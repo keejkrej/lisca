@@ -1,0 +1,12 @@
+# Virtual environment
+bin/
+include/
+lib/
+lib64
+share/
+pyvenv.cfg
+
+# Pip status
+pip-selfcheck.json
+
+
