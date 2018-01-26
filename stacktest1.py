@@ -69,9 +69,11 @@ class StackViewer():
         # Get number of slices in stack
         m = re.search(r"slices=(\d+)", desc)
         if m:
-            self.n_slices = m.group(1)
-        else:
-            self.n_slices = 1
+            n_slices = m.group(1)
+            if self.n_frames == 1 and n_frames > 1:
+                self.n_frames = n_frames
+            elif n_frames > 1:
+                raise ValueError("Bad image format: multiple slices and frames detected.")
 
         # Get number of channels in stack
         m = re.search(r"channels=(\d+)", desc)
@@ -82,7 +84,6 @@ class StackViewer():
 
         print(self.n_images)
         print(self.n_frames)
-        print(self.n_slices)
         print(self.n_channels)
 
     def build_gui(self):
