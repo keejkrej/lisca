@@ -29,8 +29,8 @@ class Stack:
         self.img = None
 
         # The stack properties
-        self.width = 0
-        self.height = 0
+        self._width = 0
+        self._height = 0
         self.n_images = 0
         self.n_frames = 0
         self.n_channels = 0
@@ -60,8 +60,8 @@ class Stack:
             print(str(e))
             raise
 
-        self.width = self.img.width
-        self.height = self.img.height
+        self._width = self.img.width
+        self._height = self.img.height
         #self.stack = np.asarray(self.img)
         self._goto_frame(channel=0, frame=0)
 
@@ -122,14 +122,26 @@ class Stack:
     def get_frame_tk(self, channel=None, frame=None):
         """Get a frame of the stack as Tk PhotoImage."""
         self._goto_frame(channel=channel, frame=frame)
-        return piltk.PhotoImage(self.img)
+        #return piltk.PhotoImage(self.img.convert(mode='P'))
+        if self.img.mode in ('L', 'P'):
+            photoimage = self.img
+        else:
+            a16 = np.asarray(self.img)
+            a8 = np.empty(a16.shape, dtype=np.uint8)
+            np.floor_divide(a16, 255, out=a8)
+            #a16 = a16 - a16.min()
+            #a16 = a16 / a16.max() * 255
+            #np.floor_divide(a16, 255, out=a8)
+            #np.true_divide(a16, 255, out=a8, casting='unsafe')
+            photoimage = pilimg.fromarray(a8)
+        return piltk.PhotoImage(photoimage)
 
 
     def info(self):
         """Print stack info. Only for debugging."""
         print("Path: " + str(self.path))
-        print("width: " + str(self.width))
-        print("height: " + str(self.height))
+        print("width: " + str(self._width))
+        print("height: " + str(self._height))
         print("n_images: " + str(self.n_images))
         print("n_channels: " + str(self.n_channels))
         print("n_frames: " + str(self.n_frames))
@@ -164,3 +176,15 @@ class Stack:
         """Notify all registered listeners."""
         for _, (fun, args, kw) in self._listeners.items():
             fun(*args, **kw)
+
+
+    @property
+    def width(self):
+        return self._width
+
+
+    @property
+    def height(self):
+        return self._height
+
+
