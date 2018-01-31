@@ -2,6 +2,7 @@
 import random
 import re
 import string
+import tempfile
 import warnings
 
 import numpy as np
@@ -9,6 +10,7 @@ import PIL.Image as pilimg
 import PIL.ImageTk as piltk
 
 TIFF_TAG_DESCRIPTION = 270
+TIFF_TAG_BITSPERSAMPLE = 258
 
 class Stack:
     """Represents an image stack."""
@@ -27,19 +29,16 @@ class Stack:
         """Clear the internal state"""
         # The stack path and object
         self._path = None
+        self._tmpfile = None
         self.img = None
 
         # The stack properties
+        self._mode = None
         self._width = 0
         self._height = 0
         self._n_images = 0
         self._n_frames = 0
         self._n_channels = 0
-
-        # The current stack position
-        self._i_image = None
-        self._i_frame = None
-        self._i_channel = None
 
         # Notify listeners
         self._notify_listeners()
@@ -49,33 +48,61 @@ class Stack:
         """Load a stack from a path."""
         try:
             self._path = path
-            self.img = pilimg.open(self._path)
-            if self.img.format != "TIFF":
+            tiffimg = pilimg.open(self._path)
+            if tiffimg.format != "TIFF":
                 raise ValueError(
                     "Bad image format: {}. Expected TIFF.".format(
-                    self.img.format))
-            self._parse_tiff_tags()
+                    tiffimg.format))
+            self._parse_tiff_tags(tiffimg)
 
         except Exception as e:
             self._clear_state()
             print(str(e))
             raise
 
-        self._width = self.img.width
-        self._height = self.img.height
-        #self.stack = np.asarray(self.img)
-        self._goto_stack_position(channel=0, frame=0)
+        self._width = tiffimg.width
+        self._height = tiffimg.height
+        self._n_images = tiffimg.n_frames
+
+        # Copy stack to numpy array in temporary file
+        self._tmpfile = tempfile.TemporaryFile()
+        self.img = np.memmap(filename=self._tmpfile,
+                             dtype=(np.uint8 if self._mode == 8
+                                    else np.uint16),
+                             shape=(self._n_channels,
+                                    self._n_frames,
+                                    self._height,
+                                    self._width))
+        for i in range(self._n_images):
+            tiffimg.seek(i)
+            ch, fr = self.convert_position(image=i)
+            self.img[ch,fr,:,:] = np.asarray(tiffimg)
+
+        # Close TIFF image
+        tiffimg.close()
 
 
     def close(self):
         """Close the TIFF file."""
-        self.img.close()
+        self.img = None
+        self._tmpfile.close()
+        self._tmpfile = None
         self._clear_state()
 
 
-    def _parse_tiff_tags(self):
+    def _parse_tiff_tags(self, tiffimg):
         """Read stack dimensions from TIFF description tag."""
-        desc = self.img.tag[TIFF_TAG_DESCRIPTION][0]
+        # Get pixel size
+        px_size = tiffimg.tag[TIFF_TAG_BITSPERSAMPLE][0]
+        if px_size == 8:
+            self._mode = 8
+        elif px_size == 16:
+            self._mode = 16
+        else:
+            raise ValueError("Undefined pixel size: {}".format(px_size))
+
+        # Parse image description (metadata from ImageJ)
+        desc = tiffimg.tag[TIFF_TAG_DESCRIPTION][0]
         
         # Get total number of images in stack
         m = re.search(r"images=(\d+)", desc)
@@ -108,82 +135,58 @@ class Stack:
             self._n_channels = 1
 
 
-    def _goto_stack_position(self, channel=None, frame=None, image=None):
-        """Load a given stack position."""
-        isChannelChanged = False
-        isFrameChanged = False
-        isImageChanged = False
-
-        # Check function arguments
-        if channel is not None and channel != self._i_channel:
-            if channel < 0 or channel >= self._n_channels or channel % 1 != 0:
-                warnings.warn("\"channel\" must be an integer in [0,{}).".format(self._n_channels))
-                return
-            isChannelChanged = True
-
-        if frame is not None and frame != self._i_frame:
-            if frame < 0 or frame >= self._n_frames or frame % 1 != 0:
-                warnings.warn("\"frame\" must be an integer in [0,{}).".format(self._n_frames))
-                return
-            isFrameChanged = True
-
-        if image is not None and image != self._i_image:
-            if image < 0 or image >= self._n_images or image % 1 != 0:
-                warnings.warn("\"image\" must be an integer in [0,{}).".format(self._n_images))
-                return
-
-            # Calculate corresponding channel and frame
-            i_channel = image % self._n_channels
-            i_frame = image // self._n_channels
-
-            # Check for contradictory function arguments
-            if (isChannelChanged and channel != i_channel) or \
-                (isFrameChanged and frame != i_frame):
-                warnings.warn("Cannot change to contradictory stack position: i_frame={}, i_channel={}, i_image={}.".format(frame, channel, image))
-                return
-
-            # Update implicitly changed dimensions
-            isImageChanged = True
-            if not isChannelChanged and i_channel != self._i_channel:
-                channel = i_channel
-                isChannelChanged = True
-            if not isFrameChanged and i_frame != self._i_frame:
-                frame = i_frame
-                isFrameChanged = True
-
-        # Set new dimensions (if any changes)
-        if not isChannelChanged and not isFrameChanged and not isImageChanged:
-            return
-        if isChannelChanged:
-            self._i_channel = channel
-        if isFrameChanged:
-            self._i_frame = frame
-        if isImageChanged:
-            self._i_image = image
+    def convert_position(self, channel=None, frame=None, image=None):
+        """
+        Convert stack position between (channel, frame) and image.
+        
+        Either give "channel" and "frame" to obtain the corresponding
+        image index, or give "image" to obtain the corresponding indices
+        of channel and frame as tuple.
+        All other combinations will return None.
+        """
+        # Check arguments
+        if channel is None and frame is None:
+            toCT = True
+        elif channel is None or frame is None:
+            return None
         else:
-            self._i_image = self._i_frame * self._n_channels + self._i_channel
+            toCT = False
+        if image is None and toCT:
+            return None
 
-        # Apply changes
-        self.img.seek(self._i_image)
-        self._notify_listeners()
+        # Convert
+        if toCT:
+            channel = image % self._n_channels
+            frame = image // self._n_channels
+            return (channel, frame)
+        else:
+            image = frame * self._n_channels + channel
+            return image
 
+
+    def get_image(self, channel, frame):
+        """Get a numpy array of a stack position."""
+        return self.img[channel, frame, :, :]
+
+
+    def get_image_copy(self, channel, frame):
+        """Get a copy of a numpy array of a stack position."""
+        return self.img[channel, frame, :, :].copy()
 
 
     def get_frame_tk(self, channel, frame):
         """Get a frame of the stack as Tk.PhotoImage."""
-        self._goto_stack_position(channel=channel, frame=frame)
-        if self.img.mode in ('L', 'P'):
-            photoimage = self.img
+        if self._mode == 8:
+            a8 = self.get_image(channel, frame)
         else:
-            a16 = np.asarray(self.img)
+            a16 = self.get_image(channel, frame)
             a8 = np.empty(a16.shape, dtype=np.uint8)
             np.floor_divide(a16, 256, out=a8)
             #a16 = a16 - a16.min()
             #a16 = a16 / a16.max() * 255
             #np.floor_divide(a16, 255, out=a8)
             #np.true_divide(a16, 255, out=a8, casting='unsafe')
-            photoimage = pilimg.fromarray(a8)
-        return piltk.PhotoImage(photoimage)
+        return piltk.PhotoImage(pilimg.fromarray(a8, mode='L'))
 
 
     def info(self):
@@ -194,9 +197,6 @@ class Stack:
         print("n_images: " + str(self._n_images))
         print("n_channels: " + str(self._n_channels))
         print("n_frames: " + str(self._n_frames))
-        print("i_image: " + str(self._i_image))
-        print("i_channel: " + str(self._i_channel))
-        print("i_frame: " + str(self._i_frame))
 
 
     def add_listener(self, fun, *args, **kw):
@@ -233,6 +233,11 @@ class Stack:
 
 
     @property
+    def mode(self):
+        return self._mode
+
+
+    @property
     def width(self):
         return self._width
 
@@ -256,30 +261,4 @@ class Stack:
     def n_frames(self):
         return self._n_frames
 
-
-    @property
-    def i_image(self):
-        return self._i_image
-
-    @i_image.setter
-    def i_image(self, i_image):
-        self._goto_stack_position(image=i_image)
-
-
-    @property
-    def i_channel(self):
-        return self._i_channel
-
-    @i_channel.setter
-    def i_channel(self, i_channel):
-        self._goto_stack_position(channel=i_channel)
-
-
-    @property
-    def i_frame(self):
-        return self._i_frame
-
-    @i_frame.setter
-    def i_frame(self, i_frame):
-        self._goto_stack_position(frame=i_frame)
 

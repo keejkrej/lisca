@@ -55,7 +55,7 @@ class StackViewer:
         self.canvas = tk.Canvas(self.mainframe, width=100, height=100,
             background="white")
         self.canvas.grid(row=ROW_CANVAS, column=0,
-            columnspan=COLSPAN_CANVAS, sticky=tk.N+tk.E+tk.S+tk.W)
+            columnspan=COLSPAN_CANVAS, sticky=tk.N+tk.S)
 
         # Channel control elements
         self.scale_channel = tk.Scale(
@@ -111,8 +111,9 @@ class StackViewer:
         if self.stack is not None:
             self.stack.close()
         self.stack = stack.Stack(fn)
+        self.img = None
         self._update_stack_properties()
-        self._show_img()
+        #self._change_stack_position(i_channel=0, i_frame=0)
 
 
     def _show_img(self):
@@ -120,15 +121,18 @@ class StackViewer:
         self.canvas.delete("img")
         self.img = self.stack.get_frame_tk(channel=self.i_channel,
             frame=self.i_frame)
-        self.canvas.config(width=self.stack.width, height=self.stack.height)
         self.canvas.create_image((0,0), anchor=tk.NW,
             image=self.img, tags=("img",))
 
 
     def _update_stack_properties(self):
         """Read stack dimensions and adjust GUI."""
+        self.canvas.config(width=self.stack.width, height=self.stack.height)
+
         self.n_channels = self.stack.n_channels
         self.n_frames = self.stack.n_frames
+        self.i_channel = 0
+        self.i_frame = 0
 
         self.i_channel_var.set(1)
         self.i_frame_var.set(1)
@@ -190,7 +194,8 @@ class StackViewer:
         if i_frame is not None and i_frame != self.i_frame:
             self.i_frame = i_frame
             isChanged = True
-        if isChanged:
+
+        if isChanged or self.img is None:
             self._show_img()
 
 
