@@ -67,6 +67,12 @@ class Stack:
         self._goto_stack_position(channel=0, frame=0)
 
 
+    def close(self):
+        """Close the TIFF file."""
+        self.img.close()
+        self._clear_state()
+
+
     def _parse_tiff_tags(self):
         """Read stack dimensions from TIFF description tag."""
         desc = self.img.tag[TIFF_TAG_DESCRIPTION][0]
@@ -162,16 +168,16 @@ class Stack:
         self._notify_listeners()
 
 
-    def get_frame_tk(self, channel=None, frame=None):
-        """get a frame of the stack as tk photoimage."""
+
+    def get_frame_tk(self, channel, frame):
+        """Get a frame of the stack as Tk.PhotoImage."""
         self._goto_stack_position(channel=channel, frame=frame)
-        #return piltk.PhotoImage(self.img.convert(mode='P'))
         if self.img.mode in ('L', 'P'):
             photoimage = self.img
         else:
             a16 = np.asarray(self.img)
             a8 = np.empty(a16.shape, dtype=np.uint8)
-            np.floor_divide(a16, 255, out=a8)
+            np.floor_divide(a16, 256, out=a8)
             #a16 = a16 - a16.min()
             #a16 = a16 / a16.max() * 255
             #np.floor_divide(a16, 255, out=a8)

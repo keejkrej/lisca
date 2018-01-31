@@ -27,6 +27,7 @@ class StackViewer:
         self.n_frames = None
         self.i_channel = None
         self.i_frame = None
+
         self.i_channel_var = tk.IntVar()
         self.i_channel_var.trace_add("write", self._i_channel_changed)
         self.i_frame_var = tk.IntVar()
@@ -54,8 +55,7 @@ class StackViewer:
         self.canvas = tk.Canvas(self.mainframe, width=100, height=100,
             background="white")
         self.canvas.grid(row=ROW_CANVAS, column=0,
-            columnspan=COLSPAN_CANVAS, sticky=tk.N+tk.E+tk.S+tk.W,
-            ipady=5, ipadx=5)
+            columnspan=COLSPAN_CANVAS, sticky=tk.N+tk.E+tk.S+tk.W)
 
         # Channel control elements
         self.scale_channel = tk.Scale(
@@ -108,6 +108,8 @@ class StackViewer:
         self.label["text"] = fn
         self.button.configure(state=tk.NORMAL)
 
+        if self.stack is not None:
+            self.stack.close()
         self.stack = stack.Stack(fn)
         self._update_stack_properties()
         self._show_img()
