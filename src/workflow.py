@@ -22,7 +22,6 @@ class WorkflowGUI:
     def new_module(self):
         self.add_button.pack_forget()
         m = ModuleFrame(self.mainframe)
-        #m.pack(fill=tk.X, padx=PAD_X, pady=PAD_Y)
         self.add_button.pack(fill=tk.X, padx=PAD_X, pady=PAD_Y)
         
 

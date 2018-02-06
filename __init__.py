@@ -11,7 +11,7 @@ if __name__ == "__main__":
     import os
     import sys
     import tkinter as tk
-    from src.module_manager import ModuleManager
+    from src.modules import ModuleManager
     from src.workflow import WorkflowGUI
 
     # Add directories for builtins and plugins to PYTHONPATH

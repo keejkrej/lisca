@@ -9,4 +9,6 @@ pyvenv.cfg
 # Pip status
 pip-selfcheck.json
 
-
+# Temporary files
+__pycache__/
+*~
