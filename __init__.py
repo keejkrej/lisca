@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
     # Load modules
     modman = ModuleManager(PLUGINS_PATH)
-    modman.show()
+    #modman.show()
 
     # Display GUI
     gui = WorkflowGUI(modman)
