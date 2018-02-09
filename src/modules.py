@@ -46,7 +46,7 @@ def _load_module(name, path):
 
 def _search_modules(plugins_path):
     """Find modules to be loaded."""
-    modules = []
+    modules = {}
 
     # Search plugins directory for plugins
     for f in os.listdir(plugins_path):
@@ -76,12 +76,12 @@ def _search_modules(plugins_path):
         # Load and register the module
         meta = _load_module(name, fp)
         if meta is not None:
-            modules.append(meta)
+            modules[meta.id] = meta
 
     return modules
 
 
-def _parse_version(ver):
+def _parse_version(ver, isComparison=False):
     """
     Parse a version string.
 
@@ -102,6 +102,20 @@ def _parse_version(ver):
 
     The version is returned as a tuple of strings, as an empty tuple
     for an unspecified version or as None for an invalid argument.
+
+    Arguments:
+    ----------
+    ver -- the version string
+    isComparison -- boolean flag whether ver is a comparison
+
+    Returns:
+    --------
+    A tuple of subversion strings, obtained by splitting the
+    version string at dots.
+    If isComparison is True, the comparison mode is returned
+    before the tuple of subversion strings. The comparison
+    mode is one of the following strings:
+    '>=', '<=', '!=', '>', '<', '='
     """
     # Catch special cases
     if ver is None:
@@ -112,8 +126,144 @@ def _parse_version(ver):
         return None
 
     # Parse version string
-    # TODO: check for comparison flags (>=, <=, !=)
-    return tuple([v for v in ver.split('.') if v != ''])
+    # TODO: add optional dependency ('?')
+    comp_flags = ('>=', '<=', '!=', '>', '<', '=')
+    starts_with_comparison = ver.startswith(comp_flags)
+    if isComparison:
+        if ver[:2] in comp_flags:
+            comp_mode = ver[:2]
+            ver = ver[2:]
+        elif ver[0] in comp_flags:
+            comp_mode = ver[0]
+            ver = ver[1:]
+        else:
+            comp_mode = '='
+
+    # Split version string into subversions
+    ver = tuple([v for v in ver.split('.') if v])
+
+    if isComparison:
+        return comp_mode, ver
+    else:
+        return ver
+
+
+def _check_versions(version_present, comp_mode, version_required):
+    """
+    Check if a version fulfills a version requirement.
+
+    TODO: possibly wrong results for subversionstrings
+    with different lengths
+
+    Returns
+    -------
+    True if version fulfills requirement, else False.
+    """
+    # TODO: correct for strings with different lengths
+    # TODO: add optional dependency ('?')
+    if not version_present and not version_required:
+        return True
+
+    elif comp_mode == '>=':
+        for vp, vr in zip(version_present, version_required):
+            if vp < vr:
+                return False
+        if len(version_present) < len(version_required):
+            return False
+        return True
+
+    elif comp_mode == '<=':
+        for vp, vr in zip(version_present, version_required):
+            if vp > vr:
+                return False
+        if len(version_present) > len(version_required):
+            return False
+        return True
+
+    elif comp_mode == '!=':
+        for vp, vr in zip(version_present, version_required):
+            if vp != vr:
+                return True
+        if len(version_present) == len(version_required):
+            return False
+        return True
+
+    elif comp_mode == '>':
+        for vp, vr in zip(version_present, version_required):
+            if vp > vr:
+                return True
+            elif vp < vr:
+                return False
+        if len(version_present) > len(version_required):
+            return True
+        return False
+
+    elif comp_mode == '<':
+        for vp, vr in zip(version_present, version_required):
+            if vp < vr:
+                return True
+            elif vp < vr:
+                return False
+        if len(version_present) < len(version_required):
+            return True
+        return False
+
+    elif comp_mode == '=':
+        if len(version_present) != len(version_required):
+            return False
+        for vp, vr in zip(version_present, version_required):
+            if vp != vr:
+                return False
+        return True
+
+    # This is never reached for a valid comp_mode
+    return False
+
+
+def _parse_dep(dep):
+    """Parse the dependency data inserted by the module."""
+    # Expects:
+    # [tuple of] tuple of ("id", [tuple of] [(<, >) [=]] "version", [tuple of] "conf_ret")
+    # Returns:
+    # tuple of (tuple of ("id", tuple of (<cmp_mode>, "version"), tuple of "conf_ret"))
+    # Returns None if input is invalid
+
+    # No dependencies
+    if not dep:
+        return ()
+
+    # Depending on only one module; convert to tuple
+    if isinstance(dep[0], str):
+        dep = (dep,)
+
+    # Write all dependencies to standardized structure
+    new = []
+    isValid = True
+    for d in dep:
+        n = []
+        try:
+            # "id" is a string
+            n[0] = d[0]
+
+            # "version" is a string or a tuple of strings
+            if isinstance(d[1], str):
+                versions = (d[1],)
+            else:
+                versions = d[1]
+            new_versions = []
+            for ver in versions:
+                cmp_mode, ver_nr = _parse_version(ver, True)
+                new_versions.append((cmp_mode, ver_nr))
+            n[1] = tuple(new_versions)
+
+            # "conf_ret" is a string or a tuple of strings
+            if isinstance(d[2], str):
+                n[2] = (d[2],)
+            else:
+                n[2] = d[2]
+        except Exception:
+            return None
+    return tuple(new)
 
 
 class ModuleManager:
@@ -123,12 +273,19 @@ class ModuleManager:
 
     def __init__(self, plugins_path=None, register_builtins=True):
         """Set up a new ModuleManager instance."""
-        self.modules = []
-        if plugins_path is not None:
-            self.modules = _search_modules(plugins_path)
+        self.modules = {}
+        self.results = {}
 
+        # Register built-in modules
         if register_builtins:
             self.register_builtins()
+
+        # Register custom plugin modules
+        if plugins_path is not None:
+            self.modules = _search_modules(plugins_path)
+            # Prepare result dictionary
+            for m in self.modules:
+                self.results[m] = {}
 
 
     def show(self):
@@ -138,22 +295,79 @@ class ModuleManager:
 
     def list_display(self, category=None):
         """Return a list of modules for displaying."""
-        return [{'name': m.name, 'id': m.id, 'category': m.category} for m in self.modules if m.name != '']
+        return [{'name': m.name, 'id': m.id, 'category': m.category} for _, m in self.modules.items() if m.name != '']
+
+
+    def memorize_result(self, mod_id, result):
+        """Add a result to the internal memory."""
+        # TODO: add test for consistency with metadata
+        # TODO: adjust to tuple of dependencies (see _parse_dep)
+        for k in result.keys():
+            self.results[mod_id][k] = result[k]
+
+
+    def acquire_dependencies(self, mod_id, isConfigure=False):
+        mod = self.modules[mod_id]
+        mod_ver = mod.version
+
+        if isConfigure:
+            dep_list = mod.conf_dep
+        else:
+            dep_list = mod.run_dep
+        print(dep_list)
+
+        if len(dep_list) == 0:
+            return {}
+
+        data = {}
+        for dep_id, dep_ver_req, dep_names in dep_list:
+            # Check if versions match
+            cmp_mode, dep_ver = _parse_version(self.modules[dep_id].version)
+            if not _check_versions(dep_ver_req, cmp_mode, dep_ver):
+                warnings.warn("Could not {} module '{}': for dependency '{}' found version {}, but require {}.".format("configure" if isConfigure else "run", mod_id, dep_id, dep_ver, dep_ver_req))
+                return None
+
+            # Check if data is available
+            for name in dep_names:
+                try:
+                    data[name] = self.results[dep_id][name]
+                except KeyError:
+                    warnings.warn("Could not {} module '{}': for dependency '{}' did not find required data '{}'.".format("configure" if isConfigure else "run", mod_id, dep_id, name))
+                    return None
+
+        return data
 
 
     def configure_module(self, mod_id):
         """Configure the module with the selected id."""
-        for m in self.modules:
-            if m.id == mod_id:
-                m.module.configure()
-                return
+        # Acquire dependencies for configuration
+        dep_data = self.acquire_dependencies(mod_id, True)
+        if dep_data is None:
+            return
+
+        # Invoke module’s configure function
+        try:
+            res = self.modules[mod_id].module.configure(**dep_data)
+            if res is not None:
+                self.memorize_result(mod_id, res)
+        except Exception:
+            pass
+
 
     def run_module(self, mod_id):
         """Run the module with the selected id."""
-        for m in self.modules:
-            if m.id == mod_id:
-                m.module.run()
-                return
+        # Acquire dependencies for running
+        dep_data = self.acquire_dependencies(mod_id)
+        if dep_data is None:
+            return
+
+        # Invoke module’s run function
+        try:
+            res = self.modules[mod_id].module.run(**dep_data)
+            if res is not None:
+                self.memorize_result(mod_id, res)
+        except Exception:
+            pass
 
     def register_builtins(self):
         # TODO
@@ -267,24 +481,32 @@ class ModuleMetadata:
         self.__set_tuple_of_str("run_ret", ret)
 
     # "conf_dep"
-    # [tuple of] tuple of ("id", [(<, >) [=]] "version", [tuple of] "conf_ret")
+    # [tuple of] tuple of ("id", [tuple of] [(<, >) [=]] "version", [tuple of] "conf_ret")
     # Dependencies of the module configuration function.
     @property
     def conf_dep(self):
         return self.__vals["conf_dep"]
     @conf_dep.setter
     def conf_dep(self, dep):
-        pass
+        dep = parse_dep(dep)
+        if dep is None:
+            warning.warn("Cannot set configuration dependencies of module '{}': bad dependency given.".format(self.id))
+            return
+        self.__vals["conf_dep"] = dep
 
     # "run_dep"
-    # [tuple of] tuple of ("id", [(<, >) [=]] "version", [tuple of] ("conf_ret", "run_ret"))
+    # [tuple of] tuple of ("id", [tuple of] [(<, >) [=]] "version", [tuple of] ("conf_ret", "run_ret"))
     # Dependencies of the module run function.
     @property
     def run_dep(self):
         return self.__vals["run_dep"]
     @run_dep.setter
     def run_dep(self, dep):
-        pass
+        dep = parse_dep(dep)
+        if dep is None:
+            warning.warn("Cannot set run dependencies of module '{}': bad dependency given.".format(self.id))
+            return
+        self.__vals["run_dep"] = dep
 
     # "module"
     # module

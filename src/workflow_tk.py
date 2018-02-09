@@ -18,6 +18,7 @@ class WorkflowGUI:
         """Set up the workflow GUI."""
         self.modman = module_manager
         self.root = tk.Tk()
+        self.root.title("Workflow")
         self.root.minsize(width=200, height=500)
 
         self.mainframe = ttk.Frame(self.root)
@@ -50,18 +51,20 @@ class ModuleFrame:
         self.frame = ttk.Frame(self.parent, relief=tk.RAISED,
             borderwidth=2, width=250, height=150)
         self.frame.pack(fill=tk.X, padx=PAD_X, pady=PAD_Y)
+        self.frame.columnconfigure(0, weight=1)
+        self.frame.columnconfigure(1, weight=1)
 
         # Drop-down menu for selecting the model
         self.modlist = self.modman.list_display()
         self.mod_sel = tk.StringVar(get_root(self.parent))
         self.mod_menu = ttk.OptionMenu(self.frame, self.mod_sel, *[m['name'] for m in self.modlist])
-        self.mod_menu.grid(row=0, column=0, columnspan=2)
+        self.mod_menu.grid(row=0, column=0, columnspan=2, sticky=tk.W+tk.E)
 
         # Buttons for configuring and running the module
         self.mod_config_but = ttk.Button(self.frame, text="Configure", command=self.configure_module)
-        self.mod_config_but.grid(row=1, column=0)
+        self.mod_config_but.grid(row=1, column=0, sticky=tk.W+tk.E)
         self.mod_run_but = ttk.Button(self.frame, text="Run", command=self.run_module)
-        self.mod_run_but.grid(row=1, column=1)
+        self.mod_run_but.grid(row=1, column=1, sticky=tk.W+tk.E)
 
 
     def configure_module(self):

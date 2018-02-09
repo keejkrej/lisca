@@ -12,7 +12,7 @@ if __name__ == "__main__":
     import sys
     import tkinter as tk
     from src.modules import ModuleManager
-    from src.workflow import WorkflowGUI
+    from src.workflow_tk import WorkflowGUI
 
     # Add directories for builtins and plugins to PYTHONPATH
     this_dir, _ = os.path.split(os.path.abspath(__file__))
