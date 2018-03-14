@@ -41,9 +41,14 @@ def _load_module(name, path):
             if meta_check_failed:
                 warnings.warn("Ignoring invalid module {} at {}:\n{}".format(name, path, meta_check_failed))
                 meta = None
-        except Exception:
-            meta = None
+        # TODO: uncomment "except" block, remove "finally" block
+        #except Exception as e:
+        #    print("Ignore module '{}' due to exception: {}".format(name, str(e)))
+        #    meta = None
+        finally:
+            pass
     else:
+        warnings.warn("Ignoring invalid module {} at {}:\nNo 'register' function found.".format(name, path))
         meta = None
 
     return meta
@@ -339,7 +344,7 @@ class ModuleManager:
             dep_list = mod.conf_dep
         else:
             dep_list = mod.run_dep
-        print(dep_list)
+        print("[MouleManager.acquire_dependencies] dependency list: {}".format(str(dep_list)))
 
         if len(dep_list) == 0:
             return {}
@@ -347,10 +352,12 @@ class ModuleManager:
         data = {}
         for dep_id, dep_ver_req, dep_names in dep_list:
             # Check if versions match
-            cmp_mode, dep_ver = _parse_version(self.modules[dep_id].version)
-            if not _check_versions(dep_ver_req, cmp_mode, dep_ver):
-                warnings.warn("Could not {} module '{}': for dependency '{}' found version {}, but require {}.".format("configure" if isConfigure else "run", mod_id, dep_id, dep_ver, dep_ver_req))
-                return None
+            if dep_id != "":
+                dep_ver_present = _parse_version(self.modules[dep_id].version)
+                cmp_mode, dep_ver_req = _parse_version(dep_ver_req, True)
+                if not _check_versions(dep_ver_req, cmp_mode, dep_ver):
+                    warnings.warn("Could not {} module '{}': for dependency '{}' found version {}, but require {}.".format("configure" if isConfigure else "run", mod_id, dep_id, dep_ver, dep_ver_req))
+                    return None
 
             # Check if data is available
             for name in dep_names:
@@ -513,9 +520,9 @@ class ModuleMetadata:
         return self.__vals["conf_dep"]
     @conf_dep.setter
     def conf_dep(self, dep):
-        dep = parse_dep(dep)
+        dep = _parse_dep(dep)
         if dep is None:
-            warning.warn("Cannot set configuration dependencies of module '{}': bad dependency given.".format(self.id))
+            warnings.warn("Cannot set configuration dependencies of module '{}': bad dependency given.".format(self.id))
             return
         self.__vals["conf_dep"] = dep
 
@@ -527,9 +534,9 @@ class ModuleMetadata:
         return self.__vals["run_dep"]
     @run_dep.setter
     def run_dep(self, dep):
-        dep = parse_dep(dep)
+        dep = _parse_dep(dep)
         if dep is None:
-            warning.warn("Cannot set run dependencies of module '{}': bad dependency given.".format(self.id))
+            warnings.warn("Cannot set run dependencies of module '{}': bad dependency given.".format(self.id))
             return
         self.__vals["run_dep"] = dep
 
