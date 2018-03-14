@@ -1,4 +1,11 @@
-#! /usr/bin/env python3
+"""
+.. py:module:: modules
+    :synopsis: The module management
+
+.. moduleauthor:: Daniel Woschée <daniel.woschee@physik.lmu.de>
+
+This is the docstring of the :py:mod:`modules` module.
+"""
 import importlib as imp
 import os
 import warnings
@@ -8,17 +15,15 @@ def _load_module(name, path):
     """
     Load and register a given module.
 
-    Arguments
-    ---------
-    name -- the name of the module
-    path -- the path to the module file
+    :param name: the name of the module
+    :type name: str
+    :param path: the path to the module file
+    :type path: str
 
     For loading a package, give the path of the package’s
-    __init__.py file as path.
+    ``__init__.py`` file as path.
 
-    Returns
-    -------
-    Metadata of the module, or None if module couldn’t be loaded.
+    :return: Metadata of the module, or ``None`` if module couldn’t be loaded.
     """
     # Load the module
     spec = imp.util.spec_from_file_location(name, path)
@@ -103,19 +108,19 @@ def _parse_version(ver, isComparison=False):
     The version is returned as a tuple of strings, as an empty tuple
     for an unspecified version or as None for an invalid argument.
 
-    Arguments:
-    ----------
-    ver -- the version string
-    isComparison -- boolean flag whether ver is a comparison
+    :param ver: the version string
+    :type ver: str
+    :param isComparison: boolean flag whether ver is a comparison
+    :type isComparison: bool
 
-    Returns:
-    --------
-    A tuple of subversion strings, obtained by splitting the
-    version string at dots.
-    If isComparison is True, the comparison mode is returned
-    before the tuple of subversion strings. The comparison
-    mode is one of the following strings:
-    '>=', '<=', '!=', '>', '<', '='
+    :return: A tuple of subversion strings, obtained by splitting
+        the version string at dots.
+
+        If isComparison is True, the comparison mode is returned
+        before the tuple of subversion strings.
+        The comparison mode is one of the following strings:
+
+        ``>=``, ``<=``, ``!=``, ``>``, ``<``, ``=``
     """
     # Catch special cases
     if ver is None:
@@ -155,9 +160,11 @@ def _check_versions(version_present, comp_mode, version_required):
     TODO: possibly wrong results for subversionstrings
     with different lengths
 
-    Returns
-    -------
-    True if version fulfills requirement, else False.
+    :param version_present: The version of the module to be evaluated
+    :param comp_mode: The comparison mode
+    :param version_required: The required version
+
+    :return: ``True`` if version fulfills requirement, else ``False``.
     """
     # TODO: correct for strings with different lengths
     # TODO: add optional dependency ('?')
@@ -221,7 +228,17 @@ def _check_versions(version_present, comp_mode, version_required):
 
 
 def _parse_dep(dep):
-    """Parse the dependency data inserted by the module."""
+    """
+    Parse the dependency data inserted by the module.
+    
+    :param dep: The dependency data provided by the module
+    :return: A (possibly empty) tuple of dependencies,
+        or ``None`` if dependency data is invalid
+
+    The expected dependency data is::
+
+        [tuple of] tuple of ("id", [tuple of] [(<, >) [=]] "version", [tuple of] "conf_ret")
+    """
     # Expects:
     # [tuple of] tuple of ("id", [tuple of] [(<, >) [=]] "version", [tuple of] "conf_ret")
     # Returns:
@@ -272,7 +289,15 @@ class ModuleManager:
     """
 
     def __init__(self, plugins_path=None, register_builtins=True):
-        """Set up a new ModuleManager instance."""
+        """
+        Set up a new ModuleManager instance.
+
+        Plugins will be searched in the given path.
+        By default, the builtin modules are also imported.
+
+        :param plugins_path: The directory in which plugins are searched
+        :param register_builtins: Boolean flag whether to import builtin modules
+        """
         self.modules = {}
         self.results = {}
 
@@ -289,7 +314,7 @@ class ModuleManager:
 
 
     def show(self):
-        """Only for DEBUG"""
+        """Print ``self.modules``. Only for debugging."""
         print(self.modules)
 
 
