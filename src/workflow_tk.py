@@ -58,7 +58,7 @@ class ModuleFrame:
         # Drop-down menu for selecting the model
         self.modlist = self.modman.list_display()
         self.mod_sel = tk.StringVar(get_root(self.parent))
-        self.mod_menu = ttk.OptionMenu(self.frame, self.mod_sel, *[m['name'] for m in self.modlist])
+        self.mod_menu = ttk.OptionMenu(self.frame, self.mod_sel, "[Select a plugin]", *[m['name'] for m in self.modlist])
         self.mod_menu.grid(row=0, column=0, columnspan=2, sticky=tk.W+tk.E)
 
         # Buttons for configuring and running the module
