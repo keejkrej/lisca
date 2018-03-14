@@ -18,6 +18,7 @@ class WorkflowGUI:
         """Set up the workflow GUI."""
         self.modman = module_manager
         self.root = tk.Tk()
+        self.modman.register_builtin_data("tk_root", self.root)
         self.root.title("Workflow")
         self.root.minsize(width=200, height=500)
 

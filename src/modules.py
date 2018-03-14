@@ -291,6 +291,8 @@ def _parse_dep(dep):
 class ModuleManager:
     """
     Provides means for managing plugins.
+
+
     """
 
     def __init__(self, plugins_path=None, register_builtins=True):
@@ -304,7 +306,7 @@ class ModuleManager:
         :param register_builtins: Boolean flag whether to import builtin modules
         """
         self.modules = {}
-        self.results = {}
+        self.data = {}
 
         # Register built-in modules
         if register_builtins:
@@ -313,9 +315,9 @@ class ModuleManager:
         # Register custom plugin modules
         if plugins_path is not None:
             self.modules = _search_modules(plugins_path)
-            # Prepare result dictionary
+            # Prepare data and result dictionary
             for m in self.modules:
-                self.results[m] = {}
+                self.data[m] = {}
 
 
     def show(self):
@@ -329,11 +331,11 @@ class ModuleManager:
 
 
     def memorize_result(self, mod_id, result):
-        """Add a result to the internal memory."""
+        """Add a result to the internal data memory."""
         # TODO: add test for consistency with metadata
         # TODO: adjust to tuple of dependencies (see _parse_dep)
         for k in result.keys():
-            self.results[mod_id][k] = result[k]
+            self._add_data(mod_id, result[k])
 
 
     def acquire_dependencies(self, mod_id, isConfigure=False):
@@ -362,7 +364,7 @@ class ModuleManager:
             # Check if data is available
             for name in dep_names:
                 try:
-                    data[name] = self.results[dep_id][name]
+                    data[name] = self.data[dep_id][name]
                 except KeyError:
                     warnings.warn("Could not {} module '{}': for dependency '{}' did not find required data '{}'.".format("configure" if isConfigure else "run", mod_id, dep_id, name))
                     return None
@@ -401,9 +403,37 @@ class ModuleManager:
         except Exception:
             pass
 
+
+    def _add_data(self, d_id, name, value):
+        """
+        Add data to the internal data memory.
+
+        :param d_id: The id of the plugin providing the data
+        :param name: The name of the data
+        :param value: The value of the data
+        """
+        if d_id not in self.data:
+            self.data[d_id] = {}
+        self.data[d_id][name] = value
+
+
+    def register_builtin_data(self, name, value):
+        """
+        Register built-in data.
+
+        :meth:`register_builtin_data` can be used to add data as built-in
+        data. They will be available using an empty string as id.
+
+        :param name: The name of the data
+        :param value: The value of the data
+        """
+        self._add_data("", name, value)
+
+
     def register_builtins(self):
         # TODO
         pass
+
 
 
 class ModuleMetadata:
