@@ -8,10 +8,12 @@ def sag_hallo(s=''):
 def register(meta):
     meta.name = "Hallo"
     meta.id = "hallo"
+    meta.conf_dep = ("", "", "__version__")
     print("Modul 'hallo' registriert.")
 
 def configure(**_):
-    print("Modul 'hallo' konfiguriert.")
+    v = _['']['__version__']
+    print("Modul 'hallo' konfiguriert in pyAMA {}.".format(v))
 
 def run(**_):
     print("Modul 'hallo' ausgeführt.")

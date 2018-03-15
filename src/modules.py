@@ -345,6 +345,30 @@ class ModuleManager:
 
 
     def acquire_dependencies(self, mod_id, isConfigure=False):
+        """
+        Acquire the dependencies for executing a plugin.
+
+        :param mod_id: The id of the plugin to be executed
+        :type mod_id: str
+        :type isConfigure: bool
+        :param isConfigure: Flag indicating whether the
+            ``configure`` or the ``run`` function of the
+            plugin is called.
+
+            * ``True`` if ``configure`` is called
+            * ``False`` if ``run`` is called
+
+        :return:
+            * Dictionary {DP: {DN: DV}}, where:
+
+                * the keys DP are the identifiers of the plugins whose return values are required,
+                * the sub-keys DN are the names of the required data values,
+                * the sub-values DV are the actual data values, and
+                * the empty string as a special sub-key DN has the present version of the corresponding plugin as sub-value DV.
+
+            * ``None`` if a dependency requirement cannot be fulfilled
+        """
+
         mod = self.modules[mod_id]
         mod_ver = mod.version
 
@@ -361,19 +385,23 @@ class ModuleManager:
         for dep_id, dep_ver_req, dep_names in dep_list:
             # Check if versions match
             if dep_id != "":
-                dep_ver_present = _parse_version(self.modules[dep_id].version)
+                dep_ver = _parse_version(self.modules[dep_id].version)
                 cmp_mode, dep_ver_req = _parse_version(dep_ver_req, True)
                 if not _check_versions(dep_ver_req, cmp_mode, dep_ver):
-                    warnings.warn("Could not {} module '{}': for dependency '{}' found version {}, but require {}.".format("configure" if isConfigure else "run", mod_id, dep_id, dep_ver, dep_ver_req))
+                    warnings.warn("Version mismatch for '{}' dependency of module '{}': found version {} of '{}', but require {}.".format("configure" if isConfigure else "run", mod_id, dep_ver, dep_id, dep_ver_req))
                     return None
+            else:
+                dep_ver = ()
 
             # Check if data is available
-            for name in dep_names:
-                try:
-                    data[name] = self.data[dep_id][name]
-                except KeyError:
-                    warnings.warn("Could not {} module '{}': for dependency '{}' did not find required data '{}'.".format("configure" if isConfigure else "run", mod_id, dep_id, name))
-                    return None
+            dep_data = {'': dep_ver}
+            try:
+                for name in dep_names:
+                    dep_data[name] = self.data[dep_id][name]
+                data[dep_id] = dep_data
+            except KeyError:
+                warnings.warn("Missing '{}' dependency of module '{}': did not find required data '{}' of plugin '{}'.".format("configure" if isConfigure else "run", mod_id, name, dep_id))
+                return None
 
         return data
 
@@ -383,6 +411,7 @@ class ModuleManager:
         # Acquire dependencies for configuration
         dep_data = self.acquire_dependencies(mod_id, True)
         if dep_data is None:
+            warnings.warn("Cannot configure plugin {}: dependencies not fulfilled.".format(mod_id))
             return
 
         # Invoke module’s configure function
@@ -399,6 +428,7 @@ class ModuleManager:
         # Acquire dependencies for running
         dep_data = self.acquire_dependencies(mod_id)
         if dep_data is None:
+            warnings.warn("Cannot run plugin {}: dependencies not fulfilled.".format(mod_id))
             return
 
         # Invoke module’s run function

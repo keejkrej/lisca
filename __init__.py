@@ -24,6 +24,7 @@ if __name__ == "__main__":
 
     # Load modules
     modman = ModuleManager(PLUGINS_PATH)
+    modman.register_builtin_data("__version__", __version__)
     #modman.show()
 
     # Display GUI
