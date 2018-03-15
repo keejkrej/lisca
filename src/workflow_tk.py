@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 import tkinter as tk
-import tkinter.ttk as ttk
+from tkinter import filedialog
+from tkinter import ttk
 
 PAD_X = 10
 PAD_Y = 10
@@ -18,7 +19,7 @@ class WorkflowGUI:
         """Set up the workflow GUI."""
         self.modman = module_manager
         self.root = tk.Tk()
-        self.modman.register_builtin_data("tk_root", self.root)
+        self.modman.register_builtin_data("workflow_gui_tk", self)
         self.root.title("Workflow")
         self.root.minsize(width=200, height=500)
 
@@ -33,12 +34,16 @@ class WorkflowGUI:
         self.add_button.pack_forget()
         m = ModuleFrame(self.mainframe, self.modman)
         self.add_button.pack(fill=tk.X, padx=PAD_X, pady=PAD_Y)
-        
 
 
     def mainloop(self):
         """Start the root mainloop."""
         self.root.mainloop()
+
+
+    def askopenfilename(self, **args):
+        """Provide file dialog for other plugins."""
+        return filedialog.askopenfilename(**args)
 
 
 class ModuleFrame:
