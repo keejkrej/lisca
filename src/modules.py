@@ -339,9 +339,8 @@ class ModuleManager:
     def memorize_result(self, mod_id, result):
         """Add a result to the internal data memory."""
         # TODO: add test for consistency with metadata
-        # TODO: adjust to tuple of dependencies (see _parse_dep)
-        for k in result.keys():
-            self._add_data(mod_id, result[k])
+        for name, value in result.items():
+            self._add_data(mod_id, name, value)
 
 
     def acquire_dependencies(self, mod_id, isConfigure=False):
@@ -368,7 +367,6 @@ class ModuleManager:
 
             * ``None`` if a dependency requirement cannot be fulfilled
         """
-
         mod = self.modules[mod_id]
         mod_ver = mod.version
 

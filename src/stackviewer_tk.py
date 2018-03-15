@@ -1,9 +1,11 @@
 #! /usr/bin/env python3
 
+import os
 import stack
 import tkinter as tk
 import tkinter.filedialog as tkfdlg
 import tkinter.ttk as ttk
+import warnings
 
 # Define constants
 ROW_HEADER = 0
@@ -46,7 +48,7 @@ class StackViewer:
         tempframe.grid(row=ROW_HEADER, column=0, columnspan=COLSPAN_CANVAS)
 
         self.button = ttk.Button(tempframe, text="Browse...",
-            command=self._open, state=tk.NORMAL)
+            command=self.open_stack, state=tk.NORMAL)
         self.button.pack(side=tk.LEFT)
         self.label = ttk.Label(tempframe, text="")
         self.label.pack(side=tk.LEFT)
@@ -100,17 +102,30 @@ class StackViewer:
         self.lbl_frame_size = ttk.Label(self.mainframe, anchor=tk.W)
 
 
-    def _open(self):
-        """Open a stack and display it."""
-        self.button.configure(state=tk.DISABLED)
-        fn = tkfdlg.askopenfilename(title="Choose stack file",
-            filetypes=(("TIFF", ("*.tif","*.tiff")),("All files", "*.*")))
-        self.label["text"] = fn
-        self.button.configure(state=tk.NORMAL)
+    def open_stack(self, fn=None):
+        """
+        Open a stack and display it.
+        :param fn: The path to the stack to be opened.
+            If ``None``, show a file selection dialog.
+        """
+        if fn is None:
+            self.button.configure(state=tk.DISABLED)
+            fn = tkfdlg.askopenfilename(title="Choose stack file",
+                filetypes=(("TIFF", ("*.tif","*.tiff")),("All files", "*.*")))
+            self.label["text"] = fn
+            self.button.configure(state=tk.NORMAL)
+        elif not os.path.isfile(fn):
+            warnings.warn("Cannot open stack: not found: {}".format(fn))
+            return
 
+        self.set_stack(stack.Stack(fn))
+
+
+    def set_stack(self, s):
+        """Set the stack that is displayed."""
         if self.stack is not None:
             self.stack.close()
-        self.stack = stack.Stack(fn)
+        self.stack = s
         self.img = None
         self._update_stack_properties()
         #self._change_stack_position(i_channel=0, i_frame=0)

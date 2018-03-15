@@ -46,6 +46,11 @@ class WorkflowGUI:
         return filedialog.askopenfilename(**args)
 
 
+    def new_toplevel(self, **args):
+        """Open a new Tk Toplevel instance."""
+        return tk.Toplevel(**args)
+
+
 class ModuleFrame:
     """Frame representing a module"""
     def __init__(self, parent, modman):
