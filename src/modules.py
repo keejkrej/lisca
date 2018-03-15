@@ -41,12 +41,11 @@ def _load_module(name, path):
             if meta_check_failed:
                 warnings.warn("Ignoring invalid module {} at {}:\n{}".format(name, path, meta_check_failed))
                 meta = None
-        # TODO: uncomment "except" block, remove "finally" block
-        #except Exception as e:
-        #    print("Ignore module '{}' due to exception: {}".format(name, str(e)))
-        #    meta = None
-        finally:
-            pass
+
+        except Exception as e:
+            print("Ignore module '{}' due to exception: {}".format(name, str(e)))
+            meta = None
+
     else:
         warnings.warn("Ignoring invalid module {} at {}:\nNo 'register' function found.".format(name, path))
         meta = None
@@ -95,7 +94,7 @@ def _parse_version(ver, isComparison=False):
     """
     Parse a version string.
 
-    The version string should preferably consist of numbers
+    The version string should consist of numbers
     separated by dots, e.g. "1.0.2", "2", or "3".
     Different versions of a module should have different version
     strings such that the version string of the newer version is
@@ -106,12 +105,12 @@ def _parse_version(ver, isComparison=False):
     the first using python’s default comparison operators.
     Multiple consecutive dots are ignored.
 
-    An empty version can also be specified by None, and a version
+    An empty version can also be specified by ``None``, and a version
     consisting of a single number can also be specified as a
     positive integer number.
 
     The version is returned as a tuple of strings, as an empty tuple
-    for an unspecified version or as None for an invalid argument.
+    for an unspecified version or as ``None`` for an invalid argument.
 
     :param ver: the version string
     :type ver: str
@@ -121,24 +120,25 @@ def _parse_version(ver, isComparison=False):
     :return: A tuple of subversion strings, obtained by splitting
         the version string at dots.
 
-        If isComparison is True, the comparison mode is returned
+        If ``isComparison`` is ``True``, the comparison mode is returned
         before the tuple of subversion strings.
         The comparison mode is one of the following strings:
 
         ``>=``, ``<=``, ``!=``, ``>``, ``<``, ``=``
     """
     # Catch special cases
-    if ver is None:
-        return ()
+    if ver is None or ver is () or ver is '':
+        return (None, ()) if isComparison else ()
     elif isinstance(ver, int) and ver >= 0:
-        return (str(ver),)
+        ver = str(ver)
+        #return ((str(ver),)
     elif not isinstance(ver, str):
         return None
 
     # Parse version string
     # TODO: add optional dependency ('?')
     comp_flags = ('>=', '<=', '!=', '>', '<', '=')
-    starts_with_comparison = ver.startswith(comp_flags)
+    #starts_with_comparison = ver.startswith(comp_flags)
     if isComparison:
         if ver[:2] in comp_flags:
             comp_mode = ver[:2]
@@ -242,12 +242,12 @@ def _parse_dep(dep):
 
     The expected dependency data is::
 
-        [tuple of] tuple of ("id", [tuple of] [(<, >) [=]] "version", [tuple of] "conf_ret")
+        [tuple of] tuple of ("id", [tuple of] [(<, >) [=]] "version", [tuple of] ("conf_ret" | "run_ret") )
     """
     # Expects:
-    # [tuple of] tuple of ("id", [tuple of] [(<, >) [=]] "version", [tuple of] "conf_ret")
+    # [tuple of] tuple of ("id", [tuple of] [(<, >) [=]] "version", [tuple of] ("conf_ret" | "run_ret") )
     # Returns:
-    # tuple of (tuple of ("id", tuple of (<cmp_mode>, "version"), tuple of "conf_ret"))
+    # tuple of (tuple of ("id", tuple of (<cmp_mode>, "version"), tuple of ("conf_ret" | "run_ret") ))
     # Returns None if input is invalid
 
     # No dependencies
@@ -262,7 +262,7 @@ def _parse_dep(dep):
     new = []
     isValid = True
     for d in dep:
-        n = []
+        n = [None, None, None]
         try:
             # "id" is a string
             n[0] = d[0]
@@ -275,16 +275,22 @@ def _parse_dep(dep):
             new_versions = []
             for ver in versions:
                 cmp_mode, ver_nr = _parse_version(ver, True)
-                new_versions.append((cmp_mode, ver_nr))
+                if cmp_mode and ver_nr:
+                    new_versions.append((cmp_mode, ver_nr))
             n[1] = tuple(new_versions)
 
-            # "conf_ret" is a string or a tuple of strings
+            # "conf_ret" is a string or an iterable of strings
             if isinstance(d[2], str):
                 n[2] = (d[2],)
             else:
                 n[2] = d[2]
+
+            # Finally, append the dependency to the list
+            new.append(tuple(n))
+
         except Exception:
             return None
+
     return tuple(new)
 
 
