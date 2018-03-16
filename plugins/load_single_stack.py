@@ -11,6 +11,7 @@ def register(meta):
     meta.name = "Read stack"
     meta.id = my_id
     meta.conf_ret = "path"
+    meta.run_ret = "stack"
     meta.run_dep = ((my_id, "", "path"), ('', '', 'workflow_gui_tk'))
     meta.conf_dep = ("", "", "workflow_gui_tk")
 
@@ -32,4 +33,6 @@ def run(**d):
     tl_win = gui_tk.new_toplevel()
     sv = StackViewer(tl_win)
     sv.set_stack(s)
+
+    return {"stack": s}
 
