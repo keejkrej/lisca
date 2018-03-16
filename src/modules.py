@@ -419,11 +419,16 @@ class ModuleManager:
                 dep_ver = ()
 
             # Check if data is available
-            dep_data = {'': dep_ver}
+            if dep_id not in data:
+                dep_data = {'': dep_ver}
+                data[dep_id] = dep_data
+            else:
+                dep_data = data[dep_id]
+
             try:
                 for name in dep_names:
                     dep_data[name] = self.data[dep_id][name]
-                data[dep_id] = dep_data
+                #data[dep_id] = dep_data
             except KeyError:
                 print("Missing '{}' dependency of plugin '{}': did not find required data '{}' of plugin '{}'.".format("configure" if isConfigure else "run", mod_id, name, dep_id), file=sys.stderr)
                 return None
