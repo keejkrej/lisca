@@ -8,6 +8,8 @@ This is the docstring of the :py:mod:`modules` module.
 """
 import importlib as imp
 import os
+import sys
+import traceback
 import warnings
 
 
@@ -37,14 +39,17 @@ def _load_module(name, path):
         meta = ModuleMetadata(mod)
         try:
             mod.register(meta)
+        except Exception as e:
+            print("\nIgnore module '{}' due to exception:".format(name),
+                    file=sys.stderr, end='')
+            _print_exception_string(e)
+            meta = None
+
+        if meta is not None:
             meta_check_failed = meta.check()
             if meta_check_failed:
                 warnings.warn("Ignoring invalid module {} at {}:\n{}".format(name, path, meta_check_failed))
                 meta = None
-
-        except Exception as e:
-            print("Ignore module '{}' due to exception: {}".format(name, str(e)))
-            meta = None
 
     else:
         warnings.warn("Ignoring invalid module {} at {}:\nNo 'register' function found.".format(name, path))
@@ -294,6 +299,20 @@ def _parse_dep(dep):
     return tuple(new)
 
 
+def _print_exception_string(exc):
+    """
+    Obtain and print a stacktrace and exception info.
+
+    :param exc: The exception that has been raised
+    :type exc: :py:class:`Exception`
+    """
+    stack = traceback.extract_tb(exc.__traceback__)[1:]
+    stack_formatted = traceback.format_list(stack)
+    msg = "\nTraceback (most recent call last):\n{}{}: {}".format(
+            ''.join(stack_formatted), exc.__class__.__name__, exc)
+    print(msg, file=sys.stderr)
+
+
 class ModuleManager:
     """
     Provides means for managing plugins.
@@ -374,7 +393,9 @@ class ModuleManager:
             dep_list = mod.conf_dep
         else:
             dep_list = mod.run_dep
-        print("[MouleManager.acquire_dependencies] dependency list: {}".format(str(dep_list)))
+
+        # DEBUG message
+        #print("[MouleManager.acquire_dependencies] dependency list: {}".format(str(dep_list)))
 
         if len(dep_list) == 0:
             return {}
@@ -417,8 +438,8 @@ class ModuleManager:
             res = self.modules[mod_id].module.configure(**dep_data)
             if res is not None:
                 self.memorize_result(mod_id, res)
-        except Exception:
-            pass
+        except Exception as e:
+            _print_exception_string(e)
 
 
     def run_module(self, mod_id):
@@ -434,8 +455,8 @@ class ModuleManager:
             res = self.modules[mod_id].module.run(**dep_data)
             if res is not None:
                 self.memorize_result(mod_id, res)
-        except Exception:
-            pass
+        except Exception as e:
+            _print_exception_string(e)
 
 
     def _add_data(self, d_id, name, value):
