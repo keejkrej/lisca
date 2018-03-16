@@ -32,7 +32,11 @@ def _load_module(name, path):
     if spec is None:
         return None
     mod = imp.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
+    try:
+        spec.loader.exec_module(mod)
+    except Exception as e:
+        print("Cannot load module '{}' from '{}':\n{}: {}".format(name, path, e.__class__.__name__, e), file=sys.stderr)
+        return None
 
     # Register the module
     if hasattr(mod, 'register'):
@@ -48,11 +52,11 @@ def _load_module(name, path):
         if meta is not None:
             meta_check_failed = meta.check()
             if meta_check_failed:
-                warnings.warn("Ignoring invalid module {} at {}:\n{}".format(name, path, meta_check_failed))
+                print("Ignoring invalid plugin {} at {}:\n{}".format(name, path, meta_check_failed), file=sys.stderr)
                 meta = None
 
     else:
-        warnings.warn("Ignoring invalid module {} at {}:\nNo 'register' function found.".format(name, path))
+        print("Ignoring invalid plugin {} at {}:\nNo 'register' function found.".format(name, path), file=sys.stderr)
         meta = None
 
     return meta
@@ -101,7 +105,7 @@ def _parse_version(ver, isComparison=False):
 
     The version string should consist of numbers
     separated by dots, e.g. "1.0.2", "2", or "3".
-    Different versions of a module should have different version
+    Different versions of a plugin should have different version
     strings such that the version string of the newer version is
     the larger operand in version comparison.
 
@@ -170,7 +174,7 @@ def _check_versions(version_present, comp_mode, version_required):
     TODO: possibly wrong results for subversionstrings
     with different lengths
 
-    :param version_present: The version of the module to be evaluated
+    :param version_present: The version of the plugin to be evaluated
     :param comp_mode: The comparison mode
     :param version_required: The required version
 
@@ -239,9 +243,9 @@ def _check_versions(version_present, comp_mode, version_required):
 
 def _parse_dep(dep):
     """
-    Parse the dependency data inserted by the module.
+    Parse the dependency data inserted by the plugin.
     
-    :param dep: The dependency data provided by the module
+    :param dep: The dependency data provided by the plugin
     :return: A (possibly empty) tuple of dependencies,
         or ``None`` if dependency data is invalid
 
@@ -299,14 +303,16 @@ def _parse_dep(dep):
     return tuple(new)
 
 
-def _print_exception_string(exc):
+def _print_exception_string(exc, first=0):
     """
     Obtain and print a stacktrace and exception info.
 
     :param exc: The exception that has been raised
     :type exc: :py:class:`Exception`
+    :param first: The first index of the exception traceback to show
+    :type first: uint
     """
-    stack = traceback.extract_tb(exc.__traceback__)[1:]
+    stack = traceback.extract_tb(exc.__traceback__)[first:]
     stack_formatted = traceback.format_list(stack)
     msg = "\nTraceback (most recent call last):\n{}{}: {}".format(
             ''.join(stack_formatted), exc.__class__.__name__, exc)
@@ -407,7 +413,7 @@ class ModuleManager:
                 dep_ver = _parse_version(self.modules[dep_id].version)
                 cmp_mode, dep_ver_req = _parse_version(dep_ver_req, True)
                 if not _check_versions(dep_ver_req, cmp_mode, dep_ver):
-                    warnings.warn("Version mismatch for '{}' dependency of module '{}': found version {} of '{}', but require {}.".format("configure" if isConfigure else "run", mod_id, dep_ver, dep_id, dep_ver_req))
+                    print("Version mismatch for '{}' dependency of module '{}': found version {} of '{}', but require {}.".format("configure" if isConfigure else "run", mod_id, dep_ver, dep_id, dep_ver_req), file=sys.stderr)
                     return None
             else:
                 dep_ver = ()
@@ -419,7 +425,7 @@ class ModuleManager:
                     dep_data[name] = self.data[dep_id][name]
                 data[dep_id] = dep_data
             except KeyError:
-                warnings.warn("Missing '{}' dependency of module '{}': did not find required data '{}' of plugin '{}'.".format("configure" if isConfigure else "run", mod_id, name, dep_id))
+                print("Missing '{}' dependency of plugin '{}': did not find required data '{}' of plugin '{}'.".format("configure" if isConfigure else "run", mod_id, name, dep_id), file=sys.stderr)
                 return None
 
         return data
@@ -430,7 +436,7 @@ class ModuleManager:
         # Acquire dependencies for configuration
         dep_data = self.acquire_dependencies(mod_id, True)
         if dep_data is None:
-            warnings.warn("Cannot configure plugin {}: dependencies not fulfilled.".format(mod_id))
+            print("Cannot configure plugin '{}': dependencies not fulfilled.".format(mod_id), file=sys.stderr)
             return
 
         # Invoke module’s configure function
@@ -439,7 +445,7 @@ class ModuleManager:
             if res is not None:
                 self.memorize_result(mod_id, res)
         except Exception as e:
-            _print_exception_string(e)
+            _print_exception_string(e, 1)
 
 
     def run_module(self, mod_id):
@@ -447,7 +453,7 @@ class ModuleManager:
         # Acquire dependencies for running
         dep_data = self.acquire_dependencies(mod_id)
         if dep_data is None:
-            warnings.warn("Cannot run plugin {}: dependencies not fulfilled.".format(mod_id))
+            print("Cannot run plugin '{}': dependencies not fulfilled.".format(mod_id), file=sys.stderr)
             return
 
         # Invoke module’s run function
@@ -456,7 +462,7 @@ class ModuleManager:
             if res is not None:
                 self.memorize_result(mod_id, res)
         except Exception as e:
-            _print_exception_string(e)
+            _print_exception_string(e, 1)
 
 
     def _add_data(self, d_id, name, value):
@@ -607,7 +613,7 @@ class ModuleMetadata:
     def conf_dep(self, dep):
         dep = _parse_dep(dep)
         if dep is None:
-            warnings.warn("Cannot set configuration dependencies of module '{}': bad dependency given.".format(self.id))
+            print("Cannot set configuration dependencies of plugin '{}': bad dependency given.".format(self.id), file=sys.stderr)
             return
         self.__vals["conf_dep"] = dep
 
@@ -621,7 +627,7 @@ class ModuleMetadata:
     def run_dep(self, dep):
         dep = _parse_dep(dep)
         if dep is None:
-            warnings.warn("Cannot set run dependencies of module '{}': bad dependency given.".format(self.id))
+            print("Cannot set run dependencies of plugin '{}': bad dependency given.".format(self.id), file=sys.stderr)
             return
         self.__vals["run_dep"] = dep
 
@@ -646,11 +652,11 @@ class ModuleMetadata:
 
         # Check values
         if not self.name or not isinstance(self.name, str):
-            msg.append("The module name must be a non-empty string.")
+            msg.append("The plugin name must be a non-empty string.")
         if not self.id or not isinstance(self.id, str):
-            msg.append("The module id must be a non-empty string.")
+            msg.append("The plugin id must be a non-empty string.")
         if not isinstance(self.version, tuple):
-            msg.append("The module version must be a tuple of strings or an empty tuple.")
+            msg.append("The plugin version must be a tuple of strings or an empty tuple.")
 
         # Assemble message string and return it
         if len(msg) > 0:

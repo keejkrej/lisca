@@ -92,6 +92,8 @@ Their documentation is only included for developing.
 
 .. autofunction:: modules._parse_dep
 
+.. autofunction:: modules._print_exception_string
+
 
 Writing own plug-ins
 --------------------
