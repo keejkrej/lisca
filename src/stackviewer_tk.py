@@ -2,6 +2,7 @@
 
 import os
 import stack
+import sys
 import tkinter as tk
 import tkinter.filedialog as tkfdlg
 import tkinter.ttk as ttk
@@ -21,7 +22,7 @@ COLSPAN_CANVAS = 4
 class StackViewer:
     """Provides a GUI for displaying a stack."""
 
-    def __init__(self, parent):
+    def __init__(self, parent, image_file=None):
         """Initialize the GUI."""
         # Stack properties
         self.stack = None
@@ -57,7 +58,7 @@ class StackViewer:
         self.canvas = tk.Canvas(self.mainframe, width=100, height=100,
             background="white")
         self.canvas.grid(row=ROW_CANVAS, column=0,
-            columnspan=COLSPAN_CANVAS, sticky=tk.N+tk.S)
+            columnspan=COLSPAN_CANVAS)#, sticky=tk.N+tk.S)
 
         # Channel control elements
         self.scale_channel = tk.Scale(
@@ -101,23 +102,29 @@ class StackViewer:
                                      )
         self.lbl_frame_size = ttk.Label(self.mainframe, anchor=tk.W)
 
+        if image_file is not None:
+            self.open_stack(image_file)
+
 
     def open_stack(self, fn=None):
         """
         Open a stack and display it.
+
         :param fn: The path to the stack to be opened.
+
             If ``None``, show a file selection dialog.
         """
         if fn is None:
             self.button.configure(state=tk.DISABLED)
             fn = tkfdlg.askopenfilename(title="Choose stack file",
                 filetypes=(("TIFF", ("*.tif","*.tiff")),("All files", "*.*")))
-            self.label["text"] = fn
             self.button.configure(state=tk.NORMAL)
-        elif not os.path.isfile(fn):
+
+        if not os.path.isfile(fn):
             warnings.warn("Cannot open stack: not found: {}".format(fn))
             return
 
+        self.label["text"] = fn
         self.set_stack(stack.Stack(fn))
 
 
@@ -136,7 +143,7 @@ class StackViewer:
         self.canvas.delete("img")
         self.img = self.stack.get_frame_tk(channel=self.i_channel,
             frame=self.i_frame)
-        self.canvas.create_image((0,0), anchor=tk.NW,
+        self.canvas.create_image(1, 1, anchor=tk.NW,
             image=self.img, tags=("img",))
 
 
@@ -193,10 +200,8 @@ class StackViewer:
         """
         Change the shown image.
 
-        Arguments:
-        ----------
-        i_channel -- channel to be shown, integer in [0,n_channels)
-        i_frame -- frame to be shown, integer in [0,n_frames)
+        :param i_channel: channel to be shown, integer in [0,n_channels)
+        :param i_frame: frame to be shown, integer in [0,n_frames)
 
         If i_channel or i_frame is None, it is not changed.
         """
@@ -227,8 +232,16 @@ class StackViewer:
 
 
 if __name__ == "__main__":
+
+    # Check if an image file was given
+    if len(sys.argv) > 1:
+        fn = sys.argv[1]
+    else:
+        fn = None
+
+    # Set up GUI
     root = tk.Tk()
     root.title("Test")
-    StackViewer(root)
+    StackViewer(root, fn)
     root.mainloop()
 

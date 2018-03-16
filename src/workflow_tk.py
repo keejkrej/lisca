@@ -42,8 +42,18 @@ class WorkflowGUI:
 
 
     def askopenfilename(self, **args):
-        """Provide file dialog for other plugins."""
+        """Provide file opening dialog for other plugins."""
         return filedialog.askopenfilename(**args)
+
+
+    def asksaveasfilename(self, **args):
+        """Provide file saving dialog for other plugins."""
+        return filedialog.asksaveasfilename(**args)
+
+
+    def askdirectory(self, **args):
+        """Provide directory dialog for other plugins."""
+        return filedialog.askdirectory(**args)
 
 
     def new_toplevel(self, **args):
