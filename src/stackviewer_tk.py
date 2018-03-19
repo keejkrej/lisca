@@ -19,6 +19,12 @@ COL_SIZES = 2
 COL_SCALES = 3
 COLSPAN_CANVAS = 4
 
+SELECTION_OFF = 0
+SELECTION_ANCHOR = 1
+SELECTION_TILT = 2
+SELECTION_RECT = 3
+SELECTION_SPACE = 4
+
 class StackViewer:
     """Provides a GUI for displaying a stack."""
 
@@ -36,6 +42,10 @@ class StackViewer:
         self.i_frame_var = tk.IntVar()
         self.i_frame_var.trace_add("write", self._i_frame_changed)
 
+        # Configure selection
+        self.SELECTION_STATE = 0
+        self.sel_coords = {}
+
         ## GUI elements:
         # Main frame
         self.mainframe = ttk.Frame(parent, relief=tk.FLAT,
@@ -48,9 +58,12 @@ class StackViewer:
         tempframe = ttk.Frame(self.mainframe)
         tempframe.grid(row=ROW_HEADER, column=0, columnspan=COLSPAN_CANVAS)
 
-        self.button = ttk.Button(tempframe, text="Browse...",
+        self.select_button = ttk.Button(tempframe, text="Select",
+            command=self.toggle_selection, state=tk.NORMAL)
+        self.select_button.pack(side=tk.LEFT)
+        self.open_button = ttk.Button(tempframe, text="Browse...",
             command=self.open_stack, state=tk.NORMAL)
-        self.button.pack(side=tk.LEFT)
+        self.open_button.pack(side=tk.LEFT)
         self.label = ttk.Label(tempframe, text="")
         self.label.pack(side=tk.LEFT)
 
@@ -115,10 +128,10 @@ class StackViewer:
             If ``None``, show a file selection dialog.
         """
         if fn is None:
-            self.button.configure(state=tk.DISABLED)
+            self.open_button.configure(state=tk.DISABLED)
             fn = tkfdlg.askopenfilename(title="Choose stack file",
                 filetypes=(("TIFF", ("*.tif","*.tiff")),("All files", "*.*")))
-            self.button.configure(state=tk.NORMAL)
+            self.open_button.configure(state=tk.NORMAL)
 
         if not os.path.isfile(fn):
             warnings.warn("Cannot open stack: not found: {}".format(fn))
@@ -229,6 +242,112 @@ class StackViewer:
         """Callback for frame variable"""
         i_frame = self.i_frame_var.get() - 1
         self._change_stack_position(i_frame=i_frame)
+
+
+    def toggle_selection(self, *_):
+        # Get current selection mode
+        if self.SELECTION_STATE:
+            self.control_selection(target=SELECTION_OFF)
+        else:
+            self.control_selection(target=SELECTION_ANCHOR)
+
+    def update_selection_button(self):
+        if self.SELECTION_STATE:
+            self.select_button.config(text="Leave selection mode")
+        else:
+            self.select_button.config(text="Select")
+
+
+    def control_selection(self, target):
+        # By default, toggle selection mode
+        #target = SELECTION_OFF if self.SELECTION_STATE else SELECTION_ANCHOR
+        self.SELECTION_STATE = target
+        self.update_selection_button()
+
+        if self.SELECTION_STATE == SELECTION_ANCHOR:
+            self.canvas.bind("<Button-1>", self.canvas_clicked)
+        elif self.SELECTION_STATE == SELECTION_TILT:
+            self.canvas.bind("<Motion>", self.canvas_moved)
+        else:
+            self.canvas.unbind("<Button-1>")
+            self.canvas.unbind("<Motion>")
+
+    def canvas_clicked(self, evt):
+        if self.SELECTION_STATE == SELECTION_ANCHOR:
+            self.sel_coords['x0'] = evt.x
+            self.sel_coords['y0'] = evt.y
+            self.control_selection(SELECTION_TILT)
+  
+    def canvas_moved(self, evt):
+        if self.SELECTION_STATE == SELECTION_TILT: 
+            # Clear rules
+            self.canvas.delete("rule")
+
+            # Get coordinates
+            height = self.canvas.winfo_height()
+            width = self.canvas.winfo_width()
+            x0 = self.sel_coords['x0']
+            y0 = self.sel_coords['y0']
+            x1 = evt.x
+            y1 = evt.y
+
+            # Calculate new rules
+            dx = x1 - x0
+            dy = y1 - y0
+
+            # Naming: [se][12][xy]
+            # start point (s) or end point (e) of rule
+            # first rule (1) or second rule (2)
+            # x-coordinate (x) or y-coordinate (y)
+            if dx == 0:
+                # First rule
+                s1x = x1
+                e1x = x1
+                s1y = 0
+                e1y = height - 1
+
+                # Second rule
+                s2y = y1
+                e2y = y1
+                s2x = 0
+                e2x = width - 1
+
+                # Third rule
+                s3y = y0
+                e3y = y0
+                s3x = 0
+                e3x = width - 1
+
+            else:
+                # First rule
+                s1x = 0
+                e1x = width - 1
+                s1y = dy / dx * (s1x - x1) + y1
+                e1y = dy / dx * (e1x - x1) + y1
+
+                # Second rule
+                s2y = 0
+                e2y = height - 1
+                s2x = - dy / dx * (s2y - y1) + x1
+                e2x = - dy / dx * (e2y - y1) + x1
+
+                # Third rule
+                s3y = 0
+                e3y = height - 1
+                s3x = - dy / dx * (s3y - y0) + x0
+                e3x = - dy / dx * (e3y - y0) + x0
+
+            # Draw new rules
+            #self.canvas.create_line(x0, y0, x1, y1,
+            #    fill="yellow", tags="rule")
+            self.canvas.create_line(s1x, s1y, e1x, e1y,
+                fill="red", tags="rule")
+            self.canvas.create_line(s2x, s2y, e2x, e2y,
+                fill="blue", tags="rule")
+            self.canvas.create_line(s3x, s3y, e3x, e3y,
+                fill="green", tags="rule")
+
+            
 
 
 if __name__ == "__main__":
