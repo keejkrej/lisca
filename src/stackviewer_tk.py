@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 import os
+import roi_selection as roi_sel
 import stack
 import sys
 import tkinter as tk
@@ -19,12 +20,6 @@ COL_SIZES = 2
 COL_SCALES = 3
 COLSPAN_CANVAS = 4
 
-SELECTION_OFF = 0
-SELECTION_ANCHOR = 1
-SELECTION_TILT = 2
-SELECTION_RECT = 3
-SELECTION_SPACE = 4
-
 class StackViewer:
     """Provides a GUI for displaying a stack."""
 
@@ -41,10 +36,6 @@ class StackViewer:
         self.i_channel_var.trace_add("write", self._i_channel_changed)
         self.i_frame_var = tk.IntVar()
         self.i_frame_var.trace_add("write", self._i_frame_changed)
-
-        # Configure selection
-        self.SELECTION_STATE = 0
-        self.sel_coords = {}
 
         ## GUI elements:
         # Main frame
@@ -115,6 +106,9 @@ class StackViewer:
                                      )
         self.lbl_frame_size = ttk.Label(self.mainframe, anchor=tk.W)
 
+        # Register ROI selection
+        self.roi_selector = roi_sel.RoiReader(self)
+
         if image_file is not None:
             self.open_stack(image_file)
 
@@ -158,6 +152,7 @@ class StackViewer:
             frame=self.i_frame)
         self.canvas.create_image(1, 1, anchor=tk.NW,
             image=self.img, tags=("img",))
+        self.canvas.tag_lower("img")
 
 
     def _update_stack_properties(self):
@@ -245,162 +240,11 @@ class StackViewer:
 
 
     def toggle_selection(self, *_):
-        # Get current selection mode
-        if self.SELECTION_STATE:
-            self.control_selection(target=SELECTION_OFF)
+        """Callback of selection button. May be overwritten."""
+        if hasattr(self.roi_selector, 'toggle_selection'):
+            self.roi_selector.toggle_selection()
         else:
-            self.control_selection(target=SELECTION_ANCHOR)
-
-    def update_selection_button(self):
-        if self.SELECTION_STATE:
-            self.select_button.config(text="Leave selection mode")
-        else:
-            self.select_button.config(text="Select")
-
-
-    def control_selection(self, target):
-        # By default, toggle selection mode
-        #target = SELECTION_OFF if self.SELECTION_STATE else SELECTION_ANCHOR
-        self.SELECTION_STATE = target
-        self.update_selection_button()
-
-        if self.SELECTION_STATE == SELECTION_ANCHOR:
-            self.canvas.bind("<Button-1>", self.canvas_clicked)
-        elif self.SELECTION_STATE == SELECTION_TILT:
-            self.canvas.bind("<Motion>", self.canvas_moved)
-        elif self.SELECTION_STATE != SELECTION_RECT:
-            self.canvas.unbind("<Button-1>")
-            self.canvas.unbind("<Motion>")
-
-    def canvas_clicked(self, evt):
-        if self.SELECTION_STATE == SELECTION_ANCHOR:
-            self.sel_coords['x0'] = evt.x
-            self.sel_coords['y0'] = evt.y
-            self.control_selection(SELECTION_TILT)
-
-        elif self.SELECTION_STATE == SELECTION_TILT:
-            # Clear rules
-            self.canvas.delete("rule")
-            self.control_selection(SELECTION_RECT)
-
-        elif self.SELECTION_STATE == SELECTION_RECT:
-            self.control_selection(SELECTION_OFF)
-  
-
-    def canvas_moved(self, evt):
-        if self.SELECTION_STATE == SELECTION_TILT: 
-            # Clear rules
-            self.canvas.delete("rule")
-
-            # Get coordinates
-            height = self.canvas.winfo_height()
-            width = self.canvas.winfo_width()
-            x0 = self.sel_coords['x0']
-            y0 = self.sel_coords['y0']
-            x1 = evt.x
-            y1 = evt.y
-
-            # Calculate new rules
-            dx = x1 - x0
-            dy = y1 - y0
-
-            # Naming: [se][12][xy]
-            # start point (s) or end point (e) of rule
-            # first rule (1) or second rule (2)
-            # x-coordinate (x) or y-coordinate (y)
-            if dx == 0:
-                # First rule
-                s1x = x1
-                e1x = x1
-                s1y = 0
-                e1y = height - 1
-
-                # Second rule
-                s2y = y1
-                e2y = y1
-                s2x = 0
-                e2x = width - 1
-
-                # Third rule
-                s3y = y0
-                e3y = y0
-                s3x = 0
-                e3x = width - 1
-
-                # Save slope
-                self.sel_coords['slope'] = 0
-
-            else:
-                # First rule
-                s1x = 0
-                e1x = width - 1
-                s1y = dy / dx * (s1x - x1) + y1
-                e1y = dy / dx * (e1x - x1) + y1
-
-                # Second rule
-                s2y = 0
-                e2y = height - 1
-                s2x = - dy / dx * (s2y - y1) + x1
-                e2x = - dy / dx * (e2y - y1) + x1
-
-                # Third rule
-                s3y = 0
-                e3y = height - 1
-                s3x = - dy / dx * (s3y - y0) + x0
-                e3x = - dy / dx * (e3y - y0) + x0
-
-                # Save (smaller of both) slopes
-                if dy == 0:
-                    self.sel_coords['slope'] = 0
-                elif abs(dy / dx) <= abs(- dx / dy):
-                    self.sel_coords['slope'] = dy / dx
-                else:
-                    self.sel_coords['slope'] = - dx / dy
-                    
-
-            # Draw new rules
-            #self.canvas.create_line(x0, y0, x1, y1,
-            #    fill="yellow", tags="rule")
-            self.canvas.create_line(s1x, s1y, e1x, e1y,
-                fill="red", tags="rule")
-            self.canvas.create_line(s2x, s2y, e2x, e2y,
-                fill="blue", tags="rule")
-            self.canvas.create_line(s3x, s3y, e3x, e3y,
-                fill="green", tags="rule")
-
-
-        elif self.SELECTION_STATE == SELECTION_RECT:
-            # Delete old rectangles
-            self.canvas.delete("rect")
-
-            # Get coordinates
-            x2 = evt.x
-            y2 = evt.y
-            self.sel_coords['x2'] = x2
-            self.sel_coords['y2'] = y2
-
-            x0 = self.sel_coords['x0']
-            y0 = self.sel_coords['y0']
-            a = self.sel_coords['slope']
-            
-            # Calculate rectangle
-            if a == 0:
-                x1 = x2
-                y1 = y0
-
-                x3 = x0
-                y3 = y2
-
-            else:
-                x1 = (y2 - y0 + a * x0 + x2 / a) / (a + 1 / a)
-                y1 = a * (x1 - x0) + y0
-
-                x3 = (y0 - y2 + a * x2 + x0 / a) / (a + 1 / a)
-                y3 = a * (x3 - x2) + y2
-
-            # Draw rectangle
-            self.canvas.create_polygon(x0, y0, x1, y1, x2, y2, x3, y3,
-                fill="", outline="yellow", width=2.0, tags="rect")
+            print("No selection tool registered.", file=sys.stderr)
 
 
 if __name__ == "__main__":
