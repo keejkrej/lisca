@@ -268,7 +268,7 @@ class StackViewer:
             self.canvas.bind("<Button-1>", self.canvas_clicked)
         elif self.SELECTION_STATE == SELECTION_TILT:
             self.canvas.bind("<Motion>", self.canvas_moved)
-        else:
+        elif self.SELECTION_STATE != SELECTION_RECT:
             self.canvas.unbind("<Button-1>")
             self.canvas.unbind("<Motion>")
 
@@ -277,7 +277,16 @@ class StackViewer:
             self.sel_coords['x0'] = evt.x
             self.sel_coords['y0'] = evt.y
             self.control_selection(SELECTION_TILT)
+
+        elif self.SELECTION_STATE == SELECTION_TILT:
+            # Clear rules
+            self.canvas.delete("rule")
+            self.control_selection(SELECTION_RECT)
+
+        elif self.SELECTION_STATE == SELECTION_RECT:
+            self.control_selection(SELECTION_OFF)
   
+
     def canvas_moved(self, evt):
         if self.SELECTION_STATE == SELECTION_TILT: 
             # Clear rules
@@ -318,6 +327,9 @@ class StackViewer:
                 s3x = 0
                 e3x = width - 1
 
+                # Save slope
+                self.sel_coords['slope'] = 0
+
             else:
                 # First rule
                 s1x = 0
@@ -337,6 +349,15 @@ class StackViewer:
                 s3x = - dy / dx * (s3y - y0) + x0
                 e3x = - dy / dx * (e3y - y0) + x0
 
+                # Save (smaller of both) slopes
+                if dy == 0:
+                    self.sel_coords['slope'] = 0
+                elif abs(dy / dx) <= abs(- dx / dy):
+                    self.sel_coords['slope'] = dy / dx
+                else:
+                    self.sel_coords['slope'] = - dx / dy
+                    
+
             # Draw new rules
             #self.canvas.create_line(x0, y0, x1, y1,
             #    fill="yellow", tags="rule")
@@ -347,7 +368,39 @@ class StackViewer:
             self.canvas.create_line(s3x, s3y, e3x, e3y,
                 fill="green", tags="rule")
 
+
+        elif self.SELECTION_STATE == SELECTION_RECT:
+            # Delete old rectangles
+            self.canvas.delete("rect")
+
+            # Get coordinates
+            x2 = evt.x
+            y2 = evt.y
+            self.sel_coords['x2'] = x2
+            self.sel_coords['y2'] = y2
+
+            x0 = self.sel_coords['x0']
+            y0 = self.sel_coords['y0']
+            a = self.sel_coords['slope']
             
+            # Calculate rectangle
+            if a == 0:
+                x1 = x2
+                y1 = y0
+
+                x3 = x0
+                y3 = y2
+
+            else:
+                x1 = (y2 - y0 + a * x0 + x2 / a) / (a + 1 / a)
+                y1 = a * (x1 - x0) + y0
+
+                x3 = (y0 - y2 + a * x2 + x0 / a) / (a + 1 / a)
+                y3 = a * (x3 - x2) + y2
+
+            # Draw rectangle
+            self.canvas.create_polygon(x0, y0, x1, y1, x2, y2, x3, y3,
+                fill="", outline="yellow", width=2.0, tags="rect")
 
 
 if __name__ == "__main__":

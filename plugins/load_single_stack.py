@@ -10,10 +10,10 @@ my_id = "simple_stack_reader"
 def register(meta):
     meta.name = "Read stack"
     meta.id = my_id
-    meta.conf_ret = "path"
-    meta.run_ret = ("stack", "StackViewer")
-    meta.run_dep = ((my_id, "", "path"), ('', '', 'workflow_gui_tk'))
     meta.conf_dep = ("", "", "workflow_gui_tk")
+    meta.conf_ret = "path"
+    meta.run_dep = ((my_id, "", "path"), ('', '', 'workflow_gui_tk'))
+    meta.run_ret = ("stack", "StackViewer")
 
 
 def configure(**d):
@@ -22,8 +22,8 @@ def configure(**d):
     f = gui_tk.askopenfilename(parent=gui_tk.root)
     print(f)
     return {"path": f}
-    
-    
+
+
 def run(**d):
     print("Running 'load_single_stack'.")
     gui_tk = d['']['workflow_gui_tk']
