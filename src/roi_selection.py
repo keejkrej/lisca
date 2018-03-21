@@ -234,11 +234,7 @@ class RoiReader:
 
             # Get new ROI by shifting and check for overlap with old ROI
             new_poly = polygon + delta
-            in_poly = 0
-            for p in new_poly:
-                in_poly |= self.is_in_rectangle(p, True)
-                if in_poly == 3:
-                    break
+            in_poly = self.is_in_rectangle(new_poly, True)
 
             # For overlap in one projection, align new ROI 
             new_poly_aligned = new_poly.copy()
@@ -250,25 +246,24 @@ class RoiReader:
                 new_poly_aligned[:,0] -= new_poly[0,0] - x_align
 
             # Check if aligned new ROI intersects with old ROI
-            aligned_in_poly = False
-            for p in new_poly_aligned:
-                aligned_in_poly = self.is_in_rectangle(p, False)
-                if aligned_in_poly:
-                    break
+            aligned_in_poly = self.is_in_rectangle(new_poly_aligned, False)
 
             # If aligned new ROI does not intersect with old ROI, update
             if in_poly != 0 and not aligned_in_poly:
                 new_poly = new_poly_aligned
-            if aligned_in_poly:
-                in_poly = 3
+
+            # Check if new ROI position is valid
+            is_new_pos_valid = True
+            if aligned_in_poly or in_poly == 3:
+                is_new_pos_valid = False
+            elif np.any((new_poly <= 0) | (new_poly >= [width, height])):
+                is_new_pos_valid = False
 
             # Paint new depending on overlap
-            if in_poly == 3:
-                roi_color = "red"
-            elif np.any((new_poly <= 0) | (new_poly >= [width, height])):
-                roi_color = "red"
-            else:
+            if is_new_pos_valid:
                 roi_color = "yellow"
+            else:
+                roi_color = "red"
 
             self.canvas.create_polygon(*new_poly.flat,
                 fill="", outline=roi_color, tags="roi_draft")
@@ -277,15 +272,107 @@ class RoiReader:
             self.canvas.create_line(*new_poly[1], *new_poly[3],
                 fill=roi_color, tags="roi_draft")
 
+            # For valid ROI positions, show ROI array
+            if is_new_pos_valid:
+                roi_arr = self.compute_roi_array(new_poly, True)
+                for roi in roi_arr:
+                    self.canvas.create_polygon(*roi.flat,
+                        fill="", outline=roi_color, tags="roi_draft")
 
 
-    def is_in_rectangle(self, p, check_projections=False):
+    def compute_roi_array(self, poly2, omit_references=False):
+        #return [] # DEBUG
+
+        # Get coordinates
+        poly0 = self.sel_coords['polygon']
+        p0x = poly0[0,0]
+        p0y = poly0[0,1]
+        p2x = poly2[0,0]
+        p2y = poly2[0,1]
+        a = self.sel_coords['slope']
+
+        eps_x = 5
+        eps_y = 5
+
+        # Get auxiliary point
+        if a == 0:
+            aux_x = p2x
+            aux_y = p0y
+        else:
+            aux_x = (p2y - p0y + a * p0x + p2x / a) / (a + 1 / a)
+            aux_y = a * (aux_x - p0x) + p0y
+
+        # Compute ROI grid vectors
+        delta_x = np.array([aux_x - p0x, aux_y - p0y])
+        delta_y = np.array([aux_x - p2x, aux_y - p2y])
+
+        # Span grid
+        roi_arr = []
+        ix = 0
+        iy = 0
+        new_col = True
+        new_row = True
+        while True:
+            raise NotImplementedError("Correct this endless loop") #DEBUG
+            if ix == 0 and iy == 0:
+                if not omit_references:
+                    roi_arr.append(poly0)
+
+            if iy >= 0:
+                if new_row:
+                    iy += 1
+                else:
+                    iy = -1
+            elif new_row:
+                iy -= 1
+            else:
+                if ix >= 0:
+                    if new_col:
+                        ix += 1
+                    elif not new_col:
+                        ix = -1
+                elif new_col:
+                    ix -= 1
+                else:
+                    break
+                iy = 0
+                new_row = True
+
+            if ix == 1 and iy == 1:
+                if not omit_references:
+                    roi_arr.append(poly2)
+                continue
+            
+            pn = poly0 + ix * delta_x + iy * delta_y
+            if self.is_in_canvas(pn):
+                roi_arr.append(pn)
+
+        return roi_arr
+
+
+    def is_in_canvas(self, P):
+        """Check if a point is in the canvas."""
+        if P.ndim == 1:
+            P = P.reshape((1,-1))
+
+        height = self.canvas.winfo_height()
+        width = self.canvas.winfo_width()
+    
+        return not np.any((P <= 0) | (P >= [width, height]))
+            
+
+
+    def is_in_rectangle(self, P, check_projections=False):
         """Check if a point is in the anchor ROI.
 
-        :param p: Point to be checked
-        :type p: Numpy array of shape (2,)
+        :param P: Point or polygon to be checked
+        :type P: Numpy array of shape (2,) or (4,2)
         :param check_projections: Flag indicating whether to check overlap in projection.
         :type check_projections: bool
+
+        If ``P`` is a polygon, its points must be arranged so that
+        ``P[0]`` is the top-left point, and the other points are
+        arranged clockwise.
 
         :return: Collision information:
 
@@ -300,49 +387,52 @@ class RoiReader:
                 * 2 if point overlaps with ROI in y-projection (``x_min <= x <= x_max``)
                 * 3 if point overlaps with ROI in both projections
         """
-        # Get coordinates
-        px = p[0]
-        py = p[1]
+        if P.ndim == 1:
+            P = (P,)
 
-        a = self.sel_coords['slope']
-        rect = self.sel_coords['polygon']
-        x0 = rect[0,0]
-        y0 = rect[0,1]
-        x1 = rect[2,0]
-        y1 = rect[2,1]
+        ret = 0
+        for px, py in P:
+            # Get coordinates
+            a = self.sel_coords['slope']
+            rect = self.sel_coords['polygon']
+            x0 = rect[0,0]
+            y0 = rect[0,1]
+            x1 = rect[2,0]
+            y1 = rect[2,1]
 
-        # Upper and lower tangents of bounding box of rect
-        y_horiz_up = a * (px - x0) + y0
-        y_horiz_low = a * (px - x1) + y1
+            # Upper and lower tangents of bounding box of rect
+            y_horiz_up = a * (px - x0) + y0
+            y_horiz_low = a * (px - x1) + y1
 
-        # Left and right tangents of bounding box of rect
-        if a == 0:
-            x_vert_left = x0
-            x_vert_right = x1
-        else:
-            x_vert_left = - a * (py - y0) + x0
-            x_vert_right = - a * (py - y1) + x1
+            # Left and right tangents of bounding box of rect
+            if a == 0:
+                x_vert_left = x0
+                x_vert_right = x1
+            else:
+                x_vert_left = - a * (py - y0) + x0
+                x_vert_right = - a * (py - y1) + x1
 
-        # Collision detection
-        if px >= x_vert_left and px <= x_vert_right:
-            x_collision = True
-        else:
-            x_collision = False
+            # Collision detection
+            if px >= x_vert_left and px <= x_vert_right:
+                x_collision = True
+            else:
+                x_collision = False
 
-        if py >= y_horiz_low and py <= y_horiz_up:
-            y_collision = True
-        else:
-            y_collision = False
+            if py >= y_horiz_low and py <= y_horiz_up:
+                y_collision = True
+            else:
+                y_collision = False
 
-        # Determine return value and return
-        if check_projections:
-            ret = 0
+            # Determine collision result
             if y_collision:
-                ret += 1
+                ret |= 1
             if x_collision:
-                ret += 2
-            return ret
+                ret |= 2
+            if ret == 3:
+                break
 
+        if check_projections:
+            return ret
         else:
-            return x_collision and y_collision
+            return ret == 3
 
