@@ -236,17 +236,31 @@ class RoiReader:
             new_poly = polygon + delta
             in_poly = 0
             for p in new_poly:
-                in_poly |= self.is_in_rectangle(p, polygon, True)
+                in_poly |= self.is_in_rectangle(p, True)
                 if in_poly == 3:
                     break
 
             # For overlap in one projection, align new ROI 
+            new_poly_aligned = new_poly.copy()
             if in_poly == 1:
                 y_align = a * (new_poly[0,0] - x0) + y0
-                new_poly[:,1] -= new_poly[0,1] - y_align
+                new_poly_aligned[:,1] -= new_poly[0,1] - y_align
             elif in_poly == 2:
                 x_align = -a * (new_poly[0,1] - y0) + x0
-                new_poly[:,0] -= new_poly[0,0] - x_align
+                new_poly_aligned[:,0] -= new_poly[0,0] - x_align
+
+            # Check if aligned new ROI intersects with old ROI
+            aligned_in_poly = False
+            for p in new_poly_aligned:
+                aligned_in_poly = self.is_in_rectangle(p, False)
+                if aligned_in_poly:
+                    break
+
+            # If aligned new ROI does not intersect with old ROI, update
+            if in_poly != 0 and not aligned_in_poly:
+                new_poly = new_poly_aligned
+            if aligned_in_poly:
+                in_poly = 3
 
             # Paint new depending on overlap
             if in_poly == 3:
@@ -265,7 +279,7 @@ class RoiReader:
 
 
 
-    def is_in_rectangle(self, p, rect, check_projections=False):
+    def is_in_rectangle(self, p, check_projections=False):
         """Check if a point is in the anchor ROI.
 
         :param p: Point to be checked
