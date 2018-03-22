@@ -13,7 +13,15 @@ ROI_TYPE_RECT = 0
 ROI_TYPE_SQU = 1 
 
 class RoiReader:
+    """Provide ROI selection functionality."""
+
     def __init__(self, sv):
+        """
+        Set up RoiReader.
+
+        :param sv: The stack viewer to which this RoiReader belongs
+        :type sv: :py:class:StackViewer
+        """
         self.sv = sv
         self.canvas = self.sv.canvas
         sv.toggle_selection = self.toggle_selection
@@ -24,6 +32,9 @@ class RoiReader:
         self.roi_type = ROI_TYPE_RECT
 
     def toggle_selection(self, *_):
+        """
+        Switch ROI definition mode on or off.
+        """
         # Get current selection mode
         if self.sel_state:
             self.control_selection(target=SELECTION_OFF)
@@ -31,6 +42,9 @@ class RoiReader:
             self.control_selection(target=SELECTION_ANCHOR)
 
     def update_selection_button(self):
+        """
+        Update appearance of the ROI definition toggling button
+        """
         if self.sel_state:
             self.sv.select_button.config(text="Leave selection mode")
         else:
@@ -38,8 +52,18 @@ class RoiReader:
 
 
     def control_selection(self, target):
+        """
+        Control ROI definition.
+
+        :param target: The requested ROI definition mode; one of:
+
+            * ``SELECTION_OFF``: ROI definition mode is off
+            * ``SELECTION_ANCHOR``: Set anchor point (corner of a ROI)
+            * ``SELECTION_TILT``: Define ROI tilt
+            * ``SELECTION_RECT``: Define ROI shape and size (rectangle)
+            * ``SELECTION_SPACE``: Define ROI spacing and span ROI grid
+        """
         # By default, toggle selection mode
-        #target = SELECTION_OFF if self.sel_state else SELECTION_ANCHOR
         self.sel_state = target
         self.update_selection_button()
 
@@ -53,10 +77,12 @@ class RoiReader:
         elif self.sel_state == SELECTION_SPACE:
             pass
         else:
+            self.canvas.delete("roi_draft")
             self.canvas.unbind("<Button-1>")
             self.canvas.unbind("<Motion>")
 
     def canvas_clicked(self, evt):
+        """Canvas "clicked" callback for ROI definition mode"""
         if self.sel_state == SELECTION_ANCHOR:
             self.sel_coords['x0'] = evt.x
             self.sel_coords['y0'] = evt.y
@@ -68,9 +94,6 @@ class RoiReader:
             self.control_selection(SELECTION_RECT)
 
         elif self.sel_state == SELECTION_RECT:
-            #del self.sel_coords['x0']
-            #del self.sel_coords['y0']
-
             # Sort polygon corners (clockwise from 0=top left)
             p = self.sel_coords['polygon']
 
@@ -91,6 +114,14 @@ class RoiReader:
             self.control_selection(SELECTION_SPACE)
 
         elif self.sel_state == SELECTION_SPACE:
+            self.canvas.delete("roi_draft")
+            self.canvas.delete("roi")
+            polygon2 = self.sel_coords['polygon2']
+            if polygon2 is not None:
+                for roi in self.compute_roi_array(polygon2):
+                    self.canvas.create_polygon(*roi.flat,
+                        fill="", outline="yellow", tags="roi")
+                
             self.control_selection(SELECTION_OFF)
 
         else:
@@ -98,6 +129,7 @@ class RoiReader:
   
 
     def canvas_moved(self, evt):
+        """Canvas "mouse moved" callback for ROI definition mode"""
         if self.sel_state == SELECTION_TILT: 
             # Clear rules
             self.canvas.delete("rule")
@@ -274,23 +306,53 @@ class RoiReader:
 
             # For valid ROI positions, show ROI array
             if is_new_pos_valid:
+                self.sel_coords['polygon2'] = new_poly
                 roi_arr = self.compute_roi_array(new_poly, True)
                 for roi in roi_arr:
                     self.canvas.create_polygon(*roi.flat,
                         fill="", outline=roi_color, tags="roi_draft")
+            else:
+                self.sel_coords['polygon2'] = None
 
 
-    def compute_roi_array(self, poly2, omit_references=False):
-        #return [] # DEBUG
+    def compute_roi_array(self, poly2, omit_references=False, poly0=None, a=None):
+        """
+        Span the array of ROIs.
 
-        # Get coordinates
-        poly0 = self.sel_coords['polygon']
+        :param poly2: The first reference rectangle
+        :type poly2: numpy array of shape (4,2)
+        :param omit_references: Flag whether to omit the reference rectangles
+
+            from output (``True``) or not (``False``).
+            This is useful when the reference rectangles, which are
+            known before, are to be highlighted.
+
+        :type omit_references: bool
+        :param poly0: The second reference rectangle.
+        
+            If this is ``None``, the internally saved anchor rectangle
+            is loaded.
+
+        :type poly0: None or numpy array of shape (4,2)
+        :param a: Slope of the grid. 0 is horizontal.
+        
+            If ``None``, the internally saved slope is used.
+        :type a: None or float
+
+        :return: The ROI array
+        :rtype: list of (4,2)-shaped numpy arrays
+        """
+        # Get coordinates (slope and reference rectangles)
+        if a is None:
+            a = self.sel_coords['slope']
+        if poly0 is None:
+            poly0 = self.sel_coords['polygon']
         p0x = poly0[0,0]
         p0y = poly0[0,1]
         p2x = poly2[0,0]
         p2y = poly2[0,1]
-        a = self.sel_coords['slope']
 
+        # Tolerance for detecting equal points, in pixels
         eps_x = 5
         eps_y = 5
 
@@ -306,52 +368,95 @@ class RoiReader:
         delta_x = np.array([aux_x - p0x, aux_y - p0y])
         delta_y = np.array([aux_x - p2x, aux_y - p2y])
 
-        # Span grid
-        roi_arr = []
+        # Grid construction control variables
         ix = 0
         iy = 0
         new_col = True
         new_row = True
-        while True:
-            raise NotImplementedError("Correct this endless loop") #DEBUG
-            if ix == 0 and iy == 0:
-                if not omit_references:
-                    roi_arr.append(poly0)
+        multi_col = True
+        multi_row = True
 
-            if iy >= 0:
+        # If both reference rectangles in same column: draw only one column
+        # (since we do not know spacing between columns)
+        if np.sqrt((delta_x**2).sum()) < eps_x:
+            new_col = False
+            multi_col = False
+
+        # If both reference rectangles in same row: draw only one row
+        # (since we do not know spacing between rows)
+        if np.sqrt((delta_y**2).sum()) < eps_y:
+            new_row = False
+            multi_row = False
+
+        # Optionally add second reference ROI
+        if not omit_references:
+            roi_arr = [poly0]
+        else:
+            roi_arr = []
+
+        # Span grid
+        # TODO: Search for non-zero rows/columns if zero rows/columns
+        #       are not in canvas
+        while True:
+            if multi_row and iy >= 0:
+                # First, visit positive rows
                 if new_row:
+                    # Visit next row above
                     iy += 1
                 else:
+                    # If highest row in canvas is reached,
+                    # continue visiting the negative rows
                     iy = -1
+                    new_row = True
             elif new_row:
+                # Climb further down, if possible
                 iy -= 1
             else:
-                if ix >= 0:
+                # All possible rows have been visited, visit next column
+                # (analog to rows)
+                if multi_col and ix >= 0:
                     if new_col:
                         ix += 1
                     elif not new_col:
                         ix = -1
+                        new_col = True
                 elif new_col:
                     ix -= 1
                 else:
+                    # No more columns to visit: we are finished
                     break
-                iy = 0
-                new_row = True
 
-            if ix == 1 and iy == 1:
+                # Start at row 0 in this new column
+                if multi_row:
+                    iy = 0
+                    new_row = True
+
+            # Do not recalculate first reference rectangle
+            if ix == 1 and iy == -1:
                 if not omit_references:
                     roi_arr.append(poly2)
                 continue
             
+            # Get ROI rectangle at current grid site (ix, iy)
             pn = poly0 + ix * delta_x + iy * delta_y
+
+            # Check if current grid site (ix, iy) fits in canvas
             if self.is_in_canvas(pn):
+                # Current grid site fits in canvas, add it to list
                 roi_arr.append(pn)
+            elif iy == 0:
+                # Row 0 does not fit in canvas: no more columns left
+                new_col = False
+            else:
+                # No new rows in this direction:
+                # continue with negative rows or visit next column
+                new_row = False
 
         return roi_arr
 
 
     def is_in_canvas(self, P):
-        """Check if a point is in the canvas."""
+        """Check if a point or rectangle is in the canvas."""
         if P.ndim == 1:
             P = P.reshape((1,-1))
 
@@ -359,7 +464,6 @@ class RoiReader:
         width = self.canvas.winfo_width()
     
         return not np.any((P <= 0) | (P >= [width, height]))
-            
 
 
     def is_in_rectangle(self, P, check_projections=False):
