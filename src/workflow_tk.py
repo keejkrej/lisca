@@ -1,17 +1,11 @@
 #! /usr/bin/env python3
+from gui_tk import get_root
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
 
 PAD_X = 10
 PAD_Y = 10
-
-def get_root(w):
-    """Obtain root of Tk widget."""
-    root = w.winfo_toplevel()
-    if root.master:
-        root = root.master
-    return root
 
 
 class WorkflowGUI:
