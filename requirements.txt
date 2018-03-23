@@ -2,6 +2,7 @@ numpy
 scipy
 matplotlib
 pillow
+scikit-image
 #ipython
 #spyder
 Sphinx

@@ -8,6 +8,7 @@ import warnings
 import numpy as np
 import PIL.Image as pilimg
 import PIL.ImageTk as piltk
+import skimage.draw as skid
 
 TIFF_TAG_DESCRIPTION = 270
 TIFF_TAG_BITSPERSAMPLE = 258
@@ -39,6 +40,9 @@ class Stack:
         self._n_images = 0
         self._n_frames = 0
         self._n_channels = 0
+
+        # ROI list
+        self._rois = None
 
         # Notify listeners
         self._notify_listeners()
@@ -198,7 +202,7 @@ class Stack:
             a8 = convert_fcn(self.get_image(channel, frame))
         elif self._mode == 8:
             a8 = self.get_image(channel, frame)
-        else:
+        elif self._mode == 16:
             a16 = self.get_image(channel, frame)
             a8 = np.empty(a16.shape, dtype=np.uint8)
             np.floor_divide(a16, 256, out=a8)
@@ -206,6 +210,8 @@ class Stack:
             #a16 = a16 / a16.max() * 255
             #np.floor_divide(a16, 255, out=a8)
             #np.true_divide(a16, 255, out=a8, casting='unsafe')
+        else:
+            raise ValueError("Illegal image mode: {}".format(str(self._mode)))
         return piltk.PhotoImage(pilimg.fromarray(a8, mode='L'))
 
 
@@ -247,6 +253,29 @@ class Stack:
             fun(*args, **kw)
 
 
+    def set_rois(self, rois, type_):
+        """Set the ROI set of the stack.
+
+        :param rois: The ROIs to be set
+        :param type_: The ROI type (currently one of "rect" and "raw")
+
+        For details, see :py:class:`RoiSet`
+        """
+        self._rois = RoiSet(rois, type_)
+        self._notify_listeners()
+
+    @property
+    def rois(self):
+        return self._rois
+    def get_rois(self):
+        return self._rois
+
+    def clear_rois(self):
+        """Delete the current ROI set"""
+        self._rois = None
+        self._notify_listeners()
+
+
     @property
     def path(self):
         return self._path
@@ -280,5 +309,29 @@ class Stack:
     @property
     def n_frames(self):
         return self._n_frames
+
+
+class RoiSet:
+    ROI_TYPE_RAW = 'raw'
+    ROI_TYPE_RECT = 'rect'
+
+    def __init__(self, roi_arr, type_=ROI_TYPE_RECT):
+
+        # Change ROI into index array
+        if type_ == RoiSet.ROI_TYPE_RECT:
+            self._roi_arr = []
+            for r in roi_arr:
+                self._roi_arr.append(skid.polygon(r[:,1], r[:,0]))
+        elif type_ == RoiSet.ROI_TYPE_RAW:
+            self._roi_arr = roi_arr
+        else:
+            raise ValueError("Unknown ROI type: {}", type_, file=sys.stderr)
+        self._list_iter = self._roi_arr.__iter__()
+
+    def __iter__(self):
+        return RoiSet(self._roi_arr, RoiSet.ROI_TYPE_RAW)
+
+    def __next__(self):
+        return self._list_iter.__next__()
 
 

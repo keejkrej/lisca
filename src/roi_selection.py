@@ -80,6 +80,7 @@ class RoiReader:
             self.canvas.delete("roi_draft")
             self.canvas.unbind("<Button-1>")
             self.canvas.unbind("<Motion>")
+            self.sv.stack.set_rois(self.compute_roi_array(self.sel_coords['polygon2']), "rect")
 
     def canvas_clicked(self, evt):
         """Canvas "clicked" callback for ROI definition mode"""
@@ -243,7 +244,6 @@ class RoiReader:
             # Draw rectangle
             self.canvas.create_polygon(x0, y0, x1, y1, x2, y2, x3, y3,
                 fill="", outline="yellow", width=2.0, tags="roi")
-
 
         elif self.sel_state == SELECTION_SPACE:
             # Delete old ROI drafts

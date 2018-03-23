@@ -18,6 +18,8 @@ The :py:class:`StackViewer` class
 .. autoclass:: stackviewer_tk.StackViewer
    :members:
 
+.. autoclass:: roi_selection.RoiReader
+   :members:
 
 The workflow GUI
 ----------------
