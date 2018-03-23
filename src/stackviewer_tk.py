@@ -1,5 +1,7 @@
 #! /usr/bin/env python3
 
+from contrast import ContrastAdjuster
+from gui_tk import get_root
 import os
 import roi_selection as roi_sel
 import stack
@@ -25,6 +27,10 @@ class StackViewer:
 
     def __init__(self, parent, image_file=None):
         """Initialize the GUI."""
+        # Initialize GUI components
+        root = get_root(parent)
+        self.contrast_adjuster = None
+        
         # Stack properties
         self.stack = None
         self.n_channels = None
@@ -49,6 +55,9 @@ class StackViewer:
         tempframe = ttk.Frame(self.mainframe)
         tempframe.grid(row=ROW_HEADER, column=0, columnspan=COLSPAN_CANVAS)
 
+        self.contrast_button = ttk.Button(tempframe, text="Contrast",
+            command=self.open_contrast_adjuster)
+        self.contrast_button.pack(side=tk.LEFT)
         self.select_button = ttk.Button(tempframe, text="Select",
             command=self.toggle_selection, state=tk.NORMAL)
         self.select_button.pack(side=tk.LEFT)
@@ -245,6 +254,12 @@ class StackViewer:
             self.roi_selector.toggle_selection()
         else:
             print("No selection tool registered.", file=sys.stderr)
+
+
+    def open_contrast_adjuster(self, *_):
+        """Callback for opening a ContrastAdjuster frame."""
+        if self.contrast_adjuster is None:
+            self.contrast_adjuster = ContrastAdjuster(self)
 
 
 if __name__ == "__main__":
