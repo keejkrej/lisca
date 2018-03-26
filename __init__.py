@@ -11,8 +11,6 @@ if __name__ == "__main__":
     import os
     import sys
     import tkinter as tk
-    from src.modules import ModuleManager
-    from src.workflow_tk import WorkflowGUI
 
     # Add directories for builtins and plugins to PYTHONPATH
     this_dir, _ = os.path.split(os.path.abspath(__file__))
@@ -21,6 +19,10 @@ if __name__ == "__main__":
 
     sys.path.append(SRC_PATH)
     sys.path.append(PLUGINS_PATH)
+
+    # Import modules at custom locations
+    from src.modules import ModuleManager
+    from src.workflow_tk import WorkflowGUI
 
     # Load modules
     modman = ModuleManager(PLUGINS_PATH)

@@ -6,7 +6,7 @@
 
 This is the docstring of the :py:mod:`modules` module.
 """
-import importlib as imp
+import importlib.util as imputil
 import os
 import sys
 import traceback
@@ -28,10 +28,10 @@ def _load_module(name, path):
     :return: Metadata of the module, or ``None`` if module couldn’t be loaded.
     """
     # Load the module
-    spec = imp.util.spec_from_file_location(name, path)
+    spec = imputil.spec_from_file_location(name, path)
     if spec is None:
         return None
-    mod = imp.util.module_from_spec(spec)
+    mod = imputil.module_from_spec(spec)
     try:
         spec.loader.exec_module(mod)
     except Exception as e:
