@@ -156,9 +156,14 @@ class StackViewer:
 
     def _show_img(self):
         """Update the image shown."""
-        self.canvas.delete("img")
+        convert_fcn = None
+        if self.contrast_adjuster is not None:
+            convert_fcn = self.contrast_adjuster.convert
+
         self.img = self.stack.get_frame_tk(channel=self.i_channel,
-            frame=self.i_frame)
+            frame=self.i_frame, convert_fcn=convert_fcn)
+
+        self.canvas.delete("img")
         self.canvas.create_image(1, 1, anchor=tk.NW,
             image=self.img, tags=("img",))
         self.canvas.tag_lower("img")
@@ -260,6 +265,8 @@ class StackViewer:
         """Callback for opening a ContrastAdjuster frame."""
         if self.contrast_adjuster is None:
             self.contrast_adjuster = ContrastAdjuster(self)
+        else:
+            self.contrast_adjuster.get_focus()
 
 
 if __name__ == "__main__":
