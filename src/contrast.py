@@ -9,6 +9,22 @@ class ContrastAdjuster:
         :param sv: StackViewer to which the ContrastAdjuster belongs
         :type sv: :py:class:`StackViewer`
         """
+        # Initialize attributes
+        self.img = None
+        self.histogram = None
+        self.i_frame = None
+        self.i_channel = None
+        self.img_min = None
+        self.img_max = None
+
+        self.pmin = None
+        self.pmax = None
+
+        self.mouse_state = None
+        self.mouse_moved = False
+        self.former_mouse_x = None
+
+        # Build GUI
         root = get_root(sv.mainframe)
 
         self.stackviewer = sv
@@ -21,6 +37,10 @@ class ContrastAdjuster:
         self.mainframe.title("Adjust contrast")
         self.mainframe.bind("<Destroy>", self._close)
 
+        self.histcan = tk.Canvas(self.mainframe, width=256, height=100,
+            background="white", highlightthickness=0)
+        self.histcan.pack()
+
         self.scale_var = tk.BooleanVar(root)
         self.scale_check = tk.Checkbutton(self.mainframe, text="Autoscale",
             variable=self.scale_var)
@@ -28,16 +48,12 @@ class ContrastAdjuster:
         self.trace_scale = self.scale_var.trace_add("write",
             self._update_image)
 
-        self.img = None
-        self.i_frame = None
-        self.i_channel = None
-        self.img_min = None
-        self.img_max = None
-
-        self.pmin = None
-        self.pmax = None
-
+        # Setup
         self._update_image()
+
+        self.histcan.bind("<Button-1>", self._limit_selection_action)
+        self.histcan.bind("<B1-Motion>", self._limit_selection_action)
+        self.histcan.bind("<ButtonRelease-1>", self._limit_selection_finished)
 
 
     def _close(self, *_, isDisplayUpdate=True):
@@ -72,7 +88,7 @@ class ContrastAdjuster:
         i_channel = self.stackviewer.i_channel_var.get() - 1
         isUpdateDisplay = False
 
-        if i_frame != self.i_frame or i_channel != self.i_channel:
+        if self.img is None or i_frame != self.i_frame or i_channel != self.i_channel:
             self.i_frame = i_frame
             self.i_channel = i_channel
 
@@ -80,6 +96,8 @@ class ContrastAdjuster:
                 self.i_channel, self.i_frame)
             self.img_min = self.img.min()
             self.img_max = self.img.max()
+
+            self.draw_hist()
         else:
             isUpdateDisplay = True
 
@@ -89,15 +107,118 @@ class ContrastAdjuster:
             self._update_display()
 
 
-    def _set_limits(self):
+    def _get_movement_action(self, y):
+        """
+        Assess which limit movement action to perform
+
+        The movement action is determined by the y-position of the
+        mouse pointer on the canvas.
+        The following positions are possible:
+
+        * If the mouse is in the upper quarter of the canvas, move the maximum (returns ``MAX``).
+        * If the mouse is in the middle two quarters of the canvas, move both minimum and maximum (returns ``BOTH``).
+        * If the mouse is in the lower quarter of the canvas, move the minimum (returns ``MIN``).
+
+        :param y: Mouse position on canvas
+        :type y: scalar numerical
+        :return: The determined movement action
+        :rtype: str
+        """
+        # Get histogram height
+        self.histcan.update_idletasks()
+        height = self.histcan.winfo_height()
+
+        # Decide which action to perform
+        if y < .25 * height:
+            action = "MAX"
+        elif y <= .75 * height:
+            action = "BOTH"
+        else:
+            action = "MIN"
+        return action
+
+
+    def _limit_selection_action(self, evt):
+        if self.mouse_state is None:
+            action = self._get_movement_action(evt.y)
+            self.mouse_state = action
+        else:
+            action = self.mouse_state
+
+        self.histcan.update_idletasks()
+        height = self.histcan.winfo_height()
+        width = self.histcan.winfo_width()
+
+        if action == "MAX":
+            new_max = evt.x
+            new_min = None
+        elif action == "MIN":
+            new_max = None
+            new_min = evt.x
+        elif action == "BOTH":
+            a = (self.pmax - self.pmin) * width / height / self.hist_max
+            new_y = height - evt.y
+            new_min = -a * new_y + evt.x
+            new_max = a * (height - new_y) + evt.x
+
+        if new_min is not None:
+            new_min *= self.hist_max / width
+        if new_max is not None:
+            new_max *= self.hist_max / width
+
+        if action == "BOTH":
+            if new_min < 0:
+                diff = new_min
+            elif new_max > self.hist_max:
+                diff = new_max - self.hist_max
+            else:
+                diff = 0
+            new_min -= diff
+            new_max -= diff
+
+        elif new_min is not None:
+            if new_min < 0:
+                new_min = 0
+            elif new_min >= self.hist_max:
+                new_min = self.hist_max - 1
+                new_max = self.hist_max
+            elif new_min >= self.pmax:
+                new_max = new_min + 1
+
+        elif new_max is not None:
+            if new_max < 1:
+                new_max = 1
+                new_min = 0
+            elif new_max > self.hist_max:
+                new_max = self.hist_max
+            elif new_max <= self.pmin:
+                new_min = new_max - 1
+
+        self._set_limits(new_min, new_max)
+
+
+    def _limit_selection_finished(self, evt):
+        # Reset limit movement control variables
+        self.mouse_state = None
+
+
+    def _set_limits(self, new_min=None, new_max=None):
         """Set limits of the colormap"""
-        if self.scale_var.get():
+        if new_min is not None or new_max is not None:
+            if new_min is not None:
+                self.pmin = new_min
+            if new_max is not None:
+                self.pmax = new_max
+        elif self.scale_var.get():
             self.pmax = self.img_max
             self.pmin = self.img_min
         else:
             iinfo = np.iinfo(self.img.flat[0])
             self.pmax = iinfo.max
             self.pmin = iinfo.min
+
+        print("pmin={:2f}, pmax={:2f}".format(self.pmin, self.pmax))
+        self.draw_limit_line()
 
 
     def convert(self, img):
@@ -117,6 +238,46 @@ class ContrastAdjuster:
         img8[:] = (img - self.pmin) / ((self.pmax - self.pmin) / 255)
         
         return img8
+
+    def draw_hist(self):
+        """Calculate the image histogram."""
+        # Get the maximum of the histogram
+        if self.img_max <= 0xff:
+            self.hist_max = 0xff        # 8-bit
+        elif self.img_max <= 0x0fff:
+            self.hist_max = 0x0fff      # 12-bit
+        elif self.img_max <= 0x3fff:
+            self.hist_max = 0x3fff      # 14-bit
+        else:
+            self.hist_max = 0xffff      # 16-bit
+
+        # Calculate histogram
+        self.histcan.update_idletasks()
+        n_bins = self.histcan.winfo_width()
+        hist_height = self.histcan.winfo_height()
+
+        self.histogram = np.histogram(self.img, bins=n_bins,
+            range=(0, self.hist_max))[0]
+        self.histogram = np.ceil(self.histogram / (self.img.size / hist_height))
+
+        # Draw histogram
+        self.histcan.delete("h")
+        for i, x in enumerate(self.histogram):
+            self.histcan.create_line(i, hist_height, i, hist_height - x, tags="h")
+        self.histcan.tag_lower("h")
+
+
+    def draw_limit_line(self):
+        self.histcan.update_idletasks()
+        width = self.histcan.winfo_width()
+        height = self.histcan.winfo_height()
+
+        x_min = width * self.pmin / self.hist_max
+        x_max = width * self.pmax / self.hist_max
+
+        self.histcan.delete("l")
+        self.histcan.create_line(x_min, height, x_max, 0,
+            fill="red", tags="l")
 
 
     def get_focus(self):
