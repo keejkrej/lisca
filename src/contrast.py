@@ -21,7 +21,7 @@ class ContrastAdjuster:
         self.mainframe.title("Adjust contrast")
         self.mainframe.bind("<Destroy>", self._close)
 
-        self.scale_var = tk.BooleanVar()
+        self.scale_var = tk.BooleanVar(root)
         self.scale_check = tk.Checkbutton(self.mainframe, text="Autoscale",
             variable=self.scale_var)
         self.scale_check.pack()
@@ -38,50 +38,32 @@ class ContrastAdjuster:
         self.pmax = None
 
         self._update_image()
-        print(sv.i_frame_var.trace_info())
 
 
-    def _close(self, *_):
+    def _close(self, *_, isDisplayUpdate=True):
         """Close the ContrastAdjuster frame.
 
         After closing, the contrast settings will be discarded.
-
-        This function currently generates an error which, however,
-        has no other impact than that an error message is printed,
-        and for which I have’t found a solution yet.
         """
         self.stackviewer.contrast_adjuster = None
 
-        # Here happens a really strange error for which I haven't
-        # found a solution yet: A TclError is thrown with a traceback
-        # indicating the first of the following calls to trace_remove
-        # as the error source.
-        # However, the traceback is printed after the calls have finished.
-        # If I surround the calls to trace_remove with a try...except
-        # statement, this function is called twice.
-        self.scale_var.trace_remove("write", self.trace_scale)
-        self.stackviewer.i_frame_var.trace_remove("write",
-            self.trace_frame)
-        self.stackviewer.i_channel_var.trace_remove("write",
-            self.trace_channel)
-        #try:
-        #    self.scale_var.trace_remove("write", self.trace_scale)
-        #    self.stackviewer.i_frame_var.trace_remove("write",
-        #        self.trace_frame)
-        #    self.stackviewer.i_channel_var.trace_remove("write",
-        #        self.trace_channel)
-        #except tk._tkinter.TclError:
-        #    pass
-        #print("Traces:")
-        #print(self.trace_scale)
-        #print(self.trace_frame)
-        #print(self.trace_channel)
-        #print("Remaining traces:")
-        #print(self.scale_var.trace_info())
-        #print(self.stackviewer.i_frame_var.trace_info())
-        #print(self.stackviewer.i_channel_var.trace_info())
-        self.mainframe.destroy()
-        self._update_display()
+        if self.trace_scale is not None:
+            self.scale_var.trace_remove("write", self.trace_scale)
+            self.trace_scale = None
+        if self.trace_frame is not None:
+            self.stackviewer.i_frame_var.trace_remove("write",
+                self.trace_frame)
+            self.trace_frame = None
+        if self.trace_channel is not None:
+            self.stackviewer.i_channel_var.trace_remove("write",
+                self.trace_channel)
+            self.trace_channel = None
+
+        # Inhibit multiple calls to this callback
+        self.mainframe.unbind("<Destroy>")
+
+        if isDisplayUpdate:
+            self._update_display()
 
 
     def _update_image(self, *_):
