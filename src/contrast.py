@@ -149,16 +149,20 @@ class ContrastAdjuster:
 
 
     def _limit_selection_action(self, evt):
+        """Callback for manual limit selection"""
+        # Get action
         if self.mouse_state is None:
             action = self._get_movement_action(evt.y)
             self.mouse_state = action
         else:
             action = self.mouse_state
 
+        # Get histogram properties
         self.histcan.update_idletasks()
         height = self.histcan.winfo_height()
         width = self.histcan.winfo_width()
 
+        # Get requested limits based on action
         if action == "MAX":
             new_max = evt.x
             new_min = None
@@ -171,11 +175,13 @@ class ContrastAdjuster:
             new_min = -a * new_y + evt.x
             new_max = a * (height - new_y) + evt.x
 
+        # Transform new limits to canvas coordinates
         if new_min is not None:
             new_min *= self.hist_max / width
         if new_max is not None:
             new_max *= self.hist_max / width
 
+        # Prevent limits from unphysical values
         if action == "BOTH":
             if new_min < 0:
                 diff = new_min
@@ -204,32 +210,46 @@ class ContrastAdjuster:
             elif new_max <= self.pmin:
                 new_min = new_max - 1
 
+        # Update limits
         self.scale_var.set("MANUAL")
         self._set_limits(new_min, new_max)
         self._draw_handle(evt)
 
 
     def _limit_selection_finished(self, evt):
+        """Callback for limit selection (mouse release)"""
         # Reset limit movement control variables
         self.mouse_state = None
 
 
     def _set_limits(self, new_min=None, new_max=None):
-        """Set limits of the colormap"""
+        """Set limits of the colormap
+        
+        Limits can be given as parameters.
+        Otherwise, they will be determined automatically.
+        
+        :param new_min: requested minimum (optional)
+        :type new_min: integer >=0
+        :param new_max: requested maximum (optional)
+        :type new_max: integer >=1
+        """
         if new_min is not None or new_max is not None:
+            # Limits are given as parameters
             if new_min is not None:
                 self.pmin = new_min
             if new_max is not None:
                 self.pmax = new_max
         elif self.scale_var.get() == "AUTO":
+            # Set limits according to range of pixel values
             self.pmax = self.img_max
             self.pmin = self.img_min
         elif self.scale_var.get() == "NONE":
+            # Expand limits to whole range allowed by image data type
             iinfo = np.iinfo(self.img.flat[0])
             self.pmax = iinfo.max
             self.pmin = iinfo.min
 
-        print("pmin={:2f}, pmax={:2f}".format(self.pmin, self.pmax))
+        #print("pmin={:2f}, pmax={:2f}".format(self.pmin, self.pmax)) #DEBUG
         self.draw_limit_line()
 
 
@@ -245,11 +265,12 @@ class ContrastAdjuster:
         :return: The converted image
         :rtype: 2-dim numpy array with dtype uint8
         """
-        #print("min: {}, max: {}".format(self.pmin, self.pmax))
+        # Find pixels inside and outside of limits
         mask_min = img <= self.pmin
         mask_max = img >= self.pmax
         mask_between = ~(mask_min | mask_max)
 
+        # Create and populate scaled display image
         img8 = np.empty_like(img, dtype=np.uint8)
         img8[mask_min] = 0
         img8[mask_max] = 255
@@ -286,6 +307,7 @@ class ContrastAdjuster:
 
 
     def draw_limit_line(self):
+        """Draw line indicating limits in histogram"""
         self.histcan.update_idletasks()
         width = self.histcan.winfo_width()
         height = self.histcan.winfo_height()
@@ -299,6 +321,16 @@ class ContrastAdjuster:
 
 
     def _draw_handle(self, evt):
+        """
+        Draw handle (point on line) in histogram.
+
+        The handle is a help to intuitively grasp the action that will be,
+        or in case of mouse button pressed, is being performed.
+        The action is one of "move the maximum", "move the minimum" and
+        "move both maximum and minimum/move limits".
+
+        :param evt: The mouse event causing this call
+        """
         # Get canvas properties
         self.histcan.update_idletasks()
         width = self.histcan.winfo_width()
