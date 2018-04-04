@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-from gui_tk import get_root
+from gui_tk import get_root, mainloop, new_toplevel
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
@@ -12,12 +12,13 @@ class WorkflowGUI:
     def __init__(self, module_manager=None):
         """Set up the workflow GUI."""
         self.modman = module_manager
-        self.root = tk.Tk()
+        self.main = new_toplevel()
+        self.root = get_root()
         self.modman.register_builtin_data("workflow_gui_tk", self)
-        self.root.title("Workflow")
-        self.root.minsize(width=200, height=500)
+        self.main.title("Workflow")
+        self.main.minsize(width=200, height=500)
 
-        self.mainframe = ttk.Frame(self.root)
+        self.mainframe = ttk.Frame(self.main)
         self.mainframe.pack(fill=tk.BOTH, expand=True)
 
         self.add_button = ttk.Button(self.mainframe, text="New", command=self.new_module)
@@ -31,8 +32,8 @@ class WorkflowGUI:
 
 
     def mainloop(self):
-        """Start the root mainloop."""
-        self.root.mainloop()
+        """Start the tkinter mainloop."""
+        mainloop()
 
 
     def askopenfilename(self, **args):
