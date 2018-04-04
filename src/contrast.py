@@ -29,9 +29,9 @@ class ContrastAdjuster:
 
         self.stackviewer = sv
         self.trace_frame = sv.i_frame_var.trace_add("write",
-            self._update_image)
+            self._update_scaling)
         self.trace_channel = sv.i_channel_var.trace_add("write",
-            self._update_image)
+            self._update_scaling)
 
         self.mainframe = tk.Toplevel(root)
         self.mainframe.title("Adjust contrast")
@@ -41,15 +41,23 @@ class ContrastAdjuster:
             background="white", highlightthickness=0)
         self.histcan.pack()
 
-        self.scale_var = tk.BooleanVar(root)
-        self.scale_check = tk.Checkbutton(self.mainframe, text="Autoscale",
-            variable=self.scale_var)
-        self.scale_check.pack()
+        self.scale_var = tk.StringVar(root)
+        b = tk.Radiobutton(self.mainframe, text="No scaling",
+            variable=self.scale_var, value="NONE")
+        b.pack(anchor=tk.W)
+        b = tk.Radiobutton(self.mainframe, text="Auto scaling",
+            variable=self.scale_var, value="AUTO")
+        b.pack(anchor=tk.W)
+        b = tk.Radiobutton(self.mainframe, text="Manual scaling",
+            variable=self.scale_var, value="MANUAL")
+        b.pack(anchor=tk.W)
+        self.scale_var.set("NONE")
+
         self.trace_scale = self.scale_var.trace_add("write",
-            self._update_image)
+            self._update_scaling)
 
         # Setup
-        self._update_image()
+        self._update_scaling()
 
         self.histcan.bind("<Button-1>", self._limit_selection_action)
         self.histcan.bind("<B1-Motion>", self._limit_selection_action)
@@ -84,7 +92,7 @@ class ContrastAdjuster:
             self._update_display()
 
 
-    def _update_image(self, *_):
+    def _update_scaling(self, *_):
         """Update information of the image (like color extrema)"""
         i_frame = self.stackviewer.i_frame_var.get() - 1
         i_channel = self.stackviewer.i_channel_var.get() - 1
@@ -196,6 +204,7 @@ class ContrastAdjuster:
             elif new_max <= self.pmin:
                 new_min = new_max - 1
 
+        self.scale_var.set("MANUAL")
         self._set_limits(new_min, new_max)
         self._draw_handle(evt)
 
@@ -212,10 +221,10 @@ class ContrastAdjuster:
                 self.pmin = new_min
             if new_max is not None:
                 self.pmax = new_max
-        elif self.scale_var.get():
+        elif self.scale_var.get() == "AUTO":
             self.pmax = self.img_max
             self.pmin = self.img_min
-        else:
+        elif self.scale_var.get() == "NONE":
             iinfo = np.iinfo(self.img.flat[0])
             self.pmax = iinfo.max
             self.pmin = iinfo.min
@@ -237,8 +246,14 @@ class ContrastAdjuster:
         :rtype: 2-dim numpy array with dtype uint8
         """
         #print("min: {}, max: {}".format(self.pmin, self.pmax))
+        mask_min = img <= self.pmin
+        mask_max = img >= self.pmax
+        mask_between = ~(mask_min | mask_max)
+
         img8 = np.empty_like(img, dtype=np.uint8)
-        img8[:] = (img - self.pmin) / ((self.pmax - self.pmin) / 255)
+        img8[mask_min] = 0
+        img8[mask_max] = 255
+        img8[mask_between] = np.round((img[mask_between] - self.pmin) / (self.pmax / 255))
         
         return img8
 
