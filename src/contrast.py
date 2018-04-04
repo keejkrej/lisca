@@ -54,6 +54,8 @@ class ContrastAdjuster:
         self.histcan.bind("<Button-1>", self._limit_selection_action)
         self.histcan.bind("<B1-Motion>", self._limit_selection_action)
         self.histcan.bind("<ButtonRelease-1>", self._limit_selection_finished)
+        self.histcan.bind("<Motion>", self._draw_handle)
+        self.histcan.bind("<Leave>", lambda _: self.histcan.delete("c"))
 
 
     def _close(self, *_, isDisplayUpdate=True):
@@ -195,6 +197,7 @@ class ContrastAdjuster:
                 new_min = new_max - 1
 
         self._set_limits(new_min, new_max)
+        self._draw_handle(evt)
 
 
     def _limit_selection_finished(self, evt):
@@ -278,6 +281,35 @@ class ContrastAdjuster:
         self.histcan.delete("l")
         self.histcan.create_line(x_min, height, x_max, 0,
             fill="red", tags="l")
+
+
+    def _draw_handle(self, evt):
+        # Get canvas properties
+        self.histcan.update_idletasks()
+        width = self.histcan.winfo_width()
+        height = self.histcan.winfo_height()
+
+        # Get action
+        if self.mouse_state is None:
+            action = self._get_movement_action(evt.y)
+        else:
+            action = self.mouse_state
+
+        # Get handle position
+        if action == "MIN":
+            x_handle = width * self.pmin / self.hist_max
+            y_handle = height
+        elif action == "MAX":
+            x_handle = width * self.pmax / self.hist_max
+            y_handle = 0
+        else:
+            y_handle = evt.y
+            x_handle = ( (self.pmax - self.pmin) / height * (height - y_handle) + self.pmin ) * width / self.hist_max
+
+        # Draw new handle
+        r = 4
+        self.histcan.delete("c")
+        self.histcan.create_oval(x_handle-r, y_handle-r, x_handle+r, y_handle+r, fill="red", outline="", tags="c")
 
 
     def get_focus(self):
