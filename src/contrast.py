@@ -41,6 +41,13 @@ class ContrastAdjuster:
             background="white", highlightthickness=0)
         self.histcan.pack()
 
+        frame = tk.Frame(self.mainframe, relief=tk.FLAT)
+        frame.pack(fill=tk.X, expand=False)
+        self.min_label = tk.Label(frame, text="min")
+        self.min_label.pack(side=tk.LEFT, anchor=tk.W)
+        self.max_label = tk.Label(frame, text="max")
+        self.max_label.pack(side=tk.RIGHT, anchor=tk.E)
+
         self.scale_var = tk.StringVar(root)
         b = tk.Radiobutton(self.mainframe, text="No scaling",
             variable=self.scale_var, value="NONE")
@@ -250,6 +257,8 @@ class ContrastAdjuster:
             self.pmin = iinfo.min
 
         #print("pmin={:2f}, pmax={:2f}".format(self.pmin, self.pmax)) #DEBUG
+        self.min_label["text"] = "{:.0f}".format(self.pmin)
+        self.max_label["text"] = "{:.0f}".format(self.pmax)
         self.draw_limit_line()
 
 
