@@ -13,7 +13,7 @@ class WorkflowGUI:
         self.modman = module_manager
         self.main = new_toplevel()
         self.root = get_root()
-        self.modman.register_builtin_data("workflow_gui_tk", self)
+        #self.modman.register_builtin_data("workflow_gui_tk", self)
         self.main.title("Workflow")
         self.main.minsize(width=200, height=500)
 
