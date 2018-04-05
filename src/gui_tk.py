@@ -2,8 +2,10 @@
 This module is intended to provide general GUI-related functions.
 """
 import tkinter as tk
+from tkinter import filedialog
 #import workflow_tk
 
+global root
 root = None
 
 def get_root(w=None):
@@ -27,4 +29,30 @@ def new_toplevel(**opt):
 
 def mainloop():
     """Start the tkinter mainloop."""
+    global root
     root.mainloop()
+
+
+def askopenfilename(**args):
+    """Provide file opening dialog for other plugins."""
+    if not "master" in args:
+        global root
+        args["master"] = root
+    return filedialog.askopenfilename(**args)
+
+
+def asksaveasfilename(**args):
+    """Provide file saving dialog for other plugins."""
+    if not "master" in args:
+        global root
+        args["master"] = root
+    return filedialog.asksaveasfilename(**args)
+
+
+def askdirectory(**args):
+    """Provide directory dialog for other plugins."""
+    if not "master" in args:
+        global root
+        args["master"] = root
+    return filedialog.askdirectory(**args)
+

@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
-from gui_tk import get_root, mainloop, new_toplevel
+from gui_tk import get_root, new_toplevel
 import tkinter as tk
-from tkinter import filedialog
 from tkinter import ttk
 
 PAD_X = 10
@@ -33,27 +32,7 @@ class WorkflowGUI:
 
     def mainloop(self):
         """Start the tkinter mainloop."""
-        mainloop()
-
-
-    def askopenfilename(self, **args):
-        """Provide file opening dialog for other plugins."""
-        return filedialog.askopenfilename(**args)
-
-
-    def asksaveasfilename(self, **args):
-        """Provide file saving dialog for other plugins."""
-        return filedialog.asksaveasfilename(**args)
-
-
-    def askdirectory(self, **args):
-        """Provide directory dialog for other plugins."""
-        return filedialog.askdirectory(**args)
-
-
-    def new_toplevel(self, **args):
-        """Open a new Tk Toplevel instance."""
-        return tk.Toplevel(**args)
+        self.root.mainloop()
 
 
 class ModuleFrame:
