@@ -2,6 +2,7 @@
 This plugin implements functionality to select ROIs in a stack.
 """
 import numpy as np
+import skimage.draw as skid
 
 SELECTION_OFF = 0
 SELECTION_ANCHOR = 1
@@ -120,7 +121,7 @@ class RoiReader:
             polygon2 = self.sel_coords['polygon2']
             if polygon2 is not None:
                 for roi in self.compute_roi_array(polygon2):
-                    self.canvas.create_polygon(*roi.flat,
+                    self.canvas.create_polygon(*roi.corners.flat,
                         fill="", outline="yellow", tags="roi")
                 
             self.control_selection(SELECTION_OFF)
@@ -199,7 +200,6 @@ class RoiReader:
                     self.sel_coords['slope'] = dy / dx
                 else:
                     self.sel_coords['slope'] = - dx / dy
-                    
 
             # Draw new rules
             self.canvas.create_line(s1x, s1y, e1x, e1y,
@@ -208,7 +208,6 @@ class RoiReader:
                 fill="red", tags="rule")
             self.canvas.create_line(s3x, s3y, e3x, e3y,
                 fill="red", tags="rule")
-
 
         elif self.sel_state == SELECTION_RECT:
             # Delete old rectangles
@@ -309,7 +308,7 @@ class RoiReader:
                 self.sel_coords['polygon2'] = new_poly
                 roi_arr = self.compute_roi_array(new_poly, True)
                 for roi in roi_arr:
-                    self.canvas.create_polygon(*roi.flat,
+                    self.canvas.create_polygon(*roi.corners.flat,
                         fill="", outline=roi_color, tags="roi_draft")
             else:
                 self.sel_coords['polygon2'] = None
@@ -390,7 +389,7 @@ class RoiReader:
 
         # Optionally add second reference ROI
         if not omit_references:
-            roi_arr = [poly0]
+            roi_arr = [RectRoi(poly0)]
         else:
             roi_arr = []
 
@@ -434,7 +433,7 @@ class RoiReader:
             # Do not recalculate first reference rectangle
             if ix == 1 and iy == -1:
                 if not omit_references:
-                    roi_arr.append(poly2)
+                    roi_arr.append(RectRoi(poly2))
                 continue
             
             # Get ROI rectangle at current grid site (ix, iy)
@@ -443,7 +442,7 @@ class RoiReader:
             # Check if current grid site (ix, iy) fits in canvas
             if self.is_in_canvas(pn):
                 # Current grid site fits in canvas, add it to list
-                roi_arr.append(pn)
+                roi_arr.append(RectRoi(pn))
             elif iy == 0:
                 # Row 0 does not fit in canvas: no more columns left
                 new_col = False
@@ -540,3 +539,39 @@ class RoiReader:
         else:
             return ret == 3
 
+
+class RectRoi:
+    def __init__(self, polygon):
+       self.corners = polygon
+       self._coords = None
+       self._area = None
+       self._perimeter = None
+       self.label = None
+
+    @property
+    def coords(self):
+        if self._coords is None:
+            pc = skid.polygon(self.corners[:,0], self.corners[:,1])
+            self._coords = np.stack([pc[1], pc[0]], axis=1)
+        return self._coords
+
+    @property
+    def area(self):
+        if self._area is None:
+            self._area = self.coords.shape[0]
+        return self._area
+
+    @property
+    def perimeter(self):
+        if self._perimeter is None:
+            pc = skid.polygon_perimeter(self.corners[:,0], self.corners[:,1])
+            self._perimeter = np.stack([pc[1], pc[0]], axis=1)
+        return self._perimeter
+
+    @property
+    def rows(self):
+        return self.coords[:,0]
+
+    @property
+    def cols(self):
+        return self.coords[:,1]

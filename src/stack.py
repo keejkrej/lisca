@@ -319,19 +319,14 @@ class RoiSet:
 
         # Change ROI into index array
         if type_ == RoiSet.ROI_TYPE_RECT:
-            self._roi_arr = []
-            for r in roi_arr:
-                self._roi_arr.append(skid.polygon(r[:,1], r[:,0]))
+            self._roi_arr = roi_arr
+
         elif type_ == RoiSet.ROI_TYPE_RAW:
             self._roi_arr = roi_arr
+
         else:
             raise ValueError("Unknown ROI type: {}", type_, file=sys.stderr)
-        self._list_iter = self._roi_arr.__iter__()
 
     def __iter__(self):
-        return RoiSet(self._roi_arr, RoiSet.ROI_TYPE_RAW)
-
-    def __next__(self):
-        return self._list_iter.__next__()
-
+        return self._roi_arr.__iter__()
 

@@ -19,17 +19,19 @@ def configure(**_):
 def run(**d):
     stack = d["simple_stack_reader"]["stack"]
     img = stack.img
-    n_channels, n_frames, _, _ = img.shape
+    n_channels, n_frames, n_rows, n_cols = img.shape
     intensity_table = np.empty((n_channels, n_frames), dtype=object)
 
     # DEBUG
-    print("Frames: {}\nChannels: {}\nInitialized intensity table: {}".format(n_frames, n_channels, str(intensity_table)))
+    print("Frames: {}\nChannels: {}\nRows: {}\nColumns: {}".format(n_frames, n_channels, n_rows, n_cols))
 
     for c in range(n_channels):
         for f in range(n_frames):
             tab = []
-            for rr, cc in stack.rois:
-                tab.append(np.sum(img[c,f,rr,cc]))
+            for roi in stack.rois:
+                print("ROI: x=[{:4d},{:4d}], y=[{:4d},{:4d}]".format(
+                    roi.cols.min(), roi.cols.max(), roi.rows.min(), roi.rows.max()))
+                tab.append(np.sum(img[c,f,roi.rows,roi.cols]))
             intensity_table[c,f] = tab
 
     # DEBUG
