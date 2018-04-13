@@ -42,7 +42,7 @@ class Stack:
         self._n_channels = 0
 
         # ROI list
-        self._rois = None
+        self._rois = {}
 
         # Notify listeners
         self._notify_listeners()
@@ -253,26 +253,34 @@ class Stack:
             fun(*args, **kw)
 
 
-    def set_rois(self, rois, type_):
+    def set_rois(self, rois, type_, frame=Ellipsis):
         """Set the ROI set of the stack.
 
         :param rois: The ROIs to be set
         :param type_: The ROI type (currently one of "rect" and "raw")
+        :param frame: The frame to which the ROI belongs. ``None`` stands for all frames.
 
         For details, see :py:class:`RoiSet`
         """
-        self._rois = RoiSet(rois, type_)
+        self._rois[frame] = RoiSet(rois, type_)
         self._notify_listeners()
+
 
     @property
     def rois(self):
         return self._rois
-    def get_rois(self):
-        return self._rois
 
-    def clear_rois(self):
+
+    def get_rois(self, frame=None):
+        return self._rois[frame]
+
+
+    def clear_rois(self, frame=None):
         """Delete the current ROI set"""
-        self._rois = None
+        if frame is None:
+            self._rois = {}
+        else:
+            del self._rois[frame]
         self._notify_listeners()
 
 

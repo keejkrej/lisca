@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 
+from bitmap_maker import coords2xbm
 from contrast import ContrastAdjuster
 from gui_tk import get_root
 import os
@@ -30,6 +31,7 @@ class StackViewer:
         # Initialize GUI components
         root = get_root(parent)
         self.contrast_adjuster = None
+        self._roi_bitmaps = None
         
         # Stack properties
         self.stack = None
@@ -42,6 +44,10 @@ class StackViewer:
         self.i_channel_var.trace_add("write", self._i_channel_changed)
         self.i_frame_var = tk.IntVar()
         self.i_frame_var.trace_add("write", self._i_frame_changed)
+
+        self.show_rois_var = tk.BooleanVar()
+        self.show_rois_var.set(True)
+        self.show_rois_var.trace_add("write", self.draw_rois)
 
         ## GUI elements:
         # Main frame
@@ -167,6 +173,7 @@ class StackViewer:
         self.canvas.create_image(1, 1, anchor=tk.NW,
             image=self.img, tags=("img",))
         self.canvas.tag_lower("img")
+        self.draw_rois()
 
 
     def _update_stack_properties(self):
@@ -267,6 +274,29 @@ class StackViewer:
             self.contrast_adjuster = ContrastAdjuster(self)
         else:
             self.contrast_adjuster.get_focus()
+
+
+    def draw_rois(self, *_):
+        """Draw the ROIs in the current frame."""
+        # Clear old ROIs
+        self.canvas.delete("roi")
+        self._roi_bitmaps = set()
+
+        if self.show_rois_var.get():
+            if self.i_channel in self.stack.rois:
+                roi_key = self.i_channel
+            elif Ellipsis in self.stack.rois:
+                roi_key = Ellipsis
+            else:
+                return
+
+            rois = self.stack.get_rois(frame=roi_key)
+            for roi in rois:
+                (xoff, yoff), xbm = coords2xbm(roi.perimeter, returnOffset=True, joinstr=',')
+                roi_bitmap = tk.BitmapImage(data=xbm, foreground="yellow", background="")
+                self.canvas.create_image(xoff, yoff, image=roi_bitmap, anchor=tk.NW, tags="roi")
+                self._roi_bitmaps.add(roi_bitmap)
+
 
 
 if __name__ == "__main__":

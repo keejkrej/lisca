@@ -32,6 +32,7 @@ class RoiReader:
         self.sel_coords = {}
         self.roi_type = ROI_TYPE_RECT
 
+
     def toggle_selection(self, *_):
         """
         Switch ROI definition mode on or off.
@@ -41,6 +42,7 @@ class RoiReader:
             self.control_selection(target=SELECTION_OFF)
         else:
             self.control_selection(target=SELECTION_ANCHOR)
+
 
     def update_selection_button(self):
         """
@@ -79,9 +81,13 @@ class RoiReader:
             pass
         else:
             self.canvas.delete("roi_draft")
+            #self.canvas.delete("roi")
             self.canvas.unbind("<Button-1>")
             self.canvas.unbind("<Motion>")
-            self.sv.stack.set_rois(self.compute_roi_array(self.sel_coords['polygon2']), "rect")
+            if 'polygon2' in self.sel_coords:
+                self.sv.stack.set_rois(self.compute_roi_array(self.sel_coords['polygon2']), "rect", frame=Ellipsis)
+            self.sv.draw_rois()
+
 
     def canvas_clicked(self, evt):
         """Canvas "clicked" callback for ROI definition mode"""
@@ -551,7 +557,7 @@ class RectRoi:
     @property
     def coords(self):
         if self._coords is None:
-            pc = skid.polygon(self.corners[:,0], self.corners[:,1])
+            pc = skid.polygon(self.corners[:,1], self.corners[:,0])
             self._coords = np.stack([pc[1], pc[0]], axis=1)
         return self._coords
 
@@ -564,7 +570,7 @@ class RectRoi:
     @property
     def perimeter(self):
         if self._perimeter is None:
-            pc = skid.polygon_perimeter(self.corners[:,0], self.corners[:,1])
+            pc = skid.polygon_perimeter(self.corners[:,1], self.corners[:,0])
             self._perimeter = np.stack([pc[1], pc[0]], axis=1)
         return self._perimeter
 
