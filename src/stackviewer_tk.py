@@ -1,6 +1,5 @@
 #! /usr/bin/env python3
 
-from bitmap_maker import coords2xbm
 from contrast import ContrastAdjuster
 from gui_tk import get_root
 import os
@@ -31,7 +30,6 @@ class StackViewer:
         # Initialize GUI components
         root = get_root(parent)
         self.contrast_adjuster = None
-        self._roi_bitmaps = None
         
         # Stack properties
         self.stack = None
@@ -280,9 +278,8 @@ class StackViewer:
         """Draw the ROIs in the current frame."""
         # Clear old ROIs
         self.canvas.delete("roi")
-        self._roi_bitmaps = set()
 
-        if self.show_rois_var.get():
+        if self.show_rois_var.get() and self.stack.rois is not None:
             if self.i_channel in self.stack.rois:
                 roi_key = self.i_channel
             elif Ellipsis in self.stack.rois:
@@ -292,10 +289,7 @@ class StackViewer:
 
             rois = self.stack.get_rois(frame=roi_key)
             for roi in rois:
-                (xoff, yoff), xbm = coords2xbm(roi.perimeter, returnOffset=True, joinstr=',')
-                roi_bitmap = tk.BitmapImage(data=xbm, foreground="yellow", background="")
-                self.canvas.create_image(xoff, yoff, image=roi_bitmap, anchor=tk.NW, tags="roi")
-                self._roi_bitmaps.add(roi_bitmap)
+                self.canvas.create_polygon(*roi.corners.flat, fill="", outline="yellow", tags="roi")
 
 
 
