@@ -97,7 +97,7 @@ class Stack:
     def _parse_tiff_tags(self, tiffimg):
         """Read stack dimensions from TIFF description tag."""
         # Get pixel size
-        px_size = tiffimg.tag[TIFF_TAG_BITSPERSAMPLE][0]
+        px_size = tiffimg.tag_v2[TIFF_TAG_BITSPERSAMPLE][0]
         if px_size == 8:
             self._mode = 8
         elif px_size == 16:
@@ -106,7 +106,7 @@ class Stack:
             raise ValueError("Undefined pixel size: {}".format(px_size))
 
         # Parse image description (metadata from ImageJ)
-        desc = tiffimg.tag[TIFF_TAG_DESCRIPTION][0]
+        desc = tiffimg.tag_v2[TIFF_TAG_DESCRIPTION]
         
         # Get total number of images in stack
         m = re.search(r"images=(\d+)", desc)
