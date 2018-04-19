@@ -230,7 +230,7 @@ class Contour:
             #ci = CornerFinder.go(self.perimeter, indices=True)
             #self.corner_idx = self.perimeter_idx.copy()
             #self.corner_idx[self.corner_idx] = ci
-            self.corner_idx = CornerFinder.go(self.perimeter, indices=True)
+            self.corner_idx = CornerFinder.go(self.perimeter, indices=True, simplify=False)
         return self.coords[self.corner_idx,:]
 
 

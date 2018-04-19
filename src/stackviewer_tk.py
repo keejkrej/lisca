@@ -290,7 +290,7 @@ class StackViewer:
 
             rois = self.stack.get_rois(frame=roi_key)
             for roi in rois:
-                self.canvas.create_polygon(*roi.corners.flat, fill="", outline="yellow", tags="roi")
+                self.canvas.create_polygon(*roi.corners[:,::-1].flat, fill="", outline="yellow", tags="roi")
 
 
 
