@@ -1,4 +1,9 @@
 #! /usr/bin/env python3
+import os
+import sys
+this_dir = os.path.dirname(os.path.abspath(__file__))
+src_dir = os.path.join(this_dir, "../src/")
+sys.path.append(src_dir)
 from cornerfinder import CornerFinder
 import numpy as np
 import scipy.interpolate as si
@@ -7,9 +12,23 @@ import skimage.measure as meas
 import skimage.morphology as morph
 
 
-#my_id = "segmenter"
-#def register(meta):
-#    meta.id = my_id
+my_id = "simple_segmenter"
+def register(meta):
+    meta.name = "Segment stack"
+    meta.id = my_id
+    meta.run_dep = ("simple_stack_reader", "", "stack")
+
+def configure(**_):
+    pass
+
+def run(**d):
+    stack = d["simple_stack_reader"]["stack"]
+    for iFr in range(stack.n_frames):
+        frame = stack.get_image(frame=iFr, channel=0)
+        bg = interpolate_background(frame)
+        regions = segment_frame(frame, bg)
+        stack.set_rois(regions, "raw", iFr)
+        print("simple_segmenter: {:4d} ROIs found in frame {:3d}".format(len(regions), iFr))
 
 # Get number of tiles in both directions
 N_TILES_HORIZ = 10
@@ -172,21 +191,27 @@ class Contour:
     def _calculate_perimeter(self):
         """Calculate the perimeter"""
         self.perimeter_idx = np.zeros(self.coords.shape[0], dtype=np.bool)
-        for i, c in enumerate(self.coords):
-            n_neighbors = 0
-            for n in self.coords:
-                if np.absolute(n - c) == [1,1]:
-                    n_neighbors += 1
-#                if n[0] == c[0]:
-#                    if n[1] == c[1] - 1:
-#                        n_neighbors += 1
-#                    elif n[1] == c[1] + 1:
-#                        n_neighbors += 1
-#                elif n[1] == c[1]:
-#                    if n[0] == c[0] - 1:
-#                        n_neighbors += 1
-#                    elif n[0] == c[0] + 1:
-#                        n_neighbors += 1
+        for i, (row, col) in enumerate(self.coords):
+            # Significantly faster implementation than below …
+            # TODO: more speedup by caching vert/horiz_neighbors in dict?
+            vert_neighbors = np.isin(self.coords[:,0], np.array([-1,1]) + row)
+            horiz_neighbors = np.isin(self.coords[:,1], np.array([-1,1]) + col)
+            n_neighbors = (vert_neighbors & horiz_neighbors).sum()
+#        for i, c in enumerate(self.coords):
+#            n_neighbors = 0
+#            for n in self.coords:
+#                if (np.absolute(n - c) == [1,1]).all():
+#                    n_neighbors += 1
+##                if n[0] == c[0]:
+##                    if n[1] == c[1] - 1:
+##                        n_neighbors += 1
+##                    elif n[1] == c[1] + 1:
+##                        n_neighbors += 1
+##                elif n[1] == c[1]:
+##                    if n[0] == c[0] - 1:
+##                        n_neighbors += 1
+##                    elif n[0] == c[0] + 1:
+##                        n_neighbors += 1
             if n_neighbors < 4:
                 self.perimeter_idx[i] = True
 
@@ -202,9 +227,10 @@ class Contour:
     def corners(self):
         """Return the coordinates of the ROI corners."""
         if self.corner_idx is None:
-            ci = CornerFinder(self.perimeter, indices=True)
-            self.corner_idx = self.perimeter_idx.copy()
-            self.corner_idx[self.corner_idx] = ci
+            #ci = CornerFinder.go(self.perimeter, indices=True)
+            #self.corner_idx = self.perimeter_idx.copy()
+            #self.corner_idx[self.corner_idx] = ci
+            self.corner_idx = CornerFinder.go(self.perimeter, indices=True)
         return self.coords[self.corner_idx,:]
 
 
@@ -237,3 +263,23 @@ def segment_frame(frame, bg, conn=2, cell_threshold=1.1):
 
 
 #def 
+
+if __name__ == "__main__":
+    import tkinter as tk
+    #from stackviewer_tk import StackViewer
+    from stack import Stack
+
+    tiff_path = os.path.join(this_dir, "../res/", "Test_Pos7_t85.tif")
+    s = Stack(tiff_path)
+    for iFr in range(s.n_frames):
+        frame = s.get_image(frame=iFr, channel=0)
+        bg = interpolate_background(frame)
+        regions = segment_frame(frame, bg)
+        s.set_rois(regions, "raw", iFr)
+        print("simple_segmenter: {:4d} ROIs found in frame {:3d}".format(len(regions), iFr))
+
+    rois = s.get_rois(frame=0)
+    r = rois._roi_arr[0]
+    rc = r.corners
+    print("Corners:")
+    print(CornerFinder.go(rc))
