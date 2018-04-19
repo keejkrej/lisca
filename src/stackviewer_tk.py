@@ -28,6 +28,7 @@ class StackViewer:
     def __init__(self, parent, image_file=None):
         """Initialize the GUI."""
         # Initialize GUI components
+        parent.title("StackViewer")
         root = get_root(parent)
         self.contrast_adjuster = None
         
@@ -73,7 +74,7 @@ class StackViewer:
 
         # Canvas
         self.canvas = tk.Canvas(self.mainframe, width=100, height=100,
-            background="white")
+            highlightthickness=0, background="white")
         self.canvas.grid(row=ROW_CANVAS, column=0,
             columnspan=COLSPAN_CANVAS)#, sticky=tk.N+tk.S)
 
@@ -168,7 +169,7 @@ class StackViewer:
             frame=self.i_frame, convert_fcn=convert_fcn)
 
         self.canvas.delete("img")
-        self.canvas.create_image(1, 1, anchor=tk.NW,
+        self.canvas.create_image(0, 0, anchor=tk.NW,
             image=self.img, tags=("img",))
         self.canvas.tag_lower("img")
         self.draw_rois()
