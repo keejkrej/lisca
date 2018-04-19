@@ -576,8 +576,8 @@ class RectRoi:
 
     @property
     def rows(self):
-        return self.coords[:,0]
+        return self.coords[:,1]
 
     @property
     def cols(self):
-        return self.coords[:,1]
+        return self.coords[:,0]

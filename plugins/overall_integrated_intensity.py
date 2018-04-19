@@ -25,10 +25,16 @@ def run(**d):
     # DEBUG
     print("Frames: {}\nChannels: {}\nRows: {}\nColumns: {}".format(n_frames, n_channels, n_rows, n_cols))
 
+    isGlobalRois = Ellipsis in stack.rois
+    if isGlobalRois:
+        rois = stack.get_rois(Ellipsis)
+
     for c in range(n_channels):
         for f in range(n_frames):
             tab = []
-            for roi in stack.rois:
+            if not isGlobalRois:
+                rois = stack.get_rois(f)
+            for roi in rois:
                 print("ROI: x=[{:4d},{:4d}], y=[{:4d},{:4d}]".format(
                     roi.cols.min(), roi.cols.max(), roi.rows.min(), roi.rows.max()))
                 tab.append(np.sum(img[c,f,roi.rows,roi.cols]))
