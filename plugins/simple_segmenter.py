@@ -16,7 +16,7 @@ my_id = "simple_segmenter"
 def register(meta):
     meta.name = "Segment stack"
     meta.id = my_id
-    meta.run_dep = ("simple_stack_reader", "", "stack")
+    meta.run_dep = ("simple_stack_reader", "stack")
 
 def configure(**_):
     pass

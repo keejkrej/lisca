@@ -9,7 +9,7 @@ def register(meta):
     meta.name = "Integrated intensity"
     meta.id = my_id
 
-    meta.run_dep = ("simple_stack_reader", "", "stack")
+    meta.run_dep = ("simple_stack_reader", "stack")
     meta.run_ret = "integrated_intensity"
 
 def configure(**_):

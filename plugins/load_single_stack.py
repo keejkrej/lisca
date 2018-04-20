@@ -12,7 +12,7 @@ def register(meta):
     meta.name = "Read stack"
     meta.id = my_id
     meta.conf_ret = "path"
-    meta.run_dep = (my_id, "", "path")
+    meta.run_dep = (my_id, "path")
     meta.run_ret = ("stack", "StackViewer")
 
 

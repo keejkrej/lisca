@@ -9,7 +9,7 @@ print("Load module: " + my_id)
 def register(meta):
     meta.name = "Binarize frame"
     meta.id = my_id
-    meta.run_dep = ("simple_stack_reader", "", "stack")
+    meta.run_dep = ("simple_stack_reader", "stack")
     meta.run_ret = ("bg",)
 
 def configure(**_):

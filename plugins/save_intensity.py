@@ -12,10 +12,10 @@ def register(meta):
     meta.name = "Save intensity to CSV"
     meta.id = my_id
 
-    #meta.conf_dep = ("", "", "workflow_gui_tk")
+    #meta.conf_dep = ("", "workflow_gui_tk")
     meta.conf_ret = "path"
     meta.run_dep = (
-            ("integrated_intensity_calculator", "", "integrated_intensity"),
+            ("integrated_intensity_calculator", "integrated_intensity"),
         )
 
 

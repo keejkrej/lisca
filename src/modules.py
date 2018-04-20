@@ -251,12 +251,12 @@ def _parse_dep(dep):
 
     The expected dependency data is::
 
-        [tuple of] tuple of ("id", [tuple of] [(<, >) [=]] "version", [tuple of] ("conf_ret" | "run_ret") )
+        [tuple of] tuple of ("id", [tuple of] ("conf_ret" | "run_ret"), [tuple of] [(<, >) [=]] "version" )
     """
     # Expects:
-    # [tuple of] tuple of ("id", [tuple of] [(<, >) [=]] "version", [tuple of] ("conf_ret" | "run_ret") )
+    # [tuple of] tuple of ("id", [tuple of] ("conf_ret" | "run_ret"), [tuple of] [(<, >) [=]] "version" )
     # Returns:
-    # tuple of (tuple of ("id", tuple of (<cmp_mode>, "version"), tuple of ("conf_ret" | "run_ret") ))
+    # tuple of (tuple of ("id", tuple of ("conf_ret" | "run_ret"), tuple of (<cmp_mode>, "version") ))
     # Returns None if input is invalid
 
     # No dependencies
@@ -276,23 +276,26 @@ def _parse_dep(dep):
             # "id" is a string
             n[0] = d[0]
 
-            # "version" is a string or a tuple of strings
-            if isinstance(d[1], str):
-                versions = (d[1],)
-            else:
-                versions = d[1]
-            new_versions = []
-            for ver in versions:
-                cmp_mode, ver_nr = _parse_version(ver, True)
-                if cmp_mode and ver_nr:
-                    new_versions.append((cmp_mode, ver_nr))
-            n[1] = tuple(new_versions)
-
             # "conf_ret" is a string or an iterable of strings
-            if isinstance(d[2], str):
-                n[2] = (d[2],)
+            if isinstance(d[1], str):
+                n[1] = (d[1],)
             else:
-                n[2] = d[2]
+                n[1] = d[1]
+
+            # "version" is a string or a tuple of strings
+            if len(d) > 2:
+                if isinstance(d[2], str):
+                    versions = (d[2],)
+                else:
+                    versions = d[2]
+                new_versions = []
+                for ver in versions:
+                    cmp_mode, ver_nr = _parse_version(ver, True)
+                    if cmp_mode and ver_nr:
+                        new_versions.append((cmp_mode, ver_nr))
+                n[2] = tuple(new_versions)
+            else:
+                n[2] = ()
 
             # Finally, append the dependency to the list
             new.append(tuple(n))
@@ -407,7 +410,7 @@ class ModuleManager:
             return {}
 
         data = {}
-        for dep_id, dep_ver_req, dep_names in dep_list:
+        for dep_id, dep_names, dep_ver_req in dep_list:
             # Check if versions match
             if dep_id != "":
                 dep_ver = _parse_version(self.modules[dep_id].version)
@@ -609,7 +612,7 @@ class ModuleMetadata:
         self.__set_tuple_of_str("run_ret", ret)
 
     # "conf_dep"
-    # [tuple of] tuple of ("id", [tuple of] [(<, >) [=]] "version", [tuple of] "conf_ret")
+    # [tuple of] tuple of ("id", [tuple of] "conf_ret", [tuple of] [(<, >) [=]] "version")
     # Dependencies of the module configuration function.
     @property
     def conf_dep(self):
@@ -623,7 +626,7 @@ class ModuleMetadata:
         self.__vals["conf_dep"] = dep
 
     # "run_dep"
-    # [tuple of] tuple of ("id", [tuple of] [(<, >) [=]] "version", [tuple of] ("conf_ret", "run_ret"))
+    # [tuple of] tuple of ("id", [tuple of] ("conf_ret", "run_ret"), [tuple of] [(<, >) [=]] "version")
     # Dependencies of the module run function.
     @property
     def run_dep(self):
