@@ -371,20 +371,14 @@ class ModuleManager:
             self._add_data(mod_id, name, value)
 
 
-    def acquire_dependencies(self, mod_id, isConfigure=False):
+    def acquire_dependencies(self, mod_id, kind):
         """
         Acquire the dependencies for executing a plugin.
 
         :param mod_id: The id of the plugin to be executed
         :type mod_id: str
-        :type isConfigure: bool
-        :param isConfigure: Flag indicating whether the
-            ``configure`` or the ``run`` function of the
-            plugin is called.
-
-            * ``True`` if ``configure`` is called
-            * ``False`` if ``run`` is called
-
+        :param kind: Indicator what dependency is needed; one of "conf", "run", "loop_next", "loop_end".
+        :type kind: str
         :return:
             * Dictionary {DP: {DN: DV}}, where:
 
@@ -397,11 +391,7 @@ class ModuleManager:
         """
         mod = self.modules[mod_id]
         mod_ver = mod.version
-
-        if isConfigure:
-            dep_list = mod.conf_dep
-        else:
-            dep_list = mod.run_dep
+        dep_list = mod.get_dep(kind)
 
         # DEBUG message
         #print("[MouleManager.acquire_dependencies] dependency list: {}".format(str(dep_list)))
@@ -416,7 +406,7 @@ class ModuleManager:
                 dep_ver = _parse_version(self.modules[dep_id].version)
                 cmp_mode, dep_ver_req = _parse_version(dep_ver_req, True)
                 if not _check_versions(dep_ver_req, cmp_mode, dep_ver):
-                    print("Version mismatch for '{}' dependency of module '{}': found version {} of '{}', but require {}.".format("configure" if isConfigure else "run", mod_id, dep_ver, dep_id, dep_ver_req), file=sys.stderr)
+                    print("Version mismatch for dependency '{}' of module '{}': found version {} of '{}', but require {}.".format(kind, mod_id, dep_ver, dep_id, dep_ver_req), file=sys.stderr)
                     return None
             else:
                 dep_ver = ()
@@ -433,7 +423,7 @@ class ModuleManager:
                     dep_data[name] = self.data[dep_id][name]
                 #data[dep_id] = dep_data
             except KeyError:
-                print("Missing '{}' dependency of plugin '{}': did not find required data '{}' of plugin '{}'.".format("configure" if isConfigure else "run", mod_id, name, dep_id), file=sys.stderr)
+                print("Missing dependency '{}' of plugin '{}': did not find required data '{}' of plugin '{}'.".format(kind, mod_id, name, dep_id), file=sys.stderr)
                 return None
 
         return data
@@ -442,7 +432,7 @@ class ModuleManager:
     def configure_module(self, mod_id):
         """Configure the module with the selected id."""
         # Acquire dependencies for configuration
-        dep_data = self.acquire_dependencies(mod_id, True)
+        dep_data = self.acquire_dependencies(mod_id, "conf")
         if dep_data is None:
             print("Cannot configure plugin '{}': dependencies not fulfilled.".format(mod_id), file=sys.stderr)
             return
@@ -459,7 +449,7 @@ class ModuleManager:
     def run_module(self, mod_id):
         """Run the module with the selected id."""
         # Acquire dependencies for running
-        dep_data = self.acquire_dependencies(mod_id)
+        dep_data = self.acquire_dependencies(mod_id, "run")
         if dep_data is None:
             print("Cannot run plugin '{}': dependencies not fulfilled.".format(mod_id), file=sys.stderr)
             return
@@ -516,10 +506,10 @@ class ModuleMetadata:
         self.__vals["version"] = ()
         self.__vals["category"] = ()
         self.__vals["group"] = ()
-        self.__vals["conf_dep"] = ()
-        self.__vals["run_dep"] = ()
-        self.__vals["conf_ret"] = ()
-        self.__vals["run_ret"] = ()
+        self.__vals["dep"] = {}
+        self.__vals["ret"] = {}
+        self.__vals["conf_ret"] = () # deprecated
+        self.__vals["run_ret"] = () # deprecated
         self.__module = module
 
 
@@ -616,28 +606,53 @@ class ModuleMetadata:
     # Dependencies of the module configuration function.
     @property
     def conf_dep(self):
-        return self.__vals["conf_dep"]
+        return self.get_dep("conf")
     @conf_dep.setter
     def conf_dep(self, dep):
-        dep = _parse_dep(dep)
-        if dep is None:
-            print("Cannot set configuration dependencies of plugin '{}': bad dependency given.".format(self.id), file=sys.stderr)
-            return
-        self.__vals["conf_dep"] = dep
+        self.set_dep("conf", dep)
 
     # "run_dep"
     # [tuple of] tuple of ("id", [tuple of] ("conf_ret", "run_ret"), [tuple of] [(<, >) [=]] "version")
     # Dependencies of the module run function.
     @property
     def run_dep(self):
-        return self.__vals["run_dep"]
+        return self.get_dep("run")
     @run_dep.setter
     def run_dep(self, dep):
-        dep = _parse_dep(dep)
-        if dep is None:
-            print("Cannot set run dependencies of plugin '{}': bad dependency given.".format(self.id), file=sys.stderr)
+        self.set_dep("run", dep)
+
+
+    # "dep"
+    # [tuple of] tuple of ("id", [tuple of] "ret", [tuple of] [(<, >) [=]] "version")
+    # Dependencies of the module function indicated by `kind`.
+    def set_dep(self, kind, dep):
+        # Check for bad kind
+        if kind not in ("conf", "run", "loop_next", "loop_end"):
+            print("Cannot set dependency: bad kind: {}".format(kind), file=sys.stderr)
             return
-        self.__vals["run_dep"] = dep
+
+        # Parse dependency
+        dep = _parse_dep(dep)
+
+        # Check for bad dependency
+        if dep is None:
+            print("Cannot set dependency '{}' of plugin '{}': bad dependency given.".format(kind, self.id), file=sys.stderr)
+            return
+
+        # Check if overwriting (print warning)
+        if kind in self.__vals["dep"]:
+            print("Warning: overwriting dependency '{}' of plugin '{}'".format(kind, self.id), file=sys.stderr)
+
+        # Set dependency
+        self.__vals["dep"][kind] = dep
+
+    def get_dep(self, kind):
+        if kind not in ("conf", "run", "loop_next", "loop_finished"):
+            return None
+        return self.__vals["dep"].get(kind, ())
+
+
+    # "ret"
 
     # "module"
     # module
