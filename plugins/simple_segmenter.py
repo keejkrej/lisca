@@ -189,29 +189,46 @@ class Contour:
         return self.coords[overlap,:]
 
     def _calculate_perimeter(self):
-        """Calculate the perimeter"""
+        """
+        Find the surface pixels, resulting in perimeter of contour.
+        
+        ``self.perimeter_idx`` is created as an index array indicating
+        the surface pixels in ``self.coords``.
+        """
         self.perimeter_idx = np.zeros(self.coords.shape[0], dtype=np.bool)
+        vert_neighbors = {}
+        horz_neighbors = {}
+        row_mates = {}
+        col_mates = {}
+
+        # Decide for each pixel whether it belongs to perimeter
         for i, (row, col) in enumerate(self.coords):
-            # Significantly faster implementation than below …
-            # TODO: more speedup by caching vert/horiz_neighbors in dict?
-            vert_neighbors = np.isin(self.coords[:,0], np.array([-1,1]) + row)
-            horiz_neighbors = np.isin(self.coords[:,1], np.array([-1,1]) + col)
-            n_neighbors = (vert_neighbors & horiz_neighbors).sum()
-#        for i, c in enumerate(self.coords):
-#            n_neighbors = 0
-#            for n in self.coords:
-#                if (np.absolute(n - c) == [1,1]).all():
-#                    n_neighbors += 1
-##                if n[0] == c[0]:
-##                    if n[1] == c[1] - 1:
-##                        n_neighbors += 1
-##                    elif n[1] == c[1] + 1:
-##                        n_neighbors += 1
-##                elif n[1] == c[1]:
-##                    if n[0] == c[0] - 1:
-##                        n_neighbors += 1
-##                    elif n[0] == c[0] + 1:
-##                        n_neighbors += 1
+            # Get indices of vertical neighbors (upper and lower row)
+            vn = vert_neighbors.get(row)
+            if vn is None:
+                vn = np.isin(self.coords[:,0], np.array([-1,1]) + row)
+                vert_neighbors[row] = vn
+
+            # Get indices of horizontal neighbors (left and right column)
+            hn = horz_neighbors.get(col)
+            if hn is None:
+                hn = np.isin(self.coords[:,1], np.array([-1,1]) + col)
+                horz_neighbors[col] = hn
+
+            # Get indices of pixels in same row
+            rm = row_mates.get(row)
+            if rm is None:
+                rm = self.coords[:,0] == row
+                row_mates[row] = rm
+
+            # Get indices of pixels in same column
+            cm = col_mates.get(col)
+            if cm is None:
+                cm = self.coords[:,1] == col
+                col_mates[col] = cm
+
+            # Count neighbors (surface pixels have less than 4 neighbors)
+            n_neighbors = ((vn & cm) | (hn & rm)).sum()
             if n_neighbors < 4:
                 self.perimeter_idx[i] = True
 
@@ -227,9 +244,6 @@ class Contour:
     def corners(self):
         """Return the coordinates of the ROI corners."""
         if self.corner_idx is None:
-            #ci = CornerFinder.go(self.perimeter, indices=True)
-            #self.corner_idx = self.perimeter_idx.copy()
-            #self.corner_idx[self.corner_idx] = ci
             self.corner_idx = CornerFinder.go(self.perimeter, indices=True, simplify=False)
         return self.perimeter[self.corner_idx,:]
 
@@ -303,5 +317,5 @@ if __name__ == "__main__":
         cnv.create_rectangle(x*scale, y*scale, (x+1)*scale, (y+1)*scale, 
             fill="black", outline="black")
         
-
+    # Tk mainloop
     root.mainloop()
