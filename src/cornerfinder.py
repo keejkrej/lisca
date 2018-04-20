@@ -179,9 +179,9 @@ class CornerFinder:
         idcs = []
         i = self.chain[j0]['prev']
         j = j0
-        prev_diff = self.contour[i] - self.contour[self.chain[i]['prev']]
+        prev_diff = self.contour[j] - self.contour[i]
 
-        print("Size: {}".format(self.chain.shape[0]))
+        print("Size: {}".format(self.chain.shape[0])) #DEBUG
         while True:
             #print("New turn")
             #print("i={}".format(i))
@@ -192,7 +192,7 @@ class CornerFinder:
             #print(self.chain)
             #input()
             
-            this_diff = self.contour[j] - self.contour[i]
+            this_diff = self.contour[self.chain[j]['next']] - self.contour[j]
             if not simplify or (this_diff != prev_diff).any():
                 idcs.append(j)
 
@@ -204,7 +204,7 @@ class CornerFinder:
             prev_diff = this_diff
 
         self.corner_idcs = np.array(idcs, dtype=np.intp)
-        print("self.corner_idcs={}".format(self.corner_idcs))
+        #print("self.corner_idcs={}".format(self.corner_idcs))
 
 
     #def walk_along_chain(self, start, direction="next"):
@@ -218,7 +218,7 @@ if __name__ == "__main__":
     #coords = np.array([[0,0],[1,0],[2,0],[2,1],[2,2],[2,3],[3,3],[3,4],[3,5],[2,5],[2,6],[2,7],[2,8],[2,9],[1,9],[0,9],[0,8],[0,7],[0,6],[0,5],[0,4],[0,3],[0,2],[0,1]])
     coords = np.array([[2,2],[2,3],[2,4],[2,5],[2,6],[2,7],[3,7],[4,7],[5,7],[6,7],[7,7],[7,6],[8,6],[8,5],[8,4],[7,4],[7,3],[7,2],[6,2],[5,2],[4,2],[3,2]])
 
-    corners = CornerFinder.go(coords, simplify=False)
+    corners = CornerFinder.go(coords, simplify=True)
 
     print("Coordinates:")
     print(coords)
