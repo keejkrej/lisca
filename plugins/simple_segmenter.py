@@ -146,7 +146,7 @@ def interpolate_background(frame, n_tiles_horiz=N_TILES_HORIZ, n_tiles_vert=N_TI
 
 
 class Contour:
-    def __init__(self, mask=None, label=None, regionprop=None):
+    def __init__(self, mask=None, label=None, regionprop=None, lazy=True):
         self.label = None
         self.perimeter_idx = None
         self.corner_idx = None
@@ -168,10 +168,14 @@ class Contour:
         else:
             raise ValueError("Illegal arguments")
 
+        if not lazy:
+            self.corners
+
+
 
     @classmethod
-    def from_regionprops(cls, regionprops):
-        return [cls(regionprop=rp) for rp in regionprops]
+    def from_regionprops(cls, regionprops, lazy=True):
+        return [cls(regionprop=rp, lazy=lazy) for rp in regionprops]
 
     @property
     def rows(self):
@@ -272,7 +276,7 @@ def segment_frame(frame, bg, conn=2, cell_threshold=1.1):
 
     # Find clusters
     mask = meas.label(mask, connectivity=conn, return_num=False)
-    regions = Contour.from_regionprops(meas.regionprops(mask))
+    regions = Contour.from_regionprops(meas.regionprops(mask), lazy=False)
     return regions
 
 
