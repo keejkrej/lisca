@@ -280,17 +280,20 @@ class StackViewer:
         # Clear old ROIs
         self.canvas.delete("roi")
 
-        if self.show_rois_var.get() and self.stack.rois is not None:
-            if self.i_channel in self.stack.rois:
-                roi_key = self.i_channel
-            elif Ellipsis in self.stack.rois:
-                roi_key = Ellipsis
-            else:
-                return
+        # If there are no ROIs to draw, we’re done here
+        if not self.show_rois_var.get() or self.stack.rois is None:
+            return
 
-            rois = self.stack.get_rois(frame=roi_key)
-            for roi in rois:
-                self.canvas.create_polygon(*roi.corners[:,::-1].flat, fill="", outline="yellow", tags="roi")
+        if self.i_frame in self.stack.rois:
+            roi_key = self.i_frame
+        elif Ellipsis in self.stack.rois:
+            roi_key = Ellipsis
+        else:
+            return
+
+        rois = self.stack.get_rois(frame=roi_key)
+        for roi in rois:
+            self.canvas.create_polygon(*roi.corners[:,::-1].flat, fill="", outline="yellow", tags="roi")
 
 
 
