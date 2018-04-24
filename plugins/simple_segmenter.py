@@ -171,8 +171,6 @@ class Contour:
         if not lazy:
             self.corners
 
-
-
     @classmethod
     def from_regionprops(cls, regionprops, lazy=True):
         return [cls(regionprop=rp, lazy=lazy) for rp in regionprops]

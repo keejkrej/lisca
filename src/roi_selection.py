@@ -314,7 +314,7 @@ class RoiReader:
                 self.sel_coords['polygon2'] = new_poly
                 roi_arr = self.compute_roi_array(new_poly, True)
                 for roi in roi_arr:
-                    self.canvas.create_polygon(*roi.corners.flat,
+                    self.canvas.create_polygon(*roi.corners[:,::-1].flat,
                         fill="", outline=roi_color, tags="roi_draft")
             else:
                 self.sel_coords['polygon2'] = None
@@ -548,7 +548,7 @@ class RoiReader:
 
 class RectRoi:
     def __init__(self, polygon):
-       self.corners = polygon
+       self.corners = polygon[:,::-1]
        self._coords = None
        self._area = None
        self._perimeter = None
@@ -557,8 +557,8 @@ class RectRoi:
     @property
     def coords(self):
         if self._coords is None:
-            pc = skid.polygon(self.corners[:,1], self.corners[:,0])
-            self._coords = np.stack([pc[1], pc[0]], axis=1)
+            pc = skid.polygon(self.corners[:,0], self.corners[:,1])
+            self._coords = np.stack([pc[0], pc[1]], axis=1)
         return self._coords
 
     @property
@@ -570,14 +570,14 @@ class RectRoi:
     @property
     def perimeter(self):
         if self._perimeter is None:
-            pc = skid.polygon_perimeter(self.corners[:,1], self.corners[:,0])
-            self._perimeter = np.stack([pc[1], pc[0]], axis=1)
+            pc = skid.polygon_perimeter(self.corners[:,0], self.corners[:,1])
+            self._perimeter = np.stack([pc[0], pc[1]], axis=1)
         return self._perimeter
 
     @property
     def rows(self):
-        return self.coords[:,1]
+        return self.coords[:,0]
 
     @property
     def cols(self):
-        return self.coords[:,0]
+        return self.coords[:,1]
