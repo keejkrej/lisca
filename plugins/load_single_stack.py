@@ -16,14 +16,14 @@ def register(meta):
     meta.run_ret = ("stack", "StackViewer")
 
 
-def configure(**d):
+def configure(d, *_, **__):
     print("Configuring 'load_single_stack'.")
     f = gui_tk.askopenfilename(parent=gui_tk.root)
     print(f)
     return {"path": f}
 
 
-def run(**d):
+def run(d, *_, **__):
     print("Running 'load_single_stack'.")
     path = d[my_id]['path']
 

@@ -19,7 +19,7 @@ def register(meta):
         )
 
 
-def configure(**d):
+def configure(d, *_, **__):
     #gui = d[""]["workflow_gui_tk"]
     #path = gui.askdirectory()
     #path = gui.asksaveasfilename()
@@ -34,7 +34,7 @@ def configure(**d):
             print("Cannot create directory: {}".format(e))
 
 
-def run(**d):
+def run(d, *_, **__):
     global path
     intensities = d["integrated_intensity_calculator"]["integrated_intensity"]
     n_channels, n_frames = intensities.shape

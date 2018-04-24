@@ -10,8 +10,8 @@ def register(meta):
     meta.id = "test:exception_raiser"
     #raise_exc("register")
 
-def configure(**_):
+def configure(*_, **__):
     raise ValueError("Test exception raised in 'configure' method")
 
-def run(**_):
+def run(*_, **__):
     raise ValueError("Test exception raised in 'run' method")

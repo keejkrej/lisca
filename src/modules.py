@@ -17,7 +17,7 @@ PERFORM_KINDS = {"conf", "run", "loop_next", "loop_finished"}
 RETURN_KINDS = {"init", *PERFORM_KINDS}
 
 
-def _load_module(name, path):
+def _load_module(name, path, return_init_ret=True):
     """
     Load and register a given module.
 
@@ -25,50 +25,72 @@ def _load_module(name, path):
     :type name: str
     :param path: the path to the module file
     :type path: str
+    :param return_init_ret: flag whether to return also the return value of the ``register`` function
+    :type return_init_ret: bool
 
     For loading a package, give the path of the package’s
     ``__init__.py`` file as path.
 
-    :return: Metadata of the module, or ``None`` if module couldn’t be loaded.
+    :return: Metadata of the module, or ``None`` if module couldn’t be loaded. If ``return_init_ret`` is ``True``, a tuple of module metadata and ``register`` return value is returned.
     """
+    if return_init_ret:
+        RETURN_BAD = (None, None)
+    else:
+        RETURN_BAD = None
+
     # Load the module
     spec = imputil.spec_from_file_location(name, path)
     if spec is None:
-        return None
+        return RETURN_BAD
     mod = imputil.module_from_spec(spec)
     try:
         spec.loader.exec_module(mod)
     except Exception as e:
         print("Cannot load module '{}' from '{}':\n{}: {}".format(name, path, e.__class__.__name__, e), file=sys.stderr)
-        return None
+        return RETURN_BAD
+
+    # Check if module is valid (has `register` function)
+    if not hasattr(mod, 'register'):
+        print("Ignoring invalid plugin {} at {}:\nNo 'register' function found.".format(name, path), file=sys.stderr)
+        return RETURN_BAD
 
     # Register the module
-    if hasattr(mod, 'register'):
-        meta = ModuleMetadata(mod)
-        try:
-            mod.register(meta)
-        except Exception as e:
-            print("\nIgnore module '{}' due to exception:".format(name),
-                    file=sys.stderr, end='')
-            _print_exception_string(e)
-            meta = None
+    meta = ModuleMetadata(mod)
 
-        if meta is not None:
-            meta_check_failed = meta.check()
-            if meta_check_failed:
-                print("Ignoring invalid plugin {} at {}:\n{}".format(name, path, meta_check_failed), file=sys.stderr)
-                meta = None
+    # First, pre-fill auto-detected `conf` and `run` function
+    if hasattr(mod, 'configure'):
+        meta.set_fun("conf", mod.configure)
+    if hasattr(mod, 'run'):
+        meta.set_fun("run", mod.run)
+    
+    # Second, let module fill in its own properties
+    try:
+        init_ret = mod.register(meta)
+    except Exception as e:
+        print("\nIgnore module '{}' due to exception:".format(name),
+                file=sys.stderr, end='')
+        _print_exception_string(e)
+        return RETURN_BAD
 
-    else:
-        print("Ignoring invalid plugin {} at {}:\nNo 'register' function found.".format(name, path), file=sys.stderr)
-        meta = None
+    # Check meta data
+    meta_check_failed = meta.check()
+    if meta_check_failed:
+        print("Ignoring invalid plugin {} at {}:\n{}".format(name, path, meta_check_failed), file=sys.stderr)
+        return RETURN_BAD
 
+    # Memorize return data of kind "init"
+    if init_ret is not None:
+        meta.set_ret("init", tuple(init_ret.keys()))
+
+    # Return
+    if return_init_ret:
+        return meta, init_ret
     return meta
 
 
 def _search_modules(plugins_path):
     """Find modules to be loaded."""
-    modules = {}
+    modules = set()
 
     # Search plugins directory for plugins
     for f in os.listdir(plugins_path):
@@ -95,11 +117,8 @@ def _search_modules(plugins_path):
         if not isValid:
             continue
 
-        # Load and register the module
-        meta = _load_module(name, fp)
-        if meta is not None:
-            modules[meta.id] = meta
-
+        # Add file to list of potential modules
+        modules.add((name, fp))
     return modules
 
 
@@ -329,8 +348,6 @@ def _print_exception_string(exc, first=0):
 class ModuleManager:
     """
     Provides means for managing plugins.
-
-
     """
 
     def __init__(self, plugins_path=None, register_builtins=True):
@@ -352,10 +369,15 @@ class ModuleManager:
 
         # Register custom plugin modules
         if plugins_path is not None:
-            self.modules = _search_modules(plugins_path)
-            # Prepare data and result dictionary
-            for m in self.modules:
-                self.data[m] = {}
+            modules_found = _search_modules(plugins_path)
+            for name, path in modules_found:
+                meta, init_ret = _load_module(name, path)
+                if meta is not None:
+                    mod_id = meta.id
+                    self.modules[mod_id] = meta
+                    self.data[mod_id] = {}
+                    if init_ret is not None:
+                        self.memorize_result(mod_id, init_ret)
 
 
     def show(self):
@@ -467,6 +489,36 @@ class ModuleManager:
             _print_exception_string(e, 1)
 
 
+    def module_perform(self, mod_id, kind):
+        """
+        Call a function of the module.
+
+        :param mod_id: The ID of the module to be called
+        :type mod_id: str
+        :param kind: The kind of function to be called; one of: "conf", "run", "loop_next", "loop_end".
+        :type kind: str
+        """
+        # Check if function exists
+        m = self.modules[mod_id]
+        if not m.has_fun(kind):
+            print("Cannot run function '{}' of module '{}': function not found.".format(kind, mod_id), file=sys.stderr)
+            return
+
+        # Get dependencies of function
+        dep_data = self.acquire_dependencies(mod_id, kind)
+        if dep_data is None:
+            print("Cannot call function '{}' of module '{}': dependencies not fulfilled.".format(kind, mod_id), file=sys.stderr)
+            return
+
+        # Call the function
+        try:
+            res = m.call_fun(kind, dep_data)
+            if res is not None:
+                self.memorize_result(mod_id, res)
+        except Exception as e:
+            _print_exception_string(e, 1)
+
+
     def _add_data(self, d_id, name, value):
         """
         Add data to the internal data memory.
@@ -512,6 +564,7 @@ class ModuleMetadata:
         self.__vals["group"] = ()
         self.__vals["dep"] = {}
         self.__vals["ret"] = {}
+        self.__vals["fun"] = {}
         self.__module = module
 
 
@@ -596,7 +649,7 @@ class ModuleMetadata:
 
 
     # "run_dep"
-    # [tuple of] tuple of ("id", [tuple of] ("conf_ret", "run_ret"), [tuple of] [(<, >) [=]] "version")
+    # [tuple of] tuple of ("id", [tuple of] "ret", [tuple of] [(<, >) [=]] "version")
     # Dependencies of the module run function.
     @property
     def run_dep(self):
@@ -677,6 +730,31 @@ class ModuleMetadata:
         if kind not in RETURN_KINDS:
             return None
         return self.__vals["ret"].get(kind, ())
+
+
+    # "fun"
+    # dict of functions
+    # The functions that can be performed by this module.
+    # The key must be an entry of `PERFORM_KINDS`.
+    def set_fun(self, kind, fun):
+        if kind not in PERFORM_KINDS:
+            print("Cannot set function: bad kind: {}".format(kind, file=sys.stderr))
+            return
+        self.__vals["fun"][kind] = fun
+
+    def get_fun(self, kind):
+        if kind not in PERFORM_KINDS:
+            return None
+        return self.__vals["fun"].get(kind)
+
+    def has_fun(self, kind):
+        return kind in self.__vals["fun"]
+
+    def call_fun(self, kind, *args, **kwargs):
+        fun = self.__vals["fun"].get(kind)
+        if fun is None:
+            return None
+        return fun(*args, **kwargs)
 
 
     # "module"

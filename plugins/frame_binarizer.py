@@ -1,10 +1,9 @@
 #! /usr/bin/env python3
 import numpy as np
-from test_segmenter import interpolate_background
+from simple_segmenter import interpolate_background
 
 # Prepare module import
 my_id = "frame_binarizer"
-print("Load module: " + my_id)
 
 def register(meta):
     meta.name = "Binarize frame"
@@ -12,16 +11,14 @@ def register(meta):
     meta.run_dep = ("simple_stack_reader", "stack")
     meta.run_ret = ("bg",)
 
-def configure(**_):
+def configure(*_, **__):
     pass
 
-def run(**d):
+def run(d, *_, **__):
     stack = d["simple_stack_reader"]["stack"]
     frame = stack.get_image(frame=0, channel=0)
     bg = interpolate_background(frame)
     return {"bg": bg}
-
-#bg = frame[frame / spline < 1.1]
 
 
 if __name__ == "__main__":

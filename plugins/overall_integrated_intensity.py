@@ -12,11 +12,11 @@ def register(meta):
     meta.run_dep = ("simple_stack_reader", "stack")
     meta.run_ret = "integrated_intensity"
 
-def configure(**_):
+def configure(*_, **__):
     pass
 
 
-def run(**d):
+def run(d, *_, **__):
     stack = d["simple_stack_reader"]["stack"]
     img = stack.img
     n_channels, n_frames, n_rows, n_cols = img.shape

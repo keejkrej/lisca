@@ -18,10 +18,10 @@ def register(meta):
     meta.id = my_id
     meta.run_dep = ("simple_stack_reader", "stack")
 
-def configure(**_):
+def configure(*_, **__):
     pass
 
-def run(**d):
+def run(d, *_, **__):
     stack = d["simple_stack_reader"]["stack"]
     for iFr in range(stack.n_frames):
         frame = stack.get_image(frame=iFr, channel=0)

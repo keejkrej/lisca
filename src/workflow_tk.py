@@ -68,7 +68,7 @@ class ModuleFrame:
         for m in self.modlist:
             if m['name'] == name:
                 #print(f"Configure module {m['name']} with id {m['id']}")
-                self.modman.configure_module(m['id'])
+                self.modman.module_perform(m['id'], "conf")
                 return
         print("No module found for configuring.")
 
@@ -79,6 +79,6 @@ class ModuleFrame:
         for m in self.modlist:
             if m['name'] == name:
                 #print(f"Run module {m['name']} with id {m['id']}")
-                self.modman.run_module(m['id'])
+                self.modman.module_perform(m['id'], "run")
                 return
         print("No module found for running.")
