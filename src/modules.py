@@ -362,6 +362,7 @@ class ModuleManager:
         """
         self.modules = {}
         self.data = [{}]
+        self.module_order = []
 
         # Register built-in modules
         if register_builtins:
@@ -382,6 +383,76 @@ class ModuleManager:
     def show(self):
         """Print ``self.modules``. Only for debugging."""
         print(self.modules)
+
+
+    def set_module_order(self, order):
+        """Set the execution order of the modules."""
+
+
+    def module_order_insert(self, mod, index=-1):
+        """Insert one module or a loop into the order."""
+        if type(index) == int:
+            index = (index,)
+
+        if type(mod) == str:
+            if self.modules
+
+
+    def module_order_remove(self, index, name=None):
+        """
+        Remove the module or loop at the given index from the module order.
+        
+        :param index: Index of item to be removed.
+        :type index: int or list of int
+        :param name: If not ``None``, the name of the item to be deleted for double-checking against deletion of wrong item. Specify the module ID of the module when deleting a single module, or surround the module ID with square brackets if it holds a loop.
+        :type name: str
+        """
+        order = self.module_order
+
+        # Index into module order if index is an iterable
+        if type(index) != int:
+            while len(index) > 1:
+                i = index.pop(0)
+                if -1 <= i < len(order):
+                    order = order[i]
+                else:
+                    print("Cannot remove item from module order: bad index given.", file=sys.stderr)
+            index = index.pop()
+
+        # Check if index is in valid range
+        if not -1 <= i < len(order):
+            print("Cannot remove item from module order: bad index given.", file=sys.stderr)
+
+        # If ``name`` is given, check if correct element is deleted
+        elif name is not None:
+            # Check if a single module or a loop is deleted
+            if type order[i] != str:
+                # Check if ``name`` indicates a loop
+                if not name.startswith('['):
+                    print("Cannot remove item from module order: bad safety check given: expected '[' due to loop, but not found.", file=sys.stderr)
+                    return
+
+                # Add optional trailing ']' if not present
+                if not name.endswith(']'):
+                    name = "".join(name, ']')
+
+                # Get correct name representation of found item
+                order_i = order[i][0]
+                while type(order_i) != str:
+                    order_i = order_i[0]
+                order_i = "".join('[', order_i, ']')
+
+            # Get ID of single module a position ``index``
+            else:
+                order_i = order[i]
+
+            # Check if correct item is addressed for deleting
+            if order_i != name:
+                print("Cannot remove item from module order: found item", file=sys.stderr)
+                return
+
+        # Delete item
+        del order[i]
 
 
     def list_display(self, category=None):
@@ -516,9 +587,9 @@ class ModuleManager:
         # Run the loop body
         try:
             while True:
+               # TODO: insert loop body calls here
                dep_data = self.acquire_dependencies(mod_id, "loop_next")
                res = m.call_fun("loop_next", dep_data)
-               # TODO: insert loop body calls here
                self.memorize_result(mod_id, res)
         except StopIteration:
             pass
