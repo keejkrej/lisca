@@ -361,7 +361,7 @@ class ModuleManager:
         :param register_builtins: Boolean flag whether to import builtin modules
         """
         self.modules = {}
-        self.data = {}
+        self.data = [{}]
 
         # Register built-in modules
         if register_builtins:
@@ -375,9 +375,8 @@ class ModuleManager:
                 if meta is not None:
                     mod_id = meta.id
                     self.modules[mod_id] = meta
-                    self.data[mod_id] = {}
-                    if init_ret is not None:
-                        self.memorize_result(mod_id, init_ret)
+                    self.data[0][mod_id] = {}
+                    self.memorize_result(mod_id, init_ret)
 
 
     def show(self):
@@ -393,6 +392,8 @@ class ModuleManager:
     def memorize_result(self, mod_id, result):
         """Add a result to the internal data memory."""
         # TODO: add test for consistency with metadata
+        if result is None:
+            return
         for name, value in result.items():
             self._add_data(mod_id, name, value)
 
@@ -444,49 +445,23 @@ class ModuleManager:
             else:
                 dep_data = data[dep_id]
 
-            try:
-                for name in dep_names:
-                    dep_data[name] = self.data[dep_id][name]
-                #data[dep_id] = dep_data
-            except KeyError:
-                print("Missing dependency '{}' of plugin '{}': did not find required data '{}' of plugin '{}'.".format(kind, mod_id, name, dep_id), file=sys.stderr)
-                return None
+            for name in dep_names:
+                for d in reversed(self.data):
+                    dm = d.get(dep_id)
+                    if dm is None:
+                        continue
+
+                    dmn = dm.get(name)
+                    if dmn is None:
+                        continue
+                    else:
+                        dep_data[name] = dmn
+                        break
+                else:
+                    print("Missing dependency '{}' of plugin '{}': did not find required data '{}' of plugin '{}'.".format(kind, mod_id, name, dep_id), file=sys.stderr)
+                    return None
 
         return data
-
-
-    def configure_module(self, mod_id):
-        """Configure the module with the selected id."""
-        # Acquire dependencies for configuration
-        dep_data = self.acquire_dependencies(mod_id, "conf")
-        if dep_data is None:
-            print("Cannot configure plugin '{}': dependencies not fulfilled.".format(mod_id), file=sys.stderr)
-            return
-
-        # Invoke module’s configure function
-        try:
-            res = self.modules[mod_id].module.configure(**dep_data)
-            if res is not None:
-                self.memorize_result(mod_id, res)
-        except Exception as e:
-            _print_exception_string(e, 1)
-
-
-    def run_module(self, mod_id):
-        """Run the module with the selected id."""
-        # Acquire dependencies for running
-        dep_data = self.acquire_dependencies(mod_id, "run")
-        if dep_data is None:
-            print("Cannot run plugin '{}': dependencies not fulfilled.".format(mod_id), file=sys.stderr)
-            return
-
-        # Invoke module’s run function
-        try:
-            res = self.modules[mod_id].module.run(**dep_data)
-            if res is not None:
-                self.memorize_result(mod_id, res)
-        except Exception as e:
-            _print_exception_string(e, 1)
 
 
     def module_perform(self, mod_id, kind):
@@ -495,13 +470,19 @@ class ModuleManager:
 
         :param mod_id: The ID of the module to be called
         :type mod_id: str
-        :param kind: The kind of function to be called; one of: "conf", "run", "loop_next", "loop_end".
+        :param kind: The kind of function to be called; eiter "conf" or "run"
+        , "loop_next", "loop_end".
         :type kind: str
         """
+        # Check if function kind is legal
+        if kind != "conf" and kind != "run":
+            print("Cannot call function '{}': only 'conf' and 'run' functions can be called directly.".format(kind), file=sys.stderr)
+            return
+
         # Check if function exists
         m = self.modules[mod_id]
         if not m.has_fun(kind):
-            print("Cannot run function '{}' of module '{}': function not found.".format(kind, mod_id), file=sys.stderr)
+            print("Cannot call function '{}' of module '{}': function not found.".format(kind, mod_id), file=sys.stderr)
             return
 
         # Get dependencies of function
@@ -513,23 +494,66 @@ class ModuleManager:
         # Call the function
         try:
             res = m.call_fun(kind, dep_data)
-            if res is not None:
-                self.memorize_result(mod_id, res)
         except Exception as e:
             _print_exception_string(e, 1)
+            return
+
+        # If module is configured, memorize its result and return
+        if kind == "conf":
+            self.memorize_result(mod_id, res)
+            return
+
+        # If this is reached, we have performed the "run" function.
+        # Check if the module contains a loop.
+        # If not, memorize result and return.
+        if m.has_fun("loop_next"):
+            self.data.append({})
+            self.memorize_result(mod_id, res)
+        else:
+            self.memorize_result(mod_id, res)
+            return
+
+        # Run the loop body
+        try:
+            while True:
+               dep_data = self.acquire_dependencies(mod_id, "loop_next")
+               res = m.call_fun("loop_next", dep_data)
+               # TODO: insert loop body calls here
+               self.memorize_result(mod_id, res)
+        except StopIteration:
+            pass
+        except Exception as e:
+            _print_exception_string(e, 1)
+            del self.data[-1]
+            return
+        
+        # Call the loop clean-up function, if given
+        if m.has_fun("loop_end"):
+            dep_data = self.acquire_dependencies(mod_id, "loop_end")
+            try:
+                res = m.call_fun("loop_end", dep_data)
+            except Exception as e:
+                _print_exception_string(e, 1)
+                return
+
+            del self.data[-1]
+            self.memorize_result(mod_id, res)
+        else:
+            del self.data[-1]
 
 
-    def _add_data(self, d_id, name, value):
+    def _add_data(self, d_id, name, value, index=-1):
         """
         Add data to the internal data memory.
 
         :param d_id: The id of the plugin providing the data
         :param name: The name of the data
         :param value: The value of the data
+        :param index: The index of `self.data` to which to write the data
         """
-        if d_id not in self.data:
-            self.data[d_id] = {}
-        self.data[d_id][name] = value
+        if d_id not in self.data[index]:
+            self.data[index][d_id] = {}
+        self.data[index][d_id][name] = value
 
 
     def register_builtin_data(self, name, value):
@@ -542,7 +566,7 @@ class ModuleManager:
         :param name: The name of the data
         :param value: The value of the data
         """
-        self._add_data("", name, value)
+        self._add_data("", name, value, index=0)
 
 
     def register_builtins(self):
