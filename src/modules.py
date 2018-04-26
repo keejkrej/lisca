@@ -387,15 +387,67 @@ class ModuleManager:
 
     def set_module_order(self, order):
         """Set the execution order of the modules."""
+        new_order = []
+        for o in order:
+            i = self._parse_module_insertion(o)
+            if i is None:
+                return
+            new_order.append(i)
+        self.module_order = new_order
 
 
     def module_order_insert(self, mod, index=-1):
         """Insert one module or a loop into the order."""
-        if type(index) == int:
-            index = (index,)
+        # Get index and array to insert module
+        order = self.module_order
+        if type(index) != int:
+            while len(index) > 1:
+                order = order[index[0]]
+                index = index[1:]
+            index = index[0]
 
-        if type(mod) == str:
-            if self.modules
+        # Insert module at given index
+        ins = self._parse_module_insertion(mod)
+        if ins is not None:
+            order.insert(index, ins)
+
+
+    def _parse_module_insertion(self, ins):
+        # If `ins` is a string, return it
+        if type(ins) == str:
+            return ins
+
+        # If `ins` is None, return None, because None indicates an
+        # error during parsing `ins` in a higher parsing instance.
+        # Do not print a message, because the message is printed
+        # by the instance that encountered the error.
+        if ins is None:
+            return None
+
+        # If `ins` is not a string, it must be a list representing a loop
+        pins = []
+
+        # Check if first loop entry is the “embracing member”
+        if type(ins[0]) != str:
+            print("Cannot insert new module: embracing member missing in loop", file=sys.stderr)
+            return None
+
+        # Check for empty list
+        if not ins:
+            print("Cannot insert new module: illegal empty list encountered.", file=sys.stderr)
+            return None
+
+        # Add all remaining items to the list
+        for i in ins:
+            if type(i) == str:
+                pins.append(i)
+            else:
+                i = self.parse_module_insertion(i)
+                if i is None:
+                    return None
+
+        # Return parsed insertion item
+        return pins
 
 
     def module_order_remove(self, index, name=None):
@@ -426,7 +478,7 @@ class ModuleManager:
         # If ``name`` is given, check if correct element is deleted
         elif name is not None:
             # Check if a single module or a loop is deleted
-            if type order[i] != str:
+            if type(order[i]) != str:
                 # Check if ``name`` indicates a loop
                 if not name.startswith('['):
                     print("Cannot remove item from module order: bad safety check given: expected '[' due to loop, but not found.", file=sys.stderr)
