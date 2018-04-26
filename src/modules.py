@@ -509,7 +509,7 @@ class ModuleManager:
 
     def list_display(self, category=None):
         """Return a list of modules for displaying."""
-        return [{'name': m.name, 'id': m.id, 'category': m.category} for _, m in self.modules.items() if m.name != '']
+        return [{'name': m.name, 'id': m.id, 'category': m.category, 'version': m.version} for _, m in self.modules.items() if m.name != '']
 
 
     def memorize_result(self, mod_id, result):

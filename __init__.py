@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     # Import modules at custom locations
     from src.modules import ModuleManager
-    from src.workflow_tk import WorkflowGUI
+    from src.workflow_tk_new import WorkflowGUI
 
     # Load modules
     modman = ModuleManager(PLUGINS_PATH)

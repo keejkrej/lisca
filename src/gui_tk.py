@@ -18,14 +18,16 @@ def get_root(w=None):
             root = root.master
     return root
 
-def new_toplevel(**opt):
+def new_toplevel(master=None, *arg, **kwarg):
     """Create a new toplevel window."""
     global root
-    if root is None:
-        root = tk.Tk(**opt)
+    if master is not None:
+        return tk.Toplevel(master, *arg, **kwarg)
+    elif root is None:
+        root = tk.Tk(*arg, **kwarg)
         return root
     else:
-        return tk.Toplevel(master=root, **opt)
+        return tk.Toplevel(master=root, *arg, **kwarg)
 
 def mainloop():
     """Start the tkinter mainloop."""
