@@ -1,5 +1,7 @@
 #print("Modul 'hallo' geladen.")
 
+__version__ = "1.0"
+
 def sag_hallo(s=''):
     if len(s) > 0:
         s = ''.join((', ', s))

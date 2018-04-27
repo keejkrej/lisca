@@ -57,7 +57,9 @@ def _load_module(name, path, return_init_ret=True):
     # Register the module
     meta = ModuleMetadata(mod)
 
-    # First, pre-fill auto-detected `conf` and `run` function
+    # First, pre-fill auto-detected version and `conf` and `run` function
+    if hasattr(mod, '__version__'):
+        meta.version = mod.__version__
     if hasattr(mod, 'configure'):
         meta.set_fun("conf", mod.configure)
     if hasattr(mod, 'run'):
@@ -509,7 +511,7 @@ class ModuleManager:
 
     def list_display(self, category=None):
         """Return a list of modules for displaying."""
-        return [{'name': m.name, 'id': m.id, 'category': m.category, 'version': m.version} for _, m in self.modules.items() if m.name != '']
+        return [{'name': m.name, 'id': m.id, 'category': m.category, 'version': '.'.join(m.version)} for _, m in self.modules.items() if m.name != '']
 
 
     def memorize_result(self, mod_id, result):
