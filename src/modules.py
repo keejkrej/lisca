@@ -8,6 +8,8 @@ This is the docstring of the :py:mod:`modules` module.
 """
 import importlib.util as imputil
 import os
+import random
+import string
 import sys
 import traceback
 import warnings
@@ -365,6 +367,7 @@ class ModuleManager:
         self.modules = {}
         self.data = [{}]
         self.module_order = []
+        self._listeners = {}
 
         # Register built-in modules
         if register_builtins:
@@ -396,6 +399,7 @@ class ModuleManager:
                 return
             new_order.append(i)
         self.module_order = new_order
+        self.call_order_listeners()
 
 
     def module_order_insert(self, mod, index=-1):
@@ -411,7 +415,11 @@ class ModuleManager:
         # Insert module at given index
         ins = self._parse_module_insertion(mod)
         if ins is not None:
-            order.insert(index, ins)
+            if index == -1:
+                order.append(ins)
+            else:
+                order.insert(index, ins)
+            self.call_order_listeners()
 
 
     def _parse_module_insertion(self, ins):
@@ -452,6 +460,29 @@ class ModuleManager:
         return pins
 
 
+    def module_order_move(self, idx_old, idx_new):
+        order = self.module_order
+        if type(idx_old) != int and type(idx_new) != int:
+            if len(idx_old) != len(idx_new):
+                return None
+            while len(idx_old) > 1:
+                i_o = idx_old[0]
+                i_n = idx_new[0]
+                if i_o != i_n:
+                    return None
+                order = order[i_o]
+                idx_old = idx_old[1:]
+                idx_new = idx_new[1:]
+            idx_old = idx_old[0]
+            idx_new = idx_new[0]
+        if idx_new == -1:
+            idx_new = len(order) - 1
+        mod = order.pop(idx_old)
+        order.insert(idx_new, mod)
+        
+        self.call_order_listeners()
+
+
     def module_order_remove(self, index, name=None):
         """
         Remove the module or loop at the given index from the module order.
@@ -474,13 +505,13 @@ class ModuleManager:
             index = index.pop()
 
         # Check if index is in valid range
-        if not -1 <= i < len(order):
+        if not -1 <= index < len(order):
             print("Cannot remove item from module order: bad index given.", file=sys.stderr)
 
         # If ``name`` is given, check if correct element is deleted
         elif name is not None:
             # Check if a single module or a loop is deleted
-            if type(order[i]) != str:
+            if type(order[index]) != str:
                 # Check if ``name`` indicates a loop
                 if not name.startswith('['):
                     print("Cannot remove item from module order: bad safety check given: expected '[' due to loop, but not found.", file=sys.stderr)
@@ -491,14 +522,14 @@ class ModuleManager:
                     name = "".join(name, ']')
 
                 # Get correct name representation of found item
-                order_i = order[i][0]
+                order_i = order[index][0]
                 while type(order_i) != str:
                     order_i = order_i[0]
                 order_i = "".join('[', order_i, ']')
 
             # Get ID of single module a position ``index``
             else:
-                order_i = order[i]
+                order_i = order[index]
 
             # Check if correct item is addressed for deleting
             if order_i != name:
@@ -506,7 +537,8 @@ class ModuleManager:
                 return
 
         # Delete item
-        del order[i]
+        del order[index]
+        self.call_order_listeners()
 
 
     def list_display(self, category=None):
@@ -697,6 +729,32 @@ class ModuleManager:
     def register_builtins(self):
         # TODO
         pass
+
+
+    def register_order_listener(self, fun):
+        # Get a unique listener ID
+        k = 0
+        isInvalid = True
+        while isInvalid:
+            k += 1
+            lid = "".join(random.choices(
+                string.ascii_letters + string.digits, k=k))
+            isInvalid = lid in self._listeners
+
+        # Register listener and return its listener ID
+        self._listeners[lid] = fun
+        return lid
+
+    def call_order_listeners(self):
+        for lid in list(self._listeners.keys()):
+            try:
+                self._listeners[lid]()
+            except Exception:
+                self.delete_order_listener(lid)
+
+    def delete_order_listener(self, lid):
+        if lid in self._listeners:
+            del self._listeners[lid]
 
 
 

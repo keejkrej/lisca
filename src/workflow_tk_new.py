@@ -2,7 +2,9 @@
 import gui_tk as gui
 import sys
 import tkinter as tk
-from tkinter import ttk
+import tkinter.font as tkfont
+import tkinter.ttk as ttk
+
 
 class WorkflowGUI:
     def __init__(self, module_manager):
@@ -51,29 +53,37 @@ class WorkflowGUI:
                 state=tk.DISABLED)
         self.up_button.pack(side=tk.LEFT)
 
-        self.refresh_button = tk.Button(frame, text="Refresh")
+        self.refresh_button = tk.Button(frame, text="Refresh",
+                command=self.refresh_mod_tree)
         self.refresh_button.pack(side=tk.LEFT)
 
         # Treeview with scrollbar
         frame = tk.Frame(self.frame)
         frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
-        self.tree_scroll = ttk.Scrollbar(frame)
-        self.tree_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        tree_scroll = ttk.Scrollbar(frame)
+        tree_scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
         self.mod_tree = ttk.Treeview(frame,
                 columns=("id",),
                 displaycolumns=(),
                 selectmode="browse",
-                yscrollcommand=self.tree_scroll.set)
+                yscrollcommand=tree_scroll.set)
         self.mod_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.tree_scroll.config(command=self.mod_tree.yview)
+        tree_scroll.config(command=self.mod_tree.yview)
         self.mod_tree.heading("#0", text="Workflow")
         #self.mod_tree.heading("id", text="ID")
         self.mod_tree.bind("<<TreeviewSelect>>", self.selection_changed)
 
-        #self.test_populate_tree()
-        self.build_mod_tree()
+        # Info frame
+        self.info_frame = tk.Frame(self.frame)
+        self.info_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+        # Populate module tree
+        #self.build_mod_tree()
+        self.refresh_mod_tree()
+        self.update_info()
+        self.modman.register_order_listener(lambda: self.frame.after_idle(self.refresh_mod_tree))
 
 
     def mainloop(self):
@@ -82,12 +92,85 @@ class WorkflowGUI:
 
     def build_mod_tree(self):
         """Populate the module list with modules; TODO"""
+        # Clear module tree
+        self.mod_tree.delete(*self.mod_tree.get_children())
+
+        # Write into Treeview
+        mo = self.modman.module_order
+        for mod in mo:
+            if type(mod) == str:
+                m = self.modman.modules[mod]
+                self.mod_tree.insert('', 'end', text=m.name, values=(m.id,))
+
+    def get_id(self, iid):
+        """Return module ID of module at Treeview position ``iid``"""
+        return self.mod_tree.set(iid, column="id")
+
+    def _insert_item(self, mod_id, parent='', index='end'):
+        name = self.modman.modules[mod_id].name
+        iid = self.mod_tree.insert(parent, index, text=name, values=(mod_id,))
+        return iid
+
+
+    def _swap_items(self, iid1, iid2):
+        """Interchange two neighboring items in the Treeview."""
+        if self.mod_tree.next(iid2) == iid1:
+            iid1, iid2 = iid2, iid1
+        if self.mod_tree.next(iid1) != iid2:
+            return False
+
+        self.mod_tree.move(iid2,
+                self.mod_tree.parent(iid2),
+                self.mod_tree.index(iid1))
+        return True
+
+
+    def refresh_mod_tree(self):
+        """Step through module list and synchronize it"""
         mo = self.modman.module_order
 
-        for item in mo:
-            if type(item) == str:
-                m = self.modman.modules[item]
-                self.mod_tree.insert('', 'end', text=m.name, values=(m.id,))
+        items = self.mod_tree.get_children()
+        if items:
+            iid = items[0]
+        else:
+            iid = ''
+        i = 0
+
+        while True:
+            if i >= len(mo):
+                if iid:
+                    iid_old = iid
+                    iid = self.mod_tree.next(iid_old)
+                    self.mod_tree.delete(iid_old)
+                else:
+                    break
+
+            elif not iid:
+                self._insert_item(mo[i])
+                i += 1
+
+            elif mo[i] != self.get_id(iid):
+                next_iid = self.mod_tree.next(iid)
+                if not next_iid:
+                    self.mod_tree.delete(iid)
+                    iid = ''
+                    continue
+                elif mo[i] == self.get_id(next_iid):
+                    self._swap_items(iid, next_iid)
+                else:
+                    iid_new = self._insert_item(mo[i],
+                            index=self.mod_tree.index(iid))
+                    if i >= len(mo) + 1 or mo[i+1] != self.get_id(iid):
+                        self.mod_tree.delete(iid)
+                        iid = self.mod_tree.next(iid_new)
+                i += 1
+
+            else:
+                i += 1
+                iid = self.mod_tree.next(iid)
+
+        self.selection_changed()
+
 
     def prompt_new_module(self, *_):
         """Open dialog for selecting modules to insert"""
@@ -98,23 +181,28 @@ class WorkflowGUI:
 
     def insert_mod(self, mod_name, mod_id):
         """Insert a module into the list after the current selection"""
-        item_focus = self.mod_tree.focus()
-        if item_focus:
-            index = self.mod_tree.index(item_focus) + 1
+        iid = self.mod_tree.focus()
+        if iid:
+            index = self.mod_tree.index(iid) + 1
         else:
-            index = "end"
-        self.mod_tree.insert("", index, values=(mod_id,), text=mod_name)
+            index = -1
+        self.modman.module_order_insert(mod_id, index)
 
     def move_mod(self, direction):
         """Move a module in the list up or down"""
         iid = self.mod_tree.focus()
-        if direction == "up":
-            index = self.mod_tree.index(iid) - 1
-        elif direction == "down":
-            index = self.mod_tree.index(iid) + 1
-        else:
+        if not iid:
             return
-        self.mod_tree.move(iid, self.mod_tree.parent(iid), index)
+        index_old = self.mod_tree.index(iid)
+        if direction == "up":
+            index_new = index_old - 1
+        elif direction == "down":
+            index_new = index_old + 1
+        else:
+            print("bad direction: '{}'".format(direction))
+            return
+        self.modman.module_order_move(index_old, index_new)
+        self.mod_tree.see(iid)
         self.selection_changed()
 
     def remove_mod(self, *_, iid=None):
@@ -122,7 +210,8 @@ class WorkflowGUI:
         if not iid:
             iid = self.mod_tree.focus()
         if iid:
-            self.mod_tree.delete(iid)
+            index = self.mod_tree.index(iid)
+            self.modman.module_order_remove(index)
         self.selection_changed()
 
     def selection_changed(self, *_):
@@ -142,6 +231,47 @@ class WorkflowGUI:
         self.remove_button.config(state=remove_button_state)
         self.up_button.config(state=up_button_state)
         self.down_button.config(state=down_button_state)
+        self.update_info()
+
+    def update_info(self):
+        iid = self.mod_tree.focus()
+        if not iid:
+            self.clear_info(True)
+        else:
+            self.show_module_info(iid)
+
+    def clear_info(self, showNote=False):
+        for c in self.info_frame.winfo_children():
+            c.destroy()
+        if showNote:
+            tk.Label(self.info_frame, text="No module selected").pack(side=tk.TOP)
+
+    def show_module_info(self, iid):
+        # Prepare info frame
+        self.clear_info()
+        #self.info_frame.rowconfigure(0, weight=1)
+        self.info_frame.columnconfigure(1, weight=1)
+
+        fmt = {"font": tkfont.Font(family="TkDefaultFont", weight="bold")}
+        tk.Label(self.info_frame,
+                anchor=tk.E,
+                **fmt,
+                text="Name:"
+                ).grid(row=0, column=0, sticky=tk.E)
+        tk.Label(self.info_frame,
+                anchor=tk.E,
+                **fmt,
+                text="ID:"
+                ).grid(row=1, column=0, sticky=tk.E)
+        tk.Label(self.info_frame,
+                anchor=tk.W,
+                text=self.mod_tree.item(iid, "text")
+                ).grid(row=0, column=1, sticky=tk.W)
+        tk.Label(self.info_frame,
+                anchor=tk.W,
+                text=self.mod_tree.set(iid, column="id")
+                ).grid(row=1, column=1, sticky=tk.W)
+
 
 
 class ModuleListFrame:
@@ -163,26 +293,26 @@ class ModuleListFrame:
         self.root.rowconfigure(0, weight=1)
 
         # Create scrollbars
-        self.scroll_y = ttk.Scrollbar(self.root, orient=tk.VERTICAL)
-        self.scroll_y.grid(row=0, column=1, sticky=tk.N+tk.S)
-        self.scroll_x = ttk.Scrollbar(self.root, orient=tk.HORIZONTAL)
-        self.scroll_x.grid(row=1, column=0, sticky=tk.W+tk.E)
+        scroll_y = ttk.Scrollbar(self.root, orient=tk.VERTICAL)
+        scroll_y.grid(row=0, column=1, sticky=tk.N+tk.S)
+        scroll_x = ttk.Scrollbar(self.root, orient=tk.HORIZONTAL)
+        scroll_x.grid(row=1, column=0, sticky=tk.W+tk.E)
 
         # Set up list view
         self.list = ttk.Treeview(self.root,
                 columns=("id", "version", "name"),
                 displaycolumns=("id", "version"),
                 selectmode="browse",
-                yscrollcommand=self.scroll_y.set,
-                xscrollcommand=self.scroll_x.set)
+                yscrollcommand=scroll_y.set,
+                xscrollcommand=scroll_x.set)
         self.list.grid(row=0, column=0, sticky=tk.N+tk.E+tk.S+tk.W)
         self.list.bind("<<TreeviewSelect>>", self.selection_changed)
         self.list.heading("#0", text="Name")
         self.list.heading("id", text="ID")
         self.list.heading("version", text="Version")
 
-        self.scroll_y.config(command=self.list.yview)
-        self.scroll_x.config(command=self.list.xview)
+        scroll_y.config(command=self.list.yview)
+        scroll_x.config(command=self.list.xview)
 
         # Set up addition button
         self.add_button = tk.Button(self.root, text="Add",
