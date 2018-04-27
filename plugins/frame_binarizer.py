@@ -11,8 +11,8 @@ def register(meta):
     meta.run_dep = ("simple_stack_reader", "stack")
     meta.run_ret = ("bg",)
 
-def configure(*_, **__):
-    pass
+#def configure(*_, **__):
+#    pass
 
 def run(d, *_, **__):
     stack = d["simple_stack_reader"]["stack"]
