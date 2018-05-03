@@ -13,8 +13,8 @@ def register(meta):
     meta.conf_dep = ("", "__version__")
     #print("Modul 'hallo' registriert.")
 
-def configure(*_, **__):
-    v = _['']['__version__']
+def configure(d, *_, **__):
+    v = d['']['__version__']
     print("Modul 'hallo' konfiguriert in pyAMA {}.".format(v))
 
 def run(*_, **__):

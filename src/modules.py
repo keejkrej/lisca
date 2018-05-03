@@ -17,6 +17,7 @@ import warnings
 
 PERFORM_KINDS = {"conf", "run", "loop_next", "loop_finished"}
 RETURN_KINDS = {"init", *PERFORM_KINDS}
+LISTENER_KINDS = {"order",}
 
 
 def _load_module(name, path, return_init_ret=True):
@@ -399,7 +400,7 @@ class ModuleManager:
                 return
             new_order.append(i)
         self.module_order = new_order
-        self.call_order_listeners()
+        self.call_listeners()
 
 
     def module_order_insert(self, mod, index=-1):
@@ -419,7 +420,7 @@ class ModuleManager:
                 order.append(ins)
             else:
                 order.insert(index, ins)
-            self.call_order_listeners()
+            self.call_listeners()
 
 
     def _parse_module_insertion(self, ins):
@@ -480,7 +481,7 @@ class ModuleManager:
         mod = order.pop(idx_old)
         order.insert(idx_new, mod)
         
-        self.call_order_listeners()
+        self.call_listeners()
 
 
     def module_order_remove(self, index, name=None):
@@ -538,7 +539,7 @@ class ModuleManager:
 
         # Delete item
         del order[index]
-        self.call_order_listeners()
+        self.call_listeners()
 
 
     def list_display(self, category=None):
@@ -731,7 +732,26 @@ class ModuleManager:
         pass
 
 
-    def register_order_listener(self, fun):
+    def register_listener(self, fun, kind=None):
+        """
+        Register a listener that will be notified on changes.
+
+        :param fun: The function to be called on change, will be called without parameters
+        :type fun: function handle
+        :param kind: The kind of events when the function will be called
+        :type kind: None, str or iterable containing strings
+
+        The possible kinds are: "order".
+        When kind is None, fun will be called by all of these events.
+
+        A listener ID is returned that can be used to delete the listener.
+        If the registration was not successful, None is returned.
+
+        Note that if ``fun`` raises an exception, it will not be called anymore.
+
+        :return: a listener ID or None
+        :rtype: str or None
+        """
         # Get a unique listener ID
         k = 0
         isInvalid = True
@@ -741,18 +761,38 @@ class ModuleManager:
                 string.ascii_letters + string.digits, k=k))
             isInvalid = lid in self._listeners
 
+        # Convert kind to valid format
+        if kind is None:
+            kind = LISTENER_KINDS
+        else:
+            s_kind = set()
+            
+            if type(kind) == str and kind in LISTENER_KINDS:
+                s_kind.add(kind)
+            else:
+                for k in kind:
+                    if type(kind) == str and kind in LISTENER_KINDS:
+                        s_kind.add(kind)
+            kind = s_kind
+
+        if not kind:
+            return None
+
         # Register listener and return its listener ID
-        self._listeners[lid] = fun
+        self._listeners[lid] = {"fun": fun, "kind": kind}
         return lid
 
-    def call_order_listeners(self):
+    def call_listeners(self, kind=None):
         for lid in list(self._listeners.keys()):
+            listener = self._listeners[lid]
+            if kind is not None and kind not in listener["kind"]:
+                continue
             try:
-                self._listeners[lid]()
+                listener["fun"]()
             except Exception:
-                self.delete_order_listener(lid)
+                self.delete_listener(lid)
 
-    def delete_order_listener(self, lid):
+    def delete_listener(self, lid):
         if lid in self._listeners:
             del self._listeners[lid]
 

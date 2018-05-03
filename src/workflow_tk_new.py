@@ -83,7 +83,7 @@ class WorkflowGUI:
         #self.build_mod_tree()
         self.refresh_mod_tree()
         self.update_info()
-        self.modman.register_order_listener(lambda: self.frame.after_idle(self.refresh_mod_tree))
+        self.modman.register_listener(lambda: self.frame.after_idle(self.refresh_mod_tree), kind="order")
 
 
     def mainloop(self):
@@ -214,6 +214,21 @@ class WorkflowGUI:
             self.modman.module_order_remove(index)
         self.selection_changed()
 
+    def get_module(self, iid=None, mod_id=None):
+        """
+        Get a reference to the module instance.
+        
+        Specify either iid (module ID of ``self.mod_tree``)
+        or module ID.
+        When specifying both, iid overrides module ID.
+        Returns module instance or, on error, None.
+        """
+        if iid is None and mod_id is None:
+            return None
+        elif iid is not None:
+            mod_id = self.mod_tree.set(iid, column='id')
+        return self.modman.modules.get(mod_id)
+
     def selection_changed(self, *_):
         """Update control button states upon selection change"""
         remove_button_state = tk.DISABLED
@@ -251,6 +266,7 @@ class WorkflowGUI:
         self.clear_info()
         #self.info_frame.rowconfigure(0, weight=1)
         self.info_frame.columnconfigure(1, weight=1)
+        mod = self.get_module(iid)
 
         fmt = {"font": tkfont.Font(family="TkDefaultFont", weight="bold")}
         tk.Label(self.info_frame,
@@ -265,13 +281,26 @@ class WorkflowGUI:
                 ).grid(row=1, column=0, sticky=tk.E)
         tk.Label(self.info_frame,
                 anchor=tk.W,
-                text=self.mod_tree.item(iid, "text")
+                text=mod.name
                 ).grid(row=0, column=1, sticky=tk.W)
         tk.Label(self.info_frame,
                 anchor=tk.W,
-                text=self.mod_tree.set(iid, column="id")
+                text=mod.id
                 ).grid(row=1, column=1, sticky=tk.W)
 
+        btn_conf = tk.Button(self.info_frame, text="Configure")
+        btn_conf.grid(row=0, column=2, sticky=tk.N+tk.E+tk.S+tk.W)
+        if mod.has_fun('conf'):
+            btn_conf.config(command=lambda: self.modman.module_perform(mod.id, "conf"))
+        else:
+            btn_conf.config(state=tk.DISABLED)
+
+        btn_run = tk.Button(self.info_frame, text="Run")
+        btn_run.grid(row=1, column=2, sticky=tk.N+tk.E+tk.S+tk.W)
+        if mod.has_fun('run'):
+            btn_run.config(command=lambda: self.modman.module_perform(mod.id, "run"))
+        else:
+            btn_run.config(state=tk.DISABLED)
 
 
 class ModuleListFrame:
