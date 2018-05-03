@@ -12,6 +12,8 @@ def get_root(w=None):
     """Obtain root of Tk widget."""
     if w is None:
         global root
+        if root is None:
+            root = tk.Tk()
     else:
         root = w.winfo_toplevel()
         if root.master:

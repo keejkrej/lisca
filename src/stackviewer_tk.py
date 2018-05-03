@@ -25,11 +25,15 @@ COLSPAN_CANVAS = 4
 class StackViewer:
     """Provides a GUI for displaying a stack."""
 
-    def __init__(self, parent, image_file=None):
+    def __init__(self, root=None, image_file=None):
         """Initialize the GUI."""
         # Initialize GUI components
-        parent.title("StackViewer")
-        root = get_root(parent)
+        if root is None:
+            self.root = get_root()
+        else:
+            self.root = root
+        self.root.title("StackViewer")
+        self.root.bind("<Destroy>", self._close)
         self.contrast_adjuster = None
         
         # Stack properties
@@ -50,7 +54,7 @@ class StackViewer:
 
         ## GUI elements:
         # Main frame
-        self.mainframe = ttk.Frame(parent, relief=tk.FLAT,
+        self.mainframe = ttk.Frame(self.root, relief=tk.FLAT,
             width=100, height=100)
         self.mainframe.pack(fill=tk.BOTH, expand=tk.YES)
         self.mainframe.columnconfigure(COL_SCALES, weight=1)
@@ -294,6 +298,11 @@ class StackViewer:
         rois = self.stack.get_rois(frame=roi_key)
         for roi in rois:
             self.canvas.create_polygon(*roi.corners[:,::-1].flat, fill="", outline="yellow", tags="roi")
+
+    def _close(self, *_):
+        if self.contrast_adjuster is not None:
+            self.contrast_adjuster.close()
+            self.contrast_adjuster = None
 
 
 

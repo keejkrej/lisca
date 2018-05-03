@@ -35,7 +35,7 @@ class ContrastAdjuster:
 
         self.mainframe = tk.Toplevel(root)
         self.mainframe.title("Adjust contrast")
-        self.mainframe.bind("<Destroy>", self._close)
+        self.mainframe.bind("<Destroy>", self.close)
 
         self.histcan = tk.Canvas(self.mainframe, width=256, height=100,
             background="white", highlightthickness=0)
@@ -73,7 +73,7 @@ class ContrastAdjuster:
         self.histcan.bind("<Leave>", lambda _: self.histcan.delete("c"))
 
 
-    def _close(self, *_, isDisplayUpdate=True):
+    def close(self, *_, isDisplayUpdate=True):
         """Close the ContrastAdjuster frame.
 
         After closing, the contrast settings will be discarded.
@@ -94,9 +94,11 @@ class ContrastAdjuster:
 
         # Inhibit multiple calls to this callback
         self.mainframe.unbind("<Destroy>")
+        self.mainframe.destroy()
 
         if isDisplayUpdate:
             self._update_display()
+
 
 
     def _update_scaling(self, *_):
