@@ -35,6 +35,8 @@ class StackViewer:
         self.root.title("StackViewer")
         self.root.bind("<Destroy>", self._close)
         self.contrast_adjuster = None
+        self.image_listener_id = None
+        self.roi_listener_id = None
         
         # Stack properties
         self.stack = None
@@ -149,18 +151,23 @@ class StackViewer:
             warnings.warn("Cannot open stack: not found: {}".format(fn))
             return
 
-        self.label["text"] = fn
+        #self.label["text"] = fn
         self.set_stack(stack.Stack(fn))
 
 
     def set_stack(self, s):
         """Set the stack that is displayed."""
         if self.stack is not None:
+            self.stack.delete_listener(self.image_listener_id)
+            self.image_listener_id = None
+            self.stack.delete_listener(self.roi_listener_id)
+            self.roi_listener_id = None
             self.stack.close()
         self.stack = s
         self.img = None
         self._update_stack_properties()
-        #self._change_stack_position(i_channel=0, i_frame=0)
+        self.image_listener_id = self.stack.add_listener(lambda: self.root.after_idle(self._update_stack_properties), "image")
+        self.roi_listener_id = self.stack.add_listener(lambda: self.root.after_idle(self.draw_rois), "roi")
 
 
     def _show_img(self):
@@ -190,6 +197,8 @@ class StackViewer:
 
         self.i_channel_var.set(1)
         self.i_frame_var.set(1)
+
+        self.label.config(text=self.stack.path)
 
         # GUI elements corresponding to channel
         if self.n_channels == 1:

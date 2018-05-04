@@ -98,7 +98,7 @@ class Stack:
 
     def close(self):
         """Close the TIFF file."""
-        with self.image_lock():
+        with self.image_lock:
             self.img = None
             self._tmpfile.close()
             self._tmpfile = None
