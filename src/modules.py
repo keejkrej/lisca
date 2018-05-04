@@ -7,6 +7,7 @@
 This is the docstring of the :py:mod:`modules` module.
 """
 import importlib.util as imputil
+from listener import Listeners
 import os
 import random
 import string
@@ -369,10 +370,9 @@ class ModuleManager:
         self.modules = {}
         self.data = [{}]
         self.module_order = []
-        self._listeners = {}
+        self._listeners = Listeners(kinds=LISTENER_KINDS)
         self.data_lock = threading.RLock()
         self.order_lock = threading.RLock()
-        self.listener_lock = threading.RLock()
 
         # Register built-in modules
         if register_builtins:
@@ -409,7 +409,7 @@ class ModuleManager:
                     return
                 new_order.append(i)
             self.module_order = new_order
-            self.call_listeners()
+            self._listeners.notify("order")
 
 
     def module_order_insert(self, mod, index=-1):
@@ -434,7 +434,7 @@ class ModuleManager:
                     order.append(ins)
                 else:
                     order.insert(index, ins)
-                self.call_listeners()
+                self._listeners.notify("order")
 
 
     def _parse_module_insertion(self, ins):
@@ -508,7 +508,7 @@ class ModuleManager:
             mod = order.pop(idx_old)
             order.insert(idx_new, mod)
             
-            self.call_listeners()
+            self._listeners.notify("order")
 
 
     def module_order_remove(self, index, name=None):
@@ -569,7 +569,7 @@ class ModuleManager:
 
             # Delete item
             del order[index]
-            self.call_listeners()
+            self._listeners.notify("order")
 
 
     def list_display(self, category=None):
@@ -802,52 +802,11 @@ class ModuleManager:
         :return: a listener ID or None
         :rtype: str or None
         """
-        with self.listener_lock:
-            # Get a unique listener ID
-            k = 0
-            isInvalid = True
-            while isInvalid:
-                k += 1
-                lid = "".join(random.choices(
-                    string.ascii_letters + string.digits, k=k))
-                isInvalid = lid in self._listeners
-
-            # Convert kind to valid format
-            if kind is None:
-                kind = LISTENER_KINDS
-            else:
-                s_kind = set()
-                
-                if type(kind) == str and kind in LISTENER_KINDS:
-                    s_kind.add(kind)
-                else:
-                    for k in kind:
-                        if type(kind) == str and kind in LISTENER_KINDS:
-                            s_kind.add(kind)
-                kind = s_kind
-
-            if not kind:
-                return None
-
-            # Register listener and return its listener ID
-            self._listeners[lid] = {"fun": fun, "kind": kind}
-            return lid
-
-    def call_listeners(self, kind=None):
-        with self.listener_lock:
-            for lid in list(self._listeners.keys()):
-                listener = self._listeners[lid]
-                if kind is not None and kind not in listener["kind"]:
-                    continue
-                try:
-                    listener["fun"]()
-                except Exception:
-                    self.delete_listener(lid)
+        self._listeners.register(fun, kind)
 
     def delete_listener(self, lid):
-        with self.listener_lock:
-            if lid in self._listeners:
-                del self._listeners[lid]
+        """Delete the listener with ID ``lid``"""
+        self._listeners.delete(lid)
 
 
 
