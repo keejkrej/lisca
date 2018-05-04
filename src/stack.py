@@ -3,6 +3,7 @@ import random
 import re
 import string
 import tempfile
+import threading
 import warnings
 
 import numpy as np
@@ -20,6 +21,8 @@ class Stack:
 
     def __init__(self, path=None):
         """Initialize a stack."""
+        self.image_lock = threading.RLock()
+        self.roi_lock = threading.RLock()
         self._listeners = Listeners(kinds={"roi", "image"})
         self._clear_state()
 
@@ -30,21 +33,23 @@ class Stack:
 
     def _clear_state(self):
         """Clear the internal state"""
-        # The stack path and object
-        self._path = None
-        self._tmpfile = None
-        self.img = None
+        with self.image_lock:
+            # The stack path and object
+            self._path = None
+            self._tmpfile = None
+            self.img = None
 
-        # The stack properties
-        self._mode = None
-        self._width = 0
-        self._height = 0
-        self._n_images = 0
-        self._n_frames = 0
-        self._n_channels = 0
+            # The stack properties
+            self._mode = None
+            self._width = 0
+            self._height = 0
+            self._n_images = 0
+            self._n_frames = 0
+            self._n_channels = 0
 
         # ROI list
-        self._rois = {}
+        with self.roi_lock:
+            self._rois = {}
 
         # Notify listeners
         self._listeners.notify(kind=None)
@@ -52,48 +57,52 @@ class Stack:
 
     def load(self, path):
         """Load a stack from a path."""
-        try:
-            self._path = path
-            tiffimg = pilimg.open(self._path)
-            if tiffimg.format != "TIFF":
-                raise ValueError(
-                    "Bad image format: {}. Expected TIFF.".format(
-                    tiffimg.format))
-            self._parse_tiff_tags(tiffimg)
+        with self.image_lock:
+            try:
+                self._path = path
+                tiffimg = pilimg.open(self._path)
+                if tiffimg.format != "TIFF":
+                    raise ValueError(
+                        "Bad image format: {}. Expected TIFF.".format(
+                        tiffimg.format))
+                self._parse_tiff_tags(tiffimg)
 
-        except Exception as e:
-            self._clear_state()
-            print(str(e))
-            raise
+            except Exception as e:
+                self._clear_state()
+                print(str(e))
+                raise
 
-        self._width = tiffimg.width
-        self._height = tiffimg.height
-        self._n_images = tiffimg.n_frames
+            self._width = tiffimg.width
+            self._height = tiffimg.height
+            self._n_images = tiffimg.n_frames
 
-        # Copy stack to numpy array in temporary file
-        self._tmpfile = tempfile.TemporaryFile()
-        self.img = np.memmap(filename=self._tmpfile,
-                             dtype=(np.uint8 if self._mode == 8
-                                    else np.uint16),
-                             shape=(self._n_channels,
-                                    self._n_frames,
-                                    self._height,
-                                    self._width))
-        for i in range(self._n_images):
-            tiffimg.seek(i)
-            ch, fr = self.convert_position(image=i)
-            self.img[ch,fr,:,:] = np.asarray(tiffimg)
+            # Copy stack to numpy array in temporary file
+            self._tmpfile = tempfile.TemporaryFile()
+            self.img = np.memmap(filename=self._tmpfile,
+                                 dtype=(np.uint8 if self._mode == 8
+                                        else np.uint16),
+                                 shape=(self._n_channels,
+                                        self._n_frames,
+                                        self._height,
+                                        self._width))
+            for i in range(self._n_images):
+                tiffimg.seek(i)
+                ch, fr = self.convert_position(image=i)
+                self.img[ch,fr,:,:] = np.asarray(tiffimg)
 
-        # Close TIFF image
-        tiffimg.close()
+            # Close TIFF image
+            tiffimg.close()
+
+            self._listeners.notify("image")
 
 
     def close(self):
         """Close the TIFF file."""
-        self.img = None
-        self._tmpfile.close()
-        self._tmpfile = None
-        self._clear_state()
+        with self.image_lock():
+            self.img = None
+            self._tmpfile.close()
+            self._tmpfile = None
+            self._clear_state()
 
 
     def _parse_tiff_tags(self, tiffimg):
@@ -150,34 +159,37 @@ class Stack:
         of channel and frame as tuple.
         All other combinations will return None.
         """
-        # Check arguments
-        if channel is None and frame is None:
-            toCT = True
-        elif channel is None or frame is None:
-            return None
-        else:
-            toCT = False
-        if image is None and toCT:
-            return None
+        with self.image_lock:
+            # Check arguments
+            if channel is None and frame is None:
+                toCT = True
+            elif channel is None or frame is None:
+                return None
+            else:
+                toCT = False
+            if image is None and toCT:
+                return None
 
-        # Convert
-        if toCT:
-            channel = image % self._n_channels
-            frame = image // self._n_channels
-            return (channel, frame)
-        else:
-            image = frame * self._n_channels + channel
-            return image
+            # Convert
+            if toCT:
+                channel = image % self._n_channels
+                frame = image // self._n_channels
+                return (channel, frame)
+            else:
+                image = frame * self._n_channels + channel
+                return image
 
 
     def get_image(self, channel, frame):
         """Get a numpy array of a stack position."""
-        return self.img[channel, frame, :, :]
+        with self.image_lock:
+            return self.img[channel, frame, :, :]
 
 
     def get_image_copy(self, channel, frame):
         """Get a copy of a numpy array of a stack position."""
-        return self.img[channel, frame, :, :].copy()
+        with self.image_lock:
+            return self.img[channel, frame, :, :].copy()
 
 
     def get_frame_tk(self, channel, frame, convert_fcn=None):
@@ -200,31 +212,33 @@ class Stack:
         :return: the image at the requested stack position
         :rtype: :py:class:`tkinter.PhotoImage`
         """
-        if convert_fcn:
-            a8 = convert_fcn(self.get_image(channel, frame))
-        elif self._mode == 8:
-            a8 = self.get_image(channel, frame)
-        elif self._mode == 16:
-            a16 = self.get_image(channel, frame)
-            a8 = np.empty(a16.shape, dtype=np.uint8)
-            np.floor_divide(a16, 256, out=a8)
-            #a16 = a16 - a16.min()
-            #a16 = a16 / a16.max() * 255
-            #np.floor_divide(a16, 255, out=a8)
-            #np.true_divide(a16, 255, out=a8, casting='unsafe')
-        else:
-            raise ValueError("Illegal image mode: {}".format(str(self._mode)))
-        return piltk.PhotoImage(pilimg.fromarray(a8, mode='L'))
+        with self.image_lock:
+            if convert_fcn:
+                a8 = convert_fcn(self.get_image(channel, frame))
+            elif self._mode == 8:
+                a8 = self.get_image(channel, frame)
+            elif self._mode == 16:
+                a16 = self.get_image(channel, frame)
+                a8 = np.empty(a16.shape, dtype=np.uint8)
+                np.floor_divide(a16, 256, out=a8)
+                #a16 = a16 - a16.min()
+                #a16 = a16 / a16.max() * 255
+                #np.floor_divide(a16, 255, out=a8)
+                #np.true_divide(a16, 255, out=a8, casting='unsafe')
+            else:
+                raise ValueError("Illegal image mode: {}".format(str(self._mode)))
+            return piltk.PhotoImage(pilimg.fromarray(a8, mode='L'))
 
 
     def info(self):
         """Print stack info. Only for debugging."""
-        print("Path: " + str(self._path))
-        print("width: " + str(self._width))
-        print("height: " + str(self._height))
-        print("n_images: " + str(self._n_images))
-        print("n_channels: " + str(self._n_channels))
-        print("n_frames: " + str(self._n_frames))
+        with self.image_lock:
+            print("Path: " + str(self._path))
+            print("width: " + str(self._width))
+            print("height: " + str(self._height))
+            print("n_images: " + str(self._n_images))
+            print("n_channels: " + str(self._n_channels))
+            print("n_frames: " + str(self._n_frames))
 
 
     def add_listener(self, fun, kind=None):
@@ -246,61 +260,72 @@ class Stack:
 
         For details, see :py:class:`RoiSet`
         """
-        self._rois[frame] = RoiSet(rois, type_)
-        self._listeners.notify("roi")
+        with self.roi_lock:
+            self._rois[frame] = RoiSet(rois, type_)
+            self._listeners.notify("roi")
 
 
     @property
     def rois(self):
-        return self._rois
+        with self.roi_lock:
+            return self._rois
 
 
     def get_rois(self, frame=None):
-        return self._rois[frame]
+        with self.roi_lock:
+            return self._rois[frame]
 
 
     def clear_rois(self, frame=None):
         """Delete the current ROI set"""
-        if frame is None:
-            self._rois = {}
-        else:
-            del self._rois[frame]
-        self._listeners.notify("roi")
+        with self.roi_lock:
+            if frame is None:
+                self._rois = {}
+            else:
+                del self._rois[frame]
+            self._listeners.notify("roi")
 
 
     @property
     def path(self):
-        return self._path
+        with self.image_lock:
+            return self._path
 
 
     @property
     def mode(self):
-        return self._mode
+        with self.image_lock:
+            return self._mode
 
 
     @property
     def width(self):
-        return self._width
+        with self.image_lock:
+            return self._width
 
 
     @property
     def height(self):
-        return self._height
+        with self.image_lock:
+            return self._height
 
 
     @property
     def n_images(self):
-        return self._n_images
+        with self.image_lock:
+            return self._n_images
 
 
     @property
     def n_channels(self):
-        return self._n_channels
+        with self.image_lock:
+            return self._n_channels
 
 
     @property
     def n_frames(self):
-        return self._n_frames
+        with self.image_lock:
+            return self._n_frames
 
 
 class RoiSet:
