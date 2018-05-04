@@ -10,6 +10,8 @@ import PIL.Image as pilimg
 import PIL.ImageTk as piltk
 import skimage.draw as skid
 
+from listener import Listeners
+
 TIFF_TAG_DESCRIPTION = 270
 TIFF_TAG_BITSPERSAMPLE = 258
 
@@ -18,7 +20,7 @@ class Stack:
 
     def __init__(self, path=None):
         """Initialize a stack."""
-        self._listeners = {}
+        self._listeners = Listeners(kinds={"roi", "image"})
         self._clear_state()
 
         # If requested, load stack
@@ -45,7 +47,7 @@ class Stack:
         self._rois = {}
 
         # Notify listeners
-        self._notify_listeners()
+        self._listeners.notify(kind=None)
 
 
     def load(self, path):
@@ -225,32 +227,14 @@ class Stack:
         print("n_frames: " + str(self._n_frames))
 
 
-    def add_listener(self, fun, *args, **kw):
+    def add_listener(self, fun, kind=None):
         """Register a listener to stack changes."""
-        # Get a unique listener ID
-        k = 0
-        isInvalid = True
-        while isInvalid:
-            k += 1
-            lid = "".join(random.choices(
-                string.ascii_letters + string.digits, k=k))
-            isInvalid = lid in self._listeners
-
-        # Register listener and return its listener ID
-        self._listeners[lid] = (fun, args, kw)
-        return lid
+        return self._listeners.register(fun, kind)
 
 
     def delete_listener(self, lid):
         """Un-register a listener."""
-        if lid in self._listeners:
-            del self._listeners[lid]
-
-
-    def _notify_listeners(self):
-        """Notify all registered listeners."""
-        for _, (fun, args, kw) in self._listeners.items():
-            fun(*args, **kw)
+        self._listeners.delete(lid)
 
 
     def set_rois(self, rois, type_, frame=Ellipsis):
@@ -263,7 +247,7 @@ class Stack:
         For details, see :py:class:`RoiSet`
         """
         self._rois[frame] = RoiSet(rois, type_)
-        self._notify_listeners()
+        self._listeners.notify("roi")
 
 
     @property
@@ -281,7 +265,7 @@ class Stack:
             self._rois = {}
         else:
             del self._rois[frame]
-        self._notify_listeners()
+        self._listeners.notify("roi")
 
 
     @property
