@@ -11,6 +11,7 @@ import os
 import random
 import string
 import sys
+import threading
 import traceback
 import warnings
 
@@ -369,6 +370,9 @@ class ModuleManager:
         self.data = [{}]
         self.module_order = []
         self._listeners = {}
+        self.data_lock = threading.RLock()
+        self.order_lock = threading.RLock()
+        self.listener_lock = threading.RLock()
 
         # Register built-in modules
         if register_builtins:
@@ -392,38 +396,54 @@ class ModuleManager:
 
 
     def set_module_order(self, order):
-        """Set the execution order of the modules."""
-        new_order = []
-        for o in order:
-            i = self._parse_module_insertion(o)
-            if i is None:
-                return
-            new_order.append(i)
-        self.module_order = new_order
-        self.call_listeners()
-
-
-    def module_order_insert(self, mod, index=-1):
-        """Insert one module or a loop into the order."""
-        # Get index and array to insert module
-        order = self.module_order
-        if type(index) != int:
-            while len(index) > 1:
-                order = order[index[0]]
-                index = index[1:]
-            index = index[0]
-
-        # Insert module at given index
-        ins = self._parse_module_insertion(mod)
-        if ins is not None:
-            if index == -1:
-                order.append(ins)
-            else:
-                order.insert(index, ins)
+        """
+        Set the execution order of the modules.
+        
+        This method is thread-safe.
+        """
+        with self.order_lock:
+            new_order = []
+            for o in order:
+                i = self._parse_module_insertion(o)
+                if i is None:
+                    return
+                new_order.append(i)
+            self.module_order = new_order
             self.call_listeners()
 
 
+    def module_order_insert(self, mod, index=-1):
+        """
+        Insert one module or a loop into the order.
+        
+        This method is thread-safe.
+        """
+        with self.order_lock:
+            # Get index and array to insert module
+            order = self.module_order
+            if type(index) != int:
+                while len(index) > 1:
+                    order = order[index[0]]
+                    index = index[1:]
+                index = index[0]
+
+            # Insert module at given index
+            ins = self._parse_module_insertion(mod)
+            if ins is not None:
+                if index == -1:
+                    order.append(ins)
+                else:
+                    order.insert(index, ins)
+                self.call_listeners()
+
+
     def _parse_module_insertion(self, ins):
+        """
+        Check module insertion.
+
+        This method is not thread-safe and must only be called from
+        thread-safe functions.
+        """
         # If `ins` is a string, return it
         if type(ins) == str:
             return ins
@@ -462,103 +482,126 @@ class ModuleManager:
 
 
     def module_order_move(self, idx_old, idx_new):
-        order = self.module_order
-        if type(idx_old) != int and type(idx_new) != int:
-            if len(idx_old) != len(idx_new):
-                return None
-            while len(idx_old) > 1:
-                i_o = idx_old[0]
-                i_n = idx_new[0]
-                if i_o != i_n:
+        """
+        Move a module in the order
+
+        Move the module at order index ``idx_old`` to ``idx_new``.
+        This method is thread-safe.
+        """
+        with self.order_lock:
+            order = self.module_order
+            if type(idx_old) != int and type(idx_new) != int:
+                if len(idx_old) != len(idx_new):
                     return None
-                order = order[i_o]
-                idx_old = idx_old[1:]
-                idx_new = idx_new[1:]
-            idx_old = idx_old[0]
-            idx_new = idx_new[0]
-        if idx_new == -1:
-            idx_new = len(order) - 1
-        mod = order.pop(idx_old)
-        order.insert(idx_new, mod)
-        
-        self.call_listeners()
+                while len(idx_old) > 1:
+                    i_o = idx_old[0]
+                    i_n = idx_new[0]
+                    if i_o != i_n:
+                        return None
+                    order = order[i_o]
+                    idx_old = idx_old[1:]
+                    idx_new = idx_new[1:]
+                idx_old = idx_old[0]
+                idx_new = idx_new[0]
+            if idx_new == -1:
+                idx_new = len(order) - 1
+            mod = order.pop(idx_old)
+            order.insert(idx_new, mod)
+            
+            self.call_listeners()
 
 
     def module_order_remove(self, index, name=None):
         """
         Remove the module or loop at the given index from the module order.
+
+        This method is thread-safe.
         
         :param index: Index of item to be removed.
         :type index: int or list of int
         :param name: If not ``None``, the name of the item to be deleted for double-checking against deletion of wrong item. Specify the module ID of the module when deleting a single module, or surround the module ID with square brackets if it holds a loop.
         :type name: str
         """
-        order = self.module_order
+        with self.order_lock:
+            order = self.module_order
 
-        # Index into module order if index is an iterable
-        if type(index) != int:
-            while len(index) > 1:
-                i = index.pop(0)
-                if -1 <= i < len(order):
-                    order = order[i]
+            # Index into module order if index is an iterable
+            if type(index) != int:
+                while len(index) > 1:
+                    i = index.pop(0)
+                    if -1 <= i < len(order):
+                        order = order[i]
+                    else:
+                        print("Cannot remove item from module order: bad index given.", file=sys.stderr)
+                index = index.pop()
+
+            # Check if index is in valid range
+            if not -1 <= index < len(order):
+                print("Cannot remove item from module order: bad index given.", file=sys.stderr)
+
+            # If ``name`` is given, check if correct element is deleted
+            elif name is not None:
+                # Check if a single module or a loop is deleted
+                if type(order[index]) != str:
+                    # Check if ``name`` indicates a loop
+                    if not name.startswith('['):
+                        print("Cannot remove item from module order: bad safety check given: expected '[' due to loop, but not found.", file=sys.stderr)
+                        return
+
+                    # Add optional trailing ']' if not present
+                    if not name.endswith(']'):
+                        name = "".join(name, ']')
+
+                    # Get correct name representation of found item
+                    order_i = order[index][0]
+                    while type(order_i) != str:
+                        order_i = order_i[0]
+                    order_i = "".join('[', order_i, ']')
+
+                # Get ID of single module a position ``index``
                 else:
-                    print("Cannot remove item from module order: bad index given.", file=sys.stderr)
-            index = index.pop()
+                    order_i = order[index]
 
-        # Check if index is in valid range
-        if not -1 <= index < len(order):
-            print("Cannot remove item from module order: bad index given.", file=sys.stderr)
-
-        # If ``name`` is given, check if correct element is deleted
-        elif name is not None:
-            # Check if a single module or a loop is deleted
-            if type(order[index]) != str:
-                # Check if ``name`` indicates a loop
-                if not name.startswith('['):
-                    print("Cannot remove item from module order: bad safety check given: expected '[' due to loop, but not found.", file=sys.stderr)
+                # Check if correct item is addressed for deleting
+                if order_i != name:
+                    print("Cannot remove item from module order: found item", file=sys.stderr)
                     return
 
-                # Add optional trailing ']' if not present
-                if not name.endswith(']'):
-                    name = "".join(name, ']')
-
-                # Get correct name representation of found item
-                order_i = order[index][0]
-                while type(order_i) != str:
-                    order_i = order_i[0]
-                order_i = "".join('[', order_i, ']')
-
-            # Get ID of single module a position ``index``
-            else:
-                order_i = order[index]
-
-            # Check if correct item is addressed for deleting
-            if order_i != name:
-                print("Cannot remove item from module order: found item", file=sys.stderr)
-                return
-
-        # Delete item
-        del order[index]
-        self.call_listeners()
+            # Delete item
+            del order[index]
+            self.call_listeners()
 
 
     def list_display(self, category=None):
-        """Return a list of modules for displaying."""
-        return [{'name': m.name, 'id': m.id, 'category': m.category, 'version': '.'.join(m.version)} for _, m in self.modules.items() if m.name != '']
+        """
+        Return a list of modules for displaying.
+        
+        This method is thread-safe.
+        """
+        with self.order_lock:
+            return [{'name': m.name, 'id': m.id, 'category': m.category, 'version': '.'.join(m.version)} for _, m in self.modules.items() if m.name != '']
 
 
     def memorize_result(self, mod_id, result):
-        """Add a result to the internal data memory."""
+        """
+        Add a result to the internal data memory.
+        
+        This method is thread-safe.
+        """
         # TODO: add test for consistency with metadata
         if result is None:
             return
-        for name, value in result.items():
-            self._add_data(mod_id, name, value)
+
+        with self.data_lock:
+            for name, value in result.items():
+                self._add_data(mod_id, name, value)
 
 
     def acquire_dependencies(self, mod_id, kind):
         """
         Acquire the dependencies for executing a plugin.
+
+        This method is thread-safe.
 
         :param mod_id: The id of the plugin to be executed
         :type mod_id: str
@@ -574,62 +617,64 @@ class ModuleManager:
 
             * ``None`` if a dependency requirement cannot be fulfilled
         """
-        mod = self.modules[mod_id]
-        mod_ver = mod.version
-        dep_list = mod.get_dep(kind)
+        with self.data_lock:
+            mod = self.modules[mod_id]
+            mod_ver = mod.version
+            dep_list = mod.get_dep(kind)
 
-        # DEBUG message
-        #print("[MouleManager.acquire_dependencies] dependency list: {}".format(str(dep_list)))
+            # DEBUG message
+            #print("[MouleManager.acquire_dependencies] dependency list: {}".format(str(dep_list)))
 
-        if len(dep_list) == 0:
-            return {}
+            if len(dep_list) == 0:
+                return {}
 
-        data = {}
-        for dep_id, dep_names, dep_ver_req in dep_list:
-            # Check if versions match
-            if dep_id != "":
-                dep_ver = _parse_version(self.modules[dep_id].version)
-                cmp_mode, dep_ver_req = _parse_version(dep_ver_req, True)
-                if not _check_versions(dep_ver_req, cmp_mode, dep_ver):
-                    print("Version mismatch for dependency '{}' of module '{}': found version {} of '{}', but require {}.".format(kind, mod_id, dep_ver, dep_id, dep_ver_req), file=sys.stderr)
-                    return None
-            else:
-                dep_ver = ()
-
-            # Check if data is available
-            if dep_id not in data:
-                dep_data = {'': dep_ver}
-                data[dep_id] = dep_data
-            else:
-                dep_data = data[dep_id]
-
-            for name in dep_names:
-                for d in reversed(self.data):
-                    dm = d.get(dep_id)
-                    if dm is None:
-                        continue
-
-                    dmn = dm.get(name)
-                    if dmn is None:
-                        continue
-                    else:
-                        dep_data[name] = dmn
-                        break
+            data = {}
+            for dep_id, dep_names, dep_ver_req in dep_list:
+                # Check if versions match
+                if dep_id != "":
+                    dep_ver = _parse_version(self.modules[dep_id].version)
+                    cmp_mode, dep_ver_req = _parse_version(dep_ver_req, True)
+                    if not _check_versions(dep_ver_req, cmp_mode, dep_ver):
+                        print("Version mismatch for dependency '{}' of module '{}': found version {} of '{}', but require {}.".format(kind, mod_id, dep_ver, dep_id, dep_ver_req), file=sys.stderr)
+                        return None
                 else:
-                    print("Missing dependency '{}' of plugin '{}': did not find required data '{}' of plugin '{}'.".format(kind, mod_id, name, dep_id), file=sys.stderr)
-                    return None
+                    dep_ver = ()
 
-        return data
+                # Check if data is available
+                if dep_id not in data:
+                    dep_data = {'': dep_ver}
+                    data[dep_id] = dep_data
+                else:
+                    dep_data = data[dep_id]
+
+                for name in dep_names:
+                    for d in reversed(self.data):
+                        dm = d.get(dep_id)
+                        if dm is None:
+                            continue
+
+                        dmn = dm.get(name)
+                        if dmn is None:
+                            continue
+                        else:
+                            dep_data[name] = dmn
+                            break
+                    else:
+                        print("Missing dependency '{}' of plugin '{}': did not find required data '{}' of plugin '{}'.".format(kind, mod_id, name, dep_id), file=sys.stderr)
+                        return None
+
+            return data
 
 
     def module_perform(self, mod_id, kind):
         """
         Call a function of the module.
 
+        This method is thread-safe with respect to module order.
+
         :param mod_id: The ID of the module to be called
         :type mod_id: str
-        :param kind: The kind of function to be called; eiter "conf" or "run"
-        , "loop_next", "loop_end".
+        :param kind: The kind of function to be called; eiter "conf" or "run", "loop_next", "loop_end".
         :type kind: str
         """
         # Check if function kind is legal
@@ -643,75 +688,80 @@ class ModuleManager:
             print("Cannot call function '{}' of module '{}': function not found.".format(kind, mod_id), file=sys.stderr)
             return
 
-        # Get dependencies of function
-        dep_data = self.acquire_dependencies(mod_id, kind)
-        if dep_data is None:
-            print("Cannot call function '{}' of module '{}': dependencies not fulfilled.".format(kind, mod_id), file=sys.stderr)
-            return
+        # Lock order
+        with self.order_lock:
+            # Get dependencies of function
+            dep_data = self.acquire_dependencies(mod_id, kind)
+            if dep_data is None:
+                print("Cannot call function '{}' of module '{}': dependencies not fulfilled.".format(kind, mod_id), file=sys.stderr)
+                return
 
-        # Call the function
-        try:
-            res = m.call_fun(kind, dep_data)
-        except Exception as e:
-            _print_exception_string(e, 1)
-            return
-
-        # If module is configured, memorize its result and return
-        if kind == "conf":
-            self.memorize_result(mod_id, res)
-            return
-
-        # If this is reached, we have performed the "run" function.
-        # Check if the module contains a loop.
-        # If not, memorize result and return.
-        if m.has_fun("loop_next"):
-            self.data.append({})
-            self.memorize_result(mod_id, res)
-        else:
-            self.memorize_result(mod_id, res)
-            return
-
-        # Run the loop body
-        try:
-            while True:
-               # TODO: insert loop body calls here
-               dep_data = self.acquire_dependencies(mod_id, "loop_next")
-               res = m.call_fun("loop_next", dep_data)
-               self.memorize_result(mod_id, res)
-        except StopIteration:
-            pass
-        except Exception as e:
-            _print_exception_string(e, 1)
-            del self.data[-1]
-            return
-        
-        # Call the loop clean-up function, if given
-        if m.has_fun("loop_end"):
-            dep_data = self.acquire_dependencies(mod_id, "loop_end")
+            # Call the function
             try:
-                res = m.call_fun("loop_end", dep_data)
+                res = m.call_fun(kind, dep_data)
             except Exception as e:
                 _print_exception_string(e, 1)
                 return
 
-            del self.data[-1]
-            self.memorize_result(mod_id, res)
-        else:
-            del self.data[-1]
+            # If module is configured, memorize its result and return
+            if kind == "conf":
+                self.memorize_result(mod_id, res)
+                return
+
+            # If this is reached, we have performed the "run" function.
+            # Check if the module contains a loop.
+            # If not, memorize result and return.
+            if m.has_fun("loop_next"):
+                self.data.append({})
+                self.memorize_result(mod_id, res)
+            else:
+                self.memorize_result(mod_id, res)
+                return
+
+            # Run the loop body
+            try:
+                while True:
+                   # TODO: insert loop body calls here
+                   dep_data = self.acquire_dependencies(mod_id, "loop_next")
+                   res = m.call_fun("loop_next", dep_data)
+                   self.memorize_result(mod_id, res)
+            except StopIteration:
+                pass
+            except Exception as e:
+                _print_exception_string(e, 1)
+                del self.data[-1]
+                return
+            
+            # Call the loop clean-up function, if given
+            if m.has_fun("loop_end"):
+                dep_data = self.acquire_dependencies(mod_id, "loop_end")
+                try:
+                    res = m.call_fun("loop_end", dep_data)
+                except Exception as e:
+                    _print_exception_string(e, 1)
+                    return
+
+                del self.data[-1]
+                self.memorize_result(mod_id, res)
+            else:
+                del self.data[-1]
 
 
     def _add_data(self, d_id, name, value, index=-1):
         """
         Add data to the internal data memory.
 
+        This method is thread-safe.
+
         :param d_id: The id of the plugin providing the data
         :param name: The name of the data
         :param value: The value of the data
         :param index: The index of `self.data` to which to write the data
         """
-        if d_id not in self.data[index]:
-            self.data[index][d_id] = {}
-        self.data[index][d_id][name] = value
+        with self.data_lock:
+            if d_id not in self.data[index]:
+                self.data[index][d_id] = {}
+            self.data[index][d_id][name] = value
 
 
     def register_builtin_data(self, name, value):
@@ -752,49 +802,52 @@ class ModuleManager:
         :return: a listener ID or None
         :rtype: str or None
         """
-        # Get a unique listener ID
-        k = 0
-        isInvalid = True
-        while isInvalid:
-            k += 1
-            lid = "".join(random.choices(
-                string.ascii_letters + string.digits, k=k))
-            isInvalid = lid in self._listeners
+        with self.listener_lock:
+            # Get a unique listener ID
+            k = 0
+            isInvalid = True
+            while isInvalid:
+                k += 1
+                lid = "".join(random.choices(
+                    string.ascii_letters + string.digits, k=k))
+                isInvalid = lid in self._listeners
 
-        # Convert kind to valid format
-        if kind is None:
-            kind = LISTENER_KINDS
-        else:
-            s_kind = set()
-            
-            if type(kind) == str and kind in LISTENER_KINDS:
-                s_kind.add(kind)
+            # Convert kind to valid format
+            if kind is None:
+                kind = LISTENER_KINDS
             else:
-                for k in kind:
-                    if type(kind) == str and kind in LISTENER_KINDS:
-                        s_kind.add(kind)
-            kind = s_kind
+                s_kind = set()
+                
+                if type(kind) == str and kind in LISTENER_KINDS:
+                    s_kind.add(kind)
+                else:
+                    for k in kind:
+                        if type(kind) == str and kind in LISTENER_KINDS:
+                            s_kind.add(kind)
+                kind = s_kind
 
-        if not kind:
-            return None
+            if not kind:
+                return None
 
-        # Register listener and return its listener ID
-        self._listeners[lid] = {"fun": fun, "kind": kind}
-        return lid
+            # Register listener and return its listener ID
+            self._listeners[lid] = {"fun": fun, "kind": kind}
+            return lid
 
     def call_listeners(self, kind=None):
-        for lid in list(self._listeners.keys()):
-            listener = self._listeners[lid]
-            if kind is not None and kind not in listener["kind"]:
-                continue
-            try:
-                listener["fun"]()
-            except Exception:
-                self.delete_listener(lid)
+        with self.listener_lock:
+            for lid in list(self._listeners.keys()):
+                listener = self._listeners[lid]
+                if kind is not None and kind not in listener["kind"]:
+                    continue
+                try:
+                    listener["fun"]()
+                except Exception:
+                    self.delete_listener(lid)
 
     def delete_listener(self, lid):
-        if lid in self._listeners:
-            del self._listeners[lid]
+        with self.listener_lock:
+            if lid in self._listeners:
+                del self._listeners[lid]
 
 
 
@@ -813,6 +866,7 @@ class ModuleMetadata:
         self.__vals["ret"] = {}
         self.__vals["fun"] = {}
         self.__module = module
+        self.__lock = threading.RLock()
 
 
     # "name"
@@ -821,10 +875,12 @@ class ModuleMetadata:
     # identifying the module in a list.
     @property
     def name(self):
-        return self.__vals["name"]
+        with self.__lock:
+            return self.__vals["name"]
     @name.setter
     def name(self, name):
-        self.__vals["name"] = name
+        with self.__lock:
+            self.__vals["name"] = name
 
 
     # "id"
@@ -834,10 +890,12 @@ class ModuleMetadata:
     # the latest defined module overwrites all others.
     @property
     def id(self):
-        return self.__vals["id"]
+        with self.__lock:
+            return self.__vals["id"]
     @id.setter
     def id(self, id_):
-        self.__vals["id"] = id_
+        with self.__lock:
+            self.__vals["id"] = id_
 
 
     # "version"
@@ -848,15 +906,18 @@ class ModuleMetadata:
     # wherein older versions are smaller than newer versions.
     @property
     def version_string(self):
-        if self.version is None:
-            return None
-        return '.'.join(self.__vals["version"])
+        with self.__lock:
+            if self.version is None:
+                return None
+            return '.'.join(self.__vals["version"])
     @property
     def version(self):
-        return self.__vals["version"]
+        with self.__lock:
+            return self.__vals["version"]
     @version.setter
     def version(self, ver):
-        self.__vals["version"] = _parse_version(ver)
+        with self.__lock:
+            self.__vals["version"] = _parse_version(ver)
 
 
     # "category"
@@ -865,7 +926,8 @@ class ModuleMetadata:
     # Used in the module selection menu for grouping modules.
     @property
     def category(self):
-        return self.__vals["category"]
+        with self.__lock:
+            return self.__vals["category"]
     @category.setter
     def category(self, cat):
         self.__set_tuple_of_str(cat, "category")
@@ -878,7 +940,8 @@ class ModuleMetadata:
     # A meta-module must have its own name in "group".
     @property
     def group(self):
-        return self.__vals["group"]
+        with self.__lock:
+            return self.__vals["group"]
     @group.setter
     def group(self, grp):
         self.__set_tuple_of_str(grp, "group")
@@ -923,17 +986,20 @@ class ModuleMetadata:
             print("Cannot set dependency '{}' of plugin '{}': bad dependency given.".format(kind, self.id), file=sys.stderr)
             return
 
-        # Check if overwriting (print warning)
-        if kind in self.__vals["dep"]:
-            print("Warning: overwriting dependency '{}' of plugin '{}'".format(kind, self.id), file=sys.stderr)
+        with self.__lock:
+            # Check if overwriting (print warning)
+            if kind in self.__vals["dep"]:
+                print("Warning: overwriting dependency '{}' of plugin '{}'".format(kind, self.id), file=sys.stderr)
 
-        # Set dependency
-        self.__vals["dep"][kind] = dep
+            # Set dependency
+            self.__vals["dep"][kind] = dep
 
     def get_dep(self, kind):
         if kind not in PERFORM_KINDS:
             return None
-        return self.__vals["dep"].get(kind, ())
+
+        with self.__lock:
+            return self.__vals["dep"].get(kind, ())
 
 
     # "conf_ret"
@@ -976,7 +1042,9 @@ class ModuleMetadata:
     def get_ret(self, kind):
         if kind not in RETURN_KINDS:
             return None
-        return self.__vals["ret"].get(kind, ())
+
+        with self.__lock:
+            return self.__vals["ret"].get(kind, ())
 
 
     # "fun"
@@ -987,21 +1055,27 @@ class ModuleMetadata:
         if kind not in PERFORM_KINDS:
             print("Cannot set function: bad kind: {}".format(kind, file=sys.stderr))
             return
-        self.__vals["fun"][kind] = fun
+
+        with self.__lock:
+            self.__vals["fun"][kind] = fun
 
     def get_fun(self, kind):
         if kind not in PERFORM_KINDS:
             return None
-        return self.__vals["fun"].get(kind)
+
+        with self.__lock:
+            return self.__vals["fun"].get(kind)
 
     def has_fun(self, kind):
-        return kind in self.__vals["fun"]
+        with self.__lock:
+            return kind in self.__vals["fun"]
 
     def call_fun(self, kind, *args, **kwargs):
-        fun = self.__vals["fun"].get(kind)
-        if fun is None:
-            return None
-        return fun(*args, **kwargs)
+        with self.__lock:
+            fun = self.__vals["fun"].get(kind)
+            if fun is None:
+                return None
+            return fun(*args, **kwargs)
 
 
     # "module"
@@ -1010,10 +1084,12 @@ class ModuleMetadata:
     # module management system.
     @property
     def module(self):
-        return self.__module
+        with self.__lock:
+            return self.__module
     @module.setter
     def module(self, mod):
-        self.__module = mod
+        with self.__lock:
+            self.__module = mod
 
 
     def check(self):
@@ -1023,13 +1099,14 @@ class ModuleMetadata:
         """
         msg = []
 
-        # Check values
-        if not self.name or not isinstance(self.name, str):
-            msg.append("The plugin name must be a non-empty string.")
-        if not self.id or not isinstance(self.id, str):
-            msg.append("The plugin id must be a non-empty string.")
-        if not isinstance(self.version, tuple):
-            msg.append("The plugin version must be a tuple of strings or an empty tuple.")
+        with self.__lock:
+            # Check values
+            if not self.name or not isinstance(self.name, str):
+                msg.append("The plugin name must be a non-empty string.")
+            if not self.id or not isinstance(self.id, str):
+                msg.append("The plugin id must be a non-empty string.")
+            if not isinstance(self.version, tuple):
+                msg.append("The plugin version must be a tuple of strings or an empty tuple.")
 
 
         # Assemble message string and return it
@@ -1062,10 +1139,11 @@ class ModuleMetadata:
             warnings.warn('Invalid "{}": {}'.format(names, str(x)))
             return
 
-        if len(names) == 1:
-            self.__vals[names[0]] = x
-        elif len(names) == 2:
-            self.__vals[names[0]][names[1]] = x
+        with self.__lock:
+            if len(names) == 1:
+                self.__vals[names[0]] = x
+            elif len(names) == 2:
+                self.__vals[names[0]][names[1]] = x
 
 
 
