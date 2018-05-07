@@ -558,6 +558,7 @@ class ModuleManager:
 
     def _run_workflow(self):
         """Execute the workflow from the module order."""
+        # TODO: support loops
         print("Running workflow …")
         for mod_id in self.module_order:
             self.module_perform(mod_id, "run")
@@ -1220,7 +1221,6 @@ class ModuleOrder:
         with self.lock:
             new_order = []
             for o in order:
-                # TODO: copy _parse_module_insertion from ModuleManager
                 i = self._parse_module_insertion(o)
                 if i is None:
                     return
