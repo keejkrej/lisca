@@ -19,7 +19,7 @@ import warnings
 
 PERFORM_KINDS = {"conf", "run", "loop_next", "loop_finished"}
 RETURN_KINDS = {"init", *PERFORM_KINDS}
-LISTENER_KINDS = {"order",}
+LISTENER_KINDS = {"order", "dependency"}
 
 
 def _load_module(name, path, return_init_ret=True):
@@ -369,7 +369,7 @@ class ModuleManager:
         """
         self.modules = {}
         self.data = [{}]
-        self.module_order = []
+        self.module_order = ModuleOrder()
         self._listeners = Listeners(kinds=LISTENER_KINDS)
         self.data_lock = threading.RLock()
         self.order_lock = threading.RLock()
@@ -402,13 +402,7 @@ class ModuleManager:
         This method is thread-safe.
         """
         with self.order_lock:
-            new_order = []
-            for o in order:
-                i = self._parse_module_insertion(o)
-                if i is None:
-                    return
-                new_order.append(i)
-            self.module_order = new_order
+            self.module_order.set(order)
             self._listeners.notify("order")
 
 
@@ -419,67 +413,73 @@ class ModuleManager:
         This method is thread-safe.
         """
         with self.order_lock:
-            # Get index and array to insert module
-            order = self.module_order
-            if type(index) != int:
-                while len(index) > 1:
-                    order = order[index[0]]
-                    index = index[1:]
-                index = index[0]
-
-            # Insert module at given index
-            ins = self._parse_module_insertion(mod)
-            if ins is not None:
-                if index == -1:
-                    order.append(ins)
-                else:
-                    order.insert(index, ins)
-                self._listeners.notify("order")
+            self.module_order[index] = mod
+            self._listeners.notify("order")
 
 
-    def _parse_module_insertion(self, ins):
+    def get_module_at_index(self, idx):
         """
-        Check module insertion.
-
-        This method is not thread-safe and must only be called from
-        thread-safe functions.
+        Get the module at a given index or None in case of error.
         """
-        # If `ins` is a string, return it
-        if type(ins) == str:
-            return ins
-
-        # If `ins` is None, return None, because None indicates an
-        # error during parsing `ins` in a higher parsing instance.
-        # Do not print a message, because the message is printed
-        # by the instance that encountered the error.
-        if ins is None:
+        if idx is None:
             return None
-
-        # If `ins` is not a string, it must be a list representing a loop
-        pins = []
-
-        # Check if first loop entry is the “embracing member”
-        if type(ins[0]) != str:
-            print("Cannot insert new module: embracing member missing in loop", file=sys.stderr)
+        elif type(idx) == int:
+            idx = [idx,]
+        elif not idx:
             return None
+        with self.order_lock:
+            return self.module_order[idx]
 
-        # Check for empty list
-        if not ins:
-            print("Cannot insert new module: illegal empty list encountered.", file=sys.stderr)
-            return None
 
-        # Add all remaining items to the list
-        for i in ins:
-            if type(i) == str:
-                pins.append(i)
-            else:
-                i = self.parse_module_insertion(i)
-                if i is None:
-                    return None
+    def check_module_dependencies(self, idx):
+        """
+        Check if the dependencies for a module are fulfilled.
 
-        # Return parsed insertion item
-        return pins
+        A thread-safe check is performed whether "run" dependencies are fulfilled
+        and whether "conf" return data is present.
 
+        TODO: Implement loops
+        TODO: Check for version conflicts
+
+        :param idx: the index of the module for which to check the dependency
+        :type idx: int or tuple of int
+        """
+        raise NotImplementedError
+        if type(idx) == int:
+            idx = (idx,)
+
+        mod = self.get_module_at_index(idx)
+        mod_id = mod.id
+
+        # Check if "conf" has been run already (if return data is present)
+        conf_ret = set()
+        if mod.has_fun("conf"):
+            with self.data_lock:
+                for cret_data in mod.get_ret("conf"):
+                    if mod_id not in self.data[0] or cret_data not in self.data[0][mod_id]:
+                        conf_ret.add(cret_data)
+        # If `conf_ret` is now non-empty, the "conf" function needs to be run.
+
+        # Collect names of "run" dependencies (to see if "run" can be invoked)
+        deps = {}
+        if mod.has_fun("run"):
+            for dep_id, dep_data, _ in mod.get_dep("run"):
+                if not dep_id in deps:
+                    deps[dep_id] = set()
+                deps[dep_id].update(dep_data)
+
+        # Filter out data that is visible to the module
+        with self.order_lock:
+            iidx = idx
+            while len(iidx) > 0:
+                pass
+                #while 
+                    
+        # CONTINUE here
+
+        with self.data_lock:
+            pass
+            
 
     def module_order_move(self, idx_old, idx_new):
         """
@@ -489,29 +489,12 @@ class ModuleManager:
         This method is thread-safe.
         """
         with self.order_lock:
-            order = self.module_order
-            if type(idx_old) != int and type(idx_new) != int:
-                if len(idx_old) != len(idx_new):
-                    return None
-                while len(idx_old) > 1:
-                    i_o = idx_old[0]
-                    i_n = idx_new[0]
-                    if i_o != i_n:
-                        return None
-                    order = order[i_o]
-                    idx_old = idx_old[1:]
-                    idx_new = idx_new[1:]
-                idx_old = idx_old[0]
-                idx_new = idx_new[0]
-            if idx_new == -1:
-                idx_new = len(order) - 1
-            mod = order.pop(idx_old)
-            order.insert(idx_new, mod)
+            self.module_order.move(idx_old, idx_new)
             
             self._listeners.notify("order")
 
 
-    def module_order_remove(self, index, name=None):
+    def module_order_remove(self, index):
         """
         Remove the module or loop at the given index from the module order.
 
@@ -519,56 +502,9 @@ class ModuleManager:
         
         :param index: Index of item to be removed.
         :type index: int or list of int
-        :param name: If not ``None``, the name of the item to be deleted for double-checking against deletion of wrong item. Specify the module ID of the module when deleting a single module, or surround the module ID with square brackets if it holds a loop.
-        :type name: str
         """
         with self.order_lock:
-            order = self.module_order
-
-            # Index into module order if index is an iterable
-            if type(index) != int:
-                while len(index) > 1:
-                    i = index.pop(0)
-                    if -1 <= i < len(order):
-                        order = order[i]
-                    else:
-                        print("Cannot remove item from module order: bad index given.", file=sys.stderr)
-                index = index.pop()
-
-            # Check if index is in valid range
-            if not -1 <= index < len(order):
-                print("Cannot remove item from module order: bad index given.", file=sys.stderr)
-
-            # If ``name`` is given, check if correct element is deleted
-            elif name is not None:
-                # Check if a single module or a loop is deleted
-                if type(order[index]) != str:
-                    # Check if ``name`` indicates a loop
-                    if not name.startswith('['):
-                        print("Cannot remove item from module order: bad safety check given: expected '[' due to loop, but not found.", file=sys.stderr)
-                        return
-
-                    # Add optional trailing ']' if not present
-                    if not name.endswith(']'):
-                        name = "".join(name, ']')
-
-                    # Get correct name representation of found item
-                    order_i = order[index][0]
-                    while type(order_i) != str:
-                        order_i = order_i[0]
-                    order_i = "".join('[', order_i, ']')
-
-                # Get ID of single module a position ``index``
-                else:
-                    order_i = order[index]
-
-                # Check if correct item is addressed for deleting
-                if order_i != name:
-                    print("Cannot remove item from module order: found item", file=sys.stderr)
-                    return
-
-            # Delete item
-            del order[index]
+            del self.module_order[index]
             self._listeners.notify("order")
 
 
@@ -1105,4 +1041,211 @@ class ModuleMetadata:
                 self.__vals[names[0]][names[1]] = x
 
 
+class ModuleOrder:
+    """
+    A class for providing module order operations.
+    """
+    def __init__(self, order=None, lock=None):
+        self._len_cache = None
+        if lock is None:
+            self.lock = threading.RLock()
+        elif type(lock) == threading.RLock():
+            self.lock = lock
+        else:
+            raise TypeError("Bad lock type given.")
+
+        if order is None:
+            self.order = []
+            self._len_cache = 0
+        elif type(order) == list:
+            self.order = order
+        else:
+            raise TypeError("Bad module order type given.")
+
+
+    def __bool__(self):
+        return bool(self.order)
+
+
+    def __iter__(self):
+        index = [0]
+        while index:
+            try:
+                o = self[index]
+            except IndexError:
+                index.pop()
+                continue
+            if type(o) == str:
+                yield o
+            else:
+                index.append(0)
+                continue
+            index[-1] += 1
+        return
+
+
+    def __len__(self):
+        if self._len_cache is not None:
+            return self._len_cache
+        l = 0
+        with self.lock:
+            for x in self.__iter__():
+                l += 1
+                print(x)
+            self._len_cache = l
+        return l
+
+    def _check_key_valid(self, key):
+        if type(key) == int:
+            key = [key,]
+        elif type(key) == tuple or type(key) == list:
+            if not key or any(type(i) != int for i in key):
+                raise TypeError("Index must be a non-empty list of integers.")
+            elif type(key) == tuple:
+                key = list(key)
+        else:
+            raise TypeError("Bad type of index: '{}'.".format(type(key)))
+        return key
+
+    def __getitem__(self, key):
+        key = self._check_key_valid(key)
+        with self.lock:
+            o = self.order
+            for i in key:
+                try:
+                    o = o[i]
+                except IndexError:
+                    pos = len(self.order) - len(o)
+                    raise IndexError("Module order index out ouf range at index position {} of index '{}'.".format(pos, str(key)))
+            return o
+
+
+    def __setitem__(self, key, mod_id):
+        key = self._check_key_valid(key)
+        isLoop = len(key) > 1 and key[-1] == 0
+        with self.lock:
+            o = self.order
+            while key:
+                i = key.pop(0)
+                if i == -1:
+                    i = len(o)
+                if isLoop and len(key) == 1:
+                    # New loop
+                    o.insert(i, [mod_id])
+                    if self._len_cache is not None:
+                        self._len_cache += 1
+                    break
+                elif len(key) > 0:
+                    o = o[i]
+                else:
+                    if i > len(o):
+                        raise IndexError("Cannot insert item: index too large")
+                    o.insert(i, mod_id)
+                    if self._len_cache is not None:
+                        self._len_cache += 1
+
+
+    def __delitem__(self, key):
+        key = self._check_key_valid(key)
+        isLoop = len(key) > 1 and key[-1] == 0
+        with self.lock:
+            o = self.order
+            while key:
+                i = key.pop(0)
+                if isLoop and len(key) == 1:
+                    del o[i]
+                    self._len_cache = None
+                    break
+                elif len(key) > 0:
+                    o = o[i]
+                else:
+                    if type(o[i]) == str:
+                        self._len_cache -= 1
+                    else:
+                        self._len_cache = None
+                    del o[i]
+
+
+    def set(self, order):
+        """
+        Set the execution order of the modules.
+        """
+        with self.lock:
+            new_order = []
+            for o in order:
+                # TODO: copy _parse_module_insertion from ModuleManager
+                i = self._parse_module_insertion(o)
+                if i is None:
+                    return
+                new_order.append(i)
+            self.order = new_order
+            self._len_cache = None
+
+
+    def move(self, idx_old, idx_new):
+        """
+        Move a module in the order
+
+        Move the module at order index ``idx_old`` to ``idx_new``.
+        """
+        with self.lock:
+            order = self.order
+            if type(idx_old) != int and type(idx_new) != int:
+                if len(idx_old) != len(idx_new):
+                    return
+                while len(idx_old) > 1:
+                    i_o = idx_old.pop(0)
+                    i_n = idx_new.pop(0)
+                    if i_o != i_n:
+                        return
+                    order = order[i_o]
+                idx_old = i_0
+                idx_new = i_n
+            if idx_new == -1:
+                idx_new = len(order) - 1
+            mod = order.pop(idx_old)
+            order.insert(idx_new, mod)
+
+
+    def _parse_insertion(self, ins):
+        """
+        Check module insertion.
+
+        This method is not thread-safe and must only be called from
+        thread-safe functions.
+        """
+        # If `ins` is a string, return it
+        if type(ins) == str:
+            return ins
+
+        # If `ins` is None, return None, because None indicates an
+        # error during parsing `ins` in a higher parsing instance.
+        # Do not print a message, because the message is printed
+        # by the instance that encountered the error.
+        if ins is None:
+            return None
+
+        # If `ins` is not a string, it must be a list representing a loop
+        pins = []
+
+        # Check if first loop entry is the “embracing member”
+        if type(ins[0]) != str:
+            print("Cannot insert new module: embracing member missing in loop", file=sys.stderr)
+            return None
+
+        # Check for empty list
+        if not ins:
+            print("Cannot insert new module: illegal empty list encountered.", file=sys.stderr)
+            return None
+
+        # Add all remaining items to the list
+        for i in ins:
+            if type(i) != str:
+                i = self._parse_module_insertion(i)
+                if i is None:
+                    return None
+            pins.append(i)
+
+        # Return parsed insertion item
+        return pins
 
