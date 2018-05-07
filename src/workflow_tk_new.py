@@ -5,6 +5,10 @@ import tkinter as tk
 import tkinter.font as tkfont
 import tkinter.ttk as ttk
 
+# Unicode status symbols:
+# dependencies OK: u+2713 or u+2714
+# dependencies not OK: u+2717 or u+2718
+# input needed: u+26a0 or u+270f
 
 class WorkflowGUI:
     def __init__(self, module_manager):
@@ -57,6 +61,10 @@ class WorkflowGUI:
                 command=self.refresh_mod_tree)
         self.refresh_button.pack(side=tk.LEFT)
 
+        self.run_button = tk.Button(frame, text="Run all",
+                command=self.modman.invoke_workflow)
+        self.run_button.pack(side=tk.LEFT)
+
         # Treeview with scrollbar
         frame = tk.Frame(self.frame)
         frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
@@ -84,6 +92,7 @@ class WorkflowGUI:
         self.refresh_mod_tree()
         self.update_info()
         self.modman.register_listener(lambda: self.frame.after_idle(self.refresh_mod_tree), kind="order")
+        self.modman.register_listener(lambda: self.frame.after_idle(self.refresh_run_button), kind="workflow")
 
 
     def mainloop(self):
@@ -213,6 +222,13 @@ class WorkflowGUI:
             index = self.mod_tree.index(iid)
             self.modman.module_order_remove(index)
         self.selection_changed()
+
+    def refresh_run_button(self):
+        """Refresh state of run button"""
+        if self.modman.is_workflow_running():
+            self.run_button.config(state=tk.DISABLED)
+        else:
+            self.run_button.config(state=tk.NORMAL)
 
     def get_module(self, iid=None, mod_id=None):
         """

@@ -19,7 +19,7 @@ import warnings
 
 PERFORM_KINDS = {"conf", "run", "loop_next", "loop_finished"}
 RETURN_KINDS = {"init", *PERFORM_KINDS}
-LISTENER_KINDS = {"order", "dependency"}
+LISTENER_KINDS = {"order", "dependency", "workflow"}
 
 
 def _load_module(name, path, return_init_ret=True):
@@ -373,6 +373,7 @@ class ModuleManager:
         self._listeners = Listeners(kinds=LISTENER_KINDS)
         self.data_lock = threading.RLock()
         self.order_lock = threading.RLock()
+        self.run_lock = threading.Lock()
 
         # Register built-in modules
         if register_builtins:
@@ -516,6 +517,52 @@ class ModuleManager:
         """
         with self.order_lock:
             return [{'name': m.name, 'id': m.id, 'category': m.category, 'version': '.'.join(m.version)} for _, m in self.modules.items() if m.name != '']
+
+
+    def is_workflow_running(self):
+        """Return True if workflow is running, else False."""
+        if self.run_lock.acquire(False):
+            self.run_lock.release()
+            return False
+        else:
+            return True
+
+
+    def invoke_workflow(self):
+        """
+        Invoke the workflow in a new thread.
+
+        The workflow can only be run once at a time; any trial to
+        invoke workflow execution while another instance of
+        workflow execution is running will fail.
+        """
+        thread = threading.Thread(target=self._lock_run_workflow)
+        thread.start()
+        print("new thread started")
+
+
+    def _lock_run_workflow(self):
+        """Acquire locks for workflow execution."""
+        if self.run_lock.acquire(False):
+            try:
+                self._listeners.notify("workflow")
+                with self.order_lock:
+                    with self.data_lock:
+                        self._run_workflow()
+            finally:
+                self.run_lock.release()
+                self._listeners.notify("workflow")
+        else:
+            print("Cannot start analysis: seems to be running already.", file=sys.stderr)
+
+
+    def _run_workflow(self):
+        """Execute the workflow from the module order."""
+        print("Running workflow …")
+        for mod_id in self.module_order:
+            self.module_perform(mod_id, "run")
+
+        print("Workflow finished.")
 
 
     def memorize_result(self, mod_id, result):
