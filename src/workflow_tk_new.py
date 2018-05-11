@@ -234,12 +234,15 @@ class WorkflowGUI:
         else:
             self.mod_list_frame.to_front()
 
-    def get_selection_index(self):
+    def get_item_index(self, iid=None):
         """Return the index of the selected module"""
-        iid = self.mod_tree.focus()
+        if iid is None:
+            iid = self.mod_tree.focus()
         index = []
         while iid:
             index.append(self.mod_tree.index(iid))
+            if self.mod_tree.parent(iid):
+                index[-1] += 1
             iid = self.mod_tree.parent(iid)
         if not index:
             return None
@@ -250,7 +253,9 @@ class WorkflowGUI:
         """Insert a module into the list after the current selection"""
         iid = self.mod_tree.focus()
         if iid:
-            index = self.mod_tree.index(iid) + 1
+            index = self.get_item_index()
+            if not self.mod_tree.parent(iid) or self.mod_tree.set(iid, column="id"):
+                index[-1] += 1
         else:
             index = -1
         self.modman.module_order_insert(mod_id, index)
@@ -258,13 +263,18 @@ class WorkflowGUI:
     def move_mod(self, direction):
         """Move a module in the list up or down"""
         iid = self.mod_tree.focus()
-        if not iid:
+        index_old = self.get_item_index(iid)
+        if not index_old:
             return
-        index_old = self.mod_tree.index(iid)
+        index_new = index_old.copy()
         if direction == "up":
-            index_new = index_old - 1
+            if not self.mod_tree.prev(iid):
+                return
+            index_new[-1] -= 1
         elif direction == "down":
-            index_new = index_old + 1
+            if not self.mod_tree.next(iid):
+                return
+            index_new[-1] += 1
         else:
             print("bad direction: '{}'".format(direction))
             return
@@ -277,7 +287,7 @@ class WorkflowGUI:
         if not iid:
             iid = self.mod_tree.focus()
         if iid:
-            index = self.mod_tree.index(iid)
+            index = self.get_item_index(iid)
             self.modman.module_order_remove(index)
         self.selection_changed()
 

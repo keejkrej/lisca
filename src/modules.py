@@ -1256,13 +1256,15 @@ class ModuleOrder:
                     return
                 if len(idx_old) > 1:
                     inLoop = True
-                while len(idx_old) > 1:
+                while len(idx_old) >= 1:
                     i_o = idx_old.pop(0)
                     i_n = idx_new.pop(0)
-                    if i_o != i_n:
-                        return
-                    order = order[i_o]
-                idx_old = i_0
+                    if idx_old:
+                        if i_o != i_n:
+                            # Movement beyond loops is forbidden
+                            return
+                        order = order[i_o]
+                idx_old = i_o
                 idx_new = i_n
             if idx_new == -1:
                 idx_new = len(order) - 1

@@ -66,7 +66,7 @@ class RecursiveComparer:
             t_id = self.id_of(iid)
 
             # DEBUG
-            print("index={}, m_id={:20s}, t_id={:20s}".format(self.moi.index, m_id, t_id))
+            #print("index={}, m_id={:20s}, t_id={:20s}".format(self.moi.index, m_id, t_id))
 
             if m_id != t_id:
                 next_iid = self.tree.next(iid)
@@ -148,11 +148,6 @@ class ModuleOrderIterator:
 
     def is_loop(self):
         return len(self.stack) > 1 and type(self.stack[-1]) != str
-
-        # DEBUG:
-        #res = len(self.stack) > 1 and type(self.stack[-1]) != str
-        #print("***\nType: {}\nstack[-1]: {}\nresult: {}\nstack: {}\n***".format(type(self.stack[-1]), self.stack[-1], res, self.stack))
-        #return res
 
     def has_children(self):
         if not self.is_loop():
