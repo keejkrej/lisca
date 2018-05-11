@@ -81,6 +81,12 @@ class RecursiveComparer:
                         iid = self.insert(m_id, prev=iid)
                     else:
                         iid = self.insert(m_id, parent=parent)
+                if not next_iid or t_id == self.moi.get_next_id():
+                    # TODO: continue here: inherit focus on deletion of first item in list if first item has focus
+                    sel = self.tree.selection()
+                    if sel and sel[0] == self.tree.prev(iid):
+                        self.tree.focus(iid)
+                        self.tree.selection_set(iid)
 
             # Compare children of current parent
             children = self.tree.get_children(iid)
@@ -89,11 +95,8 @@ class RecursiveComparer:
                     self.moi.step_into_children()
                     self.compare(parent=iid)
                 else:
-                    if len(children) > 1:
+                    if not (len(children) == 1 and self.id_of(children[0]) == ""):
                         self.tree.delete(*children)
-                    elif children and self.id_of(children[0]):
-                        self.tree.delete(*children)
-                    if not (children and self.id_of(children[0]) == ""):
                         self.insert("", parent=iid)
             elif children:
                 self.tree.delete(*children)
@@ -103,6 +106,11 @@ class RecursiveComparer:
 
         # Delete all additional items in tree view
         while iid:
+            if self.tree.focus() == iid:
+                prev = self.tree.prev(iid)
+                if prev:
+                    self.tree.selection_set(prev)
+                    self.tree.focus(prev)
             old = iid
             iid = self.tree.next(iid)
             self.tree.delete(old)
@@ -183,6 +191,19 @@ class ModuleOrderIterator:
         if self.is_loop():
             return self.stack[-1][0]
         return self.stack[-1]
+
+    def get_next_id(self):
+        if not self.has_next():
+            return ""
+        elif self.next_into_children:
+            return self.stack[-1][1]
+        elif self.index is None:
+            s = self.stack[-1][0]
+            if type(s) == list:
+                s = s[0]
+            return s
+        else:
+            self.stack[-1] = self.stack[-2][self.index[-1] + 1]
 
     def print_index(self):
         # DEBUG

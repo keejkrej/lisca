@@ -322,7 +322,7 @@ class WorkflowGUI:
         down_button_state = tk.DISABLED
 
         iid = self.mod_tree.focus()
-        if iid:
+        if iid and self.mod_tree.set(iid, column="id"):
             remove_button_state = tk.NORMAL
             if self.mod_tree.prev(iid):
                 up_button_state = tk.NORMAL

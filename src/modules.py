@@ -1220,7 +1220,7 @@ class ModuleOrder:
                 elif len(key) > 0:
                     o = o[i]
                 else:
-                    if type(o[i]) == str:
+                    if self._len_cache is not None and type(o[i]) == str:
                         self._len_cache -= 1
                     else:
                         self._len_cache = None
