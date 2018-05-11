@@ -17,7 +17,7 @@ import traceback
 import warnings
 
 
-PERFORM_KINDS = {"conf", "run", "loop_next", "loop_finished"}
+PERFORM_KINDS = {"conf", "run", "loop_next", "loop_end"}
 RETURN_KINDS = {"init", *PERFORM_KINDS}
 LISTENER_KINDS = {"order", "dependency", "workflow"}
 
@@ -369,7 +369,7 @@ class ModuleManager:
         """
         self.modules = {}
         self.data = [{}]
-        self.module_order = ModuleOrder()
+        self.module_order = ModuleOrder(self.modules)
         self._listeners = Listeners(kinds=LISTENER_KINDS)
         self.data_lock = threading.RLock()
         self.order_lock = threading.RLock()
@@ -512,11 +512,8 @@ class ModuleManager:
     def list_display(self, category=None):
         """
         Return a list of modules for displaying.
-        
-        This method is thread-safe.
         """
-        with self.order_lock:
-            return [{'name': m.name, 'id': m.id, 'category': m.category, 'version': '.'.join(m.version)} for _, m in self.modules.items() if m.name != '']
+        return [{'name': m.name, 'id': m.id, 'category': m.category, 'version': '.'.join(m.version)} for _, m in self.modules.items() if m.name != '']
 
 
     def is_workflow_running(self):
@@ -788,6 +785,7 @@ class ModuleManager:
         """
         self._listeners.register(fun, kind)
 
+
     def delete_listener(self, lid):
         """Delete the listener with ID ``lid``"""
         self._listeners.delete(lid)
@@ -1021,6 +1019,12 @@ class ModuleMetadata:
             return fun(*args, **kwargs)
 
 
+    # Check if this module holds a loop.
+    @property
+    def is_loop(self):
+        return self.has_fun("loop_next") and self.has_fun("loop_end")
+
+
     # "module"
     # module
     # Reference to the actual module; usually set by the
@@ -1092,12 +1096,19 @@ class ModuleMetadata:
 class ModuleOrder:
     """
     A class for providing module order operations.
+
+    Supports loops.
+
+    :param modules: the metadata of all available modules
+    :type modules: dict[str]:ModuleMetadata
     """
-    def __init__(self, order=None, lock=None):
+    def __init__(self, modules, order=None, lock=None):
         self._len_cache = None
+        self.modules = modules
+
         if lock is None:
             self.lock = threading.RLock()
-        elif type(lock) == threading.RLock():
+        elif type(lock) == threading.RLock:
             self.lock = lock
         else:
             raise TypeError("Bad lock type given.")
@@ -1143,6 +1154,7 @@ class ModuleOrder:
             self._len_cache = l
         return l
 
+
     def _check_key_valid(self, key):
         if type(key) == int:
             key = [key,]
@@ -1154,6 +1166,7 @@ class ModuleOrder:
         else:
             raise TypeError("Bad type of index: '{}'.".format(type(key)))
         return key
+
 
     def __getitem__(self, key):
         key = self._check_key_valid(key)
@@ -1170,27 +1183,27 @@ class ModuleOrder:
 
     def __setitem__(self, key, mod_id):
         key = self._check_key_valid(key)
-        isLoop = len(key) > 1 and key[-1] == 0
+        if len(key) > 1 and key[-1] == 0:
+            raise IndexError("Bad index: cannot replace loop head.")
+        isLoop = self.modules[mod_id].is_loop
+        print(f"isLoop={isLoop}")
         with self.lock:
             o = self.order
             while key:
                 i = key.pop(0)
                 if i == -1:
                     i = len(o)
-                if isLoop and len(key) == 1:
-                    # New loop
-                    o.insert(i, [mod_id])
-                    if self._len_cache is not None:
-                        self._len_cache += 1
-                    break
                 elif len(key) > 0:
                     o = o[i]
                 else:
                     if i > len(o):
                         raise IndexError("Cannot insert item: index too large")
-                    o.insert(i, mod_id)
-                    if self._len_cache is not None:
-                        self._len_cache += 1
+            if isLoop:
+                o.insert(i, [mod_id])
+            else:
+                o.insert(i, mod_id)
+            if self._len_cache is not None:
+                self._len_cache += 1
 
 
     def __delitem__(self, key):
@@ -1221,7 +1234,7 @@ class ModuleOrder:
         with self.lock:
             new_order = []
             for o in order:
-                i = self._parse_module_insertion(o)
+                i = self._parse_insertion(o)
                 if i is None:
                     return
                 new_order.append(i)
@@ -1235,11 +1248,14 @@ class ModuleOrder:
 
         Move the module at order index ``idx_old`` to ``idx_new``.
         """
+        inLoop = False
         with self.lock:
             order = self.order
             if type(idx_old) != int and type(idx_new) != int:
                 if len(idx_old) != len(idx_new):
                     return
+                if len(idx_old) > 1:
+                    inLoop = True
                 while len(idx_old) > 1:
                     i_o = idx_old.pop(0)
                     i_n = idx_new.pop(0)
@@ -1250,20 +1266,43 @@ class ModuleOrder:
                 idx_new = i_n
             if idx_new == -1:
                 idx_new = len(order) - 1
+            if inLoop and (idx_old == 0 or idx_new == 0):
+                # Do not move loop heads
+                return
             mod = order.pop(idx_old)
             order.insert(idx_new, mod)
 
 
-    def _parse_insertion(self, ins):
+    def _parse_insertion(self, ins, isFirst=False):
         """
         Check module insertion.
 
         This method is not thread-safe and must only be called from
         thread-safe functions.
+
+        :param ins: the module order to be inserted
+        :type ins: { [list of] } str
+        :param isFirst: flag indicating whether this is the first module in a new level in the module order (important for loop checking)
+        :type isFirst: bool
         """
         # If `ins` is a string, return it
         if type(ins) == str:
-            return ins
+            m = self.modules.get(ins)
+
+            # Check if module ID is valid
+            if m is None:
+                return None
+
+            # Check if loop module is at first position
+            isLoop = m.is_loop
+            if (isFirst and isLoop) or (not isFirst and not isLoop):
+                # Loop module at first position or non-loop module at
+                # later position: both are allowed
+                return ins
+            else:
+                # Loop module at later position or non-loop module at
+                # first position: both are forbidden
+                return None
 
         # If `ins` is None, return None, because None indicates an
         # error during parsing `ins` in a higher parsing instance.
@@ -1273,26 +1312,105 @@ class ModuleOrder:
             return None
 
         # If `ins` is not a string, it must be a list representing a loop
-        pins = []
+        # Check for empty list
+        if not ins:
+            print("Cannot insert new module: illegal empty list encountered.", file=sys.stderr)
+            return None
 
         # Check if first loop entry is the “embracing member”
         if type(ins[0]) != str:
             print("Cannot insert new module: embracing member missing in loop", file=sys.stderr)
             return None
 
-        # Check for empty list
-        if not ins:
-            print("Cannot insert new module: illegal empty list encountered.", file=sys.stderr)
-            return None
-
         # Add all remaining items to the list
+        pins = []
+        isFirst = True
         for i in ins:
             if type(i) != str:
-                i = self._parse_module_insertion(i)
+                i = self._parse_insertion(i, isFirst)
                 if i is None:
                     return None
             pins.append(i)
+            if isFirst:
+                isFirst = False
 
         # Return parsed insertion item
         return pins
 
+
+    def next_index(self, idx=None):
+        """
+        Return index of next module, or None if there is no more module.
+
+        :param idx: the current module, the next module of which is sought, or None for getting the index of the first module
+        :type idx: int, list of int or None
+        :return: index of next module or None
+        :rtype: list of int or None
+        """
+        if not self.order:
+            return None
+        o = [self.order]
+
+        if idx is None:
+            idx = [0]
+            i = 0
+        else:
+            idx = self._check_key_valid(idx)
+
+            if len(idx) > 1:
+                for i, j in enumerate(idx[:-1]):
+                    if j == -1:
+                        j = len(o[i]) - 1
+                        idx[i] = j
+                    o.append(o[i][j])
+                i += 1
+            else:
+                i = 0
+
+            while i >= 0:
+                if len(o[i]) > idx[i] + 1:
+                    idx[i] += 1
+                    break
+                else:
+                    i -= 1
+                    idx.pop()
+                    o.pop()
+            else:
+                return None
+
+        while type(o[-1][idx[-1]]) != str:
+            o.append(o[-1][idx[-1]])
+            idx.append(0)
+
+        return idx
+
+    def len(self, idx=None):
+        """
+        Return the length of the current loop (without loop head).
+        """
+        if idx is None:
+            return self.__len__()
+
+        o = self.order
+        if not o:
+            return 0
+
+        if idx == -1:
+            return len(o)
+
+        idx = self._check_key_valid(idx)
+        loop_correction = 0
+
+        if len(idx) > 1 or type(o[idx[0]]) != str:
+            loop_correction = 1
+            while idx:
+                o = o[idx.pop(0)]
+                if len(idx) == 1 and type(o[idx[0]]) == str:
+                    break
+        return len(o) - loop_correction
+
+    def mod_at(self, idx):
+        return self.modules[self[idx]]
+
+    def is_loop_at(self, idx):
+        return self.modules[self[idx]].is_loop

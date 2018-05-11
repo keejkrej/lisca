@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 import gui_tk as gui
+from recursive_tree_comparer import RecursiveComparer
 import sys
 import tkinter as tk
 import tkinter.font as tkfont
@@ -9,6 +10,52 @@ import tkinter.ttk as ttk
 # dependencies OK: u+2713 or u+2714
 # dependencies not OK: u+2717 or u+2718
 # input needed: u+26a0 or u+270f
+
+def make_index_incrementor(mo):
+    """
+    Build an index iteration function.
+
+    Returns a closure for iteating over ModuleOrder ``mo``,
+    as well as indices ``i`` and ``j``.
+    See source code for details.
+    """
+    # Initialize index
+    # `i` is an array of the number of modules in the current level that
+    # have been iterated over already.
+    # `j` is the index for indexing into `mo` to get the current module,
+    # with shape "list of integers".
+    i = [0]
+    j = mo.next_index()
+
+    def index_incrementor():
+        # Save previous index values
+        i_old = i
+        j_old = j
+
+        # Get index of next module (returns None when exhausted)
+        j = mo.next_index(j_old)
+
+        # Handle case of exhausted iterator
+        if j is None:
+            return mo.len(-1), None
+
+        # Get index `n` of first level where `j_old` and `j` differ
+        for n, (jo, jn) in enumerate(zip(j_old, j)):
+            if jo != jn:
+                break
+
+        # Crop all levels of `i` above `n`
+        if len(i) > n + 1:
+            i = i[:n+1]
+
+        # If current level higher than length of `i`, fill difference with 0
+        while len(j) > len(i):
+            i.append(0)
+
+        # Increment counter for current level and return
+        i[-1] += 1
+        return i, j
+    return i, j, index_incrementor
 
 class WorkflowGUI:
     def __init__(self, module_manager):
@@ -88,7 +135,6 @@ class WorkflowGUI:
         self.info_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
         # Populate module tree
-        #self.build_mod_tree()
         self.refresh_mod_tree()
         self.update_info()
         self.modman.register_listener(lambda: self.frame.after_idle(self.refresh_mod_tree), kind="order")
@@ -98,18 +144,6 @@ class WorkflowGUI:
     def mainloop(self):
         """Start the Tk mainloop"""
         gui.mainloop()
-
-    def build_mod_tree(self):
-        """Populate the module list with modules; TODO"""
-        # Clear module tree
-        self.mod_tree.delete(*self.mod_tree.get_children())
-
-        # Write into Treeview
-        mo = self.modman.module_order
-        for mod in mo:
-            if type(mod) == str:
-                m = self.modman.modules[mod]
-                self.mod_tree.insert('', 'end', text=m.name, values=(m.id,))
 
     def get_id(self, iid):
         """Return module ID of module at Treeview position ``iid``"""
@@ -123,6 +157,7 @@ class WorkflowGUI:
 
     def _swap_items(self, iid1, iid2):
         """Interchange two neighboring items in the Treeview."""
+        # TODO: delete this method
         if self.mod_tree.next(iid2) == iid1:
             iid1, iid2 = iid2, iid1
         if self.mod_tree.next(iid1) != iid2:
@@ -136,17 +171,28 @@ class WorkflowGUI:
 
     def refresh_mod_tree(self):
         """Step through module list and synchronize it"""
+        RecursiveComparer.go(self.mod_tree, self.modman.module_order)
+        self.selection_changed()
+
+
+    def refresh_mod_tree_old(self):
+        """Step through module list and synchronize it"""
+        # TODO: delete this method
         mo = self.modman.module_order
 
-        items = self.mod_tree.get_children()
+        parent = [""]
+        items = self.mod_tree.get_children(parent[0])
         if items:
             iid = items[0]
         else:
             iid = ''
-        i = 0
+        i, j, next_idx = make_index_incrementor(mo)
 
         while True:
-            if i >= len(mo):
+            if j is None:
+                break
+
+            elif i[-1] >= mo.len(j):
                 if iid:
                     iid_old = iid
                     iid = self.mod_tree.next(iid_old)
@@ -155,8 +201,8 @@ class WorkflowGUI:
                     break
 
             elif not iid:
-                self._insert_item(mo[i])
-                i += 1
+                self._insert_item(mo[j], parent=parent)
+                i, j = next_idx()
 
             elif mo[i] != self.get_id(iid):
                 next_iid = self.mod_tree.next(iid)
@@ -172,10 +218,10 @@ class WorkflowGUI:
                     if i >= len(mo) + 1 or mo[i+1] != self.get_id(iid):
                         self.mod_tree.delete(iid)
                         iid = self.mod_tree.next(iid_new)
-                i += 1
+                i, j = next_idx()
 
             else:
-                i += 1
+                i, j = next_idx()
                 iid = self.mod_tree.next(iid)
 
         self.selection_changed()
@@ -187,6 +233,18 @@ class WorkflowGUI:
             self.mod_list_frame = ModuleListFrame(self)
         else:
             self.mod_list_frame.to_front()
+
+    def get_selection_index(self):
+        """Return the index of the selected module"""
+        iid = self.mod_tree.focus()
+        index = []
+        while iid:
+            index.append(self.mod_tree.index(iid))
+            iid = self.mod_tree.parent(iid)
+        if not index:
+            return None
+        index.reverse()
+        return index
 
     def insert_mod(self, mod_name, mod_id):
         """Insert a module into the list after the current selection"""
@@ -243,7 +301,9 @@ class WorkflowGUI:
             return None
         elif iid is not None:
             mod_id = self.mod_tree.set(iid, column='id')
-        return self.modman.modules.get(mod_id)
+        if mod_id:
+            return self.modman.modules.get(mod_id)
+        return None
 
     def selection_changed(self, *_):
         """Update control button states upon selection change"""
@@ -278,11 +338,14 @@ class WorkflowGUI:
             tk.Label(self.info_frame, text="No module selected").pack(side=tk.TOP)
 
     def show_module_info(self, iid):
+        mod = self.get_module(iid)
+        if not mod:
+            self.clear_info(True)
+            return
+
         # Prepare info frame
         self.clear_info()
-        #self.info_frame.rowconfigure(0, weight=1)
         self.info_frame.columnconfigure(1, weight=1)
-        mod = self.get_module(iid)
 
         fmt = {"font": tkfont.Font(family="TkDefaultFont", weight="bold")}
         tk.Label(self.info_frame,
