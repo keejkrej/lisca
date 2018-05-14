@@ -69,6 +69,10 @@ def _load_module(name, path, return_init_ret=True):
         meta.set_fun("conf", mod.configure)
     if hasattr(mod, 'run'):
         meta.set_fun("run", mod.run)
+    if hasattr(mod, 'loop_next'):
+        meta.set_fun("loop_next", mod.loop_next)
+    if hasattr(mod, 'loop_end'):
+        meta.set_fun("loop_end", mod.loop_end)
     
     # Second, let module fill in its own properties
     try:
@@ -393,6 +397,7 @@ class ModuleManager:
 
     def show(self):
         """Print ``self.modules``. Only for debugging."""
+        # DEBUG
         print(self.modules)
 
 
@@ -472,8 +477,8 @@ class ModuleManager:
         # Filter out data that is visible to the module
         with self.order_lock:
             iidx = idx
-            while len(iidx) > 0:
-                pass
+            #while len(iidx) > 0:
+            #    pass
                 #while 
                     
         # CONTINUE here
@@ -558,9 +563,65 @@ class ModuleManager:
         # TODO: support loops
         print("Running workflow …")
         for mod_id in self.module_order:
-            self.module_perform(mod_id, "run")
+            #self.module_perform(mod_id, "run")
+            print(mod_id)
 
         print("Workflow finished.")
+
+
+    def _run_workflow_new(self):
+        order = [self.module_order.order]
+        if not order[0]:
+            print("Workflow order is empty.")
+            return
+        #order.append(order[0])
+        index = [0]
+        isInsideLoop = []
+
+        print("\nRunning workflow …\n")
+
+        while index:
+            # Append new module
+            order.append(order[-1][index[-1]])
+
+            # If loop, step into it
+            if type(order[-1]) is list:
+                index.append(0)
+                isInsideLoop.append(False)
+                continue
+
+            # Retrieve current module
+            mod_id = order[-1]
+            #mod = self.modules[mod_id]
+                
+            # Perform actual function
+            if index[-1] == 0 and len(index) > 1:
+                if isInsideLoop[-1]:
+                    try:
+                        # Start next loop iteration
+                        self.module_perform(mod_id, "loop_next")
+                    except StopIteration:
+                        # Finalize loop
+                        self.module_perform(mod_id, "loop_end")
+                        isInsideLoop.pop()
+                        order.pop()
+                        index.pop()
+                else:
+                    # Setup loop
+                    self.module_perform(mod_id, "run")
+                    isInsideLoop[-1] = True
+            else:
+                # Invoke "normal" module
+                self.module_perform(mod_id, "run")
+
+            # Go to next module
+            if index:
+                order.pop()
+                index[-1] += 1
+                if index[-1] >= len(order[-1]):
+                    index[-1] = 0
+
+        print("\nWorkflow finished.")
 
 
     def memorize_result(self, mod_id, result):
@@ -1133,6 +1194,8 @@ class ModuleOrder:
                 o = self[index]
             except IndexError:
                 index.pop()
+                if index:
+                    index[-1] += 1
                 continue
             if type(o) == str:
                 yield o
@@ -1177,7 +1240,7 @@ class ModuleOrder:
                     o = o[i]
                 except IndexError:
                     pos = len(self.order) - len(o)
-                    raise IndexError("Module order index out ouf range at index position {} of index '{}'.".format(pos, str(key)))
+                    raise IndexError("Module order index out ouf range at index position {} of index '{}'.".format(pos, str(key))) from None
             return o
 
 
