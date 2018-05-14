@@ -155,75 +155,9 @@ class WorkflowGUI:
         return iid
 
 
-    def _swap_items(self, iid1, iid2):
-        """Interchange two neighboring items in the Treeview."""
-        # TODO: delete this method
-        if self.mod_tree.next(iid2) == iid1:
-            iid1, iid2 = iid2, iid1
-        if self.mod_tree.next(iid1) != iid2:
-            return False
-
-        self.mod_tree.move(iid2,
-                self.mod_tree.parent(iid2),
-                self.mod_tree.index(iid1))
-        return True
-
-
     def refresh_mod_tree(self):
         """Step through module list and synchronize it"""
         RecursiveComparer.go(self.mod_tree, self.modman.module_order)
-        self.selection_changed()
-
-
-    def refresh_mod_tree_old(self):
-        """Step through module list and synchronize it"""
-        # TODO: delete this method
-        mo = self.modman.module_order
-
-        parent = [""]
-        items = self.mod_tree.get_children(parent[0])
-        if items:
-            iid = items[0]
-        else:
-            iid = ''
-        i, j, next_idx = make_index_incrementor(mo)
-
-        while True:
-            if j is None:
-                break
-
-            elif i[-1] >= mo.len(j):
-                if iid:
-                    iid_old = iid
-                    iid = self.mod_tree.next(iid_old)
-                    self.mod_tree.delete(iid_old)
-                else:
-                    break
-
-            elif not iid:
-                self._insert_item(mo[j], parent=parent)
-                i, j = next_idx()
-
-            elif mo[i] != self.get_id(iid):
-                next_iid = self.mod_tree.next(iid)
-                if not next_iid:
-                    self.mod_tree.delete(iid)
-                    iid = ''
-                    continue
-                elif mo[i] == self.get_id(next_iid):
-                    self._swap_items(iid, next_iid)
-                else:
-                    iid_new = self._insert_item(mo[i],
-                            index=self.mod_tree.index(iid))
-                    if i >= len(mo) + 1 or mo[i+1] != self.get_id(iid):
-                        self.mod_tree.delete(iid)
-                        iid = self.mod_tree.next(iid_new)
-                i, j = next_idx()
-
-            else:
-                i, j = next_idx()
-                iid = self.mod_tree.next(iid)
-
         self.selection_changed()
 
 

@@ -73,20 +73,22 @@ class RecursiveComparer:
                 next_t_id = self.id_of(next_iid)
                 if m_id == next_t_id:
                     # Module ID is found one step further, swap items
-                    self.tree.move(next_iid, parent, self.tree.index(iid))
+                    old_iid = iid
+                    self.tree.move(next_iid, parent, self.tree.index(old_iid))
                     iid = next_iid
+
+                    # When `old_iid` seems to be deleted, keep focus
+                    if t_id != self.moi.get_next_id():
+                        sel = self.tree.selection()
+                        if old_iid in sel:
+                            self.tree.focus(iid)
+                            self.tree.selection_set(iid)
                 else:
                     # Module ID is not found in tree, insert it
                     if iid:
                         iid = self.insert(m_id, prev=iid)
                     else:
                         iid = self.insert(m_id, parent=parent)
-                if not next_iid or t_id == self.moi.get_next_id():
-                    # TODO: continue here: inherit focus on deletion of first item in list if first item has focus
-                    sel = self.tree.selection()
-                    if sel and sel[0] == self.tree.prev(iid):
-                        self.tree.focus(iid)
-                        self.tree.selection_set(iid)
 
             # Compare children of current parent
             children = self.tree.get_children(iid)
@@ -195,15 +197,18 @@ class ModuleOrderIterator:
     def get_next_id(self):
         if not self.has_next():
             return ""
-        elif self.next_into_children:
-            return self.stack[-1][1]
+        #elif self.next_into_children:
+        #    return self.stack[-1][1]
         elif self.index is None:
             s = self.stack[-1][0]
             if type(s) == list:
                 s = s[0]
             return s
         else:
-            self.stack[-1] = self.stack[-2][self.index[-1] + 1]
+            try:
+                return self.stack[-2][self.index[-1] + 1]
+            except IndexError:
+                return ""
 
     def print_index(self):
         # DEBUG
