@@ -1,5 +1,19 @@
 class RecursiveComparer:
+    """
+    ``RecursiveComparer`` synchronizes the ``Treeview`` of the workflow GUI
+    with the ``ModuleOrder``.
+
+    The recommended way of using it is the ``RecursiveComparer.go`` method.
+    """
     def __init__(self, tree, mo):
+        """
+        Set up the RecursiveComparer.
+
+        :param tree: the ``Treeview`` instance to be synchronized
+        :type tree: ttk.Treeview
+        :param mo: the ``ModuleOrder`` with which to synchronize ``tree``
+        :type mo: ``ModuleOrder``
+        """
         self.tree = tree
         self.mo = mo
         self.moi = ModuleOrderIterator(mo.order)
@@ -7,10 +21,18 @@ class RecursiveComparer:
         self.i_tree = []
         self.i_mo = []
 
-        self.moi.print_order() #DEBUG
+        #self.moi.print_order() #DEBUG
 
     @classmethod
     def go(cls, tree, mo):
+        """
+        Synchronize a ``Treeview`` with a ``ModuleOrder``.
+
+        :param tree: the ``Treeview`` instance to be synchronized
+        :type tree: ttk.Treeview
+        :param mo: the ``ModuleOrder`` with which to synchronize ``tree``
+        :type mo: ``ModuleOrder``
+        """
         comparer = cls(tree, mo)
         comparer.compare()
 
@@ -21,6 +43,19 @@ class RecursiveComparer:
 
 
     def insert(self, mod_id, prev=None, parent=None):
+        """
+        Insert a new item into the ``Treeview``.
+
+        :param mod_id: the ID of the module to be inserted ("" for dummy)
+        :type mod_id: str
+        :param prev: the ``iid`` of the before which to insert the new item
+        :type prev: str
+        :param parent: the ``iid`` of the parent of the new item
+        :type parent: str
+
+        Either ``prev`` or ``parent`` must be given.
+        If ``prev`` is not given, the new item is inserted as last child.
+        """
         # Get name and ID of module to be inserted
         if not mod_id:
             # Dummy item for empty loops
@@ -49,7 +84,12 @@ class RecursiveComparer:
 
 
     def compare(self, parent=""):
-        """Compare tree view and module order content."""
+        """Compare tree view and module order content.
+        
+        :param parent: The ``iid`` of the item whose children to synchronize
+        :type parent: str
+        
+        By default, compare the top-level items."""
         # Get first child of current parent
         children = self.tree.get_children(parent)
         if children:
@@ -128,11 +168,18 @@ class ModuleOrderIterator:
     ModuleOrder instance in a similar way to a ttk.Treeview.
     """
     def __init__(self, order):
+        """
+        Set up the ``ModuleOrderIterator``.
+
+        :param order: the ``ModuleOrder.order``
+        :type order: list
+        """
         self.stack = [order]
         self.index = None
         self.next_into_children = False
 
     def has_next(self):
+        """Check if a next item exists (on same level)."""
         if self.index is None and self.stack[0]:
             return True
         elif not self.index:
@@ -145,6 +192,7 @@ class ModuleOrderIterator:
             return False
 
     def goto_next(self):
+        """Proceed to next item (on same level)."""
         if self.next_into_children:
             self.goto_first_child()
         elif self.index is None and self.stack[-1]:
@@ -157,9 +205,11 @@ class ModuleOrderIterator:
             raise IndexError("Cannot go to next item.")
 
     def is_loop(self):
+        """Check if current item is a loop."""
         return len(self.stack) > 1 and type(self.stack[-1]) != str
 
     def has_children(self):
+        """Check if current item has child items (loop content)."""
         if not self.is_loop():
             return False
         return len(self.stack[-1]) > 1
@@ -171,6 +221,7 @@ class ModuleOrderIterator:
         self.next_into_children = True
 
     def goto_first_child(self):
+        """Make first child of current item the new current item."""
         self.next_into_children = False
         if not self.has_children():
             raise IndexError("Cannot index into children when there are no children.")
@@ -178,11 +229,13 @@ class ModuleOrderIterator:
         self.stack.append(self.stack[-1][1])
 
     def has_parent(self):
+        """Check if current item has a parent item (is not top-level)."""
         if self.index:
             return True
         return False
 
     def goto_parent(self):
+        """Make parent of current item the new current item."""
         if not self.has_parent():
             raise IndexError("Cannot go to parent when there is no parent.")
         self.next_into_children = False
@@ -190,15 +243,15 @@ class ModuleOrderIterator:
         self.index.pop()
 
     def get_id(self):
+        """Return the module ID of the current item."""
         if self.is_loop():
             return self.stack[-1][0]
         return self.stack[-1]
 
     def get_next_id(self):
+        """Return the module ID of the next item (in same level), or "" if there is no next item."""
         if not self.has_next():
             return ""
-        #elif self.next_into_children:
-        #    return self.stack[-1][1]
         elif self.index is None:
             s = self.stack[-1][0]
             if type(s) == list:
@@ -211,9 +264,11 @@ class ModuleOrderIterator:
                 return ""
 
     def print_index(self):
+        """Print the index of the current item."""
         # DEBUG
         print("ModuleOrderIterator.index = {}".format(str(self.index)))
 
     def print_order(self):
+        """Print ``ModuleOrder.order`` of the underlying ``ModuleOrder``."""
         # DEBUG
         print("ModuleOrder = {}".format(str(self.stack[0])))
