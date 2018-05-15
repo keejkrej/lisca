@@ -558,7 +558,7 @@ class ModuleManager:
             print("Cannot start analysis: seems to be running already.", file=sys.stderr)
 
 
-    def _run_workflow(self):
+    def _run_workflow_old(self):
         """Execute the workflow from the module order."""
         # TODO: support loops
         print("Running workflow …")
@@ -569,18 +569,20 @@ class ModuleManager:
         print("Workflow finished.")
 
 
-    def _run_workflow_new(self):
+    def _run_workflow(self):
         order = [self.module_order.order]
         if not order[0]:
             print("Workflow order is empty.")
             return
-        #order.append(order[0])
         index = [0]
         isInsideLoop = []
 
         print("\nRunning workflow …\n")
 
         while index:
+            if not threading.main_thread().is_alive():
+                raise RuntimeError("Main thread is dead; quitting.")
+
             # Append new module
             order.append(order[-1][index[-1]])
 
@@ -592,34 +594,40 @@ class ModuleManager:
 
             # Retrieve current module
             mod_id = order[-1]
-            #mod = self.modules[mod_id]
-                
+
             # Perform actual function
             if index[-1] == 0 and len(index) > 1:
                 if isInsideLoop[-1]:
                     try:
                         # Start next loop iteration
-                        self.module_perform(mod_id, "loop_next")
-                    except StopIteration:
-                        # Finalize loop
-                        self.module_perform(mod_id, "loop_end")
-                        isInsideLoop.pop()
-                        order.pop()
-                        index.pop()
+                        try:
+                            self.module_perform(mod_id, "loop_next")
+                        except StopIteration:
+                            # Finalize loop
+                            self.module_perform(mod_id, "loop_end")
+                            isInsideLoop.pop()
+                            order.pop()
+                            index.pop()
+                    except Exception:
+                        # In case of error, clean global memory
+                        del self.data[-1]
+                        raise
                 else:
                     # Setup loop
-                    self.module_perform(mod_id, "run")
+                    self.module_perform(mod_id, "run", True)
                     isInsideLoop[-1] = True
             else:
                 # Invoke "normal" module
                 self.module_perform(mod_id, "run")
 
             # Go to next module
-            if index:
-                order.pop()
-                index[-1] += 1
-                if index[-1] >= len(order[-1]):
+            order.pop()
+            index[-1] += 1
+            if index[-1] >= len(order[-1]):
+                if len(index) > 1:
                     index[-1] = 0
+                else:
+                    index = []
 
         print("\nWorkflow finished.")
 
@@ -677,8 +685,8 @@ class ModuleManager:
                     dep_ver = _parse_version(self.modules[dep_id].version)
                     cmp_mode, dep_ver_req = _parse_version(dep_ver_req, True)
                     if not _check_versions(dep_ver_req, cmp_mode, dep_ver):
-                        print("Version mismatch for dependency '{}' of module '{}': found version {} of '{}', but require {}.".format(kind, mod_id, dep_ver, dep_id, dep_ver_req), file=sys.stderr)
-                        return None
+                        raise ValueError("Version mismatch for dependency '{}' of module '{}': found version {} of '{}', but require {}.".format(kind, mod_id, dep_ver, dep_id, dep_ver_req))
+                        #return None
                 else:
                     dep_ver = ()
 
@@ -702,13 +710,13 @@ class ModuleManager:
                             dep_data[name] = dmn
                             break
                     else:
-                        print("Missing dependency '{}' of plugin '{}': did not find required data '{}' of plugin '{}'.".format(kind, mod_id, name, dep_id), file=sys.stderr)
-                        return None
+                        raise ValueError("Missing dependency '{}' of plugin '{}': did not find required data '{}' of plugin '{}'.".format(kind, mod_id, name, dep_id))
+                        #return None
 
             return data
 
 
-    def module_perform(self, mod_id, kind):
+    def module_perform(self, mod_id, kind, isLoop=False):
         """
         Call a function of the module.
 
@@ -720,73 +728,37 @@ class ModuleManager:
         :type kind: str
         """
         # Check if function kind is legal
-        if kind != "conf" and kind != "run":
-            print("Cannot call function '{}': only 'conf' and 'run' functions can be called directly.".format(kind), file=sys.stderr)
-            return
+        if kind not in PERFORM_KINDS:
+            raise ValueError("Cannot call function '{}': bad type.".format(kind))
+            #return
 
         # Check if function exists
         m = self.modules[mod_id]
         if not m.has_fun(kind):
-            print("Cannot call function '{}' of module '{}': function not found.".format(kind, mod_id), file=sys.stderr)
-            return
+            raise ValueError("Cannot call function '{}' of module '{}': function not found.".format(kind, mod_id))
+            #return
 
         # Lock order
         with self.order_lock:
             # Get dependencies of function
             dep_data = self.acquire_dependencies(mod_id, kind)
             if dep_data is None:
-                print("Cannot call function '{}' of module '{}': dependencies not fulfilled.".format(kind, mod_id), file=sys.stderr)
-                return
+                return ValueError("Cannot call function '{}' of module '{}': dependencies not fulfilled.".format(kind, mod_id))
+                #return
 
             # Call the function
-            try:
-                res = m.call_fun(kind, dep_data)
-            except Exception as e:
-                _print_exception_string(e, 1)
-                return
+            res = m.call_fun(kind, dep_data)
 
-            # If module is configured, memorize its result and return
-            if kind == "conf":
-                self.memorize_result(mod_id, res)
-                return
-
-            # If this is reached, we have performed the "run" function.
-            # Check if the module contains a loop.
-            # If not, memorize result and return.
-            if m.has_fun("loop_next"):
+            # If a loop is started, create loop-intern memory.
+            # If a loop is ended, clear loop-intern memory.
+            if isLoop and kind == "run":
                 self.data.append({})
-                self.memorize_result(mod_id, res)
-            else:
-                self.memorize_result(mod_id, res)
-                return
+            elif kind == "loop_end":
+                del self.data[-1]
 
-            # Run the loop body
-            try:
-                while True:
-                   # TODO: insert loop body calls here
-                   dep_data = self.acquire_dependencies(mod_id, "loop_next")
-                   res = m.call_fun("loop_next", dep_data)
-                   self.memorize_result(mod_id, res)
-            except StopIteration:
-                pass
-            except Exception as e:
-                _print_exception_string(e, 1)
-                del self.data[-1]
-                return
-            
-            # Call the loop clean-up function, if given
-            if m.has_fun("loop_end"):
-                dep_data = self.acquire_dependencies(mod_id, "loop_end")
-                try:
-                    res = m.call_fun("loop_end", dep_data)
-                except Exception as e:
-                    _print_exception_string(e, 1)
-                    return
-
-                del self.data[-1]
-                self.memorize_result(mod_id, res)
-            else:
-                del self.data[-1]
+            # Memorize result and return
+            self.memorize_result(mod_id, res)
+            return
 
 
     def _add_data(self, d_id, name, value, index=-1):

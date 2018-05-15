@@ -5,8 +5,8 @@ def register(meta):
     meta.id = my_id
     meta.name = "Loop test 1"
 
-    meta.set_fun("loop_next", loop_next)
-    meta.set_fun("loop_end", loop_end)
+    #meta.set_fun("loop_next", loop_next)
+    #meta.set_fun("loop_end", loop_end)
 
     meta.set_dep("conf", (my_id, "registered"))
     meta.set_ret("conf", "configured")
