@@ -459,7 +459,7 @@ class ModuleManager:
 
         mod_id = self.get_module_at_index(idx)
         if mod_id is None:
-            return None
+            return None, None
         mod = self.modules[mod_id]
 
         # Collect dependencies (to see if module can be invoked)
@@ -558,7 +558,7 @@ class ModuleManager:
                         deps[child_id].difference_update(child.get_ret("run"))
 
         # Drop "empty" dependencies
-        for d in deps:
+        for d in list(deps.keys()):
             if not deps[d]:
                 del deps[d]
 

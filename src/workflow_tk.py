@@ -180,7 +180,7 @@ class WorkflowGUI:
 
             # Acquire dependencies of children
             try:
-                print(f"refresh_dependencies: index={index}")
+                print(f"refresh_dependencies: index={index}") #DEBUG
                 isConfRequired, deps = self.modman.check_module_dependencies(index)
             except IndexError:
                 continue
@@ -202,7 +202,7 @@ class WorkflowGUI:
             tags -= dep_tags_remove
             tags |= dep_tags
             self.mod_tree.item(iid, tags=tuple(tags))
-            print(f"settings tags: {self.mod_tree.item(iid, 'tags')}")
+            print(f"dependency tags: {self.mod_tree.item(iid, 'tags')}") #DEBUG
 
             # Recursively check dependencies of children
             if self.mod_tree.get_children(iid):
@@ -338,7 +338,9 @@ class WorkflowGUI:
         # Prepare info frame
         self.clear_info()
         self.info_frame.columnconfigure(1, weight=1)
+        self.info_frame.rowconfigure(2, weight=1)
 
+        # Define descriptor labels
         fmt = {"font": tkfont.Font(family="TkDefaultFont", weight="bold")}
         tk.Label(self.info_frame,
                 anchor=tk.E,
@@ -351,6 +353,13 @@ class WorkflowGUI:
                 text="ID:"
                 ).grid(row=1, column=0, sticky=tk.E)
         tk.Label(self.info_frame,
+                anchor=tk.E,
+                **fmt,
+                text="Requires:"
+                ).grid(row=2, column=0, sticky=tk.E+tk.N)
+
+        # Define content labels (and list)
+        tk.Label(self.info_frame,
                 anchor=tk.W,
                 text=mod.name
                 ).grid(row=0, column=1, sticky=tk.W)
@@ -358,7 +367,28 @@ class WorkflowGUI:
                 anchor=tk.W,
                 text=mod.id
                 ).grid(row=1, column=1, sticky=tk.W)
+        dep_frame = ttk.Frame(self.info_frame)
+        dep_frame.grid(row=2, column=1, sticky="NESW")
+        dep_tree = ttk.Treeview(dep_frame,
+                height=3,
+                show="tree",
+                selectmode="none",
+                takefocus=False)
+        dep_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        dep_tree_scroll = ttk.Scrollbar(dep_frame,
+                command=dep_tree.yview)
+        dep_tree_scroll.pack(side=tk.LEFT, fill=tk.Y)
+        dep_tree.config(xscrollcommand=dep_tree_scroll.set)
+        dep_tree.column("#0", minwidth=5, width=15)
 
+        # Display dependencies
+        _, deps = self.modman.check_module_dependencies(self.get_item_index(iid))
+        for dep_id, dep_data in deps.items():
+            diid = dep_tree.insert("", "end", text=dep_id)
+            for d in dep_data:
+                dep_tree.insert(diid, "end", text=d)
+
+        # Define buttons
         btn_conf = tk.Button(self.info_frame, text="Configure")
         btn_conf.grid(row=0, column=2, sticky=tk.N+tk.E+tk.S+tk.W)
         if mod.has_fun('conf'):
