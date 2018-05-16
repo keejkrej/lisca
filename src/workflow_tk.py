@@ -57,6 +57,7 @@ def make_index_incrementor(mo):
         return i, j
     return i, j, index_incrementor
 
+
 class WorkflowGUI:
     def __init__(self, module_manager):
         # Module management setup
@@ -65,10 +66,11 @@ class WorkflowGUI:
 
         # Basic GUI setup
         self.frame = gui.new_toplevel()
-        self.frame.title("PyAMA Workflow (NEW)")
+        self.frame.title("PyAMA Workflow")
 
         self.root = gui.get_root()
         self.mod_list_frame = None
+        self.dependencies_fulfilled = False
 
         # Menu bar
         menubar = tk.Menu(self.frame)
@@ -120,7 +122,7 @@ class WorkflowGUI:
         tree_scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
         self.mod_tree = ttk.Treeview(frame,
-                columns=("id",),
+                columns=("id", "status"),
                 displaycolumns=(),
                 selectmode="browse",
                 yscrollcommand=tree_scroll.set)
@@ -137,8 +139,13 @@ class WorkflowGUI:
         # Populate module tree
         self.refresh_mod_tree()
         self.update_info()
+
+        self.mod_tree.tag_configure("dep_conf", background="yellow")
+        self.mod_tree.tag_configure("dep_other", background="red")
+
         self.modman.register_listener(lambda: self.frame.after_idle(self.refresh_mod_tree), kind="order")
         self.modman.register_listener(lambda: self.frame.after_idle(self.refresh_run_button), kind="workflow")
+        self.modman.register_listener(lambda: self.frame.after_idle(self.refresh_dependencies), kind="dependency")
 
 
     def mainloop(self):
@@ -159,6 +166,47 @@ class WorkflowGUI:
         """Step through module list and synchronize it"""
         RecursiveComparer.go(self.mod_tree, self.modman.module_order)
         self.selection_changed()
+
+
+    def refresh_dependencies(self, parent=""):
+        """Update the dependencies of all modules"""
+        # If we start the test new, clear global dependency flag
+        if not parent:
+            self.dependencies_fulfilled = True
+
+        # Iterate over all children
+        for iid in self.mod_tree.get_children(parent):
+            index = self.get_item_index(iid)
+
+            # Acquire dependencies of children
+            try:
+                print(f"refresh_dependencies: index={index}")
+                isConfRequired, deps = self.modman.check_module_dependencies(index)
+            except IndexError:
+                continue
+
+            # Set global dependency flag
+            if deps or isConfRequired:
+                self.dependencies_fulfilled = False
+
+            # Set tags of item according to dependency
+            dep_tags = set()
+            dep_tags_remove = {"dep_conf", "dep_other"}
+            if deps:
+                dep_tags.add("dep_other")
+                dep_tags_remove.discard("dep_other")
+            elif isConfRequired:
+                dep_tags.add("dep_conf")
+                dep_tags_remove.discard("dep_conf")
+            tags = set(self.mod_tree.item(iid, "tags"))
+            tags -= dep_tags_remove
+            tags |= dep_tags
+            self.mod_tree.item(iid, tags=tuple(tags))
+            print(f"settings tags: {self.mod_tree.item(iid, 'tags')}")
+
+            # Recursively check dependencies of children
+            if self.mod_tree.get_children(iid):
+                self.refresh_dependencies(iid)
 
 
     def prompt_new_module(self, *_):

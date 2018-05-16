@@ -36,6 +36,7 @@ def loop_next(d, **_):
     print("test_loop.loop_next: received run data ({})".format(run))
     run -= 1
     if run < 0:
+        print("test_loop.loop_next: finishing loop")
         raise StopIteration("Loop finished.")
     return {"run": run}
 

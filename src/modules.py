@@ -410,6 +410,7 @@ class ModuleManager:
         with self.order_lock:
             self.module_order.set(order)
             self._listeners.notify("order")
+            self._listeners.notify("dependency")
 
 
     def module_order_insert(self, mod, index=-1):
@@ -421,6 +422,7 @@ class ModuleManager:
         with self.order_lock:
             self.module_order[index] = mod
             self._listeners.notify("order")
+            self._listeners.notify("dependency")
 
 
     def get_module_at_index(self, idx):
@@ -434,58 +436,135 @@ class ModuleManager:
         elif not idx:
             return None
         with self.order_lock:
-            return self.module_order[idx]
+            m = self.module_order[idx]
+            if type(m) == list:
+                m = m[0]
+            return m
 
 
     def check_module_dependencies(self, idx):
         """
         Check if the dependencies for a module are fulfilled.
 
-        A thread-safe check is performed whether "run" dependencies are fulfilled
-        and whether "conf" return data is present.
+        A thread-safe check is performed whether "run" dependencies are fulfilled and whether "conf" return data is present.
 
         TODO: Implement loops
         TODO: Check for version conflicts
 
-        :param idx: the index of the module for which to check the dependency
+        :param idx: index of the module for which to check dependencies
         :type idx: int or tuple of int
         """
-        raise NotImplementedError
         if type(idx) == int:
             idx = (idx,)
 
-        mod = self.get_module_at_index(idx)
-        mod_id = mod.id
+        mod_id = self.get_module_at_index(idx)
+        if mod_id is None:
+            return None
+        mod = self.modules[mod_id]
 
-        # Check if "conf" has been run already (if return data is present)
-        conf_ret = set()
-        if mod.has_fun("conf"):
-            with self.data_lock:
-                for cret_data in mod.get_ret("conf"):
-                    if mod_id not in self.data[0] or cret_data not in self.data[0][mod_id]:
-                        conf_ret.add(cret_data)
-        # If `conf_ret` is now non-empty, the "conf" function needs to be run.
-
-        # Collect names of "run" dependencies (to see if "run" can be invoked)
+        # Collect dependencies (to see if module can be invoked)
         deps = {}
         if mod.has_fun("run"):
             for dep_id, dep_data, _ in mod.get_dep("run"):
                 if not dep_id in deps:
                     deps[dep_id] = set()
                 deps[dep_id].update(dep_data)
+        if mod.is_loop:
+            for dep_id, dep_data, _ in mod.get_dep("loop_next"):
+                if not dep_id in deps:
+                    deps[dep_id] = set()
+                deps[dep_id].update(dep_data)
+            for dep_id, dep_data, _ in mod.get_dep("loop_end"):
+                if not dep_id in deps:
+                    deps[dep_id] = set()
+                deps[dep_id].update(dep_data)
 
-        # Filter out data that is visible to the module
-        with self.order_lock:
-            iidx = idx
-            #while len(iidx) > 0:
-            #    pass
-                #while 
-                    
-        # CONTINUE here
+        # Check if "conf" has been run already (if return data is present)
+        isConfRequired = False
+        conf_ret = mod.get_ret("conf")
+        if conf_ret:
+            with self.data_lock:
+                if mod_id not in self.data[0]:
+                    isConfRequired = True
+                isConfDep = mod_id in deps
+                for cret_data in conf_ret:
+                    if not isConfRequired and cret_data not in self.data[0][mod_id]:
+                        isConfRequired = True
+                    if isConfDep:
+                        deps[mod_id].discard(cret_data)
+                # CONTINUE here
+                        
 
+        # Check for dependencies fulfilled already
         with self.data_lock:
-            pass
-            
+            for dep_id in list(deps.keys()):
+                dep = deps[dep_id]
+                if dep_id in self.data[0]:
+                    deps[dep_id].difference_update(self.data[0][dep_id])
+                if not dep:
+                    del deps[dep_id]
+
+        # Filter out data visible to the "run" function of the module
+        with self.order_lock:
+            iidx = idx.copy()
+            while iidx:
+                # Step back to previous module in order
+                if iidx[-1] == 0:
+                    iidx.pop()
+                    continue
+                iidx[-1] -= 1
+
+                # Get module
+                isInLoop = False
+                prev_mod_id = self.get_module_at_index(iidx)
+                if iidx[-1] == 0 and len(iidx) > 1:
+                    isInLoop = True
+
+                # Check if module is relevant
+                if prev_mod_id in deps:
+                    d = deps[prev_mod_id]
+                    prev_mod = self.modules[prev_mod_id]
+
+                    # Check return data
+                    d.difference_update(prev_mod.get_ret("init"))
+                    d.difference_update(prev_mod.get_ret("conf"))
+                    if prev_mod.is_loop:
+                        if isInLoop:
+                            d.difference_update(prev_mod.get_ret("run"))
+                            d.difference_update(prev_mod.get_ret("loop_next"))
+                        else:
+                            d.difference_update(prev_mod.get_ret("loop_end"))
+                    else:
+                        d.difference_update(prev_mod.get_ret("run"))
+                    
+        # Filter out data visible to "loop_next" and "loop_end" function
+        if mod.is_loop:
+            with self.order_lock:
+                iidx = idx
+                while True:
+                    iidx[-1] += 1
+                    try:
+                        child_id = self.module_order[iidx]
+                    except IndexError:
+                        break
+
+                    if child_id not in deps:
+                        continue
+
+                    child = self.modules[child_id]
+                    if child.is_loop:
+                        deps[child_id].difference_update(child.get_ret("loop_end"))
+                    else:
+                        deps[child_id].difference_update(child.get_ret("run"))
+
+        # Drop "empty" dependencies
+        for d in deps:
+            if not deps[d]:
+                del deps[d]
+
+        # Return
+        return isConfRequired, deps
+
 
     def module_order_move(self, idx_old, idx_new):
         """
@@ -498,6 +577,7 @@ class ModuleManager:
             self.module_order.move(idx_old, idx_new)
             
             self._listeners.notify("order")
+            self._listeners.notify("dependency")
 
 
     def module_order_remove(self, index):
@@ -511,7 +591,9 @@ class ModuleManager:
         """
         with self.order_lock:
             del self.module_order[index]
+
             self._listeners.notify("order")
+            self._listeners.notify("dependency")
 
 
     def list_display(self, category=None):
@@ -540,7 +622,6 @@ class ModuleManager:
         """
         thread = threading.Thread(target=self._lock_run_workflow)
         thread.start()
-        print("new thread started")
 
 
     def _lock_run_workflow(self):
@@ -550,23 +631,16 @@ class ModuleManager:
                 self._listeners.notify("workflow")
                 with self.order_lock:
                     with self.data_lock:
-                        self._run_workflow()
+                        try:
+                            self._run_workflow()
+                        finally:
+                            if len(self.data) > 1:
+                                self.data = [self.data[0]]
             finally:
                 self.run_lock.release()
                 self._listeners.notify("workflow")
         else:
             print("Cannot start analysis: seems to be running already.", file=sys.stderr)
-
-
-    def _run_workflow_old(self):
-        """Execute the workflow from the module order."""
-        # TODO: support loops
-        print("Running workflow …")
-        for mod_id in self.module_order:
-            #self.module_perform(mod_id, "run")
-            print(mod_id)
-
-        print("Workflow finished.")
 
 
     def _run_workflow(self):
@@ -597,25 +671,20 @@ class ModuleManager:
 
             # Perform actual function
             if index[-1] == 0 and len(index) > 1:
-                if isInsideLoop[-1]:
-                    try:
-                        # Start next loop iteration
-                        try:
-                            self.module_perform(mod_id, "loop_next")
-                        except StopIteration:
-                            # Finalize loop
-                            self.module_perform(mod_id, "loop_end")
-                            isInsideLoop.pop()
-                            order.pop()
-                            index.pop()
-                    except Exception:
-                        # In case of error, clean global memory
-                        del self.data[-1]
-                        raise
-                else:
-                    # Setup loop
+                if not isInsideLoop[-1]:
+                    # Set up loop
                     self.module_perform(mod_id, "run", True)
                     isInsideLoop[-1] = True
+                else:
+                    # Start next loop iteration
+                    try:
+                        self.module_perform(mod_id, "loop_next")
+                    except StopIteration:
+                        # Finalize loop
+                        self.module_perform(mod_id, "loop_end")
+                        isInsideLoop.pop()
+                        order.pop()
+                        index.pop()
             else:
                 # Invoke "normal" module
                 self.module_perform(mod_id, "run")
@@ -685,7 +754,7 @@ class ModuleManager:
                     dep_ver = _parse_version(self.modules[dep_id].version)
                     cmp_mode, dep_ver_req = _parse_version(dep_ver_req, True)
                     if not _check_versions(dep_ver_req, cmp_mode, dep_ver):
-                        raise ValueError("Version mismatch for dependency '{}' of module '{}': found version {} of '{}', but require {}.".format(kind, mod_id, dep_ver, dep_id, dep_ver_req))
+                        raise ValueError("Version mismatch for dependency of '{}' of module '{}': found version {} of '{}', but require {}.".format(kind, mod_id, dep_ver, dep_id, dep_ver_req))
                         #return None
                 else:
                     dep_ver = ()
@@ -711,7 +780,6 @@ class ModuleManager:
                             break
                     else:
                         raise ValueError("Missing dependency '{}' of plugin '{}': did not find required data '{}' of plugin '{}'.".format(kind, mod_id, name, dep_id))
-                        #return None
 
             return data
 
@@ -726,25 +794,24 @@ class ModuleManager:
         :type mod_id: str
         :param kind: The kind of function to be called; eiter "conf" or "run", "loop_next", "loop_end".
         :type kind: str
+        :param isLoop: Indicator whether a new loop is initialized; ignored if ``kind`` is not ``"run"``.
+        :type isLoop: bool
         """
         # Check if function kind is legal
         if kind not in PERFORM_KINDS:
             raise ValueError("Cannot call function '{}': bad type.".format(kind))
-            #return
 
         # Check if function exists
         m = self.modules[mod_id]
         if not m.has_fun(kind):
             raise ValueError("Cannot call function '{}' of module '{}': function not found.".format(kind, mod_id))
-            #return
 
         # Lock order
         with self.order_lock:
             # Get dependencies of function
             dep_data = self.acquire_dependencies(mod_id, kind)
             if dep_data is None:
-                return ValueError("Cannot call function '{}' of module '{}': dependencies not fulfilled.".format(kind, mod_id))
-                #return
+                raise ValueError("Cannot call function '{}' of module '{}': dependencies not fulfilled.".format(kind, mod_id))
 
             # Call the function
             res = m.call_fun(kind, dep_data)
@@ -758,7 +825,9 @@ class ModuleManager:
 
             # Memorize result and return
             self.memorize_result(mod_id, res)
-            return
+
+            if kind == "conf" and res:
+                self._listeners.notify("dependency")
 
 
     def _add_data(self, d_id, name, value, index=-1):
@@ -1221,7 +1290,6 @@ class ModuleOrder:
         if len(key) > 1 and key[-1] == 0:
             raise IndexError("Bad index: cannot replace loop head.")
         isLoop = self.modules[mod_id].is_loop
-        print(f"isLoop={isLoop}")
         with self.lock:
             o = self.order
             while key:

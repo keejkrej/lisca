@@ -24,7 +24,7 @@ class RecursiveComparer:
         #self.moi.print_order() #DEBUG
 
     @classmethod
-    def go(cls, tree, mo):
+    def go(cls, tree, mo, checkDependency=False):
         """
         Synchronize a ``Treeview`` with a ``ModuleOrder``.
 
@@ -32,9 +32,11 @@ class RecursiveComparer:
         :type tree: ttk.Treeview
         :param mo: the ``ModuleOrder`` with which to synchronize ``tree``
         :type mo: ``ModuleOrder``
+        :param checkDependency: Flag whether to check the dependencies of the modules
+        :type checkDependency: bool
         """
         comparer = cls(tree, mo)
-        comparer.compare()
+        comparer.compare(checkDependency=checkDependency)
 
 
     def id_of(self, iid):
@@ -83,11 +85,13 @@ class RecursiveComparer:
         return iid
 
 
-    def compare(self, parent=""):
+    def compare(self, parent="", checkDependency=False):
         """Compare tree view and module order content.
         
         :param parent: The ``iid`` of the item whose children to synchronize
         :type parent: str
+        :param checkDependency: Flag whether to check the dependencies of the modules
+        :type checkDependency: bool
         
         By default, compare the top-level items."""
         # Get first child of current parent
