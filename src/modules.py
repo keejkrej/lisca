@@ -429,17 +429,14 @@ class ModuleManager:
         """
         Get the module at a given index or None in case of error.
         """
-        if idx is None:
-            return None
-        elif type(idx) == int:
-            idx = [idx,]
-        elif not idx:
-            return None
         with self.order_lock:
-            m = self.module_order[idx]
-            if type(m) == list:
-                m = m[0]
-            return m
+            try:
+                m = self.module_order[idx]
+                if type(m) == list:
+                    m = m[0]
+                return m
+            except IndexError:
+                return None
 
 
     def check_module_dependencies(self, idx):
@@ -501,8 +498,14 @@ class ModuleManager:
                 dep = deps[dep_id]
                 if dep_id in self.data[0]:
                     deps[dep_id].difference_update(self.data[0][dep_id])
-                if not dep:
-                    del deps[dep_id]
+                #if not dep:
+                #    del deps[dep_id]
+
+        # If module is a loop, check for "run" and "loop_next" return data
+        if mod.is_loop and mod_id in deps:
+            deps[mod_id].difference_update(mod.get_ret("run"))
+            deps[mod_id].difference_update(mod.get_ret("loop_next"))
+
 
         # Filter out data visible to the "run" function of the module
         with self.order_lock:
@@ -1281,7 +1284,7 @@ class ModuleOrder:
                     o = o[i]
                 except IndexError:
                     pos = len(self.order) - len(o)
-                    raise IndexError("Module order index out ouf range at index position {} of index '{}'.".format(pos, str(key))) from None
+                    raise IndexError("Module order index out of range at index position {} of index {}.".format(pos, str(key))) from None
             return o
 
 

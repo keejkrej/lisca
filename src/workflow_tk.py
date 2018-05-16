@@ -180,7 +180,6 @@ class WorkflowGUI:
 
             # Acquire dependencies of children
             try:
-                print(f"refresh_dependencies: index={index}") #DEBUG
                 isConfRequired, deps = self.modman.check_module_dependencies(index)
             except IndexError:
                 continue
@@ -202,7 +201,6 @@ class WorkflowGUI:
             tags -= dep_tags_remove
             tags |= dep_tags
             self.mod_tree.item(iid, tags=tuple(tags))
-            print(f"dependency tags: {self.mod_tree.item(iid, 'tags')}") #DEBUG
 
             # Recursively check dependencies of children
             if self.mod_tree.get_children(iid):
