@@ -11,52 +11,6 @@ import tkinter.ttk as ttk
 # dependencies not OK: u+2717 or u+2718
 # input needed: u+26a0 or u+270f
 
-def make_index_incrementor(mo):
-    """
-    Build an index iteration function.
-
-    Returns a closure for iteating over ModuleOrder ``mo``,
-    as well as indices ``i`` and ``j``.
-    See source code for details.
-    """
-    # Initialize index
-    # `i` is an array of the number of modules in the current level that
-    # have been iterated over already.
-    # `j` is the index for indexing into `mo` to get the current module,
-    # with shape "list of integers".
-    i = [0]
-    j = mo.next_index()
-
-    def index_incrementor():
-        # Save previous index values
-        i_old = i
-        j_old = j
-
-        # Get index of next module (returns None when exhausted)
-        j = mo.next_index(j_old)
-
-        # Handle case of exhausted iterator
-        if j is None:
-            return mo.len(-1), None
-
-        # Get index `n` of first level where `j_old` and `j` differ
-        for n, (jo, jn) in enumerate(zip(j_old, j)):
-            if jo != jn:
-                break
-
-        # Crop all levels of `i` above `n`
-        if len(i) > n + 1:
-            i = i[:n+1]
-
-        # If current level higher than length of `i`, fill difference with 0
-        while len(j) > len(i):
-            i.append(0)
-
-        # Increment counter for current level and return
-        i[-1] += 1
-        return i, j
-    return i, j, index_incrementor
-
 
 class WorkflowGUI:
     def __init__(self, module_manager):
@@ -111,7 +65,7 @@ class WorkflowGUI:
         self.refresh_button.pack(side=tk.LEFT)
 
         self.run_button = tk.Button(frame, text="Run all",
-                command=self.modman.invoke_workflow)
+                command=self.modman.invoke_workflow, state=tk.DISABLED)
         self.run_button.pack(side=tk.LEFT)
 
         # Treeview with scrollbar
@@ -205,6 +159,12 @@ class WorkflowGUI:
             # Recursively check dependencies of children
             if self.mod_tree.get_children(iid):
                 self.refresh_dependencies(iid)
+
+        if not parent:
+            if self.dependencies_fulfilled:
+                self.run_button.config(state=tk.NORMAL)
+            else:
+                self.run_button.config(state=tk.DISABLED)
 
 
     def prompt_new_module(self, *_):
@@ -381,10 +341,11 @@ class WorkflowGUI:
 
         # Display dependencies
         _, deps = self.modman.check_module_dependencies(self.get_item_index(iid))
-        for dep_id, dep_data in deps.items():
-            diid = dep_tree.insert("", "end", text=dep_id)
-            for d in dep_data:
-                dep_tree.insert(diid, "end", text=d)
+        if deps:
+            for dep_id, dep_data in deps.items():
+                diid = dep_tree.insert("", "end", text=dep_id)
+                for d in dep_data:
+                    dep_tree.insert(diid, "end", text=d)
 
         # Define buttons
         btn_conf = tk.Button(self.info_frame, text="Configure")
