@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
 from contrast import ContrastAdjuster
-from gui_tk import get_root
+from gui_tk import new_toplevel
 import os
 import roi_selection as roi_sel
 import stack
@@ -29,7 +29,7 @@ class StackViewer:
         """Initialize the GUI."""
         # Initialize GUI components
         if root is None:
-            self.root = get_root()
+            self.root = new_toplevel()
         else:
             self.root = root
         self.root.title("StackViewer")
@@ -152,10 +152,12 @@ class StackViewer:
             return
 
         #self.label["text"] = fn
-        self.set_stack(stack.Stack(fn))
-
+        self._set_stack(stack.Stack(fn))
 
     def set_stack(self, s):
+        self.root.after_idle(lambda: self._set_stack(s))
+
+    def _set_stack(self, s):
         """Set the stack that is displayed."""
         if self.stack is not None:
             self.stack.delete_listener(self.image_listener_id)

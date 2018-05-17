@@ -28,8 +28,7 @@ def run(d, *_, **__):
     path = d[my_id]['path']
 
     s = Stack(path)
-    tl_win = gui_tk.new_toplevel()
-    sv = StackViewer(tl_win)
+    sv = StackViewer()
     sv.set_stack(s)
 
     return {"stack": s,
