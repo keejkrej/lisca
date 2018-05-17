@@ -12,6 +12,11 @@ if __name__ == "__main__":
     import sys
     import tkinter as tk
 
+    # Check for Python 3.6 (use ugly syntax for compatibility with Python 2)
+    ver_major, ver_minor = sys.version_info[:2]
+    if ver_major != 3 or ver_minor < 6:
+        raise RuntimeError("Require at least Python 3.6, found %d.%d." % (ver_major, ver_minor))
+
     # Add directories for builtins and plugins to PYTHONPATH
     this_dir, _ = os.path.split(os.path.abspath(__file__))
     SRC_PATH = os.path.join(this_dir, "src")
