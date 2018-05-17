@@ -85,6 +85,7 @@ class WorkflowGUI:
         self.mod_tree.heading("#0", text="Workflow")
         #self.mod_tree.heading("id", text="ID")
         self.mod_tree.bind("<<TreeviewSelect>>", self.selection_changed)
+        self.mod_tree.bind("<Button-1>", self.deselect_on_click)
 
         # Info frame
         self.info_frame = tk.Frame(self.frame)
@@ -255,6 +256,13 @@ class WorkflowGUI:
             return self.modman.modules.get(mod_id)
         return None
 
+    def deselect_on_click(self, evt):
+        """Deselect all items if an empty part is clicked"""
+        iid = self.mod_tree.identify_row(evt.y)
+        if not iid:
+            self.mod_tree.focus('')
+            self.mod_tree.selection_set('')
+
     def selection_changed(self, *_):
         """Update control button states upon selection change"""
         remove_button_state = tk.DISABLED
@@ -416,13 +424,15 @@ class ModuleListFrame:
     def populate(self):
         """Populate the list with sorted available modules"""
         categories = {}
-
         for m in self.parent.mod_list:
             cat = m["category"]
+
+            # Insert category-less items at base level
             if not cat:
                 self.list.insert("", 'end', text=m["name"],
                         values=(m["id"], m["version"], m["name"]))
             else:
+                # Insert items in all categories to which they belong
                 for p in cat:
                     if p not in categories:
                         p_iid = self.list.insert("", 'end', text=p)
@@ -432,6 +442,7 @@ class ModuleListFrame:
                     self.list.insert(p_iid, 'end', text=m["name"],
                             values=(m["id"], m["version"], m["name"]))
 
+        # Sort entries
         self.sort_children_by_name()
 
 
