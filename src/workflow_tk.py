@@ -16,7 +16,7 @@ class WorkflowGUI:
     def __init__(self, module_manager):
         # Module management setup
         self.modman = module_manager
-        self.mod_list = sorted(self.modman.list_display(), key=lambda m: m["name"])
+        self.mod_list = self.modman.list_display()
 
         # Basic GUI setup
         self.frame = gui.new_toplevel()
@@ -414,10 +414,26 @@ class ModuleListFrame:
 
 
     def populate(self):
-        """Populate the list with available modules"""
+        """Populate the list with sorted available modules"""
+        categories = {}
+
         for m in self.parent.mod_list:
-            self.list.insert('', 'end', text=m["name"],
-                    values=(m["id"], m["version"], m["name"]))
+            cat = m["category"]
+            if not cat:
+                self.list.insert("", 'end', text=m["name"],
+                        values=(m["id"], m["version"], m["name"]))
+            else:
+                for p in cat:
+                    if p not in categories:
+                        p_iid = self.list.insert("", 'end', text=p)
+                        categories[p] = p_iid
+                    else:
+                        p_iid = categories[p]
+                    self.list.insert(p_iid, 'end', text=m["name"],
+                            values=(m["id"], m["version"], m["name"]))
+
+        self.sort_children_by_name()
+
 
     def to_front(self):
         """Bring the dialog window to front"""
@@ -431,7 +447,8 @@ class ModuleListFrame:
 
     def selection_changed(self, *_):
         """Toggle button state upon selection change"""
-        if self.list.focus():
+        iid = self.list.focus()
+        if iid and not self.list.get_children(iid):
             self.add_button.config(state=tk.NORMAL)
         else:
             self.add_button.config(state=tk.DISABLED)
@@ -439,7 +456,18 @@ class ModuleListFrame:
     def add_module(self,*_):
         """Insert selected module into parent list upon button click"""
         iid = self.list.focus()
-        if not iid:
+        if not iid or self.list.get_children(iid):
             return
         values = self.list.set(iid)
         self.parent.insert_mod(values["name"], values["id"])
+
+    def sort_children_by_name(self, parent="", isRecursive=True):
+        """Sort the items displayed below `parent` by display name"""
+        children = self.list.get_children(parent)
+        children = sorted(children, key=lambda c: self.list.item(c, "text"))
+        self.list.set_children(parent, *children)
+
+        if isRecursive:
+            for c in children:
+                if self.list.get_children(c):
+                    self.sort_children_by_name(c)

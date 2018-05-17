@@ -4,6 +4,7 @@ my_id = "test:loop1"
 def register(meta):
     meta.id = my_id
     meta.name = "Loop test 1"
+    meta.category = "Test"
 
     #meta.set_fun("loop_next", loop_next)
     #meta.set_fun("loop_end", loop_end)

@@ -10,6 +10,7 @@ def sag_hallo(s=''):
 def register(meta):
     meta.name = "Hallo"
     meta.id = "hallo"
+    meta.category = "Test"
     meta.conf_dep = ("", "__version__")
     #print("Modul 'hallo' registriert.")
 
