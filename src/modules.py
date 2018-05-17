@@ -6,7 +6,9 @@
 
 This is the docstring of the :py:mod:`modules` module.
 """
+from collections import namedtuple
 import importlib.util as imputil
+import inspect
 from listener import Listeners
 import os
 import random
@@ -22,7 +24,7 @@ RETURN_KINDS = {"init", *PERFORM_KINDS}
 LISTENER_KINDS = {"order", "dependency", "workflow"}
 
 
-def _load_module(name, path, return_init_ret=True):
+def _load_module(name, path):
     """
     Load and register a given module.
 
@@ -30,18 +32,13 @@ def _load_module(name, path, return_init_ret=True):
     :type name: str
     :param path: the path to the module file
     :type path: str
-    :param return_init_ret: flag whether to return also the return value of the ``register`` function
-    :type return_init_ret: bool
 
     For loading a package, give the path of the package’s
     ``__init__.py`` file as path.
 
     :return: Metadata of the module, or ``None`` if module couldn’t be loaded. If ``return_init_ret`` is ``True``, a tuple of module metadata and ``register`` return value is returned.
     """
-    if return_init_ret:
-        RETURN_BAD = (None, None)
-    else:
-        RETURN_BAD = None
+    RETURN_BAD = ((),())
 
     # Load the module
     spec = imputil.spec_from_file_location(name, path)
@@ -74,9 +71,31 @@ def _load_module(name, path, return_init_ret=True):
     if hasattr(mod, 'loop_end'):
         meta.set_fun("loop_end", mod.loop_end)
     
-    # Second, let module fill in its own properties
+    # Second, check if module wants to register more modules
+    MetadataRegisterer = namedtuple("MoreMetadata", ("meta", "ret"))
+    more_meta = ()
+    meta_templates = {}
     try:
-        init_ret = mod.register(meta)
+        # Prepare requested module metadata instances
+        reg_params = inspect.signature(mod.register).parameters
+        if "more_meta" in reg_params:
+            if reg_params["more_meta"] is None or reg_params["more_meta"] is inspect.Parameter.empty:
+                # Metadata for single module as scalar
+                more_meta = (MetadataRegisterer(ModuleMetadata(), {}),)
+                meta_templates = {"more_meta": more_meta[0]}
+            else:
+                # Tuple of metadata for multiple modules
+                n_meta = int(reg_params["more_meta"])
+                more_meta = tuple(MetadataRegisterer(ModuleMetadata(), {}) for _ in range(n_meta))
+                meta_templates = {"more_meta": more_meta}
+    except TypeError:
+        pass
+    except ValueError:
+        pass
+
+    # Third, let module fill in its properties
+    try:
+        init_ret = mod.register(meta, **meta_templates)
     except Exception as e:
         print("\nIgnore module '{}' due to exception:".format(name),
                 file=sys.stderr, end='')
@@ -84,19 +103,26 @@ def _load_module(name, path, return_init_ret=True):
         return RETURN_BAD
 
     # Check meta data
-    meta_check_failed = meta.check()
-    if meta_check_failed:
-        print("Ignoring invalid plugin {} at {}:\n{}".format(name, path, meta_check_failed), file=sys.stderr)
-        return RETURN_BAD
+    return_meta = []
+    return_init_ret = []
+    for m, r in (MetadataRegisterer(meta, init_ret), *more_meta):
+        check_failed = m.check()
 
-    # Memorize return data of kind "init"
-    if init_ret is not None:
-        meta.set_ret("init", tuple(init_ret.keys()))
+        # Ignore bad module
+        if check_failed:
+            print(f"Ignoring invalid plugin '{m.name}' ({m.id}):\n{check_failed}", file=sys.stderr)
+            continue
+
+        # Append good module to return list
+        return_meta.append(m)
+        return_init_ret.append(r)
+
+        # Memorize return data of kind "init"
+        if r:
+            m.set_ret("init", tuple(r.keys()))
 
     # Return
-    if return_init_ret:
-        return meta, init_ret
-    return meta
+    return return_meta, return_init_ret
 
 
 def _search_modules(plugins_path):
@@ -387,8 +413,7 @@ class ModuleManager:
         if plugins_path is not None:
             modules_found = _search_modules(plugins_path)
             for name, path in modules_found:
-                meta, init_ret = _load_module(name, path)
-                if meta is not None:
+                for meta, init_ret in zip(*_load_module(name, path)):
                     mod_id = meta.id
                     self.modules[mod_id] = meta
                     self.data[0][mod_id] = {}
