@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 import numpy as np
-from simple_segmenter import interpolate_background
+from segmenter.tools import interpolate_background
 
 # Prepare module import
 my_id = "frame_binarizer"
