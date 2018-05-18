@@ -226,7 +226,7 @@ class Stack:
                 #np.floor_divide(a16, 255, out=a8)
                 #np.true_divide(a16, 255, out=a8, casting='unsafe')
             else:
-                raise ValueError("Illegal image mode: {}".format(str(self._mode)))
+                raise ValueError(f"Illegal image mode: {self._mode}")
             return piltk.PhotoImage(pilimg.fromarray(a8, mode='L'))
 
 
