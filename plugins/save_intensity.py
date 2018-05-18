@@ -19,7 +19,7 @@ def register(meta):
         )
 
 
-def configure(d, *_, **__):
+def conf(d, *_, **__):
     #gui = d[""]["workflow_gui_tk"]
     #path = gui.askdirectory()
     #path = gui.asksaveasfilename()

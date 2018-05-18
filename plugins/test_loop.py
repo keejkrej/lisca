@@ -21,7 +21,7 @@ def register(meta):
 
     return {"registered": 0}
 
-def configure(d, **_):
+def conf(d, **_):
     ret_reg = d[my_id]["registered"]
     print("test_loop.configure received '{}' from register".format(ret_reg))
     return {"configured": 1}

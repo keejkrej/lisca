@@ -16,7 +16,7 @@ def register(meta):
     meta.run_ret = ("stack", "StackViewer")
 
 
-def configure(d, *_, **__):
+def conf(d, *_, **__):
     print("Configuring 'load_single_stack'.")
     f = gui_tk.askopenfilename(parent=gui_tk.root)
     print(f)

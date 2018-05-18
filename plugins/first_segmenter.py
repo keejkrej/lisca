@@ -14,7 +14,7 @@ def register(meta):
     meta.id = my_id
     meta.run_dep = ("simple_stack_reader", "stack")
 
-def configure(*_, **__):
+def conf(*_, **__):
     pass
 
 def run(d, *_, **__):

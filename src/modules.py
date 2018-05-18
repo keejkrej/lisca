@@ -16,10 +16,9 @@ import string
 import sys
 import threading
 import traceback
-import warnings
 
 
-PERFORM_KINDS = {"conf", "run", "loop_next", "loop_end"}
+PERFORM_KINDS = {"conf", "run", "loop_first", "loop_next", "loop_end"}
 RETURN_KINDS = {"init", *PERFORM_KINDS}
 LISTENER_KINDS = {"order", "dependency", "workflow"}
 
@@ -59,17 +58,12 @@ def _load_module(name, path):
     # Register the module
     meta = ModuleMetadata(mod)
 
-    # First, pre-fill auto-detected version and `conf` and `run` function
+    # First, pre-fill auto-detected version and functions
     if hasattr(mod, '__version__'):
         meta.version = mod.__version__
-    if hasattr(mod, 'configure'):
-        meta.set_fun("conf", mod.configure)
-    if hasattr(mod, 'run'):
-        meta.set_fun("run", mod.run)
-    if hasattr(mod, 'loop_next'):
-        meta.set_fun("loop_next", mod.loop_next)
-    if hasattr(mod, 'loop_end'):
-        meta.set_fun("loop_end", mod.loop_end)
+    for perf_kind in PERFORM_KINDS:
+        if hasattr(mod, perf_kind):
+            meta.set_fun(perf_kind, getattr(mod, perf_kind))
     
     # Second, check if module wants to register more modules
     MetadataRegisterer = namedtuple("MoreMetadata", ("meta", "ret"))
@@ -89,9 +83,9 @@ def _load_module(name, path):
                 n_meta = int(reg_param)
                 more_meta = tuple(MetadataRegisterer(ModuleMetadata(), {}) for _ in range(n_meta))
                 meta_templates = {"more_meta": more_meta}
-    except TypeError as e:
+    except TypeError:
         pass
-    except ValueError as e:
+    except ValueError:
         pass
 
     # Third, let module fill in its properties
@@ -486,17 +480,18 @@ class ModuleManager:
 
         # Collect dependencies (to see if module can be invoked)
         deps = {}
+        kinds_to_check = set()
         if mod.has_fun("run"):
-            for dep_id, dep_data, _ in mod.get_dep("run"):
-                if not dep_id in deps:
-                    deps[dep_id] = set()
-                deps[dep_id].update(dep_data)
+            kinds_to_check.add("run")
         if mod.is_loop:
-            for dep_id, dep_data, _ in mod.get_dep("loop_next"):
-                if not dep_id in deps:
-                    deps[dep_id] = set()
-                deps[dep_id].update(dep_data)
-            for dep_id, dep_data, _ in mod.get_dep("loop_end"):
+            kinds_to_check.add("loop_next")
+            if mod.has_fun("loop_first"):
+                kinds_to_check.add("loop_first")
+            if mod.has_fun("loop_end"):
+                kinds_to_check.add("loop_end")
+            
+        for kind in kinds_to_check:
+            for dep_id, dep_data, _ in mod.get_dep(kind):
                 if not dep_id in deps:
                     deps[dep_id] = set()
                 deps[dep_id].update(dep_data)
@@ -517,7 +512,7 @@ class ModuleManager:
 
         # Check for dependencies fulfilled already
         with self.data_lock:
-            for dep_id in list(deps.keys()):
+            for dep_id in tuple(deps.keys()):
                 dep = deps[dep_id]
                 if dep_id in self.data[0]:
                     deps[dep_id].difference_update(self.data[0][dep_id])
@@ -527,6 +522,7 @@ class ModuleManager:
         # If module is a loop, check for "run" and "loop_next" return data
         if mod.is_loop and mod_id in deps:
             deps[mod_id].difference_update(mod.get_ret("run"))
+            deps[mod_id].difference_update(mod.get_ret("loop_first"))
             deps[mod_id].difference_update(mod.get_ret("loop_next"))
 
 
@@ -540,28 +536,34 @@ class ModuleManager:
                     continue
                 iidx[-1] -= 1
 
-                # Get module
+                # Get predecessor module and check if it is a loop
                 isInLoop = False
-                prev_mod_id = self.get_module_at_index(iidx)
+                pre_mod_id = self.get_module_at_index(iidx)
                 if iidx[-1] == 0 and len(iidx) > 1:
                     isInLoop = True
 
-                # Check if module is relevant
-                if prev_mod_id in deps:
-                    d = deps[prev_mod_id]
-                    prev_mod = self.modules[prev_mod_id]
+                # Check if predecessor module is relevant
+                if pre_mod_id in deps:
+                    d = deps[pre_mod_id]
+                    pre_mod = self.modules[pre_mod_id]
 
                     # Check return data
-                    d.difference_update(prev_mod.get_ret("init"))
-                    d.difference_update(prev_mod.get_ret("conf"))
-                    if prev_mod.is_loop:
+                    d.difference_update(pre_mod.get_ret("init"))
+                    d.difference_update(pre_mod.get_ret("conf"))
+                    if pre_mod.is_loop:
                         if isInLoop:
-                            d.difference_update(prev_mod.get_ret("run"))
-                            d.difference_update(prev_mod.get_ret("loop_next"))
+                            # `mod` is inside of loop of predecessor module
+                            d.difference_update(pre_mod.get_ret("run"))
+                            d.difference_update(pre_mod.get_ret("loop_first"))
+                            d.difference_update(pre_mod.get_ret("loop_next"))
                         else:
-                            d.difference_update(prev_mod.get_ret("loop_end"))
+                            # Loop of predecessor module finished already;
+                            # we only see its `loop_end` return data
+                            d.difference_update(pre_mod.get_ret("loop_end"))
                     else:
-                        d.difference_update(prev_mod.get_ret("run"))
+                        # Predecessor module is no loop;
+                        # only has "run" return data
+                        d.difference_update(pre_mod.get_ret("run"))
                     
         # Filter out data visible to "loop_next" and "loop_end" function
         if mod.is_loop:
@@ -689,7 +691,7 @@ class ModuleManager:
             # If loop, step into it
             if type(order[-1]) is list:
                 index.append(0)
-                isInsideLoop.append(False)
+                isInsideLoop.append(None)
                 continue
 
             # Retrieve current module
@@ -697,20 +699,23 @@ class ModuleManager:
 
             # Perform actual function
             if index[-1] == 0 and len(index) > 1:
-                if not isInsideLoop[-1]:
+                if isInsideLoop[-1] is None:
                     # Set up loop
-                    self.module_perform(mod_id, "run", True)
-                    isInsideLoop[-1] = True
-                else:
-                    # Start next loop iteration
-                    try:
+                    self.module_perform(mod_id, "run", isNewLoop=True)
+                    isInsideLoop[-1] = False
+                try:
+                    # Next loop iteration
+                    if not isInsideLoop[-1]:
+                        self.module_perform(mod_id, "loop_first", isOptional=True)
+                        isInsideLoop[-1] = True
+                    else:
                         self.module_perform(mod_id, "loop_next")
-                    except StopIteration:
-                        # Finalize loop
-                        self.module_perform(mod_id, "loop_end")
-                        isInsideLoop.pop()
-                        order.pop()
-                        index.pop()
+                except StopIteration:
+                    # Finalize loop
+                    self.module_perform(mod_id, "loop_end", isOptional=True)
+                    isInsideLoop.pop()
+                    order.pop()
+                    index.pop()
             else:
                 # Invoke "normal" module
                 self.module_perform(mod_id, "run")
@@ -750,7 +755,7 @@ class ModuleManager:
 
         :param mod_id: The id of the plugin to be executed
         :type mod_id: str
-        :param kind: Indicator what dependency is needed; one of: "conf", "run", "loop_next", "loop_end".
+        :param kind: Indicator what dependency is needed; one of: "conf", "run", "loop_first", "loop_next", "loop_end".
         :type kind: str
         :return:
             * Dictionary {DP: {DN: DV}}, where:
@@ -810,7 +815,7 @@ class ModuleManager:
             return data
 
 
-    def module_perform(self, mod_id, kind, isLoop=False):
+    def module_perform(self, mod_id, kind, isNewLoop=False, isOptional=False):
         """
         Call a function of the module.
 
@@ -818,10 +823,12 @@ class ModuleManager:
 
         :param mod_id: The ID of the module to be called
         :type mod_id: str
-        :param kind: The kind of function to be called; eiter "conf" or "run", "loop_next", "loop_end".
+        :param kind: The kind of function to be called; eiter "conf" or "run", "loop_first", "loop_next", "loop_end".
         :type kind: str
-        :param isLoop: Indicator whether a new loop is initialized; ignored if ``kind`` is not ``"run"``.
-        :type isLoop: bool
+        :param isNewLoop: Indicator whether a new loop is initialized; ignored if ``kind`` is not ``"run"``.
+        :type isNewLoop: bool
+        :param isOptional: Indicator whether to raise an error (False, default) if function of ``kind`` is not found or to silently return (True)
+        :type isOptional: bool
         """
         # Check if function kind is legal
         if kind not in PERFORM_KINDS:
@@ -830,6 +837,8 @@ class ModuleManager:
         # Check if function exists
         m = self.modules[mod_id]
         if not m.has_fun(kind):
+            if isOptional:
+                return
             raise ValueError("Cannot call function '{}' of module '{}': function not found.".format(kind, mod_id))
 
         # Lock order
@@ -844,7 +853,7 @@ class ModuleManager:
 
             # If a loop is started, create loop-intern memory.
             # If a loop is ended, clear loop-intern memory.
-            if isLoop and kind == "run":
+            if isNewLoop and kind == "run":
                 self.data.append({})
             elif kind == "loop_end":
                 del self.data[-1]
@@ -1150,7 +1159,7 @@ class ModuleMetadata:
     # Check if this module holds a loop.
     @property
     def is_loop(self):
-        return self.has_fun("loop_next") and self.has_fun("loop_end")
+        return self.has_fun("loop_next")
 
 
     # "module"
@@ -1211,7 +1220,7 @@ class ModuleMetadata:
         elif cat is None:
             x = ()
         else:
-            warnings.warn('Invalid "{}": {}'.format(names, str(x)))
+            print(f'Invalid "{names}": {str(x)}', file=sys.stderr)
             return
 
         with self.__lock:

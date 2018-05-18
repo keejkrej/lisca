@@ -12,8 +12,6 @@ def register(meta, more_meta):
     more_meta.meta.set_fun("conf", hallo_c)
     more_meta.meta.set_fun("run", hallo_r)
 
-def configure(*_, **__):
-    pass
 
 def run(d, *_, **__):
     stack = d["simple_stack_reader"]["stack"]
