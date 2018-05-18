@@ -77,20 +77,21 @@ def _load_module(name, path):
     meta_templates = {}
     try:
         # Prepare requested module metadata instances
-        reg_params = inspect.signature(mod.register).parameters
-        if "more_meta" in reg_params:
-            if reg_params["more_meta"] is None or reg_params["more_meta"] is inspect.Parameter.empty:
+        reg_param = inspect.signature(mod.register).parameters.get("more_meta")
+        if reg_param:
+            reg_param = reg_param.default
+            if reg_param is None or reg_param is inspect.Parameter.empty:
                 # Metadata for single module as scalar
                 more_meta = (MetadataRegisterer(ModuleMetadata(), {}),)
                 meta_templates = {"more_meta": more_meta[0]}
             else:
                 # Tuple of metadata for multiple modules
-                n_meta = int(reg_params["more_meta"])
+                n_meta = int(reg_param)
                 more_meta = tuple(MetadataRegisterer(ModuleMetadata(), {}) for _ in range(n_meta))
                 meta_templates = {"more_meta": more_meta}
-    except TypeError:
+    except TypeError as e:
         pass
-    except ValueError:
+    except ValueError as e:
         pass
 
     # Third, let module fill in its properties
@@ -470,7 +471,6 @@ class ModuleManager:
 
         A thread-safe check is performed whether "run" dependencies are fulfilled and whether "conf" return data is present.
 
-        TODO: Implement loops
         TODO: Check for version conflicts
 
         :param idx: index of the module for which to check dependencies
@@ -514,8 +514,6 @@ class ModuleManager:
                         isConfRequired = True
                     if isConfDep:
                         deps[mod_id].discard(cret_data)
-                # CONTINUE here
-                        
 
         # Check for dependencies fulfilled already
         with self.data_lock:
