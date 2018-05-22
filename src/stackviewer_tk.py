@@ -3,6 +3,7 @@
 from contrast import ContrastAdjuster
 from gui_tk import new_toplevel
 import os
+import queue
 import roi_selection as roi_sel
 import stack
 import sys
@@ -34,9 +35,11 @@ class StackViewer:
             self.root = root
         self.root.title("StackViewer")
         self.root.bind("<Destroy>", self._close)
+
         self.contrast_adjuster = None
         self.image_listener_id = None
         self.roi_listener_id = None
+        self._update_queue = queue.Queue()
         
         # Stack properties
         self.stack = None
@@ -126,12 +129,37 @@ class StackViewer:
                                      )
         self.lbl_frame_size = ttk.Label(self.mainframe, anchor=tk.W)
 
+        # Start listening to external events
+        self.root.after(40, self._update)
+
         # Register ROI selection
         self.roi_selector = roi_sel.RoiReader(self)
 
         if image_file is not None:
             self.open_stack(image_file)
 
+
+    def _update(self):
+        """
+        Execute jobs in queue.
+        
+        Call this method only from whithin the Tkinter main thread.
+        """
+        while True:
+            try:
+                func, args, kwargs = self._update_queue.get(block=False)
+            except queue.Empty:
+                break
+            self.root.after_idle(func, *args, **kwargs)
+        self.root.after(40, self._update)
+
+    def schedule(self, func, *args, **kwargs):
+        """
+        Feed new job into queue.
+        
+        Use this function to change the GUI from another thread.
+        """
+        self._update_queue.put((func, args, kwargs))
 
     def open_stack(self, fn=None):
         """
@@ -155,7 +183,7 @@ class StackViewer:
         self._set_stack(stack.Stack(fn))
 
     def set_stack(self, s):
-        self.root.after_idle(lambda: self._set_stack(s))
+        self.schedule(self._set_stack, s)
 
     def _set_stack(self, s):
         """Set the stack that is displayed."""
@@ -168,8 +196,8 @@ class StackViewer:
         self.stack = s
         self.img = None
         self._update_stack_properties()
-        self.image_listener_id = self.stack.add_listener(lambda: self.root.after_idle(self._update_stack_properties), "image")
-        self.roi_listener_id = self.stack.add_listener(lambda: self.root.after_idle(self.draw_rois), "roi")
+        self.image_listener_id = self.stack.add_listener(lambda: self.schedule(self._update_stack_properties), "image")
+        self.roi_listener_id = self.stack.add_listener(lambda: self.schedule(self.draw_rois), "roi")
 
 
     def _show_img(self):

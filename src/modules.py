@@ -569,6 +569,10 @@ class ModuleManager:
         if mod.is_loop:
             with self.order_lock:
                 iidx = idx
+                # Ensure that index points to loop head, not to loop itself
+                if len(iidx) < 2 or iidx[-1] != 0:
+                    iidx.append(0)
+
                 while True:
                     iidx[-1] += 1
                     try:

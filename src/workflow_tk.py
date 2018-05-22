@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 import gui_tk as gui
+import queue
 from recursive_tree_comparer import RecursiveComparer
 import sys
 import tkinter as tk
@@ -25,6 +26,7 @@ class WorkflowGUI:
         self.root = gui.get_root()
         self.mod_list_frame = None
         self.dependencies_fulfilled = False
+        self._update_queue = queue.Queue()
 
         # Menu bar
         menubar = tk.Menu(self.frame)
@@ -98,9 +100,35 @@ class WorkflowGUI:
         self.mod_tree.tag_configure("dep_conf", background="yellow")
         self.mod_tree.tag_configure("dep_other", background="red")
 
-        self.modman.register_listener(lambda: self.frame.after_idle(self.refresh_mod_tree), kind="order")
-        self.modman.register_listener(lambda: self.frame.after_idle(self.refresh_run_button), kind="workflow")
-        self.modman.register_listener(lambda: self.frame.after_idle(self.refresh_dependencies), kind="dependency")
+        # Prepare listeners
+        self.modman.register_listener(lambda: self.schedule(self.refresh_mod_tree), kind="order")
+        self.modman.register_listener(lambda: self.schedule(self.refresh_run_button), kind="workflow")
+        self.modman.register_listener(lambda: self.schedule(self.refresh_dependencies), kind="dependency")
+        self.root.after(40, self._update)
+
+
+    def _update(self):
+        """
+        Execute jobs in queue.
+        
+        Call this method only from whithin the Tkinter main thread.
+        """
+        while True:
+            try:
+                func, args, kwargs = self._update_queue.get(block=False)
+            except queue.Empty:
+                break
+            self.root.after_idle(func, *args, **kwargs)
+        self.root.after(40, self._update)
+
+
+    def schedule(self, func, *args, **kwargs):
+        """
+        Feed new job into queue.
+        
+        Use this function to change the GUI from another thread.
+        """
+        self._update_queue.put((func, args, kwargs))
 
 
     def mainloop(self):
