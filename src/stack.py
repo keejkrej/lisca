@@ -7,6 +7,7 @@ import threading
 import warnings
 
 import numpy as np
+import tifffile
 import PIL.Image as pilimg
 import PIL.ImageTk as piltk
 import skimage.draw as skid
@@ -36,11 +37,12 @@ class Stack:
         with self.image_lock:
             # The stack path and object
             self._path = None
-            self._tmpfile = None
             self.img = None
+            self._tmpfile = None
 
             # The stack properties
             self._mode = None
+            self._order = None
             self._width = 0
             self._height = 0
             self._n_images = 0
@@ -59,41 +61,54 @@ class Stack:
         """Load a stack from a path."""
         with self.image_lock:
             try:
+                # Open image file
                 self._path = path
-                tiffimg = pilimg.open(self._path)
-                if tiffimg.format != "TIFF":
-                    raise ValueError(
-                        "Bad image format: {}. Expected TIFF.".format(
-                        tiffimg.format))
-                self._parse_tiff_tags(tiffimg)
+                tiff = tifffile.TiffFile(self._path)
+                pages = tiff.pages
+                if not pages:
+                    raise ValueError(f"Cannot open file '{self._path}': No pages found in TIFF.")
+
+                # Get basic information
+                self._n_images = len(pages)
+                page0 = pages[0]
+                self._width = page0.imagewidth
+                self._height = page0.imagelength
+                self._mode = page0.bitspersample
+                if self._mode != 8 and self._mode != 16:
+                    raise TypeError(f"Only 8-bit and 16-bit images are supported; found {self._mode}.")
+
+                # Get software-specific information
+                description = page0.description
+                if page0.is_imagej:
+                    self._parse_imagej_tags(description)
+                elif page0.is_ome:
+                    raise NotImplementedError("OME not implemented yet.")
+                else:
+                    raise TypeError("Unknown image type.")
+
+                # Copy stack to numpy array in temporary file
+                self._tmpfile = tempfile.TemporaryFile()
+                dtype = np.uint8 if self._mode == 8 else np.uint16
+                self.img = np.memmap(filename=self._tmpfile,
+                                     dtype=dtype,
+                                     shape=(self._n_channels,
+                                            self._n_frames,
+                                            self._height,
+                                            self._width))
+                for i in range(self._n_images):
+                    ch, fr = self.convert_position(image=i)
+                    pages[i].asarray(out=self.img[ch,fr,:,:])
 
             except Exception as e:
                 self._clear_state()
                 print(str(e))
                 raise
 
-            self._width = tiffimg.width
-            self._height = tiffimg.height
-            self._n_images = tiffimg.n_frames
+            finally:
+                # Close TIFF image
+                tiff.close()
 
-            # Copy stack to numpy array in temporary file
-            self._tmpfile = tempfile.TemporaryFile()
-            self.img = np.memmap(filename=self._tmpfile,
-                                 dtype=(np.uint8 if self._mode == 8
-                                        else np.uint16),
-                                 shape=(self._n_channels,
-                                        self._n_frames,
-                                        self._height,
-                                        self._width))
-            for i in range(self._n_images):
-                tiffimg.seek(i)
-                ch, fr = self.convert_position(image=i)
-                self.img[ch,fr,:,:] = np.asarray(tiffimg)
-
-            # Close TIFF image
-            tiffimg.close()
-
-            self._listeners.notify("image")
+                self._listeners.notify("image")
 
 
     def close(self):
@@ -105,26 +120,10 @@ class Stack:
             self._clear_state()
 
 
-    def _parse_tiff_tags(self, tiffimg):
-        """Read stack dimensions from TIFF description tag."""
-        # Get pixel size
-        px_size = tiffimg.tag_v2[TIFF_TAG_BITSPERSAMPLE][0]
-        if px_size == 8:
-            self._mode = 8
-        elif px_size == 16:
-            self._mode = 16
-        else:
-            raise ValueError("Undefined pixel size: {}".format(px_size))
-
-        # Parse image description (metadata from ImageJ)
-        desc = tiffimg.tag_v2[TIFF_TAG_DESCRIPTION]
-        
-        # Get total number of images in stack
-        m = re.search(r"images=(\d+)", desc)
-        if m:
-            self._n_images = int(m.group(1))
-        else:
-            self._n_images = 1
+    def _parse_imagej_tags(self, desc):
+        """Read stack dimensions from ImageJ’s TIFF description tag."""
+        # Set dimension order
+        self._order = "tc"
 
         # Get number of frames in stack
         m = re.search(r"frames=(\d+)", desc)
@@ -160,24 +159,30 @@ class Stack:
         All other combinations will return None.
         """
         with self.image_lock:
-            # Check arguments
-            if channel is None and frame is None:
-                toCT = True
-            elif channel is None or frame is None:
+            if self._order is None:
                 return None
-            else:
-                toCT = False
-            if image is None and toCT:
-                return None
+            elif self._order == "tc":
+                # Check arguments
+                if channel is None and frame is None:
+                    toTC = True
+                elif channel is None or frame is None:
+                    return None
+                else:
+                    toTC = False
+                if image is None and toTC:
+                    return None
 
-            # Convert
-            if toCT:
-                channel = image % self._n_channels
-                frame = image // self._n_channels
-                return (channel, frame)
+                # Convert
+                if toTC:
+                    channel = image % self._n_channels
+                    frame = image // self._n_channels
+                    return (channel, frame)
+                else:
+                    image = frame * self._n_channels + channel
+                    return image
+            #elif self._order == "tc":
             else:
-                image = frame * self._n_channels + channel
-                return image
+                raise NotImplementedError(f"Dimension order '{self._order}' not implemented yet.")
 
 
     def get_image(self, channel, frame):
@@ -296,6 +301,12 @@ class Stack:
     def mode(self):
         with self.image_lock:
             return self._mode
+
+
+    @property
+    def order(self):
+        with self.image_lock:
+            return self._order
 
 
     @property

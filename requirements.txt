@@ -2,6 +2,7 @@ numpy
 scipy
 matplotlib
 pillow
+tifffile
 scikit-image
 #ipython
 #spyder
