@@ -82,10 +82,25 @@ class StackViewer:
         self.label.pack(side=tk.LEFT)
 
         # Canvas
-        self.canvas = tk.Canvas(self.mainframe, width=100, height=100,
+        self.frame_canvas = ttk.Frame(self.mainframe)
+        self.frame_canvas.grid(row=ROW_CANVAS, column=0, columnspan=COLSPAN_CANVAS)
+        self.frame_canvas.columnconfigure(0, weight=1)
+        self.frame_canvas.rowconfigure(0, weight=1)
+
+        self.canvas = tk.Canvas(self.frame_canvas, width=100, height=100,
+            borderwidth=0,
             highlightthickness=0, background="white")
-        self.canvas.grid(row=ROW_CANVAS, column=0,
-            columnspan=COLSPAN_CANVAS)#, sticky=tk.N+tk.S)
+        self.canvas.grid(row=0, column=0, sticky="NESW")
+
+        self.scroll_canvas_horiz = ttk.Scrollbar(self.frame_canvas,
+            orient=tk.HORIZONTAL, command=self.canvas.xview)
+        self.scroll_canvas_vert = ttk.Scrollbar(self.frame_canvas,
+            orient=tk.VERTICAL, command=self.canvas.yview)
+
+        self.canvas.config(scrollregion=self.canvas.bbox(tk.ALL),
+            xscrollcommand=self.scroll_canvas_horiz.set,
+            yscrollcommand=self.scroll_canvas_vert.set)
+        self.canvas.bind("<Configure>", self.update_scrollbars)
 
         # Channel control elements
         self.scale_channel = tk.Scale(
@@ -229,6 +244,7 @@ class StackViewer:
         self.i_frame_var.set(1)
 
         self.label.config(text=self.stack.path)
+        self.update_scrollbars()
 
         # GUI elements corresponding to channel
         if self.n_channels == 1:
@@ -310,6 +326,32 @@ class StackViewer:
             print("No selection tool registered.", file=sys.stderr)
 
 
+    def update_scrollbars(self, *_):
+        """Update the settings of the scrollbars around the canvas"""
+        # Get size of canvas frame (maximum displayable area)
+        self.root.update_idletasks()
+        view_width = self.frame_canvas.winfo_width()
+        view_height = self.frame_canvas.winfo_height()
+
+        # Get bounding box of canvas content
+        cbb = self.canvas.bbox(tk.ALL)
+        canvas_width = cbb[2] - cbb[0]
+        canvas_height = cbb[3] - cbb[1]
+
+        # Set canvas scroll viewport
+        self.canvas.config(scrollregion=cbb)
+
+        # Configure scrollbar appearances
+        if canvas_width > view_width:
+            self.scroll_canvas_horiz.grid(row=1, column=0, sticky="WE")
+        else:
+            self.scroll_canvas_horiz.grid_forget()
+        if canvas_height > view_height:
+            self.scroll_canvas_vert.grid(row=0, column=1, sticky="NS")
+        else:
+            self.scroll_canvas_vert.grid_forget()
+
+
     def open_contrast_adjuster(self, *_):
         """Callback for opening a ContrastAdjuster frame."""
         if self.contrast_adjuster is None:
@@ -337,6 +379,7 @@ class StackViewer:
         rois = self.stack.get_rois(frame=roi_key)
         for roi in rois:
             self.canvas.create_polygon(*roi.corners[:,::-1].flat, fill="", outline="yellow", tags="roi")
+
 
     def _close(self, *_):
         if self.contrast_adjuster is not None:
