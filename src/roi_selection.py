@@ -92,8 +92,8 @@ class RoiReader:
     def canvas_clicked(self, evt):
         """Canvas "clicked" callback for ROI definition mode"""
         if self.sel_state == SELECTION_ANCHOR:
-            self.sel_coords['x0'] = evt.x
-            self.sel_coords['y0'] = evt.y
+            self.sel_coords['x0'] = self.canvas.canvasx(evt.x)
+            self.sel_coords['y0'] = self.canvas.canvasy(evt.y)
             self.control_selection(SELECTION_TILT)
 
         elif self.sel_state == SELECTION_TILT:
@@ -143,12 +143,11 @@ class RoiReader:
             self.canvas.delete("rule")
 
             # Get coordinates
-            height = self.canvas.winfo_height()
-            width = self.canvas.winfo_width()
+            width, height = self.sv.canvas_bbox()
             x0 = self.sel_coords['x0']
             y0 = self.sel_coords['y0']
-            x1 = evt.x
-            y1 = evt.y
+            x1 = self.canvas.canvasx(evt.x)
+            y1 = self.canvas.canvasy(evt.y)
 
             # Calculate new rules
             dx = x1 - x0
@@ -220,8 +219,8 @@ class RoiReader:
             self.canvas.delete("roi")
 
             # Get coordinates
-            x2 = evt.x
-            y2 = evt.y
+            x2 = self.canvas.canvasx(evt.x)
+            y2 = self.canvas.canvasy(evt.y)
 
             x0 = self.sel_coords['x0']
             y0 = self.sel_coords['y0']
@@ -255,11 +254,9 @@ class RoiReader:
             self.canvas.delete("roi_draft")
 
             # Get coordinates
-            ex = evt.x
-            ey = evt.y
-
-            height = self.canvas.winfo_height()
-            width = self.canvas.winfo_width()
+            ex = self.canvas.canvasx(evt.x)
+            ey = self.canvas.canvasy(evt.y)
+            width, height = self.sv.canvas_bbox()
 
             a = self.sel_coords['slope']
             polygon = self.sel_coords['polygon']
@@ -464,10 +461,7 @@ class RoiReader:
         """Check if a point or rectangle is in the canvas."""
         if P.ndim == 1:
             P = P.reshape((1,-1))
-
-        height = self.canvas.winfo_height()
-        width = self.canvas.winfo_width()
-    
+        width, height = self.sv.canvas_bbox()
         return not np.any((P <= 0) | (P >= [width, height]))
 
 

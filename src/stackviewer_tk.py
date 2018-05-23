@@ -352,6 +352,14 @@ class StackViewer:
             self.scroll_canvas_vert.grid_forget()
 
 
+    def canvas_bbox(self):
+        """Get bounding box size of image in canvas"""
+        cbb = self.canvas.bbox("img")
+        canvas_width = cbb[2] - cbb[0]
+        canvas_height = cbb[3] - cbb[1]
+        return canvas_width, canvas_height
+
+
     def open_contrast_adjuster(self, *_):
         """Callback for opening a ContrastAdjuster frame."""
         if self.contrast_adjuster is None:
