@@ -5,6 +5,7 @@ import string
 import tempfile
 import threading
 import warnings
+import xml.etree.ElementTree as ET
 
 import numpy as np
 import tifffile
@@ -82,7 +83,7 @@ class Stack:
                 if page0.is_imagej:
                     self._parse_imagej_tags(description)
                 elif page0.is_ome:
-                    raise NotImplementedError("OME not implemented yet.")
+                    self._parse_ome(description)
                 else:
                     raise TypeError("Unknown image type.")
 
@@ -149,6 +150,89 @@ class Stack:
             self._n_channels = 1
 
 
+    def _parse_ome(self, ome):
+        """Extract stack information from description in OME format."""
+        root = ET.fromstring(ome)
+
+        # Find XML namespace
+        # The namespace of an XML tag is prefixed to the tag name in
+        # curly braces; see documentation of `xml.etree.ElementTree`.
+        idx = root.tag.rfind('}')
+        if idx == -1:
+            xmlns = ''
+        else:
+            xmlns = root.tag[:idx+1]
+
+        # Find "Image" tag
+        tag_image = ''.join((xmlns, "Image"))
+        for child in root:
+            if child.tag == tag_image:
+                element_image = child
+                break
+        else:
+            raise TypeError("No 'Image' tag found in OME description.")
+
+        # Find "Pixels" tag
+        tag_pixels = ''.join((xmlns, "Pixels"))
+        for child in element_image:
+            if child.tag == tag_pixels:
+                element_pixels = child
+                break
+        else:
+            raise TypeError("No 'Pixels' tag found in OME description.")
+
+        # Get image properties from attributes of "Pixels" tag
+        # Number of frames
+        sizeT = element_pixels.attrib.get("SizeT")
+        if sizeT is None:
+            raise ValueError("No 'SizeT' attribute found in OME description.")
+        try:
+            sizeT = int(sizeT)
+        except:
+            raise ValueError("Bad 'SizeT' value in OME description.")
+        if sizeT < 1:
+            raise ValueError("Non-positive 'SizeT' value in OME description.")
+        self._n_frames = sizeT
+
+        # Number of channels
+        sizeC = element_pixels.attrib.get("SizeC")
+        if sizeC is None:
+            raise ValueError("No 'SizeC' attribute found in OME description.")
+        try:
+            sizeC = int(sizeC)
+        except:
+            raise ValueError("Bad 'SizeC' value in OME description.")
+        if sizeC < 1:
+            raise ValueError("Non-positive 'SizeC' value in OME description.")
+        self._n_channels = sizeC
+
+        # Number of slices
+        sizeZ = element_pixels.attrib.get("SizeZ")
+        if sizeZ is None:
+            raise ValueError("No 'SizeZ' attribute found in OME description.")
+        try:
+            sizeZ = int(sizeZ)
+        except:
+            raise ValueError("Bad 'SizeZ' value in OME description.")
+        if sizeZ < 1:
+            raise ValueError("Non-positive 'SizeZ' value in OME description.")
+        elif sizeZ != 1:
+            raise ValueError(f"Only images with one slice supported; found {sizeZ} slices.")
+
+        # Dimension order
+        dim_order = element_pixels.attrib.get("DimensionOrder")
+        if dim_order is None:
+            raise ValueError("No 'DimensionOrder' attribute found in OME description.")
+        idx_C = dim_order.find('C')
+        idx_T = dim_order.find('T')
+        if idx_C == -1 or idx_T == -1:
+            raise ValueError("Bad 'DimensionOrder' value in OME description.")
+        if idx_C < idx_T:
+            self._order = 'tc'
+        else:
+            self._order = 'ct'
+
+
     def convert_position(self, channel=None, frame=None, image=None):
         """
         Convert stack position between (channel, frame) and image.
@@ -158,29 +242,39 @@ class Stack:
         of channel and frame as tuple.
         All other combinations will return None.
         """
+        # Check arguments
+        if channel is None and frame is None:
+            to2 = True
+        elif channel is None or frame is None:
+            return None
+        else:
+            to2 = False
+        if image is None and to2:
+            return None
+
+        # Convert
         with self.image_lock:
             if self._order is None:
                 return None
-            elif self._order == "tc":
-                # Check arguments
-                if channel is None and frame is None:
-                    toTC = True
-                elif channel is None or frame is None:
-                    return None
-                else:
-                    toTC = False
-                if image is None and toTC:
-                    return None
 
-                # Convert
-                if toTC:
+            elif self._order == "tc":
+                if to2:
                     channel = image % self._n_channels
                     frame = image // self._n_channels
                     return (channel, frame)
                 else:
                     image = frame * self._n_channels + channel
                     return image
-            #elif self._order == "tc":
+
+            elif self._order == "ct":
+                if to2:
+                    channel = image // self._n_frames
+                    frame = image % self._n_frames
+                    return (channel, frame)
+                else:
+                    image = channel * self._n_frames + frame
+                    return image
+
             else:
                 raise NotImplementedError(f"Dimension order '{self._order}' not implemented yet.")
 
