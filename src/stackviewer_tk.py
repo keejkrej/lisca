@@ -330,13 +330,17 @@ class StackViewer:
         """Update the settings of the scrollbars around the canvas"""
         # Get size of canvas frame (maximum displayable area)
         self.root.update_idletasks()
-        view_width = self.frame_canvas.winfo_width()
-        view_height = self.frame_canvas.winfo_height()
+        view_width = self.canvas.winfo_width()
+        view_height = self.canvas.winfo_height()
 
         # Get bounding box of canvas content
         cbb = self.canvas.bbox(tk.ALL)
-        canvas_width = cbb[2] - cbb[0]
-        canvas_height = cbb[3] - cbb[1]
+        if cbb is None:
+            canvas_width = 0
+            canvas_height = 0
+        else:
+            canvas_width = cbb[2] - cbb[0]
+            canvas_height = cbb[3] - cbb[1]
 
         # Set canvas scroll viewport
         self.canvas.config(scrollregion=cbb)
@@ -355,6 +359,8 @@ class StackViewer:
     def canvas_bbox(self):
         """Get bounding box size of image in canvas"""
         cbb = self.canvas.bbox("img")
+        if cbb is None:
+            return 0, 0
         canvas_width = cbb[2] - cbb[0]
         canvas_height = cbb[3] - cbb[1]
         return canvas_width, canvas_height
