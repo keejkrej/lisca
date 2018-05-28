@@ -34,11 +34,13 @@ class ContrastAdjuster:
             self._update_scaling)
 
         self.mainframe = tk.Toplevel(root)
+        self.mainframe.resizable(False, False)
         self.mainframe.title("Adjust contrast")
         self.mainframe.bind("<Destroy>", self.close)
 
         self.histcan = tk.Canvas(self.mainframe, width=256, height=100,
-            background="white", highlightthickness=0)
+            background="white", highlightthickness=0, borderwidth=0)
+        root.update_idletasks()
         self.histcan.pack()
 
         frame = tk.Frame(self.mainframe, relief=tk.FLAT)
@@ -65,7 +67,6 @@ class ContrastAdjuster:
 
         # Setup
         self._update_scaling()
-        self.draw_hist()
 
         self.histcan.bind("<Button-1>", self._limit_selection_action)
         self.histcan.bind("<B1-Motion>", self._limit_selection_action)
