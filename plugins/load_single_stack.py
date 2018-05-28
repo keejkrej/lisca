@@ -7,6 +7,7 @@ from stack import Stack
 from stackviewer_tk import StackViewer
 
 my_id = "simple_stack_reader"
+__version__ = "0.1"
 
 def register(meta):
     meta.name = "Read stack"
