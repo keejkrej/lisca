@@ -65,6 +65,7 @@ class ContrastAdjuster:
 
         # Setup
         self._update_scaling()
+        self.draw_hist()
 
         self.histcan.bind("<Button-1>", self._limit_selection_action)
         self.histcan.bind("<B1-Motion>", self._limit_selection_action)

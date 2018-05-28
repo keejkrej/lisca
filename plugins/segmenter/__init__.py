@@ -1,6 +1,8 @@
 from . import tools
 
 my_id = "simple_segmenter"
+__version__ = "0.1"
+
 def register(meta, more_meta):
     meta.name = "Segment stack"
     meta.id = my_id
