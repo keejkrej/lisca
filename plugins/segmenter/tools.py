@@ -16,7 +16,7 @@ HIST_BREAK_WIDTH = 30
 HIST_THRESH = .5
 
 
-def interpolate_background(frame, n_tiles_horiz=N_TILES_HORIZ, n_tiles_vert=N_TILES_VERT, debug=False):
+def interpolate_background(frame, n_tiles_horiz=N_TILES_HORIZ, n_tiles_vert=N_TILES_VERT, hist_n_bins=HIST_N_BINS, hist_break_width=HIST_BREAK_WIDTH, hist_thresh=HIST_THRESH, debug=False):
     """
     Calculate an interpolated background by histogram.
 
@@ -26,6 +26,12 @@ def interpolate_background(frame, n_tiles_horiz=N_TILES_HORIZ, n_tiles_vert=N_TI
     :type n_tiles_horiz: int >0
     :param n_tiles_vert: number of tiles in vertical direction
     :type n_tiles_vert: int >0
+    :param hist_n_bins: Number of bins to use in histogram
+    :type hist_n_bins: int >0
+    :param hist_break_width: Histogram bin width threshold for acceptance
+    :type hist_break_width: int >0
+    :param hist_thresh: Relative threshold of histogram bins for acceptance
+    :type hist_thresh: int >0
     :param debug: if ``True``, return dict of internal variables
     :type degub: bool
 
@@ -73,18 +79,18 @@ def interpolate_background(frame, n_tiles_horiz=N_TILES_HORIZ, n_tiles_vert=N_TI
 
             while True:
                 # Find highest bin in histogram of tile values
-                hist, bin_edges = np.histogram(px_vals, bins=HIST_N_BINS)
+                hist, bin_edges = np.histogram(px_vals, bins=hist_n_bins)
                 iMax = hist.argmax()
 
                 if debug:
                     print("[{:1d},{:1d}] iMax={:2d}, hist_width={:.3f}".format(iRow, iCol, iMax, bin_edges[iMax+1] - bin_edges[iMax]))
 
-                if bin_edges[iMax+1] - bin_edges[iMax] <= HIST_BREAK_WIDTH:
+                if bin_edges[iMax+1] - bin_edges[iMax] <= hist_break_width:
                     # Bins are small enough
                     break
                 elif iMax > 0 and iMax < bin_edges.size-1 and \
-                         hist[iMax-1] > hist[iMax] * HIST_THRESH and \
-                         hist[iMax+1] > hist[iMax] * HIST_THRESH:
+                         hist[iMax-1] > hist[iMax] * hist_thresh and \
+                         hist[iMax+1] > hist[iMax] * hist_thresh:
                     # Highest bin is not "suspicious"
                     break
                 else:
