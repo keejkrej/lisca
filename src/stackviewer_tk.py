@@ -5,6 +5,7 @@ from gui_tk import new_toplevel
 import os
 import queue
 import roi_selection as roi_sel
+import roi_selector
 import stack
 import sys
 import tkinter as tk
@@ -75,6 +76,9 @@ class StackViewer:
         self.select_button = ttk.Button(tempframe, text="Select",
             command=self.toggle_selection, state=tk.NORMAL)
         self.select_button.pack(side=tk.LEFT)
+        self.selector_button = ttk.Button(tempframe, text="Select2",
+            command=lambda:roi_selector.new_roi_selector(self), state=tk.NORMAL)
+        self.selector_button.pack(side=tk.LEFT)
         self.open_button = ttk.Button(tempframe, text="Browse...",
             command=self.open_stack, state=tk.NORMAL)
         self.open_button.pack(side=tk.LEFT)
@@ -334,7 +338,7 @@ class StackViewer:
         view_height = self.canvas.winfo_height()
 
         # Get bounding box of canvas content
-        cbb = self.canvas.bbox(tk.ALL)
+        cbb = self.canvas.bbox("img")
         if cbb is None:
             canvas_width = 0
             canvas_height = 0

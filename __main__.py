@@ -2,7 +2,7 @@
 
 
 # Define meta information
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 __author__ = "Daniel Woschée"
 __contact__ = "daniel.woschee@physik.lmu.de"
 
