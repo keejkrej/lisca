@@ -1,3 +1,4 @@
+from listener import Listeners
 import math
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -67,7 +68,6 @@ def str2float(s, mustPositive=True, mustNonNegative=False):
 
 def flash_red(widget):
     """Make widget background flash red"""
-    #old_bg = widget.cget("background")
     widget.config(background="red")
     widget.after(RED_FLASH_MS, lambda:widget.config(background="white"))
 
@@ -79,16 +79,18 @@ class RoiSelector:
         self.canvas = sv.canvas
 
         # Define control/logic variables
+        self._listeners = Listeners()
+        self.unit_conv_fac = .6
+
         # Length unit is pixels, with 1px = `self.unit_conv_fac` µm
         # Angle unit is degree
-        self.unit_conv_fac = .6
-        self.offset_x = 5
-        self.offset_y = 0
-        self.width = 50
-        self.height = 50
-        self.pad_x = 20
-        self.pad_y = 20
-        self.angle = 0
+        self._offset_x = 5
+        self._offset_y = 0
+        self._width = 50
+        self._height = 50
+        self._pad_x = 20
+        self._pad_y = 20
+        self._angle = 0
 
         # Set up window
         self.root = tk.Toplevel(sv.root)
@@ -100,13 +102,13 @@ class RoiSelector:
         self.var_unit_px = tk.StringVar(self.root, value=1)
         self.var_unit_µm = tk.StringVar(self.root, value=1)
         self.var_type_roi = tk.StringVar(self.root, value=TYPE_SQUARE)
-        self.var_offset_x = tk.StringVar(self.root, value=self.offset_x)
-        self.var_offset_y = tk.StringVar(self.root, value=self.offset_y)
-        self.var_width = tk.StringVar(self.root, value=self.width)
-        self.var_height = tk.StringVar(self.root, value=self.height)
-        self.var_pad_x = tk.StringVar(self.root, value=self.pad_x)
-        self.var_pad_y = tk.StringVar(self.root, value=self.pad_y)
-        self.var_angle = tk.StringVar(self.root, value=self.angle)
+        self.var_offset_x = tk.StringVar(self.root, value=self._offset_x)
+        self.var_offset_y = tk.StringVar(self.root, value=self._offset_y)
+        self.var_width = tk.StringVar(self.root, value=self._width)
+        self.var_height = tk.StringVar(self.root, value=self._height)
+        self.var_pad_x = tk.StringVar(self.root, value=self._pad_x)
+        self.var_pad_y = tk.StringVar(self.root, value=self._pad_y)
+        self.var_angle = tk.StringVar(self.root, value=self._angle)
 
         # Build GUI
 
@@ -205,6 +207,7 @@ class RoiSelector:
             content["text"] = text
         else:
             content["textvariable"] = text
+            content["width"] = 3
 
         label = tk.Label(parent, **content, anchor=tk.W)
         label.grid(row=row, column=column, sticky="WE", padx=pad)
@@ -241,21 +244,21 @@ class RoiSelector:
     def update_values(self):
         """Callback for converting values between px and µm"""
         if self.unit == UNIT_µm:
-            float2str(self.offset_x * self.unit_conv_fac, self.var_offset_x)
-            float2str(self.width * self.unit_conv_fac, self.var_width)
-            float2str(self.pad_x * self.unit_conv_fac, self.var_pad_x)
+            float2str(self._offset_x * self.unit_conv_fac, self.var_offset_x)
+            float2str(self._width * self.unit_conv_fac, self.var_width)
+            float2str(self._pad_x * self.unit_conv_fac, self.var_pad_x)
 
-            float2str(self.offset_y * self.unit_conv_fac, self.var_offset_y)
-            float2str(self.height * self.unit_conv_fac, self.var_height)
-            float2str(self.pad_y * self.unit_conv_fac, self.var_pad_y)
+            float2str(self._offset_y * self.unit_conv_fac, self.var_offset_y)
+            float2str(self._height * self.unit_conv_fac, self.var_height)
+            float2str(self._pad_y * self.unit_conv_fac, self.var_pad_y)
         else:
-            float2str(self.offset_x, self.var_offset_x)
-            float2str(self.width, self.var_width)
-            float2str(self.pad_x, self.var_pad_x)
+            float2str(self._offset_x, self.var_offset_x)
+            float2str(self._width, self.var_width)
+            float2str(self._pad_x, self.var_pad_x)
 
-            float2str(self.offset_y, self.var_offset_y)
-            float2str(self.height, self.var_height)
-            float2str(self.pad_y, self.var_pad_y)
+            float2str(self._offset_y, self.var_offset_y)
+            float2str(self._height, self.var_height)
+            float2str(self._pad_y, self.var_pad_y)
         
 
     def update_unit_conversion(self, evt=None):
@@ -287,8 +290,8 @@ class RoiSelector:
             self.sp_height.config(state=tk.DISABLED)
             self.sp_pad_y.config(state=tk.DISABLED)
 
-            self.height = self.width
-            self.pad_y = self.pad_x
+            self._height = self._width
+            self._pad_y = self._pad_x
 
             self.var_height.set(self.var_width.get())
             self.var_pad_y.set(self.var_pad_x.get())
@@ -308,97 +311,97 @@ class RoiSelector:
         if widget == self.sp_offset_x:
             off_x = str2float(self.var_offset_x, False)
             if off_x is None:
-                off_x = self.offset_x
+                off_x = self._offset_x
                 if self.unit == UNIT_µm:
                     off_x *= self.unit_conv_fac
                 float2str(off_x, self.var_offset_x)
                 flash_red(self.sp_offset_x)
             else:
                 if self.unit == UNIT_µm:
-                    self.offset_x = off_x / self.unit_conv_fac
+                    self._offset_x = off_x / self.unit_conv_fac
                 else:
-                    self.offset_x = off_x
+                    self._offset_x = off_x
 
         elif widget == self.sp_offset_y:
             off_y = str2float(self.var_offset_y, False)
             if off_y is None:
-                off_y = self.offset_y
+                off_y = self._offset_y
                 if self.unit == UNIT_µm:
                     off_y *= self.unit_conv_fac
                 float2str(off_y, self.var_offset_y)
                 flash_red(self.sp_offset_y)
             else:
                 if self.unit == UNIT_µm:
-                    self.offset_y = off_y / self.unit_conv_fac
+                    self._offset_y = off_y / self.unit_conv_fac
                 else:
-                    self.offset_y = off_y
+                    self._offset_y = off_y
 
         elif widget == self.sp_width:
             width = str2float(self.var_width, True)
             if width is None:
-                width = self.width
+                width = self._width
                 if self.unit == UNIT_µm:
-                    self.width *= self.unit_conv_fac
+                    width *= self.unit_conv_fac
                 float2str(width, self.var_width)
                 flash_red(self.sp_width)
             else:
                 if self.unit == UNIT_µm:
-                    self.width = width / self.unit_conv_fac
+                    self._width = width / self.unit_conv_fac
                 else:
-                    self.width = width
+                    self._width = width
                 if self.var_type_roi.get() == TYPE_SQUARE:
-                    self.height = self.width
+                    self._height = self._width
                     self.var_height.set(self.var_width.get())
 
         elif widget == self.sp_height:
             height = str2float(self.var_height, True)
             if height is None:
-                height = self.height
+                height = self._height
                 if self.unit == UNIT_µm:
                     height *= self.unit_conv_fac
                 float2str(height, self.var_height)
                 flash_red(self.sp_height)
             else:
                 if self.unit == UNIT_µm:
-                    self.height = height / self.unit_conv_fac
+                    self._height = height / self.unit_conv_fac
                 else:
-                    self.height = height
+                    self._height = height
 
         elif widget == self.sp_pad_x:
-            pad_x = str2float(self.var_pad_x, True)
+            pad_x = str2float(self.var_pad_x, False, True)
             if pad_x is None:
-                pad_x = self.pad_x
+                pad_x = self._pad_x
                 if self.unit == UNIT_µm:
                     pad_x *= self.unit_conv_fac
                 float2str(pad_x, self.var_pad_x)
                 flash_red(self.sp_pad_x)
             else:
                 if self.unit == UNIT_µm:
-                    self.pad_x = pad_x / self.unit_conv_fac
+                    self._pad_x = pad_x / self.unit_conv_fac
                 else:
-                    self.pad_x = pad_x
+                    self._pad_x = pad_x
                 if self.roi_type == TYPE_SQUARE:
-                    self.pad_y = self.pad_x
+                    self._pad_y = self._pad_x
                     self.var_pad_y.set(self.var_pad_x.get())
 
         elif widget == self.sp_pad_y:
-            pad_y = str2float(self.var_pad_y, True)
+            pad_y = str2float(self.var_pad_y, False, True)
             if pad_y is None:
-                pad_y = self.pad_y
+                pad_y = self._pad_y
                 if self.unit == UNIT_µm:
                     pad_y *= self.unit_conv_fac
                 float2str(pad_y, self.var_pad_y)
                 flash_red(self.sp_pad_y)
             else:
                 if self.unit == UNIT_µm:
-                    self.pad_y = pad_y / self.unit_conv_fac
+                    self._pad_y = pad_y / self.unit_conv_fac
                 else:
-                    self.pad_y = pad_y
+                    self._pad_y = pad_y
 
         elif widget == self.sp_angle:
             angle = str2float(self.var_angle, False)
             if angle is None:
-                float2str(self.angle, self.var_angle)
+                float2str(self._angle, self.var_angle)
                 flash_red(self.sp_angle)
             else:
                 # Confine angle to interval [-180°, 180°]
@@ -411,7 +414,7 @@ class RoiSelector:
                 if angle < -180:
                     angle += 360
                 float2str(angle, self.var_angle)
-                self.angle = angle
+                self._angle = angle
 
         self.root.focus_set()
 
@@ -423,3 +426,95 @@ class RoiSelector:
     @property
     def roi_type(self):
         return self.var_type_roi.get()
+
+    @property
+    def offset_x(self):
+        return self._offset_x
+
+    @offset_x.setter
+    def offset_x(self, off_x):
+        self.offset_x = off_x
+        if self.unit == UNIT_µm:
+            off_x *= self.unit_conv_fac
+        float2str(off_x, self.var_offset_x)
+
+    @property
+    def offset_y(self):
+        return self._offset_y
+
+    @offset_y.setter
+    def offset_y(self, off_y):
+        self._offset_y = off_y
+        if self.unit == UNIT_µm:
+            off_y *= self.unit_conv_fac
+        float2str(off_y, self.var_offset_y)
+
+    @property
+    def width(self):
+        return self._width
+
+    @width.setter
+    def width(self, wid):
+        self._width = wid
+        if self.unit == UNIT_µm:
+            wid *= self.unit_conv_fac
+        float2str(wid, self.var_width)
+
+        if self.roi_type == TYPE_SQUARE:
+            self._height = self._width
+            self.var_height.set(self.var_width.get())
+
+    @property
+    def height(self):
+        return self._height
+
+    @height.setter
+    def height(self, heig):
+        self._height = heig
+        if self.unit == UNIT_µm:
+            heig *= self.unit_conv_fac
+        float2str(heig, self.var_height)
+
+        if self.roi_type == TYPE_SQUARE:
+            self._width = self._height
+            self.var_width.set(self.var_height.get())
+
+    @property
+    def pad_x(self):
+        return self._pad_x
+
+    @pad_x.setter
+    def pad_x(self, px):
+        self._pad_x = px
+        if self.unit == UNIT_µm:
+            px *= self.unit_conv_fac
+        float2str(px, self.var_pad_x)
+
+        if self.roi_type == TYPE_SQUARE:
+            self._pad_y = self._pad_x
+            self.var_pad_y.set(self.var_pad_x.get())
+
+    @property
+    def pad_y(self):
+        return self._pad_y
+
+    @pad_y.setter
+    def pad_y(self, py):
+        self._pad_y = py
+        if self.unit == UNIT_µm:
+            py *= self.unit_conv_fac
+        float2str(py, self.var_pad_y)
+
+        if self.roi_type == TYPE_SQUARE:
+            self._pad_x = self._pad_y
+            self.var_pad_x.set(self.var_pad_y.get())
+
+    @property
+    def angle(self):
+        return self._angle
+
+    @angle.setter
+    def angle(self, ang):
+        float2str(ang, self.var_angle)
+        self._angle = ang
+
