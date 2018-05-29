@@ -72,7 +72,8 @@ class Listeners:
         return lid
 
     def notify(self, kind=None):
-        """Notify the listeners.
+        """
+        Notify the listeners.
 
         If ``kind is None``, all listeners are notified.
         Else, only the listeners registered for event kind ``kind`` are notified.
@@ -80,7 +81,7 @@ class Listeners:
         with self.__lock:
             for lid in list(self.__listeners.keys()):
                 listener = self.__listeners[lid]
-                if kind is not None and kind not in listener["kind"]:
+                if kind is not None and kind not in listener[kind]:
                     continue
                 try:
                     listener["fun"]()
