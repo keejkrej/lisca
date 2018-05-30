@@ -1,5 +1,5 @@
 Introduction
 ============
 
-This is an introduction to the pyAMA documentation.
+This is an introduction to the PyAMA documentation.
 

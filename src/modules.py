@@ -380,18 +380,15 @@ def _print_exception_string(exc, first=0):
 class ModuleManager:
     """
     Provides means for managing plugins.
+
+    Plugins are searched in the given path by the constructor.
+    By default, also the builtin modules are imported.
+
+    :param plugins_path: The directory in which plugins are searched
+    :param register_builtins: Boolean flag whether to import builtin modules
     """
 
     def __init__(self, plugins_path=None, register_builtins=True):
-        """
-        Set up a new ModuleManager instance.
-
-        Plugins will be searched in the given path.
-        By default, the builtin modules are also imported.
-
-        :param plugins_path: The directory in which plugins are searched
-        :param register_builtins: Boolean flag whether to import builtin modules
-        """
         self.modules = {}
         self.data = [{}]
         self.module_order = ModuleOrder(self.modules)
@@ -463,7 +460,8 @@ class ModuleManager:
         """
         Check if the dependencies for a module are fulfilled.
 
-        A thread-safe check is performed whether "run" dependencies are fulfilled and whether "conf" return data is present.
+        A thread-safe check is performed whether "run" dependencies
+        are fulfilled and whether "conf" return data is present.
 
         TODO: Check for version conflicts
 
@@ -936,6 +934,59 @@ class ModuleManager:
 class ModuleMetadata:
     """
     Defines the metadata of a module.
+
+    :param module: The corresponding module. May be ``None``.
+    :type module: None or python module
+
+    Each builtin module consists of metadata including name, version,
+    dependencies and functionality of the module.
+    These metadata are stored in the class :py:class:`ModuleMetadata`.
+
+    The metadata have to be set when writing an own plugin module.
+
+    The following metadata are currently supported:
+
+    * ``name`` – The human-readable name of the module.
+
+        It is only used for displaying.
+        Since users can distinguish modules only by their names, the name
+        should be unique.
+
+    * ``id`` – A string used to identify the module.
+
+        The id must be unique among all modules.
+        It can contain any characters and should stay invariant across
+        the versions of the module.
+
+    * ``version`` – The version string of the module.
+
+        It consists of digits. Subversion numbers can be appended
+        recursively, with dots as separators.
+
+    * ``category`` – A human-readable category to which the plugin belongs.
+
+        The category is used for structured display of plugins in a GUI.
+
+    * ``group`` – Identifiers of metamodules the plugin belongs to
+
+        Groups are needed to define alternatives that have the same
+        functionality.
+
+    * ``conf_dep`` – Dependencies for configuration
+
+    * ``run_dep`` – Dependencies for running
+
+    * ``conf_ret`` – Return values of configuration
+
+    * ``run_ret`` – Return values of configuration
+
+    The dependencies of a plugin (``conf_dep`` and ``run_dep``)
+    are defined as::
+
+        [tuple of] tuple of ("id", [tuple of] "conf_ret", [tuple of] [(<, >) [=]] "version")
+
+    To define a dependency of built-in data, use an empty string as
+    dependency id.
     """
     def __init__(self, module=None):
         self.__vals = {}
@@ -1241,7 +1292,7 @@ class ModuleOrder:
     Supports loops.
 
     :param modules: the metadata of all available modules
-    :type modules: dict[str]:ModuleMetadata
+    :type modules: dict[str]: :py:class:`ModuleMetadata`
     """
     def __init__(self, modules, order=None, lock=None):
         self._len_cache = None
@@ -1264,10 +1315,12 @@ class ModuleOrder:
 
 
     def __bool__(self):
+        """Check if module order is empty"""
         return bool(self.order)
 
 
     def __iter__(self):
+        """Iterate over modules linearly (flatten loops)"""
         index = [0]
         while index:
             try:
@@ -1287,6 +1340,7 @@ class ModuleOrder:
 
 
     def __len__(self):
+        """Get number of modules in order"""
         if self._len_cache is not None:
             return self._len_cache
         l = 0
@@ -1312,6 +1366,7 @@ class ModuleOrder:
 
 
     def __getitem__(self, key):
+        """Get module ID at index ``key``"""
         key = self._check_key_valid(key)
         with self.lock:
             o = self.order
@@ -1325,6 +1380,7 @@ class ModuleOrder:
 
 
     def __setitem__(self, key, mod_id):
+        """Insert module ID ``mod_id`` at index ``key``"""
         key = self._check_key_valid(key)
         if len(key) > 1 and key[-1] == 0:
             raise IndexError("Bad index: cannot replace loop head.")
@@ -1349,6 +1405,7 @@ class ModuleOrder:
 
 
     def __delitem__(self, key):
+        """Allow deleting modules with the ``del`` statement"""
         key = self._check_key_valid(key)
         isLoop = len(key) > 1 and key[-1] == 0
         with self.lock:
@@ -1554,7 +1611,9 @@ class ModuleOrder:
         return len(o) - loop_correction
 
     def mod_at(self, idx):
+        """Return :py:class:`ModuleMetadata` of module at index ``idx``"""
         return self.modules[self[idx]]
 
     def is_loop_at(self, idx):
+        """Boolean reply whether module at index ``idx`` is a loop"""
         return self.modules[self[idx]].is_loop

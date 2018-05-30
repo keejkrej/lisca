@@ -66,6 +66,8 @@ class RoiReader:
             * ``SELECTION_TILT``: Define ROI tilt
             * ``SELECTION_RECT``: Define ROI shape and size (rectangle)
             * ``SELECTION_SPACE``: Define ROI spacing and span ROI grid
+            * ``SELECTION_ABORT``: Abort ROI selection, then switch to
+              ``SELECTION_OFF``
         """
         # By default, toggle selection mode
         self.sel_state = target

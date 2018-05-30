@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to pyAMA's documentation!
+Welcome to PyAMA’s documentation!
 =================================
 
 .. toctree::
@@ -12,6 +12,7 @@ Welcome to pyAMA's documentation!
 
    intro
    module_manager
+   stack
    builtin_plugins
 
 
