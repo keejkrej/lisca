@@ -25,7 +25,65 @@ COL_SCALES = 3
 COLSPAN_CANVAS = 4
 
 class StackViewer:
-    """Provides a GUI for displaying a stack."""
+    """
+    Provides a GUI for displaying a TIFF stack.
+
+    :param root: The frame in which to create the :py:class:`StackViewer`.
+    :type root: None or :py:class:`tkinter.Toplevel`
+    :param image_file: Path of a TIFF file to open
+    :type image_file: None or str
+
+    The :py:class:`StackViewer` is the TIFF stack display tool in PyAMA.
+
+    It provides a :py:class:`ContrastAdjuster`, an utility for adjusting
+    the displayed color map.
+    Changing the displayed color map only affects display, not the
+    color values in the underlying :py:class:`Stack`.
+
+    It is thread-safe and can display concurrent changes of the stack
+    or of the ROIs via listeners.
+
+    Moreover, the :py:class:`StackViewer` implements an set of function
+    for interacting with a ROI selector:
+
+    * :py:meth:`StackViewer.start_roi_selection` creates, if necessary,
+      a new ROI selector instance and invokes the ``start_selection``
+      method of the ROI selector to start the ROI selection process.
+
+      The ROI selector should now start ROI selection.
+
+    * :py:meth:`StackViewer.stop_roi_selection` aborts the ROI selection process by calling the ``stop_selection`` method of the ROI selector.
+
+      The ROI selector should now abort ROI selection and call
+      :py:meth:`StackViewer.notify_roi_selection_finished`.
+
+      The ROI selector should leave the Stack, the StackViewer and the
+      canvas in a clean state.
+
+    * :py:meth:`StackViewer.notify_roi_selection_finished` notifies the
+      :py:class:`StackViewer` that ROI selection has finished.
+
+      The ROI selector should call this method when ROI selection is
+      finished.
+
+    * :py:meth:`StackViewer.forget_roi_selector` aborts ROI selection
+      by calling :py:meth:`StackViewer.stop_roi_selection` if the selection
+      is not finished yet.
+
+      Then it calls the ``close`` method of the ROI selector, if present,
+      which might cause the ROI selector to close its window.
+
+      Finally, the internal reference of the :py:class:`StackViewer`
+      to the ROI selector is cleared.
+
+    For optimal compliance with these functions, a ROI selector should
+    implement the following methods, which, however, are optional:
+
+    * ``start_selection``
+    * ``stop_selection``
+    * ``close``
+
+    """
 
     def __init__(self, root=None, image_file=None):
         """Initialize the GUI."""
@@ -183,9 +241,10 @@ class StackViewer:
 
     def open_stack(self, fn=None):
         """
-        Open a stack and display it.
+        Open a :py:class:`Stack` and display it.
 
         :param fn: The path to the stack to be opened.
+        :type fn: str or None.
 
             If ``None``, show a file selection dialog.
         """
@@ -326,7 +385,7 @@ class StackViewer:
     def toggle_selection(self, *_):
         """Callback of selection button."""
         if self.roi_selection_state:
-            self.finish_roi_selection()
+            self.stop_roi_selection()
         else:
             self.start_roi_selection()
 
@@ -342,7 +401,7 @@ class StackViewer:
         self.roi_selection_state = True
 
 
-    def finish_roi_selection(self, *_):
+    def stop_roi_selection(self, *_):
         """Finish or abort ROI selection"""
         if hasattr(self.roi_selector, 'stop_selection'):
             self.roi_selector.stop_selection()
@@ -350,14 +409,14 @@ class StackViewer:
 
 
     def notify_roi_selection_finished(self, *_):
-        """Notify StackViewer that ROI selection has finished"""
+        """Notify :py:class:`StackViewer` that ROI selection has finished"""
         self.roi_selection_state = False
 
 
     def forget_roi_selector(self, *_):
         """Close roi selector."""
         if self.roi_selection_state:
-            self.finish_roi_selection()
+            self.stop_roi_selection()
 
         if hasattr(self.roi_selector, 'close'):
             self.roi_selector.close()
@@ -396,7 +455,11 @@ class StackViewer:
 
 
     def canvas_bbox(self):
-        """Get bounding box size of image in canvas"""
+        """
+        Get bounding box size of image in canvas.
+        
+        :return: Canvas height and canvas width, in pixels
+        :rtype: tuple ``(width, height)``"""
         cbb = self.canvas.bbox("img")
         if cbb is None:
             return 0, 0
@@ -406,7 +469,7 @@ class StackViewer:
 
 
     def open_contrast_adjuster(self, *_):
-        """Callback for opening a ContrastAdjuster frame."""
+        """Callback for opening a :py:class:`ContrastAdjuster` frame."""
         if self.contrast_adjuster is None:
             self.contrast_adjuster = ContrastAdjuster(self)
         else:
