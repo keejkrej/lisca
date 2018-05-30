@@ -1,7 +1,7 @@
 Built-in plugins
 ================
 
-pyAMA already ships built-in plugins.
+PyAMA already ships built-in plugins.
 Most of them are GUI components using the Tkinter toolkit.
 
 
@@ -27,6 +27,3 @@ The workflow GUI
 .. autoclass:: workflow_tk.WorkflowGUI
    :members:
 
-
-.. autoclass:: workflow_tk.ModuleFrame
-   :members:
