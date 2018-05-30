@@ -152,7 +152,8 @@ class StackViewer:
         self.root.after(40, self._update)
 
         # Register ROI selection
-        self.roi_selector = roi_sel.RoiReader(self)
+        self.roi_selector = None
+        self.roi_selection_state = False
 
         if image_file is not None:
             self.open_stack(image_file)
@@ -323,11 +324,45 @@ class StackViewer:
 
 
     def toggle_selection(self, *_):
-        """Callback of selection button. May be overwritten."""
-        if hasattr(self.roi_selector, 'toggle_selection'):
-            self.roi_selector.toggle_selection()
+        """Callback of selection button."""
+        if self.roi_selection_state:
+            self.finish_roi_selection()
         else:
-            print("No selection tool registered.", file=sys.stderr)
+            self.start_roi_selection()
+
+
+    def start_roi_selection(self, *_):
+        """Start ROI selection"""
+        if self.roi_selector is None:
+            self.roi_selector = roi_sel.RoiReader(self)
+
+        if hasattr(self.roi_selector, 'start_selection'):
+            self.roi_selector.start_selection()
+
+        self.roi_selection_state = True
+
+
+    def finish_roi_selection(self, *_):
+        """Finish or abort ROI selection"""
+        if hasattr(self.roi_selector, 'stop_selection'):
+            self.roi_selector.stop_selection()
+        self.notify_roi_selection_finished()
+
+
+    def notify_roi_selection_finished(self, *_):
+        """Notify StackViewer that ROI selection has finished"""
+        self.roi_selection_state = False
+
+
+    def forget_roi_selector(self, *_):
+        """Close roi selector."""
+        if self.roi_selection_state:
+            self.finish_roi_selection()
+
+        if hasattr(self.roi_selector, 'close'):
+            self.roi_selector.close()
+
+        self.roi_selector = None
 
 
     def update_scrollbars(self, *_):

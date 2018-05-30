@@ -9,6 +9,7 @@ SELECTION_ANCHOR = 1
 SELECTION_TILT = 2
 SELECTION_RECT = 3
 SELECTION_SPACE = 4
+SELECTION_ABORT = 5
 
 ROI_TYPE_RECT = 0
 ROI_TYPE_SQU = 1 
@@ -25,7 +26,6 @@ class RoiReader:
         """
         self.sv = sv
         self.canvas = self.sv.canvas
-        sv.toggle_selection = self.toggle_selection
 
         # Configure selection
         self.sel_state = 0
@@ -33,25 +33,26 @@ class RoiReader:
         self.roi_type = ROI_TYPE_RECT
 
 
-    def toggle_selection(self, *_):
-        """
-        Switch ROI definition mode on or off.
-        """
-        # Get current selection mode
-        if self.sel_state:
-            self.control_selection(target=SELECTION_OFF)
-        else:
+    def start_selection(self, *_):
+        """Start the selection"""
+        if not self.sel_state:
             self.control_selection(target=SELECTION_ANCHOR)
+
+
+    def stop_selection(self, *_):
+        """Abort the selection"""
+        if self.sel_state:
+            self.control_selection(target=SELECTION_ABORT)
 
 
     def update_selection_button(self):
         """
         Update appearance of the ROI definition toggling button
         """
-        if self.sel_state:
-            self.sv.select_button.config(text="Leave selection mode")
-        else:
+        if self.sel_state == SELECTION_OFF or self.sel_state == SELECTION_ABORT:
             self.sv.select_button.config(text="Select")
+        else:
+            self.sv.select_button.config(text="Leave selection mode")
 
 
     def control_selection(self, target):
@@ -81,11 +82,17 @@ class RoiReader:
             pass
         else:
             self.canvas.delete("roi_draft")
-            #self.canvas.delete("roi")
             self.canvas.unbind("<Button-1>")
             self.canvas.unbind("<Motion>")
-            if 'polygon2' in self.sel_coords:
+
+            if self.sel_state == SELECTION_ABORT:
+                self.canvas.delete("rule")
+                self.canvas.delete("roi")
+                self.sel_state = SELECTION_OFF
+            elif 'polygon2' in self.sel_coords:
                 self.sv.stack.set_rois(self.compute_roi_array(self.sel_coords['polygon2']), "rect", frame=Ellipsis)
+
+            self.sv.notify_roi_selection_finished()
             self.sv.draw_rois()
 
 
