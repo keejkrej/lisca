@@ -81,7 +81,7 @@ class Listeners:
         with self.__lock:
             for lid in list(self.__listeners.keys()):
                 listener = self.__listeners[lid]
-                if kind is not None and kind not in listener[kind]:
+                if kind is not None and kind not in listener["kind"]:
                     continue
                 try:
                     listener["fun"]()
