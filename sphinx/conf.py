@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# pyAMA documentation build configuration file, created by
+# PyAMA documentation build configuration file, created by
 # sphinx-quickstart on Tue Mar 13 14:22:25 2018.
 #
 # This file is execfile()d with the current directory set to its
@@ -52,7 +52,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'pyAMA'
+project = 'PyAMA'
 copyright = '2018, Daniel Woschée'
 author = 'Daniel Woschée'
 
@@ -119,7 +119,7 @@ html_sidebars = {
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'pyAMAdoc'
+htmlhelp_basename = 'PyAMAdoc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -146,7 +146,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'pyAMA.tex', 'pyAMA Documentation',
+    (master_doc, 'PyAMA.tex', 'PyAMA Documentation',
      'Daniel Woschée', 'manual'),
 ]
 
@@ -156,7 +156,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'pyama', 'pyAMA Documentation',
+    (master_doc, 'pyama', 'PyAMA Documentation',
      [author], 1)
 ]
 
@@ -167,8 +167,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'pyAMA', 'pyAMA Documentation',
-     author, 'pyAMA', 'One line description of project.',
+    (master_doc, 'PyAMA', 'PyAMA Documentation',
+     author, 'PyAMA', 'One line description of project.',
      'Miscellaneous'),
 ]
 
