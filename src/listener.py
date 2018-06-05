@@ -4,8 +4,9 @@ import threading
 
 
 class Listeners:
-    def __init__(self, kinds=None):
+    def __init__(self, kinds=None, debug=False):
         self.__kinds = kinds
+        self.debug = debug
         self.__listeners = {}
         self.__lock = threading.RLock()
 
@@ -51,6 +52,8 @@ class Listeners:
                 kind = s_kind
 
             if not kind:
+                if self.debug:
+                    print(f"Cannot register listener: bad kind \"{kind}\"")
                 return None
 
         with self.__lock:
@@ -87,12 +90,16 @@ class Listeners:
                     listener["fun"]()
                 except Exception:
                     self.delete(lid)
+                    if self.debug:
+                        raise
 
     def delete(self, lid):
         """Delete the listener with ID ``lid``, if existing."""
         with self.__lock:
             if lid in self.__listeners:
                 del self.__listeners[lid]
+            elif debug:
+                print(f"Cannot delete listener: ID \"{lid}\" not found.")
 
     def clear(self):
         """Delete all listeners"""
