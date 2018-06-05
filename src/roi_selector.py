@@ -1,5 +1,5 @@
 from listener import Listeners
-import math
+import numpy as np
 import tkinter as tk
 import tkinter.ttk as ttk
 
@@ -10,6 +10,10 @@ TYPE_SQUARE = 'sqare'
 
 PAD_COLUMN_SEP = 20
 RED_FLASH_MS = 300
+
+ROI_TAG = "roi"
+X = 0
+Y = 1
 
 def new_roi_selector(sv):
     return RoiSelector(sv)
@@ -57,7 +61,7 @@ def str2float(s, mustPositive=True, mustNonNegative=False):
         f = float(s)
     except Exception:
         return None
-    if not math.isfinite(f):
+    if not np.isfinite(f):
         return None
     elif mustPositive and f <= 0:
         return None
@@ -76,10 +80,9 @@ class RoiSelector:
     def __init__(self, sv):
         # Get StackViewer-related content
         self.sv = sv
-        self.canvas = sv.canvas
 
         # Define control/logic variables
-        self._listeners = Listeners()
+        self._listeners = Listeners(debug=True)
         self.unit_conv_fac = .6
 
         # Length unit is pixels, with 1px = `self.unit_conv_fac` µm
@@ -91,6 +94,8 @@ class RoiSelector:
         self._pad_x = 20
         self._pad_y = 20
         self._angle = 0
+        self._max_x = self.sv.stack.width - 1
+        self._max_y = self.sv.stack.height - 1
 
         # Set up window
         self.root = tk.Toplevel(sv.root)
@@ -196,6 +201,9 @@ class RoiSelector:
         self.update_units()
         self.update_roi_type()
 
+        # Initialize RoiDrawer
+        RoiDrawer(self, self.sv.canvas)
+
 
     def _new_label(self, text, row, column, parent=None, pad=0):
         """Label factory method"""
@@ -219,7 +227,7 @@ class RoiSelector:
         if parent is None:
             parent = self.root
 
-        sb = tk.Spinbox(parent, from_=-math.inf, to=math.inf, width=5,
+        sb = tk.Spinbox(parent, from_=-np.inf, to=np.inf, width=5,
             textvariable=var, background="white")
         sb.grid(row=row, column=column, sticky="WE")
         return sb
@@ -295,6 +303,8 @@ class RoiSelector:
 
             self.var_height.set(self.var_width.get())
             self.var_pad_y.set(self.var_pad_x.get())
+
+            self._notify_listeners()
 
         else:
             self.sp_height.config(state=tk.NORMAL)
@@ -417,7 +427,22 @@ class RoiSelector:
                 self._angle = angle
 
         self.root.focus_set()
+        self._notify_listeners()
 
+
+    def register_listener(self, fun):
+        """Register a new function ``fun`` to be executed on change"""
+        return self._listeners.register(fun)
+
+
+    def delete_listener(self, lid):
+        """Delete listener with ID ``lid``"""
+        self._listeners.delete(lid)
+    
+
+    def _notify_listeners(self):
+        """Execute listeners due to grid change"""
+        self._listeners.notify()
 
     @property
     def unit(self):
@@ -437,6 +462,7 @@ class RoiSelector:
         if self.unit == UNIT_µm:
             off_x *= self.unit_conv_fac
         float2str(off_x, self.var_offset_x)
+        self._notify_listeners()
 
     @property
     def offset_y(self):
@@ -448,6 +474,7 @@ class RoiSelector:
         if self.unit == UNIT_µm:
             off_y *= self.unit_conv_fac
         float2str(off_y, self.var_offset_y)
+        self._notify_listeners()
 
     @property
     def width(self):
@@ -464,6 +491,8 @@ class RoiSelector:
             self._height = self._width
             self.var_height.set(self.var_width.get())
 
+        self._notify_listeners()
+
     @property
     def height(self):
         return self._height
@@ -478,6 +507,8 @@ class RoiSelector:
         if self.roi_type == TYPE_SQUARE:
             self._width = self._height
             self.var_width.set(self.var_height.get())
+
+        self._notify_listeners()
 
     @property
     def pad_x(self):
@@ -494,6 +525,8 @@ class RoiSelector:
             self._pad_y = self._pad_x
             self.var_pad_y.set(self.var_pad_x.get())
 
+        self._notify_listeners()
+
     @property
     def pad_y(self):
         return self._pad_y
@@ -509,6 +542,8 @@ class RoiSelector:
             self._pad_x = self._pad_y
             self.var_pad_x.set(self.var_pad_y.get())
 
+        self._notify_listeners()
+
     @property
     def angle(self):
         return self._angle
@@ -517,4 +552,275 @@ class RoiSelector:
     def angle(self, ang):
         float2str(ang, self.var_angle)
         self._angle = ang
+        self._notify_listeners()
 
+    def span(self):
+        """Return an array of ROI coordinates"""
+        return span_rois(self._offset_x, self._offset_y,
+            self._width, self._height,
+            self._pad_x, self._pad_y,
+            self._angle,
+            self._max_x, self._max_y,
+            self.sv.canvas)
+
+
+class RoiDrawer:
+    def __init__(self, selector, canvas):
+        self.selector = selector
+        self.canvas = canvas
+
+        self.selector.register_listener(self.draw)
+        self.draw()
+
+
+    def draw(self):
+        self.canvas.delete(ROI_TAG)
+        self.canvas.delete("roi_draft")
+        print("RoiDrawer.draw") #DEBUG
+
+        for roi in self.selector.span():
+            self.canvas.create_polygon(*roi.flat, fill="",
+                outline="yellow", tags=ROI_TAG)
+
+
+def span_rois(off_x, off_y, width, height, pad_x, pad_y, angle, max_x, max_y, canvas=None):
+    #if angle != 0:
+    if True: #DEBUG
+        return span_rois_rotated(off_x, off_y, width, height, pad_x, pad_y, -angle, max_x, max_y, canvas)
+
+    # Left edge of leftmost ROIs
+    x_unit = pad_x + width
+    if off_x == 0:
+        x00 = 0
+    else:
+        x00 = off_x - (off_x // x_unit) * x_unit
+
+    # Upper edge of uppermost ROIs
+    y_unit = pad_y + height
+    if off_y == 0:
+        y0 = 0
+    else:
+        y0 = off_y - (off_y // y_unit) * y_unit
+
+    # Populate ROI grid
+    rois = []
+    while True:
+        # Build rows
+        y1 = y0 + height
+        if y1 > max_y:
+            break
+        x0 = x00
+        while True:
+            # Build columns
+            x1 = x0 + width
+            if x1 > max_x:
+                break
+            roi = np.array([[x0,y0],[x1,y0],[x1,y1],[x0,y1]])
+            rois.append(roi)
+            x0 += x_unit
+        y0 += y_unit
+    return rois
+
+
+def span_rois_rotated(off_x, off_y, width, height, pad_x, pad_y, angle, max_x, max_y, canvas=None):
+
+    # Calculate limits for ROIs
+    limits = np.zeros([4,2])
+    limits[(1,2),X] = max_x
+    limits[(2,3),Y] = max_y
+    limits = rotate(limits, angle, off_x, off_y, inverse=True)
+    print(limits) #DEBUG
+    limit_minX = limits[:,X].min()
+    limit_maxX = limits[:,X].max()
+    limit_minY = limits[:,Y].min()
+    limit_maxY = limits[:,Y].max()
+
+    # Get limits check function
+    check_limit = make_limit_check(limits)
+
+    # Set up function for ROI rotation
+    rot_fun = make_rotation(angle, off_x, off_y, inverse=False)
+
+    # Get leftmost and uppermost ROI edge
+    x_unit = pad_x + width
+    y_unit = pad_y + height
+    #x00 = limits[:,X].min()
+    #y0 = limits[:,Y].min()
+    #x00 = x00 - (x00 // x_unit) * x_unit
+    #y0 = y0 - (y0 // y_unit) * y_unit
+    x00 = off_x - (off_x // x_unit) * x_unit + limit_minX
+    y0 = off_y - (off_y // y_unit) * y_unit + limit_minY
+    #x00 = off_x - (off_x // x_unit) * x_unit
+    #y0 = off_y - (off_y // y_unit) * y_unit
+
+    # Iterate over rows and columns
+    rois = []
+    while True:
+        y1 = y0 + height
+        #print(f"y1={y1}, max_y={max_y}") #DEBUG
+        if y1 > limit_maxY:
+            break
+        x0 = x00
+        while True:
+            x1 = x0 + width
+            #print(f"x1={x1}, max_y={max_x}") #DEBUG
+            if x1 > limit_maxX:
+                break
+            if check_limit(x0, x1, y0, y1):
+                # Add roi to list
+                roi = np.array([[x0,y0],[x1,y0],[x1,y1],[x0,y1]])
+                roi = rot_fun(roi)
+                rois.append(roi)
+            #    print("in limits") #DEBUG
+            #else:
+            #    print("not in limits") #DEBUG
+            x0 += x_unit
+        y0 += y_unit
+
+    if canvas is not None:
+        canvas.create_polygon(*rot_fun(limits).flat, fill="", outline="red", tags="roi_draft")
+        #canvas.create_polygon(*limits.flat, fill="", outline="red", tags="roi_draft")
+    #limits
+
+    #print(rois) #DEBUG
+    return rois
+
+
+def make_rotation(angle, x_rot=0, y_rot=0, inverse=False):
+
+    # Define "shortcut" for angle == 0
+    if angle == 0:
+        return lambda coords: coords
+
+    # Check for rotation center
+    if x_rot != 0 or y_rot != 0:
+        rotation_center = np.array([[x_rot, y_rot]])
+    else:
+        rotation_center = None
+
+    # Build rotation matrix
+    angle = np.deg2rad(angle)
+    cos_a = np.cos(angle)
+    sin_a = np.sin(angle)
+    if inverse:
+        sin_a = -sin_a
+    R = np.matrix([[cos_a, -sin_a],[sin_a, cos_a]])
+
+    # Make closure
+    def rotation_function(coords):
+        """Rotates coordinates `coords` at a predetermined angle"""
+        # Translate to origin, if origin is not rotation center
+        if rotation_center is not None:
+            coords -= rotation_center
+
+        # Perform rotation
+        coords = (R * coords.T).T
+
+        # Translate back to rotation center, for custom rotation center
+        if rotation_center is not None:
+            coords += rotation_center
+
+        return coords
+
+    # Return closure
+    return rotation_function
+
+
+def rotate(coords, angle, x_rot=0, y_rot=0, inverse=False):
+    return make_rotation(angle, x_rot, y_rot, inverse)(coords)
+
+
+def make_limit_check(limits):
+    """
+    Return a function to check if a bounding box is inside limits.
+
+    :param limits: The corners of a rectangle representing the limits.
+        The rectangle may be rotated. The first column must be the x-values
+        and the second column must be the y-values of the corners.
+    :type limits: numpy array of shape (4,2)
+    :return: function for checking if bounding box is inside limits
+    :rtype: function(x0, x1, y0, y1)
+
+    The signature of the returned function is ``function(x0, x1, y0, y1)``.
+    ``x0`` and ``x1`` are the smallest and largest x-values of the bounding
+    box, ``y0`` and ``y1`` are the smallest and largest y-values of the
+    bounding box.
+    The returned function assumes that ``x0 < x1`` and ``y0 < y1``.
+    If this condition is not fulfilled, unexpected behaviour may occur.
+
+    The returned function returns ``True`` if the bounding box is
+    within the ``limits``, else ``False``.
+    """
+    isJust = (limits[:,Y] == limits[:,Y].max()).sum() == 2
+    if isJust:
+        maxX = limits[:,X].max()
+        minX = limits[:,X].min()
+        maxY = limits[:,Y].max()
+        minY = limits[:,Y].min()
+        def check(x0, x1, y0, y1):
+            """
+            Check if the given bounding box is inside the limits.
+            
+            Assumes that x0 < x1 and y0 < y1 are bounding box coordinates
+            of a non-rotated rectangle.
+            """
+            return x0 < minX or x1 > maxX or y0 < minY or y1 < maxY
+
+    else:
+        # Get coordinates of limits corners
+        #print(f"make_limit_check: shape of limits={limits.shape}") #DEBUG
+        #print(f"limits at maxY: {limits[limits[:,Y].argmax(),:]}") #DEBUG
+        maxYx, maxYy = limits[limits[:,Y].argmax(),:].flat
+        minYx, minYy = limits[limits[:,Y].argmin(),:].flat
+        maxXx, maxXy = limits[limits[:,X].argmax(),:].flat
+        minXx, minXy = limits[limits[:,X].argmin(),:].flat
+
+        # Get limits edges
+        edge_nw = lambda x: (maxYy - minXy) / (maxYx - minXx) * (x - minXx) + minXy
+        edge_ne = lambda x: (maxXy - maxYy) / (maxXx - maxYx) * (x - maxYx) + maxYy
+        edge_se = lambda x: (minYy - maxXy) / (minYx - maxXx) * (x - minYx) + minYy
+        edge_sw = lambda x: (minXy - minYy) / (minXx - minYx) * (x - minXx) + minXy
+        
+        # Define check function
+        def check(x0, x1, y0, y1):
+            """
+            Check if the given bounding box is inside the limits.
+
+            Assumes that x0 < x1 and y0 < y1 are bounding box coordinates
+            of a rotated rectangle.
+            """
+            # Get upper and lower limit for y0 and y1 at x0
+            if x0 < minXx:
+                return False
+            if x0 > maxYx:
+                x0y_upper = edge_ne(x0)
+            else:
+                x0y_upper = edge_nw(x0)
+            if x0 > minYx:
+                x0y_lower = edge_se(x0)
+            else:
+                x0y_lower = edge_sw(x0)
+
+            # Check if y0 and y1 are inside limits at x0
+            if y0 < x0y_lower or y1 < x0y_lower or y0 > x0y_upper or y1 > x0y_upper:
+                return False
+
+            # Get upper and lower limit for y0 and y1 at x1
+            if x1 > maxXx:
+                return False
+            if x1 > maxYx:
+                x1y_upper = edge_ne(x1)
+            else:
+                x1y_upper = edge_nw(x1)
+            if x1 > minYx:
+                x1y_lower = edge_se(x1)
+            else:
+                x1y_lower = edge_sw(x1)
+
+            # Check if y0 and y1 are inside limits at x1
+            if y0 < x1y_lower or y1 < x1y_lower or y0 > x1y_upper or y1 > x1y_upper:
+                return False
+
+            return True
+
+    return check
