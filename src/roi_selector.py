@@ -677,9 +677,16 @@ def span_rois_rotated(off_x, off_y, width, height, pad_x, pad_y, angle, max_x, m
             x0 += x_unit
         y0 += y_unit
 
+    # DEBUG
     if canvas is not None:
-        canvas.create_polygon(*rot_fun(limits).flat, fill="", outline="red", tags="roi_draft")
-        #canvas.create_polygon(*limits.flat, fill="", outline="red", tags="roi_draft")
+        #canvas.create_polygon(*rot_fun(limits).flat,
+        #    fill="", outline="red", tags="roi_draft")
+        canvas.create_polygon(*limits.flat,
+            fill="", outline="red", tags="roi_draft")
+        rot_fun_debug = make_rotation(angle, off_x, off_y, inverse=True)
+        for roi in rois:
+            canvas.create_polygon(*rot_fun_debug(roi).flat,
+                fill="", outline="red", tags="roi_draft")
     #limits
 
     #print(rois) #DEBUG
