@@ -174,7 +174,7 @@ class RoiSelector:
 
         self._new_label("x-Pivot:", 6, 0)
         self.sp_pivot_x = self._new_spinbox(self.var_pivot_x, 6, 1)
-        self._new_label(self.var_unit, 5, 2)
+        self._new_label(self.var_unit, 6, 2)
         self._new_label("y-Pivot:", 6, 4)
         self.sp_pivot_y = self._new_spinbox(self.var_pivot_y, 6, 5)
         self._new_label(self.var_unit, 6, 6)
