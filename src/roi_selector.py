@@ -93,6 +93,8 @@ class RoiSelector:
         self._height = 50
         self._pad_x = 20
         self._pad_y = 20
+        self._pivot_x = 0
+        self._pivot_y = 0
         self._angle = 0
         self._max_x = self.sv.stack.width - 1
         self._max_y = self.sv.stack.height - 1
@@ -113,6 +115,8 @@ class RoiSelector:
         self.var_height = tk.StringVar(self.root, value=self._height)
         self.var_pad_x = tk.StringVar(self.root, value=self._pad_x)
         self.var_pad_y = tk.StringVar(self.root, value=self._pad_y)
+        self.var_pivot_x = tk.StringVar(self.root, value=self._pivot_x)
+        self.var_pivot_y = tk.StringVar(self.root, value=self._pivot_y)
         self.var_angle = tk.StringVar(self.root, value=self._angle)
 
         # Build GUI
@@ -168,9 +172,16 @@ class RoiSelector:
         self.sp_pad_y = self._new_spinbox(self.var_pad_y, 5, 5)
         self._new_label(self.var_unit, 5, 6)
 
-        self._new_label("Angle:", 6, 0)
-        self.sp_angle = self._new_spinbox(self.var_angle, 6, 1)
-        self._new_label("°", 6, 2)
+        self._new_label("x-Pivot:", 6, 0)
+        self.sp_pivot_x = self._new_spinbox(self.var_pivot_x, 6, 1)
+        self._new_label(self.var_unit, 5, 2)
+        self._new_label("y-Pivot:", 6, 4)
+        self.sp_pivot_y = self._new_spinbox(self.var_pivot_y, 6, 5)
+        self._new_label(self.var_unit, 6, 6)
+
+        self._new_label("Angle:", 7, 0)
+        self.sp_angle = self._new_spinbox(self.var_angle, 7, 1)
+        self._new_label("°", 7, 2)
 
         # Callbacks
         self.sp_offset_x.bind("<<Submit>>", self.submit_spinner)
@@ -190,6 +201,12 @@ class RoiSelector:
 
         self.sp_pad_y.bind("<<Submit>>", self.submit_spinner)
         self.sp_pad_y.config(command=lambda: self.spinner_input(self.sp_pad_y))
+
+        self.sp_pivot_x.bind("<<Submit>>", self.submit_spinner)
+        self.sp_pivot_x.config(command=lambda:self.spinner_input(self.sp_pivot_x))
+
+        self.sp_pivot_y.bind("<<Submit>>", self.submit_spinner)
+        self.sp_pivot_y.config(command=lambda:self.spinner_input(self.sp_pivot_y))
 
         self.sp_angle.bind("<<Submit>>", self.submit_spinner)
         self.sp_angle.config(command=lambda: self.spinner_input(self.sp_angle))
@@ -255,18 +272,22 @@ class RoiSelector:
             float2str(self._offset_x * self.unit_conv_fac, self.var_offset_x)
             float2str(self._width * self.unit_conv_fac, self.var_width)
             float2str(self._pad_x * self.unit_conv_fac, self.var_pad_x)
+            float2str(self._pivot_x * self.unit_conv_fac, self.var_pivot_x)
 
             float2str(self._offset_y * self.unit_conv_fac, self.var_offset_y)
             float2str(self._height * self.unit_conv_fac, self.var_height)
             float2str(self._pad_y * self.unit_conv_fac, self.var_pad_y)
+            float2str(self._pivot_y * self.unit_conv_fac, self.var_pivot_y)
         else:
             float2str(self._offset_x, self.var_offset_x)
             float2str(self._width, self.var_width)
             float2str(self._pad_x, self.var_pad_x)
+            float2str(self._pivot_x, self.var_pivot_x)
 
             float2str(self._offset_y, self.var_offset_y)
             float2str(self._height, self.var_height)
             float2str(self._pad_y, self.var_pad_y)
+            float2str(self._pivot_y, self.var_pivot_y)
         
 
     def update_unit_conversion(self, evt=None):
@@ -408,6 +429,34 @@ class RoiSelector:
                 else:
                     self._pad_y = pad_y
 
+        elif widget == self.sp_pivot_x:
+            pivot_x = str2float(self.var_pivot_x, False)
+            if pivot_x is None:
+                pivot_x = self._pivot_x
+                if self.unit == UNIT_µm:
+                    pivot_x *= self.unit_conv_fac
+                float2str(pivot_x, self.var_pivot_x)
+                flash_red(self.sp_pivot_x)
+            else:
+                if self.unit == UNIT_µm:
+                    self._pivot_x = pivot_x / self.unit_conv_fac
+                else:
+                    self._pivot_x = pivot_x
+
+        elif widget == self.sp_pivot_y:
+            pivot_y = str2float(self.var_pivot_y, False)
+            if pivot_y is None:
+                pivot_y = self._pivot_y
+                if self.unit == UNIT_µm:
+                    pivot_y *= self.unit_conv_fac
+                float2str(pivot_y, self.var_pivot_y)
+                flash_red(self.sp_pivot_y)
+            else:
+                if self.unit == UNIT_µm:
+                    self._pivot_y = pivot_y / self.unit_conv_fac
+                else:
+                    self._pivot_y = pivot_y
+
         elif widget == self.sp_angle:
             angle = str2float(self.var_angle, False)
             if angle is None:
@@ -474,6 +523,30 @@ class RoiSelector:
         if self.unit == UNIT_µm:
             off_y *= self.unit_conv_fac
         float2str(off_y, self.var_offset_y)
+        self._notify_listeners()
+
+    @property
+    def pivot_x(self):
+        return self._pivot_x
+
+    @pivot_x.setter
+    def pivot_x(self, pivot_x):
+        self._pivot_x = pivot_x
+        if self.unit == UNIT_µm:
+            pivot_x *= self.unit_conv_fac
+        float2str(pivot_x, self.var_pivot_x)
+        self._notify_listeners()
+
+    @property
+    def pivot_y(self):
+        return self._pivot_y
+
+    @pivot_y.setter
+    def pivot_y(self, pivot_y):
+        self._pivot_y = pivot_y
+        if self.unit == UNIT_µm:
+            pivot_y *= self.unit_conv_fac
+        float2str(pivot_y, self.var_pivot_y)
         self._notify_listeners()
 
     @property
@@ -561,6 +634,7 @@ class RoiSelector:
             self._pad_x, self._pad_y,
             self._angle,
             self._max_x, self._max_y,
+            self._pivot_x, self._pivot_y,
             self.sv.canvas)
 
 
@@ -583,10 +657,10 @@ class RoiDrawer:
                 outline="yellow", tags=ROI_TAG)
 
 
-def span_rois(off_x, off_y, width, height, pad_x, pad_y, angle, max_x, max_y, canvas=None):
+def span_rois(off_x, off_y, width, height, pad_x, pad_y, angle, max_x, max_y, pivot_x, pivot_y, canvas=None):
     #if angle != 0:
     if True: #DEBUG
-        return span_rois_rotated(off_x, off_y, width, height, pad_x, pad_y, -angle, max_x, max_y, canvas)
+        return span_rois_rotated(off_x, off_y, width, height, pad_x, pad_y, -angle, max_x, max_y, pivot_x, pivot_y, canvas)
 
     # Left edge of leftmost ROIs
     x_unit = pad_x + width
@@ -622,13 +696,13 @@ def span_rois(off_x, off_y, width, height, pad_x, pad_y, angle, max_x, max_y, ca
     return rois
 
 
-def span_rois_rotated(off_x, off_y, width, height, pad_x, pad_y, angle, max_x, max_y, canvas=None):
+def span_rois_rotated(off_x, off_y, width, height, pad_x, pad_y, angle, max_x, max_y, pivot_x, pivot_y, canvas=None):
 
     # Calculate limits for ROIs
     limits = np.zeros([4,2])
     limits[(1,2),X] = max_x
     limits[(2,3),Y] = max_y
-    limits = rotate(limits, angle, off_x, off_y, inverse=True)
+    limits = rotate(limits, angle, pivot_x, pivot_y, inverse=True)
     print(limits) #DEBUG
     limit_minX = limits[:,X].min()
     limit_maxX = limits[:,X].max()
@@ -639,7 +713,7 @@ def span_rois_rotated(off_x, off_y, width, height, pad_x, pad_y, angle, max_x, m
     check_limit = make_limit_check(limits)
 
     # Set up function for ROI rotation
-    rot_fun = make_rotation(angle, off_x, off_y, inverse=False)
+    rot_fun = make_rotation(angle, pivot_x, pivot_y, inverse=False)
 
     # Get leftmost and uppermost ROI edge
     x_unit = pad_x + width
@@ -669,7 +743,7 @@ def span_rois_rotated(off_x, off_y, width, height, pad_x, pad_y, angle, max_x, m
             if check_limit(x0, x1, y0, y1):
                 # Add roi to list
                 roi = np.array([[x0,y0],[x1,y0],[x1,y1],[x0,y1]])
-                roi = rot_fun(roi)
+                roi = rot_fun(roi) - limits[0,:]
                 rois.append(roi)
             #    print("in limits") #DEBUG
             #else:
@@ -683,9 +757,9 @@ def span_rois_rotated(off_x, off_y, width, height, pad_x, pad_y, angle, max_x, m
         #    fill="", outline="red", tags="roi_draft")
         canvas.create_polygon(*limits.flat,
             fill="", outline="red", tags="roi_draft")
-        rot_fun_debug = make_rotation(angle, off_x, off_y, inverse=True)
+        rot_fun_debug = make_rotation(angle, pivot_x, pivot_y, inverse=True)
         for roi in rois:
-            canvas.create_polygon(*rot_fun_debug(roi).flat,
+            canvas.create_polygon(*rot_fun_debug(roi + limits[0,:]).flat,
                 fill="", outline="red", tags="roi_draft")
     #limits
 
@@ -715,7 +789,7 @@ def make_rotation(angle, x_rot=0, y_rot=0, inverse=False):
 
     # Make closure
     def rotation_function(coords):
-        """Rotates coordinates `coords` at a predetermined angle"""
+        """Rotates coordinates `coords` by a predetermined angle"""
         # Translate to origin, if origin is not rotation center
         if rotation_center is not None:
             coords -= rotation_center
