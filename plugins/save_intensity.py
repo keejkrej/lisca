@@ -6,7 +6,6 @@ import os
 import sys
 
 my_id = "simple_intensity_to_CSV_saver"
-path = None
 
 def register(meta):
     meta.name = "Save intensity to CSV"
@@ -16,15 +15,11 @@ def register(meta):
     meta.conf_ret = "path"
     meta.run_dep = (
             ("integrated_intensity_calculator", "integrated_intensity"),
+            (my_id, "path"),
         )
 
 
 def conf(d, *_, **__):
-    #gui = d[""]["workflow_gui_tk"]
-    #path = gui.askdirectory()
-    #path = gui.asksaveasfilename()
-
-    global path
     path = os.path.join(os.getcwd(), "out")
 
     if not os.path.isdir(path):
@@ -33,9 +28,11 @@ def conf(d, *_, **__):
         except Exception as e:
             print("Cannot create directory: {}".format(e))
 
+    return {"path": path}
+
 
 def run(d, *_, **__):
-    global path
+    path = d[my_id]["path"]
     intensities = d["integrated_intensity_calculator"]["integrated_intensity"]
     n_channels, n_frames = intensities.shape
     for iCh in range(n_channels):
