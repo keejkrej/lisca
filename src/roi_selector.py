@@ -1,4 +1,5 @@
 from listener import Listeners
+import math
 import numpy as np
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -291,7 +292,7 @@ class RoiSelector:
         
 
     def update_unit_conversion(self, evt=None):
-        """Callback for updating px/µm convertion factor"""
+        """Callback for updating px/µm conversion factor"""
         if hasattr(evt, "widget") and evt.widget == self.entry_unit_µm:
             new_µm = str2float(self.var_unit_µm, True)
             if new_µm is None:
@@ -338,7 +339,7 @@ class RoiSelector:
 
 
     def spinner_input(self, widget):
-        """Callback for processing changes of spinner value"""
+        """Callback for processing changes of spinner values"""
         if widget == self.sp_offset_x:
             off_x = str2float(self.var_offset_x, False)
             if off_x is None:
@@ -698,11 +699,18 @@ def span_rois(off_x, off_y, width, height, pad_x, pad_y, angle, max_x, max_y, pi
 
 def span_rois_rotated(off_x, off_y, width, height, pad_x, pad_y, angle, max_x, max_y, pivot_x, pivot_y, canvas=None):
 
+    # Set up function for ROI rotation
+    trans_fun = make_transformation(-angle, x_new=pivot_x, y_new=pivot_y)
+
     # Calculate limits for ROIs
     limits = np.zeros([4,2])
     limits[(1,2),X] = max_x
     limits[(2,3),Y] = max_y
-    limits = rotate(limits, angle, pivot_x, pivot_y, inverse=True)
+    #limits = rotate(limits, angle, pivot_x, pivot_y, inverse=True)
+    #limits = rotate(limits - [pivot_x, pivot_y], angle, inverse=True)
+    #limits = transform(limits, -angle, x_new=pivot_x, y_new=pivot_y, inverse=False)
+    #limits = transform(limits, -angle, x_new=pivot_x, y_new=pivot_y)
+    limits = trans_fun(limits)
     print(limits) #DEBUG
     limit_minX = limits[:,X].min()
     limit_maxX = limits[:,X].max()
@@ -712,20 +720,13 @@ def span_rois_rotated(off_x, off_y, width, height, pad_x, pad_y, angle, max_x, m
     # Get limits check function
     check_limit = make_limit_check(limits)
 
-    # Set up function for ROI rotation
-    rot_fun = make_rotation(angle, pivot_x, pivot_y, inverse=False)
-
     # Get leftmost and uppermost ROI edge
     x_unit = pad_x + width
     y_unit = pad_y + height
-    #x00 = limits[:,X].min()
-    #y0 = limits[:,Y].min()
-    #x00 = x00 - (x00 // x_unit) * x_unit
-    #y0 = y0 - (y0 // y_unit) * y_unit
-    x00 = off_x - (off_x // x_unit) * x_unit + limit_minX
-    y0 = off_y - (off_y // y_unit) * y_unit + limit_minY
-    #x00 = off_x - (off_x // x_unit) * x_unit
-    #y0 = off_y - (off_y // y_unit) * y_unit
+    #x00 = off_x - (off_x // x_unit) * x_unit + limit_minX
+    #y0 = off_y - (off_y // y_unit) * y_unit + limit_minY
+    x00 = initial_value(x_unit, limit_minX, off_x)
+    y0 = initial_value(y_unit, limit_minY, off_y)
 
     # Iterate over rows and columns
     rois = []
@@ -743,72 +744,97 @@ def span_rois_rotated(off_x, off_y, width, height, pad_x, pad_y, angle, max_x, m
             if check_limit(x0, x1, y0, y1):
                 # Add roi to list
                 roi = np.array([[x0,y0],[x1,y0],[x1,y1],[x0,y1]])
-                roi = rot_fun(roi) - limits[0,:]
+                roi = trans_fun(roi, inverse=True)
                 rois.append(roi)
-            #    print("in limits") #DEBUG
-            #else:
-            #    print("not in limits") #DEBUG
             x0 += x_unit
         y0 += y_unit
 
     # DEBUG
     if canvas is not None:
-        #canvas.create_polygon(*rot_fun(limits).flat,
-        #    fill="", outline="red", tags="roi_draft")
         canvas.create_polygon(*limits.flat,
             fill="", outline="red", tags="roi_draft")
-        rot_fun_debug = make_rotation(angle, pivot_x, pivot_y, inverse=True)
+        canvas.create_line(*trans_fun(np.array([[-9, -9], [9, 9,]]), inverse=True).flat, fill="green", width=3, tags="roi_draft")
+        canvas.create_line(*trans_fun(np.array([[-9, 9], [9, -9,]]), inverse=True).flat, fill="green", width=3, tags="roi_draft")
+        trans_fun_debug = make_transformation(-angle, x_new=pivot_x, y_new=pivot_y)
         for roi in rois:
-            canvas.create_polygon(*rot_fun_debug(roi + limits[0,:]).flat,
+            canvas.create_polygon(*trans_fun_debug(roi, inverse=False).flat,
                 fill="", outline="red", tags="roi_draft")
-    #limits
 
     #print(rois) #DEBUG
     return rois
 
 
-def make_rotation(angle, x_rot=0, y_rot=0, inverse=False):
+def initial_value(unit, limit=0., offset=0.):
+    """Calculate an initial value for grid construction.
 
-    # Define "shortcut" for angle == 0
-    if angle == 0:
-        return lambda coords: coords
+    :param unit: a unit length of the grid
+    :type unit: float
+    :param limit: the minimum value for grid sites
+    :type limit: float
+    :param offset: grid offset w.r.t. origin
+    :type offset: float
+    :return: Minimum allowed grid site
+    :rtype: float
 
-    # Check for rotation center
-    if x_rot != 0 or y_rot != 0:
-        rotation_center = np.array([[x_rot, y_rot]])
+    The returned value is the smallest grid site larger or equal to
+    ``limit``. The grid is shifted by ``offset``. Only the modulus
+    ``offset % unit`` is considered; larger values of ``offset``
+    are ignored.
+    """
+    # Get offset (with absolute value less than `unit`)
+    if abs(offset) >= unit:
+        offset = offset % unit
+    offset_left = offset - unit
+    offset_right = offset
+
+    # Get multiple of `unit` next larger to `limit`
+    m_limit = limit // unit
+    if m_limit < 0:
+        m_limit += 1
+    init = m_limit * unit
+
+    # Apply offset
+    if limit - init <= offset_left:
+        init += offset_left
     else:
-        rotation_center = None
+        init += offset_right
+
+    return init
+
+
+def make_transformation(angle, x_new=0, y_new=0):
+
+    # Calculate (possibly translated) origin of new coordinate system
+    new_origin = np.array([[x_new, y_new]])
 
     # Build rotation matrix
     angle = np.deg2rad(angle)
     cos_a = np.cos(angle)
     sin_a = np.sin(angle)
-    if inverse:
-        sin_a = -sin_a
     R = np.matrix([[cos_a, -sin_a],[sin_a, cos_a]])
 
     # Make closure
-    def rotation_function(coords):
+    def transformation_function(coords0, inverse=False):
         """Rotates coordinates `coords` by a predetermined angle"""
-        # Translate to origin, if origin is not rotation center
-        if rotation_center is not None:
-            coords -= rotation_center
+        coords = coords0.copy()
+        if inverse:
+            coords = (R.T * coords.T).T
+            if np.any(new_origin != 0):
+                coords += new_origin
 
-        # Perform rotation
-        coords = (R * coords.T).T
-
-        # Translate back to rotation center, for custom rotation center
-        if rotation_center is not None:
-            coords += rotation_center
+        else:
+            if np.any(new_origin != 0):
+                coords -= new_origin
+            coords = (R * coords.T).T
 
         return coords
 
     # Return closure
-    return rotation_function
+    return transformation_function
 
 
-def rotate(coords, angle, x_rot=0, y_rot=0, inverse=False):
-    return make_rotation(angle, x_rot, y_rot, inverse)(coords)
+def transform(coords, angle, x_new=0, y_new=0, inverse=False):
+    return make_transformation(angle, x_new, y_new)(coords, inverse)
 
 
 def make_limit_check(limits):
@@ -832,8 +858,10 @@ def make_limit_check(limits):
     The returned function returns ``True`` if the bounding box is
     within the ``limits``, else ``False``.
     """
+    # Check if `limits` are rotated or just
     isJust = (limits[:,Y] == limits[:,Y].max()).sum() == 2
     if isJust:
+        # Make faster function for just `limits`
         maxX = limits[:,X].max()
         minX = limits[:,X].min()
         maxY = limits[:,Y].max()
@@ -848,7 +876,12 @@ def make_limit_check(limits):
             return x0 < minX or x1 > maxX or y0 < minY or y1 < maxY
 
     else:
+        # More expensive function for rotated `limits`
         # Get coordinates of limits corners
+        # Meaning of the variable names [max|min][X|Y][x|y]:
+        #   [max|min]: point of `limits` with a coordinate extremum
+        #   [X|Y]: point of `limits` has an extremum x or y coordinate
+        #   [x|y]: x or y coordinate of point of `limits`
         #print(f"make_limit_check: shape of limits={limits.shape}") #DEBUG
         #print(f"limits at maxY: {limits[limits[:,Y].argmax(),:]}") #DEBUG
         maxYx, maxYy = limits[limits[:,Y].argmax(),:].flat
@@ -861,7 +894,7 @@ def make_limit_check(limits):
         edge_ne = lambda x: (maxXy - maxYy) / (maxXx - maxYx) * (x - maxYx) + maxYy
         edge_se = lambda x: (minYy - maxXy) / (minYx - maxXx) * (x - minYx) + minYy
         edge_sw = lambda x: (minXy - minYy) / (minXx - minYx) * (x - minXx) + minXy
-        
+
         # Define check function
         def check(x0, x1, y0, y1):
             """
