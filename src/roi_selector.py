@@ -13,11 +13,14 @@ PAD_COLUMN_SEP = 20
 RED_FLASH_MS = 300
 
 ROI_TAG = "roi"
+ROI_DRAFT_TAG = "roi_draft"
 X = 0
 Y = 1
 
+
 def new_roi_selector(sv):
     return RoiSelector(sv)
+
 
 def float2str(f, var=None):
     """
@@ -41,6 +44,7 @@ def float2str(f, var=None):
     if var is not None:
         var.set(s)
     return s
+
 
 def str2float(s, mustPositive=True, mustNonNegative=False):
     """
@@ -71,6 +75,7 @@ def str2float(s, mustPositive=True, mustNonNegative=False):
     else:
         return f
 
+
 def flash_red(widget):
     """Make widget background flash red"""
     widget.config(background="red")
@@ -86,7 +91,7 @@ class RoiSelector:
         self._listeners = Listeners(debug=True)
         self.unit_conv_fac = .6
 
-        # Length unit is pixels, with 1px = `self.unit_conv_fac` µm
+        # Length unit is pixels, with 1px == `self.unit_conv_fac` µm
         # Angle unit is degree
         self._offset_x = 5
         self._offset_y = 0
@@ -227,14 +232,12 @@ class RoiSelector:
         """Label factory method"""
         if parent is None:
             parent = self.root
-
         content = {}
         if type(text) == str:
             content["text"] = text
         else:
             content["textvariable"] = text
             content["width"] = 3
-
         label = tk.Label(parent, **content, anchor=tk.W)
         label.grid(row=row, column=column, sticky="WE", padx=pad)
         return label
@@ -244,7 +247,6 @@ class RoiSelector:
         """Spinbox factory method"""
         if parent is None:
             parent = self.root
-
         sb = tk.Spinbox(parent, from_=-np.inf, to=np.inf, width=5,
             textvariable=var, background="white")
         sb.grid(row=row, column=column, sticky="WE")
@@ -630,16 +632,31 @@ class RoiSelector:
 
     def span(self):
         """Return an array of ROI coordinates"""
-        return span_rois(self._offset_x, self._offset_y,
+        return span_rois(
             self._width, self._height,
             self._pad_x, self._pad_y,
-            self._angle,
             self._max_x, self._max_y,
+            self._angle,
             self._pivot_x, self._pivot_y,
+            self._offset_x, self._offset_y,
             self.sv.canvas)
 
 
 class RoiDrawer:
+    """Draw updated ROI grid onto canvas.
+
+    This class is the link between the ``RoiSelector`` and the canvas
+    on which to draw the ROI grid.
+
+    It registers itself as a listener to the ``RoiSelector`` and draws
+    the updated ROI grid on the canvas.
+    The ROI is marked with the tag defined by ``ROI_TAG``.
+
+    :param selector: RoiSelector to which to listen
+    :type selector: :class:RoiSelector
+    :param canvas: Canvas on which to draw the ROI grid
+    :type canvas: :class:tkinter.Canvas
+    """
     def __init__(self, selector, canvas):
         self.selector = selector
         self.canvas = canvas
@@ -649,69 +666,52 @@ class RoiDrawer:
 
 
     def draw(self):
+        """Draw the new ROI grid on the canvas."""
         self.canvas.delete(ROI_TAG)
-        self.canvas.delete("roi_draft")
-        print("RoiDrawer.draw") #DEBUG
+        self.canvas.delete(ROI_DRAFT_TAG)
 
         for roi in self.selector.span():
             self.canvas.create_polygon(*roi.flat, fill="",
                 outline="yellow", tags=ROI_TAG)
 
 
-def span_rois(off_x, off_y, width, height, pad_x, pad_y, angle, max_x, max_y, pivot_x, pivot_y, canvas=None):
-    #if angle != 0:
-    if True: #DEBUG
-        return span_rois_rotated(off_x, off_y, width, height, pad_x, pad_y, -angle, max_x, max_y, pivot_x, pivot_y, canvas)
+def span_rois(width, height, pad_x, pad_y, max_x, max_y, angle=0, pivot_x=0, pivot_y=0, off_x=0, off_y=0, canvas=None):
+    """Calculate the coordinates of the ROI grid sites.
 
-    # Left edge of leftmost ROIs
-    x_unit = pad_x + width
-    if off_x == 0:
-        x00 = 0
-    else:
-        x00 = off_x - (off_x // x_unit) * x_unit
-
-    # Upper edge of uppermost ROIs
-    y_unit = pad_y + height
-    if off_y == 0:
-        y0 = 0
-    else:
-        y0 = off_y - (off_y // y_unit) * y_unit
-
-    # Populate ROI grid
-    rois = []
-    while True:
-        # Build rows
-        y1 = y0 + height
-        if y1 > max_y:
-            break
-        x0 = x00
-        while True:
-            # Build columns
-            x1 = x0 + width
-            if x1 > max_x:
-                break
-            roi = np.array([[x0,y0],[x1,y0],[x1,y1],[x0,y1]])
-            rois.append(roi)
-            x0 += x_unit
-        y0 += y_unit
-    return rois
-
-
-def span_rois_rotated(off_x, off_y, width, height, pad_x, pad_y, angle, max_x, max_y, pivot_x, pivot_y, canvas=None):
+    :param width: width (in pixels) of a ROI
+    :type width: float
+    :param height: height (in pixels) of a ROI
+    :type height: float
+    :param pad_x: distance (in pixels) between adjacent ROIs in x-direction
+    :type pad_x: float
+    :param pad_y: distance (in pixels) between adjacent ROIs in y-direction
+    :type pad_y: float
+    :param max_x: maximum x-coordinate (in pixels) of viewport/image on which to draw ROIs
+    :type max_x: float
+    :param max_y: maximum y-coordinate (in pixels) of viewport/image on which to draw ROIs
+    :type max_y: float
+    :param angle: angle (in degrees) by which to rotate the ROI grid
+    :type angle: float
+    :pivot_x: x-coordinate (in pixels) of the rotation center and origin of the new coordinate system
+    :type pivot_x: float
+    :pivot_y: y-coordinate (in pixels) of the rotation center and origin of the new coordinate system
+    :type pivot_y: float
+    :param off_x: offset (in pixels) in x-direction of the ROI grid from the origin of the new coordinate system
+    :type off_x: float
+    :param off_y: offset (in pixels) in y-direction of the ROI grid from the origin of the new coordinate system
+    :type off_y: float
+    :param canvas: (only for debugging) canvas for drawing debug information
+    :type canvas: tkinter.canvas
+    """
 
     # Set up function for ROI rotation
-    trans_fun = make_transformation(-angle, x_new=pivot_x, y_new=pivot_y)
+    trans_fun = make_transformation(angle, x_new=pivot_x, y_new=pivot_y)
 
     # Calculate limits for ROIs
     limits = np.zeros([4,2])
     limits[(1,2),X] = max_x
     limits[(2,3),Y] = max_y
-    #limits = rotate(limits, angle, pivot_x, pivot_y, inverse=True)
-    #limits = rotate(limits - [pivot_x, pivot_y], angle, inverse=True)
-    #limits = transform(limits, -angle, x_new=pivot_x, y_new=pivot_y, inverse=False)
-    #limits = transform(limits, -angle, x_new=pivot_x, y_new=pivot_y)
     limits = trans_fun(limits)
-    print(limits) #DEBUG
     limit_minX = limits[:,X].min()
     limit_maxX = limits[:,X].max()
     limit_minY = limits[:,Y].min()
@@ -723,8 +723,6 @@ def span_rois_rotated(off_x, off_y, width, height, pad_x, pad_y, angle, max_x, m
     # Get leftmost and uppermost ROI edge
     x_unit = pad_x + width
     y_unit = pad_y + height
-    #x00 = off_x - (off_x // x_unit) * x_unit + limit_minX
-    #y0 = off_y - (off_y // y_unit) * y_unit + limit_minY
     x00 = initial_value(x_unit, limit_minX, off_x)
     y0 = initial_value(y_unit, limit_minY, off_y)
 
@@ -732,13 +730,11 @@ def span_rois_rotated(off_x, off_y, width, height, pad_x, pad_y, angle, max_x, m
     rois = []
     while True:
         y1 = y0 + height
-        #print(f"y1={y1}, max_y={max_y}") #DEBUG
         if y1 > limit_maxY:
             break
         x0 = x00
         while True:
             x1 = x0 + width
-            #print(f"x1={x1}, max_y={max_x}") #DEBUG
             if x1 > limit_maxX:
                 break
             if check_limit(x0, x1, y0, y1):
@@ -749,18 +745,18 @@ def span_rois_rotated(off_x, off_y, width, height, pad_x, pad_y, angle, max_x, m
             x0 += x_unit
         y0 += y_unit
 
-    # DEBUG
-    if canvas is not None:
-        canvas.create_polygon(*limits.flat,
-            fill="", outline="red", tags="roi_draft")
-        canvas.create_line(*trans_fun(np.array([[-9, -9], [9, 9,]]), inverse=True).flat, fill="green", width=3, tags="roi_draft")
-        canvas.create_line(*trans_fun(np.array([[-9, 9], [9, -9,]]), inverse=True).flat, fill="green", width=3, tags="roi_draft")
-        trans_fun_debug = make_transformation(-angle, x_new=pivot_x, y_new=pivot_y)
-        for roi in rois:
-            canvas.create_polygon(*trans_fun_debug(roi, inverse=False).flat,
-                fill="", outline="red", tags="roi_draft")
+#    # DEBUG
+#    # Draw grid, viewport and pivot in grid coordinate system
+#    if canvas is not None:
+#        canvas.create_polygon(*limits.flat,
+#            fill="", outline="red", tags=ROI_DRAFT_TAG)
+#        canvas.create_line(*trans_fun(np.array([[-9, -9], [9, 9,]]), inverse=True).flat, fill="green", width=3, tags=ROI_DRAFT_TAG)
+#        canvas.create_line(*trans_fun(np.array([[-9, 9], [9, -9,]]), inverse=True).flat, fill="green", width=3, tags=ROI_DRAFT_TAG)
+#        trans_fun_debug = make_transformation(-angle, x_new=pivot_x, y_new=pivot_y)
+#        for roi in rois:
+#            canvas.create_polygon(*trans_fun_debug(roi, inverse=False).flat,
+#                fill="", outline="red", tags=ROI_DRAFT_TAG)
 
-    #print(rois) #DEBUG
     return rois
 
 
@@ -803,7 +799,25 @@ def initial_value(unit, limit=0., offset=0.):
 
 
 def make_transformation(angle, x_new=0, y_new=0):
+    """Set up a coordinate transformation.
 
+    :param angle: angle by which to rotate the coordinates
+    :type angle: float
+    :param x_new: x-coordinate of the new origin (=pivot)
+    :type x_new: float
+    :param y_new: y-coordinate of the new origin (=pivot)
+    :type y_new: float
+    :return: transformation function
+    :rtype: function(coords0, inverse=False)
+
+    A closure for coordinate transformation will be returned.
+    The closure takes a n-by-2 numpy array ``coords0`` as argument,
+    which are the coordinates to be transformed, where ``coords0[i,0]`` is
+    the x-coordinate and ``coords0[i,1]`` the y-coordinate of point ``i``.
+    The optional boolean flag ``inverse`` indicates whether to perform
+    an inverse transformation, i.e. a back-transformation into the old
+    system.
+    """
     # Calculate (possibly translated) origin of new coordinate system
     new_origin = np.array([[x_new, y_new]])
 
@@ -821,12 +835,10 @@ def make_transformation(angle, x_new=0, y_new=0):
             coords = (R.T * coords.T).T
             if np.any(new_origin != 0):
                 coords += new_origin
-
         else:
             if np.any(new_origin != 0):
                 coords -= new_origin
             coords = (R * coords.T).T
-
         return coords
 
     # Return closure
@@ -834,6 +846,21 @@ def make_transformation(angle, x_new=0, y_new=0):
 
 
 def transform(coords, angle, x_new=0, y_new=0, inverse=False):
+    """Convenience function for one-shot transformation
+
+    :param coords: array of coordinates to be transformed
+    :type coords: n-by-2 numpy array, with ``coords[i,0]`` the x-coordinate and ``coords[i,1]`` the y-coordinate of point ``i``
+    :param angle: angle by which to rotate the coordinates
+    :type angle: float
+    :param x_new: x-coordinate of rotation center
+    :type x_new: float
+    :param y_new: y-coordinate of rotation center
+    :type y_new: float
+    :param inverse: flag whether to perform inverse transformation
+    :type inverse: boolean
+    :return: transformed coordinates
+    :rtype: n-by-2 numpy array
+    """
     return make_transformation(angle, x_new, y_new)(coords, inverse)
 
 
@@ -882,8 +909,6 @@ def make_limit_check(limits):
         #   [max|min]: point of `limits` with a coordinate extremum
         #   [X|Y]: point of `limits` has an extremum x or y coordinate
         #   [x|y]: x or y coordinate of point of `limits`
-        #print(f"make_limit_check: shape of limits={limits.shape}") #DEBUG
-        #print(f"limits at maxY: {limits[limits[:,Y].argmax(),:]}") #DEBUG
         maxYx, maxYy = limits[limits[:,Y].argmax(),:].flat
         minYx, minYy = limits[limits[:,Y].argmin(),:].flat
         maxXx, maxXy = limits[limits[:,X].argmax(),:].flat
