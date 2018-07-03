@@ -5,7 +5,7 @@ from gui_tk import new_toplevel
 import os
 import queue
 import roi_selection as roi_sel
-import roi_selector
+import roi_adjuster
 import stack
 import sys
 import tkinter as tk
@@ -43,44 +43,44 @@ class StackViewer:
     It is thread-safe and can display concurrent changes of the stack
     or of the ROIs via listeners.
 
-    Moreover, the :py:class:`StackViewer` implements an set of function
-    for interacting with a ROI selector:
+    Moreover, the :py:class:`StackViewer` implements a set of functions
+    for interacting with a ROI adjuster:
 
-    * :py:meth:`StackViewer.start_roi_selection` creates, if necessary,
-      a new ROI selector instance and invokes the ``start_selection``
-      method of the ROI selector to start the ROI selection process.
+    * :py:meth:`StackViewer.start_roi_adjustment` creates, if necessary,
+      a new ROI adjuster instance and invokes the ``start_adjustment``
+      method of the ROI adjuster to start the ROI adjustment process.
 
-      The ROI selector should now start ROI selection.
+      The ROI adjuster should now start ROI adjustment.
 
-    * :py:meth:`StackViewer.stop_roi_selection` aborts the ROI selection process by calling the ``stop_selection`` method of the ROI selector.
+    * :py:meth:`StackViewer.stop_roi_adjustment` aborts the ROI adjustment process by calling the ``stop_adjustment`` method of the ROI adjuster.
 
-      The ROI selector should now abort ROI selection and call
-      :py:meth:`StackViewer.notify_roi_selection_finished`.
+      The ROI adjuster should now abort ROI adjustment and call
+      :py:meth:`StackViewer.notify_roi_adjustment_finished`.
 
-      The ROI selector should leave the Stack, the StackViewer and the
+      The ROI adjuster should leave the Stack, the StackViewer and the
       canvas in a clean state.
 
-    * :py:meth:`StackViewer.notify_roi_selection_finished` notifies the
-      :py:class:`StackViewer` that ROI selection has finished.
+    * :py:meth:`StackViewer.notify_roi_adjustment_finished` notifies the
+      :py:class:`StackViewer` that ROI adjustment has finished.
 
-      The ROI selector should call this method when ROI selection is
+      The ROI adjuster should call this method when ROI adjustment is
       finished.
 
-    * :py:meth:`StackViewer.forget_roi_selector` aborts ROI selection
-      by calling :py:meth:`StackViewer.stop_roi_selection` if the selection
-      is not finished yet.
+    * :py:meth:`StackViewer.forget_roi_adjuster` aborts ROI adjustment
+      by calling :py:meth:`StackViewer.stop_roi_adjustment` if the
+      adjustment is not finished yet.
 
-      Then it calls the ``close`` method of the ROI selector, if present,
-      which might cause the ROI selector to close its window.
+      Then it calls the ``close`` method of the ROI adjuster, if present,
+      which may cause the ROI adjuster to close its window.
 
       Finally, the internal reference of the :py:class:`StackViewer`
-      to the ROI selector is cleared.
+      to the ROI adjuster is cleared.
 
-    For optimal compliance with these functions, a ROI selector should
+    For optimal compliance with these functions, a ROI adjuster should
     implement the following methods, which, however, are optional:
 
-    * ``start_selection``
-    * ``stop_selection``
+    * ``start_adjustment``
+    * ``stop_adjustment``
     * ``close``
 
     """
@@ -124,19 +124,19 @@ class StackViewer:
         self.mainframe.columnconfigure(COL_SCALES, weight=1)
         self.mainframe.rowconfigure(ROW_CANVAS, weight=1)
 
-        # (Temporal) Header with button for selecting stack
+        # (Temporal) Header with button for adjusting stack
         tempframe = ttk.Frame(self.mainframe)
         tempframe.grid(row=ROW_HEADER, column=0, columnspan=COLSPAN_CANVAS)
 
         self.contrast_button = ttk.Button(tempframe, text="Contrast",
             command=self.open_contrast_adjuster)
         self.contrast_button.pack(side=tk.LEFT)
-        self.select_button = ttk.Button(tempframe, text="Select",
-            command=self.toggle_selection, state=tk.NORMAL)
-        self.select_button.pack(side=tk.LEFT)
-        self.selector_button = ttk.Button(tempframe, text="Select2",
-            command=lambda:roi_selector.new_roi_selector(self), state=tk.NORMAL)
-        self.selector_button.pack(side=tk.LEFT)
+        self.adjustment_button = ttk.Button(tempframe, text="Adjust ROIs",
+            command=self.toggle_roi_adjustment, state=tk.NORMAL)
+        self.adjustment_button.pack(side=tk.LEFT)
+        self.adjuster_button = ttk.Button(tempframe, text="Adjust ROIs (2)",
+            command=lambda:roi_adjuster.new_roi_adjuster(self), state=tk.NORMAL)
+        self.adjuster_button.pack(side=tk.LEFT)
         self.open_button = ttk.Button(tempframe, text="Browse...",
             command=self.open_stack, state=tk.NORMAL)
         self.open_button.pack(side=tk.LEFT)
@@ -209,9 +209,9 @@ class StackViewer:
         # Start listening to external events
         self.root.after(40, self._update)
 
-        # Register ROI selection
-        self.roi_selector = None
-        self.roi_selection_state = False
+        # Register ROI adjuster
+        self.roi_adjuster = None
+        self.roi_adjustment_state = False
 
         if image_file is not None:
             self.open_stack(image_file)
@@ -382,46 +382,46 @@ class StackViewer:
         self._change_stack_position(i_frame=i_frame)
 
 
-    def toggle_selection(self, *_):
-        """Callback of selection button."""
-        if self.roi_selection_state:
-            self.stop_roi_selection()
+    def toggle_roi_adjustment(self, *_):
+        """Callback of ROI adjustment button."""
+        if self.roi_adjustment_state:
+            self.stop_roi_adjustment()
         else:
-            self.start_roi_selection()
+            self.start_roi_adjustment()
 
 
-    def start_roi_selection(self, *_):
-        """Start ROI selection"""
-        if self.roi_selector is None:
-            self.roi_selector = roi_sel.RoiReader(self)
+    def start_roi_adjustment(self, *_):
+        """Start ROI adjustment"""
+        if self.roi_adjuster is None:
+            self.roi_adjuster = roi_sel.RoiReader(self)
 
-        if hasattr(self.roi_selector, 'start_selection'):
-            self.roi_selector.start_selection()
+        if hasattr(self.roi_adjuster, 'start_adjustment'):
+            self.roi_adjuster.start_adjustment()
 
-        self.roi_selection_state = True
-
-
-    def stop_roi_selection(self, *_):
-        """Finish or abort ROI selection"""
-        if hasattr(self.roi_selector, 'stop_selection'):
-            self.roi_selector.stop_selection()
-        self.notify_roi_selection_finished()
+        self.roi_adjustment_state = True
 
 
-    def notify_roi_selection_finished(self, *_):
-        """Notify :py:class:`StackViewer` that ROI selection has finished"""
-        self.roi_selection_state = False
+    def stop_roi_adjustment(self, *_):
+        """Finish or abort ROI adjustment"""
+        if hasattr(self.roi_adjuster, 'stop_adjustment'):
+            self.roi_adjuster.stop_adjustment()
+        self.notify_roi_adjustment_finished()
 
 
-    def forget_roi_selector(self, *_):
-        """Close roi selector."""
-        if self.roi_selection_state:
-            self.stop_roi_selection()
+    def notify_roi_adjustment_finished(self, *_):
+        """Notify :py:class:`StackViewer` that ROI adjustment is finished"""
+        self.roi_adjustment_state = False
 
-        if hasattr(self.roi_selector, 'close'):
-            self.roi_selector.close()
 
-        self.roi_selector = None
+    def forget_roi_adjuster(self, *_):
+        """Close roi adjuster."""
+        if self.roi_adjustment_state:
+            self.stop_roi_adjustment()
+
+        if hasattr(self.roi_adjuster, 'close'):
+            self.roi_adjuster.close()
+
+        self.roi_adjuster = None
 
 
     def update_scrollbars(self, *_):
@@ -496,12 +496,10 @@ class StackViewer:
         for roi in rois:
             self.canvas.create_polygon(*roi.corners[:,::-1].flat, fill="", outline="yellow", tags="roi")
 
-
     def _close(self, *_):
         if self.contrast_adjuster is not None:
             self.contrast_adjuster.close()
             self.contrast_adjuster = None
-
 
 
 if __name__ == "__main__":

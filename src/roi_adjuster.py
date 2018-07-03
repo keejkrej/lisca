@@ -13,14 +13,12 @@ TYPE_SQUARE = 'square'
 PAD_COLUMN_SEP = 20
 RED_FLASH_MS = 300
 
-ROI_TAG = "roi"
-ROI_DRAFT_TAG = "roi_draft"
 X = 0
 Y = 1
 
 
-def new_roi_selector(sv):
-    return RoiSelector(sv)
+def new_roi_adjuster(sv):
+    return RoiAdjuster(sv)
 
 
 def float2str(f, var=None):
@@ -83,10 +81,9 @@ def flash_red(widget):
     widget.after(RED_FLASH_MS, lambda:widget.config(background="white"))
 
 
-class RoiSelector:
+class RoiAdjuster:
     def __init__(self, sv, props=None):
         # Get StackViewer-related content
-        self.sv = sv
         self.stack = sv.stack
 
         # Define control/logic variables
@@ -114,7 +111,7 @@ class RoiSelector:
 
         # Set up window
         self.root = tk.Toplevel(sv.root)
-        self.root.title("PyAMA ROI-Selector")
+        self.root.title("PyAMA ROI-Adjuster")
 
         # Virtual event for catching ENTER key on number pad (KP_Enter)
         self.root.event_add("<<Submit>>", "<Return>", "<KP_Enter>")
@@ -689,7 +686,7 @@ class RoiSelector:
         is likely to result in a corrupted internal state.
 
         :param props: dictionary of desired grid parameters
-        :type props: dict, such as the :py:attr:`RoiSelector.props`
+        :type props: dict, such as the :py:attr:`RoiAdjuster.props`
         """
         width = props.get("width")
         if width is not None:
@@ -804,18 +801,6 @@ def span_rois(width, height, pad_x, pad_y, max_x, max_y, angle=0, pivot_x=0, piv
                 rois.append(roi)
             x0 += x_unit
         y0 += y_unit
-
-#    # DEBUG
-#    # Draw grid, viewport and pivot in grid coordinate system
-#    if canvas is not None:
-#        canvas.create_polygon(*limits.flat,
-#            fill="", outline="red", tags=ROI_DRAFT_TAG)
-#        canvas.create_line(*trans_fun(np.array([[-9, -9], [9, 9,]]), inverse=True).flat, fill="green", width=3, tags=ROI_DRAFT_TAG)
-#        canvas.create_line(*trans_fun(np.array([[-9, 9], [9, -9,]]), inverse=True).flat, fill="green", width=3, tags=ROI_DRAFT_TAG)
-#        trans_fun_debug = make_transformation(-angle, x_new=pivot_x, y_new=pivot_y)
-#        for roi in rois:
-#            canvas.create_polygon(*trans_fun_debug(roi, inverse=False).flat,
-#                fill="", outline="red", tags=ROI_DRAFT_TAG)
 
     return rois
 
