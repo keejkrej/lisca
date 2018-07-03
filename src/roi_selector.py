@@ -1,13 +1,14 @@
 from listener import Listeners
 import math
 import numpy as np
+import skimage.draw as skid
 import tkinter as tk
 import tkinter.ttk as ttk
 
 UNIT_px = 'px'
 UNIT_µm = 'µm'
 TYPE_RECT = 'rect'
-TYPE_SQUARE = 'sqare'
+TYPE_SQUARE = 'square'
 
 PAD_COLUMN_SEP = 20
 RED_FLASH_MS = 300
@@ -83,9 +84,10 @@ def flash_red(widget):
 
 
 class RoiSelector:
-    def __init__(self, sv):
+    def __init__(self, sv, props=None):
         # Get StackViewer-related content
         self.sv = sv
+        self.stack = sv.stack
 
         # Define control/logic variables
         self._listeners = Listeners(debug=True)
@@ -99,22 +101,29 @@ class RoiSelector:
         self._height = 50
         self._pad_x = 20
         self._pad_y = 20
-        self._pivot_x = 0
-        self._pivot_y = 0
+        self._pivot_x = self.stack.width / 2
+        self._pivot_y = self.stack.height / 2
         self._angle = 0
-        self._max_x = self.sv.stack.width - 1
-        self._max_y = self.sv.stack.height - 1
+        self._max_x = self.stack.width - 1
+        self._max_y = self.stack.height - 1
+
+        init_roi_type = TYPE_SQUARE
+        if not self._width == self._height or \
+                not self._pad_x == self._pad_y:
+            init_roi_type = TYPE_RECT
 
         # Set up window
         self.root = tk.Toplevel(sv.root)
         self.root.title("PyAMA ROI-Selector")
+
+        # Virtual event for catching ENTER key on number pad (KP_Enter)
         self.root.event_add("<<Submit>>", "<Return>", "<KP_Enter>")
 
         # Define variables
         self.var_unit = tk.StringVar(self.root, value=UNIT_px)
         self.var_unit_px = tk.StringVar(self.root, value=1)
         self.var_unit_µm = tk.StringVar(self.root, value=1)
-        self.var_type_roi = tk.StringVar(self.root, value=TYPE_SQUARE)
+        self.var_type_roi = tk.StringVar(self.root, value=init_roi_type)
         self.var_offset_x = tk.StringVar(self.root, value=self._offset_x)
         self.var_offset_y = tk.StringVar(self.root, value=self._offset_y)
         self.var_width = tk.StringVar(self.root, value=self._width)
@@ -224,9 +233,6 @@ class RoiSelector:
         self.update_units()
         self.update_roi_type()
 
-        # Initialize RoiDrawer
-        RoiDrawer(self, self.sv.canvas)
-
 
     def _new_label(self, text, row, column, parent=None, pad=0):
         """Label factory method"""
@@ -328,7 +334,7 @@ class RoiSelector:
             self.var_height.set(self.var_width.get())
             self.var_pad_y.set(self.var_pad_x.get())
 
-            self._notify_listeners()
+            self.update_rois()
 
         else:
             self.sp_height.config(state=tk.NORMAL)
@@ -471,7 +477,7 @@ class RoiSelector:
                     angle -= (angle // 360) * 360
                 if angle > 180:
                     angle -= 360
-                if angle <= 360:
+                if angle <= -360:
                     angle += (abs(angle) // 360) * 360
                 if angle < -180:
                     angle += 360
@@ -479,7 +485,7 @@ class RoiSelector:
                 self._angle = angle
 
         self.root.focus_set()
-        self._notify_listeners()
+        self.update_rois()
 
 
     def register_listener(self, fun):
@@ -504,6 +510,13 @@ class RoiSelector:
     def roi_type(self):
         return self.var_type_roi.get()
 
+    @roi_type.setter
+    def roi_type(self, type_):
+        if type_ == TYPE_RECT or type_ == TYPE_SQUARE:
+            self.var_type_roi.set(type_)
+        else:
+            raise ValueError(f"Unknown ROI type: {type_}")
+
     @property
     def offset_x(self):
         return self._offset_x
@@ -514,7 +527,7 @@ class RoiSelector:
         if self.unit == UNIT_µm:
             off_x *= self.unit_conv_fac
         float2str(off_x, self.var_offset_x)
-        self._notify_listeners()
+        self.update_rois()
 
     @property
     def offset_y(self):
@@ -526,7 +539,7 @@ class RoiSelector:
         if self.unit == UNIT_µm:
             off_y *= self.unit_conv_fac
         float2str(off_y, self.var_offset_y)
-        self._notify_listeners()
+        self.update_rois()
 
     @property
     def pivot_x(self):
@@ -538,7 +551,7 @@ class RoiSelector:
         if self.unit == UNIT_µm:
             pivot_x *= self.unit_conv_fac
         float2str(pivot_x, self.var_pivot_x)
-        self._notify_listeners()
+        self.update_rois()
 
     @property
     def pivot_y(self):
@@ -550,7 +563,7 @@ class RoiSelector:
         if self.unit == UNIT_µm:
             pivot_y *= self.unit_conv_fac
         float2str(pivot_y, self.var_pivot_y)
-        self._notify_listeners()
+        self.update_rois()
 
     @property
     def width(self):
@@ -567,7 +580,7 @@ class RoiSelector:
             self._height = self._width
             self.var_height.set(self.var_width.get())
 
-        self._notify_listeners()
+        self.update_rois()
 
     @property
     def height(self):
@@ -584,7 +597,7 @@ class RoiSelector:
             self._width = self._height
             self.var_width.set(self.var_height.get())
 
-        self._notify_listeners()
+        self.update_rois()
 
     @property
     def pad_x(self):
@@ -601,7 +614,7 @@ class RoiSelector:
             self._pad_y = self._pad_x
             self.var_pad_y.set(self.var_pad_x.get())
 
-        self._notify_listeners()
+        self.update_rois()
 
     @property
     def pad_y(self):
@@ -618,7 +631,7 @@ class RoiSelector:
             self._pad_x = self._pad_y
             self.var_pad_x.set(self.var_pad_y.get())
 
-        self._notify_listeners()
+        self.update_rois()
 
     @property
     def angle(self):
@@ -628,51 +641,99 @@ class RoiSelector:
     def angle(self, ang):
         float2str(ang, self.var_angle)
         self._angle = ang
-        self._notify_listeners()
+        self.update_rois()
+
+    @property
+    def props(self):
+        return {
+                "width":   self._width,
+                "height":  self._height,
+                "pad_x":   self._pad_x,
+                "pad_y":   self._pad_y,
+                "max_x":   self._max_x,
+                "max_y":   self._max_y,
+                "angle":   self._angle,
+                "pivot_x": self._pivot_x,
+                "pivot_y": self._pivot_y,
+                "off_x":   self._offset_x,
+                "off_y":   self._offset_y,
+            }
+
 
     def span(self):
         """Return an array of ROI coordinates"""
         return span_rois(
-            self._width, self._height,
-            self._pad_x, self._pad_y,
-            self._max_x, self._max_y,
-            self._angle,
-            self._pivot_x, self._pivot_y,
-            self._offset_x, self._offset_y,
-            self.sv.canvas)
+                self._width, self._height,
+                self._pad_x, self._pad_y,
+                self._max_x, self._max_y,
+                self._angle,
+                self._pivot_x, self._pivot_y,
+                self._offset_x, self._offset_y,
+            )
 
 
-class RoiDrawer:
-    """Draw updated ROI grid onto canvas.
-
-    This class is the link between the ``RoiSelector`` and the canvas
-    on which to draw the ROI grid.
-
-    It registers itself as a listener to the ``RoiSelector`` and draws
-    the updated ROI grid on the canvas.
-    The ROI is marked with the tag defined by ``ROI_TAG``.
-
-    :param selector: RoiSelector to which to listen
-    :type selector: :class:RoiSelector
-    :param canvas: Canvas on which to draw the ROI grid
-    :type canvas: :class:tkinter.Canvas
-    """
-    def __init__(self, selector, canvas):
-        self.selector = selector
-        self.canvas = canvas
-
-        self.selector.register_listener(self.draw)
-        self.draw()
+    def update_rois(self):
+        """Write updated ROI set to the stack."""
+        roi_list = []
+        props = self.props
+        for r in self.span():
+            roi_list.append(RectRoi(r, props))
+        self.stack.set_rois(roi_list, "rect")
+        self._notify_listeners()
 
 
-    def draw(self):
-        """Draw the new ROI grid on the canvas."""
-        self.canvas.delete(ROI_TAG)
-        self.canvas.delete(ROI_DRAFT_TAG)
+    def _apply_props(self, props):
+        """Set the grid parameters to values of a given dictionary.
 
-        for roi in self.selector.span():
-            self.canvas.create_polygon(*roi.flat, fill="",
-                outline="yellow", tags=ROI_TAG)
+        Calling this function after initializing the tk-variables
+        is likely to result in a corrupted internal state.
+
+        :param props: dictionary of desired grid parameters
+        :type props: dict, such as the :py:attr:`RoiSelector.props`
+        """
+        width = props.get("width")
+        if width is not None:
+            self._width = width
+
+        height = props.get("height")
+        if height is not None:
+            self._height = height
+
+        pad_x = props.get("pad_x")
+        if pad_x is not None:
+            self._pad_x = pad_x
+
+        pad_y = props.get("pad_y")
+        if pad_y is not None:
+            self._pad_y = pad_y
+
+        max_x = props.get("max_x")
+        if max_x is not None:
+            self._max_x = max_x
+
+        max_y = props.get("max_y")
+        if max_y is not None:
+            self._max_y = max_y
+
+        angle = props.get("angle")
+        if angle is not None:
+            self._angle = angle
+
+        pivot_x = props.get("pivot_x")
+        if pivot_x is not None:
+            self._pivot_x = pivot_x
+
+        pivot_y = props.get("pivot_y")
+        if pivot_y is not None:
+            self._pivot_y = pivot_y
+
+        off_x = props.get("off_x")
+        if off_x is not None:
+            self._offset_x = off_x
+
+        off_y = props.get("off_y")
+        if off_y is not None:
+            self._offset_y = off_y
 
 
 def span_rois(width, height, pad_x, pad_y, max_x, max_y, angle=0, pivot_x=0, pivot_y=0, off_x=0, off_y=0, canvas=None):
@@ -701,13 +762,12 @@ def span_rois(width, height, pad_x, pad_y, max_x, max_y, angle=0, pivot_x=0, piv
     :param off_y: offset (in pixels) in y-direction of the ROI grid from the origin of the new coordinate system
     :type off_y: float
     :param canvas: (only for debugging) canvas for drawing debug information
-    :type canvas: tkinter.canvas
+    :type canvas: :py:class:`tkinter.Canvas`
     """
-
     # Set up function for ROI rotation
     trans_fun = make_transformation(angle, x_new=pivot_x, y_new=pivot_y)
 
-    # Calculate limits for ROIs
+    # Calculate limits for ROIs (corresponding to image size)
     limits = np.zeros([4,2])
     limits[(1,2),X] = max_x
     limits[(2,3),Y] = max_y
@@ -904,11 +964,11 @@ def make_limit_check(limits):
 
     else:
         # More expensive function for rotated `limits`
-        # Get coordinates of limits corners
+        # Get coordinates of `limits` corners
         # Meaning of the variable names [max|min][X|Y][x|y]:
-        #   [max|min]: point of `limits` with a coordinate extremum
-        #   [X|Y]: point of `limits` has an extremum x or y coordinate
-        #   [x|y]: x or y coordinate of point of `limits`
+        #   [max|min]: kind of coordinate extremum of the corner point
+        #   [X|Y]: coordinate extremum is in x or y direction
+        #   [x|y]: the x or y coordinate of the corner point
         maxYx, maxYy = limits[limits[:,Y].argmax(),:].flat
         minYx, minYy = limits[limits[:,Y].argmin(),:].flat
         maxXx, maxXy = limits[limits[:,X].argmax(),:].flat
@@ -963,3 +1023,94 @@ def make_limit_check(limits):
             return True
 
     return check
+
+
+class RectRoi:
+    """Holds information of a ROI.
+
+    :param polygon: corner coordinates (in pixels) of the ROI
+    :type polygon: 4-by-2 :py:class:`numpy.array`, where ``coords[i,0]`` is the x-coordinate and ``coords[i,1]`` the y-coordinate of corner ``i``
+    :param props: parameters for spanning the grid
+    :type props: dict
+    :param inverted: flag whether the columns of ``polygon`` are interchanged, so that ``coords[i,0]`` is the y-coordinate and ``coords[i,1]`` the x-coordinate of corner ``i``
+    :type inverted: boolean
+
+    The following properties are exposed:
+
+    ``corners``
+        The corners of the ROI, given as a 4-by-2 :py:class:`numpy.array`,
+        where ``coords[i,0]`` is the y-coordinate and ``coords[i,1]`` the
+        x-coordinate of corner ``i`` (note the different ordering than for
+        the constructor argument).
+
+    ``props``
+        A dictionary of grid parameters; can be used to reproduce the grid.
+        The underlying object may be shared by multiple instances of
+        ``RectRoi`` and should not be changed.
+
+    ``label``
+        A freely usable description of the ROI, preferably as a string.
+
+    ``coords``
+        The coordinates of all pixels within the ROI, represented as a
+        N-by-2 :py:class:`numpy.array` with row indices at ``[:,0]`` and
+        column indices at ``[:,0]``.
+        The coordinates are calculated in a lazy manner since this may
+        take comparably long. Results are cached.
+
+    ``area``
+        The number of pixels in the ROI. Querying this value involves
+        calculating the ``coords``.
+
+    ``perimeter``
+        The coordinates of the pixels at the edge of the ROI, represented
+        as a N-by-2 :py:class:`numpy.array` with row indices at ``[:,0]``
+        and column indices at ``[:,0]``.
+        The coordinates are calculated in a lazy manner since this may
+        take comparably long. Results are cached.
+
+    ``rows``
+        A one-dimensional :py:class:`numpy.array` of the row indices of
+        the ``coords``. Querying this value involves calculating
+        the ``coords``.
+
+    ``columns``
+        A one-dimensional :py:class:`numpy.array` of the colulmn indices
+        of the ``coords``. Querying this value involves calculating
+        the ``coords``.
+    """
+    def __init__(self, polygon, props=None, inverted=False):
+        if inverted:
+            self.corners = polygon.copy()
+        else:
+            self.corners = polygon[:,::-1]
+        self.props = props
+        self._coords = None
+        self._perimeter = None
+        self.label = None
+
+    @property
+    def coords(self):
+        if self._coords is None:
+            pc = skid.polygon(self.corners[:,0], self.corners[:,1])
+            self._coords = np.stack([pc[0], pc[1]], axis=1)
+        return self._coords
+
+    @property
+    def area(self):
+        return self.coords.shape[0]
+
+    @property
+    def perimeter(self):
+        if self._perimeter is None:
+            pc = skid.polygon_perimeter(self.corners[:,0], self.corners[:,1])
+            self._perimeter = np.stack([pc[0], pc[1]], axis=1)
+        return self._perimeter
+
+    @property
+    def rows(self):
+        return self.coords[:,0]
+
+    @property
+    def cols(self):
+        return self.coords[:,1]
