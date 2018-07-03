@@ -35,13 +35,13 @@ class StackViewer:
 
     The :py:class:`StackViewer` is the TIFF stack display tool in PyAMA.
 
-    It provides a :py:class:`ContrastAdjuster`, an utility for adjusting
+    It provides a :py:class:`ContrastAdjuster`, a utility for adjusting
     the displayed color map.
     Changing the displayed color map only affects display, not the
     color values in the underlying :py:class:`Stack`.
 
-    It is thread-safe and can display concurrent changes of the stack
-    or of the ROIs via listeners.
+    The :py:class:`StackViewer` is thread-safe and can display concurrent
+    changes of the stack or of the ROIs via listeners.
 
     Moreover, the :py:class:`StackViewer` implements a set of functions
     for interacting with a ROI adjuster:
@@ -52,7 +52,8 @@ class StackViewer:
 
       The ROI adjuster should now start ROI adjustment.
 
-    * :py:meth:`StackViewer.stop_roi_adjustment` aborts the ROI adjustment process by calling the ``stop_adjustment`` method of the ROI adjuster.
+    * :py:meth:`StackViewer.stop_roi_adjustment` aborts the ROI adjustment
+      process by calling the ``stop_adjustment`` method of the ROI adjuster.
 
       The ROI adjuster should now abort ROI adjustment and call
       :py:meth:`StackViewer.notify_roi_adjustment_finished`.
@@ -71,7 +72,7 @@ class StackViewer:
       adjustment is not finished yet.
 
       Then it calls the ``close`` method of the ROI adjuster, if present,
-      which may cause the ROI adjuster to close its window.
+      which preferably causes the ROI adjuster to close its window.
 
       Finally, the internal reference of the :py:class:`StackViewer`
       to the ROI adjuster is cleared.
@@ -82,7 +83,6 @@ class StackViewer:
     * ``start_adjustment``
     * ``stop_adjustment``
     * ``close``
-
     """
 
     def __init__(self, root=None, image_file=None):

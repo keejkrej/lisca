@@ -15,11 +15,13 @@ import skimage.draw as skid
 
 from listener import Listeners
 
-TIFF_TAG_DESCRIPTION = 270
-TIFF_TAG_BITSPERSAMPLE = 258
 
 class Stack:
-    """Represents an image stack."""
+    """Represents an image stack.
+
+    :param path: (optional) path to a file holding a TIFF stack
+    :type path: str
+    """
 
     def __init__(self, path=None):
         """Initialize a stack."""
@@ -355,9 +357,9 @@ class Stack:
 
         :param rois: The ROIs to be set
         :param type_: The ROI type (currently one of "rect" and "raw")
-        :param frame: The frame to which the ROI belongs. ``None`` stands for all frames.
+        :param frame: The frame to which the ROI belongs. ``Ellipsis`` stands for all frames.
 
-        For details, see :py:class:`RoiSet`
+        For details, see :py:class:`RoiSet`.
         """
         with self.roi_lock:
             self._rois[frame] = RoiSet(rois, type_)
