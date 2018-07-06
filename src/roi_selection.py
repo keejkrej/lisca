@@ -43,6 +43,7 @@ class RoiReader:
         """Abort the ROI adjustment"""
         if self.sel_state:
             self.control_adjustment(target=SELECTION_ABORT)
+        self.sv.notify_roi_adjustment_finished()
 
 
     def update_adjustment_button(self):

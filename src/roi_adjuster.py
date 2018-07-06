@@ -87,12 +87,13 @@ class RoiAdjuster:
         self.stack = sv.stack
 
         # Define control/logic variables
+        self.is_closing = False
         self._listeners = Listeners(debug=True)
         self.unit_conv_fac = .6
 
         # Length unit is pixels, with 1px == `self.unit_conv_fac` µm
         # Angle unit is degree
-        self._offset_x = 5
+        self._offset_x = 0
         self._offset_y = 0
         self._width = 50
         self._height = 50
@@ -123,6 +124,7 @@ class RoiAdjuster:
         # Set up window
         self.root = tk.Toplevel(sv.root)
         self.root.title("PyAMA ROI-Adjuster")
+        self.root.bind("<Destroy>", self.close)
 
         # Virtual event for catching ENTER key on number pad (KP_Enter)
         self.root.event_add("<<Submit>>", "<Return>", "<KP_Enter>")
@@ -240,6 +242,29 @@ class RoiAdjuster:
         # Initialize state
         self.update_units()
         self.update_roi_type()
+
+        # Initialize visual ROI adjustment
+        vis_roi_adj = VisualRoiAdjuster(sv, self)
+        self.cleanup = vis_roi_adj.cleanup
+        vis_roi_adj.smudge()
+
+
+    def close(self, *_):
+        """Finish ROI grid adjustment and close control window"""
+        # Prevent this function from running multiple times
+        # (caused by callback cascade design of `tkinter`)
+        if self.is_closing:
+            return
+        self.is_closing = True
+        print("closing")
+        self.root.destroy()
+        self.cleanup()
+
+
+    #def start_roi_adjustment(self):
+
+    def stop_roi_adjustment(self):
+        self.close()
 
 
     def _new_label(self, text, row, column, parent=None, pad=0):
@@ -1110,3 +1135,23 @@ class RectRoi:
     @property
     def cols(self):
         return self.coords[:,1]
+
+
+class VisualRoiAdjuster:
+    def __init__(self, sv, ra):
+        self.sv = sv
+        self.ra = ra
+
+        self.is_cleaning_up = False
+
+        print("Hallo")
+
+    def smudge(self):
+        pass
+
+    def cleanup(self):
+        # Prevent double execution
+        if self.is_cleaning_up:
+            return
+        self.is_cleaning_up = True
+        self.sv.notify_roi_adjustment_finished()

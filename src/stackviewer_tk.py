@@ -4,7 +4,7 @@ from contrast import ContrastAdjuster
 from gui_tk import new_toplevel
 import os
 import queue
-import roi_selection as roi_sel
+#import roi_selection as roi_sel
 import roi_adjuster
 import stack
 import sys
@@ -134,9 +134,9 @@ class StackViewer:
         self.adjustment_button = ttk.Button(tempframe, text="Adjust ROIs",
             command=self.toggle_roi_adjustment, state=tk.NORMAL)
         self.adjustment_button.pack(side=tk.LEFT)
-        self.adjuster_button = ttk.Button(tempframe, text="Adjust ROIs (2)",
-            command=lambda:roi_adjuster.new_roi_adjuster(self), state=tk.NORMAL)
-        self.adjuster_button.pack(side=tk.LEFT)
+#        self.adjuster_button = ttk.Button(tempframe, text="Adjust ROIs (2)",
+#            command=lambda:roi_adjuster.new_roi_adjuster(self), state=tk.NORMAL)
+#        self.adjuster_button.pack(side=tk.LEFT)
         self.open_button = ttk.Button(tempframe, text="Browse...",
             command=self.open_stack, state=tk.NORMAL)
         self.open_button.pack(side=tk.LEFT)
@@ -210,8 +210,8 @@ class StackViewer:
         self.root.after(40, self._update)
 
         # Register ROI adjuster
-        self.roi_adjuster = None
         self.roi_adjustment_state = False
+        self.roi_adjuster = None
 
         if image_file is not None:
             self.open_stack(image_file)
@@ -393,11 +393,10 @@ class StackViewer:
     def start_roi_adjustment(self, *_):
         """Start ROI adjustment"""
         if self.roi_adjuster is None:
-            self.roi_adjuster = roi_sel.RoiReader(self)
-
+            #self.roi_adjuster = roi_sel.RoiReader(self)
+            self.roi_adjuster = roi_adjuster.RoiAdjuster(self)
         if hasattr(self.roi_adjuster, 'start_adjustment'):
             self.roi_adjuster.start_adjustment()
-
         self.roi_adjustment_state = True
 
 
@@ -405,23 +404,24 @@ class StackViewer:
         """Finish or abort ROI adjustment"""
         if hasattr(self.roi_adjuster, 'stop_adjustment'):
             self.roi_adjuster.stop_adjustment()
-        self.notify_roi_adjustment_finished()
+        self.roi_adjustment_state = False
+        self.forget_roi_adjuster()
 
 
     def notify_roi_adjustment_finished(self, *_):
         """Notify :py:class:`StackViewer` that ROI adjustment is finished"""
         self.roi_adjustment_state = False
+        self.forget_roi_adjuster()
 
 
     def forget_roi_adjuster(self, *_):
         """Close roi adjuster."""
         if self.roi_adjustment_state:
             self.stop_roi_adjustment()
-
-        if hasattr(self.roi_adjuster, 'close'):
-            self.roi_adjuster.close()
-
-        self.roi_adjuster = None
+        if self.roi_adjuster is not None:
+            if hasattr(self.roi_adjuster, 'close'):
+                self.roi_adjuster.close()
+            self.roi_adjuster = None
 
 
     def update_scrollbars(self, *_):
@@ -500,6 +500,7 @@ class StackViewer:
         if self.contrast_adjuster is not None:
             self.contrast_adjuster.close()
             self.contrast_adjuster = None
+        self.forget_roi_adjuster()
 
 
 if __name__ == "__main__":
