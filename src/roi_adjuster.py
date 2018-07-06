@@ -1141,13 +1141,15 @@ class VisualRoiAdjuster:
     def __init__(self, sv, ra):
         self.sv = sv
         self.ra = ra
+        self.canvas = sv.canvas
 
         self.is_cleaning_up = False
 
         print("Hallo")
 
     def smudge(self):
-        pass
+        self.canvas.bind("<Motion>", self.mouse_moved)
+        self.canvas.bind("<Leave>", self.mouse_left)
 
     def cleanup(self):
         # Prevent double execution
@@ -1155,3 +1157,104 @@ class VisualRoiAdjuster:
             return
         self.is_cleaning_up = True
         self.sv.notify_roi_adjustment_finished()
+
+        self.canvas.unbind("<Motion>")
+        self.canvas.unbind("<Leave>")
+
+    def mouse_moved(self, evt):
+        print(f"mouse moved to: ({evt.x :3d}|{evt.y :3d})")
+
+        props = self.ra.props
+        trafo = make_transformation(props["angle"], x_new=props["pivot_x"], y_new=props["pivot_y"])
+
+#        unit_x = props["width"] + props["pad_x"]
+#        e_x = evt.x - props["off_x"]
+#        n_units_x = e_x // unit_x
+#        d_units_x = e_x - (n_units_x * unit_x)
+#        if evt.x >= 0:
+#            if d_units_x <= width:
+#                #inside
+#                pass
+#            else:
+#                # outside
+#                pass
+#        else:
+#            if d_units_x <= width:
+#                # inside
+#                pass
+#            else:
+#                # outside
+#                pass
+#            
+        # Get coordinates of next grid positions
+        e_r = trafo(np.array([[evt.x, evt.y]], dtype=np.float))
+        e_x = e_r[0,0]
+        e_y = e_r[0,1]
+
+        is_inside_x, nearest_before_x, nearest_after_x = nearest_grid_position(e_x, props["width"], props["pad_x"], props["off_x"])
+        is_inside_y, nearest_before_y, nearest_after_y = nearest_grid_position(e_y, props["height"], props["pad_y"], props["off_y"])
+
+        cross1 = np.array([
+                    [nearest_before_x, nearest_before_y],
+                    [nearest_after_x, nearest_after_y]
+                ])
+        cross2 = np.array([
+                    [nearest_before_x, nearest_after_y],
+                    [nearest_after_x, nearest_before_y]
+                ])
+        cross1 = trafo(cross1, inverse=True)
+        cross2 = trafo(cross2, inverse=True)
+
+        # DEBUG
+        print(f"\t{is_inside_x}  {cross1[0,0] :3.0f}  {cross1[1,0] :3.0f}")
+        print(f"\t{is_inside_y}  {cross1[0,1] :3.0f}  {cross1[1,1] :3.0f}")
+
+        # Get position-dependent color
+        if is_inside_x and is_inside_y:
+            clr = "yellow"
+        elif is_inside_x:
+            clr = "green"
+        elif is_inside_y:
+            clr = "blue"
+        else:
+            clr = "red"
+
+        # Draw debug cross
+        self.canvas.delete("roi_draft")
+        self.canvas.create_line(*cross1.flat, fill=clr, tags="roi_draft")
+        self.canvas.create_line(*cross2.flat, fill=clr, tags="roi_draft")
+
+
+    def mouse_left(self, *_):
+        self.canvas.delete("roi_draft")
+        
+
+def nearest_grid_position(z, length, pad, offset=0):
+    unit = length + pad
+    z_ = z - offset
+    n_units = z_ // unit
+    floor = n_units * unit
+    d_units = z_ - floor
+
+    if d_units <= length:
+        # inside
+        is_inside = True
+        nearest_before = offset + floor
+        nearest_after = nearest_before + length
+
+    else:
+        # outside
+        is_inside = False
+        nearest_before = offset + floor + length
+        nearest_after = nearest_before + pad
+
+    # DEBUG
+    #print(f"\t{is_inside}  {nearest_before :3.0f}  {nearest_after :3.0f}")
+
+    return is_inside, nearest_before, nearest_after
+
+
+
+
+
+
