@@ -374,7 +374,7 @@ class Stack:
 
     def get_rois(self, frame=None):
         with self.roi_lock:
-            return self._rois[frame]
+            return self._rois.get(frame)
 
 
     def clear_rois(self, frame=None):
@@ -454,3 +454,8 @@ class RoiSet:
     def __iter__(self):
         return self._roi_arr.__iter__()
 
+    def __getitem__(self, key):
+        try:
+            return self._roi_arr[key]
+        except IndexError:
+            return None

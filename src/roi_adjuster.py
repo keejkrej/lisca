@@ -104,9 +104,20 @@ class RoiAdjuster:
         self._max_x = self.stack.width - 1
         self._max_y = self.stack.height - 1
 
+        # Load grid properties from argument or from Stack
+        if props is None:
+            try:
+                roi_props = self.stack.get_rois(Ellipsis)[0].props
+            except (AttributeError, TypeError):
+                roi_props = None
+            if roi_props is not None:
+                props = roi_props
+        if props is not None:
+            self._apply_props(props)
+
+        # Determine whether to use rectangular or square ROIs
         init_roi_type = TYPE_SQUARE
-        if not self._width == self._height or \
-                not self._pad_x == self._pad_y:
+        if self._width != self._height or self._pad_x != self._pad_y:
             init_roi_type = TYPE_RECT
 
         # Set up window
