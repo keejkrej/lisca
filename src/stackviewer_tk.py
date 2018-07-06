@@ -4,7 +4,6 @@ from contrast import ContrastAdjuster
 from gui_tk import new_toplevel
 import os
 import queue
-#import roi_selection as roi_sel
 import roi_adjuster
 import stack
 import sys
@@ -134,9 +133,6 @@ class StackViewer:
         self.adjustment_button = ttk.Button(tempframe, text="Adjust ROIs",
             command=self.toggle_roi_adjustment, state=tk.NORMAL)
         self.adjustment_button.pack(side=tk.LEFT)
-#        self.adjuster_button = ttk.Button(tempframe, text="Adjust ROIs (2)",
-#            command=lambda:roi_adjuster.new_roi_adjuster(self), state=tk.NORMAL)
-#        self.adjuster_button.pack(side=tk.LEFT)
         self.open_button = ttk.Button(tempframe, text="Browse...",
             command=self.open_stack, state=tk.NORMAL)
         self.open_button.pack(side=tk.LEFT)
@@ -393,7 +389,6 @@ class StackViewer:
     def start_roi_adjustment(self, *_):
         """Start ROI adjustment"""
         if self.roi_adjuster is None:
-            #self.roi_adjuster = roi_sel.RoiReader(self)
             self.roi_adjuster = roi_adjuster.RoiAdjuster(self)
         if hasattr(self.roi_adjuster, 'start_adjustment'):
             self.roi_adjuster.start_adjustment()
