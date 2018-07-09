@@ -12,9 +12,18 @@ TYPE_SQUARE = 'square'
 
 PAD_COLUMN_SEP = 20
 RED_FLASH_MS = 300
+MIN_ROI_SIZE = 1
 
 X = 0
 Y = 1
+
+POS_BEFORE = 0b10
+POS_AFTER  = 0b01
+POS_MIDDLE = 0b00
+POS_LEFT   = 0b1000
+POS_RIGHT  = 0b0100
+POS_TOP    = 0b0010
+POS_BOTTOM = 0b0001
 
 
 def new_roi_adjuster(sv):
@@ -76,7 +85,14 @@ def str2float(s, mustPositive=True, mustNonNegative=False):
 
 
 def flash_red(widget):
-    """Make widget background flash red"""
+    """Make widget background flash red
+
+    Note that the background color is reset to white after a predefined
+    time interval.
+    
+    :param widget: The widget to flash.
+    :type widget: tkinter widget
+    """
     widget.config(background="red")
     widget.after(RED_FLASH_MS, lambda:widget.config(background="white"))
 
@@ -556,7 +572,7 @@ class RoiAdjuster:
 
     @offset_x.setter
     def offset_x(self, off_x):
-        self.offset_x = off_x
+        self._offset_x = off_x
         if self.unit == UNIT_µm:
             off_x *= self.unit_conv_fac
         float2str(off_x, self.var_offset_x)
@@ -604,6 +620,9 @@ class RoiAdjuster:
 
     @width.setter
     def width(self, wid):
+        if wid < MIN_ROI_SIZE:
+            return
+
         self._width = wid
         if self.unit == UNIT_µm:
             wid *= self.unit_conv_fac
@@ -621,6 +640,9 @@ class RoiAdjuster:
 
     @height.setter
     def height(self, heig):
+        if heig < MIN_ROI_SIZE:
+            return
+
         self._height = heig
         if self.unit == UNIT_µm:
             heig *= self.unit_conv_fac
@@ -638,6 +660,9 @@ class RoiAdjuster:
 
     @pad_x.setter
     def pad_x(self, px):
+        if px < 0:
+            return
+
         self._pad_x = px
         if self.unit == UNIT_µm:
             px *= self.unit_conv_fac
@@ -655,6 +680,9 @@ class RoiAdjuster:
 
     @pad_y.setter
     def pad_y(self, py):
+        if py < 0:
+            return
+
         self._pad_y = py
         if self.unit == UNIT_µm:
             py *= self.unit_conv_fac
@@ -725,19 +753,19 @@ class RoiAdjuster:
         :type props: dict, such as the :py:attr:`RoiAdjuster.props`
         """
         width = props.get("width")
-        if width is not None:
+        if width is not None and width >= MIN_ROI_SIZE:
             self._width = width
 
         height = props.get("height")
-        if height is not None:
+        if height is not None and height >= MIN_ROI_SIZE:
             self._height = height
 
         pad_x = props.get("pad_x")
-        if pad_x is not None:
+        if pad_x is not None and pad_x >= 0:
             self._pad_x = pad_x
 
         pad_y = props.get("pad_y")
-        if pad_y is not None:
+        if pad_y is not None and pad_y >= 0:
             self._pad_y = pad_y
 
         max_x = props.get("max_x")
@@ -786,9 +814,9 @@ def span_rois(width, height, pad_x, pad_y, max_x, max_y, angle=0, pivot_x=0, piv
     :type max_y: float
     :param angle: angle (in degrees) by which to rotate the ROI grid
     :type angle: float
-    :pivot_x: x-coordinate (in pixels) of the rotation center and origin of the new coordinate system
+    :param pivot_x: x-coordinate (in pixels) of the rotation center and origin of the new coordinate system
     :type pivot_x: float
-    :pivot_y: y-coordinate (in pixels) of the rotation center and origin of the new coordinate system
+    :param pivot_y: y-coordinate (in pixels) of the rotation center and origin of the new coordinate system
     :type pivot_y: float
     :param off_x: offset (in pixels) in x-direction of the ROI grid from the origin of the new coordinate system
     :type off_x: float
@@ -796,6 +824,8 @@ def span_rois(width, height, pad_x, pad_y, max_x, max_y, angle=0, pivot_x=0, piv
     :type off_y: float
     :param canvas: (only for debugging) canvas for drawing debug information
     :type canvas: :py:class:`tkinter.Canvas`
+    :return: the generated ROIs
+    :rtype: list of :py:class:`RectRoi`
     """
     # Set up function for ROI rotation
     trans_fun = make_transformation(angle, x_new=pivot_x, y_new=pivot_y)
@@ -1054,7 +1084,7 @@ class RectRoi:
     :param props: parameters for spanning the grid
     :type props: dict
     :param inverted: flag whether the columns of ``polygon`` are interchanged, so that ``coords[i,0]`` is the y-coordinate and ``coords[i,1]`` the x-coordinate of corner ``i``
-    :type inverted: boolean
+    :type inverted: bool
 
     The following properties are exposed:
 
@@ -1138,18 +1168,32 @@ class RectRoi:
 
 
 class VisualRoiAdjuster:
+    """Allow for interactive grid adjustment by mouse.
+
+    :param sv: The stack viewer to connect
+    :type: :py:class:`StackViewer`
+    :param ra: The roi adjuster to connect
+    :type: :py:class:`RoiAdjuster`
+    """
     def __init__(self, sv, ra):
         self.sv = sv
         self.ra = ra
         self.canvas = sv.canvas
 
         self.is_cleaning_up = False
+        self.is_mouse_down = False
+        self.prev_mouse_position = None
+        self.relative_mouse_position = None
+        self.operation_has_pad_x = None
+        self.operation_has_pad_y = None
 
-        print("Hallo")
 
     def smudge(self):
         self.canvas.bind("<Motion>", self.mouse_moved)
         self.canvas.bind("<Leave>", self.mouse_left)
+        self.canvas.bind("<Button-1>", self.mouse_clicked)
+        self.canvas.bind("<ButtonRelease-1>", self.mouse_released)
+
 
     def cleanup(self):
         # Prevent double execution
@@ -1160,39 +1204,210 @@ class VisualRoiAdjuster:
 
         self.canvas.unbind("<Motion>")
         self.canvas.unbind("<Leave>")
+        self.canvas.unbind("<Button-1>")
+        self.canvas.unbind("<ButtonRelease-1>")
+        self.canvas.config(cursor="")
+
+
+    def mouse_clicked(self, evt):
+        self.is_mouse_down = True
+        self.prev_mouse_position = np.array([[evt.x, evt.y]], dtype=np.float)
+
+
+    def mouse_released(self, *_):
+        self.is_mouse_down = False
+        self.prev_mouse_position = None
+        self.relative_mouse_position = None
+        self.operation_has_pad_x = None
+        self.operation_has_pad_y = None
+
+
+    def mouse_left(self, *_):
+        self.canvas.delete("roi_draft")
+        self.canvas.config(cursor="")
+
 
     def mouse_moved(self, evt):
-        print(f"mouse moved to: ({evt.x :3d}|{evt.y :3d})")
+        print(f"mouse moved to: ({evt.x :3d}|{evt.y :3d})") #DEBUG
 
+        # Set up transformation into grid system
         props = self.ra.props
         trafo = make_transformation(props["angle"], x_new=props["pivot_x"], y_new=props["pivot_y"])
 
-#        unit_x = props["width"] + props["pad_x"]
-#        e_x = evt.x - props["off_x"]
-#        n_units_x = e_x // unit_x
-#        d_units_x = e_x - (n_units_x * unit_x)
-#        if evt.x >= 0:
-#            if d_units_x <= width:
-#                #inside
-#                pass
-#            else:
-#                # outside
-#                pass
-#        else:
-#            if d_units_x <= width:
-#                # inside
-#                pass
-#            else:
-#                # outside
-#                pass
-#            
-        # Get coordinates of next grid positions
-        e_r = trafo(np.array([[evt.x, evt.y]], dtype=np.float))
+        # Get coordinates of nearest grid positions
+        evt_pos_raw = np.array([[evt.x, evt.y]], dtype=np.float) 
+        e_r = trafo(evt_pos_raw)
         e_x = e_r[0,0]
         e_y = e_r[0,1]
 
-        is_inside_x, nearest_before_x, nearest_after_x = nearest_grid_position(e_x, props["width"], props["pad_x"], props["off_x"])
-        is_inside_y, nearest_before_y, nearest_after_y = nearest_grid_position(e_y, props["height"], props["pad_y"], props["off_y"])
+        is_inside_x, nearest_before_x, nearest_after_x, position_x = nearest_grid_position(e_x, props["width"], props["pad_x"], props["off_x"])
+        is_inside_y, nearest_before_y, nearest_after_y, position_y = nearest_grid_position(e_y, props["height"], props["pad_y"], props["off_y"])
+        position = (position_x << 2) | position_y
+
+        # Set mouse position
+        if self.is_mouse_down and self.relative_mouse_position is None:
+            self.relative_mouse_position = position
+        elif self.is_mouse_down:
+            position = self.relative_mouse_position
+
+        self.draw_cross_debug(is_inside_x, nearest_before_x, nearest_after_x, is_inside_y, nearest_before_y, nearest_after_y, trafo) #DEBUG
+
+        if is_inside_x and is_inside_y:
+            self.mouse_cursor_inside(position)
+        else:
+            self.mouse_move_outside(e_x, e_y, is_inside_x, nearest_before_x, nearest_after_x, is_inside_y, nearest_before_y, nearest_after_y, trafo)
+
+        # If mouse clicked, get and update previous mouse position
+        if self.is_mouse_down:
+            # Check if increasing grid sites over spacing will be allowed
+            if self.operation_has_pad_x is None:
+                self.operation_has_pad_x = self.ra.pad_x > 0
+            if self.operation_has_pad_y is None:
+                self.operation_has_pad_y = self.ra.pad_y > 0
+
+            self.mouse_move_clicked(evt_pos_raw, trafo, position)
+
+            # Update mouse position for next motion event
+            self.prev_mouse_position = np.array(evt_pos_raw)
+
+
+    def mouse_move_clicked(self, new_pos, trafo, position=POS_MIDDLE):
+        prev_pos_t = trafo(self.prev_mouse_position)
+        new_pos_t = trafo(new_pos)
+
+        # Get the mouse movement
+        movement = new_pos_t - prev_pos_t
+        m_x = movement[0,X]
+        m_y = movement[0,Y]
+
+        if position & POS_LEFT and position & POS_TOP:
+            if self.ra.roi_type == TYPE_SQUARE:
+                # For square ROIs we can assume that always
+                # pad_x == pad_y and width == height
+
+                # Take movement with largest absolute change
+                if abs(m_x) > abs(m_y):
+                    m = m_x
+                else:
+                    m = m_y
+
+                # Limit resizing amount to padding and to grid site size
+                if self.operation_has_pad_x and m < -self.ra.pad_x:
+                    m = -self.ra.pad_x
+                elif not self.operation_has_pad_x and m > 0:
+                    self.operation_has_pad_x = True
+                    self.operation_has_pad_y = True
+                if m >= self.ra.width:
+                    if self.ra.width > MIN_ROI_SIZE:
+                        m = self.ra.width
+                    else:
+                        m = 0
+
+                # Resize grid
+                self.ra.width -= m
+                self.ra.pad_x += m
+                self.ra.offset_x += m
+                self.ra.offset_y += m
+
+            elif self.ra.roi_type == TYPE_RECT:
+                # Limit resizing amount
+                if self.operation_has_pad_x and m_x < -self.ra.pad_x:
+                    m_x = -self.ra.pad_x
+                elif not self.operation_has_pad_x and m_x > 0:
+                    self.operation_has_pad_x = True
+                if m_x >= self.ra.width:
+                    if self.ra.width > MIN_ROI_SIZE:
+                        m_x = self.ra.width
+                    else:
+                        m_x = 0
+
+                if self.operation_has_pad_y and m_y < -self.ra.pad_y:
+                    m_y = -self.ra.pad_y
+                elif not self.operation_has_pad_y and m_y > 0:
+                    self.operation_has_pad_y = True
+                if m_y >= self.ra.height:
+                    if self.ra.height > MIN_ROI_SIZE:
+                        m_y = self.ra.height
+                    else:
+                        m_y = 0
+
+                # Resize grid
+                self.ra.width -= m_x
+                self.ra.pad_x += m_x
+                self.ra.offset_x += m_x
+
+                self.ra.height -= m_y
+                self.ra.pad_y += m_y
+                self.ra.offset_y += m_y
+
+        elif position & POS_LEFT:
+            # Improve this resizing operation and implement others
+            self.ra.width -= m_x
+            self.ra.pad_x += m_x
+            self.ra.offset_x += m_x
+        else:
+            if m_x != 0:
+                self.ra.offset_x += m_x
+            if m_y != 0:
+                self.ra.offset_y += m_y
+
+
+
+
+    def mouse_cursor_inside(self, position=None):
+        """Set cursor appearance according to position inside grid site
+
+        :param position: The position as status byte.
+            The meaning of set bits is:
+
+            ``POS_LEFT``
+                The cursor is close to a grid site edge left of the cursor.
+
+            ``POS_RIGHT``
+                The cursor is close to a grid site edge right of the cursor.
+
+            ``POS_TOP``
+                The cursor is close to a grid site edge above the cursor.
+
+            ``POS_BOTTOM``
+                The cursor is close to a grid site edge below the cursor.
+
+            ``POS_MIDDLE``
+                The cursor is not close to a grid site edge.
+        :type position: int
+        """
+        if position is None:
+            position = self.relative_mouse_position
+
+        # Set mouse cursor according to mouse position
+        if position & POS_LEFT and position & POS_TOP:
+            cursor = "top_left_corner"
+        elif position & POS_TOP and position & POS_RIGHT:
+            cursor = "top_right_corner"
+        elif position & POS_RIGHT and position & POS_BOTTOM:
+            cursor = "bottom_right_corner"
+        elif position & POS_BOTTOM and position & POS_LEFT:
+            cursor = "bottom_left_corner"
+        elif position & POS_LEFT:
+            cursor = "left_side"
+        elif position & POS_TOP:
+            cursor = "top_side"
+        elif position & POS_RIGHT:
+            cursor = "right_side"
+        elif position & POS_BOTTOM:
+            cursor = "bottom_side"
+        else:
+            cursor = "fleur"
+
+        # Set cursor
+        self.canvas.config(cursor=cursor)
+
+
+    def mouse_move_outside(self, e_x, e_y, is_inside_x, nearest_before_x, nearest_after_x, is_inside_y, nearest_before_y, nearest_after_y, trafo):
+        self.canvas.config(cursor="")
+
+
+    def draw_cross_debug(self, is_inside_x, nearest_before_x, nearest_after_x, is_inside_y, nearest_before_y, nearest_after_y, trafo):
 
         cross1 = np.array([
                     [nearest_before_x, nearest_before_y],
@@ -1206,8 +1421,8 @@ class VisualRoiAdjuster:
         cross2 = trafo(cross2, inverse=True)
 
         # DEBUG
-        print(f"\t{is_inside_x}  {cross1[0,0] :3.0f}  {cross1[1,0] :3.0f}")
-        print(f"\t{is_inside_y}  {cross1[0,1] :3.0f}  {cross1[1,1] :3.0f}")
+        print(f"\tx: {is_inside_x}  {cross1[0,0]:4.0f} {cross1[1,0]:4.0f}")
+        print(f"\ty: {is_inside_y}  {cross1[0,1]:4.0f} {cross1[1,1]:4.0f}")
 
         # Get position-dependent color
         if is_inside_x and is_inside_y:
@@ -1223,13 +1438,51 @@ class VisualRoiAdjuster:
         self.canvas.delete("roi_draft")
         self.canvas.create_line(*cross1.flat, fill=clr, tags="roi_draft")
         self.canvas.create_line(*cross2.flat, fill=clr, tags="roi_draft")
-
-
-    def mouse_left(self, *_):
-        self.canvas.delete("roi_draft")
         
 
-def nearest_grid_position(z, length, pad, offset=0):
+def nearest_grid_position(z, length, pad, offset=0, delta=0.15):
+    """Get grid site next to a coordinate.
+
+    Calculate the relative position of a given one-dimensional coordinate
+    in a one-dimensional grid, which consists of grid sites with a given
+    length, separated by a given padding.
+
+    :param z: The coordinate to check
+    :type z: float
+    :param length: The length of the grid sites. Must be positive.
+    :type length: float
+    :param pad: The padding between the grid sites. Must be positive.
+    :type pad: float
+    :param offset: The distance between the origin and the beginning of a grid site
+    :type offset: float
+    :param delta: The relative tolerance for detecting edge proximity (percentage of ``length``). Should be ``0 < delta < 1``.
+    :type delta: float
+    :return: ``(is_inside, nearest_before, nearest_after, position)``
+    :rtype: tuple (bool, float, float, int)
+
+    A tuple of the following values is returned:
+
+    ``is_inside``
+        A boolean indicator whether the coordinate ``z`` is inside a grid
+        position (``True``) or not (``False``).
+
+    ``nearest_before``
+        The coordinate of the nearest grid site edge that is smaller than ``z``.
+
+    ``nearest_after``
+        The coordinate of the nearest grid site edge that is larger than ``z``.
+
+    ``position``
+        A status byte indicating proximity of ``z`` to grid site edges.
+        ``position`` is intended to be used with bitwise operators.
+        The following values are defined:
+
+        * ``0b10`` if ``z`` is within the tolerance range of a grid
+          site edge before ``z``.
+        * ``0b01`` if ``z`` is within the tolerance range of a grid
+          site edge after ``z``.
+        * ``0b00`` else.
+    """
     unit = length + pad
     z_ = z - offset
     n_units = z_ // unit
@@ -1248,13 +1501,21 @@ def nearest_grid_position(z, length, pad, offset=0):
         nearest_before = offset + floor + length
         nearest_after = nearest_before + pad
 
+    # Find relative position of mouse in ROI position
+    delta_abs = delta * length
+    if not is_inside and delta_abs >= pad / 3:
+        # Catch too large `delta_abs` for small `pad`
+        delta_abs = delta * pad
+
+    if z <= nearest_before + delta_abs:
+        position = POS_BEFORE
+    elif z >= nearest_after - delta_abs:
+        position = POS_AFTER
+    else:
+        position = POS_MIDDLE
+
     # DEBUG
     #print(f"\t{is_inside}  {nearest_before :3.0f}  {nearest_after :3.0f}")
 
-    return is_inside, nearest_before, nearest_after
-
-
-
-
-
+    return is_inside, nearest_before, nearest_after, position
 
