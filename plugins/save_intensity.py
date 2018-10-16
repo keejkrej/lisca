@@ -4,6 +4,7 @@ Plugin to save intensity to CSV.
 import numpy as np
 import os
 import sys
+import time
 
 my_id = "simple_intensity_to_CSV_saver"
 
@@ -40,8 +41,11 @@ def run(d, *_, **__):
         int_tab[:,0] = range(n_frames)
         for iFr in range(n_frames):
             for idx, entry in enumerate(intensities[iCh,iFr]):
+                if idx+1 >= int_tab.shape[1]:
+                    print("Found {} ROIs in frame {}, expected {}, ignoring rest.".format(len(intensities[iCh,0]), iFr, int_tab.shape[1])) #DEBUG
+                    break
                 int_tab[iFr, idx+1] = entry
-        outname = os.path.join(path, "integ_intensity_{:d}.csv".format(iCh+1))
+        outname = os.path.join(path, "integ_intensity_c{:d}_{}.csv".format(iCh+1, time.strftime("%Y%m%d-%H%M%S")))
         np.savetxt(outname, int_tab, fmt='%.7e', delimiter=',')
         print("Saved intensities to: {}".format(outname))
 
