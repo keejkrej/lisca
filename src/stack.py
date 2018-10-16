@@ -26,6 +26,7 @@ class Stack:
     def __init__(self, path=None):
         """Initialize a stack."""
         self.image_lock = threading.RLock()
+        self.info_lock = threading.RLock()
         self.roi_lock = threading.RLock()
         self._listeners = Listeners(kinds={"roi", "image"})
         self._clear_state()
@@ -55,6 +56,9 @@ class Stack:
         # ROI list
         with self.roi_lock:
             self._rois = {}
+
+        # Clear image information
+        self.clear_info()
 
         # Notify listeners
         self._listeners.notify(kind=None)
@@ -331,7 +335,23 @@ class Stack:
             return piltk.PhotoImage(pilimg.fromarray(a8, mode='L'))
 
 
-    def info(self):
+    def clear_info(self):
+        """Clear the image information"""
+        with self.info_lock:
+            self._info = {}
+
+
+    def update_info(self, name, value):
+        with self.info_lock:
+            self._info[name] = value
+
+
+    def get_info(self, name):
+        with self.info_lock:
+            return self._info.get(name)
+
+
+    def stack_info(self):
         """Print stack info. Only for debugging."""
         with self.image_lock:
             print("Path: " + str(self._path))
