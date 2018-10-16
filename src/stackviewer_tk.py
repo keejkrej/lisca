@@ -212,6 +212,8 @@ class StackViewer:
         if image_file is not None:
             self.open_stack(image_file)
 
+        # Ensure drawing
+        #self.root.update_idletasks()
 
     def _update(self):
         """

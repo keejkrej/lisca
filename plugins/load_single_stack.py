@@ -67,8 +67,9 @@ def _confirmation_dialog(root, cv):
     bind_id = None
     def close_fcn(*_):
         dlg.unbind("<Destroy>", bind_id)
+        nonlocal cv
         with cv:
-            cv.notify()
+            cv.notify_all()
     bind_id = dlg.bind("<Destroy>", close_fcn)
 
     # Set up message label
