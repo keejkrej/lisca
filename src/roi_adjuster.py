@@ -111,13 +111,13 @@ class RoiAdjuster:
         # Angle unit is degree
         self._offset_x = 0
         self._offset_y = 0
-        self._width = 50
-        self._height = 50
-        self._pad_x = 20
-        self._pad_y = 20
+        self._width = 55
+        self._height = 55
+        self._pad_x = 82
+        self._pad_y = 82
         self._pivot_x = self.stack.width / 2
         self._pivot_y = self.stack.height / 2
-        self._angle = 0
+        self._angle = .5
         self._max_x = self.stack.width - 1
         self._max_y = self.stack.height - 1
 
@@ -221,7 +221,7 @@ class RoiAdjuster:
         self._new_label(self.var_unit, 6, 6)
 
         self._new_label("Angle:", 7, 0)
-        self.sp_angle = self._new_spinbox(self.var_angle, 7, 1)
+        self.sp_angle = self._new_spinbox(self.var_angle, 7, 1, inc=0.5)
         self._new_label("°", 7, 2)
 
         # Callbacks
@@ -298,11 +298,16 @@ class RoiAdjuster:
         return label
 
 
-    def _new_spinbox(self, var, row, column, parent=None):
+    def _new_spinbox(self, var, row, column, inc=1.0, parent=None):
         """Spinbox factory method"""
         if parent is None:
             parent = self.root
+        if inc >= 1:
+            fmt = '%.0f'
+        else:
+            fmt = '%.1f'
         sb = tk.Spinbox(parent, from_=-np.inf, to=np.inf, width=5,
+            increment=inc, format=fmt,
             textvariable=var, background="white")
         sb.grid(row=row, column=column, sticky="WE")
         return sb
