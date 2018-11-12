@@ -1,0 +1,6 @@
+* Implement global namespace for data
+* More configurable ROI selection (src/roi_selector)
+* Cell contour tracking
+* Configfile-Export und -Import (HDF5, raw)
+* Solve deadlock in standalone stackviewer (own thread for Tk mainloop)
+
