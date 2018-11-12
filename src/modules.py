@@ -201,7 +201,7 @@ def _parse_version(ver, isComparison=False):
 
     # Parse version string
     # TODO: add optional dependency ('?')
-    comp_flags = ('>=', '<=', '!=', '>', '<', '=')
+    comp_flags = ('>=', '<=', '!=', '>', '<', '=', '==')
     #starts_with_comparison = ver.startswith(comp_flags)
     if isComparison:
         if ver[:2] in comp_flags:
@@ -284,7 +284,7 @@ def _check_versions(version_present, comp_mode, version_required):
             return True
         return False
 
-    elif comp_mode == '=':
+    elif comp_mode == '=' or comp_mode == '==':
         if len(version_present) != len(version_required):
             return False
         for vp, vr in zip(version_present, version_required):
