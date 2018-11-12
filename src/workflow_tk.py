@@ -135,6 +135,11 @@ class WorkflowGUI:
         """Start the Tk mainloop"""
         gui.mainloop()
 
+    @property
+    def root_tk(self):
+        """Get Tk root for use in other modules"""
+        return self.root
+
     def get_id(self, iid):
         """Return module ID of module at Treeview position ``iid``"""
         return self.mod_tree.set(iid, column="id")

@@ -84,13 +84,13 @@ class StackViewer:
     * ``close``
     """
 
-    def __init__(self, root=None, image_file=None):
+    def __init__(self, parent=None, image_file=None, root=None):
         """Initialize the GUI."""
         # Initialize GUI components
-        if root is None:
-            self.root = new_toplevel()
+        if parent is None:
+            self.root = new_toplevel(root)
         else:
-            self.root = root
+            self.root = parent
         self.root.title("StackViewer")
         self.root.bind("<Destroy>", self._close)
 

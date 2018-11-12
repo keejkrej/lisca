@@ -36,4 +36,5 @@ if __name__ == "__main__":
 
     # Display GUI
     gui = WorkflowGUI(modman)
+    modman.register_builtin_data("root_tk", gui.root_tk)
     gui.mainloop()
