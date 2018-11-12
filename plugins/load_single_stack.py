@@ -14,21 +14,21 @@ __version__ = "0.1.1"
 def register(meta):
     meta.name = "Read stack"
     meta.id = my_id
-    meta.conf_ret = "path"
-    meta.run_dep = (my_id, "path"), ("", "__tk-root__")
-    meta.run_ret = ("stack", "StackViewer")
+    meta.conf_ret = "_path"
+    meta.run_dep = (my_id, "_path"), ("", "__tk-root__")
+    meta.run_ret = ("stack", "_StackViewer")
 
 
 def conf(d, *_, **__):
     print("Configuring 'load_single_stack'.")
     f = gui_tk.askopenfilename(parent=gui_tk.root)
     print(f)
-    return {"path": f}
+    return {"_path": f}
 
 
 def run(d, *_, **__):
     print("Running 'load_single_stack'.")
-    path = d[my_id]['path']
+    path = d[my_id]['_path']
 
     # Load and show stack
     s = Stack(path)
@@ -42,7 +42,7 @@ def run(d, *_, **__):
         cv.wait()
 
     return {"stack": s,
-            "StackViewer": sv}
+            "_StackViewer": sv}
 
 
 def _confirmation_dialog(root, cv):

@@ -6,7 +6,7 @@ __version__ = "0.1"
 def register(meta, more_meta):
     meta.name = "Segment stack"
     meta.id = my_id
-    meta.run_dep = ("simple_stack_reader", "stack")
+    meta.run_dep = ("", "stack")
 
     more_meta.meta.name = "Test-Hallo"
     more_meta.meta.id = "test:hallo2"
@@ -16,7 +16,7 @@ def register(meta, more_meta):
 
 
 def run(d, *_, **__):
-    stack = d["simple_stack_reader"]["stack"]
+    stack = d[""]["stack"]
     for iFr in range(stack.n_frames):
         frame = stack.get_image(frame=iFr, channel=0)
         bg = tools.interpolate_background(frame)

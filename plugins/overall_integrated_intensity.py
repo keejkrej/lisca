@@ -9,12 +9,12 @@ def register(meta):
     meta.name = "Integrated intensity"
     meta.id = my_id
 
-    meta.run_dep = ("simple_stack_reader", "stack")
+    meta.run_dep = ("", "stack")
     meta.run_ret = "integrated_intensity"
 
 
 def run(d, *_, **__):
-    stack = d["simple_stack_reader"]["stack"]
+    stack = d[""]["stack"]
     img = stack.img
     n_channels, n_frames, n_rows, n_cols = img.shape
     intensity_table = np.empty((n_channels, n_frames), dtype=object)

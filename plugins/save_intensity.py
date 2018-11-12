@@ -13,10 +13,10 @@ def register(meta):
     meta.id = my_id
 
     #meta.conf_dep = ("", "workflow_gui_tk")
-    meta.conf_ret = "path"
+    meta.conf_ret = "_path"
     meta.run_dep = (
-            ("integrated_intensity_calculator", "integrated_intensity"),
-            (my_id, "path"),
+            ("", "integrated_intensity"),
+            (my_id, "_path"),
         )
 
 
@@ -29,12 +29,12 @@ def conf(d, *_, **__):
         except Exception as e:
             print("Cannot create directory: {}".format(e))
 
-    return {"path": path}
+    return {"_path": path}
 
 
 def run(d, *_, **__):
-    path = d[my_id]["path"]
-    intensities = d["integrated_intensity_calculator"]["integrated_intensity"]
+    path = d[my_id]["_path"]
+    intensities = d[""]["integrated_intensity"]
     n_channels, n_frames = intensities.shape
     for iCh in range(n_channels):
         int_tab = np.empty((n_frames, 1 + len(intensities[iCh, 0])))

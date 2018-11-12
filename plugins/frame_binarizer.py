@@ -8,17 +8,17 @@ my_id = "frame_binarizer"
 def register(meta):
     meta.name = "Binarize frame"
     meta.id = my_id
-    meta.run_dep = ("simple_stack_reader", "stack")
-    meta.run_ret = ("bg",)
+    meta.run_dep = ("", "stack")
+    meta.run_ret = ("background",)
 
 #def configure(*_, **__):
 #    pass
 
 def run(d, *_, **__):
-    stack = d["simple_stack_reader"]["stack"]
+    stack = d[""]["stack"]
     frame = stack.get_image(frame=0, channel=0)
     bg = interpolate_background(frame)
-    return {"bg": bg}
+    return {"background": bg}
 
 
 if __name__ == "__main__":

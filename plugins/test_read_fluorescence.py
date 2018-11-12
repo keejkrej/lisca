@@ -11,27 +11,27 @@ def register(meta):
     #meta.run_dep = "simple_stack_reader", "stack"
     meta.run_ret = "i_frame", "i_channel"
 
-    loop_dependencies = ((my_id, ("i_frame", "i_channel")),
-                        ("simple_stack_reader", "stack"))
+    loop_dependencies = ((my_id, ("_i_frame", "_i_channel")),
+                        ("", "stack"))
 
     meta.set_fun("loop_first", loop_next)
-    meta.set_ret("loop_first", ("i_frame", "i_channel"))
+    meta.set_ret("loop_first", ("_i_frame", "_i_channel"))
     meta.set_dep("loop_first", loop_dependencies)
 
-    meta.set_ret("loop_next", ("i_frame", "i_channel"))
+    meta.set_ret("loop_next", ("_i_frame", "_i_channel"))
     meta.set_dep("loop_next", loop_dependencies)
 
     meta.set_dep("loop_end", loop_dependencies)
 
 
 def run(_):
-    return {"i_frame": 0, "i_channel": -1}
+    return {"_i_frame": 0, "_i_channel": -1}
 
 
 def loop_next(d):
-    i_channel = d[my_id]["i_channel"]
-    i_frame = d[my_id]["i_frame"]
-    stack = d["simple_stack_reader"]["stack"]
+    i_channel = d[my_id]["_i_channel"]
+    i_frame = d[my_id]["_i_frame"]
+    stack = d[""]["stack"]
 
     i_channel += 1
     if i_channel >= stack.n_channels:
@@ -50,8 +50,8 @@ def loop_next(d):
     stack.set_rois(regions, "raw", i_frame)
     print(f"{my_id}.loop_next: frame={i_frame} channel={i_channel}")
 
-    return {"i_channel": i_channel, "i_frame": i_frame}
+    return {"_i_channel": i_channel, "_i_frame": i_frame}
 
 
 def loop_end(d):
-    print(f"{my_id}.loop_end: iterated over {d[my_id]['i_frame']} frames.")
+    print(f"{my_id}.loop_end: iterated over {d[my_id]['_i_frame']} frames.")
