@@ -6,7 +6,7 @@
 
 This is the docstring of the :py:mod:`modules` module.
 """
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 import importlib.util as imputil
 import inspect
 from listener import Listeners
@@ -361,6 +361,17 @@ def _parse_dep(dep):
     return tuple(new)
 
 
+def is_global_name(name):
+    """Check if a given name belongs to the global namespace
+
+    :param name: the name to check
+    :type name: str
+    :return: `True` if `name` is global, else `False`
+    :rtype: bool
+    """
+    return name.startswith('_')
+
+
 def _print_exception_string(exc, first=0):
     """
     Obtain and print a stacktrace and exception info.
@@ -391,6 +402,7 @@ class ModuleManager:
     def __init__(self, plugins_path=None, register_builtins=True):
         self.modules = {}
         self.data = [{}]
+        self.global_data_providers = defaultdict(set)
         self.module_order = ModuleOrder(self.modules)
         self._listeners = Listeners(kinds=LISTENER_KINDS)
         self.data_lock = threading.RLock()
@@ -408,7 +420,16 @@ class ModuleManager:
                 for meta, init_ret in zip(*_load_module(name, path)):
                     mod_id = meta.id
                     self.modules[mod_id] = meta
-                    self.data[0][mod_id] = {}
+
+                    with self.data_lock:
+                        # Prepare return data
+                        self.data[0][mod_id] = {}
+
+                        # Check for return data in global namespace
+                        for global_name in mod.global_ret:
+                            self.global_data_providers[global_name].add(mod.id)
+
+                    # Save return data from initialization
                     self.memorize_result(mod_id, init_ret)
 
 
@@ -437,7 +458,10 @@ class ModuleManager:
         This method is thread-safe.
         """
         with self.order_lock:
+            # Insert module
             self.module_order[index] = mod
+
+            # Notify listeners
             self._listeners.notify("order")
             self._listeners.notify("dependency")
 
@@ -477,7 +501,7 @@ class ModuleManager:
         mod = self.modules[mod_id]
 
         # Collect dependencies (to see if module can be invoked)
-        deps = {}
+        deps = defaultdict(set)
         kinds_to_check = set()
         if mod.has_fun("run"):
             kinds_to_check.add("run")
@@ -490,8 +514,6 @@ class ModuleManager:
             
         for kind in kinds_to_check:
             for dep_id, dep_data, _ in mod.get_dep(kind):
-                if not dep_id in deps:
-                    deps[dep_id] = set()
                 deps[dep_id].update(dep_data)
 
         # Check if "conf" has been run already (if return data is present)
@@ -509,8 +531,9 @@ class ModuleManager:
                         deps[mod_id].discard(cret_data)
 
         # Check for dependencies fulfilled already
+        # (e.g. due to initialization of the providing plugin)
         with self.data_lock:
-            for dep_id in tuple(deps.keys()):
+            for dep_id in deps.keys():
                 dep = deps[dep_id]
                 if dep_id in self.data[0]:
                     deps[dep_id].difference_update(self.data[0][dep_id])
@@ -620,8 +643,10 @@ class ModuleManager:
         :type index: int or list of int
         """
         with self.order_lock:
+            # Remove plugin from module order
             del self.module_order[index]
 
+            # Notify listeners
             self._listeners.notify("order")
             self._listeners.notify("dependency")
 
@@ -873,15 +898,27 @@ class ModuleManager:
 
         This method is thread-safe.
 
+        Plugin-only data could have a name starting with an underscore.
+        Names starting with another character than an underscore are
+        considered global data and are added both to the plugin’s data
+        namespace and to the global data namespace.
+
         :param d_id: The id of the plugin providing the data
         :param name: The name of the data
         :param value: The value of the data
         :param index: The index of `self.data` to which to write the data
         """
         with self.data_lock:
+            # Add data to plugin’s data namespace
             if d_id not in self.data[index]:
                 self.data[index][d_id] = {}
             self.data[index][d_id][name] = value
+
+            # Add data to global data namespace if not starting with `_`
+            if is_global_name(name):
+                if '' not in self.data[index]:
+                    self.data[index][''] = {}
+                self.data[index][''][name] = value
 
 
     def register_builtin_data(self, name, value):
@@ -893,8 +930,15 @@ class ModuleManager:
 
         :param name: The name of the data
         :param value: The value of the data
+
+        The `name` of built-in data should conventionally have a leading
+        and a trailing pair of underscores (e.g. `__name__`).
+        Names starting with an underscore are protected against being
+        overwritten by plugins.
         """
-        self._add_data("", name, value, index=0)
+        with self.data_lock:
+            self._add_data("", name, value, index=0)
+            self.global_data_providers[name].add("")
 
 
     def register_builtins(self):
@@ -1179,6 +1223,14 @@ class ModuleMetadata:
         with self.__lock:
             return self.__vals["ret"].get(kind, ())
 
+    # "global_ret"
+    # set of str
+    # Data returned by this module in any PERFORM_KIND that is in the
+    # global data namespace
+    @property
+    def global_ret(self):
+        """Return a set of names of return data in the global namespace"""
+        return {name for name in self.get_ret(kind) for kind in RETURN_KINDS if is_global_name(name)}
 
     # "fun"
     # dict of functions
