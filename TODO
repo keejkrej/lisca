@@ -1,10 +1,9 @@
-* Implement global namespace for data
-	+ Adjust modules.ModuleManager.check_module_dependencies
-	+ Test Workflow: "simple_stack_reader", "integrated_intensity_calculator", "simple_intensity_to_CSV_saver"
 * Multicolor-images
 * More configurable ROI selection (src/roi_selector)
 * Read ND files
 * Cell contour tracking
 * Configfile-Export und -Import (HDF5, raw)
-* Solve deadlock in standalone stackviewer (own thread for Tk mainloop)
-
+* Solve deadlock in standalone stackviewer
+    + own thread for Tk mainloop
+    + decorator for gui-changing functions
+* Assistent for importing a saved workflow

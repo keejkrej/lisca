@@ -21,6 +21,7 @@ import traceback
 PERFORM_KINDS = {"conf", "run", "loop_first", "loop_next", "loop_end"}
 RETURN_KINDS = {"init", *PERFORM_KINDS}
 LISTENER_KINDS = {"order", "dependency", "workflow"}
+GLOBAL_NS = ""
 
 
 def _load_module(name, path):
@@ -362,14 +363,25 @@ def _parse_dep(dep):
 
 
 def is_global_name(name):
-    """Check if a given name belongs to the global namespace
+    """Check if a given name belongs to the global namespace.
 
     :param name: the name to check
     :type name: str
     :return: `True` if `name` is global, else `False`
     :rtype: bool
     """
-    return name.startswith('_')
+    return not name.startswith('_')
+
+
+def filter_global_names(names):
+    """Return a set containing only global names.
+
+    :param names: names from which non-global names shall be removed
+    :type names: iterable
+    :return: global names (possibly empty set)
+    :rtype: set
+    """
+    return {n for n in names if is_global_name(n)}
 
 
 def _print_exception_string(exc, first=0):
@@ -426,8 +438,8 @@ class ModuleManager:
                         self.data[0][mod_id] = {}
 
                         # Check for return data in global namespace
-                        for global_name in mod.global_ret:
-                            self.global_data_providers[global_name].add(mod.id)
+                        for global_name in meta.global_ret:
+                            self.global_data_providers[global_name].add(mod_id)
 
                     # Save return data from initialization
                     self.memorize_result(mod_id, init_ret)
@@ -542,9 +554,10 @@ class ModuleManager:
 
         # If module is a loop, check for "run" and "loop_next" return data
         if mod.is_loop and mod_id in deps:
-            deps[mod_id].difference_update(mod.get_ret("run"))
-            deps[mod_id].difference_update(mod.get_ret("loop_first"))
-            deps[mod_id].difference_update(mod.get_ret("loop_next"))
+            self_ret = {r for k in ("run", "loop_first", "loop_next") for r in mod.get_ret(k)}
+            deps[mod_id].difference_update(self_ret)
+            if GLOBAL_NS in deps:
+                deps[GLOBAL_NS].difference_update({r for r in self_ret if is_global_name(r)})
 
 
         # Filter out data visible to the "run" function of the module
@@ -558,34 +571,35 @@ class ModuleManager:
                 iidx[-1] -= 1
 
                 # Get predecessor module and check if it is a loop
-                isInLoop = False
                 pre_mod_id = self.get_module_at_index(iidx)
-                if iidx[-1] == 0 and len(iidx) > 1:
-                    isInLoop = True
+                isInLoop = (iidx[-1] == 0 and len(iidx) > 1)
 
-                # Check if predecessor module is relevant
-                if pre_mod_id in deps:
-                    d = deps[pre_mod_id]
-                    pre_mod = self.modules[pre_mod_id]
-
-                    # Check return data
-                    d.difference_update(pre_mod.get_ret("init"))
-                    d.difference_update(pre_mod.get_ret("conf"))
-                    if pre_mod.is_loop:
-                        if isInLoop:
-                            # `mod` is inside of loop of predecessor module
-                            d.difference_update(pre_mod.get_ret("run"))
-                            d.difference_update(pre_mod.get_ret("loop_first"))
-                            d.difference_update(pre_mod.get_ret("loop_next"))
-                        else:
-                            # Loop of predecessor module finished already;
-                            # we only see its `loop_end` return data
-                            d.difference_update(pre_mod.get_ret("loop_end"))
+                # Search relevant return data of predecessor module
+                d = deps[pre_mod_id]
+                pre_mod = self.modules[pre_mod_id]
+                pre_ret = set(pre_mod.get_ret("init"))
+                pre_ret.update(pre_mod.get_ret("conf"))
+                if pre_mod.is_loop:
+                    if isInLoop:
+                        # `mod` is inside of loop of predecessor module
+                        pre_ret.update(pre_mod.get_ret("run"))
+                        pre_ret.update(pre_mod.get_ret("loop_first"))
+                        pre_ret.update(pre_mod.get_ret("loop_next"))
                     else:
-                        # Predecessor module is no loop;
-                        # only has "run" return data
-                        d.difference_update(pre_mod.get_ret("run"))
-                    
+                        # Loop of predecessor module finished already;
+                        # we only see its `loop_end` return data
+                        pre_ret.update(pre_mod.get_ret("loop_end"))
+                else:
+                    # Predecessor module is no loop;
+                    # only has "run" return data
+                    pre_ret.update(pre_mod.get_ret("run"))
+
+                # Remove relevant return data of predecessor from `deps`
+                if pre_mod_id in deps:
+                    d.difference_update(pre_ret)
+                if GLOBAL_NS in deps and pre_mod.global_ret:
+                    deps[GLOBAL_NS].difference_update(filter_global_names(pre_ret))
+
         # Filter out data visible to "loop_next" and "loop_end" function
         if mod.is_loop:
             with self.order_lock:
@@ -601,14 +615,15 @@ class ModuleManager:
                     except IndexError:
                         break
 
-                    if child_id not in deps:
-                        continue
-
-                    child = self.modules[child_id]
-                    if child.is_loop:
-                        deps[child_id].difference_update(child.get_ret("loop_end"))
-                    else:
-                        deps[child_id].difference_update(child.get_ret("run"))
+                    if child_id in deps:
+                        child = self.modules[child_id]
+                        if child.is_loop:
+                            child_ret = child.get_ret("loop_end")
+                        else:
+                            child_ret = child.get_ret("run")
+                        deps[child_id].difference_update(child_ret)
+                        if GLOBAL_NS in deps:
+                            deps[GLOBAL_NS].difference_update(filter_global_names(child_ret))
 
         # Drop "empty" dependencies
         for d in list(deps.keys()):
@@ -916,9 +931,9 @@ class ModuleManager:
 
             # Add data to global data namespace if not starting with `_`
             if is_global_name(name):
-                if '' not in self.data[index]:
-                    self.data[index][''] = {}
-                self.data[index][''][name] = value
+                if GLOBAL_NS not in self.data[index]:
+                    self.data[index][GLOBAL_NS] = {}
+                self.data[index][GLOBAL_NS][name] = value
 
 
     def register_builtin_data(self, name, value):
@@ -937,8 +952,8 @@ class ModuleManager:
         overwritten by plugins.
         """
         with self.data_lock:
-            self._add_data("", name, value, index=0)
-            self.global_data_providers[name].add("")
+            self._add_data(GLOBAL_NS, name, value, index=0)
+            self.global_data_providers[name].add(GLOBAL_NS)
 
 
     def register_builtins(self):
@@ -1000,7 +1015,8 @@ class ModuleMetadata:
 
         The id must be unique among all modules.
         It can contain any characters and should stay invariant across
-        the versions of the module.
+        multiple versions of the module.
+        The id must not be an empty string.
 
     * ``version`` – The version string of the module.
 
@@ -1230,7 +1246,7 @@ class ModuleMetadata:
     @property
     def global_ret(self):
         """Return a set of names of return data in the global namespace"""
-        return {name for name in self.get_ret(kind) for kind in RETURN_KINDS if is_global_name(name)}
+        return {name for kind in RETURN_KINDS for name in self.get_ret(kind) if is_global_name(name)}
 
     # "fun"
     # dict of functions
@@ -1669,3 +1685,4 @@ class ModuleOrder:
     def is_loop_at(self, idx):
         """Boolean reply whether module at index ``idx`` is a loop"""
         return self.modules[self[idx]].is_loop
+
