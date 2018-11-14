@@ -1,4 +1,5 @@
 #! /usr/bin/env python3
+from collections import defaultdict
 import re
 import tempfile
 import threading
@@ -52,7 +53,7 @@ class Stack:
 
         # ROI list
         with self.roi_lock:
-            self._rois = {}
+            self.__rois = {}
 
         # Clear image information
         self.clear_info()
@@ -353,35 +354,56 @@ class Stack:
         """Un-register a listener."""
         self._listeners.delete(lid)
 
-    def set_rois(self, rois, type_, frame=Ellipsis):
+    def set_rois(self, rois, frame=Ellipsis):
         """Set the ROI set of the stack.
 
         :param rois: The ROIs to be set
-        :param type_: The ROI type (currently one of "rect" and "raw")
-        :param frame: The frame to which the ROI belongs. ``Ellipsis`` stands for all frames.
+        :type rois: iterable of Roi
+        :param frame: index of the frame to which the ROI belongs.
+            Use ``Ellipsis`` to specify ROIs valid in all frames.
+        :type frame: int or Ellipsis
 
-        For details, see :py:class:`RoiSet`.
+        For details, see :py:class:`RoiCollection`.
         """
         with self.roi_lock:
-            self._rois[frame] = RoiSet(rois, type_)
+            for roi in rois:
+                key = roi.key()
+                if key not in self.__rois:
+                    try:
+                        self.__rois[key][frame] = rois
+                    except KeyError:
+                        self.__rois[key] = RoiCollection(key)
+                        self.__rois[key][frame] = rois
             self._listeners.notify("roi")
 
     @property
     def rois(self):
         with self.roi_lock:
-            return self._rois
+            return self.__rois
 
-    def get_rois(self, frame=None):
+    def get_rois(self, key=None, frame=None):
+        """Get ROIs, optionally at a specified position.
+
+        :param key: ROI type identifier
+        :type key: tuple (len 2) of str
+        :param frame: frame identifier
+        :return: ROI set
+        """
         with self.roi_lock:
-            return self._rois.get(frame)
+            rois = self.__rois.get(key)
+            if rois is not None and frame is not None:
+                return rois.get(frame)
+            return rois
 
-    def clear_rois(self, frame=None):
+    def clear_rois(self, key=None, frame=None):
         """Delete the current ROI set"""
         with self.roi_lock:
-            if frame is None:
-                self._rois = {}
+            if key is None:
+                self.__rois = {}
+            elif frame is None:
+                del self.__rois[key]
             else:
-                del self._rois[frame]
+                del self.__rois[key][frame]
             self._listeners.notify("roi")
 
     @property
@@ -425,27 +447,53 @@ class Stack:
             return self._n_frames
 
 
-class RoiSet:
-    ROI_TYPE_RAW = 'raw'
-    ROI_TYPE_RECT = 'rect'
+class RoiCollection:
+    IDX_TYPE = 0
+    IDX_VERSION = 1
 
-    def __init__(self, roi_arr, type_=ROI_TYPE_RECT):
-
-        # Change ROI into index array
-        if type_ == RoiSet.ROI_TYPE_RECT:
-            self._roi_arr = roi_arr
-
-        elif type_ == RoiSet.ROI_TYPE_RAW:
-            self._roi_arr = roi_arr
-
+    def __init__(self, key=None, type_=None, version=None,
+                 parameters=None, name=None, color=None):
+        if key is None and isinstance(type_, str) and isinstance(version, str):
+            self.__key = (type_, version)
+        elif isinstance(key, tuple) and len(key) == 2 and \
+                isinstance(key[RoiCollection.IDX_TYPE], str) and \
+                isinstance(key[RoiCollection.IDX_VERSION], str):
+            self.__key = key
         else:
-            raise ValueError("Unknown ROI type: {}", type_, file=sys.stderr)
+            raise TypeError("Invalid ROI type identifier given.")
+
+        self.parameters = None
+        self.name = None
+        self.color = None
+        self.__rois = defaultdict(dict)
+
+
+    @property
+    def key(self):
+        return self.__key
+
+    @property
+    def type(self):
+        return self.__key[RoiCollection.IDX_TYPE]
+
+    @property
+    def version(self):
+        return self.__key[RoiCollection.IDX_VERSION]
+
+    def __len__(self):
+        return self.__rois.__len__()
+
+    def __contains__(self, k):
+        return self.__rois.__contains__(k)
+
+    def __setitem__(self, k, v):
+        self.__rois.__setitem__(k, v)
+
+    def __getitem__(self, k):
+        return self.__rois.__getitem__(k)
+
+    def __delitem(self, k):
+        self.__rois.__delitem__(k)
 
     def __iter__(self):
-        return self._roi_arr.__iter__()
-
-    def __getitem__(self, key):
-        try:
-            return self._roi_arr[key]
-        except IndexError:
-            return None
+        return self.__rois.__iter__()

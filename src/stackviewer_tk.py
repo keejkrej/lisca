@@ -476,19 +476,28 @@ class StackViewer:
         self.canvas.delete("roi")
 
         # If there are no ROIs to draw, we’re done here
-        if not self.show_rois_var.get() or self.stack.rois is None:
+        if not self.show_rois_var.get() or not self.stack.rois:
             return
 
-        if self.i_frame in self.stack.rois:
-            roi_key = self.i_frame
-        elif Ellipsis in self.stack.rois:
-            roi_key = Ellipsis
-        else:
-            return
-        rois = self.stack.get_rois(frame=roi_key)
-        for roi in rois:
-            self.canvas.create_polygon(*roi.corners[:, ::-1].flat,
-                                       fill="", outline="yellow", tags="roi")
+        for roi_col in self.stack.rois.values():
+            rois = None
+            try:
+                rois = roi_col[self.i_frame]
+            except KeyError:
+                try:
+                    rois = roi_col[Ellipsis]
+                except KeyError:
+                    pass
+            if rois is None:
+                continue
+
+            color = roi_col.color
+            if color is None:
+                color = "yellow"
+
+            for roi in rois:
+                self.canvas.create_polygon(*roi.corners[:, ::-1].flat,
+                                           fill="", outline=color, tags="roi")
 
     def _close(self, *_):
         if self.contrast_adjuster is not None:
@@ -498,7 +507,6 @@ class StackViewer:
 
 
 if __name__ == "__main__":
-
     # Check if an image file was given
     if len(sys.argv) > 1:
         fn = sys.argv[1]
@@ -510,4 +518,3 @@ if __name__ == "__main__":
     root.title("Test")
     StackViewer(root, fn)
     root.mainloop()
-

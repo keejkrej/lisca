@@ -744,7 +744,7 @@ class RoiAdjuster:
         props = self.props
         for r in self.span():
             roi_list.append(RectRoi(r, props))
-        self.stack.set_rois(roi_list, "rect")
+        self.stack.set_rois(roi_list)
         self._notify_listeners()
 
 
@@ -830,7 +830,7 @@ def span_rois(width, height, pad_x, pad_y, max_x, max_y, angle=0, pivot_x=0, piv
     :param canvas: (only for debugging) canvas for drawing debug information
     :type canvas: :py:class:`tkinter.Canvas`
     :return: the generated ROIs
-    :rtype: list of :py:class:`RectRoi`
+    :rtype: list of 4-to-2 :py:class:`np.array`
     """
     # Set up function for ROI rotation
     trans_fun = make_transformation(angle, x_new=pivot_x, y_new=pivot_y)
@@ -1105,7 +1105,7 @@ class RectRoi:
         ``RectRoi`` and should not be changed.
 
     ``label``
-        A freely usable description of the ROI, preferably as a string.
+        A freely usable description of the ROI as string.
 
     ``coords``
         The coordinates of all pixels within the ROI, represented as a
@@ -1135,7 +1135,14 @@ class RectRoi:
         of the ``coords``. Querying this value involves calculating
         the ``coords``.
     """
-    def __init__(self, polygon, props=None, inverted=False):
+    type_id = "rect"
+    version = "0.1"
+
+    @classmethod
+    def key(cls):
+        return (cls.type_id, cls.version)
+
+    def __init__(self, polygon, props=None, inverted=False, label=None):
         if inverted:
             self.corners = polygon.copy()
         else:
@@ -1143,7 +1150,7 @@ class RectRoi:
         self.props = props
         self._coords = None
         self._perimeter = None
-        self.label = None
+        self.label = label
 
     @property
     def coords(self):
