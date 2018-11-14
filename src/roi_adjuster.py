@@ -1,9 +1,9 @@
 from listener import Listeners
-import math
 import numpy as np
 import skimage.draw as skid
 import tkinter as tk
-import tkinter.ttk as ttk
+
+__version__ = "0.1"
 
 UNIT_px = 'px'
 UNIT_µm = 'µm'
@@ -1192,15 +1192,15 @@ class VisualRoiAdjuster:
         self.operation_has_pad_x = None
         self.operation_has_pad_y = None
 
-
     def smudge(self):
+        """Create mouse bindings for canvas"""
         self.canvas.bind("<Motion>", self.mouse_moved)
         self.canvas.bind("<Leave>", self.mouse_left)
         self.canvas.bind("<Button-1>", self.mouse_clicked)
         self.canvas.bind("<ButtonRelease-1>", self.mouse_released)
 
-
     def cleanup(self):
+        """Unbind mouse bindings of canvas"""
         # Prevent double execution
         if self.is_cleaning_up:
             return
@@ -1213,11 +1213,9 @@ class VisualRoiAdjuster:
         self.canvas.unbind("<ButtonRelease-1>")
         self.canvas.config(cursor="")
 
-
     def mouse_clicked(self, evt):
         self.is_mouse_down = True
         self.prev_mouse_position = np.array([[evt.x, evt.y]], dtype=np.float)
-
 
     def mouse_released(self, *_):
         self.is_mouse_down = False
@@ -1226,14 +1224,12 @@ class VisualRoiAdjuster:
         self.operation_has_pad_x = None
         self.operation_has_pad_y = None
 
-
     def mouse_left(self, *_):
         self.canvas.delete("roi_draft")
         self.canvas.config(cursor="")
 
-
     def mouse_moved(self, evt):
-        print(f"mouse moved to: ({evt.x :3d}|{evt.y :3d})") #DEBUG
+        #print(f"mouse moved to: ({evt.x :3d}|{evt.y :3d})") #DEBUG
 
         # Set up transformation into grid system
         props = self.ra.props
@@ -1357,8 +1353,6 @@ class VisualRoiAdjuster:
                 self.ra.offset_y += m_y
 
 
-
-
     def mouse_cursor_inside(self, position=None):
         """Set cursor appearance according to position inside grid site
 
@@ -1426,8 +1420,8 @@ class VisualRoiAdjuster:
         cross2 = trafo(cross2, inverse=True)
 
         # DEBUG
-        print(f"\tx: {is_inside_x}  {cross1[0,0]:4.0f} {cross1[1,0]:4.0f}")
-        print(f"\ty: {is_inside_y}  {cross1[0,1]:4.0f} {cross1[1,1]:4.0f}")
+        #print(f"\tx: {is_inside_x}  {cross1[0,0]:4.0f} {cross1[1,0]:4.0f}")
+        #print(f"\ty: {is_inside_y}  {cross1[0,1]:4.0f} {cross1[1,1]:4.0f}")
 
         # Get position-dependent color
         if is_inside_x and is_inside_y:

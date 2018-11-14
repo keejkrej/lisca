@@ -23,6 +23,7 @@ COL_SIZES = 2
 COL_SCALES = 3
 COLSPAN_CANVAS = 4
 
+
 class StackViewer:
     """
     Provides a GUI for displaying a TIFF stack.
@@ -98,7 +99,7 @@ class StackViewer:
         self.image_listener_id = None
         self.roi_listener_id = None
         self._update_queue = queue.Queue()
-        
+
         # Stack properties
         self.stack = None
         self.n_channels = None
@@ -118,7 +119,7 @@ class StackViewer:
         ## GUI elements:
         # Main frame
         self.mainframe = ttk.Frame(self.root, relief=tk.FLAT,
-            width=100, height=100)
+                                   width=100, height=100)
         self.mainframe.pack(fill=tk.BOTH, expand=tk.YES)
         self.mainframe.columnconfigure(COL_SCALES, weight=1)
         self.mainframe.rowconfigure(ROW_CANVAS, weight=1)
@@ -128,36 +129,41 @@ class StackViewer:
         tempframe.grid(row=ROW_HEADER, column=0, columnspan=COLSPAN_CANVAS)
 
         self.contrast_button = ttk.Button(tempframe, text="Contrast",
-            command=self.open_contrast_adjuster)
+                                          command=self.open_contrast_adjuster)
         self.contrast_button.pack(side=tk.LEFT)
         self.adjustment_button = ttk.Button(tempframe, text="Adjust ROIs",
-            command=self.toggle_roi_adjustment, state=tk.NORMAL)
+                                            command=self.toggle_roi_adjustment,
+                                            state=tk.NORMAL)
         self.adjustment_button.pack(side=tk.LEFT)
         self.open_button = ttk.Button(tempframe, text="Browse...",
-            command=self.open_stack, state=tk.NORMAL)
+                                      command=self.open_stack, state=tk.NORMAL)
         self.open_button.pack(side=tk.LEFT)
         self.label = ttk.Label(tempframe, text="")
         self.label.pack(side=tk.LEFT)
 
         # Canvas
         self.frame_canvas = ttk.Frame(self.mainframe)
-        self.frame_canvas.grid(row=ROW_CANVAS, column=0, columnspan=COLSPAN_CANVAS)
+        self.frame_canvas.grid(row=ROW_CANVAS, column=0,
+                               columnspan=COLSPAN_CANVAS)
         self.frame_canvas.columnconfigure(0, weight=1)
         self.frame_canvas.rowconfigure(0, weight=1)
 
-        self.canvas = tk.Canvas(self.frame_canvas, width=100, height=100,
-            borderwidth=0,
-            highlightthickness=0, background="white")
+        self.canvas = tk.Canvas(self.frame_canvas,
+                                width=100, height=100,
+                                borderwidth=0, highlightthickness=0,
+                                background="white")
         self.canvas.grid(row=0, column=0, sticky="NESW")
 
         self.scroll_canvas_horiz = ttk.Scrollbar(self.frame_canvas,
-            orient=tk.HORIZONTAL, command=self.canvas.xview)
+                                                 orient=tk.HORIZONTAL,
+                                                 command=self.canvas.xview)
         self.scroll_canvas_vert = ttk.Scrollbar(self.frame_canvas,
-            orient=tk.VERTICAL, command=self.canvas.yview)
+                                                orient=tk.VERTICAL,
+                                                command=self.canvas.yview)
 
         self.canvas.config(scrollregion=self.canvas.bbox(tk.ALL),
-            xscrollcommand=self.scroll_canvas_horiz.set,
-            yscrollcommand=self.scroll_canvas_vert.set)
+                           xscrollcommand=self.scroll_canvas_horiz.set,
+                           yscrollcommand=self.scroll_canvas_vert.set)
         self.canvas.bind("<Configure>", self.update_scrollbars)
 
         # Channel control elements
@@ -169,8 +175,9 @@ class StackViewer:
                                       from_=1,
                                       resolution=1,
                                      )
-        self.lbl_channel = ttk.Label(self.mainframe, text="Channel:",
-            anchor=tk.W)
+        self.lbl_channel = ttk.Label(self.mainframe,
+                                     text="Channel:",
+                                     anchor=tk.W)
         self.entry_channel = tk.Spinbox(
                                        self.mainframe,
                                        width=3,
@@ -218,7 +225,7 @@ class StackViewer:
     def _update(self):
         """
         Execute jobs in queue.
-        
+
         Call this method only from whithin the Tkinter main thread.
         """
         while True:
@@ -232,7 +239,7 @@ class StackViewer:
     def schedule(self, func, *args, **kwargs):
         """
         Feed new job into queue.
-        
+
         Use this function to change the GUI from another thread.
         """
         self._update_queue.put((func, args, kwargs))
@@ -273,8 +280,10 @@ class StackViewer:
         self.stack = s
         self.img = None
         self._update_stack_properties()
-        self.image_listener_id = self.stack.add_listener(lambda: self.schedule(self._update_stack_properties), "image")
-        self.roi_listener_id = self.stack.add_listener(lambda: self.schedule(self.draw_rois), "roi")
+        self.image_listener_id = self.stack.add_listener(
+                lambda: self.schedule(self._update_stack_properties), "image")
+        self.roi_listener_id = self.stack.add_listener(
+                lambda: self.schedule(self.draw_rois), "roi")
 
 
     def _show_img(self):
@@ -284,11 +293,11 @@ class StackViewer:
             convert_fcn = self.contrast_adjuster.convert
 
         self.img = self.stack.get_frame_tk(channel=self.i_channel,
-            frame=self.i_frame, convert_fcn=convert_fcn)
-
+                                           frame=self.i_frame,
+                                           convert_fcn=convert_fcn)
         self.canvas.delete("img")
         self.canvas.create_image(0, 0, anchor=tk.NW,
-            image=self.img, tags=("img",))
+                                 image=self.img, tags=("img",))
         self.canvas.tag_lower("img")
         self.draw_rois()
 
@@ -317,14 +326,14 @@ class StackViewer:
         else:
             self.scale_channel['to'] = self.n_channels
             self.scale_channel.grid(row=ROW_CHANNEL_CONTROL,
-                column=COL_SCALES, sticky=tk.W+tk.E)
+                                    column=COL_SCALES, sticky=tk.W+tk.E)
             self.lbl_channel.grid(row=ROW_CHANNEL_CONTROL,
-                column=COL_LABELS, sticky=tk.W)
+                                  column=COL_LABELS, sticky=tk.W)
             self.lbl_channel_size['text'] = "/{:d}".format(self.n_channels)
             self.entry_channel.grid(row=ROW_CHANNEL_CONTROL,
-                column=COL_ENTRIES, sticky=tk.W)
+                                    column=COL_ENTRIES, sticky=tk.W)
             self.lbl_channel_size.grid(row=ROW_CHANNEL_CONTROL,
-                column=COL_SIZES, sticky=tk.W)
+                                       column=COL_SIZES, sticky=tk.W)
 
         # GUI elements corresponding to frame
         if self.n_frames == 1:
@@ -335,14 +344,14 @@ class StackViewer:
         else:
             self.scale_frame['to'] = self.n_frames
             self.scale_frame.grid(row=ROW_FRAME_CONTROL, column=COL_SCALES,
-                sticky=tk.W+tk.E)
+                                  sticky=tk.W+tk.E)
             self.lbl_frame.grid(row=ROW_FRAME_CONTROL, column=COL_LABELS,
-                sticky=tk.W)
+                                sticky=tk.W)
             self.lbl_frame_size['text'] = "/{:d}".format(self.n_frames)
             self.entry_frame.grid(row=ROW_FRAME_CONTROL, column=COL_ENTRIES,
-                sticky=tk.W)
+                                  sticky=tk.W)
             self.lbl_frame_size.grid(row=ROW_FRAME_CONTROL,
-                column=COL_SIZES, sticky=tk.W)
+                                     column=COL_SIZES, sticky=tk.W)
 
 
     def _change_stack_position(self, i_channel=None, i_frame=None):
@@ -363,22 +372,18 @@ class StackViewer:
         if i_frame is not None and i_frame != self.i_frame:
             self.i_frame = i_frame
             isChanged = True
-
         if isChanged or self.img is None:
             self._show_img()
-
 
     def _i_channel_changed(self, *_):
         """Callback for channel variable"""
         i_channel = self.i_channel_var.get() - 1
         self._change_stack_position(i_channel=i_channel)
 
-
     def _i_frame_changed(self, *_):
         """Callback for frame variable"""
         i_frame = self.i_frame_var.get() - 1
         self._change_stack_position(i_frame=i_frame)
-
 
     def toggle_roi_adjustment(self, *_):
         """Callback of ROI adjustment button."""
@@ -386,7 +391,6 @@ class StackViewer:
             self.stop_roi_adjustment()
         else:
             self.start_roi_adjustment()
-
 
     def start_roi_adjustment(self, *_):
         """Start ROI adjustment"""
@@ -396,7 +400,6 @@ class StackViewer:
             self.roi_adjuster.start_adjustment()
         self.roi_adjustment_state = True
 
-
     def stop_roi_adjustment(self, *_):
         """Finish or abort ROI adjustment"""
         if hasattr(self.roi_adjuster, 'stop_adjustment'):
@@ -404,12 +407,10 @@ class StackViewer:
         self.roi_adjustment_state = False
         self.forget_roi_adjuster()
 
-
     def notify_roi_adjustment_finished(self, *_):
         """Notify :py:class:`StackViewer` that ROI adjustment is finished"""
         self.roi_adjustment_state = False
         self.forget_roi_adjuster()
-
 
     def forget_roi_adjuster(self, *_):
         """Close roi adjuster."""
@@ -419,7 +420,6 @@ class StackViewer:
             if hasattr(self.roi_adjuster, 'close'):
                 self.roi_adjuster.close()
             self.roi_adjuster = None
-
 
     def update_scrollbars(self, *_):
         """Update the settings of the scrollbars around the canvas"""
@@ -450,11 +450,10 @@ class StackViewer:
         else:
             self.scroll_canvas_vert.grid_forget()
 
-
     def canvas_bbox(self):
         """
         Get bounding box size of image in canvas.
-        
+
         :return: Canvas height and canvas width, in pixels
         :rtype: tuple ``(width, height)``"""
         cbb = self.canvas.bbox("img")
@@ -464,14 +463,12 @@ class StackViewer:
         canvas_height = cbb[3] - cbb[1]
         return canvas_width, canvas_height
 
-
     def open_contrast_adjuster(self, *_):
         """Callback for opening a :py:class:`ContrastAdjuster` frame."""
         if self.contrast_adjuster is None:
             self.contrast_adjuster = ContrastAdjuster(self)
         else:
             self.contrast_adjuster.get_focus()
-
 
     def draw_rois(self, *_):
         """Draw the ROIs in the current frame."""
@@ -488,10 +485,10 @@ class StackViewer:
             roi_key = Ellipsis
         else:
             return
-
         rois = self.stack.get_rois(frame=roi_key)
         for roi in rois:
-            self.canvas.create_polygon(*roi.corners[:,::-1].flat, fill="", outline="yellow", tags="roi")
+            self.canvas.create_polygon(*roi.corners[:, ::-1].flat,
+                                       fill="", outline="yellow", tags="roi")
 
     def _close(self, *_):
         if self.contrast_adjuster is not None:

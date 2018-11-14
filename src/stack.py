@@ -1,17 +1,14 @@
 #! /usr/bin/env python3
-import random
 import re
-import string
 import tempfile
 import threading
-import warnings
+import sys
 import xml.etree.ElementTree as ET
 
 import numpy as np
 import tifffile
 import PIL.Image as pilimg
 import PIL.ImageTk as piltk
-import skimage.draw as skid
 
 from listener import Listeners
 
@@ -104,7 +101,7 @@ class Stack:
                                             self._width))
                 for i in range(self._n_images):
                     ch, fr = self.convert_position(image=i)
-                    pages[i].asarray(out=self.img[ch,fr,:,:])
+                    pages[i].asarray(out=self.img[ch, fr, :, :])
 
             except Exception as e:
                 self._clear_state()
@@ -117,7 +114,6 @@ class Stack:
 
                 self._listeners.notify("image")
 
-
     def close(self):
         """Close the TIFF file."""
         with self.image_lock:
@@ -125,7 +121,6 @@ class Stack:
             self._tmpfile.close()
             self._tmpfile = None
             self._clear_state()
-
 
     def _parse_imagej_tags(self, desc):
         """Read stack dimensions from ImageJ’s TIFF description tag."""
@@ -145,7 +140,7 @@ class Stack:
             n_slices = int(m.group(1))
             if self._n_frames == 1 and n_slices > 1:
                 self._n_frames = n_slices
-            elif n_frames > 1:
+            elif self._n_frames > 1:
                 raise ValueError("Bad image format: multiple slices and frames detected.")
 
         # Get number of channels in stack
@@ -194,7 +189,7 @@ class Stack:
             raise ValueError("No 'SizeT' attribute found in OME description.")
         try:
             sizeT = int(sizeT)
-        except:
+        except Exception:
             raise ValueError("Bad 'SizeT' value in OME description.")
         if sizeT < 1:
             raise ValueError("Non-positive 'SizeT' value in OME description.")
@@ -206,7 +201,7 @@ class Stack:
             raise ValueError("No 'SizeC' attribute found in OME description.")
         try:
             sizeC = int(sizeC)
-        except:
+        except Exception:
             raise ValueError("Bad 'SizeC' value in OME description.")
         if sizeC < 1:
             raise ValueError("Non-positive 'SizeC' value in OME description.")
@@ -218,7 +213,7 @@ class Stack:
             raise ValueError("No 'SizeZ' attribute found in OME description.")
         try:
             sizeZ = int(sizeZ)
-        except:
+        except Exception:
             raise ValueError("Bad 'SizeZ' value in OME description.")
         if sizeZ < 1:
             raise ValueError("Non-positive 'SizeZ' value in OME description.")
@@ -242,7 +237,7 @@ class Stack:
     def convert_position(self, channel=None, frame=None, image=None):
         """
         Convert stack position between (channel, frame) and image.
-        
+
         Either give "channel" and "frame" to obtain the corresponding
         image index, or give "image" to obtain the corresponding indices
         of channel and frame as tuple.
@@ -284,18 +279,15 @@ class Stack:
             else:
                 raise NotImplementedError(f"Dimension order '{self._order}' not implemented yet.")
 
-
     def get_image(self, channel, frame):
         """Get a numpy array of a stack position."""
         with self.image_lock:
             return self.img[channel, frame, :, :]
 
-
     def get_image_copy(self, channel, frame):
         """Get a copy of a numpy array of a stack position."""
         with self.image_lock:
             return self.img[channel, frame, :, :].copy()
-
 
     def get_frame_tk(self, channel, frame, convert_fcn=None):
         """
@@ -326,30 +318,22 @@ class Stack:
                 a16 = self.get_image(channel, frame)
                 a8 = np.empty(a16.shape, dtype=np.uint8)
                 np.floor_divide(a16, 256, out=a8)
-                #a16 = a16 - a16.min()
-                #a16 = a16 / a16.max() * 255
-                #np.floor_divide(a16, 255, out=a8)
-                #np.true_divide(a16, 255, out=a8, casting='unsafe')
             else:
                 raise ValueError(f"Illegal image mode: {self._mode}")
             return piltk.PhotoImage(pilimg.fromarray(a8, mode='L'))
-
 
     def clear_info(self):
         """Clear the image information"""
         with self.info_lock:
             self._info = {}
 
-
     def update_info(self, name, value):
         with self.info_lock:
             self._info[name] = value
 
-
     def get_info(self, name):
         with self.info_lock:
             return self._info.get(name)
-
 
     def stack_info(self):
         """Print stack info. Only for debugging."""
@@ -361,16 +345,13 @@ class Stack:
             print("n_channels: " + str(self._n_channels))
             print("n_frames: " + str(self._n_frames))
 
-
     def add_listener(self, fun, kind=None):
         """Register a listener to stack changes."""
         return self._listeners.register(fun, kind)
 
-
     def delete_listener(self, lid):
         """Un-register a listener."""
         self._listeners.delete(lid)
-
 
     def set_rois(self, rois, type_, frame=Ellipsis):
         """Set the ROI set of the stack.
@@ -385,17 +366,14 @@ class Stack:
             self._rois[frame] = RoiSet(rois, type_)
             self._listeners.notify("roi")
 
-
     @property
     def rois(self):
         with self.roi_lock:
             return self._rois
 
-
     def get_rois(self, frame=None):
         with self.roi_lock:
             return self._rois.get(frame)
-
 
     def clear_rois(self, frame=None):
         """Delete the current ROI set"""
@@ -406,48 +384,40 @@ class Stack:
                 del self._rois[frame]
             self._listeners.notify("roi")
 
-
     @property
     def path(self):
         with self.image_lock:
             return self._path
-
 
     @property
     def mode(self):
         with self.image_lock:
             return self._mode
 
-
     @property
     def order(self):
         with self.image_lock:
             return self._order
-
 
     @property
     def width(self):
         with self.image_lock:
             return self._width
 
-
     @property
     def height(self):
         with self.image_lock:
             return self._height
-
 
     @property
     def n_images(self):
         with self.image_lock:
             return self._n_images
 
-
     @property
     def n_channels(self):
         with self.image_lock:
             return self._n_channels
-
 
     @property
     def n_frames(self):
