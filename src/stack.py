@@ -365,10 +365,6 @@ class Stack:
 
         For details, see :py:class:`RoiCollection`.
         """
-        # DEBUG print traceback
-        print(f"\n[Stack.set_rois] Set {len(rois)} ROIs at frame [{frame}]")
-#        traceback.print_stack()
-#        print()
         cleared_keys = set()
         with self.roi_lock:
             for roi in rois:
@@ -395,13 +391,7 @@ class Stack:
 
     @property
     def rois(self):
-#        # DEBUG print traceback
-#        print("\n[Stack.rois]")
-#        traceback.print_stack()
         with self.roi_lock:
-            #print(f"[Stack.rois]: self.__rois = {self.__rois}") #DEBUG
-            self.print_rois() #DEBUG
-            print() #DEBUG
             return self.__rois
 
     def get_rois(self, key=None, frame=None):
@@ -510,7 +500,6 @@ class RoiCollection:
         return self.__rois.__contains__(frame)
 
     def set(self, frame, roi):
-        print(f"[RoiCollection.set] Setting at frame '{frame}'") #DEBUG
         if isinstance(roi, list):
             self.__rois[frame] = roi
         else:
@@ -523,10 +512,8 @@ class RoiCollection:
             self.__rois[frame].extend(roi)
         else:
             self.__rois[frame].append(roi)
-        print(f"[RoiCollection.add] Added to frame '{frame}'; has now {len(self.__rois[frame])} ROIs.") #DEBUG
 
     def __getitem__(self, frame):
-        print(f"[RoiCollection.__getitem__] Getting from frame '{frame}'") #DEBUG
         return self.__rois.get(frame)
 
     def __delitem__(self, frame):

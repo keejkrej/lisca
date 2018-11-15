@@ -480,7 +480,6 @@ class StackViewer:
         if not self.show_rois_var.get() or not roi_collections:
             return
 
-        print(f"[StackViewer.draw_rois] roi_collections = {roi_collections}") #DEBUG
         for roi_col in roi_collections.values():
             rois = None
             try:
@@ -495,7 +494,6 @@ class StackViewer:
             if rois is None:
                 continue
 
-            print(f"[StackViewer.draw_rois] Found {len(rois)} ROIs") #DEBUG
             color = roi_col.color
             if color is None:
                 color = "yellow"
