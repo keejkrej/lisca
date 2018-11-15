@@ -3,7 +3,7 @@ from collections import defaultdict
 import re
 import tempfile
 import threading
-import sys
+import traceback
 import xml.etree.ElementTree as ET
 
 import numpy as np
@@ -354,7 +354,7 @@ class Stack:
         """Un-register a listener."""
         self._listeners.delete(lid)
 
-    def set_rois(self, rois, frame=Ellipsis):
+    def set_rois(self, rois, frame=Ellipsis, replace=False):
         """Set the ROI set of the stack.
 
         :param rois: The ROIs to be set
@@ -365,20 +365,43 @@ class Stack:
 
         For details, see :py:class:`RoiCollection`.
         """
+        # DEBUG print traceback
+        print(f"\n[Stack.set_rois] Set {len(rois)} ROIs at frame [{frame}]")
+#        traceback.print_stack()
+#        print()
+        cleared_keys = set()
         with self.roi_lock:
             for roi in rois:
                 key = roi.key()
-                if key not in self.__rois:
-                    try:
-                        self.__rois[key][frame] = rois
-                    except KeyError:
-                        self.__rois[key] = RoiCollection(key)
-                        self.__rois[key][frame] = rois
+                try:
+                    if replace and key not in cleared_keys:
+                        cleared_keys.add(key)
+                        if frame in self.__rois[key]:
+                            del self.__rois[key][frame]
+                    self.__rois[key].add(frame, roi)
+                except KeyError:
+                    self.__rois[key] = RoiCollection(key)
+                    self.__rois[key].set(frame, roi)
             self._listeners.notify("roi")
+
+    def print_rois(self):
+        """Nice printout of ROIs. Only for DEBUGging."""
+        prefix = "[Stack.print_rois]"
+        for k, v in self.__rois.items():
+            print(f"{prefix} ROI type '{k}' has {len(v)} frame(s)")
+            for frame, rois in v.items():
+                print(f"{prefix}\t frame '{frame}' has {len(rois)} ROIs")
+                #print(rois)
 
     @property
     def rois(self):
+#        # DEBUG print traceback
+#        print("\n[Stack.rois]")
+#        traceback.print_stack()
         with self.roi_lock:
+            #print(f"[Stack.rois]: self.__rois = {self.__rois}") #DEBUG
+            self.print_rois() #DEBUG
+            print() #DEBUG
             return self.__rois
 
     def get_rois(self, key=None, frame=None):
@@ -465,7 +488,7 @@ class RoiCollection:
         self.parameters = None
         self.name = None
         self.color = None
-        self.__rois = defaultdict(dict)
+        self.__rois = {}
 
 
     @property
@@ -483,17 +506,40 @@ class RoiCollection:
     def __len__(self):
         return self.__rois.__len__()
 
-    def __contains__(self, k):
-        return self.__rois.__contains__(k)
+    def __contains__(self, frame):
+        return self.__rois.__contains__(frame)
 
-    def __setitem__(self, k, v):
-        self.__rois.__setitem__(k, v)
+    def set(self, frame, roi):
+        print(f"[RoiCollection.set] Setting at frame '{frame}'") #DEBUG
+        if isinstance(roi, list):
+            self.__rois[frame] = roi
+        else:
+            self.__rois[frame] = [roi]
 
-    def __getitem__(self, k):
-        return self.__rois.__getitem__(k)
+    def add(self, frame, roi):
+        if frame not in self:
+            self.set(frame, roi)
+        if isinstance(roi, list):
+            self.__rois[frame].extend(roi)
+        else:
+            self.__rois[frame].append(roi)
+        print(f"[RoiCollection.add] Added to frame '{frame}'; has now {len(self.__rois[frame])} ROIs.") #DEBUG
 
-    def __delitem(self, k):
-        self.__rois.__delitem__(k)
+    def __getitem__(self, frame):
+        print(f"[RoiCollection.__getitem__] Getting from frame '{frame}'") #DEBUG
+        return self.__rois.get(frame)
+
+    def __delitem__(self, frame):
+        self.__rois.__delitem__(frame)
 
     def __iter__(self):
         return self.__rois.__iter__()
+
+    def items(self):
+        return self.__rois.items()
+
+    def frames(self):
+        return self.__rois.keys()
+
+    def rois(self):
+        return self.__rois.values()

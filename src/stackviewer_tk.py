@@ -476,21 +476,26 @@ class StackViewer:
         self.canvas.delete("roi")
 
         # If there are no ROIs to draw, we’re done here
-        if not self.show_rois_var.get() or not self.stack.rois:
+        roi_collections = self.stack.rois
+        if not self.show_rois_var.get() or not roi_collections:
             return
 
-        for roi_col in self.stack.rois.values():
+        print(f"[StackViewer.draw_rois] roi_collections = {roi_collections}") #DEBUG
+        for roi_col in roi_collections.values():
             rois = None
             try:
                 rois = roi_col[self.i_frame]
             except KeyError:
+                rois = None
+            if rois is None:
                 try:
                     rois = roi_col[Ellipsis]
                 except KeyError:
-                    pass
+                    rois = None
             if rois is None:
                 continue
 
+            print(f"[StackViewer.draw_rois] Found {len(rois)} ROIs") #DEBUG
             color = roi_col.color
             if color is None:
                 color = "yellow"

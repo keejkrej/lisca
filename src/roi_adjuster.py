@@ -744,7 +744,8 @@ class RoiAdjuster:
         props = self.props
         for r in self.span():
             roi_list.append(RectRoi(r, props))
-        self.stack.set_rois(roi_list)
+        print(f"[RoiAduster.update_rois] Setting {len(roi_list)} ROIs") #DEBUG
+        self.stack.set_rois(roi_list, replace=True)
         self._notify_listeners()
 
 
