@@ -1,9 +1,7 @@
 #! /usr/bin/env python3
-from collections import defaultdict
 import re
 import tempfile
 import threading
-import traceback
 import xml.etree.ElementTree as ET
 
 import numpy as np
@@ -64,11 +62,9 @@ class Stack:
 
     def load(self, path):
         """Load a stack from a path."""
-        with self.image_lock:
-            try:
-                # Open image file
-                self._path = path
-                tiff = tifffile.TiffFile(self._path)
+        self._path = path
+        try:
+            with self.image_lock, tifffile.TiffFile(self._path) as tiff:
                 pages = tiff.pages
                 if not pages:
                     raise ValueError(f"Cannot open file '{self._path}': No pages found in TIFF.")
@@ -89,7 +85,10 @@ class Stack:
                 elif page0.is_ome:
                     self._parse_ome(description)
                 else:
-                    raise TypeError("Unknown image type.")
+                    # If TIFF type is not known, show as 1D stack
+                    print("Unknown image type.")
+                    self._nchannels = 1
+                    self._n_frames = self._n_images
 
                 # Copy stack to numpy array in temporary file
                 self._tmpfile = tempfile.TemporaryFile()
@@ -104,16 +103,13 @@ class Stack:
                     ch, fr = self.convert_position(image=i)
                     pages[i].asarray(out=self.img[ch, fr, :, :])
 
-            except Exception as e:
-                self._clear_state()
-                print(str(e))
-                raise
+        except Exception as e:
+            self._clear_state()
+            print(str(e))
+            raise
 
-            finally:
-                # Close TIFF image
-                tiff.close()
-
-                self._listeners.notify("image")
+        finally:
+            self._listeners.notify("image")
 
     def close(self):
         """Close the TIFF file."""
