@@ -1,21 +1,18 @@
 #! /usr/bin/env python3
-import numpy as np
-import scipy.interpolate as si
-import scipy.sparse as ssp
-import skimage.measure as meas
-import skimage.morphology as morph
-
-from segmenter.cornerfinder import CornerFinder
 from segmenter import tools
 
 my_id = "first_segmenter"
+
+
 def register(meta):
     meta.name = "Segment stack (old)"
     meta.id = my_id
     meta.run_dep = ("", "stack")
 
+
 def conf(*_, **__):
     pass
+
 
 def run(d, *_, **__):
     stack = d[""]["stack"]
@@ -24,5 +21,4 @@ def run(d, *_, **__):
         bg = tools.interpolate_background(frame)
         regions = tools.segment_frame(frame, bg)
         stack.set_rois(regions, "raw", iFr)
-        print("first_segmenter: {:4d} ROIs found in frame {:3d}".format(len(regions), iFr))
-
+        print(f"{my_id}: {len(regions) :4d} ROIs found in frame {iFr :3d}")

@@ -2,6 +2,7 @@
 import numpy as np
 np.seterr(invalid='raise') #DEBUG
 
+
 class CornerFinder:
     """
     Find the coordinates of the coordinates.
@@ -43,7 +44,7 @@ class CornerFinder:
 
         if indices:
             return cf.corner_idcs
-        return cf.contour[cf.corner_idcs,:]
+        return cf.contour[cf.corner_idcs, :]
 
 
     def make_dist(self):
@@ -54,7 +55,7 @@ class CornerFinder:
         """
         self.dist = np.empty([self.nNodes, self.nNodes], dtype=np.float)
         for i in range(self.nNodes-1):
-            d = self.contour[i+1:,:] - self.contour[i,:]
+            d = self.contour[i+1:, :] - self.contour[i, :]
             if self.metric == "manhattan":
                 d = np.abs(d).sum(axis=1)
             elif self.metric == "euclidean":
@@ -62,9 +63,9 @@ class CornerFinder:
             else:
                 raise ValueError("Unknown metric: {}".format(self.metric))
 
-            self.dist[i,i+1:] = d
-            self.dist[i+1:,i] = d
-            self.dist[i,i] = 0.
+            self.dist[i, i+1:] = d
+            self.dist[i+1:, i] = d
+            self.dist[i, i] = 0.
 
 
     def find_nearest_node(self, i, mode="free", allow=None):
@@ -101,7 +102,7 @@ class CornerFinder:
             idx = (self.chain['prev'] >= 0) & (self.chain['next'] >= 0)
         else:
             raise ValueError("Unknown mode: {}".format(mode))
-        
+
         # Exclude invalid edges
         idx[i] = False
         idx[~np.isfinite(self.dist[i])] = False
@@ -199,7 +200,7 @@ class CornerFinder:
         :return: A sorted array of indices
         :rtype: (M,)-shaped numpy array of dtype ``intp``
         """
-        while (self.chain[j0,None].view(dtype=np.intp) < 0).any():
+        while (self.chain[j0, None].view(dtype=np.intp) < 0).any():
             j0 += 1
         idcs = []
         i = self.chain[j0]['prev']
@@ -224,7 +225,9 @@ if __name__ == "__main__":
     import tkinter as tk
 
     # Set up test coordinates
-    coords = np.array([[2,2],[2,3],[2,4],[2,5],[2,6],[2,7],[3,7],[4,7],[5,7],[6,7],[7,7],[7,6],[8,6],[8,5],[8,4],[7,4],[7,3],[7,2],[6,2],[5,2],[4,2],[3,2]])
+    coords = np.array([[2,2], [2,3], [2,4], [2,5], [2,6], [2,7], [3,7], [4,7],
+                       [5,7], [6,7], [7,7], [7,6], [8,6], [8,5], [8,4], [7,4],
+                       [7,3], [7,2], [6,2], [5,2], [4,2], [3,2]])
 
     # Find the corners
     corners = CornerFinder.go(coords)
@@ -243,7 +246,7 @@ if __name__ == "__main__":
     canvas.create_polygon(*corners.flat, fill="", outline="black", tags="p")
     for c in coords:
         canvas.create_oval(c[0], c[1], c[0], c[1],
-            width=.5, fill="red", outline="red", tags="p")
+                           width=.5, fill="red", outline="red", tags="p")
     canvas.scale("p", 0, 0, 8, 8)
 
     root.mainloop()

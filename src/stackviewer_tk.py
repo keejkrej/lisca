@@ -4,7 +4,7 @@ from contrast import ContrastAdjuster
 from gui_tk import new_toplevel
 import os
 import queue
-import roi_adjuster
+from roi import RectRoi
 import stack
 import sys
 import tkinter as tk
@@ -395,7 +395,7 @@ class StackViewer:
     def start_roi_adjustment(self, *_):
         """Start ROI adjustment"""
         if self.roi_adjuster is None:
-            self.roi_adjuster = roi_adjuster.RoiAdjuster(self)
+            self.roi_adjuster = RectRoi.adjuster(self)
         if hasattr(self.roi_adjuster, 'start_adjustment'):
             self.roi_adjuster.start_adjustment()
         self.roi_adjustment_state = True

@@ -1,7 +1,6 @@
-from .contour import Contour
+from roi import ContourRoi
 import numpy as np
 import scipy.interpolate as si
-import scipy.sparse as ssp
 import skimage.measure as meas
 import skimage.morphology as morph
 
@@ -16,7 +15,13 @@ HIST_BREAK_WIDTH = 30
 HIST_THRESH = .5
 
 
-def interpolate_background(frame, n_tiles_horiz=N_TILES_HORIZ, n_tiles_vert=N_TILES_VERT, hist_n_bins=HIST_N_BINS, hist_break_width=HIST_BREAK_WIDTH, hist_thresh=HIST_THRESH, debug=False):
+def interpolate_background(frame,
+                           n_tiles_horiz=N_TILES_HORIZ,
+                           n_tiles_vert=N_TILES_VERT,
+                           hist_n_bins=HIST_N_BINS,
+                           hist_break_width=HIST_BREAK_WIDTH,
+                           hist_thresh=HIST_THRESH,
+                           debug=False):
     """
     Calculate an interpolated background by histogram.
 
@@ -75,7 +80,7 @@ def interpolate_background(frame, n_tiles_horiz=N_TILES_HORIZ, n_tiles_vert=N_TI
             px_vals = frame[tile_edges_vert[iRow]:tile_edges_vert[iRow+1],
                             tile_edges_horiz[iCol]:tile_edges_horiz[iCol+1]]
             if debug:
-                tile_median[iRow,iCol] = np.median(px_vals)
+                tile_median[iRow, iCol] = np.median(px_vals)
 
             while True:
                 # Find highest bin in histogram of tile values
@@ -83,14 +88,16 @@ def interpolate_background(frame, n_tiles_horiz=N_TILES_HORIZ, n_tiles_vert=N_TI
                 iMax = hist.argmax()
 
                 if debug:
-                    print("[{:1d},{:1d}] iMax={:2d}, hist_width={:.3f}".format(iRow, iCol, iMax, bin_edges[iMax+1] - bin_edges[iMax]))
+                    print("[{:1d},{:1d}] iMax={:2d}, hist_width={:.3f}".format(
+                            iRow, iCol, iMax,
+                            bin_edges[iMax+1] - bin_edges[iMax]))
 
                 if bin_edges[iMax+1] - bin_edges[iMax] <= hist_break_width:
                     # Bins are small enough
                     break
                 elif iMax > 0 and iMax < bin_edges.size-1 and \
-                         hist[iMax-1] > hist[iMax] * hist_thresh and \
-                         hist[iMax+1] > hist[iMax] * hist_thresh:
+                        hist[iMax-1] > hist[iMax] * hist_thresh and \
+                        hist[iMax+1] > hist[iMax] * hist_thresh:
                     # Highest bin is not "suspicious"
                     break
                 else:
@@ -98,17 +105,18 @@ def interpolate_background(frame, n_tiles_horiz=N_TILES_HORIZ, n_tiles_vert=N_TI
                     # most frequent values are concentrated in single bin.
                     # Reduce tile values to those in current bin
                     # and recalculate histogram
-                    px_vals = px_vals[ (px_vals >= bin_edges[iMax]) & (px_vals < bin_edges[iMax+1]) ]
+                    px_vals = px_vals[(px_vals >= bin_edges[iMax]) &
+                                      (px_vals < bin_edges[iMax+1])]
 
             #tile_values[iRow,iCol] = (bin_edges[iMax] + bin_edges[iMax+1]) / 2
-            tile_values[iRow,iCol] = np.median(px_vals)
+            tile_values[iRow, iCol] = np.median(px_vals)
 
     # Reconstruct background by 2D splines
     x_interp = np.array(range(n_px_cols))
     y_interp = np.array(range(n_px_rows))
     bg = si.RectBivariateSpline(tile_centers_horiz,
-            tile_centers_vert, tile_values.T, kx=3, ky=3) \
-            (x_interp, y_interp, grid=True).T
+                                tile_centers_vert, tile_values.T, kx=3, ky=3) \
+                                (x_interp, y_interp, grid=True).T
 
     if debug:
         ret = {}
@@ -140,18 +148,30 @@ def segment_frame(frame, bg, conn=2, cell_threshold=1.1):
 
     # Make mask
     mask = frame / bg >= cell_threshold
-    
+
     # Smoothen mask (first erode, then dilate with circle)
     mask = morph.binary_erosion(mask)
-    selem_dil = np.ones((5,5), dtype=np.bool)
-    selem_dil[0,0] = 0
-    selem_dil[0,-1] = 0
-    selem_dil[-1,0] = 0
-    selem_dil[-1,-1] = 0
+    selem_dil = np.ones((5, 5), dtype=np.bool)
+    selem_dil[0, 0] = 0
+    selem_dil[0, -1] = 0
+    selem_dil[-1, 0] = 0
+    selem_dil[-1, -1] = 0
     mask = morph.binary_dilation(mask, selem=selem_dil)
 
     # Find clusters
     mask = meas.label(mask, connectivity=conn, return_num=False)
-    regions = Contour.from_regionprops(meas.regionprops(mask), lazy=False)
+    regions = ContourRoi.from_regionprops(meas.regionprops(mask), lazy=False)
     return regions
 
+
+def get_regions(frame):
+    """Get regions with cells.
+
+    :param frame: the grayscale frame in which to find regions
+    :type: 2D numpy array
+    :return: regions found
+    :rtype: list of ContourRoi
+    """
+    bg = interpolate_background(frame)
+    regions = segment_frame(frame, bg)
+    return regions

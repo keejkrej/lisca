@@ -1,3 +1,4 @@
+from .base import Roi
 from listener import Listeners
 import numpy as np
 import skimage.draw as skid
@@ -24,10 +25,6 @@ POS_LEFT   = 0b1000
 POS_RIGHT  = 0b0100
 POS_TOP    = 0b0010
 POS_BOTTOM = 0b0001
-
-
-def new_roi_adjuster(sv):
-    return RoiAdjuster(sv)
 
 
 def float2str(f, var=None):
@@ -97,7 +94,7 @@ def flash_red(widget):
     widget.after(RED_FLASH_MS, lambda:widget.config(background="white"))
 
 
-class RoiAdjuster:
+class RectRoiGridAdjuster:
     def __init__(self, sv, props=None):
         # Get StackViewer-related content
         self.stack = sv.stack
@@ -260,9 +257,9 @@ class RoiAdjuster:
         self.update_roi_type()
 
         # Initialize visual ROI adjustment
-        vis_roi_adj = VisualRoiAdjuster(sv, self)
-        self.cleanup = vis_roi_adj.cleanup
-        vis_roi_adj.smudge()
+        vis_grid_adj = VisualRectRoiGridAdjuster(sv, self)
+        self.cleanup = vis_grid_adj.cleanup
+        vis_grid_adj.smudge()
 
 
     def close(self, *_):
@@ -755,7 +752,7 @@ class RoiAdjuster:
         is likely to result in a corrupted internal state.
 
         :param props: dictionary of desired grid parameters
-        :type props: dict, such as the :py:attr:`RoiAdjuster.props`
+        :type props: dict, such as the :py:attr:`RectRoiGridAdjuster.props`
         """
         width = props.get("width")
         if width is not None and width >= MIN_ROI_SIZE:
@@ -1081,7 +1078,7 @@ def make_limit_check(limits):
     return check
 
 
-class RectRoi:
+class RectRoi(Roi):
     """Holds information of a ROI.
 
     :param polygon: corner coordinates (in pixels) of the ROI
@@ -1137,6 +1134,7 @@ class RectRoi:
     """
     type_id = "rect"
     version = "0.1"
+    adjuster = RectRoiGridAdjuster
 
     @classmethod
     def key(cls):
@@ -1179,13 +1177,13 @@ class RectRoi:
         return self.coords[:,1]
 
 
-class VisualRoiAdjuster:
+class VisualRectRoiGridAdjuster:
     """Allow for interactive grid adjustment by mouse.
 
     :param sv: The stack viewer to connect
     :type: :py:class:`StackViewer`
     :param ra: The roi adjuster to connect
-    :type: :py:class:`RoiAdjuster`
+    :type: :py:class:`RectRoiGridAdjuster`
     """
     def __init__(self, sv, ra):
         self.sv = sv
