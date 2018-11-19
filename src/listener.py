@@ -14,7 +14,6 @@ class Listeners:
     def kinds(self):
         return self.__kinds
 
-
     def register(self, fun, kind=None):
         """
         Register a listener that will be notified on changes.
@@ -82,8 +81,7 @@ class Listeners:
         Else, only the listeners registered for event kind ``kind`` are notified.
         """
         with self.__lock:
-            for lid in list(self.__listeners.keys()):
-                listener = self.__listeners[lid]
+            for lid, listener in self.__listeners.items():
                 if kind is not None and kind not in listener["kind"]:
                     continue
                 try:
@@ -98,7 +96,7 @@ class Listeners:
         with self.__lock:
             if lid in self.__listeners:
                 del self.__listeners[lid]
-            elif debug:
+            elif self.debug:
                 print(f"Cannot delete listener: ID \"{lid}\" not found.")
 
     def clear(self):

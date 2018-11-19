@@ -351,7 +351,20 @@ class Stack:
         """Un-register a listener."""
         self._listeners.delete(lid)
 
-    def set_rois(self, rois, frame=Ellipsis, replace=False):
+    def _notify_roi_listeners(self, *_, **__):
+        """Convenience function for propagation of ROI changes"""
+        self._listeners.notify("roi")
+
+    def new_roi_collection(self, roi):
+        """Create a new RoiCollection"""
+        if isinstance(roi, RoiCollection):
+            with self.roi_lock:
+                roi.register_listener(self._notify_roi_listeners)
+                self.__rois[roi.key] = roi
+        else:
+            raise TypeError(f"Expected 'RoiCollection', got '{type(roi)}'")
+
+    def set_rois(self, rois, key=None, frame=Ellipsis, replace=False):
         """Set the ROI set of the stack.
 
         :param rois: The ROIs to be set
@@ -362,20 +375,20 @@ class Stack:
 
         For details, see :py:class:`RoiCollection`.
         """
-        cleared_keys = set()
+        # Infer ROI type key
+        if key is None:
+            for r in rois:
+                key = r.key()
+                break
+
         with self.roi_lock:
-            for roi in rois:
-                key = roi.key()
-                try:
-                    if replace and key not in cleared_keys:
-                        cleared_keys.add(key)
-                        if frame in self.__rois[key]:
-                            del self.__rois[key][frame]
-                    self.__rois[key].add(frame, roi)
-                except KeyError:
-                    self.__rois[key] = RoiCollection(key)
-                    self.__rois[key].set(frame, roi)
-            self._listeners.notify("roi")
+            if key not in self.__rois:
+                self.__rois[key] = RoiCollection(key)
+                self.__rois[key].register_listener(self._notify_roi_listeners)
+            if replace:
+                self.__rois[key][frame] = rois
+            else:
+                self.__rois[key].add(frame, rois)
 
     def print_rois(self):
         """Nice printout of ROIs. Only for DEBUGging."""
@@ -384,7 +397,7 @@ class Stack:
             print(f"{prefix} ROI type '{k}' has {len(v)} frame(s)")
             for frame, rois in v.items():
                 print(f"{prefix}\t frame '{frame}' has {len(rois)} ROIs")
-                #print(rois)
+                # print(rois) # DEBUG
 
     @property
     def rois(self):
@@ -414,7 +427,7 @@ class Stack:
                 del self.__rois[key]
             else:
                 del self.__rois[key][frame]
-            self._listeners.notify("roi")
+            self._notify_roi_listeners()
 
     @property
     def path(self):

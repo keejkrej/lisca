@@ -1,4 +1,5 @@
 from .base import Roi
+from .collection import RoiCollection
 from listener import Listeners
 import numpy as np
 import skimage.draw as skid
@@ -10,6 +11,8 @@ UNIT_px = 'px'
 UNIT_µm = 'µm'
 TYPE_RECT = 'rect'
 TYPE_SQUARE = 'square'
+TYPES = {TYPE_RECT, TYPE_SQUARE}
+GLOBAL_FRAME = Ellipsis
 
 PAD_COLUMN_SEP = 20
 RED_FLASH_MS = 300
@@ -97,7 +100,14 @@ def flash_red(widget):
 class RectRoiGridAdjuster:
     def __init__(self, sv, props=None):
         # Get StackViewer-related content
-        self.stack = sv.stack
+        stack = sv.stack
+        #self.stack = sv.stack
+        self.roicol = stack.get_rois(RectRoi.key())
+        if self.roicol is None:
+            self.roicol = RoiCollection(RectRoi.key(),
+                                        name="RectRoi",
+                                        color="yellow")
+            stack.new_roi_collection(self.roicol)
 
         # Define control/logic variables
         self.is_closing = False
@@ -112,27 +122,27 @@ class RectRoiGridAdjuster:
         self._height = 55
         self._pad_x = 82
         self._pad_y = 82
-        self._pivot_x = self.stack.width / 2
-        self._pivot_y = self.stack.height / 2
+        self._pivot_x = stack.width / 2
+        self._pivot_y = stack.height / 2
         self._angle = .5
-        self._max_x = self.stack.width - 1
-        self._max_y = self.stack.height - 1
+        self._max_x = stack.width - 1
+        self._max_y = stack.height - 1
+        self._type_roi = TYPE_SQUARE
+        if self._width != self._height or self._pad_x != self._pad_y:
+            self._type_roi = TYPE_RECT
 
         # Load grid properties from argument or from Stack
         if props is None:
             try:
-                roi_props = self.stack.get_rois(Ellipsis)[0].props
+                #roi_props = stack.get_rois(GLOBAL_FRAME)[0].props
+                #roi_props = stack.get_rois(RectRoi.key()).parameters
+                roi_props = self.roicol.parameters
             except (AttributeError, TypeError):
                 roi_props = None
             if roi_props is not None:
                 props = roi_props
         if props is not None:
             self._apply_props(props)
-
-        # Determine whether to use rectangular or square ROIs
-        init_roi_type = TYPE_SQUARE
-        if self._width != self._height or self._pad_x != self._pad_y:
-            init_roi_type = TYPE_RECT
 
         # Set up window
         self.root = tk.Toplevel(sv.root)
@@ -146,7 +156,7 @@ class RectRoiGridAdjuster:
         self.var_unit = tk.StringVar(self.root, value=UNIT_px)
         self.var_unit_px = tk.StringVar(self.root, value=1)
         self.var_unit_µm = tk.StringVar(self.root, value=1)
-        self.var_type_roi = tk.StringVar(self.root, value=init_roi_type)
+        self.var_type_roi = tk.StringVar(self.root, value=self._type_roi)
         self.var_offset_x = tk.StringVar(self.root, value=self._offset_x)
         self.var_offset_y = tk.StringVar(self.root, value=self._offset_y)
         self.var_width = tk.StringVar(self.root, value=self._width)
@@ -563,7 +573,7 @@ class RectRoiGridAdjuster:
 
     @roi_type.setter
     def roi_type(self, type_):
-        if type_ == TYPE_RECT or type_ == TYPE_SQUARE:
+        if type_ in TYPES:
             self.var_type_roi.set(type_)
         else:
             raise ValueError(f"Unknown ROI type: {type_}")
@@ -720,6 +730,7 @@ class RectRoiGridAdjuster:
                 "pivot_y": self._pivot_y,
                 "off_x":   self._offset_x,
                 "off_y":   self._offset_y,
+                "type":    self.roi_type,
             }
 
 
@@ -741,7 +752,9 @@ class RectRoiGridAdjuster:
         props = self.props
         for r in self.span():
             roi_list.append(RectRoi(r, props))
-        self.stack.set_rois(roi_list, replace=True)
+        #self.stack.set_rois(roi_list, replace=True)
+        self.roicol[GLOBAL_FRAME] = roi_list
+        self.roicol.parameters = self.props
         self._notify_listeners()
 
 
@@ -797,6 +810,10 @@ class RectRoiGridAdjuster:
         off_y = props.get("off_y")
         if off_y is not None:
             self._offset_y = off_y
+
+        type_ = props.get("type")
+        if type_ is not None:
+            self._type_roi = type_
 
 
 def span_rois(width, height, pad_x, pad_y, max_x, max_y, angle=0, pivot_x=0, pivot_y=0, off_x=0, off_y=0, canvas=None):
