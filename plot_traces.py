@@ -15,4 +15,5 @@ ax.set_ylabel("Fluorescence [a.u.]")
 ax.set_title(fn)
 
 plt.show(fig)
-fig.savefig(os.path.join("out", "intensity_{}.pdf".format(time.strftime("%Y%m%d-%H%M%S"))))
+
+fig.savefig(f"{os.path.splitext(fn)[0]}_{time.strftime('%Y%m%d-%H%M%S')}.pdf")
