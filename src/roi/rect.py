@@ -279,7 +279,6 @@ class RectRoiGridAdjuster:
         if self.is_closing:
             return
         self.is_closing = True
-        print("closing")
         self.root.destroy()
         self.cleanup()
 
