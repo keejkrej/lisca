@@ -1151,7 +1151,7 @@ class RectRoi(Roi):
     """
     type_id = "rect"
     version = "0.1"
-    adjuster = RectRoiGridAdjuster
+    Adjuster = RectRoiGridAdjuster
 
     @classmethod
     def key(cls):

@@ -116,6 +116,7 @@ def _load_module(name, path):
         # Memorize return data of kind "init"
         if r:
             m.set_ret("init", tuple(r.keys()))
+            #print(f"Return data of '{m.id}': {r}") #DEBUG
 
     # Return
     return return_meta, return_init_ret
@@ -811,7 +812,7 @@ class ModuleManager:
         """
         with self.data_lock:
             mod = self.modules[mod_id]
-            mod_ver = mod.version
+            mod_ver = mod.version # TODO: check for versions
             dep_list = mod.get_dep(kind)
 
             # DEBUG message

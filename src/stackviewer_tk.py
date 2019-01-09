@@ -7,6 +7,7 @@ import queue
 from roi import RectRoi
 import stack
 import sys
+from threading import Condition
 import tkinter as tk
 import tkinter.filedialog as tkfdlg
 import tkinter.ttk as ttk
@@ -93,6 +94,8 @@ class StackViewer:
         else:
             self.root = parent
         self.root.title("StackViewer")
+
+        self.closing_state = False
         self.root.bind("<Destroy>", self._close)
 
         self.contrast_adjuster = None
@@ -230,19 +233,45 @@ class StackViewer:
         """
         while True:
             try:
-                func, args, kwargs = self._update_queue.get(block=False)
+                func, args, kwargs, cv = self._update_queue.get(block=False)
             except queue.Empty:
                 break
-            self.root.after_idle(func, *args, **kwargs)
+
+            if cv is not None:
+                def sfunc(*args, **kwargs):
+                    nonlocal func, cv
+                    func(*args, **kwargs)
+                    with cv:
+                        cv.notify_all()
+            else:
+                sfunc = func
+
+            self.root.after_idle(sfunc, *args, **kwargs)
         self.root.after(40, self._update)
+
 
     def schedule(self, func, *args, **kwargs):
         """
         Feed new job into queue.
 
-        Use this function to change the GUI from another thread.
+        This function can be used to change the GUI from another thread.
+        See also :py:meth:`schedule_and_wait`.
         """
-        self._update_queue.put((func, args, kwargs))
+        self._update_queue.put((func, args, kwargs, None))
+
+
+    def schedule_and_wait(self, func, *args, **kwargs):
+        """
+        Feed new job into queue and wait until it is finished.
+
+        This function can be used to change the GUI from another thread.
+        See also :py:meth:`schedule`.
+        """
+        cv = Condition()
+        with cv:
+            self._update_queue.put((func, args, kwargs, cv))
+            cv.wait()
+
 
     def open_stack(self, fn=None):
         """
@@ -267,7 +296,7 @@ class StackViewer:
         self._set_stack(stack.Stack(fn))
 
     def set_stack(self, s):
-        self.schedule(self._set_stack, s)
+        self.schedule_and_wait(self._set_stack, s)
 
     def _set_stack(self, s):
         """Set the stack that is displayed."""
@@ -395,7 +424,7 @@ class StackViewer:
     def start_roi_adjustment(self, *_):
         """Start ROI adjustment"""
         if self.roi_adjuster is None:
-            self.roi_adjuster = RectRoi.adjuster(self)
+            self.roi_adjuster = RectRoi.Adjuster(self)
         if hasattr(self.roi_adjuster, 'start_adjustment'):
             self.roi_adjuster.start_adjustment()
         self.roi_adjustment_state = True
@@ -503,6 +532,10 @@ class StackViewer:
                                            fill="", outline=color, tags="roi")
 
     def _close(self, *_):
+        if self.closing_state:
+            return
+        self.closing_state = True
+
         if self.contrast_adjuster is not None:
             self.contrast_adjuster.close()
             self.contrast_adjuster = None
