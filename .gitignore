@@ -17,3 +17,4 @@ __pycache__/
 # Data relating to development/deployment
 out/
 res/
+temp/
