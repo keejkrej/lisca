@@ -1,6 +1,7 @@
 from .base import Roi
 from .collection import RoiCollection
 from listener import Listeners
+from threading import Condition
 import numpy as np
 import skimage.draw as skid
 import tkinter as tk
@@ -111,6 +112,7 @@ class RectRoiGridAdjuster:
 
         # Define control/logic variables
         self.is_closing = False
+        self.close_condition = Condition()
         self._listeners = Listeners(debug=True)
         self.unit_conv_fac = .6
 
@@ -279,6 +281,8 @@ class RectRoiGridAdjuster:
         if self.is_closing:
             return
         self.is_closing = True
+        with self.close_condition:
+            self.close_condition.notify_all()
         self.root.destroy()
         self.cleanup()
 

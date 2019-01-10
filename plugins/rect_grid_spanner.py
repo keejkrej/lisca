@@ -32,44 +32,6 @@ def run(d, *_, **__):
     adj = RectRoi.Adjuster(sv, props=params)
 
     # Wait until user has selected ROIs
-    cv = Condition()
-    with cv:
-        sv.schedule(_confirmation_dialog, sv.root, cv)
-        cv.wait()
+    with adj.close_condition:
+        adj.close_condition.wait()
 
-
-def _confirmation_dialog(root, cv):
-    """Block until user confirmation.
-
-    A confirmation dialog is displayed with a message requesting to
-    select ROIs and to click OK.
-    When the user clicks OK, the listeners to the condition ``cv`` are
-    notified, and this function returns.
-
-    :param root: The Tk root above which the dialog is to be displayed
-    :param cv: The ``threading.Condition`` whose listeners are notified
-    """
-    title = "PyAMA ROI grid"
-    message = "Please select ROIs for fluorescence readout\nand then click OK."
-
-    # Set up dialog window
-    dlg = tk.Toplevel(root)
-    dlg.title(title)
-
-    # Define window destroy function
-    bind_id = None
-
-    def close_fcn(*_):
-        dlg.unbind("<Destroy>", bind_id)
-        nonlocal cv
-        with cv:
-            cv.notify_all()
-    bind_id = dlg.bind("<Destroy>", close_fcn)
-
-    # Set up message label
-    lbl = tk.Label(dlg, text=message, justify=tk.LEFT)
-    lbl.pack(side=tk.TOP, fill=tk.Y, padx=10, pady=10)
-
-    # Set up OK button
-    btn = tk.Button(dlg, text="OK", command=dlg.destroy)
-    btn.pack(side=tk.TOP, fill=tk.Y, padx=30, pady=10, ipadx=30)
