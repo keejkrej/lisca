@@ -13,27 +13,16 @@ def register(meta):
     meta.id = my_id
 
     #meta.conf_dep = ("", "workflow_gui_tk")
-    meta.conf_ret = "_path"
+    #meta.conf_ret = "_path"
     meta.run_dep = (
             ("", "integrated_intensity"),
-            (my_id, "_path"),
+            #(my_id, "_path"),
         )
 
 
-def conf(d, *_, **__):
-    path = os.path.join(os.getcwd(), "out")
-
-    if not os.path.isdir(path):
-        try:
-            os.mkdir(path)
-        except Exception as e:
-            print("Cannot create directory: {}".format(e))
-
-    return {"_path": path}
-
-
 def run(d, *_, **__):
-    path = d[my_id]["_path"]
+    #path = d[my_id]["_path"]
+    path = get_out_path()
     for key, intensities in d[""]["integrated_intensity"].items():
         n_channels, n_frames = intensities.shape
         for iCh in range(n_channels):
@@ -49,4 +38,18 @@ def run(d, *_, **__):
                     time.strftime("%Y%m%d-%H%M%S"), ''.join(key), iCh+1))
             np.savetxt(outname, int_tab, fmt='%.7e', delimiter=',')
             print("Saved intensities to: {}".format(outname))
+
+
+def get_out_path():
+    """Determine path to save CSV files to"""
+    path = os.path.join(os.getcwd(), "out")
+
+    if not os.path.isdir(path):
+        try:
+            os.mkdir(path)
+        except Exception as e:
+            print("Cannot create directory: {}".format(e))
+            path = os.getcwd()
+    return path
+    
 
