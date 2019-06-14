@@ -161,6 +161,7 @@ class Stack:
             raise ValueError(f"Only images with one slice supported; found {sizeZ} slices.")
 
         # Check for inconsistent OME metadata
+        # (and try to fix inconsistency)
         if sizeT * sizeC != self._n_images:
             sizeT_desc = None
             sizeC_desc = None
@@ -176,6 +177,7 @@ class Stack:
                         pass
                     break
             if sizeT_desc is not None and sizeC_desc is not None:
+                found_correct_size = True
                 if sizeT_desc * sizeC == self._n_images:
                     sizeT = sizeT_desc
                 elif sizeT * sizeC_desc == self._n_images:
@@ -184,7 +186,11 @@ class Stack:
                     sizeT = sizeT_desc
                     sizeC = sizeC_desc
                 else:
-                    raise ValueError("Cannot determine image shape.")
+                    found_correct_size = False
+            else:
+                found_correct_size = False
+            if not found_correct_size:
+                raise ValueError("Cannot determine image shape.")
 
         # Write image size
         self._n_frames = sizeT
