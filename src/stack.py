@@ -2,7 +2,6 @@
 import re
 import tempfile
 import threading
-import xml.etree.ElementTree as ET
 
 import numpy as np
 import tifffile
@@ -83,8 +82,8 @@ class Stack:
                 description = page0.description
                 if page0.is_imagej:
                     self._parse_imagej_tags(description)
-                elif page0.is_ome:
-                    self._parse_ome(description)
+                elif tiff.is_ome:
+                    self._parse_ome(tiff.ome_metadata)
                 else:
                     # If TIFF type is not known, show as 1D stack
                     print("Unknown image type.")
@@ -122,6 +121,7 @@ class Stack:
 
     def _parse_imagej_tags(self, desc):
         """Read stack dimensions from ImageJ’s TIFF description tag."""
+        #TODO: use tiff.imagej_metadata instead of page0.description
         # Set dimension order
         self._order = "tc"
 
@@ -151,77 +151,49 @@ class Stack:
 
     def _parse_ome(self, ome):
         """Extract stack information from description in OME format."""
-        root = ET.fromstring(ome)
+        pix = ome['Image']['Pixels']
+        sizeT = pix['SizeT']
+        sizeC = pix['SizeC']
+        sizeZ = pix['SizeZ']
 
-        # Find XML namespace
-        # The namespace of an XML tag is prefixed to the tag name in
-        # curly braces; see documentation of `xml.etree.ElementTree`.
-        idx = root.tag.rfind('}')
-        if idx == -1:
-            xmlns = ''
-        else:
-            xmlns = root.tag[:idx+1]
-
-        # Find "Image" tag
-        tag_image = ''.join((xmlns, "Image"))
-        for child in root:
-            if child.tag == tag_image:
-                element_image = child
-                break
-        else:
-            raise TypeError("No 'Image' tag found in OME description.")
-
-        # Find "Pixels" tag
-        tag_pixels = ''.join((xmlns, "Pixels"))
-        for child in element_image:
-            if child.tag == tag_pixels:
-                element_pixels = child
-                break
-        else:
-            raise TypeError("No 'Pixels' tag found in OME description.")
-
-        # Get image properties from attributes of "Pixels" tag
-        # Number of frames
-        sizeT = element_pixels.attrib.get("SizeT")
-        if sizeT is None:
-            raise ValueError("No 'SizeT' attribute found in OME description.")
-        try:
-            sizeT = int(sizeT)
-        except Exception:
-            raise ValueError("Bad 'SizeT' value in OME description.")
-        if sizeT < 1:
-            raise ValueError("Non-positive 'SizeT' value in OME description.")
-        self._n_frames = sizeT
-
-        # Number of channels
-        sizeC = element_pixels.attrib.get("SizeC")
-        if sizeC is None:
-            raise ValueError("No 'SizeC' attribute found in OME description.")
-        try:
-            sizeC = int(sizeC)
-        except Exception:
-            raise ValueError("Bad 'SizeC' value in OME description.")
-        if sizeC < 1:
-            raise ValueError("Non-positive 'SizeC' value in OME description.")
-        self._n_channels = sizeC
-
-        # Number of slices
-        sizeZ = element_pixels.attrib.get("SizeZ")
-        if sizeZ is None:
-            raise ValueError("No 'SizeZ' attribute found in OME description.")
-        try:
-            sizeZ = int(sizeZ)
-        except Exception:
-            raise ValueError("Bad 'SizeZ' value in OME description.")
-        if sizeZ < 1:
-            raise ValueError("Non-positive 'SizeZ' value in OME description.")
-        elif sizeZ != 1:
+        # Check for slices
+        if sizeZ != 1:
             raise ValueError(f"Only images with one slice supported; found {sizeZ} slices.")
 
+        # Check for inconsistent OME metadata
+        if sizeT * sizeC != self._n_images:
+            sizeT_desc = None
+            sizeC_desc = None
+            for l in ome['Image']['Description'].splitlines():
+                if l.startswith("Dimensions"):
+                    try:
+                        sizeT_desc = int(re.search(r'T\((\d+)\)', l)[1])
+                    except TypeError:
+                        pass
+                    try:
+                        sizeC_desc = int(re.search(r'\?\((\d+)\)', l)[1])
+                    except TypeError:
+                        pass
+                    break
+            if sizeT_desc is not None and sizeC_desc is not None:
+                if sizeT_desc * sizeC == self._n_images:
+                    sizeT = sizeT_desc
+                elif sizeT * sizeC_desc == self._n_images:
+                    sizeC = sizeC_desc
+                elif sizeT_desc * sizeC_desc == self._n_images:
+                    sizeT = sizeT_desc
+                    sizeC = sizeC_desc
+                else:
+                    raise ValueError("Cannot determine image shape.")
+
+        # Write image size
+        self._n_frames = sizeT
+        self._n_channels = sizeC
+
         # Dimension order
-        dim_order = element_pixels.attrib.get("DimensionOrder")
-        if dim_order is None:
-            raise ValueError("No 'DimensionOrder' attribute found in OME description.")
+        dim_order = pix['DimensionOrder']
+        if not dim_order:
+            raise ValueError("No 'DimensionOrder' found in OME description.")
         idx_C = dim_order.find('C')
         idx_T = dim_order.find('T')
         if idx_C == -1 or idx_T == -1:
