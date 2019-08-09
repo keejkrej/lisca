@@ -1,6 +1,6 @@
-from .base import Roi
-from listener import Listeners
 from threading import RLock
+from .base import Roi
+from ..listener import Listeners
 
 
 class RoiCollection:

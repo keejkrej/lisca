@@ -1,6 +1,6 @@
+import numpy as np
 from .base import Roi
 from ._contour_aux import CornerFinder
-import numpy as np
 
 
 class ContourRoi(Roi):

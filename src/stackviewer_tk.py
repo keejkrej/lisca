@@ -1,17 +1,17 @@
 #! /usr/bin/env python3
 
-from contrast import ContrastAdjuster
-from gui_tk import new_toplevel
 import os
 import queue
-from roi import RectRoi
-import stack
 import sys
 from threading import Condition
 import tkinter as tk
 import tkinter.filedialog as tkfdlg
 import tkinter.ttk as ttk
 import warnings
+from .contrast import ContrastAdjuster
+from .gui_tk import new_toplevel
+from .roi import RectRoi
+from . import stack
 
 # Define constants
 ROW_HEADER = 0

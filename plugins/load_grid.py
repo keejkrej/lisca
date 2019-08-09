@@ -4,10 +4,10 @@ Plugin to load saved grid parameters
 """
 
 
-import gui_tk
-from roi.collection import RoiCollection
-from roi.rect import RectRoi
-from roi.contour import ContourRoi
+from .. import gui_tk
+from ..roi.collection import RoiCollection
+from ..roi.rect import RectRoi
+from ..roi.contour import ContourRoi
 
 import os
 import sys

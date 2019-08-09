@@ -1,4 +1,4 @@
-from roi import ContourRoi
+from ...roi import ContourRoi
 import numpy as np
 import scipy.interpolate as si
 import skimage.measure as meas

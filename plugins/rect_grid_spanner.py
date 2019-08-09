@@ -1,5 +1,5 @@
 #import gui_tk
-from roi import RectRoi
+from ..roi import RectRoi
 from threading import Condition
 import tkinter as tk
 

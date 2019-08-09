@@ -1,5 +1,5 @@
 from . import tools
-from roi import RoiCollection, ContourRoi
+from ...roi import RoiCollection, ContourRoi
 
 my_id = "stack_segmenter"
 __version__ = "0.1"

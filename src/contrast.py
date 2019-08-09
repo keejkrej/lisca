@@ -1,4 +1,4 @@
-from gui_tk import get_root
+from .gui_tk import get_root
 import numpy as np
 import tkinter as tk
 

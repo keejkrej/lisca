@@ -2,9 +2,10 @@
 This plug-in displays a file selection dialog and opens the
 stack from the file.
 """
-import gui_tk
-from stack import Stack
-from stackviewer_tk import StackViewer
+#print("__name__ of 'load_single_stack':", __name__) #DEBUG
+from .. import gui_tk
+from ..stack import Stack
+from ..stackviewer_tk import StackViewer
 
 my_id = "simple_stack_reader"
 __version__ = "0.1.1"

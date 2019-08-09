@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
-from segmenter import tools
+#print("__name__ of 'first_segmenter':", __name__) #DEBUG
+from .segmenter import tools
 
 my_id = "first_segmenter"
 

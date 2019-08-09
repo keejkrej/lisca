@@ -1,11 +1,11 @@
 #! /usr/bin/env python3
-import gui_tk as gui
 import queue
-from recursive_tree_comparer import RecursiveComparer
 import sys
 import tkinter as tk
 import tkinter.font as tkfont
 import tkinter.ttk as ttk
+from . import gui_tk as gui
+from .recursive_tree_comparer import RecursiveComparer
 
 # Unicode status symbols:
 # dependencies OK: u+2713 or u+2714

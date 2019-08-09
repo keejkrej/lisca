@@ -7,21 +7,22 @@
 This is the docstring of the :py:mod:`modules` module.
 """
 from collections import namedtuple, defaultdict
-import importlib.util as imputil
+import importlib as imp
 import inspect
-from listener import Listeners
 import os
 import random
 import string
 import sys
 import threading
 import traceback
+from .listener import Listeners
 
 
 PERFORM_KINDS = {"conf", "run", "loop_first", "loop_next", "loop_end"}
 RETURN_KINDS = {"init", *PERFORM_KINDS}
 LISTENER_KINDS = {"order", "dependency", "workflow"}
 GLOBAL_NS = ""
+PLUGINS_PATH = "plugins"
 
 
 def _load_module(name, path):
@@ -41,13 +42,10 @@ def _load_module(name, path):
     RETURN_BAD = ((),())
 
     # Load the module
-    spec = imputil.spec_from_file_location(name, path)
-    if spec is None:
-        return RETURN_BAD
-    mod = imputil.module_from_spec(spec)
     try:
-        spec.loader.exec_module(mod)
+        mod = imp.import_module('src.'+name)
     except Exception as e:
+        print("\nImporting:\n\tname: {}\n\tpath: {}".format(name, path)) #DEBUG
         print("Cannot load module '{}' from '{}':\n{}: {}".format(name, path, e.__class__.__name__, e), file=sys.stderr)
         return RETURN_BAD
 
@@ -427,10 +425,14 @@ class ModuleManager:
             self.register_builtins()
 
         # Register custom plugin modules
-        if plugins_path is not None:
+        if plugins_path is not False:
+            if plugins_path is None:
+                plugins_path = PLUGINS_PATH
+            import plugins
             modules_found = _search_modules(plugins_path)
             for name, path in modules_found:
-                for meta, init_ret in zip(*_load_module(name, path)):
+                plugin_name = '.'.join((plugins_path, name))
+                for meta, init_ret in zip(*_load_module(plugin_name, path)):
                     mod_id = meta.id
                     self.modules[mod_id] = meta
 

@@ -2,7 +2,7 @@
 Calculates the integrated intensity per frame and channel of a stack.
 """
 import numpy as np
-from roi import RectRoi, ContourRoi
+from ..roi import RectRoi, ContourRoi
 
 my_id = "integrated_intensity_calculator"
 

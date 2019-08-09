@@ -1,4 +1,4 @@
-from segmenter import tools
+from .segmenter import tools
 
 my_id = "test:read_fluorescence"
 __version__ = "0.1"

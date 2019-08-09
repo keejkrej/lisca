@@ -10,8 +10,8 @@ import sys
 import time
 import json 
 
-from roi import RectRoi
-from roi import ContourRoi
+from ..roi import RectRoi
+from ..roi import ContourRoi
 
 
 my_id = "grid_to_json_saver"

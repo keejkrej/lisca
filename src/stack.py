@@ -9,8 +9,8 @@ import tifffile
 import PIL.Image as pilimg
 import PIL.ImageTk as piltk
 
-from roi import RoiCollection
-from listener import Listeners
+from .roi import RoiCollection
+from .listener import Listeners
 
 
 class Stack:

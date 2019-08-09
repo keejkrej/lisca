@@ -2,8 +2,11 @@
 import tkinter as tk
 import os
 import sys
+
+print("Due to changes to the $PYTHONPATH, this file may not work any more.", file=sys.stderr)
+
 this_dir = os.path.dirname(os.path.abspath(__file__))
-src_dir = os.path.join(this_dir, "../../src/")
+src_dir = os.path.join(this_dir, "..", "..", "src")
 sys.path.append(src_dir)
 from stackviewer_tk import StackViewer
 from stack import Stack
