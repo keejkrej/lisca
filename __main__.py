@@ -18,5 +18,7 @@ if __name__ == "__main__":
         raise RuntimeError("Require at least Python 3.6, found %d.%d." % (ver_major, ver_minor))
 
     # Start workflow
-    workflow_starter.start_workflow(version=__version__, name=PACKAGE_NAME)
+    #workflow_starter.start_workflow(version=__version__, name=PACKAGE_NAME)
+    from src.main_window import Main_Tk
+    Main_Tk(name=PACKAGE_NAME, version=__version__)
 

@@ -11,7 +11,7 @@ import warnings
 from .contrast import ContrastAdjuster
 from .gui_tk import new_toplevel
 from .roi import RectRoi
-from . import stack
+from .stack import Stack
 
 # Define constants
 ROW_HEADER = 0
@@ -86,14 +86,14 @@ class StackViewer:
     * ``close``
     """
 
-    def __init__(self, parent=None, image_file=None, root=None):
+    def __init__(self, parent=None, image_file=None, root=None, show_buttons=True):
         """Initialize the GUI."""
         # Initialize GUI components
         if parent is None:
             self.root = new_toplevel(root)
+            self.root.title("StackViewer")
         else:
             self.root = parent
-        self.root.title("StackViewer")
 
         self.closing_state = False
         self.root.bind("<Destroy>", self._close)
@@ -133,16 +133,24 @@ class StackViewer:
 
         self.contrast_button = ttk.Button(tempframe, text="Contrast",
                                           command=self.open_contrast_adjuster)
-        self.contrast_button.pack(side=tk.LEFT)
+
+        if show_buttons:
+            self.contrast_button.pack(side=tk.LEFT)
         self.adjustment_button = ttk.Button(tempframe, text="Adjust ROIs",
                                             command=self.toggle_roi_adjustment,
                                             state=tk.NORMAL)
-        self.adjustment_button.pack(side=tk.LEFT)
+        if show_buttons:
+            self.adjustment_button.pack(side=tk.LEFT)
+
         self.open_button = ttk.Button(tempframe, text="Browse...",
                                       command=self.open_stack, state=tk.NORMAL)
-        self.open_button.pack(side=tk.LEFT)
+        if show_buttons:
+            self.open_button.pack(side=tk.LEFT)
+
         self.label = ttk.Label(tempframe, text="")
-        self.label.pack(side=tk.LEFT)
+
+        if show_buttons:
+            self.label.pack(side=tk.LEFT)
 
         # Canvas
         self.frame_canvas = ttk.Frame(self.mainframe)
@@ -154,7 +162,7 @@ class StackViewer:
         self.canvas = tk.Canvas(self.frame_canvas,
                                 width=100, height=100,
                                 borderwidth=0, highlightthickness=0,
-                                background="white")
+                                background=None)
         self.canvas.grid(row=0, column=0, sticky="NESW")
 
         self.scroll_canvas_horiz = ttk.Scrollbar(self.frame_canvas,
@@ -289,14 +297,16 @@ class StackViewer:
             self.open_button.configure(state=tk.NORMAL)
 
         if not os.path.isfile(fn):
-            warnings.warn("Cannot open stack: not found: {}".format(fn))
-            return
+            raise FileNotFoundError("Cannot open stack: not found: {}".format(fn))
 
         #self.label["text"] = fn
-        self._set_stack(stack.Stack(fn))
+        self._set_stack(Stack(fn))
 
-    def set_stack(self, s):
-        self.schedule_and_wait(self._set_stack, s)
+    def set_stack(self, s, wait=True):
+        if wait:
+            self.schedule_and_wait(self._set_stack, s)
+        else:
+            self.schedule(self._set_stack, s)
 
     def _set_stack(self, s):
         """Set the stack that is displayed."""
