@@ -49,6 +49,7 @@ class Stack:
             self._n_images = 0
             self._n_frames = 0
             self._n_channels = 0
+            self._channel_labels = None
 
         # ROI list
         with self.roi_lock:

@@ -87,9 +87,9 @@ class Listeners:
                 try:
                     listener["fun"]()
                 except Exception:
-                    self.delete(lid)
                     if self.debug:
                         raise
+                    self.delete(lid)
 
     def delete(self, lid):
         """Delete the listener with ID ``lid``, if existing."""
