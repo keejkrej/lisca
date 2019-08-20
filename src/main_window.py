@@ -79,23 +79,37 @@ class Main_Tk:
 
 
 
-
-
-
-
-
         # Run mainloop
         self.root.mainloop()
 
 
     def open_stack(self):
-        fn = tkfd.askopenfilename(title="Open stack", parent=self.root, initialdir='res', filetypes=(("TIFF", '*.tif *.tiff'), ("All files", '*')))
-        print(fn)
-        self.stack = Stack(fn)
+        """Ask user to open new stack"""
+        StackOpener(self.root, callback=self.open_metastack)
+
+    def open_metastack(self, data):
+        if not data:
+            return
+        self.stack = ms.MetaStack()
+        for d in data:
+            name = d['stack'].path
+            self.stack.add_stack(d['stack'], name=name)
+
+            self.stack.add_channel(name=name,
+                                   channel=d['i_channel'],
+                                   label=d['label'],
+                                   type_=d['type'],
+                                  )
+
         self.stackviewer.set_stack(self.stack, wait=False)
 
     def open_seg(self):
         print("Main_Tk.open_seg: not implemented")
+
+
+
+
+
 
 
 class StackOpener:
@@ -114,6 +128,7 @@ class StackOpener:
     # In [4]: import tkinter as tk
     # In [5]: root = tk.Tk(); StackOpener(root); root.mainloop()
     # Repeat In [5] for each test run
+
     def __init__(self, root, callback=None):
         self.root = root
         self.frame = tk.Toplevel(self.root)
@@ -233,7 +248,7 @@ class StackOpener:
 
     def open_stack(self):
         """Open a new stack"""
-        fn = tkfd.askopenfilename(title="Open stack", parent=self.root, initialdir='res', filetypes=(("TIFF", '*.tif *.tiff'), ("All files", '*')))
+        fn = tkfd.askopenfilename(title="Open stack", parent=self.root, initialdir='res', filetypes=(("TIFF", '*.tif *.tiff'), ("Numpy", '*.npy *.npz'), ("All files", '*')))
         if not fn:
             return
         stack = Stack(fn)
@@ -382,6 +397,12 @@ class StackOpener:
     def cancel(self):
         """Close the window and call callback with `None`"""
         self.frame.destroy()
+        for stack in self.stacks:
+            try:
+                stack['stack'].close()
+            except Exception:
+                print("StackOpener.cancel: Error while closing stack") #DEBUG
+                pass
         if self.callback is not None:
             self.callback(None)
 
@@ -389,6 +410,7 @@ class StackOpener:
         """Close the window and call callback with channels"""
         ret = []
         self.frame.destroy()
+        used_stacks = set()
         for ch in self.channels:
             x = {}
             x['stack'] = ch['stack']['stack']
@@ -398,24 +420,17 @@ class StackOpener:
             x['label'] = ch['label']
             x['type'] = ch['type']
             ret.append(x)
+            used_stacks.add(id(x['stack']))
+        for stack in self.stacks:
+            s = stack['stack']
+            if id(s) not in used_stacks:
+                try:
+                    s.close()
+                except Exception:
+                    print("StackOpener.finish: Error while closing stack") #DEBUG
+                    pass
         if self.callback is not None:
             self.callback(ret)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 if __name__ == '__main__':

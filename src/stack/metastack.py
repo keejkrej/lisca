@@ -1,6 +1,10 @@
 from dataclasses import dataclass
 import threading
 
+import numpy as np
+import PIL.Image as pilimg
+import PIL.ImageTk as piltk
+
 from ..listener import Listeners
 from .stack import Stack
 
@@ -8,7 +12,7 @@ TYPE_PHASECONTRAST = "Phase contrast"
 TYPE_FLUORESCENCE = "Fluorescence"
 TYPE_SEGMENTATION = "Segmentation"
 
-@dataclass(frozen=True)
+@dataclass
 class ChannelSpec:
     isVirtual = None
     name = None
@@ -34,7 +38,6 @@ class ChannelSpec:
             self.type = type_
 
 
-
 class MetaStack:
     def __init__(self):
         self.image_lock = threading.RLock()
@@ -44,6 +47,7 @@ class MetaStack:
         self._n_frames = None
         self._width = None
         self._height = None
+        self._mode = None
 
     def clear(self):
         with self.image_lock:
@@ -54,18 +58,26 @@ class MetaStack:
             self._n_frames = None
             self._width = None
             self._height = None
+            self._mode = None
 
-    def add_stack(self, new_stack, name=None):
+    def add_stack(self, new_stack, name=None, overwrite=False):
         """Insert a new stack
 
         `new_stack` is either a string of the path of a TIFF stack
         or a `Stack` object.
+        If `overwrite` is False, the method silently returns when
+        a stack with `name` is already registered.
         """
         # Load stack, if path is given
         if isinstance(new_stack, str):
-            new_stack = self.load_stack(new_stack)
-        if name is not None:
+            name = new_stack
+        elif name is None:
             name = new_stack.path
+        if not overwrite and name in self._stacks:
+            # Avoid overwriting existing stack
+            return
+        if isinstance(new_stack, str):
+            new_stack = self.load_stack(new_stack)
 
         with self.image_lock:
             # First, check if stack is compatible
@@ -81,23 +93,25 @@ class MetaStack:
                 self._height = new_stack.height
             elif self._height != new_stack.height:
                 raise ValueError("Incompatible stack: expected height {}, but found height {} in '{}'.".format(self._height, new_stack.height, name))
+            if self._mode is None or new_stack.mode > self._mode:
+                self._mode = new_stack.mode
 
             # Secondly, register the stack
             self._stacks[name] = new_stack
 
-    def add_channel(self, name=None, channel=None, fun=None, label=None, scales=None):
+    def add_channel(self, name=None, channel=None, fun=None, label=None, type_=None, scales=None):
         with self.image_lock:
             if name is not None and channel is not None:
                 if name not in self._stacks:
                     raise KeyError("Unknown stack: {}".format(name))
-                if idx >= self._stacks[name].n_channels:
+                if channel >= self._stacks[name].n_channels:
                     nc = self._stacks[name].n_channels
                     raise IndexError("Index {} out of range: found {} channels in stack '{}'.".format(idx, nc, name))
-                spec = ChannelSpec(name=name, channel=channel, label=label)
+                spec = ChannelSpec(name=name, channel=channel, label=label, type_=type_)
             elif fun is not None:
                 if not callable(fun):
                     raise ValueError("Expected callable for virtual channel, but found {}.".format(type(fun)))
-                spec = ChannelSpec(fun=fun, label=label, scales=scales)
+                spec = ChannelSpec(fun=fun, label=label, scales=scales, type_=type_)
             else:
                 raise ValueError("Stack name and channel or function required.")
             self._channels.append(spec)
@@ -129,7 +143,9 @@ class MetaStack:
         """Get a numpy array of a stack position."""
         #TODO implement virtual channel
         with self.image_lock:
-            name, ch = self._channels[channel]
+            spec = self._channels[channel]
+            name = spec.name
+            ch = spec.channel
             return self._stacks[name].get_image(channel=ch, frame=frame)
 
     def get_image_copy(self, *, channel, frame, scale=None):
@@ -161,11 +177,11 @@ class MetaStack:
         #TODO
         with self.image_lock:
             if convert_fcn:
-                a8 = convert_fcn(self.get_image(channel, frame))
+                a8 = convert_fcn(self.get_image(channel=channel, frame=frame))
             elif self._mode == 8:
-                a8 = self.get_image(channel, frame)
+                a8 = self.get_image(channel=channel, frame=frame)
             elif self._mode == 16:
-                a16 = self.get_image(channel, frame)
+                a16 = self.get_image(channel=channel, frame=frame)
                 a8 = np.empty(a16.shape, dtype=np.uint8)
                 np.floor_divide(a16, 256, out=a8)
             else:
@@ -191,7 +207,8 @@ class MetaStack:
 
     @property
     def mode(self):
-        return None
+        with self.image_lock:
+            return self._mode
 
     @property
     def order(self):
@@ -239,3 +256,8 @@ class MetaStack:
     def stack(self, name):
         with self.image_lock:
             return self._stacks[name]
+
+    @property
+    def rois(self):
+        #TODO
+        return []

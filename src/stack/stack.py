@@ -1,4 +1,5 @@
 #! /usr/bin/env python3
+import os
 import re
 import tempfile
 import threading
@@ -62,9 +63,68 @@ class Stack:
         self._listeners.notify(kind=None)
 
 
-    def load(self, path):
+    def load(self, path, loader=None):
         """Load a stack from a path."""
         self._path = path
+        if loader is None:
+            ext = os.path.splitext(self._path)[-1]
+            if ext.casefold().startswith('.tif'):
+                loader = 'tiff'
+            elif ext.casefold().startswith('.np'):
+                loader = 'npy'
+            else:
+                loader = '' # to prevent error in string comparison
+        if loader == 'tiff':
+            self._load_tiff()
+        elif loader == 'npy':
+            self._load_npy()
+        else:
+            self._clear_state()
+            raise TypeError("Unknown type: {}".format(loader))
+
+    def _load_npy(self, ext=None):
+        if ext is None:
+            ext = os.path.splitext(self._path)[-1]
+        if ext == '.npy':
+            arr = np.load(self._path)
+        elif ext == '.npz':
+            with np.load(self._path) as arr_file:
+                #arr = next(iter(arr_file.values())).astype(np.uint16, casting='unsafe')
+                arr = next(iter(arr_file.values()))
+        else:
+            raise TypeError("Unknown type: {}".format(ext))
+        self._mode = arr.dtype.itemsize * 8
+        #TODO: check dimensions (swap height/width?)
+        if arr.ndim == 2:
+            self._n_channels = 1
+            self._n_frames = 1
+            self._height, self._width = arr.shape
+            arr = np.reshape(arr, (1, 1, self._height, self._width))
+        elif arr.ndim == 3:
+            self._n_channels = 1
+            self._n_frames, self._height, self._width = arr.shape
+            arr = np.reshape(arr, (1, self._n_frames, self._height, self._width))
+        elif arr.ndim == 4:
+            self._n_frames, self._height, self._width, self._n_channels = arr.shape
+            arr = np.moveaxis(arr, 3, 0)
+        else:
+            raise ValueError("Bad array shape: {}".format(arr.ndim))
+        self._n_images = self._n_channels * self._n_frames
+
+        try:
+            self._tmpfile = tempfile.TemporaryFile()
+            self.img = np.memmap(filename=self._tmpfile,
+                                 dtype=arr.dtype,
+                                 shape=arr.shape)
+            self.img[...] = arr[...]
+        except Exception:
+            self._clear_state()
+            print(str(e))
+            raise
+        finally:
+            self._listeners.notify("image")
+
+    def _load_tiff(self):
         try:
             with self.image_lock, tifffile.TiffFile(self._path) as tiff:
                 pages = tiff.pages
@@ -89,7 +149,7 @@ class Stack:
                 else:
                     # If TIFF type is not known, show as 1D stack
                     print("Unknown image type.")
-                    self._nchannels = 1
+                    self._n_channels = 1
                     self._n_frames = self._n_images
 
                 # Copy stack to numpy array in temporary file
