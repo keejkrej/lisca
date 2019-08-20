@@ -1,3 +1,4 @@
+import os
 import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter.filedialog as tkfd
@@ -98,6 +99,12 @@ class Main_Tk:
 
 
 class StackOpener:
+    """Ask the user for stacks.
+
+    Arguments:
+        root - the parent tkinter.Tk object
+        callback - call this function after finishing
+    """
     # To test this class, run e.g.:
     # $ cd pyama
     # $ ipython
@@ -107,11 +114,15 @@ class StackOpener:
     # In [4]: import tkinter as tk
     # In [5]: root = tk.Tk(); StackOpener(root); root.mainloop()
     # Repeat In [5] for each test run
-    def __init__(self, root):
+    def __init__(self, root, callback=None):
         self.root = root
         self.frame = tk.Toplevel(self.root)
         self.frame.title("Select stacks and channels")
-        self.frame.geometry('1000x500')
+        self.frame.geometry('600x300')
+        self.frame.protocol('WM_DELETE_WINDOW', self.cancel)
+        self.stacks = []
+        self.channels = []
+        self.callback = callback
 
         # PanedWindow
         paned = tk.PanedWindow(self.frame)
@@ -130,8 +141,11 @@ class StackOpener:
         list_frame.grid_rowconfigure(0, weight=1)
         list_frame.grid_columnconfigure(0, weight=1)
 
-        self.stack_list = tk.Listbox(list_frame, selectmode=tk.SINGLE)
+        self.var_stack_list = tk.StringVar()
+        self.stack_list = tk.Listbox(list_frame, selectmode=tk.SINGLE,
+                listvariable=self.var_stack_list, highlightthickness=0)
         self.stack_list.grid(row=0, column=0, sticky='NESW')
+        self.stack_list.bind("<<ListboxSelect>>", self.stacklist_selection)
         list_y_scroll = tk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.stack_list.yview)
         list_x_scroll = tk.Scrollbar(list_frame, orient=tk.HORIZONTAL, command=self.stack_list.xview)
         self.stack_list.config(yscrollcommand=list_y_scroll.set)
@@ -162,13 +176,21 @@ class StackOpener:
 
         # Channel selection
         chan_frame = tk.Frame(paned)
-        paned.add(chan_frame, sticky='NESW', width=800)
+        paned.add(chan_frame, sticky='NESW', width=400)
         chan_frame.grid_rowconfigure(0, weight=1)
         chan_frame.grid_columnconfigure(0, weight=1)
 
         ## Channel display
         self.chan_disp_frame = tk.Frame(chan_frame)
         self.chan_disp_frame.grid(row=0, column=0, sticky='NESW')
+        self.chan_disp_frame.grid_columnconfigure(1, weight=1, pad=5)
+        self.chan_disp_frame.grid_columnconfigure(2, weight=0, pad=5)
+        self.chan_disp_frame.grid_columnconfigure(3, weight=1, pad=5)
+
+        tk.Label(self.chan_disp_frame, text="Channel", anchor=tk.W).grid(row=0, column=0, sticky='W')
+        tk.Label(self.chan_disp_frame, text="Label", anchor=tk.W).grid(row=0, column=1, sticky='W')
+        tk.Label(self.chan_disp_frame, text="Type", anchor=tk.W).grid(row=0, column=2, sticky='W')
+        tk.Label(self.chan_disp_frame, text="Stack [Channel]", anchor=tk.W).grid(row=0, column=3, sticky='W')
 
         ## Separator
         ttk.Separator(chan_frame, orient=tk.HORIZONTAL).grid(row=1, column=0, sticky='ESW')
@@ -189,24 +211,196 @@ class StackOpener:
         self.var_label = tk.StringVar(self.frame)
         self.var_type = tk.StringVar(self.frame)
 
-        self.chan_opt = tk.OptionMenu(chan_add_frame, self.var_chan, 0, 1, 2, 3).grid(row=2, column=0, sticky='NESW')
-        label_entry = tk.Entry(chan_add_frame, textvariable=self.var_label).grid(row=2, column=1, sticky='NESW')
-        type_opt = tk.OptionMenu(chan_add_frame, self.var_type,
-            "None", ms.TYPE_PHASECONTRAST, ms.TYPE_FLUORESCENCE, ms.TYPE_SEGMENTATION).grid(row=2, column=2, sticky='NESW')
-        tk.Button(chan_add_frame, text="Add", command=self.add_chan).grid(row=2, column=3, sticky='EW')
+        self.chan_opt = tk.OptionMenu(chan_add_frame, self.var_chan, 0, 1, 2, 3)
+        self.chan_opt.grid(row=2, column=0, sticky='NESW')
+        self.label_entry = tk.Entry(chan_add_frame, textvariable=self.var_label)
+        self.label_entry.grid(row=2, column=1, sticky='NESW')
+        self.type_opt = tk.OptionMenu(chan_add_frame, self.var_type,
+            "None", ms.TYPE_PHASECONTRAST, ms.TYPE_FLUORESCENCE, ms.TYPE_SEGMENTATION)
+        self.type_opt.grid(row=2, column=2, sticky='NESW')
+        self.add_chan_btn = tk.Button(chan_add_frame, text="Add", command=self.add_chan)
+        self.add_chan_btn.grid(row=2, column=3, sticky='EW')
+        self.disable_channel_selection()
+
+        # OK and Cancel buttons
+        btn_frame = tk.Frame(self.frame)
+        btn_frame.pack(expand=True, fill=tk.X)
+        btn_frame.grid_columnconfigure(0, weight=1, pad=20)
+        btn_frame.grid_columnconfigure(1, weight=1, pad=20)
+        tk.Button(btn_frame, text="Cancel", width=10, command=self.cancel).grid(row=0, column=0)
+        tk.Button(btn_frame, text="OK", width=10, command=self.finish).grid(row=0, column=1)
 
 
     def open_stack(self):
-        #TODO
-        print("StackOpener.open_stack")
+        """Open a new stack"""
+        fn = tkfd.askopenfilename(title="Open stack", parent=self.root, initialdir='res', filetypes=(("TIFF", '*.tif *.tiff'), ("All files", '*')))
+        if not fn:
+            return
+        stack = Stack(fn)
+        stack_dir, stack_name = os.path.split(fn)
+        n_channels = stack.n_channels
+        self.stacks.append({'name': stack_name,
+                            'dir': stack_dir,
+                            'stack': stack,
+                            'n_channels': n_channels,
+                           })
+        self.refresh_stacklist(select=tk.END)
 
     def remove_stack(self):
-        #TODO
-        print("StackOpener.remove_stack")
+        """Remove a stack from the list"""
+        sel = self.stack_list.curselection()
+        if not sel:
+            return
+        try:
+            sel = int(sel[-1])
+            stack = self.stacks.pop(sel)
+            self.del_chan(sel)
+            stack['stack'].close()
+        except Exception:
+            return
+        self.refresh_stacklist()
+
+    def refresh_stacklist(self, select=None):
+        """Refresh ListBox with loaded stacks.
+
+        If `select` is a valid index, this item is selected.
+        """
+        self.var_stack_list.set(["{name} ({dir})".format(**s) for s in self.stacks])
+        self.stack_list.selection_clear(0, tk.END)
+        if select is not None:
+            self.stack_list.selection_set(select)
+        self.stacklist_selection()
+
+    def stacklist_selection(self, event=None):
+        sel = self.stack_list.curselection()
+        try:
+            sel = int(sel[-1])
+            stack = self.stacks[sel]
+            stack_name = stack['name']
+            stack_n_chan = stack['n_channels']
+            self.activate_channel_selection(stack)
+        except Exception:
+            sel = None
+            stack_name = ""
+            stack_n_chan = ""
+            self.disable_channel_selection()
+        self.var_stack.set(stack_name)
+        self.var_n_chan.set(stack_n_chan)
+
+    def activate_channel_selection(self, stack):
+        self.chan_opt.config(state=tk.NORMAL)
+        self.label_entry.config(state=tk.NORMAL)
+        self.type_opt.config(state=tk.NORMAL)
+        self.add_chan_btn.config(state=tk.NORMAL)
+
+        self.chan_opt['menu'].delete(0, tk.END)
+        for i in range(stack['n_channels']):
+            self.chan_opt['menu'].add_command(label=i, command=tk._setit(self.var_chan, i))
+        self.var_chan.set(0)
+        self.var_label.set('')
+        self.var_type.set("None")
+
+    def disable_channel_selection(self):
+        self.var_chan.set(())
+        self.var_label.set('')
+        self.var_type.set("None")
+        self.chan_opt.config(state=tk.DISABLED)
+        self.label_entry.config(state=tk.DISABLED)
+        self.type_opt.config(state=tk.DISABLED)
+        self.add_chan_btn.config(state=tk.DISABLED)
 
     def add_chan(self):
-        #TODO
-        print("StackOpener.add_chan")
+        try:
+            i_stack = int(self.stack_list.curselection()[-1])
+        except Exception:
+            print("StackOpener.add_chan: cannot add channel")
+            return
+        self.channels.append({'stack': self.stacks[i_stack],
+                              'i_channel': self.var_chan.get(),
+                              'label': self.var_label.get(),
+                              'type': self.var_type.get(),
+                             })
+        self.refresh_channels()
+        
+    def del_chan(self, i):
+        """Remove a channel from the selection"""
+        self.channels[i]['stack'] = None
+        self.refresh_channels()
+
+    def refresh_channels(self):
+        """Redraw the channel selection"""
+        i = 0
+        idx_del = []
+        for j, ch in enumerate(self.channels):
+            # Remove widgets of channels marked for deletion
+            if ch['stack'] is None:
+                if 'widgets' in ch:
+                    for w in ch['widgets'].values():
+                        w.destroy()
+                idx_del.append(j)
+                continue
+
+            # Check if channel is new
+            wdg = None
+            if 'widgets' not in ch:
+                wdg = {}
+                wdg['idx'] = tk.Label(self.chan_disp_frame, text=i,
+                        anchor=tk.E, relief=tk.SUNKEN, bd=1)
+                wdg['label'] = tk.Label(self.chan_disp_frame, text=ch['label'],
+                        anchor=tk.W, relief=tk.SUNKEN, bd=1)
+                wdg['type'] = tk.Label(self.chan_disp_frame, text=ch['type'],
+                        anchor=tk.W, relief=tk.SUNKEN, bd=1)
+                wdg['stack'] = tk.Label(self.chan_disp_frame,
+                        text="{} [{}]".format(ch['stack']['name'], ch['i_channel']),
+                        anchor=tk.W, relief=tk.SUNKEN, bd=1)
+                wdg['button'] = tk.Button(self.chan_disp_frame, text="X")
+                wdg['button'].config(command=lambda b=wdg['button']: self.del_chan(b.grid_info()['row']-1))
+                ch['widgets'] = wdg
+
+            # Check if previous widget has been deleted
+            elif i != j:
+                wdg = ch['widgets']
+                wdg['idx'].grid_forget()
+                wdg['label'].grid_forget()
+                wdg['type'].grid_forget()
+                wdg['stack'].grid_forget()
+                wdg['button'].grid_forget()
+
+            # Redraw widgets if necessary
+            i += 1
+            if wdg is not None:
+                wdg['idx'].grid(row=i, column=0, sticky='NESW')
+                wdg['label'].grid(row=i, column=1, sticky='NESW')
+                wdg['type'].grid(row=i, column=2, sticky='NESW')
+                wdg['stack'].grid(row=i, column=3, sticky='NESW')
+                wdg['button'].grid(row=i, column=4, sticky='NESW')
+
+        # Delete channels marked for deletion
+        for i in sorted(idx_del, reverse=True):
+            self.channels.pop(i)
+
+    def cancel(self):
+        """Close the window and call callback with `None`"""
+        self.frame.destroy()
+        if self.callback is not None:
+            self.callback(None)
+
+    def finish(self):
+        """Close the window and call callback with channels"""
+        ret = []
+        self.frame.destroy()
+        for ch in self.channels:
+            x = {}
+            x['stack'] = ch['stack']['stack']
+            x['name'] = ch['stack']['name']
+            x['dir'] = ch['stack']['dir']
+            x['i_channel'] = ch['i_channel']
+            x['label'] = ch['label']
+            x['type'] = ch['type']
+            ret.append(x)
+        if self.callback is not None:
+            self.callback(ret)
+
 
 
 
