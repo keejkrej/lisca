@@ -50,6 +50,8 @@ class MetaStack:
         self._height = None
         self._mode = None
 
+        self.close = self.clear
+
     def clear(self):
         with self.image_lock:
             for s in self_stacks.keys():
@@ -182,9 +184,20 @@ class MetaStack:
             return img
         scale = np.array(scale)
         if scale.size == 1:
-            return sktrans.rescale(img, scale, anti_aliasing=True, anti_aliasing_sigma=anti_aliasing_sigma)
+            return sktrans.rescale(img,
+                                   scale,
+                                   multichannel=False,
+                                   mode='constant',
+                                   anti_aliasing=True,
+                                   anti_aliasing_sigma=anti_aliasing_sigma,
+                                  )
         else:
-            return sktrans.resize(img, scale, anti_aliasing=True, anti_aliasing_sigma=anti_aliasing_sigma)
+            return sktrans.resize(img,
+                                  scale,
+                                  mode='constant',
+                                  anti_aliasing=True,
+                                  anti_aliasing_sigma=anti_aliasing_sigma,
+                                 )
         
 
     def get_image_copy(self, *, channel, frame, scale=None):
@@ -295,6 +308,11 @@ class MetaStack:
     def stack(self, name):
         with self.image_lock:
             return self._stacks[name]
+
+    @property
+    def channels(self):
+        with self.image_lock:
+            return self._channels.copy()
 
     @property
     def rois(self):

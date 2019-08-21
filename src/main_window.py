@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter.filedialog as tkfd
@@ -27,6 +28,7 @@ class Main_Tk:
         # Initialize variables
         self.stack = None
         self.display_stack = None
+        self.channel_selection_widgets = {}
 
         # Build menu
         menubar = tk.Menu(self.root)
@@ -55,9 +57,13 @@ class Main_Tk:
         ## Channels frame
         self.chanframe = tk.Frame(self.paned)
         self.paned.add(self.chanframe, sticky='NESW', width=150)
+        self.chanframe.grid_columnconfigure(0, weight=1)
 
         self.open_btn = tk.Button(self.chanframe, text="Open stack...", command=self.open_stack)
-        self.open_btn.pack(anchor=tk.N, expand=True, fill=tk.X, padx=10)
+        #self.open_btn.pack(anchor=tk.N, expand=True, fill=tk.X, padx=10)
+        self.open_btn.grid(row=0, column=0, sticky='NEW', padx=10, pady=5)
+        self.chanselframe = tk.Frame(self.chanframe)
+        self.chanselframe.grid(row=1, column=0, sticky='NEW')
 
         ## Stack frame
         self.stackframe = tk.Frame(self.paned)
@@ -103,7 +109,43 @@ class Main_Tk:
 
     def render_display(self, meta, frame, scale=None):
         #TODO adjust display
-        return self.stack.get_image(channel=0, frame=frame, scale=scale)
+        # find channel to display
+        for i in sorted(self.channel_selection_widgets.keys()):
+            if self.channel_selection_widgets[i]['val']:
+                break
+        else:
+            i = 0
+
+        # Get image scale
+        self.root.update_idletasks()
+        display_width = self.stackframe.winfo_width()
+        if self.display_stack.width != display_width:
+            scale = display_width / self.stack.width
+            self.display_stack.set_properties(width=display_width, height=self.stack.height*scale)
+        else:
+            scale = self.display_stack.width / self.stack.width
+
+        # Convert image to uint8
+        img = self.stack.get_image(channel=i, frame=frame, scale=scale)
+        img_min, img_max = img.min(), img.max()
+        img = ((img - img_min) * (255 / (img_max - img_min))).astype(np.uint8)
+
+        return img
+
+
+    def _build_chanselbtn_callback(self, x):
+        def callback(val=None, notify=True):
+            nonlocal self, x
+            if val is None:
+                val = not x['val']
+            x['val'] = val
+            if val:
+                x['button'].config(relief=tk.SUNKEN)
+            else:
+                x['button'].config(relief=tk.RAISED)
+            if notify:
+                self.display_stack._listeners.notify('image')
+        return callback
 
     def load_metastack(self, meta):
         self.stack = meta
@@ -113,9 +155,69 @@ class Main_Tk:
                                           height=meta.height,
                                           mode=8,
                                          )
+
+        # Display buttons (new)
+        for k, x in self.channel_selection_widgets.items():
+            x['button'].destroy()
+            del x['callback']
+            del self.channel_selection_widgets[k]
+        has_display = False
+        idx_phasecontrast = None
+        idx_fluorescence = []
+        idx_segmentation = None
+        for i, spec in enumerate(meta.channels):
+            if spec.type == ms.TYPE_PHASECONTRAST and not idx_phasecontrast:
+                idx_phasecontrast = i
+            elif spec.type == ms.TYPE_FLUORESCENCE:
+                idx_fluorescence.append(i)
+            elif spec.type == ms.TYPE_SEGMENTATION and not idx_segmentation:
+                idx_segmentation = i
+            else:
+                continue
+            x = {}
+            self.channel_selection_widgets[i] = x
+            x['type'] = spec.type
+            x['val'] = False
+            btntxt = []
+            if spec.label:
+                btntxt.append(spec.label)
+            if spec.type == ms.TYPE_FLUORESCENCE:
+                btntxt.append("{} {}".format(spec.type, len(idx_fluorescence)))
+            else:
+                btntxt.append(spec.type)
+            btntxt = "\n".join(btntxt)
+            x['callback'] = self._build_chanselbtn_callback(x)
+            x['button'] = tk.Button(self.chanselframe, justify=tk.LEFT,
+                                    text=btntxt, command=x['callback'])
+
+        # Initial channel selection
+        if idx_phasecontrast is not None:
+            self.channel_selection_widgets[idx_phasecontrast]['callback'](True, notify=False)
+            self.channel_selection_widgets[idx_phasecontrast]['button'].pack(anchor=tk.N,
+                    expand=True, fill=tk.X, padx=10, pady=5)
+        elif idx_fluorescence:
+            self.channel_selection_widgets[idx_fluorescence[0]]['callback'](True, notify=False)
+            for i in idx_phasecontrast:
+                self.channel_selection_widgets[i]['button'].pack(anchor=tk.N,
+                        expand=True, fill=tk.X, padx=10, pady=5)
+        elif idx_segmentation is not None:
+            self.channel_selection_widgets[idx_segmentation]['callback'](True, notify=False)
+            self.channel_selection_widgets[idx_segmentation]['button'].pack(anchor=tk.N,
+                    expand=True, fill=tk.X, padx=10, pady=5)
+
+        # Display buttons
+        if idx_phasecontrast is not None:
+            self.channel_selection_widgets[idx_phasecontrast]['button'].pack(anchor=tk.N,
+                    expand=True, fill=tk.X, padx=10, pady=5)
+        for i in idx_fluorescence:
+            self.channel_selection_widgets[i]['button'].pack(anchor=tk.N,
+                    expand=True, fill=tk.X, padx=10, pady=5)
+        if idx_segmentation is not None:
+            self.channel_selection_widgets[idx_segmentation]['button'].pack(anchor=tk.N,
+                    expand=True, fill=tk.X, padx=10, pady=5)
+
         self.display_stack.add_channel(fun=self.render_display, scales=True)
         self.stackviewer.set_stack(self.display_stack, wait=False)
-
 
 
 
@@ -168,7 +270,7 @@ class StackOpener:
 
         self.var_stack_list = tk.StringVar()
         self.stack_list = tk.Listbox(list_frame, selectmode=tk.SINGLE,
-                listvariable=self.var_stack_list, highlightthickness=0)
+                listvariable=self.var_stack_list, highlightthickness=0, exportselection=False)
         self.stack_list.grid(row=0, column=0, sticky='NESW')
         self.stack_list.bind("<<ListboxSelect>>", self.stacklist_selection)
         list_y_scroll = tk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.stack_list.yview)

@@ -346,12 +346,14 @@ class StackViewer:
         self.canvas.config(width=self.stack.width, height=self.stack.height)
 
         self.n_channels = self.stack.n_channels
-        self.n_frames = self.stack.n_frames
-        self.i_channel = 0
-        self.i_frame = 0
+        if not self.i_channel or self.i_channel >= self.n_channels:
+            self.i_channel = 0
+            self.i_channel_var.set(1)
 
-        self.i_channel_var.set(1)
-        self.i_frame_var.set(1)
+        self.n_frames = self.stack.n_frames
+        if not self.i_frame or self.i_frame >= self.n_frames:
+            self.i_frame = 0
+            self.i_frame_var.set(1)
 
         self.label.config(text=self.stack.path)
         self.update_scrollbars()
