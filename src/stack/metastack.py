@@ -4,6 +4,7 @@ import threading
 import numpy as np
 import PIL.Image as pilimg
 import PIL.ImageTk as piltk
+import skimage.transform as sktrans
 
 from ..listener import Listeners
 from .stack import Stack
@@ -60,6 +61,20 @@ class MetaStack:
             self._height = None
             self._mode = None
 
+    def set_properties(self, n_frames=None, width=None, height=None, mode=None):
+        """Set image properties, overwriting current properties"""
+        with self.image_lock:
+            if n_frames is not None:
+                self._n_frames = n_frames
+            if width is not None:
+                self._width = width
+            if height is not None:
+                self._height = height
+            if mode is not None:
+                self._mode = mode
+        self._listeners.notify('image')
+
+
     def add_stack(self, new_stack, name=None, overwrite=False):
         """Insert a new stack
 
@@ -115,6 +130,7 @@ class MetaStack:
             else:
                 raise ValueError("Stack name and channel or function required.")
             self._channels.append(spec)
+        self._listeners.notify('image')
                 
 
     def arrange_channels(self, order):
@@ -141,12 +157,35 @@ class MetaStack:
 
     def get_image(self, *, channel, frame, scale=None):
         """Get a numpy array of a stack position."""
-        #TODO implement virtual channel
         with self.image_lock:
             spec = self._channels[channel]
-            name = spec.name
-            ch = spec.channel
-            return self._stacks[name].get_image(channel=ch, frame=frame)
+            if spec.isVirtual:
+                img = spec.fun(self, frame=frame, scale=scale)
+            else:
+                name = spec.name
+                ch = spec.channel
+                img = self._stacks[name].get_image(channel=ch, frame=frame)
+            if scale is not None and not spec.scales:
+                img = self.scale_img(img, scale)
+            return img
+
+    def scale_img(self, img, scale, anti_aliasing=True, anti_aliasing_sigma=None):
+        """Scales an image.
+
+        `img` -- the image (ndarray) to be scaled
+        `scale` -- if scalar, a scaling factor passed to `skimage.resize`,
+                if multiple values, a shape passed to `skimage.rescale`
+        `anti_aliasing`, `anti_aliasing_sigma` -- anit-aliasing settings,
+                see `skimage.rescale` and `skimage.resize`
+        """
+        if scale is None:
+            return img
+        scale = np.array(scale)
+        if scale.size == 1:
+            return sktrans.rescale(img, scale, anti_aliasing=True, anti_aliasing_sigma=anti_aliasing_sigma)
+        else:
+            return sktrans.resize(img, scale, anti_aliasing=True, anti_aliasing_sigma=anti_aliasing_sigma)
+        
 
     def get_image_copy(self, *, channel, frame, scale=None):
         """Get a copy of a numpy array of a stack position."""
@@ -154,7 +193,7 @@ class MetaStack:
         img = self.get_image(channel=channel, frame=frame, scale=scale)
 
 
-    def get_frame_tk(self, *, channel, frame, stack=None, convert_fcn=None):
+    def get_frame_tk(self, *, channel, frame, convert_fcn=None):
         """
         Get a frame of the stack as :py:class:`tkinter.PhotoImage`.
 

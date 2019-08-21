@@ -26,7 +26,7 @@ class Main_Tk:
 
         # Initialize variables
         self.stack = None
-        self.segmented = None
+        self.display_stack = None
 
         # Build menu
         menubar = tk.Menu(self.root)
@@ -35,7 +35,7 @@ class Main_Tk:
         filemenu = tk.Menu(menubar)
         menubar.add_cascade(label="File", menu=filemenu)
         filemenu.add_command(label="Open stack…", command=self.open_stack)
-        filemenu.add_command(label="Open segmentation…", command=self.open_seg)
+        #filemenu.add_command(label="Open segmentation…", command=self.open_seg)
         filemenu.add_command(label="Quit", command=self.root.quit)
 
         modemenu = tk.Menu(menubar)
@@ -90,21 +90,31 @@ class Main_Tk:
     def open_metastack(self, data):
         if not data:
             return
-        self.stack = ms.MetaStack()
+        meta = ms.MetaStack()
         for d in data:
             name = d['stack'].path
-            self.stack.add_stack(d['stack'], name=name)
+            meta.add_stack(d['stack'], name=name)
+            meta.add_channel(name=name,
+                             channel=d['i_channel'],
+                             label=d['label'],
+                             type_=d['type'],
+                            )
+        self.load_metastack(meta)
 
-            self.stack.add_channel(name=name,
-                                   channel=d['i_channel'],
-                                   label=d['label'],
-                                   type_=d['type'],
-                                  )
+    def render_display(self, meta, frame, scale=None):
+        #TODO adjust display
+        return self.stack.get_image(channel=0, frame=frame, scale=scale)
 
-        self.stackviewer.set_stack(self.stack, wait=False)
-
-    def open_seg(self):
-        print("Main_Tk.open_seg: not implemented")
+    def load_metastack(self, meta):
+        self.stack = meta
+        self.display_stack = ms.MetaStack()
+        self.display_stack.set_properties(n_frames=meta.n_frames,
+                                          width=meta.width,
+                                          height=meta.height,
+                                          mode=8,
+                                         )
+        self.display_stack.add_channel(fun=self.render_display, scales=True)
+        self.stackviewer.set_stack(self.display_stack, wait=False)
 
 
 

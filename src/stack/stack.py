@@ -86,11 +86,11 @@ class Stack:
         if ext is None:
             ext = os.path.splitext(self._path)[-1]
         if ext == '.npy':
-            arr = np.load(self._path)
+            arr = np.load(self._path, mmap_mode='r', allow_pickle=False)
         elif ext == '.npz':
-            with np.load(self._path) as arr_file:
-                #arr = next(iter(arr_file.values())).astype(np.uint16, casting='unsafe')
-                arr = next(iter(arr_file.values()))
+            with np.load(self._path, mmap_mode='r', allow_pickle=False) as arr_file:
+                arr = next(iter(arr_file.values())).astype(np.uint16, casting='unsafe')
+                #arr = next(iter(arr_file.values()))
         else:
             raise TypeError("Unknown type: {}".format(ext))
         self._mode = arr.dtype.itemsize * 8
@@ -110,16 +110,24 @@ class Stack:
         else:
             raise ValueError("Bad array shape: {}".format(arr.ndim))
         self._n_images = self._n_channels * self._n_frames
+        pad = 16 #currently, segmented data are end-padded with 16 pixels
+        self._height -= pad
+        self._width -= pad
 
         try:
             self._tmpfile = tempfile.TemporaryFile()
             self.img = np.memmap(filename=self._tmpfile,
                                  dtype=arr.dtype,
-                                 shape=arr.shape)
-            self.img[...] = arr[...]
+                                 shape=(self._n_channels,
+                                        self._n_frames,
+                                        self._height,
+                                        self._width
+                                       )
+                                )
+            self.img[...] = arr[:, :, :-pad, :-pad]
+            del arr
         except Exception:
             self._clear_state()
-            print(str(e))
             raise
         finally:
             self._listeners.notify("image")
@@ -177,7 +185,10 @@ class Stack:
         """Close the TIFF file."""
         with self.image_lock:
             self.img = None
-            self._tmpfile.close()
+            try:
+                self._tmpfile.close()
+            except Exception:
+                pass
             self._tmpfile = None
             self._clear_state()
 
