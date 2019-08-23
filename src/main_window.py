@@ -3,9 +3,11 @@ import numpy as np
 import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter.filedialog as tkfd
+from .roi import ContourRoi
 from .stackviewer_tk import StackViewer
 from .stack import Stack
 from .stack import metastack as ms
+from .tracking import Tracker
 
 
 class Main_Tk:
@@ -29,6 +31,9 @@ class Main_Tk:
         self.stack = None
         self.display_stack = None
         self.channel_selection_widgets = {}
+        self.track = True
+        self.traces = None
+        self.regionprops = None
 
         # Build menu
         menubar = tk.Menu(self.root)
@@ -98,8 +103,14 @@ class Main_Tk:
             return
         meta = ms.MetaStack()
         for d in data:
-            name = d['stack'].path
-            meta.add_stack(d['stack'], name=name)
+            if d['type'] == ms.TYPE_SEGMENTATION and self.track:
+                stack = self.track_stack(d['stack'])
+                name = 'segmented_stack'
+                d['stack'].close()
+            else:
+                stack = d['stack']
+                name = d['stack'].path
+            meta.add_stack(stack, name=name)
             meta.add_channel(name=name,
                              channel=d['i_channel'],
                              label=d['label'],
@@ -107,14 +118,27 @@ class Main_Tk:
                             )
         self.load_metastack(meta)
 
+    def track_stack(self, s):
+        """Perform tracking of a given stack"""
+        tracker = Tracker(segmented_stack=s)
+        tracker.get_traces()
+        l = tracker.stack_lbl
+        self.traces = tracker.traces
+        self.regionprops = tracker.props
+        for fr, props in self.regionprops.items():
+            l.set_rois([ContourRoi(regionprop=p) for p in props.values()], frame=fr)
+        return l
+
+
     def render_display(self, meta, frame, scale=None):
         #TODO adjust display
         # find channel to display
+        channels = []
         for i in sorted(self.channel_selection_widgets.keys()):
             if self.channel_selection_widgets[i]['val']:
-                break
-        else:
-            i = 0
+                channels.append(i)
+        if not channels:
+            channels.append(0)
 
         # Get image scale
         self.root.update_idletasks()
@@ -126,7 +150,18 @@ class Main_Tk:
             scale = self.display_stack.width / self.stack.width
 
         # Convert image to uint8
-        img = self.stack.get_image(channel=i, frame=frame, scale=scale)
+        imgs = []
+        for i in channels:
+            img = self.stack.get_image(channel=i, frame=frame, scale=scale)
+            if self.stack.spec(i).type == ms.TYPE_SEGMENTATION:
+                img2 = np.zeros_like(img, dtype=np.uint8)
+                img2[img > 0] = 255
+                img = img2
+            imgs.append(img)
+        if len(imgs) > 1:
+            img = np.mean(imgs, axis=0)
+        else:
+            img = imgs[0]
         img_min, img_max = img.min(), img.max()
         img = ((img - img_min) * (255 / (img_max - img_min))).astype(np.uint8)
 
@@ -197,7 +232,7 @@ class Main_Tk:
                     expand=True, fill=tk.X, padx=10, pady=5)
         elif idx_fluorescence:
             self.channel_selection_widgets[idx_fluorescence[0]]['callback'](True, notify=False)
-            for i in idx_phasecontrast:
+            for i in idx_fluorescence:
                 self.channel_selection_widgets[i]['button'].pack(anchor=tk.N,
                         expand=True, fill=tk.X, padx=10, pady=5)
         elif idx_segmentation is not None:

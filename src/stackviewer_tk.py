@@ -327,8 +327,9 @@ class StackViewer:
 
     def _show_img(self):
         """Update the image shown."""
-        convert_fcn = None
-        if self.contrast_adjuster is not None:
+        if self.contrast_adjuster is None:
+            convert_fcn = None
+        else:
             convert_fcn = self.contrast_adjuster.convert
 
         self.img = self.stack.get_frame_tk(channel=self.i_channel,
@@ -346,13 +347,13 @@ class StackViewer:
         self.canvas.config(width=self.stack.width, height=self.stack.height)
 
         self.n_channels = self.stack.n_channels
-        if not self.i_channel or self.i_channel >= self.n_channels:
-            self.i_channel = 0
+        if self.i_channel is None or self.i_channel >= self.n_channels:
+            #self.i_channel = 0
             self.i_channel_var.set(1)
 
         self.n_frames = self.stack.n_frames
-        if not self.i_frame or self.i_frame >= self.n_frames:
-            self.i_frame = 0
+        if self.i_frame is None or self.i_frame >= self.n_frames:
+            #self.i_frame = 0
             self.i_frame_var.set(1)
 
         self.label.config(text=self.stack.path)
@@ -394,25 +395,34 @@ class StackViewer:
             self.lbl_frame_size.grid(row=ROW_FRAME_CONTROL,
                                      column=COL_SIZES, sticky=tk.W)
 
+        # Update stack
+        self._change_stack_position(force=True)
 
-    def _change_stack_position(self, i_channel=None, i_frame=None):
+
+    def _change_stack_position(self, i_channel=None, i_frame=None, force=False):
         """
         Change the shown image.
 
         :param i_channel: channel to be shown, integer in [0,n_channels)
         :param i_frame: frame to be shown, integer in [0,n_frames)
+        :param force: if `True`, redraw image even without change
 
         If i_channel or i_frame is None, it is not changed.
         """
         if self.stack is None:
             return
-        isChanged = False
-        if i_channel is not None and i_channel != self.i_channel:
-            self.i_channel = i_channel
+        if force:
             isChanged = True
-        if i_frame is not None and i_frame != self.i_frame:
-            self.i_frame = i_frame
-            isChanged = True
+        else:
+            isChanged = False
+            if i_channel is not None and i_channel != self.i_channel:
+                self.i_channel = i_channel
+                isChanged = True
+            if i_frame is not None and i_frame != self.i_frame:
+                self.i_frame = i_frame
+                isChanged = True
+        if self.i_frame is None or self.i_channel is None:
+            return
         if isChanged or self.img is None:
             self._show_img()
 

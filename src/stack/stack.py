@@ -21,7 +21,7 @@ class Stack:
     :type path: str
     """
 
-    def __init__(self, path=None):
+    def __init__(self, path=None, arr=None, width=None, height=None, n_frames=None, n_channels=None, dtype=None):
         """Initialize a stack."""
         self.image_lock = threading.RLock()
         self.info_lock = threading.RLock()
@@ -29,9 +29,39 @@ class Stack:
         self._listeners = Listeners(kinds={"roi", "image"})
         self._clear_state()
 
-        # If requested, load stack
+        # Initialize stack
         if path is not None:
+            # Load from file (TIFF or numpy array)
             self.load(path)
+        elif arr is not None:
+            # Use array
+            self._path = None
+            self._tmpfile = None
+            self.img = arr
+            self._n_channels, self._n_frames, self._height, self._width = arr.shape
+            self._n_images = self._n_channels * self._n_frames
+            self._mode = arr.itemsize * 8
+            self._listeners.notify("image")
+        elif None not in (width, height, n_frames, n_channels, dtype):
+            # Create empty array
+            self._path = None
+            self._width = width
+            self._height = height
+            self._n_frames = n_frames
+            self._n_channels = n_channels
+            self._mode = np.dtype(dtype).itemsize * 8
+            self._tmpfile = tempfile.TemporaryFile()
+            self.img = np.memmap(filename=self._tmpfile,
+                                 dtype=dtype,
+                                 shape=(self._n_channels,
+                                        self._n_frames,
+                                        self._height,
+                                        self._width
+                                       )
+                                )
+            self._listeners.notify("image")
+            
+            
 
 
     def _clear_state(self):
