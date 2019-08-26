@@ -53,6 +53,7 @@ class Main_Tk:
 
         helpmenu = tk.Menu(menubar)
         menubar.add_cascade(label="Help", menu=helpmenu)
+        helpmenu.add_command(label="Breakpoint", command=self._breakpoint)
 
 
         # Window structure
@@ -73,6 +74,7 @@ class Main_Tk:
         ## Stack frame
         self.stackframe = tk.Frame(self.paned)
         self.paned.add(self.stackframe, sticky='NESW', width=550)
+        self.stackframe.bind('<Configure>', self._stacksize_changed)
         self.stackviewer = StackViewer(parent=self.stackframe, root=self.root, show_buttons=False)
 
         ## Options frame
@@ -93,6 +95,10 @@ class Main_Tk:
         # Run mainloop
         self.root.mainloop()
 
+
+    def _breakpoint(self):
+        """Enter a breakpoint for DEBUGging"""
+        breakpoint()
 
     def open_stack(self):
         """Ask user to open new stack"""
@@ -116,6 +122,9 @@ class Main_Tk:
                              label=d['label'],
                              type_=d['type'],
                             )
+            #if self.regionprops:
+            #    for fr, props in self.regionprops.items():
+            #        meta.set_rois([ContourRoi(regionprop=p) for p in props.values()], frame=fr)
         self.load_metastack(meta)
 
     def track_stack(self, s):
@@ -125,8 +134,9 @@ class Main_Tk:
         l = tracker.stack_lbl
         self.traces = tracker.traces
         self.regionprops = tracker.props
-        for fr, props in self.regionprops.items():
-            l.set_rois([ContourRoi(regionprop=p) for p in props.values()], frame=fr)
+        #breakpoint()#DEBUG
+        #for fr, props in self.regionprops.items():
+        #    l.set_rois([ContourRoi(regionprop=p) for p in props.values()], frame=fr)
         return l
 
 
@@ -145,7 +155,7 @@ class Main_Tk:
         display_width = self.stackframe.winfo_width()
         if self.display_stack.width != display_width:
             scale = display_width / self.stack.width
-            self.display_stack.set_properties(width=display_width, height=self.stack.height*scale)
+            #self.display_stack.set_properties(width=display_width, height=self.stack.height*scale)
         else:
             scale = self.display_stack.width / self.stack.width
 
@@ -190,6 +200,9 @@ class Main_Tk:
                                           height=meta.height,
                                           mode=8,
                                          )
+        if self.regionprops:
+            for fr, props in self.regionprops.items():
+                self.display_stack.set_rois([ContourRoi(regionprop=p) for p in props.values()], frame=fr)
 
         # Display buttons (new)
         for k, x in self.channel_selection_widgets.items():
@@ -254,6 +267,8 @@ class Main_Tk:
         self.display_stack.add_channel(fun=self.render_display, scales=True)
         self.stackviewer.set_stack(self.display_stack, wait=False)
 
+    def _stacksize_changed(self, evt):
+        self.stackviewer._change_stack_position(force=True)
 
 
 

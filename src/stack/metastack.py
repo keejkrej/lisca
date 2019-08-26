@@ -110,7 +110,8 @@ class MetaStack:
             if self._n_frames is None:
                 self._n_frames = new_stack.n_frames
             elif self._n_frames != new_stack.n_frames:
-                raise ValueError("Incompatible stack: expected {} frames, but found {} frames in '{}'.".format(self._n_channels, new_stack.n_channels, name))
+                breakpoint() #DEBUG
+                raise ValueError("Incompatible stack: expected {} frames, but found {} frames in '{}'.".format(self._n_frames, new_stack.n_frames, name))
             if self._width is None:
                 self._width = new_stack.width
             elif self._width != new_stack.width:

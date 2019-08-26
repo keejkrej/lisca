@@ -1160,7 +1160,7 @@ class RectRoi(Roi):
     def key(cls):
         return (cls.type_id, cls.version)
 
-    def __init__(self, polygon, props=None, inverted=False, label=None):
+    def __init__(self, polygon, props=None, inverted=False, label=None, color=None, visible=True):
         if inverted:
             self.corners = polygon.copy()
         else:
@@ -1169,6 +1169,8 @@ class RectRoi(Roi):
         self._coords = None
         self._perimeter = None
         self.label = label
+        self.color = color
+        self.visible = visible
 
     @property
     def coords(self):

@@ -8,10 +8,12 @@ class ContourRoi(Roi):
     def key(cls):
         return ("raw", "0.1")
 
-    def __init__(self, mask=None, label=None, regionprop=None, lazy=True):
+    def __init__(self, mask=None, label=None, regionprop=None, lazy=True, color=None, visible=True):
         self.label = None
         self.perimeter_idx = None
         self.corner_idx = None
+        self.color = color
+        self.visible = visible
         if mask is not None and label is not None:
             self.label = label
             self.coords = np.array((mask == label).nonzero()).T

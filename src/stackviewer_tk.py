@@ -4,6 +4,7 @@ import os
 import queue
 import sys
 from threading import Condition
+import numpy as np
 import tkinter as tk
 import tkinter.filedialog as tkfdlg
 import tkinter.ttk as ttk
@@ -109,6 +110,8 @@ class StackViewer:
         self.n_frames = None
         self.i_channel = None
         self.i_frame = None
+        self.img = None
+        self.img_shape = None
 
         self.i_channel_var = tk.IntVar()
         self.i_channel_var.trace_add("write", self._i_channel_changed)
@@ -318,6 +321,7 @@ class StackViewer:
             self.stack.close()
         self.stack = s
         self.img = None
+        self.img_shape = None
         self._update_stack_properties()
         self.image_listener_id = self.stack.add_listener(
                 lambda: self.schedule(self._update_stack_properties), "image")
@@ -335,16 +339,27 @@ class StackViewer:
         self.img = self.stack.get_frame_tk(channel=self.i_channel,
                                            frame=self.i_frame,
                                            convert_fcn=convert_fcn)
+        new_shape = np.array(((self.img.height(), self.img.width()),))
+        if self.img_shape is None or \
+                not (self.img_shape == new_shape).all():
+            self.img_shape = new_shape
+            is_scaled = True
+        else:
+            is_scaled = False
+
         self.canvas.delete("img")
         self.canvas.create_image(0, 0, anchor=tk.NW,
                                  image=self.img, tags=("img",))
         self.canvas.tag_lower("img")
         self.draw_rois()
 
+        if is_scaled:
+            self.update_scrollbars()
+
 
     def _update_stack_properties(self):
         """Read stack dimensions and adjust GUI."""
-        self.canvas.config(width=self.stack.width, height=self.stack.height)
+        self.update_scrollbars()
 
         self.n_channels = self.stack.n_channels
         if self.i_channel is None or self.i_channel >= self.n_channels:
@@ -411,8 +426,6 @@ class StackViewer:
         """
         if self.stack is None:
             return
-        if force:
-            isChanged = True
         else:
             isChanged = False
             if i_channel is not None and i_channel != self.i_channel:
@@ -423,7 +436,7 @@ class StackViewer:
                 isChanged = True
         if self.i_frame is None or self.i_channel is None:
             return
-        if isChanged or self.img is None:
+        if isChanged or self.img is None or force:
             self._show_img()
 
     def _i_channel_changed(self, *_):
@@ -474,6 +487,15 @@ class StackViewer:
 
     def update_scrollbars(self, *_):
         """Update the settings of the scrollbars around the canvas"""
+        # Set canvas shape to stack shape
+        if self.stack is not None and self.img_shape is not None:
+            height, width = self.img_shape.flat
+            self.root.update_idletasks()
+            view_height = self.canvas.winfo_height()
+            view_width = self.canvas.winfo_width()
+            if view_height != height or view_width != width:
+                self.canvas.config(height=height, width=width)
+
         # Get size of canvas frame (maximum displayable area)
         self.root.update_idletasks()
         view_width = self.canvas.winfo_width()
@@ -531,6 +553,12 @@ class StackViewer:
         if not self.show_rois_var.get() or not roi_collections:
             return
 
+        # Get image shape for scaling
+        if not (self.img_shape == self.stack_shape).all():
+            scale = self.img_shape / self.stack_shape
+        else:
+            scale = None
+
         for roi_col in roi_collections.values():
             rois = None
             try:
@@ -545,13 +573,27 @@ class StackViewer:
             if rois is None:
                 continue
 
-            color = roi_col.color
-            if color is None:
-                color = "yellow"
+            col_color = roi_col.color
+            if col_color is None:
+                col_color = "yellow"
 
             for roi in rois:
-                self.canvas.create_polygon(*roi.corners[:, ::-1].flat,
-                                           fill="", outline=color, tags="roi")
+                if not roi.visible:
+                    continue
+                color = roi.color
+                if color is None:
+                    color = col_color
+                corners = roi.corners
+                if scale is not None:
+                    corners = corners * scale
+                self.canvas.create_polygon(*corners[:, ::-1].flat,
+                        fill="", outline=color, tags="roi")
+
+
+    @property
+    def stack_shape(self):
+        return np.array(((self.stack.height, self.stack.width),))
+
 
     def _close(self, *_):
         if self.closing_state:
