@@ -546,7 +546,8 @@ class StackViewer:
     def draw_rois(self, *_):
         """Draw the ROIs in the current frame."""
         # Clear old ROIs
-        self.canvas.delete("roi")
+        self.canvas.delete('roi')
+        self.canvas.delete('roi_name')
 
         # If there are no ROIs to draw, we’re done here
         roi_collections = self.stack.rois
@@ -559,6 +560,7 @@ class StackViewer:
         else:
             scale = None
 
+        # Get ROIs and display
         for roi_col in roi_collections.values():
             rois = None
             try:
@@ -575,7 +577,7 @@ class StackViewer:
 
             col_color = roi_col.color
             if col_color is None:
-                col_color = "yellow"
+                col_color = 'yellow'
 
             for roi in rois:
                 if not roi.visible:
@@ -587,7 +589,13 @@ class StackViewer:
                 if scale is not None:
                     corners = corners * scale
                 self.canvas.create_polygon(*corners[:, ::-1].flat,
-                        fill="", outline=color, tags="roi")
+                        fill='', outline=color, tags='roi')
+                if roi.name and roi.name_visible:
+                    txtpos = roi.centroid.flat[::-1]
+                    if scale is not None:
+                        txtpos = txtpos * scale
+                    self.canvas.create_text(*txtpos.flat,
+                            fill=color, text=roi.name, tags='roi_name')
 
 
     @property

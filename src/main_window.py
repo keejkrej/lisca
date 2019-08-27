@@ -33,6 +33,7 @@ class Main_Tk:
         self.channel_selection_widgets = {}
         self.track = True
         self.traces = None
+        self.traces_selection = None
         self.regionprops = None
 
         # Build menu
@@ -132,11 +133,22 @@ class Main_Tk:
         tracker = Tracker(segmented_stack=s)
         tracker.get_traces()
         l = tracker.stack_lbl
-        self.traces = tracker.traces
-        self.regionprops = tracker.props
+        self.rois = []
+        self.traces = {}
+        self.traces_selection = {}
         #breakpoint()#DEBUG
-        #for fr, props in self.regionprops.items():
-        #    l.set_rois([ContourRoi(regionprop=p) for p in props.values()], frame=fr)
+        for fr, props in tracker.props.items():
+            #l.set_rois([ContourRoi(regionprop=p) for p in props.values()], frame=fr)
+            self.rois.append({l: ContourRoi(regionprop=p, label=l, color='blue') for l, p in props.items()})
+        for i, trace in enumerate(tracker.traces):
+            name = str(i + 1)
+            is_selected = tracker.traces_selection[i]
+            self.traces[name] = trace
+            self.traces_selection[name] = is_selected
+            for fr, rois in enumerate(self.rois):
+                roi = rois[trace[fr]]
+                roi.name = name
+                roi.color = 'green' if is_selected else 'red'
         return l
 
 
@@ -200,9 +212,9 @@ class Main_Tk:
                                           height=meta.height,
                                           mode=8,
                                          )
-        if self.regionprops:
-            for fr, props in self.regionprops.items():
-                self.display_stack.set_rois([ContourRoi(regionprop=p) for p in props.values()], frame=fr)
+        if self.rois:
+            for fr, rois in enumerate(self.rois):
+                self.display_stack.set_rois(list(rois.values()), frame=fr)
 
         # Display buttons (new)
         for k, x in self.channel_selection_widgets.items():
