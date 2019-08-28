@@ -194,12 +194,14 @@ class StackViewer:
                                      anchor=tk.W)
         self.entry_channel = tk.Spinbox(
                                        self.mainframe,
+                                       exportselection=False,
                                        width=3,
                                        from_=0,
                                        increment=1,
                                        textvariable=self.i_channel_var,
                                        justify=tk.RIGHT
                                       )
+        self.entry_channel.config(command=(self.entry_channel.register(self._i_channel_step), '%d'))
         self.lbl_channel_size = ttk.Label(self.mainframe, anchor=tk.W)
 
         # Frame control elements
@@ -215,12 +217,14 @@ class StackViewer:
             anchor=tk.W)
         self.entry_frame = tk.Spinbox(
                                       self.mainframe,
+                                      exportselection=False,
                                       width=3,
                                       from_=0,
                                       increment=1,
                                       textvariable=self.i_frame_var,
                                       justify=tk.RIGHT
                                      )
+        self.entry_frame.config(command=(self.entry_frame.register(self._i_frame_step), '%d'))
         self.lbl_frame_size = ttk.Label(self.mainframe, anchor=tk.W)
 
         # Start listening to external events
@@ -444,10 +448,30 @@ class StackViewer:
         i_channel = self.i_channel_var.get() - 1
         self._change_stack_position(i_channel=i_channel)
 
+    def _i_channel_step(self, direction):
+        """Callback for channel Spinbox"""
+        if not self.n_channels:
+            return
+        i_cur = self.i_channel + 1
+        if direction == 'up' and i_cur < self.n_channels:
+            self.i_channel_var.set(i_cur + 1)
+        elif direction == 'down' and i_cur > 1:
+            self.i_channel_var.set(i_cur - 1)
+
     def _i_frame_changed(self, *_):
         """Callback for frame variable"""
         i_frame = self.i_frame_var.get() - 1
         self._change_stack_position(i_frame=i_frame)
+
+    def _i_frame_step(self, direction):
+        """Callback for frame Spinbox"""
+        if not self.n_frames:
+            return
+        i_cur = self.i_frame + 1
+        if direction == 'up' and i_cur < self.n_frames:
+            self.i_frame_var.set(i_cur + 1)
+        elif direction == 'down' and i_cur > 1:
+            self.i_frame_var.set(i_cur - 1)
 
     def toggle_roi_adjustment(self, *_):
         """Callback of ROI adjustment button."""
