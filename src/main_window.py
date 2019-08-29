@@ -1,5 +1,8 @@
-import os
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.backend_bases import MouseButton
 import numpy as np
+import os
 import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter.filedialog as tkfd
@@ -9,6 +12,26 @@ from .stack import Stack
 from .stack import metastack as ms
 from .tracking import Tracker
 
+# tkinter event state constants for key presses
+# see: https://web.archive.org/web/20181009085916/http://infohost.nmt.edu/tcc/help/pubs/tkinter/web/event-handlers.html
+EVENT_STATE_SHIFT = 1
+EVENT_STATE_CTRL = 4
+
+PLOT_ALPHA = .3
+PLOT_ALPHA_HIGHLIGHT = 1
+PLOT_WIDTH = 1.5
+PLOT_WIDTH_HIGHLIGHT = 2
+PLOT_COLOR = 'k'
+PLOT_COLOR_HIGHLIGHT = 'r'
+ROI_WIDTH = 1
+ROI_WIDTH_HIGHLIGHT = 3
+
+COLOR_SELECTED = '#00cd00'
+COLOR_DESELECTED = '#0000ff'
+COLOR_UNTRACKABLE = '#ff0000'
+
+MODE_SELECTION = 'selection'
+MODE_HIGHLIGHT = 'highlight'
 
 class Main_Tk:
     def __init__(self, *, name=None, version=None):
@@ -28,13 +51,25 @@ class Main_Tk:
         self.root.grid_columnconfigure(0, weight=1)
 
         # Initialize variables
+        self.var_statusmsg = tk.StringVar(value="Initializing")
         self.stack = None
         self.display_stack = None
-        self.channel_selection_widgets = {}
+        self.channel_selection = {}
+        self.channel_order = []
+        self.frames_per_hour = 6
+        self.frame_indicators = []
         self.track = True
         self.traces = None
-        self.traces_selection = None
-        self.regionprops = None
+        self.rois = None
+        self.fig = None
+        self.fig_widget = None
+
+        self.var_show_frame_indicator = tk.BooleanVar(value=True)
+        self.var_show_frame_indicator.trace_add('write', self._update_frame_indicator)
+        self.var_mode = tk.StringVar(value=MODE_HIGHLIGHT)
+        self.var_show_untrackable = tk.BooleanVar(value=False)
+        self.var_show_untrackable.trace_add('write', self._update_show_untrackable)
+
 
         # Build menu
         menubar = tk.Menu(self.root)
@@ -43,14 +78,17 @@ class Main_Tk:
         filemenu = tk.Menu(menubar)
         menubar.add_cascade(label="File", menu=filemenu)
         filemenu.add_command(label="Open stack…", command=self.open_stack)
-        #filemenu.add_command(label="Open segmentation…", command=self.open_seg)
         filemenu.add_command(label="Quit", command=self.root.quit)
 
         modemenu = tk.Menu(menubar)
         menubar.add_cascade(label="Mode", menu=modemenu)
+        modemenu.add_radiobutton(label="Highlight", value=MODE_HIGHLIGHT, variable=self.var_mode)
+        modemenu.add_radiobutton(label="Selection", value=MODE_SELECTION, variable=self.var_mode)
 
         settmenu = tk.Menu(menubar)
-        menubar.add_cascade(label="Settings", menu=modemenu)
+        menubar.add_cascade(label="Settings", menu=settmenu)
+        settmenu.add_checkbutton(label="Display frame indicator", variable=self.var_show_frame_indicator)
+        settmenu.add_checkbutton(label="Display untracked cell", variable=self.var_show_untrackable)
 
         helpmenu = tk.Menu(menubar)
         menubar.add_cascade(label="Help", menu=helpmenu)
@@ -77,20 +115,17 @@ class Main_Tk:
         self.paned.add(self.stackframe, sticky='NESW', width=550)
         self.stackframe.bind('<Configure>', self._stacksize_changed)
         self.stackviewer = StackViewer(parent=self.stackframe, root=self.root, show_buttons=False)
+        self.stackviewer.register_roi_click(self._roi_clicked)
 
-        ## Options frame
-        self.optframe = tk.Frame(self.paned)
-        self.paned.add(self.optframe, sticky='NESW', width=450)
+        ## Figure frame
+        self.figframe = tk.Frame(self.paned)
+        self.paned.add(self.figframe, sticky='NESW', width=450)
+        self.create_figure()
 
         ## Statusbar
         self.statusbar = tk.Frame(self.root, padx=2, pady=2, bd=1, relief=tk.SUNKEN)
         self.statusbar.grid(row=1, column=0, sticky='NESW')
-        tk.Label(self.statusbar, text="Status").pack()
-
-
-
-
-
+        tk.Label(self.statusbar, textvariable=self.var_statusmsg).pack()
 
 
         # Run mainloop
@@ -101,12 +136,43 @@ class Main_Tk:
         """Enter a breakpoint for DEBUGging"""
         breakpoint()
 
+    def status(self, msg=''):
+        self.var_statusmsg.set(msg)
+        self.root.update()
+
+    def create_figure(self):
+        """Show an empty figure"""
+        self.close_figure()
+        self.fig = Figure()
+        mpl_canvas = FigureCanvasTkAgg(self.fig, master=self.figframe)
+        mpl_canvas.draw()
+        
+        #cid_enter = self.fig.canvas.mpl_connect('axes_enter_event', self.mouse_ax_enter)
+        #cid_leave = self.fig.canvas.mpl_connect('axes_leave_event', self.mouse_ax_leave)
+        
+        self.fig_widget = mpl_canvas.get_tk_widget()
+        self.fig_widget.pack(fill=tk.BOTH, expand=True)
+
+        #DEBUG
+        t = range(30)
+        ax = self.fig.subplots()
+        ax.plot(t, np.random.random(len(t)) + np.array(t) * .1)
+        ax.set_xlabel("Time [h]")
+        ax.set_ylabel("Fluorescence [a.u.]")
+        self.fig.tight_layout(pad=1.2)
+        self.fig.canvas.draw()
+
+    def close_figure(self):
+        pass
+
     def open_stack(self):
         """Ask user to open new stack"""
+        self.status("Opening stack")
         StackOpener(self.root, callback=self.open_metastack)
 
     def open_metastack(self, data):
         if not data:
+            self.status()
             return
         meta = ms.MetaStack()
         for d in data:
@@ -123,32 +189,35 @@ class Main_Tk:
                              label=d['label'],
                              type_=d['type'],
                             )
-            #if self.regionprops:
-            #    for fr, props in self.regionprops.items():
-            #        meta.set_rois([ContourRoi(regionprop=p) for p in props.values()], frame=fr)
         self.load_metastack(meta)
+        self.read_traces()
+        self.plot_traces()
+        self.status()
 
     def track_stack(self, s):
         """Perform tracking of a given stack"""
+        self.status("Tracking cells")
         tracker = Tracker(segmented_stack=s)
         tracker.get_traces()
         l = tracker.stack_lbl
         self.rois = []
         self.traces = {}
-        self.traces_selection = {}
-        #breakpoint()#DEBUG
         for fr, props in tracker.props.items():
-            #l.set_rois([ContourRoi(regionprop=p) for p in props.values()], frame=fr)
-            self.rois.append({l: ContourRoi(regionprop=p, label=l, color='blue') for l, p in props.items()})
+            self.rois.append({l: ContourRoi(regionprop=p, label=l, color=COLOR_UNTRACKABLE, visible=False) for l, p in props.items()})
         for i, trace in enumerate(tracker.traces):
             name = str(i + 1)
             is_selected = tracker.traces_selection[i]
-            self.traces[name] = trace
-            self.traces_selection[name] = is_selected
+            self.traces[name] = {'roi': trace,
+                                 'select': is_selected,
+                                 'highlight': False,
+                                 'val': {},
+                                 'plot': {},
+                                }
             for fr, rois in enumerate(self.rois):
                 roi = rois[trace[fr]]
                 roi.name = name
-                roi.color = 'green' if is_selected else 'red'
+                roi.color = COLOR_SELECTED if is_selected else COLOR_DESELECTED
+                roi.visible = True
         return l
 
 
@@ -156,18 +225,20 @@ class Main_Tk:
         #TODO adjust display
         # find channel to display
         channels = []
-        for i in sorted(self.channel_selection_widgets.keys()):
-            if self.channel_selection_widgets[i]['val']:
+        for i in sorted(self.channel_selection.keys()):
+            if self.channel_selection[i]['val']:
                 channels.append(i)
         if not channels:
             channels.append(0)
+
+        # Update frame indicator
+        self.root.after_idle(self._update_frame_indicator)
 
         # Get image scale
         self.root.update_idletasks()
         display_width = self.stackframe.winfo_width()
         if self.display_stack.width != display_width:
             scale = display_width / self.stack.width
-            #self.display_stack.set_properties(width=display_width, height=self.stack.height*scale)
         else:
             scale = self.display_stack.width / self.stack.width
 
@@ -179,6 +250,9 @@ class Main_Tk:
                 img2 = np.zeros_like(img, dtype=np.uint8)
                 img2[img > 0] = 255
                 img = img2
+            else:
+                img_min, img_max = img.min(), img.max()
+                img = ((img - img_min) * (255 / (img_max - img_min)))
             imgs.append(img)
         if len(imgs) > 1:
             img = np.mean(imgs, axis=0)
@@ -190,21 +264,60 @@ class Main_Tk:
         return img
 
 
-    def _build_chanselbtn_callback(self, x):
-        def callback(val=None, notify=True):
-            nonlocal self, x
-            if val is None:
-                val = not x['val']
-            x['val'] = val
-            if val:
-                x['button'].config(relief=tk.SUNKEN)
-            else:
-                x['button'].config(relief=tk.RAISED)
-            if notify:
-                self.display_stack._listeners.notify('image')
+    def _build_chanselbtn_callback(self, i):
+        """Build callback for channel selection button.
+
+        `i` is the key of the corresponding item in `self.channel_selection`.
+
+        The returned callback will, by default, select the channel with key `i`
+        and deselect all other buttons. However, if the control key is pressed
+        simultaneously with the click, the selection of channel `i` is toggled.
+        """
+        def callback(event):
+            nonlocal self, i
+            self._change_channel_selection(i, toggle=event.state & EVENT_STATE_CTRL, default=i)
         return callback
 
+
+    def _change_channel_selection(self, *channels, toggle=False, default=None):
+        """Select channels for display.
+
+        `channels` holds the specified channels (keys to `self.channel_selection`).
+        If `combine`, the selections of the channels in `channels` are toggled.
+        If not `combine`, the channels in `channels` are selected and all others are deselected.
+        """
+        has_selected = False
+        if not channels:
+            pass
+        elif toggle:
+            for i in channels:
+                ch = self.channel_selection[i]
+                ch['val'] ^= True
+                if ch['val']:
+                    ch['button'].config(relief=tk.SUNKEN)
+                    has_selected = True
+                else:
+                    ch['button'].config(relief=tk.RAISED)
+        else:
+            for i, ch in self.channel_selection.items():
+                ch['val'] = i in channels
+                if ch['val']:
+                    ch['button'].config(relief=tk.SUNKEN)
+                    has_selected = True
+                else:
+                    ch['button'].config(relief=tk.RAISED)
+        if not has_selected and \
+                not any(ch['val'] for ch in self.channel_selection.values()):
+            if default is None:
+                default = 0
+            ch = self.channel_selection[self.channel_order[default]]
+            ch['val'] = True
+            ch['button'].config(relief=tk.SUNKEN)
+        self.display_stack._listeners.notify('image')
+
+
     def load_metastack(self, meta):
+        self.status("Loading stack …")
         self.stack = meta
         self.display_stack = ms.MetaStack()
         self.display_stack.set_properties(n_frames=meta.n_frames,
@@ -216,11 +329,12 @@ class Main_Tk:
             for fr, rois in enumerate(self.rois):
                 self.display_stack.set_rois(list(rois.values()), frame=fr)
 
-        # Display buttons (new)
-        for k, x in self.channel_selection_widgets.items():
+        # Display buttons
+        self.channel_order.clear()
+        for k, x in self.channel_selection.items():
             x['button'].destroy()
             del x['callback']
-            del self.channel_selection_widgets[k]
+            del self.channel_selection[k]
         has_display = False
         idx_phasecontrast = None
         idx_fluorescence = []
@@ -235,7 +349,7 @@ class Main_Tk:
             else:
                 continue
             x = {}
-            self.channel_selection_widgets[i] = x
+            self.channel_selection[i] = x
             x['type'] = spec.type
             x['val'] = False
             btntxt = []
@@ -246,41 +360,220 @@ class Main_Tk:
             else:
                 btntxt.append(spec.type)
             btntxt = "\n".join(btntxt)
-            x['callback'] = self._build_chanselbtn_callback(x)
-            x['button'] = tk.Button(self.chanselframe, justify=tk.LEFT,
-                                    text=btntxt, command=x['callback'])
-
-        # Initial channel selection
-        if idx_phasecontrast is not None:
-            self.channel_selection_widgets[idx_phasecontrast]['callback'](True, notify=False)
-            self.channel_selection_widgets[idx_phasecontrast]['button'].pack(anchor=tk.N,
-                    expand=True, fill=tk.X, padx=10, pady=5)
-        elif idx_fluorescence:
-            self.channel_selection_widgets[idx_fluorescence[0]]['callback'](True, notify=False)
-            for i in idx_fluorescence:
-                self.channel_selection_widgets[i]['button'].pack(anchor=tk.N,
-                        expand=True, fill=tk.X, padx=10, pady=5)
-        elif idx_segmentation is not None:
-            self.channel_selection_widgets[idx_segmentation]['callback'](True, notify=False)
-            self.channel_selection_widgets[idx_segmentation]['button'].pack(anchor=tk.N,
-                    expand=True, fill=tk.X, padx=10, pady=5)
+            x['button'] = tk.Button(self.chanselframe, justify=tk.LEFT, text=btntxt)
+            x['button'].bind('<1>', self._build_chanselbtn_callback(i))
 
         # Display buttons
         if idx_phasecontrast is not None:
-            self.channel_selection_widgets[idx_phasecontrast]['button'].pack(anchor=tk.N,
+            self.channel_order.append(idx_phasecontrast)
+            self.channel_selection[idx_phasecontrast]['button'].pack(anchor=tk.N,
                     expand=True, fill=tk.X, padx=10, pady=5)
         for i in idx_fluorescence:
-            self.channel_selection_widgets[i]['button'].pack(anchor=tk.N,
+            self.channel_order.append(i)
+            self.channel_selection[i]['button'].pack(anchor=tk.N,
                     expand=True, fill=tk.X, padx=10, pady=5)
         if idx_segmentation is not None:
-            self.channel_selection_widgets[idx_segmentation]['button'].pack(anchor=tk.N,
+            self.channel_order.append(idx_segmentation)
+            self.channel_selection[idx_segmentation]['button'].pack(anchor=tk.N,
                     expand=True, fill=tk.X, padx=10, pady=5)
 
+        # Initial channel selection and display
+        self._change_channel_selection()
         self.display_stack.add_channel(fun=self.render_display, scales=True)
         self.stackviewer.set_stack(self.display_stack, wait=False)
 
     def _stacksize_changed(self, evt):
         self.stackviewer._change_stack_position(force=True)
+
+    def read_traces(self):
+        self.status("Read traces")
+        n_frames = self.stack.n_frames
+        if not self.traces:
+            return
+        for tr in self.traces.values():
+            tr['val'].clear()
+            if not tr['select']:
+                continue
+            val_area = np.empty(n_frames, dtype=np.float)
+            for fr, i in enumerate(tr['roi']):
+                val_area[fr] = self.rois[fr][i].area
+            tr['val']['area'] = val_area
+
+    def to_hours(self, x):
+        """Convert 0-based frame number to hours"""
+        try:
+            return x / self.frames_per_hour
+        except Exception:
+            return np.NaN
+
+    def plot_traces(self, fig=None):
+        if fig is None:
+            fig = self.fig
+            fig.canvas.mpl_connect('pick_event', self._line_picker)
+            is_interactive = True
+            self.frame_indicators.clear()
+        else:
+            is_interactive = False
+        fig.clear()
+    
+        if not self.traces:
+            fig.canvas.draw()
+            return
+            
+        ax = fig.subplots()
+        ax.set_xmargin(.003)
+        t_vec = self.to_hours(np.array(range(self.stack.n_frames)))
+        for name, tr in self.traces.items():
+            if not tr['select']:
+                continue
+            if tr['highlight']:
+                lw, alpha, color = PLOT_WIDTH_HIGHLIGHT, PLOT_ALPHA_HIGHLIGHT, PLOT_COLOR_HIGHLIGHT
+            else:
+                lw, alpha, color = PLOT_WIDTH, PLOT_ALPHA, PLOT_COLOR
+            l = ax.plot(t_vec, tr['val']['area'],
+                    color=color, alpha=alpha, lw=lw, label=name, picker=3)
+            tr['plot']['area'] = l
+
+        if is_interactive:
+            self.frame_indicators.append(ax.axvline(np.NaN, lw=1.5, color='r'))
+            self._update_frame_indicator(draw=False)
+
+        ax.set_xlabel("Time [h]")
+        fig.canvas.draw()
+
+    def _update_frame_indicator(self, *_, t=None, fr=None, draw=True):
+        if self.var_show_frame_indicator.get():
+            if t is None:
+                if fr is None:
+                    fr = self.stackviewer.i_frame
+                t = self.to_hours(fr)
+        else:
+            t = np.NaN
+        for indicator in self.frame_indicators:
+            indicator.set_xdata([t, t])
+        if draw:
+            self.fig.canvas.draw()
+
+    def _line_picker(self, event):
+        if not event.mouseevent.button == MouseButton.LEFT:
+            return
+        i = event.artist.get_label()
+        self.highlight_trace(i)
+        self._update_highlight()
+
+    def _update_show_untrackable(self, *_):
+        val = self.var_show_untrackable.get()
+        for rois in self.rois:
+            for roi in rois.values():
+                if not roi.name:
+                    roi.visible = val
+        self.display_stack._listeners.notify('roi')
+
+    def _update_highlight(self):
+        self.fig.canvas.draw()
+        self.display_stack._listeners.notify('roi')
+
+    def _update_selection(self):
+        self.read_traces()
+        self.plot_traces()
+        self.display_stack._listeners.notify('roi')
+
+    def highlight_trace(self, *trace, val=None):
+        """Change highlight state of one or more traces.
+
+        `trace` must be valid keys to `self.traces`.
+        `val` specifies whether to highlight (True) the
+        traces or not (False) or to toggle (None) highlighting.
+
+        This method does not update display.
+        To update display, call `self._update_highlight`.
+        """
+        if len(trace) > 1:
+            for tr in trace:
+                self.highlight_trace(tr, val=val)
+            return
+        else:
+            trace = trace[0]
+        tr = self.traces[trace]
+        if val is None:
+            val = not tr['highlight']
+        elif val == tr['highlight']:
+            return
+        if not tr['select'] and val:
+            return
+        tr['highlight'] = val
+        if val:
+            for plots in tr['plot'].values():
+                for plot in plots:
+                    plot.set_color(PLOT_COLOR_HIGHLIGHT)
+                    plot.set_lw(PLOT_WIDTH_HIGHLIGHT)
+                    plot.set_alpha(PLOT_ALPHA_HIGHLIGHT)
+            for fr, roi in enumerate(tr['roi']):
+                self.rois[fr][roi].stroke_width = ROI_WIDTH_HIGHLIGHT
+        else:
+            for plots in tr['plot'].values():
+                for plot in plots:
+                    plot.set_color(PLOT_COLOR)
+                    plot.set_lw(PLOT_WIDTH)
+                    plot.set_alpha(PLOT_ALPHA)
+            for fr, roi in enumerate(tr['roi']):
+                self.rois[fr][roi].stroke_width = ROI_WIDTH
+
+    def select_trace(self, *trace, val=None):
+        """Change selection state of one or more traces.
+
+        `trace` must be valid keys to `self.traces`.
+        `val` specifies whether to select (True),
+        deselect (False) or toggle (None) the selection.
+
+        This method does not update display.
+        To update display, call `self._update_selection`.
+        """
+        if len(trace) > 1:
+            for tr in trace:
+                self.select_trace(tr, val=val)
+            return
+        else:
+            trace = trace[0]
+        tr = self.traces[trace]
+        if val is None:
+            val = not tr['select']
+        elif val == tr['select']:
+            return
+        tr['select'] = val
+        if val:
+            for fr, roi in enumerate(tr['roi']):
+                self.rois[fr][roi].color = COLOR_SELECTED
+        else:
+            self.highlight_trace(trace, val=False)
+            for fr, roi in enumerate(tr['roi']):
+                self.rois[fr][roi].color = COLOR_DESELECTED
+
+    def _roi_clicked(self, event, names):
+        """Callback for click on ROI"""
+        if not names:
+            return
+        mode = self.var_mode.get()
+        if event.state & EVENT_STATE_SHIFT:
+            if mode == MODE_HIGHLIGHT:
+                mode = MODE_SELECTION
+            elif mode == MODE_SELECTION:
+                mode = MODE_HIGHLIGHT
+        if mode == MODE_HIGHLIGHT:
+            for name in names:
+                try:
+                    self.highlight_trace(name)
+                except KeyError:
+                    continue
+            self._update_highlight()
+        elif mode == MODE_SELECTION:
+            for name in names:
+                try:
+                    self.select_trace(name)
+                except KeyError:
+                    continue
+            self._update_selection()
+        
 
 
 
@@ -349,10 +642,8 @@ class StackOpener:
         btn_frame.grid_columnconfigure(1, weight=1)
 
         btn_open = tk.Button(btn_frame, text="Open...", command=self.open_stack)
-        #btn_open.pack(side=tk.LEFT)
         btn_open.grid(row=0, column=0, sticky='WE', padx=5)
         btn_remove = tk.Button(btn_frame, text="Remove", command=self.remove_stack)
-        #btn_remove.pack(side=tk.LEFT)
         btn_remove.grid(row=0, column=1, sticky='WE', padx=5)
 
         ## Display

@@ -8,7 +8,7 @@ class RoiCollection:
     IDX_VERSION = 1
 
     def __init__(self, key=None, type_=None, version=None,
-                 parameters=None, name=None, color=None):
+                 parameters=None, name=None, color=None, stroke_width=None):
         if key is None and isinstance(type_, str) and isinstance(version, str):
             self.__key = (type_, version)
         elif isinstance(key, tuple) and len(key) == 2 and \
@@ -21,6 +21,7 @@ class RoiCollection:
         self.__parameters = parameters
         self.__name = name
         self.__color = color
+        self.__stroke_width = stroke_width
         self.__rois = {}
         self.__listeners = Listeners()
         self.__lock = RLock()
@@ -134,6 +135,16 @@ class RoiCollection:
     def color(self, c):
         with self.__lock:
             self.__color = c
+
+    @property
+    def stroke_width(self):
+        with self.__lock:
+            return self.__stroke_width
+
+    @stroke_width.setter
+    def stroke_width(self, sw):
+        with self.__lock:
+            self.__stroke_width = sw
 
     def register_listener(self, fun):
         return self.__listeners.register(fun)

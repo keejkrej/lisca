@@ -1,6 +1,9 @@
+#from numba import jit
 import numpy as np
 import skimage.measure as skmeas
 from .stack import Stack
+
+import time
 
 class Tracker:
     """Performs tracking in multithreaded fashion.
@@ -17,7 +20,7 @@ class Tracker:
     IS_TOO_LARGE = 2
     IS_AT_EDGE = 4
 
-    def __init__(self, segmented_stack=None, labeled_stack=None, min_size=100, max_size=20000):
+    def __init__(self, segmented_stack=None, labeled_stack=None, min_size=1000, max_size=10000):
         self.stack_seg = segmented_stack
         self.stack_lbl = labeled_stack
         self.progress_fcn = None
@@ -66,6 +69,7 @@ class Tracker:
         last_idx = {}
 
         # Initialization for first frame
+        tic = time.time() #DEBUG
         for p in self.props[0].values():
             check = self._check_props(p)
             if check & self.IS_AT_EDGE:
@@ -73,9 +77,11 @@ class Tracker:
             last_idx[p.label] = len(traces)
             traces.append([p.label])
             traces_selection.append(True if check == self.IS_GOOD else False)
+        print("Frame 001: {:.4f}s".format(time.time() - tic)) #DEBUG
 
         # Track further frames
         for fr in range(1, self.stack_lbl.n_frames):
+            tic = time.time() #DEBUG
             new_idx = {}
             for p in self.props[fr].values():
                 ck = self._check_props(p)
@@ -157,6 +163,7 @@ class Tracker:
                     if parent['large'] or parent['small']:
                         traces_selection[parent_idx] = False
             last_idx = new_idx
+            print("Frame {:03d}: {:.4f}s".format(fr, time.time() - tic)) #DEBUG
 
         # Clean up cells
         n_frames = self.stack_lbl.n_frames

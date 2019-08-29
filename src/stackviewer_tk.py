@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-
+import base64
 import os
 import queue
 import sys
@@ -25,6 +25,10 @@ COL_SIZES = 2
 COL_SCALES = 3
 COLSPAN_CANVAS = 4
 
+TAG_IMAGE = 'image'
+TAG_ROI = 'roi'
+TAG_ROI_NAME = 'roi_name'
+TAG_ROI_ID = 'roi_id_'
 
 class StackViewer:
     """
@@ -103,6 +107,7 @@ class StackViewer:
         self.image_listener_id = None
         self.roi_listener_id = None
         self._update_queue = queue.Queue()
+        self._roi_click_bindings = {}
 
         # Stack properties
         self.stack = None
@@ -328,9 +333,9 @@ class StackViewer:
         self.img_shape = None
         self._update_stack_properties()
         self.image_listener_id = self.stack.add_listener(
-                lambda: self.schedule(self._update_stack_properties), "image")
+                lambda: self.schedule(self._update_stack_properties), TAG_IMAGE)
         self.roi_listener_id = self.stack.add_listener(
-                lambda: self.schedule(self.draw_rois), "roi")
+                lambda: self.schedule(self.draw_rois), TAG_ROI)
 
 
     def _show_img(self):
@@ -351,10 +356,10 @@ class StackViewer:
         else:
             is_scaled = False
 
-        self.canvas.delete("img")
+        self.canvas.delete(TAG_IMAGE)
         self.canvas.create_image(0, 0, anchor=tk.NW,
-                                 image=self.img, tags=("img",))
-        self.canvas.tag_lower("img")
+                                 image=self.img, tags=(TAG_IMAGE,))
+        self.canvas.tag_lower(TAG_IMAGE)
         self.draw_rois()
 
         if is_scaled:
@@ -526,7 +531,7 @@ class StackViewer:
         view_height = self.canvas.winfo_height()
 
         # Get bounding box of canvas content
-        cbb = self.canvas.bbox("img")
+        cbb = self.canvas.bbox(TAG_IMAGE)
         if cbb is None:
             canvas_width = 0
             canvas_height = 0
@@ -553,7 +558,7 @@ class StackViewer:
 
         :return: Canvas height and canvas width, in pixels
         :rtype: tuple ``(width, height)``"""
-        cbb = self.canvas.bbox("img")
+        cbb = self.canvas.bbox(TAG_IMAGE)
         if cbb is None:
             return 0, 0
         canvas_width = cbb[2] - cbb[0]
@@ -570,8 +575,8 @@ class StackViewer:
     def draw_rois(self, *_):
         """Draw the ROIs in the current frame."""
         # Clear old ROIs
-        self.canvas.delete('roi')
-        self.canvas.delete('roi_name')
+        self.canvas.delete(TAG_ROI)
+        self.canvas.delete(TAG_ROI_NAME)
 
         # If there are no ROIs to draw, we’re done here
         roi_collections = self.stack.rois
@@ -602,25 +607,89 @@ class StackViewer:
             col_color = roi_col.color
             if col_color is None:
                 col_color = 'yellow'
+            col_stroke_width = roi_col.stroke_width
 
             for roi in rois:
                 if not roi.visible:
                     continue
+
                 color = roi.color
                 if color is None:
                     color = col_color
+
+                stroke_width = roi.stroke_width
+                if stroke_width is None:
+                    stroke_width = col_stroke_width
+
                 corners = roi.corners
                 if scale is not None:
                     corners = corners * scale
-                self.canvas.create_polygon(*corners[:, ::-1].flat,
-                        fill='', outline=color, tags='roi')
+
+                if roi.name:
+                    # user-specified ROI name is base64-encoded to avoid issues due to bad format
+                    name = roi.name
+                    tags = (TAG_ROI, f'{TAG_ROI_ID}{base64.b64encode(roi.name.encode()).decode()}')
+                else:
+                    tags = TAG_ROI
+
+                self.canvas.create_polygon(*corners[:, ::-1].flat, tags=tags,
+                        fill='', outline=color, width=stroke_width)
+
                 if roi.name and roi.name_visible:
                     txtpos = roi.centroid.flat[::-1]
                     if scale is not None:
                         txtpos = txtpos * scale
                     self.canvas.create_text(*txtpos.flat,
-                            fill=color, text=roi.name, tags='roi_name')
+                            fill=color, text=roi.name, tags=TAG_ROI_NAME)
 
+    def _build_roi_click_callback(self, func):
+        """Build a callback to be registered by `register_roi_click`"""
+        def callback(event):
+            nonlocal self, func
+            x, y, = event.x, event.y
+            d = 3
+            items = self.canvas.find_overlapping(x-d, y-d, x+d, y+d)
+            names = []
+            for it in items:
+                for tag in self.canvas.gettags(it):
+                    if not tag.startswith(TAG_ROI_ID):
+                        continue
+                    name64 = tag[len(TAG_ROI_ID):]
+                    names.append(base64.b64decode(name64).decode())
+                    break
+            func(event=event, names=names)
+        return callback
+
+    def register_roi_click(self, func, seq='<Button-1>'):
+        """Register a callback for click on ROIs.
+
+        `func` is the function called when one or more ROIs are clicked.
+        It is called with the keyword `event` holding the event instance
+        and with the keyword `names` holding a list of names of the
+        affected ROIs.
+        `seq` is the event to be registered.
+
+        This function returns the binding ID, which may be used to
+        unregister the callback using the method `unregister_roi_click`.
+        """
+        func = self._build_roi_click_callback(func)
+        bind_id = self.canvas.bind(seq, func, add=True)
+        self._roi_click_bindings[bind_id] = seq
+        return bind_id
+
+    def unregister_roi_click(self, bind_id=None):
+        """Unregister a ROI callback.
+
+        `bind_id` is the binding ID as returned by `register_roi_callback`.
+        If `bind_id` is not given, all ROI callbacks are unregistered.
+        """
+        if bind_id is None:
+            while self._roi_click_bindings:
+                bind_id, seq = self._roi_click_bindings.popitem()
+                self.canvas.unbind(seq, bind_id)
+        else:
+            seq = self._roi_click_bindings.pop(bind_id)
+            self.canvas.unbind(seq, bind_id)
 
     @property
     def stack_shape(self):

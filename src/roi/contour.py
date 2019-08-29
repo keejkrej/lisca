@@ -11,7 +11,7 @@ class ContourRoi(Roi):
         return ("raw", "0.1")
 
     def __init__(self, mask=None, label=None, regionprop=None, lazy=True,
-            color=None, visible=True, name="", name_visible=True):
+            color=None, visible=True, name=None, name_visible=True, stroke_width=None):
         self.label = None
         self._perimeter = None
         self._corners = None
@@ -19,6 +19,7 @@ class ContourRoi(Roi):
         self.visible = visible
         self.name = name
         self.name_visible = name_visible
+        self.stroke_width = stroke_width
         if mask is not None and label is not None:
             self.label = label
             self.coords = np.array((mask == label).nonzero()).T
