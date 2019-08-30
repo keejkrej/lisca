@@ -26,12 +26,14 @@ PLOT_COLOR_HIGHLIGHT = 'r'
 ROI_WIDTH = 1
 ROI_WIDTH_HIGHLIGHT = 3
 
-COLOR_SELECTED = '#00cd00'
-COLOR_DESELECTED = '#0000ff'
-COLOR_UNTRACKABLE = '#ff0000'
+COLOR_SELECTED = '#00cc00'
+COLOR_DESELECTED = '#0088ff'
+COLOR_UNTRACKABLE = '#cc00cc'
 
 MODE_SELECTION = 'selection'
 MODE_HIGHLIGHT = 'highlight'
+
+TYPE_AREA = 'Area'
 
 class Main_Tk:
     def __init__(self, *, name=None, version=None):
@@ -46,7 +48,7 @@ class Main_Tk:
             title = " ".join((title, version))
         self.root.title(title)
 
-        self.root.geometry('1200x500')
+        self.root.geometry('1300x600')
         self.root.grid_rowconfigure(0, weight=1)
         self.root.grid_columnconfigure(0, weight=1)
 
@@ -60,6 +62,7 @@ class Main_Tk:
         self.frame_indicators = []
         self.track = True
         self.traces = None
+        self.trace_info = None
         self.rois = None
         self.fig = None
         self.fig_widget = None
@@ -67,9 +70,14 @@ class Main_Tk:
         self.var_show_frame_indicator = tk.BooleanVar(value=True)
         self.var_show_frame_indicator.trace_add('write', self._update_frame_indicator)
         self.var_mode = tk.StringVar(value=MODE_HIGHLIGHT)
+        self.var_show_roi_contours = tk.BooleanVar(value=True)
+        self.var_show_roi_contours.trace_add('write', self._update_show_roi_contours)
+        self.var_show_roi_names = tk.BooleanVar(value=True)
+        self.var_show_roi_names.trace_add('write', self._update_show_roi_names)
         self.var_show_untrackable = tk.BooleanVar(value=False)
         self.var_show_untrackable.trace_add('write', self._update_show_untrackable)
 
+        self._init_trace_info()
 
         # Build menu
         menubar = tk.Menu(self.root)
@@ -88,7 +96,9 @@ class Main_Tk:
         settmenu = tk.Menu(menubar)
         menubar.add_cascade(label="Settings", menu=settmenu)
         settmenu.add_checkbutton(label="Display frame indicator", variable=self.var_show_frame_indicator)
-        settmenu.add_checkbutton(label="Display untracked cell", variable=self.var_show_untrackable)
+        settmenu.add_checkbutton(label="Display cell contours", variable=self.var_show_roi_contours)
+        settmenu.add_checkbutton(label="Display cell labels", variable=self.var_show_roi_names)
+        settmenu.add_checkbutton(label="Display untracked cells", variable=self.var_show_untrackable)
 
         helpmenu = tk.Menu(menubar)
         menubar.add_cascade(label="Help", menu=helpmenu)
@@ -112,14 +122,14 @@ class Main_Tk:
 
         ## Stack frame
         self.stackframe = tk.Frame(self.paned)
-        self.paned.add(self.stackframe, sticky='NESW', width=550)
+        self.paned.add(self.stackframe, sticky='NESW', width=650)
         self.stackframe.bind('<Configure>', self._stacksize_changed)
         self.stackviewer = StackViewer(parent=self.stackframe, root=self.root, show_buttons=False)
         self.stackviewer.register_roi_click(self._roi_clicked)
 
         ## Figure frame
         self.figframe = tk.Frame(self.paned)
-        self.paned.add(self.figframe, sticky='NESW', width=450)
+        self.paned.add(self.figframe, sticky='NESW', width=500)
         self.create_figure()
 
         ## Statusbar
@@ -158,12 +168,30 @@ class Main_Tk:
         ax = self.fig.subplots()
         ax.plot(t, np.random.random(len(t)) + np.array(t) * .1)
         ax.set_xlabel("Time [h]")
-        ax.set_ylabel("Fluorescence [a.u.]")
+        ax.set_ylabel("Random test [a.u.]")
         self.fig.tight_layout(pad=1.2)
         self.fig.canvas.draw()
 
     def close_figure(self):
+        #TODO
         pass
+
+    def _init_trace_info(self):
+        self.trace_info = {TYPE_AREA: dict(label=None, channel=None, unit="px²", type=TYPE_AREA, order=0, plot=True)}
+
+    def clear_trace_info(self):
+        for k in self.trace_info.keys():
+            if k != TYPE_AREA:
+                del self.trace_info[k]
+
+    def add_trace_info(self, name, label=None, channel=None, unit="a.u.", type_=None, order=None, plot=False):
+        self.trace_info[name] = {'label': label,
+                                 'channel': channel,
+                                 'unit': unit,
+                                 'type': type_,
+                                 'order': order,
+                                 'plot': plot,
+                                }
 
     def open_stack(self):
         """Ask user to open new stack"""
@@ -175,6 +203,9 @@ class Main_Tk:
             self.status()
             return
         meta = ms.MetaStack()
+        self.clear_trace_info()
+        i_channel = 0
+        i_channel_fl = 1
         for d in data:
             if d['type'] == ms.TYPE_SEGMENTATION and self.track:
                 stack = self.track_stack(d['stack'])
@@ -189,6 +220,24 @@ class Main_Tk:
                              label=d['label'],
                              type_=d['type'],
                             )
+
+            if d['type'] == ms.TYPE_FLUORESCENCE:
+                label = f"Fluorescence {i_channel_fl}"
+                name = d['label']
+                if not name:
+                    name = label
+                    label = None
+                self.add_trace_info(name,
+                                    label=label,
+                                    channel=i_channel,
+                                    type_=d['type'],
+                                    order=i_channel_fl,
+                                    plot=True,
+                                   )
+                i_channel_fl += 1
+
+            i_channel += 1
+
         self.load_metastack(meta)
         self.read_traces()
         self.plot_traces()
@@ -202,8 +251,16 @@ class Main_Tk:
         l = tracker.stack_lbl
         self.rois = []
         self.traces = {}
+        show_contour = self.var_show_roi_contours.get()
+        show_name = self.var_show_roi_names.get()
+        show_untrackable = show_contour and self.var_show_untrackable.get()
         for fr, props in tracker.props.items():
-            self.rois.append({l: ContourRoi(regionprop=p, label=l, color=COLOR_UNTRACKABLE, visible=False) for l, p in props.items()})
+            self.rois.append({l: ContourRoi(regionprop=p,
+                                            label=l,
+                                            color=COLOR_UNTRACKABLE,
+                                            visible=show_untrackable,
+                                            name_visible=False,
+                                           ) for l, p in props.items()})
         for i, trace in enumerate(tracker.traces):
             name = str(i + 1)
             is_selected = tracker.traces_selection[i]
@@ -213,11 +270,14 @@ class Main_Tk:
                                  'val': {},
                                  'plot': {},
                                 }
-            for fr, rois in enumerate(self.rois):
-                roi = rois[trace[fr]]
+            #for fr, rois in enumerate(self.rois):
+                #roi = rois[trace[fr]]
+            for fr, j in enumerate(trace):
+                roi = self.rois[fr][j]
                 roi.name = name
                 roi.color = COLOR_SELECTED if is_selected else COLOR_DESELECTED
-                roi.visible = True
+                roi.visible = bool(roi.name) and show_contour
+                roi.name_visible = show_name
         return l
 
 
@@ -386,18 +446,47 @@ class Main_Tk:
         self.stackviewer._change_stack_position(force=True)
 
     def read_traces(self):
-        self.status("Read traces")
-        n_frames = self.stack.n_frames
+        """Read out cell traces"""
         if not self.traces:
             return
+
+        self.status("Read traces")
+        n_frames = self.stack.n_frames
+
+        # Get fluorescence channels
+        fl_chans = []
+        for name, info in self.trace_info.items():
+            if info['type'] == ms.TYPE_FLUORESCENCE:
+                fl_chans.append({'name': name,
+                                 'i_channel': info['channel'],
+                                 'img': None,
+                                })
+        fl_chans.sort(key=lambda ch: self.trace_info[ch['name']]['order'])
+
+        # Read traces
         for tr in self.traces.values():
             tr['val'].clear()
-            if not tr['select']:
-                continue
+
+            # Area
             val_area = np.empty(n_frames, dtype=np.float)
             for fr, i in enumerate(tr['roi']):
                 val_area[fr] = self.rois[fr][i].area
-            tr['val']['area'] = val_area
+            tr['val'][TYPE_AREA] = val_area
+
+            # Fluorescence
+            for ch in fl_chans:
+                tr['val'][ch['name']] = np.empty(n_frames, dtype=np.float)
+
+        for fr in range(n_frames):
+            images = {}
+            for ch in fl_chans:
+                ch['img'] = self.stack.get_image(frame=fr, channel=ch['i_channel'])
+            for tr in self.traces.values():
+                roi = self.rois[fr][tr['roi'][fr]]
+                for ch in fl_chans:
+                    tr['val'][ch['name']][fr] = np.sum(ch['img'][roi.rows, roi.cols])
+        self.status()
+                
 
     def to_hours(self, x):
         """Convert 0-based frame number to hours"""
@@ -419,29 +508,45 @@ class Main_Tk:
         if not self.traces:
             fig.canvas.draw()
             return
-            
-        ax = fig.subplots()
-        ax.set_xmargin(.003)
+
+        # Find data to be plotted and plotting order
+        plot_list = []
+        for name, info in self.trace_info.items():
+            if info['plot']:
+                plot_list.append(name)
+        plot_list.sort(key=lambda name: self.trace_info[name]['order'])
+
+
         t_vec = self.to_hours(np.array(range(self.stack.n_frames)))
-        for name, tr in self.traces.items():
-            if not tr['select']:
-                continue
-            if tr['highlight']:
-                lw, alpha, color = PLOT_WIDTH_HIGHLIGHT, PLOT_ALPHA_HIGHLIGHT, PLOT_COLOR_HIGHLIGHT
-            else:
-                lw, alpha, color = PLOT_WIDTH, PLOT_ALPHA, PLOT_COLOR
-            l = ax.plot(t_vec, tr['val']['area'],
-                    color=color, alpha=alpha, lw=lw, label=name, picker=3)
-            tr['plot']['area'] = l
+        axes = fig.subplots(len(plot_list), squeeze=False, sharex=True)[:,0]
+        for qty, ax in zip(plot_list, axes):
+            ax.set_xmargin(.003)
+            for name, tr in self.traces.items():
+                if not tr['select']:
+                    continue
+                if tr['highlight']:
+                    lw, alpha, color = PLOT_WIDTH_HIGHLIGHT, PLOT_ALPHA_HIGHLIGHT, PLOT_COLOR_HIGHLIGHT
+                else:
+                    lw, alpha, color = PLOT_WIDTH, PLOT_ALPHA, PLOT_COLOR
+                l = ax.plot(t_vec, tr['val'][qty],
+                        color=color, alpha=alpha, lw=lw, label=name, picker=3)
+                tr['plot'][qty] = l
 
-        if is_interactive:
-            self.frame_indicators.append(ax.axvline(np.NaN, lw=1.5, color='r'))
-            self._update_frame_indicator(draw=False)
+            if is_interactive:
+                self.frame_indicators.append(ax.axvline(np.NaN, lw=1.5, color='r'))
 
-        ax.set_xlabel("Time [h]")
+
+            ylbl_qty = self.trace_info[qty]['type']
+            ylbl_unit = self.trace_info[qty]['unit']
+            ax.set_ylabel("{} [{}]".format(ylbl_qty, ylbl_unit))
+            ax.set_xlabel("Time [h]")
+            ax.set_title(qty)
+        self._update_frame_indicator(draw=False)
+        self.fig.tight_layout(pad=.3)
         fig.canvas.draw()
 
     def _update_frame_indicator(self, *_, t=None, fr=None, draw=True):
+        """Update display of vertical frame indicator in plot"""
         if self.var_show_frame_indicator.get():
             if t is None:
                 if fr is None:
@@ -455,43 +560,84 @@ class Main_Tk:
             self.fig.canvas.draw()
 
     def _line_picker(self, event):
+        """Callback for clicking on line in plot"""
         if not event.mouseevent.button == MouseButton.LEFT:
             return
         i = event.artist.get_label()
         self.highlight_trace(i)
-        self._update_highlight()
+        self.update_highlight()
+
+    def _update_show_roi_contours(self, *_):
+        show_contours = self.var_show_roi_contours.get()
+        if show_contours:
+            show_untrackable = self.var_show_untrackable.get()
+        else:
+            show_untrackable = False
+        for rois in self.rois:
+            for roi in rois.values():
+                if roi.name:
+                    roi.visible = show_contours
+                else:
+                    roi_visible = show_untrackable
+        self.display_stack._listeners.notify('roi')
+
+    def _update_show_roi_names(self, *_):
+        show_names = self.var_show_roi_names.get()
+        if show_names:
+            show_untrackable = self.var_show_untrackable.get()
+        else:
+            show_untrackable = False
+        for rois in self.rois:
+            for roi in rois.values():
+                if roi.name:
+                    roi.name_visible = show_names
+                else:
+                    roi.name_visible = show_untrackable
+        self.display_stack._listeners.notify('roi')
 
     def _update_show_untrackable(self, *_):
-        val = self.var_show_untrackable.get()
+        show = False
+        if self.var_show_untrackable.get() and self.var_show_roi_contours.get():
+            show = True
         for rois in self.rois:
             for roi in rois.values():
                 if not roi.name:
-                    roi.visible = val
+                    roi.visible = show
         self.display_stack._listeners.notify('roi')
 
-    def _update_highlight(self):
+    def update_highlight(self):
         self.fig.canvas.draw()
         self.display_stack._listeners.notify('roi')
 
-    def _update_selection(self):
+    def update_selection(self):
         self.read_traces()
         self.plot_traces()
         self.display_stack._listeners.notify('roi')
 
-    def highlight_trace(self, *trace, val=None):
+    def highlight_trace(self, *trace, val=None, update_select=False):
         """Change highlight state of one or more traces.
 
         `trace` must be valid keys to `self.traces`.
         `val` specifies whether to highlight (True) the
         traces or not (False) or to toggle (None) highlighting.
+        If `update_select` is True, a non-selected cell is
+        selected before highlighting it; else, highlighting
+        is ignored.
 
         This method does not update display.
-        To update display, call `self._update_highlight`.
+        To update display, call `self.update_highlight`.
+
+        If `update_select` is True, a return value of True
+        indicates that a cell selection has changed. In this case,
+        the user is responsible to call `self.update_selection`.
         """
+        is_selection_updated = False
         if len(trace) > 1:
             for tr in trace:
-                self.highlight_trace(tr, val=val)
-            return
+                ret = self.highlight_trace(tr, val=val, update_select=update_select)
+                if update_select and ret:
+                    is_selection_updated = True
+            return is_selection_updated
         else:
             trace = trace[0]
         tr = self.traces[trace]
@@ -500,7 +646,11 @@ class Main_Tk:
         elif val == tr['highlight']:
             return
         if not tr['select'] and val:
-            return
+            if update_select:
+                self.select_trace(trace, val=True)
+                is_selection_updated = True
+            else:
+                return False
         tr['highlight'] = val
         if val:
             for plots in tr['plot'].values():
@@ -518,6 +668,7 @@ class Main_Tk:
                     plot.set_alpha(PLOT_ALPHA)
             for fr, roi in enumerate(tr['roi']):
                 self.rois[fr][roi].stroke_width = ROI_WIDTH
+        return is_selection_updated
 
     def select_trace(self, *trace, val=None):
         """Change selection state of one or more traces.
@@ -527,7 +678,7 @@ class Main_Tk:
         deselect (False) or toggle (None) the selection.
 
         This method does not update display.
-        To update display, call `self._update_selection`.
+        To update display, call `self.update_selection`.
         """
         if len(trace) > 1:
             for tr in trace:
@@ -553,6 +704,7 @@ class Main_Tk:
         """Callback for click on ROI"""
         if not names:
             return
+        is_selection_updated = False
         mode = self.var_mode.get()
         if event.state & EVENT_STATE_SHIFT:
             if mode == MODE_HIGHLIGHT:
@@ -562,17 +714,19 @@ class Main_Tk:
         if mode == MODE_HIGHLIGHT:
             for name in names:
                 try:
-                    self.highlight_trace(name)
+                    is_selection_updated |= self.highlight_trace(name, update_select=True)
                 except KeyError:
                     continue
-            self._update_highlight()
+            self.update_highlight()
         elif mode == MODE_SELECTION:
             for name in names:
                 try:
                     self.select_trace(name)
                 except KeyError:
                     continue
-            self._update_selection()
+            is_selection_updated = True
+        if is_selection_updated:
+            self.update_selection()
         
 
 
@@ -733,11 +887,11 @@ class StackOpener:
             return
         try:
             sel = int(sel[-1])
-            stack = self.stacks.pop(sel)
-            self.del_chan(sel)
-            stack['stack'].close()
         except Exception:
             return
+        self.del_chan(sel)
+        stack = self.stacks.pop(sel)
+        stack['stack'].close()
         self.refresh_stacklist()
 
     def refresh_stacklist(self, select=None):
@@ -804,7 +958,10 @@ class StackOpener:
         
     def del_chan(self, i):
         """Remove a channel from the selection"""
-        self.channels[i]['stack'] = None
+        stack = self.stacks[i]
+        for ch in self.channels:
+            if ch['stack'] is stack:
+                ch['stack'] = None
         self.refresh_channels()
 
     def refresh_channels(self):

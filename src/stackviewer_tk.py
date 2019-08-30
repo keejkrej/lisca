@@ -610,37 +610,46 @@ class StackViewer:
             col_stroke_width = roi_col.stroke_width
 
             for roi in rois:
-                if not roi.visible:
+                if not roi.visible and not roi.name_visible:
                     continue
 
                 color = roi.color
                 if color is None:
                     color = col_color
 
-                stroke_width = roi.stroke_width
-                if stroke_width is None:
-                    stroke_width = col_stroke_width
-
-                corners = roi.corners
-                if scale is not None:
-                    corners = corners * scale
-
                 if roi.name:
                     # user-specified ROI name is base64-encoded to avoid issues due to bad format
-                    name = roi.name
-                    tags = (TAG_ROI, f'{TAG_ROI_ID}{base64.b64encode(roi.name.encode()).decode()}')
+                    name_tag = f'{TAG_ROI_ID}{base64.b64encode(roi.name.encode()).decode()}'
                 else:
-                    tags = TAG_ROI
+                    name_tag = None
 
-                self.canvas.create_polygon(*corners[:, ::-1].flat, tags=tags,
-                        fill='', outline=color, width=stroke_width)
+                if roi.visible:
+                    if name_tag:
+                        tags = (TAG_ROI, name_tag)
+                    else:
+                        tags = TAG_ROI
+
+                    stroke_width = roi.stroke_width
+                    if stroke_width is None:
+                        stroke_width = col_stroke_width
+
+                    corners = roi.corners
+                    if scale is not None:
+                        corners = corners * scale
+
+                    self.canvas.create_polygon(*corners[:, ::-1].flat, tags=tags,
+                            fill='', outline=color, width=stroke_width)
 
                 if roi.name and roi.name_visible:
                     txtpos = roi.centroid.flat[::-1]
                     if scale is not None:
                         txtpos = txtpos * scale
+                    if name_tag:
+                        tags = (TAG_ROI_NAME, name_tag)
+                    else:
+                        tags = TAG_ROI_NAME
                     self.canvas.create_text(*txtpos.flat,
-                            fill=color, text=roi.name, tags=TAG_ROI_NAME)
+                            fill=color, text=roi.name, tags=tags)
 
     def _build_roi_click_callback(self, func):
         """Build a callback to be registered by `register_roi_click`"""
@@ -649,13 +658,13 @@ class StackViewer:
             x, y, = event.x, event.y
             d = 3
             items = self.canvas.find_overlapping(x-d, y-d, x+d, y+d)
-            names = []
+            names = set()
             for it in items:
                 for tag in self.canvas.gettags(it):
                     if not tag.startswith(TAG_ROI_ID):
                         continue
                     name64 = tag[len(TAG_ROI_ID):]
-                    names.append(base64.b64decode(name64).decode())
+                    names.add(base64.b64decode(name64).decode())
                     break
             func(event=event, names=names)
         return callback
@@ -665,7 +674,7 @@ class StackViewer:
 
         `func` is the function called when one or more ROIs are clicked.
         It is called with the keyword `event` holding the event instance
-        and with the keyword `names` holding a list of names of the
+        and with the keyword `names` holding a set of names of the
         affected ROIs.
         `seq` is the event to be registered.
 

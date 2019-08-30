@@ -13,6 +13,7 @@ pip-selfcheck.json
 __pycache__/
 *~
 *.swp
+*.pyc
 
 # Data relating to development/deployment
 out/
