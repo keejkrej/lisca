@@ -3,6 +3,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.backend_bases import MouseButton
 import numpy as np
 import os
+import pandas as pd
 import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter.filedialog as tkfd
@@ -66,6 +67,7 @@ class Main_Tk:
         self.rois = None
         self.fig = None
         self.fig_widget = None
+        self.save_dir = None
 
         self.var_show_frame_indicator = tk.BooleanVar(value=True)
         self.var_show_frame_indicator.trace_add('write', self._update_frame_indicator)
@@ -86,6 +88,8 @@ class Main_Tk:
         filemenu = tk.Menu(menubar)
         menubar.add_cascade(label="File", menu=filemenu)
         filemenu.add_command(label="Open stack…", command=self.open_stack)
+        filemenu.add_command(label="Save", command=self.save)
+        filemenu.add_command(label="Set output directory…", command=self._get_savedir)
         filemenu.add_command(label="Quit", command=self.root.quit)
 
         modemenu = tk.Menu(menubar)
@@ -145,6 +149,25 @@ class Main_Tk:
     def _breakpoint(self):
         """Enter a breakpoint for DEBUGging"""
         breakpoint()
+
+    def _get_savedir(self):
+        """Ask user for output directory"""
+        options = {'mustexist': False,
+                   'parent': self.root,
+                   'title': "Choose output directory",
+                  }
+        if self.save_dir:
+            options['initialdir'] = self.save_dir
+        new_savedir = tkfd.askdirectory(**options)
+        if new_savedir:
+            if not os.path.exists(new_savedir):
+                os.makedirs(new_savedir)
+            elif not os.path.isdir(new_savedir):
+                #TODO: show GUI dialog
+                raise NotADirectoryError("Not a directory: '{}'".format(new_savedir))
+            self.save_dir = new_savedir
+        if not os.path.isdir(self.save_dir):
+            raise NotADirectoryError("Not a directory: '{}'".format(self.save_dir))
 
     def status(self, msg=''):
         self.var_statusmsg.set(msg)
@@ -727,7 +750,43 @@ class Main_Tk:
             is_selection_updated = True
         if is_selection_updated:
             self.update_selection()
+
+    def traces_as_dataframes(self):
+        """Return a dict of DataFrames of the traces"""
+        t = self.to_hours(np.array(range(self.stack.n_frames)))
+        #breakpoint() #DEBUG
+        time_vec = pd.DataFrame(t, columns=("Time [h]",))
+        df_dict = {}
+        for name, tr in self.traces.items():
+            if not tr['select']:
+                continue
+            for qty, data in tr['val'].items():
+                try:
+                    df_dict[qty][name] = data
+                except KeyError:
+                    df_dict[qty] = time_vec.copy()
+                    df_dict[qty][name] = data
+        return df_dict
+
+    def save(self):
+        """Save data to files"""
+        if not self.save_dir:
+            self._get_savedir()
         
+        # Plot the data
+        fig = Figure(figsize=(9,7))
+        self.plot_traces(fig)
+        fig.savefig(os.path.join(self.save_dir, "Figure.pdf"))
+
+        # Save data to Excel file
+        df_dict = self.traces_as_dataframes()
+        with pd.ExcelWriter(os.path.join(self.save_dir, "Data.xlsx"), engine='xlsxwriter') as writer:
+            for name, df in df_dict.items():
+                df.to_excel(writer, sheet_name=name)
+            writer.save()
+
+        print(f"Data are written to '{self.save_dir}'") #DEBUG
+
 
 
 
