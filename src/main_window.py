@@ -13,23 +13,25 @@ from .stack import Stack
 from .stack import metastack as ms
 from .tracking import Tracker
 
-# tkinter event state constants for key presses
-# see: https://web.archive.org/web/20181009085916/http://infohost.nmt.edu/tcc/help/pubs/tkinter/web/event-handlers.html
-EVENT_STATE_SHIFT = 1
-EVENT_STATE_CTRL = 4
-
+# Display properties
+PLOT_COLOR = 'k'
+PLOT_COLOR_HIGHLIGHT = '#ff0000'
 PLOT_ALPHA = .3
 PLOT_ALPHA_HIGHLIGHT = 1
 PLOT_WIDTH = 1.5
 PLOT_WIDTH_HIGHLIGHT = 2
-PLOT_COLOR = 'k'
-PLOT_COLOR_HIGHLIGHT = 'r'
+
+ROI_COLOR_SELECTED = '#00aa00'
+ROI_COLOR_DESELECTED = '#0088ff'
+ROI_COLOR_UNTRACKABLE = '#cc00cc'
+ROI_COLOR_HIGHLIGHT = '#ff0000'
 ROI_WIDTH = 1
 ROI_WIDTH_HIGHLIGHT = 3
 
-COLOR_SELECTED = '#00cc00'
-COLOR_DESELECTED = '#0088ff'
-COLOR_UNTRACKABLE = '#cc00cc'
+# tkinter event state constants for key presses
+# see: https://web.archive.org/web/20181009085916/http://infohost.nmt.edu/tcc/help/pubs/tkinter/web/event-handlers.html
+EVENT_STATE_SHIFT = 1
+EVENT_STATE_CTRL = 4
 
 MODE_SELECTION = 'selection'
 MODE_HIGHLIGHT = 'highlight'
@@ -187,13 +189,13 @@ class Main_Tk:
         self.fig_widget.pack(fill=tk.BOTH, expand=True)
 
         #DEBUG
-        t = range(30)
-        ax = self.fig.subplots()
-        ax.plot(t, np.random.random(len(t)) + np.array(t) * .1)
-        ax.set_xlabel("Time [h]")
-        ax.set_ylabel("Random test [a.u.]")
-        self.fig.tight_layout(pad=1.2)
-        self.fig.canvas.draw()
+#        t = range(30)
+#        ax = self.fig.subplots()
+#        ax.plot(t, np.random.random(len(t)) + np.array(t) * .1)
+#        ax.set_xlabel("Time [h]")
+#        ax.set_ylabel("Random test [a.u.]")
+#        self.fig.tight_layout(pad=1.2)
+#        self.fig.canvas.draw()
 
     def close_figure(self):
         #TODO
@@ -280,7 +282,7 @@ class Main_Tk:
         for fr, props in tracker.props.items():
             self.rois.append({l: ContourRoi(regionprop=p,
                                             label=l,
-                                            color=COLOR_UNTRACKABLE,
+                                            color=ROI_COLOR_UNTRACKABLE,
                                             visible=show_untrackable,
                                             name_visible=False,
                                            ) for l, p in props.items()})
@@ -293,12 +295,10 @@ class Main_Tk:
                                  'val': {},
                                  'plot': {},
                                 }
-            #for fr, rois in enumerate(self.rois):
-                #roi = rois[trace[fr]]
             for fr, j in enumerate(trace):
                 roi = self.rois[fr][j]
                 roi.name = name
-                roi.color = COLOR_SELECTED if is_selected else COLOR_DESELECTED
+                roi.color = ROI_COLOR_SELECTED if is_selected else ROI_COLOR_DESELECTED
                 roi.visible = bool(roi.name) and show_contour
                 roi.name_visible = show_name
         return l
@@ -552,8 +552,10 @@ class Main_Tk:
                 else:
                     lw, alpha, color = PLOT_WIDTH, PLOT_ALPHA, PLOT_COLOR
                 l = ax.plot(t_vec, tr['val'][qty],
-                        color=color, alpha=alpha, lw=lw, label=name, picker=3)
-                tr['plot'][qty] = l
+                        color=color, alpha=alpha, lw=lw, label=name,
+                        picker=(3 if is_interactive else None))
+                if is_interactive:
+                    tr['plot'][qty] = l
 
             if is_interactive:
                 self.frame_indicators.append(ax.axvline(np.NaN, lw=1.5, color='r'))
@@ -683,6 +685,7 @@ class Main_Tk:
                     plot.set_alpha(PLOT_ALPHA_HIGHLIGHT)
             for fr, roi in enumerate(tr['roi']):
                 self.rois[fr][roi].stroke_width = ROI_WIDTH_HIGHLIGHT
+                self.rois[fr][roi].color = ROI_COLOR_HIGHLIGHT
         else:
             for plots in tr['plot'].values():
                 for plot in plots:
@@ -691,6 +694,10 @@ class Main_Tk:
                     plot.set_alpha(PLOT_ALPHA)
             for fr, roi in enumerate(tr['roi']):
                 self.rois[fr][roi].stroke_width = ROI_WIDTH
+                if tr['select']:
+                    self.rois[fr][roi].color = ROI_COLOR_SELECTED
+                else:
+                    self.rois[fr][roi].color = ROI_COLOR_DESELECTED
         return is_selection_updated
 
     def select_trace(self, *trace, val=None):
@@ -717,11 +724,11 @@ class Main_Tk:
         tr['select'] = val
         if val:
             for fr, roi in enumerate(tr['roi']):
-                self.rois[fr][roi].color = COLOR_SELECTED
+                self.rois[fr][roi].color = ROI_COLOR_SELECTED
         else:
             self.highlight_trace(trace, val=False)
             for fr, roi in enumerate(tr['roi']):
-                self.rois[fr][roi].color = COLOR_DESELECTED
+                self.rois[fr][roi].color = ROI_COLOR_DESELECTED
 
     def _roi_clicked(self, event, names):
         """Callback for click on ROI"""
@@ -754,7 +761,6 @@ class Main_Tk:
     def traces_as_dataframes(self):
         """Return a dict of DataFrames of the traces"""
         t = self.to_hours(np.array(range(self.stack.n_frames)))
-        #breakpoint() #DEBUG
         time_vec = pd.DataFrame(t, columns=("Time [h]",))
         df_dict = {}
         for name, tr in self.traces.items():
@@ -782,7 +788,7 @@ class Main_Tk:
         df_dict = self.traces_as_dataframes()
         with pd.ExcelWriter(os.path.join(self.save_dir, "Data.xlsx"), engine='xlsxwriter') as writer:
             for name, df in df_dict.items():
-                df.to_excel(writer, sheet_name=name)
+                df.to_excel(writer, sheet_name=name, index=False)
             writer.save()
 
         print(f"Data are written to '{self.save_dir}'") #DEBUG
