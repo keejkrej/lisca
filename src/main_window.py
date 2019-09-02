@@ -39,6 +39,84 @@ MODE_HIGHLIGHT = 'highlight'
 TYPE_AREA = 'Area'
 
 class Main_Tk:
+    """Display the main window
+
+    The following structured fields are present:
+
+    self.channel_selection
+        list of dict
+        The list items correspond the the channels of
+        `self.display_stack` with the same index. The dict
+        holds information of the selection widgets:
+        'type'      str of the channel type; one of:
+                    `ms.TYPE_PHASECONTRAST`, `ms.TYPE_FLUORESCENCE`
+                    and `ms.TYPE_SEGMENTATION`
+        'val'       boolean; indicates whether this channel is
+                    currently displayed (True) or not (False).
+        'button'    tk.Button instance for displaying the channel
+
+    self.channel_order
+        list of int
+        The list values are indices to `self.channel_selection`.
+        The order of the values is the order in which to display
+        the channel selection buttons.
+
+    self.traces
+        dict of dict
+        The keys of the outer dict are the trace names (as str),
+        each trace corresponding to one tracked cell.
+        The inner dict holds information of the trace:
+        'roi'       list with frame index as index and corresponding
+                    ROI name as value. The ContourRoi instance can
+                    be retrieved from `self.rois` using the frame
+                    index and the ROI name.
+        'select'    boolean; if True, cell trace is read and displayed.
+        'highlight' boolean; if True, cell/trace is highlighted in
+                    stackviewer and in plot. Only meaningful if
+                    the 'select' option is True.
+        'val'       dict of values read for the cell. The dict keys are
+                    the name of the quantity, the dict values are the
+                    corresponding values of the quantity. For most quantities
+                    (currently for all), the values are 1-dim numpy arrays
+                    with each element being to the value in the
+                    corresponding frame. Cell size is automatically present
+                    with the key 'Area'. Integrated fluorescence intensities
+                    are read for each fluorescence channel.
+        'plot'      dict of plot objects (e.g. Line2D instance). The dict keys
+                    are the plotted quantities (as in 'val'), the values
+                    are the plot objects. Useful for plot manipulations
+                    like highlighting traces.
+
+    self.trace_info
+        dict of dict
+        Holds information about the present data.
+        The keys of the outer dict are names of the quantities
+        ('Area' predefined), the inner dict contains:
+        'label'     (optional) str with additional information
+                    about the trace, e.g. 'Fluorescence 1'
+        'channel'   int, index of the corresponding channel
+                    in `self.stack`. May be None.
+        'unit'      str, unit of the quantity. Used for proper
+                    axes labels in the plot, in later versions
+                    possibly also for unit conversions.
+                    Default: 'a.u.'
+        'type'      str, one of `TYPE_AREA` and `ms.TYPE_FLUORESCENCE`.
+                    Indicates the type of quantity of the trace.
+        'order'     int, indicates in which order to display the plots.
+        'button'    tk.Button, the button instance for contoling 'plot'
+        'var'       tk.BooleanVar associated with 'button'
+        'plot'      boolean, indicates whether to plot the quantity or not.
+        The outer dict should only be changed using the methods
+        `self.add_trace_info` or `self.clear_trace_info`.
+
+    self.rois
+        list of dict
+        The list indices are the frame indices of the stack,
+        the dict keys are the labels (as in the labeled image)
+        of the ROIs in the frame (saved as string) and the
+        dict values are the corresponding ContourRoi instances.
+    """
+
     def __init__(self, *, name=None, version=None):
         # Initialize Window
         self.root = tk.Tk()
@@ -61,6 +139,7 @@ class Main_Tk:
         self.display_stack = None
         self.channel_selection = {}
         self.channel_order = []
+        self.traces_selection = {}
         self.frames_per_hour = 6
         self.frame_indicators = []
         self.track = True
@@ -121,10 +200,11 @@ class Main_Tk:
         self.chanframe.grid_columnconfigure(0, weight=1)
 
         self.open_btn = tk.Button(self.chanframe, text="Open stack...", command=self.open_stack)
-        #self.open_btn.pack(anchor=tk.N, expand=True, fill=tk.X, padx=10)
         self.open_btn.grid(row=0, column=0, sticky='NEW', padx=10, pady=5)
         self.chanselframe = tk.Frame(self.chanframe)
         self.chanselframe.grid(row=1, column=0, sticky='NEW')
+        self.plotselframe = tk.Frame(self.chanframe)
+        self.plotselframe.grid(row=2, column=0, sticky='ESW')
 
         ## Stack frame
         self.stackframe = tk.Frame(self.paned)
@@ -188,33 +268,35 @@ class Main_Tk:
         self.fig_widget = mpl_canvas.get_tk_widget()
         self.fig_widget.pack(fill=tk.BOTH, expand=True)
 
-        #DEBUG
-#        t = range(30)
-#        ax = self.fig.subplots()
-#        ax.plot(t, np.random.random(len(t)) + np.array(t) * .1)
-#        ax.set_xlabel("Time [h]")
-#        ax.set_ylabel("Random test [a.u.]")
-#        self.fig.tight_layout(pad=1.2)
-#        self.fig.canvas.draw()
-
     def close_figure(self):
         #TODO
         pass
 
     def _init_trace_info(self):
-        self.trace_info = {TYPE_AREA: dict(label=None, channel=None, unit="px²", type=TYPE_AREA, order=0, plot=True)}
+        self.trace_info = {TYPE_AREA: dict(label=None,
+                                           channel=None,
+                                           unit="px²",
+                                           type=TYPE_AREA,
+                                           order=0,
+                                           button=None,
+                                           var=None,
+                                           plot=True,
+                                          )}
 
     def clear_trace_info(self):
         for k in self.trace_info.keys():
             if k != TYPE_AREA:
                 del self.trace_info[k]
 
-    def add_trace_info(self, name, label=None, channel=None, unit="a.u.", type_=None, order=None, plot=False):
+    def add_trace_info(self, name, label=None, channel=None, unit="a.u.",
+            type_=None, order=None, plot=False):
         self.trace_info[name] = {'label': label,
                                  'channel': channel,
                                  'unit': unit,
                                  'type': type_,
                                  'order': order,
+                                 'button': None,
+                                 'var': None,
                                  'plot': plot,
                                 }
 
@@ -265,6 +347,7 @@ class Main_Tk:
 
         self.load_metastack(meta)
         self.read_traces()
+        self._update_traces_display_buttons()
         self.plot_traces()
         self.status()
 
@@ -358,7 +441,7 @@ class Main_Tk:
         """
         def callback(event):
             nonlocal self, i
-            self._change_channel_selection(i, toggle=event.state & EVENT_STATE_CTRL, default=i)
+            self._change_channel_selection(i, toggle=bool(event.state & EVENT_STATE_CTRL), default=i)
         return callback
 
 
@@ -366,8 +449,11 @@ class Main_Tk:
         """Select channels for display.
 
         `channels` holds the specified channels (keys to `self.channel_selection`).
-        If `combine`, the selections of the channels in `channels` are toggled.
-        If not `combine`, the channels in `channels` are selected and all others are deselected.
+        If `toggle`, the selections of the channels in `channels` are toggled.
+        If not `toggle`, the channels in `channels` are selected and all others are deselected.
+        If `default` is defined, it must be an index to `self.channel_selection`.
+        The channel corresponding to `default` is selected if no other channel would
+        be displayed after executing this function.
         """
         has_selected = False
         if not channels:
@@ -376,28 +462,26 @@ class Main_Tk:
             for i in channels:
                 ch = self.channel_selection[i]
                 ch['val'] ^= True
-                if ch['val']:
-                    ch['button'].config(relief=tk.SUNKEN)
-                    has_selected = True
-                else:
-                    ch['button'].config(relief=tk.RAISED)
+                has_selected = ch['val']
         else:
             for i, ch in self.channel_selection.items():
-                ch['val'] = i in channels
-                if ch['val']:
-                    ch['button'].config(relief=tk.SUNKEN)
+                if i in channels:
+                    ch['val'] = True
                     has_selected = True
                 else:
-                    ch['button'].config(relief=tk.RAISED)
+                    ch['val'] = False
         if not has_selected and \
                 not any(ch['val'] for ch in self.channel_selection.values()):
             if default is None:
                 default = 0
             ch = self.channel_selection[self.channel_order[default]]
             ch['val'] = True
-            ch['button'].config(relief=tk.SUNKEN)
         self.display_stack._listeners.notify('image')
+        self.root.after_idle(self._update_channel_selection_button_states)
 
+    def _update_channel_selection_button_states(self):
+        for ch in self.channel_selection.values():
+            ch['button'].config(relief=(tk.SUNKEN if ch['val'] else tk.RAISED))
 
     def load_metastack(self, meta):
         self.status("Loading stack …")
@@ -412,11 +496,10 @@ class Main_Tk:
             for fr, rois in enumerate(self.rois):
                 self.display_stack.set_rois(list(rois.values()), frame=fr)
 
-        # Display buttons
+        # Create channel display buttons
         self.channel_order.clear()
         for k, x in self.channel_selection.items():
             x['button'].destroy()
-            del x['callback']
             del self.channel_selection[k]
         has_display = False
         idx_phasecontrast = None
@@ -444,9 +527,9 @@ class Main_Tk:
                 btntxt.append(spec.type)
             btntxt = "\n".join(btntxt)
             x['button'] = tk.Button(self.chanselframe, justify=tk.LEFT, text=btntxt)
-            x['button'].bind('<1>', self._build_chanselbtn_callback(i))
+            x['button'].bind('<ButtonPress-1><ButtonRelease-1>', self._build_chanselbtn_callback(i))
 
-        # Display buttons
+        # Display channel display buttons
         if idx_phasecontrast is not None:
             self.channel_order.append(idx_phasecontrast)
             self.channel_selection[idx_phasecontrast]['button'].pack(anchor=tk.N,
@@ -464,6 +547,39 @@ class Main_Tk:
         self._change_channel_selection()
         self.display_stack.add_channel(fun=self.render_display, scales=True)
         self.stackviewer.set_stack(self.display_stack, wait=False)
+
+    def _update_traces_display_buttons(self):
+        for name, info in sorted(self.trace_info.items(), key=lambda x: x[1]['order']):
+            if info['button'] is not None:
+                info['button'].pack_forget()
+            else:
+                if info['label']:
+                    btn_txt = f"{name}\n{info['label']}"
+                else:
+                    btn_txt = name
+                info['button'] = tk.Button(self.plotselframe, name=btn_txt, justify=tk.LEFT,
+                        command=lambda btn=name: self._update_traces_display(button=btn))
+                info['var'] = tk.BooleanVar(info['button'], value=info['plot'])
+                info['button'].config(variable=info['var'])
+            info['button'].pack(anchor=tk.N, expand=True, fill=tk.X, padx=10, pady=5)
+
+    def _update_traces_display(self, button=None):
+        if button is not None:
+            info = self.trace_info[button]
+            info['plot'] = info['var'].get()
+        else:
+            for info in self.trace_info.values():
+                info['var'].set(info['plot'])
+        if not any(info['plot'] for info in self.trace_info.values()):
+            if button is not None:
+                info = self.trace_info[button]
+                info['plot'] ^= True
+                info['var'].set(info['plot'])
+            else:
+                for info in self.trace_info.values():
+                    info['plot'] = True
+                    info['var'].get(True)
+        self.plot()
 
     def _stacksize_changed(self, evt):
         self.stackviewer._change_stack_position(force=True)
@@ -538,7 +654,6 @@ class Main_Tk:
             if info['plot']:
                 plot_list.append(name)
         plot_list.sort(key=lambda name: self.trace_info[name]['order'])
-
 
         t_vec = self.to_hours(np.array(range(self.stack.n_frames)))
         axes = fig.subplots(len(plot_list), squeeze=False, sharex=True)[:,0]
