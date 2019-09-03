@@ -57,7 +57,7 @@ class MetaStack:
 
     def clear(self):
         with self.image_lock:
-            for s in self_stacks.keys():
+            for s in self.stacks.keys():
                 s.close()
             self._stacks = {}
             self._channels = []

@@ -1,6 +1,9 @@
+import matplotlib as mpl
+mpl.rcParams['pdf.fonttype'] = 42 # Edit plots with Illustrator
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.backend_bases import MouseButton
+from matplotlib.ticker import StrMethodFormatter
 import numpy as np
 import os
 import pandas as pd
@@ -275,20 +278,11 @@ class Main_Tk:
 
     def create_figure(self):
         """Show an empty figure"""
-        self.close_figure()
         self.fig = Figure()
         mpl_canvas = FigureCanvasTkAgg(self.fig, master=self.figframe)
         mpl_canvas.draw()
-        
-        #cid_enter = self.fig.canvas.mpl_connect('axes_enter_event', self.mouse_ax_enter)
-        #cid_leave = self.fig.canvas.mpl_connect('axes_leave_event', self.mouse_ax_leave)
-        
         self.fig_widget = mpl_canvas.get_tk_widget()
         self.fig_widget.pack(fill=tk.BOTH, expand=True)
-
-    def close_figure(self):
-        #TODO
-        pass
 
     def _init_trace_info(self):
         self.trace_info = {TYPE_AREA: dict(label=None,
@@ -302,7 +296,7 @@ class Main_Tk:
                                           )}
 
     def clear_trace_info(self):
-        for k in self.trace_info.keys():
+        for k in tuple(self.trace_info.keys()):
             if k != TYPE_AREA:
                 del self.trace_info[k]
 
@@ -513,7 +507,7 @@ class Main_Tk:
 
         # Create channel display buttons
         self.channel_order.clear()
-        for k, x in self.channel_selection.items():
+        for k, x in tuple(self.channel_selection.items()):
             x['button'].destroy()
             del self.channel_selection[k]
         has_display = False
@@ -676,6 +670,7 @@ class Main_Tk:
         axes = fig.subplots(len(plot_list), squeeze=False, sharex=True)[:,0]
         for qty, ax in zip(plot_list, axes):
             ax.set_xmargin(.003)
+            ax.yaxis.set_major_formatter(StrMethodFormatter('{x:.4g}'))
             for name, tr in self.traces.items():
                 if not tr['select']:
                     continue
