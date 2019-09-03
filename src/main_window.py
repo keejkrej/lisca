@@ -226,6 +226,15 @@ class Main_Tk:
         self.statusbar.grid(row=1, column=0, sticky='NESW')
         tk.Label(self.statusbar, textvariable=self.var_statusmsg).pack()
 
+        # Set global key bindings for cell selection and display
+        self.root.bind_all('<Up>', self._key_highlight_cell)
+        self.root.bind_all('<KP_Up>', self._key_highlight_cell)
+        self.root.bind_all('<Down>', self._key_highlight_cell)
+        self.root.bind_all('<KP_Down>', self._key_highlight_cell)
+        self.root.bind_all('<Return>', self._key_highlight_cell)
+        self.root.bind_all('<KP_Enter>', self._key_highlight_cell)
+        self.root.bind_all('<Insert>', lambda _:
+                self.var_show_roi_contours.set(not self.var_show_roi_contours.get()))
 
         # Run mainloop
         self.root.mainloop()
@@ -787,28 +796,31 @@ class Main_Tk:
             val = not tr['highlight']
         elif val == tr['highlight']:
             return
-        if not tr['select'] and val:
-            if update_select:
-                self.select_trace(trace, val=True)
-                is_selection_updated = True
-            else:
-                return False
+        if not tr['select'] and val and update_select:
+            self.select_trace(trace, val=True)
+            is_selection_updated = True
         tr['highlight'] = val
         if val:
-            for plots in tr['plot'].values():
-                for plot in plots:
-                    plot.set_color(PLOT_COLOR_HIGHLIGHT)
-                    plot.set_lw(PLOT_WIDTH_HIGHLIGHT)
-                    plot.set_alpha(PLOT_ALPHA_HIGHLIGHT)
-            for fr, roi in enumerate(tr['roi']):
-                self.rois[fr][roi].stroke_width = ROI_WIDTH_HIGHLIGHT
-                self.rois[fr][roi].color = ROI_COLOR_HIGHLIGHT
+            if tr['select']:
+                for plots in tr['plot'].values():
+                    for plot in plots:
+                        plot.set_color(PLOT_COLOR_HIGHLIGHT)
+                        plot.set_lw(PLOT_WIDTH_HIGHLIGHT)
+                        plot.set_alpha(PLOT_ALPHA_HIGHLIGHT)
+                for fr, roi in enumerate(tr['roi']):
+                    self.rois[fr][roi].stroke_width = ROI_WIDTH_HIGHLIGHT
+                    self.rois[fr][roi].color = ROI_COLOR_HIGHLIGHT
+            else:
+                for fr, roi in enumerate(tr['roi']):
+                    self.rois[fr][roi].stroke_width = ROI_WIDTH_HIGHLIGHT
+                    self.rois[fr][roi].color = ROI_COLOR_DESELECTED
         else:
-            for plots in tr['plot'].values():
-                for plot in plots:
-                    plot.set_color(PLOT_COLOR)
-                    plot.set_lw(PLOT_WIDTH)
-                    plot.set_alpha(PLOT_ALPHA)
+            if tr['select']:
+                for plots in tr['plot'].values():
+                    for plot in plots:
+                        plot.set_color(PLOT_COLOR)
+                        plot.set_lw(PLOT_WIDTH)
+                        plot.set_alpha(PLOT_ALPHA)
             for fr, roi in enumerate(tr['roi']):
                 self.rois[fr][roi].stroke_width = ROI_WIDTH
                 if tr['select']:
@@ -817,12 +829,14 @@ class Main_Tk:
                     self.rois[fr][roi].color = ROI_COLOR_DESELECTED
         return is_selection_updated
 
-    def select_trace(self, *trace, val=None):
+    def select_trace(self, *trace, val=None, update_highlight=False):
         """Change selection state of one or more traces.
 
         `trace` must be valid keys to `self.traces`.
         `val` specifies whether to select (True),
         deselect (False) or toggle (None) the selection.
+        `update_highlight` specifies whether to remove
+        highlighting (True) when a cell is deselected.
 
         This method does not update display.
         To update display, call `self.update_selection`.
@@ -843,9 +857,11 @@ class Main_Tk:
             for fr, roi in enumerate(tr['roi']):
                 self.rois[fr][roi].color = ROI_COLOR_SELECTED
         else:
-            self.highlight_trace(trace, val=False)
+            if update_highlight:
+                self.highlight_trace(trace, val=False)
             for fr, roi in enumerate(tr['roi']):
                 self.rois[fr][roi].color = ROI_COLOR_DESELECTED
+                    
 
     def _roi_clicked(self, event, names):
         """Callback for click on ROI"""
@@ -868,12 +884,70 @@ class Main_Tk:
         elif mode == MODE_SELECTION:
             for name in names:
                 try:
-                    self.select_trace(name)
+                    self.select_trace(name, update_highlight=True)
                 except KeyError:
                     continue
             is_selection_updated = True
         if is_selection_updated:
             self.update_selection()
+
+    def _key_highlight_cell(self, evt):
+        """Callback for highlighting cells by arrow keys
+
+        Up/down arrows highlight cells,
+        Enter toggles cell selection.
+        """
+        if not self.traces:
+            return
+        cells_sorted = self.traces_sorted()
+        cells_highlight = list(cells_sorted.index(name) for name, tr in self.traces.items() if tr['highlight'])
+        is_selection_updated = False
+
+        if evt.keysym in ('Up', 'KP_Up'):
+            # Highlight previous cell
+            for i in cells_highlight:
+                self.highlight_trace(cells_sorted[i], val=False)
+            if cells_highlight:
+                new_highlight = cells_highlight[0] - 1
+                if new_highlight < 0:
+                    new_highlight = cells_sorted[-1]
+                else:
+                    new_highlight = cells_sorted[new_highlight]
+            else:
+                new_highlight = cells_sorted[-1]
+            self.highlight_trace(new_highlight, val=True)
+            self.update_highlight()
+
+        elif evt.keysym in ('Down', 'KP_Down'):
+            # Highlight next cell
+            for i in cells_highlight:
+                self.highlight_trace(cells_sorted[i], val=False)
+            if cells_highlight:
+                new_highlight = cells_highlight[-1] + 1
+                if new_highlight >= len(cells_sorted):
+                    new_highlight = cells_sorted[0]
+                else:
+                    new_highlight = cells_sorted[new_highlight]
+            else:
+                new_highlight = cells_sorted[0]
+            self.highlight_trace(new_highlight, val=True)
+            self.update_highlight()
+
+        elif evt.keysym in ('Return', 'KP_Enter'):
+            # Toggle cell selection
+            for i in cells_highlight:
+                self.select_trace(cells_sorted[i])
+            self.update_selection()
+
+    def traces_sorted(self):
+        """Return a list of traces sorted by position"""
+        fr = self.stackviewer.i_frame
+        rois = self.rois[fr]
+        traces_pos = {}
+        for name, tr in self.traces.items():
+            roi = rois[tr['roi'][fr]]
+            traces_pos[name] = (roi.y_min, roi.x_min)
+        return sorted(traces_pos.keys(), key=lambda name: traces_pos[name])
 
     def traces_as_dataframes(self):
         """Return a dict of DataFrames of the traces"""
@@ -999,7 +1073,7 @@ class StackOpener:
         ## Channel display
         self.chan_disp_frame = tk.Frame(chan_frame)
         self.chan_disp_frame.grid(row=0, column=0, sticky='NESW')
-        self.chan_disp_frame.grid_columnconfigure(1, weight=1, pad=5, minsize=20)
+        self.chan_disp_frame.grid_columnconfigure(1, weight=1, pad=5, minsize=30)
         self.chan_disp_frame.grid_columnconfigure(2, weight=0, pad=5)
         self.chan_disp_frame.grid_columnconfigure(3, weight=1, pad=5)
 
