@@ -227,14 +227,20 @@ class Main_Tk:
         tk.Label(self.statusbar, textvariable=self.var_statusmsg).pack()
 
         # Set global key bindings for cell selection and display
+        self.root.bind_all('<Insert>', lambda _:
+                self.var_show_roi_contours.set(not self.var_show_roi_contours.get()))
+
         self.root.bind_all('<Up>', self._key_highlight_cell)
         self.root.bind_all('<KP_Up>', self._key_highlight_cell)
         self.root.bind_all('<Down>', self._key_highlight_cell)
         self.root.bind_all('<KP_Down>', self._key_highlight_cell)
         self.root.bind_all('<Return>', self._key_highlight_cell)
         self.root.bind_all('<KP_Enter>', self._key_highlight_cell)
-        self.root.bind_all('<Insert>', lambda _:
-                self.var_show_roi_contours.set(not self.var_show_roi_contours.get()))
+
+        self.root.bind_all('<Right>', self._key_scroll_channels)
+        self.root.bind_all('<KP_Right>', self._key_scroll_channels)
+        self.root.bind_all('<Left>', self._key_scroll_channels)
+        self.root.bind_all('<KP_Left>', self._key_scroll_channels)
 
         # Run mainloop
         self.root.mainloop()
@@ -457,7 +463,7 @@ class Main_Tk:
     def _change_channel_selection(self, *channels, toggle=False, default=None):
         """Select channels for display.
 
-        `channels` holds the specified channels (keys to `self.channel_selection`).
+        `channels` holds the specified channels (indices to `self.channel_selection`).
         If `toggle`, the selections of the channels in `channels` are toggled.
         If not `toggle`, the channels in `channels` are selected and all others are deselected.
         If `default` is defined, it must be an index to `self.channel_selection`.
@@ -854,8 +860,9 @@ class Main_Tk:
             return
         tr['select'] = val
         if val:
+            roi_color = ROI_COLOR_HIGHLIGHT if tr['highlight'] else ROI_COLOR_SELECTED
             for fr, roi in enumerate(tr['roi']):
-                self.rois[fr][roi].color = ROI_COLOR_SELECTED
+                self.rois[fr][roi].color = roi_color
         else:
             if update_highlight:
                 self.highlight_trace(trace, val=False)
@@ -890,6 +897,33 @@ class Main_Tk:
             is_selection_updated = True
         if is_selection_updated:
             self.update_selection()
+
+    def _key_scroll_channels(self, evt):
+        """Callback for displaying channels"""
+        if not self.channel_order:
+            return
+        chan_disp = [i for i in self.channel_order if self.channel_selection[i]['val']]
+
+        if evt.keysym in ('Right', 'KP_Right'):
+            if chan_disp:
+                new_chan = chan_disp[-1] + 1
+                if new_chan >= len(self.channel_order):
+                    new_chan = 0
+            else:
+                new_chan = 0
+
+        elif evt.keysym in ('Left', 'KP_Left'):
+            if chan_disp:
+                new_chan = chan_disp[0] - 1
+                if new_chan < 0:
+                    new_chan = len(self.channel_order) - 1
+            else:
+                new_chan = len(self.channel_order) - 1
+
+        else:
+            return
+
+        self._change_channel_selection(new_chan)
 
     def _key_highlight_cell(self, evt):
         """Callback for highlighting cells by arrow keys
@@ -982,11 +1016,7 @@ class Main_Tk:
                 df.to_excel(writer, sheet_name=name, index=False)
             writer.save()
 
-        print(f"Data are written to '{self.save_dir}'") #DEBUG
-
-
-
-
+        print(f"Data have been written to '{self.save_dir}'") #DEBUG
 
 
 class StackOpener:
