@@ -139,7 +139,6 @@ class Main_Tk:
         self.display_stack = None
         self.channel_selection = {}
         self.channel_order = []
-        self.traces_selection = {}
         self.frames_per_hour = 6
         self.frame_indicators = []
         self.track = True
@@ -201,10 +200,14 @@ class Main_Tk:
 
         self.open_btn = tk.Button(self.chanframe, text="Open stack...", command=self.open_stack)
         self.open_btn.grid(row=0, column=0, sticky='NEW', padx=10, pady=5)
+        self.chansellbl = tk.Label(self.chanframe, text="Display channels", anchor=tk.W, state=tk.DISABLED)
+        self.chansellbl.grid(row=1, column=0, sticky='NESW', padx=10, pady=(20, 5))
         self.chanselframe = tk.Frame(self.chanframe)
-        self.chanselframe.grid(row=1, column=0, sticky='NEW')
+        self.chanselframe.grid(row=2, column=0, sticky='ESW')
+        self.plotsellbl = tk.Label(self.chanframe, text="Plot traces", anchor=tk.W, state=tk.DISABLED)
+        self.plotsellbl.grid(row=3, column=0, sticky='ESW', padx=10, pady=(20, 5))
         self.plotselframe = tk.Frame(self.chanframe)
-        self.plotselframe.grid(row=2, column=0, sticky='ESW')
+        self.plotselframe.grid(row=4, column=0, sticky='ESW')
 
         ## Stack frame
         self.stackframe = tk.Frame(self.paned)
@@ -386,10 +389,9 @@ class Main_Tk:
                 roi.name_visible = show_name
         return l
 
-
     def render_display(self, meta, frame, scale=None):
-        #TODO adjust display
-        # find channel to display
+        #TODO adjust display contrast
+        # Find channel to display
         channels = []
         for i in sorted(self.channel_selection.keys()):
             if self.channel_selection[i]['val']:
@@ -429,7 +431,6 @@ class Main_Tk:
 
         return img
 
-
     def _build_chanselbtn_callback(self, i):
         """Build callback for channel selection button.
 
@@ -443,7 +444,6 @@ class Main_Tk:
             nonlocal self, i
             self._change_channel_selection(i, toggle=bool(event.state & EVENT_STATE_CTRL), default=i)
         return callback
-
 
     def _change_channel_selection(self, *channels, toggle=False, default=None):
         """Select channels for display.
@@ -530,6 +530,7 @@ class Main_Tk:
             x['button'].bind('<ButtonPress-1><ButtonRelease-1>', self._build_chanselbtn_callback(i))
 
         # Display channel display buttons
+        self.chansellbl.config(state=tk.NORMAL)
         if idx_phasecontrast is not None:
             self.channel_order.append(idx_phasecontrast)
             self.channel_selection[idx_phasecontrast]['button'].pack(anchor=tk.N,
@@ -549,6 +550,7 @@ class Main_Tk:
         self.stackviewer.set_stack(self.display_stack, wait=False)
 
     def _update_traces_display_buttons(self):
+        self.plotsellbl.config(state=tk.NORMAL)
         for name, info in sorted(self.trace_info.items(), key=lambda x: x[1]['order']):
             if info['button'] is not None:
                 info['button'].pack_forget()
@@ -557,11 +559,12 @@ class Main_Tk:
                     btn_txt = f"{name}\n{info['label']}"
                 else:
                     btn_txt = name
-                info['button'] = tk.Button(self.plotselframe, name=btn_txt, justify=tk.LEFT,
+                info['button'] = tk.Checkbutton(self.plotselframe, text=btn_txt,
+                        justify=tk.LEFT, indicatoron=False,
                         command=lambda btn=name: self._update_traces_display(button=btn))
                 info['var'] = tk.BooleanVar(info['button'], value=info['plot'])
                 info['button'].config(variable=info['var'])
-            info['button'].pack(anchor=tk.N, expand=True, fill=tk.X, padx=10, pady=5)
+            info['button'].pack(anchor=tk.S, expand=True, fill=tk.X, padx=10, pady=5)
 
     def _update_traces_display(self, button=None):
         if button is not None:
@@ -579,7 +582,7 @@ class Main_Tk:
                 for info in self.trace_info.values():
                     info['plot'] = True
                     info['var'].get(True)
-        self.plot()
+        self.plot_traces()
 
     def _stacksize_changed(self, evt):
         self.stackviewer._change_stack_position(force=True)
@@ -625,7 +628,6 @@ class Main_Tk:
                 for ch in fl_chans:
                     tr['val'][ch['name']][fr] = np.sum(ch['img'][roi.rows, roi.cols])
         self.status()
-                
 
     def to_hours(self, x):
         """Convert 0-based frame number to hours"""
@@ -997,7 +999,7 @@ class StackOpener:
         ## Channel display
         self.chan_disp_frame = tk.Frame(chan_frame)
         self.chan_disp_frame.grid(row=0, column=0, sticky='NESW')
-        self.chan_disp_frame.grid_columnconfigure(1, weight=1, pad=5)
+        self.chan_disp_frame.grid_columnconfigure(1, weight=1, pad=5, minsize=20)
         self.chan_disp_frame.grid_columnconfigure(2, weight=0, pad=5)
         self.chan_disp_frame.grid_columnconfigure(3, weight=1, pad=5)
 
@@ -1018,20 +1020,20 @@ class StackOpener:
 
         tk.Label(chan_add_frame, text="Add new channel", anchor=tk.W).grid(row=0, column=0, columnspan=4, sticky='EW')
         tk.Label(chan_add_frame, text="Channel", anchor=tk.W).grid(row=1, column=0, sticky='EW')
-        tk.Label(chan_add_frame, text="Label", anchor=tk.W).grid(row=1, column=1, sticky='EW')
-        tk.Label(chan_add_frame, text="Type", anchor=tk.W).grid(row=1, column=2, sticky='EW')
+        tk.Label(chan_add_frame, text="Type", anchor=tk.W).grid(row=1, column=1, sticky='EW')
+        tk.Label(chan_add_frame, text="Label", anchor=tk.W).grid(row=1, column=2, sticky='EW')
 
         self.var_chan = tk.IntVar(self.frame)
         self.var_label = tk.StringVar(self.frame)
         self.var_type = tk.StringVar(self.frame)
 
-        self.chan_opt = tk.OptionMenu(chan_add_frame, self.var_chan, 0, 1, 2, 3)
+        self.chan_opt = tk.OptionMenu(chan_add_frame, self.var_chan, 0)
         self.chan_opt.grid(row=2, column=0, sticky='NESW')
-        self.label_entry = tk.Entry(chan_add_frame, textvariable=self.var_label)
-        self.label_entry.grid(row=2, column=1, sticky='NESW')
         self.type_opt = tk.OptionMenu(chan_add_frame, self.var_type,
             "None", ms.TYPE_PHASECONTRAST, ms.TYPE_FLUORESCENCE, ms.TYPE_SEGMENTATION)
-        self.type_opt.grid(row=2, column=2, sticky='NESW')
+        self.type_opt.grid(row=2, column=1, sticky='NESW')
+        self.label_entry = tk.Entry(chan_add_frame, textvariable=self.var_label)
+        self.label_entry.grid(row=2, column=2, sticky='NESW')
         self.add_chan_btn = tk.Button(chan_add_frame, text="Add", command=self.add_chan)
         self.add_chan_btn.grid(row=2, column=3, sticky='EW')
         self.disable_channel_selection()
