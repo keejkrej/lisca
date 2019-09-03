@@ -120,7 +120,6 @@ class Stack:
         elif ext == '.npz':
             with np.load(self._path, mmap_mode='r', allow_pickle=False) as arr_file:
                 arr = next(iter(arr_file.values())).astype(np.uint16, casting='unsafe')
-                #arr = next(iter(arr_file.values()))
         else:
             raise TypeError("Unknown type: {}".format(ext))
         self._mode = arr.dtype.itemsize * 8
@@ -140,10 +139,6 @@ class Stack:
         else:
             raise ValueError("Bad array shape: {}".format(arr.ndim))
         self._n_images = self._n_channels * self._n_frames
-        pad = 16 #currently, segmented data are end-padded with 16 pixels
-        self._height -= pad
-        self._width -= pad
-
         try:
             self._tmpfile = tempfile.TemporaryFile()
             self.img = np.memmap(filename=self._tmpfile,
@@ -154,7 +149,7 @@ class Stack:
                                         self._width
                                        )
                                 )
-            self.img[...] = arr[:, :, :-pad, :-pad]
+            self.img[...] = arr[...]
             del arr
         except Exception:
             self._clear_state()
@@ -221,6 +216,44 @@ class Stack:
                 pass
             self._tmpfile = None
             self._clear_state()
+
+    def crop(self, *, top=0, bottom=0, left=0, right=0):
+        """Crop image with specified margins"""
+        new_height = self._height - (top + bottom)
+        new_width = self._width - (left + right)
+        if new_height < 0 or new_width < 0:
+            raise ValueError("Margins are larger than image")
+        if bottom == 0:
+            bottom = self._height
+        else:
+            bottom = -bottom
+        if right == 0:
+            right = self._width
+        else:
+            right = -right
+        with self.image_lock:
+            try:
+                new_tempfile = tempfile.TemporaryFile()
+                new_img = np.memmap(filename=new_tempfile,
+                                    dtype=self.img.dtype,
+                                    shape=(self._n_channels,
+                                           self._n_frames,
+                                           new_height,
+                                           new_width))
+                new_img[:, :, :, :] = self.img[:, :, top:bottom, left:right]
+            except Exception:
+                new_tempfile.close()
+                raise
+            self.img = new_img
+            self._width = new_width
+            self._height = new_height
+            try:
+                self._tmpfile.close()
+            except Exception:
+                pass
+            self._tmpfile = new_tempfile
+        self._listeners.notify("image")
+
 
     def _parse_imagej_tags(self, desc):
         """Read stack dimensions from ImageJ’s TIFF description tag."""

@@ -227,7 +227,7 @@ class Main_Tk:
         ## Statusbar
         self.statusbar = tk.Frame(self.root, padx=2, pady=2, bd=1, relief=tk.SUNKEN)
         self.statusbar.grid(row=1, column=0, sticky='NESW')
-        tk.Label(self.statusbar, textvariable=self.var_statusmsg).pack()
+        tk.Label(self.statusbar, anchor=tk.W, textvariable=self.var_statusmsg).pack(side=tk.LEFT, anchor=tk.W)
 
         # Set global key bindings for cell selection and display
         self.root.bind_all('<Insert>', lambda _:
@@ -293,6 +293,7 @@ class Main_Tk:
                                            button=None,
                                            var=None,
                                            plot=True,
+                                           quantity="Cell area",
                                           )}
 
     def clear_trace_info(self):
@@ -301,7 +302,7 @@ class Main_Tk:
                 del self.trace_info[k]
 
     def add_trace_info(self, name, label=None, channel=None, unit="a.u.",
-            type_=None, order=None, plot=False):
+            type_=None, order=None, plot=False, quantity=None):
         self.trace_info[name] = {'label': label,
                                  'channel': channel,
                                  'unit': unit,
@@ -310,6 +311,7 @@ class Main_Tk:
                                  'button': None,
                                  'var': None,
                                  'plot': plot,
+                                 'quantity': quantity if quantity is not None else type_,
                                 }
 
     def open_stack(self):
@@ -318,15 +320,50 @@ class Main_Tk:
         StackOpener(self.root, callback=self.open_metastack)
 
     def open_metastack(self, data):
+        """Create a MetaStack with the channels selected by StackOpener"""
         if not data:
             self.status()
             return
+
+        # Check image sizes
+        height_general = None
+        width_general = None
+        height_seg = None
+        width_seg = None
+        for d in data:
+            if d['type'] == ms.TYPE_SEGMENTATION:
+                height_seg = d['stack'].height
+                width_seg = d['stack'].width
+            else:
+                if height_general is None:
+                    height_general = d['stack'].height
+                elif d['stack'].height != height_general:
+                    raise ValueError(f"Stack '{name}' has height {d['stack'].height}, but height {height_general} is required.")
+                if width_general is None:
+                    width_general = d['stack'].width
+                elif d['stack'].width != width_general:
+                    raise ValueError(f"Stack '{name}' has width {d['stack'].width}, but width {width_general} is required.")
+        if None not in (height_general, height_seg):
+            if height_seg > height_general:
+                pad_y = height_seg - height_general
+            else:
+                pad_y = 0
+            if width_seg > width_general:
+                pad_x = width_seg - width_general
+            else:
+                pad_x = 0
+
         meta = ms.MetaStack()
         self.clear_trace_info()
         i_channel = 0
         i_channel_fl = 1
         for d in data:
             if d['type'] == ms.TYPE_SEGMENTATION and self.track:
+                if pad_y or pad_x:
+                    msg_bak = self.var_statusmsg.get()
+                    self.status("Cropping segmented stack")
+                    d['stack'].crop(right=pad_x, bottom=pad_y)
+                    self.status(msg_bak)
                 stack = self.track_stack(d['stack'])
                 name = 'segmented_stack'
                 d['stack'].close()
@@ -352,6 +389,7 @@ class Main_Tk:
                                     type_=d['type'],
                                     order=i_channel_fl,
                                     plot=True,
+                                    quantity="Integrated fluorescence",
                                    )
                 i_channel_fl += 1
 
@@ -684,15 +722,17 @@ class Main_Tk:
                 if is_interactive:
                     tr['plot'][qty] = l
 
+            xlbl = "Time [h]"
+            ax.set_ylabel("{quantity} [{unit}]".format(**self.trace_info[qty]))
+            ax.set_title(qty)
+
             if is_interactive:
                 self.frame_indicators.append(ax.axvline(np.NaN, lw=1.5, color='r'))
+            else:
+                ax.xaxis.set_tick_params(labelbottom=True)
+            if ax.is_last_row():
+                ax.set_xlabel(xlbl)
 
-
-            ylbl_qty = self.trace_info[qty]['type']
-            ylbl_unit = self.trace_info[qty]['unit']
-            ax.set_ylabel("{} [{}]".format(ylbl_qty, ylbl_unit))
-            ax.set_xlabel("Time [h]")
-            ax.set_title(qty)
         self._update_frame_indicator(draw=False)
         self.fig.tight_layout(pad=.3)
         fig.canvas.draw()
