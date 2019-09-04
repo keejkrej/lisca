@@ -163,7 +163,7 @@ class Tracker:
                     if parent['large'] or parent['small']:
                         traces_selection[parent_idx] = False
             last_idx = new_idx
-            print("Frame {:03d}: {:.4f}s".format(fr, time.time() - tic)) #DEBUG
+            print("Frame {:03d}: {:.4f}s".format(fr + 1, time.time() - tic)) #DEBUG
 
         # Clean up cells
         n_frames = self.stack_lbl.n_frames

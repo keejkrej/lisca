@@ -129,12 +129,14 @@ class Main_Tk:
                     axes labels in the plot, in later versions
                     possibly also for unit conversions.
                     Default: 'a.u.'
+        'factor'    float, factor to multiply values to yield 'unit'. Default: None
         'type'      str, one of `TYPE_AREA` and `ms.TYPE_FLUORESCENCE`.
                     Indicates the type of quantity of the trace.
         'order'     int, indicates in which order to display the plots.
         'button'    tk.Button, the button instance for contoling 'plot'
         'var'       tk.BooleanVar associated with 'button'
         'plot'      boolean, indicates whether to plot the quantity or not.
+        'quantity'  str, name of the value used in plot for y-label
         The outer dict should only be changed using the methods
         `self.add_trace_info` or `self.clear_trace_info`.
 
@@ -336,6 +338,7 @@ class Main_Tk:
 
     def add_trace_info(self, name, label=None, channel=None, unit="a.u.",
             factor=None, type_=None, order=None, plot=False, quantity=None):
+        """Add information about a new category of traces"""
         self.trace_info[name] = {'label': label,
                                  'channel': channel,
                                  'unit': unit,
@@ -485,6 +488,15 @@ class Main_Tk:
         return l
 
     def render_display(self, meta, frame, scale=None):
+        """Dynamically create display image.
+
+        This method is to be called by `MetaStack.get_image`.
+
+        Arguments:
+            meta -- the calling `MetaStack` instance; ignored
+            frame -- the index of the selected frame
+            scale -- scaling information; ignored
+        """
         #TODO adjust display contrast
         # Find channel to display
         channels = []
@@ -575,10 +587,17 @@ class Main_Tk:
         self.root.after_idle(self._update_channel_selection_button_states)
 
     def _update_channel_selection_button_states(self):
+        """Helper function
+
+        Called by `_change_channel_selection` after all GUI updates
+        are processed. Necessary because otherwise, changes would be
+        overwritten by ButtonRelease event.
+        """
         for ch in self.channel_selection.values():
             ch['button'].config(relief=(tk.SUNKEN if ch['val'] else tk.RAISED))
 
     def load_metastack(self, meta):
+        """Load and display a given metastack"""
         self.status("Loading stack …")
         self.stack = meta
         self.display_stack = ms.MetaStack()
@@ -645,6 +664,7 @@ class Main_Tk:
         self.stackviewer.set_stack(self.display_stack, wait=False)
 
     def _update_traces_display_buttons(self):
+        """Redraw buttons for selecting which quantities to plot"""
         self.plotsellbl.config(state=tk.NORMAL)
         for name, info in sorted(self.trace_info.items(), key=lambda x: x[1]['order']):
             if info['button'] is not None:
@@ -662,6 +682,7 @@ class Main_Tk:
             info['button'].pack(anchor=tk.S, expand=True, fill=tk.X, padx=10, pady=5)
 
     def _update_traces_display(self, button=None):
+        """Update plot after changing quantities to plot"""
         if button is not None:
             info = self.trace_info[button]
             info['plot'] = info['var'].get()
@@ -680,6 +701,7 @@ class Main_Tk:
         self.plot_traces()
 
     def _stacksize_changed(self, evt):
+        """Update stackviewer after stack size change"""
         self.stackviewer._change_stack_position(force=True)
 
     def read_traces(self):
@@ -737,6 +759,11 @@ class Main_Tk:
             return np.NaN
 
     def plot_traces(self, fig=None):
+        """Plots the traces.
+
+        If `fig` is None, the traces are plotted to the main window.
+        For exporting a plot, specify a `Figure` instance as `fig`.
+        """
         if fig is None:
             fig = self.fig
             fig.canvas.mpl_connect('pick_event', self._line_picker)
@@ -813,6 +840,7 @@ class Main_Tk:
         self.update_highlight()
 
     def _update_show_roi_contours(self, *_):
+        """Update stackviewer after toggling ROI contour display"""
         show_contours = self.var_show_roi_contours.get()
         if show_contours:
             show_untrackable = self.var_show_untrackable.get()
@@ -827,6 +855,7 @@ class Main_Tk:
         self.display_stack._listeners.notify('roi')
 
     def _update_show_roi_names(self, *_):
+        """Update stackviewer after toggling ROI name display"""
         show_names = self.var_show_roi_names.get()
         if show_names:
             show_untrackable = self.var_show_untrackable.get()
@@ -841,6 +870,7 @@ class Main_Tk:
         self.display_stack._listeners.notify('roi')
 
     def _update_show_untrackable(self, *_):
+        """Update stackviewer after toggling display of untrackable cells"""
         show = False
         if self.var_show_untrackable.get() and self.var_show_roi_contours.get():
             show = True
@@ -851,10 +881,17 @@ class Main_Tk:
         self.display_stack._listeners.notify('roi')
 
     def update_highlight(self):
+        """Redraw relevant display portions after highlight changes.
+
+        Note: All tasks performed by `update_highlight` are also
+        included in `update_selection`. Running both methods at
+        the same time is not necessary.
+        """
         self.fig.canvas.draw()
         self.display_stack._listeners.notify('roi')
 
     def update_selection(self):
+        """Read traces after selection changes and update display"""
         self.read_traces()
         self.plot_traces()
         self.display_stack._listeners.notify('roi')
