@@ -262,21 +262,20 @@ class Main_Tk:
         self.statusbar.grid(row=1, column=0, sticky='NESW')
         tk.Label(self.statusbar, anchor=tk.W, textvariable=self.var_statusmsg).pack(side=tk.LEFT, anchor=tk.W)
 
-        # Set global key bindings for cell selection and display
+        # Set global key bindings for display and cell selection
+        # Some key symbols for the keypad (KP_*) may not be available in all systems.
         self.root.bind_all('<Insert>', lambda _:
                 self.var_show_roi_contours.set(not self.var_show_roi_contours.get()))
-
-        self.root.bind_all('<Up>', self._key_highlight_cell)
-        self.root.bind_all('<KP_Up>', self._key_highlight_cell)
-        self.root.bind_all('<Down>', self._key_highlight_cell)
-        self.root.bind_all('<KP_Down>', self._key_highlight_cell)
-        self.root.bind_all('<Return>', self._key_highlight_cell)
-        self.root.bind_all('<KP_Enter>', self._key_highlight_cell)
-
-        self.root.bind_all('<Right>', self._key_scroll_channels)
-        self.root.bind_all('<KP_Right>', self._key_scroll_channels)
-        self.root.bind_all('<Left>', self._key_scroll_channels)
-        self.root.bind_all('<KP_Left>', self._key_scroll_channels)
+        for keysym in ('<Up>', '<KP_Up>', '<Down>', '<KP_Down>', '<Return>', '<KP_Enter>'):
+            try:
+                self.root.bind_all(keysym, self._key_highlight_cell)
+            except Exception:
+                print(f"Failed to register keysym '{keysym}'")
+        for keysym in ('<Right>', '<KP_Right>', '<Left>', '<KP_Left>'):
+            try:
+                self.root.bind_all(keysym, self._key_scroll_channels)
+            except Exception:
+                print(f"Failed to register keysym '{keysym}'")
 
         # Run mainloop
         self.root.mainloop()
