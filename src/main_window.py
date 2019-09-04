@@ -41,6 +41,32 @@ MODE_HIGHLIGHT = 'highlight'
 
 TYPE_AREA = 'Area'
 
+MICROSCOPE_RESOLUTION = {
+        # Resolutions are given in µm/px
+        # See: https://collab.lmu.de/x/9QGFAw
+        "Unspecified":          None,
+        "Nikon (4x)":           1.61,
+        "Nikon (10x PhC)":       .649,
+        "Nikon (20x)":           .327,
+        "Nikon TIRF (4x)":      1.621,
+        "Nikon TIRF (10x PhC)":  .658,
+        "Nikon TIRF (20x)":      .333,
+        "Nikon TIRF (60x)":      .108,
+        "Zeiss (10x PhC)":       .647,
+        "Zeiss (20x)":           .312,
+        "Zeiss (40x)":           .207,
+        "UNikon (4x)":          1.618,
+        "UNikon (10x PhC)":      .655,
+        "UNikon (10x)":          .650,
+        "UNikon (20x)":          .331,
+        "UNikon (40x)":          .163,
+        "UNikon (60x)":          .108,
+        "UNikon (100x)":         .065,
+        "Cell culture (5x)":     .81,
+        "Cell culture (10x PhC)":.42,
+        "Cell culture (20x)":    .21,
+    }
+
 class Main_Tk:
     """Display the main window
 
@@ -161,6 +187,8 @@ class Main_Tk:
         self.var_show_roi_names.trace_add('write', self._update_show_roi_names)
         self.var_show_untrackable = tk.BooleanVar(value=False)
         self.var_show_untrackable.trace_add('write', self._update_show_untrackable)
+        self.var_microscope_res = tk.StringVar(value="Unspecified")
+        self.var_microscope_res.trace_add('write', self._change_microscope_resolution)
 
         self._init_trace_info()
 
@@ -186,6 +214,11 @@ class Main_Tk:
         settmenu.add_checkbutton(label="Display cell contours", variable=self.var_show_roi_contours)
         settmenu.add_checkbutton(label="Display cell labels", variable=self.var_show_roi_names)
         settmenu.add_checkbutton(label="Display untracked cells", variable=self.var_show_untrackable)
+
+        micresmenu = tk.Menu(settmenu)
+        settmenu.add_cascade(label="Microscope resolution", menu=micresmenu)
+        for mic_opt in MICROSCOPE_RESOLUTION.keys():
+            micresmenu.add_radiobutton(label=mic_opt, value=mic_opt, variable=self.var_microscope_res)
 
         helpmenu = tk.Menu(menubar)
         menubar.add_cascade(label="Help", menu=helpmenu)
@@ -288,6 +321,7 @@ class Main_Tk:
         self.trace_info = {TYPE_AREA: dict(label=None,
                                            channel=None,
                                            unit="px²",
+                                           factor=None,
                                            type=TYPE_AREA,
                                            order=0,
                                            button=None,
@@ -302,10 +336,11 @@ class Main_Tk:
                 del self.trace_info[k]
 
     def add_trace_info(self, name, label=None, channel=None, unit="a.u.",
-            type_=None, order=None, plot=False, quantity=None):
+            factor=None, type_=None, order=None, plot=False, quantity=None):
         self.trace_info[name] = {'label': label,
                                  'channel': channel,
                                  'unit': unit,
+                                 'factor': factor,
                                  'type': type_,
                                  'order': order,
                                  'button': None,
@@ -313,6 +348,20 @@ class Main_Tk:
                                  'plot': plot,
                                  'quantity': quantity if quantity is not None else type_,
                                 }
+
+    def _change_microscope_resolution(self, *_):
+        """Callback for changing microscope resolution"""
+        mic_res = self.var_microscope_res.get()
+        res = MICROSCOPE_RESOLUTION[mic_res]
+        if res is not None:
+            self.trace_info[TYPE_AREA]['unit'] = "µm²"
+            self.trace_info[TYPE_AREA]['factor'] = res**2
+        else:
+            self.trace_info[TYPE_AREA]['unit'] = "px²"
+            self.trace_info[TYPE_AREA]['factor'] = None
+        self.read_traces()
+        if self.trace_info[TYPE_AREA]['plot']:
+            self.plot_traces()
 
     def open_stack(self):
         """Ask user to open new stack"""
@@ -652,6 +701,9 @@ class Main_Tk:
                                 })
         fl_chans.sort(key=lambda ch: self.trace_info[ch['name']]['order'])
 
+        # Get microscope resolution (=area conversion factor)
+        area_factor = self.trace_info[TYPE_AREA]['factor']
+
         # Read traces
         for tr in self.traces.values():
             tr['val'].clear()
@@ -660,6 +712,8 @@ class Main_Tk:
             val_area = np.empty(n_frames, dtype=np.float)
             for fr, i in enumerate(tr['roi']):
                 val_area[fr] = self.rois[fr][i].area
+            if area_factor is not None:
+                val_area *= area_factor
             tr['val'][TYPE_AREA] = val_area
 
             # Fluorescence
@@ -1050,6 +1104,10 @@ class Main_Tk:
             for name, df in df_dict.items():
                 df.to_excel(writer, sheet_name=name, index=False)
             writer.save()
+
+        # Save data to CSV file
+        for name, df in df_dict.items():
+            df.to_csv(os.path.join(self.save_dir, f"{name}.csv"), header=False, index=False)
 
         print(f"Data have been written to '{self.save_dir}'") #DEBUG
 
