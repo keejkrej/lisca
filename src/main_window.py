@@ -415,18 +415,23 @@ class Main_Tk:
                     self.status("Cropping segmented stack")
                     d['stack'].crop(right=pad_x, bottom=pad_y)
                     self.status(msg_bak)
-                stack = self.track_stack(d['stack'])
-                name = 'segmented_stack'
+                self.track_stack(d['stack'])
                 d['stack'].close()
+                meta.add_channel(name='segmented_stack',
+                                 label=d['label'],
+                                 type_=d['type'],
+                                 fun=self.render_segmentation,
+                                 scales=False,
+                                )
             else:
                 stack = d['stack']
                 name = d['stack'].path
-            meta.add_stack(stack, name=name)
-            meta.add_channel(name=name,
-                             channel=d['i_channel'],
-                             label=d['label'],
-                             type_=d['type'],
-                            )
+                meta.add_stack(stack, name=name)
+                meta.add_channel(name=name,
+                                 channel=d['i_channel'],
+                                 label=d['label'],
+                                 type_=d['type'],
+                                )
 
             if d['type'] == ms.TYPE_FLUORESCENCE:
                 label = f"Fluorescence {i_channel_fl}"
@@ -456,8 +461,9 @@ class Main_Tk:
         """Perform tracking of a given stack"""
         self.status("Tracking cells")
         tracker = Tracker(segmented_stack=s)
+        tracker.progress_fcn = lambda msg, current, total: \
+                self.status(f"{msg} (frame {current}/{total})")
         tracker.get_traces()
-        l = tracker.stack_lbl
         self.rois = []
         self.traces = {}
         show_contour = self.var_show_roi_contours.get()
@@ -485,7 +491,6 @@ class Main_Tk:
                 roi.color = ROI_COLOR_SELECTED if is_selected else ROI_COLOR_DESELECTED
                 roi.visible = bool(roi.name) and show_contour
                 roi.name_visible = show_name
-        return l
 
     def render_display(self, meta, frame, scale=None):
         """Dynamically create display image.
@@ -521,11 +526,7 @@ class Main_Tk:
         imgs = []
         for i in channels:
             img = self.stack.get_image(channel=i, frame=frame, scale=scale)
-            if self.stack.spec(i).type == ms.TYPE_SEGMENTATION:
-                img2 = np.zeros_like(img, dtype=np.uint8)
-                img2[img > 0] = 255
-                img = img2
-            else:
+            if self.stack.spec(i).type != ms.TYPE_SEGMENTATION:
                 img_min, img_max = img.min(), img.max()
                 img = ((img - img_min) * (255 / (img_max - img_min)))
             imgs.append(img)
@@ -537,6 +538,23 @@ class Main_Tk:
         img = ((img - img_min) * (255 / (img_max - img_min))).astype(np.uint8)
 
         return img
+
+    def render_segmentation(self, meta, frame, scale=None):
+        """Dynamically draw segmentation image from ROIs
+
+        This method is to be called by `MetaStack.get_image`.
+
+        Arguments:
+            meta -- the calling `MetaStack` instance; ignored
+            frame -- the index of the selected frame
+            scale -- scaling information; ignored
+        """
+        img = np.zeros((meta.height, meta.width), dtype=np.uint8)
+        for roi in self.rois[frame].values():
+            img[roi.rows, roi.cols] = 255
+        return img
+
+
 
     def _build_chanselbtn_callback(self, i):
         """Build callback for channel selection button.
@@ -666,10 +684,10 @@ class Main_Tk:
     def _update_traces_display_buttons(self):
         """Redraw buttons for selecting which quantities to plot"""
         self.plotsellbl.config(state=tk.NORMAL)
+        for child in self.plotselframe.winfo_children():
+            child.pack_forget()
         for name, info in sorted(self.trace_info.items(), key=lambda x: x[1]['order']):
-            if info['button'] is not None:
-                info['button'].pack_forget()
-            else:
+            if info['button'] is None:
                 if info['label']:
                     btn_txt = f"{name}\n{info['label']}"
                 else:
@@ -1263,7 +1281,7 @@ class StackOpener:
         self.chan_opt = tk.OptionMenu(chan_add_frame, self.var_chan, 0)
         self.chan_opt.grid(row=2, column=0, sticky='NESW')
         self.type_opt = tk.OptionMenu(chan_add_frame, self.var_type,
-            "None", ms.TYPE_PHASECONTRAST, ms.TYPE_FLUORESCENCE, ms.TYPE_SEGMENTATION)
+            ms.TYPE_PHASECONTRAST, ms.TYPE_FLUORESCENCE, ms.TYPE_SEGMENTATION)
         self.type_opt.grid(row=2, column=1, sticky='NESW')
         self.label_entry = tk.Entry(chan_add_frame, textvariable=self.var_label)
         self.label_entry.grid(row=2, column=2, sticky='NESW')
@@ -1347,7 +1365,7 @@ class StackOpener:
             self.chan_opt['menu'].add_command(label=i, command=tk._setit(self.var_chan, i))
         self.var_chan.set(0)
         self.var_label.set('')
-        self.var_type.set("None")
+        self.var_type.set(ms.TYPE_PHASECONTRAST)
 
     def disable_channel_selection(self):
         self.var_chan.set(())

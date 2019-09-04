@@ -20,7 +20,8 @@ class Tracker:
     IS_TOO_LARGE = 2
     IS_AT_EDGE = 4
 
-    def __init__(self, segmented_stack=None, labeled_stack=None, min_size=1000, max_size=10000):
+    def __init__(self, segmented_stack=None, labeled_stack=None, make_labeled_stack=False,
+            min_size=1000, max_size=10000):
         self.stack_seg = segmented_stack
         self.stack_lbl = labeled_stack
         self.progress_fcn = None
@@ -29,31 +30,46 @@ class Tracker:
         self.props = None
         self.traces = None
         self.traces_selection = None
+        self.make_labeled_stack = make_labeled_stack
 
-    def label(self):
+        if self.stack_seg is not None:
+            self.n_frames = self.stack_seg.n_frames
+            self.width = self.stack_seg.width
+            self.height = self.stack_seg.height
+        elif self.stack_lbl is not None:
+            self.n_frames = self.stack_lbl.n_frames
+            self.width = self.stack_lbl.width
+            self.height = self.stack_lbl.height
+        else:
+            raise ValueError("At least `segmented_stack` or `labeled_stack` must be given.")
+
+    def label_stack(self):
         if self.stack_lbl is not None:
             return
-        self.stack_lbl = Stack(width=self.stack_seg.width,
-                               height=self.stack_seg.height,
-                               n_frames=self.stack_seg.n_frames,
+        self.stack_lbl = Stack(width=self.width,
+                               height=self.height,
+                               n_frames=self.n_frames,
                                n_channels=1,
                                dtype=np.uint16,
                               )
-        n_frames = self.stack_seg.n_frames
-        for fr in range(n_frames):
+        for fr in range(self.n_frames):
             if self.progress_fcn is not None:
-                self.progress_fcn(msg="Labeling frames", current=fr, total=n_frames)
-            self.stack_lbl.img[0, fr, :, :] = skmeas.label(
-                    self.stack_seg.get_image(channel=0, frame=fr), connectivity=1)
-        self.stack_seg = None
+                self.progress_fcn(msg="Labeling frames", current=fr, total=self.n_frames)
+            self.stack_lbl.img[0, fr, :, :] = self.label(self.stack_seg.get_image(channel=0, frame=fr))
+
+    def label(self, img):
+        return skmeas.label(img, connectivity=1)
 
     def read_regionprops(self):
         self.props = {}
-        n_frames = self.stack_lbl.n_frames
-        for fr in range(n_frames):
+        for fr in range(self.n_frames):
             if self.progress_fcn is not None:
-                self.progress_fcn(msg="Reading region props", current=fr, total=n_frames)
-            props = skmeas.regionprops(self.stack_lbl.get_image(channel=0, frame=fr))
+                self.progress_fcn(msg="Reading region props", current=fr, total=self.n_frames)
+            if self.stack_lbl is None:
+                img = self.label(self.stack_seg.get_image(channel=0, frame=fr))
+            else:
+                img = self.stack_lbl.get_image(channel=0, frame=fr)
+            props = skmeas.regionprops(img)
             this_props = {}
             for p in props:
                 this_props[p.label] = p
@@ -69,6 +85,8 @@ class Tracker:
         last_idx = {}
 
         # Initialization for first frame
+        if self.progress_fcn is not None:
+            self.progress_fcn(msg="Tracking cells", current=1, total=self.n_frames)
         tic = time.time() #DEBUG
         for p in self.props[0].values():
             check = self._check_props(p)
@@ -80,7 +98,9 @@ class Tracker:
         print("Frame 001: {:.4f}s".format(time.time() - tic)) #DEBUG
 
         # Track further frames
-        for fr in range(1, self.stack_lbl.n_frames):
+        for fr in range(1, self.n_frames):
+            if self.progress_fcn is not None:
+                self.progress_fcn(msg="Tracking cells", current=fr + 1, total=self.n_frames)
             tic = time.time() #DEBUG
             new_idx = {}
             for p in self.props[fr].values():
@@ -166,11 +186,10 @@ class Tracker:
             print("Frame {:03d}: {:.4f}s".format(fr + 1, time.time() - tic)) #DEBUG
 
         # Clean up cells
-        n_frames = self.stack_lbl.n_frames
         self.traces = []
         self.traces_selection = []
         for i, tr in enumerate(traces):
-            if len(tr) == n_frames and traces_selection[i] is not None:
+            if len(tr) == self.n_frames and traces_selection[i] is not None:
                 self.traces.append(tr)
                 self.traces_selection.append(traces_selection[i])
 
@@ -189,8 +208,8 @@ class Tracker:
         ret = self.IS_GOOD
         if edges:
             coords = props.coords
-            if np.any(coords.flat == 0) or np.any(coords[:,0] == self.stack_lbl.height-1) or \
-                    np.any(coords[:,1] == self.stack_lbl.width-1):
+            if np.any(coords.flat == 0) or np.any(coords[:,0] == self.height-1) or \
+                    np.any(coords[:,1] == self.width-1):
                 ret |= self.IS_AT_EDGE
         if self.max_size and props.area > self.max_size:
             ret |= self.IS_TOO_LARGE
@@ -202,8 +221,8 @@ class Tracker:
         """Label and track cells.
 
         This method is intended to be called externally."""
-        if self.stack_lbl is None:
-            self.label()
+        if self.make_labeled_stack and self.stack_lbl is None:
+            self.label_stack()
         if self.props is None:
             self.read_regionprops()
         self.track()
