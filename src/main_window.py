@@ -10,6 +10,7 @@ import pandas as pd
 import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter.filedialog as tkfd
+import tkinter.simpledialog as tksd
 from .roi import ContourRoi
 from .stackviewer_tk import StackViewer
 from .stack import Stack
@@ -46,7 +47,6 @@ DESELECTED_DARKEN_FACTOR = .3
 MICROSCOPE_RESOLUTION = {
         # Resolutions are given in µm/px
         # See: https://collab.lmu.de/x/9QGFAw
-        "Unspecified":          None,
         "Nikon (4x)":           1.61,
         "Nikon (10x PhC)":       .649,
         "Nikon (20x)":           .327,
@@ -68,6 +68,10 @@ MICROSCOPE_RESOLUTION = {
         "Cell culture (10x PhC)":.42,
         "Cell culture (20x)":    .21,
     }
+MICROSCOPE_RES_UNSPECIFIED = "Unspecified (use [px])"
+MICROSCOPE_RES_CUSTOM = "Custom"
+MICROSCOPE_RES_UNSPECIFIED_IDX = 1
+MICROSCOPE_RES_CUSTOM_IDX = 2
 
 class Main_Tk:
     """Display the main window
@@ -193,7 +197,7 @@ class Main_Tk:
         self.var_show_roi_names.trace_add('write', self._update_show_roi_names)
         self.var_show_untrackable = tk.BooleanVar(value=False)
         self.var_show_untrackable.trace_add('write', self._update_show_untrackable)
-        self.var_microscope_res = tk.StringVar(value="Unspecified")
+        self.var_microscope_res = tk.StringVar(value=MICROSCOPE_RES_UNSPECIFIED)
         self.var_microscope_res.trace_add('write', self._change_microscope_resolution)
 
         self._init_trace_info()
@@ -222,10 +226,24 @@ class Main_Tk:
         settmenu.add_checkbutton(label="Display untracked cells", variable=self.var_show_untrackable)
         settmenu.add_checkbutton(label="Darken deselected cells", variable=self.var_darken_deselected)
 
-        micresmenu = tk.Menu(settmenu)
-        settmenu.add_cascade(label="Microscope resolution", menu=micresmenu)
+        self.micresmenu = tk.Menu(settmenu)
+        settmenu.add_cascade(label="Microscope resolution", menu=self.micresmenu)
         for mic_opt in MICROSCOPE_RESOLUTION.keys():
-            micresmenu.add_radiobutton(label=mic_opt, value=mic_opt, variable=self.var_microscope_res)
+            self.micresmenu.add_radiobutton(label=mic_opt, value=mic_opt, variable=self.var_microscope_res)
+        MICROSCOPE_RESOLUTION[MICROSCOPE_RES_UNSPECIFIED] = None
+        MICROSCOPE_RESOLUTION[MICROSCOPE_RES_CUSTOM] = None
+        self.micresmenu.insert(MICROSCOPE_RES_UNSPECIFIED_IDX,
+                          'radiobutton',
+                          label=MICROSCOPE_RES_UNSPECIFIED,
+                          value=MICROSCOPE_RES_UNSPECIFIED,
+                          variable=self.var_microscope_res,
+                         )
+        self.micresmenu.insert(MICROSCOPE_RES_CUSTOM_IDX,
+                          'radiobutton',
+                          label=MICROSCOPE_RES_CUSTOM,
+                          value=MICROSCOPE_RES_CUSTOM,
+                          variable=self.var_microscope_res,
+                         )
 
         helpmenu = tk.Menu(menubar)
         menubar.add_cascade(label="Help", menu=helpmenu)
@@ -356,13 +374,34 @@ class Main_Tk:
                                  'quantity': quantity if quantity is not None else type_,
                                 }
 
+    def _prompt_microscope_resolution(self):
+        """Ask user for custom micrsocope resolution"""
+        initval = {}
+        if MICROSCOPE_RESOLUTION[MICROSCOPE_RES_CUSTOM] is not None:
+            initval['initialvalue'] = MICROSCOPE_RESOLUTION[MICROSCOPE_RES_CUSTOM]
+        res = tksd.askfloat(
+                "Microscope resolution",
+                "Enter custom microscope resolution [µm/px]:",
+                minvalue=0, parent=self.root, **initval)
+        MICROSCOPE_RESOLUTION[MICROSCOPE_RES_CUSTOM] = res
+        if res is None:
+            new_label = MICROSCOPE_RES_CUSTOM
+        else:
+            new_label = f"{MICROSCOPE_RES_CUSTOM} ({res} µm/px)"
+        self.micresmenu.entryconfig(MICROSCOPE_RES_CUSTOM_IDX, label=new_label)
+
     def _change_microscope_resolution(self, *_):
         """Callback for changing microscope resolution"""
         mic_res = self.var_microscope_res.get()
+        if mic_res == MICROSCOPE_RES_CUSTOM:
+            self._prompt_microscope_resolution()
         res = MICROSCOPE_RESOLUTION[mic_res]
         if res is not None:
             self.trace_info[TYPE_AREA]['unit'] = "µm²"
             self.trace_info[TYPE_AREA]['factor'] = res**2
+        elif mic_res == MICROSCOPE_RES_CUSTOM:
+            self.root.after_idle(self.var_microscope_res.set, MICROSCOPE_RES_UNSPECIFIED)
+            return
         else:
             self.trace_info[TYPE_AREA]['unit'] = "px²"
             self.trace_info[TYPE_AREA]['factor'] = None
