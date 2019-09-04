@@ -41,6 +41,8 @@ MODE_HIGHLIGHT = 'highlight'
 
 TYPE_AREA = 'Area'
 
+DESELECTED_DARKEN_FACTOR = .3
+
 MICROSCOPE_RESOLUTION = {
         # Resolutions are given in µm/px
         # See: https://collab.lmu.de/x/9QGFAw
@@ -183,6 +185,8 @@ class Main_Tk:
         self.var_show_frame_indicator = tk.BooleanVar(value=True)
         self.var_show_frame_indicator.trace_add('write', self._update_frame_indicator)
         self.var_mode = tk.StringVar(value=MODE_HIGHLIGHT)
+        self.var_darken_deselected = tk.BooleanVar(value=True)
+        self.var_darken_deselected.trace_add('write', lambda *_: self.display_stack._listeners.notify('image'))
         self.var_show_roi_contours = tk.BooleanVar(value=True)
         self.var_show_roi_contours.trace_add('write', self._update_show_roi_contours)
         self.var_show_roi_names = tk.BooleanVar(value=True)
@@ -216,6 +220,7 @@ class Main_Tk:
         settmenu.add_checkbutton(label="Display cell contours", variable=self.var_show_roi_contours)
         settmenu.add_checkbutton(label="Display cell labels", variable=self.var_show_roi_names)
         settmenu.add_checkbutton(label="Display untracked cells", variable=self.var_show_untrackable)
+        settmenu.add_checkbutton(label="Darken deselected cells", variable=self.var_darken_deselected)
 
         micresmenu = tk.Menu(settmenu)
         settmenu.add_cascade(label="Microscope resolution", menu=micresmenu)
@@ -492,6 +497,15 @@ class Main_Tk:
                 roi.visible = bool(roi.name) and show_contour
                 roi.name_visible = show_name
 
+    def deselected_rois(self, frame):
+        """Get an iterable of all non-selected ROIs in given frame"""
+        return (roi for roi in self.rois[frame].values()
+                if roi.color not in (ROI_COLOR_SELECTED, ROI_COLOR_HIGHLIGHT))
+
+    def deselected_coords(self, frame):
+        """Get pixel coordinates of all non-selected cells"""
+        return np.concatenate(tuple(roi.coords for roi in self.deselected_rois(frame)), axis=0)
+
     def render_display(self, meta, frame, scale=None):
         """Dynamically create display image.
 
@@ -502,7 +516,7 @@ class Main_Tk:
             frame -- the index of the selected frame
             scale -- scaling information; ignored
         """
-        #TODO adjust display contrast
+        #TODO histogram-based contrast adjustment
         # Find channel to display
         channels = []
         for i in sorted(self.channel_selection.keys()):
@@ -524,9 +538,20 @@ class Main_Tk:
 
         # Convert image to uint8
         imgs = []
+        seg_img = None
         for i in channels:
             img = self.stack.get_image(channel=i, frame=frame, scale=scale)
             if self.stack.spec(i).type != ms.TYPE_SEGMENTATION:
+                if self.var_darken_deselected.get():
+                    # Darken deselected and untracked cells
+                    if seg_img is None:
+                        seg_img = self.render_segmentation(self.stack, frame,
+                                rois=self.deselected_rois(frame), binary=True)
+                        seg_img = ms.MetaStack.scale_img(seg_img, scale=scale)
+                    bkgd = img[seg_img < .5].mean()
+                    img = seg_img * (DESELECTED_DARKEN_FACTOR * img \
+                            + (1 - DESELECTED_DARKEN_FACTOR) * bkgd) \
+                          + (1 - seg_img) * img
                 img_min, img_max = img.min(), img.max()
                 img = ((img - img_min) * (255 / (img_max - img_min)))
             imgs.append(img)
@@ -539,7 +564,7 @@ class Main_Tk:
 
         return img
 
-    def render_segmentation(self, meta, frame, scale=None):
+    def render_segmentation(self, meta, frame, scale=None, rois=None, binary=False):
         """Dynamically draw segmentation image from ROIs
 
         This method is to be called by `MetaStack.get_image`.
@@ -548,13 +573,15 @@ class Main_Tk:
             meta -- the calling `MetaStack` instance; ignored
             frame -- the index of the selected frame
             scale -- scaling information; ignored
+            rois -- iterable of ROIs to show; if None, show all ROIs in frame
+            binary -- if True, returned array is boolean, else uint8
         """
-        img = np.zeros((meta.height, meta.width), dtype=np.uint8)
-        for roi in self.rois[frame].values():
+        img = np.zeros((meta.height, meta.width), dtype=(np.bool if binary else np.uint8))
+        if rois is None:
+            rois = self.rois[frame].values()
+        for roi in rois:
             img[roi.rows, roi.cols] = 255
         return img
-
-
 
     def _build_chanselbtn_callback(self, i):
         """Build callback for channel selection button.
@@ -860,16 +887,13 @@ class Main_Tk:
     def _update_show_roi_contours(self, *_):
         """Update stackviewer after toggling ROI contour display"""
         show_contours = self.var_show_roi_contours.get()
-        if show_contours:
-            show_untrackable = self.var_show_untrackable.get()
-        else:
-            show_untrackable = False
+        show_untrackable = show_contours and self.var_show_untrackable.get()
         for rois in self.rois:
             for roi in rois.values():
                 if roi.name:
                     roi.visible = show_contours
                 else:
-                    roi_visible = show_untrackable
+                    roi.visible = show_untrackable
         self.display_stack._listeners.notify('roi')
 
     def _update_show_roi_names(self, *_):
@@ -889,9 +913,7 @@ class Main_Tk:
 
     def _update_show_untrackable(self, *_):
         """Update stackviewer after toggling display of untrackable cells"""
-        show = False
-        if self.var_show_untrackable.get() and self.var_show_roi_contours.get():
-            show = True
+        show = self.var_show_untrackable.get() and self.var_show_roi_contours.get()
         for rois in self.rois:
             for roi in rois.values():
                 if not roi.name:
@@ -913,6 +935,8 @@ class Main_Tk:
         self.read_traces()
         self.plot_traces()
         self.display_stack._listeners.notify('roi')
+        if self.var_darken_deselected.get():
+            self.display_stack._listeners.notify('image')
 
     def highlight_trace(self, *trace, val=None, update_select=False):
         """Change highlight state of one or more traces.
