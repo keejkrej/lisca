@@ -1,13 +1,19 @@
 #! /usr/bin/env python3
 from matplotlib import pyplot as plt
 import numpy as np
+import os
 import sys
+import time
 
 fn = sys.argv[1]
 
 D = np.loadtxt(fn, delimiter=',')
-plt.plot(D[:,0], D[:,1:])
-plt.xlabel("Time [#]")
-plt.ylabel("Fluorescence [a.u.]")
-plt.title(fn)
-plt.show()
+fig, ax = plt.subplots()
+ax.plot(D[:,0], D[:,1:])
+ax.set_xlabel("Time [#]")
+ax.set_ylabel("Fluorescence [a.u.]")
+ax.set_title(fn)
+
+plt.show(fig)
+
+fig.savefig(f"{os.path.splitext(fn)[0]}_{time.strftime('%Y%m%d-%H%M%S')}.pdf")

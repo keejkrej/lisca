@@ -1,11 +1,11 @@
 #! /usr/bin/env python3
-import gui_tk as gui
 import queue
-from recursive_tree_comparer import RecursiveComparer
 import sys
 import tkinter as tk
 import tkinter.font as tkfont
 import tkinter.ttk as ttk
+from . import gui_tk as gui
+from .recursive_tree_comparer import RecursiveComparer
 
 # Unicode status symbols:
 # dependencies OK: u+2713 or u+2714
@@ -134,6 +134,11 @@ class WorkflowGUI:
     def mainloop(self):
         """Start the Tk mainloop"""
         gui.mainloop()
+
+    @property
+    def root_tk(self):
+        """Get Tk root for use in other modules"""
+        return self.root
 
     def get_id(self, iid):
         """Return module ID of module at Treeview position ``iid``"""

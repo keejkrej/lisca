@@ -4,15 +4,15 @@ import threading
 
 
 class Listeners:
-    def __init__(self, kinds=None):
+    def __init__(self, kinds=None, debug=False):
         self.__kinds = kinds
+        self.debug = debug
         self.__listeners = {}
         self.__lock = threading.RLock()
 
     @property
     def kinds(self):
         return self.__kinds
-
 
     def register(self, fun, kind=None):
         """
@@ -51,6 +51,8 @@ class Listeners:
                 kind = s_kind
 
             if not kind:
+                if self.debug:
+                    print(f"Cannot register listener: bad kind \"{kind}\"")
                 return None
 
         with self.__lock:
@@ -72,19 +74,21 @@ class Listeners:
         return lid
 
     def notify(self, kind=None):
-        """Notify the listeners.
+        """
+        Notify the listeners.
 
         If ``kind is None``, all listeners are notified.
         Else, only the listeners registered for event kind ``kind`` are notified.
         """
         with self.__lock:
-            for lid in list(self.__listeners.keys()):
-                listener = self.__listeners[lid]
+            for lid, listener in self.__listeners.items():
                 if kind is not None and kind not in listener["kind"]:
                     continue
                 try:
                     listener["fun"]()
                 except Exception:
+                    if self.debug:
+                        raise
                     self.delete(lid)
 
     def delete(self, lid):
@@ -92,6 +96,8 @@ class Listeners:
         with self.__lock:
             if lid in self.__listeners:
                 del self.__listeners[lid]
+            elif self.debug:
+                print(f"Cannot delete listener: ID \"{lid}\" not found.")
 
     def clear(self):
         """Delete all listeners"""

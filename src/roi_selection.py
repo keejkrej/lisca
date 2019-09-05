@@ -9,6 +9,7 @@ SELECTION_ANCHOR = 1
 SELECTION_TILT = 2
 SELECTION_RECT = 3
 SELECTION_SPACE = 4
+SELECTION_ABORT = 5
 
 ROI_TYPE_RECT = 0
 ROI_TYPE_SQU = 1 
@@ -21,11 +22,10 @@ class RoiReader:
         Set up RoiReader.
 
         :param sv: The stack viewer to which this RoiReader belongs
-        :type sv: :py:class:StackViewer
+        :type sv: :py:class:`StackViewer`
         """
         self.sv = sv
         self.canvas = self.sv.canvas
-        sv.toggle_selection = self.toggle_selection
 
         # Configure selection
         self.sel_state = 0
@@ -33,28 +33,30 @@ class RoiReader:
         self.roi_type = ROI_TYPE_RECT
 
 
-    def toggle_selection(self, *_):
-        """
-        Switch ROI definition mode on or off.
-        """
-        # Get current selection mode
+    def start_adjustment(self, *_):
+        """Start the ROI adjustment"""
+        if not self.sel_state:
+            self.control_adjustment(target=SELECTION_ANCHOR)
+
+
+    def stop_adjustment(self, *_):
+        """Abort the ROI adjustment"""
         if self.sel_state:
-            self.control_selection(target=SELECTION_OFF)
-        else:
-            self.control_selection(target=SELECTION_ANCHOR)
+            self.control_adjustment(target=SELECTION_ABORT)
+        self.sv.notify_roi_adjustment_finished()
 
 
-    def update_selection_button(self):
+    def update_adjustment_button(self):
         """
         Update appearance of the ROI definition toggling button
         """
-        if self.sel_state:
-            self.sv.select_button.config(text="Leave selection mode")
+        if self.sel_state == SELECTION_OFF or self.sel_state == SELECTION_ABORT:
+            self.sv.adjustment_button.config(text="Adjust ROIs")
         else:
-            self.sv.select_button.config(text="Select")
+            self.sv.adjustment_button.config(text="Stop ROI adjustment")
 
 
-    def control_selection(self, target):
+    def control_adjustment(self, target):
         """
         Control ROI definition.
 
@@ -65,10 +67,12 @@ class RoiReader:
             * ``SELECTION_TILT``: Define ROI tilt
             * ``SELECTION_RECT``: Define ROI shape and size (rectangle)
             * ``SELECTION_SPACE``: Define ROI spacing and span ROI grid
+            * ``SELECTION_ABORT``: Abort ROI selection, then switch to
+              ``SELECTION_OFF``
         """
         # By default, toggle selection mode
         self.sel_state = target
-        self.update_selection_button()
+        self.update_adjustment_button()
 
         if self.sel_state == SELECTION_ANCHOR:
             self.canvas.delete("roi")
@@ -81,11 +85,17 @@ class RoiReader:
             pass
         else:
             self.canvas.delete("roi_draft")
-            #self.canvas.delete("roi")
             self.canvas.unbind("<Button-1>")
             self.canvas.unbind("<Motion>")
-            if 'polygon2' in self.sel_coords:
+
+            if self.sel_state == SELECTION_ABORT:
+                self.canvas.delete("rule")
+                self.canvas.delete("roi")
+                self.sel_state = SELECTION_OFF
+            elif 'polygon2' in self.sel_coords:
                 self.sv.stack.set_rois(self.compute_roi_array(self.sel_coords['polygon2']), "rect", frame=Ellipsis)
+
+            self.sv.notify_roi_adjustment_finished()
             self.sv.draw_rois()
 
 
@@ -94,12 +104,12 @@ class RoiReader:
         if self.sel_state == SELECTION_ANCHOR:
             self.sel_coords['x0'] = self.canvas.canvasx(evt.x)
             self.sel_coords['y0'] = self.canvas.canvasy(evt.y)
-            self.control_selection(SELECTION_TILT)
+            self.control_adjustment(SELECTION_TILT)
 
         elif self.sel_state == SELECTION_TILT:
             # Clear rules
             self.canvas.delete("rule")
-            self.control_selection(SELECTION_RECT)
+            self.control_adjustment(SELECTION_RECT)
 
         elif self.sel_state == SELECTION_RECT:
             # Sort polygon corners (clockwise from 0=top left)
@@ -119,7 +129,7 @@ class RoiReader:
 
             self.sel_coords['polygon'] = p_new
 
-            self.control_selection(SELECTION_SPACE)
+            self.control_adjustment(SELECTION_SPACE)
 
         elif self.sel_state == SELECTION_SPACE:
             self.canvas.delete("roi_draft")
@@ -130,10 +140,10 @@ class RoiReader:
                     self.canvas.create_polygon(*roi.corners.flat,
                         fill="", outline="yellow", tags="roi")
                 
-            self.control_selection(SELECTION_OFF)
+            self.control_adjustment(SELECTION_OFF)
 
         else:
-            self.control_selection(SELECTION_OFF)
+            self.control_adjustment(SELECTION_OFF)
   
 
     def canvas_moved(self, evt):

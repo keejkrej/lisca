@@ -6,21 +6,23 @@
 
 This is the docstring of the :py:mod:`modules` module.
 """
-from collections import namedtuple
-import importlib.util as imputil
+from collections import namedtuple, defaultdict
+import importlib as imp
 import inspect
-from listener import Listeners
 import os
 import random
 import string
 import sys
 import threading
 import traceback
+from .listener import Listeners
 
 
 PERFORM_KINDS = {"conf", "run", "loop_first", "loop_next", "loop_end"}
 RETURN_KINDS = {"init", *PERFORM_KINDS}
 LISTENER_KINDS = {"order", "dependency", "workflow"}
+GLOBAL_NS = ""
+PLUGINS_PATH = "plugins"
 
 
 def _load_module(name, path):
@@ -40,13 +42,10 @@ def _load_module(name, path):
     RETURN_BAD = ((),())
 
     # Load the module
-    spec = imputil.spec_from_file_location(name, path)
-    if spec is None:
-        return RETURN_BAD
-    mod = imputil.module_from_spec(spec)
     try:
-        spec.loader.exec_module(mod)
+        mod = imp.import_module('src.'+name)
     except Exception as e:
+        print("\nImporting:\n\tname: {}\n\tpath: {}".format(name, path)) #DEBUG
         print("Cannot load module '{}' from '{}':\n{}: {}".format(name, path, e.__class__.__name__, e), file=sys.stderr)
         return RETURN_BAD
 
@@ -115,6 +114,7 @@ def _load_module(name, path):
         # Memorize return data of kind "init"
         if r:
             m.set_ret("init", tuple(r.keys()))
+            #print(f"Return data of '{m.id}': {r}") #DEBUG
 
     # Return
     return return_meta, return_init_ret
@@ -201,7 +201,7 @@ def _parse_version(ver, isComparison=False):
 
     # Parse version string
     # TODO: add optional dependency ('?')
-    comp_flags = ('>=', '<=', '!=', '>', '<', '=')
+    comp_flags = ('>=', '<=', '!=', '>', '<', '=', '==')
     #starts_with_comparison = ver.startswith(comp_flags)
     if isComparison:
         if ver[:2] in comp_flags:
@@ -284,7 +284,7 @@ def _check_versions(version_present, comp_mode, version_required):
             return True
         return False
 
-    elif comp_mode == '=':
+    elif comp_mode == '=' or comp_mode == '==':
         if len(version_present) != len(version_required):
             return False
         for vp, vr in zip(version_present, version_required):
@@ -361,6 +361,28 @@ def _parse_dep(dep):
     return tuple(new)
 
 
+def is_global_name(name):
+    """Check if a given name belongs to the global namespace.
+
+    :param name: the name to check
+    :type name: str
+    :return: `True` if `name` is global, else `False`
+    :rtype: bool
+    """
+    return not name.startswith('_')
+
+
+def filter_global_names(names):
+    """Return a set containing only global names.
+
+    :param names: names from which non-global names shall be removed
+    :type names: iterable
+    :return: global names (possibly empty set)
+    :rtype: set
+    """
+    return {n for n in names if is_global_name(n)}
+
+
 def _print_exception_string(exc, first=0):
     """
     Obtain and print a stacktrace and exception info.
@@ -380,20 +402,18 @@ def _print_exception_string(exc, first=0):
 class ModuleManager:
     """
     Provides means for managing plugins.
+
+    Plugins are searched in the given path by the constructor.
+    By default, also the builtin modules are imported.
+
+    :param plugins_path: The directory in which plugins are searched
+    :param register_builtins: Boolean flag whether to import builtin modules
     """
 
     def __init__(self, plugins_path=None, register_builtins=True):
-        """
-        Set up a new ModuleManager instance.
-
-        Plugins will be searched in the given path.
-        By default, the builtin modules are also imported.
-
-        :param plugins_path: The directory in which plugins are searched
-        :param register_builtins: Boolean flag whether to import builtin modules
-        """
         self.modules = {}
         self.data = [{}]
+        self.global_data_providers = defaultdict(set)
         self.module_order = ModuleOrder(self.modules)
         self._listeners = Listeners(kinds=LISTENER_KINDS)
         self.data_lock = threading.RLock()
@@ -405,13 +425,26 @@ class ModuleManager:
             self.register_builtins()
 
         # Register custom plugin modules
-        if plugins_path is not None:
+        if plugins_path is not False:
+            if plugins_path is None:
+                plugins_path = PLUGINS_PATH
+            import plugins
             modules_found = _search_modules(plugins_path)
             for name, path in modules_found:
-                for meta, init_ret in zip(*_load_module(name, path)):
+                plugin_name = '.'.join((plugins_path, name))
+                for meta, init_ret in zip(*_load_module(plugin_name, path)):
                     mod_id = meta.id
                     self.modules[mod_id] = meta
-                    self.data[0][mod_id] = {}
+
+                    with self.data_lock:
+                        # Prepare return data
+                        self.data[0][mod_id] = {}
+
+                        # Check for return data in global namespace
+                        for global_name in meta.global_ret:
+                            self.global_data_providers[global_name].add(mod_id)
+
+                    # Save return data from initialization
                     self.memorize_result(mod_id, init_ret)
 
 
@@ -440,7 +473,10 @@ class ModuleManager:
         This method is thread-safe.
         """
         with self.order_lock:
+            # Insert module
             self.module_order[index] = mod
+
+            # Notify listeners
             self._listeners.notify("order")
             self._listeners.notify("dependency")
 
@@ -463,7 +499,8 @@ class ModuleManager:
         """
         Check if the dependencies for a module are fulfilled.
 
-        A thread-safe check is performed whether "run" dependencies are fulfilled and whether "conf" return data is present.
+        A thread-safe check is performed whether "run" dependencies
+        are fulfilled and whether "conf" return data is present.
 
         TODO: Check for version conflicts
 
@@ -479,7 +516,7 @@ class ModuleManager:
         mod = self.modules[mod_id]
 
         # Collect dependencies (to see if module can be invoked)
-        deps = {}
+        deps = defaultdict(set)
         kinds_to_check = set()
         if mod.has_fun("run"):
             kinds_to_check.add("run")
@@ -492,8 +529,6 @@ class ModuleManager:
             
         for kind in kinds_to_check:
             for dep_id, dep_data, _ in mod.get_dep(kind):
-                if not dep_id in deps:
-                    deps[dep_id] = set()
                 deps[dep_id].update(dep_data)
 
         # Check if "conf" has been run already (if return data is present)
@@ -511,8 +546,9 @@ class ModuleManager:
                         deps[mod_id].discard(cret_data)
 
         # Check for dependencies fulfilled already
+        # (e.g. due to initialization of the providing plugin)
         with self.data_lock:
-            for dep_id in tuple(deps.keys()):
+            for dep_id in deps.keys():
                 dep = deps[dep_id]
                 if dep_id in self.data[0]:
                     deps[dep_id].difference_update(self.data[0][dep_id])
@@ -521,9 +557,10 @@ class ModuleManager:
 
         # If module is a loop, check for "run" and "loop_next" return data
         if mod.is_loop and mod_id in deps:
-            deps[mod_id].difference_update(mod.get_ret("run"))
-            deps[mod_id].difference_update(mod.get_ret("loop_first"))
-            deps[mod_id].difference_update(mod.get_ret("loop_next"))
+            self_ret = {r for k in ("run", "loop_first", "loop_next") for r in mod.get_ret(k)}
+            deps[mod_id].difference_update(self_ret)
+            if GLOBAL_NS in deps:
+                deps[GLOBAL_NS].difference_update({r for r in self_ret if is_global_name(r)})
 
 
         # Filter out data visible to the "run" function of the module
@@ -537,34 +574,35 @@ class ModuleManager:
                 iidx[-1] -= 1
 
                 # Get predecessor module and check if it is a loop
-                isInLoop = False
                 pre_mod_id = self.get_module_at_index(iidx)
-                if iidx[-1] == 0 and len(iidx) > 1:
-                    isInLoop = True
+                isInLoop = (iidx[-1] == 0 and len(iidx) > 1)
 
-                # Check if predecessor module is relevant
-                if pre_mod_id in deps:
-                    d = deps[pre_mod_id]
-                    pre_mod = self.modules[pre_mod_id]
-
-                    # Check return data
-                    d.difference_update(pre_mod.get_ret("init"))
-                    d.difference_update(pre_mod.get_ret("conf"))
-                    if pre_mod.is_loop:
-                        if isInLoop:
-                            # `mod` is inside of loop of predecessor module
-                            d.difference_update(pre_mod.get_ret("run"))
-                            d.difference_update(pre_mod.get_ret("loop_first"))
-                            d.difference_update(pre_mod.get_ret("loop_next"))
-                        else:
-                            # Loop of predecessor module finished already;
-                            # we only see its `loop_end` return data
-                            d.difference_update(pre_mod.get_ret("loop_end"))
+                # Search relevant return data of predecessor module
+                d = deps[pre_mod_id]
+                pre_mod = self.modules[pre_mod_id]
+                pre_ret = set(pre_mod.get_ret("init"))
+                pre_ret.update(pre_mod.get_ret("conf"))
+                if pre_mod.is_loop:
+                    if isInLoop:
+                        # `mod` is inside of loop of predecessor module
+                        pre_ret.update(pre_mod.get_ret("run"))
+                        pre_ret.update(pre_mod.get_ret("loop_first"))
+                        pre_ret.update(pre_mod.get_ret("loop_next"))
                     else:
-                        # Predecessor module is no loop;
-                        # only has "run" return data
-                        d.difference_update(pre_mod.get_ret("run"))
-                    
+                        # Loop of predecessor module finished already;
+                        # we only see its `loop_end` return data
+                        pre_ret.update(pre_mod.get_ret("loop_end"))
+                else:
+                    # Predecessor module is no loop;
+                    # only has "run" return data
+                    pre_ret.update(pre_mod.get_ret("run"))
+
+                # Remove relevant return data of predecessor from `deps`
+                if pre_mod_id in deps:
+                    d.difference_update(pre_ret)
+                if GLOBAL_NS in deps and pre_mod.global_ret:
+                    deps[GLOBAL_NS].difference_update(filter_global_names(pre_ret))
+
         # Filter out data visible to "loop_next" and "loop_end" function
         if mod.is_loop:
             with self.order_lock:
@@ -580,14 +618,15 @@ class ModuleManager:
                     except IndexError:
                         break
 
-                    if child_id not in deps:
-                        continue
-
-                    child = self.modules[child_id]
-                    if child.is_loop:
-                        deps[child_id].difference_update(child.get_ret("loop_end"))
-                    else:
-                        deps[child_id].difference_update(child.get_ret("run"))
+                    if child_id in deps:
+                        child = self.modules[child_id]
+                        if child.is_loop:
+                            child_ret = child.get_ret("loop_end")
+                        else:
+                            child_ret = child.get_ret("run")
+                        deps[child_id].difference_update(child_ret)
+                        if GLOBAL_NS in deps:
+                            deps[GLOBAL_NS].difference_update(filter_global_names(child_ret))
 
         # Drop "empty" dependencies
         for d in list(deps.keys()):
@@ -622,8 +661,10 @@ class ModuleManager:
         :type index: int or list of int
         """
         with self.order_lock:
+            # Remove plugin from module order
             del self.module_order[index]
 
+            # Notify listeners
             self._listeners.notify("order")
             self._listeners.notify("dependency")
 
@@ -773,7 +814,7 @@ class ModuleManager:
         """
         with self.data_lock:
             mod = self.modules[mod_id]
-            mod_ver = mod.version
+            mod_ver = mod.version # TODO: check for versions
             dep_list = mod.get_dep(kind)
 
             # DEBUG message
@@ -875,15 +916,27 @@ class ModuleManager:
 
         This method is thread-safe.
 
+        Plugin-only data could have a name starting with an underscore.
+        Names starting with another character than an underscore are
+        considered global data and are added both to the plugin’s data
+        namespace and to the global data namespace.
+
         :param d_id: The id of the plugin providing the data
         :param name: The name of the data
         :param value: The value of the data
         :param index: The index of `self.data` to which to write the data
         """
         with self.data_lock:
+            # Add data to plugin’s data namespace
             if d_id not in self.data[index]:
                 self.data[index][d_id] = {}
             self.data[index][d_id][name] = value
+
+            # Add data to global data namespace if not starting with `_`
+            if is_global_name(name):
+                if GLOBAL_NS not in self.data[index]:
+                    self.data[index][GLOBAL_NS] = {}
+                self.data[index][GLOBAL_NS][name] = value
 
 
     def register_builtin_data(self, name, value):
@@ -895,8 +948,15 @@ class ModuleManager:
 
         :param name: The name of the data
         :param value: The value of the data
+
+        The `name` of built-in data should conventionally have a leading
+        and a trailing pair of underscores (e.g. `__name__`).
+        Names starting with an underscore are protected against being
+        overwritten by plugins.
         """
-        self._add_data("", name, value, index=0)
+        with self.data_lock:
+            self._add_data(GLOBAL_NS, name, value, index=0)
+            self.global_data_providers[name].add(GLOBAL_NS)
 
 
     def register_builtins(self):
@@ -936,6 +996,60 @@ class ModuleManager:
 class ModuleMetadata:
     """
     Defines the metadata of a module.
+
+    :param module: The corresponding module. May be ``None``.
+    :type module: None or python module
+
+    Each builtin module consists of metadata including name, version,
+    dependencies and functionality of the module.
+    These metadata are stored in the class :py:class:`ModuleMetadata`.
+
+    The metadata have to be set when writing an own plugin module.
+
+    The following metadata are currently supported:
+
+    * ``name`` – The human-readable name of the module.
+
+        It is only used for displaying.
+        Since users can distinguish modules only by their names, the name
+        should be unique.
+
+    * ``id`` – A string used to identify the module.
+
+        The id must be unique among all modules.
+        It can contain any characters and should stay invariant across
+        multiple versions of the module.
+        The id must not be an empty string.
+
+    * ``version`` – The version string of the module.
+
+        It consists of digits. Subversion numbers can be appended
+        recursively, with dots as separators.
+
+    * ``category`` – A human-readable category to which the plugin belongs.
+
+        The category is used for structured display of plugins in a GUI.
+
+    * ``group`` – Identifiers of metamodules the plugin belongs to
+
+        Groups are needed to define alternatives that have the same
+        functionality.
+
+    * ``conf_dep`` – Dependencies for configuration
+
+    * ``run_dep`` – Dependencies for running
+
+    * ``conf_ret`` – Return values of configuration
+
+    * ``run_ret`` – Return values of configuration
+
+    The dependencies of a plugin (``conf_dep`` and ``run_dep``)
+    are defined as::
+
+        [tuple of] tuple of ("id", [tuple of] "conf_ret", [tuple of] [(<, >) [=]] "version")
+
+    To define a dependency of built-in data, use an empty string as
+    dependency id.
     """
     def __init__(self, module=None):
         self.__vals = {}
@@ -1128,6 +1242,14 @@ class ModuleMetadata:
         with self.__lock:
             return self.__vals["ret"].get(kind, ())
 
+    # "global_ret"
+    # set of str
+    # Data returned by this module in any PERFORM_KIND that is in the
+    # global data namespace
+    @property
+    def global_ret(self):
+        """Return a set of names of return data in the global namespace"""
+        return {name for kind in RETURN_KINDS for name in self.get_ret(kind) if is_global_name(name)}
 
     # "fun"
     # dict of functions
@@ -1241,7 +1363,7 @@ class ModuleOrder:
     Supports loops.
 
     :param modules: the metadata of all available modules
-    :type modules: dict[str]:ModuleMetadata
+    :type modules: dict[str]: :py:class:`ModuleMetadata`
     """
     def __init__(self, modules, order=None, lock=None):
         self._len_cache = None
@@ -1264,10 +1386,12 @@ class ModuleOrder:
 
 
     def __bool__(self):
+        """Check if module order is empty"""
         return bool(self.order)
 
 
     def __iter__(self):
+        """Iterate over modules linearly (flatten loops)"""
         index = [0]
         while index:
             try:
@@ -1287,6 +1411,7 @@ class ModuleOrder:
 
 
     def __len__(self):
+        """Get number of modules in order"""
         if self._len_cache is not None:
             return self._len_cache
         l = 0
@@ -1312,6 +1437,7 @@ class ModuleOrder:
 
 
     def __getitem__(self, key):
+        """Get module ID at index ``key``"""
         key = self._check_key_valid(key)
         with self.lock:
             o = self.order
@@ -1325,6 +1451,7 @@ class ModuleOrder:
 
 
     def __setitem__(self, key, mod_id):
+        """Insert module ID ``mod_id`` at index ``key``"""
         key = self._check_key_valid(key)
         if len(key) > 1 and key[-1] == 0:
             raise IndexError("Bad index: cannot replace loop head.")
@@ -1349,6 +1476,7 @@ class ModuleOrder:
 
 
     def __delitem__(self, key):
+        """Allow deleting modules with the ``del`` statement"""
         key = self._check_key_valid(key)
         isLoop = len(key) > 1 and key[-1] == 0
         with self.lock:
@@ -1554,7 +1682,10 @@ class ModuleOrder:
         return len(o) - loop_correction
 
     def mod_at(self, idx):
+        """Return :py:class:`ModuleMetadata` of module at index ``idx``"""
         return self.modules[self[idx]]
 
     def is_loop_at(self, idx):
+        """Boolean reply whether module at index ``idx`` is a loop"""
         return self.modules[self[idx]].is_loop
+

@@ -1,36 +1,67 @@
 #! /usr/bin/env python3
-import random
+import os
 import re
-import string
 import tempfile
 import threading
-import warnings
 import xml.etree.ElementTree as ET
 
 import numpy as np
 import tifffile
 import PIL.Image as pilimg
 import PIL.ImageTk as piltk
-import skimage.draw as skid
 
-from listener import Listeners
+from ..roi import RoiCollection
+from ..listener import Listeners
 
-TIFF_TAG_DESCRIPTION = 270
-TIFF_TAG_BITSPERSAMPLE = 258
 
 class Stack:
-    """Represents an image stack."""
+    """Represents an image stack.
 
-    def __init__(self, path=None):
+    :param path: (optional) path to a file holding a TIFF stack
+    :type path: str
+    """
+
+    def __init__(self, path=None, arr=None, width=None, height=None, n_frames=None, n_channels=None, dtype=None):
         """Initialize a stack."""
         self.image_lock = threading.RLock()
+        self.info_lock = threading.RLock()
         self.roi_lock = threading.RLock()
         self._listeners = Listeners(kinds={"roi", "image"})
         self._clear_state()
 
-        # If requested, load stack
+        # Initialize stack
         if path is not None:
+            # Load from file (TIFF or numpy array)
             self.load(path)
+        elif arr is not None:
+            # Use array
+            self._path = None
+            self._tmpfile = None
+            self.img = arr
+            self._n_channels, self._n_frames, self._height, self._width = arr.shape
+            self._n_images = self._n_channels * self._n_frames
+            self._mode = arr.itemsize * 8
+            self._listeners.notify("image")
+        elif None not in (width, height, n_frames, n_channels, dtype):
+            # Create empty array
+            self._path = None
+            self._width = width
+            self._height = height
+            self._n_frames = n_frames
+            self._n_channels = n_channels
+            self._mode = np.dtype(dtype).itemsize * 8
+            self._tmpfile = tempfile.TemporaryFile()
+            self.img = np.memmap(filename=self._tmpfile,
+                                 dtype=dtype,
+                                 shape=(self._n_channels,
+                                        self._n_frames,
+                                        self._height,
+                                        self._width
+                                       )
+                                )
+            self._listeners.notify("image")
+            
+            
 
 
     def _clear_state(self):
@@ -49,22 +80,86 @@ class Stack:
             self._n_images = 0
             self._n_frames = 0
             self._n_channels = 0
+            self._channel_labels = None
 
         # ROI list
         with self.roi_lock:
-            self._rois = {}
+            self.__rois = {}
+
+        # Clear image information
+        self.clear_info()
 
         # Notify listeners
         self._listeners.notify(kind=None)
 
 
-    def load(self, path):
+    def load(self, path, loader=None):
         """Load a stack from a path."""
-        with self.image_lock:
-            try:
-                # Open image file
-                self._path = path
-                tiff = tifffile.TiffFile(self._path)
+        self._path = path
+        if loader is None:
+            ext = os.path.splitext(self._path)[-1]
+            if ext.casefold().startswith('.tif'):
+                loader = 'tiff'
+            elif ext.casefold().startswith('.np'):
+                loader = 'npy'
+            else:
+                loader = '' # to prevent error in string comparison
+        if loader == 'tiff':
+            self._load_tiff()
+        elif loader == 'npy':
+            self._load_npy()
+        else:
+            self._clear_state()
+            raise TypeError("Unknown type: {}".format(loader))
+
+    def _load_npy(self, ext=None):
+        if ext is None:
+            ext = os.path.splitext(self._path)[-1]
+        if ext == '.npy':
+            arr = np.load(self._path, mmap_mode='r', allow_pickle=False)
+        elif ext == '.npz':
+            with np.load(self._path, mmap_mode='r', allow_pickle=False) as arr_file:
+                arr = next(iter(arr_file.values())).astype(np.uint16, casting='unsafe')
+        else:
+            raise TypeError("Unknown type: {}".format(ext))
+        self._mode = arr.dtype.itemsize * 8
+        #TODO: check dimensions (swap height/width?)
+        if arr.ndim == 2:
+            self._n_channels = 1
+            self._n_frames = 1
+            self._height, self._width = arr.shape
+            arr = np.reshape(arr, (1, 1, self._height, self._width))
+        elif arr.ndim == 3:
+            self._n_channels = 1
+            self._n_frames, self._height, self._width = arr.shape
+            arr = np.reshape(arr, (1, self._n_frames, self._height, self._width))
+        elif arr.ndim == 4:
+            self._n_frames, self._height, self._width, self._n_channels = arr.shape
+            arr = np.moveaxis(arr, 3, 0)
+        else:
+            raise ValueError("Bad array shape: {}".format(arr.ndim))
+        self._n_images = self._n_channels * self._n_frames
+        try:
+            self._tmpfile = tempfile.TemporaryFile()
+            self.img = np.memmap(filename=self._tmpfile,
+                                 dtype=arr.dtype,
+                                 shape=(self._n_channels,
+                                        self._n_frames,
+                                        self._height,
+                                        self._width
+                                       )
+                                )
+            self.img[...] = arr[...]
+            del arr
+        except Exception:
+            self._clear_state()
+            raise
+        finally:
+            self._listeners.notify("image")
+
+    def _load_tiff(self):
+        try:
+            with self.image_lock, tifffile.TiffFile(self._path) as tiff:
                 pages = tiff.pages
                 if not pages:
                     raise ValueError(f"Cannot open file '{self._path}': No pages found in TIFF.")
@@ -82,10 +177,13 @@ class Stack:
                 description = page0.description
                 if page0.is_imagej:
                     self._parse_imagej_tags(description)
-                elif page0.is_ome:
-                    self._parse_ome(description)
+                elif tiff.is_ome:
+                    self._parse_ome(tiff.ome_metadata)
                 else:
-                    raise TypeError("Unknown image type.")
+                    # If TIFF type is not known, show as 1D stack
+                    print("Unknown image type.")
+                    self._n_channels = 1
+                    self._n_frames = self._n_images
 
                 # Copy stack to numpy array in temporary file
                 self._tmpfile = tempfile.TemporaryFile()
@@ -98,31 +196,68 @@ class Stack:
                                             self._width))
                 for i in range(self._n_images):
                     ch, fr = self.convert_position(image=i)
-                    pages[i].asarray(out=self.img[ch,fr,:,:])
+                    pages[i].asarray(out=self.img[ch, fr, :, :])
 
-            except Exception as e:
-                self._clear_state()
-                print(str(e))
-                raise
+        except Exception as e:
+            self._clear_state()
+            print(str(e))
+            raise
 
-            finally:
-                # Close TIFF image
-                tiff.close()
-
-                self._listeners.notify("image")
-
+        finally:
+            self._listeners.notify("image")
 
     def close(self):
         """Close the TIFF file."""
         with self.image_lock:
             self.img = None
-            self._tmpfile.close()
+            try:
+                self._tmpfile.close()
+            except Exception:
+                pass
             self._tmpfile = None
             self._clear_state()
+
+    def crop(self, *, top=0, bottom=0, left=0, right=0):
+        """Crop image with specified margins"""
+        new_height = self._height - (top + bottom)
+        new_width = self._width - (left + right)
+        if new_height < 0 or new_width < 0:
+            raise ValueError("Margins are larger than image")
+        if bottom == 0:
+            bottom = self._height
+        else:
+            bottom = -bottom
+        if right == 0:
+            right = self._width
+        else:
+            right = -right
+        with self.image_lock:
+            try:
+                new_tempfile = tempfile.TemporaryFile()
+                new_img = np.memmap(filename=new_tempfile,
+                                    dtype=self.img.dtype,
+                                    shape=(self._n_channels,
+                                           self._n_frames,
+                                           new_height,
+                                           new_width))
+                new_img[:, :, :, :] = self.img[:, :, top:bottom, left:right]
+            except Exception:
+                new_tempfile.close()
+                raise
+            self.img = new_img
+            self._width = new_width
+            self._height = new_height
+            try:
+                self._tmpfile.close()
+            except Exception:
+                pass
+            self._tmpfile = new_tempfile
+        self._listeners.notify("image")
 
 
     def _parse_imagej_tags(self, desc):
         """Read stack dimensions from ImageJ’s TIFF description tag."""
+        #TODO: use tiff.imagej_metadata instead of page0.description
         # Set dimension order
         self._order = "tc"
 
@@ -139,7 +274,7 @@ class Stack:
             n_slices = int(m.group(1))
             if self._n_frames == 1 and n_slices > 1:
                 self._n_frames = n_slices
-            elif n_frames > 1:
+            elif self._n_frames > 1:
                 raise ValueError("Bad image format: multiple slices and frames detected.")
 
         # Get number of channels in stack
@@ -188,11 +323,10 @@ class Stack:
             raise ValueError("No 'SizeT' attribute found in OME description.")
         try:
             sizeT = int(sizeT)
-        except:
+        except Exception:
             raise ValueError("Bad 'SizeT' value in OME description.")
         if sizeT < 1:
             raise ValueError("Non-positive 'SizeT' value in OME description.")
-        self._n_frames = sizeT
 
         # Number of channels
         sizeC = element_pixels.attrib.get("SizeC")
@@ -200,11 +334,10 @@ class Stack:
             raise ValueError("No 'SizeC' attribute found in OME description.")
         try:
             sizeC = int(sizeC)
-        except:
+        except Exception:
             raise ValueError("Bad 'SizeC' value in OME description.")
         if sizeC < 1:
             raise ValueError("Non-positive 'SizeC' value in OME description.")
-        self._n_channels = sizeC
 
         # Number of slices
         sizeZ = element_pixels.attrib.get("SizeZ")
@@ -212,17 +345,63 @@ class Stack:
             raise ValueError("No 'SizeZ' attribute found in OME description.")
         try:
             sizeZ = int(sizeZ)
-        except:
+        except Exception:
             raise ValueError("Bad 'SizeZ' value in OME description.")
         if sizeZ < 1:
             raise ValueError("Non-positive 'SizeZ' value in OME description.")
         elif sizeZ != 1:
             raise ValueError(f"Only images with one slice supported; found {sizeZ} slices.")
 
+        # Check for inconsistent OME metadata
+        # (and try to fix inconsistency)
+        if sizeT * sizeC != self._n_images:
+            sizeT_desc = None
+            sizeC_desc = None
+            found_correct_size = False
+
+            # Find "Description" tag
+            desc = None
+            tag_desc = ''.join((xmlns, "Description"))
+            for child in element_image:
+                if child.tag == tag_desc:
+                    desc = child.text
+                    break
+
+            # Parse description
+            if desc:
+                for l in desc.splitlines():
+                    if l.startswith("Dimensions"):
+                        try:
+                            sizeT_desc = int(re.search(r'T\((\d+)\)', l)[1])
+                        except TypeError:
+                            pass
+                        try:
+                            sizeC_desc = int(re.search(r'\?\((\d+)\)', l)[1])
+                        except TypeError:
+                            pass
+                        break
+                if sizeT_desc is not None and sizeC_desc is not None:
+                    found_correct_size = True
+                    if sizeT_desc * sizeC == self._n_images:
+                        sizeT = sizeT_desc
+                    elif sizeT * sizeC_desc == self._n_images:
+                        sizeC = sizeC_desc
+                    elif sizeT_desc * sizeC_desc == self._n_images:
+                        sizeT = sizeT_desc
+                        sizeC = sizeC_desc
+                    else:
+                        found_correct_size = False
+            if not found_correct_size:
+                raise ValueError("Cannot determine image shape.")
+
+        # Write image size
+        self._n_frames = sizeT
+        self._n_channels = sizeC
+
         # Dimension order
         dim_order = element_pixels.attrib.get("DimensionOrder")
-        if dim_order is None:
-            raise ValueError("No 'DimensionOrder' attribute found in OME description.")
+        if not dim_order:
+            raise ValueError("No 'DimensionOrder' found in OME description.")
         idx_C = dim_order.find('C')
         idx_T = dim_order.find('T')
         if idx_C == -1 or idx_T == -1:
@@ -236,7 +415,7 @@ class Stack:
     def convert_position(self, channel=None, frame=None, image=None):
         """
         Convert stack position between (channel, frame) and image.
-        
+
         Either give "channel" and "frame" to obtain the corresponding
         image index, or give "image" to obtain the corresponding indices
         of channel and frame as tuple.
@@ -278,18 +457,15 @@ class Stack:
             else:
                 raise NotImplementedError(f"Dimension order '{self._order}' not implemented yet.")
 
-
     def get_image(self, channel, frame):
         """Get a numpy array of a stack position."""
         with self.image_lock:
             return self.img[channel, frame, :, :]
 
-
     def get_image_copy(self, channel, frame):
         """Get a copy of a numpy array of a stack position."""
         with self.image_lock:
             return self.img[channel, frame, :, :].copy()
-
 
     def get_frame_tk(self, channel, frame, convert_fcn=None):
         """
@@ -320,16 +496,24 @@ class Stack:
                 a16 = self.get_image(channel, frame)
                 a8 = np.empty(a16.shape, dtype=np.uint8)
                 np.floor_divide(a16, 256, out=a8)
-                #a16 = a16 - a16.min()
-                #a16 = a16 / a16.max() * 255
-                #np.floor_divide(a16, 255, out=a8)
-                #np.true_divide(a16, 255, out=a8, casting='unsafe')
             else:
                 raise ValueError(f"Illegal image mode: {self._mode}")
             return piltk.PhotoImage(pilimg.fromarray(a8, mode='L'))
 
+    def clear_info(self):
+        """Clear the image information"""
+        with self.info_lock:
+            self._info = {}
 
-    def info(self):
+    def update_info(self, name, value):
+        with self.info_lock:
+            self._info[name] = value
+
+    def get_info(self, name):
+        with self.info_lock:
+            return self._info.get(name)
+
+    def stack_info(self):
         """Print stack info. Only for debugging."""
         with self.image_lock:
             print("Path: " + str(self._path))
@@ -339,116 +523,128 @@ class Stack:
             print("n_channels: " + str(self._n_channels))
             print("n_frames: " + str(self._n_frames))
 
-
     def add_listener(self, fun, kind=None):
         """Register a listener to stack changes."""
         return self._listeners.register(fun, kind)
-
 
     def delete_listener(self, lid):
         """Un-register a listener."""
         self._listeners.delete(lid)
 
+    def _notify_roi_listeners(self, *_, **__):
+        """Convenience function for propagation of ROI changes"""
+        self._listeners.notify("roi")
 
-    def set_rois(self, rois, type_, frame=Ellipsis):
+    def new_roi_collection(self, roi):
+        """Create a new RoiCollection"""
+        if isinstance(roi, RoiCollection):
+            with self.roi_lock:
+                roi.register_listener(self._notify_roi_listeners)
+                self.__rois[roi.key] = roi
+        else:
+            raise TypeError(f"Expected 'RoiCollection', got '{type(roi)}'")
+
+    def set_rois(self, rois, key=None, frame=Ellipsis, replace=False):
         """Set the ROI set of the stack.
 
         :param rois: The ROIs to be set
-        :param type_: The ROI type (currently one of "rect" and "raw")
-        :param frame: The frame to which the ROI belongs. ``None`` stands for all frames.
+        :type rois: iterable of Roi
+        :param frame: index of the frame to which the ROI belongs.
+            Use ``Ellipsis`` to specify ROIs valid in all frames.
+        :type frame: int or Ellipsis
 
-        For details, see :py:class:`RoiSet`
+        For details, see :py:class:`RoiCollection`.
         """
-        with self.roi_lock:
-            self._rois[frame] = RoiSet(rois, type_)
-            self._listeners.notify("roi")
+        # Infer ROI type key
+        if key is None:
+            for r in rois:
+                key = r.key()
+                break
 
+        with self.roi_lock:
+            if key not in self.__rois:
+                self.__rois[key] = RoiCollection(key)
+                self.__rois[key].register_listener(self._notify_roi_listeners)
+            if replace:
+                self.__rois[key][frame] = rois
+            else:
+                self.__rois[key].add(frame, rois)
+
+    def print_rois(self):
+        """Nice printout of ROIs. Only for DEBUGging."""
+        prefix = "[Stack.print_rois]"
+        for k, v in self.__rois.items():
+            print(f"{prefix} ROI type '{k}' has {len(v)} frame(s)")
+            for frame, rois in v.items():
+                print(f"{prefix}\t frame '{frame}' has {len(rois)} ROIs")
+                # print(rois) # DEBUG
 
     @property
     def rois(self):
         with self.roi_lock:
-            return self._rois
+            return self.__rois
 
+    def get_rois(self, key=None, frame=None):
+        """Get ROIs, optionally at a specified position.
 
-    def get_rois(self, frame=None):
+        :param key: ROI type identifier
+        :type key: tuple (len 2) of str
+        :param frame: frame identifier
+        :return: ROI set
+        """
         with self.roi_lock:
-            return self._rois[frame]
+            rois = self.__rois.get(key)
+            if rois is not None and frame is not None:
+                return rois[frame]
+            return rois
 
-
-    def clear_rois(self, frame=None):
+    def clear_rois(self, key=None, frame=None):
         """Delete the current ROI set"""
         with self.roi_lock:
-            if frame is None:
-                self._rois = {}
+            if key is None:
+                self.__rois = {}
+            elif frame is None:
+                del self.__rois[key]
             else:
-                del self._rois[frame]
-            self._listeners.notify("roi")
-
+                del self.__rois[key][frame]
+            self._notify_roi_listeners()
 
     @property
     def path(self):
         with self.image_lock:
             return self._path
 
-
     @property
     def mode(self):
         with self.image_lock:
             return self._mode
-
 
     @property
     def order(self):
         with self.image_lock:
             return self._order
 
-
     @property
     def width(self):
         with self.image_lock:
             return self._width
-
 
     @property
     def height(self):
         with self.image_lock:
             return self._height
 
-
     @property
     def n_images(self):
         with self.image_lock:
             return self._n_images
-
 
     @property
     def n_channels(self):
         with self.image_lock:
             return self._n_channels
 
-
     @property
     def n_frames(self):
         with self.image_lock:
             return self._n_frames
-
-
-class RoiSet:
-    ROI_TYPE_RAW = 'raw'
-    ROI_TYPE_RECT = 'rect'
-
-    def __init__(self, roi_arr, type_=ROI_TYPE_RECT):
-
-        # Change ROI into index array
-        if type_ == RoiSet.ROI_TYPE_RECT:
-            self._roi_arr = roi_arr
-
-        elif type_ == RoiSet.ROI_TYPE_RAW:
-            self._roi_arr = roi_arr
-
-        else:
-            raise ValueError("Unknown ROI type: {}", type_, file=sys.stderr)
-
-    def __iter__(self):
-        return self._roi_arr.__iter__()
-

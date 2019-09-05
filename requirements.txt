@@ -4,6 +4,8 @@ matplotlib
 pillow
 tifffile
 scikit-image
+pandas
+XlsxWriter
 #ipython
 #spyder
 Sphinx
