@@ -32,6 +32,14 @@ ROI_COLOR_HIGHLIGHT = '#ff0000'
 ROI_WIDTH = 1
 ROI_WIDTH_HIGHLIGHT = 3
 
+KEYS_NEXT_CELL = {'Down', 'KP_Down'}
+KEYS_PREV_CELL = {'Up', 'KP_Up'}
+KEYS_HIGHLIGHT_CELL = {'Return', 'KP_Enter'}
+KEYS_SHOW_CONTOURS = {'Insert', 'KP_Insert'}
+KEYS_CHANNEL = {f'{prefix}{sym}' for prefix in ('', 'KP_') for sym in range(1, 10)}
+KEYS_NEXT_FRAME = {'Right', 'KP_Right'}
+KEYS_PREV_FRAME = {'Left', 'KP_Left'}
+
 # tkinter event state constants for key presses
 # see: https://web.archive.org/web/20181009085916/http://infohost.nmt.edu/tcc/help/pubs/tkinter/web/event-handlers.html
 EVENT_STATE_SHIFT = 1
@@ -289,18 +297,18 @@ class Main_Tk:
 
         # Set global key bindings for display and cell selection
         # Some key symbols for the keypad (KP_*) may not be available in all systems.
-        self.root.bind_all('<Insert>', lambda _:
-                self.var_show_roi_contours.set(not self.var_show_roi_contours.get()))
-        for keysym in ('<Up>', '<KP_Up>', '<Down>', '<KP_Down>', '<Return>', '<KP_Enter>'):
-            try:
-                self.root.bind_all(keysym, self._key_highlight_cell)
-            except Exception:
-                print(f"Failed to register keysym '{keysym}'")
-        for keysym in ('<Right>', '<KP_Right>', '<Left>', '<KP_Left>'):
-            try:
-                self.root.bind_all(keysym, self._key_scroll_channels)
-            except Exception:
-                print(f"Failed to register keysym '{keysym}'")
+        bindings = ((KEYS_NEXT_CELL | KEYS_PREV_CELL | KEYS_HIGHLIGHT_CELL, self._key_highlight_cell),
+                    (KEYS_SHOW_CONTOURS, lambda _:
+                        self.var_show_roi_contours.set(not self.var_show_roi_contours.get())),
+                    (KEYS_NEXT_FRAME | KEYS_PREV_FRAME, self._key_scroll_frames),
+                    (KEYS_CHANNEL, self._key_change_channel),
+                   )
+        for keysyms, callback in bindings:
+            for keysym in keysyms:
+                try:
+                    self.root.bind_all(f'<{keysym}>', callback)
+                except Exception:
+                    print(f"Failed to register keysym '<{keysym}>'")
 
         # Run mainloop
         self.root.mainloop()
@@ -1104,32 +1112,27 @@ class Main_Tk:
         if is_selection_updated:
             self.update_selection()
 
-    def _key_scroll_channels(self, evt):
+    def _key_scroll_frames(self, evt):
+        """Callback for scrolling through channels"""
+        if evt.keysym in KEYS_NEXT_FRAME:
+            cmd = 'up'
+        elif evt.keysym in KEYS_PREV_FRAME:
+            cmd = 'down'
+        else:
+            return
+        self.stackviewer._i_frame_step(cmd)
+
+
+    def _key_change_channel(self, evt):
         """Callback for displaying channels"""
         if not self.channel_order:
             return
-        chan_disp = [i for i in self.channel_order if self.channel_selection[i]['val']]
-
-        if evt.keysym in ('Right', 'KP_Right'):
-            if chan_disp:
-                new_chan = chan_disp[-1] + 1
-                if new_chan >= len(self.channel_order):
-                    new_chan = 0
-            else:
-                new_chan = 0
-
-        elif evt.keysym in ('Left', 'KP_Left'):
-            if chan_disp:
-                new_chan = chan_disp[0] - 1
-                if new_chan < 0:
-                    new_chan = len(self.channel_order) - 1
-            else:
-                new_chan = len(self.channel_order) - 1
-
-        else:
+        try:
+            new_chan = int(evt.keysym[-1]) - 1
+        except Exception:
             return
-
-        self._change_channel_selection(new_chan)
+        if new_chan >= 0 and new_chan < len(self.channel_order):
+            self._change_channel_selection(new_chan)
 
     def _key_highlight_cell(self, evt):
         """Callback for highlighting cells by arrow keys
