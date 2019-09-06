@@ -7,6 +7,7 @@ from matplotlib.ticker import StrMethodFormatter
 import numpy as np
 import os
 import pandas as pd
+import time
 import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter.filedialog as tkfd
@@ -39,6 +40,8 @@ KEYS_SHOW_CONTOURS = {'Insert', 'KP_Insert'}
 KEYS_CHANNEL = {f'{prefix}{sym}' for prefix in ('', 'KP_') for sym in range(1, 10)}
 KEYS_NEXT_FRAME = {'Right', 'KP_Right'}
 KEYS_PREV_FRAME = {'Left', 'KP_Left'}
+
+FRAME_SCROLL_RATE_MAX = 8
 
 # tkinter event state constants for key presses
 # see: https://web.archive.org/web/20181009085916/http://infohost.nmt.edu/tcc/help/pubs/tkinter/web/event-handlers.html
@@ -193,6 +196,7 @@ class Main_Tk:
         self.fig = None
         self.fig_widget = None
         self.save_dir = None
+        self.last_frame_scroll = time.monotonic()
 
         self.var_show_frame_indicator = tk.BooleanVar(value=True)
         self.var_show_frame_indicator.trace_add('write', self._update_frame_indicator)
@@ -340,7 +344,21 @@ class Main_Tk:
     def status(self, msg=''):
         self.var_statusmsg.set(msg)
         self.root.update()
-
+    
+    def status_progress(msg=None, current=None, total=None):
+        if msg is None:
+            self.status()
+            return
+        elif current is None and total is None:
+            status = msg
+        elif current is None:
+            status = f"{msg} {total}"
+        elif total is None:
+            status = f"{msg} {current}"
+        else:
+            status = f"{msg} {current}/{total}"
+        self.status(status)
+            
     def create_figure(self):
         """Show an empty figure"""
         self.fig = Figure()
@@ -420,7 +438,8 @@ class Main_Tk:
     def open_stack(self):
         """Ask user to open new stack"""
         self.status("Opening stack")
-        StackOpener(self.root, callback=self.open_metastack)
+        StackOpener(self.root, callback=self.open_metastack,
+                progress_fcn=self.status_progress)
 
     def open_metastack(self, data):
         """Create a MetaStack with the channels selected by StackOpener"""
@@ -1120,8 +1139,12 @@ class Main_Tk:
             cmd = 'down'
         else:
             return
+        clock = time.monotonic()
+        if clock - self.last_frame_scroll < 1 / FRAME_SCROLL_RATE_MAX:
+            return
+        else:
+            self.last_frame_scroll = clock
         self.stackviewer._i_frame_step(cmd)
-
 
     def _key_change_channel(self, evt):
         """Callback for displaying channels"""
@@ -1249,7 +1272,7 @@ class StackOpener:
     # In [5]: root = tk.Tk(); StackOpener(root); root.mainloop()
     # Repeat In [5] for each test run
 
-    def __init__(self, root, callback=None):
+    def __init__(self, root, callback=None, progress_fcn=None):
         self.root = root
         self.frame = tk.Toplevel(self.root)
         self.frame.title("Select stacks and channels")
@@ -1258,6 +1281,7 @@ class StackOpener:
         self.stacks = []
         self.channels = []
         self.callback = callback
+        self.progress_fcn = progress_fcn
 
         # PanedWindow
         paned = tk.PanedWindow(self.frame)
@@ -1369,7 +1393,7 @@ class StackOpener:
         fn = tkfd.askopenfilename(title="Open stack", parent=self.root, initialdir='res', filetypes=(("TIFF", '*.tif *.tiff'), ("Numpy", '*.npy *.npz'), ("All files", '*')))
         if not fn:
             return
-        stack = Stack(fn)
+        stack = Stack(fn, progress_fcn=self.progress_fcn)
         stack_dir, stack_name = os.path.split(fn)
         n_channels = stack.n_channels
         self.stacks.append({'name': stack_name,
