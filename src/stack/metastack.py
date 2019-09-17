@@ -340,7 +340,7 @@ class MetaStack:
 
     @property
     def path(self):
-        return ''
+        return None
 
     @property
     def mode(self):
@@ -389,7 +389,6 @@ class MetaStack:
             return {name: stack.n_channels
                 for name, stack in self._stacks.items()}
 
-    @property
     def stack(self, name):
         with self.image_lock:
             return self._stacks[name]

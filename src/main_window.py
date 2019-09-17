@@ -12,6 +12,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter.filedialog as tkfd
 import tkinter.simpledialog as tksd
+from . content_io import StackdataIO
 from .roi import ContourRoi
 from .stackviewer_tk import StackViewer
 from .stack import Stack
@@ -91,7 +92,7 @@ class Main_Tk:
 
     self.channel_selection
         list of dict
-        The list items correspond the the channels of
+        The list items correspond to the channels of
         `self.display_stack` with the same index. The dict
         holds information of the selection widgets:
         'type'      str of the channel type; one of:
@@ -1252,7 +1253,25 @@ class Main_Tk:
         for name, df in df_dict.items():
             df.to_csv(os.path.join(self.save_dir, f"{name}.csv"), header=False, index=False)
 
-        print(f"Data have been written to '{self.save_dir}'") #DEBUG
+        # Export ROIs to JSON file
+        sd = StackdataIO(traces=self.traces, rois=self.rois)
+        sd.n_frames = self.stack.n_frames
+        mic_res = self.var_microscope_res.get()
+        sd.mircoscope_name = mic_res
+        sd.microscope_resolution = MICROSCOPE_RESOLUTION[mic_res]
+        for i, ch in enumerate(self.stack.channels):
+            if ch.isVirtual:
+                path = None
+            else:
+                path = self.stack.stack(ch.name).path
+            i_channel = ch.channel
+            type_ = ch.type
+            name = ch.name
+            label = ch.label
+            sd.add_channel(path, type_, i_channel, name, label)
+        sd.dump(os.path.join(self.save_dir, "roi.json"))
+
+        print(f"Data have been written to '{self.save_dir}'") #DEBUG()
 
 
 class StackOpener:
