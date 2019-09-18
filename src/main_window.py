@@ -56,7 +56,7 @@ TYPE_AREA = 'Area'
 
 DESELECTED_DARKEN_FACTOR = .3
 
-MICROSCOPE_RESOLUTION = {
+MIC_RES = {
         # Resolutions are given in µm/px
         # See: https://collab.lmu.de/x/9QGFAw
         "Nikon (4x)":           1.61,
@@ -80,10 +80,10 @@ MICROSCOPE_RESOLUTION = {
         "Cell culture (10x PhC)":.42,
         "Cell culture (20x)":    .21,
     }
-MICROSCOPE_RES_UNSPECIFIED = "Unspecified (use [px])"
-MICROSCOPE_RES_CUSTOM = "Custom"
-MICROSCOPE_RES_UNSPECIFIED_IDX = 1
-MICROSCOPE_RES_CUSTOM_IDX = 2
+MIC_RES_UNSPEC = "Unspecified (use [px])"
+MIC_RES_CUSTOM = "Custom"
+MIC_RES_UNSPEC_IDX = 1
+MIC_RES_CUSTOM_IDX = 2
 
 class Main_Tk:
     """Display the main window
@@ -190,7 +190,6 @@ class Main_Tk:
         self.channel_order = []
         self.frames_per_hour = 6
         self.frame_indicators = []
-        self.track = True
         self.traces = None
         self.trace_info = None
         self.rois = None
@@ -210,7 +209,7 @@ class Main_Tk:
         self.var_show_roi_names.trace_add('write', self._update_show_roi_names)
         self.var_show_untrackable = tk.BooleanVar(value=False)
         self.var_show_untrackable.trace_add('write', self._update_show_untrackable)
-        self.var_microscope_res = tk.StringVar(value=MICROSCOPE_RES_UNSPECIFIED)
+        self.var_microscope_res = tk.StringVar(value=MIC_RES_UNSPEC)
         self.var_microscope_res.trace_add('write', self._change_microscope_resolution)
 
         self._init_trace_info()
@@ -222,6 +221,7 @@ class Main_Tk:
         filemenu = tk.Menu(menubar)
         menubar.add_cascade(label="File", menu=filemenu)
         filemenu.add_command(label="Open stack…", command=self.open_stack)
+        filemenu.add_command(label="Open session", command=self.open_session)
         filemenu.add_command(label="Save", command=self.save)
         filemenu.add_command(label="Set output directory…", command=self._get_savedir)
         filemenu.add_command(label="Quit", command=self.root.quit)
@@ -241,20 +241,20 @@ class Main_Tk:
 
         self.micresmenu = tk.Menu(settmenu)
         settmenu.add_cascade(label="Microscope resolution", menu=self.micresmenu)
-        for mic_opt in MICROSCOPE_RESOLUTION.keys():
+        for mic_opt in MIC_RES.keys():
             self.micresmenu.add_radiobutton(label=mic_opt, value=mic_opt, variable=self.var_microscope_res)
-        MICROSCOPE_RESOLUTION[MICROSCOPE_RES_UNSPECIFIED] = None
-        MICROSCOPE_RESOLUTION[MICROSCOPE_RES_CUSTOM] = None
-        self.micresmenu.insert(MICROSCOPE_RES_UNSPECIFIED_IDX,
+        MIC_RES[MIC_RES_UNSPEC] = None
+        MIC_RES[MIC_RES_CUSTOM] = None
+        self.micresmenu.insert(MIC_RES_UNSPEC_IDX,
                           'radiobutton',
-                          label=MICROSCOPE_RES_UNSPECIFIED,
-                          value=MICROSCOPE_RES_UNSPECIFIED,
+                          label=MIC_RES_UNSPEC,
+                          value=MIC_RES_UNSPEC,
                           variable=self.var_microscope_res,
                          )
-        self.micresmenu.insert(MICROSCOPE_RES_CUSTOM_IDX,
+        self.micresmenu.insert(MIC_RES_CUSTOM_IDX,
                           'radiobutton',
-                          label=MICROSCOPE_RES_CUSTOM,
-                          value=MICROSCOPE_RES_CUSTOM,
+                          label=MIC_RES_CUSTOM,
+                          value=MIC_RES_CUSTOM,
                           variable=self.var_microscope_res,
                          )
 
@@ -401,33 +401,41 @@ class Main_Tk:
                                  'quantity': quantity if quantity is not None else type_,
                                 }
 
-    def _prompt_microscope_resolution(self):
-        """Ask user for custom micrsocope resolution"""
-        initval = {}
-        if MICROSCOPE_RESOLUTION[MICROSCOPE_RES_CUSTOM] is not None:
-            initval['initialvalue'] = MICROSCOPE_RESOLUTION[MICROSCOPE_RES_CUSTOM]
-        res = tksd.askfloat(
-                "Microscope resolution",
-                "Enter custom microscope resolution [µm/px]:",
-                minvalue=0, parent=self.root, **initval)
-        MICROSCOPE_RESOLUTION[MICROSCOPE_RES_CUSTOM] = res
+    def _custom_microscope_resolution(self, res=None):
+        """Set custom micrsocope resolution"""
         if res is None:
-            new_label = MICROSCOPE_RES_CUSTOM
+            initval = {}
+            if MIC_RES[MIC_RES_CUSTOM] is not None:
+                initval['initialvalue'] = MIC_RES[MIC_RES_CUSTOM]
+            res = tksd.askfloat(
+                    "Microscope resolution",
+                    "Enter custom microscope resolution [µm/px]:",
+                    minvalue=0, parent=self.root, **initval)
+        MIC_RES[MIC_RES_CUSTOM] = res
+        if res is None:
+            new_label = MIC_RES_CUSTOM
         else:
-            new_label = f"{MICROSCOPE_RES_CUSTOM} ({res} µm/px)"
-        self.micresmenu.entryconfig(MICROSCOPE_RES_CUSTOM_IDX, label=new_label)
+            new_label = f"{MIC_RES_CUSTOM} ({res} µm/px)"
+        self.micresmenu.entryconfig(MIC_RES_CUSTOM_IDX, label=new_label)
 
-    def _change_microscope_resolution(self, *_):
+    def _change_microscope_resolution(self, *_, name=None, val=None):
         """Callback for changing microscope resolution"""
         mic_res = self.var_microscope_res.get()
-        if mic_res == MICROSCOPE_RES_CUSTOM:
-            self._prompt_microscope_resolution()
-        res = MICROSCOPE_RESOLUTION[mic_res]
+        if mic_res == MIC_RES_CUSTOM and val is None and name is None:
+            self._custom_microscope_resolution()
+        if name is not None and name in MIC_RES and (val is None or MIC_RES[name] == val):
+            self.var_microscope_res.set(name)
+            return
+        elif val is not None:
+            self._custom_microscope_resolution(res=val)
+            res = val
+        else:
+            res = MIC_RES[mic_res]
         if res is not None:
             self.trace_info[TYPE_AREA]['unit'] = "µm²"
             self.trace_info[TYPE_AREA]['factor'] = res**2
-        elif mic_res == MICROSCOPE_RES_CUSTOM:
-            self.root.after_idle(self.var_microscope_res.set, MICROSCOPE_RES_UNSPECIFIED)
+        elif mic_res == MIC_RES_CUSTOM:
+            self.root.after_idle(self.var_microscope_res.set, MIC_RES_UNSPEC)
             return
         else:
             self.trace_info[TYPE_AREA]['unit'] = "px²"
@@ -442,7 +450,110 @@ class Main_Tk:
         StackOpener(self.root, callback=self.open_metastack,
                 progress_fcn=self.status_progress)
 
-    def open_metastack(self, data):
+    def open_session(self):
+        """Open a saved session"""
+        self.status("Opening session")
+        fn = tkfd.askopenfilename(title="Open session data",
+                                  initialdir='.',
+                                  parent=self.root,
+                                  filetypes=(("Session files", '*.zip *.json'), ("All files", '*')),
+                                 )
+        if fn is None:
+            return
+
+        sd = StackdataIO().load(fn=fn)
+
+        # Load microscope data
+        self._change_microscope_resolution(name=sd.microscope_name, val=sd.microscope_resolution)
+
+        # Load ROIs
+        self.rois = []
+        for frame in sd.rois:
+            rois = {}
+            for label, roi in frame.items():
+                rois[label] = ContourRoi(label=label, coords=roi['coords'], name=roi['name'])
+            self.rois.append(rois)
+
+        # Load traces
+        self.traces = {}
+        for trace in sd.traces:
+            name = trace['name']
+            self.traces[name] = {
+                    'name': name,
+                    'roi': trace['rois'],
+                    'select': trace['select'],
+                    'highlight': False,
+                    'val': {},
+                    'plot': {},
+                   }
+        self.update_roi_display(False)
+
+        # Load stack
+        chan_info = []
+        stack_paths = {}
+        for ch in sd.channels:
+            x = {}
+            if ch['file_directory'] is None or ch['file_name'] is None:
+                path = None
+                x['stack'] = None
+            else:
+                path = os.path.join(ch['file_directory'], ch['file_name'])
+                try:
+                    x['stack'] = stack_paths[path]
+                except KeyError:
+                    stack = Stack(path, progress_fcn=self.status_progress)
+                    stack_paths[path] = stack
+                    x['stack'] = stack
+            x['name'] = ch['name']
+            x['i_channel'] = ch['i_channel']
+            x['label'] = ch['label']
+            x['type'] = ch['type']
+            chan_info.append(x)
+        self.open_metastack(chan_info, do_track=False)
+
+    def update_roi_display(self, notify_listeners=True):
+        """Update all ROIs.
+
+        This method updates all display properties of all ROIs.
+        """
+        # Update untracked cells
+        show_contour = self.var_show_untrackable.get() and self.var_show_roi_contours.get()
+        for frame in self.rois:
+            for roi in frame.values():
+                if roi.name:
+                    continue
+                roi.color = ROI_COLOR_UNTRACKABLE
+                roi.stroke_width = ROI_WIDTH
+                roi.visible = show_contour
+
+        # Update tracked cells
+        show_contour = self.var_show_roi_contours.get()
+        show_name = self.var_show_roi_names.get()
+        for trace in self.traces.values():
+            is_select = trace['select']
+            is_highlight = trace['highlight']
+            if not is_select:
+                color = ROI_COLOR_DESELECTED
+            elif is_highlight:
+                color = ROI_COLOR_HIGHLIGHT
+            else:
+                color = ROI_COLOR_SELECTED
+            if is_highlight:
+                width = ROI_WIDTH_HIGHLIGHT
+            else:
+                width = ROI_WIDTH
+            for ref, rois in zip(trace['roi'], self.rois):
+                roi = rois[ref]
+                roi.color = color
+                roi.visible = show_contour
+                roi.name_visible = show_name
+                roi.stroke_width = width
+        if notify_listeners:
+            self.display_stack._listeners.notify('roi')
+
+        
+
+    def open_metastack(self, data, do_track=True):
         """Create a MetaStack with the channels selected by StackOpener"""
         if not data:
             self.status()
@@ -454,7 +565,9 @@ class Main_Tk:
         height_seg = None
         width_seg = None
         for d in data:
-            if d['type'] == ms.TYPE_SEGMENTATION:
+            if d['stack'] is None:
+                pass
+            elif d['type'] == ms.TYPE_SEGMENTATION:
                 height_seg = d['stack'].height
                 width_seg = d['stack'].width
             else:
@@ -481,14 +594,15 @@ class Main_Tk:
         i_channel = 0
         i_channel_fl = 1
         for d in data:
-            if d['type'] == ms.TYPE_SEGMENTATION and self.track:
-                if pad_y or pad_x:
-                    msg_bak = self.var_statusmsg.get()
-                    self.status("Cropping segmented stack")
-                    d['stack'].crop(right=pad_x, bottom=pad_y)
-                    self.status(msg_bak)
-                self.track_stack(d['stack'])
-                d['stack'].close()
+            if d['type'] == ms.TYPE_SEGMENTATION:
+                if do_track and d['stack'] is not None:
+                    if pad_y or pad_x:
+                        msg_bak = self.var_statusmsg.get()
+                        self.status("Cropping segmented stack")
+                        d['stack'].crop(right=pad_x, bottom=pad_y)
+                        self.status(msg_bak)
+                    self.track_stack(d['stack'])
+                    d['stack'].close()
                 meta.add_channel(name='segmented_stack',
                                  label=d['label'],
                                  type_=d['type'],
@@ -1258,7 +1372,7 @@ class Main_Tk:
         sd.n_frames = self.stack.n_frames
         mic_res = self.var_microscope_res.get()
         sd.mircoscope_name = mic_res
-        sd.microscope_resolution = MICROSCOPE_RESOLUTION[mic_res]
+        sd.microscope_resolution = MIC_RES[mic_res]
         for i, ch in enumerate(self.stack.channels):
             if ch.isVirtual:
                 path = None
@@ -1269,7 +1383,7 @@ class Main_Tk:
             name = ch.name
             label = ch.label
             sd.add_channel(path, type_, i_channel, name, label)
-        sd.dump(os.path.join(self.save_dir, "roi.json"))
+        sd.dump(os.path.join(self.save_dir, "session.zip"))
 
         print(f"Data have been written to '{self.save_dir}'") #DEBUG()
 

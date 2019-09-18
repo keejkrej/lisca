@@ -1,7 +1,50 @@
 import base64
+from contextlib import ExitStack
+import io
 import json
+import numpy as np
 import os
 import struct
+import zipfile
+
+ZIP_JSON_NAME = 'session.json'
+
+def get_format(fmt):
+    """Get format properties for binary data.
+
+    `fmt` is a format character of the package `struct`.
+    Note that the following characters are not allowed:
+    x, ?, n, N, s, p, P
+
+    The corresponding numpy dtype is returned.
+    The number of bytes required per value can be
+    accessed with the attribute `itemsize`.
+    """
+    if fmt in 'cb':
+        return np.int8, 1
+    elif fmt == 'B':
+        return np.uint8, 1
+    elif fmt == 'h':
+        return np.int16, 2
+    elif fmt == 'H':
+        return np.uint16, 2
+    elif fmt in 'il':
+        return np.int32, 4
+    elif fmt in 'IL':
+        return np.uint32, 4
+    elif fmt == 'q':
+        return np.int64, 8
+    elif fmt == 'Q':
+        return np.uint64, 8
+    elif fmt == 'e':
+        return np.float16, 2
+    elif fmt == 'f':
+        return np.float32, 4
+    elif fmt == 'd':
+        return np.float64, 8
+    else:
+        raise ValueError(f"Undefined format character '{fmt}'")
+
 
 class StackdataIO:
     """Provides an interface for standardized export and import of stack data.
@@ -133,17 +176,41 @@ class StackdataIO:
         if fn is None:
             return json.dumps(data, **json_args)
         elif isinstance(fn, str):
-            with open(fn, 'wt') as f:
+            _, ext = os.path.splitext(fn)
+            with ExitStack() as cm:
+                if ext.lower() == '.zip':
+                    zf = cm.enter_context(zipfile.ZipFile(fn, 'w', compression=zipfile.ZIP_DEFLATED))
+                    f = cm.enter_context(zf.open(ZIP_JSON_NAME, 'w'))
+                    f = io.TextIOWrapper(f, encoding='utf8', newline='\n', write_through=True)
+                else:
+                    f = cm.enter_context(open(fn, 'wt', encoding='utf8', newline='\n'))
                 json.dump(data, f, **json_args)
         else:
             json.dump(data, fn, **json_args)
 
     def load(self, fn=None, s=None):
-        #TODO
+        """Loads stack information and ROI information from JSON
+
+        Arguments:
+            fn -- file-like or str holding a filename of JSON file to be read
+            s -- string holding JSON data
+
+        If `fn` is given, `s` is ignored.
+        `fn` may be a ZIP file containing a file named 'session.json' that holds
+        the information.
+
+        The content of the JSON data is loaded and can be accessed
+        via the fields of this object.
+        """
         if fn is not None:
             if isinstance(fn, str):
-                with open(fn, 'rt') as f:
-                    data = json.load(f)
+                if zipfile.is_zipfile(fn):
+                    with zipfile.ZipFile(fn) as zf:
+                        with zf.open(ZIP_JSON_NAME) as f:
+                            data = json.loads(io.TextIOWrapper(f, encoding='utf8').read())
+                else:
+                    with open(fn, 'rt') as f:
+                        data = json.load(f)
             else:
                 data = json.load(fn)
         elif s is not None:
@@ -157,7 +224,17 @@ class StackdataIO:
         self.microscope_name = data['microscope']['name']
         self.microscope_resolution = data['microscope']['resolution']
         self.traces = data['cells']
-        self.rois = data['rois']
+        self.rois = []
+        for frame in data['rois']:
+            rois = {}
+            for label, roi in frame.items():
+                coords = np.stack((self.from_list64(roi['rows']), self.from_list64(roi['cols'])), axis=-1)
+                rois[label] = {
+                               'name': roi['name'],
+                               'coords': coords,
+                              }
+            self.rois.append(rois)
+        return self
 
     @staticmethod
     def to_list64(arr, fmt='<H'):
@@ -170,7 +247,7 @@ class StackdataIO:
         The flattened `arr` is converted to a bytes holding a sequence of numbers
         encoded according to `fmt`. `fmt` must be a two-element str, wherein the
         first element indicates the endianness and the second element indicates
-        a byte length and signedness. See the `struct` package for possible options.
+        a byte length and sign. See the `struct` package for possible options.
 
         The resulting bytes object is prepended with fmt and returned as string.
         """
@@ -183,9 +260,13 @@ class StackdataIO:
 
         `data` must be a base64-encoded array in the format described for `to_list64`.
         It is returned as 1-dim numpy array.
-
-        Currently, the dtype of the returned array is determined by numpy’s type inference.
         """
         data = base64.b64decode(data)
-        fmt = data[:2]
-        return np.array(struct.unpack(fmt, x) for x in data[2:])
+        fmt = data[:2].decode()
+        data = data[2:]
+        dtype, itemsize = get_format(fmt[1])
+        numel = len(data) // itemsize
+        arr = np.empty(numel, dtype=dtype)
+        for i in range(numel):
+            arr[i] = struct.unpack(fmt, data[i*itemsize:(i+1)*itemsize])[0]
+        return arr

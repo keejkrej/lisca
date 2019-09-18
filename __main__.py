@@ -2,7 +2,7 @@
 
 
 # Define meta information
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __author__ = "Daniel Woschée"
 __contact__ = "daniel.woschee@physik.lmu.de"
 PACKAGE_NAME = "PyAMA"
