@@ -54,8 +54,13 @@ the frames using the slider below the stack, and by highlighting single cells.
 You can highlight a cell by clicking on the cell in the image or on a corresponding
 trace in the plot axes.
 
-To exclude or include a cell the the readout, click on the cell in the image with
-the shift key pressed.
+To exclude or include a cell the the readout, select/deselect it by clicking on the
+cell in the image with the shift key pressed.
+
+You can also use the up/down arrow keys to scroll through the cells,
+the left/right arrow keys to scroll through the frames,
+and the number keys to change the displayed channel.
+You can also (de)select cells with the enter key.
 
 When all cells to be read out are specified, click on “File/Save” to save the measurements.
 Note that highlighted cells will also be highlighted in the PDF file.
