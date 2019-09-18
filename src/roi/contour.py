@@ -10,7 +10,7 @@ class ContourRoi(Roi):
     def key(cls):
         return ("raw", "0.1")
 
-    def __init__(self, mask=None, label=None, regionprop=None, lazy=True,
+    def __init__(self, mask=None, label=None, coords=None, regionprop=None, lazy=True,
             color=None, visible=True, name=None, name_visible=True, stroke_width=None):
         self.label = None
         self._perimeter = None
@@ -20,9 +20,14 @@ class ContourRoi(Roi):
         self.name = name
         self.name_visible = name_visible
         self.stroke_width = stroke_width
-        if mask is not None and label is not None:
+        if regionprop is None and label is not None:
             self.label = label
-            self.coords = np.array((mask == label).nonzero()).T
+            if mask is not None:
+                self.coords = np.array((mask == label).nonzero()).T
+            elif coords is not None:
+                self.coords = coords
+            else:
+                raise ValueError("Illegal arguments")
             self.area = self.rows.size
             self.centroid = np.array([self.rows.mean(), self.cols.mean()])
 

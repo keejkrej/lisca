@@ -21,7 +21,7 @@ class Stack:
     :type path: str
     """
 
-    def __init__(self, path=None, arr=None, width=None, height=None, n_frames=None, n_channels=None, dtype=None):
+    def __init__(self, path=None, arr=None, width=None, height=None, n_frames=None, n_channels=None, dtype=None, progress_fcn=None):
         """Initialize a stack."""
         self.image_lock = threading.RLock()
         self.info_lock = threading.RLock()
@@ -32,7 +32,7 @@ class Stack:
         # Initialize stack
         if path is not None:
             # Load from file (TIFF or numpy array)
-            self.load(path)
+            self.load(path, progress_fcn=progress_fcn)
         elif arr is not None:
             # Use array
             self._path = None
@@ -93,8 +93,22 @@ class Stack:
         self._listeners.notify(kind=None)
 
 
-    def load(self, path, loader=None):
-        """Load a stack from a path."""
+    def load(self, path, loader=None, progress_fcn=None):
+        """Load a stack from a path.
+
+        `path` -- path to a stack file
+        `loader` -- str, name of a stack loader. Currently supported
+                    loaders: tiff and npy.
+                    If not given, loader is determined from file extension.
+        `progress_fcn` -- function for displaying loading progress.
+                          If given, it must be a callable with signature:
+                          `function(msg, current=None, total=None)`
+                                `msg` -- message to be displayed
+                                `current` -- current processing state
+                                `total` -- final processing state
+                                0 <= `progress` <= `total`
+                           `progress` and `total` may remain unset.
+        """
         self._path = path
         if loader is None:
             ext = os.path.splitext(self._path)[-1]
@@ -105,14 +119,16 @@ class Stack:
             else:
                 loader = '' # to prevent error in string comparison
         if loader == 'tiff':
-            self._load_tiff()
+            self._load_tiff(progress_fcn=None)
         elif loader == 'npy':
-            self._load_npy()
+            self._load_npy(progress_fcn=None)
         else:
             self._clear_state()
             raise TypeError("Unknown type: {}".format(loader))
 
-    def _load_npy(self, ext=None):
+    def _load_npy(self, ext=None, progress_fcn=None):
+        if progress_fcn is not None:
+            progress_fcn("Reading stack")
         if ext is None:
             ext = os.path.splitext(self._path)[-1]
         if ext == '.npy':
@@ -157,7 +173,7 @@ class Stack:
         finally:
             self._listeners.notify("image")
 
-    def _load_tiff(self):
+    def _load_tiff(self, progress_fcn=None):
         try:
             with self.image_lock, tifffile.TiffFile(self._path) as tiff:
                 pages = tiff.pages
@@ -195,6 +211,8 @@ class Stack:
                                             self._height,
                                             self._width))
                 for i in range(self._n_images):
+                    if progress_fcn is not None:
+                        progress_fcn("Reading image", current=i + 1, total=self._n_images)
                     ch, fr = self.convert_position(image=i)
                     pages[i].asarray(out=self.img[ch, fr, :, :])
 
