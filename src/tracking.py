@@ -21,7 +21,7 @@ class Tracker:
     IS_AT_EDGE = 4
 
     def __init__(self, segmented_stack=None, labeled_stack=None, make_labeled_stack=False,
-            min_size=1000, max_size=10000):
+            min_size=1000, max_size=10000, preprocessing=None):
         self.stack_seg = segmented_stack
         self.stack_lbl = labeled_stack
         self.progress_fcn = None
@@ -31,6 +31,7 @@ class Tracker:
         self.traces = None
         self.traces_selection = None
         self.make_labeled_stack = make_labeled_stack
+        self.preprocessing = preprocessing
 
         if self.stack_seg is not None:
             self.n_frames = self.stack_seg.n_frames
@@ -58,6 +59,8 @@ class Tracker:
             self.stack_lbl.img[0, fr, :, :] = self.label(self.stack_seg.get_image(channel=0, frame=fr))
 
     def label(self, img):
+        if self.preprocessing is not None:
+            img = self.preprocessing(img)
         return skmeas.label(img, connectivity=1)
 
     def read_regionprops(self):

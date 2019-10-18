@@ -401,3 +401,7 @@ class MetaStack:
     def spec(self, i):
         with self.image_lock:
             return self._channels[i]
+
+    @property
+    def stacktype(self):
+        return 'meta'

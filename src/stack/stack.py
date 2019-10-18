@@ -1,10 +1,12 @@
 #! /usr/bin/env python3
+import json
 import os
 import re
 import tempfile
 import threading
 import xml.etree.ElementTree as ET
 
+import h5py
 import numpy as np
 import tifffile
 import PIL.Image as pilimg
@@ -21,7 +23,7 @@ class Stack:
     :type path: str
     """
 
-    def __init__(self, path=None, arr=None, width=None, height=None, n_frames=None, n_channels=None, dtype=None, progress_fcn=None):
+    def __init__(self, path=None, arr=None, width=None, height=None, n_frames=None, n_channels=None, dtype=None, progress_fcn=None, channels=None):
         """Initialize a stack."""
         self.image_lock = threading.RLock()
         self.info_lock = threading.RLock()
@@ -32,7 +34,7 @@ class Stack:
         # Initialize stack
         if path is not None:
             # Load from file (TIFF or numpy array)
-            self.load(path, progress_fcn=progress_fcn)
+            self.load(path, progress_fcn=progress_fcn, channels=channels)
         elif arr is not None:
             # Use array
             self._path = None
@@ -71,6 +73,7 @@ class Stack:
             self._path = None
             self.img = None
             self._tmpfile = None
+            self._stacktype = None
 
             # The stack properties
             self._mode = None
@@ -93,12 +96,12 @@ class Stack:
         self._listeners.notify(kind=None)
 
 
-    def load(self, path, loader=None, progress_fcn=None):
+    def load(self, path, loader=None, progress_fcn=None, channels=None, h5_key=None):
         """Load a stack from a path.
 
         `path` -- path to a stack file
-        `loader` -- str, name of a stack loader. Currently supported
-                    loaders: tiff and npy.
+        `loader` -- str, name of a stack loader.
+                    Currently supported loaders: tiff, npy, hdf5
                     If not given, loader is determined from file extension.
         `progress_fcn` -- function for displaying loading progress.
                           If given, it must be a callable with signature:
@@ -108,6 +111,12 @@ class Stack:
                                 `total` -- final processing state
                                 0 <= `progress` <= `total`
                            `progress` and `total` may remain unset.
+        `channels` -- index of channels to be loaded. Default is to load all channels.
+                      Any value for indexing into a dimension of a numpy array
+                      may be given.
+        `h5_key` -- str, key of the dataset in a HDF5 file.
+                    Currently, only HDF5 files created by Ilastik are supported.
+                    May be omitted if file contains only one dataset.
         """
         self._path = path
         if loader is None:
@@ -116,17 +125,24 @@ class Stack:
                 loader = 'tiff'
             elif ext.casefold().startswith('.np'):
                 loader = 'npy'
+            elif ext.casefold() in ('.h5', '.hdf5'):
+                loader = 'hdf5'
             else:
                 loader = '' # to prevent error in string comparison
         if loader == 'tiff':
-            self._load_tiff(progress_fcn=None)
+            self._load_tiff(progress_fcn=progress_fcn, channels=channels)
         elif loader == 'npy':
-            self._load_npy(progress_fcn=None)
+            self._load_npy(progress_fcn=progress_fcn, channels=channels)
+        elif loader == 'hdf5':
+            self._load_hdf5(progress_fcn=progress_fcn, channels=channels, h5_key=h5_key)
         else:
             self._clear_state()
             raise TypeError("Unknown type: {}".format(loader))
 
-    def _load_npy(self, ext=None, progress_fcn=None):
+    def _load_npy(self, ext=None, progress_fcn=None, channels=None):
+        if channels is not None:
+            #TODO implement channel selection
+            raise NotImplementedError("Channel selection for TIFF is not implemented yet")
         if progress_fcn is not None:
             progress_fcn("Reading stack")
         if ext is None:
@@ -138,44 +154,51 @@ class Stack:
                 arr = next(iter(arr_file.values())).astype(np.uint16, casting='unsafe')
         else:
             raise TypeError("Unknown type: {}".format(ext))
-        self._mode = arr.dtype.itemsize * 8
-        #TODO: check dimensions (swap height/width?)
-        if arr.ndim == 2:
-            self._n_channels = 1
-            self._n_frames = 1
-            self._height, self._width = arr.shape
-            arr = np.reshape(arr, (1, 1, self._height, self._width))
-        elif arr.ndim == 3:
-            self._n_channels = 1
-            self._n_frames, self._height, self._width = arr.shape
-            arr = np.reshape(arr, (1, self._n_frames, self._height, self._width))
-        elif arr.ndim == 4:
-            self._n_frames, self._height, self._width, self._n_channels = arr.shape
-            arr = np.moveaxis(arr, 3, 0)
-        else:
-            raise ValueError("Bad array shape: {}".format(arr.ndim))
-        self._n_images = self._n_channels * self._n_frames
-        try:
-            self._tmpfile = tempfile.TemporaryFile()
-            self.img = np.memmap(filename=self._tmpfile,
-                                 dtype=arr.dtype,
-                                 shape=(self._n_channels,
-                                        self._n_frames,
-                                        self._height,
-                                        self._width
-                                       )
-                                )
-            self.img[...] = arr[...]
-            del arr
-        except Exception:
-            self._clear_state()
-            raise
-        finally:
-            self._listeners.notify("image")
+        with self.image_lock:
+            self._stacktype = 'numpy'
+            self._mode = arr.dtype.itemsize * 8
+            #TODO: check dimensions (swap height/width?)
+            if arr.ndim == 2:
+                self._n_channels = 1
+                self._n_frames = 1
+                self._height, self._width = arr.shape
+                arr = np.reshape(arr, (1, 1, self._height, self._width))
+            elif arr.ndim == 3:
+                self._n_channels = 1
+                self._n_frames, self._height, self._width = arr.shape
+                arr = np.reshape(arr, (1, self._n_frames, self._height, self._width))
+            elif arr.ndim == 4:
+                self._n_frames, self._height, self._width, self._n_channels = arr.shape
+                arr = np.moveaxis(arr, 3, 0)
+            else:
+                raise ValueError("Bad array shape: {}".format(arr.ndim))
+            self._n_images = self._n_channels * self._n_frames
+            try:
+                self._tmpfile = tempfile.TemporaryFile()
+                self.img = np.memmap(filename=self._tmpfile,
+                                     dtype=arr.dtype,
+                                     shape=(self._n_channels,
+                                            self._n_frames,
+                                            self._height,
+                                            self._width
+                                           )
+                                    )
+            except Exception:
+                self._clear_state()
+                raise
+            else:
+                self.img[...] = arr[...]
+            finally:
+                del arr
+                self._listeners.notify("image")
 
-    def _load_tiff(self, progress_fcn=None):
+    def _load_tiff(self, progress_fcn=None, channels=None):
+        if channels is not None:
+            #TODO implement channel selection
+            raise NotImplementedError("Channel selection for TIFF is not implemented yet")
         try:
             with self.image_lock, tifffile.TiffFile(self._path) as tiff:
+                self._stacktype = 'tiff'
                 pages = tiff.pages
                 if not pages:
                     raise ValueError(f"Cannot open file '{self._path}': No pages found in TIFF.")
@@ -212,10 +235,94 @@ class Stack:
                                             self._width))
                 for i in range(self._n_images):
                     if progress_fcn is not None:
-                        progress_fcn("Reading image", current=i + 1, total=self._n_images)
+                        progress_fcn("Reading image", current=(i + 1), total=self._n_images)
                     ch, fr = self.convert_position(image=i)
                     pages[i].asarray(out=self.img[ch, fr, :, :])
 
+        except Exception as e:
+            self._clear_state()
+            print(str(e))
+            raise
+
+        finally:
+            self._listeners.notify("image")
+
+    def _load_hdf5(self, progress_fcn=None, h5_key=None, channels=None):
+        """Note: Currently only ilastik HDF5 is supported"""
+        if progress_fcn is not None:
+            progress_fcn("Reading stack")
+        try:
+            with self.image_lock, h5py.File(self._path, 'r') as h5:
+                self._stacktype = 'hdf5'
+                if h5_key is not None:
+                    key = h5_key
+                else:
+                    keys = list(h5.keys())
+                    if len(keys) != 1:
+                        raise ValueError("Cannot infer HDF5 key of dataset")
+                    else:
+                        key = next(iter(keys))
+                data5 = h5[key]
+
+                try:
+                    ax5 = json.loads(h5.attrs['axistags'])['axes']
+                    idx = {item['key']: pos for pos, item in enumerate(ax5)}
+                except KeyError:
+                    # Assume order 'tyxc'
+                    idx = dict(t=0, y=1, x=2, c=3)
+                    if data5.ndim < 4:
+                        del idx['c']
+                    if data5.ndim < 3:
+                        del idx['t']
+                        for k in idx.keys():
+                            idx[k] -= 1
+                self._height = data5.shape[idx['y']]
+                self._width = data5.shape[idx['x']]
+                if idx.get('t') is None:
+                    self._n_frames = 1
+                else:
+                    self._n_frames = data5.shape[idx['t']]
+                try:
+                    self._n_channels = data5.shape[idx['c']]
+                except KeyError:
+                    self._n_channels = 1
+                    channels = (None,)
+                else:
+                    if channels is None:
+                        channels = range(self._n_channels)
+                    elif isinstance(channels, slice):
+                        channels = range(*channels.indices(self._n_channels))
+                        self._n_channels = len(channels)
+                    elif isinstance(channels, range):
+                        self._n_channels = len(channels)
+                    else:
+                        channels = np.ravel(channels)
+                        self._n_channels = channels.size
+                self._n_images = self._n_frames * self._n_channels
+                
+                # Copy stack to numpy array in temporary file
+                self._tmpfile = tempfile.TemporaryFile()
+                self.img = np.memmap(filename=self._tmpfile,
+                                     dtype=data5.dtype,
+                                     shape=(self._n_channels,
+                                            self._n_frames,
+                                            self._height,
+                                            self._width))
+                i = np.zeros(len(idx), dtype=np.object)
+                for dim in 'xy':
+                    i[idx[dim]] = slice(None)
+                for fr in range(self._n_frames):
+                    if 't' in idx:
+                        i[idx['t']] = fr
+                    for ch, orig_ch in enumerate(channels):
+                        if 'c' in idx:
+                            i[idx['c']] = orig_ch
+                        if progress_fcn is not None:
+                            progress_fcn("Reading image",
+                                         current=1 + ch + fr * self._n_channels,
+                                         total=self._n_images)
+                        self.img[ch, fr, :, :] = data5[tuple(i)]
+                            
         except Exception as e:
             self._clear_state()
             print(str(e))
@@ -666,3 +773,7 @@ class Stack:
     def n_frames(self):
         with self.image_lock:
             return self._n_frames
+
+    @property
+    def stacktype(self):
+        return self._stacktype

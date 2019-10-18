@@ -10,4 +10,5 @@ XlsxWriter
 #spyder
 Sphinx
 sphinx_rtd_theme
+h5py
 

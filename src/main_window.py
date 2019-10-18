@@ -7,6 +7,7 @@ from matplotlib.ticker import StrMethodFormatter
 import numpy as np
 import os
 import pandas as pd
+import skimage.morphology as skmorph
 import time
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -346,7 +347,7 @@ class Main_Tk:
         self.var_statusmsg.set(msg)
         self.root.update()
     
-    def status_progress(msg=None, current=None, total=None):
+    def status_progress(self, msg=None, current=None, total=None):
         if msg is None:
             self.status()
             return
@@ -579,15 +580,13 @@ class Main_Tk:
                     width_general = d['stack'].width
                 elif d['stack'].width != width_general:
                     raise ValueError(f"Stack '{name}' has width {d['stack'].width}, but width {width_general} is required.")
+        pad_y = 0
+        pad_x = 0
         if None not in (height_general, height_seg):
             if height_seg > height_general:
                 pad_y = height_seg - height_general
-            else:
-                pad_y = 0
             if width_seg > width_general:
                 pad_x = width_seg - width_general
-            else:
-                pad_x = 0
 
         meta = ms.MetaStack()
         self.clear_trace_info()
@@ -649,6 +648,8 @@ class Main_Tk:
         tracker = Tracker(segmented_stack=s)
         tracker.progress_fcn = lambda msg, current, total: \
                 self.status(f"{msg} (frame {current}/{total})")
+        if s.stacktype == 'hdf5':
+            tracker.preprocessing = self.segmentation_preprocessing
         tracker.get_traces()
         self.rois = []
         self.traces = {}
@@ -677,6 +678,28 @@ class Main_Tk:
                 roi.color = ROI_COLOR_SELECTED if is_selected else ROI_COLOR_DESELECTED
                 roi.visible = bool(roi.name) and show_contour
                 roi.name_visible = show_name
+
+    def segmentation_preprocessing(self, img):
+        """Preprocessing function for smoothening segmentation
+
+        Smoothens 2D image `img` using morphological operations.
+        `img` must have values from 0 to 1, indicating the probability
+        that the corresponding pixel belongs to a cell.
+        Returns a binary (boolean) image with same shape as `img`.
+
+        This function is designed for preparing the Probability obtained
+        from Ilastik for tracking, using the .label.Tracker.preprocessing attribute.
+        """
+        print("preprocessing") #DEBUG
+        img = img >= .5
+        img = skmorph.closing(img, selem=skmorph.disk(5))
+        img = skmorph.erosion(img, selem=skmorph.disk(1))
+        img = skmorph.dilation(img, selem=skmorph.disk(3))
+        #img = skmorph.area_closing(img, area_threshold=100)
+        #img = skmorph.area_opening(img, area_threshold=100)
+        img = skmorph.remove_small_holes(img, area_threshold=100)
+        img = skmorph.remove_small_objects(img, min_size=100)
+        return img
 
     def deselected_rois(self, frame):
         """Get an iterable of all non-selected ROIs in given frame"""
@@ -1523,10 +1546,23 @@ class StackOpener:
 
     def open_stack(self):
         """Open a new stack"""
-        fn = tkfd.askopenfilename(title="Open stack", parent=self.root, initialdir='res', filetypes=(("TIFF", '*.tif *.tiff'), ("Numpy", '*.npy *.npz'), ("All files", '*')))
+        fn = tkfd.askopenfilename(title="Open stack",
+                                  parent=self.root,
+                                  initialdir='res',
+                                  filetypes=(
+                                        ("Stack", '*.tif *.tiff *.npy *.npz *.h5'),
+                                        ("TIFF", '*.tif *.tiff'),
+                                        ("Numpy", '*.npy *.npz'),
+                                        ("HDF5", '*.h5'),
+                                        ("All files", '*')
+                                  )
+                                 )
         if not fn:
             return
-        stack = Stack(fn, progress_fcn=self.progress_fcn)
+        stack_props = {}
+        if fn.endswith('h5'):
+            stack_props['channels'] = 0
+        stack = Stack(fn, progress_fcn=self.progress_fcn, **stack_props)
         stack_dir, stack_name = os.path.split(fn)
         n_channels = stack.n_channels
         self.stacks.append({'name': stack_name,
