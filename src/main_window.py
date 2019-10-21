@@ -552,8 +552,6 @@ class Main_Tk:
         if notify_listeners:
             self.display_stack._listeners.notify('roi')
 
-        
-
     def open_metastack(self, data, do_track=True):
         """Create a MetaStack with the channels selected by StackOpener"""
         if not data:
@@ -563,14 +561,17 @@ class Main_Tk:
         # Check image sizes
         height_general = None
         width_general = None
+        n_frames_general = None
         height_seg = None
         width_seg = None
+        n_frames_seg = None
         for d in data:
             if d['stack'] is None:
                 pass
             elif d['type'] == ms.TYPE_SEGMENTATION:
                 height_seg = d['stack'].height
                 width_seg = d['stack'].width
+                n_frames_seg = d['stack'].n_frames
             else:
                 if height_general is None:
                     height_general = d['stack'].height
@@ -580,6 +581,12 @@ class Main_Tk:
                     width_general = d['stack'].width
                 elif d['stack'].width != width_general:
                     raise ValueError(f"Stack '{name}' has width {d['stack'].width}, but width {width_general} is required.")
+
+                if n_frames_general is None:
+                    n_frames_general = d['stack'].n_frames
+                elif d['stack'].n_frames != n_frames_general:
+                    raise ValueError(f"Stack '{name}' has {d['stack'].n_frames} frames, but {n_frames_general} frames are required.")
+
         pad_y = 0
         pad_x = 0
         if None not in (height_general, height_seg):
@@ -633,9 +640,10 @@ class Main_Tk:
                                     quantity="Integrated fluorescence",
                                    )
                 i_channel_fl += 1
-
             i_channel += 1
 
+        if not meta.check_properties():
+            meta.set_properties(n_frames=n_frames_seg, width=width_seg, height=height_seg)
         self.load_metastack(meta)
         self.read_traces()
         self._update_traces_display_buttons()
@@ -690,15 +698,14 @@ class Main_Tk:
         This function is designed for preparing the Probability obtained
         from Ilastik for tracking, using the .label.Tracker.preprocessing attribute.
         """
-        print("preprocessing") #DEBUG
         img = img >= .5
         img = skmorph.closing(img, selem=skmorph.disk(5))
         img = skmorph.erosion(img, selem=skmorph.disk(1))
         img = skmorph.dilation(img, selem=skmorph.disk(3))
         #img = skmorph.area_closing(img, area_threshold=100)
         #img = skmorph.area_opening(img, area_threshold=100)
-        img = skmorph.remove_small_holes(img, area_threshold=100)
-        img = skmorph.remove_small_objects(img, min_size=100)
+        img = skmorph.remove_small_holes(img, area_threshold=150)
+        img = skmorph.remove_small_objects(img, min_size=150)
         return img
 
     def deselected_rois(self, frame):

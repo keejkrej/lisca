@@ -62,9 +62,6 @@ class Stack:
                                        )
                                 )
             self._listeners.notify("image")
-            
-            
-
 
     def _clear_state(self):
         """Clear the internal state"""

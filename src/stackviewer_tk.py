@@ -384,7 +384,7 @@ class StackViewer:
         self.update_scrollbars()
 
         # GUI elements corresponding to channel
-        if self.n_channels == 1:
+        if self.n_channels is None or self.n_channels == 1:
             self.scale_channel.grid_forget()
             self.lbl_channel.grid_forget()
             self.entry_channel.grid_forget()
@@ -402,7 +402,7 @@ class StackViewer:
                                        column=COL_SIZES, sticky=tk.W)
 
         # GUI elements corresponding to frame
-        if self.n_frames == 1:
+        if self.n_frames is None or self.n_frames == 1:
             self.scale_frame.grid_forget()
             self.lbl_frame.grid_forget()
             self.entry_frame.grid_forget()

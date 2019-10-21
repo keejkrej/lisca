@@ -85,6 +85,9 @@ class MetaStack:
                 self._mode = mode
         self._listeners.notify('image')
 
+    def check_properties(self):
+        """Check whether properties are set"""
+        return None not in (self._n_frames, self._width, self._height)
 
     def add_stack(self, new_stack, name=None, overwrite=False):
         """Insert a new stack
