@@ -13,7 +13,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter.filedialog as tkfd
 import tkinter.simpledialog as tksd
-from . content_io import StackdataIO
+from .io import StackdataIO
 from .roi import ContourRoi
 from .stackviewer_tk import StackViewer
 from .stack import Stack
@@ -670,6 +670,7 @@ class Main_Tk:
                                             color=ROI_COLOR_UNTRACKABLE,
                                             visible=show_untrackable,
                                             name_visible=False,
+                                            frame=fr,
                                            ) for l, p in props.items()})
         for i, trace in enumerate(tracker.traces):
             name = str(i + 1)

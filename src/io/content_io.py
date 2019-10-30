@@ -2,10 +2,13 @@ import base64
 from contextlib import ExitStack
 import io
 import json
-import numpy as np
 import os
 import struct
 import zipfile
+
+import numpy as np
+
+from .roi import Roi
 
 ZIP_JSON_NAME = 'session.json'
 

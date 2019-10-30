@@ -633,11 +633,11 @@ class StackViewer:
                     if stroke_width is None:
                         stroke_width = col_stroke_width
 
-                    corners = roi.corners
+                    contour = roi.contour
                     if scale is not None:
-                        corners = corners * scale
+                        contour = contour * scale
 
-                    self.canvas.create_polygon(*corners[:, ::-1].flat, tags=tags,
+                    self.canvas.create_polygon(*contour[:, ::-1].flat, tags=tags,
                             fill='', outline=color, width=stroke_width)
 
                 if roi.name and roi.name_visible:
