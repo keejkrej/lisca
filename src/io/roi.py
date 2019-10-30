@@ -233,7 +233,7 @@ class Roi:
             coords[-2:,1] = bottom
 
         elif n_coords == 0:
-            raise NotImplementedError("No coordinates found for ROI type {}.".format(type_))
+            raise NotImplementedError(f"ROI type {type_} not supported")
 
         else:
             coords = np.empty((n_coords, 2), dtype=np.int16)
@@ -350,7 +350,7 @@ class Roi:
         # Populate header 2
         with memoryview(roi) as vroi, vroi[hdr2_off:hdr2_off+HEADER2_SIZE] as hdr2:
             if self.frame is not None:
-                write_int(hdr2, T_POSITION, frame + 1, size=4)
+                write_int(hdr2, T_POSITION, self.frame + 1, size=4)
             if name_len:
                 name_off = hdr2_off + HEADER2_SIZE
                 write_int(hdr2, NAME_OFFSET, name_off, size=4)
@@ -431,7 +431,7 @@ class Roi:
 
         Arguments:
             dtype -- the desired dtype of the returned array (default: np.bool_)
-            val -- the value of pixels inside the Roi (default: 1)
+            val -- the value of pixels indicating the Roi (default: 1)
             shape -- the desired shape of the returned array (default: largest coordinates + 1)
         """
         import skimage.draw as skd
