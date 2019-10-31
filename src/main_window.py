@@ -340,7 +340,9 @@ class Main_Tk:
                 #TODO: show GUI dialog
                 raise NotADirectoryError("Not a directory: '{}'".format(new_savedir))
             self.save_dir = new_savedir
-        if not os.path.isdir(self.save_dir):
+        elif not new_savedir:
+            return
+        elif not os.path.isdir(self.save_dir):
             raise NotADirectoryError("Not a directory: '{}'".format(self.save_dir))
 
     def status(self, msg=''):
@@ -462,18 +464,14 @@ class Main_Tk:
         if fn is None:
             return
 
-        sd = StackdataIO().load(fn=fn)
+        sd = StackdataIO()
+        sd.load(fin=fn, progress_fcn=self.status_progress)
 
         # Load microscope data
         self._change_microscope_resolution(name=sd.microscope_name, val=sd.microscope_resolution)
 
         # Load ROIs
-        self.rois = []
-        for frame in sd.rois:
-            rois = {}
-            for label, roi in frame.items():
-                rois[label] = ContourRoi(label=label, coords=roi['coords'], name=roi['name'])
-            self.rois.append(rois)
+        self.rois = sd.rois
 
         # Load traces
         self.traces = {}

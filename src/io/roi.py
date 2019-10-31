@@ -240,8 +240,8 @@ class Roi:
             for i in range(0, n_coords):
                 ix = COORDINATES + 2 * i
                 iy = ix + 2 * n_coords
-                coords[i, 0] = read_int(f, ix)
-                coords[i, 1] = read_int(f, iy)
+                coords[i, 1] = read_int(f, ix)
+                coords[i, 0] = read_int(f, iy)
             coords += np.array([[top, left]], dtype=np.int16)
 
         # Read header 2
@@ -269,27 +269,36 @@ class Roi:
                   )
 
     @classmethod
-    def read_multi(cls, fn, as_dict=False):
+    def read_multi(cls, fn, as_dict=True):
         """Load multiple Roi objects.
 
         `fn` is a path name of a file holding Roi information.
         '.roi' and '.zip' files are allowed.
+        If `fn` is a file-like object, only opened ZIP files are allowed.
         If `as_dict` is false (default), a list of the
         loaded Roi objects is returned.
         If `as_dict` is true, the Roi objects are returned as
         dictionary with the Roi names as keys.
         """
         rois = []
-        ext = os.path.splitext(fn)[-1]
-        if ext == '.roi':
-            rois.append(cls.read(fn))
-        elif ext == '.zip':
-            with zf.ZipFile(fn, 'r') as z:
+        with ExitStack() as es:
+            if isinstance(fn, str):
+                ext = os.path.splitext(fn)[-1]
+                if ext == '.roi':
+                    rois.append(cls.read(fn))
+                    z is None
+                elif ext == '.zip':
+                    z = es.enter_context(zf.ZipFile(fn, 'r'))
+                else:
+                    raise ValueError("Invalid file type '{}'".format(ext))
+            else:
+                z = fn
+            if z is not None:
                 names = z.namelist()
                 for name in names:
+                    if os.path.splitext(name)[-1] != '.roi':
+                        continue
                     rois.append(cls.read(z.read(name)))
-        else:
-            raise ValueError("Invalid file type '{}'".format(ext))
         if as_dict:
             return {r.name: r for r in rois}
         else:
