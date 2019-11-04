@@ -1152,6 +1152,7 @@ class RectRoi(Roi):
         of the ``coords``. Querying this value involves calculating
         the ``coords``.
     """
+    #TODO: adapt new API (cf. ContourRoi)
     type_id = "rect"
     version = "0.1"
     Adjuster = RectRoiGridAdjuster
@@ -1189,6 +1190,10 @@ class RectRoi(Roi):
             pc = skid.polygon_perimeter(self.corners[:,0], self.corners[:,1])
             self._perimeter = np.stack([pc[0], pc[1]], axis=1)
         return self._perimeter
+
+    @property
+    def contour(self):
+        return self.perimeter
 
     @property
     def rows(self):

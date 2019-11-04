@@ -2,10 +2,17 @@ import base64
 from contextlib import ExitStack
 import io
 import json
-import numpy as np
+import math
 import os
+import re
 import struct
 import zipfile
+
+import numpy as np
+import skimage.draw as skd
+
+from .roi import Roi
+from ..roi import ContourRoi
 
 ZIP_JSON_NAME = 'session.json'
 
@@ -105,25 +112,25 @@ class StackdataIO:
         """Loads the given ROIS"""
         for fr, rois_frame in enumerate(rois):
             for label, roi in rois_frame.items():
-                self.insert_roi(fr, label, roi)
+                self.insert_roi(roi, frame=fr, label=label)
                 
-    def insert_roi(self, frame, label, roi):
+    def insert_roi(self, roi, frame=None, label=None):
         """Inserts a ROI.
 
         Arguments:
-            frame -- int, the 0-based index of the frame the ROI belongs to
-            label -- str, the label of the ROI
             roi -- the ContourRoi instance
+            frame -- int, the 0-based index of the frame the ROI belongs to
+            label -- int, the label of the ROI
         """
         if self.rois is None:
             self.rois = []
         while frame >= len(self.rois):
             self.rois.append({})
-        self.rois[frame][str(label)] = {
-                                        "name": roi.name,
-                                        "rows": self.to_list64(roi.rows), 
-                                        "cols": self.to_list64(roi.cols), 
-                                       }
+        if frame is None:
+            frame = roi.frame
+        if label is None:
+            label = roi.label
+        self.rois[frame][label] = roi
 
     def load_traces(self, traces):
         """Loads the given traces"""
@@ -143,14 +150,16 @@ class StackdataIO:
         self.traces.append({
                             'name': name,
                             'select': is_selected,
-                            'rois': [str(roi) for roi in rois], # list of `n_frames` strings
+                            'rois': rois, # list of `n_frames` roi labels
                            })
 
-    def dump(self, fn=None):
+    def dump(self, out=None):
         """Write the stack data to JSON.
 
-        If `fn` is a str, or a file-object, the JSON data is written there.
-        If `fn` is None, the JSON data is returned as str.
+        If `out` is a str or file-like object, the session data and ROIs are written there.
+        If `out` is None, a tuple (session data, ROIs) is returned.
+
+        The session data is JSON formatted, the ROIs are in ImageJ ROI format.
         """
         if self.n_frames is None:
             raise ValueError("Number of frames is not given.")
@@ -161,6 +170,25 @@ class StackdataIO:
         elif len(self.rois) != self.n_frames:
             raise ValueError("Number of frames with ROIs is inconsistent")
 
+        # Convert ROI names to avoid duplicates and create ROI dict
+        roi_dict = {}
+        roi_name_conversion = []
+        for rois in self.rois:
+            conv = {}
+            for label, roi in rois.items():
+                new_name =  self._unique_roi_name(roi)
+                conv[label] = new_name
+                roi_dict[new_name] = Roi(
+                                         coords=roi.perimeter,
+                                         type_='polygon',
+                                         name=new_name,
+                                         frame=roi.frame,
+                                        )
+            roi_name_conversion.append(conv)
+        for trace in self.traces:
+            trace['rois'] = [roi_name_conversion[fr][roi] for fr, roi in enumerate(trace['rois'])]
+
+        # Create metadata content (will be written in JSON format)
         data = {'version': self.version,
                 'n_frames': self.n_frames,
                 'channels': self.channels,
@@ -168,73 +196,148 @@ class StackdataIO:
                                'resolution': self.microscope_resolution,
                               },
                 'cells': self.traces,
-                'rois': self.rois,
                }
-
         json_args = {'indent': '\t'}
 
-        if fn is None:
-            return json.dumps(data, **json_args)
-        elif isinstance(fn, str):
-            _, ext = os.path.splitext(fn)
-            with ExitStack() as cm:
-                if ext.lower() == '.zip':
-                    zf = cm.enter_context(zipfile.ZipFile(fn, 'w', compression=zipfile.ZIP_DEFLATED))
-                    f = cm.enter_context(zf.open(ZIP_JSON_NAME, 'w'))
-                    f = io.TextIOWrapper(f, encoding='utf8', newline='\n', write_through=True)
-                else:
-                    f = cm.enter_context(open(fn, 'wt', encoding='utf8', newline='\n'))
-                json.dump(data, f, **json_args)
-        else:
-            json.dump(data, fn, **json_args)
+        # Write data to ZIP file
+        if out is None:
+            return roi_dict, json.dumps(data, **json_args)
+        with ExitStack() as es:
+            if isinstance(out, str):
+                zf = es.enter_context(zipfile.ZipFile(out, 'w', compression=zipfile.ZIP_DEFLATED))
+            else:
+                zf = out
+            Roi.write_multi(zf, roi_dict.values())
+            with io.TextIOWrapper(
+                    es.enter_context(zf.open(ZIP_JSON_NAME, 'w')),
+                    encoding='utf8', newline='\n', write_through=True) as jf:
+                json.dump(data, jf, **json_args)
 
-    def load(self, fn=None, s=None):
+    def load(self, fin=None, s=None, rois=None, progress_fcn=None):
         """Loads stack information and ROI information from JSON
 
         Arguments:
-            fn -- file-like or str holding a filename of JSON file to be read
+            fin -- file-like or str holding a filename of ZIP file to be read
             s -- string holding JSON data
+            rois -- list of dicts, holding ContourRoi instances
+            progress_fcn -- callable for printing loading status
 
-        If `fn` is given, `s` is ignored.
-        `fn` may be a ZIP file containing a file named 'session.json' that holds
-        the information.
+        If `fin` is given, `s` and `rois` are ignored.
+        `fin` should be a ZIP file containing a file named 'session.json' that holds
+        the session information, and '*.roi' files that hold the ROI information
+        in ImageJ ROI format.
+        Note that if `rois` is given, the ROI labels must comply with the
+        cell-to-ROI assignment in `s`.
+        If `progress_fcn` is given, it must support a signature like:
+            function(msg, current=None, total=None)
 
-        The content of the JSON data is loaded and can be accessed
+        The content of the ZIP file is loaded and can be accessed
         via the fields of this object.
         """
-        if fn is not None:
-            if isinstance(fn, str):
-                if zipfile.is_zipfile(fn):
-                    with zipfile.ZipFile(fn) as zf:
-                        with zf.open(ZIP_JSON_NAME) as f:
-                            data = json.loads(io.TextIOWrapper(f, encoding='utf8').read())
+        if progress_fcn is None:
+            def progress_fcn(*_, **__): pass
+        if fin is not None:
+            with ExitStack() as es:
+                if isinstance(fin, str):
+                    zf = es.enter_context(zipfile.ZipFile(fin))
                 else:
-                    with open(fn, 'rt') as f:
-                        data = json.load(f)
-            else:
-                data = json.load(fn)
+                    zf = fin
+                with zf.open(ZIP_JSON_NAME) as f:
+                    progress_fcn("Loading session information")
+                    data = json.loads(io.TextIOWrapper(f, encoding='utf8').read())
+                progress_fcn("Loading ROI information")
+                rois_raw = Roi.read_multi(zf)
+                self.rois = None
         elif s is not None:
             data = json.loads(s)
+            if rois is not None:
+                self.rois = rois
         else:
             raise ValueError("Either file or string must be given.")
 
+        progress_fcn("Importing session")
         self.version = data['version']
         self.n_frames = data['n_frames']
         self.channels = data['channels']
         self.microscope_name = data['microscope']['name']
         self.microscope_resolution = data['microscope']['resolution']
         self.traces = data['cells']
-        self.rois = []
-        for frame in data['rois']:
-            rois = {}
-            for label, roi in frame.items():
-                coords = np.stack((self.from_list64(roi['rows']), self.from_list64(roi['cols'])), axis=-1)
-                rois[label] = {
-                               'name': roi['name'],
-                               'coords': coords,
-                              }
-            self.rois.append(rois)
-        return self
+        if self.rois is None:
+            self.rois = []
+            label_conversion = []
+            n_rois = len(rois_raw)
+            i_rr = 1
+            for rr in rois_raw.values():
+                progress_fcn("Importing ROIs", current=i_rr, total=n_rois)
+                i_rr += 1
+                info = self.parse_roi_name(rr.name)
+                fr = rr.frame
+                if not fr:
+                    fr = info['frame']
+                label = info['label']
+                if label is None:
+                    label = rr.name
+                if label is None:
+                    label = i_rr
+                poly_rr, poly_cc = skd.polygon(rr.rows, rr.cols)
+                coords = np.empty((len(poly_rr), 2), dtype=np.uint16)
+                coords[:,0] = poly_rr
+                coords[:,1] = poly_cc
+                roi = ContourRoi(label=label, coords=coords, name=info['cell'], frame=fr)
+
+                while fr >= len(self.rois):
+                    self.rois.append({})
+                self.rois[fr][label] = roi
+                while fr >= len(label_conversion):
+                    label_conversion.append({})
+                label_conversion[fr][rr.name] = label
+
+        for cell in self.traces:
+            name = cell['name']
+            roi_list = cell['rois']
+            for fr, roi_ref in enumerate(roi_list):
+                nl = label_conversion[fr][roi_ref]
+                roi_list[fr] = nl
+                self.rois[fr][nl].name = name
+
+    def _unique_roi_name(self, roi):
+        """Build a ROI name unique throughout the whole stack.
+
+        The name has the format:
+            cNAME_tFRAME_lLABEL
+        wherein NAME is the name of the cell the ROI belongs to,
+        FRAME is the frame number of the ROI (one-based, possibly with leading '0's),
+        and LABEL is the numerical label assigned to this ROI
+        by skimage.measure.label.
+        If the ROI does not belong to a cell, the part 'cNAME' is
+        left away, and the returned ROI name starts with an underscore.
+        """
+        if isinstance(roi.label, str):
+            return roi.label
+        len_fr = math.floor(math.log10(self.n_frames)) + 1
+        if roi.name:
+            namestr = f"c{roi.name}"
+        else:
+            namestr = ""
+        return f"{namestr}_t{roi.frame+1 :0{len_fr}d}_l{roi.label}"
+
+    @staticmethod
+    def parse_roi_name(name):
+        """Parse the ROI name generated wth _unique_roi_name
+
+        Returns a dict with the fields 'cell', 'frame', 'label',
+        any of which may point to None.
+        """
+        info = dict(cell=None, frame=None, label=None)
+        m = re.fullmatch(r"(?:c(?P<cell>.+))?_t(?P<frame>\d+)_l(?P<label>\d+)", name)
+        if m is not None:
+            if m.group('cell'):
+                info['cell'] = m.group('cell')
+            if m.group('frame'):
+                info['frame'] = int(m.group('frame')) - 1
+            if m.group('label'):
+                info['label'] = int(m.group('label'))
+        return info
 
     @staticmethod
     def to_list64(arr, fmt='<H'):

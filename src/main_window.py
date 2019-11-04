@@ -7,12 +7,13 @@ from matplotlib.ticker import StrMethodFormatter
 import numpy as np
 import os
 import pandas as pd
+import skimage.morphology as skmorph
 import time
 import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter.filedialog as tkfd
 import tkinter.simpledialog as tksd
-from . content_io import StackdataIO
+from .io import StackdataIO
 from .roi import ContourRoi
 from .stackviewer_tk import StackViewer
 from .stack import Stack
@@ -339,14 +340,16 @@ class Main_Tk:
                 #TODO: show GUI dialog
                 raise NotADirectoryError("Not a directory: '{}'".format(new_savedir))
             self.save_dir = new_savedir
-        if not os.path.isdir(self.save_dir):
+        elif not new_savedir:
+            return
+        elif not os.path.isdir(self.save_dir):
             raise NotADirectoryError("Not a directory: '{}'".format(self.save_dir))
 
     def status(self, msg=''):
         self.var_statusmsg.set(msg)
         self.root.update()
     
-    def status_progress(msg=None, current=None, total=None):
+    def status_progress(self, msg=None, current=None, total=None):
         if msg is None:
             self.status()
             return
@@ -461,18 +464,14 @@ class Main_Tk:
         if fn is None:
             return
 
-        sd = StackdataIO().load(fn=fn)
+        sd = StackdataIO()
+        sd.load(fin=fn, progress_fcn=self.status_progress)
 
         # Load microscope data
         self._change_microscope_resolution(name=sd.microscope_name, val=sd.microscope_resolution)
 
         # Load ROIs
-        self.rois = []
-        for frame in sd.rois:
-            rois = {}
-            for label, roi in frame.items():
-                rois[label] = ContourRoi(label=label, coords=roi['coords'], name=roi['name'])
-            self.rois.append(rois)
+        self.rois = sd.rois
 
         # Load traces
         self.traces = {}
@@ -551,8 +550,6 @@ class Main_Tk:
         if notify_listeners:
             self.display_stack._listeners.notify('roi')
 
-        
-
     def open_metastack(self, data, do_track=True):
         """Create a MetaStack with the channels selected by StackOpener"""
         if not data:
@@ -562,14 +559,17 @@ class Main_Tk:
         # Check image sizes
         height_general = None
         width_general = None
+        n_frames_general = None
         height_seg = None
         width_seg = None
+        n_frames_seg = None
         for d in data:
             if d['stack'] is None:
                 pass
             elif d['type'] == ms.TYPE_SEGMENTATION:
                 height_seg = d['stack'].height
                 width_seg = d['stack'].width
+                n_frames_seg = d['stack'].n_frames
             else:
                 if height_general is None:
                     height_general = d['stack'].height
@@ -579,15 +579,19 @@ class Main_Tk:
                     width_general = d['stack'].width
                 elif d['stack'].width != width_general:
                     raise ValueError(f"Stack '{name}' has width {d['stack'].width}, but width {width_general} is required.")
+
+                if n_frames_general is None:
+                    n_frames_general = d['stack'].n_frames
+                elif d['stack'].n_frames != n_frames_general:
+                    raise ValueError(f"Stack '{name}' has {d['stack'].n_frames} frames, but {n_frames_general} frames are required.")
+
+        pad_y = 0
+        pad_x = 0
         if None not in (height_general, height_seg):
             if height_seg > height_general:
                 pad_y = height_seg - height_general
-            else:
-                pad_y = 0
             if width_seg > width_general:
                 pad_x = width_seg - width_general
-            else:
-                pad_x = 0
 
         meta = ms.MetaStack()
         self.clear_trace_info()
@@ -634,9 +638,10 @@ class Main_Tk:
                                     quantity="Integrated fluorescence",
                                    )
                 i_channel_fl += 1
-
             i_channel += 1
 
+        if not meta.check_properties():
+            meta.set_properties(n_frames=n_frames_seg, width=width_seg, height=height_seg)
         self.load_metastack(meta)
         self.read_traces()
         self._update_traces_display_buttons()
@@ -649,6 +654,8 @@ class Main_Tk:
         tracker = Tracker(segmented_stack=s)
         tracker.progress_fcn = lambda msg, current, total: \
                 self.status(f"{msg} (frame {current}/{total})")
+        if s.stacktype == 'hdf5':
+            tracker.preprocessing = self.segmentation_preprocessing
         tracker.get_traces()
         self.rois = []
         self.traces = {}
@@ -661,6 +668,7 @@ class Main_Tk:
                                             color=ROI_COLOR_UNTRACKABLE,
                                             visible=show_untrackable,
                                             name_visible=False,
+                                            frame=fr,
                                            ) for l, p in props.items()})
         for i, trace in enumerate(tracker.traces):
             name = str(i + 1)
@@ -677,6 +685,27 @@ class Main_Tk:
                 roi.color = ROI_COLOR_SELECTED if is_selected else ROI_COLOR_DESELECTED
                 roi.visible = bool(roi.name) and show_contour
                 roi.name_visible = show_name
+
+    def segmentation_preprocessing(self, img):
+        """Preprocessing function for smoothening segmentation
+
+        Smoothens 2D image `img` using morphological operations.
+        `img` must have values from 0 to 1, indicating the probability
+        that the corresponding pixel belongs to a cell.
+        Returns a binary (boolean) image with same shape as `img`.
+
+        This function is designed for preparing the Probability obtained
+        from Ilastik for tracking, using the .label.Tracker.preprocessing attribute.
+        """
+        img = img >= .5
+        img = skmorph.closing(img, selem=skmorph.disk(5))
+        img = skmorph.erosion(img, selem=skmorph.disk(1))
+        img = skmorph.dilation(img, selem=skmorph.disk(3))
+        #img = skmorph.area_closing(img, area_threshold=100)
+        #img = skmorph.area_opening(img, area_threshold=100)
+        img = skmorph.remove_small_holes(img, area_threshold=150)
+        img = skmorph.remove_small_objects(img, min_size=150)
+        return img
 
     def deselected_rois(self, frame):
         """Get an iterable of all non-selected ROIs in given frame"""
@@ -1523,10 +1552,23 @@ class StackOpener:
 
     def open_stack(self):
         """Open a new stack"""
-        fn = tkfd.askopenfilename(title="Open stack", parent=self.root, initialdir='res', filetypes=(("TIFF", '*.tif *.tiff'), ("Numpy", '*.npy *.npz'), ("All files", '*')))
+        fn = tkfd.askopenfilename(title="Open stack",
+                                  parent=self.root,
+                                  initialdir='res',
+                                  filetypes=(
+                                        ("Stack", '*.tif *.tiff *.npy *.npz *.h5'),
+                                        ("TIFF", '*.tif *.tiff'),
+                                        ("Numpy", '*.npy *.npz'),
+                                        ("HDF5", '*.h5'),
+                                        ("All files", '*')
+                                  )
+                                 )
         if not fn:
             return
-        stack = Stack(fn, progress_fcn=self.progress_fcn)
+        stack_props = {}
+        if fn.endswith('h5'):
+            stack_props['channels'] = 0
+        stack = Stack(fn, progress_fcn=self.progress_fcn, **stack_props)
         stack_dir, stack_name = os.path.split(fn)
         n_channels = stack.n_channels
         self.stacks.append({'name': stack_name,

@@ -1,9 +1,52 @@
-#from numba import jit
 import numpy as np
 import skimage.measure as skmeas
 from .stack import Stack
 
 import time
+
+def intercalation_iterator(n):
+    """Generator function for iterating from both ends in `n` steps"""
+    n = int(n)
+    if n <= 0:
+        return
+    elif n % 2:
+        yield 0
+        i1 = n - 1
+        step1 = -2
+        stop1 = 0
+        i2 = 1
+        step2 = 2
+    else:
+        i1 = 0
+        step1 = 2
+        stop1 = n
+        i2 = n - 1
+        step2 = -2
+    while i1 != stop1:
+        yield i1
+        yield i2
+        i1 += step1
+        i2 += step2
+
+def check_coordinate_overlap(coords1, coords2):
+    """Performantly check two coordinate sets for overlap
+
+    Arguments:
+        Both `coords1` and `coords2` are n-by-2 numpy arrrays.
+        Each line cooresponds to one pixel.
+        The first column is the vertical coordinate, and
+        the second column is the horizontal coordinate.
+
+    Returns:
+        True if the coordinate sets overlap, else False.
+    """
+    uy = np.intersect1d(coords1[:, 0], coords2[:, 0])
+    for iy in intercalation_iterator(uy.size):
+        y = uy[iy]
+        if np.intersect1d(coords1[coords1[:, 0] == y, 1], coords2[coords2[:, 0] == y, 1]).size:
+            return True
+    return False
+
 
 class Tracker:
     """Performs tracking in multithreaded fashion.
@@ -19,9 +62,10 @@ class Tracker:
     IS_TOO_SMALL = 1
     IS_TOO_LARGE = 2
     IS_AT_EDGE = 4
+    IS_UNCHECKED = 128
 
     def __init__(self, segmented_stack=None, labeled_stack=None, make_labeled_stack=False,
-            min_size=1000, max_size=10000):
+            min_size=1000, max_size=10000, preprocessing=None):
         self.stack_seg = segmented_stack
         self.stack_lbl = labeled_stack
         self.progress_fcn = None
@@ -31,6 +75,7 @@ class Tracker:
         self.traces = None
         self.traces_selection = None
         self.make_labeled_stack = make_labeled_stack
+        self.preprocessing = preprocessing
 
         if self.stack_seg is not None:
             self.n_frames = self.stack_seg.n_frames
@@ -58,6 +103,8 @@ class Tracker:
             self.stack_lbl.img[0, fr, :, :] = self.label(self.stack_seg.get_image(channel=0, frame=fr))
 
     def label(self, img):
+        if self.preprocessing is not None:
+            img = self.preprocessing(img)
         return skmeas.label(img, connectivity=1)
 
     def read_regionprops(self):
@@ -75,6 +122,48 @@ class Tracker:
                 this_props[p.label] = p
             self.props[fr] = this_props
 
+    def get_bboxes(self, fr):
+        """Build a dictionary with bounding boxes of ROIs in frame `fr`"""
+        this_props = self.props[fr]
+        n = len(this_props)
+        i = 0
+        labels = np.empty(n, dtype=np.object)
+        props = np.empty(n, dtype=np.object)
+        y_min = np.empty(n, dtype=np.int32)
+        x_min = np.empty(n, dtype=np.int32)
+        y_max = np.empty(n, dtype=np.int32)
+        x_max = np.empty(n, dtype=np.int32)
+        for lbl, p in this_props.items():
+            labels[i] = lbl
+            props[i] = p
+            y_min[i], x_min[i], y_max[i], x_max[i] = p.bbox
+            i += 1
+        return {
+                'n': n,
+                'labels': labels,
+                'props': props,
+                'y_min': y_min,
+                'x_min': x_min,
+                'y_max': y_max,
+                'x_max': x_max,
+                'check': np.full(n, self.IS_UNCHECKED, dtype=np.uint8),
+               }
+
+    def update_bboxes(self, bb, keys):
+        """Remove all entries from bboxes instance `bb` that are not in `keys`"""
+        idx = np.isin(bb['labels'], keys)
+        if np.all(idx):
+            return bb
+        bb['n'] = np.sum(idx)
+        bb['labels'] = bb['labels'][idx]
+        bb['props'] = bb['props'][idx]
+        bb['y_min'] = bb['y_min'][idx]
+        bb['x_min'] = bb['x_min'][idx]
+        bb['y_max'] = bb['y_max'][idx]
+        bb['x_max'] = bb['x_max'][idx]
+        bb['check'] = bb['check'][idx]
+        return bb
+
     def track(self):
         """Track the cells through the stack."""
         # `traces` holds for each cell a list with the labels for each frame.
@@ -87,58 +176,80 @@ class Tracker:
         # Initialization for first frame
         if self.progress_fcn is not None:
             self.progress_fcn(msg="Tracking cells", current=1, total=self.n_frames)
+        tic0 = time.time() #DEBUG
         tic = time.time() #DEBUG
-        for p in self.props[0].values():
-            check = self._check_props(p)
-            if check & self.IS_AT_EDGE:
+        bbox_new = self.get_bboxes(0)
+        for i in range(bbox_new['n']):
+            ck = self._check_props(bbox_new['props'][i])
+            bbox_new['check'][i] = ck
+            if ck & self.IS_AT_EDGE and ck & self.IS_TOO_SMALL:
                 continue
-            last_idx[p.label] = len(traces)
-            traces.append([p.label])
-            traces_selection.append(True if check == self.IS_GOOD else False)
+            lbl = bbox_new['labels'][i]
+            last_idx[lbl] = len(traces)
+            traces.append([lbl])
+            traces_selection.append(ck == self.IS_GOOD)
+            
         print("Frame 001: {:.4f}s".format(time.time() - tic)) #DEBUG
 
         # Track further frames
         for fr in range(1, self.n_frames):
+            new_idx = {}
             if self.progress_fcn is not None:
                 self.progress_fcn(msg="Tracking cells", current=fr + 1, total=self.n_frames)
             tic = time.time() #DEBUG
-            new_idx = {}
-            for p in self.props[fr].values():
-                ck = self._check_props(p)
-                if ck & self.IS_AT_EDGE:
+
+            # Compare bounding boxes
+            #bbox_old = self.update_bboxes(bbox_new, (*last_idx.keys(),))
+            bbox_old = bbox_new
+            bbox_new = self.get_bboxes(fr)
+            overlaps = np.logical_and(
+                np.logical_and(
+                    bbox_new['y_min'].reshape((-1, 1)) < bbox_old['y_max'].reshape((1, -1)),
+                    bbox_new['y_max'].reshape((-1, 1)) > bbox_old['y_min'].reshape((1, -1))),
+                np.logical_and(
+                    bbox_new['x_min'].reshape((-1, 1)) < bbox_old['x_max'].reshape((1, -1)),
+                    bbox_new['x_max'].reshape((-1, 1)) > bbox_old['x_min'].reshape((1, -1))))
+
+            for i in range(overlaps.shape[0]):
+                js = np.flatnonzero(overlaps[i,:])
+
+                # Continue if ROI has no parent
+                if js.size == 0:
                     continue
 
-                # Compare with regions of previous frame
-                # Check bounding boxes and then coordinates for overlap.
-                # Then check if parent is valid (area, edge).
-                min_y, min_x, max_y, max_x = p.bbox
+                li = bbox_new['labels'][i]
+                pi = bbox_new['props'][i]
+                ci = pi.coords
+
+                cki = self._check_props(pi)
+                bbox_new['check'][i] = cki
+
                 parents = []
                 is_select = True
-                for q in self.props[fr-1].values():
-                    q_min_y, q_min_x, q_max_y, q_max_x = q.bbox
-                    if q_min_y >= max_y or q_max_y <= min_y or q_min_x >= max_x or q_max_x <= min_x:
-                        continue
-                    overlap = False
-                    for row in p.coords:
-                        if np.any(np.all(q.coords == row, axis=1)):
-                            overlap = True
-                            break
-                    if not overlap:
+
+                # Compare with regions of previous frame
+                # Check if parent is valid (area, edge)
+                for j in js:
+                    pj = bbox_old['props'][j]
+                    cj = pj.coords
+                    if not check_coordinate_overlap(ci, cj):
                         continue
 
-                    q_check = self._check_props(q)
-                    if q_check & self.IS_AT_EDGE:
-                        if q_check & self.IS_TOO_SMALL:
+                    ckj = bbox_old['check'][j]
+                    if ckj & self.IS_UNCHECKED:
+                        continue
+                    elif ckj & self.IS_AT_EDGE:
+                        if ckj & self.IS_TOO_SMALL:
                             continue
                         else:
                             is_select = None
                             break
-                    if q_check & self.IS_TOO_SMALL:
-                        parents.append(dict(label=q.label, large=False, small=True, area=q.area))
-                    elif q_check & self.IS_TOO_LARGE:
-                        parents.append(dict(label=q.label, large=True, small=False))
+                    if ckj & self.IS_TOO_SMALL:
+                        parents.append(dict(label=pj.label, large=False, small=True, area=pj.area))
+                    elif ckj & self.IS_TOO_LARGE:
+                        parents.append(dict(label=pj.label, large=True, small=False, area=pj.area))
                     else:
-                        parents.insert(0, dict(label=q.label, large=False, small=False))
+                        parents.insert(0, dict(label=pj.label, large=False, small=False, area=pj.area))
 
                 # Check for parents
                 if is_select is None:
@@ -178,8 +289,8 @@ class Tracker:
                     traces_selection[parent_idx] = None
                 else:
                     # Register this region as child of parent
-                    new_idx[p.label] = parent_idx
-                    traces[parent_idx].append(p.label)
+                    new_idx[li] = parent_idx
+                    traces[parent_idx].append(li)
                     if parent['large'] or parent['small']:
                         traces_selection[parent_idx] = False
             last_idx = new_idx
@@ -192,12 +303,14 @@ class Tracker:
             if len(tr) == self.n_frames and traces_selection[i] is not None:
                 self.traces.append(tr)
                 self.traces_selection.append(traces_selection[i])
+        print(f"Total tracking time: {time.time() - tic0 :.2f}s") #DEBUG
 
-    def _check_props(self, props, edges=True):
+    def _check_props(self, props, edges=True, coords=None):
         """Check if given regionprops are valid.
 
         Arguments:
             edges -- if `True`, region must not touch image edge
+            coords -- optional; `props.coords` to avoid re-evaluation
 
         Returns:
             `IS_AT_EDGE` if region touches the image edge,
@@ -207,7 +320,8 @@ class Tracker:
         """
         ret = self.IS_GOOD
         if edges:
-            coords = props.coords
+            if coords is None:
+                coords = props.coords
             if np.any(coords.flat == 0) or np.any(coords[:,0] == self.height-1) or \
                     np.any(coords[:,1] == self.width-1):
                 ret |= self.IS_AT_EDGE

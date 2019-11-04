@@ -2,7 +2,8 @@ import numpy as np
 import skimage.measure as skmeas
 import skimage.segmentation as skseg
 from .base import Roi
-from ._contour_aux import CornerFinder
+from ._aux_find_corners import find_corners
+from ._aux_find_perimeter import find_perimeter
 
 
 class ContourRoi(Roi):
@@ -11,15 +12,18 @@ class ContourRoi(Roi):
         return ("raw", "0.1")
 
     def __init__(self, mask=None, label=None, coords=None, regionprop=None, lazy=True,
-            color=None, visible=True, name=None, name_visible=True, stroke_width=None):
+            color=None, visible=True, name=None, name_visible=True, stroke_width=None, frame=None):
         self.label = None
         self._perimeter = None
         self._corners = None
+        self._contour = None
+        self._centroid = None
         self.color = color
         self.visible = visible
         self.name = name
         self.name_visible = name_visible
         self.stroke_width = stroke_width
+        self.frame = frame
         if regionprop is None and label is not None:
             self.label = label
             if mask is not None:
@@ -29,7 +33,6 @@ class ContourRoi(Roi):
             else:
                 raise ValueError("Illegal arguments")
             self.area = self.rows.size
-            self.centroid = np.array([self.rows.mean(), self.cols.mean()])
 
         elif regionprop is not None:
             if label is not None:
@@ -38,7 +41,6 @@ class ContourRoi(Roi):
                 self.label = regionprop.label
             self.area = regionprop.area
             self.coords = regionprop.coords
-            self.centroid = np.array(regionprop.centroid)
 
         else:
             raise ValueError("Illegal arguments")
@@ -47,7 +49,10 @@ class ContourRoi(Roi):
                 dtype=[(x, np.int16) for x in ('y_min', 'x_min', 'y_max', 'x_max')])
 
         if not lazy:
+            self.perimeter
             self.corners
+            self.contour
+            self.centroid
 
     @classmethod
     def from_regionprops(cls, regionprops, lazy=True):
@@ -68,76 +73,74 @@ class ContourRoi(Roi):
             overlap[i] = np.any(np.all(row == other_coords, axis=1))
         return self.coords[overlap, :]
 
-#    def _calculate_perimeter_old(self):
-#        """
-#        Find the surface pixels, resulting in perimeter of contour.
-#
-#        ``self.perimeter_idx`` is created as an index array indicating
-#        the surface pixels in ``self.coords``.
-#        """
-#        self.perimeter_idx = np.zeros(self.coords.shape[0], dtype=np.bool)
-#        vert_neighbors = {}
-#        horz_neighbors = {}
-#        row_mates = {}
-#        col_mates = {}
-#
-#        # Decide for each pixel whether it belongs to perimeter
-#        for i, (row, col) in enumerate(self.coords):
-#            # Get indices of vertical neighbors (upper and lower row)
-#            vn = vert_neighbors.get(row)
-#            if vn is None:
-#                vn = np.isin(self.coords[:, 0], np.array([-1, 1]) + row)
-#                vert_neighbors[row] = vn
-#
-#            # Get indices of horizontal neighbors (left and right column)
-#            hn = horz_neighbors.get(col)
-#            if hn is None:
-#                hn = np.isin(self.coords[:, 1], np.array([-1, 1]) + col)
-#                horz_neighbors[col] = hn
-#
-#            # Get indices of pixels in same row
-#            rm = row_mates.get(row)
-#            if rm is None:
-#                rm = self.coords[:, 0] == row
-#                row_mates[row] = rm
-#
-#            # Get indices of pixels in same column
-#            cm = col_mates.get(col)
-#            if cm is None:
-#                cm = self.coords[:, 1] == col
-#                col_mates[col] = cm
-#
-#            # Count neighbors (surface pixels have less than 4 neighbors)
-#            n_neighbors = ((vn & cm) | (hn & rm)).sum()
-#            if n_neighbors < 4:
-#                self.perimeter_idx[i] = True
-
     def _calculate_perimeter(self):
-        img = np.zeros((self.y_max - self.y_min, self.x_max - self.x_min), dtype=np.bool)
+        img = np.zeros((self.y_max - self.y_min + 1, self.x_max - self.x_min + 1), dtype=np.bool_)
         img[self.rows - self.y_min, self.cols - self.x_min] = True
-        img = skseg.find_boundaries(img, mode='inner')
-        self._perimeter = np.array(img.nonzero(), dtype=np.int16).T
-        self._perimeter += np.array((self.y_min, self.x_min))
+        self._perimeter = find_perimeter(img) + np.array(((self.y_min, self.x_min)))
 
     def _find_corners(self):
+        img = np.zeros((self.y_max - self.y_min + 1, self.x_max - self.x_min + 1), dtype=np.bool_)
+        img[self.rows - self.y_min, self.cols - self.x_min] = True
+        self._corners = find_corners(img) + np.array(((self.y_min, self.x_min)))
+
+    def _find_contour(self):
         img = np.zeros((self.y_max - self.y_min + 3, self.x_max - self.x_min + 3), dtype=np.uint8)
         img[self.rows - self.y_min + 1, self.cols - self.x_min + 1] = 1
-        contours = skmeas.find_contours(img, .5)
-        self._corners = max(contours, key=lambda c: c.size) + np.array(((self.y_min - 1, self.x_min - 1)))
+        contours = skmeas.find_contours(img, .5, fully_connected='high')
+        self._contour = max(contours, key=lambda c: c.size) + np.array(((self.y_min - 1, self.x_min - 1)))
 
     @property
     def perimeter(self):
-        """Return a list of surface pixel coordinates."""
+        """Return the surrounding polygon.
+
+        The returned coordinates correspond to the vertices of a polygon
+        surrounding the ROI like a rubberband, i.e. the coordinates do
+        not correspond to pixel centers, but to the edges between pixels.
+
+        These values can be used to reconstruct the ROI coordinates with
+        the function skimage.draw.polygon, and to export the ROI in the
+        format required by ImageJ.
+
+        See also: ContourRoi.corners, ContourRoi.contour
+        """
         if self._perimeter is None:
             self._calculate_perimeter()
         return self._perimeter.copy()
 
     @property
     def corners(self):
-        """Return the coordinates of the ROI corners."""
+        """Return the coordinates of the ROI corners.
+
+        The returned coordinates correspond to the pixel centers
+        of the corner pixels of the ROI. Connecting the coordinates
+        in the returned order with straight lines gives the
+        outermost pixels of the ROI.
+
+        See also: ContourRoi.perimeter, ContourRoi.contour
+        """
         if self._corners is None:
             self._find_corners()
         return self._corners.copy()
+
+    @property
+    def contour(self):
+        """Return the coordinates of the ROI contour polygon corners.
+
+        The returned coordinates should only be used for illustrating the ROI outline.
+        The coordinates are multiples of 0.5, indicating spaces between pixels.
+
+        For exact contours, see: ContourRoi.perimeter, ContourRoi.corners
+        """
+        if self._contour is None:
+            self._find_contour()
+        return self._contour.copy()
+
+    @property
+    def centroid(self):
+        """Return centroid of the ROI"""
+        if self._centroid is None:
+            self._centroid = np.array([self.rows.mean(), self.cols.mean()])
+        return self._centroid.copy()
 
     @property
     def y_min(self):

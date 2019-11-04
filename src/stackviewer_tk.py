@@ -384,7 +384,7 @@ class StackViewer:
         self.update_scrollbars()
 
         # GUI elements corresponding to channel
-        if self.n_channels == 1:
+        if self.n_channels is None or self.n_channels == 1:
             self.scale_channel.grid_forget()
             self.lbl_channel.grid_forget()
             self.entry_channel.grid_forget()
@@ -402,7 +402,7 @@ class StackViewer:
                                        column=COL_SIZES, sticky=tk.W)
 
         # GUI elements corresponding to frame
-        if self.n_frames == 1:
+        if self.n_frames is None or self.n_frames == 1:
             self.scale_frame.grid_forget()
             self.lbl_frame.grid_forget()
             self.entry_frame.grid_forget()
@@ -633,11 +633,11 @@ class StackViewer:
                     if stroke_width is None:
                         stroke_width = col_stroke_width
 
-                    corners = roi.corners
+                    contour = roi.contour
                     if scale is not None:
-                        corners = corners * scale
+                        contour = contour * scale
 
-                    self.canvas.create_polygon(*corners[:, ::-1].flat, tags=tags,
+                    self.canvas.create_polygon(*contour[:, ::-1].flat, tags=tags,
                             fill='', outline=color, width=stroke_width)
 
                 if roi.name and roi.name_visible:
