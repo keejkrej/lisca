@@ -39,7 +39,7 @@ KEYS_NEXT_CELL = {'Down', 'KP_Down'}
 KEYS_PREV_CELL = {'Up', 'KP_Up'}
 KEYS_HIGHLIGHT_CELL = {'Return', 'KP_Enter'}
 KEYS_SHOW_CONTOURS = {'Insert', 'KP_Insert'}
-KEYS_CHANNEL = {f'{prefix}{sym}' for prefix in ('', 'KP_') for sym in range(1, 10)}
+KEYS_CHANNEL = {fmt.format(sym) for fmt in ('{}', 'KP_{}') for sym in range(1, 10)}
 KEYS_NEXT_FRAME = {'Right', 'KP_Right'}
 KEYS_PREV_FRAME = {'Left', 'KP_Left'}
 
@@ -311,10 +311,12 @@ class Main_Tk:
                    )
         for keysyms, callback in bindings:
             for keysym in keysyms:
+                if len(keysym) > 1:
+                    keysym = f"<{keysym}>"
                 try:
-                    self.root.bind_all(f'<{keysym}>', callback)
+                    self.root.bind_all(keysym, callback)
                 except Exception:
-                    print(f"Failed to register keysym '<{keysym}>'")
+                    print(f"Failed to register keysym '{keysym}'")
 
         # Run mainloop
         self.root.mainloop()
@@ -1313,7 +1315,7 @@ class Main_Tk:
         cells_highlight = list(cells_sorted.index(name) for name, tr in self.traces.items() if tr['highlight'])
         is_selection_updated = False
 
-        if evt.keysym in ('Up', 'KP_Up'):
+        if evt.keysym in KEYS_PREV_CELL:
             # Highlight previous cell
             for i in cells_highlight:
                 self.highlight_trace(cells_sorted[i], val=False)
@@ -1328,7 +1330,7 @@ class Main_Tk:
             self.highlight_trace(new_highlight, val=True)
             self.update_highlight()
 
-        elif evt.keysym in ('Down', 'KP_Down'):
+        elif evt.keysym in KEYS_NEXT_CELL:
             # Highlight next cell
             for i in cells_highlight:
                 self.highlight_trace(cells_sorted[i], val=False)
@@ -1343,7 +1345,7 @@ class Main_Tk:
             self.highlight_trace(new_highlight, val=True)
             self.update_highlight()
 
-        elif evt.keysym in ('Return', 'KP_Enter'):
+        elif evt.keysym in KEYS_HIGHLIGHT_CELL:
             # Toggle cell selection
             for i in cells_highlight:
                 self.select_trace(cells_sorted[i])
