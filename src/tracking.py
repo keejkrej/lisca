@@ -65,9 +65,17 @@ class Tracker:
     IS_UNCHECKED = 128
 
     def __init__(self, segmented_stack=None, labeled_stack=None, make_labeled_stack=False,
-            min_size=1000, max_size=10000, preprocessing=None):
+            min_size=1000, max_size=10000, preprocessing=None, segmented_chan=None, labeled_chan=None):
         self.stack_seg = segmented_stack
+        if segmented_chan is None:
+            self.segmented_chan = 0
+        else:
+            self.segmented_chan = segmented_chan
         self.stack_lbl = labeled_stack
+        if self.stack_lbl is None or labeled_chan is None:
+            self.labeled_chan = 0
+        else:
+            self.labeled_chan = labeled_chan
         self.progress_fcn = None
         self.min_size = min_size
         self.max_size = max_size
@@ -100,7 +108,7 @@ class Tracker:
         for fr in range(self.n_frames):
             if self.progress_fcn is not None:
                 self.progress_fcn(msg="Labeling frames", current=fr, total=self.n_frames)
-            self.stack_lbl.img[0, fr, :, :] = self.label(self.stack_seg.get_image(channel=0, frame=fr))
+            self.stack_lbl.img[self.labeled_chan, fr, :, :] = self.label(self.stack_seg.get_image(channel=self.segmented_chan, frame=fr))
 
     def label(self, img):
         if self.preprocessing is not None:
@@ -113,9 +121,9 @@ class Tracker:
             if self.progress_fcn is not None:
                 self.progress_fcn(msg="Reading region props", current=fr, total=self.n_frames)
             if self.stack_lbl is None:
-                img = self.label(self.stack_seg.get_image(channel=0, frame=fr))
+                img = self.label(self.stack_seg.get_image(channel=self.segmented_chan, frame=fr))
             else:
-                img = self.stack_lbl.get_image(channel=0, frame=fr)
+                img = self.stack_lbl.get_image(channel=self.labeled_chan, frame=fr)
             props = skmeas.regionprops(img)
             this_props = {}
             for p in props:

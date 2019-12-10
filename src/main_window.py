@@ -599,6 +599,8 @@ class Main_Tk:
         self.clear_trace_info()
         i_channel = 0
         i_channel_fl = 1
+        close_stacks = set()
+        retain_stacks = set()
         for d in data:
             if d['type'] == ms.TYPE_SEGMENTATION:
                 if do_track and d['stack'] is not None:
@@ -607,8 +609,8 @@ class Main_Tk:
                         self.status("Cropping segmented stack")
                         d['stack'].crop(right=pad_x, bottom=pad_y)
                         self.status(msg_bak)
-                    self.track_stack(d['stack'])
-                    d['stack'].close()
+                    self.track_stack(d['stack'], channel=d['i_channel'])
+                    close_stacks.add(d['stack'])
                 meta.add_channel(name='segmented_stack',
                                  label=d['label'],
                                  type_=d['type'],
@@ -624,6 +626,7 @@ class Main_Tk:
                                  label=d['label'],
                                  type_=d['type'],
                                 )
+                retain_stacks.add(stack)
 
             if d['type'] == ms.TYPE_FLUORESCENCE:
                 label = f"Fluorescence {i_channel_fl}"
@@ -641,6 +644,11 @@ class Main_Tk:
                                    )
                 i_channel_fl += 1
             i_channel += 1
+        
+        # Close stacks that only contain segmentation
+        close_stacks -= retain_stacks
+        for stack in close_stacks:
+            stack.close()
 
         if not meta.check_properties():
             meta.set_properties(n_frames=n_frames_seg, width=width_seg, height=height_seg)
@@ -650,10 +658,10 @@ class Main_Tk:
         self.plot_traces()
         self.status()
 
-    def track_stack(self, s):
+    def track_stack(self, s, channel=0):
         """Perform tracking of a given stack"""
         self.status("Tracking cells")
-        tracker = Tracker(segmented_stack=s)
+        tracker = Tracker(segmented_stack=s, segmented_chan=channel)
         tracker.progress_fcn = lambda msg, current, total: \
                 self.status(f"{msg} (frame {current}/{total})")
         if s.stacktype == 'hdf5':
@@ -711,6 +719,8 @@ class Main_Tk:
 
     def deselected_rois(self, frame):
         """Get an iterable of all non-selected ROIs in given frame"""
+        if self.rois is None:
+            return None
         return (roi for roi in self.rois[frame].values()
                 if roi.color not in (ROI_COLOR_SELECTED, ROI_COLOR_HIGHLIGHT))
 
@@ -790,6 +800,9 @@ class Main_Tk:
         """
         img = np.zeros((meta.height, meta.width), dtype=(np.bool if binary else np.uint8))
         if rois is None:
+            if self.rois is None:
+                print("Main_Tk.render_segmentation: trying to read non-existent ROIs") #DEBUG
+                return img
             rois = self.rois[frame].values()
         for roi in rois:
             img[roi.rows, roi.cols] = 255
@@ -1061,7 +1074,7 @@ class Main_Tk:
 
             xlbl = "Time [h]"
             ax.set_ylabel("{quantity} [{unit}]".format(**self.trace_info[qty]))
-            ax.set_title(qty)
+            ax.set_title(qty, fontweight='bold')
 
             if is_interactive:
                 self.frame_indicators.append(ax.axvline(np.NaN, lw=1.5, color='r'))
@@ -1298,10 +1311,10 @@ class Main_Tk:
             return
         try:
             new_chan = int(evt.keysym[-1]) - 1
+            new_chan = self.channel_order[new_chan]
         except Exception:
             return
-        if new_chan >= 0 and new_chan < len(self.channel_order):
-            self._change_channel_selection(new_chan)
+        self._change_channel_selection(new_chan)
 
     def _key_highlight_cell(self, evt):
         """Callback for highlighting cells by arrow keys
