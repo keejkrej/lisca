@@ -49,8 +49,6 @@ EVENT_STATE_CTRL = 4
 MODE_SELECTION = 'selection'
 MODE_HIGHLIGHT = 'highlight'
 
-TYPE_AREA = 'Area'
-
 DESELECTED_DARKEN_FACTOR = .3
 
 MIC_RES = {
@@ -311,7 +309,10 @@ class SessionView_Tk(SessionView):
 
     def set_session(self, session=None):
         """Set a SessionModel instance for display"""
-        print("Setting session") #DEBUG
+        if session is None:
+            print("Clearing session") #DEBUG
+        else:
+            print("Setting session") #DEBUG
 
     def open_session(self):
         print("SessionView_Tk.open_session") #DEBUG

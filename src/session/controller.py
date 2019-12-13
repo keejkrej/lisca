@@ -105,7 +105,7 @@ class SessionController:
         with self.lock:
             session = self.sessions[session_id]
             session.open_stack(fn, status=self.status)
-            Event.fire(self.view.queue, const.CMD_UPDATE_STACK_LIST, kwargs=dict(stack_getter=session.get_stack, select=True))
+            Event.fire(self.view.queue, const.CMD_UPDATE_STACK_LIST, kwargs=dict(stack_getter=session.get_stack_info, select=True))
 
     def close_stack(self, session_id, stack_id):
         """Close a stack.
@@ -140,6 +140,9 @@ class SessionController:
             except KeyError:
                 return
             Event.fire(self.view.queue, self.view.set_session)
-            session.config(stacks)
-            Event.fire(self.view.queue, self.view.set_session, session)
+            success = session.config(stacks, self.status)
+            if success:
+                Event.fire(self.view.queue, self.view.set_session, session)
+            else:
+                self.discard_session(session_id)
 

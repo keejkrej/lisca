@@ -18,6 +18,7 @@ from .roi import ContourRoi
 from .stackviewer_tk import StackViewer
 from .stack import Stack
 from .stack import metastack as ms
+from .stack import types as ty
 from .tracking import Tracker
 
 # Display properties
@@ -97,8 +98,8 @@ class Main_Tk:
         `self.display_stack` with the same index. The dict
         holds information of the selection widgets:
         'type'      str of the channel type; one of:
-                    `ms.TYPE_PHASECONTRAST`, `ms.TYPE_FLUORESCENCE`
-                    and `ms.TYPE_SEGMENTATION`
+                    `ty.TYPE_PHASECONTRAST`, `ty.TYPE_FLUORESCENCE`
+                    and `ty.TYPE_SEGMENTATION`
         'val'       boolean; indicates whether this channel is
                     currently displayed (True) or not (False).
         'button'    tk.Button instance for displaying the channel
@@ -149,7 +150,7 @@ class Main_Tk:
                     possibly also for unit conversions.
                     Default: 'a.u.'
         'factor'    float, factor to multiply values to yield 'unit'. Default: None
-        'type'      str, one of `TYPE_AREA` and `ms.TYPE_FLUORESCENCE`.
+        'type'      str, one of `TYPE_AREA` and `ty.TYPE_FLUORESCENCE`.
                     Indicates the type of quantity of the trace.
         'order'     int, indicates in which order to display the plots.
         'button'    tk.Button, the button instance for contoling 'plot'
@@ -568,7 +569,7 @@ class Main_Tk:
         for d in data:
             if d['stack'] is None:
                 pass
-            elif d['type'] == ms.TYPE_SEGMENTATION:
+            elif d['type'] == ty.TYPE_SEGMENTATION:
                 height_seg = d['stack'].height
                 width_seg = d['stack'].width
                 n_frames_seg = d['stack'].n_frames
@@ -602,7 +603,7 @@ class Main_Tk:
         close_stacks = set()
         retain_stacks = set()
         for d in data:
-            if d['type'] == ms.TYPE_SEGMENTATION:
+            if d['type'] == ty.TYPE_SEGMENTATION:
                 if do_track and d['stack'] is not None:
                     if pad_y or pad_x:
                         msg_bak = self.var_statusmsg.get()
@@ -628,7 +629,7 @@ class Main_Tk:
                                 )
                 retain_stacks.add(stack)
 
-            if d['type'] == ms.TYPE_FLUORESCENCE:
+            if d['type'] == ty.TYPE_FLUORESCENCE:
                 label = f"Fluorescence {i_channel_fl}"
                 name = d['label']
                 if not name:
@@ -763,7 +764,7 @@ class Main_Tk:
         seg_img = None
         for i in channels:
             img = self.stack.get_image(channel=i, frame=frame, scale=scale)
-            if self.stack.spec(i).type != ms.TYPE_SEGMENTATION:
+            if self.stack.spec(i).type != ty.TYPE_SEGMENTATION:
                 if self.var_darken_deselected.get():
                     # Darken deselected and untracked cells
                     if seg_img is None:
@@ -890,11 +891,11 @@ class Main_Tk:
         idx_fluorescence = []
         idx_segmentation = None
         for i, spec in enumerate(meta.channels):
-            if spec.type == ms.TYPE_PHASECONTRAST and not idx_phasecontrast:
+            if spec.type == ty.TYPE_PHASECONTRAST and not idx_phasecontrast:
                 idx_phasecontrast = i
-            elif spec.type == ms.TYPE_FLUORESCENCE:
+            elif spec.type == ty.TYPE_FLUORESCENCE:
                 idx_fluorescence.append(i)
-            elif spec.type == ms.TYPE_SEGMENTATION and not idx_segmentation:
+            elif spec.type == ty.TYPE_SEGMENTATION and not idx_segmentation:
                 idx_segmentation = i
             else:
                 continue
@@ -905,7 +906,7 @@ class Main_Tk:
             btntxt = []
             if spec.label:
                 btntxt.append(spec.label)
-            if spec.type == ms.TYPE_FLUORESCENCE:
+            if spec.type == ty.TYPE_FLUORESCENCE:
                 btntxt.append("{} {}".format(spec.type, len(idx_fluorescence)))
             else:
                 btntxt.append(spec.type)
@@ -985,7 +986,7 @@ class Main_Tk:
         # Get fluorescence channels
         fl_chans = []
         for name, info in self.trace_info.items():
-            if info['type'] == ms.TYPE_FLUORESCENCE:
+            if info['type'] == ty.TYPE_FLUORESCENCE:
                 fl_chans.append({'name': name,
                                  'i_channel': info['channel'],
                                  'img': None,
@@ -1548,7 +1549,7 @@ class StackOpener:
         self.chan_opt = tk.OptionMenu(chan_add_frame, self.var_chan, 0)
         self.chan_opt.grid(row=2, column=0, sticky='NESW')
         self.type_opt = tk.OptionMenu(chan_add_frame, self.var_type,
-            ms.TYPE_PHASECONTRAST, ms.TYPE_FLUORESCENCE, ms.TYPE_SEGMENTATION)
+            ty.TYPE_PHASECONTRAST, ty.TYPE_FLUORESCENCE, ty.TYPE_SEGMENTATION)
         self.type_opt.grid(row=2, column=1, sticky='NESW')
         self.label_entry = tk.Entry(chan_add_frame, textvariable=self.var_label)
         self.label_entry.grid(row=2, column=2, sticky='NESW')
@@ -1645,7 +1646,7 @@ class StackOpener:
             self.chan_opt['menu'].add_command(label=i, command=tk._setit(self.var_chan, i))
         self.var_chan.set(0)
         self.var_label.set('')
-        self.var_type.set(ms.TYPE_PHASECONTRAST)
+        self.var_type.set(ty.TYPE_PHASECONTRAST)
 
     def disable_channel_selection(self):
         self.var_chan.set(())

@@ -10,9 +10,6 @@ from ..listener import Listeners
 from ..roi import RoiCollection
 from .stack import Stack
 
-TYPE_PHASECONTRAST = "Phase contrast"
-TYPE_FLUORESCENCE = "Fluorescence"
-TYPE_SEGMENTATION = "Segmentation"
 
 @dataclass
 class ChannelSpec:

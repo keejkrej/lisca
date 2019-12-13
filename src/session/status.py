@@ -131,3 +131,18 @@ class StatusMessage:
     def asdict(self):
         """Return message as dictionary use for use as keyword arguments"""
         return dict(msg=self.msg, current=self.current, total=self.total)
+
+
+class DummyStatus:
+    """Dummy status that does nothing.
+
+    Use this class as a 'fallback Status' when no status needs to be displayed.
+    """
+    def set(self, *_, **__):
+        return self
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, *_):
+        pass
