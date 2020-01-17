@@ -140,9 +140,12 @@ class SessionController:
             except KeyError:
                 return
             Event.fire(self.view.queue, self.view.set_session)
-            success = session.config(stacks, self.status)
-            if success:
-                Event.fire(self.view.queue, self.view.set_session, session)
-            else:
+            try:
+                session.config(stacks, status=self.status, render_factory=self.view.make_display_render_function)
+            except Exception:
                 self.discard_session(session_id)
+                raise
+            else:
+                Event.fire(self.view.queue, self.view.set_session, session)
+                Event.fire(self.view.queue, const.CMD_UPDATE_TRACES)#, kwargs=dict(traces=session.traces))
 

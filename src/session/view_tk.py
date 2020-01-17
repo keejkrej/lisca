@@ -1,33 +1,25 @@
+import os
 import queue
+import time
 import tkinter as tk
+import tkinter.filedialog as tkfd
+import tkinter.simpledialog as tksd
 
 import matplotlib as mpl
 mpl.rcParams['pdf.fonttype'] = 42 # Edit plots with Illustrator
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.backend_bases import MouseButton
-from matplotlib.ticker import StrMethodFormatter
+import numpy as np
 
 from . import const
 from .events import Event
 from .sessionopener_tk import SessionOpener
+from ..stack import metastack as ms
+from ..stack import types as ty
 from ..stackviewer_tk import StackViewer
+from .status import DummyStatus
 from .view import SessionView
-
-# Display properties
-PLOT_COLOR = 'k'
-PLOT_COLOR_HIGHLIGHT = '#ff0000'
-PLOT_ALPHA = .3
-PLOT_ALPHA_HIGHLIGHT = 1
-PLOT_WIDTH = 1.5
-PLOT_WIDTH_HIGHLIGHT = 2
-
-ROI_COLOR_SELECTED = '#00aa00'
-ROI_COLOR_DESELECTED = '#0088ff'
-ROI_COLOR_UNTRACKABLE = '#cc00cc'
-ROI_COLOR_HIGHLIGHT = '#ff0000'
-ROI_WIDTH = 1
-ROI_WIDTH_HIGHLIGHT = 3
 
 KEYS_NEXT_CELL = {'Down', 'KP_Down'}
 KEYS_PREV_CELL = {'Up', 'KP_Up'}
@@ -37,7 +29,7 @@ KEYS_CHANNEL = {fmt.format(sym) for fmt in ('{}', 'KP_{}') for sym in range(1, 1
 KEYS_NEXT_FRAME = {'Right', 'KP_Right'}
 KEYS_PREV_FRAME = {'Left', 'KP_Left'}
 
-FRAME_SCROLL_RATE_MAX = 8
+FRAME_SCROLL_RATE_MAX = 8e9
 
 QUEUE_POLL_INTERVAL = 10
 
@@ -92,24 +84,24 @@ class SessionView_Tk(SessionView):
         # Initialize variables
         self.queue = queue.Queue()
         self.control_queue = control_queue
-        self.status = status
         self.var_statusmsg = tk.StringVar(value="Initializing")
+        self.status = status
+        self.status_id = self.status.register_viewer(self.update_status, self.queue)
         self.session = None
         self._session_opener = None
 
         self.cmd_map = {
                 const.CMD_SET_SESSION: self.set_session,
+                const.CMD_UPDATE_TRACES: self.update_traces,
             }
 
-        
         self.display_stack = None
         self.channel_selection = {}
         self.channel_order = []
-        self.frames_per_hour = 6
         self.frame_indicators = []
-        self.traces = None
-        self.trace_info = None
-        self.rois = None
+        #self.traces = None #replace by self.session.traces
+        #self.trace_info = None # replace by self.session.trace_info
+        #self.rois = None # replace by self.session.rois
         self.fig = None
         self.fig_widget = None
         self.save_dir = None
@@ -123,7 +115,7 @@ class SessionView_Tk(SessionView):
         self.var_show_untrackable = tk.BooleanVar(value=False)
         self.var_microscope_res = tk.StringVar(value=MIC_RES_UNSPEC)
 
-        #self._init_trace_info() #TODO
+        #self._init_trace_info() # now done by self.session
 
         # Build menu
         menubar = tk.Menu(self.root)
@@ -210,12 +202,12 @@ class SessionView_Tk(SessionView):
         tk.Label(self.statusbar, anchor=tk.W, textvariable=self.var_statusmsg).pack(side=tk.LEFT, anchor=tk.W)
 
         # Callbacks
-        #self.var_show_frame_indicator.trace_add('write', self._update_frame_indicator) #TODO
-        #self.var_darken_deselected.trace_add('write', lambda *_: self.display_stack._listeners.notify('image')) #TODO
-        #self.var_show_roi_contours.trace_add('write', self._update_show_roi_contours) #TODO
-        #self.var_show_roi_names.trace_add('write', self._update_show_roi_names) #TODO
-        #self.var_show_untrackable.trace_add('write', self._update_show_untrackable) #TODO
-        #self.var_microscope_res.trace_add('write', self._change_microscope_resolution) #TODO
+        self.var_show_frame_indicator.trace_add('write', self._update_frame_indicator)
+        self.var_darken_deselected.trace_add('write', lambda *_: self.display_stack._listeners.notify('image'))
+        self.var_show_roi_contours.trace_add('write', self._update_show_roi_contours)
+        self.var_show_roi_names.trace_add('write', self._update_show_roi_names)
+        self.var_show_untrackable.trace_add('write', self._update_show_untrackable)
+        self.var_microscope_res.trace_add('write', self._change_microscope_resolution)
 
         self.stackframe.bind('<Configure>', self._stacksize_changed)
         self.stackviewer.register_roi_click(self._roi_clicked)
@@ -254,13 +246,14 @@ class SessionView_Tk(SessionView):
             status = f"{msg} {current}"
         else:
             status = f"{msg} {current}/{total}"
-        self.var_statusmsg.set(msg)
-        self.root.update()
+        self.var_statusmsg.set(status)
+        self.root.update_idletasks()
 
     def create_figure(self):
         """Show an empty figure"""
         self.fig = Figure()
         mpl_canvas = FigureCanvasTkAgg(self.fig, master=self.figframe)
+        self.fig.canvas.mpl_connect('pick_event', self._line_picker)
         mpl_canvas.draw()
         self.fig_widget = mpl_canvas.get_tk_widget()
         self.fig_widget.pack(fill=tk.BOTH, expand=True)
@@ -309,46 +302,748 @@ class SessionView_Tk(SessionView):
 
     def set_session(self, session=None):
         """Set a SessionModel instance for display"""
+        self.session = session
         if session is None:
             print("Clearing session") #DEBUG
         else:
             print("Setting session") #DEBUG
+            self.load_metastack(session.display_stack, session.stack.channels)
+
+    def load_metastack(self, display_stack, channels): #TODO
+        """Load and display a given metastack"""
+        print("load metastack") #DEBUG
+        with self.status.set("Loading stack …"):
+            self.display_stack = display_stack
+
+            # Create channel display buttons
+            self.channel_order.clear()
+            for k, x in tuple(self.channel_selection.items()):
+                x['button'].destroy()
+                del self.channel_selection[k]
+            idx_phasecontrast = None
+            idx_fluorescence = []
+            idx_segmentation = None
+            for i, spec in enumerate(channels):
+                if spec.type == ty.TYPE_PHASECONTRAST and not idx_phasecontrast:
+                    idx_phasecontrast = i
+                elif spec.type == ty.TYPE_FLUORESCENCE:
+                    idx_fluorescence.append(i)
+                elif spec.type == ty.TYPE_SEGMENTATION and not idx_segmentation:
+                    idx_segmentation = i
+                else:
+                    continue
+                x = {}
+                self.channel_selection[i] = x
+                x['type'] = spec.type
+                x['val'] = False
+                btntxt = []
+                if spec.label:
+                    btntxt.append(spec.label)
+                if spec.type == ty.TYPE_FLUORESCENCE:
+                    btntxt.append("{} {}".format(spec.type, len(idx_fluorescence)))
+                else:
+                    btntxt.append(spec.type)
+                btntxt = "\n".join(btntxt)
+                x['button'] = tk.Button(self.chanselframe, justify=tk.LEFT, text=btntxt)
+                x['button'].bind('<ButtonPress-1><ButtonRelease-1>', self._build_chanselbtn_callback(i))
+
+            # Display channel display buttons
+            self.chansellbl.config(state=tk.NORMAL)
+            if idx_phasecontrast is not None:
+                self.channel_order.append(idx_phasecontrast)
+                self.channel_selection[idx_phasecontrast]['button'].pack(anchor=tk.N,
+                        expand=True, fill=tk.X, padx=10, pady=5)
+            for i in idx_fluorescence:
+                self.channel_order.append(i)
+                self.channel_selection[i]['button'].pack(anchor=tk.N,
+                        expand=True, fill=tk.X, padx=10, pady=5)
+            if idx_segmentation is not None:
+                self.channel_order.append(idx_segmentation)
+                self.channel_selection[idx_segmentation]['button'].pack(anchor=tk.N,
+                        expand=True, fill=tk.X, padx=10, pady=5)
+
+            # Initial channel selection and display
+            self._change_channel_selection()
+            self.stackviewer.set_stack(display_stack, wait=False)
 
     def open_session(self):
         print("SessionView_Tk.open_session") #DEBUG
 
     def save(self):
-        print("SessionView_Tk.save") #DEBUG
+        """Save data to files""" #TODO
+        if not self.save_dir:
+            self._get_savedir()
+
+        #TODO: in new thread
+        self.session.save_session(self.save_dir)
 
     def _get_savedir(self):
-        print("SessionView_Tk._get_savedir") #DEBUG
+        """Ask user for output directory"""
+        options = {'mustexist': False,
+                   'parent': self.root,
+                   'title': "Choose output directory",
+                  }
+        #breakpoint() #DEBUG
+        if self.save_dir:
+            options['initialdir'] = self.save_dir
+        new_savedir = tkfd.askdirectory(**options)
+        if new_savedir:
+            if not os.path.exists(new_savedir):
+                os.makedirs(new_savedir)
+            elif not os.path.isdir(new_savedir):
+                #TODO: show GUI dialog
+                raise NotADirectoryError("Not a directory: '{}'".format(new_savedir))
+            self.save_dir = new_savedir
+        elif not new_savedir:
+            raise ValueError("No save directory given")
+        elif not os.path.isdir(self.save_dir):
+            raise NotADirectoryError("Not a directory: '{}'".format(self.save_dir))
 
-    def _stacksize_changed(self, *_):
-        print("SessionView_Tk._stacksize_changed") #DEBUG
+    def _stacksize_changed(self, evt):
+        """Update stackviewer after stack size change"""
+        self.stackviewer._change_stack_position(force=True)
 
-    def _roi_clicked(self, *_):
-        print("SessionView_Tk._roi_clicked") #DEBUG
+    def _key_highlight_cell(self, evt):
+        """Callback for highlighting cells by arrow keys
 
-    def _key_highlight_cell(self, *_):
-        print("SessionView_Tk._key_highlight_cell") #DEBUG
+        Up/down arrows highlight cells,
+        Enter toggles cell selection.
+        """
+        if not self.session or not self.session.traces:
+            return
+        cells_sorted = self.session.traces_sorted(self.stackviewer.i_frame)
+        cells_highlight = list(cells_sorted.index(name) for name, tr in self.session.traces.items() if tr['highlight'])
+        is_selection_updated = False
 
-    def _key_scroll_frames(self, *_):
-        print("SessionView_Tk._key_scroll_frames") #DEBUG
+        if evt.keysym in KEYS_PREV_CELL:
+            # Highlight previous cell
+            for i in cells_highlight:
+                self.highlight_trace(cells_sorted[i], val=False)
+            if cells_highlight:
+                new_highlight = cells_highlight[0] - 1
+                if new_highlight < 0:
+                    new_highlight = cells_sorted[-1]
+                else:
+                    new_highlight = cells_sorted[new_highlight]
+            else:
+                new_highlight = cells_sorted[-1]
+            self.highlight_trace(new_highlight, val=True)
+            self.update_highlight()
 
-    def _key_change_channel(self, *_):
-        print("SessionView_Tk._key_change_channel") #DEBUG
+        elif evt.keysym in KEYS_NEXT_CELL:
+            # Highlight next cell
+            for i in cells_highlight:
+                self.highlight_trace(cells_sorted[i], val=False)
+            if cells_highlight:
+                new_highlight = cells_highlight[-1] + 1
+                if new_highlight >= len(cells_sorted):
+                    new_highlight = cells_sorted[0]
+                else:
+                    new_highlight = cells_sorted[new_highlight]
+            else:
+                new_highlight = cells_sorted[0]
+            self.highlight_trace(new_highlight, val=True)
+            self.update_highlight()
 
-#    def _update_frame_indicator(self, *_, t=None, fr=None, draw=True):
-#        """Update display of vertical frame indicator in plot"""
-#        if self.var_show_frame_indicator.get():
-#            if t is None:
-#                if fr is None:
-#                    fr = self.stackviewer.i_frame
-#                t = self.to_hours(fr)
-#        else:
-#            t = np.NaN
-#        for indicator in self.frame_indicators:
-#            indicator.set_xdata([t, t])
-#        if draw:
-#            self.fig.canvas.draw()
+        elif evt.keysym in KEYS_HIGHLIGHT_CELL:
+            # Toggle cell selection
+            for i in cells_highlight:
+                self.select_trace(cells_sorted[i])
+            self.update_selection()
+
+    def _key_scroll_frames(self, evt):
+        """Callback for scrolling through channels"""
+        if evt.keysym in KEYS_NEXT_FRAME:
+            cmd = 'up'
+        elif evt.keysym in KEYS_PREV_FRAME:
+            cmd = 'down'
+        else:
+            return
+        clock = Event.now()
+        if clock - self.last_frame_scroll < 1 / FRAME_SCROLL_RATE_MAX:
+            return
+        self.last_frame_scroll = clock
+        self.stackviewer._i_frame_step(cmd)
+
+    def _key_change_channel(self, evt):
+        """Callback for displaying channels"""
+        if not self.channel_order:
+            return
+        try:
+            new_chan = int(evt.keysym[-1]) - 1
+            new_chan = self.channel_order[new_chan]
+        except Exception:
+            return
+        self._change_channel_selection(new_chan)
+
+    def _build_chanselbtn_callback(self, i):
+        """Build callback for channel selection button.
+
+        `i` is the key of the corresponding item in `self.channel_selection`.
+
+        The returned callback will, by default, select the channel with key `i`
+        and deselect all other buttons. However, if the control key is pressed
+        simultaneously with the click, the selection of channel `i` is toggled.
+        """
+        def callback(event):
+            nonlocal self, i
+            self._change_channel_selection(i, toggle=bool(event.state & EVENT_STATE_CTRL), default=i)
+        return callback
+
+    def _change_channel_selection(self, *channels, toggle=False, default=None):
+        """Select channels for display.
+
+        `channels` holds the specified channels (indices to `self.channel_selection`).
+        If `toggle`, the selections of the channels in `channels` are toggled.
+        If not `toggle`, the channels in `channels` are selected and all others are deselected.
+        If `default` is defined, it must be an index to `self.channel_selection`.
+        The channel corresponding to `default` is selected if no other channel would
+        be displayed after executing this function.
+        """
+        has_selected = False
+        if not channels:
+            pass
+        elif toggle:
+            for i in channels:
+                ch = self.channel_selection[i]
+                ch['val'] ^= True
+                has_selected = ch['val']
+        else:
+            for i, ch in self.channel_selection.items():
+                if i in channels:
+                    ch['val'] = True
+                    has_selected = True
+                else:
+                    ch['val'] = False
+        if not has_selected and \
+                not any(ch['val'] for ch in self.channel_selection.values()):
+            if default is None:
+                default = 0
+            ch = self.channel_selection[self.channel_order[default]]
+            ch['val'] = True
+        self.display_stack._listeners.notify('image')
+        self.root.after_idle(self._update_channel_selection_button_states)
+
+    def _update_channel_selection_button_states(self):
+        """Helper function
+
+        Called by `_change_channel_selection` after all GUI updates
+        are processed. Necessary because otherwise, changes would be
+        overwritten by ButtonRelease event.
+        """
+        for ch in self.channel_selection.values():
+            ch['button'].config(relief=(tk.SUNKEN if ch['val'] else tk.RAISED))
+
+    def make_display_render_function(self, stack, render_segmentation):
+        """Factory function for display rendering function.
+
+        stack -- metastack of session instance
+        render_segmentation -- function for rendering binary segmentation image
+        """
+        def render_display(meta, frame, scale=None):
+            """Dynamically create display image.
+
+            This method is to be called by `MetaStack.get_image`
+            within the GUI thread.
+
+            Arguments:
+                meta -- the calling `MetaStack` instance; ignored
+                frame -- the index of the selected frame
+                scale -- scaling information; ignored
+            """
+            nonlocal self, stack, render_segmentation
+            #TODO histogram-based contrast adjustment
+            # Find channel to display
+            channels = []
+            for i in sorted(self.channel_selection.keys()):
+                if self.channel_selection[i]['val']:
+                    channels.append(i)
+            if not channels:
+                channels.append(0)
+
+            # Update frame indicator
+            self.root.after_idle(self._update_frame_indicator)
+
+            # Get image scale
+            self.root.update_idletasks()
+            display_width = self.stackframe.winfo_width()
+            if self.display_stack.width != display_width:
+                scale = display_width / stack.width
+            else:
+                scale = self.display_stack.width / stack.width
+
+            # Convert image to uint8
+            imgs = []
+            seg_img = None
+            for i in channels:
+                img = stack.get_image(channel=i, frame=frame, scale=scale)
+                if stack.spec(i).type != ty.TYPE_SEGMENTATION:
+                    if self.var_darken_deselected.get():
+                        # Darken deselected and untracked cells
+                        if seg_img is None:
+                            seg_img = render_segmentation(stack, frame,
+                                    rois=False, binary=True)
+                            seg_img = ms.MetaStack.scale_img(seg_img, scale=scale)
+                        bkgd = img[seg_img < .5].mean()
+                        img = seg_img * (const.DESELECTED_DARKEN_FACTOR * img \
+                                + (1 - const.DESELECTED_DARKEN_FACTOR) * bkgd) \
+                              + (1 - seg_img) * img
+                    img_min, img_max = img.min(), img.max()
+                    img = ((img - img_min) * (255 / (img_max - img_min)))
+                imgs.append(img)
+            if len(imgs) > 1:
+                img = np.mean(imgs, axis=0)
+            else:
+                img = imgs[0]
+            img_min, img_max = img.min(), img.max()
+            img = ((img - img_min) * (255 / (img_max - img_min))).astype(np.uint8)
+
+            return img
+        return render_display
+
+    def update_traces(self):
+        self._update_traces_display_buttons()
+        self.plot_traces()
+
+    def _update_traces_display_buttons(self):
+        """Redraw buttons for selecting which quantities to plot"""
+        self.plotsellbl.config(state=tk.NORMAL)
+        for child in self.plotselframe.winfo_children():
+            child.pack_forget()
+        for name, info in sorted(self.session.trace_info.items(), key=lambda x: x[1]['order']):
+            if info['button'] is None:
+                if info['label']:
+                    btn_txt = f"{name}\n{info['label']}"
+                else:
+                    btn_txt = name
+                info['button'] = tk.Checkbutton(self.plotselframe, text=btn_txt,
+                        justify=tk.LEFT, indicatoron=False,
+                        command=lambda btn=name: self._update_traces_display(button=btn))
+                info['var'] = tk.BooleanVar(info['button'], value=info['plot'])
+                info['button'].config(variable=info['var'])
+            info['button'].pack(anchor=tk.S, expand=True, fill=tk.X, padx=10, pady=5)
+
+    def _update_traces_display(self, button=None):
+        """Update plot after changing quantities to plot"""
+        if button is not None:
+            info = self.session.trace_info[button]
+            info['plot'] = info['var'].get()
+        else:
+            for info in self.session.trace_info.values():
+                info['var'].set(info['plot'])
+        if not any(info['plot'] for info in self.session.trace_info.values()):
+            if button is not None:
+                info = self.session.trace_info[button]
+                info['plot'] ^= True
+                info['var'].set(info['plot'])
+            else:
+                for info in self.session.trace_info.values():
+                    info['plot'] = True
+                    info['var'].get(True)
+        self.plot_traces()
+
+    def plot_traces(self):
+        """Plots the traces to the main window"""
+        self.frame_indicators.clear()
+        self.fig.clear()
+        self.session.plot_traces(self.fig, is_interactive=True, frame_indicator_list=self.frame_indicators)
+        self._update_frame_indicator(draw=False)
+        self.fig.tight_layout(pad=.3)
+        self.fig.canvas.draw()
+
+    def _update_frame_indicator(self, *_, t=None, fr=None, draw=True):
+        """Update display of vertical frame indicator in plot"""
+        if self.var_show_frame_indicator.get():
+            if t is None:
+                if fr is None:
+                    fr = self.stackviewer.i_frame
+                t = self.session.to_hours(fr)
+        else:
+            t = np.NaN
+        for indicator in self.frame_indicators:
+            indicator.set_xdata([t, t])
+        if draw:
+            self.fig.canvas.draw()
+
+    def _line_picker(self, event):
+        """Callback for clicking on line in plot"""
+        if not event.mouseevent.button == MouseButton.LEFT:
+            return
+        i = event.artist.get_label()
+        self.highlight_trace(i)
+        self.update_highlight()
+
+    def highlight_trace(self, *trace, val=None, update_select=False):
+        """Change highlight state of one or more traces.
+
+        `trace` must be valid keys to `self.session.traces`.
+        `val` specifies whether to highlight (True) the
+        traces or not (False) or to toggle (None) highlighting.
+        If `update_select` is True, a non-selected cell is
+        selected before highlighting it; else, highlighting
+        is ignored.
+
+        This method does not update display.
+        To update display, call `self.update_highlight`.
+
+        If `update_select` is True, a return value of True
+        indicates that a cell selection has changed. In this case,
+        the user is responsible to call `self.update_selection`.
+        """
+        is_selection_updated = False
+        if len(trace) > 1:
+            for tr in trace:
+                ret = self.highlight_trace(tr, val=val, update_select=update_select)
+                if update_select and ret:
+                    is_selection_updated = True
+            return is_selection_updated
+        else:
+            trace = trace[0]
+        tr = self.session.traces[trace]
+        if val is None:
+            val = not tr['highlight']
+        elif val == tr['highlight']:
+            return
+        if not tr['select'] and val and update_select:
+            self.select_trace(trace, val=True)
+            is_selection_updated = True
+        tr['highlight'] = val
+        if val:
+            if tr['select']:
+                for plots in tr['plot'].values():
+                    for plot in plots:
+                        plot.set_color(PLOT_COLOR_HIGHLIGHT)
+                        plot.set_lw(PLOT_WIDTH_HIGHLIGHT)
+                        plot.set_alpha(PLOT_ALPHA_HIGHLIGHT)
+                for fr, roi in enumerate(tr['roi']):
+                    self.session.rois[fr][roi].stroke_width = ROI_WIDTH_HIGHLIGHT
+                    self.session.rois[fr][roi].color = ROI_COLOR_HIGHLIGHT
+            else:
+                for fr, roi in enumerate(tr['roi']):
+                    self.session.rois[fr][roi].stroke_width = ROI_WIDTH_HIGHLIGHT
+                    self.session.rois[fr][roi].color = ROI_COLOR_DESELECTED
+        else:
+            if tr['select']:
+                for plots in tr['plot'].values():
+                    for plot in plots:
+                        plot.set_color(PLOT_COLOR)
+                        plot.set_lw(PLOT_WIDTH)
+                        plot.set_alpha(PLOT_ALPHA)
+            for fr, roi in enumerate(tr['roi']):
+                self.session.rois[fr][roi].stroke_width = ROI_WIDTH
+                if tr['select']:
+                    self.session.rois[fr][roi].color = ROI_COLOR_SELECTED
+                else:
+                    self.session.rois[fr][roi].color = ROI_COLOR_DESELECTED
+        return is_selection_updated
+
+    def select_trace(self, *trace, val=None, update_highlight=False):
+        """Change selection state of one or more traces.
+
+        `trace` must be valid keys to `self.traces`.
+        `val` specifies whether to select (True),
+        deselect (False) or toggle (None) the selection.
+        `update_highlight` specifies whether to remove
+        highlighting (True) when a cell is deselected.
+
+        This method does not update display.
+        To update display, call `self.update_selection`.
+        """
+        if len(trace) > 1:
+            for tr in trace:
+                self.select_trace(tr, val=val)
+            return
+        else:
+            trace = trace[0]
+        tr = self.session.traces[trace]
+        if val is None:
+            val = not tr['select']
+        elif val == tr['select']:
+            return
+        tr['select'] = val
+        if val:
+            roi_color = const.ROI_COLOR_HIGHLIGHT if tr['highlight'] else const.ROI_COLOR_SELECTED
+            for fr, roi in enumerate(tr['roi']):
+                self.session.rois[fr][roi].color = roi_color
+        else:
+            if update_highlight:
+                self.highlight_trace(trace, val=False)
+            for fr, roi in enumerate(tr['roi']):
+                self.session.rois[fr][roi].color = const.ROI_COLOR_DESELECTED
+
+    def update_highlight(self):
+        """Redraw relevant display portions after highlight changes.
+
+        Note: All tasks performed by `update_highlight` are also
+        included in `update_selection`. Running both methods at
+        the same time is not necessary.
+        """
+        self.fig.canvas.draw()
+        self.display_stack._listeners.notify('roi')
+
+    def update_selection(self):
+        """Read traces after selection changes and update display"""
+        #self.read_traces() #TODO: read all traces at once
+        self.plot_traces()
+        self.display_stack._listeners.notify('roi')
+        if self.var_darken_deselected.get():
+            self.display_stack._listeners.notify('image')
+
+    def update_roi_display(self, notify_listeners=True):
+        """Update all ROIs.
+
+        This method updates all display properties of all ROIs.
+        """
+        # Update untracked cells
+        show_contour = self.var_show_untrackable.get() and self.var_show_roi_contours.get()
+        for frame in self.session.rois:
+            for roi in frame.values():
+                if roi.name:
+                    continue
+                roi.color = const.ROI_COLOR_UNTRACKABLE
+                roi.stroke_width = const.ROI_WIDTH
+                roi.visible = show_contour
+
+        # Update tracked cells
+        show_contour = self.var_show_roi_contours.get()
+        show_name = self.var_show_roi_names.get()
+        for trace in self.session.traces.values():
+            is_select = trace['select']
+            is_highlight = trace['highlight']
+            if not is_select:
+                color = const.ROI_COLOR_DESELECTED
+            elif is_highlight:
+                color = const.ROI_COLOR_HIGHLIGHT
+            else:
+                color = const.ROI_COLOR_SELECTED
+            if is_highlight:
+                width = const.ROI_WIDTH_HIGHLIGHT
+            else:
+                width = const.ROI_WIDTH
+            for ref, rois in zip(trace['roi'], self.session.rois):
+                roi = rois[ref]
+                roi.color = color
+                roi.visible = show_contour
+                roi.name_visible = show_name
+                roi.stroke_width = width
+        if notify_listeners:
+            self.display_stack._listeners.notify('roi')
+
+    def _roi_clicked(self, event, names):
+        """Callback for click on ROI"""
+        if not names:
+            return
+        is_selection_updated = False
+        mode = self.var_mode.get()
+        if event.state & EVENT_STATE_SHIFT:
+            if mode == MODE_HIGHLIGHT:
+                mode = MODE_SELECTION
+            elif mode == MODE_SELECTION:
+                mode = MODE_HIGHLIGHT
+        if mode == MODE_HIGHLIGHT:
+            for name in names:
+                try:
+                    is_selection_updated |= self.highlight_trace(name, update_select=True)
+                except KeyError:
+                    continue
+            self.update_highlight()
+        elif mode == MODE_SELECTION:
+            for name in names:
+                try:
+                    self.select_trace(name, update_highlight=True)
+                except KeyError:
+                    continue
+            is_selection_updated = True
+        if is_selection_updated:
+            self.update_selection()
+
+    def _update_show_roi_contours(self, *_):
+        """Update stackviewer after toggling ROI contour display"""
+        show_contours = self.var_show_roi_contours.get()
+        show_untrackable = show_contours and self.var_show_untrackable.get()
+        for rois in self.session.rois:
+            for roi in rois.values():
+                if roi.name:
+                    roi.visible = show_contours
+                else:
+                    roi.visible = show_untrackable
+        self.display_stack._listeners.notify('roi')
+
+    def _update_show_roi_names(self, *_):
+        """Update stackviewer after toggling ROI name display"""
+        show_names = self.var_show_roi_names.get()
+        if show_names:
+            show_untrackable = self.var_show_untrackable.get()
+        else:
+            show_untrackable = False
+        for rois in self.session.rois:
+            for roi in rois.values():
+                if roi.name:
+                    roi.name_visible = show_names
+                else:
+                    roi.name_visible = show_untrackable
+        self.display_stack._listeners.notify('roi')
+
+    def _update_show_untrackable(self, *_):
+        """Update stackviewer after toggling display of untrackable cells"""
+        show = self.var_show_untrackable.get() and self.var_show_roi_contours.get()
+        for rois in self.session.rois:
+            for roi in rois.values():
+                if not roi.name:
+                    roi.visible = show
+        self.display_stack._listeners.notify('roi')
+
+    def _change_microscope_resolution(self, *_):
+        """Callback for changing microscope resolution"""
+        mic_res = self.var_microscope_res.get()
+        if mic_res == MIC_RES_CUSTOM:
+            initval = {}
+            if MIC_RES[MIC_RES_CUSTOM] is not None:
+                initval = MIC_RES[MIC_RES_CUSTOM]
+            else:
+                initval = 1
+            res = tksd.askfloat(
+                    "Microscope resolution",
+                    "Enter custom microscope resolution [µm/px]:",
+                    minvalue=0, parent=self.root, initialvalue=initval)
+            self.session.set_microscope(resolution=res)
+        elif mic_res == MIC_RES_UNSPEC:
+            self.session.set_microscope()
+        else:
+            self.session.set_microscope(name=mic_res, resolution=MIC_RES[mic_res])
+
+        #TODO: wait for event from other thread
+        self.update_microscope_resolution()
+
+    def update_microscope_resolution(self, set_var=False):
+        """Display updates of microscope resolution.
+
+        Arguments:
+            set_var -- boolean whether to update `self.var_microscope_res
+        """
+        new_mic_name = self.session.mic_name
+        new_mic_res = self.session.mic_res
+
+        if new_mic_name is None or new_mic_res is None:
+            # use pixel as length unit
+            new_mic_name = MIC_RES_UNSPEC
+            new_mic_res = None
+        elif new_mic_name and new_mic_name not in MIC_RES:
+            # enter new_mic_name into MIC_RES
+            self.micresmenu.add_radiobutton(label=new_mic_name, value=new_mic_name, variable=self.var_microscope_res)
+        elif new_mic_name and MIC_RES[new_mic_name] != new_mic_res:
+            # name/value conflict with catalogue
+            new_mic_name = MIC_RES_CUSTOM
+        else:
+            # custom (unnamed) resolution
+            new_mic_name = MIC_RES_CUSTOM
+
+        # Update display for custom resolution
+        if new_mic_name == MIC_RES_CUSTOM:
+            MIC_RES[MIC_RES_CUSTOM] = new_mic_res
+            new_label = f"{MIC_RES_CUSTOM} ({new_mic_res} µm/px)"
+        else:
+            new_label = MIC_RES_CUSTOM
+        if new_label:
+            self.micresmenu.entryconfig(MIC_RES_CUSTOM_IDX, label=new_label)
+
+        # Apply changes
+        if set_var:
+            self.var_microscope_res.set(new_mic_name)
+        if self.session.trace_info[const.TYPE_AREA]['plot']:
+            self.plot_traces()
+
+
+#MIC_RES
+#MIC_RES_UNSPEC = "Unspecified (use [px])"
+
+
+    def _change_microscope_resolution_old(self, *_, name=None, val=None): #TODO delete this function
+        """Callback for changing microscope resolution"""
+        mic_res = self.var_microscope_res.get()
+        if mic_res == MIC_RES_CUSTOM and val is None and name is None:
+            self._custom_microscope_resolution()
+        if name is not None and name in MIC_RES and (val is None or MIC_RES[name] == val):
+            self.var_microscope_res.set(name)
+            return
+        elif val is not None:
+            self._custom_microscope_resolution(res=val)
+            res = val
+        else:
+            res = MIC_RES[mic_res]
+        if res is not None:
+            self.session.trace_info[const.TYPE_AREA]['unit'] = "µm²"
+            self.session.trace_info[const.TYPE_AREA]['factor'] = res**2
+        elif mic_res == MIC_RES_CUSTOM:
+            self.root.after_idle(self.var_microscope_res.set, MIC_RES_UNSPEC)
+            return
+        else:
+            self.session.trace_info[const.TYPE_AREA]['unit'] = "px²"
+            self.session.trace_info[const.TYPE_AREA]['factor'] = None
+        self.session.read_traces() #TODO migrate this into its own thread
+        if self.session.trace_info[const.TYPE_AREA]['plot']:
+            self.plot_traces()
+
+    def open_session(self):
+        """Open a saved session"""
+        #TODO move this (partially) to SessionModel
+        self.status.set("Opening session")
+        fn = tkfd.askopenfilename(title="Open session data",
+                                  initialdir='.',
+                                  parent=self.root,
+                                  filetypes=(("Session files", '*.zip *.json'), ("All files", '*')),
+                                 )
+        if fn is None:
+            return
+
+        sd = StackdataIO()
+        sd.load(fin=fn, progress_fcn=self.status_progress)
+
+        # Load microscope data
+        self._change_microscope_resolution(name=sd.microscope_name, val=sd.microscope_resolution)
+
+        # Load ROIs
+        self.rois = sd.rois
+
+        # Load traces
+        self.traces = {}
+        for trace in sd.traces:
+            name = trace['name']
+            self.traces[name] = {
+                    'name': name,
+                    'roi': trace['rois'],
+                    'select': trace['select'],
+                    'highlight': False,
+                    'val': {},
+                    'plot': {},
+                   }
+        self.update_roi_display(False)
+
+        # Load stack
+        chan_info = []
+        stack_paths = {}
+        for ch in sd.channels:
+            x = {}
+            if ch['file_directory'] is None or ch['file_name'] is None:
+                path = None
+                x['stack'] = None
+            else:
+                path = os.path.join(ch['file_directory'], ch['file_name'])
+                try:
+                    x['stack'] = stack_paths[path]
+                except KeyError:
+                    stack = Stack(path, progress_fcn=self.status_progress)
+                    stack_paths[path] = stack
+                    x['stack'] = stack
+            x['name'] = ch['name']
+            x['i_channel'] = ch['i_channel']
+            x['label'] = ch['label']
+            x['type'] = ch['type']
+            chan_info.append(x)
+        self.open_metastack(chan_info, do_track=False)
+
+    #def save(self):
+    #    """Save data to files"""
+    #    if not self.save_dir:
+    #        self._get_savedir()
 

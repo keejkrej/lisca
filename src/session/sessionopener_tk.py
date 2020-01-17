@@ -3,6 +3,7 @@ import tkinter.ttk as ttk
 import tkinter.filedialog as tkfd
 
 from . import const
+from .status import DummyStatus
 from .events import Event
 from ..stack import Stack
 from ..stack import metastack as ms
@@ -25,7 +26,7 @@ class SessionOpener:
     # In [5]: root = tk.Tk(); SessionOpener(root); root.mainloop()
     # Repeat In [5] for each test run
 
-    def __init__(self, root, control_queue, status):
+    def __init__(self, root, control_queue, status=None):
         self.root = root
         self.frame = tk.Toplevel(self.root)
         self.frame.title("Select stacks and channels")
@@ -36,8 +37,11 @@ class SessionOpener:
         self.channels = []
         #self.callback = callback #TODO: delete
         #self.progress_fcn = progress_fcn #TODO: delete
+        if status is None:
+            self.status = DummyStatus()
+        else:
+            self.status = status
         self.control_queue = control_queue
-        self.status = status
         self.active = True
         self.session_id = None
         self.cmd_map = {
@@ -159,7 +163,7 @@ class SessionOpener:
     def open_stack(self):
         """Open a new stack"""
         fn = tkfd.askopenfilename(title="Open stack",
-                                  parent=self.root,
+                                  parent=self.frame,
                                   initialdir='res',
                                   filetypes=(
                                         ("Stack", '*.tif *.tiff *.npy *.npz *.h5'),

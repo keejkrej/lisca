@@ -1,10 +1,18 @@
 import os
 import threading
 
+import matplotlib as mpl
+mpl.rcParams['pdf.fonttype'] = 42 # Edit plots with Illustrator
+from matplotlib.figure import Figure
+from matplotlib.ticker import StrMethodFormatter
+import numpy as np
+import pandas as pd
+
 from . import const
 from .events import Event
 from .status import DummyStatus
 
+from ..io import StackdataIO
 from ..roi import ContourRoi
 from ..stack import Stack
 from ..stack import metastack as ms
@@ -93,8 +101,6 @@ class SessionModel:
     """
     def __init__(self):
         self.lock = threading.RLock()
-        self.channel_selection = []
-        self.channel_order = []
         self.traces = {}
         self.trace_info = {}
         self.rois = []
@@ -109,6 +115,9 @@ class SessionModel:
         self.show_untrackable = False
         self.show_name = True
 
+        self.frames_per_hour = 6
+        self._microscope_name = None
+        self._microscope_resolution = None
 
     def init_trace_info(self):
         self.trace_info = {const.TYPE_AREA: dict(label=None,
@@ -129,12 +138,14 @@ class SessionModel:
                 del self.trace_info[k]
 
     def open_stack(self, fn, status=None):
+        if status is None:
+            status = DummyStatus()
         stack_props = {}
         if fn.endswith('h5'):
             stack_props['channels'] = 0
         print("SessionModel.open_stack: TODO: show dynamic status message") #DEBUG
         stack_id = Event.now()
-        stack = Stack(fn, progress_fcn=None, **stack_props)
+        stack = Stack(fn, progress_fcn=status.set, **stack_props)
         stack_dir, stack_name = os.path.split(fn)
         n_channels = stack.n_channels
         with self.lock:
@@ -148,7 +159,7 @@ class SessionModel:
     def close_stacks(self, *stack_ids, keep_open=()):
         """Close all stacks held only by this SessionModel"""
         if not stack_ids:
-            stack_ids = self.stacks.keys()
+            stack_ids = list(self.stacks.keys())
         for sid in stack_ids:
             try:
                 stack = self.stacks[sid]
@@ -196,7 +207,7 @@ class SessionModel:
             except KeyError:
                 return None
 
-    def config(self, chan_info, status=None, do_track=True):
+    def config(self, chan_info, render_factory, status=None, do_track=True):
         """Configure the session for display.
 
         'chan_info' is a list holding dictionaries with these fields, defining the channels to be displayed:
@@ -206,6 +217,7 @@ class SessionModel:
             i_channel -- int, index of stack to be used
             label -- str, optional user-defined description
             type -- str, stack type (phasecontrast, fluorescence, binary)
+        'render_factory' is a factory function for the display_stack rendering function
         'status' is a Status instance for updating the status display.
         'do_track' is a flag whether to perform tracking or not.
 
@@ -315,10 +327,57 @@ class SessionModel:
 
             if not meta.check_properties():
                 meta.set_properties(n_frames=n_frames_seg, width=width_seg, height=height_seg)
-            #self.load_metastack(meta) #TODO: task of SessionViewer_Tk
+
+            # Set meta_stack and display_stack
+            self.stack = meta
+            self.display_stack = ms.MetaStack()
+            self.display_stack.set_properties(n_frames=meta.n_frames,
+                                              width=meta.width,
+                                              height=meta.height,
+                                              mode=8,
+                                             )
+            if self.rois:
+                for fr, rois in enumerate(self.rois):
+                    self.display_stack.set_rois(list(rois.values()), frame=fr)
+            self.display_stack.add_channel(fun=render_factory(self.stack, self.render_segmentation), scales=True)
+
+            # Read traces
             self.read_traces()
-            self._update_traces_display_buttons()
-            self.plot_traces()
+
+    def render_segmentation(self, meta, frame, scale=None, rois=None, binary=False):
+        """Dynamically draw segmentation image from ROIs
+
+        This method is to be called by `MetaStack.get_image`.
+
+        Arguments:
+            meta -- the calling `MetaStack` instance; ignored
+            frame -- the index of the selected frame
+            scale -- scaling information; ignored
+            rois -- iterable of ROIs to show; if None, show all ROIs in frame
+            binary -- if True, returned array is boolean, else uint8
+        """
+        img = np.zeros((meta.height, meta.width), dtype=(np.bool if binary else np.uint8))
+        if rois is None:
+            if self.rois is None:
+                print("SessionModel.render_segmentation: trying to read non-existent ROIs") #DEBUG
+                return img
+            rois = self.rois[frame].values()
+        elif rois is False:
+            rois = self.deselected_rois(frame)
+        for roi in rois:
+            img[roi.rows, roi.cols] = 255
+        return img
+
+    def deselected_rois(self, frame):
+        """Get an iterable of all non-selected ROIs in given frame"""
+        if self.rois is None:
+            return ()
+        #DEBUG
+        if frame >= len(self.rois):
+            print(f"SessionModel.deselected_rois: len(self.rois)={len(self.rois)}; frame={frame}")
+
+        return (roi for roi in self.rois[frame].values()
+                if roi.color not in (const.ROI_COLOR_SELECTED, const.ROI_COLOR_HIGHLIGHT))
 
     def track_stack(self, s, channel=0, status=None):
         """Perform tracking of a given stack"""
@@ -337,7 +396,7 @@ class SessionModel:
             for fr, props in tracker.props.items():
                 self.rois.append({l: ContourRoi(regionprop=p,
                                                 label=l,
-                                                color=ROI_COLOR_UNTRACKABLE,
+                                                color=const.ROI_COLOR_UNTRACKABLE,
                                                 visible=self.show_untrackable,
                                                 name_visible=False,
                                                 frame=fr,
@@ -354,7 +413,7 @@ class SessionModel:
                 for fr, j in enumerate(trace):
                     roi = self.rois[fr][j]
                     roi.name = name
-                    roi.color = ROI_COLOR_SELECTED if is_selected else ROI_COLOR_DESELECTED
+                    roi.color = const.ROI_COLOR_SELECTED if is_selected else const.ROI_COLOR_DESELECTED
                     roi.visible = bool(roi.name) and self.show_contour
                     roi.name_visible = self.show_name
 
@@ -362,6 +421,8 @@ class SessionModel:
         """Read out cell traces"""
         if not self.traces:
             return
+        if status is None:
+            status = DummyStatus()
 
         with self.lock, status.set("Reading traces"):
             n_frames = self.stack.n_frames
@@ -377,7 +438,7 @@ class SessionModel:
             fl_chans.sort(key=lambda ch: self.trace_info[ch['name']]['order'])
 
             # Get microscope resolution (=area conversion factor)
-            area_factor = self.trace_info[TYPE_AREA]['factor']
+            area_factor = self.trace_info[const.TYPE_AREA]['factor']
 
             # Read traces
             for tr in self.traces.values():
@@ -389,7 +450,7 @@ class SessionModel:
                     val_area[fr] = self.rois[fr][i].area
                 if area_factor is not None:
                     val_area *= area_factor
-                tr['val'][TYPE_AREA] = val_area
+                tr['val'][const.TYPE_AREA] = val_area
 
                 # Fluorescence
                 for ch in fl_chans:
@@ -403,3 +464,180 @@ class SessionModel:
                     roi = self.rois[fr][tr['roi'][fr]]
                     for ch in fl_chans:
                         tr['val'][ch['name']][fr] = np.sum(ch['img'][roi.rows, roi.cols])
+
+    def add_trace_info(self, name, label=None, channel=None, unit="a.u.",
+            factor=None, type_=None, order=None, plot=False, quantity=None):
+        """Add information about a new category of traces"""
+        self.trace_info[name] = {'label': label,
+                                 'channel': channel,
+                                 'unit': unit,
+                                 'factor': factor,
+                                 'type': type_,
+                                 'order': order,
+                                 'button': None,
+                                 'var': None,
+                                 'plot': plot,
+                                 'quantity': quantity if quantity is not None else type_,
+                                }
+
+    def traces_sorted(self, fr):
+        """Return a list of traces sorted by position
+
+        fr -- the frame number
+        """
+        rois = self.rois[fr]
+        traces_pos = {}
+        for name, tr in self.traces.items():
+            roi = rois[tr['roi'][fr]]
+            traces_pos[name] = (roi.y_min, roi.x_min)
+        return sorted(traces_pos.keys(), key=lambda name: traces_pos[name])
+
+    def traces_as_dataframes(self):
+        """Return a dict of DataFrames of the traces"""
+        t = self.to_hours(np.array(range(self.stack.n_frames)))
+        time_vec = pd.DataFrame(t, columns=("Time [h]",))
+        df_dict = {}
+        for name, tr in self.traces.items():
+            if not tr['select']:
+                continue
+            for qty, data in tr['val'].items():
+                try:
+                    df_dict[qty][name] = data
+                except KeyError:
+                    df_dict[qty] = time_vec.copy()
+                    df_dict[qty][name] = data
+        return df_dict
+
+    def plot_traces(self, fig, is_interactive=False, frame_indicator_list=None):
+        """Plots the traces.
+
+        fig -- the Figure instance to plot to
+        is_interactive -- special formatting for interactive plot
+        frame_indicator_list -- list to which to add frame indicators
+        """
+        if not self.traces:
+            return
+
+        # Find data to be plotted and plotting order
+        plot_list = []
+        for name, info in self.trace_info.items():
+            if info['plot']:
+                plot_list.append(name)
+        plot_list.sort(key=lambda name: self.trace_info[name]['order'])
+
+        t_vec = self.to_hours(np.array(range(self.display_stack.n_frames)))
+        axes = fig.subplots(len(plot_list), squeeze=False, sharex=True)[:,0]
+        for qty, ax in zip(plot_list, axes):
+            ax.set_xmargin(.003)
+            ax.yaxis.set_major_formatter(StrMethodFormatter('{x:.4g}'))
+            for name, tr in self.traces.items():
+                if not tr['select']:
+                    continue
+                if tr['highlight']:
+                    lw, alpha, color = const.PLOT_WIDTH_HIGHLIGHT, const.PLOT_ALPHA_HIGHLIGHT, const.PLOT_COLOR_HIGHLIGHT
+                else:
+                    lw, alpha, color = const.PLOT_WIDTH, const.PLOT_ALPHA, const.PLOT_COLOR
+                l = ax.plot(t_vec, tr['val'][qty],
+                        color=color, alpha=alpha, lw=lw, label=name,
+                        picker=(3 if is_interactive else None))
+                if is_interactive:
+                    tr['plot'][qty] = l
+
+            xlbl = "Time [h]"
+            ax.set_ylabel("{quantity} [{unit}]".format(**self.trace_info[qty]))
+            ax.set_title(qty, fontweight='bold')
+
+            if is_interactive:
+                if frame_indicator_list is not None:
+                    frame_indicator_list.append(ax.axvline(np.NaN, lw=1.5, color='r'))
+            else:
+                ax.xaxis.set_tick_params(labelbottom=True)
+            if ax.is_last_row():
+                ax.set_xlabel(xlbl)
+
+    def to_hours(self, x):
+        """Convert 0-based frame number to hours"""
+        try:
+            with self.lock:
+                return x / self.frames_per_hour
+        except Exception:
+            return np.NaN
+
+    @property
+    def mic_name(self):
+        with self.lock:
+            return self._microscope_name
+
+    @property
+    def mic_res(self):
+        with self.lock:
+            return self._microscope_resolution
+
+    def set_microscope(self, name=None, resolution=None):
+        """Set a microscope
+
+        Arguments:
+            name -- str, human-readable microscope/objective name
+            resolution -- float, image resolution in [µm/px]
+        """
+        if not resolution:
+            name = None
+            resolution = None
+        elif not name:
+            name = None
+        elif resolution <= 0:
+            raise ValueError(f"Illegal microscope settings: '{name}' with {resolution} µm/px")
+        with self.lock:
+            self._microscope_name = name
+            self._microscope_resolution = resolution
+
+            if resolution is not None:
+                self.trace_info[const.TYPE_AREA]['unit'] = "µm²"
+                self.trace_info[const.TYPE_AREA]['factor'] = resolution**2
+            else:
+                self.trace_info[const.TYPE_AREA]['unit'] = "px²"
+                self.trace_info[const.TYPE_AREA]['factor'] = None
+            self.read_traces() #TODO migrate this into its own thread
+
+    def save_session(self, save_dir):
+        """Save the session.
+
+        Arguments:
+            save_dir -- str indicating path of directory to which to save
+        """
+        print(f"Saving session to {save_dir}") #DEBUG
+        # Plot the data
+        fig = Figure(figsize=(9,7))
+        self.plot_traces(fig)
+        fig.savefig(os.path.join(save_dir, "Figure.pdf"))
+
+        # Save data to Excel file
+        df_dict = self.traces_as_dataframes()
+        with pd.ExcelWriter(os.path.join(save_dir, "Data.xlsx"), engine='xlsxwriter') as writer:
+            for name, df in df_dict.items():
+                df.to_excel(writer, sheet_name=name, index=False)
+            writer.save()
+
+        # Save data to CSV file
+        for name, df in df_dict.items():
+            df.to_csv(os.path.join(save_dir, f"{name}.csv"), header=False, index=False, float_format='%.5f')
+
+        # Export ROIs to JSON file
+        sd = StackdataIO(traces=self.traces, rois=self.rois)
+        sd.n_frames = self.stack.n_frames
+        mic_res = self.var_microscope_res.get()
+        sd.mircoscope_name = mic_res
+        sd.microscope_resolution = MIC_RES[mic_res]
+        for i, ch in enumerate(self.stack.channels):
+            if ch.isVirtual:
+                path = None
+            else:
+                path = self.stack.stack(ch.name).path
+            i_channel = ch.channel
+            type_ = ch.type
+            name = ch.name
+            label = ch.label
+            sd.add_channel(path, type_, i_channel, name, label)
+        sd.dump(os.path.join(save_dir, "session.zip"))
+
+        print(f"Data have been written to '{self.save_dir}'") #DEBUG()
