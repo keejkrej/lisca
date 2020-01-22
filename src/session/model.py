@@ -370,11 +370,8 @@ class SessionModel:
 
     def deselected_rois(self, frame):
         """Get an iterable of all non-selected ROIs in given frame"""
-        if self.rois is None:
+        if not self.rois:
             return ()
-        #DEBUG
-        if frame >= len(self.rois):
-            print(f"SessionModel.deselected_rois: len(self.rois)={len(self.rois)}; frame={frame}")
 
         return (roi for roi in self.rois[frame].values()
                 if roi.color not in (const.ROI_COLOR_SELECTED, const.ROI_COLOR_HIGHLIGHT))
@@ -599,6 +596,8 @@ class SessionModel:
                 self.trace_info[const.TYPE_AREA]['factor'] = None
             self.read_traces() #TODO migrate this into its own thread
 
+        print(f"SessionModel.set_microscope: mic_name={self.mic_name}, mic_res={self.mic_res}") #DEBUG
+
     def save_session(self, save_dir):
         """Save the session.
 
@@ -625,9 +624,8 @@ class SessionModel:
         # Export ROIs to JSON file
         sd = StackdataIO(traces=self.traces, rois=self.rois)
         sd.n_frames = self.stack.n_frames
-        mic_res = self.var_microscope_res.get()
-        sd.mircoscope_name = mic_res
-        sd.microscope_resolution = MIC_RES[mic_res]
+        sd.microscope_name = self.mic_name
+        sd.microscope_resolution = self.mic_res
         for i, ch in enumerate(self.stack.channels):
             if ch.isVirtual:
                 path = None
@@ -638,6 +636,6 @@ class SessionModel:
             name = ch.name
             label = ch.label
             sd.add_channel(path, type_, i_channel, name, label)
-        sd.dump(os.path.join(save_dir, "session.zip"))
+        sd.dump(save_dir, "session.zip")
 
-        print(f"Data have been written to '{self.save_dir}'") #DEBUG()
+        print(f"Data have been written to '{save_dir}'") #DEBUG()

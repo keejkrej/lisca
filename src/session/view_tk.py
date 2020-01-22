@@ -712,29 +712,29 @@ class SessionView_Tk(SessionView):
             if tr['select']:
                 for plots in tr['plot'].values():
                     for plot in plots:
-                        plot.set_color(PLOT_COLOR_HIGHLIGHT)
-                        plot.set_lw(PLOT_WIDTH_HIGHLIGHT)
-                        plot.set_alpha(PLOT_ALPHA_HIGHLIGHT)
+                        plot.set_color(const.PLOT_COLOR_HIGHLIGHT)
+                        plot.set_lw(const.PLOT_WIDTH_HIGHLIGHT)
+                        plot.set_alpha(const.PLOT_ALPHA_HIGHLIGHT)
                 for fr, roi in enumerate(tr['roi']):
-                    self.session.rois[fr][roi].stroke_width = ROI_WIDTH_HIGHLIGHT
-                    self.session.rois[fr][roi].color = ROI_COLOR_HIGHLIGHT
+                    self.session.rois[fr][roi].stroke_width = const.ROI_WIDTH_HIGHLIGHT
+                    self.session.rois[fr][roi].color = const.ROI_COLOR_HIGHLIGHT
             else:
                 for fr, roi in enumerate(tr['roi']):
-                    self.session.rois[fr][roi].stroke_width = ROI_WIDTH_HIGHLIGHT
-                    self.session.rois[fr][roi].color = ROI_COLOR_DESELECTED
+                    self.session.rois[fr][roi].stroke_width = const.ROI_WIDTH_HIGHLIGHT
+                    self.session.rois[fr][roi].color = const.ROI_COLOR_DESELECTED
         else:
             if tr['select']:
                 for plots in tr['plot'].values():
                     for plot in plots:
-                        plot.set_color(PLOT_COLOR)
-                        plot.set_lw(PLOT_WIDTH)
-                        plot.set_alpha(PLOT_ALPHA)
+                        plot.set_color(const.PLOT_COLOR)
+                        plot.set_lw(const.PLOT_WIDTH)
+                        plot.set_alpha(const.PLOT_ALPHA)
             for fr, roi in enumerate(tr['roi']):
-                self.session.rois[fr][roi].stroke_width = ROI_WIDTH
+                self.session.rois[fr][roi].stroke_width = const.ROI_WIDTH
                 if tr['select']:
-                    self.session.rois[fr][roi].color = ROI_COLOR_SELECTED
+                    self.session.rois[fr][roi].color = const.ROI_COLOR_SELECTED
                 else:
-                    self.session.rois[fr][roi].color = ROI_COLOR_DESELECTED
+                    self.session.rois[fr][roi].color = const.ROI_COLOR_DESELECTED
         return is_selection_updated
 
     def select_trace(self, *trace, val=None, update_highlight=False):
@@ -919,7 +919,7 @@ class SessionView_Tk(SessionView):
         """Display updates of microscope resolution.
 
         Arguments:
-            set_var -- boolean whether to update `self.var_microscope_res
+            set_var -- boolean whether to update `self.var_microscope_res`
         """
         new_mic_name = self.session.mic_name
         new_mic_res = self.session.mic_res
@@ -950,37 +950,6 @@ class SessionView_Tk(SessionView):
         # Apply changes
         if set_var:
             self.var_microscope_res.set(new_mic_name)
-        if self.session.trace_info[const.TYPE_AREA]['plot']:
-            self.plot_traces()
-
-
-#MIC_RES
-#MIC_RES_UNSPEC = "Unspecified (use [px])"
-
-
-    def _change_microscope_resolution_old(self, *_, name=None, val=None): #TODO delete this function
-        """Callback for changing microscope resolution"""
-        mic_res = self.var_microscope_res.get()
-        if mic_res == MIC_RES_CUSTOM and val is None and name is None:
-            self._custom_microscope_resolution()
-        if name is not None and name in MIC_RES and (val is None or MIC_RES[name] == val):
-            self.var_microscope_res.set(name)
-            return
-        elif val is not None:
-            self._custom_microscope_resolution(res=val)
-            res = val
-        else:
-            res = MIC_RES[mic_res]
-        if res is not None:
-            self.session.trace_info[const.TYPE_AREA]['unit'] = "µm²"
-            self.session.trace_info[const.TYPE_AREA]['factor'] = res**2
-        elif mic_res == MIC_RES_CUSTOM:
-            self.root.after_idle(self.var_microscope_res.set, MIC_RES_UNSPEC)
-            return
-        else:
-            self.session.trace_info[const.TYPE_AREA]['unit'] = "px²"
-            self.session.trace_info[const.TYPE_AREA]['factor'] = None
-        self.session.read_traces() #TODO migrate this into its own thread
         if self.session.trace_info[const.TYPE_AREA]['plot']:
             self.plot_traces()
 

@@ -153,7 +153,7 @@ class StackdataIO:
                             'rois': rois, # list of `n_frames` roi labels
                            })
 
-    def dump(self, out=None):
+    def dump(self, *out):
         """Write the stack data to JSON.
 
         If `out` is a str or file-like object, the session data and ROIs are written there.
@@ -200,13 +200,13 @@ class StackdataIO:
         json_args = {'indent': '\t'}
 
         # Write data to ZIP file
-        if out is None:
+        if not out:
             return roi_dict, json.dumps(data, **json_args)
         with ExitStack() as es:
-            if isinstance(out, str):
-                zf = es.enter_context(zipfile.ZipFile(out, 'w', compression=zipfile.ZIP_DEFLATED))
+            if len(out) > 1 or isinstance(out[0], str):
+                zf = es.enter_context(zipfile.ZipFile(os.path.join(*out), 'w', compression=zipfile.ZIP_DEFLATED))
             else:
-                zf = out
+                zf = out.pop()
             Roi.write_multi(zf, roi_dict.values())
             with io.TextIOWrapper(
                     es.enter_context(zf.open(ZIP_JSON_NAME, 'w')),
