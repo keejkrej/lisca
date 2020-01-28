@@ -97,7 +97,7 @@ class Status:
                 msg = StatusMessage("")
             for k, v in self.viewers.items():
                 try:
-                    Event.fire(v.queue, v.cmd, kwargs=msg.asdict)
+                    Event.fire(v.queue, v.cmd, **msg.asdict)
                 except Exception:
                     del self.viewers[k]
 

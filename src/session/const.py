@@ -17,7 +17,9 @@ DESELECTED_DARKEN_FACTOR = .3
 TYPE_AREA = 'Area'
 
 CMD_INIT_SESSION = 'cmd_init_session'
+CMD_READ_SESSION_FROM_DISK = 'cmd_read_session_from_disk'
 CMD_CONFIG_SESSION = 'cmd_config_session'
+CMD_SET_MICROSCOPE = 'cmd_set_microscope'
 CMD_SET_SESSION = 'cmd_set_session'
 CMD_DISCARD_SESSION = 'cmd_discard_session'
 CMD_NEW_STACK = 'cmd_new_stack'

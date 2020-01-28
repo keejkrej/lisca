@@ -26,7 +26,7 @@ class Event:
     This class is not thread-safe. Once fed into a queue, it should not be
     modified by the producer anymore.
     """
-    def __init__(self, cmd, *args, kwargs=None, response_queue=None):
+    def __init__(self, cmd, *args, **kwargs):
         self.time = self.now()
         if callable(cmd):
             self.cmd = None
@@ -44,7 +44,6 @@ class Event:
             self.kwargs = {}
         else:
             self.kwargs = kwargs
-        self.response_queue = response_queue
         self.called = None
 
     def __call__(self, fun=None, not_after=None):
@@ -63,7 +62,7 @@ class Event:
         return time.perf_counter_ns()
 
     @classmethod
-    def fire(cls, queue, cmd, *args, kwargs=None, response_queue=None):
+    def fire(cls, queue, cmd, *args, **kwargs):
         """Fire an event into a queue.
 
         Arguments:
@@ -71,6 +70,5 @@ class Event:
             cmd -- command; will be passed to the constructor
             args -- arguments; will be passed to the constructor
             kwargs -- dict of keyword arguments; will be passed to the constructor
-            response_queue -- queue to which to send the response
         """
-        queue.put_nowait(cls(cmd, *args, kwargs=kwargs, response_queue=None))
+        queue.put_nowait(cls(cmd, *args, **kwargs))

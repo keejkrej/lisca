@@ -145,7 +145,10 @@ class SessionView_Tk(SessionView):
         self.micresmenu = tk.Menu(settmenu)
         settmenu.add_cascade(label="Microscope resolution", menu=self.micresmenu)
         for mic_opt in MIC_RES.keys():
-            self.micresmenu.add_radiobutton(label=mic_opt, value=mic_opt, variable=self.var_microscope_res)
+            self._add_to_microscope_menu(mic_opt)
+            #self.micresmenu.add_radiobutton(label=mic_opt, value=mic_opt,
+            #        variable=self.var_microscope_res,
+            #        command=lambda mo=mic_opt: self._change_microscope_resolution(mo))
         MIC_RES[MIC_RES_UNSPEC] = None
         MIC_RES[MIC_RES_CUSTOM] = None
         self.micresmenu.insert(MIC_RES_UNSPEC_IDX,
@@ -153,12 +156,14 @@ class SessionView_Tk(SessionView):
                           label=MIC_RES_UNSPEC,
                           value=MIC_RES_UNSPEC,
                           variable=self.var_microscope_res,
+                          command=lambda mo=MIC_RES_UNSPEC: self._change_microscope_resolution(mo)
                          )
         self.micresmenu.insert(MIC_RES_CUSTOM_IDX,
                           'radiobutton',
                           label=MIC_RES_CUSTOM,
                           value=MIC_RES_CUSTOM,
                           variable=self.var_microscope_res,
+                          command=lambda mo=MIC_RES_CUSTOM: self._change_microscope_resolution(mo)
                          )
 
         helpmenu = tk.Menu(menubar)
@@ -207,7 +212,7 @@ class SessionView_Tk(SessionView):
         self.var_show_roi_contours.trace_add('write', self._update_show_roi_contours)
         self.var_show_roi_names.trace_add('write', self._update_show_roi_names)
         self.var_show_untrackable.trace_add('write', self._update_show_untrackable)
-        self.var_microscope_res.trace_add('write', self._change_microscope_resolution)
+        #self.var_microscope_res.trace_add('write', self._change_microscope_resolution)
 
         self.stackframe.bind('<Configure>', self._stacksize_changed)
         self.stackviewer.register_roi_click(self._roi_clicked)
@@ -225,7 +230,7 @@ class SessionView_Tk(SessionView):
                 if len(keysym) > 1:
                     keysym = f"<{keysym}>"
                 try:
-                    self.root.bind_all(keysym, callback)
+                    self.root.bind(keysym, callback)
                 except Exception:
                     print(f"Failed to register keysym '{keysym}'")
 
@@ -364,10 +369,8 @@ class SessionView_Tk(SessionView):
 
             # Initial channel selection and display
             self._change_channel_selection()
+            self.update_roi_display(notify_listeners=False)
             self.stackviewer.set_stack(display_stack, wait=False)
-
-    def open_session(self):
-        print("SessionView_Tk.open_session") #DEBUG
 
     def save(self):
         """Save data to files""" #TODO
@@ -603,6 +606,7 @@ class SessionView_Tk(SessionView):
 
     def update_traces(self):
         self._update_traces_display_buttons()
+        self._update_microscope_resolution()
         self.plot_traces()
 
     def _update_traces_display_buttons(self):
@@ -893,9 +897,28 @@ class SessionView_Tk(SessionView):
                     roi.visible = show
         self.display_stack._listeners.notify('roi')
 
-    def _change_microscope_resolution(self, *_):
-        """Callback for changing microscope resolution"""
-        mic_res = self.var_microscope_res.get()
+    def _add_to_microscope_menu(self, value, label=None):
+        """Adds a radiobutton to the microscope menu.
+
+        Arguments:
+            value -- the key to the `MIC_RES` dict
+            label -- display name; if missing, equals `value`
+
+        The radiobutton is inserted at the end of the menu.
+        """
+        if label is None:
+            label = value
+        self.micresmenu.add_radiobutton(label=label,
+                    value=value,
+                    variable=self.var_microscope_res,
+                    command=lambda v=value: self._change_microscope_resolution(v),
+                    )
+
+    def _change_microscope_resolution(self, mic_res):
+        """Callback for changing microscope resolution
+
+        `mic_res` is the key of `MIC_RES` that should be loaded.
+        """
         if mic_res == MIC_RES_CUSTOM:
             initval = {}
             if MIC_RES[MIC_RES_CUSTOM] is not None:
@@ -906,34 +929,34 @@ class SessionView_Tk(SessionView):
                     "Microscope resolution",
                     "Enter custom microscope resolution [µm/px]:",
                     minvalue=0, parent=self.root, initialvalue=initval)
-            self.session.set_microscope(resolution=res)
+            res_dict = dict(resolution=res)
         elif mic_res == MIC_RES_UNSPEC:
-            self.session.set_microscope()
+            res_dict = {}
         else:
-            self.session.set_microscope(name=mic_res, resolution=MIC_RES[mic_res])
+            res_dict = dict(name=mic_res, resolution=MIC_RES[mic_res])
+        Event.fire(self.control_queue, const.CMD_SET_MICROSCOPE, self.session, **res_dict)
 
-        #TODO: wait for event from other thread
-        self.update_microscope_resolution()
-
-    def update_microscope_resolution(self, set_var=False):
+    def _update_microscope_resolution(self):
         """Display updates of microscope resolution.
 
-        Arguments:
-            set_var -- boolean whether to update `self.var_microscope_res`
+        This method should not be called explicitly.
+        It is called by `SessionView_Tk.update_traces`.
         """
         new_mic_name = self.session.mic_name
         new_mic_res = self.session.mic_res
 
-        if new_mic_name is None or new_mic_res is None:
+        if not new_mic_res:
             # use pixel as length unit
             new_mic_name = MIC_RES_UNSPEC
             new_mic_res = None
-        elif new_mic_name and new_mic_name not in MIC_RES:
-            # enter new_mic_name into MIC_RES
-            self.micresmenu.add_radiobutton(label=new_mic_name, value=new_mic_name, variable=self.var_microscope_res)
-        elif new_mic_name and MIC_RES[new_mic_name] != new_mic_res:
-            # name/value conflict with catalogue
-            new_mic_name = MIC_RES_CUSTOM
+        elif new_mic_name:
+            if new_mic_name not in MIC_RES:
+                # enter new_mic_name into MIC_RES
+                self._add_to_microscope_menu(new_mic_name)
+                MIC_RES[new_mic_name] = new_mic_res
+            elif MIC_RES[new_mic_name] != new_mic_res:
+                # name/value conflict with catalogue
+                new_mic_name = MIC_RES_CUSTOM
         else:
             # custom (unnamed) resolution
             new_mic_name = MIC_RES_CUSTOM
@@ -944,14 +967,13 @@ class SessionView_Tk(SessionView):
             new_label = f"{MIC_RES_CUSTOM} ({new_mic_res} µm/px)"
         else:
             new_label = MIC_RES_CUSTOM
-        if new_label:
-            self.micresmenu.entryconfig(MIC_RES_CUSTOM_IDX, label=new_label)
 
         # Apply changes
-        if set_var:
+        self.micresmenu.entryconfig(MIC_RES_CUSTOM_IDX, label=new_label)
+        if new_mic_name != self.var_microscope_res.get():
             self.var_microscope_res.set(new_mic_name)
-        if self.session.trace_info[const.TYPE_AREA]['plot']:
-            self.plot_traces()
+        #if self.session.trace_info[const.TYPE_AREA]['plot']:
+        #    self.plot_traces()
 
     def open_session(self):
         """Open a saved session"""
@@ -965,54 +987,7 @@ class SessionView_Tk(SessionView):
         if fn is None:
             return
 
-        sd = StackdataIO()
-        sd.load(fin=fn, progress_fcn=self.status_progress)
+        # Forward filename to controller
+        Event.fire(self.control_queue, const.CMD_READ_SESSION_FROM_DISK, fn)
 
-        # Load microscope data
-        self._change_microscope_resolution(name=sd.microscope_name, val=sd.microscope_resolution)
-
-        # Load ROIs
-        self.rois = sd.rois
-
-        # Load traces
-        self.traces = {}
-        for trace in sd.traces:
-            name = trace['name']
-            self.traces[name] = {
-                    'name': name,
-                    'roi': trace['rois'],
-                    'select': trace['select'],
-                    'highlight': False,
-                    'val': {},
-                    'plot': {},
-                   }
-        self.update_roi_display(False)
-
-        # Load stack
-        chan_info = []
-        stack_paths = {}
-        for ch in sd.channels:
-            x = {}
-            if ch['file_directory'] is None or ch['file_name'] is None:
-                path = None
-                x['stack'] = None
-            else:
-                path = os.path.join(ch['file_directory'], ch['file_name'])
-                try:
-                    x['stack'] = stack_paths[path]
-                except KeyError:
-                    stack = Stack(path, progress_fcn=self.status_progress)
-                    stack_paths[path] = stack
-                    x['stack'] = stack
-            x['name'] = ch['name']
-            x['i_channel'] = ch['i_channel']
-            x['label'] = ch['label']
-            x['type'] = ch['type']
-            chan_info.append(x)
-        self.open_metastack(chan_info, do_track=False)
-
-    #def save(self):
-    #    """Save data to files"""
-    #    if not self.save_dir:
-    #        self._get_savedir()
 

@@ -191,7 +191,7 @@ class SessionOpener:
         except Exception:
             return
         Event.fire(self.control_queue, const.CMD_CLOSE_STACK,
-                kwargs=dict(session_id=self.session_id, stack_id=self.stack_ids[sel]))
+                session_id=self.session_id, stack_id=self.stack_ids[sel])
 
         self.del_chan(sel)
 
@@ -368,4 +368,4 @@ class SessionOpener:
             x['type'] = ch['type']
             session_stacks.append(x)
         Event.fire(self.control_queue, const.CMD_CONFIG_SESSION,
-                kwargs=dict(session_id=self.session_id, stacks=session_stacks))
+                session_id=self.session_id, stacks=session_stacks)

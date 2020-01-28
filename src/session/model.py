@@ -115,7 +115,7 @@ class SessionModel:
         self.show_untrackable = False
         self.show_name = True
 
-        self.frames_per_hour = 6
+        self.frames_per_hour = 6 # TODO: let the user change this
         self._microscope_name = None
         self._microscope_resolution = None
 
@@ -138,6 +138,14 @@ class SessionModel:
                 del self.trace_info[k]
 
     def open_stack(self, fn, status=None):
+        """Open a stack and save it in SessionModel.stacks.
+
+        Arguments:
+            fn -- str, filename of the stack
+            status -- Status instance for progress display
+
+        Returns the stack_id (key to the SessionModel.stacks dictionary).
+        """
         if status is None:
             status = DummyStatus()
         stack_props = {}
@@ -155,6 +163,7 @@ class SessionModel:
                                      'stack': stack,
                                      'n_channels': n_channels,
                                      }
+        return stack_id
 
     def close_stacks(self, *stack_ids, keep_open=()):
         """Close all stacks held only by this SessionModel"""
@@ -221,7 +230,7 @@ class SessionModel:
         'status' is a Status instance for updating the status display.
         'do_track' is a flag whether to perform tracking or not.
 
-        Returns True in case of success, else False
+        Returns True in case of success, else False.
         """
         print("SessionModel.config") #DEBUG
         # This function corresponds to MainWindow_TK.open_metastack.
@@ -570,12 +579,13 @@ class SessionModel:
         with self.lock:
             return self._microscope_resolution
 
-    def set_microscope(self, name=None, resolution=None):
+    def set_microscope(self, name=None, resolution=None, status=None):
         """Set a microscope
 
         Arguments:
             name -- str, human-readable microscope/objective name
             resolution -- float, image resolution in [µm/px]
+            status -- Status, passed on to `SessionModel.read_traces`
         """
         if not resolution:
             name = None
@@ -594,9 +604,7 @@ class SessionModel:
             else:
                 self.trace_info[const.TYPE_AREA]['unit'] = "px²"
                 self.trace_info[const.TYPE_AREA]['factor'] = None
-            self.read_traces() #TODO migrate this into its own thread
-
-        print(f"SessionModel.set_microscope: mic_name={self.mic_name}, mic_res={self.mic_res}") #DEBUG
+            self.read_traces(status=status)
 
     def save_session(self, save_dir):
         """Save the session.
@@ -639,3 +647,57 @@ class SessionModel:
         sd.dump(save_dir, "session.zip")
 
         print(f"Data have been written to '{save_dir}'") #DEBUG()
+
+    def from_stackio(self, fn, status=None):
+        """Load session content from StackdataIO instance.
+
+        Arguments:
+            fn -- str, filename of the saved session
+            status -- Status object for displaying progress
+
+        Returns a new SessionModel instance.
+        """
+        if status is None:
+            status = DummyStatus()
+
+        # Read session data and load content
+        sd = StackdataIO()
+        sd.load(fin=fn, progress_fcn=status.set)
+        self.set_microscope(name=sd.microscope_name, resolution=sd.microscope_resolution)
+        self.rois = sd.rois
+        for trace in sd.traces:
+            name = trace['name']
+            self.traces[name] = {
+                    'name': name,
+                    'roi': trace['rois'],
+                    'select': trace['select'],
+                    'highlight': False,
+                    'val': {},
+                    'plot': {},
+                    }
+
+        # Load stacks
+        chan_info = []
+        stack_paths = {}
+        for ch in sd.channels:
+            x = {}
+            if ch['file_directory'] is None or ch['file_name'] is None:
+                path = None
+                x['stack_id'] = None
+            else:
+                path = os.path.join(ch['file_directory'], ch['file_name'])
+                try:
+                    x['stack_id'] = stack_paths[path]
+                except KeyError:
+                    #stack = Stack(path, progress_fcn=status.set)
+                    stack_id = self.open_stack(path, status=status)
+                    stack_paths[path] = stack_id
+                    x['stack_id'] = stack_id
+            x['name'] = ch['name']
+            x['i_channel'] = ch['i_channel']
+            x['label'] = ch['label']
+            x['type'] = ch['type']
+            chan_info.append(x)
+        return chan_info
+        #session.config(chan_info, render_factory, status=status, do_track=False)
+        # TODO: have this function called by SessionController
