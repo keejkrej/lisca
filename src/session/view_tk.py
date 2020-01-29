@@ -115,8 +115,6 @@ class SessionView_Tk(SessionView):
         self.var_show_untrackable = tk.BooleanVar(value=False)
         self.var_microscope_res = tk.StringVar(value=MIC_RES_UNSPEC)
 
-        #self._init_trace_info() # now done by self.session
-
         # Build menu
         menubar = tk.Menu(self.root)
         self.root.config(menu=menubar)
@@ -146,9 +144,6 @@ class SessionView_Tk(SessionView):
         settmenu.add_cascade(label="Microscope resolution", menu=self.micresmenu)
         for mic_opt in MIC_RES.keys():
             self._add_to_microscope_menu(mic_opt)
-            #self.micresmenu.add_radiobutton(label=mic_opt, value=mic_opt,
-            #        variable=self.var_microscope_res,
-            #        command=lambda mo=mic_opt: self._change_microscope_resolution(mo))
         MIC_RES[MIC_RES_UNSPEC] = None
         MIC_RES[MIC_RES_CUSTOM] = None
         self.micresmenu.insert(MIC_RES_UNSPEC_IDX,
@@ -169,6 +164,7 @@ class SessionView_Tk(SessionView):
         helpmenu = tk.Menu(menubar)
         menubar.add_cascade(label="Help", menu=helpmenu)
         helpmenu.add_command(label="Breakpoint", command=self._breakpoint)
+        helpmenu.add_command(label="Sleep 10s", command=self.sleep10)
 
 
         # Window structure
@@ -243,6 +239,17 @@ class SessionView_Tk(SessionView):
         """Enter a breakpoint for DEBUGging"""
         breakpoint()
 
+    def sleep10(self):
+        """Sleep 10 seconds for DEBUGging"""
+        import threading
+        def sleep(self=self, t_max=10):
+            t = 0
+            while t < t_max:
+                with self.status("Sleeping", current=t, total=t_max):
+                    time.sleep(1)
+                    t += 1
+        threading.Thread(target=sleep).start()
+
     def update_status(self, msg="", current=None, total=None):
         """Update the status shown in the status bar"""
         if current is None:
@@ -299,7 +306,6 @@ class SessionView_Tk(SessionView):
 
     def open_stack(self):
         """Ask user to open new stack"""
-        print("SessionView_Tk.open_stack") #DEBUG
         if self.session_opener is None:
             self._session_opener = SessionOpener(self.root, control_queue=self.control_queue, status=self.status)
         else:
@@ -314,10 +320,10 @@ class SessionView_Tk(SessionView):
             print("Setting session") #DEBUG
             self.load_metastack(session.display_stack, session.stack.channels)
 
-    def load_metastack(self, display_stack, channels): #TODO
+    def load_metastack(self, display_stack, channels):
         """Load and display a given metastack"""
-        print("load metastack") #DEBUG
-        with self.status.set("Loading stack …"):
+        #TODO: Allow multiple types of PhC and Segmentation
+        with self.status("Loading stack …"):
             self.display_stack = display_stack
 
             # Create channel display buttons
@@ -373,12 +379,12 @@ class SessionView_Tk(SessionView):
             self.stackviewer.set_stack(display_stack, wait=False)
 
     def save(self):
-        """Save data to files""" #TODO
+        """Save data to files"""
         if not self.save_dir:
             self._get_savedir()
 
         #TODO: in new thread
-        self.session.save_session(self.save_dir)
+        Event.fire(self.control_queue, const.CMD_SAVE_SESSION_TO_DISK, self.session, self.save_dir, status=self.status)
 
     def _get_savedir(self):
         """Ask user for output directory"""
@@ -386,7 +392,6 @@ class SessionView_Tk(SessionView):
                    'parent': self.root,
                    'title': "Choose output directory",
                   }
-        #breakpoint() #DEBUG
         if self.save_dir:
             options['initialdir'] = self.save_dir
         new_savedir = tkfd.askdirectory(**options)
@@ -650,7 +655,8 @@ class SessionView_Tk(SessionView):
         """Plots the traces to the main window"""
         self.frame_indicators.clear()
         self.fig.clear()
-        self.session.plot_traces(self.fig, is_interactive=True, frame_indicator_list=self.frame_indicators)
+        self.session.plot_traces(self.fig, is_interactive=True,
+                frame_indicator_list=self.frame_indicators, status=self.status)
         self._update_frame_indicator(draw=False)
         self.fig.tight_layout(pad=.3)
         self.fig.canvas.draw()
@@ -787,7 +793,6 @@ class SessionView_Tk(SessionView):
 
     def update_selection(self):
         """Read traces after selection changes and update display"""
-        #self.read_traces() #TODO: read all traces at once
         self.plot_traces()
         self.display_stack._listeners.notify('roi')
         if self.var_darken_deselected.get():
@@ -977,8 +982,6 @@ class SessionView_Tk(SessionView):
 
     def open_session(self):
         """Open a saved session"""
-        #TODO move this (partially) to SessionModel
-        self.status.set("Opening session")
         fn = tkfd.askopenfilename(title="Open session data",
                                   initialdir='.',
                                   parent=self.root,

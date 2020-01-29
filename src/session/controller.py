@@ -38,6 +38,7 @@ class SessionController:
         self.status = Status()
         self.cmd_map = {
             const.CMD_INIT_SESSION: self.initialize_session,
+            const.CMD_SAVE_SESSION_TO_DISK: self.save_session_to_disk,
             const.CMD_NEW_STACK: self.open_new_stack,
             const.CMD_DISCARD_SESSION: self.discard_session,
             const.CMD_CLOSE_STACK: self.close_stack,
@@ -86,7 +87,6 @@ class SessionController:
         self.view.mainloop()
 
         # Cleanup
-        #self.control_queue.put_nowait(Event(print, "Quit")) #DEBUG
         Event.fire(self.control_queue, print, "Quit") #DEBUG
         self.continue_control = False
         control_thread.join()
@@ -173,24 +173,14 @@ class SessionController:
                 Event.fire(self.view.queue, self.view.set_session, session)
                 Event.fire(self.view.queue, const.CMD_UPDATE_TRACES)#, traces=session.traces)
 
-
+    @threaded
     def read_session_from_disk(self, fn):
-        """Load a saved session from disk and display it.
+        """Read a saved session from disk and display it.
 
         `fn` is a string holding the path of the saved session.
-
-        This method is thread-safe.
+        This method is thread-safe. It is executed in a worker thread.
         """
-        threading.Thread(target=self._read_session_from_disk_thread, args=(fn,)).start()
-
-    def _read_session_from_disk_thread(self, fn):
-        """Read session from disk.
-
-        `fn` is a string holding the path of the saved session.
-        This method is thread-safe. It is preferably executed in a worker thread.
-        See `SessionController.read_session_from_disk`.
-        """
-        with self.lock:
+        with self.lock, self.status("Reading session from disk …"):
             sess_id = Event.now()
             session = SessionModel()
             self.sessions[sess_id] = session
@@ -217,3 +207,6 @@ class SessionController:
         session.set_microscope(name=name, resolution=resolution, status=status)
         Event.fire(self.view.queue, const.CMD_UPDATE_TRACES)
         
+    @threaded
+    def save_session_to_disk(self, session, save_dir, status=None):
+        session.save_session(save_dir, status=status)

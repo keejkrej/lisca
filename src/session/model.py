@@ -7,6 +7,7 @@ from matplotlib.figure import Figure
 from matplotlib.ticker import StrMethodFormatter
 import numpy as np
 import pandas as pd
+import skimage.morphology as skmorph
 
 from . import const
 from .events import Event
@@ -151,9 +152,8 @@ class SessionModel:
         stack_props = {}
         if fn.endswith('h5'):
             stack_props['channels'] = 0
-        print("SessionModel.open_stack: TODO: show dynamic status message") #DEBUG
         stack_id = Event.now()
-        stack = Stack(fn, progress_fcn=status.set, **stack_props)
+        stack = Stack(fn, status=status, **stack_props)
         stack_dir, stack_name = os.path.split(fn)
         n_channels = stack.n_channels
         with self.lock:
@@ -232,7 +232,6 @@ class SessionModel:
 
         Returns True in case of success, else False.
         """
-        print("SessionModel.config") #DEBUG
         # This function corresponds to MainWindow_TK.open_metastack.
         # The argument 'data' is renamed into 'chan_info'
         # (and has slightly different syntax, see docstring)
@@ -241,7 +240,7 @@ class SessionModel:
         if status is None:
             status = DummyStatus()
 
-        with self.lock, status.set("Preparing new session"):
+        with self.lock, status("Preparing new session"):
             # Check image sizes
             stack_ids_used = set() #TODO: close stacks that are not used
             height_general = None
@@ -292,9 +291,9 @@ class SessionModel:
                 if ci['type'] == ty.TYPE_SEGMENTATION:
                     if do_track and stack is not None:
                         if pad_y or pad_x:
-                            with status.set("Cropping segmented stack"):
+                            with status("Cropping segmented stack"):
                                 stack.crop(right=pad_x, bottom=pad_y)
-                        self.track_stack(stack, channel=ci['i_channel'])
+                        self.track_stack(stack, channel=ci['i_channel'], status=status)
                         close_stacks.add(stack)
                     meta.add_channel(name='segmented_stack',
                                      label=ci['label'],
@@ -381,7 +380,6 @@ class SessionModel:
         """Get an iterable of all non-selected ROIs in given frame"""
         if not self.rois:
             return ()
-
         return (roi for roi in self.rois[frame].values()
                 if roi.color not in (const.ROI_COLOR_SELECTED, const.ROI_COLOR_HIGHLIGHT))
 
@@ -389,11 +387,8 @@ class SessionModel:
         """Perform tracking of a given stack"""
         if status is None:
             status = DummyStatus()
-        with self.lock, status.set("Tracking cells"):
-            tracker = Tracker(segmented_stack=s, segmented_chan=channel)
-            #TODO: set tracker status function
-            #tracker.progress_fcn = lambda msg, current, total: \
-            #        self.status(f"{msg} (frame {current}/{total})")
+        with self.lock, status("Tracking cells"):
+            tracker = Tracker(segmented_stack=s, segmented_chan=channel, status=status)
             if s.stacktype == 'hdf5':
                 tracker.preprocessing = self.segmentation_preprocessing
             tracker.get_traces()
@@ -423,6 +418,27 @@ class SessionModel:
                     roi.visible = bool(roi.name) and self.show_contour
                     roi.name_visible = self.show_name
 
+    def segmentation_preprocessing(self, img):
+        """Preprocessing function for smoothening segmentation
+
+        Smoothens 2D image `img` using morphological operations.
+        `img` must have values from 0 to 1, indicating the probability
+        that the corresponding pixel belongs to a cell.
+        Returns a binary (boolean) image with same shape as `img`.
+
+        This function is designed for preparing the Probability obtained
+        from Ilastik for tracking, using the .label.Tracker.preprocessing attribute.
+        """
+        img = img >= .5
+        img = skmorph.closing(img, selem=skmorph.disk(5))
+        img = skmorph.erosion(img, selem=skmorph.disk(1))
+        img = skmorph.dilation(img, selem=skmorph.disk(3))
+        #img = skmorph.area_closing(img, area_threshold=100)
+        #img = skmorph.area_opening(img, area_threshold=100)
+        img = skmorph.remove_small_holes(img, area_threshold=150)
+        img = skmorph.remove_small_objects(img, min_size=150)
+        return img
+
     def read_traces(self, status=None):
         """Read out cell traces"""
         if not self.traces:
@@ -430,7 +446,7 @@ class SessionModel:
         if status is None:
             status = DummyStatus()
 
-        with self.lock, status.set("Reading traces"):
+        with self.lock, status("Reading traces"):
             n_frames = self.stack.n_frames
 
             # Get fluorescence channels
@@ -474,28 +490,30 @@ class SessionModel:
     def add_trace_info(self, name, label=None, channel=None, unit="a.u.",
             factor=None, type_=None, order=None, plot=False, quantity=None):
         """Add information about a new category of traces"""
-        self.trace_info[name] = {'label': label,
-                                 'channel': channel,
-                                 'unit': unit,
-                                 'factor': factor,
-                                 'type': type_,
-                                 'order': order,
-                                 'button': None,
-                                 'var': None,
-                                 'plot': plot,
-                                 'quantity': quantity if quantity is not None else type_,
-                                }
+        with self.lock:
+            self.trace_info[name] = {'label': label,
+                                     'channel': channel,
+                                     'unit': unit,
+                                     'factor': factor,
+                                     'type': type_,
+                                     'order': order,
+                                     'button': None,
+                                     'var': None,
+                                     'plot': plot,
+                                     'quantity': quantity if quantity is not None else type_,
+                                    }
 
     def traces_sorted(self, fr):
         """Return a list of traces sorted by position
 
         fr -- the frame number
         """
-        rois = self.rois[fr]
-        traces_pos = {}
-        for name, tr in self.traces.items():
-            roi = rois[tr['roi'][fr]]
-            traces_pos[name] = (roi.y_min, roi.x_min)
+        with self.lock:
+            rois = self.rois[fr]
+            traces_pos = {}
+            for name, tr in self.traces.items():
+                roi = rois[tr['roi'][fr]]
+                traces_pos[name] = (roi.y_min, roi.x_min)
         return sorted(traces_pos.keys(), key=lambda name: traces_pos[name])
 
     def traces_as_dataframes(self):
@@ -514,7 +532,7 @@ class SessionModel:
                     df_dict[qty][name] = data
         return df_dict
 
-    def plot_traces(self, fig, is_interactive=False, frame_indicator_list=None):
+    def plot_traces(self, fig, is_interactive=False, frame_indicator_list=None, status=None):
         """Plots the traces.
 
         fig -- the Figure instance to plot to
@@ -523,43 +541,50 @@ class SessionModel:
         """
         if not self.traces:
             return
+        if status is None:
+            status = DummyStatus()
 
-        # Find data to be plotted and plotting order
-        plot_list = []
-        for name, info in self.trace_info.items():
-            if info['plot']:
-                plot_list.append(name)
-        plot_list.sort(key=lambda name: self.trace_info[name]['order'])
+        with self.lock, status("Plotting traces …"):
+            # Find data to be plotted and plotting order
+            plot_list = []
+            for name, info in self.trace_info.items():
+                if info['plot']:
+                    plot_list.append(name)
+            plot_list.sort(key=lambda name: self.trace_info[name]['order'])
 
-        t_vec = self.to_hours(np.array(range(self.display_stack.n_frames)))
-        axes = fig.subplots(len(plot_list), squeeze=False, sharex=True)[:,0]
-        for qty, ax in zip(plot_list, axes):
-            ax.set_xmargin(.003)
-            ax.yaxis.set_major_formatter(StrMethodFormatter('{x:.4g}'))
-            for name, tr in self.traces.items():
-                if not tr['select']:
-                    continue
-                if tr['highlight']:
-                    lw, alpha, color = const.PLOT_WIDTH_HIGHLIGHT, const.PLOT_ALPHA_HIGHLIGHT, const.PLOT_COLOR_HIGHLIGHT
-                else:
-                    lw, alpha, color = const.PLOT_WIDTH, const.PLOT_ALPHA, const.PLOT_COLOR
-                l = ax.plot(t_vec, tr['val'][qty],
-                        color=color, alpha=alpha, lw=lw, label=name,
-                        picker=(3 if is_interactive else None))
+            t_vec = self.to_hours(np.array(range(self.display_stack.n_frames)))
+            axes = fig.subplots(len(plot_list), squeeze=False, sharex=True)[:,0]
+            for qty, ax in zip(plot_list, axes):
+                ax.set_xmargin(.003)
+                ax.yaxis.set_major_formatter(StrMethodFormatter('{x:.4g}'))
+                for name, tr in self.traces.items():
+                    if not tr['select']:
+                        continue
+                    if tr['highlight']:
+                        lw = const.PLOT_WIDTH_HIGHLIGHT
+                        alpha = const.PLOT_ALPHA_HIGHLIGHT
+                        color = const.PLOT_COLOR_HIGHLIGHT
+                    else:
+                        lw = const.PLOT_WIDTH
+                        alpha = const.PLOT_ALPHA
+                        color = const.PLOT_COLOR
+                    l = ax.plot(t_vec, tr['val'][qty],
+                            color=color, alpha=alpha, lw=lw, label=name,
+                            picker=(3 if is_interactive else None))
+                    if is_interactive:
+                        tr['plot'][qty] = l
+
+                xlbl = "Time [h]"
+                ax.set_ylabel("{quantity} [{unit}]".format(**self.trace_info[qty]))
+                ax.set_title(qty, fontweight='bold')
+
                 if is_interactive:
-                    tr['plot'][qty] = l
-
-            xlbl = "Time [h]"
-            ax.set_ylabel("{quantity} [{unit}]".format(**self.trace_info[qty]))
-            ax.set_title(qty, fontweight='bold')
-
-            if is_interactive:
-                if frame_indicator_list is not None:
-                    frame_indicator_list.append(ax.axvline(np.NaN, lw=1.5, color='r'))
-            else:
-                ax.xaxis.set_tick_params(labelbottom=True)
-            if ax.is_last_row():
-                ax.set_xlabel(xlbl)
+                    if frame_indicator_list is not None:
+                        frame_indicator_list.append(ax.axvline(np.NaN, lw=1.5, color='r'))
+                else:
+                    ax.xaxis.set_tick_params(labelbottom=True)
+                if ax.is_last_row():
+                    ax.set_xlabel(xlbl)
 
     def to_hours(self, x):
         """Convert 0-based frame number to hours"""
@@ -606,47 +631,50 @@ class SessionModel:
                 self.trace_info[const.TYPE_AREA]['factor'] = None
             self.read_traces(status=status)
 
-    def save_session(self, save_dir):
+    def save_session(self, save_dir, status=None):
         """Save the session.
 
         Arguments:
             save_dir -- str indicating path of directory to which to save
         """
-        print(f"Saving session to {save_dir}") #DEBUG
+        if status is None:
+            status = DummyStatus()
+
         # Plot the data
         fig = Figure(figsize=(9,7))
         self.plot_traces(fig)
         fig.savefig(os.path.join(save_dir, "Figure.pdf"))
 
-        # Save data to Excel file
-        df_dict = self.traces_as_dataframes()
-        with pd.ExcelWriter(os.path.join(save_dir, "Data.xlsx"), engine='xlsxwriter') as writer:
+        with self.lock, status("Saving session …"):
+            # Save data to Excel file
+            df_dict = self.traces_as_dataframes()
+            with pd.ExcelWriter(os.path.join(save_dir, "Data.xlsx"), engine='xlsxwriter') as writer:
+                for name, df in df_dict.items():
+                    df.to_excel(writer, sheet_name=name, index=False)
+                writer.save()
+
+            # Save data to CSV file
             for name, df in df_dict.items():
-                df.to_excel(writer, sheet_name=name, index=False)
-            writer.save()
+                df.to_csv(os.path.join(save_dir, f"{name}.csv"), header=False, index=False, float_format='%.5f')
 
-        # Save data to CSV file
-        for name, df in df_dict.items():
-            df.to_csv(os.path.join(save_dir, f"{name}.csv"), header=False, index=False, float_format='%.5f')
+            # Export ROIs to JSON file
+            sd = StackdataIO(traces=self.traces, rois=self.rois)
+            sd.n_frames = self.stack.n_frames
+            sd.microscope_name = self.mic_name
+            sd.microscope_resolution = self.mic_res
+            for i, ch in enumerate(self.stack.channels):
+                if ch.isVirtual:
+                    path = None
+                else:
+                    path = self.stack.stack(ch.name).path
+                i_channel = ch.channel
+                type_ = ch.type
+                name = ch.name
+                label = ch.label
+                sd.add_channel(path, type_, i_channel, name, label)
 
-        # Export ROIs to JSON file
-        sd = StackdataIO(traces=self.traces, rois=self.rois)
-        sd.n_frames = self.stack.n_frames
-        sd.microscope_name = self.mic_name
-        sd.microscope_resolution = self.mic_res
-        for i, ch in enumerate(self.stack.channels):
-            if ch.isVirtual:
-                path = None
-            else:
-                path = self.stack.stack(ch.name).path
-            i_channel = ch.channel
-            type_ = ch.type
-            name = ch.name
-            label = ch.label
-            sd.add_channel(path, type_, i_channel, name, label)
-        sd.dump(save_dir, "session.zip")
-
-        print(f"Data have been written to '{save_dir}'") #DEBUG()
+            sd.dump(save_dir, "session.zip")
+        print(f"Data have been written to '{save_dir}'") #DEBUG
 
     def from_stackio(self, fn, status=None):
         """Load session content from StackdataIO instance.
@@ -661,8 +689,8 @@ class SessionModel:
             status = DummyStatus()
 
         # Read session data and load content
-        sd = StackdataIO()
-        sd.load(fin=fn, progress_fcn=status.set)
+        sd = StackdataIO(status=status)
+        sd.load(fin=fn)
         self.set_microscope(name=sd.microscope_name, resolution=sd.microscope_resolution)
         self.rois = sd.rois
         for trace in sd.traces:
@@ -689,7 +717,6 @@ class SessionModel:
                 try:
                     x['stack_id'] = stack_paths[path]
                 except KeyError:
-                    #stack = Stack(path, progress_fcn=status.set)
                     stack_id = self.open_stack(path, status=status)
                     stack_paths[path] = stack_id
                     x['stack_id'] = stack_id
@@ -699,5 +726,3 @@ class SessionModel:
             x['type'] = ch['type']
             chan_info.append(x)
         return chan_info
-        #session.config(chan_info, render_factory, status=status, do_track=False)
-        # TODO: have this function called by SessionController

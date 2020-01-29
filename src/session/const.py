@@ -18,6 +18,7 @@ TYPE_AREA = 'Area'
 
 CMD_INIT_SESSION = 'cmd_init_session'
 CMD_READ_SESSION_FROM_DISK = 'cmd_read_session_from_disk'
+CMD_SAVE_SESSION_TO_DISK = 'cmd_save_session_to_disk'
 CMD_CONFIG_SESSION = 'cmd_config_session'
 CMD_SET_MICROSCOPE = 'cmd_set_microscope'
 CMD_SET_SESSION = 'cmd_set_session'

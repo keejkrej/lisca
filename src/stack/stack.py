@@ -14,6 +14,7 @@ import PIL.ImageTk as piltk
 
 from ..roi import RoiCollection
 from ..listener import Listeners
+from ..session.status import DummyStatus
 
 
 class Stack:
@@ -23,18 +24,20 @@ class Stack:
     :type path: str
     """
 
-    def __init__(self, path=None, arr=None, width=None, height=None, n_frames=None, n_channels=None, dtype=None, progress_fcn=None, channels=None):
+    def __init__(self, path=None, arr=None, width=None, height=None, n_frames=None, n_channels=None, dtype=None, status=None, channels=None):
         """Initialize a stack."""
         self.image_lock = threading.RLock()
         self.info_lock = threading.RLock()
         self.roi_lock = threading.RLock()
         self._listeners = Listeners(kinds={"roi", "image"})
         self._clear_state()
+        if status is None:
+            status = DummyStatus()
 
         # Initialize stack
         if path is not None:
             # Load from file (TIFF or numpy array)
-            self.load(path, progress_fcn=progress_fcn, channels=channels)
+            self.load(path, status=status, channels=channels)
         elif arr is not None:
             # Use array
             self._path = None
@@ -93,21 +96,14 @@ class Stack:
         self._listeners.notify(kind=None)
 
 
-    def load(self, path, loader=None, progress_fcn=None, channels=None, h5_key=None):
+    def load(self, path, loader=None, status=None, channels=None, h5_key=None):
         """Load a stack from a path.
 
         `path` -- path to a stack file
         `loader` -- str, name of a stack loader.
                     Currently supported loaders: tiff, npy, hdf5
                     If not given, loader is determined from file extension.
-        `progress_fcn` -- function for displaying loading progress.
-                          If given, it must be a callable with signature:
-                          `function(msg, current=None, total=None)`
-                                `msg` -- message to be displayed
-                                `current` -- current processing state
-                                `total` -- final processing state
-                                0 <= `progress` <= `total`
-                           `progress` and `total` may remain unset.
+        `status` -- Status instance for displaying progress
         `channels` -- index of channels to be loaded. Default is to load all channels.
                       Any value for indexing into a dimension of a numpy array
                       may be given.
@@ -127,31 +123,31 @@ class Stack:
             else:
                 loader = '' # to prevent error in string comparison
         if loader == 'tiff':
-            self._load_tiff(progress_fcn=progress_fcn, channels=channels)
+            self._load_tiff(status=status, channels=channels)
         elif loader == 'npy':
-            self._load_npy(progress_fcn=progress_fcn, channels=channels)
+            self._load_npy(status=status, channels=channels)
         elif loader == 'hdf5':
-            self._load_hdf5(progress_fcn=progress_fcn, channels=channels, h5_key=h5_key)
+            self._load_hdf5(status=status, channels=channels, h5_key=h5_key)
         else:
             self._clear_state()
             raise TypeError("Unknown type: {}".format(loader))
 
-    def _load_npy(self, ext=None, progress_fcn=None, channels=None):
+    def _load_npy(self, ext=None, channels=None, status=None):
         if channels is not None:
             #TODO implement channel selection
             raise NotImplementedError("Channel selection for TIFF is not implemented yet")
-        if progress_fcn is not None:
-            progress_fcn("Reading stack")
+        if status is None:
+            status = DummyStatus()
         if ext is None:
             ext = os.path.splitext(self._path)[-1]
-        if ext == '.npy':
-            arr = np.load(self._path, mmap_mode='r', allow_pickle=False)
-        elif ext == '.npz':
-            with np.load(self._path, mmap_mode='r', allow_pickle=False) as arr_file:
-                arr = next(iter(arr_file.values())).astype(np.uint16, casting='unsafe')
-        else:
-            raise TypeError("Unknown type: {}".format(ext))
-        with self.image_lock:
+        with self.image_lock, status("Reading stack"):
+            if ext == '.npy':
+                arr = np.load(self._path, mmap_mode='r', allow_pickle=False)
+            elif ext == '.npz':
+                with np.load(self._path, mmap_mode='r', allow_pickle=False) as arr_file:
+                    arr = next(iter(arr_file.values())).astype(np.uint16, casting='unsafe')
+            else:
+                raise TypeError("Unknown type: {}".format(ext))
             self._stacktype = 'numpy'
             self._mode = arr.dtype.itemsize * 8
             #TODO: check dimensions (swap height/width?)
@@ -189,12 +185,15 @@ class Stack:
                 del arr
                 self._listeners.notify("image")
 
-    def _load_tiff(self, progress_fcn=None, channels=None):
+    def _load_tiff(self, status=None, channels=None):
         if channels is not None:
             #TODO implement channel selection
             raise NotImplementedError("Channel selection for TIFF is not implemented yet")
+        if status is None:
+            status = DummyStatus()
+            print("Stack._load_tiff: use DummyStatus") #DEBUG
         try:
-            with self.image_lock, tifffile.TiffFile(self._path) as tiff:
+            with self.image_lock, tifffile.TiffFile(self._path) as tiff, status("Reading image …") as current_status:
                 self._stacktype = 'tiff'
                 pages = tiff.pages
                 if not pages:
@@ -231,8 +230,7 @@ class Stack:
                                             self._height,
                                             self._width))
                 for i in range(self._n_images):
-                    if progress_fcn is not None:
-                        progress_fcn("Reading image", current=(i + 1), total=self._n_images)
+                    current_status.reset("Reading image", current=i+1, total=self._n_images)
                     ch, fr = self.convert_position(image=i)
                     pages[i].asarray(out=self.img[ch, fr, :, :])
 
@@ -244,12 +242,12 @@ class Stack:
         finally:
             self._listeners.notify("image")
 
-    def _load_hdf5(self, progress_fcn=None, h5_key=None, channels=None):
+    def _load_hdf5(self, status=None, h5_key=None, channels=None):
         """Note: Currently only ilastik HDF5 is supported"""
-        if progress_fcn is not None:
-            progress_fcn("Reading stack")
+        if status is None:
+            status = DummyStatus()
         try:
-            with self.image_lock, h5py.File(self._path, 'r') as h5:
+            with self.image_lock, h5py.File(self._path, 'r') as h5, status("Reading stack …") as current_status:
                 self._stacktype = 'hdf5'
                 if h5_key is not None:
                     key = h5_key
@@ -314,10 +312,9 @@ class Stack:
                     for ch, orig_ch in enumerate(channels):
                         if 'c' in idx:
                             i[idx['c']] = orig_ch
-                        if progress_fcn is not None:
-                            progress_fcn("Reading image",
-                                         current=1 + ch + fr * self._n_channels,
-                                         total=self._n_images)
+                        current_status.reset("Reading image",
+                                current=1 + ch + fr * self._n_channels,
+                                total=self._n_images)
                         self.img[ch, fr, :, :] = data5[tuple(i)]
                             
         except Exception as e:
