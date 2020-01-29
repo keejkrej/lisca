@@ -1,8 +1,10 @@
+import time
+
 import numpy as np
 import skimage.measure as skmeas
-from .stack import Stack
 
-import time
+from .stack import Stack
+from .session.status import DummyStatus
 
 def intercalation_iterator(n):
     """Generator function for iterating from both ends in `n` steps"""
@@ -65,7 +67,7 @@ class Tracker:
     IS_UNCHECKED = 128
 
     def __init__(self, segmented_stack=None, labeled_stack=None, make_labeled_stack=False,
-            min_size=1000, max_size=10000, preprocessing=None, segmented_chan=None, labeled_chan=None):
+            min_size=1000, max_size=10000, preprocessing=None, segmented_chan=None, labeled_chan=None, status=None):
         self.stack_seg = segmented_stack
         if segmented_chan is None:
             self.segmented_chan = 0
@@ -76,7 +78,10 @@ class Tracker:
             self.labeled_chan = 0
         else:
             self.labeled_chan = labeled_chan
-        self.progress_fcn = None
+        if status is None:
+            self.status = DummyStatus()
+        else:
+            self.status = status
         self.min_size = min_size
         self.max_size = max_size
         self.props = None
@@ -106,9 +111,9 @@ class Tracker:
                                dtype=np.uint16,
                               )
         for fr in range(self.n_frames):
-            if self.progress_fcn is not None:
-                self.progress_fcn(msg="Labeling frames", current=fr, total=self.n_frames)
-            self.stack_lbl.img[self.labeled_chan, fr, :, :] = self.label(self.stack_seg.get_image(channel=self.segmented_chan, frame=fr))
+            with self.status(msg="Labeling frames", current=fr+1, total=self.n_frames):
+                self.stack_lbl.img[self.labeled_chan, fr, :, :] = self.label(
+                        self.stack_seg.get_image(channel=self.segmented_chan, frame=fr))
 
     def label(self, img):
         if self.preprocessing is not None:
@@ -118,17 +123,16 @@ class Tracker:
     def read_regionprops(self):
         self.props = {}
         for fr in range(self.n_frames):
-            if self.progress_fcn is not None:
-                self.progress_fcn(msg="Reading region props", current=fr, total=self.n_frames)
-            if self.stack_lbl is None:
-                img = self.label(self.stack_seg.get_image(channel=self.segmented_chan, frame=fr))
-            else:
-                img = self.stack_lbl.get_image(channel=self.labeled_chan, frame=fr)
-            props = skmeas.regionprops(img)
-            this_props = {}
-            for p in props:
-                this_props[p.label] = p
-            self.props[fr] = this_props
+            with self.status(msg="Reading region props", current=fr+1, total=self.n_frames):
+                if self.stack_lbl is None:
+                    img = self.label(self.stack_seg.get_image(channel=self.segmented_chan, frame=fr))
+                else:
+                    img = self.stack_lbl.get_image(channel=self.labeled_chan, frame=fr)
+                props = skmeas.regionprops(img)
+                this_props = {}
+                for p in props:
+                    this_props[p.label] = p
+                self.props[fr] = this_props
 
     def get_bboxes(self, fr):
         """Build a dictionary with bounding boxes of ROIs in frame `fr`"""
@@ -182,127 +186,124 @@ class Tracker:
         last_idx = {}
 
         # Initialization for first frame
-        if self.progress_fcn is not None:
-            self.progress_fcn(msg="Tracking cells", current=1, total=self.n_frames)
         tic0 = time.time() #DEBUG
-        tic = time.time() #DEBUG
-        bbox_new = self.get_bboxes(0)
-        for i in range(bbox_new['n']):
-            ck = self._check_props(bbox_new['props'][i])
-            bbox_new['check'][i] = ck
-            if ck & self.IS_AT_EDGE and ck & self.IS_TOO_SMALL:
-                continue
-            lbl = bbox_new['labels'][i]
-            last_idx[lbl] = len(traces)
-            traces.append([lbl])
-            traces_selection.append(ck == self.IS_GOOD)
-            
+        with self.status(msg="Tracking cells", current=1, total=self.n_frames):
+            tic = time.time() #DEBUG
+            bbox_new = self.get_bboxes(0)
+            for i in range(bbox_new['n']):
+                ck = self._check_props(bbox_new['props'][i])
+                bbox_new['check'][i] = ck
+                if ck & self.IS_AT_EDGE and ck & self.IS_TOO_SMALL:
+                    continue
+                lbl = bbox_new['labels'][i]
+                last_idx[lbl] = len(traces)
+                traces.append([lbl])
+                traces_selection.append(ck == self.IS_GOOD)
         print("Frame 001: {:.4f}s".format(time.time() - tic)) #DEBUG
 
         # Track further frames
         for fr in range(1, self.n_frames):
             new_idx = {}
-            if self.progress_fcn is not None:
-                self.progress_fcn(msg="Tracking cells", current=fr + 1, total=self.n_frames)
-            tic = time.time() #DEBUG
+            with self.status(msg="Tracking cells", current=fr + 1, total=self.n_frames):
+                tic = time.time() #DEBUG
 
-            # Compare bounding boxes
-            #bbox_old = self.update_bboxes(bbox_new, (*last_idx.keys(),))
-            bbox_old = bbox_new
-            bbox_new = self.get_bboxes(fr)
-            overlaps = np.logical_and(
-                np.logical_and(
-                    bbox_new['y_min'].reshape((-1, 1)) < bbox_old['y_max'].reshape((1, -1)),
-                    bbox_new['y_max'].reshape((-1, 1)) > bbox_old['y_min'].reshape((1, -1))),
-                np.logical_and(
-                    bbox_new['x_min'].reshape((-1, 1)) < bbox_old['x_max'].reshape((1, -1)),
-                    bbox_new['x_max'].reshape((-1, 1)) > bbox_old['x_min'].reshape((1, -1))))
+                # Compare bounding boxes
+                #bbox_old = self.update_bboxes(bbox_new, (*last_idx.keys(),))
+                bbox_old = bbox_new
+                bbox_new = self.get_bboxes(fr)
+                overlaps = np.logical_and(
+                    np.logical_and(
+                        bbox_new['y_min'].reshape((-1, 1)) < bbox_old['y_max'].reshape((1, -1)),
+                        bbox_new['y_max'].reshape((-1, 1)) > bbox_old['y_min'].reshape((1, -1))),
+                    np.logical_and(
+                        bbox_new['x_min'].reshape((-1, 1)) < bbox_old['x_max'].reshape((1, -1)),
+                        bbox_new['x_max'].reshape((-1, 1)) > bbox_old['x_min'].reshape((1, -1))))
 
-            for i in range(overlaps.shape[0]):
-                js = np.flatnonzero(overlaps[i,:])
+                for i in range(overlaps.shape[0]):
+                    js = np.flatnonzero(overlaps[i,:])
 
-                # Continue if ROI has no parent
-                if js.size == 0:
-                    continue
-
-                li = bbox_new['labels'][i]
-                pi = bbox_new['props'][i]
-                ci = pi.coords
-
-                cki = self._check_props(pi)
-                bbox_new['check'][i] = cki
-
-                parents = []
-                is_select = True
-
-                # Compare with regions of previous frame
-                # Check if parent is valid (area, edge)
-                for j in js:
-                    pj = bbox_old['props'][j]
-                    cj = pj.coords
-                    if not check_coordinate_overlap(ci, cj):
+                    # Continue if ROI has no parent
+                    if js.size == 0:
                         continue
 
-                    ckj = bbox_old['check'][j]
-                    if ckj & self.IS_UNCHECKED:
-                        continue
-                    elif ckj & self.IS_AT_EDGE:
+                    li = bbox_new['labels'][i]
+                    pi = bbox_new['props'][i]
+                    ci = pi.coords
+
+                    cki = self._check_props(pi)
+                    bbox_new['check'][i] = cki
+
+                    parents = []
+                    is_select = True
+
+                    # Compare with regions of previous frame
+                    # Check if parent is valid (area, edge)
+                    for j in js:
+                        pj = bbox_old['props'][j]
+                        cj = pj.coords
+                        if not check_coordinate_overlap(ci, cj):
+                            continue
+
+                        ckj = bbox_old['check'][j]
+                        if ckj & self.IS_UNCHECKED:
+                            continue
+                        elif ckj & self.IS_AT_EDGE:
+                            if ckj & self.IS_TOO_SMALL:
+                                continue
+                            else:
+                                is_select = None
+                                break
                         if ckj & self.IS_TOO_SMALL:
-                            continue
+                            parents.append(dict(label=pj.label, large=False, small=True, area=pj.area))
+                        elif ckj & self.IS_TOO_LARGE:
+                            parents.append(dict(label=pj.label, large=True, small=False, area=pj.area))
                         else:
-                            is_select = None
-                            break
-                    if ckj & self.IS_TOO_SMALL:
-                        parents.append(dict(label=pj.label, large=False, small=True, area=pj.area))
-                    elif ckj & self.IS_TOO_LARGE:
-                        parents.append(dict(label=pj.label, large=True, small=False, area=pj.area))
+                            parents.insert(0, dict(label=pj.label, large=False, small=False, area=pj.area))
+
+                    # Check for parents
+                    if is_select is None:
+                        pass
+                    elif not parents:
+                        continue
+                    elif len(parents) == 1:
+                        parent = 0
+                    elif parents[0]['small']:
+                        parent = max(range(len(parents)), key=lambda i: parents[i]['area'])
+                    elif parents[1]['small']:
+                        parent = 0
                     else:
-                        parents.insert(0, dict(label=pj.label, large=False, small=False, area=pj.area))
+                        is_select = None
 
-                # Check for parents
-                if is_select is None:
-                    pass
-                elif not parents:
-                    continue
-                elif len(parents) == 1:
-                    parent = 0
-                elif parents[0]['small']:
-                    parent = max(range(len(parents)), key=lambda i: parents[i]['area'])
-                elif parents[1]['small']:
-                    parent = 0
-                else:
-                    is_select = None
+                    # Mark untrackable cells
+                    if is_select is None:
+                        for q in parents:
+                            try:
+                                invalid_idx = last_idx[q['label']]
+                            except KeyError:
+                                continue
+                            traces_selection[invalid_idx] = None
+                        continue
 
-                # Mark untrackable cells
-                if is_select is None:
-                    for q in parents:
-                        try:
-                            invalid_idx = last_idx[q['label']]
-                        except KeyError:
-                            continue
-                        traces_selection[invalid_idx] = None
-                    continue
-
-                # Final checks
-                parent = parents[parent]
-                try:
-                    parent_idx = last_idx[parent['label']]
-                except KeyError:
-                    continue
-                if traces_selection[parent_idx] is None:
-                    # Ignore traces with "bad ancestors"
-                    continue
-                elif parent_idx in new_idx.values():
-                    # Eliminate siblings
-                    traces_selection[parent_idx] = None
-                else:
-                    # Register this region as child of parent
-                    new_idx[li] = parent_idx
-                    traces[parent_idx].append(li)
-                    if parent['large'] or parent['small']:
-                        traces_selection[parent_idx] = False
-            last_idx = new_idx
-            print("Frame {:03d}: {:.4f}s".format(fr + 1, time.time() - tic)) #DEBUG
+                    # Final checks
+                    parent = parents[parent]
+                    try:
+                        parent_idx = last_idx[parent['label']]
+                    except KeyError:
+                        continue
+                    if traces_selection[parent_idx] is None:
+                        # Ignore traces with "bad ancestors"
+                        continue
+                    elif parent_idx in new_idx.values():
+                        # Eliminate siblings
+                        traces_selection[parent_idx] = None
+                    else:
+                        # Register this region as child of parent
+                        new_idx[li] = parent_idx
+                        traces[parent_idx].append(li)
+                        if parent['large'] or parent['small']:
+                            traces_selection[parent_idx] = False
+                last_idx = new_idx
+                print("Frame {:03d}: {:.4f}s".format(fr + 1, time.time() - tic)) #DEBUG
 
         # Clean up cells
         self.traces = []

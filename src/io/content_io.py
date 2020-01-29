@@ -13,6 +13,7 @@ import skimage.draw as skd
 
 from .roi import Roi
 from ..roi import ContourRoi
+from ..session.status import DummyStatus
 
 ZIP_JSON_NAME = 'session.json'
 
@@ -59,6 +60,7 @@ class StackdataIO:
     Arguments:
         traces -- traces such as Main_Tk.traces
         rois -- ROIs such as Main_Tk.rois
+        status -- status instance for displaying loading progress
 
     In addition to traces and ROIs, which may be inserted using the constructor or
     the methods `load_traces` (all traces) / `insert_trace` (one trace) and `load_rois`
@@ -70,7 +72,7 @@ class StackdataIO:
 
     When all fields are filled, the data can be written with the method `dump`.
     """
-    def __init__(self, traces=None, rois=None):
+    def __init__(self, traces=None, rois=None, status=None):
         self.version = '1.0'
         self.microscope_name = None
         self.microscope_resolution = None
@@ -78,6 +80,10 @@ class StackdataIO:
         self.rois = None
         self.channels = []
         self.traces = None
+        if status is None:
+            self.status = DummyStatus()
+        else:
+            self.status = status
 
         if traces is not None:
             self.load_traces(traces)
@@ -153,7 +159,7 @@ class StackdataIO:
                             'rois': rois, # list of `n_frames` roi labels
                            })
 
-    def dump(self, out=None):
+    def dump(self, *out):
         """Write the stack data to JSON.
 
         If `out` is a str or file-like object, the session data and ROIs are written there.
@@ -200,27 +206,26 @@ class StackdataIO:
         json_args = {'indent': '\t'}
 
         # Write data to ZIP file
-        if out is None:
+        if not out:
             return roi_dict, json.dumps(data, **json_args)
         with ExitStack() as es:
-            if isinstance(out, str):
-                zf = es.enter_context(zipfile.ZipFile(out, 'w', compression=zipfile.ZIP_DEFLATED))
+            if len(out) > 1 or isinstance(out[0], str):
+                zf = es.enter_context(zipfile.ZipFile(os.path.join(*out), 'w', compression=zipfile.ZIP_DEFLATED))
             else:
-                zf = out
+                zf = out.pop()
             Roi.write_multi(zf, roi_dict.values())
             with io.TextIOWrapper(
                     es.enter_context(zf.open(ZIP_JSON_NAME, 'w')),
                     encoding='utf8', newline='\n', write_through=True) as jf:
                 json.dump(data, jf, **json_args)
 
-    def load(self, fin=None, s=None, rois=None, progress_fcn=None):
+    def load(self, fin=None, s=None, rois=None):
         """Loads stack information and ROI information from JSON
 
         Arguments:
             fin -- file-like or str holding a filename of ZIP file to be read
             s -- string holding JSON data
             rois -- list of dicts, holding ContourRoi instances
-            progress_fcn -- callable for printing loading status
 
         If `fin` is given, `s` and `rois` are ignored.
         `fin` should be a ZIP file containing a file named 'session.json' that holds
@@ -228,24 +233,18 @@ class StackdataIO:
         in ImageJ ROI format.
         Note that if `rois` is given, the ROI labels must comply with the
         cell-to-ROI assignment in `s`.
-        If `progress_fcn` is given, it must support a signature like:
-            function(msg, current=None, total=None)
 
         The content of the ZIP file is loaded and can be accessed
         via the fields of this object.
         """
-        if progress_fcn is None:
-            def progress_fcn(*_, **__): pass
         if fin is not None:
-            with ExitStack() as es:
+            with ExitStack() as es, self.status("Loading session information"):
                 if isinstance(fin, str):
                     zf = es.enter_context(zipfile.ZipFile(fin))
                 else:
                     zf = fin
                 with zf.open(ZIP_JSON_NAME) as f:
-                    progress_fcn("Loading session information")
                     data = json.loads(io.TextIOWrapper(f, encoding='utf8').read())
-                progress_fcn("Loading ROI information")
                 rois_raw = Roi.read_multi(zf)
                 self.rois = None
         elif s is not None:
@@ -255,50 +254,51 @@ class StackdataIO:
         else:
             raise ValueError("Either file or string must be given.")
 
-        progress_fcn("Importing session")
-        self.version = data['version']
-        self.n_frames = data['n_frames']
-        self.channels = data['channels']
-        self.microscope_name = data['microscope']['name']
-        self.microscope_resolution = data['microscope']['resolution']
-        self.traces = data['cells']
-        if self.rois is None:
-            self.rois = []
-            label_conversion = []
-            n_rois = len(rois_raw)
-            i_rr = 1
-            for rr in rois_raw.values():
-                progress_fcn("Importing ROIs", current=i_rr, total=n_rois)
-                i_rr += 1
-                info = self.parse_roi_name(rr.name)
-                fr = rr.frame
-                if not fr:
-                    fr = info['frame']
-                label = info['label']
-                if label is None:
-                    label = rr.name
-                if label is None:
-                    label = i_rr
-                poly_rr, poly_cc = skd.polygon(rr.rows, rr.cols)
-                coords = np.empty((len(poly_rr), 2), dtype=np.uint16)
-                coords[:,0] = poly_rr
-                coords[:,1] = poly_cc
-                roi = ContourRoi(label=label, coords=coords, name=info['cell'], frame=fr)
+        with self.status("Importing session …") as current_status:
+            self.version = data['version']
+            self.n_frames = data['n_frames']
+            self.channels = data['channels']
+            self.microscope_name = data['microscope']['name']
+            self.microscope_resolution = data['microscope']['resolution']
+            self.traces = data['cells']
+            if self.rois is None:
+                self.rois = []
+                label_conversion = []
+                n_rois = len(rois_raw)
+                i_rr = 1
+                for rr in rois_raw.values():
+                    current_status.reset("Importing ROIs", current=i_rr, total=n_rois)
+                    i_rr += 1
+                    info = self.parse_roi_name(rr.name)
+                    fr = rr.frame
+                    if not fr:
+                        fr = info['frame']
+                    label = info['label']
+                    if label is None:
+                        label = rr.name
+                    if label is None:
+                        label = i_rr
+                    poly_rr, poly_cc = skd.polygon(rr.rows, rr.cols)
+                    coords = np.empty((len(poly_rr), 2), dtype=np.uint16)
+                    coords[:,0] = poly_rr
+                    coords[:,1] = poly_cc
+                    roi = ContourRoi(label=label, coords=coords, name=info['cell'], frame=fr)
 
-                while fr >= len(self.rois):
-                    self.rois.append({})
-                self.rois[fr][label] = roi
-                while fr >= len(label_conversion):
-                    label_conversion.append({})
-                label_conversion[fr][rr.name] = label
+                    while fr >= len(self.rois):
+                        self.rois.append({})
+                    self.rois[fr][label] = roi
+                    while fr >= len(label_conversion):
+                        label_conversion.append({})
+                    label_conversion[fr][rr.name] = label
 
-        for cell in self.traces:
-            name = cell['name']
-            roi_list = cell['rois']
-            for fr, roi_ref in enumerate(roi_list):
-                nl = label_conversion[fr][roi_ref]
-                roi_list[fr] = nl
-                self.rois[fr][nl].name = name
+            current_status.reset("Assigning ROIs to traces …")
+            for cell in self.traces:
+                name = cell['name']
+                roi_list = cell['rois']
+                for fr, roi_ref in enumerate(roi_list):
+                    nl = label_conversion[fr][roi_ref]
+                    roi_list[fr] = nl
+                    self.rois[fr][nl].name = name
 
     def _unique_roi_name(self, roi):
         """Build a ROI name unique throughout the whole stack.
