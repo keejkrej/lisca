@@ -208,7 +208,6 @@ class SessionView_Tk(SessionView):
         self.var_show_roi_contours.trace_add('write', self._update_show_roi_contours)
         self.var_show_roi_names.trace_add('write', self._update_show_roi_names)
         self.var_show_untrackable.trace_add('write', self._update_show_untrackable)
-        #self.var_microscope_res.trace_add('write', self._change_microscope_resolution)
 
         self.stackframe.bind('<Configure>', self._stacksize_changed)
         self.stackviewer.register_roi_click(self._roi_clicked)
@@ -313,50 +312,46 @@ class SessionView_Tk(SessionView):
 
     def set_session(self, session=None):
         """Set a SessionModel instance for display"""
-        self.session = session
-        if session is None:
-            print("Clearing session") #DEBUG
-        else:
-            print("Setting session") #DEBUG
-            self.load_metastack(session.display_stack, session.stack.channels)
-
-    def load_metastack(self, display_stack, channels):
-        """Load and display a given metastack"""
         #TODO: Allow multiple types of PhC and Segmentation
-        with self.status("Loading stack …"):
-            self.display_stack = display_stack
+        self.session = session
+        if self.session is None:
+            self.display_stack = None
+            pass
+        else:
+            with self.status("Loading stack …"):
+                self.display_stack = self.session.display_stack
 
-            # Create channel display buttons
-            self.channel_order.clear()
-            for k, x in tuple(self.channel_selection.items()):
-                x['button'].destroy()
-                del self.channel_selection[k]
-            idx_phasecontrast = None
-            idx_fluorescence = []
-            idx_segmentation = None
-            for i, spec in enumerate(channels):
-                if spec.type == ty.TYPE_PHASECONTRAST and not idx_phasecontrast:
-                    idx_phasecontrast = i
-                elif spec.type == ty.TYPE_FLUORESCENCE:
-                    idx_fluorescence.append(i)
-                elif spec.type == ty.TYPE_SEGMENTATION and not idx_segmentation:
-                    idx_segmentation = i
-                else:
-                    continue
-                x = {}
-                self.channel_selection[i] = x
-                x['type'] = spec.type
-                x['val'] = False
-                btntxt = []
-                if spec.label:
-                    btntxt.append(spec.label)
-                if spec.type == ty.TYPE_FLUORESCENCE:
-                    btntxt.append("{} {}".format(spec.type, len(idx_fluorescence)))
-                else:
-                    btntxt.append(spec.type)
-                btntxt = "\n".join(btntxt)
-                x['button'] = tk.Button(self.chanselframe, justify=tk.LEFT, text=btntxt)
-                x['button'].bind('<ButtonPress-1><ButtonRelease-1>', self._build_chanselbtn_callback(i))
+                # Create channel display buttons
+                self.channel_order.clear()
+                for k, x in tuple(self.channel_selection.items()):
+                    x['button'].destroy()
+                    del self.channel_selection[k]
+                idx_phasecontrast = None
+                idx_fluorescence = []
+                idx_segmentation = None
+                for i, spec in enumerate(self.session.stack.channels):
+                    if spec.type == ty.TYPE_PHASECONTRAST and not idx_phasecontrast:
+                        idx_phasecontrast = i
+                    elif spec.type == ty.TYPE_FLUORESCENCE:
+                        idx_fluorescence.append(i)
+                    elif spec.type == ty.TYPE_SEGMENTATION and not idx_segmentation:
+                        idx_segmentation = i
+                    else:
+                        continue
+                    x = {}
+                    self.channel_selection[i] = x
+                    x['type'] = spec.type
+                    x['val'] = False
+                    btntxt = []
+                    if spec.label:
+                        btntxt.append(spec.label)
+                    if spec.type == ty.TYPE_FLUORESCENCE:
+                        btntxt.append("{} {}".format(spec.type, len(idx_fluorescence)))
+                    else:
+                        btntxt.append(spec.type)
+                    btntxt = "\n".join(btntxt)
+                    x['button'] = tk.Button(self.chanselframe, justify=tk.LEFT, text=btntxt)
+                    x['button'].bind('<ButtonPress-1><ButtonRelease-1>', self._build_chanselbtn_callback(i))
 
             # Display channel display buttons
             self.chansellbl.config(state=tk.NORMAL)
@@ -376,7 +371,7 @@ class SessionView_Tk(SessionView):
             # Initial channel selection and display
             self._change_channel_selection()
             self.update_roi_display(notify_listeners=False)
-            self.stackviewer.set_stack(display_stack, wait=False)
+        self.stackviewer.set_stack(self.display_stack, wait=False)
 
     def save(self):
         """Save data to files"""

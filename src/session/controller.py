@@ -31,7 +31,6 @@ class SessionController:
             self.title = " ".join((self.title, self.version))
         self.control_queue = queue.Queue()
         self.lock = threading.RLock()
-        self.continue_control = True
         self.view = None
         self.sessions = {}
         self.current_session = None
@@ -47,18 +46,20 @@ class SessionController:
             const.CMD_SET_MICROSCOPE: self.set_microscope,
             }
 
+    @threaded
     def control_loop(self):
         """Consume events from control queue.
 
-        This method is intended to be run in the control thread,
-        preferably as thread target.
+        This method spawns the control thread.
         """
-        while self.continue_control:
+        while True:
             try:
-                evt = self.control_queue.get(timeout=.5)
+                evt = self.control_queue.get(timeout=10)
             except queue.Empty:
                 continue
-            if evt.fun is not None:
+            if evt is None:
+                break
+            elif evt.fun is not None:
                 evt()
             else:
                 try:
@@ -74,22 +75,22 @@ class SessionController:
         This method must be run in the main thread.
         """
         # Set up control queue and control loop
-        control_thread = threading.Thread(target=self.control_loop)
-        control_thread.start()
+        control_thread = self.control_loop()
 
-        # Start the GUI
-        # Some GUI libs (like tkinter) must be run in the main thread!
-        if self.session_type == 'tk':
-            from .view_tk import SessionView_Tk as SessionView
-        else:
-            raise ValueError(f"Unknown session type '{self.session_type}'")
-        self.view = SessionView.create(title=self.title, control_queue=self.control_queue, status=self.status)
-        self.view.mainloop()
+        try:
+            # Start the GUI
+            # Some GUI libs (like tkinter) must be run in the main thread!
+            if self.session_type == 'tk':
+                from .view_tk import SessionView_Tk as SessionView
+            else:
+                raise ValueError(f"Unknown session type '{self.session_type}'")
+            self.view = SessionView.create(title=self.title, control_queue=self.control_queue, status=self.status)
+            self.view.mainloop()
 
-        # Cleanup
-        Event.fire(self.control_queue, print, "Quit") #DEBUG
-        self.continue_control = False
-        control_thread.join()
+        finally:
+            # Cleanup
+            self.control_queue.put_nowait(None)
+            control_thread.join()
 
     def initialize_session(self):
         """Create a new, empty SessionModel instance.

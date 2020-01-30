@@ -332,11 +332,11 @@ class StackViewer:
         self.img = None
         self.img_shape = None
         self._update_stack_properties()
-        self.image_listener_id = self.stack.add_listener(
-                lambda: self.schedule(self._update_stack_properties), TAG_IMAGE)
-        self.roi_listener_id = self.stack.add_listener(
-                lambda: self.schedule(self.draw_rois), TAG_ROI)
-
+        if self.stack is not None:
+            self.image_listener_id = self.stack.add_listener(
+                    lambda: self.schedule(self._update_stack_properties), TAG_IMAGE)
+            self.roi_listener_id = self.stack.add_listener(
+                    lambda: self.schedule(self.draw_rois), TAG_ROI)
 
     def _show_img(self):
         """Update the image shown."""
@@ -370,17 +370,21 @@ class StackViewer:
         """Read stack dimensions and adjust GUI."""
         self.update_scrollbars()
 
-        self.n_channels = self.stack.n_channels
-        if self.i_channel is None or self.i_channel >= self.n_channels:
-            #self.i_channel = 0
-            self.i_channel_var.set(1)
+        if self.stack is not None:
+            self.n_channels = self.stack.n_channels
+            if self.i_channel is None or self.i_channel >= self.n_channels:
+                #self.i_channel = 0
+                self.i_channel_var.set(1)
 
-        self.n_frames = self.stack.n_frames
-        if self.i_frame is None or self.i_frame >= self.n_frames:
-            #self.i_frame = 0
-            self.i_frame_var.set(1)
-
-        self.label.config(text=self.stack.path)
+            self.n_frames = self.stack.n_frames
+            if self.i_frame is None or self.i_frame >= self.n_frames:
+                #self.i_frame = 0
+                self.i_frame_var.set(1)
+            self.label.config(text=self.stack.path)
+        else:
+            self.n_channels = None
+            self.n_frames = None
+            self.label.config(text="")
         self.update_scrollbars()
 
         # GUI elements corresponding to channel
