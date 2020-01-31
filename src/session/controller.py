@@ -19,7 +19,7 @@ def threaded(fn):
     return threaded_fun
 
 class SessionController:
-    def __init__(self, session_type='tk', name=None, version=None):
+    def __init__(self, session_type='tk', name=None, version=None, read_session_path=None):
         self.session_type = session_type
         self.name = name
         self.version = version
@@ -45,6 +45,9 @@ class SessionController:
             const.CMD_READ_SESSION_FROM_DISK: self.read_session_from_disk,
             const.CMD_SET_MICROSCOPE: self.set_microscope,
             }
+
+        if read_session_path is not None:
+            Event.fire(self.control_queue, const.CMD_READ_SESSION_FROM_DISK, read_session_path)
 
     @threaded
     def control_loop(self):
@@ -141,7 +144,7 @@ class SessionController:
         """
         stack_ids = set()
         with self.lock:
-            stack_ids.update(s.stack_ids for sid, s in self.sessions.items() if sid not in exclude_sessions)
+            stack_ids.update(*(s.stack_ids for sid, s in self.sessions.items() if sid not in exclude_sessions))
         return stack_ids
             
 

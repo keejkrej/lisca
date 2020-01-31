@@ -351,6 +351,9 @@ class SessionOpener:
 
     def finish(self):
         """Close the window and call callback with channels"""
+        if not self.channels:
+            self.cancel()
+            return
         self.active = False
         session_stacks = []
         self.frame.destroy()
