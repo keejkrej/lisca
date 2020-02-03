@@ -633,7 +633,7 @@ class Stack:
             return self._info.get(name)
 
     def stack_info(self):
-        """Print stack info. Only for debugging."""
+        """Print stack info for DEBUGging."""
         with self.image_lock:
             print("Path: " + str(self._path))
             print("width: " + str(self._width))

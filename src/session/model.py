@@ -21,6 +21,7 @@ from ..stack import types as ty
 from ..tracking import Tracker
 
 class SessionModel:
+    #TODO: update this docstring
     """Session info container.
 
     The following structured fields are present:

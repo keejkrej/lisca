@@ -114,7 +114,7 @@ class ContrastAdjuster:
             self.i_channel = i_channel
 
             self.img = self.stackviewer.stack.get_image_copy(
-                self.i_channel, self.i_frame)
+                channel=self.i_channel, frame=self.i_frame)
             self.img_min = self.img.min()
             self.img_max = self.img.max()
 
