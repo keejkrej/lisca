@@ -11,7 +11,7 @@ import tkinter.ttk as ttk
 import warnings
 from .contrast import ContrastAdjuster
 from .gui_tk import new_toplevel
-from .roi import RectRoi
+from .roi import RectRoiGridAdjuster
 from .stack import Stack
 
 # Define constants
@@ -117,6 +117,7 @@ class StackViewer:
         self.i_frame = None
         self.img = None
         self.img_shape = None
+        self.scale = None
 
         self.i_channel_var = tk.IntVar()
         self.i_channel_var.trace_add("write", self._i_channel_changed)
@@ -331,6 +332,7 @@ class StackViewer:
         self.stack = s
         self.img = None
         self.img_shape = None
+        self.scale = None
         self._update_stack_properties()
         if self.stack is not None:
             self.image_listener_id = self.stack.add_listener(
@@ -355,6 +357,11 @@ class StackViewer:
             is_scaled = True
         else:
             is_scaled = False
+
+        if not (self.img_shape == self.stack_shape).all():
+            self.scale = self.img_shape / self.stack_shape
+        else:
+            self.scale = None
 
         self.canvas.delete(TAG_IMAGE)
         self.canvas.create_image(0, 0, anchor=tk.NW,
@@ -492,7 +499,7 @@ class StackViewer:
     def start_roi_adjustment(self, *_):
         """Start ROI adjustment"""
         if self.roi_adjuster is None:
-            self.roi_adjuster = RectRoi.Adjuster(self)
+            self.roi_adjuster = RectRoiGridAdjuster(self)
         if hasattr(self.roi_adjuster, 'start_adjustment'):
             self.roi_adjuster.start_adjustment()
         self.roi_adjustment_state = True
@@ -587,12 +594,6 @@ class StackViewer:
         if not self.show_rois_var.get() or not roi_collections:
             return
 
-        # Get image shape for scaling
-        if not (self.img_shape == self.stack_shape).all():
-            scale = self.img_shape / self.stack_shape
-        else:
-            scale = None
-
         # Get ROIs and display
         for roi_col in roi_collections.values():
             rois = None
@@ -606,12 +607,16 @@ class StackViewer:
                 except KeyError:
                     rois = None
             if rois is None:
+                print(f"No Rois found for collection '{roi_col.name}'") #DEBUG
                 continue
+            print(f"drawing Rois of '{roi_col.name}'") #DEBUG
 
             col_color = roi_col.color
             if col_color is None:
                 col_color = 'yellow'
             col_stroke_width = roi_col.stroke_width
+            if col_stroke_width is None:
+                col_stroke_width = 1
 
             for roi in rois:
                 if not roi.visible and not roi.name_visible:
@@ -637,17 +642,26 @@ class StackViewer:
                     if stroke_width is None:
                         stroke_width = col_stroke_width
 
-                    contour = roi.contour
-                    if scale is not None:
-                        contour = contour * scale
-
-                    self.canvas.create_polygon(*contour[:, ::-1].flat, tags=tags,
-                            fill='', outline=color, width=stroke_width)
+                    roi_key = roi.key()[0]
+                    if roi_key == 'raw':
+                        contour = roi.contour
+                        if self.scale is not None:
+                            contour = contour * self.scale
+                        self.canvas.create_polygon(*contour[:, ::-1].flat, tags=tags,
+                                fill='', outline=color, width=stroke_width)
+                    elif roi_key == 'rect':
+                        corners = roi.corners
+                        if self.scale is not None:
+                            corners = corners * self.scale
+                        self.canvas.create_polygon(*corners[:, ::-1].flat, tags=tags,
+                                fill='', outline=color, width=stroke_width)
+                    else:
+                        print(f"Undefined ROI type: '{roi_key}'") #DEBUG
 
                 if roi.name and roi.name_visible:
                     txtpos = roi.centroid.flat[::-1]
-                    if scale is not None:
-                        txtpos = txtpos * scale
+                    if self.scale is not None:
+                        txtpos = txtpos * self.scale
                     if name_tag:
                         tags = (TAG_ROI_NAME, name_tag)
                     else:

@@ -190,7 +190,7 @@ class SessionView_Tk(SessionView):
         ## Stack frame
         self.stackframe = tk.Frame(self.paned)
         self.paned.add(self.stackframe, sticky='NESW', width=650)
-        self.stackviewer = StackViewer(parent=self.stackframe, root=self.root, show_buttons=False)
+        self.stackviewer = StackViewer(parent=self.stackframe, root=self.root, show_buttons=True)
 
         ## Figure frame
         self.figframe = tk.Frame(self.paned)

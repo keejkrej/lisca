@@ -90,3 +90,9 @@ def find_perimeter(img):
             corners.append(append)
 
     return np.array(corners, dtype=np.uint16)
+
+
+def find_roi_perimeter(roi):
+    img = np.zeros((roi.y_max - roi.y_min + 1, roi.x_max - roi.x_min + 1), dtype=np.bool_)
+    img[roi.rows - roi.y_min, roi.cols - roi.x_min] = True
+    return find_perimeter(img) + np.array(((roi.y_min, roi.x_min)))

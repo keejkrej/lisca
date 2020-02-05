@@ -253,6 +253,7 @@ class MetaStack:
 
     def add_listener(self, fun, kind=None):
         """Register a listener to stack changes."""
+        print(f"Metastack.add_listener: registering listener for '{kind}'") #DEBUG
         return self._listeners.register(fun, kind)
 
     def delete_listener(self, lid):
@@ -261,6 +262,7 @@ class MetaStack:
 
     def _notify_roi_listeners(self, *_, **__):
         """Convenience function for propagation of ROI changes"""
+        print("Metastack._notify_roi_listeners: notifying …") #DEBUG
         self._listeners.notify("roi")
 
     def new_roi_collection(self, roi):
@@ -269,6 +271,7 @@ class MetaStack:
             with self.roi_lock:
                 roi.register_listener(self._notify_roi_listeners)
                 self.__rois[roi.key] = roi
+                print(f"Metastack.new_roi_collection: registering RoiCollection '{roi.name}'") #DEBUG
         else:
             raise TypeError(f"Expected 'RoiCollection', got '{type(roi)}'")
 
