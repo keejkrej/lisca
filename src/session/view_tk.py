@@ -109,7 +109,7 @@ class SessionView_Tk(SessionView):
 
         self.var_show_frame_indicator = tk.BooleanVar(value=True)
         self.var_mode = tk.StringVar(value=MODE_HIGHLIGHT)
-        self.var_darken_deselected = tk.BooleanVar(value=True)
+        self.var_darken_deselected = tk.BooleanVar(value=False)
         self.var_show_roi_contours = tk.BooleanVar(value=True)
         self.var_show_roi_names = tk.BooleanVar(value=True)
         self.var_show_untrackable = tk.BooleanVar(value=False)
