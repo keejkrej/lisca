@@ -727,3 +727,10 @@ class SessionModel:
             x['type'] = ch['type']
             chan_info.append(x)
         return chan_info
+
+    def binarize_phc_stack(self, *, i_channel, outfile, status=None):
+        from ..tools.binarize import binarize_phasecontrast_stack as tool_bin_phc
+        spec = self.stack.channels[i_channel]
+        stack = self.stack.stack(spec.name)
+        phc_channel = spec.channel
+        tool_bin_phc(stack=stack, i_channel=phc_channel, outfile=outfile, status=status)

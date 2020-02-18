@@ -44,6 +44,7 @@ class SessionController:
             const.CMD_CONFIG_SESSION: self.config_session,
             const.CMD_READ_SESSION_FROM_DISK: self.read_session_from_disk,
             const.CMD_SET_MICROSCOPE: self.set_microscope,
+            const.CMD_TOOL_BINARIZE: self.binarize_phasecontrast_stack,
             }
 
         if read_session_path is not None:
@@ -214,3 +215,9 @@ class SessionController:
     @threaded
     def save_session_to_disk(self, session, save_dir, status=None):
         session.save_session(save_dir, status=status)
+
+    @threaded
+    def binarize_phasecontrast_stack(self, session, i_channel, outfile, status=None):
+        session.binarize_phc_stack(i_channel=i_channel, outfile=outfile, status=status)
+
+

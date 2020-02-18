@@ -41,6 +41,8 @@ EVENT_STATE_CTRL = 4
 MODE_SELECTION = 'selection'
 MODE_HIGHLIGHT = 'highlight'
 
+TOOL_LABEL_BINARIZE = "Binarize…"
+
 DESELECTED_DARKEN_FACTOR = .3
 
 MIC_RES = {
@@ -131,6 +133,10 @@ class SessionView_Tk(SessionView):
         menubar.add_cascade(label="Mode", menu=modemenu)
         modemenu.add_radiobutton(label="Highlight", value=MODE_HIGHLIGHT, variable=self.var_mode)
         modemenu.add_radiobutton(label="Selection", value=MODE_SELECTION, variable=self.var_mode)
+
+        self.toolmenu = tk.Menu(menubar)
+        menubar.add_cascade(label="Tools", menu=self.toolmenu)
+        self.toolmenu.add_command(label=TOOL_LABEL_BINARIZE, command=self.binarize, state=tk.DISABLED)
 
         settmenu = tk.Menu(menubar)
         menubar.add_cascade(label="Settings", menu=settmenu)
@@ -367,6 +373,13 @@ class SessionView_Tk(SessionView):
                 self.channel_order.append(idx_segmentation)
                 self.channel_selection[idx_segmentation]['button'].pack(anchor=tk.N,
                         expand=True, fill=tk.X, padx=10, pady=5)
+
+            # Update tools menu
+            if idx_phasecontrast is None:
+                new_state = tk.DISABLED
+            else:
+                new_state = tk.NORMAL
+            self.toolmenu.entryconfig(TOOL_LABEL_BINARIZE, state=new_state)
 
             # Initial channel selection and display
             self._change_channel_selection()
@@ -988,4 +1001,33 @@ class SessionView_Tk(SessionView):
         # Forward filename to controller
         Event.fire(self.control_queue, const.CMD_READ_SESSION_FROM_DISK, fn)
 
+    def binarize(self):
+        # Get index of first phase-contrast channel
+        for i, spec in enumerate(self.session.stack.channels):
+            if spec.type == ty.TYPE_PHASECONTRAST:
+                i_channel = i
+                break
+        else:
+            print("SessionView_Tk.binarize: no phase-contrast channel found.") #DEBUG
+            return
 
+        # Get filename
+        options = {'defaultextension': '.tif',
+                   'filetypes': ( ("TIFF", '*.tif *.tiff'), ("All files", '*')),
+                   'parent': self.root,
+                   'title': "Choose output directory for binarized phase-contrast stack",
+                  }
+        if self.save_dir:
+            options['initialdir'] = self.save_dir
+        outfile = tkfd.asksaveasfilename(**options)
+        if not outfile:
+            return
+
+        # Start binarization
+        Event.fire(self.control_queue,
+                   const.CMD_TOOL_BINARIZE,
+                   session=self.session,
+                   i_channel=i_channel,
+                   outfile=outfile,
+                   status=self.status,
+                   )
