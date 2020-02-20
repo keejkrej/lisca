@@ -4,6 +4,7 @@ import numba as nb
 
 STRUCT3 = np.ones((3,3), dtype=np.bool_)
 STRUCT7 = np.ones((7,7), dtype=np.bool_)
+STRUCT7[[0,0,-1,-1], [0,-1,0,-1]] = False
 
 @nb.njit
 def window_std(img):
@@ -17,43 +18,38 @@ def generic_filter(img, fun, size=3, reflect=False):
 
     img -- the image to be filtered
     fun -- the filter function to be applied, must accept subimage of 'img' as only argument and return a scalar
-    size -- the size (side length) of the mask; msut be an odd integer
+    size -- the size (side length) of the mask; must be an odd integer
     reflect -- switch for border mode: True for 'reflect', False for 'mirror'
 
     Returns a np.float64 array with same shape as 'img'.
 
-    This function is intended to be a numba-capable version of scipy.ndimage.generic_filter.
+    This function is intended to be a numba-capable replacement of scipy.ndimage.generic_filter.
     """
     if size % 2 != 1:
         raise ValueError("'size' must be an odd integer")
     height, width = img.shape
+    s2 = size // 2
+
+    # Set up temporary image for correct border handling
+    img_temp = np.empty((height+2*s2, width+2*s2), dtype=np.float64)
+    img_temp[s2:-s2, s2:-s2] = img
+    if reflect:
+        img_temp[:s2, s2:-s2] = img[s2-1::-1, :]
+        img_temp[-s2:, s2:-s2] = img[:-s2-1:-1, :]
+        img_temp[:, :s2] = img_temp[:, 2*s2-1:s2-1:-1]
+        img_temp[:, -s2:] = img_temp[:, -s2-1:-2*s2-1:-1]
+    else:
+        img_temp[:s2, s2:-s2] = img[s2:0:-1, :]
+        img_temp[-s2:, s2:-s2] = img[-2:-s2-2:-1, :]
+        img_temp[:, :s2] = img_temp[:, 2*s2:s2:-1]
+        img_temp[:, -s2:] = img_temp[:, -s2-2:-2*s2-2:-1]
+
+    # Create and populate result image
     filtered_img = np.empty_like(img, dtype=np.float64)
-    size_2 = size // 2
-
-    # Create x- and y-coordinate array
-    idx_y = np.empty((height + 2 * size_2, 1), dtype=np.intp)
-    idx_y[size_2:-size_2, 0] = np.arange(height)
-    if reflect:
-        idx_y[:size_2, 0] = idx_y[2*size_2-1:size_2-1:-1, 0]
-        idx_y[-size_2:, 0] = idx_y[-size_2-1:-2*size_2-1:-1, 0]
-    else:
-        idx_y[:size_2, 0] = idx_y[2*size_2:size_2:-1, 0]
-        idx_y[-size_2:, 0] = idx_y[-size_2-2:-2*size_2-2:-1, 0]
-
-    idx_x = np.empty((1, width + 2 * size_2), dtype=np.intp)
-    idx_x[0, size_2:-size_2] = np.arange(width)
-    if reflect:
-        idx_x[0, :size_2] = idx_x[0, 2*size_2-1:size_2-1:-1]
-        idx_x[0, -size_2:] = idx_x[0, -size_2-1:-2*size_2-1:-1]
-    else:
-        idx_x[0, :size_2] = idx_x[0, 2*size_2:size_2:-1]
-        idx_x[0, -size_2:] = idx_x[0, -size_2-2:-2*size_2-2:-1]
-
-    # Compute filtered image
     for y in range(height):
         for x in range(width):
-            filtered_img[y, x] = fun(img[y:y+2*size_2+1, x:x+2*size_2+1])
-    
+            filtered_img[y, x] = fun(img_temp[y:y+2*s2+1, x:x+2*s2+1])
+
     return filtered_img
 
 
@@ -63,7 +59,6 @@ def binarize_frame(img, mask_size=3):
     Returns binarized image of frame
     """
     # Get logarithmic standard deviation at each pixel
-    #std_log = smg.generic_filter(img, window_std, size=mask_size, mode='reflect', output=np.float_)
     std_log = generic_filter(img, window_std, size=mask_size)
     std_log[std_log>0] = (np.log(std_log[std_log>0]) - np.log(mask_size**2 - 1)) / 2
 
