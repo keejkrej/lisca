@@ -137,6 +137,7 @@ class SessionView_Tk(SessionView):
         self.toolmenu = tk.Menu(menubar)
         menubar.add_cascade(label="Tools", menu=self.toolmenu)
         self.toolmenu.add_command(label=TOOL_LABEL_BINARIZE, command=self.binarize, state=tk.DISABLED)
+        self.toolmenu.add_command(label="Pickle maximum bounding box", command=self._pickle_max_bbox)
 
         settmenu = tk.Menu(menubar)
         menubar.add_cascade(label="Settings", menu=settmenu)
@@ -1031,3 +1032,23 @@ class SessionView_Tk(SessionView):
                    outfile=outfile,
                    status=self.status,
                    )
+
+    def _pickle_max_bbox(self):
+        """Export bounding box of maximum extension of each selected cell"""
+        if self.session is None or not self.session.traces:
+            print("No ROIs to export")
+            return
+
+        options = dict(defaultextension='.pickle',
+                       filetypes=(("Pickle", '*.pickle'), ("All", '*')),
+                       parent=self.root,
+                       title="Save bounding boxes as …",
+                      )
+        if self.save_dir:
+            options['initialdir'] = self.save_dir
+        save_name = tkfd.asksaveasfilename(**options)
+        if not save_name:
+            return
+
+        from ..tools.roi_bboxer import get_selected_bboxes
+        get_selected_bboxes(self.session, save_name)
