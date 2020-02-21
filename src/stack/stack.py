@@ -205,8 +205,8 @@ class Stack:
                 self._width = page0.imagewidth
                 self._height = page0.imagelength
                 self._mode = page0.bitspersample
-                if self._mode != 8 and self._mode != 16:
-                    raise TypeError(f"Only 8-bit and 16-bit images are supported; found {self._mode}.")
+                if self._mode not in (1, 8, 16):
+                    raise TypeError(f"Image bit-depth '{self._mode}' is not supported.")
 
                 # Get software-specific information
                 description = page0.description
@@ -222,7 +222,7 @@ class Stack:
 
                 # Copy stack to numpy array in temporary file
                 self._tmpfile = tempfile.TemporaryFile()
-                dtype = np.uint8 if self._mode == 8 else np.uint16
+                dtype = np.uint16 if self._mode == 16 else np.uint8
                 self.img = np.memmap(filename=self._tmpfile,
                                      dtype=dtype,
                                      shape=(self._n_channels,

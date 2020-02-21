@@ -3,8 +3,8 @@ import numpy as np
 import numba as nb
 
 STRUCT3 = np.ones((3,3), dtype=np.bool_)
-STRUCT7 = np.ones((7,7), dtype=np.bool_)
-STRUCT7[[0,0,-1,-1], [0,-1,0,-1]] = False
+STRUCT5 = np.ones((5,5), dtype=np.bool_)
+STRUCT5[[0,0,-1,-1], [0,-1,0,-1]] = False
 
 @nb.njit
 def window_std(img):
@@ -74,7 +74,7 @@ def binarize_frame(img, mask_size=3):
     # Remove noise
     img_bin = smg.binary_dilation(img_bin, structure=STRUCT3)
     img_bin = smg.binary_fill_holes(img_bin)
-    img_bin &= smg.binary_opening(img_bin, iterations=2, structure=STRUCT7)
+    img_bin &= smg.binary_opening(img_bin, iterations=2, structure=STRUCT5)
     img_bin = smg.binary_erosion(img_bin, border_value=1)
 
     return img_bin
