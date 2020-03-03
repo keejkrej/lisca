@@ -1014,7 +1014,7 @@ class SessionView_Tk(SessionView):
 
         # Get filename
         options = {'defaultextension': '.tif',
-                   'filetypes': ( ("TIFF", '*.tif *.tiff'), ("All files", '*')),
+                   'filetypes': ( ("Numpy", '*.npy *.npz'), ("TIFF", '*.tif *.tiff'), ("All files", '*')),
                    'parent': self.root,
                    'title': "Choose output directory for binarized phase-contrast stack",
                   }
