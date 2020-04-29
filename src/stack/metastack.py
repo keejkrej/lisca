@@ -10,9 +10,6 @@ from ..listener import Listeners
 from ..roi import RoiCollection
 from .stack import Stack
 
-TYPE_PHASECONTRAST = "Phase contrast"
-TYPE_FLUORESCENCE = "Fluorescence"
-TYPE_SEGMENTATION = "Segmentation"
 
 @dataclass
 class ChannelSpec:
@@ -217,8 +214,7 @@ class MetaStack:
 
     def get_image_copy(self, *, channel, frame, scale=None):
         """Get a copy of a numpy array of a stack position."""
-        #TODO
-        img = self.get_image(channel=channel, frame=frame, scale=scale)
+        return self.get_image(channel=channel, frame=frame, scale=scale).copy()
 
 
     def get_frame_tk(self, *, channel, frame, convert_fcn=None):

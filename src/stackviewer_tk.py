@@ -4,14 +4,17 @@ import os
 import queue
 import sys
 from threading import Condition
-import numpy as np
 import tkinter as tk
 import tkinter.filedialog as tkfdlg
 import tkinter.ttk as ttk
 import warnings
+
+import numpy as np
+
 from .contrast import ContrastAdjuster
 from .gui_tk import new_toplevel
-from .roi import RectRoi
+from .roi import RectRoiGridAdjuster
+from .session.events import Event
 from .stack import Stack
 
 # Define constants
@@ -90,6 +93,8 @@ class StackViewer:
     * ``stop_adjustment``
     * ``close``
     """
+    CMD_UPDATE_STACK = 'CMD_UPDATE_STACK'
+    CMD_UPDATE_ROIS = 'CMD_UPDATE_ROIS'
 
     def __init__(self, parent=None, image_file=None, root=None, show_buttons=True):
         """Initialize the GUI."""
@@ -107,6 +112,8 @@ class StackViewer:
         self.image_listener_id = None
         self.roi_listener_id = None
         self._update_queue = queue.Queue()
+        self._last_draw_rois = Event.now()
+        self._last_update_stack_properties = Event.now()
         self._roi_click_bindings = {}
 
         # Stack properties
@@ -117,6 +124,7 @@ class StackViewer:
         self.i_frame = None
         self.img = None
         self.img_shape = None
+        self.scale = None
 
         self.i_channel_var = tk.IntVar()
         self.i_channel_var.trace_add("write", self._i_channel_changed)
@@ -125,7 +133,7 @@ class StackViewer:
 
         self.show_rois_var = tk.BooleanVar()
         self.show_rois_var.set(True)
-        self.show_rois_var.trace_add("write", self.draw_rois)
+        self.show_rois_var.trace_add("write", self._draw_rois)
 
         ## GUI elements:
         # Main frame
@@ -253,20 +261,28 @@ class StackViewer:
         """
         while True:
             try:
-                func, args, kwargs, cv = self._update_queue.get(block=False)
+                evt = self._update_queue.get_nowait()
             except queue.Empty:
                 break
 
-            if cv is not None:
-                def sfunc(*args, **kwargs):
-                    nonlocal func, cv
-                    func(*args, **kwargs)
-                    with cv:
-                        cv.notify_all()
-            else:
-                sfunc = func
+            if evt.cmd is not None:
+                if evt.cmd == self.CMD_UPDATE_STACK:
+                    if self._last_update_stack_properties > evt.time:
+                        print("Skipping CMD_UPDATE_STACK") #DEBUG
+                        continue
+                    self.root.after_idle(self._update_stack_properties)
 
-            self.root.after_idle(sfunc, *args, **kwargs)
+                elif evt.cmd == self.CMD_UPDATE_ROIS:
+                    if self._last_draw_rois > evt.time:
+                        print("Skipping CMD_UPDATE_ROIS") #DEBUG
+                        continue
+                    self.root.after_idle(self._draw_rois)
+
+                else:
+                    print(f"StackViewer._update: Unknown command '{evt.cmd}'")
+                    continue
+            else:
+                self.root.after_idle(evt.__call__)
         self.root.after(40, self._update)
 
 
@@ -277,7 +293,7 @@ class StackViewer:
         This function can be used to change the GUI from another thread.
         See also :py:meth:`schedule_and_wait`.
         """
-        self._update_queue.put((func, args, kwargs, None))
+        Event.fire(self._update_queue, func, *args, **kwargs)
 
 
     def schedule_and_wait(self, func, *args, **kwargs):
@@ -289,9 +305,36 @@ class StackViewer:
         """
         cv = Condition()
         with cv:
-            self._update_queue.put((func, args, kwargs, cv))
+            Event.fire(self._update_queue, self._awaited_execution, func, args, kwargs, cv)
             cv.wait()
 
+    def _awaited_execution(self, func, args, kwargs, cv):
+        """Execute avaited function.
+
+        Execute a function and notify another thread waiting for the execution.
+        This method should be called by the Tkinter control thread.
+
+        See `schedule_and_wait` for more details.
+        """
+        func(*args, **kwargs)
+        with cv:
+            cv.notify_all()
+
+    def update_stack_properties(self):
+        """Trigger stack property update.
+
+        Use this function to trigger an update of stack properties
+        from another thread.
+        """
+        Event.fire(self._update_queue, self.CMD_UPDATE_STACK)
+
+    def draw_rois(self):
+        """Trigger ROIs update.
+
+        Use this function to trigger an update of ROIs
+        from another thread.
+        """
+        Event.fire(self._update_queue, self.CMD_UPDATE_ROIS)
 
     def open_stack(self, fn=None):
         """
@@ -331,12 +374,13 @@ class StackViewer:
         self.stack = s
         self.img = None
         self.img_shape = None
+        self.scale = None
         self._update_stack_properties()
-        self.image_listener_id = self.stack.add_listener(
-                lambda: self.schedule(self._update_stack_properties), TAG_IMAGE)
-        self.roi_listener_id = self.stack.add_listener(
-                lambda: self.schedule(self.draw_rois), TAG_ROI)
-
+        if self.stack is not None:
+            self.image_listener_id = self.stack.add_listener(
+                    lambda: self.schedule(self.update_stack_properties), 'image')
+            self.roi_listener_id = self.stack.add_listener(
+                    lambda: self.schedule(self.draw_rois), 'roi')
 
     def _show_img(self):
         """Update the image shown."""
@@ -356,11 +400,16 @@ class StackViewer:
         else:
             is_scaled = False
 
+        if not (self.img_shape == self.stack_shape).all():
+            self.scale = self.img_shape / self.stack_shape
+        else:
+            self.scale = None
+
         self.canvas.delete(TAG_IMAGE)
         self.canvas.create_image(0, 0, anchor=tk.NW,
                                  image=self.img, tags=(TAG_IMAGE,))
         self.canvas.tag_lower(TAG_IMAGE)
-        self.draw_rois()
+        self._draw_rois()
 
         if is_scaled:
             self.update_scrollbars()
@@ -368,19 +417,24 @@ class StackViewer:
 
     def _update_stack_properties(self):
         """Read stack dimensions and adjust GUI."""
+        self._last_update_stack_properties = Event.now()
         self.update_scrollbars()
 
-        self.n_channels = self.stack.n_channels
-        if self.i_channel is None or self.i_channel >= self.n_channels:
-            #self.i_channel = 0
-            self.i_channel_var.set(1)
+        if self.stack is not None:
+            self.n_channels = self.stack.n_channels
+            if self.i_channel is None or self.i_channel >= self.n_channels:
+                #self.i_channel = 0
+                self.i_channel_var.set(1)
 
-        self.n_frames = self.stack.n_frames
-        if self.i_frame is None or self.i_frame >= self.n_frames:
-            #self.i_frame = 0
-            self.i_frame_var.set(1)
-
-        self.label.config(text=self.stack.path)
+            self.n_frames = self.stack.n_frames
+            if self.i_frame is None or self.i_frame >= self.n_frames:
+                #self.i_frame = 0
+                self.i_frame_var.set(1)
+            self.label.config(text=self.stack.path)
+        else:
+            self.n_channels = None
+            self.n_frames = None
+            self.label.config(text="")
         self.update_scrollbars()
 
         # GUI elements corresponding to channel
@@ -488,7 +542,7 @@ class StackViewer:
     def start_roi_adjustment(self, *_):
         """Start ROI adjustment"""
         if self.roi_adjuster is None:
-            self.roi_adjuster = RectRoi.Adjuster(self)
+            self.roi_adjuster = RectRoiGridAdjuster(self)
         if hasattr(self.roi_adjuster, 'start_adjustment'):
             self.roi_adjuster.start_adjustment()
         self.roi_adjustment_state = True
@@ -572,8 +626,10 @@ class StackViewer:
         else:
             self.contrast_adjuster.get_focus()
 
-    def draw_rois(self, *_):
+    def _draw_rois(self, *_):
         """Draw the ROIs in the current frame."""
+        self._last_draw_rois = Event.now()
+
         # Clear old ROIs
         self.canvas.delete(TAG_ROI)
         self.canvas.delete(TAG_ROI_NAME)
@@ -582,12 +638,6 @@ class StackViewer:
         roi_collections = self.stack.rois
         if not self.show_rois_var.get() or not roi_collections:
             return
-
-        # Get image shape for scaling
-        if not (self.img_shape == self.stack_shape).all():
-            scale = self.img_shape / self.stack_shape
-        else:
-            scale = None
 
         # Get ROIs and display
         for roi_col in roi_collections.values():
@@ -608,6 +658,8 @@ class StackViewer:
             if col_color is None:
                 col_color = 'yellow'
             col_stroke_width = roi_col.stroke_width
+            if col_stroke_width is None:
+                col_stroke_width = 1
 
             for roi in rois:
                 if not roi.visible and not roi.name_visible:
@@ -633,17 +685,26 @@ class StackViewer:
                     if stroke_width is None:
                         stroke_width = col_stroke_width
 
-                    contour = roi.contour
-                    if scale is not None:
-                        contour = contour * scale
-
-                    self.canvas.create_polygon(*contour[:, ::-1].flat, tags=tags,
-                            fill='', outline=color, width=stroke_width)
+                    roi_key = roi.key()[0]
+                    if roi_key == 'raw':
+                        contour = roi.contour
+                        if self.scale is not None:
+                            contour = contour * self.scale
+                        self.canvas.create_polygon(*contour[:, ::-1].flat, tags=tags,
+                                fill='', outline=color, width=stroke_width)
+                    elif roi_key == 'rect':
+                        corners = roi.corners
+                        if self.scale is not None:
+                            corners = corners * self.scale
+                        self.canvas.create_polygon(*corners[:, ::-1].flat, tags=tags,
+                                fill='', outline=color, width=stroke_width)
+                    else:
+                        print(f"Undefined ROI type: '{roi_key}'") #DEBUG
 
                 if roi.name and roi.name_visible:
                     txtpos = roi.centroid.flat[::-1]
-                    if scale is not None:
-                        txtpos = txtpos * scale
+                    if self.scale is not None:
+                        txtpos = txtpos * self.scale
                     if name_tag:
                         tags = (TAG_ROI_NAME, name_tag)
                     else:
@@ -711,7 +772,7 @@ class StackViewer:
         self.closing_state = True
 
         if self.contrast_adjuster is not None:
-            self.contrast_adjuster.close()
+            self.contrast_adjuster.close(isDisplayUpdate=False)
             self.contrast_adjuster = None
         self.forget_roi_adjuster()
 
