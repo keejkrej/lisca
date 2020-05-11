@@ -728,9 +728,64 @@ class SessionModel:
             chan_info.append(x)
         return chan_info
 
-    def binarize_phc_stack(self, *, i_channel, outfile, status=None):
+
+    def binarize_phc_stack(self, *, outfile=None, status=None, return_result=False):
         from ..tools.binarize import binarize_phasecontrast_stack as tool_bin_phc
+
+        # Get index of first phase-contrast channel
+        for i, spec in enumerate(self.stack.channels):
+            if spec.type == ty.TYPE_PHASECONTRAST:
+                i_channel = i
+                break
+        else:
+            print("SessionModel.binarize_phc_stack: no phase-contrast channel found.") #DEBUG
+            return
+
         spec = self.stack.channels[i_channel]
         stack = self.stack.stack(spec.name)
         phc_channel = spec.channel
-        tool_bin_phc(stack=stack, i_channel=phc_channel, outfile=outfile, status=status)
+        result = tool_bin_phc(stack=stack,
+                              i_channel=phc_channel,
+                              outfile=outfile,
+                              status=status,
+                              return_result=return_result,
+                             )
+        return result
+
+
+    def background_correction(self, outfile, status=None):
+        from ..tools.bgcorr import perform_background_correction
+
+        i_chan_fl = None
+        i_chan_bin = None
+        for i, spec in enumerate(self.stack.channels):
+            if spec.type == ty.TYPE_FLUORESCENCE and i_chan_fl is None:
+                i_chan_fl = i
+            elif spec.type == ty.TYPE_SEGMENTATION and i_chan_bin is None:
+                i_chan_bin = i
+            if i_chan_fl is not None and i_chan_bin is not None:
+                break
+
+        # Get fluorescence channel
+        if i_chan_fl is None:
+            print("SessionModel.background_correction: no fluorescence channel found.") #DEBUG
+            return
+        c_fl0 = self.stack.get_image(channel=i_chan_fl, frame=0)
+        chan_fl = np.empty((self.stack.n_frames, self.stack.height, self.stack.width), dtype=c_fl0.dtype)
+        chan_fl[0, ...] = c_fl0
+        for t in range(1, self.stack.n_frames):
+            chan_fl[t, ...] = self.stack.get_image(channel=i_chan_fl, frame=t)
+
+        # Get segmentation channel
+        if i_chan_bin is None:
+            outfile_bin = f"{os.path.splitext(outfile)[0]}_segmented.npz"
+            chan_bin = self.binarize_phc_stack(outfile=outfile_bin, status=status, return_result=True)
+        else:
+            c_bin0 = self.stack.get_image(channel=i_chan_bin, frame=0)
+            chan_bin = np.empty((self.stack.n_frames, self.stack.height, self.stack.width), dtype=c_bin0.dtype)
+            chan_bin[0, ...] = c_bin0
+            for t in range(1, self.stack.n_frames):
+                chan_bin[t, ...] = self.stack.get_image(channel=i_chan_bin, frame=t)
+
+        perform_background_correction(chan_fl=chan_fl, chan_bin=chan_bin, outfile=outfile, status=status)
+

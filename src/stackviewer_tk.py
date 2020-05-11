@@ -33,6 +33,11 @@ TAG_ROI = 'roi'
 TAG_ROI_NAME = 'roi_name'
 TAG_ROI_ID = 'roi_id_'
 
+SHOW_ALL = 'all'
+SHOW_CONTRAST = 'contrast'
+SHOW_ROI = 'roi'
+SHOW_BROWSE = 'browse'
+
 class StackViewer:
     """
     Provides a GUI for displaying a TIFF stack.
@@ -96,8 +101,18 @@ class StackViewer:
     CMD_UPDATE_STACK = 'CMD_UPDATE_STACK'
     CMD_UPDATE_ROIS = 'CMD_UPDATE_ROIS'
 
-    def __init__(self, parent=None, image_file=None, root=None, show_buttons=True):
+    def __init__(self, parent=None, image_file=None, root=None, show_buttons='all'):
         """Initialize the GUI."""
+
+        # Prepare arguments
+        if isinstance(show_buttons, str):
+            if show_buttons == SHOW_ALL:
+                show_buttons = (SHOW_CONTRAST, SHOW_ROI, SHOW_BROWSE)
+            else:
+                show_buttons = (show_buttons,)
+        elif not show_buttons:
+            show_buttons = ()
+
         # Initialize GUI components
         if parent is None:
             self.root = new_toplevel(root)
@@ -149,23 +164,23 @@ class StackViewer:
 
         self.contrast_button = ttk.Button(tempframe, text="Contrast",
                                           command=self.open_contrast_adjuster)
-
-        if show_buttons:
+        if SHOW_CONTRAST in show_buttons:
             self.contrast_button.pack(side=tk.LEFT)
+
         self.adjustment_button = ttk.Button(tempframe, text="Adjust ROIs",
                                             command=self.toggle_roi_adjustment,
                                             state=tk.NORMAL)
-        if show_buttons:
+        if SHOW_ROI in show_buttons:
             self.adjustment_button.pack(side=tk.LEFT)
 
         self.open_button = ttk.Button(tempframe, text="Browse...",
                                       command=self.open_stack, state=tk.NORMAL)
-        if show_buttons:
+        if SHOW_BROWSE in show_buttons:
             self.open_button.pack(side=tk.LEFT)
 
         self.label = ttk.Label(tempframe, text="")
 
-        if show_buttons:
+        if SHOW_BROWSE in show_buttons:
             self.label.pack(side=tk.LEFT)
 
         # Canvas
