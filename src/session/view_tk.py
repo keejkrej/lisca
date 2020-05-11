@@ -138,7 +138,7 @@ class SessionView_Tk(SessionView):
         menubar.add_cascade(label="Tools", menu=self.toolmenu)
         self.toolmenu.add_command(label=TOOL_LABEL_BINARIZE, command=self.binarize, state=tk.DISABLED)
         self.toolmenu.add_command(label="Pickle maximum bounding box", command=self._pickle_max_bbox)
-
+        self.toolmenu.add_command(label="Background correction…", command=self._background_correction)
         settmenu = tk.Menu(menubar)
         menubar.add_cascade(label="Settings", menu=settmenu)
         settmenu.add_checkbutton(label="Display frame indicator", variable=self.var_show_frame_indicator)
@@ -1003,20 +1003,11 @@ class SessionView_Tk(SessionView):
         Event.fire(self.control_queue, const.CMD_READ_SESSION_FROM_DISK, fn)
 
     def binarize(self):
-        # Get index of first phase-contrast channel
-        for i, spec in enumerate(self.session.stack.channels):
-            if spec.type == ty.TYPE_PHASECONTRAST:
-                i_channel = i
-                break
-        else:
-            print("SessionView_Tk.binarize: no phase-contrast channel found.") #DEBUG
-            return
-
         # Get filename
         options = {'defaultextension': '.tif',
                    'filetypes': ( ("Numpy", '*.npy *.npz'), ("TIFF", '*.tif *.tiff'), ("All files", '*')),
                    'parent': self.root,
-                   'title': "Choose output directory for binarized phase-contrast stack",
+                   'title': "Choose output file for binarized phase-contrast stack",
                   }
         if self.save_dir:
             options['initialdir'] = self.save_dir
@@ -1028,10 +1019,33 @@ class SessionView_Tk(SessionView):
         Event.fire(self.control_queue,
                    const.CMD_TOOL_BINARIZE,
                    session=self.session,
-                   i_channel=i_channel,
                    outfile=outfile,
                    status=self.status,
                    )
+
+    def _background_correction(self):
+        """Write a background-corrected version of the fluorescence channel"""
+
+        # Get filename
+        options = {'defaultextension': '.tif',
+                   'filetypes': ( ("TIFF", '*.tif *.tiff'), ("All files", '*') ),
+                   'parent': self.root,
+                   'title': "Choose output file for background-corrected fluorescence channel",
+                  }
+        if self.save_dir:
+            options['initialdir'] = self.save_dir
+        outfile = tkfd.asksaveasfilename(**options)
+        if not outfile:
+            return
+
+        # Start background correction
+        Event.fire(self.control_queue,
+                   const.CMD_TOOL_BGCORR,
+                   session=self.session,
+                   outfile=outfile,
+                   status=self.status,
+                  )
+                
 
     def _pickle_max_bbox(self):
         """Export bounding box of maximum extension of each selected cell"""

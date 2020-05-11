@@ -28,5 +28,6 @@ CMD_UPDATE_STACK_LIST = 'cmd_update_stack_list'
 CMD_CLOSE_STACK = 'cmd_close_stack'
 CMD_UPDATE_TRACES = 'cmd_update_traces'
 CMD_TOOL_BINARIZE = 'cmd_tool_binarize'
+CMD_TOOL_BGCORR = 'cmd_tool_bgcorr'
 
 RESP_NEW_SESSION_ID = 'resp_new_session_id'
