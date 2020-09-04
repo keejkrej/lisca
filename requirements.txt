@@ -8,8 +8,8 @@ pandas
 XlsxWriter
 #ipython
 #spyder
-Sphinx
-sphinx_rtd_theme
+#Sphinx
+#sphinx_rtd_theme
 h5py
 numba
 
