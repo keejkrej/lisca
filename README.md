@@ -1,33 +1,37 @@
 ## PyAMA
-PyAMA is a desktop program for displaying TIFF stacks of single-cell microscopy images
-and for reading out time courses of the cell area and the fluorescence intensity of
-the single cells.
+PyAMA is a desktop application for displaying TIFF stacks of single-cell microscopy images
+and for reading out single-cell time courses of the cell area and the fluorescence intensity.
 
 ### Installation
 Python 3.7 with `tkinter` is required.
 
-Clone/pull/download this repository.
-Then install the dependencies from the file `requirements.txt`.
+Clone/pull/download this repository and make the base directory of the repository your working directory by using the `cd` command.
+Then install the necessary dependencies either via anaconda or via pip, whatever you prefer.
 
-With Anaconda, you can install the dependencies with this command:
-
-```
-conda install --file requirements.txt
-```
-
-With pip, you can use this command:
+#### Anaconda users
+If you are using [Anaconda](https://www.anaconda.com), you can install the dependencies with the following command,
+which will create a new environment called `pyama` and install all necessary packages:
 
 ```
+conda env create -f environment.yml
+conda activate pyama
+```
+
+#### Pip users
+If you prefer using venv/pip, you can use this command
+(if you use bash; otherwise, you may have to adapt the commands accordingly):
+
+```
+mkdir env
+python -m venv env
+source env/bin/activate
 pip install -r requirements.txt
 ```
 
-Of course, the above commands require that you have activated the corresponding
-environment, and that your working directory is the base directory of this
-repository.
-If the latter is not the case, you have to adjust the path of the `requirements.txt` file.
 
 ### Usage
 #### Starting PyAMA
+Make sure that the environment containing PyAMA is activated.
 Open the program with by executing the file `__main__.py` in the base directory of
 this repository.
 For simplicity, you can simply call the directory containing the file, and python
