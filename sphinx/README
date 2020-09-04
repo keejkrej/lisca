@@ -1,5 +1,0 @@
-Create the HTML documentation by executing in this directory:
-    make html
-
-Then open in your web browser the file:
-    _build/html/index.html
