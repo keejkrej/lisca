@@ -504,14 +504,13 @@ class StackViewer:
         """
         if self.stack is None:
             return
-        else:
-            isChanged = False
-            if i_channel is not None and i_channel != self.i_channel:
-                self.i_channel = i_channel
-                isChanged = True
-            if i_frame is not None and i_frame != self.i_frame:
-                self.i_frame = i_frame
-                isChanged = True
+        isChanged = False
+        if i_channel is not None and i_channel != self.i_channel:
+            self.i_channel = i_channel
+            isChanged = True
+        if i_frame is not None and i_frame != self.i_frame:
+            self.i_frame = i_frame
+            isChanged = True
         if self.i_frame is None or self.i_channel is None:
             return
         if isChanged or self.img is None or force:
@@ -538,14 +537,39 @@ class StackViewer:
         self._change_stack_position(i_frame=i_frame)
 
     def _i_frame_step(self, direction):
-        """Callback for frame Spinbox"""
+        """Callback for frame Spinbox.
+
+        Possible values for `direction` are:
+            'up' -- go to next frame
+            'down' -- go to previous frame
+            'up10' -- jump 10 frames forward
+            'down10' -- jump 10 frames backward
+        """
         if not self.n_frames:
             return
         i_cur = self.i_frame + 1
         if direction == 'up' and i_cur < self.n_frames:
-            self.i_frame_var.set(i_cur + 1)
+            i_next = i_cur + 1
+        elif direction == 'up10' and i_cur < self.n_frames:
+            i_next = min(i_cur + 10, self.n_frames)
         elif direction == 'down' and i_cur > 1:
-            self.i_frame_var.set(i_cur - 1)
+            i_next = i_cur - 1
+        elif direction == 'down10' and i_cur > 1:
+            i_next = max(i_cur - 10, 1)
+        else:
+            return
+        self.i_frame_var.set(i_next)
+
+    def i_frame_jump(self, i_frame):
+        """Jump to given frame
+
+        `i_frame` -- zero-based frame index (-1 for last frame)
+        """
+        if i_frame == -1:
+            i_frame = self.n_frames - 1
+        if self.i_frame == i_frame:
+            return
+        self.i_frame_var.set(i_frame + 1)
 
     def toggle_roi_adjustment(self, *_):
         """Callback of ROI adjustment button."""
