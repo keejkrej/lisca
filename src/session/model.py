@@ -343,7 +343,7 @@ class SessionModel:
             self.display_stack.set_properties(n_frames=meta.n_frames,
                                               width=meta.width,
                                               height=meta.height,
-                                              mode=8,
+                                              mode='uint8',
                                              )
             if self.rois:
                 for fr, rois in enumerate(self.rois):
@@ -571,7 +571,7 @@ class SessionModel:
                         color = const.PLOT_COLOR
                     l = ax.plot(t_vec, tr['val'][qty],
                             color=color, alpha=alpha, lw=lw, label=name,
-                            picker=(3 if is_interactive else None))
+                            picker=is_interactive, pickradius=3)
                     if is_interactive:
                         tr['plot'][qty] = l
 
@@ -652,7 +652,6 @@ class SessionModel:
             with pd.ExcelWriter(os.path.join(save_dir, "Data.xlsx"), engine='xlsxwriter') as writer:
                 for name, df in df_dict.items():
                     df.to_excel(writer, sheet_name=name, index=False)
-                writer.save()
 
             # Save data to CSV file
             for name, df in df_dict.items():

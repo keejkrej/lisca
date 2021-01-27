@@ -44,7 +44,11 @@ def background_schwarzfischer(fluor_chan, bin_chan, div_horiz=7, div_vert=5, mem
 
     # Interplolate background as cubic spline with each tile’s median as support point at the tile center
     supp = np.empty((tiles_horiz.size, tiles_vert.size))
-    bg_interp = np.empty_like(bin_chan, dtype=np.single)
+    if np.can_cast(fluor_chan, np.float32):
+        dtype_interp = np.float32
+    else:
+        dtype_interp = np.float64
+    bg_interp = np.empty_like(bin_chan, dtype=dtype_interp)
     for t in range(fluor_chan.shape[0]):
         print(f"Interpolate background in frame {t:3d} …")
         masked_frame = ma.masked_array(fluor_chan[t, ...], mask=bin_chan[t, ...])
@@ -59,26 +63,3 @@ def background_schwarzfischer(fluor_chan, bin_chan, div_horiz=7, div_vert=5, mem
     gain = np.median(bg_interp / bg_mean, axis=0)
     stack_corr = (fluor_chan - bg_interp) / gain
     return stack_corr
-
-def corr_gauss(img, n_sigma=4):
-    """Eliminate normal noise around 0 in background-corrected image
-    
-    Arguments:
-        img -- 2-dim float numpy array; the image to be de-noised
-        n_sigma -- float; interval up to which values should be reduced
-        
-    Returns
-        2-dim uint16 numpy array with de-noised image
-    """
-    sigma = np.sqrt(np.sum(img[img < 0]**2) / np.sum(img < 0))
-    sigma_dist = n_sigma * sigma
-
-    img_corr = np.zeros_like(img, dtype=np.uint16)
-    img_corr[img >= sigma_dist] = np.rint(img[img >= sigma_dist])
-
-    idx_dist = np.logical_and(img > 0, img < sigma_dist)
-    vals_dist = img[idx_dist]
-    bell = scst.norm.pdf(vals_dist, 0, sigma) / scst.norm.pdf(0, 0, sigma)
-    img_corr[idx_dist] = np.rint(vals_dist * (1 - bell))
-    
-    return img_corr

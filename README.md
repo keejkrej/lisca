@@ -3,7 +3,7 @@ PyAMA is a desktop application for displaying TIFF stacks of single-cell microsc
 and for reading out single-cell time courses of the cell area and the fluorescence intensity.
 
 ### Installation
-Python 3.7 with `tkinter` is required.
+Python 3.8 with `tkinter` is required.
 
 Clone/pull/download this repository and make the base directory of the repository your working directory by using the `cd` command.
 Then install the necessary dependencies either via anaconda or via pip, whatever you prefer.
@@ -27,6 +27,9 @@ python -m venv env
 source env/bin/activate
 pip install -r requirements.txt
 ```
+
+#### Desktop file installation for Linux users (experimental)
+Linux users can create an application menu entry for PyAMA by adjusting the paths in the files `pyama.sh` and `pyama.desktop` and creating a symlink to (or copying) `pyama.desktop` in either `/usr/share/applications` (for global installation) or `~/.local/share/applications` (for user-specific installation).
 
 
 ### Usage
@@ -100,11 +103,12 @@ trace in the plot axes.
 
 To exclude or include a cell in the readout, select/deselect it by clicking on the
 cell in the image with the shift key pressed.
+You can also (de)select highlighted cells with the enter key.
 
 You can also use the up/down arrow keys to scroll through the cells,
 the left/right arrow keys to scroll through the frames,
 and the number keys to change the displayed channel.
-You can also (de)select cells with the enter key.
+Use Ctrl + left/right arrow to scroll 10 frames at once and Home/End to jump to the first/last frame.
 
 When all cells to be read out are specified, click on “File/Save” to save the measurements.
 Note that highlighted cells will also be highlighted in the plot in the PDF file.

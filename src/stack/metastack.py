@@ -79,7 +79,7 @@ class MetaStack:
             if height is not None:
                 self._height = height
             if mode is not None:
-                self._mode = mode
+                self._mode = Stack.dtype_str(mode)
         self._listeners.notify('image')
 
     def check_properties(self):
@@ -119,8 +119,18 @@ class MetaStack:
                 self._height = new_stack.height
             elif self._height != new_stack.height:
                 raise ValueError("Incompatible stack: expected height {}, but found height {} in '{}'.".format(self._height, new_stack.height, name))
-            if self._mode is None or new_stack.mode > self._mode:
+
+            if self._mode is None:
                 self._mode = new_stack.mode
+            else:
+                self_dtype = Stack.dtype_str(self._mode)
+                new_dtype = Stack.dtype_str(new_stack.mode)
+                if np.can_cast(new_dtype, self_dtype):
+                    pass
+                elif np.can_cast(self_dtype, new_dtype):
+                    self._mode = new_stack.mode
+                else:
+                    raise TypeError(f"Stack types '{self_dtype}'  and '{new_dtype}' not castable")
 
             # Secondly, register the stack
             self._stacks[name] = new_stack
@@ -142,7 +152,7 @@ class MetaStack:
                 raise ValueError("Stack name and channel or function required.")
             self._channels.append(spec)
         self._listeners.notify('image')
-                
+
 
     def arrange_channels(self, order):
         """Specify the channel arrangement.
@@ -239,14 +249,25 @@ class MetaStack:
         """
         #TODO
         with self.image_lock:
+            a0 = self.get_image(channel=channel, frame=frame)
             if convert_fcn:
-                a8 = convert_fcn(self.get_image(channel=channel, frame=frame))
-            elif self._mode == 8:
-                a8 = self.get_image(channel=channel, frame=frame)
-            elif self._mode == 16:
-                a16 = self.get_image(channel=channel, frame=frame)
-                a8 = np.empty(a16.shape, dtype=np.uint8)
-                np.floor_divide(a16, 256, out=a8)
+                a8 = convert_fcn(a0)
+            elif self._mode == 'uint8':
+                a8 = a0
+            elif self._mode == 'bool':
+                a8 = np.zeros(a0.shape, dtype=np.uint8)
+                a8[a0] = 255
+            elif self._mode.startswith('uint'):
+                a8 = a0 >> ((a0.itemsize - 1) * 8)
+            elif self._mode.startswith('float'):
+                #TODO: normalize to global maximum
+                a0_min = a0.min()
+                a0_max = a0.max()
+                if a0_min >= 0. and a0_max <= 1.:
+                    # Assume values in [0,1]
+                    a0_min = 0.
+                    a0_max = 1.
+                a8 = (256 / (a0_max - a0_min) * (a0 - a0_min)).astype(np.uint8)
             else:
                 raise ValueError(f"Illegal image mode: {self._mode}")
             return piltk.PhotoImage(pilimg.fromarray(a8, mode='L'))
