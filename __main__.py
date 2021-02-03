@@ -3,16 +3,16 @@ import os
 import sys
 
 # Define meta information
-__version__ = "0.1.7"
+__version__ = "0.1.8"
 __author__ = "Daniel Woschée"
 __contact__ = "daniel.woschee@physik.lmu.de"
 PACKAGE_NAME = "PyAMA"
 
 if __name__ == "__main__":
-    # Check for Python 3.6 (use ugly syntax for compatibility with Python 2)
+    # Check for Python 3.8
     ver_major, ver_minor = sys.version_info[:2]
-    if ver_major != 3 or ver_minor < 7:
-        raise RuntimeError("At least Python 3.7 required, found %d.%d." % (ver_major, ver_minor))
+    if ver_major != 3 or ver_minor < 8:
+        raise RuntimeError("At least Python 3.8 required, found %d.%d." % (ver_major, ver_minor))
 
     # Start workflow
     #from src import workflow_starter
