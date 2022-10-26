@@ -130,8 +130,10 @@ source env/bin/activate
 If you are running pyama on a notebook for the first time:
 ```
 python -m ipykernel install --user --name pyama
+```
 
-Then if you want to have access to directories outside pyama, cd into a different directory and run
+Then if you want to have access to directories outside pyama, cd into a different directory.
+Finally open jupyter-lab:
 ```
 jupyter-lab
 ```
