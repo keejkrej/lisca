@@ -1,3 +1,4 @@
+cellpose
 numpy
 scipy
 matplotlib
@@ -13,4 +14,9 @@ XlsxWriter
 h5py
 numba
 psutil
-
+jupyterlab
+ipywidgets
+ipympl
+nd2reader
+skvideo
+trackpy
