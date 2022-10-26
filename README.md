@@ -126,7 +126,13 @@ This will save your segmentation and background correction for each position in 
 To use this run the following from the main directory where pyama is located:
 ```
 source env/bin/activate
+```
+If you are running pyama on a notebook for the first time:
+```
 python -m ipykernel install --user --name pyama
+
+Then if you want to have access to directories outside pyama, cd into a different directory and run
+```
 jupyter-lab
 ```
-In jupyterlab: open notebooks_tests/lisca.ipynb and follow the instructions to run segementation and background correction on your data.
+In jupyterlab: open notebooks_tests/lisca.ipynb or copy the file to your working directory and follow the instructions to run segementation and background correction on your data.
