@@ -117,3 +117,16 @@ When saving the measurements, a file `session.zip` is generated.
 You can reload the measurement by clicking on “File/Load session” and selecting this file.
 Currently, this requires that the stack files are all located in the same directories
 as during the session that created the file.
+
+#### Pyama on a Notebook
+
+You can use Pyama on a Notebook to run the segmentation and background correction of all positions at once.
+This will save your segmentation and background correction for each position in a separate folder named XY{position} wherever you specify that you would like to save your data.
+
+To use this run the following from the main directory where pyama is located:
+```
+source env/bin/activate
+python -m ipykernel install --user --name pyama
+jupyter-lab
+```
+In jupyterlab: open notebooks_tests/lisca.ipynb and follow the instructions to run segementation and background correction on your data.
