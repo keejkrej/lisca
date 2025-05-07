@@ -1,0 +1,42 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "lisca"
+version = "1.0.0"
+description = "Analyze time course from single-cell microscopy images."
+authors = [
+    {name = "Daniel Woschée"}
+]
+license = {text = "MIT"}
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "trackpy==0.6.4",
+    "scikit-video==1.1.11",
+    "scikit-image==0.25.2",
+    "pandas==2.2.3",
+    "nd2reader==3.3.1",
+    "cellpose==3.1.1.2",
+    "matplotlib==3.10.1",
+    "numpy==1.26.4",
+    "opencv-python==4.11.0.86",
+    "tqdm==4.67.1",
+    "jupyterlab==4.4.2",
+    "ipywidgets==8.1.7",
+    "ipympl==0.9.7",
+    "cupy-cuda12x==13.4.1",
+    "mpl_interactions==0.24.2",
+    "flask==3.1.0",
+    "julia==0.6.2",
+    "numba==0.61.2",
+	"pillow==11.2.1",
+	"tifffile==2025.3.30",
+	"XlsxWriter==3.2.3",
+	"h5py==3.13.0",
+	"psutil==7.0.0",
+	"scipy==1.15.2"
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["lisca"] 

@@ -1,3 +1,7 @@
+import numpy
+numpy.float = float
+numpy.int = int
+numpy.bool = bool
 import skvideo.io
 
 class Mp4writer:
