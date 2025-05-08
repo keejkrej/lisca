@@ -1,6 +1,7 @@
 from genericpath import isfile
 from skimage import io
 import sys
+from tifffile import TiffFile, imread
 from tqdm import tqdm
 sys.path.append('..')
 from . import functions
@@ -15,7 +16,7 @@ from nd2reader import ND2Reader
 from .segmentation import Segmentation
 from .video_writer import Mp4writer
 from lisca import tracking
-from src.img_op.background_correction import background_schwarzfischer
+from .img_op.background_correction import background_schwarzfischer
 
 
 class Track:
@@ -67,18 +68,18 @@ class Track:
         if dataset_id is not None:
 
             self.omero=True
-            #Assume this is an omero image id
-            self.dataset_id = dataset_id
-            self.image_id = image_id
-            self.conn = Omero(ome_host , ome_user_name)
-            shape = self.conn.get_image_shape(image_id)
-            self.height, self.width = shape[1:3]
+            # #Assume this is an omero image id
+            # self.dataset_id = dataset_id
+            # self.image_id = image_id
+            # self.conn = Omero(ome_host , ome_user_name)
+            # shape = self.conn.get_image_shape(image_id)
+            # self.height, self.width = shape[1:3]
 
-            if self.frame_indices is not None:
-                self.n_images = len(frame_indices)
-            else: 
-                self.n_images = shape[0]
-                self.frame_indices = np.arange(shape[0])
+            # if self.frame_indices is not None:
+            #     self.n_images = len(frame_indices)
+            # else: 
+            #     self.n_images = shape[0]
+            #     self.frame_indices = np.arange(shape[0])
         
 
         elif nd2_file is not None:
@@ -196,7 +197,7 @@ class Track:
     
     def th_segment(self):
 
-        from src.img_op import background_correction, coarse_binarize_phc
+        from .img_op import background_correction, coarse_binarize_phc
         from skimage.measure import label
 
         file = os.path.join(self.path_out, 'cyto_masks_th.mp4')
@@ -284,8 +285,8 @@ class Track:
         ##Save segmentation
         np.savez_compressed(os.path.join(self.path_out, f'XY{self.fov}-bgcorr_segmented.npz'), segmentation)
 
-        if os.path.isdir(os.path.join(self.path_out, 'tmp')):
-            os.rmdir(os.path.join(self.path_out, 'tmp'))
+        # if os.path.isdir(os.path.join(self.path_out, 'tmp')):
+        #     os.rmdir(os.path.join(self.path_out, 'tmp'))
         
         return
 

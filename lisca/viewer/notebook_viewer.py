@@ -1,3 +1,4 @@
+from urllib import request
 import ipywidgets as widgets
 import matplotlib.pyplot as plt
 #import mpl_interactions.ipyplot as iplt
@@ -14,8 +15,8 @@ except:
     print('Warning. Unable to load cellpose') 
 import sys
 sys.path.append('/home/m/Miguel.Atienza/celltracker')
-from celltracker import functions
-from celltracker import tracking
+from .. import functions
+from .. import tracking
 from tqdm import tqdm
 from collections.abc import Iterable
 import trackpy as tp
@@ -24,7 +25,7 @@ import os
 import json
 from skimage.morphology import binary_erosion
 from skimage.io import imread
-from celltracker.classify import cp
+from .. import cp
 import matplotlib.collections as collections
 
 class StackViewer:
@@ -181,7 +182,7 @@ class LaneViewer:
             self.min_coordinates.append(min_c)
             self.max_coordinates.append(max_c)
 
-        self.update(v, clip)
+        self.update(v, self.clip)
 
     def recompute_v(self, v):
         
