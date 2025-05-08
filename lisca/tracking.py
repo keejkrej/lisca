@@ -14,7 +14,7 @@ def get_centroids(masks):
     ids=np.unique(masks)
     ids = ids[ids!=0]
     
-    df = pd.DataFrame(columns=['frame', 'x', 'y', 'cyto_locator', 'area'])
+    dfs = []  # List to collect DataFrames
     print('Computing centroids')
     for frame in tqdm(range(nframes)):
         for identifier in ids:
@@ -32,9 +32,10 @@ def get_centroids(masks):
             'area': count}
 
             new_df = pd.DataFrame.from_dict(data)
+            dfs.append(new_df)
 
-            df = pd.concat([df, new_df])
-
+    # Concatenate all DataFrames at once
+    df = pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame(columns=['frame', 'x', 'y', 'cyto_locator', 'area'])
     return df
 
 def track(masks, track_memory=15, max_travel=5, min_frames=10, pixel_to_um=1, verbose=False):
