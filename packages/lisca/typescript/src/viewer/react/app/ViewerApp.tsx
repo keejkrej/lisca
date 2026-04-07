@@ -7,7 +7,7 @@ import { makeSourceKey } from "lisca/viewer/core";
 
 import RoiWorkspace from "./RoiWorkspace";
 import ViewerWorkspace from "./ViewerWorkspace";
-import type { ViewerMode } from "./ViewNavbar";
+import type { ViewerMode } from "./ViewerNavbar";
 import { setSource, setWorkspacePath, viewStore } from "./viewStore";
 
 interface ViewerAppProps {

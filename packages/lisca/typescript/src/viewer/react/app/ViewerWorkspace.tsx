@@ -108,7 +108,7 @@ import {
   runBatchCropSequence,
 } from "./tools";
 import { showErrorToast, showSuccessToast } from "./toast";
-import ViewNavbar, { type ViewerMode } from "./ViewNavbar";
+import ViewerNavbar, { type ViewerMode } from "./ViewerNavbar";
 
 type SelectValue = number | string;
 
@@ -1347,7 +1347,7 @@ export default function ViewerWorkspace({
   return (
     <div className="h-full min-h-[720px] min-w-[1280px] overflow-hidden bg-background text-foreground">
       <div className="flex h-full min-h-0 flex-col">
-        <ViewNavbar
+        <ViewerNavbar
           workspacePath={workspacePath}
           source={source}
           mode={mode}

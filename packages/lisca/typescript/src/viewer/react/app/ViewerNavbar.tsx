@@ -6,14 +6,14 @@ import {
   useRef,
   useState,
 } from "react";
-import { FolderOpen, HardDrive, Wrench, X } from "lucide-react";
+import { ChevronLeft, FolderOpen, HardDrive, X } from "lucide-react";
 
 import type { ViewerSource } from "lisca/viewer/contracts";
 import { Button } from "lisca/viewer/ui";
 
 export type ViewerMode = "align" | "roi";
 
-interface ViewNavbarProps {
+interface ViewerNavbarProps {
   workspacePath: string | null;
   source: ViewerSource | null;
   mode: ViewerMode;
@@ -102,7 +102,7 @@ function ContextSummary({
   );
 }
 
-export default function ViewNavbar({
+export default function ViewerNavbar({
   workspacePath,
   source,
   mode,
@@ -117,9 +117,10 @@ export default function ViewNavbar({
   onLoadQ20Preset,
   canBatchCrop = false,
   canLoadQ20Preset = false,
-}: ViewNavbarProps) {
+}: ViewerNavbarProps) {
   const [openDataModalOpen, setOpenDataModalOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
+  const [presetsOpen, setPresetsOpen] = useState(false);
   const toolsRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -129,6 +130,7 @@ export default function ViewNavbar({
       if (event.key === "Escape") {
         setOpenDataModalOpen(false);
         setToolsOpen(false);
+        setPresetsOpen(false);
       }
     };
 
@@ -148,6 +150,7 @@ export default function ViewNavbar({
     const handlePointerDown = (event: PointerEvent) => {
       if (!toolsRef.current?.contains(event.target as Node)) {
         setToolsOpen(false);
+        setPresetsOpen(false);
       }
     };
 
@@ -185,17 +188,19 @@ export default function ViewNavbar({
 
   const handleBatchCrop = () => {
     setToolsOpen(false);
+    setPresetsOpen(false);
     onBatchCrop?.();
   };
 
   const handleLoadQ20Preset = () => {
     setToolsOpen(false);
+    setPresetsOpen(false);
     onLoadQ20Preset?.();
   };
 
   return (
     <>
-      <header className="border-b border-border/80 bg-background/95 px-6 py-3 backdrop-blur">
+      <header className="border-b border-border/80 bg-background px-6 py-3">
         <div className="grid grid-cols-[1fr_minmax(0,56rem)_1fr] items-center gap-4">
           <div>
             <div className="flex items-center gap-1 rounded-xl border border-border bg-muted/35 p-1">
@@ -261,19 +266,28 @@ export default function ViewNavbar({
                 disabled={modeChangeDisabled}
                 onClick={() => {
                   setOpenDataModalOpen(false);
-                  setToolsOpen((current) => !current);
+                  setToolsOpen((current) => {
+                    const next = !current;
+                    if (!next) {
+                      setPresetsOpen(false);
+                    }
+                    return next;
+                  });
                 }}
               >
-                <Wrench className="size-4" />
                 Tools
               </Button>
               {toolsOpen ? (
-                <div className="absolute right-0 top-[calc(100%+0.5rem)] z-40 w-56 rounded-2xl border border-border/80 bg-card p-2 shadow-[0_20px_40px_rgba(0,0,0,0.28)]">
+                <div
+                  className="absolute right-0 top-[calc(100%+0.5rem)] z-40 w-56 rounded-2xl border border-border bg-card p-2 shadow-[0_20px_40px_rgba(0,0,0,0.28)]"
+                  style={{ backdropFilter: "none", opacity: 1 }}
+                >
                   <button
                     type="button"
-                    className="flex w-full items-start rounded-xl px-3 py-2 text-left transition-colors hover:bg-muted/45 disabled:cursor-default disabled:opacity-55"
+                    className="flex w-full items-start rounded-xl bg-card px-3 py-2 text-left transition-colors hover:bg-muted disabled:cursor-default disabled:opacity-55"
                     disabled={!canBatchCrop}
                     onClick={handleBatchCrop}
+                    style={{ backdropFilter: "none", opacity: 1 }}
                   >
                     <div>
                       <p className="text-sm font-medium text-foreground">Batch Crop</p>
@@ -282,19 +296,44 @@ export default function ViewNavbar({
                       </p>
                     </div>
                   </button>
-                  <button
-                    type="button"
-                    className="flex w-full items-start rounded-xl px-3 py-2 text-left transition-colors hover:bg-muted/45 disabled:cursor-default disabled:opacity-55"
-                    disabled={!canLoadQ20Preset}
-                    onClick={handleLoadQ20Preset}
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-foreground">Load Preset: Q20</p>
-                      <p className="text-xs text-muted-foreground">
-                        Square, 168 pitch, 128 cell size
-                      </p>
-                    </div>
-                  </button>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      className="flex w-full items-center justify-between rounded-xl bg-card px-3 py-2 text-left transition-colors hover:bg-muted disabled:cursor-default disabled:opacity-55"
+                      disabled={!canLoadQ20Preset}
+                      onClick={() => setPresetsOpen((current) => !current)}
+                      style={{ backdropFilter: "none", opacity: 1 }}
+                    >
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Load Preset</p>
+                        <p className="text-xs text-muted-foreground">
+                          Apply a hardcoded align preset
+                        </p>
+                      </div>
+                      <ChevronLeft className="size-4 shrink-0 text-muted-foreground" />
+                    </button>
+                    {presetsOpen ? (
+                      <div
+                        className="absolute right-[calc(100%+0.5rem)] top-0 z-50 w-52 rounded-2xl border border-border bg-card p-2 shadow-[0_20px_40px_rgba(0,0,0,0.24)]"
+                        style={{ backdropFilter: "none", opacity: 1 }}
+                      >
+                      <button
+                        type="button"
+                        className="flex w-full items-start rounded-xl bg-card px-3 py-2 text-left transition-colors hover:bg-muted disabled:cursor-default disabled:opacity-55"
+                        disabled={!canLoadQ20Preset}
+                        onClick={handleLoadQ20Preset}
+                        style={{ backdropFilter: "none", opacity: 1 }}
+                      >
+                        <div>
+                          <p className="text-sm font-medium text-foreground">Q20</p>
+                          <p className="text-xs text-muted-foreground">
+                            Square, 168 pitch, 128 cell size
+                          </p>
+                        </div>
+                      </button>
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
               ) : null}
             </div>
