@@ -18,17 +18,17 @@ describe("viewer store exclusion actions", () => {
       ...initialState,
       source: { kind: "tif", path: "/tmp/source" },
       selection: { pos: 2, channel: 0, time: 0, z: 0 },
-      excludedCellIdsByPosition: {
-        2: ["0:0", "0:1"],
-        3: ["1:1"],
+      excludedCellsByPosition: {
+        2: [{ i: 0, j: 0 }, { i: 0, j: 1 }],
+        3: [{ i: 1, j: 1 }],
       },
       saveState: { type: "success", message: "Saved bbox CSV for Pos2" },
     });
 
     resetExcludedCells(2);
 
-    expect(viewStore.getState().excludedCellIdsByPosition).toEqual({
-      3: ["1:1"],
+    expect(viewStore.getState().excludedCellsByPosition).toEqual({
+      3: [{ i: 1, j: 1 }],
     });
     expect(viewStore.getState().saveState).toEqual(IDLE_SAVE_STATE);
   });

@@ -28,13 +28,14 @@ import {
 import {
   buildBboxCsv,
   clamp,
-  collectEdgeCellIds,
+  collectEdgeCells,
+  collectStrokeToggleCells,
   countVisibleCells,
-  collectStrokeToggleCellIds,
   degreesToRadians,
   enumerateVisibleGridCells,
   radiansToDegrees,
-  toggleCellIds,
+  toggleExcludedCells as toggleExcludedCellCoords,
+  type GridCellCoord,
 } from "lisca/viewer/core";
 import {
   ViewerCanvasSurface,
@@ -74,7 +75,7 @@ import {
   setSelectionKey,
   setSelectionMode,
   setTimeSliderIndex,
-  toggleExcludedCells,
+  toggleExcludedCells as toggleStoredExcludedCells,
   viewStore,
 } from "./viewStore";
 import {
@@ -122,8 +123,13 @@ interface CachedFrame {
 
 interface SelectionStroke {
   pointerId: number;
-  hitCellIds: Set<string>;
+  hitCellKeys: Set<string>;
+  hitCells: GridCellCoord[];
   lastPoint: { x: number; y: number } | null;
+}
+
+function gridCellCoordKey(cell: GridCellCoord): string {
+  return `${cell.i}:${cell.j}`;
 }
 
 class FrameCache {
@@ -365,7 +371,7 @@ export default function ViewerWorkspace({
   const selectionStrokeRef = useRef<SelectionStroke | null>(null);
   const [cropConfirmOpen, setCropConfirmOpen] = useState(false);
   const [previewGrid, setPreviewGrid] = useState<GridState | null>(null);
-  const [selectionPreviewCellIds, setSelectionPreviewCellIds] = useState<string[] | null>(null);
+  const [selectionPreviewCells, setSelectionPreviewCells] = useState<GridCellCoord[] | null>(null);
   const [autoExcludeOpen, setAutoExcludeOpen] = useState(false);
   const [autoExcludePreview, setAutoExcludePreview] = useState<AutoExcludePreviewResponse | null>(null);
   const [autoExcludeLoading, setAutoExcludeLoading] = useState(false);
@@ -390,7 +396,7 @@ export default function ViewerWorkspace({
     contrastReloadToken,
     timeSliderIndex,
     selectionMode,
-    excludedCellIdsByPosition,
+    excludedCellsByPosition,
     saving,
     cropping,
   } = useStore(
@@ -408,7 +414,7 @@ export default function ViewerWorkspace({
       contrastReloadToken: state.contrastReloadToken,
       timeSliderIndex: state.timeSliderIndex,
       selectionMode: state.selectionMode,
-      excludedCellIdsByPosition: state.excludedCellIdsByPosition,
+      excludedCellsByPosition: state.excludedCellsByPosition,
       saving: state.saving,
       cropping: state.cropping,
     })),
@@ -610,31 +616,31 @@ export default function ViewerWorkspace({
     dragSessionRef.current = null;
     selectionStrokeRef.current = null;
     setPreviewGrid(null);
-    setSelectionPreviewCellIds(null);
+    setSelectionPreviewCells(null);
   }, [frame, selectionMode, selection?.pos]);
 
-  const activeExcludedCellIds = useMemo(
-    () => new Set(selection ? excludedCellIdsByPosition[selection.pos] ?? [] : []),
-    [excludedCellIdsByPosition, selection],
+  const currentPositionExcludedCells = useMemo(
+    () => (selection ? excludedCellsByPosition[selection.pos] ?? [] : []),
+    [excludedCellsByPosition, selection],
   );
-  const currentPositionExcludedCellIds = useMemo(
-    () => (selection ? excludedCellIdsByPosition[selection.pos] ?? [] : []),
-    [excludedCellIdsByPosition, selection],
+  const activeExcludedCellKeys = useMemo(
+    () => new Set(currentPositionExcludedCells.map(gridCellCoordKey)),
+    [currentPositionExcludedCells],
   );
-  const renderedExcludedCellIds = useMemo(
+  const renderedExcludedCells = useMemo(
     () =>
-      selectionPreviewCellIds
-        ? new Set(toggleCellIds(activeExcludedCellIds, selectionPreviewCellIds))
-        : activeExcludedCellIds,
-    [activeExcludedCellIds, selectionPreviewCellIds],
+      selectionPreviewCells
+        ? toggleExcludedCellCoords(currentPositionExcludedCells, selectionPreviewCells)
+        : currentPositionExcludedCells,
+    [currentPositionExcludedCells, selectionPreviewCells],
   );
   const visibleCells = useMemo(
     () => (frame ? enumerateVisibleGridCells(frame, grid) : []),
     [frame, grid],
   );
   const visibleCellCounts = useMemo(
-    () => (frame ? countVisibleCells(frame, grid, activeExcludedCellIds) : { included: 0, excluded: 0 }),
-    [activeExcludedCellIds, frame, grid],
+    () => (frame ? countVisibleCells(frame, grid, currentPositionExcludedCells) : { included: 0, excluded: 0 }),
+    [currentPositionExcludedCells, frame, grid],
   );
   const excludedVisibleCount = visibleCellCounts.excluded;
   const includedVisibleCount = visibleCellCounts.included;
@@ -670,12 +676,14 @@ export default function ViewerWorkspace({
     let cancelled = false;
     setAutoExcludeLoading(true);
     setAutoExcludeError(null);
+    const cells = enumerateVisibleGridCells(frame, grid).filter(
+      (cell) => !activeExcludedCellKeys.has(gridCellCoordKey(cell)),
+    );
 
     const program = autoExcludePreviewEffect(backend, {
       source,
       selection,
-      grid,
-      excludedCellIds: currentPositionExcludedCellIds,
+      cells,
     }).pipe(
       Effect.tap(({ preview }) =>
         Effect.sync(() => {
@@ -710,7 +718,7 @@ export default function ViewerWorkspace({
     return () => {
       cancelled = true;
     };
-  }, [autoExcludeOpen, backend, currentPositionExcludedCellIds, frame, grid, selection, source]);
+  }, [activeExcludedCellKeys, autoExcludeOpen, backend, frame, grid, selection, source]);
 
   const emptyText = useMemo(() => {
     if (!workspacePath) return "Select a workspace folder to save bbox CSVs";
@@ -734,7 +742,7 @@ export default function ViewerWorkspace({
         workspacePath,
         source,
         pos: selection.pos,
-        csv: buildBboxCsv(frame, grid, activeExcludedCellIds),
+        csv: buildBboxCsv(frame, grid, currentPositionExcludedCells),
       }),
     );
 
@@ -751,13 +759,13 @@ export default function ViewerWorkspace({
 
     showErrorToast(toErrorMessage(exit.cause));
     setSaving(false);
-  }, [activeExcludedCellIds, backend, frame, grid, selection, source, workspacePath]);
+  }, [backend, currentPositionExcludedCells, frame, grid, selection, source, workspacePath]);
 
   const handleExcludeEdgeBboxes = useCallback(() => {
     if (!frame || !selection) return;
-    const edgeCellIds = collectEdgeCellIds(frame, grid);
-    if (edgeCellIds.length === 0) return;
-    excludeCells(selection.pos, edgeCellIds);
+    const edgeCells = collectEdgeCells(frame, grid);
+    if (edgeCells.length === 0) return;
+    excludeCells(selection.pos, edgeCells);
   }, [frame, grid, selection]);
 
   const handleResetExcludedCells = useCallback(() => {
@@ -767,10 +775,7 @@ export default function ViewerWorkspace({
 
   const handleExcludeAllVisibleCells = useCallback(() => {
     if (!selection || visibleCells.length === 0) return;
-    excludeCells(
-      selection.pos,
-      visibleCells.map((cell) => cell.id),
-    );
+    excludeCells(selection.pos, visibleCells.map((cell) => ({ i: cell.i, j: cell.j })));
   }, [selection, visibleCells]);
 
   const handleOpenAutoExclude = useCallback(() => {
@@ -782,14 +787,14 @@ export default function ViewerWorkspace({
   const handleApplyAutoExclude = useCallback(() => {
     if (!selection) return;
 
-    const cellIdsToExclude =
+    const cellsToExclude =
       autoExcludePreview?.cellScores
         .filter((cell) => cell.score <= autoExcludeThreshold)
-        .map((cell) => cell.cellId) ?? [];
+        .map((cell) => ({ i: cell.i, j: cell.j })) ?? [];
 
-    if (cellIdsToExclude.length > 0) {
-      excludeCells(selection.pos, cellIdsToExclude);
-      showSuccessToast(`Auto excluded ${cellIdsToExclude.length} cells for Pos${selection.pos}`);
+    if (cellsToExclude.length > 0) {
+      excludeCells(selection.pos, cellsToExclude);
+      showSuccessToast(`Auto excluded ${cellsToExclude.length} cells for Pos${selection.pos}`);
     } else {
       showSuccessToast(`Auto exclude found no cells for Pos${selection.pos}`);
     }
@@ -855,7 +860,7 @@ export default function ViewerWorkspace({
     if (!selection) return "roi/Pos{n}";
     return `roi/Pos${selection.pos}`;
   }, [selection]);
-  const canResetExcludedCells = !!selection && currentPositionExcludedCellIds.length > 0;
+  const canResetExcludedCells = !!selection && currentPositionExcludedCells.length > 0;
   const canExcludeAllVisibleCells = !!frame && !!selection && includedVisibleCount > 0;
   const canOpenAutoExclude = !!source && !!frame && !!selection && grid.enabled && includedVisibleCount > 0;
   const canApplyAutoExclude = !autoExcludeLoading && !!autoExcludePreview && !autoExcludeError;
@@ -866,12 +871,15 @@ export default function ViewerWorkspace({
     (stroke: SelectionStroke, point: { x: number; y: number }, startPoint: { x: number; y: number }) => {
       if (!frame) return;
       const fromPoint = stroke.lastPoint ?? startPoint;
-      const nextCellIds = collectStrokeToggleCellIds(frame, grid, fromPoint, point, stroke.hitCellIds);
-      for (const cellId of nextCellIds) {
-        stroke.hitCellIds.add(cellId);
+      const nextCells = collectStrokeToggleCells(frame, grid, fromPoint, point, stroke.hitCells);
+      for (const cell of nextCells) {
+        const key = gridCellCoordKey(cell);
+        if (stroke.hitCellKeys.has(key)) continue;
+        stroke.hitCellKeys.add(key);
+        stroke.hitCells.push(cell);
       }
       stroke.lastPoint = point;
-      setSelectionPreviewCellIds(Array.from(stroke.hitCellIds));
+      setSelectionPreviewCells(stroke.hitCells.slice());
     },
     [frame, grid],
   );
@@ -882,7 +890,8 @@ export default function ViewerWorkspace({
         if (!frame || !selection || !isPrimaryMouseButton(event) || !event.framePoint) return;
         const stroke: SelectionStroke = {
           pointerId: event.pointerId,
-          hitCellIds: new Set<string>(),
+          hitCellKeys: new Set<string>(),
+          hitCells: [],
           lastPoint: null,
         };
         collectSelectionStroke(stroke, event.framePoint, event.framePoint);
@@ -933,9 +942,9 @@ export default function ViewerWorkspace({
           collectSelectionStroke(stroke, event.framePoint, event.framePoint);
         }
         selectionStrokeRef.current = null;
-        setSelectionPreviewCellIds(null);
-        if (selection && stroke.hitCellIds.size > 0) {
-          toggleExcludedCells(selection.pos, Array.from(stroke.hitCellIds));
+        setSelectionPreviewCells(null);
+        if (selection && stroke.hitCells.length > 0) {
+          toggleStoredExcludedCells(selection.pos, stroke.hitCells);
         }
         event.releasePointer();
         return;
@@ -1214,7 +1223,7 @@ export default function ViewerWorkspace({
                       frame={frame}
                       grid={grid}
                       previewGrid={previewGrid}
-                      excludedCellIds={renderedExcludedCellIds}
+                      excludedCells={renderedExcludedCells}
                       loading={loading && !frame}
                       emptyText={emptyText}
                       cursor={canvasCursor}

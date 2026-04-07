@@ -1,24 +1,47 @@
 import { describe, expect, test } from "bun:test";
 
 import {
-  clearExcludedCellIds,
-  mergeExcludedCellIds,
-  setExcludedCellIdsForPosition,
-  toggleExcludedCellIds,
+  clearExcludedCells,
+  mergeExcludedCells,
+  setExcludedCellsForPosition,
+  toggleExcludedCells,
 } from "../../../src/viewer/core";
 
 describe("excluded cell helpers", () => {
-  test("toggle adds and removes ids deterministically", () => {
-    expect(toggleExcludedCellIds(["a", "b"], ["b", "c"])).toEqual(["a", "c"]);
+  test("toggle adds and removes coords deterministically", () => {
+    expect(
+      toggleExcludedCells(
+        [
+          { i: 0, j: 0 },
+          { i: 0, j: 1 },
+        ],
+        [
+          { i: 0, j: 1 },
+          { i: 1, j: 0 },
+        ],
+      ),
+    ).toEqual([
+      { i: 0, j: 0 },
+      { i: 1, j: 0 },
+    ]);
   });
 
   test("merge is idempotent and sorted", () => {
-    expect(mergeExcludedCellIds(["b"], ["a", "b", "c"])).toEqual(["a", "b", "c"]);
+    expect(
+      mergeExcludedCells([{ i: 0, j: 1 }], [{ i: 0, j: 0 }, { i: 0, j: 1 }, { i: 1, j: 0 }]),
+    ).toEqual([
+      { i: 0, j: 0 },
+      { i: 0, j: 1 },
+      { i: 1, j: 0 },
+    ]);
   });
 
   test("position updates drop empty entries", () => {
-    const state = setExcludedCellIdsForPosition(clearExcludedCellIds(), 3, ["b", "a"]);
-    expect(state).toEqual({ 3: ["a", "b"] });
-    expect(setExcludedCellIdsForPosition(state, 3, [])).toEqual({});
+    const state = setExcludedCellsForPosition(clearExcludedCells(), 3, [
+      { i: 0, j: 1 },
+      { i: 0, j: 0 },
+    ]);
+    expect(state).toEqual({ 3: [{ i: 0, j: 0 }, { i: 0, j: 1 }] });
+    expect(setExcludedCellsForPosition(state, 3, [])).toEqual({});
   });
 });

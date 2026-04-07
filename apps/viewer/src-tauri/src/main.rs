@@ -1,9 +1,12 @@
 #![cfg_attr(all(target_os = "windows", not(debug_assertions)), windows_subsystem = "windows")]
 
-use std::path::Path;
+use std::{
+    path::Path,
+    time::{Duration, Instant},
+};
 
 use rfd::FileDialog;
-use tauri::{command, AppHandle, Emitter};
+use tauri::{command, Emitter, WebviewWindow};
 use lisca::viewer::backend::{
     auto_exclude_preview as run_auto_exclude_preview, crop_roi as run_crop_roi,
     load_annotation_labels as run_load_annotation_labels, load_frame_payload,
@@ -134,7 +137,7 @@ fn save_bbox(workspace_path: String, pos: u32, csv: String) -> SaveBboxResponse 
 
 #[command]
 async fn crop_roi(
-    app: AppHandle,
+    window: WebviewWindow,
     workspace_path: String,
     source: ViewerSource,
     pos: u32,
@@ -142,8 +145,25 @@ async fn crop_roi(
     request_id: String,
 ) -> CropRoiResponse {
     tauri::async_runtime::spawn_blocking(move || {
+        let mut last_emit_at = Instant::now()
+            .checked_sub(Duration::from_secs(1))
+            .unwrap_or_else(Instant::now);
+        let mut last_progress = -1.0f64;
+
         run_crop_roi(workspace_path, source, pos, format, &mut |progress, message| {
-            app.emit(
+            let should_emit = progress >= 1.0
+                || progress <= 0.0
+                || (progress - last_progress).abs() >= 0.01
+                || last_emit_at.elapsed() >= Duration::from_millis(80);
+
+            if !should_emit {
+                return Ok(());
+            }
+
+            last_emit_at = Instant::now();
+            last_progress = progress;
+
+            window.emit(
                 "view://crop-progress",
                 CropRoiProgress {
                     request_id: request_id.clone(),

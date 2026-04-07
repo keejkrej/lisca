@@ -1,5 +1,5 @@
 import type { FrameResult, ViewerCanvasStatusMessage } from "lisca/viewer/contracts";
-import type { GridState, GridWheelViewport } from "lisca/viewer/core";
+import type { GridCellCoord, GridState, GridWheelViewport } from "lisca/viewer/core";
 
 export interface ViewerCanvasFramePoint {
   x: number;
@@ -37,7 +37,7 @@ export interface ViewerCanvasSurfaceProps {
   frame: FrameResult | null;
   grid: GridState;
   previewGrid?: GridState | null;
-  excludedCellIds?: Iterable<string>;
+  excludedCells?: Iterable<GridCellCoord>;
   loading?: boolean;
   emptyText?: string;
   messages?: ViewerCanvasStatusMessage[];

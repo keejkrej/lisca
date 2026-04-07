@@ -187,12 +187,21 @@ export interface ContrastWindow {
 export interface AutoExcludePreviewRequest {
   source: ViewerSource;
   selection: FrameRequest;
-  grid: GridState;
-  excludedCellIds: string[];
+  cells: AutoExcludePreviewCell[];
+}
+
+export interface AutoExcludePreviewCell {
+  i: number;
+  j: number;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
 }
 
 export interface AutoExcludePreviewCellScore {
-  cellId: string;
+  i: number;
+  j: number;
   score: number;
 }
 

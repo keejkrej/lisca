@@ -1,5 +1,6 @@
 import type {
-  GridCellRect,
+  GridCellBox,
+  GridCellCoord,
   GridFrameBounds,
   GridPointerGestureInput,
   GridPointerGestureSession,
@@ -245,39 +246,42 @@ function resolveVisibleGridIndexBounds(frame: GridFrameBounds, grid: GridState) 
   };
 }
 
-function intersectsFrame(cell: GridCellRect, frameWidth: number, frameHeight: number): boolean {
-  return (
-    cell.x + cell.width >= 0 &&
-    cell.y + cell.height >= 0 &&
-    cell.x <= frameWidth &&
-    cell.y <= frameHeight
-  );
+function gridCellCoordKey(cell: GridCellCoord): string {
+  return `${cell.i}:${cell.j}`;
 }
 
-export function enumerateVisibleGridCells(frame: GridFrameBounds, grid: GridState): GridCellRect[] {
+export function enumerateVisibleGridCells(frame: GridFrameBounds, grid: GridState): GridCellBox[] {
   const { basis, originX, originY, halfWidth, halfHeight, iMin, iMax, jMin, jMax } =
     resolveVisibleGridIndexBounds(frame, grid);
-  const cells: GridCellRect[] = [];
+  const cells: GridCellBox[] = [];
+  const rawWidth = Math.max(1, Math.round(grid.cellWidth));
+  const rawHeight = Math.max(1, Math.round(grid.cellHeight));
 
   for (let i = iMin; i <= iMax; i += 1) {
     for (let j = jMin; j <= jMax; j += 1) {
       const centerX = originX + i * basis.a.x + j * basis.b.x;
       const centerY = originY + i * basis.a.y + j * basis.b.y;
-      const cell = {
-        id: `${i}:${j}`,
+      const rawX = Math.round(centerX - halfWidth);
+      const rawY = Math.round(centerY - halfHeight);
+      const clippedX = clamp(rawX, 0, frame.width);
+      const clippedY = clamp(rawY, 0, frame.height);
+      const clippedRight = clamp(rawX + rawWidth, 0, frame.width);
+      const clippedBottom = clamp(rawY + rawHeight, 0, frame.height);
+      const w = clippedRight - clippedX;
+      const h = clippedBottom - clippedY;
+
+      if (w <= 0 || h <= 0) {
+        continue;
+      }
+
+      cells.push({
         i,
         j,
-        centerX,
-        centerY,
-        x: centerX - halfWidth,
-        y: centerY - halfHeight,
-        width: grid.cellWidth,
-        height: grid.cellHeight,
-      };
-
-      if (intersectsFrame(cell, frame.width, frame.height)) {
-        cells.push(cell);
-      }
+        x: clippedX,
+        y: clippedY,
+        w,
+        h,
+      });
     }
   }
 
@@ -289,19 +293,13 @@ export function findGridCellAtPoint(
   grid: GridState,
   x: number,
   y: number,
-): GridCellRect | null {
+): GridCellBox | null {
   if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
 
   const cells = enumerateVisibleGridCells(frame, grid);
   for (let index = cells.length - 1; index >= 0; index -= 1) {
     const cell = cells[index];
-    if (
-      cell &&
-      x >= cell.x &&
-      x <= cell.x + cell.width &&
-      y >= cell.y &&
-      y <= cell.y + cell.height
-    ) {
+    if (cell && x >= cell.x && x <= cell.x + cell.w && y >= cell.y && y <= cell.y + cell.h) {
       return cell;
     }
   }
@@ -309,93 +307,80 @@ export function findGridCellAtPoint(
   return null;
 }
 
-export function collectStrokeToggleCellIds(
+export function collectStrokeToggleCells(
   frame: GridFrameBounds,
   grid: GridState,
   startPoint: { x: number; y: number },
   endPoint: { x: number; y: number },
-  alreadyToggledCellIds?: Iterable<string>,
-): string[] {
+  alreadyToggledCells?: Iterable<GridCellCoord>,
+): GridCellCoord[] {
   const sampleDistance = Math.max(4, Math.min(grid.cellWidth, grid.cellHeight) / 4);
   const distance = Math.hypot(endPoint.x - startPoint.x, endPoint.y - startPoint.y);
   const steps = Math.max(1, Math.ceil(distance / sampleDistance));
-  const skippedCellIds = new Set(alreadyToggledCellIds ?? []);
-  const hitCellIds = new Set<string>();
+  const skippedCells = new Set(Array.from(alreadyToggledCells ?? [], gridCellCoordKey));
+  const hitCells = new Map<string, GridCellCoord>();
 
   for (let step = 0; step <= steps; step += 1) {
     const t = step / steps;
     const x = startPoint.x + (endPoint.x - startPoint.x) * t;
     const y = startPoint.y + (endPoint.y - startPoint.y) * t;
     const cell = findGridCellAtPoint(frame, grid, x, y);
-    if (cell && !skippedCellIds.has(cell.id)) {
-      hitCellIds.add(cell.id);
+    if (!cell) continue;
+    const key = gridCellCoordKey(cell);
+    if (!skippedCells.has(key)) {
+      hitCells.set(key, { i: cell.i, j: cell.j });
     }
   }
 
-  return Array.from(hitCellIds);
-}
-
-export function toggleCellIds(currentCellIds: Iterable<string>, cellIdsToToggle: Iterable<string>): string[] {
-  const activeCellIds = new Set(currentCellIds);
-  for (const cellId of new Set(cellIdsToToggle)) {
-    if (activeCellIds.has(cellId)) {
-      activeCellIds.delete(cellId);
-    } else {
-      activeCellIds.add(cellId);
-    }
-  }
-  return Array.from(activeCellIds).sort();
+  return Array.from(hitCells.values()).sort((left, right) => {
+    if (left.i !== right.i) return left.i - right.i;
+    return left.j - right.j;
+  });
 }
 
 export function countVisibleCells(
   frame: GridFrameBounds,
   grid: GridState,
-  excludedCellIds?: Iterable<string>,
+  excludedCells?: Iterable<GridCellCoord>,
 ): { included: number; excluded: number } {
-  const excluded = excludedCellIds ? new Set(excludedCellIds) : new Set<string>();
+  const excluded = excludedCells ? new Set(Array.from(excludedCells, gridCellCoordKey)) : new Set<string>();
   const cells = enumerateVisibleGridCells(frame, grid);
-  const excludedCount = cells.filter((cell) => excluded.has(cell.id)).length;
+  const excludedCount = cells.filter((cell) => excluded.has(gridCellCoordKey(cell))).length;
   return {
     included: cells.length - excludedCount,
     excluded: excludedCount,
   };
 }
 
-export function collectEdgeCellIds(frame: GridFrameBounds, grid: GridState): string[] {
+export function collectEdgeCells(frame: GridFrameBounds, grid: GridState): GridCellCoord[] {
   return enumerateVisibleGridCells(frame, grid)
     .filter(
       (cell) =>
         cell.x <= 0 ||
         cell.y <= 0 ||
-        cell.x + cell.width >= frame.width ||
-        cell.y + cell.height >= frame.height,
+        cell.x + cell.w >= frame.width ||
+        cell.y + cell.h >= frame.height,
     )
-    .map((cell) => cell.id)
-    .sort();
+    .map((cell) => ({ i: cell.i, j: cell.j }))
+    .sort((left, right) => {
+      if (left.i !== right.i) return left.i - right.i;
+      return left.j - right.j;
+    });
 }
 
 export function buildBboxCsv(
   frame: GridFrameBounds,
   grid: GridState,
-  excludedCellIds?: Iterable<string>,
+  excludedCells?: Iterable<GridCellCoord>,
 ): string {
-  const excluded = excludedCellIds ? new Set(excludedCellIds) : new Set<string>();
+  const excluded = excludedCells ? new Set(Array.from(excludedCells, gridCellCoordKey)) : new Set<string>();
   const rows = ["roi,x,y,w,h"];
   let roi = 0;
 
   for (const cell of enumerateVisibleGridCells(frame, grid)) {
-    if (excluded.has(cell.id)) continue;
+    if (excluded.has(gridCellCoordKey(cell))) continue;
 
-    const clippedX = clamp(Math.round(cell.x), 0, frame.width);
-    const clippedY = clamp(Math.round(cell.y), 0, frame.height);
-    const clippedRight = clamp(Math.round(cell.x + cell.width), 0, frame.width);
-    const clippedBottom = clamp(Math.round(cell.y + cell.height), 0, frame.height);
-    const clippedWidth = clippedRight - clippedX;
-    const clippedHeight = clippedBottom - clippedY;
-
-    if (clippedWidth <= 0 || clippedHeight <= 0) continue;
-
-    rows.push(`${roi},${clippedX},${clippedY},${clippedWidth},${clippedHeight}`);
+    rows.push(`${roi},${cell.x},${cell.y},${cell.w},${cell.h}`);
     roi += 1;
   }
 

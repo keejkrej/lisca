@@ -1,13 +1,12 @@
 use std::cmp::Ordering;
-use std::collections::HashSet;
 
 use base64::prelude::{Engine as _, BASE64_STANDARD};
 use serde::Serialize;
 
 pub use crate::viewer::domain::{
-    AnnotationLabel, AutoExcludeHistogramBin, AutoExcludePreviewCellScore,
+    AnnotationLabel, AutoExcludeHistogramBin, AutoExcludePreviewCell, AutoExcludePreviewCellScore,
     AutoExcludePreviewRequest, AutoExcludePreviewResponse, ContrastWindow, CropOutputFormat,
-    CropRoiResponse, FrameRequest, GridShape, GridState, LoadedRoiFrameAnnotation,
+    CropRoiResponse, FrameRequest, LoadedRoiFrameAnnotation,
     RoiFrameAnnotation, RoiFrameAnnotationPayload, RoiFrameRequest, RoiWorkspaceScan,
     SaveBboxResponse, ViewerSource, WorkspaceScan,
 };
@@ -15,8 +14,6 @@ use crate::viewer::image::{self, apply_contrast, auto_contrast, contrast_domain,
 
 const AUTO_EXCLUDE_BIN_COUNT: usize = 40;
 const AUTO_EXCLUDE_EPSILON: f64 = 1.0;
-const GRID_BOUNDS_EPSILON: f64 = 1e-6;
-
 #[derive(Clone, Debug, Serialize)]
 pub struct FramePayload {
     pub width: u32,
@@ -26,40 +23,6 @@ pub struct FramePayload {
     pub contrast_domain: ContrastWindow,
     pub suggested_contrast: ContrastWindow,
     pub applied_contrast: ContrastWindow,
-}
-
-#[derive(Clone, Debug)]
-struct GridBasisVector {
-    x: f64,
-    y: f64,
-}
-
-#[derive(Clone, Debug)]
-struct GridBasis {
-    a: GridBasisVector,
-    b: GridBasisVector,
-}
-
-#[derive(Clone, Debug)]
-struct VisibleGridBounds {
-    basis: GridBasis,
-    origin_x: f64,
-    origin_y: f64,
-    half_width: f64,
-    half_height: f64,
-    i_min: i32,
-    i_max: i32,
-    j_min: i32,
-    j_max: i32,
-}
-
-#[derive(Clone, Debug)]
-struct VisibleCell {
-    cell_id: String,
-    x: f64,
-    y: f64,
-    width: f64,
-    height: f64,
 }
 
 #[derive(Clone, Debug)]
@@ -90,163 +53,11 @@ fn to_frame_payload(raw: RawFrame, contrast: Option<ContrastWindow>) -> FramePay
     }
 }
 
-fn clamp(value: f64, min: f64, max: f64) -> f64 {
-    value.min(max).max(min)
-}
-
-fn minimum_grid_spacing(cell_width: f64, cell_height: f64) -> f64 {
-    1.0_f64.max(cell_width.min(cell_height))
-}
-
-fn normalize_grid_state(grid: &GridState) -> GridState {
-    let cell_width = grid.cell_width.max(1.0);
-    let cell_height = grid.cell_height.max(1.0);
-    let min_spacing = minimum_grid_spacing(cell_width, cell_height);
-
-    GridState {
-        enabled: grid.enabled,
-        shape: grid.shape.clone(),
-        tx: grid.tx,
-        ty: grid.ty,
-        rotation: grid.rotation,
-        spacing_a: grid.spacing_a.max(min_spacing),
-        spacing_b: grid.spacing_b.max(min_spacing),
-        cell_width,
-        cell_height,
-        opacity: clamp(grid.opacity, 0.0, 1.0),
-    }
-}
-
-fn grid_basis(grid: &GridState) -> GridBasis {
-    let second_angle = grid.rotation
-        + match grid.shape {
-            GridShape::Square => std::f64::consts::FRAC_PI_2,
-            GridShape::Hex => std::f64::consts::FRAC_PI_3,
-        };
-
-    GridBasis {
-        a: GridBasisVector {
-            x: grid.rotation.cos() * grid.spacing_a,
-            y: grid.rotation.sin() * grid.spacing_a,
-        },
-        b: GridBasisVector {
-            x: second_angle.cos() * grid.spacing_b,
-            y: second_angle.sin() * grid.spacing_b,
-        },
-    }
-}
-
-fn estimate_grid_range(width: f64, height: f64, spacing_a: f64, spacing_b: f64) -> i32 {
-    let min_spacing = 1.0_f64.max(spacing_a.min(spacing_b));
-    let estimated_columns = (width / min_spacing).ceil() as i32 + 3;
-    let estimated_rows = (height / min_spacing).ceil() as i32 + 3;
-    estimated_columns.max(estimated_rows)
-}
-
-fn resolve_visible_grid_index_bounds(
-    frame_width: f64,
-    frame_height: f64,
-    grid: &GridState,
-) -> VisibleGridBounds {
-    let basis = grid_basis(grid);
-    let origin_x = frame_width / 2.0 + grid.tx;
-    let origin_y = frame_height / 2.0 + grid.ty;
-    let half_width = grid.cell_width / 2.0;
-    let half_height = grid.cell_height / 2.0;
-    let determinant = basis.a.x * basis.b.y - basis.a.y * basis.b.x;
-
-    if determinant.abs() <= GRID_BOUNDS_EPSILON {
-        let range = estimate_grid_range(frame_width, frame_height, grid.spacing_a, grid.spacing_b);
-        return VisibleGridBounds {
-            basis,
-            origin_x,
-            origin_y,
-            half_width,
-            half_height,
-            i_min: -range,
-            i_max: range,
-            j_min: -range,
-            j_max: range,
-        };
-    }
-
-    let corners = [
-        (-half_width, -half_height),
-        (frame_width + half_width, -half_height),
-        (-half_width, frame_height + half_height),
-        (frame_width + half_width, frame_height + half_height),
-    ];
-    let mut i_min = f64::INFINITY;
-    let mut i_max = f64::NEG_INFINITY;
-    let mut j_min = f64::INFINITY;
-    let mut j_max = f64::NEG_INFINITY;
-
-    for (x, y) in corners {
-        let dx = x - origin_x;
-        let dy = y - origin_y;
-        let i = (dx * basis.b.y - dy * basis.b.x) / determinant;
-        let j = (dy * basis.a.x - dx * basis.a.y) / determinant;
-        i_min = i_min.min(i);
-        i_max = i_max.max(i);
-        j_min = j_min.min(j);
-        j_max = j_max.max(j);
-    }
-
-    VisibleGridBounds {
-        basis,
-        origin_x,
-        origin_y,
-        half_width,
-        half_height,
-        i_min: (i_min - GRID_BOUNDS_EPSILON).floor() as i32,
-        i_max: (i_max + GRID_BOUNDS_EPSILON).ceil() as i32,
-        j_min: (j_min - GRID_BOUNDS_EPSILON).floor() as i32,
-        j_max: (j_max + GRID_BOUNDS_EPSILON).ceil() as i32,
-    }
-}
-
-fn cell_intersects_frame(cell: &VisibleCell, frame_width: f64, frame_height: f64) -> bool {
-    cell.x + cell.width >= 0.0
-        && cell.y + cell.height >= 0.0
-        && cell.x <= frame_width
-        && cell.y <= frame_height
-}
-
-fn enumerate_visible_grid_cells(frame_width: u32, frame_height: u32, grid: &GridState) -> Vec<VisibleCell> {
-    if !grid.enabled {
-        return Vec::new();
-    }
-
-    let normalized = normalize_grid_state(grid);
-    let bounds = resolve_visible_grid_index_bounds(frame_width as f64, frame_height as f64, &normalized);
-    let mut cells = Vec::new();
-
-    for i in bounds.i_min..=bounds.i_max {
-        for j in bounds.j_min..=bounds.j_max {
-            let center_x = bounds.origin_x + i as f64 * bounds.basis.a.x + j as f64 * bounds.basis.b.x;
-            let center_y = bounds.origin_y + i as f64 * bounds.basis.a.y + j as f64 * bounds.basis.b.y;
-            let cell = VisibleCell {
-                cell_id: format!("{i}:{j}"),
-                x: center_x - bounds.half_width,
-                y: center_y - bounds.half_height,
-                width: normalized.cell_width,
-                height: normalized.cell_height,
-            };
-
-            if cell_intersects_frame(&cell, frame_width as f64, frame_height as f64) {
-                cells.push(cell);
-            }
-        }
-    }
-
-    cells
-}
-
-fn clipped_cell_bounds(cell: &VisibleCell, frame_width: u32, frame_height: u32) -> Option<(usize, usize, usize, usize)> {
-    let left = clamp(cell.x.round(), 0.0, frame_width as f64) as usize;
-    let top = clamp(cell.y.round(), 0.0, frame_height as f64) as usize;
-    let right = clamp((cell.x + cell.width).round(), 0.0, frame_width as f64) as usize;
-    let bottom = clamp((cell.y + cell.height).round(), 0.0, frame_height as f64) as usize;
+fn clipped_cell_bounds(cell: &AutoExcludePreviewCell, frame_width: u32, frame_height: u32) -> Option<(usize, usize, usize, usize)> {
+    let left = cell.x.min(frame_width) as usize;
+    let top = cell.y.min(frame_height) as usize;
+    let right = cell.x.saturating_add(cell.w).min(frame_width) as usize;
+    let bottom = cell.y.saturating_add(cell.h).min(frame_height) as usize;
 
     if right <= left || bottom <= top {
         return None;
@@ -255,7 +66,7 @@ fn clipped_cell_bounds(cell: &VisibleCell, frame_width: u32, frame_height: u32) 
     Some((left, top, right, bottom))
 }
 
-fn collect_cell_values(raw: &RawFrame, cell: &VisibleCell) -> Vec<u16> {
+fn collect_cell_values(raw: &RawFrame, cell: &AutoExcludePreviewCell) -> Vec<u16> {
     let Some((left, top, right, bottom)) = clipped_cell_bounds(cell, raw.width, raw.height) else {
         return Vec::new();
     };
@@ -410,25 +221,24 @@ pub fn auto_exclude_preview(
     request: AutoExcludePreviewRequest,
 ) -> Result<AutoExcludePreviewResponse, String> {
     let raw = load_frame(request.source, request.selection)?;
-    let excluded = request
-        .excluded_cell_ids
+    let mut cell_scores = request
+        .cells
         .into_iter()
-        .collect::<HashSet<_>>();
-
-    let mut cell_scores = enumerate_visible_grid_cells(raw.width, raw.height, &request.grid)
-        .into_iter()
-        .filter(|cell| !excluded.contains(&cell.cell_id))
         .filter_map(|cell| {
             let values = collect_cell_values(&raw, &cell);
             flatness_score(&values).map(|score| AutoExcludePreviewCellScore {
-                cell_id: cell.cell_id,
+                i: cell.i,
+                j: cell.j,
                 score,
             })
         })
         .collect::<Vec<_>>();
 
     cell_scores.sort_by(|left, right| match left.score.total_cmp(&right.score) {
-        Ordering::Equal => left.cell_id.cmp(&right.cell_id),
+        Ordering::Equal => match left.i.cmp(&right.i) {
+            Ordering::Equal => left.j.cmp(&right.j),
+            ordering => ordering,
+        },
         ordering => ordering,
     });
 
@@ -509,21 +319,6 @@ where
 mod tests {
     use super::*;
 
-    fn test_grid() -> GridState {
-        GridState {
-            enabled: true,
-            shape: GridShape::Square,
-            tx: 0.0,
-            ty: 0.0,
-            rotation: 0.0,
-            spacing_a: 10.0,
-            spacing_b: 10.0,
-            cell_width: 8.0,
-            cell_height: 8.0,
-            opacity: 0.35,
-        }
-    }
-
     #[test]
     fn flatness_score_prefers_flatter_cells() {
         let flat = vec![10_u16, 10, 11, 11, 10, 11, 10, 10, 11, 11];
@@ -552,9 +347,17 @@ mod tests {
     }
 
     #[test]
-    fn visible_cells_respect_frame_intersection() {
-        let cells = enumerate_visible_grid_cells(16, 16, &test_grid());
-        assert!(!cells.is_empty());
-        assert!(cells.iter().any(|cell| cell.cell_id == "0:0"));
+    fn clipped_cell_bounds_preserve_quantized_size_for_interior_cells() {
+        let cell = AutoExcludePreviewCell {
+            i: 0,
+            j: 0,
+            x: 350,
+            y: 361,
+            w: 101,
+            h: 81,
+        };
+
+        let bounds = clipped_cell_bounds(&cell, 800, 800).expect("bounds");
+        assert_eq!(bounds, (350, 361, 451, 442));
     }
 }

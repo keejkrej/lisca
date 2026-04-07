@@ -1,31 +1,50 @@
-import type { ExcludedCellIdsByPosition } from "./types";
+import type { ExcludedCellsByPosition, GridCellCoord } from "./types";
 
-function toSortedUniqueCellIds(cellIds: Iterable<string>): string[] {
-  return Array.from(new Set(cellIds)).sort();
+function compareGridCellCoords(left: GridCellCoord, right: GridCellCoord): number {
+  if (left.i !== right.i) return left.i - right.i;
+  return left.j - right.j;
 }
 
-export function toggleExcludedCellIds(current: Iterable<string>, toggled: Iterable<string>): string[] {
-  const next = new Set(current);
-  for (const cellId of new Set(toggled)) {
-    if (next.has(cellId)) {
-      next.delete(cellId);
+function gridCellCoordKey(cell: GridCellCoord): string {
+  return `${cell.i}:${cell.j}`;
+}
+
+function toSortedUniqueCells(cells: Iterable<GridCellCoord>): GridCellCoord[] {
+  const unique = new Map<string, GridCellCoord>();
+  for (const cell of cells) {
+    unique.set(gridCellCoordKey(cell), { i: cell.i, j: cell.j });
+  }
+  return Array.from(unique.values()).sort(compareGridCellCoords);
+}
+
+export function toggleExcludedCells(current: Iterable<GridCellCoord>, toggled: Iterable<GridCellCoord>): GridCellCoord[] {
+  const next = new Map<string, GridCellCoord>();
+  for (const cell of current) {
+    next.set(gridCellCoordKey(cell), { i: cell.i, j: cell.j });
+  }
+
+  for (const cell of toSortedUniqueCells(toggled)) {
+    const key = gridCellCoordKey(cell);
+    if (next.has(key)) {
+      next.delete(key);
     } else {
-      next.add(cellId);
+      next.set(key, cell);
     }
   }
-  return Array.from(next).sort();
+
+  return Array.from(next.values()).sort(compareGridCellCoords);
 }
 
-export function mergeExcludedCellIds(current: Iterable<string>, additions: Iterable<string>): string[] {
-  return toSortedUniqueCellIds([...current, ...additions]);
+export function mergeExcludedCells(current: Iterable<GridCellCoord>, additions: Iterable<GridCellCoord>): GridCellCoord[] {
+  return toSortedUniqueCells([...current, ...additions]);
 }
 
-export function setExcludedCellIdsForPosition(
-  map: ExcludedCellIdsByPosition,
+export function setExcludedCellsForPosition(
+  map: ExcludedCellsByPosition,
   position: number,
-  nextCellIds: Iterable<string>,
-): ExcludedCellIdsByPosition {
-  const normalized = toSortedUniqueCellIds(nextCellIds);
+  nextCells: Iterable<GridCellCoord>,
+): ExcludedCellsByPosition {
+  const normalized = toSortedUniqueCells(nextCells);
   if (normalized.length === 0) {
     const { [position]: _removed, ...rest } = map;
     return rest;
@@ -33,6 +52,6 @@ export function setExcludedCellIdsForPosition(
   return { ...map, [position]: normalized };
 }
 
-export function clearExcludedCellIds(): ExcludedCellIdsByPosition {
+export function clearExcludedCells(): ExcludedCellsByPosition {
   return {};
 }

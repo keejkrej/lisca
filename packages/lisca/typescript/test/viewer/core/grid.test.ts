@@ -7,8 +7,8 @@ import {
   buildBboxCsv,
   classifyGridPointerGesture,
   classifyGridWheelGesture,
-  collectEdgeCellIds,
-  collectStrokeToggleCellIds,
+  collectEdgeCells,
+  collectStrokeToggleCells,
   countVisibleCells,
   createDefaultGrid,
   degreesToRadians,
@@ -21,6 +21,10 @@ import {
   normalizeRadians,
   normalizeGridState,
 } from "../../../src/viewer/core";
+
+function cellKey(cell: { i: number; j: number }): string {
+  return `${cell.i}:${cell.j}`;
+}
 
 describe("grid utils", () => {
   test("normalizes grid inputs", () => {
@@ -68,7 +72,7 @@ describe("grid utils", () => {
       }),
     );
 
-    const ids = new Set(cells.map((cell) => cell.id));
+    const ids = new Set(cells.map(cellKey));
     expect(ids.has("0:0")).toBe(true);
     expect(ids.has("1:0")).toBe(true);
     expect(ids.has("0:1")).toBe(true);
@@ -335,7 +339,7 @@ describe("grid utils", () => {
       }),
     );
 
-    expect(cells.some((cell) => cell.x === -25 && cell.y === 25)).toBe(true);
+    expect(cells.some((cell) => cell.i === -1 && cell.j === 0 && cell.x === 0 && cell.y === 25)).toBe(true);
   });
 
   test("keeps translated lattice cells visible", () => {
@@ -355,7 +359,7 @@ describe("grid utils", () => {
       }),
     );
 
-    const ids = new Set(cells.map((cell) => cell.id));
+    const ids = new Set(cells.map(cellKey));
     expect(cells).toHaveLength(9);
     expect(ids.has("-21:-1")).toBe(true);
     expect(ids.has("-20:0")).toBe(true);
@@ -376,7 +380,7 @@ describe("grid utils", () => {
     });
 
     const cell = findGridCellAtPoint(frame, grid, 1, 30);
-    expect(cell?.id).toBe("-1:0");
+    expect(cell).toMatchObject({ i: -1, j: 0 });
     expect(findGridCellAtPoint(frame, grid, 150, 150)).toBeNull();
   });
 
@@ -392,16 +396,16 @@ describe("grid utils", () => {
       cellWidth: 50,
       cellHeight: 50,
     });
-    const hitCellIds = new Set<string>();
+    const hitCells: { i: number; j: number }[] = [];
 
-    for (const cellId of collectStrokeToggleCellIds(frame, grid, { x: 1, y: 30 }, { x: 60, y: 30 }, hitCellIds)) {
-      hitCellIds.add(cellId);
+    for (const cell of collectStrokeToggleCells(frame, grid, { x: 1, y: 30 }, { x: 60, y: 30 }, hitCells)) {
+      hitCells.push(cell);
     }
-    for (const cellId of collectStrokeToggleCellIds(frame, grid, { x: 60, y: 30 }, { x: 1, y: 30 }, hitCellIds)) {
-      hitCellIds.add(cellId);
+    for (const cell of collectStrokeToggleCells(frame, grid, { x: 60, y: 30 }, { x: 1, y: 30 }, hitCells)) {
+      hitCells.push(cell);
     }
 
-    expect(Array.from(hitCellIds).sort()).toEqual(["-1:0", "0:0"]);
+    expect(hitCells.map(cellKey)).toEqual(["-1:0", "0:0"]);
   });
 
   test("counts included and excluded visible cells", () => {
@@ -417,7 +421,7 @@ describe("grid utils", () => {
         cellWidth: 50,
         cellHeight: 50,
       }),
-      new Set(["0:0"]),
+      [{ i: 0, j: 0 }],
     );
 
     expect(counts.included).toBeGreaterThan(0);
@@ -425,7 +429,7 @@ describe("grid utils", () => {
   });
 
   test("collects visible cells that touch the frame edge", () => {
-    const edgeCellIds = collectEdgeCellIds(
+    const edgeCells = collectEdgeCells(
       {
         width: 100,
         height: 100,
@@ -439,9 +443,9 @@ describe("grid utils", () => {
       }),
     );
 
-    expect(edgeCellIds).toContain("-1:0");
-    expect(edgeCellIds).toContain("0:-1");
-    expect(edgeCellIds).not.toContain("0:0");
+    expect(edgeCells.map(cellKey)).toContain("-1:0");
+    expect(edgeCells.map(cellKey)).toContain("0:-1");
+    expect(edgeCells.map(cellKey)).not.toContain("0:0");
   });
 
   test("builds bbox csv and clips edge-touching cells", () => {
@@ -457,12 +461,65 @@ describe("grid utils", () => {
         cellWidth: 50,
         cellHeight: 50,
       }),
-      new Set(["0:0"]),
+      [{ i: 0, j: 0 }],
     );
 
     const lines = csv.split("\n");
     expect(lines[0]).toBe("roi,x,y,w,h");
     expect(lines.some((line) => line === "1,0,25,25,50")).toBe(true);
     expect(lines.some((line) => line.includes(",25,25,50,50"))).toBe(false);
+  });
+
+  test("builds bbox csv with stable rounded cell sizes", () => {
+    const csv = buildBboxCsv(
+      {
+        width: 800,
+        height: 800,
+      },
+      normalizeGridState({
+        enabled: true,
+        tx: 0.33,
+        ty: 0.67,
+        spacingA: 120,
+        spacingB: 120,
+        cellWidth: 100.6,
+        cellHeight: 80.6,
+      }),
+    );
+
+    const lines = csv.split("\n").slice(1);
+    const centralRow = lines
+      .map((line) => line.split(","))
+      .find((parts) => parts[1] === "350" && parts[2] === "360");
+
+    expect(centralRow).toEqual(["24", "350", "360", "101", "81"]);
+  });
+
+  test("enumerates quantized visible grid cells", () => {
+    const cells = enumerateVisibleGridCells(
+      {
+        width: 800,
+        height: 800,
+      },
+      normalizeGridState({
+        enabled: true,
+        tx: 0.33,
+        ty: 0.67,
+        spacingA: 120,
+        spacingB: 120,
+        cellWidth: 100.6,
+        cellHeight: 80.6,
+      }),
+    );
+
+    const centerCell = cells.find((cell) => cell.i === 0 && cell.j === 0);
+    expect(centerCell).toEqual({
+      i: 0,
+      j: 0,
+      x: 350,
+      y: 360,
+      w: 101,
+      h: 81,
+    });
   });
 });

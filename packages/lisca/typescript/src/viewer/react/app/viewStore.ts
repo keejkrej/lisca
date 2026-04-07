@@ -8,14 +8,15 @@ import type {
   WorkspaceScan,
 } from "lisca/viewer/contracts";
 import {
-  clearExcludedCellIds,
+  clearExcludedCells as clearExcludedCellsMap,
   createDefaultGrid,
   makeSourceKey,
-  mergeExcludedCellIds,
+  mergeExcludedCells as mergeExcludedCellCoords,
   normalizeGridState,
-  setExcludedCellIdsForPosition,
-  toggleExcludedCellIds,
-  type ExcludedCellIdsByPosition,
+  setExcludedCellsForPosition,
+  toggleExcludedCells as toggleExcludedCellCoords,
+  type ExcludedCellsByPosition,
+  type GridCellCoord,
   type GridState,
 } from "lisca/viewer/core";
 
@@ -62,7 +63,7 @@ export interface ViewStoreState {
   contrastReloadToken: number;
   timeSliderIndex: number;
   selectionMode: boolean;
-  excludedCellIdsByPosition: ExcludedCellIdsByPosition;
+  excludedCellsByPosition: ExcludedCellsByPosition;
   saveState: SaveState;
   saving: boolean;
   cropState: CropState;
@@ -172,10 +173,19 @@ function excludedBboxStorageKey(source: ViewerSource): string {
   return `${EXCLUDED_BBOX_KEY_PREFIX}:${encodeURIComponent(makeSourceKey(source))}`;
 }
 
-function readStoredExcludedCellIds(
+function isStoredGridCellCoord(value: unknown): value is GridCellCoord {
+  return (
+    !!value &&
+    typeof value === "object" &&
+    Number.isInteger((value as GridCellCoord).i) &&
+    Number.isInteger((value as GridCellCoord).j)
+  );
+}
+
+function readStoredExcludedCells(
   storage: StorageLike | null,
   source: ViewerSource | null,
-): ExcludedCellIdsByPosition {
+): ExcludedCellsByPosition {
   if (!storage || !source) return {};
 
   try {
@@ -192,7 +202,7 @@ function readStoredExcludedCellIds(
       return [
         [
           numericPosition,
-          value.filter((item): item is string => typeof item === "string"),
+          value.filter(isStoredGridCellCoord),
         ] as const,
       ];
     });
@@ -233,21 +243,18 @@ function persistGridEffect(storage: StorageLike | null, grid: GridState) {
   }).pipe(Effect.withSpan("view-store.persist-grid"));
 }
 
-function persistExcludedCellIdsEffect(
+function persistExcludedCellsEffect(
   storage: StorageLike | null,
   source: ViewerSource | null,
-  excludedCellIdsByPosition: ExcludedCellIdsByPosition,
+  excludedCellsByPosition: ExcludedCellsByPosition,
 ) {
   return Effect.sync(() => {
     if (!storage || !source) return;
-    if (Object.keys(excludedCellIdsByPosition).length === 0) {
+    if (Object.keys(excludedCellsByPosition).length === 0) {
       storage.removeItem(excludedBboxStorageKey(source));
       return;
     }
-    storage.setItem(
-      excludedBboxStorageKey(source),
-      JSON.stringify(excludedCellIdsByPosition),
-    );
+    storage.setItem(excludedBboxStorageKey(source), JSON.stringify(excludedCellsByPosition));
   }).pipe(Effect.withSpan("view-store.persist-excluded-cell-ids"));
 }
 
@@ -307,7 +314,7 @@ function createInitialState(): ViewStoreState {
         contrastReloadToken: 0,
         timeSliderIndex: 0,
         selectionMode: false,
-        excludedCellIdsByPosition: readStoredExcludedCellIds(storage, source),
+        excludedCellsByPosition: readStoredExcludedCells(storage, source),
         saveState: IDLE_SAVE_STATE,
         saving: false,
         cropState: IDLE_SAVE_STATE,
@@ -330,7 +337,7 @@ export function setSource(source: ViewerSource | null) {
   viewStore.setState((state) =>
     resetViewerState(state, {
       source,
-      excludedCellIdsByPosition: readStoredExcludedCellIds(storage, source),
+      excludedCellsByPosition: readStoredExcludedCells(storage, source),
     }),
   );
 }
@@ -353,13 +360,13 @@ export function resetGrid() {
       ...createDefaultGrid(),
       enabled: state.grid.enabled,
     };
-    const excludedCellIdsByPosition = clearExcludedCellIds();
+    const excludedCellsByPosition = clearExcludedCellsMap();
     runSync(persistGridEffect(resolveStorage(), grid));
-    runSync(persistExcludedCellIdsEffect(resolveStorage(), state.source, excludedCellIdsByPosition));
+    runSync(persistExcludedCellsEffect(resolveStorage(), state.source, excludedCellsByPosition));
     return {
       ...state,
       grid,
-      excludedCellIdsByPosition,
+      excludedCellsByPosition,
       saveState: IDLE_SAVE_STATE,
     };
   });
@@ -422,59 +429,59 @@ export function reloadAutoContrast() {
   }));
 }
 
-export function toggleExcludedCells(position: number, cellIds: Iterable<string>) {
+export function toggleExcludedCells(position: number, cells: Iterable<GridCellCoord>) {
   viewStore.setState((state) => {
-    const nextCellIds = toggleExcludedCellIds(state.excludedCellIdsByPosition[position] ?? [], cellIds);
-    const currentCellIds = state.excludedCellIdsByPosition[position] ?? [];
+    const nextCells = toggleExcludedCellCoords(state.excludedCellsByPosition[position] ?? [], cells);
+    const currentCells = state.excludedCellsByPosition[position] ?? [];
     if (
-      nextCellIds.length === currentCellIds.length &&
-      nextCellIds.every((cellId, index) => cellId === currentCellIds[index])
+      nextCells.length === currentCells.length &&
+      nextCells.every(
+        (cell, index) => cell.i === currentCells[index]?.i && cell.j === currentCells[index]?.j,
+      )
     ) {
       return state;
     }
 
-    const excludedCellIdsByPosition = setExcludedCellIdsForPosition(
-      state.excludedCellIdsByPosition,
+    const excludedCellsByPosition = setExcludedCellsForPosition(
+      state.excludedCellsByPosition,
       position,
-      nextCellIds,
+      nextCells,
     );
 
-    runSync(
-      persistExcludedCellIdsEffect(resolveStorage(), state.source, excludedCellIdsByPosition),
-    );
+    runSync(persistExcludedCellsEffect(resolveStorage(), state.source, excludedCellsByPosition));
 
     return {
       ...state,
-      excludedCellIdsByPosition,
+      excludedCellsByPosition,
       saveState: IDLE_SAVE_STATE,
     };
   });
 }
 
-export function excludeCells(position: number, cellIds: Iterable<string>) {
+export function excludeCells(position: number, cells: Iterable<GridCellCoord>) {
   viewStore.setState((state) => {
-    const nextCellIds = mergeExcludedCellIds(state.excludedCellIdsByPosition[position] ?? [], cellIds);
-    const currentCellIds = state.excludedCellIdsByPosition[position] ?? [];
+    const nextCells = mergeExcludedCellCoords(state.excludedCellsByPosition[position] ?? [], cells);
+    const currentCells = state.excludedCellsByPosition[position] ?? [];
     if (
-      nextCellIds.length === currentCellIds.length &&
-      nextCellIds.every((cellId, index) => cellId === currentCellIds[index])
+      nextCells.length === currentCells.length &&
+      nextCells.every(
+        (cell, index) => cell.i === currentCells[index]?.i && cell.j === currentCells[index]?.j,
+      )
     ) {
       return state;
     }
 
-    const excludedCellIdsByPosition = setExcludedCellIdsForPosition(
-      state.excludedCellIdsByPosition,
+    const excludedCellsByPosition = setExcludedCellsForPosition(
+      state.excludedCellsByPosition,
       position,
-      nextCellIds,
+      nextCells,
     );
 
-    runSync(
-      persistExcludedCellIdsEffect(resolveStorage(), state.source, excludedCellIdsByPosition),
-    );
+    runSync(persistExcludedCellsEffect(resolveStorage(), state.source, excludedCellsByPosition));
 
     return {
       ...state,
-      excludedCellIdsByPosition,
+      excludedCellsByPosition,
       saveState: IDLE_SAVE_STATE,
     };
   });
@@ -482,23 +489,21 @@ export function excludeCells(position: number, cellIds: Iterable<string>) {
 
 export function resetExcludedCells(position: number) {
   viewStore.setState((state) => {
-    if (!(position in state.excludedCellIdsByPosition)) {
+    if (!(position in state.excludedCellsByPosition)) {
       return state;
     }
 
-    const excludedCellIdsByPosition = setExcludedCellIdsForPosition(
-      state.excludedCellIdsByPosition,
+    const excludedCellsByPosition = setExcludedCellsForPosition(
+      state.excludedCellsByPosition,
       position,
       [],
     );
 
-    runSync(
-      persistExcludedCellIdsEffect(resolveStorage(), state.source, excludedCellIdsByPosition),
-    );
+    runSync(persistExcludedCellsEffect(resolveStorage(), state.source, excludedCellsByPosition));
 
     return {
       ...state,
-      excludedCellIdsByPosition,
+      excludedCellsByPosition,
       saveState: IDLE_SAVE_STATE,
     };
   });

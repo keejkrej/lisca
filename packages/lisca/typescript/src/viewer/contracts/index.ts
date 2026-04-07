@@ -1,5 +1,6 @@
 export type {
   AutoExcludeHistogramBin,
+  AutoExcludePreviewCell,
   AutoExcludePreviewCellScore,
   AutoExcludePreviewRequest,
   AutoExcludePreviewResponse,

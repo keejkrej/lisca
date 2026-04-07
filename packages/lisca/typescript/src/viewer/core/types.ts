@@ -33,7 +33,12 @@ export interface GridWheelViewport {
   modelHeight: number;
 }
 
-export type ExcludedCellIdsByPosition = Record<number, string[]>;
+export interface GridCellCoord {
+  i: number;
+  j: number;
+}
+
+export type ExcludedCellsByPosition = Record<number, GridCellCoord[]>;
 
 export interface MousePointerInput {
   pointerType: string;
@@ -54,16 +59,11 @@ export interface GridPointerGestureSession {
   startGrid: GridState;
 }
 
-export interface GridCellRect {
-  id: string;
-  i: number;
-  j: number;
-  centerX: number;
-  centerY: number;
+export interface GridCellBox extends GridCellCoord {
   x: number;
   y: number;
-  width: number;
-  height: number;
+  w: number;
+  h: number;
 }
 
 export type GridPointerIntent = "offset" | "rotation" | "spacing";

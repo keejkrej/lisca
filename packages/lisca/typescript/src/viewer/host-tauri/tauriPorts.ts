@@ -170,13 +170,14 @@ export function createTauriDesktopPorts(): TauriDesktopPorts {
       });
     },
 
-    cropRoi(
+    async cropRoi(
       workspacePath: string,
       source: ViewerSource,
       pos: number,
       format: CropOutputFormat,
     ): Promise<CropRoiResponse> {
       const requestId = makeRequestId();
+      await ensureCropProgressListener();
       return invoke("crop_roi", {
         workspacePath,
         source,

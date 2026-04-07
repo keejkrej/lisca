@@ -2,6 +2,7 @@ import {
   clamp,
   enumerateVisibleGridCells,
   gridBasis,
+  type GridCellCoord,
   type GridState,
   type GridWheelViewport,
 } from "lisca/viewer/core";
@@ -55,7 +56,7 @@ function drawGridOverlay(
   viewportHeight: number,
   frame: FrameResult,
   grid: GridState,
-  excludedCellIds: ReadonlySet<string>,
+  excludedCellKeys: ReadonlySet<string>,
 ) {
   if (!grid.enabled) return;
 
@@ -76,14 +77,14 @@ function drawGridOverlay(
   ctx.clip();
 
   for (const cell of enumerateVisibleGridCells(frame, grid)) {
-    const color = excludedCellIds.has(cell.id) ? "244, 63, 94" : "68, 151, 255";
+    const color = excludedCellKeys.has(`${cell.i}:${cell.j}`) ? "244, 63, 94" : "68, 151, 255";
     ctx.fillStyle = `rgba(${color}, ${grid.opacity * 0.55})`;
     ctx.strokeStyle = `rgba(${color}, ${Math.max(0.45, grid.opacity * 0.9)})`;
     ctx.lineWidth = 1;
     const scaledX = drawX + cell.x * scale;
     const scaledY = drawY + cell.y * scale;
-    const scaledWidth = cell.width * scale;
-    const scaledHeight = cell.height * scale;
+    const scaledWidth = cell.w * scale;
+    const scaledHeight = cell.h * scale;
     ctx.fillRect(scaledX, scaledY, scaledWidth, scaledHeight);
     ctx.strokeRect(
       scaledX + 0.5,
@@ -137,7 +138,7 @@ export default function ViewerCanvasSurface({
   frame,
   grid,
   previewGrid,
-  excludedCellIds,
+  excludedCells,
   loading = false,
   emptyText,
   messages,
@@ -157,9 +158,9 @@ export default function ViewerCanvasSurface({
   const dprRef = useRef(1);
 
   const preparedFrame = useMemo(() => (frame ? prepareFrameCanvas(frame) : null), [frame]);
-  const activeExcludedCellIds = useMemo(
-    () => new Set(excludedCellIds ? Array.from(excludedCellIds) : []),
-    [excludedCellIds],
+  const activeExcludedCellKeys = useMemo(
+    () => new Set(Array.from(excludedCells ?? [], (cell: GridCellCoord) => `${cell.i}:${cell.j}`)),
+    [excludedCells],
   );
 
   const queueRender = useCallback(() => {
@@ -195,12 +196,12 @@ export default function ViewerCanvasSurface({
         ctx.strokeRect(drawX - 8.5, drawY - 8.5, drawWidth + 17, drawHeight + 17);
         ctx.imageSmoothingEnabled = false;
         ctx.drawImage(cached.prepared, drawX, drawY, drawWidth, drawHeight);
-        drawGridOverlay(ctx, cssWidth, cssHeight, cached.frame, activeGrid, activeExcludedCellIds);
+        drawGridOverlay(ctx, cssWidth, cssHeight, cached.frame, activeGrid, activeExcludedCellKeys);
       }
 
       ctx.restore();
     });
-  }, [activeExcludedCellIds, emptyText, grid, loading, previewGrid]);
+  }, [activeExcludedCellKeys, emptyText, grid, loading, previewGrid]);
 
   useEffect(() => {
     latestFrameRef.current =
@@ -219,7 +220,7 @@ export default function ViewerCanvasSurface({
 
   useEffect(() => {
     queueRender();
-  }, [activeExcludedCellIds, loading, messages, emptyText, queueRender]);
+  }, [activeExcludedCellKeys, loading, messages, emptyText, queueRender]);
 
   useLayoutEffect(() => {
     const view = viewportRef.current;

@@ -1,6 +1,7 @@
 export type {
-  ExcludedCellIdsByPosition,
-  GridCellRect,
+  ExcludedCellsByPosition,
+  GridCellBox,
+  GridCellCoord,
   GridFrameBounds,
   GridPointerGestureInput,
   GridPointerGestureSession,
@@ -21,8 +22,8 @@ export {
   clamp,
   classifyGridPointerGesture,
   classifyGridWheelGesture,
-  collectEdgeCellIds,
-  collectStrokeToggleCellIds,
+  collectEdgeCells,
+  collectStrokeToggleCells,
   countVisibleCells,
   createDefaultGrid,
   degreesToRadians,
@@ -37,13 +38,12 @@ export {
   normalizeGridState,
   normalizeRadians,
   radiansToDegrees,
-  toggleCellIds,
 } from "./utils";
 export {
-  clearExcludedCellIds,
-  mergeExcludedCellIds,
-  setExcludedCellIdsForPosition,
-  toggleExcludedCellIds,
+  clearExcludedCells,
+  mergeExcludedCells,
+  setExcludedCellsForPosition,
+  toggleExcludedCells,
 } from "./excludedCellIds";
 export {
   autoContrast,

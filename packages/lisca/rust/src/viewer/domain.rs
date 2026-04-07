@@ -67,17 +67,28 @@ pub struct ContrastWindow {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct AutoExcludePreviewCell {
+    pub i: i32,
+    pub j: i32,
+    pub x: u32,
+    pub y: u32,
+    pub w: u32,
+    pub h: u32,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AutoExcludePreviewRequest {
     pub source: ViewerSource,
     pub selection: FrameRequest,
-    pub grid: GridState,
-    pub excluded_cell_ids: Vec<String>,
+    pub cells: Vec<AutoExcludePreviewCell>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AutoExcludePreviewCellScore {
-    pub cell_id: String,
+    pub i: i32,
+    pub j: i32,
     pub score: f64,
 }
 
