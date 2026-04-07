@@ -1,4 +1,4 @@
 @import "../../ui/theme.css";
 
-@source "../../../ui/src";
+@source "../../ui";
 @source "../";
