@@ -24,7 +24,7 @@
     "./src/viewer/ui/theme.css"
   ],
   "scripts": {
-    "build": "bun run typecheck",
+    "check": "bun run typecheck",
     "test": "bun test",
     "typecheck": "bunx tsc --noEmit -p tsconfig.json"
   },
