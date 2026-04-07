@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "build": "bun run --cwd packages/lisca/typescript build && bun run --cwd apps/viewer build",
-    "dev:viewer": "bun run --cwd apps/viewer dev",
+    "dev": "bun run --cwd apps/viewer dev",
     "test": "bun run --cwd packages/lisca/typescript test",
     "typecheck": "bun run --cwd packages/lisca/typescript typecheck && bun run --cwd apps/viewer typecheck && cargo check --workspace"
   }
