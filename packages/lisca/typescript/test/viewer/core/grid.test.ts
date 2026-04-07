@@ -428,7 +428,29 @@ describe("grid utils", () => {
     expect(counts.excluded).toBe(1);
   });
 
-  test("collects visible cells that touch the frame edge", () => {
+  test("collects edge cells with less than half the target area visible", () => {
+    const edgeCells = collectEdgeCells(
+      {
+        width: 100,
+        height: 100,
+      },
+      normalizeGridState({
+        enabled: true,
+        tx: -10,
+        ty: -10,
+        spacingA: 50,
+        spacingB: 50,
+        cellWidth: 50,
+        cellHeight: 50,
+      }),
+    );
+
+    expect(edgeCells.map(cellKey)).toContain("-1:0");
+    expect(edgeCells.map(cellKey)).toContain("0:-1");
+    expect(edgeCells.map(cellKey)).not.toContain("0:0");
+  });
+
+  test("does not collect edge cells with exactly half the target area visible", () => {
     const edgeCells = collectEdgeCells(
       {
         width: 100,
@@ -443,8 +465,8 @@ describe("grid utils", () => {
       }),
     );
 
-    expect(edgeCells.map(cellKey)).toContain("-1:0");
-    expect(edgeCells.map(cellKey)).toContain("0:-1");
+    expect(edgeCells.map(cellKey)).not.toContain("-1:0");
+    expect(edgeCells.map(cellKey)).not.toContain("0:-1");
     expect(edgeCells.map(cellKey)).not.toContain("0:0");
   });
 

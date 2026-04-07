@@ -353,13 +353,15 @@ export function countVisibleCells(
 }
 
 export function collectEdgeCells(frame: GridFrameBounds, grid: GridState): GridCellCoord[] {
+  const targetArea = Math.max(1, Math.round(grid.cellWidth)) * Math.max(1, Math.round(grid.cellHeight));
   return enumerateVisibleGridCells(frame, grid)
     .filter(
       (cell) =>
-        cell.x <= 0 ||
-        cell.y <= 0 ||
-        cell.x + cell.w >= frame.width ||
-        cell.y + cell.h >= frame.height,
+        (cell.x <= 0 ||
+          cell.y <= 0 ||
+          cell.x + cell.w >= frame.width ||
+          cell.y + cell.h >= frame.height) &&
+        cell.w * cell.h < targetArea / 2,
     )
     .map((cell) => ({ i: cell.i, j: cell.j }))
     .sort((left, right) => {

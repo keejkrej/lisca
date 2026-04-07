@@ -1,5 +1,4 @@
 import { Effect, Exit } from "effect";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
@@ -48,6 +47,11 @@ import {
   SidebarSection,
   SidebarValue,
 } from "./sidebar";
+import {
+  findNavigationOptionIndex,
+  NavigationControls,
+  toNavigationOptions,
+} from "./NavigationControls";
 import { showErrorToast } from "./toast";
 import RoiAnnotationModal from "./RoiAnnotationModal";
 import ViewNavbar, { type ViewerMode } from "./ViewNavbar";
@@ -164,40 +168,6 @@ function AppSelect<T extends SelectValue>({
       </SelectContent>
     </Select>
   );
-}
-
-function AppSlider({
-  value,
-  min,
-  max,
-  step,
-  onChange,
-  onCommit,
-  disabled,
-}: {
-  value: number;
-  min: number;
-  max: number;
-  step: number;
-  onChange: (value: number) => void;
-  onCommit?: (value: number) => void;
-  disabled?: boolean;
-}) {
-  return (
-    <Slider
-      value={value}
-      min={min}
-      max={max}
-      step={step}
-      disabled={disabled}
-      onValueChange={onChange}
-      onValueCommitted={onCommit}
-    />
-  );
-}
-
-function toOptions(values: number[]): Option<number>[] {
-  return values.map((value) => ({ value, label: String(value) }));
 }
 
 function currentPositionScan(scan: { positions: RoiPositionScan[] } | null, pos: number | null) {
@@ -509,11 +479,21 @@ export default function RoiWorkspace({
     [roiEntries, selectedRoi],
   );
   const positionOptions = useMemo(
-    () => toOptions(scan?.positions.map((entry) => entry.pos) ?? []),
+    () => toNavigationOptions(scan?.positions.map((entry) => entry.pos) ?? []),
     [scan],
   );
-  const channelOptions = useMemo(() => toOptions(position?.channels ?? []), [position]);
-  const zOptions = useMemo(() => toOptions(position?.zSlices ?? []), [position]);
+  const channelOptions = useMemo(() => toNavigationOptions(position?.channels ?? []), [position]);
+  const zValues = position?.zSlices ?? [];
+  const selectedPosition = selection?.pos ?? positionOptions[0]?.value ?? null;
+  const selectedChannel = selection?.channel ?? channelOptions[0]?.value ?? null;
+  const selectedZ = selection?.z ?? zValues[0] ?? null;
+  const selectedPositionIndex = findNavigationOptionIndex(positionOptions, selectedPosition);
+  const selectedChannelIndex = findNavigationOptionIndex(channelOptions, selectedChannel);
+  const selectedZIndex = useMemo(() => {
+    if (!selection) return 0;
+    const index = zValues.indexOf(selection.z);
+    return index >= 0 ? index : 0;
+  }, [selection, zValues]);
   const timeValues = position?.times ?? [];
   const selectedTimeIndex = useMemo(() => {
     if (!selection) return 0;
@@ -521,10 +501,20 @@ export default function RoiWorkspace({
     return index >= 0 ? index : 0;
   }, [selection, timeValues]);
   const [timeSliderIndex, setTimeSliderIndexValue] = useState(0);
+  const [zSliderIndex, setZSliderIndexValue] = useState(0);
   const timeSliderMax = Math.max(0, timeValues.length - 1);
+  const zSliderMax = Math.max(0, zValues.length - 1);
+  const displayedTime = timeValues[timeSliderIndex] ?? selection?.time ?? 0;
+  const displayedZ = zValues[zSliderIndex] ?? selection?.z ?? 0;
   const controlsDisabled = !selection || !position || roiEntries.length === 0;
   const hasWorkspace = Boolean(workspacePath);
   const hasRoiPositions = Boolean(scan && scan.positions.length > 0);
+  const pageOptions = useMemo(
+    () => toNavigationOptions(Array.from({ length: pageCount }, (_, index) => index + 1)),
+    [pageCount],
+  );
+  const selectedPage = boundedPageIndex + 1;
+  const selectedPageIndex = findNavigationOptionIndex(pageOptions, selectedPage);
   const selectedAnnotationRequest = useMemo(() => {
     if (!selection || !selectedRoiEntry) return null;
     return {
@@ -579,6 +569,10 @@ export default function RoiWorkspace({
   useEffect(() => {
     setTimeSliderIndexValue(selectedTimeIndex);
   }, [selectedTimeIndex]);
+
+  useEffect(() => {
+    setZSliderIndexValue(selectedZIndex);
+  }, [selectedZIndex]);
 
   useEffect(() => {
     annotationStatusesRef.current = annotationStatuses;
@@ -780,106 +774,144 @@ export default function RoiWorkspace({
           <div className="grid h-full min-h-0 grid-cols-[16rem_minmax(0,1fr)_20rem] items-stretch">
             <aside className="h-full min-h-0 overflow-y-auto divide-y divide-border border-r border-border px-5 py-4">
               <SidebarSection title="ROI Stack">
-                <SidebarField label="Position">
-                  <AppSelect
-                    value={selection?.pos ?? (positionOptions[0]?.value ?? 0)}
-                    options={positionOptions}
-                    disabled={!hasRoiPositions || !selection}
-                    onChange={(value) => setRoiSelectionKey("pos", value)}
-                  />
-                </SidebarField>
-                <SidebarField label="Channel">
-                  <AppSelect
-                    value={selection?.channel ?? (channelOptions[0]?.value ?? 0)}
-                    options={channelOptions}
-                    disabled={controlsDisabled}
-                    onChange={(value) => setRoiSelectionKey("channel", value)}
-                  />
-                </SidebarField>
-                <SidebarField
-                  label="Timepoint"
-                  hint={String(timeValues[timeSliderIndex] ?? selection?.time ?? 0)}
-                >
-                  <AppSlider
-                    value={timeSliderIndex}
-                    min={0}
-                    max={timeSliderMax}
-                    step={1}
-                    disabled={controlsDisabled || timeValues.length <= 1}
-                    onChange={(nextIndex) =>
-                      setTimeSliderIndexValue(clamp(Math.round(nextIndex), 0, timeSliderMax))
-                    }
-                    onCommit={(nextIndex) => {
+                <NavigationControls
+                  position={{
+                    value: selection?.pos ?? (positionOptions[0]?.value ?? 0),
+                    options: positionOptions,
+                    disabled: !hasRoiPositions || !selection,
+                    onChange: (value) => setRoiSelectionKey("pos", value),
+                    previousDisabled: !hasRoiPositions || !selection || selectedPositionIndex <= 0,
+                    nextDisabled:
+                      !hasRoiPositions || !selection || selectedPositionIndex >= positionOptions.length - 1,
+                    onPrevious: () => {
+                      const nextValue = positionOptions[selectedPositionIndex - 1]?.value;
+                      if (nextValue != null && nextValue !== selection?.pos) {
+                        setRoiSelectionKey("pos", nextValue);
+                      }
+                    },
+                    onNext: () => {
+                      const nextValue = positionOptions[selectedPositionIndex + 1]?.value;
+                      if (nextValue != null && nextValue !== selection?.pos) {
+                        setRoiSelectionKey("pos", nextValue);
+                      }
+                    },
+                  }}
+                  channel={{
+                    value: selection?.channel ?? (channelOptions[0]?.value ?? 0),
+                    options: channelOptions,
+                    disabled: controlsDisabled,
+                    onChange: (value) => setRoiSelectionKey("channel", value),
+                    previousDisabled: controlsDisabled || selectedChannelIndex <= 0,
+                    nextDisabled: controlsDisabled || selectedChannelIndex >= channelOptions.length - 1,
+                    onPrevious: () => {
+                      const nextValue = channelOptions[selectedChannelIndex - 1]?.value;
+                      if (nextValue != null && nextValue !== selection?.channel) {
+                        setRoiSelectionKey("channel", nextValue);
+                      }
+                    },
+                    onNext: () => {
+                      const nextValue = channelOptions[selectedChannelIndex + 1]?.value;
+                      if (nextValue != null && nextValue !== selection?.channel) {
+                        setRoiSelectionKey("channel", nextValue);
+                      }
+                    },
+                  }}
+                  timepoint={{
+                    hint: String(displayedTime),
+                    value: timeSliderIndex,
+                    min: 0,
+                    max: timeSliderMax,
+                    step: 1,
+                    disabled: controlsDisabled || timeValues.length <= 1,
+                    onChange: (nextIndex) =>
+                      setTimeSliderIndexValue(clamp(Math.round(nextIndex), 0, timeSliderMax)),
+                    onCommit: (nextIndex) => {
                       const rounded = clamp(Math.round(nextIndex), 0, timeSliderMax);
                       setTimeSliderIndexValue(rounded);
                       const nextTime = timeValues[rounded];
                       if (nextTime != null && nextTime !== selection?.time) {
                         setRoiSelectionKey("time", nextTime);
                       }
-                    }}
+                    },
+                    previousDisabled: controlsDisabled || timeValues.length <= 1 || timeSliderIndex <= 0,
+                    nextDisabled: controlsDisabled || timeValues.length <= 1 || timeSliderIndex >= timeSliderMax,
+                    onPrevious: () => {
+                      const nextIndex = Math.max(0, timeSliderIndex - 1);
+                      setTimeSliderIndexValue(nextIndex);
+                      const nextTime = timeValues[nextIndex];
+                      if (nextTime != null && nextTime !== selection?.time) {
+                        setRoiSelectionKey("time", nextTime);
+                      }
+                    },
+                    onNext: () => {
+                      const nextIndex = Math.min(timeSliderMax, timeSliderIndex + 1);
+                      setTimeSliderIndexValue(nextIndex);
+                      const nextTime = timeValues[nextIndex];
+                      if (nextTime != null && nextTime !== selection?.time) {
+                        setRoiSelectionKey("time", nextTime);
+                      }
+                    },
+                  }}
+                  zPlane={{
+                    hint: String(displayedZ),
+                    value: zSliderIndex,
+                    min: 0,
+                    max: zSliderMax,
+                    step: 1,
+                    disabled: controlsDisabled || zValues.length <= 1,
+                    onChange: (nextIndex) =>
+                      setZSliderIndexValue(clamp(Math.round(nextIndex), 0, zSliderMax)),
+                    onCommit: (nextIndex) => {
+                      const rounded = clamp(Math.round(nextIndex), 0, zSliderMax);
+                      setZSliderIndexValue(rounded);
+                      const nextZ = zValues[rounded];
+                      if (nextZ != null && nextZ !== selection?.z) {
+                        setRoiSelectionKey("z", nextZ);
+                      }
+                    },
+                    previousDisabled: controlsDisabled || zValues.length <= 1 || zSliderIndex <= 0,
+                    nextDisabled: controlsDisabled || zValues.length <= 1 || zSliderIndex >= zSliderMax,
+                    onPrevious: () => {
+                      const nextIndex = Math.max(0, zSliderIndex - 1);
+                      setZSliderIndexValue(nextIndex);
+                      const nextZ = zValues[nextIndex];
+                      if (nextZ != null && nextZ !== selection?.z) {
+                        setRoiSelectionKey("z", nextZ);
+                      }
+                    },
+                    onNext: () => {
+                      const nextIndex = Math.min(zSliderMax, zSliderIndex + 1);
+                      setZSliderIndexValue(nextIndex);
+                      const nextZ = zValues[nextIndex];
+                      if (nextZ != null && nextZ !== selection?.z) {
+                        setRoiSelectionKey("z", nextZ);
+                      }
+                    },
+                  }}
+                />
+                <SidebarField label="Page">
+                  <AppSelect
+                    value={selectedPage}
+                    options={pageOptions}
+                    disabled={controlsDisabled || pageCount <= 1}
+                    onChange={(value) => setRoiPageIndex(value - 1)}
                   />
                   <div className="grid grid-cols-2 gap-2">
                     <Button
                       size="sm"
                       variant="outline"
-                      disabled={controlsDisabled || timeValues.length <= 1 || timeSliderIndex <= 0}
-                      onClick={() => {
-                        const nextIndex = Math.max(0, timeSliderIndex - 1);
-                        setTimeSliderIndexValue(nextIndex);
-                        const nextTime = timeValues[nextIndex];
-                        if (nextTime != null && nextTime !== selection?.time) {
-                          setRoiSelectionKey("time", nextTime);
-                        }
-                      }}
+                      disabled={controlsDisabled || selectedPageIndex <= 0}
+                      onClick={() => setRoiPageIndex((current) => Math.max(0, current - 1))}
                     >
                       {"<"}
                     </Button>
                     <Button
                       size="sm"
                       variant="outline"
-                      disabled={
-                        controlsDisabled || timeValues.length <= 1 || timeSliderIndex >= timeSliderMax
-                      }
-                      onClick={() => {
-                        const nextIndex = Math.min(timeSliderMax, timeSliderIndex + 1);
-                        setTimeSliderIndexValue(nextIndex);
-                        const nextTime = timeValues[nextIndex];
-                        if (nextTime != null && nextTime !== selection?.time) {
-                          setRoiSelectionKey("time", nextTime);
-                        }
-                      }}
-                    >
-                      {">"}
-                    </Button>
-                  </div>
-                </SidebarField>
-                <SidebarField label="Z Plane">
-                  <AppSelect
-                    value={selection?.z ?? (zOptions[0]?.value ?? 0)}
-                    options={zOptions}
-                    disabled={controlsDisabled}
-                    onChange={(value) => setRoiSelectionKey("z", value)}
-                  />
-                </SidebarField>
-                <SidebarField label="Page" hint={`${boundedPageIndex + 1} of ${pageCount}`}>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={boundedPageIndex <= 0}
-                      onClick={() => setRoiPageIndex((current) => Math.max(0, current - 1))}
-                    >
-                      <ChevronLeft className="size-4" />
-                      Prev
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={boundedPageIndex >= pageCount - 1}
+                      disabled={controlsDisabled || selectedPageIndex >= pageOptions.length - 1}
                       onClick={() => setRoiPageIndex((current) => Math.min(pageCount - 1, current + 1))}
                     >
-                      Next
-                      <ChevronRight className="size-4" />
+                      {">"}
                     </Button>
                   </div>
                 </SidebarField>

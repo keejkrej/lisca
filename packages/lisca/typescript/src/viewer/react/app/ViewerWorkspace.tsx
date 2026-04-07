@@ -93,6 +93,12 @@ import {
   SidebarStat,
   SidebarValue,
 } from "./sidebar";
+import {
+  findNavigationOptionIndex,
+  NavigationControls,
+  stepNavigationValue,
+  toNavigationOptions,
+} from "./NavigationControls";
 import { showErrorToast, showSuccessToast } from "./toast";
 import ViewNavbar, { type ViewerMode } from "./ViewNavbar";
 
@@ -561,9 +567,19 @@ export default function ViewerWorkspace({
   const [contrastDraft, setContrastDraft] = useState<ContrastWindow | null>(null);
   const gridDegrees = radiansToDegrees(grid.rotation);
   const minGridSpacing = Math.min(grid.cellWidth, grid.cellHeight);
-  const positionOptions = useMemo(() => toOptions(scan?.positions ?? []), [scan]);
-  const channelOptions = useMemo(() => toOptions(scan?.channels ?? []), [scan]);
-  const zOptions = useMemo(() => toOptions(scan?.zSlices ?? []), [scan]);
+  const positionOptions = useMemo(() => toNavigationOptions(scan?.positions ?? []), [scan]);
+  const channelOptions = useMemo(() => toNavigationOptions(scan?.channels ?? []), [scan]);
+  const zValues = scan?.zSlices ?? [];
+  const selectedPosition = selection?.pos ?? positionOptions[0]?.value ?? null;
+  const selectedChannel = selection?.channel ?? channelOptions[0]?.value ?? null;
+  const selectedZ = selection?.z ?? zValues[0] ?? null;
+  const selectedPositionIndex = findNavigationOptionIndex(positionOptions, selectedPosition);
+  const selectedChannelIndex = findNavigationOptionIndex(channelOptions, selectedChannel);
+  const selectedZIndex = useMemo(() => {
+    if (!selection) return 0;
+    const index = zValues.indexOf(selection.z);
+    return index >= 0 ? index : 0;
+  }, [selection, zValues]);
   const shapeOptions = useMemo<Option<GridShape>[]>(
     () => [
       { label: "Square", value: "square" },
@@ -577,12 +593,19 @@ export default function ViewerWorkspace({
     const index = timeValues.indexOf(selection.time);
     return index >= 0 ? index : 0;
   }, [selection, timeValues]);
+  const [zSliderIndex, setZSliderIndex] = useState(0);
   const displayedTime = timeValues[timeSliderIndex] ?? selection?.time ?? 0;
   const timeSliderMax = Math.max(0, timeValues.length - 1);
+  const displayedZ = zValues[zSliderIndex] ?? selection?.z ?? 0;
+  const zSliderMax = Math.max(0, zValues.length - 1);
 
   useEffect(() => {
     setTimeSliderIndex(selectedTimeIndex);
   }, [selectedTimeIndex]);
+
+  useEffect(() => {
+    setZSliderIndex(selectedZIndex);
+  }, [selectedZIndex]);
 
   useEffect(() => {
     setContrastDraft({
@@ -1029,82 +1052,118 @@ export default function ViewerWorkspace({
           <div className="grid h-full min-h-0 grid-cols-[16rem_minmax(0,1fr)_20rem] items-stretch">
             <aside className="h-full min-h-0 overflow-y-auto divide-y divide-border border-r border-border px-5 py-4">
               <SidebarSection title="Frame">
-                <SidebarField label="Position">
-                  <AppSelect
-                    value={selection?.pos ?? (positionOptions[0]?.value ?? 0)}
-                    options={positionOptions}
-                    disabled={controlsDisabled}
-                    onChange={(value) => setSelectionKey("pos", value)}
-                  />
-                </SidebarField>
-                <SidebarField label="Channel">
-                  <AppSelect
-                    value={selection?.channel ?? (channelOptions[0]?.value ?? 0)}
-                    options={channelOptions}
-                    disabled={controlsDisabled}
-                    onChange={(value) => setSelectionKey("channel", value)}
-                  />
-                </SidebarField>
-                <SidebarField label="Timepoint" hint={String(displayedTime)}>
-                  <AppSlider
-                    value={timeSliderIndex}
-                    min={0}
-                    max={timeSliderMax}
-                    step={1}
-                    disabled={controlsDisabled || timeValues.length <= 1}
-                    onChange={(nextIndex) => setTimeSliderIndex(clamp(Math.round(nextIndex), 0, timeSliderMax))}
-                    onCommit={(nextIndex) => {
+                <NavigationControls
+                  position={{
+                    value: selection?.pos ?? (positionOptions[0]?.value ?? 0),
+                    options: positionOptions,
+                    disabled: controlsDisabled,
+                    onChange: (value) => setSelectionKey("pos", value),
+                    previousDisabled: controlsDisabled || selectedPositionIndex <= 0,
+                    nextDisabled: controlsDisabled || selectedPositionIndex >= positionOptions.length - 1,
+                    onPrevious: () => {
+                      const nextValue = stepNavigationValue(positionOptions, selectedPosition, -1);
+                      if (nextValue != null && nextValue !== selection?.pos) {
+                        setSelectionKey("pos", nextValue);
+                      }
+                    },
+                    onNext: () => {
+                      const nextValue = stepNavigationValue(positionOptions, selectedPosition, 1);
+                      if (nextValue != null && nextValue !== selection?.pos) {
+                        setSelectionKey("pos", nextValue);
+                      }
+                    },
+                  }}
+                  channel={{
+                    value: selection?.channel ?? (channelOptions[0]?.value ?? 0),
+                    options: channelOptions,
+                    disabled: controlsDisabled,
+                    onChange: (value) => setSelectionKey("channel", value),
+                    previousDisabled: controlsDisabled || selectedChannelIndex <= 0,
+                    nextDisabled: controlsDisabled || selectedChannelIndex >= channelOptions.length - 1,
+                    onPrevious: () => {
+                      const nextValue = stepNavigationValue(channelOptions, selectedChannel, -1);
+                      if (nextValue != null && nextValue !== selection?.channel) {
+                        setSelectionKey("channel", nextValue);
+                      }
+                    },
+                    onNext: () => {
+                      const nextValue = stepNavigationValue(channelOptions, selectedChannel, 1);
+                      if (nextValue != null && nextValue !== selection?.channel) {
+                        setSelectionKey("channel", nextValue);
+                      }
+                    },
+                  }}
+                  timepoint={{
+                    hint: String(displayedTime),
+                    value: timeSliderIndex,
+                    min: 0,
+                    max: timeSliderMax,
+                    step: 1,
+                    disabled: controlsDisabled || timeValues.length <= 1,
+                    onChange: (nextIndex) => setTimeSliderIndex(clamp(Math.round(nextIndex), 0, timeSliderMax)),
+                    onCommit: (nextIndex) => {
                       const rounded = clamp(Math.round(nextIndex), 0, timeSliderMax);
                       setTimeSliderIndex(rounded);
                       const nextTime = timeValues[rounded];
                       if (nextTime != null && nextTime !== selection?.time) {
                         setSelectionKey("time", nextTime);
                       }
-                    }}
-                  />
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={controlsDisabled || timeValues.length <= 1 || timeSliderIndex <= 0}
-                      onClick={() => {
-                        const nextIndex = Math.max(0, timeSliderIndex - 1);
-                        setTimeSliderIndex(nextIndex);
-                        const nextTime = timeValues[nextIndex];
-                        if (nextTime != null && nextTime !== selection?.time) {
-                          setSelectionKey("time", nextTime);
-                        }
-                      }}
-                    >
-                      {"<"}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={
-                        controlsDisabled || timeValues.length <= 1 || timeSliderIndex >= timeSliderMax
+                    },
+                    previousDisabled: controlsDisabled || timeValues.length <= 1 || timeSliderIndex <= 0,
+                    nextDisabled: controlsDisabled || timeValues.length <= 1 || timeSliderIndex >= timeSliderMax,
+                    onPrevious: () => {
+                      const nextIndex = Math.max(0, timeSliderIndex - 1);
+                      setTimeSliderIndex(nextIndex);
+                      const nextTime = timeValues[nextIndex];
+                      if (nextTime != null && nextTime !== selection?.time) {
+                        setSelectionKey("time", nextTime);
                       }
-                      onClick={() => {
-                        const nextIndex = Math.min(timeSliderMax, timeSliderIndex + 1);
-                        setTimeSliderIndex(nextIndex);
-                        const nextTime = timeValues[nextIndex];
-                        if (nextTime != null && nextTime !== selection?.time) {
-                          setSelectionKey("time", nextTime);
-                        }
-                      }}
-                    >
-                      {">"}
-                    </Button>
-                  </div>
-                </SidebarField>
-                <SidebarField label="Z Plane">
-                  <AppSelect
-                    value={selection?.z ?? (zOptions[0]?.value ?? 0)}
-                    options={zOptions}
-                    disabled={controlsDisabled}
-                    onChange={(value) => setSelectionKey("z", value)}
-                  />
-                </SidebarField>
+                    },
+                    onNext: () => {
+                      const nextIndex = Math.min(timeSliderMax, timeSliderIndex + 1);
+                      setTimeSliderIndex(nextIndex);
+                      const nextTime = timeValues[nextIndex];
+                      if (nextTime != null && nextTime !== selection?.time) {
+                        setSelectionKey("time", nextTime);
+                      }
+                    },
+                  }}
+                  zPlane={{
+                    hint: String(displayedZ),
+                    value: zSliderIndex,
+                    min: 0,
+                    max: zSliderMax,
+                    step: 1,
+                    disabled: controlsDisabled || zValues.length <= 1,
+                    onChange: (nextIndex) => setZSliderIndex(clamp(Math.round(nextIndex), 0, zSliderMax)),
+                    onCommit: (nextIndex) => {
+                      const rounded = clamp(Math.round(nextIndex), 0, zSliderMax);
+                      setZSliderIndex(rounded);
+                      const nextZ = zValues[rounded];
+                      if (nextZ != null && nextZ !== selection?.z) {
+                        setSelectionKey("z", nextZ);
+                      }
+                    },
+                    previousDisabled: controlsDisabled || zValues.length <= 1 || zSliderIndex <= 0,
+                    nextDisabled: controlsDisabled || zValues.length <= 1 || zSliderIndex >= zSliderMax,
+                    onPrevious: () => {
+                      const nextIndex = Math.max(0, zSliderIndex - 1);
+                      setZSliderIndex(nextIndex);
+                      const nextZ = zValues[nextIndex];
+                      if (nextZ != null && nextZ !== selection?.z) {
+                        setSelectionKey("z", nextZ);
+                      }
+                    },
+                    onNext: () => {
+                      const nextIndex = Math.min(zSliderMax, zSliderIndex + 1);
+                      setZSliderIndex(nextIndex);
+                      const nextZ = zValues[nextIndex];
+                      if (nextZ != null && nextZ !== selection?.z) {
+                        setSelectionKey("z", nextZ);
+                      }
+                    },
+                  }}
+                />
               </SidebarSection>
 
               <SidebarSection
@@ -1693,6 +1752,3 @@ export default function ViewerWorkspace({
   );
 }
 
-function toOptions(values: number[]): Option<number>[] {
-  return values.map((value) => ({ value, label: String(value) }));
-}
