@@ -137,6 +137,7 @@ export interface ViewerDataSource {
 
 export interface ViewerDataPort extends ViewerDataSource {
   scanRoiWorkspace(workspacePath: string): Promise<RoiWorkspaceScan>;
+  listSavedBboxPositions(workspacePath: string): Promise<number[]>;
   autoExcludePreview(request: AutoExcludePreviewRequest): Promise<AutoExcludePreviewResponse>;
   loadAnnotationLabels(workspacePath: string): Promise<AnnotationLabel[]>;
   saveAnnotationLabels(workspacePath: string, labels: AnnotationLabel[]): Promise<AnnotationLabel[]>;
@@ -160,7 +161,9 @@ export interface ViewerDataPort extends ViewerDataSource {
     source: ViewerSource,
     pos: number,
     format: CropOutputFormat,
+    requestId?: string,
   ): Promise<CropRoiResponse>;
+  cancelCropRoi(requestId: string): Promise<void>;
   onCropRoiProgress(listener: (event: CropRoiProgressEvent) => void): () => void;
 }
 
@@ -237,9 +240,12 @@ export interface SaveBboxResponse {
 }
 
 export type CropOutputFormat = "tiff";
+export type CropRoiStatus = "success" | "error" | "cancelled";
 
 export interface CropRoiResponse {
   ok: boolean;
+  status: CropRoiStatus;
+  cancelled?: boolean;
   error?: string;
   outputPath?: string;
 }

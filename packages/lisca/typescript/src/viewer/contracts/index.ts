@@ -10,6 +10,7 @@ export type {
   CropOutputFormat,
   CropRoiProgressEvent,
   CropRoiResponse,
+  CropRoiStatus,
   FrameRequest,
   FrameResult,
   GridShape,

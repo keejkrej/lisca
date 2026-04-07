@@ -1,5 +1,12 @@
-import { type KeyboardEvent as ReactKeyboardEvent, type MouseEvent, type ReactNode, useEffect, useState } from "react";
-import { FolderOpen, HardDrive, X } from "lucide-react";
+import {
+  type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { FolderOpen, HardDrive, Wrench, X } from "lucide-react";
 
 import type { ViewerSource } from "lisca/viewer/contracts";
 import { Button } from "lisca/viewer/ui";
@@ -11,11 +18,16 @@ interface ViewNavbarProps {
   source: ViewerSource | null;
   mode: ViewerMode;
   onModeChange: (mode: ViewerMode) => void;
+  modeChangeDisabled?: boolean;
   onPickWorkspace: () => Promise<void>;
   onOpenTif: () => Promise<void>;
   onOpenNd2: () => Promise<void>;
   onOpenCzi: () => Promise<void>;
   onClearSource: () => void;
+  onBatchCrop?: () => void;
+  onLoadQ20Preset?: () => void;
+  canBatchCrop?: boolean;
+  canLoadQ20Preset?: boolean;
 }
 
 function pathBaseName(path: string | null) {
@@ -95,32 +107,53 @@ export default function ViewNavbar({
   source,
   mode,
   onModeChange,
+  modeChangeDisabled = false,
   onPickWorkspace,
   onOpenTif,
   onOpenNd2,
   onOpenCzi,
   onClearSource,
+  onBatchCrop,
+  onLoadQ20Preset,
+  canBatchCrop = false,
+  canLoadQ20Preset = false,
 }: ViewNavbarProps) {
   const [openDataModalOpen, setOpenDataModalOpen] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const toolsRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!openDataModalOpen) return undefined;
+    if (!openDataModalOpen && !toolsOpen) return undefined;
 
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
       if (event.key === "Escape") {
         setOpenDataModalOpen(false);
+        setToolsOpen(false);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [openDataModalOpen]);
+  }, [openDataModalOpen, toolsOpen]);
 
   useEffect(() => {
     if (!workspacePath) {
       setOpenDataModalOpen(false);
     }
   }, [workspacePath]);
+
+  useEffect(() => {
+    if (!toolsOpen) return undefined;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!toolsRef.current?.contains(event.target as Node)) {
+        setToolsOpen(false);
+      }
+    };
+
+    window.addEventListener("pointerdown", handlePointerDown);
+    return () => window.removeEventListener("pointerdown", handlePointerDown);
+  }, [toolsOpen]);
 
   const handleOpenTif = async () => {
     setOpenDataModalOpen(false);
@@ -150,11 +183,42 @@ export default function ViewNavbar({
         ? "CZI"
         : null;
 
+  const handleBatchCrop = () => {
+    setToolsOpen(false);
+    onBatchCrop?.();
+  };
+
+  const handleLoadQ20Preset = () => {
+    setToolsOpen(false);
+    onLoadQ20Preset?.();
+  };
+
   return (
     <>
       <header className="border-b border-border/80 bg-background/95 px-6 py-3 backdrop-blur">
         <div className="grid grid-cols-[1fr_minmax(0,56rem)_1fr] items-center gap-4">
-          <div />
+          <div>
+            <div className="flex items-center gap-1 rounded-xl border border-border bg-muted/35 p-1">
+              <Button
+                size="sm"
+                variant={mode === "align" ? "default" : "ghost"}
+                className="min-w-[4.5rem]"
+                disabled={modeChangeDisabled}
+                onClick={() => onModeChange("align")}
+              >
+                Align
+              </Button>
+              <Button
+                size="sm"
+                variant={mode === "roi" ? "default" : "ghost"}
+                className="min-w-[4.5rem]"
+                disabled={modeChangeDisabled}
+                onClick={() => onModeChange("roi")}
+              >
+                ROI
+              </Button>
+            </div>
+          </div>
 
           <div className="min-w-0">
             <div className="flex items-center justify-center gap-3">
@@ -189,23 +253,50 @@ export default function ViewNavbar({
           </div>
 
           <div className="justify-self-end">
-            <div className="flex items-center gap-1 rounded-xl border border-border bg-muted/35 p-1">
+            <div ref={toolsRef} className="relative">
               <Button
                 size="sm"
-                variant={mode === "align" ? "default" : "ghost"}
-                className="min-w-[4.5rem]"
-                onClick={() => onModeChange("align")}
+                variant={toolsOpen ? "default" : "outline"}
+                className="min-w-[5.5rem]"
+                disabled={modeChangeDisabled}
+                onClick={() => {
+                  setOpenDataModalOpen(false);
+                  setToolsOpen((current) => !current);
+                }}
               >
-                Align
+                <Wrench className="size-4" />
+                Tools
               </Button>
-              <Button
-                size="sm"
-                variant={mode === "roi" ? "default" : "ghost"}
-                className="min-w-[4.5rem]"
-                onClick={() => onModeChange("roi")}
-              >
-                ROI
-              </Button>
+              {toolsOpen ? (
+                <div className="absolute right-0 top-[calc(100%+0.5rem)] z-40 w-56 rounded-2xl border border-border/80 bg-card p-2 shadow-[0_20px_40px_rgba(0,0,0,0.28)]">
+                  <button
+                    type="button"
+                    className="flex w-full items-start rounded-xl px-3 py-2 text-left transition-colors hover:bg-muted/45 disabled:cursor-default disabled:opacity-55"
+                    disabled={!canBatchCrop}
+                    onClick={handleBatchCrop}
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Batch Crop</p>
+                      <p className="text-xs text-muted-foreground">
+                        Crop all saved bbox CSVs
+                      </p>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    className="flex w-full items-start rounded-xl px-3 py-2 text-left transition-colors hover:bg-muted/45 disabled:cursor-default disabled:opacity-55"
+                    disabled={!canLoadQ20Preset}
+                    onClick={handleLoadQ20Preset}
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Load Preset: Q20</p>
+                      <p className="text-xs text-muted-foreground">
+                        Square, 168 pitch, 128 cell size
+                      </p>
+                    </div>
+                  </button>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>

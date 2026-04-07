@@ -6,11 +6,13 @@ use serde::Serialize;
 pub use crate::viewer::domain::{
     AnnotationLabel, AutoExcludeHistogramBin, AutoExcludePreviewCell, AutoExcludePreviewCellScore,
     AutoExcludePreviewRequest, AutoExcludePreviewResponse, ContrastWindow, CropOutputFormat,
-    CropRoiResponse, FrameRequest, LoadedRoiFrameAnnotation,
-    RoiFrameAnnotation, RoiFrameAnnotationPayload, RoiFrameRequest, RoiWorkspaceScan,
-    SaveBboxResponse, ViewerSource, WorkspaceScan,
+    CropRoiResponse, CropRoiStatus, FrameRequest, LoadedRoiFrameAnnotation, RoiFrameAnnotation,
+    RoiFrameAnnotationPayload, RoiFrameRequest, RoiWorkspaceScan, SaveBboxResponse, ViewerSource,
+    WorkspaceScan,
 };
-use crate::viewer::image::{self, apply_contrast, auto_contrast, contrast_domain, load_frame, RawFrame};
+use crate::viewer::image::{
+    self, apply_contrast, auto_contrast, contrast_domain, load_frame, RawFrame,
+};
 
 const AUTO_EXCLUDE_BIN_COUNT: usize = 40;
 const AUTO_EXCLUDE_EPSILON: f64 = 1.0;
@@ -53,7 +55,11 @@ fn to_frame_payload(raw: RawFrame, contrast: Option<ContrastWindow>) -> FramePay
     }
 }
 
-fn clipped_cell_bounds(cell: &AutoExcludePreviewCell, frame_width: u32, frame_height: u32) -> Option<(usize, usize, usize, usize)> {
+fn clipped_cell_bounds(
+    cell: &AutoExcludePreviewCell,
+    frame_width: u32,
+    frame_height: u32,
+) -> Option<(usize, usize, usize, usize)> {
     let left = cell.x.min(frame_width) as usize;
     let top = cell.y.min(frame_height) as usize;
     let right = cell.x.saturating_add(cell.w).min(frame_width) as usize;
@@ -263,6 +269,10 @@ pub fn scan_roi_workspace(workspace_path: String) -> Result<RoiWorkspaceScan, St
     crate::viewer::roi::scan_roi_workspace(workspace_path)
 }
 
+pub fn list_saved_bbox_positions(workspace_path: String) -> Result<Vec<u32>, String> {
+    crate::viewer::roi::list_saved_bbox_positions(workspace_path)
+}
+
 pub fn load_annotation_labels(workspace_path: String) -> Result<Vec<AnnotationLabel>, String> {
     crate::viewer::roi::load_annotation_labels(workspace_path)
 }
@@ -308,11 +318,12 @@ pub fn crop_roi<F>(
     pos: u32,
     format: CropOutputFormat,
     progress: &mut F,
+    is_cancelled: &dyn Fn() -> bool,
 ) -> CropRoiResponse
 where
     F: FnMut(f64, &str) -> Result<(), String>,
 {
-    crate::viewer::roi::crop_roi(workspace_path, source, pos, format, progress)
+    crate::viewer::roi::crop_roi(workspace_path, source, pos, format, progress, is_cancelled)
 }
 
 #[cfg(test)]

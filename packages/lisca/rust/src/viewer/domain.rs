@@ -125,8 +125,19 @@ pub enum CropOutputFormat {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum CropRoiStatus {
+    Success,
+    Error,
+    Cancelled,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct CropRoiResponse {
     pub ok: bool,
+    pub status: CropRoiStatus,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cancelled: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
     #[serde(rename = "outputPath", skip_serializing_if = "Option::is_none")]
@@ -242,6 +253,12 @@ pub fn parse_pos_dir_name(name: &str) -> Option<u32> {
     None
 }
 
+pub fn parse_bbox_csv_name(name: &str) -> Option<u32> {
+    let lower = name.to_ascii_lowercase();
+    let stem = lower.strip_suffix(".csv")?;
+    parse_pos_dir_name(stem)
+}
+
 pub fn parse_tiff_name(name: &str) -> Option<ParsedTiffName> {
     let lower = name.to_ascii_lowercase();
     let stem = lower
@@ -302,11 +319,13 @@ pub fn annotation_frame_stem(request: &RoiFrameRequest) -> String {
 }
 
 pub fn workspace_annotation_json_path(root: &str, request: &RoiFrameRequest) -> PathBuf {
-    workspace_annotation_roi_dir_path(root, request).join(format!("{}.json", annotation_frame_stem(request)))
+    workspace_annotation_roi_dir_path(root, request)
+        .join(format!("{}.json", annotation_frame_stem(request)))
 }
 
 pub fn workspace_annotation_mask_path(root: &str, request: &RoiFrameRequest) -> PathBuf {
-    workspace_annotation_roi_dir_path(root, request).join(format!("{}.png", annotation_frame_stem(request)))
+    workspace_annotation_roi_dir_path(root, request)
+        .join(format!("{}.png", annotation_frame_stem(request)))
 }
 
 pub fn path_to_forward_slash_string(path: &Path) -> String {

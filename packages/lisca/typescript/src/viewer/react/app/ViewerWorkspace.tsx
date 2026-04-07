@@ -1,4 +1,5 @@
 import { Effect, Exit } from "effect";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { ChangeEvent, KeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "zustand";
@@ -80,6 +81,8 @@ import {
 } from "./viewStore";
 import {
   autoExcludePreviewEffect,
+  cancelCropRoiEffect,
+  listSavedBboxPositionsEffect,
   cropRoiEffect,
   loadFrameEffect,
   saveBboxEffect,
@@ -99,6 +102,11 @@ import {
   stepNavigationValue,
   toNavigationOptions,
 } from "./NavigationControls";
+import {
+  applyQ20Preset,
+  computeBatchCropOverallProgress,
+  runBatchCropSequence,
+} from "./tools";
 import { showErrorToast, showSuccessToast } from "./toast";
 import ViewNavbar, { type ViewerMode } from "./ViewNavbar";
 
@@ -350,6 +358,22 @@ interface AutoExcludeHistogramDatum {
   count: number;
 }
 
+interface CropConfirmState {
+  kind: "single" | "batch";
+  positions: number[];
+  overwritePositions: number[];
+}
+
+interface ActiveCropState {
+  kind: "single" | "batch";
+  requestId: string;
+  currentPos: number;
+  currentIndex: number;
+  total: number;
+  cancelling: boolean;
+  closeWhenDone: boolean;
+}
+
 const AUTO_EXCLUDE_CHART_MARGIN = {
   top: 12,
   right: 10,
@@ -358,6 +382,10 @@ const AUTO_EXCLUDE_CHART_MARGIN = {
 } as const;
 const AUTO_EXCLUDE_Y_AXIS_WIDTH = 40;
 const AUTO_EXCLUDE_X_AXIS_HEIGHT = 24;
+
+function createCropRequestId() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
 
 export default function ViewerWorkspace({
   workspacePath,
@@ -375,7 +403,10 @@ export default function ViewerWorkspace({
   const frameCacheRef = useRef(new FrameCache());
   const dragSessionRef = useRef<GridPointerGestureSession | null>(null);
   const selectionStrokeRef = useRef<SelectionStroke | null>(null);
-  const [cropConfirmOpen, setCropConfirmOpen] = useState(false);
+  const activeCropRef = useRef<ActiveCropState | null>(null);
+  const allowWindowCloseRef = useRef(false);
+  const [cropConfirm, setCropConfirm] = useState<CropConfirmState | null>(null);
+  const [activeCrop, setActiveCrop] = useState<ActiveCropState | null>(null);
   const [previewGrid, setPreviewGrid] = useState<GridState | null>(null);
   const [selectionPreviewCells, setSelectionPreviewCells] = useState<GridCellCoord[] | null>(null);
   const [autoExcludeOpen, setAutoExcludeOpen] = useState(false);
@@ -427,6 +458,10 @@ export default function ViewerWorkspace({
   );
 
   useEffect(() => {
+    activeCropRef.current = activeCrop;
+  }, [activeCrop]);
+
+  useEffect(() => {
     if (!source) return;
 
     const abortController = new AbortController();
@@ -472,9 +507,80 @@ export default function ViewerWorkspace({
 
   useEffect(() => {
     return backend.onCropRoiProgress((event: CropRoiProgressEvent) => {
+      if (activeCropRef.current?.requestId !== event.requestId) return;
       setCropProgressValue(event);
     });
   }, [backend]);
+
+  const closeWindowAfterCrop = useCallback(async () => {
+    allowWindowCloseRef.current = true;
+    try {
+      await getCurrentWindow().close();
+    } catch {
+      allowWindowCloseRef.current = false;
+    }
+  }, []);
+
+  const finishCropSession = useCallback(
+    async (closeWhenDone: boolean) => {
+      setCropping(false);
+      setActiveCrop(null);
+      if (closeWhenDone) {
+        await closeWindowAfterCrop();
+      }
+    },
+    [closeWindowAfterCrop],
+  );
+
+  const requestActiveCropCancellation = useCallback(
+    async (closeWhenDone = false) => {
+      const crop = activeCropRef.current;
+      if (!crop) return;
+      if (crop.cancelling && (!closeWhenDone || crop.closeWhenDone)) return;
+
+      setActiveCrop((current) => (
+        current
+          ? {
+              ...current,
+              cancelling: true,
+              closeWhenDone: current.closeWhenDone || closeWhenDone,
+            }
+          : current
+      ));
+
+      const exit = await Effect.runPromiseExit(cancelCropRoiEffect(backend, crop.requestId));
+      if (Exit.isFailure(exit)) {
+        showErrorToast(toErrorMessage(exit.cause));
+      }
+    },
+    [backend],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    let unlisten: (() => void) | undefined;
+
+    void getCurrentWindow()
+      .onCloseRequested(async (event) => {
+        if (allowWindowCloseRef.current) return;
+        if (!activeCropRef.current) return;
+        event.preventDefault();
+        await requestActiveCropCancellation(true);
+      })
+      .then((dispose) => {
+        if (cancelled) {
+          dispose();
+          return;
+        }
+        unlisten = dispose;
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+      unlisten?.();
+    };
+  }, [requestActiveCropCancellation]);
 
   const contrastRequestKey =
     contrastMode === "auto" ? `auto:${contrastReloadToken}` : `${contrastMin}:${contrastMax}`;
@@ -825,54 +931,248 @@ export default function ViewerWorkspace({
     setAutoExcludeOpen(false);
   }, [autoExcludePreview, autoExcludeThreshold, selection]);
 
-  const performCrop = useCallback(async () => {
-    if (!workspacePath || !source || !selection) return;
+  const handleLoadQ20Preset = useCallback(() => {
+    setGrid((current) => applyQ20Preset(current));
+    showSuccessToast("Loaded preset Q20");
+  }, []);
 
+  const performSingleCrop = useCallback(async (pos: number) => {
+    if (!workspacePath || !source) return;
+
+    const requestId = createCropRequestId();
+    setActiveCrop({
+      kind: "single",
+      requestId,
+      currentPos: pos,
+      currentIndex: 0,
+      total: 1,
+      cancelling: false,
+      closeWhenDone: false,
+    });
     setCropping(true);
     setCropProgressValue({
-      requestId: "",
+      requestId,
       progress: 0,
-      message: `Preparing ROI crop for Pos${selection.pos}...`,
+      message: `Preparing ROI crop for Pos${pos}...`,
     });
+
     const exit = await Effect.runPromiseExit(
       cropRoiEffect(backend, {
         workspacePath,
         source,
-        pos: selection.pos,
+        pos,
+        requestId,
       }),
     );
 
+    const closeWhenDone = activeCropRef.current?.closeWhenDone ?? false;
+
     if (Exit.isSuccess(exit)) {
       const response = exit.value;
-      if (!response.ok) {
-        showErrorToast(response.error ?? "Failed to crop ROI TIFFs");
-      } else {
+      if (response.status === "success") {
         setCropProgressValue((current) => ({
           ...current,
           progress: 1,
-          message: `Finished ROI crop for Pos${selection.pos}`,
+          message: `Finished ROI crop for Pos${pos}`,
         }));
-        showSuccessToast(`Cropped ROI TIFFs for Pos${selection.pos}`);
+        showSuccessToast(`Cropped ROI TIFFs for Pos${pos}`);
+      } else if (response.status === "cancelled") {
+        showSuccessToast(`Cancelled ROI crop for Pos${pos}`);
+      } else {
+        showErrorToast(response.error ?? "Failed to crop ROI TIFFs");
       }
-      setCropping(false);
+      await finishCropSession(closeWhenDone);
       return;
     }
 
     showErrorToast(toErrorMessage(exit.cause));
-    setCropping(false);
-  }, [backend, selection, source, workspacePath]);
+    await finishCropSession(closeWhenDone);
+  }, [backend, finishCropSession, source, workspacePath]);
+
+  const performBatchCrop = useCallback(async (positions: number[], skippedExistingCount = 0) => {
+    if (!workspacePath || !source || positions.length === 0) return;
+
+    setActiveCrop({
+      kind: "batch",
+      requestId: "",
+      currentPos: positions[0] ?? 0,
+      currentIndex: 0,
+      total: positions.length,
+      cancelling: false,
+      closeWhenDone: false,
+    });
+    setCropping(true);
+    setCropProgressValue({
+      requestId: "",
+      progress: 0,
+      message: `Preparing batch crop for ${positions.length} positions...`,
+    });
+
+    const result = await runBatchCropSequence(positions, async (pos, index) => {
+      if (activeCropRef.current?.cancelling) {
+        return { status: "cancelled" as const };
+      }
+
+      const requestId = createCropRequestId();
+      setActiveCrop((current) => (
+        current
+          ? {
+              ...current,
+              requestId,
+              currentPos: pos,
+              currentIndex: index,
+            }
+          : current
+      ));
+      setCropProgressValue({
+        requestId,
+        progress: 0,
+        message: `Preparing ROI crop for Pos${pos}...`,
+      });
+
+      const exit = await Effect.runPromiseExit(
+        cropRoiEffect(backend, {
+          workspacePath,
+          source,
+          pos,
+          requestId,
+        }),
+      );
+
+      if (Exit.isFailure(exit)) {
+        return {
+          status: "error" as const,
+          error: toErrorMessage(exit.cause),
+        };
+      }
+
+      const response = exit.value;
+      if (response.status === "success") {
+        setCropProgressValue((current) => ({
+          ...current,
+          progress: 1,
+          message: `Finished ROI crop for Pos${pos}`,
+        }));
+      }
+
+      return {
+        status: response.status,
+        error: response.error,
+      };
+    });
+
+    const closeWhenDone = activeCropRef.current?.closeWhenDone ?? false;
+    const skippedSummary = skippedExistingCount > 0 ? `; skipped ${skippedExistingCount} existing` : "";
+
+    if (result.cancelledAtPos != null) {
+      const failureSummary = result.failures.length > 0
+        ? ` after failures in ${result.failures.map((failure) => `Pos${failure.pos}`).join(", ")}`
+        : "";
+      showSuccessToast(
+        `Batch crop cancelled at Pos${result.cancelledAtPos}; ${result.succeeded}/${result.total} succeeded${failureSummary}${skippedSummary}`,
+      );
+      await finishCropSession(closeWhenDone);
+      return;
+    }
+
+    if (result.failures.length > 0) {
+      showErrorToast(
+        `Batch crop finished with failures in ${result.failures.map((failure) => `Pos${failure.pos}`).join(", ")}; ${result.succeeded}/${result.total} succeeded${skippedSummary}`,
+      );
+      await finishCropSession(closeWhenDone);
+      return;
+    }
+
+    showSuccessToast(`Batch cropped ROI TIFFs for ${result.succeeded} positions${skippedSummary}`);
+    await finishCropSession(closeWhenDone);
+  }, [backend, finishCropSession, source, workspacePath]);
 
   const handleCrop = useCallback(async () => {
     if (!workspacePath || !source || !selection) return;
 
     const exists = await onCheckRoiExists(workspacePath, selection.pos);
     if (exists) {
-      setCropConfirmOpen(true);
+      setCropConfirm({
+        kind: "single",
+        positions: [selection.pos],
+        overwritePositions: [selection.pos],
+      });
       return;
     }
 
-    await performCrop();
-  }, [onCheckRoiExists, performCrop, selection, source, workspacePath]);
+    await performSingleCrop(selection.pos);
+  }, [onCheckRoiExists, performSingleCrop, selection, source, workspacePath]);
+
+  const handleBatchCrop = useCallback(async () => {
+    if (!workspacePath || !source || cropping) return;
+
+    const exit = await Effect.runPromiseExit(listSavedBboxPositionsEffect(backend, workspacePath));
+    if (Exit.isFailure(exit)) {
+      showErrorToast(toErrorMessage(exit.cause));
+      return;
+    }
+
+    const positions = exit.value.positions;
+    if (positions.length === 0) {
+      showErrorToast("No saved bbox CSVs found in the workspace");
+      return;
+    }
+
+    const overwritePositions: number[] = [];
+    for (const pos of positions) {
+      if (await onCheckRoiExists(workspacePath, pos)) {
+        overwritePositions.push(pos);
+      }
+    }
+
+    if (overwritePositions.length > 0) {
+      setCropConfirm({
+        kind: "batch",
+        positions,
+        overwritePositions,
+      });
+      return;
+    }
+
+    await performBatchCrop(positions);
+  }, [backend, cropping, onCheckRoiExists, performBatchCrop, source, workspacePath]);
+
+  const handleOverwriteCrop = useCallback(() => {
+    if (!cropConfirm) return;
+    const next = cropConfirm;
+    setCropConfirm(null);
+
+    if (next.kind === "single") {
+      const pos = next.positions[0];
+      if (pos != null) {
+        void performSingleCrop(pos);
+      }
+      return;
+    }
+
+    void performBatchCrop(next.positions);
+  }, [cropConfirm, performBatchCrop, performSingleCrop]);
+
+  const handleSkipExistingCrop = useCallback(() => {
+    if (!cropConfirm) return;
+    const next = cropConfirm;
+    setCropConfirm(null);
+
+    if (next.kind === "single") {
+      return;
+    }
+
+    const overwriteSet = new Set(next.overwritePositions);
+    const remainingPositions = next.positions.filter((pos) => !overwriteSet.has(pos));
+    const skippedExistingCount = next.overwritePositions.length;
+
+    if (remainingPositions.length === 0) {
+      showSuccessToast(`Skipped batch crop for ${skippedExistingCount} existing positions`);
+      return;
+    }
+
+    void performBatchCrop(remainingPositions, skippedExistingCount);
+  }, [cropConfirm, performBatchCrop]);
 
   const bboxPath = useMemo(() => {
     if (!selection) return "bbox/Pos{n}.csv";
@@ -887,7 +1187,18 @@ export default function ViewerWorkspace({
   const canExcludeAllVisibleCells = !!frame && !!selection && includedVisibleCount > 0;
   const canOpenAutoExclude = !!source && !!frame && !!selection && grid.enabled && includedVisibleCount > 0;
   const canApplyAutoExclude = !autoExcludeLoading && !!autoExcludePreview && !autoExcludeError;
-  const cropProgressPercent = Math.round(cropProgress.progress * 100);
+  const completedBatchPositions = activeCrop?.kind === "batch"
+    ? activeCrop.currentIndex + (cropProgress.progress >= 1 ? 1 : 0)
+    : 0;
+  const batchPositionProgressPercent = activeCrop?.kind === "batch" && activeCrop.total > 0
+    ? Math.round((completedBatchPositions / activeCrop.total) * 100)
+    : 0;
+  const frameProgressPercent = Math.round(cropProgress.progress * 100);
+  const cropProgressPercent = Math.round(
+    (activeCrop?.kind === "batch"
+      ? computeBatchCropOverallProgress(activeCrop.currentIndex, activeCrop.total, cropProgress.progress)
+      : cropProgress.progress) * 100,
+  );
   const canvasCursor = selectionMode ? "crosshair" : grid.enabled ? (previewGrid ? "grabbing" : "grab") : "default";
 
   const collectSelectionStroke = useCallback(
@@ -1041,11 +1352,16 @@ export default function ViewerWorkspace({
           source={source}
           mode={mode}
           onModeChange={onModeChange}
+          modeChangeDisabled={cropping}
           onPickWorkspace={onPickWorkspace}
           onOpenTif={onOpenTif}
           onOpenNd2={onOpenNd2}
           onOpenCzi={onOpenCzi}
           onClearSource={onClearSource}
+          onBatchCrop={() => void handleBatchCrop()}
+          onLoadQ20Preset={handleLoadQ20Preset}
+          canBatchCrop={!cropping && !!workspacePath && !!source}
+          canLoadQ20Preset={!cropping}
         />
 
         <main className="flex-1 min-h-0 overflow-hidden">
@@ -1685,29 +2001,83 @@ export default function ViewerWorkspace({
             <div className="space-y-4">
               <div className="space-y-1">
                 <h2 id="crop-progress-title" className="text-base font-medium text-foreground">
-                  Cropping ROI TIFFs
+                  {activeCrop?.kind === "batch" ? "Batch Cropping ROI TIFFs" : "Cropping ROI TIFFs"}
                 </h2>
                 <p className="text-sm text-muted-foreground">
                   {cropProgress.message}
                 </p>
               </div>
               <div className="space-y-2">
-                <div className="h-3 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-primary transition-[width] duration-150"
-                    style={{ width: `${cropProgressPercent}%` }}
-                  />
-                </div>
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Workspace is locked until crop completes.</span>
-                  <span>{cropProgressPercent}%</span>
-                </div>
+                {activeCrop?.kind === "batch" ? (
+                  <>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>
+                          {activeCrop.cancelling
+                            ? "Cancelling crop and cleaning up..."
+                            : `Position ${Math.min(activeCrop.currentIndex + 1, activeCrop.total)} of ${activeCrop.total}`}
+                        </span>
+                        <span>{batchPositionProgressPercent}%</span>
+                      </div>
+                      <div className="h-3 overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full rounded-full bg-primary transition-[width] duration-150"
+                          style={{ width: `${batchPositionProgressPercent}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Frame</span>
+                        <span>{frameProgressPercent}%</span>
+                      </div>
+                      <div className="h-3 overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full rounded-full bg-sky-400 transition-[width] duration-150"
+                          style={{ width: `${frameProgressPercent}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>Overall batch progress</span>
+                      <span>{cropProgressPercent}%</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="h-3 overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full bg-primary transition-[width] duration-150"
+                        style={{ width: `${cropProgressPercent}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>
+                        {activeCrop?.cancelling
+                          ? "Cancelling crop and cleaning up..."
+                          : "Workspace is locked until crop completes."}
+                      </span>
+                      <span>{cropProgressPercent}%</span>
+                    </div>
+                  </>
+                )}
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 px-3 text-xs"
+                  disabled={activeCrop?.cancelling}
+                  onClick={() => void requestActiveCropCancellation(false)}
+                >
+                  {activeCrop?.cancelling ? "Cancelling..." : "Cancel"}
+                </Button>
               </div>
             </div>
           </div>
         </div>
       ) : null}
-      {cropConfirmOpen && selection ? (
+      {cropConfirm ? (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/45 px-4">
           <div
             className="w-full max-w-md rounded-2xl border border-border/80 bg-card p-6 shadow-2xl"
@@ -1721,27 +2091,41 @@ export default function ViewerWorkspace({
                   ROI Output Already Exists
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  {`roi/Pos${selection.pos} already exists. Continuing will replace the existing cropped ROI files for this position.`}
+                  {cropConfirm.kind === "single"
+                    ? `roi/Pos${cropConfirm.positions[0]} already exists. Continuing will replace the existing cropped ROI files for this position.`
+                    : `${cropConfirm.overwritePositions.length} of ${cropConfirm.positions.length} saved positions already have ROI output. You can overwrite those folders or skip them and crop only the remaining positions.`}
                 </p>
+                {cropConfirm.kind === "batch" ? (
+                  <p className="text-xs text-muted-foreground">
+                    {cropConfirm.overwritePositions.map((pos) => `Pos${pos}`).join(", ")}
+                  </p>
+                ) : null}
               </div>
               <div className="flex justify-end gap-2">
                 <Button
                   size="sm"
                   variant="outline"
                   className="h-8 px-3 text-xs"
-                  onClick={() => setCropConfirmOpen(false)}
+                  onClick={() => setCropConfirm(null)}
                 >
                   Cancel
                 </Button>
+                {cropConfirm.kind === "batch" ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 px-3 text-xs"
+                    onClick={handleSkipExistingCrop}
+                  >
+                    Skip Existing
+                  </Button>
+                ) : null}
                 <Button
                   size="sm"
                   className="h-8 px-3 text-xs"
-                  onClick={() => {
-                    setCropConfirmOpen(false);
-                    void performCrop();
-                  }}
+                  onClick={handleOverwriteCrop}
                 >
-                  Continue
+                  Overwrite
                 </Button>
               </div>
             </div>

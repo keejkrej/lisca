@@ -11,17 +11,18 @@ use serde::{Deserialize, Serialize};
 use tiff::encoder::{colortype, TiffEncoder};
 
 use crate::viewer::domain::{
-    current_timestamp, dimension_size, dimension_values, roi_axis_values, validate_request_index,
-    workspace_annotation_json_path, workspace_annotation_labels_path,
+    current_timestamp, dimension_size, dimension_values, parse_bbox_csv_name, roi_axis_values,
+    validate_request_index, workspace_annotation_json_path, workspace_annotation_labels_path,
     workspace_annotation_mask_path, workspace_annotation_roi_dir_path, workspace_bbox_csv_path,
     workspace_relative_path, workspace_roi_index_path, workspace_roi_pos_dir_path,
-    workspace_roi_tiff_path, AnnotationLabel, CropOutputFormat, CropRoiResponse,
+    workspace_roi_tiff_path, AnnotationLabel, CropOutputFormat, CropRoiResponse, CropRoiStatus,
     LoadedRoiFrameAnnotation, RoiBbox, RoiFrameAnnotation, RoiFrameAnnotationPayload,
     RoiFrameRequest, RoiIndexEntry, RoiIndexFile, RoiPositionScan, RoiWorkspaceScan,
     SaveBboxResponse, ViewerSource,
 };
 use crate::viewer::image::{
-    collect_tiffs, czi_bitmap_to_u16, find_position_dir, load_tiff_frame, load_tiff_frame_page, RawFrame,
+    collect_tiffs, czi_bitmap_to_u16, find_position_dir, load_tiff_frame, load_tiff_frame_page,
+    RawFrame,
 };
 
 #[derive(Deserialize, Serialize)]
@@ -48,8 +49,8 @@ fn annotation_schema_version() -> u32 {
 fn read_roi_index(workspace_path: &str, pos: u32) -> Result<RoiIndexFile, String> {
     let path = workspace_roi_index_path(workspace_path, pos);
     let bytes = fs::read(&path).map_err(|err| err.to_string())?;
-    let index =
-        serde_json::from_slice::<RoiIndexFile>(&bytes).map_err(|err| format!("{}: {err}", path.display()))?;
+    let index = serde_json::from_slice::<RoiIndexFile>(&bytes)
+        .map_err(|err| format!("{}: {err}", path.display()))?;
 
     if index.position != pos {
         return Err(format!(
@@ -82,7 +83,10 @@ fn read_roi_index(workspace_path: &str, pos: u32) -> Result<RoiIndexFile, String
             || roi.shape[3] != roi.bbox.h
             || roi.shape[4] != roi.bbox.w
         {
-            return Err(format!("ROI {} shape metadata does not match index", roi.roi));
+            return Err(format!(
+                "ROI {} shape metadata does not match index",
+                roi.roi
+            ));
         }
     }
 
@@ -117,7 +121,10 @@ fn validate_annotation_labels(labels: &[AnnotationLabel], path: &Path) -> Result
     let mut ids = BTreeSet::new();
     for label in labels {
         if label.id.trim().is_empty() {
-            return Err(format!("Annotation labels at {} contain an empty id", path.display()));
+            return Err(format!(
+                "Annotation labels at {} contain an empty id",
+                path.display()
+            ));
         }
         if label.name.trim().is_empty() {
             return Err(format!(
@@ -149,7 +156,9 @@ fn decode_png_mask(bytes: &[u8]) -> Result<(u32, u32, Vec<u8>), String> {
     let decoder = PngDecoder::new(Cursor::new(bytes));
     let mut reader = decoder.read_info().map_err(|err| err.to_string())?;
     let mut buffer = vec![0; reader.output_buffer_size()];
-    let info = reader.next_frame(&mut buffer).map_err(|err| err.to_string())?;
+    let info = reader
+        .next_frame(&mut buffer)
+        .map_err(|err| err.to_string())?;
     if info.bit_depth != BitDepth::Eight {
         return Err(format!(
             "Unsupported annotation mask bit depth {:?}; expected 8-bit PNG",
@@ -182,12 +191,18 @@ fn decode_png_mask(bytes: &[u8]) -> Result<(u32, u32, Vec<u8>), String> {
     Ok((info.width, info.height, mask))
 }
 
-fn validate_mask_pixels(mask: &[u8], width: u32, height: u32, label_count: usize) -> Result<(), String> {
+fn validate_mask_pixels(
+    mask: &[u8],
+    width: u32,
+    height: u32,
+    label_count: usize,
+) -> Result<(), String> {
     let expected = (width as usize).saturating_mul(height as usize);
     if mask.len() != expected {
         return Err(format!(
             "Annotation mask pixel count {} does not match expected frame size {}",
-            mask.len(), expected
+            mask.len(),
+            expected
         ));
     }
 
@@ -262,28 +277,30 @@ pub fn load_roi_frame_annotation(
     let annotation = serde_json::from_slice::<RoiFrameAnnotationFile>(&bytes)
         .map_err(|err| format!("{}: {err}", annotation_path.display()))?;
 
-    let (mask_path, mask_base64_png) = if let Some(mask_file_name) = annotation.mask_file_name.clone() {
-        let path = workspace_annotation_roi_dir_path(&workspace_path, &request).join(mask_file_name);
-        let mask_bytes = fs::read(&path).map_err(|err| err.to_string())?;
-        let (mask_width, mask_height, _) = decode_png_mask(&mask_bytes)?;
-        if mask_width != roi.bbox.w || mask_height != roi.bbox.h {
-            return Err(format!(
-                "Annotation mask {} dimensions {}x{} do not match ROI {} frame {}x{}",
-                path.display(),
-                mask_width,
-                mask_height,
-                roi.roi,
-                roi.bbox.w,
-                roi.bbox.h
-            ));
-        }
-        (
-            Some(workspace_relative_path(&workspace_path, &path)),
-            Some(BASE64_STANDARD.encode(mask_bytes)),
-        )
-    } else {
-        (None, None)
-    };
+    let (mask_path, mask_base64_png) =
+        if let Some(mask_file_name) = annotation.mask_file_name.clone() {
+            let path =
+                workspace_annotation_roi_dir_path(&workspace_path, &request).join(mask_file_name);
+            let mask_bytes = fs::read(&path).map_err(|err| err.to_string())?;
+            let (mask_width, mask_height, _) = decode_png_mask(&mask_bytes)?;
+            if mask_width != roi.bbox.w || mask_height != roi.bbox.h {
+                return Err(format!(
+                    "Annotation mask {} dimensions {}x{} do not match ROI {} frame {}x{}",
+                    path.display(),
+                    mask_width,
+                    mask_height,
+                    roi.roi,
+                    roi.bbox.w,
+                    roi.bbox.h
+                ));
+            }
+            (
+                Some(workspace_relative_path(&workspace_path, &path)),
+                Some(BASE64_STANDARD.encode(mask_bytes)),
+            )
+        } else {
+            (None, None)
+        };
 
     Ok(LoadedRoiFrameAnnotation {
         annotation: RoiFrameAnnotation {
@@ -413,7 +430,10 @@ fn parse_bbox_csv(path: &Path) -> Result<Vec<RoiBbox>, String> {
     let mut bboxes = Vec::new();
     let mut seen_rois = BTreeSet::new();
     for (line_number, line) in lines.enumerate() {
-        let parts = line.split(',').map(|value| value.trim()).collect::<Vec<_>>();
+        let parts = line
+            .split(',')
+            .map(|value| value.trim())
+            .collect::<Vec<_>>();
         if parts.len() <= required_idx {
             return Err(format!("BBox CSV row {} is malformed", line_number + 2));
         }
@@ -437,7 +457,10 @@ fn parse_bbox_csv(path: &Path) -> Result<Vec<RoiBbox>, String> {
         };
 
         if bbox.w == 0 || bbox.h == 0 {
-            return Err(format!("BBox row {} must have positive width and height", line_number + 2));
+            return Err(format!(
+                "BBox row {} must have positive width and height",
+                line_number + 2
+            ));
         }
         if !seen_rois.insert(bbox.roi) {
             return Err(format!("Duplicate roi {} in bbox CSV", bbox.roi));
@@ -536,16 +559,46 @@ fn prepare_roi_output_dir(workspace_path: &str, pos: u32) -> Result<PathBuf, Str
     Ok(pos_dir)
 }
 
+fn cleanup_roi_output_dir(workspace_path: &str, pos: u32) -> Result<(), String> {
+    let pos_dir = workspace_roi_pos_dir_path(workspace_path, pos);
+    if pos_dir.exists() {
+        fs::remove_dir_all(pos_dir).map_err(|err| err.to_string())?;
+    }
+    Ok(())
+}
+
+#[derive(Debug)]
+enum CropFailure {
+    Error(String),
+    Cancelled,
+}
+
+impl From<String> for CropFailure {
+    fn from(value: String) -> Self {
+        Self::Error(value)
+    }
+}
+
+fn ensure_crop_not_cancelled(is_cancelled: &dyn Fn() -> bool) -> Result<(), CropFailure> {
+    if is_cancelled() {
+        Err(CropFailure::Cancelled)
+    } else {
+        Ok(())
+    }
+}
+
 fn crop_tif_source<F>(
     workspace_path: &str,
     root: &Path,
     pos: u32,
     bboxes: &[RoiBbox],
     progress: &mut F,
-) -> Result<PathBuf, String>
+    is_cancelled: &dyn Fn() -> bool,
+) -> Result<PathBuf, CropFailure>
 where
     F: FnMut(f64, &str) -> Result<(), String>,
 {
+    ensure_crop_not_cancelled(is_cancelled)?;
     let pos_dir = find_position_dir(root, pos)?;
     let mut index = HashMap::<(u32, u32, u32), PathBuf>::new();
     let mut channels = BTreeSet::new();
@@ -566,7 +619,7 @@ where
     let times = times.into_iter().collect::<Vec<_>>();
     let z_slices = z_slices.into_iter().collect::<Vec<_>>();
     if channels.is_empty() || times.is_empty() || z_slices.is_empty() {
-        return Err(format!("No TIFF frames found for Pos{pos}"));
+        return Err(format!("No TIFF frames found for Pos{pos}").into());
     }
 
     let first_path = index
@@ -575,8 +628,9 @@ where
     let first_frame = load_tiff_frame(first_path)?;
     validate_bboxes(bboxes, first_frame.width, first_frame.height)?;
 
+    ensure_crop_not_cancelled(is_cancelled)?;
     prepare_roi_output_dir(workspace_path, pos)?;
-    progress(0.02, &format!("Opening ROI TIFF writers for Pos{pos}"))?;
+    progress(0.02, &format!("Opening ROI TIFF writers for Pos{pos}")).map_err(CropFailure::from)?;
     let mut encoders = bboxes
         .iter()
         .map(|bbox| {
@@ -591,15 +645,21 @@ where
     for time in &times {
         for channel in &channels {
             for z in &z_slices {
+                ensure_crop_not_cancelled(is_cancelled)?;
                 let path = index.get(&(*channel, *time, *z)).ok_or_else(|| {
-                    format!("Missing TIFF frame for Pos{pos}, channel {channel}, time {time}, z {z}")
+                    format!(
+                        "Missing TIFF frame for Pos{pos}, channel {channel}, time {time}, z {z}"
+                    )
                 })?;
                 let frame = load_tiff_frame(path)?;
                 if frame.width != first_frame.width || frame.height != first_frame.height {
-                    return Err("Inconsistent TIFF dimensions across stack".to_string());
+                    return Err(CropFailure::Error(
+                        "Inconsistent TIFF dimensions across stack".to_string(),
+                    ));
                 }
 
                 for (encoder, bbox) in encoders.iter_mut().zip(bboxes.iter()) {
+                    ensure_crop_not_cancelled(is_cancelled)?;
                     let cropped = crop_u16_frame(&frame.data, frame.width, bbox);
                     encoder
                         .write_image::<colortype::Gray16>(bbox.w, bbox.h, &cropped)
@@ -614,12 +674,14 @@ where
                 progress(
                     0.02 + plane_progress * 0.96,
                     &format!("Cropping frame {processed_planes}/{total_planes} for Pos{pos}"),
-                )?;
+                )
+                .map_err(CropFailure::from)?;
             }
         }
     }
 
-    progress(0.99, &format!("Writing ROI index for Pos{pos}"))?;
+    ensure_crop_not_cancelled(is_cancelled)?;
+    progress(0.99, &format!("Writing ROI index for Pos{pos}")).map_err(CropFailure::from)?;
     write_roi_index(
         workspace_path,
         pos,
@@ -631,7 +693,7 @@ where
         &z_slices,
         bboxes,
     )?;
-    progress(1.0, &format!("Finished ROI crop for Pos{pos}"))?;
+    progress(1.0, &format!("Finished ROI crop for Pos{pos}")).map_err(CropFailure::from)?;
     Ok(workspace_roi_pos_dir_path(workspace_path, pos))
 }
 
@@ -641,10 +703,12 @@ fn crop_nd2_source<F>(
     pos: u32,
     bboxes: &[RoiBbox],
     progress: &mut F,
-) -> Result<PathBuf, String>
+    is_cancelled: &dyn Fn() -> bool,
+) -> Result<PathBuf, CropFailure>
 where
     F: FnMut(f64, &str) -> Result<(), String>,
 {
+    ensure_crop_not_cancelled(is_cancelled)?;
     let mut nd2 = Nd2File::open(path).map_err(|err| err.to_string())?;
     let sizes = nd2.sizes().map_err(|err| err.to_string())?;
     let width = u32::try_from(dimension_size(&sizes, "X")).map_err(|err| err.to_string())?;
@@ -654,14 +718,15 @@ where
     let times = dimension_values(&sizes, "T");
     let z_slices = dimension_values(&sizes, "Z");
     if !positions.contains(&pos) {
-        return Err(format!("Position index {pos} is out of range"));
+        return Err(format!("Position index {pos} is out of range").into());
     }
 
     let pos_index = validate_request_index("Position", pos, dimension_size(&sizes, "P"))?;
     validate_bboxes(bboxes, width, height)?;
 
+    ensure_crop_not_cancelled(is_cancelled)?;
     prepare_roi_output_dir(workspace_path, pos)?;
-    progress(0.02, &format!("Opening ROI TIFF writers for Pos{pos}"))?;
+    progress(0.02, &format!("Opening ROI TIFF writers for Pos{pos}")).map_err(CropFailure::from)?;
     let mut encoders = bboxes
         .iter()
         .map(|bbox| {
@@ -676,17 +741,22 @@ where
     for time in &times {
         let time_index = validate_request_index("Time", *time, dimension_size(&sizes, "T"))?;
         for channel in &channels {
-            let channel_index = validate_request_index("Channel", *channel, dimension_size(&sizes, "C"))?;
+            let channel_index =
+                validate_request_index("Channel", *channel, dimension_size(&sizes, "C"))?;
             for z in &z_slices {
+                ensure_crop_not_cancelled(is_cancelled)?;
                 let z_index = validate_request_index("Z", *z, dimension_size(&sizes, "Z"))?;
                 let frame = nd2
                     .read_frame_2d(pos_index, time_index, channel_index, z_index)
                     .map_err(|err| err.to_string())?;
                 if frame.len() != width as usize * height as usize {
-                    return Err("Unexpected ND2 frame dimensions".to_string());
+                    return Err(CropFailure::Error(
+                        "Unexpected ND2 frame dimensions".to_string(),
+                    ));
                 }
 
                 for (encoder, bbox) in encoders.iter_mut().zip(bboxes.iter()) {
+                    ensure_crop_not_cancelled(is_cancelled)?;
                     let cropped = crop_u16_frame(&frame, width, bbox);
                     encoder
                         .write_image::<colortype::Gray16>(bbox.w, bbox.h, &cropped)
@@ -701,12 +771,14 @@ where
                 progress(
                     0.02 + plane_progress * 0.96,
                     &format!("Cropping frame {processed_planes}/{total_planes} for Pos{pos}"),
-                )?;
+                )
+                .map_err(CropFailure::from)?;
             }
         }
     }
 
-    progress(0.99, &format!("Writing ROI index for Pos{pos}"))?;
+    ensure_crop_not_cancelled(is_cancelled)?;
+    progress(0.99, &format!("Writing ROI index for Pos{pos}")).map_err(CropFailure::from)?;
     write_roi_index(
         workspace_path,
         pos,
@@ -718,7 +790,7 @@ where
         &z_slices,
         bboxes,
     )?;
-    progress(1.0, &format!("Finished ROI crop for Pos{pos}"))?;
+    progress(1.0, &format!("Finished ROI crop for Pos{pos}")).map_err(CropFailure::from)?;
     Ok(workspace_roi_pos_dir_path(workspace_path, pos))
 }
 
@@ -728,10 +800,12 @@ fn crop_czi_source<F>(
     pos: u32,
     bboxes: &[RoiBbox],
     progress: &mut F,
-) -> Result<PathBuf, String>
+    is_cancelled: &dyn Fn() -> bool,
+) -> Result<PathBuf, CropFailure>
 where
     F: FnMut(f64, &str) -> Result<(), String>,
 {
+    ensure_crop_not_cancelled(is_cancelled)?;
     let mut czi = CziFile::open(path).map_err(|err| err.to_string())?;
     let sizes = czi.sizes().map_err(|err| err.to_string())?;
     let positions = dimension_values(&sizes, "S");
@@ -739,7 +813,7 @@ where
     let times = dimension_values(&sizes, "T");
     let z_slices = dimension_values(&sizes, "Z");
     if !positions.contains(&pos) {
-        return Err(format!("Position index {pos} is out of range"));
+        return Err(format!("Position index {pos} is out of range").into());
     }
 
     let pos_index = validate_request_index("Position", pos, dimension_size(&sizes, "S"))?;
@@ -752,11 +826,14 @@ where
         .with(CziDimension::T, 0)
         .with(CziDimension::C, 0)
         .with(CziDimension::Z, 0);
-    let preview_bitmap = czi.read_plane(&preview_plane).map_err(|err| err.to_string())?;
+    let preview_bitmap = czi
+        .read_plane(&preview_plane)
+        .map_err(|err| err.to_string())?;
     validate_bboxes(bboxes, preview_bitmap.width, preview_bitmap.height)?;
 
+    ensure_crop_not_cancelled(is_cancelled)?;
     prepare_roi_output_dir(workspace_path, pos)?;
-    progress(0.02, &format!("Opening ROI TIFF writers for Pos{pos}"))?;
+    progress(0.02, &format!("Opening ROI TIFF writers for Pos{pos}")).map_err(CropFailure::from)?;
     let mut encoders = bboxes
         .iter()
         .map(|bbox| {
@@ -773,6 +850,7 @@ where
         for channel in &channels {
             let channel_index = validate_request_index("Channel", *channel, channel_count)?;
             for z in &z_slices {
+                ensure_crop_not_cancelled(is_cancelled)?;
                 let z_index = validate_request_index("Z", *z, z_count)?;
                 let plane = PlaneIndex::new()
                     .with(CziDimension::S, pos_index)
@@ -783,6 +861,7 @@ where
                 let frame = czi_bitmap_to_u16(bitmap)?;
 
                 for (encoder, bbox) in encoders.iter_mut().zip(bboxes.iter()) {
+                    ensure_crop_not_cancelled(is_cancelled)?;
                     let cropped = crop_u16_frame(&frame, preview_bitmap.width, bbox);
                     encoder
                         .write_image::<colortype::Gray16>(bbox.w, bbox.h, &cropped)
@@ -797,12 +876,14 @@ where
                 progress(
                     0.02 + plane_progress * 0.96,
                     &format!("Cropping frame {processed_planes}/{total_planes} for Pos{pos}"),
-                )?;
+                )
+                .map_err(CropFailure::from)?;
             }
         }
     }
 
-    progress(0.99, &format!("Writing ROI index for Pos{pos}"))?;
+    ensure_crop_not_cancelled(is_cancelled)?;
+    progress(0.99, &format!("Writing ROI index for Pos{pos}")).map_err(CropFailure::from)?;
     write_roi_index(
         workspace_path,
         pos,
@@ -814,7 +895,7 @@ where
         &z_slices,
         bboxes,
     )?;
-    progress(1.0, &format!("Finished ROI crop for Pos{pos}"))?;
+    progress(1.0, &format!("Finished ROI crop for Pos{pos}")).map_err(CropFailure::from)?;
     Ok(workspace_roi_pos_dir_path(workspace_path, pos))
 }
 
@@ -856,7 +937,36 @@ pub fn scan_roi_workspace(workspace_path: String) -> Result<RoiWorkspaceScan, St
     Ok(RoiWorkspaceScan { positions })
 }
 
-pub fn load_roi_frame(workspace_path: String, request: RoiFrameRequest) -> Result<RawFrame, String> {
+pub fn list_saved_bbox_positions(workspace_path: String) -> Result<Vec<u32>, String> {
+    let root = Path::new(&workspace_path).join("bbox");
+    if !root.is_dir() {
+        return Ok(Vec::new());
+    }
+
+    let mut positions = BTreeSet::new();
+    for entry in fs::read_dir(root).map_err(|err| err.to_string())? {
+        let entry = entry.map_err(|err| err.to_string())?;
+        let path = entry.path();
+        if !path.is_file() {
+            continue;
+        }
+
+        let Some(name) = entry.file_name().to_str().map(str::to_string) else {
+            continue;
+        };
+        let Some(pos) = parse_bbox_csv_name(&name) else {
+            continue;
+        };
+        positions.insert(pos);
+    }
+
+    Ok(positions.into_iter().collect())
+}
+
+pub fn load_roi_frame(
+    workspace_path: String,
+    request: RoiFrameRequest,
+) -> Result<RawFrame, String> {
     let index = read_roi_index(&workspace_path, request.pos)?;
     let roi = index
         .rois
@@ -874,8 +984,12 @@ pub fn load_roi_frame(workspace_path: String, request: RoiFrameRequest) -> Resul
         return Err(format!("Z index {} is out of range", request.z));
     }
 
-    let page = ((request.time * index.channel_count + request.channel) * index.z_count + request.z) as usize;
-    let raw = load_tiff_frame_page(&workspace_roi_tiff_path(&workspace_path, request.pos, request.roi), page)?;
+    let page = ((request.time * index.channel_count + request.channel) * index.z_count + request.z)
+        as usize;
+    let raw = load_tiff_frame_page(
+        &workspace_roi_tiff_path(&workspace_path, request.pos, request.roi),
+        page,
+    )?;
     if raw.width != roi.bbox.w || raw.height != roi.bbox.h {
         return Err(format!(
             "ROI {} TIFF page dimensions {}x{} do not match index {}x{}",
@@ -901,10 +1015,17 @@ pub fn save_bbox(workspace_path: String, pos: u32, csv: String) -> SaveBboxRespo
         };
     }
 
-    let normalized = if csv.ends_with('\n') { csv } else { format!("{csv}\n") };
+    let normalized = if csv.ends_with('\n') {
+        csv
+    } else {
+        format!("{csv}\n")
+    };
 
     match fs::write(target, normalized) {
-        Ok(_) => SaveBboxResponse { ok: true, error: None },
+        Ok(_) => SaveBboxResponse {
+            ok: true,
+            error: None,
+        },
         Err(error) => SaveBboxResponse {
             ok: false,
             error: Some(error.to_string()),
@@ -918,6 +1039,7 @@ pub fn crop_roi<F>(
     pos: u32,
     format: CropOutputFormat,
     progress: &mut F,
+    is_cancelled: &dyn Fn() -> bool,
 ) -> CropRoiResponse
 where
     F: FnMut(f64, &str) -> Result<(), String>,
@@ -925,6 +1047,8 @@ where
     if !matches!(format, CropOutputFormat::Tiff) {
         return CropRoiResponse {
             ok: false,
+            status: CropRoiStatus::Error,
+            cancelled: None,
             error: Some("Unsupported crop output format".to_string()),
             output_path: None,
         };
@@ -934,7 +1058,19 @@ where
     if !bbox_path.is_file() {
         return CropRoiResponse {
             ok: false,
+            status: CropRoiStatus::Error,
+            cancelled: None,
             error: Some(format!("BBox CSV not found at {}", bbox_path.display())),
+            output_path: None,
+        };
+    }
+
+    if is_cancelled() {
+        return CropRoiResponse {
+            ok: false,
+            status: CropRoiStatus::Cancelled,
+            cancelled: Some(true),
+            error: None,
             output_path: None,
         };
     }
@@ -942,36 +1078,166 @@ where
     if let Err(error) = progress(0.0, &format!("Reading bbox CSV for Pos{pos}")) {
         return CropRoiResponse {
             ok: false,
+            status: CropRoiStatus::Error,
+            cancelled: None,
             error: Some(error),
             output_path: None,
         };
     }
 
-    let result = parse_bbox_csv(&bbox_path).and_then(|bboxes| match &source {
-        ViewerSource::Tif { path } => {
-            progress(0.01, &format!("Scanning TIFF stack for Pos{pos}"))?;
-            crop_tif_source(&workspace_path, Path::new(path), pos, &bboxes, progress)
-        }
-        ViewerSource::Nd2 { path } => {
-            progress(0.01, &format!("Opening ND2 source for Pos{pos}"))?;
-            crop_nd2_source(&workspace_path, Path::new(path), pos, &bboxes, progress)
-        }
-        ViewerSource::Czi { path } => {
-            progress(0.01, &format!("Opening CZI source for Pos{pos}"))?;
-            crop_czi_source(&workspace_path, Path::new(path), pos, &bboxes, progress)
-        }
-    });
+    let result = parse_bbox_csv(&bbox_path)
+        .map_err(CropFailure::from)
+        .and_then(|bboxes| match &source {
+            ViewerSource::Tif { path } => {
+                progress(0.01, &format!("Scanning TIFF stack for Pos{pos}"))
+                    .map_err(CropFailure::from)?;
+                crop_tif_source(
+                    &workspace_path,
+                    Path::new(path),
+                    pos,
+                    &bboxes,
+                    progress,
+                    is_cancelled,
+                )
+            }
+            ViewerSource::Nd2 { path } => {
+                progress(0.01, &format!("Opening ND2 source for Pos{pos}"))
+                    .map_err(CropFailure::from)?;
+                crop_nd2_source(
+                    &workspace_path,
+                    Path::new(path),
+                    pos,
+                    &bboxes,
+                    progress,
+                    is_cancelled,
+                )
+            }
+            ViewerSource::Czi { path } => {
+                progress(0.01, &format!("Opening CZI source for Pos{pos}"))
+                    .map_err(CropFailure::from)?;
+                crop_czi_source(
+                    &workspace_path,
+                    Path::new(path),
+                    pos,
+                    &bboxes,
+                    progress,
+                    is_cancelled,
+                )
+            }
+        });
 
     match result {
         Ok(output_path) => CropRoiResponse {
             ok: true,
+            status: CropRoiStatus::Success,
+            cancelled: None,
             error: None,
             output_path: Some(output_path.to_string_lossy().to_string()),
         },
-        Err(error) => CropRoiResponse {
+        Err(CropFailure::Cancelled) => {
+            let _ = cleanup_roi_output_dir(&workspace_path, pos);
+            CropRoiResponse {
+                ok: false,
+                status: CropRoiStatus::Cancelled,
+                cancelled: Some(true),
+                error: None,
+                output_path: None,
+            }
+        }
+        Err(CropFailure::Error(error)) => CropRoiResponse {
             ok: false,
+            status: CropRoiStatus::Error,
+            cancelled: None,
             error: Some(error),
             output_path: None,
         },
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::cell::Cell;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    use super::*;
+
+    fn unique_test_dir(name: &str) -> PathBuf {
+        let suffix = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system time before epoch")
+            .as_nanos();
+        let path = std::env::temp_dir().join(format!("lisca-{name}-{suffix}"));
+        fs::create_dir_all(&path).expect("create test directory");
+        path
+    }
+
+    fn write_tiff(path: &Path, width: u32, height: u32, data: &[u16]) {
+        let file = File::create(path).expect("create tiff");
+        let mut encoder = TiffEncoder::new(BufWriter::new(file)).expect("create encoder");
+        encoder
+            .write_image::<colortype::Gray16>(width, height, data)
+            .expect("write image");
+    }
+
+    #[test]
+    fn list_saved_bbox_positions_returns_sorted_positions() {
+        let root = unique_test_dir("saved-bboxes");
+        let bbox_dir = root.join("bbox");
+        fs::create_dir_all(&bbox_dir).expect("create bbox dir");
+        fs::write(bbox_dir.join("Pos10.csv"), "roi,x,y,w,h\n0,0,0,1,1\n").expect("write bbox 10");
+        fs::write(bbox_dir.join("pos2.csv"), "roi,x,y,w,h\n0,0,0,1,1\n").expect("write bbox 2");
+        fs::write(bbox_dir.join("notes.txt"), "ignore").expect("write notes");
+        fs::write(bbox_dir.join("PosX.csv"), "ignore").expect("write malformed bbox");
+
+        let positions = list_saved_bbox_positions(root.to_string_lossy().to_string())
+            .expect("scan saved bboxes");
+        assert_eq!(positions, vec![2, 10]);
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn crop_roi_cancellation_removes_partial_output() {
+        let root = unique_test_dir("cancel-crop");
+        let workspace_path = root.join("workspace");
+        let source_path = root.join("source");
+        let pos_dir = source_path.join("Pos0");
+        fs::create_dir_all(&pos_dir).expect("create source position dir");
+        fs::create_dir_all(workspace_path.join("bbox")).expect("create workspace bbox dir");
+
+        write_tiff(
+            &pos_dir.join("img_channel0_position0_time0_z0.tif"),
+            2,
+            1,
+            &[11, 22],
+        );
+        fs::write(
+            workspace_path.join("bbox").join("Pos0.csv"),
+            "roi,x,y,w,h\n0,0,0,1,1\n1,1,0,1,1\n",
+        )
+        .expect("write bbox csv");
+
+        let cancel_checks = Cell::new(0usize);
+        let response = crop_roi(
+            workspace_path.to_string_lossy().to_string(),
+            ViewerSource::Tif {
+                path: source_path.to_string_lossy().to_string(),
+            },
+            0,
+            CropOutputFormat::Tiff,
+            &mut |_progress, _message| Ok(()),
+            &|| {
+                let next = cancel_checks.get() + 1;
+                cancel_checks.set(next);
+                next >= 5
+            },
+        );
+
+        assert!(!response.ok);
+        assert!(matches!(response.status, CropRoiStatus::Cancelled));
+        assert_eq!(response.cancelled, Some(true));
+        assert!(!workspace_path.join("roi").join("Pos0").exists());
+
+        let _ = fs::remove_dir_all(root);
     }
 }

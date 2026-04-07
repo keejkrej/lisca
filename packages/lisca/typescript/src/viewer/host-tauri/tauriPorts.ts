@@ -123,6 +123,10 @@ export function createTauriDesktopPorts(): TauriDesktopPorts {
       return invoke("scan_roi_workspace", { workspacePath });
     },
 
+    listSavedBboxPositions(workspacePath: string): Promise<number[]> {
+      return invoke("list_saved_bbox_positions", { workspacePath });
+    },
+
     autoExcludePreview(request: AutoExcludePreviewRequest): Promise<AutoExcludePreviewResponse> {
       return invoke("auto_exclude_preview", { request });
     },
@@ -181,16 +185,21 @@ export function createTauriDesktopPorts(): TauriDesktopPorts {
       source: ViewerSource,
       pos: number,
       format: CropOutputFormat,
+      requestId?: string,
     ): Promise<CropRoiResponse> {
-      const requestId = makeRequestId();
+      const nextRequestId = requestId ?? makeRequestId();
       await ensureCropProgressListener().catch(() => undefined);
       return invoke("crop_roi", {
         workspacePath,
         source,
         pos,
         format,
-        requestId,
+        requestId: nextRequestId,
       });
+    },
+
+    cancelCropRoi(requestId: string): Promise<void> {
+      return invoke("cancel_crop_roi", { requestId });
     },
 
     onCropRoiProgress(listener) {

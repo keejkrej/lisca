@@ -1,30 +1,62 @@
-#![cfg_attr(all(target_os = "windows", not(debug_assertions)), windows_subsystem = "windows")]
+#![cfg_attr(
+    all(target_os = "windows", not(debug_assertions)),
+    windows_subsystem = "windows"
+)]
 
 use std::{
+    collections::HashSet,
     path::Path,
+    sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
 
-use rfd::FileDialog;
-use tauri::{command, Emitter, WebviewWindow};
 use lisca::viewer::backend::{
     auto_exclude_preview as run_auto_exclude_preview, crop_roi as run_crop_roi,
+    list_saved_bbox_positions as run_list_saved_bbox_positions,
     load_annotation_labels as run_load_annotation_labels, load_frame_payload,
     load_roi_frame_annotation as run_load_roi_frame_annotation, load_roi_frame_payload,
     save_annotation_labels as run_save_annotation_labels, save_bbox as run_save_bbox,
     save_roi_frame_annotation as run_save_roi_frame_annotation,
     scan_roi_workspace as run_scan_roi_workspace, scan_source as run_scan_source, AnnotationLabel,
     AutoExcludePreviewRequest, AutoExcludePreviewResponse, ContrastWindow, CropOutputFormat,
-    CropRoiResponse, FramePayload, FrameRequest, LoadedRoiFrameAnnotation, RoiFrameAnnotation,
-    RoiFrameAnnotationPayload, RoiFrameRequest, RoiWorkspaceScan, SaveBboxResponse,
-    ViewerSource, WorkspaceScan,
+    CropRoiResponse, CropRoiStatus, FramePayload, FrameRequest, LoadedRoiFrameAnnotation,
+    RoiFrameAnnotation, RoiFrameAnnotationPayload, RoiFrameRequest, RoiWorkspaceScan,
+    SaveBboxResponse, ViewerSource, WorkspaceScan,
 };
+use rfd::FileDialog;
+use tauri::{command, Emitter, State, WebviewWindow};
 
 #[derive(Clone, serde::Serialize)]
 struct CropRoiProgress {
     request_id: String,
     progress: f64,
     message: String,
+}
+
+#[derive(Default)]
+struct CropCancellationRegistry {
+    cancelled: Mutex<HashSet<String>>,
+}
+
+impl CropCancellationRegistry {
+    fn cancel(&self, request_id: &str) {
+        if let Ok(mut cancelled) = self.cancelled.lock() {
+            cancelled.insert(request_id.to_string());
+        }
+    }
+
+    fn is_cancelled(&self, request_id: &str) -> bool {
+        self.cancelled
+            .lock()
+            .map(|cancelled| cancelled.contains(request_id))
+            .unwrap_or(false)
+    }
+
+    fn clear(&self, request_id: &str) {
+        if let Ok(mut cancelled) = self.cancelled.lock() {
+            cancelled.remove(request_id);
+        }
+    }
 }
 
 #[command]
@@ -85,6 +117,11 @@ fn scan_roi_workspace(workspace_path: String) -> Result<RoiWorkspaceScan, String
 }
 
 #[command]
+fn list_saved_bbox_positions(workspace_path: String) -> Result<Vec<u32>, String> {
+    run_list_saved_bbox_positions(workspace_path)
+}
+
+#[command]
 fn auto_exclude_preview(
     request: AutoExcludePreviewRequest,
 ) -> Result<AutoExcludePreviewResponse, String> {
@@ -136,54 +173,78 @@ fn save_bbox(workspace_path: String, pos: u32, csv: String) -> SaveBboxResponse 
 }
 
 #[command]
+fn cancel_crop_roi(request_id: String, registry: State<'_, Arc<CropCancellationRegistry>>) {
+    registry.cancel(&request_id);
+}
+
+#[command]
 async fn crop_roi(
     window: WebviewWindow,
+    registry: State<'_, Arc<CropCancellationRegistry>>,
     workspace_path: String,
     source: ViewerSource,
     pos: u32,
     format: CropOutputFormat,
     request_id: String,
-) -> CropRoiResponse {
-    tauri::async_runtime::spawn_blocking(move || {
+) -> Result<CropRoiResponse, String> {
+    let registry = registry.inner().clone();
+    let response = tauri::async_runtime::spawn_blocking(move || {
         let mut last_emit_at = Instant::now()
             .checked_sub(Duration::from_secs(1))
             .unwrap_or_else(Instant::now);
         let mut last_progress = -1.0f64;
+        let request_id_for_cancel = request_id.clone();
 
-        run_crop_roi(workspace_path, source, pos, format, &mut |progress, message| {
-            let should_emit = progress >= 1.0
-                || progress <= 0.0
-                || (progress - last_progress).abs() >= 0.01
-                || last_emit_at.elapsed() >= Duration::from_millis(80);
+        let response = run_crop_roi(
+            workspace_path,
+            source,
+            pos,
+            format,
+            &mut |progress, message| {
+                let should_emit = progress >= 1.0
+                    || progress <= 0.0
+                    || (progress - last_progress).abs() >= 0.01
+                    || last_emit_at.elapsed() >= Duration::from_millis(80);
 
-            if !should_emit {
-                return Ok(());
-            }
+                if !should_emit {
+                    return Ok(());
+                }
 
-            last_emit_at = Instant::now();
-            last_progress = progress;
+                last_emit_at = Instant::now();
+                last_progress = progress;
 
-            window.emit(
-                "viewer://crop-progress",
-                CropRoiProgress {
-                    request_id: request_id.clone(),
-                    progress,
-                    message: message.to_string(),
-                },
-            )
-            .map_err(|err| err.to_string())
-        })
+                window
+                    .emit(
+                        "viewer://crop-progress",
+                        CropRoiProgress {
+                            request_id: request_id.clone(),
+                            progress,
+                            message: message.to_string(),
+                        },
+                    )
+                    .map_err(|err| err.to_string())
+            },
+            &|| registry.is_cancelled(&request_id_for_cancel),
+        );
+
+        registry.clear(&request_id_for_cancel);
+        response
     })
     .await
     .unwrap_or_else(|error| CropRoiResponse {
         ok: false,
+        status: CropRoiStatus::Error,
+        cancelled: None,
         error: Some(format!("Failed to join ROI crop task: {error}")),
         output_path: None,
-    })
+    });
+
+    Ok(response)
 }
 
 fn main() {
     tauri::Builder::default()
+        .manage(Arc::new(CropCancellationRegistry::default()))
         .invoke_handler(tauri::generate_handler![
             pick_workspace,
             pick_tif,
@@ -193,6 +254,7 @@ fn main() {
             scan_source,
             load_frame,
             scan_roi_workspace,
+            list_saved_bbox_positions,
             auto_exclude_preview,
             load_annotation_labels,
             save_annotation_labels,
@@ -200,6 +262,7 @@ fn main() {
             load_roi_frame_annotation,
             save_roi_frame_annotation,
             save_bbox,
+            cancel_crop_roi,
             crop_roi
         ])
         .run(tauri::generate_context!())

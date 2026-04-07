@@ -3,7 +3,9 @@ use std::fs::{self, File};
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
 
-use czi_rs::{Bitmap as CziBitmap, CziFile, Dimension as CziDimension, PixelType as CziPixelType, PlaneIndex};
+use czi_rs::{
+    Bitmap as CziBitmap, CziFile, Dimension as CziDimension, PixelType as CziPixelType, PlaneIndex,
+};
 use nd2_rs::Nd2File;
 use tiff::decoder::{Decoder, DecodingResult};
 use walkdir::WalkDir;
@@ -69,7 +71,10 @@ pub fn czi_bitmap_to_u16(bitmap: CziBitmap) -> Result<Vec<u16>, String> {
             let values = bitmap.to_u16_vec().map_err(|err| err.to_string())?;
             collapse_u16_buffer(width, height, values)
         }
-        _ => Err(format!("Unsupported CZI pixel type {}", pixel_type.as_str())),
+        _ => Err(format!(
+            "Unsupported CZI pixel type {}",
+            pixel_type.as_str()
+        )),
     }
 }
 
@@ -266,7 +271,11 @@ pub fn load_nd2_frame(path: &Path, request: FrameRequest) -> Result<RawFrame, St
         .read_frame_2d(pos, time, channel, z)
         .map_err(|err| err.to_string())?;
 
-    Ok(RawFrame { width, height, data })
+    Ok(RawFrame {
+        width,
+        height,
+        data,
+    })
 }
 
 pub fn load_czi_frame(path: &Path, request: FrameRequest) -> Result<RawFrame, String> {

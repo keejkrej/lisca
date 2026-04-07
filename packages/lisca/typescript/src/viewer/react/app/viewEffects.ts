@@ -84,6 +84,16 @@ export function scanRoiWorkspaceEffect(backend: ViewerDataPort, workspacePath: s
   );
 }
 
+export function listSavedBboxPositionsEffect(backend: ViewerDataPort, workspacePath: string) {
+  return Effect.tryPromise({
+    try: () => backend.listSavedBboxPositions(workspacePath),
+    catch: (error) => toError(error, "Failed to list saved bbox CSVs"),
+  }).pipe(
+    Effect.map((positions) => ({ positions })),
+    Effect.withSpan("viewer.list-saved-bbox-positions"),
+  );
+}
+
 export function autoExcludePreviewEffect(
   backend: ViewerDataPort,
   request: AutoExcludePreviewRequest,
@@ -266,14 +276,23 @@ export function cropRoiEffect(
     workspacePath,
     source,
     pos,
+    requestId,
   }: {
     workspacePath: string;
     source: ViewerSource;
     pos: number;
+    requestId?: string;
   },
 ) {
   return Effect.tryPromise({
-    try: () => backend.cropRoi(workspacePath, source, pos, "tiff"),
+    try: () => backend.cropRoi(workspacePath, source, pos, "tiff", requestId),
     catch: (error) => toError(error, "Failed to crop ROI TIFFs"),
   }).pipe(Effect.withSpan("viewer.crop-roi"));
+}
+
+export function cancelCropRoiEffect(backend: ViewerDataPort, requestId: string) {
+  return Effect.tryPromise({
+    try: () => backend.cancelCropRoi(requestId),
+    catch: (error) => toError(error, "Failed to cancel ROI crop"),
+  }).pipe(Effect.withSpan("viewer.cancel-crop-roi"));
 }
