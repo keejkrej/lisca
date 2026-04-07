@@ -1381,7 +1381,7 @@ export default function ViewerWorkspace({
                   <SidebarSegmentedToggle
                     value={selectionMode ? "edit" : "view"}
                     options={[
-                      { label: "View", value: "view" },
+                      { label: "Viewer", value: "view" },
                       { label: "Edit", value: "edit" },
                     ]}
                     compact

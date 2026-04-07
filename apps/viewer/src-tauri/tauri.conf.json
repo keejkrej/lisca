@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "View",
+  "productName": "Viewer",
   "version": "0.1.0",
-  "identifier": "com.view.posviewer",
+  "identifier": "com.lisca.viewer",
   "build": {
     "devUrl": "http://127.0.0.1:5173",
     "beforeDevCommand": "bun run dev:web",
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "View",
+        "title": "Viewer",
         "width": 1280,
         "height": 720,
         "minWidth": 1280,

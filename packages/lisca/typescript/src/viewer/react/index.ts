@@ -1,4 +1,4 @@
-export { default as ViewApp } from "./app/ViewApp";
+export { default as ViewerApp } from "./app/ViewerApp";
 export { default as ViewerCanvasSurface } from "./alignment/ViewerCanvasSurface";
 export { default as RoiAnnotationCanvas } from "./annotation/RoiAnnotationCanvas";
 export { default as RoiAnnotationEditor } from "./annotation/RoiAnnotationEditor";

@@ -133,7 +133,7 @@ fn save_bbox(workspace_path: String, pos: u32, csv: String) -> SaveBboxResponse 
 }
 
 #[command]
-fn crop_roi(
+async fn crop_roi(
     app: AppHandle,
     workspace_path: String,
     source: ViewerSource,
@@ -141,16 +141,24 @@ fn crop_roi(
     format: CropOutputFormat,
     request_id: String,
 ) -> CropRoiResponse {
-    run_crop_roi(workspace_path, source, pos, format, &mut |progress, message| {
-        app.emit(
-            "view://crop-progress",
-            CropRoiProgress {
-                request_id: request_id.clone(),
-                progress,
-                message: message.to_string(),
-            },
-        )
-        .map_err(|err| err.to_string())
+    tauri::async_runtime::spawn_blocking(move || {
+        run_crop_roi(workspace_path, source, pos, format, &mut |progress, message| {
+            app.emit(
+                "view://crop-progress",
+                CropRoiProgress {
+                    request_id: request_id.clone(),
+                    progress,
+                    message: message.to_string(),
+                },
+            )
+            .map_err(|err| err.to_string())
+        })
+    })
+    .await
+    .unwrap_or_else(|error| CropRoiResponse {
+        ok: false,
+        error: Some(format!("Failed to join ROI crop task: {error}")),
+        output_path: None,
     })
 }
 
