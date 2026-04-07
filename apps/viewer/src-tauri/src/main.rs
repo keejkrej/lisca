@@ -164,7 +164,7 @@ async fn crop_roi(
             last_progress = progress;
 
             window.emit(
-                "view://crop-progress",
+                "viewer://crop-progress",
                 CropRoiProgress {
                     request_id: request_id.clone(),
                     progress,

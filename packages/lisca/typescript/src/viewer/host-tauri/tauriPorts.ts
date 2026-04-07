@@ -1,5 +1,5 @@
-import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 
 import type {
   AutoExcludePreviewRequest,
@@ -39,7 +39,7 @@ interface CropRoiProgressPayload {
   message: string;
 }
 
-const CROP_PROGRESS_EVENT = "view://crop-progress";
+const CROP_PROGRESS_EVENT = "viewer://crop-progress";
 
 function decodeBase64ToBytes(value: string): Uint8Array {
   if (typeof atob !== "function") {
@@ -85,16 +85,22 @@ export interface TauriDesktopPorts {
 
 export function createTauriDesktopPorts(): TauriDesktopPorts {
   const cropProgressListeners = new Set<(event: CropRoiProgressEvent) => void>();
-  let cropProgressUnlistenPromise: Promise<(() => void) | null> | null = null;
+  let cropProgressUnlistenPromise: Promise<() => void> | null = null;
 
   const ensureCropProgressListener = () => {
     if (!cropProgressUnlistenPromise) {
-      cropProgressUnlistenPromise = listen<CropRoiProgressPayload>(CROP_PROGRESS_EVENT, (event) => {
-        const payload = toCropRoiProgressEvent(event.payload);
-        for (const listener of cropProgressListeners) {
-          listener(payload);
-        }
-      }).catch(() => null);
+      cropProgressUnlistenPromise = getCurrentWebviewWindow()
+        .listen<CropRoiProgressPayload>(CROP_PROGRESS_EVENT, (event) => {
+          const payload = toCropRoiProgressEvent(event.payload);
+          for (const listener of cropProgressListeners) {
+            listener(payload);
+          }
+        })
+        .catch((error) => {
+          cropProgressUnlistenPromise = null;
+          console.error("Failed to subscribe to ROI crop progress events", error);
+          throw error;
+        });
     }
 
     return cropProgressUnlistenPromise;
@@ -177,7 +183,7 @@ export function createTauriDesktopPorts(): TauriDesktopPorts {
       format: CropOutputFormat,
     ): Promise<CropRoiResponse> {
       const requestId = makeRequestId();
-      await ensureCropProgressListener();
+      await ensureCropProgressListener().catch(() => undefined);
       return invoke("crop_roi", {
         workspacePath,
         source,
@@ -189,7 +195,7 @@ export function createTauriDesktopPorts(): TauriDesktopPorts {
 
     onCropRoiProgress(listener) {
       cropProgressListeners.add(listener);
-      void ensureCropProgressListener();
+      void ensureCropProgressListener().catch(() => undefined);
 
       return () => {
         cropProgressListeners.delete(listener);
