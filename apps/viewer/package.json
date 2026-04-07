@@ -1,0 +1,31 @@
+{
+  "name": "viewer",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev:web": "vite --config vite.config.ts",
+    "dev": "bunx @tauri-apps/cli dev --config src-tauri/tauri.conf.json",
+    "build:renderer": "tsc --noEmit -p tsconfig.json && vite build --config vite.config.ts",
+    "build": "bun run build:renderer",
+    "release": "bun run package:release",
+    "package:release": "bun ./scripts/package-release.mjs",
+    "typecheck": "bunx tsc --noEmit -p tsconfig.json",
+    "check:tauri": "cargo check --manifest-path src-tauri/Cargo.toml"
+  },
+  "dependencies": {
+    "lisca": "workspace:*",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.2.2",
+    "@tauri-apps/cli": "^2.10.1",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.7.0",
+    "tailwindcss": "^4.2.2",
+    "typescript": "^5.6.3",
+    "vite": "^6.3.0"
+  }
+}

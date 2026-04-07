@@ -1,0 +1,20 @@
+[project]
+name = "lisca"
+version = "0.1.0"
+description = "Reusable ROI data loading and intensity analysis utilities."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "matplotlib>=3.8",
+  "nd2>=0.10",
+  "numpy>=1.26",
+  "pandas>=2.2.3,<2.3",
+  "tifffile>=2025.3.13",
+]
+
+[build-system]
+requires = ["hatchling", "pathspec<0.13"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/lisca"]

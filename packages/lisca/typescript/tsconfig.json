@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "lisca": ["./src/index.ts"],
+      "lisca/*": ["./src/*"]
+    }
+  },
+  "include": ["src", "test"]
+}

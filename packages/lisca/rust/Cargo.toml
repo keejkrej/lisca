@@ -1,0 +1,15 @@
+[package]
+name = "lisca"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+base64 = "0.22"
+czi-rs = "0.1.0"
+nd2-rs = "0.1.6"
+png = "0.17"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tiff = "0.10"
+time = { version = "0.3", features = ["formatting"] }
+walkdir = "2.5"

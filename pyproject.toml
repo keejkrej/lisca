@@ -1,0 +1,30 @@
+[dependency-groups]
+dev = [
+  "pytest>=8.3",
+]
+
+[tool.uv.workspace]
+members = [
+  "packages/lisca/python",
+  "apps/delivery",
+  "apps/apoptosis",
+]
+
+[tool.uv.extra-build-dependencies]
+lisca = ["pathspec<0.13"]
+expression = ["pathspec<0.13"]
+
+[[tool.uv.index]]
+name = "pytorch"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
+
+[tool.uv.sources]
+lisca = { workspace = true }
+delivery = { workspace = true }
+apoptosis = { workspace = true }
+torch = [{ index = "pytorch", marker = "sys_platform != 'darwin'" }]
+torchvision = [{ index = "pytorch", marker = "sys_platform != 'darwin'" }]
+
+[tool.uv]
+default-groups = ["dev"]

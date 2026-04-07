@@ -1,0 +1,29 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "View",
+  "version": "0.1.0",
+  "identifier": "com.view.posviewer",
+  "build": {
+    "devUrl": "http://127.0.0.1:5173",
+    "beforeDevCommand": "bun run dev:web",
+    "beforeBuildCommand": "bun run build:renderer",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "View",
+        "width": 1280,
+        "height": 720,
+        "minWidth": 1280,
+        "minHeight": 720
+      }
+    ]
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+"icon": ["icons/icon.png", "icons/icon.ico"]
+  }
+}

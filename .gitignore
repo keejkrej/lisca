@@ -1,0 +1,11 @@
+node_modules/
+.venv/
+target/
+dist/
+coverage/
+.pytest_cache/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.DS_Store
+*.log

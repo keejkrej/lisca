@@ -1,0 +1,9 @@
+[workspace]
+members = [
+  "packages/lisca/rust",
+  "apps/viewer/src-tauri",
+]
+resolver = "2"
+
+[workspace.dependencies]
+lisca = { path = "packages/lisca/rust" }

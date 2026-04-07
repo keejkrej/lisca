@@ -1,0 +1,338 @@
+use std::collections::HashMap;
+use std::path::{Path, PathBuf};
+
+use serde::{Deserialize, Serialize};
+use time::{format_description::well_known::Rfc3339, OffsetDateTime};
+
+#[derive(Clone, Debug)]
+pub struct ParsedTiffName {
+    pub channel: u32,
+    pub position: u32,
+    pub time: u32,
+    pub z: u32,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct WorkspaceScan {
+    pub positions: Vec<u32>,
+    pub channels: Vec<u32>,
+    pub times: Vec<u32>,
+    #[serde(rename = "zSlices")]
+    pub z_slices: Vec<u32>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(tag = "kind", rename_all = "lowercase")]
+pub enum ViewerSource {
+    Tif { path: String },
+    Nd2 { path: String },
+    Czi { path: String },
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct FrameRequest {
+    pub pos: u32,
+    pub channel: u32,
+    pub time: u32,
+    pub z: u32,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum GridShape {
+    Square,
+    Hex,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GridState {
+    pub enabled: bool,
+    pub shape: GridShape,
+    pub tx: f64,
+    pub ty: f64,
+    pub rotation: f64,
+    pub spacing_a: f64,
+    pub spacing_b: f64,
+    pub cell_width: f64,
+    pub cell_height: f64,
+    pub opacity: f64,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct ContrastWindow {
+    pub min: u32,
+    pub max: u32,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AutoExcludePreviewRequest {
+    pub source: ViewerSource,
+    pub selection: FrameRequest,
+    pub grid: GridState,
+    pub excluded_cell_ids: Vec<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AutoExcludePreviewCellScore {
+    pub cell_id: String,
+    pub score: f64,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AutoExcludeHistogramBin {
+    pub start: f64,
+    pub end: f64,
+    pub count: u32,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AutoExcludePreviewResponse {
+    pub eligible_cell_count: u32,
+    pub cell_scores: Vec<AutoExcludePreviewCellScore>,
+    pub histogram_bins: Vec<AutoExcludeHistogramBin>,
+    pub score_min: f64,
+    pub score_max: f64,
+    pub threshold: f64,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct SaveBboxResponse {
+    pub ok: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum CropOutputFormat {
+    Tiff,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct CropRoiResponse {
+    pub ok: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+    #[serde(rename = "outputPath", skip_serializing_if = "Option::is_none")]
+    pub output_path: Option<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct RoiFrameRequest {
+    pub pos: u32,
+    pub roi: u32,
+    pub channel: u32,
+    pub time: u32,
+    pub z: u32,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct RoiBbox {
+    pub roi: u32,
+    pub x: u32,
+    pub y: u32,
+    pub w: u32,
+    pub h: u32,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RoiIndexEntry {
+    pub roi: u32,
+    pub file_name: String,
+    pub bbox: RoiBbox,
+    pub shape: [u32; 5],
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RoiIndexFile {
+    pub position: u32,
+    pub axis_order: String,
+    pub page_order: Vec<String>,
+    pub time_count: u32,
+    pub channel_count: u32,
+    pub z_count: u32,
+    pub source: ViewerSource,
+    pub rois: Vec<RoiIndexEntry>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RoiPositionScan {
+    pub pos: u32,
+    pub source: ViewerSource,
+    pub channels: Vec<u32>,
+    pub times: Vec<u32>,
+    #[serde(rename = "zSlices")]
+    pub z_slices: Vec<u32>,
+    pub rois: Vec<RoiIndexEntry>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct RoiWorkspaceScan {
+    pub positions: Vec<RoiPositionScan>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct AnnotationLabel {
+    pub id: String,
+    pub name: String,
+    pub color: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RoiFrameAnnotation {
+    pub classification_label_id: Option<String>,
+    pub mask_path: Option<String>,
+    pub updated_at: Option<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RoiFrameAnnotationPayload {
+    pub classification_label_id: Option<String>,
+    pub mask_base64_png: Option<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LoadedRoiFrameAnnotation {
+    pub annotation: RoiFrameAnnotation,
+    pub mask_base64_png: Option<String>,
+}
+
+pub fn parse_pos_dir_name(name: &str) -> Option<u32> {
+    let normalized: String = name.chars().filter(|c| !c.is_whitespace()).collect();
+    if normalized.is_empty() {
+        return None;
+    }
+
+    let lower = normalized.to_ascii_lowercase();
+    for prefix in ["position", "pos"] {
+        if let Some(rest) = lower.strip_prefix(prefix) {
+            let trimmed = rest.trim_start_matches(['-', '_']);
+            if !trimmed.is_empty() && trimmed.chars().all(|c| c.is_ascii_digit()) {
+                return trimmed.parse().ok();
+            }
+        }
+    }
+
+    if lower.chars().all(|c| c.is_ascii_digit()) {
+        return lower.parse().ok();
+    }
+
+    None
+}
+
+pub fn parse_tiff_name(name: &str) -> Option<ParsedTiffName> {
+    let lower = name.to_ascii_lowercase();
+    let stem = lower
+        .strip_suffix(".tif")
+        .or_else(|| lower.strip_suffix(".tiff"))?;
+    let rest = stem.strip_prefix("img_channel")?;
+    let parts: Vec<&str> = rest.split('_').collect();
+    if parts.len() != 4 {
+        return None;
+    }
+
+    let channel = parts[0].parse().ok()?;
+    let position = parts[1].strip_prefix("position")?.parse().ok()?;
+    let time = parts[2].strip_prefix("time")?.parse().ok()?;
+    let z = parts[3].strip_prefix("z")?.parse().ok()?;
+
+    Some(ParsedTiffName {
+        channel,
+        position,
+        time,
+        z,
+    })
+}
+
+pub fn workspace_bbox_csv_path(root: &str, pos: u32) -> PathBuf {
+    Path::new(root).join("bbox").join(format!("Pos{pos}.csv"))
+}
+
+pub fn workspace_roi_pos_dir_path(root: &str, pos: u32) -> PathBuf {
+    Path::new(root).join("roi").join(format!("Pos{pos}"))
+}
+
+pub fn workspace_roi_tiff_path(root: &str, pos: u32, roi: u32) -> PathBuf {
+    workspace_roi_pos_dir_path(root, pos).join(format!("Roi{roi}.tif"))
+}
+
+pub fn workspace_roi_index_path(root: &str, pos: u32) -> PathBuf {
+    workspace_roi_pos_dir_path(root, pos).join("index.json")
+}
+
+pub fn workspace_annotations_dir_path(root: &str) -> PathBuf {
+    Path::new(root).join("annotations")
+}
+
+pub fn workspace_annotation_labels_path(root: &str) -> PathBuf {
+    workspace_annotations_dir_path(root).join("labels.json")
+}
+
+pub fn workspace_annotation_roi_dir_path(root: &str, request: &RoiFrameRequest) -> PathBuf {
+    workspace_annotations_dir_path(root)
+        .join("roi")
+        .join(format!("Pos{}", request.pos))
+        .join(format!("Roi{}", request.roi))
+}
+
+pub fn annotation_frame_stem(request: &RoiFrameRequest) -> String {
+    format!("C{}_T{}_Z{}", request.channel, request.time, request.z)
+}
+
+pub fn workspace_annotation_json_path(root: &str, request: &RoiFrameRequest) -> PathBuf {
+    workspace_annotation_roi_dir_path(root, request).join(format!("{}.json", annotation_frame_stem(request)))
+}
+
+pub fn workspace_annotation_mask_path(root: &str, request: &RoiFrameRequest) -> PathBuf {
+    workspace_annotation_roi_dir_path(root, request).join(format!("{}.png", annotation_frame_stem(request)))
+}
+
+pub fn path_to_forward_slash_string(path: &Path) -> String {
+    path.to_string_lossy().replace('\\', "/")
+}
+
+pub fn workspace_relative_path(root: &str, path: &Path) -> String {
+    path.strip_prefix(root)
+        .map(path_to_forward_slash_string)
+        .unwrap_or_else(|_| path_to_forward_slash_string(path))
+}
+
+pub fn current_timestamp() -> Result<String, String> {
+    OffsetDateTime::now_utc()
+        .format(&Rfc3339)
+        .map_err(|err| err.to_string())
+}
+
+pub fn roi_axis_values(count: u32) -> Vec<u32> {
+    (0..count).collect()
+}
+
+pub fn dimension_size(sizes: &HashMap<String, usize>, key: &str) -> usize {
+    sizes.get(key).copied().unwrap_or(1)
+}
+
+pub fn dimension_values(sizes: &HashMap<String, usize>, key: &str) -> Vec<u32> {
+    (0..dimension_size(sizes, key))
+        .filter_map(|value| u32::try_from(value).ok())
+        .collect()
+}
+
+pub fn validate_request_index(label: &str, index: u32, size: usize) -> Result<usize, String> {
+    let effective_size = size.max(1);
+    let index = index as usize;
+    if index >= effective_size {
+        return Err(format!("{label} index {index} is out of range"));
+    }
+    Ok(index)
+}
