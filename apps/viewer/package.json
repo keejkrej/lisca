@@ -5,11 +5,9 @@
   "type": "module",
   "scripts": {
     "dev:web": "vite --config vite.config.ts",
-    "dev": "bunx @tauri-apps/cli dev --config src-tauri/tauri.conf.json",
-    "build:renderer": "tsc --noEmit -p tsconfig.json && vite build --config vite.config.ts",
-    "build": "bun run build:renderer",
-    "release": "bun run package:release",
-    "package:release": "bun ./scripts/package-release.mjs",
+    "dev": "bunx @tauri-apps/cli dev",
+    "build": "tsc --noEmit -p tsconfig.json && vite build --config vite.config.ts",
+    "release": "bun ./scripts/release.mjs",
     "typecheck": "bunx tsc --noEmit -p tsconfig.json",
     "check:tauri": "cargo check --manifest-path src-tauri/Cargo.toml"
   },
