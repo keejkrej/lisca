@@ -1,1 +1,1 @@
-"""Shared ROI data and analysis utilities."""
+"""Python pipeline layer for shared microscopy data IO and analysis utilities."""

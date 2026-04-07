@@ -1,10 +1,10 @@
 {
   "name": "lisca",
   "version": "0.1.0",
+  "description": "TypeScript pipeline layer for LISCA viewer contracts, UI, and host integration.",
   "packageManager": "bun@1.2.22",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
     "./viewer/contracts": "./src/viewer/contracts/index.ts",
     "./viewer/core": "./src/viewer/core/index.ts",
     "./viewer/host-tauri": "./src/viewer/host-tauri/index.ts",
@@ -19,7 +19,6 @@
     "tsconfig.base.json",
     "tsconfig.json"
   ],
-  "types": "./src/index.ts",
   "sideEffects": [
     "./src/viewer/react/app/app.css",
     "./src/viewer/ui/theme.css"
