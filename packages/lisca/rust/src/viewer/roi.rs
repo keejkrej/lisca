@@ -16,7 +16,7 @@ use crate::viewer::domain::{
     workspace_annotation_mask_path, workspace_annotation_roi_dir_path, workspace_bbox_csv_path,
     workspace_align_json_path, workspace_relative_path, workspace_roi_index_path, workspace_roi_pos_dir_path,
     workspace_roi_tiff_path, AnnotationLabel, CropOutputFormat, CropRoiResponse, CropRoiStatus,
-    GridCellCoord, GridShape, GridState, LoadedRoiFrameAnnotation, RoiBbox, RoiFrameAnnotation, RoiFrameAnnotationPayload,
+    LoadedRoiFrameAnnotation, RoiBbox, RoiFrameAnnotation, RoiFrameAnnotationPayload,
     RoiFrameRequest, RoiIndexEntry, RoiIndexFile, RoiPositionScan, RoiWorkspaceScan,
     SaveBboxResponse, SavedAlignState, ViewerSource,
 };
@@ -1203,6 +1203,7 @@ mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     use super::*;
+    use crate::viewer::domain::{GridCellCoord, GridShape, GridState};
 
     fn unique_test_dir(name: &str) -> PathBuf {
         let suffix = SystemTime::now()
