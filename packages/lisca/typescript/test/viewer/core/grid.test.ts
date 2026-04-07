@@ -428,7 +428,7 @@ describe("grid utils", () => {
     expect(counts.excluded).toBe(1);
   });
 
-  test("collects edge cells with less than half the target area visible", () => {
+  test("collects edge cells with less than 80% of the target area visible", () => {
     const edgeCells = collectEdgeCells(
       {
         width: 100,
@@ -450,7 +450,7 @@ describe("grid utils", () => {
     expect(edgeCells.map(cellKey)).not.toContain("0:0");
   });
 
-  test("does not collect edge cells with exactly half the target area visible", () => {
+  test("does not collect edge cells with exactly 80% of the target area visible", () => {
     const edgeCells = collectEdgeCells(
       {
         width: 100,
@@ -458,8 +458,32 @@ describe("grid utils", () => {
       },
       normalizeGridState({
         enabled: true,
-        spacingA: 50,
-        spacingB: 50,
+        tx: -10,
+        ty: -10,
+        spacingA: 100,
+        spacingB: 100,
+        cellWidth: 50,
+        cellHeight: 50,
+      }),
+    );
+
+    expect(edgeCells.map(cellKey)).not.toContain("-1:0");
+    expect(edgeCells.map(cellKey)).not.toContain("0:-1");
+    expect(edgeCells.map(cellKey)).not.toContain("0:0");
+  });
+
+  test("collects edge cells above the previous 50% cutoff but below 80%", () => {
+    const edgeCells = collectEdgeCells(
+      {
+        width: 100,
+        height: 100,
+      },
+      normalizeGridState({
+        enabled: true,
+        tx: -20,
+        ty: -20,
+        spacingA: 100,
+        spacingB: 100,
         cellWidth: 50,
         cellHeight: 50,
       }),
