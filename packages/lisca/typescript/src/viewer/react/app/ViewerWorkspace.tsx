@@ -371,7 +371,6 @@ interface ActiveCropState {
   currentIndex: number;
   total: number;
   cancelling: boolean;
-  closeWhenDone: boolean;
 }
 
 const AUTO_EXCLUDE_CHART_MARGIN = {
@@ -404,7 +403,7 @@ export default function ViewerWorkspace({
   const dragSessionRef = useRef<GridPointerGestureSession | null>(null);
   const selectionStrokeRef = useRef<SelectionStroke | null>(null);
   const activeCropRef = useRef<ActiveCropState | null>(null);
-  const allowWindowCloseRef = useRef(false);
+  const croppingRef = useRef(false);
   const [cropConfirm, setCropConfirm] = useState<CropConfirmState | null>(null);
   const [activeCrop, setActiveCrop] = useState<ActiveCropState | null>(null);
   const [previewGrid, setPreviewGrid] = useState<GridState | null>(null);
@@ -462,6 +461,34 @@ export default function ViewerWorkspace({
   }, [activeCrop]);
 
   useEffect(() => {
+    croppingRef.current = cropping;
+  }, [cropping]);
+
+  useEffect(() => {
+    let cancelled = false;
+    let unlisten: (() => void) | undefined;
+
+    void getCurrentWindow()
+      .onCloseRequested((event) => {
+        if (!croppingRef.current) return;
+        event.preventDefault();
+      })
+      .then((dispose) => {
+        if (cancelled) {
+          dispose();
+          return;
+        }
+        unlisten = dispose;
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+      unlisten?.();
+    };
+  }, []);
+
+  useEffect(() => {
     if (!source) return;
 
     const abortController = new AbortController();
@@ -512,39 +539,30 @@ export default function ViewerWorkspace({
     });
   }, [backend]);
 
-  const closeWindowAfterCrop = useCallback(async () => {
-    allowWindowCloseRef.current = true;
-    try {
-      await getCurrentWindow().close();
-    } catch {
-      allowWindowCloseRef.current = false;
-    }
-  }, []);
-
   const finishCropSession = useCallback(
-    async (closeWhenDone: boolean) => {
+    async () => {
+      activeCropRef.current = null;
+      croppingRef.current = false;
       setCropping(false);
       setActiveCrop(null);
-      if (closeWhenDone) {
-        await closeWindowAfterCrop();
-      }
     },
-    [closeWindowAfterCrop],
+    [],
   );
 
   const requestActiveCropCancellation = useCallback(
-    async (closeWhenDone = false) => {
+    async () => {
       const crop = activeCropRef.current;
-      if (!crop) return;
-      if (crop.cancelling && (!closeWhenDone || crop.closeWhenDone)) return;
+      if (!crop || !croppingRef.current) return;
+      if (crop.cancelling) return;
 
+      const nextCrop = {
+        ...crop,
+        cancelling: true,
+      };
+      activeCropRef.current = nextCrop;
       setActiveCrop((current) => (
         current
-          ? {
-              ...current,
-              cancelling: true,
-              closeWhenDone: current.closeWhenDone || closeWhenDone,
-            }
+          ? nextCrop
           : current
       ));
 
@@ -555,32 +573,6 @@ export default function ViewerWorkspace({
     },
     [backend],
   );
-
-  useEffect(() => {
-    let cancelled = false;
-    let unlisten: (() => void) | undefined;
-
-    void getCurrentWindow()
-      .onCloseRequested(async (event) => {
-        if (allowWindowCloseRef.current) return;
-        if (!activeCropRef.current) return;
-        event.preventDefault();
-        await requestActiveCropCancellation(true);
-      })
-      .then((dispose) => {
-        if (cancelled) {
-          dispose();
-          return;
-        }
-        unlisten = dispose;
-      })
-      .catch(() => undefined);
-
-    return () => {
-      cancelled = true;
-      unlisten?.();
-    };
-  }, [requestActiveCropCancellation]);
 
   const contrastRequestKey =
     contrastMode === "auto" ? `auto:${contrastReloadToken}` : `${contrastMin}:${contrastMax}`;
@@ -947,8 +939,16 @@ export default function ViewerWorkspace({
       currentIndex: 0,
       total: 1,
       cancelling: false,
-      closeWhenDone: false,
     });
+    activeCropRef.current = {
+      kind: "single",
+      requestId,
+      currentPos: pos,
+      currentIndex: 0,
+      total: 1,
+      cancelling: false,
+    };
+    croppingRef.current = true;
     setCropping(true);
     setCropProgressValue({
       requestId,
@@ -965,8 +965,6 @@ export default function ViewerWorkspace({
       }),
     );
 
-    const closeWhenDone = activeCropRef.current?.closeWhenDone ?? false;
-
     if (Exit.isSuccess(exit)) {
       const response = exit.value;
       if (response.status === "success") {
@@ -981,12 +979,12 @@ export default function ViewerWorkspace({
       } else {
         showErrorToast(response.error ?? "Failed to crop ROI TIFFs");
       }
-      await finishCropSession(closeWhenDone);
+      await finishCropSession();
       return;
     }
 
     showErrorToast(toErrorMessage(exit.cause));
-    await finishCropSession(closeWhenDone);
+    await finishCropSession();
   }, [backend, finishCropSession, source, workspacePath]);
 
   const performBatchCrop = useCallback(async (positions: number[], skippedExistingCount = 0) => {
@@ -999,8 +997,16 @@ export default function ViewerWorkspace({
       currentIndex: 0,
       total: positions.length,
       cancelling: false,
-      closeWhenDone: false,
     });
+    activeCropRef.current = {
+      kind: "batch",
+      requestId: "",
+      currentPos: positions[0] ?? 0,
+      currentIndex: 0,
+      total: positions.length,
+      cancelling: false,
+    };
+    croppingRef.current = true;
     setCropping(true);
     setCropProgressValue({
       requestId: "",
@@ -1014,6 +1020,19 @@ export default function ViewerWorkspace({
       }
 
       const requestId = createCropRequestId();
+      activeCropRef.current = {
+        ...(activeCropRef.current ?? {
+          kind: "batch",
+          requestId: "",
+          currentPos: pos,
+          currentIndex: index,
+          total: positions.length,
+          cancelling: false,
+        }),
+        requestId,
+        currentPos: pos,
+        currentIndex: index,
+      };
       setActiveCrop((current) => (
         current
           ? {
@@ -1061,7 +1080,6 @@ export default function ViewerWorkspace({
       };
     });
 
-    const closeWhenDone = activeCropRef.current?.closeWhenDone ?? false;
     const skippedSummary = skippedExistingCount > 0 ? `; skipped ${skippedExistingCount} existing` : "";
 
     if (result.cancelledAtPos != null) {
@@ -1071,7 +1089,7 @@ export default function ViewerWorkspace({
       showSuccessToast(
         `Batch crop cancelled at Pos${result.cancelledAtPos}; ${result.succeeded}/${result.total} succeeded${failureSummary}${skippedSummary}`,
       );
-      await finishCropSession(closeWhenDone);
+      await finishCropSession();
       return;
     }
 
@@ -1079,12 +1097,12 @@ export default function ViewerWorkspace({
       showErrorToast(
         `Batch crop finished with failures in ${result.failures.map((failure) => `Pos${failure.pos}`).join(", ")}; ${result.succeeded}/${result.total} succeeded${skippedSummary}`,
       );
-      await finishCropSession(closeWhenDone);
+      await finishCropSession();
       return;
     }
 
     showSuccessToast(`Batch cropped ROI TIFFs for ${result.succeeded} positions${skippedSummary}`);
-    await finishCropSession(closeWhenDone);
+    await finishCropSession();
   }, [backend, finishCropSession, source, workspacePath]);
 
   const handleCrop = useCallback(async () => {
@@ -2038,10 +2056,6 @@ export default function ViewerWorkspace({
                         />
                       </div>
                     </div>
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>Overall batch progress</span>
-                      <span>{cropProgressPercent}%</span>
-                    </div>
                   </>
                 ) : (
                   <>
@@ -2068,7 +2082,7 @@ export default function ViewerWorkspace({
                   variant="outline"
                   className="h-8 px-3 text-xs"
                   disabled={activeCrop?.cancelling}
-                  onClick={() => void requestActiveCropCancellation(false)}
+                  onClick={() => void requestActiveCropCancellation()}
                 >
                   {activeCrop?.cancelling ? "Cancelling..." : "Cancel"}
                 </Button>
