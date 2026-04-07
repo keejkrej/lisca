@@ -8,7 +8,7 @@ import { makeSourceKey } from "lisca/viewer/core";
 import RoiWorkspace from "./RoiWorkspace";
 import ViewerWorkspace from "./ViewerWorkspace";
 import type { ViewerMode } from "./ViewerNavbar";
-import { setSource, setWorkspacePath, viewStore } from "./viewStore";
+import { setSource, setWorkspacePath, viewerStore } from "./viewerStore";
 
 interface ViewerAppProps {
   dataPort: ViewerDataPort;
@@ -27,8 +27,8 @@ export default function ViewerApp({
   dataPort,
   hostPort,
 }: ViewerAppProps) {
-  const workspacePath = useStore(viewStore, (state) => state.workspacePath);
-  const source = useStore(viewStore, (state) => state.source);
+  const workspacePath = useStore(viewerStore, (state) => state.workspacePath);
+  const source = useStore(viewerStore, (state) => state.source);
   const [mode, setMode] = useState<ViewerMode>(() => readStoredViewerMode());
 
   useEffect(() => {

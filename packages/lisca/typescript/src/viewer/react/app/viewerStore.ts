@@ -3,6 +3,7 @@ import { createStore } from "zustand/vanilla";
 
 import type {
   FrameResult,
+  SavedAlignState,
   ViewerSelection,
   ViewerSource,
   WorkspaceScan,
@@ -79,30 +80,6 @@ function runSync<A>(effect: Effect.Effect<A, never, never>): A {
 function resolveStorage(): StorageLike | null {
   if (typeof window !== "undefined" && window.sessionStorage) return window.sessionStorage;
   return null;
-}
-
-function clearLegacyPersistentStorage() {
-  if (typeof window === "undefined" || !window.localStorage) return;
-
-  const keysToRemove: string[] = [];
-  for (let index = 0; index < window.localStorage.length; index += 1) {
-    const key = window.localStorage.key(index);
-    if (!key) continue;
-    if (
-      key === LAST_IMAGE_SOURCE_KEY ||
-      key === LAST_WORKSPACE_KEY ||
-      key === LAST_SOURCE_KEY ||
-      key === LAST_ROOT_KEY ||
-      key === LAST_GRID_KEY ||
-      key.startsWith(`${EXCLUDED_BBOX_KEY_PREFIX}:`)
-    ) {
-      keysToRemove.push(key);
-    }
-  }
-
-  for (const key of keysToRemove) {
-    window.localStorage.removeItem(key);
-  }
 }
 
 function readStoredGrid(storage: StorageLike | null): GridState {
@@ -221,7 +198,7 @@ function persistWorkspacePathEffect(storage: StorageLike | null, workspacePath: 
       storage.removeItem(LAST_WORKSPACE_KEY);
     }
     storage.removeItem(LAST_ROOT_KEY);
-  }).pipe(Effect.withSpan("view-store.persist-workspace-path"));
+  }).pipe(Effect.withSpan("viewer-store.persist-workspace-path"));
 }
 
 function persistSourceEffect(storage: StorageLike | null, source: ViewerSource | null) {
@@ -233,14 +210,14 @@ function persistSourceEffect(storage: StorageLike | null, source: ViewerSource |
       storage.removeItem(LAST_IMAGE_SOURCE_KEY);
     }
     storage.removeItem(LAST_SOURCE_KEY);
-  }).pipe(Effect.withSpan("view-store.persist-source"));
+  }).pipe(Effect.withSpan("viewer-store.persist-source"));
 }
 
 function persistGridEffect(storage: StorageLike | null, grid: GridState) {
   return Effect.sync(() => {
     if (!storage) return;
     storage.setItem(LAST_GRID_KEY, JSON.stringify(grid));
-  }).pipe(Effect.withSpan("view-store.persist-grid"));
+  }).pipe(Effect.withSpan("viewer-store.persist-grid"));
 }
 
 function persistExcludedCellsEffect(
@@ -255,7 +232,7 @@ function persistExcludedCellsEffect(
       return;
     }
     storage.setItem(excludedBboxStorageKey(source), JSON.stringify(excludedCellsByPosition));
-  }).pipe(Effect.withSpan("view-store.persist-excluded-cell-ids"));
+  }).pipe(Effect.withSpan("viewer-store.persist-excluded-cell-ids"));
 }
 
 function resolveNextValue<T>(current: T, next: StateUpdater<T>): T {
@@ -263,6 +240,14 @@ function resolveNextValue<T>(current: T, next: StateUpdater<T>): T {
     return (next as (value: T) => T)(current);
   }
   return next;
+}
+
+function replaceExcludedCellsForPosition(
+  current: ExcludedCellsByPosition,
+  position: number,
+  cells: Iterable<GridCellCoord>,
+): ExcludedCellsByPosition {
+  return setExcludedCellsForPosition(current, position, Array.from(cells));
 }
 
 function resetViewerState(
@@ -297,8 +282,6 @@ function createInitialState(): ViewStoreState {
       const workspacePath = yield* Effect.sync(() => readStoredWorkspacePath(storage));
       const source = yield* Effect.sync(() => readStoredSource(storage, workspacePath));
 
-      yield* Effect.sync(clearLegacyPersistentStorage);
-
       return {
         workspacePath,
         source,
@@ -320,21 +303,21 @@ function createInitialState(): ViewStoreState {
         cropState: IDLE_SAVE_STATE,
         cropping: false,
       } satisfies ViewStoreState;
-    }).pipe(Effect.withSpan("view-store.create-initial-state")),
+    }).pipe(Effect.withSpan("viewer-store.create-initial-state")),
   );
 }
 
-export const viewStore = createStore<ViewStoreState>(() => createInitialState());
+export const viewerStore = createStore<ViewStoreState>(() => createInitialState());
 
 export function setWorkspacePath(workspacePath: string | null) {
   runSync(persistWorkspacePathEffect(resolveStorage(), workspacePath));
-  viewStore.setState((state) => ({ ...state, workspacePath }));
+  viewerStore.setState((state) => ({ ...state, workspacePath }));
 }
 
 export function setSource(source: ViewerSource | null) {
   const storage = resolveStorage();
   runSync(persistSourceEffect(storage, source));
-  viewStore.setState((state) =>
+  viewerStore.setState((state) =>
     resetViewerState(state, {
       source,
       excludedCellsByPosition: readStoredExcludedCells(storage, source),
@@ -343,11 +326,11 @@ export function setSource(source: ViewerSource | null) {
 }
 
 export function patchViewState(patch: Partial<ViewStoreState>) {
-  viewStore.setState((state) => ({ ...state, ...patch }));
+  viewerStore.setState((state) => ({ ...state, ...patch }));
 }
 
 export function setGrid(next: StateUpdater<GridState>) {
-  viewStore.setState((state) => {
+  viewerStore.setState((state) => {
     const grid = resolveNextValue(state.grid, next);
     runSync(persistGridEffect(resolveStorage(), grid));
     return { ...state, grid };
@@ -355,7 +338,7 @@ export function setGrid(next: StateUpdater<GridState>) {
 }
 
 export function resetGrid() {
-  viewStore.setState((state) => {
+  viewerStore.setState((state) => {
     const grid = {
       ...createDefaultGrid(),
       enabled: state.grid.enabled,
@@ -373,7 +356,7 @@ export function resetGrid() {
 }
 
 export function toggleGridEnabled() {
-  viewStore.setState((state) => {
+  viewerStore.setState((state) => {
     const grid = { ...state.grid, enabled: !state.grid.enabled };
     runSync(persistGridEffect(resolveStorage(), grid));
     return { ...state, grid };
@@ -384,7 +367,7 @@ export function setSelectionKey<K extends keyof ViewerSelection>(
   key: K,
   value: ViewerSelection[K],
 ) {
-  viewStore.setState((state) => {
+  viewerStore.setState((state) => {
     if (!state.selection) return state;
     return {
       ...state,
@@ -395,34 +378,34 @@ export function setSelectionKey<K extends keyof ViewerSelection>(
 }
 
 export function setTimeSliderIndex(timeSliderIndex: number) {
-  viewStore.setState((state) => ({ ...state, timeSliderIndex }));
+  viewerStore.setState((state) => ({ ...state, timeSliderIndex }));
 }
 
 export function setSelectionMode(selectionMode: boolean | ((current: boolean) => boolean)) {
-  viewStore.setState((state) => ({
+  viewerStore.setState((state) => ({
     ...state,
     selectionMode: resolveNextValue(state.selectionMode, selectionMode),
   }));
 }
 
 export function setSaveState(saveState: SaveState) {
-  viewStore.setState((state) => ({ ...state, saveState }));
+  viewerStore.setState((state) => ({ ...state, saveState }));
 }
 
 export function setSaving(saving: boolean) {
-  viewStore.setState((state) => ({ ...state, saving }));
+  viewerStore.setState((state) => ({ ...state, saving }));
 }
 
 export function setCropState(cropState: CropState) {
-  viewStore.setState((state) => ({ ...state, cropState }));
+  viewerStore.setState((state) => ({ ...state, cropState }));
 }
 
 export function setCropping(cropping: boolean) {
-  viewStore.setState((state) => ({ ...state, cropping }));
+  viewerStore.setState((state) => ({ ...state, cropping }));
 }
 
 export function reloadAutoContrast() {
-  viewStore.setState((state) => ({
+  viewerStore.setState((state) => ({
     ...state,
     contrastMode: "auto",
     contrastReloadToken: state.contrastReloadToken + 1,
@@ -430,7 +413,7 @@ export function reloadAutoContrast() {
 }
 
 export function toggleExcludedCells(position: number, cells: Iterable<GridCellCoord>) {
-  viewStore.setState((state) => {
+  viewerStore.setState((state) => {
     const nextCells = toggleExcludedCellCoords(state.excludedCellsByPosition[position] ?? [], cells);
     const currentCells = state.excludedCellsByPosition[position] ?? [];
     if (
@@ -459,7 +442,7 @@ export function toggleExcludedCells(position: number, cells: Iterable<GridCellCo
 }
 
 export function excludeCells(position: number, cells: Iterable<GridCellCoord>) {
-  viewStore.setState((state) => {
+  viewerStore.setState((state) => {
     const nextCells = mergeExcludedCellCoords(state.excludedCellsByPosition[position] ?? [], cells);
     const currentCells = state.excludedCellsByPosition[position] ?? [];
     if (
@@ -488,7 +471,7 @@ export function excludeCells(position: number, cells: Iterable<GridCellCoord>) {
 }
 
 export function resetExcludedCells(position: number) {
-  viewStore.setState((state) => {
+  viewerStore.setState((state) => {
     if (!(position in state.excludedCellsByPosition)) {
       return state;
     }
@@ -503,6 +486,30 @@ export function resetExcludedCells(position: number) {
 
     return {
       ...state,
+      excludedCellsByPosition,
+      saveState: IDLE_SAVE_STATE,
+    };
+  });
+}
+
+export function applySavedAlignState(position: number, alignState: SavedAlignState | null) {
+  viewerStore.setState((state) => {
+    const excludedCellsByPosition = replaceExcludedCellsForPosition(
+      state.excludedCellsByPosition,
+      position,
+      alignState?.excludedCells ?? [],
+    );
+    const grid = alignState ? normalizeGridState(alignState.grid) : state.grid;
+    const storage = resolveStorage();
+
+    if (alignState) {
+      runSync(persistGridEffect(storage, grid));
+    }
+    runSync(persistExcludedCellsEffect(storage, state.source, excludedCellsByPosition));
+
+    return {
+      ...state,
+      grid,
       excludedCellsByPosition,
       saveState: IDLE_SAVE_STATE,
     };

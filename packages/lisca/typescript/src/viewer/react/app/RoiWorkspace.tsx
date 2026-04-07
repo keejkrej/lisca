@@ -41,7 +41,7 @@ import {
   loadRoiFrameEffect,
   scanRoiWorkspaceEffect,
   toErrorMessage,
-} from "./viewEffects";
+} from "./viewerEffects";
 import {
   SidebarField,
   SidebarSection,

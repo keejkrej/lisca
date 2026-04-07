@@ -15,7 +15,7 @@ import {
 } from "../annotation";
 import { useEffect, useMemo, useState } from "react";
 
-import { toErrorMessage } from "./viewEffects";
+import { toErrorMessage } from "./viewerEffects";
 
 interface RoiAnnotationModalProps {
   workspacePath: string;

@@ -112,6 +112,16 @@ export interface GridState {
   opacity: number;
 }
 
+export interface GridCellCoord {
+  i: number;
+  j: number;
+}
+
+export interface SavedAlignState {
+  grid: GridState;
+  excludedCells: GridCellCoord[];
+}
+
 export interface RoiFrameRequest {
   pos: number;
   roi: number;
@@ -138,6 +148,7 @@ export interface ViewerDataSource {
 export interface ViewerDataPort extends ViewerDataSource {
   scanRoiWorkspace(workspacePath: string): Promise<RoiWorkspaceScan>;
   listSavedBboxPositions(workspacePath: string): Promise<number[]>;
+  loadAlignState(workspacePath: string, pos: number): Promise<SavedAlignState | null>;
   autoExcludePreview(request: AutoExcludePreviewRequest): Promise<AutoExcludePreviewResponse>;
   loadAnnotationLabels(workspacePath: string): Promise<AnnotationLabel[]>;
   saveAnnotationLabels(workspacePath: string, labels: AnnotationLabel[]): Promise<AnnotationLabel[]>;
@@ -155,7 +166,13 @@ export interface ViewerDataPort extends ViewerDataSource {
     request: RoiFrameRequest,
     annotation: RoiFrameAnnotationPayload,
   ): Promise<RoiFrameAnnotation>;
-  saveBbox(workspacePath: string, source: ViewerSource, pos: number, csv: string): Promise<SaveBboxResponse>;
+  saveBbox(
+    workspacePath: string,
+    source: ViewerSource,
+    pos: number,
+    csv: string,
+    alignState: SavedAlignState,
+  ): Promise<SaveBboxResponse>;
   cropRoi(
     workspacePath: string,
     source: ViewerSource,

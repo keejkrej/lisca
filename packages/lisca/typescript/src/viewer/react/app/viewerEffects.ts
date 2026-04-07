@@ -11,6 +11,7 @@ import type {
   RoiFrameAnnotationPayload,
   RoiFrameRequest,
   RoiWorkspaceScan,
+  SavedAlignState,
   ViewerDataPort,
   ViewerSelection,
   ViewerSource,
@@ -22,7 +23,7 @@ import {
   getFrameContrastDomain,
 } from "lisca/viewer/core";
 
-import type { ContrastMode } from "./viewStore";
+import type { ContrastMode } from "./viewerStore";
 
 function toError(error: unknown, fallback: string): Error {
   if (error instanceof Error) {
@@ -91,6 +92,20 @@ export function listSavedBboxPositionsEffect(backend: ViewerDataPort, workspaceP
   }).pipe(
     Effect.map((positions) => ({ positions })),
     Effect.withSpan("viewer.list-saved-bbox-positions"),
+  );
+}
+
+export function loadAlignStateEffect(
+  backend: ViewerDataPort,
+  workspacePath: string,
+  pos: number,
+) {
+  return Effect.tryPromise({
+    try: () => backend.loadAlignState(workspacePath, pos),
+    catch: (error) => toError(error, `Failed to load align state for Pos${pos}`),
+  }).pipe(
+    Effect.map((alignState: SavedAlignState | null) => ({ alignState })),
+    Effect.withSpan("viewer.load-align-state"),
   );
 }
 
@@ -257,16 +272,18 @@ export function saveBboxEffect(
     source,
     pos,
     csv,
+    alignState,
   }: {
     workspacePath: string;
     source: ViewerSource;
     pos: number;
     csv: string;
+    alignState: SavedAlignState;
   },
 ) {
   return Effect.tryPromise({
-    try: () => backend.saveBbox(workspacePath, source, pos, csv),
-    catch: (error) => toError(error, "Failed to save bbox CSV"),
+    try: () => backend.saveBbox(workspacePath, source, pos, csv, alignState),
+    catch: (error) => toError(error, "Failed to save alignment outputs"),
   }).pipe(Effect.withSpan("viewer.save-bbox"));
 }
 

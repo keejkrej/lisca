@@ -13,6 +13,7 @@ use std::{
 use lisca::viewer::backend::{
     auto_exclude_preview as run_auto_exclude_preview, crop_roi as run_crop_roi,
     list_saved_bbox_positions as run_list_saved_bbox_positions,
+    load_align_state as run_load_align_state,
     load_annotation_labels as run_load_annotation_labels, load_frame_payload,
     load_roi_frame_annotation as run_load_roi_frame_annotation, load_roi_frame_payload,
     save_annotation_labels as run_save_annotation_labels, save_bbox as run_save_bbox,
@@ -21,6 +22,7 @@ use lisca::viewer::backend::{
     AutoExcludePreviewRequest, AutoExcludePreviewResponse, ContrastWindow, CropOutputFormat,
     CropRoiResponse, CropRoiStatus, FramePayload, FrameRequest, LoadedRoiFrameAnnotation,
     RoiFrameAnnotation, RoiFrameAnnotationPayload, RoiFrameRequest, RoiWorkspaceScan,
+    SavedAlignState,
     SaveBboxResponse, ViewerSource, WorkspaceScan,
 };
 use rfd::FileDialog;
@@ -122,6 +124,11 @@ fn list_saved_bbox_positions(workspace_path: String) -> Result<Vec<u32>, String>
 }
 
 #[command]
+fn load_align_state(workspace_path: String, pos: u32) -> Result<Option<SavedAlignState>, String> {
+    run_load_align_state(workspace_path, pos)
+}
+
+#[command]
 fn auto_exclude_preview(
     request: AutoExcludePreviewRequest,
 ) -> Result<AutoExcludePreviewResponse, String> {
@@ -168,8 +175,13 @@ fn save_roi_frame_annotation(
 }
 
 #[command]
-fn save_bbox(workspace_path: String, pos: u32, csv: String) -> SaveBboxResponse {
-    run_save_bbox(workspace_path, pos, csv)
+fn save_bbox(
+    workspace_path: String,
+    pos: u32,
+    csv: String,
+    align_state: SavedAlignState,
+) -> SaveBboxResponse {
+    run_save_bbox(workspace_path, pos, csv, align_state)
 }
 
 #[command]
@@ -255,6 +267,7 @@ fn main() {
             load_frame,
             scan_roi_workspace,
             list_saved_bbox_positions,
+            load_align_state,
             auto_exclude_preview,
             load_annotation_labels,
             save_annotation_labels,

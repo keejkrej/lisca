@@ -7,8 +7,8 @@ pub use crate::viewer::domain::{
     AnnotationLabel, AutoExcludeHistogramBin, AutoExcludePreviewCell, AutoExcludePreviewCellScore,
     AutoExcludePreviewRequest, AutoExcludePreviewResponse, ContrastWindow, CropOutputFormat,
     CropRoiResponse, CropRoiStatus, FrameRequest, LoadedRoiFrameAnnotation, RoiFrameAnnotation,
-    RoiFrameAnnotationPayload, RoiFrameRequest, RoiWorkspaceScan, SaveBboxResponse, ViewerSource,
-    WorkspaceScan,
+    RoiFrameAnnotationPayload, RoiFrameRequest, RoiWorkspaceScan, SaveBboxResponse,
+    SavedAlignState, ViewerSource, WorkspaceScan,
 };
 use crate::viewer::image::{
     self, apply_contrast, auto_contrast, contrast_domain, load_frame, RawFrame,
@@ -273,6 +273,10 @@ pub fn list_saved_bbox_positions(workspace_path: String) -> Result<Vec<u32>, Str
     crate::viewer::roi::list_saved_bbox_positions(workspace_path)
 }
 
+pub fn load_align_state(workspace_path: String, pos: u32) -> Result<Option<SavedAlignState>, String> {
+    crate::viewer::roi::load_align_state(workspace_path, pos)
+}
+
 pub fn load_annotation_labels(workspace_path: String) -> Result<Vec<AnnotationLabel>, String> {
     crate::viewer::roi::load_annotation_labels(workspace_path)
 }
@@ -308,8 +312,13 @@ pub fn save_roi_frame_annotation(
     crate::viewer::roi::save_roi_frame_annotation(workspace_path, request, annotation)
 }
 
-pub fn save_bbox(workspace_path: String, pos: u32, csv: String) -> SaveBboxResponse {
-    crate::viewer::roi::save_bbox(workspace_path, pos, csv)
+pub fn save_bbox(
+    workspace_path: String,
+    pos: u32,
+    csv: String,
+    align_state: SavedAlignState,
+) -> SaveBboxResponse {
+    crate::viewer::roi::save_bbox(workspace_path, pos, csv, align_state)
 }
 
 pub fn crop_roi<F>(

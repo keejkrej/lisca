@@ -16,6 +16,7 @@ import type {
   RoiFrameAnnotationPayload,
   RoiFrameRequest,
   RoiWorkspaceScan,
+  SavedAlignState,
   SaveBboxResponse,
   ViewerDataPort,
   ViewerHostPort,
@@ -127,6 +128,10 @@ export function createTauriDesktopPorts(): TauriDesktopPorts {
       return invoke("list_saved_bbox_positions", { workspacePath });
     },
 
+    loadAlignState(workspacePath: string, pos: number): Promise<SavedAlignState | null> {
+      return invoke("load_align_state", { workspacePath, pos });
+    },
+
     autoExcludePreview(request: AutoExcludePreviewRequest): Promise<AutoExcludePreviewResponse> {
       return invoke("auto_exclude_preview", { request });
     },
@@ -171,12 +176,14 @@ export function createTauriDesktopPorts(): TauriDesktopPorts {
       source: ViewerSource,
       pos: number,
       csv: string,
+      alignState: SavedAlignState,
     ): Promise<SaveBboxResponse> {
       return invoke("save_bbox", {
         workspacePath,
         source,
         pos,
         csv,
+        alignState,
       });
     },
 

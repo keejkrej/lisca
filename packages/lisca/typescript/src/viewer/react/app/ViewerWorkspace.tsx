@@ -65,6 +65,7 @@ import {
 } from "lisca/viewer/ui";
 
 import {
+  applySavedAlignState,
   excludeCells,
   patchViewState,
   reloadAutoContrast,
@@ -77,18 +78,19 @@ import {
   setSelectionMode,
   setTimeSliderIndex,
   toggleExcludedCells as toggleStoredExcludedCells,
-  viewStore,
-} from "./viewStore";
+  viewerStore,
+} from "./viewerStore";
 import {
   autoExcludePreviewEffect,
   cancelCropRoiEffect,
-  listSavedBboxPositionsEffect,
   cropRoiEffect,
+  listSavedBboxPositionsEffect,
+  loadAlignStateEffect,
   loadFrameEffect,
   saveBboxEffect,
   scanSourceEffect,
   toErrorMessage,
-} from "./viewEffects";
+} from "./viewerEffects";
 import {
   SidebarField,
   SidebarSection,
@@ -436,7 +438,7 @@ export default function ViewerWorkspace({
     saving,
     cropping,
   } = useStore(
-    viewStore,
+    viewerStore,
     useShallow((state) => ({
       scan: state.scan,
       selection: state.selection,
@@ -696,6 +698,34 @@ export default function ViewerWorkspace({
   const timeSliderMax = Math.max(0, timeValues.length - 1);
   const displayedZ = zValues[zSliderIndex] ?? selection?.z ?? 0;
   const zSliderMax = Math.max(0, zValues.length - 1);
+  const selectedPos = selection?.pos ?? null;
+
+  useEffect(() => {
+    if (selectedPos == null) return;
+
+    if (!workspacePath) {
+      applySavedAlignState(selectedPos, null);
+      return;
+    }
+
+    let cancelled = false;
+    const program = loadAlignStateEffect(backend, workspacePath, selectedPos).pipe(
+      Effect.tap(({ alignState }) =>
+        Effect.sync(() => {
+          if (cancelled) return;
+          applySavedAlignState(selectedPos, alignState);
+        })),
+    );
+
+    void Effect.runPromiseExit(program).then((exit) => {
+      if (!Exit.isFailure(exit) || cancelled) return;
+      showErrorToast(toErrorMessage(exit.cause));
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [backend, selectedPos, workspacePath]);
 
   useEffect(() => {
     setTimeSliderIndex(selectedTimeIndex);
@@ -864,15 +894,19 @@ export default function ViewerWorkspace({
         source,
         pos: selection.pos,
         csv: buildBboxCsv(frame, grid, currentPositionExcludedCells),
+        alignState: {
+          grid,
+          excludedCells: currentPositionExcludedCells,
+        },
       }),
     );
 
     if (Exit.isSuccess(exit)) {
       const response = exit.value;
       if (!response.ok) {
-        showErrorToast(response.error ?? "Failed to save bbox CSV");
+        showErrorToast(response.error ?? "Failed to save alignment outputs");
       } else {
-        showSuccessToast(`Saved bbox CSV for Pos${selection.pos}`);
+        showSuccessToast(`Saved alignment for Pos${selection.pos}`);
       }
       setSaving(false);
       return;
@@ -1195,6 +1229,10 @@ export default function ViewerWorkspace({
   const bboxPath = useMemo(() => {
     if (!selection) return "bbox/Pos{n}.csv";
     return `bbox/Pos${selection.pos}.csv`;
+  }, [selection]);
+  const alignPath = useMemo(() => {
+    if (!selection) return "align/Pos{n}.json";
+    return `align/Pos${selection.pos}.json`;
   }, [selection]);
 
   const roiPath = useMemo(() => {
@@ -1580,6 +1618,11 @@ export default function ViewerWorkspace({
                     {bboxPath}
                   </SidebarValue>
                 </SidebarField>
+                <SidebarField label="Align JSON">
+                  <SidebarValue monospace>
+                    {alignPath}
+                  </SidebarValue>
+                </SidebarField>
                 <SidebarField label="ROI Output Folder">
                   <SidebarValue monospace>
                     {roiPath}
@@ -1593,7 +1636,7 @@ export default function ViewerWorkspace({
                     disabled={!workspacePath || !frame || !selection || saving || cropping}
                     onClick={() => void handleSave()}
                   >
-                    {saving ? "Saving..." : "Save CSV"}
+                    {saving ? "Saving..." : "Save"}
                   </Button>
                   <Button
                     size="sm"

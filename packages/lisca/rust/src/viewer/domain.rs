@@ -60,6 +60,19 @@ pub struct GridState {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct GridCellCoord {
+    pub i: i32,
+    pub j: i32,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SavedAlignState {
+    pub grid: GridState,
+    pub excluded_cells: Vec<GridCellCoord>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ContrastWindow {
     pub min: u32,
     pub max: u32,
@@ -285,6 +298,10 @@ pub fn parse_tiff_name(name: &str) -> Option<ParsedTiffName> {
 
 pub fn workspace_bbox_csv_path(root: &str, pos: u32) -> PathBuf {
     Path::new(root).join("bbox").join(format!("Pos{pos}.csv"))
+}
+
+pub fn workspace_align_json_path(root: &str, pos: u32) -> PathBuf {
+    Path::new(root).join("align").join(format!("Pos{pos}.json"))
 }
 
 pub fn workspace_roi_pos_dir_path(root: &str, pos: u32) -> PathBuf {
