@@ -10,7 +10,8 @@ from lisca.analysis.roi import load_timeseries_csv
 
 
 SLIDE_CHANNEL_PATTERN = re.compile(r"_sc\d+(?=_)")
-GROUP_COLUMNS = ("pos", "channel", "roi")
+GROUP_COLUMNS = ("pos", "roi")
+OUTPUT_COLUMNS = ("slide_channel", "pos", "roi", "auc")
 
 app = typer.Typer(
     add_completion=False,
@@ -72,14 +73,7 @@ def compute_auc_table(timeseries_csvs: list[Path], *, interval: float) -> pd.Dat
             sorted_df = trace_df.sort_values("t").reset_index(drop=True)
             row.update(
                 {
-                    "source_csv": csv_path.name,
                     "slide_channel": slide_channel,
-                    "n_frames": int(len(sorted_df)),
-                    "interval_min": float(interval),
-                    "t_start": int(sorted_df["t"].iat[0]),
-                    "t_end": int(sorted_df["t"].iat[-1]),
-                    "t_start_min": float(sorted_df["t"].iat[0] * interval),
-                    "t_end_min": float(sorted_df["t"].iat[-1] * interval),
                     "auc": integrate_trace(sorted_df, interval=interval),
                 }
             )
@@ -89,8 +83,8 @@ def compute_auc_table(timeseries_csvs: list[Path], *, interval: float) -> pd.Dat
         raise ValueError("No AUC rows produced")
 
     result = pd.DataFrame(rows)
-    sort_columns = [column for column in ("source_csv", "slide_channel", *GROUP_COLUMNS) if column in result.columns]
-    return result.sort_values(sort_columns).reset_index(drop=True)
+    sort_columns = [column for column in ("slide_channel", *GROUP_COLUMNS) if column in result.columns]
+    return result.sort_values(sort_columns).reset_index(drop=True).loc[:, list(OUTPUT_COLUMNS)]
 
 
 def write_auc_csv(df: pd.DataFrame, output_csv: Path) -> None:

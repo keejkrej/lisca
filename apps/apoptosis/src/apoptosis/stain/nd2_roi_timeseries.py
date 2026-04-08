@@ -10,11 +10,9 @@ import pandas as pd
 import typer
 
 from lisca.analysis.roi import (
-    DEFAULT_CORRECTED_QUANTILE,
     DEFAULT_QUARTILES,
     parse_quartiles,
     quantile_column_name,
-    validate_corrected_quantile,
     write_metrics_csv,
 )
 from lisca.data.bbox import RoiBox, clip_roi, read_bbox_csv
@@ -37,6 +35,15 @@ app = typer.Typer(
         "write a long-form CSV."
     ),
 )
+
+DEFAULT_CORRECTED_QUANTILE = 0.25
+
+
+def validate_corrected_quantile(quartiles: list[float], corrected_quantile: float) -> None:
+    if corrected_quantile not in quartiles:
+        raise ValueError(
+            f"Quartiles must include {corrected_quantile:.2f} so the corrected column can be computed"
+        )
 
 def default_output_csv_path(bbox_csv: Path, pos: int, channel: int, output_csv: Path | None) -> Path:
     suffix = f"_pos{pos:03d}_ch{channel:03d}_timeseries"

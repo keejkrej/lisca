@@ -39,31 +39,15 @@ def test_compute_auc_table_integrates_by_pos_channel_roi(tmp_path: Path) -> None
 
     assert auc_df.to_dict("records") == [
         {
-            "source_csv": "slide_sc2_ch001_timeseries.csv",
             "slide_channel": 2,
             "pos": 25,
-            "channel": 1,
             "roi": 0,
-            "n_frames": 3,
-            "interval_min": 10.0,
-            "t_start": 0,
-            "t_end": 2,
-            "t_start_min": 0.0,
-            "t_end_min": 20.0,
             "auc": 60.0,
         },
         {
-            "source_csv": "slide_sc2_ch001_timeseries.csv",
             "slide_channel": 2,
             "pos": 25,
-            "channel": 1,
             "roi": 1,
-            "n_frames": 2,
-            "interval_min": 10.0,
-            "t_start": 0,
-            "t_end": 1,
-            "t_start_min": 0.0,
-            "t_end_min": 10.0,
             "auc": 30.0,
         },
     ]
@@ -92,4 +76,8 @@ def test_cli_writes_auc_csv(tmp_path: Path) -> None:
     output_csv = tmp_path / "slide_ch001_timeseries_auc.csv"
     assert output_csv.is_file()
     output_df = pd.read_csv(output_csv)
-    assert output_df["auc"].tolist() == [20.0, 20.0]
+    assert output_df.columns.tolist() == ["slide_channel", "pos", "roi", "auc"]
+    assert output_df.to_dict("records") == [
+        {"slide_channel": 0, "pos": 0, "roi": 0, "auc": 20.0},
+        {"slide_channel": 1, "pos": 12, "roi": 0, "auc": 20.0},
+    ]

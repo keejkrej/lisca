@@ -6,7 +6,13 @@ from pathlib import Path
 import pandas as pd
 import typer
 
-from lisca.analysis.roi import DEFAULT_QUARTILES, compute_roi_metrics, parse_quartiles, write_metrics_csv
+from lisca.analysis.roi import (
+    DEFAULT_QUARTILES,
+    compute_roi_metrics,
+    parse_quartiles,
+    quantile_column_name,
+    write_metrics_csv,
+)
 from lisca.data.roi import (
     default_timeseries_csv_path,
     position_dir,
@@ -23,6 +29,9 @@ app = typer.Typer(
         "metrics for one channel, and write a long-form CSV."
     ),
 )
+
+OUTPUT_COLUMNS = ("pos", "roi", "t", "corrected")
+DELIVERY_CORRECTED_QUANTILE = 0.25
 
 
 def load_slide_position_groups(slide_path: Path) -> dict[int, list[int]]:
@@ -87,6 +96,22 @@ def consolidate_metrics(dataframes: list[pd.DataFrame]) -> pd.DataFrame:
     if not dataframes:
         raise ValueError('No position metrics to consolidate')
     return pd.concat(dataframes, ignore_index=True).sort_values(['pos', 'roi', 't']).reset_index(drop=True)
+
+
+def simplify_metrics(df: pd.DataFrame) -> pd.DataFrame:
+    return df.loc[:, list(OUTPUT_COLUMNS)].sort_values(['pos', 'roi', 't']).reset_index(drop=True)
+
+
+def apply_delivery_correction(df: pd.DataFrame, *, corrected_quantile: float = DELIVERY_CORRECTED_QUANTILE) -> pd.DataFrame:
+    corrected_column = quantile_column_name(corrected_quantile)
+    if corrected_column not in df.columns:
+        raise ValueError(
+            f"Quartiles must include {corrected_quantile:.2f} so delivery corrected intensity can be computed"
+        )
+
+    corrected_df = df.copy()
+    corrected_df["corrected"] = corrected_df["sum"] - corrected_df["area"] * corrected_df[corrected_column]
+    return corrected_df
 
 
 @app.command()
@@ -157,7 +182,7 @@ def cli(
             channel=channel,
             quartiles=resolved_quartiles,
         )
-        write_metrics_csv(df, resolved_output_csv)
+        write_metrics_csv(simplify_metrics(apply_delivery_correction(df)), resolved_output_csv)
         print(f"Wrote metrics CSV: {resolved_output_csv}")
         return
 
@@ -195,7 +220,7 @@ def cli(
             channel=channel,
             output_csv=output_csv,
         )
-        write_metrics_csv(combined_df, resolved_output_csv)
+        write_metrics_csv(simplify_metrics(apply_delivery_correction(combined_df)), resolved_output_csv)
         written_outputs.append((slide_channel, resolved_output_csv, len(position_frames)))
 
     if not written_outputs:

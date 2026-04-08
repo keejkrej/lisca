@@ -13,7 +13,6 @@ from lisca.data.roi import PositionIndex, read_roi_stack, roi_frame_2d
 
 
 DEFAULT_QUARTILES = "0.10,0.25,0.50,0.75,0.90"
-DEFAULT_CORRECTED_QUANTILE = 0.25
 
 
 def quantile_column_name(quartile: float) -> str:
@@ -41,24 +40,13 @@ def parse_quartiles(quartiles: str) -> list[float]:
     return unique_values
 
 
-def validate_corrected_quantile(quartiles: list[float], corrected_quantile: float) -> None:
-    if corrected_quantile not in quartiles:
-        raise ValueError(
-            f"Quartiles must include {corrected_quantile:.2f} so the corrected column can be computed"
-        )
-
-
 def compute_roi_metrics(
     pos_dir: Path,
     index: PositionIndex,
     *,
     channel: int,
     quartiles: list[float],
-    corrected_quantile: float = DEFAULT_CORRECTED_QUANTILE,
 ) -> pd.DataFrame:
-    validate_corrected_quantile(quartiles, corrected_quantile)
-    corrected_column = quantile_column_name(corrected_quantile)
-
     rows: list[dict[str, int | float | None]] = []
     for roi in index.rois:
         roi_path = pos_dir / roi.file_name
@@ -90,7 +78,6 @@ def compute_roi_metrics(
                     "area": int(patch.size),
                     "sum": sum_value,
                     **metrics,
-                    "corrected": float(sum_value - patch.size * metrics[corrected_column]),
                 }
             )
 

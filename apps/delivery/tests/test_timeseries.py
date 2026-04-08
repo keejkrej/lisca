@@ -66,7 +66,9 @@ def test_cli_with_slide_writes_one_csv_per_slide_channel(monkeypatch, tmp_path: 
                 'channel': channel,
                 't': 0,
                 'roi': 1,
-                'corrected': float(index.position),
+                'area': 1,
+                'sum': float(index.position) + 1.0,
+                'q25': 1.0,
             }
         ])
 
@@ -94,14 +96,16 @@ def test_cli_with_slide_writes_one_csv_per_slide_channel(monkeypatch, tmp_path: 
     written_df2, written_path2 = written[1]
     assert written_path0 == (tmp_path / 'timeseries' / 'slide_sc0_ch001_timeseries.csv').resolve()
     assert written_path2 == (tmp_path / 'timeseries' / 'slide_sc2_ch001_timeseries.csv').resolve()
-    assert written_df0[['pos', 'channel', 't', 'roi', 'corrected']].to_dict('records') == [
-        {'pos': 0, 'channel': 1, 't': 0, 'roi': 1, 'corrected': 0.0},
-        {'pos': 1, 'channel': 1, 't': 0, 'roi': 1, 'corrected': 1.0},
+    assert written_df0.columns.tolist() == ['pos', 'roi', 't', 'corrected']
+    assert written_df0.to_dict('records') == [
+        {'pos': 0, 'roi': 1, 't': 0, 'corrected': 0.0},
+        {'pos': 1, 'roi': 1, 't': 0, 'corrected': 1.0},
     ]
-    assert written_df2[['pos', 'channel', 't', 'roi', 'corrected']].to_dict('records') == [
-        {'pos': 25, 'channel': 1, 't': 0, 'roi': 1, 'corrected': 25.0},
-        {'pos': 26, 'channel': 1, 't': 0, 'roi': 1, 'corrected': 26.0},
-        {'pos': 28, 'channel': 1, 't': 0, 'roi': 1, 'corrected': 28.0},
+    assert written_df2.columns.tolist() == ['pos', 'roi', 't', 'corrected']
+    assert written_df2.to_dict('records') == [
+        {'pos': 25, 'roi': 1, 't': 0, 'corrected': 25.0},
+        {'pos': 26, 'roi': 1, 't': 0, 'corrected': 26.0},
+        {'pos': 28, 'roi': 1, 't': 0, 'corrected': 28.0},
     ]
 
 
@@ -129,7 +133,7 @@ def test_cli_with_slide_skips_missing_positions(monkeypatch, tmp_path: Path, cap
     def fake_compute_roi_metrics(pos_dir: Path, index: SimpleNamespace, *, channel: int, quartiles: list[float]) -> pd.DataFrame:
         compute_calls.append(index.position)
         return pd.DataFrame([
-            {'pos': index.position, 'channel': channel, 't': 0, 'roi': 1, 'corrected': float(index.position)}
+            {'pos': index.position, 'channel': channel, 't': 0, 'roi': 1, 'area': 1, 'sum': float(index.position) + 1.0, 'q25': 1.0}
         ])
 
     monkeypatch.setattr(timeseries, 'compute_roi_metrics', fake_compute_roi_metrics)
@@ -168,7 +172,7 @@ def test_cli_with_slide_honors_custom_output_csv(monkeypatch, tmp_path: Path) ->
         timeseries,
         'compute_roi_metrics',
         lambda pos_dir, index, *, channel, quartiles: pd.DataFrame([
-            {'pos': index.position, 'channel': channel, 't': 0, 'roi': 1, 'corrected': float(index.position)}
+            {'pos': index.position, 'channel': channel, 't': 0, 'roi': 1, 'area': 1, 'sum': float(index.position) + 1.0, 'q25': 1.0}
         ]),
     )
 
