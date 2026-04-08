@@ -25,46 +25,61 @@ app = typer.Typer(
 )
 
 
-def load_slide_positions(slide_path: Path, channel: int) -> list[int]:
+def load_slide_position_groups(slide_path: Path) -> dict[int, list[int]]:
     raw = json.loads(slide_path.read_text(encoding="utf-8"))
     if not isinstance(raw, dict):
         raise ValueError(f"Slide mapping must be a JSON object: {slide_path}")
 
-    channel_key = str(channel)
-    raw_positions = raw.get(channel_key)
-    if raw_positions is None:
-        available_channels = ", ".join(sorted(str(key) for key in raw)) or "none"
-        raise ValueError(
-            f"{slide_path} does not define positions for --channel={channel}. "
-            f"Available channels: {available_channels}"
-        )
-    if not isinstance(raw_positions, list):
-        raise ValueError(
-            f"Slide channel entries must be lists, got {type(raw_positions).__name__} for {channel_key}"
-        )
-
-    positions: list[int] = []
-    for entry in raw_positions:
-        if not isinstance(entry, int):
+    slide_positions: dict[int, list[int]] = {}
+    for raw_channel, raw_positions in raw.items():
+        try:
+            slide_channel = int(raw_channel)
+        except (TypeError, ValueError) as exc:
             raise ValueError(
-                f"Slide positions for channel {channel_key} must be integers, got {entry!r}"
+                f"Slide channel keys must be non-negative integers, got {raw_channel!r}"
+            ) from exc
+        if slide_channel < 0:
+            raise ValueError(f"Slide channel keys must be non-negative integers, got {raw_channel!r}")
+        if not isinstance(raw_positions, list):
+            raise ValueError(
+                f"Slide channel entries must be lists, got {type(raw_positions).__name__} for {slide_channel}"
             )
-        if entry < 0:
-            raise ValueError(f"Slide positions must be non-negative, got {entry}")
-        positions.append(entry)
 
-    if not positions:
-        raise ValueError(f"{slide_path} defines no positions for --channel={channel}")
-    return positions
+        positions: list[int] = []
+        for entry in raw_positions:
+            if not isinstance(entry, int):
+                raise ValueError(
+                    f"Slide positions for channel {slide_channel} must be integers, got {entry!r}"
+                )
+            if entry < 0:
+                raise ValueError(f"Slide positions must be non-negative, got {entry}")
+            positions.append(entry)
+        if not positions:
+            raise ValueError(f"{slide_path} defines no positions for slide channel {slide_channel}")
+        slide_positions[slide_channel] = positions
+
+    if not slide_positions:
+        raise ValueError(f"{slide_path} defines no slide channels")
+    return dict(sorted(slide_positions.items()))
 
 
 def default_slide_timeseries_csv_path(
     dataset_root: Path,
     slide_path: Path,
+    slide_channel: int,
     channel: int,
     output_csv: Path | None,
 ) -> Path:
-    csv_path = output_csv or (dataset_root / 'timeseries' / f'{slide_path.stem}_ch{channel:03d}_timeseries.csv')
+    if output_csv is None:
+        csv_path = dataset_root / 'timeseries' / f'{slide_path.stem}_sc{slide_channel}_ch{channel:03d}_timeseries.csv'
+        return csv_path.resolve()
+
+    if output_csv.suffix:
+        csv_path = output_csv.with_name(
+            f'{output_csv.stem}_sc{slide_channel}_ch{channel:03d}{output_csv.suffix}'
+        )
+    else:
+        csv_path = output_csv / f'{slide_path.stem}_sc{slide_channel}_ch{channel:03d}_timeseries.csv'
     return csv_path.resolve()
 
 
@@ -102,9 +117,9 @@ def cli(
         file_okay=True,
         dir_okay=False,
         help=(
-            "Optional microscopy slide mapping JSON from channel to position list. "
-            "When provided, process every mapped position for the selected channel "
-            "and write one consolidated CSV."
+            "Optional microscopy slide mapping JSON from slide channel to position list. "
+            "When provided, process every position from every slide channel in the file "
+            "and write one CSV per slide channel."
         ),
     ),
     output_csv: Path | None = typer.Option(
@@ -112,8 +127,9 @@ def cli(
         "--output-csv",
         help=(
             "Output CSV path. Default: <dataset_root>/timeseries/PosN/PosN_chCCC_timeseries.csv "
-            "for single-position mode, or <dataset_root>/timeseries/<slide_stem>_chCCC_timeseries.csv "
-            "for --slide mode."
+            "for single-position mode, or one CSV per slide channel named "
+            "<slide_stem>_scS_chCCC_timeseries.csv for --slide mode. When a custom .csv path "
+            "is provided with --slide, _scS_chCCC is appended to the stem for each output file."
         ),
     ),
     quartiles: str = typer.Option(
@@ -146,50 +162,67 @@ def cli(
         return
 
     slide_path = slide.resolve()
-    positions = load_slide_positions(slide_path, channel)
-    position_frames: list[pd.DataFrame] = []
-    skipped_positions: list[int] = []
-    for resolved_pos in positions:
-        try:
-            pos_dir = position_dir(dataset_root, resolved_pos)
-        except ValueError:
-            skipped_positions.append(resolved_pos)
+    skipped_positions: dict[int, list[int]] = {}
+    slide_positions = load_slide_position_groups(slide_path)
+    written_outputs: list[tuple[int, Path, int]] = []
+    for slide_channel, positions in slide_positions.items():
+        position_frames: list[pd.DataFrame] = []
+        for resolved_pos in positions:
+            try:
+                pos_dir = position_dir(dataset_root, resolved_pos)
+            except ValueError:
+                skipped_positions.setdefault(slide_channel, []).append(resolved_pos)
+                continue
+            index = read_position_index(pos_dir)
+            validate_channel_index(index, channel)
+            position_frames.append(
+                compute_roi_metrics(
+                    pos_dir,
+                    index,
+                    channel=channel,
+                    quartiles=resolved_quartiles,
+                )
+            )
+
+        if not position_frames:
             continue
-        index = read_position_index(pos_dir)
-        validate_channel_index(index, channel)
-        position_frames.append(
-            compute_roi_metrics(
-                pos_dir,
-                index,
-                channel=channel,
-                quartiles=resolved_quartiles,
-            )
-        )
 
-    if not position_frames:
+        combined_df = consolidate_metrics(position_frames)
+        resolved_output_csv = default_slide_timeseries_csv_path(
+            dataset_root=dataset_root,
+            slide_path=slide_path,
+            slide_channel=slide_channel,
+            channel=channel,
+            output_csv=output_csv,
+        )
+        write_metrics_csv(combined_df, resolved_output_csv)
+        written_outputs.append((slide_channel, resolved_output_csv, len(position_frames)))
+
+    if not written_outputs:
         if skipped_positions:
-            raise ValueError(
-                f"No ROI directories found for mapped slide positions on --channel={channel}. "
-                f"Skipped positions: {', '.join(str(pos) for pos in skipped_positions)}"
+            skipped_summary = "; ".join(
+                f"slide channel {slide_channel} -> {', '.join(str(pos) for pos in positions)}"
+                for slide_channel, positions in sorted(skipped_positions.items())
             )
-        raise ValueError(f"{slide_path} defines no valid positions for --channel={channel}")
-
-    combined_df = consolidate_metrics(position_frames)
-    resolved_output_csv = default_slide_timeseries_csv_path(
-        dataset_root=dataset_root,
-        slide_path=slide_path,
-        channel=channel,
-        output_csv=output_csv,
-    )
-    write_metrics_csv(combined_df, resolved_output_csv)
+            raise ValueError(
+                f"No ROI directories found for positions in {slide_path}. "
+                f"Skipped positions: {skipped_summary}"
+            )
+        raise ValueError(f"{slide_path} defines no valid positions")
     if skipped_positions:
-        print(
-            f"Skipped {len(skipped_positions)} missing positions: "
-            f"{', '.join(str(pos) for pos in skipped_positions)}"
+        total_skipped_positions = sum(len(positions) for positions in skipped_positions.values())
+        skipped_summary = "; ".join(
+            f"slide channel {slide_channel} -> {', '.join(str(pos) for pos in positions)}"
+            for slide_channel, positions in sorted(skipped_positions.items())
         )
-    print(
-        f"Wrote consolidated metrics CSV for {len(position_frames)} positions: {resolved_output_csv}"
-    )
+        print(
+            f"Skipped {total_skipped_positions} missing positions from slide mapping: {skipped_summary}"
+        )
+    for slide_channel, resolved_output_csv, position_count in written_outputs:
+        print(
+            f"Wrote metrics CSV for slide channel {slide_channel} with {position_count} positions: "
+            f"{resolved_output_csv}"
+        )
 
 
 def main(argv: list[str] | None = None, *, prog_name: str = "delivery expression timeseries") -> None:

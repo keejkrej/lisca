@@ -1,19 +1,40 @@
 from __future__ import annotations
 
+from typer.testing import CliRunner
+
 from delivery import cli
 
 
-def test_expression_timeseries_dispatches(monkeypatch) -> None:
-    captured: dict[str, object] = {}
+runner = CliRunner()
 
-    def fake_main(argv: list[str] | None = None, *, prog_name: str) -> None:
-        captured["argv"] = argv
-        captured["prog_name"] = prog_name
 
-    monkeypatch.setattr(cli.timeseries, "main", fake_main)
+def test_expression_timeseries_help_is_exposed() -> None:
+    result = runner.invoke(cli.app, ["expression", "timeseries", "--help"])
 
-    cli.main(["expression", "timeseries", "dataset", "--channel", "1"])
+    assert result.exit_code == 0
+    assert "Dataset root containing" in result.output
 
-    assert captured["argv"] == ["dataset", "--channel", "1"]
-    assert captured["prog_name"] == "delivery expression timeseries"
 
+def test_expression_auc_help_is_exposed() -> None:
+    result = runner.invoke(cli.app, ["expression", "auc", "--help"])
+
+    assert result.exit_code == 0
+    assert "Usage: root expression auc" in result.output
+    assert "--interval" in result.output
+    assert "--output-csv" in result.output
+
+
+def test_expression_plot_timeseries_help_is_exposed() -> None:
+    result = runner.invoke(cli.app, ["expression", "plot-timeseries", "--help"])
+
+    assert result.exit_code == 0
+    assert "Usage: root expression plot-timeseries" in result.output
+    assert "--columns" in result.output
+
+
+def test_expression_plot_auc_help_is_exposed() -> None:
+    result = runner.invoke(cli.app, ["expression", "plot-auc", "--help"])
+
+    assert result.exit_code == 0
+    assert "Usage: root expression plot-auc" in result.output
+    assert "slide channel" in result.output
