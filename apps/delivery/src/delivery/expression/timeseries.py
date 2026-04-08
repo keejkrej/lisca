@@ -8,9 +8,7 @@ import pandas as pd
 import typer
 
 from lisca.analysis.roi import (
-    DEFAULT_QUARTILES,
     compute_roi_metrics,
-    parse_quartiles,
     quantile_column_name,
     write_metrics_csv,
 )
@@ -27,7 +25,7 @@ app = typer.Typer(
 )
 
 OUTPUT_COLUMNS = ("pos", "roi", "t", "corrected")
-DELIVERY_CORRECTED_QUANTILE = 0.25
+DELIVERY_CORRECTION_QUARTILE = 0.25
 
 
 @dataclass(frozen=True)
@@ -104,11 +102,11 @@ def simplify_metrics(df: pd.DataFrame) -> pd.DataFrame:
     return df.loc[:, list(OUTPUT_COLUMNS)].sort_values(['pos', 'roi', 't']).reset_index(drop=True)
 
 
-def apply_delivery_correction(df: pd.DataFrame, *, corrected_quantile: float = DELIVERY_CORRECTED_QUANTILE) -> pd.DataFrame:
-    corrected_column = quantile_column_name(corrected_quantile)
+def apply_delivery_correction(df: pd.DataFrame, *, correction_quartile: float = DELIVERY_CORRECTION_QUARTILE) -> pd.DataFrame:
+    corrected_column = quantile_column_name(correction_quartile)
     if corrected_column not in df.columns:
         raise ValueError(
-            f"Quartiles must include {corrected_quantile:.2f} so delivery corrected intensity can be computed"
+            f"Quartiles must include {correction_quartile:.2f} so delivery corrected intensity can be computed"
         )
 
     corrected_df = df.copy()
@@ -122,11 +120,11 @@ def run_slide_timeseries(
     slide: Path,
     channel: int,
     output_csv: Path | None,
-    quartiles: str,
+    correction_quartile: float = DELIVERY_CORRECTION_QUARTILE,
 ) -> SlideTimeseriesRunResult:
     dataset_root = dataset_root.resolve()
     slide_path = slide.resolve()
-    resolved_quartiles = parse_quartiles(quartiles)
+    quantile_column_name(correction_quartile)
     skipped_positions: dict[int, list[int]] = {}
     slide_positions = load_slide_position_groups(slide_path)
     written_outputs: list[tuple[int, Path, int]] = []
@@ -146,7 +144,7 @@ def run_slide_timeseries(
                     pos_dir,
                     index,
                     channel=channel,
-                    quartiles=resolved_quartiles,
+                    quartiles=[correction_quartile],
                 )
             )
 
@@ -161,7 +159,12 @@ def run_slide_timeseries(
             channel=channel,
             output_csv=output_csv,
         )
-        write_metrics_csv(simplify_metrics(apply_delivery_correction(combined_df)), resolved_output_csv)
+        write_metrics_csv(
+            simplify_metrics(
+                apply_delivery_correction(combined_df, correction_quartile=correction_quartile)
+            ),
+            resolved_output_csv,
+        )
         written_outputs.append((slide_channel, resolved_output_csv, len(position_frames)))
 
     if not written_outputs:
@@ -219,10 +222,10 @@ def cli(
             "for each output file."
         ),
     ),
-    quartiles: str = typer.Option(
-        DEFAULT_QUARTILES,
-        "--quartiles",
-        help="Comma-separated quantiles to write as qXX columns.",
+    correction_quartile: float = typer.Option(
+        DELIVERY_CORRECTION_QUARTILE,
+        "--correction-quartile",
+        help="Single quartile used to compute the corrected intensity column.",
     ),
 ) -> None:
     result = run_slide_timeseries(
@@ -230,7 +233,7 @@ def cli(
         slide=slide,
         channel=channel,
         output_csv=output_csv,
-        quartiles=quartiles,
+        correction_quartile=correction_quartile,
     )
     if result.skipped_positions:
         total_skipped_positions = sum(len(positions) for positions in result.skipped_positions.values())

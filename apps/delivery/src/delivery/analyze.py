@@ -3,8 +3,11 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable
 
 import typer
+from rich.console import Console
+from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn, TimeElapsedColumn
 
 from .expression import auc, plot_auc, plot_timeseries, timeseries
 
@@ -34,6 +37,9 @@ class AnalyzeRunResult:
     skipped_positions: dict[int, list[int]]
 
 
+StageCallback = Callable[[int, int, str], None]
+
+
 def run_analysis(
     dataset_root: Path,
     *,
@@ -41,17 +47,25 @@ def run_analysis(
     channel: int,
     interval: float,
     output_dir: Path | None,
-    quartiles: str,
+    correction_quartile: float = timeseries.DELIVERY_CORRECTION_QUARTILE,
+    on_stage: StageCallback | None = None,
 ) -> AnalyzeRunResult:
+    total_steps = 4
+    if on_stage is not None:
+        on_stage(0, total_steps, "Computing timeseries CSVs")
     timeseries_result = timeseries.run_slide_timeseries(
         dataset_root,
         slide=slide,
         channel=channel,
         output_csv=output_dir,
-        quartiles=quartiles,
+        correction_quartile=correction_quartile,
     )
     timeseries_csvs = [path for _, path, _ in timeseries_result.written_outputs]
+    if on_stage is not None:
+        on_stage(1, total_steps, "Computing AUC summary")
     auc_csv = auc.run_auc(timeseries_csvs, interval=interval, output_csv=None)
+    if on_stage is not None:
+        on_stage(2, total_steps, "Rendering timeseries plot")
     timeseries_plot = plot_timeseries.run_plot_timeseries(
         timeseries_csvs,
         output_plot=None,
@@ -61,13 +75,15 @@ def run_analysis(
         color="#c03a2b",
         title=None,
     )
+    if on_stage is not None:
+        on_stage(3, total_steps, "Rendering AUC plot")
     auc_plot = plot_auc.run_plot_auc(
         auc_csv,
         output_plot=None,
         color="#c03a2b",
         title="AUC by slide channel",
     )
-    return AnalyzeRunResult(
+    result = AnalyzeRunResult(
         dataset_root=dataset_root.resolve(),
         slide=slide.resolve(),
         channel=channel,
@@ -78,6 +94,9 @@ def run_analysis(
         auc_plot=auc_plot,
         skipped_positions=timeseries_result.skipped_positions,
     )
+    if on_stage is not None:
+        on_stage(4, total_steps, "Analysis complete")
+    return result
 
 
 def to_result_payload(result: AnalyzeRunResult) -> dict[str, object]:
@@ -149,10 +168,10 @@ def cli(
         dir_okay=True,
         help="Optional directory to write all generated outputs into.",
     ),
-    quartiles: str = typer.Option(
-        timeseries.DEFAULT_QUARTILES,
-        "--quartiles",
-        help="Comma-separated quantiles to write as qXX columns.",
+    correction_quartile: float = typer.Option(
+        timeseries.DELIVERY_CORRECTION_QUARTILE,
+        "--correction-quartile",
+        help="Single quartile used to compute the corrected intensity column.",
     ),
     json_output: bool = typer.Option(
         False,
@@ -160,15 +179,45 @@ def cli(
         help="Emit the final result payload as JSON on stdout.",
     ),
 ) -> None:
+    console = Console(stderr=True)
+
+    def run_with_optional_progress() -> AnalyzeRunResult:
+        if json_output:
+            return run_analysis(
+                dataset_root,
+                slide=slide,
+                channel=channel,
+                interval=interval,
+                output_dir=output_dir.resolve() if output_dir is not None else None,
+                correction_quartile=correction_quartile,
+            )
+
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("{task.description}"),
+            BarColumn(),
+            TaskProgressColumn(),
+            TimeElapsedColumn(),
+            console=console,
+            transient=True,
+        ) as progress:
+            task_id = progress.add_task("Preparing analysis", total=4)
+
+            def on_stage(completed: int, total: int, description: str) -> None:
+                progress.update(task_id, total=total, completed=completed, description=description)
+
+            return run_analysis(
+                dataset_root,
+                slide=slide,
+                channel=channel,
+                interval=interval,
+                output_dir=output_dir.resolve() if output_dir is not None else None,
+                correction_quartile=correction_quartile,
+                on_stage=on_stage,
+            )
+
     try:
-        result = run_analysis(
-            dataset_root,
-            slide=slide,
-            channel=channel,
-            interval=interval,
-            output_dir=output_dir.resolve() if output_dir is not None else None,
-            quartiles=quartiles,
-        )
+        result = run_with_optional_progress()
     except Exception as error:
         if json_output:
             typer.echo(
@@ -184,6 +233,7 @@ def cli(
                 )
             )
             raise typer.Exit(code=1)
+        console.print(f"[red]Analysis failed:[/red] {error}")
         raise
 
     if result.skipped_positions:

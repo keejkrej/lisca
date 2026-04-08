@@ -80,15 +80,15 @@ def test_cli_with_slide_writes_one_csv_per_slide_channel(monkeypatch, tmp_path: 
         channel=1,
         slide=slide_path,
         output_csv=None,
-        quartiles=timeseries.DEFAULT_QUARTILES,
+        correction_quartile=timeseries.DELIVERY_CORRECTION_QUARTILE,
     )
 
     assert compute_calls == [
-        (0, 1, [0.1, 0.25, 0.5, 0.75, 0.9]),
-        (1, 1, [0.1, 0.25, 0.5, 0.75, 0.9]),
-        (25, 1, [0.1, 0.25, 0.5, 0.75, 0.9]),
-        (26, 1, [0.1, 0.25, 0.5, 0.75, 0.9]),
-        (28, 1, [0.1, 0.25, 0.5, 0.75, 0.9]),
+        (0, 1, [0.25]),
+        (1, 1, [0.25]),
+        (25, 1, [0.25]),
+        (26, 1, [0.25]),
+        (28, 1, [0.25]),
     ]
     assert len(written) == 2
     written_df0, written_path0 = written[0]
@@ -143,7 +143,7 @@ def test_cli_with_slide_skips_missing_positions(monkeypatch, tmp_path: Path, cap
         channel=1,
         slide=slide_path,
         output_csv=None,
-        quartiles=timeseries.DEFAULT_QUARTILES,
+        correction_quartile=timeseries.DELIVERY_CORRECTION_QUARTILE,
     )
 
     captured = capsys.readouterr()
@@ -183,7 +183,7 @@ def test_cli_with_slide_honors_custom_output_csv(monkeypatch, tmp_path: Path) ->
         channel=0,
         slide=slide_path,
         output_csv=custom_output,
-        quartiles=timeseries.DEFAULT_QUARTILES,
+        correction_quartile=timeseries.DELIVERY_CORRECTION_QUARTILE,
     )
 
     assert written_paths == [

@@ -38,6 +38,14 @@ def test_analyze_help_is_exposed() -> None:
     assert "--interval" in result.output
 
 
+def test_slide_help_is_exposed() -> None:
+    result = runner.invoke(cli.app, ["slide", "--help"])
+
+    assert result.exit_code == 0
+    assert "Interactively create a slide.json mapping" in result.output
+    assert "--output" in result.output
+
+
 def test_expression_auc_help_is_exposed() -> None:
     result = runner.invoke(cli.app, ["expression", "auc", "--help"])
 

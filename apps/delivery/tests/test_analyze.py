@@ -24,8 +24,8 @@ def test_run_analysis_orchestrates_expected_outputs(monkeypatch, tmp_path: Path)
     monkeypatch.setattr(
         analyze.timeseries,
         "run_slide_timeseries",
-        lambda dataset_root_arg, *, slide, channel, output_csv, quartiles: (
-            calls.append(("timeseries", (dataset_root_arg, slide, channel, output_csv, quartiles))),
+        lambda dataset_root_arg, *, slide, channel, output_csv, correction_quartile: (
+            calls.append(("timeseries", (dataset_root_arg, slide, channel, output_csv, correction_quartile))),
             analyze.timeseries.SlideTimeseriesRunResult(
                 written_outputs=[(0, timeseries_csv_a, 2), (2, timeseries_csv_b, 3)],
                 skipped_positions={2: [26]},
@@ -63,7 +63,7 @@ def test_run_analysis_orchestrates_expected_outputs(monkeypatch, tmp_path: Path)
         channel=1,
         interval=10.0,
         output_dir=output_dir,
-        quartiles=analyze.timeseries.DEFAULT_QUARTILES,
+        correction_quartile=analyze.timeseries.DELIVERY_CORRECTION_QUARTILE,
     )
 
     assert result.timeseries_csvs == [timeseries_csv_a, timeseries_csv_b]
@@ -72,10 +72,47 @@ def test_run_analysis_orchestrates_expected_outputs(monkeypatch, tmp_path: Path)
     assert result.auc_plot == auc_plot
     assert result.skipped_positions == {2: [26]}
     assert calls == [
-        ("timeseries", (dataset_root, slide_path, 1, output_dir, analyze.timeseries.DEFAULT_QUARTILES)),
+        ("timeseries", (dataset_root, slide_path, 1, output_dir, analyze.timeseries.DELIVERY_CORRECTION_QUARTILE)),
         ("auc", ([timeseries_csv_a, timeseries_csv_b], 10.0, None)),
         ("plot_timeseries", ([timeseries_csv_a, timeseries_csv_b], None, 3, 0.12, 1.0, "#c03a2b", None)),
         ("plot_auc", (auc_csv, None, "#c03a2b", "AUC by slide channel")),
+    ]
+
+
+def test_run_analysis_emits_stage_updates(monkeypatch, tmp_path: Path) -> None:
+    dataset_root = tmp_path / "dataset"
+    slide_path = tmp_path / "slide.json"
+    result = analyze.timeseries.SlideTimeseriesRunResult(
+        written_outputs=[(0, tmp_path / "slide_sc0_ch001_timeseries.csv", 2)],
+        skipped_positions={},
+    )
+    stage_updates: list[tuple[int, int, str]] = []
+
+    monkeypatch.setattr(analyze.timeseries, "run_slide_timeseries", lambda *args, **kwargs: result)
+    monkeypatch.setattr(analyze.auc, "run_auc", lambda *args, **kwargs: tmp_path / "auc.csv")
+    monkeypatch.setattr(
+        analyze.plot_timeseries,
+        "run_plot_timeseries",
+        lambda *args, **kwargs: tmp_path / "timeseries.png",
+    )
+    monkeypatch.setattr(analyze.plot_auc, "run_plot_auc", lambda *args, **kwargs: tmp_path / "auc.png")
+
+    analyze.run_analysis(
+        dataset_root,
+        slide=slide_path,
+        channel=1,
+        interval=10.0,
+        output_dir=None,
+        correction_quartile=analyze.timeseries.DELIVERY_CORRECTION_QUARTILE,
+        on_stage=lambda completed, total, description: stage_updates.append((completed, total, description)),
+    )
+
+    assert stage_updates == [
+        (0, 4, "Computing timeseries CSVs"),
+        (1, 4, "Computing AUC summary"),
+        (2, 4, "Rendering timeseries plot"),
+        (3, 4, "Rendering AUC plot"),
+        (4, 4, "Analysis complete"),
     ]
 
 
@@ -121,7 +158,7 @@ def test_cli_with_json_emits_error_payload(tmp_path: Path, capsys: pytest.Captur
             channel=1,
             interval=10.0,
             output_dir=None,
-            quartiles=analyze.timeseries.DEFAULT_QUARTILES,
+            correction_quartile=analyze.timeseries.DELIVERY_CORRECTION_QUARTILE,
             json_output=True,
         )
 
