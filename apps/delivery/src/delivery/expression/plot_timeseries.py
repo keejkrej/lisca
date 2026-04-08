@@ -22,6 +22,30 @@ app = typer.Typer(
 )
 
 
+def run_plot_timeseries(
+    timeseries_csvs: list[Path],
+    *,
+    output_plot: Path | None,
+    columns: int,
+    alpha: float,
+    linewidth: float,
+    color: str,
+    title: str | None,
+) -> Path:
+    resolved_csvs = sorted((csv_path.resolve() for csv_path in timeseries_csvs), key=lambda path: path.name)
+    resolved_output_plot = default_output_plot_path(resolved_csvs, output_plot)
+    write_subplot_grid(
+        resolved_csvs,
+        resolved_output_plot,
+        alpha=alpha,
+        linewidth=linewidth,
+        color=color,
+        title=title,
+        columns=columns,
+    )
+    return resolved_output_plot
+
+
 def normalize_output_stem(csv_path: Path) -> str:
     return SLIDE_CHANNEL_PATTERN.sub("", csv_path.stem)
 
@@ -133,16 +157,14 @@ def cli(
         help="Optional figure title.",
     ),
 ) -> None:
-    resolved_csvs = sorted((csv_path.resolve() for csv_path in timeseries_csvs), key=lambda path: path.name)
-    resolved_output_plot = default_output_plot_path(resolved_csvs, output_plot)
-    write_subplot_grid(
-        resolved_csvs,
-        resolved_output_plot,
+    resolved_output_plot = run_plot_timeseries(
+        timeseries_csvs,
+        output_plot=output_plot,
+        columns=columns,
         alpha=alpha,
         linewidth=linewidth,
         color=color,
         title=title,
-        columns=columns,
     )
     print(f"Wrote plot: {resolved_output_plot}")
 

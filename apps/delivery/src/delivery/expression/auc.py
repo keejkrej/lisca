@@ -20,6 +20,17 @@ app = typer.Typer(
 )
 
 
+def run_auc(timeseries_csvs: list[Path], *, interval: float, output_csv: Path | None) -> Path:
+    if interval <= 0:
+        raise ValueError(f"--interval must be > 0, got {interval}")
+
+    resolved_csvs = sorted((csv_path.resolve() for csv_path in timeseries_csvs), key=lambda path: path.name)
+    auc_df = compute_auc_table(resolved_csvs, interval=interval)
+    resolved_output_csv = default_output_csv_path(resolved_csvs, output_csv)
+    write_auc_csv(auc_df, resolved_output_csv)
+    return resolved_output_csv
+
+
 def normalize_output_stem(csv_path: Path) -> str:
     return SLIDE_CHANNEL_PATTERN.sub("", csv_path.stem)
 
@@ -112,13 +123,7 @@ def cli(
         help="Output CSV path. Default: derive a shared <stem>_auc.csv path.",
     ),
 ) -> None:
-    if interval <= 0:
-        raise ValueError(f"--interval must be > 0, got {interval}")
-
-    resolved_csvs = sorted((csv_path.resolve() for csv_path in timeseries_csvs), key=lambda path: path.name)
-    auc_df = compute_auc_table(resolved_csvs, interval=interval)
-    resolved_output_csv = default_output_csv_path(resolved_csvs, output_csv)
-    write_auc_csv(auc_df, resolved_output_csv)
+    resolved_output_csv = run_auc(timeseries_csvs, interval=interval, output_csv=output_csv)
     print(f"Wrote AUC CSV: {resolved_output_csv}")
 
 

@@ -17,6 +17,20 @@ app = typer.Typer(
 )
 
 
+def run_plot_auc(
+    auc_csv: Path,
+    *,
+    output_plot: Path | None,
+    color: str,
+    title: str | None,
+) -> Path:
+    resolved_auc_csv = auc_csv.resolve()
+    df = load_auc_csv(resolved_auc_csv)
+    resolved_output_plot = default_output_plot_path(resolved_auc_csv, output_plot)
+    write_auc_boxplot(df, resolved_output_plot, color=color, title=title)
+    return resolved_output_plot
+
+
 def load_auc_csv(auc_csv: Path) -> pd.DataFrame:
     df = pd.read_csv(auc_csv)
     required = {"auc", "slide_channel"}
@@ -97,10 +111,12 @@ def cli(
         help="Optional plot title.",
     ),
 ) -> None:
-    resolved_auc_csv = auc_csv.resolve()
-    df = load_auc_csv(resolved_auc_csv)
-    resolved_output_plot = default_output_plot_path(resolved_auc_csv, output_plot)
-    write_auc_boxplot(df, resolved_output_plot, color=color, title=title)
+    resolved_output_plot = run_plot_auc(
+        auc_csv,
+        output_plot=output_plot,
+        color=color,
+        title=title,
+    )
     print(f"Wrote plot: {resolved_output_plot}")
 
 

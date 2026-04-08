@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 import json
 from pathlib import Path
 
@@ -13,12 +14,7 @@ from lisca.analysis.roi import (
     quantile_column_name,
     write_metrics_csv,
 )
-from lisca.data.roi import (
-    default_timeseries_csv_path,
-    position_dir,
-    read_position_index,
-    validate_channel_index,
-)
+from lisca.data.roi import position_dir, read_position_index, validate_channel_index
 
 
 app = typer.Typer(
@@ -32,6 +28,12 @@ app = typer.Typer(
 
 OUTPUT_COLUMNS = ("pos", "roi", "t", "corrected")
 DELIVERY_CORRECTED_QUANTILE = 0.25
+
+
+@dataclass(frozen=True)
+class SlideTimeseriesRunResult:
+    written_outputs: list[tuple[int, Path, int]]
+    skipped_positions: dict[int, list[int]]
 
 
 def load_slide_position_groups(slide_path: Path) -> dict[int, list[int]]:
@@ -114,82 +116,21 @@ def apply_delivery_correction(df: pd.DataFrame, *, corrected_quantile: float = D
     return corrected_df
 
 
-@app.command()
-def cli(
-    dataset_root: Path = typer.Argument(
-        ...,
-        exists=True,
-        file_okay=False,
-        dir_okay=True,
-        help="Dataset root containing roi/PosN/index.json and Roi*.tif files.",
-    ),
-    pos: int = typer.Option(
-        0,
-        "--pos",
-        min=0,
-        help="Position index resolved as roi/PosN under the dataset root.",
-    ),
-    channel: int = typer.Option(
-        ...,
-        "--channel",
-        min=0,
-        help="Channel index in the cropped ROI TIFF timelapses.",
-    ),
-    slide: Path | None = typer.Option(
-        None,
-        "--slide",
-        exists=True,
-        file_okay=True,
-        dir_okay=False,
-        help=(
-            "Optional microscopy slide mapping JSON from slide channel to position list. "
-            "When provided, process every position from every slide channel in the file "
-            "and write one CSV per slide channel."
-        ),
-    ),
-    output_csv: Path | None = typer.Option(
-        None,
-        "--output-csv",
-        help=(
-            "Output CSV path. Default: <dataset_root>/timeseries/PosN/PosN_chCCC_timeseries.csv "
-            "for single-position mode, or one CSV per slide channel named "
-            "<slide_stem>_scS_chCCC_timeseries.csv for --slide mode. When a custom .csv path "
-            "is provided with --slide, _scS_chCCC is appended to the stem for each output file."
-        ),
-    ),
-    quartiles: str = typer.Option(
-        DEFAULT_QUARTILES,
-        "--quartiles",
-        help="Comma-separated quantiles to write as qXX columns.",
-    ),
-) -> None:
+def run_slide_timeseries(
+    dataset_root: Path,
+    *,
+    slide: Path,
+    channel: int,
+    output_csv: Path | None,
+    quartiles: str,
+) -> SlideTimeseriesRunResult:
     dataset_root = dataset_root.resolve()
-    resolved_quartiles = parse_quartiles(quartiles)
-
-    if slide is None:
-        pos_dir = position_dir(dataset_root, pos)
-        index = read_position_index(pos_dir)
-        validate_channel_index(index, channel)
-        resolved_output_csv = default_timeseries_csv_path(
-            dataset_root=dataset_root,
-            pos=pos,
-            channel=channel,
-            output_csv=output_csv,
-        )
-        df = compute_roi_metrics(
-            pos_dir,
-            index,
-            channel=channel,
-            quartiles=resolved_quartiles,
-        )
-        write_metrics_csv(simplify_metrics(apply_delivery_correction(df)), resolved_output_csv)
-        print(f"Wrote metrics CSV: {resolved_output_csv}")
-        return
-
     slide_path = slide.resolve()
+    resolved_quartiles = parse_quartiles(quartiles)
     skipped_positions: dict[int, list[int]] = {}
     slide_positions = load_slide_position_groups(slide_path)
     written_outputs: list[tuple[int, Path, int]] = []
+
     for slide_channel, positions in slide_positions.items():
         position_frames: list[pd.DataFrame] = []
         for resolved_pos in positions:
@@ -234,16 +175,73 @@ def cli(
                 f"Skipped positions: {skipped_summary}"
             )
         raise ValueError(f"{slide_path} defines no valid positions")
-    if skipped_positions:
-        total_skipped_positions = sum(len(positions) for positions in skipped_positions.values())
+
+    return SlideTimeseriesRunResult(
+        written_outputs=written_outputs,
+        skipped_positions=skipped_positions,
+    )
+
+
+@app.command()
+def cli(
+    dataset_root: Path = typer.Argument(
+        ...,
+        exists=True,
+        file_okay=False,
+        dir_okay=True,
+        help="Dataset root containing roi/PosN/index.json and Roi*.tif files.",
+    ),
+    channel: int = typer.Option(
+        ...,
+        "--channel",
+        min=0,
+        help="Channel index in the cropped ROI TIFF timelapses.",
+    ),
+    slide: Path = typer.Option(
+        ...,
+        "--slide",
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+        help=(
+            "Microscopy slide mapping JSON from slide channel to position list. "
+            "Process every position from every slide channel in the file and write "
+            "one CSV per slide channel."
+        ),
+    ),
+    output_csv: Path | None = typer.Option(
+        None,
+        "--output-csv",
+        help=(
+            "Output CSV path or directory. Default: one CSV per slide channel named "
+            "<slide_stem>_scS_chCCC_timeseries.csv under <dataset_root>/timeseries. "
+            "When a custom .csv path is provided, _scS_chCCC is appended to the stem "
+            "for each output file."
+        ),
+    ),
+    quartiles: str = typer.Option(
+        DEFAULT_QUARTILES,
+        "--quartiles",
+        help="Comma-separated quantiles to write as qXX columns.",
+    ),
+) -> None:
+    result = run_slide_timeseries(
+        dataset_root,
+        slide=slide,
+        channel=channel,
+        output_csv=output_csv,
+        quartiles=quartiles,
+    )
+    if result.skipped_positions:
+        total_skipped_positions = sum(len(positions) for positions in result.skipped_positions.values())
         skipped_summary = "; ".join(
             f"slide channel {slide_channel} -> {', '.join(str(pos) for pos in positions)}"
-            for slide_channel, positions in sorted(skipped_positions.items())
+            for slide_channel, positions in sorted(result.skipped_positions.items())
         )
         print(
             f"Skipped {total_skipped_positions} missing positions from slide mapping: {skipped_summary}"
         )
-    for slide_channel, resolved_output_csv, position_count in written_outputs:
+    for slide_channel, resolved_output_csv, position_count in result.written_outputs:
         print(
             f"Wrote metrics CSV for slide channel {slide_channel} with {position_count} positions: "
             f"{resolved_output_csv}"
