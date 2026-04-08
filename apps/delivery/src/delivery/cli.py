@@ -3,15 +3,15 @@ from __future__ import annotations
 import sys
 from collections.abc import Callable, Sequence
 
-from .expression import compare_timeseries, roi_bbox_timeseries
+from .expression import compare_timeseries, timeseries
 
 
 CommandHandler = Callable[[list[str]], None]
 
 COMMANDS: dict[tuple[str, str], CommandHandler] = {
-    ("expression", "roi-bbox-timeseries"): lambda argv: roi_bbox_timeseries.main(
+    ("expression", "timeseries"): lambda argv: timeseries.main(
         argv,
-        prog_name="delivery expression roi-bbox-timeseries",
+        prog_name="delivery expression timeseries",
     ),
     ("expression", "compare-timeseries"): lambda argv: compare_timeseries.main(
         argv,
@@ -26,7 +26,7 @@ def _usage() -> str:
             "Usage: delivery <workflow> <command> [args...]",
             "",
             "Commands:",
-            "  delivery expression roi-bbox-timeseries",
+            "  delivery expression timeseries",
             "  delivery expression compare-timeseries",
         ]
     )
@@ -49,3 +49,4 @@ def main(argv: Sequence[str] | None = None) -> None:
         raise SystemExit(2)
 
     command(args[2:])
+

@@ -91,7 +91,7 @@ def default_timeseries_csv_path(
     dataset_root: Path, pos: int, channel: int, output_csv: Path | None
 ) -> Path:
     csv_path = output_csv or (
-        dataset_root / "roi" / f"Pos{pos}" / f"Pos{pos}_ch{channel:03d}_timeseries.csv"
+        dataset_root / "timeseries" / f"Pos{pos}" / f"Pos{pos}_ch{channel:03d}_timeseries.csv"
     )
     return csv_path.resolve()
 
@@ -143,3 +143,4 @@ def roi_frame_2d(
     if frame.ndim != 2:
         raise ValueError(f"Expected a 2D ROI frame, got shape={frame.shape}")
     return frame
+
