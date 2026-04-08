@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-import json
 from pathlib import Path
 
 import pandas as pd
@@ -13,6 +12,7 @@ from lisca.analysis.roi import (
     write_metrics_csv,
 )
 from lisca.data.roi import position_dir, read_position_index, validate_channel_index
+from lisca.data.slide import load_slide_mapping
 
 
 app = typer.Typer(
@@ -34,42 +34,7 @@ class SlideTimeseriesRunResult:
     skipped_positions: dict[int, list[int]]
 
 
-def load_slide_position_groups(slide_path: Path) -> dict[int, list[int]]:
-    raw = json.loads(slide_path.read_text(encoding="utf-8"))
-    if not isinstance(raw, dict):
-        raise ValueError(f"Slide mapping must be a JSON object: {slide_path}")
-
-    slide_positions: dict[int, list[int]] = {}
-    for raw_channel, raw_positions in raw.items():
-        try:
-            slide_channel = int(raw_channel)
-        except (TypeError, ValueError) as exc:
-            raise ValueError(
-                f"Slide channel keys must be non-negative integers, got {raw_channel!r}"
-            ) from exc
-        if slide_channel < 0:
-            raise ValueError(f"Slide channel keys must be non-negative integers, got {raw_channel!r}")
-        if not isinstance(raw_positions, list):
-            raise ValueError(
-                f"Slide channel entries must be lists, got {type(raw_positions).__name__} for {slide_channel}"
-            )
-
-        positions: list[int] = []
-        for entry in raw_positions:
-            if not isinstance(entry, int):
-                raise ValueError(
-                    f"Slide positions for channel {slide_channel} must be integers, got {entry!r}"
-                )
-            if entry < 0:
-                raise ValueError(f"Slide positions must be non-negative, got {entry}")
-            positions.append(entry)
-        if not positions:
-            raise ValueError(f"{slide_path} defines no positions for slide channel {slide_channel}")
-        slide_positions[slide_channel] = positions
-
-    if not slide_positions:
-        raise ValueError(f"{slide_path} defines no slide channels")
-    return dict(sorted(slide_positions.items()))
+load_slide_position_groups = load_slide_mapping
 
 
 def default_slide_timeseries_csv_path(
@@ -126,7 +91,7 @@ def run_slide_timeseries(
     slide_path = slide.resolve()
     quantile_column_name(correction_quartile)
     skipped_positions: dict[int, list[int]] = {}
-    slide_positions = load_slide_position_groups(slide_path)
+    slide_positions = load_slide_mapping(slide_path)
     written_outputs: list[tuple[int, Path, int]] = []
 
     for slide_channel, positions in slide_positions.items():

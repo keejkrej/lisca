@@ -1,22 +1,20 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import typer
+from lisca.data.slide import (
+    SlideMapping,
+    parse_position_spec,
+    resolve_slide_path,
+    write_slide_mapping,
+)
 from rich.console import Console
 from rich.prompt import Confirm, IntPrompt, Prompt
 from rich.table import Table
 
 
 HELP = "Interactively create a slide.json mapping for delivery analysis."
-SlideMapping = dict[int, list[int]]
-
-
-def resolve_output_path(dataset_root: Path, output: Path | None) -> Path:
-    if output is None:
-        return (dataset_root / "slide.json").resolve()
-    return output.expanduser().resolve()
 
 
 def next_channel_id(mapping: SlideMapping) -> int:
@@ -24,69 +22,6 @@ def next_channel_id(mapping: SlideMapping) -> int:
     while next_id in mapping:
         next_id += 1
     return next_id
-
-
-def parse_position_token(token: str) -> list[int]:
-    raw = token.strip()
-    if not raw:
-        raise ValueError("Empty position token")
-
-    if ":" not in raw:
-        try:
-            value = int(raw)
-        except ValueError as exc:
-            raise ValueError(f"Invalid position token: {raw!r}") from exc
-        if value < 0:
-            raise ValueError(f"Positions must be non-negative, got {value}")
-        return [value]
-
-    parts = [part.strip() for part in raw.split(":")]
-    if len(parts) not in {2, 3}:
-        raise ValueError(f"Invalid slice token: {raw!r}")
-    if any(part == "" for part in parts[:2]):
-        raise ValueError(f"Slices must include explicit start and stop: {raw!r}")
-
-    try:
-        start = int(parts[0])
-        stop = int(parts[1])
-        step = int(parts[2]) if len(parts) == 3 else 1
-    except ValueError as exc:
-        raise ValueError(f"Invalid slice token: {raw!r}") from exc
-
-    if start < 0 or stop < 0:
-        raise ValueError(f"Positions must be non-negative in slice {raw!r}")
-    if step <= 0:
-        raise ValueError(f"Slice step must be > 0 in {raw!r}")
-
-    values = list(range(start, stop, step))
-    if not values:
-        raise ValueError(f"Slice produced no positions: {raw!r}")
-    return values
-
-
-def parse_position_spec(spec: str) -> list[int]:
-    tokens = [token.strip() for token in spec.split(",")]
-    if not any(tokens):
-        raise ValueError("Position spec is empty")
-
-    positions: list[int] = []
-    for token in tokens:
-        if not token:
-            raise ValueError("Position spec contains an empty token")
-        positions.extend(parse_position_token(token))
-
-    return sorted(set(positions))
-
-
-def serialize_slide_mapping(mapping: SlideMapping) -> str:
-    ordered = {str(channel): mapping[channel] for channel in sorted(mapping)}
-    return json.dumps(ordered, indent=2) + "\n"
-
-
-def write_slide_mapping(mapping: SlideMapping, output_path: Path) -> Path:
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(serialize_slide_mapping(mapping), encoding="utf-8")
-    return output_path.resolve()
 
 
 def format_positions(positions: list[int]) -> str:
@@ -214,7 +149,7 @@ def cli(
     ),
 ) -> None:
     console = Console(stderr=True)
-    output_path = resolve_output_path(dataset_root.resolve(), output)
+    output_path = resolve_slide_path(dataset_root.resolve(), output)
     mapping = run_slide_wizard(console, dataset_root.resolve(), output_path)
     if mapping is None:
         raise typer.Exit(code=1)
