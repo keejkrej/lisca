@@ -197,6 +197,7 @@ async fn crop_roi(
     source: ViewerSource,
     pos: u32,
     format: CropOutputFormat,
+    batch: Option<usize>,
     request_id: String,
 ) -> Result<CropRoiResponse, String> {
     let registry = registry.inner().clone();
@@ -212,6 +213,7 @@ async fn crop_roi(
             source,
             pos,
             format,
+            batch,
             &mut |progress, message| {
                 let should_emit = progress >= 1.0
                     || progress <= 0.0

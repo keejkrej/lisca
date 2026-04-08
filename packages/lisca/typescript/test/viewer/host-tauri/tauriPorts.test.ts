@@ -95,6 +95,43 @@ describe("tauri crop progress bridge", () => {
     unlisten();
   });
 
+  test("forwards hidden crop batch override when provided", async () => {
+    mockWindows("main");
+
+    let cropPayload: unknown = null;
+    mockIPC((cmd, payload) => {
+      const eventArgs = eventPayload(payload);
+      switch (cmd) {
+        case "plugin:event|listen":
+          return typeof eventArgs.handler === "number" ? eventArgs.handler : null;
+        case "crop_roi":
+          cropPayload = payload;
+          return { ok: true };
+        default:
+          return null;
+      }
+    });
+
+    const ports = createTauriDesktopPorts();
+    await ports.dataPort.cropRoi(
+      "/tmp/workspace",
+      { kind: "nd2", path: "/tmp/source.nd2" },
+      3,
+      "tiff",
+      "req-hidden",
+      50,
+    );
+
+    expect(cropPayload).toEqual({
+      workspacePath: "/tmp/workspace",
+      source: { kind: "nd2", path: "/tmp/source.nd2" },
+      pos: 3,
+      format: "tiff",
+      batch: 50,
+      requestId: "req-hidden",
+    });
+  });
+
   test("retries crop progress listener registration after an initial failure", async () => {
     mockWindows("main");
 

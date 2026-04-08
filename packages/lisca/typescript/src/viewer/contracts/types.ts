@@ -179,6 +179,7 @@ export interface ViewerDataPort extends ViewerDataSource {
     pos: number,
     format: CropOutputFormat,
     requestId?: string,
+    batch?: number,
   ): Promise<CropRoiResponse>;
   cancelCropRoi(requestId: string): Promise<void>;
   onCropRoiProgress(listener: (event: CropRoiProgressEvent) => void): () => void;

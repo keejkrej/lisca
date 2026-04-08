@@ -2,6 +2,7 @@ use std::collections::{BTreeSet, HashMap};
 use std::fs::{self, File};
 use std::io::{BufWriter, Cursor};
 use std::path::{Path, PathBuf};
+use std::thread;
 
 use base64::prelude::{Engine as _, BASE64_STANDARD};
 use czi_rs::{CziFile, Dimension as CziDimension, PlaneIndex};
@@ -12,13 +13,13 @@ use tiff::encoder::{colortype, TiffEncoder};
 
 use crate::viewer::domain::{
     current_timestamp, dimension_size, dimension_values, parse_bbox_csv_name, roi_axis_values,
-    validate_request_index, workspace_annotation_json_path, workspace_annotation_labels_path,
-    workspace_annotation_mask_path, workspace_annotation_roi_dir_path, workspace_bbox_csv_path,
-    workspace_align_json_path, workspace_relative_path, workspace_roi_index_path, workspace_roi_pos_dir_path,
-    workspace_roi_tiff_path, AnnotationLabel, CropOutputFormat, CropRoiResponse, CropRoiStatus,
-    LoadedRoiFrameAnnotation, RoiBbox, RoiFrameAnnotation, RoiFrameAnnotationPayload,
-    RoiFrameRequest, RoiIndexEntry, RoiIndexFile, RoiPositionScan, RoiWorkspaceScan,
-    SaveBboxResponse, SavedAlignState, ViewerSource,
+    validate_request_index, workspace_align_json_path, workspace_annotation_json_path,
+    workspace_annotation_labels_path, workspace_annotation_mask_path,
+    workspace_annotation_roi_dir_path, workspace_bbox_csv_path, workspace_relative_path,
+    workspace_roi_index_path, workspace_roi_pos_dir_path, workspace_roi_tiff_path, AnnotationLabel,
+    CropOutputFormat, CropRoiResponse, CropRoiStatus, LoadedRoiFrameAnnotation, RoiBbox,
+    RoiFrameAnnotation, RoiFrameAnnotationPayload, RoiFrameRequest, RoiIndexEntry, RoiIndexFile,
+    RoiPositionScan, RoiWorkspaceScan, SaveBboxResponse, SavedAlignState, ViewerSource,
 };
 use crate::viewer::image::{
     collect_tiffs, czi_bitmap_to_u16, find_position_dir, load_tiff_frame, load_tiff_frame_page,
@@ -45,6 +46,8 @@ struct RoiFrameAnnotationFile {
 fn annotation_schema_version() -> u32 {
     1
 }
+
+const DEFAULT_ND2_BATCH_PLANES: usize = 50;
 
 fn read_roi_index(workspace_path: &str, pos: u32) -> Result<RoiIndexFile, String> {
     let path = workspace_roi_index_path(workspace_path, pos);
@@ -392,7 +395,7 @@ pub fn save_roi_frame_annotation(
     })
 }
 
-fn parse_bbox_csv(path: &Path) -> Result<Vec<RoiBbox>, String> {
+pub(crate) fn parse_bbox_csv(path: &Path) -> Result<Vec<RoiBbox>, String> {
     let csv = fs::read_to_string(path).map_err(|err| err.to_string())?;
     let mut lines = csv.lines().filter(|line| !line.trim().is_empty());
     let header = lines
@@ -477,7 +480,7 @@ fn parse_bbox_csv(path: &Path) -> Result<Vec<RoiBbox>, String> {
     Ok(bboxes)
 }
 
-fn validate_bboxes(bboxes: &[RoiBbox], width: u32, height: u32) -> Result<(), String> {
+pub(crate) fn validate_bboxes(bboxes: &[RoiBbox], width: u32, height: u32) -> Result<(), String> {
     for bbox in bboxes {
         let max_x = bbox
             .x
@@ -497,7 +500,7 @@ fn validate_bboxes(bboxes: &[RoiBbox], width: u32, height: u32) -> Result<(), St
     Ok(())
 }
 
-fn crop_u16_frame(frame: &[u16], frame_width: u32, bbox: &RoiBbox) -> Vec<u16> {
+pub(crate) fn crop_u16_frame(frame: &[u16], frame_width: u32, bbox: &RoiBbox) -> Vec<u16> {
     let mut cropped = vec![0u16; (bbox.w * bbox.h) as usize];
     for row in 0..bbox.h {
         let src_start = ((bbox.y + row) * frame_width + bbox.x) as usize;
@@ -550,7 +553,7 @@ fn write_roi_index(
     Ok(path)
 }
 
-fn prepare_roi_output_dir(workspace_path: &str, pos: u32) -> Result<PathBuf, String> {
+pub(crate) fn prepare_roi_output_dir(workspace_path: &str, pos: u32) -> Result<PathBuf, String> {
     let pos_dir = workspace_roi_pos_dir_path(workspace_path, pos);
     if pos_dir.exists() {
         fs::remove_dir_all(&pos_dir).map_err(|err| err.to_string())?;
@@ -571,6 +574,18 @@ fn cleanup_roi_output_dir(workspace_path: &str, pos: u32) -> Result<(), String> 
 enum CropFailure {
     Error(String),
     Cancelled,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct Nd2PlaneCoord {
+    time: u32,
+    channel: u32,
+    z: u32,
+}
+
+struct Nd2BatchReadResult {
+    order_index: usize,
+    frame: Vec<u16>,
 }
 
 impl From<String> for CropFailure {
@@ -702,6 +717,7 @@ fn crop_nd2_source<F>(
     path: &Path,
     pos: u32,
     bboxes: &[RoiBbox],
+    batch_planes: usize,
     progress: &mut F,
     is_cancelled: &dyn Fn() -> bool,
 ) -> Result<PathBuf, CropFailure>
@@ -737,43 +753,36 @@ where
         .collect::<Result<Vec<_>, String>>()?;
 
     let total_planes = times.len() * channels.len() * z_slices.len();
+    let plane_batches = nd2_plane_batches(&times, &channels, &z_slices, batch_planes.max(1));
     let mut processed_planes = 0usize;
-    for time in &times {
-        let time_index = validate_request_index("Time", *time, dimension_size(&sizes, "T"))?;
-        for channel in &channels {
-            let channel_index =
-                validate_request_index("Channel", *channel, dimension_size(&sizes, "C"))?;
-            for z in &z_slices {
-                ensure_crop_not_cancelled(is_cancelled)?;
-                let z_index = validate_request_index("Z", *z, dimension_size(&sizes, "Z"))?;
-                let frame = nd2
-                    .read_frame_2d(pos_index, time_index, channel_index, z_index)
-                    .map_err(|err| err.to_string())?;
-                if frame.len() != width as usize * height as usize {
-                    return Err(CropFailure::Error(
-                        "Unexpected ND2 frame dimensions".to_string(),
-                    ));
-                }
-
-                for (encoder, bbox) in encoders.iter_mut().zip(bboxes.iter()) {
-                    ensure_crop_not_cancelled(is_cancelled)?;
-                    let cropped = crop_u16_frame(&frame, width, bbox);
-                    encoder
-                        .write_image::<colortype::Gray16>(bbox.w, bbox.h, &cropped)
-                        .map_err(|err| err.to_string())?;
-                }
-                processed_planes += 1;
-                let plane_progress = if total_planes == 0 {
-                    1.0
-                } else {
-                    processed_planes as f64 / total_planes as f64
-                };
-                progress(
-                    0.02 + plane_progress * 0.96,
-                    &format!("Cropping frame {processed_planes}/{total_planes} for Pos{pos}"),
-                )
-                .map_err(CropFailure::from)?;
+    for planes in plane_batches {
+        ensure_crop_not_cancelled(is_cancelled)?;
+        let results = read_nd2_batch(path, pos_index, &planes)?;
+        for result in results {
+            if result.frame.len() != width as usize * height as usize {
+                return Err(CropFailure::Error(
+                    "Unexpected ND2 frame dimensions".to_string(),
+                ));
             }
+
+            for (encoder, bbox) in encoders.iter_mut().zip(bboxes.iter()) {
+                ensure_crop_not_cancelled(is_cancelled)?;
+                let cropped = crop_u16_frame(&result.frame, width, bbox);
+                encoder
+                    .write_image::<colortype::Gray16>(bbox.w, bbox.h, &cropped)
+                    .map_err(|err| err.to_string())?;
+            }
+            processed_planes += 1;
+            let plane_progress = if total_planes == 0 {
+                1.0
+            } else {
+                processed_planes as f64 / total_planes as f64
+            };
+            progress(
+                0.02 + plane_progress * 0.96,
+                &format!("Cropping frame {processed_planes}/{total_planes} for Pos{pos}"),
+            )
+            .map_err(CropFailure::from)?;
         }
     }
 
@@ -792,6 +801,79 @@ where
     )?;
     progress(1.0, &format!("Finished ROI crop for Pos{pos}")).map_err(CropFailure::from)?;
     Ok(workspace_roi_pos_dir_path(workspace_path, pos))
+}
+
+fn read_nd2_batch(
+    path: &Path,
+    pos_index: usize,
+    planes: &[Nd2PlaneCoord],
+) -> Result<Vec<Nd2BatchReadResult>, String> {
+    if planes.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let path = path.to_path_buf();
+    let mut handles = Vec::with_capacity(planes.len());
+    for (order_index, plane) in planes.iter().copied().enumerate() {
+        let path = path.clone();
+        handles.push(thread::spawn(
+            move || -> Result<Nd2BatchReadResult, String> {
+                let mut nd2 = Nd2File::open(&path).map_err(|err| err.to_string())?;
+                let frame = nd2
+                    .read_frame_2d(
+                        pos_index,
+                        plane.time as usize,
+                        plane.channel as usize,
+                        plane.z as usize,
+                    )
+                    .map_err(|err| err.to_string())?;
+                Ok(Nd2BatchReadResult { order_index, frame })
+            },
+        ));
+    }
+
+    let mut results = Vec::with_capacity(planes.len());
+    for handle in handles {
+        let result = handle
+            .join()
+            .map_err(|_| "ND2 batch worker panicked".to_string())??;
+        results.push(result);
+    }
+    results.sort_by_key(|result| result.order_index);
+    Ok(results)
+}
+
+fn nd2_plane_batches(
+    times: &[u32],
+    channels: &[u32],
+    z_slices: &[u32],
+    batch_planes: usize,
+) -> Vec<Vec<Nd2PlaneCoord>> {
+    if times.is_empty() || channels.is_empty() || z_slices.is_empty() {
+        return Vec::new();
+    }
+
+    let planes_per_timepoint = channels.len() * z_slices.len();
+    let timepoints_per_batch = batch_planes.div_ceil(planes_per_timepoint).max(1);
+
+    times
+        .chunks(timepoints_per_batch)
+        .map(|batch_times| {
+            let mut planes = Vec::with_capacity(batch_times.len() * planes_per_timepoint);
+            for time in batch_times {
+                for channel in channels {
+                    for z in z_slices {
+                        planes.push(Nd2PlaneCoord {
+                            time: *time,
+                            channel: *channel,
+                            z: *z,
+                        });
+                    }
+                }
+            }
+            planes
+        })
+        .collect()
 }
 
 fn crop_czi_source<F>(
@@ -1000,7 +1082,10 @@ pub fn load_roi_frame(
     Ok(raw)
 }
 
-pub fn load_align_state(workspace_path: String, pos: u32) -> Result<Option<SavedAlignState>, String> {
+pub fn load_align_state(
+    workspace_path: String,
+    pos: u32,
+) -> Result<Option<SavedAlignState>, String> {
     let path = workspace_align_json_path(&workspace_path, pos);
     let bytes = match fs::read(&path) {
         Ok(bytes) => bytes,
@@ -1068,7 +1153,10 @@ pub fn save_bbox(
     };
 
     match fs::write(&bbox_target, normalized).and_then(|_| fs::write(&align_target, align_json)) {
-        Ok(_) => SaveBboxResponse { ok: true, error: None },
+        Ok(_) => SaveBboxResponse {
+            ok: true,
+            error: None,
+        },
         Err(error) => SaveBboxResponse {
             ok: false,
             error: Some(error.to_string()),
@@ -1081,12 +1169,15 @@ pub fn crop_roi<F>(
     source: ViewerSource,
     pos: u32,
     format: CropOutputFormat,
+    batch: Option<usize>,
     progress: &mut F,
     is_cancelled: &dyn Fn() -> bool,
 ) -> CropRoiResponse
 where
     F: FnMut(f64, &str) -> Result<(), String>,
 {
+    let batch = batch.unwrap_or(DEFAULT_ND2_BATCH_PLANES).max(1);
+
     if !matches!(format, CropOutputFormat::Tiff) {
         return CropRoiResponse {
             ok: false,
@@ -1151,6 +1242,7 @@ where
                     Path::new(path),
                     pos,
                     &bboxes,
+                    batch,
                     progress,
                     is_cancelled,
                 )
@@ -1289,7 +1381,8 @@ mod tests {
     fn load_align_state_returns_none_when_missing() {
         let root = unique_test_dir("missing-align");
 
-        let loaded = load_align_state(root.to_string_lossy().to_string(), 4).expect("load align state");
+        let loaded =
+            load_align_state(root.to_string_lossy().to_string(), 4).expect("load align state");
         assert!(loaded.is_none());
 
         let _ = fs::remove_dir_all(root);
@@ -1302,10 +1395,35 @@ mod tests {
         fs::create_dir_all(&align_dir).expect("create align dir");
         fs::write(align_dir.join("Pos2.json"), "{not-json").expect("write invalid json");
 
-        let error = load_align_state(root.to_string_lossy().to_string(), 2).expect_err("invalid align json");
+        let error = load_align_state(root.to_string_lossy().to_string(), 2)
+            .expect_err("invalid align json");
         assert!(error.contains("Pos2.json"));
 
         let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn nd2_plane_batches_round_up_to_full_timepoints() {
+        let batches = nd2_plane_batches(&[0, 1, 2], &[0, 1, 2], &[0], 50);
+
+        assert_eq!(batches.len(), 1);
+        assert_eq!(batches[0].len(), 9);
+        assert!(batches[0].iter().any(|plane| plane.time == 0));
+        assert!(batches[0].iter().any(|plane| plane.time == 1));
+        assert!(batches[0].iter().any(|plane| plane.time == 2));
+    }
+
+    #[test]
+    fn nd2_plane_batches_split_by_whole_timepoint_windows() {
+        let batches = nd2_plane_batches(&[0, 1, 2, 3, 4], &[0, 1, 2], &[0], 4);
+
+        assert_eq!(batches.len(), 3);
+        assert_eq!(batches[0].len(), 6);
+        assert_eq!(batches[1].len(), 6);
+        assert_eq!(batches[2].len(), 3);
+        assert!(batches[0].iter().all(|plane| plane.time <= 1));
+        assert!(batches[1].iter().all(|plane| (2..=3).contains(&plane.time)));
+        assert!(batches[2].iter().all(|plane| plane.time == 4));
     }
 
     #[test]
@@ -1337,6 +1455,7 @@ mod tests {
             },
             0,
             CropOutputFormat::Tiff,
+            None,
             &mut |_progress, _message| Ok(()),
             &|| {
                 let next = cancel_checks.get() + 1;

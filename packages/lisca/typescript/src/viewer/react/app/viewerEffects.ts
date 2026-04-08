@@ -294,15 +294,17 @@ export function cropRoiEffect(
     source,
     pos,
     requestId,
+    batch,
   }: {
     workspacePath: string;
     source: ViewerSource;
     pos: number;
     requestId?: string;
+    batch?: number;
   },
 ) {
   return Effect.tryPromise({
-    try: () => backend.cropRoi(workspacePath, source, pos, "tiff", requestId),
+    try: () => backend.cropRoi(workspacePath, source, pos, "tiff", requestId, batch),
     catch: (error) => toError(error, "Failed to crop ROI TIFFs"),
   }).pipe(Effect.withSpan("viewer.crop-roi"));
 }

@@ -193,6 +193,7 @@ export function createTauriDesktopPorts(): TauriDesktopPorts {
       pos: number,
       format: CropOutputFormat,
       requestId?: string,
+      batch?: number,
     ): Promise<CropRoiResponse> {
       const nextRequestId = requestId ?? makeRequestId();
       await ensureCropProgressListener().catch(() => undefined);
@@ -201,6 +202,7 @@ export function createTauriDesktopPorts(): TauriDesktopPorts {
         source,
         pos,
         format,
+        batch,
         requestId: nextRequestId,
       });
     },

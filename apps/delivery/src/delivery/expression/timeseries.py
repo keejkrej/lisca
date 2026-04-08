@@ -25,40 +25,6 @@ app = typer.Typer(
 )
 
 
-def _parse_slide_position_entry(entry: object) -> list[int]:
-    if isinstance(entry, int):
-        if entry < 0:
-            raise ValueError(f"Slide positions must be non-negative, got {entry}")
-        return [entry]
-
-    if isinstance(entry, str):
-        text = entry.strip()
-        if not text:
-            raise ValueError("Slide position entries cannot be empty")
-        if "-" in text:
-            start_text, end_text = text.split("-", 1)
-            try:
-                start = int(start_text)
-                end = int(end_text)
-            except ValueError as exc:
-                raise ValueError(f"Invalid slide range {entry!r}") from exc
-            if start < 0 or end < 0:
-                raise ValueError(f"Slide ranges must be non-negative, got {entry!r}")
-            if start > end:
-                raise ValueError(f"Slide ranges must be ascending, got {entry!r}")
-            return list(range(start, end + 1))
-
-        try:
-            value = int(text)
-        except ValueError as exc:
-            raise ValueError(f"Invalid slide position entry {entry!r}") from exc
-        if value < 0:
-            raise ValueError(f"Slide positions must be non-negative, got {entry!r}")
-        return [value]
-
-    raise ValueError(f"Unsupported slide position entry {entry!r}")
-
-
 def load_slide_positions(slide_path: Path, channel: int) -> list[int]:
     raw = json.loads(slide_path.read_text(encoding="utf-8"))
     if not isinstance(raw, dict):
@@ -78,12 +44,14 @@ def load_slide_positions(slide_path: Path, channel: int) -> list[int]:
         )
 
     positions: list[int] = []
-    seen: set[int] = set()
     for entry in raw_positions:
-        for position in _parse_slide_position_entry(entry):
-            if position not in seen:
-                seen.add(position)
-                positions.append(position)
+        if not isinstance(entry, int):
+            raise ValueError(
+                f"Slide positions for channel {channel_key} must be integers, got {entry!r}"
+            )
+        if entry < 0:
+            raise ValueError(f"Slide positions must be non-negative, got {entry}")
+        positions.append(entry)
 
     if not positions:
         raise ValueError(f"{slide_path} defines no positions for --channel={channel}")
@@ -180,8 +148,13 @@ def cli(
     slide_path = slide.resolve()
     positions = load_slide_positions(slide_path, channel)
     position_frames: list[pd.DataFrame] = []
+    skipped_positions: list[int] = []
     for resolved_pos in positions:
-        pos_dir = position_dir(dataset_root, resolved_pos)
+        try:
+            pos_dir = position_dir(dataset_root, resolved_pos)
+        except ValueError:
+            skipped_positions.append(resolved_pos)
+            continue
         index = read_position_index(pos_dir)
         validate_channel_index(index, channel)
         position_frames.append(
@@ -193,6 +166,14 @@ def cli(
             )
         )
 
+    if not position_frames:
+        if skipped_positions:
+            raise ValueError(
+                f"No ROI directories found for mapped slide positions on --channel={channel}. "
+                f"Skipped positions: {', '.join(str(pos) for pos in skipped_positions)}"
+            )
+        raise ValueError(f"{slide_path} defines no valid positions for --channel={channel}")
+
     combined_df = consolidate_metrics(position_frames)
     resolved_output_csv = default_slide_timeseries_csv_path(
         dataset_root=dataset_root,
@@ -201,8 +182,13 @@ def cli(
         output_csv=output_csv,
     )
     write_metrics_csv(combined_df, resolved_output_csv)
+    if skipped_positions:
+        print(
+            f"Skipped {len(skipped_positions)} missing positions: "
+            f"{', '.join(str(pos) for pos in skipped_positions)}"
+        )
     print(
-        f"Wrote consolidated metrics CSV for {len(positions)} positions: {resolved_output_csv}"
+        f"Wrote consolidated metrics CSV for {len(position_frames)} positions: {resolved_output_csv}"
     )
 
 

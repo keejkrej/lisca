@@ -273,7 +273,10 @@ pub fn list_saved_bbox_positions(workspace_path: String) -> Result<Vec<u32>, Str
     crate::viewer::roi::list_saved_bbox_positions(workspace_path)
 }
 
-pub fn load_align_state(workspace_path: String, pos: u32) -> Result<Option<SavedAlignState>, String> {
+pub fn load_align_state(
+    workspace_path: String,
+    pos: u32,
+) -> Result<Option<SavedAlignState>, String> {
     crate::viewer::roi::load_align_state(workspace_path, pos)
 }
 
@@ -326,13 +329,22 @@ pub fn crop_roi<F>(
     source: ViewerSource,
     pos: u32,
     format: CropOutputFormat,
+    batch: Option<usize>,
     progress: &mut F,
     is_cancelled: &dyn Fn() -> bool,
 ) -> CropRoiResponse
 where
     F: FnMut(f64, &str) -> Result<(), String>,
 {
-    crate::viewer::roi::crop_roi(workspace_path, source, pos, format, progress, is_cancelled)
+    crate::viewer::roi::crop_roi(
+        workspace_path,
+        source,
+        pos,
+        format,
+        batch,
+        progress,
+        is_cancelled,
+    )
 }
 
 #[cfg(test)]
