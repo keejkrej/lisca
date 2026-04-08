@@ -76,7 +76,7 @@ def test_cli_with_slide_writes_one_csv_per_slide_channel(monkeypatch, tmp_path: 
     monkeypatch.setattr(timeseries, 'write_metrics_csv', lambda df, output_csv: written.append((df.copy(), output_csv)))
 
     timeseries.cli(
-        dataset_root=tmp_path,
+        workspace=tmp_path,
         channel=1,
         slide=slide_path,
         output_csv=None,
@@ -139,7 +139,7 @@ def test_cli_with_slide_skips_missing_positions(monkeypatch, tmp_path: Path, cap
     monkeypatch.setattr(timeseries, 'write_metrics_csv', lambda df, output_csv: written.append((df.copy(), output_csv)))
 
     timeseries.cli(
-        dataset_root=tmp_path,
+        workspace=tmp_path,
         channel=1,
         slide=slide_path,
         output_csv=None,
@@ -179,7 +179,7 @@ def test_cli_with_slide_honors_custom_output_csv(monkeypatch, tmp_path: Path) ->
 
     custom_output = tmp_path / 'combined.csv'
     timeseries.cli(
-        dataset_root=tmp_path,
+        workspace=tmp_path,
         channel=0,
         slide=slide_path,
         output_csv=custom_output,

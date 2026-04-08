@@ -103,6 +103,10 @@ def write_auc_csv(df: pd.DataFrame, output_csv: Path) -> None:
     df.to_csv(output_csv, index=False)
 
 
+def format_written_auc_csv_message(output_csv: Path) -> str:
+    return f"Wrote AUC CSV: {output_csv}"
+
+
 @app.command()
 def cli(
     timeseries_csvs: list[Path] = typer.Argument(
@@ -124,7 +128,7 @@ def cli(
     ),
 ) -> None:
     resolved_output_csv = run_auc(timeseries_csvs, interval=interval, output_csv=output_csv)
-    print(f"Wrote AUC CSV: {resolved_output_csv}")
+    print(format_written_auc_csv_message(resolved_output_csv))
 
 
 def main(argv: list[str] | None = None, *, prog_name: str = "delivery expression auc") -> None:

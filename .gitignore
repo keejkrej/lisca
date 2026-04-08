@@ -2,6 +2,7 @@ node_modules/
 .venv/
 target/
 dist/
+build/
 coverage/
 .pytest_cache/
 __pycache__/

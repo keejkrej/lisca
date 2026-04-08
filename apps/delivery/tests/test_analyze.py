@@ -1,36 +1,34 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
-
-from click.exceptions import Exit
-import pytest
 
 from delivery import analyze
 
 
 def test_run_analysis_orchestrates_expected_outputs(monkeypatch, tmp_path: Path) -> None:
-    dataset_root = tmp_path / "dataset"
+    workspace = tmp_path / "workspace"
     slide_path = tmp_path / "slide.json"
-    output_dir = tmp_path / "out"
-    timeseries_csv_a = output_dir / "slide_sc0_ch001_timeseries.csv"
-    timeseries_csv_b = output_dir / "slide_sc2_ch001_timeseries.csv"
-    auc_csv = output_dir / "slide_ch001_timeseries_auc.csv"
-    timeseries_plot = output_dir / "slide_ch001_timeseries_combined.png"
-    auc_plot = output_dir / "slide_ch001_timeseries_auc.png"
+    timeseries_csv_a = tmp_path / "slide_sc0_ch001_timeseries.csv"
+    timeseries_csv_b = tmp_path / "slide_sc2_ch001_timeseries.csv"
+    auc_csv = tmp_path / "slide_ch001_timeseries_auc.csv"
+    timeseries_plot = tmp_path / "slide_ch001_timeseries_combined.png"
+    auc_plot = tmp_path / "slide_ch001_timeseries_auc.png"
 
     calls: list[tuple[str, object]] = []
+    output_messages: list[str] = []
 
     monkeypatch.setattr(
         analyze.timeseries,
         "run_slide_timeseries",
-        lambda dataset_root_arg, *, slide, channel, output_csv, correction_quartile: (
-            calls.append(("timeseries", (dataset_root_arg, slide, channel, output_csv, correction_quartile))),
+        lambda workspace_arg, *, slide, channel, output_csv, correction_quartile=analyze.timeseries.DELIVERY_CORRECTION_QUARTILE, on_csv_written=None: (
+            calls.append(("timeseries", (workspace_arg, slide, channel, output_csv, correction_quartile))),
+            on_csv_written(0, timeseries_csv_a, 2) if on_csv_written is not None else None,
+            on_csv_written(2, timeseries_csv_b, 3) if on_csv_written is not None else None,
             analyze.timeseries.SlideTimeseriesRunResult(
                 written_outputs=[(0, timeseries_csv_a, 2), (2, timeseries_csv_b, 3)],
                 skipped_positions={2: [26]},
             ),
-        )[1],
+        )[-1],
     )
     monkeypatch.setattr(
         analyze.auc,
@@ -58,12 +56,11 @@ def test_run_analysis_orchestrates_expected_outputs(monkeypatch, tmp_path: Path)
     )
 
     result = analyze.run_analysis(
-        dataset_root,
+        workspace,
         slide=slide_path,
         channel=1,
         interval=10.0,
-        output_dir=output_dir,
-        correction_quartile=analyze.timeseries.DELIVERY_CORRECTION_QUARTILE,
+        on_output=output_messages.append,
     )
 
     assert result.timeseries_csvs == [timeseries_csv_a, timeseries_csv_b]
@@ -72,15 +69,23 @@ def test_run_analysis_orchestrates_expected_outputs(monkeypatch, tmp_path: Path)
     assert result.auc_plot == auc_plot
     assert result.skipped_positions == {2: [26]}
     assert calls == [
-        ("timeseries", (dataset_root, slide_path, 1, output_dir, analyze.timeseries.DELIVERY_CORRECTION_QUARTILE)),
+        ("timeseries", (workspace, slide_path, 1, None, analyze.timeseries.DELIVERY_CORRECTION_QUARTILE)),
         ("auc", ([timeseries_csv_a, timeseries_csv_b], 10.0, None)),
         ("plot_timeseries", ([timeseries_csv_a, timeseries_csv_b], None, 3, 0.12, 1.0, "#c03a2b", None)),
         ("plot_auc", (auc_csv, None, "#c03a2b", "AUC by slide channel")),
     ]
+    assert output_messages == [
+        analyze.timeseries.format_written_timeseries_csv_message(0, timeseries_csv_a, 2),
+        analyze.timeseries.format_written_timeseries_csv_message(2, timeseries_csv_b, 3),
+        analyze.timeseries.format_skipped_positions_message({2: [26]}),
+        analyze.auc.format_written_auc_csv_message(auc_csv),
+        analyze.plot_timeseries.format_written_timeseries_plot_message(timeseries_plot),
+        analyze.plot_auc.format_written_auc_plot_message(auc_plot),
+    ]
 
 
 def test_run_analysis_emits_stage_updates(monkeypatch, tmp_path: Path) -> None:
-    dataset_root = tmp_path / "dataset"
+    workspace = tmp_path / "workspace"
     slide_path = tmp_path / "slide.json"
     result = analyze.timeseries.SlideTimeseriesRunResult(
         written_outputs=[(0, tmp_path / "slide_sc0_ch001_timeseries.csv", 2)],
@@ -98,12 +103,10 @@ def test_run_analysis_emits_stage_updates(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(analyze.plot_auc, "run_plot_auc", lambda *args, **kwargs: tmp_path / "auc.png")
 
     analyze.run_analysis(
-        dataset_root,
+        workspace,
         slide=slide_path,
         channel=1,
         interval=10.0,
-        output_dir=None,
-        correction_quartile=analyze.timeseries.DELIVERY_CORRECTION_QUARTILE,
         on_stage=lambda completed, total, description: stage_updates.append((completed, total, description)),
     )
 
@@ -114,58 +117,3 @@ def test_run_analysis_emits_stage_updates(monkeypatch, tmp_path: Path) -> None:
         (3, 4, "Rendering AUC plot"),
         (4, 4, "Analysis complete"),
     ]
-
-
-def test_to_result_payload_serializes_paths(tmp_path: Path) -> None:
-    result = analyze.AnalyzeRunResult(
-        dataset_root=tmp_path / "dataset",
-        slide=tmp_path / "slide.json",
-        channel=2,
-        interval=5.0,
-        timeseries_csvs=[tmp_path / "a.csv", tmp_path / "b.csv"],
-        auc_csv=tmp_path / "auc.csv",
-        timeseries_plot=tmp_path / "timeseries.png",
-        auc_plot=tmp_path / "auc.png",
-        skipped_positions={1: [3, 5]},
-    )
-
-    payload = analyze.to_result_payload(result)
-
-    assert payload == {
-        "status": "success",
-        "dataset_root": str(result.dataset_root),
-        "slide": str(result.slide),
-        "channel": 2,
-        "interval": 5.0,
-        "timeseries_csvs": [str(tmp_path / "a.csv"), str(tmp_path / "b.csv")],
-        "auc_csv": str(tmp_path / "auc.csv"),
-        "timeseries_plot": str(tmp_path / "timeseries.png"),
-        "auc_plot": str(tmp_path / "auc.png"),
-        "skipped_positions": {1: [3, 5]},
-    }
-
-
-def test_cli_with_json_emits_error_payload(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    dataset_root = tmp_path / "dataset"
-    slide_path = tmp_path / "slide.json"
-    dataset_root.mkdir()
-    slide_path.write_text("{}", encoding="utf-8")
-
-    with pytest.raises(Exit) as exc_info:
-        analyze.cli(
-            dataset_root=dataset_root,
-            slide=slide_path,
-            channel=1,
-            interval=10.0,
-            output_dir=None,
-            correction_quartile=analyze.timeseries.DELIVERY_CORRECTION_QUARTILE,
-            json_output=True,
-        )
-
-    assert exc_info.value.exit_code == 1
-    captured = capsys.readouterr()
-    payload = json.loads(captured.out)
-    assert payload["status"] == "error"
-    assert payload["channel"] == 1
-    assert payload["interval"] == 10.0
-    assert "defines no slide channels" in payload["error"]

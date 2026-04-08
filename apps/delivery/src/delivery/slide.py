@@ -85,9 +85,9 @@ def prompt_remove_channel(console: Console, mapping: SlideMapping) -> None:
         return
 
 
-def run_slide_wizard(console: Console, dataset_root: Path, output_path: Path) -> SlideMapping | None:
+def run_slide_wizard(console: Console, workspace: Path, output_path: Path) -> SlideMapping | None:
     console.print("[bold]Delivery Slide Wizard[/bold]")
-    console.print(f"Dataset root: {dataset_root}")
+    console.print(f"Workspace: {workspace}")
     console.print(f"Output path: {output_path}")
     console.print()
 
@@ -133,24 +133,24 @@ app = typer.Typer(add_completion=False, no_args_is_help=True, help=HELP)
 
 @app.command()
 def cli(
-    dataset_root: Path = typer.Argument(
+    workspace: Path = typer.Argument(
         ...,
         exists=True,
         file_okay=False,
         dir_okay=True,
-        help="Dataset root used to choose the default output path.",
+        help="Workspace used to choose the default output path.",
     ),
     output: Path | None = typer.Option(
         None,
         "--output",
         file_okay=True,
         dir_okay=False,
-        help="Optional output path. Default: <dataset_root>/slide.json",
+        help="Optional output path. Default: <workspace>/slide.json",
     ),
 ) -> None:
     console = Console(stderr=True)
-    output_path = resolve_slide_path(dataset_root.resolve(), output)
-    mapping = run_slide_wizard(console, dataset_root.resolve(), output_path)
+    output_path = resolve_slide_path(workspace.resolve(), output)
+    mapping = run_slide_wizard(console, workspace.resolve(), output_path)
     if mapping is None:
         raise typer.Exit(code=1)
 

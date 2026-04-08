@@ -87,6 +87,10 @@ def write_auc_boxplot(
     plt.close(fig)
 
 
+def format_written_auc_plot_message(output_plot: Path) -> str:
+    return f"Wrote plot: {output_plot}"
+
+
 @app.command()
 def cli(
     auc_csv: Path = typer.Argument(
@@ -117,7 +121,7 @@ def cli(
         color=color,
         title=title,
     )
-    print(f"Wrote plot: {resolved_output_plot}")
+    print(format_written_auc_plot_message(resolved_output_plot))
 
 
 def main(argv: list[str] | None = None, *, prog_name: str = "delivery expression plot-auc") -> None:

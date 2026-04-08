@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable
 
 import pandas as pd
 import typer
@@ -26,6 +27,7 @@ app = typer.Typer(
 
 OUTPUT_COLUMNS = ("pos", "roi", "t", "corrected")
 DELIVERY_CORRECTION_QUARTILE = 0.25
+CsvWrittenCallback = Callable[[int, Path, int], None]
 
 
 @dataclass(frozen=True)
@@ -38,14 +40,14 @@ load_slide_position_groups = load_slide_mapping
 
 
 def default_slide_timeseries_csv_path(
-    dataset_root: Path,
+    workspace: Path,
     slide_path: Path,
     slide_channel: int,
     channel: int,
     output_csv: Path | None,
 ) -> Path:
     if output_csv is None:
-        csv_path = dataset_root / 'timeseries' / f'{slide_path.stem}_sc{slide_channel}_ch{channel:03d}_timeseries.csv'
+        csv_path = workspace / 'timeseries' / f'{slide_path.stem}_sc{slide_channel}_ch{channel:03d}_timeseries.csv'
         return csv_path.resolve()
 
     if output_csv.suffix:
@@ -80,14 +82,15 @@ def apply_delivery_correction(df: pd.DataFrame, *, correction_quartile: float = 
 
 
 def run_slide_timeseries(
-    dataset_root: Path,
+    workspace: Path,
     *,
     slide: Path,
     channel: int,
     output_csv: Path | None,
     correction_quartile: float = DELIVERY_CORRECTION_QUARTILE,
+    on_csv_written: CsvWrittenCallback | None = None,
 ) -> SlideTimeseriesRunResult:
-    dataset_root = dataset_root.resolve()
+    workspace = workspace.resolve()
     slide_path = slide.resolve()
     quantile_column_name(correction_quartile)
     skipped_positions: dict[int, list[int]] = {}
@@ -98,7 +101,7 @@ def run_slide_timeseries(
         position_frames: list[pd.DataFrame] = []
         for resolved_pos in positions:
             try:
-                pos_dir = position_dir(dataset_root, resolved_pos)
+                pos_dir = position_dir(workspace, resolved_pos)
             except ValueError:
                 skipped_positions.setdefault(slide_channel, []).append(resolved_pos)
                 continue
@@ -118,7 +121,7 @@ def run_slide_timeseries(
 
         combined_df = consolidate_metrics(position_frames)
         resolved_output_csv = default_slide_timeseries_csv_path(
-            dataset_root=dataset_root,
+            workspace=workspace,
             slide_path=slide_path,
             slide_channel=slide_channel,
             channel=channel,
@@ -131,6 +134,8 @@ def run_slide_timeseries(
             resolved_output_csv,
         )
         written_outputs.append((slide_channel, resolved_output_csv, len(position_frames)))
+        if on_csv_written is not None:
+            on_csv_written(slide_channel, resolved_output_csv, len(position_frames))
 
     if not written_outputs:
         if skipped_positions:
@@ -150,14 +155,30 @@ def run_slide_timeseries(
     )
 
 
+def format_written_timeseries_csv_message(slide_channel: int, output_csv: Path, position_count: int) -> str:
+    return (
+        f"Wrote metrics CSV for slide channel {slide_channel} with {position_count} positions: "
+        f"{output_csv}"
+    )
+
+
+def format_skipped_positions_message(skipped_positions: dict[int, list[int]]) -> str:
+    total_skipped_positions = sum(len(positions) for positions in skipped_positions.values())
+    skipped_summary = "; ".join(
+        f"slide channel {slide_channel} -> {', '.join(str(pos) for pos in positions)}"
+        for slide_channel, positions in sorted(skipped_positions.items())
+    )
+    return f"Skipped {total_skipped_positions} missing positions from slide mapping: {skipped_summary}"
+
+
 @app.command()
 def cli(
-    dataset_root: Path = typer.Argument(
+    workspace: Path = typer.Argument(
         ...,
         exists=True,
         file_okay=False,
         dir_okay=True,
-        help="Dataset root containing roi/PosN/index.json and Roi*.tif files.",
+        help="Workspace containing roi/PosN/index.json and Roi*.tif files.",
     ),
     channel: int = typer.Option(
         ...,
@@ -182,7 +203,7 @@ def cli(
         "--output-csv",
         help=(
             "Output CSV path or directory. Default: one CSV per slide channel named "
-            "<slide_stem>_scS_chCCC_timeseries.csv under <dataset_root>/timeseries. "
+            "<slide_stem>_scS_chCCC_timeseries.csv under <workspace>/timeseries. "
             "When a custom .csv path is provided, _scS_chCCC is appended to the stem "
             "for each output file."
         ),
@@ -194,26 +215,17 @@ def cli(
     ),
 ) -> None:
     result = run_slide_timeseries(
-        dataset_root,
+        workspace,
         slide=slide,
         channel=channel,
         output_csv=output_csv,
         correction_quartile=correction_quartile,
+        on_csv_written=lambda slide_channel, resolved_output_csv, position_count: print(
+            format_written_timeseries_csv_message(slide_channel, resolved_output_csv, position_count)
+        ),
     )
     if result.skipped_positions:
-        total_skipped_positions = sum(len(positions) for positions in result.skipped_positions.values())
-        skipped_summary = "; ".join(
-            f"slide channel {slide_channel} -> {', '.join(str(pos) for pos in positions)}"
-            for slide_channel, positions in sorted(result.skipped_positions.items())
-        )
-        print(
-            f"Skipped {total_skipped_positions} missing positions from slide mapping: {skipped_summary}"
-        )
-    for slide_channel, resolved_output_csv, position_count in result.written_outputs:
-        print(
-            f"Wrote metrics CSV for slide channel {slide_channel} with {position_count} positions: "
-            f"{resolved_output_csv}"
-        )
+        print(format_skipped_positions_message(result.skipped_positions))
 
 
 def main(argv: list[str] | None = None, *, prog_name: str = "delivery expression timeseries") -> None:
