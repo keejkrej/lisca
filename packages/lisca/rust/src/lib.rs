@@ -1,6 +1,9 @@
-//! Rust pipeline layer for native viewer backend workflows.
+//! Rust pipeline layer for LISCA native workflows.
 //!
-//! This crate is not intended to mirror the Python or TypeScript package
-//! topology. It currently exposes only the native `viewer` backend layer.
+//! The crate currently exposes the native `viewer` backend plus shared
+//! delivery-oriented data loading and analysis helpers used by the Rust
+//! `delivery` CLI.
 
+pub mod analysis;
+pub mod data;
 pub mod viewer;

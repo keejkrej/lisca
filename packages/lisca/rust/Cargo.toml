@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 base64 = "0.22"
+csv = "1.4"
 czi-rs = "0.1.0"
 nd2-rs = "0.1.6"
 png = "0.17"

@@ -1,0 +1,18 @@
+[package]
+name = "delivery-rs"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "delivery"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4.6", features = ["derive"] }
+csv = "1.4"
+dialoguer = "0.12"
+lisca = { workspace = true }
+plotters = "0.3.7"
+
+[dev-dependencies]
+tempfile = "3.20"

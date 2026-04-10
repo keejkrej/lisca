@@ -7,6 +7,7 @@ This repository contains the shared `lisca` pipeline layers plus the current LIS
 - `packages/lisca/rust`: shared Rust native backend for viewer workflows
 - `apps/viewer`: standalone Tauri viewer shell
 - `apps/delivery`: delivery-specific Python workflows
+- `apps/delivery-rs`: delivery-specific Rust CLI intended to replace the packaged Python binary
 - `apps/apoptosis`: apoptosis-specific Python workflows
 - `apps/studio`: reserved for the integrated desktop app
 
