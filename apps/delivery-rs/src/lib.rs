@@ -17,7 +17,6 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Commands {
-    Analyze(analyze::AnalyzeArgs),
     Slide(slide::SlideArgs),
     Expression(expression::ExpressionArgs),
 }
@@ -25,7 +24,6 @@ pub enum Commands {
 impl Cli {
     pub fn run(self) -> Result<(), String> {
         match self.command {
-            Commands::Analyze(args) => analyze::execute(args),
             Commands::Slide(args) => slide::execute(args),
             Commands::Expression(args) => expression::execute(args),
         }
@@ -41,8 +39,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn analyze_help_is_exposed() {
-        let output = build_cli().render_long_help().to_string();
-        assert!(output.contains("delivery"));
+    fn analyze_help_is_exposed_under_expression() {
+        let output = build_cli()
+            .find_subcommand("expression")
+            .unwrap()
+            .clone()
+            .render_long_help()
+            .to_string();
+        assert!(output.contains("analyze"));
     }
 }

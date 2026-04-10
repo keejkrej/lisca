@@ -30,9 +30,10 @@ def test_expression_timeseries_requires_slide(tmp_path: Path) -> None:
 
 
 def test_analyze_help_is_exposed() -> None:
-    result = runner.invoke(cli.app, ["analyze", "--help"])
+    result = runner.invoke(cli.app, ["expression", "analyze", "--help"])
 
     assert result.exit_code == 0
+    assert "Usage: root expression analyze" in result.output
     assert "Run the full delivery analysis workflow" in result.output
     assert "--slide" in result.output
     assert "--interval" in result.output

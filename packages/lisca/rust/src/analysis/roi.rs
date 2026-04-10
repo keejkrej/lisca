@@ -4,7 +4,7 @@ use std::path::Path;
 use csv::{ReaderBuilder, WriterBuilder};
 use serde::{Deserialize, Serialize};
 
-use crate::data::roi::{read_roi_frame_2d, PositionIndex};
+use crate::data::roi::{read_roi_stack_2d, roi_frame_from_stack, PositionIndex};
 
 pub const DEFAULT_QUARTILES: &str = "0.10,0.25,0.50,0.75,0.90";
 
@@ -77,8 +77,9 @@ pub fn compute_roi_metrics(
 
     let mut rows = Vec::new();
     for roi in &index.rois {
+        let stack = read_roi_stack_2d(pos_dir, index, roi)?;
         for timepoint in 0..index.time_count {
-            let frame = read_roi_frame_2d(pos_dir, index, roi, timepoint, channel, 0)?;
+            let frame = roi_frame_from_stack(&stack, index, roi, timepoint, channel, 0)?;
             let mut sorted = frame
                 .pixels
                 .iter()

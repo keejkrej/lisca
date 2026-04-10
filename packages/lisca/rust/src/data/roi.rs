@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use crate::viewer::image::load_tiff_frame_page;
+use crate::viewer::image::{load_tiff_frame_page, load_tiff_frames};
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct RoiCrop {
@@ -132,6 +132,69 @@ pub fn read_roi_frame_2d(
     })
 }
 
+pub fn read_roi_stack_2d(
+    pos_dir: &Path,
+    index: &PositionIndex,
+    roi: &RoiCrop,
+) -> Result<Vec<RoiFrame2D>, String> {
+    let roi_path = pos_dir.join(&roi.file_name);
+    if !roi_path.is_file() {
+        return Err(format!(
+            "Missing ROI TIFF referenced by index.json: {}",
+            roi_path.display()
+        ));
+    }
+
+    let expected_pages = roi_page_count(index, roi)?;
+    let expected_area = roi_frame_area(index, roi)?;
+    let frames = load_tiff_frames(&roi_path)?;
+    if frames.len() != expected_pages {
+        return Err(format!(
+            "{} page count mismatch: expected {}, got {}",
+            roi_path.display(),
+            expected_pages,
+            frames.len()
+        ));
+    }
+
+    frames
+        .into_iter()
+        .map(|frame| {
+            if frame.data.len() != expected_area {
+                return Err(format!(
+                    "{} shape mismatch: expected {} pixels, got {}",
+                    roi_path.display(),
+                    expected_area,
+                    frame.data.len()
+                ));
+            }
+            Ok(RoiFrame2D {
+                width: frame.width,
+                height: frame.height,
+                pixels: frame.data,
+            })
+        })
+        .collect()
+}
+
+pub fn roi_frame_from_stack<'a>(
+    stack: &'a [RoiFrame2D],
+    index: &PositionIndex,
+    roi: &RoiCrop,
+    timepoint: u32,
+    channel: u32,
+    z_index: u32,
+) -> Result<&'a RoiFrame2D, String> {
+    let page = roi_page_index(index, roi, timepoint, channel, z_index)?;
+    stack.get(page).ok_or_else(|| {
+        format!(
+            "TIFF page {} is out of range for ROI {}",
+            page,
+            roi.file_name
+        )
+    })
+}
+
 fn parse_roi_crop(value: &serde_json::Value) -> Result<RoiCrop, String> {
     let bbox = value.get("bbox").cloned().unwrap_or_else(|| serde_json::json!({}));
     Ok(RoiCrop {
@@ -240,6 +303,24 @@ fn roi_frame_area(index: &PositionIndex, roi: &RoiCrop) -> Result<usize, String>
         ));
     }
     Ok(area)
+}
+
+fn roi_page_count(index: &PositionIndex, roi: &RoiCrop) -> Result<usize, String> {
+    if index.axis_order.len() != roi.shape.len() {
+        return Err(format!(
+            "Axis order {:?} does not match ROI stack ndim={}",
+            index.axis_order,
+            roi.shape.len()
+        ));
+    }
+
+    let mut pages = 1usize;
+    for (axis, size) in index.axis_order.chars().zip(roi.shape.iter().copied()) {
+        if axis != 'Y' && axis != 'X' {
+            pages = pages.saturating_mul(size);
+        }
+    }
+    Ok(pages.max(1))
 }
 
 #[cfg(test)]

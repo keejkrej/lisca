@@ -147,6 +147,30 @@ pub fn load_tiff_frame(path: &Path) -> Result<RawFrame, String> {
     load_tiff_frame_page(path, 0)
 }
 
+pub fn load_tiff_frames(path: &Path) -> Result<Vec<RawFrame>, String> {
+    let file = File::open(path).map_err(|err| err.to_string())?;
+    let mut decoder = Decoder::new(BufReader::new(file)).map_err(|err| err.to_string())?;
+    let mut frames = Vec::new();
+
+    loop {
+        let dimensions = decoder.dimensions().map_err(|err| err.to_string())?;
+        let data = decoder.read_image().map_err(|err| err.to_string())?;
+        let pixels = to_u16_buffer(dimensions.0, dimensions.1, data)?;
+        frames.push(RawFrame {
+            width: dimensions.0,
+            height: dimensions.1,
+            data: pixels,
+        });
+
+        if !decoder.more_images() {
+            break;
+        }
+        decoder.next_image().map_err(|err| err.to_string())?;
+    }
+
+    Ok(frames)
+}
+
 pub fn load_tiff_frame_page(path: &Path, page: usize) -> Result<RawFrame, String> {
     let file = File::open(path).map_err(|err| err.to_string())?;
     let mut decoder = Decoder::new(BufReader::new(file)).map_err(|err| err.to_string())?;

@@ -1,3 +1,5 @@
+use crate::analyze;
+
 pub mod auc;
 pub mod plot_auc;
 pub mod plot_timeseries;
@@ -14,6 +16,7 @@ pub struct ExpressionArgs {
 
 #[derive(Clone, Debug, Subcommand)]
 pub enum ExpressionCommands {
+    Analyze(analyze::AnalyzeArgs),
     Auc(auc::AucArgs),
     #[command(name = "plot-auc")]
     PlotAuc(plot_auc::PlotAucArgs),
@@ -24,6 +27,7 @@ pub enum ExpressionCommands {
 
 pub fn execute(args: ExpressionArgs) -> Result<(), String> {
     match args.command {
+        ExpressionCommands::Analyze(args) => analyze::execute(args),
         ExpressionCommands::Auc(args) => auc::execute(args),
         ExpressionCommands::PlotAuc(args) => plot_auc::execute(args),
         ExpressionCommands::PlotTimeseries(args) => plot_timeseries::execute(args),

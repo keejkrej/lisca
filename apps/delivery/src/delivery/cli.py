@@ -12,8 +12,8 @@ from .expression import auc, plot_auc, plot_timeseries, timeseries
 app = typer.Typer(add_completion=False, no_args_is_help=True)
 expression_app = typer.Typer(add_completion=False, no_args_is_help=True)
 
-app.command("analyze", help=analyze.HELP)(analyze.cli)
 app.command("slide", help=slide.HELP)(slide.cli)
+expression_app.command("analyze", help=analyze.HELP)(analyze.cli)
 expression_app.command("auc")(auc.cli)
 expression_app.command("plot-auc")(plot_auc.cli)
 expression_app.command("plot-timeseries")(plot_timeseries.cli)

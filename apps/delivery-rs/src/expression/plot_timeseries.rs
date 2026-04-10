@@ -7,6 +7,10 @@ use plotters::prelude::*;
 use lisca::analysis::roi::load_timeseries_csv;
 
 pub const HELP: &str = "Plot one or more ROI timeseries CSVs as subplots in a single PNG.";
+const PYTHON_TIMESERIES_WIDTH_PER_COLUMN: u32 = 900;
+const PYTHON_TIMESERIES_HEIGHT_PER_ROW: u32 = 720;
+const PYTHON_TITLE_FONT_SIZE: i32 = 25;
+const PYTHON_LABEL_FONT_SIZE: i32 = 21;
 
 #[derive(Clone, Debug, Args)]
 #[command(about = HELP)]
@@ -92,8 +96,14 @@ pub fn write_subplot_grid(
 ) -> Result<(), String> {
     let columns = columns.max(1);
     let rows = (timeseries_csvs.len() + columns - 1) / columns;
-    let root = BitMapBackend::new(output_plot, (columns as u32 * 900, rows as u32 * 600))
-        .into_drawing_area();
+    let root = BitMapBackend::new(
+        output_plot,
+        (
+            columns as u32 * PYTHON_TIMESERIES_WIDTH_PER_COLUMN,
+            rows as u32 * PYTHON_TIMESERIES_HEIGHT_PER_ROW,
+        ),
+    )
+    .into_drawing_area();
     root.fill(&WHITE).map_err(|err| err.to_string())?;
     if let Some(parent) = output_plot.parent() {
         std::fs::create_dir_all(parent).map_err(|err| err.to_string())?;
@@ -103,7 +113,7 @@ pub fn write_subplot_grid(
         root.draw(&Text::new(
             title.to_string(),
             (20, 25),
-            ("sans-serif", 24).into_font(),
+            ("sans-serif", PYTHON_TITLE_FONT_SIZE).into_font(),
         ))
         .map_err(|err| err.to_string())?;
     }
@@ -140,15 +150,21 @@ pub fn write_subplot_grid(
 
         let mut chart = ChartBuilder::on(&area)
             .margin(10)
-            .caption(subplot_title(csv_path, Some(trace_count)), ("sans-serif", 20))
-            .set_label_area_size(LabelAreaPosition::Left, 50)
-            .set_label_area_size(LabelAreaPosition::Bottom, 35)
+            .caption(
+                subplot_title(csv_path, Some(trace_count)),
+                ("sans-serif", PYTHON_TITLE_FONT_SIZE),
+            )
+            .set_label_area_size(LabelAreaPosition::Left, 90)
+            .set_label_area_size(LabelAreaPosition::Bottom, 55)
             .build_cartesian_2d(x_min..x_max, y_min..y_max)
             .map_err(|err| err.to_string())?;
         chart
             .configure_mesh()
             .x_desc("frame")
             .y_desc("corrected intensity")
+            .label_style(("sans-serif", PYTHON_LABEL_FONT_SIZE))
+            .axis_desc_style(("sans-serif", PYTHON_LABEL_FONT_SIZE))
+            .y_label_formatter(&scientific_tick_label)
             .disable_mesh()
             .draw()
             .map_err(|err| err.to_string())?;
@@ -204,6 +220,10 @@ pub(crate) fn parse_color(value: &str) -> Result<RGBColor, String> {
     }
 }
 
+pub(crate) fn scientific_tick_label(value: &f64) -> String {
+    format!("{value:.2e}")
+}
+
 fn padded_range(min: f64, max: f64) -> (f64, f64) {
     if !min.is_finite() || !max.is_finite() {
         return (0.0, 1.0);
@@ -234,5 +254,10 @@ mod tests {
     fn subplot_title_includes_trace_count() {
         let title = subplot_title(Path::new("/tmp/slide_sc3_ch001_timeseries.csv"), Some(42));
         assert_eq!(title, "slide channel 3 (42 traces)");
+    }
+
+    #[test]
+    fn scientific_tick_label_uses_exponential_notation() {
+        assert_eq!(scientific_tick_label(&12345.0), "1.23e4");
     }
 }

@@ -5,6 +5,10 @@ use clap::Args;
 use plotters::prelude::*;
 
 pub const HELP: &str = "Plot AUC summaries as one box plot per slide channel.";
+const PYTHON_AUC_WIDTH: u32 = 1500;
+const PYTHON_AUC_HEIGHT: u32 = 900;
+const PYTHON_TITLE_FONT_SIZE: i32 = 25;
+const PYTHON_LABEL_FONT_SIZE: i32 = 21;
 
 #[derive(Clone, Debug, Args)]
 #[command(about = HELP)]
@@ -106,7 +110,7 @@ pub fn write_auc_boxplot(
     if let Some(parent) = output_plot.parent() {
         std::fs::create_dir_all(parent).map_err(|err| err.to_string())?;
     }
-    let root = BitMapBackend::new(output_plot, (1000, 600)).into_drawing_area();
+    let root = BitMapBackend::new(output_plot, (PYTHON_AUC_WIDTH, PYTHON_AUC_HEIGHT)).into_drawing_area();
     root.fill(&WHITE).map_err(|err| err.to_string())?;
 
     let mut grouped = BTreeMap::<u32, Vec<f64>>::new();
@@ -126,15 +130,20 @@ pub fn write_auc_boxplot(
 
     let mut chart = ChartBuilder::on(&root)
         .margin(20)
-        .caption(title.unwrap_or("AUC by slide channel"), ("sans-serif", 24))
-        .set_label_area_size(LabelAreaPosition::Left, 60)
-        .set_label_area_size(LabelAreaPosition::Bottom, 50)
+        .caption(
+            title.unwrap_or("AUC by slide channel"),
+            ("sans-serif", PYTHON_TITLE_FONT_SIZE),
+        )
+        .set_label_area_size(LabelAreaPosition::Left, 90)
+        .set_label_area_size(LabelAreaPosition::Bottom, 85)
         .build_cartesian_2d(0.5f64..(grouped.len() as f64 + 0.5), y_min..y_max)
         .map_err(|err| err.to_string())?;
     chart
         .configure_mesh()
         .x_desc("slide channel")
         .y_desc("AUC")
+        .label_style(("sans-serif", PYTHON_LABEL_FONT_SIZE))
+        .axis_desc_style(("sans-serif", PYTHON_LABEL_FONT_SIZE))
         .x_labels(grouped.len())
         .x_label_formatter(&|value| {
             let index = value.round() as usize;
@@ -154,7 +163,8 @@ pub fn write_auc_boxplot(
                     .unwrap_or_default()
             }
         })
-        .light_line_style(RGBAColor(0, 0, 0, 0.1))
+        .y_label_formatter(&super::plot_timeseries::scientific_tick_label)
+        .disable_mesh()
         .draw()
         .map_err(|err| err.to_string())?;
 
@@ -256,6 +266,7 @@ fn quantile(sorted: &[f64], q: f64) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tempfile::tempdir;
 
     #[test]
     fn default_output_plot_path_uses_auc_name() {
@@ -273,5 +284,29 @@ mod tests {
             .and_then(|channel| grouped.get(&channel).map(|values| format!("{channel}\n(n={})", values.len())))
             .unwrap_or_default();
         assert_eq!(label, "0\n(n=2)");
+    }
+
+    #[test]
+    fn write_auc_boxplot_writes_png() {
+        let tempdir = tempdir().unwrap();
+        let output_plot = tempdir.path().join("auc.png");
+        let rows = vec![
+            PlotAucRow {
+                slide_channel: 0,
+                auc: 10.0,
+            },
+            PlotAucRow {
+                slide_channel: 0,
+                auc: 12.0,
+            },
+            PlotAucRow {
+                slide_channel: 1,
+                auc: 20.0,
+            },
+        ];
+
+        write_auc_boxplot(&rows, &output_plot, "#c03a2b", Some("AUC by slide channel")).unwrap();
+
+        assert!(output_plot.is_file());
     }
 }
