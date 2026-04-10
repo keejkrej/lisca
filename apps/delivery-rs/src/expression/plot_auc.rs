@@ -141,10 +141,16 @@ pub fn write_auc_boxplot(
             if index == 0 || index > grouped.len() {
                 String::new()
             } else {
-                grouped
+                let slide_channel = grouped
                     .keys()
                     .nth(index - 1)
-                    .map(u32::to_string)
+                    .copied();
+                slide_channel
+                    .and_then(|channel| {
+                        grouped
+                            .get(&channel)
+                            .map(|values| format!("{channel}\n(n={})", values.len()))
+                    })
                     .unwrap_or_default()
             }
         })
@@ -255,5 +261,17 @@ mod tests {
     fn default_output_plot_path_uses_auc_name() {
         let path = default_output_plot_path(Path::new("/tmp/slide_auc.csv"), None);
         assert!(path.ends_with("slide_auc.png"));
+    }
+
+    #[test]
+    fn auc_tick_label_includes_count() {
+        let mut grouped = BTreeMap::<u32, Vec<f64>>::new();
+        grouped.insert(0, vec![10.0, 12.0]);
+        grouped.insert(1, vec![20.0]);
+        let slide_channel = grouped.keys().nth(0).copied();
+        let label = slide_channel
+            .and_then(|channel| grouped.get(&channel).map(|values| format!("{channel}\n(n={})", values.len())))
+            .unwrap_or_default();
+        assert_eq!(label, "0\n(n=2)");
     }
 }

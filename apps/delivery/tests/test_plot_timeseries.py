@@ -46,3 +46,31 @@ def test_cli_writes_combined_plot(tmp_path: Path) -> None:
     )
 
     assert (tmp_path / "slide_ch001_timeseries_combined.png").is_file()
+
+
+def test_trace_group_columns_include_position_when_present() -> None:
+    df = pd.DataFrame(
+        [
+            {"pos": 0, "roi": 1, "t": 0, "corrected": 1.0},
+            {"pos": 2, "roi": 1, "t": 0, "corrected": 3.0},
+        ]
+    )
+
+    assert plot_timeseries.trace_group_columns(df) == ["pos", "roi"]
+
+
+def test_trace_group_columns_fall_back_to_roi_without_position() -> None:
+    df = pd.DataFrame(
+        [
+            {"roi": 1, "t": 0, "corrected": 1.0},
+            {"roi": 2, "t": 0, "corrected": 3.0},
+        ]
+    )
+
+    assert plot_timeseries.trace_group_columns(df) == ["roi"]
+
+
+def test_subplot_title_includes_trace_count() -> None:
+    csv_path = Path("/tmp/slide_sc3_ch001_timeseries.csv")
+
+    assert plot_timeseries.subplot_title(csv_path, 42) == "slide channel 3 (42 traces)"

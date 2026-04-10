@@ -64,11 +64,22 @@ def default_output_plot_path(timeseries_csvs: list[Path], output_plot: Path | No
     return timeseries_csvs[0].with_name(f"{stem}_combined.png").resolve()
 
 
-def subplot_title(csv_path: Path) -> str:
+def subplot_title(csv_path: Path, trace_count: int | None = None) -> str:
     match = re.search(r"_sc(\d+)(?=_|$)", csv_path.stem)
     if match is not None:
-        return f"slide channel {int(match.group(1))}"
-    return csv_path.stem
+        label = f"slide channel {int(match.group(1))}"
+    else:
+        label = csv_path.stem
+    if trace_count is None:
+        return label
+    return f"{label} ({trace_count} traces)"
+
+
+def trace_group_columns(df) -> list[str]:
+    columns = ["roi"]
+    if "pos" in df.columns:
+        columns.insert(0, "pos")
+    return columns
 
 
 def write_subplot_grid(
@@ -87,7 +98,8 @@ def write_subplot_grid(
 
     for ax, csv_path in zip(axes_flat, timeseries_csvs):
         df = load_timeseries_csv(csv_path)
-        for _, roi_df in df.groupby("roi", sort=True):
+        trace_groups = df.groupby(trace_group_columns(df), sort=True, dropna=False)
+        for _, roi_df in trace_groups:
             ax.plot(
                 roi_df["t"],
                 roi_df["corrected"],
@@ -95,10 +107,9 @@ def write_subplot_grid(
                 alpha=alpha,
                 linewidth=linewidth,
             )
-        ax.set_title(subplot_title(csv_path))
+        ax.set_title(subplot_title(csv_path, trace_groups.ngroups))
         ax.set_xlabel("frame")
         ax.set_ylabel("corrected intensity")
-        ax.grid(alpha=0.2, linewidth=0.5)
 
     for ax in axes_flat[len(timeseries_csvs):]:
         ax.axis("off")

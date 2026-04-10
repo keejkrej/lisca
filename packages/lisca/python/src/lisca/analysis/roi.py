@@ -101,7 +101,10 @@ def load_timeseries_csv(csv_path: Path) -> pd.DataFrame:
         raise ValueError(
             f"{csv_path} is missing required columns for plotting: {sorted(missing)}"
         )
-    return df.sort_values(["roi", "t"]).reset_index(drop=True)
+    sort_columns = ["roi", "t"]
+    if "pos" in df.columns:
+        sort_columns = ["pos", *sort_columns]
+    return df.sort_values(sort_columns).reset_index(drop=True)
 
 
 def default_output_plot_path(csv_path: Path, output_plot: Path | None) -> Path:

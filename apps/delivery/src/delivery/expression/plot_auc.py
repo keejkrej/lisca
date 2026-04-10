@@ -58,6 +58,10 @@ def write_auc_boxplot(
     title: str | None,
 ) -> None:
     slide_channels = sorted(df["slide_channel"].unique().tolist())
+    trace_counts = [
+        int(df.loc[df["slide_channel"] == slide_channel, "auc"].shape[0])
+        for slide_channel in slide_channels
+    ]
     grouped_values = [
         df.loc[df["slide_channel"] == slide_channel, "auc"].to_numpy(dtype=float)
         for slide_channel in slide_channels
@@ -67,7 +71,10 @@ def write_auc_boxplot(
     boxplot = ax.boxplot(
         grouped_values,
         patch_artist=True,
-        tick_labels=[str(value) for value in slide_channels],
+        tick_labels=[
+            f"{slide_channel}\n(n={trace_count})"
+            for slide_channel, trace_count in zip(slide_channels, trace_counts, strict=True)
+        ],
     )
     for patch in boxplot["boxes"]:
         patch.set_facecolor(color)

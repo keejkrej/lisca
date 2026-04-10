@@ -65,8 +65,8 @@ pub fn default_output_plot_path(timeseries_csvs: &[PathBuf], output_plot: Option
     timeseries_csvs[0].with_file_name(format!("{stem}_combined.png"))
 }
 
-pub fn subplot_title(csv_path: &Path) -> String {
-    super::auc::parse_slide_channel(csv_path)
+pub fn subplot_title(csv_path: &Path, trace_count: Option<usize>) -> String {
+    let label = super::auc::parse_slide_channel(csv_path)
         .map(|value| format!("slide channel {value}"))
         .unwrap_or_else(|| {
             csv_path
@@ -74,7 +74,11 @@ pub fn subplot_title(csv_path: &Path) -> String {
                 .and_then(|value| value.to_str())
                 .unwrap_or("timeseries")
                 .to_string()
-        })
+        });
+    match trace_count {
+        Some(value) => format!("{label} ({value} traces)"),
+        None => label,
+    }
 }
 
 pub fn write_subplot_grid(
@@ -114,7 +118,7 @@ pub fn write_subplot_grid(
 
     for (area, csv_path) in areas.into_iter().zip(timeseries_csvs.iter()) {
         let rows = load_timeseries_csv(csv_path)?;
-        let mut grouped = BTreeMap::<u32, Vec<(f64, f64)>>::new();
+        let mut grouped = BTreeMap::<(u32, u32), Vec<(f64, f64)>>::new();
         let mut x_min = f64::INFINITY;
         let mut x_max = f64::NEG_INFINITY;
         let mut y_min = f64::INFINITY;
@@ -125,14 +129,18 @@ pub fn write_subplot_grid(
             x_max = x_max.max(point.0);
             y_min = y_min.min(point.1);
             y_max = y_max.max(point.1);
-            grouped.entry(row.roi).or_default().push(point);
+            grouped
+                .entry((row.pos.unwrap_or(0), row.roi))
+                .or_default()
+                .push(point);
         }
         let (x_min, x_max) = padded_range(x_min, x_max);
         let (y_min, y_max) = padded_range(y_min, y_max);
+        let trace_count = grouped.len();
 
         let mut chart = ChartBuilder::on(&area)
             .margin(10)
-            .caption(subplot_title(csv_path), ("sans-serif", 20))
+            .caption(subplot_title(csv_path, Some(trace_count)), ("sans-serif", 20))
             .set_label_area_size(LabelAreaPosition::Left, 50)
             .set_label_area_size(LabelAreaPosition::Bottom, 35)
             .build_cartesian_2d(x_min..x_max, y_min..y_max)
@@ -141,7 +149,7 @@ pub fn write_subplot_grid(
             .configure_mesh()
             .x_desc("frame")
             .y_desc("corrected intensity")
-            .light_line_style(RGBAColor(0, 0, 0, 0.1))
+            .disable_mesh()
             .draw()
             .map_err(|err| err.to_string())?;
         for (_, mut trace) in grouped {
@@ -220,5 +228,11 @@ mod tests {
         ];
         let output = default_output_plot_path(&csvs, None);
         assert!(output.ends_with("slide_ch001_timeseries_combined.png"));
+    }
+
+    #[test]
+    fn subplot_title_includes_trace_count() {
+        let title = subplot_title(Path::new("/tmp/slide_sc3_ch001_timeseries.csv"), Some(42));
+        assert_eq!(title, "slide channel 3 (42 traces)");
     }
 }
