@@ -5,6 +5,7 @@
 
 use std::{
     collections::HashSet,
+    env, fs,
     path::Path,
     sync::{Arc, Mutex},
     time::{Duration, Instant},
@@ -13,17 +14,15 @@ use std::{
 use lisca::viewer::backend::{
     auto_exclude_preview as run_auto_exclude_preview, crop_roi as run_crop_roi,
     list_saved_bbox_positions as run_list_saved_bbox_positions,
-    load_align_state as run_load_align_state,
-    load_annotation_labels as run_load_annotation_labels, load_frame_payload,
-    load_roi_frame_annotation as run_load_roi_frame_annotation, load_roi_frame_payload,
-    save_annotation_labels as run_save_annotation_labels, save_bbox as run_save_bbox,
-    save_roi_frame_annotation as run_save_roi_frame_annotation,
+    load_align_state as run_load_align_state, load_annotation_labels as run_load_annotation_labels,
+    load_frame_payload, load_roi_frame_annotation as run_load_roi_frame_annotation,
+    load_roi_frame_payload, save_annotation_labels as run_save_annotation_labels,
+    save_bbox as run_save_bbox, save_roi_frame_annotation as run_save_roi_frame_annotation,
     scan_roi_workspace as run_scan_roi_workspace, scan_source as run_scan_source, AnnotationLabel,
     AutoExcludePreviewRequest, AutoExcludePreviewResponse, ContrastWindow, CropOutputFormat,
     CropRoiResponse, CropRoiStatus, FramePayload, FrameRequest, LoadedRoiFrameAnnotation,
     RoiFrameAnnotation, RoiFrameAnnotationPayload, RoiFrameRequest, RoiWorkspaceScan,
-    SavedAlignState,
-    SaveBboxResponse, ViewerSource, WorkspaceScan,
+    SaveBboxResponse, SavedAlignState, ViewerSource, WorkspaceScan,
 };
 use rfd::FileDialog;
 use tauri::{command, Emitter, State, WebviewWindow};
@@ -257,6 +256,8 @@ async fn crop_roi(
 }
 
 fn main() {
+    apply_linux_webkit_workarounds();
+
     tauri::Builder::default()
         .manage(Arc::new(CropCancellationRegistry::default()))
         .invoke_handler(tauri::generate_handler![
@@ -282,4 +283,45 @@ fn main() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+fn apply_linux_webkit_workarounds() {
+    #[cfg(target_os = "linux")]
+    {
+        if !linux_has_nvidia_gpu() {
+            return;
+        }
+
+        match env::var("XDG_SESSION_TYPE").as_deref() {
+            Ok("wayland") => {
+                if env::var_os("__NV_DISABLE_EXPLICIT_SYNC").is_none() {
+                    env::set_var("__NV_DISABLE_EXPLICIT_SYNC", "1");
+                }
+            }
+            Ok("x11") => {
+                if env::var_os("WEBKIT_DISABLE_DMABUF_RENDERER").is_none() {
+                    env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+#[cfg(target_os = "linux")]
+fn linux_has_nvidia_gpu() -> bool {
+    if Path::new("/sys/module/nvidia").exists() {
+        return true;
+    }
+
+    let Ok(entries) = fs::read_dir("/sys/class/drm") else {
+        return false;
+    };
+
+    entries.filter_map(Result::ok).any(|entry| {
+        let vendor_path = entry.path().join("device/vendor");
+        fs::read_to_string(vendor_path)
+            .map(|vendor| vendor.trim().eq_ignore_ascii_case("0x10de"))
+            .unwrap_or(false)
+    })
 }
