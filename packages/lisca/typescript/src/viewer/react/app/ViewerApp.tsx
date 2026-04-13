@@ -93,7 +93,7 @@ export default function ViewerApp({
   );
 
   return (
-    <div className="h-screen min-h-[720px] min-w-[1280px] overflow-auto bg-background">
+    <div className="h-full overflow-hidden bg-background">
       <Toaster
         position="bottom-right"
         theme="dark"

@@ -1401,7 +1401,7 @@ export default function ViewerWorkspace({
   );
 
   return (
-    <div className="h-full min-h-[720px] min-w-[1280px] overflow-hidden bg-background text-foreground">
+    <div className="h-full min-h-0 min-w-0 overflow-hidden bg-background text-foreground">
       <div className="flex h-full min-h-0 flex-col">
         <ViewerNavbar
           workspacePath={workspacePath}
@@ -1836,10 +1836,10 @@ export default function ViewerWorkspace({
                 </SidebarField>
                 <div className="grid grid-cols-2 gap-2">
                   <SidebarField label="Included Cells">
-                    <SidebarStat value={includedVisibleCount} tone="info" />
+                    <SidebarStat value={includedVisibleCount} />
                   </SidebarField>
                   <SidebarField label="Excluded Cells">
-                    <SidebarStat value={excludedVisibleCount} tone="danger" />
+                    <SidebarStat value={excludedVisibleCount} />
                   </SidebarField>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
@@ -1854,7 +1854,7 @@ export default function ViewerWorkspace({
                   </Button>
                   <Button
                     size="sm"
-                    variant="destructive-outline"
+                    variant="outline"
                     className="h-8 justify-center px-3 text-xs"
                     disabled={!canExcludeAllVisibleCells}
                     onClick={handleExcludeAllVisibleCells}
@@ -2192,4 +2192,3 @@ export default function ViewerWorkspace({
     </div>
   );
 }
-

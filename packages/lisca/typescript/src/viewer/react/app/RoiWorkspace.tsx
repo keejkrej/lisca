@@ -756,7 +756,7 @@ export default function RoiWorkspace({
   );
 
   return (
-    <div className="h-full min-h-[720px] min-w-[1280px] overflow-hidden bg-background text-foreground">
+    <div className="h-full min-h-0 min-w-0 overflow-hidden bg-background text-foreground">
       <div className="flex h-full min-h-0 flex-col">
         <ViewerNavbar
           workspacePath={workspacePath}
