@@ -5,7 +5,7 @@
 
 use std::{
     collections::HashSet,
-    env, fs,
+    env,
     path::Path,
     sync::{Arc, Mutex},
     time::{Duration, Instant},
@@ -314,13 +314,13 @@ fn linux_has_nvidia_gpu() -> bool {
         return true;
     }
 
-    let Ok(entries) = fs::read_dir("/sys/class/drm") else {
+    let Ok(entries) = std::fs::read_dir("/sys/class/drm") else {
         return false;
     };
 
     entries.filter_map(Result::ok).any(|entry| {
         let vendor_path = entry.path().join("device/vendor");
-        fs::read_to_string(vendor_path)
+        std::fs::read_to_string(vendor_path)
             .map(|vendor| vendor.trim().eq_ignore_ascii_case("0x10de"))
             .unwrap_or(false)
     })
