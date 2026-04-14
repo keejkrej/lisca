@@ -5,25 +5,22 @@ use std::path::{Path, PathBuf};
 use std::thread;
 
 use base64::prelude::{Engine as _, BASE64_STANDARD};
-use czi_rs::{CziFile, Dimension as CziDimension, PlaneIndex};
-use nd2_rs::Nd2File;
 use png::{BitDepth, ColorType, Decoder as PngDecoder};
 use serde::{Deserialize, Serialize};
 use tiff::encoder::{colortype, TiffEncoder};
 
 use crate::viewer::domain::{
-    current_timestamp, dimension_size, dimension_values, parse_bbox_csv_name, roi_axis_values,
-    validate_request_index, workspace_align_json_path, workspace_annotation_json_path,
-    workspace_annotation_labels_path, workspace_annotation_mask_path,
-    workspace_annotation_roi_dir_path, workspace_bbox_csv_path, workspace_relative_path,
-    workspace_roi_index_path, workspace_roi_pos_dir_path, workspace_roi_tiff_path, AnnotationLabel,
-    CropOutputFormat, CropRoiResponse, CropRoiStatus, LoadedRoiFrameAnnotation, RoiBbox,
-    RoiFrameAnnotation, RoiFrameAnnotationPayload, RoiFrameRequest, RoiIndexEntry, RoiIndexFile,
-    RoiPositionScan, RoiWorkspaceScan, SaveBboxResponse, SavedAlignState, ViewerSource,
+    current_timestamp, parse_bbox_csv_name, roi_axis_values, workspace_align_json_path,
+    workspace_annotation_json_path, workspace_annotation_labels_path,
+    workspace_annotation_mask_path, workspace_annotation_roi_dir_path, workspace_bbox_csv_path,
+    workspace_relative_path, workspace_roi_index_path, workspace_roi_pos_dir_path,
+    workspace_roi_tiff_path, AnnotationLabel, CropOutputFormat, CropRoiResponse, CropRoiStatus,
+    LoadedRoiFrameAnnotation, RoiBbox, RoiFrameAnnotation, RoiFrameAnnotationPayload,
+    RoiFrameRequest, RoiIndexEntry, RoiIndexFile, RoiPositionScan, RoiWorkspaceScan,
+    SaveBboxResponse, SavedAlignState, ViewerSource,
 };
 use crate::viewer::image::{
-    collect_tiffs, czi_bitmap_to_u16, find_position_dir, load_tiff_frame, load_tiff_frame_page,
-    RawFrame,
+    collect_tiffs, find_position_dir, load_tiff_frame, load_tiff_frame_page, RawFrame, SourceReader,
 };
 
 #[derive(Deserialize, Serialize)]
@@ -725,19 +722,18 @@ where
     F: FnMut(f64, &str) -> Result<(), String>,
 {
     ensure_crop_not_cancelled(is_cancelled)?;
-    let mut nd2 = Nd2File::open(path).map_err(|err| err.to_string())?;
-    let sizes = nd2.sizes().map_err(|err| err.to_string())?;
-    let width = u32::try_from(dimension_size(&sizes, "X")).map_err(|err| err.to_string())?;
-    let height = u32::try_from(dimension_size(&sizes, "Y")).map_err(|err| err.to_string())?;
-    let positions = dimension_values(&sizes, "P");
-    let channels = dimension_values(&sizes, "C");
-    let times = dimension_values(&sizes, "T");
-    let z_slices = dimension_values(&sizes, "Z");
-    if !positions.contains(&pos) {
+    let mut reader = SourceReader::open_nd2(path)?;
+    let metadata = reader.metadata()?;
+    let width = metadata.width;
+    let height = metadata.height;
+    let channels = metadata.channels.clone();
+    let times = metadata.times.clone();
+    let z_slices = metadata.z_slices.clone();
+    if !metadata.contains_position(pos) {
         return Err(format!("Position index {pos} is out of range").into());
     }
 
-    let pos_index = validate_request_index("Position", pos, dimension_size(&sizes, "P"))?;
+    let pos_index = metadata.position_index(pos)?;
     validate_bboxes(bboxes, width, height)?;
 
     ensure_crop_not_cancelled(is_cancelled)?;
@@ -818,15 +814,15 @@ fn read_nd2_batch(
         let path = path.clone();
         handles.push(thread::spawn(
             move || -> Result<Nd2BatchReadResult, String> {
-                let mut nd2 = Nd2File::open(&path).map_err(|err| err.to_string())?;
-                let frame = nd2
+                let mut reader = SourceReader::open_nd2(&path)?;
+                let frame = reader
                     .read_frame_2d(
                         pos_index,
                         plane.time as usize,
                         plane.channel as usize,
                         plane.z as usize,
-                    )
-                    .map_err(|err| err.to_string())?;
+                    )?
+                    .data;
                 Ok(Nd2BatchReadResult { order_index, frame })
             },
         ));
@@ -888,30 +884,20 @@ where
     F: FnMut(f64, &str) -> Result<(), String>,
 {
     ensure_crop_not_cancelled(is_cancelled)?;
-    let mut czi = CziFile::open(path).map_err(|err| err.to_string())?;
-    let sizes = czi.sizes().map_err(|err| err.to_string())?;
-    let positions = dimension_values(&sizes, "S");
-    let channels = dimension_values(&sizes, "C");
-    let times = dimension_values(&sizes, "T");
-    let z_slices = dimension_values(&sizes, "Z");
-    if !positions.contains(&pos) {
+    let mut reader = SourceReader::open_czi(path)?;
+    let metadata = reader.metadata()?;
+    let channels = metadata.channels.clone();
+    let times = metadata.times.clone();
+    let z_slices = metadata.z_slices.clone();
+    if !metadata.contains_position(pos) {
         return Err(format!("Position index {pos} is out of range").into());
     }
 
-    let pos_index = validate_request_index("Position", pos, dimension_size(&sizes, "S"))?;
-    let time_count = dimension_size(&sizes, "T");
-    let channel_count = dimension_size(&sizes, "C");
-    let z_count = dimension_size(&sizes, "Z");
-
-    let preview_plane = PlaneIndex::new()
-        .with(CziDimension::S, pos_index)
-        .with(CziDimension::T, 0)
-        .with(CziDimension::C, 0)
-        .with(CziDimension::Z, 0);
-    let preview_bitmap = czi
-        .read_plane(&preview_plane)
-        .map_err(|err| err.to_string())?;
-    validate_bboxes(bboxes, preview_bitmap.width, preview_bitmap.height)?;
+    let pos_index = metadata.position_index(pos)?;
+    let preview_frame = reader
+        .read_frame_2d(pos_index, 0, 0, 0)
+        .map_err(CropFailure::from)?;
+    validate_bboxes(bboxes, preview_frame.width, preview_frame.height)?;
 
     ensure_crop_not_cancelled(is_cancelled)?;
     prepare_roi_output_dir(workspace_path, pos)?;
@@ -928,23 +914,20 @@ where
     let total_planes = times.len() * channels.len() * z_slices.len();
     let mut processed_planes = 0usize;
     for time in &times {
-        let time_index = validate_request_index("Time", *time, time_count)?;
+        let time_index = metadata.time_index(*time)?;
         for channel in &channels {
-            let channel_index = validate_request_index("Channel", *channel, channel_count)?;
+            let channel_index = metadata.channel_index(*channel)?;
             for z in &z_slices {
                 ensure_crop_not_cancelled(is_cancelled)?;
-                let z_index = validate_request_index("Z", *z, z_count)?;
-                let plane = PlaneIndex::new()
-                    .with(CziDimension::S, pos_index)
-                    .with(CziDimension::T, time_index)
-                    .with(CziDimension::C, channel_index)
-                    .with(CziDimension::Z, z_index);
-                let bitmap = czi.read_plane(&plane).map_err(|err| err.to_string())?;
-                let frame = czi_bitmap_to_u16(bitmap)?;
+                let z_index = metadata.z_index(*z)?;
+                let frame = reader
+                    .read_frame_2d(pos_index, time_index, channel_index, z_index)
+                    .map_err(CropFailure::from)?
+                    .data;
 
                 for (encoder, bbox) in encoders.iter_mut().zip(bboxes.iter()) {
                     ensure_crop_not_cancelled(is_cancelled)?;
-                    let cropped = crop_u16_frame(&frame, preview_bitmap.width, bbox);
+                    let cropped = crop_u16_frame(&frame, preview_frame.width, bbox);
                     encoder
                         .write_image::<colortype::Gray16>(bbox.w, bbox.h, &cropped)
                         .map_err(|err| err.to_string())?;

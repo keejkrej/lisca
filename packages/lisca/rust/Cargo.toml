@@ -17,8 +17,8 @@ czi = ["dep:czi-rs"]
 [dependencies]
 base64 = "0.22"
 csv = "1.4"
-czi-rs = { version = "0.1.0", optional = true }
-nd2-rs = { version = "0.1.6", optional = true }
+czi-rs = { git = "https://github.com/keejkrej/czi-rs", optional = true }
+nd2-rs = { git = "https://github.com/keejkrej/nd2-rs", optional = true }
 png = "0.17"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

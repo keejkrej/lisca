@@ -862,8 +862,7 @@ dependencies = [
 [[package]]
 name = "czi-rs"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ca35a20dfb0c1a2c2d8fe12cb70d5717ae20ca61da75a6f0d4a4dd9891279b1"
+source = "git+https://github.com/keejkrej/czi-rs#a9b27e2193763ea0f332b9c88f34f4d7fa322147"
 dependencies = [
  "roxmltree",
  "thiserror 1.0.69",
@@ -2413,7 +2412,7 @@ dependencies = [
  "png",
  "serde",
  "serde_json",
- "tiff 0.10.3",
+ "tiff",
  "time",
  "walkdir",
 ]
@@ -2553,16 +2552,12 @@ dependencies = [
 [[package]]
 name = "nd2-rs"
 version = "0.1.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9184580f2061fdbd0a9ae674762d7f6a97a9f0e96128864800e13f86423c1d31"
+source = "git+https://github.com/keejkrej/nd2-rs#0ef418a2194a51e020874b3b725684753fc7ba92"
 dependencies = [
  "byteorder",
- "clap",
  "flate2",
  "serde",
- "serde_json",
  "thiserror 1.0.69",
- "tiff 0.9.1",
 ]
 
 [[package]]
@@ -4493,17 +4488,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.117",
-]
-
-[[package]]
-name = "tiff"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba1310fcea54c6a9a4fd1aad794ecc02c31682f6bfbecdf460bf19533eed1e3e"
-dependencies = [
- "flate2",
- "jpeg-decoder",
- "weezl",
 ]
 
 [[package]]

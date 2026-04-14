@@ -1,11 +1,9 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashMap};
 use std::fs::{self, File};
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
 
-use czi_rs::{
-    Bitmap as CziBitmap, CziFile, Dimension as CziDimension, PixelType as CziPixelType, PlaneIndex,
-};
+use czi_rs::CziFile;
 use nd2_rs::Nd2File;
 use tiff::decoder::{Decoder, DecodingResult};
 use walkdir::WalkDir;
@@ -24,58 +22,144 @@ pub struct RawFrame {
     pub data: Vec<u16>,
 }
 
-fn collapse_u8_buffer(width: u32, height: u32, values: Vec<u8>) -> Result<Vec<u16>, String> {
-    let expected_len = width as usize * height as usize;
-    if values.len() == expected_len {
-        return Ok(values.into_iter().map(u16::from).collect());
-    }
-    if values.len() == expected_len * 3 || values.len() == expected_len * 4 {
-        let channels = values.len() / expected_len;
-        let mut collapsed = Vec::with_capacity(expected_len);
-        for chunk in values.chunks(channels) {
-            let sum: u32 = chunk.iter().map(|value| u32::from(*value)).sum();
-            collapsed.push((sum / channels as u32) as u16);
-        }
-        return Ok(collapsed);
-    }
-    Err("Unsupported CZI sample layout".to_string())
+#[derive(Clone, Debug)]
+pub struct SourceMetadata {
+    pub width: u32,
+    pub height: u32,
+    pub positions: Vec<u32>,
+    pub channels: Vec<u32>,
+    pub times: Vec<u32>,
+    pub z_slices: Vec<u32>,
 }
 
-fn collapse_u16_buffer(width: u32, height: u32, values: Vec<u16>) -> Result<Vec<u16>, String> {
-    let expected_len = width as usize * height as usize;
-    if values.len() == expected_len {
-        return Ok(values);
-    }
-    if values.len() == expected_len * 3 || values.len() == expected_len * 4 {
-        let channels = values.len() / expected_len;
-        let mut collapsed = Vec::with_capacity(expected_len);
-        for chunk in values.chunks(channels) {
-            let sum: u32 = chunk.iter().map(|value| u32::from(*value)).sum();
-            collapsed.push((sum / channels as u32) as u16);
+impl SourceMetadata {
+    pub fn workspace_scan(&self) -> WorkspaceScan {
+        WorkspaceScan {
+            positions: self.positions.clone(),
+            channels: self.channels.clone(),
+            times: self.times.clone(),
+            z_slices: self.z_slices.clone(),
         }
-        return Ok(collapsed);
     }
-    Err("Unsupported CZI sample layout".to_string())
+
+    pub fn contains_position(&self, pos: u32) -> bool {
+        self.positions.contains(&pos)
+    }
+
+    pub fn position_index(&self, pos: u32) -> Result<usize, String> {
+        validate_request_index("Position", pos, self.positions.len())
+    }
+
+    pub fn time_index(&self, time: u32) -> Result<usize, String> {
+        validate_request_index("Time", time, self.times.len())
+    }
+
+    pub fn channel_index(&self, channel: u32) -> Result<usize, String> {
+        validate_request_index("Channel", channel, self.channels.len())
+    }
+
+    pub fn z_index(&self, z: u32) -> Result<usize, String> {
+        validate_request_index("Z", z, self.z_slices.len())
+    }
+
+    pub fn indices_for_request(
+        &self,
+        request: &FrameRequest,
+    ) -> Result<(usize, usize, usize, usize), String> {
+        Ok((
+            self.position_index(request.pos)?,
+            self.time_index(request.time)?,
+            self.channel_index(request.channel)?,
+            self.z_index(request.z)?,
+        ))
+    }
 }
 
-pub fn czi_bitmap_to_u16(bitmap: CziBitmap) -> Result<Vec<u16>, String> {
-    let pixel_type = bitmap.pixel_type;
-    let width = bitmap.width;
-    let height = bitmap.height;
+pub enum SourceReader {
+    Nd2(Nd2File),
+    Czi(CziFile),
+}
 
-    match pixel_type {
-        CziPixelType::Gray8 | CziPixelType::Bgr24 | CziPixelType::Bgra32 => {
-            collapse_u8_buffer(width, height, bitmap.into_bytes())
-        }
-        CziPixelType::Gray16 | CziPixelType::Bgr48 => {
-            let values = bitmap.to_u16_vec().map_err(|err| err.to_string())?;
-            collapse_u16_buffer(width, height, values)
-        }
-        _ => Err(format!(
-            "Unsupported CZI pixel type {}",
-            pixel_type.as_str()
-        )),
+impl SourceReader {
+    pub fn open_nd2(path: &Path) -> Result<Self, String> {
+        Ok(Self::Nd2(
+            Nd2File::open(path).map_err(|err| err.to_string())?,
+        ))
     }
+
+    pub fn open_czi(path: &Path) -> Result<Self, String> {
+        Ok(Self::Czi(
+            CziFile::open(path).map_err(|err| err.to_string())?,
+        ))
+    }
+
+    pub fn metadata(&mut self) -> Result<SourceMetadata, String> {
+        match self {
+            Self::Nd2(reader) => {
+                let sizes = reader.sizes().map_err(|err| err.to_string())?;
+                metadata_from_sizes(&sizes, "P")
+            }
+            Self::Czi(reader) => {
+                let sizes = reader.sizes().map_err(|err| err.to_string())?;
+                metadata_from_sizes(&sizes, "S")
+            }
+        }
+    }
+
+    pub fn read_frame_2d(
+        &mut self,
+        pos: usize,
+        time: usize,
+        channel: usize,
+        z: usize,
+    ) -> Result<RawFrame, String> {
+        match self {
+            Self::Nd2(reader) => {
+                let data = reader
+                    .read_frame_2d(pos, time, channel, z)
+                    .map_err(|err| err.to_string())?;
+                let sizes = reader.sizes().map_err(|err| err.to_string())?;
+                let width =
+                    u32::try_from(dimension_size(&sizes, "X")).map_err(|err| err.to_string())?;
+                let height =
+                    u32::try_from(dimension_size(&sizes, "Y")).map_err(|err| err.to_string())?;
+                Ok(RawFrame {
+                    width,
+                    height,
+                    data,
+                })
+            }
+            Self::Czi(reader) => {
+                let data = reader
+                    .read_frame_2d(pos, time, channel, z)
+                    .map_err(|err| err.to_string())?;
+                let sizes = reader.sizes().map_err(|err| err.to_string())?;
+                let width =
+                    u32::try_from(dimension_size(&sizes, "X")).map_err(|err| err.to_string())?;
+                let height =
+                    u32::try_from(dimension_size(&sizes, "Y")).map_err(|err| err.to_string())?;
+                Ok(RawFrame {
+                    width,
+                    height,
+                    data,
+                })
+            }
+        }
+    }
+}
+
+fn metadata_from_sizes(
+    sizes: &HashMap<String, usize>,
+    position_key: &str,
+) -> Result<SourceMetadata, String> {
+    Ok(SourceMetadata {
+        width: u32::try_from(dimension_size(sizes, "X")).map_err(|err| err.to_string())?,
+        height: u32::try_from(dimension_size(sizes, "Y")).map_err(|err| err.to_string())?,
+        positions: dimension_values(sizes, position_key),
+        channels: dimension_values(sizes, "C"),
+        times: dimension_values(sizes, "T"),
+        z_slices: dimension_values(sizes, "Z"),
+    })
 }
 
 pub fn collect_tiffs(folder: &Path) -> Vec<(PathBuf, ParsedTiffName)> {
@@ -198,27 +282,13 @@ pub fn load_tiff_frame_page(path: &Path, page: usize) -> Result<RawFrame, String
 }
 
 pub fn scan_nd2(path: &Path) -> Result<WorkspaceScan, String> {
-    let mut nd2 = Nd2File::open(path).map_err(|err| err.to_string())?;
-    let sizes = nd2.sizes().map_err(|err| err.to_string())?;
-
-    Ok(WorkspaceScan {
-        positions: dimension_values(&sizes, "P"),
-        channels: dimension_values(&sizes, "C"),
-        times: dimension_values(&sizes, "T"),
-        z_slices: dimension_values(&sizes, "Z"),
-    })
+    let mut reader = SourceReader::open_nd2(path)?;
+    Ok(reader.metadata()?.workspace_scan())
 }
 
 pub fn scan_czi(path: &Path) -> Result<WorkspaceScan, String> {
-    let czi = CziFile::open(path).map_err(|err| err.to_string())?;
-    let sizes = czi.sizes().map_err(|err| err.to_string())?;
-
-    Ok(WorkspaceScan {
-        positions: dimension_values(&sizes, "S"),
-        channels: dimension_values(&sizes, "C"),
-        times: dimension_values(&sizes, "T"),
-        z_slices: dimension_values(&sizes, "Z"),
-    })
+    let mut reader = SourceReader::open_czi(path)?;
+    Ok(reader.metadata()?.workspace_scan())
 }
 
 pub fn scan_tif(root: &Path) -> Result<WorkspaceScan, String> {
@@ -281,51 +351,17 @@ pub fn load_tif_frame(root: &Path, request: FrameRequest) -> Result<RawFrame, St
 }
 
 pub fn load_nd2_frame(path: &Path, request: FrameRequest) -> Result<RawFrame, String> {
-    let mut nd2 = Nd2File::open(path).map_err(|err| err.to_string())?;
-    let sizes = nd2.sizes().map_err(|err| err.to_string())?;
-    let width = u32::try_from(dimension_size(&sizes, "X")).map_err(|err| err.to_string())?;
-    let height = u32::try_from(dimension_size(&sizes, "Y")).map_err(|err| err.to_string())?;
-
-    let pos = validate_request_index("Position", request.pos, dimension_size(&sizes, "P"))?;
-    let time = validate_request_index("Time", request.time, dimension_size(&sizes, "T"))?;
-    let channel = validate_request_index("Channel", request.channel, dimension_size(&sizes, "C"))?;
-    let z = validate_request_index("Z", request.z, dimension_size(&sizes, "Z"))?;
-
-    let data = nd2
-        .read_frame_2d(pos, time, channel, z)
-        .map_err(|err| err.to_string())?;
-
-    Ok(RawFrame {
-        width,
-        height,
-        data,
-    })
+    let mut reader = SourceReader::open_nd2(path)?;
+    let metadata = reader.metadata()?;
+    let (pos, time, channel, z) = metadata.indices_for_request(&request)?;
+    reader.read_frame_2d(pos, time, channel, z)
 }
 
 pub fn load_czi_frame(path: &Path, request: FrameRequest) -> Result<RawFrame, String> {
-    let mut czi = CziFile::open(path).map_err(|err| err.to_string())?;
-    let sizes = czi.sizes().map_err(|err| err.to_string())?;
-
-    let pos = validate_request_index("Position", request.pos, dimension_size(&sizes, "S"))?;
-    let time = validate_request_index("Time", request.time, dimension_size(&sizes, "T"))?;
-    let channel = validate_request_index("Channel", request.channel, dimension_size(&sizes, "C"))?;
-    let z = validate_request_index("Z", request.z, dimension_size(&sizes, "Z"))?;
-
-    let plane = PlaneIndex::new()
-        .with(CziDimension::S, pos)
-        .with(CziDimension::T, time)
-        .with(CziDimension::C, channel)
-        .with(CziDimension::Z, z);
-    let bitmap = czi.read_plane(&plane).map_err(|err| err.to_string())?;
-    let width = bitmap.width;
-    let height = bitmap.height;
-    let data = czi_bitmap_to_u16(bitmap)?;
-
-    Ok(RawFrame {
-        width,
-        height,
-        data,
-    })
+    let mut reader = SourceReader::open_czi(path)?;
+    let metadata = reader.metadata()?;
+    let (pos, time, channel, z) = metadata.indices_for_request(&request)?;
+    reader.read_frame_2d(pos, time, channel, z)
 }
 
 pub fn scan_source(source: ViewerSource) -> Result<WorkspaceScan, String> {
