@@ -7,4 +7,4 @@ members = [
 resolver = "2"
 
 [workspace.dependencies]
-lisca = { path = "packages/lisca/rust" }
+lisca = { path = "packages/lisca/rust", default-features = false }

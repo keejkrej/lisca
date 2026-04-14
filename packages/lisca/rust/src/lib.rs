@@ -6,4 +6,5 @@
 
 pub mod analysis;
 pub mod data;
+#[cfg(feature = "viewer")]
 pub mod viewer;

@@ -3,11 +3,22 @@ name = "lisca"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "crop-profiler"
+path = "src/bin/crop-profiler.rs"
+required-features = ["viewer"]
+
+[features]
+default = []
+viewer = ["nd2", "czi"]
+nd2 = ["dep:nd2-rs"]
+czi = ["dep:czi-rs"]
+
 [dependencies]
 base64 = "0.22"
 csv = "1.4"
-czi-rs = "0.1.0"
-nd2-rs = "0.1.6"
+czi-rs = { version = "0.1.0", optional = true }
+nd2-rs = { version = "0.1.6", optional = true }
 png = "0.17"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

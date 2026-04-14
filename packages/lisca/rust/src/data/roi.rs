@@ -35,7 +35,10 @@ pub struct RoiFrame2D {
 pub fn position_dir(dataset_root: &Path, pos: u32) -> Result<PathBuf, String> {
     let path = dataset_root.join("roi").join(format!("Pos{pos}"));
     if !path.is_dir() {
-        return Err(format!("No ROI directory found for --pos={pos}: {}", path.display()));
+        return Err(format!(
+            "No ROI directory found for --pos={pos}: {}",
+            path.display()
+        ));
     }
     Ok(path)
 }
@@ -189,14 +192,16 @@ pub fn roi_frame_from_stack<'a>(
     stack.get(page).ok_or_else(|| {
         format!(
             "TIFF page {} is out of range for ROI {}",
-            page,
-            roi.file_name
+            page, roi.file_name
         )
     })
 }
 
 fn parse_roi_crop(value: &serde_json::Value) -> Result<RoiCrop, String> {
-    let bbox = value.get("bbox").cloned().unwrap_or_else(|| serde_json::json!({}));
+    let bbox = value
+        .get("bbox")
+        .cloned()
+        .unwrap_or_else(|| serde_json::json!({}));
     Ok(RoiCrop {
         roi: value
             .get("roi")
@@ -219,10 +224,22 @@ fn parse_roi_crop(value: &serde_json::Value) -> Result<RoiCrop, String> {
                     .ok_or_else(|| "ROI shape values must be integers".to_string())
             })
             .collect::<Result<Vec<_>, _>>()?,
-        x: bbox.get("x").and_then(serde_json::Value::as_u64).map(|v| v as u32),
-        y: bbox.get("y").and_then(serde_json::Value::as_u64).map(|v| v as u32),
-        w: bbox.get("w").and_then(serde_json::Value::as_u64).map(|v| v as u32),
-        h: bbox.get("h").and_then(serde_json::Value::as_u64).map(|v| v as u32),
+        x: bbox
+            .get("x")
+            .and_then(serde_json::Value::as_u64)
+            .map(|v| v as u32),
+        y: bbox
+            .get("y")
+            .and_then(serde_json::Value::as_u64)
+            .map(|v| v as u32),
+        w: bbox
+            .get("w")
+            .and_then(serde_json::Value::as_u64)
+            .map(|v| v as u32),
+        h: bbox
+            .get("h")
+            .and_then(serde_json::Value::as_u64)
+            .map(|v| v as u32),
     })
 }
 
@@ -247,19 +264,25 @@ fn roi_page_index(
         let coord = match axis {
             'T' => {
                 if timepoint as usize >= size {
-                    return Err(format!("Time index {timepoint} out of range for axis size {size}"));
+                    return Err(format!(
+                        "Time index {timepoint} out of range for axis size {size}"
+                    ));
                 }
                 Some(timepoint as usize)
             }
             'C' => {
                 if channel as usize >= size {
-                    return Err(format!("Channel index {channel} out of range for axis size {size}"));
+                    return Err(format!(
+                        "Channel index {channel} out of range for axis size {size}"
+                    ));
                 }
                 Some(channel as usize)
             }
             'Z' => {
                 if z_index as usize >= size {
-                    return Err(format!("Z index {z_index} out of range for axis size {size}"));
+                    return Err(format!(
+                        "Z index {z_index} out of range for axis size {size}"
+                    ));
                 }
                 Some(z_index as usize)
             }
@@ -337,7 +360,9 @@ mod tests {
             z_count: 1,
             rois: Vec::new(),
         };
-        assert!(validate_channel_index(&index, 1).unwrap_err().contains("--channel"));
+        assert!(validate_channel_index(&index, 1)
+            .unwrap_err()
+            .contains("--channel"));
     }
 
     #[test]
