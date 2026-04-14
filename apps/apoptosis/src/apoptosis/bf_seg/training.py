@@ -24,8 +24,9 @@ def build_dataloader(
     batch_size: int,
     shuffle: bool,
     num_workers: int,
+    augment: bool = False,
 ) -> DataLoader[tuple[torch.Tensor, torch.Tensor]]:
-    dataset = SegmentationDataset(records=records, image_size=image_size)
+    dataset = SegmentationDataset(records=records, image_size=image_size, augment=augment)
     return DataLoader(
         dataset,
         batch_size=batch_size,
@@ -78,6 +79,7 @@ def run_epoch(
     optimizer: torch.optim.Optimizer | None,
     device: torch.device,
     class_weights: torch.Tensor,
+    dice_weight: float,
 ) -> dict[str, float]:
     loss_fn = nn.CrossEntropyLoss(weight=class_weights.to(device))
     training = optimizer is not None
@@ -93,7 +95,9 @@ def run_epoch(
 
         with torch.set_grad_enabled(training):
             logits = model(images)
-            loss = loss_fn(logits, batch_targets)
+            ce_loss = loss_fn(logits, batch_targets)
+            dice_loss = multiclass_dice_loss(logits, batch_targets)
+            loss = ce_loss + dice_weight * dice_loss
             if training:
                 optimizer.zero_grad()
                 loss.backward()
@@ -111,6 +115,15 @@ def run_epoch(
     metrics = metrics_from_confusion(confusion)
     metrics["loss"] = total_loss / total_examples
     return metrics
+
+
+def multiclass_dice_loss(logits: torch.Tensor, targets: torch.Tensor, epsilon: float = 1e-6) -> torch.Tensor:
+    probabilities = torch.softmax(logits, dim=1)
+    target_one_hot = F.one_hot(targets, num_classes=NUM_CLASSES).permute(0, 3, 1, 2).to(probabilities.dtype)
+    intersection = (probabilities * target_one_hot).sum(dim=(0, 2, 3))
+    denominator = probabilities.sum(dim=(0, 2, 3)) + target_one_hot.sum(dim=(0, 2, 3))
+    dice = (2.0 * intersection + epsilon) / (denominator + epsilon)
+    return 1.0 - dice.mean()
 
 
 def make_run_dir(artifact_root: Path, run_name: str | None) -> Path:
@@ -233,6 +246,7 @@ def train_model(config: TrainingConfig) -> TrainingArtifacts:
         batch_size=config.batch_size,
         shuffle=True,
         num_workers=config.num_workers,
+        augment=True,
     )
     val_loader = build_dataloader(
         split_map["val"],
@@ -255,6 +269,11 @@ def train_model(config: TrainingConfig) -> TrainingArtifacts:
         lr=config.lr,
         weight_decay=config.weight_decay,
     )
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        optimizer,
+        T_max=max(config.epochs, 1),
+        eta_min=config.lr * config.lr_decay,
+    )
 
     best_val_loss = float("inf")
     history_rows: list[dict[str, str | int]] = []
@@ -266,6 +285,7 @@ def train_model(config: TrainingConfig) -> TrainingArtifacts:
             optimizer=optimizer,
             device=device,
             class_weights=class_weights,
+            dice_weight=config.dice_weight,
         )
         val_metrics = run_epoch(
             model,
@@ -273,7 +293,9 @@ def train_model(config: TrainingConfig) -> TrainingArtifacts:
             optimizer=None,
             device=device,
             class_weights=class_weights,
+            dice_weight=config.dice_weight,
         )
+        current_lr = float(optimizer.param_groups[0]["lr"])
         combined_metrics = {
             "train_loss": train_metrics["loss"],
             "train_miou": train_metrics["miou"],
@@ -285,6 +307,7 @@ def train_model(config: TrainingConfig) -> TrainingArtifacts:
             "val_iou_background": val_metrics["iou_background"],
             "val_iou_live": val_metrics["iou_live"],
             "val_iou_dead": val_metrics["iou_dead"],
+            "lr": current_lr,
         }
         save_checkpoint(
             last_checkpoint_path,
@@ -308,6 +331,7 @@ def train_model(config: TrainingConfig) -> TrainingArtifacts:
         history_rows.append(
             {
                 "epoch": epoch,
+                "lr": format_metric(current_lr),
                 "train_loss": format_metric(train_metrics["loss"]),
                 "train_miou": format_metric(train_metrics["miou"]),
                 "train_iou_background": format_metric(train_metrics["iou_background"]),
@@ -320,12 +344,14 @@ def train_model(config: TrainingConfig) -> TrainingArtifacts:
                 "val_iou_dead": format_metric(val_metrics["iou_dead"]),
             }
         )
+        scheduler.step()
 
     with metrics_csv_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(
             handle,
             fieldnames=[
                 "epoch",
+                "lr",
                 "train_loss",
                 "train_miou",
                 "train_iou_background",
@@ -349,6 +375,7 @@ def train_model(config: TrainingConfig) -> TrainingArtifacts:
         optimizer=None,
         device=device,
         class_weights=class_weights,
+        dice_weight=config.dice_weight,
     )
     save_json(
         test_metrics_path,

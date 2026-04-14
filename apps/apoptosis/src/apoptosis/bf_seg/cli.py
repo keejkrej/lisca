@@ -6,8 +6,10 @@ from pathlib import Path
 from .config import (
     DEFAULT_ARTIFACT_ROOT,
     DEFAULT_BATCH_SIZE,
+    DEFAULT_DICE_WEIGHT,
     DEFAULT_EPOCHS,
     DEFAULT_IMAGE_SIZE,
+    DEFAULT_LR_DECAY,
     DEFAULT_LR,
     DEFAULT_NUM_WORKERS,
     DEFAULT_SEED,
@@ -60,6 +62,13 @@ def build_train_parser() -> argparse.ArgumentParser:
     parser.add_argument("--image-size", type=int, default=DEFAULT_IMAGE_SIZE)
     parser.add_argument("--lr", type=float, default=DEFAULT_LR)
     parser.add_argument("--weight-decay", type=float, default=DEFAULT_WEIGHT_DECAY)
+    parser.add_argument("--dice-weight", type=float, default=DEFAULT_DICE_WEIGHT)
+    parser.add_argument(
+        "--lr-decay",
+        type=float,
+        default=DEFAULT_LR_DECAY,
+        help="Final LR as a fraction of the starting LR under cosine decay.",
+    )
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
     parser.add_argument("--num-workers", type=int, default=DEFAULT_NUM_WORKERS)
     parser.add_argument("--device", default="auto")
@@ -113,6 +122,8 @@ def train_main(argv: list[str] | None = None) -> None:
         image_size=args.image_size,
         lr=args.lr,
         weight_decay=args.weight_decay,
+        dice_weight=args.dice_weight,
+        lr_decay=args.lr_decay,
         seed=args.seed,
         num_workers=args.num_workers,
         device=args.device,

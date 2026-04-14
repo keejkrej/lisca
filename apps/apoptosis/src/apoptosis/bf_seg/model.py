@@ -16,11 +16,12 @@ from .manifest import ExampleRecord
 
 
 class SegmentationDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
-    def __init__(self, records: list[ExampleRecord], image_size: int) -> None:
+    def __init__(self, records: list[ExampleRecord], image_size: int, *, augment: bool = False) -> None:
         if not records:
             raise ValueError("Dataset split is empty")
         self.records = records
         self.image_size = image_size
+        self.augment = augment
 
     def __len__(self) -> int:
         return len(self.records)
@@ -29,6 +30,8 @@ class SegmentationDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
         record = self.records[index]
         image = preprocess_tiff_image(record.image_path, image_size=self.image_size)
         mask = preprocess_mask_image(record.mask_path, image_size=self.image_size)
+        if self.augment:
+            image, mask = augment_example(image, mask)
         return image, mask
 
 
@@ -174,6 +177,26 @@ def preprocess_mask_array(mask_array: np.ndarray, image_size: int) -> torch.Tens
 
 def preprocess_mask_image(mask_path: Path, image_size: int) -> torch.Tensor:
     return preprocess_mask_array(load_mask_array(mask_path), image_size=image_size)
+
+
+def augment_example(image: torch.Tensor, mask: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    if torch.rand(()) < 0.5:
+        image = torch.flip(image, dims=(2,))
+        mask = torch.flip(mask, dims=(1,))
+    if torch.rand(()) < 0.5:
+        image = torch.flip(image, dims=(1,))
+        mask = torch.flip(mask, dims=(0,))
+
+    rotations = int(torch.randint(0, 4, ()).item())
+    if rotations:
+        image = torch.rot90(image, rotations, dims=(1, 2))
+        mask = torch.rot90(mask, rotations, dims=(0, 1))
+
+    contrast = float(torch.empty((), dtype=image.dtype).uniform_(0.9, 1.1).item())
+    brightness = float(torch.empty((), dtype=image.dtype).uniform_(-0.08, 0.08).item())
+    noise = torch.randn_like(image) * 0.03
+    image = torch.clamp(image * contrast + brightness + noise, 0.0, 1.0)
+    return image, mask
 
 
 def load_roi_shape_from_index(tif_path: Path) -> tuple[int, int, int, int, int] | None:

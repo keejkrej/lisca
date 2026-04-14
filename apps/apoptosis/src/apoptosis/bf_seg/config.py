@@ -13,6 +13,8 @@ DEFAULT_EPOCHS = 10
 DEFAULT_BATCH_SIZE = 8
 DEFAULT_LR = 1e-3
 DEFAULT_WEIGHT_DECAY = 1e-4
+DEFAULT_DICE_WEIGHT = 0.5
+DEFAULT_LR_DECAY = 0.05
 DEFAULT_SEED = 42
 DEFAULT_NUM_WORKERS = 0
 NUM_CLASSES = 3
@@ -31,6 +33,8 @@ class TrainingConfig:
     image_size: int = DEFAULT_IMAGE_SIZE
     lr: float = DEFAULT_LR
     weight_decay: float = DEFAULT_WEIGHT_DECAY
+    dice_weight: float = DEFAULT_DICE_WEIGHT
+    lr_decay: float = DEFAULT_LR_DECAY
     seed: int = DEFAULT_SEED
     num_workers: int = DEFAULT_NUM_WORKERS
     device: str = "auto"
