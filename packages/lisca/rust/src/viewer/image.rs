@@ -96,11 +96,13 @@ impl SourceReader {
     pub fn metadata(&mut self) -> Result<SourceMetadata, String> {
         match self {
             Self::Nd2(reader) => {
-                let sizes = reader.sizes().map_err(|err| err.to_string())?;
+                let summary = reader.summary().map_err(|err| err.to_string())?;
+                let sizes: HashMap<String, usize> = summary.sizes.into_iter().collect();
                 metadata_from_sizes(&sizes, "P")
             }
             Self::Czi(reader) => {
-                let sizes = reader.sizes().map_err(|err| err.to_string())?;
+                let summary = reader.summary().map_err(|err| err.to_string())?;
+                let sizes: HashMap<String, usize> = summary.sizes.into_iter().collect();
                 metadata_from_sizes(&sizes, "S")
             }
         }
@@ -118,7 +120,8 @@ impl SourceReader {
                 let data = reader
                     .read_frame_2d(pos, time, channel, z)
                     .map_err(|err| err.to_string())?;
-                let sizes = reader.sizes().map_err(|err| err.to_string())?;
+                let summary = reader.summary().map_err(|err| err.to_string())?;
+                let sizes: HashMap<String, usize> = summary.sizes.into_iter().collect();
                 let width =
                     u32::try_from(dimension_size(&sizes, "X")).map_err(|err| err.to_string())?;
                 let height =
@@ -133,7 +136,8 @@ impl SourceReader {
                 let data = reader
                     .read_frame_2d(pos, time, channel, z)
                     .map_err(|err| err.to_string())?;
-                let sizes = reader.sizes().map_err(|err| err.to_string())?;
+                let summary = reader.summary().map_err(|err| err.to_string())?;
+                let sizes: HashMap<String, usize> = summary.sizes.into_iter().collect();
                 let width =
                     u32::try_from(dimension_size(&sizes, "X")).map_err(|err| err.to_string())?;
                 let height =
