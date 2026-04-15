@@ -3,8 +3,9 @@ import { cn } from "lisca/viewer/ui";
 
 import { colorStyle } from "../annotationUtils";
 
-const tileClass =
-  "flex min-w-0 w-full items-center rounded-lg border px-3 py-2 text-left text-xs font-medium transition-colors";
+/** Shared with label manager modal so configure tiles match sidebar chips */
+export const annotationLabelTileClass =
+  "flex h-8 min-w-0 w-full shrink-0 items-center justify-center rounded-lg border px-3 text-center text-xs font-medium transition-colors";
 
 /** Label chip — `colorStyle` border / fill / text; stronger when `selected`. */
 export function AnnotationLabelSelectTile({
@@ -24,11 +25,11 @@ export function AnnotationLabelSelectTile({
       disabled={disabled}
       aria-pressed={selected}
       title={label.name}
-      className={cn(tileClass, "disabled:cursor-not-allowed disabled:opacity-50")}
+      className={cn(annotationLabelTileClass, "disabled:cursor-not-allowed disabled:opacity-50")}
       style={colorStyle(label.color, selected)}
       onClick={onClick}
     >
-      <span className="min-w-0 truncate">{label.name}</span>
+      <span className="min-w-0 w-full truncate text-center">{label.name}</span>
     </button>
   );
 }
