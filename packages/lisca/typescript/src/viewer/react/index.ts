@@ -1,4 +1,7 @@
 export { default as ViewerApp } from "./app/ViewerApp";
+export { default as AnnotatorApp } from "./app/AnnotatorApp";
+export { RoiAnnotationSession } from "./annotator";
+export type { RoiAnnotationSessionProps } from "./annotator";
 export { default as ViewerCanvasSurface } from "./alignment/ViewerCanvasSurface";
 export { default as RoiAnnotationCanvas } from "./annotation/RoiAnnotationCanvas";
 export { default as RoiAnnotationEditor } from "./annotation/RoiAnnotationEditor";

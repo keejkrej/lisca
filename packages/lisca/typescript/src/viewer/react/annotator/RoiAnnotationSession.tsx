@@ -15,9 +15,9 @@ import {
 } from "../annotation";
 import { useEffect, useMemo, useState } from "react";
 
-import { toErrorMessage } from "./viewerEffects";
+import { toErrorMessage } from "../app/viewerEffects";
 
-interface RoiAnnotationModalProps {
+export interface RoiAnnotationSessionProps {
   workspacePath: string;
   backend: ViewerDataPort;
   roi: RoiIndexEntry;
@@ -29,9 +29,11 @@ interface RoiAnnotationModalProps {
   onClose: () => void;
   onLabelsChange: (labels: AnnotationLabel[]) => void;
   onSaved: (annotation: RoiFrameAnnotation) => void;
+  /** Applied to the outer container around the editor (layout / sizing). */
+  className?: string;
 }
 
-export default function RoiAnnotationModal({
+export default function RoiAnnotationSession({
   workspacePath,
   backend,
   roi,
@@ -43,7 +45,8 @@ export default function RoiAnnotationModal({
   onClose,
   onLabelsChange,
   onSaved,
-}: RoiAnnotationModalProps) {
+  className = "flex h-full min-h-0 w-full flex-col overflow-hidden rounded-[1.75rem] border border-border/80 bg-card shadow-2xl",
+}: RoiAnnotationSessionProps) {
   const [initialValue, setInitialValue] = useState<RoiAnnotationValue>({
     classificationLabelId: null,
     mask: createEmptyMask(frame.width, frame.height),
@@ -98,46 +101,37 @@ export default function RoiAnnotationModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) {
-          onClose();
-        }
-      }}
+      className={className}
+      role="region"
+      aria-label={`ROI ${roi.roi} Annotation`}
     >
-      <div
-        className="flex h-full max-h-[min(92vh,56rem)] w-full max-w-6xl flex-col overflow-hidden rounded-[1.75rem] border border-border/80 bg-card shadow-2xl"
-        role="dialog"
-        aria-modal="true"
-        aria-label={`ROI ${roi.roi} Annotation`}
-      >
-        <RoiAnnotationEditor
-          frame={frame}
-          labels={labels}
-          initialValue={initialValue}
-          resetKey={resetKey}
-          title={`ROI ${roi.roi} Annotation`}
-          subtitle={editorSubtitle}
-          loading={loadState.loading || labelsLoading}
-          error={loadState.error ?? labelsError}
-          onClose={onClose}
-          onSave={async (value) => {
-            const payload = {
-              classificationLabelId: value.classificationLabelId,
-              maskBase64Png: value.mask.some((pixel) => pixel !== 0)
-                ? await encodeMaskToBase64Png(value.mask, frame.width, frame.height)
-                : null,
-            };
-            const saved = await backend.saveRoiFrameAnnotation(workspacePath, request, payload);
-            onSaved(saved);
-          }}
-          onLabelsChange={async (nextLabels) => {
-            const savedLabels = await backend.saveAnnotationLabels(workspacePath, nextLabels);
-            onLabelsChange(savedLabels);
-            return savedLabels;
-          }}
-        />
-      </div>
+      <RoiAnnotationEditor
+        frame={frame}
+        labels={labels}
+        initialValue={initialValue}
+        resetKey={resetKey}
+        title={`ROI ${roi.roi} Annotation`}
+        subtitle={editorSubtitle}
+        loading={loadState.loading || labelsLoading}
+        error={loadState.error ?? labelsError}
+        onClose={onClose}
+        className="min-h-0 flex-1"
+        onSave={async (value) => {
+          const payload = {
+            classificationLabelId: value.classificationLabelId,
+            maskBase64Png: value.mask.some((pixel) => pixel !== 0)
+              ? await encodeMaskToBase64Png(value.mask, frame.width, frame.height)
+              : null,
+          };
+          const saved = await backend.saveRoiFrameAnnotation(workspacePath, request, payload);
+          onSaved(saved);
+        }}
+        onLabelsChange={async (nextLabels) => {
+          const savedLabels = await backend.saveAnnotationLabels(workspacePath, nextLabels);
+          onLabelsChange(savedLabels);
+          return savedLabels;
+        }}
+      />
     </div>
   );
 }

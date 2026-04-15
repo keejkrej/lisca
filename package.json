@@ -4,13 +4,16 @@
   "packageManager": "bun@1.2.22",
   "workspaces": [
     "packages/lisca/typescript",
-    "apps/viewer"
+    "apps/viewer",
+    "apps/annotator"
   ],
   "scripts": {
     "build": "bun run --cwd apps/viewer build",
-    "dev": "bun run --cwd apps/viewer dev",
-    "release": "bun run --cwd apps/viewer release",
+    "dev:viewer": "bun run --cwd apps/viewer dev",
+    "dev:annotator": "bun run --cwd apps/annotator dev",
+    "release:viewer": "bun run --cwd apps/viewer release",
+    "release:annotator": "bun run --cwd apps/annotator release",
     "test": "bun run --cwd packages/lisca/typescript test",
-    "typecheck": "bun run --cwd packages/lisca/typescript typecheck && bun run --cwd apps/viewer typecheck && cargo check --workspace"
+    "typecheck": "bun run --cwd packages/lisca/typescript typecheck && bun run --cwd apps/viewer typecheck && bun run --cwd apps/annotator typecheck && cargo check --workspace"
   }
 }

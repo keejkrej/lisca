@@ -4,9 +4,7 @@ import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 
 import type {
-  AnnotationLabel,
   FrameResult,
-  RoiFrameAnnotation,
   RoiFrameRequest,
   RoiIndexEntry,
   RoiPositionScan,
@@ -35,13 +33,7 @@ import {
   setRoiSelectionKey,
   setSelectedRoi,
 } from "./roiStore";
-import {
-  loadAnnotationLabelsEffect,
-  loadRoiFrameAnnotationEffect,
-  loadRoiFrameEffect,
-  scanRoiWorkspaceEffect,
-  toErrorMessage,
-} from "./viewerEffects";
+import { loadRoiFrameEffect, scanRoiWorkspaceEffect, toErrorMessage } from "./viewerEffects";
 import {
   SidebarField,
   SidebarSection,
@@ -53,7 +45,6 @@ import {
   toNavigationOptions,
 } from "./NavigationControls";
 import { showErrorToast } from "./toast";
-import RoiAnnotationModal from "./RoiAnnotationModal";
 import ViewerNavbar, { type ViewerMode } from "./ViewerNavbar";
 
 type SelectValue = number | string;
@@ -85,19 +76,6 @@ interface TileState {
   frame: FrameResult | null;
   error: string | null;
   loading: boolean;
-}
-
-interface AnnotationStatusState {
-  requestKey: string;
-  annotation: RoiFrameAnnotation | null;
-  error: string | null;
-  loading: boolean;
-}
-
-interface AnnotationModalState {
-  roi: RoiIndexEntry;
-  request: RoiFrameRequest;
-  frame: FrameResult;
 }
 
 const ROI_PAGE_SIZE = 9;
@@ -186,38 +164,6 @@ function makeRoiFrameKey(workspacePath: string, request: RoiFrameRequest) {
   ].join(":");
 }
 
-function hexToRgb(color: string) {
-  const value = color.trim();
-  if (!value.startsWith("#")) return null;
-  const hex = value.slice(1);
-  if (hex.length === 3) {
-    const [r, g, b] = hex.split("");
-    return {
-      r: Number.parseInt(`${r}${r}`, 16),
-      g: Number.parseInt(`${g}${g}`, 16),
-      b: Number.parseInt(`${b}${b}`, 16),
-    };
-  }
-  if (hex.length === 6) {
-    return {
-      r: Number.parseInt(hex.slice(0, 2), 16),
-      g: Number.parseInt(hex.slice(2, 4), 16),
-      b: Number.parseInt(hex.slice(4, 6), 16),
-    };
-  }
-  return null;
-}
-
-function colorBadgeStyle(color: string) {
-  const rgb = hexToRgb(color);
-  if (!rgb) return undefined;
-  return {
-    borderColor: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.35)`,
-    backgroundColor: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.12)`,
-    color: `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`,
-  };
-}
-
 function tileStatesEqual(
   left: Record<number, TileState>,
   right: Record<number, TileState>,
@@ -249,13 +195,11 @@ function RoiTile({
   tileState,
   selected,
   onSelect,
-  onAnnotate,
 }: {
   roi: RoiIndexEntry;
   tileState: TileState | undefined;
   selected: boolean;
   onSelect: () => void;
-  onAnnotate: () => void;
 }) {
   const messages = useMemo<ViewerCanvasStatusMessage[] | undefined>(() => {
     if (!tileState?.error) return undefined;
@@ -277,11 +221,6 @@ function RoiTile({
           event.preventDefault();
           onSelect();
         }
-      }}
-      onContextMenu={(event) => {
-        event.preventDefault();
-        onSelect();
-        onAnnotate();
       }}
     >
       <div className="min-h-0 flex-1 overflow-hidden rounded-[1.125rem] border border-border/60 bg-black/10">
@@ -311,21 +250,8 @@ export default function RoiWorkspace({
   onClearSource,
 }: RoiWorkspaceProps) {
   const frameCacheRef = useRef(new FrameCache());
-  const annotationStatusesRef = useRef<Record<string, AnnotationStatusState>>({});
   const lastWorkspaceErrorToastRef = useRef<string | null>(null);
-  const lastLabelsErrorToastRef = useRef<string | null>(null);
   const [tileStates, setTileStates] = useState<Record<number, TileState>>({});
-  const [annotationLabelsState, setAnnotationLabelsState] = useState<{
-    labels: AnnotationLabel[] | null;
-    loading: boolean;
-    error: string | null;
-  }>({
-    labels: null,
-    loading: false,
-    error: null,
-  });
-  const [annotationStatuses, setAnnotationStatuses] = useState<Record<string, AnnotationStatusState>>({});
-  const [annotationModal, setAnnotationModal] = useState<AnnotationModalState | null>(null);
   const { scan, selection, loading, error, pageIndex, selectedRoi } = useStore(
     roiStore,
     useShallow((state) => ({
@@ -349,26 +275,9 @@ export default function RoiWorkspace({
   }, [error]);
 
   useEffect(() => {
-    if (!annotationLabelsState.error) {
-      lastLabelsErrorToastRef.current = null;
-      return;
-    }
-    if (lastLabelsErrorToastRef.current === annotationLabelsState.error) return;
-    lastLabelsErrorToastRef.current = annotationLabelsState.error;
-    showErrorToast(annotationLabelsState.error);
-  }, [annotationLabelsState.error]);
-
-  useEffect(() => {
     if (!workspacePath) {
       resetRoiState();
       setTileStates({});
-      setAnnotationLabelsState({
-        labels: null,
-        loading: false,
-        error: null,
-      });
-      setAnnotationStatuses({});
-      setAnnotationModal(null);
       return;
     }
 
@@ -422,47 +331,6 @@ export default function RoiWorkspace({
     };
   }, [backend, workspacePath]);
 
-  useEffect(() => {
-    if (!workspacePath) return;
-
-    const abortController = new AbortController();
-    setAnnotationLabelsState({
-      labels: null,
-      loading: true,
-      error: null,
-    });
-
-    const program = loadAnnotationLabelsEffect(backend, workspacePath);
-    void Effect.runPromiseExit(program, {
-      signal: abortController.signal,
-    }).then((exit) => {
-      if (abortController.signal.aborted) return;
-      if (Exit.isSuccess(exit)) {
-        setAnnotationLabelsState({
-          labels: exit.value.labels,
-          loading: false,
-          error: null,
-        });
-        return;
-      }
-
-      setAnnotationLabelsState({
-        labels: null,
-        loading: false,
-        error: toErrorMessage(exit.cause),
-      });
-    });
-
-    return () => {
-      abortController.abort();
-    };
-  }, [backend, workspacePath]);
-
-  useEffect(() => {
-    setAnnotationStatuses({});
-    setAnnotationModal(null);
-  }, [workspacePath]);
-
   const position = useMemo(
     () => currentPositionScan(scan, selection?.pos ?? null),
     [scan, selection?.pos],
@@ -507,7 +375,6 @@ export default function RoiWorkspace({
   const displayedTime = timeValues[timeSliderIndex] ?? selection?.time ?? 0;
   const displayedZ = zValues[zSliderIndex] ?? selection?.z ?? 0;
   const controlsDisabled = !selection || !position || roiEntries.length === 0;
-  const hasWorkspace = Boolean(workspacePath);
   const hasRoiPositions = Boolean(scan && scan.positions.length > 0);
   const pageOptions = useMemo(
     () => toNavigationOptions(Array.from({ length: pageCount }, (_, index) => index + 1)),
@@ -515,28 +382,6 @@ export default function RoiWorkspace({
   );
   const selectedPage = boundedPageIndex + 1;
   const selectedPageIndex = findNavigationOptionIndex(pageOptions, selectedPage);
-  const selectedAnnotationRequest = useMemo(() => {
-    if (!selection || !selectedRoiEntry) return null;
-    return {
-      pos: selection.pos,
-      roi: selectedRoiEntry.roi,
-      channel: selection.channel,
-      time: selection.time,
-      z: selection.z,
-    } satisfies RoiFrameRequest;
-  }, [selectedRoiEntry, selection]);
-  const selectedAnnotationStatus = useMemo(() => {
-    if (!workspacePath || !selectedAnnotationRequest) return null;
-    return annotationStatuses[makeRoiFrameKey(workspacePath, selectedAnnotationRequest)] ?? null;
-  }, [annotationStatuses, selectedAnnotationRequest, workspacePath]);
-  const selectedTileState = selectedRoi != null ? tileStates[selectedRoi] : undefined;
-  const selectedAnnotationLabel = useMemo(
-    () =>
-      annotationLabelsState.labels?.find(
-        (entry) => entry.id === selectedAnnotationStatus?.annotation?.classificationLabelId,
-      ) ?? null,
-    [annotationLabelsState.labels, selectedAnnotationStatus?.annotation?.classificationLabelId],
-  );
   const visibleRoiRequests = useMemo(() => {
     if (!workspacePath || !selection) return [];
     return visibleRois.map((roi) => {
@@ -573,10 +418,6 @@ export default function RoiWorkspace({
   useEffect(() => {
     setZSliderIndexValue(selectedZIndex);
   }, [selectedZIndex]);
-
-  useEffect(() => {
-    annotationStatusesRef.current = annotationStatuses;
-  }, [annotationStatuses]);
 
   useEffect(() => {
     if (pageIndex === boundedPageIndex) return;
@@ -670,90 +511,11 @@ export default function RoiWorkspace({
     };
   }, [backend, visibleRequestSignature, visibleRoiRequests]);
 
-  useEffect(() => {
-    if (!workspacePath || visibleRoiRequests.length === 0) {
-      return;
-    }
-
-    const abortControllers: AbortController[] = [];
-    for (const { request, requestKey } of visibleRoiRequests) {
-      const cached = annotationStatusesRef.current[requestKey];
-      if (cached) continue;
-
-      setAnnotationStatuses((current) => ({
-        ...current,
-        [requestKey]: {
-          requestKey,
-          annotation: current[requestKey]?.annotation ?? null,
-          error: null,
-          loading: true,
-        },
-      }));
-
-      const abortController = new AbortController();
-      abortControllers.push(abortController);
-      const program = loadRoiFrameAnnotationEffect(backend, workspacePath, request);
-      void Effect.runPromiseExit(program, {
-        signal: abortController.signal,
-      }).then((exit) => {
-        if (abortController.signal.aborted) return;
-        if (Exit.isSuccess(exit)) {
-          setAnnotationStatuses((current) => ({
-            ...current,
-            [requestKey]: {
-              requestKey,
-              annotation: exit.value.loaded.annotation,
-              error: null,
-              loading: false,
-            },
-          }));
-          return;
-        }
-
-        setAnnotationStatuses((current) => ({
-          ...current,
-          [requestKey]: {
-            requestKey,
-            annotation: current[requestKey]?.annotation ?? null,
-            error: toErrorMessage(exit.cause),
-            loading: false,
-          },
-        }));
-      });
-    }
-
-    return () => {
-      for (const controller of abortControllers) {
-        controller.abort();
-      }
-    };
-  }, [backend, visibleRequestSignature, visibleRoiRequests]);
-
   const emptyText = useMemo(() => {
     if (loading) return "Scanning workspace ROI output...";
     if (error) return error;
     return null;
   }, [error, loading]);
-
-  const openAnnotationModal = useMemo(
-    () =>
-      (roi: RoiIndexEntry, frame: FrameResult | null) => {
-        if (!selection || !frame) return;
-        setSelectedRoi(roi.roi);
-        setAnnotationModal({
-          roi,
-          frame,
-          request: {
-            pos: selection.pos,
-            roi: roi.roi,
-            channel: selection.channel,
-            time: selection.time,
-            z: selection.z,
-          },
-        });
-      },
-    [selection],
-  );
 
   return (
     <div className="h-full min-h-0 min-w-0 overflow-hidden bg-background text-foreground">
@@ -959,9 +721,6 @@ export default function RoiWorkspace({
                             tileState={tileStates[roi.roi]}
                             selected={selectedRoi === roi.roi}
                             onSelect={() => setSelectedRoi(roi.roi)}
-                            onAnnotate={() =>
-                              openAnnotationModal(roi, tileStates[roi.roi]?.frame ?? null)
-                            }
                           />
                         ))}
                       </div>
@@ -972,23 +731,7 @@ export default function RoiWorkspace({
             </section>
 
             <aside className="h-full min-h-0 overflow-y-auto divide-y divide-border border-l border-border px-5 py-4">
-              <SidebarSection
-                title="Selected ROI"
-                action={
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-8 px-3 text-xs"
-                    disabled={!selectedRoiEntry || !selectedTileState?.frame || !selectedAnnotationRequest}
-                    onClick={() => {
-                      if (!selectedRoiEntry || !selectedTileState?.frame) return;
-                      openAnnotationModal(selectedRoiEntry, selectedTileState.frame);
-                    }}
-                  >
-                    Annotate
-                  </Button>
-                }
-              >
+              <SidebarSection title="Selected ROI">
                 <SidebarField label="ROI">
                   <SidebarValue tone="default">
                     {selectedRoiEntry ? `ROI ${selectedRoiEntry.roi}` : "No ROI selected"}
@@ -1006,74 +749,11 @@ export default function RoiWorkspace({
                     {selectedRoiEntry ? selectedRoiEntry.shape.join(" x ") : "T x C x Z x Y x X"}
                   </SidebarValue>
                 </SidebarField>
-                <SidebarField label="Annotation">
-                  <div className="flex min-h-11 flex-wrap items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
-                    {selectedAnnotationStatus?.annotation?.classificationLabelId ? (
-                      <span
-                        className="rounded-full border px-2.5 py-1 text-xs font-medium"
-                        style={
-                          selectedAnnotationLabel
-                            ? colorBadgeStyle(selectedAnnotationLabel.color)
-                            : undefined
-                        }
-                      >
-                        {selectedAnnotationLabel?.name ?? "Classified"}
-                      </span>
-                    ) : null}
-                    {selectedAnnotationStatus?.annotation?.maskPath ? (
-                      <span className="rounded-full border border-sky-400/35 bg-sky-400/10 px-2.5 py-1 text-xs font-medium text-sky-200">
-                        Segmentation mask
-                      </span>
-                    ) : null}
-                    {!selectedAnnotationStatus?.annotation?.classificationLabelId &&
-                    !selectedAnnotationStatus?.annotation?.maskPath ? (
-                      <span className="text-sm text-muted-foreground">No annotation saved</span>
-                    ) : null}
-                  </div>
-                </SidebarField>
-                {annotationLabelsState.error ? (
-                  <div className="rounded-lg border border-amber-400/35 bg-amber-400/10 px-3 py-2 text-xs text-amber-100">
-                    {annotationLabelsState.error}
-                  </div>
-                ) : null}
               </SidebarSection>
             </aside>
           </div>
         </main>
       </div>
-      {annotationModal && workspacePath ? (
-        <RoiAnnotationModal
-          workspacePath={workspacePath}
-          backend={backend}
-          roi={annotationModal.roi}
-          request={annotationModal.request}
-          frame={annotationModal.frame}
-          labels={annotationLabelsState.labels}
-          labelsLoading={annotationLabelsState.loading}
-          labelsError={annotationLabelsState.error}
-          onClose={() => setAnnotationModal(null)}
-          onLabelsChange={(labels) =>
-            setAnnotationLabelsState({
-              labels,
-              loading: false,
-              error: null,
-            })
-          }
-          onSaved={(annotation) => {
-            const requestKey = makeRoiFrameKey(workspacePath, annotationModal.request);
-            setAnnotationStatuses((current) => ({
-              ...current,
-              [requestKey]: {
-                requestKey,
-                annotation,
-                error: null,
-                loading: false,
-              },
-            }));
-            setAnnotationModal(null);
-          }}
-        />
-      ) : null}
     </div>
   );
 }
