@@ -12,7 +12,7 @@ import type {
   ViewerSource,
   ViewerDataPort,
 } from "lisca/viewer/contracts";
-import { clamp, createDefaultGrid } from "lisca/viewer/core";
+import { clamp, createDefaultGrid, normalizeGridState, type GridState } from "lisca/viewer/core";
 import { ViewerCanvasSurface } from "../alignment";
 import {
   Button,
@@ -195,11 +195,13 @@ function RoiTile({
   tileState,
   selected,
   onSelect,
+  grid,
 }: {
   roi: RoiIndexEntry;
   tileState: TileState | undefined;
   selected: boolean;
   onSelect: () => void;
+  grid: GridState;
 }) {
   const messages = useMemo<ViewerCanvasStatusMessage[] | undefined>(() => {
     if (!tileState?.error) return undefined;
@@ -227,7 +229,7 @@ function RoiTile({
         <ViewerCanvasSurface
           className="h-full w-full"
           frame={tileState?.frame ?? null}
-          grid={ROI_TILE_GRID}
+          grid={grid}
           loading={tileState?.loading ?? false}
           emptyText="No ROI frame"
           messages={messages}
@@ -252,6 +254,9 @@ export default function RoiWorkspace({
   const frameCacheRef = useRef(new FrameCache());
   const lastWorkspaceErrorToastRef = useRef<string | null>(null);
   const [tileStates, setTileStates] = useState<Record<number, TileState>>({});
+  const [tileGrid, setTileGrid] = useState<GridState>(() =>
+    normalizeGridState({ ...ROI_TILE_GRID }),
+  );
   const { scan, selection, loading, error, pageIndex, selectedRoi } = useStore(
     roiStore,
     useShallow((state) => ({
@@ -718,6 +723,7 @@ export default function RoiWorkspace({
                           <RoiTile
                             key={roi.roi}
                             roi={roi}
+                            grid={tileGrid}
                             tileState={tileStates[roi.roi]}
                             selected={selectedRoi === roi.roi}
                             onSelect={() => setSelectedRoi(roi.roi)}
@@ -731,24 +737,42 @@ export default function RoiWorkspace({
             </section>
 
             <aside className="h-full min-h-0 overflow-y-auto divide-y divide-border border-l border-border px-5 py-4">
-              <SidebarSection title="Selected ROI">
-                <SidebarField label="ROI">
-                  <SidebarValue tone="default">
-                    {selectedRoiEntry ? `ROI ${selectedRoiEntry.roi}` : "No ROI selected"}
-                  </SidebarValue>
+              <SidebarSection title="Tile overlay">
+                <SidebarField label="Grid">
+                  <Button
+                    size="sm"
+                    variant={tileGrid.enabled ? "default" : "outline"}
+                    className="h-9 w-full text-xs"
+                    onClick={() =>
+                      setTileGrid((current) =>
+                        normalizeGridState({ ...current, enabled: !current.enabled }),
+                      )
+                    }
+                  >
+                    {tileGrid.enabled ? "Grid on" : "Grid off"}
+                  </Button>
                 </SidebarField>
-                <SidebarField label="Bounding Box">
-                  <SidebarValue>
-                    {selectedRoiEntry
-                      ? `${selectedRoiEntry.bbox.x}, ${selectedRoiEntry.bbox.y}, ${selectedRoiEntry.bbox.w}, ${selectedRoiEntry.bbox.h}`
-                      : "x, y, w, h"}
-                  </SidebarValue>
+                <SidebarField label="Opacity" hint={tileGrid.opacity.toFixed(2)}>
+                  <Slider
+                    value={tileGrid.opacity}
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    disabled={!tileGrid.enabled}
+                    onValueChange={(value) =>
+                      setTileGrid((current) =>
+                        normalizeGridState({ ...current, opacity: clamp(value, 0, 1) }),
+                      )
+                    }
+                  />
                 </SidebarField>
-                <SidebarField label="Stack Dimensions">
-                  <SidebarValue>
-                    {selectedRoiEntry ? selectedRoiEntry.shape.join(" x ") : "T x C x Z x Y x X"}
-                  </SidebarValue>
-                </SidebarField>
+              </SidebarSection>
+
+              <SidebarSection title="Tiles">
+                <p className="text-xs text-muted-foreground">
+                  Up to nine ROI previews per page. Use ROI Stack and Page on the left to change
+                  position, channel, time, Z, and which ROIs are shown.
+                </p>
               </SidebarSection>
             </aside>
           </div>

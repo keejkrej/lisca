@@ -2,7 +2,16 @@ export { default as AnnotatorApp } from "./app/AnnotatorApp";
 export { RoiAnnotationSession } from "./session";
 export type { RoiAnnotationSessionProps } from "./session";
 export { default as RoiAnnotationCanvas } from "./annotation/RoiAnnotationCanvas";
-export { default as RoiAnnotationEditor } from "./annotation/RoiAnnotationEditor";
+export {
+  AnnotationLabelManagerDialog,
+  RoiAnnotationCanvasPanel,
+  RoiAnnotationDiscardDialog,
+  RoiAnnotationProvider,
+  RoiAnnotationToolbar,
+  useRoiAnnotation,
+  useRoiAnnotationContext,
+} from "./annotation";
+export type { RoiAnnotationContextValue } from "./annotation/useRoiAnnotation";
 export {
   annotationValuesEqual,
   cloneAnnotationValue,
@@ -16,4 +25,4 @@ export {
   slugifyLabelId,
   type RoiAnnotationValue,
 } from "./annotation/annotationUtils";
-export type { RoiAnnotationCanvasProps, RoiAnnotationEditorProps } from "./annotation/types";
+export type { RoiAnnotationCanvasProps, RoiAnnotationControllerProps } from "./annotation/types";

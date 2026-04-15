@@ -17,7 +17,8 @@ export interface RoiAnnotationCanvasProps {
   onStrokeCommit: (mask: Uint8Array) => void;
 }
 
-export interface RoiAnnotationEditorProps {
+/** Props for `RoiAnnotationProvider` / `useRoiAnnotation` (annotation controller state). */
+export interface RoiAnnotationControllerProps {
   frame: FrameResult;
   labels: AnnotationLabel[] | null;
   initialValue: RoiAnnotationValue;
@@ -26,7 +27,6 @@ export interface RoiAnnotationEditorProps {
   subtitle?: string;
   loading?: boolean;
   error?: string | null;
-  className?: string;
   initialBrushSize?: number;
   initialOverlayOpacity?: number;
   onClose: () => void;
@@ -34,4 +34,9 @@ export interface RoiAnnotationEditorProps {
   onLabelsChange?: (
     labels: AnnotationLabel[],
   ) => Promise<AnnotationLabel[] | void> | AnnotationLabel[] | void;
+  /**
+   * When false, brush/segmentation and save are disabled (controls stay visible; same idea as
+   * viewer `controlsDisabled` when no frame).
+   */
+  annotationInteractive?: boolean;
 }

@@ -2,16 +2,22 @@ import { describe, expect, test } from "bun:test";
 
 import {
   RoiAnnotationCanvas,
-  RoiAnnotationEditor,
+  RoiAnnotationCanvasPanel,
+  RoiAnnotationProvider,
+  RoiAnnotationToolbar,
   createEmptyMask,
   decodeMaskBase64Png,
   encodeMaskToBase64Png,
+  useRoiAnnotation,
 } from "../../../src/annotator/react";
 
 describe("annotator react package surface", () => {
-  test("exports the annotation components", () => {
+  test("exports the annotation components and hooks", () => {
     expect(typeof RoiAnnotationCanvas).toBe("function");
-    expect(typeof RoiAnnotationEditor).toBe("function");
+    expect(typeof RoiAnnotationCanvasPanel).toBe("function");
+    expect(typeof RoiAnnotationProvider).toBe("function");
+    expect(typeof RoiAnnotationToolbar).toBe("function");
+    expect(typeof useRoiAnnotation).toBe("function");
   });
 
   test("creates empty masks with the expected size", () => {

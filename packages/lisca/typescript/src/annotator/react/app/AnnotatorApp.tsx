@@ -1,4 +1,5 @@
 import { Effect, Exit } from "effect";
+import { FolderOpen } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Toaster } from "sonner";
 import { useStore } from "zustand";
@@ -14,12 +15,21 @@ import type {
   ViewerHostPort,
 } from "lisca/viewer/contracts";
 import { clamp } from "lisca/viewer/core";
-import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "lisca/viewer/ui";
 
+import {
+  AnnotationLabelManagerDialog,
+  createEmptyMask,
+  createPlaceholderAnnotationFrame,
+  RoiAnnotationCanvasPanel,
+  RoiAnnotationDiscardDialog,
+  RoiAnnotationProvider,
+  RoiAnnotationToolbar,
+} from "../annotation";
 import RoiAnnotationSession from "../session/RoiAnnotationSession";
 import {
   findNavigationOptionIndex,
   NavigationControls,
+  SelectStepperField,
   toNavigationOptions,
 } from "../../../viewer/react/app/NavigationControls";
 import {
@@ -38,47 +48,15 @@ import {
 } from "../../../viewer/react/app/viewerEffects";
 import { setWorkspacePath, viewerStore } from "../../../viewer/react/app/viewerStore";
 import { showErrorToast } from "../../../viewer/react/app/toast";
-import { SidebarField, SidebarSection, SidebarValue } from "../../../viewer/react/app/sidebar";
+import { ContextSummary } from "../../../viewer/react/app/ViewerNavbar";
+import { SidebarSection } from "../../../viewer/react/app/sidebar";
 
-type SelectValue = number | string;
-
-type Option<T extends SelectValue> = {
-  label: string;
-  value: T;
+/** Minimal frame for the annotation rail shell (toolbar visible before a real ROI frame exists). */
+const SHELL_ANNOTATION_FRAME: FrameResult = {
+  width: 1,
+  height: 1,
+  pixels: new Uint8Array(1),
 };
-
-function AppSelect<T extends SelectValue>({
-  value,
-  options,
-  onChange,
-  disabled,
-}: {
-  value: T;
-  options: Option<T>[];
-  onChange: (value: T) => void;
-  disabled?: boolean;
-}) {
-  return (
-    <Select<T>
-      value={value}
-      onValueChange={(next: T | null) => next != null && onChange(next)}
-      items={options}
-      disabled={disabled}
-      modal={false}
-    >
-      <SelectTrigger size="sm" className="text-sm">
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {options.map((option) => (
-          <SelectItem key={String(option.value)} value={option.value}>
-            {option.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
 
 function currentPositionScan(scan: { positions: RoiPositionScan[] } | null, pos: number | null) {
   if (!scan || pos == null) return null;
@@ -291,6 +269,11 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
     [roiEntries],
   );
 
+  const selectedRoiIndex = useMemo(
+    () => findNavigationOptionIndex(roiOptions, selectedRoi ?? roiOptions[0]?.value ?? null),
+    [roiOptions, selectedRoi],
+  );
+
   const selectedAnnotationRequest = useMemo((): RoiFrameRequest | null => {
     if (!selection || !selectedRoiEntry) return null;
     return {
@@ -381,41 +364,55 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
     return null;
   }, [error, loading]);
 
-  const showEditor =
-    workspacePath &&
-    selectedRoiEntry &&
-    selectedAnnotationRequest &&
-    editorFrame &&
-    !editorFrameLoading &&
-    !editorFrameError;
+  const annotationRailFallbackSubtitle = useMemo(() => {
+    if (!workspacePath) return "Open a workspace to load ROI TIFF output.";
+    if (emptyText) return emptyText;
+    if (roiEntries.length === 0) return "No ROIs found in this workspace.";
+    return "Select a ROI and stack position to annotate.";
+  }, [workspacePath, emptyText, roiEntries.length]);
+
+  const shellProviderLoading =
+    Boolean(workspacePath) && (annotationLabelsState.loading || loading);
+
+  const shellInitialMask = useMemo(() => createEmptyMask(1, 1), []);
+
+  /** Full annotation rail (like viewer): mount once ROI + request are known; use placeholder frame until load completes. */
+  const canMountAnnotationUi =
+    Boolean(workspacePath) &&
+    emptyText === null &&
+    selectedRoiEntry != null &&
+    selectedAnnotationRequest != null;
+
+  const annotationFrameReady = Boolean(
+    editorFrame && !editorFrameLoading && !editorFrameError,
+  );
+
+  const displayFrame = useMemo(() => {
+    if (!selectedRoiEntry) return null;
+    if (annotationFrameReady && editorFrame) return editorFrame;
+    return createPlaceholderAnnotationFrame(selectedRoiEntry);
+  }, [annotationFrameReady, editorFrame, selectedRoiEntry]);
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-background text-foreground">
       <Toaster position="bottom-right" theme="dark" richColors closeButton />
 
-      <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3">
-        <div className="space-y-1">
-          <h1 className="text-sm font-semibold text-foreground">Annotator</h1>
-          <p className="text-xs text-muted-foreground">ROI TIFF stacks in the workspace output layout</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {workspacePath ? (
-            <SidebarValue monospace className="max-w-[min(48rem,50vw)] truncate text-xs">
-              {workspacePath}
-            </SidebarValue>
-          ) : (
-            <span className="text-xs text-muted-foreground">No workspace open</span>
-          )}
-          <Button size="sm" variant="outline" onClick={() => void handlePickWorkspace()}>
-            Open workspace
-          </Button>
+      <header className="shrink-0 border-b border-border/80 bg-background px-6 py-3">
+        <div className="flex items-center justify-center">
+          <ContextSummary
+            label="Workspace"
+            value={workspacePath}
+            icon={<FolderOpen className="size-4" />}
+            onClick={() => void handlePickWorkspace()}
+          />
         </div>
       </header>
 
-      <main className="flex min-h-0 flex-1 overflow-hidden">
-        <aside className="h-full min-h-0 w-[18rem] shrink-0 overflow-y-auto divide-y divide-border border-r border-border px-5 py-4">
-          <SidebarSection title="ROI Stack">
-            <NavigationControls
+      <main className="flex-1 min-h-0 overflow-hidden">
+        <div className="grid h-full min-h-0 grid-cols-[18rem_minmax(0,1fr)_18rem] items-stretch">
+          <aside className="col-start-1 h-full min-h-0 overflow-y-auto divide-y divide-border border-r border-border px-5 py-4">
+            <SidebarSection title="ROI Stack">
+              <NavigationControls
               position={{
                 value: selection?.pos ?? (positionOptions[0]?.value ?? 0),
                 options: positionOptions,
@@ -530,43 +527,42 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
                   }
                 },
               }}
-            />
-            <SidebarField label="ROI">
-              <AppSelect
-                value={selectedRoi ?? (roiOptions[0]?.value ?? 0)}
+              />
+              <SelectStepperField
+                label="ROI"
+                value={selectedRoi ?? roiOptions[0]?.value ?? 0}
                 options={roiOptions}
                 disabled={controlsDisabled || roiOptions.length === 0}
                 onChange={(value) => setSelectedRoi(value)}
+                previousDisabled={
+                  controlsDisabled || roiOptions.length === 0 || selectedRoiIndex <= 0
+                }
+                nextDisabled={
+                  controlsDisabled ||
+                  roiOptions.length === 0 ||
+                  selectedRoiIndex >= roiOptions.length - 1
+                }
+                onPrevious={() => {
+                  const nextValue = roiOptions[selectedRoiIndex - 1]?.value;
+                  if (nextValue != null) setSelectedRoi(nextValue);
+                }}
+                onNext={() => {
+                  const nextValue = roiOptions[selectedRoiIndex + 1]?.value;
+                  if (nextValue != null) setSelectedRoi(nextValue);
+                }}
               />
-            </SidebarField>
-          </SidebarSection>
-        </aside>
+            </SidebarSection>
+          </aside>
 
-        <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-4">
-          {!workspacePath ? (
-            <div className="flex h-full min-h-[18rem] items-center justify-center rounded-2xl border border-border/60 bg-card/10 px-6 text-center text-sm text-muted-foreground">
-              Open a workspace folder that contains ROI TIFF output (roi/Pos folders and index.json).
-            </div>
-          ) : emptyText ? (
-            <div className="flex h-full min-h-[18rem] items-center justify-center rounded-2xl border border-border/60 bg-card/10 px-6 text-center text-sm text-muted-foreground">
-              {emptyText}
-            </div>
-          ) : editorFrameLoading ? (
-            <div className="flex h-full min-h-[18rem] items-center justify-center rounded-2xl border border-border/60 bg-card/10 px-6 text-center text-sm text-muted-foreground">
-              Loading frame…
-            </div>
-          ) : editorFrameError ? (
-            <div className="flex h-full min-h-[18rem] items-center justify-center rounded-2xl border border-red-500/35 bg-red-500/10 px-6 text-center text-sm text-red-200">
-              {editorFrameError}
-            </div>
-          ) : showEditor && selectedRoiEntry && selectedAnnotationRequest && editorFrame ? (
+          {canMountAnnotationUi && workspacePath && displayFrame && selectedAnnotationRequest ? (
             <RoiAnnotationSession
-              className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.75rem] border border-border/80 bg-card shadow-2xl"
               workspacePath={workspacePath}
               backend={backend}
               roi={selectedRoiEntry}
               request={selectedAnnotationRequest}
-              frame={editorFrame}
+              frame={displayFrame}
+              annotationLoadEnabled={annotationFrameReady}
+              frameLoadError={editorFrameError}
               labels={annotationLabelsState.labels}
               labelsLoading={annotationLabelsState.loading}
               labelsError={annotationLabelsState.error}
@@ -581,13 +577,96 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
               onSaved={(_annotation: RoiFrameAnnotation) => {
                 /* session resets via load effect when request unchanged; no-op */
               }}
-            />
+            >
+              <>
+                <section
+                  className="col-start-2 h-full min-h-0 min-w-0 overflow-hidden"
+                  role="region"
+                  aria-label={`ROI ${selectedRoiEntry.roi} Annotation`}
+                >
+                  <div className="flex h-full min-h-0 flex-col overflow-hidden">
+                    <div className="m-4 flex min-h-0 flex-1 flex-col overflow-hidden">
+                      {editorFrameError ? (
+                        <div className="flex h-full min-h-[18rem] items-center justify-center rounded-2xl border border-red-500/35 bg-red-500/10 px-6 text-center text-sm text-red-200">
+                          {editorFrameError}
+                        </div>
+                      ) : !annotationFrameReady ? (
+                        <div className="flex h-full min-h-[18rem] items-center justify-center rounded-2xl border border-border/60 bg-card/10 px-6 text-center text-sm text-muted-foreground">
+                          Loading frame…
+                        </div>
+                      ) : (
+                        <RoiAnnotationCanvasPanel className="rounded-[1.75rem] border border-border/80 bg-card shadow-2xl" />
+                      )}
+                    </div>
+                  </div>
+                </section>
+                <RoiAnnotationToolbar className="col-start-3" />
+              </>
+            </RoiAnnotationSession>
           ) : (
-            <div className="flex h-full min-h-[18rem] items-center justify-center rounded-2xl border border-border/60 bg-card/10 px-6 text-center text-sm text-muted-foreground">
-              Select a ROI and stack position to load a frame.
-            </div>
+            <>
+              <section className="col-start-2 h-full min-h-0 min-w-0 overflow-hidden">
+                <div className="flex h-full min-h-0 flex-col overflow-hidden">
+                  <div className="m-4 flex min-h-0 flex-1 flex-col overflow-hidden">
+                    {!workspacePath ? (
+                      <div className="flex h-full min-h-[18rem] items-center justify-center rounded-2xl border border-border/60 bg-card/10 px-6 text-center text-sm text-muted-foreground">
+                        Open a workspace folder that contains ROI TIFF output (roi/Pos folders and
+                        index.json).
+                      </div>
+                    ) : emptyText ? (
+                      <div className="flex h-full min-h-[18rem] items-center justify-center rounded-2xl border border-border/60 bg-card/10 px-6 text-center text-sm text-muted-foreground">
+                        {emptyText}
+                      </div>
+                    ) : editorFrameLoading ? (
+                      <div className="flex h-full min-h-[18rem] items-center justify-center rounded-2xl border border-border/60 bg-card/10 px-6 text-center text-sm text-muted-foreground">
+                        Loading frame…
+                      </div>
+                    ) : editorFrameError ? (
+                      <div className="flex h-full min-h-[18rem] items-center justify-center rounded-2xl border border-red-500/35 bg-red-500/10 px-6 text-center text-sm text-red-200">
+                        {editorFrameError}
+                      </div>
+                    ) : (
+                      <div className="flex h-full min-h-[18rem] items-center justify-center rounded-2xl border border-border/60 bg-card/10 px-6 text-center text-sm text-muted-foreground">
+                        Select a ROI and stack position to load a frame.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </section>
+
+              <RoiAnnotationProvider
+                frame={SHELL_ANNOTATION_FRAME}
+                labels={annotationLabelsState.labels}
+                initialValue={{ classificationLabelId: null, mask: shellInitialMask }}
+                resetKey="annotator-shell"
+                title="ROI Annotation"
+                subtitle={annotationRailFallbackSubtitle}
+                loading={shellProviderLoading}
+                error={annotationLabelsState.error}
+                annotationInteractive={false}
+                onClose={handleCloseSession}
+                onSave={async () => {}}
+                onLabelsChange={
+                  workspacePath
+                    ? async (labels) => {
+                        const saved = await backend.saveAnnotationLabels(workspacePath, labels);
+                        setAnnotationLabelsState({
+                          labels: saved,
+                          loading: false,
+                          error: null,
+                        });
+                        return saved;
+                      }
+                    : undefined
+                }
+              >
+                <RoiAnnotationToolbar className="col-start-3" />
+                <AnnotationLabelManagerDialog />
+                <RoiAnnotationDiscardDialog />
+              </RoiAnnotationProvider>
+            </>
           )}
-        </section>
+        </div>
       </main>
     </div>
   );

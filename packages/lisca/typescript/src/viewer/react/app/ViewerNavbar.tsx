@@ -36,7 +36,7 @@ function pathBaseName(path: string | null) {
   return segments.at(-1) ?? path;
 }
 
-function ContextSummary({
+export function ContextSummary({
   label,
   value,
   icon,
