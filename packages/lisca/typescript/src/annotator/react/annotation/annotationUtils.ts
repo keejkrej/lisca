@@ -1,4 +1,4 @@
-import type { AnnotationLabel } from "lisca/viewer/contracts";
+import type { AnnotationLabel } from "lisca/shared/contracts";
 
 export interface RoiAnnotationValue {
   classificationLabelId: string | null;

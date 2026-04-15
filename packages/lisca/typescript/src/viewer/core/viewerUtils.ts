@@ -8,7 +8,7 @@ import type {
   ViewerSelection,
   ViewerSource,
   WorkspaceScan,
-} from "lisca/viewer/contracts";
+} from "lisca/shared/contracts";
 
 const SAMPLE_SIZE = 2048;
 

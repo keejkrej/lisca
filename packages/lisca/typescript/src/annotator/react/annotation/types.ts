@@ -1,4 +1,4 @@
-import type { AnnotationLabel, FrameResult } from "lisca/viewer/contracts";
+import type { AnnotationLabel, FrameResult } from "lisca/shared/contracts";
 
 import type { RoiAnnotationValue } from "./annotationUtils";
 

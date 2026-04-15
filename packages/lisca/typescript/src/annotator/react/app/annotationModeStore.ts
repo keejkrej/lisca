@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-import type { AnnotationMode } from "lisca/viewer/contracts";
+import type { AnnotationMode } from "lisca/shared/contracts";
 
 export interface AnnotationModeState {
   mode: AnnotationMode;

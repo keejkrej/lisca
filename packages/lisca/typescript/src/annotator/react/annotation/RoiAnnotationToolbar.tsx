@@ -1,4 +1,4 @@
-import { cn } from "lisca/viewer/ui";
+import { cn } from "lisca/shared/ui";
 
 import { useAnnotationModeStore } from "../app/annotationModeStore";
 import AnnotationToolbarInstances from "./toolbar/AnnotationToolbarInstances";

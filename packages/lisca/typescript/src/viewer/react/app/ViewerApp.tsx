@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { Toaster } from "sonner";
 import { useStore } from "zustand";
 
-import type { ViewerDataPort, ViewerHostPort } from "lisca/viewer/contracts";
-import { makeSourceKey } from "lisca/viewer/core";
+import type { ViewerDataPort, ViewerHostPort } from "lisca/shared/contracts";
+import { makeSourceKey } from "lisca/shared/core";
+import { setWorkspacePath, workspaceStore } from "lisca/shared/state";
 
 import RoiWorkspace from "./RoiWorkspace";
 import ViewerWorkspace from "./ViewerWorkspace";
 import type { ViewerMode } from "./ViewerNavbar";
-import { setSource, setWorkspacePath, viewerStore } from "./viewerStore";
+import { setSource, viewerStore } from "./viewerStore";
 
 interface ViewerAppProps {
   dataPort: ViewerDataPort;
@@ -27,7 +28,7 @@ export default function ViewerApp({
   dataPort,
   hostPort,
 }: ViewerAppProps) {
-  const workspacePath = useStore(viewerStore, (state) => state.workspacePath);
+  const workspacePath = useStore(workspaceStore, (state) => state.workspacePath);
   const source = useStore(viewerStore, (state) => state.source);
   const [mode, setMode] = useState<ViewerMode>(() => readStoredViewerMode());
 

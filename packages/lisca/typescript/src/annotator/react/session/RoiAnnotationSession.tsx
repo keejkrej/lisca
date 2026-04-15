@@ -5,7 +5,8 @@ import type {
   RoiFrameRequest,
   RoiIndexEntry,
   ViewerDataPort,
-} from "lisca/viewer/contracts";
+} from "lisca/shared/contracts";
+import { toErrorMessage } from "lisca/shared/react";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -18,7 +19,6 @@ import {
   encodeMaskToBase64Png,
   type RoiAnnotationValue,
 } from "../annotation";
-import { toErrorMessage } from "../../../viewer/react/app/viewerEffects";
 
 export interface RoiAnnotationSessionProps {
   workspacePath: string;

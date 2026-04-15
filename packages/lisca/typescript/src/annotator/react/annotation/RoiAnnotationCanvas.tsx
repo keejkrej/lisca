@@ -1,5 +1,5 @@
-import type { AnnotationLabel, FrameResult } from "lisca/viewer/contracts";
-import { clamp } from "lisca/viewer/core";
+import type { AnnotationLabel, FrameResult } from "lisca/shared/contracts";
+import { clamp } from "lisca/shared/core";
 import {
   type PointerEvent as ReactPointerEvent,
   useCallback,

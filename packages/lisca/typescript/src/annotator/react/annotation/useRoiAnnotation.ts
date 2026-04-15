@@ -1,4 +1,4 @@
-import type { AnnotationLabel, FrameResult } from "lisca/viewer/contracts";
+import type { AnnotationLabel, FrameResult } from "lisca/shared/contracts";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useAnnotationModeStore } from "../app/annotationModeStore";

@@ -1,6 +1,6 @@
-import { Button, Slider } from "lisca/viewer/ui";
+import { Button, Slider } from "lisca/shared/ui";
 
-import { SidebarField, SidebarSection } from "../../../../viewer/react/app/sidebar";
+import { SidebarField, SidebarSection } from "lisca/shared/react";
 import { maskHasPixels } from "../annotationUtils";
 import { useRoiAnnotationContext } from "../RoiAnnotationContext";
 

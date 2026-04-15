@@ -15,13 +15,14 @@ import type {
   ViewerDataPort,
   ViewerSelection,
   ViewerSource,
-} from "lisca/viewer/contracts";
+} from "lisca/shared/contracts";
 import {
   clamp,
   coerceSelection,
   createSelection,
   getFrameContrastDomain,
-} from "lisca/viewer/core";
+} from "lisca/shared/core";
+import { toErrorMessage as toSharedErrorMessage } from "lisca/shared/react";
 
 import type { ContrastMode } from "./viewerStore";
 
@@ -59,7 +60,7 @@ function contrastWindowForFrame(frame: FrameResult | null): ContrastWindow {
 }
 
 export function toErrorMessage(error: unknown): string {
-  return toError(error, "Unknown viewer error").message;
+  return toSharedErrorMessage(error);
 }
 
 export function scanSourceEffect(backend: ViewerDataPort, source: ViewerSource) {

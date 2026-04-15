@@ -7,7 +7,7 @@ import type {
   ViewerSelection,
   ViewerSource,
   WorkspaceScan,
-} from "lisca/viewer/contracts";
+} from "lisca/shared/contracts";
 import {
   clearExcludedCells as clearExcludedCellsMap,
   createDefaultGrid,
@@ -19,7 +19,8 @@ import {
   type ExcludedCellsByPosition,
   type GridCellCoord,
   type GridState,
-} from "lisca/viewer/core";
+} from "lisca/shared/core";
+import { setWorkspacePath as setSharedWorkspacePath } from "lisca/shared/state";
 
 const LAST_IMAGE_SOURCE_KEY = "view.lastImageSource";
 const LAST_WORKSPACE_KEY = "view.lastWorkspace";
@@ -310,6 +311,7 @@ function createInitialState(): ViewStoreState {
 export const viewerStore = createStore<ViewStoreState>(() => createInitialState());
 
 export function setWorkspacePath(workspacePath: string | null) {
+  setSharedWorkspacePath(workspacePath);
   runSync(persistWorkspacePathEffect(resolveStorage(), workspacePath));
   viewerStore.setState((state) => ({ ...state, workspacePath }));
 }

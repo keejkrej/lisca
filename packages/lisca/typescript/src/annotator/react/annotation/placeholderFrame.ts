@@ -1,4 +1,4 @@
-import type { FrameResult, RoiIndexEntry } from "lisca/viewer/contracts";
+import type { FrameResult, RoiIndexEntry } from "lisca/shared/contracts";
 
 /** Minimal frame for provider/canvas layout before `loadRoiFrame` completes (matches ROI crop size). */
 export function createPlaceholderAnnotationFrame(roi: RoiIndexEntry): FrameResult {

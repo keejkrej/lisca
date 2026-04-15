@@ -1,5 +1,5 @@
-import type { AnnotationLabel } from "lisca/viewer/contracts";
-import { cn } from "lisca/viewer/ui";
+import type { AnnotationLabel } from "lisca/shared/contracts";
+import { cn } from "lisca/shared/ui";
 
 import { colorStyle } from "../annotationUtils";
 

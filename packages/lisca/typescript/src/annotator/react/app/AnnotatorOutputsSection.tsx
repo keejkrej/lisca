@@ -2,13 +2,12 @@ import { useMemo } from "react";
 import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 
-import type { RoiPositionScan } from "lisca/viewer/contracts";
-import { Button } from "lisca/viewer/ui";
+import type { RoiPositionScan } from "lisca/shared/contracts";
+import { Button } from "lisca/shared/ui";
+import { SidebarField, SidebarSection, SidebarValue } from "lisca/shared/react";
+import { roiStore, workspaceStore } from "lisca/shared/state";
 
 import { useRoiAnnotationContext } from "../annotation/RoiAnnotationContext";
-import { roiStore } from "../../../viewer/react/app/roiStore";
-import { SidebarField, SidebarSection, SidebarValue } from "../../../viewer/react/app/sidebar";
-import { viewerStore } from "../../../viewer/react/app/viewerStore";
 
 function currentPositionScan(scan: { positions: RoiPositionScan[] } | null, pos: number | null) {
   if (!scan || pos == null) return null;
@@ -17,7 +16,7 @@ function currentPositionScan(scan: { positions: RoiPositionScan[] } | null, pos:
 
 /** Workspace-relative paths (forward slashes) for annotation outputs; mirrors Rust `domain.rs`. */
 export default function AnnotatorOutputsSection() {
-  const workspacePath = useStore(viewerStore, (state) => state.workspacePath);
+  const workspacePath = useStore(workspaceStore, (state) => state.workspacePath);
   const { scan, selection, selectedRoi } = useStore(
     roiStore,
     useShallow((state) => ({

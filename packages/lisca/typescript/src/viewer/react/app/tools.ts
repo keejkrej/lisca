@@ -1,4 +1,4 @@
-import type { CropRoiResponse, GridState } from "lisca/viewer/contracts";
+import type { CropRoiResponse, GridState } from "lisca/shared/contracts";
 
 export const Q20_PRESET = {
   shape: "square",

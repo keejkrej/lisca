@@ -1,5 +1,5 @@
-import type { FrameResult, ViewerCanvasStatusMessage } from "lisca/viewer/contracts";
-import type { GridCellCoord, GridState, GridWheelViewport } from "lisca/viewer/core";
+import type { FrameResult, ViewerCanvasStatusMessage } from "lisca/shared/contracts";
+import type { GridCellCoord, GridState, GridWheelViewport } from "lisca/shared/core";
 
 export interface ViewerCanvasFramePoint {
   x: number;

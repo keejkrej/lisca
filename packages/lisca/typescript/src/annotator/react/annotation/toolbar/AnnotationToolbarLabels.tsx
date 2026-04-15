@@ -1,6 +1,6 @@
-import { Button } from "lisca/viewer/ui";
+import { Button } from "lisca/shared/ui";
 
-import { SidebarSection } from "../../../../viewer/react/app/sidebar";
+import { SidebarSection } from "lisca/shared/react";
 import { useRoiAnnotationContext } from "../RoiAnnotationContext";
 import { AnnotationLabelSelectTile } from "./AnnotationLabelTile";
 

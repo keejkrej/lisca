@@ -5,8 +5,8 @@ import {
   type GridCellCoord,
   type GridState,
   type GridWheelViewport,
-} from "lisca/viewer/core";
-import type { FrameResult, ViewerCanvasStatusTone } from "lisca/viewer/contracts";
+} from "lisca/shared/core";
+import type { FrameResult, ViewerCanvasStatusTone } from "lisca/shared/contracts";
 import {
   type WheelEvent as ReactWheelEvent,
   type PointerEvent as ReactPointerEvent,

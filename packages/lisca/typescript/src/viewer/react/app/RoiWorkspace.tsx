@@ -11,8 +11,8 @@ import type {
   ViewerCanvasStatusMessage,
   ViewerSource,
   ViewerDataPort,
-} from "lisca/viewer/contracts";
-import { clamp, createDefaultGrid, normalizeGridState, type GridState } from "lisca/viewer/core";
+} from "lisca/shared/contracts";
+import { clamp, createDefaultGrid, normalizeGridState, type GridState } from "lisca/shared/core";
 import { ViewerCanvasSurface } from "../alignment";
 import {
   Button,
@@ -22,8 +22,19 @@ import {
   SelectTrigger,
   SelectValue,
   Slider,
-} from "lisca/viewer/ui";
-
+} from "lisca/shared/ui";
+import {
+  findNavigationOptionIndex,
+  NavigationControls,
+  loadRoiFrameEffect,
+  scanRoiWorkspaceEffect,
+  showErrorToast,
+  SidebarField,
+  SidebarSection,
+  SidebarValue,
+  toErrorMessage,
+  toNavigationOptions,
+} from "lisca/shared/react";
 import {
   patchRoiState,
   resetRoiState,
@@ -32,19 +43,8 @@ import {
   setRoiScan,
   setRoiSelectionKey,
   setSelectedRoi,
-} from "./roiStore";
-import { loadRoiFrameEffect, scanRoiWorkspaceEffect, toErrorMessage } from "./viewerEffects";
-import {
-  SidebarField,
-  SidebarSection,
-  SidebarValue,
-} from "./sidebar";
-import {
-  findNavigationOptionIndex,
-  NavigationControls,
-  toNavigationOptions,
-} from "./NavigationControls";
-import { showErrorToast } from "./toast";
+} from "lisca/shared/state";
+
 import ViewerNavbar, { type ViewerMode } from "./ViewerNavbar";
 
 type SelectValue = number | string;

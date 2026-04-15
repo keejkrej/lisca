@@ -1,4 +1,4 @@
-import { Button } from "lisca/viewer/ui";
+import { Button } from "lisca/shared/ui";
 
 import { useRoiAnnotationContext } from "./RoiAnnotationContext";
 

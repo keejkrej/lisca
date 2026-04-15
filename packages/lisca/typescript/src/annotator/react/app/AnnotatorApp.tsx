@@ -13,9 +13,32 @@ import type {
   RoiPositionScan,
   ViewerDataPort,
   ViewerHostPort,
-} from "lisca/viewer/contracts";
-import { clamp } from "lisca/viewer/core";
-import { Button } from "lisca/viewer/ui";
+} from "lisca/shared/contracts";
+import { clamp } from "lisca/shared/core";
+import { Button } from "lisca/shared/ui";
+import {
+  ContextSummary,
+  findNavigationOptionIndex,
+  loadAnnotationLabelsEffect,
+  loadRoiFrameEffect,
+  NavigationControls,
+  SelectStepperField,
+  scanRoiWorkspaceEffect,
+  showErrorToast,
+  SidebarSection,
+  toErrorMessage,
+  toNavigationOptions,
+} from "lisca/shared/react";
+import {
+  patchRoiState,
+  resetRoiState,
+  roiStore,
+  setRoiScan,
+  setRoiSelectionKey,
+  setSelectedRoi,
+  setWorkspacePath,
+  workspaceStore,
+} from "lisca/shared/state";
 
 import {
   AnnotationLabelManagerDialog,
@@ -27,30 +50,6 @@ import {
   RoiAnnotationToolbar,
 } from "../annotation";
 import RoiAnnotationSession from "../session/RoiAnnotationSession";
-import {
-  findNavigationOptionIndex,
-  NavigationControls,
-  SelectStepperField,
-  toNavigationOptions,
-} from "../../../viewer/react/app/NavigationControls";
-import {
-  patchRoiState,
-  resetRoiState,
-  roiStore,
-  setRoiSelectionKey,
-  setSelectedRoi,
-  setRoiScan,
-} from "../../../viewer/react/app/roiStore";
-import {
-  loadAnnotationLabelsEffect,
-  loadRoiFrameEffect,
-  scanRoiWorkspaceEffect,
-  toErrorMessage,
-} from "../../../viewer/react/app/viewerEffects";
-import { setWorkspacePath, viewerStore } from "../../../viewer/react/app/viewerStore";
-import { showErrorToast } from "../../../viewer/react/app/toast";
-import { ContextSummary } from "../../../viewer/react/app/ViewerNavbar";
-import { SidebarSection } from "../../../viewer/react/app/sidebar";
 
 import AnnotatorOutputsSection from "./AnnotatorOutputsSection";
 import { useAnnotationModeStore } from "./annotationModeStore";
@@ -73,7 +72,7 @@ interface AnnotatorAppProps {
 }
 
 export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorAppProps) {
-  const workspacePath = useStore(viewerStore, (state) => state.workspacePath);
+  const workspacePath = useStore(workspaceStore, (state) => state.workspacePath);
   const annotationMode = useAnnotationModeStore((state) => state.mode);
   const setAnnotationMode = useAnnotationModeStore((state) => state.setMode);
 

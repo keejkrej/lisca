@@ -1,7 +1,7 @@
-import { Button, cn } from "lisca/viewer/ui";
+import { Button, cn } from "lisca/shared/ui";
 import { Plus, Trash2 } from "lucide-react";
 
-import { SidebarSection } from "../../../../viewer/react/app/sidebar";
+import { SidebarSection } from "lisca/shared/react";
 import { useRoiAnnotationContext } from "../RoiAnnotationContext";
 
 export default function AnnotationToolbarInstances() {

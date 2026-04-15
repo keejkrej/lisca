@@ -14,7 +14,7 @@ import type {
   FrameResult,
   ViewerDataPort,
   ViewerSource,
-} from "lisca/viewer/contracts";
+} from "lisca/shared/contracts";
 import {
   applyGridPointerGesture,
   applyGridWheelGesture,
@@ -25,7 +25,7 @@ import {
   type GridPointerGestureSession,
   type GridShape,
   type GridState,
-} from "lisca/viewer/core";
+} from "lisca/shared/core";
 import {
   buildBboxCsv,
   clamp,
@@ -37,7 +37,7 @@ import {
   radiansToDegrees,
   toggleExcludedCells as toggleExcludedCellCoords,
   type GridCellCoord,
-} from "lisca/viewer/core";
+} from "lisca/shared/core";
 import {
   ViewerCanvasSurface,
   type ViewerCanvasPointerEvent,
@@ -62,7 +62,18 @@ import {
   SelectTrigger,
   SelectValue,
   Slider,
-} from "lisca/viewer/ui";
+} from "lisca/shared/ui";
+import {
+  NavigationControls,
+  SidebarField,
+  SidebarSection,
+  SidebarSegmentedToggle,
+  SidebarStat,
+  SidebarValue,
+  showErrorToast,
+  showSuccessToast,
+} from "lisca/shared/react";
+import { findNavigationOptionIndex, stepNavigationValue, toNavigationOptions } from "lisca/shared/react";
 
 import {
   applySavedAlignState,
@@ -92,24 +103,10 @@ import {
   toErrorMessage,
 } from "./viewerEffects";
 import {
-  SidebarField,
-  SidebarSection,
-  SidebarSegmentedToggle,
-  SidebarStat,
-  SidebarValue,
-} from "./sidebar";
-import {
-  findNavigationOptionIndex,
-  NavigationControls,
-  stepNavigationValue,
-  toNavigationOptions,
-} from "./NavigationControls";
-import {
   applyQ20Preset,
   computeBatchCropOverallProgress,
   runBatchCropSequence,
 } from "./tools";
-import { showErrorToast, showSuccessToast } from "./toast";
 import ViewerNavbar, { type ViewerMode } from "./ViewerNavbar";
 
 type SelectValue = number | string;

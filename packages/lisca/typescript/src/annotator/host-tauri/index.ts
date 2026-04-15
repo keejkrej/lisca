@@ -1,1 +1,1 @@
-export { createTauriDesktopPorts, type TauriDesktopPorts } from "../../viewer/host-tauri";
+export { createTauriDesktopPorts, type TauriDesktopPorts } from "../../shared/host-tauri";

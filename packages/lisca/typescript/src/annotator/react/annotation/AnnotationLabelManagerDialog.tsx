@@ -1,5 +1,5 @@
-import type { AnnotationLabel } from "lisca/viewer/contracts";
-import { Button, Input, cn } from "lisca/viewer/ui";
+import type { AnnotationLabel } from "lisca/shared/contracts";
+import { Button, Input, cn } from "lisca/shared/ui";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 

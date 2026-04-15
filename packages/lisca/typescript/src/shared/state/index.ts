@@ -8,4 +8,5 @@ export {
   setSelectedRoi,
   type RoiSelection,
   type RoiStoreState,
-} from "../../../shared/state";
+} from "./roiStore";
+export { setWorkspacePath, workspaceStore } from "./workspaceStore";
