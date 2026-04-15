@@ -1,23 +1,76 @@
+import type { AnnotationLabel } from "lisca/viewer/contracts";
 import { Button, Input } from "lisca/viewer/ui";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-import { colorStyle, slugifyLabelId } from "./annotationUtils";
+import { slugifyLabelId } from "./annotationUtils";
 import { useRoiAnnotationContext } from "./RoiAnnotationContext";
+
+function labelsEqual(a: AnnotationLabel[], b: AnnotationLabel[]): boolean {
+  if (a.length !== b.length) return false;
+  const byId = new Map(b.map((x) => [x.id, x]));
+  for (const l of a) {
+    const o = byId.get(l.id);
+    if (!o || o.name !== l.name || o.color !== l.color) return false;
+  }
+  return true;
+}
 
 export default function AnnotationLabelManagerDialog() {
   const {
     labelManagerOpen,
     setLabelManagerOpen,
     labelSaveState,
+    setLabelSaveState,
     localLabels,
-    labelDraft,
-    setLabelDraft,
-    labelColorDrafts,
-    setLabelColorDrafts,
     canManageLabels,
-    handleAddLabel,
-    handleSaveLabelColors,
-    labelColorsDirty,
+    commitAnnotationLabels,
   } = useRoiAnnotationContext();
+
+  const [draftLabels, setDraftLabels] = useState<AnnotationLabel[]>([]);
+  const [newLabel, setNewLabel] = useState({ name: "", id: "", color: "#22c55e" });
+  const labelsRef = useRef(localLabels);
+  labelsRef.current = localLabels;
+
+  useEffect(() => {
+    if (!labelManagerOpen) return;
+    setDraftLabels(labelsRef.current.map((l) => ({ ...l })));
+    setNewLabel({ name: "", id: "", color: "#22c55e" });
+    setLabelSaveState({ saving: false, error: null });
+  }, [labelManagerOpen, setLabelSaveState]);
+
+  const dirty = useMemo(() => !labelsEqual(draftLabels, localLabels), [draftLabels, localLabels]);
+
+  const handleColorChange = (labelId: string, color: string) => {
+    setDraftLabels((prev) =>
+      prev.map((l) => (l.id === labelId ? { ...l, color } : l)),
+    );
+  };
+
+  const handleAddPending = () => {
+    const name = newLabel.name.trim();
+    const id = (newLabel.id.trim() || slugifyLabelId(name)).trim();
+    if (!name) {
+      setLabelSaveState({ saving: false, error: "Label name is required." });
+      return;
+    }
+    if (!id) {
+      setLabelSaveState({ saving: false, error: "Label id is required." });
+      return;
+    }
+    if (draftLabels.some((label) => label.id === id)) {
+      setLabelSaveState({ saving: false, error: `A label with id '${id}' already exists.` });
+      return;
+    }
+    setLabelSaveState({ saving: false, error: null });
+    setDraftLabels((prev) => [...prev, { id, name, color: newLabel.color }]);
+    setNewLabel({ name: "", id: "", color: "#22c55e" });
+  };
+
+  const handleSave = async () => {
+    if (!dirty || !canManageLabels || labelSaveState.saving) return;
+    const ok = await commitAnnotationLabels(draftLabels);
+    if (ok) setLabelManagerOpen(false);
+  };
 
   if (!labelManagerOpen) return null;
 
@@ -31,157 +84,115 @@ export default function AnnotationLabelManagerDialog() {
       }}
     >
       <div
-        className="w-full max-w-lg rounded-[1.5rem] border border-border/80 bg-card shadow-2xl"
+        className="w-full max-w-md rounded-xl border border-border/80 bg-card shadow-2xl"
         role="dialog"
         aria-modal="true"
         aria-labelledby="annotation-label-settings-title"
       >
-        <div className="flex items-center justify-between gap-4 border-b border-border px-5 py-4">
-          <div className="space-y-1">
-            <h2
-              id="annotation-label-settings-title"
-              className="text-base font-medium text-foreground"
+        <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+          <h2 id="annotation-label-settings-title" className="text-sm font-medium text-foreground">
+            Labels
+          </h2>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              className="h-8 px-3 text-xs"
+              disabled={!canManageLabels || labelSaveState.saving || !dirty}
+              onClick={() => void handleSave()}
             >
-              Annotation Label Settings
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Add labels and tune their colors for classification chips and semantic mask painting.
-            </p>
+              {labelSaveState.saving ? "Saving…" : "Save"}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 px-2 text-xs"
+              disabled={labelSaveState.saving}
+              onClick={() => setLabelManagerOpen(false)}
+            >
+              Close
+            </Button>
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-9 px-3 text-xs"
-            disabled={labelSaveState.saving}
-            onClick={() => setLabelManagerOpen(false)}
-          >
-            Close
-          </Button>
         </div>
 
-        <div className="space-y-5 px-5 py-5">
-          {localLabels.length > 0 ? (
-            <div className="space-y-2">
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
-                Current labels
-              </p>
-              <div className="space-y-2">
-                {localLabels.map((label) => (
-                  <div
-                    key={label.id}
-                    className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-background/45 px-3 py-2"
-                  >
-                    <div className="min-w-0 space-y-1">
-                      <span
-                        className="inline-flex rounded-full border px-2.5 py-1 text-xs font-medium"
-                        style={colorStyle(labelColorDrafts[label.id] ?? label.color, false)}
-                      >
-                        {label.name}
-                      </span>
-                      <p className="text-xs text-muted-foreground">{label.id}</p>
-                    </div>
-                    <Input
-                      nativeInput
-                      type="color"
-                      size="sm"
-                      className="h-9 w-14 shrink-0 overflow-hidden px-1.5"
-                      value={labelColorDrafts[label.id] ?? label.color}
-                      onChange={(event) =>
-                        setLabelColorDrafts((current) => ({
-                          ...current,
-                          [label.id]: event.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-                ))}
-              </div>
-              <div className="flex justify-end">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-9 px-3 text-xs"
-                  disabled={!canManageLabels || labelSaveState.saving || !labelColorsDirty}
-                  onClick={() => void handleSaveLabelColors()}
+        <div className="space-y-4 px-4 py-4">
+          {labelSaveState.error ? (
+            <p className="text-xs text-red-400">{labelSaveState.error}</p>
+          ) : null}
+
+          {draftLabels.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              {draftLabels.map((label) => (
+                <div
+                  key={label.id}
+                  className="flex items-center gap-3 rounded-lg border border-border/80 bg-card/50 px-3 py-2.5"
                 >
-                  {labelSaveState.saving && labelColorsDirty ? "Saving colors..." : "Save colors"}
-                </Button>
-              </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm text-foreground">{label.name}</p>
+                    <p className="truncate font-mono text-[11px] text-muted-foreground">{label.id}</p>
+                  </div>
+                  <Input
+                    nativeInput
+                    type="color"
+                    size="sm"
+                    aria-label={`Color for ${label.name}`}
+                    className="size-8 shrink-0 cursor-pointer overflow-hidden rounded border-0 p-0.5"
+                    value={label.color}
+                    onChange={(event) => handleColorChange(label.id, event.target.value)}
+                  />
+                </div>
+              ))}
             </div>
           ) : (
-            <div className="rounded-2xl border border-border bg-background/45 px-4 py-3 text-sm text-muted-foreground">
-              No labels yet. Add one below to enable annotation for this surface.
-            </div>
+            <p className="text-xs text-muted-foreground">No labels yet.</p>
           )}
 
-          <div className="grid grid-cols-[minmax(0,1fr)_10rem] gap-3">
-            <div className="space-y-1.5">
-              <p className="text-xs font-medium text-muted-foreground">Label name</p>
-              <Input
-                size="sm"
-                value={labelDraft.name}
-                placeholder="Cell"
-                onChange={(event) => {
-                  const name = event.target.value;
-                  setLabelDraft((current) => ({
-                    ...current,
-                    name,
-                    id: current.id.length > 0 ? current.id : slugifyLabelId(name),
-                  }));
-                }}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <p className="text-xs font-medium text-muted-foreground">Color</p>
+          <div className="rounded-lg border border-dashed border-border/70 bg-muted/10 p-3">
+            <p className="mb-2 text-xs font-medium text-muted-foreground">Add label</p>
+            <div className="flex flex-wrap items-end gap-2">
+              <div className="min-w-0 flex-1 space-y-1">
+                <Input
+                  size="sm"
+                  value={newLabel.name}
+                  placeholder="Name"
+                  onChange={(event) => {
+                    const name = event.target.value;
+                    setNewLabel((current) => ({
+                      ...current,
+                      name,
+                      id: current.id.length > 0 ? current.id : slugifyLabelId(name),
+                    }));
+                  }}
+                />
+                <Input
+                  size="sm"
+                  className="font-mono text-xs"
+                  value={newLabel.id}
+                  placeholder="id"
+                  onChange={(event) =>
+                    setNewLabel((current) => ({ ...current, id: event.target.value }))
+                  }
+                />
+              </div>
               <Input
                 nativeInput
                 type="color"
                 size="sm"
-                className="h-9 overflow-hidden px-1.5"
-                value={labelDraft.color}
+                className="size-8 shrink-0 cursor-pointer overflow-hidden rounded border-0 p-0.5"
+                value={newLabel.color}
                 onChange={(event) =>
-                  setLabelDraft((current) => ({ ...current, color: event.target.value }))
+                  setNewLabel((current) => ({ ...current, color: event.target.value }))
                 }
               />
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 shrink-0 text-xs"
+                disabled={!canManageLabels || labelSaveState.saving}
+                onClick={handleAddPending}
+              >
+                Add
+              </Button>
             </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <p className="text-xs font-medium text-muted-foreground">Label id</p>
-            <Input
-              size="sm"
-              value={labelDraft.id}
-              placeholder="cell"
-              onChange={(event) =>
-                setLabelDraft((current) => ({ ...current, id: event.target.value }))
-              }
-            />
-          </div>
-
-          {labelSaveState.error ? (
-            <div className="rounded-xl border border-red-500/35 bg-red-500/10 px-3 py-2 text-xs text-red-200">
-              {labelSaveState.error}
-            </div>
-          ) : null}
-
-          <div className="flex justify-end gap-3">
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-9 px-3 text-xs"
-              disabled={labelSaveState.saving}
-              onClick={() => setLabelManagerOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              size="sm"
-              className="h-9 px-3 text-xs"
-              disabled={!canManageLabels || labelSaveState.saving}
-              onClick={() => void handleAddLabel()}
-            >
-              {labelSaveState.saving ? "Adding label..." : "Add label"}
-            </Button>
           </div>
         </div>
       </div>

@@ -10,7 +10,7 @@ export default function RoiAnnotationCanvasPanel({ className }: { className?: st
     tool,
     brushSize,
     overlayOpacity,
-    canEdit,
+    canEditPaint,
     loading,
     setPreviewMask,
     clearStrokeError,
@@ -29,7 +29,7 @@ export default function RoiAnnotationCanvasPanel({ className }: { className?: st
         tool={tool}
         brushSize={brushSize}
         overlayOpacity={overlayOpacity}
-        disabled={!canEdit || loading}
+        disabled={!canEditPaint || loading}
         className="h-full min-h-[20rem] w-full"
         onStrokeStart={clearStrokeError}
         onPreviewMaskChange={setPreviewMask}

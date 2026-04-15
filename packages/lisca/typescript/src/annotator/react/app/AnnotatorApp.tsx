@@ -15,6 +15,7 @@ import type {
   ViewerHostPort,
 } from "lisca/viewer/contracts";
 import { clamp } from "lisca/viewer/core";
+import { Button } from "lisca/viewer/ui";
 
 import {
   AnnotationLabelManagerDialog,
@@ -52,6 +53,7 @@ import { ContextSummary } from "../../../viewer/react/app/ViewerNavbar";
 import { SidebarSection } from "../../../viewer/react/app/sidebar";
 
 import AnnotatorOutputsSection from "./AnnotatorOutputsSection";
+import { useAnnotationModeStore } from "./annotationModeStore";
 
 /** Minimal frame for the annotation rail shell (toolbar visible before a real ROI frame exists). */
 const SHELL_ANNOTATION_FRAME: FrameResult = {
@@ -72,6 +74,8 @@ interface AnnotatorAppProps {
 
 export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorAppProps) {
   const workspacePath = useStore(viewerStore, (state) => state.workspacePath);
+  const annotationMode = useAnnotationModeStore((state) => state.mode);
+  const setAnnotationMode = useAnnotationModeStore((state) => state.setMode);
 
   const { scan, selection, loading, error, selectedRoi } = useStore(
     roiStore,
@@ -545,13 +549,50 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
       <Toaster position="bottom-right" theme="dark" richColors closeButton />
 
       <header className="shrink-0 border-b border-border/80 bg-background px-6 py-3">
-        <div className="flex items-center justify-center">
-          <ContextSummary
-            label="Workspace"
-            value={workspacePath}
-            icon={<FolderOpen className="size-4" />}
-            onClick={() => void handlePickWorkspace()}
-          />
+        <div className="grid grid-cols-[1fr_minmax(0,56rem)_1fr] items-center gap-4">
+          <div>
+            <div
+              className="flex w-fit max-w-full flex-wrap items-center gap-1 rounded-xl border border-border bg-muted/35 p-1"
+              role="group"
+              aria-label="Annotation task"
+            >
+              <Button
+                size="sm"
+                variant={annotationMode === "classification" ? "default" : "ghost"}
+                className="min-w-[4.25rem] px-2"
+                onClick={() => setAnnotationMode("classification")}
+              >
+                Class
+              </Button>
+              <Button
+                size="sm"
+                variant={annotationMode === "semantic" ? "default" : "ghost"}
+                className="min-w-[4.25rem] px-2"
+                onClick={() => setAnnotationMode("semantic")}
+              >
+                Regions
+              </Button>
+              <Button
+                size="sm"
+                variant={annotationMode === "instance" ? "default" : "ghost"}
+                className="min-w-[4.25rem] px-2"
+                onClick={() => setAnnotationMode("instance")}
+              >
+                Objects
+              </Button>
+            </div>
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center justify-center gap-3">
+              <ContextSummary
+                label="Workspace"
+                value={workspacePath}
+                icon={<FolderOpen className="size-4" />}
+                onClick={() => void handlePickWorkspace()}
+              />
+            </div>
+          </div>
+          <div className="justify-self-end" />
         </div>
       </header>
 

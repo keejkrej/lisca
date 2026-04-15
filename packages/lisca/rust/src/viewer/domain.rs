@@ -231,9 +231,18 @@ pub struct RoiFrameAnnotation {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct AnnotationInstancePayload {
+    pub id: String,
+    pub label_id: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RoiFrameAnnotationPayload {
     pub classification_label_id: Option<String>,
     pub mask_base64_png: Option<String>,
+    #[serde(default)]
+    pub instances: Option<Vec<AnnotationInstancePayload>>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

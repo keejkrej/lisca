@@ -1,14 +1,13 @@
 import type { AnnotationLabel, FrameResult } from "lisca/viewer/contracts";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { useAnnotationModeStore } from "../app/annotationModeStore";
 import {
   annotationValuesEqual,
   cloneAnnotationValue,
   coerceMask,
   createEmptyMask,
-  labelColorMap,
   maskHasPixels,
-  slugifyLabelId,
   type RoiAnnotationValue,
 } from "./annotationUtils";
 import type { RoiAnnotationControllerProps } from "./types";
@@ -59,17 +58,23 @@ export function useRoiAnnotation({
     saving: false,
     error: null,
   });
-  const [labelDraft, setLabelDraft] = useState({
-    name: "",
-    id: "",
-    color: "#22c55e",
-  });
-  const [labelColorDrafts, setLabelColorDrafts] = useState<Record<string, string>>({});
   const [localLabels, setLocalLabels] = useState<AnnotationLabel[]>(labels ?? []);
+  const [annotationInstances, setAnnotationInstances] = useState<Array<{ id: string; name: string }>>(
+    [],
+  );
+  const [activeInstanceId, setActiveInstanceId] = useState<string | null>(null);
+  const annotationMode = useAnnotationModeStore((state) => state.mode);
 
   useEffect(() => {
     setLocalLabels(labels ?? []);
   }, [labels]);
+
+  useEffect(() => {
+    if (annotationMode !== "instance") {
+      setAnnotationInstances([]);
+      setActiveInstanceId(null);
+    }
+  }, [annotationMode]);
 
   useEffect(() => {
     const nextInitial = {
@@ -95,17 +100,23 @@ export function useRoiAnnotation({
     }
   }, [activePaintLabelId, localLabels]);
 
-  useEffect(() => {
-    if (!labelManagerOpen) return;
-    setLabelColorDrafts(labelColorMap(localLabels));
-  }, [labelManagerOpen, localLabels]);
-
   const currentSnapshot = historyState.history[historyState.index] ?? initialSnapshotRef.current;
   const effectiveMask = historyState.previewMask ?? currentSnapshot.mask;
   const labelManagerOpenable = Boolean(onLabelsChange) && !loading;
   const canManageLabels = !loading && !error && Boolean(onLabelsChange);
   const canEdit =
     annotationInteractive && !loading && !error && localLabels.length > 0;
+  const canEditClassification = useMemo(
+    () => canEdit && annotationMode === "classification",
+    [annotationMode, canEdit],
+  );
+  const canEditPaint = useMemo(
+    () =>
+      canEdit &&
+      annotationMode !== "classification" &&
+      (annotationMode !== "instance" || activeInstanceId !== null),
+    [activeInstanceId, annotationMode, canEdit],
+  );
   const dirty = useMemo(
     () => !annotationValuesEqual(currentSnapshot, initialSnapshotRef.current),
     [currentSnapshot],
@@ -113,12 +124,6 @@ export function useRoiAnnotation({
   const selectedClassificationLabel = localLabels.find(
     (label) => label.id === currentSnapshot.classificationLabelId,
   );
-  const labelColorsDirty = useMemo(
-    () =>
-      localLabels.some((label) => (labelColorDrafts[label.id] ?? label.color) !== label.color),
-    [labelColorDrafts, localLabels],
-  );
-
   const commitSnapshot = useCallback((nextSnapshot: RoiAnnotationValue) => {
     setHistoryState((current) => {
       const active = current.history[current.index] ?? initialSnapshotRef.current;
@@ -215,81 +220,27 @@ export function useRoiAnnotation({
     }
   }, [canEdit, currentSnapshot, loading, onSave, saving]);
 
-  const handleAddLabel = useCallback(async () => {
-    if (!onLabelsChange || labelSaveState.saving) return;
-    const name = labelDraft.name.trim();
-    const id = (labelDraft.id.trim() || slugifyLabelId(name)).trim();
-    if (!name) {
-      setLabelSaveState({
-        saving: false,
-        error: "Label name is required.",
-      });
-      return;
-    }
-    if (!id) {
-      setLabelSaveState({
-        saving: false,
-        error: "Label id is required.",
-      });
-      return;
-    }
-    if (localLabels.some((label) => label.id === id)) {
-      setLabelSaveState({
-        saving: false,
-        error: `A label with id '${id}' already exists.`,
-      });
-      return;
-    }
-
-    setLabelSaveState({ saving: true, error: null });
-    try {
-      const nextLabels = [
-        ...localLabels,
-        {
-          id,
-          name,
-          color: labelDraft.color,
-        },
-      ];
-      const resolved = (await onLabelsChange(nextLabels)) ?? nextLabels;
-      setLocalLabels(resolved);
-      setActivePaintLabelId((current) => current ?? resolved[0]?.id ?? null);
-      setLabelColorDrafts(labelColorMap(resolved));
-      setLabelDraft({
-        name: "",
-        id: "",
-        color: "#22c55e",
-      });
-      setLabelSaveState({ saving: false, error: null });
-    } catch (labelIssue) {
-      setLabelSaveState({
-        saving: false,
-        error:
-          labelIssue instanceof Error ? labelIssue.message : "Failed to save annotation labels",
-      });
-    }
-  }, [labelDraft.color, labelDraft.id, labelDraft.name, labelSaveState.saving, localLabels, onLabelsChange]);
-
-  const handleSaveLabelColors = useCallback(async () => {
-    if (!onLabelsChange || labelSaveState.saving || !labelColorsDirty) return;
-    setLabelSaveState({ saving: true, error: null });
-    try {
-      const nextLabels = localLabels.map((label) => ({
-        ...label,
-        color: labelColorDrafts[label.id] ?? label.color,
-      }));
-      const resolved = (await onLabelsChange(nextLabels)) ?? nextLabels;
-      setLocalLabels(resolved);
-      setLabelColorDrafts(labelColorMap(resolved));
-      setLabelSaveState({ saving: false, error: null });
-    } catch (labelIssue) {
-      setLabelSaveState({
-        saving: false,
-        error:
-          labelIssue instanceof Error ? labelIssue.message : "Failed to save annotation labels",
-      });
-    }
-  }, [labelColorDrafts, labelColorsDirty, labelSaveState.saving, localLabels, onLabelsChange]);
+  const commitAnnotationLabels = useCallback(
+    async (nextLabels: AnnotationLabel[]): Promise<boolean> => {
+      if (!onLabelsChange || labelSaveState.saving) return false;
+      setLabelSaveState({ saving: true, error: null });
+      try {
+        const resolved = (await onLabelsChange(nextLabels)) ?? nextLabels;
+        setLocalLabels(resolved);
+        setActivePaintLabelId((current) => current ?? resolved[0]?.id ?? null);
+        setLabelSaveState({ saving: false, error: null });
+        return true;
+      } catch (labelIssue) {
+        setLabelSaveState({
+          saving: false,
+          error:
+            labelIssue instanceof Error ? labelIssue.message : "Failed to save annotation labels",
+        });
+        return false;
+      }
+    },
+    [labelSaveState.saving, onLabelsChange],
+  );
 
   const setPreviewMask = useCallback((nextMask: Uint8Array) => {
     setHistoryState((current) => ({ ...current, previewMask: nextMask.slice() }));
@@ -307,6 +258,17 @@ export function useRoiAnnotation({
     [commitSnapshot, currentSnapshot.classificationLabelId],
   );
 
+  const addAnnotationInstance = useCallback(() => {
+    const id = crypto.randomUUID();
+    setAnnotationInstances((prev) => [...prev, { id, name: `Object ${prev.length + 1}` }]);
+    setActiveInstanceId(id);
+  }, []);
+
+  const removeAnnotationInstance = useCallback((instanceId: string) => {
+    setAnnotationInstances((prev) => prev.filter((entry) => entry.id !== instanceId));
+    setActiveInstanceId((current) => (current === instanceId ? null : current));
+  }, []);
+
   return {
     frame,
     title,
@@ -319,6 +281,14 @@ export function useRoiAnnotation({
     labelManagerOpenable,
     canManageLabels,
     canEdit,
+    canEditClassification,
+    canEditPaint,
+    annotationMode,
+    annotationInstances,
+    activeInstanceId,
+    setActiveInstanceId,
+    addAnnotationInstance,
+    removeAnnotationInstance,
     dirty,
     saving,
     saveError,
@@ -335,18 +305,12 @@ export function useRoiAnnotation({
     setLabelManagerOpen,
     labelSaveState,
     setLabelSaveState,
-    labelDraft,
-    setLabelDraft,
-    labelColorDrafts,
-    setLabelColorDrafts,
-    labelColorsDirty,
     discardConfirmOpen,
     setDiscardConfirmOpen,
     handleClassificationChange,
     handleClearMask,
     handleSave,
-    handleAddLabel,
-    handleSaveLabelColors,
+    commitAnnotationLabels,
     requestClose,
     setPreviewMask,
     clearStrokeError,

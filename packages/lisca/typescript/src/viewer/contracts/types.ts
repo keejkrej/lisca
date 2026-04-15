@@ -45,9 +45,24 @@ export interface RoiFrameAnnotation {
   updatedAt: string | null;
 }
 
+/** Workspace UI: what kind of annotation the user is performing. */
+export type AnnotationMode = "classification" | "semantic" | "instance";
+
+/**
+ * Future instance-segmentation payloads (optional; not yet written by the backend).
+ * When present, pairs with semantic/instance mask conventions on disk.
+ */
+export interface AnnotationInstancePayload {
+  id: string;
+  /** Class label id for this instance */
+  labelId: string;
+}
+
 export interface RoiFrameAnnotationPayload {
   classificationLabelId: string | null;
   maskBase64Png: string | null;
+  /** Optional; reserved for instance mode persistence (forward-compatible). */
+  instances?: AnnotationInstancePayload[] | null;
 }
 
 export interface LoadedRoiFrameAnnotation {
