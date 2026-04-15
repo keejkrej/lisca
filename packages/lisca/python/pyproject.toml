@@ -12,6 +12,9 @@ dependencies = [
   "tifffile>=2025.3.13",
 ]
 
+[project.scripts]
+lisca2acdc = "lisca.acdc:main"
+
 [build-system]
 requires = ["hatchling", "pathspec<0.13"]
 build-backend = "hatchling.build"
