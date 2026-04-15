@@ -6,9 +6,9 @@ import {
   createEmptyMask,
   decodeMaskBase64Png,
   encodeMaskToBase64Png,
-} from "../../../src/viewer/react";
+} from "../../../src/annotator/react";
 
-describe("react package annotation surface", () => {
+describe("annotator react package surface", () => {
   test("exports the annotation components", () => {
     expect(typeof RoiAnnotationCanvas).toBe("function");
     expect(typeof RoiAnnotationEditor).toBe("function");

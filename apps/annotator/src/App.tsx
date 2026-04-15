@@ -1,5 +1,5 @@
-import { createTauriDesktopPorts } from "lisca/viewer/host-tauri";
-import { AnnotatorApp } from "lisca/viewer/react";
+import { createTauriDesktopPorts } from "lisca/annotator/host-tauri";
+import { AnnotatorApp } from "lisca/annotator/react";
 
 const ports = createTauriDesktopPorts();
 

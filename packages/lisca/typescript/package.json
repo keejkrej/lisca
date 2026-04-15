@@ -5,6 +5,9 @@
   "packageManager": "bun@1.2.22",
   "type": "module",
   "exports": {
+    "./annotator/host-tauri": "./src/annotator/host-tauri/index.ts",
+    "./annotator/react": "./src/annotator/react/index.ts",
+    "./annotator/styles.css": "./src/viewer/react/app/app.css",
     "./viewer/contracts": "./src/viewer/contracts/index.ts",
     "./viewer/core": "./src/viewer/core/index.ts",
     "./viewer/host-tauri": "./src/viewer/host-tauri/index.ts",

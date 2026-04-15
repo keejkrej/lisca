@@ -16,12 +16,12 @@ import type {
 import { clamp } from "lisca/viewer/core";
 import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "lisca/viewer/ui";
 
-import RoiAnnotationSession from "../annotator/RoiAnnotationSession";
+import RoiAnnotationSession from "../session/RoiAnnotationSession";
 import {
   findNavigationOptionIndex,
   NavigationControls,
   toNavigationOptions,
-} from "./NavigationControls";
+} from "../../../viewer/react/app/NavigationControls";
 import {
   patchRoiState,
   resetRoiState,
@@ -29,16 +29,16 @@ import {
   setRoiSelectionKey,
   setSelectedRoi,
   setRoiScan,
-} from "./roiStore";
+} from "../../../viewer/react/app/roiStore";
 import {
   loadAnnotationLabelsEffect,
   loadRoiFrameEffect,
   scanRoiWorkspaceEffect,
   toErrorMessage,
-} from "./viewerEffects";
-import { setWorkspacePath, viewerStore } from "./viewerStore";
-import { showErrorToast } from "./toast";
-import { SidebarField, SidebarSection, SidebarValue } from "./sidebar";
+} from "../../../viewer/react/app/viewerEffects";
+import { setWorkspacePath, viewerStore } from "../../../viewer/react/app/viewerStore";
+import { showErrorToast } from "../../../viewer/react/app/toast";
+import { SidebarField, SidebarSection, SidebarValue } from "../../../viewer/react/app/sidebar";
 
 type SelectValue = number | string;
 
