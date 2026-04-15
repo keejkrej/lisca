@@ -102,6 +102,7 @@ export function useRoiAnnotation({
 
   const currentSnapshot = historyState.history[historyState.index] ?? initialSnapshotRef.current;
   const effectiveMask = historyState.previewMask ?? currentSnapshot.mask;
+  const labelManagerOpenable = Boolean(onLabelsChange) && !loading;
   const canManageLabels = !loading && !error && Boolean(onLabelsChange);
   const canEdit =
     annotationInteractive && !loading && !error && localLabels.length > 0;
@@ -315,6 +316,7 @@ export function useRoiAnnotation({
     localLabels,
     effectiveMask,
     currentSnapshot,
+    labelManagerOpenable,
     canManageLabels,
     canEdit,
     dirty,

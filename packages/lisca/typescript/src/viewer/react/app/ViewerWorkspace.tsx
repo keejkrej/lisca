@@ -1421,8 +1421,8 @@ export default function ViewerWorkspace({
         />
 
         <main className="flex-1 min-h-0 overflow-hidden">
-          <div className="grid h-full min-h-0 grid-cols-[18rem_minmax(0,1fr)_18rem] items-stretch">
-            <aside className="h-full min-h-0 overflow-y-auto divide-y divide-border border-r border-border px-5 py-4">
+          <div className="grid h-full min-h-0 min-w-0 grid-cols-[18rem_minmax(0,1fr)_18rem] items-stretch">
+            <aside className="h-full min-h-0 min-w-0 overflow-y-auto overflow-x-hidden divide-y divide-border border-r border-border px-5 py-4">
               <SidebarSection title="Frame">
                 <NavigationControls
                   position={{
@@ -1628,11 +1628,11 @@ export default function ViewerWorkspace({
                     {roiPath}
                   </SidebarValue>
                 </SidebarField>
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-8 px-3 text-xs"
+                    className="h-8 justify-center px-3 text-xs"
                     disabled={!workspacePath || !frame || !selection || saving || cropping}
                     onClick={() => void handleSave()}
                   >
@@ -1641,11 +1641,11 @@ export default function ViewerWorkspace({
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-8 px-3 text-xs"
+                    className="h-8 justify-center px-3 text-xs"
                     disabled={!workspacePath || !source || !selection || saving || cropping}
                     onClick={() => void handleCrop()}
                   >
-                    {cropping ? "Cropping..." : "Crop ROIs"}
+                    {cropping ? "Cropping..." : "Crop"}
                   </Button>
                 </div>
               </SidebarSection>
@@ -1674,7 +1674,7 @@ export default function ViewerWorkspace({
               </div>
             </section>
 
-            <aside className="h-full min-h-0 overflow-y-auto divide-y divide-border border-l border-border px-5 py-4">
+            <aside className="h-full min-h-0 min-w-0 overflow-y-auto overflow-x-hidden divide-y divide-border border-l border-border px-5 py-4">
               <SidebarSection
                 title="Grid"
                 action={

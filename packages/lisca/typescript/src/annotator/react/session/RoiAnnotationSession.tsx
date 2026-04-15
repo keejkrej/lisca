@@ -114,7 +114,7 @@ export default function RoiAnnotationSession({
 
   const editorSubtitle = useMemo(
     () =>
-      `Pos${request.pos} | C${request.channel} | T${request.time} | Z${request.z} | ${frame.width} x ${frame.height}`,
+      `P${request.pos} · C${request.channel} · T${request.time} · Z${request.z} · ${frame.width}×${frame.height}`,
     [frame.height, frame.width, request.channel, request.pos, request.time, request.z],
   );
 
@@ -124,7 +124,7 @@ export default function RoiAnnotationSession({
       labels={labels}
       initialValue={initialValue}
       resetKey={resetKey}
-      title={`ROI ${roi.roi} Annotation`}
+      title={`ROI ${roi.roi}`}
       subtitle={editorSubtitle}
       loading={loadState.loading || labelsLoading}
       error={frameLoadError ?? loadState.error ?? labelsError}

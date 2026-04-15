@@ -12,12 +12,12 @@ export function SidebarSection({
   children: ReactNode;
 }) {
   return (
-    <section className="space-y-3 py-4 first:pt-0 last:pb-0">
+    <section className="min-w-0 space-y-3 py-4 first:pt-0 last:pb-0">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-sm font-medium text-foreground">{title}</h2>
         {action}
       </div>
-      <div className="space-y-3">{children}</div>
+      <div className="min-w-0 space-y-3">{children}</div>
     </section>
   );
 }
@@ -32,7 +32,7 @@ export function SidebarField({
   children: ReactNode;
 }) {
   return (
-    <div className="space-y-1.5">
+    <div className="min-w-0 space-y-1.5">
       <div className="flex items-center justify-between gap-3">
         <label className="text-xs font-medium text-muted-foreground">{label}</label>
         {hint ? <span className="text-xs text-muted-foreground/80">{hint}</span> : null}
@@ -58,11 +58,15 @@ export function SidebarValue({
       className={cn(
         "rounded-lg border border-border bg-card px-3 py-2 text-sm",
         tone === "default" ? "text-foreground" : "text-muted-foreground",
-        monospace && "font-mono text-[13px]",
+        monospace && "min-w-0 overflow-x-auto overflow-y-hidden font-mono text-[13px] [scrollbar-width:thin]",
         className,
       )}
     >
-      {children}
+      {monospace ? (
+        <span className="inline-block max-w-none whitespace-nowrap">{children}</span>
+      ) : (
+        children
+      )}
     </div>
   );
 }

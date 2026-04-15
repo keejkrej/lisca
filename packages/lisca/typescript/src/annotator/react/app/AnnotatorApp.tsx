@@ -51,6 +51,8 @@ import { showErrorToast } from "../../../viewer/react/app/toast";
 import { ContextSummary } from "../../../viewer/react/app/ViewerNavbar";
 import { SidebarSection } from "../../../viewer/react/app/sidebar";
 
+import AnnotatorOutputsSection from "./AnnotatorOutputsSection";
+
 /** Minimal frame for the annotation rail shell (toolbar visible before a real ROI frame exists). */
 const SHELL_ANNOTATION_FRAME: FrameResult = {
   width: 1,
@@ -365,11 +367,12 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
   }, [error, loading]);
 
   const annotationRailFallbackSubtitle = useMemo(() => {
-    if (!workspacePath) return "Open a workspace to load ROI TIFF output.";
-    if (emptyText) return emptyText;
-    if (roiEntries.length === 0) return "No ROIs found in this workspace.";
-    return "Select a ROI and stack position to annotate.";
-  }, [workspacePath, emptyText, roiEntries.length]);
+    if (!workspacePath) return "Open a workspace folder.";
+    if (loading) return "Scanning…";
+    if (error) return error;
+    if (roiEntries.length === 0) return "No ROIs in this workspace.";
+    return "Choose a ROI and stack.";
+  }, [workspacePath, loading, error, roiEntries.length]);
 
   const shellProviderLoading =
     Boolean(workspacePath) && (annotationLabelsState.loading || loading);
@@ -393,6 +396,150 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
     return createPlaceholderAnnotationFrame(selectedRoiEntry);
   }, [annotationFrameReady, editorFrame, selectedRoiEntry]);
 
+  const renderRoiStack = () => (
+    <SidebarSection title="ROI Stack">
+      <NavigationControls
+        position={{
+          value: selection?.pos ?? (positionOptions[0]?.value ?? 0),
+          options: positionOptions,
+          disabled: !hasRoiPositions || !selection,
+          onChange: (value) => setRoiSelectionKey("pos", value),
+          previousDisabled: !hasRoiPositions || !selection || selectedPositionIndex <= 0,
+          nextDisabled:
+            !hasRoiPositions || !selection || selectedPositionIndex >= positionOptions.length - 1,
+          onPrevious: () => {
+            const nextValue = positionOptions[selectedPositionIndex - 1]?.value;
+            if (nextValue != null && nextValue !== selection?.pos) {
+              setRoiSelectionKey("pos", nextValue);
+            }
+          },
+          onNext: () => {
+            const nextValue = positionOptions[selectedPositionIndex + 1]?.value;
+            if (nextValue != null && nextValue !== selection?.pos) {
+              setRoiSelectionKey("pos", nextValue);
+            }
+          },
+        }}
+        channel={{
+          value: selection?.channel ?? (channelOptions[0]?.value ?? 0),
+          options: channelOptions,
+          disabled: controlsDisabled,
+          onChange: (value) => setRoiSelectionKey("channel", value),
+          previousDisabled: controlsDisabled || selectedChannelIndex <= 0,
+          nextDisabled: controlsDisabled || selectedChannelIndex >= channelOptions.length - 1,
+          onPrevious: () => {
+            const nextValue = channelOptions[selectedChannelIndex - 1]?.value;
+            if (nextValue != null && nextValue !== selection?.channel) {
+              setRoiSelectionKey("channel", nextValue);
+            }
+          },
+          onNext: () => {
+            const nextValue = channelOptions[selectedChannelIndex + 1]?.value;
+            if (nextValue != null && nextValue !== selection?.channel) {
+              setRoiSelectionKey("channel", nextValue);
+            }
+          },
+        }}
+        timepoint={{
+          hint: String(displayedTime),
+          value: timeSliderIndex,
+          min: 0,
+          max: timeSliderMax,
+          step: 1,
+          disabled: controlsDisabled || timeValues.length <= 1,
+          onChange: (nextIndex) =>
+            setTimeSliderIndexValue(clamp(Math.round(nextIndex), 0, timeSliderMax)),
+          onCommit: (nextIndex) => {
+            const rounded = clamp(Math.round(nextIndex), 0, timeSliderMax);
+            setTimeSliderIndexValue(rounded);
+            const nextTime = timeValues[rounded];
+            if (nextTime != null && nextTime !== selection?.time) {
+              setRoiSelectionKey("time", nextTime);
+            }
+          },
+          previousDisabled: controlsDisabled || timeValues.length <= 1 || timeSliderIndex <= 0,
+          nextDisabled:
+            controlsDisabled || timeValues.length <= 1 || timeSliderIndex >= timeSliderMax,
+          onPrevious: () => {
+            const nextIndex = Math.max(0, timeSliderIndex - 1);
+            setTimeSliderIndexValue(nextIndex);
+            const nextTime = timeValues[nextIndex];
+            if (nextTime != null && nextTime !== selection?.time) {
+              setRoiSelectionKey("time", nextTime);
+            }
+          },
+          onNext: () => {
+            const nextIndex = Math.min(timeSliderMax, timeSliderIndex + 1);
+            setTimeSliderIndexValue(nextIndex);
+            const nextTime = timeValues[nextIndex];
+            if (nextTime != null && nextTime !== selection?.time) {
+              setRoiSelectionKey("time", nextTime);
+            }
+          },
+        }}
+        zPlane={{
+          hint: String(displayedZ),
+          value: zSliderIndex,
+          min: 0,
+          max: zSliderMax,
+          step: 1,
+          disabled: controlsDisabled || zValues.length <= 1,
+          onChange: (nextIndex) =>
+            setZSliderIndexValue(clamp(Math.round(nextIndex), 0, zSliderMax)),
+          onCommit: (nextIndex) => {
+            const rounded = clamp(Math.round(nextIndex), 0, zSliderMax);
+            setZSliderIndexValue(rounded);
+            const nextZ = zValues[rounded];
+            if (nextZ != null && nextZ !== selection?.z) {
+              setRoiSelectionKey("z", nextZ);
+            }
+          },
+          previousDisabled: controlsDisabled || zValues.length <= 1 || zSliderIndex <= 0,
+          nextDisabled: controlsDisabled || zValues.length <= 1 || zSliderIndex >= zSliderMax,
+          onPrevious: () => {
+            const nextIndex = Math.max(0, zSliderIndex - 1);
+            setZSliderIndexValue(nextIndex);
+            const nextZ = zValues[nextIndex];
+            if (nextZ != null && nextZ !== selection?.z) {
+              setRoiSelectionKey("z", nextZ);
+            }
+          },
+          onNext: () => {
+            const nextIndex = Math.min(zSliderMax, zSliderIndex + 1);
+            setZSliderIndexValue(nextIndex);
+            const nextZ = zValues[nextIndex];
+            if (nextZ != null && nextZ !== selection?.z) {
+              setRoiSelectionKey("z", nextZ);
+            }
+          },
+        }}
+      />
+      <SelectStepperField
+        label="ROI"
+        value={selectedRoi ?? roiOptions[0]?.value ?? 0}
+        options={roiOptions}
+        disabled={controlsDisabled || roiOptions.length === 0}
+        onChange={(value) => setSelectedRoi(value)}
+        previousDisabled={
+          controlsDisabled || roiOptions.length === 0 || selectedRoiIndex <= 0
+        }
+        nextDisabled={
+          controlsDisabled ||
+          roiOptions.length === 0 ||
+          selectedRoiIndex >= roiOptions.length - 1
+        }
+        onPrevious={() => {
+          const nextValue = roiOptions[selectedRoiIndex - 1]?.value;
+          if (nextValue != null) setSelectedRoi(nextValue);
+        }}
+        onNext={() => {
+          const nextValue = roiOptions[selectedRoiIndex + 1]?.value;
+          if (nextValue != null) setSelectedRoi(nextValue);
+        }}
+      />
+    </SidebarSection>
+  );
+
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-background text-foreground">
       <Toaster position="bottom-right" theme="dark" richColors closeButton />
@@ -410,150 +557,6 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
 
       <main className="flex-1 min-h-0 overflow-hidden">
         <div className="grid h-full min-h-0 grid-cols-[18rem_minmax(0,1fr)_18rem] items-stretch">
-          <aside className="col-start-1 h-full min-h-0 overflow-y-auto divide-y divide-border border-r border-border px-5 py-4">
-            <SidebarSection title="ROI Stack">
-              <NavigationControls
-              position={{
-                value: selection?.pos ?? (positionOptions[0]?.value ?? 0),
-                options: positionOptions,
-                disabled: !hasRoiPositions || !selection,
-                onChange: (value) => setRoiSelectionKey("pos", value),
-                previousDisabled: !hasRoiPositions || !selection || selectedPositionIndex <= 0,
-                nextDisabled:
-                  !hasRoiPositions || !selection || selectedPositionIndex >= positionOptions.length - 1,
-                onPrevious: () => {
-                  const nextValue = positionOptions[selectedPositionIndex - 1]?.value;
-                  if (nextValue != null && nextValue !== selection?.pos) {
-                    setRoiSelectionKey("pos", nextValue);
-                  }
-                },
-                onNext: () => {
-                  const nextValue = positionOptions[selectedPositionIndex + 1]?.value;
-                  if (nextValue != null && nextValue !== selection?.pos) {
-                    setRoiSelectionKey("pos", nextValue);
-                  }
-                },
-              }}
-              channel={{
-                value: selection?.channel ?? (channelOptions[0]?.value ?? 0),
-                options: channelOptions,
-                disabled: controlsDisabled,
-                onChange: (value) => setRoiSelectionKey("channel", value),
-                previousDisabled: controlsDisabled || selectedChannelIndex <= 0,
-                nextDisabled: controlsDisabled || selectedChannelIndex >= channelOptions.length - 1,
-                onPrevious: () => {
-                  const nextValue = channelOptions[selectedChannelIndex - 1]?.value;
-                  if (nextValue != null && nextValue !== selection?.channel) {
-                    setRoiSelectionKey("channel", nextValue);
-                  }
-                },
-                onNext: () => {
-                  const nextValue = channelOptions[selectedChannelIndex + 1]?.value;
-                  if (nextValue != null && nextValue !== selection?.channel) {
-                    setRoiSelectionKey("channel", nextValue);
-                  }
-                },
-              }}
-              timepoint={{
-                hint: String(displayedTime),
-                value: timeSliderIndex,
-                min: 0,
-                max: timeSliderMax,
-                step: 1,
-                disabled: controlsDisabled || timeValues.length <= 1,
-                onChange: (nextIndex) =>
-                  setTimeSliderIndexValue(clamp(Math.round(nextIndex), 0, timeSliderMax)),
-                onCommit: (nextIndex) => {
-                  const rounded = clamp(Math.round(nextIndex), 0, timeSliderMax);
-                  setTimeSliderIndexValue(rounded);
-                  const nextTime = timeValues[rounded];
-                  if (nextTime != null && nextTime !== selection?.time) {
-                    setRoiSelectionKey("time", nextTime);
-                  }
-                },
-                previousDisabled: controlsDisabled || timeValues.length <= 1 || timeSliderIndex <= 0,
-                nextDisabled:
-                  controlsDisabled || timeValues.length <= 1 || timeSliderIndex >= timeSliderMax,
-                onPrevious: () => {
-                  const nextIndex = Math.max(0, timeSliderIndex - 1);
-                  setTimeSliderIndexValue(nextIndex);
-                  const nextTime = timeValues[nextIndex];
-                  if (nextTime != null && nextTime !== selection?.time) {
-                    setRoiSelectionKey("time", nextTime);
-                  }
-                },
-                onNext: () => {
-                  const nextIndex = Math.min(timeSliderMax, timeSliderIndex + 1);
-                  setTimeSliderIndexValue(nextIndex);
-                  const nextTime = timeValues[nextIndex];
-                  if (nextTime != null && nextTime !== selection?.time) {
-                    setRoiSelectionKey("time", nextTime);
-                  }
-                },
-              }}
-              zPlane={{
-                hint: String(displayedZ),
-                value: zSliderIndex,
-                min: 0,
-                max: zSliderMax,
-                step: 1,
-                disabled: controlsDisabled || zValues.length <= 1,
-                onChange: (nextIndex) =>
-                  setZSliderIndexValue(clamp(Math.round(nextIndex), 0, zSliderMax)),
-                onCommit: (nextIndex) => {
-                  const rounded = clamp(Math.round(nextIndex), 0, zSliderMax);
-                  setZSliderIndexValue(rounded);
-                  const nextZ = zValues[rounded];
-                  if (nextZ != null && nextZ !== selection?.z) {
-                    setRoiSelectionKey("z", nextZ);
-                  }
-                },
-                previousDisabled: controlsDisabled || zValues.length <= 1 || zSliderIndex <= 0,
-                nextDisabled: controlsDisabled || zValues.length <= 1 || zSliderIndex >= zSliderMax,
-                onPrevious: () => {
-                  const nextIndex = Math.max(0, zSliderIndex - 1);
-                  setZSliderIndexValue(nextIndex);
-                  const nextZ = zValues[nextIndex];
-                  if (nextZ != null && nextZ !== selection?.z) {
-                    setRoiSelectionKey("z", nextZ);
-                  }
-                },
-                onNext: () => {
-                  const nextIndex = Math.min(zSliderMax, zSliderIndex + 1);
-                  setZSliderIndexValue(nextIndex);
-                  const nextZ = zValues[nextIndex];
-                  if (nextZ != null && nextZ !== selection?.z) {
-                    setRoiSelectionKey("z", nextZ);
-                  }
-                },
-              }}
-              />
-              <SelectStepperField
-                label="ROI"
-                value={selectedRoi ?? roiOptions[0]?.value ?? 0}
-                options={roiOptions}
-                disabled={controlsDisabled || roiOptions.length === 0}
-                onChange={(value) => setSelectedRoi(value)}
-                previousDisabled={
-                  controlsDisabled || roiOptions.length === 0 || selectedRoiIndex <= 0
-                }
-                nextDisabled={
-                  controlsDisabled ||
-                  roiOptions.length === 0 ||
-                  selectedRoiIndex >= roiOptions.length - 1
-                }
-                onPrevious={() => {
-                  const nextValue = roiOptions[selectedRoiIndex - 1]?.value;
-                  if (nextValue != null) setSelectedRoi(nextValue);
-                }}
-                onNext={() => {
-                  const nextValue = roiOptions[selectedRoiIndex + 1]?.value;
-                  if (nextValue != null) setSelectedRoi(nextValue);
-                }}
-              />
-            </SidebarSection>
-          </aside>
-
           {canMountAnnotationUi && workspacePath && displayFrame && selectedAnnotationRequest ? (
             <RoiAnnotationSession
               workspacePath={workspacePath}
@@ -579,10 +582,14 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
               }}
             >
               <>
+                <aside className="col-start-1 h-full min-h-0 min-w-0 overflow-y-auto divide-y divide-border border-r border-border px-5 py-4">
+                  {renderRoiStack()}
+                  <AnnotatorOutputsSection />
+                </aside>
                 <section
                   className="col-start-2 h-full min-h-0 min-w-0 overflow-hidden"
                   role="region"
-                  aria-label={`ROI ${selectedRoiEntry.roi} Annotation`}
+                  aria-label={`ROI ${selectedRoiEntry.roi}`}
                 >
                   <div className="flex h-full min-h-0 flex-col overflow-hidden">
                     <div className="m-4 flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -604,7 +611,36 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
               </>
             </RoiAnnotationSession>
           ) : (
-            <>
+            <RoiAnnotationProvider
+              frame={SHELL_ANNOTATION_FRAME}
+              labels={annotationLabelsState.labels}
+              initialValue={{ classificationLabelId: null, mask: shellInitialMask }}
+              resetKey="annotator-shell"
+              title="Annotation"
+              subtitle={annotationRailFallbackSubtitle}
+              loading={shellProviderLoading}
+              error={annotationLabelsState.error}
+              annotationInteractive={false}
+              onClose={handleCloseSession}
+              onSave={async () => {}}
+              onLabelsChange={
+                workspacePath
+                  ? async (labels) => {
+                      const saved = await backend.saveAnnotationLabels(workspacePath, labels);
+                      setAnnotationLabelsState({
+                        labels: saved,
+                        loading: false,
+                        error: null,
+                      });
+                      return saved;
+                    }
+                  : undefined
+              }
+            >
+              <aside className="col-start-1 h-full min-h-0 min-w-0 overflow-y-auto divide-y divide-border border-r border-border px-5 py-4">
+                {renderRoiStack()}
+                <AnnotatorOutputsSection />
+              </aside>
               <section className="col-start-2 h-full min-h-0 min-w-0 overflow-hidden">
                 <div className="flex h-full min-h-0 flex-col overflow-hidden">
                   <div className="m-4 flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -633,38 +669,10 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
                   </div>
                 </div>
               </section>
-
-              <RoiAnnotationProvider
-                frame={SHELL_ANNOTATION_FRAME}
-                labels={annotationLabelsState.labels}
-                initialValue={{ classificationLabelId: null, mask: shellInitialMask }}
-                resetKey="annotator-shell"
-                title="ROI Annotation"
-                subtitle={annotationRailFallbackSubtitle}
-                loading={shellProviderLoading}
-                error={annotationLabelsState.error}
-                annotationInteractive={false}
-                onClose={handleCloseSession}
-                onSave={async () => {}}
-                onLabelsChange={
-                  workspacePath
-                    ? async (labels) => {
-                        const saved = await backend.saveAnnotationLabels(workspacePath, labels);
-                        setAnnotationLabelsState({
-                          labels: saved,
-                          loading: false,
-                          error: null,
-                        });
-                        return saved;
-                      }
-                    : undefined
-                }
-              >
-                <RoiAnnotationToolbar className="col-start-3" />
-                <AnnotationLabelManagerDialog />
-                <RoiAnnotationDiscardDialog />
-              </RoiAnnotationProvider>
-            </>
+              <RoiAnnotationToolbar className="col-start-3" />
+              <AnnotationLabelManagerDialog />
+              <RoiAnnotationDiscardDialog />
+            </RoiAnnotationProvider>
           )}
         </div>
       </main>
