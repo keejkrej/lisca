@@ -1,7 +1,19 @@
-import type { AnnotationLabel } from "lisca/shared/contracts";
-import { Button, Input, cn } from "lisca/shared/ui";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+
+import type { AnnotationLabel } from "lisca/shared/contracts";
+import {
+  Button,
+  Dialog,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogPanel,
+  DialogPopup,
+  DialogTitle,
+  Input,
+  cn,
+} from "lisca/shared/ui";
 
 import { colorStyle, slugifyLabelId } from "./annotationUtils";
 import { useRoiAnnotationContext } from "./RoiAnnotationContext";
@@ -171,113 +183,6 @@ export default function AnnotationLabelManagerDialog() {
     if (ok) setLabelManagerOpen(false);
   };
 
-  if (!labelManagerOpen) return null;
-
-  const modal = (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4 py-6"
-      role="presentation"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget && !labelSaveState.saving) {
-          setLabelManagerOpen(false);
-        }
-      }}
-    >
-      <div
-        className="flex shrink-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-lg"
-        style={{
-          width: `min(${LABELS_MODAL_W_REM}rem, calc(100vw - 2rem))`,
-          height: `min(${LABELS_MODAL_H_REM}rem, calc(100vh - 4rem))`,
-        }}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="annotation-label-settings-title"
-        onMouseDown={(event) => event.stopPropagation()}
-      >
-        <div className="shrink-0 border-b border-border px-4 py-3">
-          <h2 id="annotation-label-settings-title" className="text-sm font-medium text-foreground">
-            Labels
-          </h2>
-        </div>
-
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden px-4 py-3">
-          {labelSaveState.error ? (
-            <div
-              className="shrink-0 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive"
-              role="alert"
-            >
-              {labelSaveState.error}
-            </div>
-          ) : null}
-
-          <div className="min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-hidden pb-1 [-webkit-overflow-scrolling:touch]">
-            <div className="flex w-max flex-nowrap items-center gap-2">
-              {draftLabels.map((label) => (
-                <button
-                  key={label.id}
-                  type="button"
-                  disabled={!canManageLabels}
-                  title={label.name}
-                  className={cn(
-                    annotationLabelTileClass,
-                    "w-36 shrink-0 outline-none",
-                    canManageLabels
-                      ? "hover:opacity-95 focus-visible:ring-2 focus-visible:ring-ring"
-                      : "cursor-not-allowed opacity-50",
-                  )}
-                  style={colorStyle(label.color, false)}
-                  onContextMenu={(event) => {
-                    event.preventDefault();
-                    openEditPanel(event.clientX, event.clientY, label);
-                  }}
-                  aria-label={`Label ${label.name}`}
-                >
-                  <span className="min-w-0 w-full truncate text-center">{label.name}</span>
-                </button>
-              ))}
-
-              <button
-                type="button"
-                disabled={!canManageLabels || labelSaveState.saving}
-                className={cn(
-                  annotationLabelTileClass,
-                  "w-36 shrink-0 border-dashed border-border bg-muted/15 text-muted-foreground outline-none",
-                  "hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring",
-                  "disabled:cursor-not-allowed disabled:opacity-50",
-                )}
-                onClick={(event) => openCreatePanel(event.currentTarget.getBoundingClientRect())}
-                aria-label="Add label"
-              >
-                <span className="text-base font-medium leading-none">+</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex shrink-0 flex-row justify-end gap-2 border-t border-border px-4 py-3">
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-8 px-3 text-xs"
-            disabled={labelSaveState.saving}
-            onClick={() => setLabelManagerOpen(false)}
-          >
-            Cancel
-          </Button>
-          <Button
-            size="sm"
-            className="h-8 px-3 text-xs"
-            disabled={!canManageLabels || labelSaveState.saving || !dirty}
-            loading={labelSaveState.saving}
-            onClick={() => void handleSave()}
-          >
-            Save
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-
   const panelLayer =
     panel.open &&
     createPortal(
@@ -359,7 +264,108 @@ export default function AnnotationLabelManagerDialog() {
 
   return (
     <>
-      {createPortal(modal, document.body)}
+      <Dialog
+        open={labelManagerOpen}
+        onOpenChange={(open) => {
+          if (!labelSaveState.saving) setLabelManagerOpen(open);
+        }}
+      >
+        <DialogPopup
+          closeOnOutsideClick={!labelSaveState.saving}
+          className="rounded-xl border-border shadow-lg"
+          overlayClassName="z-[100]"
+        >
+          <div
+            className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden"
+            style={{
+              width: `min(${LABELS_MODAL_W_REM}rem, calc(100vw - 2rem))`,
+              height: `min(${LABELS_MODAL_H_REM}rem, calc(100vh - 4rem))`,
+            }}
+          >
+            <DialogHeader>
+              <DialogTitle>Labels</DialogTitle>
+              <DialogDescription className="sr-only">
+                Manage the label tiles available for ROI annotation.
+              </DialogDescription>
+            </DialogHeader>
+
+            <DialogPanel className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 px-4 py-3">
+              {labelSaveState.error ? (
+                <div
+                  className="shrink-0 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+                  role="alert"
+                >
+                  {labelSaveState.error}
+                </div>
+              ) : null}
+
+              <div className="min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-hidden pb-1 [-webkit-overflow-scrolling:touch]">
+                <div className="flex w-max flex-nowrap items-center gap-2">
+                  {draftLabels.map((label) => (
+                    <button
+                      key={label.id}
+                      type="button"
+                      disabled={!canManageLabels}
+                      title={label.name}
+                      className={cn(
+                        annotationLabelTileClass,
+                        "w-36 shrink-0 outline-none",
+                        canManageLabels
+                          ? "hover:opacity-95 focus-visible:ring-2 focus-visible:ring-ring"
+                          : "cursor-not-allowed opacity-50",
+                      )}
+                      style={colorStyle(label.color, false)}
+                      onContextMenu={(event) => {
+                        event.preventDefault();
+                        openEditPanel(event.clientX, event.clientY, label);
+                      }}
+                      aria-label={`Label ${label.name}`}
+                    >
+                      <span className="min-w-0 w-full truncate text-center">{label.name}</span>
+                    </button>
+                  ))}
+
+                  <button
+                    type="button"
+                    disabled={!canManageLabels || labelSaveState.saving}
+                    className={cn(
+                      annotationLabelTileClass,
+                      "w-36 shrink-0 border-dashed border-border bg-muted/15 text-muted-foreground outline-none",
+                      "hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring",
+                      "disabled:cursor-not-allowed disabled:opacity-50",
+                    )}
+                    onClick={(event) => openCreatePanel(event.currentTarget.getBoundingClientRect())}
+                    aria-label="Add label"
+                  >
+                    <span className="text-base font-medium leading-none">+</span>
+                  </button>
+                </div>
+              </div>
+            </DialogPanel>
+
+            <DialogFooter>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 px-3 text-xs"
+                disabled={labelSaveState.saving}
+                onClick={() => setLabelManagerOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                className="h-8 px-3 text-xs"
+                disabled={!canManageLabels || labelSaveState.saving || !dirty}
+                loading={labelSaveState.saving}
+                onClick={() => void handleSave()}
+              >
+                Save
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogPopup>
+      </Dialog>
       {panelLayer}
     </>
   );

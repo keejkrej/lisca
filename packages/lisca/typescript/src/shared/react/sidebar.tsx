@@ -1,6 +1,6 @@
 import { type ReactNode } from "react";
 
-import { Button, cn } from "lisca/shared/ui";
+import { ToggleGroup, ToggleGroupItem, cn } from "lisca/shared/ui";
 
 export function SidebarSection({
   title,
@@ -106,23 +106,26 @@ export function SidebarSegmentedToggle<T extends string>({
   compact?: boolean;
 }) {
   return (
-    <div className="flex items-center gap-1 rounded-xl border border-border bg-muted/35 p-1">
+    <ToggleGroup
+      multiple={false}
+      value={[value]}
+      disabled={disabled}
+      onValueChange={(next) => {
+        const selected = next[0];
+        if (selected) onChange(selected as T);
+      }}
+    >
       {options.map((option) => {
-        const active = option.value === value;
         return (
-          <Button
+          <ToggleGroupItem
             key={option.value}
-            size="sm"
-            variant={active ? "default" : "ghost"}
             className={compact ? "min-w-0 flex-1 px-2 text-xs" : "min-w-[4.5rem]"}
-            disabled={disabled}
-            aria-pressed={active}
-            onClick={() => onChange(option.value)}
+            value={option.value}
           >
             {option.label}
-          </Button>
+          </ToggleGroupItem>
         );
       })}
-    </div>
+    </ToggleGroup>
   );
 }

@@ -21,3 +21,4 @@ export {
   SidebarValue,
 } from "./sidebar";
 export { showErrorToast, showSuccessToast } from "./toast";
+export { AnchoredToastProvider, ToastProvider, anchoredToastManager, toastManager } from "../ui";

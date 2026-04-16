@@ -1,7 +1,6 @@
 import { Effect, Exit } from "effect";
 import { FolderOpen } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Toaster } from "sonner";
 import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 
@@ -15,8 +14,9 @@ import type {
   ViewerHostPort,
 } from "lisca/shared/contracts";
 import { clamp } from "lisca/shared/core";
-import { Button } from "lisca/shared/ui";
+import { Button, ToggleGroup, ToggleGroupItem } from "lisca/shared/ui";
 import {
+  AnchoredToastProvider,
   ContextSummary,
   findNavigationOptionIndex,
   loadAnnotationLabelsEffect,
@@ -26,6 +26,7 @@ import {
   scanRoiWorkspaceEffect,
   showErrorToast,
   SidebarSection,
+  ToastProvider,
   toErrorMessage,
   toNavigationOptions,
 } from "lisca/shared/react";
@@ -544,139 +545,128 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
   );
 
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-background text-foreground">
-      <Toaster position="bottom-right" theme="dark" richColors closeButton />
-
-      <header className="shrink-0 border-b border-border/80 bg-background px-6 py-3">
-        <div className="grid grid-cols-[1fr_minmax(0,56rem)_1fr] items-center gap-4">
-          <div>
-            <div
-              className="flex w-fit max-w-full flex-wrap items-center gap-1 rounded-xl border border-border bg-muted/35 p-1"
-              role="group"
-              aria-label="Annotation task"
-            >
-              <Button
-                size="sm"
-                variant={annotationMode === "classification" ? "default" : "ghost"}
-                className="min-w-[4.25rem] px-2"
-                onClick={() => setAnnotationMode("classification")}
-              >
-                Class
-              </Button>
-              <Button
-                size="sm"
-                variant={annotationMode === "semantic" ? "default" : "ghost"}
-                className="min-w-[4.25rem] px-2"
-                onClick={() => setAnnotationMode("semantic")}
-              >
-                Regions
-              </Button>
-              <Button
-                size="sm"
-                variant={annotationMode === "instance" ? "default" : "ghost"}
-                className="min-w-[4.25rem] px-2"
-                onClick={() => setAnnotationMode("instance")}
-              >
-                Objects
-              </Button>
-            </div>
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center justify-center gap-3">
-              <ContextSummary
-                label="Workspace"
-                value={workspacePath}
-                icon={<FolderOpen className="size-4" />}
-                onClick={() => void handlePickWorkspace()}
-              />
-            </div>
-          </div>
-          <div className="justify-self-end" />
-        </div>
-      </header>
-
-      <main className="flex-1 min-h-0 overflow-hidden">
-        <div className="grid h-full min-h-0 grid-cols-[18rem_minmax(0,1fr)_18rem] items-stretch">
-          {canMountAnnotationUi && workspacePath && displayFrame && selectedAnnotationRequest ? (
-            <RoiAnnotationSession
-              workspacePath={workspacePath}
-              backend={backend}
-              roi={selectedRoiEntry}
-              request={selectedAnnotationRequest}
-              frame={displayFrame}
-              annotationLoadEnabled={annotationFrameReady}
-              frameLoadError={editorFrameError}
-              labels={annotationLabelsState.labels}
-              labelsLoading={annotationLabelsState.loading}
-              labelsError={annotationLabelsState.error}
-              onClose={handleCloseSession}
-              onLabelsChange={(labels) =>
-                setAnnotationLabelsState({
-                  labels,
-                  loading: false,
-                  error: null,
-                })
-              }
-              onSaved={(_annotation: RoiFrameAnnotation) => {
-                /* session resets via load effect when request unchanged; no-op */
-              }}
-            >
-              <>
-                <aside className="col-start-1 h-full min-h-0 min-w-0 overflow-y-auto divide-y divide-border border-r border-border px-5 py-4">
-                  {renderRoiStack()}
-                  <AnnotatorOutputsSection />
-                </aside>
-                <section
-                  className="col-start-2 h-full min-h-0 min-w-0 overflow-hidden"
-                  role="region"
-                  aria-label={`ROI ${selectedRoiEntry.roi}`}
+    <ToastProvider>
+      <AnchoredToastProvider>
+        <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-background text-foreground">
+          <header className="shrink-0 border-b border-border/80 bg-background px-6 py-3">
+            <div className="grid grid-cols-[1fr_minmax(0,56rem)_1fr] items-center gap-4">
+              <div>
+                <ToggleGroup
+                  className="w-fit max-w-full flex-wrap"
+                  multiple={false}
+                  value={[annotationMode]}
+                  onValueChange={(value) => {
+                    const nextMode = value[0];
+                    if (nextMode) setAnnotationMode(nextMode);
+                  }}
                 >
-                  <div className="flex h-full min-h-0 flex-col overflow-hidden">
-                    <div className="m-4 flex min-h-0 flex-1 flex-col overflow-hidden">
-                      {editorFrameError ? (
-                        <div className="flex h-full min-h-[18rem] items-center justify-center rounded-2xl border border-red-500/35 bg-red-500/10 px-6 text-center text-sm text-red-200">
-                          {editorFrameError}
+                  <ToggleGroupItem className="min-w-[4.25rem] px-2" value="classification">
+                    Class
+                  </ToggleGroupItem>
+                  <ToggleGroupItem className="min-w-[4.25rem] px-2" value="semantic">
+                    Regions
+                  </ToggleGroupItem>
+                  <ToggleGroupItem className="min-w-[4.25rem] px-2" value="instance">
+                    Objects
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center justify-center gap-3">
+                  <ContextSummary
+                    label="Workspace"
+                    value={workspacePath}
+                    icon={<FolderOpen className="size-4" />}
+                    onClick={() => void handlePickWorkspace()}
+                  />
+                </div>
+              </div>
+              <div className="justify-self-end" />
+            </div>
+          </header>
+
+          <main className="flex-1 min-h-0 overflow-hidden">
+            <div className="grid h-full min-h-0 grid-cols-[18rem_minmax(0,1fr)_18rem] items-stretch">
+              {canMountAnnotationUi && workspacePath && displayFrame && selectedAnnotationRequest ? (
+                <RoiAnnotationSession
+                  workspacePath={workspacePath}
+                  backend={backend}
+                  roi={selectedRoiEntry}
+                  request={selectedAnnotationRequest}
+                  frame={displayFrame}
+                  annotationLoadEnabled={annotationFrameReady}
+                  frameLoadError={editorFrameError}
+                  labels={annotationLabelsState.labels}
+                  labelsLoading={annotationLabelsState.loading}
+                  labelsError={annotationLabelsState.error}
+                  onClose={handleCloseSession}
+                  onLabelsChange={(labels) =>
+                    setAnnotationLabelsState({
+                      labels,
+                      loading: false,
+                      error: null,
+                    })
+                  }
+                  onSaved={(_annotation: RoiFrameAnnotation) => {
+                    /* session resets via load effect when request unchanged; no-op */
+                  }}
+                >
+                  <>
+                    <aside className="col-start-1 h-full min-h-0 min-w-0 overflow-y-auto divide-y divide-border border-r border-border px-5 py-4">
+                      {renderRoiStack()}
+                      <AnnotatorOutputsSection />
+                    </aside>
+                    <section
+                      className="col-start-2 h-full min-h-0 min-w-0 overflow-hidden"
+                      role="region"
+                      aria-label={`ROI ${selectedRoiEntry.roi}`}
+                    >
+                      <div className="flex h-full min-h-0 flex-col overflow-hidden">
+                        <div className="m-4 flex min-h-0 flex-1 flex-col overflow-hidden">
+                          {editorFrameError ? (
+                            <div className="flex h-full min-h-[18rem] items-center justify-center rounded-2xl border border-red-500/35 bg-red-500/10 px-6 text-center text-sm text-red-200">
+                              {editorFrameError}
+                            </div>
+                          ) : !annotationFrameReady ? (
+                            <div className="flex h-full min-h-[18rem] items-center justify-center rounded-2xl border border-border/60 bg-card/10 px-6 text-center text-sm text-muted-foreground">
+                              Loading frame…
+                            </div>
+                          ) : (
+                            <RoiAnnotationCanvasPanel className="rounded-[1.75rem] border border-border/80 bg-card shadow-2xl" />
+                          )}
                         </div>
-                      ) : !annotationFrameReady ? (
-                        <div className="flex h-full min-h-[18rem] items-center justify-center rounded-2xl border border-border/60 bg-card/10 px-6 text-center text-sm text-muted-foreground">
-                          Loading frame…
-                        </div>
-                      ) : (
-                        <RoiAnnotationCanvasPanel className="rounded-[1.75rem] border border-border/80 bg-card shadow-2xl" />
-                      )}
-                    </div>
-                  </div>
-                </section>
-                <RoiAnnotationToolbar className="col-start-3" />
-              </>
-            </RoiAnnotationSession>
-          ) : (
-            <RoiAnnotationProvider
-              frame={SHELL_ANNOTATION_FRAME}
-              labels={annotationLabelsState.labels}
-              initialValue={{ classificationLabelId: null, mask: shellInitialMask }}
-              resetKey="annotator-shell"
-              title="Annotation"
-              subtitle={annotationRailFallbackSubtitle}
-              loading={shellProviderLoading}
-              error={annotationLabelsState.error}
-              annotationInteractive={false}
-              onClose={handleCloseSession}
-              onSave={async () => {}}
-              onLabelsChange={
-                workspacePath
-                  ? async (labels) => {
-                      const saved = await backend.saveAnnotationLabels(workspacePath, labels);
-                      setAnnotationLabelsState({
-                        labels: saved,
-                        loading: false,
-                        error: null,
-                      });
-                      return saved;
-                    }
-                  : undefined
-              }
-            >
+                      </div>
+                    </section>
+                    <RoiAnnotationToolbar className="col-start-3" />
+                  </>
+                </RoiAnnotationSession>
+              ) : (
+                <RoiAnnotationProvider
+                  frame={SHELL_ANNOTATION_FRAME}
+                  labels={annotationLabelsState.labels}
+                  initialValue={{ classificationLabelId: null, mask: shellInitialMask }}
+                  resetKey="annotator-shell"
+                  title="Annotation"
+                  subtitle={annotationRailFallbackSubtitle}
+                  loading={shellProviderLoading}
+                  error={annotationLabelsState.error}
+                  annotationInteractive={false}
+                  onClose={handleCloseSession}
+                  onSave={async () => {}}
+                  onLabelsChange={
+                    workspacePath
+                      ? async (labels) => {
+                          const saved = await backend.saveAnnotationLabels(workspacePath, labels);
+                          setAnnotationLabelsState({
+                            labels: saved,
+                            loading: false,
+                            error: null,
+                          });
+                          return saved;
+                        }
+                      : undefined
+                  }
+                >
               <aside className="col-start-1 h-full min-h-0 min-w-0 overflow-y-auto divide-y divide-border border-r border-border px-5 py-4">
                 {renderRoiStack()}
                 <AnnotatorOutputsSection />
@@ -714,8 +704,10 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
               <RoiAnnotationDiscardDialog />
             </RoiAnnotationProvider>
           )}
+            </div>
+          </main>
         </div>
-      </main>
-    </div>
+      </AnchoredToastProvider>
+    </ToastProvider>
   );
 }

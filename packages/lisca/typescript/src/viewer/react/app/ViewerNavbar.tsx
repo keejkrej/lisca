@@ -7,7 +7,7 @@ import {
 import { ChevronLeft, FolderOpen, HardDrive, X } from "lucide-react";
 
 import type { ViewerSource } from "lisca/shared/contracts";
-import { Button } from "lisca/shared/ui";
+import { Button, ToggleGroup, ToggleGroupItem } from "lisca/shared/ui";
 import { ContextSummary } from "lisca/shared/react";
 
 export type ViewerMode = "align" | "roi";
@@ -130,26 +130,22 @@ export default function ViewerNavbar({
       <header className="border-b border-border/80 bg-background px-6 py-3">
         <div className="grid grid-cols-[1fr_minmax(0,56rem)_1fr] items-center gap-4">
           <div>
-            <div className="flex items-center gap-1 rounded-xl border border-border bg-muted/35 p-1">
-              <Button
-                size="sm"
-                variant={mode === "align" ? "default" : "ghost"}
-                className="min-w-[4.5rem]"
-                disabled={modeChangeDisabled}
-                onClick={() => onModeChange("align")}
-              >
+            <ToggleGroup
+              multiple={false}
+              value={[mode]}
+              disabled={modeChangeDisabled}
+              onValueChange={(next) => {
+                const nextMode = next[0];
+                if (nextMode) onModeChange(nextMode);
+              }}
+            >
+              <ToggleGroupItem value="align" className="min-w-[4.5rem]">
                 Align
-              </Button>
-              <Button
-                size="sm"
-                variant={mode === "roi" ? "default" : "ghost"}
-                className="min-w-[4.5rem]"
-                disabled={modeChangeDisabled}
-                onClick={() => onModeChange("roi")}
-              >
+              </ToggleGroupItem>
+              <ToggleGroupItem value="roi" className="min-w-[4.5rem]">
                 ROI
-              </Button>
-            </div>
+              </ToggleGroupItem>
+            </ToggleGroup>
           </div>
 
           <div className="min-w-0">

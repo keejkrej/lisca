@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { Toaster } from "sonner";
 import { useStore } from "zustand";
 
 import type { ViewerDataPort, ViewerHostPort } from "lisca/shared/contracts";
 import { makeSourceKey } from "lisca/shared/core";
+import { AnchoredToastProvider, ToastProvider } from "lisca/shared/react";
 import { setWorkspacePath, workspaceStore } from "lisca/shared/state";
 
 import RoiWorkspace from "./RoiWorkspace";
@@ -94,14 +94,12 @@ export default function ViewerApp({
   );
 
   return (
-    <div className="h-full overflow-hidden bg-background">
-      <Toaster
-        position="bottom-right"
-        theme="dark"
-        richColors
-        closeButton
-      />
-      {workspace}
-    </div>
+    <ToastProvider>
+      <AnchoredToastProvider>
+        <div className="h-full overflow-hidden bg-background">
+          {workspace}
+        </div>
+      </AnchoredToastProvider>
+    </ToastProvider>
   );
 }
