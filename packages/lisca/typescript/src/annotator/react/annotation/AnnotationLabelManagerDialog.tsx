@@ -267,7 +267,8 @@ export default function AnnotationLabelManagerDialog() {
       <Dialog
         open={labelManagerOpen}
         onOpenChange={(open) => {
-          if (!labelSaveState.saving) setLabelManagerOpen(open);
+          if (!open && labelSaveState.saving) return;
+          setLabelManagerOpen(open);
         }}
       >
         <DialogPopup

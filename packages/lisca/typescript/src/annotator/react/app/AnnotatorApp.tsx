@@ -667,43 +667,43 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
                       : undefined
                   }
                 >
-              <aside className="col-start-1 h-full min-h-0 min-w-0 overflow-y-auto divide-y divide-border border-r border-border px-5 py-4">
-                {renderRoiStack()}
-                <AnnotatorOutputsSection />
-              </aside>
-              <section className="col-start-2 h-full min-h-0 min-w-0 overflow-hidden">
-                <div className="flex h-full min-h-0 flex-col overflow-hidden">
-                  <div className="m-4 flex min-h-0 flex-1 flex-col overflow-hidden">
-                    {!workspacePath ? (
-                      <div className="flex h-full min-h-[18rem] items-center justify-center rounded-2xl border border-border/60 bg-card/10 px-6 text-center text-sm text-muted-foreground">
-                        Open a workspace folder that contains ROI TIFF output (roi/Pos folders and
-                        index.json).
+                  <aside className="col-start-1 h-full min-h-0 min-w-0 overflow-y-auto divide-y divide-border border-r border-border px-5 py-4">
+                    {renderRoiStack()}
+                    <AnnotatorOutputsSection />
+                  </aside>
+                  <section className="col-start-2 h-full min-h-0 min-w-0 overflow-hidden">
+                    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+                      <div className="m-4 flex min-h-0 flex-1 flex-col overflow-hidden">
+                        {!workspacePath ? (
+                          <div className="flex h-full min-h-[18rem] items-center justify-center rounded-2xl border border-border/60 bg-card/10 px-6 text-center text-sm text-muted-foreground">
+                            Open a workspace folder that contains ROI TIFF output (roi/Pos folders and
+                            index.json).
+                          </div>
+                        ) : emptyText ? (
+                          <div className="flex h-full min-h-[18rem] items-center justify-center rounded-2xl border border-border/60 bg-card/10 px-6 text-center text-sm text-muted-foreground">
+                            {emptyText}
+                          </div>
+                        ) : editorFrameLoading ? (
+                          <div className="flex h-full min-h-[18rem] items-center justify-center rounded-2xl border border-border/60 bg-card/10 px-6 text-center text-sm text-muted-foreground">
+                            Loading frame…
+                          </div>
+                        ) : editorFrameError ? (
+                          <div className="flex h-full min-h-[18rem] items-center justify-center rounded-2xl border border-red-500/35 bg-red-500/10 px-6 text-center text-sm text-red-200">
+                            {editorFrameError}
+                          </div>
+                        ) : (
+                          <div className="flex h-full min-h-[18rem] items-center justify-center rounded-2xl border border-border/60 bg-card/10 px-6 text-center text-sm text-muted-foreground">
+                            Select a ROI and stack position to load a frame.
+                          </div>
+                        )}
                       </div>
-                    ) : emptyText ? (
-                      <div className="flex h-full min-h-[18rem] items-center justify-center rounded-2xl border border-border/60 bg-card/10 px-6 text-center text-sm text-muted-foreground">
-                        {emptyText}
-                      </div>
-                    ) : editorFrameLoading ? (
-                      <div className="flex h-full min-h-[18rem] items-center justify-center rounded-2xl border border-border/60 bg-card/10 px-6 text-center text-sm text-muted-foreground">
-                        Loading frame…
-                      </div>
-                    ) : editorFrameError ? (
-                      <div className="flex h-full min-h-[18rem] items-center justify-center rounded-2xl border border-red-500/35 bg-red-500/10 px-6 text-center text-sm text-red-200">
-                        {editorFrameError}
-                      </div>
-                    ) : (
-                      <div className="flex h-full min-h-[18rem] items-center justify-center rounded-2xl border border-border/60 bg-card/10 px-6 text-center text-sm text-muted-foreground">
-                        Select a ROI and stack position to load a frame.
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </section>
-              <RoiAnnotationToolbar className="col-start-3" />
-              <AnnotationLabelManagerDialog />
-              <RoiAnnotationDiscardDialog />
-            </RoiAnnotationProvider>
-          )}
+                    </div>
+                  </section>
+                  <RoiAnnotationToolbar className="col-start-3" />
+                  <AnnotationLabelManagerDialog />
+                  <RoiAnnotationDiscardDialog />
+                </RoiAnnotationProvider>
+              )}
             </div>
           </main>
         </div>
