@@ -45,7 +45,10 @@ function ToggleGroup<T extends string>({
   return (
     <ToggleGroupContext.Provider value={contextValue as unknown as ToggleGroupContextValue<string>}>
       <div
-        className={cn("flex items-center gap-1 rounded-xl border border-border bg-muted/35 p-1", className)}
+        className={cn(
+          "flex flex-row flex-nowrap items-center gap-1 rounded-xl border border-border bg-muted/35 p-1",
+          className,
+        )}
         role="group"
       >
         {children}

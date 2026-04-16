@@ -7,7 +7,7 @@
   "exports": {
     "./annotator/host-tauri": "./src/annotator/host-tauri/index.ts",
     "./annotator/react": "./src/annotator/react/index.ts",
-    "./annotator/styles.css": "./src/viewer/react/app/app.css",
+    "./annotator/styles.css": "./src/annotator/react/app/annotator.css",
     "./shared/contracts": "./src/shared/contracts/index.ts",
     "./shared/core": "./src/shared/core/index.ts",
     "./shared/host-tauri": "./src/shared/host-tauri/index.ts",
@@ -19,7 +19,7 @@
     "./viewer/host-tauri": "./src/viewer/host-tauri/index.ts",
     "./viewer/react": "./src/viewer/react/index.ts",
     "./viewer/ui": "./src/viewer/ui/index.ts",
-    "./viewer/styles.css": "./src/viewer/react/app/app.css"
+    "./viewer/styles.css": "./src/viewer/react/app/viewer.css"
   },
   "files": [
     "src",
@@ -29,7 +29,8 @@
     "tsconfig.json"
   ],
   "sideEffects": [
-    "./src/viewer/react/app/app.css",
+    "./src/viewer/react/app/viewer.css",
+    "./src/annotator/react/app/annotator.css",
     "./src/viewer/ui/theme.css"
   ],
   "scripts": {

@@ -549,10 +549,10 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
       <AnchoredToastProvider>
         <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-background text-foreground">
           <header className="shrink-0 border-b border-border/80 bg-background px-6 py-3">
-            <div className="grid grid-cols-[1fr_minmax(0,56rem)_1fr] items-center gap-4">
-              <div>
+            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+              <div className="min-w-0 justify-self-start">
                 <ToggleGroup
-                  className="w-fit max-w-full flex-wrap"
+                  className="w-fit max-w-full"
                   multiple={false}
                   value={[annotationMode]}
                   onValueChange={(value) => {
@@ -571,8 +571,8 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
                   </ToggleGroupItem>
                 </ToggleGroup>
               </div>
-              <div className="min-w-0">
-                <div className="flex items-center justify-center gap-3">
+              <div className="min-w-0 justify-self-center">
+                <div className="flex max-w-[56rem] flex-wrap items-center justify-center gap-3">
                   <ContextSummary
                     label="Workspace"
                     value={workspacePath}
@@ -581,7 +581,7 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
                   />
                 </div>
               </div>
-              <div className="justify-self-end" />
+              <div className="min-w-0 justify-self-end" aria-hidden />
             </div>
           </header>
 

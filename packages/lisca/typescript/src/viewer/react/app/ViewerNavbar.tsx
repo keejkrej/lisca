@@ -128,8 +128,8 @@ export default function ViewerNavbar({
   return (
     <>
       <header className="border-b border-border/80 bg-background px-6 py-3">
-        <div className="grid grid-cols-[1fr_minmax(0,56rem)_1fr] items-center gap-4">
-          <div>
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+          <div className="min-w-0 justify-self-start">
             <ToggleGroup
               multiple={false}
               value={[mode]}
@@ -148,8 +148,8 @@ export default function ViewerNavbar({
             </ToggleGroup>
           </div>
 
-          <div className="min-w-0">
-            <div className="flex items-center justify-center gap-3">
+          <div className="min-w-0 justify-self-center">
+            <div className="flex max-w-[56rem] flex-wrap items-center justify-center gap-3">
               <ContextSummary
                 label="Workspace"
                 value={workspacePath}
@@ -180,7 +180,7 @@ export default function ViewerNavbar({
             </div>
           </div>
 
-          <div className="justify-self-end">
+          <div className="min-w-0 justify-self-end">
             <div ref={toolsRef} className="relative">
               <Button
                 size="sm"
