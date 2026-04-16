@@ -36,7 +36,10 @@ pub fn format_positions(positions: &[u32]) -> String {
 
 fn render_mapping(mapping: &SlideMapping) {
     eprintln!("Current Slide Mapping");
-    eprintln!("{:>14} | {:<40} | {:>5}", "Slide Channel", "Positions", "Count");
+    eprintln!(
+        "{:>14} | {:<40} | {:>5}",
+        "Slide Channel", "Positions", "Count"
+    );
     for (channel, positions) in mapping {
         eprintln!(
             "{:>14} | {:<40} | {:>5}",
@@ -55,7 +58,9 @@ fn prompt_channel_id(theme: &ColorfulTheme, mapping: &SlideMapping) -> Result<u3
             .interact_text()
             .map_err(|err| err.to_string())?;
         if mapping.contains_key(&channel) {
-            eprintln!("Slide channel {channel} already exists. Remove it first or choose another ID.");
+            eprintln!(
+                "Slide channel {channel} already exists. Remove it first or choose another ID."
+            );
             continue;
         }
         return Ok(channel);
@@ -108,7 +113,10 @@ fn prompt_remove_channel(theme: &ColorfulTheme, mapping: &mut SlideMapping) -> R
     }
 }
 
-pub fn run_slide_wizard(workspace: &Path, output_path: &Path) -> Result<Option<SlideMapping>, String> {
+pub fn run_slide_wizard(
+    workspace: &Path,
+    output_path: &Path,
+) -> Result<Option<SlideMapping>, String> {
     let theme = ColorfulTheme::default();
     eprintln!("Delivery Slide Wizard");
     eprintln!("Workspace: {}", workspace.display());
@@ -162,7 +170,10 @@ pub fn execute(args: SlideArgs) -> Result<(), String> {
 
     if output_path.exists() {
         let overwrite = Confirm::with_theme(&ColorfulTheme::default())
-            .with_prompt(format!("{} already exists. Overwrite?", output_path.display()))
+            .with_prompt(format!(
+                "{} already exists. Overwrite?",
+                output_path.display()
+            ))
             .default(false)
             .interact()
             .map_err(|err| err.to_string())?;

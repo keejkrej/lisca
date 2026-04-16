@@ -17,9 +17,16 @@ const PYTHON_LABEL_FONT_SIZE: i32 = 21;
 pub struct PlotTimeseriesArgs {
     #[arg(help = "One or more long-form ROI timeseries CSV files to plot together.")]
     pub timeseries_csvs: Vec<PathBuf>,
-    #[arg(long, help = "Output PNG path. Default: derive a shared <stem>_combined.png path.")]
+    #[arg(
+        long,
+        help = "Output PNG path. Default: derive a shared <stem>_combined.png path."
+    )]
     pub output_plot: Option<PathBuf>,
-    #[arg(long, default_value_t = 3, help = "Number of subplot columns in the output grid.")]
+    #[arg(
+        long,
+        default_value_t = 3,
+        help = "Number of subplot columns in the output grid."
+    )]
     pub columns: usize,
     #[arg(long, default_value_t = 0.12, help = "Per-trace opacity.")]
     pub alpha: f64,
@@ -47,7 +54,10 @@ pub fn run_plot_timeseries(
     Ok(output)
 }
 
-pub fn default_output_plot_path(timeseries_csvs: &[PathBuf], output_plot: Option<&Path>) -> PathBuf {
+pub fn default_output_plot_path(
+    timeseries_csvs: &[PathBuf],
+    output_plot: Option<&Path>,
+) -> PathBuf {
     if let Some(path) = output_plot {
         return path.to_path_buf();
     }
@@ -203,11 +213,12 @@ pub(crate) fn parse_color(value: &str) -> Result<RGBColor, String> {
     let normalized = value.trim();
     if let Some(hex) = normalized.strip_prefix('#') {
         if hex.len() == 6 {
-            let red = u8::from_str_radix(&hex[0..2], 16).map_err(|_| format!("Invalid color {value:?}"))?;
-            let green =
-                u8::from_str_radix(&hex[2..4], 16).map_err(|_| format!("Invalid color {value:?}"))?;
-            let blue =
-                u8::from_str_radix(&hex[4..6], 16).map_err(|_| format!("Invalid color {value:?}"))?;
+            let red = u8::from_str_radix(&hex[0..2], 16)
+                .map_err(|_| format!("Invalid color {value:?}"))?;
+            let green = u8::from_str_radix(&hex[2..4], 16)
+                .map_err(|_| format!("Invalid color {value:?}"))?;
+            let blue = u8::from_str_radix(&hex[4..6], 16)
+                .map_err(|_| format!("Invalid color {value:?}"))?;
             return Ok(RGBColor(red, green, blue));
         }
     }

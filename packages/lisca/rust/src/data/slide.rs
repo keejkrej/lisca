@@ -31,7 +31,9 @@ pub fn parse_position_token(token: &str) -> Result<Vec<u32>, String> {
         return Err(format!("Invalid slice token: {raw:?}"));
     }
     if parts[0].is_empty() || parts[1].is_empty() {
-        return Err(format!("Slices must include explicit start and stop: {raw:?}"));
+        return Err(format!(
+            "Slices must include explicit start and stop: {raw:?}"
+        ));
     }
 
     let start: i64 = parts[0]
@@ -216,7 +218,10 @@ mod tests {
 
     #[test]
     fn parse_position_spec_supports_integers_and_slices() {
-        assert_eq!(parse_position_spec("0,2,12:19:2").unwrap(), vec![0, 2, 12, 14, 16, 18]);
+        assert_eq!(
+            parse_position_spec("0,2,12:19:2").unwrap(),
+            vec![0, 2, 12, 14, 16, 18]
+        );
     }
 
     #[test]
@@ -226,7 +231,9 @@ mod tests {
 
     #[test]
     fn parse_position_spec_rejects_empty() {
-        assert!(parse_position_spec("  ").unwrap_err().contains("Position spec is empty"));
+        assert!(parse_position_spec("  ")
+            .unwrap_err()
+            .contains("Position spec is empty"));
     }
 
     #[test]
@@ -238,11 +245,9 @@ mod tests {
 
     #[test]
     fn validate_slide_mapping_orders_keys_and_deduplicates_positions() {
-        let mapping = validate_slide_mapping_value(
-            &serde_json::json!({"2":[10,12,10],"0":[2,0]}),
-            None,
-        )
-        .unwrap();
+        let mapping =
+            validate_slide_mapping_value(&serde_json::json!({"2":[10,12,10],"0":[2,0]}), None)
+                .unwrap();
         assert_eq!(
             mapping.into_iter().collect::<Vec<_>>(),
             vec![(0, vec![0, 2]), (2, vec![10, 12])]

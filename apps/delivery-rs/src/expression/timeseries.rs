@@ -69,7 +69,10 @@ pub fn default_slide_timeseries_csv_path(
                 .file_stem()
                 .and_then(|value| value.to_str())
                 .unwrap_or("timeseries");
-            let extension = output_csv.extension().and_then(|value| value.to_str()).unwrap_or("csv");
+            let extension = output_csv
+                .extension()
+                .and_then(|value| value.to_str())
+                .unwrap_or("csv");
             output_csv.with_file_name(format!(
                 "{stem}_sc{slide_channel}_ch{channel:03}.{extension}"
             ))
@@ -134,7 +137,10 @@ where
             let pos_dir = match position_dir(workspace, pos) {
                 Ok(path) => path,
                 Err(_) => {
-                    skipped_positions.entry(slide_channel).or_default().push(pos);
+                    skipped_positions
+                        .entry(slide_channel)
+                        .or_default()
+                        .push(pos);
                     continue;
                 }
             };
@@ -171,7 +177,11 @@ where
                 .iter()
                 .map(|(slide_channel, positions)| format!(
                     "slide channel {slide_channel} -> {}",
-                    positions.iter().map(u32::to_string).collect::<Vec<_>>().join(", ")
+                    positions
+                        .iter()
+                        .map(u32::to_string)
+                        .collect::<Vec<_>>()
+                        .join(", ")
                 ))
                 .collect::<Vec<_>>()
                 .join("; ")
@@ -202,7 +212,11 @@ pub fn format_skipped_positions_message(skipped_positions: &BTreeMap<u32, Vec<u3
         .map(|(slide_channel, positions)| {
             format!(
                 "slide channel {slide_channel} -> {}",
-                positions.iter().map(u32::to_string).collect::<Vec<_>>().join(", ")
+                positions
+                    .iter()
+                    .map(u32::to_string)
+                    .collect::<Vec<_>>()
+                    .join(", ")
             )
         })
         .collect::<Vec<_>>()
@@ -217,16 +231,25 @@ pub fn execute(args: TimeseriesArgs) -> Result<(), String> {
         args.channel,
         args.output_csv.as_deref(),
         args.correction_quartile,
-        Some(|slide_channel: u32, output_csv: &Path, position_count: usize| {
-            println!(
-                "{}",
-                format_written_timeseries_csv_message(slide_channel, output_csv, position_count)
-            );
-        }),
+        Some(
+            |slide_channel: u32, output_csv: &Path, position_count: usize| {
+                println!(
+                    "{}",
+                    format_written_timeseries_csv_message(
+                        slide_channel,
+                        output_csv,
+                        position_count
+                    )
+                );
+            },
+        ),
     )?;
 
     if !result.skipped_positions.is_empty() {
-        println!("{}", format_skipped_positions_message(&result.skipped_positions));
+        println!(
+            "{}",
+            format_skipped_positions_message(&result.skipped_positions)
+        );
     }
     Ok(())
 }

@@ -20,9 +20,17 @@ pub struct PlotAucArgs {
         help = "Output PNG path. Default: same path as the AUC CSV with .png extension."
     )]
     pub output_plot: Option<PathBuf>,
-    #[arg(long, default_value = "#c03a2b", help = "Plot color for the box fills.")]
+    #[arg(
+        long,
+        default_value = "#c03a2b",
+        help = "Plot color for the box fills."
+    )]
     pub color: String,
-    #[arg(long, default_value = "AUC by slide channel", help = "Optional plot title.")]
+    #[arg(
+        long,
+        default_value = "AUC by slide channel",
+        help = "Optional plot title."
+    )]
     pub title: Option<String>,
 }
 
@@ -49,13 +57,10 @@ pub fn load_auc_csv(auc_csv: &Path) -> Result<Vec<PlotAucRow>, String> {
     let headers = reader.headers().map_err(|err| err.to_string())?.clone();
     let slide_channel_idx = headers.iter().position(|header| header == "slide_channel");
     let auc_idx = headers.iter().position(|header| header == "auc");
-    let missing = [
-        ("auc", auc_idx),
-        ("slide_channel", slide_channel_idx),
-    ]
-    .into_iter()
-    .filter_map(|(name, index)| index.is_none().then_some(name.to_string()))
-    .collect::<Vec<_>>();
+    let missing = [("auc", auc_idx), ("slide_channel", slide_channel_idx)]
+        .into_iter()
+        .filter_map(|(name, index)| index.is_none().then_some(name.to_string()))
+        .collect::<Vec<_>>();
     if !missing.is_empty() {
         return Err(format!(
             "{} is missing required columns for AUC plotting: {:?}",
@@ -72,7 +77,11 @@ pub fn load_auc_csv(auc_csv: &Path) -> Result<Vec<PlotAucRow>, String> {
             .unwrap_or_default()
             .trim()
             .to_string();
-        let auc_raw = record.get(auc_idx.unwrap()).unwrap_or_default().trim().to_string();
+        let auc_raw = record
+            .get(auc_idx.unwrap())
+            .unwrap_or_default()
+            .trim()
+            .to_string();
         if slide_channel_raw.is_empty() || auc_raw.is_empty() {
             continue;
         }
@@ -110,7 +119,8 @@ pub fn write_auc_boxplot(
     if let Some(parent) = output_plot.parent() {
         std::fs::create_dir_all(parent).map_err(|err| err.to_string())?;
     }
-    let root = BitMapBackend::new(output_plot, (PYTHON_AUC_WIDTH, PYTHON_AUC_HEIGHT)).into_drawing_area();
+    let root =
+        BitMapBackend::new(output_plot, (PYTHON_AUC_WIDTH, PYTHON_AUC_HEIGHT)).into_drawing_area();
     root.fill(&WHITE).map_err(|err| err.to_string())?;
 
     let mut grouped = BTreeMap::<u32, Vec<f64>>::new();
@@ -150,10 +160,7 @@ pub fn write_auc_boxplot(
             if index == 0 || index > grouped.len() {
                 String::new()
             } else {
-                let slide_channel = grouped
-                    .keys()
-                    .nth(index - 1)
-                    .copied();
+                let slide_channel = grouped.keys().nth(index - 1).copied();
                 slide_channel
                     .and_then(|channel| {
                         grouped
@@ -281,7 +288,11 @@ mod tests {
         grouped.insert(1, vec![20.0]);
         let slide_channel = grouped.keys().nth(0).copied();
         let label = slide_channel
-            .and_then(|channel| grouped.get(&channel).map(|values| format!("{channel}\n(n={})", values.len())))
+            .and_then(|channel| {
+                grouped
+                    .get(&channel)
+                    .map(|values| format!("{channel}\n(n={})", values.len()))
+            })
             .unwrap_or_default();
         assert_eq!(label, "0\n(n=2)");
     }

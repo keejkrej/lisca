@@ -26,7 +26,10 @@ pub struct AucArgs {
         help = "Frame interval in minutes used to convert t into time before integration."
     )]
     pub interval: f64,
-    #[arg(long, help = "Output CSV path. Default: derive a shared <stem>_auc.csv path.")]
+    #[arg(
+        long,
+        help = "Output CSV path. Default: derive a shared <stem>_auc.csv path."
+    )]
     pub output_csv: Option<PathBuf>,
 }
 
@@ -109,7 +112,10 @@ pub fn integrate_trace(trace: &[(u32, f64)], interval: f64) -> f64 {
         .sum()
 }
 
-pub fn compute_auc_table(timeseries_csvs: &[PathBuf], interval: f64) -> Result<Vec<AucRow>, String> {
+pub fn compute_auc_table(
+    timeseries_csvs: &[PathBuf],
+    interval: f64,
+) -> Result<Vec<AucRow>, String> {
     let mut auc_rows = Vec::new();
     let mut csvs = timeseries_csvs.to_vec();
     csvs.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
@@ -177,7 +183,11 @@ pub fn format_written_auc_csv_message(output_csv: &Path) -> String {
 }
 
 pub fn execute(args: AucArgs) -> Result<(), String> {
-    let output = run_auc(&args.timeseries_csvs, args.interval, args.output_csv.as_deref())?;
+    let output = run_auc(
+        &args.timeseries_csvs,
+        args.interval,
+        args.output_csv.as_deref(),
+    )?;
     println!("{}", format_written_auc_csv_message(&output));
     Ok(())
 }

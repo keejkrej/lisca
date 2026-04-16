@@ -44,7 +44,10 @@ pub fn quantile_column_name(quartile: f64) -> Result<String, String> {
 pub fn parse_quartiles(quartiles: &str) -> Result<Vec<f64>, String> {
     let mut values = Vec::new();
     for raw in quartiles.split(',') {
-        let value: f64 = raw.trim().parse().map_err(|_| format!("Invalid quartile {raw:?}"))?;
+        let value: f64 = raw
+            .trim()
+            .parse()
+            .map_err(|_| format!("Invalid quartile {raw:?}"))?;
         if !(0.0..=1.0).contains(&value) {
             return Err(format!("Quartiles must be between 0 and 1, got {value}"));
         }
@@ -152,7 +155,9 @@ pub fn write_metrics_csv(rows: &[RoiMetricsRow], output_csv: &Path) -> Result<()
         "sum".to_string(),
     ];
     headers.extend(quartile_headers.iter().cloned());
-    writer.write_record(&headers).map_err(|err| err.to_string())?;
+    writer
+        .write_record(&headers)
+        .map_err(|err| err.to_string())?;
 
     for row in rows {
         let mut record = vec![
@@ -218,14 +223,10 @@ pub fn load_timeseries_csv(csv_path: &Path) -> Result<Vec<TimeseriesRow>, String
     let corrected_idx = header_index(&headers, "corrected");
     let pos_idx = header_index(&headers, "pos");
 
-    let missing = [
-        ("roi", roi_idx),
-        ("t", t_idx),
-        ("corrected", corrected_idx),
-    ]
-    .into_iter()
-    .filter_map(|(name, index)| index.is_none().then_some(name.to_string()))
-    .collect::<Vec<_>>();
+    let missing = [("roi", roi_idx), ("t", t_idx), ("corrected", corrected_idx)]
+        .into_iter()
+        .filter_map(|(name, index)| index.is_none().then_some(name.to_string()))
+        .collect::<Vec<_>>();
     if !missing.is_empty() {
         return Err(format!(
             "{} is missing required columns for plotting: {:?}",
@@ -241,7 +242,11 @@ pub fn load_timeseries_csv(csv_path: &Path) -> Result<Vec<TimeseriesRow>, String
             .and_then(|idx| record.get(idx))
             .map(str::trim)
             .filter(|value| !value.is_empty())
-            .map(|value| value.parse::<u32>().map_err(|_| format!("Invalid pos value {value:?}")))
+            .map(|value| {
+                value
+                    .parse::<u32>()
+                    .map_err(|_| format!("Invalid pos value {value:?}"))
+            })
             .transpose()?;
         rows.push(TimeseriesRow {
             pos,
@@ -301,7 +306,9 @@ mod tests {
     #[test]
     fn quantile_column_name_requires_integer_percentages() {
         assert_eq!(quantile_column_name(0.25).unwrap(), "q25");
-        assert!(quantile_column_name(0.255).unwrap_err().contains("integer percentage"));
+        assert!(quantile_column_name(0.255)
+            .unwrap_err()
+            .contains("integer percentage"));
     }
 
     #[test]

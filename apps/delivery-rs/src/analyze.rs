@@ -25,14 +25,14 @@ pub struct AnalyzeRunResult {
 pub struct AnalyzeArgs {
     #[arg(help = "Workspace containing roi/PosN/index.json and Roi*.tif files.")]
     pub workspace: PathBuf,
-    #[arg(long, help = "Microscopy slide mapping JSON from slide channel to position list.")]
+    #[arg(
+        long,
+        help = "Microscopy slide mapping JSON from slide channel to position list."
+    )]
     pub slide: PathBuf,
     #[arg(long, help = "Channel index in the cropped ROI TIFF timelapses.")]
     pub channel: u32,
-    #[arg(
-        long,
-        help = "Frame interval in minutes used when integrating AUC."
-    )]
+    #[arg(long, help = "Frame interval in minutes used when integrating AUC.")]
     pub interval: f64,
 }
 
