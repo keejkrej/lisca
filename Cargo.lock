@@ -872,8 +872,8 @@ dependencies = [
 
 [[package]]
 name = "czi-rs"
-version = "0.1.0"
-source = "git+https://github.com/keejkrej/czi-rs#a9b27e2193763ea0f332b9c88f34f4d7fa322147"
+version = "0.2.0"
+source = "git+https://github.com/keejkrej/czi-rs#f68b043065900a30c59ba6df7d6e48efbccc7378"
 dependencies = [
  "roxmltree",
  "thiserror 1.0.69",
@@ -2562,8 +2562,8 @@ dependencies = [
 
 [[package]]
 name = "nd2-rs"
-version = "0.1.6"
-source = "git+https://github.com/keejkrej/nd2-rs#0ef418a2194a51e020874b3b725684753fc7ba92"
+version = "0.2.0"
+source = "git+https://github.com/keejkrej/nd2-rs#b3c28e1c8a90845ab094bf9e2bfd9e20fece5393"
 dependencies = [
  "byteorder",
  "flate2",
