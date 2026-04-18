@@ -10,9 +10,7 @@ pub use crate::viewer::domain::{
     RoiFrameAnnotationPayload, RoiFrameRequest, RoiWorkspaceScan, SaveBboxResponse,
     SavedAlignState, ViewerSource, WorkspaceScan,
 };
-use crate::viewer::image::{
-    self, apply_contrast, auto_contrast, contrast_domain, load_frame, RawFrame,
-};
+use crate::viewer::image::{self, apply_contrast, auto_contrast, load_frame, RawFrame};
 
 const AUTO_EXCLUDE_BIN_COUNT: usize = 40;
 const AUTO_EXCLUDE_EPSILON: f64 = 1.0;
@@ -36,11 +34,11 @@ struct HistogramResult {
 }
 
 fn to_frame_payload(raw: RawFrame, contrast: Option<ContrastWindow>) -> FramePayload {
-    let domain = contrast_domain();
+    let domain = raw.contrast_domain.clone();
     let suggested = auto_contrast(&raw.data);
     let applied = contrast
         .as_ref()
-        .map(image::normalize_contrast)
+        .map(|window| image::normalize_contrast(window, &domain))
         .unwrap_or_else(|| suggested.clone());
     let pixels = apply_contrast(&raw.data, &applied);
 
@@ -350,6 +348,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::viewer::domain::ContrastWindow;
+    use crate::viewer::image::RawFrame;
 
     #[test]
     fn flatness_score_prefers_flatter_cells() {
@@ -391,5 +391,24 @@ mod tests {
 
         let bounds = clipped_cell_bounds(&cell, 800, 800).expect("bounds");
         assert_eq!(bounds, (350, 361, 451, 442));
+    }
+
+    #[test]
+    fn frame_payload_preserves_u8_contrast_domain() {
+        let payload = to_frame_payload(
+            RawFrame {
+                width: 2,
+                height: 1,
+                data: vec![0, 255],
+                contrast_domain: ContrastWindow { min: 0, max: 255 },
+            },
+            None,
+        );
+
+        assert_eq!(payload.contrast_domain.min, 0);
+        assert_eq!(payload.contrast_domain.max, 255);
+        assert_eq!(payload.suggested_contrast.min, 0);
+        assert!(payload.suggested_contrast.max <= 255);
+        assert!(payload.applied_contrast.max <= 255);
     }
 }

@@ -22,6 +22,7 @@ pub struct RawFrame {
     pub width: u32,
     pub height: u32,
     pub data: Vec<u16>,
+    pub contrast_domain: ContrastWindow,
 }
 
 #[derive(Clone, Debug)]
@@ -132,6 +133,10 @@ impl SourceReader {
                     width,
                     height,
                     data,
+                    contrast_domain: ContrastWindow {
+                        min: 0,
+                        max: u16::MAX as u32,
+                    },
                 })
             }
             Self::Czi(reader) => {
@@ -148,6 +153,10 @@ impl SourceReader {
                     width,
                     height,
                     data,
+                    contrast_domain: ContrastWindow {
+                        min: 0,
+                        max: u16::MAX as u32,
+                    },
                 })
             }
         }
@@ -235,11 +244,17 @@ pub fn find_position_dir(root: &Path, position: u32) -> Result<PathBuf, String> 
     Err(format!("Position directory not found for Pos{position}"))
 }
 
-fn to_u16_buffer(width: u32, height: u32, data: DecodingResult) -> Result<Vec<u16>, String> {
+fn to_u16_buffer(
+    width: u32,
+    height: u32,
+    data: DecodingResult,
+) -> Result<(Vec<u16>, ContrastWindow), String> {
     let expected_len = width as usize * height as usize;
-    let collapse_channels = |values: Vec<u16>| -> Result<Vec<u16>, String> {
+    let collapse_channels = |values: Vec<u16>,
+                             contrast_domain: ContrastWindow|
+     -> Result<(Vec<u16>, ContrastWindow), String> {
         if values.len() == expected_len {
-            return Ok(values);
+            return Ok((values, contrast_domain));
         }
         if values.len() == expected_len * 3 || values.len() == expected_len * 4 {
             let channels = values.len() / expected_len;
@@ -248,7 +263,7 @@ fn to_u16_buffer(width: u32, height: u32, data: DecodingResult) -> Result<Vec<u1
                 let sum: u32 = chunk.iter().map(|value| *value as u32).sum();
                 collapsed.push((sum / channels as u32) as u16);
             }
-            return Ok(collapsed);
+            return Ok((collapsed, contrast_domain));
         }
         Err("Unsupported TIFF sample layout".to_string())
     };
@@ -256,14 +271,32 @@ fn to_u16_buffer(width: u32, height: u32, data: DecodingResult) -> Result<Vec<u1
     match data {
         DecodingResult::U8(values) => {
             if values.len() == expected_len {
-                Ok(values.into_iter().map(|value| value as u16).collect())
+                Ok((
+                    values.into_iter().map(|value| value as u16).collect(),
+                    ContrastWindow {
+                        min: 0,
+                        max: u8::MAX as u32,
+                    },
+                ))
             } else if values.len() == expected_len * 3 || values.len() == expected_len * 4 {
-                collapse_channels(values.into_iter().map(|value| value as u16).collect())
+                collapse_channels(
+                    values.into_iter().map(|value| value as u16).collect(),
+                    ContrastWindow {
+                        min: 0,
+                        max: u8::MAX as u32,
+                    },
+                )
             } else {
                 Err("Unsupported TIFF sample layout".to_string())
             }
         }
-        DecodingResult::U16(values) => collapse_channels(values),
+        DecodingResult::U16(values) => collapse_channels(
+            values,
+            ContrastWindow {
+                min: 0,
+                max: u16::MAX as u32,
+            },
+        ),
         _ => Err("Unsupported TIFF pixel type".to_string()),
     }
 }
@@ -292,11 +325,12 @@ pub fn load_tiff_frames(path: &Path) -> Result<Vec<RawFrame>, String> {
     loop {
         let dimensions = decoder.dimensions().map_err(|err| err.to_string())?;
         let data = decoder.read_image().map_err(|err| err.to_string())?;
-        let pixels = to_u16_buffer(dimensions.0, dimensions.1, data)?;
+        let (pixels, contrast_domain) = to_u16_buffer(dimensions.0, dimensions.1, data)?;
         frames.push(RawFrame {
             width: dimensions.0,
             height: dimensions.1,
             data: pixels,
+            contrast_domain,
         });
 
         if !decoder.more_images() {
@@ -325,12 +359,13 @@ pub fn load_tiff_frame_page(path: &Path, page: usize) -> Result<RawFrame, String
 
     let dimensions = decoder.dimensions().map_err(|err| err.to_string())?;
     let data = decoder.read_image().map_err(|err| err.to_string())?;
-    let pixels = to_u16_buffer(dimensions.0, dimensions.1, data)?;
+    let (pixels, contrast_domain) = to_u16_buffer(dimensions.0, dimensions.1, data)?;
 
     Ok(RawFrame {
         width: dimensions.0,
         height: dimensions.1,
         data: pixels,
+        contrast_domain,
     })
 }
 
@@ -444,13 +479,6 @@ pub fn load_frame(source: ViewerSource, request: FrameRequest) -> Result<RawFram
     }
 }
 
-pub fn contrast_domain() -> ContrastWindow {
-    ContrastWindow {
-        min: 0,
-        max: u16::MAX as u32,
-    }
-}
-
 fn sampled_values(values: &[u16]) -> Vec<u16> {
     if values.is_empty() {
         return vec![0];
@@ -496,8 +524,7 @@ pub fn auto_contrast(values: &[u16]) -> ContrastWindow {
     }
 }
 
-pub fn normalize_contrast(contrast: &ContrastWindow) -> ContrastWindow {
-    let domain = contrast_domain();
+pub fn normalize_contrast(contrast: &ContrastWindow, domain: &ContrastWindow) -> ContrastWindow {
     let min = contrast.min.clamp(domain.min, domain.max.saturating_sub(1));
     let max = contrast.max.clamp(min + 1, domain.max);
     ContrastWindow { min, max }
@@ -531,11 +558,19 @@ fn raw_frame_from_dynamic_image(image: DynamicImage) -> RawFrame {
             width: buffer.width(),
             height: buffer.height(),
             data: buffer.into_raw().into_iter().map(u16::from).collect(),
+            contrast_domain: ContrastWindow {
+                min: 0,
+                max: u8::MAX as u32,
+            },
         },
         DynamicImage::ImageLuma16(buffer) => RawFrame {
             width: buffer.width(),
             height: buffer.height(),
             data: buffer.into_raw(),
+            contrast_domain: ContrastWindow {
+                min: 0,
+                max: u16::MAX as u32,
+            },
         },
         other => {
             let buffer = other.into_luma8();
@@ -543,6 +578,10 @@ fn raw_frame_from_dynamic_image(image: DynamicImage) -> RawFrame {
                 width: buffer.width(),
                 height: buffer.height(),
                 data: buffer.into_raw().into_iter().map(u16::from).collect(),
+                contrast_domain: ContrastWindow {
+                    min: 0,
+                    max: u8::MAX as u32,
+                },
             }
         }
     }
