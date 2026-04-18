@@ -27,7 +27,7 @@ pub struct WorkspaceScan {
     pub z_slices: Vec<u32>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(tag = "kind", rename_all = "lowercase")]
 pub enum ViewerSource {
     Tif { path: String },
@@ -174,6 +174,14 @@ pub struct RoiFrameRequest {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct RawFrameRequest {
+    pub pos: u32,
+    pub channel: u32,
+    pub time: u32,
+    pub z: u32,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct RoiBbox {
     pub roi: u32,
     pub x: u32,
@@ -256,6 +264,30 @@ pub struct RoiFrameAnnotationPayload {
 #[serde(rename_all = "camelCase")]
 pub struct LoadedRoiFrameAnnotation {
     pub annotation: RoiFrameAnnotation,
+    pub mask_base64_png: Option<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RawFrameAnnotation {
+    pub classification_label_id: Option<String>,
+    pub mask_path: Option<String>,
+    pub updated_at: Option<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RawFrameAnnotationPayload {
+    pub classification_label_id: Option<String>,
+    pub mask_base64_png: Option<String>,
+    #[serde(default)]
+    pub instances: Option<Vec<AnnotationInstancePayload>>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LoadedRawFrameAnnotation {
+    pub annotation: RawFrameAnnotation,
     pub mask_base64_png: Option<String>,
 }
 
@@ -371,6 +403,18 @@ pub fn workspace_annotation_labels_path(root: &str) -> PathBuf {
     workspace_annotations_dir_path(root).join("labels.json")
 }
 
+pub fn workspace_annotation_raw_dir_path(root: &str) -> PathBuf {
+    workspace_annotations_dir_path(root).join("raw")
+}
+
+pub fn workspace_annotation_raw_source_path(root: &str) -> PathBuf {
+    workspace_annotation_raw_dir_path(root).join("source.json")
+}
+
+pub fn workspace_annotation_raw_pos_dir_path(root: &str, pos: u32) -> PathBuf {
+    workspace_annotation_raw_dir_path(root).join(format!("Pos{pos}"))
+}
+
 pub fn workspace_annotation_roi_dir_path(root: &str, request: &RoiFrameRequest) -> PathBuf {
     workspace_annotations_dir_path(root)
         .join("roi")
@@ -378,18 +422,36 @@ pub fn workspace_annotation_roi_dir_path(root: &str, request: &RoiFrameRequest) 
         .join(format!("Roi{}", request.roi))
 }
 
-pub fn annotation_frame_stem(request: &RoiFrameRequest) -> String {
-    format!("C{}_T{}_Z{}", request.channel, request.time, request.z)
+pub fn annotation_frame_stem(channel: u32, time: u32, z: u32) -> String {
+    format!("C{channel}_T{time}_Z{z}")
+}
+
+pub fn annotation_roi_frame_stem(request: &RoiFrameRequest) -> String {
+    annotation_frame_stem(request.channel, request.time, request.z)
+}
+
+pub fn annotation_raw_frame_stem(request: &RawFrameRequest) -> String {
+    annotation_frame_stem(request.channel, request.time, request.z)
 }
 
 pub fn workspace_annotation_json_path(root: &str, request: &RoiFrameRequest) -> PathBuf {
     workspace_annotation_roi_dir_path(root, request)
-        .join(format!("{}.json", annotation_frame_stem(request)))
+        .join(format!("{}.json", annotation_roi_frame_stem(request)))
 }
 
 pub fn workspace_annotation_mask_path(root: &str, request: &RoiFrameRequest) -> PathBuf {
     workspace_annotation_roi_dir_path(root, request)
-        .join(format!("{}.png", annotation_frame_stem(request)))
+        .join(format!("{}.png", annotation_roi_frame_stem(request)))
+}
+
+pub fn workspace_raw_annotation_json_path(root: &str, request: &RawFrameRequest) -> PathBuf {
+    workspace_annotation_raw_pos_dir_path(root, request.pos)
+        .join(format!("{}.json", annotation_raw_frame_stem(request)))
+}
+
+pub fn workspace_raw_annotation_mask_path(root: &str, request: &RawFrameRequest) -> PathBuf {
+    workspace_annotation_raw_pos_dir_path(root, request.pos)
+        .join(format!("{}.png", annotation_raw_frame_stem(request)))
 }
 
 pub fn path_to_forward_slash_string(path: &Path) -> String {

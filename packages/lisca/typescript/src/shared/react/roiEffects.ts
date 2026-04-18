@@ -3,17 +3,21 @@ import { Effect } from "effect";
 import type {
   AnnotationLabel,
   ContrastWindow,
+  FrameResult,
+  RawFrameRequest,
   ViewerDataPort,
   RoiFrameRequest,
+  ViewerSelection,
+  ViewerSource,
 } from "lisca/shared/contracts";
-import { clamp, getFrameContrastDomain } from "lisca/shared/core";
+import { clamp, coerceSelection, createSelection, getFrameContrastDomain } from "lisca/shared/core";
 
 import { toErrorMessage } from "./errors";
 
 type ContrastMode = "auto" | "manual";
 
 function contrastWindowForFrame(
-  frame: Awaited<ReturnType<ViewerDataPort["loadRoiFrame"]>> | null,
+  frame: FrameResult | null,
 ): ContrastWindow {
   if (!frame) return { min: 0, max: 255 };
   return frame.contrastDomain ?? getFrameContrastDomain(frame);
@@ -30,6 +34,19 @@ export function scanRoiWorkspaceEffect(backend: ViewerDataPort, workspacePath: s
   }).pipe(
     Effect.map((scan) => ({ scan })),
     Effect.withSpan("shared.scan-roi-workspace"),
+  );
+}
+
+export function scanSourceEffect(backend: ViewerDataPort, source: ViewerSource) {
+  return Effect.tryPromise({
+    try: () => backend.scanSource(source),
+    catch: (error) => toError(error, "Failed to scan source"),
+  }).pipe(
+    Effect.map((scan) => ({
+      scan,
+      selection: coerceSelection(scan, createSelection(scan)),
+    })),
+    Effect.withSpan("shared.scan-source"),
   );
 }
 
@@ -89,5 +106,54 @@ export function loadRoiFrameEffect(
       };
     }),
     Effect.withSpan("shared.load-roi-frame"),
+  );
+}
+
+export function loadRawFrameEffect(
+  backend: ViewerDataPort,
+  source: ViewerSource,
+  request: RawFrameRequest | ViewerSelection,
+  contrast: {
+    mode: ContrastMode;
+    min: number;
+    max: number;
+  },
+) {
+  const requestedContrast =
+    contrast.mode === "manual"
+      ? ({
+          min: contrast.min,
+          max: contrast.max,
+        } satisfies ContrastWindow)
+      : undefined;
+
+  return Effect.tryPromise({
+    try: () =>
+      backend.loadFrame(
+        source,
+        request,
+        requestedContrast ? { contrast: requestedContrast } : undefined,
+      ),
+    catch: (error) => toError(error, "Failed to load frame"),
+  }).pipe(
+    Effect.map((frame) => {
+      const domain = contrastWindowForFrame(frame);
+      const applied = frame.appliedContrast ?? frame.suggestedContrast ?? domain;
+
+      return {
+        frame,
+        contrastMin: clamp(
+          Math.round(applied.min),
+          domain.min,
+          Math.max(domain.min, domain.max - 1),
+        ),
+        contrastMax: clamp(
+          Math.round(applied.max),
+          Math.min(domain.min + 1, domain.max),
+          domain.max,
+        ),
+      };
+    }),
+    Effect.withSpan("shared.load-raw-frame"),
   );
 }

@@ -1,6 +1,7 @@
 export { default as AnnotatorApp } from "./app/AnnotatorApp";
 export { RoiAnnotationSession } from "./session";
-export type { RoiAnnotationSessionProps } from "./session";
+export { RawAnnotationSession } from "./session";
+export type { RawAnnotationSessionProps, RoiAnnotationSessionProps } from "./session";
 export { default as RoiAnnotationCanvas } from "./annotation/RoiAnnotationCanvas";
 export {
   AnnotationLabelManagerDialog,

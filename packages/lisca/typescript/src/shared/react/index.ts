@@ -12,7 +12,13 @@ export {
   type SliderNavigationControlProps,
 } from "./NavigationControls";
 export { toErrorMessage } from "./errors";
-export { loadAnnotationLabelsEffect, loadRoiFrameEffect, scanRoiWorkspaceEffect } from "./roiEffects";
+export {
+  loadAnnotationLabelsEffect,
+  loadRawFrameEffect,
+  loadRoiFrameEffect,
+  scanRoiWorkspaceEffect,
+  scanSourceEffect,
+} from "./roiEffects";
 export {
   SidebarField,
   SidebarSection,

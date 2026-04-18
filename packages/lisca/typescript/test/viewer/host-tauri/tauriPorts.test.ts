@@ -308,3 +308,66 @@ describe("tauri align state bridge", () => {
     });
   });
 });
+
+describe("tauri raw annotation bridge", () => {
+  test("loads the bound raw source for a workspace", async () => {
+    mockWindows("main");
+
+    mockIPC((cmd) => {
+      if (cmd === "load_raw_annotation_source") {
+        return { kind: "nd2", path: "/tmp/source.nd2" };
+      }
+      return null;
+    });
+
+    const ports = createTauriDesktopPorts();
+    await expect(ports.dataPort.loadRawAnnotationSource("/tmp/workspace")).resolves.toEqual({
+      kind: "nd2",
+      path: "/tmp/source.nd2",
+    });
+  });
+
+  test("forwards raw frame annotation save payload", async () => {
+    mockWindows("main");
+
+    let savedPayload: unknown = null;
+    mockIPC((cmd, payload) => {
+      if (cmd === "save_raw_frame_annotation") {
+        savedPayload = payload;
+        return {
+          classificationLabelId: "live",
+          maskPath: "annotations/raw/Pos0/C0_T0_Z0.png",
+          updatedAt: "2026-04-18T00:00:00Z",
+        };
+      }
+      return null;
+    });
+
+    const ports = createTauriDesktopPorts();
+    await expect(
+      ports.dataPort.saveRawFrameAnnotation(
+        "/tmp/workspace",
+        { kind: "tif", path: "/tmp/source" },
+        { pos: 0, channel: 0, time: 0, z: 0 },
+        {
+          classificationLabelId: "live",
+          maskBase64Png: "ZmFrZQ==",
+        },
+      ),
+    ).resolves.toEqual({
+      classificationLabelId: "live",
+      maskPath: "annotations/raw/Pos0/C0_T0_Z0.png",
+      updatedAt: "2026-04-18T00:00:00Z",
+    });
+
+    expect(savedPayload).toEqual({
+      workspacePath: "/tmp/workspace",
+      source: { kind: "tif", path: "/tmp/source" },
+      request: { pos: 0, channel: 0, time: 0, z: 0 },
+      annotation: {
+        classificationLabelId: "live",
+        maskBase64Png: "ZmFrZQ==",
+      },
+    });
+  });
+});

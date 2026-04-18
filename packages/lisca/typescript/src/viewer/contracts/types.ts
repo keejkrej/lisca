@@ -70,6 +70,23 @@ export interface LoadedRoiFrameAnnotation {
   maskBase64Png: string | null;
 }
 
+export interface RawFrameAnnotation {
+  classificationLabelId: string | null;
+  maskPath: string | null;
+  updatedAt: string | null;
+}
+
+export interface RawFrameAnnotationPayload {
+  classificationLabelId: string | null;
+  maskBase64Png: string | null;
+  instances?: AnnotationInstancePayload[] | null;
+}
+
+export interface LoadedRawFrameAnnotation {
+  annotation: RawFrameAnnotation;
+  maskBase64Png: string | null;
+}
+
 export interface TifSource {
   kind: "tif";
   path: string;
@@ -150,6 +167,13 @@ export interface RoiFrameRequest {
   z: number;
 }
 
+export interface RawFrameRequest {
+  pos: number;
+  channel: number;
+  time: number;
+  z: number;
+}
+
 export interface FrameResult {
   width: number;
   height: number;
@@ -181,11 +205,23 @@ export interface ViewerDataPort extends ViewerDataSource {
     workspacePath: string,
     request: RoiFrameRequest,
   ): Promise<LoadedRoiFrameAnnotation>;
+  loadRawAnnotationSource(workspacePath: string): Promise<ViewerSource | null>;
+  loadRawFrameAnnotation(
+    workspacePath: string,
+    source: ViewerSource,
+    request: RawFrameRequest,
+  ): Promise<LoadedRawFrameAnnotation>;
   saveRoiFrameAnnotation(
     workspacePath: string,
     request: RoiFrameRequest,
     annotation: RoiFrameAnnotationPayload,
   ): Promise<RoiFrameAnnotation>;
+  saveRawFrameAnnotation(
+    workspacePath: string,
+    source: ViewerSource,
+    request: RawFrameRequest,
+    annotation: RawFrameAnnotationPayload,
+  ): Promise<RawFrameAnnotation>;
   saveBbox(
     workspacePath: string,
     source: ViewerSource,

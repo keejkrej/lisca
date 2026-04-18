@@ -15,12 +15,16 @@ use lisca::viewer::backend::{
     auto_exclude_preview as run_auto_exclude_preview, crop_roi as run_crop_roi,
     list_saved_bbox_positions as run_list_saved_bbox_positions,
     load_align_state as run_load_align_state, load_annotation_labels as run_load_annotation_labels,
-    load_frame_payload, load_roi_frame_annotation as run_load_roi_frame_annotation,
-    load_roi_frame_payload, save_annotation_labels as run_save_annotation_labels,
-    save_bbox as run_save_bbox, save_roi_frame_annotation as run_save_roi_frame_annotation,
+    load_frame_payload, load_raw_annotation_source as run_load_raw_annotation_source,
+    load_raw_frame_annotation as run_load_raw_frame_annotation,
+    load_roi_frame_annotation as run_load_roi_frame_annotation, load_roi_frame_payload,
+    save_annotation_labels as run_save_annotation_labels, save_bbox as run_save_bbox,
+    save_raw_frame_annotation as run_save_raw_frame_annotation,
+    save_roi_frame_annotation as run_save_roi_frame_annotation,
     scan_roi_workspace as run_scan_roi_workspace, scan_source as run_scan_source, AnnotationLabel,
     AutoExcludePreviewRequest, AutoExcludePreviewResponse, ContrastWindow, CropOutputFormat,
-    CropRoiResponse, CropRoiStatus, FramePayload, FrameRequest, LoadedRoiFrameAnnotation,
+    CropRoiResponse, CropRoiStatus, FramePayload, FrameRequest, LoadedRawFrameAnnotation,
+    LoadedRoiFrameAnnotation, RawFrameAnnotation, RawFrameAnnotationPayload, RawFrameRequest,
     RoiFrameAnnotation, RoiFrameAnnotationPayload, RoiFrameRequest, RoiWorkspaceScan,
     SaveBboxResponse, SavedAlignState, ViewerSource, WorkspaceScan,
 };
@@ -172,12 +176,36 @@ fn load_roi_frame_annotation(
 }
 
 #[command]
+fn load_raw_annotation_source(workspace_path: String) -> Result<Option<ViewerSource>, String> {
+    run_load_raw_annotation_source(workspace_path)
+}
+
+#[command]
+fn load_raw_frame_annotation(
+    workspace_path: String,
+    source: ViewerSource,
+    request: RawFrameRequest,
+) -> Result<LoadedRawFrameAnnotation, String> {
+    run_load_raw_frame_annotation(workspace_path, source, request)
+}
+
+#[command]
 fn save_roi_frame_annotation(
     workspace_path: String,
     request: RoiFrameRequest,
     annotation: RoiFrameAnnotationPayload,
 ) -> Result<RoiFrameAnnotation, String> {
     run_save_roi_frame_annotation(workspace_path, request, annotation)
+}
+
+#[command]
+fn save_raw_frame_annotation(
+    workspace_path: String,
+    source: ViewerSource,
+    request: RawFrameRequest,
+    annotation: RawFrameAnnotationPayload,
+) -> Result<RawFrameAnnotation, String> {
+    run_save_raw_frame_annotation(workspace_path, source, request, annotation)
 }
 
 #[command]
@@ -283,7 +311,10 @@ fn main() {
             load_annotation_labels,
             save_annotation_labels,
             load_roi_frame,
+            load_raw_annotation_source,
+            load_raw_frame_annotation,
             load_roi_frame_annotation,
+            save_raw_frame_annotation,
             save_roi_frame_annotation,
             save_bbox,
             cancel_crop_roi,

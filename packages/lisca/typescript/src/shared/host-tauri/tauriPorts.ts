@@ -10,8 +10,12 @@ import type {
   CropRoiResponse,
   FrameRequest,
   FrameResult,
+  LoadedRawFrameAnnotation,
   LoadedRoiFrameAnnotation,
   LoadFrameOptions,
+  RawFrameAnnotation,
+  RawFrameAnnotationPayload,
+  RawFrameRequest,
   RoiFrameAnnotation,
   RoiFrameAnnotationPayload,
   RoiFrameRequest,
@@ -159,6 +163,18 @@ export function createTauriDesktopPorts(): TauriDesktopPorts {
       return invoke("load_roi_frame_annotation", { workspacePath, request });
     },
 
+    loadRawAnnotationSource(workspacePath: string): Promise<ViewerSource | null> {
+      return invoke("load_raw_annotation_source", { workspacePath });
+    },
+
+    loadRawFrameAnnotation(
+      workspacePath: string,
+      source: ViewerSource,
+      request: RawFrameRequest,
+    ): Promise<LoadedRawFrameAnnotation> {
+      return invoke("load_raw_frame_annotation", { workspacePath, source, request });
+    },
+
     saveRoiFrameAnnotation(
       workspacePath: string,
       request: RoiFrameRequest,
@@ -166,6 +182,20 @@ export function createTauriDesktopPorts(): TauriDesktopPorts {
     ): Promise<RoiFrameAnnotation> {
       return invoke("save_roi_frame_annotation", {
         workspacePath,
+        request,
+        annotation,
+      });
+    },
+
+    saveRawFrameAnnotation(
+      workspacePath: string,
+      source: ViewerSource,
+      request: RawFrameRequest,
+      annotation: RawFrameAnnotationPayload,
+    ): Promise<RawFrameAnnotation> {
+      return invoke("save_raw_frame_annotation", {
+        workspacePath,
+        source,
         request,
         annotation,
       });

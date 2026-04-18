@@ -6,9 +6,10 @@ use serde::Serialize;
 pub use crate::viewer::domain::{
     AnnotationLabel, AutoExcludeHistogramBin, AutoExcludePreviewCell, AutoExcludePreviewCellScore,
     AutoExcludePreviewRequest, AutoExcludePreviewResponse, ContrastWindow, CropOutputFormat,
-    CropRoiResponse, CropRoiStatus, FrameRequest, LoadedRoiFrameAnnotation, RoiFrameAnnotation,
-    RoiFrameAnnotationPayload, RoiFrameRequest, RoiWorkspaceScan, SaveBboxResponse,
-    SavedAlignState, ViewerSource, WorkspaceScan,
+    CropRoiResponse, CropRoiStatus, FrameRequest, LoadedRawFrameAnnotation,
+    LoadedRoiFrameAnnotation, RawFrameAnnotation, RawFrameAnnotationPayload, RawFrameRequest,
+    RoiFrameAnnotation, RoiFrameAnnotationPayload, RoiFrameRequest, RoiWorkspaceScan,
+    SaveBboxResponse, SavedAlignState, ViewerSource, WorkspaceScan,
 };
 use crate::viewer::image::{self, apply_contrast, auto_contrast, load_frame, RawFrame};
 
@@ -305,12 +306,38 @@ pub fn load_roi_frame_annotation(
     crate::viewer::roi::load_roi_frame_annotation(workspace_path, request)
 }
 
+pub fn load_raw_annotation_source(workspace_path: String) -> Result<Option<ViewerSource>, String> {
+    crate::viewer::raw_annotation::load_raw_annotation_source(workspace_path)
+}
+
+pub fn load_raw_frame_annotation(
+    workspace_path: String,
+    source: ViewerSource,
+    request: RawFrameRequest,
+) -> Result<LoadedRawFrameAnnotation, String> {
+    crate::viewer::raw_annotation::load_raw_frame_annotation(workspace_path, source, request)
+}
+
 pub fn save_roi_frame_annotation(
     workspace_path: String,
     request: RoiFrameRequest,
     annotation: RoiFrameAnnotationPayload,
 ) -> Result<RoiFrameAnnotation, String> {
     crate::viewer::roi::save_roi_frame_annotation(workspace_path, request, annotation)
+}
+
+pub fn save_raw_frame_annotation(
+    workspace_path: String,
+    source: ViewerSource,
+    request: RawFrameRequest,
+    annotation: RawFrameAnnotationPayload,
+) -> Result<RawFrameAnnotation, String> {
+    crate::viewer::raw_annotation::save_raw_frame_annotation(
+        workspace_path,
+        source,
+        request,
+        annotation,
+    )
 }
 
 pub fn save_bbox(
