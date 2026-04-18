@@ -102,7 +102,7 @@ function parseStoredSource(raw: string | null): ViewerSource | null {
     if (
       parsed &&
       typeof parsed === "object" &&
-      (parsed.kind === "tif" || parsed.kind === "nd2" || parsed.kind === "czi") &&
+      (parsed.kind === "tif" || parsed.kind === "jpg" || parsed.kind === "nd2" || parsed.kind === "czi") &&
       typeof parsed.path === "string" &&
       parsed.path
     ) {
@@ -168,7 +168,7 @@ function readStoredExcludedCells(
 
   try {
     let raw = storage.getItem(excludedBboxStorageKey(source));
-    if (!raw && source.kind === "tif") {
+    if (!raw && (source.kind === "tif" || source.kind === "jpg")) {
       raw = storage.getItem(`${EXCLUDED_BBOX_KEY_PREFIX}:${encodeURIComponent(source.path)}`);
     }
     if (!raw) return {};

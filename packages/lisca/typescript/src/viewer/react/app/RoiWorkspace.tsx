@@ -62,6 +62,7 @@ interface RoiWorkspaceProps {
   onModeChange: (mode: ViewerMode) => void;
   onPickWorkspace: () => Promise<void>;
   onOpenTif: () => Promise<void>;
+  onOpenJpg: () => Promise<void>;
   onOpenNd2: () => Promise<void>;
   onOpenCzi: () => Promise<void>;
   onClearSource: () => void;
@@ -247,6 +248,7 @@ export default function RoiWorkspace({
   onModeChange,
   onPickWorkspace,
   onOpenTif,
+  onOpenJpg,
   onOpenNd2,
   onOpenCzi,
   onClearSource,
@@ -532,6 +534,7 @@ export default function RoiWorkspace({
           onModeChange={onModeChange}
           onPickWorkspace={onPickWorkspace}
           onOpenTif={onOpenTif}
+          onOpenJpg={onOpenJpg}
           onOpenNd2={onOpenNd2}
           onOpenCzi={onOpenCzi}
           onClearSource={onClearSource}

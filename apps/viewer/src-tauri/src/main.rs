@@ -75,6 +75,13 @@ fn pick_tif() -> Option<String> {
 }
 
 #[command]
+fn pick_jpg() -> Option<String> {
+    FileDialog::new()
+        .pick_folder()
+        .map(|path| path.to_string_lossy().to_string())
+}
+
+#[command]
 fn pick_nd2() -> Option<String> {
     FileDialog::new()
         .add_filter("ND2", &["nd2"])
@@ -263,6 +270,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             pick_workspace,
             pick_tif,
+            pick_jpg,
             pick_nd2,
             pick_czi,
             roi_pos_exists,

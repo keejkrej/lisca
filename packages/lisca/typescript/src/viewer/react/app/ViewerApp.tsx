@@ -48,6 +48,12 @@ export default function ViewerApp({
     if (selected) setSource({ kind: "tif", path: selected });
   };
 
+  const handlePickJpg = async () => {
+    if (!workspacePath) return;
+    const selected = await hostPort.pickJpgDirectory();
+    if (selected) setSource({ kind: "jpg", path: selected });
+  };
+
   const handlePickNd2 = async () => {
     if (!workspacePath) return;
     const selected = await hostPort.pickNd2File();
@@ -71,6 +77,7 @@ export default function ViewerApp({
         onModeChange={setMode}
         onPickWorkspace={handlePickWorkspace}
         onOpenTif={handlePickTif}
+        onOpenJpg={handlePickJpg}
         onOpenNd2={handlePickNd2}
         onOpenCzi={handlePickCzi}
         onCheckRoiExists={hostPort.roiPosExists}
@@ -86,6 +93,7 @@ export default function ViewerApp({
         onModeChange={setMode}
         onPickWorkspace={handlePickWorkspace}
         onOpenTif={handlePickTif}
+        onOpenJpg={handlePickJpg}
         onOpenNd2={handlePickNd2}
         onOpenCzi={handlePickCzi}
         onClearSource={() => setSource(null)}

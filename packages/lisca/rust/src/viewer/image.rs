@@ -4,13 +4,15 @@ use std::io::BufReader;
 use std::path::{Path, PathBuf};
 
 use czi_rs::CziFile;
+use image::{DynamicImage, ImageReader};
 use nd2_rs::Nd2File;
 use tiff::decoder::{Decoder, DecodingResult};
 use walkdir::WalkDir;
 
 use crate::viewer::domain::{
-    dimension_size, dimension_values, parse_pos_dir_name, parse_tiff_name, validate_request_index,
-    ContrastWindow, FrameRequest, ParsedTiffName, ViewerSource, WorkspaceScan,
+    dimension_size, dimension_values, parse_pos_dir_name, parse_source_image_name,
+    validate_request_index, ContrastWindow, FrameRequest, ParsedSourceChannel,
+    ParsedSourceImageName, ViewerSource, WorkspaceScan,
 };
 
 const SAMPLE_SIZE: usize = 2048;
@@ -166,7 +168,42 @@ fn metadata_from_sizes(
     })
 }
 
-pub fn collect_tiffs(folder: &Path) -> Vec<(PathBuf, ParsedTiffName)> {
+fn infer_position_hint(path: &Path) -> Option<u32> {
+    path.ancestors().find_map(|ancestor| {
+        ancestor
+            .file_name()
+            .and_then(|value| value.to_str())
+            .and_then(parse_pos_dir_name)
+    })
+}
+
+pub(crate) fn build_channel_mapping<'a>(
+    channels: impl IntoIterator<Item = &'a ParsedSourceChannel>,
+) -> HashMap<ParsedSourceChannel, u32> {
+    let unique = channels.into_iter().cloned().collect::<BTreeSet<_>>();
+    if unique
+        .iter()
+        .all(|channel| matches!(channel, ParsedSourceChannel::Numeric(_)))
+    {
+        return unique
+            .into_iter()
+            .filter_map(|channel| match channel {
+                ParsedSourceChannel::Numeric(value) => {
+                    Some((ParsedSourceChannel::Numeric(value), value))
+                }
+                ParsedSourceChannel::Named(_) => None,
+            })
+            .collect();
+    }
+
+    unique
+        .into_iter()
+        .enumerate()
+        .map(|(index, channel)| (channel, index as u32))
+        .collect()
+}
+
+pub fn collect_tiffs(folder: &Path) -> Vec<(PathBuf, ParsedSourceImageName)> {
     WalkDir::new(folder)
         .max_depth(6)
         .into_iter()
@@ -174,7 +211,7 @@ pub fn collect_tiffs(folder: &Path) -> Vec<(PathBuf, ParsedTiffName)> {
         .filter(|entry| entry.file_type().is_file())
         .filter_map(|entry| {
             let file_name = entry.path().file_name()?.to_str()?;
-            let parsed = parse_tiff_name(file_name)?;
+            let parsed = parse_source_image_name(file_name, infer_position_hint(entry.path()))?;
             Some((entry.into_path(), parsed))
         })
         .collect()
@@ -232,7 +269,19 @@ fn to_u16_buffer(width: u32, height: u32, data: DecodingResult) -> Result<Vec<u1
 }
 
 pub fn load_tiff_frame(path: &Path) -> Result<RawFrame, String> {
-    load_tiff_frame_page(path, 0)
+    match path
+        .extension()
+        .and_then(|value| value.to_str())
+        .map(|value| value.to_ascii_lowercase())
+        .as_deref()
+    {
+        Some("tif" | "tiff") => load_tiff_frame_page(path, 0),
+        Some("png" | "jpg" | "jpeg") => load_raster_frame(path),
+        _ => Err(format!(
+            "Unsupported source image extension for {}",
+            path.display()
+        )),
+    }
 }
 
 pub fn load_tiff_frames(path: &Path) -> Result<Vec<RawFrame>, String> {
@@ -320,14 +369,20 @@ pub fn scan_tif(root: &Path) -> Result<WorkspaceScan, String> {
     let mut channels = BTreeSet::new();
     let mut times = BTreeSet::new();
     let mut z_slices = BTreeSet::new();
+    let mut parsed_images = Vec::<ParsedSourceImageName>::new();
 
     for (position, folder) in position_dirs {
         positions.push(position);
-        for (_, parsed) in collect_tiffs(&folder) {
-            channels.insert(parsed.channel);
-            times.insert(parsed.time);
-            z_slices.insert(parsed.z);
+        parsed_images.extend(collect_tiffs(&folder).into_iter().map(|(_, parsed)| parsed));
+    }
+
+    let channel_mapping = build_channel_mapping(parsed_images.iter().map(|parsed| &parsed.channel));
+    for parsed in parsed_images {
+        if let Some(channel) = channel_mapping.get(&parsed.channel) {
+            channels.insert(*channel);
         }
+        times.insert(parsed.time);
+        z_slices.insert(parsed.z);
     }
 
     Ok(WorkspaceScan {
@@ -340,11 +395,14 @@ pub fn scan_tif(root: &Path) -> Result<WorkspaceScan, String> {
 
 pub fn load_tif_frame(root: &Path, request: FrameRequest) -> Result<RawFrame, String> {
     let pos_dir = find_position_dir(root, request.pos)?;
-    let matching = collect_tiffs(&pos_dir)
+    let source_images = collect_tiffs(&pos_dir);
+    let channel_mapping =
+        build_channel_mapping(source_images.iter().map(|(_, parsed)| &parsed.channel));
+    let matching = source_images
         .into_iter()
         .find(|(_, parsed)| {
             parsed.position == request.pos
-                && parsed.channel == request.channel
+                && channel_mapping.get(&parsed.channel).copied() == Some(request.channel)
                 && parsed.time == request.time
                 && parsed.z == request.z
         })
@@ -370,7 +428,7 @@ pub fn load_czi_frame(path: &Path, request: FrameRequest) -> Result<RawFrame, St
 
 pub fn scan_source(source: ViewerSource) -> Result<WorkspaceScan, String> {
     match source {
-        ViewerSource::Tif { path } => scan_tif(Path::new(&path)),
+        ViewerSource::Tif { path } | ViewerSource::Jpg { path } => scan_tif(Path::new(&path)),
         ViewerSource::Nd2 { path } => scan_nd2(Path::new(&path)),
         ViewerSource::Czi { path } => scan_czi(Path::new(&path)),
     }
@@ -378,7 +436,9 @@ pub fn scan_source(source: ViewerSource) -> Result<WorkspaceScan, String> {
 
 pub fn load_frame(source: ViewerSource, request: FrameRequest) -> Result<RawFrame, String> {
     match source {
-        ViewerSource::Tif { path } => load_tif_frame(Path::new(&path), request),
+        ViewerSource::Tif { path } | ViewerSource::Jpg { path } => {
+            load_tif_frame(Path::new(&path), request)
+        }
         ViewerSource::Nd2 { path } => load_nd2_frame(Path::new(&path), request),
         ViewerSource::Czi { path } => load_czi_frame(Path::new(&path), request),
     }
@@ -455,4 +515,116 @@ pub fn apply_contrast(values: &[u16], contrast: &ContrastWindow) -> Vec<u8> {
             (normalized * 255.0).round() as u8
         })
         .collect()
+}
+
+fn load_raster_frame(path: &Path) -> Result<RawFrame, String> {
+    let image = ImageReader::open(path)
+        .map_err(|err| err.to_string())?
+        .decode()
+        .map_err(|err| err.to_string())?;
+    Ok(raw_frame_from_dynamic_image(image))
+}
+
+fn raw_frame_from_dynamic_image(image: DynamicImage) -> RawFrame {
+    match image {
+        DynamicImage::ImageLuma8(buffer) => RawFrame {
+            width: buffer.width(),
+            height: buffer.height(),
+            data: buffer.into_raw().into_iter().map(u16::from).collect(),
+        },
+        DynamicImage::ImageLuma16(buffer) => RawFrame {
+            width: buffer.width(),
+            height: buffer.height(),
+            data: buffer.into_raw(),
+        },
+        other => {
+            let buffer = other.into_luma8();
+            RawFrame {
+                width: buffer.width(),
+                height: buffer.height(),
+                data: buffer.into_raw().into_iter().map(u16::from).collect(),
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    use image::{ImageBuffer, ImageFormat, Luma};
+
+    use super::*;
+
+    fn unique_test_dir(name: &str) -> PathBuf {
+        let suffix = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system time before epoch")
+            .as_nanos();
+        let path = std::env::temp_dir().join(format!("lisca-image-{name}-{suffix}"));
+        fs::create_dir_all(&path).expect("create test directory");
+        path
+    }
+
+    #[test]
+    fn scan_tif_supports_named_jpg_sources() {
+        let root = unique_test_dir("scan-jpg");
+        let pos_dir = root.join("Pos18");
+        fs::create_dir_all(&pos_dir).expect("create pos dir");
+        ImageBuffer::<Luma<u8>, Vec<u8>>::from_vec(2, 2, vec![0, 32, 64, 255])
+            .expect("jpg buffer")
+            .save_with_format(
+                pos_dir.join("img_000000000_Durchlicht_000.jpg"),
+                ImageFormat::Jpeg,
+            )
+            .expect("write durchlicht jpg");
+        ImageBuffer::<Luma<u8>, Vec<u8>>::from_vec(2, 2, vec![8, 16, 24, 32])
+            .expect("jpg buffer")
+            .save_with_format(
+                pos_dir.join("img_000000000_TexRed_000.jpg"),
+                ImageFormat::Jpeg,
+            )
+            .expect("write texred jpg");
+
+        let scan = scan_tif(&root).expect("scan source");
+
+        assert_eq!(scan.positions, vec![18]);
+        assert_eq!(scan.channels, vec![0, 1]);
+        assert_eq!(scan.times, vec![0]);
+        assert_eq!(scan.z_slices, vec![0]);
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn load_tif_frame_reads_named_jpg_sources() {
+        let root = unique_test_dir("load-jpg");
+        let pos_dir = root.join("Pos18");
+        fs::create_dir_all(&pos_dir).expect("create pos dir");
+        ImageBuffer::<Luma<u8>, Vec<u8>>::from_vec(2, 2, vec![0, 48, 96, 255])
+            .expect("jpg buffer")
+            .save_with_format(
+                pos_dir.join("img_000000000_Durchlicht_000.jpg"),
+                ImageFormat::Jpeg,
+            )
+            .expect("write jpg");
+
+        let frame = load_tif_frame(
+            &root,
+            FrameRequest {
+                pos: 18,
+                channel: 0,
+                time: 0,
+                z: 0,
+            },
+        )
+        .expect("load jpg frame");
+
+        assert_eq!(frame.width, 2);
+        assert_eq!(frame.height, 2);
+        assert_eq!(frame.data.len(), 4);
+        assert!(frame.data[0] < frame.data[3]);
+
+        let _ = fs::remove_dir_all(root);
+    }
 }

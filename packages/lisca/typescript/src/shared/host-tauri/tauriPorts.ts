@@ -230,6 +230,10 @@ export function createTauriDesktopPorts(): TauriDesktopPorts {
       return invoke("pick_tif");
     },
 
+    pickJpgDirectory() {
+      return invoke("pick_jpg");
+    },
+
     pickNd2File() {
       return invoke("pick_nd2");
     },

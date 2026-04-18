@@ -20,7 +20,8 @@ use crate::viewer::domain::{
     SaveBboxResponse, SavedAlignState, ViewerSource,
 };
 use crate::viewer::image::{
-    collect_tiffs, find_position_dir, load_tiff_frame, load_tiff_frame_page, RawFrame, SourceReader,
+    build_channel_mapping, collect_tiffs, find_position_dir, load_tiff_frame, load_tiff_frame_page,
+    RawFrame, SourceReader,
 };
 
 #[derive(Deserialize, Serialize)]
@@ -601,6 +602,7 @@ fn ensure_crop_not_cancelled(is_cancelled: &dyn Fn() -> bool) -> Result<(), Crop
 
 fn crop_tif_source<F>(
     workspace_path: &str,
+    source: ViewerSource,
     root: &Path,
     pos: u32,
     bboxes: &[RoiBbox],
@@ -613,18 +615,28 @@ where
     ensure_crop_not_cancelled(is_cancelled)?;
     let pos_dir = find_position_dir(root, pos)?;
     let mut index = HashMap::<(u32, u32, u32), PathBuf>::new();
-    let mut channels = BTreeSet::new();
     let mut times = BTreeSet::new();
     let mut z_slices = BTreeSet::new();
+    let mut source_images = Vec::new();
 
     for (path, parsed) in collect_tiffs(&pos_dir) {
         if parsed.position != pos {
             continue;
         }
-        channels.insert(parsed.channel);
         times.insert(parsed.time);
         z_slices.insert(parsed.z);
-        index.insert((parsed.channel, parsed.time, parsed.z), path);
+        source_images.push((path, parsed));
+    }
+
+    let channel_mapping =
+        build_channel_mapping(source_images.iter().map(|(_, parsed)| &parsed.channel));
+    let mut channels = BTreeSet::new();
+    for (path, parsed) in source_images {
+        let Some(channel) = channel_mapping.get(&parsed.channel).copied() else {
+            continue;
+        };
+        channels.insert(channel);
+        index.insert((channel, parsed.time, parsed.z), path);
     }
 
     let channels = channels.into_iter().collect::<Vec<_>>();
@@ -697,9 +709,7 @@ where
     write_roi_index(
         workspace_path,
         pos,
-        ViewerSource::Tif {
-            path: root.to_string_lossy().to_string(),
-        },
+        source,
         &times,
         &channels,
         &z_slices,
@@ -1205,11 +1215,12 @@ where
     let result = parse_bbox_csv(&bbox_path)
         .map_err(CropFailure::from)
         .and_then(|bboxes| match &source {
-            ViewerSource::Tif { path } => {
+            ViewerSource::Tif { path } | ViewerSource::Jpg { path } => {
                 progress(0.01, &format!("Scanning TIFF stack for Pos{pos}"))
                     .map_err(CropFailure::from)?;
                 crop_tif_source(
                     &workspace_path,
+                    source.clone(),
                     Path::new(path),
                     pos,
                     &bboxes,

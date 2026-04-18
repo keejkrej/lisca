@@ -13,7 +13,9 @@ use crate::viewer::domain::{
     workspace_bbox_csv_path, workspace_roi_pos_dir_path, workspace_roi_tiff_path, RoiBbox,
     ViewerSource,
 };
-use crate::viewer::image::{collect_tiffs, find_position_dir, load_tiff_frame, SourceReader};
+use crate::viewer::image::{
+    build_channel_mapping, collect_tiffs, find_position_dir, load_tiff_frame, SourceReader,
+};
 use crate::viewer::roi::{crop_u16_frame, parse_bbox_csv, prepare_roi_output_dir, validate_bboxes};
 
 #[derive(Clone, Debug)]
@@ -265,7 +267,7 @@ pub fn profile_crop(options: CropProfileOptions) -> Result<CropProfileReport, St
         ViewerSource::Nd2 { path } => {
             profile_nd2_source(Path::new(path), &output_root, &options, &bboxes, &mut stats)
         }
-        ViewerSource::Tif { path } => {
+        ViewerSource::Tif { path } | ViewerSource::Jpg { path } => {
             profile_tif_source(Path::new(path), &output_root, &options, &bboxes, &mut stats)
         }
         ViewerSource::Czi { path } => {
@@ -431,18 +433,28 @@ fn profile_tif_source(
     let mut channels = Vec::<u32>::new();
     let mut times = Vec::<u32>::new();
     let mut z_slices = Vec::<u32>::new();
-    let mut channel_set = std::collections::BTreeSet::new();
     let mut time_set = std::collections::BTreeSet::new();
     let mut z_set = std::collections::BTreeSet::new();
+    let mut source_images = Vec::new();
 
     for (path, parsed) in collect_tiffs(&pos_dir) {
         if parsed.position != options.pos {
             continue;
         }
-        channel_set.insert(parsed.channel);
         time_set.insert(parsed.time);
         z_set.insert(parsed.z);
-        index.insert((parsed.channel, parsed.time, parsed.z), path);
+        source_images.push((path, parsed));
+    }
+
+    let channel_mapping =
+        build_channel_mapping(source_images.iter().map(|(_, parsed)| &parsed.channel));
+    let mut channel_set = std::collections::BTreeSet::new();
+    for (path, parsed) in source_images {
+        let Some(channel) = channel_mapping.get(&parsed.channel).copied() else {
+            continue;
+        };
+        channel_set.insert(channel);
+        index.insert((channel, parsed.time, parsed.z), path);
     }
 
     channels.extend(channel_set);
@@ -776,6 +788,7 @@ fn lookup_step(steps: &[CropProfileStepSummary], step: &str) -> f64 {
 fn source_label(source: &ViewerSource) -> &str {
     match source {
         ViewerSource::Tif { .. } => "tif",
+        ViewerSource::Jpg { .. } => "jpg",
         ViewerSource::Nd2 { .. } => "nd2",
         ViewerSource::Czi { .. } => "czi",
     }

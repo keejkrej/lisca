@@ -4,9 +4,15 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
+#[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum ParsedSourceChannel {
+    Numeric(u32),
+    Named(String),
+}
+
 #[derive(Clone, Debug)]
-pub struct ParsedTiffName {
-    pub channel: u32,
+pub struct ParsedSourceImageName {
+    pub channel: ParsedSourceChannel,
     pub position: u32,
     pub time: u32,
     pub z: u32,
@@ -25,6 +31,7 @@ pub struct WorkspaceScan {
 #[serde(tag = "kind", rename_all = "lowercase")]
 pub enum ViewerSource {
     Tif { path: String },
+    Jpg { path: String },
     Nd2 { path: String },
     Czi { path: String },
 }
@@ -281,24 +288,55 @@ pub fn parse_bbox_csv_name(name: &str) -> Option<u32> {
     parse_pos_dir_name(stem)
 }
 
-pub fn parse_tiff_name(name: &str) -> Option<ParsedTiffName> {
-    let lower = name.to_ascii_lowercase();
-    let stem = lower
-        .strip_suffix(".tif")
-        .or_else(|| lower.strip_suffix(".tiff"))?;
-    let rest = stem.strip_prefix("img_channel")?;
-    let parts: Vec<&str> = rest.split('_').collect();
-    if parts.len() != 4 {
+pub fn parse_source_image_name(
+    name: &str,
+    position_hint: Option<u32>,
+) -> Option<ParsedSourceImageName> {
+    let extension = Path::new(name)
+        .extension()
+        .and_then(|value| value.to_str())?
+        .to_ascii_lowercase();
+    if !matches!(extension.as_str(), "tif" | "tiff" | "png" | "jpg" | "jpeg") {
         return None;
     }
 
-    let channel = parts[0].parse().ok()?;
-    let position = parts[1].strip_prefix("position")?.parse().ok()?;
-    let time = parts[2].strip_prefix("time")?.parse().ok()?;
-    let z = parts[3].strip_prefix("z")?.parse().ok()?;
+    let stem = Path::new(name).file_stem()?.to_str()?;
+    let lower = stem.to_ascii_lowercase();
 
-    Some(ParsedTiffName {
-        channel,
+    if let Some(rest) = lower.strip_prefix("img_channel") {
+        let parts: Vec<&str> = rest.split('_').collect();
+        if parts.len() == 4 {
+            let channel = parts[0].parse().ok()?;
+            let position = parts[1].strip_prefix("position")?.parse().ok()?;
+            let time = parts[2].strip_prefix("time")?.parse().ok()?;
+            let z = parts[3].strip_prefix("z")?.parse().ok()?;
+
+            return Some(ParsedSourceImageName {
+                channel: ParsedSourceChannel::Numeric(channel),
+                position,
+                time,
+                z,
+            });
+        }
+    }
+
+    let position = position_hint?;
+    let rest = stem.strip_prefix("img_")?;
+    let first_sep = rest.find('_')?;
+    let last_sep = rest.rfind('_')?;
+    if first_sep == last_sep {
+        return None;
+    }
+
+    let time = rest[..first_sep].parse().ok()?;
+    let channel = &rest[first_sep + 1..last_sep];
+    if channel.is_empty() {
+        return None;
+    }
+    let z = rest[last_sep + 1..].parse().ok()?;
+
+    Some(ParsedSourceImageName {
+        channel: ParsedSourceChannel::Named(channel.to_string()),
         position,
         time,
         z,
@@ -391,4 +429,48 @@ pub fn validate_request_index(label: &str, index: u32, size: usize) -> Result<us
         return Err(format!("{label} index {index} is out of range"));
     }
     Ok(index)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_source_image_name_supports_legacy_tiff_pattern() {
+        let parsed = parse_source_image_name("img_channel1_position18_time7_z2.tif", None)
+            .expect("legacy source image name");
+
+        assert!(matches!(parsed.channel, ParsedSourceChannel::Numeric(1)));
+        assert_eq!(parsed.position, 18);
+        assert_eq!(parsed.time, 7);
+        assert_eq!(parsed.z, 2);
+    }
+
+    #[test]
+    fn parse_source_image_name_supports_named_jpg_pattern() {
+        let parsed = parse_source_image_name("img_000000123_Durchlicht_007.jpg", Some(18))
+            .expect("named jpg source image");
+
+        assert!(matches!(
+            parsed.channel,
+            ParsedSourceChannel::Named(ref name) if name == "Durchlicht"
+        ));
+        assert_eq!(parsed.position, 18);
+        assert_eq!(parsed.time, 123);
+        assert_eq!(parsed.z, 7);
+    }
+
+    #[test]
+    fn parse_source_image_name_supports_channel_names_with_underscores() {
+        let parsed =
+            parse_source_image_name("img_000000123_Tex_Red_007.png", Some(4)).expect("png source");
+
+        assert!(matches!(
+            parsed.channel,
+            ParsedSourceChannel::Named(ref name) if name == "Tex_Red"
+        ));
+        assert_eq!(parsed.position, 4);
+        assert_eq!(parsed.time, 123);
+        assert_eq!(parsed.z, 7);
+    }
 }

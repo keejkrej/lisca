@@ -20,6 +20,7 @@ interface ViewerNavbarProps {
   modeChangeDisabled?: boolean;
   onPickWorkspace: () => Promise<void>;
   onOpenTif: () => Promise<void>;
+  onOpenJpg: () => Promise<void>;
   onOpenNd2: () => Promise<void>;
   onOpenCzi: () => Promise<void>;
   onClearSource: () => void;
@@ -37,6 +38,7 @@ export default function ViewerNavbar({
   modeChangeDisabled = false,
   onPickWorkspace,
   onOpenTif,
+  onOpenJpg,
   onOpenNd2,
   onOpenCzi,
   onClearSource,
@@ -95,6 +97,11 @@ export default function ViewerNavbar({
     await onOpenNd2();
   };
 
+  const handleOpenJpg = async () => {
+    setOpenDataModalOpen(false);
+    await onOpenJpg();
+  };
+
   const handleOpenCzi = async () => {
     setOpenDataModalOpen(false);
     await onOpenCzi();
@@ -107,6 +114,8 @@ export default function ViewerNavbar({
 
   const sourceBadge = source?.kind === "nd2"
     ? "ND2"
+    : source?.kind === "jpg"
+      ? "JPG"
     : source?.kind === "tif"
       ? "TIFF"
       : source?.kind === "czi"
@@ -303,7 +312,7 @@ export default function ViewerNavbar({
             </div>
 
             <div className="px-5 pb-5">
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-4 gap-3">
                 <button
                   type="button"
                   className="group flex min-h-36 w-full flex-col items-start justify-center rounded-2xl border border-border/70 bg-muted/[0.12] px-5 py-5 text-left transition-colors hover:border-primary/35 hover:bg-primary/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -314,6 +323,19 @@ export default function ViewerNavbar({
                   </p>
                   <p className="mt-1 text-sm leading-6 text-muted-foreground">
                     Folder with Pos{"{n}"} stacks
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  className="group flex min-h-36 w-full flex-col items-start justify-center rounded-2xl border border-border/70 bg-muted/[0.12] px-5 py-5 text-left transition-colors hover:border-primary/35 hover:bg-primary/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  onClick={() => void handleOpenJpg()}
+                >
+                  <p className="text-[1.1rem] font-medium tracking-[0.02em] text-foreground transition-colors group-hover:text-primary">
+                    JPG
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                    Folder with Pos{"{n}"} image frames
                   </p>
                 </button>
 

@@ -75,6 +75,11 @@ export interface TifSource {
   path: string;
 }
 
+export interface JpgSource {
+  kind: "jpg";
+  path: string;
+}
+
 export interface Nd2Source {
   kind: "nd2";
   path: string;
@@ -85,7 +90,7 @@ export interface CziSource {
   path: string;
 }
 
-export type ViewerSource = TifSource | Nd2Source | CziSource;
+export type ViewerSource = TifSource | JpgSource | Nd2Source | CziSource;
 
 export type PixelType =
   | "uint8"
@@ -203,6 +208,7 @@ export interface ViewerDataPort extends ViewerDataSource {
 export interface ViewerHostPort {
   pickWorkspace(): Promise<string | null>;
   pickTifDirectory(): Promise<string | null>;
+  pickJpgDirectory(): Promise<string | null>;
   pickNd2File(): Promise<string | null>;
   pickCziFile(): Promise<string | null>;
   roiPosExists(workspacePath: string, pos: number): Promise<boolean>;
