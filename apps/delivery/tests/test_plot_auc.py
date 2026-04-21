@@ -65,7 +65,7 @@ def test_write_auc_boxplot_shows_counts_under_x_labels(tmp_path: Path) -> None:
     assert [tick.get_text() for tick in ax.get_xticklabels()] == ["0\n(n=2)", "1\n(n=1)"]
 
 
-def test_write_auc_boxplot_uses_max_q3_times_125_for_ymax(tmp_path: Path) -> None:
+def test_write_auc_boxplot_uses_log_y_scale(tmp_path: Path) -> None:
     df = pd.DataFrame(
         [
             {"slide_channel": 0, "auc": 10.0},
@@ -95,10 +95,6 @@ def test_write_auc_boxplot_uses_max_q3_times_125_for_ymax(tmp_path: Path) -> Non
         plt.subplots = original_subplots
 
     ax = captured["ax"]
-    expected_upper = max(
-        pd.Series([10.0, 12.0, 20.0, 100.0]).quantile(0.75),
-        pd.Series([8.0, 9.0, 10.0, 11.0]).quantile(0.75),
-    ) * 1.25
-    assert ax.get_yscale() == "linear"
-    assert ax.get_ylim()[0] == 0.0
-    assert ax.get_ylim()[1] == pytest.approx(expected_upper)
+    assert ax.get_yscale() == "log"
+    assert ax.get_ylim()[0] > 0
+    assert ax.get_ylim()[1] > ax.get_ylim()[0]

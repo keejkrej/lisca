@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 
 use clap::Args;
 
-use crate::expression::{auc, fit, plot_auc, plot_timeseries, timeseries};
+use crate::expression::{auc, fit, plot_auc, plot_fit, plot_timeseries, timeseries};
 
 pub const HELP: &str = "Run the full delivery analysis workflow for a slide-mapped ROI workspace and write timeseries CSVs, AUC summary, exponential fit summary, and plots.";
 
@@ -17,6 +17,7 @@ pub struct AnalyzeRunResult {
     pub fit_csv: PathBuf,
     pub timeseries_plot: PathBuf,
     pub auc_plot: PathBuf,
+    pub fit_plots: Vec<PathBuf>,
     pub skipped_positions: BTreeMap<u32, Vec<u32>>,
 }
 
@@ -77,12 +78,13 @@ where
         |auc_csv, output_plot, color, title| {
             plot_auc::run_plot_auc(auc_csv, output_plot, color, title)
         },
+        |fit_csv, output_dir, color, _interval| plot_fit::run_plot_fit(fit_csv, output_dir, color),
         on_stage,
         on_output,
     )
 }
 
-fn run_analysis_with<RT, RA, RF, RPT, RPA, FS, FO>(
+fn run_analysis_with<RT, RA, RF, RPT, RPA, RPF, FS, FO>(
     workspace: &Path,
     slide: &Path,
     interval: f64,
@@ -91,6 +93,7 @@ fn run_analysis_with<RT, RA, RF, RPT, RPA, FS, FO>(
     mut run_fit: RF,
     mut run_plot_timeseries: RPT,
     mut run_plot_auc: RPA,
+    mut run_plot_fit: RPF,
     mut on_stage: Option<FS>,
     mut on_output: Option<FO>,
 ) -> Result<AnalyzeRunResult, String>
@@ -100,10 +103,11 @@ where
     RF: FnMut(&[PathBuf], f64, Option<&Path>) -> Result<PathBuf, String>,
     RPT: FnMut(&[PathBuf], Option<&Path>, usize, f64, f64, &str, Option<&str>) -> Result<PathBuf, String>,
     RPA: FnMut(&Path, Option<&Path>, &str, Option<&str>) -> Result<PathBuf, String>,
+    RPF: FnMut(&Path, Option<&Path>, &str, f64) -> Result<Vec<PathBuf>, String>,
     FS: FnMut(usize, usize, &str),
     FO: FnMut(&str),
 {
-    let total_steps = 5;
+    let total_steps = 6;
     if let Some(ref mut callback) = on_stage {
         callback(0, total_steps, "Computing timeseries CSVs");
     }
@@ -171,6 +175,15 @@ where
     if let Some(ref mut callback) = on_output {
         callback(&plot_auc::format_written_auc_plot_message(&auc_plot));
     }
+    if let Some(ref mut callback) = on_stage {
+        callback(5, total_steps, "Rendering fit plots");
+    }
+    let fit_plots = run_plot_fit(&fit_csv, None, "#c03a2b", interval)?;
+    if let Some(ref mut callback) = on_output {
+        for message in plot_fit::format_written_fit_plot_messages(&fit_plots) {
+            callback(&message);
+        }
+    }
 
     let result = AnalyzeRunResult {
         workspace: workspace.to_path_buf(),
@@ -181,6 +194,7 @@ where
         fit_csv,
         timeseries_plot,
         auc_plot,
+        fit_plots,
         skipped_positions: timeseries_result.skipped_positions,
     };
     if let Some(ref mut callback) = on_stage {
@@ -191,8 +205,9 @@ where
 
 pub fn format_completed_analysis_message(result: &AnalyzeRunResult) -> String {
     format!(
-        "Completed analysis: {} timeseries CSVs, 1 AUC CSV, 1 fit CSV, and 2 plots.",
-        result.timeseries_csvs.len()
+        "Completed analysis: {} timeseries CSVs, 1 AUC CSV, 1 fit CSV, and {} plots.",
+        result.timeseries_csvs.len(),
+        2 + result.fit_plots.len()
     )
 }
 
@@ -226,6 +241,13 @@ mod tests {
         let fit_csv = PathBuf::from("/tmp/slide_timeseries_fit.csv");
         let timeseries_plot = PathBuf::from("/tmp/slide_timeseries_combined.png");
         let auc_plot = PathBuf::from("/tmp/slide_timeseries_auc.png");
+        let fit_plots = vec![
+            PathBuf::from("/tmp/slide_timeseries_intensity_offset.png"),
+            PathBuf::from("/tmp/slide_timeseries_protein_decay_rate.png"),
+            PathBuf::from("/tmp/slide_timeseries_mrna_decay_rate.png"),
+            PathBuf::from("/tmp/slide_timeseries_expression_onset.png"),
+            PathBuf::from("/tmp/slide_timeseries_expression_amplitude.png"),
+        ];
         let calls = RefCell::new(Vec::<String>::new());
         let output_messages = RefCell::new(Vec::<String>::new());
 
@@ -289,6 +311,16 @@ mod tests {
                 ));
                 Ok(auc_plot.clone())
             },
+            |fit_csv_arg, output_dir, color, interval| {
+                calls.borrow_mut().push(format!(
+                    "plot_fit:{}:{}:{}:{}",
+                    fit_csv_arg == fit_csv.as_path(),
+                    output_dir.is_none(),
+                    color,
+                    interval
+                ));
+                Ok(fit_plots.clone())
+            },
             None::<fn(usize, usize, &str)>,
             Some(|message: &str| output_messages.borrow_mut().push(message.to_string())),
         )
@@ -299,6 +331,7 @@ mod tests {
         assert_eq!(result.fit_csv, fit_csv);
         assert_eq!(result.timeseries_plot, timeseries_plot);
         assert_eq!(result.auc_plot, auc_plot);
+        assert_eq!(result.fit_plots, fit_plots);
         assert_eq!(result.skipped_positions, BTreeMap::from([(2, vec![26])]));
         assert_eq!(
             calls.into_inner(),
@@ -308,6 +341,7 @@ mod tests {
                 "fit:2:10:true",
                 "plot_timeseries:2:true:3:0.12:1:#c03a2b:",
                 "plot_auc:true:true:#c03a2b:AUC by slide channel",
+                "plot_fit:true:true:#c03a2b:10",
             ]
         );
         assert_eq!(
@@ -320,6 +354,11 @@ mod tests {
                 fit::format_written_fit_csv_message(&result.fit_csv),
                 plot_timeseries::format_written_timeseries_plot_message(&result.timeseries_plot),
                 plot_auc::format_written_auc_plot_message(&result.auc_plot),
+                plot_fit::format_written_fit_plot_messages(&result.fit_plots)[0].clone(),
+                plot_fit::format_written_fit_plot_messages(&result.fit_plots)[1].clone(),
+                plot_fit::format_written_fit_plot_messages(&result.fit_plots)[2].clone(),
+                plot_fit::format_written_fit_plot_messages(&result.fit_plots)[3].clone(),
+                plot_fit::format_written_fit_plot_messages(&result.fit_plots)[4].clone(),
             ]
         );
     }
@@ -344,6 +383,7 @@ mod tests {
                 Ok(PathBuf::from("/tmp/timeseries.png"))
             },
             |_auc_csv, _output_plot, _color, _title| Ok(PathBuf::from("/tmp/auc.png")),
+            |_fit_csv, _output_dir, _color, _interval| Ok(vec![PathBuf::from("/tmp/fit-plot.png")]),
             Some(|completed, total, description: &str| {
                 stage_updates.push((completed, total, description.to_string()))
             }),
@@ -354,12 +394,13 @@ mod tests {
         assert_eq!(
             stage_updates,
             vec![
-                (0, 5, "Computing timeseries CSVs".to_string()),
-                (1, 5, "Computing AUC summary".to_string()),
-                (2, 5, "Computing exponential fit summary".to_string()),
-                (3, 5, "Rendering timeseries plot".to_string()),
-                (4, 5, "Rendering AUC plot".to_string()),
-                (5, 5, "Analysis complete".to_string()),
+                (0, 6, "Computing timeseries CSVs".to_string()),
+                (1, 6, "Computing AUC summary".to_string()),
+                (2, 6, "Computing exponential fit summary".to_string()),
+                (3, 6, "Rendering timeseries plot".to_string()),
+                (4, 6, "Rendering AUC plot".to_string()),
+                (5, 6, "Rendering fit plots".to_string()),
+                (6, 6, "Analysis complete".to_string()),
             ]
         );
     }
@@ -375,12 +416,19 @@ mod tests {
             fit_csv: PathBuf::from("/tmp/fit.csv"),
             timeseries_plot: PathBuf::from("/tmp/timeseries.png"),
             auc_plot: PathBuf::from("/tmp/auc.png"),
+            fit_plots: vec![
+                PathBuf::from("/tmp/intensity_offset.png"),
+                PathBuf::from("/tmp/protein_decay_rate.png"),
+                PathBuf::from("/tmp/mrna_decay_rate.png"),
+                PathBuf::from("/tmp/expression_onset.png"),
+                PathBuf::from("/tmp/expression_amplitude.png"),
+            ],
             skipped_positions: BTreeMap::new(),
         };
 
         assert_eq!(
             format_completed_analysis_message(&result),
-            "Completed analysis: 2 timeseries CSVs, 1 AUC CSV, 1 fit CSV, and 2 plots."
+            "Completed analysis: 2 timeseries CSVs, 1 AUC CSV, 1 fit CSV, and 7 plots."
         );
     }
 }

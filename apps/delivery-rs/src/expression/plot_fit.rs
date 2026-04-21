@@ -175,103 +175,181 @@ pub fn write_fit_boxplot(
     let mut grouped = BTreeMap::<u32, Vec<f64>>::new();
     for row in rows {
         if let Some(value) = row.values.get(parameter) {
-            grouped.entry(row.slide_channel).or_default().push(*value);
+            if parameter != "expression_amplitude" || *value > 0.0 {
+                grouped.entry(row.slide_channel).or_default().push(*value);
+            }
         }
     }
     if grouped.is_empty() {
         return Err(format!("No finite rows available to plot parameter {parameter:?}"));
     }
 
-    let values = grouped.values().flatten().copied().collect::<Vec<_>>();
-    let y_min = values.iter().copied().fold(f64::INFINITY, f64::min);
-    let y_max = values.iter().copied().fold(f64::NEG_INFINITY, f64::max);
-    let (y_min, y_max) = if (y_max - y_min).abs() < f64::EPSILON {
-        (y_min, y_max + 1.0)
-    } else {
-        let pad = (y_max - y_min) * 0.05;
-        (y_min - pad, y_max + pad)
-    };
+    let grouped_values = grouped.values().cloned().collect::<Vec<_>>();
+    let use_log_scale = parameter == "expression_amplitude";
 
     let root =
         BitMapBackend::new(output_plot, (PYTHON_PLOT_WIDTH, PYTHON_PLOT_HEIGHT)).into_drawing_area();
     root.fill(&WHITE).map_err(|err| err.to_string())?;
-    let mut chart = ChartBuilder::on(&root)
-        .margin(20)
-        .caption(
-            title.unwrap_or(parameter),
-            ("sans-serif", PYTHON_TITLE_FONT_SIZE),
-        )
-        .set_label_area_size(LabelAreaPosition::Left, 90)
-        .set_label_area_size(LabelAreaPosition::Bottom, 85)
-        .build_cartesian_2d(0.5f64..(grouped.len() as f64 + 0.5), y_min..y_max)
-        .map_err(|err| err.to_string())?;
-    chart
-        .configure_mesh()
-        .x_desc("slide channel")
-        .y_desc(ylabel)
-        .label_style(("sans-serif", PYTHON_LABEL_FONT_SIZE))
-        .axis_desc_style(("sans-serif", PYTHON_LABEL_FONT_SIZE))
-        .x_labels(grouped.len())
-        .x_label_formatter(&|value| {
-            let index = value.round() as usize;
-            if index == 0 || index > grouped.len() {
-                String::new()
-            } else {
-                let slide_channel = grouped.keys().nth(index - 1).copied();
-                slide_channel
-                    .and_then(|channel| {
-                        grouped
-                            .get(&channel)
-                            .map(|channel_values| format!("{channel}\n(n={})", channel_values.len()))
-                    })
-                    .unwrap_or_default()
-            }
-        })
-        .y_label_formatter(&super::plot_timeseries::scientific_tick_label)
-        .disable_mesh()
-        .draw()
-        .map_err(|err| err.to_string())?;
-
     let fill = super::plot_timeseries::parse_color(color)?.mix(0.65);
-    for (idx, channel_values) in grouped.values().enumerate() {
-        let x = idx as f64 + 1.0;
-        let stats = boxplot_stats(channel_values);
-        chart
-            .draw_series(std::iter::once(PathElement::new(
-                vec![(x, stats.min), (x, stats.q1)],
-                BLACK,
-            )))
+
+    if use_log_scale {
+        let (y_min, y_max) = super::plot_auc::log_axis_bounds(&grouped_values, ylabel)?;
+        let mut chart = ChartBuilder::on(&root)
+            .margin(20)
+            .caption(
+                title.unwrap_or(parameter),
+                ("sans-serif", PYTHON_TITLE_FONT_SIZE),
+            )
+            .set_label_area_size(LabelAreaPosition::Left, 90)
+            .set_label_area_size(LabelAreaPosition::Bottom, 85)
+            .build_cartesian_2d(0.5f64..(grouped.len() as f64 + 0.5), (y_min..y_max).log_scale())
             .map_err(|err| err.to_string())?;
         chart
-            .draw_series(std::iter::once(PathElement::new(
-                vec![(x, stats.q3), (x, stats.max)],
-                BLACK,
-            )))
+            .configure_mesh()
+            .x_desc("slide channel")
+            .y_desc(ylabel)
+            .label_style(("sans-serif", PYTHON_LABEL_FONT_SIZE))
+            .axis_desc_style(("sans-serif", PYTHON_LABEL_FONT_SIZE))
+            .x_labels(grouped.len())
+            .x_label_formatter(&|value| {
+                let index = value.round() as usize;
+                if index == 0 || index > grouped.len() {
+                    String::new()
+                } else {
+                    let slide_channel = grouped.keys().nth(index - 1).copied();
+                    slide_channel
+                        .and_then(|channel| {
+                            grouped
+                                .get(&channel)
+                                .map(|channel_values| format!("{channel}\n(n={})", channel_values.len()))
+                        })
+                        .unwrap_or_default()
+                }
+            })
+            .y_label_formatter(&super::plot_timeseries::scientific_tick_label)
+            .disable_mesh()
+            .draw()
+            .map_err(|err| err.to_string())?;
+
+        for (idx, channel_values) in grouped.values().enumerate() {
+            let x = idx as f64 + 1.0;
+            let stats = boxplot_stats(channel_values);
+            chart
+                .draw_series(std::iter::once(PathElement::new(
+                    vec![(x, stats.min), (x, stats.q1)],
+                    BLACK,
+                )))
+                .map_err(|err| err.to_string())?;
+            chart
+                .draw_series(std::iter::once(PathElement::new(
+                    vec![(x, stats.q3), (x, stats.max)],
+                    BLACK,
+                )))
+                .map_err(|err| err.to_string())?;
+            chart
+                .draw_series(std::iter::once(PathElement::new(
+                    vec![(x - 0.15, stats.min), (x + 0.15, stats.min)],
+                    BLACK,
+                )))
+                .map_err(|err| err.to_string())?;
+            chart
+                .draw_series(std::iter::once(PathElement::new(
+                    vec![(x - 0.15, stats.max), (x + 0.15, stats.max)],
+                    BLACK,
+                )))
+                .map_err(|err| err.to_string())?;
+            chart
+                .draw_series(std::iter::once(Rectangle::new(
+                    [(x - 0.25, stats.q1), (x + 0.25, stats.q3)],
+                    fill.filled(),
+                )))
+                .map_err(|err| err.to_string())?;
+            chart
+                .draw_series(std::iter::once(PathElement::new(
+                    vec![(x - 0.25, stats.median), (x + 0.25, stats.median)],
+                    BLACK.stroke_width(2),
+                )))
+                .map_err(|err| err.to_string())?;
+        }
+    } else {
+        let y_max = super::plot_auc::quartile_axis_upper(&grouped_values);
+        let mut chart = ChartBuilder::on(&root)
+            .margin(20)
+            .caption(
+                title.unwrap_or(parameter),
+                ("sans-serif", PYTHON_TITLE_FONT_SIZE),
+            )
+            .set_label_area_size(LabelAreaPosition::Left, 90)
+            .set_label_area_size(LabelAreaPosition::Bottom, 85)
+            .build_cartesian_2d(0.5f64..(grouped.len() as f64 + 0.5), 0.0f64..y_max)
             .map_err(|err| err.to_string())?;
         chart
-            .draw_series(std::iter::once(PathElement::new(
-                vec![(x - 0.15, stats.min), (x + 0.15, stats.min)],
-                BLACK,
-            )))
+            .configure_mesh()
+            .x_desc("slide channel")
+            .y_desc(ylabel)
+            .label_style(("sans-serif", PYTHON_LABEL_FONT_SIZE))
+            .axis_desc_style(("sans-serif", PYTHON_LABEL_FONT_SIZE))
+            .x_labels(grouped.len())
+            .x_label_formatter(&|value| {
+                let index = value.round() as usize;
+                if index == 0 || index > grouped.len() {
+                    String::new()
+                } else {
+                    let slide_channel = grouped.keys().nth(index - 1).copied();
+                    slide_channel
+                        .and_then(|channel| {
+                            grouped
+                                .get(&channel)
+                                .map(|channel_values| format!("{channel}\n(n={})", channel_values.len()))
+                        })
+                        .unwrap_or_default()
+                }
+            })
+            .y_label_formatter(&super::plot_timeseries::scientific_tick_label)
+            .disable_mesh()
+            .draw()
             .map_err(|err| err.to_string())?;
-        chart
-            .draw_series(std::iter::once(PathElement::new(
-                vec![(x - 0.15, stats.max), (x + 0.15, stats.max)],
-                BLACK,
-            )))
-            .map_err(|err| err.to_string())?;
-        chart
-            .draw_series(std::iter::once(Rectangle::new(
-                [(x - 0.25, stats.q1), (x + 0.25, stats.q3)],
-                fill.filled(),
-            )))
-            .map_err(|err| err.to_string())?;
-        chart
-            .draw_series(std::iter::once(PathElement::new(
-                vec![(x - 0.25, stats.median), (x + 0.25, stats.median)],
-                BLACK.stroke_width(2),
-            )))
-            .map_err(|err| err.to_string())?;
+
+        for (idx, channel_values) in grouped.values().enumerate() {
+            let x = idx as f64 + 1.0;
+            let stats = boxplot_stats(channel_values);
+            chart
+                .draw_series(std::iter::once(PathElement::new(
+                    vec![(x, stats.min), (x, stats.q1)],
+                    BLACK,
+                )))
+                .map_err(|err| err.to_string())?;
+            chart
+                .draw_series(std::iter::once(PathElement::new(
+                    vec![(x, stats.q3), (x, stats.max)],
+                    BLACK,
+                )))
+                .map_err(|err| err.to_string())?;
+            chart
+                .draw_series(std::iter::once(PathElement::new(
+                    vec![(x - 0.15, stats.min), (x + 0.15, stats.min)],
+                    BLACK,
+                )))
+                .map_err(|err| err.to_string())?;
+            chart
+                .draw_series(std::iter::once(PathElement::new(
+                    vec![(x - 0.15, stats.max), (x + 0.15, stats.max)],
+                    BLACK,
+                )))
+                .map_err(|err| err.to_string())?;
+            chart
+                .draw_series(std::iter::once(Rectangle::new(
+                    [(x - 0.25, stats.q1), (x + 0.25, stats.q3)],
+                    fill.filled(),
+                )))
+                .map_err(|err| err.to_string())?;
+            chart
+                .draw_series(std::iter::once(PathElement::new(
+                    vec![(x - 0.25, stats.median), (x + 0.25, stats.median)],
+                    BLACK.stroke_width(2),
+                )))
+                .map_err(|err| err.to_string())?;
+        }
     }
 
     root.present().map_err(|err| err.to_string())
@@ -397,5 +475,21 @@ mod tests {
         for output in outputs {
             assert!(output.is_file());
         }
+    }
+
+    #[test]
+    fn expression_amplitude_uses_log_scale_bounds() {
+        let mut grouped = BTreeMap::<u32, Vec<f64>>::new();
+        grouped.insert(0, vec![40.0, 32.0]);
+        grouped.insert(1, vec![16.0]);
+
+        let (lower, upper) = crate::expression::plot_auc::log_axis_bounds(
+            &grouped.values().cloned().collect::<Vec<_>>(),
+            "expression amplitude",
+        )
+        .unwrap();
+
+        assert_eq!(lower, 12.8);
+        assert_eq!(upper, 50.0);
     }
 }

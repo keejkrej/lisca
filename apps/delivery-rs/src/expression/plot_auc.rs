@@ -125,18 +125,16 @@ pub fn write_auc_boxplot(
 
     let mut grouped = BTreeMap::<u32, Vec<f64>>::new();
     for row in rows {
-        grouped.entry(row.slide_channel).or_default().push(row.auc);
+        if row.auc > 0.0 {
+            grouped.entry(row.slide_channel).or_default().push(row.auc);
+        }
+    }
+    if grouped.is_empty() {
+        return Err("No positive AUC values available for log-scale plotting".to_string());
     }
 
-    let values = grouped.values().flatten().copied().collect::<Vec<_>>();
-    let y_min = values.iter().copied().fold(f64::INFINITY, f64::min);
-    let y_max = values.iter().copied().fold(f64::NEG_INFINITY, f64::max);
-    let (y_min, y_max) = if (y_max - y_min).abs() < f64::EPSILON {
-        (y_min, y_max + 1.0)
-    } else {
-        let pad = (y_max - y_min) * 0.05;
-        (y_min - pad, y_max + pad)
-    };
+    let grouped_values = grouped.values().cloned().collect::<Vec<_>>();
+    let (y_min, y_max) = log_axis_bounds(&grouped_values, "AUC")?;
 
     let mut chart = ChartBuilder::on(&root)
         .margin(20)
@@ -146,7 +144,7 @@ pub fn write_auc_boxplot(
         )
         .set_label_area_size(LabelAreaPosition::Left, 90)
         .set_label_area_size(LabelAreaPosition::Bottom, 85)
-        .build_cartesian_2d(0.5f64..(grouped.len() as f64 + 0.5), y_min..y_max)
+        .build_cartesian_2d(0.5f64..(grouped.len() as f64 + 0.5), (y_min..y_max).log_scale())
         .map_err(|err| err.to_string())?;
     chart
         .configure_mesh()
@@ -255,6 +253,39 @@ fn boxplot_stats(values: &[f64]) -> BoxplotStats {
     }
 }
 
+pub(crate) fn quartile_axis_upper(grouped_values: &[Vec<f64>]) -> f64 {
+    let max_q3 = grouped_values
+        .iter()
+        .map(|values| {
+            let mut sorted = values.clone();
+            sorted.sort_by(|a, b| a.total_cmp(b));
+            quantile(&sorted, 0.75)
+        })
+        .fold(f64::NEG_INFINITY, f64::max);
+    let upper_limit = max_q3 * 1.25;
+    if upper_limit > 0.0 { upper_limit } else { 1.0 }
+}
+
+pub(crate) fn log_axis_bounds(grouped_values: &[Vec<f64>], label: &str) -> Result<(f64, f64), String> {
+    if grouped_values.is_empty() {
+        return Err(format!("No positive {label} values available for log-scale plotting"));
+    }
+
+    let min_value = grouped_values
+        .iter()
+        .flat_map(|values| values.iter())
+        .copied()
+        .fold(f64::INFINITY, f64::min);
+    let max_value = grouped_values
+        .iter()
+        .flat_map(|values| values.iter())
+        .copied()
+        .fold(f64::NEG_INFINITY, f64::max);
+    let lower_limit = min_value * 0.8;
+    let upper_limit = max_value * 1.25;
+    Ok((lower_limit, upper_limit))
+}
+
 fn quantile(sorted: &[f64], q: f64) -> f64 {
     if sorted.len() <= 1 {
         return sorted.first().copied().unwrap_or(0.0);
@@ -319,5 +350,12 @@ mod tests {
         write_auc_boxplot(&rows, &output_plot, "#c03a2b", Some("AUC by slide channel")).unwrap();
 
         assert!(output_plot.is_file());
+    }
+
+    #[test]
+    fn log_axis_bounds_uses_positive_limits() {
+        let (lower, upper) = log_axis_bounds(&[vec![10.0, 12.0], vec![20.0]], "AUC").unwrap();
+        assert_eq!(lower, 8.0);
+        assert_eq!(upper, 25.0);
     }
 }

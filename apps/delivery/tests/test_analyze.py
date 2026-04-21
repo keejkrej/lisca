@@ -14,6 +14,14 @@ def test_run_analysis_orchestrates_expected_outputs(monkeypatch, tmp_path: Path)
     fit_csv = tmp_path / "slide_timeseries_fit.csv"
     timeseries_plot = tmp_path / "slide_timeseries_combined.png"
     auc_plot = tmp_path / "slide_timeseries_auc.png"
+    fit_plots = [
+        tmp_path / "slide_timeseries_intensity_offset.png",
+        tmp_path / "slide_timeseries_protein_decay_rate.png",
+        tmp_path / "slide_timeseries_mrna_decay_rate.png",
+        tmp_path / "slide_timeseries_expression_onset.png",
+        tmp_path / "slide_timeseries_expression_amplitude.png",
+        tmp_path / "slide_timeseries_fit_traces.png",
+    ]
 
     calls: list[tuple[str, object]] = []
     output_messages: list[str] = []
@@ -63,6 +71,16 @@ def test_run_analysis_orchestrates_expected_outputs(monkeypatch, tmp_path: Path)
             auc_plot,
         )[1],
     )
+    monkeypatch.setattr(
+        analyze.plot_fit,
+        "run_plot_fit",
+        lambda fit_csv_arg, *, output_dir, color, interval, columns, alpha, linewidth: (
+            calls.append(
+                ("plot_fit", (fit_csv_arg, output_dir, color, interval, columns, alpha, linewidth))
+            ),
+            fit_plots,
+        )[1],
+    )
 
     result = analyze.run_analysis(
         workspace,
@@ -76,6 +94,7 @@ def test_run_analysis_orchestrates_expected_outputs(monkeypatch, tmp_path: Path)
     assert result.fit_csv == fit_csv
     assert result.timeseries_plot == timeseries_plot
     assert result.auc_plot == auc_plot
+    assert result.fit_plots == fit_plots
     assert result.skipped_positions == {2: [26]}
     assert calls == [
         ("timeseries", (workspace, slide_path, None, analyze.timeseries.DELIVERY_CORRECTION_QUARTILE)),
@@ -83,6 +102,7 @@ def test_run_analysis_orchestrates_expected_outputs(monkeypatch, tmp_path: Path)
         ("fit", ([timeseries_csv_a, timeseries_csv_b], 10.0, None)),
         ("plot_timeseries", ([timeseries_csv_a, timeseries_csv_b], None, 3, 0.12, 1.0, "#c03a2b", None)),
         ("plot_auc", (auc_csv, None, "#c03a2b", "AUC by slide channel")),
+        ("plot_fit", (fit_csv, None, "#c03a2b", 10.0, 3, 0.12, 1.0)),
     ]
     assert output_messages == [
         analyze.timeseries.format_written_timeseries_csv_message(0, timeseries_csv_a, 2),
@@ -92,6 +112,7 @@ def test_run_analysis_orchestrates_expected_outputs(monkeypatch, tmp_path: Path)
         analyze.fit.format_written_fit_csv_message(fit_csv),
         analyze.plot_timeseries.format_written_timeseries_plot_message(timeseries_plot),
         analyze.plot_auc.format_written_auc_plot_message(auc_plot),
+        *analyze.plot_fit.format_written_fit_plot_messages(fit_plots),
     ]
 
 
@@ -113,6 +134,7 @@ def test_run_analysis_emits_stage_updates(monkeypatch, tmp_path: Path) -> None:
         lambda *args, **kwargs: tmp_path / "timeseries.png",
     )
     monkeypatch.setattr(analyze.plot_auc, "run_plot_auc", lambda *args, **kwargs: tmp_path / "auc.png")
+    monkeypatch.setattr(analyze.plot_fit, "run_plot_fit", lambda *args, **kwargs: [tmp_path / "fit-traces.png"])
 
     analyze.run_analysis(
         workspace,
@@ -122,12 +144,13 @@ def test_run_analysis_emits_stage_updates(monkeypatch, tmp_path: Path) -> None:
     )
 
     assert stage_updates == [
-        (0, 5, "Computing timeseries CSVs"),
-        (1, 5, "Computing AUC summary"),
-        (2, 5, "Computing exponential fit summary"),
-        (3, 5, "Rendering timeseries plot"),
-        (4, 5, "Rendering AUC plot"),
-        (5, 5, "Analysis complete"),
+        (0, 6, "Computing timeseries CSVs"),
+        (1, 6, "Computing AUC summary"),
+        (2, 6, "Computing exponential fit summary"),
+        (3, 6, "Rendering timeseries plot"),
+        (4, 6, "Rendering AUC plot"),
+        (5, 6, "Rendering fit plots"),
+        (6, 6, "Analysis complete"),
     ]
 
 
@@ -147,6 +170,14 @@ def test_completed_analysis_message_no_longer_mentions_one_channel(monkeypatch, 
             fit_csv=tmp_path / "slide_timeseries_fit.csv",
             timeseries_plot=tmp_path / "slide_timeseries_combined.png",
             auc_plot=tmp_path / "slide_timeseries_auc.png",
+            fit_plots=[
+                tmp_path / "slide_timeseries_intensity_offset.png",
+                tmp_path / "slide_timeseries_protein_decay_rate.png",
+                tmp_path / "slide_timeseries_mrna_decay_rate.png",
+                tmp_path / "slide_timeseries_expression_onset.png",
+                tmp_path / "slide_timeseries_expression_amplitude.png",
+                tmp_path / "slide_timeseries_fit_traces.png",
+            ],
             skipped_positions={},
         ),
     )
@@ -154,4 +185,4 @@ def test_completed_analysis_message_no_longer_mentions_one_channel(monkeypatch, 
     analyze.cli(workspace=tmp_path, slide=tmp_path / "slide.json", interval=10.0)
 
     captured = capsys.readouterr()
-    assert "Completed analysis: 2 timeseries CSVs, 1 AUC CSV, 1 fit CSV, and 2 plots." in captured.err
+    assert "Completed analysis: 2 timeseries CSVs, 1 AUC CSV, 1 fit CSV, and 8 plots." in captured.err

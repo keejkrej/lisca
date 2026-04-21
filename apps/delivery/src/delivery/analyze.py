@@ -6,7 +6,7 @@ from typing import Callable
 
 import typer
 
-from .expression import auc, fit, plot_auc, plot_timeseries, timeseries
+from .expression import auc, fit, plot_auc, plot_fit, plot_timeseries, timeseries
 
 
 HELP = (
@@ -31,6 +31,7 @@ class AnalyzeRunResult:
     fit_csv: Path
     timeseries_plot: Path
     auc_plot: Path
+    fit_plots: list[Path]
     skipped_positions: dict[int, list[int]]
 
 
@@ -46,7 +47,7 @@ def run_analysis(
     on_stage: StageCallback | None = None,
     on_output: OutputCallback | None = None,
 ) -> AnalyzeRunResult:
-    total_steps = 5
+    total_steps = 6
     if on_stage is not None:
         on_stage(0, total_steps, "Computing timeseries CSVs")
     timeseries_result = timeseries.run_slide_timeseries(
@@ -101,6 +102,20 @@ def run_analysis(
     )
     if on_output is not None:
         on_output(plot_auc.format_written_auc_plot_message(auc_plot))
+    if on_stage is not None:
+        on_stage(5, total_steps, "Rendering fit plots")
+    fit_plots = plot_fit.run_plot_fit(
+        fit_csv,
+        output_dir=None,
+        color="#c03a2b",
+        interval=interval,
+        columns=3,
+        alpha=0.12,
+        linewidth=1.0,
+    )
+    if on_output is not None:
+        for message in plot_fit.format_written_fit_plot_messages(fit_plots):
+            on_output(message)
     result = AnalyzeRunResult(
         workspace=workspace.resolve(),
         slide=slide.resolve(),
@@ -110,6 +125,7 @@ def run_analysis(
         fit_csv=fit_csv,
         timeseries_plot=timeseries_plot,
         auc_plot=auc_plot,
+        fit_plots=fit_plots,
         skipped_positions=timeseries_result.skipped_positions,
     )
     if on_stage is not None:
@@ -158,6 +174,6 @@ def cli(
 
     typer.echo(
         f"Completed analysis: {len(result.timeseries_csvs)} timeseries CSVs, "
-        "1 AUC CSV, 1 fit CSV, and 2 plots.",
+        f"1 AUC CSV, 1 fit CSV, and {2 + len(result.fit_plots)} plots.",
         err=True,
     )

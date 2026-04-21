@@ -58,16 +58,19 @@ def write_auc_boxplot(
     color: str,
     title: str | None,
 ) -> None:
-    slide_channels = sorted(df["slide_channel"].unique().tolist())
+    positive_df = df.loc[df["auc"] > 0].copy()
+    if positive_df.empty:
+        raise ValueError("No positive AUC values available for log-scale plotting")
+
+    slide_channels = sorted(positive_df["slide_channel"].unique().tolist())
     trace_counts = [
-        int(df.loc[df["slide_channel"] == slide_channel, "auc"].shape[0])
+        int(positive_df.loc[positive_df["slide_channel"] == slide_channel, "auc"].shape[0])
         for slide_channel in slide_channels
     ]
     grouped_values = [
-        df.loc[df["slide_channel"] == slide_channel, "auc"].to_numpy(dtype=float)
+        positive_df.loc[positive_df["slide_channel"] == slide_channel, "auc"].to_numpy(dtype=float)
         for slide_channel in slide_channels
     ]
-    upper_limit = quartile_axis_upper(grouped_values)
 
     fig, ax = plt.subplots(figsize=(10, 6))
     boxplot = ax.boxplot(
@@ -86,7 +89,7 @@ def write_auc_boxplot(
 
     ax.set_xlabel("slide channel")
     ax.set_ylabel("AUC")
-    ax.set_ylim(0.0, upper_limit)
+    ax.set_yscale("log")
     ax.grid(axis="y", alpha=0.2, linewidth=0.5)
     if title is not None:
         ax.set_title(title)

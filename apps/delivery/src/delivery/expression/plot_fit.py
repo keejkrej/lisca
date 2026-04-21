@@ -137,6 +137,9 @@ def write_fit_boxplot(
     title: str | None,
 ) -> None:
     parameter_df = df.dropna(subset=[parameter]).copy()
+    use_log_scale = parameter == "expression_amplitude"
+    if use_log_scale:
+        parameter_df = parameter_df.loc[parameter_df[parameter] > 0].copy()
     if parameter_df.empty:
         raise ValueError(f"No finite rows available to plot parameter {parameter!r}")
 
@@ -149,7 +152,8 @@ def write_fit_boxplot(
         parameter_df.loc[parameter_df["slide_channel"] == slide_channel, parameter].to_numpy(dtype=float)
         for slide_channel in slide_channels
     ]
-    upper_limit = plot_auc.quartile_axis_upper(grouped_values)
+    if not use_log_scale:
+        upper_limit = plot_auc.quartile_axis_upper(grouped_values)
 
     fig, ax = plt.subplots(figsize=(10, 6))
     boxplot = ax.boxplot(
@@ -168,7 +172,10 @@ def write_fit_boxplot(
 
     ax.set_xlabel("slide channel")
     ax.set_ylabel(ylabel)
-    ax.set_ylim(0.0, upper_limit)
+    if use_log_scale:
+        ax.set_yscale("log")
+    else:
+        ax.set_ylim(0.0, upper_limit)
     ax.grid(axis="y", alpha=0.2, linewidth=0.5)
     if title is not None:
         ax.set_title(title)
