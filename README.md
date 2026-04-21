@@ -22,3 +22,18 @@ The `packages/lisca/*` directories are not parallel reimplementations of the sam
 The package root name is shared across languages, but the module trees do not need to mirror each other. New shared code should be added according to the pipeline layer it belongs to, not to force cross-language symmetry.
 
 The repository root is workspace-only. Python, TypeScript, and Rust packages live at their language-specific package roots.
+
+## Monorepo Tasks
+
+The TypeScript workspace uses Turbo for package-aware task orchestration:
+
+- `bun run build`: build every JS workspace package that defines a `build` script
+- `bun run typecheck`: run `typecheck` across the JS workspace
+- `bun run test`: run package tests across the JS workspace
+- `bun run build:viewer`: build only the viewer app
+- `bun run build:annotator`: build only the annotator app
+- `bun run dev:viewer`: start the viewer app in dev mode
+- `bun run dev:annotator`: start the annotator app in dev mode
+- `bun run check`: run JS typechecks and `cargo check --workspace`
+
+Rust remains managed by Cargo directly via `bun run check:rust` or plain `cargo` commands.

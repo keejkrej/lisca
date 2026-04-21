@@ -8,12 +8,20 @@
     "apps/annotator"
   ],
   "scripts": {
-    "build": "bun run --cwd apps/viewer build",
-    "dev:viewer": "bun run --cwd apps/viewer dev",
-    "dev:annotator": "bun run --cwd apps/annotator dev",
-    "release:viewer": "bun run --cwd apps/viewer release",
-    "release:annotator": "bun run --cwd apps/annotator release",
-    "test": "bun run --cwd packages/lisca/typescript test",
-    "typecheck": "bun run --cwd packages/lisca/typescript typecheck && bun run --cwd apps/viewer typecheck && bun run --cwd apps/annotator typecheck && cargo check --workspace"
+    "build": "turbo run build",
+    "build:viewer": "turbo run build --filter=viewer",
+    "build:annotator": "turbo run build --filter=annotator",
+    "dev:viewer": "turbo run dev --filter=viewer",
+    "dev:annotator": "turbo run dev --filter=annotator",
+    "release:viewer": "turbo run release --filter=viewer",
+    "release:annotator": "turbo run release --filter=annotator",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "check:tauri": "turbo run check:tauri",
+    "check:rust": "cargo check --workspace",
+    "check": "bun run typecheck && bun run check:rust"
+  },
+  "devDependencies": {
+    "turbo": "^2.9.6"
   }
 }
