@@ -52,7 +52,60 @@ pub fn normalize_output_stem(csv_path: &Path) -> String {
         .file_stem()
         .and_then(|value| value.to_str())
         .unwrap_or_default();
-    remove_slide_channel_segment(stem)
+    normalize_output_stem_with(stem, false)
+}
+
+pub fn parse_image_channel(csv_path: &Path) -> Option<u32> {
+    let stem = csv_path.file_stem()?.to_str()?;
+    let marker = stem.find("_ch")?;
+    let digits = stem[marker + 3..]
+        .chars()
+        .take_while(|c| c.is_ascii_digit())
+        .collect::<String>();
+    if digits.is_empty() {
+        return None;
+    }
+    digits.parse().ok()
+}
+
+pub fn aggregate_output_stem(timeseries_csvs: &[PathBuf]) -> String {
+    let parsed_channels = timeseries_csvs
+        .iter()
+        .filter_map(|path| parse_image_channel(path))
+        .collect::<std::collections::BTreeSet<_>>();
+    let drop_image_channel = parsed_channels.len() > 1;
+    let stems = timeseries_csvs
+        .iter()
+        .map(|path| {
+            let stem = path
+                .file_stem()
+                .and_then(|value| value.to_str())
+                .unwrap_or_default();
+            normalize_output_stem_with(stem, drop_image_channel)
+        })
+        .collect::<std::collections::BTreeSet<_>>();
+    if stems.len() == 1 {
+        stems.into_iter().next().unwrap()
+    } else if timeseries_csvs.len() == 1 {
+        let stem = timeseries_csvs[0]
+            .file_stem()
+            .and_then(|value| value.to_str())
+            .unwrap_or_default();
+        normalize_output_stem_with(stem, drop_image_channel)
+    } else {
+        "timeseries".to_string()
+    }
+}
+
+pub fn aggregate_output_stem_candidates(csv_path: &Path) -> std::collections::BTreeSet<String> {
+    let stem = csv_path
+        .file_stem()
+        .and_then(|value| value.to_str())
+        .unwrap_or_default();
+    std::collections::BTreeSet::from([
+        normalize_output_stem_with(stem, false),
+        normalize_output_stem_with(stem, true),
+    ])
 }
 
 pub fn default_output_csv_path(timeseries_csvs: &[PathBuf], output_csv: Option<&Path>) -> PathBuf {
@@ -60,21 +113,7 @@ pub fn default_output_csv_path(timeseries_csvs: &[PathBuf], output_csv: Option<&
         return path.to_path_buf();
     }
 
-    let stems = timeseries_csvs
-        .iter()
-        .map(|path| normalize_output_stem(path))
-        .collect::<std::collections::BTreeSet<_>>();
-    let stem = if stems.len() == 1 {
-        stems.into_iter().next().unwrap()
-    } else if timeseries_csvs.len() == 1 {
-        timeseries_csvs[0]
-            .file_stem()
-            .and_then(|value| value.to_str())
-            .unwrap_or("timeseries")
-            .to_string()
-    } else {
-        "timeseries".to_string()
-    };
+    let stem = aggregate_output_stem(timeseries_csvs);
     timeseries_csvs
         .first()
         .cloned()
@@ -210,6 +249,33 @@ fn remove_slide_channel_segment(stem: &str) -> String {
     stem.to_string()
 }
 
+fn remove_image_channel_segment(stem: &str) -> String {
+    if let Some(marker) = stem.find("_ch") {
+        let digits_end = stem[marker + 3..]
+            .chars()
+            .take_while(|c| c.is_ascii_digit())
+            .count();
+        if digits_end > 0 {
+            let end = marker + 3 + digits_end;
+            if stem.as_bytes().get(end) == Some(&b'_') {
+                let mut normalized = stem[..marker].to_string();
+                normalized.push_str(&stem[end..]);
+                return normalized;
+            }
+        }
+    }
+    stem.to_string()
+}
+
+fn normalize_output_stem_with(stem: &str, drop_image_channel: bool) -> String {
+    let normalized = remove_slide_channel_segment(stem);
+    if drop_image_channel {
+        remove_image_channel_segment(&normalized)
+    } else {
+        normalized
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -222,6 +288,16 @@ mod tests {
         ];
         let output = default_output_csv_path(&csv_paths, None);
         assert!(output.ends_with("slide_ch001_timeseries_auc.csv"));
+    }
+
+    #[test]
+    fn default_output_csv_path_drops_image_channel_for_mixed_inputs() {
+        let csv_paths = vec![
+            PathBuf::from("/tmp/slide_sc0_ch001_timeseries.csv"),
+            PathBuf::from("/tmp/slide_sc2_ch002_timeseries.csv"),
+        ];
+        let output = default_output_csv_path(&csv_paths, None);
+        assert!(output.ends_with("slide_timeseries_auc.csv"));
     }
 
     #[test]

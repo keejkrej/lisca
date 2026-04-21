@@ -21,7 +21,8 @@ app = typer.Typer(
     no_args_is_help=True,
     help=(
         "Read cropped ROI TIFF timelapses from roi/PosN, compute per-ROI intensity "
-        "metrics for one channel, and write a long-form CSV."
+        "metrics for each slide channel's mapped image channel, and write one long-form CSV "
+        "per slide channel."
     ),
 )
 
@@ -43,19 +44,19 @@ def default_slide_timeseries_csv_path(
     workspace: Path,
     slide_path: Path,
     slide_channel: int,
-    channel: int,
+    image_channel: int,
     output_csv: Path | None,
 ) -> Path:
     if output_csv is None:
-        csv_path = workspace / 'timeseries' / f'{slide_path.stem}_sc{slide_channel}_ch{channel:03d}_timeseries.csv'
+        csv_path = workspace / 'timeseries' / f'{slide_path.stem}_sc{slide_channel}_ch{image_channel:03d}_timeseries.csv'
         return csv_path.resolve()
 
     if output_csv.suffix:
         csv_path = output_csv.with_name(
-            f'{output_csv.stem}_sc{slide_channel}_ch{channel:03d}{output_csv.suffix}'
+            f'{output_csv.stem}_sc{slide_channel}_ch{image_channel:03d}{output_csv.suffix}'
         )
     else:
-        csv_path = output_csv / f'{slide_path.stem}_sc{slide_channel}_ch{channel:03d}_timeseries.csv'
+        csv_path = output_csv / f'{slide_path.stem}_sc{slide_channel}_ch{image_channel:03d}_timeseries.csv'
     return csv_path.resolve()
 
 
@@ -85,7 +86,6 @@ def run_slide_timeseries(
     workspace: Path,
     *,
     slide: Path,
-    channel: int,
     output_csv: Path | None,
     correction_quartile: float = DELIVERY_CORRECTION_QUARTILE,
     on_csv_written: CsvWrittenCallback | None = None,
@@ -97,7 +97,9 @@ def run_slide_timeseries(
     slide_positions = load_slide_mapping(slide_path)
     written_outputs: list[tuple[int, Path, int]] = []
 
-    for slide_channel, positions in slide_positions.items():
+    for slide_channel, entry in slide_positions.items():
+        image_channel = entry.image_channel
+        positions = entry.positions
         position_frames: list[pd.DataFrame] = []
         for resolved_pos in positions:
             try:
@@ -106,12 +108,12 @@ def run_slide_timeseries(
                 skipped_positions.setdefault(slide_channel, []).append(resolved_pos)
                 continue
             index = read_position_index(pos_dir)
-            validate_channel_index(index, channel)
+            validate_channel_index(index, image_channel)
             position_frames.append(
                 compute_roi_metrics(
                     pos_dir,
                     index,
-                    channel=channel,
+                    channel=image_channel,
                     quartiles=[correction_quartile],
                 )
             )
@@ -124,7 +126,7 @@ def run_slide_timeseries(
             workspace=workspace,
             slide_path=slide_path,
             slide_channel=slide_channel,
-            channel=channel,
+            image_channel=image_channel,
             output_csv=output_csv,
         )
         write_metrics_csv(
@@ -180,12 +182,6 @@ def cli(
         dir_okay=True,
         help="Workspace containing roi/PosN/index.json and Roi*.tif files.",
     ),
-    channel: int = typer.Option(
-        ...,
-        "--channel",
-        min=0,
-        help="Channel index in the cropped ROI TIFF timelapses.",
-    ),
     slide: Path = typer.Option(
         ...,
         "--slide",
@@ -193,7 +189,7 @@ def cli(
         file_okay=True,
         dir_okay=False,
         help=(
-            "Microscopy slide mapping JSON from slide channel to position list. "
+            "Microscopy slide mapping JSON from slide channel to positions plus image_channel. "
             "Process every position from every slide channel in the file and write "
             "one CSV per slide channel."
         ),
@@ -217,7 +213,6 @@ def cli(
     result = run_slide_timeseries(
         workspace,
         slide=slide,
-        channel=channel,
         output_csv=output_csv,
         correction_quartile=correction_quartile,
         on_csv_written=lambda slide_channel, resolved_output_csv, position_count: print(

@@ -87,6 +87,19 @@ def test_infer_timeseries_csvs_matches_shared_stem(tmp_path: Path) -> None:
     assert resolved == [matching_a.resolve(), matching_b.resolve()]
 
 
+def test_infer_timeseries_csvs_matches_mixed_channel_fit_stem(tmp_path: Path) -> None:
+    fit_csv = tmp_path / "slide_timeseries_fit.csv"
+    matching_a = tmp_path / "slide_sc0_ch001_timeseries.csv"
+    matching_b = tmp_path / "slide_sc2_ch002_timeseries.csv"
+    non_matching = tmp_path / "other_sc0_ch001_timeseries.csv"
+    for path in (matching_a, matching_b, non_matching):
+        path.write_text("pos,roi,t,corrected\n", encoding="utf-8")
+
+    resolved = plot_fit.infer_timeseries_csvs(fit_csv)
+
+    assert resolved == [matching_a.resolve(), matching_b.resolve()]
+
+
 def test_cli_writes_boxplots_and_fitted_trace_overlay(tmp_path: Path) -> None:
     fit_csv = tmp_path / "slide_ch001_timeseries_fit.csv"
     write_fit_csv(fit_csv)

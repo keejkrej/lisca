@@ -25,6 +25,17 @@ def test_default_output_csv_path_strips_slide_channel_segment(tmp_path: Path) ->
     assert output_csv == (tmp_path / "slide_ch001_timeseries_fit.csv").resolve()
 
 
+def test_default_output_csv_path_drops_image_channel_for_mixed_inputs(tmp_path: Path) -> None:
+    csv_paths = [
+        tmp_path / "slide_sc0_ch001_timeseries.csv",
+        tmp_path / "slide_sc2_ch002_timeseries.csv",
+    ]
+
+    output_csv = fit.default_output_csv_path(csv_paths, output_csv=None)
+
+    assert output_csv == (tmp_path / "slide_timeseries_fit.csv").resolve()
+
+
 def test_compute_fit_table_recovers_biexponential_traces_with_zero_onset(tmp_path: Path) -> None:
     csv_path = tmp_path / "slide_sc2_ch001_timeseries.csv"
     interval = 1.0

@@ -10,6 +10,7 @@ from lisca.analysis.roi import load_timeseries_csv
 
 
 SLIDE_CHANNEL_PATTERN = re.compile(r"_sc\d+(?=_)")
+IMAGE_CHANNEL_PATTERN = re.compile(r"_ch\d+(?=_)")
 GROUP_COLUMNS = ("pos", "roi")
 OUTPUT_COLUMNS = ("slide_channel", "pos", "roi", "auc")
 
@@ -31,21 +32,48 @@ def run_auc(timeseries_csvs: list[Path], *, interval: float, output_csv: Path | 
     return resolved_output_csv
 
 
-def normalize_output_stem(csv_path: Path) -> str:
-    return SLIDE_CHANNEL_PATTERN.sub("", csv_path.stem)
+def parse_image_channel(csv_path: Path) -> int | None:
+    match = re.search(r"_ch(\d+)(?=_|$)", csv_path.stem)
+    if match is None:
+        return None
+    return int(match.group(1))
+
+
+def normalize_output_stem(csv_path: Path, *, drop_image_channel: bool = False) -> str:
+    stem = SLIDE_CHANNEL_PATTERN.sub("", csv_path.stem)
+    if drop_image_channel:
+        return IMAGE_CHANNEL_PATTERN.sub("", stem)
+    return stem
+
+
+def aggregate_output_stem(timeseries_csvs: list[Path]) -> str:
+    image_channels = {parse_image_channel(csv_path) for csv_path in timeseries_csvs}
+    drop_image_channel = len({channel for channel in image_channels if channel is not None}) > 1
+    normalized_stems = {
+        normalize_output_stem(csv_path, drop_image_channel=drop_image_channel)
+        for csv_path in timeseries_csvs
+    }
+    if len(normalized_stems) == 1:
+        return next(iter(normalized_stems))
+    if len(timeseries_csvs) == 1:
+        return normalize_output_stem(
+            timeseries_csvs[0],
+            drop_image_channel=drop_image_channel,
+        )
+    return "timeseries"
+
+
+def aggregate_output_stem_candidates(csv_path: Path) -> set[str]:
+    return {
+        normalize_output_stem(csv_path, drop_image_channel=False),
+        normalize_output_stem(csv_path, drop_image_channel=True),
+    }
 
 
 def default_output_csv_path(timeseries_csvs: list[Path], output_csv: Path | None) -> Path:
     if output_csv is not None:
         return output_csv.resolve()
-
-    normalized_stems = {normalize_output_stem(csv_path) for csv_path in timeseries_csvs}
-    if len(normalized_stems) == 1:
-        stem = next(iter(normalized_stems))
-    elif len(timeseries_csvs) == 1:
-        stem = timeseries_csvs[0].stem
-    else:
-        stem = "timeseries"
+    stem = aggregate_output_stem(timeseries_csvs)
     return timeseries_csvs[0].with_name(f"{stem}_auc.csv").resolve()
 
 

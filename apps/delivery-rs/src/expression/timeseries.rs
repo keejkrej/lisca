@@ -9,7 +9,7 @@ use lisca::analysis::roi::{
 use lisca::data::roi::{position_dir, read_position_index, validate_channel_index};
 use lisca::data::slide::{load_slide_mapping, SlideMapping};
 
-pub const HELP: &str = "Read cropped ROI TIFF timelapses from roi/PosN, compute per-ROI intensity metrics for one channel, and write a long-form CSV.";
+pub const HELP: &str = "Read cropped ROI TIFF timelapses from roi/PosN, compute per-ROI intensity metrics for each slide channel's mapped image channel, and write one long-form CSV per slide channel.";
 pub const DELIVERY_CORRECTION_QUARTILE: f64 = 0.25;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -23,11 +23,9 @@ pub struct SlideTimeseriesRunResult {
 pub struct TimeseriesArgs {
     #[arg(help = "Workspace containing roi/PosN/index.json and Roi*.tif files.")]
     pub workspace: PathBuf,
-    #[arg(long, help = "Channel index in the cropped ROI TIFF timelapses.")]
-    pub channel: u32,
     #[arg(
         long,
-        help = "Microscopy slide mapping JSON from slide channel to position list. Process every position from every slide channel in the file and write one CSV per slide channel."
+        help = "Microscopy slide mapping JSON from slide channel to positions plus image_channel. Process every position from every slide channel in the file and write one CSV per slide channel."
     )]
     pub slide: PathBuf,
     #[arg(
@@ -51,7 +49,7 @@ pub fn default_slide_timeseries_csv_path(
     workspace: &Path,
     slide_path: &Path,
     slide_channel: u32,
-    channel: u32,
+    image_channel: u32,
     output_csv: Option<&Path>,
 ) -> PathBuf {
     match output_csv {
@@ -62,7 +60,7 @@ pub fn default_slide_timeseries_csv_path(
                 .and_then(|value| value.to_str())
                 .unwrap_or("slide"),
             slide_channel,
-            channel
+            image_channel
         )),
         Some(output_csv) if output_csv.extension().is_some() => {
             let stem = output_csv
@@ -74,7 +72,7 @@ pub fn default_slide_timeseries_csv_path(
                 .and_then(|value| value.to_str())
                 .unwrap_or("csv");
             output_csv.with_file_name(format!(
-                "{stem}_sc{slide_channel}_ch{channel:03}.{extension}"
+                "{stem}_sc{slide_channel}_ch{image_channel:03}.{extension}"
             ))
         }
         Some(output_csv) => output_csv.join(format!(
@@ -84,7 +82,7 @@ pub fn default_slide_timeseries_csv_path(
                 .and_then(|value| value.to_str())
                 .unwrap_or("slide"),
             slide_channel,
-            channel
+            image_channel
         )),
     }
 }
@@ -117,7 +115,6 @@ pub fn apply_delivery_correction(
 pub fn run_slide_timeseries<F>(
     workspace: &Path,
     slide: &Path,
-    channel: u32,
     output_csv: Option<&Path>,
     correction_quartile: f64,
     mut on_csv_written: Option<F>,
@@ -130,7 +127,9 @@ where
     let mut skipped_positions = BTreeMap::<u32, Vec<u32>>::new();
     let mut written_outputs = Vec::new();
 
-    for (slide_channel, positions) in slide_positions {
+    for (slide_channel, entry) in slide_positions {
+        let image_channel = entry.image_channel;
+        let positions = entry.positions;
         let mut metrics = Vec::<RoiMetricsRow>::new();
         let mut position_count = 0usize;
         for pos in positions {
@@ -145,9 +144,9 @@ where
                 }
             };
             let index = read_position_index(&pos_dir)?;
-            validate_channel_index(&index, channel)?;
+            validate_channel_index(&index, image_channel)?;
             let mut position_rows =
-                compute_roi_metrics(&pos_dir, &index, channel, &[correction_quartile])?;
+                compute_roi_metrics(&pos_dir, &index, image_channel, &[correction_quartile])?;
             metrics.append(&mut position_rows);
             position_count += 1;
         }
@@ -156,8 +155,13 @@ where
             continue;
         }
 
-        let output_path =
-            default_slide_timeseries_csv_path(workspace, slide, slide_channel, channel, output_csv);
+        let output_path = default_slide_timeseries_csv_path(
+            workspace,
+            slide,
+            slide_channel,
+            image_channel,
+            output_csv,
+        );
         let simplified = apply_delivery_correction(&metrics, correction_quartile)?;
         write_timeseries_csv(&simplified, &output_path)?;
         if let Some(ref mut callback) = on_csv_written {
@@ -228,7 +232,6 @@ pub fn execute(args: TimeseriesArgs) -> Result<(), String> {
     let result = run_slide_timeseries(
         &args.workspace,
         &args.slide,
-        args.channel,
         args.output_csv.as_deref(),
         args.correction_quartile,
         Some(

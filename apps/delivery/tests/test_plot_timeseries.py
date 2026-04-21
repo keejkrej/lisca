@@ -29,6 +29,17 @@ def test_default_output_plot_path_strips_slide_channel_segment(tmp_path: Path) -
     assert output_plot == (tmp_path / "slide_ch001_timeseries_combined.png").resolve()
 
 
+def test_default_output_plot_path_drops_image_channel_for_mixed_inputs(tmp_path: Path) -> None:
+    csv_paths = [
+        tmp_path / "slide_sc0_ch001_timeseries.csv",
+        tmp_path / "slide_sc2_ch002_timeseries.csv",
+    ]
+
+    output_plot = plot_timeseries.default_output_plot_path(csv_paths, output_plot=None)
+
+    assert output_plot == (tmp_path / "slide_timeseries_combined.png").resolve()
+
+
 def test_cli_writes_combined_plot(tmp_path: Path) -> None:
     csv_path_a = tmp_path / "slide_sc0_ch001_timeseries.csv"
     csv_path_b = tmp_path / "slide_sc2_ch001_timeseries.csv"

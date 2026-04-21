@@ -11,7 +11,6 @@ pub const HELP: &str = "Run the full delivery analysis workflow for a slide-mapp
 pub struct AnalyzeRunResult {
     pub workspace: PathBuf,
     pub slide: PathBuf,
-    pub channel: u32,
     pub interval: f64,
     pub timeseries_csvs: Vec<PathBuf>,
     pub auc_csv: PathBuf,
@@ -28,11 +27,9 @@ pub struct AnalyzeArgs {
     pub workspace: PathBuf,
     #[arg(
         long,
-        help = "Microscopy slide mapping JSON from slide channel to position list."
+        help = "Microscopy slide mapping JSON from slide channel to positions plus image_channel."
     )]
     pub slide: PathBuf,
-    #[arg(long, help = "Channel index in the cropped ROI TIFF timelapses.")]
-    pub channel: u32,
     #[arg(
         long,
         help = "Frame interval in minutes used when integrating AUC and fitting y=intensity_offset + expression_amplitude * (exp(-protein_decay_rate*t) - exp(-mrna_decay_rate*t))."
@@ -43,10 +40,9 @@ pub struct AnalyzeArgs {
 pub fn run_analysis<FS, FO>(
     workspace: &Path,
     slide: &Path,
-    channel: u32,
     interval: f64,
-    mut on_stage: Option<FS>,
-    mut on_output: Option<FO>,
+    on_stage: Option<FS>,
+    on_output: Option<FO>,
 ) -> Result<AnalyzeRunResult, String>
 where
     FS: FnMut(usize, usize, &str),
@@ -55,13 +51,11 @@ where
     run_analysis_with(
         workspace,
         slide,
-        channel,
         interval,
-        |workspace, slide, channel, output_csv| {
+        |workspace, slide, output_csv| {
             timeseries::run_slide_timeseries(
                 workspace,
                 slide,
-                channel,
                 output_csv,
                 timeseries::DELIVERY_CORRECTION_QUARTILE,
                 None::<fn(u32, &Path, usize)>,
@@ -91,7 +85,6 @@ where
 fn run_analysis_with<RT, RA, RF, RPT, RPA, FS, FO>(
     workspace: &Path,
     slide: &Path,
-    channel: u32,
     interval: f64,
     mut run_timeseries: RT,
     mut run_auc: RA,
@@ -102,7 +95,7 @@ fn run_analysis_with<RT, RA, RF, RPT, RPA, FS, FO>(
     mut on_output: Option<FO>,
 ) -> Result<AnalyzeRunResult, String>
 where
-    RT: FnMut(&Path, &Path, u32, Option<&Path>) -> Result<timeseries::SlideTimeseriesRunResult, String>,
+    RT: FnMut(&Path, &Path, Option<&Path>) -> Result<timeseries::SlideTimeseriesRunResult, String>,
     RA: FnMut(&[PathBuf], f64, Option<&Path>) -> Result<PathBuf, String>,
     RF: FnMut(&[PathBuf], f64, Option<&Path>) -> Result<PathBuf, String>,
     RPT: FnMut(&[PathBuf], Option<&Path>, usize, f64, f64, &str, Option<&str>) -> Result<PathBuf, String>,
@@ -114,7 +107,7 @@ where
     if let Some(ref mut callback) = on_stage {
         callback(0, total_steps, "Computing timeseries CSVs");
     }
-    let timeseries_result = run_timeseries(workspace, slide, channel, None)?;
+    let timeseries_result = run_timeseries(workspace, slide, None)?;
     if let Some(ref mut callback) = on_output {
         for (slide_channel, output_csv, position_count) in &timeseries_result.written_outputs {
             callback(&timeseries::format_written_timeseries_csv_message(
@@ -182,7 +175,6 @@ where
     let result = AnalyzeRunResult {
         workspace: workspace.to_path_buf(),
         slide: slide.to_path_buf(),
-        channel,
         interval,
         timeseries_csvs,
         auc_csv,
@@ -199,8 +191,7 @@ where
 
 pub fn format_completed_analysis_message(result: &AnalyzeRunResult) -> String {
     format!(
-        "Completed analysis for channel {}: {} timeseries CSVs, 1 AUC CSV, 1 fit CSV, and 2 plots.",
-        result.channel,
+        "Completed analysis: {} timeseries CSVs, 1 AUC CSV, 1 fit CSV, and 2 plots.",
         result.timeseries_csvs.len()
     )
 }
@@ -209,7 +200,6 @@ pub fn execute(args: AnalyzeArgs) -> Result<(), String> {
     let result = run_analysis(
         &args.workspace,
         &args.slide,
-        args.channel,
         args.interval,
         None::<fn(usize, usize, &str)>,
         Some(|message: &str| eprintln!("{message}")),
@@ -231,25 +221,23 @@ mod tests {
         let workspace = PathBuf::from("/tmp/workspace");
         let slide = PathBuf::from("/tmp/slide.json");
         let timeseries_csv_a = PathBuf::from("/tmp/slide_sc0_ch001_timeseries.csv");
-        let timeseries_csv_b = PathBuf::from("/tmp/slide_sc2_ch001_timeseries.csv");
-        let auc_csv = PathBuf::from("/tmp/slide_ch001_timeseries_auc.csv");
-        let fit_csv = PathBuf::from("/tmp/slide_ch001_timeseries_fit.csv");
-        let timeseries_plot = PathBuf::from("/tmp/slide_ch001_timeseries_combined.png");
-        let auc_plot = PathBuf::from("/tmp/slide_ch001_timeseries_auc.png");
+        let timeseries_csv_b = PathBuf::from("/tmp/slide_sc2_ch002_timeseries.csv");
+        let auc_csv = PathBuf::from("/tmp/slide_timeseries_auc.csv");
+        let fit_csv = PathBuf::from("/tmp/slide_timeseries_fit.csv");
+        let timeseries_plot = PathBuf::from("/tmp/slide_timeseries_combined.png");
+        let auc_plot = PathBuf::from("/tmp/slide_timeseries_auc.png");
         let calls = RefCell::new(Vec::<String>::new());
         let output_messages = RefCell::new(Vec::<String>::new());
 
         let result = run_analysis_with(
             &workspace,
             &slide,
-            1,
             10.0,
-            |workspace_arg, slide_arg, channel, output_csv| {
+            |workspace_arg, slide_arg, output_csv| {
                 calls.borrow_mut().push(format!(
-                    "timeseries:{}:{}:{}:{}",
+                    "timeseries:{}:{}:{}",
                     workspace_arg == workspace.as_path(),
                     slide_arg == slide.as_path(),
-                    channel,
                     output_csv.is_none()
                 ));
                 Ok(timeseries::SlideTimeseriesRunResult {
@@ -315,7 +303,7 @@ mod tests {
         assert_eq!(
             calls.into_inner(),
             vec![
-                "timeseries:true:true:1:true",
+                "timeseries:true:true:true",
                 "auc:2:10:true",
                 "fit:2:10:true",
                 "plot_timeseries:2:true:3:0.12:1:#c03a2b:",
@@ -343,9 +331,8 @@ mod tests {
         run_analysis_with(
             Path::new("/tmp/workspace"),
             Path::new("/tmp/slide.json"),
-            1,
             10.0,
-            |_workspace, _slide, _channel, _output_csv| {
+            |_workspace, _slide, _output_csv| {
                 Ok(timeseries::SlideTimeseriesRunResult {
                     written_outputs: vec![(0, PathBuf::from("/tmp/slide_sc0_ch001_timeseries.csv"), 2)],
                     skipped_positions: BTreeMap::new(),
@@ -357,7 +344,7 @@ mod tests {
                 Ok(PathBuf::from("/tmp/timeseries.png"))
             },
             |_auc_csv, _output_plot, _color, _title| Ok(PathBuf::from("/tmp/auc.png")),
-            Some(|completed, total, description| {
+            Some(|completed, total, description: &str| {
                 stage_updates.push((completed, total, description.to_string()))
             }),
             None::<fn(&str)>,
@@ -382,7 +369,6 @@ mod tests {
         let result = AnalyzeRunResult {
             workspace: PathBuf::from("/tmp/workspace"),
             slide: PathBuf::from("/tmp/slide.json"),
-            channel: 1,
             interval: 10.0,
             timeseries_csvs: vec![PathBuf::from("/tmp/a.csv"), PathBuf::from("/tmp/b.csv")],
             auc_csv: PathBuf::from("/tmp/auc.csv"),
@@ -394,7 +380,7 @@ mod tests {
 
         assert_eq!(
             format_completed_analysis_message(&result),
-            "Completed analysis for channel 1: 2 timeseries CSVs, 1 AUC CSV, 1 fit CSV, and 2 plots."
+            "Completed analysis: 2 timeseries CSVs, 1 AUC CSV, 1 fit CSV, and 2 plots."
         );
     }
 }

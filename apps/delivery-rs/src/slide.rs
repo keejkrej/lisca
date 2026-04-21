@@ -4,7 +4,7 @@ use clap::Args;
 use dialoguer::{theme::ColorfulTheme, Confirm, Input, Select};
 
 use lisca::data::slide::{
-    parse_position_spec, resolve_slide_path, write_slide_mapping, SlideMapping,
+    parse_position_spec, resolve_slide_path, write_slide_mapping, SlideChannelMapping, SlideMapping,
 };
 
 pub const HELP: &str = "Interactively create a slide.json mapping for delivery analysis.";
@@ -34,20 +34,28 @@ pub fn format_positions(positions: &[u32]) -> String {
         .join(", ")
 }
 
-fn render_mapping(mapping: &SlideMapping) {
-    eprintln!("Current Slide Mapping");
-    eprintln!(
-        "{:>14} | {:<40} | {:>5}",
-        "Slide Channel", "Positions", "Count"
-    );
-    for (channel, positions) in mapping {
-        eprintln!(
-            "{:>14} | {:<40} | {:>5}",
+fn format_mapping_table(mapping: &SlideMapping) -> String {
+    let mut lines = vec![
+        "Current Slide Mapping".to_string(),
+        format!(
+            "{:>14} | {:<40} | {:>13} | {:>5}",
+            "Slide Channel", "Positions", "Image Channel", "Count"
+        ),
+    ];
+    for (channel, entry) in mapping {
+        lines.push(format!(
+            "{:>14} | {:<40} | {:>13} | {:>5}",
             channel,
-            format_positions(positions),
-            positions.len()
-        );
+            format_positions(&entry.positions),
+            entry.image_channel,
+            entry.positions.len()
+        ));
     }
+    lines.join("\n")
+}
+
+fn render_mapping(mapping: &SlideMapping) {
+    eprintln!("{}", format_mapping_table(mapping));
 }
 
 fn prompt_channel_id(theme: &ColorfulTheme, mapping: &SlideMapping) -> Result<u32, String> {
@@ -99,6 +107,14 @@ fn prompt_positions(theme: &ColorfulTheme) -> Result<Vec<u32>, String> {
     }
 }
 
+fn prompt_image_channel(theme: &ColorfulTheme) -> Result<u32, String> {
+    Input::<u32>::with_theme(theme)
+        .with_prompt("Image channel")
+        .default(0)
+        .interact_text()
+        .map_err(|err| err.to_string())
+}
+
 fn prompt_remove_channel(theme: &ColorfulTheme, mapping: &mut SlideMapping) -> Result<(), String> {
     loop {
         let channel = Input::<u32>::with_theme(theme)
@@ -127,7 +143,14 @@ pub fn run_slide_wizard(
     while mapping.is_empty() {
         let channel = prompt_channel_id(&theme, &mapping)?;
         let positions = prompt_positions(&theme)?;
-        mapping.insert(channel, positions);
+        let image_channel = prompt_image_channel(&theme)?;
+        mapping.insert(
+            channel,
+            SlideChannelMapping {
+                positions,
+                image_channel,
+            },
+        );
         render_mapping(&mapping);
     }
 
@@ -143,7 +166,14 @@ pub fn run_slide_wizard(
             "add" => {
                 let channel = prompt_channel_id(&theme, &mapping)?;
                 let positions = prompt_positions(&theme)?;
-                mapping.insert(channel, positions);
+                let image_channel = prompt_image_channel(&theme)?;
+                mapping.insert(
+                    channel,
+                    SlideChannelMapping {
+                        positions,
+                        image_channel,
+                    },
+                );
                 render_mapping(&mapping);
             }
             "remove" => {
@@ -152,7 +182,14 @@ pub fn run_slide_wizard(
                     eprintln!("No groups remain. Add a new group.");
                     let channel = prompt_channel_id(&theme, &mapping)?;
                     let positions = prompt_positions(&theme)?;
-                    mapping.insert(channel, positions);
+                    let image_channel = prompt_image_channel(&theme)?;
+                    mapping.insert(
+                        channel,
+                        SlideChannelMapping {
+                            positions,
+                            image_channel,
+                        },
+                    );
                 }
                 render_mapping(&mapping);
             }
@@ -186,4 +223,37 @@ pub fn execute(args: SlideArgs) -> Result<(), String> {
     eprintln!("Wrote slide mapping: {}", written_path.display());
     render_mapping(&mapping);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn format_mapping_table_includes_image_channel_column() {
+        let mapping = SlideMapping::from([
+            (
+                0,
+                SlideChannelMapping {
+                    positions: vec![0, 2],
+                    image_channel: 1,
+                },
+            ),
+            (
+                1,
+                SlideChannelMapping {
+                    positions: vec![12, 14],
+                    image_channel: 2,
+                },
+            ),
+        ]);
+
+        let rendered = format_mapping_table(&mapping);
+
+        assert!(rendered.contains("Image Channel"));
+        assert!(rendered.contains("0, 2"));
+        assert!(rendered.contains("12, 14"));
+        assert!(rendered.contains("1"));
+        assert!(rendered.contains("2"));
+    }
 }

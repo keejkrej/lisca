@@ -1,10 +1,17 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from pathlib import Path
 
 
-type SlideMapping = dict[int, list[int]]
+@dataclass(frozen=True)
+class SlideChannelMapping:
+    positions: list[int]
+    image_channel: int
+
+
+type SlideMapping = dict[int, SlideChannelMapping]
 
 
 def resolve_slide_path(dataset_root: Path, output: Path | None = None) -> Path:
@@ -71,7 +78,7 @@ def validate_slide_mapping(raw: object, *, source: Path | None = None) -> SlideM
         raise ValueError(f"Slide mapping must be a JSON object: {source_label}")
 
     slide_positions: SlideMapping = {}
-    for raw_channel, raw_positions in raw.items():
+    for raw_channel, raw_entry in raw.items():
         try:
             slide_channel = int(raw_channel)
         except (TypeError, ValueError) as exc:
@@ -80,14 +87,38 @@ def validate_slide_mapping(raw: object, *, source: Path | None = None) -> SlideM
             ) from exc
         if slide_channel < 0:
             raise ValueError(f"Slide channel keys must be non-negative integers, got {raw_channel!r}")
+
+        if isinstance(raw_entry, SlideChannelMapping):
+            raw_positions = raw_entry.positions
+            raw_image_channel = raw_entry.image_channel
+        else:
+            if not isinstance(raw_entry, dict):
+                raise ValueError(
+                    f"Slide channel entries must be objects, got {type(raw_entry).__name__} for {slide_channel}"
+                )
+            if "positions" not in raw_entry:
+                raise ValueError(f"Slide channel {slide_channel} is missing required field 'positions'")
+            if "image_channel" not in raw_entry:
+                raise ValueError(
+                    f"Slide channel {slide_channel} is missing required field 'image_channel'"
+                )
+            raw_positions = raw_entry["positions"]
+            raw_image_channel = raw_entry["image_channel"]
+
         if not isinstance(raw_positions, list):
             raise ValueError(
-                f"Slide channel entries must be lists, got {type(raw_positions).__name__} for {slide_channel}"
+                f"Slide channel positions must be lists, got {type(raw_positions).__name__} for {slide_channel}"
             )
+        if not isinstance(raw_image_channel, int) or isinstance(raw_image_channel, bool):
+            raise ValueError(
+                f"Slide image_channel for channel {slide_channel} must be an integer, got {raw_image_channel!r}"
+            )
+        if raw_image_channel < 0:
+            raise ValueError(f"Slide image_channel must be non-negative, got {raw_image_channel}")
 
         positions: list[int] = []
         for entry in raw_positions:
-            if not isinstance(entry, int):
+            if not isinstance(entry, int) or isinstance(entry, bool):
                 raise ValueError(
                     f"Slide positions for channel {slide_channel} must be integers, got {entry!r}"
                 )
@@ -96,7 +127,10 @@ def validate_slide_mapping(raw: object, *, source: Path | None = None) -> SlideM
             positions.append(entry)
         if not positions:
             raise ValueError(f"{source_label} defines no positions for slide channel {slide_channel}")
-        slide_positions[slide_channel] = sorted(set(positions))
+        slide_positions[slide_channel] = SlideChannelMapping(
+            positions=sorted(set(positions)),
+            image_channel=raw_image_channel,
+        )
 
     if not slide_positions:
         raise ValueError(f"{source_label} defines no slide channels")
@@ -110,7 +144,13 @@ def load_slide_mapping(slide_path: Path) -> SlideMapping:
 
 def serialize_slide_mapping(mapping: SlideMapping) -> str:
     validated_mapping = validate_slide_mapping(mapping)
-    ordered = {str(channel): validated_mapping[channel] for channel in sorted(validated_mapping)}
+    ordered = {
+        str(channel): {
+            "positions": validated_mapping[channel].positions,
+            "image_channel": validated_mapping[channel].image_channel,
+        }
+        for channel in sorted(validated_mapping)
+    }
     return json.dumps(ordered, indent=2) + "\n"
 
 

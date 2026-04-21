@@ -94,14 +94,7 @@ def run_fit_with_jobs(
 def default_output_csv_path(timeseries_csvs: list[Path], output_csv: Path | None) -> Path:
     if output_csv is not None:
         return output_csv.resolve()
-
-    normalized_stems = {auc.normalize_output_stem(csv_path) for csv_path in timeseries_csvs}
-    if len(normalized_stems) == 1:
-        stem = next(iter(normalized_stems))
-    elif len(timeseries_csvs) == 1:
-        stem = timeseries_csvs[0].stem
-    else:
-        stem = "timeseries"
+    stem = auc.aggregate_output_stem(timeseries_csvs)
     return timeseries_csvs[0].with_name(f"{stem}_fit.csv").resolve()
 
 

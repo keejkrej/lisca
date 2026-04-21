@@ -61,21 +61,7 @@ pub fn default_output_plot_path(
     if let Some(path) = output_plot {
         return path.to_path_buf();
     }
-    let stems = timeseries_csvs
-        .iter()
-        .map(|path| super::auc::normalize_output_stem(path))
-        .collect::<std::collections::BTreeSet<_>>();
-    let stem = if stems.len() == 1 {
-        stems.into_iter().next().unwrap()
-    } else if timeseries_csvs.len() == 1 {
-        timeseries_csvs[0]
-            .file_stem()
-            .and_then(|value| value.to_str())
-            .unwrap_or("timeseries")
-            .to_string()
-    } else {
-        "timeseries".to_string()
-    };
+    let stem = super::auc::aggregate_output_stem(timeseries_csvs);
     timeseries_csvs[0].with_file_name(format!("{stem}_combined.png"))
 }
 
@@ -259,6 +245,16 @@ mod tests {
         ];
         let output = default_output_plot_path(&csvs, None);
         assert!(output.ends_with("slide_ch001_timeseries_combined.png"));
+    }
+
+    #[test]
+    fn default_output_plot_path_drops_image_channel_for_mixed_inputs() {
+        let csvs = vec![
+            PathBuf::from("/tmp/slide_sc0_ch001_timeseries.csv"),
+            PathBuf::from("/tmp/slide_sc2_ch002_timeseries.csv"),
+        ];
+        let output = default_output_plot_path(&csvs, None);
+        assert!(output.ends_with("slide_timeseries_combined.png"));
     }
 
     #[test]

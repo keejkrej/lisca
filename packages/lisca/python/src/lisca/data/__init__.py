@@ -11,6 +11,7 @@ from lisca.data.nd2 import (
 )
 from lisca.data.roi import PositionIndex, RoiCrop, position_dir, read_position_index
 from lisca.data.slide import (
+    SlideChannelMapping,
     SlideMapping,
     load_slide_mapping,
     parse_position_spec,
@@ -27,6 +28,7 @@ __all__ = [
     "RoiBox",
     "RoiCrop",
     "SlideMapping",
+    "SlideChannelMapping",
     "build_frame_lookup",
     "channel_name",
     "clip_roi",

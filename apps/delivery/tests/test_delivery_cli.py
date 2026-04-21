@@ -16,6 +16,7 @@ def test_expression_timeseries_help_is_exposed() -> None:
     assert result.exit_code == 0
     assert "Workspace containing" in result.output
     assert "--slide" in result.output
+    assert "--channel" not in result.output
     assert "--pos" not in result.output
 
 
@@ -23,10 +24,11 @@ def test_expression_timeseries_requires_slide(tmp_path: Path) -> None:
     workspace = tmp_path / "workspace"
     workspace.mkdir()
 
-    result = runner.invoke(cli.app, ["expression", "timeseries", str(workspace), "--channel", "1"])
+    result = runner.invoke(cli.app, ["expression", "timeseries", str(workspace)])
 
     assert result.exit_code != 0
     assert "Missing option '--slide'" in result.output
+    assert "--channel" not in result.output
 
 
 def test_analyze_help_is_exposed() -> None:
@@ -37,6 +39,7 @@ def test_analyze_help_is_exposed() -> None:
     assert "Run the full delivery analysis workflow" in result.output
     assert "--slide" in result.output
     assert "--interval" in result.output
+    assert "--channel" not in result.output
     assert "--output-dir" not in result.output
     assert "--correction-quartile" not in result.output
     assert "--json" not in result.output

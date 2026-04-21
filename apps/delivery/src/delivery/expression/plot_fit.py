@@ -118,7 +118,7 @@ def infer_timeseries_csvs(fit_csv: Path) -> list[Path]:
         (
             candidate.resolve()
             for candidate in fit_csv.parent.glob("*_timeseries.csv")
-            if plot_timeseries.normalize_output_stem(candidate) == fit_stem
+            if fit_stem in auc.aggregate_output_stem_candidates(candidate)
         ),
         key=lambda path: path.name,
     )

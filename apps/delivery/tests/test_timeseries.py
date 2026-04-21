@@ -8,20 +8,35 @@ import pandas as pd
 import pytest
 
 from delivery.expression import timeseries
+from lisca.data.slide import SlideChannelMapping
 
 
 
-def test_load_slide_position_groups_returns_integer_lists(tmp_path: Path) -> None:
+def test_load_slide_position_groups_returns_positions_and_image_channels(tmp_path: Path) -> None:
     slide_path = tmp_path / 'slide.json'
-    slide_path.write_text(json.dumps({'1': [12, 14, 16, 18], '0': [0, 2]}), encoding='utf-8')
+    slide_path.write_text(
+        json.dumps(
+            {
+                '1': {'positions': [12, 14, 16, 18], 'image_channel': 2},
+                '0': {'positions': [0, 2], 'image_channel': 1},
+            }
+        ),
+        encoding='utf-8',
+    )
 
-    assert timeseries.load_slide_position_groups(slide_path) == {0: [0, 2], 1: [12, 14, 16, 18]}
+    assert timeseries.load_slide_position_groups(slide_path) == {
+        0: SlideChannelMapping(positions=[0, 2], image_channel=1),
+        1: SlideChannelMapping(positions=[12, 14, 16, 18], image_channel=2),
+    }
 
 
 
 def test_load_slide_position_groups_rejects_string_entries(tmp_path: Path) -> None:
     slide_path = tmp_path / 'slide.json'
-    slide_path.write_text(json.dumps({'1': ['12-14', 16]}), encoding='utf-8')
+    slide_path.write_text(
+        json.dumps({'1': {'positions': ['12-14', 16], 'image_channel': 1}}),
+        encoding='utf-8',
+    )
 
     with pytest.raises(ValueError, match="must be integers"):
         timeseries.load_slide_position_groups(slide_path)
@@ -35,7 +50,7 @@ def test_default_slide_timeseries_csv_path_uses_slide_stem(tmp_path: Path) -> No
         tmp_path,
         slide_path,
         slide_channel=4,
-        channel=2,
+        image_channel=2,
         output_csv=None,
     )
 
@@ -45,7 +60,15 @@ def test_default_slide_timeseries_csv_path_uses_slide_stem(tmp_path: Path) -> No
 
 def test_cli_with_slide_writes_one_csv_per_slide_channel(monkeypatch, tmp_path: Path) -> None:
     slide_path = tmp_path / 'slide.json'
-    slide_path.write_text(json.dumps({'0': [0, 1], '2': [25, 26, 28]}), encoding='utf-8')
+    slide_path.write_text(
+        json.dumps(
+            {
+                '0': {'positions': [0, 1], 'image_channel': 1},
+                '2': {'positions': [25, 26, 28], 'image_channel': 2},
+            }
+        ),
+        encoding='utf-8',
+    )
 
     compute_calls: list[tuple[int, int, list[float]]] = []
     written: list[tuple[pd.DataFrame, Path]] = []
@@ -77,7 +100,6 @@ def test_cli_with_slide_writes_one_csv_per_slide_channel(monkeypatch, tmp_path: 
 
     timeseries.cli(
         workspace=tmp_path,
-        channel=1,
         slide=slide_path,
         output_csv=None,
         correction_quartile=timeseries.DELIVERY_CORRECTION_QUARTILE,
@@ -86,15 +108,15 @@ def test_cli_with_slide_writes_one_csv_per_slide_channel(monkeypatch, tmp_path: 
     assert compute_calls == [
         (0, 1, [0.25]),
         (1, 1, [0.25]),
-        (25, 1, [0.25]),
-        (26, 1, [0.25]),
-        (28, 1, [0.25]),
+        (25, 2, [0.25]),
+        (26, 2, [0.25]),
+        (28, 2, [0.25]),
     ]
     assert len(written) == 2
     written_df0, written_path0 = written[0]
     written_df2, written_path2 = written[1]
     assert written_path0 == (tmp_path / 'timeseries' / 'slide_sc0_ch001_timeseries.csv').resolve()
-    assert written_path2 == (tmp_path / 'timeseries' / 'slide_sc2_ch001_timeseries.csv').resolve()
+    assert written_path2 == (tmp_path / 'timeseries' / 'slide_sc2_ch002_timeseries.csv').resolve()
     assert written_df0.columns.tolist() == ['pos', 'roi', 't', 'corrected']
     assert written_df0.to_dict('records') == [
         {'pos': 0, 'roi': 1, 't': 0, 'corrected': 0.0},
@@ -111,7 +133,15 @@ def test_cli_with_slide_writes_one_csv_per_slide_channel(monkeypatch, tmp_path: 
 
 def test_cli_with_slide_skips_missing_positions(monkeypatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     slide_path = tmp_path / 'slide.json'
-    slide_path.write_text(json.dumps({'0': [0, 1], '2': [25, 26, 28]}), encoding='utf-8')
+    slide_path.write_text(
+        json.dumps(
+            {
+                '0': {'positions': [0, 1], 'image_channel': 1},
+                '2': {'positions': [25, 26, 28], 'image_channel': 2},
+            }
+        ),
+        encoding='utf-8',
+    )
 
     compute_calls: list[int] = []
     written: list[tuple[pd.DataFrame, Path]] = []
@@ -140,7 +170,6 @@ def test_cli_with_slide_skips_missing_positions(monkeypatch, tmp_path: Path, cap
 
     timeseries.cli(
         workspace=tmp_path,
-        channel=1,
         slide=slide_path,
         output_csv=None,
         correction_quartile=timeseries.DELIVERY_CORRECTION_QUARTILE,
@@ -157,7 +186,15 @@ def test_cli_with_slide_skips_missing_positions(monkeypatch, tmp_path: Path, cap
 
 def test_cli_with_slide_honors_custom_output_csv(monkeypatch, tmp_path: Path) -> None:
     slide_path = tmp_path / 'slide.json'
-    slide_path.write_text(json.dumps({'0': [0, 1], '2': [25]}), encoding='utf-8')
+    slide_path.write_text(
+        json.dumps(
+            {
+                '0': {'positions': [0, 1], 'image_channel': 0},
+                '2': {'positions': [25], 'image_channel': 2},
+            }
+        ),
+        encoding='utf-8',
+    )
 
     monkeypatch.setattr(timeseries, 'position_dir', lambda dataset_root, pos: dataset_root / 'roi' / f'Pos{pos}')
     monkeypatch.setattr(
@@ -180,7 +217,6 @@ def test_cli_with_slide_honors_custom_output_csv(monkeypatch, tmp_path: Path) ->
     custom_output = tmp_path / 'combined.csv'
     timeseries.cli(
         workspace=tmp_path,
-        channel=0,
         slide=slide_path,
         output_csv=custom_output,
         correction_quartile=timeseries.DELIVERY_CORRECTION_QUARTILE,
@@ -188,5 +224,5 @@ def test_cli_with_slide_honors_custom_output_csv(monkeypatch, tmp_path: Path) ->
 
     assert written_paths == [
         (tmp_path / 'combined_sc0_ch000.csv').resolve(),
-        (tmp_path / 'combined_sc2_ch000.csv').resolve(),
+        (tmp_path / 'combined_sc2_ch002.csv').resolve(),
     ]

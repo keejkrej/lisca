@@ -25,7 +25,6 @@ app = typer.Typer(
 class AnalyzeRunResult:
     workspace: Path
     slide: Path
-    channel: int
     interval: float
     timeseries_csvs: list[Path]
     auc_csv: Path
@@ -43,7 +42,6 @@ def run_analysis(
     workspace: Path,
     *,
     slide: Path,
-    channel: int,
     interval: float,
     on_stage: StageCallback | None = None,
     on_output: OutputCallback | None = None,
@@ -54,7 +52,6 @@ def run_analysis(
     timeseries_result = timeseries.run_slide_timeseries(
         workspace,
         slide=slide,
-        channel=channel,
         output_csv=None,
         on_csv_written=(
             None
@@ -107,7 +104,6 @@ def run_analysis(
     result = AnalyzeRunResult(
         workspace=workspace.resolve(),
         slide=slide.resolve(),
-        channel=channel,
         interval=interval,
         timeseries_csvs=timeseries_csvs,
         auc_csv=auc_csv,
@@ -136,13 +132,7 @@ def cli(
         exists=True,
         file_okay=True,
         dir_okay=False,
-        help="Microscopy slide mapping JSON from slide channel to position list.",
-    ),
-    channel: int = typer.Option(
-        ...,
-        "--channel",
-        min=0,
-        help="Channel index in the cropped ROI TIFF timelapses.",
+        help="Microscopy slide mapping JSON from slide channel to positions plus image_channel.",
     ),
     interval: float = typer.Option(
         ...,
@@ -159,7 +149,6 @@ def cli(
         result = run_analysis(
             workspace,
             slide=slide,
-            channel=channel,
             interval=interval,
             on_output=lambda message: typer.echo(message, err=True),
         )
@@ -168,7 +157,7 @@ def cli(
         raise
 
     typer.echo(
-        f"Completed analysis for channel {result.channel}: {len(result.timeseries_csvs)} timeseries CSVs, "
+        f"Completed analysis: {len(result.timeseries_csvs)} timeseries CSVs, "
         "1 AUC CSV, 1 fit CSV, and 2 plots.",
         err=True,
     )

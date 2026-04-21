@@ -1,7 +1,13 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
-pub type SlideMapping = BTreeMap<u32, Vec<u32>>;
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SlideChannelMapping {
+    pub positions: Vec<u32>,
+    pub image_channel: u32,
+}
+
+pub type SlideMapping = BTreeMap<u32, SlideChannelMapping>;
 
 pub fn resolve_slide_path(dataset_root: &Path, output: Option<&Path>) -> PathBuf {
     match output {
@@ -94,19 +100,26 @@ fn source_label(source: Option<&Path>) -> String {
 
 fn normalize_mapping_entries<I>(entries: I, source: Option<&Path>) -> Result<SlideMapping, String>
 where
-    I: IntoIterator<Item = (u32, Vec<u32>)>,
+    I: IntoIterator<Item = (u32, SlideChannelMapping)>,
 {
     let source_label = source_label(source);
     let mut mapping = BTreeMap::new();
 
-    for (slide_channel, raw_positions) in entries {
+    for (slide_channel, raw_entry) in entries {
+        let raw_positions = raw_entry.positions;
         if raw_positions.is_empty() {
             return Err(format!(
                 "{source_label} defines no positions for slide channel {slide_channel}"
             ));
         }
         let positions = raw_positions.into_iter().collect::<BTreeSet<_>>();
-        mapping.insert(slide_channel, positions.into_iter().collect());
+        mapping.insert(
+            slide_channel,
+            SlideChannelMapping {
+                positions: positions.into_iter().collect(),
+                image_channel: raw_entry.image_channel,
+            },
+        );
     }
 
     if mapping.is_empty() {
@@ -126,7 +139,7 @@ pub fn validate_slide_mapping_value(
         .ok_or_else(|| format!("Slide mapping must be a JSON object: {source_label}"))?;
 
     let mut entries = Vec::new();
-    for (raw_channel, raw_positions) in object {
+    for (raw_channel, raw_entry) in object {
         let slide_channel: i64 = raw_channel.parse().map_err(|_| {
             format!("Slide channel keys must be non-negative integers, got {raw_channel:?}")
         })?;
@@ -136,26 +149,61 @@ pub fn validate_slide_mapping_value(
             ));
         }
 
+        let entry = raw_entry.as_object().ok_or_else(|| {
+            format!(
+                "Slide channel entries must be objects, got {} for {}",
+                type_name(raw_entry),
+                slide_channel
+            )
+        })?;
+        let raw_positions = entry.get("positions").ok_or_else(|| {
+            format!("Slide channel {slide_channel} is missing required field 'positions'")
+        })?;
+        let raw_image_channel = entry.get("image_channel").ok_or_else(|| {
+            format!("Slide channel {slide_channel} is missing required field 'image_channel'")
+        })?;
+
         let array = raw_positions.as_array().ok_or_else(|| {
             format!(
-                "Slide channel entries must be lists, got {} for {}",
+                "Slide channel positions must be lists, got {} for {}",
                 type_name(raw_positions),
                 slide_channel
             )
         })?;
+        let image_channel = raw_image_channel.as_i64().ok_or_else(|| {
+            format!(
+                "Slide image_channel for channel {} must be an integer, got {}",
+                slide_channel,
+                json_value_repr(raw_image_channel)
+            )
+        })?;
+        if image_channel < 0 {
+            return Err(format!(
+                "Slide image_channel must be non-negative, got {image_channel}"
+            ));
+        }
 
         let mut positions = Vec::new();
         for entry in array {
-            let value = entry.as_u64().ok_or_else(|| {
+            let value = entry.as_i64().ok_or_else(|| {
                 format!(
                     "Slide positions for channel {} must be integers, got {}",
                     slide_channel,
                     json_value_repr(entry)
                 )
             })?;
+            if value < 0 {
+                return Err(format!("Slide positions must be non-negative, got {value}"));
+            }
             positions.push(value as u32);
         }
-        entries.push((slide_channel as u32, positions));
+        entries.push((
+            slide_channel as u32,
+            SlideChannelMapping {
+                positions,
+                image_channel: image_channel as u32,
+            },
+        ));
     }
 
     normalize_mapping_entries(entries, source)
@@ -175,7 +223,15 @@ pub fn serialize_slide_mapping(mapping: &SlideMapping) -> Result<String, String>
     let mapping = validate_slide_mapping(mapping)?;
     let object = mapping
         .into_iter()
-        .map(|(channel, positions)| (channel.to_string(), serde_json::json!(positions)))
+        .map(|(channel, entry)| {
+            (
+                channel.to_string(),
+                serde_json::json!({
+                    "positions": entry.positions,
+                    "image_channel": entry.image_channel,
+                }),
+            )
+        })
         .collect::<serde_json::Map<String, serde_json::Value>>();
     serde_json::to_string_pretty(&serde_json::Value::Object(object))
         .map(|mut value| {
@@ -246,11 +302,76 @@ mod tests {
     #[test]
     fn validate_slide_mapping_orders_keys_and_deduplicates_positions() {
         let mapping =
-            validate_slide_mapping_value(&serde_json::json!({"2":[10,12,10],"0":[2,0]}), None)
-                .unwrap();
+            validate_slide_mapping_value(
+                &serde_json::json!({
+                    "2":{"positions":[10,12,10],"image_channel":1},
+                    "0":{"positions":[2,0],"image_channel":0}
+                }),
+                None,
+            )
+            .unwrap();
         assert_eq!(
             mapping.into_iter().collect::<Vec<_>>(),
-            vec![(0, vec![0, 2]), (2, vec![10, 12])]
+            vec![
+                (
+                    0,
+                    SlideChannelMapping {
+                        positions: vec![0, 2],
+                        image_channel: 0,
+                    },
+                ),
+                (
+                    2,
+                    SlideChannelMapping {
+                        positions: vec![10, 12],
+                        image_channel: 1,
+                    },
+                ),
+            ]
         );
+    }
+
+    #[test]
+    fn validate_slide_mapping_rejects_missing_fields() {
+        assert!(validate_slide_mapping_value(
+            &serde_json::json!({"0":{"image_channel":1}}),
+            None,
+        )
+        .unwrap_err()
+        .contains("missing required field 'positions'"));
+        assert!(validate_slide_mapping_value(
+            &serde_json::json!({"0":{"positions":[1,2]}}),
+            None,
+        )
+        .unwrap_err()
+        .contains("missing required field 'image_channel'"));
+    }
+
+    #[test]
+    fn validate_slide_mapping_rejects_invalid_types_and_negative_values() {
+        assert!(validate_slide_mapping_value(
+            &serde_json::json!({"0":{"positions":"1,2","image_channel":1}}),
+            None,
+        )
+        .unwrap_err()
+        .contains("positions must be lists"));
+        assert!(validate_slide_mapping_value(
+            &serde_json::json!({"0":{"positions":[1,2],"image_channel":"1"}}),
+            None,
+        )
+        .unwrap_err()
+        .contains("image_channel for channel 0 must be an integer"));
+        assert!(validate_slide_mapping_value(
+            &serde_json::json!({"0":{"positions":[1,2],"image_channel":-1}}),
+            None,
+        )
+        .unwrap_err()
+        .contains("Slide image_channel must be non-negative"));
+        assert!(validate_slide_mapping_value(
+            &serde_json::json!({"0":{"positions":[1,-2],"image_channel":1}}),
+            None,
+        )
+        .unwrap_err()
+        .contains("Slide positions must be non-negative"));
     }
 }

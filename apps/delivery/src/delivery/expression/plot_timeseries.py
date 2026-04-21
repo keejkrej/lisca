@@ -12,8 +12,7 @@ import typer
 
 from lisca.analysis.roi import load_timeseries_csv
 
-
-SLIDE_CHANNEL_PATTERN = re.compile(r"_sc\d+(?=_)")
+from . import auc
 
 app = typer.Typer(
     add_completion=False,
@@ -46,21 +45,14 @@ def run_plot_timeseries(
     return resolved_output_plot
 
 
-def normalize_output_stem(csv_path: Path) -> str:
-    return SLIDE_CHANNEL_PATTERN.sub("", csv_path.stem)
+def normalize_output_stem(csv_path: Path, *, drop_image_channel: bool = False) -> str:
+    return auc.normalize_output_stem(csv_path, drop_image_channel=drop_image_channel)
 
 
 def default_output_plot_path(timeseries_csvs: list[Path], output_plot: Path | None) -> Path:
     if output_plot is not None:
         return output_plot.resolve()
-
-    normalized_stems = {normalize_output_stem(csv_path) for csv_path in timeseries_csvs}
-    if len(normalized_stems) == 1:
-        stem = next(iter(normalized_stems))
-    elif len(timeseries_csvs) == 1:
-        stem = timeseries_csvs[0].stem
-    else:
-        stem = "timeseries"
+    stem = auc.aggregate_output_stem(timeseries_csvs)
     return timeseries_csvs[0].with_name(f"{stem}_combined.png").resolve()
 
 

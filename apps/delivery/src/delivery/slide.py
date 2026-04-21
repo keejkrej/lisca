@@ -4,6 +4,7 @@ from pathlib import Path
 
 import typer
 from lisca.data.slide import (
+    SlideChannelMapping,
     SlideMapping,
     parse_position_spec,
     resolve_slide_path,
@@ -32,11 +33,17 @@ def render_mapping(console: Console, mapping: SlideMapping) -> None:
     table = Table(title="Current Slide Mapping")
     table.add_column("Slide Channel", justify="right")
     table.add_column("Positions")
+    table.add_column("Image Channel", justify="right")
     table.add_column("Count", justify="right")
 
     for channel in sorted(mapping):
-        positions = mapping[channel]
-        table.add_row(str(channel), format_positions(positions), str(len(positions)))
+        entry = mapping[channel]
+        table.add_row(
+            str(channel),
+            format_positions(entry.positions),
+            str(entry.image_channel),
+            str(len(entry.positions)),
+        )
 
     console.print(table)
 
@@ -74,6 +81,15 @@ def prompt_positions(console: Console) -> list[int]:
             return positions
 
 
+def prompt_image_channel(console: Console) -> int:
+    while True:
+        image_channel = IntPrompt.ask("[bold]Image channel[/bold]", console=console, default=0)
+        if image_channel < 0:
+            console.print("[red]Image channels must be non-negative.[/red]")
+            continue
+        return image_channel
+
+
 def prompt_remove_channel(console: Console, mapping: SlideMapping) -> None:
     while True:
         channel = IntPrompt.ask("[bold]Remove slide channel ID[/bold]", console=console)
@@ -95,7 +111,8 @@ def run_slide_wizard(console: Console, workspace: Path, output_path: Path) -> Sl
     while not mapping:
         channel = prompt_channel_id(console, mapping)
         positions = prompt_positions(console)
-        mapping[channel] = positions
+        image_channel = prompt_image_channel(console)
+        mapping[channel] = SlideChannelMapping(positions=positions, image_channel=image_channel)
         render_mapping(console, mapping)
 
     while True:
@@ -108,7 +125,8 @@ def run_slide_wizard(console: Console, workspace: Path, output_path: Path) -> Sl
         if action == "add":
             channel = prompt_channel_id(console, mapping)
             positions = prompt_positions(console)
-            mapping[channel] = positions
+            image_channel = prompt_image_channel(console)
+            mapping[channel] = SlideChannelMapping(positions=positions, image_channel=image_channel)
             render_mapping(console, mapping)
             continue
         if action == "remove":
@@ -119,7 +137,8 @@ def run_slide_wizard(console: Console, workspace: Path, output_path: Path) -> Sl
             console.print("[yellow]No groups remain. Add a new group.[/yellow]")
             channel = prompt_channel_id(console, mapping)
             positions = prompt_positions(console)
-            mapping[channel] = positions
+            image_channel = prompt_image_channel(console)
+            mapping[channel] = SlideChannelMapping(positions=positions, image_channel=image_channel)
             render_mapping(console, mapping)
             continue
         if action == "cancel":
