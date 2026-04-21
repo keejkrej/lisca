@@ -11,6 +11,7 @@ def test_run_analysis_orchestrates_expected_outputs(monkeypatch, tmp_path: Path)
     timeseries_csv_a = tmp_path / "slide_sc0_ch001_timeseries.csv"
     timeseries_csv_b = tmp_path / "slide_sc2_ch001_timeseries.csv"
     auc_csv = tmp_path / "slide_ch001_timeseries_auc.csv"
+    fit_csv = tmp_path / "slide_ch001_timeseries_fit.csv"
     timeseries_plot = tmp_path / "slide_ch001_timeseries_combined.png"
     auc_plot = tmp_path / "slide_ch001_timeseries_auc.png"
 
@@ -36,6 +37,14 @@ def test_run_analysis_orchestrates_expected_outputs(monkeypatch, tmp_path: Path)
         lambda csvs, *, interval, output_csv: (
             calls.append(("auc", (csvs, interval, output_csv))),
             auc_csv,
+        )[1],
+    )
+    monkeypatch.setattr(
+        analyze.fit,
+        "run_fit",
+        lambda csvs, *, interval, output_csv: (
+            calls.append(("fit", (csvs, interval, output_csv))),
+            fit_csv,
         )[1],
     )
     monkeypatch.setattr(
@@ -65,12 +74,14 @@ def test_run_analysis_orchestrates_expected_outputs(monkeypatch, tmp_path: Path)
 
     assert result.timeseries_csvs == [timeseries_csv_a, timeseries_csv_b]
     assert result.auc_csv == auc_csv
+    assert result.fit_csv == fit_csv
     assert result.timeseries_plot == timeseries_plot
     assert result.auc_plot == auc_plot
     assert result.skipped_positions == {2: [26]}
     assert calls == [
         ("timeseries", (workspace, slide_path, 1, None, analyze.timeseries.DELIVERY_CORRECTION_QUARTILE)),
         ("auc", ([timeseries_csv_a, timeseries_csv_b], 10.0, None)),
+        ("fit", ([timeseries_csv_a, timeseries_csv_b], 10.0, None)),
         ("plot_timeseries", ([timeseries_csv_a, timeseries_csv_b], None, 3, 0.12, 1.0, "#c03a2b", None)),
         ("plot_auc", (auc_csv, None, "#c03a2b", "AUC by slide channel")),
     ]
@@ -79,6 +90,7 @@ def test_run_analysis_orchestrates_expected_outputs(monkeypatch, tmp_path: Path)
         analyze.timeseries.format_written_timeseries_csv_message(2, timeseries_csv_b, 3),
         analyze.timeseries.format_skipped_positions_message({2: [26]}),
         analyze.auc.format_written_auc_csv_message(auc_csv),
+        analyze.fit.format_written_fit_csv_message(fit_csv),
         analyze.plot_timeseries.format_written_timeseries_plot_message(timeseries_plot),
         analyze.plot_auc.format_written_auc_plot_message(auc_plot),
     ]
@@ -95,6 +107,7 @@ def test_run_analysis_emits_stage_updates(monkeypatch, tmp_path: Path) -> None:
 
     monkeypatch.setattr(analyze.timeseries, "run_slide_timeseries", lambda *args, **kwargs: result)
     monkeypatch.setattr(analyze.auc, "run_auc", lambda *args, **kwargs: tmp_path / "auc.csv")
+    monkeypatch.setattr(analyze.fit, "run_fit", lambda *args, **kwargs: tmp_path / "fit.csv")
     monkeypatch.setattr(
         analyze.plot_timeseries,
         "run_plot_timeseries",
@@ -111,9 +124,10 @@ def test_run_analysis_emits_stage_updates(monkeypatch, tmp_path: Path) -> None:
     )
 
     assert stage_updates == [
-        (0, 4, "Computing timeseries CSVs"),
-        (1, 4, "Computing AUC summary"),
-        (2, 4, "Rendering timeseries plot"),
-        (3, 4, "Rendering AUC plot"),
-        (4, 4, "Analysis complete"),
+        (0, 5, "Computing timeseries CSVs"),
+        (1, 5, "Computing AUC summary"),
+        (2, 5, "Computing exponential fit summary"),
+        (3, 5, "Rendering timeseries plot"),
+        (4, 5, "Rendering AUC plot"),
+        (5, 5, "Analysis complete"),
     ]

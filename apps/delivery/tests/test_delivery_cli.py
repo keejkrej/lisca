@@ -59,6 +59,17 @@ def test_expression_auc_help_is_exposed() -> None:
     assert "--output-csv" in result.output
 
 
+def test_expression_fit_help_is_exposed() -> None:
+    result = runner.invoke(cli.app, ["expression", "fit", "--help"])
+
+    assert result.exit_code == 0
+    assert "Usage: root expression fit" in result.output
+    assert "y=d before onset" in result.output
+    assert "y=d+amplitude*(1-exp(-b*(t-t_onset))) after onset" in result.output
+    assert "--interval" in result.output
+    assert "--output-csv" in result.output
+
+
 def test_expression_plot_timeseries_help_is_exposed() -> None:
     result = runner.invoke(cli.app, ["expression", "plot-timeseries", "--help"])
 

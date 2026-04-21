@@ -47,5 +47,6 @@ mod tests {
             .render_long_help()
             .to_string();
         assert!(output.contains("analyze"));
+        assert!(output.contains("fit"));
     }
 }

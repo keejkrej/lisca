@@ -6,12 +6,12 @@ from typing import Callable
 
 import typer
 
-from .expression import auc, plot_auc, plot_timeseries, timeseries
+from .expression import auc, fit, plot_auc, plot_timeseries, timeseries
 
 
 HELP = (
     "Run the full delivery analysis workflow for a slide-mapped ROI workspace and "
-    "write timeseries CSVs, AUC summary, and plots."
+    "write timeseries CSVs, AUC summary, exponential fit summary, and plots."
 )
 
 app = typer.Typer(
@@ -29,6 +29,7 @@ class AnalyzeRunResult:
     interval: float
     timeseries_csvs: list[Path]
     auc_csv: Path
+    fit_csv: Path
     timeseries_plot: Path
     auc_plot: Path
     skipped_positions: dict[int, list[int]]
@@ -47,7 +48,7 @@ def run_analysis(
     on_stage: StageCallback | None = None,
     on_output: OutputCallback | None = None,
 ) -> AnalyzeRunResult:
-    total_steps = 4
+    total_steps = 5
     if on_stage is not None:
         on_stage(0, total_steps, "Computing timeseries CSVs")
     timeseries_result = timeseries.run_slide_timeseries(
@@ -76,7 +77,12 @@ def run_analysis(
     if on_output is not None:
         on_output(auc.format_written_auc_csv_message(auc_csv))
     if on_stage is not None:
-        on_stage(2, total_steps, "Rendering timeseries plot")
+        on_stage(2, total_steps, "Computing exponential fit summary")
+    fit_csv = fit.run_fit(timeseries_csvs, interval=interval, output_csv=None)
+    if on_output is not None:
+        on_output(fit.format_written_fit_csv_message(fit_csv))
+    if on_stage is not None:
+        on_stage(3, total_steps, "Rendering timeseries plot")
     timeseries_plot = plot_timeseries.run_plot_timeseries(
         timeseries_csvs,
         output_plot=None,
@@ -89,7 +95,7 @@ def run_analysis(
     if on_output is not None:
         on_output(plot_timeseries.format_written_timeseries_plot_message(timeseries_plot))
     if on_stage is not None:
-        on_stage(3, total_steps, "Rendering AUC plot")
+        on_stage(4, total_steps, "Rendering AUC plot")
     auc_plot = plot_auc.run_plot_auc(
         auc_csv,
         output_plot=None,
@@ -105,6 +111,7 @@ def run_analysis(
         interval=interval,
         timeseries_csvs=timeseries_csvs,
         auc_csv=auc_csv,
+        fit_csv=fit_csv,
         timeseries_plot=timeseries_plot,
         auc_plot=auc_plot,
         skipped_positions=timeseries_result.skipped_positions,
@@ -141,7 +148,10 @@ def cli(
         ...,
         "--interval",
         min=0.0,
-        help="Frame interval in minutes used when integrating AUC.",
+        help=(
+            "Frame interval in minutes used when integrating AUC and fitting y=d before onset "
+            "and y=d+amplitude*(1-exp(-b*(t-t_onset))) after onset."
+        ),
     ),
 ) -> None:
     try:
@@ -158,6 +168,6 @@ def cli(
 
     typer.echo(
         f"Completed analysis for channel {result.channel}: {len(result.timeseries_csvs)} timeseries CSVs, "
-        "1 AUC CSV, and 2 plots.",
+        "1 AUC CSV, 1 fit CSV, and 2 plots.",
         err=True,
     )
