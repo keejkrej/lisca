@@ -149,8 +149,9 @@ def cli(
         "--interval",
         min=0.0,
         help=(
-            "Frame interval in minutes used when integrating AUC and fitting y=d before onset "
-            "and y=d+amplitude*(1-exp(-b*(t-t_onset))) after onset."
+            "Frame interval in minutes used when integrating AUC and fitting "
+            "y=intensity_offset + expression_amplitude * "
+            "(exp(-protein_decay_rate*t) - exp(-mrna_decay_rate*t))."
         ),
     ),
 ) -> None:

@@ -4,6 +4,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
+import pytest
 
 from delivery.expression import plot_auc
 
@@ -62,3 +63,42 @@ def test_write_auc_boxplot_shows_counts_under_x_labels(tmp_path: Path) -> None:
 
     ax = captured["ax"]
     assert [tick.get_text() for tick in ax.get_xticklabels()] == ["0\n(n=2)", "1\n(n=1)"]
+
+
+def test_write_auc_boxplot_uses_max_q3_times_125_for_ymax(tmp_path: Path) -> None:
+    df = pd.DataFrame(
+        [
+            {"slide_channel": 0, "auc": 10.0},
+            {"slide_channel": 0, "auc": 12.0},
+            {"slide_channel": 0, "auc": 20.0},
+            {"slide_channel": 0, "auc": 100.0},
+            {"slide_channel": 1, "auc": 8.0},
+            {"slide_channel": 1, "auc": 9.0},
+            {"slide_channel": 1, "auc": 10.0},
+            {"slide_channel": 1, "auc": 11.0},
+        ]
+    )
+    output_plot = tmp_path / "auc.png"
+
+    captured: dict[str, object] = {}
+    original_subplots = plt.subplots
+
+    def wrapped_subplots(*args, **kwargs):
+        fig, ax = original_subplots(*args, **kwargs)
+        captured["ax"] = ax
+        return fig, ax
+
+    plt.subplots = wrapped_subplots
+    try:
+        plot_auc.write_auc_boxplot(df, output_plot, color="#c03a2b", title=None)
+    finally:
+        plt.subplots = original_subplots
+
+    ax = captured["ax"]
+    expected_upper = max(
+        pd.Series([10.0, 12.0, 20.0, 100.0]).quantile(0.75),
+        pd.Series([8.0, 9.0, 10.0, 11.0]).quantile(0.75),
+    ) * 1.25
+    assert ax.get_yscale() == "linear"
+    assert ax.get_ylim()[0] == 0.0
+    assert ax.get_ylim()[1] == pytest.approx(expected_upper)

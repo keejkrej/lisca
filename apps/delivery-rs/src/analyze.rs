@@ -35,7 +35,7 @@ pub struct AnalyzeArgs {
     pub channel: u32,
     #[arg(
         long,
-        help = "Frame interval in minutes used when integrating AUC and fitting y=d before onset and y=d+amplitude*(1-exp(-b*(t-t_onset))) after onset."
+        help = "Frame interval in minutes used when integrating AUC and fitting y=intensity_offset + expression_amplitude * (exp(-protein_decay_rate*t) - exp(-mrna_decay_rate*t))."
     )]
     pub interval: f64,
 }

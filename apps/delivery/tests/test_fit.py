@@ -25,21 +25,16 @@ def test_default_output_csv_path_strips_slide_channel_segment(tmp_path: Path) ->
     assert output_csv == (tmp_path / "slide_ch001_timeseries_fit.csv").resolve()
 
 
-def test_compute_fit_table_recovers_plateau_and_direct_rise_traces(tmp_path: Path) -> None:
+def test_compute_fit_table_recovers_biexponential_traces_with_zero_onset(tmp_path: Path) -> None:
     csv_path = tmp_path / "slide_sc2_ch001_timeseries.csv"
-    interval = 2.5
-    frames = list(range(8))
-    onset_frame = 2
+    interval = 1.0
+    frames = list(range(25))
     rows = [
         {
             "pos": 25,
             "roi": 0,
             "t": frame,
-            "corrected": (
-                2.0
-                if frame < onset_frame
-                else 2.0 + 8.0 * (1.0 - math.exp(-0.3 * ((frame - onset_frame) * interval)))
-            ),
+            "corrected": 2.0 + 40.0 * (math.exp(-0.05 * (frame * interval)) - math.exp(-0.35 * (frame * interval))),
         }
         for frame in frames
     ] + [
@@ -47,7 +42,7 @@ def test_compute_fit_table_recovers_plateau_and_direct_rise_traces(tmp_path: Pat
             "pos": 25,
             "roi": 1,
             "t": frame,
-            "corrected": 3.5 + 2.0 * (1.0 - math.exp(-0.4 * (frame * interval))),
+            "corrected": 3.5 + 16.0 * (math.exp(-0.05 * (frame * interval)) - math.exp(-0.7 * (frame * interval))),
         }
         for frame in frames
     ]
@@ -59,12 +54,8 @@ def test_compute_fit_table_recovers_plateau_and_direct_rise_traces(tmp_path: Pat
         "slide_channel",
         "pos",
         "roi",
-        "d",
-        "b",
-        "t_onset",
-        "amplitude",
-        "c",
         "intensity_offset",
+        "protein_decay_rate",
         "mrna_decay_rate",
         "expression_onset",
         "expression_amplitude",
@@ -75,26 +66,63 @@ def test_compute_fit_table_recovers_plateau_and_direct_rise_traces(tmp_path: Pat
     assert records[0]["pos"] == 25
     assert records[0]["roi"] == 0
     assert records[0]["success"] is True
-    assert records[0]["d"] == pytest.approx(2.0, rel=0.03, abs=0.05)
-    assert records[0]["b"] == pytest.approx(0.3, rel=0.03, abs=0.02)
-    assert records[0]["t_onset"] == pytest.approx(onset_frame * interval, abs=1e-8)
-    assert records[0]["amplitude"] == pytest.approx(8.0, rel=0.04, abs=0.08)
-    assert records[0]["c"] == pytest.approx(10.0, rel=0.01, abs=0.05)
-    assert records[0]["intensity_offset"] == pytest.approx(2.0, rel=0.03, abs=0.05)
-    assert records[0]["mrna_decay_rate"] == pytest.approx(0.3, rel=0.03, abs=0.02)
-    assert records[0]["expression_onset"] == pytest.approx(onset_frame * interval, abs=1e-8)
-    assert records[0]["expression_amplitude"] == pytest.approx(8.0, rel=0.04, abs=0.08)
+    assert records[0]["intensity_offset"] == pytest.approx(2.0, rel=0.03, abs=0.08)
+    assert records[0]["protein_decay_rate"] == pytest.approx(0.05, rel=0.18, abs=0.015)
+    assert records[0]["mrna_decay_rate"] == pytest.approx(0.35, rel=0.15, abs=0.05)
+    assert records[0]["expression_onset"] == pytest.approx(0.0, abs=1e-8)
+    assert records[0]["expression_amplitude"] == pytest.approx(40.0, rel=0.1, abs=2.0)
 
     assert records[1]["success"] is True
-    assert records[1]["d"] == pytest.approx(3.5, rel=0.03, abs=0.05)
-    assert records[1]["b"] == pytest.approx(0.4, rel=0.03, abs=0.02)
-    assert records[1]["t_onset"] == pytest.approx(0.0, abs=1e-8)
-    assert records[1]["amplitude"] == pytest.approx(2.0, rel=0.03, abs=0.05)
-    assert records[1]["c"] == pytest.approx(5.5, rel=0.01, abs=0.05)
-    assert records[1]["intensity_offset"] == pytest.approx(3.5, rel=0.03, abs=0.05)
-    assert records[1]["mrna_decay_rate"] == pytest.approx(0.4, rel=0.03, abs=0.02)
+    assert records[1]["intensity_offset"] == pytest.approx(3.5, rel=0.03, abs=0.08)
+    assert records[1]["protein_decay_rate"] == pytest.approx(records[0]["protein_decay_rate"], abs=1e-12)
+    assert records[1]["mrna_decay_rate"] == pytest.approx(0.7, rel=0.15, abs=0.08)
     assert records[1]["expression_onset"] == pytest.approx(0.0, abs=1e-8)
-    assert records[1]["expression_amplitude"] == pytest.approx(2.0, rel=0.03, abs=0.05)
+    assert records[1]["expression_amplitude"] == pytest.approx(16.0, rel=0.12, abs=1.0)
+
+
+def test_compute_fit_table_respects_max_onset_minutes_in_second_pass(tmp_path: Path) -> None:
+    csv_path = tmp_path / "slide_sc2_ch001_timeseries.csv"
+    interval = 1.0
+    onset_minutes = 5.0
+    rows = [
+        {
+            "pos": 25,
+            "roi": 0,
+            "t": frame,
+            "corrected": 2.0 + 40.0 * (math.exp(-0.05 * (frame * interval)) - math.exp(-0.35 * (frame * interval))),
+        }
+        for frame in range(25)
+    ] + [
+        {
+            "pos": 25,
+            "roi": 1,
+            "t": frame,
+            "corrected": (
+                3.5
+                if (frame * interval) < onset_minutes
+                else 3.5
+                + 16.0
+                * (
+                    math.exp(-0.05 * ((frame * interval) - onset_minutes))
+                    - math.exp(-0.7 * ((frame * interval) - onset_minutes))
+                )
+            ),
+        }
+        for frame in range(25)
+    ]
+    write_timeseries_csv(csv_path, rows)
+
+    unconstrained = fit.compute_fit_table([csv_path], interval=interval, max_onset_minutes=12.0)
+    clamped = fit.compute_fit_table([csv_path], interval=interval, max_onset_minutes=4.0)
+
+    delayed_unconstrained = unconstrained.to_dict("records")[1]
+    delayed_clamped = clamped.to_dict("records")[1]
+    assert delayed_unconstrained["expression_onset"] == pytest.approx(onset_minutes, abs=1e-8)
+    assert delayed_clamped["expression_onset"] <= 4.0
+    assert delayed_unconstrained["protein_decay_rate"] == pytest.approx(
+        unconstrained.to_dict("records")[0]["protein_decay_rate"], abs=1e-12
+    )
+    assert delayed_unconstrained["success"] is True
 
 
 def test_compute_fit_table_marks_failed_traces(tmp_path: Path) -> None:
@@ -115,12 +143,8 @@ def test_compute_fit_table_marks_failed_traces(tmp_path: Path) -> None:
     assert records[0]["slide_channel"] == 0
     assert records[0]["pos"] == 0
     assert records[0]["roi"] == 0
-    assert pd.isna(records[0]["d"])
-    assert pd.isna(records[0]["b"])
-    assert pd.isna(records[0]["t_onset"])
-    assert pd.isna(records[0]["amplitude"])
-    assert pd.isna(records[0]["c"])
     assert pd.isna(records[0]["intensity_offset"])
+    assert pd.isna(records[0]["protein_decay_rate"])
     assert pd.isna(records[0]["mrna_decay_rate"])
     assert pd.isna(records[0]["expression_onset"])
     assert pd.isna(records[0]["expression_amplitude"])
@@ -128,12 +152,8 @@ def test_compute_fit_table_marks_failed_traces(tmp_path: Path) -> None:
     assert records[1]["slide_channel"] == 0
     assert records[1]["pos"] == 0
     assert records[1]["roi"] == 1
-    assert pd.isna(records[1]["d"])
-    assert pd.isna(records[1]["b"])
-    assert pd.isna(records[1]["t_onset"])
-    assert pd.isna(records[1]["amplitude"])
-    assert pd.isna(records[1]["c"])
     assert pd.isna(records[1]["intensity_offset"])
+    assert pd.isna(records[1]["protein_decay_rate"])
     assert pd.isna(records[1]["mrna_decay_rate"])
     assert pd.isna(records[1]["expression_onset"])
     assert pd.isna(records[1]["expression_amplitude"])
@@ -150,13 +170,19 @@ def test_cli_writes_fit_csv_with_expected_columns(tmp_path: Path) -> None:
                 "pos": 12,
                 "roi": 0,
                 "t": frame,
-                "corrected": 3.5 + 2.0 * (1.0 - math.exp(-0.4 * (frame * interval))),
+                "corrected": 3.5 + 16.0 * (math.exp(-0.05 * (frame * interval)) - math.exp(-0.7 * (frame * interval))),
             }
-            for frame in range(6)
+            for frame in range(25)
         ],
     )
 
-    fit.cli(timeseries_csvs=[csv_path], interval=interval, output_csv=None)
+    fit.cli(
+        timeseries_csvs=[csv_path],
+        interval=interval,
+        output_csv=None,
+        max_onset_minutes=None,
+        jobs=1,
+    )
 
     output_csv = tmp_path / "slide_ch001_timeseries_fit.csv"
     assert output_csv.is_file()
@@ -166,12 +192,8 @@ def test_cli_writes_fit_csv_with_expected_columns(tmp_path: Path) -> None:
         "slide_channel",
         "pos",
         "roi",
-        "d",
-        "b",
-        "t_onset",
-        "amplitude",
-        "c",
         "intensity_offset",
+        "protein_decay_rate",
         "mrna_decay_rate",
         "expression_onset",
         "expression_amplitude",
@@ -181,12 +203,8 @@ def test_cli_writes_fit_csv_with_expected_columns(tmp_path: Path) -> None:
         "slide_channel",
         "pos",
         "roi",
-        "d",
-        "b",
-        "t_onset",
-        "amplitude",
-        "c",
         "intensity_offset",
+        "protein_decay_rate",
         "mrna_decay_rate",
         "expression_onset",
         "expression_amplitude",
@@ -195,13 +213,9 @@ def test_cli_writes_fit_csv_with_expected_columns(tmp_path: Path) -> None:
     assert rows[0]["slide_channel"] == "0"
     assert rows[0]["pos"] == "12"
     assert rows[0]["roi"] == "0"
-    assert float(rows[0]["d"]) == pytest.approx(3.5, rel=0.03, abs=0.05)
-    assert float(rows[0]["b"]) == pytest.approx(0.4, rel=0.03, abs=0.02)
-    assert float(rows[0]["t_onset"]) == pytest.approx(0.0, abs=1e-8)
-    assert float(rows[0]["amplitude"]) == pytest.approx(2.0, rel=0.03, abs=0.05)
-    assert float(rows[0]["c"]) == pytest.approx(5.5, rel=0.01, abs=0.05)
-    assert float(rows[0]["intensity_offset"]) == pytest.approx(3.5, rel=0.03, abs=0.05)
-    assert float(rows[0]["mrna_decay_rate"]) == pytest.approx(0.4, rel=0.03, abs=0.02)
+    assert float(rows[0]["intensity_offset"]) == pytest.approx(3.5, rel=0.03, abs=0.08)
+    assert float(rows[0]["protein_decay_rate"]) == pytest.approx(0.05, rel=0.18, abs=0.015)
+    assert float(rows[0]["mrna_decay_rate"]) == pytest.approx(0.7, rel=0.15, abs=0.08)
     assert float(rows[0]["expression_onset"]) == pytest.approx(0.0, abs=1e-8)
-    assert float(rows[0]["expression_amplitude"]) == pytest.approx(2.0, rel=0.03, abs=0.05)
+    assert float(rows[0]["expression_amplitude"]) == pytest.approx(16.0, rel=0.12, abs=1.0)
     assert rows[0]["success"] == "true"

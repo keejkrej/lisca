@@ -64,9 +64,12 @@ def test_expression_fit_help_is_exposed() -> None:
 
     assert result.exit_code == 0
     assert "Usage: root expression fit" in result.output
-    assert "y=d before onset" in result.output
-    assert "y=d+amplitude*(1-exp(-b*(t-t_onset))) after onset" in result.output
+    assert "intensity_offset" in result.output
+    assert "protein_decay_rate" in result.output
+    assert "mrna_decay_rate" in result.output
     assert "--interval" in result.output
+    assert "--max-onset-minutes" in result.output
+    assert "--jobs" in result.output
     assert "--output-csv" in result.output
 
 
@@ -84,3 +87,16 @@ def test_expression_plot_auc_help_is_exposed() -> None:
     assert result.exit_code == 0
     assert "Usage: root expression plot-auc" in result.output
     assert "slide channel" in result.output
+
+
+def test_expression_plot_fit_help_is_exposed() -> None:
+    result = runner.invoke(cli.app, ["expression", "plot-fit", "--help"])
+
+    assert result.exit_code == 0
+    assert "Usage: root expression plot-fit" in result.output
+    assert "Fit summary CSV" in result.output
+    assert "--interval" in result.output
+    assert "--output-dir" in result.output
+    assert "--alpha" in result.output
+    assert "--linewidth" in result.output
+    assert "--color" in result.output

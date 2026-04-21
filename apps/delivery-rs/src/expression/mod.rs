@@ -3,6 +3,7 @@ use crate::analyze;
 pub mod auc;
 pub mod fit;
 pub mod plot_auc;
+pub mod plot_fit;
 pub mod plot_timeseries;
 pub mod timeseries;
 
@@ -22,6 +23,8 @@ pub enum ExpressionCommands {
     Fit(fit::FitArgs),
     #[command(name = "plot-auc")]
     PlotAuc(plot_auc::PlotAucArgs),
+    #[command(name = "plot-fit")]
+    PlotFit(plot_fit::PlotFitArgs),
     #[command(name = "plot-timeseries")]
     PlotTimeseries(plot_timeseries::PlotTimeseriesArgs),
     Timeseries(timeseries::TimeseriesArgs),
@@ -33,6 +36,7 @@ pub fn execute(args: ExpressionArgs) -> Result<(), String> {
         ExpressionCommands::Auc(args) => auc::execute(args),
         ExpressionCommands::Fit(args) => fit::execute(args),
         ExpressionCommands::PlotAuc(args) => plot_auc::execute(args),
+        ExpressionCommands::PlotFit(args) => plot_fit::execute(args),
         ExpressionCommands::PlotTimeseries(args) => plot_timeseries::execute(args),
         ExpressionCommands::Timeseries(args) => timeseries::execute(args),
     }

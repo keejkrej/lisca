@@ -6,22 +6,19 @@ use clap::Args;
 use lisca::analysis::roi::load_timeseries_csv;
 
 pub const HELP: &str =
-    "Fit each ROI trace to a frame-grid onset model: y=d before onset and y=d+amplitude*(1-exp(-b*(t-t_onset))) after onset, where t is measured in minutes from t * --interval.";
-const ASYMPTOTE_COARSE_CANDIDATE_COUNT: usize = 64;
-const ASYMPTOTE_REFINE_CANDIDATE_COUNT: usize = 32;
-const ASYMPTOTE_REFINE_PASSES: usize = 2;
+    "Fit each ROI trace to y=intensity_offset + expression_amplitude * (exp(-protein_decay_rate*t) - exp(-mrna_decay_rate*t)), where t is measured in minutes from t * --interval and expression_onset is fixed at 0.";
+const RATE_COARSE_CANDIDATE_COUNT: usize = 24;
+const RATE_REFINE_CANDIDATE_COUNT: usize = 12;
+const RATE_REFINE_PASSES: usize = 2;
+const FIXED_EXPRESSION_ONSET: f64 = 0.0;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct FitRow {
     pub slide_channel: Option<u32>,
     pub pos: Option<u32>,
     pub roi: u32,
-    pub d: Option<f64>,
-    pub b: Option<f64>,
-    pub t_onset: Option<f64>,
-    pub amplitude: Option<f64>,
-    pub c: Option<f64>,
     pub intensity_offset: Option<f64>,
+    pub protein_decay_rate: Option<f64>,
     pub mrna_decay_rate: Option<f64>,
     pub expression_onset: Option<f64>,
     pub expression_amplitude: Option<f64>,
@@ -35,7 +32,7 @@ pub struct FitArgs {
     pub timeseries_csvs: Vec<PathBuf>,
     #[arg(
         long,
-        help = "Frame interval in minutes used to convert t into time for fitting y=d before onset and y=d+amplitude*(1-exp(-b*(t-t_onset))) after onset."
+        help = "Frame interval in minutes used to convert t into time for fitting y=intensity_offset + expression_amplitude * (exp(-protein_decay_rate*t) - exp(-mrna_decay_rate*t))."
     )]
     pub interval: f64,
     #[arg(
@@ -47,11 +44,11 @@ pub struct FitArgs {
 
 #[derive(Clone, Copy, Debug)]
 struct FitResult {
-    d: f64,
-    b: f64,
-    t_onset: f64,
-    amplitude: f64,
-    c: f64,
+    intensity_offset: f64,
+    protein_decay_rate: f64,
+    mrna_decay_rate: f64,
+    expression_onset: f64,
+    expression_amplitude: f64,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -101,14 +98,11 @@ pub fn default_output_csv_path(timeseries_csvs: &[PathBuf], output_csv: Option<&
         .with_file_name(format!("{stem}_fit.csv"))
 }
 
-pub fn compute_fit_table(
-    timeseries_csvs: &[PathBuf],
-    interval: f64,
-) -> Result<Vec<FitRow>, String> {
-    let mut fit_rows = Vec::new();
+pub fn compute_fit_table(timeseries_csvs: &[PathBuf], interval: f64) -> Result<Vec<FitRow>, String> {
     let mut csvs = timeseries_csvs.to_vec();
     csvs.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
 
+    let mut tasks = Vec::<(Option<u32>, Option<u32>, u32, Vec<(u32, f64)>)>::new();
     for csv_path in csvs {
         let slide_channel = super::auc::parse_slide_channel(&csv_path);
         let rows = load_timeseries_csv(&csv_path)?;
@@ -119,39 +113,49 @@ pub fn compute_fit_table(
                 .or_default()
                 .push((row.t, row.corrected));
         }
-
         for ((pos, roi), mut trace) in grouped {
             trace.sort_by_key(|(t, _)| *t);
-            let fitted = fit_trace(&trace, interval);
-            fit_rows.push(FitRow {
-                slide_channel,
-                pos,
-                roi,
-                d: fitted.map(|candidate| candidate.d),
-                b: fitted.map(|candidate| candidate.b),
-                t_onset: fitted.map(|candidate| candidate.t_onset),
-                amplitude: fitted.map(|candidate| candidate.amplitude),
-                c: fitted.map(|candidate| candidate.c),
-                intensity_offset: fitted.map(|candidate| derive_parameters(candidate).0),
-                mrna_decay_rate: fitted.map(|candidate| derive_parameters(candidate).1),
-                expression_onset: fitted.map(|candidate| derive_parameters(candidate).2),
-                expression_amplitude: fitted.map(|candidate| derive_parameters(candidate).3),
-                success: fitted.is_some(),
-            });
+            tasks.push((slide_channel, pos, roi, trace));
         }
     }
 
-    if fit_rows.is_empty() {
+    if tasks.is_empty() {
         return Err("No fit rows produced".to_string());
     }
 
-    fit_rows.sort_by(|a, b| {
+    let first_pass_results = tasks
+        .iter()
+        .map(|(_, _, _, trace)| fit_trace(trace, interval, None))
+        .collect::<Vec<_>>();
+    let successful_protein_rates = first_pass_results
+        .iter()
+        .flatten()
+        .map(|result| result.protein_decay_rate)
+        .collect::<Vec<_>>();
+
+    let rows = if successful_protein_rates.is_empty() {
+        tasks.iter()
+            .map(|(slide_channel, pos, roi, _)| failed_row(*slide_channel, *pos, *roi))
+            .collect::<Vec<_>>()
+    } else {
+        let shared_protein_decay_rate = median(&successful_protein_rates);
+        tasks.iter()
+            .map(|(slide_channel, pos, roi, trace)| {
+                fit_trace(trace, interval, Some(shared_protein_decay_rate))
+                    .map(|result| fit_row(*slide_channel, *pos, *roi, result))
+                    .unwrap_or_else(|| failed_row(*slide_channel, *pos, *roi))
+            })
+            .collect::<Vec<_>>()
+    };
+
+    let mut rows = rows;
+    rows.sort_by(|a, b| {
         a.slide_channel
             .cmp(&b.slide_channel)
             .then(a.pos.cmp(&b.pos))
             .then(a.roi.cmp(&b.roi))
     });
-    Ok(fit_rows)
+    Ok(rows)
 }
 
 pub fn write_fit_csv(rows: &[FitRow], output_csv: &Path) -> Result<(), String> {
@@ -165,12 +169,8 @@ pub fn write_fit_csv(rows: &[FitRow], output_csv: &Path) -> Result<(), String> {
             "slide_channel",
             "pos",
             "roi",
-            "d",
-            "b",
-            "t_onset",
-            "amplitude",
-            "c",
             "intensity_offset",
+            "protein_decay_rate",
             "mrna_decay_rate",
             "expression_onset",
             "expression_amplitude",
@@ -185,14 +185,10 @@ pub fn write_fit_csv(rows: &[FitRow], output_csv: &Path) -> Result<(), String> {
                     .unwrap_or_default(),
                 row.pos.map(|value| value.to_string()).unwrap_or_default(),
                 row.roi.to_string(),
-                row.d.map(|value| value.to_string()).unwrap_or_default(),
-                row.b.map(|value| value.to_string()).unwrap_or_default(),
-                row.t_onset.map(|value| value.to_string()).unwrap_or_default(),
-                row.amplitude
+                row.intensity_offset
                     .map(|value| value.to_string())
                     .unwrap_or_default(),
-                row.c.map(|value| value.to_string()).unwrap_or_default(),
-                row.intensity_offset
+                row.protein_decay_rate
                     .map(|value| value.to_string())
                     .unwrap_or_default(),
                 row.mrna_decay_rate
@@ -216,25 +212,44 @@ pub fn format_written_fit_csv_message(output_csv: &Path) -> String {
 }
 
 pub fn execute(args: FitArgs) -> Result<(), String> {
-    let output = run_fit(
-        &args.timeseries_csvs,
-        args.interval,
-        args.output_csv.as_deref(),
-    )?;
+    let output = run_fit(&args.timeseries_csvs, args.interval, args.output_csv.as_deref())?;
     println!("{}", format_written_fit_csv_message(&output));
     Ok(())
 }
 
-fn derive_parameters(result: FitResult) -> (f64, f64, f64, f64) {
-    (
-        result.d,
-        result.b,
-        result.t_onset,
-        result.amplitude,
-    )
+fn fit_row(slide_channel: Option<u32>, pos: Option<u32>, roi: u32, result: FitResult) -> FitRow {
+    FitRow {
+        slide_channel,
+        pos,
+        roi,
+        intensity_offset: Some(result.intensity_offset),
+        protein_decay_rate: Some(result.protein_decay_rate),
+        mrna_decay_rate: Some(result.mrna_decay_rate),
+        expression_onset: Some(result.expression_onset),
+        expression_amplitude: Some(result.expression_amplitude),
+        success: true,
+    }
 }
 
-fn fit_trace(trace: &[(u32, f64)], interval: f64) -> Option<FitResult> {
+fn failed_row(slide_channel: Option<u32>, pos: Option<u32>, roi: u32) -> FitRow {
+    FitRow {
+        slide_channel,
+        pos,
+        roi,
+        intensity_offset: None,
+        protein_decay_rate: None,
+        mrna_decay_rate: None,
+        expression_onset: None,
+        expression_amplitude: None,
+        success: false,
+    }
+}
+
+fn fit_trace(
+    trace: &[(u32, f64)],
+    interval: f64,
+    fixed_protein_decay_rate: Option<f64>,
+) -> Option<FitResult> {
     if trace.len() < 3 {
         return None;
     }
@@ -259,80 +274,129 @@ fn fit_trace(trace: &[(u32, f64)], interval: f64) -> Option<FitResult> {
         return None;
     }
 
-    let mut best = None;
-    for onset_index in 0..points.len().saturating_sub(1) {
-        let candidate = evaluate_onset_candidate(&points, onset_index);
-        if let Some(candidate) = candidate {
-            if best
-                .as_ref()
-                .map_or(true, |best_candidate: &ScoredFit| candidate.score < best_candidate.score)
-            {
-                best = Some(candidate);
+    fit_trace_points(&points, fixed_protein_decay_rate)
+}
+
+fn fit_trace_points(points: &[(f64, f64)], fixed_protein_decay_rate: Option<f64>) -> Option<FitResult> {
+    let positive_diffs = points
+        .windows(2)
+        .filter_map(|window| {
+            let diff = window[1].0 - window[0].0;
+            (diff > 0.0).then_some(diff)
+        })
+        .collect::<Vec<_>>();
+    if positive_diffs.is_empty() {
+        return None;
+    }
+
+    let max_time = points
+        .iter()
+        .map(|(time, _)| *time)
+        .fold(f64::NEG_INFINITY, f64::max)
+        .max(positive_diffs[0])
+        .max(1.0);
+    let min_positive_dt = positive_diffs.iter().copied().fold(f64::INFINITY, f64::min);
+    let min_rate = (1e-4 / max_time).max(1e-6);
+    let max_rate = (min_rate * 10.0).max(10.0 / min_positive_dt);
+
+    match fixed_protein_decay_rate {
+        Some(rate) => fit_trace_points_with_fixed_protein(points, rate, min_rate, max_rate),
+        None => fit_trace_points_independent(points, min_rate, max_rate),
+    }
+}
+
+fn fit_trace_points_independent(
+    points: &[(f64, f64)],
+    min_rate: f64,
+    max_rate: f64,
+) -> Option<FitResult> {
+    let mut protein_lower = min_rate.ln();
+    let mut protein_upper = max_rate.ln();
+    let mut mrna_lower = min_rate.ln();
+    let mut mrna_upper = max_rate.ln();
+    let mut best_result = None;
+    let mut best_score = None;
+
+    let mut candidate_counts = vec![RATE_COARSE_CANDIDATE_COUNT];
+    candidate_counts.extend((0..RATE_REFINE_PASSES).map(|_| RATE_REFINE_CANDIDATE_COUNT));
+    for candidate_count in candidate_counts {
+        let protein_logs = linspace(protein_lower, protein_upper, candidate_count);
+        let mrna_logs = linspace(mrna_lower, mrna_upper, candidate_count);
+        let mut stage_best = None;
+        let mut best_indices = None;
+        for (protein_index, protein_log) in protein_logs.iter().enumerate() {
+            let protein_decay_rate = protein_log.exp();
+            for (mrna_index, mrna_log) in mrna_logs.iter().enumerate() {
+                let mrna_decay_rate = mrna_log.exp();
+                if mrna_decay_rate <= protein_decay_rate {
+                    continue;
+                }
+                let candidate =
+                    evaluate_rate_candidate(points, protein_decay_rate, mrna_decay_rate);
+                if let Some(candidate) = candidate {
+                    if stage_best
+                        .as_ref()
+                        .map_or(true, |best_candidate: &ScoredFit| candidate.score < best_candidate.score)
+                    {
+                        stage_best = Some(candidate);
+                        best_indices = Some((protein_index, mrna_index));
+                    }
+                }
             }
+        }
+
+        let Some(candidate) = stage_best else {
+            break;
+        };
+        if best_score
+            .map_or(true, |best_candidate: f64| candidate.score < best_candidate)
+        {
+            best_score = Some(candidate.score);
+            best_result = Some(candidate.result);
+        }
+
+        if candidate_count <= 1 {
+            break;
+        }
+        let (protein_index, mrna_index) = best_indices.unwrap();
+        protein_lower = protein_logs[protein_index.saturating_sub(1)];
+        protein_upper = protein_logs[(protein_index + 1).min(protein_logs.len() - 1)];
+        mrna_lower = mrna_logs[mrna_index.saturating_sub(1)];
+        mrna_upper = mrna_logs[(mrna_index + 1).min(mrna_logs.len() - 1)];
+        if !(protein_upper > protein_lower && mrna_upper > mrna_lower) {
+            break;
         }
     }
 
-    best.map(|candidate: ScoredFit| candidate.result)
+    best_result
 }
 
-fn evaluate_onset_candidate(points: &[(f64, f64)], onset_index: usize) -> Option<ScoredFit> {
-    let post_points = &points[onset_index..];
-    if post_points.len() < 2 {
+fn fit_trace_points_with_fixed_protein(
+    points: &[(f64, f64)],
+    fixed_protein_decay_rate: f64,
+    min_rate: f64,
+    max_rate: f64,
+) -> Option<FitResult> {
+    if !fixed_protein_decay_rate.is_finite() || fixed_protein_decay_rate <= 0.0 {
+        return None;
+    }
+    let mrna_min_rate = min_rate.max(fixed_protein_decay_rate * 1.001);
+    if mrna_min_rate >= max_rate {
         return None;
     }
 
-    let dt = post_points
-        .iter()
-        .map(|(time, _)| *time - post_points[0].0)
-        .collect::<Vec<_>>();
-    if dt
-        .windows(2)
-        .all(|window| (window[0] - window[1]).abs() <= f64::EPSILON)
-    {
-        return None;
-    }
-
-    let candidate_d = if onset_index == 0 {
-        points[0].1
-    } else {
-        median(
-            &points[..onset_index]
-                .iter()
-                .map(|(_, value)| *value)
-                .collect::<Vec<_>>(),
-        )
-    };
-    if !candidate_d.is_finite() {
-        return None;
-    }
-
-    let post_values = post_points.iter().map(|(_, value)| *value).collect::<Vec<_>>();
-    let post_max = post_values.iter().copied().fold(f64::NEG_INFINITY, f64::max);
-    let post_min = post_values.iter().copied().fold(f64::INFINITY, f64::min);
-    let span = (post_max - post_min).max(0.0);
-    let scale = post_max.abs().max(candidate_d.abs()).max(span).max(1.0);
-    let min_gap = (span * 1e-6).max(scale * 1e-9).max(1e-12);
-    let max_gap = (scale * 1e6).max(span * 1e6).max(1.0);
-
-    let mut best = None;
-    let mut lower = min_gap.ln();
-    let mut upper = max_gap.ln();
-    let mut counts = vec![ASYMPTOTE_COARSE_CANDIDATE_COUNT];
-    counts.extend((0..ASYMPTOTE_REFINE_PASSES).map(|_| ASYMPTOTE_REFINE_CANDIDATE_COUNT));
-
-    for count in counts {
-        let log_gaps = linspace(lower, upper, count);
+    let mut mrna_lower = mrna_min_rate.ln();
+    let mut mrna_upper = max_rate.ln();
+    let mut best_result = None;
+    let mut best_score = None;
+    let mut candidate_counts = vec![RATE_COARSE_CANDIDATE_COUNT];
+    candidate_counts.extend((0..RATE_REFINE_PASSES).map(|_| RATE_REFINE_CANDIDATE_COUNT));
+    for candidate_count in candidate_counts {
+        let mrna_logs = linspace(mrna_lower, mrna_upper, candidate_count);
         let mut stage_best = None;
         let mut best_index = None;
-        for (index, log_gap) in log_gaps.iter().enumerate() {
-            let candidate = evaluate_asymptote_candidate(
-                points,
-                &dt,
-                &post_values,
-                candidate_d,
-                post_points[0].0,
-                post_max + log_gap.exp(),
-            );
+        for (index, mrna_log) in mrna_logs.iter().enumerate() {
+            let candidate = evaluate_rate_candidate(points, fixed_protein_decay_rate, mrna_log.exp());
             if let Some(candidate) = candidate {
                 if stage_best
                     .as_ref()
@@ -347,95 +411,76 @@ fn evaluate_onset_candidate(points: &[(f64, f64)], onset_index: usize) -> Option
         let Some(candidate) = stage_best else {
             break;
         };
-        if best
-            .as_ref()
-            .map_or(true, |best_candidate: &ScoredFit| candidate.score < best_candidate.score)
+        if best_score
+            .map_or(true, |best_candidate: f64| candidate.score < best_candidate)
         {
-            best = Some(candidate);
+            best_score = Some(candidate.score);
+            best_result = Some(candidate.result);
         }
 
-        if log_gaps.len() <= 1 {
+        if candidate_count <= 1 {
             break;
         }
         let index = best_index.unwrap();
-        lower = log_gaps[index.saturating_sub(1)];
-        upper = log_gaps[(index + 1).min(log_gaps.len() - 1)];
-        if upper <= lower {
+        mrna_lower = mrna_logs[index.saturating_sub(1)];
+        mrna_upper = mrna_logs[(index + 1).min(mrna_logs.len() - 1)];
+        if mrna_upper <= mrna_lower {
             break;
         }
     }
 
-    best
+    best_result
 }
 
-fn evaluate_asymptote_candidate(
+fn evaluate_rate_candidate(
     points: &[(f64, f64)],
-    dt: &[f64],
-    post_values: &[f64],
-    candidate_d: f64,
-    t_onset: f64,
-    candidate_c: f64,
+    protein_decay_rate: f64,
+    mrna_decay_rate: f64,
 ) -> Option<ScoredFit> {
-    let deltas = post_values
+    if !(protein_decay_rate.is_finite() && mrna_decay_rate.is_finite()) {
+        return None;
+    }
+    if mrna_decay_rate <= protein_decay_rate {
+        return None;
+    }
+
+    let basis = points
         .iter()
-        .map(|value| candidate_c - value)
+        .map(|(time, _)| (-protein_decay_rate * *time).exp() - (-mrna_decay_rate * *time).exp())
         .collect::<Vec<_>>();
-    if deltas
-        .iter()
-        .any(|delta| !delta.is_finite() || *delta <= 0.0)
-    {
+    if basis.iter().any(|value| !value.is_finite()) {
         return None;
     }
 
-    let log_deltas = deltas.iter().map(|delta| delta.ln()).collect::<Vec<_>>();
-    let dt_mean = dt.iter().sum::<f64>() / dt.len() as f64;
-    let centered_dt = dt.iter().map(|time| *time - dt_mean).collect::<Vec<_>>();
-    let denominator = centered_dt.iter().map(|value| value * value).sum::<f64>();
-    if denominator <= 0.0 {
-        return None;
-    }
-
-    let log_delta_mean = log_deltas.iter().sum::<f64>() / log_deltas.len() as f64;
-    let slope = centered_dt
-        .iter()
-        .zip(log_deltas.iter())
-        .map(|(time, value)| time * (value - log_delta_mean))
-        .sum::<f64>()
-        / denominator;
-    let intercept = log_delta_mean - slope * dt_mean;
-    if !intercept.is_finite() {
-        return None;
-    }
-
-    let b = -slope;
-    if !b.is_finite() || b <= 0.0 {
-        return None;
-    }
-
-    let amplitude = candidate_c - candidate_d;
-    if !amplitude.is_finite() || amplitude <= 0.0 {
-        return None;
-    }
-
-    let predicted = points
-        .iter()
-        .map(|(time, _)| {
-            if *time < t_onset {
-                candidate_d
-            } else {
-                candidate_d + amplitude * (1.0 - (-b * (*time - t_onset)).exp())
-            }
-        })
-        .collect::<Vec<_>>();
-    if predicted.iter().any(|value| !value.is_finite()) {
-        return None;
-    }
-
-    let sse = predicted
+    let n = points.len() as f64;
+    let sum_basis = basis.iter().sum::<f64>();
+    let sum_basis_sq = basis.iter().map(|value| value * value).sum::<f64>();
+    let sum_values = points.iter().map(|(_, value)| *value).sum::<f64>();
+    let sum_basis_values = basis
         .iter()
         .zip(points.iter())
-        .map(|(predicted_value, (_, observed_value))| {
-            let residual = predicted_value - observed_value;
+        .map(|(basis_value, (_, value))| basis_value * value)
+        .sum::<f64>();
+    let determinant = n * sum_basis_sq - sum_basis * sum_basis;
+    if determinant.abs() <= f64::EPSILON {
+        return None;
+    }
+
+    let intensity_offset = (sum_values * sum_basis_sq - sum_basis * sum_basis_values) / determinant;
+    let expression_amplitude = (n * sum_basis_values - sum_basis * sum_values) / determinant;
+    if !intensity_offset.is_finite() || !expression_amplitude.is_finite() {
+        return None;
+    }
+    if expression_amplitude <= 0.0 {
+        return None;
+    }
+
+    let sse = points
+        .iter()
+        .zip(basis.iter())
+        .map(|((_, observed_value), basis_value)| {
+            let predicted = intensity_offset + expression_amplitude * basis_value;
+            let residual = predicted - observed_value;
             residual * residual
         })
         .sum::<f64>();
@@ -443,16 +488,14 @@ fn evaluate_asymptote_candidate(
         return None;
     }
 
-    let intercept_error = (intercept - amplitude.ln()).powi(2);
-    let score = sse + intercept_error * 1e-12;
     Some(ScoredFit {
-        score,
+        score: sse,
         result: FitResult {
-            d: candidate_d,
-            b,
-            t_onset,
-            amplitude,
-            c: candidate_c,
+            intensity_offset,
+            protein_decay_rate,
+            mrna_decay_rate,
+            expression_onset: FIXED_EXPRESSION_ONSET,
+            expression_amplitude,
         },
     })
 }
@@ -502,52 +545,36 @@ mod tests {
     }
 
     #[test]
-    fn compute_fit_table_recovers_plateau_and_direct_rise_traces() {
+    fn compute_fit_table_recovers_batch_shared_protein_decay_rate() {
         let tempdir = tempdir().unwrap();
         let csv_path = tempdir.path().join("slide_sc2_ch001_timeseries.csv");
-        let interval = 2.5;
-        let onset_frame = 2;
+        let interval = 1.0;
         let mut contents = String::from("pos,roi,t,corrected\n");
-        for frame in 0..8 {
-            let t_min = frame as f64 * interval;
-            let corrected = if frame < onset_frame {
-                2.0
-            } else {
-                2.0 + 8.0 * (1.0 - (-0.3 * ((frame - onset_frame) as f64 * interval)).exp())
-            };
-            contents.push_str(&format!("25,0,{frame},{corrected}\n"));
-            let direct = 3.5 + 2.0 * (1.0 - (-0.4 * t_min).exp());
-            contents.push_str(&format!("25,1,{frame},{direct}\n"));
+        for frame in 0..25 {
+            let time = frame as f64 * interval;
+            let trace_a = 2.0 + 40.0 * ((-0.05 * time).exp() - (-0.35 * time).exp());
+            let trace_b = 3.5 + 16.0 * ((-0.05 * time).exp() - (-0.7 * time).exp());
+            contents.push_str(&format!("25,0,{frame},{trace_a}\n"));
+            contents.push_str(&format!("25,1,{frame},{trace_b}\n"));
         }
         fs::write(&csv_path, contents).unwrap();
 
         let rows = compute_fit_table(&[csv_path], interval).unwrap();
 
         assert_eq!(rows.len(), 2);
-        assert_eq!(rows[0].slide_channel, Some(2));
-        assert_eq!(rows[0].pos, Some(25));
-        assert_eq!(rows[0].roi, 0);
         assert!(rows[0].success);
-        assert!((rows[0].d.unwrap() - 2.0).abs() <= 0.05);
-        assert!((rows[0].b.unwrap() - 0.3).abs() <= 0.02);
-        assert_eq!(rows[0].t_onset.unwrap(), onset_frame as f64 * interval);
-        assert!((rows[0].amplitude.unwrap() - 8.0).abs() <= 0.08);
-        assert!((rows[0].c.unwrap() - 10.0).abs() <= 0.05);
-        assert!((rows[0].intensity_offset.unwrap() - 2.0).abs() <= 0.05);
-        assert!((rows[0].mrna_decay_rate.unwrap() - 0.3).abs() <= 0.02);
-        assert_eq!(rows[0].expression_onset.unwrap(), onset_frame as f64 * interval);
-        assert!((rows[0].expression_amplitude.unwrap() - 8.0).abs() <= 0.08);
-
         assert!(rows[1].success);
-        assert!((rows[1].d.unwrap() - 3.5).abs() <= 0.05);
-        assert!((rows[1].b.unwrap() - 0.4).abs() <= 0.02);
-        assert_eq!(rows[1].t_onset.unwrap(), 0.0);
-        assert!((rows[1].amplitude.unwrap() - 2.0).abs() <= 0.05);
-        assert!((rows[1].c.unwrap() - 5.5).abs() <= 0.05);
-        assert!((rows[1].intensity_offset.unwrap() - 3.5).abs() <= 0.05);
-        assert!((rows[1].mrna_decay_rate.unwrap() - 0.4).abs() <= 0.02);
+        assert!((rows[0].intensity_offset.unwrap() - 2.0).abs() <= 0.1);
+        assert!((rows[0].protein_decay_rate.unwrap() - 0.05).abs() <= 0.02);
+        assert!((rows[0].mrna_decay_rate.unwrap() - 0.35).abs() <= 0.07);
+        assert_eq!(rows[0].expression_onset.unwrap(), 0.0);
+        assert!((rows[0].expression_amplitude.unwrap() - 40.0).abs() <= 3.0);
+
+        assert!((rows[1].intensity_offset.unwrap() - 3.5).abs() <= 0.1);
+        assert!((rows[1].protein_decay_rate.unwrap() - rows[0].protein_decay_rate.unwrap()).abs() <= 1e-12);
+        assert!((rows[1].mrna_decay_rate.unwrap() - 0.7).abs() <= 0.1);
         assert_eq!(rows[1].expression_onset.unwrap(), 0.0);
-        assert!((rows[1].expression_amplitude.unwrap() - 2.0).abs() <= 0.05);
+        assert!((rows[1].expression_amplitude.unwrap() - 16.0).abs() <= 2.0);
     }
 
     #[test]
@@ -558,12 +585,8 @@ mod tests {
             slide_channel: Some(0),
             pos: Some(12),
             roi: 1,
-            d: None,
-            b: None,
-            t_onset: None,
-            amplitude: None,
-            c: None,
             intensity_offset: None,
+            protein_decay_rate: None,
             mrna_decay_rate: None,
             expression_onset: None,
             expression_amplitude: None,
@@ -573,7 +596,7 @@ mod tests {
         write_fit_csv(&rows, &output_csv).unwrap();
 
         let contents = fs::read_to_string(output_csv).unwrap();
-        assert!(contents.contains("slide_channel,pos,roi,d,b,t_onset,amplitude,c,intensity_offset,mrna_decay_rate,expression_onset,expression_amplitude,success"));
-        assert!(contents.contains("0,12,1,,,,,,,,,,false"));
+        assert!(contents.contains("slide_channel,pos,roi,intensity_offset,protein_decay_rate,mrna_decay_rate,expression_onset,expression_amplitude,success"));
+        assert!(contents.contains("0,12,1,,,,,,false"));
     }
 }

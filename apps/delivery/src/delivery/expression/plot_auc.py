@@ -6,6 +6,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import typer
 
@@ -66,25 +67,26 @@ def write_auc_boxplot(
         df.loc[df["slide_channel"] == slide_channel, "auc"].to_numpy(dtype=float)
         for slide_channel in slide_channels
     ]
+    upper_limit = quartile_axis_upper(grouped_values)
 
     fig, ax = plt.subplots(figsize=(10, 6))
     boxplot = ax.boxplot(
         grouped_values,
         patch_artist=True,
+        showfliers=False,
         tick_labels=[
             f"{slide_channel}\n(n={trace_count})"
             for slide_channel, trace_count in zip(slide_channels, trace_counts, strict=True)
         ],
+        medianprops={"color": "black", "linewidth": 1.2},
     )
     for patch in boxplot["boxes"]:
         patch.set_facecolor(color)
         patch.set_alpha(0.65)
-    for median in boxplot["medians"]:
-        median.set_color("black")
-        median.set_linewidth(1.2)
 
     ax.set_xlabel("slide channel")
     ax.set_ylabel("AUC")
+    ax.set_ylim(0.0, upper_limit)
     ax.grid(axis="y", alpha=0.2, linewidth=0.5)
     if title is not None:
         ax.set_title(title)
@@ -92,6 +94,12 @@ def write_auc_boxplot(
     output_plot.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_plot, dpi=150, bbox_inches="tight")
     plt.close(fig)
+
+
+def quartile_axis_upper(grouped_values: list[np.ndarray]) -> float:
+    max_q3 = max(float(np.quantile(values, 0.75)) for values in grouped_values)
+    upper_limit = max_q3 * 1.25
+    return upper_limit if upper_limit > 0 else 1.0
 
 
 def format_written_auc_plot_message(output_plot: Path) -> str:
