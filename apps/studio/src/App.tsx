@@ -1,18 +1,35 @@
 import { Button } from "@/components/ui/button";
 import { StudioCommandBar } from "./components/studio/StudioCommandBar";
 import { StudioNavRail } from "./components/studio/StudioNavRail";
+import { AlignPattern } from "./screens/AlignPattern";
 import { BasicInfoStep1 } from "./screens/BasicInfoStep1";
 import { BasicInfoStep2 } from "./screens/BasicInfoStep2";
 import { WelcomeAssay } from "./screens/WelcomeAssay";
 import { instructionForStep } from "./studioCopy";
-import { type StudioStep, useStudioStore } from "./studioStore";
+import { type BasicInfo2FeatureId, useStudioStore } from "./studioStore";
 
-function validInfo1(studyName: string, operatorName: string, extra1: string, extra2: string) {
+/** `variant="ghost"`; white label on the command bar. */
+const stepGhostCtaClass =
+  "text-2xl font-normal text-white shadow-none hover:bg-white/10 hover:text-white data-[pressed]:text-white data-[pressed]:bg-white/10 disabled:text-white/50";
+
+function validInfo1(name: string, date: string, dataPath: string, saveTo: string) {
   return (
-    studyName.trim().length > 0 &&
-    operatorName.trim().length > 0 &&
-    extra1.trim().length > 0 &&
-    extra2.trim().length > 0
+    name.trim().length > 0 &&
+    date.trim().length > 0 &&
+    dataPath.trim().length > 0 &&
+    saveTo.trim().length > 0
+  );
+}
+
+function validInfo2(
+  pattern: string,
+  timelapseInterval: string,
+  selectedFeature: BasicInfo2FeatureId | null,
+) {
+  return (
+    pattern.trim().length > 0 &&
+    timelapseInterval.trim().length > 0 &&
+    selectedFeature !== null
   );
 }
 
@@ -22,49 +39,42 @@ export default function App() {
   const info1 = useStudioStore((s) => s.info1);
   const info2 = useStudioStore((s) => s.info2);
   const goNext = useStudioStore((s) => s.goNext);
-  const goBack = useStudioStore((s) => s.goBack);
-  const submit = useStudioStore((s) => s.submit);
 
   const canContinue =
     step === "welcome"
       ? Boolean(assayId)
       : step === "info1"
-        ? validInfo1(
-            info1.studyName,
-            info1.operatorName,
-            info1.instrumentId,
-            info1.lotId,
-          )
-        : false;
+        ? validInfo1(info1.name, info1.date, info1.dataPath, info1.saveTo)
+        : step === "info2"
+          ? validInfo2(
+              info2.pattern,
+              info2.timelapseInterval,
+              info2.selectedFeature,
+            )
+          : false;
 
-  const canSubmit = info2.sampleId.trim().length > 0;
-  const showBack = step !== "welcome";
+  const stepAction =
+    step === "alignPattern" ? null : (
+      <Button
+        className={stepGhostCtaClass}
+        disabled={!canContinue}
+        type="button"
+        variant="ghost"
+        onClick={() => {
+          goNext();
+        }}
+      >
+        next
+      </Button>
+    );
 
-  const nextOrSubmit = (
-    <>
-      {step === "info2" ? (
-        <Button
-          type="button"
-          disabled={!canSubmit}
-          onClick={() => {
-            submit();
-          }}
-        >
-          Submit
-        </Button>
-      ) : (
-        <Button
-          type="button"
-          disabled={!canContinue}
-          onClick={() => {
-            goNext();
-          }}
-        >
-          Next
-        </Button>
-      )}
-    </>
-  );
+  const isBasicInfoMain = step === "info1" || step === "info2";
+
+  const mainInnerClass = isBasicInfoMain
+    ? "mx-auto flex w-full min-h-0 min-w-0 max-w-[52rem] flex-1 flex-col items-center justify-start px-4 py-6 md:px-[100px] md:py-10"
+    : `mx-auto flex w-full min-h-0 min-w-0 max-w-[52rem] flex-1 flex-col items-center px-4 py-6 sm:px-6 sm:py-8 ${
+        step === "welcome" || step === "alignPattern" ? "justify-center" : "justify-start"
+      }`;
 
   return (
     <div className="grid h-svh min-h-0 w-full grid-cols-1 overflow-hidden bg-background text-foreground md:grid-cols-[240px_minmax(0,1fr)_240px]">
@@ -72,28 +82,15 @@ export default function App() {
 
       <div className="flex min-h-0 min-w-0 flex-col border-border/60 md:border-x">
         <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
-          <div
-            className={`mx-auto flex w-full min-w-0 max-w-[52rem] min-h-0 flex-1 flex-col items-center px-4 py-6 sm:px-6 sm:py-8 ${
-              step === "welcome" ? "justify-center" : "justify-start"
-            }`}
-          >
+          <div className={mainInnerClass}>
             {step === "welcome" ? <WelcomeAssay /> : null}
             {step === "info1" ? <BasicInfoStep1 /> : null}
             {step === "info2" ? <BasicInfoStep2 /> : null}
+            {step === "alignPattern" ? <AlignPattern /> : null}
           </div>
         </main>
 
-        <StudioCommandBar
-          instruction={instructionForStep(step)}
-          tool={
-            showBack ? (
-              <Button type="button" variant="outline" onClick={() => goBack()}>
-                Back
-              </Button>
-            ) : null
-          }
-          step={nextOrSubmit}
-        />
+        <StudioCommandBar instruction={instructionForStep(step)} step={stepAction} tool={null} />
       </div>
 
       <aside

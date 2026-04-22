@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type StudioStep = "welcome" | "info1" | "info2";
+export type StudioStep = "welcome" | "info1" | "info2" | "alignPattern";
 
 /** Assay options shown on the welcome step (ids are stable for persistence later). */
 export type AssayId =
@@ -9,18 +9,37 @@ export type AssayId =
   | "lnp-binding"
   | "custom-assay";
 
-export type BasicInfoStep1 = {
-  studyName: string;
-  operatorName: string;
-  /** Instrument or device id for the run. */
-  instrumentId: string;
-  /** Reagent or kit lot reference. */
-  lotId: string;
+/** Same strings as the choose-assay tiles (`WelcomeAssay`). */
+export const ASSAY_CHOICE_LABEL: Record<AssayId, string> = {
+  "gene-expression": "Gene expression",
+  "immune-killing": "Immune killing",
+  "lnp-binding": "LNP binding",
+  "custom-assay": "Custom assay",
 };
 
+/** Centered H1 for basic info — "{choice} assay" except custom (label already includes “assay”). */
+export function basicInfoAssayTitle(assayId: AssayId | null): string {
+  if (!assayId) return "Assay";
+  if (assayId === "custom-assay") return ASSAY_CHOICE_LABEL["custom-assay"];
+  return `${ASSAY_CHOICE_LABEL[assayId]} assay`;
+}
+
+/** Basic info form fields (names match Figma node 38:382). */
+export type BasicInfoStep1 = {
+  name: string;
+  date: string;
+  dataPath: string;
+  saveTo: string;
+};
+
+/** Feature tile ids — Figma 43:297 gallery (morphology, partcount, partfluor, totalfluor). */
+export type BasicInfo2FeatureId = "morphology" | "partcount" | "partfluor" | "totalfluor";
+
+/** Second basic-info screen — Figma node 43:97. */
 export type BasicInfoStep2 = {
-  sampleId: string;
-  runNotes: string;
+  pattern: string;
+  timelapseInterval: string;
+  selectedFeature: BasicInfo2FeatureId | null;
 };
 
 type StudioState = {
@@ -38,16 +57,20 @@ type StudioState = {
 };
 
 const initialInfo1: BasicInfoStep1 = {
-  studyName: "",
-  operatorName: "",
-  instrumentId: "",
-  lotId: "",
+  name: "",
+  date: "",
+  dataPath: "",
+  saveTo: "",
 };
-const initialInfo2: BasicInfoStep2 = { sampleId: "", runNotes: "" };
+const initialInfo2: BasicInfoStep2 = {
+  pattern: "",
+  timelapseInterval: "",
+  selectedFeature: null,
+};
 
 export const useStudioStore = create<StudioState>((set, get) => ({
   step: "welcome",
-  assayId: null,
+  assayId: "custom-assay",
   info1: { ...initialInfo1 },
   info2: { ...initialInfo2 },
 
@@ -66,7 +89,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     })),
 
   goNext: () => {
-    const { step, assayId, info1 } = get();
+    const { step, assayId, info1, info2 } = get();
     if (step === "welcome") {
       if (!assayId) return;
       set({ step: "info1" });
@@ -74,14 +97,25 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     }
     if (step === "info1") {
       if (
-        !info1.studyName.trim() ||
-        !info1.operatorName.trim() ||
-        !info1.instrumentId.trim() ||
-        !info1.lotId.trim()
+        !info1.name.trim() ||
+        !info1.date.trim() ||
+        !info1.dataPath.trim() ||
+        !info1.saveTo.trim()
       ) {
         return;
       }
       set({ step: "info2" });
+      return;
+    }
+    if (step === "info2") {
+      if (
+        !info2.pattern.trim() ||
+        !info2.timelapseInterval.trim() ||
+        info2.selectedFeature === null
+      ) {
+        return;
+      }
+      set({ step: "alignPattern" });
     }
   },
 
@@ -89,11 +123,12 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     const { step } = get();
     if (step === "info1") set({ step: "welcome" });
     else if (step === "info2") set({ step: "info1" });
+    else if (step === "alignPattern") set({ step: "info2" });
   },
 
   submit: () => {
     const { assayId, info1, info2 } = get();
-    if (!assayId || !info2.sampleId.trim()) return;
+    if (!assayId) return;
     console.info("studio.submit", { assayId, info1, info2 });
   },
 }));

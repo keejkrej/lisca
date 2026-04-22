@@ -4,11 +4,13 @@ import type { StudioStep } from "./studioStore";
 export function instructionForStep(step: StudioStep): string {
   switch (step) {
     case "welcome":
-      return "pick assay type!";
+      return "pick the assay type!";
     case "info1":
-      return "enter study and run fields!";
+      return "more assay info!";
     case "info2":
-      return "add sample and readouts!";
+      return "more assay info!";
+    case "alignPattern":
+      return "";
     default:
       return "";
   }

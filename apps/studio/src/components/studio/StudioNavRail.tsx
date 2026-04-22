@@ -16,14 +16,14 @@ const ITEMS: { id: string; label: string }[] = [
 const STEP_TO_ACTIVE: Record<StudioStep, (typeof ITEMS)[number]["id"]> = {
   welcome: "choose-assay",
   info1: "basic-info",
-  info2: "align-pattern",
+  info2: "basic-info",
+  alignPattern: "align-pattern",
 };
 
-/** Nav items that map to implemented `StudioStep` values. */
 const NAV_ID_TO_STEP: Partial<Record<string, StudioStep>> = {
   "choose-assay": "welcome",
   "basic-info": "info1",
-  "align-pattern": "info2",
+  "align-pattern": "alignPattern",
 };
 
 type StudioNavRailProps = {
@@ -39,7 +39,7 @@ export function StudioNavRail({ className }: StudioNavRailProps) {
     <nav
       aria-label="Primary"
       className={cn(
-        "flex w-60 min-w-60 flex-col gap-1 border-r border-border/80 bg-card/32 px-2.5 py-4",
+        "flex h-full min-h-0 w-60 min-w-60 flex-col items-center justify-center gap-[30px] border-r border-border/80 bg-card/32 p-2.5",
         className,
       )}
     >
@@ -53,8 +53,8 @@ export function StudioNavRail({ className }: StudioNavRailProps) {
             key={item.id}
             aria-current={isActive ? "page" : undefined}
             className={cn(
-              "h-12 w-full justify-start",
-              isActive && "border-l-2 border-primary bg-accent/40 pl-[calc(0.625rem-2px)]",
+              "h-auto w-auto min-w-0 max-w-full rounded-2xl px-5 py-2.5 text-2xl font-medium",
+              isActive ? "text-foreground" : "text-muted-foreground",
               !isNavigable && "cursor-not-allowed opacity-50",
             )}
             data-active={isActive ? true : undefined}

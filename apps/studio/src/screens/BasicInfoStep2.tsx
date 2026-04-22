@@ -1,83 +1,143 @@
-import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { useStudioStore } from "../studioStore";
+import { cn } from "@/lib/utils";
+import {
+  basicInfoAssayTitle,
+  type BasicInfo2FeatureId,
+  useStudioStore,
+} from "../studioStore";
 
-const TILE =
-  "aspect-square w-full min-h-0 min-w-0 max-w-[8.625rem] rounded-lg border border-dashed border-border/80 bg-muted/30 sm:max-w-[8.6rem]";
+const ROW = "flex min-h-[100px] w-full flex-col gap-2.5 p-2.5";
 
-function GallerySlot({ label }: { label: string }) {
-  return (
-    <div
-      className="flex min-h-0 w-full min-w-0 flex-1 flex-col items-center gap-1.5"
-      data-slot="gallery-tile"
-    >
-      <p className="text-muted-foreground line-clamp-2 w-full text-center text-[10px] font-medium sm:text-xs">
-        {label}
-      </p>
-      <div aria-hidden className={TILE} />
-    </div>
-  );
+const FEATURES: { id: BasicInfo2FeatureId; title: string }[] = [
+  { id: "morphology", title: "Morphology" },
+  { id: "partcount", title: "Part count" },
+  { id: "partfluor", title: "Part fluor" },
+  { id: "totalfluor", title: "Total fluor" },
+];
+
+function FeaturePreview({ id }: { id: BasicInfo2FeatureId }) {
+  switch (id) {
+    case "morphology":
+      return (
+        <div
+          aria-hidden
+          className="flex h-[120px] w-[122px] items-center justify-center opacity-50"
+        >
+          <div className="h-16 w-20 rounded-[40%] bg-muted-foreground/35" />
+        </div>
+      );
+    case "partcount":
+      return (
+        <div
+          aria-hidden
+          className="relative flex h-[120px] w-[122px] items-center justify-center opacity-50"
+        >
+          <div className="h-14 w-20 rounded-[45%] bg-rose-200/80 dark:bg-rose-900/40" />
+          <span className="absolute text-[8px] text-rose-600">•••</span>
+        </div>
+      );
+    case "partfluor":
+      return (
+        <div
+          aria-hidden
+          className="relative flex h-[120px] w-[122px] items-center justify-center opacity-50"
+        >
+          <div className="h-14 w-16 rounded-[40%] border-2 border-dashed border-muted-foreground/40" />
+          <span className="absolute text-[6px] text-blue-500">●●●</span>
+        </div>
+      );
+    case "totalfluor":
+      return (
+        <div
+          aria-hidden
+          className="flex h-[120px] w-[122px] items-center justify-center"
+        >
+          <div className="flex h-24 w-24 items-center justify-center rounded-full border-4 border-dashed border-foreground/80">
+            <div className="h-10 w-10 rounded-full bg-lime-500" />
+          </div>
+        </div>
+      );
+    default:
+      return null;
+  }
 }
 
+/** Second part of Basic info — Figma node 43:97 (nav stays “Basic info”). */
 export function BasicInfoStep2() {
+  const assayId = useStudioStore((s) => s.assayId);
   const info2 = useStudioStore((s) => s.info2);
   const setInfo2 = useStudioStore((s) => s.setInfo2);
 
   return (
-    <div className="flex w-full min-w-0 flex-col">
-      <h1 className="px-0.5 text-center font-semibold text-2xl leading-tight sm:text-3xl">
-        Gene expression assay
+    <div className="flex w-full min-w-0 max-w-[619px] flex-col gap-[30px] self-center">
+      <h1 className="text-center font-normal text-4xl leading-tight text-foreground">
+        {basicInfoAssayTitle(assayId)}
       </h1>
-      <p className="text-muted-foreground mt-1 text-center text-sm">
-        Link the run to a sample and add optional readouts or notes.
-      </p>
 
-      <div className="mx-auto mt-8 flex w-full min-w-0 max-w-[619px] flex-col sm:mt-10">
-        <div className="min-h-[100px] w-full">
-          <Field name="sampleId">
-            <FieldLabel htmlFor="studio-sample-id">Sample ID</FieldLabel>
-            <FieldDescription>Required. LIMS, tube barcode, or your internal id.</FieldDescription>
+      <div className="flex w-full min-w-0 flex-col gap-2.5">
+        <div className={ROW}>
+          <Field className="gap-2.5" name="pattern">
+            <FieldLabel className="text-2xl font-normal" htmlFor="studio-pattern">
+              Pattern
+            </FieldLabel>
             <Input
-              id="studio-sample-id"
+              id="studio-pattern"
               type="text"
-              className="mt-2 w-full"
-              value={info2.sampleId}
-              onChange={(e) => setInfo2({ sampleId: e.target.value })}
-              placeholder="e.g. SPL-10482-B"
+              className="mt-0 w-full rounded-2xl border-2 border-border bg-transparent px-5 py-2.5 text-2xl text-foreground placeholder:text-muted-foreground"
+              value={info2.pattern}
+              onChange={(e) => setInfo2({ pattern: e.target.value })}
+              placeholder="30 um / 200 um"
             />
           </Field>
         </div>
 
-        <div className="mt-2.5 w-full min-h-[12.5rem] sm:min-h-[200px]">
-          <Field className="h-full" name="gallery">
-            <FieldLabel>Readouts</FieldLabel>
-            <FieldDescription>Optional placeholders for panel previews (e.g. morphology, counts).</FieldDescription>
+        <div className={ROW}>
+          <Field className="gap-2.5" name="timelapseInterval">
+            <FieldLabel className="text-2xl font-normal" htmlFor="studio-timelapse">
+              Timelapse interval
+            </FieldLabel>
+            <Input
+              id="studio-timelapse"
+              type="text"
+              className="mt-0 w-full rounded-2xl border-2 border-border bg-transparent px-5 py-2.5 text-2xl text-foreground placeholder:text-muted-foreground"
+              value={info2.timelapseInterval}
+              onChange={(e) => setInfo2({ timelapseInterval: e.target.value })}
+              placeholder="10 min"
+            />
+          </Field>
+        </div>
+
+        <div className="min-h-[200px] w-full p-2.5">
+          <Field className="h-full min-h-[200px] gap-2.5" name="features">
+            <FieldLabel className="text-2xl font-normal">Features</FieldLabel>
             <div
-              className="mt-2 flex min-h-0 w-full min-w-0 items-start justify-between gap-2 sm:gap-2.5"
-              role="group"
-              aria-label="Assay readout previews"
+              className="mt-0 flex min-h-0 w-full min-w-0 flex-1 gap-2.5 p-2.5"
+              role="listbox"
+              aria-label="Feature type"
             >
-              <GallerySlot label="Morphology" />
-              <GallerySlot label="Part count" />
-              <GallerySlot label="Fluor (panel)" />
-              <GallerySlot label="Fluor (total)" />
+              {FEATURES.map(({ id, title }) => {
+                const selected = info2.selectedFeature === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    role="option"
+                    aria-selected={selected}
+                    className={cn(
+                      "flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center rounded-2xl border-2 p-2.5 transition-shadow",
+                      selected
+                        ? "border-foreground/80 ring-1 ring-foreground/20"
+                        : "border-border opacity-60 hover:opacity-100",
+                    )}
+                    onClick={() => setInfo2({ selectedFeature: id })}
+                  >
+                    <span className="sr-only">{title}</span>
+                    <FeaturePreview id={id} />
+                  </button>
+                );
+              })}
             </div>
-          </Field>
-        </div>
-
-        <div className="mt-2.5 min-h-0 w-full min-w-0 sm:mt-3">
-          <Field name="runNotes">
-            <FieldLabel htmlFor="studio-run-notes">Notes</FieldLabel>
-            <FieldDescription>Extra context for collaborators; optional.</FieldDescription>
-            <Textarea
-              id="studio-run-notes"
-              className="mt-2 min-h-[4.5rem] w-full resize-y"
-              value={info2.runNotes}
-              onChange={(e) => setInfo2({ runNotes: e.target.value })}
-              placeholder="Optional"
-              rows={4}
-            />
           </Field>
         </div>
       </div>

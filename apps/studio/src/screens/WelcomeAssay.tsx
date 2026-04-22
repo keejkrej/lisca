@@ -1,12 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { type AssayId, useStudioStore } from "../studioStore";
+import { ASSAY_CHOICE_LABEL, type AssayId, useStudioStore } from "../studioStore";
 
-const ASSAYS: { id: AssayId; label: string }[] = [
-  { id: "gene-expression", label: "Gene expression" },
-  { id: "immune-killing", label: "Immune killing" },
-  { id: "lnp-binding", label: "LNP binding" },
-  { id: "custom-assay", label: "Custom assay" },
+const ASSAY_ORDER: AssayId[] = [
+  "gene-expression",
+  "immune-killing",
+  "lnp-binding",
+  "custom-assay",
 ];
 
 export function WelcomeAssay() {
@@ -22,23 +22,25 @@ export function WelcomeAssay() {
         aria-label="Assay type"
         role="group"
       >
-        {ASSAYS.map((a) => {
-          const selected = assayId === a.id;
+        {ASSAY_ORDER.map((id) => {
+          const selected = assayId === id;
           return (
             <Button
-              key={a.id}
+              key={id}
               aria-pressed={selected}
               className={cn(
                 "h-20 w-full min-h-[5rem] items-center justify-center px-2 py-3 text-center sm:h-[5.5rem] sm:min-h-[5.5rem] sm:px-3",
                 selected && "border-primary ring-2 ring-ring/24 bg-primary/6 hover:bg-primary/10",
               )}
               onClick={() => {
-                setAssayId(a.id);
+                setAssayId(id);
               }}
               type="button"
               variant="outline"
             >
-              <span className="text-center font-medium text-sm sm:text-base">{a.label}</span>
+              <span className="text-center font-medium text-sm sm:text-base">
+                {ASSAY_CHOICE_LABEL[id]}
+              </span>
             </Button>
           );
         })}

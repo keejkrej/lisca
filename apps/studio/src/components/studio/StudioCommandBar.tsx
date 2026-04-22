@@ -4,9 +4,9 @@ import { cn } from "@/lib/utils";
 export type StudioCommandBarProps = {
   /** Short helper for the current step (left, fixed width). */
   instruction: string;
-  /** Center slot: Back only (optional). */
+  /** Center slot: empty in Figma. */
   tool: ReactNode;
-  /** Right slot: single primary forward action (e.g. Next / Submit). */
+  /** Right slot: single forward action. */
   step: ReactNode;
   className?: string;
 };
@@ -19,11 +19,15 @@ export function StudioCommandBar({ instruction, tool, step, className }: StudioC
         className,
       )}
     >
-      <div className="flex w-40 shrink-0 flex-col justify-center border-r border-border/80 px-3 py-2">
-        <p className="text-muted-foreground line-clamp-4 text-xs leading-snug">{instruction}</p>
+      <div className="flex w-40 shrink-0 items-center justify-center border-r border-border/80 px-2.5 py-2.5">
+        {instruction ? (
+          <p className="text-foreground line-clamp-4 text-center text-2xl leading-tight">
+            {instruction}
+          </p>
+        ) : null}
       </div>
-      <div className="flex min-w-0 flex-1 items-center justify-center gap-2 px-4 py-2">{tool}</div>
-      <div className="flex w-40 shrink-0 flex-col items-end justify-center border-l border-border/80 px-3 py-2">
+      <div className="min-h-0 min-w-0 flex-1 px-0 py-2">{tool}</div>
+      <div className="flex w-40 shrink-0 items-center justify-center border-l border-border/80 px-2.5 py-2.5">
         {step}
       </div>
     </div>

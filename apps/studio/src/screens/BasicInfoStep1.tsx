@@ -1,78 +1,79 @@
-import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { useStudioStore } from "../studioStore";
+import { basicInfoAssayTitle, useStudioStore } from "../studioStore";
 
-const ROW = "min-h-[100px] w-full max-w-[619px] self-center";
+const ROW = "flex min-h-[100px] w-full flex-col gap-2.5 p-2.5";
 
 export function BasicInfoStep1() {
+  const assayId = useStudioStore((s) => s.assayId);
   const info1 = useStudioStore((s) => s.info1);
   const setInfo1 = useStudioStore((s) => s.setInfo1);
 
   return (
-    <div className="flex w-full min-w-0 flex-col">
-      <h1 className="px-0.5 text-center font-semibold text-2xl leading-tight sm:text-3xl">
-        Gene expression assay
+    <div className="flex w-full min-w-0 max-w-[619px] flex-col gap-[30px] self-center">
+      <h1 className="text-center font-normal text-4xl leading-tight text-foreground">
+        {basicInfoAssayTitle(assayId)}
       </h1>
-      <p className="text-muted-foreground mt-1 text-center text-sm">
-        Enter study and run metadata for the instrument session.
-      </p>
 
-      <div className="mt-8 flex w-full min-w-0 flex-col items-center gap-2.5 sm:mt-10 sm:gap-2.5">
+      <div className="flex w-full min-w-0 flex-col gap-2.5">
         <div className={ROW}>
-          <Field name="studyName">
-            <FieldLabel htmlFor="studio-study-name">Study name</FieldLabel>
-            <FieldDescription>Shown on exported reports and audit trails.</FieldDescription>
+          <Field className="gap-2.5" name="name">
+            <FieldLabel className="text-2xl font-normal" htmlFor="studio-name">
+              Name
+            </FieldLabel>
             <Input
-              id="studio-study-name"
+              id="studio-name"
               type="text"
-              autoComplete="organization"
-              className="mt-2 w-full"
-              value={info1.studyName}
-              onChange={(e) => setInfo1({ studyName: e.target.value })}
-              placeholder="e.g. NEURO-2026-Q1"
+              autoComplete="off"
+              className="mt-0 w-full rounded-2xl border-2 px-5 py-2.5 text-2xl"
+              value={info1.name}
+              onChange={(e) => setInfo1({ name: e.target.value })}
+              placeholder="mRNA lifetime test"
             />
           </Field>
         </div>
         <div className={ROW}>
-          <Field name="operatorName">
-            <FieldLabel htmlFor="studio-operator-name">Operator</FieldLabel>
-            <FieldDescription>Full name or badge ID.</FieldDescription>
+          <Field className="gap-2.5" name="date">
+            <FieldLabel className="text-2xl font-normal" htmlFor="studio-date">
+              Date
+            </FieldLabel>
             <Input
-              id="studio-operator-name"
+              id="studio-date"
               type="text"
-              autoComplete="name"
-              className="mt-2 w-full"
-              value={info1.operatorName}
-              onChange={(e) => setInfo1({ operatorName: e.target.value })}
-              placeholder="e.g. Alex Rivera"
+              className="mt-0 w-full rounded-2xl border-2 px-5 py-2.5 text-2xl"
+              value={info1.date}
+              onChange={(e) => setInfo1({ date: e.target.value })}
+              placeholder="20.04.2026"
             />
           </Field>
         </div>
         <div className={ROW}>
-          <Field name="instrumentId">
-            <FieldLabel htmlFor="studio-instrument-id">Instrument ID</FieldLabel>
-            <FieldDescription>Reader or workcell identifier for this run.</FieldDescription>
+          <Field className="gap-2.5" name="dataPath">
+            <FieldLabel className="text-2xl font-normal" htmlFor="studio-data-path">
+              Data path
+            </FieldLabel>
             <Input
-              id="studio-instrument-id"
+              id="studio-data-path"
               type="text"
-              className="mt-2 w-full"
-              value={info1.instrumentId}
-              onChange={(e) => setInfo1({ instrumentId: e.target.value })}
-              placeholder="e.g. WC-12"
+              className="mt-0 w-full rounded-2xl border-2 px-5 py-2.5 text-2xl"
+              value={info1.dataPath}
+              onChange={(e) => setInfo1({ dataPath: e.target.value })}
+              placeholder="ag-moonraedler/projects/lifetime"
             />
           </Field>
         </div>
         <div className={ROW}>
-          <Field name="lotId">
-            <FieldLabel htmlFor="studio-lot-id">Reagent lot</FieldLabel>
-            <FieldDescription>Panel or reagent lot reference (required).</FieldDescription>
+          <Field className="gap-2.5" name="saveTo">
+            <FieldLabel className="text-2xl font-normal" htmlFor="studio-save-to">
+              Save to
+            </FieldLabel>
             <Input
-              id="studio-lot-id"
+              id="studio-save-to"
               type="text"
-              className="mt-2 w-full"
-              value={info1.lotId}
-              onChange={(e) => setInfo1({ lotId: e.target.value })}
-              placeholder="e.g. LOT-482A"
+              className="mt-0 w-full rounded-2xl border-2 px-5 py-2.5 text-2xl"
+              value={info1.saveTo}
+              onChange={(e) => setInfo1({ saveTo: e.target.value })}
+              placeholder="ag-moonraedler/users/me/lifetime"
             />
           </Field>
         </div>
