@@ -3,11 +3,19 @@ import { create } from "zustand";
 export type StudioStep = "welcome" | "info1" | "info2";
 
 /** Assay options shown on the welcome step (ids are stable for persistence later). */
-export type AssayId = "lisca-flex" | "lisca-standard" | "custom-panel";
+export type AssayId =
+  | "gene-expression"
+  | "immune-killing"
+  | "lnp-binding"
+  | "custom-assay";
 
 export type BasicInfoStep1 = {
   studyName: string;
   operatorName: string;
+  /** Instrument or device id for the run. */
+  instrumentId: string;
+  /** Reagent or kit lot reference. */
+  lotId: string;
 };
 
 export type BasicInfoStep2 = {
@@ -29,7 +37,12 @@ type StudioState = {
   submit: () => void;
 };
 
-const initialInfo1: BasicInfoStep1 = { studyName: "", operatorName: "" };
+const initialInfo1: BasicInfoStep1 = {
+  studyName: "",
+  operatorName: "",
+  instrumentId: "",
+  lotId: "",
+};
 const initialInfo2: BasicInfoStep2 = { sampleId: "", runNotes: "" };
 
 export const useStudioStore = create<StudioState>((set, get) => ({
@@ -60,7 +73,14 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       return;
     }
     if (step === "info1") {
-      if (!info1.studyName.trim() || !info1.operatorName.trim()) return;
+      if (
+        !info1.studyName.trim() ||
+        !info1.operatorName.trim() ||
+        !info1.instrumentId.trim() ||
+        !info1.lotId.trim()
+      ) {
+        return;
+      }
       set({ step: "info2" });
     }
   },
