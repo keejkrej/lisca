@@ -1,6 +1,10 @@
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import morphologyUrl from "@/assets/features/morphology.svg?url";
+import partcountUrl from "@/assets/features/partcount.svg?url";
+import partfluorUrl from "@/assets/features/partfluor.svg?url";
+import totalfluorUrl from "@/assets/features/totalfluor.svg?url";
 import {
   basicInfoAssayTitle,
   type BasicInfo2FeatureId,
@@ -16,51 +20,26 @@ const FEATURES: { id: BasicInfo2FeatureId; title: string }[] = [
   { id: "totalfluor", title: "Total fluor" },
 ];
 
+const FEATURE_IMAGE_URL: Record<BasicInfo2FeatureId, string> = {
+  morphology: morphologyUrl,
+  partcount: partcountUrl,
+  partfluor: partfluorUrl,
+  totalfluor: totalfluorUrl,
+};
+
 function FeaturePreview({ id }: { id: BasicInfo2FeatureId }) {
-  switch (id) {
-    case "morphology":
-      return (
-        <div
-          aria-hidden
-          className="flex h-[120px] w-[122px] items-center justify-center opacity-50"
-        >
-          <div className="h-16 w-20 rounded-[40%] bg-muted-foreground/35" />
-        </div>
-      );
-    case "partcount":
-      return (
-        <div
-          aria-hidden
-          className="relative flex h-[120px] w-[122px] items-center justify-center opacity-50"
-        >
-          <div className="h-14 w-20 rounded-[45%] bg-rose-200/80 dark:bg-rose-900/40" />
-          <span className="absolute text-[8px] text-rose-600">•••</span>
-        </div>
-      );
-    case "partfluor":
-      return (
-        <div
-          aria-hidden
-          className="relative flex h-[120px] w-[122px] items-center justify-center opacity-50"
-        >
-          <div className="h-14 w-16 rounded-[40%] border-2 border-dashed border-muted-foreground/40" />
-          <span className="absolute text-[6px] text-blue-500">●●●</span>
-        </div>
-      );
-    case "totalfluor":
-      return (
-        <div
-          aria-hidden
-          className="flex h-[120px] w-[122px] items-center justify-center"
-        >
-          <div className="flex h-24 w-24 items-center justify-center rounded-full border-4 border-dashed border-foreground/80">
-            <div className="h-10 w-10 rounded-full bg-lime-500" />
-          </div>
-        </div>
-      );
-    default:
-      return null;
-  }
+  return (
+    <div
+      aria-hidden
+      className="flex h-[120px] w-full max-w-[122px] items-center justify-center"
+    >
+      <img
+        src={FEATURE_IMAGE_URL[id]}
+        alt=""
+        className="h-[120px] w-full object-contain"
+      />
+    </div>
+  );
 }
 
 /** Second part of Basic info — Figma node 43:97 (nav stays “Basic info”). */
