@@ -1,3 +1,4 @@
+import path from "node:path";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
@@ -5,6 +6,11 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   // Relative base so JS/CSS/font URLs work when Tauri loads the built app (not served from "/").
   base: "./",
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
   plugins: [react(), tailwindcss()],
   server: {
     host: "127.0.0.1",
