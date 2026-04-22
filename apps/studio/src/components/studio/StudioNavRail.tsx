@@ -1,7 +1,15 @@
 import { ContextMenu } from "@base-ui/react/context-menu";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogPanel,
+  DialogPopup,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { MenuItem, MenuPopup } from "@/components/ui/menu";
 import { cn } from "@/lib/utils";
+import { StudioAlignFrameNavigation } from "lisca/viewer/react";
+import { useEffect, useState } from "react";
 import type { StudioStep } from "../../studioStore";
 import { useStudioStore } from "../../studioStore";
 
@@ -50,6 +58,13 @@ export function StudioNavRail({ className }: StudioNavRailProps) {
   const step = useStudioStore((s) => s.step);
   const setStep = useStudioStore((s) => s.setStep);
   const activeId = STEP_TO_ACTIVE[step];
+  const [alignFrameNavOpen, setAlignFrameNavOpen] = useState(false);
+
+  useEffect(() => {
+    if (step !== "alignPattern") {
+      setAlignFrameNavOpen(false);
+    }
+  }, [step]);
 
   return (
     <nav
@@ -85,6 +100,38 @@ export function StudioNavRail({ className }: StudioNavRailProps) {
           );
         }
 
+        if (item.id === "align-pattern" && step === "alignPattern") {
+          return (
+            <ContextMenu.Root key={item.id}>
+              <ContextMenu.Trigger className="flex w-full min-w-0 max-w-full justify-center outline-none">
+                <Button
+                  aria-current={isActive ? "page" : undefined}
+                  className={cn("w-full", itemButtonClass(isActive))}
+                  data-active={isActive ? true : undefined}
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    if (targetStep !== undefined) {
+                      setStep(targetStep);
+                    }
+                  }}
+                >
+                  {item.label}
+                </Button>
+              </ContextMenu.Trigger>
+              <MenuPopup align="start" className="min-w-48" side="right" sideOffset={6}>
+                <MenuItem
+                  onClick={() => {
+                    setAlignFrameNavOpen(true);
+                  }}
+                >
+                  Frame navigation
+                </MenuItem>
+              </MenuPopup>
+            </ContextMenu.Root>
+          );
+        }
+
         if (!hasSubMenu) {
           return (
             <Button
@@ -107,9 +154,7 @@ export function StudioNavRail({ className }: StudioNavRailProps) {
 
         return (
           <ContextMenu.Root key={item.id}>
-            <ContextMenu.Trigger
-              className="flex w-full min-w-0 max-w-full justify-center outline-none"
-            >
+            <ContextMenu.Trigger className="flex w-full min-w-0 max-w-full justify-center outline-none">
               <Button
                 aria-current={isActive ? "page" : undefined}
                 className={cn("w-full", itemButtonClass(isActive))}
@@ -141,6 +186,17 @@ export function StudioNavRail({ className }: StudioNavRailProps) {
           </ContextMenu.Root>
         );
       })}
+
+      <Dialog open={alignFrameNavOpen} onOpenChange={setAlignFrameNavOpen}>
+        <DialogPopup className="max-w-md">
+          <div className="border-b border-border px-6 py-4">
+            <DialogTitle>Frame navigation</DialogTitle>
+          </div>
+          <DialogPanel className="max-h-[min(70vh,520px)] space-y-2">
+            <StudioAlignFrameNavigation />
+          </DialogPanel>
+        </DialogPopup>
+      </Dialog>
     </nav>
   );
 }

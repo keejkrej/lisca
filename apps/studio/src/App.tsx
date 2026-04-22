@@ -1,4 +1,9 @@
 import { Button } from "@/components/ui/button";
+import { createTauriDesktopPorts } from "lisca/shared/host-tauri";
+import { viewerStore } from "lisca/viewer/react";
+import { useMemo, useRef } from "react";
+import { useStore } from "zustand";
+
 import { StudioCommandBar } from "./components/studio/StudioCommandBar";
 import { StudioNavRail } from "./components/studio/StudioNavRail";
 import { AlignPattern } from "./screens/AlignPattern";
@@ -40,6 +45,26 @@ export default function App() {
   const info2 = useStudioStore((s) => s.info2);
   const goNext = useStudioStore((s) => s.goNext);
 
+  const dataPort = useMemo(() => {
+    if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
+      return createTauriDesktopPorts().dataPort;
+    }
+    return null;
+  }, []);
+
+  const alignCommitRef = useRef<(() => Promise<void>) | null>(null);
+
+  const alignNextDisabled = useStore(viewerStore, (s) =>
+    step !== "alignPattern"
+      ? false
+      : !s.scan ||
+        !s.selection ||
+        !s.frame ||
+        !s.workspacePath?.trim().length ||
+        s.loading ||
+        s.saving,
+  );
+
   const canContinue =
     step === "welcome"
       ? Boolean(assayId)
@@ -54,7 +79,19 @@ export default function App() {
           : false;
 
   const stepAction =
-    step === "alignPattern" ? null : (
+    step === "alignPattern" ? (
+      <Button
+        className={stepGhostCtaClass}
+        disabled={alignNextDisabled}
+        type="button"
+        variant="ghost"
+        onClick={() => {
+          void alignCommitRef.current?.();
+        }}
+      >
+        next
+      </Button>
+    ) : (
       <Button
         className={stepGhostCtaClass}
         disabled={!canContinue}
@@ -72,21 +109,33 @@ export default function App() {
 
   const mainInnerClass = isBasicInfoMain
     ? "mx-auto flex w-full min-h-0 min-w-0 max-w-[52rem] flex-1 flex-col items-center justify-start px-4 py-6 md:px-[100px] md:py-10"
-    : `mx-auto flex w-full min-h-0 min-w-0 max-w-[52rem] flex-1 flex-col items-center px-4 py-6 sm:px-6 sm:py-8 ${
-        step === "welcome" || step === "alignPattern" ? "justify-center" : "justify-start"
-      }`;
+    : step === "alignPattern"
+      ? "flex min-h-0 min-w-0 w-full max-w-none flex-1 flex-col px-4 py-6 sm:px-6 sm:py-8"
+      : `mx-auto flex w-full min-h-0 min-w-0 max-w-[52rem] flex-1 flex-col items-center px-4 py-6 sm:px-6 sm:py-8 ${
+          step === "welcome" ? "justify-center" : "justify-start"
+        }`;
+
+  const mainScrollClass =
+    step === "alignPattern" ? "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden" : "flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto";
 
   return (
     <div className="grid h-svh min-h-0 w-full grid-cols-1 overflow-hidden bg-background text-foreground md:grid-cols-[240px_minmax(0,1fr)_240px]">
       <StudioNavRail className="hidden min-h-0 md:flex" />
 
       <div className="flex min-h-0 min-w-0 flex-col border-border/60 md:border-x">
-        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
+        <main className={mainScrollClass}>
           <div className={mainInnerClass}>
             {step === "welcome" ? <WelcomeAssay /> : null}
             {step === "info1" ? <BasicInfoStep1 /> : null}
             {step === "info2" ? <BasicInfoStep2 /> : null}
-            {step === "alignPattern" ? <AlignPattern /> : null}
+            {step === "alignPattern" ? (
+              <AlignPattern
+                dataPort={dataPort}
+                onRegisterCommit={(handler) => {
+                  alignCommitRef.current = handler;
+                }}
+              />
+            ) : null}
           </div>
         </main>
 

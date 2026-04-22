@@ -1,4 +1,31 @@
-/** Align pattern: dedicated step (nav: Align pattern). Content TBD. */
-export function AlignPattern() {
-  return <div className="min-h-0 w-full flex-1" aria-label="Align pattern" />;
+import { StudioAlignPattern } from "lisca/viewer/react";
+import { useMemo } from "react";
+
+import type { ViewerDataPort } from "lisca/viewer/contracts";
+import { useStudioStore } from "../studioStore";
+
+export function AlignPattern({
+  dataPort,
+  onRegisterCommit,
+}: {
+  dataPort: ViewerDataPort | null;
+  onRegisterCommit: (handler: (() => Promise<void>) | null) => void;
+}) {
+  const info1 = useStudioStore((s) => s.info1);
+
+  const key = useMemo(
+    () =>
+      `${info1.dataPath.trim()}|${info1.saveTo.trim()}|${dataPort ? "host" : "web"}`,
+    [dataPort, info1.dataPath, info1.saveTo],
+  );
+
+  return (
+    <StudioAlignPattern
+      key={key}
+      dataPort={dataPort}
+      dataPath={info1.dataPath}
+      saveTo={info1.saveTo}
+      onRegisterCommit={onRegisterCommit}
+    />
+  );
 }

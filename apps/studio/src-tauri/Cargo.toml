@@ -7,4 +7,7 @@ edition = "2021"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+rfd = "0.15"
+serde = { version = "1", features = ["derive"] }
 tauri = { version = "2", features = [] }
+lisca = { workspace = true, features = ["viewer"] }
