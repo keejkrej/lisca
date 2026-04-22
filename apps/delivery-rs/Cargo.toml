@@ -10,6 +10,7 @@ path = "src/main.rs"
 [dependencies]
 clap = { version = "4.6", features = ["derive"] }
 csv = "1.4"
+rayon = "1.10"
 dialoguer = "0.12"
 lisca = { workspace = true, default-features = false }
 plotters = "0.3.7"
