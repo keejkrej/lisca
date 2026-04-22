@@ -1,5 +1,16 @@
 import { Field, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+import {
+  NumberField,
+  NumberFieldGroup,
+  NumberFieldInput,
+} from "@/components/ui/number-field";
+import {
+  Select,
+  SelectItem,
+  SelectPopup,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import morphologyUrl from "@/assets/features/morphology.svg?url";
 import partcountUrl from "@/assets/features/partcount.svg?url";
@@ -8,6 +19,7 @@ import totalfluorUrl from "@/assets/features/totalfluor.svg?url";
 import {
   basicInfoAssayTitle,
   type BasicInfo2FeatureId,
+  type TimelapseUnit,
   useStudioStore,
 } from "../studioStore";
 
@@ -26,6 +38,12 @@ const FEATURE_IMAGE_URL: Record<BasicInfo2FeatureId, string> = {
   partfluor: partfluorUrl,
   totalfluor: totalfluorUrl,
 };
+
+const TIMELAPSE_UNITS: { value: TimelapseUnit; label: string }[] = [
+  { value: "second", label: "second" },
+  { value: "minute", label: "minute" },
+  { value: "hour", label: "hour" },
+];
 
 function FeaturePreview({ id }: { id: BasicInfo2FeatureId }) {
   return (
@@ -49,7 +67,7 @@ export function BasicInfoStep2() {
   const setInfo2 = useStudioStore((s) => s.setInfo2);
 
   return (
-    <div className="flex w-full min-w-0 max-w-[619px] flex-col gap-[30px] self-center">
+    <div className="flex w-full min-w-0 flex-col gap-[30px]">
       <h1 className="text-center font-normal text-4xl leading-tight text-foreground">
         {basicInfoAssayTitle(assayId)}
       </h1>
@@ -57,33 +75,77 @@ export function BasicInfoStep2() {
       <div className="flex w-full min-w-0 flex-col gap-2.5">
         <div className={ROW}>
           <Field className="gap-2.5" name="pattern">
-            <FieldLabel className="text-2xl font-normal" htmlFor="studio-pattern">
+            <FieldLabel className="text-2xl font-normal" id="studio-pattern-label">
               Pattern
             </FieldLabel>
-            <Input
-              id="studio-pattern"
-              type="text"
-              className="mt-0 w-full rounded-2xl border-2 border-border bg-transparent px-5 py-2.5 text-2xl text-foreground placeholder:text-muted-foreground"
-              value={info2.pattern}
-              onChange={(e) => setInfo2({ pattern: e.target.value })}
-              placeholder="30 um / 200 um"
-            />
+            <Select
+              value={info2.pattern || undefined}
+              onValueChange={(pattern) =>
+                setInfo2({ pattern: pattern == null ? "" : pattern })
+              }
+            >
+              <SelectTrigger
+                aria-labelledby="studio-pattern-label"
+                className="w-full"
+              >
+                <SelectValue placeholder="Choose pattern" />
+              </SelectTrigger>
+              <SelectPopup align="start" className="min-w-(--anchor-width)">
+                <SelectItem value="30 um">30 μm</SelectItem>
+                <SelectItem value="200 um">200 μm</SelectItem>
+              </SelectPopup>
+            </Select>
           </Field>
         </div>
 
         <div className={ROW}>
           <Field className="gap-2.5" name="timelapseInterval">
-            <FieldLabel className="text-2xl font-normal" htmlFor="studio-timelapse">
+            <FieldLabel className="text-2xl font-normal" id="studio-timelapse-label">
               Timelapse interval
             </FieldLabel>
-            <Input
-              id="studio-timelapse"
-              type="text"
-              className="mt-0 w-full rounded-2xl border-2 border-border bg-transparent px-5 py-2.5 text-2xl text-foreground placeholder:text-muted-foreground"
-              value={info2.timelapseInterval}
-              onChange={(e) => setInfo2({ timelapseInterval: e.target.value })}
-              placeholder="10 min"
-            />
+            <div className="mt-0 flex w-full min-w-0 flex-row flex-wrap items-stretch gap-2.5">
+              <NumberField
+                className="min-w-0 flex-1 gap-0"
+                id="studio-timelapse-amount"
+                min={1}
+                step={1}
+                value={info2.timelapseAmount ?? undefined}
+                onValueChange={(value) =>
+                  setInfo2({
+                    timelapseAmount:
+                      value === null || Number.isNaN(value) ? null : value,
+                  })
+                }
+              >
+                <NumberFieldGroup>
+                  <NumberFieldInput
+                    aria-labelledby="studio-timelapse-label"
+                    placeholder="10"
+                  />
+                </NumberFieldGroup>
+              </NumberField>
+
+              <Select
+                value={info2.timelapseUnit}
+                onValueChange={(unit) =>
+                  setInfo2({ timelapseUnit: unit as TimelapseUnit })
+                }
+              >
+                <SelectTrigger
+                  aria-labelledby="studio-timelapse-label"
+                  className="w-[11rem] shrink-0 sm:w-[10.5rem]"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectPopup align="end" className="min-w-(--anchor-width)">
+                  {TIMELAPSE_UNITS.map(({ value, label }) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectPopup>
+              </Select>
+            </div>
           </Field>
         </div>
 

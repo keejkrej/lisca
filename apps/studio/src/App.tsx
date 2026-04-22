@@ -28,12 +28,13 @@ function validInfo1(name: string, date: string, dataPath: string, saveTo: string
 
 function validInfo2(
   pattern: string,
-  timelapseInterval: string,
+  timelapseAmount: number | null,
   selectedFeature: BasicInfo2FeatureId | null,
 ) {
   return (
     pattern.trim().length > 0 &&
-    timelapseInterval.trim().length > 0 &&
+    timelapseAmount != null &&
+    timelapseAmount > 0 &&
     selectedFeature !== null
   );
 }
@@ -73,7 +74,7 @@ export default function App() {
         : step === "info2"
           ? validInfo2(
               info2.pattern,
-              info2.timelapseInterval,
+              info2.timelapseAmount,
               info2.selectedFeature,
             )
           : false;
@@ -108,7 +109,7 @@ export default function App() {
   const isBasicInfoMain = step === "info1" || step === "info2";
 
   const mainInnerClass = isBasicInfoMain
-    ? "mx-auto flex w-full min-h-0 min-w-0 max-w-[52rem] flex-1 flex-col items-center justify-start px-4 py-6 md:px-[100px] md:py-10"
+    ? "mx-auto flex w-full min-h-0 min-w-0 max-w-[52rem] flex-1 flex-col items-center justify-center px-4 py-6 md:px-[100px] md:py-10"
     : step === "alignPattern"
       ? "flex min-h-0 min-w-0 w-full max-w-none flex-1 flex-col px-4 py-6 sm:px-6 sm:py-8"
       : `mx-auto flex w-full min-h-0 min-w-0 max-w-[52rem] flex-1 flex-col items-center px-4 py-6 sm:px-6 sm:py-8 ${

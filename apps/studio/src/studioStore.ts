@@ -35,10 +35,13 @@ export type BasicInfoStep1 = {
 /** Feature tile ids — Figma 43:297 gallery (morphology, partcount, partfluor, totalfluor). */
 export type BasicInfo2FeatureId = "morphology" | "partcount" | "partfluor" | "totalfluor";
 
+export type TimelapseUnit = "second" | "minute" | "hour";
+
 /** Second basic-info screen — Figma node 43:97. */
 export type BasicInfoStep2 = {
   pattern: string;
-  timelapseInterval: string;
+  timelapseAmount: number | null;
+  timelapseUnit: TimelapseUnit;
   selectedFeature: BasicInfo2FeatureId | null;
 };
 
@@ -64,7 +67,8 @@ const initialInfo1: BasicInfoStep1 = {
 };
 const initialInfo2: BasicInfoStep2 = {
   pattern: "",
-  timelapseInterval: "",
+  timelapseAmount: null,
+  timelapseUnit: "minute",
   selectedFeature: null,
 };
 
@@ -110,7 +114,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     if (step === "info2") {
       if (
         !info2.pattern.trim() ||
-        !info2.timelapseInterval.trim() ||
+        info2.timelapseAmount == null ||
+        info2.timelapseAmount <= 0 ||
         info2.selectedFeature === null
       ) {
         return;
