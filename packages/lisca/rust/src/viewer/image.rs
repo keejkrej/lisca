@@ -1,14 +1,13 @@
 use std::collections::{BTreeSet, HashMap};
-use std::fs::{self, File};
-use std::io::BufReader;
+use std::fs;
 use std::path::{Path, PathBuf};
 
 use czi_rs::CziFile;
 use image::{DynamicImage, ImageReader};
 use nd2_rs::Nd2File;
-use tiff::decoder::{Decoder, DecodingResult};
 use walkdir::WalkDir;
 
+use crate::data::tiff;
 use crate::viewer::domain::{
     dimension_size, dimension_values, parse_pos_dir_name, parse_source_image_name,
     validate_request_index, ContrastWindow, FrameRequest, ParsedSourceChannel,
@@ -244,60 +243,15 @@ pub fn find_position_dir(root: &Path, position: u32) -> Result<PathBuf, String> 
     Err(format!("Position directory not found for Pos{position}"))
 }
 
-fn to_u16_buffer(
-    width: u32,
-    height: u32,
-    data: DecodingResult,
-) -> Result<(Vec<u16>, ContrastWindow), String> {
-    let expected_len = width as usize * height as usize;
-    let collapse_channels = |values: Vec<u16>,
-                             contrast_domain: ContrastWindow|
-     -> Result<(Vec<u16>, ContrastWindow), String> {
-        if values.len() == expected_len {
-            return Ok((values, contrast_domain));
-        }
-        if values.len() == expected_len * 3 || values.len() == expected_len * 4 {
-            let channels = values.len() / expected_len;
-            let mut collapsed = Vec::with_capacity(expected_len);
-            for chunk in values.chunks(channels) {
-                let sum: u32 = chunk.iter().map(|value| *value as u32).sum();
-                collapsed.push((sum / channels as u32) as u16);
-            }
-            return Ok((collapsed, contrast_domain));
-        }
-        Err("Unsupported TIFF sample layout".to_string())
-    };
-
-    match data {
-        DecodingResult::U8(values) => {
-            if values.len() == expected_len {
-                Ok((
-                    values.into_iter().map(|value| value as u16).collect(),
-                    ContrastWindow {
-                        min: 0,
-                        max: u8::MAX as u32,
-                    },
-                ))
-            } else if values.len() == expected_len * 3 || values.len() == expected_len * 4 {
-                collapse_channels(
-                    values.into_iter().map(|value| value as u16).collect(),
-                    ContrastWindow {
-                        min: 0,
-                        max: u8::MAX as u32,
-                    },
-                )
-            } else {
-                Err("Unsupported TIFF sample layout".to_string())
-            }
-        }
-        DecodingResult::U16(values) => collapse_channels(
-            values,
-            ContrastWindow {
-                min: 0,
-                max: u16::MAX as u32,
-            },
-        ),
-        _ => Err("Unsupported TIFF pixel type".to_string()),
+fn raw_frame_from_tiff(frame: tiff::TiffFrame16) -> RawFrame {
+    RawFrame {
+        width: frame.width,
+        height: frame.height,
+        data: frame.data,
+        contrast_domain: ContrastWindow {
+            min: 0,
+            max: frame.max_value,
+        },
     }
 }
 
@@ -318,55 +272,11 @@ pub fn load_tiff_frame(path: &Path) -> Result<RawFrame, String> {
 }
 
 pub fn load_tiff_frames(path: &Path) -> Result<Vec<RawFrame>, String> {
-    let file = File::open(path).map_err(|err| err.to_string())?;
-    let mut decoder = Decoder::new(BufReader::new(file)).map_err(|err| err.to_string())?;
-    let mut frames = Vec::new();
-
-    loop {
-        let dimensions = decoder.dimensions().map_err(|err| err.to_string())?;
-        let data = decoder.read_image().map_err(|err| err.to_string())?;
-        let (pixels, contrast_domain) = to_u16_buffer(dimensions.0, dimensions.1, data)?;
-        frames.push(RawFrame {
-            width: dimensions.0,
-            height: dimensions.1,
-            data: pixels,
-            contrast_domain,
-        });
-
-        if !decoder.more_images() {
-            break;
-        }
-        decoder.next_image().map_err(|err| err.to_string())?;
-    }
-
-    Ok(frames)
+    tiff::load_tiff_frames(path).map(|frames| frames.into_iter().map(raw_frame_from_tiff).collect())
 }
 
 pub fn load_tiff_frame_page(path: &Path, page: usize) -> Result<RawFrame, String> {
-    let file = File::open(path).map_err(|err| err.to_string())?;
-    let mut decoder = Decoder::new(BufReader::new(file)).map_err(|err| err.to_string())?;
-
-    for page_idx in 0..page {
-        if !decoder.more_images() {
-            return Err(format!(
-                "TIFF page {} is out of range for {}",
-                page_idx + 1,
-                path.display()
-            ));
-        }
-        decoder.next_image().map_err(|err| err.to_string())?;
-    }
-
-    let dimensions = decoder.dimensions().map_err(|err| err.to_string())?;
-    let data = decoder.read_image().map_err(|err| err.to_string())?;
-    let (pixels, contrast_domain) = to_u16_buffer(dimensions.0, dimensions.1, data)?;
-
-    Ok(RawFrame {
-        width: dimensions.0,
-        height: dimensions.1,
-        data: pixels,
-        contrast_domain,
-    })
+    tiff::load_tiff_frame_page(path, page).map(raw_frame_from_tiff)
 }
 
 pub fn scan_nd2(path: &Path) -> Result<WorkspaceScan, String> {

@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use crate::viewer::image::{load_tiff_frame_page, load_tiff_frames};
+use crate::data::tiff::{load_tiff_frame_page, load_tiff_frames};
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct RoiCrop {
