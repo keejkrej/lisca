@@ -21,7 +21,7 @@ export function StudioCommandBar({ instruction, tool, step, className }: StudioC
     >
       <div className="flex w-40 shrink-0 items-center justify-center border-r border-border/80 px-2.5 py-2.5">
         {instruction ? (
-          <p className="text-foreground line-clamp-4 text-center text-2xl leading-tight">
+          <p className="text-foreground line-clamp-4 text-center text-lg leading-snug">
             {instruction}
           </p>
         ) : null}
