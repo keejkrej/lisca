@@ -101,7 +101,15 @@ where
     RT: FnMut(&Path, &Path, Option<&Path>) -> Result<timeseries::SlideTimeseriesRunResult, String>,
     RA: FnMut(&[PathBuf], f64, Option<&Path>) -> Result<PathBuf, String>,
     RF: FnMut(&[PathBuf], f64, Option<&Path>) -> Result<PathBuf, String>,
-    RPT: FnMut(&[PathBuf], Option<&Path>, usize, f64, f64, &str, Option<&str>) -> Result<PathBuf, String>,
+    RPT: FnMut(
+        &[PathBuf],
+        Option<&Path>,
+        usize,
+        f64,
+        f64,
+        &str,
+        Option<&str>,
+    ) -> Result<PathBuf, String>,
     RPA: FnMut(&Path, Option<&Path>, &str, Option<&str>) -> Result<PathBuf, String>,
     RPF: FnMut(&Path, Option<&Path>, &str, f64) -> Result<Vec<PathBuf>, String>,
     FS: FnMut(usize, usize, &str),
@@ -153,15 +161,8 @@ where
     if let Some(ref mut callback) = on_stage {
         callback(3, total_steps, "Rendering timeseries plot");
     }
-    let timeseries_plot = run_plot_timeseries(
-        &timeseries_csvs,
-        None,
-        3,
-        0.12,
-        1.0,
-        "#c03a2b",
-        None,
-    )?;
+    let timeseries_plot =
+        run_plot_timeseries(&timeseries_csvs, None, 3, 0.12, 1.0, "#c03a2b", None)?;
     if let Some(ref mut callback) = on_output {
         callback(&plot_timeseries::format_written_timeseries_plot_message(
             &timeseries_plot,
@@ -326,7 +327,10 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(result.timeseries_csvs, vec![timeseries_csv_a.clone(), timeseries_csv_b.clone()]);
+        assert_eq!(
+            result.timeseries_csvs,
+            vec![timeseries_csv_a.clone(), timeseries_csv_b.clone()]
+        );
         assert_eq!(result.auc_csv, auc_csv);
         assert_eq!(result.fit_csv, fit_csv);
         assert_eq!(result.timeseries_plot, timeseries_plot);
@@ -373,7 +377,11 @@ mod tests {
             10.0,
             |_workspace, _slide, _output_csv| {
                 Ok(timeseries::SlideTimeseriesRunResult {
-                    written_outputs: vec![(0, PathBuf::from("/tmp/slide_sc0_ch001_timeseries.csv"), 2)],
+                    written_outputs: vec![(
+                        0,
+                        PathBuf::from("/tmp/slide_sc0_ch001_timeseries.csv"),
+                        2,
+                    )],
                     skipped_positions: BTreeMap::new(),
                 })
             },

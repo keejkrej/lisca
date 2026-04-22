@@ -7,9 +7,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::viewer::domain::{
     current_timestamp, workspace_annotation_raw_pos_dir_path, workspace_annotation_raw_source_path,
-    workspace_raw_annotation_json_path, workspace_raw_annotation_mask_path, workspace_relative_path,
-    FrameRequest, LoadedRawFrameAnnotation, RawFrameAnnotation, RawFrameAnnotationPayload,
-    RawFrameRequest, ViewerSource,
+    workspace_raw_annotation_json_path, workspace_raw_annotation_mask_path,
+    workspace_relative_path, FrameRequest, LoadedRawFrameAnnotation, RawFrameAnnotation,
+    RawFrameAnnotationPayload, RawFrameRequest, ViewerSource,
 };
 use crate::viewer::image::load_frame;
 
@@ -363,7 +363,8 @@ mod tests {
 
     fn write_labels(workspace: &Path) {
         let labels_path = workspace.join("annotations").join("labels.json");
-        fs::create_dir_all(labels_path.parent().expect("labels parent")).expect("create labels dir");
+        fs::create_dir_all(labels_path.parent().expect("labels parent"))
+            .expect("create labels dir");
         let bytes = serde_json::to_vec_pretty(&serde_json::json!({
             "labels": [
                 { "id": "live", "name": "Live", "color": "#00ff00" }
@@ -403,20 +404,15 @@ mod tests {
             saved.mask_path.as_deref(),
             Some("annotations/raw/Pos0/C0_T0_Z0.png")
         );
-        assert!(
-            workspace
-                .join("annotations")
-                .join("raw")
-                .join("source.json")
-                .is_file()
-        );
+        assert!(workspace
+            .join("annotations")
+            .join("raw")
+            .join("source.json")
+            .is_file());
 
-        let loaded = load_raw_frame_annotation(
-            workspace.to_string_lossy().to_string(),
-            source,
-            request,
-        )
-        .expect("load raw annotation");
+        let loaded =
+            load_raw_frame_annotation(workspace.to_string_lossy().to_string(), source, request)
+                .expect("load raw annotation");
 
         assert_eq!(
             loaded.annotation.classification_label_id.as_deref(),

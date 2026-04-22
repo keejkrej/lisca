@@ -74,7 +74,12 @@ pub fn load_fit_csv(fit_csv: &Path) -> Result<Vec<PlotFitRow>, String> {
     let slide_channel_idx = headers.iter().position(|header| header == "slide_channel");
     let parameter_indices = PARAMETERS
         .into_iter()
-        .map(|(parameter, _)| (parameter, headers.iter().position(|header| header == parameter)))
+        .map(|(parameter, _)| {
+            (
+                parameter,
+                headers.iter().position(|header| header == parameter),
+            )
+        })
         .collect::<Vec<_>>();
 
     let mut missing = Vec::new();
@@ -111,7 +116,11 @@ pub fn load_fit_csv(fit_csv: &Path) -> Result<Vec<PlotFitRow>, String> {
             .map_err(|_| format!("Invalid slide_channel value {slide_channel_raw:?}"))?;
         let mut values = BTreeMap::new();
         for (parameter, idx) in &parameter_indices {
-            let raw = record.get(idx.unwrap()).unwrap_or_default().trim().to_string();
+            let raw = record
+                .get(idx.unwrap())
+                .unwrap_or_default()
+                .trim()
+                .to_string();
             if raw.is_empty() {
                 continue;
             }
@@ -144,11 +153,19 @@ pub fn default_output_plot_paths(
         .and_then(|value| value.to_str())
         .unwrap_or("fit")
         .strip_suffix("_fit")
-        .unwrap_or_else(|| fit_csv.file_stem().and_then(|value| value.to_str()).unwrap_or("fit"))
+        .unwrap_or_else(|| {
+            fit_csv
+                .file_stem()
+                .and_then(|value| value.to_str())
+                .unwrap_or("fit")
+        })
         .to_string();
-    let destination_dir = output_dir
-        .map(PathBuf::from)
-        .unwrap_or_else(|| fit_csv.parent().unwrap_or_else(|| Path::new(".")).to_path_buf());
+    let destination_dir = output_dir.map(PathBuf::from).unwrap_or_else(|| {
+        fit_csv
+            .parent()
+            .unwrap_or_else(|| Path::new("."))
+            .to_path_buf()
+    });
     PARAMETERS
         .into_iter()
         .map(|(parameter, _)| {
@@ -181,14 +198,16 @@ pub fn write_fit_boxplot(
         }
     }
     if grouped.is_empty() {
-        return Err(format!("No finite rows available to plot parameter {parameter:?}"));
+        return Err(format!(
+            "No finite rows available to plot parameter {parameter:?}"
+        ));
     }
 
     let grouped_values = grouped.values().cloned().collect::<Vec<_>>();
     let use_log_scale = parameter == "expression_amplitude";
 
-    let root =
-        BitMapBackend::new(output_plot, (PYTHON_PLOT_WIDTH, PYTHON_PLOT_HEIGHT)).into_drawing_area();
+    let root = BitMapBackend::new(output_plot, (PYTHON_PLOT_WIDTH, PYTHON_PLOT_HEIGHT))
+        .into_drawing_area();
     root.fill(&WHITE).map_err(|err| err.to_string())?;
     let fill = super::plot_timeseries::parse_color(color)?.mix(0.65);
 
@@ -202,7 +221,10 @@ pub fn write_fit_boxplot(
             )
             .set_label_area_size(LabelAreaPosition::Left, 90)
             .set_label_area_size(LabelAreaPosition::Bottom, 85)
-            .build_cartesian_2d(0.5f64..(grouped.len() as f64 + 0.5), (y_min..y_max).log_scale())
+            .build_cartesian_2d(
+                0.5f64..(grouped.len() as f64 + 0.5),
+                (y_min..y_max).log_scale(),
+            )
             .map_err(|err| err.to_string())?;
         chart
             .configure_mesh()
@@ -219,9 +241,9 @@ pub fn write_fit_boxplot(
                     let slide_channel = grouped.keys().nth(index - 1).copied();
                     slide_channel
                         .and_then(|channel| {
-                            grouped
-                                .get(&channel)
-                                .map(|channel_values| format!("{channel}\n(n={})", channel_values.len()))
+                            grouped.get(&channel).map(|channel_values| {
+                                format!("{channel}\n(n={})", channel_values.len())
+                            })
                         })
                         .unwrap_or_default()
                 }
@@ -298,9 +320,9 @@ pub fn write_fit_boxplot(
                     let slide_channel = grouped.keys().nth(index - 1).copied();
                     slide_channel
                         .and_then(|channel| {
-                            grouped
-                                .get(&channel)
-                                .map(|channel_values| format!("{channel}\n(n={})", channel_values.len()))
+                            grouped.get(&channel).map(|channel_values| {
+                                format!("{channel}\n(n={})", channel_values.len())
+                            })
                         })
                         .unwrap_or_default()
                 }

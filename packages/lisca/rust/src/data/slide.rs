@@ -301,15 +301,14 @@ mod tests {
 
     #[test]
     fn validate_slide_mapping_orders_keys_and_deduplicates_positions() {
-        let mapping =
-            validate_slide_mapping_value(
-                &serde_json::json!({
-                    "2":{"positions":[10,12,10],"image_channel":1},
-                    "0":{"positions":[2,0],"image_channel":0}
-                }),
-                None,
-            )
-            .unwrap();
+        let mapping = validate_slide_mapping_value(
+            &serde_json::json!({
+                "2":{"positions":[10,12,10],"image_channel":1},
+                "0":{"positions":[2,0],"image_channel":0}
+            }),
+            None,
+        )
+        .unwrap();
         assert_eq!(
             mapping.into_iter().collect::<Vec<_>>(),
             vec![
@@ -333,18 +332,16 @@ mod tests {
 
     #[test]
     fn validate_slide_mapping_rejects_missing_fields() {
-        assert!(validate_slide_mapping_value(
-            &serde_json::json!({"0":{"image_channel":1}}),
-            None,
-        )
-        .unwrap_err()
-        .contains("missing required field 'positions'"));
-        assert!(validate_slide_mapping_value(
-            &serde_json::json!({"0":{"positions":[1,2]}}),
-            None,
-        )
-        .unwrap_err()
-        .contains("missing required field 'image_channel'"));
+        assert!(
+            validate_slide_mapping_value(&serde_json::json!({"0":{"image_channel":1}}), None,)
+                .unwrap_err()
+                .contains("missing required field 'positions'")
+        );
+        assert!(
+            validate_slide_mapping_value(&serde_json::json!({"0":{"positions":[1,2]}}), None,)
+                .unwrap_err()
+                .contains("missing required field 'image_channel'")
+        );
     }
 
     #[test]

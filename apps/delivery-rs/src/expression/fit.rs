@@ -84,7 +84,10 @@ pub fn default_output_csv_path(timeseries_csvs: &[PathBuf], output_csv: Option<&
         .with_file_name(format!("{stem}_fit.csv"))
 }
 
-pub fn compute_fit_table(timeseries_csvs: &[PathBuf], interval: f64) -> Result<Vec<FitRow>, String> {
+pub fn compute_fit_table(
+    timeseries_csvs: &[PathBuf],
+    interval: f64,
+) -> Result<Vec<FitRow>, String> {
     let mut csvs = timeseries_csvs.to_vec();
     csvs.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
 
@@ -120,12 +123,14 @@ pub fn compute_fit_table(timeseries_csvs: &[PathBuf], interval: f64) -> Result<V
         .collect::<Vec<_>>();
 
     let rows = if successful_protein_rates.is_empty() {
-        tasks.iter()
+        tasks
+            .iter()
             .map(|(slide_channel, pos, roi, _)| failed_row(*slide_channel, *pos, *roi))
             .collect::<Vec<_>>()
     } else {
         let shared_protein_decay_rate = median(&successful_protein_rates);
-        tasks.iter()
+        tasks
+            .iter()
             .map(|(slide_channel, pos, roi, trace)| {
                 fit_trace(trace, interval, Some(shared_protein_decay_rate))
                     .map(|result| fit_row(*slide_channel, *pos, *roi, result))
@@ -198,7 +203,11 @@ pub fn format_written_fit_csv_message(output_csv: &Path) -> String {
 }
 
 pub fn execute(args: FitArgs) -> Result<(), String> {
-    let output = run_fit(&args.timeseries_csvs, args.interval, args.output_csv.as_deref())?;
+    let output = run_fit(
+        &args.timeseries_csvs,
+        args.interval,
+        args.output_csv.as_deref(),
+    )?;
     println!("{}", format_written_fit_csv_message(&output));
     Ok(())
 }
@@ -251,7 +260,10 @@ fn fit_trace(
         return None;
     }
 
-    let y_min = points.iter().map(|(_, value)| *value).fold(f64::INFINITY, f64::min);
+    let y_min = points
+        .iter()
+        .map(|(_, value)| *value)
+        .fold(f64::INFINITY, f64::min);
     let y_max = points
         .iter()
         .map(|(_, value)| *value)
@@ -263,7 +275,10 @@ fn fit_trace(
     fit_trace_points(&points, fixed_protein_decay_rate)
 }
 
-fn fit_trace_points(points: &[(f64, f64)], fixed_protein_decay_rate: Option<f64>) -> Option<FitResult> {
+fn fit_trace_points(
+    points: &[(f64, f64)],
+    fixed_protein_decay_rate: Option<f64>,
+) -> Option<FitResult> {
     let positive_diffs = points
         .windows(2)
         .filter_map(|window| {
@@ -322,7 +337,9 @@ fn fit_trace_points_independent(
                 if let Some(candidate) = candidate {
                     if stage_best
                         .as_ref()
-                        .map_or(true, |best_candidate: &ScoredFit| candidate.score < best_candidate.score)
+                        .map_or(true, |best_candidate: &ScoredFit| {
+                            candidate.score < best_candidate.score
+                        })
                     {
                         stage_best = Some(candidate);
                         best_indices = Some((protein_index, mrna_index));
@@ -334,9 +351,7 @@ fn fit_trace_points_independent(
         let Some(candidate) = stage_best else {
             break;
         };
-        if best_score
-            .map_or(true, |best_candidate: f64| candidate.score < best_candidate)
-        {
+        if best_score.map_or(true, |best_candidate: f64| candidate.score < best_candidate) {
             best_score = Some(candidate.score);
             best_result = Some(candidate.result);
         }
@@ -382,11 +397,14 @@ fn fit_trace_points_with_fixed_protein(
         let mut stage_best = None;
         let mut best_index = None;
         for (index, mrna_log) in mrna_logs.iter().enumerate() {
-            let candidate = evaluate_rate_candidate(points, fixed_protein_decay_rate, mrna_log.exp());
+            let candidate =
+                evaluate_rate_candidate(points, fixed_protein_decay_rate, mrna_log.exp());
             if let Some(candidate) = candidate {
                 if stage_best
                     .as_ref()
-                    .map_or(true, |best_candidate: &ScoredFit| candidate.score < best_candidate.score)
+                    .map_or(true, |best_candidate: &ScoredFit| {
+                        candidate.score < best_candidate.score
+                    })
                 {
                     stage_best = Some(candidate);
                     best_index = Some(index);
@@ -397,9 +415,7 @@ fn fit_trace_points_with_fixed_protein(
         let Some(candidate) = stage_best else {
             break;
         };
-        if best_score
-            .map_or(true, |best_candidate: f64| candidate.score < best_candidate)
-        {
+        if best_score.map_or(true, |best_candidate: f64| candidate.score < best_candidate) {
             best_score = Some(candidate.score);
             best_result = Some(candidate.result);
         }
@@ -567,7 +583,10 @@ mod tests {
         assert!((rows[0].expression_amplitude.unwrap() - 40.0).abs() <= 3.0);
 
         assert!((rows[1].intensity_offset.unwrap() - 3.5).abs() <= 0.1);
-        assert!((rows[1].protein_decay_rate.unwrap() - rows[0].protein_decay_rate.unwrap()).abs() <= 1e-12);
+        assert!(
+            (rows[1].protein_decay_rate.unwrap() - rows[0].protein_decay_rate.unwrap()).abs()
+                <= 1e-12
+        );
         assert!((rows[1].mrna_decay_rate.unwrap() - 0.7).abs() <= 0.1);
         assert_eq!(rows[1].expression_onset.unwrap(), 0.0);
         assert!((rows[1].expression_amplitude.unwrap() - 16.0).abs() <= 2.0);

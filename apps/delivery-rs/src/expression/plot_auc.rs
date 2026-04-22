@@ -144,7 +144,10 @@ pub fn write_auc_boxplot(
         )
         .set_label_area_size(LabelAreaPosition::Left, 90)
         .set_label_area_size(LabelAreaPosition::Bottom, 85)
-        .build_cartesian_2d(0.5f64..(grouped.len() as f64 + 0.5), (y_min..y_max).log_scale())
+        .build_cartesian_2d(
+            0.5f64..(grouped.len() as f64 + 0.5),
+            (y_min..y_max).log_scale(),
+        )
         .map_err(|err| err.to_string())?;
     chart
         .configure_mesh()
@@ -263,12 +266,21 @@ pub(crate) fn quartile_axis_upper(grouped_values: &[Vec<f64>]) -> f64 {
         })
         .fold(f64::NEG_INFINITY, f64::max);
     let upper_limit = max_q3 * 1.25;
-    if upper_limit > 0.0 { upper_limit } else { 1.0 }
+    if upper_limit > 0.0 {
+        upper_limit
+    } else {
+        1.0
+    }
 }
 
-pub(crate) fn log_axis_bounds(grouped_values: &[Vec<f64>], label: &str) -> Result<(f64, f64), String> {
+pub(crate) fn log_axis_bounds(
+    grouped_values: &[Vec<f64>],
+    label: &str,
+) -> Result<(f64, f64), String> {
     if grouped_values.is_empty() {
-        return Err(format!("No positive {label} values available for log-scale plotting"));
+        return Err(format!(
+            "No positive {label} values available for log-scale plotting"
+        ));
     }
 
     let min_value = grouped_values
