@@ -4,6 +4,7 @@ members = [
   "apps/delivery-rs",
   "apps/viewer/src-tauri",
   "apps/annotator/src-tauri",
+  "apps/studio/src-tauri",
 ]
 resolver = "2"
 

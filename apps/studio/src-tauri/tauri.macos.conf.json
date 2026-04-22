@@ -1,0 +1,20 @@
+{
+  "bundle": {
+    "targets": ["app", "dmg"],
+    "macOS": {
+      "dmg": {
+        "windowPosition": {
+          "x": 100,
+          "y": 100
+        },
+        "windowSize": {
+          "width": 660,
+          "height": 400
+        }
+      }
+    }
+  },
+  "app": {
+    "macOSPrivateApi": false
+  }
+}

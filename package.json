@@ -5,16 +5,20 @@
   "workspaces": [
     "packages/lisca/typescript",
     "apps/viewer",
-    "apps/annotator"
+    "apps/annotator",
+    "apps/studio"
   ],
   "scripts": {
     "build": "turbo run build",
     "build:viewer": "turbo run build --filter=viewer",
     "build:annotator": "turbo run build --filter=annotator",
+    "build:studio": "turbo run build --filter=studio",
     "dev:viewer": "turbo run dev --filter=viewer",
     "dev:annotator": "turbo run dev --filter=annotator",
+    "dev:studio": "turbo run dev --filter=studio",
     "release:viewer": "turbo run release --filter=viewer",
     "release:annotator": "turbo run release --filter=annotator",
+    "release:studio": "turbo run release --filter=studio",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
     "check:tauri": "turbo run check:tauri",
