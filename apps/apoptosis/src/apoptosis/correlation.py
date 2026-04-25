@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 app = typer.Typer(
     add_completion=False,
     no_args_is_help=True,
-    help="Plot stain event timing versus bright-field classifier event timing from existing result CSVs.",
+    help="Plot TOTO-3 event timing versus bright field event timing from existing result CSVs.",
 )
 
 
@@ -183,7 +183,7 @@ def cli(
         help="Minutes per frame. Used to convert frame timings to plot axes.",
     ),
     title: str | None = typer.Option(
-        "Stain vs BF-class apoptosis timing",
+        "TOTO-3 vs Bright field apoptosis timing",
         "--title",
         help="Optional plot title.",
     ),
@@ -206,8 +206,8 @@ def cli(
     write_scatter_plot(
         df,
         resolved_output_plot,
-        xlabel="stain timing (min)",
-        ylabel="BF-class timing (min)",
+        xlabel="TOTO-3 timing (min)",
+        ylabel="Bright field timing (min)",
         title=title,
     )
     print(f"Wrote correlation plot: {resolved_output_plot}")
