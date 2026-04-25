@@ -9,6 +9,8 @@ from typing import Any
 
 import torch
 
+from lisca.analysis.events import first_sustained_threshold_crossing
+
 from .config import DEFAULT_THRESHOLD, TimelapsePredictionRow
 from .inference import load_checkpoint
 from .model import choose_device, extract_timelapse_frames, preprocess_image_array
@@ -67,15 +69,13 @@ def discover_roi_timelapses(roi_root: Path) -> list[RoiTimelapse]:
 
 
 def first_sustained_crossing(rows: list[TimelapsePredictionRow], *, threshold: float, hold_frames: int) -> int | None:
-    if hold_frames < 1:
-        raise ValueError(f"--hold-frames must be >= 1, got {hold_frames}")
-
-    run_length = 0
-    for idx, row in enumerate(rows):
-        run_length = run_length + 1 if row.dead_probability >= threshold else 0
-        if run_length >= hold_frames:
-            return idx - hold_frames + 1
-    return None
+    probabilities = (row.dead_probability for row in rows)
+    return first_sustained_threshold_crossing(
+        probabilities,
+        threshold=threshold,
+        hold_frames=hold_frames,
+        parameter_name="--hold-frames",
+    )
 
 
 def detect_event(

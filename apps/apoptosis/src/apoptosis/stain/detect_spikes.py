@@ -8,6 +8,8 @@ import numpy as np
 import pandas as pd
 import typer
 
+from lisca.analysis.events import first_sustained_threshold_crossing
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
@@ -60,19 +62,6 @@ def rolling_median(values: pd.Series, window: int) -> np.ndarray:
     )
 
 
-def first_sustained_crossing(mask: np.ndarray, hold_frames: int) -> int | None:
-    if hold_frames < 1:
-        raise ValueError(f"--hold-frames must be >= 1, got {hold_frames}")
-    if mask.size < hold_frames:
-        return None
-    run_length = 0
-    for idx, is_active in enumerate(mask):
-        run_length = run_length + 1 if is_active else 0
-        if run_length >= hold_frames:
-            return idx - hold_frames + 1
-    return None
-
-
 def detect_first_spike(
     roi_df: pd.DataFrame,
     *,
@@ -98,8 +87,13 @@ def detect_first_spike(
     threshold = max(min_prominence_abs, min_prominence_fraction * dynamic_range)
     prominence = smoothed - running_min
     slope = np.diff(smoothed, prepend=smoothed[0])
-    active = (prominence >= threshold) & (slope > 0)
-    event_idx = first_sustained_crossing(active, hold_frames)
+    event_idx = first_sustained_threshold_crossing(
+        prominence,
+        threshold=threshold,
+        hold_frames=hold_frames,
+        gate=slope > 0,
+        parameter_name="--hold-frames",
+    )
 
     if event_idx is None:
         return EventDetectionResult(
