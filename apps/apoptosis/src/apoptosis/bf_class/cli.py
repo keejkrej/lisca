@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-import argparse
 from pathlib import Path
+from typing import Annotated
+
+import typer
 
 from .config import (
     DEFAULT_ARTIFACT_ROOT,
@@ -22,142 +24,91 @@ from .plotting import plot_score_series
 from .training import train_model
 
 
-def build_convert_dataset_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description=(
-            "Convert annotated ROI timelapses into one bright-field C0 TIFF per frame "
-            "plus a CSV with dead-probability soft labels."
-        )
-    )
-    parser.add_argument(
-        "--input-root",
-        type=Path,
-        required=True,
-        help="Dataset root containing 'annotations' and 'roi'.",
-    )
-    parser.add_argument(
-        "--output-root",
-        type=Path,
-        default=None,
-        help=(
-            "Output dataset root. Default: <input-root>/bf_frame_dataset. "
-            "Images are written under images/live, images/dead, and images/mixed."
+app = typer.Typer(
+    add_completion=False,
+    no_args_is_help=True,
+    help="Bright-field frame classification workflows.",
+)
+
+
+@app.command(name="convert-dataset")
+def convert_dataset_command(
+    input_root: Annotated[
+        Path,
+        typer.Option(
+            "--input-root",
+            exists=True,
+            file_okay=False,
+            help="Dataset root containing 'annotations' and 'roi'.",
         ),
-    )
-    parser.add_argument(
-        "--position",
-        default=POSITION_NAME,
-        help=f"Position folder name inside annotations/roi and roi. Default: {POSITION_NAME}",
-    )
-    return parser
+    ],
+    output_root: Annotated[
+        Path | None,
+        typer.Option(
+            "--output-root",
+            help=(
+                "Output dataset root. Default: <input-root>/bf_frame_dataset. "
+                "Images are written under images/live, images/dead, and images/mixed."
+            ),
+        ),
+    ] = None,
+    position: Annotated[
+        str,
+        typer.Option(
+            "--position",
+            help=f"Position folder name inside annotations/roi and roi. Default: {POSITION_NAME}",
+        ),
+    ] = POSITION_NAME,
+) -> None:
+    """Convert annotated ROI timelapses into per-frame BF TIFFs and soft labels."""
+
+    input_root = input_root.resolve()
+    resolved_output_root = output_root.resolve() if output_root is not None else default_output_root(input_root)
+    summary = convert_dataset(input_root, resolved_output_root, position=position)
+    print_summary(summary, resolved_output_root)
 
 
-def build_train_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description=(
-            "Train a soft-target binary ResNet18 on bright-field TIFF frames using "
-            "dead_probability from labels.csv."
-        )
-    )
-    parser.add_argument("--dataset-root", type=Path, required=True)
-    parser.add_argument("--artifact-root", type=Path, default=DEFAULT_ARTIFACT_ROOT)
-    parser.add_argument("--run-name", default=None)
-    parser.add_argument("--epochs", type=int, default=DEFAULT_EPOCHS)
-    parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE)
-    parser.add_argument("--image-size", type=int, default=DEFAULT_IMAGE_SIZE)
-    parser.add_argument("--lr", type=float, default=DEFAULT_LR)
-    parser.add_argument("--weight-decay", type=float, default=DEFAULT_WEIGHT_DECAY)
-    parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
-    parser.add_argument("--num-workers", type=int, default=DEFAULT_NUM_WORKERS)
-    parser.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD)
-    parser.add_argument("--device", default="auto")
-    parser.add_argument(
-        "--pretrained",
-        action=argparse.BooleanOptionalAction,
-        default=True,
-        help="Use ImageNet-pretrained ResNet18 weights. Disable with --no-pretrained.",
-    )
-    return parser
+@app.command(name="train")
+def train_command(
+    dataset_root: Annotated[
+        Path,
+        typer.Option("--dataset-root", exists=True, file_okay=False),
+    ],
+    artifact_root: Annotated[Path, typer.Option("--artifact-root")] = DEFAULT_ARTIFACT_ROOT,
+    run_name: Annotated[str | None, typer.Option("--run-name")] = None,
+    epochs: Annotated[int, typer.Option("--epochs", min=1)] = DEFAULT_EPOCHS,
+    batch_size: Annotated[int, typer.Option("--batch-size", min=1)] = DEFAULT_BATCH_SIZE,
+    image_size: Annotated[int, typer.Option("--image-size", min=1)] = DEFAULT_IMAGE_SIZE,
+    lr: Annotated[float, typer.Option("--lr", min=0.0)] = DEFAULT_LR,
+    weight_decay: Annotated[float, typer.Option("--weight-decay", min=0.0)] = DEFAULT_WEIGHT_DECAY,
+    seed: Annotated[int, typer.Option("--seed")] = DEFAULT_SEED,
+    num_workers: Annotated[int, typer.Option("--num-workers", min=0)] = DEFAULT_NUM_WORKERS,
+    threshold: Annotated[float, typer.Option("--threshold", min=0.0, max=1.0)] = DEFAULT_THRESHOLD,
+    device: Annotated[str, typer.Option("--device")] = "auto",
+    pretrained: Annotated[
+        bool,
+        typer.Option(
+            "--pretrained/--no-pretrained",
+            help="Use ImageNet-pretrained ResNet18 weights.",
+        ),
+    ] = True,
+) -> None:
+    """Train a soft-target binary ResNet18 on BF frame labels."""
 
-
-def build_infer_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description=(
-            "Run timelapse inference with a trained bright-field ResNet checkpoint. "
-            "Single-frame TIFFs are treated as a one-frame timelapse."
-        )
-    )
-    parser.add_argument("checkpoint", type=Path)
-    parser.add_argument("tif", type=Path)
-    parser.add_argument("--channel", type=int, default=0)
-    parser.add_argument("--channel-count", type=int, default=None)
-    parser.add_argument("--output-csv", type=Path, default=None)
-    parser.add_argument("--device", default="auto")
-    parser.add_argument("--threshold", type=float, default=None)
-    parser.add_argument("--batch-size", type=int, default=64)
-    return parser
-
-
-def build_plot_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description="Plot a per-frame dead-probability score series from inference CSV output."
-    )
-    parser.add_argument("scores_csv", type=Path)
-    parser.add_argument("--output-png", type=Path, default=None)
-    parser.add_argument("--title", default=None)
-    return parser
-
-
-def build_events_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description=(
-            "Score every ROI TIFF in a position folder and write one apoptosis-event "
-            "timing row per ROI. Event timing is the first frame where dead_probability "
-            "stays above threshold for --hold-frames frames."
-        )
-    )
-    parser.add_argument("checkpoint", type=Path)
-    parser.add_argument("roi_root", type=Path, help="Folder containing Roi*.tif and optional index.json.")
-    parser.add_argument("--channel", type=int, default=0)
-    parser.add_argument("--channel-count", type=int, default=None)
-    parser.add_argument("--output-csv", type=Path, required=True)
-    parser.add_argument(
-        "--output-scores-csv",
-        type=Path,
-        default=None,
-        help="Optional long-form per-frame scores CSV for all ROIs.",
-    )
-    parser.add_argument("--device", default="auto")
-    parser.add_argument("--threshold", type=float, default=None)
-    parser.add_argument("--hold-frames", type=int, default=1)
-    parser.add_argument("--batch-size", type=int, default=64)
-    return parser
-
-
-def convert_dataset_main(argv: list[str] | None = None) -> None:
-    args = build_convert_dataset_parser().parse_args(argv)
-    input_root = args.input_root.resolve()
-    output_root = args.output_root.resolve() if args.output_root is not None else default_output_root(input_root)
-    summary = convert_dataset(input_root, output_root, position=args.position)
-    print_summary(summary, output_root)
-
-
-def train_main(argv: list[str] | None = None) -> None:
-    args = build_train_parser().parse_args(argv)
     config = TrainingConfig(
-        dataset_root=args.dataset_root.resolve(),
-        artifact_root=args.artifact_root.resolve(),
-        run_name=args.run_name,
-        epochs=args.epochs,
-        batch_size=args.batch_size,
-        image_size=args.image_size,
-        lr=args.lr,
-        weight_decay=args.weight_decay,
-        seed=args.seed,
-        num_workers=args.num_workers,
-        threshold=args.threshold,
-        pretrained=args.pretrained,
-        device=args.device,
+        dataset_root=dataset_root.resolve(),
+        artifact_root=artifact_root.resolve(),
+        run_name=run_name,
+        epochs=epochs,
+        batch_size=batch_size,
+        image_size=image_size,
+        lr=lr,
+        weight_decay=weight_decay,
+        seed=seed,
+        num_workers=num_workers,
+        threshold=threshold,
+        pretrained=pretrained,
+        device=device,
     )
     artifacts = train_model(config)
     print(f"Run directory: {artifacts.run_dir}")
@@ -167,17 +118,28 @@ def train_main(argv: list[str] | None = None) -> None:
     print(f"Test metrics JSON: {artifacts.test_metrics_path}")
 
 
-def infer_main(argv: list[str] | None = None) -> None:
-    args = build_infer_parser().parse_args(argv)
+@app.command(name="infer")
+def infer_command(
+    checkpoint: Annotated[Path, typer.Argument(help="Trained checkpoint path.")],
+    tif: Annotated[Path, typer.Argument(help="Input TIFF timelapse or single frame.")],
+    channel: Annotated[int, typer.Option("--channel", min=0)] = 0,
+    channel_count: Annotated[int | None, typer.Option("--channel-count", min=1)] = None,
+    output_csv: Annotated[Path | None, typer.Option("--output-csv")] = None,
+    device: Annotated[str, typer.Option("--device")] = "auto",
+    threshold: Annotated[float | None, typer.Option("--threshold", min=0.0, max=1.0)] = None,
+    batch_size: Annotated[int, typer.Option("--batch-size", min=1)] = 64,
+) -> None:
+    """Run timelapse inference with a trained BF ResNet checkpoint."""
+
     prediction = predict_timelapse(
-        checkpoint_path=args.checkpoint,
-        tif_path=args.tif,
-        channel=args.channel,
-        channel_count=args.channel_count,
-        output_csv_path=args.output_csv,
-        device=args.device,
-        threshold=args.threshold,
-        batch_size=args.batch_size,
+        checkpoint_path=checkpoint,
+        tif_path=tif,
+        channel=channel,
+        channel_count=channel_count,
+        output_csv_path=output_csv,
+        device=device,
+        threshold=threshold,
+        batch_size=batch_size,
     )
     probabilities = [row.dead_probability for row in prediction.rows]
     print(f"Input TIFF: {prediction.input_path}")
@@ -191,32 +153,80 @@ def infer_main(argv: list[str] | None = None) -> None:
     print(f"Mean dead probability: {sum(probabilities) / len(probabilities):.6f}")
 
 
-def plot_main(argv: list[str] | None = None) -> None:
-    args = build_plot_parser().parse_args(argv)
+@app.command(name="plot-scores")
+def plot_scores_command(
+    scores_csv: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
+    output_plot: Annotated[
+        Path | None,
+        typer.Option("--output-plot", help="Output PNG path. Default: same path as the CSV with .png extension."),
+    ] = None,
+    title: Annotated[str | None, typer.Option("--title")] = None,
+) -> None:
+    """Plot a per-frame dead-probability score series from inference CSV output."""
+
     output_path = plot_score_series(
-        args.scores_csv,
-        output_png_path=args.output_png,
-        title=args.title,
+        scores_csv,
+        output_png_path=output_plot,
+        title=title,
     )
     print(f"Wrote plot: {output_path}")
 
 
-def events_main(argv: list[str] | None = None) -> None:
-    args = build_events_parser().parse_args(argv)
+@app.command(name="detect-events")
+def detect_events_command(
+    checkpoint: Annotated[Path, typer.Argument(help="Trained checkpoint path.")],
+    roi_root: Annotated[
+        Path,
+        typer.Argument(help="Folder containing Roi*.tif and optional index.json."),
+    ],
+    channel: Annotated[int, typer.Option("--channel", min=0)] = 0,
+    channel_count: Annotated[int | None, typer.Option("--channel-count", min=1)] = None,
+    output_csv: Annotated[Path, typer.Option("--output-csv", help="Output event CSV path.")] = ...,
+    output_scores_csv: Annotated[
+        Path | None,
+        typer.Option("--output-scores-csv", help="Optional long-form per-frame scores CSV for all ROIs."),
+    ] = None,
+    device: Annotated[str, typer.Option("--device")] = "auto",
+    threshold: Annotated[float | None, typer.Option("--threshold", min=0.0, max=1.0)] = None,
+    hold_frames: Annotated[int, typer.Option("--hold-frames", min=1)] = 1,
+    batch_size: Annotated[int, typer.Option("--batch-size", min=1)] = 64,
+) -> None:
+    """Score every ROI TIFF and write one apoptosis-event timing row per ROI."""
+
     result = run_batch_events(
-        checkpoint_path=args.checkpoint,
-        roi_root=args.roi_root,
-        channel=args.channel,
-        channel_count=args.channel_count,
-        output_csv_path=args.output_csv,
-        output_scores_csv_path=args.output_scores_csv,
-        device=args.device,
-        threshold=args.threshold,
-        hold_frames=args.hold_frames,
-        batch_size=args.batch_size,
+        checkpoint_path=checkpoint,
+        roi_root=roi_root,
+        channel=channel,
+        channel_count=channel_count,
+        output_csv_path=output_csv,
+        output_scores_csv_path=output_scores_csv,
+        device=device,
+        threshold=threshold,
+        hold_frames=hold_frames,
+        batch_size=batch_size,
     )
     detected_count = sum(1 for event in result.events if event.detected)
     print(f"Wrote event CSV: {result.events_csv_path}")
     if result.scores_csv_path is not None:
         print(f"Wrote scores CSV: {result.scores_csv_path}")
     print(f"Detected apoptosis events for {detected_count}/{len(result.events)} ROIs")
+
+
+def convert_dataset_main(argv: list[str] | None = None) -> None:
+    app(args=["convert-dataset", *(argv or [])], prog_name="apoptosis bf-class", standalone_mode=False)
+
+
+def train_main(argv: list[str] | None = None) -> None:
+    app(args=["train", *(argv or [])], prog_name="apoptosis bf-class", standalone_mode=False)
+
+
+def infer_main(argv: list[str] | None = None) -> None:
+    app(args=["infer", *(argv or [])], prog_name="apoptosis bf-class", standalone_mode=False)
+
+
+def plot_main(argv: list[str] | None = None) -> None:
+    app(args=["plot-scores", *(argv or [])], prog_name="apoptosis bf-class", standalone_mode=False)
+
+
+def events_main(argv: list[str] | None = None) -> None:
+    app(args=["detect-events", *(argv or [])], prog_name="apoptosis bf-class", standalone_mode=False)

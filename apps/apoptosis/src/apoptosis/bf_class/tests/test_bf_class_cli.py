@@ -2,18 +2,19 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from typer.testing import CliRunner
+
 from apoptosis.bf_class import cli
 
 
-def test_train_parser_requires_dataset_root() -> None:
-    parser = cli.build_train_parser()
+runner = CliRunner()
 
-    try:
-        parser.parse_args([])
-    except SystemExit as exc:
-        assert exc.code == 2
-    else:
-        raise AssertionError("Expected --dataset-root to be required")
+
+def test_train_requires_dataset_root() -> None:
+    result = runner.invoke(cli.app, ["train"])
+
+    assert result.exit_code != 0
+    assert "--dataset-root" in result.output
 
 
 def test_convert_dataset_main_dispatches(tmp_path: Path, monkeypatch) -> None:
@@ -31,6 +32,7 @@ def test_convert_dataset_main_dispatches(tmp_path: Path, monkeypatch) -> None:
 
     monkeypatch.setattr(cli, "convert_dataset", fake_convert_dataset)
     monkeypatch.setattr(cli, "print_summary", fake_print_summary)
+    (tmp_path / "input").mkdir()
 
     cli.convert_dataset_main(
         [

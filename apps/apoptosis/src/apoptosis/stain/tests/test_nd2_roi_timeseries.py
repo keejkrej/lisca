@@ -18,14 +18,14 @@ from apoptosis.stain.nd2_roi_timeseries import (
 )
 from apoptosis.stain.detect_spikes import (
     default_histogram_path,
-    default_output_csv_path as default_spike_output_csv_path,
+    default_output_csv_path as default_event_output_csv_path,
     detect_spikes,
-    load_timeseries as load_spike_timeseries,
+    load_timeseries as load_event_timeseries,
     write_histogram,
 )
 from apoptosis.stain.plot_traces import (
     default_output_plot_path,
-    load_spikes,
+    load_events,
     load_timeseries,
     write_trace_plot,
 )
@@ -200,11 +200,11 @@ def test_write_trace_plot_writes_png(tmp_path: Path) -> None:
         color="#000000",
         alpha=0.12,
         linewidth=1.0,
-        spikes_df=None,
-        spike_color="#0b5fff",
-        spike_alpha=0.95,
-        spike_marker_size=110.0,
-        spike_marker_linewidth=2.2,
+        events_df=None,
+        event_color="#0b5fff",
+        event_alpha=0.95,
+        event_marker_size=110.0,
+        event_marker_linewidth=2.2,
         title=None,
     )
 
@@ -212,9 +212,9 @@ def test_write_trace_plot_writes_png(tmp_path: Path) -> None:
     assert output_plot.stat().st_size > 0
 
 
-def test_write_trace_plot_with_spikes_writes_png(tmp_path: Path) -> None:
+def test_write_trace_plot_with_events_writes_png(tmp_path: Path) -> None:
     csv_path = tmp_path / "timeseries.csv"
-    spike_csv = tmp_path / "spikes.csv"
+    event_csv = tmp_path / "events.csv"
     write_csv(
         csv_path,
         ["roi", "t", "corrected"],
@@ -226,8 +226,8 @@ def test_write_trace_plot_with_spikes_writes_png(tmp_path: Path) -> None:
         ],
     )
     write_csv(
-        spike_csv,
-        ["roi", "detected", "spike_t", "spike_value"],
+        event_csv,
+        ["roi", "detected", "event_t", "event_value"],
         [
             [0, True, 1.0, 12.0],
             [1, False, "", ""],
@@ -235,7 +235,7 @@ def test_write_trace_plot_with_spikes_writes_png(tmp_path: Path) -> None:
     )
 
     df = load_timeseries(csv_path)
-    spikes_df = load_spikes(spike_csv)
+    events_df = load_events(event_csv)
     output_plot = tmp_path / "overlay.png"
     write_trace_plot(
         df,
@@ -243,11 +243,11 @@ def test_write_trace_plot_with_spikes_writes_png(tmp_path: Path) -> None:
         color="#000000",
         alpha=0.12,
         linewidth=1.0,
-        spikes_df=spikes_df,
-        spike_color="#0b5fff",
-        spike_alpha=0.95,
-        spike_marker_size=110.0,
-        spike_marker_linewidth=2.2,
+        events_df=events_df,
+        event_color="#0b5fff",
+        event_alpha=0.95,
+        event_marker_size=110.0,
+        event_marker_linewidth=2.2,
         title=None,
     )
 
@@ -255,7 +255,7 @@ def test_write_trace_plot_with_spikes_writes_png(tmp_path: Path) -> None:
     assert output_plot.stat().st_size > 0
 
 
-def test_detect_spikes_finds_first_crossing_after_baseline(tmp_path: Path) -> None:
+def test_detect_events_finds_first_crossing_after_baseline(tmp_path: Path) -> None:
     csv_path = tmp_path / "timeseries.csv"
     write_csv(
         csv_path,
@@ -276,46 +276,47 @@ def test_detect_spikes_finds_first_crossing_after_baseline(tmp_path: Path) -> No
         ],
     )
 
-    spikes_df = detect_spikes(
-        load_spike_timeseries(csv_path),
+    events_df = detect_spikes(
+        load_event_timeseries(csv_path),
         smooth_window=1,
         min_prominence_fraction=0.5,
         min_prominence_abs=0.0,
         hold_frames=1,
     )
 
-    roi0 = spikes_df.loc[spikes_df["roi"] == 0].iloc[0]
+    roi0 = events_df.loc[events_df["roi"] == 0].iloc[0]
     assert bool(roi0["detected"])
-    assert roi0["spike_t"] == 5
+    assert roi0["event_t"] == 5
+    assert roi0["event_value"] == pytest.approx(15.0)
     assert roi0["baseline_t"] == 2
     assert roi0["baseline_value"] == pytest.approx(6.0)
     assert roi0["prominence"] == pytest.approx(9.0)
     assert roi0["threshold"] == pytest.approx(4.5)
     assert roi0["last_t"] == 5
 
-    roi1 = spikes_df.loc[spikes_df["roi"] == 1].iloc[0]
+    roi1 = events_df.loc[events_df["roi"] == 1].iloc[0]
     assert not bool(roi1["detected"])
     assert roi1["last_t"] == 5
 
 
-def test_spike_outputs_and_histogram_paths(tmp_path: Path) -> None:
+def test_event_outputs_and_histogram_paths(tmp_path: Path) -> None:
     timeseries_csv = tmp_path / "trace.csv"
-    assert default_spike_output_csv_path(timeseries_csv, None).name == "trace_spikes.csv"
-    assert default_histogram_path(timeseries_csv, None).name == "trace_spike_hist.png"
+    assert default_event_output_csv_path(timeseries_csv, None).name == "trace_events.csv"
+    assert default_histogram_path(timeseries_csv, None).name == "trace_event_hist.png"
 
 
 def test_write_histogram_writes_png(tmp_path: Path) -> None:
-    spikes_df = pd.DataFrame(
+    events_df = pd.DataFrame(
         [
-            {"roi": 0, "detected": True, "spike_t": 10, "last_t": 30},
-            {"roi": 1, "detected": True, "spike_t": 20, "last_t": 30},
-            {"roi": 2, "detected": False, "spike_t": np.nan, "last_t": 30},
+            {"roi": 0, "detected": True, "event_t": 10, "last_t": 30},
+            {"roi": 1, "detected": True, "event_t": 20, "last_t": 30},
+            {"roi": 2, "detected": False, "event_t": np.nan, "last_t": 30},
         ]
     )
     output_plot = tmp_path / "hist.png"
 
     write_histogram(
-        spikes_df,
+        events_df,
         output_plot,
         bins=5,
         color="#000000",

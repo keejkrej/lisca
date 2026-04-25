@@ -9,7 +9,7 @@ from apoptosis import correlation
 
 def test_build_correlation_table_joins_detected_events(tmp_path: Path) -> None:
     bf_csv = tmp_path / "bf_events.csv"
-    stain_csv = tmp_path / "stain_spikes.csv"
+    stain_csv = tmp_path / "stain_events.csv"
     pd.DataFrame(
         [
             {"roi": 0, "detected": True, "event_t": 10},
@@ -19,9 +19,9 @@ def test_build_correlation_table_joins_detected_events(tmp_path: Path) -> None:
     ).to_csv(bf_csv, index=False)
     pd.DataFrame(
         [
-            {"roi": 0, "detected": True, "spike_t": 12},
-            {"roi": 1, "detected": True, "spike_t": 22},
-            {"roi": 2, "detected": True, "spike_t": 32},
+            {"roi": 0, "detected": True, "event_t": 12},
+            {"roi": 1, "detected": True, "event_t": 22},
+            {"roi": 2, "detected": True, "event_t": 32},
         ]
     ).to_csv(stain_csv, index=False)
 
@@ -35,7 +35,7 @@ def test_build_correlation_table_joins_detected_events(tmp_path: Path) -> None:
 
 def test_correlation_main_writes_plot_and_joined_csv(tmp_path: Path) -> None:
     bf_csv = tmp_path / "bf_events.csv"
-    stain_csv = tmp_path / "stain_spikes.csv"
+    stain_csv = tmp_path / "stain_events.csv"
     output_plot = tmp_path / "scatter.png"
     output_csv = tmp_path / "joined.csv"
     pd.DataFrame(
@@ -46,13 +46,14 @@ def test_correlation_main_writes_plot_and_joined_csv(tmp_path: Path) -> None:
     ).to_csv(bf_csv, index=False)
     pd.DataFrame(
         [
-            {"roi": 0, "detected": True, "spike_t": 11},
-            {"roi": 1, "detected": True, "spike_t": 21},
+            {"roi": 0, "detected": True, "event_t": 11},
+            {"roi": 1, "detected": True, "event_t": 21},
         ]
     ).to_csv(stain_csv, index=False)
 
     correlation.main(
         [
+            "plot",
             str(bf_csv),
             str(stain_csv),
             "--output-plot",

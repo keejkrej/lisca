@@ -18,6 +18,11 @@ app = typer.Typer(
 )
 
 
+@app.callback()
+def correlation() -> None:
+    """Correlation workflows."""
+
+
 def _as_bool_series(series: pd.Series) -> pd.Series:
     if series.dtype == bool:
         return series
@@ -56,7 +61,7 @@ def load_stain_events(csv_path: Path, timing_column: str | None) -> pd.DataFrame
     if missing:
         raise ValueError(f"{csv_path} is missing required stain event columns: {sorted(missing)}")
 
-    column = timing_column or choose_timing_column(df, ("spike_t",), label="stain")
+    column = timing_column or choose_timing_column(df, ("event_t",), label="stain")
     if column not in df.columns:
         raise ValueError(f"{csv_path} does not contain stain timing column {column!r}")
 
@@ -138,19 +143,19 @@ def write_scatter_plot(
     plt.close(fig)
 
 
-@app.command()
-def cli(
+@app.command(name="plot")
+def plot(
     bf_events_csv: Path = typer.Argument(
         ...,
         exists=True,
         dir_okay=False,
-        help="CSV from apoptosis bf-class events.",
+        help="CSV from apoptosis bf-class detect-events.",
     ),
     stain_events_csv: Path = typer.Argument(
         ...,
         exists=True,
         dir_okay=False,
-        help="CSV from apoptosis stain detect-spikes.",
+        help="CSV from apoptosis stain detect-events.",
     ),
     output_plot: Path | None = typer.Option(
         None,
@@ -162,15 +167,15 @@ def cli(
         "--output-csv",
         help="Optional joined ROI timing table.",
     ),
-    bf_column: str | None = typer.Option(
+    bf_event_column: str | None = typer.Option(
         None,
-        "--bf-column",
+        "--bf-event-column",
         help="BF frame column. Default: event_t.",
     ),
-    stain_column: str | None = typer.Option(
+    stain_event_column: str | None = typer.Option(
         None,
-        "--stain-column",
-        help="Stain frame column. Default: spike_t.",
+        "--stain-event-column",
+        help="Stain frame column. Default: event_t.",
     ),
     interval: float = typer.Option(
         ...,
@@ -190,8 +195,8 @@ def cli(
         bf_events_csv,
         stain_events_csv,
         interval=interval,
-        bf_timing_column=bf_column,
-        stain_timing_column=stain_column,
+        bf_timing_column=bf_event_column,
+        stain_timing_column=stain_event_column,
     )
     resolved_output_plot = default_output_plot_path(bf_events_csv, stain_events_csv, output_plot)
     if output_csv is not None:

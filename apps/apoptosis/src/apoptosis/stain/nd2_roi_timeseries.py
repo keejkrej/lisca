@@ -174,7 +174,7 @@ def cli(
     print(f"Wrote metrics CSV: {resolved_output_csv}")
 
 
-def main(argv: list[str] | None = None, *, prog_name: str = "apoptosis stain roi-timeseries") -> None:
+def main(argv: list[str] | None = None, *, prog_name: str = "apoptosis stain extract-timeseries") -> None:
     app(args=argv, prog_name=prog_name)
 
 

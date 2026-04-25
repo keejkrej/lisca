@@ -16,11 +16,11 @@ VALUE_COLUMN = "corrected"
 
 
 @dataclass(frozen=True)
-class SpikeDetectionResult:
+class EventDetectionResult:
     roi: int
     detected: bool
-    spike_t: int | None
-    spike_value: float | None
+    event_t: int | None
+    event_value: float | None
     baseline_t: int | None
     baseline_value: float | None
     prominence: float | None
@@ -33,7 +33,7 @@ app = typer.Typer(
     add_completion=False,
     no_args_is_help=True,
     help=(
-        "Detect the first stain-signal spike timing per ROI from a long-form "
+        "Detect the first stain-signal event timing per ROI from a long-form "
         "timeseries CSV, write one-row-per-ROI results, and plot a histogram."
     ),
 )
@@ -45,7 +45,7 @@ def load_timeseries(csv_path: Path) -> pd.DataFrame:
     missing = required.difference(df.columns)
     if missing:
         raise ValueError(
-            f"{csv_path} is missing required columns for spike detection: {sorted(missing)}"
+            f"{csv_path} is missing required columns for event detection: {sorted(missing)}"
         )
     return df.sort_values(["roi", "t"]).reset_index(drop=True)
 
@@ -80,7 +80,7 @@ def detect_first_spike(
     min_prominence_fraction: float,
     min_prominence_abs: float,
     hold_frames: int,
-) -> SpikeDetectionResult:
+) -> EventDetectionResult:
     roi_df = roi_df.sort_values("t").reset_index(drop=True)
     roi = int(roi_df["roi"].iat[0])
     smoothed = rolling_median(roi_df[VALUE_COLUMN], smooth_window)
@@ -99,14 +99,14 @@ def detect_first_spike(
     prominence = smoothed - running_min
     slope = np.diff(smoothed, prepend=smoothed[0])
     active = (prominence >= threshold) & (slope > 0)
-    spike_idx = first_sustained_crossing(active, hold_frames)
+    event_idx = first_sustained_crossing(active, hold_frames)
 
-    if spike_idx is None:
-        return SpikeDetectionResult(
+    if event_idx is None:
+        return EventDetectionResult(
             roi=roi,
             detected=False,
-            spike_t=None,
-            spike_value=None,
+            event_t=None,
+            event_value=None,
             baseline_t=None,
             baseline_value=None,
             prominence=None,
@@ -115,15 +115,15 @@ def detect_first_spike(
             last_t=int(roi_df["t"].iat[-1]),
         )
 
-    baseline_idx = int(running_min_idx[spike_idx])
-    return SpikeDetectionResult(
+    baseline_idx = int(running_min_idx[event_idx])
+    return EventDetectionResult(
         roi=roi,
         detected=True,
-        spike_t=int(roi_df["t"].iat[spike_idx]),
-        spike_value=float(smoothed[spike_idx]),
+        event_t=int(roi_df["t"].iat[event_idx]),
+        event_value=float(smoothed[event_idx]),
         baseline_t=int(roi_df["t"].iat[baseline_idx]),
         baseline_value=float(smoothed[baseline_idx]),
-        prominence=float(prominence[spike_idx]),
+        prominence=float(prominence[event_idx]),
         threshold=float(threshold),
         dynamic_range=dynamic_range,
         last_t=int(roi_df["t"].iat[-1]),
@@ -152,12 +152,12 @@ def detect_spikes(
 
 
 def default_output_csv_path(timeseries_csv: Path, output_csv: Path | None) -> Path:
-    csv_path = output_csv or timeseries_csv.with_name(f"{timeseries_csv.stem}_spikes.csv")
+    csv_path = output_csv or timeseries_csv.with_name(f"{timeseries_csv.stem}_events.csv")
     return csv_path.resolve()
 
 
 def default_histogram_path(timeseries_csv: Path, output_plot: Path | None) -> Path:
-    plot_path = output_plot or timeseries_csv.with_name(f"{timeseries_csv.stem}_spike_hist.png")
+    plot_path = output_plot or timeseries_csv.with_name(f"{timeseries_csv.stem}_event_hist.png")
     return plot_path.resolve()
 
 
@@ -167,7 +167,7 @@ def write_results_csv(df: pd.DataFrame, output_csv: Path) -> None:
 
 
 def write_histogram(
-    spikes_df: pd.DataFrame,
+    events_df: pd.DataFrame,
     output_plot: Path,
     *,
     bins: int,
@@ -176,10 +176,10 @@ def write_histogram(
     accumulate_undetected_at_end: bool,
     title: str | None,
 ) -> None:
-    detected = spikes_df.loc[spikes_df["detected"], "spike_t"].dropna().astype(float)
-    undetected = spikes_df.loc[~spikes_df["detected"].astype(bool)].copy()
+    detected = events_df.loc[events_df["detected"], "event_t"].dropna().astype(float)
+    undetected = events_df.loc[~events_df["detected"].astype(bool)].copy()
     if detected.empty and (not accumulate_undetected_at_end or undetected.empty):
-        raise ValueError("No detected spikes available to plot")
+        raise ValueError("No detected events available to plot")
 
     histogram_values = detected.to_numpy()
     if accumulate_undetected_at_end and not undetected.empty:
@@ -188,17 +188,17 @@ def write_histogram(
 
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.hist(histogram_values, bins=bins, color=color, alpha=alpha, edgecolor="none")
-    ax.set_xlabel("first spike frame")
+    ax.set_xlabel("first event frame")
     ax.set_ylabel("ROI count")
     ax.grid(alpha=0.2, linewidth=0.5)
     if title is not None:
         ax.set_title(title)
-    n_detected = int(spikes_df["detected"].astype(bool).sum())
-    n_total = int(len(spikes_df))
+    n_detected = int(events_df["detected"].astype(bool).sum())
+    n_total = int(len(events_df))
     n_undetected = n_total - n_detected
     annotation = f"Detected: {n_detected}/{n_total}"
     if accumulate_undetected_at_end:
-        annotation += f"\nNo spike by end: {n_undetected}"
+        annotation += f"\nNo event by end: {n_undetected}"
     ax.text(
         0.98,
         0.98,
@@ -220,23 +220,23 @@ def cli(
         ...,
         exists=True,
         dir_okay=False,
-        help="Long-form ROI timeseries CSV generated by apoptosis stain roi-timeseries.",
+        help="Long-form ROI timeseries CSV generated by apoptosis stain extract-timeseries.",
     ),
     output_csv: Path | None = typer.Option(
         None,
         "--output-csv",
-        help="Output CSV path. Default: <timeseries_stem>_spikes.csv",
+        help="Output CSV path. Default: <timeseries_stem>_events.csv",
     ),
     output_plot: Path | None = typer.Option(
         None,
         "--output-plot",
-        help="Histogram PNG path. Default: <timeseries_stem>_spike_hist.png",
+        help="Histogram PNG path. Default: <timeseries_stem>_event_hist.png",
     ),
     smooth_window: int = typer.Option(
         5,
         "--smooth-window",
         min=1,
-        help="Centered rolling-median window in frames before spike detection.",
+        help="Centered rolling-median window in frames before event detection.",
     ),
     min_prominence_fraction: float = typer.Option(
         0.30,
@@ -255,7 +255,7 @@ def cli(
         1,
         "--hold-frames",
         min=1,
-        help="Require the spike condition to hold for this many consecutive frames.",
+        help="Require the event condition to hold for this many consecutive frames.",
     ),
     bins: int = typer.Option(
         20,
@@ -281,14 +281,14 @@ def cli(
         help="Add undetected ROIs to the histogram at the last recorded timepoint.",
     ),
     title: str | None = typer.Option(
-        "First stain-signal spike timings",
+        "First stain-signal event timings",
         "--title",
         help="Optional histogram title.",
     ),
 ) -> None:
     timeseries_csv = timeseries_csv.resolve()
     df = load_timeseries(timeseries_csv)
-    spikes_df = detect_spikes(
+    events_df = detect_spikes(
         df,
         smooth_window=smooth_window,
         min_prominence_fraction=min_prominence_fraction,
@@ -298,9 +298,9 @@ def cli(
     resolved_output_csv = default_output_csv_path(timeseries_csv, output_csv)
     resolved_output_plot = default_histogram_path(timeseries_csv, output_plot)
 
-    write_results_csv(spikes_df, resolved_output_csv)
+    write_results_csv(events_df, resolved_output_csv)
     write_histogram(
-        spikes_df,
+        events_df,
         resolved_output_plot,
         bins=bins,
         color=color,
@@ -309,11 +309,11 @@ def cli(
         title=title,
     )
 
-    n_detected = int(spikes_df["detected"].sum())
-    print(f"Wrote spike CSV: {resolved_output_csv}")
+    n_detected = int(events_df["detected"].sum())
+    print(f"Wrote event CSV: {resolved_output_csv}")
     print(f"Wrote histogram: {resolved_output_plot}")
-    print(f"Detected first spikes for {n_detected}/{len(spikes_df)} ROIs")
+    print(f"Detected first events for {n_detected}/{len(events_df)} ROIs")
 
 
-def main(argv: list[str] | None = None, *, prog_name: str = "apoptosis stain detect-spikes") -> None:
+def main(argv: list[str] | None = None, *, prog_name: str = "apoptosis stain detect-events") -> None:
     app(args=argv, prog_name=prog_name)
