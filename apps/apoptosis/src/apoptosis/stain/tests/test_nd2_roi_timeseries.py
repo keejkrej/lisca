@@ -183,7 +183,7 @@ def test_write_trace_plot_writes_png(tmp_path: Path) -> None:
     csv_path = tmp_path / "timeseries.csv"
     write_csv(
         csv_path,
-        ["roi", "t_min", "corrected"],
+        ["roi", "t", "corrected"],
         [
             [0, 0, 10],
             [0, 1, 12],
@@ -217,7 +217,7 @@ def test_write_trace_plot_with_spikes_writes_png(tmp_path: Path) -> None:
     spike_csv = tmp_path / "spikes.csv"
     write_csv(
         csv_path,
-        ["roi", "t_min", "corrected"],
+        ["roi", "t", "corrected"],
         [
             [0, 0, 10],
             [0, 1, 12],
@@ -227,7 +227,7 @@ def test_write_trace_plot_with_spikes_writes_png(tmp_path: Path) -> None:
     )
     write_csv(
         spike_csv,
-        ["roi", "detected", "spike_t_min", "spike_value"],
+        ["roi", "detected", "spike_t", "spike_value"],
         [
             [0, True, 1.0, 12.0],
             [1, False, "", ""],
@@ -288,17 +288,14 @@ def test_detect_spikes_finds_first_crossing_after_baseline(tmp_path: Path) -> No
     assert bool(roi0["detected"])
     assert roi0["spike_t"] == 5
     assert roi0["baseline_t"] == 2
-    assert roi0["spike_t_min"] == pytest.approx(5.0)
     assert roi0["baseline_value"] == pytest.approx(6.0)
     assert roi0["prominence"] == pytest.approx(9.0)
     assert roi0["threshold"] == pytest.approx(4.5)
     assert roi0["last_t"] == 5
-    assert roi0["last_t_min"] == pytest.approx(5.0)
 
     roi1 = spikes_df.loc[spikes_df["roi"] == 1].iloc[0]
     assert not bool(roi1["detected"])
     assert roi1["last_t"] == 5
-    assert roi1["last_t_min"] == pytest.approx(5.0)
 
 
 def test_spike_outputs_and_histogram_paths(tmp_path: Path) -> None:
@@ -310,9 +307,9 @@ def test_spike_outputs_and_histogram_paths(tmp_path: Path) -> None:
 def test_write_histogram_writes_png(tmp_path: Path) -> None:
     spikes_df = pd.DataFrame(
         [
-            {"roi": 0, "detected": True, "spike_t_min": 10.0, "last_t_min": 30.0},
-            {"roi": 1, "detected": True, "spike_t_min": 20.0, "last_t_min": 30.0},
-            {"roi": 2, "detected": False, "spike_t_min": np.nan, "last_t_min": 30.0},
+            {"roi": 0, "detected": True, "spike_t": 10, "last_t": 30},
+            {"roi": 1, "detected": True, "spike_t": 20, "last_t": 30},
+            {"roi": 2, "detected": False, "spike_t": np.nan, "last_t": 30},
         ]
     )
     output_plot = tmp_path / "hist.png"

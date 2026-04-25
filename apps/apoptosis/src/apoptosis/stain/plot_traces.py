@@ -22,18 +22,18 @@ app = typer.Typer(
 
 def load_timeseries(csv_path: Path) -> pd.DataFrame:
     df = pd.read_csv(csv_path)
-    required = {"roi", "t_min", "corrected"}
+    required = {"roi", "t", "corrected"}
     missing = required.difference(df.columns)
     if missing:
         raise ValueError(
             f"{csv_path} is missing required columns for plotting: {sorted(missing)}"
     )
-    return df.sort_values(["roi", "t_min"]).reset_index(drop=True)
+    return df.sort_values(["roi", "t"]).reset_index(drop=True)
 
 
 def load_spikes(spike_csv: Path) -> pd.DataFrame:
     df = pd.read_csv(spike_csv)
-    required = {"roi", "detected", "spike_t_min", "spike_value"}
+    required = {"roi", "detected", "spike_t", "spike_value"}
     missing = required.difference(df.columns)
     if missing:
         raise ValueError(
@@ -64,7 +64,7 @@ def write_trace_plot(
     fig, ax = plt.subplots(figsize=(12, 7))
     for _, roi_df in df.groupby("roi", sort=True):
         ax.plot(
-            roi_df["t_min"],
+            roi_df["t"],
             roi_df["corrected"],
             color=color,
             alpha=alpha,
@@ -73,7 +73,7 @@ def write_trace_plot(
 
     if spikes_df is not None and not spikes_df.empty:
         ax.scatter(
-            spikes_df["spike_t_min"],
+            spikes_df["spike_t"],
             spikes_df["spike_value"],
             color=spike_color,
             alpha=spike_alpha,
@@ -82,7 +82,7 @@ def write_trace_plot(
             linewidths=spike_marker_linewidth,
         )
 
-    ax.set_xlabel("time (min)")
+    ax.set_xlabel("frame")
     ax.set_ylabel("sum - area*q25")
     ax.grid(alpha=0.2, linewidth=0.5)
     if title is not None:

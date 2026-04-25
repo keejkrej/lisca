@@ -16,6 +16,7 @@ from .config import (
     TrainingConfig,
 )
 from .dataset_conversion import POSITION_NAME, convert_dataset, default_output_root, print_summary
+from .events import run_batch_events
 from .inference import predict_timelapse
 from .plotting import plot_score_series
 from .training import train_model
@@ -107,6 +108,32 @@ def build_plot_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def build_events_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Score every ROI TIFF in a position folder and write one apoptosis-event "
+            "timing row per ROI. Event timing is the first frame where dead_probability "
+            "stays above threshold for --hold-frames frames."
+        )
+    )
+    parser.add_argument("checkpoint", type=Path)
+    parser.add_argument("roi_root", type=Path, help="Folder containing Roi*.tif and optional index.json.")
+    parser.add_argument("--channel", type=int, default=0)
+    parser.add_argument("--channel-count", type=int, default=None)
+    parser.add_argument("--output-csv", type=Path, required=True)
+    parser.add_argument(
+        "--output-scores-csv",
+        type=Path,
+        default=None,
+        help="Optional long-form per-frame scores CSV for all ROIs.",
+    )
+    parser.add_argument("--device", default="auto")
+    parser.add_argument("--threshold", type=float, default=None)
+    parser.add_argument("--hold-frames", type=int, default=1)
+    parser.add_argument("--batch-size", type=int, default=64)
+    return parser
+
+
 def convert_dataset_main(argv: list[str] | None = None) -> None:
     args = build_convert_dataset_parser().parse_args(argv)
     input_root = args.input_root.resolve()
@@ -172,3 +199,24 @@ def plot_main(argv: list[str] | None = None) -> None:
         title=args.title,
     )
     print(f"Wrote plot: {output_path}")
+
+
+def events_main(argv: list[str] | None = None) -> None:
+    args = build_events_parser().parse_args(argv)
+    result = run_batch_events(
+        checkpoint_path=args.checkpoint,
+        roi_root=args.roi_root,
+        channel=args.channel,
+        channel_count=args.channel_count,
+        output_csv_path=args.output_csv,
+        output_scores_csv_path=args.output_scores_csv,
+        device=args.device,
+        threshold=args.threshold,
+        hold_frames=args.hold_frames,
+        batch_size=args.batch_size,
+    )
+    detected_count = sum(1 for event in result.events if event.detected)
+    print(f"Wrote event CSV: {result.events_csv_path}")
+    if result.scores_csv_path is not None:
+        print(f"Wrote scores CSV: {result.scores_csv_path}")
+    print(f"Detected apoptosis events for {detected_count}/{len(result.events)} ROIs")

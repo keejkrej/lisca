@@ -20,16 +20,13 @@ class SpikeDetectionResult:
     roi: int
     detected: bool
     spike_t: int | None
-    spike_t_min: float | None
     spike_value: float | None
     baseline_t: int | None
-    baseline_t_min: float | None
     baseline_value: float | None
     prominence: float | None
     threshold: float
     dynamic_range: float
     last_t: int
-    last_t_min: float
 
 
 app = typer.Typer(
@@ -44,7 +41,7 @@ app = typer.Typer(
 
 def load_timeseries(csv_path: Path) -> pd.DataFrame:
     df = pd.read_csv(csv_path)
-    required = {"roi", "t", "t_min", VALUE_COLUMN}
+    required = {"roi", "t", VALUE_COLUMN}
     missing = required.difference(df.columns)
     if missing:
         raise ValueError(
@@ -109,16 +106,13 @@ def detect_first_spike(
             roi=roi,
             detected=False,
             spike_t=None,
-            spike_t_min=None,
             spike_value=None,
             baseline_t=None,
-            baseline_t_min=None,
             baseline_value=None,
             prominence=None,
             threshold=float(threshold),
             dynamic_range=dynamic_range,
             last_t=int(roi_df["t"].iat[-1]),
-            last_t_min=float(roi_df["t_min"].iat[-1]),
         )
 
     baseline_idx = int(running_min_idx[spike_idx])
@@ -126,16 +120,13 @@ def detect_first_spike(
         roi=roi,
         detected=True,
         spike_t=int(roi_df["t"].iat[spike_idx]),
-        spike_t_min=float(roi_df["t_min"].iat[spike_idx]),
         spike_value=float(smoothed[spike_idx]),
         baseline_t=int(roi_df["t"].iat[baseline_idx]),
-        baseline_t_min=float(roi_df["t_min"].iat[baseline_idx]),
         baseline_value=float(smoothed[baseline_idx]),
         prominence=float(prominence[spike_idx]),
         threshold=float(threshold),
         dynamic_range=dynamic_range,
         last_t=int(roi_df["t"].iat[-1]),
-        last_t_min=float(roi_df["t_min"].iat[-1]),
     )
 
 
@@ -185,19 +176,19 @@ def write_histogram(
     accumulate_undetected_at_end: bool,
     title: str | None,
 ) -> None:
-    detected = spikes_df.loc[spikes_df["detected"], "spike_t_min"].dropna().astype(float)
+    detected = spikes_df.loc[spikes_df["detected"], "spike_t"].dropna().astype(float)
     undetected = spikes_df.loc[~spikes_df["detected"].astype(bool)].copy()
     if detected.empty and (not accumulate_undetected_at_end or undetected.empty):
         raise ValueError("No detected spikes available to plot")
 
     histogram_values = detected.to_numpy()
     if accumulate_undetected_at_end and not undetected.empty:
-        end_times = undetected["last_t_min"].dropna().astype(float).to_numpy()
+        end_times = undetected["last_t"].dropna().astype(float).to_numpy()
         histogram_values = np.concatenate([histogram_values, end_times])
 
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.hist(histogram_values, bins=bins, color=color, alpha=alpha, edgecolor="none")
-    ax.set_xlabel("first spike time (min)")
+    ax.set_xlabel("first spike frame")
     ax.set_ylabel("ROI count")
     ax.grid(alpha=0.2, linewidth=0.5)
     if title is not None:
