@@ -116,11 +116,7 @@ def write_scatter_plot(
     if np.isfinite(min_value) and np.isfinite(max_value):
         ax.plot([min_value, max_value], [min_value, max_value], color="#7a7a7a", linewidth=1.0, alpha=0.65)
 
-    if len(df) >= 2:
-        corr = float(df[["stain_timing_min", "bf_timing_min"]].corr(method="pearson").iloc[0, 1])
-        annotation = f"n={len(df)}\nr={corr:.3f}"
-    else:
-        annotation = f"n={len(df)}"
+    annotation = f"n={len(df)}"
     ax.text(
         0.03,
         0.97,
