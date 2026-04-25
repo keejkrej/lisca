@@ -10,6 +10,8 @@ import numpy as np
 import tifffile
 from PIL import Image
 
+from lisca.data.manifest import UNIFIED_LABEL_FIELDS
+
 
 DEFAULT_OUTPUT_DIRNAME = "bf_seg_dataset"
 EXPECTED_AXIS_ORDER = "TCZYX"
@@ -240,17 +242,7 @@ def convert_dataset(
     with labels_csv_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(
             handle,
-            fieldnames=[
-                "image_relpath",
-                "mask_relpath",
-                "position",
-                "roi",
-                "time_index",
-                "source_tif",
-                "source_mask",
-                "width",
-                "height",
-            ],
+            fieldnames=UNIFIED_LABEL_FIELDS,
         )
         writer.writeheader()
 
@@ -273,6 +265,8 @@ def convert_dataset(
                 {
                     "image_relpath": str(image_path.relative_to(output_root)),
                     "mask_relpath": str(mask_path.relative_to(output_root)),
+                    "target_type": "segmentation",
+                    "split_folder": "",
                     "position": spec.position,
                     "roi": spec.roi_index,
                     "time_index": spec.time_index,
@@ -280,6 +274,10 @@ def convert_dataset(
                     "source_mask": str(spec.mask_path),
                     "width": image_array.shape[1],
                     "height": image_array.shape[0],
+                    "live_anchor_t": "",
+                    "dead_anchor_t": "",
+                    "dead_probability": "",
+                    "annotation_mode": "mask",
                 }
             )
 

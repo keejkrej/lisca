@@ -41,6 +41,7 @@ from .model import (
 )
 from .plotting import plot_readout_series
 from .training import (
+    SegmentationLightningModule,
     build_dataloader,
     compute_class_weights,
     format_metric,
@@ -51,7 +52,7 @@ from .training import (
     save_json,
     summarize_split,
     train_model,
+    trainer_device_kwargs,
     update_confusion_matrix,
     write_split_manifest,
 )
-

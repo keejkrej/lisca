@@ -10,6 +10,8 @@ from typing import Any
 
 import tifffile
 
+from lisca.data.manifest import UNIFIED_LABEL_FIELDS
+
 
 DEFAULT_OUTPUT_DIRNAME = "bf_frame_dataset"
 EXPECTED_AXIS_ORDER = "TCZYX"
@@ -329,18 +331,7 @@ def convert_dataset(input_root: Path, output_root: Path, position: str = POSITIO
         with labels_csv.open("w", newline="", encoding="utf-8") as handle:
             writer = csv.DictWriter(
                 handle,
-                fieldnames=[
-                    "split_folder",
-                    "image_relpath",
-                    "position",
-                    "roi",
-                    "time_index",
-                    "source_tif",
-                    "live_anchor_t",
-                    "dead_anchor_t",
-                    "dead_probability",
-                    "annotation_mode",
-                ],
+                fieldnames=UNIFIED_LABEL_FIELDS,
             )
             writer.writeheader()
 
@@ -356,10 +347,15 @@ def convert_dataset(input_root: Path, output_root: Path, position: str = POSITIO
                         {
                             "split_folder": split_folder,
                             "image_relpath": str(image_path.relative_to(output_root)),
+                            "mask_relpath": "",
+                            "target_type": "classification",
                             "position": position,
                             "roi": spec.roi_index,
                             "time_index": time_index,
                             "source_tif": str(spec.roi_tif_path),
+                            "source_mask": "",
+                            "width": stack.shape[4],
+                            "height": stack.shape[3],
                             "live_anchor_t": spec.live_anchor_t,
                             "dead_anchor_t": "" if spec.dead_anchor_t is None else spec.dead_anchor_t,
                             "dead_probability": format_probability(dead_probability),

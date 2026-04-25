@@ -5,6 +5,7 @@ description = "Apoptosis-specific ROI analysis and brightfield model workflows."
 requires-python = ">=3.12,<3.13"
 dependencies = [
   "lisca",
+  "lightning>=2.5",
   "markdown-it-py<4",
   "matplotlib>=3.8",
   "nd2>=0.10",

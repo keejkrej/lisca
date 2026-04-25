@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import csv
-import random
 from dataclasses import dataclass
-from pathlib import Path, PureWindowsPath
+from pathlib import Path
 
-from .config import TRAIN_FRACTION, VAL_FRACTION
+from lisca.data.manifest import (
+    resolve_dataset_path,
+    split_group_ids,
+    split_records_by_roi,
+    windows_relpath_to_path,
+)
 
 
 @dataclass(frozen=True)
@@ -27,10 +31,6 @@ class ExampleRecord:
         return f"{self.position}_roi{self.roi:03d}"
 
 
-def windows_relpath_to_path(relative_path: str) -> Path:
-    return Path(*PureWindowsPath(relative_path).parts)
-
-
 def load_manifest(dataset_root: Path) -> list[ExampleRecord]:
     dataset_root = dataset_root.resolve()
     labels_csv = dataset_root / "labels.csv"
@@ -41,8 +41,8 @@ def load_manifest(dataset_root: Path) -> list[ExampleRecord]:
     with labels_csv.open(newline="", encoding="utf-8") as handle:
         reader = csv.DictReader(handle)
         for row in reader:
-            image_path = (dataset_root / windows_relpath_to_path(row["image_relpath"])).resolve()
-            mask_path = (dataset_root / windows_relpath_to_path(row["mask_relpath"])).resolve()
+            image_path = resolve_dataset_path(dataset_root, row["image_relpath"])
+            mask_path = resolve_dataset_path(dataset_root, row["mask_relpath"])
             if not image_path.exists():
                 raise FileNotFoundError(f"Image path from labels.csv does not exist: {image_path}")
             if not mask_path.exists():
@@ -57,52 +57,11 @@ def load_manifest(dataset_root: Path) -> list[ExampleRecord]:
                     roi=int(row["roi"]),
                     time_index=int(row["time_index"]),
                     source_tif=row["source_tif"],
-                    source_mask=row["source_mask"],
-                    width=int(row["width"]),
-                    height=int(row["height"]),
+                    source_mask=row.get("source_mask", ""),
+                    width=int(row.get("width", "0") or 0),
+                    height=int(row.get("height", "0") or 0),
                 )
             )
     if not records:
         raise ValueError(f"No rows found in {labels_csv}")
     return records
-
-
-def split_group_ids(group_ids: list[str], seed: int) -> dict[str, set[str]]:
-    if len(group_ids) < 3:
-        raise ValueError("At least 3 ROI groups are required for train/val/test splitting")
-
-    shuffled = list(group_ids)
-    random.Random(seed).shuffle(shuffled)
-
-    train_count = int(round(len(shuffled) * TRAIN_FRACTION))
-    train_count = min(max(train_count, 1), len(shuffled) - 2)
-    val_count = int(round(len(shuffled) * VAL_FRACTION))
-    val_count = min(max(val_count, 1), len(shuffled) - train_count - 1)
-    test_count = len(shuffled) - train_count - val_count
-    if test_count <= 0:
-        test_count = 1
-        if train_count >= val_count:
-            train_count -= 1
-        else:
-            val_count -= 1
-
-    return {
-        "train": set(shuffled[:train_count]),
-        "val": set(shuffled[train_count : train_count + val_count]),
-        "test": set(shuffled[train_count + val_count : train_count + val_count + test_count]),
-    }
-
-
-def split_records_by_roi(records: list[ExampleRecord], seed: int) -> dict[str, list[ExampleRecord]]:
-    split_ids = split_group_ids(sorted({record.roi_group for record in records}), seed=seed)
-    split_records: dict[str, list[ExampleRecord]] = {"train": [], "val": [], "test": []}
-    for record in records:
-        if record.roi_group in split_ids["train"]:
-            split_records["train"].append(record)
-        elif record.roi_group in split_ids["val"]:
-            split_records["val"].append(record)
-        elif record.roi_group in split_ids["test"]:
-            split_records["test"].append(record)
-        else:
-            raise AssertionError(f"Record {record.image_path} was not assigned to a split")
-    return split_records

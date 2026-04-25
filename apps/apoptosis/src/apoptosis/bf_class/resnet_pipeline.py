@@ -34,6 +34,7 @@ from .model import (
 )
 from .plotting import plot_score_series
 from .training import (
+    ClassificationLightningModule,
     binary_accuracy,
     binary_auroc,
     build_dataloader,
@@ -45,5 +46,6 @@ from .training import (
     summarize_epoch,
     summarize_split,
     train_model,
+    trainer_device_kwargs,
     write_split_manifest,
 )
