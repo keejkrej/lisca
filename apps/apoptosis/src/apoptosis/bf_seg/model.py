@@ -9,6 +9,7 @@ from PIL import Image
 from torch import nn
 from torch.nn import functional as F
 from torch.utils.data import Dataset
+from torchvision.models import ResNet34_Weights, resnet34
 
 from lisca.data.tiff import extract_timelapse_frames, load_roi_shape_from_index, select_frames_from_interleaved_pages
 
@@ -36,63 +37,89 @@ class SegmentationDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
         return image, mask
 
 
-class DoubleConv(nn.Module):
-    def __init__(self, in_channels: int, out_channels: int) -> None:
+class DecoderBlock(nn.Module):
+    def __init__(self, in_channels: int, skip_channels: int, out_channels: int) -> None:
         super().__init__()
         self.layers = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+            nn.Conv2d(in_channels + skip_channels, out_channels, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True),
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True),
         )
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.layers(x)
-
-
-class DownBlock(nn.Module):
-    def __init__(self, in_channels: int, out_channels: int) -> None:
-        super().__init__()
-        self.pool = nn.MaxPool2d(kernel_size=2)
-        self.conv = DoubleConv(in_channels, out_channels)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.conv(self.pool(x))
-
-
-class UpBlock(nn.Module):
-    def __init__(self, in_channels: int, skip_channels: int, out_channels: int) -> None:
-        super().__init__()
-        self.conv = DoubleConv(in_channels + skip_channels, out_channels)
-
     def forward(self, x: torch.Tensor, skip: torch.Tensor) -> torch.Tensor:
         x = F.interpolate(x, size=skip.shape[-2:], mode="bilinear", align_corners=False)
-        return self.conv(torch.cat([x, skip], dim=1))
+        return self.layers(torch.cat([x, skip], dim=1))
 
 
-class SmallUNet(nn.Module):
-    def __init__(self, in_channels: int = 1, num_classes: int = NUM_CLASSES, base_channels: int = 16) -> None:
+class ResNetUNet(nn.Module):
+    def __init__(
+        self,
+        *,
+        in_channels: int = 1,
+        num_classes: int = NUM_CLASSES,
+        pretrained_encoder: bool = False,
+    ) -> None:
         super().__init__()
-        self.stem = DoubleConv(in_channels, base_channels)
-        self.down1 = DownBlock(base_channels, base_channels * 2)
-        self.down2 = DownBlock(base_channels * 2, base_channels * 4)
-        self.bottleneck = DownBlock(base_channels * 4, base_channels * 8)
-        self.up2 = UpBlock(base_channels * 8, base_channels * 4, base_channels * 4)
-        self.up1 = UpBlock(base_channels * 4, base_channels * 2, base_channels * 2)
-        self.up0 = UpBlock(base_channels * 2, base_channels, base_channels)
-        self.head = nn.Conv2d(base_channels, num_classes, kernel_size=1)
+        weights = ResNet34_Weights.IMAGENET1K_V1 if pretrained_encoder else None
+        encoder = resnet34(weights=weights)
+        if in_channels != 3:
+            encoder.conv1 = self._adapt_input_conv(encoder.conv1, in_channels)
+
+        self.stem = nn.Sequential(encoder.conv1, encoder.bn1, encoder.relu)
+        self.maxpool = encoder.maxpool
+        self.layer1 = encoder.layer1
+        self.layer2 = encoder.layer2
+        self.layer3 = encoder.layer3
+        self.layer4 = encoder.layer4
+
+        self.dec4 = DecoderBlock(512, 256, 256)
+        self.dec3 = DecoderBlock(256, 128, 128)
+        self.dec2 = DecoderBlock(128, 64, 64)
+        self.dec1 = DecoderBlock(64, 64, 64)
+        self.head = nn.Sequential(
+            nn.Conv2d(64, 32, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(32),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(32, num_classes, kernel_size=1),
+        )
+
+    @staticmethod
+    def _adapt_input_conv(conv: nn.Conv2d, in_channels: int) -> nn.Conv2d:
+        adapted = nn.Conv2d(
+            in_channels,
+            conv.out_channels,
+            kernel_size=conv.kernel_size,
+            stride=conv.stride,
+            padding=conv.padding,
+            bias=conv.bias is not None,
+        )
+        with torch.no_grad():
+            if in_channels == 1:
+                adapted.weight.copy_(conv.weight.mean(dim=1, keepdim=True))
+            else:
+                repeated = conv.weight.mean(dim=1, keepdim=True).repeat(1, in_channels, 1, 1)
+                adapted.weight.copy_(repeated / in_channels)
+            if conv.bias is not None and adapted.bias is not None:
+                adapted.bias.copy_(conv.bias)
+        return adapted
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        input_size = x.shape[-2:]
         skip0 = self.stem(x)
-        skip1 = self.down1(skip0)
-        skip2 = self.down2(skip1)
-        bottleneck = self.bottleneck(skip2)
-        up2 = self.up2(bottleneck, skip2)
-        up1 = self.up1(up2, skip1)
-        up0 = self.up0(up1, skip0)
-        return self.head(up0)
+        pooled = self.maxpool(skip0)
+        skip1 = self.layer1(pooled)
+        skip2 = self.layer2(skip1)
+        skip3 = self.layer3(skip2)
+        bottleneck = self.layer4(skip3)
+        x = self.dec4(bottleneck, skip3)
+        x = self.dec3(x, skip2)
+        x = self.dec2(x, skip1)
+        x = self.dec1(x, skip0)
+        logits = self.head(x)
+        return F.interpolate(logits, size=input_size, mode="bilinear", align_corners=False)
 
 
 def choose_device(requested_device: str) -> torch.device:
@@ -124,8 +151,8 @@ def default_plot_path(readout_csv_path: Path) -> Path:
     return readout_csv_path.with_suffix(".png")
 
 
-def build_model() -> nn.Module:
-    return SmallUNet()
+def build_model(*, pretrained_encoder: bool = False) -> nn.Module:
+    return ResNetUNet(pretrained_encoder=pretrained_encoder)
 
 
 def preprocess_image_array(image_array: np.ndarray, image_size: int) -> torch.Tensor:

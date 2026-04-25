@@ -20,11 +20,9 @@ from .config import (
 from .inference import load_checkpoint, predict_timelapse
 from .manifest import ExampleRecord, load_manifest, split_group_ids, split_records_by_roi, windows_relpath_to_path
 from .model import (
-    DoubleConv,
-    DownBlock,
+    DecoderBlock,
+    ResNetUNet,
     SegmentationDataset,
-    SmallUNet,
-    UpBlock,
     build_model,
     choose_device,
     default_plot_path,

@@ -165,11 +165,12 @@ def test_train_model_and_timelapse_inference_smoke(tmp_path: Path) -> None:
             run_name="testrun",
             epochs=1,
             batch_size=2,
-            image_size=32,
+            image_size=64,
             lr=1e-3,
             weight_decay=0.0,
             seed=123,
             num_workers=0,
+            pretrained_encoder=False,
             device="cpu",
         )
     )

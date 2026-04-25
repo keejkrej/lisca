@@ -12,6 +12,7 @@ from .config import (
     DEFAULT_LR_DECAY,
     DEFAULT_LR,
     DEFAULT_NUM_WORKERS,
+    DEFAULT_PRETRAINED_ENCODER,
     DEFAULT_SEED,
     DEFAULT_WEIGHT_DECAY,
     TrainingConfig,
@@ -71,6 +72,19 @@ def build_train_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
     parser.add_argument("--num-workers", type=int, default=DEFAULT_NUM_WORKERS)
+    parser.add_argument(
+        "--pretrained-encoder",
+        dest="pretrained_encoder",
+        action="store_true",
+        default=DEFAULT_PRETRAINED_ENCODER,
+        help="Initialize the ResNet34 encoder from ImageNet weights.",
+    )
+    parser.add_argument(
+        "--no-pretrained-encoder",
+        dest="pretrained_encoder",
+        action="store_false",
+        help="Train the ResNet34 encoder from scratch.",
+    )
     parser.add_argument("--device", default="auto")
     return parser
 
@@ -126,6 +140,7 @@ def train_main(argv: list[str] | None = None) -> None:
         lr_decay=args.lr_decay,
         seed=args.seed,
         num_workers=args.num_workers,
+        pretrained_encoder=args.pretrained_encoder,
         device=args.device,
     )
     artifacts = train_model(config)

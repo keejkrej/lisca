@@ -22,7 +22,7 @@ from .model import (
 
 def load_checkpoint(checkpoint_path: Path, device: torch.device) -> tuple[nn.Module, dict[str, Any], torch.Tensor]:
     checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
-    model = build_model()
+    model = build_model(pretrained_encoder=False)
     model.load_state_dict(checkpoint["model_state_dict"])
     model.to(device)
     model.eval()

@@ -17,6 +17,7 @@ DEFAULT_DICE_WEIGHT = 0.5
 DEFAULT_LR_DECAY = 0.05
 DEFAULT_SEED = 42
 DEFAULT_NUM_WORKERS = 0
+DEFAULT_PRETRAINED_ENCODER = True
 NUM_CLASSES = 3
 TRAIN_FRACTION = 0.70
 VAL_FRACTION = 0.15
@@ -37,6 +38,7 @@ class TrainingConfig:
     lr_decay: float = DEFAULT_LR_DECAY
     seed: int = DEFAULT_SEED
     num_workers: int = DEFAULT_NUM_WORKERS
+    pretrained_encoder: bool = DEFAULT_PRETRAINED_ENCODER
     device: str = "auto"
 
     def to_dict(self) -> dict[str, Any]:
@@ -82,4 +84,4 @@ class TimelapseInferenceResult:
 
 
 def default_run_name() -> str:
-    return datetime.now().strftime("unet_%Y%m%d_%H%M%S")
+    return datetime.now().strftime("resnet34_unet_%Y%m%d_%H%M%S")

@@ -229,7 +229,7 @@ class SegmentationLightningModule(L.LightningModule):
         self.config = config
         self.best_checkpoint_path = best_checkpoint_path
         self.last_checkpoint_path = last_checkpoint_path
-        self.model = build_model()
+        self.model = build_model(pretrained_encoder=config.pretrained_encoder)
         self.register_buffer("class_weights", class_weights.detach().clone().to(dtype=torch.float32))
         self.best_val_loss = float("inf")
         self.history_rows: list[dict[str, str | int]] = []
