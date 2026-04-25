@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 
 from lisca.data.manifest import UNIFIED_LABEL_FIELDS
 
-from .config import TrainingArtifacts, TrainingConfig
+from .config import TrainingArtifacts, TrainingConfig, default_run_name
 from .manifest import ExampleRecord, load_manifest, split_records_by_roi
 from .model import ApoptosisFrameDataset, build_model, choose_device, set_seed
 
