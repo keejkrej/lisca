@@ -6,7 +6,7 @@ import { useStore } from "zustand";
 
 import { StudioCommandBar } from "./components/studio/StudioCommandBar";
 import { StudioNavRail } from "./components/studio/StudioNavRail";
-import { AlignPattern } from "./screens/AlignPattern";
+import { StudioAlignPattern } from "./screens/StudioAlignPattern";
 import { BasicInfoStep1 } from "./screens/BasicInfoStep1";
 import { BasicInfoStep2 } from "./screens/BasicInfoStep2";
 import { WelcomeAssay } from "./screens/WelcomeAssay";
@@ -130,7 +130,7 @@ export default function App() {
             {step === "info1" ? <BasicInfoStep1 /> : null}
             {step === "info2" ? <BasicInfoStep2 /> : null}
             {step === "alignPattern" ? (
-              <AlignPattern
+              <StudioAlignPattern
                 dataPort={dataPort}
                 onRegisterCommit={(handler) => {
                   alignCommitRef.current = handler;

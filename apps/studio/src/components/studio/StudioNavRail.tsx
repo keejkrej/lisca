@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { MenuItem, MenuPopup } from "@/components/ui/menu";
 import { cn } from "@/lib/utils";
-import { StudioAlignFrameNavigation } from "lisca/viewer/react";
+import { ViewerAlignFrameNavigation } from "lisca/viewer/react";
 import { useEffect, useState } from "react";
 import type { StudioStep } from "../../studioStore";
 import { useStudioStore } from "../../studioStore";
@@ -193,7 +193,7 @@ export function StudioNavRail({ className }: StudioNavRailProps) {
             <DialogTitle>Frame navigation</DialogTitle>
           </div>
           <DialogPanel className="max-h-[min(70vh,520px)] space-y-2">
-            <StudioAlignFrameNavigation />
+            <ViewerAlignFrameNavigation />
           </DialogPanel>
         </DialogPopup>
       </Dialog>

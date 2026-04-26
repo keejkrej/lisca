@@ -5,7 +5,7 @@ import type { SavedAlignState, ViewerSource, WorkspaceScan } from "lisca/shared/
 import { coerceSelection, createSelection } from "lisca/shared/core";
 import { showErrorToast } from "lisca/shared/react";
 
-import { studioInitialViewerSelection } from "../app/studioAlign/advanceSelection";
+import { initialViewerAlignSelection } from "../app/viewerAlign/advanceSelection";
 import { applySavedAlignState, patchViewState, setGrid, setSource, setTimeSliderIndex, setWorkspacePath } from "../app/viewerStore";
 import { toErrorMessage } from "../app/viewerEffects";
 
@@ -74,8 +74,8 @@ export function useSyncAlignStateQueryToViewerStore(
   }, [onAfterApply, query.data, query.error, query.isError, query.isSuccess, selectedPos, workspacePath]);
 }
 
-/** Studio align: scan query plus workspace/source wiring and time slider. */
-export function useSyncScanSourceQueryToStudioAlignStore(
+/** Embeddable align flow (e.g. Studio wizard): scan query plus workspace/source wiring and time slider. */
+export function useSyncScanSourceQueryToViewerAlignStore(
   backendReady: boolean,
   workspaceTrim: string,
   sourceInferred: ViewerSource | null,
@@ -106,7 +106,7 @@ export function useSyncScanSourceQueryToStudioAlignStore(
 
     if (query.data) {
       const scanned = query.data;
-      const sel = coerceSelection(scanned, studioInitialViewerSelection(scanned));
+      const sel = coerceSelection(scanned, initialViewerAlignSelection(scanned));
       patchViewState({ scan: scanned, selection: sel, loading: false, error: null });
       setGrid((g) => ({ ...g, enabled: true }));
       const ti = scanned.times.indexOf(sel.time);

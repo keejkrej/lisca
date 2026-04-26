@@ -34,16 +34,16 @@ import {
   viewerStore,
 } from "../viewerStore";
 import { toErrorMessage } from "../viewerEffects";
-import { useSyncAlignStateQueryToViewerStore, useSyncScanSourceQueryToStudioAlignStore } from "../../hooks/syncQueryToViewerStore";
+import { useSyncAlignStateQueryToViewerStore, useSyncScanSourceQueryToViewerAlignStore } from "../../hooks/syncQueryToViewerStore";
 import { useViewerSourceFrameLoad } from "../../hooks/useViewerSourceFrameLoad";
-import { advanceStudioAlignSelection } from "./advanceSelection";
+import { advanceViewerAlignSelection } from "./advanceSelection";
 import { inferViewerSourceFromDataPath } from "./inferSource";
 
 function cellKey(i: number, j: number): string {
   return `${i}:${j}`;
 }
 
-export interface StudioAlignPatternProps {
+export interface ViewerAlignPatternProps {
   /** Null when not running inside Tauri (plain Vite web). */
   dataPort: ViewerDataPort | null;
   dataPath: string;
@@ -52,12 +52,12 @@ export interface StudioAlignPatternProps {
   onRegisterCommit: (handler: (() => Promise<void>) | null) => void;
 }
 
-export default function StudioAlignPattern({
+export default function ViewerAlignPattern({
   dataPort,
   dataPath,
   saveTo,
   onRegisterCommit,
-}: StudioAlignPatternProps) {
+}: ViewerAlignPatternProps) {
   const backend = dataPort;
   const dragSessionRef = useRef<GridPointerGestureSession | null>(null);
   const [previewGrid, setPreviewGrid] = useState<GridState | null>(null);
@@ -107,7 +107,7 @@ export default function StudioAlignPattern({
     enabled: Boolean(backend && workspacePath && selectedPos != null),
   });
 
-  useSyncScanSourceQueryToStudioAlignStore(
+  useSyncScanSourceQueryToViewerAlignStore(
     Boolean(backend && workspaceTrim && sourceInferred),
     workspaceTrim,
     sourceInferred,
@@ -316,7 +316,7 @@ export default function StudioAlignPattern({
     const selFresh = viewerStore.getState().selection;
     if (!scanFresh || !selFresh) return;
 
-    const nextSel = advanceStudioAlignSelection(scanFresh, selFresh);
+    const nextSel = advanceViewerAlignSelection(scanFresh, selFresh);
     if (!nextSel) {
       showSuccessToast("Finished all positions and timepoints.");
       return;

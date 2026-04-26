@@ -14,7 +14,7 @@ import {
 import { patchViewState, setSelectionKey, setTimeSliderIndex, viewerStore } from "../viewerStore";
 
 /** Full viewer-style frame navigation for Studio dialog (Align pattern). */
-export function StudioAlignFrameNavigation() {
+export function ViewerAlignFrameNavigation() {
   const { scan, selection } = useStore(
     viewerStore,
     useShallow((state) => ({

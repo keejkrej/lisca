@@ -1,10 +1,10 @@
-import { StudioAlignPattern } from "lisca/viewer/react";
+import { ViewerAlignPattern } from "lisca/viewer/react";
 import { useMemo } from "react";
 
 import type { ViewerDataPort } from "lisca/viewer/contracts";
 import { useStudioStore } from "../studioStore";
 
-export function AlignPattern({
+export function StudioAlignPattern({
   dataPort,
   onRegisterCommit,
 }: {
@@ -20,7 +20,7 @@ export function AlignPattern({
   );
 
   return (
-    <StudioAlignPattern
+    <ViewerAlignPattern
       key={key}
       dataPort={dataPort}
       dataPath={info1.dataPath}
