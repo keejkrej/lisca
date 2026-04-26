@@ -1,8 +1,7 @@
 import { createStore } from "zustand/vanilla";
 
 import type { RoiPositionScan, RoiWorkspaceScan } from "lisca/shared/contracts";
-
-type StateUpdater<T> = T | ((current: T) => T);
+import { type StateUpdater, resolveStateUpdater } from "./updater";
 
 export interface RoiSelection {
   pos: number;
@@ -18,13 +17,6 @@ export interface RoiStoreState {
   error: string | null;
   pageIndex: number;
   selectedRoi: number | null;
-}
-
-function resolveNextValue<T>(current: T, next: StateUpdater<T>): T {
-  if (typeof next === "function") {
-    return (next as (value: T) => T)(current);
-  }
-  return next;
 }
 
 function getPositionScan(scan: RoiWorkspaceScan | null, pos: number | null): RoiPositionScan | null {
@@ -120,7 +112,7 @@ export function setRoiSelectionKey<K extends keyof RoiSelection>(
 export function setRoiPageIndex(pageIndex: number | ((current: number) => number)) {
   roiStore.setState((state) => ({
     ...state,
-    pageIndex: resolveNextValue(state.pageIndex, pageIndex),
+    pageIndex: resolveStateUpdater(state.pageIndex, pageIndex),
   }));
 }
 

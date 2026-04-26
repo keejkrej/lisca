@@ -1,114 +1,64 @@
 "use client";
 
-import * as React from "react";
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useId,
-  useMemo,
-} from "react";
-import { createPortal } from "react-dom";
+import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog";
+import type * as React from "react";
 
 import { cn } from "./utils";
 
-type CloseRenderer = React.ReactElement<{
-  children?: React.ReactNode;
-  onClick?: React.MouseEventHandler<HTMLElement>;
-}>;
-
-type AlertDialogContextValue = {
-  descriptionId: string;
-  onOpenChange: (open: boolean) => void;
-  open: boolean;
-  titleId: string;
+type AlertDialogProps = Omit<AlertDialogPrimitive.Root.Props, "children" | "onOpenChange"> & {
+  children: React.ReactNode;
+  onOpenChange?: (open: boolean) => void;
 };
 
-const AlertDialogContext = createContext<AlertDialogContextValue | null>(null);
-
-function useAlertDialogContext(name: string) {
-  const value = useContext(AlertDialogContext);
-  if (!value) {
-    throw new Error(`${name} must be used within AlertDialog`);
-  }
-  return value;
-}
-
-function composeHandlers<T extends HTMLElement>(
-  first?: React.MouseEventHandler<T>,
-  second?: React.MouseEventHandler<T>,
-) {
-  return (event: React.MouseEvent<T>) => {
-    first?.(event);
-    if (!event.defaultPrevented) {
-      second?.(event);
-    }
-  };
-}
-
-interface AlertDialogProps {
-  children: React.ReactNode;
-  onOpenChange: (open: boolean) => void;
-  open: boolean;
-}
-
-function AlertDialog({ children, onOpenChange, open }: AlertDialogProps) {
-  const titleId = useId();
-  const descriptionId = useId();
-
-  useEffect(() => {
-    if (!open) return undefined;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onOpenChange(false);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onOpenChange, open]);
-
-  const value = useMemo<AlertDialogContextValue>(
-    () => ({
-      descriptionId,
-      onOpenChange,
-      open,
-      titleId,
-    }),
-    [descriptionId, onOpenChange, open, titleId],
+function AlertDialog({ children, onOpenChange, ...props }: AlertDialogProps) {
+  return (
+    <AlertDialogPrimitive.Root
+      onOpenChange={(open) => onOpenChange?.(open)}
+      {...props}
+    >
+      {children}
+    </AlertDialogPrimitive.Root>
   );
-
-  return <AlertDialogContext.Provider value={value}>{children}</AlertDialogContext.Provider>;
 }
+
+function AlertDialogTrigger(
+  props: AlertDialogPrimitive.Trigger.Props,
+): React.ReactElement {
+  return <AlertDialogPrimitive.Trigger data-slot="alert-dialog-trigger" {...props} />;
+}
+
+type AlertDialogPopupProps = AlertDialogPrimitive.Popup.Props & {
+  portalProps?: AlertDialogPrimitive.Portal.Props;
+};
 
 function AlertDialogPopup({
   children,
   className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  const { descriptionId, open, titleId } = useAlertDialogContext("AlertDialogPopup");
-  if (!open || typeof document === "undefined") return null;
-
-  return createPortal(
-    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-4 py-6" role="presentation">
-      <div
-        className={cn(
-          "w-full max-w-md rounded-2xl border border-border/80 bg-card shadow-2xl",
-          className,
-        )}
-        role="alertdialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        aria-describedby={descriptionId}
+  portalProps,
+  ...props
+}: AlertDialogPopupProps) {
+  return (
+    <AlertDialogPrimitive.Portal {...portalProps}>
+      <AlertDialogPrimitive.Backdrop
+        className="fixed inset-0 z-[110] bg-black/50"
+        data-slot="alert-dialog-backdrop"
+      />
+      <AlertDialogPrimitive.Viewport
+        className="fixed inset-0 z-[110] flex items-center justify-center px-4 py-6"
+        data-slot="alert-dialog-viewport"
       >
-        {children}
-      </div>
-    </div>,
-    document.body,
+        <AlertDialogPrimitive.Popup
+          className={cn(
+            "w-full max-w-md rounded-2xl border border-border/80 bg-card shadow-2xl outline-none",
+            className,
+          )}
+          data-slot="alert-dialog-popup"
+          {...props}
+        >
+          {children}
+        </AlertDialogPrimitive.Popup>
+      </AlertDialogPrimitive.Viewport>
+    </AlertDialogPrimitive.Portal>
   );
 }
 
@@ -129,11 +79,13 @@ function AlertDialogTitle({
   children: React.ReactNode;
   className?: string;
 }) {
-  const { titleId } = useAlertDialogContext("AlertDialogTitle");
   return (
-    <h2 id={titleId} className={cn("text-base font-medium text-foreground", className)}>
+    <AlertDialogPrimitive.Title
+      className={cn("text-base font-medium text-foreground", className)}
+      data-slot="alert-dialog-title"
+    >
       {children}
-    </h2>
+    </AlertDialogPrimitive.Title>
   );
 }
 
@@ -144,11 +96,13 @@ function AlertDialogDescription({
   children: React.ReactNode;
   className?: string;
 }) {
-  const { descriptionId } = useAlertDialogContext("AlertDialogDescription");
   return (
-    <p id={descriptionId} className={cn("text-sm text-muted-foreground", className)}>
+    <AlertDialogPrimitive.Description
+      className={cn("text-sm text-muted-foreground", className)}
+      data-slot="alert-dialog-description"
+    >
       {children}
-    </p>
+    </AlertDialogPrimitive.Description>
   );
 }
 
@@ -174,29 +128,13 @@ function AlertDialogFooter({
 
 function AlertDialogClose({
   children,
-  onClick,
-  render,
-}: {
-  children: React.ReactNode;
-  onClick?: React.MouseEventHandler<HTMLElement>;
-  render?: CloseRenderer;
-}) {
-  const { onOpenChange } = useAlertDialogContext("AlertDialogClose");
-  const handleClick: React.MouseEventHandler<HTMLElement> = (event) => {
-    onClick?.(event);
-    if (!event.defaultPrevented) {
-      onOpenChange(false);
-    }
-  };
-
-  if (render) {
-    return React.cloneElement(render, {
-      children,
-      onClick: composeHandlers(render.props.onClick, handleClick),
-    });
-  }
-
-  return <button type="button" onClick={handleClick}>{children}</button>;
+  ...props
+}: AlertDialogPrimitive.Close.Props) {
+  return (
+    <AlertDialogPrimitive.Close data-slot="alert-dialog-close" type="button" {...props}>
+      {children}
+    </AlertDialogPrimitive.Close>
+  );
 }
 
 export {
@@ -208,4 +146,5 @@ export {
   AlertDialogPanel,
   AlertDialogPopup,
   AlertDialogTitle,
+  AlertDialogTrigger,
 };

@@ -1,132 +1,94 @@
 "use client";
 
+import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import * as React from "react";
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useId,
-  useMemo,
-} from "react";
-import { createPortal } from "react-dom";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import { cn } from "./utils";
 
-type CloseRenderer = React.ReactElement<{
-  children?: React.ReactNode;
-  onClick?: React.MouseEventHandler<HTMLElement>;
-}>;
-
-type DialogContextValue = {
-  descriptionId: string;
-  onOpenChange: (open: boolean) => void;
-  open: boolean;
-  titleId: string;
+type DialogOptionsContextValue = {
+  setDisablePointerDismissal: (disabled: boolean) => void;
 };
 
-const DialogContext = createContext<DialogContextValue | null>(null);
+const DialogOptionsContext = createContext<DialogOptionsContextValue | null>(null);
 
-function useDialogContext(name: string) {
-  const value = useContext(DialogContext);
-  if (!value) {
-    throw new Error(`${name} must be used within Dialog`);
-  }
-  return value;
-}
-
-function composeHandlers<T extends HTMLElement>(
-  first?: React.MouseEventHandler<T>,
-  second?: React.MouseEventHandler<T>,
-) {
-  return (event: React.MouseEvent<T>) => {
-    first?.(event);
-    if (!event.defaultPrevented) {
-      second?.(event);
-    }
-  };
-}
-
-interface DialogProps {
+type DialogProps = Omit<DialogPrimitive.Root.Props, "children" | "onOpenChange"> & {
   children: React.ReactNode;
-  onOpenChange: (open: boolean) => void;
-  open: boolean;
-}
+  onOpenChange?: (open: boolean) => void;
+};
 
-function Dialog({ children, onOpenChange, open }: DialogProps) {
-  const titleId = useId();
-  const descriptionId = useId();
-
-  useEffect(() => {
-    if (!open) return undefined;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onOpenChange(false);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onOpenChange, open]);
-
-  const value = useMemo<DialogContextValue>(
-    () => ({
-      descriptionId,
-      onOpenChange,
-      open,
-      titleId,
-    }),
-    [descriptionId, onOpenChange, open, titleId],
+function Dialog({ children, onOpenChange, ...props }: DialogProps) {
+  const [disablePointerDismissal, setDisablePointerDismissal] = useState(false);
+  const contextValue = useMemo<DialogOptionsContextValue>(
+    () => ({ setDisablePointerDismissal }),
+    [],
   );
 
-  return <DialogContext.Provider value={value}>{children}</DialogContext.Provider>;
+  return (
+    <DialogPrimitive.Root
+      disablePointerDismissal={disablePointerDismissal}
+      onOpenChange={(open) => onOpenChange?.(open)}
+      {...props}
+    >
+      <DialogOptionsContext.Provider value={contextValue}>
+        {children}
+      </DialogOptionsContext.Provider>
+    </DialogPrimitive.Root>
+  );
 }
 
-interface DialogPopupProps {
-  children: React.ReactNode;
-  className?: string;
+function DialogTrigger(
+  props: DialogPrimitive.Trigger.Props,
+): React.ReactElement {
+  return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />;
+}
+
+type DialogPopupProps = DialogPrimitive.Popup.Props & {
   closeOnOutsideClick?: boolean;
   overlayClassName?: string;
-}
+  portalProps?: DialogPrimitive.Portal.Props;
+};
 
 function DialogPopup({
   children,
   className,
   closeOnOutsideClick = true,
   overlayClassName,
+  portalProps,
+  ...props
 }: DialogPopupProps) {
-  const { descriptionId, onOpenChange, open, titleId } = useDialogContext("DialogPopup");
-  if (!open || typeof document === "undefined") return null;
+  const options = useContext(DialogOptionsContext);
 
-  return createPortal(
-    <div
-      className={cn(
-        "fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4 py-6",
-        overlayClassName,
-      )}
-      role="presentation"
-      onMouseDown={(event) => {
-        if (closeOnOutsideClick && event.target === event.currentTarget) {
-          onOpenChange(false);
-        }
-      }}
-    >
-      <div
+  useEffect(() => {
+    options?.setDisablePointerDismissal(!closeOnOutsideClick);
+    return () => options?.setDisablePointerDismissal(false);
+  }, [closeOnOutsideClick, options]);
+
+  return (
+    <DialogPrimitive.Portal {...portalProps}>
+      <DialogPrimitive.Backdrop
+        className={cn("fixed inset-0 z-[100] bg-black/50", overlayClassName)}
+        data-slot="dialog-backdrop"
+      />
+      <DialogPrimitive.Viewport
         className={cn(
-          "flex max-h-[calc(100vh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border/80 bg-card shadow-2xl",
-          className,
+          "fixed inset-0 z-[100] flex items-center justify-center px-4 py-6",
+          overlayClassName,
         )}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        aria-describedby={descriptionId}
-        onMouseDown={(event) => event.stopPropagation()}
+        data-slot="dialog-viewport"
       >
-        {children}
-      </div>
-    </div>,
-    document.body,
+        <DialogPrimitive.Popup
+          className={cn(
+            "flex max-h-[calc(100vh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border/80 bg-card shadow-2xl outline-none",
+            className,
+          )}
+          data-slot="dialog-popup"
+          {...props}
+        >
+          {children}
+        </DialogPrimitive.Popup>
+      </DialogPrimitive.Viewport>
+    </DialogPrimitive.Portal>
   );
 }
 
@@ -147,11 +109,13 @@ function DialogTitle({
   children: React.ReactNode;
   className?: string;
 }) {
-  const { titleId } = useDialogContext("DialogTitle");
   return (
-    <h2 id={titleId} className={cn("text-sm font-medium text-foreground", className)}>
+    <DialogPrimitive.Title
+      className={cn("text-sm font-medium text-foreground", className)}
+      data-slot="dialog-title"
+    >
       {children}
-    </h2>
+    </DialogPrimitive.Title>
   );
 }
 
@@ -162,11 +126,13 @@ function DialogDescription({
   children: React.ReactNode;
   className?: string;
 }) {
-  const { descriptionId } = useDialogContext("DialogDescription");
   return (
-    <p id={descriptionId} className={cn("mt-1 text-sm text-muted-foreground", className)}>
+    <DialogPrimitive.Description
+      className={cn("mt-1 text-sm text-muted-foreground", className)}
+      data-slot="dialog-description"
+    >
       {children}
-    </p>
+    </DialogPrimitive.Description>
   );
 }
 
@@ -194,29 +160,15 @@ function DialogFooter({
   );
 }
 
-interface DialogCloseProps {
-  children: React.ReactNode;
-  onClick?: React.MouseEventHandler<HTMLElement>;
-  render?: CloseRenderer;
-}
-
-function DialogClose({ children, onClick, render }: DialogCloseProps) {
-  const { onOpenChange } = useDialogContext("DialogClose");
-  const handleClick: React.MouseEventHandler<HTMLElement> = (event) => {
-    onClick?.(event);
-    if (!event.defaultPrevented) {
-      onOpenChange(false);
-    }
-  };
-
-  if (render) {
-    return React.cloneElement(render, {
-      children,
-      onClick: composeHandlers(render.props.onClick, handleClick),
-    });
-  }
-
-  return <button type="button" onClick={handleClick}>{children}</button>;
+function DialogClose({
+  children,
+  ...props
+}: DialogPrimitive.Close.Props) {
+  return (
+    <DialogPrimitive.Close data-slot="dialog-close" type="button" {...props}>
+      {children}
+    </DialogPrimitive.Close>
+  );
 }
 
 export {
@@ -228,4 +180,5 @@ export {
   DialogPanel,
   DialogPopup,
   DialogTitle,
+  DialogTrigger,
 };

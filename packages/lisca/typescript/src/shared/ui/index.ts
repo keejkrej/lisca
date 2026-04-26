@@ -1,7 +1,7 @@
-export { AlertDialog, AlertDialogClose, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogPanel, AlertDialogPopup, AlertDialogTitle } from "./alert-dialog";
+export { AlertDialog, AlertDialogClose, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogPanel, AlertDialogPopup, AlertDialogTitle, AlertDialogTrigger } from "./alert-dialog";
 export { Button } from "./button";
 export { ContextMenu } from "./context-menu";
-export { Dialog, DialogClose, DialogDescription, DialogFooter, DialogHeader, DialogPanel, DialogPopup, DialogTitle } from "./dialog";
+export { Dialog, DialogClose, DialogDescription, DialogFooter, DialogHeader, DialogPanel, DialogPopup, DialogTitle, DialogTrigger } from "./dialog";
 export { Field, FieldControl, FieldDescription, FieldError, FieldItem, FieldLabel, FieldPrimitive, FieldValidity } from "./field";
 export { Input, type InputProps } from "./input";
 export { Label } from "./label";

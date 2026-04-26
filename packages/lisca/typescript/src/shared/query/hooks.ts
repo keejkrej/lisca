@@ -45,6 +45,11 @@ type LiscaHookQueryOptions<T> = Omit<
   "queryKey" | "queryFn" | "initialData"
 >;
 
+type LiscaQueryFactory<T> = Pick<
+  UseQueryOptions<T, Error, T, readonly unknown[]>,
+  "queryKey" | "queryFn" | "staleTime" | "gcTime"
+>;
+
 // --- Reads ---
 
 function disabledQueryOptions<T>(): Pick<
@@ -57,16 +62,28 @@ function disabledQueryOptions<T>(): Pick<
   };
 }
 
+function enabledQueryOptions<T>(
+  queryOptions: LiscaQueryFactory<T> | null,
+  options?: LiscaHookQueryOptions<T>,
+) {
+  return {
+    ...(queryOptions ?? disabledQueryOptions<T>()),
+    ...options,
+    enabled: queryOptions !== null && (options?.enabled ?? true),
+  };
+}
+
 export function useScanSourceQuery(
   backend: ViewerDataPort | null | undefined,
   source: ViewerSource | null | undefined,
   options?: LiscaHookQueryOptions<WorkspaceScan>,
 ) {
-  return useQuery({
-    ...(backend && source ? scanSourceQueryOptions(backend, source) : disabledQueryOptions<WorkspaceScan>()),
-    ...options,
-    enabled: Boolean(backend && source) && (options?.enabled ?? true),
-  });
+  return useQuery(
+    enabledQueryOptions(
+      backend && source ? scanSourceQueryOptions(backend, source) : null,
+      options,
+    ),
+  );
 }
 
 export function useScanRoiWorkspaceQuery(
@@ -74,11 +91,14 @@ export function useScanRoiWorkspaceQuery(
   workspacePath: string | null | undefined,
   options?: LiscaHookQueryOptions<RoiWorkspaceScan>,
 ) {
-  return useQuery({
-    ...(backend && workspacePath ? scanRoiWorkspaceQueryOptions(backend, workspacePath) : disabledQueryOptions<RoiWorkspaceScan>()),
-    ...options,
-    enabled: Boolean(backend && workspacePath) && (options?.enabled ?? true),
-  });
+  return useQuery(
+    enabledQueryOptions(
+      backend && workspacePath
+        ? scanRoiWorkspaceQueryOptions(backend, workspacePath)
+        : null,
+      options,
+    ),
+  );
 }
 
 export function useSavedBboxPositionsQuery(
@@ -86,11 +106,14 @@ export function useSavedBboxPositionsQuery(
   workspacePath: string | null | undefined,
   options?: LiscaHookQueryOptions<number[]>,
 ) {
-  return useQuery({
-    ...(backend && workspacePath ? savedBboxPositionsQueryOptions(backend, workspacePath) : disabledQueryOptions<number[]>()),
-    ...options,
-    enabled: Boolean(backend && workspacePath) && (options?.enabled ?? true),
-  });
+  return useQuery(
+    enabledQueryOptions(
+      backend && workspacePath
+        ? savedBboxPositionsQueryOptions(backend, workspacePath)
+        : null,
+      options,
+    ),
+  );
 }
 
 export function useAlignStateQuery(
@@ -102,13 +125,14 @@ export function useAlignStateQuery(
     "queryKey" | "queryFn" | "initialData"
   >,
 ) {
-  const hasKey = !!backend && workspacePath != null && workspacePath !== "" && pos != null;
-  return useQuery({
-    ...(hasKey ? alignStateQueryOptions(backend, workspacePath!, pos!) : disabledQueryOptions<SavedAlignState | null>()),
-    ...options,
-    enabled:
-      Boolean(backend && workspacePath) && pos != null && !Number.isNaN(pos) && (options?.enabled ?? true),
-  });
+  const canQuery =
+    !!backend && !!workspacePath && pos != null && !Number.isNaN(pos);
+  return useQuery(
+    enabledQueryOptions(
+      canQuery ? alignStateQueryOptions(backend, workspacePath, pos) : null,
+      options,
+    ),
+  );
 }
 
 export function useAnnotationLabelsQuery(
@@ -116,11 +140,14 @@ export function useAnnotationLabelsQuery(
   workspacePath: string | null | undefined,
   options?: LiscaHookQueryOptions<AnnotationLabel[]>,
 ) {
-  return useQuery({
-    ...(backend && workspacePath ? annotationLabelsQueryOptions(backend, workspacePath) : disabledQueryOptions<AnnotationLabel[]>()),
-    ...options,
-    enabled: Boolean(backend && workspacePath) && (options?.enabled ?? true),
-  });
+  return useQuery(
+    enabledQueryOptions(
+      backend && workspacePath
+        ? annotationLabelsQueryOptions(backend, workspacePath)
+        : null,
+      options,
+    ),
+  );
 }
 
 export function useRawAnnotationSourceQuery(
@@ -131,11 +158,14 @@ export function useRawAnnotationSourceQuery(
     "queryKey" | "queryFn" | "initialData"
   >,
 ) {
-  return useQuery({
-    ...(backend && workspacePath ? rawAnnotationSourceQueryOptions(backend, workspacePath) : disabledQueryOptions<ViewerSource | null>()),
-    ...options,
-    enabled: Boolean(backend && workspacePath) && (options?.enabled ?? true),
-  });
+  return useQuery(
+    enabledQueryOptions(
+      backend && workspacePath
+        ? rawAnnotationSourceQueryOptions(backend, workspacePath)
+        : null,
+      options,
+    ),
+  );
 }
 
 export function useAutoExcludePreviewQuery(
@@ -147,9 +177,10 @@ export function useAutoExcludePreviewQuery(
   >,
 ) {
   return useQuery({
-    ...(backend && request ? autoExcludePreviewQueryOptions(backend, request) : disabledQueryOptions<AutoExcludePreviewResponse>()),
-    ...options,
-    enabled: Boolean(backend && request) && (options?.enabled ?? true),
+    ...enabledQueryOptions(
+      backend && request ? autoExcludePreviewQueryOptions(backend, request) : null,
+      options,
+    ),
     staleTime: options?.staleTime ?? 0,
   });
 }
@@ -161,12 +192,14 @@ export function useRoiFrameAnnotationMetaQuery(
   request: RoiFrameRequest | null | undefined,
   options?: LiscaHookQueryOptions<RoiFrameAnnotation>,
 ) {
-  const hasKey = Boolean(backend && workspacePath && request);
-  return useQuery({
-    ...(hasKey ? roiFrameAnnotationMetaQueryOptions(backend!, workspacePath as string, request as RoiFrameRequest) : disabledQueryOptions<RoiFrameAnnotation>()),
-    ...options,
-    enabled: Boolean(backend && workspacePath && request) && (options?.enabled ?? true),
-  });
+  return useQuery(
+    enabledQueryOptions(
+      backend && workspacePath && request
+        ? roiFrameAnnotationMetaQueryOptions(backend, workspacePath, request)
+        : null,
+      options,
+    ),
+  );
 }
 
 /** Tier A: metadata only; mask is not written to the query cache. */
@@ -177,13 +210,14 @@ export function useRawFrameAnnotationMetaQuery(
   request: RawFrameRequest | null | undefined,
   options?: LiscaHookQueryOptions<RawFrameAnnotation>,
 ) {
-  const hasKey = Boolean(backend && workspacePath && source && request);
-  return useQuery({
-    ...(hasKey ? rawFrameAnnotationMetaQueryOptions(backend!, workspacePath as string, source as ViewerSource, request as RawFrameRequest) : disabledQueryOptions<RawFrameAnnotation>()),
-    ...options,
-    enabled:
-      Boolean(backend && workspacePath && source && request) && (options?.enabled ?? true),
-  });
+  return useQuery(
+    enabledQueryOptions(
+      backend && workspacePath && source && request
+        ? rawFrameAnnotationMetaQueryOptions(backend, workspacePath, source, request)
+        : null,
+      options,
+    ),
+  );
 }
 
 // --- Mutations ---

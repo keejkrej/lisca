@@ -2,8 +2,7 @@ import { createStore } from "zustand/vanilla";
 
 import type { ViewerSelection, ViewerSource, WorkspaceScan } from "lisca/shared/contracts";
 import { coerceSelection, createSelection } from "lisca/shared/core";
-
-type StateUpdater<T> = T | ((current: T) => T);
+import { type StateUpdater, resolveStateUpdater } from "./updater";
 
 export interface RawStoreState {
   source: ViewerSource | null;
@@ -12,13 +11,6 @@ export interface RawStoreState {
   selection: ViewerSelection | null;
   loading: boolean;
   error: string | null;
-}
-
-function resolveNextValue<T>(current: T, next: StateUpdater<T>): T {
-  if (typeof next === "function") {
-    return (next as (value: T) => T)(current);
-  }
-  return next;
 }
 
 function createInitialState(): RawStoreState {
@@ -83,10 +75,10 @@ export function setRawSelectionKey<K extends keyof ViewerSelection>(
 }
 
 export function updateRawSelection(
-  selection: ViewerSelection | ((current: ViewerSelection | null) => ViewerSelection | null),
+  selection: StateUpdater<ViewerSelection | null>,
 ) {
   rawStore.setState((state) => ({
     ...state,
-    selection: resolveNextValue(state.selection, selection),
+    selection: resolveStateUpdater(state.selection, selection),
   }));
 }
