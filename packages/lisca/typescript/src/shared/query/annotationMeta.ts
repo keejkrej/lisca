@@ -5,7 +5,7 @@ import type {
   RoiFrameRequest,
   ViewerDataPort,
   ViewerSource,
-} from "../../viewer/contracts";
+} from "lisca/shared/contracts";
 
 /** Tier A: load full payload from IPC, return only metadata (mask stays out of Query cache). */
 export async function fetchRoiFrameAnnotationMeta(

@@ -5,7 +5,7 @@ import type * as React from "react";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 
-import { Button } from "../../viewer/ui/button";
+import { Button } from "./button";
 import { cn } from "./utils";
 
 export type ToastVariant = "default" | "success" | "error" | "info" | "warning";

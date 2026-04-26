@@ -3,7 +3,7 @@
 import type * as React from "react";
 import { createContext, useContext, useMemo } from "react";
 
-import { Button } from "../../viewer/ui/button";
+import { Button } from "./button";
 import { cn } from "./utils";
 
 type ToggleGroupContextValue<T extends string> = {

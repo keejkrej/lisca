@@ -3,12 +3,12 @@ import type {
   RawFrameRequest,
   RoiFrameRequest,
   ViewerSource,
-} from "../../viewer/contracts";
+} from "lisca/shared/contracts";
 
 /**
  * Stable query keys for ViewerDataPort-backed queries.
  *
- * Policy: never key or cache {@link import("../../viewer/contracts").FrameResult}
+ * Policy: never key or cache {@link import("lisca/shared/contracts").FrameResult}
  * (pixel buffers). Large mask payloads use Tier A metadata keys only; see
  * `fetchRoiFrameAnnotationMeta` / `fetchRawFrameAnnotationMeta` in hooks.
  *

@@ -1,4 +1,5 @@
 export { default as AnnotatorApp } from "./app/AnnotatorApp";
+export { default as AnnotatorWorkspace } from "./app/AnnotatorWorkspace";
 export { RoiAnnotationSession } from "./session";
 export { RawAnnotationSession } from "./session";
 export type { RawAnnotationSessionProps, RoiAnnotationSessionProps } from "./session";

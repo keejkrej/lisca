@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "lisca/shared/ui";
 import { createTauriDesktopPorts } from "lisca/shared/host-tauri";
 import { viewerStore } from "lisca/viewer/react";
 import { useMemo, useRef } from "react";
@@ -39,7 +39,7 @@ function validInfo2(
   );
 }
 
-export default function App() {
+export default function StudioApp() {
   const step = useStudioStore((s) => s.step);
   const assayId = useStudioStore((s) => s.assayId);
   const info1 = useStudioStore((s) => s.info1);

@@ -7,7 +7,7 @@ import "lisca/viewer/styles.css";
 
 import "./index.css";
 
-import App from "./App";
+import StudioApp from "./App";
 
 document.documentElement.classList.add("dark");
 
@@ -16,7 +16,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <LiscaQueryProvider>
       <ToastProvider>
         <AnchoredToastProvider>
-          <App />
+          <StudioApp />
         </AnchoredToastProvider>
       </ToastProvider>
     </LiscaQueryProvider>

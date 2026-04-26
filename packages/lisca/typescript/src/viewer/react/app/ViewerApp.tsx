@@ -6,8 +6,8 @@ import { makeSourceKey } from "lisca/shared/core";
 import { AnchoredToastProvider, ToastProvider } from "lisca/shared/react";
 import { setWorkspacePath, workspaceStore } from "lisca/shared/state";
 
-import RoiWorkspace from "./RoiWorkspace";
-import ViewerWorkspace from "./ViewerWorkspace";
+import ViewerAlignWorkspace from "./ViewerAlignWorkspace";
+import ViewerRoiWorkspace from "./ViewerRoiWorkspace";
 import type { ViewerMode } from "./ViewerNavbar";
 import { setSource, viewerStore } from "./viewerStore";
 
@@ -68,7 +68,7 @@ export default function ViewerApp({
 
   const workspace = (
     mode === "align" ? (
-      <ViewerWorkspace
+      <ViewerAlignWorkspace
         key={source ? `align:${makeSourceKey(source)}` : "align:no-source"}
         workspacePath={workspacePath}
         source={source}
@@ -84,7 +84,7 @@ export default function ViewerApp({
         onClearSource={() => setSource(null)}
       />
     ) : (
-      <RoiWorkspace
+      <ViewerRoiWorkspace
         key="roi-workspace"
         workspacePath={workspacePath}
         source={source}

@@ -1,13 +1,14 @@
 import { ContextMenu } from "@base-ui/react/context-menu";
-import { Button } from "@/components/ui/button";
 import {
+  Button,
+  cn,
   Dialog,
   DialogPanel,
   DialogPopup,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { MenuItem, MenuPopup } from "@/components/ui/menu";
-import { cn } from "@/lib/utils";
+  MenuItem,
+  MenuPopup,
+} from "lisca/shared/ui";
 import { ViewerAlignFrameNavigation } from "lisca/viewer/react";
 import { useEffect, useState } from "react";
 import type { StudioStep } from "../../studioStore";

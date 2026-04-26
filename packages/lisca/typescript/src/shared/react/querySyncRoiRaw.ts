@@ -12,13 +12,12 @@ import type {
   WorkspaceScan,
 } from "lisca/shared/contracts";
 import {
-  fetchRawFrameAnnotationMeta,
-  fetchRoiFrameAnnotationMeta,
-  queryKeys,
+  rawFrameAnnotationMetaQueryOptions,
+  roiFrameAnnotationMetaQueryOptions,
 } from "lisca/shared/query";
 import {
   patchRawState,
-  roiStore,
+  patchRoiState,
   setBoundRawSource,
   setRawScan,
   setRawSource,
@@ -38,26 +37,25 @@ export function useSyncRoiWorkspaceQueryToRoiStore(
     }
 
     if (query.isPending) {
-      roiStore.setState((state) => ({ ...state, loading: true, error: null }));
+      patchRoiState({ loading: true, error: null });
       return;
     }
 
     if (query.isError) {
-      roiStore.setState((state) => ({
-        ...state,
+      patchRoiState({
         loading: false,
         scan: null,
         selection: null,
         pageIndex: 0,
         selectedRoi: null,
         error: toErrorMessage(query.error),
-      }));
+      });
       return;
     }
 
     if (query.data) {
       setRoiScan(query.data);
-      roiStore.setState((state) => ({ ...state, loading: false, error: null }));
+      patchRoiState({ loading: false, error: null });
     }
   }, [workspacePath, query.data, query.error, query.isError, query.isPending]);
 }
@@ -158,16 +156,10 @@ export function prefetchAnnotationMetaForEditor(
   rawRequest: RawFrameRequest | null,
 ) {
   if (kind === "roi" && roiRequest) {
-    void queryClient.prefetchQuery({
-      queryKey: queryKeys.roiFrameAnnotationMeta(workspacePath, roiRequest),
-      queryFn: () => fetchRoiFrameAnnotationMeta(backend, workspacePath, roiRequest),
-    });
+    void queryClient.prefetchQuery(roiFrameAnnotationMetaQueryOptions(backend, workspacePath, roiRequest));
     return;
   }
   if (kind === "raw" && rawSource && rawRequest) {
-    void queryClient.prefetchQuery({
-      queryKey: queryKeys.rawFrameAnnotationMeta(workspacePath, rawSource, rawRequest),
-      queryFn: () => fetchRawFrameAnnotationMeta(backend, workspacePath, rawSource, rawRequest),
-    });
+    void queryClient.prefetchQuery(rawFrameAnnotationMetaQueryOptions(backend, workspacePath, rawSource, rawRequest));
   }
 }

@@ -15,11 +15,11 @@
     "./shared/react": "./src/shared/react/index.ts",
     "./shared/state": "./src/shared/state/index.ts",
     "./shared/ui": "./src/shared/ui/index.ts",
+    "./shared/ui/theme.css": "./src/shared/ui/theme.css",
     "./viewer/contracts": "./src/viewer/contracts/index.ts",
     "./viewer/core": "./src/viewer/core/index.ts",
     "./viewer/host-tauri": "./src/viewer/host-tauri/index.ts",
     "./viewer/react": "./src/viewer/react/index.ts",
-    "./viewer/ui": "./src/viewer/ui/index.ts",
     "./viewer/styles.css": "./src/viewer/react/app/viewer.css"
   },
   "files": [
@@ -32,7 +32,7 @@
   "sideEffects": [
     "./src/viewer/react/app/viewer.css",
     "./src/annotator/react/app/annotator.css",
-    "./src/viewer/ui/theme.css"
+    "./src/shared/ui/theme.css"
   ],
   "scripts": {
     "check": "bun run typecheck",

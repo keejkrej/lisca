@@ -4,7 +4,7 @@ import type { MutableRefObject } from "react";
 
 import type { FrameResult, ViewerDataPort, ViewerSelection, ViewerSource } from "lisca/shared/contracts";
 
-/** LRU or plain cache used by the main viewer workspace (see `FrameCache` in ViewerWorkspace). */
+/** LRU or plain cache used by the main viewer workspace (see `FrameCache` in ViewerAlignWorkspace). */
 export interface FrameResultCache {
   get(key: string): { frame: FrameResult } | undefined;
   set(key: string, value: { frame: FrameResult }): void;

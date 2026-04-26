@@ -20,4 +20,10 @@ export {
   updateRawSelection,
   type RawStoreState,
 } from "./rawStore";
+export {
+  persistStoredString,
+  readStoredStringWithFallback,
+  resolveSessionStorage,
+  type SessionStorageLike,
+} from "./storage";
 export { setWorkspacePath, workspaceStore } from "./workspaceStore";

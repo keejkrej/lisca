@@ -20,7 +20,13 @@ import {
   type GridCellCoord,
   type GridState,
 } from "lisca/shared/core";
-import { setWorkspacePath as setSharedWorkspacePath } from "lisca/shared/state";
+import {
+  persistStoredString,
+  readStoredStringWithFallback,
+  resolveSessionStorage,
+  setWorkspacePath as setSharedWorkspacePath,
+  type SessionStorageLike,
+} from "lisca/shared/state";
 
 const LAST_IMAGE_SOURCE_KEY = "view.lastImageSource";
 const LAST_WORKSPACE_KEY = "view.lastWorkspace";
@@ -40,13 +46,7 @@ export type ContrastMode = "auto" | "manual";
 const DEFAULT_CONTRAST_MIN = 0;
 const DEFAULT_CONTRAST_MAX = 65535;
 
-interface StorageLike {
-  getItem(key: string): string | null;
-  setItem(key: string, value: string): void;
-  removeItem(key: string): void;
-  key(index: number): string | null;
-  readonly length: number;
-}
+type StorageLike = SessionStorageLike;
 
 type StateUpdater<T> = T | ((current: T) => T);
 
@@ -79,8 +79,7 @@ function runSync<A>(effect: Effect.Effect<A, never, never>): A {
 }
 
 function resolveStorage(): StorageLike | null {
-  if (typeof window !== "undefined" && window.sessionStorage) return window.sessionStorage;
-  return null;
+  return resolveSessionStorage();
 }
 
 function readStoredGrid(storage: StorageLike | null): GridState {
@@ -127,11 +126,8 @@ function parseLegacySource(raw: string | null): ViewerSource | null {
 }
 
 function readStoredWorkspacePath(storage: StorageLike | null): string | null {
-  const stored = storage?.getItem(LAST_WORKSPACE_KEY);
+  const stored = readStoredStringWithFallback(storage, LAST_WORKSPACE_KEY, LAST_ROOT_KEY);
   if (stored) return stored;
-
-  const legacyRoot = storage?.getItem(LAST_ROOT_KEY);
-  if (legacyRoot) return legacyRoot;
 
   const legacySource = parseLegacySource(storage?.getItem(LAST_SOURCE_KEY) ?? null);
   return legacySource?.path ?? null;
@@ -192,13 +188,7 @@ function readStoredExcludedCells(
 
 function persistWorkspacePathEffect(storage: StorageLike | null, workspacePath: string | null) {
   return Effect.sync(() => {
-    if (!storage) return;
-    if (workspacePath) {
-      storage.setItem(LAST_WORKSPACE_KEY, workspacePath);
-    } else {
-      storage.removeItem(LAST_WORKSPACE_KEY);
-    }
-    storage.removeItem(LAST_ROOT_KEY);
+    persistStoredString(storage, LAST_WORKSPACE_KEY, workspacePath, LAST_ROOT_KEY);
   }).pipe(Effect.withSpan("viewer-store.persist-workspace-path"));
 }
 

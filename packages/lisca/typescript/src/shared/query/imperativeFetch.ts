@@ -4,9 +4,12 @@ import type {
   AutoExcludePreviewRequest,
   AutoExcludePreviewResponse,
   ViewerDataPort,
-} from "../../viewer/contracts";
+} from "lisca/shared/contracts";
 
-import { queryKeys } from "./queryKeys";
+import {
+  autoExcludePreviewQueryOptions,
+  savedBboxPositionsQueryOptions,
+} from "./queryOptions";
 
 /** Imperative read sharing the same cache entry as {@link useSavedBboxPositionsQuery}. */
 export function fetchSavedBboxPositions(
@@ -14,13 +17,7 @@ export function fetchSavedBboxPositions(
   backend: ViewerDataPort,
   workspacePath: string,
 ): Promise<number[]> {
-  return queryClient.fetchQuery({
-    queryKey: queryKeys.savedBboxPositions(workspacePath),
-    queryFn: ({ signal }) => {
-      void signal;
-      return backend.listSavedBboxPositions(workspacePath);
-    },
-  });
+  return queryClient.fetchQuery(savedBboxPositionsQueryOptions(backend, workspacePath));
 }
 
 /** Imperative read sharing the same cache entry as {@link useAutoExcludePreviewQuery}. */
@@ -29,12 +26,5 @@ export function fetchAutoExcludePreview(
   backend: ViewerDataPort,
   request: AutoExcludePreviewRequest,
 ): Promise<AutoExcludePreviewResponse> {
-  return queryClient.fetchQuery({
-    queryKey: queryKeys.autoExcludePreview(request),
-    queryFn: ({ signal }) => {
-      void signal;
-      return backend.autoExcludePreview(request);
-    },
-    staleTime: 0,
-  });
+  return queryClient.fetchQuery(autoExcludePreviewQueryOptions(backend, request));
 }

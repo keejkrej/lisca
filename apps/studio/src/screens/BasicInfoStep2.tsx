@@ -1,17 +1,16 @@
-import { Field, FieldLabel } from "@/components/ui/field";
 import {
+  Field,
+  FieldLabel,
   NumberField,
   NumberFieldGroup,
   NumberFieldInput,
-} from "@/components/ui/number-field";
-import {
   Select,
   SelectItem,
   SelectPopup,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { cn } from "@/lib/utils";
+  cn,
+} from "lisca/shared/ui";
 import morphologyUrl from "@/assets/features/morphology.svg?url";
 import partcountUrl from "@/assets/features/partcount.svg?url";
 import partfluorUrl from "@/assets/features/partfluor.svg?url";

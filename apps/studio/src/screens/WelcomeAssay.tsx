@@ -1,5 +1,4 @@
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Button, cn } from "lisca/shared/ui";
 import { ASSAY_CHOICE_LABEL, type AssayId, useStudioStore } from "../studioStore";
 
 const ASSAY_ORDER: AssayId[] = [

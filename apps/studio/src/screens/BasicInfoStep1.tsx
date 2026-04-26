@@ -1,8 +1,7 @@
 import { useMemo } from "react";
 import { createTauriDesktopPorts } from "lisca/shared/host-tauri";
 
-import { Field, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+import { Field, FieldLabel, Input } from "lisca/shared/ui";
 import { basicInfoAssayTitle, useStudioStore } from "../studioStore";
 
 const ROW = "flex min-h-[100px] w-full flex-col gap-2.5 p-2.5";

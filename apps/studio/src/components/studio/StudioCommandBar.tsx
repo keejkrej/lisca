@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "lisca/shared/ui";
 
 export type StudioCommandBarProps = {
   /** Short helper for the current step (left, fixed width). */
