@@ -1,8 +1,7 @@
 import { Button } from "lisca/shared/ui";
 import { createTauriDesktopPorts } from "lisca/shared/host-tauri";
-import { viewerStore } from "lisca/viewer/react";
-import { useMemo, useRef } from "react";
-import { useStore } from "zustand";
+import { createAlignStore, type AlignPatternStatus } from "lisca/shared/react";
+import { useMemo, useRef, useState } from "react";
 
 import { StudioCommandBar } from "./components/studio/StudioCommandBar";
 import { StudioNavRail } from "./components/studio/StudioNavRail";
@@ -52,19 +51,17 @@ export default function StudioApp() {
     }
     return null;
   }, []);
+  const alignStore = useMemo(() => createAlignStore(), []);
 
   const alignCommitRef = useRef<(() => Promise<void>) | null>(null);
+  const [alignStatus, setAlignStatus] = useState<AlignPatternStatus>({
+    ready: false,
+    loading: false,
+    saving: false,
+    error: null,
+  });
 
-  const alignNextDisabled = useStore(viewerStore, (s) =>
-    step !== "alignPattern"
-      ? false
-      : !s.scan ||
-        !s.selection ||
-        !s.frame ||
-        !s.workspacePath?.trim().length ||
-        s.loading ||
-        s.saving,
-  );
+  const alignNextDisabled = step === "alignPattern" ? !alignStatus.ready : false;
 
   const canContinue =
     step === "welcome"
@@ -121,7 +118,7 @@ export default function StudioApp() {
 
   return (
     <div className="grid h-svh min-h-0 w-full grid-cols-1 overflow-hidden bg-background text-foreground md:grid-cols-[240px_minmax(0,1fr)_240px]">
-      <StudioNavRail className="hidden min-h-0 md:flex" />
+      <StudioNavRail alignStore={alignStore} className="hidden min-h-0 md:flex" />
 
       <div className="flex min-h-0 min-w-0 flex-col border-border/60 md:border-x">
         <main className={mainScrollClass}>
@@ -132,6 +129,8 @@ export default function StudioApp() {
             {step === "alignPattern" ? (
               <StudioAlignPattern
                 dataPort={dataPort}
+                store={alignStore}
+                onStatusChange={setAlignStatus}
                 onRegisterCommit={(handler) => {
                   alignCommitRef.current = handler;
                 }}

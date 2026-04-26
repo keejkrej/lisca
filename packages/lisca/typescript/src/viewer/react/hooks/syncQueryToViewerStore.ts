@@ -3,9 +3,8 @@ import { useEffect } from "react";
 
 import type { SavedAlignState, ViewerSource, WorkspaceScan } from "lisca/shared/contracts";
 import { coerceSelection, createSelection } from "lisca/shared/core";
-import { showErrorToast } from "lisca/shared/react";
+import { initialAlignSelection, showErrorToast } from "lisca/shared/react";
 
-import { initialViewerAlignSelection } from "../app/viewerAlign/advanceSelection";
 import { applySavedAlignState, patchViewState, setGrid, setSource, setTimeSliderIndex, setWorkspacePath } from "../app/viewerStore";
 import { toErrorMessage } from "../app/viewerEffects";
 
@@ -106,7 +105,7 @@ export function useSyncScanSourceQueryToViewerAlignStore(
 
     if (query.data) {
       const scanned = query.data;
-      const sel = coerceSelection(scanned, initialViewerAlignSelection(scanned));
+      const sel = coerceSelection(scanned, initialAlignSelection(scanned));
       patchViewState({ scan: scanned, selection: sel, loading: false, error: null });
       setGrid((g) => ({ ...g, enabled: true }));
       const ti = scanned.times.indexOf(sel.time);

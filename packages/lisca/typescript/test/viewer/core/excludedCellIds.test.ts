@@ -5,7 +5,7 @@ import {
   mergeExcludedCells,
   setExcludedCellsForPosition,
   toggleExcludedCells,
-} from "../../../src/viewer/core";
+} from "../../../src/shared/core";
 
 describe("excluded cell helpers", () => {
   test("toggle adds and removes coords deterministically", () => {

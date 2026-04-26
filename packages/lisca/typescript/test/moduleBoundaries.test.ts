@@ -99,8 +99,19 @@ describe("module boundaries", () => {
     };
 
     expect(packageJson.exports["./viewer/ui"]).toBeUndefined();
+    expect(packageJson.exports["./viewer/core"]).toBeUndefined();
+    expect(packageJson.exports["./viewer/contracts"]).toBeUndefined();
     expect(packageJson.exports["./shared/ui"]).toBe("./src/shared/ui/index.ts");
     expect(packageJson.exports["./shared/ui/theme.css"]).toBe("./src/shared/ui/theme.css");
+  });
+
+  test("source imports use shared core/contracts instead of legacy viewer aliases", () => {
+    const violations = collectForbiddenImports(SRC_ROOT, [
+      /from\s+["']lisca\/viewer\/core["']/,
+      /from\s+["']lisca\/viewer\/contracts["']/,
+    ]);
+
+    expect(violations).toEqual([]);
   });
 
   test("viewer and annotator workspace file names are explicit", () => {

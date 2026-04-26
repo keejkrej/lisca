@@ -3,7 +3,6 @@ import ReactDOM from "react-dom/client";
 
 import { LiscaQueryProvider } from "lisca/shared/query";
 import { AnchoredToastProvider, ToastProvider } from "lisca/shared/react";
-import "lisca/viewer/styles.css";
 
 import "./index.css";
 

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { GridState } from "../../../src/viewer/contracts";
+import type { GridState } from "../../../src/shared/core";
 import {
   applyQ20Preset,
   computeBatchCropOverallProgress,

@@ -1,7 +1,7 @@
-import type { ViewerSelection, WorkspaceScan } from "lisca/viewer/contracts";
+import type { ViewerSelection, WorkspaceScan } from "lisca/shared/contracts";
 
 /** Smallest position, channel 0 when present, first z/time. */
-export function initialViewerAlignSelection(scan: WorkspaceScan): ViewerSelection {
+export function initialAlignSelection(scan: WorkspaceScan): ViewerSelection {
   return {
     pos: scan.positions[0] ?? 0,
     channel: scan.channels.includes(0) ? 0 : (scan.channels[0] ?? 0),
@@ -11,7 +11,7 @@ export function initialViewerAlignSelection(scan: WorkspaceScan): ViewerSelectio
 }
 
 /** After commit: advance time within position, then wrap time and increment position. */
-export function advanceViewerAlignSelection(
+export function advanceAlignSelection(
   scan: WorkspaceScan,
   selection: ViewerSelection,
 ): ViewerSelection | null {

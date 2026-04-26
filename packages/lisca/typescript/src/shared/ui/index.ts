@@ -1,5 +1,6 @@
 export { AlertDialog, AlertDialogClose, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogPanel, AlertDialogPopup, AlertDialogTitle } from "./alert-dialog";
 export { Button } from "./button";
+export { ContextMenu } from "./context-menu";
 export { Dialog, DialogClose, DialogDescription, DialogFooter, DialogHeader, DialogPanel, DialogPopup, DialogTitle } from "./dialog";
 export { Field, FieldControl, FieldDescription, FieldError, FieldItem, FieldLabel, FieldPrimitive, FieldValidity } from "./field";
 export { Input, type InputProps } from "./input";

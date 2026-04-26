@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 
-import type { ViewerDataPort } from "lisca/viewer/contracts";
+import type { ViewerDataPort } from "lisca/shared/contracts";
 import {
   applyGridPointerGesture,
   applyGridWheelGesture,
@@ -14,8 +14,7 @@ import {
   enumerateVisibleGridCells,
   type GridPointerGestureSession,
   type GridState,
-} from "lisca/viewer/core";
-import { showErrorToast, showSuccessToast } from "lisca/shared/react";
+} from "lisca/shared/core";
 import {
   fetchAutoExcludePreview,
   useAlignStateQuery,
@@ -23,41 +22,58 @@ import {
   useScanSourceQuery,
 } from "lisca/shared/query";
 
-import { ViewerCanvasSurface } from "../../alignment";
-import type { ViewerCanvasPointerEvent, ViewerCanvasWheelEvent } from "../../alignment/types";
+import AlignCanvasSurface from "./AlignCanvasSurface";
 import {
-  excludeCells,
-  patchViewState,
-  setGrid,
-  setSaving,
-  setTimeSliderIndex,
-  viewerStore,
-} from "../viewerStore";
-import { toErrorMessage } from "../viewerEffects";
-import { useSyncAlignStateQueryToViewerStore, useSyncScanSourceQueryToViewerAlignStore } from "../../hooks/syncQueryToViewerStore";
-import { useViewerSourceFrameLoad } from "../../hooks/useViewerSourceFrameLoad";
-import { advanceViewerAlignSelection } from "./advanceSelection";
-import { inferViewerSourceFromDataPath } from "./inferSource";
+  AlignStoreProvider,
+  applyAlignSavedState,
+  excludeAlignCells,
+  patchAlignState,
+  setAlignGrid,
+  setAlignSaving,
+  setAlignSource,
+  setAlignTimeSliderIndex,
+  setAlignWorkspacePath,
+  useAlignStoreApi,
+  type AlignStore,
+} from "./alignStore";
+import { advanceAlignSelection, initialAlignSelection } from "./advanceSelection";
+import { inferSourceFromDataPath } from "./inferSource";
+import type { AlignCanvasPointerEvent, AlignCanvasWheelEvent } from "./types";
+import { useLoadRawFrameIntoAlignStore } from "./useLoadRawFrameIntoAlignStore";
+import { showErrorToast, showSuccessToast } from "../toast";
 
 function cellKey(i: number, j: number): string {
   return `${i}:${j}`;
 }
 
-export interface ViewerAlignPatternProps {
+export type AlignPatternCommitHandler = () => Promise<void>;
+
+export interface AlignPatternStatus {
+  ready: boolean;
+  loading: boolean;
+  saving: boolean;
+  error: string | null;
+}
+
+export interface AlignPatternWorkspaceProps {
   /** Null when not running inside Tauri (plain Vite web). */
   dataPort: ViewerDataPort | null;
   dataPath: string;
   saveTo: string;
-  /** Registers the align-step "next" commit handler for the Studio command bar. */
-  onRegisterCommit: (handler: (() => Promise<void>) | null) => void;
+  store?: AlignStore;
+  /** Registers the align-step "next" commit handler for a parent command bar. */
+  onRegisterCommit: (handler: AlignPatternCommitHandler | null) => void;
+  onStatusChange?: (status: AlignPatternStatus) => void;
 }
 
-export default function ViewerAlignPattern({
+function AlignPatternWorkspaceInner({
   dataPort,
   dataPath,
   saveTo,
   onRegisterCommit,
-}: ViewerAlignPatternProps) {
+  onStatusChange,
+}: Omit<AlignPatternWorkspaceProps, "store">) {
+  const store = useAlignStoreApi();
   const backend = dataPort;
   const dragSessionRef = useRef<GridPointerGestureSession | null>(null);
   const [previewGrid, setPreviewGrid] = useState<GridState | null>(null);
@@ -75,8 +91,9 @@ export default function ViewerAlignPattern({
     excludedCellsByPosition,
     workspacePath,
     source,
+    saving,
   } = useStore(
-    viewerStore,
+    store,
     useShallow((state) => ({
       scan: state.scan,
       selection: state.selection,
@@ -90,41 +107,93 @@ export default function ViewerAlignPattern({
       excludedCellsByPosition: state.excludedCellsByPosition,
       workspacePath: state.workspacePath,
       source: state.source,
+      saving: state.saving,
     })),
   );
 
   const selectedPos = selection?.pos ?? null;
-
   const workspaceTrim = saveTo.trim();
-  const sourceInferred = useMemo(() => inferViewerSourceFromDataPath(dataPath), [dataPath]);
+  const sourceInferred = useMemo(() => inferSourceFromDataPath(dataPath), [dataPath]);
 
   const queryClient = useQueryClient();
-  const saveBboxMutation = useSaveBboxMutation(backend as ViewerDataPort);
-  const scanSourceQuery = useScanSourceQuery(backend as ViewerDataPort, sourceInferred, {
+  const saveBboxMutation = useSaveBboxMutation(backend);
+  const scanSourceQuery = useScanSourceQuery(backend, sourceInferred, {
     enabled: Boolean(backend && workspaceTrim && sourceInferred),
   });
-  const alignQuery = useAlignStateQuery(backend as ViewerDataPort, workspacePath, selectedPos, {
+  const alignQuery = useAlignStateQuery(backend, workspacePath, selectedPos, {
     enabled: Boolean(backend && workspacePath && selectedPos != null),
   });
 
-  useSyncScanSourceQueryToViewerAlignStore(
-    Boolean(backend && workspaceTrim && sourceInferred),
-    workspaceTrim,
+  useEffect(() => {
+    if (!backend || !workspaceTrim || !sourceInferred) return;
+
+    setAlignWorkspacePath(store, workspaceTrim);
+    if (store.getState().source?.path !== sourceInferred.path || store.getState().source?.kind !== sourceInferred.kind) {
+      setAlignSource(store, sourceInferred);
+    }
+
+    if (scanSourceQuery.isPending) {
+      patchAlignState(store, {
+        loading: true,
+        error: null,
+        frame: null,
+        scan: null,
+        selection: null,
+        contrastMode: "manual",
+      });
+      return;
+    }
+
+    if (scanSourceQuery.isError) {
+      patchAlignState(store, { loading: false, error: String(scanSourceQuery.error.message) });
+      return;
+    }
+
+    if (scanSourceQuery.data) {
+      const scanned = scanSourceQuery.data;
+      const sel = coerceSelection(scanned, initialAlignSelection(scanned));
+      patchAlignState(store, { scan: scanned, selection: sel, loading: false, error: null });
+      setAlignGrid(store, (g) => ({ ...g, enabled: true }));
+      const ti = scanned.times.indexOf(sel.time);
+      setAlignTimeSliderIndex(store, ti >= 0 ? ti : 0);
+    }
+  }, [
+    backend,
+    scanSourceQuery.data,
+    scanSourceQuery.error,
+    scanSourceQuery.isError,
+    scanSourceQuery.isPending,
     sourceInferred,
-    scanSourceQuery,
-  );
+    store,
+    workspaceTrim,
+  ]);
 
-  const enableAlignGrid = useCallback(() => {
-    setGrid((g) => ({ ...g, enabled: true }));
-  }, []);
+  useEffect(() => {
+    if (selectedPos == null) return;
 
-  useSyncAlignStateQueryToViewerStore(selectedPos, workspacePath, alignQuery, enableAlignGrid);
+    if (!workspacePath) {
+      applyAlignSavedState(store, selectedPos, null);
+      return;
+    }
 
-  const reloadToken = useStore(viewerStore, (s) => s.contrastReloadToken);
+    if (alignQuery.isError) {
+      showErrorToast(alignQuery.error.message);
+      return;
+    }
+
+    if (alignQuery.isSuccess) {
+      applyAlignSavedState(store, selectedPos, alignQuery.data);
+      setAlignGrid(store, (g) => ({ ...g, enabled: true }));
+    }
+  }, [alignQuery.data, alignQuery.error, alignQuery.isError, alignQuery.isSuccess, selectedPos, store, workspacePath]);
+
   const contrastKey =
-    contrastMode === "auto" ? `auto:${reloadToken}` : `${contrastMin}:${contrastMax}`;
+    contrastMode === "auto"
+      ? `auto:${store.getState().contrastReloadToken}`
+      : `${contrastMin}:${contrastMax}`;
 
-  useViewerSourceFrameLoad({
+  useLoadRawFrameIntoAlignStore({
+    store,
     backend,
     source,
     selection,
@@ -144,7 +213,26 @@ export default function ViewerAlignPattern({
     [excludedCellsByPosition, selection],
   );
 
-  const renderedExcludedCells = currentPositionExcludedCells;
+  const ready = Boolean(
+    backend &&
+      workspaceTrim &&
+      sourceInferred &&
+      scan &&
+      selection &&
+      frame &&
+      workspacePath?.trim().length &&
+      !loading &&
+      !saving,
+  );
+
+  useEffect(() => {
+    onStatusChange?.({
+      ready,
+      loading,
+      saving,
+      error,
+    });
+  }, [error, loading, onStatusChange, ready, saving]);
 
   const emptyText = useMemo(() => {
     if (!backend) {
@@ -162,7 +250,7 @@ export default function ViewerAlignPattern({
   const canvasCursor = grid.enabled ? (previewGrid ? "grabbing" : "grab") : "default";
 
   const handleCanvasPointerDown = useCallback(
-    (event: ViewerCanvasPointerEvent) => {
+    (event: AlignCanvasPointerEvent) => {
       if (!grid.enabled) return;
       const session = beginGridPointerGesture(grid, event);
       if (!session) return;
@@ -173,39 +261,36 @@ export default function ViewerAlignPattern({
     [grid],
   );
 
-  const handleCanvasPointerMove = useCallback(
-    (event: ViewerCanvasPointerEvent) => {
-      const session = dragSessionRef.current;
-      if (!session || session.pointerId !== event.pointerId || !event.viewport) return;
-      setPreviewGrid(applyGridPointerGesture(session, event, event.viewport));
-      event.preventDefault();
-    },
-    [],
-  );
+  const handleCanvasPointerMove = useCallback((event: AlignCanvasPointerEvent) => {
+    const session = dragSessionRef.current;
+    if (!session || session.pointerId !== event.pointerId || !event.viewport) return;
+    setPreviewGrid(applyGridPointerGesture(session, event, event.viewport));
+    event.preventDefault();
+  }, []);
 
   const handleCanvasPointerEnd = useCallback(
-    (event: ViewerCanvasPointerEvent) => {
+    (event: AlignCanvasPointerEvent) => {
       const session = dragSessionRef.current;
       if (!session || session.pointerId !== event.pointerId) return;
       dragSessionRef.current = null;
       if (previewGrid) {
-        setGrid(previewGrid);
+        setAlignGrid(store, previewGrid);
       }
       setPreviewGrid(null);
       event.releasePointer();
     },
-    [previewGrid],
+    [previewGrid, store],
   );
 
   const handleCanvasWheel = useCallback(
-    (event: ViewerCanvasWheelEvent) => {
+    (event: AlignCanvasWheelEvent) => {
       if (!frame || !grid.enabled || !event.viewport) return;
       event.preventDefault();
       dragSessionRef.current = null;
       setPreviewGrid(null);
-      setGrid((current) => applyGridWheelGesture(current, event, event.viewport!));
+      setAlignGrid(store, (current) => applyGridWheelGesture(current, event, event.viewport!));
     },
-    [frame, grid.enabled],
+    [frame, grid.enabled, store],
   );
 
   const commitAndAdvance = useCallback(async () => {
@@ -218,21 +303,21 @@ export default function ViewerAlignPattern({
       frame: fr,
       grid: gr,
       scan: sc,
-    } = viewerStore.getState();
+    } = store.getState();
 
     if (!ws || !src || !sel || !fr || !sc || sc.positions.length === 0) {
       showErrorToast("Cannot save: missing workspace, frame, or scan.");
       return;
     }
 
-    setSaving(true);
+    setAlignSaving(store, true);
 
     const edgeCells = collectEdgeCells(fr, gr);
     if (edgeCells.length > 0) {
-      excludeCells(sel.pos, edgeCells);
+      excludeAlignCells(store, sel.pos, edgeCells);
     }
 
-    const excludedAfterEdge = viewerStore.getState().excludedCellsByPosition[sel.pos] ?? [];
+    const excludedAfterEdge = store.getState().excludedCellsByPosition[sel.pos] ?? [];
     const excludedKeys = new Set(excludedAfterEdge.map((c) => cellKey(c.i, c.j)));
 
     const eligibleCells = enumerateVisibleGridCells(fr, gr).filter(
@@ -256,8 +341,8 @@ export default function ViewerAlignPattern({
     try {
       preview = await fetchAutoExcludePreview(queryClient, backend, previewRequest);
     } catch (cause) {
-      showErrorToast(toErrorMessage(cause));
-      setSaving(false);
+      showErrorToast(cause instanceof Error ? cause.message : String(cause));
+      setAlignSaving(store, false);
       return;
     }
 
@@ -267,7 +352,7 @@ export default function ViewerAlignPattern({
         ?.filter((cell) => cell.score <= threshold)
         .map((cell) => ({ i: cell.i, j: cell.j })) ?? [];
     if (cellsToExclude.length > 0) {
-      excludeCells(sel.pos, cellsToExclude);
+      excludeAlignCells(store, sel.pos, cellsToExclude);
     }
 
     const {
@@ -276,10 +361,10 @@ export default function ViewerAlignPattern({
       frame: frameAfter,
       selection: selAfter,
       source: srcAfter,
-    } = viewerStore.getState();
+    } = store.getState();
 
     if (!frameAfter || !selAfter || !srcAfter || !ws) {
-      setSaving(false);
+      setAlignSaving(store, false);
       return;
     }
 
@@ -298,12 +383,12 @@ export default function ViewerAlignPattern({
         },
       });
     } catch (cause) {
-      showErrorToast(toErrorMessage(cause));
-      setSaving(false);
+      showErrorToast(cause instanceof Error ? cause.message : String(cause));
+      setAlignSaving(store, false);
       return;
     }
 
-    setSaving(false);
+    setAlignSaving(store, false);
 
     if (!response.ok) {
       showErrorToast(response.error ?? "Failed to save alignment outputs");
@@ -312,22 +397,22 @@ export default function ViewerAlignPattern({
 
     showSuccessToast(`Saved bbox for Pos${selAfter.pos}`);
 
-    const scanFresh = viewerStore.getState().scan;
-    const selFresh = viewerStore.getState().selection;
+    const scanFresh = store.getState().scan;
+    const selFresh = store.getState().selection;
     if (!scanFresh || !selFresh) return;
 
-    const nextSel = advanceViewerAlignSelection(scanFresh, selFresh);
+    const nextSel = advanceAlignSelection(scanFresh, selFresh);
     if (!nextSel) {
       showSuccessToast("Finished all positions and timepoints.");
       return;
     }
 
-    patchViewState({
+    patchAlignState(store, {
       selection: coerceSelection(scanFresh, nextSel),
     });
     const nt = scanFresh.times.indexOf(nextSel.time);
-    setTimeSliderIndex(nt >= 0 ? nt : 0);
-  }, [backend, queryClient, saveBboxMutation]);
+    setAlignTimeSliderIndex(store, nt >= 0 ? nt : 0);
+  }, [backend, queryClient, saveBboxMutation, store]);
 
   useEffect(() => {
     onRegisterCommit(commitAndAdvance);
@@ -356,11 +441,11 @@ export default function ViewerAlignPattern({
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       <div className="flex min-h-0 flex-1 overflow-hidden rounded-2xl border border-border/60 bg-black/10">
-        <ViewerCanvasSurface
+        <AlignCanvasSurface
           frame={frame}
           grid={grid}
           previewGrid={previewGrid}
-          excludedCells={renderedExcludedCells}
+          excludedCells={currentPositionExcludedCells}
           loading={loading && !frame}
           emptyText={emptyText}
           cursor={canvasCursor}
@@ -372,5 +457,16 @@ export default function ViewerAlignPattern({
         />
       </div>
     </div>
+  );
+}
+
+export default function AlignPatternWorkspace({
+  store,
+  ...props
+}: AlignPatternWorkspaceProps) {
+  return (
+    <AlignStoreProvider store={store}>
+      <AlignPatternWorkspaceInner {...props} />
+    </AlignStoreProvider>
   );
 }

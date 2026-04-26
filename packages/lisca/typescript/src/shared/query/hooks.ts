@@ -2,6 +2,7 @@ import {
   useMutation,
   useQuery,
   useQueryClient,
+  skipToken,
   type UseMutationOptions,
   type UseQueryOptions,
 } from "@tanstack/react-query";
@@ -39,141 +40,163 @@ import {
   scanSourceQueryOptions,
 } from "./queryOptions";
 
+type LiscaHookQueryOptions<T> = Omit<
+  UseQueryOptions<T, Error, T, readonly unknown[]>,
+  "queryKey" | "queryFn" | "initialData"
+>;
+
 // --- Reads ---
 
+function disabledQueryOptions<T>(): Pick<
+  UseQueryOptions<T, Error, T, readonly unknown[]>,
+  "queryKey" | "queryFn"
+> {
+  return {
+    queryKey: queryKeys.all,
+    queryFn: skipToken as UseQueryOptions<T, Error, T, readonly unknown[]>["queryFn"],
+  };
+}
+
 export function useScanSourceQuery(
-  backend: ViewerDataPort,
+  backend: ViewerDataPort | null | undefined,
   source: ViewerSource | null | undefined,
-  options?: Omit<UseQueryOptions<WorkspaceScan, Error, WorkspaceScan>, "queryKey" | "queryFn">,
+  options?: LiscaHookQueryOptions<WorkspaceScan>,
 ) {
   return useQuery({
-    ...(source ? scanSourceQueryOptions(backend, source) : { queryKey: queryKeys.all, queryFn: () => Promise.reject(new Error("scanSource: missing source")) }),
+    ...(backend && source ? scanSourceQueryOptions(backend, source) : disabledQueryOptions<WorkspaceScan>()),
     ...options,
-    enabled: Boolean(source) && (options?.enabled ?? true),
+    enabled: Boolean(backend && source) && (options?.enabled ?? true),
   });
 }
 
 export function useScanRoiWorkspaceQuery(
-  backend: ViewerDataPort,
+  backend: ViewerDataPort | null | undefined,
   workspacePath: string | null | undefined,
-  options?: Omit<UseQueryOptions<RoiWorkspaceScan, Error, RoiWorkspaceScan>, "queryKey" | "queryFn">,
+  options?: LiscaHookQueryOptions<RoiWorkspaceScan>,
 ) {
   return useQuery({
-    ...(workspacePath ? scanRoiWorkspaceQueryOptions(backend, workspacePath) : { queryKey: queryKeys.all, queryFn: () => Promise.reject(new Error("scanRoiWorkspace: missing path")) }),
+    ...(backend && workspacePath ? scanRoiWorkspaceQueryOptions(backend, workspacePath) : disabledQueryOptions<RoiWorkspaceScan>()),
     ...options,
-    enabled: Boolean(workspacePath) && (options?.enabled ?? true),
+    enabled: Boolean(backend && workspacePath) && (options?.enabled ?? true),
   });
 }
 
 export function useSavedBboxPositionsQuery(
-  backend: ViewerDataPort,
+  backend: ViewerDataPort | null | undefined,
   workspacePath: string | null | undefined,
-  options?: Omit<UseQueryOptions<number[], Error, number[]>, "queryKey" | "queryFn">,
+  options?: LiscaHookQueryOptions<number[]>,
 ) {
   return useQuery({
-    ...(workspacePath ? savedBboxPositionsQueryOptions(backend, workspacePath) : { queryKey: queryKeys.all, queryFn: () => Promise.reject(new Error("listSavedBboxPositions: missing path")) }),
+    ...(backend && workspacePath ? savedBboxPositionsQueryOptions(backend, workspacePath) : disabledQueryOptions<number[]>()),
     ...options,
-    enabled: Boolean(workspacePath) && (options?.enabled ?? true),
+    enabled: Boolean(backend && workspacePath) && (options?.enabled ?? true),
   });
 }
 
 export function useAlignStateQuery(
-  backend: ViewerDataPort,
+  backend: ViewerDataPort | null | undefined,
   workspacePath: string | null | undefined,
   pos: number | null | undefined,
   options?: Omit<
-    UseQueryOptions<SavedAlignState | null, Error, SavedAlignState | null>,
-    "queryKey" | "queryFn"
+    UseQueryOptions<SavedAlignState | null, Error, SavedAlignState | null, readonly unknown[]>,
+    "queryKey" | "queryFn" | "initialData"
   >,
 ) {
-  const hasKey = workspacePath != null && workspacePath !== "" && pos != null;
+  const hasKey = !!backend && workspacePath != null && workspacePath !== "" && pos != null;
   return useQuery({
-    ...(hasKey ? alignStateQueryOptions(backend, workspacePath, pos) : { queryKey: queryKeys.all, queryFn: () => Promise.reject(new Error("loadAlignState: missing workspacePath or pos")) }),
+    ...(hasKey ? alignStateQueryOptions(backend, workspacePath!, pos!) : disabledQueryOptions<SavedAlignState | null>()),
     ...options,
     enabled:
-      Boolean(workspacePath) && pos != null && !Number.isNaN(pos) && (options?.enabled ?? true),
+      Boolean(backend && workspacePath) && pos != null && !Number.isNaN(pos) && (options?.enabled ?? true),
   });
 }
 
 export function useAnnotationLabelsQuery(
-  backend: ViewerDataPort,
+  backend: ViewerDataPort | null | undefined,
   workspacePath: string | null | undefined,
-  options?: Omit<UseQueryOptions<AnnotationLabel[], Error, AnnotationLabel[]>, "queryKey" | "queryFn">,
+  options?: LiscaHookQueryOptions<AnnotationLabel[]>,
 ) {
   return useQuery({
-    ...(workspacePath ? annotationLabelsQueryOptions(backend, workspacePath) : { queryKey: queryKeys.all, queryFn: () => Promise.reject(new Error("loadAnnotationLabels: missing path")) }),
+    ...(backend && workspacePath ? annotationLabelsQueryOptions(backend, workspacePath) : disabledQueryOptions<AnnotationLabel[]>()),
     ...options,
-    enabled: Boolean(workspacePath) && (options?.enabled ?? true),
+    enabled: Boolean(backend && workspacePath) && (options?.enabled ?? true),
   });
 }
 
 export function useRawAnnotationSourceQuery(
-  backend: ViewerDataPort,
+  backend: ViewerDataPort | null | undefined,
   workspacePath: string | null | undefined,
   options?: Omit<
-    UseQueryOptions<ViewerSource | null, Error, ViewerSource | null>,
-    "queryKey" | "queryFn"
+    UseQueryOptions<ViewerSource | null, Error, ViewerSource | null, readonly unknown[]>,
+    "queryKey" | "queryFn" | "initialData"
   >,
 ) {
   return useQuery({
-    ...(workspacePath ? rawAnnotationSourceQueryOptions(backend, workspacePath) : { queryKey: queryKeys.all, queryFn: () => Promise.reject(new Error("loadRawAnnotationSource: missing path")) }),
+    ...(backend && workspacePath ? rawAnnotationSourceQueryOptions(backend, workspacePath) : disabledQueryOptions<ViewerSource | null>()),
     ...options,
-    enabled: Boolean(workspacePath) && (options?.enabled ?? true),
+    enabled: Boolean(backend && workspacePath) && (options?.enabled ?? true),
   });
 }
 
 export function useAutoExcludePreviewQuery(
-  backend: ViewerDataPort,
+  backend: ViewerDataPort | null | undefined,
   request: AutoExcludePreviewRequest | null | undefined,
   options?: Omit<
-    UseQueryOptions<AutoExcludePreviewResponse, Error, AutoExcludePreviewResponse>,
-    "queryKey" | "queryFn"
+    UseQueryOptions<AutoExcludePreviewResponse, Error, AutoExcludePreviewResponse, readonly unknown[]>,
+    "queryKey" | "queryFn" | "initialData"
   >,
 ) {
   return useQuery({
-    ...(request ? autoExcludePreviewQueryOptions(backend, request) : { queryKey: queryKeys.all, queryFn: () => Promise.reject(new Error("autoExcludePreview: missing request")) }),
+    ...(backend && request ? autoExcludePreviewQueryOptions(backend, request) : disabledQueryOptions<AutoExcludePreviewResponse>()),
     ...options,
-    enabled: Boolean(request) && (options?.enabled ?? true),
+    enabled: Boolean(backend && request) && (options?.enabled ?? true),
     staleTime: options?.staleTime ?? 0,
   });
 }
 
 /** Tier A: metadata only; mask is not written to the query cache. */
 export function useRoiFrameAnnotationMetaQuery(
-  backend: ViewerDataPort,
+  backend: ViewerDataPort | null | undefined,
   workspacePath: string | null | undefined,
   request: RoiFrameRequest | null | undefined,
-  options?: Omit<UseQueryOptions<RoiFrameAnnotation, Error, RoiFrameAnnotation>, "queryKey" | "queryFn">,
+  options?: LiscaHookQueryOptions<RoiFrameAnnotation>,
 ) {
-  const hasKey = Boolean(workspacePath && request);
+  const hasKey = Boolean(backend && workspacePath && request);
   return useQuery({
-    ...(hasKey ? roiFrameAnnotationMetaQueryOptions(backend, workspacePath as string, request as RoiFrameRequest) : { queryKey: queryKeys.all, queryFn: () => Promise.reject(new Error("roiFrameAnnotationMeta: missing workspacePath or request")) }),
+    ...(hasKey ? roiFrameAnnotationMetaQueryOptions(backend!, workspacePath as string, request as RoiFrameRequest) : disabledQueryOptions<RoiFrameAnnotation>()),
     ...options,
-    enabled: Boolean(workspacePath && request) && (options?.enabled ?? true),
+    enabled: Boolean(backend && workspacePath && request) && (options?.enabled ?? true),
   });
 }
 
 /** Tier A: metadata only; mask is not written to the query cache. */
 export function useRawFrameAnnotationMetaQuery(
-  backend: ViewerDataPort,
+  backend: ViewerDataPort | null | undefined,
   workspacePath: string | null | undefined,
   source: ViewerSource | null | undefined,
   request: RawFrameRequest | null | undefined,
-  options?: Omit<UseQueryOptions<RawFrameAnnotation, Error, RawFrameAnnotation>, "queryKey" | "queryFn">,
+  options?: LiscaHookQueryOptions<RawFrameAnnotation>,
 ) {
-  const hasKey = Boolean(workspacePath && source && request);
+  const hasKey = Boolean(backend && workspacePath && source && request);
   return useQuery({
-    ...(hasKey ? rawFrameAnnotationMetaQueryOptions(backend, workspacePath as string, source as ViewerSource, request as RawFrameRequest) : { queryKey: queryKeys.all, queryFn: () => Promise.reject(new Error("rawFrameAnnotationMeta: missing workspacePath, source, or request")) }),
+    ...(hasKey ? rawFrameAnnotationMetaQueryOptions(backend!, workspacePath as string, source as ViewerSource, request as RawFrameRequest) : disabledQueryOptions<RawFrameAnnotation>()),
     ...options,
     enabled:
-      Boolean(workspacePath && source && request) && (options?.enabled ?? true),
+      Boolean(backend && workspacePath && source && request) && (options?.enabled ?? true),
   });
 }
 
 // --- Mutations ---
 
+function requireBackend(backend: ViewerDataPort | null | undefined): ViewerDataPort {
+  if (!backend) {
+    throw new Error("Viewer data backend is not available");
+  }
+  return backend;
+}
+
 export function useSaveAnnotationLabelsMutation(
-  backend: ViewerDataPort,
+  backend: ViewerDataPort | null | undefined,
   options?: UseMutationOptions<
     AnnotationLabel[],
     Error,
@@ -184,7 +207,7 @@ export function useSaveAnnotationLabelsMutation(
   return useMutation({
     ...options,
     mutationFn: ({ workspacePath, labels }) =>
-      backend.saveAnnotationLabels(workspacePath, labels),
+      requireBackend(backend).saveAnnotationLabels(workspacePath, labels),
     onSuccess: (data, variables, onMutateResult, context) => {
       qc.setQueryData(queryKeys.annotationLabels(variables.workspacePath), data);
       options?.onSuccess?.(data, variables, onMutateResult, context);
@@ -193,7 +216,7 @@ export function useSaveAnnotationLabelsMutation(
 }
 
 export function useSaveRoiFrameAnnotationMutation(
-  backend: ViewerDataPort,
+  backend: ViewerDataPort | null | undefined,
   options?: UseMutationOptions<
     RoiFrameAnnotation,
     Error,
@@ -208,7 +231,7 @@ export function useSaveRoiFrameAnnotationMutation(
   return useMutation({
     ...options,
     mutationFn: ({ workspacePath, request, annotation }) =>
-      backend.saveRoiFrameAnnotation(workspacePath, request, annotation),
+      requireBackend(backend).saveRoiFrameAnnotation(workspacePath, request, annotation),
     onSuccess: (data, variables, onMutateResult, context) => {
       qc.setQueryData(
         queryKeys.roiFrameAnnotationMeta(variables.workspacePath, variables.request),
@@ -220,7 +243,7 @@ export function useSaveRoiFrameAnnotationMutation(
 }
 
 export function useSaveRawFrameAnnotationMutation(
-  backend: ViewerDataPort,
+  backend: ViewerDataPort | null | undefined,
   options?: UseMutationOptions<
     RawFrameAnnotation,
     Error,
@@ -236,7 +259,7 @@ export function useSaveRawFrameAnnotationMutation(
   return useMutation({
     ...options,
     mutationFn: ({ workspacePath, source, request, annotation }) =>
-      backend.saveRawFrameAnnotation(workspacePath, source, request, annotation),
+      requireBackend(backend).saveRawFrameAnnotation(workspacePath, source, request, annotation),
     onSuccess: (data, variables, onMutateResult, context) => {
       qc.setQueryData(
         queryKeys.rawFrameAnnotationMeta(
@@ -252,7 +275,7 @@ export function useSaveRawFrameAnnotationMutation(
 }
 
 export function useSaveBboxMutation(
-  backend: ViewerDataPort,
+  backend: ViewerDataPort | null | undefined,
   options?: UseMutationOptions<
     SaveBboxResponse,
     Error,
@@ -269,7 +292,7 @@ export function useSaveBboxMutation(
   return useMutation({
     ...options,
     mutationFn: ({ workspacePath, source, pos, csv, alignState }) =>
-      backend.saveBbox(workspacePath, source, pos, csv, alignState),
+      requireBackend(backend).saveBbox(workspacePath, source, pos, csv, alignState),
     onSuccess: (data, variables, onMutateResult, context) => {
       if (data.ok) {
         qc.setQueryData<number[]>(
@@ -291,7 +314,7 @@ export function useSaveBboxMutation(
 }
 
 export function useCropRoiMutation(
-  backend: ViewerDataPort,
+  backend: ViewerDataPort | null | undefined,
   options?: UseMutationOptions<
     CropRoiResponse,
     Error,
@@ -309,7 +332,7 @@ export function useCropRoiMutation(
   return useMutation({
     ...options,
     mutationFn: ({ workspacePath, source, pos, format, requestId, batch }) =>
-      backend.cropRoi(workspacePath, source, pos, format, requestId, batch),
+      requireBackend(backend).cropRoi(workspacePath, source, pos, format, requestId, batch),
     onSuccess: (data, variables, onMutateResult, context) => {
       void qc.invalidateQueries({
         queryKey: queryKeys.scanRoiWorkspace(variables.workspacePath),
@@ -320,11 +343,11 @@ export function useCropRoiMutation(
 }
 
 export function useCancelCropRoiMutation(
-  backend: ViewerDataPort,
+  backend: ViewerDataPort | null | undefined,
   options?: UseMutationOptions<void, Error, { requestId: string }>,
 ) {
   return useMutation({
     ...options,
-    mutationFn: ({ requestId }) => backend.cancelCropRoi(requestId),
+    mutationFn: ({ requestId }) => requireBackend(backend).cancelCropRoi(requestId),
   });
 }

@@ -1,7 +1,7 @@
-import { ContextMenu } from "@base-ui/react/context-menu";
 import {
   Button,
   cn,
+  ContextMenu,
   Dialog,
   DialogPanel,
   DialogPopup,
@@ -9,7 +9,7 @@ import {
   MenuItem,
   MenuPopup,
 } from "lisca/shared/ui";
-import { ViewerAlignFrameNavigation } from "lisca/viewer/react";
+import { AlignFrameNavigation, type AlignStore } from "lisca/shared/react";
 import { useEffect, useState } from "react";
 import type { StudioStep } from "../../studioStore";
 import { useStudioStore } from "../../studioStore";
@@ -52,10 +52,11 @@ const itemButtonClass = (isActive: boolean) =>
   );
 
 type StudioNavRailProps = {
+  alignStore: AlignStore;
   className?: string;
 };
 
-export function StudioNavRail({ className }: StudioNavRailProps) {
+export function StudioNavRail({ alignStore, className }: StudioNavRailProps) {
   const step = useStudioStore((s) => s.step);
   const setStep = useStudioStore((s) => s.setStep);
   const activeId = STEP_TO_ACTIVE[step];
@@ -194,7 +195,7 @@ export function StudioNavRail({ className }: StudioNavRailProps) {
             <DialogTitle>Frame navigation</DialogTitle>
           </div>
           <DialogPanel className="max-h-[min(70vh,520px)] space-y-2">
-            <ViewerAlignFrameNavigation />
+            <AlignFrameNavigation store={alignStore} />
           </DialogPanel>
         </DialogPopup>
       </Dialog>

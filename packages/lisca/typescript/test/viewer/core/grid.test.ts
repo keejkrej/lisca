@@ -20,7 +20,7 @@ import {
   isPrimaryMouseButton,
   normalizeRadians,
   normalizeGridState,
-} from "../../../src/viewer/core";
+} from "../../../src/shared/core";
 
 function cellKey(cell: { i: number; j: number }): string {
   return `${cell.i}:${cell.j}`;

@@ -3,20 +3,41 @@ import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 
 import { clamp, coerceSelection } from "lisca/shared/core";
+
+import {
+  AlignStoreProvider,
+  patchAlignState,
+  setAlignTimeSliderIndex,
+  useAlignStoreApi,
+  type AlignStore,
+} from "./alignStore";
 import {
   NavigationControls,
-  SidebarSection,
   findNavigationOptionIndex,
   stepNavigationValue,
   toNavigationOptions,
-} from "lisca/shared/react";
+} from "../NavigationControls";
+import { SidebarSection } from "../sidebar";
 
-import { patchViewState, setSelectionKey, setTimeSliderIndex, viewerStore } from "../viewerStore";
+function setSelectionKey<K extends "pos" | "channel" | "time" | "z">(
+  store: AlignStore,
+  key: K,
+  value: NonNullable<ReturnType<AlignStore["getState"]>["selection"]>[K],
+) {
+  store.setState((state) => {
+    if (!state.selection) return state;
+    return {
+      ...state,
+      selection: { ...state.selection, [key]: value },
+      saveState: { type: "idle", message: null },
+    };
+  });
+}
 
-/** Full viewer-style frame navigation for Studio dialog (Align pattern). */
-export function ViewerAlignFrameNavigation() {
+function AlignFrameNavigationInner() {
+  const store = useAlignStoreApi();
   const { scan, selection } = useStore(
-    viewerStore,
+    store,
     useShallow((state) => ({
       scan: state.scan,
       selection: state.selection,
@@ -45,23 +66,20 @@ export function ViewerAlignFrameNavigation() {
     return index >= 0 ? index : 0;
   }, [selection, timeValues]);
 
-  const timeSliderIndex = useStore(viewerStore, (s) => s.timeSliderIndex);
-
+  const timeSliderIndex = useStore(store, (s) => s.timeSliderIndex);
   const [zSliderIndex, setZSliderIndex] = useState(0);
 
   useEffect(() => {
-    setTimeSliderIndex(selectedTimeIndex);
-  }, [selectedTimeIndex]);
+    setAlignTimeSliderIndex(store, selectedTimeIndex);
+  }, [selectedTimeIndex, store]);
 
   useEffect(() => {
     setZSliderIndex(selectedZIndex);
   }, [selectedZIndex]);
 
   const controlsDisabled = !scan || scan.positions.length === 0 || !selection;
-
   const timeSliderMax = Math.max(0, timeValues.length - 1);
   const displayedTime = timeValues[timeSliderIndex] ?? selection?.time ?? 0;
-
   const zSliderMax = Math.max(0, zValues.length - 1);
   const displayedZ = zValues[zSliderIndex] ?? selection?.z ?? 0;
 
@@ -72,19 +90,19 @@ export function ViewerAlignFrameNavigation() {
           value: selection?.pos ?? (positionOptions[0]?.value ?? 0),
           options: positionOptions,
           disabled: controlsDisabled,
-          onChange: (value) => setSelectionKey("pos", value),
+          onChange: (value) => setSelectionKey(store, "pos", value),
           previousDisabled: controlsDisabled || selectedPositionIndex <= 0,
           nextDisabled: controlsDisabled || selectedPositionIndex >= positionOptions.length - 1,
           onPrevious: () => {
             const nextValue = stepNavigationValue(positionOptions, selectedPosition, -1);
             if (nextValue != null && nextValue !== selection?.pos) {
-              setSelectionKey("pos", nextValue);
+              setSelectionKey(store, "pos", nextValue);
             }
           },
           onNext: () => {
             const nextValue = stepNavigationValue(positionOptions, selectedPosition, 1);
             if (nextValue != null && nextValue !== selection?.pos) {
-              setSelectionKey("pos", nextValue);
+              setSelectionKey(store, "pos", nextValue);
             }
           },
         }}
@@ -92,19 +110,19 @@ export function ViewerAlignFrameNavigation() {
           value: selection?.channel ?? (channelOptions[0]?.value ?? 0),
           options: channelOptions,
           disabled: controlsDisabled,
-          onChange: (value) => setSelectionKey("channel", value),
+          onChange: (value) => setSelectionKey(store, "channel", value),
           previousDisabled: controlsDisabled || selectedChannelIndex <= 0,
           nextDisabled: controlsDisabled || selectedChannelIndex >= channelOptions.length - 1,
           onPrevious: () => {
             const nextValue = stepNavigationValue(channelOptions, selectedChannel, -1);
             if (nextValue != null && nextValue !== selection?.channel) {
-              setSelectionKey("channel", nextValue);
+              setSelectionKey(store, "channel", nextValue);
             }
           },
           onNext: () => {
             const nextValue = stepNavigationValue(channelOptions, selectedChannel, 1);
             if (nextValue != null && nextValue !== selection?.channel) {
-              setSelectionKey("channel", nextValue);
+              setSelectionKey(store, "channel", nextValue);
             }
           },
         }}
@@ -116,13 +134,13 @@ export function ViewerAlignFrameNavigation() {
           step: 1,
           disabled: controlsDisabled || timeValues.length <= 1,
           onChange: (nextIndex) =>
-            setTimeSliderIndex(clamp(Math.round(nextIndex), 0, timeSliderMax)),
+            setAlignTimeSliderIndex(store, clamp(Math.round(nextIndex), 0, timeSliderMax)),
           onCommit: (nextIndex) => {
             const rounded = clamp(Math.round(nextIndex), 0, timeSliderMax);
-            setTimeSliderIndex(rounded);
+            setAlignTimeSliderIndex(store, rounded);
             const nextTime = timeValues[rounded];
             if (nextTime != null && nextTime !== selection?.time) {
-              setSelectionKey("time", nextTime);
+              setSelectionKey(store, "time", nextTime);
             }
           },
           previousDisabled: controlsDisabled || timeValues.length <= 1 || timeSliderIndex <= 0,
@@ -130,18 +148,18 @@ export function ViewerAlignFrameNavigation() {
             controlsDisabled || timeValues.length <= 1 || timeSliderIndex >= timeSliderMax,
           onPrevious: () => {
             const nextIndex = Math.max(0, timeSliderIndex - 1);
-            setTimeSliderIndex(nextIndex);
+            setAlignTimeSliderIndex(store, nextIndex);
             const nextTime = timeValues[nextIndex];
             if (nextTime != null && nextTime !== selection?.time) {
-              setSelectionKey("time", nextTime);
+              setSelectionKey(store, "time", nextTime);
             }
           },
           onNext: () => {
             const nextIndex = Math.min(timeSliderMax, timeSliderIndex + 1);
-            setTimeSliderIndex(nextIndex);
+            setAlignTimeSliderIndex(store, nextIndex);
             const nextTime = timeValues[nextIndex];
             if (nextTime != null && nextTime !== selection?.time) {
-              setSelectionKey("time", nextTime);
+              setSelectionKey(store, "time", nextTime);
             }
           },
         }}
@@ -158,7 +176,7 @@ export function ViewerAlignFrameNavigation() {
             setZSliderIndex(rounded);
             const nextZ = zValues[rounded];
             if (nextZ != null && nextZ !== selection?.z && selection && scan) {
-              patchViewState({
+              patchAlignState(store, {
                 selection: coerceSelection(scan, {
                   ...selection,
                   z: nextZ,
@@ -173,7 +191,7 @@ export function ViewerAlignFrameNavigation() {
             setZSliderIndex(nextIndex);
             const nextZ = zValues[nextIndex];
             if (nextZ != null && selection && scan) {
-              patchViewState({
+              patchAlignState(store, {
                 selection: coerceSelection(scan, {
                   ...selection,
                   z: nextZ,
@@ -186,7 +204,7 @@ export function ViewerAlignFrameNavigation() {
             setZSliderIndex(nextIndex);
             const nextZ = zValues[nextIndex];
             if (nextZ != null && selection && scan) {
-              patchViewState({
+              patchAlignState(store, {
                 selection: coerceSelection(scan, {
                   ...selection,
                   z: nextZ,
@@ -198,4 +216,16 @@ export function ViewerAlignFrameNavigation() {
       />
     </SidebarSection>
   );
+}
+
+export function AlignFrameNavigation({ store }: { store?: AlignStore }) {
+  if (store) {
+    return (
+      <AlignStoreProvider store={store}>
+        <AlignFrameNavigationInner />
+      </AlignStoreProvider>
+    );
+  }
+
+  return <AlignFrameNavigationInner />;
 }

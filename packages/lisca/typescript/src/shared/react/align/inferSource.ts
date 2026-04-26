@@ -1,7 +1,7 @@
-import type { ViewerSource } from "lisca/viewer/contracts";
+import type { ViewerSource } from "lisca/shared/contracts";
 
 /** Infer TIFF folder vs ND2/CZI/JPG roots from Basic info-style path strings. */
-export function inferViewerSourceFromDataPath(path: string): ViewerSource | null {
+export function inferSourceFromDataPath(path: string): ViewerSource | null {
   const normalized = path.trim();
   if (!normalized) return null;
 

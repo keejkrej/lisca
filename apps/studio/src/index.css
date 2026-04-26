@@ -2,7 +2,6 @@
 
 @source ".";
 @source "../../../packages/lisca/typescript/src/shared";
-@source "../../../packages/lisca/typescript/src/viewer/react";
 
 :root {
   --font-heading: Inter, ui-sans-serif, system-ui, sans-serif;
