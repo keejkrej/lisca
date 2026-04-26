@@ -1,4 +1,5 @@
 import { Effect, Exit } from "effect";
+import { useQueryClient } from "@tanstack/react-query";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { ChangeEvent, KeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -19,6 +20,8 @@ import {
   applyGridPointerGesture,
   applyGridWheelGesture,
   beginGridPointerGesture,
+  coerceSelection,
+  createSelection,
   getFrameContrastDomain,
   isPrimaryMouseButton,
   makeFrameKey,
@@ -73,6 +76,14 @@ import {
   showErrorToast,
   showSuccessToast,
 } from "lisca/shared/react";
+import {
+  queryKeys,
+  useAlignStateQuery,
+  useCancelCropRoiMutation,
+  useCropRoiMutation,
+  useSaveBboxMutation,
+  useScanSourceQuery,
+} from "lisca/shared/query";
 import { findNavigationOptionIndex, stepNavigationValue, toNavigationOptions } from "lisca/shared/react";
 
 import {
@@ -91,17 +102,7 @@ import {
   toggleExcludedCells as toggleStoredExcludedCells,
   viewerStore,
 } from "./viewerStore";
-import {
-  autoExcludePreviewEffect,
-  cancelCropRoiEffect,
-  cropRoiEffect,
-  listSavedBboxPositionsEffect,
-  loadAlignStateEffect,
-  loadFrameEffect,
-  saveBboxEffect,
-  scanSourceEffect,
-  toErrorMessage,
-} from "./viewerEffects";
+import { autoExcludePreviewEffect, loadFrameEffect, toErrorMessage } from "./viewerEffects";
 import {
   applyQ20Preset,
   computeBatchCropOverallProgress,
@@ -457,6 +458,19 @@ export default function ViewerWorkspace({
     })),
   );
 
+  const selectedPos = selection?.pos ?? null;
+
+  const queryClient = useQueryClient();
+  const saveBboxMutation = useSaveBboxMutation(backend);
+  const cropRoiMutation = useCropRoiMutation(backend);
+  const cancelCropRoiMutation = useCancelCropRoiMutation(backend);
+  const scanSourceQuery = useScanSourceQuery(backend, source, {
+    enabled: Boolean(source),
+  });
+  const alignQuery = useAlignStateQuery(backend, workspacePath, selectedPos, {
+    enabled: selectedPos != null && Boolean(workspacePath),
+  });
+
   useEffect(() => {
     activeCropRef.current = activeCrop;
   }, [activeCrop]);
@@ -492,46 +506,40 @@ export default function ViewerWorkspace({
   useEffect(() => {
     if (!source) return;
 
-    const abortController = new AbortController();
-    patchViewState({
-      loading: true,
-      error: null,
-      frame: null,
-      scan: null,
-      selection: null,
-      contrastMode: "manual",
-    });
+    if (scanSourceQuery.isPending) {
+      patchViewState({
+        loading: true,
+        error: null,
+        frame: null,
+        scan: null,
+        selection: null,
+        contrastMode: "manual",
+      });
+      return;
+    }
 
-    const program = scanSourceEffect(backend, source).pipe(
-      Effect.tap(({ scan, selection }) =>
-        Effect.sync(() => {
-          patchViewState({ scan, selection });
-        }),
-      ),
-      Effect.catchAll((error) =>
-        Effect.sync(() => {
-          patchViewState({ error: toErrorMessage(error) });
-        }),
-      ),
-      Effect.ensuring(
-        Effect.sync(() => {
-          patchViewState({ loading: false });
-        }),
-      ),
-    );
+    if (scanSourceQuery.isError) {
+      patchViewState({ loading: false, error: toErrorMessage(scanSourceQuery.error) });
+      return;
+    }
 
-    void Effect.runPromiseExit(program, {
-      signal: abortController.signal,
-    }).then((exit) => {
-      if (!Exit.isFailure(exit)) return;
-      if (abortController.signal.aborted) return;
-      patchViewState({ error: toErrorMessage(exit.cause) });
-    });
-
-    return () => {
-      abortController.abort();
-    };
-  }, [backend, source]);
+    if (scanSourceQuery.data) {
+      const scanData = scanSourceQuery.data;
+      const nextSelection = coerceSelection(scanData, createSelection(scanData));
+      patchViewState({
+        scan: scanData,
+        selection: nextSelection,
+        loading: false,
+        error: null,
+      });
+    }
+  }, [
+    source,
+    scanSourceQuery.data,
+    scanSourceQuery.error,
+    scanSourceQuery.isError,
+    scanSourceQuery.isPending,
+  ]);
 
   useEffect(() => {
     return backend.onCropRoiProgress((event: CropRoiProgressEvent) => {
@@ -567,12 +575,13 @@ export default function ViewerWorkspace({
           : current
       ));
 
-      const exit = await Effect.runPromiseExit(cancelCropRoiEffect(backend, crop.requestId));
-      if (Exit.isFailure(exit)) {
-        showErrorToast(toErrorMessage(exit.cause));
+      try {
+        await cancelCropRoiMutation.mutateAsync({ requestId: crop.requestId });
+      } catch (cause) {
+        showErrorToast(toErrorMessage(cause));
       }
     },
-    [backend],
+    [cancelCropRoiMutation],
   );
 
   const contrastRequestKey =
@@ -697,8 +706,6 @@ export default function ViewerWorkspace({
   const timeSliderMax = Math.max(0, timeValues.length - 1);
   const displayedZ = zValues[zSliderIndex] ?? selection?.z ?? 0;
   const zSliderMax = Math.max(0, zValues.length - 1);
-  const selectedPos = selection?.pos ?? null;
-
   useEffect(() => {
     if (selectedPos == null) return;
 
@@ -707,24 +714,15 @@ export default function ViewerWorkspace({
       return;
     }
 
-    let cancelled = false;
-    const program = loadAlignStateEffect(backend, workspacePath, selectedPos).pipe(
-      Effect.tap(({ alignState }) =>
-        Effect.sync(() => {
-          if (cancelled) return;
-          applySavedAlignState(selectedPos, alignState);
-        })),
-    );
+    if (alignQuery.isError) {
+      showErrorToast(toErrorMessage(alignQuery.error));
+      return;
+    }
 
-    void Effect.runPromiseExit(program).then((exit) => {
-      if (!Exit.isFailure(exit) || cancelled) return;
-      showErrorToast(toErrorMessage(exit.cause));
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [backend, selectedPos, workspacePath]);
+    if (alignQuery.isSuccess) {
+      applySavedAlignState(selectedPos, alignQuery.data);
+    }
+  }, [alignQuery.data, alignQuery.error, alignQuery.isError, alignQuery.isSuccess, selectedPos, workspacePath]);
 
   useEffect(() => {
     setTimeSliderIndex(selectedTimeIndex);
@@ -889,8 +887,8 @@ export default function ViewerWorkspace({
     if (!workspacePath || !source || !selection || !frame) return;
 
     setSaving(true);
-    const exit = await Effect.runPromiseExit(
-      saveBboxEffect(backend, {
+    try {
+      const response = await saveBboxMutation.mutateAsync({
         workspacePath,
         source,
         pos: selection.pos,
@@ -899,23 +897,18 @@ export default function ViewerWorkspace({
           grid,
           excludedCells: currentPositionExcludedCells,
         },
-      }),
-    );
-
-    if (Exit.isSuccess(exit)) {
-      const response = exit.value;
+      });
       if (!response.ok) {
         showErrorToast(response.error ?? "Failed to save alignment outputs");
       } else {
         showSuccessToast(`Saved alignment for Pos${selection.pos}`);
       }
+    } catch (cause) {
+      showErrorToast(toErrorMessage(cause));
+    } finally {
       setSaving(false);
-      return;
     }
-
-    showErrorToast(toErrorMessage(exit.cause));
-    setSaving(false);
-  }, [backend, currentPositionExcludedCells, frame, grid, selection, source, workspacePath]);
+  }, [currentPositionExcludedCells, frame, grid, saveBboxMutation, selection, source, workspacePath]);
 
   const handleExcludeEdgeBboxes = useCallback(() => {
     if (!frame || !selection) return;
@@ -991,17 +984,14 @@ export default function ViewerWorkspace({
       message: `Preparing ROI crop for Pos${pos}...`,
     });
 
-    const exit = await Effect.runPromiseExit(
-      cropRoiEffect(backend, {
+    try {
+      const response = await cropRoiMutation.mutateAsync({
         workspacePath,
         source,
         pos,
+        format: "tiff",
         requestId,
-      }),
-    );
-
-    if (Exit.isSuccess(exit)) {
-      const response = exit.value;
+      });
       if (response.status === "success") {
         setCropProgressValue((current) => ({
           ...current,
@@ -1014,13 +1004,11 @@ export default function ViewerWorkspace({
       } else {
         showErrorToast(response.error ?? "Failed to crop ROI TIFFs");
       }
-      await finishCropSession();
-      return;
+    } catch (cause) {
+      showErrorToast(toErrorMessage(cause));
     }
-
-    showErrorToast(toErrorMessage(exit.cause));
     await finishCropSession();
-  }, [backend, finishCropSession, source, workspacePath]);
+  }, [cropRoiMutation, finishCropSession, source, workspacePath]);
 
   const performBatchCrop = useCallback(async (positions: number[], skippedExistingCount = 0) => {
     if (!workspacePath || !source || positions.length === 0) return;
@@ -1084,23 +1072,22 @@ export default function ViewerWorkspace({
         message: `Preparing ROI crop for Pos${pos}...`,
       });
 
-      const exit = await Effect.runPromiseExit(
-        cropRoiEffect(backend, {
+      let response;
+      try {
+        response = await cropRoiMutation.mutateAsync({
           workspacePath,
           source,
           pos,
+          format: "tiff",
           requestId,
-        }),
-      );
-
-      if (Exit.isFailure(exit)) {
+        });
+      } catch (cause) {
         return {
           status: "error" as const,
-          error: toErrorMessage(exit.cause),
+          error: toErrorMessage(cause),
         };
       }
 
-      const response = exit.value;
       if (response.status === "success") {
         setCropProgressValue((current) => ({
           ...current,
@@ -1138,7 +1125,7 @@ export default function ViewerWorkspace({
 
     showSuccessToast(`Batch cropped ROI TIFFs for ${result.succeeded} positions${skippedSummary}`);
     await finishCropSession();
-  }, [backend, finishCropSession, source, workspacePath]);
+  }, [cropRoiMutation, finishCropSession, source, workspacePath]);
 
   const handleCrop = useCallback(async () => {
     if (!workspacePath || !source || !selection) return;
@@ -1159,13 +1146,16 @@ export default function ViewerWorkspace({
   const handleBatchCrop = useCallback(async () => {
     if (!workspacePath || !source || cropping) return;
 
-    const exit = await Effect.runPromiseExit(listSavedBboxPositionsEffect(backend, workspacePath));
-    if (Exit.isFailure(exit)) {
-      showErrorToast(toErrorMessage(exit.cause));
+    let positions: number[];
+    try {
+      positions = await queryClient.fetchQuery({
+        queryKey: queryKeys.savedBboxPositions(workspacePath),
+        queryFn: () => backend.listSavedBboxPositions(workspacePath),
+      });
+    } catch (cause) {
+      showErrorToast(toErrorMessage(cause));
       return;
     }
-
-    const positions = exit.value.positions;
     if (positions.length === 0) {
       showErrorToast("No saved bbox CSVs found in the workspace");
       return;
@@ -1188,7 +1178,7 @@ export default function ViewerWorkspace({
     }
 
     await performBatchCrop(positions);
-  }, [backend, cropping, onCheckRoiExists, performBatchCrop, source, workspacePath]);
+  }, [backend, cropping, onCheckRoiExists, performBatchCrop, queryClient, source, workspacePath]);
 
   const handleOverwriteCrop = useCallback(() => {
     if (!cropConfirm) return;

@@ -7,6 +7,10 @@ import type {
   ViewerDataPort,
 } from "lisca/shared/contracts";
 import { toErrorMessage } from "lisca/shared/react";
+import {
+  useSaveAnnotationLabelsMutation,
+  useSaveRoiFrameAnnotationMutation,
+} from "lisca/shared/query";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -56,6 +60,9 @@ export default function RoiAnnotationSession({
   frameLoadError = null,
   children,
 }: RoiAnnotationSessionProps) {
+  const saveRoiMutation = useSaveRoiFrameAnnotationMutation(backend);
+  const saveLabelsMutation = useSaveAnnotationLabelsMutation(backend);
+
   const [initialValue, setInitialValue] = useState<RoiAnnotationValue>({
     classificationLabelId: null,
     mask: createEmptyMask(frame.width, frame.height),
@@ -138,11 +145,18 @@ export default function RoiAnnotationSession({
             ? await encodeMaskToBase64Png(value.mask, frame.width, frame.height)
             : null,
         };
-        const saved = await backend.saveRoiFrameAnnotation(workspacePath, request, payload);
+        const saved = await saveRoiMutation.mutateAsync({
+          workspacePath,
+          request,
+          annotation: payload,
+        });
         onSaved(saved);
       }}
       onLabelsChange={async (nextLabels) => {
-        const savedLabels = await backend.saveAnnotationLabels(workspacePath, nextLabels);
+        const savedLabels = await saveLabelsMutation.mutateAsync({
+          workspacePath,
+          labels: nextLabels,
+        });
         onLabelsChange(savedLabels);
         return savedLabels;
       }}

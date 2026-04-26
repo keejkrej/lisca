@@ -7,6 +7,10 @@ import type {
   ViewerSource,
 } from "lisca/shared/contracts";
 import { toErrorMessage } from "lisca/shared/react";
+import {
+  useSaveAnnotationLabelsMutation,
+  useSaveRawFrameAnnotationMutation,
+} from "lisca/shared/query";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -53,6 +57,9 @@ export default function RawAnnotationSession({
   frameLoadError = null,
   children,
 }: RawAnnotationSessionProps) {
+  const saveRawMutation = useSaveRawFrameAnnotationMutation(backend);
+  const saveLabelsMutation = useSaveAnnotationLabelsMutation(backend);
+
   const [initialValue, setInitialValue] = useState<RoiAnnotationValue>({
     classificationLabelId: null,
     mask: createEmptyMask(frame.width, frame.height),
@@ -135,11 +142,19 @@ export default function RawAnnotationSession({
             ? await encodeMaskToBase64Png(value.mask, frame.width, frame.height)
             : null,
         };
-        const saved = await backend.saveRawFrameAnnotation(workspacePath, source, request, payload);
+        const saved = await saveRawMutation.mutateAsync({
+          workspacePath,
+          source,
+          request,
+          annotation: payload,
+        });
         onSaved(saved);
       }}
       onLabelsChange={async (nextLabels) => {
-        const savedLabels = await backend.saveAnnotationLabels(workspacePath, nextLabels);
+        const savedLabels = await saveLabelsMutation.mutateAsync({
+          workspacePath,
+          labels: nextLabels,
+        });
         onLabelsChange(savedLabels);
         return savedLabels;
       }}

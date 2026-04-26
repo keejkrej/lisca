@@ -1,4 +1,5 @@
 import { Effect, Exit } from "effect";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
@@ -20,19 +21,24 @@ import { clamp, makeSourceKey } from "lisca/shared/core";
 import {
   AnchoredToastProvider,
   findNavigationOptionIndex,
-  loadAnnotationLabelsEffect,
   loadRawFrameEffect,
   loadRoiFrameEffect,
   NavigationControls,
   SelectStepperField,
-  scanRoiWorkspaceEffect,
-  scanSourceEffect,
   showErrorToast,
   SidebarSection,
   ToastProvider,
   toErrorMessage,
   toNavigationOptions,
 } from "lisca/shared/react";
+import {
+  queryKeys,
+  useAnnotationLabelsQuery,
+  useRawAnnotationSourceQuery,
+  useSaveAnnotationLabelsMutation,
+  useScanRoiWorkspaceQuery,
+  useScanSourceQuery,
+} from "lisca/shared/query";
 import { resetRoiState, roiStore, setRoiScan, setRoiSelectionKey, setSelectedRoi, setWorkspacePath, workspaceStore } from "lisca/shared/state";
 
 import {
@@ -79,6 +85,8 @@ interface AnnotatorAppProps {
 }
 
 export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorAppProps) {
+  const queryClient = useQueryClient();
+  const saveAnnotationLabelsMutation = useSaveAnnotationLabelsMutation(backend);
   const workspacePath = useStore(workspaceStore, (state) => state.workspacePath);
   const annotationMode = useAnnotationModeStore((state) => state.mode);
   const setAnnotationMode = useAnnotationModeStore((state) => state.setMode);
@@ -107,15 +115,18 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
     })),
   );
 
-  const [annotationLabelsState, setAnnotationLabelsState] = useState<{
-    labels: AnnotationLabel[] | null;
-    loading: boolean;
-    error: string | null;
-  }>({
-    labels: null,
-    loading: false,
-    error: null,
+  const roiWorkspaceQuery = useScanRoiWorkspaceQuery(backend, workspacePath);
+  const labelsQuery = useAnnotationLabelsQuery(backend, workspacePath);
+  const rawBoundQuery = useRawAnnotationSourceQuery(backend, workspacePath);
+  const rawScanQuery = useScanSourceQuery(backend, rawState.source, {
+    enabled: dataMode === "raw" && Boolean(workspacePath && rawState.source),
   });
+
+  const annotationLabels = labelsQuery.data ?? null;
+  const annotationLabelsLoading = labelsQuery.isPending;
+  const annotationLabelsError = labelsQuery.error ? toErrorMessage(labelsQuery.error) : null;
+
+  const lastBoundSyncKey = useRef<string | null>(null);
 
   const [editorFrame, setEditorFrame] = useState<FrameResult | null>(null);
   const [editorFrameLoading, setEditorFrameLoading] = useState(false);
@@ -145,119 +156,109 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
   }, [activeDataError]);
 
   useEffect(() => {
-    if (!annotationLabelsState.error) {
+    if (!annotationLabelsError) {
       lastLabelsErrorToastRef.current = null;
       return;
     }
-    if (lastLabelsErrorToastRef.current === annotationLabelsState.error) return;
-    lastLabelsErrorToastRef.current = annotationLabelsState.error;
-    showErrorToast(annotationLabelsState.error);
-  }, [annotationLabelsState.error]);
+    if (lastLabelsErrorToastRef.current === annotationLabelsError) return;
+    lastLabelsErrorToastRef.current = annotationLabelsError;
+    showErrorToast(annotationLabelsError);
+  }, [annotationLabelsError]);
 
   useEffect(() => {
     if (!workspacePath) {
       resetRoiState();
       resetRawState();
-      setAnnotationLabelsState({ labels: null, loading: false, error: null });
+      lastBoundSyncKey.current = null;
       setEditorFrame(null);
       setEditorFrameLoading(false);
       setEditorFrameError(null);
       return;
     }
 
-    const abortController = new AbortController();
-    roiStore.setState((state) => ({ ...state, loading: true, error: null }));
+    void queryClient.prefetchQuery({
+      queryKey: queryKeys.scanRoiWorkspace(workspacePath),
+      queryFn: () => backend.scanRoiWorkspace(workspacePath),
+    });
+    void queryClient.prefetchQuery({
+      queryKey: queryKeys.annotationLabels(workspacePath),
+      queryFn: () => backend.loadAnnotationLabels(workspacePath),
+    });
+  }, [backend, queryClient, workspacePath]);
 
-    const program = scanRoiWorkspaceEffect(backend, workspacePath).pipe(
-      Effect.tap(({ scan: nextScan }) =>
-        Effect.sync(() => {
-          setRoiScan(nextScan);
-        }),
-      ),
-      Effect.catchAll((scanError) =>
-        Effect.sync(() => {
-          roiStore.setState((state) => ({
-            ...state,
-            scan: null,
-            selection: null,
-            pageIndex: 0,
-            selectedRoi: null,
-            error: toErrorMessage(scanError),
-          }));
-        }),
-      ),
-      Effect.ensuring(
-        Effect.sync(() => {
-          roiStore.setState((state) => ({ ...state, loading: false }));
-        }),
-      ),
-    );
+  useEffect(() => {
+    if (!workspacePath) {
+      return;
+    }
 
-    void Effect.runPromiseExit(program, { signal: abortController.signal }).then((exit) => {
-      if (!Exit.isFailure(exit) || abortController.signal.aborted) return;
+    if (roiWorkspaceQuery.isPending) {
+      roiStore.setState((state) => ({ ...state, loading: true, error: null }));
+      return;
+    }
+
+    if (roiWorkspaceQuery.isError) {
       roiStore.setState((state) => ({
         ...state,
+        loading: false,
         scan: null,
         selection: null,
         pageIndex: 0,
         selectedRoi: null,
-        loading: false,
-        error: toErrorMessage(exit.cause),
+        error: toErrorMessage(roiWorkspaceQuery.error),
       }));
-    });
+      return;
+    }
 
-    return () => abortController.abort();
-  }, [backend, workspacePath]);
+    if (roiWorkspaceQuery.data) {
+      setRoiScan(roiWorkspaceQuery.data);
+      roiStore.setState((state) => ({ ...state, loading: false, error: null }));
+    }
+  }, [
+    workspacePath,
+    roiWorkspaceQuery.data,
+    roiWorkspaceQuery.error,
+    roiWorkspaceQuery.isError,
+    roiWorkspaceQuery.isPending,
+  ]);
 
   useEffect(() => {
     if (!workspacePath) return;
 
-    const abortController = new AbortController();
-    setAnnotationLabelsState({
-      labels: null,
-      loading: true,
-      error: null,
-    });
+    if (rawBoundQuery.isPending) {
+      return;
+    }
 
-    const program = loadAnnotationLabelsEffect(backend, workspacePath);
-    void Effect.runPromiseExit(program, { signal: abortController.signal }).then((exit) => {
-      if (abortController.signal.aborted) return;
-      if (Exit.isSuccess(exit)) {
-        setAnnotationLabelsState({ labels: exit.value.labels, loading: false, error: null });
-        return;
-      }
-      setAnnotationLabelsState({
-        labels: null,
+    if (rawBoundQuery.isError) {
+      setBoundRawSource(null);
+      patchRawState({ error: toErrorMessage(rawBoundQuery.error) });
+      return;
+    }
+
+    const src = rawBoundQuery.data ?? null;
+    const key = `${workspacePath}:${src ? `${src.kind}:${src.path}` : ""}`;
+    if (lastBoundSyncKey.current === key) {
+      return;
+    }
+    lastBoundSyncKey.current = key;
+    setBoundRawSource(src);
+    setRawSource(src);
+  }, [
+    workspacePath,
+    rawBoundQuery.data,
+    rawBoundQuery.error,
+    rawBoundQuery.isError,
+    rawBoundQuery.isPending,
+  ]);
+
+  useEffect(() => {
+    if (dataMode !== "raw") {
+      patchRawState({
+        scan: null,
+        selection: null,
         loading: false,
-        error: toErrorMessage(exit.cause),
       });
-    });
-
-    return () => abortController.abort();
-  }, [backend, workspacePath]);
-
-  useEffect(() => {
-    if (!workspacePath) return;
-
-    const abortController = new AbortController();
-    void backend
-      .loadRawAnnotationSource(workspacePath)
-      .then((source) => {
-        if (abortController.signal.aborted) return;
-        setBoundRawSource(source);
-        setRawSource(source);
-      })
-      .catch((loadError) => {
-        if (abortController.signal.aborted) return;
-        setBoundRawSource(null);
-        patchRawState({ error: toErrorMessage(loadError) });
-      });
-
-    return () => abortController.abort();
-  }, [backend, workspacePath]);
-
-  useEffect(() => {
-    if (dataMode !== "raw") return;
+      return;
+    }
     if (!workspacePath || !rawState.source) {
       patchRawState({
         scan: null,
@@ -267,44 +268,34 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
       return;
     }
 
-    const abortController = new AbortController();
-    patchRawState({ loading: true, error: null });
+    if (rawScanQuery.isPending) {
+      patchRawState({ loading: true, error: null });
+      return;
+    }
 
-    const program = scanSourceEffect(backend, rawState.source).pipe(
-      Effect.tap(({ scan: nextScan, selection: nextSelection }) =>
-        Effect.sync(() => {
-          setRawScan(nextScan);
-          rawStore.setState((state) => ({ ...state, selection: nextSelection }));
-        }),
-      ),
-      Effect.catchAll((scanError) =>
-        Effect.sync(() => {
-          patchRawState({
-            scan: null,
-            selection: null,
-            error: toErrorMessage(scanError),
-          });
-        }),
-      ),
-      Effect.ensuring(
-        Effect.sync(() => {
-          patchRawState({ loading: false });
-        }),
-      ),
-    );
-
-    void Effect.runPromiseExit(program, { signal: abortController.signal }).then((exit) => {
-      if (!Exit.isFailure(exit) || abortController.signal.aborted) return;
+    if (rawScanQuery.isError) {
       patchRawState({
         scan: null,
         selection: null,
         loading: false,
-        error: toErrorMessage(exit.cause),
+        error: toErrorMessage(rawScanQuery.error),
       });
-    });
+      return;
+    }
 
-    return () => abortController.abort();
-  }, [backend, dataMode, rawState.source, workspacePath]);
+    if (rawScanQuery.data) {
+      setRawScan(rawScanQuery.data);
+      patchRawState({ loading: false, error: null });
+    }
+  }, [
+    dataMode,
+    rawScanQuery.data,
+    rawScanQuery.error,
+    rawScanQuery.isError,
+    rawScanQuery.isPending,
+    rawState.source,
+    workspacePath,
+  ]);
 
   const roiPosition = useMemo(
     () => currentPositionScan(scan, selection?.pos ?? null),
@@ -524,7 +515,7 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
 
   const shellProviderLoading =
     Boolean(workspacePath) &&
-    (annotationLabelsState.loading || (dataMode === "roi" ? loading : rawState.loading));
+    (annotationLabelsLoading || (dataMode === "roi" ? loading : rawState.loading));
 
   const shellInitialMask = useMemo(() => createEmptyMask(1, 1), []);
   const annotationFrameReady = Boolean(editorFrame && !editorFrameLoading && !editorFrameError);
@@ -833,11 +824,11 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
                   frame={displayFrame}
                   annotationLoadEnabled={annotationFrameReady}
                   frameLoadError={editorFrameError}
-                  labels={annotationLabelsState.labels}
-                  labelsLoading={annotationLabelsState.loading}
-                  labelsError={annotationLabelsState.error}
+                  labels={annotationLabels}
+                  labelsLoading={annotationLabelsLoading}
+                  labelsError={annotationLabelsError}
                   onClose={handleCloseSession}
-                  onLabelsChange={(labels) => setAnnotationLabelsState({ labels, loading: false, error: null })}
+                  onLabelsChange={() => undefined}
                   onSaved={(_annotation: RoiFrameAnnotation) => {}}
                 >
                   <>
@@ -868,11 +859,11 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
                   frame={displayFrame}
                   annotationLoadEnabled={annotationFrameReady}
                   frameLoadError={editorFrameError}
-                  labels={annotationLabelsState.labels}
-                  labelsLoading={annotationLabelsState.loading}
-                  labelsError={annotationLabelsState.error}
+                  labels={annotationLabels}
+                  labelsLoading={annotationLabelsLoading}
+                  labelsError={annotationLabelsError}
                   onClose={handleCloseSession}
-                  onLabelsChange={(labels) => setAnnotationLabelsState({ labels, loading: false, error: null })}
+                  onLabelsChange={() => undefined}
                   onSaved={(_annotation: RawFrameAnnotation) => {}}
                 >
                   <>
@@ -901,21 +892,23 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
               ) : (
                 <RoiAnnotationProvider
                   frame={SHELL_ANNOTATION_FRAME}
-                  labels={annotationLabelsState.labels}
+                  labels={annotationLabels}
                   initialValue={{ classificationLabelId: null, mask: shellInitialMask }}
                   resetKey={`annotator-shell:${dataMode}`}
                   title={dataMode === "roi" ? "ROI Annotation" : "Raw Annotation"}
                   subtitle={annotationRailFallbackSubtitle}
                   loading={shellProviderLoading}
-                  error={annotationLabelsState.error}
+                  error={annotationLabelsError}
                   annotationInteractive={false}
                   onClose={handleCloseSession}
                   onSave={async () => {}}
                   onLabelsChange={
                     workspacePath
                       ? async (labels) => {
-                          const saved = await backend.saveAnnotationLabels(workspacePath, labels);
-                          setAnnotationLabelsState({ labels: saved, loading: false, error: null });
+                          const saved = await saveAnnotationLabelsMutation.mutateAsync({
+                            workspacePath,
+                            labels,
+                          });
                           return saved;
                         }
                       : undefined

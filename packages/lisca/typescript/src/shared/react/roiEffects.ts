@@ -1,7 +1,6 @@
 import { Effect } from "effect";
 
 import type {
-  AnnotationLabel,
   ContrastWindow,
   FrameResult,
   RawFrameRequest,
@@ -10,7 +9,7 @@ import type {
   ViewerSelection,
   ViewerSource,
 } from "lisca/shared/contracts";
-import { clamp, coerceSelection, createSelection, getFrameContrastDomain } from "lisca/shared/core";
+import { clamp, getFrameContrastDomain } from "lisca/shared/core";
 
 import { toErrorMessage } from "./errors";
 
@@ -25,39 +24,6 @@ function contrastWindowForFrame(
 
 function toError(error: unknown, fallback: string): Error {
   return new Error(toErrorMessage(error, fallback));
-}
-
-export function scanRoiWorkspaceEffect(backend: ViewerDataPort, workspacePath: string) {
-  return Effect.tryPromise({
-    try: () => backend.scanRoiWorkspace(workspacePath),
-    catch: (error) => toError(error, "Failed to scan ROI workspace"),
-  }).pipe(
-    Effect.map((scan) => ({ scan })),
-    Effect.withSpan("shared.scan-roi-workspace"),
-  );
-}
-
-export function scanSourceEffect(backend: ViewerDataPort, source: ViewerSource) {
-  return Effect.tryPromise({
-    try: () => backend.scanSource(source),
-    catch: (error) => toError(error, "Failed to scan source"),
-  }).pipe(
-    Effect.map((scan) => ({
-      scan,
-      selection: coerceSelection(scan, createSelection(scan)),
-    })),
-    Effect.withSpan("shared.scan-source"),
-  );
-}
-
-export function loadAnnotationLabelsEffect(backend: ViewerDataPort, workspacePath: string) {
-  return Effect.tryPromise({
-    try: () => backend.loadAnnotationLabels(workspacePath),
-    catch: (error) => toError(error, "Failed to load annotation labels"),
-  }).pipe(
-    Effect.map((labels: AnnotationLabel[]) => ({ labels })),
-    Effect.withSpan("shared.load-annotation-labels"),
-  );
 }
 
 export function loadRoiFrameEffect(

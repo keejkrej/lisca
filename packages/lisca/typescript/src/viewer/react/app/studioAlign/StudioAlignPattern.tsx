@@ -1,9 +1,10 @@
 import { Effect, Exit } from "effect";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 
-import type { SaveBboxResponse, ViewerDataPort } from "lisca/viewer/contracts";
+import type { ViewerDataPort } from "lisca/viewer/contracts";
 import {
   applyGridPointerGesture,
   applyGridWheelGesture,
@@ -16,6 +17,12 @@ import {
   type GridState,
 } from "lisca/viewer/core";
 import { showErrorToast, showSuccessToast } from "lisca/shared/react";
+import {
+  queryKeys,
+  useAlignStateQuery,
+  useSaveBboxMutation,
+  useScanSourceQuery,
+} from "lisca/shared/query";
 
 import { ViewerCanvasSurface } from "../../alignment";
 import type { ViewerCanvasPointerEvent, ViewerCanvasWheelEvent } from "../../alignment/types";
@@ -30,14 +37,7 @@ import {
   setWorkspacePath,
   viewerStore,
 } from "../viewerStore";
-import {
-  autoExcludePreviewEffect,
-  loadAlignStateEffect,
-  loadFrameEffect,
-  saveBboxEffect,
-  scanSourceEffect,
-  toErrorMessage,
-} from "../viewerEffects";
+import { loadFrameEffect, toErrorMessage } from "../viewerEffects";
 import { advanceStudioAlignSelection, studioInitialViewerSelection } from "./advanceSelection";
 import { inferViewerSourceFromDataPath } from "./inferSource";
 
@@ -95,8 +95,19 @@ export default function StudioAlignPattern({
     })),
   );
 
+  const selectedPos = selection?.pos ?? null;
+
   const workspaceTrim = saveTo.trim();
   const sourceInferred = useMemo(() => inferViewerSourceFromDataPath(dataPath), [dataPath]);
+
+  const queryClient = useQueryClient();
+  const saveBboxMutation = useSaveBboxMutation(backend as ViewerDataPort);
+  const scanSourceQuery = useScanSourceQuery(backend as ViewerDataPort, sourceInferred, {
+    enabled: Boolean(backend && workspaceTrim && sourceInferred),
+  });
+  const alignQuery = useAlignStateQuery(backend as ViewerDataPort, workspacePath, selectedPos, {
+    enabled: Boolean(backend && workspacePath && selectedPos != null),
+  });
 
   useEffect(() => {
     if (!backend || !workspaceTrim || !sourceInferred) return;
@@ -104,53 +115,40 @@ export default function StudioAlignPattern({
     setWorkspacePath(workspaceTrim);
     setSource(sourceInferred);
 
-    const abortController = new AbortController();
-    patchViewState({
-      loading: true,
-      error: null,
-      frame: null,
-      scan: null,
-      selection: null,
-      contrastMode: "manual",
-    });
+    if (scanSourceQuery.isPending) {
+      patchViewState({
+        loading: true,
+        error: null,
+        frame: null,
+        scan: null,
+        selection: null,
+        contrastMode: "manual",
+      });
+      return;
+    }
 
-    const program = scanSourceEffect(backend, sourceInferred).pipe(
-      Effect.map(({ scan: scanned }) => ({
-        scan: scanned,
-        selection: coerceSelection(scanned, studioInitialViewerSelection(scanned)),
-      })),
-      Effect.tap(({ scan: scanned, selection: sel }) =>
-        Effect.sync(() => {
-          patchViewState({ scan: scanned, selection: sel });
-          setGrid((g) => ({ ...g, enabled: true }));
-          const ti = scanned.times.indexOf(sel.time);
-          setTimeSliderIndex(ti >= 0 ? ti : 0);
-        }),
-      ),
-      Effect.catchAll((err) =>
-        Effect.sync(() => {
-          patchViewState({ error: toErrorMessage(err) });
-        }),
-      ),
-      Effect.ensuring(
-        Effect.sync(() => {
-          patchViewState({ loading: false });
-        }),
-      ),
-    );
+    if (scanSourceQuery.isError) {
+      patchViewState({ loading: false, error: toErrorMessage(scanSourceQuery.error) });
+      return;
+    }
 
-    void Effect.runPromiseExit(program, {
-      signal: abortController.signal,
-    }).then((exit) => {
-      if (!Exit.isFailure(exit)) return;
-      if (abortController.signal.aborted) return;
-      patchViewState({ error: toErrorMessage(exit.cause) });
-    });
-
-    return () => {
-      abortController.abort();
-    };
-  }, [backend, workspaceTrim, sourceInferred]);
+    if (scanSourceQuery.data) {
+      const scanned = scanSourceQuery.data;
+      const sel = coerceSelection(scanned, studioInitialViewerSelection(scanned));
+      patchViewState({ scan: scanned, selection: sel, loading: false, error: null });
+      setGrid((g) => ({ ...g, enabled: true }));
+      const ti = scanned.times.indexOf(sel.time);
+      setTimeSliderIndex(ti >= 0 ? ti : 0);
+    }
+  }, [
+    backend,
+    workspaceTrim,
+    sourceInferred,
+    scanSourceQuery.data,
+    scanSourceQuery.error,
+    scanSourceQuery.isError,
+    scanSourceQuery.isPending,
+  ]);
 
   const reloadToken = useStore(viewerStore, (s) => s.contrastReloadToken);
   const contrastKey =
@@ -208,33 +206,21 @@ export default function StudioAlignPattern({
     };
   }, [backend, contrastKey, contrastMax, contrastMin, contrastMode, selection, source]);
 
-  const selectedPos = selection?.pos ?? null;
-
   useEffect(() => {
     if (selectedPos == null || !workspacePath || !backend) {
       return;
     }
 
-    let cancelled = false;
-    const program = loadAlignStateEffect(backend, workspacePath, selectedPos).pipe(
-      Effect.tap(({ alignState }) =>
-        Effect.sync(() => {
-          if (cancelled) return;
-          applySavedAlignState(selectedPos, alignState);
-          setGrid((g) => ({ ...g, enabled: true }));
-        }),
-      ),
-    );
+    if (alignQuery.isError) {
+      showErrorToast(toErrorMessage(alignQuery.error));
+      return;
+    }
 
-    void Effect.runPromiseExit(program).then((exit) => {
-      if (!Exit.isFailure(exit) || cancelled) return;
-      showErrorToast(toErrorMessage(exit.cause));
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [backend, selectedPos, workspacePath]);
+    if (alignQuery.isSuccess) {
+      applySavedAlignState(selectedPos, alignQuery.data);
+      setGrid((g) => ({ ...g, enabled: true }));
+    }
+  }, [alignQuery.data, alignQuery.error, alignQuery.isError, alignQuery.isSuccess, backend, selectedPos, workspacePath]);
 
   useEffect(() => {
     if (!error) return;
@@ -341,35 +327,39 @@ export default function StudioAlignPattern({
       (cell) => !excludedKeys.has(cellKey(cell.i, cell.j)),
     );
 
-    const previewExit = await Effect.runPromiseExit(
-      autoExcludePreviewEffect(backend, {
-        source: src,
-        selection: sel,
-        cells: eligibleCells.map((c) => ({
-          i: c.i,
-          j: c.j,
-          x: c.x,
-          y: c.y,
-          w: c.w,
-          h: c.h,
-        })),
-      }),
-    );
+    const previewRequest = {
+      source: src,
+      selection: sel,
+      cells: eligibleCells.map((c) => ({
+        i: c.i,
+        j: c.j,
+        x: c.x,
+        y: c.y,
+        w: c.w,
+        h: c.h,
+      })),
+    };
 
-    if (Exit.isSuccess(previewExit)) {
-      const { preview } = previewExit.value;
-      const threshold = preview.threshold;
-      const cellsToExclude =
-        preview.cellScores
-          ?.filter((cell) => cell.score <= threshold)
-          .map((cell) => ({ i: cell.i, j: cell.j })) ?? [];
-      if (cellsToExclude.length > 0) {
-        excludeCells(sel.pos, cellsToExclude);
-      }
-    } else {
-      showErrorToast(toErrorMessage(previewExit.cause));
+    let preview;
+    try {
+      preview = await queryClient.fetchQuery({
+        queryKey: queryKeys.autoExcludePreview(previewRequest),
+        queryFn: () => backend.autoExcludePreview(previewRequest),
+        staleTime: 0,
+      });
+    } catch (cause) {
+      showErrorToast(toErrorMessage(cause));
       setSaving(false);
       return;
+    }
+
+    const threshold = preview.threshold;
+    const cellsToExclude =
+      preview.cellScores
+        ?.filter((cell) => cell.score <= threshold)
+        .map((cell) => ({ i: cell.i, j: cell.j })) ?? [];
+    if (cellsToExclude.length > 0) {
+      excludeCells(sel.pos, cellsToExclude);
     }
 
     const {
@@ -387,8 +377,9 @@ export default function StudioAlignPattern({
 
     const excludedFinal = exMap[selAfter.pos] ?? [];
 
-    const saveExit = await Effect.runPromiseExit(
-      saveBboxEffect(backend, {
+    let response;
+    try {
+      response = await saveBboxMutation.mutateAsync({
         workspacePath: ws,
         source: srcAfter,
         pos: selAfter.pos,
@@ -397,17 +388,15 @@ export default function StudioAlignPattern({
           grid: gridAfter,
           excludedCells: excludedFinal,
         },
-      }),
-    );
-
-    setSaving(false);
-
-    if (Exit.isFailure(saveExit)) {
-      showErrorToast(toErrorMessage(saveExit.cause));
+      });
+    } catch (cause) {
+      showErrorToast(toErrorMessage(cause));
+      setSaving(false);
       return;
     }
 
-    const response = saveExit.value as SaveBboxResponse;
+    setSaving(false);
+
     if (!response.ok) {
       showErrorToast(response.error ?? "Failed to save alignment outputs");
       return;
@@ -430,7 +419,7 @@ export default function StudioAlignPattern({
     });
     const nt = scanFresh.times.indexOf(nextSel.time);
     setTimeSliderIndex(nt >= 0 ? nt : 0);
-  }, [backend]);
+  }, [backend, queryClient, saveBboxMutation]);
 
   useEffect(() => {
     onRegisterCommit(commitAndAdvance);

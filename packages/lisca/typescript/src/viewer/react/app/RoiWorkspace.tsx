@@ -1,5 +1,6 @@
 import { Effect, Exit } from "effect";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useScanRoiWorkspaceQuery } from "lisca/shared/query";
 import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 
@@ -27,7 +28,6 @@ import {
   findNavigationOptionIndex,
   NavigationControls,
   loadRoiFrameEffect,
-  scanRoiWorkspaceEffect,
   showErrorToast,
   SidebarField,
   SidebarSection,
@@ -271,6 +271,8 @@ export default function RoiWorkspace({
     })),
   );
 
+  const roiWorkspaceQuery = useScanRoiWorkspaceQuery(backend, workspacePath);
+
   useEffect(() => {
     if (!error) {
       lastWorkspaceErrorToastRef.current = null;
@@ -288,55 +290,37 @@ export default function RoiWorkspace({
       return;
     }
 
-    const abortController = new AbortController();
-    patchRoiState({
-      loading: true,
-      error: null,
-    });
+    if (roiWorkspaceQuery.isPending) {
+      patchRoiState({
+        loading: true,
+        error: null,
+      });
+      return;
+    }
 
-    const program = scanRoiWorkspaceEffect(backend, workspacePath).pipe(
-      Effect.tap(({ scan: nextScan }) =>
-        Effect.sync(() => {
-          setRoiScan(nextScan);
-        }),
-      ),
-      Effect.catchAll((scanError) =>
-        Effect.sync(() => {
-          patchRoiState({
-            scan: null,
-            selection: null,
-            pageIndex: 0,
-            selectedRoi: null,
-            error: toErrorMessage(scanError),
-          });
-        }),
-      ),
-      Effect.ensuring(
-        Effect.sync(() => {
-          patchRoiState({ loading: false });
-        }),
-      ),
-    );
-
-    void Effect.runPromiseExit(program, {
-      signal: abortController.signal,
-    }).then((exit) => {
-      if (!Exit.isFailure(exit)) return;
-      if (abortController.signal.aborted) return;
+    if (roiWorkspaceQuery.isError) {
       patchRoiState({
         scan: null,
         selection: null,
         pageIndex: 0,
         selectedRoi: null,
         loading: false,
-        error: toErrorMessage(exit.cause),
+        error: toErrorMessage(roiWorkspaceQuery.error),
       });
-    });
+      return;
+    }
 
-    return () => {
-      abortController.abort();
-    };
-  }, [backend, workspacePath]);
+    if (roiWorkspaceQuery.data) {
+      setRoiScan(roiWorkspaceQuery.data);
+      patchRoiState({ loading: false, error: null });
+    }
+  }, [
+    workspacePath,
+    roiWorkspaceQuery.data,
+    roiWorkspaceQuery.error,
+    roiWorkspaceQuery.isError,
+    roiWorkspaceQuery.isPending,
+  ]);
 
   const position = useMemo(
     () => currentPositionScan(scan, selection?.pos ?? null),
