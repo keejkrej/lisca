@@ -27,18 +27,16 @@ import {
 import { ViewerCanvasSurface } from "../../alignment";
 import type { ViewerCanvasPointerEvent, ViewerCanvasWheelEvent } from "../../alignment/types";
 import {
-  applySavedAlignState,
   excludeCells,
   patchViewState,
   setGrid,
   setSaving,
-  setSource,
   setTimeSliderIndex,
-  setWorkspacePath,
   viewerStore,
 } from "../viewerStore";
 import { loadFrameEffect, toErrorMessage } from "../viewerEffects";
-import { advanceStudioAlignSelection, studioInitialViewerSelection } from "./advanceSelection";
+import { useSyncAlignStateQueryToViewerStore, useSyncScanSourceQueryToStudioAlignStore } from "../../hooks/syncQueryToViewerStore";
+import { advanceStudioAlignSelection } from "./advanceSelection";
 import { inferViewerSourceFromDataPath } from "./inferSource";
 
 function cellKey(i: number, j: number): string {
@@ -109,46 +107,18 @@ export default function StudioAlignPattern({
     enabled: Boolean(backend && workspacePath && selectedPos != null),
   });
 
-  useEffect(() => {
-    if (!backend || !workspaceTrim || !sourceInferred) return;
-
-    setWorkspacePath(workspaceTrim);
-    setSource(sourceInferred);
-
-    if (scanSourceQuery.isPending) {
-      patchViewState({
-        loading: true,
-        error: null,
-        frame: null,
-        scan: null,
-        selection: null,
-        contrastMode: "manual",
-      });
-      return;
-    }
-
-    if (scanSourceQuery.isError) {
-      patchViewState({ loading: false, error: toErrorMessage(scanSourceQuery.error) });
-      return;
-    }
-
-    if (scanSourceQuery.data) {
-      const scanned = scanSourceQuery.data;
-      const sel = coerceSelection(scanned, studioInitialViewerSelection(scanned));
-      patchViewState({ scan: scanned, selection: sel, loading: false, error: null });
-      setGrid((g) => ({ ...g, enabled: true }));
-      const ti = scanned.times.indexOf(sel.time);
-      setTimeSliderIndex(ti >= 0 ? ti : 0);
-    }
-  }, [
-    backend,
+  useSyncScanSourceQueryToStudioAlignStore(
+    Boolean(backend && workspaceTrim && sourceInferred),
     workspaceTrim,
     sourceInferred,
-    scanSourceQuery.data,
-    scanSourceQuery.error,
-    scanSourceQuery.isError,
-    scanSourceQuery.isPending,
-  ]);
+    scanSourceQuery,
+  );
+
+  const enableAlignGrid = useCallback(() => {
+    setGrid((g) => ({ ...g, enabled: true }));
+  }, []);
+
+  useSyncAlignStateQueryToViewerStore(selectedPos, workspacePath, alignQuery, enableAlignGrid);
 
   const reloadToken = useStore(viewerStore, (s) => s.contrastReloadToken);
   const contrastKey =
@@ -205,22 +175,6 @@ export default function StudioAlignPattern({
       abortController.abort();
     };
   }, [backend, contrastKey, contrastMax, contrastMin, contrastMode, selection, source]);
-
-  useEffect(() => {
-    if (selectedPos == null || !workspacePath || !backend) {
-      return;
-    }
-
-    if (alignQuery.isError) {
-      showErrorToast(toErrorMessage(alignQuery.error));
-      return;
-    }
-
-    if (alignQuery.isSuccess) {
-      applySavedAlignState(selectedPos, alignQuery.data);
-      setGrid((g) => ({ ...g, enabled: true }));
-    }
-  }, [alignQuery.data, alignQuery.error, alignQuery.isError, alignQuery.isSuccess, backend, selectedPos, workspacePath]);
 
   useEffect(() => {
     if (!error) return;

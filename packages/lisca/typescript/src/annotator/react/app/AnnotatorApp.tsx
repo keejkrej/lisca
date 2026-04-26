@@ -1,6 +1,5 @@
-import { Effect, Exit } from "effect";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 
@@ -21,15 +20,17 @@ import { clamp, makeSourceKey } from "lisca/shared/core";
 import {
   AnchoredToastProvider,
   findNavigationOptionIndex,
-  loadRawFrameEffect,
-  loadRoiFrameEffect,
   NavigationControls,
+  prefetchAnnotationMetaForEditor,
   SelectStepperField,
   showErrorToast,
   SidebarSection,
   ToastProvider,
   toErrorMessage,
   toNavigationOptions,
+  useSyncRawAnnotationSourceQueryToRawStores,
+  useSyncRawScanQueryToRawStore,
+  useSyncRoiWorkspaceQueryToRoiStore,
 } from "lisca/shared/react";
 import {
   queryKeys,
@@ -39,7 +40,18 @@ import {
   useScanRoiWorkspaceQuery,
   useScanSourceQuery,
 } from "lisca/shared/query";
-import { resetRoiState, roiStore, setRoiScan, setRoiSelectionKey, setSelectedRoi, setWorkspacePath, workspaceStore } from "lisca/shared/state";
+import {
+  rawStore,
+  resetRawState,
+  resetRoiState,
+  roiStore,
+  setRawSelectionKey,
+  setRawSource,
+  setRoiSelectionKey,
+  setSelectedRoi,
+  setWorkspacePath,
+  workspaceStore,
+} from "lisca/shared/state";
 
 import {
   AnnotationLabelManagerDialog,
@@ -54,7 +66,7 @@ import { RawAnnotationSession, RoiAnnotationSession } from "../session";
 import AnnotatorNavbar, { type AnnotatorDataMode } from "./AnnotatorNavbar";
 import AnnotatorOutputsSection from "./AnnotatorOutputsSection";
 import { useAnnotationModeStore } from "./annotationModeStore";
-import { patchRawState, rawStore, resetRawState, setBoundRawSource, setRawScan, setRawSelectionKey, setRawSource } from "./rawStore";
+import { useLoadAnnotatorEditorFrame } from "../hooks/useLoadAnnotatorEditorFrame";
 
 const SHELL_ANNOTATION_FRAME: FrameResult = {
   width: 1,
@@ -122,15 +134,16 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
     enabled: dataMode === "raw" && Boolean(workspacePath && rawState.source),
   });
 
+  const lastBoundSyncKey = useRef<string | null>(null);
+
+  useSyncRoiWorkspaceQueryToRoiStore(workspacePath, roiWorkspaceQuery);
+  useSyncRawAnnotationSourceQueryToRawStores(workspacePath, rawBoundQuery, lastBoundSyncKey);
+  useSyncRawScanQueryToRawStore(dataMode, workspacePath, rawState.source, rawScanQuery);
+
   const annotationLabels = labelsQuery.data ?? null;
   const annotationLabelsLoading = labelsQuery.isPending;
   const annotationLabelsError = labelsQuery.error ? toErrorMessage(labelsQuery.error) : null;
 
-  const lastBoundSyncKey = useRef<string | null>(null);
-
-  const [editorFrame, setEditorFrame] = useState<FrameResult | null>(null);
-  const [editorFrameLoading, setEditorFrameLoading] = useState(false);
-  const [editorFrameError, setEditorFrameError] = useState<string | null>(null);
   const lastDataErrorToastRef = useRef<string | null>(null);
   const lastLabelsErrorToastRef = useRef<string | null>(null);
 
@@ -170,9 +183,6 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
       resetRoiState();
       resetRawState();
       lastBoundSyncKey.current = null;
-      setEditorFrame(null);
-      setEditorFrameLoading(false);
-      setEditorFrameError(null);
       return;
     }
 
@@ -185,117 +195,6 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
       queryFn: () => backend.loadAnnotationLabels(workspacePath),
     });
   }, [backend, queryClient, workspacePath]);
-
-  useEffect(() => {
-    if (!workspacePath) {
-      return;
-    }
-
-    if (roiWorkspaceQuery.isPending) {
-      roiStore.setState((state) => ({ ...state, loading: true, error: null }));
-      return;
-    }
-
-    if (roiWorkspaceQuery.isError) {
-      roiStore.setState((state) => ({
-        ...state,
-        loading: false,
-        scan: null,
-        selection: null,
-        pageIndex: 0,
-        selectedRoi: null,
-        error: toErrorMessage(roiWorkspaceQuery.error),
-      }));
-      return;
-    }
-
-    if (roiWorkspaceQuery.data) {
-      setRoiScan(roiWorkspaceQuery.data);
-      roiStore.setState((state) => ({ ...state, loading: false, error: null }));
-    }
-  }, [
-    workspacePath,
-    roiWorkspaceQuery.data,
-    roiWorkspaceQuery.error,
-    roiWorkspaceQuery.isError,
-    roiWorkspaceQuery.isPending,
-  ]);
-
-  useEffect(() => {
-    if (!workspacePath) return;
-
-    if (rawBoundQuery.isPending) {
-      return;
-    }
-
-    if (rawBoundQuery.isError) {
-      setBoundRawSource(null);
-      patchRawState({ error: toErrorMessage(rawBoundQuery.error) });
-      return;
-    }
-
-    const src = rawBoundQuery.data ?? null;
-    const key = `${workspacePath}:${src ? `${src.kind}:${src.path}` : ""}`;
-    if (lastBoundSyncKey.current === key) {
-      return;
-    }
-    lastBoundSyncKey.current = key;
-    setBoundRawSource(src);
-    setRawSource(src);
-  }, [
-    workspacePath,
-    rawBoundQuery.data,
-    rawBoundQuery.error,
-    rawBoundQuery.isError,
-    rawBoundQuery.isPending,
-  ]);
-
-  useEffect(() => {
-    if (dataMode !== "raw") {
-      patchRawState({
-        scan: null,
-        selection: null,
-        loading: false,
-      });
-      return;
-    }
-    if (!workspacePath || !rawState.source) {
-      patchRawState({
-        scan: null,
-        selection: null,
-        loading: false,
-      });
-      return;
-    }
-
-    if (rawScanQuery.isPending) {
-      patchRawState({ loading: true, error: null });
-      return;
-    }
-
-    if (rawScanQuery.isError) {
-      patchRawState({
-        scan: null,
-        selection: null,
-        loading: false,
-        error: toErrorMessage(rawScanQuery.error),
-      });
-      return;
-    }
-
-    if (rawScanQuery.data) {
-      setRawScan(rawScanQuery.data);
-      patchRawState({ loading: false, error: null });
-    }
-  }, [
-    dataMode,
-    rawScanQuery.data,
-    rawScanQuery.error,
-    rawScanQuery.isError,
-    rawScanQuery.isPending,
-    rawState.source,
-    workspacePath,
-  ]);
 
   const roiPosition = useMemo(
     () => currentPositionScan(scan, selection?.pos ?? null),
@@ -409,54 +308,29 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
     return `raw:${makeSourceKey(rawState.source)}:${rawRequest.pos}:${rawRequest.channel}:${rawRequest.time}:${rawRequest.z}`;
   }, [dataMode, rawRequest, rawState.source, roiRequest]);
 
-  useEffect(() => {
-    if (!workspacePath || !frameLoadKey) {
-      setEditorFrame(null);
-      setEditorFrameLoading(false);
-      setEditorFrameError(null);
-      return;
-    }
+  const prefetchEditorAnnotationMeta = useCallback(() => {
+    if (!workspacePath) return;
+    prefetchAnnotationMetaForEditor(
+      queryClient,
+      backend,
+      workspacePath,
+      dataMode,
+      roiRequest,
+      rawState.source,
+      rawRequest,
+    );
+  }, [backend, dataMode, queryClient, rawRequest, rawState.source, roiRequest, workspacePath]);
 
-    const abortController = new AbortController();
-    setEditorFrameLoading(true);
-    setEditorFrameError(null);
-
-    const program =
-      dataMode === "roi" && roiRequest
-        ? loadRoiFrameEffect(backend, workspacePath, roiRequest, {
-            mode: "auto",
-            min: 0,
-            max: 65535,
-          })
-        : dataMode === "raw" && rawState.source && rawRequest
-          ? loadRawFrameEffect(backend, rawState.source, rawRequest, {
-              mode: "auto",
-              min: 0,
-              max: 65535,
-            })
-          : null;
-
-    if (!program) {
-      setEditorFrame(null);
-      setEditorFrameLoading(false);
-      return;
-    }
-
-    void Effect.runPromiseExit(program, { signal: abortController.signal }).then((exit) => {
-      if (abortController.signal.aborted) return;
-      if (Exit.isSuccess(exit)) {
-        setEditorFrame(exit.value.frame);
-        setEditorFrameLoading(false);
-        setEditorFrameError(null);
-        return;
-      }
-      setEditorFrame(null);
-      setEditorFrameLoading(false);
-      setEditorFrameError(toErrorMessage(exit.cause));
-    });
-
-    return () => abortController.abort();
-  }, [backend, dataMode, frameLoadKey, rawRequest, rawState.source, roiRequest, workspacePath]);
+  const { editorFrame, editorFrameLoading, editorFrameError } = useLoadAnnotatorEditorFrame({
+    backend,
+    workspacePath,
+    frameLoadKey,
+    dataMode,
+    roiRequest,
+    rawSource: rawState.source,
+    rawRequest,
+    onFrameLoaded: prefetchEditorAnnotationMeta,
+  });
 
   const handlePickWorkspace = async () => {
     const selected = await hostPort.pickWorkspace();

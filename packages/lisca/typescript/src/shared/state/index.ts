@@ -9,4 +9,15 @@ export {
   type RoiSelection,
   type RoiStoreState,
 } from "./roiStore";
+export {
+  patchRawState,
+  rawStore,
+  resetRawState,
+  setBoundRawSource,
+  setRawScan,
+  setRawSelectionKey,
+  setRawSource,
+  updateRawSelection,
+  type RawStoreState,
+} from "./rawStore";
 export { setWorkspacePath, workspaceStore } from "./workspaceStore";

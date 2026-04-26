@@ -9,6 +9,7 @@ import { useShallow } from "zustand/react/shallow";
 import type {
   AutoExcludeHistogramBin,
   AutoExcludePreviewCellScore,
+  AutoExcludePreviewRequest,
   AutoExcludePreviewResponse,
   ContrastWindow,
   CropRoiProgressEvent,
@@ -20,8 +21,6 @@ import {
   applyGridPointerGesture,
   applyGridWheelGesture,
   beginGridPointerGesture,
-  coerceSelection,
-  createSelection,
   getFrameContrastDomain,
   isPrimaryMouseButton,
   makeFrameKey,
@@ -79,6 +78,7 @@ import {
 import {
   queryKeys,
   useAlignStateQuery,
+  useAutoExcludePreviewQuery,
   useCancelCropRoiMutation,
   useCropRoiMutation,
   useSaveBboxMutation,
@@ -87,7 +87,6 @@ import {
 import { findNavigationOptionIndex, stepNavigationValue, toNavigationOptions } from "lisca/shared/react";
 
 import {
-  applySavedAlignState,
   excludeCells,
   patchViewState,
   reloadAutoContrast,
@@ -102,7 +101,11 @@ import {
   toggleExcludedCells as toggleStoredExcludedCells,
   viewerStore,
 } from "./viewerStore";
-import { autoExcludePreviewEffect, loadFrameEffect, toErrorMessage } from "./viewerEffects";
+import { loadFrameEffect, toErrorMessage } from "./viewerEffects";
+import {
+  useSyncAlignStateQueryToViewerStore,
+  useSyncScanSourceQueryToViewerStore,
+} from "../hooks/syncQueryToViewerStore";
 import {
   applyQ20Preset,
   computeBatchCropOverallProgress,
@@ -411,9 +414,6 @@ export default function ViewerWorkspace({
   const [previewGrid, setPreviewGrid] = useState<GridState | null>(null);
   const [selectionPreviewCells, setSelectionPreviewCells] = useState<GridCellCoord[] | null>(null);
   const [autoExcludeOpen, setAutoExcludeOpen] = useState(false);
-  const [autoExcludePreview, setAutoExcludePreview] = useState<AutoExcludePreviewResponse | null>(null);
-  const [autoExcludeLoading, setAutoExcludeLoading] = useState(false);
-  const [autoExcludeError, setAutoExcludeError] = useState<string | null>(null);
   const [autoExcludeThreshold, setAutoExcludeThreshold] = useState<number>(0);
   const [cropProgress, setCropProgressValue] = useState<CropRoiProgressEvent>({
     requestId: "",
@@ -471,6 +471,9 @@ export default function ViewerWorkspace({
     enabled: selectedPos != null && Boolean(workspacePath),
   });
 
+  useSyncScanSourceQueryToViewerStore(source, scanSourceQuery);
+  useSyncAlignStateQueryToViewerStore(selectedPos, workspacePath, alignQuery);
+
   useEffect(() => {
     activeCropRef.current = activeCrop;
   }, [activeCrop]);
@@ -502,44 +505,6 @@ export default function ViewerWorkspace({
       unlisten?.();
     };
   }, []);
-
-  useEffect(() => {
-    if (!source) return;
-
-    if (scanSourceQuery.isPending) {
-      patchViewState({
-        loading: true,
-        error: null,
-        frame: null,
-        scan: null,
-        selection: null,
-        contrastMode: "manual",
-      });
-      return;
-    }
-
-    if (scanSourceQuery.isError) {
-      patchViewState({ loading: false, error: toErrorMessage(scanSourceQuery.error) });
-      return;
-    }
-
-    if (scanSourceQuery.data) {
-      const scanData = scanSourceQuery.data;
-      const nextSelection = coerceSelection(scanData, createSelection(scanData));
-      patchViewState({
-        scan: scanData,
-        selection: nextSelection,
-        loading: false,
-        error: null,
-      });
-    }
-  }, [
-    source,
-    scanSourceQuery.data,
-    scanSourceQuery.error,
-    scanSourceQuery.isError,
-    scanSourceQuery.isPending,
-  ]);
 
   useEffect(() => {
     return backend.onCropRoiProgress((event: CropRoiProgressEvent) => {
@@ -706,23 +671,6 @@ export default function ViewerWorkspace({
   const timeSliderMax = Math.max(0, timeValues.length - 1);
   const displayedZ = zValues[zSliderIndex] ?? selection?.z ?? 0;
   const zSliderMax = Math.max(0, zValues.length - 1);
-  useEffect(() => {
-    if (selectedPos == null) return;
-
-    if (!workspacePath) {
-      applySavedAlignState(selectedPos, null);
-      return;
-    }
-
-    if (alignQuery.isError) {
-      showErrorToast(toErrorMessage(alignQuery.error));
-      return;
-    }
-
-    if (alignQuery.isSuccess) {
-      applySavedAlignState(selectedPos, alignQuery.data);
-    }
-  }, [alignQuery.data, alignQuery.error, alignQuery.isError, alignQuery.isSuccess, selectedPos, workspacePath]);
 
   useEffect(() => {
     setTimeSliderIndex(selectedTimeIndex);
@@ -775,6 +723,29 @@ export default function ViewerWorkspace({
     () => new Set(currentPositionExcludedCells.map(gridCellCoordKey)),
     [currentPositionExcludedCells],
   );
+
+  const autoExcludeRequest = useMemo((): AutoExcludePreviewRequest | null => {
+    if (!autoExcludeOpen || !source || !selection || !frame || !grid.enabled) return null;
+    const cells = enumerateVisibleGridCells(frame, grid).filter(
+      (cell) => !activeExcludedCellKeys.has(gridCellCoordKey(cell)),
+    );
+    return { source, selection, cells };
+  }, [activeExcludedCellKeys, autoExcludeOpen, frame, grid, selection, source]);
+
+  const autoExcludePreviewQuery = useAutoExcludePreviewQuery(backend, autoExcludeRequest);
+  const autoExcludePreview = autoExcludePreviewQuery.data ?? null;
+  const autoExcludeLoading = Boolean(autoExcludeRequest) && autoExcludePreviewQuery.isPending;
+  const autoExcludeError = autoExcludePreviewQuery.isError
+    ? toErrorMessage(autoExcludePreviewQuery.error)
+    : null;
+
+  useEffect(() => {
+    if (!autoExcludePreview) return;
+    setAutoExcludeThreshold(
+      clampThresholdToDomain(autoExcludePreview.threshold, scoreDomainForPreview(autoExcludePreview)),
+    );
+  }, [autoExcludePreview]);
+
   const renderedExcludedCells = useMemo(
     () =>
       selectionPreviewCells
@@ -817,56 +788,6 @@ export default function ViewerWorkspace({
       setAutoExcludeOpen(false);
     }
   }, [autoExcludeOpen, frame, grid.enabled, selection, source]);
-
-  useEffect(() => {
-    if (!autoExcludeOpen || !source || !selection || !frame || !grid.enabled) return;
-
-    let cancelled = false;
-    setAutoExcludeLoading(true);
-    setAutoExcludeError(null);
-    const cells = enumerateVisibleGridCells(frame, grid).filter(
-      (cell) => !activeExcludedCellKeys.has(gridCellCoordKey(cell)),
-    );
-
-    const program = autoExcludePreviewEffect(backend, {
-      source,
-      selection,
-      cells,
-    }).pipe(
-      Effect.tap(({ preview }) =>
-        Effect.sync(() => {
-          if (cancelled) return;
-          setAutoExcludePreview(preview);
-          setAutoExcludeThreshold(clampThresholdToDomain(preview.threshold, scoreDomainForPreview(preview)));
-        }),
-      ),
-      Effect.catchAll((previewError) =>
-        Effect.sync(() => {
-          if (cancelled) return;
-          setAutoExcludePreview(null);
-          setAutoExcludeError(toErrorMessage(previewError));
-        }),
-      ),
-      Effect.ensuring(
-        Effect.sync(() => {
-          if (!cancelled) {
-            setAutoExcludeLoading(false);
-          }
-        }),
-      ),
-    );
-
-    void Effect.runPromiseExit(program).then((exit) => {
-      if (!Exit.isFailure(exit) || cancelled) return;
-      setAutoExcludePreview(null);
-      setAutoExcludeError(toErrorMessage(exit.cause));
-      setAutoExcludeLoading(false);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [activeExcludedCellKeys, autoExcludeOpen, backend, frame, grid, selection, source]);
 
   const emptyText = useMemo(() => {
     if (!workspacePath) return "Select a workspace folder to save bbox CSVs";
@@ -928,8 +849,6 @@ export default function ViewerWorkspace({
   }, [selection, visibleCells]);
 
   const handleOpenAutoExclude = useCallback(() => {
-    setAutoExcludeError(null);
-    setAutoExcludePreview(null);
     setAutoExcludeOpen(true);
   }, []);
 

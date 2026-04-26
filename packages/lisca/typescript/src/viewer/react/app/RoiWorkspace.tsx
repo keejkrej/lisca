@@ -34,13 +34,12 @@ import {
   SidebarValue,
   toErrorMessage,
   toNavigationOptions,
+  useSyncRoiWorkspaceQueryToRoiStore,
 } from "lisca/shared/react";
 import {
-  patchRoiState,
   resetRoiState,
   roiStore,
   setRoiPageIndex,
-  setRoiScan,
   setRoiSelectionKey,
   setSelectedRoi,
 } from "lisca/shared/state";
@@ -287,40 +286,10 @@ export default function RoiWorkspace({
     if (!workspacePath) {
       resetRoiState();
       setTileStates({});
-      return;
     }
+  }, [workspacePath]);
 
-    if (roiWorkspaceQuery.isPending) {
-      patchRoiState({
-        loading: true,
-        error: null,
-      });
-      return;
-    }
-
-    if (roiWorkspaceQuery.isError) {
-      patchRoiState({
-        scan: null,
-        selection: null,
-        pageIndex: 0,
-        selectedRoi: null,
-        loading: false,
-        error: toErrorMessage(roiWorkspaceQuery.error),
-      });
-      return;
-    }
-
-    if (roiWorkspaceQuery.data) {
-      setRoiScan(roiWorkspaceQuery.data);
-      patchRoiState({ loading: false, error: null });
-    }
-  }, [
-    workspacePath,
-    roiWorkspaceQuery.data,
-    roiWorkspaceQuery.error,
-    roiWorkspaceQuery.isError,
-    roiWorkspaceQuery.isPending,
-  ]);
+  useSyncRoiWorkspaceQueryToRoiStore(workspacePath, roiWorkspaceQuery);
 
   const position = useMemo(
     () => currentPositionScan(scan, selection?.pos ?? null),

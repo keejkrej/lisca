@@ -12,6 +12,12 @@ export {
   type SliderNavigationControlProps,
 } from "./NavigationControls";
 export { toErrorMessage } from "./errors";
+export {
+  prefetchAnnotationMetaForEditor,
+  useSyncRawAnnotationSourceQueryToRawStores,
+  useSyncRawScanQueryToRawStore,
+  useSyncRoiWorkspaceQueryToRoiStore,
+} from "./querySyncRoiRaw";
 export { loadRawFrameEffect, loadRoiFrameEffect } from "./roiEffects";
 export {
   SidebarField,

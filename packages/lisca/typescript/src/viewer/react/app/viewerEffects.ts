@@ -1,8 +1,6 @@
 import { Cause, Effect, Option } from "effect";
 
 import type {
-  AutoExcludePreviewRequest,
-  AutoExcludePreviewResponse,
   ContrastWindow,
   FrameResult,
   ViewerDataPort,
@@ -49,19 +47,6 @@ function contrastWindowForFrame(frame: FrameResult | null): ContrastWindow {
 
 export function toErrorMessage(error: unknown): string {
   return toSharedErrorMessage(error);
-}
-
-export function autoExcludePreviewEffect(
-  backend: ViewerDataPort,
-  request: AutoExcludePreviewRequest,
-) {
-  return Effect.tryPromise({
-    try: () => backend.autoExcludePreview(request),
-    catch: (error) => toError(error, "Failed to compute auto exclude preview"),
-  }).pipe(
-    Effect.map((preview: AutoExcludePreviewResponse) => ({ preview })),
-    Effect.withSpan("viewer.auto-exclude-preview"),
-  );
 }
 
 export function loadFrameEffect(
