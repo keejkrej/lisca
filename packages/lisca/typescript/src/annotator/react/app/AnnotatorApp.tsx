@@ -33,7 +33,7 @@ import {
   useSyncRoiWorkspaceQueryToRoiStore,
 } from "lisca/shared/react";
 import {
-  queryKeys,
+  prefetchAnnotatorWorkspaceShell,
   useAnnotationLabelsQuery,
   useRawAnnotationSourceQuery,
   useSaveAnnotationLabelsMutation,
@@ -186,14 +186,7 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
       return;
     }
 
-    void queryClient.prefetchQuery({
-      queryKey: queryKeys.scanRoiWorkspace(workspacePath),
-      queryFn: () => backend.scanRoiWorkspace(workspacePath),
-    });
-    void queryClient.prefetchQuery({
-      queryKey: queryKeys.annotationLabels(workspacePath),
-      queryFn: () => backend.loadAnnotationLabels(workspacePath),
-    });
+    prefetchAnnotatorWorkspaceShell(queryClient, backend, workspacePath);
   }, [backend, queryClient, workspacePath]);
 
   const roiPosition = useMemo(
@@ -708,7 +701,13 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
                   <>
                     <aside className="col-start-1 h-full min-h-0 min-w-0 overflow-y-auto divide-y divide-border border-r border-border px-5 py-4">
                       {renderRoiStack()}
-                      <AnnotatorOutputsSection mode="roi" roiRequest={roiRequest} roiEntry={selectedRoiEntry} />
+                      <AnnotatorOutputsSection
+                        backend={backend}
+                        workspacePath={workspacePath}
+                        mode="roi"
+                        roiRequest={roiRequest}
+                        roiEntry={selectedRoiEntry}
+                      />
                     </aside>
                     <section className="col-start-2 h-full min-h-0 min-w-0 overflow-hidden" role="region" aria-label={`ROI ${selectedRoiEntry.roi}`}>
                       <div className="m-4 flex h-[calc(100%-2rem)] min-h-0 flex-col overflow-hidden">
@@ -744,6 +743,8 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
                     <aside className="col-start-1 h-full min-h-0 min-w-0 overflow-y-auto divide-y divide-border border-r border-border px-5 py-4">
                       {renderRawStack()}
                       <AnnotatorOutputsSection
+                        backend={backend}
+                        workspacePath={workspacePath}
                         mode="raw"
                         rawRequest={rawRequest}
                         source={rawState.source}
@@ -791,6 +792,8 @@ export default function AnnotatorApp({ dataPort: backend, hostPort }: AnnotatorA
                   <aside className="col-start-1 h-full min-h-0 min-w-0 overflow-y-auto divide-y divide-border border-r border-border px-5 py-4">
                     {dataMode === "roi" ? renderRoiStack() : renderRawStack()}
                     <AnnotatorOutputsSection
+                      backend={backend}
+                      workspacePath={workspacePath}
                       mode={dataMode}
                       roiRequest={roiRequest}
                       roiEntry={selectedRoiEntry}

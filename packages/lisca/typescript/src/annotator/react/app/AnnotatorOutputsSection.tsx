@@ -1,12 +1,22 @@
-import type { RawFrameRequest, RoiFrameRequest, RoiIndexEntry, ViewerSource } from "lisca/shared/contracts";
+import type {
+  RawFrameRequest,
+  RoiFrameRequest,
+  RoiIndexEntry,
+  ViewerDataPort,
+  ViewerSource,
+} from "lisca/shared/contracts";
+import { useMemo } from "react";
+import { SidebarField, SidebarSection, SidebarValue, toErrorMessage } from "lisca/shared/react";
+import { useRawFrameAnnotationMetaQuery, useRoiFrameAnnotationMetaQuery } from "lisca/shared/query";
 import { Button } from "lisca/shared/ui";
-import { SidebarField, SidebarSection, SidebarValue } from "lisca/shared/react";
 
 import { useRoiAnnotationContext } from "../annotation/RoiAnnotationContext";
 
 import type { AnnotatorDataMode } from "./AnnotatorNavbar";
 
 interface AnnotatorOutputsSectionProps {
+  backend: ViewerDataPort;
+  workspacePath: string | null;
   mode: AnnotatorDataMode;
   roiRequest?: RoiFrameRequest | null;
   roiEntry?: RoiIndexEntry | null;
@@ -15,6 +25,8 @@ interface AnnotatorOutputsSectionProps {
 }
 
 export default function AnnotatorOutputsSection({
+  backend,
+  workspacePath,
   mode,
   roiRequest = null,
   roiEntry = null,
@@ -22,6 +34,49 @@ export default function AnnotatorOutputsSection({
   source = null,
 }: AnnotatorOutputsSectionProps) {
   const { handleSave, saving, dirty, canEdit, loading, saveError } = useRoiAnnotationContext();
+
+  const roiMetaQuery = useRoiFrameAnnotationMetaQuery(backend, workspacePath, roiRequest, {
+    enabled: mode === "roi" && Boolean(workspacePath && roiRequest),
+  });
+  const rawMetaQuery = useRawFrameAnnotationMetaQuery(backend, workspacePath, source, rawRequest, {
+    enabled: mode === "raw" && Boolean(workspacePath && source && rawRequest),
+  });
+
+  const diskAnnotationSummary = useMemo(() => {
+    if (!workspacePath) return "—";
+    if (mode === "roi") {
+      if (!roiRequest) return "—";
+      if (roiMetaQuery.isPending) return "Loading…";
+      if (roiMetaQuery.isError) return toErrorMessage(roiMetaQuery.error);
+      const a = roiMetaQuery.data;
+      if (!a) return "—";
+      const cls = a.classificationLabelId ?? "no class";
+      const mask = a.maskPath ? "mask on disk" : "no mask";
+      return `${cls} · ${mask}`;
+    }
+    if (!rawRequest || !source) return "—";
+    if (rawMetaQuery.isPending) return "Loading…";
+    if (rawMetaQuery.isError) return toErrorMessage(rawMetaQuery.error);
+    const a = rawMetaQuery.data;
+    if (!a) return "—";
+    const cls = a.classificationLabelId ?? "no class";
+    const mask = a.maskPath ? "mask on disk" : "no mask";
+    return `${cls} · ${mask}`;
+  }, [
+    mode,
+    rawMetaQuery.data,
+    rawMetaQuery.error,
+    rawMetaQuery.isError,
+    rawMetaQuery.isPending,
+    rawRequest,
+    roiMetaQuery.data,
+    roiMetaQuery.error,
+    roiMetaQuery.isError,
+    roiMetaQuery.isPending,
+    roiRequest,
+    source,
+    workspacePath,
+  ]);
 
   const labelsRel = "annotations/labels.json";
   const sourceRel = "annotations/raw/source.json";
@@ -74,6 +129,9 @@ export default function AnnotatorOutputsSection({
       </SidebarField>
       <SidebarField label="Mask PNG">
         <SidebarValue monospace>{maskRel}</SidebarValue>
+      </SidebarField>
+      <SidebarField label="On disk (metadata)">
+        <SidebarValue className="text-[11px] leading-snug">{diskAnnotationSummary}</SidebarValue>
       </SidebarField>
       {saveError ? <p className="text-[11px] leading-snug text-red-200">{saveError}</p> : null}
       <Button

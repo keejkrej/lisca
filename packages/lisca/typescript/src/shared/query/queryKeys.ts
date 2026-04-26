@@ -14,6 +14,10 @@ import type {
  *
  * Tier B (full Loaded* in cache) is intentionally not implemented here; if added
  * later, use a dedicated key root, aggressive `gcTime`, and strict per-frame keys.
+ *
+ * ROI workspace **thumbnail tiles** stay off this key tree: they load pixels via
+ * `loadRoiFrameEffect` inside `useRoiVisibleTileFrames` (in-memory tile cache only),
+ * not TanStack Query, to avoid holding many `FrameResult` buffers in the query cache.
  */
 export const queryKeys = {
   all: ["lisca"] as const,

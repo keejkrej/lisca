@@ -1,4 +1,3 @@
-import { Effect, Exit } from "effect";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useScanRoiWorkspaceQuery } from "lisca/shared/query";
 import { useStore } from "zustand";
@@ -27,12 +26,10 @@ import {
 import {
   findNavigationOptionIndex,
   NavigationControls,
-  loadRoiFrameEffect,
   showErrorToast,
   SidebarField,
   SidebarSection,
   SidebarValue,
-  toErrorMessage,
   toNavigationOptions,
   useSyncRoiWorkspaceQueryToRoiStore,
 } from "lisca/shared/react";
@@ -44,6 +41,7 @@ import {
   setSelectedRoi,
 } from "lisca/shared/state";
 
+import { useRoiVisibleTileFrames, type RoiWorkspaceTileState } from "../hooks/useRoiVisibleTileFrames";
 import ViewerNavbar, { type ViewerMode } from "./ViewerNavbar";
 
 type SelectValue = number | string;
@@ -69,13 +67,6 @@ interface RoiWorkspaceProps {
 
 interface CachedFrame {
   frame: FrameResult;
-}
-
-interface TileState {
-  requestKey: string;
-  frame: FrameResult | null;
-  error: string | null;
-  loading: boolean;
 }
 
 const ROI_PAGE_SIZE = 9;
@@ -164,32 +155,6 @@ function makeRoiFrameKey(workspacePath: string, request: RoiFrameRequest) {
   ].join(":");
 }
 
-function tileStatesEqual(
-  left: Record<number, TileState>,
-  right: Record<number, TileState>,
-) {
-  const leftKeys = Object.keys(left);
-  const rightKeys = Object.keys(right);
-  if (leftKeys.length !== rightKeys.length) return false;
-
-  for (const key of rightKeys) {
-    const roi = Number(key);
-    const leftState = left[roi];
-    const rightState = right[roi];
-    if (!leftState || !rightState) return false;
-    if (
-      leftState.requestKey !== rightState.requestKey ||
-      leftState.frame !== rightState.frame ||
-      leftState.error !== rightState.error ||
-      leftState.loading !== rightState.loading
-    ) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 function RoiTile({
   roi,
   tileState,
@@ -198,7 +163,7 @@ function RoiTile({
   grid,
 }: {
   roi: RoiIndexEntry;
-  tileState: TileState | undefined;
+  tileState: RoiWorkspaceTileState | undefined;
   selected: boolean;
   onSelect: () => void;
   grid: GridState;
@@ -254,7 +219,7 @@ export default function RoiWorkspace({
 }: RoiWorkspaceProps) {
   const frameCacheRef = useRef(new FrameCache());
   const lastWorkspaceErrorToastRef = useRef<string | null>(null);
-  const [tileStates, setTileStates] = useState<Record<number, TileState>>({});
+  const [tileStates, setTileStates] = useState<Record<number, RoiWorkspaceTileState>>({});
   const [tileGrid, setTileGrid] = useState<GridState>(() =>
     normalizeGridState({ ...ROI_TILE_GRID }),
   );
@@ -395,81 +360,14 @@ export default function RoiWorkspace({
     }
   }, [selectedRoi, visibleRois]);
 
-  useEffect(() => {
-    if (!workspacePath || visibleRoiRequests.length === 0) {
-      setTileStates((current) => (Object.keys(current).length === 0 ? current : {}));
-      return;
-    }
-
-    const abortControllers: AbortController[] = [];
-    const nextStates: Record<number, TileState> = {};
-    for (const { roi, request, requestKey } of visibleRoiRequests) {
-      const cached = frameCacheRef.current.get(requestKey);
-
-      nextStates[roi.roi] = {
-        requestKey,
-        frame: cached?.frame ?? null,
-        error: null,
-        loading: !cached,
-      };
-
-      if (cached) continue;
-
-      const abortController = new AbortController();
-      abortControllers.push(abortController);
-      const program = loadRoiFrameEffect(backend, workspacePath, request, {
-        mode: "auto",
-        min: 0,
-        max: 65535,
-      });
-
-      void Effect.runPromiseExit(program, {
-        signal: abortController.signal,
-      }).then((exit) => {
-        if (abortController.signal.aborted) return;
-
-        if (Exit.isSuccess(exit)) {
-          frameCacheRef.current.set(requestKey, { frame: exit.value.frame });
-          setTileStates((current) => {
-            const active = current[roi.roi];
-            if (!active || active.requestKey !== requestKey) return current;
-            return {
-              ...current,
-              [roi.roi]: {
-                requestKey,
-                frame: exit.value.frame,
-                error: null,
-                loading: false,
-              },
-            };
-          });
-          return;
-        }
-
-        setTileStates((current) => {
-          const active = current[roi.roi];
-          if (!active || active.requestKey !== requestKey) return current;
-          return {
-            ...current,
-            [roi.roi]: {
-              requestKey,
-              frame: null,
-              error: toErrorMessage(exit.cause),
-              loading: false,
-            },
-          };
-        });
-      });
-    }
-
-    setTileStates((current) => (tileStatesEqual(current, nextStates) ? current : nextStates));
-
-    return () => {
-      for (const controller of abortControllers) {
-        controller.abort();
-      }
-    };
-  }, [backend, visibleRequestSignature, visibleRoiRequests]);
+  useRoiVisibleTileFrames({
+    backend,
+    workspacePath,
+    visibleRoiRequests,
+    visibleRequestSignature,
+    frameCacheRef,
+    setTileStates,
+  });
 
   const emptyText = useMemo(() => {
     if (loading) return "Scanning workspace ROI output...";

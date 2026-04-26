@@ -1,4 +1,3 @@
-import { Effect, Exit } from "effect";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useStore } from "zustand";
@@ -34,8 +33,9 @@ import {
   setTimeSliderIndex,
   viewerStore,
 } from "../viewerStore";
-import { loadFrameEffect, toErrorMessage } from "../viewerEffects";
+import { toErrorMessage } from "../viewerEffects";
 import { useSyncAlignStateQueryToViewerStore, useSyncScanSourceQueryToStudioAlignStore } from "../../hooks/syncQueryToViewerStore";
+import { useViewerSourceFrameLoad } from "../../hooks/useViewerSourceFrameLoad";
 import { advanceStudioAlignSelection } from "./advanceSelection";
 import { inferViewerSourceFromDataPath } from "./inferSource";
 
@@ -124,57 +124,15 @@ export default function StudioAlignPattern({
   const contrastKey =
     contrastMode === "auto" ? `auto:${reloadToken}` : `${contrastMin}:${contrastMax}`;
 
-  useEffect(() => {
-    if (!backend || !source || !selection) return;
-
-    const abortController = new AbortController();
-    patchViewState({ loading: true, error: null });
-
-    const program = loadFrameEffect(backend, source, selection, {
-      mode: contrastMode,
-      min: contrastMin,
-      max: contrastMax,
-    }).pipe(
-      Effect.tap(({ frame: loadedFrame, contrastMin: cmin, contrastMax: cmax }) =>
-        Effect.sync(() => {
-          patchViewState({
-            contrastMin: cmin,
-            contrastMax: cmax,
-            contrastMode: "manual",
-            frame: loadedFrame,
-          });
-        }),
-      ),
-      Effect.catchAll((err) =>
-        Effect.sync(() => {
-          patchViewState({
-            error: toErrorMessage(err),
-            frame: null,
-          });
-        }),
-      ),
-      Effect.ensuring(
-        Effect.sync(() => {
-          patchViewState({ loading: false });
-        }),
-      ),
-    );
-
-    void Effect.runPromiseExit(program, {
-      signal: abortController.signal,
-    }).then((exit) => {
-      if (!Exit.isFailure(exit)) return;
-      if (abortController.signal.aborted) return;
-      patchViewState({
-        error: toErrorMessage(exit.cause),
-        frame: null,
-      });
-    });
-
-    return () => {
-      abortController.abort();
-    };
-  }, [backend, contrastKey, contrastMax, contrastMin, contrastMode, selection, source]);
+  useViewerSourceFrameLoad({
+    backend,
+    source,
+    selection,
+    contrastMode,
+    contrastMin,
+    contrastMax,
+    contrastRequestKey: contrastKey,
+  });
 
   useEffect(() => {
     if (!error) return;

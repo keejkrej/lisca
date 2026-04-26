@@ -9,6 +9,7 @@
 export { createLiscaQueryClient } from "./createLiscaQueryClient";
 export { LiscaQueryProvider } from "./LiscaQueryProvider";
 export { queryKeys } from "./queryKeys";
+export { prefetchAnnotatorWorkspaceShell } from "./prefetch";
 export { fetchRawFrameAnnotationMeta, fetchRoiFrameAnnotationMeta } from "./annotationMeta";
 export {
   useAlignStateQuery,
