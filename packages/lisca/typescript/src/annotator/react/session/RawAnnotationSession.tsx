@@ -6,23 +6,20 @@ import type {
   ViewerDataPort,
   ViewerSource,
 } from "lisca/shared/contracts";
-import { toErrorMessage } from "lisca/shared/react";
 import {
   useSaveAnnotationLabelsMutation,
   useSaveRawFrameAnnotationMutation,
 } from "lisca/shared/query";
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import {
   AnnotationLabelManagerDialog,
   RoiAnnotationDiscardDialog,
   RoiAnnotationProvider,
-  createEmptyMask,
-  decodeMaskBase64Png,
   encodeMaskToBase64Png,
-  type RoiAnnotationValue,
 } from "../annotation";
+import { useLoadFrameAnnotationForEditor } from "../hooks/useLoadFrameAnnotationForEditor";
 
 export interface RawAnnotationSessionProps {
   workspacePath: string;
@@ -60,61 +57,17 @@ export default function RawAnnotationSession({
   const saveRawMutation = useSaveRawFrameAnnotationMutation(backend);
   const saveLabelsMutation = useSaveAnnotationLabelsMutation(backend);
 
-  const [initialValue, setInitialValue] = useState<RoiAnnotationValue>({
-    classificationLabelId: null,
-    mask: createEmptyMask(frame.width, frame.height),
+  const { initialValue, resetKey, loadState } = useLoadFrameAnnotationForEditor({
+    annotationLoadEnabled,
+    workspacePath,
+    backend,
+    frameWidth: frame.width,
+    frameHeight: frame.height,
+    mode: "raw",
+    roiRequest: null,
+    rawRequest: request,
+    rawSource: source,
   });
-  const [resetKey, setResetKey] = useState(0);
-  const [loadState, setLoadState] = useState<{
-    loading: boolean;
-    error: string | null;
-  }>({
-    loading: annotationLoadEnabled,
-    error: null,
-  });
-
-  useEffect(() => {
-    if (!annotationLoadEnabled) {
-      setLoadState({ loading: false, error: null });
-      setInitialValue({
-        classificationLabelId: null,
-        mask: createEmptyMask(frame.width, frame.height),
-      });
-      setResetKey((current) => current + 1);
-      return;
-    }
-
-    let cancelled = false;
-    setLoadState({ loading: true, error: null });
-
-    void (async () => {
-      try {
-        const loaded = await backend.loadRawFrameAnnotation(workspacePath, source, request);
-        const mask = loaded.maskBase64Png
-          ? await decodeMaskBase64Png(loaded.maskBase64Png, frame.width, frame.height)
-          : createEmptyMask(frame.width, frame.height);
-        if (cancelled) return;
-        setInitialValue({
-          classificationLabelId: loaded.annotation.classificationLabelId ?? null,
-          mask,
-        });
-        setResetKey((current) => current + 1);
-        setLoadState({ loading: false, error: null });
-      } catch (error) {
-        if (cancelled) return;
-        setInitialValue({
-          classificationLabelId: null,
-          mask: createEmptyMask(frame.width, frame.height),
-        });
-        setResetKey((current) => current + 1);
-        setLoadState({ loading: false, error: toErrorMessage(error) });
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [annotationLoadEnabled, backend, frame.height, frame.width, request, source, workspacePath]);
 
   const editorSubtitle = useMemo(
     () =>

@@ -17,7 +17,7 @@ import {
 } from "lisca/viewer/core";
 import { showErrorToast, showSuccessToast } from "lisca/shared/react";
 import {
-  queryKeys,
+  fetchAutoExcludePreview,
   useAlignStateQuery,
   useSaveBboxMutation,
   useScanSourceQuery,
@@ -254,11 +254,7 @@ export default function StudioAlignPattern({
 
     let preview;
     try {
-      preview = await queryClient.fetchQuery({
-        queryKey: queryKeys.autoExcludePreview(previewRequest),
-        queryFn: () => backend.autoExcludePreview(previewRequest),
-        staleTime: 0,
-      });
+      preview = await fetchAutoExcludePreview(queryClient, backend, previewRequest);
     } catch (cause) {
       showErrorToast(toErrorMessage(cause));
       setSaving(false);

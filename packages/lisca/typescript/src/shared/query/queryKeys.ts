@@ -18,6 +18,12 @@ import type {
  * ROI workspace **thumbnail tiles** stay off this key tree: they load pixels via
  * `loadRoiFrameEffect` inside `useRoiVisibleTileFrames` (in-memory tile cache only),
  * not TanStack Query, to avoid holding many `FrameResult` buffers in the query cache.
+ *
+ * **Annotator editor (Tier B deferred):** full `loadRoiFrameAnnotation` /
+ * `loadRawFrameAnnotation` payloads (metadata plus base64 mask) are loaded in
+ * `useLoadFrameAnnotationForEditor`, not under these keys, so decoded masks never enter
+ * the query cache. A future Tier B option could add a dedicated per-frame key family with
+ * `gcTime: 0` / `staleTime: 0` if cache-level deduplication is worth the complexity.
  */
 export const queryKeys = {
   all: ["lisca"] as const,

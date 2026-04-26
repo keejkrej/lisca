@@ -73,7 +73,7 @@ import {
   showSuccessToast,
 } from "lisca/shared/react";
 import {
-  queryKeys,
+  fetchSavedBboxPositions,
   useAutoExcludePreviewQuery,
   useCancelCropRoiMutation,
   useCropRoiMutation,
@@ -971,10 +971,7 @@ export default function ViewerWorkspace({
 
     let positions: number[];
     try {
-      positions = await queryClient.fetchQuery({
-        queryKey: queryKeys.savedBboxPositions(workspacePath),
-        queryFn: () => backend.listSavedBboxPositions(workspacePath),
-      });
+      positions = await fetchSavedBboxPositions(queryClient, backend, workspacePath);
     } catch (cause) {
       showErrorToast(toErrorMessage(cause));
       return;
