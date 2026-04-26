@@ -1,0 +1,88 @@
+import type {
+  AutoExcludePreviewRequest,
+  RawFrameRequest,
+  RoiFrameRequest,
+  ViewerSource,
+} from "../../viewer/contracts";
+
+/**
+ * Stable query keys for ViewerDataPort-backed queries.
+ *
+ * Policy: never key or cache {@link import("../../viewer/contracts").FrameResult}
+ * (pixel buffers). Large mask payloads use Tier A metadata keys only; see
+ * `fetchRoiFrameAnnotationMeta` / `fetchRawFrameAnnotationMeta` in hooks.
+ *
+ * Tier B (full Loaded* in cache) is intentionally not implemented here; if added
+ * later, use a dedicated key root, aggressive `gcTime`, and strict per-frame keys.
+ */
+export const queryKeys = {
+  all: ["lisca"] as const,
+
+  scanSource: (source: ViewerSource) =>
+    [...queryKeys.all, "scanSource", source.kind, source.path] as const,
+
+  scanRoiWorkspace: (workspacePath: string) =>
+    [...queryKeys.all, "scanRoiWorkspace", workspacePath] as const,
+
+  savedBboxPositions: (workspacePath: string) =>
+    [...queryKeys.all, "savedBboxPositions", workspacePath] as const,
+
+  alignState: (workspacePath: string, pos: number) =>
+    [...queryKeys.all, "alignState", workspacePath, pos] as const,
+
+  annotationLabels: (workspacePath: string) =>
+    [...queryKeys.all, "annotationLabels", workspacePath] as const,
+
+  rawAnnotationSource: (workspacePath: string) =>
+    [...queryKeys.all, "rawAnnotationSource", workspacePath] as const,
+
+  autoExcludePreview: (request: AutoExcludePreviewRequest) =>
+    [
+      ...queryKeys.all,
+      "autoExcludePreview",
+      request.source.kind,
+      request.source.path,
+      request.selection.pos,
+      request.selection.channel,
+      request.selection.time,
+      request.selection.z,
+      stablePreviewCellsKey(request.cells),
+    ] as const,
+
+  roiFrameAnnotationMeta: (workspacePath: string, request: RoiFrameRequest) =>
+    [
+      ...queryKeys.all,
+      "roiFrameAnnotationMeta",
+      workspacePath,
+      request.pos,
+      request.roi,
+      request.channel,
+      request.time,
+      request.z,
+    ] as const,
+
+  rawFrameAnnotationMeta: (
+    workspacePath: string,
+    source: ViewerSource,
+    request: RawFrameRequest,
+  ) =>
+    [
+      ...queryKeys.all,
+      "rawFrameAnnotationMeta",
+      workspacePath,
+      source.kind,
+      source.path,
+      request.pos,
+      request.channel,
+      request.time,
+      request.z,
+    ] as const,
+};
+
+function stablePreviewCellsKey(
+  cells: AutoExcludePreviewRequest["cells"],
+): string {
+  if (cells.length === 0) return "cells:[]";
+  const sorted = [...cells].sort((a, b) => a.i - b.i || a.j - b.j);
+  return JSON.stringify(sorted);
+}
