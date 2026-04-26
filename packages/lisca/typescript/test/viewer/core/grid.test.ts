@@ -136,6 +136,27 @@ describe("grid utils", () => {
     expect(isPrimaryMouseButton({ pointerType: "mouse", button: 1 })).toBe(false);
   });
 
+  test("beginGridPointerGesture with toolMode zoom ignores primary button", () => {
+    const grid = createDefaultGrid();
+    expect(
+      beginGridPointerGesture(
+        grid,
+        { pointerId: 1, pointerType: "mouse", button: 0, clientX: 0, clientY: 0 },
+        "zoom",
+      ),
+    ).toBeNull();
+  });
+
+  test("beginGridPointerGesture with toolMode rotate maps primary button to rotation", () => {
+    const grid = createDefaultGrid();
+    const session = beginGridPointerGesture(
+      grid,
+      { pointerId: 1, pointerType: "mouse", button: 0, clientX: 100, clientY: 200 },
+      "rotate",
+    );
+    expect(session?.intent).toBe("rotation");
+  });
+
   test("applies left drag as offset movement", () => {
     const grid = createDefaultGrid();
     const session = beginGridPointerGesture(grid, {

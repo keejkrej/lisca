@@ -68,3 +68,6 @@ export interface GridCellBox extends GridCellCoord {
 
 export type GridPointerIntent = "offset" | "rotation" | "spacing";
 export type GridWheelIntent = "ignore" | "size";
+
+/** Studio align toolbar — primary mouse button maps to pan / rotate / wheel-only zoom; chord buttons unchanged. */
+export type AlignPatternToolMode = "pan" | "rotate" | "zoom";

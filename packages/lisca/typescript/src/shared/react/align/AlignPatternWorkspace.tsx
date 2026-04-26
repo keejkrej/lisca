@@ -12,6 +12,7 @@ import {
   coerceSelection,
   collectEdgeCells,
   enumerateVisibleGridCells,
+  type AlignPatternToolMode,
   type GridPointerGestureSession,
   type GridState,
 } from "lisca/shared/core";
@@ -61,6 +62,8 @@ export interface AlignPatternWorkspaceProps {
   dataPath: string;
   saveTo: string;
   store?: AlignStore;
+  /** Primary-button tool from the Studio command bar; omit for legacy mouse chords (left=pan, middle=spacing, right=rotate). */
+  toolMode?: AlignPatternToolMode;
   /** Registers the align-step "next" commit handler for a parent command bar. */
   onRegisterCommit: (handler: AlignPatternCommitHandler | null) => void;
   onStatusChange?: (status: AlignPatternStatus) => void;
@@ -70,6 +73,7 @@ function AlignPatternWorkspaceInner({
   dataPort,
   dataPath,
   saveTo,
+  toolMode,
   onRegisterCommit,
   onStatusChange,
 }: Omit<AlignPatternWorkspaceProps, "store">) {
@@ -247,18 +251,25 @@ function AlignPatternWorkspaceInner({
     return "No frame loaded.";
   }, [backend, scan, sourceInferred, workspaceTrim]);
 
-  const canvasCursor = grid.enabled ? (previewGrid ? "grabbing" : "grab") : "default";
+  const canvasCursor = useMemo(() => {
+    if (!grid.enabled) return "default";
+    if (previewGrid) return "grabbing";
+    if (toolMode === "pan") return "grab";
+    if (toolMode === "rotate") return "crosshair";
+    if (toolMode === "zoom") return "zoom-in";
+    return "grab";
+  }, [grid.enabled, previewGrid, toolMode]);
 
   const handleCanvasPointerDown = useCallback(
     (event: AlignCanvasPointerEvent) => {
       if (!grid.enabled) return;
-      const session = beginGridPointerGesture(grid, event);
+      const session = beginGridPointerGesture(grid, event, toolMode);
       if (!session) return;
       dragSessionRef.current = session;
       event.capturePointer();
       event.preventDefault();
     },
-    [grid],
+    [grid, toolMode],
   );
 
   const handleCanvasPointerMove = useCallback((event: AlignCanvasPointerEvent) => {

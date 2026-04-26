@@ -1,4 +1,5 @@
 import type {
+  AlignPatternToolMode,
   GridCellBox,
   GridCellCoord,
   GridFrameBounds,
@@ -42,7 +43,22 @@ export function classifyGridPointerGesture(input: MousePointerInput): GridPointe
 export function beginGridPointerGesture(
   grid: GridState,
   input: GridPointerGestureInput,
+  toolMode?: AlignPatternToolMode,
 ): GridPointerGestureSession | null {
+  if (toolMode !== undefined && isMousePointerInput(input) && input.button === 0) {
+    if (toolMode === "zoom") {
+      return null;
+    }
+    const intent: GridPointerIntent = toolMode === "pan" ? "offset" : "rotation";
+    return {
+      pointerId: input.pointerId,
+      intent,
+      startClientX: input.clientX,
+      startClientY: input.clientY,
+      startGrid: grid,
+    };
+  }
+
   const intent = classifyGridPointerGesture(input);
   if (!intent) return null;
   return {

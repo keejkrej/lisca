@@ -13,6 +13,7 @@ import { AlignFrameNavigation, type AlignStore } from "lisca/shared/react";
 import { useEffect, useState } from "react";
 import type { StudioStep } from "../../studioStore";
 import { useStudioStore } from "../../studioStore";
+import { studioNavItemButtonClass } from "./studioNavItemButtonClass";
 
 /** Left rail labels match Figma (Page 2 appshell). */
 const ITEMS: { id: string; label: string }[] = [
@@ -28,6 +29,7 @@ const STEP_TO_ACTIVE: Record<StudioStep, (typeof ITEMS)[number]["id"]> = {
   welcome: "choose-assay",
   info1: "basic-info",
   info2: "basic-info",
+  info3: "basic-info",
   alignPattern: "align-pattern",
 };
 
@@ -42,14 +44,9 @@ const NAV_SUBSTEPS: Partial<Record<string, { step: StudioStep; label: string }[]
   "basic-info": [
     { step: "info1", label: "Step 1" },
     { step: "info2", label: "Step 2" },
+    { step: "info3", label: "Step 3" },
   ],
 };
-
-const itemButtonClass = (isActive: boolean) =>
-  cn(
-    "h-auto min-w-0 max-w-full rounded-2xl px-5 py-2.5 text-2xl font-medium",
-    isActive ? "text-foreground" : "text-muted-foreground",
-  );
 
 type StudioNavRailProps = {
   alignStore: AlignStore;
@@ -87,11 +84,7 @@ export function StudioNavRail({ alignStore, className }: StudioNavRailProps) {
           return (
             <Button
               key={item.id}
-              className={cn(
-                "h-auto w-auto min-w-0 max-w-full rounded-2xl px-5 py-2.5 text-2xl font-medium",
-                isActive ? "text-foreground" : "text-muted-foreground",
-                "cursor-not-allowed opacity-50",
-              )}
+              className={cn(studioNavItemButtonClass(isActive), "cursor-not-allowed opacity-50")}
               data-active={isActive ? true : undefined}
               disabled
               type="button"
@@ -105,10 +98,10 @@ export function StudioNavRail({ alignStore, className }: StudioNavRailProps) {
         if (item.id === "align-pattern" && step === "alignPattern") {
           return (
             <ContextMenu.Root key={item.id}>
-              <ContextMenu.Trigger className="flex w-full min-w-0 max-w-full justify-center outline-none">
+              <ContextMenu.Trigger className="mx-auto flex w-fit max-w-full justify-center outline-none">
                 <Button
                   aria-current={isActive ? "page" : undefined}
-                  className={cn("w-full", itemButtonClass(isActive))}
+                  className={studioNavItemButtonClass(isActive)}
                   data-active={isActive ? true : undefined}
                   type="button"
                   variant="ghost"
@@ -139,7 +132,7 @@ export function StudioNavRail({ alignStore, className }: StudioNavRailProps) {
             <Button
               key={item.id}
               aria-current={isActive ? "page" : undefined}
-              className={cn("w-auto", itemButtonClass(isActive))}
+              className={studioNavItemButtonClass(isActive)}
               data-active={isActive ? true : undefined}
               type="button"
               variant="ghost"
@@ -156,10 +149,10 @@ export function StudioNavRail({ alignStore, className }: StudioNavRailProps) {
 
         return (
           <ContextMenu.Root key={item.id}>
-            <ContextMenu.Trigger className="flex w-full min-w-0 max-w-full justify-center outline-none">
+            <ContextMenu.Trigger className="mx-auto flex w-fit max-w-full justify-center outline-none">
               <Button
                 aria-current={isActive ? "page" : undefined}
-                className={cn("w-full", itemButtonClass(isActive))}
+                className={studioNavItemButtonClass(isActive)}
                 data-active={isActive ? true : undefined}
                 type="button"
                 variant="ghost"

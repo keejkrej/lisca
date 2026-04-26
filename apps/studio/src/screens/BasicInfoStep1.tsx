@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { createTauriDesktopPorts } from "lisca/shared/host-tauri";
 
 import { Field, FieldLabel, Input } from "lisca/shared/ui";
-import { basicInfoAssayTitle, useStudioStore } from "../studioStore";
+import { useStudioStore } from "../studioStore";
 
 const ROW = "flex min-h-[100px] w-full flex-col gap-2.5 p-2.5";
 
@@ -24,7 +24,6 @@ function useFolderPicker() {
 }
 
 export function BasicInfoStep1() {
-  const assayId = useStudioStore((s) => s.assayId);
   const info1 = useStudioStore((s) => s.info1);
   const setInfo1 = useStudioStore((s) => s.setInfo1);
   const pickFolder = useFolderPicker();
@@ -35,12 +34,7 @@ export function BasicInfoStep1() {
   };
 
   return (
-    <div className="flex w-full min-w-0 flex-col gap-[30px]">
-      <h1 className="text-center font-normal text-4xl leading-tight text-foreground">
-        {basicInfoAssayTitle(assayId)}
-      </h1>
-
-      <div className="flex w-full min-w-0 flex-col gap-2.5">
+    <div className="flex w-full min-w-0 flex-col gap-2.5">
         <div className={ROW}>
           <Field className="gap-2.5" name="name">
             <FieldLabel className="text-2xl font-normal" htmlFor="studio-name">
@@ -127,7 +121,6 @@ export function BasicInfoStep1() {
             />
           </Field>
         </div>
-      </div>
     </div>
   );
 }

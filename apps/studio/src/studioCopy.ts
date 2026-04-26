@@ -9,6 +9,8 @@ export function instructionForStep(step: StudioStep): string {
       return "more assay info!";
     case "info2":
       return "more assay info!";
+    case "info3":
+      return "more assay info!";
     case "alignPattern":
       return "Align the grid with the mouse, then press next to save bbox and advance.";
     default:

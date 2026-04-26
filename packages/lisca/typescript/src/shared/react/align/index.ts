@@ -28,6 +28,7 @@ export type {
   AlignPatternStatus,
   AlignPatternWorkspaceProps,
 } from "./AlignPatternWorkspace";
+export type { AlignPatternToolMode } from "lisca/shared/core";
 export type {
   AlignCanvasFramePoint,
   AlignCanvasPointerEvent,

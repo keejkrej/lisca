@@ -26,8 +26,10 @@ export function StudioCommandBar({ instruction, tool, step, className }: StudioC
           </p>
         ) : null}
       </div>
-      <div className="min-h-0 min-w-0 flex-1 px-0 py-2">{tool}</div>
-      <div className="flex w-40 shrink-0 items-center justify-center border-l border-border/80 px-2.5 py-2.5">
+      <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center px-2 py-2">
+        {tool}
+      </div>
+      <div className="flex min-w-[9rem] shrink-0 items-center justify-center border-l border-border/80 px-2.5 py-2.5 sm:min-w-[10rem]">
         {step}
       </div>
     </div>

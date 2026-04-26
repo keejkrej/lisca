@@ -27,6 +27,7 @@ export {
   type AlignContrastMode,
   type AlignPatternCommitHandler,
   type AlignPatternStatus,
+  type AlignPatternToolMode,
   type AlignPatternWorkspaceProps,
   type AlignSaveState,
   type AlignStore,

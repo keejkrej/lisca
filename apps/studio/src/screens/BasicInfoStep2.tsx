@@ -16,7 +16,6 @@ import partcountUrl from "@/assets/features/partcount.svg?url";
 import partfluorUrl from "@/assets/features/partfluor.svg?url";
 import totalfluorUrl from "@/assets/features/totalfluor.svg?url";
 import {
-  basicInfoAssayTitle,
   type BasicInfo2FeatureId,
   type TimelapseUnit,
   useStudioStore,
@@ -61,17 +60,11 @@ function FeaturePreview({ id }: { id: BasicInfo2FeatureId }) {
 
 /** Second part of Basic info — Figma node 43:97 (nav stays “Basic info”). */
 export function BasicInfoStep2() {
-  const assayId = useStudioStore((s) => s.assayId);
   const info2 = useStudioStore((s) => s.info2);
   const setInfo2 = useStudioStore((s) => s.setInfo2);
 
   return (
-    <div className="flex w-full min-w-0 flex-col gap-[30px]">
-      <h1 className="text-center font-normal text-4xl leading-tight text-foreground">
-        {basicInfoAssayTitle(assayId)}
-      </h1>
-
-      <div className="flex w-full min-w-0 flex-col gap-2.5">
+    <div className="flex w-full min-w-0 flex-col gap-2.5">
         <div className={ROW}>
           <Field className="gap-2.5" name="pattern">
             <FieldLabel className="text-2xl font-normal" id="studio-pattern-label">
@@ -180,7 +173,6 @@ export function BasicInfoStep2() {
             </div>
           </Field>
         </div>
-      </div>
     </div>
   );
 }

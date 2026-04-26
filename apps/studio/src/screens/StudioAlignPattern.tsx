@@ -4,6 +4,7 @@ import {
   AlignPatternWorkspace,
   type AlignPatternCommitHandler,
   type AlignPatternStatus,
+  type AlignPatternToolMode,
   type AlignStore,
 } from "lisca/shared/react";
 import type { ViewerDataPort } from "lisca/shared/contracts";
@@ -12,11 +13,13 @@ import { useStudioStore } from "../studioStore";
 export function StudioAlignPattern({
   dataPort,
   store,
+  toolMode,
   onRegisterCommit,
   onStatusChange,
 }: {
   dataPort: ViewerDataPort | null;
   store: AlignStore;
+  toolMode: AlignPatternToolMode;
   onRegisterCommit: (handler: AlignPatternCommitHandler | null) => void;
   onStatusChange: (status: AlignPatternStatus) => void;
 }) {
@@ -35,6 +38,7 @@ export function StudioAlignPattern({
       dataPort={dataPort}
       dataPath={info1.dataPath}
       saveTo={info1.saveTo}
+      toolMode={toolMode}
       onRegisterCommit={onRegisterCommit}
       onStatusChange={onStatusChange}
     />
