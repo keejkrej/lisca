@@ -1,0 +1,22 @@
+[package]
+name = "czi-rs"
+version = "0.2.0"
+edition = "2021"
+rust-version = "1.74"
+description = "Rust wrapper for ZEISS libCZI with a czi-rs-compatible reader API"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/keejkrej/czisdk-rs"
+keywords = ["czi", "zeiss", "microscopy", "bioimaging", "image"]
+categories = ["science", "multimedia::images"]
+
+[lib]
+name = "czi_rs"
+
+[dependencies]
+roxmltree = "0.20"
+thiserror = "1.0"
+
+[build-dependencies]
+cc = "1.0"
+vcpkg = "0.2"

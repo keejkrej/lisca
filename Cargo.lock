@@ -896,7 +896,6 @@ dependencies = [
 [[package]]
 name = "czi-rs"
 version = "0.2.0"
-source = "git+https://github.com/keejkrej/czisdk-rs#a0925978f0c69ec99e45161dccd178d37bd84cc2"
 dependencies = [
  "cc",
  "roxmltree",
@@ -2610,7 +2609,6 @@ dependencies = [
 [[package]]
 name = "nd2sdk-rs"
 version = "0.1.0"
-source = "git+https://github.com/keejkrej/nd2sdk-rs#3bbc8ced4b089b0b13b124066a15eaf900d8492b"
 dependencies = [
  "serde",
  "serde_json",

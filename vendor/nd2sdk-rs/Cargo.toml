@@ -1,0 +1,19 @@
+[package]
+name = "nd2sdk-rs"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.70"
+description = "Rust wrapper for Nikon Nd2ReadSdk with an nd2-rs compatible API"
+license = "MIT"
+
+[lib]
+name = "nd2_rs"
+path = "src/lib.rs"
+doctest = false
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "1"
+
+[build-dependencies]

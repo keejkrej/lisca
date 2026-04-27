@@ -6,7 +6,15 @@
     "RUSTUP_TOOLCHAIN",
     "RUSTFLAGS",
     "CARGO_INCREMENTAL",
-    "CARGO_TARGET_DIR"
+    "CARGO_TARGET_DIR",
+    "VCPKG_ROOT",
+    "VCPKGRS_TRIPLET",
+    "VCPKGRS_DYNAMIC",
+    "LIBCZI_INCLUDE_DIR",
+    "LIBCZI_LIB_DIR",
+    "LIBCZI_LIB_NAME",
+    "LIBCZI_STATIC",
+    "ND2READSDK_DIR"
   ],
   "tasks": {
     "build": {
