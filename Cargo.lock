@@ -896,7 +896,7 @@ dependencies = [
 [[package]]
 name = "czi-rs"
 version = "0.2.0"
-source = "git+https://github.com/keejkrej/czisdk-rs#e5d10e98ec1f936e33e9f6c783d67114a12ac065"
+source = "git+https://github.com/keejkrej/czisdk-rs#a0925978f0c69ec99e45161dccd178d37bd84cc2"
 dependencies = [
  "cc",
  "roxmltree",
