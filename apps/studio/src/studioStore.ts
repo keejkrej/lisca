@@ -108,9 +108,9 @@ function requireRecord(value: unknown, label: string): Record<string, unknown> {
   return value;
 }
 
-function requireString(record: Record<string, unknown>, key: string): string {
+function requireString(record: Record<string, unknown>, key: string, label = key): string {
   const value = record[key];
-  if (typeof value !== "string") throw new Error(`Invalid assay.json: ${key} must be a string.`);
+  if (typeof value !== "string") throw new Error(`Invalid assay.json: ${label} must be a string.`);
   return value;
 }
 
@@ -133,10 +133,10 @@ function isTimelapseUnit(value: unknown): value is TimelapseUnit {
 function parseInfo1(value: unknown): BasicInfoStep1 {
   const info1 = requireRecord(value, "info1");
   return {
-    name: requireString(info1, "info1.name"),
-    date: requireString(info1, "info1.date"),
-    dataPath: requireString(info1, "info1.dataPath"),
-    saveTo: requireString(info1, "info1.saveTo"),
+    name: requireString(info1, "name", "info1.name"),
+    date: requireString(info1, "date", "info1.date"),
+    dataPath: requireString(info1, "dataPath", "info1.dataPath"),
+    saveTo: requireString(info1, "saveTo", "info1.saveTo"),
   };
 }
 
@@ -160,7 +160,7 @@ function parseInfo2(value: unknown): BasicInfoStep2 {
   }
 
   return {
-    pattern: requireString(info2, "info2.pattern"),
+    pattern: requireString(info2, "pattern", "info2.pattern"),
     timelapseAmount,
     timelapseUnit,
     selectedFeature,
@@ -173,9 +173,9 @@ function parseSampleRows(value: unknown, label: string): BasicInfoSampleRow[] {
   return value.map((row, index) => {
     const record = requireRecord(row, `${label}[${index}]`);
     return {
-      channel: requireString(record, `${label}[${index}].channel`),
-      name: requireString(record, `${label}[${index}].name`),
-      positions: requireString(record, `${label}[${index}].positions`),
+      channel: requireString(record, "channel", `${label}[${index}].channel`),
+      name: requireString(record, "name", `${label}[${index}].name`),
+      positions: requireString(record, "positions", `${label}[${index}].positions`),
     };
   });
 }

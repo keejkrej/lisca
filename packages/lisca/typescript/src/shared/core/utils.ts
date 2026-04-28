@@ -45,11 +45,10 @@ export function beginGridPointerGesture(
   input: GridPointerGestureInput,
   toolMode?: AlignPatternToolMode,
 ): GridPointerGestureSession | null {
-  if (toolMode !== undefined && isMousePointerInput(input) && input.button === 0) {
-    if (toolMode === "zoom") {
-      return null;
-    }
-    const intent: GridPointerIntent = toolMode === "pan" ? "offset" : "rotation";
+  if (toolMode !== undefined) {
+    if (!isPrimaryMouseButton(input)) return null;
+    const intent: GridPointerIntent =
+      toolMode === "pan" ? "offset" : toolMode === "rotate" ? "rotation" : "spacing-size";
     return {
       pointerId: input.pointerId,
       intent,
@@ -104,6 +103,18 @@ export function applyGridPointerGesture(
         session.startGrid.rotation + degreesToRadians((deltaX / Math.max(1, viewport.displayWidth)) * 220),
       ),
     };
+  }
+
+  if (session.intent === "spacing-size") {
+    const spacingFactor = Math.max(0.01, 1 + (deltaX / Math.max(1, viewport.displayWidth)) * 2.5);
+    const sizeFactor = Math.max(0.01, 1 + (deltaY / Math.max(1, viewport.displayHeight)) * 2.5);
+    return normalizeGridState({
+      ...session.startGrid,
+      spacingA: session.startGrid.spacingA * spacingFactor,
+      spacingB: session.startGrid.spacingB * spacingFactor,
+      cellWidth: session.startGrid.cellWidth * sizeFactor,
+      cellHeight: session.startGrid.cellHeight * sizeFactor,
+    });
   }
 
   const factor = Math.max(0.01, 1 + (deltaX / Math.max(1, viewport.displayWidth)) * 2.5);

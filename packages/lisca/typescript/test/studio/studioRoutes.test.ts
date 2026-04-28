@@ -26,8 +26,18 @@ const validInfo2: BasicInfoStep2 = {
 };
 
 const validInfo3: BasicInfoStep3 = {
-  selectedSlideId: "slide-1",
-  samples: [{ channel: "0", name: "sample", positions: "0:10" }],
+  selectedSlideId: "slide-i",
+  samplesBySlide: {
+    "slide-i": [{ channel: "0", name: "sample", positions: "0:10" }],
+    "slide-vi": [
+      { channel: "0", name: "sample", positions: "0:10" },
+      { channel: "1", name: "sample", positions: "10:20" },
+      { channel: "2", name: "sample", positions: "20:30" },
+      { channel: "3", name: "sample", positions: "30:40" },
+      { channel: "4", name: "sample", positions: "40:50" },
+      { channel: "5", name: "sample", positions: "50:60" },
+    ],
+  },
 };
 
 describe("studio route helpers", () => {

@@ -136,15 +136,14 @@ describe("grid utils", () => {
     expect(isPrimaryMouseButton({ pointerType: "mouse", button: 1 })).toBe(false);
   });
 
-  test("beginGridPointerGesture with toolMode zoom ignores primary button", () => {
+  test("beginGridPointerGesture with toolMode zoom maps primary button to spacing and size", () => {
     const grid = createDefaultGrid();
-    expect(
-      beginGridPointerGesture(
-        grid,
-        { pointerId: 1, pointerType: "mouse", button: 0, clientX: 0, clientY: 0 },
-        "zoom",
-      ),
-    ).toBeNull();
+    const session = beginGridPointerGesture(
+      grid,
+      { pointerId: 1, pointerType: "mouse", button: 0, clientX: 0, clientY: 0 },
+      "zoom",
+    );
+    expect(session?.intent).toBe("spacing-size");
   });
 
   test("beginGridPointerGesture with toolMode rotate maps primary button to rotation", () => {
@@ -155,6 +154,24 @@ describe("grid utils", () => {
       "rotate",
     );
     expect(session?.intent).toBe("rotation");
+  });
+
+  test("beginGridPointerGesture with toolMode ignores non-primary buttons", () => {
+    const grid = createDefaultGrid();
+    expect(
+      beginGridPointerGesture(
+        grid,
+        { pointerId: 1, pointerType: "mouse", button: 1, clientX: 100, clientY: 200 },
+        "pan",
+      ),
+    ).toBeNull();
+    expect(
+      beginGridPointerGesture(
+        grid,
+        { pointerId: 1, pointerType: "mouse", button: 2, clientX: 100, clientY: 200 },
+        "rotate",
+      ),
+    ).toBeNull();
   });
 
   test("applies left drag as offset movement", () => {
@@ -253,6 +270,45 @@ describe("grid utils", () => {
 
     expect(next.rotation).toBeCloseTo(normalizeRadians(degreesToRadians(22)));
     expect(next.tx).toBe(grid.tx);
+  });
+
+  test("applies toolMode zoom drag as spacing on x and box size on y", () => {
+    const grid = createDefaultGrid();
+    const session = beginGridPointerGesture(
+      grid,
+      {
+        pointerId: 7,
+        pointerType: "mouse",
+        button: 0,
+        clientX: 100,
+        clientY: 200,
+      },
+      "zoom",
+    );
+
+    expect(session).not.toBeNull();
+    const next = applyGridPointerGesture(
+      session!,
+      {
+        pointerId: 7,
+        pointerType: "mouse",
+        button: 0,
+        clientX: 140,
+        clientY: 240,
+      },
+      {
+        displayWidth: 400,
+        displayHeight: 400,
+        modelWidth: 200,
+        modelHeight: 200,
+      },
+    );
+
+    expect(next.spacingA).toBeGreaterThan(grid.spacingA);
+    expect(next.spacingB).toBeGreaterThan(grid.spacingB);
+    expect(next.cellWidth).toBeGreaterThan(grid.cellWidth);
+    expect(next.cellHeight).toBeGreaterThan(grid.cellHeight);
+    expect(next.rotation).toBe(grid.rotation);
   });
 
   test("ignores pinch gestures", () => {

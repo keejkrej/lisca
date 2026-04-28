@@ -263,6 +263,10 @@ function AlignPatternWorkspaceInner({
   const handleCanvasPointerDown = useCallback(
     (event: AlignCanvasPointerEvent) => {
       if (!grid.enabled) return;
+      if (toolMode !== undefined && event.pointerType === "mouse" && event.button !== 0) {
+        event.preventDefault();
+        return;
+      }
       const session = beginGridPointerGesture(grid, event, toolMode);
       if (!session) return;
       dragSessionRef.current = session;
@@ -295,13 +299,17 @@ function AlignPatternWorkspaceInner({
 
   const handleCanvasWheel = useCallback(
     (event: AlignCanvasWheelEvent) => {
+      if (toolMode !== undefined) {
+        event.preventDefault();
+        return;
+      }
       if (!frame || !grid.enabled || !event.viewport) return;
       event.preventDefault();
       dragSessionRef.current = null;
       setPreviewGrid(null);
       setAlignGrid(store, (current) => applyGridWheelGesture(current, event, event.viewport!));
     },
-    [frame, grid.enabled, store],
+    [frame, grid.enabled, store, toolMode],
   );
 
   const commitAndAdvance = useCallback(async () => {
