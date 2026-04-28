@@ -15,6 +15,7 @@
     "@fontsource-variable/geist": "^5.2.8",
     "@fontsource-variable/geist-mono": "^5.2.7",
     "@fontsource-variable/inter": "^5.2.8",
+    "@tanstack/react-router": "^1.168.25",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lisca": "workspace:*",
@@ -30,6 +31,7 @@
   "devDependencies": {
     "@types/node": "^22.10.0",
     "@tailwindcss/vite": "^4.2.2",
+    "@tanstack/router-plugin": "^1.167.28",
     "@tauri-apps/cli": "^2.10.1",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",

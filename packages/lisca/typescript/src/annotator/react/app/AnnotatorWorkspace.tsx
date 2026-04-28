@@ -5,6 +5,7 @@ import { useShallow } from "zustand/react/shallow";
 
 import type {
   AnnotationLabel,
+  AnnotationMode,
   FrameResult,
   RawFrameAnnotation,
   RawFrameRequest,
@@ -63,6 +64,7 @@ import { RawAnnotationSession, RoiAnnotationSession } from "../session";
 
 import AnnotatorNavbar, { type AnnotatorDataMode } from "./AnnotatorNavbar";
 import AnnotatorOutputsSection from "./AnnotatorOutputsSection";
+import { LAST_ANNOTATOR_DATA_MODE_KEY, readStoredAnnotatorDataMode } from "./annotatorRoutes";
 import { useAnnotationModeStore } from "./annotationModeStore";
 import { useLoadAnnotatorEditorFrame } from "../hooks/useLoadAnnotatorEditorFrame";
 
@@ -72,16 +74,9 @@ const SHELL_ANNOTATION_FRAME: FrameResult = {
   pixels: new Uint8Array(1),
 };
 
-const LAST_DATA_MODE_KEY = "annotator.dataMode";
-
 function currentPositionScan(scan: { positions: RoiPositionScan[] } | null, pos: number | null) {
   if (!scan || pos == null) return null;
   return scan.positions.find((entry) => entry.pos === pos) ?? null;
-}
-
-function readStoredDataMode(): AnnotatorDataMode {
-  if (typeof window === "undefined" || !window.sessionStorage) return "roi";
-  return window.sessionStorage.getItem(LAST_DATA_MODE_KEY) === "raw" ? "raw" : "roi";
 }
 
 function sourcesEqual(left: ViewerSource | null, right: ViewerSource | null) {
@@ -92,15 +87,43 @@ function sourcesEqual(left: ViewerSource | null, right: ViewerSource | null) {
 interface AnnotatorWorkspaceProps {
   dataPort: ViewerDataPort;
   hostPort: ViewerHostPort;
+  dataMode?: AnnotatorDataMode;
+  annotationMode?: AnnotationMode;
+  onDataModeChange?: (mode: AnnotatorDataMode) => void;
+  onAnnotationModeChange?: (mode: AnnotationMode) => void;
 }
 
-export default function AnnotatorWorkspace({ dataPort: backend, hostPort }: AnnotatorWorkspaceProps) {
+export default function AnnotatorWorkspace({
+  dataPort: backend,
+  hostPort,
+  dataMode: controlledDataMode,
+  annotationMode: controlledAnnotationMode,
+  onDataModeChange,
+  onAnnotationModeChange,
+}: AnnotatorWorkspaceProps) {
   const queryClient = useQueryClient();
   const saveAnnotationLabelsMutation = useSaveAnnotationLabelsMutation(backend);
   const workspacePath = useStore(workspaceStore, (state) => state.workspacePath);
-  const annotationMode = useAnnotationModeStore((state) => state.mode);
+  const storedAnnotationMode = useAnnotationModeStore((state) => state.mode);
   const setAnnotationMode = useAnnotationModeStore((state) => state.setMode);
-  const [dataMode, setDataMode] = useState<AnnotatorDataMode>(() => readStoredDataMode());
+  const [uncontrolledDataMode, setUncontrolledDataMode] = useState<AnnotatorDataMode>(() => {
+    if (typeof window === "undefined") return "roi";
+    return readStoredAnnotatorDataMode(window.sessionStorage) ?? "roi";
+  });
+  const dataMode = controlledDataMode ?? uncontrolledDataMode;
+  const annotationMode = controlledAnnotationMode ?? storedAnnotationMode;
+
+  const setDataMode = (nextMode: AnnotatorDataMode) => {
+    if (controlledDataMode === undefined) {
+      setUncontrolledDataMode(nextMode);
+    }
+    onDataModeChange?.(nextMode);
+  };
+
+  const handleAnnotationModeChange = (nextMode: AnnotationMode) => {
+    setAnnotationMode(nextMode);
+    onAnnotationModeChange?.(nextMode);
+  };
 
   const { scan, selection, loading, error, selectedRoi } = useStore(
     roiStore,
@@ -152,8 +175,13 @@ export default function AnnotatorWorkspace({ dataPort: backend, hostPort }: Anno
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.sessionStorage) return;
-    window.sessionStorage.setItem(LAST_DATA_MODE_KEY, dataMode);
+    window.sessionStorage.setItem(LAST_ANNOTATOR_DATA_MODE_KEY, dataMode);
   }, [dataMode]);
+
+  useEffect(() => {
+    if (controlledAnnotationMode === undefined || storedAnnotationMode === controlledAnnotationMode) return;
+    setAnnotationMode(controlledAnnotationMode);
+  }, [controlledAnnotationMode, setAnnotationMode, storedAnnotationMode]);
 
   const activeDataError = dataMode === "roi" ? error : rawState.error;
   useEffect(() => {
@@ -667,7 +695,7 @@ export default function AnnotatorWorkspace({ dataPort: backend, hostPort }: Anno
             dataMode={dataMode}
             annotationMode={annotationMode}
             onDataModeChange={setDataMode}
-            onAnnotationModeChange={setAnnotationMode}
+            onAnnotationModeChange={handleAnnotationModeChange}
             onPickWorkspace={handlePickWorkspace}
             onOpenTif={() => handleOpenSource(hostPort.pickTifDirectory, "tif")}
             onOpenJpg={() => handleOpenSource(hostPort.pickJpgDirectory, "jpg")}

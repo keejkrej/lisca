@@ -9,28 +9,36 @@ import { setWorkspacePath, workspaceStore } from "lisca/shared/state";
 import ViewerAlignWorkspace from "./ViewerAlignWorkspace";
 import ViewerRoiWorkspace from "./ViewerRoiWorkspace";
 import type { ViewerMode } from "./ViewerNavbar";
+import { LAST_VIEWER_MODE_KEY, readStoredViewerMode } from "./viewerRoutes";
 import { setSource, viewerStore } from "./viewerStore";
 
 interface ViewerAppProps {
   dataPort: ViewerDataPort;
   hostPort: ViewerHostPort;
-}
-
-const LAST_VIEWER_MODE_KEY = "viewer.viewerMode";
-
-function readStoredViewerMode(): ViewerMode {
-  if (typeof window === "undefined" || !window.sessionStorage) return "align";
-  const stored = window.sessionStorage.getItem(LAST_VIEWER_MODE_KEY);
-  return stored === "roi" ? "roi" : "align";
+  mode?: ViewerMode;
+  onModeChange?: (mode: ViewerMode) => void;
 }
 
 export default function ViewerApp({
   dataPort,
   hostPort,
+  mode: controlledMode,
+  onModeChange,
 }: ViewerAppProps) {
   const workspacePath = useStore(workspaceStore, (state) => state.workspacePath);
   const source = useStore(viewerStore, (state) => state.source);
-  const [mode, setMode] = useState<ViewerMode>(() => readStoredViewerMode());
+  const [uncontrolledMode, setUncontrolledMode] = useState<ViewerMode>(() => {
+    if (typeof window === "undefined") return "align";
+    return readStoredViewerMode(window.sessionStorage) ?? "align";
+  });
+  const mode = controlledMode ?? uncontrolledMode;
+
+  const setMode = (nextMode: ViewerMode) => {
+    if (controlledMode === undefined) {
+      setUncontrolledMode(nextMode);
+    }
+    onModeChange?.(nextMode);
+  };
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.sessionStorage) return;

@@ -1,5 +1,5 @@
 import { Button } from "lisca/shared/ui";
-import { createTauriDesktopPorts } from "lisca/shared/host-tauri";
+import type { ViewerDataPort } from "lisca/shared/contracts";
 import {
   createAlignStore,
   type AlignPatternStatus,
@@ -16,62 +16,24 @@ import { BasicInfoStep2 } from "./screens/BasicInfoStep2";
 import { BasicInfoStep3 } from "./screens/BasicInfoStep3";
 import { WelcomeAssay } from "./screens/WelcomeAssay";
 import { instructionForStep } from "./studioCopy";
-import {
-  type BasicInfo2FeatureId,
-  type BasicInfoStep3 as BasicInfoStep3Fields,
-  useStudioStore,
-} from "./studioStore";
+import { type StudioStep, useStudioStore } from "./studioStore";
+import { nextStudioStep, validInfo1, validInfo2, validInfo3 } from "./studioRoutes";
 
 /** `variant="ghost"`; white label on the command bar. `!` + `sm:!` override Button defaults (`sm:text-sm`, `sm:h-8`). */
 const stepGhostCtaClass =
   "!h-auto !min-h-0 py-1.5 sm:!h-auto sm:py-1.5 !text-xl sm:!text-xl font-normal leading-tight text-white shadow-none hover:bg-white/10 hover:text-white data-[pressed]:text-white data-[pressed]:bg-white/10 disabled:text-white/50";
 
-function validInfo1(name: string, date: string, dataPath: string, saveTo: string) {
-  return (
-    name.trim().length > 0 &&
-    date.trim().length > 0 &&
-    dataPath.trim().length > 0 &&
-    saveTo.trim().length > 0
-  );
+interface StudioAppProps {
+  step: StudioStep;
+  dataPort: ViewerDataPort | null;
+  onStepChange: (step: StudioStep) => void;
 }
 
-function validInfo2(
-  pattern: string,
-  timelapseAmount: number | null,
-  selectedFeature: BasicInfo2FeatureId | null,
-) {
-  return (
-    pattern.trim().length > 0 &&
-    timelapseAmount != null &&
-    timelapseAmount > 0 &&
-    selectedFeature !== null
-  );
-}
-
-function validInfo3(info3: BasicInfoStep3Fields) {
-  if (info3.selectedSlideId === null) return false;
-  return info3.samples.every(
-    (r) =>
-      r.channel.trim().length > 0 &&
-      r.name.trim().length > 0 &&
-      r.positions.trim().length > 0,
-  );
-}
-
-export default function StudioApp() {
-  const step = useStudioStore((s) => s.step);
+export default function StudioApp({ step, dataPort, onStepChange }: StudioAppProps) {
   const assayId = useStudioStore((s) => s.assayId);
   const info1 = useStudioStore((s) => s.info1);
   const info2 = useStudioStore((s) => s.info2);
   const info3 = useStudioStore((s) => s.info3);
-  const goNext = useStudioStore((s) => s.goNext);
-
-  const dataPort = useMemo(() => {
-    if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
-      return createTauriDesktopPorts().dataPort;
-    }
-    return null;
-  }, []);
   const alignStore = useMemo(() => createAlignStore(), []);
 
   const [alignToolMode, setAlignToolMode] = useState<AlignPatternToolMode>("pan");
@@ -96,16 +58,13 @@ export default function StudioApp() {
     step === "welcome"
       ? Boolean(assayId)
       : step === "info1"
-        ? validInfo1(info1.name, info1.date, info1.dataPath, info1.saveTo)
+        ? validInfo1(info1)
         : step === "info2"
-          ? validInfo2(
-              info2.pattern,
-              info2.timelapseAmount,
-              info2.selectedFeature,
-            )
+          ? validInfo2(info2)
           : step === "info3"
             ? validInfo3(info3)
             : false;
+  const nextStep = nextStudioStep({ step, assayId, info1, info2, info3 });
 
   const stepAction =
     step === "alignPattern" ? (
@@ -127,7 +86,7 @@ export default function StudioApp() {
         type="button"
         variant="ghost"
         onClick={() => {
-          goNext();
+          if (nextStep) onStepChange(nextStep);
         }}
       >
         next
@@ -149,7 +108,12 @@ export default function StudioApp() {
 
   return (
     <div className="grid h-svh min-h-0 w-full grid-cols-1 overflow-hidden bg-background text-foreground md:grid-cols-[240px_minmax(0,1fr)_240px]">
-      <StudioNavRail alignStore={alignStore} className="hidden min-h-0 md:flex" />
+      <StudioNavRail
+        alignStore={alignStore}
+        step={step}
+        className="hidden min-h-0 md:flex"
+        onStepChange={onStepChange}
+      />
 
       <div className="flex min-h-0 min-w-0 flex-col border-border/60 md:border-x">
         <main className={mainScrollClass}>

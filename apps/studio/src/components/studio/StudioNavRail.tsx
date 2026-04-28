@@ -12,7 +12,6 @@ import {
 import { AlignFrameNavigation, type AlignStore } from "lisca/shared/react";
 import { useEffect, useState } from "react";
 import type { StudioStep } from "../../studioStore";
-import { useStudioStore } from "../../studioStore";
 import { studioNavItemButtonClass } from "./studioNavItemButtonClass";
 
 /** Left rail labels match Figma (Page 2 appshell). */
@@ -50,12 +49,12 @@ const NAV_SUBSTEPS: Partial<Record<string, { step: StudioStep; label: string }[]
 
 type StudioNavRailProps = {
   alignStore: AlignStore;
+  step: StudioStep;
   className?: string;
+  onStepChange: (step: StudioStep) => void;
 };
 
-export function StudioNavRail({ alignStore, className }: StudioNavRailProps) {
-  const step = useStudioStore((s) => s.step);
-  const setStep = useStudioStore((s) => s.setStep);
+export function StudioNavRail({ alignStore, step, className, onStepChange }: StudioNavRailProps) {
   const activeId = STEP_TO_ACTIVE[step];
   const [alignFrameNavOpen, setAlignFrameNavOpen] = useState(false);
 
@@ -107,7 +106,7 @@ export function StudioNavRail({ alignStore, className }: StudioNavRailProps) {
                   variant="ghost"
                   onClick={() => {
                     if (targetStep !== undefined) {
-                      setStep(targetStep);
+                      onStepChange(targetStep);
                     }
                   }}
                 >
@@ -138,7 +137,7 @@ export function StudioNavRail({ alignStore, className }: StudioNavRailProps) {
               variant="ghost"
               onClick={() => {
                 if (targetStep !== undefined) {
-                  setStep(targetStep);
+                  onStepChange(targetStep);
                 }
               }}
             >
@@ -158,7 +157,7 @@ export function StudioNavRail({ alignStore, className }: StudioNavRailProps) {
                 variant="ghost"
                 onClick={() => {
                   if (targetStep !== undefined) {
-                    setStep(targetStep);
+                    onStepChange(targetStep);
                   }
                 }}
               >
@@ -171,7 +170,7 @@ export function StudioNavRail({ alignStore, className }: StudioNavRailProps) {
                   key={s.step}
                   className={cn(step === s.step && "bg-accent/60")}
                   onClick={() => {
-                    setStep(s.step);
+                    onStepChange(s.step);
                   }}
                 >
                   {s.label}

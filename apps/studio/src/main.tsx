@@ -6,7 +6,7 @@ import { AnchoredToastProvider, ToastProvider } from "lisca/shared/react";
 
 import "./index.css";
 
-import StudioApp from "./App";
+import { StudioRouterProvider } from "./router";
 
 document.documentElement.classList.add("dark");
 
@@ -15,7 +15,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <LiscaQueryProvider>
       <ToastProvider>
         <AnchoredToastProvider>
-          <StudioApp />
+          <StudioRouterProvider />
         </AnchoredToastProvider>
       </ToastProvider>
     </LiscaQueryProvider>

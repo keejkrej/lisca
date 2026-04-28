@@ -61,19 +61,15 @@ export type BasicInfoStep3 = {
 };
 
 type StudioState = {
-  step: StudioStep;
   assayId: AssayId | null;
   info1: BasicInfoStep1;
   info2: BasicInfoStep2;
   info3: BasicInfoStep3;
-  setStep: (step: StudioStep) => void;
   setAssayId: (id: AssayId | null) => void;
   setInfo1: (patch: Partial<BasicInfoStep1>) => void;
   setInfo2: (patch: Partial<BasicInfoStep2>) => void;
   setInfo3: (patch: Partial<BasicInfoStep3>) => void;
   updateInfo3Sample: (index: number, patch: Partial<BasicInfoSampleRow>) => void;
-  goNext: () => void;
-  goBack: () => void;
   submit: () => void;
 };
 
@@ -105,7 +101,6 @@ const initialInfo3: BasicInfoStep3 = {
 };
 
 export const useStudioStore = create<StudioState>((set, get) => ({
-  step: "welcome",
   assayId: "custom-assay",
   info1: { ...initialInfo1 },
   info2: { ...initialInfo2 },
@@ -113,8 +108,6 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     selectedSlideId: initialInfo3.selectedSlideId,
     samples: initialInfo3.samples.map((r) => ({ ...r })),
   },
-
-  setStep: (step) => set({ step }),
 
   setAssayId: (assayId) => set({ assayId }),
 
@@ -140,58 +133,6 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       );
       return { info3: { ...s.info3, samples } };
     }),
-
-  goNext: () => {
-    const { step, assayId, info1, info2, info3 } = get();
-    if (step === "welcome") {
-      if (!assayId) return;
-      set({ step: "info1" });
-      return;
-    }
-    if (step === "info1") {
-      if (
-        !info1.name.trim() ||
-        !info1.date.trim() ||
-        !info1.dataPath.trim() ||
-        !info1.saveTo.trim()
-      ) {
-        return;
-      }
-      set({ step: "info2" });
-      return;
-    }
-    if (step === "info2") {
-      if (
-        !info2.pattern.trim() ||
-        info2.timelapseAmount == null ||
-        info2.timelapseAmount <= 0 ||
-        info2.selectedFeature === null
-      ) {
-        return;
-      }
-      set({ step: "info3" });
-      return;
-    }
-    if (step === "info3") {
-      if (info3.selectedSlideId === null) return;
-      const samplesOk = info3.samples.every(
-        (r) =>
-          r.channel.trim().length > 0 &&
-          r.name.trim().length > 0 &&
-          r.positions.trim().length > 0,
-      );
-      if (!samplesOk) return;
-      set({ step: "alignPattern" });
-    }
-  },
-
-  goBack: () => {
-    const { step } = get();
-    if (step === "info1") set({ step: "welcome" });
-    else if (step === "info2") set({ step: "info1" });
-    else if (step === "info3") set({ step: "info2" });
-    else if (step === "alignPattern") set({ step: "info3" });
-  },
 
   submit: () => {
     const { assayId, info1, info2, info3 } = get();

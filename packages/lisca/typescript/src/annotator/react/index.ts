@@ -1,5 +1,18 @@
 export { default as AnnotatorApp } from "./app/AnnotatorApp";
 export { default as AnnotatorWorkspace } from "./app/AnnotatorWorkspace";
+export {
+  DEFAULT_ANNOTATION_MODE,
+  LAST_ANNOTATOR_DATA_MODE_KEY,
+  annotatorDataModeToPath,
+  annotatorIndexRedirectPath,
+  annotatorPathToDataMode,
+  parseAnnotationMode,
+  parseAnnotatorDataMode,
+  readStoredAnnotatorDataMode,
+  validateAnnotationModeSearch,
+  type AnnotatorRoutePath,
+} from "./app/annotatorRoutes";
+export type { AnnotatorDataMode } from "./app/AnnotatorNavbar";
 export { RoiAnnotationSession } from "./session";
 export { RawAnnotationSession } from "./session";
 export type { RawAnnotationSessionProps, RoiAnnotationSessionProps } from "./session";
