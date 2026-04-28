@@ -96,7 +96,7 @@ export default function StudioApp({ step, dataPort, onStepChange }: StudioAppPro
   const isBasicInfoMain = step === "info1" || step === "info2" || step === "info3";
 
   const mainInnerClass = isBasicInfoMain
-    ? "mx-auto flex w-full min-h-0 min-w-0 max-w-[52rem] flex-1 flex-col items-center justify-center px-4 py-6 md:px-[100px] md:py-10"
+    ? "mx-auto flex min-h-full w-full min-w-0 max-w-[52rem] flex-col items-center justify-center px-4 py-6 md:px-[100px] md:py-10"
     : step === "alignPattern"
       ? "flex min-h-0 min-w-0 w-full max-w-none flex-1 flex-col px-4 py-6 sm:px-6 sm:py-8"
       : `mx-auto flex w-full min-h-0 min-w-0 max-w-[52rem] flex-1 flex-col items-center px-4 py-6 sm:px-6 sm:py-8 ${

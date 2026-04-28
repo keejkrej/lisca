@@ -46,7 +46,7 @@ export type BasicInfoStep2 = {
 };
 
 /** Slide tile ids — Basic info step 3 (Figma 78:284). */
-export type BasicInfoSlideId = "slide-1" | "slide-2" | "slide-3" | "slide-4";
+export type BasicInfoSlideId = "slide-i" | "slide-vi";
 
 export type BasicInfoSampleRow = {
   channel: string;
@@ -56,8 +56,8 @@ export type BasicInfoSampleRow = {
 
 /** Third basic-info screen — Figma node 78:284 (Slide + Samples). */
 export type BasicInfoStep3 = {
-  selectedSlideId: BasicInfoSlideId | null;
-  samples: BasicInfoSampleRow[];
+  selectedSlideId: BasicInfoSlideId;
+  samplesBySlide: Record<BasicInfoSlideId, BasicInfoSampleRow[]>;
 };
 
 type StudioState = {
@@ -86,19 +86,29 @@ const initialInfo2: BasicInfoStep2 = {
   selectedFeature: null,
 };
 
-const initialInfo3Samples: BasicInfoSampleRow[] = [
-  { channel: "0", name: "sample a", positions: "0:10" },
-  { channel: "1", name: "sample a", positions: "11:20" },
-  { channel: "2", name: "sample a", positions: "21:30" },
-  { channel: "3", name: "sample b", positions: "31:40" },
-  { channel: "4", name: "sample b", positions: "41:50" },
-  { channel: "5", name: "sample b", positions: "51:60" },
-];
-
 const initialInfo3: BasicInfoStep3 = {
-  selectedSlideId: null,
-  samples: initialInfo3Samples.map((r) => ({ ...r })),
+  selectedSlideId: "slide-vi",
+  samplesBySlide: {
+    "slide-i": [{ channel: "0", name: "", positions: "" }],
+    "slide-vi": [
+      { channel: "0", name: "", positions: "" },
+      { channel: "1", name: "", positions: "" },
+      { channel: "2", name: "", positions: "" },
+      { channel: "3", name: "", positions: "" },
+      { channel: "4", name: "", positions: "" },
+      { channel: "5", name: "", positions: "" },
+    ],
+  },
 };
+
+function cloneSamplesBySlide(
+  samplesBySlide: Record<BasicInfoSlideId, BasicInfoSampleRow[]>,
+): Record<BasicInfoSlideId, BasicInfoSampleRow[]> {
+  return {
+    "slide-i": samplesBySlide["slide-i"].map((r) => ({ ...r })),
+    "slide-vi": samplesBySlide["slide-vi"].map((r) => ({ ...r })),
+  };
+}
 
 export const useStudioStore = create<StudioState>((set, get) => ({
   assayId: "custom-assay",
@@ -106,7 +116,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   info2: { ...initialInfo2 },
   info3: {
     selectedSlideId: initialInfo3.selectedSlideId,
-    samples: initialInfo3.samples.map((r) => ({ ...r })),
+    samplesBySlide: cloneSamplesBySlide(initialInfo3.samplesBySlide),
   },
 
   setAssayId: (assayId) => set({ assayId }),
@@ -128,10 +138,19 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   updateInfo3Sample: (index, patch) =>
     set((s) => {
-      const samples = s.info3.samples.map((row, i) =>
+      const selectedSlideId = s.info3.selectedSlideId;
+      const samples = s.info3.samplesBySlide[selectedSlideId].map((row, i) =>
         i === index ? { ...row, ...patch } : row,
       );
-      return { info3: { ...s.info3, samples } };
+      return {
+        info3: {
+          ...s.info3,
+          samplesBySlide: {
+            ...s.info3.samplesBySlide,
+            [selectedSlideId]: samples,
+          },
+        },
+      };
     }),
 
   submit: () => {

@@ -60,8 +60,10 @@ export function validInfo2(info2: BasicInfoStep2): boolean {
 }
 
 export function validInfo3(info3: BasicInfoStep3): boolean {
-  if (info3.selectedSlideId === null) return false;
-  return info3.samples.every(
+  const activeSamples = info3.samplesBySlide[info3.selectedSlideId];
+  if (activeSamples.length === 0) return false;
+
+  return activeSamples.every(
     (r) =>
       r.channel.trim().length > 0 &&
       r.name.trim().length > 0 &&

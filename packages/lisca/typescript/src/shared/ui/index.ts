@@ -49,6 +49,17 @@ export {
 } from "./select";
 export { Slider, SliderValue } from "./slider";
 export { Spinner } from "./spinner";
+export {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+  type TableVariant,
+} from "./table";
 export { AnchoredToastProvider, anchoredToastManager, ToastProvider, toastManager, type ToastDescriptor, type ToastVariant } from "./toast";
 export { ToggleGroup, ToggleGroupItem } from "./toggle-group";
 export { cn } from "./utils";
