@@ -26,6 +26,7 @@ pub struct FitRow {
     pub mrna_decay_rate: Option<f64>,
     pub expression_onset: Option<f64>,
     pub expression_amplitude: Option<f64>,
+    pub expression_slope: Option<f64>,
     pub success: bool,
 }
 
@@ -120,7 +121,10 @@ pub fn default_output_csv_path(timeseries_csvs: &[PathBuf], output_csv: Option<&
 }
 
 /// Default `max_onset_minutes` and `jobs` match Python `compute_fit_table` (`0.0` and `1`).
-pub fn compute_fit_table(timeseries_csvs: &[PathBuf], interval: f64) -> Result<Vec<FitRow>, String> {
+pub fn compute_fit_table(
+    timeseries_csvs: &[PathBuf],
+    interval: f64,
+) -> Result<Vec<FitRow>, String> {
     compute_fit_table_with_options(timeseries_csvs, interval, Some(0.0), 1)
 }
 
@@ -178,9 +182,7 @@ pub fn compute_fit_table_with_options(
         pool.install(|| {
             tasks
                 .par_iter()
-                .map(|(_, _, _, trace)| {
-                    fit_trace(trace, interval, None, FIRST_PASS_MAX_ONSET)
-                })
+                .map(|(_, _, _, trace)| fit_trace(trace, interval, None, FIRST_PASS_MAX_ONSET))
                 .collect()
         })
     } else {
@@ -191,11 +193,7 @@ pub fn compute_fit_table_with_options(
     };
     let successful_protein_rates: Vec<f64> = first_pass_results
         .iter()
-        .filter_map(|result| {
-            result.map(|r| {
-                r.protein_decay_rate
-            })
-        })
+        .filter_map(|result| result.map(|r| r.protein_decay_rate))
         .collect();
 
     let rows = if successful_protein_rates.is_empty() {
@@ -268,6 +266,7 @@ pub fn write_fit_csv(rows: &[FitRow], output_csv: &Path) -> Result<(), String> {
             "mrna_decay_rate",
             "expression_onset",
             "expression_amplitude",
+            "expression_slope",
             "success",
         ])
         .map_err(|err| err.to_string())?;
@@ -292,6 +291,9 @@ pub fn write_fit_csv(rows: &[FitRow], output_csv: &Path) -> Result<(), String> {
                     .map(|value| value.to_string())
                     .unwrap_or_default(),
                 row.expression_amplitude
+                    .map(|value| value.to_string())
+                    .unwrap_or_default(),
+                row.expression_slope
                     .map(|value| value.to_string())
                     .unwrap_or_default(),
                 row.success.to_string(),
@@ -325,6 +327,8 @@ pub fn execute(args: FitArgs) -> Result<(), String> {
 }
 
 fn fit_row(slide_channel: Option<u32>, pos: Option<u32>, roi: u32, result: FitResult) -> FitRow {
+    let expression_slope =
+        result.expression_amplitude * (result.mrna_decay_rate - result.protein_decay_rate);
     FitRow {
         slide_channel,
         pos,
@@ -334,6 +338,7 @@ fn fit_row(slide_channel: Option<u32>, pos: Option<u32>, roi: u32, result: FitRe
         mrna_decay_rate: Some(result.mrna_decay_rate),
         expression_onset: Some(result.expression_onset),
         expression_amplitude: Some(result.expression_amplitude),
+        expression_slope: Some(expression_slope),
         success: true,
     }
 }
@@ -348,6 +353,7 @@ fn failed_row(slide_channel: Option<u32>, pos: Option<u32>, roi: u32) -> FitRow 
         mrna_decay_rate: None,
         expression_onset: None,
         expression_amplitude: None,
+        expression_slope: None,
         success: false,
     }
 }
@@ -754,6 +760,13 @@ mod tests {
         assert!((rows[0].mrna_decay_rate.unwrap() - 0.35).abs() <= 0.07);
         assert_eq!(rows[0].expression_onset.unwrap(), 0.0);
         assert!((rows[0].expression_amplitude.unwrap() - 40.0).abs() <= 3.0);
+        assert!(
+            (rows[0].expression_slope.unwrap()
+                - rows[0].expression_amplitude.unwrap()
+                    * (rows[0].mrna_decay_rate.unwrap() - rows[0].protein_decay_rate.unwrap()))
+            .abs()
+                <= 1e-12
+        );
 
         assert!((rows[1].intensity_offset.unwrap() - 3.5).abs() <= 0.1);
         assert!(
@@ -763,6 +776,13 @@ mod tests {
         assert!((rows[1].mrna_decay_rate.unwrap() - 0.7).abs() <= 0.1);
         assert_eq!(rows[1].expression_onset.unwrap(), 0.0);
         assert!((rows[1].expression_amplitude.unwrap() - 16.0).abs() <= 2.0);
+        assert!(
+            (rows[1].expression_slope.unwrap()
+                - rows[1].expression_amplitude.unwrap()
+                    * (rows[1].mrna_decay_rate.unwrap() - rows[1].protein_decay_rate.unwrap()))
+            .abs()
+                <= 1e-12
+        );
     }
 
     /// Align with `test_compute_fit_table_respects_max_onset_minutes_in_second_pass` in
@@ -780,9 +800,8 @@ mod tests {
             let trace_b = if t < onset_minutes {
                 3.5
             } else {
-                3.5
-                    + 16.0 * ((-0.05 * (t - onset_minutes)).exp()
-                        - (-0.7 * (t - onset_minutes)).exp())
+                3.5 + 16.0
+                    * ((-0.05 * (t - onset_minutes)).exp() - (-0.7 * (t - onset_minutes)).exp())
             };
             contents.push_str(&format!("25,0,{frame},{trace_a}\n"));
             contents.push_str(&format!("25,1,{frame},{trace_b}\n"));
@@ -798,8 +817,10 @@ mod tests {
         assert!((delayed_unconstrained.expression_onset.unwrap() - onset_minutes).abs() < 1e-5);
         assert!(delayed_clamped.expression_onset.unwrap() <= 4.0);
         assert!(
-            (delayed_unconstrained.protein_decay_rate.unwrap() - unconstrained[0].protein_decay_rate.unwrap())
-                .abs() < 1e-9
+            (delayed_unconstrained.protein_decay_rate.unwrap()
+                - unconstrained[0].protein_decay_rate.unwrap())
+            .abs()
+                < 1e-9
         );
         assert!(delayed_unconstrained.success);
     }
@@ -817,13 +838,14 @@ mod tests {
             mrna_decay_rate: None,
             expression_onset: None,
             expression_amplitude: None,
+            expression_slope: None,
             success: false,
         }];
 
         write_fit_csv(&rows, &output_csv).unwrap();
 
         let contents = fs::read_to_string(output_csv).unwrap();
-        assert!(contents.contains("slide_channel,pos,roi,intensity_offset,protein_decay_rate,mrna_decay_rate,expression_onset,expression_amplitude,success"));
-        assert!(contents.contains("0,12,1,,,,,,false"));
+        assert!(contents.contains("slide_channel,pos,roi,intensity_offset,protein_decay_rate,mrna_decay_rate,expression_onset,expression_amplitude,expression_slope,success"));
+        assert!(contents.contains("0,12,1,,,,,,,false"));
     }
 }

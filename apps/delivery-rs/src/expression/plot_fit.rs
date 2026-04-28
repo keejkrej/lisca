@@ -15,7 +15,12 @@ const PARAMETERS: [(&str, &str); 5] = [
     ("protein_decay_rate", "protein decay rate"),
     ("mrna_decay_rate", "mRNA decay rate"),
     ("expression_onset", "expression onset"),
-    ("expression_amplitude", "expression amplitude"),
+    ("expression_slope", "expression slope"),
+];
+const DERIVED_SLOPE_INPUTS: [&str; 3] = [
+    "expression_amplitude",
+    "mrna_decay_rate",
+    "protein_decay_rate",
 ];
 
 #[derive(Clone, Debug, Args)]
@@ -81,16 +86,35 @@ pub fn load_fit_csv(fit_csv: &Path) -> Result<Vec<PlotFitRow>, String> {
             )
         })
         .collect::<Vec<_>>();
+    let slope_input_indices = DERIVED_SLOPE_INPUTS
+        .into_iter()
+        .map(|parameter| {
+            (
+                parameter,
+                headers.iter().position(|header| header == parameter),
+            )
+        })
+        .collect::<Vec<_>>();
 
     let mut missing = Vec::new();
     if slide_channel_idx.is_none() {
         missing.push("slide_channel".to_string());
     }
-    missing.extend(
-        parameter_indices
-            .iter()
-            .filter_map(|(parameter, idx)| idx.is_none().then_some((*parameter).to_string())),
-    );
+    missing.extend(parameter_indices.iter().filter_map(|(parameter, idx)| {
+        (idx.is_none() && *parameter != "expression_slope").then_some((*parameter).to_string())
+    }));
+    if parameter_indices
+        .iter()
+        .any(|(parameter, idx)| *parameter == "expression_slope" && idx.is_none())
+    {
+        missing.extend(
+            slope_input_indices
+                .iter()
+                .filter_map(|(parameter, idx)| idx.is_none().then_some((*parameter).to_string())),
+        );
+    }
+    missing.sort();
+    missing.dedup();
     if !missing.is_empty() {
         return Err(format!(
             "{} is missing required columns for fit plotting: {:?}",
@@ -116,11 +140,10 @@ pub fn load_fit_csv(fit_csv: &Path) -> Result<Vec<PlotFitRow>, String> {
             .map_err(|_| format!("Invalid slide_channel value {slide_channel_raw:?}"))?;
         let mut values = BTreeMap::new();
         for (parameter, idx) in &parameter_indices {
-            let raw = record
-                .get(idx.unwrap())
-                .unwrap_or_default()
-                .trim()
-                .to_string();
+            let Some(idx) = idx else {
+                continue;
+            };
+            let raw = record.get(*idx).unwrap_or_default().trim().to_string();
             if raw.is_empty() {
                 continue;
             }
@@ -128,6 +151,28 @@ pub fn load_fit_csv(fit_csv: &Path) -> Result<Vec<PlotFitRow>, String> {
                 .parse()
                 .map_err(|_| format!("Invalid {parameter} value {raw:?}"))?;
             values.insert((*parameter).to_string(), value);
+        }
+        if !values.contains_key("expression_slope") {
+            let slope_inputs = slope_input_indices
+                .iter()
+                .map(|(parameter, idx)| {
+                    let raw = record.get(idx.unwrap()).unwrap_or_default().trim();
+                    if raw.is_empty() {
+                        return Ok(None);
+                    }
+                    raw.parse::<f64>()
+                        .map(Some)
+                        .map_err(|_| format!("Invalid {parameter} value {raw:?}"))
+                })
+                .collect::<Result<Vec<_>, String>>()?;
+            if let [Some(expression_amplitude), Some(mrna_decay_rate), Some(protein_decay_rate)] =
+                slope_inputs.as_slice()
+            {
+                values.insert(
+                    "expression_slope".to_string(),
+                    *expression_amplitude * (*mrna_decay_rate - *protein_decay_rate),
+                );
+            }
         }
         rows.push(PlotFitRow {
             slide_channel,
@@ -192,7 +237,7 @@ pub fn write_fit_boxplot(
     let mut grouped = BTreeMap::<u32, Vec<f64>>::new();
     for row in rows {
         if let Some(value) = row.values.get(parameter) {
-            if parameter != "expression_amplitude" || *value > 0.0 {
+            if parameter != "expression_slope" || *value > 0.0 {
                 grouped.entry(row.slide_channel).or_default().push(*value);
             }
         }
@@ -204,7 +249,7 @@ pub fn write_fit_boxplot(
     }
 
     let grouped_values = grouped.values().cloned().collect::<Vec<_>>();
-    let use_log_scale = parameter == "expression_amplitude";
+    let use_log_scale = parameter == "expression_slope";
 
     let root = BitMapBackend::new(output_plot, (PYTHON_PLOT_WIDTH, PYTHON_PLOT_HEIGHT))
         .into_drawing_area();
@@ -459,8 +504,8 @@ mod tests {
             &PathBuf::from("/tmp/slide_ch001_timeseries_expression_onset.png")
         );
         assert_eq!(
-            output_paths.get("expression_amplitude").unwrap(),
-            &PathBuf::from("/tmp/slide_ch001_timeseries_expression_amplitude.png")
+            output_paths.get("expression_slope").unwrap(),
+            &PathBuf::from("/tmp/slide_ch001_timeseries_expression_slope.png")
         );
     }
 
@@ -500,18 +545,18 @@ mod tests {
     }
 
     #[test]
-    fn expression_amplitude_uses_log_scale_bounds() {
+    fn expression_slope_uses_log_scale_bounds() {
         let mut grouped = BTreeMap::<u32, Vec<f64>>::new();
-        grouped.insert(0, vec![40.0, 32.0]);
-        grouped.insert(1, vec![16.0]);
+        grouped.insert(0, vec![12.0, 10.88]);
+        grouped.insert(1, vec![9.92]);
 
         let (lower, upper) = crate::expression::plot_auc::log_axis_bounds(
             &grouped.values().cloned().collect::<Vec<_>>(),
-            "expression amplitude",
+            "expression slope",
         )
         .unwrap();
 
-        assert_eq!(lower, 12.8);
-        assert_eq!(upper, 50.0);
+        assert_eq!(lower, 7.936);
+        assert_eq!(upper, 15.0);
     }
 }

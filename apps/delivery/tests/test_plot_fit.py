@@ -52,10 +52,7 @@ def test_default_output_plot_paths_strip_fit_suffix(tmp_path: Path) -> None:
     assert output_paths["protein_decay_rate"] == tmp_path / "slide_ch001_timeseries_protein_decay_rate.png"
     assert output_paths["mrna_decay_rate"] == tmp_path / "slide_ch001_timeseries_mrna_decay_rate.png"
     assert output_paths["expression_onset"] == tmp_path / "slide_ch001_timeseries_expression_onset.png"
-    assert (
-        output_paths["expression_amplitude"]
-        == tmp_path / "slide_ch001_timeseries_expression_amplitude.png"
-    )
+    assert output_paths["expression_slope"] == tmp_path / "slide_ch001_timeseries_expression_slope.png"
 
 
 def test_default_trace_plot_path_strips_fit_suffix(tmp_path: Path) -> None:
@@ -159,11 +156,11 @@ def test_write_fit_boxplot_uses_linear_ylim_for_non_log_parameter(tmp_path: Path
     assert ax.get_ylim()[1] == pytest.approx(expected_upper)
 
 
-def test_write_fit_boxplot_uses_linear_ylim_for_expression_amplitude(tmp_path: Path) -> None:
+def test_write_fit_boxplot_uses_log_ylim_for_expression_slope(tmp_path: Path) -> None:
     fit_csv = tmp_path / "slide_ch001_timeseries_fit.csv"
     write_fit_csv(fit_csv)
     df = plot_fit.load_fit_csv(fit_csv)
-    output_plot = tmp_path / "expression_amplitude.png"
+    output_plot = tmp_path / "expression_slope.png"
 
     captured: dict[str, object] = {}
     original_subplots = plt.subplots
@@ -177,8 +174,8 @@ def test_write_fit_boxplot_uses_linear_ylim_for_expression_amplitude(tmp_path: P
     try:
         plot_fit.write_fit_boxplot(
             df,
-            parameter="expression_amplitude",
-            ylabel="expression amplitude",
+            parameter="expression_slope",
+            ylabel="expression slope",
             output_plot=output_plot,
             color="#c03a2b",
             title=None,

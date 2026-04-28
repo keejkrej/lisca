@@ -247,7 +247,7 @@ mod tests {
             PathBuf::from("/tmp/slide_timeseries_protein_decay_rate.png"),
             PathBuf::from("/tmp/slide_timeseries_mrna_decay_rate.png"),
             PathBuf::from("/tmp/slide_timeseries_expression_onset.png"),
-            PathBuf::from("/tmp/slide_timeseries_expression_amplitude.png"),
+            PathBuf::from("/tmp/slide_timeseries_expression_slope.png"),
         ];
         let calls = RefCell::new(Vec::<String>::new());
         let output_messages = RefCell::new(Vec::<String>::new());
@@ -429,7 +429,7 @@ mod tests {
                 PathBuf::from("/tmp/protein_decay_rate.png"),
                 PathBuf::from("/tmp/mrna_decay_rate.png"),
                 PathBuf::from("/tmp/expression_onset.png"),
-                PathBuf::from("/tmp/expression_amplitude.png"),
+                PathBuf::from("/tmp/expression_slope.png"),
             ],
             skipped_positions: BTreeMap::new(),
         };

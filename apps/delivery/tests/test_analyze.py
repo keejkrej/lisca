@@ -19,7 +19,7 @@ def test_run_analysis_orchestrates_expected_outputs(monkeypatch, tmp_path: Path)
         tmp_path / "slide_timeseries_protein_decay_rate.png",
         tmp_path / "slide_timeseries_mrna_decay_rate.png",
         tmp_path / "slide_timeseries_expression_onset.png",
-        tmp_path / "slide_timeseries_expression_amplitude.png",
+        tmp_path / "slide_timeseries_expression_slope.png",
         tmp_path / "slide_timeseries_fit_traces.png",
     ]
 
@@ -175,7 +175,7 @@ def test_completed_analysis_message_no_longer_mentions_one_channel(monkeypatch, 
                 tmp_path / "slide_timeseries_protein_decay_rate.png",
                 tmp_path / "slide_timeseries_mrna_decay_rate.png",
                 tmp_path / "slide_timeseries_expression_onset.png",
-                tmp_path / "slide_timeseries_expression_amplitude.png",
+                tmp_path / "slide_timeseries_expression_slope.png",
                 tmp_path / "slide_timeseries_fit_traces.png",
             ],
             skipped_positions={},

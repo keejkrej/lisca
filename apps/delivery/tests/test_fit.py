@@ -70,6 +70,7 @@ def test_compute_fit_table_recovers_biexponential_traces_with_zero_onset(tmp_pat
         "mrna_decay_rate",
         "expression_onset",
         "expression_amplitude",
+        "expression_slope",
         "success",
     ]
     records = fit_df.to_dict("records")
@@ -82,6 +83,9 @@ def test_compute_fit_table_recovers_biexponential_traces_with_zero_onset(tmp_pat
     assert records[0]["mrna_decay_rate"] == pytest.approx(0.35, rel=0.15, abs=0.05)
     assert records[0]["expression_onset"] == pytest.approx(0.0, abs=1e-8)
     assert records[0]["expression_amplitude"] == pytest.approx(40.0, rel=0.1, abs=2.0)
+    assert records[0]["expression_slope"] == pytest.approx(
+        records[0]["expression_amplitude"] * (records[0]["mrna_decay_rate"] - records[0]["protein_decay_rate"])
+    )
 
     assert records[1]["success"] is True
     assert records[1]["intensity_offset"] == pytest.approx(3.5, rel=0.03, abs=0.08)
@@ -89,6 +93,9 @@ def test_compute_fit_table_recovers_biexponential_traces_with_zero_onset(tmp_pat
     assert records[1]["mrna_decay_rate"] == pytest.approx(0.7, rel=0.15, abs=0.08)
     assert records[1]["expression_onset"] == pytest.approx(0.0, abs=1e-8)
     assert records[1]["expression_amplitude"] == pytest.approx(16.0, rel=0.12, abs=1.0)
+    assert records[1]["expression_slope"] == pytest.approx(
+        records[1]["expression_amplitude"] * (records[1]["mrna_decay_rate"] - records[1]["protein_decay_rate"])
+    )
 
 
 def test_compute_fit_table_respects_max_onset_minutes_in_second_pass(tmp_path: Path) -> None:
@@ -159,6 +166,7 @@ def test_compute_fit_table_marks_failed_traces(tmp_path: Path) -> None:
     assert pd.isna(records[0]["mrna_decay_rate"])
     assert pd.isna(records[0]["expression_onset"])
     assert pd.isna(records[0]["expression_amplitude"])
+    assert pd.isna(records[0]["expression_slope"])
     assert records[0]["success"] is False
     assert records[1]["slide_channel"] == 0
     assert records[1]["pos"] == 0
@@ -168,6 +176,7 @@ def test_compute_fit_table_marks_failed_traces(tmp_path: Path) -> None:
     assert pd.isna(records[1]["mrna_decay_rate"])
     assert pd.isna(records[1]["expression_onset"])
     assert pd.isna(records[1]["expression_amplitude"])
+    assert pd.isna(records[1]["expression_slope"])
     assert records[1]["success"] is False
 
 
@@ -208,6 +217,7 @@ def test_cli_writes_fit_csv_with_expected_columns(tmp_path: Path) -> None:
         "mrna_decay_rate",
         "expression_onset",
         "expression_amplitude",
+        "expression_slope",
         "success",
     }
     assert list(rows[0]) == [
@@ -219,6 +229,7 @@ def test_cli_writes_fit_csv_with_expected_columns(tmp_path: Path) -> None:
         "mrna_decay_rate",
         "expression_onset",
         "expression_amplitude",
+        "expression_slope",
         "success",
     ]
     assert rows[0]["slide_channel"] == "0"
@@ -229,4 +240,8 @@ def test_cli_writes_fit_csv_with_expected_columns(tmp_path: Path) -> None:
     assert float(rows[0]["mrna_decay_rate"]) == pytest.approx(0.7, rel=0.15, abs=0.08)
     assert float(rows[0]["expression_onset"]) == pytest.approx(0.0, abs=1e-8)
     assert float(rows[0]["expression_amplitude"]) == pytest.approx(16.0, rel=0.12, abs=1.0)
+    assert float(rows[0]["expression_slope"]) == pytest.approx(
+        float(rows[0]["expression_amplitude"])
+        * (float(rows[0]["mrna_decay_rate"]) - float(rows[0]["protein_decay_rate"]))
+    )
     assert rows[0]["success"] == "true"

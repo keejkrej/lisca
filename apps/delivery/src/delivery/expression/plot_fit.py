@@ -20,7 +20,14 @@ PLOTTED_PARAMETERS = (
     ("protein_decay_rate", "protein decay rate"),
     ("mrna_decay_rate", "mRNA decay rate"),
     ("expression_onset", "expression onset"),
-    ("expression_amplitude", "expression amplitude"),
+    ("expression_slope", "expression slope"),
+)
+FIT_TRACE_PARAMETERS = (
+    "intensity_offset",
+    "protein_decay_rate",
+    "mrna_decay_rate",
+    "expression_onset",
+    "expression_amplitude",
 )
 
 HELP = (
@@ -77,12 +84,12 @@ def run_plot_fit(
 
 def load_fit_csv(fit_csv: Path) -> pd.DataFrame:
     df = pd.read_csv(fit_csv)
-    required = {"slide_channel", "pos", "roi", "success", *(parameter for parameter, _ in PLOTTED_PARAMETERS)}
+    required = {"slide_channel", "pos", "roi", "success", *FIT_TRACE_PARAMETERS}
     missing = required.difference(df.columns)
     if missing:
         raise ValueError(f"{fit_csv} is missing required columns for fit plotting: {sorted(missing)}")
 
-    keep_columns = ["slide_channel", "pos", "roi", "success", *(parameter for parameter, _ in PLOTTED_PARAMETERS)]
+    keep_columns = ["slide_channel", "pos", "roi", "success", *FIT_TRACE_PARAMETERS]
     df = df.loc[:, keep_columns].copy()
     df = df.dropna(subset=["slide_channel"])
     if df.empty:
@@ -92,8 +99,9 @@ def load_fit_csv(fit_csv: Path) -> pd.DataFrame:
     df["pos"] = pd.to_numeric(df["pos"], errors="coerce").astype("Int64")
     df["roi"] = pd.to_numeric(df["roi"], errors="coerce").astype("Int64")
     df["success"] = df["success"].astype(str).str.lower().eq("true")
-    for parameter, _ in PLOTTED_PARAMETERS:
+    for parameter in FIT_TRACE_PARAMETERS:
         df[parameter] = pd.to_numeric(df[parameter], errors="coerce")
+    df["expression_slope"] = df["expression_amplitude"] * (df["mrna_decay_rate"] - df["protein_decay_rate"])
     return df.sort_values(["slide_channel", "pos", "roi"]).reset_index(drop=True)
 
 
@@ -137,7 +145,7 @@ def write_fit_boxplot(
     title: str | None,
 ) -> None:
     parameter_df = df.dropna(subset=[parameter]).copy()
-    use_log_scale = parameter == "expression_amplitude"
+    use_log_scale = parameter == "expression_slope"
     if use_log_scale:
         parameter_df = parameter_df.loc[parameter_df[parameter] > 0].copy()
     if parameter_df.empty:
