@@ -315,55 +315,41 @@ export default function ViewerNavbar({
               <div className="grid grid-cols-4 gap-3">
                 <button
                   type="button"
-                  className="group flex min-h-36 w-full flex-col items-start justify-center rounded-2xl border border-border/70 bg-muted/[0.12] px-5 py-5 text-left transition-colors hover:border-primary/35 hover:bg-primary/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="group flex min-h-24 w-full items-center justify-center rounded-2xl border border-border/70 bg-muted/[0.12] px-4 py-5 text-center transition-colors hover:border-primary/35 hover:bg-primary/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   onClick={() => void handleOpenTif()}
                 >
                   <p className="text-[1.1rem] font-medium tracking-[0.02em] text-foreground transition-colors group-hover:text-primary">
                     TIFF
                   </p>
-                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                    Folder with Pos{"{n}"} stacks
-                  </p>
                 </button>
 
                 <button
                   type="button"
-                  className="group flex min-h-36 w-full flex-col items-start justify-center rounded-2xl border border-border/70 bg-muted/[0.12] px-5 py-5 text-left transition-colors hover:border-primary/35 hover:bg-primary/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="group flex min-h-24 w-full items-center justify-center rounded-2xl border border-border/70 bg-muted/[0.12] px-4 py-5 text-center transition-colors hover:border-primary/35 hover:bg-primary/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   onClick={() => void handleOpenJpg()}
                 >
                   <p className="text-[1.1rem] font-medium tracking-[0.02em] text-foreground transition-colors group-hover:text-primary">
-                    JPG
-                  </p>
-                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                    Folder with Pos{"{n}"} image frames
+                    PNG
                   </p>
                 </button>
 
                 <button
                   type="button"
-                  className="group flex min-h-36 w-full flex-col items-start justify-center rounded-2xl border border-border/70 bg-muted/[0.12] px-5 py-5 text-left transition-colors hover:border-primary/35 hover:bg-primary/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="group flex min-h-24 w-full items-center justify-center rounded-2xl border border-border/70 bg-muted/[0.12] px-4 py-5 text-center transition-colors hover:border-primary/35 hover:bg-primary/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   onClick={() => void handleOpenNd2()}
                 >
                   <p className="text-[1.1rem] font-medium tracking-[0.02em] text-foreground transition-colors group-hover:text-primary">
                     ND2
                   </p>
-                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                    Nikon acquisition file
-                  </p>
                 </button>
 
                 <button
                   type="button"
-                  className="group flex min-h-36 w-full flex-col items-start justify-center rounded-2xl border border-border/70 bg-muted/[0.12] px-5 py-5 text-left transition-colors hover:border-primary/35 hover:bg-primary/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="group flex min-h-24 w-full items-center justify-center rounded-2xl border border-border/70 bg-muted/[0.12] px-4 py-5 text-center transition-colors hover:border-primary/35 hover:bg-primary/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   onClick={() => void handleOpenCzi()}
                 >
-                  <div className="flex items-center gap-2">
-                    <p className="text-[1.1rem] font-medium tracking-[0.02em] text-foreground transition-colors group-hover:text-primary">
-                      CZI
-                    </p>
-                  </div>
-                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                    Zeiss acquisition file
+                  <p className="text-[1.1rem] font-medium tracking-[0.02em] text-foreground transition-colors group-hover:text-primary">
+                    CZI
                   </p>
                 </button>
               </div>

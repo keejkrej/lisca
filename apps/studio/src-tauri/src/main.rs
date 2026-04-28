@@ -6,6 +6,7 @@
 use std::{
     collections::HashSet,
     env,
+    fs,
     path::Path,
     sync::{Arc, Mutex},
     time::{Duration, Instant},
@@ -95,6 +96,25 @@ fn pick_czi() -> Option<String> {
         .add_filter("CZI", &["czi"])
         .pick_file()
         .map(|path| path.to_string_lossy().to_string())
+}
+
+#[command]
+fn save_assay_json(save_to: String, contents: String) -> Result<(), String> {
+    let save_dir = Path::new(&save_to);
+    fs::create_dir_all(save_dir).map_err(|err| err.to_string())?;
+    fs::write(save_dir.join("assay.json"), contents).map_err(|err| err.to_string())
+}
+
+#[command]
+fn open_assay_json() -> Result<Option<String>, String> {
+    let Some(path) = FileDialog::new()
+        .add_filter("Assay JSON", &["json"])
+        .pick_file()
+    else {
+        return Ok(None);
+    };
+
+    fs::read_to_string(path).map(Some).map_err(|err| err.to_string())
 }
 
 #[command]
@@ -273,6 +293,8 @@ fn main() {
             pick_jpg,
             pick_nd2,
             pick_czi,
+            save_assay_json,
+            open_assay_json,
             roi_pos_exists,
             scan_source,
             load_frame,

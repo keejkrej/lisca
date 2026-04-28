@@ -1,7 +1,10 @@
 import { Button } from "lisca/shared/ui";
 import type { ViewerDataPort } from "lisca/shared/contracts";
+import { createTauriDesktopPorts } from "lisca/shared/host-tauri";
 import {
   createAlignStore,
+  showErrorToast,
+  showSuccessToast,
   type AlignPatternStatus,
   type AlignPatternToolMode,
 } from "lisca/shared/react";
@@ -16,7 +19,12 @@ import { BasicInfoStep2 } from "./screens/BasicInfoStep2";
 import { BasicInfoStep3 } from "./screens/BasicInfoStep3";
 import { WelcomeAssay } from "./screens/WelcomeAssay";
 import { instructionForStep } from "./studioCopy";
-import { type StudioStep, useStudioStore } from "./studioStore";
+import {
+  buildStudioAssayJson,
+  parseStudioAssayJson,
+  type StudioStep,
+  useStudioStore,
+} from "./studioStore";
 import { nextStudioStep, validInfo1, validInfo2, validInfo3 } from "./studioRoutes";
 
 /** `variant="ghost"`; white label on the command bar. `!` + `sm:!` override Button defaults (`sm:text-sm`, `sm:h-8`). */
@@ -34,9 +42,18 @@ export default function StudioApp({ step, dataPort, onStepChange }: StudioAppPro
   const info1 = useStudioStore((s) => s.info1);
   const info2 = useStudioStore((s) => s.info2);
   const info3 = useStudioStore((s) => s.info3);
+  const loadAssayJson = useStudioStore((s) => s.loadAssayJson);
   const alignStore = useMemo(() => createAlignStore(), []);
+  const hostPort = useMemo(() => {
+    if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
+      return createTauriDesktopPorts().hostPort;
+    }
+    return null;
+  }, []);
 
   const [alignToolMode, setAlignToolMode] = useState<AlignPatternToolMode>("pan");
+  const [savingAssay, setSavingAssay] = useState(false);
+  const [openingAssay, setOpeningAssay] = useState(false);
 
   const alignCommitRef = useRef<(() => Promise<void>) | null>(null);
   const [alignStatus, setAlignStatus] = useState<AlignPatternStatus>({
@@ -66,6 +83,55 @@ export default function StudioApp({ step, dataPort, onStepChange }: StudioAppPro
             : false;
   const nextStep = nextStudioStep({ step, assayId, info1, info2, info3 });
 
+  const handleBasicInfoNext = async () => {
+    if (!nextStep || savingAssay) return;
+
+    if (step !== "info3") {
+      onStepChange(nextStep);
+      return;
+    }
+
+    if (!assayId) return;
+    if (!hostPort) {
+      showErrorToast("Cannot save assay.json outside the desktop app.");
+      return;
+    }
+
+    setSavingAssay(true);
+    try {
+      const assayJson = buildStudioAssayJson({ assayId, info1, info2, info3 });
+      await hostPort.saveAssayJson(info1.saveTo.trim(), JSON.stringify(assayJson, null, 2));
+      onStepChange(nextStep);
+    } catch (cause) {
+      showErrorToast(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setSavingAssay(false);
+    }
+  };
+
+  const handleOpenAssay = async () => {
+    if (openingAssay) return;
+    if (!hostPort) {
+      showErrorToast("Cannot open assay.json outside the desktop app.");
+      return;
+    }
+
+    setOpeningAssay(true);
+    try {
+      const contents = await hostPort.openAssayJson();
+      if (!contents) return;
+
+      const assayJson = parseStudioAssayJson(contents);
+      loadAssayJson(assayJson);
+      showSuccessToast("Loaded assay.json");
+      onStepChange("info1");
+    } catch (cause) {
+      showErrorToast(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setOpeningAssay(false);
+    }
+  };
+
   const stepAction =
     step === "alignPattern" ? (
       <Button
@@ -82,14 +148,14 @@ export default function StudioApp({ step, dataPort, onStepChange }: StudioAppPro
     ) : (
       <Button
         className={stepGhostCtaClass}
-        disabled={!canContinue}
+        disabled={!canContinue || savingAssay}
         type="button"
         variant="ghost"
         onClick={() => {
-          if (nextStep) onStepChange(nextStep);
+          void handleBasicInfoNext();
         }}
       >
-        next
+        {savingAssay ? "saving..." : step === "info3" ? "save" : "next"}
       </Button>
     );
 
@@ -142,6 +208,18 @@ export default function StudioApp({ step, dataPort, onStepChange }: StudioAppPro
           tool={
             step === "alignPattern" ? (
               <AlignPatternCommandToolbar mode={alignToolMode} onModeChange={setAlignToolMode} />
+            ) : step === "welcome" ? (
+              <Button
+                className={stepGhostCtaClass}
+                disabled={openingAssay}
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  void handleOpenAssay();
+                }}
+              >
+                {openingAssay ? "opening..." : "open assay"}
+              </Button>
             ) : null
           }
         />

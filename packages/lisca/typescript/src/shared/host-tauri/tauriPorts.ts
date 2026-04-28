@@ -85,7 +85,12 @@ function makeRequestId(): string {
 
 export interface TauriDesktopPorts {
   dataPort: ViewerDataPort;
-  hostPort: ViewerHostPort;
+  hostPort: TauriHostPort;
+}
+
+export interface TauriHostPort extends ViewerHostPort {
+  saveAssayJson(saveTo: string, contents: string): Promise<void>;
+  openAssayJson(): Promise<string | null>;
 }
 
 export function createTauriDesktopPorts(): TauriDesktopPorts {
@@ -251,7 +256,7 @@ export function createTauriDesktopPorts(): TauriDesktopPorts {
     },
   };
 
-  const hostPort: ViewerHostPort = {
+  const hostPort: TauriHostPort = {
     pickWorkspace() {
       return invoke("pick_workspace");
     },
@@ -270,6 +275,17 @@ export function createTauriDesktopPorts(): TauriDesktopPorts {
 
     pickCziFile() {
       return invoke("pick_czi");
+    },
+
+    saveAssayJson(saveTo: string, contents: string) {
+      return invoke("save_assay_json", {
+        saveTo,
+        contents,
+      });
+    },
+
+    openAssayJson() {
+      return invoke("open_assay_json");
     },
 
     roiPosExists(workspacePath: string, pos: number) {
