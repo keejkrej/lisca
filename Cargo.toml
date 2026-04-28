@@ -10,9 +10,3 @@ resolver = "2"
 
 [workspace.dependencies]
 lisca = { path = "packages/lisca/rust", default-features = false }
-
-[patch."https://github.com/keejkrej/nd2sdk-rs"]
-nd2sdk-rs = { path = "vendor/nd2sdk-rs" }
-
-[patch."https://github.com/keejkrej/czisdk-rs"]
-czi-rs = { path = "vendor/czisdk-rs" }

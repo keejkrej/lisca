@@ -17,7 +17,7 @@ czi = ["dep:czi-rs"]
 [dependencies]
 base64 = "0.22"
 csv = "1.4"
-czi-rs = { git = "https://github.com/keejkrej/czisdk-rs", optional = true }
+czi-rs = { package = "czisdk-rs", git = "https://github.com/keejkrej/czisdk-rs", optional = true }
 image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
 nd2-rs = { package = "nd2sdk-rs", git = "https://github.com/keejkrej/nd2sdk-rs", optional = true }
 png = "0.17"
