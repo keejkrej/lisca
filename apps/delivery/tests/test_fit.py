@@ -67,7 +67,9 @@ def test_compute_fit_table_recovers_biexponential_traces_with_zero_onset(tmp_pat
         "roi",
         "intensity_offset",
         "protein_decay_rate",
+        "protein_lifetime",
         "mrna_decay_rate",
+        "mrna_lifetime",
         "expression_onset",
         "expression_amplitude",
         "expression_slope",
@@ -81,6 +83,8 @@ def test_compute_fit_table_recovers_biexponential_traces_with_zero_onset(tmp_pat
     assert records[0]["intensity_offset"] == pytest.approx(2.0, rel=0.03, abs=0.08)
     assert records[0]["protein_decay_rate"] == pytest.approx(0.05, rel=0.18, abs=0.015)
     assert records[0]["mrna_decay_rate"] == pytest.approx(0.35, rel=0.15, abs=0.05)
+    assert records[0]["protein_lifetime"] == pytest.approx(1.0 / records[0]["protein_decay_rate"])
+    assert records[0]["mrna_lifetime"] == pytest.approx(1.0 / records[0]["mrna_decay_rate"])
     assert records[0]["expression_onset"] == pytest.approx(0.0, abs=1e-8)
     assert records[0]["expression_amplitude"] == pytest.approx(40.0, rel=0.1, abs=2.0)
     assert records[0]["expression_slope"] == pytest.approx(
@@ -91,6 +95,8 @@ def test_compute_fit_table_recovers_biexponential_traces_with_zero_onset(tmp_pat
     assert records[1]["intensity_offset"] == pytest.approx(3.5, rel=0.03, abs=0.08)
     assert records[1]["protein_decay_rate"] == pytest.approx(records[0]["protein_decay_rate"], abs=1e-12)
     assert records[1]["mrna_decay_rate"] == pytest.approx(0.7, rel=0.15, abs=0.08)
+    assert records[1]["protein_lifetime"] == pytest.approx(1.0 / records[1]["protein_decay_rate"])
+    assert records[1]["mrna_lifetime"] == pytest.approx(1.0 / records[1]["mrna_decay_rate"])
     assert records[1]["expression_onset"] == pytest.approx(0.0, abs=1e-8)
     assert records[1]["expression_amplitude"] == pytest.approx(16.0, rel=0.12, abs=1.0)
     assert records[1]["expression_slope"] == pytest.approx(
@@ -164,6 +170,8 @@ def test_compute_fit_table_marks_failed_traces(tmp_path: Path) -> None:
     assert pd.isna(records[0]["intensity_offset"])
     assert pd.isna(records[0]["protein_decay_rate"])
     assert pd.isna(records[0]["mrna_decay_rate"])
+    assert pd.isna(records[0]["protein_lifetime"])
+    assert pd.isna(records[0]["mrna_lifetime"])
     assert pd.isna(records[0]["expression_onset"])
     assert pd.isna(records[0]["expression_amplitude"])
     assert pd.isna(records[0]["expression_slope"])
@@ -174,6 +182,8 @@ def test_compute_fit_table_marks_failed_traces(tmp_path: Path) -> None:
     assert pd.isna(records[1]["intensity_offset"])
     assert pd.isna(records[1]["protein_decay_rate"])
     assert pd.isna(records[1]["mrna_decay_rate"])
+    assert pd.isna(records[1]["protein_lifetime"])
+    assert pd.isna(records[1]["mrna_lifetime"])
     assert pd.isna(records[1]["expression_onset"])
     assert pd.isna(records[1]["expression_amplitude"])
     assert pd.isna(records[1]["expression_slope"])
@@ -214,7 +224,9 @@ def test_cli_writes_fit_csv_with_expected_columns(tmp_path: Path) -> None:
         "roi",
         "intensity_offset",
         "protein_decay_rate",
+        "protein_lifetime",
         "mrna_decay_rate",
+        "mrna_lifetime",
         "expression_onset",
         "expression_amplitude",
         "expression_slope",
@@ -226,7 +238,9 @@ def test_cli_writes_fit_csv_with_expected_columns(tmp_path: Path) -> None:
         "roi",
         "intensity_offset",
         "protein_decay_rate",
+        "protein_lifetime",
         "mrna_decay_rate",
+        "mrna_lifetime",
         "expression_onset",
         "expression_amplitude",
         "expression_slope",
@@ -238,6 +252,8 @@ def test_cli_writes_fit_csv_with_expected_columns(tmp_path: Path) -> None:
     assert float(rows[0]["intensity_offset"]) == pytest.approx(3.5, rel=0.03, abs=0.08)
     assert float(rows[0]["protein_decay_rate"]) == pytest.approx(0.05, rel=0.18, abs=0.015)
     assert float(rows[0]["mrna_decay_rate"]) == pytest.approx(0.7, rel=0.15, abs=0.08)
+    assert float(rows[0]["protein_lifetime"]) == pytest.approx(1.0 / float(rows[0]["protein_decay_rate"]))
+    assert float(rows[0]["mrna_lifetime"]) == pytest.approx(1.0 / float(rows[0]["mrna_decay_rate"]))
     assert float(rows[0]["expression_onset"]) == pytest.approx(0.0, abs=1e-8)
     assert float(rows[0]["expression_amplitude"]) == pytest.approx(16.0, rel=0.12, abs=1.0)
     assert float(rows[0]["expression_slope"]) == pytest.approx(

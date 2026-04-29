@@ -49,8 +49,8 @@ def test_default_output_plot_paths_strip_fit_suffix(tmp_path: Path) -> None:
     output_paths = plot_fit.default_output_plot_paths(fit_csv, output_dir=None)
 
     assert output_paths["intensity_offset"] == tmp_path / "slide_ch001_timeseries_intensity_offset.png"
-    assert output_paths["protein_decay_rate"] == tmp_path / "slide_ch001_timeseries_protein_decay_rate.png"
-    assert output_paths["mrna_decay_rate"] == tmp_path / "slide_ch001_timeseries_mrna_decay_rate.png"
+    assert output_paths["protein_lifetime"] == tmp_path / "slide_ch001_timeseries_protein_lifetime.png"
+    assert output_paths["mrna_lifetime"] == tmp_path / "slide_ch001_timeseries_mrna_lifetime.png"
     assert output_paths["expression_onset"] == tmp_path / "slide_ch001_timeseries_expression_onset.png"
     assert output_paths["expression_slope"] == tmp_path / "slide_ch001_timeseries_expression_slope.png"
 
@@ -123,7 +123,7 @@ def test_write_fit_boxplot_uses_linear_ylim_for_non_log_parameter(tmp_path: Path
     fit_csv = tmp_path / "slide_ch001_timeseries_fit.csv"
     write_fit_csv(fit_csv)
     df = plot_fit.load_fit_csv(fit_csv)
-    output_plot = tmp_path / "protein_decay_rate.png"
+    output_plot = tmp_path / "protein_lifetime.png"
 
     captured: dict[str, object] = {}
     original_subplots = plt.subplots
@@ -137,8 +137,8 @@ def test_write_fit_boxplot_uses_linear_ylim_for_non_log_parameter(tmp_path: Path
     try:
         plot_fit.write_fit_boxplot(
             df,
-            parameter="protein_decay_rate",
-            ylabel="protein decay rate",
+            parameter="protein_lifetime",
+            ylabel="protein lifetime",
             output_plot=output_plot,
             color="#c03a2b",
             title=None,
@@ -148,8 +148,8 @@ def test_write_fit_boxplot_uses_linear_ylim_for_non_log_parameter(tmp_path: Path
 
     ax = captured["ax"]
     expected_upper = max(
-        df.loc[df["slide_channel"] == 0, "protein_decay_rate"].quantile(0.75),
-        df.loc[df["slide_channel"] == 1, "protein_decay_rate"].quantile(0.75),
+        df.loc[df["slide_channel"] == 0, "protein_lifetime"].quantile(0.75),
+        df.loc[df["slide_channel"] == 1, "protein_lifetime"].quantile(0.75),
     ) * 1.25
     assert ax.get_yscale() == "linear"
     assert ax.get_ylim()[0] == 0.0

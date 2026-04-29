@@ -16,8 +16,8 @@ def test_run_analysis_orchestrates_expected_outputs(monkeypatch, tmp_path: Path)
     auc_plot = tmp_path / "slide_timeseries_auc.png"
     fit_plots = [
         tmp_path / "slide_timeseries_intensity_offset.png",
-        tmp_path / "slide_timeseries_protein_decay_rate.png",
-        tmp_path / "slide_timeseries_mrna_decay_rate.png",
+        tmp_path / "slide_timeseries_protein_lifetime.png",
+        tmp_path / "slide_timeseries_mrna_lifetime.png",
         tmp_path / "slide_timeseries_expression_onset.png",
         tmp_path / "slide_timeseries_expression_slope.png",
         tmp_path / "slide_timeseries_fit_traces.png",
@@ -172,8 +172,8 @@ def test_completed_analysis_message_no_longer_mentions_one_channel(monkeypatch, 
             auc_plot=tmp_path / "slide_timeseries_auc.png",
             fit_plots=[
                 tmp_path / "slide_timeseries_intensity_offset.png",
-                tmp_path / "slide_timeseries_protein_decay_rate.png",
-                tmp_path / "slide_timeseries_mrna_decay_rate.png",
+                tmp_path / "slide_timeseries_protein_lifetime.png",
+                tmp_path / "slide_timeseries_mrna_lifetime.png",
                 tmp_path / "slide_timeseries_expression_onset.png",
                 tmp_path / "slide_timeseries_expression_slope.png",
                 tmp_path / "slide_timeseries_fit_traces.png",

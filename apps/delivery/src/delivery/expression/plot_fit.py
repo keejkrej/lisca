@@ -17,8 +17,8 @@ from . import auc, plot_auc, plot_timeseries
 
 PLOTTED_PARAMETERS = (
     ("intensity_offset", "intensity offset"),
-    ("protein_decay_rate", "protein decay rate"),
-    ("mrna_decay_rate", "mRNA decay rate"),
+    ("protein_lifetime", "protein lifetime"),
+    ("mrna_lifetime", "mRNA lifetime"),
     ("expression_onset", "expression onset"),
     ("expression_slope", "expression slope"),
 )
@@ -101,6 +101,10 @@ def load_fit_csv(fit_csv: Path) -> pd.DataFrame:
     df["success"] = df["success"].astype(str).str.lower().eq("true")
     for parameter in FIT_TRACE_PARAMETERS:
         df[parameter] = pd.to_numeric(df[parameter], errors="coerce")
+    if "protein_lifetime" not in df.columns:
+        df["protein_lifetime"] = 1.0 / df["protein_decay_rate"]
+    if "mrna_lifetime" not in df.columns:
+        df["mrna_lifetime"] = 1.0 / df["mrna_decay_rate"]
     df["expression_slope"] = df["expression_amplitude"] * (df["mrna_decay_rate"] - df["protein_decay_rate"])
     return df.sort_values(["slide_channel", "pos", "roi"]).reset_index(drop=True)
 
