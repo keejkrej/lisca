@@ -1,0 +1,76 @@
+/**
+ * coss-style semantic tokens for `@lisca/ui` primitives (neutral palette).
+ * Import after Tailwind in each app: `@import "@lisca/ui/coss-theme.css";`
+ */
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: var(--color-white);
+  --foreground: var(--color-neutral-900);
+  --card: var(--color-white);
+  --card-foreground: var(--color-neutral-900);
+  --popover: var(--color-white);
+  --popover-foreground: var(--color-neutral-900);
+  --primary: var(--color-neutral-900);
+  --primary-foreground: var(--color-neutral-50);
+  --secondary: var(--color-neutral-100);
+  --secondary-foreground: var(--color-neutral-900);
+  --muted: var(--color-neutral-100);
+  --muted-foreground: var(--color-neutral-500);
+  --accent: var(--color-neutral-100);
+  --accent-foreground: var(--color-neutral-900);
+  --destructive: var(--color-red-500);
+  --destructive-foreground: var(--color-red-700);
+  --border: color-mix(in oklab, var(--color-neutral-900) 10%, transparent);
+  --input: color-mix(in oklab, var(--color-neutral-900) 12%, transparent);
+  --ring: var(--color-neutral-400);
+}
+
+.dark {
+  --background: var(--color-neutral-950);
+  --foreground: var(--color-neutral-50);
+  --card: color-mix(in oklab, var(--color-neutral-950) 96%, var(--color-white));
+  --card-foreground: var(--color-neutral-50);
+  --popover: color-mix(in oklab, var(--color-neutral-950) 96%, var(--color-white));
+  --popover-foreground: var(--color-neutral-50);
+  --primary: var(--color-neutral-50);
+  --primary-foreground: var(--color-neutral-900);
+  --secondary: color-mix(in oklab, var(--color-white) 6%, transparent);
+  --secondary-foreground: var(--color-neutral-50);
+  --muted: color-mix(in oklab, var(--color-white) 6%, transparent);
+  --muted-foreground: var(--color-neutral-400);
+  --accent: color-mix(in oklab, var(--color-white) 6%, transparent);
+  --accent-foreground: var(--color-neutral-50);
+  --destructive: color-mix(in oklab, var(--color-red-500) 88%, var(--color-white));
+  --destructive-foreground: var(--color-red-400);
+  --border: color-mix(in oklab, var(--color-white) 10%, transparent);
+  --input: color-mix(in oklab, var(--color-white) 14%, transparent);
+  --ring: var(--color-neutral-500);
+}
