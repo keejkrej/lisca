@@ -18,8 +18,7 @@ export function resolveLiscaWsUrl(options: {
   defaultPort: number;
   wsPath?: string;
 }): string {
-  const fromQuery =
-    options.searchParams?.get("liscaWs") ?? options.searchParams?.get("wsUrl");
+  const fromQuery = options.searchParams?.get("liscaWs") ?? options.searchParams?.get("wsUrl");
   if (fromQuery?.trim()) {
     return decodeURIComponent(fromQuery.trim());
   }

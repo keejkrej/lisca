@@ -10,8 +10,7 @@ const CARGO_PACKAGE = "studio-server";
 const DEBUG_BINARY = "studio-server";
 
 const repoRoot = path.resolve(__dirname, "../../..");
-const webUrl =
-  process.env.VITE_DEV_SERVER_URL || `http://127.0.0.1:${WEB_PORT}`;
+const webUrl = process.env.VITE_DEV_SERVER_URL || `http://127.0.0.1:${WEB_PORT}`;
 
 let serverChild;
 
@@ -29,16 +28,12 @@ function startServer() {
     return;
   }
 
-  serverChild = spawn(
-    "cargo",
-    ["run", "-p", CARGO_PACKAGE, "--quiet"],
-    {
-      cwd: repoRoot,
-      env: { ...process.env, PORT: String(WS_PORT) },
-      stdio: "inherit",
-      shell: isWin,
-    },
-  );
+  serverChild = spawn("cargo", ["run", "-p", CARGO_PACKAGE, "--quiet"], {
+    cwd: repoRoot,
+    env: { ...process.env, PORT: String(WS_PORT) },
+    stdio: "inherit",
+    shell: isWin,
+  });
 }
 
 async function createWindow() {

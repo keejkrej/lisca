@@ -11,8 +11,7 @@ function PanelLabel(props: { children: ReactNode }) {
 }
 
 function RouteNav() {
-  const linkClass =
-    "text-xs underline underline-offset-2 opacity-80 hover:opacity-100";
+  const linkClass = "text-xs underline underline-offset-2 opacity-80 hover:opacity-100";
   return (
     <nav className="mt-1 flex flex-wrap justify-center gap-x-6 gap-y-1">
       <Link to="/raw" className={linkClass}>

@@ -1,0 +1,115 @@
+#!/usr/bin/env node
+/**
+ * Thin dispatcher: maps (task, product, target?) → a single turbo --filter.
+ * Avoids N×M script lines in package.json while staying explicit at the CLI.
+ *
+ * Usage:
+ *   pnpm lisca <task> <product> [target] [-- <extra turbo args>]
+ *
+ * Examples:
+ *   pnpm lisca dev aligner
+ *   pnpm lisca dev aligner web
+ *   pnpm lisca build studio
+ *   pnpm lisca typecheck annotator
+ *   pnpm lisca typecheck annotator server
+ *   pnpm lisca preview studio
+ */
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+
+const PRODUCTS = new Set(["aligner", "annotator", "studio"]);
+const TYPECHECK_TARGETS = new Set(["desktop", "web", "server", "mobile", "all"]);
+const APP_TARGETS = new Set(["desktop", "web", "server", "mobile"]);
+
+const dash = process.argv.indexOf("--");
+const argv = dash === -1 ? process.argv.slice(2) : process.argv.slice(2, dash);
+const turboExtra = dash === -1 ? [] : process.argv.slice(dash + 1);
+
+const [task, product, targetArg] = argv;
+
+function usage() {
+  console.error(`
+Usage: pnpm lisca <task> <product> [target] [-- <turbo passthrough>]
+
+  task     dev | build | typecheck | preview
+  product  aligner | annotator | studio
+  target   desktop | web | server | mobile | all
+           (optional — sensible defaults per task)
+
+Defaults:
+  dev, build      → target desktop (Electron stack; desktop scripts pull web + Rust)
+  typecheck       → target all (every package matching @lisca/<product>-*)
+  preview         → target web (Vite preview)
+
+Examples:
+  pnpm lisca dev aligner
+  pnpm lisca dev annotator web
+  pnpm lisca build studio
+  pnpm lisca typecheck aligner
+  pnpm lisca typecheck aligner server
+  pnpm lisca preview studio
+`);
+}
+
+function filterFor(task, product, target) {
+  if (task === "typecheck") {
+    const t = target ?? "all";
+    if (t === "all") return `@lisca/${product}-*`;
+    if (!TYPECHECK_TARGETS.has(t)) {
+      console.error(`Invalid typecheck target "${t}". Use: web | server | desktop | mobile | all`);
+      process.exit(1);
+    }
+    return `@lisca/${product}-${t}`;
+  }
+
+  let t = target;
+  if (!t) {
+    if (task === "preview") t = "web";
+    else t = "desktop";
+  }
+
+  if (!APP_TARGETS.has(t)) {
+    console.error(`Invalid target "${t}". Use: desktop | web | server | mobile`);
+    process.exit(1);
+  }
+
+  if (task === "preview" && t !== "web") {
+    console.error('preview only applies to "web" (Vite). Example: pnpm lisca preview aligner web');
+    process.exit(1);
+  }
+
+  return `@lisca/${product}-${t}`;
+}
+
+function main() {
+  if (!task || !product || argv.includes("-h") || argv.includes("--help")) {
+    usage();
+    process.exit(task ? 0 : 1);
+  }
+
+  if (!["dev", "build", "typecheck", "preview"].includes(task)) {
+    console.error(`Unknown task "${task}". Use: dev | build | typecheck | preview`);
+    process.exit(1);
+  }
+
+  if (!PRODUCTS.has(product)) {
+    console.error(`Unknown product "${product}". Use: aligner | annotator | studio`);
+    process.exit(1);
+  }
+
+  const filter = filterFor(task, product, targetArg);
+  const cmd = ["exec", "turbo", "run", task, `--filter=${filter}`, ...turboExtra];
+
+  const result = spawnSync("pnpm", cmd, {
+    cwd: root,
+    stdio: "inherit",
+    shell: process.platform === "win32",
+  });
+
+  process.exit(result.status ?? 1);
+}
+
+main();

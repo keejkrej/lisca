@@ -4,14 +4,14 @@ pnpm + [Turborepo](https://turbo.build/) monorepo for Aligner, Annotator, and St
 
 ## Layout
 
-| Path | Role |
-|------|------|
-| `apps/*-web` | Vite + React + Tailwind CSS v4 |
-| `apps/*-server` | Rust binary (`cargo`), shared logic in `crates/lisca` |
-| `apps/*-desktop` | Electron main/preload; dev runs Vite + spawns server |
-| `packages/contracts`, `ui`, `utils` | Scoped npm packages `@lisca/*` |
-| `crates/lisca` | Shared Rust library (protocol + `run_ws_server`) |
-| `python/` | Installable **`lisca`** Python package (Hatchling, `src/lisca`) |
+| Path                                | Role                                                            |
+| ----------------------------------- | --------------------------------------------------------------- |
+| `apps/*-web`                        | Vite + React + Tailwind CSS v4                                  |
+| `apps/*-server`                     | Rust binary (`cargo`), shared logic in `crates/lisca`           |
+| `apps/*-desktop`                    | Electron main/preload; dev runs Vite + spawns server            |
+| `packages/contracts`, `ui`, `utils` | Scoped npm packages `@lisca/*`                                  |
+| `crates/lisca`                      | Shared Rust library (protocol + `run_ws_server`)                |
+| `python/`                           | Installable **`lisca`** Python package (Hatchling, `src/lisca`) |
 
 Default ports: Aligner web `5173` / WS `8765`, Annotator `5174` / `8766`, Studio `5175` / `8767`. Override the server with `PORT`.
 
@@ -20,7 +20,8 @@ Default ports: Aligner web `5173` / WS `8765`, Annotator `5174` / `8766`, Studio
 ```bash
 pnpm install
 pnpm turbo run build
-pnpm turbo run lint
+pnpm lint
+pnpm format
 ```
 
 Run a full desktop dev stack (Vite + `cargo run` for the matching server + Electron):

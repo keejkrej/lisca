@@ -16,9 +16,9 @@
 
 ## Routing
 
-| Mechanism | Use |
-|-----------|-----|
-| **Path** | Selects the **`View`** (`/align` → `AlignView`). Aligner and annotator today: `/align`, `/inspect` / `/raw`, `/roi`. Studio: `/assay`, `/info`, `/align`, `/inspect`, `/result`. |
+| Mechanism          | Use                                                                                                                                                                                                               |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Path**           | Selects the **`View`** (`/align` → `AlignView`). Aligner and annotator today: `/align`, `/inspect` / `/raw`, `/roi`. Studio: `/assay`, `/info`, `/align`, `/inspect`, `/result`.                                  |
 | **Search (query)** | Selects **steps** and other non-navigation state inside that view (`/info?step=2`, annotation mode on annotator routes, etc.). Validated with TanStack Router **search schema**, kept shareable and bookmarkable. |
 
 Substep UI lives **inside** the route **`View`**: e.g. **`InfoView`** switches its body from **search params / props** and may use **inline or internal child components** as needed — no separate routable `*View` per substep.
@@ -87,34 +87,34 @@ Shared **`FrameNavigation`** and **`ViewerBottomBar*`** live in **`@lisca/ui`**.
 
 ## Aligner (`aligner-web`)
 
-| Slot | Contents |
-|------|----------|
-| **Top** | WebSocket connection status, **workspace** path (folder), theme toggle, align vs inspect mode switch |
-| **Left** | Frame navigation (one reusable component; behavior differs for align vs inspect) |
-| **Main** | `AlignView` (`/align`) or `InspectView` (`/inspect`) |
+| Slot       | Contents                                                                                                                                                |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Top**    | WebSocket connection status, **workspace** path (folder), theme toggle, align vs inspect mode switch                                                    |
+| **Left**   | Frame navigation (one reusable component; behavior differs for align vs inspect)                                                                        |
+| **Main**   | `AlignView` (`/align`) or `InspectView` (`/inspect`)                                                                                                    |
 | **Bottom** | Two horizontal halves: **left half** — contrast min/max controls and auto contrast; **right half** — save and other persist actions for the active mode |
-| **Right** | Sidebar panels: source summary, histogram / exclude tooling, and other inspect-side controls that are not frame stepping |
+| **Right**  | Sidebar panels: source summary, histogram / exclude tooling, and other inspect-side controls that are not frame stepping                                |
 
 ---
 
 ## Annotator (`annotator-web`)
 
-| Slot | Contents |
-|------|----------|
-| **Top** | WebSocket connection status, **workspace** path (folder), theme toggle, raw vs ROI data mode, annotation mode |
-| **Left** | Frame navigation (same reusable component as aligner; behavior differs for raw vs ROI and for annotate flows) |
-| **Main** | `RawView` (`/raw`) or `RoiView` (`/roi`); further options via **search** |
+| Slot       | Contents                                                                                                                                                 |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Top**    | WebSocket connection status, **workspace** path (folder), theme toggle, raw vs ROI data mode, annotation mode                                            |
+| **Left**   | Frame navigation (same reusable component as aligner; behavior differs for raw vs ROI and for annotate flows)                                            |
+| **Main**   | `RawView` (`/raw`) or `RoiView` (`/roi`); further options via **search**                                                                                 |
 | **Bottom** | Two horizontal halves: **left half** — contrast min/max controls and auto contrast; **right half** — save (annotations / labels as defined by the route) |
-| **Right** | Outputs section (exports, derived artifacts, secondary metadata) |
+| **Right**  | Outputs section (exports, derived artifacts, secondary metadata)                                                                                         |
 
 ---
 
 ## Studio (`studio-web`)
 
-| Slot | Contents |
-|------|----------|
-| **Top** | Theme toggle; optional compact title or status strip |
-| **Left** | Studio nav rail; navigates **paths** and **query** for wizard position (e.g. `/info` + `step`) |
-| **Main** | Path-sized views only: `AssayView`, `InfoView`, `AlignView`, `InspectView`, `ResultView` — **`InfoView`** changes body by **query** (and props); subcomponents stay private to that view |
-| **Bottom** | Studio command bar: step instruction copy, primary step action (`next` / `save` / align commit), and step-specific tools (e.g. align pattern toolbar) |
-| **Right** | Unused — no slot content |
+| Slot       | Contents                                                                                                                                                                                 |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Top**    | Theme toggle; optional compact title or status strip                                                                                                                                     |
+| **Left**   | Studio nav rail; navigates **paths** and **query** for wizard position (e.g. `/info` + `step`)                                                                                           |
+| **Main**   | Path-sized views only: `AssayView`, `InfoView`, `AlignView`, `InspectView`, `ResultView` — **`InfoView`** changes body by **query** (and props); subcomponents stay private to that view |
+| **Bottom** | Studio command bar: step instruction copy, primary step action (`next` / `save` / align commit), and step-specific tools (e.g. align pattern toolbar)                                    |
+| **Right**  | Unused — no slot content                                                                                                                                                                 |

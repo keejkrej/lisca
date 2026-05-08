@@ -53,9 +53,7 @@ export function ShellWorkspaceProvider({ children }: { children: ReactNode }) {
     [workspacePath, sourcePath, pickWorkspace, pickSource, clearSource],
   );
 
-  return (
-    <ShellWorkspaceContext.Provider value={value}>{children}</ShellWorkspaceContext.Provider>
-  );
+  return <ShellWorkspaceContext.Provider value={value}>{children}</ShellWorkspaceContext.Provider>;
 }
 
 export function useShellWorkspace(): ShellWorkspace {

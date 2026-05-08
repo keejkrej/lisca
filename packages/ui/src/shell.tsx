@@ -36,27 +36,27 @@ function flattenSlotElements(nodes: ReactNode): ReactElement<SlotMarkerProps>[] 
   return out;
 }
 
-function AppShellTop(props: SlotMarkerProps) {
+function AppShellTop(_props: SlotMarkerProps) {
   return null;
 }
 AppShellTop.displayName = "AppShell.Top";
 
-function AppShellLeft(props: SlotMarkerProps) {
+function AppShellLeft(_props: SlotMarkerProps) {
   return null;
 }
 AppShellLeft.displayName = "AppShell.Left";
 
-function AppShellMain(props: SlotMarkerProps) {
+function AppShellMain(_props: SlotMarkerProps) {
   return null;
 }
 AppShellMain.displayName = "AppShell.Main";
 
-function AppShellBottom(props: SlotMarkerProps) {
+function AppShellBottom(_props: SlotMarkerProps) {
   return null;
 }
 AppShellBottom.displayName = "AppShell.Bottom";
 
-function AppShellRight(props: SlotMarkerProps) {
+function AppShellRight(_props: SlotMarkerProps) {
   return null;
 }
 AppShellRight.displayName = "AppShell.Right";
@@ -133,17 +133,21 @@ function AppShellRoot(props: { children?: ReactNode }) {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
       {slots.top != null ? (
-        <div className={`${shellTopFixed} border-b ${shellDivider}`} role="region" aria-label="Top bar">
+        <div
+          className={`${shellTopFixed} border-b ${shellDivider}`}
+          role="region"
+          aria-label="Top bar"
+        >
           <div className="min-h-0 flex-1 overflow-auto">{slots.top}</div>
         </div>
       ) : null}
       <div className="flex min-h-0 flex-1 overflow-hidden">
-        {slots.left != null ? <ShellSidebarInner side="left">{slots.left}</ShellSidebarInner> : null}
+        {slots.left != null ? (
+          <ShellSidebarInner side="left">{slots.left}</ShellSidebarInner>
+        ) : null}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <main className="min-h-0 flex-1 overflow-auto">{slots.main}</main>
-          {slots.bottom != null ? (
-            <ShellBottomInner>{slots.bottom}</ShellBottomInner>
-          ) : null}
+          {slots.bottom != null ? <ShellBottomInner>{slots.bottom}</ShellBottomInner> : null}
         </div>
         {slots.right != null ? (
           <ShellSidebarInner side="right">{slots.right}</ShellSidebarInner>
@@ -215,11 +219,7 @@ export function ShellTitleHeader(props: { title: string }) {
   );
 }
 
-export function ShellHeaderBar(props: {
-  start: ReactNode;
-  center: ReactNode;
-  end: ReactNode;
-}) {
+export function ShellHeaderBar(props: { start: ReactNode; center: ReactNode; end: ReactNode }) {
   return (
     <header className="shrink-0 px-6 py-3">
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
@@ -247,15 +247,7 @@ export function ShellFolderIcon(props: { className?: string }) {
 export function ShellDriveIcon(props: { className?: string }) {
   return (
     <svg className={props.className ?? "size-4"} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <rect
-        x="3"
-        y="5"
-        width="18"
-        height="14"
-        rx="2"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
+      <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" />
       <path d="M7 15h4M15 15h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
@@ -281,9 +273,7 @@ export function ShellPathChip(props: {
         <span className="block text-[0.65rem] font-medium uppercase tracking-wide opacity-60">
           {props.label}
         </span>
-        <span className="block truncate font-mono text-xs">
-          {props.value ?? "—"}
-        </span>
+        <span className="block truncate font-mono text-xs">{props.value ?? "—"}</span>
       </span>
     </button>
   );
@@ -335,10 +325,7 @@ export function ShellSegmentedControl<T extends string>(props: {
   disabled?: boolean;
   "aria-label"?: string;
 }) {
-  const item = (
-    value: T,
-    label: string,
-  ): ButtonHTMLAttributes<HTMLButtonElement> => ({
+  const item = (value: T, _label: string): ButtonHTMLAttributes<HTMLButtonElement> => ({
     type: "button",
     role: "radio",
     "aria-checked": props.value === value,
@@ -346,12 +333,18 @@ export function ShellSegmentedControl<T extends string>(props: {
     onClick: () => props.onChange(value),
     className: [
       "min-w-[4.5rem] rounded px-3 py-1.5 text-sm",
-      props.value === value ? "font-semibold underline underline-offset-2" : "opacity-70 hover:opacity-100",
+      props.value === value
+        ? "font-semibold underline underline-offset-2"
+        : "opacity-70 hover:opacity-100",
     ].join(" "),
   });
 
   return (
-    <div className="inline-flex gap-1" role="radiogroup" aria-label={props["aria-label"] ?? "Segmented control"}>
+    <div
+      className="inline-flex gap-1"
+      role="radiogroup"
+      aria-label={props["aria-label"] ?? "Segmented control"}
+    >
       {props.options.map((opt) => (
         <button key={opt.value} {...item(opt.value, opt.label)}>
           {opt.label}

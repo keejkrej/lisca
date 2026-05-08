@@ -5,6 +5,6 @@
   "scripts": {
     "build": "cargo build --release -p studio-server",
     "dev": "cargo run -p studio-server",
-    "lint": "cargo check -p studio-server"
+    "typecheck": "cargo check -p studio-server"
   }
 }

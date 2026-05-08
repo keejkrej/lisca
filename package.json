@@ -1,23 +1,35 @@
 {
   "name": "lisca",
   "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "build:packages": "turbo run build --filter=./packages/*",
+    "build:webs": "turbo run build --filter=@lisca/*-web",
+    "check": "pnpm lint && pnpm check:rust",
+    "check:rust": "cargo check --workspace",
+    "dev": "turbo run dev",
+    "format": "oxfmt .",
+    "format:check": "oxfmt . --check",
+    "lisca": "node ./scripts/lisca.mjs",
+    "lint": "pnpm oxlint && turbo run typecheck",
+    "oxlint": "oxlint . --deny-warnings",
+    "typecheck": "turbo run typecheck"
+  },
+  "devDependencies": {
+    "oxfmt": "^0.48.0",
+    "oxlint": "^1.63.0",
+    "turbo": "^2.5.4",
+    "typescript": "^5.8.3"
+  },
   "packageManager": "pnpm@10.11.0",
   "pnpm": {
-    "onlyBuiltDependencies": ["electron", "esbuild"],
+    "onlyBuiltDependencies": [
+      "electron",
+      "esbuild"
+    ],
     "overrides": {
       "react": "19.1.0",
       "react-dom": "19.1.0"
     }
-  },
-  "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev",
-    "lint": "turbo run lint",
-    "format": "prettier -w ."
-  },
-  "devDependencies": {
-    "prettier": "^3.5.3",
-    "turbo": "^2.5.4",
-    "typescript": "^5.8.3"
   }
 }

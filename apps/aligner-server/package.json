@@ -5,6 +5,6 @@
   "scripts": {
     "build": "cargo build --release -p aligner-server",
     "dev": "cargo run -p aligner-server",
-    "lint": "cargo check -p aligner-server"
+    "typecheck": "cargo check -p aligner-server"
   }
 }

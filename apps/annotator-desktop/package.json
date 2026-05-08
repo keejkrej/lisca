@@ -6,7 +6,7 @@
   "scripts": {
     "build": "pnpm --filter @lisca/annotator-web build && pnpm --filter @lisca/annotator-server build",
     "dev": "concurrently -k -n web,desk \"pnpm --filter @lisca/annotator-web dev\" \"cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5174 wait-on -t 120000 tcp:127.0.0.1:5174 && electron .\"",
-    "lint": "node --check electron/main.cjs && node --check electron/preload.cjs"
+    "typecheck": "node --check electron/main.cjs && node --check electron/preload.cjs"
   },
   "devDependencies": {
     "@lisca/annotator-server": "workspace:*",
