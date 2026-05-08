@@ -2,20 +2,193 @@ import type { HelloMessage } from "@lisca/contracts";
 import { WS_PATH } from "@lisca/contracts";
 import { resolveLiscaWsUrl } from "@lisca/utils";
 import {
+  Children,
+  Fragment,
+  isValidElement,
   useEffect,
   useMemo,
   useState,
   type ButtonHTMLAttributes,
+  type ReactElement,
   type ReactNode,
 } from "react";
 
-/** Full-viewport product shell: fixed header + scrolling main. */
-export function AppShell(props: { header: ReactNode; children: ReactNode }) {
+type AppShellSlots = {
+  top?: ReactNode;
+  left?: ReactNode;
+  main?: ReactNode;
+  bottom?: ReactNode;
+  right?: ReactNode;
+};
+
+type SlotMarkerProps = { children?: ReactNode };
+
+function flattenSlotElements(nodes: ReactNode): ReactElement<SlotMarkerProps>[] {
+  const out: ReactElement<SlotMarkerProps>[] = [];
+  Children.forEach(nodes, (child) => {
+    if (!isValidElement<SlotMarkerProps>(child)) return;
+    if (child.type === Fragment) {
+      out.push(...flattenSlotElements(child.props.children));
+      return;
+    }
+    out.push(child);
+  });
+  return out;
+}
+
+function AppShellTop(props: SlotMarkerProps) {
+  return null;
+}
+AppShellTop.displayName = "AppShell.Top";
+
+function AppShellLeft(props: SlotMarkerProps) {
+  return null;
+}
+AppShellLeft.displayName = "AppShell.Left";
+
+function AppShellMain(props: SlotMarkerProps) {
+  return null;
+}
+AppShellMain.displayName = "AppShell.Main";
+
+function AppShellBottom(props: SlotMarkerProps) {
+  return null;
+}
+AppShellBottom.displayName = "AppShell.Bottom";
+
+function AppShellRight(props: SlotMarkerProps) {
+  return null;
+}
+AppShellRight.displayName = "AppShell.Right";
+
+function collectAppShellSlots(children: ReactNode): AppShellSlots {
+  const slots: AppShellSlots = {};
+  for (const child of flattenSlotElements(children)) {
+    const body = child.props.children;
+    switch (child.type) {
+      case AppShellTop:
+        slots.top = body;
+        break;
+      case AppShellLeft:
+        slots.left = body;
+        break;
+      case AppShellMain:
+        slots.main = body;
+        break;
+      case AppShellBottom:
+        slots.bottom = body;
+        break;
+      case AppShellRight:
+        slots.right = body;
+        break;
+      default:
+        break;
+    }
+  }
+  return slots;
+}
+
+/** Bottom panel (VS Code terminal–sized); shares styling with sidebars. */
+function ShellBottomInner(props: { children?: ReactNode }) {
+  return (
+    <div
+      role="region"
+      aria-label="Bottom panel"
+      className="flex h-[min(38vh,28rem)] min-h-[12rem] max-h-[min(55vh,32rem)] shrink-0 flex-col overflow-hidden border-t border-neutral-200 bg-neutral-50 text-neutral-900"
+    >
+      <div className="min-h-0 flex-1 overflow-auto p-3 text-xs leading-relaxed text-neutral-900">
+        {props.children}
+      </div>
+    </div>
+  );
+}
+
+/** Sidebar column chrome used inside `AppShell`. */
+function ShellSidebarInner(props: {
+  side: "left" | "right";
+  children?: ReactNode;
+  widthClass?: string;
+}) {
+  const edge = props.side === "left" ? "border-r" : "border-l";
+  return (
+    <aside
+      className={`flex min-h-0 shrink-0 flex-col overflow-y-auto border-neutral-200 bg-neutral-50 ${props.widthClass ?? "w-56"} ${edge}`}
+    >
+      <div className="min-h-0 flex-1 p-3">{props.children}</div>
+    </aside>
+  );
+}
+
+function AppShellRoot(props: { children?: ReactNode }) {
+  const slots = useMemo(() => collectAppShellSlots(props.children), [props.children]);
+
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-white text-neutral-900">
-      {props.header}
-      <main className="min-h-0 flex-1 overflow-auto">{props.children}</main>
+      {slots.top != null ? <div className="shrink-0">{slots.top}</div> : null}
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        {slots.left != null ? <ShellSidebarInner side="left">{slots.left}</ShellSidebarInner> : null}
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          <main className="min-h-0 flex-1 overflow-auto">{slots.main}</main>
+          {slots.bottom != null ? (
+            <ShellBottomInner>{slots.bottom}</ShellBottomInner>
+          ) : null}
+        </div>
+        {slots.right != null ? (
+          <ShellSidebarInner side="right">{slots.right}</ShellSidebarInner>
+        ) : null}
+      </div>
     </div>
+  );
+}
+AppShellRoot.displayName = "AppShell";
+
+export type AppShellCompound = typeof AppShellRoot & {
+  Top: typeof AppShellTop;
+  Left: typeof AppShellLeft;
+  Main: typeof AppShellMain;
+  Bottom: typeof AppShellBottom;
+  Right: typeof AppShellRight;
+};
+
+/**
+ * Layout shell: nest `AppShell.Top`, `AppShell.Left`, `AppShell.Main`, `AppShell.Bottom`,
+ * and `AppShell.Right`. Sidebars and bottom-panel chrome are applied for you.
+ *
+ * @example
+ * ```tsx
+ * <AppShell>
+ *   <AppShell.Top><Header /></AppShell.Top>
+ *   <AppShell.Left><Nav /></AppShell.Left>
+ *   <AppShell.Main><Editor /></AppShell.Main>
+ *   <AppShell.Bottom><Logs /></AppShell.Bottom>
+ *   <AppShell.Right><Inspector /></AppShell.Right>
+ * </AppShell>
+ * ```
+ */
+export const AppShell: AppShellCompound = Object.assign(AppShellRoot, {
+  Top: AppShellTop,
+  Left: AppShellLeft,
+  Main: AppShellMain,
+  Bottom: AppShellBottom,
+  Right: AppShellRight,
+});
+
+/** Stand-alone bottom panel chrome (same as `AppShell.Bottom` content wrapper). */
+export function ShellBottom(props: { children?: ReactNode }) {
+  return <ShellBottomInner>{props.children}</ShellBottomInner>;
+}
+
+/** Stand-alone sidebar chrome (same as `AppShell.Left` / `AppShell.Right` wrappers). */
+export function ShellSidebar(props: {
+  side: "left" | "right";
+  children?: ReactNode;
+  /** Tailwind width utility; default `w-56`. */
+  widthClass?: string;
+}) {
+  return (
+    <ShellSidebarInner side={props.side} widthClass={props.widthClass}>
+      {props.children}
+    </ShellSidebarInner>
   );
 }
 

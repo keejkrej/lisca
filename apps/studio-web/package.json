@@ -10,9 +10,8 @@
     "lint": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@lisca/contracts": "workspace:*",
     "@lisca/ui": "workspace:*",
-    "@lisca/utils": "workspace:*",
+    "@tanstack/react-router": "^1.169.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },

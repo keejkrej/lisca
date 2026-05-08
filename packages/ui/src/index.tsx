@@ -1,5 +1,8 @@
 export {
   AppShell,
+  type AppShellCompound,
+  ShellBottom,
+  ShellSidebar,
   ShellConnectionStatus,
   ShellDriveIcon,
   ShellFolderIcon,

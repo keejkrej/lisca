@@ -8,35 +8,35 @@ import {
   redirect,
 } from "@tanstack/react-router";
 
-import { AlignPage } from "./pages/align";
-import { InspectPage } from "./pages/inspect";
+import { RawPage } from "./pages/raw";
+import { RoiPage } from "./pages/roi";
 
 const rootRoute = createRootRoute({
   component: Outlet,
-  notFoundComponent: () => <Navigate replace to="/align" />,
+  notFoundComponent: () => <Navigate replace to="/raw" />,
 });
 
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   beforeLoad: () => {
-    throw redirect({ to: "/align" });
+    throw redirect({ to: "/raw" });
   },
 });
 
-const alignRoute = createRoute({
+const rawRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/align",
-  component: AlignPage,
+  path: "/raw",
+  component: RawPage,
 });
 
-const inspectRoute = createRoute({
+const roiRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/inspect",
-  component: InspectPage,
+  path: "/roi",
+  component: RoiPage,
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, alignRoute, inspectRoute]);
+const routeTree = rootRoute.addChildren([indexRoute, rawRoute, roiRoute]);
 
 export const router = createRouter({
   routeTree,

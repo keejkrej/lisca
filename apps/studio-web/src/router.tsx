@@ -9,19 +9,34 @@ import {
 } from "@tanstack/react-router";
 
 import { AlignPage } from "./pages/align";
+import { AssayPage } from "./pages/assay";
+import { InfoPage } from "./pages/info";
 import { InspectPage } from "./pages/inspect";
+import { ResultPage } from "./pages/result";
 
 const rootRoute = createRootRoute({
   component: Outlet,
-  notFoundComponent: () => <Navigate replace to="/align" />,
+  notFoundComponent: () => <Navigate replace to="/assay" />,
 });
 
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   beforeLoad: () => {
-    throw redirect({ to: "/align" });
+    throw redirect({ to: "/assay" });
   },
+});
+
+const assayRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/assay",
+  component: AssayPage,
+});
+
+const infoRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/info",
+  component: InfoPage,
 });
 
 const alignRoute = createRoute({
@@ -36,7 +51,20 @@ const inspectRoute = createRoute({
   component: InspectPage,
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, alignRoute, inspectRoute]);
+const resultRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/result",
+  component: ResultPage,
+});
+
+const routeTree = rootRoute.addChildren([
+  indexRoute,
+  assayRoute,
+  infoRoute,
+  alignRoute,
+  inspectRoute,
+  resultRoute,
+]);
 
 export const router = createRouter({
   routeTree,

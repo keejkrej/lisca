@@ -72,15 +72,9 @@ importers:
 
   apps/aligner-web:
     dependencies:
-      '@lisca/contracts':
-        specifier: workspace:*
-        version: link:../../packages/contracts
       '@lisca/ui':
         specifier: workspace:*
         version: link:../../packages/ui
-      '@lisca/utils':
-        specifier: workspace:*
-        version: link:../../packages/utils
       '@tanstack/react-router':
         specifier: ^1.169.2
         version: 1.169.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -163,15 +157,12 @@ importers:
 
   apps/annotator-web:
     dependencies:
-      '@lisca/contracts':
-        specifier: workspace:*
-        version: link:../../packages/contracts
       '@lisca/ui':
         specifier: workspace:*
         version: link:../../packages/ui
-      '@lisca/utils':
-        specifier: workspace:*
-        version: link:../../packages/utils
+      '@tanstack/react-router':
+        specifier: ^1.169.2
+        version: 1.169.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react:
         specifier: 19.1.0
         version: 19.1.0
@@ -251,15 +242,12 @@ importers:
 
   apps/studio-web:
     dependencies:
-      '@lisca/contracts':
-        specifier: workspace:*
-        version: link:../../packages/contracts
       '@lisca/ui':
         specifier: workspace:*
         version: link:../../packages/ui
-      '@lisca/utils':
-        specifier: workspace:*
-        version: link:../../packages/utils
+      '@tanstack/react-router':
+        specifier: ^1.169.2
+        version: 1.169.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react:
         specifier: 19.1.0
         version: 19.1.0

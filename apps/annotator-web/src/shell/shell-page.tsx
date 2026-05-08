@@ -15,36 +15,36 @@ function RouteNav() {
     "text-neutral-500 underline-offset-2 hover:text-neutral-800 hover:underline";
   return (
     <nav className="mt-2 flex flex-wrap justify-center gap-x-6 gap-y-1 text-xs font-normal">
-      <Link to="/align" className={linkClass}>
-        align
+      <Link to="/raw" className={linkClass}>
+        raw
       </Link>
-      <Link to="/inspect" className={linkClass}>
-        inspect
+      <Link to="/roi" className={linkClass}>
+        roi
       </Link>
     </nav>
   );
 }
 
-export function AlignerShellPage(props: { routeId: string }) {
+export function AnnotatorShellPage(props: { routeId: string }) {
   return (
     <AppShell>
       <AppShell.Top>
         <div className="flex flex-col items-center justify-center border-b border-neutral-200 bg-white py-6">
-          <span className="text-sm font-medium text-neutral-500">aligner — top</span>
+          <span className="text-sm font-medium text-neutral-500">annotator — top</span>
           <RouteNav />
         </div>
       </AppShell.Top>
       <AppShell.Left>
-        <PanelLabel>aligner — left</PanelLabel>
+        <PanelLabel>annotator — left</PanelLabel>
       </AppShell.Left>
       <AppShell.Main>
-        <PanelLabel>aligner — main ({props.routeId})</PanelLabel>
+        <PanelLabel>annotator — main ({props.routeId})</PanelLabel>
       </AppShell.Main>
       <AppShell.Bottom>
-        <PanelLabel>aligner — bottom</PanelLabel>
+        <PanelLabel>annotator — bottom</PanelLabel>
       </AppShell.Bottom>
       <AppShell.Right>
-        <PanelLabel>aligner — right</PanelLabel>
+        <PanelLabel>annotator — right</PanelLabel>
       </AppShell.Right>
     </AppShell>
   );
