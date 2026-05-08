@@ -1,0 +1,22 @@
+node_modules
+dist
+*.tsbuildinfo
+.turbo
+*.local
+.DS_Store
+target
+
+# Python
+.venv
+__pycache__
+*.egg-info
+.python-version
+dist/
+
+# Editor
+.idea
+.vscode/*.log
+
+# Electron
+out
+release

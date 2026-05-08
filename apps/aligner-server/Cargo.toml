@@ -1,0 +1,17 @@
+[package]
+name = "aligner-server"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "WebSocket server for the Aligner desktop/web stack."
+
+[[bin]]
+name = "aligner-server"
+path = "src/main.rs"
+
+[dependencies]
+lisca.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true

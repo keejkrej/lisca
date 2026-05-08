@@ -1,0 +1,17 @@
+[package]
+name = "annotator-server"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "WebSocket server for the Annotator desktop/web stack."
+
+[[bin]]
+name = "annotator-server"
+path = "src/main.rs"
+
+[dependencies]
+lisca.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true

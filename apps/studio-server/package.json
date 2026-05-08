@@ -1,0 +1,10 @@
+{
+  "name": "@lisca/studio-server",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "cargo build --release -p studio-server",
+    "dev": "cargo run -p studio-server",
+    "lint": "cargo check -p studio-server"
+  }
+}

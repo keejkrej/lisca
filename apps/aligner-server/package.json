@@ -1,0 +1,10 @@
+{
+  "name": "@lisca/aligner-server",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "cargo build --release -p aligner-server",
+    "dev": "cargo run -p aligner-server",
+    "lint": "cargo check -p aligner-server"
+  }
+}

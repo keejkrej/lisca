@@ -1,0 +1,10 @@
+{
+  "name": "@lisca/annotator-server",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "cargo build --release -p annotator-server",
+    "dev": "cargo run -p annotator-server",
+    "lint": "cargo check -p annotator-server"
+  }
+}

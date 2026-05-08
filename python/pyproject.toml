@@ -1,0 +1,16 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "lisca"
+version = "0.1.0"
+description = "Python utilities and protocol helpers for the Lisca monorepo."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Lisca contributors" }]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
