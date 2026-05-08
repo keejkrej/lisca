@@ -16,4 +16,11 @@ export {
   type ShellWsProbe,
 } from "./shell";
 
+export {
+  ShellThemeProvider,
+  ShellThemeToggle,
+  useShellTheme,
+  type ShellThemeMode,
+} from "./shell-theme";
+
 export { ShellWorkspaceProvider, useShellWorkspace, type ShellWorkspace } from "./workspace";
