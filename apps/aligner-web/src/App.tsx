@@ -2,13 +2,21 @@ import { useEffect, useMemo, useState } from "react";
 import type { HelloMessage } from "@lisca/contracts";
 import { WS_PATH } from "@lisca/contracts";
 import { AppShell } from "@lisca/ui";
-import { formatWsUrl } from "@lisca/utils";
+import { resolveLiscaWsUrl } from "@lisca/utils";
 
 export function App() {
   const [log, setLog] = useState<string[]>([]);
   const wsUrl = useMemo(() => {
-    const port = Number(import.meta.env.VITE_WS_PORT ?? 8765);
-    return formatWsUrl("127.0.0.1", port, WS_PATH);
+    const params =
+      typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+    return resolveLiscaWsUrl({
+      searchParams: params,
+      viteWsUrl: import.meta.env.VITE_WS_URL,
+      viteWsHost: import.meta.env.VITE_WS_HOST,
+      viteWsPort: import.meta.env.VITE_WS_PORT,
+      defaultPort: 8765,
+      wsPath: WS_PATH,
+    });
   }, []);
 
   useEffect(() => {
