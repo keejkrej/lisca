@@ -1,1 +1,8 @@
 @import "tailwindcss";
+@source "../../../packages/ui/src";
+
+html,
+body,
+#root {
+  height: 100%;
+}

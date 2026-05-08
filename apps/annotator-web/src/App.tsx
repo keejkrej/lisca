@@ -1,53 +1,31 @@
-import { useEffect, useMemo, useState } from "react";
-import type { HelloMessage } from "@lisca/contracts";
-import { WS_PATH } from "@lisca/contracts";
-import { AppShell } from "@lisca/ui";
-import { resolveLiscaWsUrl } from "@lisca/utils";
+import { AppShell, useShellWsProbe, useShellWorkspace } from "@lisca/ui";
+
+import { AnnotatorTopBar } from "./top-bar";
 
 export function App() {
-  const [log, setLog] = useState<string[]>([]);
-  const wsUrl = useMemo(() => {
-    const params =
-      typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
-    return resolveLiscaWsUrl({
-      searchParams: params,
-      viteWsUrl: import.meta.env.VITE_WS_URL,
-      viteWsHost: import.meta.env.VITE_WS_HOST,
-      viteWsPort: import.meta.env.VITE_WS_PORT,
-      defaultPort: 8766,
-      wsPath: WS_PATH,
-    });
-  }, []);
-
-  useEffect(() => {
-    const ws = new WebSocket(wsUrl);
-    ws.addEventListener("open", () =>
-      setLog((l) => [...l, `connected ${wsUrl}`]),
-    );
-    ws.addEventListener("message", (ev) => {
-      try {
-        const data = JSON.parse(String(ev.data)) as HelloMessage | { echo?: string };
-        setLog((l) => [...l, JSON.stringify(data)]);
-      } catch {
-        setLog((l) => [...l, String(ev.data)]);
-      }
-    });
-    ws.addEventListener("close", () =>
-      setLog((l) => [...l, "socket closed"]),
-    );
-    return () => ws.close();
-  }, [wsUrl]);
+  const probe = useShellWsProbe({ defaultPort: 8766 });
+  const workspace = useShellWorkspace();
 
   return (
-    <AppShell title="Annotator">
-      <p className="text-sm text-neutral-600 mb-3">
-        WebSocket: <code className="font-mono">{wsUrl}</code>
-      </p>
-      <ul className="list-disc pl-5 space-y-1 text-sm font-mono">
-        {log.map((line, i) => (
-          <li key={i}>{line}</li>
-        ))}
-      </ul>
+    <AppShell header={<AnnotatorTopBar workspace={workspace} probe={probe} />}>
+      <div className="space-y-4 p-6">
+        <p className="text-sm text-neutral-600">
+          Annotation workspace — canvas and tooling plug in here.
+        </p>
+        <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+          <p className="text-sm text-neutral-600 mb-2">
+            WebSocket:{" "}
+            <code className="rounded bg-white px-1.5 py-0.5 font-mono text-neutral-800">
+              {probe.wsUrl}
+            </code>
+          </p>
+          <ul className="list-disc space-y-1 pl-5 font-mono text-xs text-neutral-800">
+            {probe.log.map((line, i) => (
+              <li key={i}>{line}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
     </AppShell>
   );
 }

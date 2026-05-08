@@ -17,6 +17,10 @@
     "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
     "lint": "tsc -p tsconfig.build.json --noEmit"
   },
+  "dependencies": {
+    "@lisca/contracts": "workspace:*",
+    "@lisca/utils": "workspace:*"
+  },
   "peerDependencies": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

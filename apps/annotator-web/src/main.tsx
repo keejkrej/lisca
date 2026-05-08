@@ -1,10 +1,15 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import "./index.css";
+
+import { ShellWorkspaceProvider } from "@lisca/ui";
+
 import { App } from "./App";
+import "./index.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <App />
+    <ShellWorkspaceProvider>
+      <App />
+    </ShellWorkspaceProvider>
   </StrictMode>,
 );
