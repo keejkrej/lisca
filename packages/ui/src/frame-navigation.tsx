@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "./components/ui/select";
 import { Slider } from "./components/ui/slider";
+import { Section } from "./section";
 
 export type NavigationValue = number | string;
 
@@ -189,19 +190,43 @@ export type FrameNavigationProps<T extends NavigationValue> = {
   zPlane?: SliderNavigationControlProps;
   /** ROI / tile index stepper (e.g. inspect mode). */
   roi?: SelectNavigationControlProps<T>;
+  /** Inner controls wrapper class (layout of fields). */
   className?: string;
+  /** Section card title (default: Navigation). */
+  sectionTitle?: string;
+  sectionDescription?: string;
+  sectionClassName?: string;
+  sectionContentClassName?: string;
 };
 
-/** Shared stack: optional position, channel, time (slider), Z (slider), ROI — render only props you pass. */
+/** Shared stack in a {@link Section} card: optional position, channel, time (slider), Z (slider), ROI — render only props you pass. */
 export function FrameNavigation<T extends NavigationValue>(props: FrameNavigationProps<T>) {
-  const { position, channel, timepoint, zPlane, roi, className } = props;
+  const {
+    position,
+    channel,
+    timepoint,
+    zPlane,
+    roi,
+    className,
+    sectionTitle = "Navigation",
+    sectionDescription,
+    sectionClassName,
+    sectionContentClassName,
+  } = props;
   return (
-    <div className={className ?? "min-w-0 space-y-3"}>
-      {position ? <SelectStepperField label="Position" {...position} /> : null}
-      {channel ? <SelectStepperField label="Channel" {...channel} /> : null}
-      {timepoint ? <SliderStepperField label="Timepoint" {...timepoint} /> : null}
-      {zPlane ? <SliderStepperField label="Z plane" {...zPlane} /> : null}
-      {roi ? <SelectStepperField label="ROI" {...roi} /> : null}
-    </div>
+    <Section
+      contentClassName={sectionContentClassName}
+      description={sectionDescription}
+      title={sectionTitle}
+      className={sectionClassName}
+    >
+      <div className={className ?? "min-w-0 space-y-3"}>
+        {position ? <SelectStepperField label="Position" {...position} /> : null}
+        {channel ? <SelectStepperField label="Channel" {...channel} /> : null}
+        {timepoint ? <SliderStepperField label="Timepoint" {...timepoint} /> : null}
+        {zPlane ? <SliderStepperField label="Z plane" {...zPlane} /> : null}
+        {roi ? <SelectStepperField label="ROI" {...roi} /> : null}
+      </div>
+    </Section>
   );
 }

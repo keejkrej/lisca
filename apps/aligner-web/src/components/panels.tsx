@@ -1,18 +1,13 @@
 import {
   Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
   ContrastControl,
   FrameNavigation,
+  Section,
   findNavigationOptionIndex,
   stepNavigationValue,
   toNavigationOptions,
 } from "@lisca/ui";
 import { useMemo, useState } from "react";
-import type { ReactNode } from "react";
 
 import type { RouteId } from "../types";
 
@@ -207,46 +202,32 @@ function InspectFrameNavigation() {
   );
 }
 
-function Section(props: { title: string; description?: string; children?: ReactNode }) {
-  return (
-    <Card className="border-0 shadow-none">
-      <CardHeader className="px-3 py-3 pb-0">
-        <CardTitle className="text-sm">{props.title}</CardTitle>
-        {props.description ? (
-          <CardDescription className="text-xs">{props.description}</CardDescription>
-        ) : null}
-      </CardHeader>
-      <CardContent className="space-y-2 px-3 pb-3 pt-2">{props.children}</CardContent>
-    </Card>
-  );
-}
-
-/** Left `AppShell` rail; align vs inspect each show Navigation + `FrameNavigation` only (no subtitle copy). */
+/** Left `AppShell` rail; align vs inspect each show Navigation (`FrameNavigation` includes its section card). */
 export function LeftPanel(props: { routeId: RouteId }) {
   return (
     <div className="flex min-h-0 flex-col gap-2 p-3">
-      <Section title="Navigation">
-        {props.routeId === "align" ? <AlignFrameNavigation /> : <InspectFrameNavigation />}
-      </Section>
+      {props.routeId === "align" ? <AlignFrameNavigation /> : <InspectFrameNavigation />}
     </div>
   );
 }
 
-const bottomSplitDivider = "border-neutral-300 dark:border-neutral-700";
-
 const dockContrastDomain = { min: 0, max: 65535 } as const;
 
-/** Dock contrast strip — local demo state until workspace / frame wiring lands. */
+/** Dock contrast — local demo state until workspace / frame wiring lands. */
 function DockContrastControls() {
   const [contrastMin, setContrastMin] = useState(8000);
   const [contrastMax, setContrastMax] = useState(56_000);
 
   return (
     <ContrastControl
+      aria-label="Contrast"
       domainMax={dockContrastDomain.max}
       domainMin={dockContrastDomain.min}
       maxValue={contrastMax}
       minValue={contrastMin}
+      role="region"
+      sectionClassName="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+      sectionContentClassName="flex min-h-0 flex-1 flex-col overflow-auto"
       onAutoRange={() => {
         setContrastMin(4096);
         setContrastMax(61_440);
@@ -257,7 +238,7 @@ function DockContrastControls() {
   );
 }
 
-/** `AppShell.Dock` content: contrast (left) and save (right). */
+/** `AppShell.Dock` content: Contrast (`ContrastControl` includes its section card) and Save. */
 export function BottomPanel(props: { routeId: RouteId }) {
   const saveHint =
     props.routeId === "align"
@@ -265,29 +246,21 @@ export function BottomPanel(props: { routeId: RouteId }) {
       : "Persist inspect results — stub";
 
   return (
-    <div className="flex h-full min-h-0 w-full">
-      <section
-        aria-label="Contrast"
-        className={`min-h-0 min-w-0 flex-1 overflow-auto border-r ${bottomSplitDivider}`}
+    <div className="flex h-full min-h-0 w-full gap-2 p-3">
+      <DockContrastControls />
+
+      <Section
+        aria-label="Save"
+        contentClassName="flex min-h-0 flex-1 flex-col items-center justify-center space-y-2"
+        role="region"
+        title="Save"
+        className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
       >
-        <div className="flex h-full min-h-0 flex-col gap-2 p-3">
-          <div className="shrink-0 text-muted-foreground text-xs uppercase tracking-wide">Contrast</div>
-          <div className="flex min-h-0 flex-1 items-center overflow-x-auto overflow-y-hidden">
-            <DockContrastControls />
-          </div>
-        </div>
-      </section>
-      <section aria-label="Save" className="min-h-0 min-w-0 flex-1 overflow-auto">
-        <div className="flex h-full min-h-0 flex-col gap-3 p-3">
-          <div className="text-muted-foreground text-xs uppercase tracking-wide">Save</div>
-          <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border px-3 py-4">
-            <p className="text-center text-muted-foreground text-sm">{saveHint}</p>
-            <Button type="button" size="sm" disabled>
-              Save
-            </Button>
-          </div>
-        </div>
-      </section>
+        <p className="text-center text-muted-foreground text-sm">{saveHint}</p>
+        <Button type="button" size="sm" disabled>
+          Save
+        </Button>
+      </Section>
     </div>
   );
 }

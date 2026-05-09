@@ -5,8 +5,8 @@ const shellDivider = "border-border";
 /** Fixed-height header strip (`h-16`); scrolls inside if content overflows. */
 const shellHeaderFixed = "flex h-16 shrink-0 flex-col overflow-hidden";
 
-/** Fixed-height dock strip (`calc(13rem × 2/3)`); scrolls inside if content overflows. */
-const shellDockFixed = "flex h-[calc(13rem*2/3)] shrink-0 flex-col overflow-hidden";
+/** Fixed-height dock strip (`11rem`); scrolls inside if content overflows. */
+const shellDockFixed = "flex h-[11rem] shrink-0 flex-col overflow-hidden";
 
 function ShellDockInner(props: { children?: ReactNode }) {
   return (

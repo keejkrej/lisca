@@ -100,6 +100,8 @@ export {
 
 export { ShellWorkspaceProvider, useShellWorkspace, type ShellWorkspace } from "./workspace";
 
+export { Section, type SectionProps } from "./section";
+
 export {
   FrameNavigation,
   SelectStepperField,
