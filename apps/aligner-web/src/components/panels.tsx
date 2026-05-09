@@ -12,7 +12,7 @@ import type { ReactNode } from "react";
 
 import type { RouteId } from "../types";
 
-function PanelSection(props: { title: string; description?: string; children?: ReactNode }) {
+function Section(props: { title: string; description?: string; children?: ReactNode }) {
   return (
     <Card className="border-0 shadow-none">
       <CardHeader className="px-3 py-3 pb-0">
@@ -26,63 +26,62 @@ function PanelSection(props: { title: string; description?: string; children?: R
   );
 }
 
-/** Left rail for `#/align`: navigation, grid, timeline (stubs). */
-export function AlignLeftPanels() {
-  return (
-    <div className="flex min-h-0 flex-col gap-2 p-3">
-      <PanelSection title="Navigation" description="Frame / channel / Z — placeholders">
-        <div className="space-y-1">
-          <Label className="text-muted-foreground text-xs">Position</Label>
-          <div className="rounded-md border border-dashed border-border px-2 py-6 text-center text-muted-foreground text-xs">
-            NavigationControls (stub)
+/** Left `AppShell` rail; content depends on `routeId` (align vs inspect each have left + right panels). */
+export function LeftPanel(props: { routeId: RouteId }) {
+  if (props.routeId === "align") {
+    return (
+      <div className="flex min-h-0 flex-col gap-2 p-3">
+        <Section title="Navigation" description="Frame / channel / Z — placeholders">
+          <div className="space-y-1">
+            <Label className="text-muted-foreground text-xs">Position</Label>
+            <div className="rounded-md border border-dashed border-border px-2 py-6 text-center text-muted-foreground text-xs">
+              NavigationControls (stub)
+            </div>
           </div>
-        </div>
-      </PanelSection>
-      <Separator />
-      <PanelSection title="Grid" description="Pitch, cell size, exclusions — placeholders">
-        <div className="rounded-md border border-dashed border-border px-2 py-8 text-center text-muted-foreground text-xs">
-          Grid controls (stub)
-        </div>
-      </PanelSection>
-      <Separator />
-      <PanelSection title="Timeline" description="Time slider & auto-exclude — placeholders">
-        <div className="min-h-0 rounded-xl border border-dashed border-border px-3 py-6 text-center text-muted-foreground text-sm">
-          Time slider & auto-exclude chart — stub
-        </div>
-      </PanelSection>
-    </div>
-  );
-}
+        </Section>
+        <Separator />
+        <Section title="Grid" description="Pitch, cell size, exclusions — placeholders">
+          <div className="rounded-md border border-dashed border-border px-2 py-8 text-center text-muted-foreground text-xs">
+            Grid controls (stub)
+          </div>
+        </Section>
+        <Separator />
+        <Section title="Timeline" description="Time slider & auto-exclude — placeholders">
+          <div className="min-h-0 rounded-xl border border-dashed border-border px-3 py-6 text-center text-muted-foreground text-sm">
+            Time slider & auto-exclude chart — stub
+          </div>
+        </Section>
+      </div>
+    );
+  }
 
-/** Left rail for `#/inspect` (stubs). */
-export function InspectLeftPanels() {
   return (
     <div className="flex min-h-0 flex-col gap-2 p-3">
-      <PanelSection title="Inspect navigation" description="Tile / frame stepping — placeholders">
+      <Section title="Inspect navigation" description="Tile / frame stepping — placeholders">
         <div className="rounded-md border border-dashed border-border px-2 py-6 text-center text-muted-foreground text-xs">
           Inspect navigation (stub)
         </div>
-      </PanelSection>
+      </Section>
       <Separator />
-      <PanelSection title="Appearance" description="Intensity / LUT — placeholders">
+      <Section title="Appearance" description="Intensity / LUT — placeholders">
         <div className="rounded-md border border-dashed border-border px-2 py-6 text-center text-muted-foreground text-xs">
           View tuning (stub)
         </div>
-      </PanelSection>
+      </Section>
       <Separator />
-      <PanelSection title="Filmstrip" description="Inspect thumbnails — placeholders">
+      <Section title="Filmstrip" description="Inspect thumbnails — placeholders">
         <div className="min-h-0 rounded-xl border border-dashed border-border px-3 py-6 text-center text-muted-foreground text-sm">
           Thumbnail strip — stub
         </div>
-      </PanelSection>
+      </Section>
     </div>
   );
 }
 
 const bottomSplitDivider = "border-neutral-300 dark:border-neutral-700";
 
-/** Single child for `AppShell.Bottom`: contrast (left) and save (right). */
-export function BottomBar(props: { routeId: RouteId }) {
+/** Bottom `AppShell` rail: contrast (left) and save (right). */
+export function BottomPanel(props: { routeId: RouteId }) {
   const contrastSubtitle =
     props.routeId === "align"
       ? "Auto / manual window–level — placeholders"
@@ -120,7 +119,8 @@ export function BottomBar(props: { routeId: RouteId }) {
   );
 }
 
-export function CanvasPlaceholder(props: { routeId: RouteId }) {
+/** Center `AppShell` region: viewport / canvas (stub). */
+export function MainPanel(props: { routeId: RouteId }) {
   const label = props.routeId === "align" ? "Align canvas" : "Inspect canvas";
   return (
     <div className="flex h-full min-h-0 flex-col bg-muted/20">
@@ -137,15 +137,16 @@ export function CanvasPlaceholder(props: { routeId: RouteId }) {
   );
 }
 
-export function InspectorPanel(props: { routeId: RouteId }) {
+/** Right `AppShell` rail; content depends on `routeId`. */
+export function RightPanel(props: { routeId: RouteId }) {
   const title = props.routeId === "align" ? "Align inspector" : "Inspect inspector";
   return (
     <div className="flex min-h-0 flex-col gap-2 p-3">
-      <PanelSection title={title} description="Stats & metadata — placeholders">
+      <Section title={title} description="Stats & metadata — placeholders">
         <div className="rounded-md border border-dashed border-border px-2 py-10 text-center text-muted-foreground text-xs">
           Inspector stats (stub)
         </div>
-      </PanelSection>
+      </Section>
     </div>
   );
 }

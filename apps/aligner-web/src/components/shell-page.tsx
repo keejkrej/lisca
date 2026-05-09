@@ -1,13 +1,7 @@
 import { AppShell, ShellThemeToggle } from "@lisca/ui";
 
 import { Navbar } from "./navbar";
-import {
-  AlignLeftPanels,
-  BottomBar,
-  CanvasPlaceholder,
-  InspectLeftPanels,
-  InspectorPanel,
-} from "./panels";
+import { BottomPanel, LeftPanel, MainPanel, RightPanel } from "./panels";
 import type { RouteId } from "../types";
 
 export function ShellPage(props: { routeId: RouteId }) {
@@ -25,18 +19,18 @@ export function ShellPage(props: { routeId: RouteId }) {
             </span>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto">
-            {props.routeId === "align" ? <AlignLeftPanels /> : <InspectLeftPanels />}
+            <LeftPanel routeId={props.routeId} />
           </div>
         </div>
       </AppShell.Left>
       <AppShell.Main>
-        <CanvasPlaceholder routeId={props.routeId} />
+        <MainPanel routeId={props.routeId} />
       </AppShell.Main>
       <AppShell.Bottom>
-        <BottomBar routeId={props.routeId} />
+        <BottomPanel routeId={props.routeId} />
       </AppShell.Bottom>
       <AppShell.Right>
-        <InspectorPanel routeId={props.routeId} />
+        <RightPanel routeId={props.routeId} />
       </AppShell.Right>
     </AppShell>
   );
