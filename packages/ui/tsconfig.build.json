@@ -6,7 +6,11 @@
     "declarationMap": true,
     "noEmit": false,
     "rootDir": "src",
-    "outDir": "dist"
+    "outDir": "dist",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "include": ["src/**/*.tsx", "src/**/*.ts", "src/**/*.d.ts"]
 }

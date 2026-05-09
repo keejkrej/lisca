@@ -22,7 +22,7 @@
     "typecheck": "tsc -p tsconfig.build.json --noEmit"
   },
   "dependencies": {
-    "@base-ui/react": "^1.0.0",
+    "@base-ui/react": "^1.4.1",
     "@lisca/contracts": "workspace:*",
     "@lisca/utils": "workspace:*",
     "class-variance-authority": "^0.7.1",

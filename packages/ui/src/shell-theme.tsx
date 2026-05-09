@@ -1,3 +1,4 @@
+import { Moon, Sun } from "lucide-react";
 import {
   createContext,
   useCallback,
@@ -7,6 +8,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
+
+import { Button } from "./components/ui/button";
 
 export type ShellThemeMode = "light" | "dark";
 
@@ -97,27 +100,24 @@ export function useShellTheme(): ShellThemeContextValue {
   return ctx;
 }
 
-const themeToggleTextClass =
-  "cursor-pointer border-0 bg-transparent p-0 font-inherit text-inherit text-xs underline underline-offset-2 opacity-80 hover:opacity-100";
-
 /**
- * Single underlined label in the top bar corner: shows **dark** while in light mode
- * (click → dark), **light** while in dark mode (click → light).
+ * Icon control: moon while in light mode (switch to dark), sun while in dark (switch to light).
  */
 export function ShellThemeToggle(props: { className?: string }) {
   const { mode, toggleLightDark } = useShellTheme();
-  const label = mode === "light" ? "dark" : "light";
   const title = mode === "light" ? "Switch to dark theme" : "Switch to light theme";
 
   return (
-    <button
+    <Button
       type="button"
-      className={props.className ?? themeToggleTextClass}
+      variant="ghost"
+      size="icon-sm"
+      className={props.className}
       onClick={toggleLightDark}
       title={title}
       aria-label={title}
     >
-      {label}
-    </button>
+      {mode === "light" ? <Moon /> : <Sun />}
+    </Button>
   );
 }

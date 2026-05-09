@@ -9,9 +9,13 @@ import {
   useMemo,
   useState,
   type ButtonHTMLAttributes,
+  type KeyboardEvent as ReactKeyboardEvent,
   type ReactElement,
   type ReactNode,
 } from "react";
+
+import { buttonVariants } from "./components/ui/button";
+import { cn } from "./lib/utils";
 
 type AppShellSlots = {
   top?: ReactNode;
@@ -221,7 +225,7 @@ export function ShellTitleHeader(props: { title: string }) {
 
 export function ShellHeaderBar(props: { start: ReactNode; center: ReactNode; end: ReactNode }) {
   return (
-    <header className="shrink-0 px-6 py-3">
+    <header className="shrink-0 border-b border-border/80 bg-background px-6 py-3">
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
         <div className="min-w-0 justify-self-start">{props.start}</div>
         <div className="min-w-0 justify-self-center">{props.center}</div>
@@ -279,6 +283,61 @@ export function ShellPathChip(props: {
   );
 }
 
+/** Path control styled like the legacy aligner navbar `PathBadge` (basename display, fixed width pill). */
+export function ShellPathBadge(props: {
+  label: string;
+  value: string | null;
+  icon: ReactNode;
+  disabled?: boolean;
+  onClick?: () => void;
+}) {
+  const display = props.value
+    ? props.value
+        .split(/[\\/]/)
+        .filter(Boolean)
+        .pop()
+        ?.replace(/\.[^./\\]+$/, "")
+    : null;
+
+  const handleKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (props.disabled || !props.onClick) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      props.onClick();
+    }
+  };
+
+  const disabled = props.disabled ?? !props.onClick;
+
+  return (
+    <div
+      role="button"
+      tabIndex={disabled ? -1 : 0}
+      aria-disabled={disabled}
+      onClick={() => {
+        if (!disabled) props.onClick?.();
+      }}
+      onKeyDown={handleKeyDown}
+      className={cn(
+        "min-w-[12rem] w-[12rem] max-w-[12rem] rounded-xl border border-border/55 bg-muted/15 px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        disabled
+          ? "cursor-default opacity-65"
+          : "cursor-pointer hover:border-border/80 hover:bg-muted/25",
+      )}
+      title={props.value ? props.value : props.label}
+    >
+      <div className="flex min-w-0 items-center gap-2.5">
+        <div className="shrink-0 self-center text-muted-foreground/70">{props.icon}</div>
+        <div className="min-w-0 flex-1 leading-none">
+          <p className="w-full min-w-0 truncate text-xs leading-none text-foreground/90">
+            {display ?? props.label}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export type ShellConnectionState = "idle" | "connecting" | "open" | "closed";
 
 export function ShellConnectionStatus(props: {
@@ -306,7 +365,10 @@ export function ShellConnectionStatus(props: {
 
   return (
     <div
-      className="flex items-center gap-2 rounded-md border border-current/25 px-3 py-1.5 text-xs"
+      className={cn(
+        buttonVariants({ size: "sm", variant: "outline" }),
+        "h-auto min-h-0 cursor-default gap-1.5 py-1.5 whitespace-normal shadow-none before:shadow-none hover:bg-popover data-pressed:bg-popover dark:hover:bg-input/32",
+      )}
       title={props.wsUrl}
     >
       <span className={`size-2 shrink-0 rounded-full ${dot}`} aria-hidden />

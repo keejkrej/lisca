@@ -292,7 +292,7 @@ importers:
   packages/ui:
     dependencies:
       '@base-ui/react':
-        specifier: ^1.0.0
+        specifier: ^1.4.1
         version: 1.4.1(@types/react@19.1.17)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@lisca/contracts':
         specifier: workspace:*

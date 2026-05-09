@@ -1,4 +1,4 @@
-import { AppShell, ShellThemeToggle } from "@lisca/ui";
+import { AppShell } from "@lisca/ui";
 
 import { Navbar } from "./navbar";
 import { BottomPanel, LeftPanel, MainPanel, RightPanel } from "./panels";
@@ -11,17 +11,7 @@ export function ShellPage(props: { routeId: RouteId }) {
         <Navbar routeId={props.routeId} />
       </AppShell.Top>
       <AppShell.Left>
-        <div className="flex h-full min-h-0 flex-col">
-          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-neutral-300 px-3 py-2 dark:border-neutral-700">
-            <ShellThemeToggle />
-            <span className="truncate text-muted-foreground text-[0.65rem] uppercase tracking-wide">
-              {props.routeId}
-            </span>
-          </div>
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <LeftPanel routeId={props.routeId} />
-          </div>
-        </div>
+        <LeftPanel routeId={props.routeId} />
       </AppShell.Left>
       <AppShell.Main>
         <MainPanel routeId={props.routeId} />
