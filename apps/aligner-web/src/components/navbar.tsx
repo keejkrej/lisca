@@ -10,7 +10,7 @@ import {
   ShellDriveIcon,
   ShellFolderIcon,
   ShellHeaderBar,
-  ShellPathBadge,
+  PathButton,
   ShellThemeToggle,
   ToggleGroup,
   ToggleGroupItem,
@@ -165,13 +165,13 @@ export function Navbar(props: { routeId: RouteId }) {
         }
         center={
           <div className="flex max-w-[56rem] flex-wrap items-center justify-center gap-3">
-            <ShellPathBadge
+            <PathButton
               label="Workspace"
               value={workspace.workspacePath}
               icon={<ShellFolderIcon />}
               onClick={() => workspace.pickWorkspace()}
             />
-            <ShellPathBadge
+            <PathButton
               label="Source"
               value={workspace.sourcePath}
               icon={<ShellDriveIcon />}

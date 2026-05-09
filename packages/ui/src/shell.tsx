@@ -9,12 +9,11 @@ import {
   useMemo,
   useState,
   type ButtonHTMLAttributes,
-  type KeyboardEvent as ReactKeyboardEvent,
   type ReactElement,
   type ReactNode,
 } from "react";
 
-import { buttonVariants } from "./components/ui/button";
+import { Button, buttonVariants } from "./components/ui/button";
 import { cn } from "./lib/utils";
 
 type AppShellSlots = {
@@ -283,8 +282,8 @@ export function ShellPathChip(props: {
   );
 }
 
-/** Path control styled like the legacy aligner navbar `PathBadge` (basename display, fixed width pill). */
-export function ShellPathBadge(props: {
+/** Basename path control for workspace/source selection (`Button` outline, matches shell chrome). */
+export function PathButton(props: {
   label: string;
   value: string | null;
   icon: ReactNode;
@@ -299,42 +298,23 @@ export function ShellPathBadge(props: {
         ?.replace(/\.[^./\\]+$/, "")
     : null;
 
-  const handleKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-    if (props.disabled || !props.onClick) return;
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      props.onClick();
-    }
-  };
-
   const disabled = props.disabled ?? !props.onClick;
 
   return (
-    <div
-      role="button"
-      tabIndex={disabled ? -1 : 0}
-      aria-disabled={disabled}
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      disabled={disabled}
+      title={props.value ? props.value : props.label}
       onClick={() => {
         if (!disabled) props.onClick?.();
       }}
-      onKeyDown={handleKeyDown}
-      className={cn(
-        "min-w-[12rem] w-[12rem] max-w-[12rem] rounded-xl border border-border/55 bg-muted/15 px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        disabled
-          ? "cursor-default opacity-65"
-          : "cursor-pointer hover:border-border/80 hover:bg-muted/25",
-      )}
-      title={props.value ? props.value : props.label}
+      className="max-w-[min(100%,18rem)] justify-start gap-2 font-normal"
     >
-      <div className="flex min-w-0 items-center gap-2.5">
-        <div className="shrink-0 self-center text-muted-foreground/70">{props.icon}</div>
-        <div className="min-w-0 flex-1 leading-none">
-          <p className="w-full min-w-0 truncate text-xs leading-none text-foreground/90">
-            {display ?? props.label}
-          </p>
-        </div>
-      </div>
-    </div>
+      <span className="shrink-0">{props.icon}</span>
+      <span className="min-w-0 truncate">{display ?? props.label}</span>
+    </Button>
   );
 }
 

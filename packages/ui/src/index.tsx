@@ -61,7 +61,7 @@ export {
   ShellDriveIcon,
   ShellFolderIcon,
   ShellHeaderBar,
-  ShellPathBadge,
+  PathButton,
   ShellPathChip,
   ShellSegmentedControl,
   ShellTitleHeader,
