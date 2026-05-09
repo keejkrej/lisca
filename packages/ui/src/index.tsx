@@ -42,8 +42,22 @@ export {
   Input,
   InputPrimitive,
   Label,
+  Select,
+  SelectButton,
+  SelectContent,
+  SelectGroup,
+  SelectGroupLabel,
+  SelectItem,
+  SelectLabel,
+  SelectPrimitive,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
   Separator,
   SeparatorPrimitive,
+  Slider,
+  SliderPrimitive,
+  SliderValue,
   Spinner,
   buttonVariants,
   type ButtonProps,
@@ -85,3 +99,23 @@ export {
 } from "./shell-theme";
 
 export { ShellWorkspaceProvider, useShellWorkspace, type ShellWorkspace } from "./workspace";
+
+export {
+  FrameNavigation,
+  SelectStepperField,
+  SliderStepperField,
+  findNavigationOptionIndex,
+  stepNavigationValue,
+  toNavigationOptions,
+  type FrameNavigationProps,
+  type NavigationOption,
+  type NavigationValue,
+  type SelectNavigationControlProps,
+  type SliderNavigationControlProps,
+} from "./frame-navigation";
+
+export {
+  ContrastControl,
+  type ContrastControlProps,
+  type ContrastWindow,
+} from "./contrast-control";

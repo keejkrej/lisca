@@ -28,6 +28,20 @@ export {
   ToggleGroupSeparator,
 } from "./toggle-group";
 export {
+  Select,
+  SelectButton,
+  SelectContent,
+  SelectGroup,
+  SelectGroupLabel,
+  SelectItem,
+  SelectLabel,
+  SelectPrimitive,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from "./select";
+export { Slider, SliderPrimitive, SliderValue } from "./slider";
+export {
   Menu,
   MenuCheckboxItem,
   MenuCreateHandle,

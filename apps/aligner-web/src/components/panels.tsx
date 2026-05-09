@@ -5,12 +5,207 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Label,
-  Separator,
+  ContrastControl,
+  FrameNavigation,
+  findNavigationOptionIndex,
+  stepNavigationValue,
+  toNavigationOptions,
 } from "@lisca/ui";
+import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 import type { RouteId } from "../types";
+
+const demoPositions = [1, 2, 3, 4];
+const demoChannels = [0, 1, 2];
+const demoTimeValues = [0, 12, 24, 36, 48];
+const demoZValues = [0, 1, 2, 3, 4];
+const demoRoiIds = [0, 1, 2, 3, 4, 5, 6, 7];
+
+function clamp(n: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, n));
+}
+
+function AlignFrameNavigation() {
+  const positionOptions = useMemo(() => toNavigationOptions(demoPositions), []);
+  const channelOptions = useMemo(() => toNavigationOptions(demoChannels), []);
+  const [pos, setPos] = useState(demoPositions[0]!);
+  const [channel, setChannel] = useState(demoChannels[0]!);
+  const [timeIndex, setTimeIndex] = useState(0);
+  const [zIndex, setZIndex] = useState(0);
+
+  const timeMax = Math.max(0, demoTimeValues.length - 1);
+  const zMax = Math.max(0, demoZValues.length - 1);
+  const posIndex = findNavigationOptionIndex(positionOptions, pos);
+  const chIndex = findNavigationOptionIndex(channelOptions, channel);
+  const displayedTime = demoTimeValues[timeIndex] ?? 0;
+  const displayedZ = demoZValues[zIndex] ?? 0;
+
+  return (
+    <FrameNavigation
+      position={{
+        value: pos,
+        options: positionOptions,
+        disabled: false,
+        onChange: setPos,
+        previousDisabled: posIndex <= 0,
+        nextDisabled: posIndex >= positionOptions.length - 1,
+        onPrevious: () => {
+          const next = stepNavigationValue(positionOptions, pos, -1);
+          if (next != null) setPos(next);
+        },
+        onNext: () => {
+          const next = stepNavigationValue(positionOptions, pos, 1);
+          if (next != null) setPos(next);
+        },
+      }}
+      channel={{
+        value: channel,
+        options: channelOptions,
+        disabled: false,
+        onChange: setChannel,
+        previousDisabled: chIndex <= 0,
+        nextDisabled: chIndex >= channelOptions.length - 1,
+        onPrevious: () => {
+          const next = stepNavigationValue(channelOptions, channel, -1);
+          if (next != null) setChannel(next);
+        },
+        onNext: () => {
+          const next = stepNavigationValue(channelOptions, channel, 1);
+          if (next != null) setChannel(next);
+        },
+      }}
+      timepoint={{
+        hint: String(displayedTime),
+        value: timeIndex,
+        min: 0,
+        max: timeMax,
+        step: 1,
+        disabled: demoTimeValues.length <= 1,
+        onChange: (i: number) => setTimeIndex(clamp(Math.round(i), 0, timeMax)),
+        onCommit: (i: number) => setTimeIndex(clamp(Math.round(i), 0, timeMax)),
+        previousDisabled: demoTimeValues.length <= 1 || timeIndex <= 0,
+        nextDisabled: demoTimeValues.length <= 1 || timeIndex >= timeMax,
+        onPrevious: () => setTimeIndex((t) => Math.max(0, t - 1)),
+        onNext: () => setTimeIndex((t) => Math.min(timeMax, t + 1)),
+      }}
+      zPlane={{
+        hint: String(displayedZ),
+        value: zIndex,
+        min: 0,
+        max: zMax,
+        step: 1,
+        disabled: demoZValues.length <= 1,
+        onChange: (i: number) => setZIndex(clamp(Math.round(i), 0, zMax)),
+        onCommit: (i: number) => setZIndex(clamp(Math.round(i), 0, zMax)),
+        previousDisabled: demoZValues.length <= 1 || zIndex <= 0,
+        nextDisabled: demoZValues.length <= 1 || zIndex >= zMax,
+        onPrevious: () => setZIndex((z) => Math.max(0, z - 1)),
+        onNext: () => setZIndex((z) => Math.min(zMax, z + 1)),
+      }}
+    />
+  );
+}
+
+function InspectFrameNavigation() {
+  const positionOptions = useMemo(() => toNavigationOptions(demoPositions), []);
+  const channelOptions = useMemo(() => toNavigationOptions(demoChannels), []);
+  const roiOptions = useMemo(() => toNavigationOptions(demoRoiIds), []);
+  const [pos, setPos] = useState(demoPositions[0]!);
+  const [channel, setChannel] = useState(demoChannels[0]!);
+  const [roi, setRoi] = useState(demoRoiIds[0]!);
+  const [timeIndex, setTimeIndex] = useState(0);
+  const [zIndex, setZIndex] = useState(0);
+
+  const timeMax = Math.max(0, demoTimeValues.length - 1);
+  const zMax = Math.max(0, demoZValues.length - 1);
+  const posIndex = findNavigationOptionIndex(positionOptions, pos);
+  const chIndex = findNavigationOptionIndex(channelOptions, channel);
+  const roiIndex = findNavigationOptionIndex(roiOptions, roi);
+  const displayedTime = demoTimeValues[timeIndex] ?? 0;
+  const displayedZ = demoZValues[zIndex] ?? 0;
+
+  return (
+    <FrameNavigation
+      position={{
+        value: pos,
+        options: positionOptions,
+        disabled: false,
+        onChange: setPos,
+        previousDisabled: posIndex <= 0,
+        nextDisabled: posIndex >= positionOptions.length - 1,
+        onPrevious: () => {
+          const next = stepNavigationValue(positionOptions, pos, -1);
+          if (next != null) setPos(next);
+        },
+        onNext: () => {
+          const next = stepNavigationValue(positionOptions, pos, 1);
+          if (next != null) setPos(next);
+        },
+      }}
+      channel={{
+        value: channel,
+        options: channelOptions,
+        disabled: false,
+        onChange: setChannel,
+        previousDisabled: chIndex <= 0,
+        nextDisabled: chIndex >= channelOptions.length - 1,
+        onPrevious: () => {
+          const next = stepNavigationValue(channelOptions, channel, -1);
+          if (next != null) setChannel(next);
+        },
+        onNext: () => {
+          const next = stepNavigationValue(channelOptions, channel, 1);
+          if (next != null) setChannel(next);
+        },
+      }}
+      roi={{
+        value: roi,
+        options: roiOptions,
+        disabled: false,
+        onChange: setRoi,
+        previousDisabled: roiIndex <= 0,
+        nextDisabled: roiIndex >= roiOptions.length - 1,
+        onPrevious: () => {
+          const next = stepNavigationValue(roiOptions, roi, -1);
+          if (next != null) setRoi(next);
+        },
+        onNext: () => {
+          const next = stepNavigationValue(roiOptions, roi, 1);
+          if (next != null) setRoi(next);
+        },
+      }}
+      timepoint={{
+        hint: String(displayedTime),
+        value: timeIndex,
+        min: 0,
+        max: timeMax,
+        step: 1,
+        disabled: demoTimeValues.length <= 1,
+        onChange: (i: number) => setTimeIndex(clamp(Math.round(i), 0, timeMax)),
+        onCommit: (i: number) => setTimeIndex(clamp(Math.round(i), 0, timeMax)),
+        previousDisabled: demoTimeValues.length <= 1 || timeIndex <= 0,
+        nextDisabled: demoTimeValues.length <= 1 || timeIndex >= timeMax,
+        onPrevious: () => setTimeIndex((t) => Math.max(0, t - 1)),
+        onNext: () => setTimeIndex((t) => Math.min(timeMax, t + 1)),
+      }}
+      zPlane={{
+        hint: String(displayedZ),
+        value: zIndex,
+        min: 0,
+        max: zMax,
+        step: 1,
+        disabled: demoZValues.length <= 1,
+        onChange: (i: number) => setZIndex(clamp(Math.round(i), 0, zMax)),
+        onCommit: (i: number) => setZIndex(clamp(Math.round(i), 0, zMax)),
+        previousDisabled: demoZValues.length <= 1 || zIndex <= 0,
+        nextDisabled: demoZValues.length <= 1 || zIndex >= zMax,
+        onPrevious: () => setZIndex((z) => Math.max(0, z - 1)),
+        onNext: () => setZIndex((z) => Math.min(zMax, z + 1)),
+      }}
+    />
+  );
+}
 
 function Section(props: { title: string; description?: string; children?: ReactNode }) {
   return (
@@ -26,53 +221,12 @@ function Section(props: { title: string; description?: string; children?: ReactN
   );
 }
 
-/** Left `AppShell` rail; content depends on `routeId` (align vs inspect each have left + right panels). */
+/** Left `AppShell` rail; align vs inspect each show Navigation + `FrameNavigation` only (no subtitle copy). */
 export function LeftPanel(props: { routeId: RouteId }) {
-  if (props.routeId === "align") {
-    return (
-      <div className="flex min-h-0 flex-col gap-2 p-3">
-        <Section title="Navigation" description="Frame / channel / Z — placeholders">
-          <div className="space-y-1">
-            <Label className="text-muted-foreground text-xs">Position</Label>
-            <div className="rounded-md border border-dashed border-border px-2 py-6 text-center text-muted-foreground text-xs">
-              NavigationControls (stub)
-            </div>
-          </div>
-        </Section>
-        <Separator />
-        <Section title="Grid" description="Pitch, cell size, exclusions — placeholders">
-          <div className="rounded-md border border-dashed border-border px-2 py-8 text-center text-muted-foreground text-xs">
-            Grid controls (stub)
-          </div>
-        </Section>
-        <Separator />
-        <Section title="Timeline" description="Time slider & auto-exclude — placeholders">
-          <div className="min-h-0 rounded-xl border border-dashed border-border px-3 py-6 text-center text-muted-foreground text-sm">
-            Time slider & auto-exclude chart — stub
-          </div>
-        </Section>
-      </div>
-    );
-  }
-
   return (
     <div className="flex min-h-0 flex-col gap-2 p-3">
-      <Section title="Inspect navigation" description="Tile / frame stepping — placeholders">
-        <div className="rounded-md border border-dashed border-border px-2 py-6 text-center text-muted-foreground text-xs">
-          Inspect navigation (stub)
-        </div>
-      </Section>
-      <Separator />
-      <Section title="Appearance" description="Intensity / LUT — placeholders">
-        <div className="rounded-md border border-dashed border-border px-2 py-6 text-center text-muted-foreground text-xs">
-          View tuning (stub)
-        </div>
-      </Section>
-      <Separator />
-      <Section title="Filmstrip" description="Inspect thumbnails — placeholders">
-        <div className="min-h-0 rounded-xl border border-dashed border-border px-3 py-6 text-center text-muted-foreground text-sm">
-          Thumbnail strip — stub
-        </div>
+      <Section title="Navigation">
+        {props.routeId === "align" ? <AlignFrameNavigation /> : <InspectFrameNavigation />}
       </Section>
     </div>
   );
@@ -80,12 +234,31 @@ export function LeftPanel(props: { routeId: RouteId }) {
 
 const bottomSplitDivider = "border-neutral-300 dark:border-neutral-700";
 
+const dockContrastDomain = { min: 0, max: 65535 } as const;
+
+/** Dock contrast strip — local demo state until workspace / frame wiring lands. */
+function DockContrastControls() {
+  const [contrastMin, setContrastMin] = useState(8000);
+  const [contrastMax, setContrastMax] = useState(56_000);
+
+  return (
+    <ContrastControl
+      domainMax={dockContrastDomain.max}
+      domainMin={dockContrastDomain.min}
+      maxValue={contrastMax}
+      minValue={contrastMin}
+      onAutoRange={() => {
+        setContrastMin(4096);
+        setContrastMax(61_440);
+      }}
+      onMaxCommit={setContrastMax}
+      onMinCommit={setContrastMin}
+    />
+  );
+}
+
 /** `AppShell.Dock` content: contrast (left) and save (right). */
 export function BottomPanel(props: { routeId: RouteId }) {
-  const contrastSubtitle =
-    props.routeId === "align"
-      ? "Auto / manual window–level — placeholders"
-      : "Inspect intensity / LUT — placeholders";
   const saveHint =
     props.routeId === "align"
       ? "Save bbox CSV, grid preset, etc. — stub"
@@ -98,9 +271,9 @@ export function BottomPanel(props: { routeId: RouteId }) {
         className={`min-h-0 min-w-0 flex-1 overflow-auto border-r ${bottomSplitDivider}`}
       >
         <div className="flex h-full min-h-0 flex-col gap-2 p-3">
-          <div className="text-muted-foreground text-xs uppercase tracking-wide">Contrast</div>
-          <div className="min-h-0 flex-1 rounded-xl border border-dashed border-border px-3 py-6 text-center text-muted-foreground text-sm">
-            {contrastSubtitle}
+          <div className="shrink-0 text-muted-foreground text-xs uppercase tracking-wide">Contrast</div>
+          <div className="flex min-h-0 flex-1 items-center overflow-x-auto overflow-y-hidden">
+            <DockContrastControls />
           </div>
         </div>
       </section>
