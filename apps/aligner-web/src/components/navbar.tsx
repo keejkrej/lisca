@@ -6,16 +6,7 @@ import {
   MenuItem,
   MenuPopup,
   MenuTrigger,
-  ShellConnectionStatus,
-  ShellDriveIcon,
-  ShellFolderIcon,
-  ShellHeaderBar,
-  PathButton,
-  ShellThemeToggle,
-  ToggleGroup,
-  ToggleGroupItem,
-  useShellWsProbe,
-  useShellWorkspace,
+  ShellNavbar,
 } from "@lisca/ui";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
@@ -135,60 +126,21 @@ function SourcePickerStub(props: { open: boolean; onClose: () => void }) {
 
 export function Navbar(props: { routeId: RouteId }) {
   const navigate = useNavigate();
-  const ws = useShellWsProbe({ defaultPort: 8765 });
-  const workspace = useShellWorkspace();
-
   const [sourceModalOpen, setSourceModalOpen] = useState(false);
   const closeSourceModal = useCallback(() => setSourceModalOpen(false), []);
 
   return (
     <>
-      <ShellHeaderBar
-        start={
-          <ToggleGroup
-            className="flex-nowrap gap-1 rounded-xl border border-border bg-muted/35 p-1"
-            multiple={false}
-            size="sm"
-            value={[props.routeId]}
-            onValueChange={(next) => {
-              const nextRoute = next[0];
-              if (nextRoute) navigate({ to: `/${nextRoute}` });
-            }}
-          >
-            <ToggleGroupItem value="align" className="min-w-[4.5rem]">
-              Align
-            </ToggleGroupItem>
-            <ToggleGroupItem value="inspect" className="min-w-[4.5rem]">
-              Inspect
-            </ToggleGroupItem>
-          </ToggleGroup>
-        }
-        center={
-          <div className="flex max-w-[56rem] flex-wrap items-center justify-center gap-3">
-            <PathButton
-              label="Workspace"
-              value={workspace.workspacePath}
-              icon={<ShellFolderIcon />}
-              onClick={() => workspace.pickWorkspace()}
-            />
-            <PathButton
-              label="Source"
-              value={workspace.sourcePath}
-              icon={<ShellDriveIcon />}
-              disabled={!workspace.workspacePath}
-              onClick={
-                workspace.workspacePath ? () => setSourceModalOpen(true) : undefined
-              }
-            />
-          </div>
-        }
-        end={
-          <div className="flex items-center justify-end gap-1 sm:gap-2">
-            <ShellConnectionStatus wsUrl={ws.wsUrl} state={ws.state} />
-            <ToolsMenu />
-            <ShellThemeToggle />
-          </div>
-        }
+      <ShellNavbar
+        wsDefaultPort={8765}
+        routeItems={[
+          { value: "align", label: "Align" },
+          { value: "inspect", label: "Inspect" },
+        ]}
+        routeValue={props.routeId}
+        onRouteChange={(v: string) => navigate({ to: `/${v}` })}
+        onPickSource={() => setSourceModalOpen(true)}
+        endLeading={<ToolsMenu />}
       />
 
       <SourcePickerStub open={sourceModalOpen} onClose={closeSourceModal} />

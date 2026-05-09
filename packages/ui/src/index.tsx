@@ -57,19 +57,25 @@ export {
   type AppShellCompound,
   ShellBottom,
   ShellSidebar,
-  ShellConnectionStatus,
-  ShellDriveIcon,
-  ShellFolderIcon,
-  ShellHeaderBar,
-  PathButton,
-  ShellPathChip,
-  ShellSegmentedControl,
-  ShellTitleHeader,
-  useShellWsProbe,
-  type ShellConnectionState,
-  type ShellSegmentOption,
-  type ShellWsProbe,
 } from "./shell";
+
+export {
+  ShellNavbar,
+  type ShellNavbarProps,
+  type ShellNavbarRouteItem,
+} from "./navbar";
+
+export { PathButton } from "./path-button";
+
+export {
+  ConnectionStatus,
+  type ConnectionState,
+} from "./connection-status";
+
+export {
+  useShellWsProbe,
+  type ShellWsProbe,
+} from "./use-shell-ws-probe";
 
 export {
   ShellThemeProvider,
