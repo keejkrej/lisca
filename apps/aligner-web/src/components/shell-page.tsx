@@ -7,21 +7,25 @@ import type { RouteId } from "../types";
 export function ShellPage(props: { routeId: RouteId }) {
   return (
     <AppShell>
-      <AppShell.Top>
+      <AppShell.Header>
         <Navbar routeId={props.routeId} />
-      </AppShell.Top>
-      <AppShell.Left>
-        <LeftPanel routeId={props.routeId} />
-      </AppShell.Left>
-      <AppShell.Main>
-        <MainPanel routeId={props.routeId} />
-      </AppShell.Main>
-      <AppShell.Bottom>
-        <BottomPanel routeId={props.routeId} />
-      </AppShell.Bottom>
-      <AppShell.Right>
-        <RightPanel routeId={props.routeId} />
-      </AppShell.Right>
+      </AppShell.Header>
+      <AppShell.Body>
+        <AppShell.Left>
+          <LeftPanel routeId={props.routeId} />
+        </AppShell.Left>
+        <AppShell.MainColumn>
+          <AppShell.Main>
+            <MainPanel routeId={props.routeId} />
+          </AppShell.Main>
+          <AppShell.Dock>
+            <BottomPanel routeId={props.routeId} />
+          </AppShell.Dock>
+        </AppShell.MainColumn>
+        <AppShell.Right>
+          <RightPanel routeId={props.routeId} />
+        </AppShell.Right>
+      </AppShell.Body>
     </AppShell>
   );
 }

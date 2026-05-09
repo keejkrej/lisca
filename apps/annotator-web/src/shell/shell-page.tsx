@@ -15,7 +15,7 @@ export function AnnotatorShellPage(props: { routeId: string }) {
 
   return (
     <AppShell>
-      <AppShell.Top>
+      <AppShell.Header>
         <ShellNavbar
           wsDefaultPort={8766}
           routeItems={[
@@ -25,19 +25,23 @@ export function AnnotatorShellPage(props: { routeId: string }) {
           routeValue={props.routeId}
           onRouteChange={(v: string) => navigate({ to: `/${v}` })}
         />
-      </AppShell.Top>
-      <AppShell.Left>
-        <PanelLabel>annotator — left</PanelLabel>
-      </AppShell.Left>
-      <AppShell.Main>
-        <PanelLabel>annotator — main ({props.routeId})</PanelLabel>
-      </AppShell.Main>
-      <AppShell.Bottom>
-        <PanelLabel>annotator — bottom</PanelLabel>
-      </AppShell.Bottom>
-      <AppShell.Right>
-        <PanelLabel>annotator — right</PanelLabel>
-      </AppShell.Right>
+      </AppShell.Header>
+      <AppShell.Body>
+        <AppShell.Left>
+          <PanelLabel>annotator — left</PanelLabel>
+        </AppShell.Left>
+        <AppShell.MainColumn>
+          <AppShell.Main>
+            <PanelLabel>annotator — main ({props.routeId})</PanelLabel>
+          </AppShell.Main>
+          <AppShell.Dock>
+            <PanelLabel>annotator — bottom</PanelLabel>
+          </AppShell.Dock>
+        </AppShell.MainColumn>
+        <AppShell.Right>
+          <PanelLabel>annotator — right</PanelLabel>
+        </AppShell.Right>
+      </AppShell.Body>
     </AppShell>
   );
 }

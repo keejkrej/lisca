@@ -27,7 +27,7 @@ function RouteNav() {
 export function StudioShellPage(props: { routeId: string }) {
   return (
     <AppShell>
-      <AppShell.Top>
+      <AppShell.Header>
         <div className="relative flex flex-col items-center py-2">
           <div className="absolute right-3 top-3">
             <ShellThemeToggle />
@@ -35,19 +35,23 @@ export function StudioShellPage(props: { routeId: string }) {
           <span className="text-sm opacity-70">studio — top</span>
           <RouteNav />
         </div>
-      </AppShell.Top>
-      <AppShell.Left>
-        <PanelLabel>studio — left</PanelLabel>
-      </AppShell.Left>
-      <AppShell.Main>
-        <PanelLabel>studio — main ({props.routeId})</PanelLabel>
-      </AppShell.Main>
-      <AppShell.Bottom>
-        <PanelLabel>studio — bottom</PanelLabel>
-      </AppShell.Bottom>
-      <AppShell.Right>
-        <PanelLabel>studio — right</PanelLabel>
-      </AppShell.Right>
+      </AppShell.Header>
+      <AppShell.Body>
+        <AppShell.Left>
+          <PanelLabel>studio — left</PanelLabel>
+        </AppShell.Left>
+        <AppShell.MainColumn>
+          <AppShell.Main>
+            <PanelLabel>studio — main ({props.routeId})</PanelLabel>
+          </AppShell.Main>
+          <AppShell.Dock>
+            <PanelLabel>studio — bottom</PanelLabel>
+          </AppShell.Dock>
+        </AppShell.MainColumn>
+        <AppShell.Right>
+          <PanelLabel>studio — right</PanelLabel>
+        </AppShell.Right>
+      </AppShell.Body>
     </AppShell>
   );
 }

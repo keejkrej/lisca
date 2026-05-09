@@ -36,7 +36,7 @@ export function ShellNavbar(props: ShellNavbarProps) {
   const handleSource = props.onPickSource ?? (() => workspace.pickSource());
 
   return (
-    <header className="shrink-0 border-b border-border/80 bg-background px-6 py-3">
+    <header className="shrink-0 bg-background px-6 py-3">
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
         <div className="min-w-0 justify-self-start">
           <ToggleGroup

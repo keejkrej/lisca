@@ -55,7 +55,7 @@ export { cn } from "./lib/utils";
 export {
   AppShell,
   type AppShellCompound,
-  ShellBottom,
+  ShellDock,
   ShellSidebar,
 } from "./shell";
 

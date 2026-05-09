@@ -80,7 +80,7 @@ export function LeftPanel(props: { routeId: RouteId }) {
 
 const bottomSplitDivider = "border-neutral-300 dark:border-neutral-700";
 
-/** Bottom `AppShell` rail: contrast (left) and save (right). */
+/** `AppShell.Dock` content: contrast (left) and save (right). */
 export function BottomPanel(props: { routeId: RouteId }) {
   const contrastSubtitle =
     props.routeId === "align"
