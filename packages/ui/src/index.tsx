@@ -39,6 +39,14 @@ export {
   CardHeader,
   CardPanel,
   CardTitle,
+  Field,
+  FieldControl,
+  FieldDescription,
+  FieldError,
+  FieldItem,
+  FieldLabel,
+  FieldPrimitive,
+  FieldValidity,
   Input,
   InputPrimitive,
   Label,
@@ -101,6 +109,14 @@ export {
 export { ShellWorkspaceProvider, useShellWorkspace, type ShellWorkspace } from "./workspace";
 
 export { Section, type SectionProps } from "./section";
+
+export { AlignGrid, type AlignGridProps } from "./align-grid";
+
+export {
+  AlignSelection,
+  type AlignSelectionMode,
+  type AlignSelectionProps,
+} from "./align-selection";
 
 export {
   FrameNavigation,

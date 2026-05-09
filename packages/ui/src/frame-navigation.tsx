@@ -1,7 +1,5 @@
 "use client";
 
-import type { ReactNode } from "react";
-
 import { Button } from "./components/ui/button";
 import {
   Select,
@@ -10,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./components/ui/select";
+import { Field, FieldLabel } from "./components/ui/field";
 import { Slider } from "./components/ui/slider";
 import { Section } from "./section";
 
@@ -46,7 +45,6 @@ export function stepNavigationValue<T extends NavigationValue>(
 
 type SelectNavigationFieldProps<T extends NavigationValue> = {
   label: string;
-  hint?: string;
   value: T;
   options: NavigationOption<T>[];
   onChange: (value: T) => void;
@@ -59,7 +57,6 @@ type SelectNavigationFieldProps<T extends NavigationValue> = {
 
 type SliderNavigationFieldProps = {
   label: string;
-  hint?: string;
   value: number;
   min: number;
   max: number;
@@ -79,26 +76,6 @@ export type SelectNavigationControlProps<T extends NavigationValue> = Omit<
 >;
 
 export type SliderNavigationControlProps = Omit<SliderNavigationFieldProps, "label">;
-
-function FrameNavField({
-  label,
-  hint,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="min-w-0 space-y-1.5">
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
-        {hint ? <span className="text-xs text-muted-foreground/80">{hint}</span> : null}
-      </div>
-      {children}
-    </div>
-  );
-}
 
 function StepperButtons({
   previousDisabled,
@@ -132,7 +109,8 @@ function StepperButtons({
 
 export function SelectStepperField<T extends NavigationValue>(props: SelectNavigationFieldProps<T>) {
   return (
-    <FrameNavField hint={props.hint} label={props.label}>
+    <Field className="min-w-0 w-full">
+      <FieldLabel>{props.label}</FieldLabel>
       <Select<T>
         disabled={props.disabled}
         items={props.options}
@@ -157,13 +135,14 @@ export function SelectStepperField<T extends NavigationValue>(props: SelectNavig
         onNext={props.onNext}
         onPrevious={props.onPrevious}
       />
-    </FrameNavField>
+    </Field>
   );
 }
 
 export function SliderStepperField(props: SliderNavigationFieldProps) {
   return (
-    <FrameNavField hint={props.hint} label={props.label}>
+    <Field className="min-w-0 w-full">
+      <FieldLabel>{props.label}</FieldLabel>
       <Slider
         disabled={props.disabled}
         max={props.max}
@@ -179,7 +158,7 @@ export function SliderStepperField(props: SliderNavigationFieldProps) {
         onNext={props.onNext}
         onPrevious={props.onPrevious}
       />
-    </FrameNavField>
+    </Field>
   );
 }
 

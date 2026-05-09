@@ -16,6 +16,16 @@ export {
   CardTitle,
 } from "./card";
 export { Input, InputPrimitive, type InputProps } from "./input";
+export {
+  Field,
+  FieldControl,
+  FieldDescription,
+  FieldError,
+  FieldItem,
+  FieldLabel,
+  FieldPrimitive,
+  FieldValidity,
+} from "./field";
 export { Label } from "./label";
 export { Separator, SeparatorPrimitive } from "./separator";
 export { Spinner } from "./spinner";

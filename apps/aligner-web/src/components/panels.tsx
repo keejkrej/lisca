@@ -1,11 +1,14 @@
 import {
-  Button,
+  AlignGrid,
+  AlignSelection,
   ContrastControl,
   FrameNavigation,
   Section,
   findNavigationOptionIndex,
   stepNavigationValue,
   toNavigationOptions,
+  type AlignSelectionMode,
+  type NavigationOption,
 } from "@lisca/ui";
 import { useMemo, useState } from "react";
 
@@ -16,6 +19,8 @@ const demoChannels = [0, 1, 2];
 const demoTimeValues = [0, 12, 24, 36, 48];
 const demoZValues = [0, 1, 2, 3, 4];
 const demoRoiIds = [0, 1, 2, 3, 4, 5, 6, 7];
+
+type AlignGridShape = "hex" | "rect";
 
 function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n));
@@ -33,8 +38,6 @@ function AlignFrameNavigation() {
   const zMax = Math.max(0, demoZValues.length - 1);
   const posIndex = findNavigationOptionIndex(positionOptions, pos);
   const chIndex = findNavigationOptionIndex(channelOptions, channel);
-  const displayedTime = demoTimeValues[timeIndex] ?? 0;
-  const displayedZ = demoZValues[zIndex] ?? 0;
 
   return (
     <FrameNavigation
@@ -71,7 +74,6 @@ function AlignFrameNavigation() {
         },
       }}
       timepoint={{
-        hint: String(displayedTime),
         value: timeIndex,
         min: 0,
         max: timeMax,
@@ -85,7 +87,6 @@ function AlignFrameNavigation() {
         onNext: () => setTimeIndex((t) => Math.min(timeMax, t + 1)),
       }}
       zPlane={{
-        hint: String(displayedZ),
         value: zIndex,
         min: 0,
         max: zMax,
@@ -117,8 +118,6 @@ function InspectFrameNavigation() {
   const posIndex = findNavigationOptionIndex(positionOptions, pos);
   const chIndex = findNavigationOptionIndex(channelOptions, channel);
   const roiIndex = findNavigationOptionIndex(roiOptions, roi);
-  const displayedTime = demoTimeValues[timeIndex] ?? 0;
-  const displayedZ = demoZValues[zIndex] ?? 0;
 
   return (
     <FrameNavigation
@@ -171,7 +170,6 @@ function InspectFrameNavigation() {
         },
       }}
       timepoint={{
-        hint: String(displayedTime),
         value: timeIndex,
         min: 0,
         max: timeMax,
@@ -185,7 +183,6 @@ function InspectFrameNavigation() {
         onNext: () => setTimeIndex((t) => Math.min(timeMax, t + 1)),
       }}
       zPlane={{
-        hint: String(displayedZ),
         value: zIndex,
         min: 0,
         max: zMax,
@@ -238,30 +235,120 @@ function DockContrastControls() {
   );
 }
 
-/** `AppShell.Dock` content: Contrast (`ContrastControl` includes its section card) and Save. */
-export function BottomPanel(props: { routeId: RouteId }) {
-  const saveHint =
-    props.routeId === "align"
-      ? "Save bbox CSV, grid preset, etc. — stub"
-      : "Persist inspect results — stub";
+/** `AppShell.Dock` content: Contrast only (`ContrastControl`). Selection sits under Grid in the right rail. */
+export function BottomPanel({ routeId: _routeId }: { routeId: RouteId }) {
+  return (
+    <div className="flex h-full min-h-0 w-full p-3">
+      <DockContrastControls />
+    </div>
+  );
+}
+
+/** Right rail grid controls — local demo state until workspace wiring lands. */
+function AlignGridPanel() {
+  const shapeOptions = useMemo<NavigationOption<AlignGridShape>[]>(
+    () => [
+      { label: "Rectangle", value: "rect" },
+      { label: "Hexagon", value: "hex" },
+    ],
+    [],
+  );
+
+  const [overlayVisible, setOverlayVisible] = useState(true);
+  const [shape, setShape] = useState<AlignGridShape>("rect");
+  const [rotationDegrees, setRotationDegrees] = useState(0);
+  const [vectorA, setVectorA] = useState(32);
+  const [vectorB, setVectorB] = useState(32);
+  const [patternWidth, setPatternWidth] = useState(120);
+  const [patternHeight, setPatternHeight] = useState(120);
+  const [offsetX, setOffsetX] = useState(0);
+  const [offsetY, setOffsetY] = useState(0);
+  const [overlayOpacity, setOverlayOpacity] = useState(0.65);
+
+  const handleReset = () => {
+    setOverlayVisible(true);
+    setShape("rect");
+    setRotationDegrees(0);
+    setVectorA(32);
+    setVectorB(32);
+    setPatternWidth(120);
+    setPatternHeight(120);
+    setOffsetX(0);
+    setOffsetY(0);
+    setOverlayOpacity(0.65);
+  };
 
   return (
-    <div className="flex h-full min-h-0 w-full gap-2 p-3">
-      <DockContrastControls />
+    <AlignGrid
+      patternHeight={patternHeight}
+      patternMin={1}
+      patternWidth={patternWidth}
+      offsetX={offsetX}
+      offsetY={offsetY}
+      onPatternHeightChange={setPatternHeight}
+      onPatternWidthChange={setPatternWidth}
+      onOffsetXChange={setOffsetX}
+      onOffsetYChange={setOffsetY}
+      onOverlayOpacityChange={setOverlayOpacity}
+      onOverlayVisibleChange={setOverlayVisible}
+      onVectorAChange={setVectorA}
+      onVectorBChange={setVectorB}
+      onReset={handleReset}
+      onRotationDegreesChange={setRotationDegrees}
+      onShapeChange={setShape}
+      overlayOpacity={overlayOpacity}
+      overlayVisible={overlayVisible}
+      vectorA={vectorA}
+      vectorB={vectorB}
+      vectorMin={1}
+      rotationDegrees={rotationDegrees}
+      shape={shape}
+      shapeOptions={shapeOptions}
+      sectionClassName="min-h-0 shrink-0"
+    />
+  );
+}
 
-      <Section
-        aria-label="Save"
-        contentClassName="flex min-h-0 flex-1 flex-col items-center justify-center space-y-2"
-        role="region"
-        title="Save"
-        className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
-      >
-        <p className="text-center text-muted-foreground text-sm">{saveHint}</p>
-        <Button type="button" size="sm" disabled>
-          Save
-        </Button>
-      </Section>
-    </div>
+/** Selection below Grid — local demo state until backend wiring lands. */
+function AlignSelectionPanel() {
+  const [mode, setMode] = useState<AlignSelectionMode>("view");
+  const [includedCells, setIncludedCells] = useState(24);
+  const [excludedCells, setExcludedCells] = useState(2);
+
+  return (
+    <AlignSelection
+      autoExcludeDisabled={includedCells <= 0}
+      excludedCells={excludedCells}
+      excludeAllDisabled={includedCells <= 0}
+      excludeEdgeDisabled={includedCells <= 0}
+      includedCells={includedCells}
+      mode={mode}
+      resetDisabled={excludedCells === 0 && includedCells === 24 && mode === "view"}
+      sectionClassName="min-h-0 shrink-0"
+      sectionContentClassName="flex min-h-0 flex-col overflow-auto"
+      onAutoExclude={() => {
+        const n = Math.min(4, includedCells);
+        if (n <= 0) return;
+        setExcludedCells((x) => x + n);
+        setIncludedCells((i) => Math.max(0, i - n));
+      }}
+      onExcludeAll={() => {
+        if (includedCells <= 0) return;
+        setExcludedCells((x) => x + includedCells);
+        setIncludedCells(0);
+      }}
+      onExcludeEdge={() => {
+        if (includedCells <= 0) return;
+        setExcludedCells((x) => x + 1);
+        setIncludedCells((i) => Math.max(0, i - 1));
+      }}
+      onModeChange={setMode}
+      onReset={() => {
+        setIncludedCells(24);
+        setExcludedCells(0);
+        setMode("view");
+      }}
+    />
   );
 }
 
@@ -283,12 +370,20 @@ export function MainPanel(props: { routeId: RouteId }) {
   );
 }
 
-/** Right `AppShell` rail; content depends on `routeId`. */
+/** Right `AppShell` rail; align shows Grid then Selection; inspect keeps inspector stub. */
 export function RightPanel(props: { routeId: RouteId }) {
-  const title = props.routeId === "align" ? "Align inspector" : "Inspect inspector";
+  if (props.routeId === "align") {
+    return (
+      <div className="flex min-h-0 flex-col gap-2 overflow-auto p-3">
+        <AlignGridPanel />
+        <AlignSelectionPanel />
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-0 flex-col gap-2 p-3">
-      <Section title={title} description="Stats & metadata — placeholders">
+      <Section description="Stats & metadata — placeholders" title="Inspect inspector">
         <div className="rounded-md border border-dashed border-border px-2 py-10 text-center text-muted-foreground text-xs">
           Inspector stats (stub)
         </div>
