@@ -1,13 +1,13 @@
 import {
   AppShell,
   Button,
-  buttonVariants,
-  cn,
   Menu,
   MenuItem,
   MenuPopup,
   MenuTrigger,
   ShellNavbar,
+  buttonVariants,
+  cn,
 } from "@lisca/ui";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
@@ -37,11 +37,10 @@ function ToolsMenuChevron(props: { className?: string }) {
   );
 }
 
-function ToolsMenu(props: { disabled?: boolean }) {
+function ToolsMenu() {
   return (
     <Menu>
       <MenuTrigger
-        disabled={props.disabled}
         className={cn(
           buttonVariants({
             size: "sm",
@@ -60,19 +59,8 @@ function ToolsMenu(props: { disabled?: boolean }) {
         side="bottom"
         sideOffset={8}
       >
-        <MenuItem
-          disabled
-          className="h-auto min-h-0 flex-col items-stretch gap-0.5 py-2.5 text-left"
-        >
-          <span className="font-medium text-foreground text-sm">Batch Crop</span>
-          <span className="text-muted-foreground text-xs">Not wired yet</span>
-        </MenuItem>
-        <MenuItem
-          disabled
-          className="h-auto min-h-0 flex-col items-stretch gap-0.5 py-2.5 text-left"
-        >
-          <span className="font-medium text-foreground text-sm">Load Preset</span>
-          <span className="text-muted-foreground text-xs">Not wired yet</span>
+        <MenuItem className="h-auto min-h-0 flex-col items-stretch gap-0.5 py-2.5 text-left">
+          <span className="font-medium text-foreground text-sm">Hello</span>
         </MenuItem>
       </MenuPopup>
     </Menu>
@@ -146,6 +134,7 @@ export function AnnotatorShellPage(props: { routeId: string }) {
               { value: "roi", label: "ROI" },
             ]}
             showRouteToggle={false}
+            showToolsMenu={true}
             routeValue={props.routeId}
             onRouteChange={(v: string) => navigate({ to: `/${v}` })}
             onPickSource={() => setSourceModalOpen(true)}

@@ -21,6 +21,8 @@ export type ShellNavbarProps = {
   onRouteChange: (value: string) => void;
   /** Show the route switcher toggle group (default: true). */
   showRouteToggle?: boolean;
+  /** Show the `endLeading` action slot (default: true). */
+  showToolsMenu?: boolean;
   /** Override source action; defaults to `workspace.pickSource()`. */
   onPickSource?: () => void;
   /** Insert before the theme toggle (e.g. aligner Tools menu). */
@@ -83,7 +85,7 @@ export function ShellNavbar(props: ShellNavbarProps) {
 
         <div className="flex min-w-0 items-center justify-end justify-self-end gap-1 sm:gap-2">
           <ConnectionStatus wsUrl={ws.wsUrl} state={ws.state} />
-          {props.endLeading}
+          {props.showToolsMenu !== false && props.endLeading}
           <ShellThemeToggle />
         </div>
       </div>
