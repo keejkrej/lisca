@@ -108,79 +108,79 @@ export function ContrastControl(props: ContrastControlProps) {
         ) : null}
 
         <div className="flex w-full min-w-0 flex-row flex-wrap items-center gap-x-4 gap-y-3">
-        {onAutoRange ? (
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            disabled={disabled || autoRangeDisabled}
-            className="h-8 shrink-0 px-2.5 text-xs"
-            onClick={onAutoRange}
-          >
-            Auto Range
-          </Button>
-        ) : null}
+          {onAutoRange ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={disabled || autoRangeDisabled}
+              className="h-8 shrink-0 px-2.5 text-xs"
+              onClick={onAutoRange}
+            >
+              Auto Range
+            </Button>
+          ) : null}
 
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
-          <div className={sliderCol}>
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-medium text-muted-foreground">Min</span>
-              <span className="text-xs text-muted-foreground/80 tabular-nums">
-                {String(Math.round(displayed.min))}
-              </span>
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
+            <div className={sliderCol}>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-medium text-muted-foreground">Min</span>
+                <span className="text-xs text-muted-foreground/80 tabular-nums">
+                  {String(Math.round(displayed.min))}
+                </span>
+              </div>
+              <Slider
+                className="w-full pt-0.5"
+                disabled={disabled}
+                max={domainMax}
+                min={domainMin}
+                step={1}
+                value={displayed.min}
+                onValueChange={(value) => {
+                  setDraft((current) => {
+                    const base = current ?? { min: minValue, max: maxValue };
+                    return {
+                      ...base,
+                      min: clamp(Math.round(value), domainMin, domainMax),
+                    };
+                  });
+                }}
+                onValueCommitted={(value) => {
+                  onMinCommit(clamp(Math.round(value), domainMin, domainMax));
+                }}
+              />
             </div>
-            <Slider
-              className="w-full pt-0.5"
-              disabled={disabled}
-              max={domainMax}
-              min={domainMin}
-              step={1}
-              value={displayed.min}
-              onValueChange={(value) => {
-                setDraft((current) => {
-                  const base = current ?? { min: minValue, max: maxValue };
-                  return {
-                    ...base,
-                    min: clamp(Math.round(value), domainMin, domainMax),
-                  };
-                });
-              }}
-              onValueCommitted={(value) => {
-                onMinCommit(clamp(Math.round(value), domainMin, domainMax));
-              }}
-            />
-          </div>
 
-          <div className={sliderCol}>
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-medium text-muted-foreground">Max</span>
-              <span className="text-xs text-muted-foreground/80 tabular-nums">
-                {String(Math.round(displayed.max))}
-              </span>
+            <div className={sliderCol}>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-medium text-muted-foreground">Max</span>
+                <span className="text-xs text-muted-foreground/80 tabular-nums">
+                  {String(Math.round(displayed.max))}
+                </span>
+              </div>
+              <Slider
+                className="w-full pt-0.5"
+                disabled={disabled}
+                max={domainMax}
+                min={domainMin}
+                step={1}
+                value={displayed.max}
+                onValueChange={(value) => {
+                  setDraft((current) => {
+                    const base = current ?? { min: minValue, max: maxValue };
+                    return {
+                      ...base,
+                      max: clamp(Math.round(value), domainMin, domainMax),
+                    };
+                  });
+                }}
+                onValueCommitted={(value) => {
+                  onMaxCommit(clamp(Math.round(value), domainMin, domainMax));
+                }}
+              />
             </div>
-            <Slider
-              className="w-full pt-0.5"
-              disabled={disabled}
-              max={domainMax}
-              min={domainMin}
-              step={1}
-              value={displayed.max}
-              onValueChange={(value) => {
-                setDraft((current) => {
-                  const base = current ?? { min: minValue, max: maxValue };
-                  return {
-                    ...base,
-                    max: clamp(Math.round(value), domainMin, domainMax),
-                  };
-                });
-              }}
-              onValueCommitted={(value) => {
-                onMaxCommit(clamp(Math.round(value), domainMin, domainMax));
-              }}
-            />
           </div>
         </div>
-      </div>
       </div>
     </Section>
   );

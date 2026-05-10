@@ -7,11 +7,10 @@ import { cn } from "../../lib/utils";
 
 type SliderInputValue = number | readonly number[];
 
-interface SliderProps
-  extends Omit<
-    SliderPrimitive.Root.Props,
-    "defaultValue" | "onValueChange" | "onValueCommitted" | "value"
-  > {
+interface SliderProps extends Omit<
+  SliderPrimitive.Root.Props,
+  "defaultValue" | "onValueChange" | "onValueCommitted" | "value"
+> {
   defaultValue?: number;
   onValueChange?: (value: number) => void;
   onValueCommitted?: (value: number) => void;
@@ -78,10 +77,7 @@ function Slider({
   );
 }
 
-function SliderValue({
-  className,
-  ...props
-}: SliderPrimitive.Value.Props): React.ReactElement {
+function SliderValue({ className, ...props }: SliderPrimitive.Value.Props): React.ReactElement {
   return (
     <SliderPrimitive.Value
       className={cn("flex justify-end text-sm", className)}

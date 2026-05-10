@@ -74,30 +74,15 @@ export {
 
 export { cn } from "./lib/utils";
 
-export {
-  AppShell,
-  type AppShellCompound,
-  ShellDock,
-  ShellSidebar,
-} from "./shell";
+export { AppShell, type AppShellCompound, ShellDock, ShellSidebar } from "./shell";
 
-export {
-  ShellNavbar,
-  type ShellNavbarProps,
-  type ShellNavbarRouteItem,
-} from "./navbar";
+export { ShellNavbar, type ShellNavbarProps, type ShellNavbarRouteItem } from "./navbar";
 
 export { PathButton } from "./path-button";
 
-export {
-  ConnectionStatus,
-  type ConnectionState,
-} from "./connection-status";
+export { ConnectionStatus, type ConnectionState } from "./connection-status";
 
-export {
-  useShellWsProbe,
-  type ShellWsProbe,
-} from "./use-shell-ws-probe";
+export { useShellWsProbe, type ShellWsProbe } from "./use-shell-ws-probe";
 
 export {
   ShellThemeProvider,

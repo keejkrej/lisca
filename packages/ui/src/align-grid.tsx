@@ -270,7 +270,6 @@ export function AlignGrid<TShape extends NavigationValue = string>(props: AlignG
             />
           </Field>
         </div>
-
       </div>
     </Section>
   );

@@ -210,10 +210,7 @@ function SelectGroup(props: SelectPrimitive.Group.Props): React.ReactElement {
   return <SelectPrimitive.Group data-slot="select-group" {...props} />;
 }
 
-function SelectLabel({
-  className,
-  ...props
-}: SelectPrimitive.Label.Props): React.ReactElement {
+function SelectLabel({ className, ...props }: SelectPrimitive.Label.Props): React.ReactElement {
   return (
     <SelectPrimitive.Label
       className={cn(

@@ -100,14 +100,23 @@ function StepperButtons({
       >
         {"<"}
       </Button>
-      <Button type="button" size="sm" variant="outline" disabled={nextDisabled} aria-label="Next" onClick={onNext}>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        disabled={nextDisabled}
+        aria-label="Next"
+        onClick={onNext}
+      >
         {">"}
       </Button>
     </div>
   );
 }
 
-export function SelectStepperField<T extends NavigationValue>(props: SelectNavigationFieldProps<T>) {
+export function SelectStepperField<T extends NavigationValue>(
+  props: SelectNavigationFieldProps<T>,
+) {
   return (
     <Field className="min-w-0 w-full">
       <FieldLabel>{props.label}</FieldLabel>

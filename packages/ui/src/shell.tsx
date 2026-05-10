@@ -10,11 +10,7 @@ const shellDockFixed = "flex h-[11rem] shrink-0 flex-col overflow-hidden";
 
 function ShellDockInner(props: { children?: ReactNode }) {
   return (
-    <div
-      role="region"
-      aria-label="Dock"
-      className={`${shellDockFixed} border-t ${shellDivider}`}
-    >
+    <div role="region" aria-label="Dock" className={`${shellDockFixed} border-t ${shellDivider}`}>
       <div className="min-h-0 flex-1 overflow-auto">{props.children}</div>
     </div>
   );
@@ -63,9 +59,7 @@ AppShellHeader.displayName = "AppShell.Header";
  * Use `flex-1` so it fills remaining height when a `Header` is present.
  */
 function AppShellBody(props: { children?: ReactNode }) {
-  return (
-    <div className="flex min-h-0 flex-1 overflow-hidden">{props.children}</div>
-  );
+  return <div className="flex min-h-0 flex-1 overflow-hidden">{props.children}</div>;
 }
 AppShellBody.displayName = "AppShell.Body";
 

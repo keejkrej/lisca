@@ -2,13 +2,7 @@
 
 import type { ComponentProps, ReactNode } from "react";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "./components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./components/ui/card";
 import { cn } from "./lib/utils";
 
 export type SectionProps = Omit<ComponentProps<typeof Card>, "title"> & {
@@ -41,11 +35,11 @@ export function Section({
             <div className="flex shrink-0 items-center gap-1">{headerAction}</div>
           ) : null}
         </div>
-        {description ? (
-          <CardDescription className="text-xs">{description}</CardDescription>
-        ) : null}
+        {description ? <CardDescription className="text-xs">{description}</CardDescription> : null}
       </CardHeader>
-      <CardContent className={cn("space-y-2 px-3 pb-3 pt-2", contentClassName)}>{children}</CardContent>
+      <CardContent className={cn("space-y-2 px-3 pb-3 pt-2", contentClassName)}>
+        {children}
+      </CardContent>
     </Card>
   );
 }
