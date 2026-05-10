@@ -24,7 +24,6 @@
   "packageManager": "pnpm@10.11.0",
   "pnpm": {
     "onlyBuiltDependencies": [
-      "electron",
       "esbuild"
     ],
     "overrides": {

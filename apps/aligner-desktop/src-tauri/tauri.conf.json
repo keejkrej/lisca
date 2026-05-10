@@ -1,0 +1,32 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Aligner",
+  "version": "0.1.0",
+  "identifier": "com.lisca.aligner.desktop",
+  "build": {
+    "beforeDevCommand": "pnpm --filter @lisca/aligner-web dev",
+    "beforeBuildCommand": "pnpm --filter @lisca/aligner-web build",
+    "devUrl": "http://127.0.0.1:5173",
+    "frontendDist": "../aligner-web/dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Aligner",
+        "width": 1280,
+        "height": 800,
+        "resizable": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "icon": [
+      "icons/icon.ico",
+      "icons/icon.png"
+    ]
+  },
+  "plugins": {}
+}
