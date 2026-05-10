@@ -1,4 +1,4 @@
-import { Button } from "./components/ui/button";
+import { Button } from "../components/ui/button";
 import type { ReactNode } from "react";
 
 /** Basename path control (`Button` outline; matches shell chrome). */

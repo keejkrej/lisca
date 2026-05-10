@@ -2,8 +2,8 @@
 
 import type { ComponentProps, ReactNode } from "react";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./components/ui/card";
-import { cn } from "./lib/utils";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import { cn } from "../lib/utils";
 
 export type SectionProps = Omit<ComponentProps<typeof Card>, "title"> & {
   /** Primary heading shown in the section header. */

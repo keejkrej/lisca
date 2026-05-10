@@ -1,9 +1,9 @@
 "use client";
 
-import { Button } from "./components/ui/button";
-import { Field, FieldLabel } from "./components/ui/field";
-import { ToggleGroup, ToggleGroupItem } from "./components/ui/toggle-group";
-import { Section } from "./section";
+import { Button } from "../components/ui/button";
+import { Field, FieldLabel } from "../components/ui/field";
+import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group";
+import { Section } from "../shell/section";
 
 export type AlignSelectionMode = "view" | "edit";
 

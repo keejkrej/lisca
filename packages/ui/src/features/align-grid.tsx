@@ -1,18 +1,19 @@
 "use client";
 
-import { Button } from "./components/ui/button";
-import { Field, FieldLabel } from "./components/ui/field";
-import { Input } from "./components/ui/input";
+import { Button } from "../components/ui/button";
+import { Field, FieldLabel } from "../components/ui/field";
+import { Input } from "../components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./components/ui/select";
-import { Slider } from "./components/ui/slider";
+} from "../components/ui/select";
+
+import { Slider } from "../components/ui/slider";
 import type { NavigationOption, NavigationValue } from "./frame-navigation";
-import { Section } from "./section";
+import { Section } from "../shell/section";
 
 function AlignNumberInput(props: {
   value: number;
@@ -274,3 +275,4 @@ export function AlignGrid<TShape extends NavigationValue = string>(props: AlignG
     </Section>
   );
 }
+

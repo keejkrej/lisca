@@ -2,11 +2,11 @@ import { Folder, HardDrive } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { ShellThemeToggle } from "./shell-theme";
-import { ToggleGroup, ToggleGroupItem } from "./components/ui/toggle-group";
+import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group";
 import { ConnectionStatus } from "./connection-status";
 import { PathButton } from "./path-button";
-import { useShellWsProbe } from "./use-shell-ws-probe";
-import { useShellWorkspace } from "./workspace";
+import { useShellWsProbe } from "../state/use-shell-ws-probe";
+import { useShellWorkspace } from "../state/workspace";
 
 export type ShellNavbarRouteItem = {
   value: string;

@@ -1,16 +1,16 @@
 "use client";
 
-import { Button } from "./components/ui/button";
+import { Button } from "../components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./components/ui/select";
-import { Field, FieldLabel } from "./components/ui/field";
-import { Slider } from "./components/ui/slider";
-import { Section } from "./section";
+} from "../components/ui/select";
+import { Field, FieldLabel } from "../components/ui/field";
+import { Slider } from "../components/ui/slider";
+import { Section } from "../shell/section";
 
 export type NavigationValue = number | string;
 

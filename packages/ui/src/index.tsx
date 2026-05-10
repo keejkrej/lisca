@@ -74,34 +74,34 @@ export {
 
 export { cn } from "./lib/utils";
 
-export { AppShell, type AppShellCompound, ShellDock, ShellSidebar } from "./shell";
+export { AppShell, type AppShellCompound, ShellDock, ShellSidebar } from "./shell/shell";
 
-export { ShellNavbar, type ShellNavbarProps, type ShellNavbarRouteItem } from "./navbar";
+export { ShellNavbar, type ShellNavbarProps, type ShellNavbarRouteItem } from "./shell/navbar";
 
-export { PathButton } from "./path-button";
+export { PathButton } from "./shell/path-button";
 
-export { ConnectionStatus, type ConnectionState } from "./connection-status";
+export { ConnectionStatus, type ConnectionState } from "./shell/connection-status";
 
-export { useShellWsProbe, type ShellWsProbe } from "./use-shell-ws-probe";
+export { useShellWsProbe, type ShellWsProbe } from "./state/use-shell-ws-probe";
 
 export {
   ShellThemeProvider,
   ShellThemeToggle,
   useShellTheme,
   type ShellThemeMode,
-} from "./shell-theme";
+} from "./shell/shell-theme";
 
-export { ShellWorkspaceProvider, useShellWorkspace, type ShellWorkspace } from "./workspace";
+export { ShellWorkspaceProvider, useShellWorkspace, type ShellWorkspace } from "./state/workspace";
 
-export { Section, type SectionProps } from "./section";
+export { Section, type SectionProps } from "./shell/section";
 
-export { AlignGrid, type AlignGridProps } from "./align-grid";
+export { AlignGrid, type AlignGridProps } from "./features/align-grid";
 
 export {
   AlignSelection,
   type AlignSelectionMode,
   type AlignSelectionProps,
-} from "./align-selection";
+} from "./features/align-selection";
 
 export {
   FrameNavigation,
@@ -115,10 +115,10 @@ export {
   type NavigationValue,
   type SelectNavigationControlProps,
   type SliderNavigationControlProps,
-} from "./frame-navigation";
+} from "./features/frame-navigation";
 
 export {
   ContrastControl,
   type ContrastControlProps,
   type ContrastWindow,
-} from "./contrast-control";
+} from "./features/contrast-control";

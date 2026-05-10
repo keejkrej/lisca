@@ -2,10 +2,10 @@
 
 import { type AriaRole, useEffect, useState } from "react";
 
-import { Button } from "./components/ui/button";
-import { Slider } from "./components/ui/slider";
-import { cn } from "./lib/utils";
-import { Section } from "./section";
+import { Button } from "../components/ui/button";
+import { Slider } from "../components/ui/slider";
+import { cn } from "../lib/utils";
+import { Section } from "../shell/section";
 
 function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));

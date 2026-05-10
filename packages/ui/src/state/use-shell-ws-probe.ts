@@ -3,7 +3,7 @@ import { WS_PATH } from "@lisca/contracts";
 import { resolveLiscaWsUrl } from "@lisca/utils";
 import { useEffect, useMemo, useState } from "react";
 
-import type { ConnectionState } from "./connection-status";
+import type { ConnectionState } from "../shell/connection-status";
 
 export type ShellWsProbe = {
   wsUrl: string;

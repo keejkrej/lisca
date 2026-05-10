@@ -1,5 +1,5 @@
-import { buttonVariants } from "./components/ui/button";
-import { cn } from "./lib/utils";
+import { buttonVariants } from "../components/ui/button";
+import { cn } from "../lib/utils";
 
 export type ConnectionState = "idle" | "connecting" | "open" | "closed";
 
