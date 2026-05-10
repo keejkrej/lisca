@@ -8,26 +8,19 @@ import {
   redirect,
 } from "@tanstack/react-router";
 
-import { RawPage } from "./pages/raw";
 import { RoiPage } from "./pages/roi";
 
 const rootRoute = createRootRoute({
   component: Outlet,
-  notFoundComponent: () => <Navigate replace to="/raw" />,
+  notFoundComponent: () => <Navigate replace to="/roi" />,
 });
 
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   beforeLoad: () => {
-    throw redirect({ to: "/raw" });
+    throw redirect({ to: "/roi" });
   },
-});
-
-const rawRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/raw",
-  component: RawPage,
 });
 
 const roiRoute = createRoute({
@@ -36,7 +29,7 @@ const roiRoute = createRoute({
   component: RoiPage,
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, rawRoute, roiRoute]);
+const routeTree = rootRoute.addChildren([indexRoute, roiRoute]);
 
 export const router = createRouter({
   routeTree,

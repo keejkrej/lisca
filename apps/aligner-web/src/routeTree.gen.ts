@@ -8,88 +8,70 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from "./routes/__root";
-import { Route as InspectRouteImport } from "./routes/inspect";
-import { Route as AlignRouteImport } from "./routes/align";
-import { Route as IndexRouteImport } from "./routes/index";
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as AlignRouteImport } from './routes/align'
+import { Route as IndexRouteImport } from './routes/index'
 
-const InspectRoute = InspectRouteImport.update({
-  id: "/inspect",
-  path: "/inspect",
-  getParentRoute: () => rootRouteImport,
-} as any);
 const AlignRoute = AlignRouteImport.update({
-  id: "/align",
-  path: "/align",
+  id: '/align',
+  path: '/align',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const IndexRoute = IndexRouteImport.update({
-  id: "/",
-  path: "/",
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 
 export interface FileRoutesByFullPath {
-  "/": typeof IndexRoute;
-  "/align": typeof AlignRoute;
-  "/inspect": typeof InspectRoute;
+  '/': typeof IndexRoute
+  '/align': typeof AlignRoute
 }
 export interface FileRoutesByTo {
-  "/": typeof IndexRoute;
-  "/align": typeof AlignRoute;
-  "/inspect": typeof InspectRoute;
+  '/': typeof IndexRoute
+  '/align': typeof AlignRoute
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport;
-  "/": typeof IndexRoute;
-  "/align": typeof AlignRoute;
-  "/inspect": typeof InspectRoute;
+  __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/align': typeof AlignRoute
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath;
-  fullPaths: "/" | "/align" | "/inspect";
-  fileRoutesByTo: FileRoutesByTo;
-  to: "/" | "/align" | "/inspect";
-  id: "__root__" | "/" | "/align" | "/inspect";
-  fileRoutesById: FileRoutesById;
+  fileRoutesByFullPath: FileRoutesByFullPath
+  fullPaths: '/' | '/align'
+  fileRoutesByTo: FileRoutesByTo
+  to: '/' | '/align'
+  id: '__root__' | '/' | '/align'
+  fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute;
-  AlignRoute: typeof AlignRoute;
-  InspectRoute: typeof InspectRoute;
+  IndexRoute: typeof IndexRoute
+  AlignRoute: typeof AlignRoute
 }
 
-declare module "@tanstack/react-router" {
+declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    "/inspect": {
-      id: "/inspect";
-      path: "/inspect";
-      fullPath: "/inspect";
-      preLoaderRoute: typeof InspectRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/align": {
-      id: "/align";
-      path: "/align";
-      fullPath: "/align";
-      preLoaderRoute: typeof AlignRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/": {
-      id: "/";
-      path: "/";
-      fullPath: "/";
-      preLoaderRoute: typeof IndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+    '/align': {
+      id: '/align'
+      path: '/align'
+      fullPath: '/align'
+      preLoaderRoute: typeof AlignRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AlignRoute: AlignRoute,
-  InspectRoute: InspectRoute,
-};
+}
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>();
+  ._addFileTypes<FileRouteTypes>()

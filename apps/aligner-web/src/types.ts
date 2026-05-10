@@ -1,2 +1,2 @@
-/** Hash routes `#/align` and `#/inspect`. */
-export type RouteId = "align" | "inspect";
+/** Hash route `#/align`. */
+export type RouteId = "align";
