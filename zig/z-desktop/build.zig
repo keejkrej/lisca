@@ -37,7 +37,7 @@ pub fn build(_: *std.Build) void {}
 pub fn buildApp(b: *std.Build, config: AppConfig) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
-    const helper_dep = b.dependency("zon_desktop", .{});
+    const helper_dep = b.dependency("z_desktop", .{});
     const platform_option = b.option(PlatformOption, "platform", "Desktop backend: auto, null, macos, linux") orelse .auto;
     const trace_option = b.option(TraceOption, "trace", "Trace output: off, events, runtime, all") orelse .events;
     const debug_overlay = b.option(bool, "debug-overlay", "Enable debug overlay output") orelse false;

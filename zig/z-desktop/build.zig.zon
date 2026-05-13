@@ -1,6 +1,6 @@
 .{
-    .name = .zon_desktop,
-    .fingerprint = 0xdb4c85e03cc43286,
+    .name = .z_desktop,
+    .fingerprint = 0x9b8f66558c6d194a,
     .version = "0.1.0",
     .minimum_zig_version = "0.16.0",
     .dependencies = .{},
