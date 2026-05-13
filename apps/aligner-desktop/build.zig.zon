@@ -1,0 +1,10 @@
+.{
+    .name = .lisca_aligner_desktop,
+    .fingerprint = 0xddc8cbef6819c32b,
+    .version = "0.1.0",
+    .minimum_zig_version = "0.16.0",
+    .dependencies = .{
+        .zon_desktop = .{ .path = "../../zig/zon-desktop" },
+    },
+    .paths = .{ "app.zon", "assets", "build.zig", "build.zig.zon", "src" },
+}

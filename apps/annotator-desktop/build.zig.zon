@@ -1,0 +1,10 @@
+.{
+    .name = .lisca_annotator_desktop,
+    .fingerprint = 0x6de6ee2af437175b,
+    .version = "0.1.0",
+    .minimum_zig_version = "0.16.0",
+    .dependencies = .{
+        .zon_desktop = .{ .path = "../../zig/zon-desktop" },
+    },
+    .paths = .{ "app.zon", "assets", "build.zig", "build.zig.zon", "src" },
+}

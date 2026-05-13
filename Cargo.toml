@@ -5,9 +5,6 @@ members = [
   "apps/aligner-server",
   "apps/annotator-server",
   "apps/studio-server",
-  "apps/aligner-desktop/src-tauri",
-  "apps/annotator-desktop/src-tauri",
-  "apps/studio-desktop/src-tauri",
 ]
 
 [workspace.package]
@@ -25,5 +22,3 @@ tower-http = { version = "0.6", features = ["trace"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 lisca = { path = "crates/lisca" }
-tauri = { version = "2" }
-tauri-build = "2"

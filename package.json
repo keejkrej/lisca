@@ -24,7 +24,8 @@
   "packageManager": "pnpm@10.11.0",
   "pnpm": {
     "onlyBuiltDependencies": [
-      "esbuild"
+      "esbuild",
+      "zero-native"
     ],
     "overrides": {
       "react": "19.1.0",

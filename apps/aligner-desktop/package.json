@@ -3,12 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "tauri build",
-    "dev": "tauri dev",
-    "typecheck": "cargo check --manifest-path ./src-tauri/Cargo.toml"
+    "build": "zig build package -Doptimize=ReleaseSafe",
+    "dev": "zig build dev",
+    "typecheck": "zig build --global-cache-dir ../../.zig-cache-global test -Dplatform=null && cargo check -p aligner-server"
   },
   "devDependencies": {
     "@lisca/aligner-web": "workspace:*",
-    "@tauri-apps/cli": "^2"
+    "@lisca/aligner-server": "workspace:*",
+    "zero-native": "0.1.9"
   }
 }
