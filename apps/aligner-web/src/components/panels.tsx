@@ -7,25 +7,21 @@ import type {
 import {
   AlignCanvasSurface,
   AlignGrid,
-  AlignSelection,
+  AlignTools,
+  Button,
   ContrastControl,
   FrameNavigation,
   Section,
   findNavigationOptionIndex,
   stepNavigationValue,
   toNavigationOptions,
-  type AlignCanvasFramePoint,
   type AlignCanvasPointerEvent,
-  type AlignCanvasWheelEvent,
-  type AlignSelectionMode,
   type NavigationOption,
 } from "@lisca/ui";
 import {
   applyAlignGridPointerGesture,
-  applyAlignGridWheelGesture,
   beginAlignGridPointerGesture,
   collectAlignGridEdgeCells,
-  collectAlignGridStrokeToggleCells,
   countVisibleAlignGridCells,
   createDefaultAlignGrid,
   degreesToRadians,
@@ -34,7 +30,7 @@ import {
   normalizeAlignGridState,
   radiansToDegrees,
   setExcludedAlignGridCellsForPosition,
-  toggleExcludedAlignGridCells,
+  type AlignGridToolMode,
   type AlignGridPointerGestureSession,
 } from "@lisca/utils";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -65,11 +61,10 @@ export type AlignDemoState = {
   setContrastMax: (value: number) => void;
   grid: AlignGridState;
   setGrid: (next: AlignGridState | ((current: AlignGridState) => AlignGridState)) => void;
-  selectionMode: AlignSelectionMode;
-  setSelectionMode: (mode: AlignSelectionMode) => void;
+  toolMode: AlignGridToolMode;
+  setToolMode: (mode: AlignGridToolMode) => void;
   excludedCellsByPosition: ExcludedByPosition;
   setExcludedCellsForCurrentPosition: (cells: Iterable<AlignGridCellCoord>) => void;
-  toggleExcludedCellsForCurrentPosition: (cells: Iterable<AlignGridCellCoord>) => void;
   frame: FrameResult | null;
   currentExcludedCells: AlignGridCellCoord[];
   visibleCounts: { included: number; excluded: number };
@@ -87,7 +82,7 @@ export function useAlignDemoState(): AlignDemoState {
   const [contrastMin, setContrastMin] = useState(0);
   const [contrastMax, setContrastMax] = useState(255);
   const [grid, setGridRaw] = useState(() => normalizeAlignGridState(createDefaultAlignGrid()));
-  const [selectionMode, setSelectionMode] = useState<AlignSelectionMode>("view");
+  const [toolMode, setToolMode] = useState<AlignGridToolMode>("pan");
   const [excludedCellsByPosition, setExcludedCellsByPosition] = useState<ExcludedByPosition>({});
 
   const frame = null;
@@ -121,19 +116,6 @@ export function useAlignDemoState(): AlignDemoState {
     [pos],
   );
 
-  const toggleExcludedCellsForCurrentPosition = useCallback(
-    (cells: Iterable<AlignGridCellCoord>) => {
-      setExcludedCellsByPosition((current) =>
-        setExcludedAlignGridCellsForPosition(
-          current,
-          pos,
-          toggleExcludedAlignGridCells(current[pos] ?? emptyExcludedCells, cells),
-        ),
-      );
-    },
-    [pos],
-  );
-
   return {
     pos,
     setPos,
@@ -149,11 +131,10 @@ export function useAlignDemoState(): AlignDemoState {
     setContrastMax,
     grid,
     setGrid,
-    selectionMode,
-    setSelectionMode,
+    toolMode,
+    setToolMode,
     excludedCellsByPosition,
     setExcludedCellsForCurrentPosition,
-    toggleExcludedCellsForCurrentPosition,
     frame,
     currentExcludedCells,
     visibleCounts,
@@ -367,14 +348,68 @@ function DockContrastControls({ state }: { state: AlignDemoState }) {
 
 export function BottomPanel(props: { routeId: RouteId; alignDemo?: AlignDemoState }) {
   return (
-    <div className="flex h-full min-h-0 w-full p-3">
+    <div className="flex h-full min-h-0 w-full gap-3 p-3">
       {props.routeId === "align" && props.alignDemo ? (
-        <DockContrastControls state={props.alignDemo} />
+        <>
+          <AlignToolSection state={props.alignDemo} />
+          <AlignSaveSection state={props.alignDemo} />
+        </>
       ) : (
         <Section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden" title="Contrast">
           <p className="text-muted-foreground text-xs">Inspect contrast controls land here next.</p>
         </Section>
       )}
+    </div>
+  );
+}
+
+function AlignToolSection({ state }: { state: AlignDemoState }) {
+  return (
+    <AlignTools
+      mode={state.toolMode}
+      sectionClassName="flex min-h-0 min-w-0 flex-1 basis-0 flex-col"
+      sectionContentClassName="flex min-h-0 flex-1 flex-col"
+      onModeChange={state.setToolMode}
+    />
+  );
+}
+
+function AlignSaveSection({ state }: { state: AlignDemoState }) {
+  const bboxPath = `bbox/Pos${state.pos}.csv`;
+  const alignPath = `align/Pos${state.pos}.json`;
+  const roiPath = `roi/Pos${state.pos}.tif`;
+
+  return (
+    <Section
+      className="flex min-h-0 min-w-0 flex-1 basis-0 flex-col"
+      contentClassName="flex min-h-0 flex-col gap-2"
+      title="Save"
+    >
+      <div className="grid min-w-0 grid-cols-3 gap-2">
+        <OutputPathField value={bboxPath} />
+        <OutputPathField value={alignPath} />
+        <OutputPathField value={roiPath} />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <Button className="w-full justify-center" disabled size="sm" type="button" variant="outline">
+          Save
+        </Button>
+        <Button className="w-full justify-center" disabled size="sm" type="button" variant="outline">
+          Crop
+        </Button>
+      </div>
+    </Section>
+  );
+}
+
+function OutputPathField({ value }: { value: string }) {
+  return (
+    <div
+      aria-label={`Output path ${value}`}
+      className="min-w-0 truncate rounded-md border border-border bg-muted/20 px-2 py-1.5 font-mono text-xs text-foreground"
+      title={value}
+    >
+      {value}
     </div>
   );
 }
@@ -435,133 +470,117 @@ function AlignSelectionPanel({ state }: { state: AlignDemoState }) {
   const hasExcludedCells = state.currentExcludedCells.length > 0;
 
   return (
-    <AlignSelection
-      autoExcludeDisabled
-      excludedCells={state.visibleCounts.excluded}
-      excludeAllDisabled={!hasVisibleCells}
-      excludeEdgeDisabled={!hasVisibleCells}
-      includedCells={state.visibleCounts.included}
-      mode={state.selectionMode}
-      resetDisabled={!hasExcludedCells && state.selectionMode === "view"}
-      sectionClassName="min-h-0 shrink-0"
-      sectionContentClassName="flex min-h-0 flex-col overflow-auto"
-      onExcludeAll={() => state.setExcludedCellsForCurrentPosition(visibleCells)}
-      onExcludeEdge={() => {
-        if (!state.frame) return;
-        const edgeCells = collectAlignGridEdgeCells(state.frame, state.grid);
-        state.setExcludedCellsForCurrentPosition(
-          mergeExcludedAlignGridCells(state.currentExcludedCells, edgeCells),
-        );
-      }}
-      onModeChange={state.setSelectionMode}
-      onReset={() => {
-        state.setExcludedCellsForCurrentPosition([]);
-        state.setSelectionMode("view");
-      }}
-    />
+    <Section
+      className="min-h-0 shrink-0"
+      contentClassName="flex min-h-0 flex-col gap-2 overflow-auto"
+      title="Selection"
+    >
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-md border border-border bg-muted/30 px-2 py-2">
+          <div className="text-muted-foreground text-xs">Included cells</div>
+          <div className="mt-1 font-medium tabular-nums">{state.visibleCounts.included}</div>
+        </div>
+        <div className="rounded-md border border-border bg-muted/30 px-2 py-2">
+          <div className="text-muted-foreground text-xs">Excluded cells</div>
+          <div className="mt-1 font-medium tabular-nums">{state.visibleCounts.excluded}</div>
+        </div>
+      </div>
+      <Button
+        className="w-full"
+        disabled={!hasExcludedCells}
+        size="sm"
+        type="button"
+        variant="outline"
+        onClick={() => state.setExcludedCellsForCurrentPosition([])}
+      >
+        Reset
+      </Button>
+      <div className="grid grid-cols-2 gap-2">
+        <Button
+          disabled={!hasVisibleCells}
+          size="sm"
+          type="button"
+          variant="outline"
+          onClick={() => state.setExcludedCellsForCurrentPosition(visibleCells)}
+        >
+          Exclude all
+        </Button>
+        <Button
+          disabled={!hasVisibleCells}
+          size="sm"
+          type="button"
+          variant="outline"
+          onClick={() => {
+            if (!state.frame) return;
+            const edgeCells = collectAlignGridEdgeCells(state.frame, state.grid);
+            state.setExcludedCellsForCurrentPosition(
+              mergeExcludedAlignGridCells(state.currentExcludedCells, edgeCells),
+            );
+          }}
+        >
+          Exclude edge
+        </Button>
+      </div>
+      <Button className="w-full" disabled size="sm" type="button" variant="outline">
+        Auto exclude
+      </Button>
+    </Section>
   );
 }
 
 function useAlignCanvasHandlers(state: AlignDemoState) {
   const gestureRef = useRef<AlignGridPointerGestureSession | null>(null);
-  const strokeRef = useRef<{
-    lastPoint: AlignCanvasFramePoint;
-    toggledCells: AlignGridCellCoord[];
-  } | null>(null);
-
-  const toggleStrokeCells = useCallback(
-    (cells: AlignGridCellCoord[]) => {
-      if (cells.length === 0) return;
-      state.toggleExcludedCellsForCurrentPosition(cells);
-    },
-    [state],
-  );
 
   const handlePointerDown = useCallback(
     (event: AlignCanvasPointerEvent) => {
-      if (!event.viewport) return;
-
-      if (state.selectionMode === "edit") {
-        if (event.pointerType !== "mouse" || event.button !== 0 || !event.framePoint) return;
-        if (!state.frame) return;
+      if (!event.viewport || !state.grid.enabled) return;
+      if (event.pointerType === "mouse" && event.button !== 0) {
         event.preventDefault();
-        event.capturePointer();
-        const cells = collectAlignGridStrokeToggleCells(
-          state.frame,
-          state.grid,
-          event.framePoint,
-          event.framePoint,
-        );
-        strokeRef.current = { lastPoint: event.framePoint, toggledCells: cells };
-        toggleStrokeCells(cells);
         return;
       }
 
-      const session = beginAlignGridPointerGesture(state.grid, event);
+      const session = beginAlignGridPointerGesture(state.grid, event, state.toolMode);
       if (!session) return;
       event.preventDefault();
       event.capturePointer();
       gestureRef.current = session;
     },
-    [state, toggleStrokeCells],
+    [state],
   );
 
   const handlePointerMove = useCallback(
     (event: AlignCanvasPointerEvent) => {
-      if (state.selectionMode === "edit") {
-        const stroke = strokeRef.current;
-        if (!stroke || !event.framePoint || (event.buttons & 1) === 0) return;
-        if (!state.frame) return;
-        event.preventDefault();
-        const cells = collectAlignGridStrokeToggleCells(
-          state.frame,
-          state.grid,
-          stroke.lastPoint,
-          event.framePoint,
-          stroke.toggledCells,
-        );
-        stroke.lastPoint = event.framePoint;
-        stroke.toggledCells = [...stroke.toggledCells, ...cells];
-        toggleStrokeCells(cells);
-        return;
-      }
-
       const gesture = gestureRef.current;
       if (!gesture || !event.viewport || gesture.pointerId !== event.pointerId) return;
       event.preventDefault();
       state.setGrid(applyAlignGridPointerGesture(gesture, event, event.viewport));
     },
-    [state, toggleStrokeCells],
+    [state],
   );
 
   const handlePointerEnd = useCallback((event: AlignCanvasPointerEvent) => {
     if (gestureRef.current?.pointerId === event.pointerId) {
       gestureRef.current = null;
     }
-    strokeRef.current = null;
     event.releasePointer();
   }, []);
-
-  const handleWheel = useCallback(
-    (event: AlignCanvasWheelEvent) => {
-      if (state.selectionMode !== "view" || !event.viewport) return;
-      event.preventDefault();
-      state.setGrid(applyAlignGridWheelGesture(state.grid, event, event.viewport));
-    },
-    [state],
-  );
 
   return {
     handlePointerDown,
     handlePointerMove,
     handlePointerEnd,
-    handleWheel,
   };
 }
 
+function cursorForAlignTool(toolMode: AlignGridToolMode, gridEnabled: boolean) {
+  if (!gridEnabled) return "default";
+  if (toolMode === "pan") return "grab";
+  if (toolMode === "rotate") return "crosshair";
+  return "zoom-in";
+}
+
 function AlignCanvasPanel({ state }: { state: AlignDemoState }) {
-  const { handlePointerDown, handlePointerMove, handlePointerEnd, handleWheel } =
-    useAlignCanvasHandlers(state);
+  const { handlePointerDown, handlePointerMove, handlePointerEnd } = useAlignCanvasHandlers(state);
 
   if (!state.frame) {
     return <div className="flex h-full min-h-0 flex-col bg-zinc-950" />;
@@ -571,7 +590,7 @@ function AlignCanvasPanel({ state }: { state: AlignDemoState }) {
     <div className="flex h-full min-h-0 flex-col bg-muted/20">
       <AlignCanvasSurface
         className="min-h-0 flex-1"
-        cursor={state.selectionMode === "edit" ? "crosshair" : "grab"}
+        cursor={cursorForAlignTool(state.toolMode, state.grid.enabled)}
         excludedCells={state.currentExcludedCells}
         frame={state.frame}
         grid={state.grid}
@@ -579,7 +598,6 @@ function AlignCanvasPanel({ state }: { state: AlignDemoState }) {
         onVirtualPointerDown={handlePointerDown}
         onVirtualPointerMove={handlePointerMove}
         onVirtualPointerUp={handlePointerEnd}
-        onVirtualWheel={handleWheel}
       />
     </div>
   );

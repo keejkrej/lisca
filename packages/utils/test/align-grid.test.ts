@@ -184,6 +184,25 @@ describe("align grid utils", () => {
     expect(resized.cellWidth).toBeGreaterThan(grid.cellWidth);
   });
 
+  test("maps active tools to primary-button grid gestures", () => {
+    const grid = createDefaultAlignGrid();
+    const input = {
+      pointerId: 1,
+      pointerType: "mouse",
+      button: 0,
+      clientX: 100,
+      clientY: 100,
+    };
+
+    expect(beginAlignGridPointerGesture(grid, input, "pan")?.intent).toBe("offset");
+    expect(beginAlignGridPointerGesture(grid, input, "rotate")?.intent).toBe("rotation");
+    expect(beginAlignGridPointerGesture(grid, input, "zoom-vector")?.intent).toBe("spacing");
+    expect(beginAlignGridPointerGesture(grid, input, "zoom-pattern")?.intent).toBe("size");
+    expect(
+      beginAlignGridPointerGesture(grid, { ...input, button: 2 }, "pan"),
+    ).toBeNull();
+  });
+
   test("classifies pointer and wheel gestures", () => {
     expect(classifyAlignGridPointerGesture({ pointerType: "mouse", button: 0 })).toBe("offset");
     expect(classifyAlignGridPointerGesture({ pointerType: "mouse", button: 1 })).toBe("spacing");

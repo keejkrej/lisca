@@ -79,43 +79,6 @@ export type SelectNavigationControlProps<T extends NavigationValue> = Omit<
 
 export type SliderNavigationControlProps = Omit<SliderNavigationFieldProps, "label">;
 
-function StepperButtons({
-  previousDisabled,
-  nextDisabled,
-  onPrevious,
-  onNext,
-}: {
-  previousDisabled?: boolean;
-  nextDisabled?: boolean;
-  onPrevious: () => void;
-  onNext: () => void;
-}) {
-  return (
-    <div className="grid grid-cols-2 gap-2">
-      <Button
-        type="button"
-        size="sm"
-        variant="outline"
-        disabled={previousDisabled}
-        aria-label="Previous"
-        onClick={onPrevious}
-      >
-        <ChevronLeft aria-hidden="true" />
-      </Button>
-      <Button
-        type="button"
-        size="sm"
-        variant="outline"
-        disabled={nextDisabled}
-        aria-label="Next"
-        onClick={onNext}
-      >
-        <ChevronRight aria-hidden="true" />
-      </Button>
-    </div>
-  );
-}
-
 export function SelectStepperField<T extends NavigationValue>(
   props: SelectNavigationFieldProps<T>,
 ) {

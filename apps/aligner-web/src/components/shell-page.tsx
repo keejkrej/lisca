@@ -20,11 +20,9 @@ export function ShellPage(props: { routeId: RouteId }) {
           <AppShell.Main>
             <MainPanel alignDemo={alignDemo} routeId={props.routeId} />
           </AppShell.Main>
-          {props.routeId === "align" ? null : (
-            <AppShell.Dock>
-              <BottomPanel alignDemo={alignDemo} routeId={props.routeId} />
-            </AppShell.Dock>
-          )}
+          <AppShell.Dock>
+            <BottomPanel alignDemo={alignDemo} routeId={props.routeId} />
+          </AppShell.Dock>
         </AppShell.MainColumn>
         <AppShell.Right widthClass="w-72">
           <RightPanel alignDemo={alignDemo} routeId={props.routeId} />

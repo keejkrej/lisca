@@ -64,9 +64,9 @@ export type AlignGridPointerGestureInput = AlignGridMousePointerInput & {
   clientY: number;
 };
 
-export type AlignGridPointerIntent = "offset" | "rotation" | "spacing" | "spacing-size";
+export type AlignGridPointerIntent = "offset" | "rotation" | "spacing" | "size" | "spacing-size";
 export type AlignGridWheelIntent = "ignore" | "size";
-export type AlignGridToolMode = "pan" | "rotate" | "zoom";
+export type AlignGridToolMode = "pan" | "rotate" | "zoom-vector" | "zoom-pattern" | "zoom";
 
 export type AlignGridPointerGestureSession = {
   pointerId: number;
@@ -417,7 +417,15 @@ export function beginAlignGridPointerGesture(
   if (toolMode !== undefined) {
     if (!isPrimaryAlignGridMouseButton(input)) return null;
     const intent: AlignGridPointerIntent =
-      toolMode === "pan" ? "offset" : toolMode === "rotate" ? "rotation" : "spacing-size";
+      toolMode === "pan"
+        ? "offset"
+        : toolMode === "rotate"
+          ? "rotation"
+          : toolMode === "zoom-vector"
+            ? "spacing"
+            : toolMode === "zoom-pattern"
+              ? "size"
+              : "spacing-size";
     return {
       pointerId: input.pointerId,
       intent,
@@ -484,6 +492,15 @@ export function applyAlignGridPointerGesture(
       spacingB: session.startGrid.spacingB * spacingFactor,
       cellWidth: session.startGrid.cellWidth * sizeFactor,
       cellHeight: session.startGrid.cellHeight * sizeFactor,
+    });
+  }
+
+  if (session.intent === "size") {
+    const factor = Math.max(0.01, 1 + (deltaY / Math.max(1, viewport.displayHeight)) * 2.5);
+    return normalizeAlignGridState({
+      ...session.startGrid,
+      cellWidth: session.startGrid.cellWidth * factor,
+      cellHeight: session.startGrid.cellHeight * factor,
     });
   }
 
