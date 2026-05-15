@@ -98,6 +98,14 @@ export { Section, type SectionProps } from "./shell/section";
 export { AlignGrid, type AlignGridProps } from "./features/align-grid";
 
 export {
+  AlignCanvasSurface,
+  type AlignCanvasFramePoint,
+  type AlignCanvasPointerEvent,
+  type AlignCanvasSurfaceProps,
+  type AlignCanvasWheelEvent,
+} from "./features/align-canvas-surface";
+
+export {
   AlignSelection,
   type AlignSelectionMode,
   type AlignSelectionProps,
@@ -116,6 +124,13 @@ export {
   type SelectNavigationControlProps,
   type SliderNavigationControlProps,
 } from "./features/frame-navigation";
+
+export {
+  HostFilePickerDialog,
+  type HostFilePickerDialogProps,
+} from "./features/host-file-picker-dialog";
+
+export { SourcePickerModal, type SourcePickerModalProps } from "./features/source-picker-modal";
 
 export {
   ContrastControl,

@@ -1,13 +1,18 @@
 import {
+  HostFilePickerDialog,
   Menu,
   MenuItem,
   MenuPopup,
   MenuTrigger,
   ShellNavbar,
+  SourcePickerModal,
   buttonVariants,
   cn,
+  useShellWorkspace,
 } from "@lisca/ui";
+import type { AlignerHostPort, HostFilePickerMode } from "@lisca/contracts";
 import { useNavigate } from "@tanstack/react-router";
+import { useMemo, useRef, useState } from "react";
 
 import type { RouteId } from "../types";
 
@@ -58,20 +63,110 @@ function ToolsMenu() {
   );
 }
 
+function createHttpHostPort(baseUrl: string): AlignerHostPort {
+  async function readJson<T>(url: string): Promise<T> {
+    const response = await fetch(url);
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(text || `Request failed with ${response.status}`);
+    }
+    return response.json() as Promise<T>;
+  }
+
+  return {
+    listDirectory(path) {
+      const url = new URL("/fs/list", baseUrl);
+      if (path) url.searchParams.set("path", path);
+      return readJson(url.toString());
+    },
+    userHomeDirectory() {
+      return readJson<{ path: string }>(new URL("/fs/home", baseUrl).toString()).then(
+        (result) => result.path,
+      );
+    },
+  };
+}
+
+function filePickerTitle(mode: HostFilePickerMode): string {
+  if (mode === "workspace") return "Workspace folder";
+  if (mode === "tif_dir") return "TIFF image folder";
+  if (mode === "jpg_dir") return "JPEG / PNG image folder";
+  if (mode === "nd2_file") return "ND2 file";
+  if (mode === "czi_file") return "CZI file";
+  return "File";
+}
+
 export function Navbar(props: { routeId: RouteId }) {
   const navigate = useNavigate();
+  const workspace = useShellWorkspace();
+  const pickerModeRef = useRef<HostFilePickerMode | null>(null);
+  const [sourcePickerOpen, setSourcePickerOpen] = useState(false);
+  const [filePicker, setFilePicker] = useState<{
+    open: boolean;
+    mode: HostFilePickerMode;
+    title: string;
+  }>({ open: false, mode: "workspace", title: "" });
+
+  const hostPort = useMemo(() => createHttpHostPort("http://127.0.0.1:8765"), []);
+
+  const openFilePicker = (mode: HostFilePickerMode) => {
+    pickerModeRef.current = mode;
+    setFilePicker({ open: true, mode, title: filePickerTitle(mode) });
+  };
+
+  const applyPickDirectory = (path: string) => {
+    const mode = pickerModeRef.current;
+    if (mode === "workspace") {
+      workspace.setWorkspacePath(path);
+      return;
+    }
+    if (mode === "tif_dir" || mode === "jpg_dir") {
+      workspace.setSourcePath(path);
+    }
+  };
+
+  const applyPickFile = (path: string) => {
+    const mode = pickerModeRef.current;
+    if (mode === "nd2_file" || mode === "czi_file") {
+      workspace.setSourcePath(path);
+    }
+  };
 
   return (
-    <ShellNavbar
-      wsDefaultPort={8765}
-      routeItems={[
-        { value: "align", label: "Align" },
-      ]}
-      showToolsMenu={true}
-      showRouteToggle={false}
-      routeValue={props.routeId}
-      onRouteChange={(v: string) => navigate({ to: `/${v}` })}
-      endLeading={<ToolsMenu />}
-    />
+    <>
+      <ShellNavbar
+        endLeading={<ToolsMenu />}
+        routeItems={[{ value: "align", label: "Align" }]}
+        routeValue={props.routeId}
+        showRouteToggle={false}
+        showToolsMenu={true}
+        wsDefaultPort={8765}
+        onPickSource={() => setSourcePickerOpen(true)}
+        onPickWorkspace={() => openFilePicker("workspace")}
+        onRouteChange={(v: string) => navigate({ to: `/${v}` })}
+      />
+
+      <SourcePickerModal
+        open={sourcePickerOpen}
+        onClose={() => setSourcePickerOpen(false)}
+        onOpenCzi={() => openFilePicker("czi_file")}
+        onOpenJpg={() => openFilePicker("jpg_dir")}
+        onOpenNd2={() => openFilePicker("nd2_file")}
+        onOpenTif={() => openFilePicker("tif_dir")}
+      />
+
+      <HostFilePickerDialog
+        hostPort={hostPort}
+        mode={filePicker.mode}
+        open={filePicker.open}
+        title={filePicker.title}
+        onOpenChange={(open) => {
+          setFilePicker((current) => ({ ...current, open }));
+          if (!open) pickerModeRef.current = null;
+        }}
+        onPickDirectory={applyPickDirectory}
+        onPickFile={applyPickFile}
+      />
+    </>
   );
 }

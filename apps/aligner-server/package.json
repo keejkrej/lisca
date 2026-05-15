@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "cargo build --release -p aligner-server",
-    "dev": "cargo run -p aligner-server",
+    "dev": "cargo watch -w . -w ../../crates/lisca -w ../../Cargo.toml -w ../../Cargo.lock -x \"run -p aligner-server\"",
     "typecheck": "cargo check -p aligner-server"
   }
 }

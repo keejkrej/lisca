@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group";
 
 import { Slider } from "../components/ui/slider";
 import type { NavigationOption, NavigationValue } from "./frame-navigation";
@@ -86,6 +87,7 @@ export type AlignGridProps<TShape extends NavigationValue = string> = {
  */
 export function AlignGrid<TShape extends NavigationValue = string>(props: AlignGridProps<TShape>) {
   const {
+    overlayVisible,
     onOverlayVisibleChange,
     shape,
     shapeOptions,
@@ -127,38 +129,36 @@ export function AlignGrid<TShape extends NavigationValue = string>(props: AlignG
       <div className="min-w-0 space-y-3">
         <Field className="min-w-0 w-full">
           <FieldLabel>Overlay</FieldLabel>
-          <div className="grid grid-cols-3 gap-2">
-            <Button
-              className="h-8 px-2 text-xs"
-              disabled={disabled}
-              size="sm"
-              type="button"
-              variant="outline"
-              onClick={() => onOverlayVisibleChange(false)}
-            >
+          <Button
+            className="h-8 w-full justify-center px-3 text-xs"
+            disabled={disabled || resetDisabled || !onReset}
+            size="sm"
+            type="button"
+            variant="outline"
+            onClick={() => onReset?.()}
+          >
+            Reset
+          </Button>
+          <ToggleGroup
+            className="w-full min-w-0"
+            disabled={disabled}
+            multiple={false}
+            size="sm"
+            value={[overlayVisible ? "show" : "hide"]}
+            variant="outline"
+            onValueChange={(next) => {
+              const value = next[0];
+              if (value === "hide") onOverlayVisibleChange(false);
+              if (value === "show") onOverlayVisibleChange(true);
+            }}
+          >
+            <ToggleGroupItem className="min-w-0 flex-1 px-2 text-xs" value="hide">
               Hide
-            </Button>
-            <Button
-              className="h-8 px-2 text-xs"
-              disabled={disabled}
-              size="sm"
-              type="button"
-              variant="outline"
-              onClick={() => onOverlayVisibleChange(true)}
-            >
+            </ToggleGroupItem>
+            <ToggleGroupItem className="min-w-0 flex-1 px-2 text-xs" value="show">
               Show
-            </Button>
-            <Button
-              className="h-8 px-2 text-xs"
-              disabled={disabled || resetDisabled || !onReset}
-              size="sm"
-              type="button"
-              variant="outline"
-              onClick={() => onReset?.()}
-            >
-              Reset
-            </Button>
-          </div>
+            </ToggleGroupItem>
+          </ToggleGroup>
         </Field>
 
         <Field className="min-w-0 w-full">
@@ -275,4 +275,3 @@ export function AlignGrid<TShape extends NavigationValue = string>(props: AlignG
     </Section>
   );
 }
-

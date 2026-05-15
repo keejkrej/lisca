@@ -11,6 +11,8 @@ import {
 export type ShellWorkspace = {
   workspacePath: string | null;
   sourcePath: string | null;
+  setWorkspacePath: (path: string | null) => void;
+  setSourcePath: (path: string | null) => void;
   pickWorkspace: () => void;
   pickSource: () => void;
   clearSource: () => void;
@@ -46,6 +48,8 @@ export function ShellWorkspaceProvider({ children }: { children: ReactNode }) {
     () => ({
       workspacePath,
       sourcePath,
+      setWorkspacePath,
+      setSourcePath,
       pickWorkspace,
       pickSource,
       clearSource,

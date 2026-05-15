@@ -92,16 +92,16 @@ export function AlignSelection(props: AlignSelectionProps) {
           </ToggleGroup>
         </Field>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid w-full grid-cols-2 gap-2">
           <Field className="min-w-0 w-full">
             <FieldLabel>Included Cells</FieldLabel>
-            <div className="rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground">
+            <div className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground">
               {includedCells}
             </div>
           </Field>
           <Field className="min-w-0 w-full">
             <FieldLabel>Excluded Cells</FieldLabel>
-            <div className="rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground">
+            <div className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground">
               {excludedCells}
             </div>
           </Field>

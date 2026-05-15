@@ -11,6 +11,7 @@ interface SliderProps extends Omit<
   SliderPrimitive.Root.Props,
   "defaultValue" | "onValueChange" | "onValueCommitted" | "value"
 > {
+  controlClassName?: string;
   defaultValue?: number;
   onValueChange?: (value: number) => void;
   onValueCommitted?: (value: number) => void;
@@ -23,6 +24,7 @@ function coerceSliderValue(value: SliderInputValue) {
 
 function Slider({
   className,
+  controlClassName,
   children,
   defaultValue,
   onValueChange,
@@ -52,7 +54,10 @@ function Slider({
     >
       {children}
       <SliderPrimitive.Control
-        className="flex touch-none select-none data-[orientation=vertical]:h-full data-[orientation=vertical]:min-h-44 data-[orientation=horizontal]:w-full data-[orientation=horizontal]:min-w-44 data-[orientation=vertical]:flex-col data-disabled:pointer-events-none data-disabled:opacity-64"
+        className={cn(
+          "flex touch-none select-none data-[orientation=vertical]:h-full data-[orientation=vertical]:min-h-44 data-[orientation=horizontal]:w-full data-[orientation=horizontal]:min-w-44 data-[orientation=vertical]:flex-col data-disabled:pointer-events-none data-disabled:opacity-64",
+          controlClassName,
+        )}
         data-slot="slider-control"
       >
         <SliderPrimitive.Track

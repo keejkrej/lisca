@@ -17,9 +17,14 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
+    "test": "vitest run",
     "typecheck": "tsc -p tsconfig.build.json --noEmit"
   },
+  "dependencies": {
+    "@lisca/contracts": "workspace:*"
+  },
   "devDependencies": {
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
   }
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
 import { Button } from "../components/ui/button";
 import {
   Select,
@@ -98,7 +100,7 @@ function StepperButtons({
         aria-label="Previous"
         onClick={onPrevious}
       >
-        {"<"}
+        <ChevronLeft aria-hidden="true" />
       </Button>
       <Button
         type="button"
@@ -108,7 +110,7 @@ function StepperButtons({
         aria-label="Next"
         onClick={onNext}
       >
-        {">"}
+        <ChevronRight aria-hidden="true" />
       </Button>
     </div>
   );
@@ -120,30 +122,48 @@ export function SelectStepperField<T extends NavigationValue>(
   return (
     <Field className="min-w-0 w-full">
       <FieldLabel>{props.label}</FieldLabel>
-      <Select<T>
-        disabled={props.disabled}
-        items={props.options}
-        modal={false}
-        value={props.value}
-        onValueChange={(next) => next != null && props.onChange(next)}
-      >
-        <SelectTrigger size="sm" className="min-w-0 text-sm">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {props.options.map((option) => (
-            <SelectItem key={String(option.value)} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <StepperButtons
-        nextDisabled={props.nextDisabled}
-        previousDisabled={props.previousDisabled}
-        onNext={props.onNext}
-        onPrevious={props.onPrevious}
-      />
+      <div className="grid w-full grid-cols-[2rem_minmax(0,1fr)_2rem] gap-2">
+        <Button
+          aria-label={`Previous ${props.label}`}
+          className="h-8 w-full px-0 text-xs"
+          disabled={props.previousDisabled}
+          size="sm"
+          type="button"
+          variant="outline"
+          onClick={props.onPrevious}
+        >
+          <ChevronLeft aria-hidden="true" />
+        </Button>
+        <Select<T>
+          disabled={props.disabled}
+          items={props.options}
+          modal={false}
+          value={props.value}
+          onValueChange={(next) => next != null && props.onChange(next)}
+        >
+          <SelectTrigger size="sm" className="min-w-0 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {props.options.map((option) => (
+              <SelectItem key={String(option.value)} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button
+          aria-label={`Next ${props.label}`}
+          className="h-8 w-full px-0 text-xs"
+          disabled={props.nextDisabled}
+          size="sm"
+          type="button"
+          variant="outline"
+          onClick={props.onNext}
+        >
+          <ChevronRight aria-hidden="true" />
+        </Button>
+      </div>
     </Field>
   );
 }
@@ -152,21 +172,40 @@ export function SliderStepperField(props: SliderNavigationFieldProps) {
   return (
     <Field className="min-w-0 w-full">
       <FieldLabel>{props.label}</FieldLabel>
-      <Slider
-        disabled={props.disabled}
-        max={props.max}
-        min={props.min}
-        step={props.step}
-        value={props.value}
-        onValueChange={props.onChange}
-        onValueCommitted={props.onCommit}
-      />
-      <StepperButtons
-        nextDisabled={props.nextDisabled}
-        previousDisabled={props.previousDisabled}
-        onNext={props.onNext}
-        onPrevious={props.onPrevious}
-      />
+      <div className="grid w-full grid-cols-[2rem_minmax(0,1fr)_2rem] items-center gap-2">
+        <Button
+          aria-label={`Previous ${props.label}`}
+          className="h-8 w-full px-0 text-xs"
+          disabled={props.previousDisabled}
+          size="sm"
+          type="button"
+          variant="outline"
+          onClick={props.onPrevious}
+        >
+          <ChevronLeft aria-hidden="true" />
+        </Button>
+        <Slider
+          controlClassName="data-[orientation=horizontal]:!min-w-0"
+          disabled={props.disabled}
+          max={props.max}
+          min={props.min}
+          step={props.step}
+          value={props.value}
+          onValueChange={props.onChange}
+          onValueCommitted={props.onCommit}
+        />
+        <Button
+          aria-label={`Next ${props.label}`}
+          className="h-8 w-full px-0 text-xs"
+          disabled={props.nextDisabled}
+          size="sm"
+          type="button"
+          variant="outline"
+          onClick={props.onNext}
+        >
+          <ChevronRight aria-hidden="true" />
+        </Button>
+      </div>
     </Field>
   );
 }

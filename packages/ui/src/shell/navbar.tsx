@@ -23,6 +23,8 @@ export type ShellNavbarProps = {
   showRouteToggle?: boolean;
   /** Show the `endLeading` action slot (default: true). */
   showToolsMenu?: boolean;
+  /** Override workspace action; defaults to `workspace.pickWorkspace()`. */
+  onPickWorkspace?: () => void;
   /** Override source action; defaults to `workspace.pickSource()`. */
   onPickSource?: () => void;
   /** Insert before the theme toggle (e.g. aligner Tools menu). */
@@ -38,6 +40,7 @@ export function ShellNavbar(props: ShellNavbarProps) {
   const workspace = useShellWorkspace();
 
   const handleSource = props.onPickSource ?? (() => workspace.pickSource());
+  const handleWorkspace = props.onPickWorkspace ?? (() => workspace.pickWorkspace());
 
   return (
     <header className="h-full bg-background px-6">
@@ -47,7 +50,7 @@ export function ShellNavbar(props: ShellNavbarProps) {
             label="Workspace"
             value={workspace.workspacePath}
             icon={<Folder className="size-4 shrink-0 opacity-80" aria-hidden />}
-            onClick={() => workspace.pickWorkspace()}
+            onClick={handleWorkspace}
           />
           <PathButton
             label="Source"

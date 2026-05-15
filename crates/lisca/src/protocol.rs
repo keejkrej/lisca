@@ -23,3 +23,19 @@ pub struct Hello {
     pub app: AppId,
     pub version: String,
 }
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HostFsEntry {
+    pub name: String,
+    pub path: String,
+    pub is_directory: bool,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HostListDirectoryResult {
+    pub path: Option<String>,
+    pub parent: Option<String>,
+    pub entries: Vec<HostFsEntry>,
+}

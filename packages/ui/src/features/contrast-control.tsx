@@ -107,21 +107,21 @@ export function ContrastControl(props: ContrastControlProps) {
           <span className="shrink-0 font-medium text-foreground text-sm">{title.trim()}</span>
         ) : null}
 
-        <div className="flex w-full min-w-0 flex-row flex-wrap items-center gap-x-4 gap-y-3">
+        <div className="flex w-full min-w-0 flex-col gap-3">
           {onAutoRange ? (
             <Button
               type="button"
               size="sm"
               variant="outline"
               disabled={disabled || autoRangeDisabled}
-              className="h-8 shrink-0 px-2.5 text-xs"
+              className="h-8 w-full px-2.5 text-xs"
               onClick={onAutoRange}
             >
               Auto Range
             </Button>
           ) : null}
 
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
+          <div className="flex min-h-0 min-w-0 flex-col gap-3">
             <div className={sliderCol}>
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-medium text-muted-foreground">Min</span>
