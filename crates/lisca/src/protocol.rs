@@ -174,3 +174,89 @@ pub struct SaveBboxResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
 }
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct RoiFrameRequest {
+    pub pos: u32,
+    pub roi: u32,
+    pub channel: u32,
+    pub time: u32,
+    pub z: u32,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct RoiBbox {
+    pub roi: u32,
+    pub x: u32,
+    pub y: u32,
+    pub w: u32,
+    pub h: u32,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RoiIndexEntry {
+    pub roi: u32,
+    pub file_name: String,
+    pub bbox: RoiBbox,
+    pub shape: [u32; 5],
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RoiIndexFile {
+    pub position: u32,
+    pub axis_order: String,
+    pub page_order: Vec<String>,
+    pub time_count: u32,
+    pub channel_count: u32,
+    pub z_count: u32,
+    pub source: ImageSource,
+    pub rois: Vec<RoiIndexEntry>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RoiPositionScan {
+    pub pos: u32,
+    pub source: ImageSource,
+    pub channels: Vec<u32>,
+    pub times: Vec<u32>,
+    #[serde(rename = "zSlices")]
+    pub z_slices: Vec<u32>,
+    pub rois: Vec<RoiIndexEntry>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct RoiWorkspaceScan {
+    pub positions: Vec<RoiPositionScan>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct AnnotationLabel {
+    pub id: String,
+    pub name: String,
+    pub color: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RoiFrameAnnotation {
+    pub classification_label_id: Option<String>,
+    pub mask_path: Option<String>,
+    pub updated_at: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RoiFrameAnnotationPayload {
+    pub classification_label_id: Option<String>,
+    pub mask_base64_png: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LoadedRoiFrameAnnotation {
+    pub annotation: RoiFrameAnnotation,
+    pub mask_base64_png: Option<String>,
+}

@@ -21,8 +21,12 @@ export type ShellNavbarProps = {
   onRouteChange: (value: string) => void;
   /** Show the route switcher toggle group (default: true). */
   showRouteToggle?: boolean;
+  /** Show the source path/action button (default: true). */
+  showSourceButton?: boolean;
   /** Show the `endLeading` action slot (default: true). */
   showToolsMenu?: boolean;
+  /** Insert next to the workspace action in the left path group. */
+  workspaceTrailing?: ReactNode;
   /** Override workspace action; defaults to `workspace.pickWorkspace()`. */
   onPickWorkspace?: () => void;
   /** Override source action; defaults to `workspace.pickSource()`. */
@@ -52,13 +56,16 @@ export function ShellNavbar(props: ShellNavbarProps) {
             icon={<Folder className="size-4 shrink-0 opacity-80" aria-hidden />}
             onClick={handleWorkspace}
           />
-          <PathButton
-            label="Source"
-            value={workspace.sourcePath}
-            icon={<HardDrive className="size-4 shrink-0 opacity-80" aria-hidden />}
-            disabled={!workspace.workspacePath}
-            onClick={workspace.workspacePath ? handleSource : undefined}
-          />
+          {props.workspaceTrailing}
+          {props.showSourceButton === false ? null : (
+            <PathButton
+              label="Source"
+              value={workspace.sourcePath}
+              icon={<HardDrive className="size-4 shrink-0 opacity-80" aria-hidden />}
+              disabled={!workspace.workspacePath}
+              onClick={workspace.workspacePath ? handleSource : undefined}
+            />
+          )}
         </div>
 
         {props.showRouteToggle === false ? (

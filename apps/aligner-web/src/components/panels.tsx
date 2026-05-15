@@ -583,7 +583,7 @@ function AlignCanvasPanel({ state }: { state: AlignDemoState }) {
   const { handlePointerDown, handlePointerMove, handlePointerEnd } = useAlignCanvasHandlers(state);
 
   if (!state.frame) {
-    return <div className="flex h-full min-h-0 flex-col bg-zinc-950" />;
+    return <div className="flex h-full min-h-0 flex-col bg-background" />;
   }
 
   return (

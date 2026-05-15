@@ -105,6 +105,73 @@ export type WorkspaceScan = {
   zSlices: number[];
 };
 
+export type RoiFrameRequest = FrameRequest & {
+  roi: number;
+};
+
+export type RoiBbox = {
+  roi: number;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+};
+
+export type RoiIndexEntry = {
+  roi: number;
+  fileName: string;
+  bbox: RoiBbox;
+  shape: [number, number, number, number, number];
+};
+
+export type RoiIndexFile = {
+  position: number;
+  axisOrder: "TCZYX";
+  pageOrder: ["t", "c", "z"];
+  timeCount: number;
+  channelCount: number;
+  zCount: number;
+  source: ImageSource;
+  rois: RoiIndexEntry[];
+};
+
+export type RoiPositionScan = {
+  pos: number;
+  source: ImageSource;
+  channels: number[];
+  times: number[];
+  zSlices: number[];
+  rois: RoiIndexEntry[];
+};
+
+export type RoiWorkspaceScan = {
+  positions: RoiPositionScan[];
+};
+
+export type AnnotationMode = "classification" | "semantic";
+
+export type AnnotationLabel = {
+  id: string;
+  name: string;
+  color: string;
+};
+
+export type RoiFrameAnnotation = {
+  classificationLabelId: string | null;
+  maskPath: string | null;
+  updatedAt: string | null;
+};
+
+export type RoiFrameAnnotationPayload = {
+  classificationLabelId: string | null;
+  maskBase64Png: string | null;
+};
+
+export type LoadedRoiFrameAnnotation = {
+  annotation: RoiFrameAnnotation;
+  maskBase64Png: string | null;
+};
+
 export type AlignGridShape = "rect" | "hex";
 
 export type AlignGridState = {

@@ -18,10 +18,13 @@ use tracing::{info, warn};
 
 use crate::{
     aligner,
+    image_source,
     protocol::{
         AlignerSource, AppId, AutoExcludePreviewRequest, ContrastWindow, FrameRequest, Hello,
-        HostFsEntry, HostListDirectoryResult, SavedAlignState,
+        HostFsEntry, HostListDirectoryResult, RoiFrameAnnotationPayload, RoiFrameRequest,
+        SavedAlignState, AnnotationLabel,
     },
+    roi,
 };
 
 #[derive(Clone)]
@@ -42,6 +45,18 @@ pub async fn run_ws_server(app: AppId, port: u16) -> Result<(), std::io::Error> 
         .route("/align/save-bbox", post(save_bbox_handler))
         .route("/align/align-state", get(load_align_state_handler))
         .route("/align/output-paths", get(output_paths_handler))
+        .route("/annotate/scan-roi-workspace", post(scan_roi_workspace_handler))
+        .route("/annotate/load-labels", post(load_annotation_labels_handler))
+        .route("/annotate/save-labels", post(save_annotation_labels_handler))
+        .route("/annotate/load-roi-frame", post(load_roi_frame_handler))
+        .route(
+            "/annotate/load-roi-frame-annotation",
+            post(load_roi_frame_annotation_handler),
+        )
+        .route(
+            "/annotate/save-roi-frame-annotation",
+            post(save_roi_frame_annotation_handler),
+        )
         .with_state(state)
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http());
@@ -92,6 +107,42 @@ struct LoadAlignStateQuery {
 #[derive(Debug, Deserialize)]
 struct OutputPathsQuery {
     pos: u32,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct WorkspacePathPayload {
+    workspace_path: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LoadRoiFramePayload {
+    workspace_path: String,
+    request: RoiFrameRequest,
+    contrast: Option<ContrastWindow>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SaveAnnotationLabelsPayload {
+    workspace_path: String,
+    labels: Vec<AnnotationLabel>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RoiFrameAnnotationPayloadBody {
+    workspace_path: String,
+    request: RoiFrameRequest,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SaveRoiFrameAnnotationPayload {
+    workspace_path: String,
+    request: RoiFrameRequest,
+    annotation: RoiFrameAnnotationPayload,
 }
 
 async fn list_directory_handler(
@@ -152,6 +203,55 @@ async fn output_paths_handler(
     Query(query): Query<OutputPathsQuery>,
 ) -> Json<aligner::OutputPaths> {
     Json(aligner::output_paths(query.pos))
+}
+
+async fn scan_roi_workspace_handler(
+    Json(payload): Json<WorkspacePathPayload>,
+) -> Result<Json<crate::protocol::RoiWorkspaceScan>, FsError> {
+    roi::scan_roi_workspace(&payload.workspace_path)
+        .map(Json)
+        .map_err(FsError::new)
+}
+
+async fn load_annotation_labels_handler(
+    Json(payload): Json<WorkspacePathPayload>,
+) -> Result<Json<Vec<crate::protocol::AnnotationLabel>>, FsError> {
+    roi::load_annotation_labels(&payload.workspace_path)
+        .map(Json)
+        .map_err(FsError::new)
+}
+
+async fn save_annotation_labels_handler(
+    Json(payload): Json<SaveAnnotationLabelsPayload>,
+) -> Result<Json<Vec<crate::protocol::AnnotationLabel>>, FsError> {
+    roi::save_annotation_labels(&payload.workspace_path, payload.labels)
+        .map(Json)
+        .map_err(FsError::new)
+}
+
+async fn load_roi_frame_handler(
+    Json(payload): Json<LoadRoiFramePayload>,
+) -> Result<Json<crate::protocol::FramePayload>, FsError> {
+    roi::load_roi_frame(&payload.workspace_path, payload.request)
+        .map(|raw| image_source::to_frame_payload(raw, payload.contrast))
+        .map(Json)
+        .map_err(FsError::new)
+}
+
+async fn load_roi_frame_annotation_handler(
+    Json(payload): Json<RoiFrameAnnotationPayloadBody>,
+) -> Result<Json<crate::protocol::LoadedRoiFrameAnnotation>, FsError> {
+    roi::load_roi_frame_annotation(&payload.workspace_path, payload.request)
+        .map(Json)
+        .map_err(FsError::new)
+}
+
+async fn save_roi_frame_annotation_handler(
+    Json(payload): Json<SaveRoiFrameAnnotationPayload>,
+) -> Result<Json<crate::protocol::RoiFrameAnnotation>, FsError> {
+    roi::save_roi_frame_annotation(&payload.workspace_path, payload.request, payload.annotation)
+        .map(Json)
+        .map_err(FsError::new)
 }
 
 #[derive(Debug)]

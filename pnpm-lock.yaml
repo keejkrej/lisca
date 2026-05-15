@@ -151,12 +151,18 @@ importers:
 
   apps/annotator-web:
     dependencies:
+      '@lisca/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       '@lisca/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@tanstack/react-router':
         specifier: ^1.169.2
         version: 1.169.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      lucide-react:
+        specifier: ^0.511.0
+        version: 0.511.0(react@19.1.0)
       react:
         specifier: 19.1.0
         version: 19.1.0

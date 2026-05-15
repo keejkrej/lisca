@@ -3,6 +3,7 @@
 pub mod aligner;
 pub mod image_source;
 pub mod protocol;
+pub mod roi;
 pub mod server;
 mod tiff_io;
 

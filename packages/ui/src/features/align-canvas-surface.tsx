@@ -238,7 +238,7 @@ export function AlignCanvasSurface({
       const dpr = dprRef.current;
       const activeGrid = previewGrid ?? grid;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = "#09090b";
+      ctx.fillStyle = getComputedStyle(view).getPropertyValue("--color-background").trim() || "#09090b";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       if (frame) {
@@ -395,7 +395,7 @@ export function AlignCanvasSurface({
   return (
     <div
       ref={viewportRef}
-      className={cn("relative h-full min-h-0 w-full flex-1 overflow-hidden bg-zinc-950", className)}
+      className={cn("relative h-full min-h-0 w-full flex-1 overflow-hidden bg-background", className)}
     >
       <canvas
         ref={canvasRef}
@@ -410,8 +410,8 @@ export function AlignCanvasSurface({
       />
 
       {loading || !frame ? (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-zinc-950/45">
-          <div className="rounded-md border border-white/15 bg-zinc-950/90 px-3 py-2 text-sm text-white/75 shadow-lg">
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background/45">
+          <div className="rounded-md border border-border bg-popover px-3 py-2 text-sm text-popover-foreground shadow-lg">
             {loading ? "Loading frame..." : emptyText}
           </div>
         </div>
