@@ -52,7 +52,7 @@ export function AlignTools({
             key={toolMode}
             aria-pressed={mode === toolMode}
             aria-label={label}
-            className="h-full w-full min-w-0 justify-start gap-2 px-3"
+            className="h-full w-full min-w-0 justify-center gap-2 px-3"
             size="sm"
             title={label}
             type="button"
