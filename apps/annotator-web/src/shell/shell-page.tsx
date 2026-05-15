@@ -169,14 +169,14 @@ function AnnotationModeToggle({
       variant="outline"
       onValueChange={(next) => {
         const value = next[0];
-        if (value === "classification" || value === "semantic") onModeChange(value);
+        if (value === "classification" || value === "segmentation") onModeChange(value);
       }}
     >
       <ToggleGroupItem value="classification" className="min-w-0 flex-1 px-2 text-xs">
         Classification
       </ToggleGroupItem>
-      <ToggleGroupItem value="semantic" className="min-w-0 flex-1 px-2 text-xs">
-        Semantic
+      <ToggleGroupItem value="segmentation" className="min-w-0 flex-1 px-2 text-xs">
+        Segmentation
       </ToggleGroupItem>
     </ToggleGroup>
   );
@@ -475,8 +475,8 @@ export function AnnotatorShellPage(props: { routeId: string }) {
     !annotationLoading &&
     !scanLoading;
   const toolCanRunWithoutLabel = tool === "brush-erase" || tool === "lasso-erase";
-  const canEditSemantic =
-    canEdit && mode === "semantic" && (activeLabelValue > 0 || toolCanRunWithoutLabel);
+  const canEditSegmentation =
+    canEdit && mode === "segmentation" && (activeLabelValue > 0 || toolCanRunWithoutLabel);
   const canSave = canEdit && annotation.dirty && !saving;
 
   const guardDirty = useCallback(() => {
@@ -624,10 +624,10 @@ export function AnnotatorShellPage(props: { routeId: string }) {
     setSaving(true);
     setSaveError(null);
     try {
-      const semanticMask = maskHasPixels(annotation.current.mask);
+      const segmentationMask = maskHasPixels(annotation.current.mask);
       await api.saveRoiFrameAnnotation(workspace.workspacePath, request, {
         classificationLabelId: annotation.current.classificationLabelId,
-        maskBase64Png: semanticMask
+        maskBase64Png: segmentationMask
           ? await encodeMaskToBase64Png(annotation.current.mask, frame.width, frame.height)
           : null,
       });
@@ -715,7 +715,7 @@ export function AnnotatorShellPage(props: { routeId: string }) {
             <AnnotationCanvas
               activeLabelId={activeLabelId}
               brushSize={brushSize}
-              disabled={!canEditSemantic}
+              disabled={!canEditSegmentation}
               frame={frame}
               labels={labels}
               mask={annotation.current.mask}
@@ -1021,7 +1021,7 @@ function RightPanel(props: {
           Redo
         </Button>
         <Button
-          disabled={props.mode !== "semantic" || !props.canEdit}
+          disabled={props.mode !== "segmentation" || !props.canEdit}
           size="sm"
           type="button"
           variant="outline"
@@ -1033,7 +1033,7 @@ function RightPanel(props: {
           Discard
         </Button>
       </Section>
-      {props.mode === "semantic" ? (
+      {props.mode === "segmentation" ? (
         <Section title="Brush" contentClassName="flex flex-col gap-3">
           <ToolSlider
             label="Opacity"
@@ -1076,7 +1076,7 @@ function BottomPanel(props: {
         contentClassName="flex min-h-0 flex-1 flex-col gap-2"
         title="Tools"
       >
-        {props.mode === "semantic" ? (
+        {props.mode === "segmentation" ? (
           <>
             <div className="grid flex-1 grid-cols-2 gap-2">
               <Button

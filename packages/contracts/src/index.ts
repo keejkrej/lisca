@@ -148,7 +148,7 @@ export type RoiWorkspaceScan = {
   positions: RoiPositionScan[];
 };
 
-export type AnnotationMode = "classification" | "semantic";
+export type AnnotationMode = "classification" | "segmentation";
 
 export type AnnotationLabel = {
   id: string;
