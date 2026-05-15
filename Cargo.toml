@@ -15,10 +15,16 @@ repository = "https://github.com/lisca/lisca"
 
 [workspace.dependencies]
 axum = { version = "0.8", features = ["ws"] }
+base64 = "0.22"
+czi-rs = { package = "czi-rs", git = "https://github.com/keejkrej/czi-rs" }
+image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
+nd2-rs = { package = "nd2-rs", git = "https://github.com/keejkrej/nd2-rs" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+tiff = "0.10"
 tokio = { version = "1", features = ["full"] }
 tower-http = { version = "0.6", features = ["cors", "trace"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+walkdir = "2.5"
 lisca = { path = "crates/lisca" }

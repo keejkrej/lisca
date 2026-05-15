@@ -28,6 +28,7 @@ export type CziSource = {
 };
 
 export type AlignerSource = TifSource | JpgSource | Nd2Source | CziSource;
+export type ImageSource = AlignerSource;
 
 export type HostFsEntry = {
   name: string;
@@ -80,6 +81,30 @@ export type FrameResult = {
   appliedContrast?: ContrastWindow;
 };
 
+export type FramePayload = {
+  width: number;
+  height: number;
+  dataBase64: string;
+  pixelType: PixelType;
+  contrastDomain: ContrastWindow;
+  suggestedContrast: ContrastWindow;
+  appliedContrast: ContrastWindow;
+};
+
+export type FrameRequest = {
+  pos: number;
+  channel: number;
+  time: number;
+  z: number;
+};
+
+export type WorkspaceScan = {
+  positions: number[];
+  channels: number[];
+  times: number[];
+  zSlices: number[];
+};
+
 export type AlignGridShape = "rect" | "hex";
 
 export type AlignGridState = {
@@ -98,6 +123,54 @@ export type AlignGridState = {
 export type AlignGridCellCoord = {
   i: number;
   j: number;
+};
+
+export type SavedAlignState = {
+  grid: AlignGridState;
+  excludedCells: AlignGridCellCoord[];
+};
+
+export type AutoExcludePreviewCell = AlignGridCellCoord & {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+};
+
+export type AutoExcludePreviewRequest = {
+  source: AlignerSource;
+  selection: FrameRequest;
+  cells: AutoExcludePreviewCell[];
+};
+
+export type AutoExcludePreviewCellScore = AlignGridCellCoord & {
+  score: number;
+};
+
+export type AutoExcludeHistogramBin = {
+  start: number;
+  end: number;
+  count: number;
+};
+
+export type AutoExcludePreviewResponse = {
+  eligibleCellCount: number;
+  cellScores: AutoExcludePreviewCellScore[];
+  histogramBins: AutoExcludeHistogramBin[];
+  scoreMin: number;
+  scoreMax: number;
+  threshold: number;
+};
+
+export type SaveBboxResponse = {
+  ok: boolean;
+  error?: string;
+};
+
+export type AlignOutputPaths = {
+  bbox: string;
+  align: string;
+  roi: string;
 };
 
 export type AlignCanvasStatusTone = "default" | "error" | "success";

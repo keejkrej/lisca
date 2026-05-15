@@ -8,7 +8,7 @@ use axum::{
     },
     http::StatusCode,
     response::{IntoResponse, Response},
-    routing::get,
+    routing::{get, post},
     Json,
     Router,
 };
@@ -16,7 +16,13 @@ use serde::Deserialize;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing::{info, warn};
 
-use crate::protocol::{AppId, Hello, HostFsEntry, HostListDirectoryResult};
+use crate::{
+    aligner,
+    protocol::{
+        AlignerSource, AppId, AutoExcludePreviewRequest, ContrastWindow, FrameRequest, Hello,
+        HostFsEntry, HostListDirectoryResult, SavedAlignState,
+    },
+};
 
 #[derive(Clone)]
 struct AppState {
@@ -30,6 +36,12 @@ pub async fn run_ws_server(app: AppId, port: u16) -> Result<(), std::io::Error> 
         .route("/ws", get(ws_handler))
         .route("/fs/list", get(list_directory_handler))
         .route("/fs/home", get(home_directory_handler))
+        .route("/align/scan-source", post(scan_source_handler))
+        .route("/align/load-frame", post(load_frame_handler))
+        .route("/align/auto-exclude-preview", post(auto_exclude_preview_handler))
+        .route("/align/save-bbox", post(save_bbox_handler))
+        .route("/align/align-state", get(load_align_state_handler))
+        .route("/align/output-paths", get(output_paths_handler))
         .with_state(state)
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http());
@@ -47,6 +59,41 @@ struct ListDirectoryQuery {
     path: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ScanSourcePayload {
+    source: AlignerSource,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LoadFramePayload {
+    source: AlignerSource,
+    request: FrameRequest,
+    contrast: Option<ContrastWindow>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SaveBboxPayload {
+    workspace_path: String,
+    pos: u32,
+    csv: String,
+    align_state: SavedAlignState,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LoadAlignStateQuery {
+    workspace_path: String,
+    pos: u32,
+}
+
+#[derive(Debug, Deserialize)]
+struct OutputPathsQuery {
+    pos: u32,
+}
+
 async fn list_directory_handler(
     Query(query): Query<ListDirectoryQuery>,
 ) -> Result<Json<HostListDirectoryResult>, FsError> {
@@ -56,6 +103,55 @@ async fn list_directory_handler(
 async fn home_directory_handler() -> Result<Json<serde_json::Value>, FsError> {
     let home = user_home_directory().ok_or_else(|| FsError::new("home directory not found"))?;
     Ok(Json(serde_json::json!({ "path": home })))
+}
+
+async fn scan_source_handler(
+    Json(payload): Json<ScanSourcePayload>,
+) -> Result<Json<crate::protocol::WorkspaceScan>, FsError> {
+    aligner::scan_source(payload.source).map(Json).map_err(FsError::new)
+}
+
+async fn load_frame_handler(
+    Json(payload): Json<LoadFramePayload>,
+) -> Result<Json<crate::protocol::FramePayload>, FsError> {
+    aligner::load_frame_payload(payload.source, payload.request, payload.contrast)
+        .map(Json)
+        .map_err(FsError::new)
+}
+
+async fn auto_exclude_preview_handler(
+    Json(request): Json<AutoExcludePreviewRequest>,
+) -> Result<Json<crate::protocol::AutoExcludePreviewResponse>, FsError> {
+    aligner::auto_exclude_preview(request)
+        .map(Json)
+        .map_err(FsError::new)
+}
+
+async fn save_bbox_handler(
+    Json(payload): Json<SaveBboxPayload>,
+) -> Result<Json<crate::protocol::SaveBboxResponse>, FsError> {
+    aligner::save_bbox(
+        &payload.workspace_path,
+        payload.pos,
+        &payload.csv,
+        &payload.align_state,
+    )
+    .map(Json)
+    .map_err(FsError::new)
+}
+
+async fn load_align_state_handler(
+    Query(query): Query<LoadAlignStateQuery>,
+) -> Result<Json<Option<SavedAlignState>>, FsError> {
+    aligner::load_align_state(&query.workspace_path, query.pos)
+        .map(Json)
+        .map_err(FsError::new)
+}
+
+async fn output_paths_handler(
+    Query(query): Query<OutputPathsQuery>,
+) -> Json<aligner::OutputPaths> {
+    Json(aligner::output_paths(query.pos))
 }
 
 #[derive(Debug)]
