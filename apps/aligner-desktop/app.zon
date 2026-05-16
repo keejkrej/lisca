@@ -13,7 +13,7 @@
         .spa_fallback = true,
         .dev = .{
             .url = "http://127.0.0.1:5173/",
-            .command = .{ "pnpm", "--filter", "@lisca/aligner-web", "dev", "--", "--host", "127.0.0.1" },
+            .command = .{ "pnpm", "turbo", "run", "dev", "--filter", "@lisca/aligner-web", "--", "--host", "127.0.0.1" },
             .ready_path = "/",
             .timeout_ms = 30000,
         },

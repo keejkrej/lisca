@@ -6,6 +6,7 @@ const zero_native = @import("zero-native");
 pub const panic = std.debug.FullPanic(zero_native.debug.capturePanic);
 
 const App = struct {
+    io: std.Io,
     env_map: *std.process.Environ.Map,
     server_process: server.ServerProcess = .{},
 
@@ -31,20 +32,20 @@ const App = struct {
     fn start(context: *anyopaque, runtime: *zero_native.Runtime) anyerror!void {
         _ = runtime;
         const self: *@This() = @ptrCast(@alignCast(context));
-        try self.server_process.start(self.env_map);
+        try self.server_process.start(self.io, self.env_map);
     }
 
     fn stop(context: *anyopaque, runtime: *zero_native.Runtime) anyerror!void {
         _ = runtime;
         const self: *@This() = @ptrCast(@alignCast(context));
-        self.server_process.stop();
+        self.server_process.stop(self.io);
     }
 };
 
 const dev_origins = [_][]const u8{ "zero://app", "zero://inline", "http://127.0.0.1:5174" };
 
 pub fn main(init: std.process.Init) !void {
-    var app = App{ .env_map = init.environ_map };
+    var app = App{ .io = init.io, .env_map = init.environ_map };
     try runner.runWithOptions(app.app(), .{
         .app_name = "Annotator",
         .window_title = "Annotator",
