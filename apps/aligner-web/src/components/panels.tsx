@@ -2,7 +2,13 @@ import type {
   AlignGridCellCoord,
   AlignGridShape,
   AlignGridState,
+  AlignerSource,
+  ContrastWindow,
+  CropRoiProgress,
+  FrameRequest,
   FrameResult,
+  SavedAlignState,
+  WorkspaceScan,
 } from "@lisca/contracts";
 import {
   AlignCanvasSurface,
@@ -12,9 +18,11 @@ import {
   ContrastControl,
   FrameNavigation,
   Section,
+  Spinner,
   findNavigationOptionIndex,
   stepNavigationValue,
   toNavigationOptions,
+  useShellWorkspace,
   type AlignCanvasPointerEvent,
   type NavigationOption,
 } from "@lisca/ui";
@@ -30,66 +38,116 @@ import {
   normalizeAlignGridState,
   radiansToDegrees,
   setExcludedAlignGridCellsForPosition,
-  type AlignGridToolMode,
   type AlignGridPointerGestureSession,
+  type AlignGridToolMode,
 } from "@lisca/utils";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { createAlignerHttpClient } from "../api/aligner-client";
 import type { RouteId } from "../types";
 
-const demoPositions = [1, 2, 3, 4];
-const demoChannels = [0, 1, 2];
-const demoTimeValues = [0, 12, 24, 36, 48];
-const demoZValues = [0, 1, 2, 3, 4];
-const demoRoiIds = [0, 1, 2, 3, 4, 5, 6, 7];
-
 type ExcludedByPosition = Record<number, AlignGridCellCoord[]>;
-const emptyExcludedCells: AlignGridCellCoord[] = [];
 
-export type AlignDemoState = {
-  pos: number;
-  setPos: (value: number) => void;
-  channel: number;
-  setChannel: (value: number) => void;
-  timeIndex: number;
-  setTimeIndex: (value: number | ((current: number) => number)) => void;
-  zIndex: number;
-  setZIndex: (value: number | ((current: number) => number)) => void;
-  contrastMin: number;
-  setContrastMin: (value: number) => void;
-  contrastMax: number;
-  setContrastMax: (value: number) => void;
+const emptyExcludedCells: AlignGridCellCoord[] = [];
+const alignerClient = createAlignerHttpClient("http://127.0.0.1:8765");
+
+export type AlignState = {
+  workspacePath: string | null;
+  source: AlignerSource | null;
+  setSource: (source: AlignerSource | null) => void;
+  scan: WorkspaceScan | null;
+  scanLoading: boolean;
+  frameLoading: boolean;
+  error: string | null;
+  selection: FrameRequest;
+  setSelection: (patch: Partial<FrameRequest>) => void;
+  contrast: ContrastWindow | null;
+  setContrast: (contrast: ContrastWindow | null) => void;
+  frame: FrameResult | null;
   grid: AlignGridState;
   setGrid: (next: AlignGridState | ((current: AlignGridState) => AlignGridState)) => void;
   toolMode: AlignGridToolMode;
   setToolMode: (mode: AlignGridToolMode) => void;
   excludedCellsByPosition: ExcludedByPosition;
   setExcludedCellsForCurrentPosition: (cells: Iterable<AlignGridCellCoord>) => void;
-  frame: FrameResult | null;
   currentExcludedCells: AlignGridCellCoord[];
   visibleCounts: { included: number; excluded: number };
+  saving: boolean;
+  cropping: boolean;
+  cropProgress: CropRoiProgress | null;
+  status: string | null;
+  saveCurrent: () => Promise<boolean>;
+  cropCurrent: () => Promise<void>;
+  cropBatch: () => Promise<void>;
+  cancelCrop: () => Promise<void>;
+  autoExclude: () => Promise<void>;
 };
+
+function firstOrZero(values: number[] | undefined): number {
+  return values?.[0] ?? 0;
+}
 
 function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n));
 }
 
-export function useAlignDemoState(): AlignDemoState {
-  const [pos, setPos] = useState(demoPositions[0]!);
-  const [channel, setChannel] = useState(demoChannels[0]!);
-  const [timeIndex, setTimeIndex] = useState(0);
-  const [zIndex, setZIndex] = useState(0);
-  const [contrastMin, setContrastMin] = useState(0);
-  const [contrastMax, setContrastMax] = useState(255);
+function selectedIndex(values: number[] | undefined, value: number): number {
+  return Math.max(0, values?.indexOf(value) ?? 0);
+}
+
+function isDoneCropStatus(status: CropRoiProgress["status"]) {
+  return status === "completed" || status === "cancelled" || status === "error";
+}
+
+function buildBboxCsv(
+  frame: FrameResult,
+  grid: AlignGridState,
+  excludedCells: readonly AlignGridCellCoord[],
+): string {
+  const excluded = new Set(excludedCells.map((cell) => `${cell.i}:${cell.j}`));
+  const rows = enumerateVisibleAlignGridCells(frame, grid)
+    .filter((cell) => !excluded.has(`${cell.i}:${cell.j}`))
+    .map((cell, roi) => [roi, cell.x, cell.y, cell.w, cell.h, cell.i, cell.j].join(","));
+  return ["roi,x,y,w,h,i,j", ...rows].join("\n");
+}
+
+function alignStateFromCurrent(state: Pick<AlignState, "grid" | "currentExcludedCells">): SavedAlignState {
+  return {
+    grid: state.grid,
+    excludedCells: state.currentExcludedCells,
+  };
+}
+
+export function useAlignState(): AlignState {
+  const workspace = useShellWorkspace();
+  const [source, setSource] = useState<AlignerSource | null>(null);
+  const [scan, setScan] = useState<WorkspaceScan | null>(null);
+  const [selection, setSelectionRaw] = useState<FrameRequest>({
+    pos: 0,
+    channel: 0,
+    time: 0,
+    z: 0,
+  });
+  const [frame, setFrame] = useState<FrameResult | null>(null);
+  const [contrast, setContrast] = useState<ContrastWindow | null>(null);
   const [grid, setGridRaw] = useState(() => normalizeAlignGridState(createDefaultAlignGrid()));
   const [toolMode, setToolMode] = useState<AlignGridToolMode>("pan");
   const [excludedCellsByPosition, setExcludedCellsByPosition] = useState<ExcludedByPosition>({});
+  const [scanLoading, setScanLoading] = useState(false);
+  const [frameLoading, setFrameLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [cropProgress, setCropProgress] = useState<CropRoiProgress | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
+  const cropRequestIdRef = useRef<string | null>(null);
 
-  const frame = null;
+  const workspacePath = workspace.workspacePath;
   const currentExcludedCells = useMemo(
-    () => excludedCellsByPosition[pos] ?? emptyExcludedCells,
-    [excludedCellsByPosition, pos],
+    () => excludedCellsByPosition[selection.pos] ?? emptyExcludedCells,
+    [excludedCellsByPosition, selection.pos],
   );
+  const cropping = cropProgress != null && !isDoneCropStatus(cropProgress.status);
+
   const visibleCounts = useMemo(
     () =>
       frame
@@ -97,6 +155,10 @@ export function useAlignDemoState(): AlignDemoState {
         : { included: 0, excluded: 0 },
     [currentExcludedCells, frame, grid],
   );
+
+  const setSelection = useCallback((patch: Partial<FrameRequest>) => {
+    setSelectionRaw((current) => ({ ...current, ...patch }));
+  }, []);
 
   const setGrid = useCallback(
     (next: AlignGridState | ((current: AlignGridState) => AlignGridState)) => {
@@ -110,174 +172,340 @@ export function useAlignDemoState(): AlignDemoState {
   const setExcludedCellsForCurrentPosition = useCallback(
     (cells: Iterable<AlignGridCellCoord>) => {
       setExcludedCellsByPosition((current) =>
-        setExcludedAlignGridCellsForPosition(current, pos, cells),
+        setExcludedAlignGridCellsForPosition(current, selection.pos, cells),
       );
     },
-    [pos],
+    [selection.pos],
   );
 
+  useEffect(() => {
+    if (!workspacePath) {
+      setSource(null);
+      setScan(null);
+      setFrame(null);
+      setError(null);
+    }
+  }, [workspacePath]);
+
+  useEffect(() => {
+    if (!source) {
+      setScan(null);
+      setFrame(null);
+      return;
+    }
+    let cancelled = false;
+    setScanLoading(true);
+    setError(null);
+    setStatus("Scanning source");
+    void alignerClient
+      .scanSource(source)
+      .then((nextScan) => {
+        if (cancelled) return;
+        setScan(nextScan);
+        setSelectionRaw({
+          pos: firstOrZero(nextScan.positions),
+          channel: firstOrZero(nextScan.channels),
+          time: firstOrZero(nextScan.times),
+          z: firstOrZero(nextScan.zSlices),
+        });
+        setContrast(null);
+        setGridRaw(normalizeAlignGridState(createDefaultAlignGrid()));
+        setExcludedCellsByPosition({});
+        setStatus("Source loaded");
+      })
+      .catch((cause) => {
+        if (cancelled) return;
+        setScan(null);
+        setFrame(null);
+        setError(cause instanceof Error ? cause.message : String(cause));
+      })
+      .finally(() => {
+        if (!cancelled) setScanLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [source]);
+
+  useEffect(() => {
+    if (!workspacePath || !scan) return;
+    let cancelled = false;
+    void alignerClient
+      .loadAlignState(workspacePath, selection.pos)
+      .then((saved) => {
+        if (cancelled || !saved) return;
+        setGridRaw(normalizeAlignGridState(saved.grid));
+        setExcludedCellsByPosition((current) =>
+          setExcludedAlignGridCellsForPosition(current, selection.pos, saved.excludedCells),
+        );
+        setStatus(`Loaded align/Pos${selection.pos}.json`);
+      })
+      .catch((cause) => {
+        if (!cancelled) setError(cause instanceof Error ? cause.message : String(cause));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [scan, selection.pos, workspacePath]);
+
+  useEffect(() => {
+    if (!source || !scan) return;
+    let cancelled = false;
+    setFrameLoading(true);
+    setError(null);
+    void alignerClient
+      .loadFrame(source, selection, contrast)
+      .then((nextFrame) => {
+        if (cancelled) return;
+        setFrame(nextFrame);
+        const nextContrast = nextFrame.appliedContrast ?? nextFrame.suggestedContrast ?? null;
+        setContrast((current) =>
+          current?.min === nextContrast?.min && current?.max === nextContrast?.max
+            ? current
+            : nextContrast,
+        );
+      })
+      .catch((cause) => {
+        if (cancelled) return;
+        setFrame(null);
+        setError(cause instanceof Error ? cause.message : String(cause));
+      })
+      .finally(() => {
+        if (!cancelled) setFrameLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [contrast, scan, selection, source]);
+
+  const saveCurrent = useCallback(async () => {
+    if (!workspacePath || !frame) return false;
+    setSaving(true);
+    setError(null);
+    try {
+      const csv = buildBboxCsv(frame, grid, currentExcludedCells);
+      const result = await alignerClient.saveBbox(
+        workspacePath,
+        selection.pos,
+        csv,
+        alignStateFromCurrent({ grid, currentExcludedCells }),
+      );
+      if (!result.ok) throw new Error(result.error ?? "Save failed");
+      setStatus(`Saved bbox/Pos${selection.pos}.csv`);
+      return true;
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }, [currentExcludedCells, frame, grid, selection.pos, workspacePath]);
+
+  const runCrop = useCallback(
+    async (positions: number[], overwrite: boolean) => {
+      if (!workspacePath || !source || positions.length === 0) return;
+      const requestId = `crop-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      cropRequestIdRef.current = requestId;
+      setError(null);
+      setCropProgress({
+        requestId,
+        status: "queued",
+        position: null,
+        completedPositions: 0,
+        totalPositions: positions.length,
+        completedRois: 0,
+        totalRois: 0,
+        message: "Queued crop",
+      });
+      const stop = alignerClient.onCropRoiProgress(requestId, (progress) => {
+        setCropProgress(progress);
+        if (isDoneCropStatus(progress.status)) {
+          if (progress.status === "error") setError(progress.error ?? "Crop failed");
+          stop();
+        }
+      });
+      try {
+        await alignerClient.cropRoi({
+          requestId,
+          workspacePath,
+          source,
+          positions,
+          overwrite,
+          outputFormat: "tiff",
+        });
+      } catch (cause) {
+        stop();
+        setError(cause instanceof Error ? cause.message : String(cause));
+        setCropProgress((current) =>
+          current
+            ? {
+                ...current,
+                status: "error",
+                error: cause instanceof Error ? cause.message : String(cause),
+              }
+            : current,
+        );
+      }
+    },
+    [source, workspacePath],
+  );
+
+  const cropCurrent = useCallback(async () => {
+    if (!workspacePath || !source || !frame) return;
+    const saved = await saveCurrent();
+    if (!saved) return;
+    const exists = await alignerClient.roiPosExists(workspacePath, selection.pos);
+    const overwrite = exists
+      ? window.confirm(`roi/Pos${selection.pos} already exists. Overwrite it?`)
+      : false;
+    if (exists && !overwrite) return;
+    await runCrop([selection.pos], overwrite);
+  }, [frame, runCrop, saveCurrent, selection.pos, source, workspacePath]);
+
+  const cropBatch = useCallback(async () => {
+    if (!workspacePath || !source) return;
+    const savedPositions = await alignerClient.listSavedBboxPositions(workspacePath);
+    if (savedPositions.length === 0) {
+      setStatus("No saved bbox CSVs found");
+      return;
+    }
+    const existing = (
+      await Promise.all(
+        savedPositions.map(async (pos) => ({
+          pos,
+          exists: await alignerClient.roiPosExists(workspacePath, pos),
+        })),
+      )
+    )
+      .filter((entry) => entry.exists)
+      .map((entry) => entry.pos);
+    const overwrite =
+      existing.length > 0
+        ? window.confirm(`ROI output exists for ${existing.length} position(s). Overwrite them?`)
+        : false;
+    const positions = overwrite
+      ? savedPositions
+      : savedPositions.filter((pos) => !existing.includes(pos));
+    if (positions.length === 0) return;
+    await runCrop(positions, overwrite);
+  }, [runCrop, source, workspacePath]);
+
+  const cancelCrop = useCallback(async () => {
+    const requestId = cropRequestIdRef.current;
+    if (!requestId) return;
+    setCropProgress(await alignerClient.cancelCropRoi(requestId));
+  }, []);
+
+  const autoExclude = useCallback(async () => {
+    if (!source || !frame) return;
+    const cells = enumerateVisibleAlignGridCells(frame, grid);
+    if (cells.length === 0) return;
+    setStatus("Auto exclude preview");
+    try {
+      const preview = await alignerClient.autoExcludePreview({
+        source,
+        selection,
+        cells,
+      });
+      const autoExcluded = preview.cellScores
+        .filter((cell) => cell.score <= preview.threshold)
+        .map(({ i, j }) => ({ i, j }));
+      const apply = window.confirm(
+        [
+          `Auto exclude ${autoExcluded.length} of ${preview.eligibleCellCount} eligible cells?`,
+          `Threshold: ${preview.threshold.toFixed(3)}`,
+          `Score range: ${preview.scoreMin.toFixed(3)} - ${preview.scoreMax.toFixed(3)}`,
+        ].join("\n"),
+      );
+      if (!apply) {
+        setStatus("Auto exclude preview cancelled");
+        return;
+      }
+      setExcludedCellsForCurrentPosition(
+        mergeExcludedAlignGridCells(currentExcludedCells, autoExcluded),
+      );
+      setStatus(`Auto excluded ${autoExcluded.length} of ${preview.eligibleCellCount} cells`);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    }
+  }, [currentExcludedCells, frame, grid, selection, setExcludedCellsForCurrentPosition, source]);
+
   return {
-    pos,
-    setPos,
-    channel,
-    setChannel,
-    timeIndex,
-    setTimeIndex,
-    zIndex,
-    setZIndex,
-    contrastMin,
-    setContrastMin,
-    contrastMax,
-    setContrastMax,
+    workspacePath,
+    source,
+    setSource,
+    scan,
+    scanLoading,
+    frameLoading,
+    error,
+    selection,
+    setSelection,
+    contrast,
+    setContrast,
+    frame,
     grid,
     setGrid,
     toolMode,
     setToolMode,
     excludedCellsByPosition,
     setExcludedCellsForCurrentPosition,
-    frame,
     currentExcludedCells,
     visibleCounts,
+    saving,
+    cropping,
+    cropProgress,
+    status,
+    saveCurrent,
+    cropCurrent,
+    cropBatch,
+    cancelCrop,
+    autoExclude,
   };
 }
 
-function AlignFrameNavigation({ state }: { state: AlignDemoState }) {
-  const positionOptions = useMemo(() => toNavigationOptions(demoPositions), []);
-  const channelOptions = useMemo(() => toNavigationOptions(demoChannels), []);
-
-  const timeMax = Math.max(0, demoTimeValues.length - 1);
-  const zMax = Math.max(0, demoZValues.length - 1);
-  const posIndex = findNavigationOptionIndex(positionOptions, state.pos);
-  const chIndex = findNavigationOptionIndex(channelOptions, state.channel);
-
-  return (
-    <FrameNavigation
-      position={{
-        value: state.pos,
-        options: positionOptions,
-        disabled: false,
-        onChange: state.setPos,
-        previousDisabled: posIndex <= 0,
-        nextDisabled: posIndex >= positionOptions.length - 1,
-        onPrevious: () => {
-          const next = stepNavigationValue(positionOptions, state.pos, -1);
-          if (next != null) state.setPos(next);
-        },
-        onNext: () => {
-          const next = stepNavigationValue(positionOptions, state.pos, 1);
-          if (next != null) state.setPos(next);
-        },
-      }}
-      channel={{
-        value: state.channel,
-        options: channelOptions,
-        disabled: false,
-        onChange: state.setChannel,
-        previousDisabled: chIndex <= 0,
-        nextDisabled: chIndex >= channelOptions.length - 1,
-        onPrevious: () => {
-          const next = stepNavigationValue(channelOptions, state.channel, -1);
-          if (next != null) state.setChannel(next);
-        },
-        onNext: () => {
-          const next = stepNavigationValue(channelOptions, state.channel, 1);
-          if (next != null) state.setChannel(next);
-        },
-      }}
-      timepoint={{
-        value: state.timeIndex,
-        min: 0,
-        max: timeMax,
-        step: 1,
-        disabled: demoTimeValues.length <= 1,
-        onChange: (i: number) => state.setTimeIndex(clamp(Math.round(i), 0, timeMax)),
-        onCommit: (i: number) => state.setTimeIndex(clamp(Math.round(i), 0, timeMax)),
-        previousDisabled: demoTimeValues.length <= 1 || state.timeIndex <= 0,
-        nextDisabled: demoTimeValues.length <= 1 || state.timeIndex >= timeMax,
-        onPrevious: () => state.setTimeIndex((t) => Math.max(0, t - 1)),
-        onNext: () => state.setTimeIndex((t) => Math.min(timeMax, t + 1)),
-      }}
-      zPlane={{
-        value: state.zIndex,
-        min: 0,
-        max: zMax,
-        step: 1,
-        disabled: demoZValues.length <= 1,
-        onChange: (i: number) => state.setZIndex(clamp(Math.round(i), 0, zMax)),
-        onCommit: (i: number) => state.setZIndex(clamp(Math.round(i), 0, zMax)),
-        previousDisabled: demoZValues.length <= 1 || state.zIndex <= 0,
-        nextDisabled: demoZValues.length <= 1 || state.zIndex >= zMax,
-        onPrevious: () => state.setZIndex((z) => Math.max(0, z - 1)),
-        onNext: () => state.setZIndex((z) => Math.min(zMax, z + 1)),
-      }}
-    />
-  );
-}
-
-function InspectFrameNavigation() {
-  const positionOptions = useMemo(() => toNavigationOptions(demoPositions), []);
-  const channelOptions = useMemo(() => toNavigationOptions(demoChannels), []);
-  const roiOptions = useMemo(() => toNavigationOptions(demoRoiIds), []);
-  const [pos, setPos] = useState(demoPositions[0]!);
-  const [channel, setChannel] = useState(demoChannels[0]!);
-  const [roi, setRoi] = useState(demoRoiIds[0]!);
-  const [timeIndex, setTimeIndex] = useState(0);
-  const [zIndex, setZIndex] = useState(0);
-
-  const timeMax = Math.max(0, demoTimeValues.length - 1);
-  const zMax = Math.max(0, demoZValues.length - 1);
-  const posIndex = findNavigationOptionIndex(positionOptions, pos);
-  const chIndex = findNavigationOptionIndex(channelOptions, channel);
-  const roiIndex = findNavigationOptionIndex(roiOptions, roi);
+function AlignFrameNavigation({ state }: { state: AlignState }) {
+  const positionOptions = useMemo(() => toNavigationOptions(state.scan?.positions ?? []), [state.scan]);
+  const channelOptions = useMemo(() => toNavigationOptions(state.scan?.channels ?? []), [state.scan]);
+  const timeIndex = selectedIndex(state.scan?.times, state.selection.time);
+  const zIndex = selectedIndex(state.scan?.zSlices, state.selection.z);
+  const timeMax = Math.max(0, (state.scan?.times.length ?? 1) - 1);
+  const zMax = Math.max(0, (state.scan?.zSlices.length ?? 1) - 1);
+  const posIndex = findNavigationOptionIndex(positionOptions, state.selection.pos);
+  const chIndex = findNavigationOptionIndex(channelOptions, state.selection.channel);
+  const disabled = !state.scan || state.cropping;
 
   return (
     <FrameNavigation
       position={{
-        value: pos,
+        value: state.selection.pos,
         options: positionOptions,
-        disabled: false,
-        onChange: setPos,
-        previousDisabled: posIndex <= 0,
-        nextDisabled: posIndex >= positionOptions.length - 1,
+        disabled,
+        onChange: (pos) => state.setSelection({ pos }),
+        previousDisabled: disabled || posIndex <= 0,
+        nextDisabled: disabled || posIndex >= positionOptions.length - 1,
         onPrevious: () => {
-          const next = stepNavigationValue(positionOptions, pos, -1);
-          if (next != null) setPos(next);
+          const next = stepNavigationValue(positionOptions, state.selection.pos, -1);
+          if (next != null) state.setSelection({ pos: next });
         },
         onNext: () => {
-          const next = stepNavigationValue(positionOptions, pos, 1);
-          if (next != null) setPos(next);
+          const next = stepNavigationValue(positionOptions, state.selection.pos, 1);
+          if (next != null) state.setSelection({ pos: next });
         },
       }}
       channel={{
-        value: channel,
+        value: state.selection.channel,
         options: channelOptions,
-        disabled: false,
-        onChange: setChannel,
-        previousDisabled: chIndex <= 0,
-        nextDisabled: chIndex >= channelOptions.length - 1,
+        disabled,
+        onChange: (channel) => state.setSelection({ channel }),
+        previousDisabled: disabled || chIndex <= 0,
+        nextDisabled: disabled || chIndex >= channelOptions.length - 1,
         onPrevious: () => {
-          const next = stepNavigationValue(channelOptions, channel, -1);
-          if (next != null) setChannel(next);
+          const next = stepNavigationValue(channelOptions, state.selection.channel, -1);
+          if (next != null) state.setSelection({ channel: next });
         },
         onNext: () => {
-          const next = stepNavigationValue(channelOptions, channel, 1);
-          if (next != null) setChannel(next);
-        },
-      }}
-      roi={{
-        value: roi,
-        options: roiOptions,
-        disabled: false,
-        onChange: setRoi,
-        previousDisabled: roiIndex <= 0,
-        nextDisabled: roiIndex >= roiOptions.length - 1,
-        onPrevious: () => {
-          const next = stepNavigationValue(roiOptions, roi, -1);
-          if (next != null) setRoi(next);
-        },
-        onNext: () => {
-          const next = stepNavigationValue(roiOptions, roi, 1);
-          if (next != null) setRoi(next);
+          const next = stepNavigationValue(channelOptions, state.selection.channel, 1);
+          if (next != null) state.setSelection({ channel: next });
         },
       }}
       timepoint={{
@@ -285,99 +513,98 @@ function InspectFrameNavigation() {
         min: 0,
         max: timeMax,
         step: 1,
-        disabled: demoTimeValues.length <= 1,
-        onChange: (i: number) => setTimeIndex(clamp(Math.round(i), 0, timeMax)),
-        onCommit: (i: number) => setTimeIndex(clamp(Math.round(i), 0, timeMax)),
-        previousDisabled: demoTimeValues.length <= 1 || timeIndex <= 0,
-        nextDisabled: demoTimeValues.length <= 1 || timeIndex >= timeMax,
-        onPrevious: () => setTimeIndex((t) => Math.max(0, t - 1)),
-        onNext: () => setTimeIndex((t) => Math.min(timeMax, t + 1)),
+        disabled: disabled || timeMax <= 0,
+        onChange: (i) =>
+          state.setSelection({ time: state.scan?.times[clamp(Math.round(i), 0, timeMax)] ?? 0 }),
+        onCommit: (i) =>
+          state.setSelection({ time: state.scan?.times[clamp(Math.round(i), 0, timeMax)] ?? 0 }),
+        previousDisabled: disabled || timeIndex <= 0,
+        nextDisabled: disabled || timeIndex >= timeMax,
+        onPrevious: () =>
+          state.setSelection({ time: state.scan?.times[Math.max(0, timeIndex - 1)] ?? 0 }),
+        onNext: () =>
+          state.setSelection({ time: state.scan?.times[Math.min(timeMax, timeIndex + 1)] ?? 0 }),
       }}
       zPlane={{
         value: zIndex,
         min: 0,
         max: zMax,
         step: 1,
-        disabled: demoZValues.length <= 1,
-        onChange: (i: number) => setZIndex(clamp(Math.round(i), 0, zMax)),
-        onCommit: (i: number) => setZIndex(clamp(Math.round(i), 0, zMax)),
-        previousDisabled: demoZValues.length <= 1 || zIndex <= 0,
-        nextDisabled: demoZValues.length <= 1 || zIndex >= zMax,
-        onPrevious: () => setZIndex((z) => Math.max(0, z - 1)),
-        onNext: () => setZIndex((z) => Math.min(zMax, z + 1)),
+        disabled: disabled || zMax <= 0,
+        onChange: (i) =>
+          state.setSelection({ z: state.scan?.zSlices[clamp(Math.round(i), 0, zMax)] ?? 0 }),
+        onCommit: (i) =>
+          state.setSelection({ z: state.scan?.zSlices[clamp(Math.round(i), 0, zMax)] ?? 0 }),
+        previousDisabled: disabled || zIndex <= 0,
+        nextDisabled: disabled || zIndex >= zMax,
+        onPrevious: () =>
+          state.setSelection({ z: state.scan?.zSlices[Math.max(0, zIndex - 1)] ?? 0 }),
+        onNext: () =>
+          state.setSelection({ z: state.scan?.zSlices[Math.min(zMax, zIndex + 1)] ?? 0 }),
       }}
     />
   );
 }
 
-export function LeftPanel(props: { routeId: RouteId; alignDemo?: AlignDemoState }) {
+export function LeftPanel(props: { routeId: RouteId; alignState?: AlignState }) {
+  if (props.routeId !== "align" || !props.alignState) return null;
   return (
     <div className="flex min-h-0 flex-col gap-2 p-3">
-      {props.routeId === "align" && props.alignDemo ? (
-        <>
-          <AlignFrameNavigation state={props.alignDemo} />
-          <DockContrastControls state={props.alignDemo} />
-        </>
-      ) : (
-        <InspectFrameNavigation />
-      )}
+      <AlignFrameNavigation state={props.alignState} />
+      <DockContrastControls state={props.alignState} />
     </div>
   );
 }
 
-function DockContrastControls({ state }: { state: AlignDemoState }) {
+function DockContrastControls({ state }: { state: AlignState }) {
+  const domain = state.frame?.contrastDomain ?? { min: 0, max: 255 };
+  const value = state.contrast ?? state.frame?.appliedContrast ?? { min: domain.min, max: domain.max };
   return (
     <ContrastControl
       aria-label="Contrast"
-      domainMax={255}
-      domainMin={0}
-      maxValue={state.contrastMax}
-      minValue={state.contrastMin}
+      autoRangeDisabled={!state.frame || state.cropping}
+      disabled={!state.frame || state.cropping}
+      domainMax={domain.max}
+      domainMin={domain.min}
+      maxValue={value.max}
+      minValue={value.min}
       role="region"
       sectionClassName="min-h-0 shrink-0"
       sectionContentClassName="flex min-h-0 flex-col overflow-auto"
-      onAutoRange={() => {
-        state.setContrastMin(24);
-        state.setContrastMax(232);
-      }}
-      onMaxCommit={state.setContrastMax}
-      onMinCommit={state.setContrastMin}
+      onAutoRange={() => state.setContrast(null)}
+      onMaxCommit={(max) => state.setContrast({ min: value.min, max })}
+      onMinCommit={(min) => state.setContrast({ min, max: value.max })}
     />
   );
 }
 
-export function BottomPanel(props: { routeId: RouteId; alignDemo?: AlignDemoState }) {
+export function BottomPanel(props: { routeId: RouteId; alignState?: AlignState }) {
+  if (props.routeId !== "align" || !props.alignState) return null;
   return (
     <div className="flex h-full min-h-0 w-full gap-3 p-3">
-      {props.routeId === "align" && props.alignDemo ? (
-        <>
-          <AlignToolSection state={props.alignDemo} />
-          <AlignSaveSection state={props.alignDemo} />
-        </>
-      ) : (
-        <Section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden" title="Contrast">
-          <p className="text-muted-foreground text-xs">Inspect contrast controls land here next.</p>
-        </Section>
-      )}
+      <AlignToolSection state={props.alignState} />
+      <AlignSaveSection state={props.alignState} />
     </div>
   );
 }
 
-function AlignToolSection({ state }: { state: AlignDemoState }) {
+function AlignToolSection({ state }: { state: AlignState }) {
   return (
     <AlignTools
       mode={state.toolMode}
       sectionClassName="flex min-h-0 min-w-0 flex-1 basis-0 flex-col"
       sectionContentClassName="flex min-h-0 flex-1 flex-col"
-      onModeChange={state.setToolMode}
+      onModeChange={(mode) => {
+        if (!state.cropping) state.setToolMode(mode);
+      }}
     />
   );
 }
 
-function AlignSaveSection({ state }: { state: AlignDemoState }) {
-  const bboxPath = `bbox/Pos${state.pos}.csv`;
-  const alignPath = `align/Pos${state.pos}.json`;
-  const roiPath = `roi/Pos${state.pos}.tif`;
+function AlignSaveSection({ state }: { state: AlignState }) {
+  const pos = state.selection.pos;
+  const canSave = Boolean(state.workspacePath && state.frame && !state.cropping);
+  const canCrop = Boolean(state.workspacePath && state.source && state.frame && !state.cropping);
 
   return (
     <Section
@@ -386,16 +613,41 @@ function AlignSaveSection({ state }: { state: AlignDemoState }) {
       title="Save"
     >
       <div className="grid min-w-0 grid-cols-3 gap-2">
-        <OutputPathField value={bboxPath} />
-        <OutputPathField value={alignPath} />
-        <OutputPathField value={roiPath} />
+        <OutputPathField value={`bbox/Pos${pos}.csv`} />
+        <OutputPathField value={`align/Pos${pos}.json`} />
+        <OutputPathField value={`roi/Pos${pos}`} />
       </div>
-      <div className="grid grid-cols-2 gap-2">
-        <Button className="w-full justify-center" disabled size="sm" type="button" variant="outline">
+      <div className="grid grid-cols-3 gap-2">
+        <Button
+          className="w-full justify-center"
+          disabled={!canSave || state.saving}
+          loading={state.saving}
+          size="sm"
+          type="button"
+          variant="outline"
+          onClick={() => void state.saveCurrent()}
+        >
           Save
         </Button>
-        <Button className="w-full justify-center" disabled size="sm" type="button" variant="outline">
+        <Button
+          className="w-full justify-center"
+          disabled={!canCrop}
+          size="sm"
+          type="button"
+          variant="outline"
+          onClick={() => void state.cropCurrent()}
+        >
           Crop
+        </Button>
+        <Button
+          className="w-full justify-center"
+          disabled={!state.workspacePath || !state.source || state.cropping}
+          size="sm"
+          type="button"
+          variant="outline"
+          onClick={() => void state.cropBatch()}
+        >
+          Batch
         </Button>
       </div>
     </Section>
@@ -414,7 +666,7 @@ function OutputPathField({ value }: { value: string }) {
   );
 }
 
-function AlignGridPanel({ state }: { state: AlignDemoState }) {
+function AlignGridPanel({ state }: { state: AlignState }) {
   const shapeOptions = useMemo<NavigationOption<AlignGridShape>[]>(
     () => [
       { label: "Rectangle", value: "rect" },
@@ -422,8 +674,9 @@ function AlignGridPanel({ state }: { state: AlignDemoState }) {
     ],
     [],
   );
-
+  const disabled = state.cropping || !state.frame;
   const updateGrid = (patch: Partial<AlignGridState>) => {
+    if (disabled) return;
     state.setGrid((grid) => ({ ...grid, ...patch }));
   };
 
@@ -442,7 +695,7 @@ function AlignGridPanel({ state }: { state: AlignDemoState }) {
       onOverlayVisibleChange={(enabled) => updateGrid({ enabled })}
       onVectorAChange={(spacingA) => updateGrid({ spacingA })}
       onVectorBChange={(spacingB) => updateGrid({ spacingB })}
-      onReset={() => state.setGrid(createDefaultAlignGrid())}
+      onReset={() => !disabled && state.setGrid(createDefaultAlignGrid())}
       onRotationDegreesChange={(degrees) => updateGrid({ rotation: degreesToRadians(degrees) })}
       onShapeChange={(shape) => updateGrid({ shape })}
       overlayOpacity={state.grid.opacity}
@@ -458,7 +711,7 @@ function AlignGridPanel({ state }: { state: AlignDemoState }) {
   );
 }
 
-function AlignSelectionPanel({ state }: { state: AlignDemoState }) {
+function AlignSelectionPanel({ state }: { state: AlignState }) {
   const visibleCells = useMemo(
     () =>
       state.frame
@@ -468,6 +721,7 @@ function AlignSelectionPanel({ state }: { state: AlignDemoState }) {
   );
   const hasVisibleCells = visibleCells.length > 0;
   const hasExcludedCells = state.currentExcludedCells.length > 0;
+  const disabled = state.cropping || !state.frame;
 
   return (
     <Section
@@ -487,7 +741,7 @@ function AlignSelectionPanel({ state }: { state: AlignDemoState }) {
       </div>
       <Button
         className="w-full"
-        disabled={!hasExcludedCells}
+        disabled={disabled || !hasExcludedCells}
         size="sm"
         type="button"
         variant="outline"
@@ -497,7 +751,7 @@ function AlignSelectionPanel({ state }: { state: AlignDemoState }) {
       </Button>
       <div className="grid grid-cols-2 gap-2">
         <Button
-          disabled={!hasVisibleCells}
+          disabled={disabled || !hasVisibleCells}
           size="sm"
           type="button"
           variant="outline"
@@ -506,7 +760,7 @@ function AlignSelectionPanel({ state }: { state: AlignDemoState }) {
           Exclude all
         </Button>
         <Button
-          disabled={!hasVisibleCells}
+          disabled={disabled || !hasVisibleCells}
           size="sm"
           type="button"
           variant="outline"
@@ -521,24 +775,30 @@ function AlignSelectionPanel({ state }: { state: AlignDemoState }) {
           Exclude edge
         </Button>
       </div>
-      <Button className="w-full" disabled size="sm" type="button" variant="outline">
+      <Button
+        className="w-full"
+        disabled={disabled || !hasVisibleCells}
+        size="sm"
+        type="button"
+        variant="outline"
+        onClick={() => void state.autoExclude()}
+      >
         Auto exclude
       </Button>
     </Section>
   );
 }
 
-function useAlignCanvasHandlers(state: AlignDemoState) {
+function useAlignCanvasHandlers(state: AlignState) {
   const gestureRef = useRef<AlignGridPointerGestureSession | null>(null);
 
   const handlePointerDown = useCallback(
     (event: AlignCanvasPointerEvent) => {
-      if (!event.viewport || !state.grid.enabled) return;
+      if (state.cropping || !event.viewport || !state.grid.enabled) return;
       if (event.pointerType === "mouse" && event.button !== 0) {
         event.preventDefault();
         return;
       }
-
       const session = beginAlignGridPointerGesture(state.grid, event, state.toolMode);
       if (!session) return;
       event.preventDefault();
@@ -565,11 +825,7 @@ function useAlignCanvasHandlers(state: AlignDemoState) {
     event.releasePointer();
   }, []);
 
-  return {
-    handlePointerDown,
-    handlePointerMove,
-    handlePointerEnd,
-  };
+  return { handlePointerDown, handlePointerMove, handlePointerEnd };
 }
 
 function cursorForAlignTool(toolMode: AlignGridToolMode, gridEnabled: boolean) {
@@ -579,66 +835,97 @@ function cursorForAlignTool(toolMode: AlignGridToolMode, gridEnabled: boolean) {
   return "zoom-in";
 }
 
-function AlignCanvasPanel({ state }: { state: AlignDemoState }) {
+function AlignCanvasPanel({ state }: { state: AlignState }) {
   const { handlePointerDown, handlePointerMove, handlePointerEnd } = useAlignCanvasHandlers(state);
+  const messages = useMemo(() => {
+    const items = [];
+    if (state.error) items.push({ text: state.error, tone: "error" as const });
+    else if (state.status) items.push({ text: state.status });
+    return items;
+  }, [state.error, state.status]);
 
-  if (!state.frame) {
-    return <div className="flex h-full min-h-0 flex-col bg-background" />;
-  }
+  const emptyText = !state.workspacePath
+    ? "Pick a workspace."
+    : !state.source
+      ? "Pick a source."
+      : state.scanLoading
+        ? "Scanning source..."
+        : "No frame loaded.";
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-muted/20">
       <AlignCanvasSurface
         className="min-h-0 flex-1"
         cursor={cursorForAlignTool(state.toolMode, state.grid.enabled)}
+        emptyText={emptyText}
         excludedCells={state.currentExcludedCells}
         frame={state.frame}
         grid={state.grid}
+        loading={state.scanLoading || state.frameLoading}
+        messages={messages}
         onVirtualPointerCancel={handlePointerEnd}
         onVirtualPointerDown={handlePointerDown}
         onVirtualPointerMove={handlePointerMove}
         onVirtualPointerUp={handlePointerEnd}
       />
+      <CropProgressModal state={state} />
     </div>
   );
 }
 
-export function MainPanel(props: { routeId: RouteId; alignDemo?: AlignDemoState }) {
-  if (props.routeId !== "align" || !props.alignDemo) {
-    return (
-      <div className="flex h-full min-h-0 flex-col bg-muted/20">
-        <div className="flex min-h-0 flex-1 items-center justify-center p-4">
-          <div className="max-w-md rounded-lg border border-dashed border-border bg-card/80 px-6 py-10 text-center shadow-sm backdrop-blur-sm">
-            <p className="font-medium text-foreground">Inspect canvas</p>
-            <p className="mt-2 text-muted-foreground text-sm">
-              Inspector canvas wiring lands here next.
-            </p>
+function CropProgressModal({ state }: { state: AlignState }) {
+  const progress = state.cropProgress;
+  if (!progress || isDoneCropStatus(progress.status)) return null;
+  const total = Math.max(1, progress.totalRois || progress.totalPositions || 1);
+  const done = progress.totalRois ? progress.completedRois : progress.completedPositions;
+  const pct = clamp((done / total) * 100, 0, 100);
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/55 px-6 backdrop-blur-sm">
+      <div
+        aria-modal="true"
+        className="w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-2xl"
+        role="dialog"
+      >
+        <div className="flex items-center gap-3">
+          <Spinner className="size-4" />
+          <div className="min-w-0">
+            <div className="font-medium text-foreground">Cropping ROI output</div>
+            <div className="truncate text-muted-foreground text-sm">
+              {progress.message ?? "Working"}
+            </div>
           </div>
         </div>
+        <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted">
+          <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
+        </div>
+        <div className="mt-2 text-muted-foreground text-xs tabular-nums">
+          {done} / {total}
+        </div>
+        <Button
+          className="mt-4 w-full justify-center"
+          size="sm"
+          type="button"
+          variant="outline"
+          onClick={() => void state.cancelCrop()}
+        >
+          Cancel
+        </Button>
       </div>
-    );
-  }
-
-  return <AlignCanvasPanel state={props.alignDemo} />;
+    </div>
+  );
 }
 
-export function RightPanel(props: { routeId: RouteId; alignDemo?: AlignDemoState }) {
-  if (props.routeId === "align" && props.alignDemo) {
-    return (
-      <div className="flex min-h-0 flex-col gap-2 overflow-auto p-3">
-        <AlignGridPanel state={props.alignDemo} />
-        <AlignSelectionPanel state={props.alignDemo} />
-      </div>
-    );
-  }
+export function MainPanel(props: { routeId: RouteId; alignState?: AlignState }) {
+  if (props.routeId !== "align" || !props.alignState) return null;
+  return <AlignCanvasPanel state={props.alignState} />;
+}
 
+export function RightPanel(props: { routeId: RouteId; alignState?: AlignState }) {
+  if (props.routeId !== "align" || !props.alignState) return null;
   return (
-    <div className="flex min-h-0 flex-col gap-2 p-3">
-      <Section description="Stats & metadata placeholders" title="Inspect inspector">
-        <div className="rounded-md border border-dashed border-border px-2 py-10 text-center text-muted-foreground text-xs">
-          Inspector stats (stub)
-        </div>
-      </Section>
+    <div className="flex min-h-0 flex-col gap-2 overflow-auto p-3">
+      <AlignGridPanel state={props.alignState} />
+      <AlignSelectionPanel state={props.alignState} />
     </div>
   );
 }

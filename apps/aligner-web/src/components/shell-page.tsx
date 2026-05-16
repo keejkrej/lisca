@@ -1,31 +1,31 @@
 import { AppShell } from "@lisca/ui";
 
 import { Navbar } from "./navbar";
-import { BottomPanel, LeftPanel, MainPanel, RightPanel, useAlignDemoState } from "./panels";
+import { BottomPanel, LeftPanel, MainPanel, RightPanel, useAlignState } from "./panels";
 import type { RouteId } from "../types";
 
 export function ShellPage(props: { routeId: RouteId }) {
-  const alignDemo = useAlignDemoState();
+  const alignState = useAlignState();
 
   return (
     <AppShell>
       <AppShell.Header>
-        <Navbar routeId={props.routeId} />
+        <Navbar routeId={props.routeId} onSourcePicked={alignState.setSource} />
       </AppShell.Header>
       <AppShell.Body>
         <AppShell.Left widthClass="w-72">
-          <LeftPanel alignDemo={alignDemo} routeId={props.routeId} />
+          <LeftPanel alignState={alignState} routeId={props.routeId} />
         </AppShell.Left>
         <AppShell.MainColumn>
           <AppShell.Main>
-            <MainPanel alignDemo={alignDemo} routeId={props.routeId} />
+            <MainPanel alignState={alignState} routeId={props.routeId} />
           </AppShell.Main>
           <AppShell.Dock>
-            <BottomPanel alignDemo={alignDemo} routeId={props.routeId} />
+            <BottomPanel alignState={alignState} routeId={props.routeId} />
           </AppShell.Dock>
         </AppShell.MainColumn>
         <AppShell.Right widthClass="w-72">
-          <RightPanel alignDemo={alignDemo} routeId={props.routeId} />
+          <RightPanel alignState={alignState} routeId={props.routeId} />
         </AppShell.Right>
       </AppShell.Body>
     </AppShell>

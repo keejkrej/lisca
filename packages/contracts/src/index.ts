@@ -240,6 +240,65 @@ export type AlignOutputPaths = {
   roi: string;
 };
 
+export type CropOutputFormat = "tiff";
+
+export type CropRoiStatus = "queued" | "running" | "completed" | "cancelled" | "error";
+
+export type CropRoiRequest = {
+  requestId: string;
+  workspacePath: string;
+  source: AlignerSource;
+  positions: number[];
+  overwrite: boolean;
+  outputFormat?: CropOutputFormat;
+};
+
+export type CropRoiResponse = {
+  requestId: string;
+  status: CropRoiStatus;
+};
+
+export type CropRoiProgress = {
+  requestId: string;
+  status: CropRoiStatus;
+  position: number | null;
+  completedPositions: number;
+  totalPositions: number;
+  completedRois: number;
+  totalRois: number;
+  message: string | null;
+  error?: string;
+};
+
+export type RoiPosExistsResponse = {
+  exists: boolean;
+};
+
+export type AlignerDataPort = {
+  scanSource(source: AlignerSource): Promise<WorkspaceScan>;
+  loadFrame(
+    source: AlignerSource,
+    request: FrameRequest,
+    contrast?: ContrastWindow | null,
+  ): Promise<FrameResult>;
+  loadAlignState(workspacePath: string, pos: number): Promise<SavedAlignState | null>;
+  saveBbox(
+    workspacePath: string,
+    pos: number,
+    csv: string,
+    alignState: SavedAlignState,
+  ): Promise<SaveBboxResponse>;
+  autoExcludePreview(request: AutoExcludePreviewRequest): Promise<AutoExcludePreviewResponse>;
+  listSavedBboxPositions(workspacePath: string): Promise<number[]>;
+  cropRoi(request: CropRoiRequest): Promise<CropRoiResponse>;
+  cancelCropRoi(requestId: string): Promise<CropRoiProgress>;
+  onCropRoiProgress(
+    requestId: string,
+    onProgress: (progress: CropRoiProgress) => void,
+  ): () => void;
+  roiPosExists(workspacePath: string, pos: number): Promise<boolean>;
+};
+
 export type AlignCanvasStatusTone = "default" | "error" | "success";
 
 export type AlignCanvasStatusMessage = {

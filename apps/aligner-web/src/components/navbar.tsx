@@ -10,7 +10,7 @@ import {
   cn,
   useShellWorkspace,
 } from "@lisca/ui";
-import type { AlignerHostPort, HostFilePickerMode } from "@lisca/contracts";
+import type { AlignerHostPort, AlignerSource, HostFilePickerMode } from "@lisca/contracts";
 import { useNavigate } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 
@@ -96,7 +96,10 @@ function filePickerTitle(mode: HostFilePickerMode): string {
   return "File";
 }
 
-export function Navbar(props: { routeId: RouteId }) {
+export function Navbar(props: {
+  routeId: RouteId;
+  onSourcePicked: (source: AlignerSource | null) => void;
+}) {
   const navigate = useNavigate();
   const workspace = useShellWorkspace();
   const pickerModeRef = useRef<HostFilePickerMode | null>(null);
@@ -118,17 +121,28 @@ export function Navbar(props: { routeId: RouteId }) {
     const mode = pickerModeRef.current;
     if (mode === "workspace") {
       workspace.setWorkspacePath(path);
+      props.onSourcePicked(null);
       return;
     }
-    if (mode === "tif_dir" || mode === "jpg_dir") {
+    if (mode === "tif_dir") {
       workspace.setSourcePath(path);
+      props.onSourcePicked({ kind: "tif", path });
+    }
+    if (mode === "jpg_dir") {
+      workspace.setSourcePath(path);
+      props.onSourcePicked({ kind: "jpg", path });
     }
   };
 
   const applyPickFile = (path: string) => {
     const mode = pickerModeRef.current;
-    if (mode === "nd2_file" || mode === "czi_file") {
+    if (mode === "nd2_file") {
       workspace.setSourcePath(path);
+      props.onSourcePicked({ kind: "nd2", path });
+    }
+    if (mode === "czi_file") {
+      workspace.setSourcePath(path);
+      props.onSourcePicked({ kind: "czi", path });
     }
   };
 

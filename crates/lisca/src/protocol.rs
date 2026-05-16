@@ -176,6 +176,67 @@ pub struct SaveBboxResponse {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum CropOutputFormat {
+    Tiff,
+}
+
+impl Default for CropOutputFormat {
+    fn default() -> Self {
+        Self::Tiff
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum CropRoiStatus {
+    Queued,
+    Running,
+    Completed,
+    Cancelled,
+    Error,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CropRoiRequest {
+    pub request_id: String,
+    pub workspace_path: String,
+    pub source: AlignerSource,
+    pub positions: Vec<u32>,
+    pub overwrite: bool,
+    #[serde(default)]
+    pub output_format: CropOutputFormat,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CropRoiResponse {
+    pub request_id: String,
+    pub status: CropRoiStatus,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CropRoiProgress {
+    pub request_id: String,
+    pub status: CropRoiStatus,
+    pub position: Option<u32>,
+    pub completed_positions: u32,
+    pub total_positions: u32,
+    pub completed_rois: u32,
+    pub total_rois: u32,
+    pub message: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct RoiPosExistsResponse {
+    pub exists: bool,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct RoiFrameRequest {
     pub pos: u32,
     pub roi: u32,
