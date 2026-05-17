@@ -32,18 +32,36 @@ import {
   useShellWorkspace,
 } from "@lisca/ui";
 import { useNavigate } from "@tanstack/react-router";
+import { Effect, Exit } from "effect";
 import { ChevronDown, Plus, Tags, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { annotatorBaseUrl, createAnnotatorApi } from "../api";
 import { AnnotationCanvas, type AnnotationTool } from "../annotation-canvas";
+import {
+  effectErrorMessage,
+  loadRoiFrameAnnotationEffect,
+  loadRoiFrameEffect,
+} from "../annotator-effects";
+import {
+  annotatorApi,
+  toAnnotatorErrorMessage,
+  useAnnotationLabelsQuery,
+  useRoiWorkspaceScanQuery,
+  useSaveAnnotationLabelsMutation,
+  useSaveRoiFrameAnnotationMutation,
+} from "../annotator-queries";
+import {
+  currentPosition,
+  currentRoi,
+  requestKey,
+  roiRequestSelectionKey,
+  useAnnotatorStore,
+} from "../annotator-store";
 import {
   annotationValuesEqual,
   cloneAnnotationValue,
   createEmptyMask,
-  decodeMaskBase64Png,
   encodeMaskToBase64Png,
-  framePayloadToResult,
   labelColorStyle,
   maskHasPixels,
   type AnnotationValue,
@@ -56,16 +74,6 @@ type AnnotationHistory = {
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
-}
-
-function currentPosition(scan: RoiWorkspaceScan | null, pos: number | null) {
-  if (!scan || pos == null) return null;
-  return scan.positions.find((entry) => entry.pos === pos) ?? null;
-}
-
-function currentRoi(position: RoiPositionScan | null, roi: number | null) {
-  if (!position || roi == null) return null;
-  return position.rois.find((entry) => entry.roi === roi) ?? null;
 }
 
 function makeRequest(
@@ -86,12 +94,6 @@ function makeRequest(
     time,
     z,
   };
-}
-
-function requestKey(request: RoiFrameRequest | null) {
-  return request
-    ? `${request.pos}:${request.roi}:${request.channel}:${request.time}:${request.z}`
-    : "none";
 }
 
 function emptyValueFor(frame: FrameResult | null): AnnotationValue {
@@ -206,10 +208,7 @@ function labelDraftsFrom(labels: AnnotationLabel[]) {
   return labels.length > 0 ? labels.map((label) => ({ ...label })) : defaultLabelDrafts;
 }
 
-function AnnotatorToolsMenu(props: {
-  workspacePath: string | null;
-  onCreateLabels: () => void;
-}) {
+function AnnotatorToolsMenu(props: { workspacePath: string | null; onCreateLabels: () => void }) {
   return (
     <Menu>
       <MenuTrigger
@@ -239,7 +238,9 @@ function AnnotatorToolsMenu(props: {
           <Tags className="mt-0.5 size-4 shrink-0" aria-hidden />
           <span className="min-w-0">
             <span className="block font-medium text-foreground text-sm">Create labels</span>
-            <span className="block text-muted-foreground text-xs">Write annotations/labels.json</span>
+            <span className="block text-muted-foreground text-xs">
+              Write annotations/labels.json
+            </span>
           </span>
         </MenuItem>
       </MenuPopup>
@@ -427,47 +428,76 @@ function LabelCreationDialog(props: {
 export function AnnotatorShellPage(props: { routeId: string }) {
   const navigate = useNavigate();
   const workspace = useShellWorkspace();
-  const api = useMemo(() => createAnnotatorApi(annotatorBaseUrl()), []);
+  const shellWorkspacePath = workspace.workspacePath;
   const [filePickerOpen, setFilePickerOpen] = useState(false);
-  const [mode, setMode] = useState<AnnotationMode>("classification");
-  const [scan, setScan] = useState<RoiWorkspaceScan | null>(null);
-  const [labels, setLabels] = useState<AnnotationLabel[]>([]);
-  const [scanLoading, setScanLoading] = useState(false);
-  const [scanError, setScanError] = useState<string | null>(null);
-  const [labelDialogOpen, setLabelDialogOpen] = useState(false);
-  const [labelSaving, setLabelSaving] = useState(false);
-  const [labelError, setLabelError] = useState<string | null>(null);
-  const [pos, setPos] = useState<number | null>(null);
-  const [roi, setRoi] = useState<number | null>(null);
-  const [channel, setChannel] = useState<number | null>(null);
-  const [timeIndex, setTimeIndex] = useState(0);
-  const [zIndex, setZIndex] = useState(0);
-  const [frame, setFrame] = useState<FrameResult | null>(null);
-  const [frameLoading, setFrameLoading] = useState(false);
-  const [frameError, setFrameError] = useState<string | null>(null);
-  const [annotationLoading, setAnnotationLoading] = useState(false);
-  const [annotationError, setAnnotationError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [activeLabelId, setActiveLabelId] = useState<string | null>(null);
-  const [tool, setTool] = useState<AnnotationTool>("brush");
-  const [overlayOpacity, setOverlayOpacity] = useState(0.35);
-  const [brushSize, setBrushSize] = useState(4);
-  const [contrastOverride, setContrastOverride] = useState<ContrastWindow | null>(null);
-  const [contrastMin, setContrastMin] = useState(0);
-  const [contrastMax, setContrastMax] = useState(255);
-  const [contrastDomain, setContrastDomain] = useState<ContrastWindow>({ min: 0, max: 255 });
+  const {
+    workspacePath,
+    scan,
+    labels,
+    selection,
+    activeLabelId,
+    mode,
+    tool,
+    brushSize,
+    overlayOpacity,
+    frame,
+    contrast,
+    contrastDomain,
+    contrastMin,
+    contrastMax,
+    scanLoading,
+    frameLoading,
+    annotationLoading,
+    saving,
+    scanError,
+    frameError,
+    annotationError,
+    saveError,
+    labelError,
+    labelDialogOpen,
+    setWorkspacePath,
+    setScan,
+    setLabels,
+    setSelection,
+    setActiveLabelId,
+    setMode,
+    setTool,
+    setBrushSize,
+    setOverlayOpacity,
+    setFrame,
+    setContrast,
+    setContrastState,
+    setScanLoading,
+    setFrameLoading,
+    setAnnotationLoading,
+    setSaving,
+    setScanError,
+    setFrameError,
+    setAnnotationError,
+    setSaveError,
+    setLabelError,
+    setStatus,
+    setLabelDialogOpen,
+  } = useAnnotatorStore();
   const annotation = useAnnotationHistory(frame);
   const resetAnnotation = annotation.reset;
   const selectionChangingRef = useRef(false);
+  const frameLoadIdRef = useRef(0);
+  const annotationLoadIdRef = useRef(0);
+  const scanQuery = useRoiWorkspaceScanQuery(shellWorkspacePath);
+  const labelsQuery = useAnnotationLabelsQuery(shellWorkspacePath);
+  const saveLabelsMutation = useSaveAnnotationLabelsMutation(shellWorkspacePath);
+  const saveAnnotationMutation = useSaveRoiFrameAnnotationMutation(shellWorkspacePath);
 
-  const position = useMemo(() => currentPosition(scan, pos), [pos, scan]);
-  const selectedRoi = useMemo(() => currentRoi(position, roi), [position, roi]);
+  const position = useMemo(() => currentPosition(scan, selection.pos), [scan, selection.pos]);
+  const selectedRoi = useMemo(() => currentRoi(position, selection.roi), [position, selection.roi]);
   const request = useMemo(
-    () => makeRequest(position, selectedRoi, channel, timeIndex, zIndex),
-    [channel, position, selectedRoi, timeIndex, zIndex],
+    () =>
+      makeRequest(position, selectedRoi, selection.channel, selection.timeIndex, selection.zIndex),
+    [position, selectedRoi, selection.channel, selection.timeIndex, selection.zIndex],
   );
-  const activeRequestKey = requestKey(request);
+  const activeSelectionKey = roiRequestSelectionKey(selection);
+  const activeRequestKey = requestKey(position, selectedRoi, selection);
   const activeLabelValue = labels.findIndex((label) => label.id === activeLabelId) + 1;
   const canEdit =
     Boolean(frame && request && labels.length > 0) &&
@@ -497,164 +527,244 @@ export function AnnotatorShellPage(props: { routeId: string }) {
   );
 
   useEffect(() => {
-    if (!workspace.workspacePath) {
-      setScan(null);
-      setLabels([]);
-      setPos(null);
-      setRoi(null);
-      setChannel(null);
-      setFrame(null);
-      resetAnnotation(emptyValueFor(null));
-      return;
-    }
+    setWorkspacePath(shellWorkspacePath);
+  }, [setWorkspacePath, shellWorkspacePath]);
 
-    let cancelled = false;
-    setScanLoading(true);
-    setScanError(null);
-    Promise.all([
-      api.scanRoiWorkspace(workspace.workspacePath),
-      api.loadLabels(workspace.workspacePath),
-    ])
-      .then(([nextScan, nextLabels]) => {
-        if (cancelled) return;
-        setScan(nextScan);
-        setLabels(nextLabels);
-        setActiveLabelId((current) => current ?? nextLabels[0]?.id ?? null);
-      })
-      .catch((cause) => {
-        if (!cancelled) setScanError(cause instanceof Error ? cause.message : String(cause));
-      })
-      .finally(() => {
-        if (!cancelled) setScanLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [api, resetAnnotation, workspace.workspacePath]);
+  useEffect(() => {
+    setScanLoading(Boolean(shellWorkspacePath && (scanQuery.isFetching || labelsQuery.isFetching)));
+    if (scanQuery.isFetching || labelsQuery.isFetching) {
+      setScanError(null);
+      setStatus("Scanning ROI workspace");
+    }
+  }, [
+    labelsQuery.isFetching,
+    scanQuery.isFetching,
+    setScanError,
+    setScanLoading,
+    setStatus,
+    shellWorkspacePath,
+  ]);
+
+  useEffect(() => {
+    if (workspacePath !== shellWorkspacePath) return;
+    if (scanQuery.data) {
+      setScan(scanQuery.data);
+      setStatus("ROI workspace loaded");
+    }
+  }, [scanQuery.data, setScan, setStatus, shellWorkspacePath, workspacePath]);
+
+  useEffect(() => {
+    if (workspacePath !== shellWorkspacePath) return;
+    if (labelsQuery.data) setLabels(labelsQuery.data);
+  }, [labelsQuery.data, setLabels, shellWorkspacePath, workspacePath]);
+
+  useEffect(() => {
+    if (workspacePath !== shellWorkspacePath) return;
+    const error = scanQuery.error ?? labelsQuery.error;
+    if (!error) return;
+    setFrame(null);
+    setScanError(toAnnotatorErrorMessage(error, "ROI workspace load failed"));
+  }, [
+    labelsQuery.error,
+    scanQuery.error,
+    setFrame,
+    setScanError,
+    shellWorkspacePath,
+    workspacePath,
+  ]);
 
   useEffect(() => {
     const firstPosition = scan?.positions[0] ?? null;
     if (!firstPosition) {
-      setPos(null);
-      setRoi(null);
-      setChannel(null);
+      setSelection({ pos: null, roi: null, channel: null, timeIndex: 0, zIndex: 0 });
       return;
     }
-    if (!scan?.positions.some((entry) => entry.pos === pos)) setPos(firstPosition.pos);
-  }, [pos, scan]);
+    if (!scan?.positions.some((entry) => entry.pos === selection.pos)) {
+      setSelection({ pos: firstPosition.pos });
+    }
+  }, [scan, selection.pos, setSelection]);
 
   useEffect(() => {
     if (!position) return;
-    if (!position.channels.includes(channel ?? Number.NaN)) setChannel(position.channels[0] ?? null);
-    if (!position.rois.some((entry) => entry.roi === roi)) setRoi(position.rois[0]?.roi ?? null);
-    setTimeIndex((value) => clamp(value, 0, Math.max(0, position.times.length - 1)));
-    setZIndex((value) => clamp(value, 0, Math.max(0, position.zSlices.length - 1)));
-  }, [channel, position, roi]);
+    const patch = {
+      channel: position.channels.includes(selection.channel ?? Number.NaN)
+        ? selection.channel
+        : (position.channels[0] ?? null),
+      roi: position.rois.some((entry) => entry.roi === selection.roi)
+        ? selection.roi
+        : (position.rois[0]?.roi ?? null),
+      timeIndex: clamp(selection.timeIndex, 0, Math.max(0, position.times.length - 1)),
+      zIndex: clamp(selection.zIndex, 0, Math.max(0, position.zSlices.length - 1)),
+    };
+    if (
+      patch.channel !== selection.channel ||
+      patch.roi !== selection.roi ||
+      patch.timeIndex !== selection.timeIndex ||
+      patch.zIndex !== selection.zIndex
+    ) {
+      setSelection(patch);
+    }
+  }, [position, selection, setSelection]);
 
   useEffect(() => {
-    setContrastOverride(null);
-  }, [activeRequestKey]);
+    setContrast(null);
+  }, [activeSelectionKey, setContrast]);
 
   useEffect(() => {
-    if (!workspace.workspacePath || !request) {
+    frameLoadIdRef.current += 1;
+    const loadId = frameLoadIdRef.current;
+
+    if (!workspacePath || workspacePath !== shellWorkspacePath || !request) {
       setFrame(null);
+      setFrameLoading(false);
       return;
     }
-    let cancelled = false;
+
+    const abortController = new AbortController();
+    const commit = (apply: () => void) => {
+      if (frameLoadIdRef.current === loadId && !abortController.signal.aborted) apply();
+    };
+
     setFrameLoading(true);
     setFrameError(null);
-    api
-      .loadRoiFrame(workspace.workspacePath, request, contrastOverride)
-      .then((payload) => {
-        if (cancelled) return;
-        const nextFrame = framePayloadToResult(payload);
-        setFrame(nextFrame);
-        setContrastDomain(payload.contrastDomain);
-        setContrastMin(payload.appliedContrast.min);
-        setContrastMax(payload.appliedContrast.max);
-      })
-      .catch((cause) => {
-        if (!cancelled) {
-          setFrame(null);
-          setFrameError(cause instanceof Error ? cause.message : String(cause));
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setFrameLoading(false);
+    setStatus("Loading ROI frame");
+
+    const program = loadRoiFrameEffect(annotatorApi, workspacePath, request, contrast).pipe(
+      Effect.tap((nextFrame) =>
+        Effect.sync(() =>
+          commit(() => {
+            setFrame(nextFrame);
+            setContrastState(nextFrame);
+            setStatus(`Loaded Pos${request.pos} Roi${request.roi}`);
+          }),
+        ),
+      ),
+      Effect.catchAll((cause) =>
+        Effect.sync(() =>
+          commit(() => {
+            setFrame(null);
+            setFrameError(effectErrorMessage(cause, "ROI frame request failed"));
+          }),
+        ),
+      ),
+      Effect.ensuring(Effect.sync(() => commit(() => setFrameLoading(false)))),
+    );
+
+    void Effect.runPromiseExit(program, { signal: abortController.signal }).then((exit) => {
+      if (!Exit.isFailure(exit) || abortController.signal.aborted) return;
+      commit(() => {
+        setFrame(null);
+        setFrameError(effectErrorMessage(exit.cause, "ROI frame request failed"));
+        setFrameLoading(false);
       });
+    });
+
     return () => {
-      cancelled = true;
+      abortController.abort();
     };
-  }, [activeRequestKey, api, contrastOverride, request, workspace.workspacePath]);
+  }, [
+    activeRequestKey,
+    contrast,
+    request,
+    setContrastState,
+    setFrame,
+    setFrameError,
+    setFrameLoading,
+    setStatus,
+    workspacePath,
+    shellWorkspacePath,
+  ]);
 
   useEffect(() => {
-    if (!workspace.workspacePath || !request || !frame) {
+    annotationLoadIdRef.current += 1;
+    const loadId = annotationLoadIdRef.current;
+
+    if (!workspacePath || workspacePath !== shellWorkspacePath || !request || !frame) {
       resetAnnotation(emptyValueFor(frame));
+      setAnnotationLoading(false);
       return;
     }
-    let cancelled = false;
+
+    const abortController = new AbortController();
+    const commit = (apply: () => void) => {
+      if (annotationLoadIdRef.current === loadId && !abortController.signal.aborted) apply();
+    };
+
     setAnnotationLoading(true);
     setAnnotationError(null);
-    api
-      .loadRoiFrameAnnotation(workspace.workspacePath, request)
-      .then(async (loaded) => {
-        const mask = loaded.maskBase64Png
-          ? await decodeMaskBase64Png(loaded.maskBase64Png, frame.width, frame.height)
-          : createEmptyMask(frame.width, frame.height);
-        if (!cancelled) {
-          resetAnnotation({
-            classificationLabelId: loaded.annotation.classificationLabelId,
-            mask,
-          });
-        }
-      })
-      .catch((cause) => {
-        if (!cancelled) setAnnotationError(cause instanceof Error ? cause.message : String(cause));
-      })
-      .finally(() => {
-        if (!cancelled) setAnnotationLoading(false);
+
+    const program = loadRoiFrameAnnotationEffect(annotatorApi, workspacePath, request, frame).pipe(
+      Effect.tap((value) => Effect.sync(() => commit(() => resetAnnotation(value)))),
+      Effect.catchAll((cause) =>
+        Effect.sync(() =>
+          commit(() => {
+            resetAnnotation(emptyValueFor(frame));
+            setAnnotationError(effectErrorMessage(cause, "ROI annotation load failed"));
+          }),
+        ),
+      ),
+      Effect.ensuring(Effect.sync(() => commit(() => setAnnotationLoading(false)))),
+    );
+
+    void Effect.runPromiseExit(program, { signal: abortController.signal }).then((exit) => {
+      if (!Exit.isFailure(exit) || abortController.signal.aborted) return;
+      commit(() => {
+        resetAnnotation(emptyValueFor(frame));
+        setAnnotationError(effectErrorMessage(exit.cause, "ROI annotation load failed"));
+        setAnnotationLoading(false);
       });
+    });
+
     return () => {
-      cancelled = true;
+      abortController.abort();
     };
-  }, [activeRequestKey, api, frame, request, resetAnnotation, workspace.workspacePath]);
+  }, [
+    activeRequestKey,
+    frame,
+    request,
+    resetAnnotation,
+    setAnnotationError,
+    setAnnotationLoading,
+    workspacePath,
+    shellWorkspacePath,
+  ]);
 
   const handleSave = async () => {
-    if (!workspace.workspacePath || !request || !frame || !canSave) return;
+    if (!shellWorkspacePath || !request || !frame || !canSave) return;
     setSaving(true);
     setSaveError(null);
     try {
       const segmentationMask = maskHasPixels(annotation.current.mask);
-      await api.saveRoiFrameAnnotation(workspace.workspacePath, request, {
-        classificationLabelId: annotation.current.classificationLabelId,
-        maskBase64Png: segmentationMask
-          ? await encodeMaskToBase64Png(annotation.current.mask, frame.width, frame.height)
-          : null,
+      await saveAnnotationMutation.mutateAsync({
+        request,
+        annotation: {
+          classificationLabelId: annotation.current.classificationLabelId,
+          maskBase64Png: segmentationMask
+            ? await encodeMaskToBase64Png(annotation.current.mask, frame.width, frame.height)
+            : null,
+        },
       });
       annotation.markSaved();
     } catch (cause) {
-      setSaveError(cause instanceof Error ? cause.message : String(cause));
+      setSaveError(toAnnotatorErrorMessage(cause, "ROI annotation save failed"));
     } finally {
       setSaving(false);
     }
   };
 
   const handleSaveLabels = async (nextLabels: AnnotationLabel[]) => {
-    if (!workspace.workspacePath) {
+    if (!shellWorkspacePath) {
       setLabelError("Select a workspace first.");
       return;
     }
-    setLabelSaving(true);
     setLabelError(null);
     try {
-      const savedLabels = await api.saveLabels(workspace.workspacePath, nextLabels);
+      const savedLabels = await saveLabelsMutation.mutateAsync(nextLabels);
       setLabels(savedLabels);
       setActiveLabelId(savedLabels[0]?.id ?? null);
       setLabelDialogOpen(false);
     } catch (cause) {
-      setLabelError(cause instanceof Error ? cause.message : String(cause));
-    } finally {
-      setLabelSaving(false);
+      setLabelError(toAnnotatorErrorMessage(cause, "Annotation labels save failed"));
     }
   };
 
@@ -669,7 +779,7 @@ export function AnnotatorShellPage(props: { routeId: string }) {
           showSourceButton={false}
           endLeading={
             <AnnotatorToolsMenu
-              workspacePath={workspace.workspacePath}
+              workspacePath={workspacePath}
               onCreateLabels={() => {
                 setLabelError(null);
                 setLabelDialogOpen(true);
@@ -683,31 +793,26 @@ export function AnnotatorShellPage(props: { routeId: string }) {
       <AppShell.Body>
         <AppShell.Left widthClass="w-72">
           <LeftPanel
-            channel={channel}
+            channel={selection.channel}
             contrastDomain={contrastDomain}
             contrastMax={contrastMax}
             contrastMin={contrastMin}
             position={position}
-            pos={pos}
-            roi={roi}
+            pos={selection.pos}
+            roi={selection.roi}
             scan={scan}
-            timeIndex={timeIndex}
-            zIndex={zIndex}
-            onChannelChange={(value) => changeSelection(() => setChannel(value))}
-            onContrastChange={(next) => {
-              setContrastOverride(next);
-              setContrastMin(next.min);
-              setContrastMax(next.max);
-            }}
+            timeIndex={selection.timeIndex}
+            zIndex={selection.zIndex}
+            onChannelChange={(value) => changeSelection(() => setSelection({ channel: value }))}
+            onContrastChange={setContrast}
             onPosChange={(value) =>
               changeSelection(() => {
-                setPos(value);
-                setRoi(null);
+                setSelection({ pos: value, roi: null });
               })
             }
-            onRoiChange={(value) => changeSelection(() => setRoi(value))}
-            onTimeIndexChange={(value) => changeSelection(() => setTimeIndex(value))}
-            onZIndexChange={(value) => changeSelection(() => setZIndex(value))}
+            onRoiChange={(value) => changeSelection(() => setSelection({ roi: value }))}
+            onTimeIndexChange={(value) => changeSelection(() => setSelection({ timeIndex: value }))}
+            onZIndexChange={(value) => changeSelection(() => setSelection({ zIndex: value }))}
           />
         </AppShell.Left>
         <AppShell.MainColumn>
@@ -781,7 +886,7 @@ export function AnnotatorShellPage(props: { routeId: string }) {
         </AppShell.Right>
       </AppShell.Body>
       <HostFilePickerDialog
-        hostPort={api}
+        hostPort={annotatorApi}
         mode="workspace"
         open={filePickerOpen}
         title="Workspace folder"
@@ -796,8 +901,8 @@ export function AnnotatorShellPage(props: { routeId: string }) {
         error={labelError}
         labels={labels}
         open={labelDialogOpen}
-        saving={labelSaving}
-        workspacePath={workspace.workspacePath}
+        saving={saveLabelsMutation.isPending}
+        workspacePath={workspacePath}
         onOpenChange={setLabelDialogOpen}
         onSave={(nextLabels) => void handleSaveLabels(nextLabels)}
       />
@@ -828,7 +933,8 @@ function LeftPanel(props: {
     [props.scan],
   );
   const roiOptions = useMemo(
-    () => props.position?.rois.map((entry) => ({ value: entry.roi, label: String(entry.roi) })) ?? [],
+    () =>
+      props.position?.rois.map((entry) => ({ value: entry.roi, label: String(entry.roi) })) ?? [],
     [props.position],
   );
   const channelOptions = useMemo(
@@ -965,7 +1071,8 @@ function RightPanel(props: {
   onRedo: () => void;
   onDiscard: () => void;
 }) {
-  const activeError = props.scanError ?? props.frameError ?? props.annotationError ?? props.saveError;
+  const activeError =
+    props.scanError ?? props.frameError ?? props.annotationError ?? props.saveError;
   const loading = props.scanLoading || props.frameLoading || props.annotationLoading;
 
   return (
@@ -1014,10 +1121,22 @@ function RightPanel(props: {
         {activeError ? <p className="col-span-2 text-destructive text-xs">{activeError}</p> : null}
       </Section>
       <Section title="Edit" contentClassName="grid grid-cols-2 gap-2">
-        <Button disabled={!props.canUndo} size="sm" type="button" variant="outline" onClick={props.onUndo}>
+        <Button
+          disabled={!props.canUndo}
+          size="sm"
+          type="button"
+          variant="outline"
+          onClick={props.onUndo}
+        >
           Undo
         </Button>
-        <Button disabled={!props.canRedo} size="sm" type="button" variant="outline" onClick={props.onRedo}>
+        <Button
+          disabled={!props.canRedo}
+          size="sm"
+          type="button"
+          variant="outline"
+          onClick={props.onRedo}
+        >
           Redo
         </Button>
         <Button
@@ -1029,7 +1148,13 @@ function RightPanel(props: {
         >
           Clear
         </Button>
-        <Button disabled={!props.dirty} size="sm" type="button" variant="outline" onClick={props.onDiscard}>
+        <Button
+          disabled={!props.dirty}
+          size="sm"
+          type="button"
+          variant="outline"
+          onClick={props.onDiscard}
+        >
           Discard
         </Button>
       </Section>

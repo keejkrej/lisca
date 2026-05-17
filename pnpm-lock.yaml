@@ -166,9 +166,15 @@ importers:
       '@lisca/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@tanstack/react-query':
+        specifier: ^5.100.10
+        version: 5.100.10(react@19.1.0)
       '@tanstack/react-router':
         specifier: ^1.169.2
         version: 1.169.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      effect:
+        specifier: ^3.21.2
+        version: 3.21.2
       lucide-react:
         specifier: ^0.511.0
         version: 0.511.0(react@19.1.0)
@@ -178,6 +184,9 @@ importers:
       react-dom:
         specifier: 19.1.0
         version: 19.1.0(react@19.1.0)
+      zustand:
+        specifier: ^5.0.13
+        version: 5.0.13(@types/react@19.1.17)(react@19.1.0)(use-sync-external-store@1.6.0(react@19.1.0))
     devDependencies:
       '@tailwindcss/vite':
         specifier: ^4.1.8
