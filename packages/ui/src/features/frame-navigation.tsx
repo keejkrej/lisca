@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { Button } from "../components/ui/button";
 import {
@@ -63,7 +64,7 @@ type SliderNavigationFieldProps = {
   min: number;
   max: number;
   step: number;
-  onChange: (value: number) => void;
+  onChange?: (value: number) => void;
   onCommit?: (value: number) => void;
   disabled?: boolean;
   previousDisabled?: boolean;
@@ -132,6 +133,14 @@ export function SelectStepperField<T extends NavigationValue>(
 }
 
 export function SliderStepperField(props: SliderNavigationFieldProps) {
+  const [draftValue, setDraftValue] = useState(props.value);
+
+  useEffect(() => {
+    setDraftValue(props.value);
+  }, [props.value]);
+
+  const commitValue = props.onCommit ?? props.onChange;
+
   return (
     <Field className="min-w-0 w-full">
       <FieldLabel>{props.label}</FieldLabel>
@@ -153,9 +162,12 @@ export function SliderStepperField(props: SliderNavigationFieldProps) {
           max={props.max}
           min={props.min}
           step={props.step}
-          value={props.value}
-          onValueChange={props.onChange}
-          onValueCommitted={props.onCommit}
+          value={draftValue}
+          onValueChange={setDraftValue}
+          onValueCommitted={(value) => {
+            setDraftValue(value);
+            commitValue?.(value);
+          }}
         />
         <Button
           aria-label={`Next ${props.label}`}

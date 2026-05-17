@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+
 import { Button } from "../components/ui/button";
 import { Field, FieldLabel } from "../components/ui/field";
 import { Input } from "../components/ui/input";
@@ -18,11 +20,35 @@ import { Section } from "../shell/section";
 
 function AlignNumberInput(props: {
   value: number;
-  onChange: (value: number) => void;
+  onCommit: (value: number) => void;
   disabled?: boolean;
   min?: number;
   step?: string;
 }) {
+  const [draft, setDraft] = useState(formatNumber(props.value));
+  const skipBlurCommitRef = useRef(false);
+
+  useEffect(() => {
+    setDraft(formatNumber(props.value));
+  }, [props.value]);
+
+  const revert = () => setDraft(formatNumber(props.value));
+  const commit = () => {
+    if (skipBlurCommitRef.current) {
+      skipBlurCommitRef.current = false;
+      revert();
+      return;
+    }
+    const trimmed = draft.trim();
+    const value = trimmed === "" ? NaN : Number(trimmed);
+    if (!Number.isFinite(value) || (props.min != null && value < props.min)) {
+      revert();
+      return;
+    }
+    setDraft(formatNumber(value));
+    props.onCommit(value);
+  };
+
   return (
     <Input
       disabled={props.disabled}
@@ -30,13 +56,28 @@ function AlignNumberInput(props: {
       size="sm"
       step={props.step ?? "any"}
       type="number"
-      value={Number.isFinite(props.value) ? String(props.value) : ""}
-      onChange={(e) => {
-        const raw = parseFloat(e.target.value);
-        if (Number.isFinite(raw)) props.onChange(raw);
+      value={draft}
+      onBlur={commit}
+      onChange={(e) => setDraft(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.currentTarget.blur();
+        } else if (e.key === "Escape") {
+          skipBlurCommitRef.current = true;
+          revert();
+          e.currentTarget.blur();
+        }
       }}
     />
   );
+}
+
+function formatNumber(value: number) {
+  return Number.isFinite(value) ? String(value) : "";
+}
+
+function clamp(n: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, n));
 }
 
 export type AlignGridProps<TShape extends NavigationValue = string> = {
@@ -119,6 +160,17 @@ export function AlignGrid<TShape extends NavigationValue = string>(props: AlignG
     sectionContentClassName,
   } = props;
 
+  const [rotationDraft, setRotationDraft] = useState(rotationDegrees);
+  const [overlayOpacityDraft, setOverlayOpacityDraft] = useState(overlayOpacity);
+
+  useEffect(() => {
+    setRotationDraft(rotationDegrees);
+  }, [rotationDegrees]);
+
+  useEffect(() => {
+    setOverlayOpacityDraft(overlayOpacity);
+  }, [overlayOpacity]);
+
   return (
     <Section
       contentClassName={sectionContentClassName}
@@ -169,8 +221,13 @@ export function AlignGrid<TShape extends NavigationValue = string>(props: AlignG
             max={1}
             min={0}
             step={0.01}
-            value={overlayOpacity}
-            onValueChange={(v) => onOverlayOpacityChange(Math.min(1, Math.max(0, v)))}
+            value={overlayOpacityDraft}
+            onValueChange={(value) => setOverlayOpacityDraft(clamp(value, 0, 1))}
+            onValueCommitted={(value) => {
+              const opacity = clamp(value, 0, 1);
+              setOverlayOpacityDraft(opacity);
+              onOverlayOpacityChange(opacity);
+            }}
           />
         </Field>
 
@@ -204,8 +261,13 @@ export function AlignGrid<TShape extends NavigationValue = string>(props: AlignG
             max={180}
             min={-180}
             step={0.1}
-            value={rotationDegrees}
-            onValueChange={onRotationDegreesChange}
+            value={rotationDraft}
+            onValueChange={(value) => setRotationDraft(clamp(value, -180, 180))}
+            onValueCommitted={(value) => {
+              const degrees = clamp(value, -180, 180);
+              setRotationDraft(degrees);
+              onRotationDegreesChange(degrees);
+            }}
           />
         </Field>
 
@@ -216,7 +278,7 @@ export function AlignGrid<TShape extends NavigationValue = string>(props: AlignG
               disabled={disabled}
               min={vectorMin}
               value={vectorA}
-              onChange={onVectorAChange}
+              onCommit={onVectorAChange}
             />
           </Field>
           <Field className="min-w-0 w-full">
@@ -225,7 +287,7 @@ export function AlignGrid<TShape extends NavigationValue = string>(props: AlignG
               disabled={disabled}
               min={vectorMin}
               value={vectorB}
-              onChange={onVectorBChange}
+              onCommit={onVectorBChange}
             />
           </Field>
         </div>
@@ -237,7 +299,7 @@ export function AlignGrid<TShape extends NavigationValue = string>(props: AlignG
               disabled={disabled}
               min={patternMin}
               value={patternWidth}
-              onChange={onPatternWidthChange}
+              onCommit={onPatternWidthChange}
             />
           </Field>
           <Field className="min-w-0 w-full">
@@ -246,7 +308,7 @@ export function AlignGrid<TShape extends NavigationValue = string>(props: AlignG
               disabled={disabled}
               min={patternMin}
               value={patternHeight}
-              onChange={onPatternHeightChange}
+              onCommit={onPatternHeightChange}
             />
           </Field>
         </div>
@@ -258,7 +320,7 @@ export function AlignGrid<TShape extends NavigationValue = string>(props: AlignG
               disabled={disabled}
               step="0.1"
               value={offsetX}
-              onChange={onOffsetXChange}
+              onCommit={onOffsetXChange}
             />
           </Field>
           <Field className="min-w-0 w-full">
@@ -267,7 +329,7 @@ export function AlignGrid<TShape extends NavigationValue = string>(props: AlignG
               disabled={disabled}
               step="0.1"
               value={offsetY}
-              onChange={onOffsetYChange}
+              onCommit={onOffsetYChange}
             />
           </Field>
         </div>

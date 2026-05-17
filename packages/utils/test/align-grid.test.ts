@@ -203,6 +203,48 @@ describe("align grid utils", () => {
     ).toBeNull();
   });
 
+  test("uses horizontal pointer motion for split zoom tools", () => {
+    const grid = createDefaultAlignGrid();
+    const viewport = { displayWidth: 400, displayHeight: 400, modelWidth: 200, modelHeight: 200 };
+    const input = {
+      pointerId: 1,
+      pointerType: "mouse",
+      button: 0,
+      clientX: 100,
+      clientY: 100,
+    };
+    const vectorSession = beginAlignGridPointerGesture(grid, input, "zoom-vector");
+    const patternSession = beginAlignGridPointerGesture(grid, input, "zoom-pattern");
+
+    const vectorZoomed = applyAlignGridPointerGesture(
+      vectorSession!,
+      { ...input, clientX: 140, clientY: 100 },
+      viewport,
+    );
+    expect(vectorZoomed.spacingA).toBeGreaterThan(grid.spacingA);
+    expect(vectorZoomed.spacingB).toBeGreaterThan(grid.spacingB);
+    expect(vectorZoomed.cellWidth).toBe(grid.cellWidth);
+    expect(vectorZoomed.cellHeight).toBe(grid.cellHeight);
+
+    const patternZoomed = applyAlignGridPointerGesture(
+      patternSession!,
+      { ...input, clientX: 140, clientY: 100 },
+      viewport,
+    );
+    expect(patternZoomed.cellWidth).toBeGreaterThan(grid.cellWidth);
+    expect(patternZoomed.cellHeight).toBeGreaterThan(grid.cellHeight);
+    expect(patternZoomed.spacingA).toBe(grid.spacingA);
+    expect(patternZoomed.spacingB).toBe(grid.spacingB);
+
+    const verticalOnlyPattern = applyAlignGridPointerGesture(
+      patternSession!,
+      { ...input, clientX: 100, clientY: 140 },
+      viewport,
+    );
+    expect(verticalOnlyPattern.cellWidth).toBe(grid.cellWidth);
+    expect(verticalOnlyPattern.cellHeight).toBe(grid.cellHeight);
+  });
+
   test("classifies pointer and wheel gestures", () => {
     expect(classifyAlignGridPointerGesture({ pointerType: "mouse", button: 0 })).toBe("offset");
     expect(classifyAlignGridPointerGesture({ pointerType: "mouse", button: 1 })).toBe("spacing");

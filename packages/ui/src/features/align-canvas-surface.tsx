@@ -77,6 +77,7 @@ export type AlignCanvasSurfaceProps = {
 
 type PreparedFrame = {
   frame: FrameResult;
+  prepared: HTMLCanvasElement;
 };
 
 function pixelToDisplayValue(frame: FrameResult, index: number) {
@@ -90,36 +91,25 @@ function pixelToDisplayValue(frame: FrameResult, index: number) {
   return clamp(Math.round(((raw - contrast.min) / span) * 255), 0, 255);
 }
 
-function drawFramePixels(
-  ctx: CanvasRenderingContext2D,
-  cssWidth: number,
-  cssHeight: number,
-  dpr: number,
-  frame: FrameResult,
-) {
-  const scale = Math.min(cssWidth / frame.width, cssHeight / frame.height);
-  const drawWidth = frame.width * scale;
-  const drawHeight = frame.height * scale;
-  const drawX = (cssWidth - drawWidth) / 2;
-  const drawY = (cssHeight - drawHeight) / 2;
-  const outputWidth = Math.max(1, Math.round(drawWidth * dpr));
-  const outputHeight = Math.max(1, Math.round(drawHeight * dpr));
-  const image = ctx.createImageData(outputWidth, outputHeight);
+function prepareFrameCanvas(frame: FrameResult): HTMLCanvasElement {
+  const canvas = document.createElement("canvas");
+  canvas.width = frame.width;
+  canvas.height = frame.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return canvas;
 
-  for (let outY = 0; outY < outputHeight; outY += 1) {
-    const sourceY = Math.min(frame.height - 1, Math.floor((outY / outputHeight) * frame.height));
-    for (let outX = 0; outX < outputWidth; outX += 1) {
-      const sourceX = Math.min(frame.width - 1, Math.floor((outX / outputWidth) * frame.width));
-      const value = pixelToDisplayValue(frame, sourceY * frame.width + sourceX);
-      const offset = (outY * outputWidth + outX) * 4;
-      image.data[offset] = value;
-      image.data[offset + 1] = value;
-      image.data[offset + 2] = value;
-      image.data[offset + 3] = 255;
-    }
+  const rgba = new Uint8ClampedArray(frame.width * frame.height * 4);
+  for (let index = 0; index < frame.width * frame.height; index += 1) {
+    const value = pixelToDisplayValue(frame, index);
+    const offset = index * 4;
+    rgba[offset] = value;
+    rgba[offset + 1] = value;
+    rgba[offset + 2] = value;
+    rgba[offset + 3] = 255;
   }
 
-  ctx.putImageData(image, Math.round(drawX * dpr), Math.round(drawY * dpr));
+  ctx.putImageData(new ImageData(rgba, frame.width, frame.height), 0, 0);
+  return canvas;
 }
 
 function drawGridOverlay(
@@ -198,8 +188,6 @@ export function AlignCanvasSurface({
   grid,
   previewGrid,
   excludedCells,
-  loading = false,
-  emptyText = "No frame loaded.",
   messages,
   className,
   cursor,
@@ -215,6 +203,7 @@ export function AlignCanvasSurface({
   const resizeRafRef = useRef<number | null>(null);
   const latestFrameRef = useRef<PreparedFrame | null>(null);
   const dprRef = useRef(1);
+  const preparedFrame = useMemo(() => (frame ? prepareFrameCanvas(frame) : null), [frame]);
 
   const activeExcludedCellKeys = useMemo(
     () =>
@@ -222,52 +211,61 @@ export function AlignCanvasSurface({
     [excludedCells],
   );
 
-  const queueRender = useCallback(() => {
-    if (renderRafRef.current != null) return;
-    renderRafRef.current = window.requestAnimationFrame(() => {
-      renderRafRef.current = null;
-      const canvas = canvasRef.current;
-      const view = viewportRef.current;
-      if (!canvas || !view) return;
+  const renderNow = useCallback(() => {
+    renderRafRef.current = null;
+    const canvas = canvasRef.current;
+    const view = viewportRef.current;
+    const cached = latestFrameRef.current;
+    if (!canvas || !view) return;
 
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-      const cssWidth = view.clientWidth;
-      const cssHeight = view.clientHeight;
-      const dpr = dprRef.current;
-      const activeGrid = previewGrid ?? grid;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = getComputedStyle(view).getPropertyValue("--color-background").trim() || "#09090b";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const cssWidth = view.clientWidth;
+    const cssHeight = view.clientHeight;
+    const activeGrid = previewGrid ?? grid;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.scale(dprRef.current, dprRef.current);
+    ctx.fillStyle = "#09090b";
+    ctx.fillRect(0, 0, cssWidth, cssHeight);
 
-      if (frame) {
-        const scale = Math.min(cssWidth / frame.width, cssHeight / frame.height);
-        const drawWidth = frame.width * scale;
-        const drawHeight = frame.height * scale;
-        const drawX = (cssWidth - drawWidth) / 2;
-        const drawY = (cssHeight - drawHeight) / 2;
-        drawFramePixels(ctx, cssWidth, cssHeight, dpr, frame);
-        ctx.save();
-        ctx.scale(dpr, dpr);
-        ctx.fillStyle = "rgba(255,255,255,0.03)";
-        ctx.fillRect(drawX - 8, drawY - 8, drawWidth + 16, drawHeight + 16);
-        ctx.strokeStyle = "rgba(255,255,255,0.08)";
-        ctx.strokeRect(drawX - 8.5, drawY - 8.5, drawWidth + 17, drawHeight + 17);
-        drawGridOverlay(ctx, cssWidth, cssHeight, frame, activeGrid, activeExcludedCellKeys);
-        ctx.restore();
-      }
-    });
-  }, [activeExcludedCellKeys, frame, grid, previewGrid]);
+    if (cached) {
+      const scale = Math.min(cssWidth / cached.frame.width, cssHeight / cached.frame.height);
+      const drawWidth = cached.frame.width * scale;
+      const drawHeight = cached.frame.height * scale;
+      const drawX = (cssWidth - drawWidth) / 2;
+      const drawY = (cssHeight - drawHeight) / 2;
+      ctx.fillStyle = "rgba(255,255,255,0.03)";
+      ctx.fillRect(drawX - 8, drawY - 8, drawWidth + 16, drawHeight + 16);
+      ctx.strokeStyle = "rgba(255,255,255,0.08)";
+      ctx.strokeRect(drawX - 8.5, drawY - 8.5, drawWidth + 17, drawHeight + 17);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(cached.prepared, drawX, drawY, drawWidth, drawHeight);
+      drawGridOverlay(ctx, cssWidth, cssHeight, cached.frame, activeGrid, activeExcludedCellKeys);
+    }
 
-  useEffect(() => {
-    latestFrameRef.current = frame ? { frame } : null;
-    queueRender();
-  }, [frame, queueRender]);
+    ctx.restore();
+  }, [activeExcludedCellKeys, grid, previewGrid]);
 
   useEffect(() => {
-    queueRender();
-  }, [activeExcludedCellKeys, grid, previewGrid, queueRender]);
+    latestFrameRef.current =
+      frame && preparedFrame
+        ? {
+            frame,
+            prepared: preparedFrame,
+          }
+        : null;
+    renderNow();
+  }, [frame, preparedFrame, renderNow]);
+
+  useEffect(() => {
+    renderNow();
+  }, [grid, previewGrid, renderNow]);
+
+  useEffect(() => {
+    renderNow();
+  }, [activeExcludedCellKeys, renderNow]);
 
   useLayoutEffect(() => {
     const view = viewportRef.current;
@@ -290,7 +288,7 @@ export function AlignCanvasSurface({
         const cssHeight = `${view.clientHeight}px`;
         if (canvas.style.width !== cssWidth) canvas.style.width = cssWidth;
         if (canvas.style.height !== cssHeight) canvas.style.height = cssHeight;
-        queueRender();
+        renderNow();
       });
     };
 
@@ -301,13 +299,15 @@ export function AlignCanvasSurface({
     return () => {
       if (resizeRafRef.current != null) {
         window.cancelAnimationFrame(resizeRafRef.current);
+        resizeRafRef.current = null;
       }
       if (renderRafRef.current != null) {
         window.cancelAnimationFrame(renderRafRef.current);
+        renderRafRef.current = null;
       }
       observer.disconnect();
     };
-  }, [queueRender]);
+  }, [renderNow]);
 
   const getFramePointFromClient = useCallback(
     (clientX: number, clientY: number): AlignCanvasFramePoint | null => {
@@ -395,7 +395,10 @@ export function AlignCanvasSurface({
   return (
     <div
       ref={viewportRef}
-      className={cn("relative h-full min-h-0 w-full flex-1 overflow-hidden bg-background", className)}
+      className={cn(
+        "relative h-full min-h-0 w-full flex-1 overflow-hidden bg-background",
+        className,
+      )}
     >
       <canvas
         ref={canvasRef}
@@ -408,14 +411,6 @@ export function AlignCanvasSurface({
         onPointerUp={(event) => onVirtualPointerUp?.(toVirtualPointerEvent(event))}
         onWheel={(event) => onVirtualWheel?.(toVirtualWheelEvent(event))}
       />
-
-      {loading || !frame ? (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background/45">
-          <div className="rounded-md border border-border bg-popover px-3 py-2 text-sm text-popover-foreground shadow-lg">
-            {loading ? "Loading frame..." : emptyText}
-          </div>
-        </div>
-      ) : null}
 
       {messages?.length ? (
         <div className="pointer-events-none absolute left-3 top-3 flex max-w-[78%] flex-wrap gap-1.5">

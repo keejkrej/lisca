@@ -40,7 +40,7 @@ import {
   type AlignGridToolMode,
 } from "@lisca/utils";
 import { Effect, Exit } from "effect";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   alignerClient,
@@ -184,8 +184,20 @@ export function useAlignState(): AlignState {
   );
 
   useEffect(() => {
+    if (workspace.workspacePath === workspacePath) return;
+    if (workspace.workspacePath == null && workspacePath != null) {
+      workspace.setWorkspacePath(workspacePath);
+      return;
+    }
     setWorkspacePath(workspace.workspacePath);
-  }, [setWorkspacePath, workspace.workspacePath]);
+  }, [setWorkspacePath, workspace, workspacePath]);
+
+  useEffect(() => {
+    const sourcePath = source?.path ?? null;
+    if (workspace.sourcePath !== sourcePath) {
+      workspace.setSourcePath(sourcePath);
+    }
+  }, [source, workspace]);
 
   useEffect(() => {
     if (source && scanQuery.isFetching) {
@@ -246,7 +258,7 @@ export function useAlignState(): AlignState {
         Effect.sync(() =>
           commit(() => {
             setFrame(nextFrame);
-            setStatus(`Loaded Pos${selection.pos}`);
+            setStatus(null);
           }),
         ),
       ),
@@ -544,8 +556,6 @@ function AlignFrameNavigation({ state }: { state: AlignState }) {
         max: timeMax,
         step: 1,
         disabled: disabled || timeMax <= 0,
-        onChange: (i) =>
-          state.setSelection({ time: state.scan?.times[clamp(Math.round(i), 0, timeMax)] ?? 0 }),
         onCommit: (i) =>
           state.setSelection({ time: state.scan?.times[clamp(Math.round(i), 0, timeMax)] ?? 0 }),
         previousDisabled: disabled || timeIndex <= 0,
@@ -561,8 +571,6 @@ function AlignFrameNavigation({ state }: { state: AlignState }) {
         max: zMax,
         step: 1,
         disabled: disabled || zMax <= 0,
-        onChange: (i) =>
-          state.setSelection({ z: state.scan?.zSlices[clamp(Math.round(i), 0, zMax)] ?? 0 }),
         onCommit: (i) =>
           state.setSelection({ z: state.scan?.zSlices[clamp(Math.round(i), 0, zMax)] ?? 0 }),
         previousDisabled: disabled || zIndex <= 0,
@@ -726,7 +734,7 @@ function AlignGridPanel({ state }: { state: AlignState }) {
       onOverlayVisibleChange={(enabled) => updateGrid({ enabled })}
       onVectorAChange={(spacingA) => updateGrid({ spacingA })}
       onVectorBChange={(spacingB) => updateGrid({ spacingB })}
-      onReset={() => !disabled && state.setGrid(createDefaultAlignGrid())}
+      onReset={() => !disabled && state.setGrid({ ...createDefaultAlignGrid(), enabled: true })}
       onRotationDegreesChange={(degrees) => updateGrid({ rotation: degreesToRadians(degrees) })}
       onShapeChange={(shape) => updateGrid({ shape })}
       overlayOpacity={state.grid.opacity}
@@ -821,22 +829,31 @@ function AlignSelectionPanel({ state }: { state: AlignState }) {
 }
 
 function useAlignCanvasHandlers(state: AlignState) {
+  const { cropping, grid, setGrid, toolMode } = state;
   const gestureRef = useRef<AlignGridPointerGestureSession | null>(null);
+  const previewGridRef = useRef<AlignGridState | null>(null);
+  const [previewGrid, setPreviewGridState] = useState<AlignGridState | null>(null);
+
+  const setPreviewGrid = useCallback((next: AlignGridState | null) => {
+    previewGridRef.current = next;
+    setPreviewGridState(next);
+  }, []);
 
   const handlePointerDown = useCallback(
     (event: AlignCanvasPointerEvent) => {
-      if (state.cropping || !event.viewport || !state.grid.enabled) return;
+      if (cropping || !event.viewport || !grid.enabled) return;
       if (event.pointerType === "mouse" && event.button !== 0) {
         event.preventDefault();
         return;
       }
-      const session = beginAlignGridPointerGesture(state.grid, event, state.toolMode);
+      const session = beginAlignGridPointerGesture(grid, event, toolMode);
       if (!session) return;
       event.preventDefault();
       event.capturePointer();
       gestureRef.current = session;
+      setPreviewGrid(null);
     },
-    [state],
+    [cropping, grid, setPreviewGrid, toolMode],
   );
 
   const handlePointerMove = useCallback(
@@ -844,36 +861,64 @@ function useAlignCanvasHandlers(state: AlignState) {
       const gesture = gestureRef.current;
       if (!gesture || !event.viewport || gesture.pointerId !== event.pointerId) return;
       event.preventDefault();
-      state.setGrid(applyAlignGridPointerGesture(gesture, event, event.viewport));
+      setPreviewGrid(applyAlignGridPointerGesture(gesture, event, event.viewport));
     },
-    [state],
+    [setPreviewGrid],
   );
 
-  const handlePointerEnd = useCallback((event: AlignCanvasPointerEvent) => {
-    if (gestureRef.current?.pointerId === event.pointerId) {
+  const handlePointerEnd = useCallback(
+    (event: AlignCanvasPointerEvent) => {
+      if (gestureRef.current?.pointerId !== event.pointerId) return;
       gestureRef.current = null;
-    }
-    event.releasePointer();
-  }, []);
+      const previewGrid = previewGridRef.current;
+      if (previewGrid) setGrid(previewGrid);
+      setPreviewGrid(null);
+      event.releasePointer();
+    },
+    [setGrid, setPreviewGrid],
+  );
 
-  return { handlePointerDown, handlePointerMove, handlePointerEnd };
+  return { handlePointerDown, handlePointerMove, handlePointerEnd, previewGrid };
 }
 
-function cursorForAlignTool(toolMode: AlignGridToolMode, gridEnabled: boolean) {
+function cursorForAlignTool(toolMode: AlignGridToolMode, gridEnabled: boolean, dragging: boolean) {
   if (!gridEnabled) return "default";
+  if (dragging) return "grabbing";
   if (toolMode === "pan") return "grab";
   if (toolMode === "rotate") return "crosshair";
   return "zoom-in";
 }
 
 function AlignCanvasPanel({ state }: { state: AlignState }) {
-  const { handlePointerDown, handlePointerMove, handlePointerEnd } = useAlignCanvasHandlers(state);
+  const { handlePointerDown, handlePointerMove, handlePointerEnd, previewGrid } =
+    useAlignCanvasHandlers(state);
+  const [visibleStatus, setVisibleStatus] = useState<string | null>(state.status);
+
+  useEffect(() => {
+    if (!state.status) {
+      setVisibleStatus(null);
+      return;
+    }
+    setVisibleStatus(state.status);
+    if (state.status === "Scanning source" || state.status === "Loading frame") return;
+
+    const timeoutId = window.setTimeout(() => {
+      setVisibleStatus((current) => (current === state.status ? null : current));
+    }, 2500);
+    return () => window.clearTimeout(timeoutId);
+  }, [state.status]);
+
+  const activeStatus = state.frameLoading
+    ? "Loading frame"
+    : state.scanLoading
+      ? "Scanning source"
+      : visibleStatus;
   const messages = useMemo(() => {
     const items = [];
     if (state.error) items.push({ text: state.error, tone: "error" as const });
-    else if (state.status) items.push({ text: state.status });
+    else if (activeStatus) items.push({ text: activeStatus });
     return items;
-  }, [state.error, state.status]);
+  }, [activeStatus, state.error]);
 
   const emptyText = !state.workspacePath
     ? "Pick a workspace."
@@ -887,13 +932,14 @@ function AlignCanvasPanel({ state }: { state: AlignState }) {
     <div className="flex h-full min-h-0 flex-col bg-muted/20">
       <AlignCanvasSurface
         className="min-h-0 flex-1"
-        cursor={cursorForAlignTool(state.toolMode, state.grid.enabled)}
+        cursor={cursorForAlignTool(state.toolMode, state.grid.enabled, previewGrid != null)}
         emptyText={emptyText}
         excludedCells={state.currentExcludedCells}
         frame={state.frame}
         grid={state.grid}
         loading={state.scanLoading || state.frameLoading}
         messages={messages}
+        previewGrid={previewGrid}
         onVirtualPointerCancel={handlePointerEnd}
         onVirtualPointerDown={handlePointerDown}
         onVirtualPointerMove={handlePointerMove}

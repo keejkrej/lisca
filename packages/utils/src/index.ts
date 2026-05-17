@@ -496,7 +496,7 @@ export function applyAlignGridPointerGesture(
   }
 
   if (session.intent === "size") {
-    const factor = Math.max(0.01, 1 + (deltaY / Math.max(1, viewport.displayHeight)) * 2.5);
+    const factor = Math.max(0.01, 1 + (deltaX / Math.max(1, viewport.displayWidth)) * 2.5);
     return normalizeAlignGridState({
       ...session.startGrid,
       cellWidth: session.startGrid.cellWidth * factor,
