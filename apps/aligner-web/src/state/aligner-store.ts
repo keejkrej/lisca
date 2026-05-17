@@ -16,6 +16,7 @@ import {
   type AlignGridToolMode,
 } from "@lisca/utils";
 import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 export type ExcludedByPosition = Record<number, AlignGridCellCoord[]>;
 
@@ -104,105 +105,123 @@ function createInitialState(): AlignerStoreState {
   };
 }
 
-export const useAlignerStore = create<AlignerStore>((set) => ({
-  ...createInitialState(),
-  setWorkspacePath: (workspacePath) =>
-    set((state) => {
-      if (state.workspacePath === workspacePath) return state;
-      return {
-        ...state,
-        workspacePath,
-        source: null,
-        scan: null,
-        scanSourceKey: null,
-        appliedAlignStateKey: null,
-        frame: null,
-        error: null,
-        status: null,
-      };
-    }),
-  setSource: (source) =>
-    set((state) => ({
-      ...state,
-      source,
-      scan: null,
-      scanSourceKey: null,
-      appliedAlignStateKey: null,
-      selection: defaultSelection,
-      frame: null,
-      contrast: null,
-      grid: normalizeAlignGridState(createDefaultAlignGrid()),
-      excludedCellsByPosition: {},
-      error: null,
-      status: source ? "Scanning source" : null,
-    })),
-  applySourceScan: (nextSourceKey, scan) =>
-    set((state) => {
-      if (state.scanSourceKey === nextSourceKey) return state;
-      return {
-        ...state,
-        scan,
-        scanSourceKey: nextSourceKey,
-        appliedAlignStateKey: null,
-        selection: {
-          pos: firstOrZero(scan.positions),
-          channel: firstOrZero(scan.channels),
-          time: firstOrZero(scan.times),
-          z: firstOrZero(scan.zSlices),
-        },
-        frame: null,
-        contrast: null,
-        grid: normalizeAlignGridState(createDefaultAlignGrid()),
-        excludedCellsByPosition: {},
-        error: null,
-        status: "Source loaded",
-      };
-    }),
-  applySavedAlignState: (stateKey, pos, saved) =>
-    set((state) => {
-      if (state.appliedAlignStateKey === stateKey) return state;
-      const nextExcluded = saved
-        ? setExcludedAlignGridCellsForPosition(
+function createVisibleDefaultAlignGrid(): AlignGridState {
+  return normalizeAlignGridState({ ...createDefaultAlignGrid(), enabled: true });
+}
+
+export const useAlignerStore = create<AlignerStore>()(
+  persist(
+    (set) => ({
+      ...createInitialState(),
+      setWorkspacePath: (workspacePath) =>
+        set((state) => {
+          if (state.workspacePath === workspacePath) return state;
+          return {
+            ...state,
+            workspacePath,
+            source: null,
+            scan: null,
+            scanSourceKey: null,
+            appliedAlignStateKey: null,
+            frame: null,
+            error: null,
+            status: null,
+          };
+        }),
+      setSource: (source) =>
+        set((state) => ({
+          ...state,
+          source,
+          scan: null,
+          scanSourceKey: null,
+          appliedAlignStateKey: null,
+          selection: defaultSelection,
+          frame: null,
+          contrast: null,
+          grid: normalizeAlignGridState(createDefaultAlignGrid()),
+          excludedCellsByPosition: {},
+          error: null,
+          status: source ? "Scanning source" : null,
+        })),
+      applySourceScan: (nextSourceKey, scan) =>
+        set((state) => {
+          if (state.scanSourceKey === nextSourceKey) return state;
+          return {
+            ...state,
+            scan,
+            scanSourceKey: nextSourceKey,
+            appliedAlignStateKey: null,
+            selection: {
+              pos: firstOrZero(scan.positions),
+              channel: firstOrZero(scan.channels),
+              time: firstOrZero(scan.times),
+              z: firstOrZero(scan.zSlices),
+            },
+            frame: null,
+            contrast: null,
+            grid: createVisibleDefaultAlignGrid(),
+            excludedCellsByPosition: {},
+            error: null,
+            status: "Source loaded",
+          };
+        }),
+      applySavedAlignState: (stateKey, pos, saved) =>
+        set((state) => {
+          if (state.appliedAlignStateKey === stateKey) return state;
+          const nextExcluded = saved
+            ? setExcludedAlignGridCellsForPosition(
+                state.excludedCellsByPosition,
+                pos,
+                saved.excludedCells,
+              )
+            : state.excludedCellsByPosition;
+          return {
+            ...state,
+            appliedAlignStateKey: stateKey,
+            grid: saved ? normalizeAlignGridState(saved.grid) : state.grid,
+            excludedCellsByPosition: nextExcluded,
+            status: saved ? `Loaded align/Pos${pos}.json` : state.status,
+          };
+        }),
+      setSelection: (patch) =>
+        set((state) => ({
+          ...state,
+          selection: { ...state.selection, ...patch },
+          appliedAlignStateKey:
+            patch.pos != null && patch.pos !== state.selection.pos
+              ? null
+              : state.appliedAlignStateKey,
+        })),
+      setFrame: (frame) => set((state) => ({ ...state, frame })),
+      setContrast: (contrast) => set((state) => ({ ...state, contrast })),
+      setGrid: (next) =>
+        set((state) => ({
+          ...state,
+          grid: normalizeAlignGridState(resolveNextValue(state.grid, next)),
+        })),
+      setToolMode: (toolMode) => set((state) => ({ ...state, toolMode })),
+      setExcludedCellsForCurrentPosition: (cells) =>
+        set((state) => ({
+          ...state,
+          excludedCellsByPosition: setExcludedAlignGridCellsForPosition(
             state.excludedCellsByPosition,
-            pos,
-            saved.excludedCells,
-          )
-        : state.excludedCellsByPosition;
-      return {
-        ...state,
-        appliedAlignStateKey: stateKey,
-        grid: saved ? normalizeAlignGridState(saved.grid) : state.grid,
-        excludedCellsByPosition: nextExcluded,
-        status: saved ? `Loaded align/Pos${pos}.json` : state.status,
-      };
+            state.selection.pos,
+            cells,
+          ),
+        })),
+      setFrameLoading: (frameLoading) => set((state) => ({ ...state, frameLoading })),
+      setSaving: (saving) => set((state) => ({ ...state, saving })),
+      setCropProgress: (cropProgress) => set((state) => ({ ...state, cropProgress })),
+      setError: (error) => set((state) => ({ ...state, error })),
+      setStatus: (status) => set((state) => ({ ...state, status })),
     }),
-  setSelection: (patch) =>
-    set((state) => ({
-      ...state,
-      selection: { ...state.selection, ...patch },
-      appliedAlignStateKey:
-        patch.pos != null && patch.pos !== state.selection.pos ? null : state.appliedAlignStateKey,
-    })),
-  setFrame: (frame) => set((state) => ({ ...state, frame })),
-  setContrast: (contrast) => set((state) => ({ ...state, contrast })),
-  setGrid: (next) =>
-    set((state) => ({
-      ...state,
-      grid: normalizeAlignGridState(resolveNextValue(state.grid, next)),
-    })),
-  setToolMode: (toolMode) => set((state) => ({ ...state, toolMode })),
-  setExcludedCellsForCurrentPosition: (cells) =>
-    set((state) => ({
-      ...state,
-      excludedCellsByPosition: setExcludedAlignGridCellsForPosition(
-        state.excludedCellsByPosition,
-        state.selection.pos,
-        cells,
-      ),
-    })),
-  setFrameLoading: (frameLoading) => set((state) => ({ ...state, frameLoading })),
-  setSaving: (saving) => set((state) => ({ ...state, saving })),
-  setCropProgress: (cropProgress) => set((state) => ({ ...state, cropProgress })),
-  setError: (error) => set((state) => ({ ...state, error })),
-  setStatus: (status) => set((state) => ({ ...state, status })),
-}));
+    {
+      name: "lisca-aligner-session",
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        workspacePath: state.workspacePath,
+        source: state.source,
+      }),
+    },
+  ),
+);

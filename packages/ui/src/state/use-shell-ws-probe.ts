@@ -30,28 +30,48 @@ export function useShellWsProbe(options: { defaultPort: number }): ShellWsProbe 
 
   useEffect(() => {
     setState("connecting");
-    const ws = new WebSocket(wsUrl);
+    let cancelled = false;
+    let ws: WebSocket | null = null;
 
-    ws.addEventListener("open", () => {
-      setState("open");
-      setLog((lines) => [...lines, `connected ${wsUrl}`]);
-    });
+    const connectTimer = window.setTimeout(() => {
+      if (cancelled) return;
 
-    ws.addEventListener("message", (ev) => {
-      try {
-        const data = JSON.parse(String(ev.data)) as HelloMessage | { echo?: string };
-        setLog((lines) => [...lines, JSON.stringify(data)]);
-      } catch {
-        setLog((lines) => [...lines, String(ev.data)]);
+      const socket = new WebSocket(wsUrl);
+      ws = socket;
+
+      socket.addEventListener("open", () => {
+        if (cancelled) {
+          socket.close();
+          return;
+        }
+        setState("open");
+        setLog((lines) => [...lines, `connected ${wsUrl}`]);
+      });
+
+      socket.addEventListener("message", (ev) => {
+        if (cancelled) return;
+        try {
+          const data = JSON.parse(String(ev.data)) as HelloMessage | { echo?: string };
+          setLog((lines) => [...lines, JSON.stringify(data)]);
+        } catch {
+          setLog((lines) => [...lines, String(ev.data)]);
+        }
+      });
+
+      socket.addEventListener("close", () => {
+        if (cancelled) return;
+        setState("closed");
+        setLog((lines) => [...lines, "socket closed"]);
+      });
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(connectTimer);
+      if (ws && ws.readyState !== WebSocket.CONNECTING && ws.readyState !== WebSocket.CLOSED) {
+        ws.close();
       }
-    });
-
-    ws.addEventListener("close", () => {
-      setState("closed");
-      setLog((lines) => [...lines, "socket closed"]);
-    });
-
-    return () => ws.close();
+    };
   }, [wsUrl]);
 
   return { wsUrl, state, log };
