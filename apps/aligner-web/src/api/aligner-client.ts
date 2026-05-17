@@ -1,21 +1,24 @@
-import type {
-  AlignerDataPort,
-  AlignerSource,
-  AutoExcludePreviewRequest,
-  AutoExcludePreviewResponse,
-  ContrastWindow,
-  CropRoiProgress,
-  CropRoiRequest,
-  CropRoiResponse,
-  FramePayload,
-  FrameRequest,
-  FrameResult,
-  PixelArray,
-  PixelType,
-  SaveBboxResponse,
-  SavedAlignState,
-  WorkspaceScan,
+import {
+  WS_PATH,
+  type AlignerDataPort,
+  type AlignerSource,
+  type AutoExcludePreviewRequest,
+  type AutoExcludePreviewResponse,
+  type ContrastWindow,
+  type CropRoiProgress,
+  type CropRoiProgressMessage,
+  type CropRoiRequest,
+  type CropRoiResponse,
+  type FramePayload,
+  type FrameRequest,
+  type FrameResult,
+  type PixelArray,
+  type PixelType,
+  type SaveBboxResponse,
+  type SavedAlignState,
+  type WorkspaceScan,
 } from "@lisca/contracts";
+import { resolveLiscaWsUrl } from "@lisca/utils";
 
 function createPixelArray(pixelType: PixelType, buffer: ArrayBuffer): PixelArray {
   if (pixelType === "uint8") return new Uint8Array(buffer);
@@ -85,6 +88,62 @@ function getJson<T>(
   return fetch(url, { signal }).then(readJson<T>);
 }
 
+function resolveAlignerWsUrl(baseUrl: string): string {
+  const base = new URL(baseUrl);
+  const defaultPort = Number(base.port || (base.protocol === "https:" ? 443 : 80));
+  const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+  return resolveLiscaWsUrl({
+    searchParams: params,
+    viteWsUrl: import.meta.env.VITE_WS_URL,
+    viteWsHost: import.meta.env.VITE_WS_HOST ?? base.hostname,
+    viteWsPort: import.meta.env.VITE_WS_PORT ?? base.port,
+    defaultPort,
+    wsPath: WS_PATH,
+  });
+}
+
+function isCropRoiProgressMessage(value: unknown): value is CropRoiProgressMessage {
+  if (!value || typeof value !== "object") return false;
+  const message = value as { type?: unknown; progress?: { requestId?: unknown } };
+  return message.type === "cropRoiProgress" && typeof message.progress?.requestId === "string";
+}
+
+function pollCropRoiProgress(
+  baseUrl: string,
+  requestId: string,
+  onProgress: (progress: CropRoiProgress) => void,
+) {
+  let closed = false;
+  const poll = async () => {
+    if (closed) return;
+    try {
+      const progress = await getJson<CropRoiProgress>(baseUrl, "/align/crop-roi-progress", {
+        requestId,
+      });
+      onProgress(progress);
+      if (["completed", "cancelled", "error"].includes(progress.status)) return;
+    } catch (cause) {
+      onProgress({
+        requestId,
+        status: "error",
+        position: null,
+        completedPositions: 0,
+        totalPositions: 0,
+        completedRois: 0,
+        totalRois: 0,
+        message: null,
+        error: cause instanceof Error ? cause.message : String(cause),
+      });
+      return;
+    }
+    window.setTimeout(poll, 350);
+  };
+  void poll();
+  return () => {
+    closed = true;
+  };
+}
+
 export function createAlignerHttpClient(baseUrl: string): AlignerDataPort {
   return {
     scanSource(source: AlignerSource) {
@@ -136,33 +195,70 @@ export function createAlignerHttpClient(baseUrl: string): AlignerDataPort {
     },
     onCropRoiProgress(requestId: string, onProgress: (progress: CropRoiProgress) => void) {
       let closed = false;
-      const poll = async () => {
+      let terminal = false;
+      let ws: WebSocket | null = null;
+      let stopFallback: (() => void) | null = null;
+      const fallbackTimer = window.setTimeout(() => {
+        if (closed) return;
+        stopFallback = pollCropRoiProgress(baseUrl, requestId, onProgress);
+      }, 1500);
+
+      try {
+        ws = new WebSocket(resolveAlignerWsUrl(baseUrl));
+      } catch {
+        window.clearTimeout(fallbackTimer);
+        stopFallback = pollCropRoiProgress(baseUrl, requestId, onProgress);
+      }
+
+      ws?.addEventListener("open", () => {
+        window.clearTimeout(fallbackTimer);
+        void getJson<CropRoiProgress>(baseUrl, "/align/crop-roi-progress", { requestId })
+          .then((progress) => {
+            if (closed) return;
+            onProgress(progress);
+            terminal = ["completed", "cancelled", "error"].includes(progress.status);
+            if (terminal) ws?.close();
+          })
+          .catch(() => {
+            if (closed || stopFallback) return;
+            stopFallback = pollCropRoiProgress(baseUrl, requestId, onProgress);
+          });
+      });
+
+      ws?.addEventListener("message", (event) => {
         if (closed) return;
         try {
-          const progress = await getJson<CropRoiProgress>(baseUrl, "/align/crop-roi-progress", {
-            requestId,
-          });
-          onProgress(progress);
-          if (["completed", "cancelled", "error"].includes(progress.status)) return;
-        } catch (cause) {
-          onProgress({
-            requestId,
-            status: "error",
-            position: null,
-            completedPositions: 0,
-            totalPositions: 0,
-            completedRois: 0,
-            totalRois: 0,
-            message: null,
-            error: cause instanceof Error ? cause.message : String(cause),
-          });
-          return;
+          const message = JSON.parse(String(event.data)) as unknown;
+          if (!isCropRoiProgressMessage(message) || message.progress.requestId !== requestId) {
+            return;
+          }
+          onProgress(message.progress);
+          terminal = ["completed", "cancelled", "error"].includes(message.progress.status);
+          if (terminal) {
+            ws?.close();
+          }
+        } catch {
+          // Ignore non-JSON websocket messages such as development probes.
         }
-        window.setTimeout(poll, 350);
-      };
-      void poll();
+      });
+
+      ws?.addEventListener("error", () => {
+        if (closed || stopFallback) return;
+        window.clearTimeout(fallbackTimer);
+        stopFallback = pollCropRoiProgress(baseUrl, requestId, onProgress);
+      });
+
+      ws?.addEventListener("close", () => {
+        if (closed || terminal || stopFallback) return;
+        window.clearTimeout(fallbackTimer);
+        stopFallback = pollCropRoiProgress(baseUrl, requestId, onProgress);
+      });
+
       return () => {
         closed = true;
+        window.clearTimeout(fallbackTimer);
+        stopFallback?.();
+        ws?.close();
       };
     },
     async roiPosExists(workspacePath: string, pos: number) {

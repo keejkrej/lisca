@@ -85,12 +85,22 @@ export type AlignState = {
   saving: boolean;
   cropping: boolean;
   cropProgress: CropRoiProgress | null;
+  cropConfirm: CropConfirmState | null;
   status: string | null;
   saveCurrent: () => Promise<boolean>;
   cropCurrent: () => Promise<void>;
   cropBatch: () => Promise<void>;
+  confirmCropOverwrite: () => void;
+  skipExistingCrop: () => void;
+  cancelCropConfirm: () => void;
   cancelCrop: () => Promise<void>;
   autoExclude: () => Promise<void>;
+};
+
+type CropConfirmState = {
+  kind: "single" | "batch";
+  positions: number[];
+  existingPositions: number[];
 };
 
 function clamp(n: number, min: number, max: number) {
@@ -163,6 +173,7 @@ export function useAlignState(): AlignState {
   } = useAlignerStore();
   const frameLoadIdRef = useRef(0);
   const cropRequestIdRef = useRef<string | null>(null);
+  const [cropConfirm, setCropConfirm] = useState<CropConfirmState | null>(null);
   const activeSourceKey = sourceKey(source);
   const scanQuery = useScanSourceQuery(source);
   const alignStateQuery = useLoadAlignStateQuery(workspacePath, selection, Boolean(scan));
@@ -335,13 +346,7 @@ export function useAlignState(): AlignState {
         totalRois: 0,
         message: "Queued crop",
       });
-      const stop = alignerClient.onCropRoiProgress(requestId, (progress) => {
-        setCropProgress(progress);
-        if (isDoneCropStatus(progress.status)) {
-          if (progress.status === "error") setError(progress.error ?? "Crop failed");
-          stop();
-        }
-      });
+      let stop = () => {};
       try {
         await alignerClient.cropRoi({
           requestId,
@@ -350,6 +355,13 @@ export function useAlignState(): AlignState {
           positions,
           overwrite,
           outputFormat: "tiff",
+        });
+        stop = alignerClient.onCropRoiProgress(requestId, (progress) => {
+          setCropProgress(progress);
+          if (isDoneCropStatus(progress.status)) {
+            if (progress.status === "error") setError(progress.error ?? "Crop failed");
+            stop();
+          }
         });
       } catch (cause) {
         stop();
@@ -376,11 +388,15 @@ export function useAlignState(): AlignState {
     const saved = await saveCurrent();
     if (!saved) return;
     const exists = await alignerClient.roiPosExists(workspacePath, selection.pos);
-    const overwrite = exists
-      ? window.confirm(`roi/Pos${selection.pos} already exists. Overwrite it?`)
-      : false;
-    if (exists && !overwrite) return;
-    await runCrop([selection.pos], overwrite);
+    if (exists) {
+      setCropConfirm({
+        kind: "single",
+        positions: [selection.pos],
+        existingPositions: [selection.pos],
+      });
+      return;
+    }
+    await runCrop([selection.pos], false);
   }, [frame, runCrop, saveCurrent, selection.pos, source, workspacePath]);
 
   const cropBatch = useCallback(async () => {
@@ -405,16 +421,40 @@ export function useAlignState(): AlignState {
     )
       .filter((entry) => entry.exists)
       .map((entry) => entry.pos);
-    const overwrite =
-      existing.length > 0
-        ? window.confirm(`ROI output exists for ${existing.length} position(s). Overwrite them?`)
-        : false;
-    const positions = overwrite
-      ? savedPositions
-      : savedPositions.filter((pos) => !existing.includes(pos));
-    if (positions.length === 0) return;
-    await runCrop(positions, overwrite);
+    if (existing.length > 0) {
+      setCropConfirm({
+        kind: "batch",
+        positions: savedPositions,
+        existingPositions: existing,
+      });
+      return;
+    }
+    await runCrop(savedPositions, false);
   }, [runCrop, savedPositionsQuery, setError, setStatus, source, workspacePath]);
+
+  const confirmCropOverwrite = useCallback(() => {
+    const next = cropConfirm;
+    if (!next) return;
+    setCropConfirm(null);
+    void runCrop(next.positions, true);
+  }, [cropConfirm, runCrop]);
+
+  const skipExistingCrop = useCallback(() => {
+    const next = cropConfirm;
+    if (!next || next.kind !== "batch") return;
+    setCropConfirm(null);
+    const existing = new Set(next.existingPositions);
+    const remaining = next.positions.filter((pos) => !existing.has(pos));
+    if (remaining.length === 0) {
+      setStatus(`Skipped ${next.existingPositions.length} existing ROI output(s)`);
+      return;
+    }
+    void runCrop(remaining, false);
+  }, [cropConfirm, runCrop, setStatus]);
+
+  const cancelCropConfirm = useCallback(() => {
+    setCropConfirm(null);
+  }, []);
 
   const cancelCrop = useCallback(async () => {
     const requestId = cropRequestIdRef.current;
@@ -490,10 +530,14 @@ export function useAlignState(): AlignState {
     saving,
     cropping,
     cropProgress,
+    cropConfirm,
     status,
     saveCurrent,
     cropCurrent,
     cropBatch,
+    confirmCropOverwrite,
+    skipExistingCrop,
+    cancelCropConfirm,
     cancelCrop,
     autoExclude,
   };
@@ -945,7 +989,57 @@ function AlignCanvasPanel({ state }: { state: AlignState }) {
         onVirtualPointerMove={handlePointerMove}
         onVirtualPointerUp={handlePointerEnd}
       />
+      <CropConfirmModal state={state} />
       <CropProgressModal state={state} />
+    </div>
+  );
+}
+
+function CropConfirmModal({ state }: { state: AlignState }) {
+  const confirm = state.cropConfirm;
+  if (!confirm) return null;
+
+  const existingList = confirm.existingPositions.map((pos) => `Pos${pos}`).join(", ");
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 px-6 backdrop-blur-sm">
+      <div
+        aria-labelledby="crop-confirm-title"
+        aria-modal="true"
+        className="w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-2xl"
+        role="dialog"
+      >
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <h2 id="crop-confirm-title" className="font-medium text-foreground">
+              ROI output already exists
+            </h2>
+            <p className="text-muted-foreground text-sm">
+              {confirm.kind === "single"
+                ? `roi/Pos${confirm.positions[0]} already exists. Overwrite the existing cropped ROI files for this position?`
+                : `${confirm.existingPositions.length} of ${confirm.positions.length} saved positions already have ROI output. Overwrite those folders or skip them and crop only the remaining positions.`}
+            </p>
+            {confirm.kind === "batch" ? (
+              <p className="max-h-20 overflow-auto text-muted-foreground text-xs">
+                {existingList}
+              </p>
+            ) : null}
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button size="sm" type="button" variant="outline" onClick={state.cancelCropConfirm}>
+              Cancel
+            </Button>
+            {confirm.kind === "batch" ? (
+              <Button size="sm" type="button" variant="outline" onClick={state.skipExistingCrop}>
+                Skip Existing
+              </Button>
+            ) : null}
+            <Button size="sm" type="button" onClick={state.confirmCropOverwrite}>
+              Overwrite
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

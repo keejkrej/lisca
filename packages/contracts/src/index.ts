@@ -270,6 +270,13 @@ export type CropRoiProgress = {
   error?: string;
 };
 
+export type CropRoiProgressMessage = {
+  type: "cropRoiProgress";
+  progress: CropRoiProgress;
+};
+
+export type ServerWsMessage = HelloMessage | CropRoiProgressMessage;
+
 export type RoiPosExistsResponse = {
   exists: boolean;
 };

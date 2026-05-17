@@ -6,6 +6,7 @@ use std::{
         atomic::{AtomicBool, Ordering as AtomicOrdering},
         Arc, Mutex,
     },
+    time::Duration,
 };
 
 use axum::{
@@ -19,6 +20,7 @@ use axum::{
     Json, Router,
 };
 use serde::Deserialize;
+use tokio::sync::broadcast;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing::{info, warn};
 
@@ -36,6 +38,7 @@ use crate::{
 struct AppState {
     app: AppId,
     crop_jobs: Arc<Mutex<HashMap<String, CropJob>>>,
+    crop_events: broadcast::Sender<CropRoiProgress>,
 }
 
 #[derive(Clone)]
@@ -48,6 +51,7 @@ pub async fn run_ws_server(app: AppId, port: u16) -> Result<(), std::io::Error> 
     let state = AppState {
         app,
         crop_jobs: Arc::new(Mutex::new(HashMap::new())),
+        crop_events: broadcast::channel(128).0,
     };
 
     let app_router = Router::new()
@@ -311,17 +315,20 @@ async fn crop_roi_handler(
             },
         );
     }
+    let _ = state.crop_events.send(progress.clone());
 
     let request_id = request.request_id.clone();
     let jobs = state.crop_jobs.clone();
+    let crop_events = state.crop_events.clone();
     tokio::task::spawn_blocking(move || {
         let update_jobs = jobs.clone();
         let result = aligner::crop_roi(request, &cancel, |progress| {
             if let Ok(mut jobs) = update_jobs.lock() {
                 if let Some(job) = jobs.get_mut(&progress.request_id) {
-                    job.progress = progress;
+                    job.progress = progress.clone();
                 }
             }
+            let _ = crop_events.send(progress);
         });
 
         if let Err(error) = result {
@@ -330,6 +337,7 @@ async fn crop_roi_handler(
                     job.progress.status = CropRoiStatus::Error;
                     job.progress.error = Some(error);
                     job.progress.message = Some("Crop failed".to_string());
+                    let _ = crop_events.send(job.progress.clone());
                 }
             }
         }
@@ -360,6 +368,7 @@ async fn cancel_crop_roi_handler(
         job.progress.status = CropRoiStatus::Cancelled;
         job.progress.message = Some("Crop cancellation requested".to_string());
     }
+    let _ = state.crop_events.send(job.progress.clone());
     Ok(Json(job.progress.clone()))
 }
 
@@ -535,6 +544,8 @@ async fn ws_handler(ws: WebSocketUpgrade, State(state): State<AppState>) -> impl
 }
 
 async fn handle_socket(mut socket: WebSocket, state: AppState) {
+    let mut crop_events = state.crop_events.subscribe();
+    let mut keepalive = tokio::time::interval(Duration::from_secs(30));
     let hello = Hello {
         app: state.app,
         version: env!("CARGO_PKG_VERSION").to_string(),
@@ -548,23 +559,30 @@ async fn handle_socket(mut socket: WebSocket, state: AppState) {
         return;
     }
 
-    while let Some(msg) = socket.recv().await {
-        match msg {
-            Ok(Message::Text(t)) => {
-                let reply = serde_json::json!({
-                    "app": state.app.as_str(),
-                    "echo": t.to_string(),
-                })
-                .to_string();
-                if socket.send(Message::Text(reply.into())).await.is_err() {
-                    break;
+    loop {
+        tokio::select! {
+            event = crop_events.recv() => {
+                match event {
+                    Ok(progress) => {
+                        let event = serde_json::json!({
+                            "type": "cropRoiProgress",
+                            "progress": progress,
+                        })
+                        .to_string();
+                        if socket.send(Message::Text(event.into())).await.is_err() {
+                            break;
+                        }
+                    }
+                    Err(broadcast::error::RecvError::Lagged(skipped)) => {
+                        warn!(skipped, "crop progress websocket receiver lagged");
+                    }
+                    Err(broadcast::error::RecvError::Closed) => break,
                 }
             }
-            Ok(Message::Close(_)) => break,
-            Ok(_) => {}
-            Err(e) => {
-                warn!(?e, "websocket error");
-                break;
+            _ = keepalive.tick() => {
+                if socket.send(Message::Ping(Vec::new().into())).await.is_err() {
+                    break;
+                }
             }
         }
     }
