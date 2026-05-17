@@ -178,9 +178,11 @@ function drawGridOverlay(
 }
 
 function messageToneClassName(tone: AlignCanvasStatusTone | undefined) {
-  if (tone === "error") return "border-red-500/35 text-red-200";
-  if (tone === "success") return "border-emerald-500/35 text-emerald-200";
-  return "border-white/15 text-white/75";
+  if (tone === "error") return "border-destructive/35 bg-destructive/10 text-destructive-foreground";
+  if (tone === "success") {
+    return "border-emerald-600/30 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-300";
+  }
+  return "border-border text-muted-foreground";
 }
 
 export function AlignCanvasSurface({
@@ -418,7 +420,7 @@ export function AlignCanvasSurface({
             <div
               key={`${message.tone ?? "default"}:${message.text}:${index}`}
               className={cn(
-                "rounded-md border bg-zinc-950/90 px-3 py-2 text-sm leading-snug shadow-lg",
+                "rounded-md border bg-card/95 px-3 py-2 text-sm leading-snug shadow-lg backdrop-blur-sm",
                 messageToneClassName(message.tone),
               )}
             >
