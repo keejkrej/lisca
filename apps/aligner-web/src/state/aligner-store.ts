@@ -217,7 +217,7 @@ export const useAlignerStore = create<AlignerStore>()(
     }),
     {
       name: "lisca-aligner-session",
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => sessionStorage),
       partialize: (state) => ({
         workspacePath: state.workspacePath,
         source: state.source,
