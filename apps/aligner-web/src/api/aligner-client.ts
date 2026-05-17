@@ -28,21 +28,26 @@ function createPixelArray(pixelType: PixelType, buffer: ArrayBuffer): PixelArray
 }
 
 export function decodeFramePayload(payload: FramePayload): FrameResult {
-  const binary = window.atob(payload.dataBase64);
-  const bytes = new Uint8Array(binary.length);
-  for (let index = 0; index < binary.length; index += 1) {
-    bytes[index] = binary.charCodeAt(index);
-  }
+  try {
+    const binary = window.atob(payload.dataBase64);
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index += 1) {
+      bytes[index] = binary.charCodeAt(index);
+    }
 
-  return {
-    width: payload.width,
-    height: payload.height,
-    pixels: createPixelArray(payload.pixelType, bytes.buffer),
-    pixelType: payload.pixelType,
-    contrastDomain: payload.contrastDomain,
-    suggestedContrast: payload.suggestedContrast,
-    appliedContrast: payload.appliedContrast,
-  };
+    return {
+      width: payload.width,
+      height: payload.height,
+      pixels: createPixelArray(payload.pixelType, bytes.buffer),
+      pixelType: payload.pixelType,
+      contrastDomain: payload.contrastDomain,
+      suggestedContrast: payload.suggestedContrast,
+      appliedContrast: payload.appliedContrast,
+    };
+  } catch (cause) {
+    const detail = cause instanceof Error ? cause.message : String(cause);
+    throw new Error(`Base64 decode failed: ${detail}`);
+  }
 }
 
 async function readJson<T>(response: Response): Promise<T> {
@@ -53,20 +58,31 @@ async function readJson<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-function postJson<T>(baseUrl: string, path: string, body: unknown): Promise<T> {
+function postJson<T>(
+  baseUrl: string,
+  path: string,
+  body: unknown,
+  signal?: AbortSignal,
+): Promise<T> {
   return fetch(new URL(path, baseUrl), {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
+    signal,
   }).then(readJson<T>);
 }
 
-function getJson<T>(baseUrl: string, path: string, params?: Record<string, string | number>) {
+function getJson<T>(
+  baseUrl: string,
+  path: string,
+  params?: Record<string, string | number>,
+  signal?: AbortSignal,
+) {
   const url = new URL(path, baseUrl);
   for (const [key, value] of Object.entries(params ?? {})) {
     url.searchParams.set(key, String(value));
   }
-  return fetch(url).then(readJson<T>);
+  return fetch(url, { signal }).then(readJson<T>);
 }
 
 export function createAlignerHttpClient(baseUrl: string): AlignerDataPort {
@@ -74,12 +90,22 @@ export function createAlignerHttpClient(baseUrl: string): AlignerDataPort {
     scanSource(source: AlignerSource) {
       return postJson<WorkspaceScan>(baseUrl, "/align/scan-source", { source });
     },
-    async loadFrame(source: AlignerSource, request: FrameRequest, contrast?: ContrastWindow | null) {
-      const payload = await postJson<FramePayload>(baseUrl, "/align/load-frame", {
-        source,
-        request,
-        contrast: contrast ?? null,
-      });
+    async loadFrame(
+      source: AlignerSource,
+      request: FrameRequest,
+      contrast?: ContrastWindow | null,
+      signal?: AbortSignal,
+    ) {
+      const payload = await postJson<FramePayload>(
+        baseUrl,
+        "/align/load-frame",
+        {
+          source,
+          request,
+          contrast: contrast ?? null,
+        },
+        signal,
+      );
       return decodeFramePayload(payload);
     },
     loadAlignState(workspacePath: string, pos: number) {

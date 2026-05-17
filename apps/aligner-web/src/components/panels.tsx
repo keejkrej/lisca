@@ -35,21 +35,31 @@ import {
   degreesToRadians,
   enumerateVisibleAlignGridCells,
   mergeExcludedAlignGridCells,
-  normalizeAlignGridState,
   radiansToDegrees,
-  setExcludedAlignGridCellsForPosition,
   type AlignGridPointerGestureSession,
   type AlignGridToolMode,
 } from "@lisca/utils";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Effect, Exit } from "effect";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
-import { createAlignerHttpClient } from "../api/aligner-client";
+import {
+  alignerClient,
+  toErrorMessage,
+  useAutoExcludePreviewMutation,
+  useLoadAlignStateQuery,
+  useSavedBboxPositionsQuery,
+  useScanSourceQuery,
+} from "../api/aligner-queries";
+import { effectErrorMessage, loadFrameEffect } from "../effects/frame-loader";
+import {
+  savedAlignStateKey,
+  sourceKey,
+  useAlignerStore,
+  type ExcludedByPosition,
+} from "../state/aligner-store";
 import type { RouteId } from "../types";
 
-type ExcludedByPosition = Record<number, AlignGridCellCoord[]>;
-
 const emptyExcludedCells: AlignGridCellCoord[] = [];
-const alignerClient = createAlignerHttpClient("http://127.0.0.1:8765");
 
 export type AlignState = {
   workspacePath: string | null;
@@ -83,10 +93,6 @@ export type AlignState = {
   autoExclude: () => Promise<void>;
 };
 
-function firstOrZero(values: number[] | undefined): number {
-  return values?.[0] ?? 0;
-}
-
 function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n));
 }
@@ -111,7 +117,9 @@ function buildBboxCsv(
   return ["roi,x,y,w,h,i,j", ...rows].join("\n");
 }
 
-function alignStateFromCurrent(state: Pick<AlignState, "grid" | "currentExcludedCells">): SavedAlignState {
+function alignStateFromCurrent(
+  state: Pick<AlignState, "grid" | "currentExcludedCells">,
+): SavedAlignState {
   return {
     grid: state.grid,
     excludedCells: state.currentExcludedCells,
@@ -120,28 +128,47 @@ function alignStateFromCurrent(state: Pick<AlignState, "grid" | "currentExcluded
 
 export function useAlignState(): AlignState {
   const workspace = useShellWorkspace();
-  const [source, setSource] = useState<AlignerSource | null>(null);
-  const [scan, setScan] = useState<WorkspaceScan | null>(null);
-  const [selection, setSelectionRaw] = useState<FrameRequest>({
-    pos: 0,
-    channel: 0,
-    time: 0,
-    z: 0,
-  });
-  const [frame, setFrame] = useState<FrameResult | null>(null);
-  const [contrast, setContrast] = useState<ContrastWindow | null>(null);
-  const [grid, setGridRaw] = useState(() => normalizeAlignGridState(createDefaultAlignGrid()));
-  const [toolMode, setToolMode] = useState<AlignGridToolMode>("pan");
-  const [excludedCellsByPosition, setExcludedCellsByPosition] = useState<ExcludedByPosition>({});
-  const [scanLoading, setScanLoading] = useState(false);
-  const [frameLoading, setFrameLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [cropProgress, setCropProgress] = useState<CropRoiProgress | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
+  const {
+    workspacePath,
+    source,
+    setSource,
+    scan,
+    scanSourceKey,
+    appliedAlignStateKey,
+    selection,
+    setSelection,
+    contrast,
+    setContrast,
+    frame,
+    setFrame,
+    grid,
+    setGrid,
+    toolMode,
+    setToolMode,
+    excludedCellsByPosition,
+    setExcludedCellsForCurrentPosition,
+    frameLoading,
+    setFrameLoading,
+    saving,
+    setSaving,
+    cropProgress,
+    setCropProgress,
+    error,
+    setError,
+    status,
+    setStatus,
+    setWorkspacePath,
+    applySourceScan,
+    applySavedAlignState,
+  } = useAlignerStore();
+  const frameLoadIdRef = useRef(0);
   const cropRequestIdRef = useRef<string | null>(null);
+  const activeSourceKey = sourceKey(source);
+  const scanQuery = useScanSourceQuery(source);
+  const alignStateQuery = useLoadAlignStateQuery(workspacePath, selection, Boolean(scan));
+  const savedPositionsQuery = useSavedBboxPositionsQuery(workspacePath, Boolean(workspacePath));
+  const autoExcludePreview = useAutoExcludePreviewMutation();
 
-  const workspacePath = workspace.workspacePath;
   const currentExcludedCells = useMemo(
     () => excludedCellsByPosition[selection.pos] ?? emptyExcludedCells,
     [excludedCellsByPosition, selection.pos],
@@ -156,127 +183,97 @@ export function useAlignState(): AlignState {
     [currentExcludedCells, frame, grid],
   );
 
-  const setSelection = useCallback((patch: Partial<FrameRequest>) => {
-    setSelectionRaw((current) => ({ ...current, ...patch }));
-  }, []);
-
-  const setGrid = useCallback(
-    (next: AlignGridState | ((current: AlignGridState) => AlignGridState)) => {
-      setGridRaw((current) =>
-        normalizeAlignGridState(typeof next === "function" ? next(current) : next),
-      );
-    },
-    [],
-  );
-
-  const setExcludedCellsForCurrentPosition = useCallback(
-    (cells: Iterable<AlignGridCellCoord>) => {
-      setExcludedCellsByPosition((current) =>
-        setExcludedAlignGridCellsForPosition(current, selection.pos, cells),
-      );
-    },
-    [selection.pos],
-  );
+  useEffect(() => {
+    setWorkspacePath(workspace.workspacePath);
+  }, [setWorkspacePath, workspace.workspacePath]);
 
   useEffect(() => {
-    if (!workspacePath) {
-      setSource(null);
-      setScan(null);
-      setFrame(null);
+    if (source && scanQuery.isFetching) {
       setError(null);
+      setStatus("Scanning source");
     }
-  }, [workspacePath]);
+  }, [scanQuery.isFetching, setError, setStatus, source]);
 
   useEffect(() => {
-    if (!source) {
-      setScan(null);
-      setFrame(null);
+    if (!scanQuery.data || !activeSourceKey || scanSourceKey === activeSourceKey) return;
+    applySourceScan(activeSourceKey, scanQuery.data);
+  }, [activeSourceKey, applySourceScan, scanQuery.data, scanSourceKey]);
+
+  useEffect(() => {
+    if (!scanQuery.error) return;
+    setFrame(null);
+    setError(toErrorMessage(scanQuery.error, "Source scan failed"));
+  }, [scanQuery.error, setError, setFrame]);
+
+  useEffect(() => {
+    if (!workspacePath || alignStateQuery.data === undefined) return;
+    const stateKey = savedAlignStateKey(workspacePath, selection.pos);
+    if (appliedAlignStateKey === stateKey) return;
+    applySavedAlignState(stateKey, selection.pos, alignStateQuery.data);
+  }, [
+    alignStateQuery.data,
+    appliedAlignStateKey,
+    applySavedAlignState,
+    selection.pos,
+    workspacePath,
+  ]);
+
+  useEffect(() => {
+    if (!alignStateQuery.error) return;
+    setError(toErrorMessage(alignStateQuery.error, "Saved align state load failed"));
+  }, [alignStateQuery.error, setError]);
+
+  useEffect(() => {
+    frameLoadIdRef.current += 1;
+    const loadId = frameLoadIdRef.current;
+
+    if (!source || !scan) {
+      setFrameLoading(false);
       return;
     }
-    let cancelled = false;
-    setScanLoading(true);
-    setError(null);
-    setStatus("Scanning source");
-    void alignerClient
-      .scanSource(source)
-      .then((nextScan) => {
-        if (cancelled) return;
-        setScan(nextScan);
-        setSelectionRaw({
-          pos: firstOrZero(nextScan.positions),
-          channel: firstOrZero(nextScan.channels),
-          time: firstOrZero(nextScan.times),
-          z: firstOrZero(nextScan.zSlices),
-        });
-        setContrast(null);
-        setGridRaw(normalizeAlignGridState(createDefaultAlignGrid()));
-        setExcludedCellsByPosition({});
-        setStatus("Source loaded");
-      })
-      .catch((cause) => {
-        if (cancelled) return;
-        setScan(null);
-        setFrame(null);
-        setError(cause instanceof Error ? cause.message : String(cause));
-      })
-      .finally(() => {
-        if (!cancelled) setScanLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [source]);
 
-  useEffect(() => {
-    if (!workspacePath || !scan) return;
-    let cancelled = false;
-    void alignerClient
-      .loadAlignState(workspacePath, selection.pos)
-      .then((saved) => {
-        if (cancelled || !saved) return;
-        setGridRaw(normalizeAlignGridState(saved.grid));
-        setExcludedCellsByPosition((current) =>
-          setExcludedAlignGridCellsForPosition(current, selection.pos, saved.excludedCells),
-        );
-        setStatus(`Loaded align/Pos${selection.pos}.json`);
-      })
-      .catch((cause) => {
-        if (!cancelled) setError(cause instanceof Error ? cause.message : String(cause));
-      });
-    return () => {
-      cancelled = true;
+    const abortController = new AbortController();
+    const commit = (apply: () => void) => {
+      if (frameLoadIdRef.current === loadId && !abortController.signal.aborted) apply();
     };
-  }, [scan, selection.pos, workspacePath]);
 
-  useEffect(() => {
-    if (!source || !scan) return;
-    let cancelled = false;
     setFrameLoading(true);
     setError(null);
-    void alignerClient
-      .loadFrame(source, selection, contrast)
-      .then((nextFrame) => {
-        if (cancelled) return;
-        setFrame(nextFrame);
-        const nextContrast = nextFrame.appliedContrast ?? nextFrame.suggestedContrast ?? null;
-        setContrast((current) =>
-          current?.min === nextContrast?.min && current?.max === nextContrast?.max
-            ? current
-            : nextContrast,
-        );
-      })
-      .catch((cause) => {
-        if (cancelled) return;
+    setStatus("Loading frame");
+
+    const program = loadFrameEffect(alignerClient, source, selection, contrast).pipe(
+      Effect.tap((nextFrame) =>
+        Effect.sync(() =>
+          commit(() => {
+            setFrame(nextFrame);
+            setStatus(`Loaded Pos${selection.pos}`);
+          }),
+        ),
+      ),
+      Effect.catchAll((cause) =>
+        Effect.sync(() =>
+          commit(() => {
+            setFrame(null);
+            setError(effectErrorMessage(cause));
+          }),
+        ),
+      ),
+      Effect.ensuring(Effect.sync(() => commit(() => setFrameLoading(false)))),
+    );
+
+    void Effect.runPromiseExit(program, { signal: abortController.signal }).then((exit) => {
+      if (!Exit.isFailure(exit) || abortController.signal.aborted) return;
+      commit(() => {
         setFrame(null);
-        setError(cause instanceof Error ? cause.message : String(cause));
-      })
-      .finally(() => {
-        if (!cancelled) setFrameLoading(false);
+        setError(effectErrorMessage(exit.cause));
+        setFrameLoading(false);
       });
+    });
+
     return () => {
-      cancelled = true;
+      abortController.abort();
     };
-  }, [contrast, scan, selection, source]);
+  }, [contrast, scan, selection, setError, setFrame, setFrameLoading, setStatus, source]);
 
   const saveCurrent = useCallback(async () => {
     if (!workspacePath || !frame) return false;
@@ -294,12 +291,21 @@ export function useAlignState(): AlignState {
       setStatus(`Saved bbox/Pos${selection.pos}.csv`);
       return true;
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
+      setError(toErrorMessage(cause, "Save failed"));
       return false;
     } finally {
       setSaving(false);
     }
-  }, [currentExcludedCells, frame, grid, selection.pos, workspacePath]);
+  }, [
+    currentExcludedCells,
+    frame,
+    grid,
+    selection.pos,
+    setError,
+    setSaving,
+    setStatus,
+    workspacePath,
+  ]);
 
   const runCrop = useCallback(
     async (positions: number[], overwrite: boolean) => {
@@ -335,19 +341,22 @@ export function useAlignState(): AlignState {
         });
       } catch (cause) {
         stop();
-        setError(cause instanceof Error ? cause.message : String(cause));
-        setCropProgress((current) =>
-          current
-            ? {
-                ...current,
-                status: "error",
-                error: cause instanceof Error ? cause.message : String(cause),
-              }
-            : current,
-        );
+        const message = toErrorMessage(cause, "Crop failed");
+        setError(message);
+        setCropProgress({
+          requestId,
+          status: "error",
+          position: null,
+          completedPositions: 0,
+          totalPositions: positions.length,
+          completedRois: 0,
+          totalRois: 0,
+          message,
+          error: message,
+        });
       }
     },
-    [source, workspacePath],
+    [setCropProgress, setError, source, workspacePath],
   );
 
   const cropCurrent = useCallback(async () => {
@@ -364,7 +373,12 @@ export function useAlignState(): AlignState {
 
   const cropBatch = useCallback(async () => {
     if (!workspacePath || !source) return;
-    const savedPositions = await alignerClient.listSavedBboxPositions(workspacePath);
+    const savedPositionsResult = await savedPositionsQuery.refetch();
+    if (savedPositionsResult.error) {
+      setError(toErrorMessage(savedPositionsResult.error, "Saved bbox positions load failed"));
+      return;
+    }
+    const savedPositions = savedPositionsResult.data ?? [];
     if (savedPositions.length === 0) {
       setStatus("No saved bbox CSVs found");
       return;
@@ -388,13 +402,13 @@ export function useAlignState(): AlignState {
       : savedPositions.filter((pos) => !existing.includes(pos));
     if (positions.length === 0) return;
     await runCrop(positions, overwrite);
-  }, [runCrop, source, workspacePath]);
+  }, [runCrop, savedPositionsQuery, setError, setStatus, source, workspacePath]);
 
   const cancelCrop = useCallback(async () => {
     const requestId = cropRequestIdRef.current;
     if (!requestId) return;
     setCropProgress(await alignerClient.cancelCropRoi(requestId));
-  }, []);
+  }, [setCropProgress]);
 
   const autoExclude = useCallback(async () => {
     if (!source || !frame) return;
@@ -402,7 +416,7 @@ export function useAlignState(): AlignState {
     if (cells.length === 0) return;
     setStatus("Auto exclude preview");
     try {
-      const preview = await alignerClient.autoExcludePreview({
+      const preview = await autoExcludePreview.mutateAsync({
         source,
         selection,
         cells,
@@ -426,16 +440,26 @@ export function useAlignState(): AlignState {
       );
       setStatus(`Auto excluded ${autoExcluded.length} of ${preview.eligibleCellCount} cells`);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
+      setError(toErrorMessage(cause, "Auto exclude preview failed"));
     }
-  }, [currentExcludedCells, frame, grid, selection, setExcludedCellsForCurrentPosition, source]);
+  }, [
+    autoExcludePreview,
+    currentExcludedCells,
+    frame,
+    grid,
+    selection,
+    setError,
+    setExcludedCellsForCurrentPosition,
+    setStatus,
+    source,
+  ]);
 
   return {
     workspacePath,
     source,
     setSource,
     scan,
-    scanLoading,
+    scanLoading: source != null && scanQuery.isFetching,
     frameLoading,
     error,
     selection,
@@ -464,8 +488,14 @@ export function useAlignState(): AlignState {
 }
 
 function AlignFrameNavigation({ state }: { state: AlignState }) {
-  const positionOptions = useMemo(() => toNavigationOptions(state.scan?.positions ?? []), [state.scan]);
-  const channelOptions = useMemo(() => toNavigationOptions(state.scan?.channels ?? []), [state.scan]);
+  const positionOptions = useMemo(
+    () => toNavigationOptions(state.scan?.positions ?? []),
+    [state.scan],
+  );
+  const channelOptions = useMemo(
+    () => toNavigationOptions(state.scan?.channels ?? []),
+    [state.scan],
+  );
   const timeIndex = selectedIndex(state.scan?.times, state.selection.time);
   const zIndex = selectedIndex(state.scan?.zSlices, state.selection.z);
   const timeMax = Math.max(0, (state.scan?.times.length ?? 1) - 1);
@@ -558,7 +588,8 @@ export function LeftPanel(props: { routeId: RouteId; alignState?: AlignState }) 
 
 function DockContrastControls({ state }: { state: AlignState }) {
   const domain = state.frame?.contrastDomain ?? { min: 0, max: 255 };
-  const value = state.contrast ?? state.frame?.appliedContrast ?? { min: domain.min, max: domain.max };
+  const value = state.contrast ??
+    state.frame?.appliedContrast ?? { min: domain.min, max: domain.max };
   return (
     <ContrastControl
       aria-label="Contrast"

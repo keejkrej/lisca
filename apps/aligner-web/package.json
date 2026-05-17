@@ -13,9 +13,12 @@
     "@lisca/contracts": "workspace:*",
     "@lisca/ui": "workspace:*",
     "@lisca/utils": "workspace:*",
+    "@tanstack/react-query": "^5.100.10",
     "@tanstack/react-router": "^1.169.2",
+    "effect": "^3.21.2",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "zustand": "^5.0.13"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.8",
