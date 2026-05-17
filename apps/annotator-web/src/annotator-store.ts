@@ -8,6 +8,7 @@ import type {
   RoiWorkspaceScan,
 } from "@lisca/contracts";
 import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 import type { AnnotationTool } from "./annotation-canvas";
 
@@ -146,72 +147,84 @@ export function requestKey(
   return `${position.pos}:${roi.roi}:${selection.channel}:${time}:${z}`;
 }
 
-export const useAnnotatorStore = create<AnnotatorStore>((set) => ({
-  ...createInitialState(),
-  setWorkspacePath: (workspacePath) =>
-    set((state) => {
-      if (state.workspacePath === workspacePath) return state;
-      return {
-        ...state,
-        workspacePath,
-        scan: null,
-        labels: [],
-        selection: defaultSelection,
-        activeLabelId: null,
-        frame: null,
-        contrast: null,
-        contrastDomain: defaultContrastDomain,
-        contrastMin: 0,
-        contrastMax: 255,
-        scanError: null,
-        frameError: null,
-        annotationError: null,
-        saveError: null,
-        labelError: null,
-        status: null,
-      };
+export const useAnnotatorStore = create<AnnotatorStore>()(
+  persist(
+    (set) => ({
+      ...createInitialState(),
+      setWorkspacePath: (workspacePath) =>
+        set((state) => {
+          if (state.workspacePath === workspacePath) return state;
+          return {
+            ...state,
+            workspacePath,
+            scan: null,
+            labels: [],
+            selection: defaultSelection,
+            activeLabelId: null,
+            frame: null,
+            contrast: null,
+            contrastDomain: defaultContrastDomain,
+            contrastMin: 0,
+            contrastMax: 255,
+            scanError: null,
+            frameError: null,
+            annotationError: null,
+            saveError: null,
+            labelError: null,
+            status: null,
+          };
+        }),
+      setScan: (scan) => set((state) => ({ ...state, scan })),
+      setLabels: (labels) =>
+        set((state) => ({
+          ...state,
+          labels,
+          activeLabelId:
+            state.activeLabelId && labels.some((label) => label.id === state.activeLabelId)
+              ? state.activeLabelId
+              : (labels[0]?.id ?? null),
+        })),
+      setSelection: (patch) =>
+        set((state) => ({ ...state, selection: { ...state.selection, ...patch } })),
+      setActiveLabelId: (activeLabelId) => set((state) => ({ ...state, activeLabelId })),
+      setMode: (mode) => set((state) => ({ ...state, mode })),
+      setTool: (tool) => set((state) => ({ ...state, tool })),
+      setBrushSize: (brushSize) => set((state) => ({ ...state, brushSize })),
+      setOverlayOpacity: (overlayOpacity) => set((state) => ({ ...state, overlayOpacity })),
+      setFrame: (frame) => set((state) => ({ ...state, frame })),
+      setContrast: (contrast) =>
+        set((state) => ({
+          ...state,
+          contrast,
+          contrastMin: contrast?.min ?? state.contrastMin,
+          contrastMax: contrast?.max ?? state.contrastMax,
+        })),
+      setContrastState: (frame) =>
+        set((state) => ({
+          ...state,
+          contrastDomain: frame.contrastDomain ?? defaultContrastDomain,
+          contrastMin: frame.appliedContrast?.min ?? state.contrastMin,
+          contrastMax: frame.appliedContrast?.max ?? state.contrastMax,
+        })),
+      setScanLoading: (scanLoading) => set((state) => ({ ...state, scanLoading })),
+      setFrameLoading: (frameLoading) => set((state) => ({ ...state, frameLoading })),
+      setAnnotationLoading: (annotationLoading) =>
+        set((state) => ({ ...state, annotationLoading })),
+      setSaving: (saving) => set((state) => ({ ...state, saving })),
+      setScanError: (scanError) => set((state) => ({ ...state, scanError })),
+      setFrameError: (frameError) => set((state) => ({ ...state, frameError })),
+      setAnnotationError: (annotationError) => set((state) => ({ ...state, annotationError })),
+      setSaveError: (saveError) => set((state) => ({ ...state, saveError })),
+      setLabelError: (labelError) => set((state) => ({ ...state, labelError })),
+      setStatus: (status) => set((state) => ({ ...state, status })),
+      setLabelDialogOpen: (labelDialogOpen) => set((state) => ({ ...state, labelDialogOpen })),
     }),
-  setScan: (scan) => set((state) => ({ ...state, scan })),
-  setLabels: (labels) =>
-    set((state) => ({
-      ...state,
-      labels,
-      activeLabelId:
-        state.activeLabelId && labels.some((label) => label.id === state.activeLabelId)
-          ? state.activeLabelId
-          : (labels[0]?.id ?? null),
-    })),
-  setSelection: (patch) =>
-    set((state) => ({ ...state, selection: { ...state.selection, ...patch } })),
-  setActiveLabelId: (activeLabelId) => set((state) => ({ ...state, activeLabelId })),
-  setMode: (mode) => set((state) => ({ ...state, mode })),
-  setTool: (tool) => set((state) => ({ ...state, tool })),
-  setBrushSize: (brushSize) => set((state) => ({ ...state, brushSize })),
-  setOverlayOpacity: (overlayOpacity) => set((state) => ({ ...state, overlayOpacity })),
-  setFrame: (frame) => set((state) => ({ ...state, frame })),
-  setContrast: (contrast) =>
-    set((state) => ({
-      ...state,
-      contrast,
-      contrastMin: contrast?.min ?? state.contrastMin,
-      contrastMax: contrast?.max ?? state.contrastMax,
-    })),
-  setContrastState: (frame) =>
-    set((state) => ({
-      ...state,
-      contrastDomain: frame.contrastDomain ?? defaultContrastDomain,
-      contrastMin: frame.appliedContrast?.min ?? state.contrastMin,
-      contrastMax: frame.appliedContrast?.max ?? state.contrastMax,
-    })),
-  setScanLoading: (scanLoading) => set((state) => ({ ...state, scanLoading })),
-  setFrameLoading: (frameLoading) => set((state) => ({ ...state, frameLoading })),
-  setAnnotationLoading: (annotationLoading) => set((state) => ({ ...state, annotationLoading })),
-  setSaving: (saving) => set((state) => ({ ...state, saving })),
-  setScanError: (scanError) => set((state) => ({ ...state, scanError })),
-  setFrameError: (frameError) => set((state) => ({ ...state, frameError })),
-  setAnnotationError: (annotationError) => set((state) => ({ ...state, annotationError })),
-  setSaveError: (saveError) => set((state) => ({ ...state, saveError })),
-  setLabelError: (labelError) => set((state) => ({ ...state, labelError })),
-  setStatus: (status) => set((state) => ({ ...state, status })),
-  setLabelDialogOpen: (labelDialogOpen) => set((state) => ({ ...state, labelDialogOpen })),
-}));
+    {
+      name: "lisca-annotator-session",
+      storage: createJSONStorage(() => sessionStorage),
+      partialize: (state) => ({
+        workspacePath: state.workspacePath,
+      }),
+    },
+  ),
+);

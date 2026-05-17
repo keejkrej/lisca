@@ -454,6 +454,7 @@ export function AnnotatorShellPage(props: { routeId: string }) {
     annotationError,
     saveError,
     labelError,
+    status,
     labelDialogOpen,
     setWorkspacePath,
     setScan,
@@ -508,6 +509,8 @@ export function AnnotatorShellPage(props: { routeId: string }) {
   const canEditSegmentation =
     canEdit && mode === "segmentation" && (activeLabelValue > 0 || toolCanRunWithoutLabel);
   const canSave = canEdit && annotation.dirty && !saving;
+  const activeError = scanError ?? frameError ?? annotationError ?? saveError;
+  const [visibleStatus, setVisibleStatus] = useState<string | null>(status);
 
   const guardDirty = useCallback(() => {
     if (!annotation.dirty || selectionChangingRef.current) return true;
@@ -527,8 +530,46 @@ export function AnnotatorShellPage(props: { routeId: string }) {
   );
 
   useEffect(() => {
-    setWorkspacePath(shellWorkspacePath);
-  }, [setWorkspacePath, shellWorkspacePath]);
+    if (workspace.workspacePath === workspacePath) return;
+    if (workspace.workspacePath == null && workspacePath != null) {
+      workspace.setWorkspacePath(workspacePath);
+      return;
+    }
+    setWorkspacePath(workspace.workspacePath);
+  }, [setWorkspacePath, workspace, workspacePath]);
+
+  useEffect(() => {
+    if (!status) {
+      setVisibleStatus(null);
+      return;
+    }
+    setVisibleStatus(status);
+    if (
+      status === "Scanning ROI workspace" ||
+      status === "Loading ROI frame" ||
+      status === "Loading ROI annotation"
+    ) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setVisibleStatus((current) => (current === status ? null : current));
+    }, 2500);
+    return () => window.clearTimeout(timeoutId);
+  }, [status]);
+
+  const activeStatus = frameLoading
+    ? "Loading ROI frame"
+    : annotationLoading
+      ? "Loading ROI annotation"
+      : scanLoading
+        ? "Scanning ROI workspace"
+        : visibleStatus;
+  const canvasMessages = useMemo(() => {
+    if (activeError) return [{ text: activeError, tone: "error" as const }];
+    if (activeStatus) return [{ text: activeStatus }];
+    return [];
+  }, [activeError, activeStatus]);
 
   useEffect(() => {
     setScanLoading(Boolean(shellWorkspacePath && (scanQuery.isFetching || labelsQuery.isFetching)));
@@ -692,9 +733,17 @@ export function AnnotatorShellPage(props: { routeId: string }) {
 
     setAnnotationLoading(true);
     setAnnotationError(null);
+    setStatus("Loading ROI annotation");
 
     const program = loadRoiFrameAnnotationEffect(annotatorApi, workspacePath, request, frame).pipe(
-      Effect.tap((value) => Effect.sync(() => commit(() => resetAnnotation(value)))),
+      Effect.tap((value) =>
+        Effect.sync(() =>
+          commit(() => {
+            resetAnnotation(value);
+            setStatus(null);
+          }),
+        ),
+      ),
       Effect.catchAll((cause) =>
         Effect.sync(() =>
           commit(() => {
@@ -725,6 +774,7 @@ export function AnnotatorShellPage(props: { routeId: string }) {
     resetAnnotation,
     setAnnotationError,
     setAnnotationLoading,
+    setStatus,
     workspacePath,
     shellWorkspacePath,
   ]);
@@ -745,6 +795,7 @@ export function AnnotatorShellPage(props: { routeId: string }) {
         },
       });
       annotation.markSaved();
+      setStatus("Saved ROI annotation");
     } catch (cause) {
       setSaveError(toAnnotatorErrorMessage(cause, "ROI annotation save failed"));
     } finally {
@@ -824,6 +875,7 @@ export function AnnotatorShellPage(props: { routeId: string }) {
               frame={frame}
               labels={labels}
               mask={annotation.current.mask}
+              messages={canvasMessages}
               overlayOpacity={overlayOpacity}
               tool={tool}
               onMaskCommit={(mask) =>
@@ -1009,7 +1061,6 @@ function LeftPanel(props: {
           disabled: timeMax <= 0,
           previousDisabled: props.timeIndex <= 0,
           nextDisabled: props.timeIndex >= timeMax,
-          onChange: (value) => props.onTimeIndexChange(clamp(Math.round(value), 0, timeMax)),
           onCommit: (value) => props.onTimeIndexChange(clamp(Math.round(value), 0, timeMax)),
           onPrevious: () => props.onTimeIndexChange(Math.max(0, props.timeIndex - 1)),
           onNext: () => props.onTimeIndexChange(Math.min(timeMax, props.timeIndex + 1)),
@@ -1022,7 +1073,6 @@ function LeftPanel(props: {
           disabled: zMax <= 0,
           previousDisabled: props.zIndex <= 0,
           nextDisabled: props.zIndex >= zMax,
-          onChange: (value) => props.onZIndexChange(clamp(Math.round(value), 0, zMax)),
           onCommit: (value) => props.onZIndexChange(clamp(Math.round(value), 0, zMax)),
           onPrevious: () => props.onZIndexChange(Math.max(0, props.zIndex - 1)),
           onNext: () => props.onZIndexChange(Math.min(zMax, props.zIndex + 1)),
