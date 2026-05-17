@@ -97,7 +97,12 @@ export { Section, type SectionProps } from "./shell/section";
 
 export { AlignGrid, type AlignGridProps } from "./features/align-grid";
 
-export { AlignTools, type AlignToolsProps } from "./features/align-tools";
+export {
+  AlignToolButton,
+  AlignTools,
+  alignToolDefinitions,
+  type AlignToolsProps,
+} from "./features/align-tools";
 
 export {
   AlignCanvasSurface,

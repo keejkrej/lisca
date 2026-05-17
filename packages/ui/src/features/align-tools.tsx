@@ -16,7 +16,7 @@ export type AlignToolsProps = {
   sectionContentClassName?: string;
 };
 
-const alignTools: {
+export const alignToolDefinitions: {
   mode: AlignGridToolMode;
   label: string;
   Icon: LucideIcon;
@@ -26,6 +26,33 @@ const alignTools: {
   { mode: "zoom-vector", label: "Zoom vector", Icon: ArrowLeftRight },
   { mode: "zoom-pattern", label: "Zoom pattern", Icon: SquareDashedMousePointer },
 ];
+
+export function AlignToolButton(props: {
+  mode: AlignGridToolMode;
+  active: boolean;
+  label: string;
+  Icon: LucideIcon;
+  onClick: () => void;
+  className?: string;
+}) {
+  const { mode, active, label, Icon, onClick, className } = props;
+  return (
+    <Button
+      aria-label={label}
+      aria-pressed={active}
+      className={className ?? "h-full w-full min-w-0 justify-center gap-2 px-3"}
+      key={mode}
+      size="sm"
+      title={label}
+      type="button"
+      variant={active ? "default" : "outline"}
+      onClick={onClick}
+    >
+      <Icon aria-hidden="true" className="size-5" />
+      <span className="max-w-full truncate text-xs">{label}</span>
+    </Button>
+  );
+}
 
 export function AlignTools({
   mode,
@@ -47,21 +74,15 @@ export function AlignTools({
         className="grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-2"
         role="toolbar"
       >
-        {alignTools.map(({ mode: toolMode, label, Icon }) => (
-          <Button
+        {alignToolDefinitions.map(({ mode: toolMode, label, Icon }) => (
+          <AlignToolButton
             key={toolMode}
-            aria-pressed={mode === toolMode}
-            aria-label={label}
-            className="h-full w-full min-w-0 justify-center gap-2 px-3"
-            size="sm"
-            title={label}
-            type="button"
-            variant={mode === toolMode ? "default" : "outline"}
+            active={mode === toolMode}
+            Icon={Icon}
+            label={label}
+            mode={toolMode}
             onClick={() => onModeChange(toolMode)}
-          >
-            <Icon aria-hidden="true" className="size-5" />
-            <span className="max-w-full truncate text-xs">{label}</span>
-          </Button>
+          />
         ))}
       </div>
     </Section>

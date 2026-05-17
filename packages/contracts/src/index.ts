@@ -55,6 +55,60 @@ export type AlignerHostPort = {
   userHomeDirectory(): Promise<string>;
 };
 
+export type StudioSaveAssayJsonResponse = {
+  ok: true;
+  path: string;
+};
+
+export type StudioHostPort = AlignerHostPort & {
+  readTextFile(path: string): Promise<string>;
+  saveAssayJson(saveTo: string, contents: string): Promise<StudioSaveAssayJsonResponse>;
+};
+
+export type StudioAssayId = "gene-expression" | "immune-killing" | "lnp-binding" | "custom-assay";
+
+export type StudioDataSourceKind = AlignerSource["kind"] | null;
+
+export type StudioTimelapseUnit = "second" | "minute" | "hour";
+
+export type StudioBasicInfoFeatureId = "morphology" | "partcount" | "partfluor" | "totalfluor";
+
+export type StudioBasicInfoSlideId = "slide-i" | "slide-vi";
+
+export type StudioBasicInfoStep1 = {
+  name: string;
+  date: string;
+  dataPath: string;
+  saveTo: string;
+};
+
+export type StudioBasicInfoStep2 = {
+  pattern: string;
+  timelapseAmount: number | null;
+  timelapseUnit: StudioTimelapseUnit;
+  selectedFeature: StudioBasicInfoFeatureId | null;
+};
+
+export type StudioBasicInfoSampleRow = {
+  channel: string;
+  name: string;
+  positions: string;
+};
+
+export type StudioBasicInfoStep3 = {
+  selectedSlideId: StudioBasicInfoSlideId;
+  samplesBySlide: Record<StudioBasicInfoSlideId, StudioBasicInfoSampleRow[]>;
+};
+
+export type StudioAssayJson = {
+  assayId: StudioAssayId;
+  assayLabel: string;
+  dataSourceKind?: StudioDataSourceKind;
+  info1: StudioBasicInfoStep1;
+  info2: StudioBasicInfoStep2;
+  info3: StudioBasicInfoStep3;
+};
+
 export type PixelType = "uint8" | "uint8clamped" | "int8" | "uint16" | "int16" | "uint32" | "int32";
 
 export type PixelArray =
@@ -299,10 +353,7 @@ export type AlignerDataPort = {
   listSavedBboxPositions(workspacePath: string): Promise<number[]>;
   cropRoi(request: CropRoiRequest): Promise<CropRoiResponse>;
   cancelCropRoi(requestId: string): Promise<CropRoiProgress>;
-  onCropRoiProgress(
-    requestId: string,
-    onProgress: (progress: CropRoiProgress) => void,
-  ): () => void;
+  onCropRoiProgress(requestId: string, onProgress: (progress: CropRoiProgress) => void): () => void;
   roiPosExists(workspacePath: string, pos: number): Promise<boolean>;
 };
 

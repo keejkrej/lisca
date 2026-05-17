@@ -1,15 +1,33 @@
-import { RouterProvider } from "@tanstack/react-router";
-import { ShellThemeProvider } from "@lisca/ui";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { RouterProvider, createHashHistory, createRouter } from "@tanstack/react-router";
+import { ShellThemeProvider, ShellWorkspaceProvider } from "@lisca/ui";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import "./index.css";
-import { router } from "./router";
+import { routeTree } from "./routeTree.gen";
+
+const router = createRouter({
+  routeTree,
+  history: createHashHistory(),
+});
+
+const queryClient = new QueryClient();
+
+declare module "@tanstack/react-router" {
+  interface Register {
+    router: typeof router;
+  }
+}
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <ShellThemeProvider>
-      <RouterProvider router={router} />
-    </ShellThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ShellThemeProvider>
+        <ShellWorkspaceProvider>
+          <RouterProvider router={router} />
+        </ShellWorkspaceProvider>
+      </ShellThemeProvider>
+    </QueryClientProvider>
   </StrictMode>,
 );

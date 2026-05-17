@@ -29,7 +29,8 @@ use crate::{
     protocol::{
         AlignerSource, AnnotationLabel, AppId, AutoExcludePreviewRequest, ContrastWindow,
         CropRoiProgress, CropRoiRequest, CropRoiStatus, FrameRequest, Hello, HostFsEntry,
-        HostListDirectoryResult, RoiFrameAnnotationPayload, RoiFrameRequest, SavedAlignState,
+        HostListDirectoryResult, ReadTextFileResponse, RoiFrameAnnotationPayload, RoiFrameRequest,
+        SaveAssayJsonRequest, SaveAssayJsonResponse, SavedAlignState,
     },
     roi,
 };
@@ -58,6 +59,8 @@ pub async fn run_ws_server(app: AppId, port: u16) -> Result<(), std::io::Error> 
         .route("/ws", get(ws_handler))
         .route("/fs/list", get(list_directory_handler))
         .route("/fs/home", get(home_directory_handler))
+        .route("/fs/read-text", get(read_text_file_handler))
+        .route("/studio/save-assay-json", post(save_assay_json_handler))
         .route("/align/scan-source", post(scan_source_handler))
         .route("/align/load-frame", post(load_frame_handler))
         .route(
@@ -111,6 +114,11 @@ pub async fn run_ws_server(app: AppId, port: u16) -> Result<(), std::io::Error> 
 #[derive(Debug, Deserialize)]
 struct ListDirectoryQuery {
     path: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ReadTextFileQuery {
+    path: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -212,6 +220,36 @@ async fn list_directory_handler(
 async fn home_directory_handler() -> Result<Json<serde_json::Value>, FsError> {
     let home = user_home_directory().ok_or_else(|| FsError::new("home directory not found"))?;
     Ok(Json(serde_json::json!({ "path": home })))
+}
+
+async fn read_text_file_handler(
+    Query(query): Query<ReadTextFileQuery>,
+) -> Result<Json<ReadTextFileResponse>, FsError> {
+    let contents = std::fs::read_to_string(&query.path)
+        .map_err(|error| FsError::new(format!("failed to read text file: {error}")))?;
+    Ok(Json(ReadTextFileResponse { contents }))
+}
+
+async fn save_assay_json_handler(
+    Json(payload): Json<SaveAssayJsonRequest>,
+) -> Result<Json<SaveAssayJsonResponse>, FsError> {
+    let save_to = payload.save_to.trim();
+    if save_to.is_empty() {
+        return Err(FsError::new("saveTo is required"));
+    }
+
+    let target = PathBuf::from(save_to).join("assay.json");
+    if let Some(parent) = target.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|error| FsError::new(format!("failed to create assay folder: {error}")))?;
+    }
+    std::fs::write(&target, payload.contents)
+        .map_err(|error| FsError::new(format!("failed to save assay.json: {error}")))?;
+
+    Ok(Json(SaveAssayJsonResponse {
+        ok: true,
+        path: target.to_string_lossy().to_string(),
+    }))
 }
 
 async fn scan_source_handler(

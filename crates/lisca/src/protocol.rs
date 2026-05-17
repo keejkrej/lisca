@@ -40,6 +40,26 @@ pub struct HostListDirectoryResult {
     pub entries: Vec<HostFsEntry>,
 }
 
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReadTextFileResponse {
+    pub contents: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SaveAssayJsonRequest {
+    pub save_to: String,
+    pub contents: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SaveAssayJsonResponse {
+    pub ok: bool,
+    pub path: String,
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct WorkspaceScan {
     pub positions: Vec<u32>,
