@@ -1,32 +1,7 @@
-import { Button, ConnectionStatus, ShellThemeToggle, cn, useShellWsProbe } from "@lisca/ui";
-import { Link, useRouterState } from "@tanstack/react-router";
+import { ConnectionStatus, ShellThemeToggle, useShellWsProbe } from "@lisca/ui";
+import { useRouterState } from "@tanstack/react-router";
 
-const navButtonClass =
-  "h-auto w-auto min-w-0 max-w-full shrink-0 rounded-lg px-5 py-2.5 text-xl font-medium";
-
-function NavButton({
-  active,
-  children,
-  to,
-  onClick,
-}: {
-  active: boolean;
-  children: string;
-  to: string;
-  onClick?: () => void;
-}) {
-  return (
-    <Button
-      render={<Link to={to} />}
-      aria-current={active ? "page" : undefined}
-      className={cn(navButtonClass, active ? "text-foreground" : "text-muted-foreground")}
-      variant="ghost"
-      onClick={onClick}
-    >
-      {children}
-    </Button>
-  );
-}
+import { NavButton } from "./studio-nav-button";
 
 export function StudioNavRail() {
   const ws = useShellWsProbe({ defaultPort: 8767 });

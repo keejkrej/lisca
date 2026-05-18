@@ -1,8 +1,12 @@
 import { AppShell } from "@lisca/ui";
 import { createFileRoute } from "@tanstack/react-router";
 
+import { AlignCanvasPanel } from "../components/align-canvas-panel";
+import { BottomPanel } from "../components/bottom-panel";
+import { LeftPanel } from "../components/left-panel";
 import { Navbar } from "../components/navbar";
-import { BottomPanel, LeftPanel, MainPanel, RightPanel, useAlignState } from "../components/panels";
+import { RightPanel } from "../components/right-panel";
+import { useAlignState } from "../state/use-align-state";
 
 export const Route = createFileRoute("/")({
   component: AlignPage,
@@ -22,7 +26,7 @@ function AlignPage() {
         </AppShell.Left>
         <AppShell.MainColumn>
           <AppShell.Main>
-            <MainPanel alignState={alignState} />
+            <AlignCanvasPanel state={alignState} />
           </AppShell.Main>
           <AppShell.Dock>
             <BottomPanel alignState={alignState} />

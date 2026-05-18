@@ -5,9 +5,11 @@ import { useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
 import { studioClient } from "../api/studio-client";
-import { DockButton, DockSection, StudioDock } from "../components/studio-dock";
+import { DockButton } from "../components/dock-button";
+import { DockSection } from "../components/dock-section";
+import { StudioDock } from "../components/studio-dock";
 import { StudioNavRail } from "../components/studio-nav-rail";
-import { WelcomeAssay } from "../screens/welcome-assay";
+import { WelcomeAssay } from "../components/welcome-assay";
 import { instructionForStep } from "../state/studio-routes";
 import { parseStudioAssayJson, useStudioStore } from "../state/studio-store";
 

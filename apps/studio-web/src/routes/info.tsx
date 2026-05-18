@@ -5,11 +5,12 @@ import { useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
 import { studioClient } from "../api/studio-client";
-import { DockButton, StudioDock } from "../components/studio-dock";
+import { BasicInfoStep1 } from "../components/basic-info-step1";
+import { BasicInfoStep2 } from "../components/basic-info-step2";
+import { BasicInfoStep3 } from "../components/basic-info-step3";
+import { DockButton } from "../components/dock-button";
+import { StudioDock } from "../components/studio-dock";
 import { StudioNavRail } from "../components/studio-nav-rail";
-import { BasicInfoStep1 } from "../screens/basic-info-step1";
-import { BasicInfoStep2 } from "../screens/basic-info-step2";
-import { BasicInfoStep3 } from "../screens/basic-info-step3";
 import { instructionForStep, validInfo1, validInfo2, validInfo3 } from "../state/studio-routes";
 import { buildStudioAssayJson, useStudioStore } from "../state/studio-store";
 

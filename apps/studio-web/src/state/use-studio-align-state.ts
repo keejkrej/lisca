@@ -1,33 +1,20 @@
-import {
-  type AlignGridCellCoord,
-  type AlignGridState,
-  type AlignerSource,
-  type ContrastWindow,
-  type FrameRequest,
-  type FrameResult,
-  type SavedAlignState,
-  type StudioBasicInfoStep1,
-  type StudioBasicInfoStep3,
-  type WorkspaceScan,
+import type {
+  AlignGridCellCoord,
+  AlignGridState,
+  AlignerSource,
+  ContrastWindow,
+  FrameRequest,
+  FrameResult,
+  WorkspaceScan,
 } from "@lisca/contracts";
 import {
-  AlignCanvasSurface,
-  AlignTools,
-  useCanvasTransientStatus,
-  type AlignCanvasPointerEvent,
-} from "@lisca/ui";
-import {
-  applyAlignGridPointerGesture,
-  beginAlignGridPointerGesture,
   collectAlignGridEdgeCells,
   countVisibleAlignGridCells,
   enumerateVisibleAlignGridCells,
-  mergeExcludedAlignGridCells,
-  type AlignGridPointerGestureSession,
   type AlignGridToolMode,
 } from "@lisca/utils";
 import { Effect, Exit } from "effect";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { studioClient, toErrorMessage } from "../api/studio-client";
 import {
@@ -36,13 +23,16 @@ import {
   useScanSourceQuery,
 } from "../api/studio-queries";
 import { effectErrorMessage, loadFrameEffect } from "../effects/frame-loader";
+import { alignStateFromCurrent, buildBboxCsv } from "../utils/studio-align-output";
+import { mergeStudioExcludedCells } from "../utils/studio-align-selection";
+import { lockedStudioSelection, studioMaskChannel, toStudioSource } from "../utils/studio-source";
 import {
   savedAlignStateKey,
   sourceKey,
   useStudioAlignStore,
   type ExcludedByPosition,
-} from "../state/studio-align-store";
-import { useStudioStore } from "../state/studio-store";
+} from "./studio-align-store";
+import { useStudioStore } from "./studio-store";
 
 const emptyExcludedCells: AlignGridCellCoord[] = [];
 
@@ -73,78 +63,6 @@ export type StudioAlignState = {
   saveAndAdvance: () => Promise<boolean>;
   autoExclude: () => Promise<void>;
 };
-
-function buildBboxCsv(
-  frame: FrameResult,
-  grid: AlignGridState,
-  excludedCells: readonly AlignGridCellCoord[],
-): string {
-  const excluded = new Set(excludedCells.map((cell) => `${cell.i}:${cell.j}`));
-  const rows = enumerateVisibleAlignGridCells(frame, grid)
-    .filter((cell) => !excluded.has(`${cell.i}:${cell.j}`))
-    .map((cell, roi) => [roi, cell.x, cell.y, cell.w, cell.h, cell.i, cell.j].join(","));
-  return ["roi,x,y,w,h,i,j", ...rows].join("\n");
-}
-
-function alignStateFromCurrent(
-  grid: AlignGridState,
-  currentExcludedCells: AlignGridCellCoord[],
-): SavedAlignState {
-  return { grid, excludedCells: currentExcludedCells };
-}
-
-function toStudioSource(
-  kind: AlignerSource["kind"] | null,
-  info1: StudioBasicInfoStep1,
-): AlignerSource | null {
-  const trimmed = info1.dataPath.trim();
-  if (!trimmed || !kind) return null;
-  if (kind === "folder") {
-    return {
-      kind,
-      path: trimmed,
-      subfolderTemplate: info1.folderSubfolderTemplate.trim(),
-      filenameTemplate: info1.folderFilenameTemplate.trim(),
-    };
-  }
-  return { kind, path: trimmed } as AlignerSource;
-}
-
-function parseChannel(value: string): number | null {
-  const channel = Number(value.trim());
-  return Number.isInteger(channel) && channel >= 0 ? channel : null;
-}
-
-function studioMaskChannel(info3: StudioBasicInfoStep3): number {
-  const rows = info3.samplesBySlide[info3.selectedSlideId];
-  for (const row of rows) {
-    const channel = parseChannel(row.maskChannel);
-    if (channel != null) return channel;
-  }
-  return 0;
-}
-
-function lastOrZero(values: number[] | undefined): number {
-  return values?.[Math.max(0, values.length - 1)] ?? 0;
-}
-
-function firstOrZero(values: number[] | undefined): number {
-  return values?.[0] ?? 0;
-}
-
-function lockedStudioSelection(
-  scan: WorkspaceScan,
-  current: FrameRequest,
-  maskChannel: number,
-): FrameRequest {
-  const position = scan.positions.includes(current.pos) ? current.pos : firstOrZero(scan.positions);
-  return {
-    pos: position,
-    channel: maskChannel,
-    time: lastOrZero(scan.times),
-    z: 0,
-  };
-}
 
 export function useStudioAlignState(): StudioAlignState {
   const info1 = useStudioStore((state) => state.info1);
@@ -341,7 +259,7 @@ export function useStudioAlignState(): StudioAlignState {
     try {
       const edgeCells = collectAlignGridEdgeCells(frame, grid);
       const thresholdCells = await autoExcludeCells();
-      const finalExcludedCells = mergeExcludedAlignGridCells(currentExcludedCells, [
+      const finalExcludedCells = mergeStudioExcludedCells(currentExcludedCells, [
         ...edgeCells,
         ...thresholdCells,
       ]);
@@ -386,7 +304,7 @@ export function useStudioAlignState(): StudioAlignState {
       setStatus("Auto exclude preview");
       const autoExcluded = await autoExcludeCells();
       setExcludedCellsForCurrentPosition(
-        mergeExcludedAlignGridCells(currentExcludedCells, autoExcluded),
+        mergeStudioExcludedCells(currentExcludedCells, autoExcluded),
       );
       setStatus(`Auto excluded ${autoExcluded.length} cells`);
     } catch (cause) {
@@ -427,123 +345,4 @@ export function useStudioAlignState(): StudioAlignState {
     saveAndAdvance,
     autoExclude,
   };
-}
-
-export function StudioAlignBottomPanel({ state }: { state: StudioAlignState }) {
-  return (
-    <AlignTools
-      mode={state.toolMode}
-      sectionClassName="flex min-h-0 min-w-0 flex-1 basis-0 flex-col"
-      sectionContentClassName="flex min-h-0 flex-1 flex-col"
-      onModeChange={state.setToolMode}
-    />
-  );
-}
-
-function useAlignCanvasHandlers(state: StudioAlignState) {
-  const { grid, setGrid, toolMode } = state;
-  const gestureRef = useRef<AlignGridPointerGestureSession | null>(null);
-  const previewGridRef = useRef<AlignGridState | null>(null);
-  const [previewGrid, setPreviewGridState] = useState<AlignGridState | null>(null);
-  const setPreviewGrid = useCallback((next: AlignGridState | null) => {
-    previewGridRef.current = next;
-    setPreviewGridState(next);
-  }, []);
-  const handlePointerDown = useCallback(
-    (event: AlignCanvasPointerEvent) => {
-      if (!event.viewport || !grid.enabled) return;
-      if (event.pointerType === "mouse" && event.button !== 0) {
-        event.preventDefault();
-        return;
-      }
-      const session = beginAlignGridPointerGesture(grid, event, toolMode);
-      if (!session) return;
-      event.preventDefault();
-      event.capturePointer();
-      gestureRef.current = session;
-      setPreviewGrid(null);
-    },
-    [grid, setPreviewGrid, toolMode],
-  );
-  const handlePointerMove = useCallback(
-    (event: AlignCanvasPointerEvent) => {
-      const gesture = gestureRef.current;
-      if (!gesture || !event.viewport || gesture.pointerId !== event.pointerId) return;
-      event.preventDefault();
-      setPreviewGrid(applyAlignGridPointerGesture(gesture, event, event.viewport));
-    },
-    [setPreviewGrid],
-  );
-  const handlePointerEnd = useCallback(
-    (event: AlignCanvasPointerEvent) => {
-      if (gestureRef.current?.pointerId !== event.pointerId) return;
-      gestureRef.current = null;
-      const previewGrid = previewGridRef.current;
-      if (previewGrid) setGrid(previewGrid);
-      setPreviewGrid(null);
-      event.releasePointer();
-    },
-    [setGrid, setPreviewGrid],
-  );
-  return { handlePointerDown, handlePointerMove, handlePointerEnd, previewGrid };
-}
-
-function cursorForAlignTool(toolMode: AlignGridToolMode, gridEnabled: boolean, dragging: boolean) {
-  if (!gridEnabled) return "default";
-  if (dragging) return "grabbing";
-  if (toolMode === "pan") return "grab";
-  if (toolMode === "rotate") return "crosshair";
-  return "zoom-in";
-}
-
-export function StudioAlignMainPanel({ state }: { state: StudioAlignState }) {
-  const { handlePointerDown, handlePointerMove, handlePointerEnd, previewGrid } =
-    useAlignCanvasHandlers(state);
-  const visibleStatus = useCanvasTransientStatus(state.status);
-  const activeToastStatus = state.frameLoading
-    ? "Loading frame"
-    : state.scanLoading
-      ? "Scanning source"
-      : visibleStatus;
-  const positionIndex = state.scan?.positions.indexOf(state.selection.pos) ?? -1;
-  const positionCount = state.scan?.positions.length ?? 0;
-  const positionMessage =
-    positionIndex >= 0 && positionCount > 0 ? `Pos ${positionIndex + 1}/${positionCount}` : null;
-  const messages = useMemo(() => {
-    if (!positionMessage) return [];
-    return [{ text: positionMessage }];
-  }, [positionMessage]);
-  const toasts = useMemo(() => {
-    if (state.error) return [{ text: state.error, tone: "error" as const }];
-    if (activeToastStatus) return [{ text: activeToastStatus }];
-    return [];
-  }, [activeToastStatus, state.error]);
-  const emptyText = !state.workspacePath
-    ? "Choose a save folder on Info."
-    : !state.source
-      ? "Choose a data source on Info."
-      : state.scanLoading
-        ? "Scanning source..."
-        : "No frame loaded.";
-
-  return (
-    <div className="flex h-full min-h-0 flex-col bg-muted/20">
-      <AlignCanvasSurface
-        className="min-h-0 flex-1"
-        cursor={cursorForAlignTool(state.toolMode, state.grid.enabled, previewGrid != null)}
-        emptyText={emptyText}
-        excludedCells={state.currentExcludedCells}
-        frame={state.frame}
-        grid={state.grid}
-        loading={state.scanLoading || state.frameLoading}
-        messages={messages}
-        previewGrid={previewGrid}
-        toasts={toasts}
-        onVirtualPointerCancel={handlePointerEnd}
-        onVirtualPointerDown={handlePointerDown}
-        onVirtualPointerMove={handlePointerMove}
-        onVirtualPointerUp={handlePointerEnd}
-      />
-    </div>
-  );
 }
