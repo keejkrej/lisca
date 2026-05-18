@@ -1,10 +1,13 @@
 use std::{
     cmp::Ordering,
-    collections::BTreeSet,
+    collections::{BTreeSet, VecDeque},
     fs,
     fs::File,
     path::{Path, PathBuf},
-    sync::atomic::{AtomicBool, Ordering as AtomicOrdering},
+    sync::{
+        atomic::{AtomicBool, Ordering as AtomicOrdering},
+        mpsc, Arc, Mutex,
+    },
 };
 
 use serde::Serialize;
@@ -15,7 +18,8 @@ use crate::{
     protocol::{
         AutoExcludeHistogramBin, AutoExcludePreviewCell, AutoExcludePreviewCellScore,
         AutoExcludePreviewRequest, AutoExcludePreviewResponse, CropRoiProgress, CropRoiRequest,
-        CropRoiStatus, RoiBbox, RoiIndexEntry, RoiIndexFile, SaveBboxResponse, SavedAlignState,
+        CropRoiStatus, FrameRequest, RoiBbox, RoiIndexEntry, RoiIndexFile, SaveBboxResponse,
+        SavedAlignState, WorkspaceScan,
     },
 };
 
@@ -23,6 +27,8 @@ pub use crate::image_source::{load_frame_payload, scan_source};
 
 const AUTO_EXCLUDE_BIN_COUNT: usize = 40;
 const AUTO_EXCLUDE_EPSILON: f64 = 1.0;
+const CROP_MAX_POSITION_WORKERS: usize = 4;
+const CROP_ROI_CHUNK_SIZE: usize = 32;
 
 #[derive(Clone, Debug)]
 struct HistogramResult {
@@ -126,6 +132,13 @@ where
         );
         position_bboxes.push((*pos, bboxes));
     }
+    if !request.overwrite {
+        for (pos, _) in &position_bboxes {
+            if workspace_roi_pos_dir_path(&request.workspace_path, *pos).exists() {
+                return Err(format!("roi/Pos{pos} already exists"));
+            }
+        }
+    }
 
     let mut progress = CropRoiProgress {
         request_id: request.request_id.clone(),
@@ -140,63 +153,73 @@ where
     };
     on_progress(progress.clone());
 
-    for (pos, bboxes) in position_bboxes {
-        if cancel.load(AtomicOrdering::SeqCst) {
-            progress.status = CropRoiStatus::Cancelled;
-            progress.position = Some(pos);
-            progress.message = Some("Crop cancelled".to_string());
-            on_progress(progress);
-            return Ok(());
-        }
+    let request = Arc::new(request);
+    let scan = Arc::new(scan);
+    let page_count_per_roi = scan_page_count(&scan);
+    let worker_count = crop_position_worker_count(position_bboxes.len());
+    let queue = Arc::new(Mutex::new(VecDeque::from(position_bboxes)));
+    let (event_sender, event_receiver) = mpsc::channel::<CropPositionEvent>();
+    let mut failed = None::<String>;
+    let mut cancelled = false;
 
-        let target_dir = workspace_roi_pos_dir_path(&request.workspace_path, pos);
-        if target_dir.exists() {
-            if request.overwrite {
-                fs::remove_dir_all(&target_dir).map_err(|error| error.to_string())?;
-            } else {
-                return Err(format!("roi/Pos{pos} already exists"));
-            }
-        }
-        fs::create_dir_all(&target_dir).map_err(|error| error.to_string())?;
-
-        progress.position = Some(pos);
-        progress.message = Some(format!("Cropping Pos{pos}"));
-        on_progress(progress.clone());
-
-        let mut entries = Vec::new();
-        for bbox in bboxes {
-            if cancel.load(AtomicOrdering::SeqCst) {
-                progress.status = CropRoiStatus::Cancelled;
-                progress.message = Some("Crop cancelled".to_string());
-                on_progress(progress);
-                return Ok(());
-            }
-            write_roi_tiff_stack(&request, pos, &bbox, &scan)?;
-            progress.completed_rois = progress.completed_rois.saturating_add(
-                (scan.times.len().max(1) as u32)
-                    .saturating_mul(scan.channels.len().max(1) as u32)
-                    .saturating_mul(scan.z_slices.len().max(1) as u32),
-            );
-            progress.message = Some(format!("Wrote Pos{} Roi{}", pos, bbox.roi));
-            on_progress(progress.clone());
-            entries.push(RoiIndexEntry {
-                roi: bbox.roi,
-                file_name: format!("Roi{}.tif", bbox.roi),
-                shape: [
-                    scan.times.len().max(1) as u32,
-                    scan.channels.len().max(1) as u32,
-                    scan.z_slices.len().max(1) as u32,
-                    bbox.h,
-                    bbox.w,
-                ],
-                bbox,
+    std::thread::scope(|scope| {
+        for _ in 0..worker_count {
+            let request = request.clone();
+            let scan = scan.clone();
+            let queue = queue.clone();
+            let event_sender = event_sender.clone();
+            scope.spawn(move || {
+                crop_position_worker(request, scan, queue, cancel, event_sender);
             });
         }
+        drop(event_sender);
 
-        write_roi_index(&request, pos, entries, &scan)?;
-        progress.completed_positions = progress.completed_positions.saturating_add(1);
-        progress.message = Some(format!("Finished Pos{pos}"));
-        on_progress(progress.clone());
+        for event in event_receiver {
+            match event {
+                CropPositionEvent::Started { pos } if failed.is_none() && !cancelled => {
+                    progress.position = Some(pos);
+                    progress.message = Some(format!("Cropping Pos{pos}"));
+                    on_progress(progress.clone());
+                }
+                CropPositionEvent::RoiWritten { pos, roi } if failed.is_none() && !cancelled => {
+                    progress.position = Some(pos);
+                    progress.completed_rois =
+                        progress.completed_rois.saturating_add(page_count_per_roi);
+                    progress.message = Some(format!("Wrote Pos{pos} Roi{roi}"));
+                    on_progress(progress.clone());
+                }
+                CropPositionEvent::Finished { pos } if failed.is_none() && !cancelled => {
+                    progress.position = Some(pos);
+                    progress.completed_positions = progress.completed_positions.saturating_add(1);
+                    progress.message = Some(format!("Finished Pos{pos}"));
+                    on_progress(progress.clone());
+                }
+                CropPositionEvent::Cancelled { pos } if failed.is_none() && !cancelled => {
+                    cancelled = true;
+                    progress.status = CropRoiStatus::Cancelled;
+                    progress.position = Some(pos);
+                    progress.message = Some("Crop cancelled".to_string());
+                    on_progress(progress.clone());
+                }
+                CropPositionEvent::Error { message } if failed.is_none() => {
+                    cancel.store(true, AtomicOrdering::SeqCst);
+                    failed = Some(message);
+                }
+                _ => {}
+            }
+        }
+    });
+
+    if let Some(error) = failed {
+        return Err(error);
+    }
+    if cancelled || cancel.load(AtomicOrdering::SeqCst) {
+        if !matches!(progress.status, CropRoiStatus::Cancelled) {
+            progress.status = CropRoiStatus::Cancelled;
+            progress.message = Some("Crop cancelled".to_string());
+            on_progress(progress);
+        }
+        return Ok(());
     }
 
     progress.status = CropRoiStatus::Completed;
@@ -495,46 +518,209 @@ fn crop_frame(raw: &RawFrame, bbox: &RoiBbox) -> Result<Vec<u16>, String> {
     Ok(pixels)
 }
 
-fn write_roi_tiff_stack(
+enum CropPositionEvent {
+    Started { pos: u32 },
+    RoiWritten { pos: u32, roi: u32 },
+    Finished { pos: u32 },
+    Cancelled { pos: u32 },
+    Error { message: String },
+}
+
+struct RoiTiffWriter {
+    bbox: RoiBbox,
+    encoder: TiffEncoder<File>,
+}
+
+impl RoiTiffWriter {
+    fn create(request: &CropRoiRequest, pos: u32, bbox: &RoiBbox) -> Result<Self, String> {
+        let path = workspace_roi_tiff_path(&request.workspace_path, pos, bbox.roi);
+        let file = File::create(&path).map_err(|error| error.to_string())?;
+        let encoder = TiffEncoder::new(file).map_err(|error| error.to_string())?;
+        Ok(Self {
+            bbox: bbox.clone(),
+            encoder,
+        })
+    }
+}
+
+fn crop_position_worker(
+    request: Arc<CropRoiRequest>,
+    scan: Arc<WorkspaceScan>,
+    queue: Arc<Mutex<VecDeque<(u32, Vec<RoiBbox>)>>>,
+    cancel: &AtomicBool,
+    event_sender: mpsc::Sender<CropPositionEvent>,
+) {
+    loop {
+        if cancel.load(AtomicOrdering::SeqCst) {
+            return;
+        }
+        let next = match queue.lock() {
+            Ok(mut queue) => queue.pop_front(),
+            Err(_) => {
+                let _ = event_sender.send(CropPositionEvent::Error {
+                    message: "crop queue state is poisoned".to_string(),
+                });
+                return;
+            }
+        };
+        let Some((pos, bboxes)) = next else {
+            return;
+        };
+        match crop_position_frame_major(&request, &scan, pos, bboxes, cancel, &event_sender) {
+            Ok(()) => {}
+            Err(CropPositionStop::Cancelled) => {
+                let _ = event_sender.send(CropPositionEvent::Cancelled { pos });
+                return;
+            }
+            Err(CropPositionStop::Error(message)) => {
+                cancel.store(true, AtomicOrdering::SeqCst);
+                let _ = event_sender.send(CropPositionEvent::Error { message });
+                return;
+            }
+        }
+    }
+}
+
+enum CropPositionStop {
+    Cancelled,
+    Error(String),
+}
+
+impl From<String> for CropPositionStop {
+    fn from(value: String) -> Self {
+        Self::Error(value)
+    }
+}
+
+fn crop_position_frame_major(
     request: &CropRoiRequest,
+    scan: &WorkspaceScan,
     pos: u32,
-    bbox: &RoiBbox,
-    scan: &crate::protocol::WorkspaceScan,
-) -> Result<(), String> {
-    let path = workspace_roi_tiff_path(&request.workspace_path, pos, bbox.roi);
-    let file = File::create(&path).map_err(|error| error.to_string())?;
-    let mut encoder = TiffEncoder::new(file).map_err(|error| error.to_string())?;
+    bboxes: Vec<RoiBbox>,
+    cancel: &AtomicBool,
+    event_sender: &mpsc::Sender<CropPositionEvent>,
+) -> Result<(), CropPositionStop> {
+    if cancel.load(AtomicOrdering::SeqCst) {
+        return Err(CropPositionStop::Cancelled);
+    }
+
+    let target_dir = workspace_roi_pos_dir_path(&request.workspace_path, pos);
+    if target_dir.exists() {
+        if request.overwrite {
+            fs::remove_dir_all(&target_dir).map_err(|error| error.to_string())?;
+        } else {
+            return Err(CropPositionStop::Error(format!(
+                "roi/Pos{pos} already exists"
+            )));
+        }
+    }
+    fs::create_dir_all(&target_dir).map_err(|error| error.to_string())?;
+
+    let _ = event_sender.send(CropPositionEvent::Started { pos });
+    for chunk in bboxes.chunks(CROP_ROI_CHUNK_SIZE) {
+        if cancel.load(AtomicOrdering::SeqCst) {
+            return Err(CropPositionStop::Cancelled);
+        }
+        write_roi_tiff_chunk_frame_major(request, scan, pos, chunk, cancel)?;
+        for bbox in chunk {
+            let _ = event_sender.send(CropPositionEvent::RoiWritten { pos, roi: bbox.roi });
+        }
+    }
+
+    write_roi_index(request, pos, roi_index_entries(&bboxes, scan), scan)?;
+    let _ = event_sender.send(CropPositionEvent::Finished { pos });
+    Ok(())
+}
+
+fn write_roi_tiff_chunk_frame_major(
+    request: &CropRoiRequest,
+    scan: &WorkspaceScan,
+    pos: u32,
+    bboxes: &[RoiBbox],
+    cancel: &AtomicBool,
+) -> Result<(), CropPositionStop> {
+    let mut writers = bboxes
+        .iter()
+        .map(|bbox| RoiTiffWriter::create(request, pos, bbox))
+        .collect::<Result<Vec<_>, _>>()?;
 
     for time in scan.times.iter().copied() {
         for channel in scan.channels.iter().copied() {
             for z in scan.z_slices.iter().copied() {
+                if cancel.load(AtomicOrdering::SeqCst) {
+                    return Err(CropPositionStop::Cancelled);
+                }
                 let raw = load_frame(
                     request.source.clone(),
-                    crate::protocol::FrameRequest {
+                    FrameRequest {
                         pos,
                         channel,
                         time,
                         z,
                     },
                 )?;
-                let pixels = crop_frame(&raw, bbox)?;
-                let image = encoder
-                    .new_image::<colortype::Gray16>(bbox.w, bbox.h)
-                    .map_err(|error| error.to_string())?;
-                image
-                    .write_data(&pixels)
-                    .map_err(|error| error.to_string())?;
+                for writer in &mut writers {
+                    let pixels = crop_frame(&raw, &writer.bbox)?;
+                    write_roi_tiff_page(&mut writer.encoder, &writer.bbox, &pixels)?;
+                }
             }
         }
     }
+    drop(writers);
     Ok(())
+}
+
+fn write_roi_tiff_page(
+    encoder: &mut TiffEncoder<File>,
+    bbox: &RoiBbox,
+    pixels: &[u16],
+) -> Result<(), String> {
+    let image = encoder
+        .new_image::<colortype::Gray16>(bbox.w, bbox.h)
+        .map_err(|error| error.to_string())?;
+    image.write_data(pixels).map_err(|error| error.to_string())
+}
+
+fn crop_position_worker_count(position_count: usize) -> usize {
+    let available = std::thread::available_parallelism()
+        .map(usize::from)
+        .unwrap_or(1);
+    position_count
+        .min(available)
+        .min(CROP_MAX_POSITION_WORKERS)
+        .max(1)
+}
+
+fn scan_page_count(scan: &WorkspaceScan) -> u32 {
+    (scan.times.len().max(1) as u32)
+        .saturating_mul(scan.channels.len().max(1) as u32)
+        .saturating_mul(scan.z_slices.len().max(1) as u32)
+}
+
+fn roi_index_entries(bboxes: &[RoiBbox], scan: &WorkspaceScan) -> Vec<RoiIndexEntry> {
+    bboxes
+        .iter()
+        .cloned()
+        .map(|bbox| RoiIndexEntry {
+            roi: bbox.roi,
+            file_name: format!("Roi{}.tif", bbox.roi),
+            shape: [
+                scan.times.len().max(1) as u32,
+                scan.channels.len().max(1) as u32,
+                scan.z_slices.len().max(1) as u32,
+                bbox.h,
+                bbox.w,
+            ],
+            bbox,
+        })
+        .collect()
 }
 
 fn write_roi_index(
     request: &CropRoiRequest,
     pos: u32,
     entries: Vec<RoiIndexEntry>,
-    scan: &crate::protocol::WorkspaceScan,
+    scan: &WorkspaceScan,
 ) -> Result<(), String> {
     let index = RoiIndexFile {
         position: pos,

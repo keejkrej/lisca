@@ -21,3 +21,15 @@ export function useAutoExcludePreviewMutation() {
     mutationFn: (request: AutoExcludePreviewRequest) => studioClient.autoExcludePreview(request),
   });
 }
+
+export function useStudioRoiWorkspaceScanQuery(workspacePath: string | null) {
+  return useQuery({
+    queryKey: ["studio", "roi-workspace-scan", workspacePath],
+    queryFn: ({ signal }) => {
+      if (!workspacePath) throw new Error("No workspace selected");
+      return studioClient.scanRoiWorkspace(workspacePath, signal);
+    },
+    enabled: workspacePath != null,
+    retry: false,
+  });
+}

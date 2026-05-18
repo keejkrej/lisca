@@ -23,8 +23,8 @@ export function StudioNavRail() {
         <NavButton active={routeId === "align"} to="/align">
           Align pattern
         </NavButton>
-        <NavButton active={routeId === "inspect"} to="/inspect">
-          Inspect ROI
+        <NavButton active={routeId === "annotate"} to="/annotate">
+          Annotate ROI
         </NavButton>
         <NavButton active={routeId === "result"} to="/result">
           View results

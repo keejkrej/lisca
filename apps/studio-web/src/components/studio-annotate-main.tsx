@@ -1,0 +1,54 @@
+import { AnnotationCanvas, CanvasToastStack } from "@lisca/ui";
+import { useMemo } from "react";
+
+import type { StudioAnnotateState } from "../state/use-studio-annotate-state";
+
+export function StudioAnnotateMain({ state }: { state: StudioAnnotateState }) {
+  const emptyMask = useMemo(
+    () => (state.frame ? new Uint8Array(state.frame.width * state.frame.height) : new Uint8Array()),
+    [state.frame],
+  );
+  const messages = useMemo(() => {
+    if (!state.request) return [];
+    const positionIndex =
+      state.scan?.positions.findIndex((entry) => entry.pos === state.request?.pos) ?? -1;
+    const positionCount = state.scan?.positions.length ?? 0;
+    const roiIndex =
+      state.position?.rois.findIndex((entry) => entry.roi === state.request?.roi) ?? -1;
+    const roiCount = state.position?.rois.length ?? 0;
+    if (positionIndex < 0 || positionCount === 0 || roiIndex < 0 || roiCount === 0) return [];
+    return [{ text: `Pos ${positionIndex}/${positionCount}\nRoi ${roiIndex}/${roiCount}` }];
+  }, [state.position, state.request, state.scan]);
+  const emptyText = !state.workspacePath
+    ? "Choose a save folder on Info."
+    : state.scanLoading
+      ? "Scanning ROI workspace..."
+      : "No ROI frame loaded.";
+
+  if (!state.frame) {
+    return (
+      <div className="relative flex h-full min-h-0 items-center justify-center bg-muted/20 text-muted-foreground text-sm">
+        {emptyText}
+        <CanvasToastStack messages={state.toasts} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-full min-h-0 flex-col bg-muted/20">
+      <AnnotationCanvas
+        activeLabelId={null}
+        brushSize={1}
+        disabled
+        frame={state.frame}
+        labels={[]}
+        mask={emptyMask}
+        messages={messages.length ? messages : undefined}
+        overlayOpacity={0}
+        toasts={state.toasts}
+        tool="brush"
+        onMaskCommit={() => undefined}
+      />
+    </div>
+  );
+}

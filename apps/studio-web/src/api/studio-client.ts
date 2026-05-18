@@ -11,7 +11,10 @@ import {
   type CropRoiResponse,
   type FramePayload,
   type FrameRequest,
+  type FrameResult,
   type HostListDirectoryResult,
+  type RoiFrameRequest,
+  type RoiWorkspaceScan,
   type SaveBboxResponse,
   type SavedAlignState,
   type StudioHostPort,
@@ -19,6 +22,17 @@ import {
   type WorkspaceScan,
 } from "@lisca/contracts";
 import { decodeFramePayload, resolveLiscaWsUrl } from "@lisca/utils";
+
+type StudioHttpClient = AlignerDataPort &
+  StudioHostPort & {
+    scanRoiWorkspace(workspacePath: string, signal?: AbortSignal): Promise<RoiWorkspaceScan>;
+    loadRoiFrame(
+      workspacePath: string,
+      request: RoiFrameRequest,
+      contrast?: ContrastWindow | null,
+      signal?: AbortSignal,
+    ): Promise<FrameResult>;
+  };
 
 async function readJson<T>(response: Response): Promise<T> {
   if (!response.ok) {
@@ -111,7 +125,7 @@ function pollCropRoiProgress(
   };
 }
 
-export function createStudioHttpClient(baseUrl: string): AlignerDataPort & StudioHostPort {
+export function createStudioHttpClient(baseUrl: string): StudioHttpClient {
   const aligner: AlignerDataPort = {
     scanSource(source: AlignerSource) {
       return postJson<WorkspaceScan>(baseUrl, "/align/scan-source", { source });
@@ -233,6 +247,28 @@ export function createStudioHttpClient(baseUrl: string): AlignerDataPort & Studi
 
   return {
     ...aligner,
+    scanRoiWorkspace(workspacePath: string, signal?: AbortSignal) {
+      return postJson<RoiWorkspaceScan>(
+        baseUrl,
+        "/annotate/scan-roi-workspace",
+        { workspacePath },
+        signal,
+      );
+    },
+    async loadRoiFrame(
+      workspacePath: string,
+      request: RoiFrameRequest,
+      contrast?: ContrastWindow | null,
+      signal?: AbortSignal,
+    ) {
+      const payload = await postJson<FramePayload>(
+        baseUrl,
+        "/annotate/load-roi-frame",
+        { workspacePath, request, contrast: contrast ?? null },
+        signal,
+      );
+      return decodeFramePayload(payload);
+    },
     listDirectory(path: string | null): Promise<HostListDirectoryResult> {
       const params = path ? { path } : undefined;
       return getJson<HostListDirectoryResult>(baseUrl, "/fs/list", params);

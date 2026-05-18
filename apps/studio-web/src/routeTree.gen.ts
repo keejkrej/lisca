@@ -10,20 +10,15 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ResultRouteImport } from './routes/result'
-import { Route as InspectRouteImport } from './routes/inspect'
 import { Route as InfoRouteImport } from './routes/info'
 import { Route as AssayRouteImport } from './routes/assay'
+import { Route as AnnotateRouteImport } from './routes/annotate'
 import { Route as AlignRouteImport } from './routes/align'
 import { Route as IndexRouteImport } from './routes/index'
 
 const ResultRoute = ResultRouteImport.update({
   id: '/result',
   path: '/result',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InspectRoute = InspectRouteImport.update({
-  id: '/inspect',
-  path: '/inspect',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InfoRoute = InfoRouteImport.update({
@@ -34,6 +29,11 @@ const InfoRoute = InfoRouteImport.update({
 const AssayRoute = AssayRouteImport.update({
   id: '/assay',
   path: '/assay',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnnotateRoute = AnnotateRouteImport.update({
+  id: '/annotate',
+  path: '/annotate',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AlignRoute = AlignRouteImport.update({
@@ -50,42 +50,42 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/align': typeof AlignRoute
+  '/annotate': typeof AnnotateRoute
   '/assay': typeof AssayRoute
   '/info': typeof InfoRoute
-  '/inspect': typeof InspectRoute
   '/result': typeof ResultRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/align': typeof AlignRoute
+  '/annotate': typeof AnnotateRoute
   '/assay': typeof AssayRoute
   '/info': typeof InfoRoute
-  '/inspect': typeof InspectRoute
   '/result': typeof ResultRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/align': typeof AlignRoute
+  '/annotate': typeof AnnotateRoute
   '/assay': typeof AssayRoute
   '/info': typeof InfoRoute
-  '/inspect': typeof InspectRoute
   '/result': typeof ResultRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/align' | '/assay' | '/info' | '/inspect' | '/result'
+  fullPaths: '/' | '/align' | '/annotate' | '/assay' | '/info' | '/result'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/align' | '/assay' | '/info' | '/inspect' | '/result'
-  id: '__root__' | '/' | '/align' | '/assay' | '/info' | '/inspect' | '/result'
+  to: '/' | '/align' | '/annotate' | '/assay' | '/info' | '/result'
+  id: '__root__' | '/' | '/align' | '/annotate' | '/assay' | '/info' | '/result'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AlignRoute: typeof AlignRoute
+  AnnotateRoute: typeof AnnotateRoute
   AssayRoute: typeof AssayRoute
   InfoRoute: typeof InfoRoute
-  InspectRoute: typeof InspectRoute
   ResultRoute: typeof ResultRoute
 }
 
@@ -96,13 +96,6 @@ declare module '@tanstack/react-router' {
       path: '/result'
       fullPath: '/result'
       preLoaderRoute: typeof ResultRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/inspect': {
-      id: '/inspect'
-      path: '/inspect'
-      fullPath: '/inspect'
-      preLoaderRoute: typeof InspectRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/info': {
@@ -117,6 +110,13 @@ declare module '@tanstack/react-router' {
       path: '/assay'
       fullPath: '/assay'
       preLoaderRoute: typeof AssayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/annotate': {
+      id: '/annotate'
+      path: '/annotate'
+      fullPath: '/annotate'
+      preLoaderRoute: typeof AnnotateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/align': {
@@ -139,9 +139,9 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AlignRoute: AlignRoute,
+  AnnotateRoute: AnnotateRoute,
   AssayRoute: AssayRoute,
   InfoRoute: InfoRoute,
-  InspectRoute: InspectRoute,
   ResultRoute: ResultRoute,
 }
 export const routeTree = rootRouteImport

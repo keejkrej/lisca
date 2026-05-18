@@ -65,7 +65,7 @@ export function CanvasStatusMessageStack({
         <div
           key={`${message.tone ?? "default"}:${message.text}:${index}`}
           className={cn(
-            "rounded-md border bg-card/95 px-3 py-2 text-sm leading-snug shadow-lg backdrop-blur-sm",
+            "whitespace-pre-line rounded-md border bg-card/95 px-3 py-2 text-sm leading-snug shadow-lg backdrop-blur-sm",
             messageToneClassName(message.tone),
           )}
         >

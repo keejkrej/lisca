@@ -22,6 +22,7 @@ import {
 } from "@lisca/utils";
 import { Effect } from "effect";
 import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { studioClient, toErrorMessage } from "../api/studio-client";
@@ -154,6 +155,7 @@ export function useStudioAlignState(): StudioAlignState {
   const scanQuery = useScanSourceQuery(source);
   const autoExcludePreview = useAutoExcludePreviewMutation();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const currentExcludedCells = useMemo(
     () => excludedCellsByPosition[lockedSelection.pos] ?? emptyExcludedCells,
@@ -366,6 +368,7 @@ export function useStudioAlignState(): StudioAlignState {
           setCropProgress(progress);
           if (isDoneCropStatus(progress.status)) {
             if (progress.status === "error") setError(progress.error ?? "Crop failed");
+            if (progress.status === "completed") void navigate({ to: "/annotate" });
             stop();
           }
         });
@@ -386,7 +389,7 @@ export function useStudioAlignState(): StudioAlignState {
         });
       }
     },
-    [setError, source, workspacePath],
+    [navigate, setError, source, workspacePath],
   );
 
   const cropBatchWithOverwriteCheck = useCallback(
@@ -445,10 +448,11 @@ export function useStudioAlignState(): StudioAlignState {
     const remaining = next.positions.filter((pos) => !existing.has(pos));
     if (remaining.length === 0) {
       setStatus(`Skipped ${next.existingPositions.length} existing ROI output(s)`);
+      void navigate({ to: "/annotate" });
       return;
     }
     void runCrop(remaining, false);
-  }, [cropConfirm, runCrop, setStatus]);
+  }, [cropConfirm, navigate, runCrop, setStatus]);
 
   const cancelCropConfirm = useCallback(() => {
     setCropConfirm(null);
