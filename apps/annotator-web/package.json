@@ -12,6 +12,7 @@
   "dependencies": {
     "@lisca/contracts": "workspace:*",
     "@lisca/ui": "workspace:*",
+    "@lisca/utils": "workspace:*",
     "@tanstack/react-query": "^5.100.10",
     "@tanstack/react-router": "^1.169.2",
     "effect": "^3.21.2",

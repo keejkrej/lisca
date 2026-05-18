@@ -7,10 +7,9 @@ import type {
   RoiPositionScan,
   RoiWorkspaceScan,
 } from "@lisca/contracts";
+import type { AnnotationTool } from "@lisca/ui";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-
-import type { AnnotationTool } from "../components/annotation-canvas";
 
 export type RoiSelection = {
   pos: number | null;

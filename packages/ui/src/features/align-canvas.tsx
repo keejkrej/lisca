@@ -11,9 +11,9 @@ import {
 } from "react";
 
 import type {
-  AlignCanvasStatusMessage,
   AlignGridCellCoord,
   AlignGridState,
+  CanvasStatusMessage,
   FrameResult,
 } from "@lisca/contracts";
 import {
@@ -58,15 +58,15 @@ export type AlignCanvasWheelEvent = {
   preventDefault: () => void;
 };
 
-export type AlignCanvasSurfaceProps = {
+export type AlignCanvasProps = {
   frame: FrameResult | null;
   grid: AlignGridState;
   previewGrid?: AlignGridState | null;
   excludedCells?: Iterable<AlignGridCellCoord>;
   loading?: boolean;
   emptyText?: string;
-  messages?: AlignCanvasStatusMessage[];
-  toasts?: AlignCanvasStatusMessage[];
+  messages?: CanvasStatusMessage[];
+  toasts?: CanvasStatusMessage[];
   className?: string;
   cursor?: string;
   onVirtualPointerDown?: (event: AlignCanvasPointerEvent) => void;
@@ -183,7 +183,7 @@ function canvasBackgroundColor(element: HTMLElement) {
   return color && color !== "rgba(0, 0, 0, 0)" && color !== "transparent" ? color : "#09090b";
 }
 
-export function AlignCanvasSurface({
+export function AlignCanvas({
   frame,
   grid,
   previewGrid,
@@ -197,7 +197,7 @@ export function AlignCanvasSurface({
   onVirtualPointerUp,
   onVirtualPointerCancel,
   onVirtualWheel,
-}: AlignCanvasSurfaceProps) {
+}: AlignCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const renderRafRef = useRef<number | null>(null);

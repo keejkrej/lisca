@@ -1,7 +1,6 @@
 import type { AnnotationMode, RoiFrameRequest } from "@lisca/contracts";
-import { Button, Section, cn } from "@lisca/ui";
+import { Button, Section, cn, type AnnotationTool } from "@lisca/ui";
 
-import type { AnnotationTool } from "./annotation-canvas";
 import { OutputPathField } from "./output-path-field";
 import { annotationOutputPaths } from "../utils/annotation-output";
 

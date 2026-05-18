@@ -1,4 +1,4 @@
-import { AlignCanvasSurface, useCanvasTransientStatus } from "@lisca/ui";
+import { AlignCanvas, useCanvasTransientStatus } from "@lisca/ui";
 import { useMemo } from "react";
 
 import type { StudioAlignState } from "../state/use-studio-align-state";
@@ -36,7 +36,7 @@ export function StudioAlignMain({ state }: { state: StudioAlignState }) {
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-muted/20">
-      <AlignCanvasSurface
+      <AlignCanvas
         className="min-h-0 flex-1"
         cursor={cursorForAlignTool(state.toolMode, state.grid.enabled, previewGrid != null)}
         emptyText={emptyText}

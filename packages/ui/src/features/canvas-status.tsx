@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 
-import type { AlignCanvasStatusMessage, AlignCanvasStatusTone } from "@lisca/contracts";
+import type { CanvasStatusMessage, CanvasStatusTone } from "@lisca/contracts";
 
 import { cn } from "../lib/utils";
 
-function messageToneClassName(tone: AlignCanvasStatusTone | undefined) {
+function messageToneClassName(tone: CanvasStatusTone | undefined) {
   if (tone === "error")
     return "border-destructive/35 bg-destructive/10 text-destructive-foreground";
   if (tone === "success") {
@@ -15,7 +15,7 @@ function messageToneClassName(tone: AlignCanvasStatusTone | undefined) {
   return "border-border text-muted-foreground";
 }
 
-function toastToneClassName(tone: AlignCanvasStatusTone | undefined) {
+function toastToneClassName(tone: CanvasStatusTone | undefined) {
   if (tone === "error") {
     return "border-destructive/35 bg-destructive/10 text-destructive-foreground before:bg-destructive";
   }
@@ -30,7 +30,7 @@ export function CanvasStatusMessageStack({
   messages,
 }: {
   className?: string;
-  messages?: AlignCanvasStatusMessage[];
+  messages?: CanvasStatusMessage[];
 }) {
   if (!messages?.length) return null;
 
@@ -61,7 +61,7 @@ export function CanvasToastStack({
   messages,
 }: {
   className?: string;
-  messages?: AlignCanvasStatusMessage[];
+  messages?: CanvasStatusMessage[];
 }) {
   if (!messages?.length) return null;
 

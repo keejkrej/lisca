@@ -1,5 +1,7 @@
-import type { AlignCanvasStatusMessage, AnnotationLabel, FrameResult } from "@lisca/contracts";
-import { CanvasStatusMessageStack, CanvasToastStack, cn } from "@lisca/ui";
+"use client";
+
+import type { AnnotationLabel, CanvasStatusMessage, FrameResult } from "@lisca/contracts";
+import { clamp, fillPolygon, hexToRgb, strokeMask } from "@lisca/utils";
 import {
   useCallback,
   useEffect,
@@ -10,7 +12,8 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 
-import { fillPolygon, hexToRgb, strokeMask } from "../utils/annotation-utils";
+import { cn } from "../lib/utils";
+import { CanvasStatusMessageStack, CanvasToastStack } from "./canvas-status";
 
 type FramePoint = { x: number; y: number };
 
@@ -32,16 +35,12 @@ export type AnnotationCanvasProps = {
   tool: AnnotationTool;
   brushSize: number;
   overlayOpacity: number;
-  messages?: AlignCanvasStatusMessage[];
-  toasts?: AlignCanvasStatusMessage[];
+  messages?: CanvasStatusMessage[];
+  toasts?: CanvasStatusMessage[];
   disabled?: boolean;
   className?: string;
   onMaskCommit: (mask: Uint8Array) => void;
 };
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
-}
 
 function drawRectFor(width: number, height: number, frame: FrameResult): DrawRect {
   const scale = Math.min(width / frame.width, height / frame.height);

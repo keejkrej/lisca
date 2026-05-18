@@ -1,9 +1,5 @@
-import type { ComponentProps } from "react";
+import { AnnotationCanvas, type AnnotationCanvasProps } from "@lisca/ui";
 
-import { AnnotationCanvas } from "./annotation-canvas";
-
-type AnnotatorMainProps = ComponentProps<typeof AnnotationCanvas>;
-
-export function AnnotatorMain(props: AnnotatorMainProps) {
+export function AnnotatorMain(props: AnnotationCanvasProps) {
   return <AnnotationCanvas {...props} />;
 }

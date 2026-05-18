@@ -105,12 +105,18 @@ export {
 } from "./features/align-tools";
 
 export {
-  AlignCanvasSurface,
+  AlignCanvas,
   type AlignCanvasFramePoint,
+  type AlignCanvasProps,
   type AlignCanvasPointerEvent,
-  type AlignCanvasSurfaceProps,
   type AlignCanvasWheelEvent,
-} from "./features/align-canvas-surface";
+} from "./features/align-canvas";
+
+export {
+  AnnotationCanvas,
+  type AnnotationCanvasProps,
+  type AnnotationTool,
+} from "./features/annotation-canvas";
 
 export {
   CanvasStatusMessageStack,

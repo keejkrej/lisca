@@ -378,9 +378,13 @@ export type AlignerDataPort = {
   roiPosExists(workspacePath: string, pos: number): Promise<boolean>;
 };
 
-export type AlignCanvasStatusTone = "default" | "error" | "success";
+export type CanvasStatusTone = "default" | "error" | "success";
 
-export type AlignCanvasStatusMessage = {
+export type CanvasStatusMessage = {
   text: string;
-  tone?: AlignCanvasStatusTone;
+  tone?: CanvasStatusTone;
 };
+
+export type AlignCanvasStatusTone = CanvasStatusTone;
+
+export type AlignCanvasStatusMessage = CanvasStatusMessage;
