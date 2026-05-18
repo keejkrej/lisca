@@ -178,11 +178,17 @@ function drawGridOverlay(
 }
 
 function messageToneClassName(tone: AlignCanvasStatusTone | undefined) {
-  if (tone === "error") return "border-destructive/35 bg-destructive/10 text-destructive-foreground";
+  if (tone === "error")
+    return "border-destructive/35 bg-destructive/10 text-destructive-foreground";
   if (tone === "success") {
     return "border-emerald-600/30 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-300";
   }
   return "border-border text-muted-foreground";
+}
+
+function canvasBackgroundColor(element: HTMLElement) {
+  const color = window.getComputedStyle(element).backgroundColor;
+  return color && color !== "rgba(0, 0, 0, 0)" && color !== "transparent" ? color : "#09090b";
 }
 
 export function AlignCanvasSurface({
@@ -229,7 +235,7 @@ export function AlignCanvasSurface({
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.save();
     ctx.scale(dprRef.current, dprRef.current);
-    ctx.fillStyle = "#09090b";
+    ctx.fillStyle = canvasBackgroundColor(view);
     ctx.fillRect(0, 0, cssWidth, cssHeight);
 
     if (cached) {
@@ -268,6 +274,15 @@ export function AlignCanvasSurface({
   useEffect(() => {
     renderNow();
   }, [activeExcludedCellKeys, renderNow]);
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => renderNow());
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class", "style"],
+    });
+    return () => observer.disconnect();
+  }, [renderNow]);
 
   useLayoutEffect(() => {
     const view = viewportRef.current;
