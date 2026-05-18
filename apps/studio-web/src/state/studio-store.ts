@@ -14,6 +14,7 @@ import type {
 import {
   ASSAY_NAME,
   GENE_EXPRESSION_FEATURE_IDS as CONTRACT_GENE_EXPRESSION_FEATURE_IDS,
+  ASSAY_FEATURE,
   DEFAULT_FOLDER_SOURCE_TEMPLATE,
 } from "@lisca/contracts";
 import { create } from "zustand";
@@ -46,6 +47,12 @@ const BASIC_INFO_FEATURE_IDS: ReadonlyArray<BasicInfo2FeatureId> = CONTRACT_GENE
 const BASIC_INFO_SLIDE_IDS: BasicInfoSlideId[] = ["slide-i", "slide-vi"];
 const TIMELAPSE_UNITS: TimelapseUnit[] = ["second", "minute", "hour"];
 const ENABLED_ASSAY_ID: AssayId = ASSAY_NAME.GENE_EXPRESSION;
+const ASSAY_DEFAULT_INFO_FEATURES: Record<AssayId, readonly BasicInfo2FeatureId[]> = {
+  [ASSAY_NAME.GENE_EXPRESSION]: [ASSAY_FEATURE.TOTAL_FLUOR],
+  [ASSAY_NAME.IMMUNE_KILLING]: [],
+  [ASSAY_NAME.LNP_BINDING]: [],
+  [ASSAY_NAME.CUSTOM_ASSAY]: [],
+};
 
 function isGeneExpressionAssay(assayId: AssayId | null): assayId is GeneExpressionAssayName {
   return assayId === ASSAY_NAME.GENE_EXPRESSION;
@@ -128,6 +135,17 @@ function isBasicInfoFeatureList(value: unknown): value is BasicInfo2FeatureId[] 
   return Array.isArray(value) && value.every((item) => isBasicInfoFeatureId(item));
 }
 
+function normalizeSelectedFeaturesForAssay(
+  assayId: AssayId | null,
+  selectedFeatures: readonly BasicInfo2FeatureId[],
+): BasicInfo2FeatureId[] {
+  const defaults = assayId ? ASSAY_DEFAULT_INFO_FEATURES[assayId] : [];
+  const allowed = defaults.length > 0 ? defaults : BASIC_INFO_FEATURE_IDS;
+  const filtered = selectedFeatures.filter((id) => allowed.includes(id));
+  if (filtered.length > 0) return [...filtered];
+  return defaults.length > 0 ? [...defaults] : [];
+}
+
 function isBasicInfoSlideId(value: unknown): value is BasicInfoSlideId {
   return typeof value === "string" && BASIC_INFO_SLIDE_IDS.includes(value as BasicInfoSlideId);
 }
@@ -152,7 +170,7 @@ function parseInfo1(value: unknown): BasicInfoStep1 {
   };
 }
 
-function parseInfo2(value: unknown): BasicInfoStep2 {
+function parseInfo2(value: unknown, assayId: AssayId | null): BasicInfoStep2 {
   const info2 = requireRecord(value, "info2");
   const timelapseAmount = info2.timelapseAmount;
   const timelapseUnit = info2.timelapseUnit;
@@ -176,14 +194,14 @@ function parseInfo2(value: unknown): BasicInfoStep2 {
     pattern: requireString(info2, "pattern", "info2.pattern"),
     timelapseAmount,
     timelapseUnit,
-    selectedFeatures,
+    selectedFeatures: normalizeSelectedFeaturesForAssay(assayId, selectedFeatures),
   };
 }
 
-function parsePersistedInfo2(value: unknown): BasicInfoStep2 {
+function parsePersistedInfo2(value: unknown, assayId: AssayId | null): BasicInfoStep2 {
   if (!isRecord(value)) return { ...initialInfo2 };
   try {
-    return parseInfo2(value);
+    return parseInfo2(value, assayId);
   } catch {
     const valueRecord = value as Record<string, unknown>;
     const rawSelectedFeatures = valueRecord.selectedFeatures;
@@ -192,12 +210,14 @@ function parsePersistedInfo2(value: unknown): BasicInfoStep2 {
       pattern: optionalString(valueRecord, "pattern"),
       timelapseAmount: null,
       timelapseUnit: "minute",
-      selectedFeatures:
+      selectedFeatures: normalizeSelectedFeaturesForAssay(
+        assayId,
         isBasicInfoFeatureList(rawSelectedFeatures)
           ? [...rawSelectedFeatures]
           : isBasicInfoFeatureId(rawSelectedFeature)
             ? [rawSelectedFeature]
             : [],
+      ),
     };
   }
 }
@@ -250,7 +270,7 @@ export function parseStudioAssayJson(contents: string): StudioAssayJson {
     assayId,
     dataSourceKind,
     info1,
-    info2: parseInfo2(root.info2),
+    info2: parseInfo2(root.info2, assayId),
     info3: parseInfo3(root.info3),
   });
 }
@@ -295,7 +315,7 @@ const initialInfo2: BasicInfoStep2 = {
   pattern: "",
   timelapseAmount: null,
   timelapseUnit: "minute",
-  selectedFeatures: [],
+  selectedFeatures: [ASSAY_FEATURE.TOTAL_FLUOR],
 };
 const initialInfo3: BasicInfoStep3 = {
   selectedSlideId: "slide-vi",
@@ -338,7 +358,9 @@ function normalizeInfo3(info3: BasicInfoStep3): BasicInfoStep3 {
 
 function mergeStudioState(persisted: unknown, current: StudioState): StudioState {
   const persistedState = persisted as Partial<StudioState>;
-  const mergedInfo2 = persistedState.info2 ? parsePersistedInfo2(persistedState.info2) : current.info2;
+  const mergedInfo2 = persistedState.info2
+    ? parsePersistedInfo2(persistedState.info2, persistedState.assayId ?? current.assayId)
+    : current.info2;
   return {
     ...current,
     ...persistedState,
@@ -371,10 +393,10 @@ export const useStudioStore = create<StudioState>()(
           info1: { ...assayJson.info1 },
           info2: {
             ...assayJson.info2,
-            selectedFeatures:
-              assayJson.assayId === ASSAY_NAME.GENE_EXPRESSION
-                ? assayJson.info2.selectedFeatures
-                : [],
+            selectedFeatures: normalizeSelectedFeaturesForAssay(
+              assayJson.assayId,
+              assayJson.info2.selectedFeatures,
+            ),
           },
           info3: {
             selectedSlideId: assayJson.info3.selectedSlideId,
@@ -387,7 +409,10 @@ export const useStudioStore = create<StudioState>()(
           assayId: nextAssayId,
           info2: {
             ...state.info2,
-            ...(nextAssayId === ASSAY_NAME.GENE_EXPRESSION ? {} : { selectedFeatures: [] }),
+            selectedFeatures: normalizeSelectedFeaturesForAssay(
+              nextAssayId,
+              nextAssayId === ASSAY_NAME.GENE_EXPRESSION ? state.info2.selectedFeatures : [],
+            ),
           },
         }));
       },
@@ -398,6 +423,10 @@ export const useStudioStore = create<StudioState>()(
             ? {
                 ...state.info2,
                 ...patch,
+                selectedFeatures:
+                  patch.selectedFeatures == null
+                    ? state.info2.selectedFeatures
+                    : normalizeSelectedFeaturesForAssay(state.assayId, patch.selectedFeatures),
               }
             : {
                 ...state.info2,
