@@ -3,6 +3,7 @@ import { Button, cn } from "@lisca/ui";
 import { ASSAY_CHOICE_LABEL, type AssayId, useStudioStore } from "../state/studio-store";
 
 const ASSAY_ORDER: AssayId[] = ["gene-expression", "immune-killing", "lnp-binding", "custom-assay"];
+const ENABLED_ASSAY_ID: AssayId = "gene-expression";
 
 export function WelcomeAssay() {
   const assayId = useStudioStore((state) => state.assayId);
@@ -18,6 +19,7 @@ export function WelcomeAssay() {
       >
         {ASSAY_ORDER.map((id) => {
           const selected = assayId === id;
+          const disabled = id !== ENABLED_ASSAY_ID;
           return (
             <Button
               key={id}
@@ -26,6 +28,7 @@ export function WelcomeAssay() {
                 "h-20 w-full min-h-[5rem] items-center justify-center px-2 py-3 text-center sm:h-[5.5rem] sm:min-h-[5.5rem] sm:px-3",
                 selected && "border-primary bg-primary/6 ring-2 ring-ring/24 hover:bg-primary/10",
               )}
+              disabled={disabled}
               type="button"
               variant="outline"
               onClick={() => setAssayId(id)}

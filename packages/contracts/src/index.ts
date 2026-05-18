@@ -120,6 +120,8 @@ export type StudioBasicInfoSampleRow = {
   channel: string;
   name: string;
   positions: string;
+  maskChannel: string;
+  signalChannel: string;
 };
 
 export type StudioBasicInfoStep3 = {

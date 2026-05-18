@@ -26,7 +26,9 @@ export function validInfo3(info3: BasicInfoStep3): boolean {
       (row) =>
         row.channel.trim().length > 0 &&
         row.name.trim().length > 0 &&
-        row.positions.trim().length > 0,
+        row.positions.trim().length > 0 &&
+        row.maskChannel.trim().length > 0 &&
+        row.signalChannel.trim().length > 0,
     )
   );
 }

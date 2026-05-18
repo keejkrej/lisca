@@ -44,6 +44,7 @@ const BASIC_INFO_FEATURE_IDS: BasicInfo2FeatureId[] = [
 ];
 const BASIC_INFO_SLIDE_IDS: BasicInfoSlideId[] = ["slide-i", "slide-vi"];
 const TIMELAPSE_UNITS: TimelapseUnit[] = ["second", "minute", "hour"];
+const ENABLED_ASSAY_ID: AssayId = "gene-expression";
 
 export function basicInfoAssayTitle(assayId: AssayId | null): string {
   if (!assayId) return "Assay";
@@ -97,8 +98,17 @@ function requireString(record: Record<string, unknown>, key: string, label = key
   return value;
 }
 
+function optionalString(record: Record<string, unknown>, key: string): string {
+  const value = record[key];
+  return typeof value === "string" ? value : "";
+}
+
 function isAssayId(value: unknown): value is AssayId {
   return typeof value === "string" && value in ASSAY_CHOICE_LABEL;
+}
+
+function enabledAssayId(assayId: AssayId | null): AssayId | null {
+  return assayId === ENABLED_ASSAY_ID ? assayId : ENABLED_ASSAY_ID;
 }
 
 function isDataSourceKind(value: unknown): value is StudioDataSourceKind {
@@ -160,6 +170,8 @@ function parseSampleRows(value: unknown, label: string): BasicInfoSampleRow[] {
       channel: requireString(record, "channel", `${label}[${index}].channel`),
       name: requireString(record, "name", `${label}[${index}].name`),
       positions: requireString(record, "positions", `${label}[${index}].positions`),
+      maskChannel: optionalString(record, "maskChannel"),
+      signalChannel: optionalString(record, "signalChannel"),
     };
   });
 }
@@ -230,14 +242,14 @@ const initialInfo2: BasicInfoStep2 = {
 const initialInfo3: BasicInfoStep3 = {
   selectedSlideId: "slide-vi",
   samplesBySlide: {
-    "slide-i": [{ channel: "0", name: "", positions: "" }],
+    "slide-i": [{ channel: "0", name: "", positions: "", maskChannel: "", signalChannel: "" }],
     "slide-vi": [
-      { channel: "0", name: "", positions: "" },
-      { channel: "1", name: "", positions: "" },
-      { channel: "2", name: "", positions: "" },
-      { channel: "3", name: "", positions: "" },
-      { channel: "4", name: "", positions: "" },
-      { channel: "5", name: "", positions: "" },
+      { channel: "0", name: "", positions: "", maskChannel: "", signalChannel: "" },
+      { channel: "1", name: "", positions: "", maskChannel: "", signalChannel: "" },
+      { channel: "2", name: "", positions: "", maskChannel: "", signalChannel: "" },
+      { channel: "3", name: "", positions: "", maskChannel: "", signalChannel: "" },
+      { channel: "4", name: "", positions: "", maskChannel: "", signalChannel: "" },
+      { channel: "5", name: "", positions: "", maskChannel: "", signalChannel: "" },
     ],
   },
 };
@@ -246,15 +258,40 @@ function cloneSamplesBySlide(
   samplesBySlide: Record<BasicInfoSlideId, BasicInfoSampleRow[]>,
 ): Record<BasicInfoSlideId, BasicInfoSampleRow[]> {
   return {
-    "slide-i": samplesBySlide["slide-i"].map((row) => ({ ...row })),
-    "slide-vi": samplesBySlide["slide-vi"].map((row) => ({ ...row })),
+    "slide-i": samplesBySlide["slide-i"].map((row) => ({
+      ...row,
+      maskChannel: row.maskChannel ?? "",
+      signalChannel: row.signalChannel ?? "",
+    })),
+    "slide-vi": samplesBySlide["slide-vi"].map((row) => ({
+      ...row,
+      maskChannel: row.maskChannel ?? "",
+      signalChannel: row.signalChannel ?? "",
+    })),
+  };
+}
+
+function normalizeInfo3(info3: BasicInfoStep3): BasicInfoStep3 {
+  return {
+    selectedSlideId: info3.selectedSlideId,
+    samplesBySlide: cloneSamplesBySlide(info3.samplesBySlide),
+  };
+}
+
+function mergeStudioState(persisted: unknown, current: StudioState): StudioState {
+  const persistedState = persisted as Partial<StudioState>;
+  return {
+    ...current,
+    ...persistedState,
+    assayId: enabledAssayId(persistedState.assayId ?? current.assayId),
+    info3: persistedState.info3 ? normalizeInfo3(persistedState.info3) : current.info3,
   };
 }
 
 export const useStudioStore = create<StudioState>()(
   persist(
     (set) => ({
-      assayId: "custom-assay",
+      assayId: ENABLED_ASSAY_ID,
       infoStep: 1,
       dataSourceKind: null,
       info1: { ...initialInfo1 },
@@ -263,12 +300,12 @@ export const useStudioStore = create<StudioState>()(
         selectedSlideId: initialInfo3.selectedSlideId,
         samplesBySlide: cloneSamplesBySlide(initialInfo3.samplesBySlide),
       },
-      setAssayId: (assayId) => set({ assayId }),
+      setAssayId: (assayId) => set({ assayId: enabledAssayId(assayId) }),
       setInfoStep: (infoStep) => set({ infoStep }),
       setDataSourceKind: (dataSourceKind) => set({ dataSourceKind }),
       loadAssayJson: (assayJson) =>
         set({
-          assayId: assayJson.assayId,
+          assayId: enabledAssayId(assayJson.assayId),
           infoStep: 1,
           dataSourceKind: assayJson.dataSourceKind ?? inferDataSourceKind(assayJson.info1.dataPath),
           info1: { ...assayJson.info1 },
@@ -301,6 +338,7 @@ export const useStudioStore = create<StudioState>()(
     {
       name: "lisca-studio-session",
       storage: createJSONStorage(() => sessionStorage),
+      merge: mergeStudioState,
     },
   ),
 );

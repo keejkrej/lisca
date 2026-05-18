@@ -60,12 +60,14 @@ export function BasicInfoStep3() {
         <Field className="min-h-0 gap-2.5" name="samples">
           <FieldLabel className="text-2xl font-normal">Samples</FieldLabel>
           <div className="mt-0 w-full min-w-0 overflow-x-auto">
-            <table className="w-full min-w-[28rem] table-fixed border-separate border-spacing-0 text-base">
+            <table className="w-full min-w-[46rem] table-fixed border-separate border-spacing-0 text-base">
               <thead>
                 <tr className="text-left text-muted-foreground">
                   <th className="border-b border-border px-2 py-2 font-medium">channel</th>
                   <th className="border-b border-border px-2 py-2 font-medium">name</th>
                   <th className="border-b border-border px-2 py-2 font-medium">positions</th>
+                  <th className="border-b border-border px-2 py-2 font-medium">mask channel</th>
+                  <th className="border-b border-border px-2 py-2 font-medium">signal channel</th>
                 </tr>
               </thead>
               <tbody>
@@ -99,6 +101,28 @@ export function BasicInfoStep3() {
                         value={row.positions}
                         onChange={(event) =>
                           updateInfo3Sample(index, { positions: event.target.value })
+                        }
+                      />
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <Input
+                        aria-label={`Mask channel row ${index + 1}`}
+                        autoComplete="off"
+                        className="w-full min-w-[6rem]"
+                        value={row.maskChannel}
+                        onChange={(event) =>
+                          updateInfo3Sample(index, { maskChannel: event.target.value })
+                        }
+                      />
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <Input
+                        aria-label={`Signal channel row ${index + 1}`}
+                        autoComplete="off"
+                        className="w-full min-w-[6rem]"
+                        value={row.signalChannel}
+                        onChange={(event) =>
+                          updateInfo3Sample(index, { signalChannel: event.target.value })
                         }
                       />
                     </td>
