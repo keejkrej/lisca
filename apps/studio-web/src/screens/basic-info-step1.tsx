@@ -11,8 +11,7 @@ type StudioPathPickerState = null | { kind: "save" } | { kind: "source"; mode: H
 function pickerTitle(state: StudioPathPickerState): string {
   if (!state) return "";
   if (state.kind === "save") return "Workspace output folder";
-  if (state.mode === "tif_dir") return "TIFF image folder";
-  if (state.mode === "jpg_dir") return "JPEG / PNG image folder";
+  if (state.mode === "folder") return "Image folder";
   if (state.mode === "nd2_file") return "ND2 file";
   if (state.mode === "czi_file") return "CZI file";
   return "Choose source";
@@ -25,8 +24,7 @@ function pickerMode(state: StudioPathPickerState): HostFilePickerMode {
 }
 
 function kindFromMode(mode: HostFilePickerMode): StudioDataSourceKind {
-  if (mode === "tif_dir") return "tif";
-  if (mode === "jpg_dir") return "jpg";
+  if (mode === "folder") return "folder";
   if (mode === "nd2_file") return "nd2";
   if (mode === "czi_file") return "czi";
   return null;
@@ -131,9 +129,8 @@ export function BasicInfoStep1({ hostPort }: { hostPort: StudioHostPort }) {
         open={openDataModalOpen}
         onClose={() => setOpenDataModalOpen(false)}
         onOpenCzi={() => openSourceBrowser("czi_file")}
-        onOpenJpg={() => openSourceBrowser("jpg_dir")}
+        onOpenFolder={() => openSourceBrowser("folder")}
         onOpenNd2={() => openSourceBrowser("nd2_file")}
-        onOpenTif={() => openSourceBrowser("tif_dir")}
       />
       <HostFilePickerDialog
         hostPort={hostPort}
@@ -146,7 +143,7 @@ export function BasicInfoStep1({ hostPort }: { hostPort: StudioHostPort }) {
         onPickDirectory={(path) => {
           if (!pathPicker) return;
           if (pathPicker.kind === "save") setInfo1({ saveTo: path });
-          else if (pathPicker.mode === "tif_dir" || pathPicker.mode === "jpg_dir") {
+          else if (pathPicker.mode === "folder") {
             applySourcePath(path, pathPicker.mode);
           }
           setPathPicker(null);

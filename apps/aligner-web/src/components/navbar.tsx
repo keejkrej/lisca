@@ -1,5 +1,10 @@
 import {
+  Button,
+  Field,
+  FieldDescription,
+  FieldLabel,
   HostFilePickerDialog,
+  Input,
   Menu,
   MenuItem,
   MenuPopup,
@@ -10,9 +15,15 @@ import {
   cn,
   useShellWorkspace,
 } from "@lisca/ui";
-import type { AlignerHostPort, AlignerSource, HostFilePickerMode } from "@lisca/contracts";
+import {
+  DEFAULT_FOLDER_SOURCE_TEMPLATE,
+  FOLDER_SOURCE_TEMPLATE_PRESETS,
+  type AlignerHostPort,
+  type AlignerSource,
+  type HostFilePickerMode,
+} from "@lisca/contracts";
 import { useNavigate } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { RouteId } from "../types";
 
@@ -89,11 +100,136 @@ function createHttpHostPort(baseUrl: string): AlignerHostPort {
 
 function filePickerTitle(mode: HostFilePickerMode): string {
   if (mode === "workspace") return "Workspace folder";
-  if (mode === "tif_dir") return "TIFF image folder";
-  if (mode === "jpg_dir") return "JPEG / PNG image folder";
+  if (mode === "folder") return "Image folder";
   if (mode === "nd2_file") return "ND2 file";
   if (mode === "czi_file") return "CZI file";
   return "File";
+}
+
+function FolderSourceParseModal(props: {
+  path: string | null;
+  onClose: () => void;
+  onConfirm: (source: AlignerSource) => void;
+}) {
+  const [subfolderTemplate, setSubfolderTemplate] = useState<string>(
+    DEFAULT_FOLDER_SOURCE_TEMPLATE.subfolderTemplate,
+  );
+  const [filenameTemplate, setFilenameTemplate] = useState<string>(
+    DEFAULT_FOLDER_SOURCE_TEMPLATE.filenameTemplate,
+  );
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!props.path) return;
+    setSubfolderTemplate(DEFAULT_FOLDER_SOURCE_TEMPLATE.subfolderTemplate);
+    setFilenameTemplate(DEFAULT_FOLDER_SOURCE_TEMPLATE.filenameTemplate);
+    setError(null);
+  }, [props.path]);
+
+  if (!props.path) return null;
+  const path = props.path;
+
+  const confirm = () => {
+    const filename = filenameTemplate.trim();
+    if (!filename) {
+      setError("Filename template is required.");
+      return;
+    }
+
+    props.onConfirm({
+      kind: "folder",
+      path,
+      subfolderTemplate: subfolderTemplate.trim(),
+      filenameTemplate: filename,
+    });
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6 backdrop-blur-sm"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) props.onClose();
+      }}
+    >
+      <div
+        aria-labelledby="folder-source-template-title"
+        aria-modal="true"
+        className="w-full max-w-xl rounded-xl border border-border bg-card shadow-2xl"
+        role="dialog"
+      >
+        <div className="border-b border-border px-5 py-4">
+          <h2 className="font-semibold text-foreground text-lg" id="folder-source-template-title">
+            Parse image folder
+          </h2>
+          <p className="mt-1 truncate text-muted-foreground text-sm" title={path}>
+            {path}
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-4 px-5 py-4">
+          <div className="flex flex-wrap gap-2">
+            {FOLDER_SOURCE_TEMPLATE_PRESETS.map((preset) => (
+              <Button
+                key={`${preset.subfolderTemplate}/${preset.filenameTemplate}`}
+                size="sm"
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setSubfolderTemplate(preset.subfolderTemplate);
+                  setFilenameTemplate(preset.filenameTemplate);
+                  setError(null);
+                }}
+              >
+                {preset.label}
+              </Button>
+            ))}
+          </div>
+
+          <Field className="gap-2" name="subfolderTemplate">
+            <FieldLabel htmlFor="folder-subfolder-template">Subfolder template</FieldLabel>
+            <Input
+              autoComplete="off"
+              id="folder-subfolder-template"
+              placeholder="Pos{p}"
+              type="text"
+              value={subfolderTemplate}
+              onChange={(event) => {
+                setSubfolderTemplate(event.target.value);
+                setError(null);
+              }}
+            />
+            <FieldDescription>Leave empty when files are directly in the folder.</FieldDescription>
+          </Field>
+
+          <Field className="gap-2" name="filenameTemplate">
+            <FieldLabel htmlFor="folder-filename-template">Filename template</FieldLabel>
+            <Input
+              autoComplete="off"
+              aria-invalid={Boolean(error)}
+              id="folder-filename-template"
+              placeholder="img_{t}_{c}_{z}.jpg"
+              type="text"
+              value={filenameTemplate}
+              onChange={(event) => {
+                setFilenameTemplate(event.target.value);
+                setError(null);
+              }}
+            />
+            {error ? <p className="text-destructive-foreground text-sm">{error}</p> : null}
+          </Field>
+        </div>
+
+        <div className="flex justify-end gap-2 border-t border-border px-5 py-4">
+          <Button type="button" variant="outline" onClick={props.onClose}>
+            Cancel
+          </Button>
+          <Button type="button" onClick={confirm}>
+            Open
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function Navbar(props: {
@@ -104,6 +240,7 @@ export function Navbar(props: {
   const workspace = useShellWorkspace();
   const pickerModeRef = useRef<HostFilePickerMode | null>(null);
   const [sourcePickerOpen, setSourcePickerOpen] = useState(false);
+  const [folderSourcePath, setFolderSourcePath] = useState<string | null>(null);
   const [filePicker, setFilePicker] = useState<{
     open: boolean;
     mode: HostFilePickerMode;
@@ -124,13 +261,8 @@ export function Navbar(props: {
       props.onSourcePicked(null);
       return;
     }
-    if (mode === "tif_dir") {
-      workspace.setSourcePath(path);
-      props.onSourcePicked({ kind: "tif", path });
-    }
-    if (mode === "jpg_dir") {
-      workspace.setSourcePath(path);
-      props.onSourcePicked({ kind: "jpg", path });
+    if (mode === "folder") {
+      setFolderSourcePath(path);
     }
   };
 
@@ -164,9 +296,18 @@ export function Navbar(props: {
         open={sourcePickerOpen}
         onClose={() => setSourcePickerOpen(false)}
         onOpenCzi={() => openFilePicker("czi_file")}
-        onOpenJpg={() => openFilePicker("jpg_dir")}
+        onOpenFolder={() => openFilePicker("folder")}
         onOpenNd2={() => openFilePicker("nd2_file")}
-        onOpenTif={() => openFilePicker("tif_dir")}
+      />
+
+      <FolderSourceParseModal
+        path={folderSourcePath}
+        onClose={() => setFolderSourcePath(null)}
+        onConfirm={(source) => {
+          workspace.setSourcePath(source.path);
+          props.onSourcePicked(source);
+          setFolderSourcePath(null);
+        }}
       />
 
       <HostFilePickerDialog

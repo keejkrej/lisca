@@ -55,6 +55,7 @@ export function inferDataSourceKind(path: string): StudioDataSourceKind {
   const lower = path.trim().toLowerCase();
   if (lower.endsWith(".nd2")) return "nd2";
   if (lower.endsWith(".czi")) return "czi";
+  if (path.trim()) return "folder";
   return null;
 }
 
@@ -101,7 +102,7 @@ function isAssayId(value: unknown): value is AssayId {
 }
 
 function isDataSourceKind(value: unknown): value is StudioDataSourceKind {
-  return value === null || value === "tif" || value === "jpg" || value === "nd2" || value === "czi";
+  return value === null || value === "folder" || value === "nd2" || value === "czi";
 }
 
 function isBasicInfoFeatureId(value: unknown): value is BasicInfo2FeatureId {

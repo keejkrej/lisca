@@ -7,14 +7,11 @@ export type HelloMessage = {
 
 export const WS_PATH = "/ws" as const;
 
-export type TifSource = {
-  kind: "tif";
+export type FolderSource = {
+  kind: "folder";
   path: string;
-};
-
-export type JpgSource = {
-  kind: "jpg";
-  path: string;
+  subfolderTemplate: string;
+  filenameTemplate: string;
 };
 
 export type Nd2Source = {
@@ -27,8 +24,39 @@ export type CziSource = {
   path: string;
 };
 
-export type AlignerSource = TifSource | JpgSource | Nd2Source | CziSource;
+export type AlignerSource = FolderSource | Nd2Source | CziSource;
 export type ImageSource = AlignerSource;
+
+export type FolderSourceTemplatePreset = {
+  label: string;
+  subfolderTemplate: string;
+  filenameTemplate: string;
+};
+
+export const FOLDER_SOURCE_TEMPLATE_PRESETS = [
+  {
+    label: "PNG folder",
+    subfolderTemplate: "Pos{p}",
+    filenameTemplate: "img_{t}_{c}_{z}.png",
+  },
+  {
+    label: "JPEG folder",
+    subfolderTemplate: "Pos{p}",
+    filenameTemplate: "img_{t}_{c}_{z}.jpg",
+  },
+  {
+    label: "TIFF folder",
+    subfolderTemplate: "Pos{p}",
+    filenameTemplate: "img_channel{c}_position{p}_time{t}_z{z}.tif",
+  },
+  {
+    label: "Flat folder",
+    subfolderTemplate: "",
+    filenameTemplate: "img_channel{c}_position{p}_time{t}_z{z}.tif",
+  },
+] as const satisfies readonly FolderSourceTemplatePreset[];
+
+export const DEFAULT_FOLDER_SOURCE_TEMPLATE = FOLDER_SOURCE_TEMPLATE_PRESETS[0];
 
 export type HostFsEntry = {
   name: string;
@@ -44,8 +72,7 @@ export type HostListDirectoryResult = {
 
 export type HostFilePickerMode =
   | "workspace"
-  | "tif_dir"
-  | "jpg_dir"
+  | "folder"
   | "nd2_file"
   | "czi_file"
   | "assay_json_file";

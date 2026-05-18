@@ -7,8 +7,7 @@ import { Button } from "../components/ui/button";
 export type SourcePickerModalProps = {
   open: boolean;
   onClose: () => void;
-  onOpenTif: () => void | Promise<void>;
-  onOpenJpg: () => void | Promise<void>;
+  onOpenFolder: () => void | Promise<void>;
   onOpenNd2: () => void | Promise<void>;
   onOpenCzi: () => void | Promise<void>;
 };
@@ -16,8 +15,7 @@ export type SourcePickerModalProps = {
 export function SourcePickerModal({
   open,
   onClose,
-  onOpenTif,
-  onOpenJpg,
+  onOpenFolder,
   onOpenNd2,
   onOpenCzi,
 }: SourcePickerModalProps) {
@@ -67,23 +65,14 @@ export function SourcePickerModal({
         </div>
 
         <div className="px-5 pb-5">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <button
               className={optionClass}
               type="button"
-              onClick={() => void handleSelect(onOpenTif)}
+              onClick={() => void handleSelect(onOpenFolder)}
             >
               <span className="font-medium text-foreground text-lg group-hover:text-primary">
-                TIFF
-              </span>
-            </button>
-            <button
-              className={optionClass}
-              type="button"
-              onClick={() => void handleSelect(onOpenJpg)}
-            >
-              <span className="font-medium text-foreground text-lg group-hover:text-primary">
-                PNG
+                Folder
               </span>
             </button>
             <button

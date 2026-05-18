@@ -28,7 +28,7 @@ function fileMatchesMode(mode: HostFilePickerMode, entry: HostFsEntry): boolean 
 }
 
 function isDirectoryMode(mode: HostFilePickerMode): boolean {
-  return mode === "workspace" || mode === "tif_dir" || mode === "jpg_dir";
+  return mode === "workspace" || mode === "folder";
 }
 
 export type HostFilePickerDialogProps = {

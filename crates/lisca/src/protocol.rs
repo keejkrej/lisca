@@ -72,10 +72,25 @@ pub struct WorkspaceScan {
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(tag = "kind", rename_all = "lowercase")]
 pub enum AlignerSource {
-    Tif { path: String },
-    Jpg { path: String },
-    Nd2 { path: String },
-    Czi { path: String },
+    Folder {
+        path: String,
+        #[serde(rename = "subfolderTemplate")]
+        subfolder_template: String,
+        #[serde(rename = "filenameTemplate")]
+        filename_template: String,
+    },
+    Tif {
+        path: String,
+    },
+    Jpg {
+        path: String,
+    },
+    Nd2 {
+        path: String,
+    },
+    Czi {
+        path: String,
+    },
 }
 
 pub type ImageSource = AlignerSource;

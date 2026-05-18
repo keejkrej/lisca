@@ -96,8 +96,7 @@ export function frameCacheKey(
   contrast: ContrastWindow | null,
 ): string {
   return JSON.stringify([
-    source.kind,
-    source.path,
+    source,
     selection.pos,
     selection.channel,
     selection.time,

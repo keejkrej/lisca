@@ -1,13 +1,14 @@
-import type {
-  AlignGridCellCoord,
-  AlignGridShape,
-  AlignGridState,
-  AlignerSource,
-  ContrastWindow,
-  FrameRequest,
-  FrameResult,
-  SavedAlignState,
-  WorkspaceScan,
+import {
+  DEFAULT_FOLDER_SOURCE_TEMPLATE,
+  type AlignGridCellCoord,
+  type AlignGridShape,
+  type AlignGridState,
+  type AlignerSource,
+  type ContrastWindow,
+  type FrameRequest,
+  type FrameResult,
+  type SavedAlignState,
+  type WorkspaceScan,
 } from "@lisca/contracts";
 import {
   AlignCanvasSurface,
@@ -112,6 +113,14 @@ function alignStateFromCurrent(
 function toStudioSource(kind: AlignerSource["kind"] | null, path: string): AlignerSource | null {
   const trimmed = path.trim();
   if (!trimmed || !kind) return null;
+  if (kind === "folder") {
+    return {
+      kind,
+      path: trimmed,
+      subfolderTemplate: DEFAULT_FOLDER_SOURCE_TEMPLATE.subfolderTemplate,
+      filenameTemplate: DEFAULT_FOLDER_SOURCE_TEMPLATE.filenameTemplate,
+    };
+  }
   return { kind, path: trimmed } as AlignerSource;
 }
 

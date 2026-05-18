@@ -77,7 +77,7 @@ function resolveNextValue<T>(current: T, next: StateUpdater<T>): T {
 }
 
 export function sourceKey(source: AlignerSource | null): string | null {
-  return source ? `${source.kind}:${source.path}` : null;
+  return source ? JSON.stringify(source) : null;
 }
 
 export function savedAlignStateKey(workspacePath: string, pos: number): string {
