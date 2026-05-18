@@ -5,6 +5,8 @@ import { useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
 import { studioClient } from "../api/studio-client";
+import { AssayOverwriteConfirmModal } from "../components/assay-overwrite-confirm-modal";
+import { AssaySaveConfirmModal } from "../components/assay-save-confirm-modal";
 import { BasicInfoStep1 } from "../components/basic-info-step1";
 import { BasicInfoStep2 } from "../components/basic-info-step2";
 import { BasicInfoStep3 } from "../components/basic-info-step3";
@@ -29,17 +31,37 @@ function InfoPage() {
   const info2 = useStudioStore((state) => state.info2);
   const info3 = useStudioStore((state) => state.info3);
   const [savingAssay, setSavingAssay] = useState(false);
+  const [saveConfirmOpen, setSaveConfirmOpen] = useState(false);
+  const [overwriteConfirmOpen, setOverwriteConfirmOpen] = useState(false);
   const canContinue =
     infoStep === 1 ? validInfo1(info1) : infoStep === 2 ? validInfo2(info2) : validInfo3(info3);
   const step = infoStep === 1 ? "info1" : infoStep === 2 ? "info2" : "info3";
+  const assayJsonSaveTo = info1.saveTo.trim();
 
-  const saveAssayAndGoAlign = async () => {
+  const goAlign = async () => {
+    await navigate({ to: "/align" });
+  };
+
+  const assayJsonExists = async () => {
+    try {
+      const list = await hostPort.listDirectory(assayJsonSaveTo);
+      return list.entries.some((entry) => !entry.isDirectory && entry.name === "assay.json");
+    } catch {
+      return false;
+    }
+  };
+
+  const saveAssayAndGoAlign = async (overwrite: boolean) => {
     if (!assayId || savingAssay) return;
     setSavingAssay(true);
     try {
+      if (!overwrite && (await assayJsonExists())) {
+        setOverwriteConfirmOpen(true);
+        return;
+      }
       const assayJson = buildStudioAssayJson({ assayId, dataSourceKind, info1, info2, info3 });
-      await hostPort.saveAssayJson(info1.saveTo.trim(), JSON.stringify(assayJson, null, 2));
-      await navigate({ to: "/align" });
+      await hostPort.saveAssayJson(assayJsonSaveTo, JSON.stringify(assayJson, null, 2));
+      await goAlign();
     } catch (cause) {
       window.alert(cause instanceof Error ? cause.message : String(cause));
     } finally {
@@ -47,12 +69,24 @@ function InfoPage() {
     }
   };
 
+  const firstInvalidInfoStep = (): 1 | 2 | 3 | null => {
+    if (!validInfo1(info1)) return 1;
+    if (!validInfo2(info2)) return 2;
+    if (!validInfo3(info3)) return 3;
+    return null;
+  };
+
   const next = async () => {
     if (infoStep < 3) {
       setInfoStep((infoStep + 1) as 1 | 2 | 3);
       return;
     }
-    await saveAssayAndGoAlign();
+    const invalidStep = firstInvalidInfoStep();
+    if (invalidStep) {
+      setInfoStep(invalidStep);
+      return;
+    }
+    setSaveConfirmOpen(true);
   };
 
   const back = () => {
@@ -89,7 +123,7 @@ function InfoPage() {
                     loading={savingAssay}
                     onClick={() => void next()}
                   >
-                    {infoStep === 3 ? "Save" : "Next"}
+                    Next
                   </DockButton>
                 </div>
               }
@@ -99,6 +133,27 @@ function InfoPage() {
         </AppShell.MainColumn>
         <AppShell.Right widthClass="w-60" />
       </AppShell.Body>
+      <AssaySaveConfirmModal
+        open={saveConfirmOpen}
+        onCancel={() => setSaveConfirmOpen(false)}
+        onSave={() => {
+          setSaveConfirmOpen(false);
+          void saveAssayAndGoAlign(false);
+        }}
+        onSkip={() => {
+          setSaveConfirmOpen(false);
+          void goAlign();
+        }}
+      />
+      <AssayOverwriteConfirmModal
+        open={overwriteConfirmOpen}
+        saveTo={assayJsonSaveTo}
+        onCancel={() => setOverwriteConfirmOpen(false)}
+        onOverwrite={() => {
+          setOverwriteConfirmOpen(false);
+          void saveAssayAndGoAlign(true);
+        }}
+      />
     </AppShell>
   );
 }

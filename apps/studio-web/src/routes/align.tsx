@@ -33,7 +33,7 @@ function AlignPage() {
                 <div className="flex w-full flex-col gap-2">
                   <div className="grid grid-cols-2 gap-2">
                     <DockButton
-                      disabled={!alignState.frame || alignState.saving}
+                      disabled={!alignState.frame || alignState.saving || alignState.cropping}
                       onClick={alignState.resetCurrent}
                     >
                       Reset
@@ -43,6 +43,7 @@ function AlignPage() {
                         !alignState.workspacePath ||
                         !alignState.scan ||
                         alignState.saving ||
+                        alignState.cropping ||
                         alignState.findingFirstUnaligned
                       }
                       loading={alignState.findingFirstUnaligned}
@@ -53,13 +54,13 @@ function AlignPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <DockButton
-                      disabled={!alignState.canGoBack || alignState.saving}
+                      disabled={!alignState.canGoBack || alignState.saving || alignState.cropping}
                       onClick={alignState.goBack}
                     >
                       Back
                     </DockButton>
                     <DockButton
-                      disabled={!alignState.frame || alignState.saving}
+                      disabled={!alignState.frame || alignState.saving || alignState.cropping}
                       loading={alignState.saving}
                       onClick={() => void alignState.saveAndAdvance()}
                     >

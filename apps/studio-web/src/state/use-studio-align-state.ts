@@ -3,6 +3,7 @@ import type {
   AlignGridState,
   AlignerSource,
   ContrastWindow,
+  CropRoiProgress,
   FrameRequest,
   FrameResult,
   SavedAlignState,
@@ -21,11 +22,12 @@ import {
 } from "@lisca/utils";
 import { Effect } from "effect";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { studioClient, toErrorMessage } from "../api/studio-client";
 import { useAutoExcludePreviewMutation, useScanSourceQuery } from "../api/studio-queries";
 import { effectErrorMessage, loadFrameEffect } from "../effects/frame-loader";
+import { isDoneCropStatus } from "../utils/crop-status";
 import { lockedStudioSelection, studioMaskChannel, toStudioSource } from "../utils/studio-source";
 import {
   savedAlignStateKey,
@@ -66,14 +68,33 @@ export type StudioAlignState = {
   displayedExcludedCells: AlignGridCellCoord[];
   visibleCounts: { included: number; excluded: number };
   saving: boolean;
+  cropping: boolean;
+  cropProgress: CropRoiProgress | null;
+  cropStartConfirm: CropStartConfirmState | null;
+  cropConfirm: CropConfirmState | null;
   findingFirstUnaligned: boolean;
   status: string | null;
   canGoBack: boolean;
   goBack: () => void;
   resetCurrent: () => void;
   goToFirstUnaligned: () => Promise<void>;
+  startConfirmedCrop: () => void;
+  cancelCropStartConfirm: () => void;
+  confirmCropOverwrite: () => void;
+  skipExistingCrop: () => void;
+  cancelCropConfirm: () => void;
+  cancelCrop: () => Promise<void>;
   saveAndAdvance: () => Promise<boolean>;
   autoExclude: () => Promise<void>;
+};
+
+export type CropStartConfirmState = {
+  positions: number[];
+};
+
+export type CropConfirmState = {
+  positions: number[];
+  existingPositions: number[];
 };
 
 export function useStudioAlignState(): StudioAlignState {
@@ -114,6 +135,10 @@ export function useStudioAlignState(): StudioAlignState {
     applyLoadedFrame,
   } = useStudioAlignStore();
   const [findingFirstUnaligned, setFindingFirstUnaligned] = useState(false);
+  const [cropProgress, setCropProgress] = useState<CropRoiProgress | null>(null);
+  const [cropStartConfirm, setCropStartConfirm] = useState<CropStartConfirmState | null>(null);
+  const [cropConfirm, setCropConfirm] = useState<CropConfirmState | null>(null);
+  const cropRequestIdRef = useRef<string | null>(null);
   const loadCanvasResources = useCanvasResourceTransaction();
   const activeSource = useMemo(
     () => toStudioSource(dataSourceKind, info1),
@@ -147,6 +172,7 @@ export function useStudioAlignState(): StudioAlignState {
         : { included: 0, excluded: 0 },
     [displayedExcludedCells, frame, grid],
   );
+  const cropping = cropProgress != null && !isDoneCropStatus(cropProgress.status);
 
   useEffect(() => {
     setWorkspacePath(activeWorkspacePath);
@@ -310,6 +336,130 @@ export function useStudioAlignState(): StudioAlignState {
     return true;
   }, [lockedSelection.pos, scan, setSelection]);
 
+  const runCrop = useCallback(
+    async (positions: number[], overwrite: boolean) => {
+      if (!workspacePath || !source || positions.length === 0) return;
+      const requestId = `studio-crop-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      cropRequestIdRef.current = requestId;
+      setError(null);
+      setCropProgress({
+        requestId,
+        status: "queued",
+        position: null,
+        completedPositions: 0,
+        totalPositions: positions.length,
+        completedRois: 0,
+        totalRois: 0,
+        message: "Queued crop",
+      });
+      let stop = () => {};
+      try {
+        await studioClient.cropRoi({
+          requestId,
+          workspacePath,
+          source,
+          positions,
+          overwrite,
+          outputFormat: "tiff",
+        });
+        stop = studioClient.onCropRoiProgress(requestId, (progress) => {
+          setCropProgress(progress);
+          if (isDoneCropStatus(progress.status)) {
+            if (progress.status === "error") setError(progress.error ?? "Crop failed");
+            stop();
+          }
+        });
+      } catch (cause) {
+        stop();
+        const message = toErrorMessage(cause, "Crop failed");
+        setError(message);
+        setCropProgress({
+          requestId,
+          status: "error",
+          position: null,
+          completedPositions: 0,
+          totalPositions: positions.length,
+          completedRois: 0,
+          totalRois: 0,
+          message,
+          error: message,
+        });
+      }
+    },
+    [setError, source, workspacePath],
+  );
+
+  const cropBatchWithOverwriteCheck = useCallback(
+    async (positions: number[]) => {
+      if (!workspacePath || positions.length === 0) return;
+      const existing = (
+        await Promise.all(
+          positions.map(async (pos) => ({
+            pos,
+            exists: await studioClient.roiPosExists(workspacePath, pos),
+          })),
+        )
+      )
+        .filter((entry) => entry.exists)
+        .map((entry) => entry.pos);
+      if (existing.length > 0) {
+        setCropConfirm({ positions, existingPositions: existing });
+        return;
+      }
+      await runCrop(positions, false);
+    },
+    [runCrop, workspacePath],
+  );
+
+  const maybeCropWhenAllPositionsSaved = useCallback(async () => {
+    if (!workspacePath || !scan) return;
+    const savedPositions = new Set(await studioClient.listSavedBboxPositions(workspacePath));
+    const allPositionsSaved = scan.positions.every((pos) => savedPositions.has(pos));
+    if (!allPositionsSaved) return;
+    setCropStartConfirm({ positions: scan.positions });
+  }, [scan, workspacePath]);
+
+  const startConfirmedCrop = useCallback(() => {
+    const next = cropStartConfirm;
+    if (!next) return;
+    setCropStartConfirm(null);
+    void cropBatchWithOverwriteCheck(next.positions);
+  }, [cropBatchWithOverwriteCheck, cropStartConfirm]);
+
+  const cancelCropStartConfirm = useCallback(() => {
+    setCropStartConfirm(null);
+  }, []);
+
+  const confirmCropOverwrite = useCallback(() => {
+    const next = cropConfirm;
+    if (!next) return;
+    setCropConfirm(null);
+    void runCrop(next.positions, true);
+  }, [cropConfirm, runCrop]);
+
+  const skipExistingCrop = useCallback(() => {
+    const next = cropConfirm;
+    if (!next) return;
+    setCropConfirm(null);
+    const existing = new Set(next.existingPositions);
+    const remaining = next.positions.filter((pos) => !existing.has(pos));
+    if (remaining.length === 0) {
+      setStatus(`Skipped ${next.existingPositions.length} existing ROI output(s)`);
+      return;
+    }
+    void runCrop(remaining, false);
+  }, [cropConfirm, runCrop, setStatus]);
+
+  const cancelCropConfirm = useCallback(() => {
+    setCropConfirm(null);
+  }, []);
+
+  const cancelCrop = useCallback(async () => {
+    const requestId = cropRequestIdRef.current;
+    if (!requestId) return;
+    setCropProgress(await studioClient.cancelCropRoi(requestId));
+  }, []);
+
   const saveAndAdvance = useCallback(async () => {
     if (!workspacePath || !frame) return false;
     setSaving(true);
@@ -336,7 +486,8 @@ export function useStudioAlignState(): StudioAlignState {
         alignState,
       );
       setStatus(`Saved bbox/Pos${lockedSelection.pos}.csv`);
-      advanceToNextPosition();
+      const advanced = advanceToNextPosition();
+      if (!advanced) await maybeCropWhenAllPositionsSaved();
       return true;
     } catch (cause) {
       setError(toErrorMessage(cause, "Save failed"));
@@ -350,6 +501,7 @@ export function useStudioAlignState(): StudioAlignState {
     frame,
     grid,
     lockedSelection.pos,
+    maybeCropWhenAllPositionsSaved,
     queryClient,
     setError,
     setExcludedCellsForCurrentPosition,
@@ -410,12 +562,22 @@ export function useStudioAlignState(): StudioAlignState {
     displayedExcludedCells,
     visibleCounts,
     saving,
+    cropping,
+    cropProgress,
+    cropStartConfirm,
+    cropConfirm,
     findingFirstUnaligned,
     status,
     canGoBack,
     goBack,
     resetCurrent,
     goToFirstUnaligned,
+    startConfirmedCrop,
+    cancelCropStartConfirm,
+    confirmCropOverwrite,
+    skipExistingCrop,
+    cancelCropConfirm,
+    cancelCrop,
     saveAndAdvance,
     autoExclude,
   };

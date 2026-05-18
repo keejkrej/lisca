@@ -6,6 +6,9 @@ import {
 } from "@lisca/ui";
 import { useMemo } from "react";
 
+import { StudioCropConfirmModal } from "./studio-crop-confirm-modal";
+import { StudioCropProgressModal } from "./studio-crop-progress-modal";
+import { StudioCropStartModal } from "./studio-crop-start-modal";
 import type { StudioAlignState } from "../state/use-studio-align-state";
 
 export function StudioAlignMain({ state }: { state: StudioAlignState }) {
@@ -17,8 +20,9 @@ export function StudioAlignMain({ state }: { state: StudioAlignState }) {
       toolMode: state.toolMode,
     });
   const visibleStatus = useCanvasTransientStatus(state.status);
-  const activeToastStatus =
-    state.saving || state.frameLoading
+  const activeToastStatus = state.cropping
+    ? "Cropping ROI output"
+    : state.saving || state.frameLoading
       ? "Loading frame"
       : state.scanLoading
         ? "Scanning source"
@@ -53,7 +57,7 @@ export function StudioAlignMain({ state }: { state: StudioAlignState }) {
         excludedCells={state.displayedExcludedCells}
         frame={state.frame}
         grid={state.grid}
-        loading={state.scanLoading || state.saving || state.frameLoading}
+        loading={state.scanLoading || state.saving || state.frameLoading || state.cropping}
         messages={messages}
         previewGrid={previewGrid}
         toasts={toasts}
@@ -62,6 +66,9 @@ export function StudioAlignMain({ state }: { state: StudioAlignState }) {
         onVirtualPointerMove={handlePointerMove}
         onVirtualPointerUp={handlePointerEnd}
       />
+      <StudioCropStartModal state={state} />
+      <StudioCropConfirmModal state={state} />
+      <StudioCropProgressModal state={state} />
     </div>
   );
 }
