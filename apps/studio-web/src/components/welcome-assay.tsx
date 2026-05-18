@@ -1,9 +1,15 @@
 import { Button, cn } from "@lisca/ui";
 
 import { ASSAY_CHOICE_LABEL, type AssayId, useStudioStore } from "../state/studio-store";
+import { ASSAY_NAME } from "@lisca/contracts";
 
-const ASSAY_ORDER: AssayId[] = ["gene-expression", "immune-killing", "lnp-binding", "custom-assay"];
-const ENABLED_ASSAY_ID: AssayId = "gene-expression";
+const ASSAY_ORDER: AssayId[] = [
+  ASSAY_NAME.GENE_EXPRESSION,
+  ASSAY_NAME.IMMUNE_KILLING,
+  ASSAY_NAME.LNP_BINDING,
+  ASSAY_NAME.CUSTOM_ASSAY,
+];
+const ENABLED_ASSAY_ID: AssayId = ASSAY_NAME.GENE_EXPRESSION;
 
 export function WelcomeAssay() {
   const assayId = useStudioStore((state) => state.assayId);

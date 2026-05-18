@@ -34,7 +34,11 @@ function InfoPage() {
   const [saveConfirmOpen, setSaveConfirmOpen] = useState(false);
   const [overwriteConfirmOpen, setOverwriteConfirmOpen] = useState(false);
   const canContinue =
-    infoStep === 1 ? validInfo1(info1) : infoStep === 2 ? validInfo2(info2) : validInfo3(info3);
+    infoStep === 1
+      ? validInfo1(info1)
+      : infoStep === 2
+        ? validInfo2(info2, assayId)
+        : validInfo3(info3);
   const step = infoStep === 1 ? "info1" : infoStep === 2 ? "info2" : "info3";
   const assayJsonSaveTo = info1.saveTo.trim();
 
@@ -71,7 +75,7 @@ function InfoPage() {
 
   const firstInvalidInfoStep = (): 1 | 2 | 3 | null => {
     if (!validInfo1(info1)) return 1;
-    if (!validInfo2(info2)) return 2;
+    if (!validInfo2(info2, assayId)) return 2;
     if (!validInfo3(info3)) return 3;
     return null;
   };

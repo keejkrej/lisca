@@ -7,10 +7,15 @@ import type {
   StudioBasicInfoStep1 as BasicInfoStep1,
   StudioBasicInfoStep2 as BasicInfoStep2,
   StudioBasicInfoStep3 as BasicInfoStep3,
+  GeneExpressionAssayName,
   StudioDataSourceKind,
   StudioTimelapseUnit as TimelapseUnit,
 } from "@lisca/contracts";
-import { DEFAULT_FOLDER_SOURCE_TEMPLATE } from "@lisca/contracts";
+import {
+  ASSAY_NAME,
+  GENE_EXPRESSION_FEATURE_IDS as CONTRACT_GENE_EXPRESSION_FEATURE_IDS,
+  DEFAULT_FOLDER_SOURCE_TEMPLATE,
+} from "@lisca/contracts";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
@@ -31,25 +36,24 @@ export type StudioStep = "welcome" | "info1" | "info2" | "info3" | "alignPattern
 export type InfoStep = 1 | 2 | 3;
 
 export const ASSAY_CHOICE_LABEL: Record<AssayId, string> = {
-  "gene-expression": "Gene expression",
-  "immune-killing": "Immune killing",
-  "lnp-binding": "LNP binding",
-  "custom-assay": "Custom assay",
+  [ASSAY_NAME.GENE_EXPRESSION]: "Gene expression",
+  [ASSAY_NAME.IMMUNE_KILLING]: "Immune killing",
+  [ASSAY_NAME.LNP_BINDING]: "LNP binding",
+  [ASSAY_NAME.CUSTOM_ASSAY]: "Custom assay",
 };
 
-const BASIC_INFO_FEATURE_IDS: BasicInfo2FeatureId[] = [
-  "morphology",
-  "partcount",
-  "partfluor",
-  "totalfluor",
-];
+const BASIC_INFO_FEATURE_IDS: ReadonlyArray<BasicInfo2FeatureId> = CONTRACT_GENE_EXPRESSION_FEATURE_IDS;
 const BASIC_INFO_SLIDE_IDS: BasicInfoSlideId[] = ["slide-i", "slide-vi"];
 const TIMELAPSE_UNITS: TimelapseUnit[] = ["second", "minute", "hour"];
-const ENABLED_ASSAY_ID: AssayId = "gene-expression";
+const ENABLED_ASSAY_ID: AssayId = ASSAY_NAME.GENE_EXPRESSION;
+
+function isGeneExpressionAssay(assayId: AssayId | null): assayId is GeneExpressionAssayName {
+  return assayId === ASSAY_NAME.GENE_EXPRESSION;
+}
 
 export function basicInfoAssayTitle(assayId: AssayId | null): string {
   if (!assayId) return "Assay";
-  if (assayId === "custom-assay") return ASSAY_CHOICE_LABEL["custom-assay"];
+  if (assayId === ASSAY_NAME.CUSTOM_ASSAY) return ASSAY_CHOICE_LABEL[ASSAY_NAME.CUSTOM_ASSAY];
   return `${ASSAY_CHOICE_LABEL[assayId]} assay`;
 }
 
@@ -120,6 +124,10 @@ function isBasicInfoFeatureId(value: unknown): value is BasicInfo2FeatureId {
   return typeof value === "string" && BASIC_INFO_FEATURE_IDS.includes(value as BasicInfo2FeatureId);
 }
 
+function isBasicInfoFeatureList(value: unknown): value is BasicInfo2FeatureId[] {
+  return Array.isArray(value) && value.every((item) => isBasicInfoFeatureId(item));
+}
+
 function isBasicInfoSlideId(value: unknown): value is BasicInfoSlideId {
   return typeof value === "string" && BASIC_INFO_SLIDE_IDS.includes(value as BasicInfoSlideId);
 }
@@ -148,7 +156,13 @@ function parseInfo2(value: unknown): BasicInfoStep2 {
   const info2 = requireRecord(value, "info2");
   const timelapseAmount = info2.timelapseAmount;
   const timelapseUnit = info2.timelapseUnit;
-  const selectedFeature = info2.selectedFeature;
+  const rawSelectedFeatures = (info2 as Record<string, unknown>)?.selectedFeatures;
+  const rawSelectedFeature = (info2 as Record<string, unknown>)?.selectedFeature;
+  const selectedFeatures = isBasicInfoFeatureList(rawSelectedFeatures)
+    ? rawSelectedFeatures
+    : isBasicInfoFeatureId(rawSelectedFeature)
+      ? [rawSelectedFeature]
+      : [];
   if (
     timelapseAmount !== null &&
     (typeof timelapseAmount !== "number" || !Number.isFinite(timelapseAmount))
@@ -158,14 +172,11 @@ function parseInfo2(value: unknown): BasicInfoStep2 {
   if (!isTimelapseUnit(timelapseUnit)) {
     throw new Error("Invalid assay.json: info2.timelapseUnit is not supported.");
   }
-  if (selectedFeature !== null && !isBasicInfoFeatureId(selectedFeature)) {
-    throw new Error("Invalid assay.json: info2.selectedFeature is not supported.");
-  }
   return {
     pattern: requireString(info2, "pattern", "info2.pattern"),
     timelapseAmount,
     timelapseUnit,
-    selectedFeature,
+    selectedFeatures,
   };
 }
 
@@ -262,7 +273,7 @@ const initialInfo2: BasicInfoStep2 = {
   pattern: "",
   timelapseAmount: null,
   timelapseUnit: "minute",
-  selectedFeature: null,
+  selectedFeatures: [],
 };
 const initialInfo3: BasicInfoStep3 = {
   selectedSlideId: "slide-vi",
@@ -326,7 +337,6 @@ export const useStudioStore = create<StudioState>()(
         selectedSlideId: initialInfo3.selectedSlideId,
         samplesBySlide: cloneSamplesBySlide(initialInfo3.samplesBySlide),
       },
-      setAssayId: (assayId) => set({ assayId: enabledAssayId(assayId) }),
       setInfoStep: (infoStep) => set({ infoStep }),
       setDataSourceKind: (dataSourceKind) => set({ dataSourceKind }),
       loadAssayJson: (assayJson) =>
@@ -335,14 +345,42 @@ export const useStudioStore = create<StudioState>()(
           infoStep: 1,
           dataSourceKind: assayJson.dataSourceKind ?? inferDataSourceKind(assayJson.info1.dataPath),
           info1: { ...assayJson.info1 },
-          info2: { ...assayJson.info2 },
+          info2: {
+            ...assayJson.info2,
+            selectedFeatures:
+              assayJson.assayId === ASSAY_NAME.GENE_EXPRESSION
+                ? assayJson.info2.selectedFeatures
+                : [],
+          },
           info3: {
             selectedSlideId: assayJson.info3.selectedSlideId,
             samplesBySlide: cloneSamplesBySlide(assayJson.info3.samplesBySlide),
           },
         }),
+      setAssayId: (assayId) => {
+        const nextAssayId = enabledAssayId(assayId);
+        set((state) => ({
+          assayId: nextAssayId,
+          info2: {
+            ...state.info2,
+            ...(nextAssayId === ASSAY_NAME.GENE_EXPRESSION ? {} : { selectedFeatures: [] }),
+          },
+        }));
+      },
       setInfo1: (patch) => set((state) => ({ info1: { ...state.info1, ...patch } })),
-      setInfo2: (patch) => set((state) => ({ info2: { ...state.info2, ...patch } })),
+      setInfo2: (patch) =>
+        set((state) => ({
+          info2: isGeneExpressionAssay(state.assayId)
+            ? {
+                ...state.info2,
+                ...patch,
+              }
+            : {
+                ...state.info2,
+                ...patch,
+                selectedFeatures: [],
+              },
+        })),
       setInfo3: (patch) => set((state) => ({ info3: { ...state.info3, ...patch } })),
       updateInfo3Sample: (index, patch) =>
         set((state) => {

@@ -19,19 +19,20 @@ import {
   type TimelapseUnit,
   useStudioStore,
 } from "../state/studio-store";
+import { ASSAY_FEATURE, ASSAY_NAME } from "@lisca/contracts";
 
 const ROW = "flex min-h-[100px] w-full flex-col gap-2.5 p-2.5";
 const FEATURES: { id: BasicInfo2FeatureId; title: string }[] = [
-  { id: "morphology", title: "Morphology" },
-  { id: "partcount", title: "Part count" },
-  { id: "partfluor", title: "Part fluor" },
-  { id: "totalfluor", title: "Total fluor" },
+  { id: ASSAY_FEATURE.MORPHOLOGY, title: "Morphology" },
+  { id: ASSAY_FEATURE.PART_COUNT, title: "Part count" },
+  { id: ASSAY_FEATURE.PART_FLUOR, title: "Part fluor" },
+  { id: ASSAY_FEATURE.TOTAL_FLUOR, title: "Total fluor" },
 ];
 const FEATURE_IMAGE_URL: Record<BasicInfo2FeatureId, string> = {
-  morphology: morphologyUrl,
-  partcount: partcountUrl,
-  partfluor: partfluorUrl,
-  totalfluor: totalfluorUrl,
+  [ASSAY_FEATURE.MORPHOLOGY]: morphologyUrl,
+  [ASSAY_FEATURE.PART_COUNT]: partcountUrl,
+  [ASSAY_FEATURE.PART_FLUOR]: partfluorUrl,
+  [ASSAY_FEATURE.TOTAL_FLUOR]: totalfluorUrl,
 };
 const TIMELAPSE_UNITS: { value: TimelapseUnit; label: string }[] = [
   { value: "second", label: "Second" },
@@ -40,8 +41,11 @@ const TIMELAPSE_UNITS: { value: TimelapseUnit; label: string }[] = [
 ];
 
 export function BasicInfoStep2() {
+  const assayId = useStudioStore((state) => state.assayId);
   const info2 = useStudioStore((state) => state.info2);
   const setInfo2 = useStudioStore((state) => state.setInfo2);
+  const isSelected = (id: BasicInfo2FeatureId) => info2.selectedFeatures.includes(id);
+  const isGeneExpressionAssay = assayId === ASSAY_NAME.GENE_EXPRESSION;
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-2.5">
@@ -104,42 +108,49 @@ export function BasicInfoStep2() {
           </div>
         </Field>
       </div>
-      <div className="min-h-[200px] w-full p-2.5">
-        <Field className="h-full min-h-[200px] gap-2.5" name="features">
-          <FieldLabel className="text-2xl font-normal">Features</FieldLabel>
-          <div
-            aria-label="Feature type"
-            className="mt-0 flex min-h-0 w-full min-w-0 flex-1 gap-2.5 p-2.5"
-            role="listbox"
-          >
-            {FEATURES.map(({ id, title }) => {
-              const selected = info2.selectedFeature === id;
-              return (
-                <button
-                  key={id}
-                  aria-selected={selected}
-                  className={cn(
-                    "flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center rounded-lg border-2 p-2.5 transition-shadow",
-                    selected
-                      ? "border-foreground/80 ring-1 ring-foreground/20"
-                      : "border-border opacity-60 hover:opacity-100",
-                  )}
-                  role="option"
-                  type="button"
-                  onClick={() => setInfo2({ selectedFeature: id })}
-                >
-                  <span className="sr-only">{title}</span>
-                  <img
-                    alt=""
-                    className="h-[120px] w-full object-contain"
-                    src={FEATURE_IMAGE_URL[id]}
-                  />
-                </button>
-              );
-            })}
-          </div>
-        </Field>
-      </div>
+      {isGeneExpressionAssay ? (
+        <div className="min-h-[200px] w-full p-2.5">
+          <Field className="h-full min-h-[200px] gap-2.5" name="features">
+            <FieldLabel className="text-2xl font-normal">Features</FieldLabel>
+            <div
+              aria-label="Feature type"
+              className="mt-0 grid min-h-0 w-full min-w-0 grid-cols-2 gap-2.5 p-2.5 sm:grid-cols-4"
+            >
+              {FEATURES.map(({ id, title }) => {
+                const selected = isSelected(id);
+                return (
+                  <label
+                    key={id}
+                    className={cn(
+                      "relative flex min-h-0 min-w-0 flex-1 cursor-pointer flex-col items-center justify-center rounded-lg border-2 p-2.5 transition-shadow",
+                      selected
+                        ? "border-foreground/80 ring-1 ring-foreground/20"
+                        : "border-border opacity-60 hover:opacity-100",
+                    )}
+                    role="option"
+                    aria-selected={selected}
+                  >
+                    <input
+                      className="absolute inset-0 z-10 cursor-pointer opacity-0"
+                      checked={selected}
+                      name="studio-feature"
+                      type="radio"
+                      value={id}
+                      onChange={() => setInfo2({ selectedFeatures: [id] })}
+                    />
+                    <span className="sr-only">{title}</span>
+                    <img
+                      alt=""
+                      className="z-0 h-[120px] w-full object-contain"
+                      src={FEATURE_IMAGE_URL[id]}
+                    />
+                  </label>
+                );
+              })}
+            </div>
+          </Field>
+        </div>
+      ) : null}
     </div>
   );
 }

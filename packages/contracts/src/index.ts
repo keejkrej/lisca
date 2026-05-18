@@ -82,13 +82,57 @@ export type StudioHostPort = AlignerHostPort & {
   saveAssayJson(saveTo: string, contents: string): Promise<StudioSaveAssayJsonResponse>;
 };
 
-export type StudioAssayId = "gene-expression" | "immune-killing" | "lnp-binding" | "custom-assay";
+export const ASSAY_NAME = {
+  GENE_EXPRESSION: "gene-expression",
+  IMMUNE_KILLING: "immune-killing",
+  LNP_BINDING: "lnp-binding",
+  CUSTOM_ASSAY: "custom-assay",
+} as const;
+
+export type AssayName = (typeof ASSAY_NAME)[keyof typeof ASSAY_NAME];
+export type GeneExpressionAssayName = typeof ASSAY_NAME.GENE_EXPRESSION;
+
+export const ASSAY_FEATURE = {
+  MORPHOLOGY: "morphology",
+  PART_COUNT: "partcount",
+  PART_FLUOR: "partfluor",
+  TOTAL_FLUOR: "totalfluor",
+} as const;
+
+export type AssayFeature = (typeof ASSAY_FEATURE)[keyof typeof ASSAY_FEATURE];
+
+export const GENE_EXPRESSION_FEATURE_IDS = [
+  ASSAY_FEATURE.MORPHOLOGY,
+  ASSAY_FEATURE.PART_COUNT,
+  ASSAY_FEATURE.PART_FLUOR,
+  ASSAY_FEATURE.TOTAL_FLUOR,
+] as const;
+
+export type AssayFeatureList = readonly AssayFeature[];
+
+export type NonEmptyAssayFeatureList = [AssayFeature, ...AssayFeature[]];
+
+export type Assay = {
+  name: AssayName;
+  features: AssayFeatureList;
+};
+
+export type GeneExpressionFeatureList = [GeneExpressionAssayFeature, ...GeneExpressionAssayFeature[]];
+
+export type GeneExpressionAssayFeature = (typeof GENE_EXPRESSION_FEATURE_IDS)[number];
+
+export type GeneExpressionAssay = {
+  name: GeneExpressionAssayName;
+  features: GeneExpressionFeatureList;
+};
+
+export type StudioAssayId = AssayName;
 
 export type StudioDataSourceKind = AlignerSource["kind"] | null;
 
 export type StudioTimelapseUnit = "second" | "minute" | "hour";
 
-export type StudioBasicInfoFeatureId = "morphology" | "partcount" | "partfluor" | "totalfluor";
+export type StudioBasicInfoFeatureId = AssayFeature;
 
 export type StudioBasicInfoSlideId = "slide-i" | "slide-vi";
 
@@ -105,7 +149,7 @@ export type StudioBasicInfoStep2 = {
   pattern: string;
   timelapseAmount: number | null;
   timelapseUnit: StudioTimelapseUnit;
-  selectedFeature: StudioBasicInfoFeatureId | null;
+  selectedFeatures: readonly StudioBasicInfoFeatureId[];
 };
 
 export type StudioBasicInfoSampleRow = {

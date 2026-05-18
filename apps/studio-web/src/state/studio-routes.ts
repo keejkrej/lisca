@@ -1,4 +1,11 @@
-import type { BasicInfoStep1, BasicInfoStep2, BasicInfoStep3, StudioStep } from "./studio-store";
+import type {
+  AssayId,
+  BasicInfoStep1,
+  BasicInfoStep2,
+  BasicInfoStep3,
+  StudioStep,
+} from "./studio-store";
+import { ASSAY_NAME } from "@lisca/contracts";
 
 export function validInfo1(info1: BasicInfoStep1): boolean {
   return (
@@ -9,12 +16,12 @@ export function validInfo1(info1: BasicInfoStep1): boolean {
   );
 }
 
-export function validInfo2(info2: BasicInfoStep2): boolean {
+export function validInfo2(info2: BasicInfoStep2, assayId: AssayId | null): boolean {
   return (
     info2.pattern.trim().length > 0 &&
     info2.timelapseAmount != null &&
     info2.timelapseAmount > 0 &&
-    info2.selectedFeature !== null
+    (assayId !== ASSAY_NAME.GENE_EXPRESSION || info2.selectedFeatures.length > 0)
   );
 }
 
