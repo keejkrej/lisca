@@ -5,7 +5,7 @@ import { useMemo } from "react";
 
 import type { AlignState } from "../state/use-align-state";
 
-export function AlignGridPanel({ state }: { state: AlignState }) {
+export function AlignGridControls({ state }: { state: AlignState }) {
   const shapeOptions = useMemo<NavigationOption<AlignGridShape>[]>(
     () => [
       { label: "Rectangle", value: "rect" },

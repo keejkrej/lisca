@@ -12,7 +12,7 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
-export function LeftPanel(props: {
+export function AnnotatorLeft(props: {
   scan: RoiWorkspaceScan | null;
   position: RoiPositionScan | null;
   pos: number | null;

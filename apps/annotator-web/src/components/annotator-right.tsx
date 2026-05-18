@@ -1,11 +1,11 @@
 import type { AnnotationLabel, AnnotationMode } from "@lisca/contracts";
 import { Button, Section, cn } from "@lisca/ui";
 
+import { AnnotationToolSlider } from "./annotation-tool-slider";
 import { AnnotationModeToggle } from "./annotation-mode-toggle";
-import { ToolSlider } from "./tool-slider";
 import { labelColorStyle, type AnnotationValue } from "../utils/annotation-utils";
 
-export function RightPanel(props: {
+export function AnnotatorRight(props: {
   labels: AnnotationLabel[];
   mode: AnnotationMode;
   overlayOpacity: number;
@@ -122,7 +122,7 @@ export function RightPanel(props: {
       </Section>
       {props.mode === "segmentation" ? (
         <Section title="Brush" contentClassName="flex flex-col gap-3">
-          <ToolSlider
+          <AnnotationToolSlider
             label="Opacity"
             max={0.95}
             min={0.05}
@@ -131,7 +131,7 @@ export function RightPanel(props: {
             valueLabel={`${Math.round(props.overlayOpacity * 100)}%`}
             onChange={props.onOverlayOpacityChange}
           />
-          <ToolSlider
+          <AnnotationToolSlider
             label="Brush Size"
             max={32}
             min={1}

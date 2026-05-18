@@ -5,7 +5,7 @@ import type { AnnotationTool } from "./annotation-canvas";
 import { OutputPathField } from "./output-path-field";
 import { annotationOutputPaths } from "../utils/annotation-output";
 
-export function BottomPanel(props: {
+export function AnnotatorDock(props: {
   mode: AnnotationMode;
   tool: AnnotationTool;
   request: RoiFrameRequest | null;

@@ -93,7 +93,7 @@ function filePickerTitle(mode: HostFilePickerMode): string {
   return "File";
 }
 
-export function Navbar(props: { onSourcePicked: (source: AlignerSource | null) => void }) {
+export function AlignerHeader(props: { onSourcePicked: (source: AlignerSource | null) => void }) {
   const workspace = useShellWorkspace();
   const pickerModeRef = useRef<HostFilePickerMode | null>(null);
   const [sourcePickerOpen, setSourcePickerOpen] = useState(false);

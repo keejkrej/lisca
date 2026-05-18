@@ -1,11 +1,11 @@
 import { AppShell } from "@lisca/ui";
 import { createFileRoute } from "@tanstack/react-router";
 
-import { AlignCanvasPanel } from "../components/align-canvas-panel";
-import { BottomPanel } from "../components/bottom-panel";
-import { LeftPanel } from "../components/left-panel";
-import { Navbar } from "../components/navbar";
-import { RightPanel } from "../components/right-panel";
+import { AlignerDock } from "../components/aligner-dock";
+import { AlignerHeader } from "../components/aligner-header";
+import { AlignerLeft } from "../components/aligner-left";
+import { AlignerMain } from "../components/aligner-main";
+import { AlignerRight } from "../components/aligner-right";
 import { useAlignState } from "../state/use-align-state";
 
 export const Route = createFileRoute("/")({
@@ -18,22 +18,22 @@ function AlignPage() {
   return (
     <AppShell>
       <AppShell.Header>
-        <Navbar onSourcePicked={alignState.setSource} />
+        <AlignerHeader onSourcePicked={alignState.setSource} />
       </AppShell.Header>
       <AppShell.Body>
         <AppShell.Left widthClass="w-72">
-          <LeftPanel alignState={alignState} />
+          <AlignerLeft alignState={alignState} />
         </AppShell.Left>
         <AppShell.MainColumn>
           <AppShell.Main>
-            <AlignCanvasPanel state={alignState} />
+            <AlignerMain state={alignState} />
           </AppShell.Main>
           <AppShell.Dock>
-            <BottomPanel alignState={alignState} />
+            <AlignerDock alignState={alignState} />
           </AppShell.Dock>
         </AppShell.MainColumn>
         <AppShell.Right widthClass="w-72">
-          <RightPanel alignState={alignState} />
+          <AlignerRight alignState={alignState} />
         </AppShell.Right>
       </AppShell.Body>
     </AppShell>

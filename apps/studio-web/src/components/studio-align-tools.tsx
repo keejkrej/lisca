@@ -2,7 +2,7 @@ import { AlignTools } from "@lisca/ui";
 
 import type { StudioAlignState } from "../state/use-studio-align-state";
 
-export function StudioAlignBottomPanel({ state }: { state: StudioAlignState }) {
+export function StudioAlignTools({ state }: { state: StudioAlignState }) {
   return (
     <AlignTools
       mode={state.toolMode}

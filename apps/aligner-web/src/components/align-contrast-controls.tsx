@@ -2,7 +2,7 @@ import { ContrastControl } from "@lisca/ui";
 
 import type { AlignState } from "../state/use-align-state";
 
-export function DockContrastControls({ state }: { state: AlignState }) {
+export function AlignContrastControls({ state }: { state: AlignState }) {
   const domain = state.frame?.contrastDomain ?? { min: 0, max: 255 };
   const value = state.contrast ??
     state.frame?.appliedContrast ?? { min: domain.min, max: domain.max };

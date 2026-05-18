@@ -3,12 +3,12 @@ import { AppShell, HostFilePickerDialog } from "@lisca/ui";
 import { annotatorApi } from "../api/annotator-queries";
 import { useRoiPageState } from "../state/use-roi-page-state";
 import { createEmptyMask } from "../utils/annotation-utils";
-import { AnnotationCanvas } from "./annotation-canvas";
-import { BottomPanel } from "./bottom-panel";
+import { AnnotatorDock } from "./annotator-dock";
+import { AnnotatorHeader } from "./annotator-header";
+import { AnnotatorLeft } from "./annotator-left";
+import { AnnotatorMain } from "./annotator-main";
+import { AnnotatorRight } from "./annotator-right";
 import { LabelCreationDialog } from "./label-creation-dialog";
-import { LeftPanel } from "./left-panel";
-import { Navbar } from "./navbar";
-import { RightPanel } from "./right-panel";
 
 export function RoiPage() {
   const page = useRoiPageState();
@@ -16,7 +16,7 @@ export function RoiPage() {
   return (
     <AppShell>
       <AppShell.Header>
-        <Navbar
+        <AnnotatorHeader
           workspacePath={page.workspacePath}
           onCreateLabels={() => {
             page.setLabelError(null);
@@ -27,7 +27,7 @@ export function RoiPage() {
       </AppShell.Header>
       <AppShell.Body>
         <AppShell.Left widthClass="w-72">
-          <LeftPanel
+          <AnnotatorLeft
             channel={page.selection.channel}
             contrastDomain={page.contrastDomain}
             contrastMax={page.contrastMax}
@@ -58,7 +58,7 @@ export function RoiPage() {
         </AppShell.Left>
         <AppShell.MainColumn>
           <AppShell.Main>
-            <AnnotationCanvas
+            <AnnotatorMain
               activeLabelId={page.activeLabelId}
               brushSize={page.brushSize}
               disabled={!page.canEditSegmentation}
@@ -77,7 +77,7 @@ export function RoiPage() {
             />
           </AppShell.Main>
           <AppShell.Dock>
-            <BottomPanel
+            <AnnotatorDock
               canSave={page.canSave}
               mode={page.mode}
               request={page.request}
@@ -89,7 +89,7 @@ export function RoiPage() {
           </AppShell.Dock>
         </AppShell.MainColumn>
         <AppShell.Right widthClass="w-72">
-          <RightPanel
+          <AnnotatorRight
             activeLabelId={page.activeLabelId}
             annotation={page.annotation.current}
             annotationError={page.annotationError}

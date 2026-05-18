@@ -1,7 +1,7 @@
 import { Menu, MenuItem, MenuPopup, MenuTrigger, ShellNavbar, buttonVariants, cn } from "@lisca/ui";
 import { ChevronDown, Tags } from "lucide-react";
 
-export function Navbar(props: {
+export function AnnotatorHeader(props: {
   workspacePath: string | null;
   onCreateLabels: () => void;
   onPickWorkspace: () => void;

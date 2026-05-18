@@ -2,10 +2,10 @@ import { AppShell } from "@lisca/ui";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { DockButton } from "../components/dock-button";
-import { StudioAlignBottomPanel } from "../components/studio-align-bottom-panel";
-import { StudioAlignMainPanel } from "../components/studio-align-main-panel";
+import { StudioAlignMain } from "../components/studio-align-main";
+import { StudioAlignTools } from "../components/studio-align-tools";
 import { StudioDock } from "../components/studio-dock";
-import { StudioNavRail } from "../components/studio-nav-rail";
+import { StudioLeft } from "../components/studio-left";
 import { useStudioAlignState } from "../state/use-studio-align-state";
 import { instructionForStep } from "../state/studio-routes";
 
@@ -20,11 +20,11 @@ function AlignPage() {
     <AppShell>
       <AppShell.Body>
         <AppShell.Left widthClass="w-60">
-          <StudioNavRail />
+          <StudioLeft />
         </AppShell.Left>
         <AppShell.MainColumn>
           <AppShell.Main>
-            <StudioAlignMainPanel state={alignState} />
+            <StudioAlignMain state={alignState} />
           </AppShell.Main>
           <AppShell.Dock>
             <StudioDock
@@ -46,7 +46,7 @@ function AlignPage() {
                   </DockButton>
                 </div>
               }
-              tools={<StudioAlignBottomPanel state={alignState} />}
+              tools={<StudioAlignTools state={alignState} />}
             />
           </AppShell.Dock>
         </AppShell.MainColumn>

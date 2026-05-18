@@ -6,7 +6,7 @@ import { cursorForAlignTool, useAlignCanvasHandlers } from "../utils/align-canva
 import { CropConfirmModal } from "./crop-confirm-modal";
 import { CropProgressModal } from "./crop-progress-modal";
 
-export function AlignCanvasPanel({ state }: { state: AlignState }) {
+export function AlignerMain({ state }: { state: AlignState }) {
   const { handlePointerDown, handlePointerMove, handlePointerEnd, previewGrid } =
     useAlignCanvasHandlers(state);
   const visibleStatus = useCanvasTransientStatus(state.status);

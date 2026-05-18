@@ -1,7 +1,7 @@
 import { AppShell } from "@lisca/ui";
 import { createFileRoute } from "@tanstack/react-router";
 
-import { StudioNavRail } from "../components/studio-nav-rail";
+import { StudioLeft } from "../components/studio-left";
 import { StudioPlaceholder } from "../components/studio-placeholder";
 
 export const Route = createFileRoute("/result")({
@@ -13,7 +13,7 @@ function ResultPage() {
     <AppShell>
       <AppShell.Body>
         <AppShell.Left widthClass="w-60">
-          <StudioNavRail />
+          <StudioLeft />
         </AppShell.Left>
         <AppShell.MainColumn>
           <AppShell.Main>

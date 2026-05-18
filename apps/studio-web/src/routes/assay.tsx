@@ -8,7 +8,7 @@ import { studioClient } from "../api/studio-client";
 import { DockButton } from "../components/dock-button";
 import { DockSection } from "../components/dock-section";
 import { StudioDock } from "../components/studio-dock";
-import { StudioNavRail } from "../components/studio-nav-rail";
+import { StudioLeft } from "../components/studio-left";
 import { WelcomeAssay } from "../components/welcome-assay";
 import { instructionForStep } from "../state/studio-routes";
 import { parseStudioAssayJson, useStudioStore } from "../state/studio-store";
@@ -44,7 +44,7 @@ function AssayPage() {
     <AppShell>
       <AppShell.Body>
         <AppShell.Left widthClass="w-60">
-          <StudioNavRail />
+          <StudioLeft />
         </AppShell.Left>
         <AppShell.MainColumn>
           <AppShell.Main>

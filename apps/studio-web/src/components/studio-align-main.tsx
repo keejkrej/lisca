@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import type { StudioAlignState } from "../state/use-studio-align-state";
 import { cursorForAlignTool, useAlignCanvasHandlers } from "../utils/studio-align-canvas-handlers";
 
-export function StudioAlignMainPanel({ state }: { state: StudioAlignState }) {
+export function StudioAlignMain({ state }: { state: StudioAlignState }) {
   const { handlePointerDown, handlePointerMove, handlePointerEnd, previewGrid } =
     useAlignCanvasHandlers(state);
   const visibleStatus = useCanvasTransientStatus(state.status);

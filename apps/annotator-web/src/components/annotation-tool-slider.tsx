@@ -1,6 +1,6 @@
 import { Slider } from "@lisca/ui";
 
-export function ToolSlider(props: {
+export function AnnotationToolSlider(props: {
   label: string;
   value: number;
   valueLabel: string;

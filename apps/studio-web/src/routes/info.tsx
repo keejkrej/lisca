@@ -10,7 +10,7 @@ import { BasicInfoStep2 } from "../components/basic-info-step2";
 import { BasicInfoStep3 } from "../components/basic-info-step3";
 import { DockButton } from "../components/dock-button";
 import { StudioDock } from "../components/studio-dock";
-import { StudioNavRail } from "../components/studio-nav-rail";
+import { StudioLeft } from "../components/studio-left";
 import { instructionForStep, validInfo1, validInfo2, validInfo3 } from "../state/studio-routes";
 import { buildStudioAssayJson, useStudioStore } from "../state/studio-store";
 
@@ -66,7 +66,7 @@ function InfoPage() {
     <AppShell>
       <AppShell.Body>
         <AppShell.Left widthClass="w-60">
-          <StudioNavRail />
+          <StudioLeft />
         </AppShell.Left>
         <AppShell.MainColumn>
           <AppShell.Main>

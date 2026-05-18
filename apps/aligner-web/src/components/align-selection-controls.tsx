@@ -8,7 +8,7 @@ import { useMemo } from "react";
 
 import type { AlignState } from "../state/use-align-state";
 
-export function AlignSelectionPanel({ state }: { state: AlignState }) {
+export function AlignSelectionControls({ state }: { state: AlignState }) {
   const visibleCells = useMemo(
     () =>
       state.frame
