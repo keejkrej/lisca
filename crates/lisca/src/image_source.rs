@@ -345,7 +345,7 @@ fn build_series_dataset(
     }
 
     let subfolder_template = subfolder_template.trim();
-    let filename_template = filename_template.trim();
+    let filename_template = strip_supported_image_extension(filename_template.trim());
     if filename_template.is_empty() {
         return Err("Filename template cannot be empty".to_string());
     }
@@ -437,6 +437,18 @@ fn build_series_dataset(
     })
 }
 
+fn strip_supported_image_extension(value: &str) -> &str {
+    for extension in [".tiff", ".jpeg", ".tif", ".png", ".jpg"] {
+        if value
+            .to_ascii_lowercase()
+            .ends_with(&extension.to_ascii_lowercase())
+        {
+            return &value[..value.len() - extension.len()];
+        }
+    }
+    value
+}
+
 fn collect_series_records(
     folder: &Path,
     subfolder_name: &str,
@@ -457,7 +469,13 @@ fn collect_series_records(
         let Some(name) = file.file_name().to_str().map(str::to_string) else {
             continue;
         };
-        let Some(filename_values) = match_series_template(filename_parts, &name, true) else {
+        let filename_values = match_series_template(filename_parts, &name, true).or_else(|| {
+            file.path()
+                .file_stem()
+                .and_then(|stem| stem.to_str())
+                .and_then(|stem| match_series_template(filename_parts, stem, true))
+        });
+        let Some(filename_values) = filename_values else {
             continue;
         };
         let values = merge_series_values(&subfolder_values, &filename_values, &name)?;
@@ -1075,11 +1093,37 @@ mod tests {
         let scan = scan_image_folder(
             root.to_str().expect("temp path"),
             "Pos{p}",
-            "img_{t}_{c}_{z}.png",
+            "img_{t}_{c}_{z}",
         )
         .expect("scan");
 
         assert_eq!(scan.positions, vec![0, 1]);
+        assert_eq!(scan.channels, vec![0]);
+        assert_eq!(scan.times, vec![0]);
+        assert_eq!(scan.z_slices, vec![0]);
+
+        fs::remove_dir_all(root).expect("cleanup");
+    }
+
+    #[test]
+    fn scans_folder_source_ignores_template_extension() {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock")
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("lisca-series-ext-test-{unique}"));
+        let pos0 = root.join("Pos0");
+        fs::create_dir_all(&pos0).expect("pos0");
+        fs::write(pos0.join("img_channel0_position0_time0_z0.png"), []).expect("pos0 file");
+
+        let scan = scan_image_folder(
+            root.to_str().expect("temp path"),
+            "Pos{p}",
+            "img_channel{c}_position{p}_time{t}_z{z}.tif",
+        )
+        .expect("scan");
+
+        assert_eq!(scan.positions, vec![0]);
         assert_eq!(scan.channels, vec![0]);
         assert_eq!(scan.times, vec![0]);
         assert_eq!(scan.z_slices, vec![0]);

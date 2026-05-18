@@ -113,6 +113,12 @@ export {
 } from "./features/align-canvas-surface";
 
 export {
+  CanvasStatusMessageStack,
+  CanvasToastStack,
+  useCanvasTransientStatus,
+} from "./features/canvas-status";
+
+export {
   AlignSelection,
   type AlignSelectionMode,
   type AlignSelectionProps,
@@ -138,6 +144,11 @@ export {
 } from "./features/host-file-picker-dialog";
 
 export { SourcePickerModal, type SourcePickerModalProps } from "./features/source-picker-modal";
+
+export {
+  FolderSourceParseModal,
+  type FolderSourceParseModalProps,
+} from "./features/folder-source-parse-modal";
 
 export {
   ContrastControl,

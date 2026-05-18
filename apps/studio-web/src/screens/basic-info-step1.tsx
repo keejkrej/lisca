@@ -1,5 +1,12 @@
 import type { HostFilePickerMode, StudioDataSourceKind, StudioHostPort } from "@lisca/contracts";
-import { Field, FieldLabel, HostFilePickerDialog, Input, SourcePickerModal } from "@lisca/ui";
+import {
+  Field,
+  FieldLabel,
+  FolderSourceParseModal,
+  HostFilePickerDialog,
+  Input,
+  SourcePickerModal,
+} from "@lisca/ui";
 import { useState } from "react";
 
 import { useStudioStore } from "../state/studio-store";
@@ -36,6 +43,7 @@ export function BasicInfoStep1({ hostPort }: { hostPort: StudioHostPort }) {
   const setDataSourceKind = useStudioStore((state) => state.setDataSourceKind);
   const [openDataModalOpen, setOpenDataModalOpen] = useState(false);
   const [pathPicker, setPathPicker] = useState<StudioPathPickerState>(null);
+  const [folderSourcePath, setFolderSourcePath] = useState<string | null>(null);
 
   const openSourceBrowser = (mode: HostFilePickerMode) => {
     setOpenDataModalOpen(false);
@@ -144,13 +152,27 @@ export function BasicInfoStep1({ hostPort }: { hostPort: StudioHostPort }) {
           if (!pathPicker) return;
           if (pathPicker.kind === "save") setInfo1({ saveTo: path });
           else if (pathPicker.mode === "folder") {
-            applySourcePath(path, pathPicker.mode);
+            setFolderSourcePath(path);
           }
           setPathPicker(null);
         }}
         onPickFile={(path) => {
           if (pathPicker?.kind === "source") applySourcePath(path, pathPicker.mode);
           setPathPicker(null);
+        }}
+      />
+      <FolderSourceParseModal
+        hostPort={hostPort}
+        path={folderSourcePath}
+        onClose={() => setFolderSourcePath(null)}
+        onConfirm={(source) => {
+          setInfo1({
+            dataPath: source.path,
+            folderSubfolderTemplate: source.subfolderTemplate,
+            folderFilenameTemplate: source.filenameTemplate,
+          });
+          setDataSourceKind("folder");
+          setFolderSourcePath(null);
         }}
       />
     </>

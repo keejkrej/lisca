@@ -22,6 +22,7 @@ import {
   findNavigationOptionIndex,
   stepNavigationValue,
   toNavigationOptions,
+  useCanvasTransientStatus,
   useShellWorkspace,
   type AlignCanvasPointerEvent,
   type NavigationOption,
@@ -936,33 +937,17 @@ function cursorForAlignTool(toolMode: AlignGridToolMode, gridEnabled: boolean, d
 function AlignCanvasPanel({ state }: { state: AlignState }) {
   const { handlePointerDown, handlePointerMove, handlePointerEnd, previewGrid } =
     useAlignCanvasHandlers(state);
-  const [visibleStatus, setVisibleStatus] = useState<string | null>(state.status);
-
-  useEffect(() => {
-    if (!state.status) {
-      setVisibleStatus(null);
-      return;
-    }
-    setVisibleStatus(state.status);
-    if (state.status === "Scanning source" || state.status === "Loading frame") return;
-
-    const timeoutId = window.setTimeout(() => {
-      setVisibleStatus((current) => (current === state.status ? null : current));
-    }, 2500);
-    return () => window.clearTimeout(timeoutId);
-  }, [state.status]);
-
-  const activeStatus = state.frameLoading
+  const visibleStatus = useCanvasTransientStatus(state.status);
+  const activeToastStatus = state.frameLoading
     ? "Loading frame"
     : state.scanLoading
       ? "Scanning source"
       : visibleStatus;
-  const messages = useMemo(() => {
-    const items = [];
-    if (state.error) items.push({ text: state.error, tone: "error" as const });
-    else if (activeStatus) items.push({ text: activeStatus });
-    return items;
-  }, [activeStatus, state.error]);
+  const toasts = useMemo(() => {
+    if (state.error) return [{ text: state.error, tone: "error" as const }];
+    if (activeToastStatus) return [{ text: activeToastStatus }];
+    return [];
+  }, [activeToastStatus, state.error]);
 
   const emptyText = !state.workspacePath
     ? "Pick a workspace."
@@ -982,8 +967,8 @@ function AlignCanvasPanel({ state }: { state: AlignState }) {
         frame={state.frame}
         grid={state.grid}
         loading={state.scanLoading || state.frameLoading}
-        messages={messages}
         previewGrid={previewGrid}
+        toasts={toasts}
         onVirtualPointerCancel={handlePointerEnd}
         onVirtualPointerDown={handlePointerDown}
         onVirtualPointerMove={handlePointerMove}
@@ -1020,9 +1005,7 @@ function CropConfirmModal({ state }: { state: AlignState }) {
                 : `${confirm.existingPositions.length} of ${confirm.positions.length} saved positions already have ROI output. Overwrite those folders or skip them and crop only the remaining positions.`}
             </p>
             {confirm.kind === "batch" ? (
-              <p className="max-h-20 overflow-auto text-muted-foreground text-xs">
-                {existingList}
-              </p>
+              <p className="max-h-20 overflow-auto text-muted-foreground text-xs">{existingList}</p>
             ) : null}
           </div>
           <div className="flex justify-end gap-2">

@@ -1,11 +1,27 @@
+import { AppShell } from "@lisca/ui";
 import { createFileRoute } from "@tanstack/react-router";
 
-import { StudioShell } from "../components/studio-shell";
+import { StudioNavRail } from "../components/studio-nav-rail";
+import { StudioPlaceholder } from "../components/studio-placeholder";
 
 export const Route = createFileRoute("/inspect")({
   component: InspectPage,
 });
 
 function InspectPage() {
-  return <StudioShell routeId="inspect" />;
+  return (
+    <AppShell>
+      <AppShell.Body>
+        <AppShell.Left widthClass="w-60">
+          <StudioNavRail />
+        </AppShell.Left>
+        <AppShell.MainColumn>
+          <AppShell.Main>
+            <StudioPlaceholder title="Inspect ROI" />
+          </AppShell.Main>
+        </AppShell.MainColumn>
+        <AppShell.Right widthClass="w-60" />
+      </AppShell.Body>
+    </AppShell>
+  );
 }

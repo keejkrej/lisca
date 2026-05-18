@@ -10,6 +10,7 @@ import type {
   StudioDataSourceKind,
   StudioTimelapseUnit as TimelapseUnit,
 } from "@lisca/contracts";
+import { DEFAULT_FOLDER_SOURCE_TEMPLATE } from "@lisca/contracts";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
@@ -133,6 +134,12 @@ function parseInfo1(value: unknown): BasicInfoStep1 {
     name: requireString(info1, "name", "info1.name"),
     date: requireString(info1, "date", "info1.date"),
     dataPath: requireString(info1, "dataPath", "info1.dataPath"),
+    folderSubfolderTemplate:
+      optionalString(info1, "folderSubfolderTemplate") ||
+      DEFAULT_FOLDER_SOURCE_TEMPLATE.subfolderTemplate,
+    folderFilenameTemplate:
+      optionalString(info1, "folderFilenameTemplate") ||
+      DEFAULT_FOLDER_SOURCE_TEMPLATE.filenameTemplate,
     saveTo: requireString(info1, "saveTo", "info1.saveTo"),
   };
 }
@@ -232,7 +239,25 @@ type StudioState = {
   updateInfo3Sample: (index: number, patch: Partial<BasicInfoSampleRow>) => void;
 };
 
-const initialInfo1: BasicInfoStep1 = { name: "", date: "", dataPath: "", saveTo: "" };
+const initialInfo1: BasicInfoStep1 = {
+  name: "",
+  date: "",
+  dataPath: "",
+  folderSubfolderTemplate: DEFAULT_FOLDER_SOURCE_TEMPLATE.subfolderTemplate,
+  folderFilenameTemplate: DEFAULT_FOLDER_SOURCE_TEMPLATE.filenameTemplate,
+  saveTo: "",
+};
+
+function normalizeInfo1(info1: BasicInfoStep1): BasicInfoStep1 {
+  return {
+    ...info1,
+    folderSubfolderTemplate:
+      info1.folderSubfolderTemplate ?? DEFAULT_FOLDER_SOURCE_TEMPLATE.subfolderTemplate,
+    folderFilenameTemplate:
+      info1.folderFilenameTemplate ?? DEFAULT_FOLDER_SOURCE_TEMPLATE.filenameTemplate,
+  };
+}
+
 const initialInfo2: BasicInfoStep2 = {
   pattern: "",
   timelapseAmount: null,
@@ -284,6 +309,7 @@ function mergeStudioState(persisted: unknown, current: StudioState): StudioState
     ...current,
     ...persistedState,
     assayId: enabledAssayId(persistedState.assayId ?? current.assayId),
+    info1: persistedState.info1 ? normalizeInfo1(persistedState.info1) : current.info1,
     info3: persistedState.info3 ? normalizeInfo3(persistedState.info3) : current.info3,
   };
 }

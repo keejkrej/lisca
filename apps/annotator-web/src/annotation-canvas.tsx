@@ -1,10 +1,5 @@
-import type {
-  AlignCanvasStatusMessage,
-  AlignCanvasStatusTone,
-  AnnotationLabel,
-  FrameResult,
-} from "@lisca/contracts";
-import { cn } from "@lisca/ui";
+import type { AlignCanvasStatusMessage, AnnotationLabel, FrameResult } from "@lisca/contracts";
+import { CanvasStatusMessageStack, CanvasToastStack, cn } from "@lisca/ui";
 import {
   useCallback,
   useEffect,
@@ -38,6 +33,7 @@ export type AnnotationCanvasProps = {
   brushSize: number;
   overlayOpacity: number;
   messages?: AlignCanvasStatusMessage[];
+  toasts?: AlignCanvasStatusMessage[];
   disabled?: boolean;
   className?: string;
   onMaskCommit: (mask: Uint8Array) => void;
@@ -105,15 +101,6 @@ function prepareMaskCanvas(
   return canvas;
 }
 
-function messageToneClassName(tone: AlignCanvasStatusTone | undefined) {
-  if (tone === "error")
-    return "border-destructive/35 bg-destructive/10 text-destructive-foreground";
-  if (tone === "success") {
-    return "border-emerald-600/30 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-300";
-  }
-  return "border-border text-muted-foreground";
-}
-
 export function AnnotationCanvas({
   frame,
   labels,
@@ -123,6 +110,7 @@ export function AnnotationCanvas({
   brushSize,
   overlayOpacity,
   messages,
+  toasts,
   disabled = false,
   className,
   onMaskCommit,
@@ -312,21 +300,8 @@ export function AnnotationCanvas({
         onLostPointerCapture={finishLasso}
         onContextMenu={(event) => event.preventDefault()}
       />
-      {messages?.length ? (
-        <div className="pointer-events-none absolute left-3 top-3 flex max-w-[78%] flex-wrap gap-1.5">
-          {messages.map((message, index) => (
-            <div
-              key={`${message.tone ?? "default"}:${message.text}:${index}`}
-              className={cn(
-                "rounded-md border bg-card/95 px-3 py-2 text-sm leading-snug shadow-lg backdrop-blur-sm",
-                messageToneClassName(message.tone),
-              )}
-            >
-              {message.text}
-            </div>
-          ))}
-        </div>
-      ) : null}
+      <CanvasStatusMessageStack messages={messages} />
+      <CanvasToastStack messages={toasts} />
     </div>
   );
 }

@@ -93,7 +93,7 @@ export function HostFilePickerDialog({
 
   const dirMode = isDirectoryMode(mode);
   const canGoUp = Boolean(list?.path);
-  const locationLabel = list?.path ?? "Choose a location";
+  const locationLabel = list?.path ?? null;
 
   const goUp = () => {
     if (!list) return;
@@ -173,9 +173,11 @@ export function HostFilePickerDialog({
             <h2 className="font-semibold text-foreground text-lg" id="host-file-picker-title">
               {title}
             </h2>
-            <p className="truncate text-muted-foreground text-sm" title={locationLabel}>
-              {locationLabel}
-            </p>
+            {locationLabel ? (
+              <p className="truncate text-muted-foreground text-sm" title={locationLabel}>
+                {locationLabel}
+              </p>
+            ) : null}
             {description ? (
               <p className="mt-1 text-muted-foreground text-sm">{description}</p>
             ) : null}

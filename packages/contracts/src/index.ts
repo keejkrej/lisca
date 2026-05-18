@@ -35,24 +35,14 @@ export type FolderSourceTemplatePreset = {
 
 export const FOLDER_SOURCE_TEMPLATE_PRESETS = [
   {
-    label: "PNG folder",
+    label: "Standard folder",
     subfolderTemplate: "Pos{p}",
-    filenameTemplate: "img_{t}_{c}_{z}.png",
+    filenameTemplate: "img_channel{c}_position{p}_time{t}_z{z}",
   },
   {
-    label: "JPEG folder",
+    label: "Compact folder",
     subfolderTemplate: "Pos{p}",
-    filenameTemplate: "img_{t}_{c}_{z}.jpg",
-  },
-  {
-    label: "TIFF folder",
-    subfolderTemplate: "Pos{p}",
-    filenameTemplate: "img_channel{c}_position{p}_time{t}_z{z}.tif",
-  },
-  {
-    label: "Flat folder",
-    subfolderTemplate: "",
-    filenameTemplate: "img_channel{c}_position{p}_time{t}_z{z}.tif",
+    filenameTemplate: "img_{t}_{c}_{z}",
   },
 ] as const satisfies readonly FolderSourceTemplatePreset[];
 
@@ -106,6 +96,8 @@ export type StudioBasicInfoStep1 = {
   name: string;
   date: string;
   dataPath: string;
+  folderSubfolderTemplate: string;
+  folderFilenameTemplate: string;
   saveTo: string;
 };
 

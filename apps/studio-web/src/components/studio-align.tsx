@@ -1,39 +1,28 @@
 import {
-  DEFAULT_FOLDER_SOURCE_TEMPLATE,
   type AlignGridCellCoord,
-  type AlignGridShape,
   type AlignGridState,
   type AlignerSource,
   type ContrastWindow,
   type FrameRequest,
   type FrameResult,
   type SavedAlignState,
+  type StudioBasicInfoStep1,
+  type StudioBasicInfoStep3,
   type WorkspaceScan,
 } from "@lisca/contracts";
 import {
   AlignCanvasSurface,
-  AlignGrid,
   AlignTools,
-  Button,
-  ContrastControl,
-  FrameNavigation,
-  Section,
-  findNavigationOptionIndex,
-  stepNavigationValue,
-  toNavigationOptions,
+  useCanvasTransientStatus,
   type AlignCanvasPointerEvent,
-  type NavigationOption,
 } from "@lisca/ui";
 import {
   applyAlignGridPointerGesture,
   beginAlignGridPointerGesture,
   collectAlignGridEdgeCells,
   countVisibleAlignGridCells,
-  createDefaultAlignGrid,
-  degreesToRadians,
   enumerateVisibleAlignGridCells,
   mergeExcludedAlignGridCells,
-  radiansToDegrees,
   type AlignGridPointerGestureSession,
   type AlignGridToolMode,
 } from "@lisca/utils";
@@ -79,17 +68,11 @@ export type StudioAlignState = {
   visibleCounts: { included: number; excluded: number };
   saving: boolean;
   status: string | null;
+  canGoBack: boolean;
+  goBack: () => void;
   saveAndAdvance: () => Promise<boolean>;
   autoExclude: () => Promise<void>;
 };
-
-function clamp(n: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, n));
-}
-
-function selectedIndex(values: number[] | undefined, value: number): number {
-  return Math.max(0, values?.indexOf(value) ?? 0);
-}
 
 function buildBboxCsv(
   frame: FrameResult,
@@ -110,22 +93,62 @@ function alignStateFromCurrent(
   return { grid, excludedCells: currentExcludedCells };
 }
 
-function toStudioSource(kind: AlignerSource["kind"] | null, path: string): AlignerSource | null {
-  const trimmed = path.trim();
+function toStudioSource(
+  kind: AlignerSource["kind"] | null,
+  info1: StudioBasicInfoStep1,
+): AlignerSource | null {
+  const trimmed = info1.dataPath.trim();
   if (!trimmed || !kind) return null;
   if (kind === "folder") {
     return {
       kind,
       path: trimmed,
-      subfolderTemplate: DEFAULT_FOLDER_SOURCE_TEMPLATE.subfolderTemplate,
-      filenameTemplate: DEFAULT_FOLDER_SOURCE_TEMPLATE.filenameTemplate,
+      subfolderTemplate: info1.folderSubfolderTemplate.trim(),
+      filenameTemplate: info1.folderFilenameTemplate.trim(),
     };
   }
   return { kind, path: trimmed } as AlignerSource;
 }
 
+function parseChannel(value: string): number | null {
+  const channel = Number(value.trim());
+  return Number.isInteger(channel) && channel >= 0 ? channel : null;
+}
+
+function studioMaskChannel(info3: StudioBasicInfoStep3): number {
+  const rows = info3.samplesBySlide[info3.selectedSlideId];
+  for (const row of rows) {
+    const channel = parseChannel(row.maskChannel);
+    if (channel != null) return channel;
+  }
+  return 0;
+}
+
+function lastOrZero(values: number[] | undefined): number {
+  return values?.[Math.max(0, values.length - 1)] ?? 0;
+}
+
+function firstOrZero(values: number[] | undefined): number {
+  return values?.[0] ?? 0;
+}
+
+function lockedStudioSelection(
+  scan: WorkspaceScan,
+  current: FrameRequest,
+  maskChannel: number,
+): FrameRequest {
+  const position = scan.positions.includes(current.pos) ? current.pos : firstOrZero(scan.positions);
+  return {
+    pos: position,
+    channel: maskChannel,
+    time: lastOrZero(scan.times),
+    z: 0,
+  };
+}
+
 export function useStudioAlignState(): StudioAlignState {
   const info1 = useStudioStore((state) => state.info1);
+  const info3 = useStudioStore((state) => state.info3);
   const dataSourceKind = useStudioStore((state) => state.dataSourceKind);
   const {
     source,
@@ -160,18 +183,23 @@ export function useStudioAlignState(): StudioAlignState {
   } = useStudioAlignStore();
   const frameLoadIdRef = useRef(0);
   const activeSource = useMemo(
-    () => toStudioSource(dataSourceKind, info1.dataPath),
-    [dataSourceKind, info1.dataPath],
+    () => toStudioSource(dataSourceKind, info1),
+    [dataSourceKind, info1],
   );
   const activeWorkspacePath = info1.saveTo.trim() || null;
   const activeSourceKey = sourceKey(source);
+  const maskChannel = useMemo(() => studioMaskChannel(info3), [info3]);
+  const lockedSelection = useMemo(
+    () => (scan ? lockedStudioSelection(scan, selection, maskChannel) : selection),
+    [maskChannel, scan, selection],
+  );
   const scanQuery = useScanSourceQuery(source);
-  const alignStateQuery = useLoadAlignStateQuery(workspacePath, selection, Boolean(scan));
+  const alignStateQuery = useLoadAlignStateQuery(workspacePath, lockedSelection, Boolean(scan));
   const autoExcludePreview = useAutoExcludePreviewMutation();
 
   const currentExcludedCells = useMemo(
-    () => excludedCellsByPosition[selection.pos] ?? emptyExcludedCells,
-    [excludedCellsByPosition, selection.pos],
+    () => excludedCellsByPosition[lockedSelection.pos] ?? emptyExcludedCells,
+    [excludedCellsByPosition, lockedSelection.pos],
   );
   const visibleCounts = useMemo(
     () =>
@@ -209,14 +237,14 @@ export function useStudioAlignState(): StudioAlignState {
 
   useEffect(() => {
     if (!workspacePath || alignStateQuery.data === undefined) return;
-    const stateKey = savedAlignStateKey(workspacePath, selection.pos);
+    const stateKey = savedAlignStateKey(workspacePath, lockedSelection.pos);
     if (appliedAlignStateKey === stateKey) return;
-    applySavedAlignState(stateKey, selection.pos, alignStateQuery.data);
+    applySavedAlignState(stateKey, lockedSelection.pos, alignStateQuery.data);
   }, [
     alignStateQuery.data,
     appliedAlignStateKey,
     applySavedAlignState,
-    selection.pos,
+    lockedSelection.pos,
     workspacePath,
   ]);
 
@@ -224,6 +252,19 @@ export function useStudioAlignState(): StudioAlignState {
     if (!alignStateQuery.error) return;
     setError(toErrorMessage(alignStateQuery.error, "Saved align state load failed"));
   }, [alignStateQuery.error, setError]);
+
+  useEffect(() => {
+    if (!scan) return;
+    if (
+      selection.pos === lockedSelection.pos &&
+      selection.channel === lockedSelection.channel &&
+      selection.time === lockedSelection.time &&
+      selection.z === lockedSelection.z
+    ) {
+      return;
+    }
+    setSelection(lockedSelection);
+  }, [lockedSelection, scan, selection, setSelection]);
 
   useEffect(() => {
     frameLoadIdRef.current += 1;
@@ -239,7 +280,7 @@ export function useStudioAlignState(): StudioAlignState {
     setFrameLoading(true);
     setError(null);
     setStatus("Loading frame");
-    const program = loadFrameEffect(studioClient, source, selection, contrast).pipe(
+    const program = loadFrameEffect(studioClient, source, lockedSelection, null).pipe(
       Effect.tap((nextFrame) =>
         Effect.sync(() =>
           commit(() => {
@@ -267,17 +308,31 @@ export function useStudioAlignState(): StudioAlignState {
       });
     });
     return () => abortController.abort();
-  }, [contrast, scan, selection, setError, setFrame, setFrameLoading, setStatus, source]);
+  }, [lockedSelection, scan, setError, setFrame, setFrameLoading, setStatus, source]);
 
   const autoExcludeCells = useCallback(async (): Promise<AlignGridCellCoord[]> => {
     if (!source || !frame) return [];
     const cells = enumerateVisibleAlignGridCells(frame, grid);
     if (cells.length === 0) return [];
-    const preview = await autoExcludePreview.mutateAsync({ source, selection, cells });
+    const preview = await autoExcludePreview.mutateAsync({
+      source,
+      selection: lockedSelection,
+      cells,
+    });
     return preview.cellScores
       .filter((cell) => cell.score <= preview.threshold)
       .map(({ i, j }) => ({ i, j }));
-  }, [autoExcludePreview, frame, grid, selection, source]);
+  }, [autoExcludePreview, frame, grid, lockedSelection, source]);
+
+  const positionIndex = useMemo(
+    () => scan?.positions.indexOf(lockedSelection.pos) ?? -1,
+    [lockedSelection.pos, scan],
+  );
+  const canGoBack = positionIndex > 0;
+  const goBack = useCallback(() => {
+    if (saving || !scan || positionIndex <= 0) return;
+    setSelection({ pos: scan.positions[positionIndex - 1] });
+  }, [positionIndex, saving, scan, setSelection]);
 
   const saveAndAdvance = useCallback(async () => {
     if (!workspacePath || !frame) return false;
@@ -294,14 +349,14 @@ export function useStudioAlignState(): StudioAlignState {
       const csv = buildBboxCsv(frame, grid, finalExcludedCells);
       const result = await studioClient.saveBbox(
         workspacePath,
-        selection.pos,
+        lockedSelection.pos,
         csv,
         alignStateFromCurrent(grid, finalExcludedCells),
       );
       if (!result.ok) throw new Error(result.error ?? "Save failed");
-      setStatus(`Saved bbox/Pos${selection.pos}.csv`);
+      setStatus(`Saved bbox/Pos${lockedSelection.pos}.csv`);
       const posOptions = scan?.positions ?? [];
-      const currentIndex = posOptions.indexOf(selection.pos);
+      const currentIndex = posOptions.indexOf(lockedSelection.pos);
       const nextPos = currentIndex >= 0 ? posOptions[currentIndex + 1] : null;
       if (nextPos != null) setSelection({ pos: nextPos });
       return true;
@@ -316,8 +371,8 @@ export function useStudioAlignState(): StudioAlignState {
     currentExcludedCells,
     frame,
     grid,
+    lockedSelection.pos,
     scan,
-    selection.pos,
     setError,
     setExcludedCellsForCurrentPosition,
     setSaving,
@@ -352,7 +407,7 @@ export function useStudioAlignState(): StudioAlignState {
     scanLoading: source != null && scanQuery.isFetching,
     frameLoading,
     error,
-    selection,
+    selection: lockedSelection,
     setSelection,
     contrast,
     setContrast,
@@ -367,274 +422,21 @@ export function useStudioAlignState(): StudioAlignState {
     visibleCounts,
     saving,
     status,
+    canGoBack,
+    goBack,
     saveAndAdvance,
     autoExclude,
   };
 }
 
-function AlignFrameNavigation({ state }: { state: StudioAlignState }) {
-  const positionOptions = useMemo(
-    () => toNavigationOptions(state.scan?.positions ?? []),
-    [state.scan],
-  );
-  const channelOptions = useMemo(
-    () => toNavigationOptions(state.scan?.channels ?? []),
-    [state.scan],
-  );
-  const timeIndex = selectedIndex(state.scan?.times, state.selection.time);
-  const zIndex = selectedIndex(state.scan?.zSlices, state.selection.z);
-  const timeMax = Math.max(0, (state.scan?.times.length ?? 1) - 1);
-  const zMax = Math.max(0, (state.scan?.zSlices.length ?? 1) - 1);
-  const posIndex = findNavigationOptionIndex(positionOptions, state.selection.pos);
-  const chIndex = findNavigationOptionIndex(channelOptions, state.selection.channel);
-  const disabled = !state.scan;
-
-  return (
-    <FrameNavigation
-      channel={{
-        value: state.selection.channel,
-        options: channelOptions,
-        disabled,
-        onChange: (channel) => state.setSelection({ channel }),
-        previousDisabled: disabled || chIndex <= 0,
-        nextDisabled: disabled || chIndex >= channelOptions.length - 1,
-        onPrevious: () => {
-          const next = stepNavigationValue(channelOptions, state.selection.channel, -1);
-          if (next != null) state.setSelection({ channel: next });
-        },
-        onNext: () => {
-          const next = stepNavigationValue(channelOptions, state.selection.channel, 1);
-          if (next != null) state.setSelection({ channel: next });
-        },
-      }}
-      position={{
-        value: state.selection.pos,
-        options: positionOptions,
-        disabled,
-        onChange: (pos) => state.setSelection({ pos }),
-        previousDisabled: disabled || posIndex <= 0,
-        nextDisabled: disabled || posIndex >= positionOptions.length - 1,
-        onPrevious: () => {
-          const next = stepNavigationValue(positionOptions, state.selection.pos, -1);
-          if (next != null) state.setSelection({ pos: next });
-        },
-        onNext: () => {
-          const next = stepNavigationValue(positionOptions, state.selection.pos, 1);
-          if (next != null) state.setSelection({ pos: next });
-        },
-      }}
-      timepoint={{
-        value: timeIndex,
-        min: 0,
-        max: timeMax,
-        step: 1,
-        disabled: disabled || timeMax <= 0,
-        onCommit: (i) =>
-          state.setSelection({ time: state.scan?.times[clamp(Math.round(i), 0, timeMax)] ?? 0 }),
-        previousDisabled: disabled || timeIndex <= 0,
-        nextDisabled: disabled || timeIndex >= timeMax,
-        onPrevious: () =>
-          state.setSelection({ time: state.scan?.times[Math.max(0, timeIndex - 1)] ?? 0 }),
-        onNext: () =>
-          state.setSelection({ time: state.scan?.times[Math.min(timeMax, timeIndex + 1)] ?? 0 }),
-      }}
-      zPlane={{
-        value: zIndex,
-        min: 0,
-        max: zMax,
-        step: 1,
-        disabled: disabled || zMax <= 0,
-        onCommit: (i) =>
-          state.setSelection({ z: state.scan?.zSlices[clamp(Math.round(i), 0, zMax)] ?? 0 }),
-        previousDisabled: disabled || zIndex <= 0,
-        nextDisabled: disabled || zIndex >= zMax,
-        onPrevious: () =>
-          state.setSelection({ z: state.scan?.zSlices[Math.max(0, zIndex - 1)] ?? 0 }),
-        onNext: () =>
-          state.setSelection({ z: state.scan?.zSlices[Math.min(zMax, zIndex + 1)] ?? 0 }),
-      }}
-    />
-  );
-}
-
-export function StudioAlignLeftPanel({ state }: { state: StudioAlignState }) {
-  const domain = state.frame?.contrastDomain ?? { min: 0, max: 255 };
-  const value = state.contrast ??
-    state.frame?.appliedContrast ?? { min: domain.min, max: domain.max };
-  return (
-    <div className="flex min-h-0 flex-col gap-2 p-3">
-      <AlignFrameNavigation state={state} />
-      <ContrastControl
-        autoRangeDisabled={!state.frame}
-        disabled={!state.frame}
-        domainMax={domain.max}
-        domainMin={domain.min}
-        maxValue={value.max}
-        minValue={value.min}
-        sectionClassName="min-h-0 shrink-0"
-        onAutoRange={() => state.setContrast(null)}
-        onMaxCommit={(max) => state.setContrast({ min: value.min, max })}
-        onMinCommit={(min) => state.setContrast({ min, max: value.max })}
-      />
-    </div>
-  );
-}
-
 export function StudioAlignBottomPanel({ state }: { state: StudioAlignState }) {
-  const canSave = Boolean(state.workspacePath && state.frame);
   return (
-    <div className="flex h-full min-h-0 w-full gap-3 p-3">
-      <AlignTools
-        mode={state.toolMode}
-        sectionClassName="flex min-h-0 min-w-0 flex-1 basis-0 flex-col"
-        sectionContentClassName="flex min-h-0 flex-1 flex-col"
-        onModeChange={state.setToolMode}
-      />
-      <Section
-        className="flex min-h-0 min-w-0 flex-1 basis-0 flex-col"
-        contentClassName="flex min-h-0 flex-col gap-2"
-        title="Save"
-      >
-        <div className="grid min-w-0 grid-cols-2 gap-2">
-          <OutputPathField value={`bbox/Pos${state.selection.pos}.csv`} />
-          <OutputPathField value={`align/Pos${state.selection.pos}.json`} />
-        </div>
-        <Button
-          className="w-full justify-center"
-          disabled={!canSave || state.saving}
-          loading={state.saving}
-          size="sm"
-          type="button"
-          variant="outline"
-          onClick={() => void state.saveAndAdvance()}
-        >
-          Save and next
-        </Button>
-      </Section>
-    </div>
-  );
-}
-
-function OutputPathField({ value }: { value: string }) {
-  return (
-    <div
-      aria-label={`Output path ${value}`}
-      className="min-w-0 truncate rounded-md border border-border bg-muted/20 px-2 py-1.5 font-mono text-xs text-foreground"
-      title={value}
-    >
-      {value}
-    </div>
-  );
-}
-
-export function StudioAlignRightPanel({ state }: { state: StudioAlignState }) {
-  const shapeOptions = useMemo<NavigationOption<AlignGridShape>[]>(
-    () => [
-      { label: "Rectangle", value: "rect" },
-      { label: "Hexagon", value: "hex" },
-    ],
-    [],
-  );
-  const disabled = !state.frame;
-  const updateGrid = (patch: Partial<AlignGridState>) => {
-    if (disabled) return;
-    state.setGrid((grid) => ({ ...grid, ...patch }));
-  };
-  const visibleCells = useMemo(
-    () =>
-      state.frame
-        ? enumerateVisibleAlignGridCells(state.frame, state.grid).map(({ i, j }) => ({ i, j }))
-        : [],
-    [state.frame, state.grid],
-  );
-
-  return (
-    <div className="flex min-h-0 flex-col gap-2 overflow-auto p-3">
-      <AlignGrid
-        offsetX={state.grid.tx}
-        offsetY={state.grid.ty}
-        onOffsetXChange={(tx) => updateGrid({ tx })}
-        onOffsetYChange={(ty) => updateGrid({ ty })}
-        onOverlayOpacityChange={(opacity) => updateGrid({ opacity })}
-        onOverlayVisibleChange={(enabled) => updateGrid({ enabled })}
-        onPatternHeightChange={(cellHeight) => updateGrid({ cellHeight })}
-        onPatternWidthChange={(cellWidth) => updateGrid({ cellWidth })}
-        onReset={() => !disabled && state.setGrid({ ...createDefaultAlignGrid(), enabled: true })}
-        onRotationDegreesChange={(degrees) => updateGrid({ rotation: degreesToRadians(degrees) })}
-        onShapeChange={(shape) => updateGrid({ shape })}
-        onVectorAChange={(spacingA) => updateGrid({ spacingA })}
-        onVectorBChange={(spacingB) => updateGrid({ spacingB })}
-        overlayOpacity={state.grid.opacity}
-        overlayVisible={state.grid.enabled}
-        patternHeight={state.grid.cellHeight}
-        patternMin={1}
-        patternWidth={state.grid.cellWidth}
-        rotationDegrees={radiansToDegrees(state.grid.rotation)}
-        shape={state.grid.shape}
-        shapeOptions={shapeOptions}
-        vectorA={state.grid.spacingA}
-        vectorB={state.grid.spacingB}
-        vectorMin={1}
-      />
-      <Section contentClassName="flex min-h-0 flex-col gap-2 overflow-auto" title="Selection">
-        <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-md border border-border bg-muted/30 px-2 py-2">
-            <div className="text-muted-foreground text-xs">Included cells</div>
-            <div className="mt-1 font-medium tabular-nums">{state.visibleCounts.included}</div>
-          </div>
-          <div className="rounded-md border border-border bg-muted/30 px-2 py-2">
-            <div className="text-muted-foreground text-xs">Excluded cells</div>
-            <div className="mt-1 font-medium tabular-nums">{state.visibleCounts.excluded}</div>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <Button
-            disabled={disabled || visibleCells.length === 0}
-            size="sm"
-            type="button"
-            variant="outline"
-            onClick={() => state.setExcludedCellsForCurrentPosition(visibleCells)}
-          >
-            Exclude all
-          </Button>
-          <Button
-            disabled={disabled || !state.frame}
-            size="sm"
-            type="button"
-            variant="outline"
-            onClick={() =>
-              state.frame &&
-              state.setExcludedCellsForCurrentPosition(
-                mergeExcludedAlignGridCells(
-                  state.currentExcludedCells,
-                  collectAlignGridEdgeCells(state.frame, state.grid),
-                ),
-              )
-            }
-          >
-            Exclude edge
-          </Button>
-        </div>
-        <Button
-          disabled={disabled || visibleCells.length === 0}
-          size="sm"
-          type="button"
-          variant="outline"
-          onClick={() => void state.autoExclude()}
-        >
-          Auto exclude
-        </Button>
-        <Button
-          disabled={disabled || state.currentExcludedCells.length === 0}
-          size="sm"
-          type="button"
-          variant="outline"
-          onClick={() => state.setExcludedCellsForCurrentPosition([])}
-        >
-          Reset
-        </Button>
-      </Section>
-    </div>
+    <AlignTools
+      mode={state.toolMode}
+      sectionClassName="flex min-h-0 min-w-0 flex-1 basis-0 flex-col"
+      sectionContentClassName="flex min-h-0 flex-1 flex-col"
+      onModeChange={state.setToolMode}
+    />
   );
 }
 
@@ -697,17 +499,25 @@ function cursorForAlignTool(toolMode: AlignGridToolMode, gridEnabled: boolean, d
 export function StudioAlignMainPanel({ state }: { state: StudioAlignState }) {
   const { handlePointerDown, handlePointerMove, handlePointerEnd, previewGrid } =
     useAlignCanvasHandlers(state);
-  const activeStatus = state.frameLoading
+  const visibleStatus = useCanvasTransientStatus(state.status);
+  const activeToastStatus = state.frameLoading
     ? "Loading frame"
     : state.scanLoading
       ? "Scanning source"
-      : state.status;
+      : visibleStatus;
+  const positionIndex = state.scan?.positions.indexOf(state.selection.pos) ?? -1;
+  const positionCount = state.scan?.positions.length ?? 0;
+  const positionMessage =
+    positionIndex >= 0 && positionCount > 0 ? `Pos ${positionIndex + 1}/${positionCount}` : null;
   const messages = useMemo(() => {
-    const items = [];
-    if (state.error) items.push({ text: state.error, tone: "error" as const });
-    else if (activeStatus) items.push({ text: activeStatus });
-    return items;
-  }, [activeStatus, state.error]);
+    if (!positionMessage) return [];
+    return [{ text: positionMessage }];
+  }, [positionMessage]);
+  const toasts = useMemo(() => {
+    if (state.error) return [{ text: state.error, tone: "error" as const }];
+    if (activeToastStatus) return [{ text: activeToastStatus }];
+    return [];
+  }, [activeToastStatus, state.error]);
   const emptyText = !state.workspacePath
     ? "Choose a save folder on Info."
     : !state.source
@@ -728,6 +538,7 @@ export function StudioAlignMainPanel({ state }: { state: StudioAlignState }) {
         loading={state.scanLoading || state.frameLoading}
         messages={messages}
         previewGrid={previewGrid}
+        toasts={toasts}
         onVirtualPointerCancel={handlePointerEnd}
         onVirtualPointerDown={handlePointerDown}
         onVirtualPointerMove={handlePointerMove}

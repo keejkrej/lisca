@@ -12,7 +12,6 @@ import {
 
 import type {
   AlignCanvasStatusMessage,
-  AlignCanvasStatusTone,
   AlignGridCellCoord,
   AlignGridState,
   FrameResult,
@@ -25,6 +24,7 @@ import {
 } from "@lisca/utils";
 
 import { cn } from "../lib/utils";
+import { CanvasStatusMessageStack, CanvasToastStack } from "./canvas-status";
 
 export type AlignCanvasFramePoint = {
   x: number;
@@ -66,6 +66,7 @@ export type AlignCanvasSurfaceProps = {
   loading?: boolean;
   emptyText?: string;
   messages?: AlignCanvasStatusMessage[];
+  toasts?: AlignCanvasStatusMessage[];
   className?: string;
   cursor?: string;
   onVirtualPointerDown?: (event: AlignCanvasPointerEvent) => void;
@@ -177,15 +178,6 @@ function drawGridOverlay(
   ctx.restore();
 }
 
-function messageToneClassName(tone: AlignCanvasStatusTone | undefined) {
-  if (tone === "error")
-    return "border-destructive/35 bg-destructive/10 text-destructive-foreground";
-  if (tone === "success") {
-    return "border-emerald-600/30 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-300";
-  }
-  return "border-border text-muted-foreground";
-}
-
 function canvasBackgroundColor(element: HTMLElement) {
   const color = window.getComputedStyle(element).backgroundColor;
   return color && color !== "rgba(0, 0, 0, 0)" && color !== "transparent" ? color : "#09090b";
@@ -197,6 +189,7 @@ export function AlignCanvasSurface({
   previewGrid,
   excludedCells,
   messages,
+  toasts,
   className,
   cursor,
   onVirtualPointerDown,
@@ -429,21 +422,8 @@ export function AlignCanvasSurface({
         onWheel={(event) => onVirtualWheel?.(toVirtualWheelEvent(event))}
       />
 
-      {messages?.length ? (
-        <div className="pointer-events-none absolute left-3 top-3 flex max-w-[78%] flex-wrap gap-1.5">
-          {messages.map((message, index) => (
-            <div
-              key={`${message.tone ?? "default"}:${message.text}:${index}`}
-              className={cn(
-                "rounded-md border bg-card/95 px-3 py-2 text-sm leading-snug shadow-lg backdrop-blur-sm",
-                messageToneClassName(message.tone),
-              )}
-            >
-              {message.text}
-            </div>
-          ))}
-        </div>
-      ) : null}
+      <CanvasStatusMessageStack messages={messages} />
+      <CanvasToastStack messages={toasts} />
     </div>
   );
 }

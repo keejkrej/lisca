@@ -1,7 +1,5 @@
-import { Button, cn } from "@lisca/ui";
-import { Link } from "@tanstack/react-router";
-
-import type { InfoStep } from "../state/studio-store";
+import { Button, ConnectionStatus, ShellThemeToggle, cn, useShellWsProbe } from "@lisca/ui";
+import { Link, useRouterState } from "@tanstack/react-router";
 
 const navButtonClass =
   "h-auto w-auto min-w-0 max-w-full shrink-0 rounded-lg px-5 py-2.5 text-xl font-medium";
@@ -30,46 +28,23 @@ function NavButton({
   );
 }
 
-export function StudioNavRail({
-  routeId,
-  infoStep,
-  onInfoStepChange,
-}: {
-  routeId: string;
-  infoStep: InfoStep;
-  onInfoStepChange: (step: InfoStep) => void;
-}) {
+export function StudioNavRail() {
+  const ws = useShellWsProbe({ defaultPort: 8767 });
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const routeId = pathname.slice(1) || "assay";
+
   return (
     <nav
       aria-label="Primary"
-      className="hidden h-full min-h-0 w-60 min-w-60 flex-col items-stretch border-r border-border/80 bg-card/32 p-2.5 md:flex"
+      className="flex h-full min-h-0 flex-col items-stretch bg-card/32 p-2.5"
     >
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 overflow-y-auto">
         <NavButton active={routeId === "assay"} to="/assay">
           Choose assay
         </NavButton>
-        <div className="flex flex-col items-center gap-2">
-          <NavButton active={routeId === "info"} to="/info">
-            Basic info
-          </NavButton>
-          {routeId === "info" ? (
-            <div className="flex gap-1">
-              {[1, 2, 3].map((step) => (
-                <Button
-                  key={step}
-                  aria-pressed={infoStep === step}
-                  className="h-7 w-7 justify-center p-0 text-xs"
-                  size="sm"
-                  type="button"
-                  variant={infoStep === step ? "default" : "outline"}
-                  onClick={() => onInfoStepChange(step as InfoStep)}
-                >
-                  {step}
-                </Button>
-              ))}
-            </div>
-          ) : null}
-        </div>
+        <NavButton active={routeId === "info"} to="/info">
+          Basic info
+        </NavButton>
         <NavButton active={routeId === "align"} to="/align">
           Align pattern
         </NavButton>
@@ -79,6 +54,12 @@ export function StudioNavRail({
         <NavButton active={routeId === "result"} to="/result">
           View results
         </NavButton>
+      </div>
+      <div className="flex shrink-0 items-center gap-2 border-t border-border/60 pt-2.5">
+        <ConnectionStatus wsUrl={ws.wsUrl} state={ws.state} />
+        <div className="ml-auto shrink-0">
+          <ShellThemeToggle />
+        </div>
       </div>
     </nav>
   );
