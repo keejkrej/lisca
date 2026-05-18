@@ -62,7 +62,7 @@ function AssayPage() {
                     void navigate({ to: "/info" }).then(() => setInfoStep(1));
                   }}
                 >
-                  next
+                  Next
                 </DockButton>
               }
               tools={
@@ -72,7 +72,7 @@ function AssayPage() {
                     loading={openingAssay}
                     onClick={() => setAssayPickerOpen(true)}
                   >
-                    open assay
+                    Open assay
                   </DockButton>
                 </DockSection>
               }

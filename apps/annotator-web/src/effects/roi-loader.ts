@@ -1,4 +1,9 @@
-import type { ContrastWindow, FrameResult, RoiFrameRequest } from "@lisca/contracts";
+import type {
+  ContrastWindow,
+  FrameResult,
+  LoadedRoiFrameAnnotation,
+  RoiFrameRequest,
+} from "@lisca/contracts";
 import { normalizeFrameContrast } from "@lisca/utils";
 import { Cause, Effect, Option } from "effect";
 
@@ -7,6 +12,7 @@ import {
   createEmptyMask,
   decodeMaskBase64Png,
   framePayloadToResult,
+  type AnnotationValue,
 } from "../utils/annotation-utils";
 
 class FrameCache {
@@ -100,34 +106,49 @@ export function loadRoiFrameEffect(
   );
 }
 
-export function loadRoiFrameAnnotationEffect(
+async function loadedAnnotationToValue(
+  loaded: LoadedRoiFrameAnnotation,
+  frame: FrameResult,
+): Promise<AnnotationValue> {
+  if (!loaded.maskBase64Png) {
+    return {
+      classificationLabelId: loaded.annotation.classificationLabelId,
+      mask: createEmptyMask(frame.width, frame.height),
+    };
+  }
+
+  try {
+    return {
+      classificationLabelId: loaded.annotation.classificationLabelId,
+      mask: await decodeMaskBase64Png(loaded.maskBase64Png, frame.width, frame.height),
+    };
+  } catch (cause) {
+    const detail = cause instanceof Error ? cause.message : String(cause);
+    throw new Error(`Annotation mask decode failed: ${detail}`);
+  }
+}
+
+export function loadRoiFrameWithAnnotationEffect(
   api: AnnotatorApi,
   workspacePath: string,
   request: RoiFrameRequest,
-  frame: FrameResult,
+  contrast: ContrastWindow | null,
 ) {
   return Effect.tryPromise({
     try: async (signal) => {
-      const loaded = await api.loadRoiFrameAnnotation(workspacePath, request, signal);
-      if (!loaded.maskBase64Png) {
-        return {
-          classificationLabelId: loaded.annotation.classificationLabelId,
-          mask: createEmptyMask(frame.width, frame.height),
-        };
-      }
-
-      try {
-        return {
-          classificationLabelId: loaded.annotation.classificationLabelId,
-          mask: await decodeMaskBase64Png(loaded.maskBase64Png, frame.width, frame.height),
-        };
-      } catch (cause) {
-        const detail = cause instanceof Error ? cause.message : String(cause);
-        throw new Error(`Annotation mask decode failed: ${detail}`);
-      }
+      const framePromise = Effect.runPromise(
+        loadRoiFrameEffect(api, workspacePath, request, contrast),
+        { signal },
+      );
+      const annotationPromise = api.loadRoiFrameAnnotation(workspacePath, request, signal);
+      const [frame, loadedAnnotation] = await Promise.all([framePromise, annotationPromise]);
+      return {
+        frame,
+        annotation: await loadedAnnotationToValue(loadedAnnotation, frame),
+      };
     },
-    catch: (cause) => toError(cause, "ROI annotation load failed"),
-  }).pipe(Effect.withSpan("annotator-web.load-roi-frame-annotation"));
+    catch: (cause) => toError(cause, "ROI frame and annotation request failed"),
+  }).pipe(Effect.withSpan("annotator-web.load-roi-frame-with-annotation"));
 }
 
 export function effectErrorMessage(error: unknown, fallback: string): string {

@@ -31,19 +31,41 @@ function AlignPage() {
               instruction={instructionForStep("alignPattern")}
               action={
                 <div className="flex w-full flex-col gap-2">
-                  <DockButton
-                    disabled={!alignState.canGoBack || alignState.saving}
-                    onClick={alignState.goBack}
-                  >
-                    back
-                  </DockButton>
-                  <DockButton
-                    disabled={!alignState.frame || alignState.saving}
-                    loading={alignState.saving}
-                    onClick={() => void alignState.saveAndAdvance()}
-                  >
-                    next
-                  </DockButton>
+                  <div className="grid grid-cols-2 gap-2">
+                    <DockButton
+                      disabled={!alignState.frame || alignState.saving}
+                      onClick={alignState.resetCurrent}
+                    >
+                      Reset
+                    </DockButton>
+                    <DockButton
+                      disabled={
+                        !alignState.workspacePath ||
+                        !alignState.scan ||
+                        alignState.saving ||
+                        alignState.findingFirstUnaligned
+                      }
+                      loading={alignState.findingFirstUnaligned}
+                      onClick={() => void alignState.goToFirstUnaligned()}
+                    >
+                      Jump
+                    </DockButton>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <DockButton
+                      disabled={!alignState.canGoBack || alignState.saving}
+                      onClick={alignState.goBack}
+                    >
+                      Back
+                    </DockButton>
+                    <DockButton
+                      disabled={!alignState.frame || alignState.saving}
+                      loading={alignState.saving}
+                      onClick={() => void alignState.saveAndAdvance()}
+                    >
+                      Next
+                    </DockButton>
+                  </div>
                 </div>
               }
               tools={<StudioAlignTools state={alignState} />}

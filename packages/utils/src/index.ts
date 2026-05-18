@@ -344,10 +344,10 @@ export function createDefaultAlignGrid(): AlignGridState {
     tx: 0,
     ty: 0,
     rotation: 0,
-    spacingA: 325,
-    spacingB: 325,
-    cellWidth: 200,
-    cellHeight: 200,
+    spacingA: 160,
+    spacingB: 160,
+    cellWidth: 128,
+    cellHeight: 128,
     opacity: 0.35,
   };
 }

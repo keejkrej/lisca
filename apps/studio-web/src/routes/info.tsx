@@ -82,14 +82,14 @@ function InfoPage() {
               action={
                 <div className="flex w-full flex-col gap-2">
                   <DockButton disabled={infoStep === 1 || savingAssay} onClick={back}>
-                    back
+                    Back
                   </DockButton>
                   <DockButton
                     disabled={!canContinue || savingAssay}
                     loading={savingAssay}
                     onClick={() => void next()}
                   >
-                    {infoStep === 3 ? "save" : "next"}
+                    {infoStep === 3 ? "Save" : "Next"}
                   </DockButton>
                 </div>
               }

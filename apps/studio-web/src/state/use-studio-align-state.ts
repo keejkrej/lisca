@@ -5,26 +5,26 @@ import type {
   ContrastWindow,
   FrameRequest,
   FrameResult,
+  SavedAlignState,
   WorkspaceScan,
 } from "@lisca/contracts";
+import { useCanvasResourceTransaction } from "@lisca/ui";
 import {
   alignStateFromCurrent,
   buildBboxCsv,
   collectAlignGridEdgeCells,
   countVisibleAlignGridCells,
+  createDefaultAlignGrid,
   enumerateVisibleAlignGridCells,
   mergeExcludedAlignGridCells,
   type AlignGridToolMode,
 } from "@lisca/utils";
-import { Effect, Exit } from "effect";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { Effect } from "effect";
+import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { studioClient, toErrorMessage } from "../api/studio-client";
-import {
-  useAutoExcludePreviewMutation,
-  useLoadAlignStateQuery,
-  useScanSourceQuery,
-} from "../api/studio-queries";
+import { useAutoExcludePreviewMutation, useScanSourceQuery } from "../api/studio-queries";
 import { effectErrorMessage, loadFrameEffect } from "../effects/frame-loader";
 import { lockedStudioSelection, studioMaskChannel, toStudioSource } from "../utils/studio-source";
 import {
@@ -36,6 +36,11 @@ import {
 import { useStudioStore } from "./studio-store";
 
 const emptyExcludedCells: AlignGridCellCoord[] = [];
+const nextExclusionPreviewMs = 1000;
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export type StudioAlignState = {
   workspacePath: string | null;
@@ -53,14 +58,20 @@ export type StudioAlignState = {
   setGrid: (next: AlignGridState | ((current: AlignGridState) => AlignGridState)) => void;
   toolMode: AlignGridToolMode;
   setToolMode: (mode: AlignGridToolMode) => void;
+  patternZoomLocked: boolean;
+  setPatternZoomLocked: (locked: boolean) => void;
   excludedCellsByPosition: ExcludedByPosition;
   setExcludedCellsForCurrentPosition: (cells: Iterable<AlignGridCellCoord>) => void;
   currentExcludedCells: AlignGridCellCoord[];
+  displayedExcludedCells: AlignGridCellCoord[];
   visibleCounts: { included: number; excluded: number };
   saving: boolean;
+  findingFirstUnaligned: boolean;
   status: string | null;
   canGoBack: boolean;
   goBack: () => void;
+  resetCurrent: () => void;
+  goToFirstUnaligned: () => Promise<void>;
   saveAndAdvance: () => Promise<boolean>;
   autoExclude: () => Promise<void>;
 };
@@ -76,8 +87,8 @@ export function useStudioAlignState(): StudioAlignState {
     setWorkspacePath,
     scan,
     scanSourceKey,
-    appliedAlignStateKey,
     selection,
+    loadedFrameSelection,
     setSelection,
     contrast,
     setContrast,
@@ -87,6 +98,8 @@ export function useStudioAlignState(): StudioAlignState {
     setGrid,
     toolMode,
     setToolMode,
+    patternZoomLocked,
+    setPatternZoomLocked,
     excludedCellsByPosition,
     setExcludedCellsForCurrentPosition,
     frameLoading,
@@ -98,9 +111,10 @@ export function useStudioAlignState(): StudioAlignState {
     status,
     setStatus,
     applySourceScan,
-    applySavedAlignState,
+    applyLoadedFrame,
   } = useStudioAlignStore();
-  const frameLoadIdRef = useRef(0);
+  const [findingFirstUnaligned, setFindingFirstUnaligned] = useState(false);
+  const loadCanvasResources = useCanvasResourceTransaction();
   const activeSource = useMemo(
     () => toStudioSource(dataSourceKind, info1),
     [dataSourceKind, info1],
@@ -113,19 +127,25 @@ export function useStudioAlignState(): StudioAlignState {
     [maskChannel, scan, selection],
   );
   const scanQuery = useScanSourceQuery(source);
-  const alignStateQuery = useLoadAlignStateQuery(workspacePath, lockedSelection, Boolean(scan));
   const autoExcludePreview = useAutoExcludePreviewMutation();
+  const queryClient = useQueryClient();
 
   const currentExcludedCells = useMemo(
     () => excludedCellsByPosition[lockedSelection.pos] ?? emptyExcludedCells,
     [excludedCellsByPosition, lockedSelection.pos],
   );
+  const displayedExcludedCells = useMemo(
+    () =>
+      excludedCellsByPosition[loadedFrameSelection?.pos ?? lockedSelection.pos] ??
+      emptyExcludedCells,
+    [excludedCellsByPosition, loadedFrameSelection?.pos, lockedSelection.pos],
+  );
   const visibleCounts = useMemo(
     () =>
       frame
-        ? countVisibleAlignGridCells(frame, grid, currentExcludedCells)
+        ? countVisibleAlignGridCells(frame, grid, displayedExcludedCells)
         : { included: 0, excluded: 0 },
-    [currentExcludedCells, frame, grid],
+    [displayedExcludedCells, frame, grid],
   );
 
   useEffect(() => {
@@ -155,24 +175,6 @@ export function useStudioAlignState(): StudioAlignState {
   }, [scanQuery.error, setError, setFrame]);
 
   useEffect(() => {
-    if (!workspacePath || alignStateQuery.data === undefined) return;
-    const stateKey = savedAlignStateKey(workspacePath, lockedSelection.pos);
-    if (appliedAlignStateKey === stateKey) return;
-    applySavedAlignState(stateKey, lockedSelection.pos, alignStateQuery.data);
-  }, [
-    alignStateQuery.data,
-    appliedAlignStateKey,
-    applySavedAlignState,
-    lockedSelection.pos,
-    workspacePath,
-  ]);
-
-  useEffect(() => {
-    if (!alignStateQuery.error) return;
-    setError(toErrorMessage(alignStateQuery.error, "Saved align state load failed"));
-  }, [alignStateQuery.error, setError]);
-
-  useEffect(() => {
     if (!scan) return;
     if (
       selection.pos === lockedSelection.pos &&
@@ -186,50 +188,68 @@ export function useStudioAlignState(): StudioAlignState {
   }, [lockedSelection, scan, selection, setSelection]);
 
   useEffect(() => {
-    frameLoadIdRef.current += 1;
-    const loadId = frameLoadIdRef.current;
     if (!source || !scan) {
       setFrameLoading(false);
       return;
     }
-    const abortController = new AbortController();
-    const commit = (apply: () => void) => {
-      if (frameLoadIdRef.current === loadId && !abortController.signal.aborted) apply();
-    };
-    setFrameLoading(true);
-    setError(null);
-    setStatus("Loading frame");
-    const program = loadFrameEffect(studioClient, source, lockedSelection, null).pipe(
-      Effect.tap((nextFrame) =>
-        Effect.sync(() =>
-          commit(() => {
-            setFrame(nextFrame);
-            setStatus(null);
-          }),
-        ),
-      ),
-      Effect.catchAll((cause) =>
-        Effect.sync(() =>
-          commit(() => {
-            setFrame(null);
-            setError(effectErrorMessage(cause));
-          }),
-        ),
-      ),
-      Effect.ensuring(Effect.sync(() => commit(() => setFrameLoading(false)))),
-    );
-    void Effect.runPromiseExit(program, { signal: abortController.signal }).then((exit) => {
-      if (!Exit.isFailure(exit) || abortController.signal.aborted) return;
-      commit(() => {
-        setFrame(null);
-        setError(effectErrorMessage(exit.cause));
-        setFrameLoading(false);
-      });
-    });
-    return () => abortController.abort();
-  }, [lockedSelection, scan, setError, setFrame, setFrameLoading, setStatus, source]);
+    const alignStateKey = workspacePath
+      ? savedAlignStateKey(workspacePath, lockedSelection.pos)
+      : null;
 
-  const autoExcludeCells = useCallback(async (): Promise<AlignGridCellCoord[]> => {
+    return loadCanvasResources({
+      start: () => {
+        setFrameLoading(true);
+        setError(null);
+        setStatus("Loading frame");
+      },
+      load: (signal) => {
+        const framePromise = Effect.runPromise(
+          loadFrameEffect(studioClient, source, lockedSelection, null),
+          { signal },
+        );
+        const alignStatePromise = workspacePath
+          ? queryClient.fetchQuery<SavedAlignState | null>({
+              queryKey: ["studio", "align-state", alignStateKey],
+              queryFn: () => studioClient.loadAlignState(workspacePath, lockedSelection.pos),
+              retry: false,
+            })
+          : Promise.resolve(null);
+        return Promise.all([framePromise, alignStatePromise]);
+      },
+      commit: ([nextFrame, savedAlignState]) => {
+        applyLoadedFrame(
+          lockedSelection,
+          nextFrame,
+          alignStateKey
+            ? { stateKey: alignStateKey, pos: lockedSelection.pos, saved: savedAlignState }
+            : null,
+        );
+      },
+      reject: (cause) => {
+        setFrame(null);
+        setError(
+          cause instanceof Error && cause.message.startsWith("Frame request failed")
+            ? effectErrorMessage(cause)
+            : toErrorMessage(cause, "Frame or saved align state load failed"),
+        );
+      },
+      settle: () => setFrameLoading(false),
+    });
+  }, [
+    applyLoadedFrame,
+    lockedSelection,
+    loadCanvasResources,
+    queryClient,
+    scan,
+    setError,
+    setFrame,
+    setFrameLoading,
+    setStatus,
+    source,
+    workspacePath,
+  ]);
+
+  const variationExcludeCells = useCallback(async (): Promise<AlignGridCellCoord[]> => {
     if (!source || !frame) return [];
     const cells = enumerateVisibleAlignGridCells(frame, grid);
     if (cells.length === 0) return [];
@@ -253,31 +273,70 @@ export function useStudioAlignState(): StudioAlignState {
     setSelection({ pos: scan.positions[positionIndex - 1] });
   }, [positionIndex, saving, scan, setSelection]);
 
+  const resetCurrent = useCallback(() => {
+    if (saving) return;
+    setGrid({ ...createDefaultAlignGrid(), enabled: true });
+    setExcludedCellsForCurrentPosition([]);
+    setStatus(`Reset Pos${lockedSelection.pos}`);
+  }, [lockedSelection.pos, saving, setExcludedCellsForCurrentPosition, setGrid, setStatus]);
+
+  const goToFirstUnaligned = useCallback(async () => {
+    if (!workspacePath || !scan || saving || findingFirstUnaligned) return;
+    setFindingFirstUnaligned(true);
+    setError(null);
+    try {
+      setStatus("Finding first unaligned");
+      const savedPositions = new Set(await studioClient.listSavedBboxPositions(workspacePath));
+      const firstUnaligned = scan.positions.find((pos) => !savedPositions.has(pos));
+      if (firstUnaligned == null) {
+        setStatus("All positions aligned");
+        return;
+      }
+      setSelection({ pos: firstUnaligned });
+      setStatus(`Jumped to Pos${firstUnaligned}`);
+    } catch (cause) {
+      setError(toErrorMessage(cause, "Saved position scan failed"));
+    } finally {
+      setFindingFirstUnaligned(false);
+    }
+  }, [findingFirstUnaligned, saving, scan, setError, setSelection, setStatus, workspacePath]);
+
+  const advanceToNextPosition = useCallback(() => {
+    const posOptions = scan?.positions ?? [];
+    const currentIndex = posOptions.indexOf(lockedSelection.pos);
+    const nextPos = currentIndex >= 0 ? posOptions[currentIndex + 1] : null;
+    if (nextPos == null) return false;
+    setSelection({ pos: nextPos });
+    return true;
+  }, [lockedSelection.pos, scan, setSelection]);
+
   const saveAndAdvance = useCallback(async () => {
     if (!workspacePath || !frame) return false;
     setSaving(true);
     setError(null);
     try {
-      const edgeCells = collectAlignGridEdgeCells(frame, grid);
-      const thresholdCells = await autoExcludeCells();
+      const [edgeCells, thresholdCells] = await Promise.all([
+        Promise.resolve(collectAlignGridEdgeCells(frame, grid)),
+        variationExcludeCells(),
+      ]);
       const finalExcludedCells = mergeExcludedAlignGridCells(currentExcludedCells, [
         ...edgeCells,
         ...thresholdCells,
       ]);
       setExcludedCellsForCurrentPosition(finalExcludedCells);
       const csv = buildBboxCsv(frame, grid, finalExcludedCells);
-      const result = await studioClient.saveBbox(
-        workspacePath,
-        lockedSelection.pos,
-        csv,
-        alignStateFromCurrent(grid, finalExcludedCells),
-      );
+      const alignState = alignStateFromCurrent(grid, finalExcludedCells);
+      const [result] = await Promise.all([
+        studioClient.saveBbox(workspacePath, lockedSelection.pos, csv, alignState),
+        delay(nextExclusionPreviewMs),
+      ]);
       if (!result.ok) throw new Error(result.error ?? "Save failed");
+      queryClient.setQueryData<SavedAlignState | null>(
+        ["studio", "align-state", savedAlignStateKey(workspacePath, lockedSelection.pos)],
+        alignState,
+      );
       setStatus(`Saved bbox/Pos${lockedSelection.pos}.csv`);
-      const posOptions = scan?.positions ?? [];
-      const currentIndex = posOptions.indexOf(lockedSelection.pos);
-      const nextPos = currentIndex >= 0 ? posOptions[currentIndex + 1] : null;
-      if (nextPos != null) setSelection({ pos: nextPos });
+      advanceToNextPosition();
       return true;
     } catch (cause) {
       setError(toErrorMessage(cause, "Save failed"));
@@ -286,37 +345,45 @@ export function useStudioAlignState(): StudioAlignState {
       setSaving(false);
     }
   }, [
-    autoExcludeCells,
+    advanceToNextPosition,
     currentExcludedCells,
     frame,
     grid,
     lockedSelection.pos,
-    scan,
+    queryClient,
     setError,
     setExcludedCellsForCurrentPosition,
     setSaving,
-    setSelection,
     setStatus,
+    variationExcludeCells,
     workspacePath,
   ]);
 
   const autoExclude = useCallback(async () => {
+    if (!frame) return;
     try {
       setStatus("Auto exclude preview");
-      const autoExcluded = await autoExcludeCells();
-      setExcludedCellsForCurrentPosition(
-        mergeExcludedAlignGridCells(currentExcludedCells, autoExcluded),
-      );
-      setStatus(`Auto excluded ${autoExcluded.length} cells`);
+      const [edgeCells, variationCells] = await Promise.all([
+        Promise.resolve(collectAlignGridEdgeCells(frame, grid)),
+        variationExcludeCells(),
+      ]);
+      const finalExcludedCells = mergeExcludedAlignGridCells(currentExcludedCells, [
+        ...edgeCells,
+        ...variationCells,
+      ]);
+      setExcludedCellsForCurrentPosition(finalExcludedCells);
+      setStatus(`Auto excluded ${finalExcludedCells.length - currentExcludedCells.length} cells`);
     } catch (cause) {
       setError(toErrorMessage(cause, "Auto exclude preview failed"));
     }
   }, [
-    autoExcludeCells,
     currentExcludedCells,
+    frame,
+    grid,
     setError,
     setExcludedCellsForCurrentPosition,
     setStatus,
+    variationExcludeCells,
   ]);
 
   return {
@@ -335,14 +402,20 @@ export function useStudioAlignState(): StudioAlignState {
     setGrid,
     toolMode,
     setToolMode,
+    patternZoomLocked,
+    setPatternZoomLocked,
     excludedCellsByPosition,
     setExcludedCellsForCurrentPosition,
     currentExcludedCells,
+    displayedExcludedCells,
     visibleCounts,
     saving,
+    findingFirstUnaligned,
     status,
     canGoBack,
     goBack,
+    resetCurrent,
+    goToFirstUnaligned,
     saveAndAdvance,
     autoExclude,
   };

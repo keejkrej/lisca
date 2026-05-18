@@ -15,12 +15,14 @@ export type UseAlignCanvasGridHandlersOptions = {
   grid: AlignGridState;
   setGrid: (grid: AlignGridState) => void;
   toolMode: AlignGridToolMode;
+  patternZoomLocked?: boolean;
   disabled?: boolean;
 };
 
 export function useAlignCanvasGridHandlers({
   disabled = false,
   grid,
+  patternZoomLocked = false,
   setGrid,
   toolMode,
 }: UseAlignCanvasGridHandlersOptions) {
@@ -36,6 +38,7 @@ export function useAlignCanvasGridHandlers({
   const handlePointerDown = useCallback(
     (event: AlignCanvasPointerEvent) => {
       if (disabled || !event.viewport || !grid.enabled) return;
+      if (patternZoomLocked && toolMode === "zoom-pattern") return;
       if (event.pointerType === "mouse" && event.button !== 0) {
         event.preventDefault();
         return;
@@ -47,7 +50,7 @@ export function useAlignCanvasGridHandlers({
       gestureRef.current = session;
       setPreviewGrid(null);
     },
-    [disabled, grid, setPreviewGrid, toolMode],
+    [disabled, grid, patternZoomLocked, setPreviewGrid, toolMode],
   );
 
   const handlePointerMove = useCallback(

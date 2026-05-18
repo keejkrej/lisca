@@ -12,19 +12,21 @@ export function StudioAlignMain({ state }: { state: StudioAlignState }) {
   const { handlePointerDown, handlePointerMove, handlePointerEnd, previewGrid } =
     useAlignCanvasGridHandlers({
       grid: state.grid,
+      patternZoomLocked: state.patternZoomLocked,
       setGrid: state.setGrid,
       toolMode: state.toolMode,
     });
   const visibleStatus = useCanvasTransientStatus(state.status);
-  const activeToastStatus = state.frameLoading
-    ? "Loading frame"
-    : state.scanLoading
-      ? "Scanning source"
-      : visibleStatus;
+  const activeToastStatus =
+    state.saving || state.frameLoading
+      ? "Loading frame"
+      : state.scanLoading
+        ? "Scanning source"
+        : visibleStatus;
   const positionIndex = state.scan?.positions.indexOf(state.selection.pos) ?? -1;
   const positionCount = state.scan?.positions.length ?? 0;
   const positionMessage =
-    positionIndex >= 0 && positionCount > 0 ? `Pos ${positionIndex + 1}/${positionCount}` : null;
+    positionIndex >= 0 && positionCount > 0 ? `Pos ${positionIndex}/${positionCount}` : null;
   const messages = useMemo(() => {
     if (!positionMessage) return [];
     return [{ text: positionMessage }];
@@ -48,10 +50,10 @@ export function StudioAlignMain({ state }: { state: StudioAlignState }) {
         className="min-h-0 flex-1"
         cursor={cursorForAlignTool(state.toolMode, state.grid.enabled, previewGrid != null)}
         emptyText={emptyText}
-        excludedCells={state.currentExcludedCells}
+        excludedCells={state.displayedExcludedCells}
         frame={state.frame}
         grid={state.grid}
-        loading={state.scanLoading || state.frameLoading}
+        loading={state.scanLoading || state.saving || state.frameLoading}
         messages={messages}
         previewGrid={previewGrid}
         toasts={toasts}

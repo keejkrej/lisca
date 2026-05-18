@@ -131,6 +131,11 @@ export {
 } from "./features/canvas-status";
 
 export {
+  useCanvasResourceTransaction,
+  type CanvasResourceTransactionOptions,
+} from "./features/canvas-resource-transaction";
+
+export {
   AlignSelection,
   type AlignSelectionMode,
   type AlignSelectionProps,

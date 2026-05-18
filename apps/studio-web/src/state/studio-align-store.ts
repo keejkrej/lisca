@@ -19,6 +19,11 @@ import { createJSONStorage, persist } from "zustand/middleware";
 
 export type ExcludedByPosition = Record<number, AlignGridCellCoord[]>;
 type StateUpdater<T> = T | ((current: T) => T);
+type LoadedSavedAlignState = {
+  stateKey: string;
+  pos: number;
+  saved: SavedAlignState | null;
+};
 
 type StudioAlignStoreState = {
   source: AlignerSource | null;
@@ -27,10 +32,12 @@ type StudioAlignStoreState = {
   scanSourceKey: string | null;
   appliedAlignStateKey: string | null;
   selection: FrameRequest;
+  loadedFrameSelection: FrameRequest | null;
   frame: FrameResult | null;
   contrast: ContrastWindow | null;
   grid: AlignGridState;
   toolMode: AlignGridToolMode;
+  patternZoomLocked: boolean;
   excludedCellsByPosition: ExcludedByPosition;
   frameLoading: boolean;
   saving: boolean;
@@ -43,11 +50,17 @@ type StudioAlignStoreActions = {
   setSource: (source: AlignerSource | null) => void;
   applySourceScan: (sourceKey: string, scan: WorkspaceScan) => void;
   applySavedAlignState: (stateKey: string, pos: number, saved: SavedAlignState | null) => void;
+  applyLoadedFrame: (
+    selection: FrameRequest,
+    frame: FrameResult,
+    savedAlignState: LoadedSavedAlignState | null,
+  ) => void;
   setSelection: (patch: Partial<FrameRequest>) => void;
   setFrame: (frame: FrameResult | null) => void;
   setContrast: (contrast: ContrastWindow | null) => void;
   setGrid: (next: StateUpdater<AlignGridState>) => void;
   setToolMode: (mode: AlignGridToolMode) => void;
+  setPatternZoomLocked: (locked: boolean) => void;
   setExcludedCellsForCurrentPosition: (cells: Iterable<AlignGridCellCoord>) => void;
   setFrameLoading: (frameLoading: boolean) => void;
   setSaving: (saving: boolean) => void;
@@ -61,6 +74,10 @@ const defaultSelection: FrameRequest = { pos: 0, channel: 0, time: 0, z: 0 };
 
 function firstOrZero(values: number[] | undefined): number {
   return values?.[0] ?? 0;
+}
+
+function scanValueOrFirst(values: number[] | undefined, preferred: number): number {
+  return values?.includes(preferred) ? preferred : firstOrZero(values);
 }
 
 function resolveNextValue<T>(current: T, next: StateUpdater<T>): T {
@@ -83,10 +100,12 @@ function createInitialState(): StudioAlignStoreState {
     scanSourceKey: null,
     appliedAlignStateKey: null,
     selection: defaultSelection,
+    loadedFrameSelection: null,
     frame: null,
     contrast: null,
     grid: normalizeAlignGridState(createDefaultAlignGrid()),
     toolMode: "pan",
+    patternZoomLocked: true,
     excludedCellsByPosition: {},
     frameLoading: false,
     saving: false,
@@ -125,6 +144,7 @@ export const useStudioAlignStore = create<StudioAlignStore>()(
             scanSourceKey: null,
             appliedAlignStateKey: null,
             selection: defaultSelection,
+            loadedFrameSelection: null,
             frame: null,
             contrast: null,
             grid: normalizeAlignGridState(createDefaultAlignGrid()),
@@ -141,11 +161,12 @@ export const useStudioAlignStore = create<StudioAlignStore>()(
             scan,
             scanSourceKey: nextSourceKey,
             appliedAlignStateKey: null,
+            loadedFrameSelection: null,
             selection: {
-              pos: firstOrZero(scan.positions),
-              channel: firstOrZero(scan.channels),
-              time: firstOrZero(scan.times),
-              z: firstOrZero(scan.zSlices),
+              pos: scanValueOrFirst(scan.positions, state.selection.pos),
+              channel: scanValueOrFirst(scan.channels, state.selection.channel),
+              time: scanValueOrFirst(scan.times, state.selection.time),
+              z: scanValueOrFirst(scan.zSlices, state.selection.z),
             },
             frame: null,
             contrast: null,
@@ -173,6 +194,28 @@ export const useStudioAlignStore = create<StudioAlignStore>()(
             status: saved ? `Loaded align/Pos${pos}.json` : state.status,
           };
         }),
+      applyLoadedFrame: (loadedFrameSelection, frame, savedAlignState) =>
+        set((state) => {
+          const nextState = { ...state, loadedFrameSelection, frame, status: null };
+          if (!savedAlignState || state.appliedAlignStateKey === savedAlignState.stateKey) {
+            return nextState;
+          }
+          const nextExcluded = savedAlignState.saved
+            ? setExcludedAlignGridCellsForPosition(
+                state.excludedCellsByPosition,
+                savedAlignState.pos,
+                savedAlignState.saved.excludedCells,
+              )
+            : state.excludedCellsByPosition;
+          return {
+            ...nextState,
+            appliedAlignStateKey: savedAlignState.stateKey,
+            grid: savedAlignState.saved
+              ? normalizeAlignGridState(savedAlignState.saved.grid)
+              : state.grid,
+            excludedCellsByPosition: nextExcluded,
+          };
+        }),
       setSelection: (patch) =>
         set((state) => ({
           ...state,
@@ -182,7 +225,12 @@ export const useStudioAlignStore = create<StudioAlignStore>()(
               ? null
               : state.appliedAlignStateKey,
         })),
-      setFrame: (frame) => set((state) => ({ ...state, frame })),
+      setFrame: (frame) =>
+        set((state) => ({
+          ...state,
+          frame,
+          loadedFrameSelection: frame ? state.loadedFrameSelection : null,
+        })),
       setContrast: (contrast) => set((state) => ({ ...state, contrast })),
       setGrid: (next) =>
         set((state) => ({
@@ -190,6 +238,8 @@ export const useStudioAlignStore = create<StudioAlignStore>()(
           grid: normalizeAlignGridState(resolveNextValue(state.grid, next)),
         })),
       setToolMode: (toolMode) => set((state) => ({ ...state, toolMode })),
+      setPatternZoomLocked: (patternZoomLocked) =>
+        set((state) => ({ ...state, patternZoomLocked })),
       setExcludedCellsForCurrentPosition: (cells) =>
         set((state) => ({
           ...state,
@@ -210,6 +260,7 @@ export const useStudioAlignStore = create<StudioAlignStore>()(
       partialize: (state) => ({
         workspacePath: state.workspacePath,
         source: state.source,
+        selection: state.selection,
       }),
     },
   ),

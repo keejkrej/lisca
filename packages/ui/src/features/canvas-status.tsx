@@ -1,5 +1,6 @@
 "use client";
 
+import { CircleAlert, Loader2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import type { CanvasStatusMessage, CanvasStatusTone } from "@lisca/contracts";
@@ -17,12 +18,31 @@ function messageToneClassName(tone: CanvasStatusTone | undefined) {
 
 function toastToneClassName(tone: CanvasStatusTone | undefined) {
   if (tone === "error") {
-    return "border-destructive/35 bg-destructive/10 text-destructive-foreground before:bg-destructive";
+    return "border-destructive/35 bg-destructive/10 text-destructive-foreground";
   }
   if (tone === "success") {
-    return "border-emerald-600/30 bg-emerald-500/10 text-emerald-700 before:bg-emerald-500 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-300 dark:before:bg-emerald-400";
+    return "border-emerald-600/30 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-300";
   }
-  return "border-border/80 text-popover-foreground before:bg-ring/70";
+  return "border-border/80 text-popover-foreground";
+}
+
+function shouldShowLoadingIcon(message: CanvasStatusMessage): boolean {
+  if (message.tone != null) return false;
+  return /loading|scanning|preview/i.test(message.text);
+}
+
+function shouldHideToastText(message: CanvasStatusMessage): boolean {
+  return shouldShowLoadingIcon(message);
+}
+
+function toastIcon(message: CanvasStatusMessage) {
+  if (message.tone === "error") {
+    return <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />;
+  }
+  if (shouldShowLoadingIcon(message)) {
+    return <Loader2Icon aria-hidden="true" className="mt-0.5 size-4 shrink-0 animate-spin" />;
+  }
+  return null;
 }
 
 export function CanvasStatusMessageStack({
@@ -73,18 +93,27 @@ export function CanvasToastStack({
         className,
       )}
     >
-      {messages.map((message, index) => (
-        <div
-          key={`${message.tone ?? "default"}:${message.text}:${index}`}
-          className={cn(
-            "relative max-w-full overflow-hidden rounded-lg border bg-popover/95 px-3 py-2 pl-3.5 text-sm leading-snug shadow-lg backdrop-blur-md before:absolute before:inset-y-2 before:left-0 before:w-0.5",
-            toastToneClassName(message.tone),
-          )}
-          role={message.tone === "error" ? "alert" : "status"}
-        >
-          {message.text}
-        </div>
-      ))}
+      {messages.map((message, index) => {
+        const icon = toastIcon(message);
+        const hideText = shouldHideToastText(message);
+        return (
+          <div
+            key={`${message.tone ?? "default"}:${message.text}:${index}`}
+            className={cn(
+              "flex max-w-full items-start rounded-lg text-sm leading-snug",
+              hideText
+                ? "p-1 text-popover-foreground drop-shadow-sm"
+                : "gap-2 border bg-popover/95 px-3 py-2 shadow-lg/5 backdrop-blur-md",
+              !hideText && toastToneClassName(message.tone),
+            )}
+            aria-label={hideText ? message.text : undefined}
+            role={message.tone === "error" ? "alert" : "status"}
+          >
+            {icon}
+            {hideText ? null : <span className="min-w-0">{message.text}</span>}
+          </div>
+        );
+      })}
     </div>
   );
 }

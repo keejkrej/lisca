@@ -2,29 +2,32 @@ import type {
   AlignGridCellCoord,
   AlignGridState,
   AlignerSource,
+  AutoExcludePreviewResponse,
   ContrastWindow,
   CropRoiProgress,
   FrameRequest,
   FrameResult,
+  SavedAlignState,
   WorkspaceScan,
 } from "@lisca/contracts";
-import { useShellWorkspace } from "@lisca/ui";
+import { useCanvasResourceTransaction, useShellWorkspace } from "@lisca/ui";
 import {
   alignStateFromCurrent,
   buildBboxCsv,
+  collectAlignGridEdgeCells,
   countVisibleAlignGridCells,
   enumerateVisibleAlignGridCells,
   mergeExcludedAlignGridCells,
   type AlignGridToolMode,
 } from "@lisca/utils";
-import { Effect, Exit } from "effect";
+import { useQueryClient } from "@tanstack/react-query";
+import { Effect } from "effect";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   alignerClient,
   toErrorMessage,
   useAutoExcludePreviewMutation,
-  useLoadAlignStateQuery,
   useSavedBboxPositionsQuery,
   useScanSourceQuery,
 } from "../api/aligner-queries";
@@ -56,9 +59,12 @@ export type AlignState = {
   setGrid: (next: AlignGridState | ((current: AlignGridState) => AlignGridState)) => void;
   toolMode: AlignGridToolMode;
   setToolMode: (mode: AlignGridToolMode) => void;
+  patternZoomLocked: boolean;
+  setPatternZoomLocked: (locked: boolean) => void;
   excludedCellsByPosition: ExcludedByPosition;
   setExcludedCellsForCurrentPosition: (cells: Iterable<AlignGridCellCoord>) => void;
   currentExcludedCells: AlignGridCellCoord[];
+  displayedExcludedCells: AlignGridCellCoord[];
   visibleCounts: { included: number; excluded: number };
   saving: boolean;
   cropping: boolean;
@@ -72,7 +78,18 @@ export type AlignState = {
   skipExistingCrop: () => void;
   cancelCropConfirm: () => void;
   cancelCrop: () => Promise<void>;
+  variationExcludePreview: VariationExcludePreview | null;
+  variationExcludeLoading: boolean;
+  variationExclude: () => Promise<void>;
+  setVariationExcludeThreshold: (threshold: number) => void;
+  cancelVariationExclude: () => void;
+  applyVariationExclude: () => void;
   autoExclude: () => Promise<void>;
+};
+
+export type VariationExcludePreview = {
+  preview: AutoExcludePreviewResponse;
+  threshold: number;
 };
 
 export type CropConfirmState = {
@@ -89,8 +106,8 @@ export function useAlignState(): AlignState {
     setSource,
     scan,
     scanSourceKey,
-    appliedAlignStateKey,
     selection,
+    loadedFrameSelection,
     setSelection,
     contrast,
     setContrast,
@@ -100,6 +117,8 @@ export function useAlignState(): AlignState {
     setGrid,
     toolMode,
     setToolMode,
+    patternZoomLocked,
+    setPatternZoomLocked,
     excludedCellsByPosition,
     setExcludedCellsForCurrentPosition,
     frameLoading,
@@ -114,29 +133,35 @@ export function useAlignState(): AlignState {
     setStatus,
     setWorkspacePath,
     applySourceScan,
-    applySavedAlignState,
+    applyLoadedFrame,
   } = useAlignerStore();
-  const frameLoadIdRef = useRef(0);
+  const loadCanvasResources = useCanvasResourceTransaction();
   const cropRequestIdRef = useRef<string | null>(null);
   const [cropConfirm, setCropConfirm] = useState<CropConfirmState | null>(null);
+  const [variationExcludePreview, setVariationExcludePreview] =
+    useState<VariationExcludePreview | null>(null);
   const activeSourceKey = sourceKey(source);
   const scanQuery = useScanSourceQuery(source);
-  const alignStateQuery = useLoadAlignStateQuery(workspacePath, selection, Boolean(scan));
   const savedPositionsQuery = useSavedBboxPositionsQuery(workspacePath, Boolean(workspacePath));
   const autoExcludePreview = useAutoExcludePreviewMutation();
+  const queryClient = useQueryClient();
 
   const currentExcludedCells = useMemo(
     () => excludedCellsByPosition[selection.pos] ?? emptyExcludedCells,
     [excludedCellsByPosition, selection.pos],
+  );
+  const displayedExcludedCells = useMemo(
+    () => excludedCellsByPosition[loadedFrameSelection?.pos ?? selection.pos] ?? emptyExcludedCells,
+    [excludedCellsByPosition, loadedFrameSelection?.pos, selection.pos],
   );
   const cropping = cropProgress != null && !isDoneCropStatus(cropProgress.status);
 
   const visibleCounts = useMemo(
     () =>
       frame
-        ? countVisibleAlignGridCells(frame, grid, currentExcludedCells)
+        ? countVisibleAlignGridCells(frame, grid, displayedExcludedCells)
         : { included: 0, excluded: 0 },
-    [currentExcludedCells, frame, grid],
+    [displayedExcludedCells, frame, grid],
   );
 
   useEffect(() => {
@@ -174,74 +199,65 @@ export function useAlignState(): AlignState {
   }, [scanQuery.error, setError, setFrame]);
 
   useEffect(() => {
-    if (!workspacePath || alignStateQuery.data === undefined) return;
-    const stateKey = savedAlignStateKey(workspacePath, selection.pos);
-    if (appliedAlignStateKey === stateKey) return;
-    applySavedAlignState(stateKey, selection.pos, alignStateQuery.data);
-  }, [
-    alignStateQuery.data,
-    appliedAlignStateKey,
-    applySavedAlignState,
-    selection.pos,
-    workspacePath,
-  ]);
-
-  useEffect(() => {
-    if (!alignStateQuery.error) return;
-    setError(toErrorMessage(alignStateQuery.error, "Saved align state load failed"));
-  }, [alignStateQuery.error, setError]);
-
-  useEffect(() => {
-    frameLoadIdRef.current += 1;
-    const loadId = frameLoadIdRef.current;
-
     if (!source || !scan) {
       setFrameLoading(false);
       return;
     }
+    const alignStateKey = workspacePath ? savedAlignStateKey(workspacePath, selection.pos) : null;
 
-    const abortController = new AbortController();
-    const commit = (apply: () => void) => {
-      if (frameLoadIdRef.current === loadId && !abortController.signal.aborted) apply();
-    };
-
-    setFrameLoading(true);
-    setError(null);
-    setStatus("Loading frame");
-
-    const program = loadFrameEffect(alignerClient, source, selection, contrast).pipe(
-      Effect.tap((nextFrame) =>
-        Effect.sync(() =>
-          commit(() => {
-            setFrame(nextFrame);
-            setStatus(null);
-          }),
-        ),
-      ),
-      Effect.catchAll((cause) =>
-        Effect.sync(() =>
-          commit(() => {
-            setFrame(null);
-            setError(effectErrorMessage(cause));
-          }),
-        ),
-      ),
-      Effect.ensuring(Effect.sync(() => commit(() => setFrameLoading(false)))),
-    );
-
-    void Effect.runPromiseExit(program, { signal: abortController.signal }).then((exit) => {
-      if (!Exit.isFailure(exit) || abortController.signal.aborted) return;
-      commit(() => {
+    return loadCanvasResources({
+      start: () => {
+        setFrameLoading(true);
+        setError(null);
+        setStatus("Loading frame");
+      },
+      load: (signal) => {
+        const framePromise = Effect.runPromise(
+          loadFrameEffect(alignerClient, source, selection, contrast),
+          { signal },
+        );
+        const alignStatePromise = workspacePath
+          ? queryClient.fetchQuery<SavedAlignState | null>({
+              queryKey: ["aligner", "align-state", alignStateKey],
+              queryFn: () => alignerClient.loadAlignState(workspacePath, selection.pos),
+              retry: false,
+            })
+          : Promise.resolve(null);
+        return Promise.all([framePromise, alignStatePromise]);
+      },
+      commit: ([nextFrame, savedAlignState]) => {
+        applyLoadedFrame(
+          selection,
+          nextFrame,
+          alignStateKey
+            ? { stateKey: alignStateKey, pos: selection.pos, saved: savedAlignState }
+            : null,
+        );
+      },
+      reject: (cause) => {
         setFrame(null);
-        setError(effectErrorMessage(exit.cause));
-        setFrameLoading(false);
-      });
+        setError(
+          cause instanceof Error && cause.message.startsWith("Frame request failed")
+            ? effectErrorMessage(cause)
+            : toErrorMessage(cause, "Frame or saved align state load failed"),
+        );
+      },
+      settle: () => setFrameLoading(false),
     });
-
-    return () => {
-      abortController.abort();
-    };
-  }, [contrast, scan, selection, setError, setFrame, setFrameLoading, setStatus, source]);
+  }, [
+    applyLoadedFrame,
+    contrast,
+    loadCanvasResources,
+    queryClient,
+    scan,
+    selection,
+    setError,
+    setFrame,
+    setFrameLoading,
+    setStatus,
+    source,
+    workspacePath,
+  ]);
 
   const saveCurrent = useCallback(async () => {
     if (!workspacePath || !frame) return false;
@@ -249,13 +265,13 @@ export function useAlignState(): AlignState {
     setError(null);
     try {
       const csv = buildBboxCsv(frame, grid, currentExcludedCells);
-      const result = await alignerClient.saveBbox(
-        workspacePath,
-        selection.pos,
-        csv,
-        alignStateFromCurrent(grid, currentExcludedCells),
-      );
+      const alignState = alignStateFromCurrent(grid, currentExcludedCells);
+      const result = await alignerClient.saveBbox(workspacePath, selection.pos, csv, alignState);
       if (!result.ok) throw new Error(result.error ?? "Save failed");
+      queryClient.setQueryData<SavedAlignState | null>(
+        ["aligner", "align-state", savedAlignStateKey(workspacePath, selection.pos)],
+        alignState,
+      );
       setStatus(`Saved bbox/Pos${selection.pos}.csv`);
       return true;
     } catch (cause) {
@@ -268,6 +284,7 @@ export function useAlignState(): AlignState {
     currentExcludedCells,
     frame,
     grid,
+    queryClient,
     selection.pos,
     setError,
     setSaving,
@@ -407,44 +424,92 @@ export function useAlignState(): AlignState {
     setCropProgress(await alignerClient.cancelCropRoi(requestId));
   }, [setCropProgress]);
 
-  const autoExclude = useCallback(async () => {
-    if (!source || !frame) return;
+  const previewVariationExclude = useCallback(async () => {
+    if (!source || !frame) return null;
     const cells = enumerateVisibleAlignGridCells(frame, grid);
-    if (cells.length === 0) return;
-    setStatus("Auto exclude preview");
+    if (cells.length === 0) return null;
+    return autoExcludePreview.mutateAsync({
+      source,
+      selection,
+      cells,
+    });
+  }, [autoExcludePreview, frame, grid, selection, source]);
+
+  const cellsBelowThreshold = useCallback(
+    (preview: AutoExcludePreviewResponse, threshold: number): AlignGridCellCoord[] =>
+      preview.cellScores.filter((cell) => cell.score <= threshold).map(({ i, j }) => ({ i, j })),
+    [],
+  );
+
+  const variationExclude = useCallback(async () => {
+    if (!source || !frame) return;
+    setStatus("Variation exclude preview");
     try {
-      const preview = await autoExcludePreview.mutateAsync({
-        source,
-        selection,
-        cells,
-      });
-      const autoExcluded = preview.cellScores
-        .filter((cell) => cell.score <= preview.threshold)
-        .map(({ i, j }) => ({ i, j }));
-      const apply = window.confirm(
-        [
-          `Auto exclude ${autoExcluded.length} of ${preview.eligibleCellCount} eligible cells?`,
-          `Threshold: ${preview.threshold.toFixed(3)}`,
-          `Score range: ${preview.scoreMin.toFixed(3)} - ${preview.scoreMax.toFixed(3)}`,
-        ].join("\n"),
-      );
-      if (!apply) {
-        setStatus("Auto exclude preview cancelled");
+      const preview = await previewVariationExclude();
+      if (!preview) {
+        setStatus("No visible cells for variation exclude");
         return;
       }
-      setExcludedCellsForCurrentPosition(
-        mergeExcludedAlignGridCells(currentExcludedCells, autoExcluded),
-      );
-      setStatus(`Auto excluded ${autoExcluded.length} of ${preview.eligibleCellCount} cells`);
+      setVariationExcludePreview({ preview, threshold: preview.threshold });
     } catch (cause) {
-      setError(toErrorMessage(cause, "Auto exclude preview failed"));
+      setError(toErrorMessage(cause, "Variation exclude preview failed"));
+    }
+  }, [frame, previewVariationExclude, setError, setStatus, source]);
+
+  const setVariationExcludeThreshold = useCallback((threshold: number) => {
+    setVariationExcludePreview((current) => (current ? { ...current, threshold } : current));
+  }, []);
+
+  const cancelVariationExclude = useCallback(() => {
+    setVariationExcludePreview(null);
+    setStatus("Variation exclude cancelled");
+  }, [setStatus]);
+
+  const applyVariationExclude = useCallback(() => {
+    if (!variationExcludePreview) return;
+    const variationCells = cellsBelowThreshold(
+      variationExcludePreview.preview,
+      variationExcludePreview.threshold,
+    );
+    setExcludedCellsForCurrentPosition(
+      mergeExcludedAlignGridCells(currentExcludedCells, variationCells),
+    );
+    setVariationExcludePreview(null);
+    setStatus(
+      `Variation excluded ${variationCells.length} of ${variationExcludePreview.preview.eligibleCellCount} cells`,
+    );
+  }, [
+    cellsBelowThreshold,
+    currentExcludedCells,
+    setExcludedCellsForCurrentPosition,
+    setStatus,
+    variationExcludePreview,
+  ]);
+
+  const autoExclude = useCallback(async () => {
+    if (!source || !frame) return;
+    setStatus("Auto exclude");
+    try {
+      const [edgeCells, preview] = await Promise.all([
+        Promise.resolve(collectAlignGridEdgeCells(frame, grid)),
+        previewVariationExclude(),
+      ]);
+      const variationCells = preview ? cellsBelowThreshold(preview, preview.threshold) : [];
+      const finalExcludedCells = mergeExcludedAlignGridCells(currentExcludedCells, [
+        ...edgeCells,
+        ...variationCells,
+      ]);
+      setExcludedCellsForCurrentPosition(finalExcludedCells);
+      setStatus(`Auto excluded ${finalExcludedCells.length - currentExcludedCells.length} cells`);
+    } catch (cause) {
+      setError(toErrorMessage(cause, "Auto exclude failed"));
     }
   }, [
-    autoExcludePreview,
+    cellsBelowThreshold,
     currentExcludedCells,
     frame,
     grid,
-    selection,
+    previewVariationExclude,
     setError,
     setExcludedCellsForCurrentPosition,
     setStatus,
@@ -468,9 +533,12 @@ export function useAlignState(): AlignState {
     setGrid,
     toolMode,
     setToolMode,
+    patternZoomLocked,
+    setPatternZoomLocked,
     excludedCellsByPosition,
     setExcludedCellsForCurrentPosition,
     currentExcludedCells,
+    displayedExcludedCells,
     visibleCounts,
     saving,
     cropping,
@@ -484,6 +552,12 @@ export function useAlignState(): AlignState {
     skipExistingCrop,
     cancelCropConfirm,
     cancelCrop,
+    variationExcludePreview,
+    variationExcludeLoading: autoExcludePreview.isPending,
+    variationExclude,
+    setVariationExcludeThreshold,
+    cancelVariationExclude,
+    applyVariationExclude,
     autoExclude,
   };
 }

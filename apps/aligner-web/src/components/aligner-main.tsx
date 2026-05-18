@@ -15,6 +15,7 @@ export function AlignerMain({ state }: { state: AlignState }) {
     useAlignCanvasGridHandlers({
       disabled: state.cropping,
       grid: state.grid,
+      patternZoomLocked: state.patternZoomLocked,
       setGrid: state.setGrid,
       toolMode: state.toolMode,
     });
@@ -44,7 +45,7 @@ export function AlignerMain({ state }: { state: AlignState }) {
         className="min-h-0 flex-1"
         cursor={cursorForAlignTool(state.toolMode, state.grid.enabled, previewGrid != null)}
         emptyText={emptyText}
-        excludedCells={state.currentExcludedCells}
+        excludedCells={state.displayedExcludedCells}
         frame={state.frame}
         grid={state.grid}
         loading={state.scanLoading || state.frameLoading}

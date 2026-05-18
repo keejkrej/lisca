@@ -126,7 +126,7 @@ export function AlignSelection(props: AlignSelectionProps) {
             variant="outline"
             onClick={() => onExcludeAll?.()}
           >
-            Exclude All
+            Exclude all
           </Button>
         </div>
 
@@ -139,7 +139,7 @@ export function AlignSelection(props: AlignSelectionProps) {
             variant="outline"
             onClick={() => onExcludeEdge?.()}
           >
-            Exclude Edge
+            Edge exclude
           </Button>
           <Button
             className={btnClass}
@@ -149,7 +149,7 @@ export function AlignSelection(props: AlignSelectionProps) {
             variant="outline"
             onClick={() => onAutoExclude?.()}
           >
-            Auto Exclude
+            Auto exclude
           </Button>
         </div>
       </div>

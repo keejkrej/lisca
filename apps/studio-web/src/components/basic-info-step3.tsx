@@ -63,11 +63,11 @@ export function BasicInfoStep3() {
             <table className="w-full min-w-[46rem] table-fixed border-separate border-spacing-0 text-base">
               <thead>
                 <tr className="text-left text-muted-foreground">
-                  <th className="border-b border-border px-2 py-2 font-medium">channel</th>
-                  <th className="border-b border-border px-2 py-2 font-medium">name</th>
-                  <th className="border-b border-border px-2 py-2 font-medium">positions</th>
-                  <th className="border-b border-border px-2 py-2 font-medium">mask channel</th>
-                  <th className="border-b border-border px-2 py-2 font-medium">signal channel</th>
+                  <th className="border-b border-border px-2 py-2 font-medium">Channel</th>
+                  <th className="border-b border-border px-2 py-2 font-medium">Name</th>
+                  <th className="border-b border-border px-2 py-2 font-medium">Positions</th>
+                  <th className="border-b border-border px-2 py-2 font-medium">Mask channel</th>
+                  <th className="border-b border-border px-2 py-2 font-medium">Signal channel</th>
                 </tr>
               </thead>
               <tbody>

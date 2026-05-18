@@ -1,8 +1,8 @@
-import type { AlignerSource, AutoExcludePreviewRequest, FrameRequest } from "@lisca/contracts";
+import type { AlignerSource, AutoExcludePreviewRequest } from "@lisca/contracts";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { createAlignerHttpClient } from "./aligner-client";
-import { savedAlignStateKey, sourceKey } from "../state/aligner-store";
+import { sourceKey } from "../state/aligner-store";
 
 export const alignerClient = createAlignerHttpClient("http://127.0.0.1:8765");
 
@@ -29,26 +29,6 @@ export function useScanSourceQuery(source: AlignerSource | null) {
       return alignerClient.scanSource(source);
     },
     enabled: source != null,
-    retry: false,
-  });
-}
-
-export function useLoadAlignStateQuery(
-  workspacePath: string | null,
-  selection: FrameRequest,
-  enabled: boolean,
-) {
-  return useQuery({
-    queryKey: [
-      "aligner",
-      "align-state",
-      workspacePath ? savedAlignStateKey(workspacePath, selection.pos) : null,
-    ],
-    queryFn: () => {
-      if (!workspacePath) throw new Error("No workspace selected");
-      return alignerClient.loadAlignState(workspacePath, selection.pos);
-    },
-    enabled: enabled && workspacePath != null,
     retry: false,
   });
 }

@@ -34,9 +34,9 @@ const FEATURE_IMAGE_URL: Record<BasicInfo2FeatureId, string> = {
   totalfluor: totalfluorUrl,
 };
 const TIMELAPSE_UNITS: { value: TimelapseUnit; label: string }[] = [
-  { value: "second", label: "second" },
-  { value: "minute", label: "minute" },
-  { value: "hour", label: "hour" },
+  { value: "second", label: "Second" },
+  { value: "minute", label: "Minute" },
+  { value: "hour", label: "Hour" },
 ];
 
 export function BasicInfoStep2() {

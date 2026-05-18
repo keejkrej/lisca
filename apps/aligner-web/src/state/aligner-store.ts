@@ -21,6 +21,11 @@ import { createJSONStorage, persist } from "zustand/middleware";
 export type ExcludedByPosition = Record<number, AlignGridCellCoord[]>;
 
 type StateUpdater<T> = T | ((current: T) => T);
+type LoadedSavedAlignState = {
+  stateKey: string;
+  pos: number;
+  saved: SavedAlignState | null;
+};
 
 type AlignerStoreState = {
   workspacePath: string | null;
@@ -29,10 +34,12 @@ type AlignerStoreState = {
   scanSourceKey: string | null;
   appliedAlignStateKey: string | null;
   selection: FrameRequest;
+  loadedFrameSelection: FrameRequest | null;
   frame: FrameResult | null;
   contrast: ContrastWindow | null;
   grid: AlignGridState;
   toolMode: AlignGridToolMode;
+  patternZoomLocked: boolean;
   excludedCellsByPosition: ExcludedByPosition;
   frameLoading: boolean;
   saving: boolean;
@@ -46,11 +53,17 @@ type AlignerStoreActions = {
   setSource: (source: AlignerSource | null) => void;
   applySourceScan: (sourceKey: string, scan: WorkspaceScan) => void;
   applySavedAlignState: (stateKey: string, pos: number, saved: SavedAlignState | null) => void;
+  applyLoadedFrame: (
+    selection: FrameRequest,
+    frame: FrameResult,
+    savedAlignState: LoadedSavedAlignState | null,
+  ) => void;
   setSelection: (patch: Partial<FrameRequest>) => void;
   setFrame: (frame: FrameResult | null) => void;
   setContrast: (contrast: ContrastWindow | null) => void;
   setGrid: (next: StateUpdater<AlignGridState>) => void;
   setToolMode: (mode: AlignGridToolMode) => void;
+  setPatternZoomLocked: (locked: boolean) => void;
   setExcludedCellsForCurrentPosition: (cells: Iterable<AlignGridCellCoord>) => void;
   setFrameLoading: (frameLoading: boolean) => void;
   setSaving: (saving: boolean) => void;
@@ -92,10 +105,12 @@ function createInitialState(): AlignerStoreState {
     scanSourceKey: null,
     appliedAlignStateKey: null,
     selection: defaultSelection,
+    loadedFrameSelection: null,
     frame: null,
     contrast: null,
     grid: normalizeAlignGridState(createDefaultAlignGrid()),
     toolMode: "pan",
+    patternZoomLocked: true,
     excludedCellsByPosition: {},
     frameLoading: false,
     saving: false,
@@ -123,6 +138,7 @@ export const useAlignerStore = create<AlignerStore>()(
             scan: null,
             scanSourceKey: null,
             appliedAlignStateKey: null,
+            loadedFrameSelection: null,
             frame: null,
             error: null,
             status: null,
@@ -136,6 +152,7 @@ export const useAlignerStore = create<AlignerStore>()(
           scanSourceKey: null,
           appliedAlignStateKey: null,
           selection: defaultSelection,
+          loadedFrameSelection: null,
           frame: null,
           contrast: null,
           grid: normalizeAlignGridState(createDefaultAlignGrid()),
@@ -151,6 +168,7 @@ export const useAlignerStore = create<AlignerStore>()(
             scan,
             scanSourceKey: nextSourceKey,
             appliedAlignStateKey: null,
+            loadedFrameSelection: null,
             selection: {
               pos: firstOrZero(scan.positions),
               channel: firstOrZero(scan.channels),
@@ -183,6 +201,28 @@ export const useAlignerStore = create<AlignerStore>()(
             status: saved ? `Loaded align/Pos${pos}.json` : state.status,
           };
         }),
+      applyLoadedFrame: (loadedFrameSelection, frame, savedAlignState) =>
+        set((state) => {
+          const nextState = { ...state, loadedFrameSelection, frame, status: null };
+          if (!savedAlignState || state.appliedAlignStateKey === savedAlignState.stateKey) {
+            return nextState;
+          }
+          const nextExcluded = savedAlignState.saved
+            ? setExcludedAlignGridCellsForPosition(
+                state.excludedCellsByPosition,
+                savedAlignState.pos,
+                savedAlignState.saved.excludedCells,
+              )
+            : state.excludedCellsByPosition;
+          return {
+            ...nextState,
+            appliedAlignStateKey: savedAlignState.stateKey,
+            grid: savedAlignState.saved
+              ? normalizeAlignGridState(savedAlignState.saved.grid)
+              : state.grid,
+            excludedCellsByPosition: nextExcluded,
+          };
+        }),
       setSelection: (patch) =>
         set((state) => ({
           ...state,
@@ -192,7 +232,12 @@ export const useAlignerStore = create<AlignerStore>()(
               ? null
               : state.appliedAlignStateKey,
         })),
-      setFrame: (frame) => set((state) => ({ ...state, frame })),
+      setFrame: (frame) =>
+        set((state) => ({
+          ...state,
+          frame,
+          loadedFrameSelection: frame ? state.loadedFrameSelection : null,
+        })),
       setContrast: (contrast) => set((state) => ({ ...state, contrast })),
       setGrid: (next) =>
         set((state) => ({
@@ -200,6 +245,8 @@ export const useAlignerStore = create<AlignerStore>()(
           grid: normalizeAlignGridState(resolveNextValue(state.grid, next)),
         })),
       setToolMode: (toolMode) => set((state) => ({ ...state, toolMode })),
+      setPatternZoomLocked: (patternZoomLocked) =>
+        set((state) => ({ ...state, patternZoomLocked })),
       setExcludedCellsForCurrentPosition: (cells) =>
         set((state) => ({
           ...state,

@@ -1,7 +1,11 @@
 import type { AnnotationLabel } from "@lisca/contracts";
-import { useCanvasTransientStatus, useShellWorkspace } from "@lisca/ui";
+import {
+  useCanvasResourceTransaction,
+  useCanvasTransientStatus,
+  useShellWorkspace,
+} from "@lisca/ui";
 import { clamp } from "@lisca/utils";
-import { Effect, Exit } from "effect";
+import { Effect } from "effect";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
@@ -12,11 +16,7 @@ import {
   useSaveAnnotationLabelsMutation,
   useSaveRoiFrameAnnotationMutation,
 } from "../api/annotator-queries";
-import {
-  effectErrorMessage,
-  loadRoiFrameAnnotationEffect,
-  loadRoiFrameEffect,
-} from "../effects/roi-loader";
+import { effectErrorMessage, loadRoiFrameWithAnnotationEffect } from "../effects/roi-loader";
 import {
   currentPosition,
   currentRoi,
@@ -85,8 +85,7 @@ export function useRoiPageState() {
   const annotation = useAnnotationHistory(frame);
   const resetAnnotation = annotation.reset;
   const selectionChangingRef = useRef(false);
-  const frameLoadIdRef = useRef(0);
-  const annotationLoadIdRef = useRef(0);
+  const loadCanvasResources = useCanvasResourceTransaction();
   const scanQuery = useRoiWorkspaceScanQuery(shellWorkspacePath);
   const labelsQuery = useAnnotationLabelsQuery(shellWorkspacePath);
   const saveLabelsMutation = useSaveAnnotationLabelsMutation(shellWorkspacePath);
@@ -234,128 +233,55 @@ export function useRoiPageState() {
   }, [activeSelectionKey, setContrast]);
 
   useEffect(() => {
-    frameLoadIdRef.current += 1;
-    const loadId = frameLoadIdRef.current;
-
     if (!workspacePath || workspacePath !== shellWorkspacePath || !request) {
       setFrame(null);
+      resetAnnotation(emptyValueFor(null));
       setFrameLoading(false);
-      return;
-    }
-
-    const abortController = new AbortController();
-    const commit = (apply: () => void) => {
-      if (frameLoadIdRef.current === loadId && !abortController.signal.aborted) apply();
-    };
-
-    setFrameLoading(true);
-    setFrameError(null);
-    setStatus("Loading ROI frame");
-
-    const program = loadRoiFrameEffect(annotatorApi, workspacePath, request, contrast).pipe(
-      Effect.tap((nextFrame) =>
-        Effect.sync(() =>
-          commit(() => {
-            setFrame(nextFrame);
-            setContrastState(nextFrame);
-            setStatus(`Loaded Pos${request.pos} Roi${request.roi}`);
-          }),
-        ),
-      ),
-      Effect.catchAll((cause) =>
-        Effect.sync(() =>
-          commit(() => {
-            setFrame(null);
-            setFrameError(effectErrorMessage(cause, "ROI frame request failed"));
-          }),
-        ),
-      ),
-      Effect.ensuring(Effect.sync(() => commit(() => setFrameLoading(false)))),
-    );
-
-    void Effect.runPromiseExit(program, { signal: abortController.signal }).then((exit) => {
-      if (!Exit.isFailure(exit) || abortController.signal.aborted) return;
-      commit(() => {
-        setFrame(null);
-        setFrameError(effectErrorMessage(exit.cause, "ROI frame request failed"));
-        setFrameLoading(false);
-      });
-    });
-
-    return () => {
-      abortController.abort();
-    };
-  }, [
-    activeRequestKey,
-    contrast,
-    request,
-    setContrastState,
-    setFrame,
-    setFrameError,
-    setFrameLoading,
-    setStatus,
-    workspacePath,
-    shellWorkspacePath,
-  ]);
-
-  useEffect(() => {
-    annotationLoadIdRef.current += 1;
-    const loadId = annotationLoadIdRef.current;
-
-    if (!workspacePath || workspacePath !== shellWorkspacePath || !request || !frame) {
-      resetAnnotation(emptyValueFor(frame));
       setAnnotationLoading(false);
       return;
     }
 
-    const abortController = new AbortController();
-    const commit = (apply: () => void) => {
-      if (annotationLoadIdRef.current === loadId && !abortController.signal.aborted) apply();
-    };
-
-    setAnnotationLoading(true);
-    setAnnotationError(null);
-    setStatus("Loading ROI annotation");
-
-    const program = loadRoiFrameAnnotationEffect(annotatorApi, workspacePath, request, frame).pipe(
-      Effect.tap((value) =>
-        Effect.sync(() =>
-          commit(() => {
-            resetAnnotation(value);
-            setStatus(null);
-          }),
+    return loadCanvasResources({
+      start: () => {
+        setFrameLoading(true);
+        setAnnotationLoading(true);
+        setFrameError(null);
+        setAnnotationError(null);
+        setStatus("Loading ROI frame");
+      },
+      load: (signal) =>
+        Effect.runPromise(
+          loadRoiFrameWithAnnotationEffect(annotatorApi, workspacePath, request, contrast),
+          { signal },
         ),
-      ),
-      Effect.catchAll((cause) =>
-        Effect.sync(() =>
-          commit(() => {
-            resetAnnotation(emptyValueFor(frame));
-            setAnnotationError(effectErrorMessage(cause, "ROI annotation load failed"));
-          }),
-        ),
-      ),
-      Effect.ensuring(Effect.sync(() => commit(() => setAnnotationLoading(false)))),
-    );
-
-    void Effect.runPromiseExit(program, { signal: abortController.signal }).then((exit) => {
-      if (!Exit.isFailure(exit) || abortController.signal.aborted) return;
-      commit(() => {
-        resetAnnotation(emptyValueFor(frame));
-        setAnnotationError(effectErrorMessage(exit.cause, "ROI annotation load failed"));
+      commit: ({ frame: nextFrame, annotation: nextAnnotation }) => {
+        resetAnnotation(nextAnnotation);
+        setFrame(nextFrame);
+        setContrastState(nextFrame);
+        setStatus(`Loaded Pos${request.pos} Roi${request.roi}`);
+      },
+      reject: (cause) => {
+        setFrame(null);
+        resetAnnotation(emptyValueFor(null));
+        setFrameError(effectErrorMessage(cause, "ROI frame and annotation request failed"));
+      },
+      settle: () => {
+        setFrameLoading(false);
         setAnnotationLoading(false);
-      });
+      },
     });
-
-    return () => {
-      abortController.abort();
-    };
   }, [
     activeRequestKey,
-    frame,
+    contrast,
+    loadCanvasResources,
     request,
     resetAnnotation,
     setAnnotationError,
     setAnnotationLoading,
+    setContrastState,
+    setFrame,
+    setFrameError,
+    setFrameLoading,
     setStatus,
     workspacePath,
     shellWorkspacePath,
