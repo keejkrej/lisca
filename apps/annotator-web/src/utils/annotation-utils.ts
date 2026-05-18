@@ -25,7 +25,9 @@ export function masksEqual(left: Uint8Array, right: Uint8Array) {
 }
 
 export function annotationValuesEqual(left: AnnotationValue, right: AnnotationValue) {
-  return left.classificationLabelId === right.classificationLabelId && masksEqual(left.mask, right.mask);
+  return (
+    left.classificationLabelId === right.classificationLabelId && masksEqual(left.mask, right.mask)
+  );
 }
 
 export function framePayloadToResult(payload: FramePayload): FrameResult {

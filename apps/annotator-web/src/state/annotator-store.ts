@@ -10,7 +10,7 @@ import type {
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-import type { AnnotationTool } from "./annotation-canvas";
+import type { AnnotationTool } from "../components/annotation-canvas";
 
 export type RoiSelection = {
   pos: number | null;

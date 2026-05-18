@@ -12,10 +12,7 @@ import {
   useShellWorkspace,
 } from "@lisca/ui";
 import type { AlignerHostPort, AlignerSource, HostFilePickerMode } from "@lisca/contracts";
-import { useNavigate } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
-
-import type { RouteId } from "../types";
 
 function ToolsMenuChevron(props: { className?: string }) {
   return (
@@ -96,11 +93,7 @@ function filePickerTitle(mode: HostFilePickerMode): string {
   return "File";
 }
 
-export function Navbar(props: {
-  routeId: RouteId;
-  onSourcePicked: (source: AlignerSource | null) => void;
-}) {
-  const navigate = useNavigate();
+export function Navbar(props: { onSourcePicked: (source: AlignerSource | null) => void }) {
   const workspace = useShellWorkspace();
   const pickerModeRef = useRef<HostFilePickerMode | null>(null);
   const [sourcePickerOpen, setSourcePickerOpen] = useState(false);
@@ -147,13 +140,13 @@ export function Navbar(props: {
       <ShellNavbar
         endLeading={<ToolsMenu />}
         routeItems={[{ value: "align", label: "Align" }]}
-        routeValue={props.routeId}
+        routeValue="align"
         showRouteToggle={false}
         showToolsMenu={true}
         wsDefaultPort={8765}
         onPickSource={() => setSourcePickerOpen(true)}
         onPickWorkspace={() => openFilePicker("workspace")}
-        onRouteChange={(v: string) => navigate({ to: `/${v}` })}
+        onRouteChange={() => undefined}
       />
 
       <SourcePickerModal

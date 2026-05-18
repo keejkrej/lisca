@@ -1,8 +1,12 @@
 import type { ContrastWindow, FrameResult, RoiFrameRequest } from "@lisca/contracts";
 import { Cause, Effect, Option } from "effect";
 
-import type { AnnotatorApi } from "./api";
-import { createEmptyMask, decodeMaskBase64Png, framePayloadToResult } from "./annotation-utils";
+import type { AnnotatorApi } from "../api/annotator-client";
+import {
+  createEmptyMask,
+  decodeMaskBase64Png,
+  framePayloadToResult,
+} from "../utils/annotation-utils";
 
 class FrameCache {
   private readonly frames = new Map<string, FrameResult>();

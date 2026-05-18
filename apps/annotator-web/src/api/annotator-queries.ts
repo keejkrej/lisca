@@ -1,7 +1,7 @@
 import type { AnnotationLabel, RoiFrameAnnotationPayload, RoiFrameRequest } from "@lisca/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { annotatorBaseUrl, createAnnotatorApi } from "./api";
+import { annotatorBaseUrl, createAnnotatorApi } from "./annotator-client";
 
 export const annotatorApi = createAnnotatorApi(annotatorBaseUrl());
 

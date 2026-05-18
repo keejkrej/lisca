@@ -32,17 +32,16 @@ import {
   useCanvasTransientStatus,
   useShellWorkspace,
 } from "@lisca/ui";
-import { useNavigate } from "@tanstack/react-router";
 import { Effect, Exit } from "effect";
 import { ChevronDown, Plus, Tags, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { AnnotationCanvas, type AnnotationTool } from "../annotation-canvas";
+import { AnnotationCanvas, type AnnotationTool } from "./annotation-canvas";
 import {
   effectErrorMessage,
   loadRoiFrameAnnotationEffect,
   loadRoiFrameEffect,
-} from "../annotator-effects";
+} from "../effects/roi-loader";
 import {
   annotatorApi,
   toAnnotatorErrorMessage,
@@ -50,14 +49,14 @@ import {
   useRoiWorkspaceScanQuery,
   useSaveAnnotationLabelsMutation,
   useSaveRoiFrameAnnotationMutation,
-} from "../annotator-queries";
+} from "../api/annotator-queries";
 import {
   currentPosition,
   currentRoi,
   requestKey,
   roiRequestSelectionKey,
   useAnnotatorStore,
-} from "../annotator-store";
+} from "../state/annotator-store";
 import {
   annotationValuesEqual,
   cloneAnnotationValue,
@@ -66,7 +65,7 @@ import {
   labelColorStyle,
   maskHasPixels,
   type AnnotationValue,
-} from "../annotation-utils";
+} from "../utils/annotation-utils";
 
 type AnnotationHistory = {
   history: AnnotationValue[];
@@ -427,7 +426,6 @@ function LabelCreationDialog(props: {
 }
 
 export function RoiPage() {
-  const navigate = useNavigate();
   const workspace = useShellWorkspace();
   const shellWorkspacePath = workspace.workspacePath;
   const [filePickerOpen, setFilePickerOpen] = useState(false);
@@ -818,7 +816,7 @@ export function RoiPage() {
               }}
             />
           }
-          onRouteChange={(v: string) => navigate({ to: `/${v}` })}
+          onRouteChange={() => undefined}
           onPickWorkspace={() => setFilePickerOpen(true)}
         />
       </AppShell.Header>

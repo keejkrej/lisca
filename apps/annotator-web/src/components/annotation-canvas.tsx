@@ -10,7 +10,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 
-import { fillPolygon, hexToRgb, strokeMask } from "./annotation-utils";
+import { fillPolygon, hexToRgb, strokeMask } from "../utils/annotation-utils";
 
 type FramePoint = { x: number; y: number };
 

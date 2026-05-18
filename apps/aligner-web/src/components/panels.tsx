@@ -58,7 +58,6 @@ import {
   useAlignerStore,
   type ExcludedByPosition,
 } from "../state/aligner-store";
-import type { RouteId } from "../types";
 
 const emptyExcludedCells: AlignGridCellCoord[] = [];
 
@@ -629,8 +628,7 @@ function AlignFrameNavigation({ state }: { state: AlignState }) {
   );
 }
 
-export function LeftPanel(props: { routeId: RouteId; alignState?: AlignState }) {
-  if (props.routeId !== "align" || !props.alignState) return null;
+export function LeftPanel(props: { alignState: AlignState }) {
   return (
     <div className="flex min-h-0 flex-col gap-2 p-3">
       <AlignFrameNavigation state={props.alignState} />
@@ -662,8 +660,7 @@ function DockContrastControls({ state }: { state: AlignState }) {
   );
 }
 
-export function BottomPanel(props: { routeId: RouteId; alignState?: AlignState }) {
-  if (props.routeId !== "align" || !props.alignState) return null;
+export function BottomPanel(props: { alignState: AlignState }) {
   return (
     <div className="flex h-full min-h-0 w-full gap-3 p-3">
       <AlignToolSection state={props.alignState} />
@@ -1069,13 +1066,11 @@ function CropProgressModal({ state }: { state: AlignState }) {
   );
 }
 
-export function MainPanel(props: { routeId: RouteId; alignState?: AlignState }) {
-  if (props.routeId !== "align" || !props.alignState) return null;
+export function MainPanel(props: { alignState: AlignState }) {
   return <AlignCanvasPanel state={props.alignState} />;
 }
 
-export function RightPanel(props: { routeId: RouteId; alignState?: AlignState }) {
-  if (props.routeId !== "align" || !props.alignState) return null;
+export function RightPanel(props: { alignState: AlignState }) {
   return (
     <div className="flex min-h-0 flex-col gap-2 overflow-auto p-3">
       <AlignGridPanel state={props.alignState} />
