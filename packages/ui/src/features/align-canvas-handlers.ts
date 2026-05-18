@@ -1,5 +1,6 @@
+"use client";
+
 import type { AlignGridState } from "@lisca/contracts";
-import type { AlignCanvasPointerEvent } from "@lisca/ui";
 import {
   applyAlignGridPointerGesture,
   beginAlignGridPointerGesture,
@@ -8,20 +9,33 @@ import {
 } from "@lisca/utils";
 import { useCallback, useRef, useState } from "react";
 
-import type { StudioAlignState } from "../state/use-studio-align-state";
+import type { AlignCanvasPointerEvent } from "./align-canvas";
 
-export function useAlignCanvasHandlers(state: StudioAlignState) {
-  const { grid, setGrid, toolMode } = state;
+export type UseAlignCanvasGridHandlersOptions = {
+  grid: AlignGridState;
+  setGrid: (grid: AlignGridState) => void;
+  toolMode: AlignGridToolMode;
+  disabled?: boolean;
+};
+
+export function useAlignCanvasGridHandlers({
+  disabled = false,
+  grid,
+  setGrid,
+  toolMode,
+}: UseAlignCanvasGridHandlersOptions) {
   const gestureRef = useRef<AlignGridPointerGestureSession | null>(null);
   const previewGridRef = useRef<AlignGridState | null>(null);
   const [previewGrid, setPreviewGridState] = useState<AlignGridState | null>(null);
+
   const setPreviewGrid = useCallback((next: AlignGridState | null) => {
     previewGridRef.current = next;
     setPreviewGridState(next);
   }, []);
+
   const handlePointerDown = useCallback(
     (event: AlignCanvasPointerEvent) => {
-      if (!event.viewport || !grid.enabled) return;
+      if (disabled || !event.viewport || !grid.enabled) return;
       if (event.pointerType === "mouse" && event.button !== 0) {
         event.preventDefault();
         return;
@@ -33,8 +47,9 @@ export function useAlignCanvasHandlers(state: StudioAlignState) {
       gestureRef.current = session;
       setPreviewGrid(null);
     },
-    [grid, setPreviewGrid, toolMode],
+    [disabled, grid, setPreviewGrid, toolMode],
   );
+
   const handlePointerMove = useCallback(
     (event: AlignCanvasPointerEvent) => {
       const gesture = gestureRef.current;
@@ -44,6 +59,7 @@ export function useAlignCanvasHandlers(state: StudioAlignState) {
     },
     [setPreviewGrid],
   );
+
   const handlePointerEnd = useCallback(
     (event: AlignCanvasPointerEvent) => {
       if (gestureRef.current?.pointerId !== event.pointerId) return;
@@ -55,6 +71,7 @@ export function useAlignCanvasHandlers(state: StudioAlignState) {
     },
     [setGrid, setPreviewGrid],
   );
+
   return { handlePointerDown, handlePointerMove, handlePointerEnd, previewGrid };
 }
 

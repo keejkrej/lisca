@@ -8,9 +8,12 @@ import type {
   WorkspaceScan,
 } from "@lisca/contracts";
 import {
+  alignStateFromCurrent,
+  buildBboxCsv,
   collectAlignGridEdgeCells,
   countVisibleAlignGridCells,
   enumerateVisibleAlignGridCells,
+  mergeExcludedAlignGridCells,
   type AlignGridToolMode,
 } from "@lisca/utils";
 import { Effect, Exit } from "effect";
@@ -23,8 +26,6 @@ import {
   useScanSourceQuery,
 } from "../api/studio-queries";
 import { effectErrorMessage, loadFrameEffect } from "../effects/frame-loader";
-import { alignStateFromCurrent, buildBboxCsv } from "../utils/studio-align-output";
-import { mergeStudioExcludedCells } from "../utils/studio-align-selection";
 import { lockedStudioSelection, studioMaskChannel, toStudioSource } from "../utils/studio-source";
 import {
   savedAlignStateKey,
@@ -259,7 +260,7 @@ export function useStudioAlignState(): StudioAlignState {
     try {
       const edgeCells = collectAlignGridEdgeCells(frame, grid);
       const thresholdCells = await autoExcludeCells();
-      const finalExcludedCells = mergeStudioExcludedCells(currentExcludedCells, [
+      const finalExcludedCells = mergeExcludedAlignGridCells(currentExcludedCells, [
         ...edgeCells,
         ...thresholdCells,
       ]);
@@ -304,7 +305,7 @@ export function useStudioAlignState(): StudioAlignState {
       setStatus("Auto exclude preview");
       const autoExcluded = await autoExcludeCells();
       setExcludedCellsForCurrentPosition(
-        mergeStudioExcludedCells(currentExcludedCells, autoExcluded),
+        mergeExcludedAlignGridCells(currentExcludedCells, autoExcluded),
       );
       setStatus(`Auto excluded ${autoExcluded.length} cells`);
     } catch (cause) {

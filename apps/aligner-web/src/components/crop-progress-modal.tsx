@@ -1,7 +1,7 @@
 import { Button, Spinner } from "@lisca/ui";
+import { clamp } from "@lisca/utils";
 
 import type { AlignState } from "../state/use-align-state";
-import { clamp } from "../utils/align-selection";
 import { isDoneCropStatus } from "../utils/crop-status";
 
 export function CropProgressModal({ state }: { state: AlignState }) {

@@ -1,12 +1,20 @@
-import { AlignCanvas, useCanvasTransientStatus } from "@lisca/ui";
+import {
+  AlignCanvas,
+  cursorForAlignTool,
+  useAlignCanvasGridHandlers,
+  useCanvasTransientStatus,
+} from "@lisca/ui";
 import { useMemo } from "react";
 
 import type { StudioAlignState } from "../state/use-studio-align-state";
-import { cursorForAlignTool, useAlignCanvasHandlers } from "../utils/studio-align-canvas-handlers";
 
 export function StudioAlignMain({ state }: { state: StudioAlignState }) {
   const { handlePointerDown, handlePointerMove, handlePointerEnd, previewGrid } =
-    useAlignCanvasHandlers(state);
+    useAlignCanvasGridHandlers({
+      grid: state.grid,
+      setGrid: state.setGrid,
+      toolMode: state.toolMode,
+    });
   const visibleStatus = useCanvasTransientStatus(state.status);
   const activeToastStatus = state.frameLoading
     ? "Loading frame"

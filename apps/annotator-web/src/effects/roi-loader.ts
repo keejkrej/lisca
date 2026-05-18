@@ -1,4 +1,5 @@
 import type { ContrastWindow, FrameResult, RoiFrameRequest } from "@lisca/contracts";
+import { normalizeFrameContrast } from "@lisca/utils";
 import { Cause, Effect, Option } from "effect";
 
 import type { AnnotatorApi } from "../api/annotator-client";
@@ -33,29 +34,6 @@ class FrameCache {
 }
 
 const roiFrameCache = new FrameCache(8);
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
-}
-
-function normalizeContrastWindow(window: ContrastWindow, domain: ContrastWindow): ContrastWindow {
-  return {
-    min: clamp(Math.round(window.min), domain.min, Math.max(domain.min, domain.max - 1)),
-    max: clamp(Math.round(window.max), Math.min(domain.min + 1, domain.max), domain.max),
-  };
-}
-
-function normalizeFrameContrast(frame: FrameResult): FrameResult {
-  const domain = frame.contrastDomain ?? { min: 0, max: 255 };
-  const suggested = normalizeContrastWindow(frame.suggestedContrast ?? domain, domain);
-  const applied = normalizeContrastWindow(frame.appliedContrast ?? suggested, domain);
-  return {
-    ...frame,
-    contrastDomain: domain,
-    suggestedContrast: suggested,
-    appliedContrast: applied,
-  };
-}
 
 function toError(error: unknown, fallback: string): Error {
   if (error instanceof Error) return error;

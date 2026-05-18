@@ -1,14 +1,23 @@
-import { AlignCanvas, useCanvasTransientStatus } from "@lisca/ui";
+import {
+  AlignCanvas,
+  cursorForAlignTool,
+  useAlignCanvasGridHandlers,
+  useCanvasTransientStatus,
+} from "@lisca/ui";
 import { useMemo } from "react";
 
 import type { AlignState } from "../state/use-align-state";
-import { cursorForAlignTool, useAlignCanvasHandlers } from "../utils/align-canvas-handlers";
 import { CropConfirmModal } from "./crop-confirm-modal";
 import { CropProgressModal } from "./crop-progress-modal";
 
 export function AlignerMain({ state }: { state: AlignState }) {
   const { handlePointerDown, handlePointerMove, handlePointerEnd, previewGrid } =
-    useAlignCanvasHandlers(state);
+    useAlignCanvasGridHandlers({
+      disabled: state.cropping,
+      grid: state.grid,
+      setGrid: state.setGrid,
+      toolMode: state.toolMode,
+    });
   const visibleStatus = useCanvasTransientStatus(state.status);
   const activeToastStatus = state.frameLoading
     ? "Loading frame"

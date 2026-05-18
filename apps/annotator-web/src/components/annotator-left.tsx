@@ -6,11 +6,8 @@ import {
   stepNavigationValue,
   toNavigationOptions,
 } from "@lisca/ui";
+import { clamp } from "@lisca/utils";
 import { useMemo } from "react";
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
-}
 
 export function AnnotatorLeft(props: {
   scan: RoiWorkspaceScan | null;

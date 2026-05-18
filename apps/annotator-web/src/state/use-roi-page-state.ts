@@ -1,5 +1,6 @@
 import type { AnnotationLabel } from "@lisca/contracts";
 import { useCanvasTransientStatus, useShellWorkspace } from "@lisca/ui";
+import { clamp } from "@lisca/utils";
 import { Effect, Exit } from "effect";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -26,10 +27,6 @@ import {
 import { emptyValueFor, useAnnotationHistory } from "./use-annotation-history";
 import { makeRequest } from "../utils/roi-request";
 import { encodeMaskToBase64Png, maskHasPixels } from "../utils/annotation-utils";
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
-}
 
 export function useRoiPageState() {
   const workspace = useShellWorkspace();

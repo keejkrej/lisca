@@ -1,4 +1,14 @@
-import type { AlignGridCellCoord, AlignGridShape, AlignGridState } from "@lisca/contracts";
+import type {
+  AlignGridCellCoord,
+  AlignGridShape,
+  AlignGridState,
+  ContrastWindow,
+  FramePayload,
+  FrameResult,
+  PixelArray,
+  PixelType,
+  SavedAlignState,
+} from "@lisca/contracts";
 
 export function formatWsUrl(host: string, port: number, path: string): string {
   const proto = host === "localhost" || host === "127.0.0.1" ? "ws" : "wss";
@@ -93,6 +103,71 @@ const GRID_BOUNDS_EPSILON = 1e-6;
 
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
+}
+
+export function selectedIndex(values: readonly number[] | undefined, value: number): number {
+  return Math.max(0, values?.indexOf(value) ?? 0);
+}
+
+export function createPixelArray(pixelType: PixelType, buffer: ArrayBuffer): PixelArray {
+  if (pixelType === "uint8") return new Uint8Array(buffer);
+  if (pixelType === "uint8clamped") return new Uint8ClampedArray(buffer);
+  if (pixelType === "int8") return new Int8Array(buffer);
+  if (pixelType === "uint16") return new Uint16Array(buffer);
+  if (pixelType === "int16") return new Int16Array(buffer);
+  if (pixelType === "uint32") return new Uint32Array(buffer);
+  return new Int32Array(buffer);
+}
+
+export function decodeFramePayload(payload: FramePayload): FrameResult {
+  try {
+    const binary = window.atob(payload.dataBase64);
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index += 1) {
+      bytes[index] = binary.charCodeAt(index);
+    }
+    return {
+      width: payload.width,
+      height: payload.height,
+      pixels: createPixelArray(payload.pixelType, bytes.buffer),
+      pixelType: payload.pixelType,
+      contrastDomain: payload.contrastDomain,
+      suggestedContrast: payload.suggestedContrast,
+      appliedContrast: payload.appliedContrast,
+    };
+  } catch (cause) {
+    const detail = cause instanceof Error ? cause.message : String(cause);
+    throw new Error(`Base64 decode failed: ${detail}`);
+  }
+}
+
+export function defaultContrastDomain(frame: FrameResult): ContrastWindow {
+  if (frame.pixelType === "uint8" || frame.pixelType === "uint8clamped") {
+    return { min: 0, max: 255 };
+  }
+  return { min: 0, max: 65535 };
+}
+
+export function normalizeContrastWindow(
+  window: ContrastWindow,
+  domain: ContrastWindow,
+): ContrastWindow {
+  return {
+    min: clamp(Math.round(window.min), domain.min, Math.max(domain.min, domain.max - 1)),
+    max: clamp(Math.round(window.max), Math.min(domain.min + 1, domain.max), domain.max),
+  };
+}
+
+export function normalizeFrameContrast(frame: FrameResult): FrameResult {
+  const domain = frame.contrastDomain ?? defaultContrastDomain(frame);
+  const suggested = normalizeContrastWindow(frame.suggestedContrast ?? domain, domain);
+  const applied = normalizeContrastWindow(frame.appliedContrast ?? suggested, domain);
+  return {
+    ...frame,
+    contrastDomain: domain,
+    suggestedContrast: suggested,
+    appliedContrast: applied,
+  };
 }
 
 export type RgbColor = {
@@ -224,6 +299,28 @@ function pointInPolygon(x: number, y: number, points: MaskPoint[]) {
     if (intersects) inside = !inside;
   }
   return inside;
+}
+
+export function buildBboxCsv(
+  frame: FrameResult,
+  grid: AlignGridState,
+  excludedCells: readonly AlignGridCellCoord[],
+): string {
+  const excluded = new Set(excludedCells.map((cell) => `${cell.i}:${cell.j}`));
+  const rows = enumerateVisibleAlignGridCells(frame, grid)
+    .filter((cell) => !excluded.has(`${cell.i}:${cell.j}`))
+    .map((cell, roi) => [roi, cell.x, cell.y, cell.w, cell.h, cell.i, cell.j].join(","));
+  return ["roi,x,y,w,h,i,j", ...rows].join("\n");
+}
+
+export function alignStateFromCurrent(
+  grid: AlignGridState,
+  currentExcludedCells: AlignGridCellCoord[],
+): SavedAlignState {
+  return {
+    grid,
+    excludedCells: currentExcludedCells,
+  };
 }
 
 export function radiansToDegrees(value: number): number {

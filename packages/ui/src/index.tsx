@@ -113,6 +113,12 @@ export {
 } from "./features/align-canvas";
 
 export {
+  cursorForAlignTool,
+  useAlignCanvasGridHandlers,
+  type UseAlignCanvasGridHandlersOptions,
+} from "./features/align-canvas-handlers";
+
+export {
   AnnotationCanvas,
   type AnnotationCanvasProps,
   type AnnotationTool,

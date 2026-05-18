@@ -11,49 +11,14 @@ import {
   type CropRoiResponse,
   type FramePayload,
   type FrameRequest,
-  type FrameResult,
   type HostListDirectoryResult,
-  type PixelArray,
-  type PixelType,
   type SaveBboxResponse,
   type SavedAlignState,
   type StudioHostPort,
   type StudioSaveAssayJsonResponse,
   type WorkspaceScan,
 } from "@lisca/contracts";
-import { resolveLiscaWsUrl } from "@lisca/utils";
-
-function createPixelArray(pixelType: PixelType, buffer: ArrayBuffer): PixelArray {
-  if (pixelType === "uint8") return new Uint8Array(buffer);
-  if (pixelType === "uint8clamped") return new Uint8ClampedArray(buffer);
-  if (pixelType === "int8") return new Int8Array(buffer);
-  if (pixelType === "uint16") return new Uint16Array(buffer);
-  if (pixelType === "int16") return new Int16Array(buffer);
-  if (pixelType === "uint32") return new Uint32Array(buffer);
-  return new Int32Array(buffer);
-}
-
-export function decodeFramePayload(payload: FramePayload): FrameResult {
-  try {
-    const binary = window.atob(payload.dataBase64);
-    const bytes = new Uint8Array(binary.length);
-    for (let index = 0; index < binary.length; index += 1) {
-      bytes[index] = binary.charCodeAt(index);
-    }
-    return {
-      width: payload.width,
-      height: payload.height,
-      pixels: createPixelArray(payload.pixelType, bytes.buffer),
-      pixelType: payload.pixelType,
-      contrastDomain: payload.contrastDomain,
-      suggestedContrast: payload.suggestedContrast,
-      appliedContrast: payload.appliedContrast,
-    };
-  } catch (cause) {
-    const detail = cause instanceof Error ? cause.message : String(cause);
-    throw new Error(`Base64 decode failed: ${detail}`);
-  }
-}
+import { decodeFramePayload, resolveLiscaWsUrl } from "@lisca/utils";
 
 async function readJson<T>(response: Response): Promise<T> {
   if (!response.ok) {

@@ -1,15 +1,12 @@
 "use client";
 
+import { clamp } from "@lisca/utils";
 import { type AriaRole, useEffect, useState } from "react";
 
 import { Button } from "../components/ui/button";
 import { Slider } from "../components/ui/slider";
 import { cn } from "../lib/utils";
 import { Section } from "../shell/section";
-
-function clamp(n: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, n));
-}
 
 export type ContrastWindow = {
   min: number;

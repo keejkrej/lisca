@@ -1,8 +1,9 @@
-import type { AnnotationLabel, FramePayload, FrameResult } from "@lisca/contracts";
+import type { AnnotationLabel } from "@lisca/contracts";
 import { hexToRgb, masksEqual } from "@lisca/utils";
 
 export {
   createEmptyMask,
+  decodeFramePayload as framePayloadToResult,
   fillPolygon,
   hexToRgb,
   maskHasPixels,
@@ -26,23 +27,6 @@ export function annotationValuesEqual(left: AnnotationValue, right: AnnotationVa
   return (
     left.classificationLabelId === right.classificationLabelId && masksEqual(left.mask, right.mask)
   );
-}
-
-export function framePayloadToResult(payload: FramePayload): FrameResult {
-  const binary = window.atob(payload.dataBase64);
-  const pixels = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i += 1) {
-    pixels[i] = binary.charCodeAt(i);
-  }
-  return {
-    width: payload.width,
-    height: payload.height,
-    pixels,
-    pixelType: payload.pixelType,
-    contrastDomain: payload.contrastDomain,
-    suggestedContrast: payload.suggestedContrast,
-    appliedContrast: payload.appliedContrast,
-  };
 }
 
 export function labelColorStyle(label: AnnotationLabel, selected: boolean) {

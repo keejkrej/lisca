@@ -1,5 +1,6 @@
 "use client";
 
+import { clamp } from "@lisca/utils";
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "../components/ui/button";
@@ -74,10 +75,6 @@ function AlignNumberInput(props: {
 
 function formatNumber(value: number) {
   return Number.isFinite(value) ? String(value) : "";
-}
-
-function clamp(n: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, n));
 }
 
 export type AlignGridProps<TShape extends NavigationValue = string> = {

@@ -5,7 +5,7 @@ import type {
   FrameRequest,
   FrameResult,
 } from "@lisca/contracts";
-import { clamp } from "@lisca/utils";
+import { normalizeFrameContrast } from "@lisca/utils";
 import { Cause, Effect, Option } from "effect";
 
 type AbortableAlignerDataPort = AlignerDataPort & {
@@ -42,33 +42,6 @@ class FrameCache {
 }
 
 export const alignerFrameCache = new FrameCache(8);
-
-function defaultContrastDomain(frame: FrameResult): ContrastWindow {
-  if (frame.pixelType === "uint8" || frame.pixelType === "uint8clamped") {
-    return { min: 0, max: 255 };
-  }
-  return { min: 0, max: 65535 };
-}
-
-function normalizeContrastWindow(window: ContrastWindow, domain: ContrastWindow): ContrastWindow {
-  return {
-    min: clamp(Math.round(window.min), domain.min, Math.max(domain.min, domain.max - 1)),
-    max: clamp(Math.round(window.max), Math.min(domain.min + 1, domain.max), domain.max),
-  };
-}
-
-function normalizeFrameContrast(frame: FrameResult): FrameResult {
-  const domain = frame.contrastDomain ?? defaultContrastDomain(frame);
-  const suggested = normalizeContrastWindow(frame.suggestedContrast ?? domain, domain);
-  const applied = normalizeContrastWindow(frame.appliedContrast ?? suggested, domain);
-
-  return {
-    ...frame,
-    contrastDomain: domain,
-    suggestedContrast: suggested,
-    appliedContrast: applied,
-  };
-}
 
 function toError(error: unknown, fallback: string): Error {
   if (error instanceof Error) return error;

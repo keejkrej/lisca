@@ -4,10 +4,10 @@ import {
   stepNavigationValue,
   toNavigationOptions,
 } from "@lisca/ui";
+import { clamp, selectedIndex } from "@lisca/utils";
 import { useMemo } from "react";
 
 import type { AlignState } from "../state/use-align-state";
-import { clamp, selectedIndex } from "../utils/align-selection";
 
 export function AlignFrameNavigation({ state }: { state: AlignState }) {
   const positionOptions = useMemo(
