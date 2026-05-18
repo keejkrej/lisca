@@ -44,7 +44,8 @@ export function BasicInfoStep2() {
   const assayId = useStudioStore((state) => state.assayId);
   const info2 = useStudioStore((state) => state.info2);
   const setInfo2 = useStudioStore((state) => state.setInfo2);
-  const isSelected = (id: BasicInfo2FeatureId) => info2.selectedFeatures.includes(id);
+  const isSelected = (id: BasicInfo2FeatureId) =>
+    Array.isArray(info2.selectedFeatures) && info2.selectedFeatures.includes(id);
   const isGeneExpressionAssay = assayId === ASSAY_NAME.GENE_EXPRESSION;
 
   return (

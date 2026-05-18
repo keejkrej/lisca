@@ -21,7 +21,8 @@ export function validInfo2(info2: BasicInfoStep2, assayId: AssayId | null): bool
     info2.pattern.trim().length > 0 &&
     info2.timelapseAmount != null &&
     info2.timelapseAmount > 0 &&
-    (assayId !== ASSAY_NAME.GENE_EXPRESSION || info2.selectedFeatures.length > 0)
+    (assayId !== ASSAY_NAME.GENE_EXPRESSION ||
+      (Array.isArray(info2.selectedFeatures) && info2.selectedFeatures.length > 0))
   );
 }
 

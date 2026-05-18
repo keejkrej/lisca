@@ -180,6 +180,28 @@ function parseInfo2(value: unknown): BasicInfoStep2 {
   };
 }
 
+function parsePersistedInfo2(value: unknown): BasicInfoStep2 {
+  if (!isRecord(value)) return { ...initialInfo2 };
+  try {
+    return parseInfo2(value);
+  } catch {
+    const valueRecord = value as Record<string, unknown>;
+    const rawSelectedFeatures = valueRecord.selectedFeatures;
+    const rawSelectedFeature = valueRecord.selectedFeature;
+    return {
+      pattern: optionalString(valueRecord, "pattern"),
+      timelapseAmount: null,
+      timelapseUnit: "minute",
+      selectedFeatures:
+        isBasicInfoFeatureList(rawSelectedFeatures)
+          ? [...rawSelectedFeatures]
+          : isBasicInfoFeatureId(rawSelectedFeature)
+            ? [rawSelectedFeature]
+            : [],
+    };
+  }
+}
+
 function parseSampleRows(value: unknown, label: string): BasicInfoSampleRow[] {
   if (!Array.isArray(value)) throw new Error(`Invalid assay.json: ${label} must be an array.`);
   return value.map((row, index) => {
@@ -316,11 +338,13 @@ function normalizeInfo3(info3: BasicInfoStep3): BasicInfoStep3 {
 
 function mergeStudioState(persisted: unknown, current: StudioState): StudioState {
   const persistedState = persisted as Partial<StudioState>;
+  const mergedInfo2 = persistedState.info2 ? parsePersistedInfo2(persistedState.info2) : current.info2;
   return {
     ...current,
     ...persistedState,
     assayId: enabledAssayId(persistedState.assayId ?? current.assayId),
     info1: persistedState.info1 ? normalizeInfo1(persistedState.info1) : current.info1,
+    info2: mergedInfo2,
     info3: persistedState.info3 ? normalizeInfo3(persistedState.info3) : current.info3,
   };
 }
