@@ -23,6 +23,8 @@ export type AlignToolsProps = {
   sectionDescription?: string;
   sectionClassName?: string;
   sectionContentClassName?: string;
+  /** When true, render only the toolbar (no surrounding {@link Section}). */
+  bare?: boolean;
 };
 
 export const alignToolDefinitions: {
@@ -72,19 +74,14 @@ export function AlignTools({
   sectionDescription,
   sectionClassName,
   sectionContentClassName,
+  bare = false,
 }: AlignToolsProps) {
-  return (
-    <Section
-      className={sectionClassName}
-      contentClassName={sectionContentClassName}
-      description={sectionDescription}
-      title={sectionTitle}
+  const toolbar = (
+    <div
+      aria-label="Align canvas tool"
+      className="grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-2"
+      role="toolbar"
     >
-      <div
-        aria-label="Align canvas tool"
-        className="grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-2"
-        role="toolbar"
-      >
         {alignToolDefinitions.map(({ mode: toolMode, label, Icon }) =>
           toolMode === "zoom-pattern" ? (
             <div key={toolMode} className="grid min-h-0 min-w-0 grid-cols-[1fr_2rem] gap-1">
@@ -125,7 +122,21 @@ export function AlignTools({
             />
           ),
         )}
-      </div>
+    </div>
+  );
+
+  if (bare) {
+    return <div className={sectionClassName}>{toolbar}</div>;
+  }
+
+  return (
+    <Section
+      className={sectionClassName}
+      contentClassName={sectionContentClassName}
+      description={sectionDescription}
+      title={sectionTitle}
+    >
+      {toolbar}
     </Section>
   );
 }

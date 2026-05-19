@@ -10,7 +10,6 @@ import { AssaySaveConfirmModal } from "../components/assay-save-confirm-modal";
 import { BasicInfoStep1 } from "../components/basic-info-step1";
 import { BasicInfoStep2 } from "../components/basic-info-step2";
 import { BasicInfoStep3 } from "../components/basic-info-step3";
-import { DockSection } from "../components/dock-section";
 import { StudioDock } from "../components/studio-dock";
 import { StudioLeft } from "../components/studio-left";
 import { instructionForStep, validInfo1, validInfo2, validInfo3 } from "../state/studio-routes";
@@ -126,11 +125,6 @@ function InfoPage() {
                     Next
                   </DockButton>
                 </div>
-              }
-              assay={
-                <DockSection>
-                  <div aria-hidden="true" />
-                </DockSection>
               }
             />
           </AppShell.Dock>

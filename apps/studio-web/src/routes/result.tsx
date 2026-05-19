@@ -4,7 +4,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { DockSection } from "../components/dock-section";
 import { StudioDock } from "../components/studio-dock";
 import { StudioLeft } from "../components/studio-left";
 import { useStudioAnnotateState } from "../state/use-studio-annotate-state";
@@ -273,27 +272,25 @@ function ResultPage() {
           <AppShell.Dock>
             <StudioDock
               instruction="Choose Timeseries or Results, then step with Back and Next."
-              assay={
-                <DockSection>
-                  <div className="flex w-full flex-col gap-2">
-                    <div className="grid grid-cols-2 gap-2">
-                      <DockButton
-                        active={activeSection === "timeseries"}
-                        disabled={!hasTimeseriesFiles || isPanelLoading}
-                        onClick={() => switchSection("timeseries")}
-                      >
-                        Timeseries
-                      </DockButton>
-                      <DockButton
-                        active={activeSection === "results"}
-                        disabled={!hasResultsFiles || isPanelLoading}
-                        onClick={() => switchSection("results")}
-                      >
-                        Results
-                      </DockButton>
-                    </div>
+              tool={
+                <div className="flex w-full flex-col gap-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <DockButton
+                      active={activeSection === "timeseries"}
+                      disabled={!hasTimeseriesFiles || isPanelLoading}
+                      onClick={() => switchSection("timeseries")}
+                    >
+                      Timeseries
+                    </DockButton>
+                    <DockButton
+                      active={activeSection === "results"}
+                      disabled={!hasResultsFiles || isPanelLoading}
+                      onClick={() => switchSection("results")}
+                    >
+                      Results
+                    </DockButton>
                   </div>
-                </DockSection>
+                </div>
               }
               action={
                 <div className="flex w-full flex-col gap-2">

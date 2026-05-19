@@ -1,7 +1,6 @@
 import { AppShell, DockButton } from "@lisca/ui";
 import { createFileRoute } from "@tanstack/react-router";
 
-import { DockSection } from "../components/dock-section";
 import { StudioAnnotateMain } from "../components/studio-annotate-main";
 import { StudioDock } from "../components/studio-dock";
 import { StudioLeft } from "../components/studio-left";
@@ -36,11 +35,6 @@ function AnnotatePage() {
           <AppShell.Dock>
             <StudioDock
               instruction="Review cropped ROI frames."
-              assay={
-                <DockSection>
-                  <div aria-hidden="true" />
-                </DockSection>
-              }
               action={
                 <div className="flex w-full flex-col gap-2">
                   <div className="grid grid-cols-2 gap-2">

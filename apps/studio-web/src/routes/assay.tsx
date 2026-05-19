@@ -5,7 +5,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
 import { studioClient } from "../api/studio-client";
-import { DockSection } from "../components/dock-section";
 import { StudioDock } from "../components/studio-dock";
 import { StudioLeft } from "../components/studio-left";
 import { ChooseAssay } from "../components/choose-assay";
@@ -64,12 +63,10 @@ function AssayPage() {
                   Next
                 </DockButton>
               }
-              assay={
-                <DockSection>
-                  <DockButton disabled={openingAssay} onClick={() => setAssayPickerOpen(true)}>
-                    Open assay
-                  </DockButton>
-                </DockSection>
+              tool={
+                <DockButton disabled={openingAssay} onClick={() => setAssayPickerOpen(true)}>
+                  Open assay
+                </DockButton>
               }
             />
           </AppShell.Dock>
