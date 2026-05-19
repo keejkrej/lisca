@@ -23,6 +23,8 @@ import {
   type SavedAlignState,
   type StudioHostPort,
   type StudioSaveAssayJsonResponse,
+  type StudioSaveResultPdfRequest,
+  type StudioSaveResultPdfResponse,
   type WorkspaceScan,
 } from "@lisca/contracts";
 import { decodeFramePayload, resolveLiscaHttpBaseUrl, resolveLiscaWsUrl } from "@lisca/utils";
@@ -428,6 +430,9 @@ export function createStudioHttpClient(
         saveTo,
         contents,
       });
+    },
+    saveResultPdf(request: StudioSaveResultPdfRequest) {
+      return postJson<StudioSaveResultPdfResponse>(baseUrl(), "/studio/save-result-pdf", request);
     },
   };
 }

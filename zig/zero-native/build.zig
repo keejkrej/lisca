@@ -116,8 +116,6 @@ pub fn buildApp(b: *std.Build, config: AppConfig) void {
     const dev = b.addSystemCommand(&.{ "zero-native", "dev", "--manifest", "app.zon", "--binary" });
     dev.addFileArg(exe.getEmittedBin());
     dev.step.dependOn(&exe.step);
-    dev.step.dependOn(&server_build.step);
-    dev.setEnvironmentVariable("LISCA_SERVER_BINARY", default_server_binary);
     const dev_step = b.step("dev", "Run the frontend dev server and native shell");
     dev_step.dependOn(&dev.step);
 

@@ -12,7 +12,7 @@ use std::{
 use axum::{
     extract::{
         ws::{Message, WebSocket, WebSocketUpgrade},
-        Query, State,
+        DefaultBodyLimit, Query, State,
     },
     http::StatusCode,
     response::{IntoResponse, Response},
@@ -32,6 +32,7 @@ use crate::{
         AnalysisProgress, AnalysisStartRequest, CropRoiProgress, CropRoiRequest, CropRoiStatus,
         FrameRequest, Hello, HostFsEntry, HostListDirectoryResult, ReadTextFileResponse,
         RoiFrameAnnotationPayload, RoiFrameRequest, SaveAssayJsonRequest, SaveAssayJsonResponse,
+        SaveResultPdfRequest, SaveResultPdfResponse,
         SavedAlignState,
     },
     roi,
@@ -69,6 +70,10 @@ pub async fn run_ws_server(app: AppId, port: u16) -> Result<(), std::io::Error> 
         .route("/fs/home", get(home_directory_handler))
         .route("/fs/read-text", get(read_text_file_handler))
         .route("/studio/save-assay-json", post(save_assay_json_handler))
+        .route(
+            "/studio/save-result-pdf",
+            post(save_result_pdf_handler).layer(DefaultBodyLimit::max(32 * 1024 * 1024)),
+        )
         .route("/align/scan-source", post(scan_source_handler))
         .route("/align/load-frame", post(load_frame_handler))
         .route(
@@ -272,6 +277,46 @@ async fn save_assay_json_handler(
 
     Ok(Json(SaveAssayJsonResponse {
         ok: true,
+        path: target.to_string_lossy().to_string(),
+    }))
+}
+
+async fn save_result_pdf_handler(
+    Json(payload): Json<SaveResultPdfRequest>,
+) -> Result<Json<SaveResultPdfResponse>, FsError> {
+    use base64::Engine;
+
+    let workspace_path = payload.workspace_path.trim();
+    if workspace_path.is_empty() {
+        return Err(FsError::new("workspacePath is required"));
+    }
+
+    let file_name = payload.file_name.trim();
+    if file_name.is_empty() {
+        return Err(FsError::new("fileName is required"));
+    }
+    if file_name.contains('/') || file_name.contains('\\') {
+        return Err(FsError::new(format!("invalid fileName: {file_name}")));
+    }
+    if !file_name.ends_with(".pdf") {
+        return Err(FsError::new("fileName must end with .pdf"));
+    }
+
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(payload.contents_base64.trim())
+        .map_err(|error| FsError::new(format!("failed to decode {file_name}: {error}")))?;
+
+    let results_dir = PathBuf::from(workspace_path).join("results");
+    std::fs::create_dir_all(&results_dir)
+        .map_err(|error| FsError::new(format!("failed to create results folder: {error}")))?;
+
+    let target = results_dir.join(file_name);
+    std::fs::write(&target, bytes)
+        .map_err(|error| FsError::new(format!("failed to save {file_name}: {error}")))?;
+
+    Ok(Json(SaveResultPdfResponse {
+        ok: true,
+        directory: results_dir.to_string_lossy().to_string(),
         path: target.to_string_lossy().to_string(),
     }))
 }

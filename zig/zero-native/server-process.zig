@@ -7,6 +7,8 @@ pub const ServerProcess = struct {
     pub fn start(self: *ServerProcess, io: std.Io, env_map: *std.process.Environ.Map) !void {
         if (self.child != null) return;
 
+        if (envTruthy(env_map.get("LISCA_SKIP_SERVER"))) return;
+
         if (env_map.get("LISCA_SERVER_BINARY")) |path| {
             if (path.len > 0) {
                 try self.spawn(io, path);
@@ -46,3 +48,18 @@ pub const ServerProcess = struct {
         return true;
     }
 };
+
+fn envTruthy(value: ?[]const u8) bool {
+    const trimmed = std.mem.trim(u8, value orelse "", &std.ascii.whitespace);
+    if (trimmed.len == 0) return false;
+    return std.ascii.eqlIgnoreCase(trimmed, "1") or
+        std.ascii.eqlIgnoreCase(trimmed, "true") or
+        std.ascii.eqlIgnoreCase(trimmed, "yes");
+}
+
+test "envTruthy recognizes skip-server values" {
+    try std.testing.expect(envTruthy("1"));
+    try std.testing.expect(envTruthy("true"));
+    try std.testing.expect(!envTruthy("0"));
+    try std.testing.expect(!envTruthy(null));
+}

@@ -60,6 +60,22 @@ pub struct SaveAssayJsonResponse {
     pub path: String,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SaveResultPdfRequest {
+    pub workspace_path: String,
+    pub file_name: String,
+    pub contents_base64: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SaveResultPdfResponse {
+    pub ok: bool,
+    pub directory: String,
+    pub path: String,
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct WorkspaceScan {
     pub positions: Vec<u32>,

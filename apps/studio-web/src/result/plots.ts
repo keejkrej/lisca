@@ -77,6 +77,62 @@ export type HistogramPanel = {
 
 export type ResultPanel = TimeseriesPanel | BoxPlotPanel | GenericLinePanel | HistogramPanel;
 
+/** Summary parameter plots shown on the Parameters tab, in display order. */
+export const DISPLAYED_PARAMETER_PLOTS = [
+  { id: "mrna_lifetime", label: "mRNA lifetime" },
+  { id: "auc", label: "AUC" },
+  { id: "transfection_efficiency", label: "transfection efficiency" },
+  { id: "translation_onset", label: "translation onset" },
+] as const;
+
+/** PNG filenames under workspace/results/, matching transfection plot output. */
+export const TIMESERIES_RESULT_PLOT_FILES = {
+  corrected: "traces.png",
+  correctedSharedY: "traces_shared_y.png",
+  area: "area.png",
+  areaSharedY: "area_shared_y.png",
+} as const;
+
+export type DisplayedParameterPlotId = (typeof DISPLAYED_PARAMETER_PLOTS)[number]["id"];
+
+export function displayedParameterPlotFileName(id: DisplayedParameterPlotId): string {
+  return `${id}.png`;
+}
+
+export function displayedParameterPanelId(panel: ResultPanel): DisplayedParameterPlotId | null {
+  if (panel.kind !== "boxplot") return null;
+
+  for (const entry of DISPLAYED_PARAMETER_PLOTS) {
+    if (panel.yAxisLabel === entry.label) return entry.id;
+  }
+
+  return null;
+}
+
+export function collectDisplayedParameterPanels(panelsByFile: ResultPanel[][]): ResultPanel[] {
+  const byId = new Map<DisplayedParameterPlotId, ResultPanel>();
+
+  for (const panels of panelsByFile) {
+    for (const panel of panels) {
+      const id = displayedParameterPanelId(panel);
+      if (id && !byId.has(id)) {
+        byId.set(id, panel);
+      }
+    }
+  }
+
+  return DISPLAYED_PARAMETER_PLOTS.flatMap((entry) => {
+    const panel = byId.get(entry.id);
+    return panel ? [{ ...panel, title: entry.label }] : [];
+  });
+}
+
+export function collectTimeseriesPanels(panelsByFile: ResultPanel[][]): TimeseriesPanel[] {
+  return panelsByFile.flatMap((panels) =>
+    panels.filter((panel): panel is TimeseriesPanel => panel.kind === "timeseries"),
+  );
+}
+
 export type PanelCursor = {
   fileIndex: number;
   panelIndex: number;
@@ -457,10 +513,10 @@ export function parsePanelGroups(
   return resultPanels;
 }
 
-export type ResultPlotSection = "timeseries" | "results";
+export type ResultPlotSection = "timeseries" | "parameters";
 
 export function resultPlotSection(file: StudioAnalysisCsvFile): ResultPlotSection {
-  return file.kind === "timeseries" ? "timeseries" : "results";
+  return file.kind === "timeseries" ? "timeseries" : "parameters";
 }
 
 export function filterResultFilesBySection(
@@ -473,7 +529,7 @@ export function filterResultFilesBySection(
 export function defaultResultPlotSection(files: StudioAnalysisCsvFile[]): ResultPlotSection {
   const sorted = sortResultFiles(files);
   if (sorted.some((file) => file.kind === "timeseries")) return "timeseries";
-  return "results";
+  return "parameters";
 }
 
 export function resolveCachedPanelByCursor(

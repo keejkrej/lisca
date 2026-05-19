@@ -3,19 +3,18 @@ import { AppShell, DockButton, Spinner, ViewportCard } from "@lisca/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 
+import { studioClient, toErrorMessage } from "../api/studio-client";
 import { StudioDock } from "../components/studio-dock";
 import { StudioLeft } from "../components/studio-left";
-import { useStudioAnnotateState } from "../state/use-studio-annotate-state";
-import { useStudioStore } from "../state/studio-store";
-import { ResultPanelView } from "../result/plot-charts";
+import { ResultPanelsGridView, plotOptionsForPanel } from "../result/plot-charts";
 import {
+  collectDisplayedParameterPanels,
+  collectTimeseriesPanels,
   defaultResultPlotSection,
   filterResultFilesBySection,
   intervalFromAssaySettings,
-  resolveCachedPanelByCursor,
-  resolvePanelByCursor,
-  type PanelCursor,
   type ResultPanel,
   type ResultPlotSection,
   type SlideChannelLabels,
@@ -23,10 +22,18 @@ import {
 import {
   fetchAnalysisPanels,
   getCachedAnalysisPanels,
-  prefetchAnalysisPanels,
   slideChannelLabelsCacheKey,
   useAnalysisResultsQuery,
 } from "../result/queries";
+import {
+  buildResultPdf,
+  loadAllResultPlotPanels,
+  pdfBytesToBase64,
+  RESULT_PDF_FILE_NAME,
+  waitForExportPlots,
+} from "../result/save-result-pdf";
+import { useStudioAnnotateState } from "../state/use-studio-annotate-state";
+import { useStudioStore } from "../state/studio-store";
 
 export const Route = createFileRoute("/result")({
   component: ResultPage,
@@ -55,18 +62,18 @@ function ResultPage() {
     () => slideChannelLabelsCacheKey(slideChannelLabels),
     [slideChannelLabels],
   );
-  const panelHistoryRef = useRef<PanelCursor[]>([]);
-  const latestPanelCursorRef = useRef("0:0");
-  const showPanelRef = useRef<(cursor: PanelCursor, step: number) => void>(() => undefined);
   const [activeSection, setActiveSection] = useState<ResultPlotSection>("timeseries");
-  const [isPanelLoading, setIsPanelLoading] = useState(false);
-  const [, setPanelError] = useState<string | null>(null);
-  const [activePanel, setActivePanel] = useState<ResultPanel | null>(null);
-  const [currentPanelCursor, setCurrentPanelCursor] = useState<PanelCursor | null>(null);
-  const [activePanelCursor, setActivePanelCursor] = useState<PanelCursor | null>(null);
-  const [activePanelStep, setActivePanelStep] = useState(0);
-  const [hasNextPanel, setHasNextPanel] = useState(false);
-  const [canGoBack, setCanGoBack] = useState(false);
+  const [isSectionLoading, setIsSectionLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [panelError, setPanelError] = useState<string | null>(null);
+  const [sectionPanels, setSectionPanels] = useState<ResultPanel[]>([]);
+  const [exportCapture, setExportCapture] = useState<{
+    timeseriesPanels: ResultPanel[];
+    parameterPanels: ResultPanel[];
+  } | null>(null);
+  const exportTimeseriesRef = useRef<HTMLDivElement>(null);
+  const exportParametersRef = useRef<HTMLDivElement>(null);
 
   const sectionFiles = useMemo(
     () => filterResultFilesBySection(analysisResultFiles, activeSection),
@@ -80,8 +87,8 @@ function ResultPage() {
     () => filterResultFilesBySection(analysisResultFiles, "timeseries").length > 0,
     [analysisResultFiles],
   );
-  const hasResultsFiles = useMemo(
-    () => filterResultFilesBySection(analysisResultFiles, "results").length > 0,
+  const hasParameterFiles = useMemo(
+    () => filterResultFilesBySection(analysisResultFiles, "parameters").length > 0,
     [analysisResultFiles],
   );
 
@@ -101,105 +108,82 @@ function ResultPage() {
     [activeWorkspacePath, queryClient, slideChannelLabels, slideChannelLabelsKey, timeseriesXScale],
   );
 
-  const showPanel = useCallback(
-    (cursor: PanelCursor, step: number) => {
-      if (sectionFiles.length === 0) {
-        setActivePanel(null);
-        setActivePanelCursor(null);
-        setActivePanelStep(0);
-        setHasNextPanel(false);
-        setPanelError(null);
-        return;
-      }
+  const hasAnyResultFiles = analysisResultFiles.length > 0;
 
-      const cursorKey = `${cursor.fileIndex}:${cursor.panelIndex}`;
-      latestPanelCursorRef.current = cursorKey;
-      setPanelError(null);
-
-      const getPanels = (file: StudioAnalysisCsvFile) =>
-        getCachedAnalysisPanels(
-          queryClient,
-          activeWorkspacePath,
-          file,
-          timeseriesXScale,
-          slideChannelLabelsKey,
-        );
-
-      const applyResolved = (resolved: { panel: ResultPanel; nextCursor: PanelCursor | null }) => {
-        setActivePanel(resolved.panel);
-        setCurrentPanelCursor(cursor);
-        setActivePanelCursor(resolved.nextCursor);
-        setActivePanelStep(step);
-        setHasNextPanel(Boolean(resolved.nextCursor));
-
-        if (resolved.nextCursor) {
-          const nextFile = sectionFiles[resolved.nextCursor.fileIndex];
-          if (nextFile) {
-            void prefetchAnalysisPanels(
-              queryClient,
-              activeWorkspacePath,
-              nextFile,
-              timeseriesXScale,
-              slideChannelLabels,
-              slideChannelLabelsKey,
-            );
-          }
-        }
-      };
-
-      const syncResolved = resolveCachedPanelByCursor(sectionFiles, cursor, getPanels);
-      if (syncResolved) {
-        applyResolved(syncResolved);
-        return;
-      }
-
-      setIsPanelLoading(true);
-
-      void (async () => {
-        try {
-          const resolved = await resolvePanelByCursor(sectionFiles, cursor, loadPanelsForFile);
-          if (latestPanelCursorRef.current !== cursorKey) return;
-          if (!resolved) {
-            setActivePanel(null);
-            setActivePanelCursor(null);
-            setActivePanelStep(0);
-            setHasNextPanel(false);
-            return;
-          }
-
-          applyResolved(resolved);
-        } catch (cause) {
-          if (latestPanelCursorRef.current !== cursorKey) return;
-          setActivePanel(null);
-          setPanelError(cause instanceof Error ? cause.message : "Failed to load plot data");
-        } finally {
-          if (latestPanelCursorRef.current === cursorKey) {
-            setIsPanelLoading(false);
-          }
-        }
-      })();
-    },
-    [
-      activeWorkspacePath,
-      loadPanelsForFile,
-      queryClient,
-      sectionFiles,
-      slideChannelLabels,
-      slideChannelLabelsKey,
-      timeseriesXScale,
-    ],
+  const countRenderablePanels = useCallback(
+    (panels: ResultPanel[]) => panels.filter((panel) => plotOptionsForPanel(panel) !== null).length,
+    [],
   );
 
-  showPanelRef.current = showPanel;
+  const savePdf = useCallback(async () => {
+    if (!activeWorkspacePath || isSaving || isSectionLoading || !hasAnyResultFiles) return;
+
+    setIsSaving(true);
+    setSaveMessage(null);
+    setPanelError(null);
+
+    try {
+      const { timeseriesPanels, parameterPanels } = await loadAllResultPlotPanels(
+        analysisResultFiles,
+        loadPanelsForFile,
+      );
+
+      flushSync(() => {
+        setExportCapture({ timeseriesPanels, parameterPanels });
+      });
+
+      const timeseriesPage = exportTimeseriesRef.current;
+      const parametersPage = exportParametersRef.current;
+      if (!timeseriesPage && !parametersPage) {
+        throw new Error("Nothing to export");
+      }
+
+      const pages: HTMLElement[] = [];
+      const expectedPlots =
+        countRenderablePanels(timeseriesPanels) + countRenderablePanels(parameterPanels);
+
+      if (timeseriesPage && timeseriesPanels.length > 0) {
+        await waitForExportPlots(timeseriesPage, countRenderablePanels(timeseriesPanels));
+        pages.push(timeseriesPage);
+      }
+      if (parametersPage && parameterPanels.length > 0) {
+        await waitForExportPlots(parametersPage, countRenderablePanels(parameterPanels));
+        pages.push(parametersPage);
+      }
+
+      if (pages.length === 0) {
+        throw new Error("No plots to export");
+      }
+
+      const pdfBytes = await buildResultPdf(pages);
+      const response = await studioClient.saveResultPdf({
+        workspacePath: activeWorkspacePath,
+        fileName: RESULT_PDF_FILE_NAME,
+        contentsBase64: pdfBytesToBase64(pdfBytes),
+      });
+      setSaveMessage(`Saved PDF (${expectedPlots} plot(s)) to ${response.path}`);
+    } catch (cause) {
+      setSaveMessage(toErrorMessage(cause, "Failed to save PDF"));
+    } finally {
+      setExportCapture(null);
+      setIsSaving(false);
+    }
+  }, [
+    activeWorkspacePath,
+    analysisResultFiles,
+    countRenderablePanels,
+    hasAnyResultFiles,
+    isSaving,
+    isSectionLoading,
+    loadPanelsForFile,
+  ]);
 
   const switchSection = useCallback(
     (section: ResultPlotSection) => {
-      if (section === activeSection || isPanelLoading) return;
-      panelHistoryRef.current = [];
-      setCanGoBack(false);
+      if (section === activeSection || isSectionLoading || isSaving) return;
       setActiveSection(section);
     },
-    [activeSection, isPanelLoading],
+    [activeSection, isSaving, isSectionLoading],
   );
 
   useEffect(() => {
@@ -222,42 +206,73 @@ function ResultPage() {
   }, [analysisResultFiles]);
 
   useEffect(() => {
-    panelHistoryRef.current = [];
-    setCanGoBack(false);
-    void showPanelRef.current({ fileIndex: 0, panelIndex: 0 }, 1);
+    if (sectionFiles.length === 0) {
+      setSectionPanels([]);
+      setIsSectionLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setIsSectionLoading(true);
+    setPanelError(null);
+
+    const getPanels = (file: StudioAnalysisCsvFile) =>
+      getCachedAnalysisPanels(
+        queryClient,
+        activeWorkspacePath,
+        file,
+        timeseriesXScale,
+        slideChannelLabelsKey,
+      );
+
+    const collectPanels = (panelsByFile: ResultPanel[][]) =>
+      activeSection === "timeseries"
+        ? collectTimeseriesPanels(panelsByFile)
+        : collectDisplayedParameterPanels(panelsByFile);
+
+    const syncPanels = sectionFiles.map((file) => getPanels(file));
+    if (syncPanels.every((panels) => panels !== undefined)) {
+      setSectionPanels(collectPanels(syncPanels));
+      setIsSectionLoading(false);
+      return;
+    }
+
+    void (async () => {
+      try {
+        const panelsByFile = await Promise.all(sectionFiles.map((file) => loadPanelsForFile(file)));
+        if (cancelled) return;
+        setSectionPanels(collectPanels(panelsByFile));
+      } catch (cause) {
+        if (cancelled) return;
+        setSectionPanels([]);
+        setPanelError(cause instanceof Error ? cause.message : "Failed to load plot data");
+      } finally {
+        if (!cancelled) {
+          setIsSectionLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [
     activeSection,
     activeWorkspacePath,
+    loadPanelsForFile,
+    queryClient,
     sectionFilePathsKey,
+    sectionFiles,
     slideChannelLabelsKey,
     timeseriesXScale,
   ]);
 
-  const goNextPanel = () => {
-    if (!activePanelCursor || !hasNextPanel || isPanelLoading || !currentPanelCursor) return;
-    panelHistoryRef.current.push(currentPanelCursor);
-    setCanGoBack(true);
-    void showPanel(activePanelCursor, activePanelStep + 1);
-  };
-
-  const goBackPanel = () => {
-    if (isPanelLoading || !canGoBack) return;
-    const previous = panelHistoryRef.current.pop();
-    if (!previous) return;
-    setCanGoBack(panelHistoryRef.current.length > 0);
-    void showPanel(previous, activePanelStep - 1);
-  };
-
-  const plotContent = activePanel ? (
-    <div className="relative flex h-full min-h-0 flex-1 flex-col">
-      {isPanelLoading ? (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/70">
-          <Spinner className="size-4" />
-        </div>
-      ) : null}
-      <ResultPanelView panel={activePanel} />
-    </div>
-  ) : null;
+  const defaultInstruction =
+    activeSection === "timeseries"
+      ? "All timeseries plots are shown below."
+      : "Parameter plots: mRNA lifetime, AUC, transfection efficiency, and translation onset.";
+  const dockInstruction = saveMessage ?? panelError ?? defaultInstruction;
+  const isBusy = isSectionLoading || isSaving;
 
   return (
     <AppShell>
@@ -267,47 +282,76 @@ function ResultPage() {
         </AppShell.Left>
         <AppShell.MainColumn>
           <AppShell.Main>
-            <ViewportCard className="relative">{plotContent}</ViewportCard>
+            <ViewportCard className="relative">
+              <div className="relative flex h-full min-h-0 flex-1 flex-col">
+                {isSectionLoading ? (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/70">
+                    <Spinner className="size-4" />
+                  </div>
+                ) : null}
+                <ResultPanelsGridView panels={sectionPanels} section={activeSection} />
+                {exportCapture ? (
+                  <div
+                    aria-hidden
+                    className="pointer-events-none fixed top-0 -left-[10000px] w-[1200px] bg-white"
+                  >
+                    {exportCapture.timeseriesPanels.length > 0 ? (
+                      <div ref={exportTimeseriesRef}>
+                        <ResultPanelsGridView
+                          exportMode
+                          pageTitle="Timeseries"
+                          panels={exportCapture.timeseriesPanels}
+                          section="timeseries"
+                        />
+                      </div>
+                    ) : null}
+                    {exportCapture.parameterPanels.length > 0 ? (
+                      <div ref={exportParametersRef}>
+                        <ResultPanelsGridView
+                          exportMode
+                          pageTitle="Parameters"
+                          panels={exportCapture.parameterPanels}
+                          section="parameters"
+                        />
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            </ViewportCard>
           </AppShell.Main>
           <AppShell.Dock>
             <StudioDock
-              instruction="Choose Timeseries or Results, then step with Back and Next."
+              instruction={dockInstruction}
               tool={
                 <div className="flex w-full flex-col gap-2">
                   <div className="grid grid-cols-2 gap-2">
                     <DockButton
                       active={activeSection === "timeseries"}
-                      disabled={!hasTimeseriesFiles || isPanelLoading}
+                      disabled={!hasTimeseriesFiles || isBusy}
                       onClick={() => switchSection("timeseries")}
                     >
                       Timeseries
                     </DockButton>
                     <DockButton
-                      active={activeSection === "results"}
-                      disabled={!hasResultsFiles || isPanelLoading}
-                      onClick={() => switchSection("results")}
+                      active={activeSection === "parameters"}
+                      disabled={!hasParameterFiles || isBusy}
+                      onClick={() => switchSection("parameters")}
                     >
-                      Results
+                      Parameters
                     </DockButton>
                   </div>
                 </div>
               }
               action={
-                <div className="flex w-full flex-col gap-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    <DockButton disabled={!canGoBack || isPanelLoading} onClick={goBackPanel}>
-                      Back
-                    </DockButton>
-                    <DockButton
-                      disabled={!hasNextPanel || isPanelLoading}
-                      onClick={() => {
-                        goNextPanel();
-                      }}
-                    >
-                      Next
-                    </DockButton>
-                  </div>
-                </div>
+                <DockButton
+                  disabled={!activeWorkspacePath || !hasAnyResultFiles || isBusy}
+                  onClick={() => {
+                    void savePdf();
+                  }}
+                >
+                  {isSaving ? "Saving..." : "Save"}
+                </DockButton>
               }
             />
           </AppShell.Dock>

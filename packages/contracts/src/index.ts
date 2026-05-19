@@ -77,9 +77,24 @@ export type StudioSaveAssayJsonResponse = {
   path: string;
 };
 
+export type StudioSaveResultPdfRequest = {
+  workspacePath: string;
+  fileName: string;
+  contentsBase64: string;
+};
+
+export type StudioSaveResultPdfResponse = {
+  ok: true;
+  directory: string;
+  path: string;
+};
+
 export type StudioHostPort = AlignerHostPort & {
   readTextFile(path: string, signal?: AbortSignal): Promise<string>;
   saveAssayJson(saveTo: string, contents: string): Promise<StudioSaveAssayJsonResponse>;
+  saveResultPdf(
+    request: StudioSaveResultPdfRequest,
+  ): Promise<StudioSaveResultPdfResponse>;
 };
 
 export const ASSAY_NAME = {
