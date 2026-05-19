@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider, createHashHistory, createRouter } from "@tanstack/react-router";
-import { ShellThemeProvider, ShellWorkspaceProvider } from "@lisca/ui";
+import { ShellServerProvider, ShellThemeProvider, ShellWorkspaceProvider } from "@lisca/ui";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
@@ -24,9 +24,11 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <ShellThemeProvider>
-        <ShellWorkspaceProvider>
-          <RouterProvider router={router} />
-        </ShellWorkspaceProvider>
+        <ShellServerProvider defaultPort={8767}>
+          <ShellWorkspaceProvider>
+            <RouterProvider router={router} />
+          </ShellWorkspaceProvider>
+        </ShellServerProvider>
       </ShellThemeProvider>
     </QueryClientProvider>
   </StrictMode>,

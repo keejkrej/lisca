@@ -15,7 +15,7 @@ import {
   type SavedAlignState,
   type WorkspaceScan,
 } from "@lisca/contracts";
-import { decodeFramePayload, resolveLiscaWsUrl } from "@lisca/utils";
+import { decodeFramePayload, resolveLiscaHttpBaseUrl, resolveLiscaWsUrl } from "@lisca/utils";
 
 async function readJson<T>(response: Response): Promise<T> {
   if (!response.ok) {
@@ -52,18 +52,25 @@ function getJson<T>(
   return fetch(url, { signal }).then(readJson<T>);
 }
 
-function resolveAlignerWsUrl(baseUrl: string): string {
-  const base = new URL(baseUrl);
-  const defaultPort = Number(base.port || (base.protocol === "https:" ? 443 : 80));
+function alignerUrlOptions() {
   const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
-  return resolveLiscaWsUrl({
+  return {
     searchParams: params,
+    viteHttpUrl: import.meta.env.VITE_HTTP_URL,
     viteWsUrl: import.meta.env.VITE_WS_URL,
-    viteWsHost: import.meta.env.VITE_WS_HOST ?? base.hostname,
-    viteWsPort: import.meta.env.VITE_WS_PORT ?? base.port,
-    defaultPort,
+    viteWsHost: import.meta.env.VITE_WS_HOST,
+    viteWsPort: import.meta.env.VITE_WS_PORT,
+    defaultPort: 8765,
     wsPath: WS_PATH,
-  });
+  };
+}
+
+export function resolveAlignerHttpBaseUrl(): string {
+  return resolveLiscaHttpBaseUrl(alignerUrlOptions());
+}
+
+function resolveAlignerWsUrl(): string {
+  return resolveLiscaWsUrl(alignerUrlOptions());
 }
 
 function isCropRoiProgressMessage(value: unknown): value is CropRoiProgressMessage {
@@ -108,10 +115,13 @@ function pollCropRoiProgress(
   };
 }
 
-export function createAlignerHttpClient(baseUrl: string): AlignerDataPort {
+export function createAlignerHttpClient(
+  getBaseUrl: () => string = resolveAlignerHttpBaseUrl,
+): AlignerDataPort {
+  const baseUrl = getBaseUrl;
   return {
     scanSource(source: AlignerSource) {
-      return postJson<WorkspaceScan>(baseUrl, "/align/scan-source", { source });
+      return postJson<WorkspaceScan>(baseUrl(), "/align/scan-source", { source });
     },
     async loadFrame(
       source: AlignerSource,
@@ -120,7 +130,7 @@ export function createAlignerHttpClient(baseUrl: string): AlignerDataPort {
       signal?: AbortSignal,
     ) {
       const payload = await postJson<FramePayload>(
-        baseUrl,
+        baseUrl(),
         "/align/load-frame",
         {
           source,
@@ -132,13 +142,13 @@ export function createAlignerHttpClient(baseUrl: string): AlignerDataPort {
       return decodeFramePayload(payload);
     },
     loadAlignState(workspacePath: string, pos: number) {
-      return getJson<SavedAlignState | null>(baseUrl, "/align/align-state", {
+      return getJson<SavedAlignState | null>(baseUrl(), "/align/align-state", {
         workspacePath,
         pos,
       });
     },
     saveBbox(workspacePath: string, pos: number, csv: string, alignState: SavedAlignState) {
-      return postJson<SaveBboxResponse>(baseUrl, "/align/save-bbox", {
+      return postJson<SaveBboxResponse>(baseUrl(), "/align/save-bbox", {
         workspacePath,
         pos,
         csv,
@@ -146,16 +156,16 @@ export function createAlignerHttpClient(baseUrl: string): AlignerDataPort {
       });
     },
     autoExcludePreview(request: AutoExcludePreviewRequest) {
-      return postJson<AutoExcludePreviewResponse>(baseUrl, "/align/auto-exclude-preview", request);
+      return postJson<AutoExcludePreviewResponse>(baseUrl(), "/align/auto-exclude-preview", request);
     },
     listSavedBboxPositions(workspacePath: string) {
-      return getJson<number[]>(baseUrl, "/align/saved-bbox-positions", { workspacePath });
+      return getJson<number[]>(baseUrl(), "/align/saved-bbox-positions", { workspacePath });
     },
     cropRoi(request: CropRoiRequest) {
-      return postJson<CropRoiResponse>(baseUrl, "/align/crop-roi", request);
+      return postJson<CropRoiResponse>(baseUrl(), "/align/crop-roi", request);
     },
     cancelCropRoi(requestId: string) {
-      return postJson<CropRoiProgress>(baseUrl, "/align/cancel-crop-roi", { requestId });
+      return postJson<CropRoiProgress>(baseUrl(), "/align/cancel-crop-roi", { requestId });
     },
     onCropRoiProgress(requestId: string, onProgress: (progress: CropRoiProgress) => void) {
       let closed = false;
@@ -164,19 +174,19 @@ export function createAlignerHttpClient(baseUrl: string): AlignerDataPort {
       let stopFallback: (() => void) | null = null;
       const fallbackTimer = window.setTimeout(() => {
         if (closed) return;
-        stopFallback = pollCropRoiProgress(baseUrl, requestId, onProgress);
+        stopFallback = pollCropRoiProgress(baseUrl(), requestId, onProgress);
       }, 1500);
 
       try {
-        ws = new WebSocket(resolveAlignerWsUrl(baseUrl));
+        ws = new WebSocket(resolveAlignerWsUrl());
       } catch {
         window.clearTimeout(fallbackTimer);
-        stopFallback = pollCropRoiProgress(baseUrl, requestId, onProgress);
+        stopFallback = pollCropRoiProgress(baseUrl(), requestId, onProgress);
       }
 
       ws?.addEventListener("open", () => {
         window.clearTimeout(fallbackTimer);
-        void getJson<CropRoiProgress>(baseUrl, "/align/crop-roi-progress", { requestId })
+        void getJson<CropRoiProgress>(baseUrl(), "/align/crop-roi-progress", { requestId })
           .then((progress) => {
             if (closed) return;
             onProgress(progress);
@@ -185,7 +195,7 @@ export function createAlignerHttpClient(baseUrl: string): AlignerDataPort {
           })
           .catch(() => {
             if (closed || stopFallback) return;
-            stopFallback = pollCropRoiProgress(baseUrl, requestId, onProgress);
+            stopFallback = pollCropRoiProgress(baseUrl(), requestId, onProgress);
           });
       });
 
@@ -209,13 +219,13 @@ export function createAlignerHttpClient(baseUrl: string): AlignerDataPort {
       ws?.addEventListener("error", () => {
         if (closed || stopFallback) return;
         window.clearTimeout(fallbackTimer);
-        stopFallback = pollCropRoiProgress(baseUrl, requestId, onProgress);
+        stopFallback = pollCropRoiProgress(baseUrl(), requestId, onProgress);
       });
 
       ws?.addEventListener("close", () => {
         if (closed || terminal || stopFallback) return;
         window.clearTimeout(fallbackTimer);
-        stopFallback = pollCropRoiProgress(baseUrl, requestId, onProgress);
+        stopFallback = pollCropRoiProgress(baseUrl(), requestId, onProgress);
       });
 
       return () => {
@@ -226,7 +236,7 @@ export function createAlignerHttpClient(baseUrl: string): AlignerDataPort {
       };
     },
     async roiPosExists(workspacePath: string, pos: number) {
-      const result = await getJson<{ exists: boolean }>(baseUrl, "/align/roi-pos-exists", {
+      const result = await getJson<{ exists: boolean }>(baseUrl(), "/align/roi-pos-exists", {
         workspacePath,
         pos,
       });

@@ -14,20 +14,7 @@ export type ShellWsProbe = {
 const MAX_ATTEMPTS = 40;
 const RETRY_MS = 250;
 
-export function useShellWsProbe(options: { defaultPort: number }): ShellWsProbe {
-  const wsUrl = useMemo(() => {
-    const params =
-      typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
-    return resolveLiscaWsUrl({
-      searchParams: params,
-      viteWsUrl: import.meta.env.VITE_WS_URL,
-      viteWsHost: import.meta.env.VITE_WS_HOST,
-      viteWsPort: import.meta.env.VITE_WS_PORT,
-      defaultPort: options.defaultPort,
-      wsPath: WS_PATH,
-    });
-  }, [options.defaultPort]);
-
+export function useWsProbeForUrl(wsUrl: string): Pick<ShellWsProbe, "state" | "log"> {
   const [state, setState] = useState<ConnectionState>("idle");
   const [log, setLog] = useState<string[]>([]);
 
@@ -102,5 +89,24 @@ export function useShellWsProbe(options: { defaultPort: number }): ShellWsProbe 
     };
   }, [wsUrl]);
 
-  return { wsUrl, state, log };
+  return { state, log };
+}
+
+/** @deprecated Prefer `useShellServer` from `ShellServerProvider`. */
+export function useShellWsProbe(options: { defaultPort: number }): ShellWsProbe {
+  const wsUrl = useMemo(() => {
+    const params =
+      typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+    return resolveLiscaWsUrl({
+      searchParams: params,
+      viteWsUrl: import.meta.env.VITE_WS_URL,
+      viteWsHost: import.meta.env.VITE_WS_HOST,
+      viteWsPort: import.meta.env.VITE_WS_PORT,
+      defaultPort: options.defaultPort,
+      wsPath: WS_PATH,
+    });
+  }, [options.defaultPort]);
+
+  const probe = useWsProbeForUrl(wsUrl);
+  return { wsUrl, ...probe };
 }

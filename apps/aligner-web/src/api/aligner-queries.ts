@@ -4,7 +4,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { createAlignerHttpClient } from "./aligner-client";
 import { sourceKey } from "../state/aligner-store";
 
-export const alignerClient = createAlignerHttpClient("http://127.0.0.1:8765");
+export const alignerClient = createAlignerHttpClient();
 
 export function toErrorMessage(cause: unknown, fallback: string): string {
   const message = cause instanceof Error ? cause.message : typeof cause === "string" ? cause : "";

@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { annotatorBaseUrl, createAnnotatorApi } from "./annotator-client";
 
-export const annotatorApi = createAnnotatorApi(annotatorBaseUrl());
+export const annotatorApi = createAnnotatorApi(annotatorBaseUrl);
 
 export function annotationLabelsQueryKey(workspacePath: string | null) {
   return ["annotator", "annotation-labels", workspacePath] as const;
@@ -22,7 +22,7 @@ export function toAnnotatorErrorMessage(cause: unknown, fallback: string): strin
     message.includes("NetworkError") ||
     message.includes("fetch failed")
   ) {
-    return `${fallback}: server unreachable at 127.0.0.1:8766`;
+    return `${fallback}: server unreachable at ${annotatorBaseUrl()}`;
   }
 
   return message ? `${fallback}: ${message}` : fallback;

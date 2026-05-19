@@ -8,7 +8,6 @@ export function AnnotatorHeader(props: {
 }) {
   return (
     <ShellNavbar
-      wsDefaultPort={8766}
       routeItems={[{ value: "roi", label: "ROI" }]}
       routeValue="roi"
       showRouteToggle={false}

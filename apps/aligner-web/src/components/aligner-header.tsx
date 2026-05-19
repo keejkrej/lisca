@@ -143,7 +143,6 @@ export function AlignerHeader(props: { onSourcePicked: (source: AlignerSource | 
         routeValue="align"
         showRouteToggle={false}
         showToolsMenu={true}
-        wsDefaultPort={8765}
         onPickSource={() => setSourcePickerOpen(true)}
         onPickWorkspace={() => openFilePicker("workspace")}
         onRouteChange={() => undefined}

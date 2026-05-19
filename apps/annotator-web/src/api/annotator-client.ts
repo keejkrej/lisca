@@ -9,6 +9,7 @@ import type {
   RoiFrameRequest,
   RoiWorkspaceScan,
 } from "@lisca/contracts";
+import { resolveLiscaHttpBaseUrl } from "@lisca/utils";
 
 async function postJson<T>(
   baseUrl: string,
@@ -28,27 +29,28 @@ async function postJson<T>(
   return (await response.json()) as T;
 }
 
-export function createAnnotatorApi(baseUrl: string) {
+export function createAnnotatorApi(getBaseUrl: () => string = annotatorBaseUrl) {
+  const baseUrl = getBaseUrl;
   return {
     async listDirectory(
       path: string | null,
       signal?: AbortSignal,
     ): Promise<HostListDirectoryResult> {
-      const url = new URL(`${baseUrl}/fs/list`);
+      const url = new URL(`${baseUrl()}/fs/list`);
       if (path) url.searchParams.set("path", path);
       const response = await fetch(url, { signal });
       if (!response.ok) throw new Error(await response.text());
       return (await response.json()) as HostListDirectoryResult;
     },
     async userHomeDirectory(signal?: AbortSignal): Promise<string> {
-      const response = await fetch(`${baseUrl}/fs/home`, { signal });
+      const response = await fetch(`${baseUrl()}/fs/home`, { signal });
       if (!response.ok) throw new Error(await response.text());
       const result = (await response.json()) as { path: string };
       return result.path;
     },
     scanRoiWorkspace(workspacePath: string, signal?: AbortSignal) {
       return postJson<RoiWorkspaceScan>(
-        baseUrl,
+        baseUrl(),
         "/annotate/scan-roi-workspace",
         {
           workspacePath,
@@ -58,7 +60,7 @@ export function createAnnotatorApi(baseUrl: string) {
     },
     loadLabels(workspacePath: string, signal?: AbortSignal) {
       return postJson<AnnotationLabel[]>(
-        baseUrl,
+        baseUrl(),
         "/annotate/load-labels",
         { workspacePath },
         signal,
@@ -66,7 +68,7 @@ export function createAnnotatorApi(baseUrl: string) {
     },
     saveLabels(workspacePath: string, labels: AnnotationLabel[], signal?: AbortSignal) {
       return postJson<AnnotationLabel[]>(
-        baseUrl,
+        baseUrl(),
         "/annotate/save-labels",
         {
           workspacePath,
@@ -82,7 +84,7 @@ export function createAnnotatorApi(baseUrl: string) {
       signal?: AbortSignal,
     ) {
       return postJson<FramePayload>(
-        baseUrl,
+        baseUrl(),
         "/annotate/load-roi-frame",
         {
           workspacePath,
@@ -94,7 +96,7 @@ export function createAnnotatorApi(baseUrl: string) {
     },
     loadRoiFrameAnnotation(workspacePath: string, request: RoiFrameRequest, signal?: AbortSignal) {
       return postJson<LoadedRoiFrameAnnotation>(
-        baseUrl,
+        baseUrl(),
         "/annotate/load-roi-frame-annotation",
         {
           workspacePath,
@@ -110,7 +112,7 @@ export function createAnnotatorApi(baseUrl: string) {
       signal?: AbortSignal,
     ) {
       return postJson<RoiFrameAnnotation>(
-        baseUrl,
+        baseUrl(),
         "/annotate/save-roi-frame-annotation",
         {
           workspacePath,
@@ -125,7 +127,13 @@ export function createAnnotatorApi(baseUrl: string) {
 
 export type AnnotatorApi = ReturnType<typeof createAnnotatorApi>;
 
-export function annotatorBaseUrl() {
-  const port = import.meta.env.VITE_HTTP_PORT ?? import.meta.env.VITE_WS_PORT ?? "8766";
-  return `http://127.0.0.1:${port}`;
+export function annotatorBaseUrl(): string {
+  const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+  return resolveLiscaHttpBaseUrl({
+    searchParams: params,
+    viteHttpUrl: import.meta.env.VITE_HTTP_URL,
+    viteWsHost: import.meta.env.VITE_WS_HOST,
+    viteWsPort: import.meta.env.VITE_HTTP_PORT ?? import.meta.env.VITE_WS_PORT,
+    defaultPort: 8766,
+  });
 }

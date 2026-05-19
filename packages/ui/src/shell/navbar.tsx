@@ -5,7 +5,7 @@ import { ShellThemeToggle } from "./shell-theme";
 import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group";
 import { ConnectionStatus } from "./connection-status";
 import { PathButton } from "./path-button";
-import { useShellWsProbe } from "../state/use-shell-ws-probe";
+import { useShellServer } from "../state/shell-server";
 import { useShellWorkspace } from "../state/workspace";
 
 export type ShellNavbarRouteItem = {
@@ -14,8 +14,6 @@ export type ShellNavbarRouteItem = {
 };
 
 export type ShellNavbarProps = {
-  /** Product WebSocket port when env vars are unset (see AGENTS.md port table). */
-  wsDefaultPort: number;
   routeItems: readonly ShellNavbarRouteItem[];
   routeValue: string;
   onRouteChange: (value: string) => void;
@@ -37,10 +35,10 @@ export type ShellNavbarProps = {
 
 /**
  * Shared shell chrome: route toggle, workspace/source paths, WS status, theme.
- * Requires `ShellWorkspaceProvider` above in the tree.
+ * Requires `ShellServerProvider` and `ShellWorkspaceProvider` above in the tree.
  */
 export function ShellNavbar(props: ShellNavbarProps) {
-  const ws = useShellWsProbe({ defaultPort: props.wsDefaultPort });
+  const server = useShellServer();
   const workspace = useShellWorkspace();
 
   const handleSource = props.onPickSource ?? (() => workspace.pickSource());
@@ -94,7 +92,11 @@ export function ShellNavbar(props: ShellNavbarProps) {
         )}
 
         <div className="flex min-w-0 items-center justify-end justify-self-end gap-1 sm:gap-2">
-          <ConnectionStatus wsUrl={ws.wsUrl} state={ws.state} />
+          <ConnectionStatus
+            state={server.state}
+            wsUrl={server.wsUrl}
+            onOpenSettings={server.openSettings}
+          />
           {props.showToolsMenu !== false && props.endLeading}
           <ShellThemeToggle />
         </div>

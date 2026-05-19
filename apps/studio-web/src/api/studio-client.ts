@@ -25,7 +25,7 @@ import {
   type StudioSaveAssayJsonResponse,
   type WorkspaceScan,
 } from "@lisca/contracts";
-import { decodeFramePayload, resolveLiscaWsUrl } from "@lisca/utils";
+import { decodeFramePayload, resolveLiscaHttpBaseUrl, resolveLiscaWsUrl } from "@lisca/utils";
 
 type StudioHttpClient = AlignerDataPort &
   AnalysisDataPort &
@@ -76,18 +76,25 @@ function getJson<T>(
   return fetch(url, { signal }).then(readJson<T>);
 }
 
-function resolveStudioWsUrl(baseUrl: string): string {
-  const base = new URL(baseUrl);
-  const defaultPort = Number(base.port || (base.protocol === "https:" ? 443 : 80));
+function studioUrlOptions() {
   const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
-  return resolveLiscaWsUrl({
+  return {
     searchParams: params,
+    viteHttpUrl: import.meta.env.VITE_HTTP_URL,
     viteWsUrl: import.meta.env.VITE_WS_URL,
-    viteWsHost: import.meta.env.VITE_WS_HOST ?? base.hostname,
-    viteWsPort: import.meta.env.VITE_WS_PORT ?? base.port,
-    defaultPort,
+    viteWsHost: import.meta.env.VITE_WS_HOST,
+    viteWsPort: import.meta.env.VITE_WS_PORT,
+    defaultPort: 8767,
     wsPath: WS_PATH,
-  });
+  };
+}
+
+export function resolveStudioHttpBaseUrl(): string {
+  return resolveLiscaHttpBaseUrl(studioUrlOptions());
+}
+
+function resolveStudioWsUrl(): string {
+  return resolveLiscaWsUrl(studioUrlOptions());
 }
 
 function isCropRoiProgressMessage(value: unknown): value is CropRoiProgressMessage {
@@ -171,10 +178,11 @@ function pollAnalysisProgress(
   };
 }
 
-export function createStudioHttpClient(baseUrl: string): StudioHttpClient {
+export function createStudioHttpClient(getBaseUrl: () => string = resolveStudioHttpBaseUrl): StudioHttpClient {
+  const baseUrl = getBaseUrl;
   const aligner: AlignerDataPort & AnalysisDataPort = {
     scanSource(source: AlignerSource) {
-      return postJson<WorkspaceScan>(baseUrl, "/align/scan-source", { source });
+      return postJson<WorkspaceScan>(baseUrl(), "/align/scan-source", { source });
     },
     async loadFrame(
       source: AlignerSource,
@@ -183,7 +191,7 @@ export function createStudioHttpClient(baseUrl: string): StudioHttpClient {
       signal?: AbortSignal,
     ) {
       const payload = await postJson<FramePayload>(
-        baseUrl,
+        baseUrl(),
         "/align/load-frame",
         { source, request, contrast: contrast ?? null },
         signal,
@@ -191,13 +199,13 @@ export function createStudioHttpClient(baseUrl: string): StudioHttpClient {
       return decodeFramePayload(payload);
     },
     loadAlignState(workspacePath: string, pos: number) {
-      return getJson<SavedAlignState | null>(baseUrl, "/align/align-state", {
+      return getJson<SavedAlignState | null>(baseUrl(), "/align/align-state", {
         workspacePath,
         pos,
       });
     },
     saveBbox(workspacePath: string, pos: number, csv: string, alignState: SavedAlignState) {
-      return postJson<SaveBboxResponse>(baseUrl, "/align/save-bbox", {
+      return postJson<SaveBboxResponse>(baseUrl(), "/align/save-bbox", {
         workspacePath,
         pos,
         csv,
@@ -205,22 +213,22 @@ export function createStudioHttpClient(baseUrl: string): StudioHttpClient {
       });
     },
     autoExcludePreview(request: AutoExcludePreviewRequest) {
-      return postJson<AutoExcludePreviewResponse>(baseUrl, "/align/auto-exclude-preview", request);
+      return postJson<AutoExcludePreviewResponse>(baseUrl(), "/align/auto-exclude-preview", request);
     },
     listSavedBboxPositions(workspacePath: string) {
-      return getJson<number[]>(baseUrl, "/align/saved-bbox-positions", { workspacePath });
+      return getJson<number[]>(baseUrl(), "/align/saved-bbox-positions", { workspacePath });
     },
     cropRoi(request: CropRoiRequest) {
-      return postJson<CropRoiResponse>(baseUrl, "/align/crop-roi", request);
+      return postJson<CropRoiResponse>(baseUrl(), "/align/crop-roi", request);
     },
     cancelCropRoi(requestId: string) {
-      return postJson<CropRoiProgress>(baseUrl, "/align/cancel-crop-roi", { requestId });
+      return postJson<CropRoiProgress>(baseUrl(), "/align/cancel-crop-roi", { requestId });
     },
     startAnalysis(request: AnalysisStartRequest) {
-      return postJson<AnalysisProgress>(baseUrl, "/studio/start-analysis", request);
+      return postJson<AnalysisProgress>(baseUrl(), "/studio/start-analysis", request);
     },
     getAnalysisProgress(requestId: string) {
-      return getJson<AnalysisProgress>(baseUrl, "/studio/analysis-progress", { requestId });
+      return getJson<AnalysisProgress>(baseUrl(), "/studio/analysis-progress", { requestId });
     },
     onCropRoiProgress(requestId: string, onProgress: (progress: CropRoiProgress) => void) {
       let closed = false;
@@ -229,19 +237,19 @@ export function createStudioHttpClient(baseUrl: string): StudioHttpClient {
       let stopFallback: (() => void) | null = null;
       const fallbackTimer = window.setTimeout(() => {
         if (closed) return;
-        stopFallback = pollCropRoiProgress(baseUrl, requestId, onProgress);
+        stopFallback = pollCropRoiProgress(baseUrl(), requestId, onProgress);
       }, 1500);
 
       try {
-        ws = new WebSocket(resolveStudioWsUrl(baseUrl));
+        ws = new WebSocket(resolveStudioWsUrl());
       } catch {
         window.clearTimeout(fallbackTimer);
-        stopFallback = pollCropRoiProgress(baseUrl, requestId, onProgress);
+        stopFallback = pollCropRoiProgress(baseUrl(), requestId, onProgress);
       }
 
       ws?.addEventListener("open", () => {
         window.clearTimeout(fallbackTimer);
-        void getJson<CropRoiProgress>(baseUrl, "/align/crop-roi-progress", { requestId })
+        void getJson<CropRoiProgress>(baseUrl(), "/align/crop-roi-progress", { requestId })
           .then((progress) => {
             if (closed) return;
             onProgress(progress);
@@ -250,7 +258,7 @@ export function createStudioHttpClient(baseUrl: string): StudioHttpClient {
           })
           .catch(() => {
             if (closed || stopFallback) return;
-            stopFallback = pollCropRoiProgress(baseUrl, requestId, onProgress);
+            stopFallback = pollCropRoiProgress(baseUrl(), requestId, onProgress);
           });
       });
 
@@ -272,13 +280,13 @@ export function createStudioHttpClient(baseUrl: string): StudioHttpClient {
       ws?.addEventListener("error", () => {
         if (closed || stopFallback) return;
         window.clearTimeout(fallbackTimer);
-        stopFallback = pollCropRoiProgress(baseUrl, requestId, onProgress);
+        stopFallback = pollCropRoiProgress(baseUrl(), requestId, onProgress);
       });
 
       ws?.addEventListener("close", () => {
         if (closed || terminal || stopFallback) return;
         window.clearTimeout(fallbackTimer);
-        stopFallback = pollCropRoiProgress(baseUrl, requestId, onProgress);
+        stopFallback = pollCropRoiProgress(baseUrl(), requestId, onProgress);
       });
 
       return () => {
@@ -295,19 +303,19 @@ export function createStudioHttpClient(baseUrl: string): StudioHttpClient {
       let stopFallback: (() => void) | null = null;
       const fallbackTimer = window.setTimeout(() => {
         if (closed) return;
-        stopFallback = pollAnalysisProgress(baseUrl, requestId, onProgress);
+        stopFallback = pollAnalysisProgress(baseUrl(), requestId, onProgress);
       }, 1500);
 
       try {
-        ws = new WebSocket(resolveStudioWsUrl(baseUrl));
+        ws = new WebSocket(resolveStudioWsUrl());
       } catch {
         window.clearTimeout(fallbackTimer);
-        stopFallback = pollAnalysisProgress(baseUrl, requestId, onProgress);
+        stopFallback = pollAnalysisProgress(baseUrl(), requestId, onProgress);
       }
 
       ws?.addEventListener("open", () => {
         window.clearTimeout(fallbackTimer);
-        void getJson<AnalysisProgress>(baseUrl, "/studio/analysis-progress", { requestId })
+        void getJson<AnalysisProgress>(baseUrl(), "/studio/analysis-progress", { requestId })
           .then((progress) => {
             if (closed) return;
             onProgress(progress);
@@ -316,7 +324,7 @@ export function createStudioHttpClient(baseUrl: string): StudioHttpClient {
           })
           .catch(() => {
             if (closed || stopFallback) return;
-            stopFallback = pollAnalysisProgress(baseUrl, requestId, onProgress);
+            stopFallback = pollAnalysisProgress(baseUrl(), requestId, onProgress);
           });
       });
 
@@ -338,13 +346,13 @@ export function createStudioHttpClient(baseUrl: string): StudioHttpClient {
       ws?.addEventListener("error", () => {
         if (closed || stopFallback) return;
         window.clearTimeout(fallbackTimer);
-        stopFallback = pollAnalysisProgress(baseUrl, requestId, onProgress);
+        stopFallback = pollAnalysisProgress(baseUrl(), requestId, onProgress);
       });
 
       ws?.addEventListener("close", () => {
         if (closed || terminal || stopFallback) return;
         window.clearTimeout(fallbackTimer);
-        stopFallback = pollAnalysisProgress(baseUrl, requestId, onProgress);
+        stopFallback = pollAnalysisProgress(baseUrl(), requestId, onProgress);
       });
 
       return () => {
@@ -355,7 +363,7 @@ export function createStudioHttpClient(baseUrl: string): StudioHttpClient {
       };
     },
     async roiPosExists(workspacePath: string, pos: number) {
-      const result = await getJson<{ exists: boolean }>(baseUrl, "/align/roi-pos-exists", {
+      const result = await getJson<{ exists: boolean }>(baseUrl(), "/align/roi-pos-exists", {
         workspacePath,
         pos,
       });
@@ -366,14 +374,14 @@ export function createStudioHttpClient(baseUrl: string): StudioHttpClient {
   return {
     ...aligner,
     getAnalysisResults(workspacePath: string) {
-      return getJson<AnalysisProgress | null>(baseUrl, "/studio/analysis-results", { workspacePath });
+      return getJson<AnalysisProgress | null>(baseUrl(), "/studio/analysis-results", { workspacePath });
     },
     getLatestAnalysisProgress(workspacePath: string) {
-      return getJson<AnalysisProgress | null>(baseUrl, "/studio/latest-analysis", { workspacePath });
+      return getJson<AnalysisProgress | null>(baseUrl(), "/studio/latest-analysis", { workspacePath });
     },
     scanRoiWorkspace(workspacePath: string, signal?: AbortSignal) {
       return postJson<RoiWorkspaceScan>(
-        baseUrl,
+        baseUrl(),
         "/annotate/scan-roi-workspace",
         { workspacePath },
         signal,
@@ -386,7 +394,7 @@ export function createStudioHttpClient(baseUrl: string): StudioHttpClient {
       signal?: AbortSignal,
     ) {
       const payload = await postJson<FramePayload>(
-        baseUrl,
+        baseUrl(),
         "/annotate/load-roi-frame",
         { workspacePath, request, contrast: contrast ?? null },
         signal,
@@ -395,18 +403,18 @@ export function createStudioHttpClient(baseUrl: string): StudioHttpClient {
     },
     listDirectory(path: string | null): Promise<HostListDirectoryResult> {
       const params = path ? { path } : undefined;
-      return getJson<HostListDirectoryResult>(baseUrl, "/fs/list", params);
+      return getJson<HostListDirectoryResult>(baseUrl(), "/fs/list", params);
     },
     userHomeDirectory() {
-      return getJson<{ path: string }>(baseUrl, "/fs/home").then((result) => result.path);
+      return getJson<{ path: string }>(baseUrl(), "/fs/home").then((result) => result.path);
     },
     readTextFile(path: string, signal?: AbortSignal) {
-      return getJson<{ contents: string }>(baseUrl, "/fs/read-text", { path }, signal).then(
+      return getJson<{ contents: string }>(baseUrl(), "/fs/read-text", { path }, signal).then(
         (result) => result.contents,
       );
     },
     saveAssayJson(saveTo: string, contents: string) {
-      return postJson<StudioSaveAssayJsonResponse>(baseUrl, "/studio/save-assay-json", {
+      return postJson<StudioSaveAssayJsonResponse>(baseUrl(), "/studio/save-assay-json", {
         saveTo,
         contents,
       });
@@ -414,7 +422,7 @@ export function createStudioHttpClient(baseUrl: string): StudioHttpClient {
   };
 }
 
-export const studioClient = createStudioHttpClient("http://127.0.0.1:8767");
+export const studioClient = createStudioHttpClient();
 
 export function toErrorMessage(cause: unknown, fallback: string): string {
   const message = cause instanceof Error ? cause.message : typeof cause === "string" ? cause : "";
@@ -424,7 +432,7 @@ export function toErrorMessage(cause: unknown, fallback: string): string {
     message.includes("NetworkError") ||
     message.includes("fetch failed")
   ) {
-    return `${fallback}: server unreachable at 127.0.0.1:8767`;
+    return `${fallback}: server unreachable at ${resolveStudioHttpBaseUrl()}`;
   }
   return message ? `${fallback}: ${message}` : fallback;
 }

@@ -1,10 +1,10 @@
-import { ConnectionStatus, ShellThemeToggle, useShellWsProbe } from "@lisca/ui";
+import { ConnectionStatus, ShellThemeToggle, useShellServer } from "@lisca/ui";
 import { useRouterState } from "@tanstack/react-router";
 
 import { NavButton } from "./studio-nav-button";
 
 export function StudioNavRail() {
-  const ws = useShellWsProbe({ defaultPort: 8767 });
+  const server = useShellServer();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const routeId = pathname.slice(1) || "assay";
 
@@ -32,7 +32,11 @@ export function StudioNavRail() {
       </div>
       <div className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center border-t border-border/60 pt-2.5">
         <div />
-        <ConnectionStatus wsUrl={ws.wsUrl} state={ws.state} />
+        <ConnectionStatus
+          state={server.state}
+          wsUrl={server.wsUrl}
+          onOpenSettings={server.openSettings}
+        />
         <div className="justify-self-end">
           <ShellThemeToggle />
         </div>

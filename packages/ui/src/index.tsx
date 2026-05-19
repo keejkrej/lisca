@@ -82,7 +82,11 @@ export { PathButton } from "./shell/path-button";
 
 export { ConnectionStatus, type ConnectionState } from "./shell/connection-status";
 
-export { useShellWsProbe, type ShellWsProbe } from "./state/use-shell-ws-probe";
+export { ServerAddressDialog, type ServerAddressDialogProps } from "./shell/server-address-dialog";
+
+export { ShellServerProvider, useShellServer, type ShellServer } from "./state/shell-server";
+
+export { useShellWsProbe, useWsProbeForUrl, type ShellWsProbe } from "./state/use-shell-ws-probe";
 
 export {
   ShellThemeProvider,

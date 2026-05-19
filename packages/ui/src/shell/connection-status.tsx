@@ -8,6 +8,7 @@ export function ConnectionStatus(props: {
   state: ConnectionState;
   /** Defaults to `"Server"`. */
   label?: string;
+  onOpenSettings?: () => void;
 }) {
   const title = props.label ?? "Server";
   const statusLabel =
@@ -26,14 +27,27 @@ export function ConnectionStatus(props: {
         ? "bg-amber-400"
         : "bg-neutral-300 dark:bg-neutral-600";
 
+  const className = cn(
+    buttonVariants({ size: "sm", variant: "outline" }),
+    "h-auto min-h-0 gap-1.5 py-1.5 whitespace-normal shadow-none before:shadow-none hover:bg-popover data-pressed:bg-popover dark:hover:bg-input/32",
+    props.onOpenSettings ? "cursor-pointer" : "cursor-default",
+  );
+  const titleAttr = props.onOpenSettings
+    ? `${props.wsUrl}\nClick to change server address`
+    : props.wsUrl;
+
+  if (props.onOpenSettings) {
+    return (
+      <button className={className} title={titleAttr} type="button" onClick={props.onOpenSettings}>
+        <span className={`size-2 shrink-0 rounded-full ${dot}`} aria-hidden />
+        <span className="font-medium">{title}</span>
+        <span className="opacity-70">{statusLabel}</span>
+      </button>
+    );
+  }
+
   return (
-    <div
-      className={cn(
-        buttonVariants({ size: "sm", variant: "outline" }),
-        "h-auto min-h-0 cursor-default gap-1.5 py-1.5 whitespace-normal shadow-none before:shadow-none hover:bg-popover data-pressed:bg-popover dark:hover:bg-input/32",
-      )}
-      title={props.wsUrl}
-    >
+    <div className={className} title={titleAttr}>
       <span className={`size-2 shrink-0 rounded-full ${dot}`} aria-hidden />
       <span className="font-medium">{title}</span>
       <span className="opacity-70">{statusLabel}</span>
