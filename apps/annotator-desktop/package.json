@@ -8,8 +8,8 @@
     "typecheck": "zig build --global-cache-dir ../../.zig-cache-global test -Dplatform=null && cargo check -p annotator-server"
   },
   "devDependencies": {
-    "@lisca/annotator-web": "workspace:*",
     "@lisca/annotator-server": "workspace:*",
+    "@lisca/annotator-web": "workspace:*",
     "zero-native": "0.1.9"
   }
 }

@@ -140,8 +140,7 @@ export const useStudioAnnotateStore = create<StudioAnnotateStore>()(
         set((state) => ({ ...state, analysisStartConfirm })),
       setAnalysisRequestId: (analysisRequestId) =>
         set((state) => ({ ...state, analysisRequestId })),
-      setAnalysisProgress: (analysisProgress) =>
-        set((state) => ({ ...state, analysisProgress })),
+      setAnalysisProgress: (analysisProgress) => set((state) => ({ ...state, analysisProgress })),
       setAnalysisResultFiles: (analysisResultFiles) =>
         set((state) => ({ ...state, analysisResultFiles })),
       setScan: (scan) => set((state) => ({ ...state, scan })),

@@ -1,11 +1,7 @@
 import * as Plot from "@observablehq/plot";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import {
-  type BoxPlotPanel,
-  type HistogramPanel,
-  type ResultPanel,
-} from "./plots";
+import { type BoxPlotPanel, type HistogramPanel, type ResultPanel } from "./plots";
 
 const TRACE_PALETTE = [
   "#60a5fa",

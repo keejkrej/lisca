@@ -1,5 +1,5 @@
 import type { StudioHostPort } from "@lisca/contracts";
-import { AppShell } from "@lisca/ui";
+import { AppShell, DockButton } from "@lisca/ui";
 import { createFileRoute } from "@tanstack/react-router";
 import { useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
@@ -10,7 +10,6 @@ import { AssaySaveConfirmModal } from "../components/assay-save-confirm-modal";
 import { BasicInfoStep1 } from "../components/basic-info-step1";
 import { BasicInfoStep2 } from "../components/basic-info-step2";
 import { BasicInfoStep3 } from "../components/basic-info-step3";
-import { DockButton } from "../components/dock-button";
 import { DockSection } from "../components/dock-section";
 import { StudioDock } from "../components/studio-dock";
 import { StudioLeft } from "../components/studio-left";

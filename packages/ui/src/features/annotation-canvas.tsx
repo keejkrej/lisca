@@ -281,10 +281,19 @@ export function AnnotationCanvas({
       if (value <= 0 && !eraseMode) return;
       if (brushMode) {
         onMaskCommit(
-          strokeMask(mask, cached.frame.width, cached.frame.height, active.points, value, brushSize),
+          strokeMask(
+            mask,
+            cached.frame.width,
+            cached.frame.height,
+            active.points,
+            value,
+            brushSize,
+          ),
         );
       } else if (active.points.length >= 3) {
-        onMaskCommit(fillPolygon(mask, cached.frame.width, cached.frame.height, active.points, value));
+        onMaskCommit(
+          fillPolygon(mask, cached.frame.width, cached.frame.height, active.points, value),
+        );
       }
     },
     [activeLabelValue, brushMode, brushSize, eraseMode, mask, onMaskCommit],

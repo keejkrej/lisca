@@ -7,6 +7,7 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { surfaceDialogClass } from "../lib/surface";
 import { cn } from "../lib/utils";
+import { ModalScrim } from "./modal-scrim";
 
 export type ServerAddressDialogProps = {
   open: boolean;
@@ -67,8 +68,7 @@ export function ServerAddressDialog({
   const isLocalActive = activeAddress == null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6 backdrop-blur-sm"
+    <ModalScrim
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onOpenChange(false);
       }}
@@ -76,10 +76,7 @@ export function ServerAddressDialog({
       <div
         aria-labelledby="server-address-title"
         aria-modal="true"
-        className={cn(
-          "flex max-h-[86vh] w-full max-w-lg flex-col",
-          surfaceDialogClass,
-        )}
+        className={cn("flex max-h-[86vh] w-full max-w-lg flex-col", surfaceDialogClass)}
         role="dialog"
       >
         <div className="space-y-1 border-b border-border px-5 py-4">
@@ -195,6 +192,6 @@ export function ServerAddressDialog({
           </Button>
         </div>
       </div>
-    </div>
+    </ModalScrim>
   );
 }

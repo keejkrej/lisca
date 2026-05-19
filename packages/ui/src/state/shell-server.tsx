@@ -83,17 +83,14 @@ export function ShellServerProvider({
     [defaultPort],
   );
 
-  const handleRemoveServer = useCallback(
-    (address: string) => {
-      setSavedServers(removeLiscaSavedServer(address));
-      setActiveAddress((current) => {
-        if (current !== address.trim()) return current;
-        setLiscaActiveServerAddress(null);
-        return null;
-      });
-    },
-    [],
-  );
+  const handleRemoveServer = useCallback((address: string) => {
+    setSavedServers(removeLiscaSavedServer(address));
+    setActiveAddress((current) => {
+      if (current !== address.trim()) return current;
+      setLiscaActiveServerAddress(null);
+      return null;
+    });
+  }, []);
 
   const value = useMemo<ShellServer>(
     () => ({

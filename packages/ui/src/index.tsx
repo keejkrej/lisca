@@ -73,7 +73,13 @@ export {
 } from "./components/ui";
 
 export { cn } from "./lib/utils";
-export { surfaceDialogClass, surfacePanelClass } from "./lib/surface";
+export {
+  modalOverlayClass,
+  shellRailChromeClass,
+  surfaceDialogClass,
+  surfaceInsetClass,
+  surfacePanelClass,
+} from "./lib/surface";
 
 export { AppShell, type AppShellCompound, ShellDock, ShellSidebar } from "./shell/shell";
 
@@ -98,7 +104,11 @@ export {
 
 export { ShellWorkspaceProvider, useShellWorkspace, type ShellWorkspace } from "./state/workspace";
 
+export { DockButton } from "./shell/dock-button";
+export { ModalScrim } from "./shell/modal-scrim";
+export { ReadonlyPathField } from "./shell/readonly-path-field";
 export { Section, type SectionProps } from "./shell/section";
+export { ViewportCard } from "./shell/viewport-card";
 
 export { AlignGrid, type AlignGridProps } from "./features/align-grid";
 

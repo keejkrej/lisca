@@ -1,17 +1,8 @@
 import type { StudioAnalysisCsvFile } from "@lisca/contracts";
-import {
-  queryOptions,
-  type QueryClient,
-  useQuery,
-} from "@tanstack/react-query";
+import { queryOptions, type QueryClient, useQuery } from "@tanstack/react-query";
 
 import { studioClient } from "../api/studio-client";
-import {
-  parseCsvFile,
-  parsePanelGroups,
-  type ResultPanel,
-  type SlideChannelLabels,
-} from "./plots";
+import { parseCsvFile, parsePanelGroups, type ResultPanel, type SlideChannelLabels } from "./plots";
 
 const ANALYSIS_QUERY_GC_TIME = 30 * 60 * 1000;
 
@@ -43,10 +34,7 @@ export function analysisPanelsQueryKey(
   ] as const;
 }
 
-export function analysisCsvQueryOptions(
-  workspacePath: string | null,
-  file: StudioAnalysisCsvFile,
-) {
+export function analysisCsvQueryOptions(workspacePath: string | null, file: StudioAnalysisCsvFile) {
   return queryOptions({
     queryKey: analysisCsvQueryKey(workspacePath, file.path),
     queryFn: async ({ signal }) => {
@@ -94,10 +82,7 @@ export function analysisPanelsQueryOptions(
   });
 }
 
-export function useAnalysisResultsQuery(
-  workspacePath: string | null,
-  enabled: boolean,
-) {
+export function useAnalysisResultsQuery(workspacePath: string | null, enabled: boolean) {
   return useQuery({
     queryKey: analysisResultsQueryKey(workspacePath),
     queryFn: () => {
@@ -137,12 +122,7 @@ export function getCachedAnalysisPanels(
   slideChannelLabelsKey: string,
 ): ResultPanel[] | undefined {
   return queryClient.getQueryData<ResultPanel[]>(
-    analysisPanelsQueryKey(
-      workspacePath,
-      file.path,
-      timeseriesXScale,
-      slideChannelLabelsKey,
-    ),
+    analysisPanelsQueryKey(workspacePath, file.path, timeseriesXScale, slideChannelLabelsKey),
   );
 }
 

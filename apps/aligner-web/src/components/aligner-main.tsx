@@ -3,6 +3,7 @@ import {
   cursorForAlignTool,
   useAlignCanvasGridHandlers,
   useCanvasTransientStatus,
+  ViewportCard,
 } from "@lisca/ui";
 import { useMemo } from "react";
 
@@ -40,24 +41,26 @@ export function AlignerMain({ state }: { state: AlignState }) {
         : "No frame loaded.";
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-muted/20">
-      <AlignCanvas
-        className="min-h-0 flex-1"
-        cursor={cursorForAlignTool(state.toolMode, state.grid.enabled, previewGrid != null)}
-        emptyText={emptyText}
-        excludedCells={state.displayedExcludedCells}
-        frame={state.frame}
-        grid={state.grid}
-        loading={state.scanLoading || state.frameLoading}
-        previewGrid={previewGrid}
-        toasts={toasts}
-        onVirtualPointerCancel={handlePointerEnd}
-        onVirtualPointerDown={handlePointerDown}
-        onVirtualPointerMove={handlePointerMove}
-        onVirtualPointerUp={handlePointerEnd}
-      />
+    <>
+      <ViewportCard>
+        <AlignCanvas
+          className="min-h-0 flex-1"
+          cursor={cursorForAlignTool(state.toolMode, state.grid.enabled, previewGrid != null)}
+          emptyText={emptyText}
+          excludedCells={state.displayedExcludedCells}
+          frame={state.frame}
+          grid={state.grid}
+          loading={state.scanLoading || state.frameLoading}
+          previewGrid={previewGrid}
+          toasts={toasts}
+          onVirtualPointerCancel={handlePointerEnd}
+          onVirtualPointerDown={handlePointerDown}
+          onVirtualPointerMove={handlePointerMove}
+          onVirtualPointerUp={handlePointerEnd}
+        />
+      </ViewportCard>
       <CropConfirmModal state={state} />
       <CropProgressModal state={state} />
-    </div>
+    </>
   );
 }

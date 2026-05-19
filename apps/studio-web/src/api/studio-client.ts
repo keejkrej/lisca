@@ -178,7 +178,9 @@ function pollAnalysisProgress(
   };
 }
 
-export function createStudioHttpClient(getBaseUrl: () => string = resolveStudioHttpBaseUrl): StudioHttpClient {
+export function createStudioHttpClient(
+  getBaseUrl: () => string = resolveStudioHttpBaseUrl,
+): StudioHttpClient {
   const baseUrl = getBaseUrl;
   const aligner: AlignerDataPort & AnalysisDataPort = {
     scanSource(source: AlignerSource) {
@@ -213,7 +215,11 @@ export function createStudioHttpClient(getBaseUrl: () => string = resolveStudioH
       });
     },
     autoExcludePreview(request: AutoExcludePreviewRequest) {
-      return postJson<AutoExcludePreviewResponse>(baseUrl(), "/align/auto-exclude-preview", request);
+      return postJson<AutoExcludePreviewResponse>(
+        baseUrl(),
+        "/align/auto-exclude-preview",
+        request,
+      );
     },
     listSavedBboxPositions(workspacePath: string) {
       return getJson<number[]>(baseUrl(), "/align/saved-bbox-positions", { workspacePath });
@@ -374,10 +380,14 @@ export function createStudioHttpClient(getBaseUrl: () => string = resolveStudioH
   return {
     ...aligner,
     getAnalysisResults(workspacePath: string) {
-      return getJson<AnalysisProgress | null>(baseUrl(), "/studio/analysis-results", { workspacePath });
+      return getJson<AnalysisProgress | null>(baseUrl(), "/studio/analysis-results", {
+        workspacePath,
+      });
     },
     getLatestAnalysisProgress(workspacePath: string) {
-      return getJson<AnalysisProgress | null>(baseUrl(), "/studio/latest-analysis", { workspacePath });
+      return getJson<AnalysisProgress | null>(baseUrl(), "/studio/latest-analysis", {
+        workspacePath,
+      });
     },
     scanRoiWorkspace(workspacePath: string, signal?: AbortSignal) {
       return postJson<RoiWorkspaceScan>(

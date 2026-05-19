@@ -1,14 +1,12 @@
 import type { StudioAnalysisCsvFile } from "@lisca/contracts";
-import { AppShell, Spinner } from "@lisca/ui";
+import { AppShell, DockButton, Spinner, ViewportCard } from "@lisca/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { DockButton } from "../components/dock-button";
 import { DockSection } from "../components/dock-section";
 import { StudioDock } from "../components/studio-dock";
 import { StudioLeft } from "../components/studio-left";
-import { StudioMainCard } from "../components/studio-main-card";
 import { useStudioAnnotateState } from "../state/use-studio-annotate-state";
 import { useStudioStore } from "../state/studio-store";
 import { ResultPanelView } from "../result/plot-charts";
@@ -37,12 +35,8 @@ export const Route = createFileRoute("/result")({
 
 function ResultPage() {
   const queryClient = useQueryClient();
-  const {
-    workspacePath,
-    analysisResultFiles,
-    setAnalysisProgress,
-    setAnalysisResultFiles,
-  } = useStudioAnnotateState();
+  const { workspacePath, analysisResultFiles, setAnalysisProgress, setAnalysisResultFiles } =
+    useStudioAnnotateState();
   const info3 = useStudioStore((state) => state.info3);
   const timelapseAmount = useStudioStore((state) => state.info2.timelapseAmount);
   const timelapseUnit = useStudioStore((state) => state.info2.timelapseUnit);
@@ -105,13 +99,7 @@ function ResultPage() {
         slideChannelLabels,
         slideChannelLabelsKey,
       ),
-    [
-      activeWorkspacePath,
-      queryClient,
-      slideChannelLabels,
-      slideChannelLabelsKey,
-      timeseriesXScale,
-    ],
+    [activeWorkspacePath, queryClient, slideChannelLabels, slideChannelLabelsKey, timeseriesXScale],
   );
 
   const showPanel = useCallback(
@@ -138,10 +126,7 @@ function ResultPage() {
           slideChannelLabelsKey,
         );
 
-      const applyResolved = (resolved: {
-        panel: ResultPanel;
-        nextCursor: PanelCursor | null;
-      }) => {
+      const applyResolved = (resolved: { panel: ResultPanel; nextCursor: PanelCursor | null }) => {
         setActivePanel(resolved.panel);
         setCurrentPanelCursor(cursor);
         setActivePanelCursor(resolved.nextCursor);
@@ -283,7 +268,7 @@ function ResultPage() {
         </AppShell.Left>
         <AppShell.MainColumn>
           <AppShell.Main>
-            <StudioMainCard className="relative">{plotContent}</StudioMainCard>
+            <ViewportCard className="relative">{plotContent}</ViewportCard>
           </AppShell.Main>
           <AppShell.Dock>
             <StudioDock

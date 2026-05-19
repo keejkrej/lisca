@@ -8,8 +8,8 @@
     "typecheck": "zig build --global-cache-dir ../../.zig-cache-global test -Dplatform=null && cargo check -p aligner-server"
   },
   "devDependencies": {
-    "@lisca/aligner-web": "workspace:*",
     "@lisca/aligner-server": "workspace:*",
+    "@lisca/aligner-web": "workspace:*",
     "zero-native": "0.1.9"
   }
 }

@@ -8,8 +8,8 @@
     "typecheck": "zig build --global-cache-dir ../../.zig-cache-global test -Dplatform=null && cargo check -p studio-server"
   },
   "devDependencies": {
-    "@lisca/studio-web": "workspace:*",
     "@lisca/studio-server": "workspace:*",
+    "@lisca/studio-web": "workspace:*",
     "zero-native": "0.1.9"
   }
 }

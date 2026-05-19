@@ -50,7 +50,9 @@ export function readLiscaSavedServers(): string[] {
   try {
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0);
+    return parsed.filter(
+      (entry): entry is string => typeof entry === "string" && entry.trim().length > 0,
+    );
   } catch {
     return [];
   }
@@ -210,7 +212,8 @@ export function resolveLiscaHttpBaseUrl(options: {
   }
   const active = options.activeAddress ?? getLiscaActiveServerAddress();
   if (active) {
-    return endpointsFromStoredOverride(active, options.defaultPort, options.wsPath ?? "/ws").httpBaseUrl;
+    return endpointsFromStoredOverride(active, options.defaultPort, options.wsPath ?? "/ws")
+      .httpBaseUrl;
   }
   if (options.viteHttpUrl?.trim()) {
     return options.viteHttpUrl.trim();

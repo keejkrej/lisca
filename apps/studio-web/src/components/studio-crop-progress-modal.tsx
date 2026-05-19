@@ -1,4 +1,5 @@
-import { Button, cn, Spinner, surfaceDialogClass } from "@lisca/ui";
+import { Button, cn, Spinner, surfaceDialogClass, ModalScrim } from "@lisca/ui";
+
 import { clamp } from "@lisca/utils";
 
 import type { StudioAlignState } from "../state/use-studio-align-state";
@@ -13,7 +14,7 @@ export function StudioCropProgressModal({ state }: { state: StudioAlignState }) 
   const pct = clamp((done / total) * 100, 0, 100);
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/55 px-6 backdrop-blur-sm">
+    <ModalScrim zIndex="z-40">
       <div
         aria-modal="true"
         className={cn("w-full max-w-md p-5", surfaceDialogClass)}
@@ -44,6 +45,6 @@ export function StudioCropProgressModal({ state }: { state: StudioAlignState }) 
           Cancel
         </Button>
       </div>
-    </div>
+    </ModalScrim>
   );
 }

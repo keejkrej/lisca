@@ -487,7 +487,12 @@ export function useStudioAlignState(): StudioAlignState {
       setExcludedCellsForCurrentPosition(finalExcludedCells);
       const csv = buildBboxCsv(frame, grid, finalExcludedCells);
       const alignState = alignStateFromCurrent(grid, finalExcludedCells);
-      const result = await studioClient.saveBbox(workspacePath, lockedSelection.pos, csv, alignState);
+      const result = await studioClient.saveBbox(
+        workspacePath,
+        lockedSelection.pos,
+        csv,
+        alignState,
+      );
       if (!result.ok) throw new Error(result.error ?? "Save failed");
       queryClient.setQueryData<SavedAlignState | null>(
         ["studio", "align-state", savedAlignStateKey(workspacePath, lockedSelection.pos)],

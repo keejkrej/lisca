@@ -43,7 +43,8 @@ export const ASSAY_CHOICE_LABEL: Record<AssayId, string> = {
   [ASSAY_NAME.CUSTOM_ASSAY]: "Custom assay",
 };
 
-const BASIC_INFO_FEATURE_IDS: ReadonlyArray<BasicInfo2FeatureId> = CONTRACT_GENE_EXPRESSION_FEATURE_IDS;
+const BASIC_INFO_FEATURE_IDS: ReadonlyArray<BasicInfo2FeatureId> =
+  CONTRACT_GENE_EXPRESSION_FEATURE_IDS;
 const BASIC_INFO_SLIDE_IDS: BasicInfoSlideId[] = ["slide-i", "slide-vi"];
 const TIMELAPSE_UNITS: TimelapseUnit[] = ["second", "minute", "hour"];
 const ENABLED_ASSAY_ID: AssayId = ASSAY_NAME.GENE_EXPRESSION;

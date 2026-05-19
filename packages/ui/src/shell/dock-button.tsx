@@ -1,5 +1,6 @@
-import { Button } from "@lisca/ui";
 import type { ReactNode } from "react";
+
+import { Button } from "../components/ui/button";
 
 export function DockButton(props: {
   active?: boolean;

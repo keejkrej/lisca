@@ -13,6 +13,7 @@ import { Field, FieldLabel } from "../components/ui/field";
 import { Input } from "../components/ui/input";
 import { surfaceDialogClass } from "../lib/surface";
 import { cn } from "../lib/utils";
+import { ModalScrim } from "../shell/modal-scrim";
 
 export type FolderSourceParseModalProps = {
   path: string | null;
@@ -138,8 +139,7 @@ export function FolderSourceParseModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6 backdrop-blur-sm"
+    <ModalScrim
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
@@ -210,6 +210,6 @@ export function FolderSourceParseModal({
           </Button>
         </div>
       </div>
-    </div>
+    </ModalScrim>
   );
 }

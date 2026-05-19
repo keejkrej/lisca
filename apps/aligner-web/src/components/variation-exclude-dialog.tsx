@@ -1,4 +1,4 @@
-import { Button, Input, Slider, cn } from "@lisca/ui";
+import { Button, cn, Input, ModalScrim, Slider, surfaceDialogClass } from "@lisca/ui";
 import { useMemo } from "react";
 
 import type { VariationExcludePreview } from "../state/use-align-state";
@@ -44,8 +44,7 @@ export function VariationExcludeDialog({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6 backdrop-blur-sm"
+    <ModalScrim
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onCancel();
       }}
@@ -53,7 +52,7 @@ export function VariationExcludeDialog({
       <div
         aria-labelledby="variation-exclude-title"
         aria-modal="true"
-        className="flex w-full max-w-xl flex-col rounded-xl border border-border bg-card shadow-2xl"
+        className={cn("flex w-full max-w-xl flex-col", surfaceDialogClass)}
         role="dialog"
       >
         <div className="border-b border-border px-5 py-4">
@@ -144,6 +143,6 @@ export function VariationExcludeDialog({
           </Button>
         </div>
       </div>
-    </div>
+    </ModalScrim>
   );
 }

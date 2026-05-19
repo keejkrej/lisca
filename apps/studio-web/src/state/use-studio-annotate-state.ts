@@ -255,8 +255,9 @@ export function useStudioAnnotateState(): StudioAnnotateState {
   const shuffleSelection = useCallback(() => {
     if (!scan?.positions.length) return;
     const randomPosition = scan.positions[Math.floor(Math.random() * scan.positions.length)];
-    const randomRoi = randomPosition?.rois[Math.floor(Math.random() * randomPosition.rois.length)] ?? null;
-    const channel = randomPosition ? randomPosition.channels[0] ?? null : null;
+    const randomRoi =
+      randomPosition?.rois[Math.floor(Math.random() * randomPosition.rois.length)] ?? null;
+    const channel = randomPosition ? (randomPosition.channels[0] ?? null) : null;
     const roi = randomRoi?.roi ?? null;
     const timeIndex =
       randomPosition && randomPosition.times.length > 0

@@ -3,13 +3,13 @@ import {
   cursorForAlignTool,
   useAlignCanvasGridHandlers,
   useCanvasTransientStatus,
+  ViewportCard,
 } from "@lisca/ui";
 import { useMemo } from "react";
 
 import { StudioCropConfirmModal } from "./studio-crop-confirm-modal";
 import { StudioCropProgressModal } from "./studio-crop-progress-modal";
 import { StudioCropStartModal } from "./studio-crop-start-modal";
-import { StudioMainCard } from "./studio-main-card";
 import type { StudioAlignState } from "../state/use-studio-align-state";
 
 export function StudioAlignMain({ state }: { state: StudioAlignState }) {
@@ -43,7 +43,7 @@ export function StudioAlignMain({ state }: { state: StudioAlignState }) {
   }, [activeToastStatus, state.error]);
   return (
     <>
-      <StudioMainCard>
+      <ViewportCard>
         <AlignCanvas
           className="min-h-0 flex-1"
           cursor={cursorForAlignTool(state.toolMode, state.grid.enabled, previewGrid != null)}
@@ -59,7 +59,7 @@ export function StudioAlignMain({ state }: { state: StudioAlignState }) {
           onVirtualPointerMove={handlePointerMove}
           onVirtualPointerUp={handlePointerEnd}
         />
-      </StudioMainCard>
+      </ViewportCard>
       <StudioCropStartModal state={state} />
       <StudioCropConfirmModal state={state} />
       <StudioCropProgressModal state={state} />

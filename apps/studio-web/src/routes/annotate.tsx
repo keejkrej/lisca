@@ -1,7 +1,6 @@
-import { AppShell } from "@lisca/ui";
+import { AppShell, DockButton } from "@lisca/ui";
 import { createFileRoute } from "@tanstack/react-router";
 
-import { DockButton } from "../components/dock-button";
 import { DockSection } from "../components/dock-section";
 import { StudioAnnotateMain } from "../components/studio-annotate-main";
 import { StudioDock } from "../components/studio-dock";
@@ -16,8 +15,8 @@ function AnnotatePage() {
   const annotateState = useStudioAnnotateState();
   const analysisBusy = Boolean(
     annotateState.analysisProgress &&
-      (annotateState.analysisProgress.status === "queued" ||
-        annotateState.analysisProgress.status === "running"),
+    (annotateState.analysisProgress.status === "queued" ||
+      annotateState.analysisProgress.status === "running"),
   );
 
   const disableShuffle =

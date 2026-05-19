@@ -1,5 +1,5 @@
 import type { AnnotationLabel } from "@lisca/contracts";
-import { Button, Input } from "@lisca/ui";
+import { Button, cn, Input, ModalScrim, surfaceDialogClass } from "@lisca/ui";
 import { Plus, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -102,8 +102,7 @@ export function LabelCreationDialog(props: {
   const activeError = localError ?? props.error;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6 backdrop-blur-sm"
+    <ModalScrim
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) props.onOpenChange(false);
       }}
@@ -111,7 +110,7 @@ export function LabelCreationDialog(props: {
       <div
         aria-labelledby="label-dialog-title"
         aria-modal="true"
-        className="flex max-h-[86vh] w-full max-w-2xl flex-col rounded-xl border border-border bg-card shadow-2xl"
+        className={cn("flex max-h-[86vh] w-full max-w-2xl flex-col", surfaceDialogClass)}
         role="dialog"
       >
         <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
@@ -200,6 +199,6 @@ export function LabelCreationDialog(props: {
           </Button>
         </div>
       </div>
-    </div>
+    </ModalScrim>
   );
 }

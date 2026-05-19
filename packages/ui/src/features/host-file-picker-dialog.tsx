@@ -12,6 +12,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Button } from "../components/ui/button";
 import { surfaceDialogClass } from "../lib/surface";
 import { cn } from "../lib/utils";
+import { ModalScrim } from "../shell/modal-scrim";
 
 function pathExtLower(name: string): string {
   const index = name.lastIndexOf(".");
@@ -157,8 +158,7 @@ export function HostFilePickerDialog({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6 backdrop-blur-sm"
+    <ModalScrim
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onOpenChange(false);
       }}
@@ -288,6 +288,6 @@ export function HostFilePickerDialog({
           )}
         </div>
       </div>
-    </div>
+    </ModalScrim>
   );
 }

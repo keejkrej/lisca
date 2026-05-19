@@ -1,13 +1,12 @@
-import { AppShell } from "@lisca/ui";
+import { AppShell, DockButton } from "@lisca/ui";
 import { createFileRoute } from "@tanstack/react-router";
 
-import { DockButton } from "../components/dock-button";
 import { StudioAlignMain } from "../components/studio-align-main";
 import { StudioAlignTools } from "../components/studio-align-tools";
 import { StudioDock } from "../components/studio-dock";
 import { StudioLeft } from "../components/studio-left";
-import { useStudioAlignState } from "../state/use-studio-align-state";
 import { instructionForStep } from "../state/studio-routes";
+import { useStudioAlignState } from "../state/use-studio-align-state";
 
 export const Route = createFileRoute("/align")({
   component: AlignPage,

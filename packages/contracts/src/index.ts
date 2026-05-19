@@ -117,7 +117,10 @@ export type Assay = {
   features: AssayFeatureList;
 };
 
-export type GeneExpressionFeatureList = [GeneExpressionAssayFeature, ...GeneExpressionAssayFeature[]];
+export type GeneExpressionFeatureList = [
+  GeneExpressionAssayFeature,
+  ...GeneExpressionAssayFeature[],
+];
 
 export type GeneExpressionAssayFeature = (typeof GENE_EXPRESSION_FEATURE_IDS)[number];
 
@@ -394,7 +397,14 @@ export type CropRoiProgressMessage = {
   progress: CropRoiProgress;
 };
 
-export type AnalysisStage = "queued" | "preparing" | "segment" | "timeseries" | "auc" | "fit" | "completed";
+export type AnalysisStage =
+  | "queued"
+  | "preparing"
+  | "segment"
+  | "timeseries"
+  | "auc"
+  | "fit"
+  | "completed";
 
 export type AnalysisStatus = "queued" | "running" | "completed" | "error";
 
@@ -434,7 +444,10 @@ export type RoiPosExistsResponse = {
 export type AnalysisDataPort = {
   startAnalysis(request: AnalysisStartRequest): Promise<AnalysisProgress>;
   getAnalysisProgress(requestId: string): Promise<AnalysisProgress>;
-  onAnalysisProgress(requestId: string, onProgress: (progress: AnalysisProgress) => void): () => void;
+  onAnalysisProgress(
+    requestId: string,
+    onProgress: (progress: AnalysisProgress) => void,
+  ): () => void;
 };
 
 export type AlignerDataPort = {

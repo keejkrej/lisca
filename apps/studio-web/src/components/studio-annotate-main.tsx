@@ -1,10 +1,9 @@
-import { AnnotationCanvas } from "@lisca/ui";
+import { AnnotationCanvas, ViewportCard } from "@lisca/ui";
 import { useMemo } from "react";
 
 import type { StudioAnnotateState } from "../state/use-studio-annotate-state";
 import { StudioAnalysisProgressModal } from "./studio-analysis-progress-modal";
 import { StudioAnalysisStartModal } from "./studio-analysis-start-modal";
-import { StudioMainCard } from "./studio-main-card";
 
 export function StudioAnnotateMain({ state }: { state: StudioAnnotateState }) {
   const emptyMask = useMemo(
@@ -25,7 +24,7 @@ export function StudioAnnotateMain({ state }: { state: StudioAnnotateState }) {
 
   return (
     <>
-      <StudioMainCard className="relative">
+      <ViewportCard className="relative">
         <AnnotationCanvas
           activeLabelId={null}
           brushSize={1}
@@ -39,7 +38,7 @@ export function StudioAnnotateMain({ state }: { state: StudioAnnotateState }) {
           tool="brush"
           onMaskCommit={() => undefined}
         />
-      </StudioMainCard>
+      </ViewportCard>
       <StudioAnalysisStartModal state={state} />
       <StudioAnalysisProgressModal state={state} />
     </>

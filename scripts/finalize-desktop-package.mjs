@@ -50,6 +50,8 @@ if (target === "macos" && existsSync(appIconIcns)) {
   if (existsSync(iconIcoSource)) copyFileSync(iconIcoSource, join(resourcesDir, "icon.ico"));
   if (existsSync(iconPngSource)) copyFileSync(iconPngSource, join(resourcesDir, "icon.png"));
   if (existsSync(infoPlist)) {
-    execSync(`plutil -replace CFBundleIconFile -string AppIcon "${infoPlist}"`, { stdio: "inherit" });
+    execSync(`plutil -replace CFBundleIconFile -string AppIcon "${infoPlist}"`, {
+      stdio: "inherit",
+    });
   }
 }

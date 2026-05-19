@@ -1,7 +1,13 @@
 import { Section } from "@lisca/ui";
 import type { ReactNode } from "react";
 
-export function DockSection({ children, title = "Assay" }: { children: ReactNode; title?: string }) {
+export function DockSection({
+  children,
+  title = "Assay",
+}: {
+  children: ReactNode;
+  title?: string;
+}) {
   return (
     <Section
       className="flex h-full min-h-0 min-w-0 flex-col"

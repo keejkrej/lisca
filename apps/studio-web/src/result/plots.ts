@@ -224,11 +224,7 @@ function fitParameterValue(
     case "transfection_efficiency": {
       const direct = read("transfection_efficiency");
       if (direct !== null) return direct;
-      if (
-        expressionAmplitude === null ||
-        mrnaDecayRate === null ||
-        proteinDecayRate === null
-      ) {
+      if (expressionAmplitude === null || mrnaDecayRate === null || proteinDecayRate === null) {
         return null;
       }
       return expressionAmplitude * (mrnaDecayRate - proteinDecayRate);
@@ -490,8 +486,7 @@ export function resolveCachedPanelByCursor(
     if (panels === undefined) return null;
     if (panels.length === 0) continue;
 
-    const panelIndex =
-      fileIndex === cursor.fileIndex ? Math.max(cursor.panelIndex, 0) : 0;
+    const panelIndex = fileIndex === cursor.fileIndex ? Math.max(cursor.panelIndex, 0) : 0;
     if (panelIndex >= panels.length) continue;
 
     const panel = panels[panelIndex];
@@ -518,8 +513,7 @@ export async function resolvePanelByCursor(
     const panels = await loadPanels(files[fileIndex]);
     if (panels.length === 0) continue;
 
-    const panelIndex =
-      fileIndex === cursor.fileIndex ? Math.max(cursor.panelIndex, 0) : 0;
+    const panelIndex = fileIndex === cursor.fileIndex ? Math.max(cursor.panelIndex, 0) : 0;
     if (panelIndex >= panels.length) continue;
 
     const panel = panels[panelIndex];

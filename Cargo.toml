@@ -1,11 +1,6 @@
 [workspace]
 resolver = "2"
-members = [
-  "crates/lisca",
-  "apps/aligner-server",
-  "apps/annotator-server",
-  "apps/studio-server",
-]
+members = ["crates/lisca", "apps/aligner-server", "apps/annotator-server", "apps/studio-server"]
 
 [workspace.package]
 version = "0.1.0"

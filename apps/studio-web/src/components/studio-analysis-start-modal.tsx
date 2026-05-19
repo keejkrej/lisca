@@ -1,4 +1,4 @@
-import { Button, cn, surfaceDialogClass } from "@lisca/ui";
+import { Button, cn, surfaceDialogClass, ModalScrim } from "@lisca/ui";
 
 import type { StudioAnnotateState } from "../state/use-studio-annotate-state";
 
@@ -6,7 +6,7 @@ export function StudioAnalysisStartModal({ state }: { state: StudioAnnotateState
   if (!state.analysisStartConfirm) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 px-6 backdrop-blur-sm">
+    <ModalScrim zIndex="z-50">
       <div
         aria-labelledby="studio-analysis-start-title"
         aria-modal="true"
@@ -37,6 +37,6 @@ export function StudioAnalysisStartModal({ state }: { state: StudioAnnotateState
           </div>
         </div>
       </div>
-    </div>
+    </ModalScrim>
   );
 }

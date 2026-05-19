@@ -1,4 +1,4 @@
-import { Button, cn, surfaceDialogClass } from "@lisca/ui";
+import { Button, cn, surfaceDialogClass, ModalScrim } from "@lisca/ui";
 
 import type { StudioAlignState } from "../state/use-studio-align-state";
 
@@ -9,7 +9,7 @@ export function StudioCropConfirmModal({ state }: { state: StudioAlignState }) {
   const existingList = confirm.existingPositions.map((pos) => `Pos${pos}`).join(", ");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 px-6 backdrop-blur-sm">
+    <ModalScrim zIndex="z-50">
       <div
         aria-labelledby="studio-crop-confirm-title"
         aria-modal="true"
@@ -39,6 +39,6 @@ export function StudioCropConfirmModal({ state }: { state: StudioAlignState }) {
           </div>
         </div>
       </div>
-    </div>
+    </ModalScrim>
   );
 }

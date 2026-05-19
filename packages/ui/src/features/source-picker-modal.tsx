@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { surfaceDialogClass } from "../lib/surface";
 import { cn } from "../lib/utils";
+import { ModalScrim } from "../shell/modal-scrim";
 
 export type SourcePickerModalProps = {
   open: boolean;
@@ -32,8 +33,7 @@ export function SourcePickerModal({
     "group flex min-h-24 w-full items-center justify-center rounded-lg border border-border bg-muted/20 px-4 py-5 text-center transition-colors hover:border-primary/35 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6 backdrop-blur-sm"
+    <ModalScrim
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
@@ -98,6 +98,6 @@ export function SourcePickerModal({
           </div>
         </div>
       </div>
-    </div>
+    </ModalScrim>
   );
 }

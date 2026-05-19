@@ -156,7 +156,11 @@ export function createAlignerHttpClient(
       });
     },
     autoExcludePreview(request: AutoExcludePreviewRequest) {
-      return postJson<AutoExcludePreviewResponse>(baseUrl(), "/align/auto-exclude-preview", request);
+      return postJson<AutoExcludePreviewResponse>(
+        baseUrl(),
+        "/align/auto-exclude-preview",
+        request,
+      );
     },
     listSavedBboxPositions(workspacePath: string) {
       return getJson<number[]>(baseUrl(), "/align/saved-bbox-positions", { workspacePath });
