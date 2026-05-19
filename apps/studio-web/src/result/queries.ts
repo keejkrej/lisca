@@ -11,7 +11,7 @@ import {
   parsePanelGroups,
   type ResultPanel,
   type SlideChannelLabels,
-} from "./result-plots";
+} from "./plots";
 
 const ANALYSIS_QUERY_GC_TIME = 30 * 60 * 1000;
 

@@ -10,7 +10,7 @@ import { StudioDock } from "../components/studio-dock";
 import { StudioLeft } from "../components/studio-left";
 import { useStudioAnnotateState } from "../state/use-studio-annotate-state";
 import { useStudioStore } from "../state/studio-store";
-import { ResultPanelView } from "./result-plot-charts";
+import { ResultPanelView } from "../result/plot-charts";
 import {
   defaultResultPlotSection,
   filterResultFilesBySection,
@@ -21,14 +21,14 @@ import {
   type ResultPanel,
   type ResultPlotSection,
   type SlideChannelLabels,
-} from "./result-plots";
+} from "../result/plots";
 import {
   fetchAnalysisPanels,
   getCachedAnalysisPanels,
   prefetchAnalysisPanels,
   slideChannelLabelsCacheKey,
   useAnalysisResultsQuery,
-} from "./result-queries";
+} from "../result/queries";
 
 export const Route = createFileRoute("/result")({
   component: ResultPage,

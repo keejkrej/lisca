@@ -143,10 +143,19 @@ pub fn buildApp(b: *std.Build, config: AppConfig) void {
     package.step.dependOn(&exe.step);
     package.step.dependOn(&frontend_assets.step);
     package.step.dependOn(&release_server_build.step);
-    const package_sidecar = copyPackageSidecar(b, package_target, package_output, release_server_binary, server_binary_name);
-    package_sidecar.step.dependOn(&package.step);
+    const app_icon_icns = b.pathJoin(&.{ b.build_root.path orelse ".", "assets", "AppIcon.icns" });
+    const finalize_package = finalizeDesktopPackage(
+        b,
+        package_target,
+        package_output,
+        release_server_binary,
+        server_binary_name,
+        config.exe_name,
+        app_icon_icns,
+    );
+    finalize_package.step.dependOn(&package.step);
     const package_step = b.step("package", "Create a local package artifact");
-    package_step.dependOn(&package_sidecar.step);
+    package_step.dependOn(&finalize_package.step);
 
     const tests = b.addTest(.{ .root_module = app_mod });
     const test_step = b.step("test", "Run desktop shell tests");
@@ -157,8 +166,25 @@ fn syncFrontendAssets(b: *std.Build, source_dist: []const u8) *std.Build.Step.Ru
     return b.addSystemCommand(&.{ "node", "../../scripts/sync-frontend-dist.mjs", source_dist, "frontend/dist" });
 }
 
-fn copyPackageSidecar(b: *std.Build, package_target: PackageTarget, package_output: []const u8, source_binary: []const u8, server_binary_name: []const u8) *std.Build.Step.Run {
-    return b.addSystemCommand(&.{ "node", "../../scripts/copy-desktop-sidecar.mjs", @tagName(package_target), package_output, source_binary, server_binary_name });
+fn finalizeDesktopPackage(
+    b: *std.Build,
+    package_target: PackageTarget,
+    package_output: []const u8,
+    source_binary: []const u8,
+    server_binary_name: []const u8,
+    shell_binary_name: []const u8,
+    app_icon_icns: []const u8,
+) *std.Build.Step.Run {
+    return b.addSystemCommand(&.{
+        "node",
+        "../../scripts/finalize-desktop-package.mjs",
+        @tagName(package_target),
+        package_output,
+        source_binary,
+        server_binary_name,
+        shell_binary_name,
+        app_icon_icns,
+    });
 }
 
 fn resolveRepoServerBinary(b: *std.Build, cargo_profile_dir: []const u8, server_binary_name: []const u8) []const u8 {

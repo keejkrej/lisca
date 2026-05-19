@@ -29,4 +29,4 @@ Spec for the **lisca** monorepo: `apps/{aligner,annotator,studio}-{web,server,de
 
 ## Conventions
 
-Workspace scope **`@lisca/*`**. One root **`Cargo.toml`** workspace. Desktop packages **`devDependencies`** on their web + server so Turbo **`^build`** ordering works. **`pnpm.onlyBuiltDependencies`**: `electron`, `esbuild`.
+Workspace scope **`@lisca/*`**. One root **`Cargo.toml`** workspace. Desktop packages **`devDependencies`** on their web + server so Turbo **`^build`** ordering works. **`pnpm.onlyBuiltDependencies`**: `electron`, `esbuild`. Shared product icons: **`assets/brand/`** (web via Vite `publicDir`; desktop/mobile `assets/` symlinks).

@@ -5,7 +5,7 @@ import {
   type BoxPlotPanel,
   type HistogramPanel,
   type ResultPanel,
-} from "./result-plots";
+} from "./plots";
 
 const TRACE_PALETTE = [
   "#60a5fa",
