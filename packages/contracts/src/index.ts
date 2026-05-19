@@ -78,7 +78,7 @@ export type StudioSaveAssayJsonResponse = {
 };
 
 export type StudioHostPort = AlignerHostPort & {
-  readTextFile(path: string): Promise<string>;
+  readTextFile(path: string, signal?: AbortSignal): Promise<string>;
   saveAssayJson(saveTo: string, contents: string): Promise<StudioSaveAssayJsonResponse>;
 };
 
@@ -394,7 +394,38 @@ export type CropRoiProgressMessage = {
   progress: CropRoiProgress;
 };
 
-export type ServerWsMessage = HelloMessage | CropRoiProgressMessage;
+export type AnalysisStage = "queued" | "preparing" | "segment" | "timeseries" | "auc" | "fit" | "completed";
+
+export type AnalysisStatus = "queued" | "running" | "completed" | "error";
+
+export type StudioAnalysisCsvFile = {
+  kind: string;
+  fileName: string;
+  path: string;
+  csv?: string;
+};
+
+export type AnalysisProgress = {
+  requestId: string;
+  status: AnalysisStatus;
+  stage: AnalysisStage;
+  progress: number;
+  message: string | null;
+  resultFiles: StudioAnalysisCsvFile[];
+  error?: string;
+};
+
+export type AnalysisStartRequest = {
+  workspacePath: string;
+  requestId: string;
+};
+
+export type AnalysisProgressMessage = {
+  type: "analysisProgress";
+  progress: AnalysisProgress;
+};
+
+export type ServerWsMessage = HelloMessage | CropRoiProgressMessage | AnalysisProgressMessage;
 
 export type RoiPosExistsResponse = {
   exists: boolean;
@@ -420,6 +451,9 @@ export type AlignerDataPort = {
   cancelCropRoi(requestId: string): Promise<CropRoiProgress>;
   onCropRoiProgress(requestId: string, onProgress: (progress: CropRoiProgress) => void): () => void;
   roiPosExists(workspacePath: string, pos: number): Promise<boolean>;
+  startAnalysis(request: AnalysisStartRequest): Promise<AnalysisProgress>;
+  getAnalysisProgress(requestId: string): Promise<AnalysisProgress>;
+  onAnalysisProgress(requestId: string, onProgress: (progress: AnalysisProgress) => void): () => void;
 };
 
 export type CanvasStatusTone = "default" | "error" | "success";

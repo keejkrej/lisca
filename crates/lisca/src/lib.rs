@@ -1,6 +1,7 @@
 //! Shared contracts and WebSocket server utilities for Lisca.
 
 pub mod aligner;
+pub mod analysis;
 pub mod image_source;
 pub mod protocol;
 pub mod roi;

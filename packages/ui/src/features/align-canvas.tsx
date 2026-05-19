@@ -25,6 +25,7 @@ import {
 
 import { cn } from "../lib/utils";
 import { CanvasStatusMessageStack, CanvasToastStack } from "./canvas-status";
+import { resolvedCanvasBackground, useCanvasThemeRerender } from "./canvas-theme";
 
 export type AlignCanvasFramePoint = {
   x: number;
@@ -178,11 +179,6 @@ function drawGridOverlay(
   ctx.restore();
 }
 
-function canvasBackgroundColor(element: HTMLElement) {
-  const color = window.getComputedStyle(element).backgroundColor;
-  return color && color !== "rgba(0, 0, 0, 0)" && color !== "transparent" ? color : "#09090b";
-}
-
 export function AlignCanvas({
   frame,
   grid,
@@ -228,7 +224,7 @@ export function AlignCanvas({
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.save();
     ctx.scale(dprRef.current, dprRef.current);
-    ctx.fillStyle = canvasBackgroundColor(view);
+    ctx.fillStyle = resolvedCanvasBackground(view);
     ctx.fillRect(0, 0, cssWidth, cssHeight);
 
     if (cached) {
@@ -268,14 +264,7 @@ export function AlignCanvas({
     renderNow();
   }, [activeExcludedCellKeys, renderNow]);
 
-  useEffect(() => {
-    const observer = new MutationObserver(() => renderNow());
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class", "style"],
-    });
-    return () => observer.disconnect();
-  }, [renderNow]);
+  useCanvasThemeRerender(renderNow);
 
   useLayoutEffect(() => {
     const view = viewportRef.current;

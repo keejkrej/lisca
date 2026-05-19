@@ -2,6 +2,7 @@ import { Button } from "@lisca/ui";
 import type { ReactNode } from "react";
 
 export function DockButton(props: {
+  active?: boolean;
   children: ReactNode;
   disabled?: boolean;
   loading?: boolean;
@@ -14,7 +15,7 @@ export function DockButton(props: {
       loading={props.loading}
       size="sm"
       type="button"
-      variant="outline"
+      variant={props.active ? "default" : "outline"}
       onClick={props.onClick}
     >
       {props.children}

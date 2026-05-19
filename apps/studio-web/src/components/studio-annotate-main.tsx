@@ -2,6 +2,8 @@ import { AnnotationCanvas, CanvasToastStack } from "@lisca/ui";
 import { useMemo } from "react";
 
 import type { StudioAnnotateState } from "../state/use-studio-annotate-state";
+import { StudioAnalysisProgressModal } from "./studio-analysis-progress-modal";
+import { StudioAnalysisStartModal } from "./studio-analysis-start-modal";
 
 export function StudioAnnotateMain({ state }: { state: StudioAnnotateState }) {
   const emptyMask = useMemo(
@@ -49,6 +51,8 @@ export function StudioAnnotateMain({ state }: { state: StudioAnnotateState }) {
         tool="brush"
         onMaskCommit={() => undefined}
       />
+      <StudioAnalysisStartModal state={state} />
+      <StudioAnalysisProgressModal state={state} />
     </div>
   );
 }

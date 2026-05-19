@@ -266,6 +266,57 @@ pub struct CropRoiProgress {
     pub error: Option<String>,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum AnalysisStatus {
+    Queued,
+    Running,
+    Completed,
+    Error,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum AnalysisStage {
+    Queued,
+    Preparing,
+    Segment,
+    Timeseries,
+    Auc,
+    Fit,
+    Completed,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnalysisCsvFile {
+    pub kind: String,
+    pub file_name: String,
+    pub path: String,
+    pub csv: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnalysisProgress {
+    pub request_id: String,
+    pub status: AnalysisStatus,
+    pub stage: AnalysisStage,
+    pub progress: f64,
+    pub message: Option<String>,
+    #[serde(default)]
+    pub result_files: Vec<AnalysisCsvFile>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnalysisStartRequest {
+    pub workspace_path: String,
+    pub request_id: String,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct RoiPosExistsResponse {
     pub exists: bool,

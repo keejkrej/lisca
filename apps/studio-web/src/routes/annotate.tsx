@@ -1,5 +1,5 @@
 import { AppShell } from "@lisca/ui";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 
 import { DockButton } from "../components/dock-button";
 import { DockSection } from "../components/dock-section";
@@ -14,11 +14,15 @@ export const Route = createFileRoute("/annotate")({
 
 function AnnotatePage() {
   const annotateState = useStudioAnnotateState();
-  const navigate = useNavigate();
+  const analysisBusy = Boolean(
+    annotateState.analysisProgress &&
+      (annotateState.analysisProgress.status === "queued" ||
+        annotateState.analysisProgress.status === "running"),
+  );
 
   const disableShuffle =
     annotateState.scanLoading || annotateState.scan === null || Boolean(annotateState.error);
-  const disableNext = annotateState.frameLoading || !annotateState.request;
+  const disableNext = annotateState.frameLoading || !annotateState.request || analysisBusy;
 
   return (
     <AppShell>
@@ -44,7 +48,12 @@ function AnnotatePage() {
                     <DockButton disabled={disableShuffle} onClick={annotateState.shuffleSelection}>
                       Shuffle
                     </DockButton>
-                    <DockButton disabled={disableNext} onClick={() => void navigate({ to: "/result" })}>
+                    <DockButton
+                      disabled={disableNext}
+                      onClick={() => {
+                        annotateState.setAnalysisStartConfirm(true);
+                      }}
+                    >
                       Next
                     </DockButton>
                   </div>

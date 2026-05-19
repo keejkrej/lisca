@@ -1,9 +1,11 @@
 import type {
+  AnalysisProgress,
   ContrastWindow,
   FrameResult,
   RoiIndexEntry,
   RoiPositionScan,
   RoiWorkspaceScan,
+  StudioAnalysisCsvFile,
 } from "@lisca/contracts";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
@@ -17,6 +19,10 @@ export type StudioAnnotateSelection = {
 };
 
 type StudioAnnotateStoreState = {
+  analysisStartConfirm: boolean;
+  analysisRequestId: string | null;
+  analysisProgress: AnalysisProgress | null;
+  analysisResultFiles: StudioAnalysisCsvFile[];
   workspacePath: string | null;
   scan: RoiWorkspaceScan | null;
   selection: StudioAnnotateSelection;
@@ -34,6 +40,10 @@ type StudioAnnotateStoreState = {
 
 type StudioAnnotateStoreActions = {
   setWorkspacePath: (workspacePath: string | null) => void;
+  setAnalysisStartConfirm: (value: boolean) => void;
+  setAnalysisRequestId: (requestId: string | null) => void;
+  setAnalysisProgress: (progress: AnalysisProgress | null) => void;
+  setAnalysisResultFiles: (files: StudioAnalysisCsvFile[]) => void;
   setScan: (scan: RoiWorkspaceScan | null) => void;
   setSelection: (patch: Partial<StudioAnnotateSelection>) => void;
   setFrame: (frame: FrameResult | null) => void;
@@ -59,6 +69,10 @@ const defaultContrastDomain: ContrastWindow = { min: 0, max: 255 };
 
 function createInitialState(): StudioAnnotateStoreState {
   return {
+    analysisStartConfirm: false,
+    analysisRequestId: null,
+    analysisProgress: null,
+    analysisResultFiles: [],
     workspacePath: null,
     scan: null,
     selection: defaultSelection,
@@ -106,6 +120,10 @@ export const useStudioAnnotateStore = create<StudioAnnotateStore>()(
           return {
             ...state,
             workspacePath,
+            analysisStartConfirm: false,
+            analysisRequestId: null,
+            analysisProgress: null,
+            analysisResultFiles: [],
             scan: null,
             selection: defaultSelection,
             frame: null,
@@ -118,6 +136,14 @@ export const useStudioAnnotateStore = create<StudioAnnotateStore>()(
             status: null,
           };
         }),
+      setAnalysisStartConfirm: (analysisStartConfirm) =>
+        set((state) => ({ ...state, analysisStartConfirm })),
+      setAnalysisRequestId: (analysisRequestId) =>
+        set((state) => ({ ...state, analysisRequestId })),
+      setAnalysisProgress: (analysisProgress) =>
+        set((state) => ({ ...state, analysisProgress })),
+      setAnalysisResultFiles: (analysisResultFiles) =>
+        set((state) => ({ ...state, analysisResultFiles })),
       setScan: (scan) => set((state) => ({ ...state, scan })),
       setSelection: (patch) =>
         set((state) => ({ ...state, selection: { ...state.selection, ...patch } })),

@@ -13,6 +13,7 @@ import {
 } from "react";
 
 import { cn } from "../lib/utils";
+import { resolvedCanvasBackground, useCanvasThemeRerender } from "./canvas-theme";
 import { CanvasStatusMessageStack, CanvasToastStack } from "./canvas-status";
 
 type FramePoint = { x: number; y: number };
@@ -145,8 +146,7 @@ export function AnnotationCanvas({
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.save();
     ctx.scale(dprRef.current, dprRef.current);
-    ctx.fillStyle =
-      getComputedStyle(viewport).getPropertyValue("--color-background").trim() || "#09090b";
+    ctx.fillStyle = resolvedCanvasBackground(viewport);
     ctx.fillRect(0, 0, width, height);
 
     if (frame && preparedFrame) {
@@ -189,6 +189,8 @@ export function AnnotationCanvas({
     if (rafRef.current != null) return;
     rafRef.current = window.requestAnimationFrame(render);
   }, [render]);
+
+  useCanvasThemeRerender(queueRender);
 
   useLayoutEffect(() => {
     const canvas = canvasRef.current;

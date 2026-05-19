@@ -30,9 +30,10 @@ export function StudioNavRail() {
           View results
         </NavButton>
       </div>
-      <div className="flex shrink-0 items-center gap-2 border-t border-border/60 pt-2.5">
+      <div className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center border-t border-border/60 pt-2.5">
+        <div />
         <ConnectionStatus wsUrl={ws.wsUrl} state={ws.state} />
-        <div className="ml-auto shrink-0">
+        <div className="justify-self-end">
           <ShellThemeToggle />
         </div>
       </div>

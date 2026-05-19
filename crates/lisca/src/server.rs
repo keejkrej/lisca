@@ -1,7 +1,7 @@
 use std::{
     collections::HashMap,
     net::SocketAddr,
-    path::PathBuf,
+    path::{Path, PathBuf},
     sync::{
         atomic::{AtomicBool, Ordering as AtomicOrdering},
         Arc, Mutex,
@@ -25,12 +25,14 @@ use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing::{info, warn};
 
 use crate::{
+    analysis,
     aligner, image_source,
     protocol::{
         AlignerSource, AnnotationLabel, AppId, AutoExcludePreviewRequest, ContrastWindow,
-        CropRoiProgress, CropRoiRequest, CropRoiStatus, FrameRequest, Hello, HostFsEntry,
-        HostListDirectoryResult, ReadTextFileResponse, RoiFrameAnnotationPayload, RoiFrameRequest,
-        SaveAssayJsonRequest, SaveAssayJsonResponse, SavedAlignState,
+        AnalysisProgress, AnalysisStartRequest, CropRoiProgress, CropRoiRequest, CropRoiStatus,
+        FrameRequest, Hello, HostFsEntry, HostListDirectoryResult, ReadTextFileResponse,
+        RoiFrameAnnotationPayload, RoiFrameRequest, SaveAssayJsonRequest, SaveAssayJsonResponse,
+        SavedAlignState,
     },
     roi,
 };
@@ -40,6 +42,9 @@ struct AppState {
     app: AppId,
     crop_jobs: Arc<Mutex<HashMap<String, CropJob>>>,
     crop_events: broadcast::Sender<CropRoiProgress>,
+    analysis_jobs: Arc<Mutex<HashMap<String, AnalysisProgress>>>,
+    analysis_workspace_requests: Arc<Mutex<HashMap<String, String>>>,
+    analysis_events: broadcast::Sender<AnalysisProgress>,
 }
 
 #[derive(Clone)]
@@ -53,6 +58,9 @@ pub async fn run_ws_server(app: AppId, port: u16) -> Result<(), std::io::Error> 
         app,
         crop_jobs: Arc::new(Mutex::new(HashMap::new())),
         crop_events: broadcast::channel(128).0,
+        analysis_jobs: Arc::new(Mutex::new(HashMap::new())),
+        analysis_workspace_requests: Arc::new(Mutex::new(HashMap::new())),
+        analysis_events: broadcast::channel(256).0,
     };
 
     let app_router = Router::new()
@@ -78,6 +86,10 @@ pub async fn run_ws_server(app: AppId, port: u16) -> Result<(), std::io::Error> 
         .route("/align/crop-roi", post(crop_roi_handler))
         .route("/align/cancel-crop-roi", post(cancel_crop_roi_handler))
         .route("/align/crop-roi-progress", get(crop_roi_progress_handler))
+        .route("/studio/start-analysis", post(start_analysis_handler))
+        .route("/studio/analysis-progress", get(analysis_progress_handler))
+        .route("/studio/latest-analysis", get(analysis_latest_progress_handler))
+        .route("/studio/analysis-results", get(analysis_results_handler))
         .route(
             "/annotate/scan-roi-workspace",
             post(scan_roi_workspace_handler),
@@ -162,6 +174,18 @@ struct WorkspacePosQuery {
 #[serde(rename_all = "camelCase")]
 struct CropProgressQuery {
     request_id: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AnalysisProgressQuery {
+    request_id: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LatestAnalysisQuery {
+    workspace_path: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -423,6 +447,201 @@ async fn crop_roi_progress_handler(
         .ok_or_else(|| FsError::new("crop job not found"))
 }
 
+async fn start_analysis_handler(
+    State(state): State<AppState>,
+    Json(payload): Json<AnalysisStartRequest>,
+) -> Result<Json<AnalysisProgress>, FsError> {
+    let request_id = payload.request_id.trim();
+    if request_id.is_empty() {
+        return Err(FsError::new("analysis request id is required"));
+    }
+
+    let workspace_path = normalize_workspace_path(&payload.workspace_path);
+    if workspace_path.is_empty() {
+        return Err(FsError::new("analysis workspace path is required"));
+    }
+
+    let request_id = request_id.to_string();
+    let workspace_path = workspace_path.to_string();
+    let initial = AnalysisProgress {
+        request_id: request_id.clone(),
+        status: crate::protocol::AnalysisStatus::Queued,
+        stage: crate::protocol::AnalysisStage::Queued,
+        progress: 0.0,
+        message: Some("Queued analysis".to_string()),
+        result_files: Vec::new(),
+        error: None,
+    };
+    {
+        let mut jobs = state
+            .analysis_jobs
+            .lock()
+            .map_err(|_| FsError::new("analysis job state is poisoned"))?;
+        if jobs.contains_key(&request_id) {
+            return Err(FsError::new("analysis request id already exists"));
+        }
+        jobs.insert(request_id.clone(), initial.clone());
+        let mut requests = state
+            .analysis_workspace_requests
+            .lock()
+            .map_err(|_| FsError::new("analysis workspace request map is poisoned"))?;
+        requests.insert(workspace_path.clone(), request_id.clone());
+    }
+    let _ = state.analysis_events.send(initial.clone());
+
+    let jobs = state.analysis_jobs.clone();
+    let events = state.analysis_events.clone();
+    let path = PathBuf::from(workspace_path.clone());
+    let run_request_id = request_id.clone();
+    tokio::spawn(async move {
+        let update_progress = {
+            let jobs = jobs.clone();
+            let events = events.clone();
+            move |progress: AnalysisProgress| {
+                if let Ok(mut jobs) = jobs.lock() {
+                    jobs.insert(progress.request_id.clone(), progress.clone());
+                }
+                let _ = events.send(progress);
+            }
+        };
+
+        let result = analysis::run_analysis_pipeline(path.clone(), run_request_id.clone(), update_progress).await;
+        match result {
+            Ok(result_files) => {
+                let final_progress = AnalysisProgress {
+                    request_id: run_request_id,
+                    status: crate::protocol::AnalysisStatus::Completed,
+                    stage: crate::protocol::AnalysisStage::Completed,
+                    progress: 100.0,
+                    message: Some("Completed".to_string()),
+                    result_files,
+                    error: None,
+                };
+                if let Ok(mut jobs) = jobs.lock() {
+                    jobs.insert(final_progress.request_id.clone(), final_progress.clone());
+                }
+                let _ = events.send(final_progress);
+            }
+            Err(error) => {
+                let final_progress = AnalysisProgress {
+                    request_id: run_request_id.clone(),
+                    status: crate::protocol::AnalysisStatus::Error,
+                    stage: crate::protocol::AnalysisStage::Queued,
+                    progress: 0.0,
+                    message: Some("Analysis failed".to_string()),
+                    result_files: Vec::new(),
+                    error: Some(error),
+                };
+                if let Ok(mut jobs) = jobs.lock() {
+                    jobs.insert(final_progress.request_id.clone(), final_progress.clone());
+                }
+                let _ = events.send(final_progress);
+            }
+        }
+    });
+
+    Ok(Json(initial))
+}
+
+async fn analysis_progress_handler(
+    State(state): State<AppState>,
+    Query(query): Query<AnalysisProgressQuery>,
+) -> Result<Json<AnalysisProgress>, FsError> {
+    let jobs = state
+        .analysis_jobs
+        .lock()
+        .map_err(|_| FsError::new("analysis job state is poisoned"))?;
+    jobs.get(&query.request_id)
+        .cloned()
+        .map(Json)
+        .ok_or_else(|| FsError::new("analysis job not found"))
+}
+
+async fn analysis_latest_progress_handler(
+    State(state): State<AppState>,
+    Query(query): Query<LatestAnalysisQuery>,
+) -> Result<Json<Option<AnalysisProgress>>, FsError> {
+    let workspace_path = normalize_workspace_path(&query.workspace_path);
+    if workspace_path.is_empty() {
+        return Err(FsError::new("analysis workspace path is required"));
+    }
+
+    let request_id = {
+        let requests = state
+            .analysis_workspace_requests
+            .lock()
+            .map_err(|_| FsError::new("analysis workspace request map is poisoned"))?;
+        requests.get(&workspace_path).cloned()
+    };
+
+    let Some(request_id) = request_id else {
+        let workspace = Path::new(&workspace_path);
+        let result_files = match analysis::workspace_analysis_manifest(workspace) {
+            Ok(result_files) if !result_files.is_empty() => result_files,
+            Ok(_) => return Ok(Json(None)),
+            Err(_) => return Ok(Json(None)),
+        };
+
+        let synthetic = AnalysisProgress {
+            request_id: workspace_path.clone(),
+            status: crate::protocol::AnalysisStatus::Completed,
+            stage: crate::protocol::AnalysisStage::Completed,
+            progress: 100.0,
+            message: Some("Using existing workspace CSV results".to_string()),
+            result_files,
+            error: None,
+        };
+        return Ok(Json(Some(synthetic)));
+    };
+
+    let jobs = state
+        .analysis_jobs
+        .lock()
+        .map_err(|_| FsError::new("analysis job state is poisoned"))?;
+    Ok(Json(jobs.get(&request_id).cloned()))
+}
+
+async fn analysis_results_handler(
+    Query(query): Query<LatestAnalysisQuery>,
+) -> Result<Json<Option<AnalysisProgress>>, FsError> {
+    let workspace_path = normalize_workspace_path(&query.workspace_path);
+    if workspace_path.is_empty() {
+        return Err(FsError::new("analysis workspace path is required"));
+    }
+    let workspace = Path::new(&workspace_path);
+    if !workspace.is_dir() {
+        return Ok(Json(None));
+    }
+
+    let result_files = match analysis::workspace_analysis_manifest(workspace) {
+        Ok(result_files) if !result_files.is_empty() => result_files,
+        Ok(_) => return Ok(Json(None)),
+        Err(_) => return Ok(Json(None)),
+    };
+
+    let synthetic = AnalysisProgress {
+        request_id: workspace_path,
+        status: crate::protocol::AnalysisStatus::Completed,
+        stage: crate::protocol::AnalysisStage::Completed,
+        progress: 100.0,
+        message: Some("Loaded workspace results".to_string()),
+        result_files,
+        error: None,
+    };
+    Ok(Json(Some(synthetic)))
+}
+
+fn normalize_workspace_path(raw: &str) -> String {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return String::new();
+    }
+    Path::new(trimmed)
+        .canonicalize()
+        .map(|path| path.to_string_lossy().into_owned())
+        .unwrap_or_else(|_| trimmed.to_string())
+}
+
 async fn scan_roi_workspace_handler(
     Json(payload): Json<WorkspacePathPayload>,
 ) -> Result<Json<crate::protocol::RoiWorkspaceScan>, FsError> {
@@ -583,6 +802,7 @@ async fn ws_handler(ws: WebSocketUpgrade, State(state): State<AppState>) -> impl
 
 async fn handle_socket(mut socket: WebSocket, state: AppState) {
     let mut crop_events = state.crop_events.subscribe();
+    let mut analysis_events = state.analysis_events.subscribe();
     let mut keepalive = tokio::time::interval(Duration::from_secs(30));
     let hello = Hello {
         app: state.app,
@@ -613,6 +833,24 @@ async fn handle_socket(mut socket: WebSocket, state: AppState) {
                     }
                     Err(broadcast::error::RecvError::Lagged(skipped)) => {
                         warn!(skipped, "crop progress websocket receiver lagged");
+                    }
+                    Err(broadcast::error::RecvError::Closed) => break,
+                }
+            }
+            event = analysis_events.recv() => {
+                match event {
+                    Ok(progress) => {
+                        let event = serde_json::json!({
+                            "type": "analysisProgress",
+                            "progress": progress,
+                        })
+                        .to_string();
+                        if socket.send(Message::Text(event.into())).await.is_err() {
+                            break;
+                        }
+                    }
+                    Err(broadcast::error::RecvError::Lagged(skipped)) => {
+                        warn!(skipped, "analysis progress websocket receiver lagged");
                     }
                     Err(broadcast::error::RecvError::Closed) => break,
                 }

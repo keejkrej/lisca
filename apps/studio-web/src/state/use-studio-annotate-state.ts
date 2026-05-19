@@ -1,6 +1,8 @@
 import type {
+  AnalysisProgress,
   ContrastWindow,
   FrameResult,
+  StudioAnalysisCsvFile,
   RoiFrameRequest,
   RoiPositionScan,
   RoiWorkspaceScan,
@@ -8,6 +10,7 @@ import type {
 import { useCanvasResourceTransaction, useCanvasTransientStatus } from "@lisca/ui";
 import { clamp } from "@lisca/utils";
 import { useCallback, useEffect, useMemo } from "react";
+import { useNavigate } from "@tanstack/react-router";
 
 import { studioClient, toErrorMessage } from "../api/studio-client";
 import { useStudioRoiWorkspaceScanQuery } from "../api/studio-queries";
@@ -44,6 +47,10 @@ export type StudioAnnotateState = {
   workspacePath: string | null;
   scan: RoiWorkspaceScan | null;
   position: RoiPositionScan | null;
+  analysisStartConfirm: boolean;
+  analysisRequestId: string | null;
+  analysisProgress: AnalysisProgress | null;
+  analysisResultFiles: StudioAnalysisCsvFile[];
   request: RoiFrameRequest | null;
   frame: FrameResult | null;
   contrastDomain: ContrastWindow;
@@ -60,14 +67,19 @@ export type StudioAnnotateState = {
     timeIndex: number;
     zIndex: number;
   };
+  setAnalysisProgress: (progress: AnalysisProgress | null) => void;
+  setAnalysisResultFiles: (files: StudioAnalysisCsvFile[]) => void;
   setSelection: (patch: Partial<StudioAnnotateState["selection"]>) => void;
   setContrast: (contrast: ContrastWindow) => void;
+  startAnalysis: () => void;
+  setAnalysisStartConfirm: (value: boolean) => void;
   shuffleSelection: () => void;
 };
 
 export function useStudioAnnotateState(): StudioAnnotateState {
   const saveTo = useStudioStore((state) => state.info1.saveTo);
   const activeWorkspacePath = saveTo.trim() || null;
+  const navigate = useNavigate();
   const {
     workspacePath,
     scan,
@@ -82,6 +94,10 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     scanError,
     frameError,
     status,
+    analysisStartConfirm,
+    analysisRequestId,
+    analysisProgress,
+    analysisResultFiles,
     setWorkspacePath,
     setScan,
     setSelection,
@@ -93,6 +109,10 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     setScanError,
     setFrameError,
     setStatus,
+    setAnalysisStartConfirm,
+    setAnalysisRequestId,
+    setAnalysisProgress,
+    setAnalysisResultFiles,
   } = useStudioAnnotateStore();
   const scanQuery = useStudioRoiWorkspaceScanQuery(activeWorkspacePath);
   const loadCanvasResources = useCanvasResourceTransaction();
@@ -257,9 +277,82 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     });
   }, [scan?.positions, setSelection]);
 
+  const startAnalysis = useCallback(() => {
+    if (!workspacePath) return;
+    setAnalysisStartConfirm(false);
+    setStatus("Starting analysis");
+    const requestId = `studio-analysis-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    setAnalysisRequestId(requestId);
+    setAnalysisResultFiles([]);
+    setAnalysisProgress({
+      requestId,
+      status: "queued",
+      stage: "queued",
+      progress: 0,
+      message: "Queued analysis",
+      resultFiles: [],
+      error: undefined,
+    });
+
+    let stop: (() => void) | null = null;
+    const onProgress = (progress: AnalysisProgress) => {
+      setAnalysisProgress(progress);
+      if (progress.resultFiles.length) {
+        setAnalysisResultFiles(progress.resultFiles);
+      }
+      if (progress.status === "completed") {
+        stop?.();
+        stop = null;
+        setStatus("Analysis completed");
+        void navigate({ to: "/result" });
+      }
+      if (progress.status === "error") {
+        stop?.();
+        stop = null;
+        setStatus(progress.error ?? "Analysis failed");
+      }
+    };
+
+    void (async () => {
+      try {
+        const initialProgress = await studioClient.startAnalysis({
+          workspacePath,
+          requestId,
+        });
+        setAnalysisProgress(initialProgress);
+        stop = studioClient.onAnalysisProgress(requestId, onProgress);
+      } catch (cause) {
+        stop?.();
+        stop = null;
+        setAnalysisProgress({
+          requestId,
+          status: "error",
+          stage: "queued",
+          progress: 0,
+          message: "Analysis failed to start",
+          resultFiles: [],
+          error: toErrorMessage(cause, "Analysis failed"),
+        });
+        setStatus(toErrorMessage(cause, "Analysis failed"));
+      }
+    })();
+  }, [
+    navigate,
+    setAnalysisProgress,
+    setAnalysisRequestId,
+    setAnalysisResultFiles,
+    setAnalysisStartConfirm,
+    setStatus,
+    workspacePath,
+  ]);
+
   return {
     workspacePath,
     scan,
+    analysisStartConfirm,
+    analysisRequestId,
+    analysisProgress,
+    analysisResultFiles,
     position,
     request,
     frame,
@@ -268,11 +361,14 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     contrastMax,
     scanLoading,
     frameLoading,
-    workspacePath,
     error,
     toasts,
     selection,
+    setAnalysisProgress,
+    setAnalysisResultFiles,
     setSelection: changeSelection,
+    setAnalysisStartConfirm,
+    startAnalysis,
     setContrast,
     shuffleSelection,
   };

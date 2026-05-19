@@ -4,6 +4,9 @@ import {
   type AlignerSource,
   type AutoExcludePreviewRequest,
   type AutoExcludePreviewResponse,
+  type AnalysisProgress,
+  type AnalysisProgressMessage,
+  type AnalysisStartRequest,
   type ContrastWindow,
   type CropRoiProgress,
   type CropRoiProgressMessage,
@@ -26,6 +29,8 @@ import { decodeFramePayload, resolveLiscaWsUrl } from "@lisca/utils";
 type StudioHttpClient = AlignerDataPort &
   StudioHostPort & {
     scanRoiWorkspace(workspacePath: string, signal?: AbortSignal): Promise<RoiWorkspaceScan>;
+    getAnalysisResults(workspacePath: string): Promise<AnalysisProgress | null>;
+    getLatestAnalysisProgress(workspacePath: string): Promise<AnalysisProgress | null>;
     loadRoiFrame(
       workspacePath: string,
       request: RoiFrameRequest,
@@ -89,6 +94,12 @@ function isCropRoiProgressMessage(value: unknown): value is CropRoiProgressMessa
   return message.type === "cropRoiProgress" && typeof message.progress?.requestId === "string";
 }
 
+function isAnalysisProgressMessage(value: unknown): value is AnalysisProgressMessage {
+  if (!value || typeof value !== "object") return false;
+  const message = value as { type?: unknown; progress?: { requestId?: unknown } };
+  return message.type === "analysisProgress" && typeof message.progress?.requestId === "string";
+}
+
 function pollCropRoiProgress(
   baseUrl: string,
   requestId: string,
@@ -114,6 +125,39 @@ function pollCropRoiProgress(
         totalRois: 0,
         message: null,
         error: cause instanceof Error ? cause.message : String(cause),
+      });
+      return;
+    }
+    window.setTimeout(poll, 350);
+  };
+  void poll();
+  return () => {
+    closed = true;
+  };
+}
+
+function pollAnalysisProgress(
+  baseUrl: string,
+  requestId: string,
+  onProgress: (progress: AnalysisProgress) => void,
+) {
+  let closed = false;
+  const poll = async () => {
+    if (closed) return;
+    try {
+      const progress = await getJson<AnalysisProgress>(baseUrl, "/studio/analysis-progress", {
+        requestId,
+      });
+      onProgress(progress);
+      if (["completed", "error"].includes(progress.status)) return;
+    } catch (cause) {
+      onProgress({
+        requestId,
+        status: "error",
+        stage: "queued",
+        progress: 0,
+        message: cause instanceof Error ? cause.message : String(cause),
+        resultFiles: [],
       });
       return;
     }
@@ -169,6 +213,18 @@ export function createStudioHttpClient(baseUrl: string): StudioHttpClient {
     },
     cancelCropRoi(requestId: string) {
       return postJson<CropRoiProgress>(baseUrl, "/align/cancel-crop-roi", { requestId });
+    },
+    startAnalysis(request: AnalysisStartRequest) {
+      return postJson<AnalysisProgress>(baseUrl, "/studio/start-analysis", request);
+    },
+    getAnalysisProgress(requestId: string) {
+      return getJson<AnalysisProgress>(baseUrl, "/studio/analysis-progress", { requestId });
+    },
+    getAnalysisResults(workspacePath: string) {
+      return getJson<AnalysisProgress | null>(baseUrl, "/studio/analysis-results", { workspacePath });
+    },
+    getLatestAnalysisProgress(workspacePath: string) {
+      return getJson<AnalysisProgress | null>(baseUrl, "/studio/latest-analysis", { workspacePath });
     },
     onCropRoiProgress(requestId: string, onProgress: (progress: CropRoiProgress) => void) {
       let closed = false;
@@ -236,6 +292,72 @@ export function createStudioHttpClient(baseUrl: string): StudioHttpClient {
         ws?.close();
       };
     },
+    onAnalysisProgress(requestId: string, onProgress: (progress: AnalysisProgress) => void) {
+      let closed = false;
+      let terminal = false;
+      let ws: WebSocket | null = null;
+      let stopFallback: (() => void) | null = null;
+      const fallbackTimer = window.setTimeout(() => {
+        if (closed) return;
+        stopFallback = pollAnalysisProgress(baseUrl, requestId, onProgress);
+      }, 1500);
+
+      try {
+        ws = new WebSocket(resolveStudioWsUrl(baseUrl));
+      } catch {
+        window.clearTimeout(fallbackTimer);
+        stopFallback = pollAnalysisProgress(baseUrl, requestId, onProgress);
+      }
+
+      ws?.addEventListener("open", () => {
+        window.clearTimeout(fallbackTimer);
+        void getJson<AnalysisProgress>(baseUrl, "/studio/analysis-progress", { requestId })
+          .then((progress) => {
+            if (closed) return;
+            onProgress(progress);
+            terminal = ["completed", "error"].includes(progress.status);
+            if (terminal) ws?.close();
+          })
+          .catch(() => {
+            if (closed || stopFallback) return;
+            stopFallback = pollAnalysisProgress(baseUrl, requestId, onProgress);
+          });
+      });
+
+      ws?.addEventListener("message", (event) => {
+        if (closed) return;
+        try {
+          const message = JSON.parse(String(event.data)) as unknown;
+          if (!isAnalysisProgressMessage(message) || message.progress.requestId !== requestId) {
+            return;
+          }
+          onProgress(message.progress);
+          terminal = ["completed", "error"].includes(message.progress.status);
+          if (terminal) ws?.close();
+        } catch {
+          // Ignore non-JSON websocket messages.
+        }
+      });
+
+      ws?.addEventListener("error", () => {
+        if (closed || stopFallback) return;
+        window.clearTimeout(fallbackTimer);
+        stopFallback = pollAnalysisProgress(baseUrl, requestId, onProgress);
+      });
+
+      ws?.addEventListener("close", () => {
+        if (closed || terminal || stopFallback) return;
+        window.clearTimeout(fallbackTimer);
+        stopFallback = pollAnalysisProgress(baseUrl, requestId, onProgress);
+      });
+
+      return () => {
+        closed = true;
+        window.clearTimeout(fallbackTimer);
+        stopFallback?.();
+        ws?.close();
+      };
+    },
     async roiPosExists(workspacePath: string, pos: number) {
       const result = await getJson<{ exists: boolean }>(baseUrl, "/align/roi-pos-exists", {
         workspacePath,
@@ -276,8 +398,8 @@ export function createStudioHttpClient(baseUrl: string): StudioHttpClient {
     userHomeDirectory() {
       return getJson<{ path: string }>(baseUrl, "/fs/home").then((result) => result.path);
     },
-    readTextFile(path: string) {
-      return getJson<{ contents: string }>(baseUrl, "/fs/read-text", { path }).then(
+    readTextFile(path: string, signal?: AbortSignal) {
+      return getJson<{ contents: string }>(baseUrl, "/fs/read-text", { path }, signal).then(
         (result) => result.contents,
       );
     },
