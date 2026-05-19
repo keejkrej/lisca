@@ -4,7 +4,7 @@
     .version = "0.1.0",
     .minimum_zig_version = "0.16.0",
     .dependencies = .{
-        .z_desktop = .{ .path = "../../zig/z-desktop" },
+        .zero_native = .{ .path = "../../zig/zero-native" },
     },
     .paths = .{ "app.zon", "assets", "build.zig", "build.zig.zon", "src" },
 }

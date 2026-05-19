@@ -1,8 +1,8 @@
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
-    const z_desktop = b.lazyImport(@This(), "z_desktop") orelse return;
-    z_desktop.buildApp(b, .{
+    const zero_native = b.lazyImport(@This(), "zero_native") orelse return;
+    zero_native.buildApp(b, .{
         .exe_name = "lisca-aligner",
         .version = "0.1.0",
         .web_package = "@lisca/aligner-web",
