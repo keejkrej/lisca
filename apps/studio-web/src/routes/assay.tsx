@@ -65,8 +65,8 @@ function AssayPage() {
                   Next
                 </DockButton>
               }
-              tool={
-                <DockSection title="Assay">
+              assay={
+                <DockSection>
                   <DockButton disabled={openingAssay} onClick={() => setAssayPickerOpen(true)}>
                     Open assay
                   </DockButton>

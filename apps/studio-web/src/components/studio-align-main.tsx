@@ -9,6 +9,7 @@ import { useMemo } from "react";
 import { StudioCropConfirmModal } from "./studio-crop-confirm-modal";
 import { StudioCropProgressModal } from "./studio-crop-progress-modal";
 import { StudioCropStartModal } from "./studio-crop-start-modal";
+import { StudioMainCard } from "./studio-main-card";
 import type { StudioAlignState } from "../state/use-studio-align-state";
 
 export function StudioAlignMain({ state }: { state: StudioAlignState }) {
@@ -40,35 +41,28 @@ export function StudioAlignMain({ state }: { state: StudioAlignState }) {
     if (activeToastStatus) return [{ text: activeToastStatus }];
     return [];
   }, [activeToastStatus, state.error]);
-  const emptyText = !state.workspacePath
-    ? "Choose a save folder on Info."
-    : !state.source
-      ? "Choose a data source on Info."
-      : state.scanLoading
-        ? "Scanning source..."
-        : "No frame loaded.";
-
   return (
-    <div className="flex h-full min-h-0 flex-col bg-muted/20">
-      <AlignCanvas
-        className="min-h-0 flex-1"
-        cursor={cursorForAlignTool(state.toolMode, state.grid.enabled, previewGrid != null)}
-        emptyText={emptyText}
-        excludedCells={state.displayedExcludedCells}
-        frame={state.frame}
-        grid={state.grid}
-        loading={state.scanLoading || state.saving || state.frameLoading || state.cropping}
-        messages={messages}
-        previewGrid={previewGrid}
-        toasts={toasts}
-        onVirtualPointerCancel={handlePointerEnd}
-        onVirtualPointerDown={handlePointerDown}
-        onVirtualPointerMove={handlePointerMove}
-        onVirtualPointerUp={handlePointerEnd}
-      />
+    <>
+      <StudioMainCard>
+        <AlignCanvas
+          className="min-h-0 flex-1"
+          cursor={cursorForAlignTool(state.toolMode, state.grid.enabled, previewGrid != null)}
+          excludedCells={state.displayedExcludedCells}
+          frame={state.frame}
+          grid={state.grid}
+          loading={state.scanLoading || state.saving || state.frameLoading || state.cropping}
+          messages={messages}
+          previewGrid={previewGrid}
+          toasts={toasts}
+          onVirtualPointerCancel={handlePointerEnd}
+          onVirtualPointerDown={handlePointerDown}
+          onVirtualPointerMove={handlePointerMove}
+          onVirtualPointerUp={handlePointerEnd}
+        />
+      </StudioMainCard>
       <StudioCropStartModal state={state} />
       <StudioCropConfirmModal state={state} />
       <StudioCropProgressModal state={state} />
-    </div>
+    </>
   );
 }

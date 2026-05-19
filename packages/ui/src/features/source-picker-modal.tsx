@@ -3,6 +3,8 @@
 import { X } from "lucide-react";
 
 import { Button } from "../components/ui/button";
+import { surfaceDialogClass } from "../lib/surface";
+import { cn } from "../lib/utils";
 
 export type SourcePickerModalProps = {
   open: boolean;
@@ -39,7 +41,7 @@ export function SourcePickerModal({
       <div
         aria-labelledby="open-source-title"
         aria-modal="true"
-        className="w-full max-w-lg rounded-xl border border-border bg-card shadow-2xl"
+        className={cn("w-full max-w-lg", surfaceDialogClass)}
         role="dialog"
       >
         <div className="px-5 pb-3 pt-5">

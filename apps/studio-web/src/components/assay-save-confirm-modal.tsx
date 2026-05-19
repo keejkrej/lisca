@@ -1,4 +1,4 @@
-import { Button } from "@lisca/ui";
+import { Button, cn, surfaceDialogClass } from "@lisca/ui";
 
 export function AssaySaveConfirmModal({
   open,
@@ -18,7 +18,7 @@ export function AssaySaveConfirmModal({
       <div
         aria-labelledby="assay-save-confirm-title"
         aria-modal="true"
-        className="w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-2xl"
+        className={cn("w-full max-w-md p-5", surfaceDialogClass)}
         role="dialog"
       >
         <div className="space-y-4">

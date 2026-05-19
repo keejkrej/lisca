@@ -45,6 +45,7 @@ export type AnnotationCanvasProps = {
   toasts?: CanvasStatusMessage[];
   disabled?: boolean;
   className?: string;
+  emptyText?: string;
   onMaskCommit: (mask: Uint8Array) => void;
 };
 
@@ -118,6 +119,7 @@ export function AnnotationCanvas({
   toasts,
   disabled = false,
   className,
+  emptyText,
   onMaskCommit,
 }: AnnotationCanvasProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
@@ -293,9 +295,9 @@ export function AnnotationCanvas({
       ref={viewportRef}
       className={cn("relative h-full min-h-0 w-full overflow-hidden bg-background", className)}
     >
-      {!frame ? (
+      {!frame && emptyText ? (
         <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
-          No ROI frame loaded.
+          {emptyText}
         </div>
       ) : null}
       <canvas

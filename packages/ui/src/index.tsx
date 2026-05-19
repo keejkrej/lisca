@@ -73,6 +73,7 @@ export {
 } from "./components/ui";
 
 export { cn } from "./lib/utils";
+export { surfaceDialogClass, surfacePanelClass } from "./lib/surface";
 
 export { AppShell, type AppShellCompound, ShellDock, ShellSidebar } from "./shell/shell";
 

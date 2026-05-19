@@ -1,4 +1,4 @@
-import { Spinner } from "@lisca/ui";
+import { cn, Spinner, surfaceDialogClass } from "@lisca/ui";
 import { clamp } from "@lisca/utils";
 
 import type { AnalysisProgress } from "@lisca/contracts";
@@ -19,7 +19,7 @@ export function StudioAnalysisProgressModal({ state }: { state: StudioAnnotateSt
       <div
         aria-labelledby="studio-analysis-progress-title"
         aria-modal="true"
-        className="w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-2xl"
+        className={cn("w-full max-w-md p-5", surfaceDialogClass)}
         role="dialog"
       >
         <div className="flex items-center gap-3">

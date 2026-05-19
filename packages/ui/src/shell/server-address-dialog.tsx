@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
+import { surfaceDialogClass } from "../lib/surface";
 import { cn } from "../lib/utils";
 
 export type ServerAddressDialogProps = {
@@ -75,7 +76,10 @@ export function ServerAddressDialog({
       <div
         aria-labelledby="server-address-title"
         aria-modal="true"
-        className="flex max-h-[86vh] w-full max-w-lg flex-col rounded-xl border border-border bg-card shadow-2xl"
+        className={cn(
+          "flex max-h-[86vh] w-full max-w-lg flex-col",
+          surfaceDialogClass,
+        )}
         role="dialog"
       >
         <div className="space-y-1 border-b border-border px-5 py-4">

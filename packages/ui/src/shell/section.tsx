@@ -6,6 +6,7 @@ import { useId, useState } from "react";
 
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import { surfacePanelClass } from "../lib/surface";
 import { cn } from "../lib/utils";
 
 export type SectionProps = Omit<ComponentProps<typeof Card>, "title"> & {
@@ -37,7 +38,7 @@ export function Section({
   const CollapseIcon = collapsed ? ChevronRight : ChevronDown;
 
   return (
-    <Card className={cn("border-0 shadow-none", className)} {...cardProps}>
+    <Card className={cn(surfacePanelClass, className)} {...cardProps}>
       <CardHeader
         className={cn("shrink-0 space-y-1.5 px-3 py-3", !collapsed && "pb-0", headerClassName)}
       >

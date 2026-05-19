@@ -11,6 +11,7 @@ import { BasicInfoStep1 } from "../components/basic-info-step1";
 import { BasicInfoStep2 } from "../components/basic-info-step2";
 import { BasicInfoStep3 } from "../components/basic-info-step3";
 import { DockButton } from "../components/dock-button";
+import { DockSection } from "../components/dock-section";
 import { StudioDock } from "../components/studio-dock";
 import { StudioLeft } from "../components/studio-left";
 import { instructionForStep, validInfo1, validInfo2, validInfo3 } from "../state/studio-routes";
@@ -127,7 +128,11 @@ function InfoPage() {
                   </DockButton>
                 </div>
               }
-              tool={null}
+              assay={
+                <DockSection>
+                  <div aria-hidden="true" />
+                </DockSection>
+              }
             />
           </AppShell.Dock>
         </AppShell.MainColumn>

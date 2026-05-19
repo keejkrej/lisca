@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import type { StudioAnnotateState } from "../state/use-studio-annotate-state";
 import { StudioAnalysisProgressModal } from "./studio-analysis-progress-modal";
 import { StudioAnalysisStartModal } from "./studio-analysis-start-modal";
+import { StudioMainCard } from "./studio-main-card";
 
 export function StudioAnnotateMain({ state }: { state: StudioAnnotateState }) {
   const emptyMask = useMemo(
@@ -23,22 +24,24 @@ export function StudioAnnotateMain({ state }: { state: StudioAnnotateState }) {
   }, [state.position, state.request, state.scan]);
 
   return (
-    <div className="relative flex h-full min-h-0 flex-col bg-muted/20">
-      <AnnotationCanvas
-        activeLabelId={null}
-        brushSize={1}
-        disabled
-        frame={state.frame}
-        labels={[]}
-        mask={emptyMask}
-        messages={messages.length ? messages : undefined}
-        overlayOpacity={0}
-        toasts={state.toasts}
-        tool="brush"
-        onMaskCommit={() => undefined}
-      />
+    <>
+      <StudioMainCard className="relative">
+        <AnnotationCanvas
+          activeLabelId={null}
+          brushSize={1}
+          disabled
+          frame={state.frame}
+          labels={[]}
+          mask={emptyMask}
+          messages={messages.length ? messages : undefined}
+          overlayOpacity={0}
+          toasts={state.toasts}
+          tool="brush"
+          onMaskCommit={() => undefined}
+        />
+      </StudioMainCard>
       <StudioAnalysisStartModal state={state} />
       <StudioAnalysisProgressModal state={state} />
-    </div>
+    </>
   );
 }

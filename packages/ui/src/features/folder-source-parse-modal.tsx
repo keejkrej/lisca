@@ -11,6 +11,8 @@ import { useEffect, useState } from "react";
 import { Button } from "../components/ui/button";
 import { Field, FieldLabel } from "../components/ui/field";
 import { Input } from "../components/ui/input";
+import { surfaceDialogClass } from "../lib/surface";
+import { cn } from "../lib/utils";
 
 export type FolderSourceParseModalProps = {
   path: string | null;
@@ -145,7 +147,7 @@ export function FolderSourceParseModal({
       <div
         aria-labelledby="folder-source-template-title"
         aria-modal="true"
-        className="w-full max-w-xl rounded-xl border border-border bg-card shadow-2xl"
+        className={cn("w-full max-w-xl", surfaceDialogClass)}
         role="dialog"
       >
         <div className="border-b border-border px-5 py-4">

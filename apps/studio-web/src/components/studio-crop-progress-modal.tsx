@@ -1,4 +1,4 @@
-import { Button, Spinner } from "@lisca/ui";
+import { Button, cn, Spinner, surfaceDialogClass } from "@lisca/ui";
 import { clamp } from "@lisca/utils";
 
 import type { StudioAlignState } from "../state/use-studio-align-state";
@@ -16,7 +16,7 @@ export function StudioCropProgressModal({ state }: { state: StudioAlignState }) 
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/55 px-6 backdrop-blur-sm">
       <div
         aria-modal="true"
-        className="w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-2xl"
+        className={cn("w-full max-w-md p-5", surfaceDialogClass)}
         role="dialog"
       >
         <div className="flex items-center gap-3">

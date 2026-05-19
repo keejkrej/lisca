@@ -7,7 +7,8 @@ export function StudioAlignTools({ state }: { state: StudioAlignState }) {
     <AlignTools
       mode={state.toolMode}
       patternZoomLocked={state.patternZoomLocked}
-      sectionClassName="flex min-h-0 min-w-0 flex-1 basis-0 flex-col"
+      sectionClassName="flex h-full min-h-0 min-w-0 flex-col"
+      sectionTitle="Assay"
       sectionContentClassName="flex min-h-0 flex-1 flex-col"
       onModeChange={state.setToolMode}
       onPatternZoomLockedChange={state.setPatternZoomLocked}

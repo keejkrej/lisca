@@ -1,4 +1,10 @@
-import { ConnectionStatus, ShellThemeToggle, useShellServer } from "@lisca/ui";
+import {
+  cn,
+  ConnectionStatus,
+  ShellThemeToggle,
+  surfacePanelClass,
+  useShellServer,
+} from "@lisca/ui";
 import { useRouterState } from "@tanstack/react-router";
 
 import { NavButton } from "./studio-nav-button";
@@ -11,26 +17,30 @@ export function StudioNavRail() {
   return (
     <nav
       aria-label="Primary"
-      className="flex h-full min-h-0 flex-col items-stretch bg-card/32 p-2.5"
+      className="flex h-full min-h-0 flex-col items-stretch gap-2.5 bg-card/32 p-2.5"
     >
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 overflow-y-auto">
-        <NavButton active={routeId === "assay"} to="/assay">
-          Choose assay
-        </NavButton>
-        <NavButton active={routeId === "info"} to="/info">
-          Basic info
-        </NavButton>
-        <NavButton active={routeId === "align"} to="/align">
-          Align pattern
-        </NavButton>
-        <NavButton active={routeId === "annotate"} to="/annotate">
-          Annotate ROI
-        </NavButton>
-        <NavButton active={routeId === "result"} to="/result">
-          View results
-        </NavButton>
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
+        <div className={cn("w-full shrink-0", surfacePanelClass)}>
+          <div className="flex flex-col items-center gap-6 p-3">
+            <NavButton active={routeId === "assay"} to="/assay">
+              Choose assay
+            </NavButton>
+            <NavButton active={routeId === "info"} to="/info">
+              Basic info
+            </NavButton>
+            <NavButton active={routeId === "align"} to="/align">
+              Align pattern
+            </NavButton>
+            <NavButton active={routeId === "annotate"} to="/annotate">
+              Annotate ROI
+            </NavButton>
+            <NavButton active={routeId === "result"} to="/result">
+              View results
+            </NavButton>
+          </div>
+        </div>
       </div>
-      <div className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center border-t border-border/60 pt-2.5">
+      <div className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center">
         <div />
         <ConnectionStatus
           state={server.state}

@@ -67,7 +67,7 @@ function AlignPage() {
                   </div>
                 </div>
               }
-              tool={<StudioAlignTools state={alignState} />}
+              assay={<StudioAlignTools state={alignState} />}
             />
           </AppShell.Dock>
         </AppShell.MainColumn>

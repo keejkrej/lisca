@@ -10,6 +10,7 @@ import { FileIcon, FolderIcon, Home, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import { Button } from "../components/ui/button";
+import { surfaceDialogClass } from "../lib/surface";
 import { cn } from "../lib/utils";
 
 function pathExtLower(name: string): string {
@@ -165,7 +166,7 @@ export function HostFilePickerDialog({
       <div
         aria-labelledby="host-file-picker-title"
         aria-modal="true"
-        className="flex max-h-[86vh] w-full max-w-2xl flex-col rounded-xl border border-border bg-card shadow-2xl"
+        className={cn("flex max-h-[86vh] w-full max-w-2xl flex-col", surfaceDialogClass)}
         role="dialog"
       >
         <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
