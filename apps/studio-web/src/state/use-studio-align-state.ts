@@ -313,11 +313,17 @@ export function useStudioAlignState(): StudioAlignState {
     setFindingFirstUnaligned(true);
     setError(null);
     try {
-      setStatus("Finding first unaligned");
+      setStatus("Finding jump target");
       const savedPositions = new Set(await studioClient.listSavedBboxPositions(workspacePath));
       const firstUnaligned = scan.positions.find((pos) => !savedPositions.has(pos));
       if (firstUnaligned == null) {
-        setStatus("All positions aligned");
+        const lastPos = scan.positions.at(-1);
+        if (lastPos == null) {
+          setStatus("No positions in scan");
+          return;
+        }
+        setSelection({ pos: lastPos });
+        setStatus(`Jumped to Pos${lastPos}`);
         return;
       }
       setSelection({ pos: firstUnaligned });
@@ -468,6 +474,7 @@ export function useStudioAlignState(): StudioAlignState {
     if (!workspacePath || !frame) return false;
     setSaving(true);
     setError(null);
+    let advanced = false;
     try {
       const [edgeCells, thresholdCells] = await Promise.all([
         Promise.resolve(collectAlignGridEdgeCells(frame, grid)),
@@ -480,25 +487,27 @@ export function useStudioAlignState(): StudioAlignState {
       setExcludedCellsForCurrentPosition(finalExcludedCells);
       const csv = buildBboxCsv(frame, grid, finalExcludedCells);
       const alignState = alignStateFromCurrent(grid, finalExcludedCells);
-      const [result] = await Promise.all([
-        studioClient.saveBbox(workspacePath, lockedSelection.pos, csv, alignState),
-        delay(nextExclusionPreviewMs),
-      ]);
+      const result = await studioClient.saveBbox(workspacePath, lockedSelection.pos, csv, alignState);
       if (!result.ok) throw new Error(result.error ?? "Save failed");
       queryClient.setQueryData<SavedAlignState | null>(
         ["studio", "align-state", savedAlignStateKey(workspacePath, lockedSelection.pos)],
         alignState,
       );
       setStatus(`Saved bbox/Pos${lockedSelection.pos}.csv`);
-      const advanced = advanceToNextPosition();
-      if (!advanced) await maybeCropWhenAllPositionsSaved();
-      return true;
     } catch (cause) {
       setError(toErrorMessage(cause, "Save failed"));
       return false;
     } finally {
       setSaving(false);
     }
+
+    advanced = advanceToNextPosition();
+    if (!advanced) {
+      await maybeCropWhenAllPositionsSaved();
+      return true;
+    }
+    await delay(nextExclusionPreviewMs);
+    return true;
   }, [
     advanceToNextPosition,
     currentExcludedCells,

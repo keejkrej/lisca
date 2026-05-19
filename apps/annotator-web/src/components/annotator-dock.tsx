@@ -19,7 +19,7 @@ export function AnnotatorDock(props: {
       <Section
         className="flex min-h-0 min-w-0 flex-1 basis-0 flex-col"
         contentClassName="flex min-h-0 flex-1 flex-col gap-2"
-        title="Tools"
+        title="Tool"
       >
         {props.mode === "segmentation" ? (
           <>

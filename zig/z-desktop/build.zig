@@ -64,7 +64,7 @@ pub fn buildApp(b: *std.Build, config: AppConfig) void {
         config.server_binary;
     const release_server_binary = b.pathJoin(&.{ "..", "..", "target", "release", server_binary_name });
     const cargo_profile_dir = if (optimize == .Debug) "debug" else "release";
-    const default_server_binary = b.pathJoin(&.{ "..", "..", "target", cargo_profile_dir, server_binary_name });
+    const default_server_binary = resolveRepoServerBinary(b, cargo_profile_dir, server_binary_name);
 
     const zero_native_mod = zeroNativeModule(b, target, optimize, zero_native_path);
     const options = b.addOptions();
@@ -109,6 +109,7 @@ pub fn buildApp(b: *std.Build, config: AppConfig) void {
     const run = b.addRunArtifact(exe);
     run.step.dependOn(&frontend_assets.step);
     run.step.dependOn(&server_build.step);
+    run.setEnvironmentVariable("LISCA_SERVER_BINARY", default_server_binary);
     const run_step = b.step("run", "Build and run the desktop app");
     run_step.dependOn(&run.step);
 
@@ -116,6 +117,7 @@ pub fn buildApp(b: *std.Build, config: AppConfig) void {
     dev.addFileArg(exe.getEmittedBin());
     dev.step.dependOn(&exe.step);
     dev.step.dependOn(&server_build.step);
+    dev.setEnvironmentVariable("LISCA_SERVER_BINARY", default_server_binary);
     const dev_step = b.step("dev", "Run the frontend dev server and native shell");
     dev_step.dependOn(&dev.step);
 
@@ -157,6 +159,13 @@ fn syncFrontendAssets(b: *std.Build, source_dist: []const u8) *std.Build.Step.Ru
 
 fn copyPackageSidecar(b: *std.Build, package_target: PackageTarget, package_output: []const u8, source_binary: []const u8, server_binary_name: []const u8) *std.Build.Step.Run {
     return b.addSystemCommand(&.{ "node", "../../scripts/copy-desktop-sidecar.mjs", @tagName(package_target), package_output, source_binary, server_binary_name });
+}
+
+fn resolveRepoServerBinary(b: *std.Build, cargo_profile_dir: []const u8, server_binary_name: []const u8) []const u8 {
+    const build_root = b.build_root.path orelse
+        return b.pathJoin(&.{ "..", "..", "target", cargo_profile_dir, server_binary_name });
+    return std.fs.path.resolve(b.allocator, &.{ build_root, "..", "..", "target", cargo_profile_dir, server_binary_name }) catch
+        b.pathJoin(&.{ "..", "..", "target", cargo_profile_dir, server_binary_name });
 }
 
 fn cargoBuild(b: *std.Build, package: []const u8, release: bool) *std.Build.Step.Run {

@@ -122,16 +122,12 @@ function InfoPage() {
                   <DockButton disabled={infoStep === 1 || savingAssay} onClick={back}>
                     Back
                   </DockButton>
-                  <DockButton
-                    disabled={!canContinue || savingAssay}
-                    loading={savingAssay}
-                    onClick={() => void next()}
-                  >
+                  <DockButton disabled={!canContinue || savingAssay} onClick={() => void next()}>
                     Next
                   </DockButton>
                 </div>
               }
-              tools={null}
+              tool={null}
             />
           </AppShell.Dock>
         </AppShell.MainColumn>

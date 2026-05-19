@@ -11,6 +11,9 @@ export type ShellWsProbe = {
   log: string[];
 };
 
+const MAX_ATTEMPTS = 40;
+const RETRY_MS = 250;
+
 export function useShellWsProbe(options: { defaultPort: number }): ShellWsProbe {
   const wsUrl = useMemo(() => {
     const params =
@@ -29,12 +32,24 @@ export function useShellWsProbe(options: { defaultPort: number }): ShellWsProbe 
   const [log, setLog] = useState<string[]>([]);
 
   useEffect(() => {
-    setState("connecting");
     let cancelled = false;
     let ws: WebSocket | null = null;
+    let retryTimer: number | undefined;
+    let attempt = 0;
+    let connected = false;
 
-    const connectTimer = window.setTimeout(() => {
-      if (cancelled) return;
+    const scheduleRetry = () => {
+      if (cancelled || connected || attempt >= MAX_ATTEMPTS) {
+        if (!connected && attempt >= MAX_ATTEMPTS) setState("closed");
+        return;
+      }
+      retryTimer = window.setTimeout(connect, RETRY_MS);
+    };
+
+    const connect = () => {
+      if (cancelled || connected) return;
+      attempt += 1;
+      setState("connecting");
 
       const socket = new WebSocket(wsUrl);
       ws = socket;
@@ -44,6 +59,7 @@ export function useShellWsProbe(options: { defaultPort: number }): ShellWsProbe 
           socket.close();
           return;
         }
+        connected = true;
         setState("open");
         setLog((lines) => [...lines, `connected ${wsUrl}`]);
       });
@@ -60,15 +76,27 @@ export function useShellWsProbe(options: { defaultPort: number }): ShellWsProbe 
 
       socket.addEventListener("close", () => {
         if (cancelled) return;
-        setState("closed");
+        if (connected) {
+          setState("closed");
+          setLog((lines) => [...lines, "socket closed"]);
+          return;
+        }
         setLog((lines) => [...lines, "socket closed"]);
+        scheduleRetry();
       });
-    }, 0);
+
+      socket.addEventListener("error", () => {
+        if (cancelled || connected) return;
+        scheduleRetry();
+      });
+    };
+
+    connect();
 
     return () => {
       cancelled = true;
-      window.clearTimeout(connectTimer);
-      if (ws && ws.readyState !== WebSocket.CONNECTING && ws.readyState !== WebSocket.CLOSED) {
+      if (retryTimer !== undefined) window.clearTimeout(retryTimer);
+      if (ws && ws.readyState !== WebSocket.CLOSED) {
         ws.close();
       }
     };

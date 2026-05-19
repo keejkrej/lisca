@@ -14,10 +14,10 @@ pub const ServerProcess = struct {
             }
         }
 
-        self.spawn(io, build_options.default_server_binary) catch |err| switch (err) {
-            error.FileNotFound => try self.spawnSidecar(io),
-            else => return err,
-        };
+        // Bundled sidecar (next to the desktop executable) wins over repo target paths.
+        if (self.spawnSidecar(io)) return;
+
+        try self.spawn(io, build_options.default_server_binary);
     }
 
     pub fn stop(self: *ServerProcess, io: std.Io) void {
@@ -36,12 +36,13 @@ pub const ServerProcess = struct {
         });
     }
 
-    fn spawnSidecar(self: *ServerProcess, io: std.Io) !void {
+    fn spawnSidecar(self: *ServerProcess, io: std.Io) bool {
         var exe_dir_buffer: [std.fs.max_path_bytes]u8 = undefined;
-        const exe_dir_len = try std.process.executableDirPath(io, &exe_dir_buffer);
+        const exe_dir_len = std.process.executableDirPath(io, &exe_dir_buffer) catch return false;
         const exe_dir = exe_dir_buffer[0..exe_dir_len];
-        const sidecar_path = try std.fs.path.join(std.heap.page_allocator, &.{ exe_dir, build_options.server_binary_name });
+        const sidecar_path = std.fs.path.join(std.heap.page_allocator, &.{ exe_dir, build_options.server_binary_name }) catch return false;
         defer std.heap.page_allocator.free(sidecar_path);
-        try self.spawn(io, sidecar_path);
+        self.spawn(io, sidecar_path) catch return false;
+        return true;
     }
 };

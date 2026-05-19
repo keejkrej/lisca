@@ -1,4 +1,4 @@
-import { copyFileSync, mkdirSync } from "node:fs";
+import { chmodSync, copyFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 const [target, packageOutput, sourceBinary, serverBinaryName] = process.argv.slice(2);
@@ -17,3 +17,4 @@ const destination =
 
 mkdirSync(dirname(destination), { recursive: true });
 copyFileSync(sourceBinary, destination);
+chmodSync(destination, 0o755);

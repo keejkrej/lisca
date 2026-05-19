@@ -1,4 +1,4 @@
-import { AnnotationCanvas, CanvasToastStack } from "@lisca/ui";
+import { AnnotationCanvas } from "@lisca/ui";
 import { useMemo } from "react";
 
 import type { StudioAnnotateState } from "../state/use-studio-annotate-state";
@@ -21,23 +21,9 @@ export function StudioAnnotateMain({ state }: { state: StudioAnnotateState }) {
     if (positionIndex < 0 || positionCount === 0 || roiIndex < 0 || roiCount === 0) return [];
     return [{ text: `Pos ${positionIndex}/${positionCount}\nRoi ${roiIndex}/${roiCount}` }];
   }, [state.position, state.request, state.scan]);
-  const emptyText = !state.workspacePath
-    ? "Choose a save folder on Info."
-    : state.scanLoading
-      ? "Scanning ROI workspace..."
-      : "No ROI frame loaded.";
-
-  if (!state.frame) {
-    return (
-      <div className="relative flex h-full min-h-0 items-center justify-center bg-muted/20 text-muted-foreground text-sm">
-        {emptyText}
-        <CanvasToastStack messages={state.toasts} />
-      </div>
-    );
-  }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-muted/20">
+    <div className="relative flex h-full min-h-0 flex-col bg-muted/20">
       <AnnotationCanvas
         activeLabelId={null}
         brushSize={1}

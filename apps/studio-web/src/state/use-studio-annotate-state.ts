@@ -22,6 +22,10 @@ import {
 } from "./studio-annotate-store";
 import { useStudioStore } from "./studio-store";
 
+function isAbortError(cause: unknown): boolean {
+  return cause instanceof DOMException && cause.name === "AbortError";
+}
+
 function makeRoiFrameRequest(
   position: RoiPositionScan | null,
   roi: number | null,
@@ -207,12 +211,7 @@ export function useStudioAnnotateState(): StudioAnnotateState {
   }, [position, selection, setSelection]);
 
   useEffect(() => {
-    setContrast(null);
-  }, [activeRequestKey, setContrast]);
-
-  useEffect(() => {
     if (!workspacePath || workspacePath !== activeWorkspacePath || !request) {
-      setFrame(null);
       setFrameLoading(false);
       return;
     }
@@ -223,12 +222,13 @@ export function useStudioAnnotateState(): StudioAnnotateState {
         setFrameError(null);
         setStatus("Loading ROI frame");
       },
-      load: (signal) => studioClient.loadRoiFrame(workspacePath, request, contrast, signal),
+      load: (signal) => studioClient.loadRoiFrame(workspacePath, request, null, signal),
       commit: (nextFrame) => {
         setFrame(nextFrame);
         setContrastState(nextFrame);
       },
       reject: (cause) => {
+        if (isAbortError(cause)) return;
         setFrame(null);
         setFrameError(toErrorMessage(cause, "ROI frame load failed"));
       },
@@ -237,7 +237,6 @@ export function useStudioAnnotateState(): StudioAnnotateState {
   }, [
     activeRequestKey,
     activeWorkspacePath,
-    contrast,
     loadCanvasResources,
     request,
     setContrastState,

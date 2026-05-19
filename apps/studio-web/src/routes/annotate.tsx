@@ -37,8 +37,8 @@ function AnnotatePage() {
           <AppShell.Dock>
             <StudioDock
               instruction="Review cropped ROI frames."
-              tools={
-                <DockSection title="Tools">
+              tool={
+                <DockSection title="Tool">
                   <div aria-hidden="true" />
                 </DockSection>
               }

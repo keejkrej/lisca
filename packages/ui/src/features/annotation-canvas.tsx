@@ -26,6 +26,11 @@ type DrawRect = {
   scale: number;
 };
 
+type PreparedFrame = {
+  frame: FrameResult;
+  prepared: HTMLCanvasElement;
+};
+
 export type AnnotationTool = "brush" | "brush-erase" | "lasso" | "lasso-erase";
 
 export type AnnotationCanvasProps = {
@@ -118,7 +123,9 @@ export function AnnotationCanvas({
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const dprRef = useRef(1);
-  const rafRef = useRef<number | null>(null);
+  const latestFrameRef = useRef<PreparedFrame | null>(null);
+  const renderRafRef = useRef<number | null>(null);
+  const resizeRafRef = useRef<number | null>(null);
   const [lassoPoints, setLassoPoints] = useState<FramePoint[]>([]);
   const lassoRef = useRef<{
     pointerId: number;
@@ -133,10 +140,11 @@ export function AnnotationCanvas({
   const eraseMode = tool === "brush-erase" || tool === "lasso-erase";
   const brushMode = tool === "brush" || tool === "brush-erase";
 
-  const render = useCallback(() => {
-    rafRef.current = null;
+  const renderNow = useCallback(() => {
+    renderRafRef.current = null;
     const canvas = canvasRef.current;
     const viewport = viewportRef.current;
+    const cached = latestFrameRef.current;
     if (!canvas || !viewport) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -149,11 +157,11 @@ export function AnnotationCanvas({
     ctx.fillStyle = resolvedCanvasBackground(viewport);
     ctx.fillRect(0, 0, width, height);
 
-    if (frame && preparedFrame) {
-      const rect = drawRectFor(width, height, frame);
+    if (cached) {
+      const rect = drawRectFor(width, height, cached.frame);
       ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(preparedFrame, rect.x, rect.y, rect.width, rect.height);
-      const maskCanvas = prepareMaskCanvas(frame.width, frame.height, labels, mask);
+      ctx.drawImage(cached.prepared, rect.x, rect.y, rect.width, rect.height);
+      const maskCanvas = prepareMaskCanvas(cached.frame.width, cached.frame.height, labels, mask);
       ctx.globalAlpha = clamp(overlayOpacity, 0, 1);
       ctx.drawImage(maskCanvas, rect.x, rect.y, rect.width, rect.height);
       ctx.globalAlpha = 1;
@@ -173,79 +181,95 @@ export function AnnotationCanvas({
       }
     }
     ctx.restore();
-  }, [
-    brushMode,
-    brushSize,
-    eraseMode,
-    frame,
-    labels,
-    lassoPoints,
-    mask,
-    overlayOpacity,
-    preparedFrame,
-  ]);
+  }, [brushMode, brushSize, eraseMode, labels, lassoPoints, mask, overlayOpacity]);
 
   const queueRender = useCallback(() => {
-    if (rafRef.current != null) return;
-    rafRef.current = window.requestAnimationFrame(render);
-  }, [render]);
+    if (renderRafRef.current != null) return;
+    renderRafRef.current = window.requestAnimationFrame(renderNow);
+  }, [renderNow]);
 
-  useCanvasThemeRerender(queueRender);
+  useCanvasThemeRerender(renderNow);
+
+  useLayoutEffect(() => {
+    if (frame && preparedFrame) {
+      latestFrameRef.current = { frame, prepared: preparedFrame };
+    } else if (!frame) {
+      latestFrameRef.current = null;
+    }
+    renderNow();
+  }, [frame, preparedFrame, renderNow]);
+
+  useEffect(() => {
+    renderNow();
+  }, [labels, lassoPoints, mask, overlayOpacity, renderNow]);
 
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
     const viewport = viewportRef.current;
     if (!canvas || !viewport) return;
+
     const resize = () => {
-      const dpr = window.devicePixelRatio || 1;
-      dprRef.current = dpr;
-      const width = Math.max(1, Math.floor(viewport.clientWidth * dpr));
-      const height = Math.max(1, Math.floor(viewport.clientHeight * dpr));
-      canvas.width = width;
-      canvas.height = height;
-      canvas.style.width = `${viewport.clientWidth}px`;
-      canvas.style.height = `${viewport.clientHeight}px`;
-      queueRender();
+      if (resizeRafRef.current != null) {
+        window.cancelAnimationFrame(resizeRafRef.current);
+      }
+      resizeRafRef.current = window.requestAnimationFrame(() => {
+        resizeRafRef.current = null;
+        const dpr = window.devicePixelRatio || 1;
+        const width = Math.max(1, Math.floor(viewport.clientWidth * dpr));
+        const height = Math.max(1, Math.floor(viewport.clientHeight * dpr));
+        dprRef.current = dpr;
+        if (canvas.width !== width) canvas.width = width;
+        if (canvas.height !== height) canvas.height = height;
+        const cssWidth = `${viewport.clientWidth}px`;
+        const cssHeight = `${viewport.clientHeight}px`;
+        if (canvas.style.width !== cssWidth) canvas.style.width = cssWidth;
+        if (canvas.style.height !== cssHeight) canvas.style.height = cssHeight;
+        renderNow();
+      });
     };
-    const observer = new ResizeObserver(resize);
+
+    const observer = new ResizeObserver(() => resize());
     observer.observe(viewport);
     resize();
-    return () => observer.disconnect();
-  }, [queueRender]);
 
-  useEffect(() => {
-    queueRender();
     return () => {
-      if (rafRef.current != null) {
-        window.cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
+      if (resizeRafRef.current != null) {
+        window.cancelAnimationFrame(resizeRafRef.current);
+        resizeRafRef.current = null;
       }
+      if (renderRafRef.current != null) {
+        window.cancelAnimationFrame(renderRafRef.current);
+        renderRafRef.current = null;
+      }
+      observer.disconnect();
     };
-  }, [queueRender]);
+  }, [renderNow]);
 
   const framePointFromEvent = useCallback(
     (event: ReactPointerEvent<HTMLCanvasElement>): FramePoint | null => {
       const viewport = viewportRef.current;
-      if (!viewport || !frame) return null;
+      const cached = latestFrameRef.current;
+      if (!viewport || !cached) return null;
       const bounds = viewport.getBoundingClientRect();
-      const rect = drawRectFor(bounds.width, bounds.height, frame);
+      const rect = drawRectFor(bounds.width, bounds.height, cached.frame);
       const x = event.clientX - bounds.left;
       const y = event.clientY - bounds.top;
       if (x < rect.x || y < rect.y || x > rect.x + rect.width || y > rect.y + rect.height) {
         return null;
       }
       return {
-        x: clamp(Math.floor((x - rect.x) / rect.scale), 0, frame.width - 1),
-        y: clamp(Math.floor((y - rect.y) / rect.scale), 0, frame.height - 1),
+        x: clamp(Math.floor((x - rect.x) / rect.scale), 0, cached.frame.width - 1),
+        y: clamp(Math.floor((y - rect.y) / rect.scale), 0, cached.frame.height - 1),
       };
     },
-    [frame],
+    [],
   );
 
   const finishLasso = useCallback(
     (event: ReactPointerEvent<HTMLCanvasElement>) => {
       const active = lassoRef.current;
-      if (!active || active.pointerId !== event.pointerId || !frame) return;
+      const cached = latestFrameRef.current;
+      if (!active || active.pointerId !== event.pointerId || !cached) return;
       lassoRef.current = null;
       setLassoPoints([]);
       if (event.currentTarget.hasPointerCapture(event.pointerId)) {
@@ -254,12 +278,14 @@ export function AnnotationCanvas({
       const value = eraseMode ? 0 : activeLabelValue;
       if (value <= 0 && !eraseMode) return;
       if (brushMode) {
-        onMaskCommit(strokeMask(mask, frame.width, frame.height, active.points, value, brushSize));
+        onMaskCommit(
+          strokeMask(mask, cached.frame.width, cached.frame.height, active.points, value, brushSize),
+        );
       } else if (active.points.length >= 3) {
-        onMaskCommit(fillPolygon(mask, frame.width, frame.height, active.points, value));
+        onMaskCommit(fillPolygon(mask, cached.frame.width, cached.frame.height, active.points, value));
       }
     },
-    [activeLabelValue, brushMode, brushSize, eraseMode, frame, mask, onMaskCommit],
+    [activeLabelValue, brushMode, brushSize, eraseMode, mask, onMaskCommit],
   );
 
   return (

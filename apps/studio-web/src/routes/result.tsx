@@ -363,8 +363,8 @@ function ResultPage() {
           <AppShell.Dock>
             <StudioDock
               instruction="Choose Timeseries or Results, then step with Back and Next."
-              tools={
-                <DockSection title="Tools">
+              tool={
+                <DockSection title="Tool">
                   <div className="flex w-full flex-col gap-2">
                     <div className="grid grid-cols-2 gap-2">
                       <DockButton
@@ -393,7 +393,6 @@ function ResultPage() {
                     </DockButton>
                     <DockButton
                       disabled={!hasNextPanel || isPanelLoading}
-                      loading={isPanelLoading}
                       onClick={() => {
                         goNextPanel();
                       }}

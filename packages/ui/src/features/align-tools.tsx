@@ -68,7 +68,7 @@ export function AlignTools({
   onModeChange,
   patternZoomLocked = false,
   onPatternZoomLockedChange,
-  sectionTitle = "Tools",
+  sectionTitle = "Tool",
   sectionDescription,
   sectionClassName,
   sectionContentClassName,

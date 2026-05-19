@@ -46,7 +46,6 @@ function AlignPage() {
                         alignState.cropping ||
                         alignState.findingFirstUnaligned
                       }
-                      loading={alignState.findingFirstUnaligned}
                       onClick={() => void alignState.goToFirstUnaligned()}
                     >
                       Jump
@@ -61,7 +60,6 @@ function AlignPage() {
                     </DockButton>
                     <DockButton
                       disabled={!alignState.frame || alignState.saving || alignState.cropping}
-                      loading={alignState.saving}
                       onClick={() => void alignState.saveAndAdvance()}
                     >
                       Next
@@ -69,7 +67,7 @@ function AlignPage() {
                   </div>
                 </div>
               }
-              tools={<StudioAlignTools state={alignState} />}
+              tool={<StudioAlignTools state={alignState} />}
             />
           </AppShell.Dock>
         </AppShell.MainColumn>
