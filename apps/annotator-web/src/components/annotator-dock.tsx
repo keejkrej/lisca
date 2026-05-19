@@ -1,7 +1,5 @@
 import type { AnnotationMode, RoiFrameRequest } from "@lisca/contracts";
-import { Button, Section, cn, type AnnotationTool } from "@lisca/ui";
-
-import { OutputPathField } from "./output-path-field";
+import { Button, ReadonlyPathField, Section, cn, type AnnotationTool } from "@lisca/ui";
 import { annotationOutputPaths } from "../utils/annotation-output";
 
 export function AnnotatorDock(props: {
@@ -71,7 +69,7 @@ export function AnnotatorDock(props: {
       >
         <div className={cn("grid min-w-0 gap-2", paths.length > 1 ? "grid-cols-2" : "grid-cols-1")}>
           {paths.map((path) => (
-            <OutputPathField key={path} value={path} />
+            <ReadonlyPathField key={path} aria-label={`Output path ${path}`} value={path} />
           ))}
         </div>
         <Button

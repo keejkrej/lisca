@@ -1,4 +1,4 @@
-import { Button, cn, Input, ModalScrim, Slider, surfaceDialogClass } from "@lisca/ui";
+import { Button, cn, DialogSurface, Input, ModalScrim, Slider } from "@lisca/ui";
 import { useMemo } from "react";
 
 import type { VariationExcludePreview } from "../state/use-align-state";
@@ -49,12 +49,7 @@ export function VariationExcludeDialog({
         if (event.target === event.currentTarget) onCancel();
       }}
     >
-      <div
-        aria-labelledby="variation-exclude-title"
-        aria-modal="true"
-        className={cn("flex w-full max-w-xl flex-col", surfaceDialogClass)}
-        role="dialog"
-      >
+      <DialogSurface aria-labelledby="variation-exclude-title" maxWidth="xl">
         <div className="border-b border-border px-5 py-4">
           <h2 className="font-semibold text-foreground text-lg" id="variation-exclude-title">
             Variation exclude
@@ -142,7 +137,7 @@ export function VariationExcludeDialog({
             Apply
           </Button>
         </div>
-      </div>
+      </DialogSurface>
     </ModalScrim>
   );
 }

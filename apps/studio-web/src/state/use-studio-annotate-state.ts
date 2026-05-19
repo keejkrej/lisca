@@ -89,7 +89,6 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     scan,
     selection,
     frame,
-    contrast,
     contrastDomain,
     contrastMin,
     contrastMax,

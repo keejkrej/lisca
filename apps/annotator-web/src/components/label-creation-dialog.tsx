@@ -1,5 +1,5 @@
 import type { AnnotationLabel } from "@lisca/contracts";
-import { Button, cn, Input, ModalScrim, surfaceDialogClass } from "@lisca/ui";
+import { Button, DialogSurface, Input, ModalScrim } from "@lisca/ui";
 import { Plus, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -107,12 +107,7 @@ export function LabelCreationDialog(props: {
         if (event.target === event.currentTarget) props.onOpenChange(false);
       }}
     >
-      <div
-        aria-labelledby="label-dialog-title"
-        aria-modal="true"
-        className={cn("flex max-h-[86vh] w-full max-w-2xl flex-col", surfaceDialogClass)}
-        role="dialog"
-      >
+      <DialogSurface aria-labelledby="label-dialog-title" className="max-h-[86vh]" maxWidth="2xl">
         <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
           <div className="min-w-0">
             <h2 className="font-semibold text-foreground text-lg" id="label-dialog-title">
@@ -198,7 +193,7 @@ export function LabelCreationDialog(props: {
             Save labels
           </Button>
         </div>
-      </div>
+      </DialogSurface>
     </ModalScrim>
   );
 }

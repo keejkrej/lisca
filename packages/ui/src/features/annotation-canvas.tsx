@@ -185,11 +185,6 @@ export function AnnotationCanvas({
     ctx.restore();
   }, [brushMode, brushSize, eraseMode, labels, lassoPoints, mask, overlayOpacity]);
 
-  const queueRender = useCallback(() => {
-    if (renderRafRef.current != null) return;
-    renderRafRef.current = window.requestAnimationFrame(renderNow);
-  }, [renderNow]);
-
   useCanvasThemeRerender(renderNow);
 
   useLayoutEffect(() => {

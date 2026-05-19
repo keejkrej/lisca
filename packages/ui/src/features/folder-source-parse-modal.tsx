@@ -11,8 +11,7 @@ import { useEffect, useState } from "react";
 import { Button } from "../components/ui/button";
 import { Field, FieldLabel } from "../components/ui/field";
 import { Input } from "../components/ui/input";
-import { surfaceDialogClass } from "../lib/surface";
-import { cn } from "../lib/utils";
+import { DialogSurface } from "../shell/dialog-surface";
 import { ModalScrim } from "../shell/modal-scrim";
 
 export type FolderSourceParseModalProps = {
@@ -144,12 +143,7 @@ export function FolderSourceParseModal({
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div
-        aria-labelledby="folder-source-template-title"
-        aria-modal="true"
-        className={cn("w-full max-w-xl", surfaceDialogClass)}
-        role="dialog"
-      >
+      <DialogSurface aria-labelledby="folder-source-template-title" maxWidth="xl">
         <div className="border-b border-border px-5 py-4">
           <h2 className="font-semibold text-foreground text-lg" id="folder-source-template-title">
             Parse image folder
@@ -209,7 +203,7 @@ export function FolderSourceParseModal({
             Open
           </Button>
         </div>
-      </div>
+      </DialogSurface>
     </ModalScrim>
   );
 }

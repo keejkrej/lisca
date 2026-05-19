@@ -5,8 +5,8 @@ import { useEffect, useState } from "react";
 
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { surfaceDialogClass } from "../lib/surface";
 import { cn } from "../lib/utils";
+import { DialogSurface } from "./dialog-surface";
 import { ModalScrim } from "./modal-scrim";
 
 export type ServerAddressDialogProps = {
@@ -73,12 +73,7 @@ export function ServerAddressDialog({
         if (event.target === event.currentTarget) onOpenChange(false);
       }}
     >
-      <div
-        aria-labelledby="server-address-title"
-        aria-modal="true"
-        className={cn("flex max-h-[86vh] w-full max-w-lg flex-col", surfaceDialogClass)}
-        role="dialog"
-      >
+      <DialogSurface aria-labelledby="server-address-title" className="max-h-[86vh]" maxWidth="lg">
         <div className="space-y-1 border-b border-border px-5 py-4">
           <h2 className="font-semibold text-foreground text-lg" id="server-address-title">
             Servers
@@ -191,7 +186,7 @@ export function ServerAddressDialog({
             Close
           </Button>
         </div>
-      </div>
+      </DialogSurface>
     </ModalScrim>
   );
 }

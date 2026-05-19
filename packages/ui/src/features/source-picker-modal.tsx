@@ -3,8 +3,7 @@
 import { X } from "lucide-react";
 
 import { Button } from "../components/ui/button";
-import { surfaceDialogClass } from "../lib/surface";
-import { cn } from "../lib/utils";
+import { DialogSurface } from "../shell/dialog-surface";
 import { ModalScrim } from "../shell/modal-scrim";
 
 export type SourcePickerModalProps = {
@@ -38,12 +37,7 @@ export function SourcePickerModal({
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div
-        aria-labelledby="open-source-title"
-        aria-modal="true"
-        className={cn("w-full max-w-lg", surfaceDialogClass)}
-        role="dialog"
-      >
+      <DialogSurface aria-labelledby="open-source-title" maxWidth="lg">
         <div className="px-5 pb-3 pt-5">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
@@ -97,7 +91,7 @@ export function SourcePickerModal({
             </button>
           </div>
         </div>
-      </div>
+      </DialogSurface>
     </ModalScrim>
   );
 }

@@ -104,8 +104,10 @@ export {
 
 export { ShellWorkspaceProvider, useShellWorkspace, type ShellWorkspace } from "./state/workspace";
 
+export { DialogSurface, type DialogSurfaceMaxWidth } from "./shell/dialog-surface";
 export { DockButton } from "./shell/dock-button";
 export { ModalScrim } from "./shell/modal-scrim";
+export { Panel, PanelContent, PanelDescription, PanelHeader, PanelTitle } from "./shell/panel";
 export { ReadonlyPathField } from "./shell/readonly-path-field";
 export { Section, type SectionProps } from "./shell/section";
 export { ViewportCard } from "./shell/viewport-card";

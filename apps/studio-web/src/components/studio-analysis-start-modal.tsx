@@ -1,4 +1,4 @@
-import { Button, cn, surfaceDialogClass, ModalScrim } from "@lisca/ui";
+import { Button, DialogSurface, ModalScrim } from "@lisca/ui";
 
 import type { StudioAnnotateState } from "../state/use-studio-annotate-state";
 
@@ -7,12 +7,7 @@ export function StudioAnalysisStartModal({ state }: { state: StudioAnnotateState
 
   return (
     <ModalScrim zIndex="z-50">
-      <div
-        aria-labelledby="studio-analysis-start-title"
-        aria-modal="true"
-        className={cn("w-full max-w-md p-5", surfaceDialogClass)}
-        role="dialog"
-      >
+      <DialogSurface aria-labelledby="studio-analysis-start-title" className="p-5" maxWidth="sm">
         <div className="space-y-4">
           <div className="space-y-1">
             <h2 id="studio-analysis-start-title" className="font-medium text-foreground">
@@ -36,7 +31,7 @@ export function StudioAnalysisStartModal({ state }: { state: StudioAnnotateState
             </Button>
           </div>
         </div>
-      </div>
+      </DialogSurface>
     </ModalScrim>
   );
 }

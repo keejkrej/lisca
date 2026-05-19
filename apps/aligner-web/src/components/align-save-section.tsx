@@ -1,7 +1,6 @@
-import { Button, Section } from "@lisca/ui";
+import { Button, ReadonlyPathField, Section } from "@lisca/ui";
 
 import type { AlignState } from "../state/use-align-state";
-import { OutputPathField } from "./output-path-field";
 
 export function AlignSaveSection({ state }: { state: AlignState }) {
   const pos = state.selection.pos;
@@ -15,9 +14,15 @@ export function AlignSaveSection({ state }: { state: AlignState }) {
       title="Save"
     >
       <div className="grid min-w-0 grid-cols-3 gap-2">
-        <OutputPathField value={`bbox/Pos${pos}.csv`} />
-        <OutputPathField value={`align/Pos${pos}.json`} />
-        <OutputPathField value={`roi/Pos${pos}`} />
+        <ReadonlyPathField
+          aria-label={`Output path bbox/Pos${pos}.csv`}
+          value={`bbox/Pos${pos}.csv`}
+        />
+        <ReadonlyPathField
+          aria-label={`Output path align/Pos${pos}.json`}
+          value={`align/Pos${pos}.json`}
+        />
+        <ReadonlyPathField aria-label={`Output path roi/Pos${pos}`} value={`roi/Pos${pos}`} />
       </div>
       <div className="grid grid-cols-3 gap-2">
         <Button

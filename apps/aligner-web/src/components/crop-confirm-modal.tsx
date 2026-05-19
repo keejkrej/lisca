@@ -1,4 +1,4 @@
-import { Button, cn, ModalScrim, surfaceDialogClass } from "@lisca/ui";
+import { Button, DialogSurface, ModalScrim } from "@lisca/ui";
 
 import type { AlignState } from "../state/use-align-state";
 
@@ -10,12 +10,7 @@ export function CropConfirmModal({ state }: { state: AlignState }) {
 
   return (
     <ModalScrim>
-      <div
-        aria-labelledby="crop-confirm-title"
-        aria-modal="true"
-        className={cn("w-full max-w-md p-5", surfaceDialogClass)}
-        role="dialog"
-      >
+      <DialogSurface aria-labelledby="crop-confirm-title" className="p-5" maxWidth="sm">
         <div className="space-y-4">
           <div className="space-y-1">
             <h2 id="crop-confirm-title" className="font-medium text-foreground">
@@ -44,7 +39,7 @@ export function CropConfirmModal({ state }: { state: AlignState }) {
             </Button>
           </div>
         </div>
-      </div>
+      </DialogSurface>
     </ModalScrim>
   );
 }

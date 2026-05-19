@@ -5,11 +5,10 @@ import type { ComponentProps, ReactNode } from "react";
 import { useId, useState } from "react";
 
 import { Button } from "../components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
-import { surfacePanelClass } from "../lib/surface";
 import { cn } from "../lib/utils";
+import { Panel, PanelContent, PanelDescription, PanelHeader, PanelTitle } from "./panel";
 
-export type SectionProps = Omit<ComponentProps<typeof Card>, "title"> & {
+export type SectionProps = Omit<ComponentProps<typeof Panel>, "title"> & {
   /** Primary heading shown in the section header. */
   title: string;
   description?: string;
@@ -31,19 +30,17 @@ export function Section({
   headerClassName,
   contentClassName,
   defaultCollapsed = false,
-  ...cardProps
+  ...panelProps
 }: SectionProps) {
   const contentId = useId();
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
   const CollapseIcon = collapsed ? ChevronRight : ChevronDown;
 
   return (
-    <Card className={cn(surfacePanelClass, className)} {...cardProps}>
-      <CardHeader
-        className={cn("shrink-0 space-y-1.5 px-3 py-3", !collapsed && "pb-0", headerClassName)}
-      >
+    <Panel className={className} {...panelProps}>
+      <PanelHeader className={cn("space-y-1.5 px-3 py-3", !collapsed && "pb-0", headerClassName)}>
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="min-w-0 flex-1 text-sm">{title}</CardTitle>
+          <PanelTitle className="min-w-0 flex-1 text-sm">{title}</PanelTitle>
           <div className="flex shrink-0 items-center gap-1">
             {headerAction}
             <Button
@@ -59,13 +56,15 @@ export function Section({
             </Button>
           </div>
         </div>
-        {description ? <CardDescription className="text-xs">{description}</CardDescription> : null}
-      </CardHeader>
+        {description ? (
+          <PanelDescription className="text-xs">{description}</PanelDescription>
+        ) : null}
+      </PanelHeader>
       {!collapsed ? (
-        <CardContent className={cn("space-y-2 px-3 pb-3 pt-2", contentClassName)} id={contentId}>
+        <PanelContent className={cn("space-y-2 px-3 pb-3 pt-2", contentClassName)} id={contentId}>
           {children}
-        </CardContent>
+        </PanelContent>
       ) : null}
-    </Card>
+    </Panel>
   );
 }

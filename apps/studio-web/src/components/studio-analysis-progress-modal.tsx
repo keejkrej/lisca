@@ -1,4 +1,4 @@
-import { cn, Spinner, surfaceDialogClass, ModalScrim } from "@lisca/ui";
+import { Spinner, DialogSurface, ModalScrim } from "@lisca/ui";
 
 import { clamp } from "@lisca/utils";
 
@@ -17,12 +17,7 @@ export function StudioAnalysisProgressModal({ state }: { state: StudioAnnotateSt
 
   return (
     <ModalScrim zIndex="z-40">
-      <div
-        aria-labelledby="studio-analysis-progress-title"
-        aria-modal="true"
-        className={cn("w-full max-w-md p-5", surfaceDialogClass)}
-        role="dialog"
-      >
+      <DialogSurface aria-label="Running analysis" className="p-5" maxWidth="sm">
         <div className="flex items-center gap-3">
           <Spinner className="size-4" />
           <div className="min-w-0">
@@ -36,7 +31,7 @@ export function StudioAnalysisProgressModal({ state }: { state: StudioAnnotateSt
           <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
         </div>
         <div className="mt-2 text-muted-foreground text-xs tabular-nums">{Math.round(pct)}%</div>
-      </div>
+      </DialogSurface>
     </ModalScrim>
   );
 }

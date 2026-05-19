@@ -1,4 +1,4 @@
-import { Button, cn, surfaceDialogClass, ModalScrim } from "@lisca/ui";
+import { Button, DialogSurface, ModalScrim } from "@lisca/ui";
 
 export function AssayOverwriteConfirmModal({
   open,
@@ -15,12 +15,7 @@ export function AssayOverwriteConfirmModal({
 
   return (
     <ModalScrim zIndex="z-50">
-      <div
-        aria-labelledby="assay-overwrite-confirm-title"
-        aria-modal="true"
-        className={cn("w-full max-w-md p-5", surfaceDialogClass)}
-        role="dialog"
-      >
+      <DialogSurface aria-labelledby="assay-overwrite-confirm-title" className="p-5" maxWidth="sm">
         <div className="space-y-4">
           <div className="space-y-1">
             <h2 id="assay-overwrite-confirm-title" className="font-medium text-foreground">
@@ -42,7 +37,7 @@ export function AssayOverwriteConfirmModal({
             </Button>
           </div>
         </div>
-      </div>
+      </DialogSurface>
     </ModalScrim>
   );
 }

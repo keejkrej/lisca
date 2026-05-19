@@ -1,8 +1,10 @@
 import type { ContrastWindow, RoiPositionScan, RoiWorkspaceScan } from "@lisca/contracts";
 import {
+  cn,
   ContrastControl,
   FrameNavigation,
   findNavigationOptionIndex,
+  shellRailChromeClass,
   stepNavigationValue,
   toNavigationOptions,
 } from "@lisca/ui";
@@ -48,7 +50,7 @@ export function AnnotatorLeft(props: {
   const channelValue = props.channel ?? channelOptions[0]?.value ?? 0;
 
   return (
-    <div className="flex min-h-0 flex-col gap-2 p-3">
+    <div className={cn("flex min-h-0 flex-col gap-2 p-3", shellRailChromeClass)}>
       <FrameNavigation
         position={{
           value: posValue,

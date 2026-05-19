@@ -1,4 +1,4 @@
-import { Button, cn, surfaceDialogClass, ModalScrim } from "@lisca/ui";
+import { Button, DialogSurface, ModalScrim } from "@lisca/ui";
 
 export function AssaySaveConfirmModal({
   open,
@@ -15,12 +15,7 @@ export function AssaySaveConfirmModal({
 
   return (
     <ModalScrim zIndex="z-50">
-      <div
-        aria-labelledby="assay-save-confirm-title"
-        aria-modal="true"
-        className={cn("w-full max-w-md p-5", surfaceDialogClass)}
-        role="dialog"
-      >
+      <DialogSurface aria-labelledby="assay-save-confirm-title" className="p-5" maxWidth="sm">
         <div className="space-y-4">
           <div className="space-y-1">
             <h2 id="assay-save-confirm-title" className="font-medium text-foreground">
@@ -42,7 +37,7 @@ export function AssaySaveConfirmModal({
             </Button>
           </div>
         </div>
-      </div>
+      </DialogSurface>
     </ModalScrim>
   );
 }

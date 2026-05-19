@@ -10,7 +10,7 @@ import { FileIcon, FolderIcon, Home, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import { Button } from "../components/ui/button";
-import { surfaceDialogClass } from "../lib/surface";
+import { DialogSurface } from "../shell/dialog-surface";
 import { cn } from "../lib/utils";
 import { ModalScrim } from "../shell/modal-scrim";
 
@@ -163,11 +163,10 @@ export function HostFilePickerDialog({
         if (event.target === event.currentTarget) onOpenChange(false);
       }}
     >
-      <div
+      <DialogSurface
         aria-labelledby="host-file-picker-title"
-        aria-modal="true"
-        className={cn("flex max-h-[86vh] w-full max-w-2xl flex-col", surfaceDialogClass)}
-        role="dialog"
+        className="max-h-[86vh]"
+        maxWidth="2xl"
       >
         <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
           <div className="min-w-0">
@@ -287,7 +286,7 @@ export function HostFilePickerDialog({
             </Button>
           )}
         </div>
-      </div>
+      </DialogSurface>
     </ModalScrim>
   );
 }

@@ -1,4 +1,4 @@
-import { Button, cn, Spinner, surfaceDialogClass, ModalScrim } from "@lisca/ui";
+import { Button, DialogSurface, ModalScrim, Spinner } from "@lisca/ui";
 
 import { clamp } from "@lisca/utils";
 
@@ -15,11 +15,7 @@ export function StudioCropProgressModal({ state }: { state: StudioAlignState }) 
 
   return (
     <ModalScrim zIndex="z-40">
-      <div
-        aria-modal="true"
-        className={cn("w-full max-w-md p-5", surfaceDialogClass)}
-        role="dialog"
-      >
+      <DialogSurface aria-label="Cropping ROI output" className="p-5" maxWidth="sm">
         <div className="flex items-center gap-3">
           <Spinner className="size-4" />
           <div className="min-w-0">
@@ -44,7 +40,7 @@ export function StudioCropProgressModal({ state }: { state: StudioAlignState }) 
         >
           Cancel
         </Button>
-      </div>
+      </DialogSurface>
     </ModalScrim>
   );
 }
