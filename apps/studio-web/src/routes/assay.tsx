@@ -9,7 +9,7 @@ import { DockButton } from "../components/dock-button";
 import { DockSection } from "../components/dock-section";
 import { StudioDock } from "../components/studio-dock";
 import { StudioLeft } from "../components/studio-left";
-import { WelcomeAssay } from "../components/welcome-assay";
+import { ChooseAssay } from "../components/choose-assay";
 import { instructionForStep } from "../state/studio-routes";
 import { parseStudioAssayJson, useStudioStore } from "../state/studio-store";
 
@@ -49,12 +49,12 @@ function AssayPage() {
         <AppShell.MainColumn>
           <AppShell.Main>
             <div className="mx-auto flex min-h-full w-full min-w-0 max-w-[52rem] flex-col items-center justify-center px-4 py-6 md:px-[100px] md:py-10">
-              <WelcomeAssay />
+              <ChooseAssay />
             </div>
           </AppShell.Main>
           <AppShell.Dock>
             <StudioDock
-              instruction={instructionForStep("welcome")}
+              instruction={instructionForStep("chooseAssay")}
               action={
                 <DockButton
                   disabled={!assayId}

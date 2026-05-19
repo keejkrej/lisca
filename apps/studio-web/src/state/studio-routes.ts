@@ -42,9 +42,9 @@ export function validInfo3(info3: BasicInfoStep3): boolean {
 }
 
 export function instructionForStep(step: StudioStep): string {
-  if (step === "welcome") return "Pick the assay type!";
+  if (step === "chooseAssay") return "Choose an assay type.";
   if (step === "alignPattern") {
     return "Align the grid with the mouse, then press Next to save bbox and advance.";
   }
-  return "More assay info!";
+  return "Complete basic info.";
 }

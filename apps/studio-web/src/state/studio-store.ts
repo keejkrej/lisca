@@ -33,7 +33,7 @@ export type {
   TimelapseUnit,
 };
 
-export type StudioStep = "welcome" | "info1" | "info2" | "info3" | "alignPattern";
+export type StudioStep = "chooseAssay" | "info1" | "info2" | "info3" | "alignPattern";
 export type InfoStep = 1 | 2 | 3;
 
 export const ASSAY_CHOICE_LABEL: Record<AssayId, string> = {

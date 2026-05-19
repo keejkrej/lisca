@@ -11,7 +11,7 @@ const ASSAY_ORDER: AssayId[] = [
 ];
 const ENABLED_ASSAY_ID: AssayId = ASSAY_NAME.GENE_EXPRESSION;
 
-export function WelcomeAssay() {
+export function ChooseAssay() {
   const assayId = useStudioStore((state) => state.assayId);
   const setAssayId = useStudioStore((state) => state.setAssayId);
 

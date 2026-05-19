@@ -1,6 +1,7 @@
 import {
   WS_PATH,
   type AlignerDataPort,
+  type AnalysisDataPort,
   type AlignerSource,
   type AutoExcludePreviewRequest,
   type AutoExcludePreviewResponse,
@@ -27,6 +28,7 @@ import {
 import { decodeFramePayload, resolveLiscaWsUrl } from "@lisca/utils";
 
 type StudioHttpClient = AlignerDataPort &
+  AnalysisDataPort &
   StudioHostPort & {
     scanRoiWorkspace(workspacePath: string, signal?: AbortSignal): Promise<RoiWorkspaceScan>;
     getAnalysisResults(workspacePath: string): Promise<AnalysisProgress | null>;
@@ -170,7 +172,7 @@ function pollAnalysisProgress(
 }
 
 export function createStudioHttpClient(baseUrl: string): StudioHttpClient {
-  const aligner: AlignerDataPort = {
+  const aligner: AlignerDataPort & AnalysisDataPort = {
     scanSource(source: AlignerSource) {
       return postJson<WorkspaceScan>(baseUrl, "/align/scan-source", { source });
     },
@@ -219,12 +221,6 @@ export function createStudioHttpClient(baseUrl: string): StudioHttpClient {
     },
     getAnalysisProgress(requestId: string) {
       return getJson<AnalysisProgress>(baseUrl, "/studio/analysis-progress", { requestId });
-    },
-    getAnalysisResults(workspacePath: string) {
-      return getJson<AnalysisProgress | null>(baseUrl, "/studio/analysis-results", { workspacePath });
-    },
-    getLatestAnalysisProgress(workspacePath: string) {
-      return getJson<AnalysisProgress | null>(baseUrl, "/studio/latest-analysis", { workspacePath });
     },
     onCropRoiProgress(requestId: string, onProgress: (progress: CropRoiProgress) => void) {
       let closed = false;
@@ -369,6 +365,12 @@ export function createStudioHttpClient(baseUrl: string): StudioHttpClient {
 
   return {
     ...aligner,
+    getAnalysisResults(workspacePath: string) {
+      return getJson<AnalysisProgress | null>(baseUrl, "/studio/analysis-results", { workspacePath });
+    },
+    getLatestAnalysisProgress(workspacePath: string) {
+      return getJson<AnalysisProgress | null>(baseUrl, "/studio/latest-analysis", { workspacePath });
+    },
     scanRoiWorkspace(workspacePath: string, signal?: AbortSignal) {
       return postJson<RoiWorkspaceScan>(
         baseUrl,

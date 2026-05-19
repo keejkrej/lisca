@@ -431,6 +431,12 @@ export type RoiPosExistsResponse = {
   exists: boolean;
 };
 
+export type AnalysisDataPort = {
+  startAnalysis(request: AnalysisStartRequest): Promise<AnalysisProgress>;
+  getAnalysisProgress(requestId: string): Promise<AnalysisProgress>;
+  onAnalysisProgress(requestId: string, onProgress: (progress: AnalysisProgress) => void): () => void;
+};
+
 export type AlignerDataPort = {
   scanSource(source: AlignerSource): Promise<WorkspaceScan>;
   loadFrame(
@@ -451,9 +457,6 @@ export type AlignerDataPort = {
   cancelCropRoi(requestId: string): Promise<CropRoiProgress>;
   onCropRoiProgress(requestId: string, onProgress: (progress: CropRoiProgress) => void): () => void;
   roiPosExists(workspacePath: string, pos: number): Promise<boolean>;
-  startAnalysis(request: AnalysisStartRequest): Promise<AnalysisProgress>;
-  getAnalysisProgress(requestId: string): Promise<AnalysisProgress>;
-  onAnalysisProgress(requestId: string, onProgress: (progress: AnalysisProgress) => void): () => void;
 };
 
 export type CanvasStatusTone = "default" | "error" | "success";
