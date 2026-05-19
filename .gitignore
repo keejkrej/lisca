@@ -4,6 +4,7 @@ dist
 .turbo
 .zig-cache
 .zig-cache-global
+zig-out
 *.local
 .DS_Store
 target
