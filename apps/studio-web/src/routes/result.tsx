@@ -5,7 +5,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
-import { studioClient, toErrorMessage } from "../api/studio-client";
+import { toErrorMessage } from "../api/studio-client";
+import { studioClient } from "../api/studio-port";
 import { StudioDock } from "../components/studio-dock";
 import { StudioLeft } from "../components/studio-left";
 import { ResultPanelsGridView, plotOptionsForPanel } from "../result/plot-charts";

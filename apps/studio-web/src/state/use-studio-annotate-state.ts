@@ -12,7 +12,8 @@ import { clamp } from "@lisca/utils";
 import { useCallback, useEffect, useMemo } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
-import { studioClient, toErrorMessage } from "../api/studio-client";
+import { toErrorMessage } from "../api/studio-client";
+import { studioClient } from "../api/studio-port";
 import { useStudioRoiWorkspaceScanQuery } from "../api/studio-queries";
 import {
   annotateRequestKey,

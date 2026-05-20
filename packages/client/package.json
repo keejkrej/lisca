@@ -1,0 +1,66 @@
+{
+  "name": "@lisca/client",
+  "version": "0.1.0",
+  "private": true,
+  "files": [
+    "src"
+  ],
+  "type": "module",
+  "exports": {
+    "./fetch": {
+      "types": "./src/fetch.ts",
+      "import": "./src/fetch.ts"
+    },
+    "./urls": {
+      "types": "./src/urls.ts",
+      "import": "./src/urls.ts"
+    },
+    "./progress": {
+      "types": "./src/progress-subscribe.ts",
+      "import": "./src/progress-subscribe.ts"
+    },
+    "./port-registry": {
+      "types": "./src/port-registry.ts",
+      "import": "./src/port-registry.ts"
+    },
+    "./errors": {
+      "types": "./src/errors.ts",
+      "import": "./src/errors.ts"
+    },
+    "./ports/aligner": {
+      "types": "./src/ports/aligner.ts",
+      "import": "./src/ports/aligner.ts"
+    },
+    "./ports/analysis": {
+      "types": "./src/ports/analysis.ts",
+      "import": "./src/ports/analysis.ts"
+    },
+    "./ports/annotator": {
+      "types": "./src/ports/annotator.ts",
+      "import": "./src/ports/annotator.ts"
+    },
+    "./ports/studio-host": {
+      "types": "./src/ports/studio-host.ts",
+      "import": "./src/ports/studio-host.ts"
+    },
+    "./ports/studio": {
+      "types": "./src/ports/studio.ts",
+      "import": "./src/ports/studio.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.build.json --noEmit"
+  },
+  "dependencies": {
+    "@lisca/contracts": "workspace:*",
+    "@lisca/utils": "workspace:*",
+    "effect": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}

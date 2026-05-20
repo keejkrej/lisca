@@ -25,7 +25,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { studioClient, toErrorMessage } from "../api/studio-client";
+import { toErrorMessage } from "../api/studio-client";
+import { studioClient } from "../api/studio-port";
 import { useAutoExcludePreviewMutation, useScanSourceQuery } from "../api/studio-queries";
 import { effectErrorMessage, loadFrameEffect } from "../effects/frame-loader";
 import { isDoneCropStatus } from "../utils/crop-status";

@@ -1,4 +1,5 @@
 import type {
+  AnnotatorDataPort,
   ContrastWindow,
   FrameResult,
   LoadedRoiFrameAnnotation,
@@ -6,8 +7,6 @@ import type {
 } from "@lisca/contracts";
 import { normalizeFrameContrast } from "@lisca/utils";
 import { Cause, Effect, Option } from "effect";
-
-import type { AnnotatorApi } from "../api/annotator-client";
 import {
   createEmptyMask,
   decodeMaskBase64Png,
@@ -79,7 +78,7 @@ function frameCacheKey(
 }
 
 export function loadRoiFrameEffect(
-  api: AnnotatorApi,
+  api: AnnotatorDataPort,
   workspacePath: string,
   request: RoiFrameRequest,
   contrast: ContrastWindow | null,
@@ -129,7 +128,7 @@ async function loadedAnnotationToValue(
 }
 
 export function loadRoiFrameWithAnnotationEffect(
-  api: AnnotatorApi,
+  api: AnnotatorDataPort,
   workspacePath: string,
   request: RoiFrameRequest,
   contrast: ContrastWindow | null,

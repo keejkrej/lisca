@@ -81,6 +81,9 @@ importers:
 
   apps/aligner-web:
     dependencies:
+      '@lisca/client':
+        specifier: workspace:*
+        version: link:../../packages/client
       '@lisca/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
@@ -184,6 +187,9 @@ importers:
 
   apps/annotator-web:
     dependencies:
+      '@lisca/client':
+        specifier: workspace:*
+        version: link:../../packages/client
       '@lisca/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
@@ -290,6 +296,9 @@ importers:
 
   apps/studio-web:
     dependencies:
+      '@lisca/client':
+        specifier: workspace:*
+        version: link:../../packages/client
       '@lisca/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
@@ -354,6 +363,25 @@ importers:
       vite:
         specifier: ^6.3.5
         version: 6.4.2(@types/node@22.19.18)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.47.1)(yaml@2.8.4)
+
+  packages/client:
+    dependencies:
+      '@lisca/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@lisca/utils':
+        specifier: workspace:*
+        version: link:../utils
+      effect:
+        specifier: 'catalog:'
+        version: 3.21.2
+    devDependencies:
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@22.19.18)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.47.1)(yaml@2.8.4)
 
   packages/contracts:
     dependencies:

@@ -1,7 +1,7 @@
 import type { StudioAnalysisCsvFile } from "@lisca/contracts";
 import { queryOptions, type QueryClient, useQuery } from "@tanstack/react-query";
 
-import { studioClient } from "../api/studio-client";
+import { ensureStudioPort } from "../api/studio-port";
 import { parseCsvFile, parsePanelGroups, type ResultPanel, type SlideChannelLabels } from "./plots";
 
 const ANALYSIS_QUERY_GC_TIME = 30 * 60 * 1000;
@@ -40,7 +40,7 @@ export function analysisCsvQueryOptions(workspacePath: string | null, file: Stud
     queryFn: async ({ signal }) => {
       const inline = file.csv?.trim();
       if (inline) return inline;
-      return studioClient.readTextFile(file.path, signal);
+      return ensureStudioPort().readTextFile(file.path, signal);
     },
     staleTime: Number.POSITIVE_INFINITY,
     gcTime: ANALYSIS_QUERY_GC_TIME,
@@ -87,7 +87,7 @@ export function useAnalysisResultsQuery(workspacePath: string | null, enabled: b
     queryKey: analysisResultsQueryKey(workspacePath),
     queryFn: () => {
       if (!workspacePath) throw new Error("No workspace selected");
-      return studioClient.getAnalysisResults(workspacePath);
+      return ensureStudioPort().getAnalysisResults(workspacePath);
     },
     enabled: enabled && workspacePath != null,
     retry: false,

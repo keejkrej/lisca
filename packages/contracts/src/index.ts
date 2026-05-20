@@ -42,8 +42,42 @@ export type StudioHostPort = AlignerHostPort & {
   saveResultPdf(request: SaveResultPdfRequest): Promise<SaveResultPdfResponse>;
 };
 
+export type AnnotatorDataPort = AlignerHostPort & {
+  scanRoiWorkspace(workspacePath: string, signal?: AbortSignal): Promise<RoiWorkspaceScan>;
+  loadLabels(workspacePath: string, signal?: AbortSignal): Promise<AnnotationLabel[]>;
+  saveLabels(
+    workspacePath: string,
+    labels: AnnotationLabel[],
+    signal?: AbortSignal,
+  ): Promise<AnnotationLabel[]>;
+  loadRoiFrame(
+    workspacePath: string,
+    request: RoiFrameRequest,
+    contrast: ContrastWindow | null,
+    signal?: AbortSignal,
+  ): Promise<FramePayload>;
+  loadRoiFrameAnnotation(
+    workspacePath: string,
+    request: RoiFrameRequest,
+    signal?: AbortSignal,
+  ): Promise<LoadedRoiFrameAnnotation>;
+  saveRoiFrameAnnotation(
+    workspacePath: string,
+    request: RoiFrameRequest,
+    annotation: RoiFrameAnnotationPayload,
+    signal?: AbortSignal,
+  ): Promise<RoiFrameAnnotation>;
+};
+
 import type {
+  AnnotationLabel,
+  FramePayload,
   HostListDirectoryResult,
+  LoadedRoiFrameAnnotation,
+  RoiFrameAnnotation,
+  RoiFrameAnnotationPayload,
+  RoiFrameRequest,
+  RoiWorkspaceScan,
   SaveAssayJsonResponse,
   SaveResultPdfRequest,
   SaveResultPdfResponse,
@@ -218,6 +252,20 @@ import type {
   SavedAlignState,
   WorkspaceScan,
 } from "./protocol.wire.js";
+
+export type StudioDataPort = AlignerDataPort &
+  AnalysisDataPort &
+  StudioHostPort & {
+    scanRoiWorkspace(workspacePath: string, signal?: AbortSignal): Promise<RoiWorkspaceScan>;
+    getAnalysisResults(workspacePath: string): Promise<AnalysisProgress | null>;
+    getLatestAnalysisProgress(workspacePath: string): Promise<AnalysisProgress | null>;
+    loadRoiFrame(
+      workspacePath: string,
+      request: RoiFrameRequest,
+      contrast?: ContrastWindow | null,
+      signal?: AbortSignal,
+    ): Promise<FrameResult>;
+  };
 
 export type CanvasStatusTone = "default" | "error" | "success";
 

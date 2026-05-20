@@ -1,52 +1,64 @@
 import type { AlignerSource, AutoExcludePreviewRequest } from "@lisca/contracts";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { toFetchErrorMessage } from "@lisca/client/errors";
+import { queryOptions, useMutation, useQuery } from "@tanstack/react-query";
 
-import { createAlignerHttpClient } from "./aligner-client";
+import { ensureAlignerPort } from "./aligner-port";
+import { resolveAlignerHttpBaseUrl } from "./aligner-client";
 import { sourceKey } from "../state/aligner-store";
 
-export const alignerClient = createAlignerHttpClient();
+export const alignerQueryKeys = {
+  all: ["aligner"] as const,
+  scanSource: (source: AlignerSource | null) =>
+    ["aligner", "scan-source", sourceKey(source)] as const,
+  savedBboxPositions: (workspacePath: string | null) =>
+    ["aligner", "saved-bbox-positions", workspacePath] as const,
+};
 
-export function toErrorMessage(cause: unknown, fallback: string): string {
-  const message = cause instanceof Error ? cause.message : typeof cause === "string" ? cause : "";
-
-  if (
-    cause instanceof TypeError ||
-    message.includes("Failed to fetch") ||
-    message.includes("NetworkError") ||
-    message.includes("fetch failed")
-  ) {
-    return `${fallback}: server unreachable at 127.0.0.1:8765`;
-  }
-
-  return message ? `${fallback}: ${message}` : fallback;
-}
-
-export function useScanSourceQuery(source: AlignerSource | null) {
-  return useQuery({
-    queryKey: ["aligner", "scan-source", sourceKey(source)],
+export function workspaceScanQueryOptions(source: AlignerSource | null) {
+  return queryOptions({
+    queryKey: alignerQueryKeys.scanSource(source),
     queryFn: () => {
       if (!source) throw new Error("No source selected");
-      return alignerClient.scanSource(source);
+      return ensureAlignerPort().scanSource(source);
     },
     enabled: source != null,
     retry: false,
   });
 }
 
-export function useSavedBboxPositionsQuery(workspacePath: string | null, enabled: boolean) {
-  return useQuery({
-    queryKey: ["aligner", "saved-bbox-positions", workspacePath],
+export function savedBboxPositionsQueryOptions(workspacePath: string | null, enabled: boolean) {
+  return queryOptions({
+    queryKey: alignerQueryKeys.savedBboxPositions(workspacePath),
     queryFn: () => {
       if (!workspacePath) throw new Error("No workspace selected");
-      return alignerClient.listSavedBboxPositions(workspacePath);
+      return ensureAlignerPort().listSavedBboxPositions(workspacePath);
     },
     enabled: enabled && workspacePath != null,
     retry: false,
   });
 }
 
-export function useAutoExcludePreviewMutation() {
-  return useMutation({
-    mutationFn: (request: AutoExcludePreviewRequest) => alignerClient.autoExcludePreview(request),
-  });
+export function autoExcludePreviewMutationOptions() {
+  return {
+    mutationFn: (request: AutoExcludePreviewRequest) =>
+      ensureAlignerPort().autoExcludePreview(request),
+  };
 }
+
+export function toErrorMessage(cause: unknown, fallback: string): string {
+  return toFetchErrorMessage(cause, fallback, resolveAlignerHttpBaseUrl());
+}
+
+export function useScanSourceQuery(source: AlignerSource | null) {
+  return useQuery(workspaceScanQueryOptions(source));
+}
+
+export function useSavedBboxPositionsQuery(workspacePath: string | null, enabled: boolean) {
+  return useQuery(savedBboxPositionsQueryOptions(workspacePath, enabled));
+}
+
+export function useAutoExcludePreviewMutation() {
+  return useMutation(autoExcludePreviewMutationOptions());
+}
+
+export { alignerClient, ensureAlignerPort } from "./aligner-port";
