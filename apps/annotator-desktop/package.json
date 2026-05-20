@@ -2,14 +2,18 @@
   "name": "@lisca/annotator-desktop",
   "version": "0.1.0",
   "private": true,
+  "main": "electron/main.cjs",
   "scripts": {
-    "build": "zig build package -Doptimize=ReleaseSafe",
-    "dev": "node ../../scripts/desktop-dev.mjs @lisca/annotator-server",
-    "typecheck": "zig build --global-cache-dir ../../.zig-cache-global test -Dplatform=null && cargo check -p annotator-server"
+    "build": "pnpm --filter @lisca/annotator-web build && pnpm --filter @lisca/annotator-server build",
+    "dev": "concurrently -k -n web,desk \"pnpm --filter @lisca/annotator-web dev\" \"cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5174 wait-on -t 120000 tcp:127.0.0.1:5174 && electron .\"",
+    "typecheck": "node --check electron/main.cjs && node --check electron/preload.cjs"
   },
   "devDependencies": {
     "@lisca/annotator-server": "workspace:*",
     "@lisca/annotator-web": "workspace:*",
-    "zero-native": "0.1.9"
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
+    "electron": "^35.2.1",
+    "wait-on": "^8.0.3"
   }
 }

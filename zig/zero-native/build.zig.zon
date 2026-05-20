@@ -1,8 +1,0 @@
-.{
-    .name = .zero_native,
-    .fingerprint = 0x338d08a1b31484a7,
-    .version = "0.1.0",
-    .minimum_zig_version = "0.16.0",
-    .dependencies = .{},
-    .paths = .{ "build.zig", "build.zig.zon", "runner.zig", "server-process.zig" },
-}
