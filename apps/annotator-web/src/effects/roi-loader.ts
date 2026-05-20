@@ -1,5 +1,5 @@
+import type { AnnotatorDataPort } from "@lisca/client/ports/types";
 import type {
-  AnnotatorDataPort,
   ContrastWindow,
   FrameResult,
   LoadedRoiFrameAnnotation,

@@ -2,7 +2,7 @@
  * Canonical wire types for HTTP/WebSocket payloads.
  * `protocol.generated.ts` is produced by Specta from `crates/lisca/src/protocol.rs`.
  */
-import type { PixelType } from "./constants.js";
+import type { PixelType } from "./constants.ts";
 import type {
   AlignGridCellCoord,
   AlignGridShape_Deserialize,
@@ -46,7 +46,7 @@ import type {
   SaveResultPdfRequest,
   SaveResultPdfResponse,
   WorkspaceScan,
-} from "./protocol.generated.js";
+} from "./protocol.generated.ts";
 
 export type { AppId };
 export type HelloMessage = Hello;

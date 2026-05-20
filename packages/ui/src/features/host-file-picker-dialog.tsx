@@ -1,11 +1,11 @@
 "use client";
 
 import type {
-  AlignerHostPort,
   HostFilePickerMode,
   HostFsEntry,
   HostListDirectoryResult,
 } from "@lisca/contracts";
+import type { AlignerHostPort } from "@lisca/client/ports/types";
 import { FileIcon, FolderIcon, Home, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 

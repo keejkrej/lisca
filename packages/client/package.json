@@ -46,6 +46,10 @@
     "./ports/studio": {
       "types": "./src/ports/studio.ts",
       "import": "./src/ports/studio.ts"
+    },
+    "./ports/types": {
+      "types": "./src/ports/types.ts",
+      "import": "./src/ports/types.ts"
     }
   },
   "scripts": {

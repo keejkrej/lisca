@@ -1,4 +1,4 @@
-import type { StudioHostPort } from "@lisca/contracts";
+import type { StudioHostPort } from "@lisca/client/ports/types";
 import { AppShell, DockButton, HostFilePickerDialog } from "@lisca/ui";
 import { createFileRoute } from "@tanstack/react-router";
 import { useNavigate } from "@tanstack/react-router";

@@ -11,7 +11,7 @@ Spec for the **lisca** monorepo: `apps/{aligner,annotator,studio}-{web,server,de
 | Desktop          | **Electron** (`electron/main.cjs`, preload); dev starts Vite + Rust server                                                                     |
 | Realtime         | **WebSocket** on localhost (`/ws`); servers **Rust** / **Tokio** / **Axum**                                                                    |
 | New TS HTTP APIs | **Hono**                                                                                                                                       |
-| Shared code      | **`lisca`** Rust crate; **`@lisca/contracts`** (Specta TS + Effect Schema), **`@lisca/ui`**, **`@lisca/utils`**; Python **`lisca`** (**Hatchling**, `python/`) |
+| Shared code      | **`lisca`** Rust crate; **`@lisca/contracts`** (Specta wire types + Effect Schema), **`@lisca/client`** (port interfaces + HTTP/WS clients), **`@lisca/ui`**, **`@lisca/utils`**; Python **`lisca`** (**Hatchling**, `python/`) |
 | Contracts        | `pnpm contracts:generate` — Rust `protocol.rs` → `packages/contracts/src/protocol.generated.ts`; runtime decode via Effect Schema in `protocol.schema.ts` |
 
 ## Effect (v3)
@@ -20,6 +20,11 @@ Spec for the **lisca** monorepo: `apps/{aligner,annotator,studio}-{web,server,de
 - **Imports:** subpaths (`effect/Schema`, `effect/Either`, …), not the `effect` barrel.
 - **Wire JSON:** use `@lisca/contracts` helpers — `schemaDecoder` / `schemaDecoderEither` (hoisted), `decodeJson`, `readJsonResponse`, `formatSchemaError`.
 - **Web state:** Zustand + TanStack Query unchanged; `Effect.tryPromise` only in `apps/*-web/src/effects/*` loaders.
+
+## Packages
+
+- **`@lisca/contracts`** — Specta-generated wire types, Effect schemas, decode helpers. No port interfaces or HTTP/WS client logic.
+- **`@lisca/client`** — `*DataPort` / `*HostPort` interfaces and implementations (`create*Port`, `subscribeProgress`). Subpath exports only (e.g. `@lisca/client/ports/types`); no root barrel.
 
 ## Ports
 
@@ -38,3 +43,5 @@ Spec for the **lisca** monorepo: `apps/{aligner,annotator,studio}-{web,server,de
 ## Conventions
 
 Workspace scope **`@lisca/*`**. One root **`Cargo.toml`** workspace. Desktop packages **`devDependencies`** on their web + server so Turbo **`^build`** ordering works. **`pnpm.onlyBuiltDependencies`**: `electron`, `esbuild`. Shared product icons: **`assets/brand/`** (web via Vite `publicDir`; desktop/mobile `assets/` symlinks).
+
+**TypeScript imports:** `@lisca/*` packages use **`NodeNext`** resolution with explicit **`.ts`** extensions in relative imports (e.g. `from "./types.ts"`). Vite web apps override to **`Bundler`** resolution (extensionless imports are fine). `package.json` exports point at **`src/*.ts`** source; `tsc` is for typecheck/declarations, not the runtime entrypoint.

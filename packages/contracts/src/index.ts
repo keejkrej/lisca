@@ -1,7 +1,7 @@
-export { WS_PATH } from "./constants.js";
-export * from "./decode.js";
-export * from "./protocol.schema.js";
-export * from "./protocol.wire.js";
+export { WS_PATH } from "./constants.ts";
+export * from "./decode.ts";
+export * from "./protocol.schema.ts";
+export * from "./protocol.wire.ts";
 
 export type FolderSourceTemplatePreset = {
   label: string;
@@ -30,58 +30,6 @@ export type HostFilePickerMode =
   | "nd2_file"
   | "czi_file"
   | "assay_json_file";
-
-export type AlignerHostPort = {
-  listDirectory(path: string | null): Promise<HostListDirectoryResult>;
-  userHomeDirectory(): Promise<string>;
-};
-
-export type StudioHostPort = AlignerHostPort & {
-  readTextFile(path: string, signal?: AbortSignal): Promise<string>;
-  saveAssayJson(saveTo: string, contents: string): Promise<SaveAssayJsonResponse>;
-  saveResultPdf(request: SaveResultPdfRequest): Promise<SaveResultPdfResponse>;
-};
-
-export type AnnotatorDataPort = AlignerHostPort & {
-  scanRoiWorkspace(workspacePath: string, signal?: AbortSignal): Promise<RoiWorkspaceScan>;
-  loadLabels(workspacePath: string, signal?: AbortSignal): Promise<AnnotationLabel[]>;
-  saveLabels(
-    workspacePath: string,
-    labels: AnnotationLabel[],
-    signal?: AbortSignal,
-  ): Promise<AnnotationLabel[]>;
-  loadRoiFrame(
-    workspacePath: string,
-    request: RoiFrameRequest,
-    contrast: ContrastWindow | null,
-    signal?: AbortSignal,
-  ): Promise<FramePayload>;
-  loadRoiFrameAnnotation(
-    workspacePath: string,
-    request: RoiFrameRequest,
-    signal?: AbortSignal,
-  ): Promise<LoadedRoiFrameAnnotation>;
-  saveRoiFrameAnnotation(
-    workspacePath: string,
-    request: RoiFrameRequest,
-    annotation: RoiFrameAnnotationPayload,
-    signal?: AbortSignal,
-  ): Promise<RoiFrameAnnotation>;
-};
-
-import type {
-  AnnotationLabel,
-  FramePayload,
-  HostListDirectoryResult,
-  LoadedRoiFrameAnnotation,
-  RoiFrameAnnotation,
-  RoiFrameAnnotationPayload,
-  RoiFrameRequest,
-  RoiWorkspaceScan,
-  SaveAssayJsonResponse,
-  SaveResultPdfRequest,
-  SaveResultPdfResponse,
-} from "./protocol.wire.js";
 
 export const ASSAY_NAME = {
   GENE_EXPRESSION: "gene-expression",
@@ -134,7 +82,7 @@ export type StudioAssayId = AssayName;
 
 export type StudioDataSourceKind = AlignerSource["kind"] | null;
 
-import type { AlignerSource, FolderSource, Nd2Source, CziSource } from "./protocol.wire.js";
+import type { AlignerSource, FolderSource, Nd2Source, CziSource } from "./protocol.wire.ts";
 export type { FolderSource, Nd2Source, CziSource };
 
 export type StudioTimelapseUnit = "second" | "minute" | "hour";
@@ -181,9 +129,9 @@ export type StudioAssayJson = {
   info3: StudioBasicInfoStep3;
 };
 
-export type { PixelType } from "./constants.js";
-export { PIXEL_TYPES } from "./constants.js";
-import type { PixelType } from "./constants.js";
+export type { PixelType } from "./constants.ts";
+export { PIXEL_TYPES } from "./constants.ts";
+import type { PixelType } from "./constants.ts";
 
 export type PixelArray =
   | Uint8Array
@@ -204,68 +152,9 @@ export type FrameResult = {
   appliedContrast?: ContrastWindow;
 };
 
-import type { ContrastWindow } from "./protocol.wire.js";
+import type { ContrastWindow } from "./protocol.wire.ts";
 
 export type AnnotationMode = "classification" | "segmentation";
-
-export type AnalysisDataPort = {
-  startAnalysis(request: AnalysisStartRequest): Promise<AnalysisProgress>;
-  getAnalysisProgress(requestId: string): Promise<AnalysisProgress>;
-  onAnalysisProgress(
-    requestId: string,
-    onProgress: (progress: AnalysisProgress) => void,
-  ): () => void;
-};
-
-import type { AnalysisProgress, AnalysisStartRequest } from "./protocol.wire.js";
-
-export type AlignerDataPort = {
-  scanSource(source: AlignerSource): Promise<WorkspaceScan>;
-  loadFrame(
-    source: AlignerSource,
-    request: FrameRequest,
-    contrast?: ContrastWindow | null,
-  ): Promise<FrameResult>;
-  loadAlignState(workspacePath: string, pos: number): Promise<SavedAlignState | null>;
-  saveBbox(
-    workspacePath: string,
-    pos: number,
-    csv: string,
-    alignState: SavedAlignState,
-  ): Promise<SaveBboxResponse>;
-  autoExcludePreview(request: AutoExcludePreviewRequest): Promise<AutoExcludePreviewResponse>;
-  listSavedBboxPositions(workspacePath: string): Promise<number[]>;
-  cropRoi(request: CropRoiRequest): Promise<CropRoiResponse>;
-  cancelCropRoi(requestId: string): Promise<CropRoiProgress>;
-  onCropRoiProgress(requestId: string, onProgress: (progress: CropRoiProgress) => void): () => void;
-  roiPosExists(workspacePath: string, pos: number): Promise<boolean>;
-};
-
-import type {
-  AutoExcludePreviewRequest,
-  AutoExcludePreviewResponse,
-  CropRoiProgress,
-  CropRoiRequest,
-  CropRoiResponse,
-  FrameRequest,
-  SaveBboxResponse,
-  SavedAlignState,
-  WorkspaceScan,
-} from "./protocol.wire.js";
-
-export type StudioDataPort = AlignerDataPort &
-  AnalysisDataPort &
-  StudioHostPort & {
-    scanRoiWorkspace(workspacePath: string, signal?: AbortSignal): Promise<RoiWorkspaceScan>;
-    getAnalysisResults(workspacePath: string): Promise<AnalysisProgress | null>;
-    getLatestAnalysisProgress(workspacePath: string): Promise<AnalysisProgress | null>;
-    loadRoiFrame(
-      workspacePath: string,
-      request: RoiFrameRequest,
-      contrast?: ContrastWindow | null,
-      signal?: AbortSignal,
-    ): Promise<FrameResult>;
-  };
 
 export type CanvasStatusTone = "default" | "error" | "success";
 

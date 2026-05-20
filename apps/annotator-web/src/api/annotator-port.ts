@@ -1,4 +1,4 @@
-import type { AnnotatorDataPort } from "@lisca/contracts";
+import type { AnnotatorDataPort } from "@lisca/client/ports/types";
 import { createPortRegistry } from "@lisca/client/port-registry";
 import { createAnnotatorPort } from "@lisca/client/ports/annotator";
 

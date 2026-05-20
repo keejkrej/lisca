@@ -2,19 +2,21 @@ import {
   FramePayloadSchema,
   NullableAnalysisProgressSchema,
   RoiWorkspaceScanSchema,
-  type AnalysisProgress,
   type ContrastWindow,
   type FrameResult,
   type RoiFrameRequest,
   type RoiWorkspaceScan,
-  type StudioDataPort,
 } from "@lisca/contracts";
 import { decodeFramePayload } from "@lisca/utils";
 
-import { createJsonFetch } from "../fetch.js";
-import { createAlignerPort, type AlignerPortDeps } from "./aligner.js";
-import { createAnalysisPort } from "./analysis.js";
-import { createStudioHostPort } from "./studio-host.js";
+import { createJsonFetch } from "../fetch.ts";
+import { createAlignerPort, type AlignerPortDeps } from "./aligner.ts";
+import { createAnalysisPort } from "./analysis.ts";
+import { createStudioHostPort } from "./studio-host.ts";
+import type { StudioDataPort } from "./types.ts";
+
+export type { StudioDataPort } from "./types.ts";
+export type { AnalysisProgress } from "@lisca/contracts";
 
 export type StudioPortDeps = AlignerPortDeps;
 
@@ -62,5 +64,3 @@ export function createStudioPort(deps: StudioPortDeps): StudioDataPort {
     },
   };
 }
-
-export type { AnalysisProgress };

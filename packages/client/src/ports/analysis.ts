@@ -2,13 +2,15 @@ import {
   AnalysisProgressMessageSchema,
   AnalysisProgressSchema,
   schemaDecoderEither,
-  type AnalysisDataPort,
   type AnalysisProgress,
   type AnalysisStartRequest,
 } from "@lisca/contracts";
 
-import { createJsonFetch, type JsonFetch } from "../fetch.js";
-import { subscribeProgress } from "../progress-subscribe.js";
+import { createJsonFetch, type JsonFetch } from "../fetch.ts";
+import { subscribeProgress } from "../progress-subscribe.ts";
+import type { AnalysisDataPort } from "./types.ts";
+
+export type { AnalysisDataPort } from "./types.ts";
 
 const decodeAnalysisProgressMessage = schemaDecoderEither(AnalysisProgressMessageSchema);
 

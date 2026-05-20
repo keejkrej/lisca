@@ -10,7 +10,6 @@ import {
   UIntArraySchema,
   WorkspaceScanSchema,
   schemaDecoderEither,
-  type AlignerDataPort,
   type AlignerSource,
   type AutoExcludePreviewRequest,
   type ContrastWindow,
@@ -21,8 +20,11 @@ import {
 } from "@lisca/contracts";
 import { decodeFramePayload } from "@lisca/utils";
 
-import { createJsonFetch, type JsonFetch } from "../fetch.js";
-import { pollProgressLoop, subscribeProgress } from "../progress-subscribe.js";
+import { createJsonFetch, type JsonFetch } from "../fetch.ts";
+import { pollProgressLoop, subscribeProgress } from "../progress-subscribe.ts";
+import type { AlignerDataPort } from "./types.ts";
+
+export type { AlignerDataPort } from "./types.ts";
 
 const decodeCropRoiProgressMessage = schemaDecoderEither(CropRoiProgressMessageSchema);
 

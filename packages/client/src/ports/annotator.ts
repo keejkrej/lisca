@@ -4,15 +4,17 @@ import {
   LoadedRoiFrameAnnotationSchema,
   RoiFrameAnnotationSchema,
   RoiWorkspaceScanSchema,
-  type AnnotatorDataPort,
   type AnnotationLabel,
   type ContrastWindow,
   type RoiFrameAnnotationPayload,
   type RoiFrameRequest,
 } from "@lisca/contracts";
 
-import { createJsonFetch } from "../fetch.js";
-import { createHostPort, type HostPortDeps } from "./studio-host.js";
+import { createJsonFetch } from "../fetch.ts";
+import { createHostPort, type HostPortDeps } from "./studio-host.ts";
+import type { AnnotatorDataPort } from "./types.ts";
+
+export type { AnnotatorDataPort } from "./types.ts";
 
 export type AnnotatorPortDeps = HostPortDeps;
 

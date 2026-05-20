@@ -1,5 +1,5 @@
+import type { AlignerDataPort } from "@lisca/client/ports/types";
 import type {
-  AlignerDataPort,
   AlignerSource,
   ContrastWindow,
   FrameRequest,

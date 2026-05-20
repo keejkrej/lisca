@@ -1,7 +1,7 @@
-import { CropRoiProgressMessageSchema, CropRoiProgressSchema, schemaDecoderEither } from "@lisca/contracts";
+import { CropRoiProgressMessageSchema, schemaDecoderEither } from "@lisca/contracts";
 import { describe, expect, test, vi } from "vitest";
 
-import { pollProgressLoop, subscribeProgress } from "../src/progress-subscribe.js";
+import { pollProgressLoop, subscribeProgress } from "../src/progress-subscribe.ts";
 
 const decodeCropRoiProgressMessage = schemaDecoderEither(CropRoiProgressMessageSchema);
 

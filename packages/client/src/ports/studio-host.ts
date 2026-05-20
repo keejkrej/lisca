@@ -6,10 +6,12 @@ import {
   SaveResultPdfResponseSchema,
   type HostListDirectoryResult,
   type SaveResultPdfRequest,
-  type StudioHostPort,
 } from "@lisca/contracts";
 
-import { createJsonFetch } from "../fetch.js";
+import { createJsonFetch } from "../fetch.ts";
+import type { StudioHostPort } from "./types.ts";
+
+export type { StudioHostPort } from "./types.ts";
 
 export type HostPortDeps = {
   baseUrl: () => string;

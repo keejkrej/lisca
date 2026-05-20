@@ -1,11 +1,11 @@
 "use client";
 
 import {
-  type AlignerHostPort,
   DEFAULT_FOLDER_SOURCE_TEMPLATE,
   FOLDER_SOURCE_TEMPLATE_PRESETS,
   type FolderSource,
 } from "@lisca/contracts";
+import type { AlignerHostPort } from "@lisca/client/ports/types";
 import { useEffect, useState } from "react";
 
 import { Button } from "../components/ui/button";

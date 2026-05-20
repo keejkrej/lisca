@@ -398,6 +398,9 @@ importers:
       '@base-ui/react':
         specifier: ^1.4.1
         version: 1.4.1(@types/react@19.1.17)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@lisca/client':
+        specifier: workspace:*
+        version: link:../client
       '@lisca/contracts':
         specifier: workspace:*
         version: link:../contracts

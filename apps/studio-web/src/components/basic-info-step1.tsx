@@ -1,4 +1,5 @@
-import type { HostFilePickerMode, StudioDataSourceKind, StudioHostPort } from "@lisca/contracts";
+import type { HostFilePickerMode, StudioDataSourceKind } from "@lisca/contracts";
+import type { StudioHostPort } from "@lisca/client/ports/types";
 import {
   Field,
   FieldLabel,

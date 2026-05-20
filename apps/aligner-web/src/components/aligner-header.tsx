@@ -11,7 +11,8 @@ import {
   cn,
   useShellWorkspace,
 } from "@lisca/ui";
-import type { AlignerHostPort, AlignerSource, HostFilePickerMode } from "@lisca/contracts";
+import type { AlignerSource, HostFilePickerMode } from "@lisca/contracts";
+import type { AlignerHostPort } from "@lisca/client/ports/types";
 import { useMemo, useRef, useState } from "react";
 
 function ToolsMenuChevron(props: { className?: string }) {

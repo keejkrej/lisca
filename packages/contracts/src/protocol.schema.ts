@@ -1,6 +1,6 @@
 import * as Schema from "effect/Schema";
 
-import { PIXEL_TYPES } from "./constants.js";
+import { PIXEL_TYPES } from "./constants.ts";
 
 import type {
   AlignGridCellCoord,
@@ -52,7 +52,7 @@ import type {
   SavedAlignState,
   StudioAnalysisCsvFile,
   WorkspaceScan,
-} from "./protocol.wire.js";
+} from "./protocol.wire.ts";
 
 const UInt = Schema.Number.pipe(Schema.int(), Schema.nonNegative());
 const Int = Schema.Number.pipe(Schema.int());

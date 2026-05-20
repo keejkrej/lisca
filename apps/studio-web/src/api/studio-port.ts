@@ -1,4 +1,4 @@
-import type { StudioDataPort } from "@lisca/contracts";
+import type { StudioDataPort } from "@lisca/client/ports/types";
 import { createPortRegistry } from "@lisca/client/port-registry";
 import { createStudioPort } from "@lisca/client/ports/studio";
 

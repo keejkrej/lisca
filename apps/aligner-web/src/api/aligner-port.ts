@@ -1,4 +1,4 @@
-import type { AlignerDataPort } from "@lisca/contracts";
+import type { AlignerDataPort } from "@lisca/client/ports/types";
 import { createPortRegistry } from "@lisca/client/port-registry";
 import { createAlignerPort } from "@lisca/client/ports/aligner";
 
