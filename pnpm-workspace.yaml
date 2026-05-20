@@ -3,4 +3,14 @@ packages:
   - "packages/*"
 catalog:
   effect: "^3.21.2"
+  "@types/node": "^22.15.21"
+  typescript: "^5.8.3"
+  vitest: "^3.2.4"
 minimumReleaseAge: 10080
+onlyBuiltDependencies:
+  - core-js
+  - electron
+  - esbuild
+overrides:
+  react: 19.1.0
+  react-dom: 19.1.0

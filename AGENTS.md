@@ -4,15 +4,15 @@ Spec for the **lisca** monorepo: `apps/{aligner,annotator,studio}-{web,server,de
 
 ## Stack
 
-| Area             | Tools                                                                                                                                          |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| Repo             | **pnpm** + **Turborepo**                                                                                                                       |
-| Web              | **React 19**, **Vite 6**, **TanStack Router**, **TanStack Query**, **Effect**, **Zustand**, **coss-ui**, **Tailwind v4** (`@tailwindcss/vite`) |
-| Desktop          | **Electron** (`electron/main.cjs`, preload); dev starts Vite + Rust server                                                                     |
-| Realtime         | **WebSocket** on localhost (`/ws`); servers **Rust** / **Tokio** / **Axum**                                                                    |
-| New TS HTTP APIs | **Hono**                                                                                                                                       |
+| Area             | Tools                                                                                                                                                                                                                           |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Repo             | **pnpm** + **Turborepo**                                                                                                                                                                                                        |
+| Web              | **React 19**, **Vite 6**, **TanStack Router**, **TanStack Query**, **Effect**, **Zustand**, **coss-ui**, **Tailwind v4** (`@tailwindcss/vite`)                                                                                  |
+| Desktop          | **Electron** (`electron/main.cjs`, preload); dev starts Vite + Rust server                                                                                                                                                      |
+| Realtime         | **WebSocket** on localhost (`/ws`); servers **Rust** / **Tokio** / **Axum**                                                                                                                                                     |
+| New TS HTTP APIs | **Hono**                                                                                                                                                                                                                        |
 | Shared code      | **`lisca`** Rust crate; **`@lisca/contracts`** (Specta wire types + Effect Schema), **`@lisca/client`** (port interfaces + HTTP/WS clients), **`@lisca/ui`**, **`@lisca/utils`**; Python **`lisca`** (**Hatchling**, `python/`) |
-| Contracts        | `pnpm contracts:generate` — Rust `protocol.rs` → `packages/contracts/src/protocol.generated.ts`; runtime decode via Effect Schema in `protocol.schema.ts` |
+| Contracts        | `pnpm contracts:generate` — Rust `protocol.rs` → `packages/contracts/src/protocol.generated.ts`; runtime decode via Effect Schema in `protocol.schema.ts`                                                                       |
 
 ## Effect (v3)
 
@@ -38,7 +38,7 @@ Spec for the **lisca** monorepo: `apps/{aligner,annotator,studio}-{web,server,de
 
 ## Commands
 
-`pnpm install` · `pnpm turbo run build` · **`pnpm lint`** (oxlint + `turbo run typecheck`) · **`pnpm format`** (oxfmt) · `pnpm --filter @lisca/<product>-desktop dev` · `cargo build --workspace` / `cargo run -p <crate>` · `cd python && pip install -e ".[dev]"`
+`pnpm install` · `pnpm turbo run build` · **`pnpm lint`** (oxlint) · **`pnpm typecheck`** · **`pnpm test`** · **`pnpm fmt`** (oxfmt; `format` aliases `fmt`) · `pnpm --filter @lisca/<product>-desktop dev` · `cargo build --workspace` / `cargo run -p <crate>` · `cd python && pip install -e ".[dev]"`
 
 ## Conventions
 

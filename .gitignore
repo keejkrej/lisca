@@ -1,7 +1,11 @@
 node_modules
 dist
+apps/*/dist
+packages/*/dist
+dist-electron
 *.tsbuildinfo
 .turbo
+.tanstack
 .zig-cache
 .zig-cache-global
 zig-out

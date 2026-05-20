@@ -6,9 +6,18 @@ settings:
 
 catalogs:
   default:
+    '@types/node':
+      specifier: ^22.15.21
+      version: 22.19.18
     effect:
       specifier: ^3.21.2
       version: 3.21.2
+    typescript:
+      specifier: ^5.8.3
+      version: 5.9.3
+    vitest:
+      specifier: ^3.2.4
+      version: 3.2.4
 
 overrides:
   react: 19.1.0
@@ -18,6 +27,9 @@ importers:
 
   .:
     devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 22.19.18
       oxfmt:
         specifier: ^0.48.0
         version: 0.48.0
@@ -28,8 +40,11 @@ importers:
         specifier: ^2.5.4
         version: 2.9.10
       typescript:
-        specifier: ^5.8.3
+        specifier: 'catalog:'
         version: 5.9.3
+      vitest:
+        specifier: 'catalog:'
+        version: 3.2.4(@types/node@22.19.18)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.47.1)(yaml@2.8.4)
 
   apps/aligner-desktop:
     devDependencies:

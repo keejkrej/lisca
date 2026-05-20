@@ -5,6 +5,9 @@
     "**/target/**",
     "**/.turbo/**",
     "**/coverage/**",
-    "**/routeTree.gen.ts"
-  ]
+    "**/routeTree.gen.ts",
+    "**/protocol.generated.ts",
+    "pnpm-lock.yaml"
+  ],
+  "sortPackageJson": {}
 }

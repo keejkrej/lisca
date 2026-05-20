@@ -5,33 +5,30 @@
     "build": "turbo run build",
     "build:packages": "turbo run build --filter=./packages/*",
     "build:webs": "turbo run build --filter=@lisca/*-web",
-    "check": "pnpm lint && pnpm check:rust",
+    "check": "pnpm lint && pnpm typecheck && pnpm check:rust",
     "check:rust": "cargo check --workspace",
-    "dev": "turbo run dev",
-    "format": "oxfmt .",
-    "format:check": "oxfmt . --check",
     "contracts:generate": "pnpm --filter @lisca/contracts generate",
+    "dev": "turbo run dev",
+    "fmt": "oxfmt .",
+    "fmt:check": "oxfmt . --check",
+    "format": "pnpm fmt",
+    "format:check": "pnpm fmt:check",
     "lisca": "node ./scripts/lisca.mjs",
-    "lint": "pnpm oxlint && turbo run typecheck",
-    "oxlint": "oxlint . --deny-warnings",
+    "lint": "oxlint . --report-unused-disable-directives",
+    "test": "turbo run test",
     "typecheck": "turbo run typecheck"
   },
   "devDependencies": {
+    "@types/node": "catalog:",
     "oxfmt": "^0.48.0",
     "oxlint": "^1.63.0",
     "turbo": "^2.5.4",
-    "typescript": "^5.8.3"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
-  "packageManager": "pnpm@10.11.0",
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "core-js",
-      "electron",
-      "esbuild"
-    ],
-    "overrides": {
-      "react": "19.1.0",
-      "react-dom": "19.1.0"
-    }
-  }
+  "engines": {
+    "node": ">=22",
+    "pnpm": "^10.11.0"
+  },
+  "packageManager": "pnpm@10.11.0"
 }

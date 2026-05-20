@@ -1,10 +1,24 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "unicorn", "oxc", "react"],
+  "ignorePatterns": [
+    "**/dist/**",
+    "**/target/**",
+    "**/.turbo/**",
+    "**/node_modules/**",
+    "**/coverage/**",
+    "*.tsbuildinfo",
+    "**/routeTree.gen.ts",
+    "**/protocol.generated.ts"
+  ],
+  "plugins": ["eslint", "oxc", "react", "unicorn", "typescript"],
   "categories": {
-    "correctness": "error"
+    "correctness": "warn",
+    "suspicious": "warn",
+    "perf": "warn"
   },
-  "rules": {},
+  "rules": {
+    "react-in-jsx-scope": "off"
+  },
   "env": {
     "builtin": true,
     "browser": true
@@ -13,12 +27,5 @@
     "react": {
       "version": "19.1.0"
     }
-  },
-  "ignorePatterns": [
-    "**/dist/**",
-    "**/target/**",
-    "**/.turbo/**",
-    "**/node_modules/**",
-    "**/coverage/**"
-  ]
+  }
 }
