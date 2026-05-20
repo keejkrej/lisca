@@ -24,6 +24,6 @@
     "effect": "catalog:"
   },
   "devDependencies": {
-    "typescript": "^5.8.3"
+    "typescript": "catalog:"
   }
 }

@@ -14,6 +14,19 @@ Spec for the **lisca** monorepo: `apps/{aligner,annotator,studio}-{web,server,de
 | Shared code      | **`lisca`** Rust crate; **`@lisca/contracts`** (Specta wire types + Effect Schema), **`@lisca/client`** (port interfaces + HTTP/WS clients), **`@lisca/ui`**, **`@lisca/utils`**; Python **`lisca`** (**Hatchling**, `python/`) |
 | Contracts        | `pnpm contracts:generate` — Rust `protocol.rs` → `packages/contracts/src/protocol.generated.ts`; runtime decode via Effect Schema in `protocol.schema.ts`                                                                       |
 
+## Dependency pinning
+
+| Ecosystem | Source of truth | Consume as |
+| --------- | --------------- | ---------- |
+| TypeScript | `pnpm-workspace.yaml` `catalog` | `"name": "catalog:"` |
+| TypeScript (transitive) | `pnpm.overrides` for `effect`, `react` | — |
+| Rust | `Cargo.toml` `[workspace.dependencies]` | `dep.workspace = true` |
+| Python | `python/pyproject.toml` `[tool.uv] constraint-dependencies` | listed in `[dependency-groups]` |
+
+**Rule of thumb:** catalog / workspace / constraint for shared and version-sensitive deps; inline semver for app-specific leaves (Expo, Electron, one-off libs).
+
+New Rust crates must add shared deps to `[workspace.dependencies]` and reference `dep.workspace = true` in member `Cargo.toml` files — never duplicate versions inline.
+
 ## Effect (v3)
 
 - **`effect`** is pinned via **pnpm catalog** (`pnpm-workspace.yaml`); depend with `"effect": "catalog:"`.
@@ -38,7 +51,7 @@ Spec for the **lisca** monorepo: `apps/{aligner,annotator,studio}-{web,server,de
 
 ## Commands
 
-`pnpm install` · `pnpm turbo run build` · **`pnpm lint`** (oxlint) · **`pnpm typecheck`** · **`pnpm test`** · **`pnpm fmt`** (oxfmt; `format` aliases `fmt`) · `pnpm --filter @lisca/<product>-desktop dev` · `cargo build --workspace` / `cargo run -p <crate>` · `cd python && pip install -e ".[dev]"`
+`pnpm install` · `pnpm turbo run build` · **`pnpm lint`** (oxlint) · **`pnpm typecheck`** · **`pnpm test`** · **`pnpm fmt`** (oxfmt; `format` aliases `fmt`) · `pnpm --filter @lisca/<product>-desktop dev` · `cargo build --workspace` / `cargo run -p <crate>` · `cd python && uv sync`
 
 ## Conventions
 

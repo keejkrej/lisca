@@ -4,7 +4,7 @@ Editable install from the repo root:
 
 ```bash
 cd python
-pip install -e ".[dev]"
+uv sync
 ```
 
 Build a wheel:
@@ -13,3 +13,5 @@ Build a wheel:
 cd python
 python -m build
 ```
+
+Shared dev dependency versions live in `pyproject.toml` (`[dependency-groups]` and `[tool.uv] constraint-dependencies`). Bump versions there only.

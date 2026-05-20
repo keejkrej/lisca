@@ -14,21 +14,21 @@
     "@lisca/contracts": "workspace:*",
     "@lisca/ui": "workspace:*",
     "@lisca/utils": "workspace:*",
-    "@tanstack/react-query": "^5.100.10",
-    "@tanstack/react-router": "^1.169.2",
+    "@tanstack/react-query": "catalog:",
+    "@tanstack/react-router": "catalog:",
     "effect": "catalog:",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "zustand": "^5.0.13"
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "zustand": "catalog:"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.1.8",
-    "@tanstack/router-plugin": "^1.167.35",
-    "@types/react": "^19.1.6",
-    "@types/react-dom": "^19.1.5",
-    "@vitejs/plugin-react": "^4.5.0",
-    "tailwindcss": "^4.1.8",
-    "typescript": "^5.8.3",
-    "vite": "^6.3.5"
+    "@tailwindcss/vite": "catalog:",
+    "@tanstack/router-plugin": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
   }
 }

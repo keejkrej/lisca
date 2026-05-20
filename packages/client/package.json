@@ -64,7 +64,7 @@
     "effect": "catalog:"
   },
   "devDependencies": {
-    "typescript": "^5.8.3",
-    "vitest": "^3.2.4"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }
