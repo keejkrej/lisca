@@ -7,6 +7,7 @@ repository.workspace = true
 description = "Shared Rust contracts and WebSocket helpers for Lisca apps."
 
 [dependencies]
+specta = { workspace = true, features = ["derive", "collect"] }
 axum.workspace = true
 base64.workspace = true
 czi-rs = { workspace = true }
@@ -19,3 +20,19 @@ tokio.workspace = true
 tower-http.workspace = true
 tracing.workspace = true
 walkdir.workspace = true
+
+[[bin]]
+name = "export-typescript"
+path = "src/bin/export_typescript.rs"
+required-features = ["export-typescript"]
+
+[features]
+export-typescript = ["dep:specta-serde", "dep:specta-typescript"]
+
+[dependencies.specta-serde]
+workspace = true
+optional = true
+
+[dependencies.specta-typescript]
+workspace = true
+optional = true

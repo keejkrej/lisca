@@ -11,7 +11,8 @@ Spec for the **lisca** monorepo: `apps/{aligner,annotator,studio}-{web,server,de
 | Desktop          | **Electron** (`electron/main.cjs`, preload); dev starts Vite + Rust server                                                                     |
 | Realtime         | **WebSocket** on localhost (`/ws`); servers **Rust** / **Tokio** / **Axum**                                                                    |
 | New TS HTTP APIs | **Hono**                                                                                                                                       |
-| Shared code      | **`lisca`** Rust crate; **`@lisca/contracts`**, **`@lisca/ui`**, **`@lisca/utils`**; Python **`lisca`** (**Hatchling**, `python/`)             |
+| Shared code      | **`lisca`** Rust crate; **`@lisca/contracts`** (Specta TS + Effect Schema), **`@lisca/ui`**, **`@lisca/utils`**; Python **`lisca`** (**Hatchling**, `python/`) |
+| Contracts        | `pnpm contracts:generate` — Rust `protocol.rs` → `packages/contracts/src/protocol.generated.ts`; runtime decode via Effect Schema in `protocol.schema.ts` |
 
 ## Ports
 

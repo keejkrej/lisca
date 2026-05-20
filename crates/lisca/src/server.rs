@@ -246,9 +246,9 @@ async fn list_directory_handler(
     list_directory(query.path).map(Json)
 }
 
-async fn home_directory_handler() -> Result<Json<serde_json::Value>, FsError> {
+async fn home_directory_handler() -> Result<Json<crate::protocol::HomeDirectoryResponse>, FsError> {
     let home = user_home_directory().ok_or_else(|| FsError::new("home directory not found"))?;
-    Ok(Json(serde_json::json!({ "path": home })))
+    Ok(Json(crate::protocol::HomeDirectoryResponse { path: home }))
 }
 
 async fn read_text_file_handler(
@@ -366,7 +366,9 @@ async fn load_align_state_handler(
         .map_err(FsError::new)
 }
 
-async fn output_paths_handler(Query(query): Query<OutputPathsQuery>) -> Json<aligner::OutputPaths> {
+async fn output_paths_handler(
+    Query(query): Query<OutputPathsQuery>,
+) -> Json<crate::protocol::AlignOutputPaths> {
     Json(aligner::output_paths(query.pos))
 }
 

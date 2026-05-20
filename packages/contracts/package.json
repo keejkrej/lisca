@@ -17,7 +17,11 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
+    "generate": "cargo run -p lisca --features export-typescript --bin export-typescript --manifest-path ../../crates/lisca/Cargo.toml",
     "typecheck": "tsc -p tsconfig.build.json --noEmit"
+  },
+  "dependencies": {
+    "effect": "^3.21.2"
   },
   "devDependencies": {
     "typescript": "^5.8.3"

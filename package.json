@@ -10,6 +10,7 @@
     "dev": "turbo run dev",
     "format": "oxfmt .",
     "format:check": "oxfmt . --check",
+    "contracts:generate": "pnpm --filter @lisca/contracts generate",
     "lisca": "node ./scripts/lisca.mjs",
     "lint": "pnpm oxlint && turbo run typecheck",
     "oxlint": "oxlint . --deny-warnings",

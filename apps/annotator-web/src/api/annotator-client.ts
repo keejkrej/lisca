@@ -1,32 +1,41 @@
-import type {
-  AnnotationLabel,
-  ContrastWindow,
-  FramePayload,
-  HostListDirectoryResult,
-  LoadedRoiFrameAnnotation,
-  RoiFrameAnnotation,
-  RoiFrameAnnotationPayload,
-  RoiFrameRequest,
-  RoiWorkspaceScan,
+import {
+  FramePayloadSchema,
+  HomeDirectoryResponseSchema,
+  HostListDirectoryResultSchema,
+  LoadedRoiFrameAnnotationSchema,
+  RoiFrameAnnotationPayloadSchema,
+  RoiFrameAnnotationSchema,
+  RoiWorkspaceScanSchema,
+  readJsonResponse,
+  type AnnotationLabel,
+  type ContrastWindow,
+  type HostListDirectoryResult,
+  type LoadedRoiFrameAnnotation,
+  type RoiFrameAnnotation,
+  type RoiFrameAnnotationPayload,
+  type RoiFrameRequest,
+  type RoiWorkspaceScan,
 } from "@lisca/contracts";
+import {
+  AnnotationLabelArraySchema,
+  AnnotationLabelSchema,
+} from "@lisca/contracts";
+import { Schema } from "effect";
 import { resolveLiscaHttpBaseUrl } from "@lisca/utils";
 
-async function postJson<T>(
+function postJson<S extends Schema.Schema.Any>(
   baseUrl: string,
   path: string,
   body: unknown,
+  schema: S,
   signal?: AbortSignal,
-): Promise<T> {
-  const response = await fetch(`${baseUrl}${path}`, {
+) {
+  return fetch(`${baseUrl}${path}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
     signal,
-  });
-  if (!response.ok) {
-    throw new Error(await response.text());
-  }
-  return (await response.json()) as T;
+  }).then((response) => readJsonResponse(response, schema));
 }
 
 export function createAnnotatorApi(getBaseUrl: () => string = annotatorBaseUrl) {
@@ -38,42 +47,39 @@ export function createAnnotatorApi(getBaseUrl: () => string = annotatorBaseUrl) 
     ): Promise<HostListDirectoryResult> {
       const url = new URL(`${baseUrl()}/fs/list`);
       if (path) url.searchParams.set("path", path);
-      const response = await fetch(url, { signal });
-      if (!response.ok) throw new Error(await response.text());
-      return (await response.json()) as HostListDirectoryResult;
+      return readJsonResponse(await fetch(url, { signal }), HostListDirectoryResultSchema);
     },
     async userHomeDirectory(signal?: AbortSignal): Promise<string> {
-      const response = await fetch(`${baseUrl()}/fs/home`, { signal });
-      if (!response.ok) throw new Error(await response.text());
-      const result = (await response.json()) as { path: string };
+      const result = await readJsonResponse(
+        await fetch(`${baseUrl()}/fs/home`, { signal }),
+        HomeDirectoryResponseSchema,
+      );
       return result.path;
     },
     scanRoiWorkspace(workspacePath: string, signal?: AbortSignal) {
-      return postJson<RoiWorkspaceScan>(
+      return postJson(
         baseUrl(),
         "/annotate/scan-roi-workspace",
-        {
-          workspacePath,
-        },
+        { workspacePath },
+        RoiWorkspaceScanSchema,
         signal,
       );
     },
     loadLabels(workspacePath: string, signal?: AbortSignal) {
-      return postJson<AnnotationLabel[]>(
+      return postJson(
         baseUrl(),
         "/annotate/load-labels",
         { workspacePath },
+        AnnotationLabelArraySchema,
         signal,
       );
     },
     saveLabels(workspacePath: string, labels: AnnotationLabel[], signal?: AbortSignal) {
-      return postJson<AnnotationLabel[]>(
+      return postJson(
         baseUrl(),
         "/annotate/save-labels",
-        {
-          workspacePath,
-          labels,
-        },
+        { workspacePath, labels },
+        AnnotationLabelArraySchema,
         signal,
       );
     },
@@ -83,25 +89,20 @@ export function createAnnotatorApi(getBaseUrl: () => string = annotatorBaseUrl) 
       contrast: ContrastWindow | null,
       signal?: AbortSignal,
     ) {
-      return postJson<FramePayload>(
+      return postJson(
         baseUrl(),
         "/annotate/load-roi-frame",
-        {
-          workspacePath,
-          request,
-          contrast,
-        },
+        { workspacePath, request, contrast },
+        FramePayloadSchema,
         signal,
       );
     },
     loadRoiFrameAnnotation(workspacePath: string, request: RoiFrameRequest, signal?: AbortSignal) {
-      return postJson<LoadedRoiFrameAnnotation>(
+      return postJson(
         baseUrl(),
         "/annotate/load-roi-frame-annotation",
-        {
-          workspacePath,
-          request,
-        },
+        { workspacePath, request },
+        LoadedRoiFrameAnnotationSchema,
         signal,
       );
     },
@@ -111,14 +112,11 @@ export function createAnnotatorApi(getBaseUrl: () => string = annotatorBaseUrl) 
       annotation: RoiFrameAnnotationPayload,
       signal?: AbortSignal,
     ) {
-      return postJson<RoiFrameAnnotation>(
+      return postJson(
         baseUrl(),
         "/annotate/save-roi-frame-annotation",
-        {
-          workspacePath,
-          request,
-          annotation,
-        },
+        { workspacePath, request, annotation },
+        RoiFrameAnnotationSchema,
         signal,
       );
     },

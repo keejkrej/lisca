@@ -191,7 +191,7 @@ function ResultPage() {
     if (!results) return;
 
     setAnalysisProgress(results);
-    if (results.resultFiles.length > 0) {
+    if (results.resultFiles && results.resultFiles.length > 0) {
       setAnalysisResultFiles(results.resultFiles);
     }
   }, [resultsQuery.data, setAnalysisProgress, setAnalysisResultFiles]);

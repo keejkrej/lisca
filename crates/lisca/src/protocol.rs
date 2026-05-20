@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
+use specta::Type;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "kebab-case")]
 pub enum AppId {
     Aligner,
@@ -18,13 +19,13 @@ impl AppId {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct Hello {
     pub app: AppId,
     pub version: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct HostFsEntry {
     pub name: String,
@@ -32,7 +33,7 @@ pub struct HostFsEntry {
     pub is_directory: bool,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct HostListDirectoryResult {
     pub path: Option<String>,
@@ -40,27 +41,27 @@ pub struct HostListDirectoryResult {
     pub entries: Vec<HostFsEntry>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct ReadTextFileResponse {
     pub contents: String,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct SaveAssayJsonRequest {
     pub save_to: String,
     pub contents: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct SaveAssayJsonResponse {
     pub ok: bool,
     pub path: String,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct SaveResultPdfRequest {
     pub workspace_path: String,
@@ -68,7 +69,7 @@ pub struct SaveResultPdfRequest {
     pub contents_base64: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct SaveResultPdfResponse {
     pub ok: bool,
@@ -76,7 +77,7 @@ pub struct SaveResultPdfResponse {
     pub path: String,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct WorkspaceScan {
     pub positions: Vec<u32>,
     pub channels: Vec<u32>,
@@ -85,7 +86,7 @@ pub struct WorkspaceScan {
     pub z_slices: Vec<u32>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Type)]
 #[serde(tag = "kind", rename_all = "lowercase")]
 pub enum AlignerSource {
     Folder {
@@ -111,7 +112,7 @@ pub enum AlignerSource {
 
 pub type ImageSource = AlignerSource;
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct FrameRequest {
     pub pos: u32,
     pub channel: u32,
@@ -119,25 +120,26 @@ pub struct FrameRequest {
     pub z: u32,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct ContrastWindow {
     pub min: u32,
     pub max: u32,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct FramePayload {
     pub width: u32,
     pub height: u32,
     pub data_base64: String,
+    #[specta(type = String)]
     pub pixel_type: &'static str,
     pub contrast_domain: ContrastWindow,
     pub suggested_contrast: ContrastWindow,
     pub applied_contrast: ContrastWindow,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "lowercase")]
 pub enum AlignGridShape {
     #[serde(alias = "square")]
@@ -145,7 +147,7 @@ pub enum AlignGridShape {
     Hex,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct AlignGridState {
     pub enabled: bool,
@@ -160,20 +162,20 @@ pub struct AlignGridState {
     pub opacity: f64,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct AlignGridCellCoord {
     pub i: i32,
     pub j: i32,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct SavedAlignState {
     pub grid: AlignGridState,
     pub excluded_cells: Vec<AlignGridCellCoord>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct AutoExcludePreviewCell {
     pub i: i32,
@@ -184,7 +186,7 @@ pub struct AutoExcludePreviewCell {
     pub h: u32,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct AutoExcludePreviewRequest {
     pub source: AlignerSource,
@@ -192,7 +194,7 @@ pub struct AutoExcludePreviewRequest {
     pub cells: Vec<AutoExcludePreviewCell>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct AutoExcludePreviewCellScore {
     pub i: i32,
@@ -200,7 +202,7 @@ pub struct AutoExcludePreviewCellScore {
     pub score: f64,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct AutoExcludeHistogramBin {
     pub start: f64,
@@ -208,7 +210,7 @@ pub struct AutoExcludeHistogramBin {
     pub count: u32,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct AutoExcludePreviewResponse {
     pub eligible_cell_count: u32,
@@ -219,14 +221,13 @@ pub struct AutoExcludePreviewResponse {
     pub threshold: f64,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct SaveBboxResponse {
     pub ok: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "lowercase")]
 pub enum CropOutputFormat {
     Tiff,
@@ -238,7 +239,7 @@ impl Default for CropOutputFormat {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Type)]
 #[serde(rename_all = "lowercase")]
 pub enum CropRoiStatus {
     Queued,
@@ -248,7 +249,7 @@ pub enum CropRoiStatus {
     Error,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct CropRoiRequest {
     pub request_id: String,
@@ -260,14 +261,14 @@ pub struct CropRoiRequest {
     pub output_format: CropOutputFormat,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct CropRoiResponse {
     pub request_id: String,
     pub status: CropRoiStatus,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct CropRoiProgress {
     pub request_id: String,
@@ -278,11 +279,10 @@ pub struct CropRoiProgress {
     pub completed_rois: u32,
     pub total_rois: u32,
     pub message: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "lowercase")]
 pub enum AnalysisStatus {
     Queued,
@@ -291,7 +291,7 @@ pub enum AnalysisStatus {
     Error,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Type)]
 #[serde(rename_all = "lowercase")]
 pub enum AnalysisStage {
     Queued,
@@ -303,7 +303,7 @@ pub enum AnalysisStage {
     Completed,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct AnalysisCsvFile {
     pub kind: String,
@@ -312,7 +312,7 @@ pub struct AnalysisCsvFile {
     pub csv: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct AnalysisProgress {
     pub request_id: String,
@@ -322,23 +322,22 @@ pub struct AnalysisProgress {
     pub message: Option<String>,
     #[serde(default)]
     pub result_files: Vec<AnalysisCsvFile>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct AnalysisStartRequest {
     pub workspace_path: String,
     pub request_id: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct RoiPosExistsResponse {
     pub exists: bool,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct RoiFrameRequest {
     pub pos: u32,
     pub roi: u32,
@@ -347,7 +346,7 @@ pub struct RoiFrameRequest {
     pub z: u32,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct RoiBbox {
     pub roi: u32,
     pub x: u32,
@@ -356,7 +355,7 @@ pub struct RoiBbox {
     pub h: u32,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct RoiIndexEntry {
     pub roi: u32,
@@ -365,7 +364,7 @@ pub struct RoiIndexEntry {
     pub shape: [u32; 5],
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct RoiIndexFile {
     pub position: u32,
@@ -378,7 +377,7 @@ pub struct RoiIndexFile {
     pub rois: Vec<RoiIndexEntry>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct RoiPositionScan {
     pub pos: u32,
@@ -390,19 +389,19 @@ pub struct RoiPositionScan {
     pub rois: Vec<RoiIndexEntry>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct RoiWorkspaceScan {
     pub positions: Vec<RoiPositionScan>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct AnnotationLabel {
     pub id: String,
     pub name: String,
     pub color: String,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct RoiFrameAnnotation {
     pub classification_label_id: Option<String>,
@@ -410,16 +409,44 @@ pub struct RoiFrameAnnotation {
     pub updated_at: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct RoiFrameAnnotationPayload {
     pub classification_label_id: Option<String>,
     pub mask_base64_png: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct LoadedRoiFrameAnnotation {
     pub annotation: RoiFrameAnnotation,
     pub mask_base64_png: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct HomeDirectoryResponse {
+    pub path: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct AlignOutputPaths {
+    pub bbox: String,
+    pub align: String,
+    pub roi: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+pub struct CropRoiProgressMessage {
+    #[serde(rename = "type")]
+    pub message_type: String,
+    pub progress: CropRoiProgress,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+pub struct AnalysisProgressMessage {
+    #[serde(rename = "type")]
+    pub message_type: String,
+    pub progress: AnalysisProgress,
 }

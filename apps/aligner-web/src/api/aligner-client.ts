@@ -1,47 +1,49 @@
 import {
+  AutoExcludePreviewRequestSchema,
+  AutoExcludePreviewResponseSchema,
+  CropRoiProgressMessageSchema,
+  CropRoiProgressSchema,
+  CropRoiResponseSchema,
+  FramePayloadSchema,
+  NullableSavedAlignStateSchema,
+  RoiPosExistsResponseSchema,
+  SaveBboxResponseSchema,
+  UIntArraySchema,
+  WorkspaceScanSchema,
   WS_PATH,
+  decodeJson,
+  readJsonResponse,
   type AlignerDataPort,
   type AlignerSource,
   type AutoExcludePreviewRequest,
-  type AutoExcludePreviewResponse,
   type ContrastWindow,
   type CropRoiProgress,
-  type CropRoiProgressMessage,
   type CropRoiRequest,
-  type CropRoiResponse,
-  type FramePayload,
   type FrameRequest,
-  type SaveBboxResponse,
   type SavedAlignState,
-  type WorkspaceScan,
 } from "@lisca/contracts";
+import { Schema } from "effect";
 import { decodeFramePayload, resolveLiscaHttpBaseUrl, resolveLiscaWsUrl } from "@lisca/utils";
 
-async function readJson<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || `Request failed with ${response.status}`);
-  }
-  return response.json() as Promise<T>;
-}
-
-function postJson<T>(
+function postJson<S extends Schema.Schema.Any>(
   baseUrl: string,
   path: string,
   body: unknown,
+  schema: S,
   signal?: AbortSignal,
-): Promise<T> {
+) {
   return fetch(new URL(path, baseUrl), {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
     signal,
-  }).then(readJson<T>);
+  }).then((response) => readJsonResponse(response, schema));
 }
 
-function getJson<T>(
+function getJson<S extends Schema.Schema.Any>(
   baseUrl: string,
   path: string,
+  schema: S,
   params?: Record<string, string | number>,
   signal?: AbortSignal,
 ) {
@@ -49,7 +51,7 @@ function getJson<T>(
   for (const [key, value] of Object.entries(params ?? {})) {
     url.searchParams.set(key, String(value));
   }
-  return fetch(url, { signal }).then(readJson<T>);
+  return fetch(url, { signal }).then((response) => readJsonResponse(response, schema));
 }
 
 function alignerUrlOptions() {
@@ -73,12 +75,6 @@ function resolveAlignerWsUrl(): string {
   return resolveLiscaWsUrl(alignerUrlOptions());
 }
 
-function isCropRoiProgressMessage(value: unknown): value is CropRoiProgressMessage {
-  if (!value || typeof value !== "object") return false;
-  const message = value as { type?: unknown; progress?: { requestId?: unknown } };
-  return message.type === "cropRoiProgress" && typeof message.progress?.requestId === "string";
-}
-
 function pollCropRoiProgress(
   baseUrl: string,
   requestId: string,
@@ -88,7 +84,7 @@ function pollCropRoiProgress(
   const poll = async () => {
     if (closed) return;
     try {
-      const progress = await getJson<CropRoiProgress>(baseUrl, "/align/crop-roi-progress", {
+      const progress = await getJson(baseUrl, "/align/crop-roi-progress", CropRoiProgressSchema, {
         requestId,
       });
       onProgress(progress);
@@ -121,7 +117,7 @@ export function createAlignerHttpClient(
   const baseUrl = getBaseUrl;
   return {
     scanSource(source: AlignerSource) {
-      return postJson<WorkspaceScan>(baseUrl(), "/align/scan-source", { source });
+      return postJson(baseUrl(), "/align/scan-source", { source }, WorkspaceScanSchema);
     },
     async loadFrame(
       source: AlignerSource,
@@ -129,7 +125,7 @@ export function createAlignerHttpClient(
       contrast?: ContrastWindow | null,
       signal?: AbortSignal,
     ) {
-      const payload = await postJson<FramePayload>(
+      const payload = await postJson(
         baseUrl(),
         "/align/load-frame",
         {
@@ -137,39 +133,46 @@ export function createAlignerHttpClient(
           request,
           contrast: contrast ?? null,
         },
+        FramePayloadSchema,
         signal,
       );
       return decodeFramePayload(payload);
     },
     loadAlignState(workspacePath: string, pos: number) {
-      return getJson<SavedAlignState | null>(baseUrl(), "/align/align-state", {
+      return getJson(baseUrl(), "/align/align-state", NullableSavedAlignStateSchema, {
         workspacePath,
         pos,
       });
     },
     saveBbox(workspacePath: string, pos: number, csv: string, alignState: SavedAlignState) {
-      return postJson<SaveBboxResponse>(baseUrl(), "/align/save-bbox", {
-        workspacePath,
-        pos,
-        csv,
-        alignState,
-      });
+      return postJson(
+        baseUrl(),
+        "/align/save-bbox",
+        {
+          workspacePath,
+          pos,
+          csv,
+          alignState,
+        },
+        SaveBboxResponseSchema,
+      );
     },
     autoExcludePreview(request: AutoExcludePreviewRequest) {
-      return postJson<AutoExcludePreviewResponse>(
+      return postJson(
         baseUrl(),
         "/align/auto-exclude-preview",
         request,
+        AutoExcludePreviewResponseSchema,
       );
     },
     listSavedBboxPositions(workspacePath: string) {
-      return getJson<number[]>(baseUrl(), "/align/saved-bbox-positions", { workspacePath });
+      return getJson(baseUrl(), "/align/saved-bbox-positions", UIntArraySchema, { workspacePath });
     },
     cropRoi(request: CropRoiRequest) {
-      return postJson<CropRoiResponse>(baseUrl(), "/align/crop-roi", request);
+      return postJson(baseUrl(), "/align/crop-roi", request, CropRoiResponseSchema);
     },
     cancelCropRoi(requestId: string) {
-      return postJson<CropRoiProgress>(baseUrl(), "/align/cancel-crop-roi", { requestId });
+      return postJson(baseUrl(), "/align/cancel-crop-roi", { requestId }, CropRoiProgressSchema);
     },
     onCropRoiProgress(requestId: string, onProgress: (progress: CropRoiProgress) => void) {
       let closed = false;
@@ -190,7 +193,7 @@ export function createAlignerHttpClient(
 
       ws?.addEventListener("open", () => {
         window.clearTimeout(fallbackTimer);
-        void getJson<CropRoiProgress>(baseUrl(), "/align/crop-roi-progress", { requestId })
+        void getJson(baseUrl(), "/align/crop-roi-progress", CropRoiProgressSchema, { requestId })
           .then((progress) => {
             if (closed) return;
             onProgress(progress);
@@ -206,17 +209,18 @@ export function createAlignerHttpClient(
       ws?.addEventListener("message", (event) => {
         if (closed) return;
         try {
-          const message = JSON.parse(String(event.data)) as unknown;
-          if (!isCropRoiProgressMessage(message) || message.progress.requestId !== requestId) {
-            return;
-          }
+          const message = decodeJson(
+            CropRoiProgressMessageSchema,
+            JSON.parse(String(event.data)) as unknown,
+          );
+          if (message.progress.requestId !== requestId) return;
           onProgress(message.progress);
           terminal = ["completed", "cancelled", "error"].includes(message.progress.status);
           if (terminal) {
             ws?.close();
           }
         } catch {
-          // Ignore non-JSON websocket messages such as development probes.
+          // Ignore non-protocol websocket messages such as development probes.
         }
       });
 
@@ -240,7 +244,7 @@ export function createAlignerHttpClient(
       };
     },
     async roiPosExists(workspacePath: string, pos: number) {
-      const result = await getJson<{ exists: boolean }>(baseUrl(), "/align/roi-pos-exists", {
+      const result = await getJson(baseUrl(), "/align/roi-pos-exists", RoiPosExistsResponseSchema, {
         workspacePath,
         pos,
       });

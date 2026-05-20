@@ -350,6 +350,10 @@ importers:
         version: 6.4.2(@types/node@22.19.18)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.47.1)(yaml@2.8.4)
 
   packages/contracts:
+    dependencies:
+      effect:
+        specifier: ^3.21.2
+        version: 3.21.2
     devDependencies:
       typescript:
         specifier: ^5.8.3

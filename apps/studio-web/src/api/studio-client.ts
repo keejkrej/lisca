@@ -1,32 +1,46 @@
 import {
+  AnalysisProgressMessageSchema,
+  AnalysisProgressSchema,
+  AutoExcludePreviewResponseSchema,
+  CropRoiProgressMessageSchema,
+  CropRoiProgressSchema,
+  CropRoiResponseSchema,
+  decodeJson,
+  FramePayloadSchema,
+  HomeDirectoryResponseSchema,
+  HostListDirectoryResultSchema,
+  NullableAnalysisProgressSchema,
+  NullableSavedAlignStateSchema,
+  ReadTextFileResponseSchema,
+  RoiPosExistsResponseSchema,
+  RoiWorkspaceScanSchema,
+  SaveAssayJsonResponseSchema,
+  SaveBboxResponseSchema,
+  SaveResultPdfRequestSchema,
+  SaveResultPdfResponseSchema,
+  UIntArraySchema,
+  WorkspaceScanSchema,
   WS_PATH,
+  readJsonResponse,
   type AlignerDataPort,
-  type AnalysisDataPort,
   type AlignerSource,
-  type AutoExcludePreviewRequest,
-  type AutoExcludePreviewResponse,
+  type AnalysisDataPort,
   type AnalysisProgress,
-  type AnalysisProgressMessage,
   type AnalysisStartRequest,
+  type AutoExcludePreviewRequest,
   type ContrastWindow,
   type CropRoiProgress,
-  type CropRoiProgressMessage,
   type CropRoiRequest,
-  type CropRoiResponse,
-  type FramePayload,
   type FrameRequest,
   type FrameResult,
   type HostListDirectoryResult,
   type RoiFrameRequest,
   type RoiWorkspaceScan,
-  type SaveBboxResponse,
   type SavedAlignState,
   type StudioHostPort,
-  type StudioSaveAssayJsonResponse,
-  type StudioSaveResultPdfRequest,
-  type StudioSaveResultPdfResponse,
-  type WorkspaceScan,
+  type SaveResultPdfRequest,
 } from "@lisca/contracts";
+import { Schema } from "effect";
 import { decodeFramePayload, resolveLiscaHttpBaseUrl, resolveLiscaWsUrl } from "@lisca/utils";
 
 type StudioHttpClient = AlignerDataPort &
@@ -43,31 +57,25 @@ type StudioHttpClient = AlignerDataPort &
     ): Promise<FrameResult>;
   };
 
-async function readJson<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || `Request failed with ${response.status}`);
-  }
-  return response.json() as Promise<T>;
-}
-
-function postJson<T>(
+function postJson<S extends Schema.Schema.Any>(
   baseUrl: string,
   path: string,
   body: unknown,
+  schema: S,
   signal?: AbortSignal,
-): Promise<T> {
+) {
   return fetch(new URL(path, baseUrl), {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
     signal,
-  }).then(readJson<T>);
+  }).then((response) => readJsonResponse(response, schema));
 }
 
-function getJson<T>(
+function getJson<S extends Schema.Schema.Any>(
   baseUrl: string,
   path: string,
+  schema: S,
   params?: Record<string, string | number>,
   signal?: AbortSignal,
 ) {
@@ -75,7 +83,7 @@ function getJson<T>(
   for (const [key, value] of Object.entries(params ?? {})) {
     url.searchParams.set(key, String(value));
   }
-  return fetch(url, { signal }).then(readJson<T>);
+  return fetch(url, { signal }).then((response) => readJsonResponse(response, schema));
 }
 
 function studioUrlOptions() {
@@ -99,18 +107,6 @@ function resolveStudioWsUrl(): string {
   return resolveLiscaWsUrl(studioUrlOptions());
 }
 
-function isCropRoiProgressMessage(value: unknown): value is CropRoiProgressMessage {
-  if (!value || typeof value !== "object") return false;
-  const message = value as { type?: unknown; progress?: { requestId?: unknown } };
-  return message.type === "cropRoiProgress" && typeof message.progress?.requestId === "string";
-}
-
-function isAnalysisProgressMessage(value: unknown): value is AnalysisProgressMessage {
-  if (!value || typeof value !== "object") return false;
-  const message = value as { type?: unknown; progress?: { requestId?: unknown } };
-  return message.type === "analysisProgress" && typeof message.progress?.requestId === "string";
-}
-
 function pollCropRoiProgress(
   baseUrl: string,
   requestId: string,
@@ -120,7 +116,7 @@ function pollCropRoiProgress(
   const poll = async () => {
     if (closed) return;
     try {
-      const progress = await getJson<CropRoiProgress>(baseUrl, "/align/crop-roi-progress", {
+      const progress = await getJson(baseUrl, "/align/crop-roi-progress", CropRoiProgressSchema, {
         requestId,
       });
       onProgress(progress);
@@ -156,7 +152,7 @@ function pollAnalysisProgress(
   const poll = async () => {
     if (closed) return;
     try {
-      const progress = await getJson<AnalysisProgress>(baseUrl, "/studio/analysis-progress", {
+      const progress = await getJson(baseUrl, "/studio/analysis-progress", AnalysisProgressSchema, {
         requestId,
       });
       onProgress(progress);
@@ -169,6 +165,7 @@ function pollAnalysisProgress(
         progress: 0,
         message: cause instanceof Error ? cause.message : String(cause),
         resultFiles: [],
+        error: cause instanceof Error ? cause.message : String(cause),
       });
       return;
     }
@@ -186,7 +183,7 @@ export function createStudioHttpClient(
   const baseUrl = getBaseUrl;
   const aligner: AlignerDataPort & AnalysisDataPort = {
     scanSource(source: AlignerSource) {
-      return postJson<WorkspaceScan>(baseUrl(), "/align/scan-source", { source });
+      return postJson(baseUrl(), "/align/scan-source", { source }, WorkspaceScanSchema);
     },
     async loadFrame(
       source: AlignerSource,
@@ -194,49 +191,51 @@ export function createStudioHttpClient(
       contrast?: ContrastWindow | null,
       signal?: AbortSignal,
     ) {
-      const payload = await postJson<FramePayload>(
+      const payload = await postJson(
         baseUrl(),
         "/align/load-frame",
         { source, request, contrast: contrast ?? null },
+        FramePayloadSchema,
         signal,
       );
       return decodeFramePayload(payload);
     },
     loadAlignState(workspacePath: string, pos: number) {
-      return getJson<SavedAlignState | null>(baseUrl(), "/align/align-state", {
+      return getJson(baseUrl(), "/align/align-state", NullableSavedAlignStateSchema, {
         workspacePath,
         pos,
       });
     },
     saveBbox(workspacePath: string, pos: number, csv: string, alignState: SavedAlignState) {
-      return postJson<SaveBboxResponse>(baseUrl(), "/align/save-bbox", {
-        workspacePath,
-        pos,
-        csv,
-        alignState,
-      });
+      return postJson(
+        baseUrl(),
+        "/align/save-bbox",
+        { workspacePath, pos, csv, alignState },
+        SaveBboxResponseSchema,
+      );
     },
     autoExcludePreview(request: AutoExcludePreviewRequest) {
-      return postJson<AutoExcludePreviewResponse>(
+      return postJson(
         baseUrl(),
         "/align/auto-exclude-preview",
         request,
+        AutoExcludePreviewResponseSchema,
       );
     },
     listSavedBboxPositions(workspacePath: string) {
-      return getJson<number[]>(baseUrl(), "/align/saved-bbox-positions", { workspacePath });
+      return getJson(baseUrl(), "/align/saved-bbox-positions", UIntArraySchema, { workspacePath });
     },
     cropRoi(request: CropRoiRequest) {
-      return postJson<CropRoiResponse>(baseUrl(), "/align/crop-roi", request);
+      return postJson(baseUrl(), "/align/crop-roi", request, CropRoiResponseSchema);
     },
     cancelCropRoi(requestId: string) {
-      return postJson<CropRoiProgress>(baseUrl(), "/align/cancel-crop-roi", { requestId });
+      return postJson(baseUrl(), "/align/cancel-crop-roi", { requestId }, CropRoiProgressSchema);
     },
     startAnalysis(request: AnalysisStartRequest) {
-      return postJson<AnalysisProgress>(baseUrl(), "/studio/start-analysis", request);
+      return postJson(baseUrl(), "/studio/start-analysis", request, AnalysisProgressSchema);
     },
     getAnalysisProgress(requestId: string) {
-      return getJson<AnalysisProgress>(baseUrl(), "/studio/analysis-progress", { requestId });
+      return getJson(baseUrl(), "/studio/analysis-progress", AnalysisProgressSchema, { requestId });
     },
     onCropRoiProgress(requestId: string, onProgress: (progress: CropRoiProgress) => void) {
       let closed = false;
@@ -257,7 +256,7 @@ export function createStudioHttpClient(
 
       ws?.addEventListener("open", () => {
         window.clearTimeout(fallbackTimer);
-        void getJson<CropRoiProgress>(baseUrl(), "/align/crop-roi-progress", { requestId })
+        void getJson(baseUrl(), "/align/crop-roi-progress", CropRoiProgressSchema, { requestId })
           .then((progress) => {
             if (closed) return;
             onProgress(progress);
@@ -273,15 +272,16 @@ export function createStudioHttpClient(
       ws?.addEventListener("message", (event) => {
         if (closed) return;
         try {
-          const message = JSON.parse(String(event.data)) as unknown;
-          if (!isCropRoiProgressMessage(message) || message.progress.requestId !== requestId) {
-            return;
-          }
+          const message = decodeJson(
+            CropRoiProgressMessageSchema,
+            JSON.parse(String(event.data)) as unknown,
+          );
+          if (message.progress.requestId !== requestId) return;
           onProgress(message.progress);
           terminal = ["completed", "cancelled", "error"].includes(message.progress.status);
           if (terminal) ws?.close();
         } catch {
-          // Ignore non-JSON websocket messages such as development probes.
+          // Ignore non-protocol websocket messages.
         }
       });
 
@@ -323,7 +323,7 @@ export function createStudioHttpClient(
 
       ws?.addEventListener("open", () => {
         window.clearTimeout(fallbackTimer);
-        void getJson<AnalysisProgress>(baseUrl(), "/studio/analysis-progress", { requestId })
+        void getJson(baseUrl(), "/studio/analysis-progress", AnalysisProgressSchema, { requestId })
           .then((progress) => {
             if (closed) return;
             onProgress(progress);
@@ -339,15 +339,16 @@ export function createStudioHttpClient(
       ws?.addEventListener("message", (event) => {
         if (closed) return;
         try {
-          const message = JSON.parse(String(event.data)) as unknown;
-          if (!isAnalysisProgressMessage(message) || message.progress.requestId !== requestId) {
-            return;
-          }
+          const message = decodeJson(
+            AnalysisProgressMessageSchema,
+            JSON.parse(String(event.data)) as unknown,
+          );
+          if (message.progress.requestId !== requestId) return;
           onProgress(message.progress);
           terminal = ["completed", "error"].includes(message.progress.status);
           if (terminal) ws?.close();
         } catch {
-          // Ignore non-JSON websocket messages.
+          // Ignore non-protocol websocket messages.
         }
       });
 
@@ -371,7 +372,7 @@ export function createStudioHttpClient(
       };
     },
     async roiPosExists(workspacePath: string, pos: number) {
-      const result = await getJson<{ exists: boolean }>(baseUrl(), "/align/roi-pos-exists", {
+      const result = await getJson(baseUrl(), "/align/roi-pos-exists", RoiPosExistsResponseSchema, {
         workspacePath,
         pos,
       });
@@ -382,20 +383,21 @@ export function createStudioHttpClient(
   return {
     ...aligner,
     getAnalysisResults(workspacePath: string) {
-      return getJson<AnalysisProgress | null>(baseUrl(), "/studio/analysis-results", {
+      return getJson(baseUrl(), "/studio/analysis-results", NullableAnalysisProgressSchema, {
         workspacePath,
       });
     },
     getLatestAnalysisProgress(workspacePath: string) {
-      return getJson<AnalysisProgress | null>(baseUrl(), "/studio/latest-analysis", {
+      return getJson(baseUrl(), "/studio/latest-analysis", NullableAnalysisProgressSchema, {
         workspacePath,
       });
     },
     scanRoiWorkspace(workspacePath: string, signal?: AbortSignal) {
-      return postJson<RoiWorkspaceScan>(
+      return postJson(
         baseUrl(),
         "/annotate/scan-roi-workspace",
         { workspacePath },
+        RoiWorkspaceScanSchema,
         signal,
       );
     },
@@ -405,34 +407,43 @@ export function createStudioHttpClient(
       contrast?: ContrastWindow | null,
       signal?: AbortSignal,
     ) {
-      const payload = await postJson<FramePayload>(
+      const payload = await postJson(
         baseUrl(),
         "/annotate/load-roi-frame",
         { workspacePath, request, contrast: contrast ?? null },
+        FramePayloadSchema,
         signal,
       );
       return decodeFramePayload(payload);
     },
     listDirectory(path: string | null): Promise<HostListDirectoryResult> {
       const params = path ? { path } : undefined;
-      return getJson<HostListDirectoryResult>(baseUrl(), "/fs/list", params);
+      return getJson(baseUrl(), "/fs/list", HostListDirectoryResultSchema, params);
     },
-    userHomeDirectory() {
-      return getJson<{ path: string }>(baseUrl(), "/fs/home").then((result) => result.path);
+    async userHomeDirectory() {
+      const result = await getJson(baseUrl(), "/fs/home", HomeDirectoryResponseSchema);
+      return result.path;
     },
-    readTextFile(path: string, signal?: AbortSignal) {
-      return getJson<{ contents: string }>(baseUrl(), "/fs/read-text", { path }, signal).then(
-        (result) => result.contents,
+    async readTextFile(path: string, signal?: AbortSignal) {
+      const result = await getJson(
+        baseUrl(),
+        "/fs/read-text",
+        ReadTextFileResponseSchema,
+        { path },
+        signal,
       );
+      return result.contents;
     },
     saveAssayJson(saveTo: string, contents: string) {
-      return postJson<StudioSaveAssayJsonResponse>(baseUrl(), "/studio/save-assay-json", {
-        saveTo,
-        contents,
-      });
+      return postJson(
+        baseUrl(),
+        "/studio/save-assay-json",
+        { saveTo, contents },
+        SaveAssayJsonResponseSchema,
+      );
     },
-    saveResultPdf(request: StudioSaveResultPdfRequest) {
-      return postJson<StudioSaveResultPdfResponse>(baseUrl(), "/studio/save-result-pdf", request);
+    saveResultPdf(request: SaveResultPdfRequest) {
+      return postJson(baseUrl(), "/studio/save-result-pdf", request, SaveResultPdfResponseSchema);
     },
   };
 }

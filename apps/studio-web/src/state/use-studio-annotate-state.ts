@@ -290,13 +290,13 @@ export function useStudioAnnotateState(): StudioAnnotateState {
       progress: 0,
       message: "Queued analysis",
       resultFiles: [],
-      error: undefined,
+      error: null,
     });
 
     let stop: (() => void) | null = null;
     const onProgress = (progress: AnalysisProgress) => {
       setAnalysisProgress(progress);
-      if (progress.resultFiles.length) {
+      if (progress.resultFiles?.length) {
         setAnalysisResultFiles(progress.resultFiles);
       }
       if (progress.status === "completed") {

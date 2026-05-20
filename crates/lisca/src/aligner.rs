@@ -10,7 +10,6 @@ use std::{
     },
 };
 
-use serde::Serialize;
 use tiff::encoder::{colortype, TiffEncoder};
 
 use crate::{
@@ -740,15 +739,10 @@ fn write_roi_index(
     .map_err(|error| error.to_string())
 }
 
-#[derive(Serialize)]
-pub struct OutputPaths {
-    pub bbox: String,
-    pub align: String,
-    pub roi: String,
-}
+pub use crate::protocol::AlignOutputPaths;
 
-pub fn output_paths(pos: u32) -> OutputPaths {
-    OutputPaths {
+pub fn output_paths(pos: u32) -> AlignOutputPaths {
+    AlignOutputPaths {
         bbox: format!("bbox/Pos{pos}.csv"),
         align: format!("align/Pos{pos}.json"),
         roi: format!("roi/Pos{pos}.tif"),
