@@ -5,7 +5,7 @@ import {
   CropRoiProgressMessageSchema,
   CropRoiProgressSchema,
   CropRoiResponseSchema,
-  decodeJson,
+  formatSchemaError,
   FramePayloadSchema,
   HomeDirectoryResponseSchema,
   HostListDirectoryResultSchema,
@@ -16,12 +16,12 @@ import {
   RoiWorkspaceScanSchema,
   SaveAssayJsonResponseSchema,
   SaveBboxResponseSchema,
-  SaveResultPdfRequestSchema,
   SaveResultPdfResponseSchema,
   UIntArraySchema,
   WorkspaceScanSchema,
   WS_PATH,
   readJsonResponse,
+  schemaDecoderEither,
   type AlignerDataPort,
   type AlignerSource,
   type AnalysisDataPort,
@@ -40,8 +40,12 @@ import {
   type StudioHostPort,
   type SaveResultPdfRequest,
 } from "@lisca/contracts";
-import { Schema } from "effect";
+import * as Either from "effect/Either";
+import type * as Schema from "effect/Schema";
 import { decodeFramePayload, resolveLiscaHttpBaseUrl, resolveLiscaWsUrl } from "@lisca/utils";
+
+const decodeCropRoiProgressMessage = schemaDecoderEither(CropRoiProgressMessageSchema);
+const decodeAnalysisProgressMessage = schemaDecoderEither(AnalysisProgressMessageSchema);
 
 type StudioHttpClient = AlignerDataPort &
   AnalysisDataPort &
@@ -271,18 +275,27 @@ export function createStudioHttpClient(
 
       ws?.addEventListener("message", (event) => {
         if (closed) return;
+        let parsed: unknown;
         try {
-          const message = decodeJson(
-            CropRoiProgressMessageSchema,
-            JSON.parse(String(event.data)) as unknown,
-          );
-          if (message.progress.requestId !== requestId) return;
-          onProgress(message.progress);
-          terminal = ["completed", "cancelled", "error"].includes(message.progress.status);
-          if (terminal) ws?.close();
+          parsed = JSON.parse(String(event.data));
         } catch {
-          // Ignore non-protocol websocket messages.
+          return;
         }
+        const result = decodeCropRoiProgressMessage(parsed);
+        if (Either.isLeft(result)) {
+          if (import.meta.env.DEV) {
+            console.debug(
+              "[studio-ws] crop protocol decode failed:",
+              formatSchemaError(result.left),
+            );
+          }
+          return;
+        }
+        const message = result.right;
+        if (message.progress.requestId !== requestId) return;
+        onProgress(message.progress);
+        terminal = ["completed", "cancelled", "error"].includes(message.progress.status);
+        if (terminal) ws?.close();
       });
 
       ws?.addEventListener("error", () => {
@@ -338,18 +351,27 @@ export function createStudioHttpClient(
 
       ws?.addEventListener("message", (event) => {
         if (closed) return;
+        let parsed: unknown;
         try {
-          const message = decodeJson(
-            AnalysisProgressMessageSchema,
-            JSON.parse(String(event.data)) as unknown,
-          );
-          if (message.progress.requestId !== requestId) return;
-          onProgress(message.progress);
-          terminal = ["completed", "error"].includes(message.progress.status);
-          if (terminal) ws?.close();
+          parsed = JSON.parse(String(event.data));
         } catch {
-          // Ignore non-protocol websocket messages.
+          return;
         }
+        const result = decodeAnalysisProgressMessage(parsed);
+        if (Either.isLeft(result)) {
+          if (import.meta.env.DEV) {
+            console.debug(
+              "[studio-ws] analysis protocol decode failed:",
+              formatSchemaError(result.left),
+            );
+          }
+          return;
+        }
+        const message = result.right;
+        if (message.progress.requestId !== requestId) return;
+        onProgress(message.progress);
+        terminal = ["completed", "error"].includes(message.progress.status);
+        if (terminal) ws?.close();
       });
 
       ws?.addEventListener("error", () => {

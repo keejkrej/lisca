@@ -1,4 +1,6 @@
 packages:
   - "apps/*"
   - "packages/*"
+catalog:
+  effect: "^3.21.2"
 minimumReleaseAge: 10080

@@ -4,6 +4,12 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    effect:
+      specifier: ^3.21.2
+      version: 3.21.2
+
 overrides:
   react: 19.1.0
   react-dom: 19.1.0
@@ -91,7 +97,7 @@ importers:
         specifier: ^1.169.2
         version: 1.169.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       effect:
-        specifier: ^3.21.2
+        specifier: 'catalog:'
         version: 3.21.2
       react:
         specifier: 19.1.0
@@ -194,7 +200,7 @@ importers:
         specifier: ^1.169.2
         version: 1.169.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       effect:
-        specifier: ^3.21.2
+        specifier: 'catalog:'
         version: 3.21.2
       lucide-react:
         specifier: ^0.511.0
@@ -303,7 +309,7 @@ importers:
         specifier: ^1.169.2
         version: 1.169.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       effect:
-        specifier: ^3.21.2
+        specifier: 'catalog:'
         version: 3.21.2
       html2canvas-pro:
         specifier: ^2.0.2
@@ -352,7 +358,7 @@ importers:
   packages/contracts:
     dependencies:
       effect:
-        specifier: ^3.21.2
+        specifier: 'catalog:'
         version: 3.21.2
     devDependencies:
       typescript:

@@ -16,7 +16,7 @@
     "@observablehq/plot": "^0.6.17",
     "@tanstack/react-query": "^5.100.10",
     "@tanstack/react-router": "^1.169.2",
-    "effect": "^3.21.2",
+    "effect": "catalog:",
     "html2canvas-pro": "^2.0.2",
     "jspdf": "^4.2.1",
     "lucide-react": "^0.511.0",

@@ -1,5 +1,4 @@
 import {
-  AutoExcludePreviewRequestSchema,
   AutoExcludePreviewResponseSchema,
   CropRoiProgressMessageSchema,
   CropRoiProgressSchema,
@@ -11,8 +10,9 @@ import {
   UIntArraySchema,
   WorkspaceScanSchema,
   WS_PATH,
-  decodeJson,
+  formatSchemaError,
   readJsonResponse,
+  schemaDecoderEither,
   type AlignerDataPort,
   type AlignerSource,
   type AutoExcludePreviewRequest,
@@ -22,8 +22,11 @@ import {
   type FrameRequest,
   type SavedAlignState,
 } from "@lisca/contracts";
-import { Schema } from "effect";
+import * as Either from "effect/Either";
+import type * as Schema from "effect/Schema";
 import { decodeFramePayload, resolveLiscaHttpBaseUrl, resolveLiscaWsUrl } from "@lisca/utils";
+
+const decodeCropRoiProgressMessage = schemaDecoderEither(CropRoiProgressMessageSchema);
 
 function postJson<S extends Schema.Schema.Any>(
   baseUrl: string,
@@ -208,19 +211,28 @@ export function createAlignerHttpClient(
 
       ws?.addEventListener("message", (event) => {
         if (closed) return;
+        let parsed: unknown;
         try {
-          const message = decodeJson(
-            CropRoiProgressMessageSchema,
-            JSON.parse(String(event.data)) as unknown,
-          );
-          if (message.progress.requestId !== requestId) return;
-          onProgress(message.progress);
-          terminal = ["completed", "cancelled", "error"].includes(message.progress.status);
-          if (terminal) {
-            ws?.close();
-          }
+          parsed = JSON.parse(String(event.data));
         } catch {
-          // Ignore non-protocol websocket messages such as development probes.
+          return;
+        }
+        const result = decodeCropRoiProgressMessage(parsed);
+        if (Either.isLeft(result)) {
+          if (import.meta.env.DEV) {
+            console.debug(
+              "[aligner-ws] protocol decode failed:",
+              formatSchemaError(result.left),
+            );
+          }
+          return;
+        }
+        const message = result.right;
+        if (message.progress.requestId !== requestId) return;
+        onProgress(message.progress);
+        terminal = ["completed", "cancelled", "error"].includes(message.progress.status);
+        if (terminal) {
+          ws?.close();
         }
       });
 

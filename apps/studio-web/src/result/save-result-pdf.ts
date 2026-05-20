@@ -6,7 +6,6 @@ import {
   collectDisplayedParameterPanels,
   collectTimeseriesPanels,
   type ResultPanel,
-  type ResultPlotSection,
   type TimeseriesPanel,
 } from "./plots";
 

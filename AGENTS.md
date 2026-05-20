@@ -14,6 +14,13 @@ Spec for the **lisca** monorepo: `apps/{aligner,annotator,studio}-{web,server,de
 | Shared code      | **`lisca`** Rust crate; **`@lisca/contracts`** (Specta TS + Effect Schema), **`@lisca/ui`**, **`@lisca/utils`**; Python **`lisca`** (**Hatchling**, `python/`) |
 | Contracts        | `pnpm contracts:generate` — Rust `protocol.rs` → `packages/contracts/src/protocol.generated.ts`; runtime decode via Effect Schema in `protocol.schema.ts` |
 
+## Effect (v3)
+
+- **`effect`** is pinned via **pnpm catalog** (`pnpm-workspace.yaml`); depend with `"effect": "catalog:"`.
+- **Imports:** subpaths (`effect/Schema`, `effect/Either`, …), not the `effect` barrel.
+- **Wire JSON:** use `@lisca/contracts` helpers — `schemaDecoder` / `schemaDecoderEither` (hoisted), `decodeJson`, `readJsonResponse`, `formatSchemaError`.
+- **Web state:** Zustand + TanStack Query unchanged; `Effect.tryPromise` only in `apps/*-web/src/effects/*` loaders.
+
 ## Ports
 
 | Product   | Web  | WS   | Server crate       |

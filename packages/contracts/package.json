@@ -21,7 +21,7 @@
     "typecheck": "tsc -p tsconfig.build.json --noEmit"
   },
   "dependencies": {
-    "effect": "^3.21.2"
+    "effect": "catalog:"
   },
   "devDependencies": {
     "typescript": "^5.8.3"

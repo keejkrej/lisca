@@ -3,24 +3,17 @@ import {
   HomeDirectoryResponseSchema,
   HostListDirectoryResultSchema,
   LoadedRoiFrameAnnotationSchema,
-  RoiFrameAnnotationPayloadSchema,
   RoiFrameAnnotationSchema,
   RoiWorkspaceScanSchema,
   readJsonResponse,
   type AnnotationLabel,
   type ContrastWindow,
   type HostListDirectoryResult,
-  type LoadedRoiFrameAnnotation,
-  type RoiFrameAnnotation,
   type RoiFrameAnnotationPayload,
   type RoiFrameRequest,
-  type RoiWorkspaceScan,
 } from "@lisca/contracts";
-import {
-  AnnotationLabelArraySchema,
-  AnnotationLabelSchema,
-} from "@lisca/contracts";
-import { Schema } from "effect";
+import { AnnotationLabelArraySchema } from "@lisca/contracts";
+import type * as Schema from "effect/Schema";
 import { resolveLiscaHttpBaseUrl } from "@lisca/utils";
 
 function postJson<S extends Schema.Schema.Any>(
