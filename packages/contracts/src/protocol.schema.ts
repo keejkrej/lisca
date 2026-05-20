@@ -59,7 +59,11 @@ const Int = Schema.Number.pipe(Schema.int());
 const NumArray = Schema.mutable(Schema.Array(UInt));
 const StrArray = Schema.mutable(Schema.Array(Schema.String));
 
-export const AppIdSchema = Schema.Literal("aligner", "annotator", "studio") satisfies Schema.Schema<AppId>;
+export const AppIdSchema = Schema.Literal(
+  "aligner",
+  "annotator",
+  "studio",
+) satisfies Schema.Schema<AppId>;
 
 export const HelloMessageSchema = Schema.Struct({
   app: AppIdSchema,
@@ -236,7 +240,9 @@ export const AlignOutputPathsSchema = Schema.Struct({
   roi: Schema.String,
 }) satisfies Schema.Schema<AlignOutputPaths>;
 
-export const CropOutputFormatSchema = Schema.Literal("tiff") satisfies Schema.Schema<CropOutputFormat>;
+export const CropOutputFormatSchema = Schema.Literal(
+  "tiff",
+) satisfies Schema.Schema<CropOutputFormat>;
 
 export const CropRoiStatusSchema = Schema.Literal(
   "queued",

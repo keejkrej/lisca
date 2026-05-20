@@ -72,7 +72,11 @@ export function createAlignerPort(deps: AlignerPortDeps): AlignerDataPort {
       );
     },
     autoExcludePreview(request: AutoExcludePreviewRequest) {
-      return json.postJson("/align/auto-exclude-preview", request, AutoExcludePreviewResponseSchema);
+      return json.postJson(
+        "/align/auto-exclude-preview",
+        request,
+        AutoExcludePreviewResponseSchema,
+      );
     },
     listSavedBboxPositions(workspacePath: string) {
       return json.getJson("/align/saved-bbox-positions", UIntArraySchema, { workspacePath });

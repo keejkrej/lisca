@@ -41,9 +41,7 @@ export function formatSchemaError(error: unknown): string {
     return ParseResult.TreeFormatter.formatErrorSync(error);
   }
   try {
-    return ParseResult.TreeFormatter.formatIssueSync(
-      (error as ParseResult.ParseError).issue,
-    );
+    return ParseResult.TreeFormatter.formatIssueSync((error as ParseResult.ParseError).issue);
   } catch {
     if (error instanceof Error) {
       return error.message;
@@ -64,9 +62,7 @@ export const decodeJsonResult = <S extends Schema.Schema.Any>(schema: S) => {
       return decodeUnknown(JSON.parse(input));
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : String(cause);
-      return Either.left(
-        ParseResult.parseError(new ParseResult.Unexpected(input, message)),
-      );
+      return Either.left(ParseResult.parseError(new ParseResult.Unexpected(input, message)));
     }
   };
 };

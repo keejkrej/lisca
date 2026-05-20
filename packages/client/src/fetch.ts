@@ -16,10 +16,7 @@ export type JsonFetch = {
   ): Promise<Schema.Schema.Type<S>>;
 };
 
-export function createJsonFetch(
-  baseUrl: () => string,
-  fetchImpl: typeof fetch = fetch,
-): JsonFetch {
+export function createJsonFetch(baseUrl: () => string, fetchImpl: typeof fetch = fetch): JsonFetch {
   return {
     getJson(path, schema, params, signal) {
       const url = new URL(path, baseUrl());

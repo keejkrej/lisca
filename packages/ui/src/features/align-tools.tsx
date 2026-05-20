@@ -82,46 +82,46 @@ export function AlignTools({
       className="grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-2"
       role="toolbar"
     >
-        {alignToolDefinitions.map(({ mode: toolMode, label, Icon }) =>
-          toolMode === "zoom-pattern" ? (
-            <div key={toolMode} className="grid min-h-0 min-w-0 grid-cols-[1fr_2rem] gap-1">
-              <AlignToolButton
-                active={mode === toolMode}
-                className="h-full w-full min-w-0 justify-center gap-2 px-2"
-                Icon={Icon}
-                label={label}
-                mode={toolMode}
-                onClick={() => onModeChange(toolMode)}
-              />
-              <Button
-                aria-label={patternZoomLocked ? "Unlock pattern zoom" : "Lock pattern zoom"}
-                aria-pressed={patternZoomLocked}
-                className="h-full w-full px-0"
-                disabled={!onPatternZoomLockedChange}
-                size="sm"
-                title={patternZoomLocked ? "Unlock pattern zoom" : "Lock pattern zoom"}
-                type="button"
-                variant={patternZoomLocked ? "default" : "outline"}
-                onClick={() => onPatternZoomLockedChange?.(!patternZoomLocked)}
-              >
-                {patternZoomLocked ? (
-                  <Lock aria-hidden="true" className="size-4" />
-                ) : (
-                  <Unlock aria-hidden="true" className="size-4" />
-                )}
-              </Button>
-            </div>
-          ) : (
+      {alignToolDefinitions.map(({ mode: toolMode, label, Icon }) =>
+        toolMode === "zoom-pattern" ? (
+          <div key={toolMode} className="grid min-h-0 min-w-0 grid-cols-[1fr_2rem] gap-1">
             <AlignToolButton
-              key={toolMode}
               active={mode === toolMode}
+              className="h-full w-full min-w-0 justify-center gap-2 px-2"
               Icon={Icon}
               label={label}
               mode={toolMode}
               onClick={() => onModeChange(toolMode)}
             />
-          ),
-        )}
+            <Button
+              aria-label={patternZoomLocked ? "Unlock pattern zoom" : "Lock pattern zoom"}
+              aria-pressed={patternZoomLocked}
+              className="h-full w-full px-0"
+              disabled={!onPatternZoomLockedChange}
+              size="sm"
+              title={patternZoomLocked ? "Unlock pattern zoom" : "Lock pattern zoom"}
+              type="button"
+              variant={patternZoomLocked ? "default" : "outline"}
+              onClick={() => onPatternZoomLockedChange?.(!patternZoomLocked)}
+            >
+              {patternZoomLocked ? (
+                <Lock aria-hidden="true" className="size-4" />
+              ) : (
+                <Unlock aria-hidden="true" className="size-4" />
+              )}
+            </Button>
+          </div>
+        ) : (
+          <AlignToolButton
+            key={toolMode}
+            active={mode === toolMode}
+            Icon={Icon}
+            label={label}
+            mode={toolMode}
+            onClick={() => onModeChange(toolMode)}
+          />
+        ),
+      )}
     </div>
   );
 

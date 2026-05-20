@@ -275,8 +275,7 @@ function ObservablePlotView(props: {
       ref={containerRef}
       aria-label={props.title}
       className={
-        props.className ??
-        "flex min-h-0 flex-1 pointer-events-none select-none text-foreground"
+        props.className ?? "flex min-h-0 flex-1 pointer-events-none select-none text-foreground"
       }
       role="img"
     >
@@ -288,13 +287,7 @@ function ObservablePlotView(props: {
   );
 }
 
-export function ResultPanelView({
-  panel,
-  className,
-}: {
-  panel: ResultPanel;
-  className?: string;
-}) {
+export function ResultPanelView({ panel, className }: { panel: ResultPanel; className?: string }) {
   const options = useMemo(() => plotOptionsForPanel(panel), [panel]);
 
   return <ObservablePlotView className={className} options={options} title={panel.title} />;
@@ -350,24 +343,29 @@ export function ResultPanelsGridView({
 
   return (
     <div
-      className={
-        exportMode
-          ? EXPORT_PAGE_CLASS
-          : "flex h-full min-h-0 flex-col overflow-y-auto"
-      }
+      className={exportMode ? EXPORT_PAGE_CLASS : "flex h-full min-h-0 flex-col overflow-y-auto"}
     >
       {pageTitle ? (
-        <h2 className={exportMode ? EXPORT_TITLE_CLASS : "border-b px-4 py-3 text-2xl font-semibold text-foreground"}>
+        <h2
+          className={
+            exportMode
+              ? EXPORT_TITLE_CLASS
+              : "border-b px-4 py-3 text-2xl font-semibold text-foreground"
+          }
+        >
           {pageTitle}
         </h2>
       ) : null}
       <div className={gridClass}>
         {panels.map((panel) => (
-          <div
-            key={`${panel.path}:${panel.kind}:${panel.title}`}
-            className={cellClass}
-          >
-            <p className={exportMode ? EXPORT_PANEL_TITLE_CLASS : "truncate px-1 text-xl font-semibold text-muted-foreground"}>
+          <div key={`${panel.path}:${panel.kind}:${panel.title}`} className={cellClass}>
+            <p
+              className={
+                exportMode
+                  ? EXPORT_PANEL_TITLE_CLASS
+                  : "truncate px-1 text-xl font-semibold text-muted-foreground"
+              }
+            >
               {panel.title}
             </p>
             <div className={plotHeightClass}>

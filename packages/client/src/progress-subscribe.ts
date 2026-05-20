@@ -13,7 +13,8 @@ export type ProgressPollOptions<TProgress> = {
 };
 
 export function pollProgressLoop<TProgress>(options: ProgressPollOptions<TProgress>): () => void {
-  const schedule = options.schedule ?? ((callback, delayMs) => window.setTimeout(callback, delayMs));
+  const schedule =
+    options.schedule ?? ((callback, delayMs) => window.setTimeout(callback, delayMs));
   const clearSchedule = options.clearSchedule ?? ((handle) => window.clearTimeout(handle));
   const pollIntervalMs = options.pollIntervalMs ?? 350;
   let closed = false;
@@ -71,7 +72,8 @@ export function subscribeProgress<TProgress, TMessage>(
   options: ProgressSubscriptionOptions<TProgress, TMessage>,
 ): () => void {
   const WebSocketImpl = options.WebSocketImpl ?? WebSocket;
-  const schedule = options.schedule ?? ((callback, delayMs) => window.setTimeout(callback, delayMs));
+  const schedule =
+    options.schedule ?? ((callback, delayMs) => window.setTimeout(callback, delayMs));
   const clearSchedule = options.clearSchedule ?? ((handle) => window.clearTimeout(handle));
   const fallbackDelayMs = options.fallbackDelayMs ?? 1500;
   const debugLabel = options.debugLabel ?? "lisca-ws";

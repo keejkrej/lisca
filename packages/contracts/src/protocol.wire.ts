@@ -51,7 +51,12 @@ import type {
 export type { AppId };
 export type HelloMessage = Hello;
 export type { HostFsEntry, HostListDirectoryResult, HomeDirectoryResponse, ReadTextFileResponse };
-export type { SaveAssayJsonRequest, SaveAssayJsonResponse, SaveResultPdfRequest, SaveResultPdfResponse };
+export type {
+  SaveAssayJsonRequest,
+  SaveAssayJsonResponse,
+  SaveResultPdfRequest,
+  SaveResultPdfResponse,
+};
 export type { WorkspaceScan, AlignerSource };
 export type ImageSource = AlignerSource;
 export type { FrameRequest, ContrastWindow };
@@ -123,7 +128,12 @@ export type RoiPositionScan = Omit<GeneratedRoiPositionScan, "rois"> & { rois: R
 export type RoiWorkspaceScan = Omit<GeneratedRoiWorkspaceScan, "positions"> & {
   positions: RoiPositionScan[];
 };
-export type { AnnotationLabel, RoiFrameAnnotation, RoiFrameAnnotationPayload, LoadedRoiFrameAnnotation };
+export type {
+  AnnotationLabel,
+  RoiFrameAnnotation,
+  RoiFrameAnnotationPayload,
+  LoadedRoiFrameAnnotation,
+};
 
 export type CropRoiProgressMessage = {
   type: "cropRoiProgress";

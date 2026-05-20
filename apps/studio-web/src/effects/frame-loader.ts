@@ -1,10 +1,5 @@
 import type { AlignerDataPort } from "@lisca/client/ports/types";
-import type {
-  AlignerSource,
-  ContrastWindow,
-  FrameRequest,
-  FrameResult,
-} from "@lisca/contracts";
+import type { AlignerSource, ContrastWindow, FrameRequest, FrameResult } from "@lisca/contracts";
 import { normalizeFrameContrast } from "@lisca/utils";
 import { Cause, Effect, Option } from "effect";
 

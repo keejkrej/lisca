@@ -56,7 +56,11 @@ export function createStudioHostPort(deps: StudioHostPortDeps): StudioHostPort {
       return result.contents;
     },
     saveAssayJson(saveTo: string, contents: string) {
-      return json.postJson("/studio/save-assay-json", { saveTo, contents }, SaveAssayJsonResponseSchema);
+      return json.postJson(
+        "/studio/save-assay-json",
+        { saveTo, contents },
+        SaveAssayJsonResponseSchema,
+      );
     },
     saveResultPdf(request: SaveResultPdfRequest) {
       return json.postJson("/studio/save-result-pdf", request, SaveResultPdfResponseSchema);
