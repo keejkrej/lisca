@@ -7,7 +7,7 @@
     "**/coverage/**",
     "**/routeTree.gen.ts",
     "**/protocol.generated.ts",
-    "pnpm-lock.yaml"
+    "bun.lock"
   ],
   "sortPackageJson": {}
 }

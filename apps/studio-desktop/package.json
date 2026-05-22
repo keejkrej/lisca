@@ -4,9 +4,9 @@
   "private": true,
   "main": "electron/main.cjs",
   "scripts": {
-    "build": "pnpm --filter @lisca/studio-web build && pnpm --filter @lisca/studio-server build",
-    "dev": "concurrently -k -n web,desk \"pnpm --filter @lisca/studio-web dev\" \"cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5175 wait-on -t 120000 tcp:127.0.0.1:5175 && electron .\"",
-    "typecheck": "node --check electron/main.cjs && node --check electron/preload.cjs"
+    "build": "bun --filter @lisca/studio-web build && bun --filter @lisca/studio-server build",
+    "dev": "concurrently -k -n web,desk \"bun --filter @lisca/studio-web dev\" \"cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5175 wait-on -t 120000 tcp:127.0.0.1:5175 && electron .\"",
+    "typecheck": "bunx oxlint electron/main.cjs electron/preload.cjs"
   },
   "devDependencies": {
     "@lisca/studio-server": "workspace:*",

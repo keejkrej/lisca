@@ -1,19 +1,40 @@
 {
   "name": "lisca",
   "private": true,
+  "workspaces": {
+    "packages": ["apps/*", "packages/*"],
+    "catalog": {
+      "effect": "^3.21.2",
+      "@types/node": "^22.15.21",
+      "typescript": "^5.9.2",
+      "vitest": "^3.2.4",
+      "@tanstack/react-query": "^5.100.10",
+      "@tanstack/react-router": "^1.169.2",
+      "@tanstack/router-plugin": "^1.167.35",
+      "@types/react": "^19.2.6",
+      "@types/react-dom": "^19.2.3",
+      "@tailwindcss/vite": "^4.1.8",
+      "@vitejs/plugin-react": "^4.5.0",
+      "tailwindcss": "^4.1.8",
+      "vite": "^6.3.5",
+      "zustand": "^5.0.13",
+      "react": "^19.1.0",
+      "react-dom": "^19.1.0"
+    }
+  },
   "scripts": {
     "build": "turbo run build",
     "build:packages": "turbo run build --filter=./packages/*",
     "build:webs": "turbo run build --filter=@lisca/*-web",
-    "check": "pnpm lint && pnpm typecheck && pnpm check:rust",
+    "check": "bun run lint && bun run typecheck && bun run check:rust",
     "check:rust": "cargo check --workspace",
-    "contracts:generate": "pnpm --filter @lisca/contracts generate",
+    "contracts:generate": "bun --filter @lisca/contracts generate",
     "dev": "turbo run dev",
     "fmt": "oxfmt .",
     "fmt:check": "oxfmt . --check",
-    "format": "pnpm fmt",
-    "format:check": "pnpm fmt:check",
-    "lisca": "node ./scripts/lisca.mjs",
+    "format": "bun run fmt",
+    "format:check": "bun run fmt:check",
+    "lisca": "bun ./scripts/lisca.mjs",
     "lint": "oxlint . --report-unused-disable-directives",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck"
@@ -26,9 +47,14 @@
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
-  "engines": {
-    "node": ">=22",
-    "pnpm": "^10.11.0"
+  "overrides": {
+    "effect": "catalog:",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
   },
-  "packageManager": "pnpm@10.11.0"
+  "trustedDependencies": ["core-js", "electron", "esbuild"],
+  "engines": {
+    "bun": ">=1.2.14"
+  },
+  "packageManager": "bun@1.3.14"
 }

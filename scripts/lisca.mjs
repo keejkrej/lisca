@@ -1,18 +1,18 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 /**
  * Thin dispatcher: maps (task, product, target?) → a single turbo --filter.
  * Avoids N×M script lines in package.json while staying explicit at the CLI.
  *
  * Usage:
- *   pnpm lisca <task> <product> [target] [-- <extra turbo args>]
+ *   bun lisca <task> <product> [target] [-- <extra turbo args>]
  *
  * Examples:
- *   pnpm lisca dev aligner
- *   pnpm lisca dev aligner web
- *   pnpm lisca build studio
- *   pnpm lisca typecheck annotator
- *   pnpm lisca typecheck annotator server
- *   pnpm lisca preview studio
+ *   bun lisca dev aligner
+ *   bun lisca dev aligner web
+ *   bun lisca build studio
+ *   bun lisca typecheck annotator
+ *   bun lisca typecheck annotator server
+ *   bun lisca preview studio
  */
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -32,7 +32,7 @@ const [task, product, targetArg] = argv;
 
 function usage() {
   console.error(`
-Usage: pnpm lisca <task> <product> [target] [-- <turbo passthrough>]
+Usage: bun lisca <task> <product> [target] [-- <turbo passthrough>]
 
   task     dev | build | typecheck | preview
   product  aligner | annotator | studio
@@ -45,12 +45,12 @@ Defaults:
   preview         → target web (Vite preview)
 
 Examples:
-  pnpm lisca dev aligner
-  pnpm lisca dev annotator web
-  pnpm lisca build studio
-  pnpm lisca typecheck aligner
-  pnpm lisca typecheck aligner server
-  pnpm lisca preview studio
+  bun lisca dev aligner
+  bun lisca dev annotator web
+  bun lisca build studio
+  bun lisca typecheck aligner
+  bun lisca typecheck aligner server
+  bun lisca preview studio
 `);
 }
 
@@ -77,7 +77,7 @@ function filterFor(task, product, target) {
   }
 
   if (task === "preview" && t !== "web") {
-    console.error('preview only applies to "web" (Vite). Example: pnpm lisca preview aligner web');
+    console.error('preview only applies to "web" (Vite). Example: bun lisca preview aligner web');
     process.exit(1);
   }
 
@@ -101,9 +101,9 @@ function main() {
   }
 
   const filter = filterFor(task, product, targetArg);
-  const cmd = ["exec", "turbo", "run", task, `--filter=${filter}`, ...turboExtra];
+  const cmd = ["x", "turbo", "run", task, `--filter=${filter}`, ...turboExtra];
 
-  const result = spawnSync("pnpm", cmd, {
+  const result = spawnSync("bun", cmd, {
     cwd: root,
     stdio: "inherit",
     shell: process.platform === "win32",
