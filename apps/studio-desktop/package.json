@@ -13,7 +13,7 @@
     "@lisca/studio-web": "workspace:*",
     "concurrently": "^9.1.2",
     "cross-env": "^7.0.3",
-    "electron": "^35.2.1",
+    "electron": "catalog:",
     "wait-on": "^8.0.3"
   }
 }
