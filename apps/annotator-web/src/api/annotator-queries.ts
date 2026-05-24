@@ -1,8 +1,7 @@
 import type { AnnotationLabel, RoiFrameAnnotationPayload, RoiFrameRequest } from "@lisca/contracts";
-import { toFetchErrorMessage } from "@lisca/client/errors";
+import { runClientEffect } from "@lisca/client/runtime";
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { annotatorBaseUrl } from "./annotator-client";
 import { ensureAnnotatorPort } from "./annotator-port";
 
 export const annotatorQueryKeys = {
@@ -26,7 +25,9 @@ export function roiWorkspaceScanQueryOptions(workspacePath: string | null) {
     queryKey: annotatorQueryKeys.roiWorkspaceScan(workspacePath),
     queryFn: ({ signal }) => {
       if (!workspacePath) throw new Error("No workspace selected");
-      return ensureAnnotatorPort().scanRoiWorkspace(workspacePath, signal);
+      return runClientEffect(ensureAnnotatorPort().scanRoiWorkspace(workspacePath, signal), {
+        signal,
+      });
     },
     enabled: workspacePath != null,
     retry: false,
@@ -38,15 +39,11 @@ export function annotationLabelsQueryOptions(workspacePath: string | null) {
     queryKey: annotatorQueryKeys.annotationLabels(workspacePath),
     queryFn: ({ signal }) => {
       if (!workspacePath) throw new Error("No workspace selected");
-      return ensureAnnotatorPort().loadLabels(workspacePath, signal);
+      return runClientEffect(ensureAnnotatorPort().loadLabels(workspacePath, signal), { signal });
     },
     enabled: workspacePath != null,
     retry: false,
   });
-}
-
-export function toAnnotatorErrorMessage(cause: unknown, fallback: string): string {
-  return toFetchErrorMessage(cause, fallback, annotatorBaseUrl());
 }
 
 export function useRoiWorkspaceScanQuery(workspacePath: string | null) {
@@ -62,7 +59,7 @@ export function useSaveAnnotationLabelsMutation(workspacePath: string | null) {
   return useMutation({
     mutationFn: (labels: AnnotationLabel[]) => {
       if (!workspacePath) throw new Error("No workspace selected");
-      return ensureAnnotatorPort().saveLabels(workspacePath, labels);
+      return runClientEffect(ensureAnnotatorPort().saveLabels(workspacePath, labels));
     },
     onSuccess: (labels) => {
       queryClient.setQueryData(annotationLabelsQueryKey(workspacePath), labels);
@@ -74,13 +71,16 @@ export function useSaveRoiFrameAnnotationMutation(workspacePath: string | null) 
   return useMutation({
     mutationFn: (input: { request: RoiFrameRequest; annotation: RoiFrameAnnotationPayload }) => {
       if (!workspacePath) throw new Error("No workspace selected");
-      return ensureAnnotatorPort().saveRoiFrameAnnotation(
-        workspacePath,
-        input.request,
-        input.annotation,
+      return runClientEffect(
+        ensureAnnotatorPort().saveRoiFrameAnnotation(
+          workspacePath,
+          input.request,
+          input.annotation,
+        ),
       );
     },
   });
 }
 
-export { annotatorPort, ensureAnnotatorPort, annotatorApi } from "./annotator-port";
+export { annotatorClient, ensureAnnotatorPort } from "./annotator-port";
+export { toErrorMessage } from "./annotator-client";

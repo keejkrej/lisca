@@ -1,20 +1,16 @@
 import { WS_PATH } from "@lisca/contracts";
-import { createLiscaUrlResolver } from "@lisca/client/urls";
+import { toFetchErrorMessage } from "@lisca/client/errors";
+import { createLiscaUrlResolver, readBrowserSearchParams } from "@lisca/client/urls";
 
-function alignerUrlOptions() {
-  const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
-  return {
-    searchParams: params,
-    viteHttpUrl: import.meta.env.VITE_HTTP_URL,
-    viteWsUrl: import.meta.env.VITE_WS_URL,
-    viteWsHost: import.meta.env.VITE_WS_HOST,
-    viteWsPort: import.meta.env.VITE_WS_PORT,
-    defaultPort: 8765,
-    wsPath: WS_PATH,
-  };
-}
-
-const urls = createLiscaUrlResolver(alignerUrlOptions());
+const urls = createLiscaUrlResolver({
+  searchParams: readBrowserSearchParams(),
+  viteHttpUrl: import.meta.env.VITE_HTTP_URL,
+  viteWsUrl: import.meta.env.VITE_WS_URL,
+  viteWsHost: import.meta.env.VITE_WS_HOST,
+  viteWsPort: import.meta.env.VITE_WS_PORT,
+  defaultPort: 8765,
+  wsPath: WS_PATH,
+});
 
 export function resolveAlignerHttpBaseUrl(): string {
   return urls.httpBaseUrl();
@@ -30,6 +26,10 @@ export function createAlignerPortDeps() {
     wsUrl: resolveAlignerWsUrl,
     isDev: import.meta.env.DEV,
   };
+}
+
+export function toErrorMessage(cause: unknown, fallback: string): string {
+  return toFetchErrorMessage(cause, fallback, resolveAlignerHttpBaseUrl());
 }
 
 /** @deprecated Use {@link createAlignerPortDeps} with `@lisca/client/ports/aligner`. */

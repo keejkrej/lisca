@@ -27,9 +27,29 @@
       "types": "./src/errors.ts",
       "import": "./src/errors.ts"
     },
+    "./runtime": {
+      "types": "./src/runtime.ts",
+      "import": "./src/runtime.ts"
+    },
+    "./client-error": {
+      "types": "./src/client-error.ts",
+      "import": "./src/client-error.ts"
+    },
+    "./crop-status": {
+      "types": "./src/crop-status.ts",
+      "import": "./src/crop-status.ts"
+    },
+    "./frame-loader": {
+      "types": "./src/frame-loader.ts",
+      "import": "./src/frame-loader.ts"
+    },
     "./ports/aligner": {
       "types": "./src/ports/aligner.ts",
       "import": "./src/ports/aligner.ts"
+    },
+    "./ports/host": {
+      "types": "./src/ports/host.ts",
+      "import": "./src/ports/host.ts"
     },
     "./ports/analysis": {
       "types": "./src/ports/analysis.ts",
@@ -38,10 +58,6 @@
     "./ports/annotator": {
       "types": "./src/ports/annotator.ts",
       "import": "./src/ports/annotator.ts"
-    },
-    "./ports/studio-host": {
-      "types": "./src/ports/studio-host.ts",
-      "import": "./src/ports/studio-host.ts"
     },
     "./ports/studio": {
       "types": "./src/ports/studio.ts",

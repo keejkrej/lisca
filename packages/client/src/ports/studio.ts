@@ -1,21 +1,23 @@
 import {
   FramePayloadSchema,
   NullableAnalysisProgressSchema,
+  ReadTextFileResponseSchema,
   RoiWorkspaceScanSchema,
+  SaveAssayJsonResponseSchema,
+  SaveResultPdfResponseSchema,
   type ContrastWindow,
-  type FrameResult,
   type RoiFrameRequest,
-  type RoiWorkspaceScan,
+  type SaveResultPdfRequest,
 } from "@lisca/contracts";
 import { decodeFramePayload } from "@lisca/utils";
+import { Effect } from "effect";
 
 import { createJsonFetch } from "../fetch.ts";
 import { createAlignerPort, type AlignerPortDeps } from "./aligner.ts";
 import { createAnalysisPort } from "./analysis.ts";
-import { createStudioHostPort } from "./studio-host.ts";
 import type { StudioDataPort } from "./types.ts";
 
-export type { StudioDataPort } from "./types.ts";
+export type { StudioDataPort, StudioHostPort } from "./types.ts";
 export type { AnalysisProgress } from "@lisca/contracts";
 
 export type StudioPortDeps = AlignerPortDeps;
@@ -24,23 +26,36 @@ export function createStudioPort(deps: StudioPortDeps): StudioDataPort {
   const json = createJsonFetch(deps.baseUrl, deps.fetch);
   const aligner = createAlignerPort(deps);
   const analysis = createAnalysisPort(deps);
-  const host = createStudioHostPort(deps);
 
   return {
     ...aligner,
     ...analysis,
-    ...host,
-    getAnalysisResults(workspacePath: string) {
+    readTextFile(path, signal) {
+      return json
+        .getJson("/fs/read-text", ReadTextFileResponseSchema, { path }, signal)
+        .pipe(Effect.map((result) => result.contents));
+    },
+    saveAssayJson(saveTo, contents) {
+      return json.postJson(
+        "/studio/save-assay-json",
+        { saveTo, contents },
+        SaveAssayJsonResponseSchema,
+      );
+    },
+    saveResultPdf(request: SaveResultPdfRequest) {
+      return json.postJson("/studio/save-result-pdf", request, SaveResultPdfResponseSchema);
+    },
+    getAnalysisResults(workspacePath) {
       return json.getJson("/studio/analysis-results", NullableAnalysisProgressSchema, {
         workspacePath,
       });
     },
-    getLatestAnalysisProgress(workspacePath: string) {
+    getLatestAnalysisProgress(workspacePath) {
       return json.getJson("/studio/latest-analysis", NullableAnalysisProgressSchema, {
         workspacePath,
       });
     },
-    scanRoiWorkspace(workspacePath: string, signal?: AbortSignal): Promise<RoiWorkspaceScan> {
+    scanRoiWorkspace(workspacePath, signal) {
       return json.postJson(
         "/annotate/scan-roi-workspace",
         { workspacePath },
@@ -48,19 +63,15 @@ export function createStudioPort(deps: StudioPortDeps): StudioDataPort {
         signal,
       );
     },
-    async loadRoiFrame(
-      workspacePath: string,
-      request: RoiFrameRequest,
-      contrast?: ContrastWindow | null,
-      signal?: AbortSignal,
-    ): Promise<FrameResult> {
-      const payload = await json.postJson(
-        "/annotate/load-roi-frame",
-        { workspacePath, request, contrast: contrast ?? null },
-        FramePayloadSchema,
-        signal,
-      );
-      return decodeFramePayload(payload);
+    loadRoiFrame(workspacePath, request, contrast, signal) {
+      return json
+        .postJson(
+          "/annotate/load-roi-frame",
+          { workspacePath, request, contrast: contrast ?? null },
+          FramePayloadSchema,
+          signal,
+        )
+        .pipe(Effect.map(decodeFramePayload));
     },
   };
 }

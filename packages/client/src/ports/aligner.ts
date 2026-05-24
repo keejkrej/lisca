@@ -19,9 +19,11 @@ import {
   type SavedAlignState,
 } from "@lisca/contracts";
 import { decodeFramePayload } from "@lisca/utils";
+import { Effect } from "effect";
 
 import { createJsonFetch, type JsonFetch } from "../fetch.ts";
 import { pollProgressLoop, subscribeProgress } from "../progress-subscribe.ts";
+import { createHostPort, type HostPortDeps } from "./host.ts";
 import type { AlignerDataPort } from "./types.ts";
 
 export type { AlignerDataPort } from "./types.ts";
@@ -30,72 +32,66 @@ const decodeCropRoiProgressMessage = schemaDecoderEither(CropRoiProgressMessageS
 
 const CROP_ROI_TERMINAL_STATUSES = new Set(["completed", "cancelled", "error"]);
 
-export type AlignerPortDeps = {
-  baseUrl: () => string;
+export type AlignerPortDeps = HostPortDeps & {
   wsUrl: () => string;
-  fetch?: typeof fetch;
   isDev?: boolean;
 };
 
 export function createAlignerPort(deps: AlignerPortDeps): AlignerDataPort {
   const json = createJsonFetch(deps.baseUrl, deps.fetch);
+  const host = createHostPort(deps);
 
   return {
-    scanSource(source: AlignerSource) {
+    ...host,
+    scanSource(source) {
       return json.postJson("/align/scan-source", { source }, WorkspaceScanSchema);
     },
-    async loadFrame(
-      source: AlignerSource,
-      request: FrameRequest,
-      contrast?: ContrastWindow | null,
-      signal?: AbortSignal,
-    ) {
-      const payload = await json.postJson(
-        "/align/load-frame",
-        { source, request, contrast: contrast ?? null },
-        FramePayloadSchema,
-        signal,
-      );
-      return decodeFramePayload(payload);
+    loadFrame(source, request, contrast, signal) {
+      return json
+        .postJson(
+          "/align/load-frame",
+          { source, request, contrast: contrast ?? null },
+          FramePayloadSchema,
+          signal,
+        )
+        .pipe(Effect.map(decodeFramePayload));
     },
-    loadAlignState(workspacePath: string, pos: number) {
+    loadAlignState(workspacePath, pos) {
       return json.getJson("/align/align-state", NullableSavedAlignStateSchema, {
         workspacePath,
         pos,
       });
     },
-    saveBbox(workspacePath: string, pos: number, csv: string, alignState: SavedAlignState) {
+    saveBbox(workspacePath, pos, csv, alignState) {
       return json.postJson(
         "/align/save-bbox",
         { workspacePath, pos, csv, alignState },
         SaveBboxResponseSchema,
       );
     },
-    autoExcludePreview(request: AutoExcludePreviewRequest) {
+    autoExcludePreview(request) {
       return json.postJson(
         "/align/auto-exclude-preview",
         request,
         AutoExcludePreviewResponseSchema,
       );
     },
-    listSavedBboxPositions(workspacePath: string) {
+    listSavedBboxPositions(workspacePath) {
       return json.getJson("/align/saved-bbox-positions", UIntArraySchema, { workspacePath });
     },
-    cropRoi(request: CropRoiRequest) {
+    cropRoi(request) {
       return json.postJson("/align/crop-roi", request, CropRoiResponseSchema);
     },
-    cancelCropRoi(requestId: string) {
+    cancelCropRoi(requestId) {
       return json.postJson("/align/cancel-crop-roi", { requestId }, CropRoiProgressSchema);
     },
-    onCropRoiProgress(requestId: string, onProgress: (progress: CropRoiProgress) => void) {
+    onCropRoiProgress(requestId, onProgress) {
       return createCropRoiProgressSubscription(json, deps, requestId, onProgress);
     },
-    async roiPosExists(workspacePath: string, pos: number) {
-      const result = await json.getJson("/align/roi-pos-exists", RoiPosExistsResponseSchema, {
-        workspacePath,
-        pos,
-      });
-      return result.exists;
+    roiPosExists(workspacePath, pos) {
+      return json
+        .getJson("/align/roi-pos-exists", RoiPosExistsResponseSchema, { workspacePath, pos })
+        .pipe(Effect.map((result) => result.exists));
     },
   };
 }

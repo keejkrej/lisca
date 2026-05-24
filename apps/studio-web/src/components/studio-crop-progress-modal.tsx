@@ -3,7 +3,7 @@ import { Button, DialogSurface, ModalScrim, Spinner } from "@lisca/ui";
 import { clamp } from "@lisca/utils";
 
 import type { StudioAlignState } from "../state/use-studio-align-state";
-import { isDoneCropStatus } from "../utils/crop-status";
+import { isDoneCropStatus } from "@lisca/client/crop-status";
 
 export function StudioCropProgressModal({ state }: { state: StudioAlignState }) {
   const progress = state.cropProgress;

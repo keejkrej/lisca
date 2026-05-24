@@ -1,5 +1,9 @@
 import { resolveLiscaHttpBaseUrl, resolveLiscaWsUrl } from "@lisca/utils";
 
+export function readBrowserSearchParams(): URLSearchParams | null {
+  return typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+}
+
 export type LiscaUrlOptions = {
   searchParams?: URLSearchParams | null;
   viteHttpUrl?: string | undefined;

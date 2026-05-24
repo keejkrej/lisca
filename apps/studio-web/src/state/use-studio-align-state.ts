@@ -29,7 +29,8 @@ import { toErrorMessage } from "../api/studio-client";
 import { studioClient } from "../api/studio-port";
 import { useAutoExcludePreviewMutation, useScanSourceQuery } from "../api/studio-queries";
 import { effectErrorMessage, loadFrameEffect } from "../effects/frame-loader";
-import { isDoneCropStatus } from "../utils/crop-status";
+import { isDoneCropStatus } from "@lisca/client/crop-status";
+import { runClientEffect, toClientError } from "@lisca/client/runtime";
 import { lockedStudioSelection, studioMaskChannel, toStudioSource } from "../utils/studio-source";
 import {
   savedAlignStateKey,
@@ -231,20 +232,24 @@ export function useStudioAlignState(): StudioAlignState {
         setError(null);
         setStatus("Loading frame");
       },
-      load: (signal) => {
-        const framePromise = Effect.runPromise(
+      load: () =>
+        Effect.all([
           loadFrameEffect(studioClient, source, lockedSelection, null),
-          { signal },
-        );
-        const alignStatePromise = workspacePath
-          ? queryClient.fetchQuery<SavedAlignState | null>({
-              queryKey: ["studio", "align-state", alignStateKey],
-              queryFn: () => studioClient.loadAlignState(workspacePath, lockedSelection.pos),
-              retry: false,
-            })
-          : Promise.resolve(null);
-        return Promise.all([framePromise, alignStatePromise]);
-      },
+          workspacePath
+            ? Effect.tryPromise({
+                try: () =>
+                  queryClient.fetchQuery<SavedAlignState | null>({
+                    queryKey: ["studio", "align-state", alignStateKey],
+                    queryFn: () =>
+                      runClientEffect(
+                        studioClient.loadAlignState(workspacePath, lockedSelection.pos),
+                      ),
+                    retry: false,
+                  }),
+                catch: toClientError,
+              })
+            : Effect.succeed(null as SavedAlignState | null),
+        ]),
       commit: ([nextFrame, savedAlignState]) => {
         applyLoadedFrame(
           lockedSelection,
@@ -315,7 +320,9 @@ export function useStudioAlignState(): StudioAlignState {
     setError(null);
     try {
       setStatus("Finding jump target");
-      const savedPositions = new Set(await studioClient.listSavedBboxPositions(workspacePath));
+      const savedPositions = new Set(
+        await runClientEffect(studioClient.listSavedBboxPositions(workspacePath)),
+      );
       const firstUnaligned = scan.positions.find((pos) => !savedPositions.has(pos));
       if (firstUnaligned == null) {
         const lastPos = scan.positions.at(-1);
@@ -363,14 +370,16 @@ export function useStudioAlignState(): StudioAlignState {
       });
       let stop = () => {};
       try {
-        await studioClient.cropRoi({
-          requestId,
-          workspacePath,
-          source,
-          positions,
-          overwrite,
-          outputFormat: "tiff",
-        });
+        await runClientEffect(
+          studioClient.cropRoi({
+            requestId,
+            workspacePath,
+            source,
+            positions,
+            overwrite,
+            outputFormat: "tiff",
+          }),
+        );
         stop = studioClient.onCropRoiProgress(requestId, (progress) => {
           setCropProgress(progress);
           if (isDoneCropStatus(progress.status)) {
@@ -402,16 +411,19 @@ export function useStudioAlignState(): StudioAlignState {
   const cropBatchWithOverwriteCheck = useCallback(
     async (positions: number[]) => {
       if (!workspacePath || positions.length === 0) return;
-      const existing = (
-        await Promise.all(
-          positions.map(async (pos) => ({
-            pos,
-            exists: await studioClient.roiPosExists(workspacePath, pos),
-          })),
-        )
-      )
-        .filter((entry) => entry.exists)
-        .map((entry) => entry.pos);
+      const existing = await runClientEffect(
+        Effect.all(
+          positions.map((pos) =>
+            studioClient
+              .roiPosExists(workspacePath, pos)
+              .pipe(Effect.map((exists) => ({ pos, exists }))),
+          ),
+        ).pipe(
+          Effect.map((entries) =>
+            entries.filter((entry) => entry.exists).map((entry) => entry.pos),
+          ),
+        ),
+      );
       if (existing.length > 0) {
         setCropConfirm({ positions, existingPositions: existing });
         return;
@@ -423,7 +435,9 @@ export function useStudioAlignState(): StudioAlignState {
 
   const maybeCropWhenAllPositionsSaved = useCallback(async () => {
     if (!workspacePath || !scan) return;
-    const savedPositions = new Set(await studioClient.listSavedBboxPositions(workspacePath));
+    const savedPositions = new Set(
+      await runClientEffect(studioClient.listSavedBboxPositions(workspacePath)),
+    );
     const allPositionsSaved = scan.positions.every((pos) => savedPositions.has(pos));
     if (!allPositionsSaved) return;
     setCropStartConfirm({ positions: scan.positions });
@@ -468,7 +482,7 @@ export function useStudioAlignState(): StudioAlignState {
   const cancelCrop = useCallback(async () => {
     const requestId = cropRequestIdRef.current;
     if (!requestId) return;
-    setCropProgress(await studioClient.cancelCropRoi(requestId));
+    setCropProgress(await runClientEffect(studioClient.cancelCropRoi(requestId)));
   }, []);
 
   const saveAndAdvance = useCallback(async () => {
@@ -488,11 +502,8 @@ export function useStudioAlignState(): StudioAlignState {
       setExcludedCellsForCurrentPosition(finalExcludedCells);
       const csv = buildBboxCsv(frame, grid, finalExcludedCells);
       const alignState = alignStateFromCurrent(grid, finalExcludedCells);
-      const result = await studioClient.saveBbox(
-        workspacePath,
-        lockedSelection.pos,
-        csv,
-        alignState,
+      const result = await runClientEffect(
+        studioClient.saveBbox(workspacePath, lockedSelection.pos, csv, alignState),
       );
       if (!result.ok) throw new Error(result.error ?? "Save failed");
       queryClient.setQueryData<SavedAlignState | null>(

@@ -1,4 +1,5 @@
 import type { AlignerSource, AutoExcludePreviewRequest } from "@lisca/contracts";
+import { runClientEffect } from "@lisca/client/runtime";
 import { queryOptions, useMutation, useQuery } from "@tanstack/react-query";
 
 import { ensureStudioPort } from "./studio-port";
@@ -17,7 +18,7 @@ export function studioScanSourceQueryOptions(source: AlignerSource | null) {
     queryKey: studioQueryKeys.scanSource(source),
     queryFn: () => {
       if (!source) throw new Error("No source selected");
-      return ensureStudioPort().scanSource(source);
+      return runClientEffect(ensureStudioPort().scanSource(source));
     },
     enabled: source != null,
     retry: false,
@@ -29,7 +30,9 @@ export function studioRoiWorkspaceScanQueryOptions(workspacePath: string | null)
     queryKey: studioQueryKeys.roiWorkspaceScan(workspacePath),
     queryFn: ({ signal }) => {
       if (!workspacePath) throw new Error("No workspace selected");
-      return ensureStudioPort().scanRoiWorkspace(workspacePath, signal);
+      return runClientEffect(ensureStudioPort().scanRoiWorkspace(workspacePath, signal), {
+        signal,
+      });
     },
     enabled: workspacePath != null,
     retry: false,
@@ -39,7 +42,7 @@ export function studioRoiWorkspaceScanQueryOptions(workspacePath: string | null)
 export function studioAutoExcludePreviewMutationOptions() {
   return {
     mutationFn: (request: AutoExcludePreviewRequest) =>
-      ensureStudioPort().autoExcludePreview(request),
+      runClientEffect(ensureStudioPort().autoExcludePreview(request)),
   };
 }
 
@@ -56,3 +59,4 @@ export function useStudioRoiWorkspaceScanQuery(workspacePath: string | null) {
 }
 
 export { studioClient, ensureStudioPort } from "./studio-port";
+export { toErrorMessage } from "./studio-client";

@@ -1,5 +1,9 @@
 import { readJsonResponse } from "@lisca/contracts";
+import { Effect } from "effect";
 import type * as Schema from "effect/Schema";
+
+import { toClientError } from "./client-error.ts";
+import type { ClientEffect } from "./runtime.ts";
 
 export type JsonFetch = {
   getJson<S extends Schema.Schema.Any>(
@@ -7,13 +11,13 @@ export type JsonFetch = {
     schema: S,
     params?: Record<string, string | number>,
     signal?: AbortSignal,
-  ): Promise<Schema.Schema.Type<S>>;
+  ): ClientEffect<Schema.Schema.Type<S>>;
   postJson<S extends Schema.Schema.Any>(
     path: string,
     body: unknown,
     schema: S,
     signal?: AbortSignal,
-  ): Promise<Schema.Schema.Type<S>>;
+  ): ClientEffect<Schema.Schema.Type<S>>;
 };
 
 export function createJsonFetch(baseUrl: () => string, fetchImpl: typeof fetch = fetch): JsonFetch {
@@ -23,15 +27,25 @@ export function createJsonFetch(baseUrl: () => string, fetchImpl: typeof fetch =
       for (const [key, value] of Object.entries(params ?? {})) {
         url.searchParams.set(key, String(value));
       }
-      return fetchImpl(url, { signal }).then((response) => readJsonResponse(response, schema));
+      return Effect.tryPromise({
+        try: (abortSignal) =>
+          fetchImpl(url, { signal: signal ?? abortSignal }).then((response) =>
+            readJsonResponse(response, schema),
+          ),
+        catch: toClientError,
+      });
     },
     postJson(path, body, schema, signal) {
-      return fetchImpl(new URL(path, baseUrl()), {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(body),
-        signal,
-      }).then((response) => readJsonResponse(response, schema));
+      return Effect.tryPromise({
+        try: (abortSignal) =>
+          fetchImpl(new URL(path, baseUrl()), {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(body),
+            signal: signal ?? abortSignal,
+          }).then((response) => readJsonResponse(response, schema)),
+        catch: toClientError,
+      });
     },
   };
 }

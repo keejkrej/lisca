@@ -1,7 +1,8 @@
 "use client";
 
 import type { HostFilePickerMode, HostFsEntry, HostListDirectoryResult } from "@lisca/contracts";
-import type { AlignerHostPort } from "@lisca/client/ports/types";
+import type { HostPort } from "@lisca/client/ports/types";
+import { runClientEffect } from "@lisca/client/runtime";
 import { FileIcon, FolderIcon, Home, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
@@ -32,7 +33,7 @@ function isDirectoryMode(mode: HostFilePickerMode): boolean {
 export type HostFilePickerDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  hostPort: Pick<AlignerHostPort, "listDirectory" | "userHomeDirectory">;
+  hostPort: Pick<HostPort, "listDirectory" | "userHomeDirectory">;
   mode: HostFilePickerMode;
   title: string;
   description?: string;
@@ -60,7 +61,7 @@ export function HostFilePickerDialog({
       setLoading(true);
       setError(null);
       try {
-        const result = await hostPort.listDirectory(path);
+        const result = await runClientEffect(hostPort.listDirectory(path));
         setList(result);
         setSelectedFile(null);
       } catch (cause) {
@@ -104,7 +105,7 @@ export function HostFilePickerDialog({
 
   const goHome = async () => {
     try {
-      const home = await hostPort.userHomeDirectory();
+      const home = await runClientEffect(hostPort.userHomeDirectory());
       await loadPath(home);
     } catch (cause) {
       setList(null);

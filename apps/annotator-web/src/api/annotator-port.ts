@@ -25,7 +25,4 @@ export function resetAnnotatorPortForTests(): void {
 }
 
 /** Primary annotator API for app code. */
-export const annotatorPort = ensureAnnotatorPort();
-
-/** @deprecated Use {@link annotatorPort}. */
-export const annotatorApi = annotatorPort;
+export const annotatorClient = ensureAnnotatorPort();

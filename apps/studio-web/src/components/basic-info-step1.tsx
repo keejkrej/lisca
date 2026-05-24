@@ -1,5 +1,5 @@
 import type { HostFilePickerMode, StudioDataSourceKind } from "@lisca/contracts";
-import type { StudioHostPort } from "@lisca/client/ports/types";
+import type { HostPort } from "@lisca/client/ports/types";
 import {
   Field,
   FieldLabel,
@@ -38,7 +38,7 @@ function kindFromMode(mode: HostFilePickerMode): StudioDataSourceKind {
   return null;
 }
 
-export function BasicInfoStep1({ hostPort }: { hostPort: StudioHostPort }) {
+export function BasicInfoStep1({ hostPort }: { hostPort: HostPort }) {
   const info1 = useStudioStore((state) => state.info1);
   const setInfo1 = useStudioStore((state) => state.setInfo1);
   const setDataSourceKind = useStudioStore((state) => state.setDataSourceKind);

@@ -9,9 +9,11 @@ import {
   type RoiFrameAnnotationPayload,
   type RoiFrameRequest,
 } from "@lisca/contracts";
+import { decodeFramePayload } from "@lisca/utils";
+import { Effect } from "effect";
 
 import { createJsonFetch } from "../fetch.ts";
-import { createHostPort, type HostPortDeps } from "./studio-host.ts";
+import { createHostPort, type HostPortDeps } from "./host.ts";
 import type { AnnotatorDataPort } from "./types.ts";
 
 export type { AnnotatorDataPort } from "./types.ts";
@@ -23,9 +25,8 @@ export function createAnnotatorPort(deps: AnnotatorPortDeps): AnnotatorDataPort 
   const host = createHostPort(deps);
 
   return {
-    listDirectory: host.listDirectory,
-    userHomeDirectory: host.userHomeDirectory,
-    scanRoiWorkspace(workspacePath: string, signal?: AbortSignal) {
+    ...host,
+    scanRoiWorkspace(workspacePath, signal) {
       return json.postJson(
         "/annotate/scan-roi-workspace",
         { workspacePath },
@@ -33,7 +34,7 @@ export function createAnnotatorPort(deps: AnnotatorPortDeps): AnnotatorDataPort 
         signal,
       );
     },
-    loadLabels(workspacePath: string, signal?: AbortSignal) {
+    loadLabels(workspacePath, signal) {
       return json.postJson(
         "/annotate/load-labels",
         { workspacePath },
@@ -41,7 +42,7 @@ export function createAnnotatorPort(deps: AnnotatorPortDeps): AnnotatorDataPort 
         signal,
       );
     },
-    saveLabels(workspacePath: string, labels: AnnotationLabel[], signal?: AbortSignal) {
+    saveLabels(workspacePath, labels, signal) {
       return json.postJson(
         "/annotate/save-labels",
         { workspacePath, labels },
@@ -49,20 +50,17 @@ export function createAnnotatorPort(deps: AnnotatorPortDeps): AnnotatorDataPort 
         signal,
       );
     },
-    loadRoiFrame(
-      workspacePath: string,
-      request: RoiFrameRequest,
-      contrast: ContrastWindow | null,
-      signal?: AbortSignal,
-    ) {
-      return json.postJson(
-        "/annotate/load-roi-frame",
-        { workspacePath, request, contrast },
-        FramePayloadSchema,
-        signal,
-      );
+    loadRoiFrame(workspacePath, request, contrast, signal) {
+      return json
+        .postJson(
+          "/annotate/load-roi-frame",
+          { workspacePath, request, contrast },
+          FramePayloadSchema,
+          signal,
+        )
+        .pipe(Effect.map(decodeFramePayload));
     },
-    loadRoiFrameAnnotation(workspacePath: string, request: RoiFrameRequest, signal?: AbortSignal) {
+    loadRoiFrameAnnotation(workspacePath, request, signal) {
       return json.postJson(
         "/annotate/load-roi-frame-annotation",
         { workspacePath, request },
@@ -70,12 +68,7 @@ export function createAnnotatorPort(deps: AnnotatorPortDeps): AnnotatorDataPort 
         signal,
       );
     },
-    saveRoiFrameAnnotation(
-      workspacePath: string,
-      request: RoiFrameRequest,
-      annotation: RoiFrameAnnotationPayload,
-      signal?: AbortSignal,
-    ) {
+    saveRoiFrameAnnotation(workspacePath, request, annotation, signal) {
       return json.postJson(
         "/annotate/save-roi-frame-annotation",
         { workspacePath, request, annotation },

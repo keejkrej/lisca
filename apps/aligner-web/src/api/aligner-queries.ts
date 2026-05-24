@@ -1,9 +1,8 @@
 import type { AlignerSource, AutoExcludePreviewRequest } from "@lisca/contracts";
-import { toFetchErrorMessage } from "@lisca/client/errors";
+import { runClientEffect } from "@lisca/client/runtime";
 import { queryOptions, useMutation, useQuery } from "@tanstack/react-query";
 
 import { ensureAlignerPort } from "./aligner-port";
-import { resolveAlignerHttpBaseUrl } from "./aligner-client";
 import { sourceKey } from "../state/aligner-store";
 
 export const alignerQueryKeys = {
@@ -19,7 +18,7 @@ export function workspaceScanQueryOptions(source: AlignerSource | null) {
     queryKey: alignerQueryKeys.scanSource(source),
     queryFn: () => {
       if (!source) throw new Error("No source selected");
-      return ensureAlignerPort().scanSource(source);
+      return runClientEffect(ensureAlignerPort().scanSource(source));
     },
     enabled: source != null,
     retry: false,
@@ -31,7 +30,7 @@ export function savedBboxPositionsQueryOptions(workspacePath: string | null, ena
     queryKey: alignerQueryKeys.savedBboxPositions(workspacePath),
     queryFn: () => {
       if (!workspacePath) throw new Error("No workspace selected");
-      return ensureAlignerPort().listSavedBboxPositions(workspacePath);
+      return runClientEffect(ensureAlignerPort().listSavedBboxPositions(workspacePath));
     },
     enabled: enabled && workspacePath != null,
     retry: false,
@@ -41,12 +40,8 @@ export function savedBboxPositionsQueryOptions(workspacePath: string | null, ena
 export function autoExcludePreviewMutationOptions() {
   return {
     mutationFn: (request: AutoExcludePreviewRequest) =>
-      ensureAlignerPort().autoExcludePreview(request),
+      runClientEffect(ensureAlignerPort().autoExcludePreview(request)),
   };
-}
-
-export function toErrorMessage(cause: unknown, fallback: string): string {
-  return toFetchErrorMessage(cause, fallback, resolveAlignerHttpBaseUrl());
 }
 
 export function useScanSourceQuery(source: AlignerSource | null) {
@@ -62,3 +57,4 @@ export function useAutoExcludePreviewMutation() {
 }
 
 export { alignerClient, ensureAlignerPort } from "./aligner-port";
+export { toErrorMessage } from "./aligner-client";

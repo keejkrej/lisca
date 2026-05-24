@@ -32,7 +32,8 @@ import {
   useScanSourceQuery,
 } from "../api/aligner-queries";
 import { effectErrorMessage, loadFrameEffect } from "../effects/frame-loader";
-import { isDoneCropStatus } from "../utils/crop-status";
+import { isDoneCropStatus } from "@lisca/client/crop-status";
+import { runClientEffect, toClientError } from "@lisca/client/runtime";
 import {
   savedAlignStateKey,
   sourceKey,
@@ -211,20 +212,24 @@ export function useAlignState(): AlignState {
         setError(null);
         setStatus("Loading frame");
       },
-      load: (signal) => {
-        const framePromise = Effect.runPromise(
+      load: () =>
+        Effect.all([
           loadFrameEffect(alignerClient, source, selection, contrast),
-          { signal },
-        );
-        const alignStatePromise = workspacePath
-          ? queryClient.fetchQuery<SavedAlignState | null>({
-              queryKey: ["aligner", "align-state", alignStateKey],
-              queryFn: () => alignerClient.loadAlignState(workspacePath, selection.pos),
-              retry: false,
-            })
-          : Promise.resolve(null);
-        return Promise.all([framePromise, alignStatePromise]);
-      },
+          workspacePath
+            ? Effect.tryPromise({
+                try: () =>
+                  queryClient.fetchQuery<SavedAlignState | null>({
+                    queryKey: ["aligner", "align-state", alignStateKey],
+                    queryFn: () =>
+                      runClientEffect(
+                        alignerClient.loadAlignState(workspacePath, selection.pos),
+                      ),
+                    retry: false,
+                  }),
+                catch: toClientError,
+              })
+            : Effect.succeed(null as SavedAlignState | null),
+        ]),
       commit: ([nextFrame, savedAlignState]) => {
         applyLoadedFrame(
           selection,
@@ -266,7 +271,9 @@ export function useAlignState(): AlignState {
     try {
       const csv = buildBboxCsv(frame, grid, currentExcludedCells);
       const alignState = alignStateFromCurrent(grid, currentExcludedCells);
-      const result = await alignerClient.saveBbox(workspacePath, selection.pos, csv, alignState);
+      const result = await runClientEffect(
+        alignerClient.saveBbox(workspacePath, selection.pos, csv, alignState),
+      );
       if (!result.ok) throw new Error(result.error ?? "Save failed");
       queryClient.setQueryData<SavedAlignState | null>(
         ["aligner", "align-state", savedAlignStateKey(workspacePath, selection.pos)],
@@ -310,14 +317,16 @@ export function useAlignState(): AlignState {
       });
       let stop = () => {};
       try {
-        await alignerClient.cropRoi({
-          requestId,
-          workspacePath,
-          source,
-          positions,
-          overwrite,
-          outputFormat: "tiff",
-        });
+        await runClientEffect(
+          alignerClient.cropRoi({
+            requestId,
+            workspacePath,
+            source,
+            positions,
+            overwrite,
+            outputFormat: "tiff",
+          }),
+        );
         stop = alignerClient.onCropRoiProgress(requestId, (progress) => {
           setCropProgress(progress);
           if (isDoneCropStatus(progress.status)) {
@@ -349,7 +358,9 @@ export function useAlignState(): AlignState {
     if (!workspacePath || !source || !frame) return;
     const saved = await saveCurrent();
     if (!saved) return;
-    const exists = await alignerClient.roiPosExists(workspacePath, selection.pos);
+    const exists = await runClientEffect(
+      alignerClient.roiPosExists(workspacePath, selection.pos),
+    );
     if (exists) {
       setCropConfirm({
         kind: "single",
@@ -373,16 +384,19 @@ export function useAlignState(): AlignState {
       setStatus("No saved bbox CSVs found");
       return;
     }
-    const existing = (
-      await Promise.all(
-        savedPositions.map(async (pos) => ({
-          pos,
-          exists: await alignerClient.roiPosExists(workspacePath, pos),
-        })),
-      )
-    )
-      .filter((entry) => entry.exists)
-      .map((entry) => entry.pos);
+    const existing = await runClientEffect(
+      Effect.all(
+        savedPositions.map((pos) =>
+          alignerClient
+            .roiPosExists(workspacePath, pos)
+            .pipe(Effect.map((exists) => ({ pos, exists }))),
+        ),
+      ).pipe(
+        Effect.map((entries) =>
+          entries.filter((entry) => entry.exists).map((entry) => entry.pos),
+        ),
+      ),
+    );
     if (existing.length > 0) {
       setCropConfirm({
         kind: "batch",
@@ -421,7 +435,7 @@ export function useAlignState(): AlignState {
   const cancelCrop = useCallback(async () => {
     const requestId = cropRequestIdRef.current;
     if (!requestId) return;
-    setCropProgress(await alignerClient.cancelCropRoi(requestId));
+    setCropProgress(await runClientEffect(alignerClient.cancelCropRoi(requestId)));
   }, [setCropProgress]);
 
   const previewVariationExclude = useCallback(async () => {

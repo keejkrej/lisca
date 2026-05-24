@@ -1,4 +1,5 @@
 import { CropRoiProgressMessageSchema, schemaDecoderEither } from "@lisca/contracts";
+import { Effect } from "effect";
 import { describe, expect, test, vi } from "vitest";
 
 import { pollProgressLoop, subscribeProgress } from "../src/progress-subscribe.ts";
@@ -84,17 +85,18 @@ describe("subscribeProgress", () => {
       wsUrl: "ws://127.0.0.1:8765/ws",
       requestId: "req-1",
       onProgress: (progress) => progressEvents.push(progress),
-      pollProgress: async () => ({
-        requestId: "req-1",
-        status: "running",
-        position: 1,
-        completedPositions: 0,
-        totalPositions: 1,
-        completedRois: 0,
-        totalRois: 0,
-        message: null,
-        error: null,
-      }),
+      pollProgress: () =>
+        Effect.succeed({
+          requestId: "req-1",
+          status: "running",
+          position: 1,
+          completedPositions: 0,
+          totalPositions: 1,
+          completedRois: 0,
+          totalRois: 0,
+          message: null,
+          error: null,
+        }),
       decodeMessage: decodeCropRoiProgressMessage,
       extractProgress: (message) => message.progress,
       matchRequestId: (message, requestId) => message.progress.requestId === requestId,
@@ -140,20 +142,23 @@ describe("subscribeProgress", () => {
 
   test("starts poll fallback when websocket never opens", async () => {
     vi.useFakeTimers();
-    const pollProgress = vi
-      .fn()
-      .mockResolvedValueOnce({
-        requestId: "req-2",
-        status: "running",
-        position: 1,
-        completedPositions: 0,
-        totalPositions: 1,
-        completedRois: 0,
-        totalRois: 0,
-        message: null,
-        error: null,
-      })
-      .mockResolvedValueOnce({
+    let pollCount = 0;
+    const pollProgress = vi.fn(() => {
+      pollCount += 1;
+      if (pollCount === 1) {
+        return Effect.succeed({
+          requestId: "req-2",
+          status: "running",
+          position: 1,
+          completedPositions: 0,
+          totalPositions: 1,
+          completedRois: 0,
+          totalRois: 0,
+          message: null,
+          error: null,
+        });
+      }
+      return Effect.succeed({
         requestId: "req-2",
         status: "completed",
         position: 1,
@@ -164,6 +169,7 @@ describe("subscribeProgress", () => {
         message: null,
         error: null,
       });
+    });
 
     class NeverOpenWebSocket {
       addEventListener() {}
@@ -213,17 +219,19 @@ describe("subscribeProgress", () => {
 describe("pollProgressLoop", () => {
   test("stops polling after teardown", async () => {
     vi.useFakeTimers();
-    const pollProgress = vi.fn().mockResolvedValue({
-      requestId: "req-3",
-      status: "running",
-      position: 1,
-      completedPositions: 0,
-      totalPositions: 1,
-      completedRois: 0,
-      totalRois: 0,
-      message: null,
-      error: null,
-    });
+    const pollProgress = vi.fn(() =>
+      Effect.succeed({
+        requestId: "req-3",
+        status: "running",
+        position: 1,
+        completedPositions: 0,
+        totalPositions: 1,
+        completedRois: 0,
+        totalRois: 0,
+        message: null,
+        error: null,
+      }),
+    );
 
     const stop = pollProgressLoop({
       pollProgress,

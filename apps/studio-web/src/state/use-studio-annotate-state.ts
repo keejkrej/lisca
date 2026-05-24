@@ -12,6 +12,7 @@ import { clamp } from "@lisca/utils";
 import { useCallback, useEffect, useMemo } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
+import { runClientEffect } from "@lisca/client/runtime";
 import { toErrorMessage } from "../api/studio-client";
 import { studioClient } from "../api/studio-port";
 import { useStudioRoiWorkspaceScanQuery } from "../api/studio-queries";
@@ -315,10 +316,12 @@ export function useStudioAnnotateState(): StudioAnnotateState {
 
     void (async () => {
       try {
-        const initialProgress = await studioClient.startAnalysis({
-          workspacePath,
-          requestId,
-        });
+        const initialProgress = await runClientEffect(
+          studioClient.startAnalysis({
+            workspacePath,
+            requestId,
+          }),
+        );
         setAnalysisProgress(initialProgress);
         stop = studioClient.onAnalysisProgress(requestId, onProgress);
       } catch (cause) {

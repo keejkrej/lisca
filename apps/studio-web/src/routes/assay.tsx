@@ -1,8 +1,9 @@
-import type { StudioHostPort } from "@lisca/client/ports/types";
+import type { HostPort } from "@lisca/client/ports/types";
+import { runClientEffect } from "@lisca/client/runtime";
 import { AppShell, DockButton, HostFilePickerDialog } from "@lisca/ui";
 import { createFileRoute } from "@tanstack/react-router";
 import { useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { studioClient } from "../api/studio-port";
 import { StudioDock } from "../components/studio-dock";
@@ -17,7 +18,6 @@ export const Route = createFileRoute("/assay")({
 
 function AssayPage() {
   const navigate = useNavigate();
-  const hostPort = useMemo<StudioHostPort>(() => studioClient, []);
   const assayId = useStudioStore((state) => state.assayId);
   const setInfoStep = useStudioStore((state) => state.setInfoStep);
   const loadAssayJson = useStudioStore((state) => state.loadAssayJson);
@@ -28,7 +28,7 @@ function AssayPage() {
     setAssayPickerOpen(false);
     setOpeningAssay(true);
     try {
-      const contents = await hostPort.readTextFile(path);
+      const contents = await runClientEffect(studioClient.readTextFile(path));
       loadAssayJson(parseStudioAssayJson(contents));
       await navigate({ to: "/info" });
     } catch (cause) {
@@ -75,7 +75,7 @@ function AssayPage() {
       </AppShell.Body>
       <HostFilePickerDialog
         description="Choose a JSON file from a prior Studio export."
-        hostPort={hostPort}
+        hostPort={studioClient}
         mode="assay_json_file"
         open={assayPickerOpen}
         title="Open assay.json"

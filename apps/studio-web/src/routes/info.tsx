@@ -1,8 +1,8 @@
-import type { StudioHostPort } from "@lisca/client/ports/types";
 import { AppShell, DockButton } from "@lisca/ui";
 import { createFileRoute } from "@tanstack/react-router";
 import { useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { runClientEffect } from "@lisca/client/runtime";
+import { useState } from "react";
 
 import { studioClient } from "../api/studio-port";
 import { AssayOverwriteConfirmModal } from "../components/assay-overwrite-confirm-modal";
@@ -21,7 +21,6 @@ export const Route = createFileRoute("/info")({
 
 function InfoPage() {
   const navigate = useNavigate();
-  const hostPort = useMemo<StudioHostPort>(() => studioClient, []);
   const assayId = useStudioStore((state) => state.assayId);
   const infoStep = useStudioStore((state) => state.infoStep);
   const setInfoStep = useStudioStore((state) => state.setInfoStep);
@@ -47,7 +46,7 @@ function InfoPage() {
 
   const assayJsonExists = async () => {
     try {
-      const list = await hostPort.listDirectory(assayJsonSaveTo);
+      const list = await runClientEffect(studioClient.listDirectory(assayJsonSaveTo));
       return list.entries.some((entry) => !entry.isDirectory && entry.name === "assay.json");
     } catch {
       return false;
@@ -63,7 +62,9 @@ function InfoPage() {
         return;
       }
       const assayJson = buildStudioAssayJson({ assayId, dataSourceKind, info1, info2, info3 });
-      await hostPort.saveAssayJson(assayJsonSaveTo, JSON.stringify(assayJson, null, 2));
+      await runClientEffect(
+        studioClient.saveAssayJson(assayJsonSaveTo, JSON.stringify(assayJson, null, 2)),
+      );
       await goAlign();
     } catch (cause) {
       window.alert(cause instanceof Error ? cause.message : String(cause));
@@ -108,7 +109,7 @@ function InfoPage() {
         <AppShell.MainColumn>
           <AppShell.Main>
             <div className="mx-auto flex min-h-full w-full min-w-0 max-w-[52rem] flex-col items-center justify-center px-4 py-6 md:px-[100px] md:py-10">
-              {infoStep === 1 ? <BasicInfoStep1 hostPort={hostPort} /> : null}
+              {infoStep === 1 ? <BasicInfoStep1 hostPort={studioClient} /> : null}
               {infoStep === 2 ? <BasicInfoStep2 /> : null}
               {infoStep === 3 ? <BasicInfoStep3 /> : null}
             </div>

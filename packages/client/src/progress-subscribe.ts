@@ -2,8 +2,11 @@ import { formatSchemaError } from "@lisca/contracts";
 import * as Either from "effect/Either";
 import type * as ParseResult from "effect/ParseResult";
 
+import type { ClientEffect } from "./runtime.ts";
+import { runClientEffect } from "./runtime.ts";
+
 export type ProgressPollOptions<TProgress> = {
-  pollProgress: () => Promise<TProgress>;
+  pollProgress: () => ClientEffect<TProgress>;
   onProgress: (progress: TProgress) => void;
   isTerminal: (progress: TProgress) => boolean;
   createErrorProgress: (cause: unknown) => TProgress;
@@ -20,23 +23,25 @@ export function pollProgressLoop<TProgress>(options: ProgressPollOptions<TProgre
   let closed = false;
   let pollHandle: number | null = null;
 
-  const poll = async () => {
-    if (closed) return;
-    try {
-      const progress = await options.pollProgress();
-      onProgressSafe(progress);
-      if (options.isTerminal(progress)) return;
-    } catch (cause) {
-      onProgressSafe(options.createErrorProgress(cause));
-      return;
-    }
-    pollHandle = schedule(poll, pollIntervalMs);
-  };
-
   const onProgressSafe = (progress: TProgress) => {
     if (!closed) {
       options.onProgress(progress);
     }
+  };
+
+  const poll = () => {
+    if (closed) return;
+    void runClientEffect(options.pollProgress())
+      .then((progress) => {
+        if (closed) return;
+        onProgressSafe(progress);
+        if (options.isTerminal(progress)) return;
+        pollHandle = schedule(poll, pollIntervalMs);
+      })
+      .catch((cause) => {
+        if (closed) return;
+        onProgressSafe(options.createErrorProgress(cause));
+      });
   };
 
   void poll();
@@ -53,7 +58,7 @@ export type ProgressSubscriptionOptions<TProgress, TMessage> = {
   wsUrl: string;
   requestId: string;
   onProgress: (progress: TProgress) => void;
-  pollProgress: () => Promise<TProgress>;
+  pollProgress: () => ClientEffect<TProgress>;
   decodeMessage: (input: unknown) => Either.Either<TMessage, ParseResult.ParseError>;
   extractProgress: (message: TMessage) => TProgress;
   matchRequestId: (message: TMessage, requestId: string) => boolean;
@@ -110,8 +115,7 @@ export function subscribeProgress<TProgress, TMessage>(
 
   ws?.addEventListener("open", () => {
     clearSchedule(fallbackTimer);
-    void options
-      .pollProgress()
+    void runClientEffect(options.pollProgress())
       .then((progress) => {
         if (closed) return;
         options.onProgress(progress);

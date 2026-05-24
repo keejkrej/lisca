@@ -1,4 +1,5 @@
 import type { AnnotatorDataPort } from "@lisca/client/ports/types";
+import { ClientError } from "@lisca/client/client-error";
 import type {
   ContrastWindow,
   FrameResult,
@@ -6,11 +7,12 @@ import type {
   RoiFrameRequest,
 } from "@lisca/contracts";
 import { normalizeFrameContrast } from "@lisca/utils";
-import { Cause, Effect, Option } from "effect";
+import { Effect } from "effect";
+
+import { toErrorMessage } from "../api/annotator-client";
 import {
   createEmptyMask,
   decodeMaskBase64Png,
-  framePayloadToResult,
   type AnnotationValue,
 } from "../utils/annotation-utils";
 
@@ -40,26 +42,6 @@ class FrameCache {
 
 const roiFrameCache = new FrameCache(8);
 
-function toError(error: unknown, fallback: string): Error {
-  if (error instanceof Error) return error;
-  if (Cause.isCause(error)) {
-    const failure = Cause.failureOption(error);
-    if (Option.isSome(failure)) return toError(failure.value, fallback);
-    const defect = Cause.dieOption(error);
-    if (Option.isSome(defect)) return toError(defect.value, fallback);
-    return toError(Cause.squash(error), fallback);
-  }
-  if (
-    typeof error === "object" &&
-    error !== null &&
-    "message" in error &&
-    typeof (error as { message?: unknown }).message === "string"
-  ) {
-    return new Error((error as { message: string }).message);
-  }
-  return new Error(typeof error === "string" && error ? error : fallback);
-}
-
 function frameCacheKey(
   workspacePath: string,
   request: RoiFrameRequest,
@@ -87,18 +69,7 @@ export function loadRoiFrameEffect(
   const cached = roiFrameCache.get(cacheKey);
   if (cached) return Effect.succeed(cached);
 
-  return Effect.tryPromise({
-    try: (signal) => api.loadRoiFrame(workspacePath, request, contrast, signal),
-    catch: (cause) => toError(cause, "ROI frame request failed"),
-  }).pipe(
-    Effect.map((payload) => {
-      try {
-        return framePayloadToResult(payload);
-      } catch (cause) {
-        const detail = cause instanceof Error ? cause.message : String(cause);
-        throw new Error(`ROI frame decode failed: ${detail}`);
-      }
-    }),
+  return api.loadRoiFrame(workspacePath, request, contrast).pipe(
     Effect.map(normalizeFrameContrast),
     Effect.tap((frame) => Effect.sync(() => roiFrameCache.set(cacheKey, frame))),
     Effect.withSpan("annotator-web.load-roi-frame"),
@@ -133,32 +104,21 @@ export function loadRoiFrameWithAnnotationEffect(
   request: RoiFrameRequest,
   contrast: ContrastWindow | null,
 ) {
-  return Effect.tryPromise({
-    try: async (signal) => {
-      const framePromise = Effect.runPromise(
-        loadRoiFrameEffect(api, workspacePath, request, contrast),
-        { signal },
-      );
-      const annotationPromise = api.loadRoiFrameAnnotation(workspacePath, request, signal);
-      const [frame, loadedAnnotation] = await Promise.all([framePromise, annotationPromise]);
-      return {
-        frame,
-        annotation: await loadedAnnotationToValue(loadedAnnotation, frame),
-      };
-    },
-    catch: (cause) => toError(cause, "ROI frame and annotation request failed"),
+  return Effect.gen(function* () {
+    const frame = yield* loadRoiFrameEffect(api, workspacePath, request, contrast);
+    const loadedAnnotation = yield* api.loadRoiFrameAnnotation(workspacePath, request);
+    const annotation = yield* Effect.tryPromise({
+      try: () => loadedAnnotationToValue(loadedAnnotation, frame),
+      catch: (cause) =>
+        new ClientError({
+          message: toErrorMessage(cause, "ROI frame and annotation request failed"),
+          cause,
+        }),
+    });
+    return { frame, annotation };
   }).pipe(Effect.withSpan("annotator-web.load-roi-frame-with-annotation"));
 }
 
 export function effectErrorMessage(error: unknown, fallback: string): string {
-  const normalized = toError(error, fallback);
-  if (
-    normalized instanceof TypeError ||
-    normalized.message.includes("Failed to fetch") ||
-    normalized.message.includes("NetworkError") ||
-    normalized.message.includes("fetch failed")
-  ) {
-    return `${fallback}: server unreachable at 127.0.0.1:8766`;
-  }
-  return normalized.message;
+  return toErrorMessage(error, fallback);
 }

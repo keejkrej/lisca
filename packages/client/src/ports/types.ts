@@ -9,7 +9,6 @@ import type {
   CropRoiProgress,
   CropRoiRequest,
   CropRoiResponse,
-  FramePayload,
   FrameRequest,
   FrameResult,
   HostListDirectoryResult,
@@ -26,85 +25,88 @@ import type {
   WorkspaceScan,
 } from "@lisca/contracts";
 
-export type AlignerHostPort = {
-  listDirectory(path: string | null): Promise<HostListDirectoryResult>;
-  userHomeDirectory(): Promise<string>;
+import type { ClientEffect } from "../runtime.ts";
+
+export type HostPort = {
+  listDirectory(path: string | null, signal?: AbortSignal): ClientEffect<HostListDirectoryResult>;
+  userHomeDirectory(signal?: AbortSignal): ClientEffect<string>;
 };
 
-export type StudioHostPort = AlignerHostPort & {
-  readTextFile(path: string, signal?: AbortSignal): Promise<string>;
-  saveAssayJson(saveTo: string, contents: string): Promise<SaveAssayJsonResponse>;
-  saveResultPdf(request: SaveResultPdfRequest): Promise<SaveResultPdfResponse>;
+export type StudioHostPort = HostPort & {
+  readTextFile(path: string, signal?: AbortSignal): ClientEffect<string>;
+  saveAssayJson(saveTo: string, contents: string): ClientEffect<SaveAssayJsonResponse>;
+  saveResultPdf(request: SaveResultPdfRequest): ClientEffect<SaveResultPdfResponse>;
 };
 
-export type AnnotatorDataPort = AlignerHostPort & {
-  scanRoiWorkspace(workspacePath: string, signal?: AbortSignal): Promise<RoiWorkspaceScan>;
-  loadLabels(workspacePath: string, signal?: AbortSignal): Promise<AnnotationLabel[]>;
+export type AnnotatorDataPort = HostPort & {
+  scanRoiWorkspace(workspacePath: string, signal?: AbortSignal): ClientEffect<RoiWorkspaceScan>;
+  loadLabels(workspacePath: string, signal?: AbortSignal): ClientEffect<AnnotationLabel[]>;
   saveLabels(
     workspacePath: string,
     labels: AnnotationLabel[],
     signal?: AbortSignal,
-  ): Promise<AnnotationLabel[]>;
+  ): ClientEffect<AnnotationLabel[]>;
   loadRoiFrame(
     workspacePath: string,
     request: RoiFrameRequest,
     contrast: ContrastWindow | null,
     signal?: AbortSignal,
-  ): Promise<FramePayload>;
+  ): ClientEffect<FrameResult>;
   loadRoiFrameAnnotation(
     workspacePath: string,
     request: RoiFrameRequest,
     signal?: AbortSignal,
-  ): Promise<LoadedRoiFrameAnnotation>;
+  ): ClientEffect<LoadedRoiFrameAnnotation>;
   saveRoiFrameAnnotation(
     workspacePath: string,
     request: RoiFrameRequest,
     annotation: RoiFrameAnnotationPayload,
     signal?: AbortSignal,
-  ): Promise<RoiFrameAnnotation>;
+  ): ClientEffect<RoiFrameAnnotation>;
 };
 
 export type AnalysisDataPort = {
-  startAnalysis(request: AnalysisStartRequest): Promise<AnalysisProgress>;
-  getAnalysisProgress(requestId: string): Promise<AnalysisProgress>;
+  startAnalysis(request: AnalysisStartRequest): ClientEffect<AnalysisProgress>;
+  getAnalysisProgress(requestId: string): ClientEffect<AnalysisProgress>;
   onAnalysisProgress(
     requestId: string,
     onProgress: (progress: AnalysisProgress) => void,
   ): () => void;
 };
 
-export type AlignerDataPort = {
-  scanSource(source: AlignerSource): Promise<WorkspaceScan>;
+export type AlignerDataPort = HostPort & {
+  scanSource(source: AlignerSource): ClientEffect<WorkspaceScan>;
   loadFrame(
     source: AlignerSource,
     request: FrameRequest,
     contrast?: ContrastWindow | null,
-  ): Promise<FrameResult>;
-  loadAlignState(workspacePath: string, pos: number): Promise<SavedAlignState | null>;
+    signal?: AbortSignal,
+  ): ClientEffect<FrameResult>;
+  loadAlignState(workspacePath: string, pos: number): ClientEffect<SavedAlignState | null>;
   saveBbox(
     workspacePath: string,
     pos: number,
     csv: string,
     alignState: SavedAlignState,
-  ): Promise<SaveBboxResponse>;
-  autoExcludePreview(request: AutoExcludePreviewRequest): Promise<AutoExcludePreviewResponse>;
-  listSavedBboxPositions(workspacePath: string): Promise<number[]>;
-  cropRoi(request: CropRoiRequest): Promise<CropRoiResponse>;
-  cancelCropRoi(requestId: string): Promise<CropRoiProgress>;
+  ): ClientEffect<SaveBboxResponse>;
+  autoExcludePreview(request: AutoExcludePreviewRequest): ClientEffect<AutoExcludePreviewResponse>;
+  listSavedBboxPositions(workspacePath: string): ClientEffect<number[]>;
+  cropRoi(request: CropRoiRequest): ClientEffect<CropRoiResponse>;
+  cancelCropRoi(requestId: string): ClientEffect<CropRoiProgress>;
   onCropRoiProgress(requestId: string, onProgress: (progress: CropRoiProgress) => void): () => void;
-  roiPosExists(workspacePath: string, pos: number): Promise<boolean>;
+  roiPosExists(workspacePath: string, pos: number): ClientEffect<boolean>;
 };
 
 export type StudioDataPort = AlignerDataPort &
   AnalysisDataPort &
   StudioHostPort & {
-    scanRoiWorkspace(workspacePath: string, signal?: AbortSignal): Promise<RoiWorkspaceScan>;
-    getAnalysisResults(workspacePath: string): Promise<AnalysisProgress | null>;
-    getLatestAnalysisProgress(workspacePath: string): Promise<AnalysisProgress | null>;
+    scanRoiWorkspace(workspacePath: string, signal?: AbortSignal): ClientEffect<RoiWorkspaceScan>;
+    getAnalysisResults(workspacePath: string): ClientEffect<AnalysisProgress | null>;
+    getLatestAnalysisProgress(workspacePath: string): ClientEffect<AnalysisProgress | null>;
     loadRoiFrame(
       workspacePath: string,
       request: RoiFrameRequest,
       contrast?: ContrastWindow | null,
       signal?: AbortSignal,
-    ): Promise<FrameResult>;
+    ): ClientEffect<FrameResult>;
   };

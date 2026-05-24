@@ -5,12 +5,11 @@ import {
   useShellWorkspace,
 } from "@lisca/ui";
 import { clamp } from "@lisca/utils";
-import { Effect } from "effect";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
-  annotatorApi,
-  toAnnotatorErrorMessage,
+  annotatorClient,
+  toErrorMessage,
   useAnnotationLabelsQuery,
   useRoiWorkspaceScanQuery,
   useSaveAnnotationLabelsMutation,
@@ -185,7 +184,7 @@ export function useRoiPageState() {
     const error = scanQuery.error ?? labelsQuery.error;
     if (!error) return;
     setFrame(null);
-    setScanError(toAnnotatorErrorMessage(error, "ROI workspace load failed"));
+    setScanError(toErrorMessage(error, "ROI workspace load failed"));
   }, [
     labelsQuery.error,
     scanQuery.error,
@@ -249,11 +248,8 @@ export function useRoiPageState() {
         setAnnotationError(null);
         setStatus("Loading ROI frame");
       },
-      load: (signal) =>
-        Effect.runPromise(
-          loadRoiFrameWithAnnotationEffect(annotatorApi, workspacePath, request, contrast),
-          { signal },
-        ),
+      load: () =>
+        loadRoiFrameWithAnnotationEffect(annotatorClient, workspacePath, request, contrast),
       commit: ({ frame: nextFrame, annotation: nextAnnotation }) => {
         resetAnnotation(nextAnnotation);
         setFrame(nextFrame);
@@ -305,7 +301,7 @@ export function useRoiPageState() {
       annotation.markSaved();
       setStatus("Saved ROI annotation");
     } catch (cause) {
-      setSaveError(toAnnotatorErrorMessage(cause, "ROI annotation save failed"));
+      setSaveError(toErrorMessage(cause, "ROI annotation save failed"));
     } finally {
       setSaving(false);
     }
@@ -323,7 +319,7 @@ export function useRoiPageState() {
       setActiveLabelId(savedLabels[0]?.id ?? null);
       setLabelDialogOpen(false);
     } catch (cause) {
-      setLabelError(toAnnotatorErrorMessage(cause, "Annotation labels save failed"));
+      setLabelError(toErrorMessage(cause, "Annotation labels save failed"));
     }
   };
 

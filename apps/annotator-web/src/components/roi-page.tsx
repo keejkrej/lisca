@@ -1,6 +1,6 @@
 import { AppShell, HostFilePickerDialog } from "@lisca/ui";
 
-import { annotatorApi } from "../api/annotator-queries";
+import { annotatorClient } from "../api/annotator-port";
 import { useRoiPageState } from "../state/use-roi-page-state";
 import { createEmptyMask } from "../utils/annotation-utils";
 import { AnnotatorDock } from "./annotator-dock";
@@ -131,7 +131,7 @@ export function RoiPage() {
         </AppShell.Right>
       </AppShell.Body>
       <HostFilePickerDialog
-        hostPort={annotatorApi}
+        hostPort={annotatorClient}
         mode="workspace"
         open={page.filePickerOpen}
         title="Workspace folder"

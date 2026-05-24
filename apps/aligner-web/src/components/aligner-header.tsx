@@ -12,8 +12,9 @@ import {
   useShellWorkspace,
 } from "@lisca/ui";
 import type { AlignerSource, HostFilePickerMode } from "@lisca/contracts";
-import type { AlignerHostPort } from "@lisca/client/ports/types";
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
+
+import { alignerClient } from "../api/aligner-port.ts";
 
 function ToolsMenuChevron(props: { className?: string }) {
   return (
@@ -62,30 +63,6 @@ function ToolsMenu() {
   );
 }
 
-function createHttpHostPort(baseUrl: string): AlignerHostPort {
-  async function readJson<T>(url: string): Promise<T> {
-    const response = await fetch(url);
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(text || `Request failed with ${response.status}`);
-    }
-    return response.json() as Promise<T>;
-  }
-
-  return {
-    listDirectory(path) {
-      const url = new URL("/fs/list", baseUrl);
-      if (path) url.searchParams.set("path", path);
-      return readJson(url.toString());
-    },
-    userHomeDirectory() {
-      return readJson<{ path: string }>(new URL("/fs/home", baseUrl).toString()).then(
-        (result) => result.path,
-      );
-    },
-  };
-}
-
 function filePickerTitle(mode: HostFilePickerMode): string {
   if (mode === "workspace") return "Workspace folder";
   if (mode === "folder") return "Image folder";
@@ -104,8 +81,6 @@ export function AlignerHeader(props: { onSourcePicked: (source: AlignerSource | 
     mode: HostFilePickerMode;
     title: string;
   }>({ open: false, mode: "workspace", title: "" });
-
-  const hostPort = useMemo(() => createHttpHostPort("http://127.0.0.1:8765"), []);
 
   const openFilePicker = (mode: HostFilePickerMode) => {
     pickerModeRef.current = mode;
@@ -158,7 +133,7 @@ export function AlignerHeader(props: { onSourcePicked: (source: AlignerSource | 
       />
 
       <FolderSourceParseModal
-        hostPort={hostPort}
+        hostPort={alignerClient}
         path={folderSourcePath}
         onClose={() => setFolderSourcePath(null)}
         onConfirm={(source) => {
@@ -169,7 +144,7 @@ export function AlignerHeader(props: { onSourcePicked: (source: AlignerSource | 
       />
 
       <HostFilePickerDialog
-        hostPort={hostPort}
+        hostPort={alignerClient}
         mode={filePicker.mode}
         open={filePicker.open}
         title={filePicker.title}

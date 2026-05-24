@@ -5,6 +5,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
+import { runClientEffect } from "@lisca/client/runtime";
 import { toErrorMessage } from "../api/studio-client";
 import { studioClient } from "../api/studio-port";
 import { StudioDock } from "../components/studio-dock";
@@ -157,11 +158,13 @@ function ResultPage() {
       }
 
       const pdfBytes = await buildResultPdf(pages);
-      const response = await studioClient.saveResultPdf({
-        workspacePath: activeWorkspacePath,
-        fileName: RESULT_PDF_FILE_NAME,
-        contentsBase64: pdfBytesToBase64(pdfBytes),
-      });
+      const response = await runClientEffect(
+        studioClient.saveResultPdf({
+          workspacePath: activeWorkspacePath,
+          fileName: RESULT_PDF_FILE_NAME,
+          contentsBase64: pdfBytesToBase64(pdfBytes),
+        }),
+      );
       setSaveMessage(`Saved PDF (${expectedPlots} plot(s)) to ${response.path}`);
     } catch (cause) {
       setSaveMessage(toErrorMessage(cause, "Failed to save PDF"));
