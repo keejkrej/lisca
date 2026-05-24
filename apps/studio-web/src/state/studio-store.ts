@@ -17,8 +17,8 @@ import {
   ASSAY_FEATURE,
   DEFAULT_FOLDER_SOURCE_TEMPLATE,
 } from "@lisca/contracts";
-import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
+import { Atom, useAtom } from "@effect-atom/atom-react";
+import { useMemo, useRef } from "react";
 
 export type {
   AssayId,
@@ -276,13 +276,16 @@ export function parseStudioAssayJson(contents: string): StudioAssayJson {
   });
 }
 
-type StudioState = {
+type StudioWizardData = {
   assayId: AssayId | null;
   infoStep: InfoStep;
   dataSourceKind: StudioDataSourceKind;
   info1: BasicInfoStep1;
   info2: BasicInfoStep2;
   info3: BasicInfoStep3;
+};
+
+type StudioState = StudioWizardData & {
   loadAssayJson: (assayJson: StudioAssayJson) => void;
   setAssayId: (id: AssayId | null) => void;
   setInfoStep: (step: InfoStep) => void;
@@ -357,8 +360,8 @@ function normalizeInfo3(info3: BasicInfoStep3): BasicInfoStep3 {
   };
 }
 
-function mergeStudioState(persisted: unknown, current: StudioState): StudioState {
-  const persistedState = persisted as Partial<StudioState>;
+function mergeStudioState(persisted: unknown, current: StudioWizardData): StudioWizardData {
+  const persistedState = persisted as Partial<StudioWizardData>;
   const mergedInfo2 = persistedState.info2
     ? parsePersistedInfo2(persistedState.info2, persistedState.assayId ?? current.assayId)
     : current.info2;
@@ -372,91 +375,149 @@ function mergeStudioState(persisted: unknown, current: StudioState): StudioState
   };
 }
 
-export const useStudioStore = create<StudioState>()(
-  persist(
-    (set) => ({
-      assayId: ENABLED_ASSAY_ID,
-      infoStep: 1,
-      dataSourceKind: null,
-      info1: { ...initialInfo1 },
-      info2: { ...initialInfo2 },
-      info3: {
-        selectedSlideId: initialInfo3.selectedSlideId,
-        samplesBySlide: cloneSamplesBySlide(initialInfo3.samplesBySlide),
-      },
-      setInfoStep: (infoStep) => set({ infoStep }),
-      setDataSourceKind: (dataSourceKind) => set({ dataSourceKind }),
-      loadAssayJson: (assayJson) =>
-        set({
-          assayId: enabledAssayId(assayJson.assayId),
-          infoStep: 1,
-          dataSourceKind: assayJson.dataSourceKind ?? inferDataSourceKind(assayJson.info1.dataPath),
-          info1: { ...assayJson.info1 },
-          info2: {
-            ...assayJson.info2,
-            selectedFeatures: normalizeSelectedFeaturesForAssay(
-              assayJson.assayId,
-              assayJson.info2.selectedFeatures,
-            ),
-          },
-          info3: {
-            selectedSlideId: assayJson.info3.selectedSlideId,
-            samplesBySlide: cloneSamplesBySlide(assayJson.info3.samplesBySlide),
-          },
-        }),
-      setAssayId: (assayId) => {
-        const nextAssayId = enabledAssayId(assayId);
-        set((state) => ({
-          assayId: nextAssayId,
-          info2: {
-            ...state.info2,
-            selectedFeatures: normalizeSelectedFeaturesForAssay(
-              nextAssayId,
-              nextAssayId === ASSAY_NAME.GENE_EXPRESSION ? state.info2.selectedFeatures : [],
-            ),
-          },
-        }));
-      },
-      setInfo1: (patch) => set((state) => ({ info1: { ...state.info1, ...patch } })),
-      setInfo2: (patch) =>
-        set((state) => ({
-          info2: isGeneExpressionAssay(state.assayId)
-            ? {
-                ...state.info2,
-                ...patch,
-                selectedFeatures:
-                  patch.selectedFeatures == null
-                    ? state.info2.selectedFeatures
-                    : normalizeSelectedFeaturesForAssay(state.assayId, patch.selectedFeatures),
-              }
-            : {
-                ...state.info2,
-                ...patch,
-                selectedFeatures: [],
-              },
-        })),
-      setInfo3: (patch) => set((state) => ({ info3: { ...state.info3, ...patch } })),
-      updateInfo3Sample: (index, patch) =>
-        set((state) => {
-          const selectedSlideId = state.info3.selectedSlideId;
-          const samples = state.info3.samplesBySlide[selectedSlideId].map((row, i) =>
-            i === index ? { ...row, ...patch } : row,
-          );
-          return {
-            info3: {
-              ...state.info3,
-              samplesBySlide: {
-                ...state.info3.samplesBySlide,
-                [selectedSlideId]: samples,
-              },
-            },
-          };
-        }),
-    }),
-    {
-      name: "lisca-studio-session",
-      storage: createJSONStorage(() => sessionStorage),
-      merge: mergeStudioState,
+export const STUDIO_SESSION_KEY = "lisca-studio-session";
+
+function createInitialWizardData(): StudioWizardData {
+  return {
+    assayId: ENABLED_ASSAY_ID,
+    infoStep: 1,
+    dataSourceKind: null,
+    info1: { ...initialInfo1 },
+    info2: { ...initialInfo2 },
+    info3: {
+      selectedSlideId: initialInfo3.selectedSlideId,
+      samplesBySlide: cloneSamplesBySlide(initialInfo3.samplesBySlide),
     },
-  ),
-);
+  };
+}
+
+export function readStudioSession(): StudioWizardData | null {
+  try {
+    const raw = sessionStorage.getItem(STUDIO_SESSION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { state?: Partial<StudioWizardData> };
+    const persisted = parsed.state ?? (parsed as Partial<StudioWizardData>);
+    return mergeStudioState(persisted, createInitialWizardData());
+  } catch {
+    return null;
+  }
+}
+
+function writeStudioSession(state: StudioWizardData): void {
+  try {
+    sessionStorage.setItem(STUDIO_SESSION_KEY, JSON.stringify({ state }));
+  } catch {
+    // ignore
+  }
+}
+
+export function createInitialStudioWizardState(): StudioWizardData {
+  return createInitialWizardData();
+}
+
+export const studioWizardAtom = Atom.make(createInitialWizardData()).pipe(Atom.keepAlive);
+
+type StateUpdater<T> = T | ((current: T) => T);
+
+function patchStudioWizard(
+  set: (update: StateUpdater<StudioWizardData>) => void,
+  patch: Partial<StudioWizardData> | ((state: StudioWizardData) => StudioWizardData),
+): void {
+  set((state) => {
+    const next = typeof patch === "function" ? patch(state) : { ...state, ...patch };
+    writeStudioSession(next);
+    return next;
+  });
+}
+
+function bindStudioStore(
+  state: StudioWizardData,
+  set: (update: StateUpdater<StudioWizardData>) => void,
+): StudioState {
+  return {
+    ...state,
+    setInfoStep: (infoStep) => patchStudioWizard(set, { infoStep }),
+    setDataSourceKind: (dataSourceKind) => patchStudioWizard(set, { dataSourceKind }),
+    loadAssayJson: (assayJson) =>
+      patchStudioWizard(set, {
+        assayId: enabledAssayId(assayJson.assayId),
+        infoStep: 1,
+        dataSourceKind: assayJson.dataSourceKind ?? inferDataSourceKind(assayJson.info1.dataPath),
+        info1: { ...assayJson.info1 },
+        info2: {
+          ...assayJson.info2,
+          selectedFeatures: normalizeSelectedFeaturesForAssay(
+            assayJson.assayId,
+            assayJson.info2.selectedFeatures,
+          ),
+        },
+        info3: {
+          selectedSlideId: assayJson.info3.selectedSlideId,
+          samplesBySlide: cloneSamplesBySlide(assayJson.info3.samplesBySlide),
+        },
+      }),
+    setAssayId: (assayId) => {
+      const nextAssayId = enabledAssayId(assayId);
+      patchStudioWizard(set, (current) => ({
+        ...current,
+        assayId: nextAssayId,
+        info2: {
+          ...current.info2,
+          selectedFeatures: normalizeSelectedFeaturesForAssay(
+            nextAssayId,
+            nextAssayId === ASSAY_NAME.GENE_EXPRESSION ? current.info2.selectedFeatures : [],
+          ),
+        },
+      }));
+    },
+    setInfo1: (patch) => patchStudioWizard(set, (current) => ({ ...current, info1: { ...current.info1, ...patch } })),
+    setInfo2: (patch) =>
+      patchStudioWizard(set, (current) => ({
+        ...current,
+        info2: isGeneExpressionAssay(current.assayId)
+          ? {
+              ...current.info2,
+              ...patch,
+              selectedFeatures:
+                patch.selectedFeatures == null
+                  ? current.info2.selectedFeatures
+                  : normalizeSelectedFeaturesForAssay(current.assayId, patch.selectedFeatures),
+            }
+          : {
+              ...current.info2,
+              ...patch,
+              selectedFeatures: [],
+            },
+      })),
+    setInfo3: (patch) => patchStudioWizard(set, (current) => ({ ...current, info3: { ...current.info3, ...patch } })),
+    updateInfo3Sample: (index, patch) =>
+      patchStudioWizard(set, (current) => {
+        const selectedSlideId = current.info3.selectedSlideId;
+        const samples = current.info3.samplesBySlide[selectedSlideId].map((row, i) =>
+          i === index ? { ...row, ...patch } : row,
+        );
+        return {
+          ...current,
+          info3: {
+            ...current.info3,
+            samplesBySlide: {
+              ...current.info3.samplesBySlide,
+              [selectedSlideId]: samples,
+            },
+          },
+        };
+      }),
+  };
+}
+
+function useStudioStoreApi(): StudioState {
+  const [state, setState] = useAtom(studioWizardAtom);
+  return useMemo(() => bindStudioStore(state, setState), [state, setState]);
+}
+
+export function useStudioStore<T>(selector: (state: StudioState) => T): T {
+  const api = useStudioStoreApi();
+  const selectorRef = useRef(selector);
+  selectorRef.current = selector;
+  return selectorRef.current(api);
+}

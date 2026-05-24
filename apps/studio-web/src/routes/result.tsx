@@ -1,13 +1,22 @@
 import type { StudioAnalysisCsvFile } from "@lisca/contracts";
+import { resultData } from "@lisca/client/atoms";
+import { RegistryContext, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { AppShell, DockButton, Spinner, ViewportCard } from "@lisca/ui";
-import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
 import { runClientEffect } from "@lisca/client/runtime";
 import { toErrorMessage } from "../api/studio-client";
 import { studioClient } from "../api/studio-port";
+import {
+  analysisPanelsAtom,
+  analysisPanelsParamsKey,
+  analysisResultsAtom,
+  analysisResultsIdleAtom,
+  loadAnalysisPanelsAtom,
+  slideChannelLabelsCacheKey,
+} from "../atoms/studio-analysis-atoms";
 import { StudioDock } from "../components/studio-dock";
 import { StudioLeft } from "../components/studio-left";
 import { ResultPanelsGridView, plotOptionsForPanel } from "../result/plot-charts";
@@ -21,12 +30,6 @@ import {
   type ResultPlotSection,
   type SlideChannelLabels,
 } from "../result/plots";
-import {
-  fetchAnalysisPanels,
-  getCachedAnalysisPanels,
-  slideChannelLabelsCacheKey,
-  useAnalysisResultsQuery,
-} from "../result/queries";
 import {
   buildResultPdf,
   loadAllResultPlotPanels,
@@ -42,7 +45,7 @@ export const Route = createFileRoute("/result")({
 });
 
 function ResultPage() {
-  const queryClient = useQueryClient();
+  const registry = useContext(RegistryContext);
   const { workspacePath, analysisResultFiles, setAnalysisProgress, setAnalysisResultFiles } =
     useStudioAnnotateState();
   const info3 = useStudioStore((state) => state.info3);
@@ -95,19 +98,39 @@ function ResultPage() {
   );
 
   const hasStoredResultFiles = analysisResultFiles.length > 0;
-  const resultsQuery = useAnalysisResultsQuery(activeWorkspacePath, !hasStoredResultFiles);
+  const resultsAtom = activeWorkspacePath
+    ? analysisResultsAtom(activeWorkspacePath)
+    : analysisResultsIdleAtom;
+  const resultsQueryResult = useAtomValue(hasStoredResultFiles ? analysisResultsIdleAtom : resultsAtom);
+
+  const panelsParams = useCallback(
+    (file: StudioAnalysisCsvFile) => ({
+      workspacePath: activeWorkspacePath ?? "",
+      file,
+      timeseriesXScale,
+      slideChannelLabels,
+      slideChannelLabelsKey,
+    }),
+    [activeWorkspacePath, slideChannelLabels, slideChannelLabelsKey, timeseriesXScale],
+  );
+
+  const runLoadPanels = useAtomSet(loadAnalysisPanelsAtom, { mode: "promise" });
 
   const loadPanelsForFile = useCallback(
-    (file: StudioAnalysisCsvFile) =>
-      fetchAnalysisPanels(
-        queryClient,
-        activeWorkspacePath,
-        file,
-        timeseriesXScale,
-        slideChannelLabels,
-        slideChannelLabelsKey,
-      ),
-    [activeWorkspacePath, queryClient, slideChannelLabels, slideChannelLabelsKey, timeseriesXScale],
+    async (file: StudioAnalysisCsvFile): Promise<ResultPanel[]> => {
+      if (!activeWorkspacePath) throw new Error("No workspace selected");
+      return (await runLoadPanels(panelsParams(file))) as ResultPanel[];
+    },
+    [activeWorkspacePath, panelsParams, runLoadPanels],
+  );
+
+  const getCachedAnalysisPanels = useCallback(
+    (file: StudioAnalysisCsvFile): ResultPanel[] | undefined => {
+      if (!activeWorkspacePath) return undefined;
+      const atom = analysisPanelsAtom(analysisPanelsParamsKey(panelsParams(file)));
+      return resultData(registry.get(atom));
+    },
+    [activeWorkspacePath, panelsParams, registry],
   );
 
   const hasAnyResultFiles = analysisResultFiles.length > 0;
@@ -191,14 +214,15 @@ function ResultPage() {
   );
 
   useEffect(() => {
-    const results = resultsQuery.data;
+    if (hasStoredResultFiles) return;
+    const results = resultData(resultsQueryResult);
     if (!results) return;
 
     setAnalysisProgress(results);
     if (results.resultFiles && results.resultFiles.length > 0) {
       setAnalysisResultFiles(results.resultFiles);
     }
-  }, [resultsQuery.data, setAnalysisProgress, setAnalysisResultFiles]);
+  }, [hasStoredResultFiles, resultsQueryResult, setAnalysisProgress, setAnalysisResultFiles]);
 
   useEffect(() => {
     if (analysisResultFiles.length === 0) return;
@@ -220,14 +244,7 @@ function ResultPage() {
     setIsSectionLoading(true);
     setPanelError(null);
 
-    const getPanels = (file: StudioAnalysisCsvFile) =>
-      getCachedAnalysisPanels(
-        queryClient,
-        activeWorkspacePath,
-        file,
-        timeseriesXScale,
-        slideChannelLabelsKey,
-      );
+    const getPanels = (file: StudioAnalysisCsvFile) => getCachedAnalysisPanels(file);
 
     const collectPanels = (panelsByFile: ResultPanel[][]) =>
       activeSection === "timeseries"
@@ -236,7 +253,7 @@ function ResultPage() {
 
     const syncPanels = sectionFiles.map((file) => getPanels(file));
     if (syncPanels.every((panels) => panels !== undefined)) {
-      setSectionPanels(collectPanels(syncPanels));
+      setSectionPanels(collectPanels(syncPanels as ResultPanel[][]));
       setIsSectionLoading(false);
       return;
     }
@@ -262,13 +279,10 @@ function ResultPage() {
     };
   }, [
     activeSection,
-    activeWorkspacePath,
+    getCachedAnalysisPanels,
     loadPanelsForFile,
-    queryClient,
     sectionFilePathsKey,
     sectionFiles,
-    slideChannelLabelsKey,
-    timeseriesXScale,
   ]);
 
   const defaultInstruction =

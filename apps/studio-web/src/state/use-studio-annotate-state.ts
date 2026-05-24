@@ -7,15 +7,17 @@ import type {
   RoiPositionScan,
   RoiWorkspaceScan,
 } from "@lisca/contracts";
+import { resultData, resultFailureMessage, resultLoading } from "@lisca/client/atoms";
 import { useCanvasResourceTransaction, useCanvasTransientStatus } from "@lisca/ui";
 import { clamp } from "@lisca/utils";
+import { useAtomValue } from "@effect-atom/atom-react";
 import { useCallback, useEffect, useMemo } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
 import { runClientEffect } from "@lisca/client/runtime";
 import { toErrorMessage } from "../api/studio-client";
 import { studioClient } from "../api/studio-port";
-import { useStudioRoiWorkspaceScanQuery } from "../api/studio-queries";
+import { roiScanIdleAtom, roiWorkspaceScanAtom } from "../atoms/studio-query-atoms";
 import {
   annotateRequestKey,
   currentAnnotatePosition,
@@ -88,13 +90,11 @@ export function useStudioAnnotateState(): StudioAnnotateState {
   const navigate = useNavigate();
   const {
     workspacePath,
-    scan,
     selection,
     frame,
     contrastDomain,
     contrastMin,
     contrastMax,
-    scanLoading,
     frameLoading,
     scanError,
     frameError,
@@ -104,12 +104,10 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     analysisProgress,
     analysisResultFiles,
     setWorkspacePath,
-    setScan,
     setSelection,
     setFrame,
     setContrast,
     setContrastState,
-    setScanLoading,
     setFrameLoading,
     setScanError,
     setFrameError,
@@ -119,7 +117,11 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     setAnalysisProgress,
     setAnalysisResultFiles,
   } = useStudioAnnotateStore();
-  const scanQuery = useStudioRoiWorkspaceScanQuery(activeWorkspacePath);
+  const scanResult = useAtomValue(
+    activeWorkspacePath ? roiWorkspaceScanAtom(activeWorkspacePath) : roiScanIdleAtom,
+  );
+  const scan = resultData(scanResult) ?? null;
+  const scanLoading = Boolean(activeWorkspacePath && resultLoading(scanResult));
   const loadCanvasResources = useCanvasResourceTransaction();
   const position = useMemo(
     () => currentAnnotatePosition(scan, selection.pos),
@@ -159,24 +161,23 @@ export function useStudioAnnotateState(): StudioAnnotateState {
   }, [activeWorkspacePath, setWorkspacePath]);
 
   useEffect(() => {
-    setScanLoading(Boolean(activeWorkspacePath && scanQuery.isFetching));
-    if (scanQuery.isFetching) {
+    if (resultLoading(scanResult)) {
       setScanError(null);
       setStatus("Scanning ROI workspace");
     }
-  }, [activeWorkspacePath, scanQuery.isFetching, setScanError, setScanLoading, setStatus]);
+  }, [scanResult, setScanError, setStatus]);
 
   useEffect(() => {
-    if (!scanQuery.data || workspacePath !== activeWorkspacePath) return;
-    setScan(scanQuery.data);
+    if (!scan || workspacePath !== activeWorkspacePath) return;
     setStatus("ROI workspace loaded");
-  }, [activeWorkspacePath, scanQuery.data, setScan, setStatus, workspacePath]);
+  }, [activeWorkspacePath, scan, setStatus, workspacePath]);
 
   useEffect(() => {
-    if (!scanQuery.error) return;
+    const scanLoadError = resultFailureMessage(scanResult);
+    if (!scanLoadError) return;
     setFrame(null);
-    setScanError(toErrorMessage(scanQuery.error, "ROI workspace load failed"));
-  }, [scanQuery.error, setFrame, setScanError]);
+    setScanError(toErrorMessage(scanLoadError, "ROI workspace load failed"));
+  }, [scanResult, setFrame, setScanError]);
 
   useEffect(() => {
     const firstPosition = scan?.positions[0] ?? null;

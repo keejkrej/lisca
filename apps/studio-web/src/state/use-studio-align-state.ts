@@ -9,6 +9,7 @@ import type {
   SavedAlignState,
   WorkspaceScan,
 } from "@lisca/contracts";
+import { resultData, resultFailureMessage, resultLoading } from "@lisca/client/atoms";
 import { useCanvasResourceTransaction } from "@lisca/ui";
 import {
   alignStateFromCurrent,
@@ -22,11 +23,16 @@ import {
 } from "@lisca/utils";
 import { Effect } from "effect";
 import { useNavigate } from "@tanstack/react-router";
+import { useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { toErrorMessage } from "../api/studio-client";
 import { studioClient } from "../api/studio-port";
-import { useAutoExcludePreviewMutation, useScanSourceQuery } from "../api/studio-queries";
+import {
+  autoExcludePreviewAtom,
+  scanIdleAtom,
+  scanSourceAtom,
+} from "../atoms/studio-query-atoms";
 import { effectErrorMessage, loadFrameEffect } from "../effects/frame-loader";
 import { isDoneCropStatus } from "@lisca/client/crop-status";
 import { runClientEffect } from "@lisca/client/runtime";
@@ -153,8 +159,10 @@ export function useStudioAlignState(): StudioAlignState {
     () => (scan ? lockedStudioSelection(scan, selection, maskChannel) : selection),
     [maskChannel, scan, selection],
   );
-  const scanQuery = useScanSourceQuery(source);
-  const autoExcludePreview = useAutoExcludePreviewMutation();
+  const scanResult = useAtomValue(
+    activeSourceKey ? scanSourceAtom(activeSourceKey) : scanIdleAtom,
+  );
+  const runAutoExcludePreview = useAtomSet(autoExcludePreviewAtom, { mode: "promise" });
   const navigate = useNavigate();
 
   const currentExcludedCells = useMemo(
@@ -185,22 +193,24 @@ export function useStudioAlignState(): StudioAlignState {
   }, [activeSource, setSource]);
 
   useEffect(() => {
-    if (source && scanQuery.isFetching) {
+    if (source && resultLoading(scanResult)) {
       setError(null);
       setStatus("Scanning source");
     }
-  }, [scanQuery.isFetching, setError, setStatus, source]);
+  }, [scanResult, setError, setStatus, source]);
 
   useEffect(() => {
-    if (!scanQuery.data || !activeSourceKey || scanSourceKey === activeSourceKey) return;
-    applySourceScan(activeSourceKey, scanQuery.data);
-  }, [activeSourceKey, applySourceScan, scanQuery.data, scanSourceKey]);
+    const scanData = resultData(scanResult);
+    if (!scanData || !activeSourceKey || scanSourceKey === activeSourceKey) return;
+    applySourceScan(activeSourceKey, scanData);
+  }, [activeSourceKey, applySourceScan, scanResult, scanSourceKey]);
 
   useEffect(() => {
-    if (!scanQuery.error) return;
+    const scanLoadError = resultFailureMessage(scanResult);
+    if (!scanLoadError) return;
     setFrame(null);
-    setError(toErrorMessage(scanQuery.error, "Source scan failed"));
-  }, [scanQuery.error, setError, setFrame]);
+    setError(toErrorMessage(scanLoadError, "Source scan failed"));
+  }, [scanResult, setError, setFrame]);
 
   useEffect(() => {
     if (!scan) return;
@@ -273,7 +283,7 @@ export function useStudioAlignState(): StudioAlignState {
     if (!source || !frame) return [];
     const cells = enumerateVisibleAlignGridCells(frame, grid);
     if (cells.length === 0) return [];
-    const preview = await autoExcludePreview.mutateAsync({
+    const preview = await runAutoExcludePreview({
       source,
       selection: lockedSelection,
       cells,
@@ -281,7 +291,7 @@ export function useStudioAlignState(): StudioAlignState {
     return preview.cellScores
       .filter((cell) => cell.score <= preview.threshold)
       .map(({ i, j }) => ({ i, j }));
-  }, [autoExcludePreview, frame, grid, lockedSelection, source]);
+  }, [frame, grid, lockedSelection, runAutoExcludePreview, source]);
 
   const positionIndex = useMemo(
     () => scan?.positions.indexOf(lockedSelection.pos) ?? -1,
@@ -549,7 +559,7 @@ export function useStudioAlignState(): StudioAlignState {
     workspacePath,
     source,
     scan,
-    scanLoading: source != null && scanQuery.isFetching,
+    scanLoading: source != null && resultLoading(scanResult),
     frameLoading,
     error,
     selection: lockedSelection,

@@ -1,0 +1,72 @@
+import type {
+  AlignerSource,
+  AutoExcludePreviewRequest,
+  AutoExcludePreviewResponse,
+  WorkspaceScan,
+} from "@lisca/contracts";
+import { Atom, type Result } from "@effect-atom/atom-react";
+import { Effect } from "effect";
+
+import { AlignerPortService } from "../ports.ts";
+import { ReactivityKeys } from "../reactivity.ts";
+import type { AppRuntime } from "../runtime.ts";
+import type { ClientError } from "../../client-error.ts";
+
+export type AlignerQueryAtoms = {
+  scanSourceAtom: (sourceKey: string) => Atom.Atom<Result.Result<WorkspaceScan, ClientError>>;
+  savedBboxPositionsAtom: (workspacePath: string) => Atom.Atom<Result.Result<number[], ClientError>>;
+  autoExcludePreviewAtom: Atom.AtomResultFn<
+    AutoExcludePreviewRequest,
+    AutoExcludePreviewResponse,
+    ClientError
+  >;
+};
+
+export function createAlignerQueryAtoms(runtime: AppRuntime<AlignerPortService>): AlignerQueryAtoms {
+  const scanSourceAtom = Atom.family((sourceKey: string) =>
+    runtime
+      .atom(
+        Effect.gen(function* () {
+          const port = yield* AlignerPortService;
+          const source = JSON.parse(sourceKey) as AlignerSource;
+          return yield* port.scanSource(source);
+        }),
+      )
+      .pipe(
+        Atom.keepAlive,
+        Atom.withReactivity([ReactivityKeys.scanSource(sourceKey)]),
+      ),
+  );
+
+  const savedBboxPositionsAtom = Atom.family((workspacePath: string) =>
+    runtime
+      .atom(
+        Effect.gen(function* () {
+          const port = yield* AlignerPortService;
+          return yield* port.listSavedBboxPositions(workspacePath);
+        }),
+      )
+      .pipe(
+        Atom.keepAlive,
+        Atom.withReactivity([ReactivityKeys.savedBboxPositions(workspacePath)]),
+      ),
+  );
+
+  const autoExcludePreviewAtom = runtime.fn(
+    Effect.fnUntraced(function* (request: AutoExcludePreviewRequest) {
+      const port = yield* AlignerPortService;
+      return yield* port.autoExcludePreview(request);
+    }),
+  );
+
+  return {
+    scanSourceAtom,
+    savedBboxPositionsAtom,
+    autoExcludePreviewAtom,
+  };
+}
+
+export type ScanSourceAtom = AlignerQueryAtoms["scanSourceAtom"];
+export type SavedBboxPositionsAtom = AlignerQueryAtoms["savedBboxPositionsAtom"];
+
+export type { WorkspaceScan, AutoExcludePreviewResponse };

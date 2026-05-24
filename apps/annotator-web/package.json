@@ -10,17 +10,16 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@effect-atom/atom-react": "catalog:",
     "@lisca/client": "workspace:*",
     "@lisca/contracts": "workspace:*",
     "@lisca/ui": "workspace:*",
     "@lisca/utils": "workspace:*",
-    "@tanstack/react-query": "catalog:",
     "@tanstack/react-router": "catalog:",
     "effect": "catalog:",
     "lucide-react": "^0.511.0",
     "react": "catalog:",
-    "react-dom": "catalog:",
-    "zustand": "catalog:"
+    "react-dom": "catalog:"
   },
   "devDependencies": {
     "@tailwindcss/vite": "catalog:",

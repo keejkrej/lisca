@@ -1,9 +1,9 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider, createHashHistory, createRouter } from "@tanstack/react-router";
 import { ShellServerProvider, ShellThemeProvider, ShellWorkspaceProvider } from "@lisca/ui";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
+import { StudioAtomsProvider } from "./components/studio-atoms-provider";
 import "./index.css";
 import { routeTree } from "./routeTree.gen";
 
@@ -11,8 +11,6 @@ const router = createRouter({
   routeTree,
   history: createHashHistory(),
 });
-
-const queryClient = new QueryClient();
 
 declare module "@tanstack/react-router" {
   interface Register {
@@ -22,7 +20,7 @@ declare module "@tanstack/react-router" {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
+    <StudioAtomsProvider>
       <ShellThemeProvider>
         <ShellServerProvider defaultPort={8767}>
           <ShellWorkspaceProvider>
@@ -30,6 +28,6 @@ createRoot(document.getElementById("root")!).render(
           </ShellWorkspaceProvider>
         </ShellServerProvider>
       </ShellThemeProvider>
-    </QueryClientProvider>
+    </StudioAtomsProvider>
   </StrictMode>,
 );

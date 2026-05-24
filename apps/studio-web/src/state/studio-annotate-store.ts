@@ -7,8 +7,8 @@ import type {
   RoiWorkspaceScan,
   StudioAnalysisCsvFile,
 } from "@lisca/contracts";
-import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
+import { Atom, useAtom } from "@effect-atom/atom-react";
+import { useMemo } from "react";
 
 export type StudioAnnotateSelection = {
   pos: number | null;
@@ -18,20 +18,20 @@ export type StudioAnnotateSelection = {
   zIndex: number;
 };
 
+type StateUpdater<T> = T | ((current: T) => T);
+
 type StudioAnnotateStoreState = {
   analysisStartConfirm: boolean;
   analysisRequestId: string | null;
   analysisProgress: AnalysisProgress | null;
   analysisResultFiles: StudioAnalysisCsvFile[];
   workspacePath: string | null;
-  scan: RoiWorkspaceScan | null;
   selection: StudioAnnotateSelection;
   frame: FrameResult | null;
   contrast: ContrastWindow | null;
   contrastDomain: ContrastWindow;
   contrastMin: number;
   contrastMax: number;
-  scanLoading: boolean;
   frameLoading: boolean;
   scanError: string | null;
   frameError: string | null;
@@ -44,12 +44,10 @@ type StudioAnnotateStoreActions = {
   setAnalysisRequestId: (requestId: string | null) => void;
   setAnalysisProgress: (progress: AnalysisProgress | null) => void;
   setAnalysisResultFiles: (files: StudioAnalysisCsvFile[]) => void;
-  setScan: (scan: RoiWorkspaceScan | null) => void;
   setSelection: (patch: Partial<StudioAnnotateSelection>) => void;
   setFrame: (frame: FrameResult | null) => void;
   setContrast: (contrast: ContrastWindow | null) => void;
   setContrastState: (frame: FrameResult) => void;
-  setScanLoading: (scanLoading: boolean) => void;
   setFrameLoading: (frameLoading: boolean) => void;
   setScanError: (scanError: string | null) => void;
   setFrameError: (frameError: string | null) => void;
@@ -74,14 +72,12 @@ function createInitialState(): StudioAnnotateStoreState {
     analysisProgress: null,
     analysisResultFiles: [],
     workspacePath: null,
-    scan: null,
     selection: defaultSelection,
     frame: null,
     contrast: null,
     contrastDomain: defaultContrastDomain,
     contrastMin: 0,
     contrastMax: 255,
-    scanLoading: false,
     frameLoading: false,
     scanError: null,
     frameError: null,
@@ -110,70 +106,157 @@ export function annotateRequestKey(
   return `${position.pos}:${roi.roi}:${selection.channel}:${time}:${z}`;
 }
 
-export const useStudioAnnotateStore = create<StudioAnnotateStore>()(
-  persist(
-    (set) => ({
-      ...createInitialState(),
-      setWorkspacePath: (workspacePath) =>
-        set((state) => {
-          if (state.workspacePath === workspacePath) return state;
-          return {
-            ...state,
-            workspacePath,
-            analysisStartConfirm: false,
-            analysisRequestId: null,
-            analysisProgress: null,
-            analysisResultFiles: [],
-            scan: null,
-            selection: defaultSelection,
-            frame: null,
-            contrast: null,
-            contrastDomain: defaultContrastDomain,
-            contrastMin: 0,
-            contrastMax: 255,
-            scanError: null,
-            frameError: null,
-            status: null,
-          };
-        }),
-      setAnalysisStartConfirm: (analysisStartConfirm) =>
-        set((state) => ({ ...state, analysisStartConfirm })),
-      setAnalysisRequestId: (analysisRequestId) =>
-        set((state) => ({ ...state, analysisRequestId })),
-      setAnalysisProgress: (analysisProgress) => set((state) => ({ ...state, analysisProgress })),
-      setAnalysisResultFiles: (analysisResultFiles) =>
-        set((state) => ({ ...state, analysisResultFiles })),
-      setScan: (scan) => set((state) => ({ ...state, scan })),
-      setSelection: (patch) =>
-        set((state) => ({ ...state, selection: { ...state.selection, ...patch } })),
-      setFrame: (frame) => set((state) => ({ ...state, frame })),
-      setContrast: (contrast) =>
-        set((state) => ({
-          ...state,
-          contrast,
-          contrastMin: contrast?.min ?? state.contrastMin,
-          contrastMax: contrast?.max ?? state.contrastMax,
-        })),
-      setContrastState: (frame) =>
-        set((state) => ({
-          ...state,
-          contrastDomain: frame.contrastDomain ?? defaultContrastDomain,
-          contrastMin: frame.appliedContrast?.min ?? state.contrastMin,
-          contrastMax: frame.appliedContrast?.max ?? state.contrastMax,
-        })),
-      setScanLoading: (scanLoading) => set((state) => ({ ...state, scanLoading })),
-      setFrameLoading: (frameLoading) => set((state) => ({ ...state, frameLoading })),
-      setScanError: (scanError) => set((state) => ({ ...state, scanError })),
-      setFrameError: (frameError) => set((state) => ({ ...state, frameError })),
-      setStatus: (status) => set((state) => ({ ...state, status })),
-    }),
-    {
-      name: "lisca-studio-annotate-session",
-      storage: createJSONStorage(() => sessionStorage),
-      partialize: (state) => ({
-        workspacePath: state.workspacePath,
-        selection: state.selection,
+export const STUDIO_ANNOTATE_SESSION_KEY = "lisca-studio-annotate-session";
+
+export type StudioAnnotateSessionPersist = Pick<
+  StudioAnnotateStoreState,
+  "workspacePath" | "selection"
+>;
+
+export function readStudioAnnotateSession(): StudioAnnotateSessionPersist | null {
+  try {
+    const raw = sessionStorage.getItem(STUDIO_ANNOTATE_SESSION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { state?: StudioAnnotateSessionPersist };
+    return parsed.state ?? (parsed as StudioAnnotateSessionPersist);
+  } catch {
+    return null;
+  }
+}
+
+function writeStudioAnnotateSession(state: StudioAnnotateStoreState): void {
+  try {
+    sessionStorage.setItem(
+      STUDIO_ANNOTATE_SESSION_KEY,
+      JSON.stringify({
+        state: {
+          workspacePath: state.workspacePath,
+          selection: state.selection,
+        } satisfies StudioAnnotateSessionPersist,
       }),
-    },
-  ),
-);
+    );
+  } catch {
+    // ignore
+  }
+}
+
+export function createInitialStudioAnnotateUiState(): StudioAnnotateStoreState {
+  return createInitialState();
+}
+
+export const studioAnnotateUiAtom = Atom.make(createInitialState()).pipe(Atom.keepAlive);
+
+function patchStudioAnnotateUi(
+  set: (update: StateUpdater<StudioAnnotateStoreState>) => void,
+  patch: Partial<StudioAnnotateStoreState> | ((state: StudioAnnotateStoreState) => StudioAnnotateStoreState),
+): void {
+  set((state) => {
+    const next = typeof patch === "function" ? patch(state) : { ...state, ...patch };
+    writeStudioAnnotateSession(next);
+    return next;
+  });
+}
+
+export const studioAnnotateUiActions = {
+  setWorkspacePath(set: (update: StateUpdater<StudioAnnotateStoreState>) => void, workspacePath: string | null) {
+    patchStudioAnnotateUi(set, (state) => {
+      if (state.workspacePath === workspacePath) return state;
+      return {
+        ...state,
+        workspacePath,
+        analysisStartConfirm: false,
+        analysisRequestId: null,
+        analysisProgress: null,
+        analysisResultFiles: [],
+        selection: defaultSelection,
+        frame: null,
+        contrast: null,
+        contrastDomain: defaultContrastDomain,
+        contrastMin: 0,
+        contrastMax: 255,
+        scanError: null,
+        frameError: null,
+        status: null,
+      };
+    });
+  },
+  setAnalysisStartConfirm(set: (update: StateUpdater<StudioAnnotateStoreState>) => void, value: boolean) {
+    patchStudioAnnotateUi(set, (state) => ({ ...state, analysisStartConfirm: value }));
+  },
+  setAnalysisRequestId(set: (update: StateUpdater<StudioAnnotateStoreState>) => void, requestId: string | null) {
+    patchStudioAnnotateUi(set, (state) => ({ ...state, analysisRequestId: requestId }));
+  },
+  setAnalysisProgress(
+    set: (update: StateUpdater<StudioAnnotateStoreState>) => void,
+    progress: AnalysisProgress | null,
+  ) {
+    patchStudioAnnotateUi(set, (state) => ({ ...state, analysisProgress: progress }));
+  },
+  setAnalysisResultFiles(
+    set: (update: StateUpdater<StudioAnnotateStoreState>) => void,
+    files: StudioAnalysisCsvFile[],
+  ) {
+    patchStudioAnnotateUi(set, (state) => ({ ...state, analysisResultFiles: files }));
+  },
+  setSelection(set: (update: StateUpdater<StudioAnnotateStoreState>) => void, patch: Partial<StudioAnnotateSelection>) {
+    patchStudioAnnotateUi(set, (state) => ({ ...state, selection: { ...state.selection, ...patch } }));
+  },
+  setFrame(set: (update: StateUpdater<StudioAnnotateStoreState>) => void, frame: FrameResult | null) {
+    patchStudioAnnotateUi(set, (state) => ({ ...state, frame }));
+  },
+  setContrast(set: (update: StateUpdater<StudioAnnotateStoreState>) => void, contrast: ContrastWindow | null) {
+    patchStudioAnnotateUi(set, (state) => ({
+      ...state,
+      contrast,
+      contrastMin: contrast?.min ?? state.contrastMin,
+      contrastMax: contrast?.max ?? state.contrastMax,
+    }));
+  },
+  setContrastState(set: (update: StateUpdater<StudioAnnotateStoreState>) => void, frame: FrameResult) {
+    patchStudioAnnotateUi(set, (state) => ({
+      ...state,
+      contrastDomain: frame.contrastDomain ?? defaultContrastDomain,
+      contrastMin: frame.appliedContrast?.min ?? state.contrastMin,
+      contrastMax: frame.appliedContrast?.max ?? state.contrastMax,
+    }));
+  },
+  setFrameLoading(set: (update: StateUpdater<StudioAnnotateStoreState>) => void, frameLoading: boolean) {
+    patchStudioAnnotateUi(set, (state) => ({ ...state, frameLoading }));
+  },
+  setScanError(set: (update: StateUpdater<StudioAnnotateStoreState>) => void, scanError: string | null) {
+    patchStudioAnnotateUi(set, (state) => ({ ...state, scanError }));
+  },
+  setFrameError(set: (update: StateUpdater<StudioAnnotateStoreState>) => void, frameError: string | null) {
+    patchStudioAnnotateUi(set, (state) => ({ ...state, frameError }));
+  },
+  setStatus(set: (update: StateUpdater<StudioAnnotateStoreState>) => void, status: string | null) {
+    patchStudioAnnotateUi(set, (state) => ({ ...state, status }));
+  },
+};
+
+function bindStudioAnnotateStore(
+  state: StudioAnnotateStoreState,
+  set: (update: StateUpdater<StudioAnnotateStoreState>) => void,
+): StudioAnnotateStore {
+  return {
+    ...state,
+    setWorkspacePath: (workspacePath) => studioAnnotateUiActions.setWorkspacePath(set, workspacePath),
+    setAnalysisStartConfirm: (value) => studioAnnotateUiActions.setAnalysisStartConfirm(set, value),
+    setAnalysisRequestId: (requestId) => studioAnnotateUiActions.setAnalysisRequestId(set, requestId),
+    setAnalysisProgress: (progress) => studioAnnotateUiActions.setAnalysisProgress(set, progress),
+    setAnalysisResultFiles: (files) => studioAnnotateUiActions.setAnalysisResultFiles(set, files),
+    setSelection: (patch) => studioAnnotateUiActions.setSelection(set, patch),
+    setFrame: (frame) => studioAnnotateUiActions.setFrame(set, frame),
+    setContrast: (contrast) => studioAnnotateUiActions.setContrast(set, contrast),
+    setContrastState: (frame) => studioAnnotateUiActions.setContrastState(set, frame),
+    setFrameLoading: (frameLoading) => studioAnnotateUiActions.setFrameLoading(set, frameLoading),
+    setScanError: (scanError) => studioAnnotateUiActions.setScanError(set, scanError),
+    setFrameError: (frameError) => studioAnnotateUiActions.setFrameError(set, frameError),
+    setStatus: (status) => studioAnnotateUiActions.setStatus(set, status),
+  };
+}
+
+export function useStudioAnnotateStore(): StudioAnnotateStore {
+  const [state, setState] = useAtom(studioAnnotateUiAtom);
+  return useMemo(() => bindStudioAnnotateStore(state, setState), [state, setState]);
+}

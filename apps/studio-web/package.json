@@ -10,20 +10,19 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@effect-atom/atom-react": "catalog:",
     "@lisca/client": "workspace:*",
     "@lisca/contracts": "workspace:*",
     "@lisca/ui": "workspace:*",
     "@lisca/utils": "workspace:*",
     "@observablehq/plot": "^0.6.17",
-    "@tanstack/react-query": "catalog:",
     "@tanstack/react-router": "catalog:",
     "effect": "catalog:",
     "html2canvas-pro": "^2.0.2",
     "jspdf": "^4.2.1",
     "lucide-react": "^0.511.0",
     "react": "catalog:",
-    "react-dom": "catalog:",
-    "zustand": "catalog:"
+    "react-dom": "catalog:"
   },
   "devDependencies": {
     "@tailwindcss/vite": "catalog:",

@@ -10,6 +10,9 @@ import type {
   SavedAlignState,
   WorkspaceScan,
 } from "@lisca/contracts";
+import { resultData, resultFailureMessage, resultLoading } from "@lisca/client/atoms";
+import { isDoneCropStatus } from "@lisca/client/crop-status";
+import { runClientEffect } from "@lisca/client/runtime";
 import { useCanvasResourceTransaction, useShellWorkspace } from "@lisca/ui";
 import {
   alignStateFromCurrent,
@@ -20,25 +23,25 @@ import {
   mergeExcludedAlignGridCells,
   type AlignGridToolMode,
 } from "@lisca/utils";
+import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { Effect } from "effect";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { alignerClient } from "../api/aligner-port";
+import { toErrorMessage } from "../api/aligner-client";
 import {
-  alignerClient,
-  toErrorMessage,
-  useAutoExcludePreviewMutation,
-  useSavedBboxPositionsQuery,
-  useScanSourceQuery,
-} from "../api/aligner-queries";
-import { effectErrorMessage, loadFrameEffect } from "../effects/frame-loader";
-import { isDoneCropStatus } from "@lisca/client/crop-status";
-import { runClientEffect } from "@lisca/client/runtime";
+  autoExcludePreviewAtom,
+  scanIdleAtom,
+  scanSourceAtom,
+} from "../atoms/aligner-query-atoms";
 import {
+  alignerUiActions,
+  alignerUiAtom,
   savedAlignStateKey,
   sourceKey,
-  useAlignerStore,
   type ExcludedByPosition,
-} from "./aligner-store";
+} from "../atoms/aligner-ui-atoms";
+import { effectErrorMessage, loadFrameEffect } from "../effects/frame-loader";
 
 const emptyExcludedCells: AlignGridCellCoord[] = [];
 
@@ -100,50 +103,70 @@ export type CropConfirmState = {
 
 export function useAlignState(): AlignState {
   const workspace = useShellWorkspace();
+  const [ui, setUi] = useAtom(alignerUiAtom);
   const {
     workspacePath,
     source,
-    setSource,
     scan,
     scanSourceKey,
     selection,
     loadedFrameSelection,
-    setSelection,
     contrast,
-    setContrast,
     frame,
-    setFrame,
     grid,
-    setGrid,
     toolMode,
-    setToolMode,
     patternZoomLocked,
-    setPatternZoomLocked,
     excludedCellsByPosition,
-    setExcludedCellsForCurrentPosition,
     frameLoading,
-    setFrameLoading,
     saving,
-    setSaving,
     cropProgress,
-    setCropProgress,
     error,
-    setError,
     status,
-    setStatus,
-    setWorkspacePath,
-    applySourceScan,
-    applyLoadedFrame,
-  } = useAlignerStore();
+  } = ui;
+
+  const setSource = useCallback(
+    (next: AlignerSource | null) => alignerUiActions.setSource(setUi, next),
+    [setUi],
+  );
+  const setSelection = useCallback(
+    (patch: Partial<FrameRequest>) => alignerUiActions.setSelection(setUi, patch),
+    [setUi],
+  );
+  const setContrast = useCallback(
+    (next: ContrastWindow | null) => alignerUiActions.setContrast(setUi, next),
+    [setUi],
+  );
+  const setGrid = useCallback(
+    (next: AlignGridState | ((current: AlignGridState) => AlignGridState)) =>
+      alignerUiActions.setGrid(setUi, next),
+    [setUi],
+  );
+  const setToolMode = useCallback(
+    (mode: AlignGridToolMode) => alignerUiActions.setToolMode(setUi, mode),
+    [setUi],
+  );
+  const setPatternZoomLocked = useCallback(
+    (locked: boolean) => alignerUiActions.setPatternZoomLocked(setUi, locked),
+    [setUi],
+  );
+  const setExcludedCellsForCurrentPosition = useCallback(
+    (cells: Iterable<AlignGridCellCoord>) =>
+      alignerUiActions.setExcludedCellsForCurrentPosition(setUi, cells),
+    [setUi],
+  );
+
   const loadCanvasResources = useCanvasResourceTransaction();
   const cropRequestIdRef = useRef<string | null>(null);
   const [cropConfirm, setCropConfirm] = useState<CropConfirmState | null>(null);
   const [variationExcludePreview, setVariationExcludePreview] =
     useState<VariationExcludePreview | null>(null);
+  const [variationExcludeLoading, setVariationExcludeLoading] = useState(false);
+
   const activeSourceKey = sourceKey(source);
-  const scanQuery = useScanSourceQuery(source);
-  const savedPositionsQuery = useSavedBboxPositionsQuery(workspacePath, Boolean(workspacePath));
-  const autoExcludePreview = useAutoExcludePreviewMutation();
+  const scanResult = useAtomValue(
+    activeSourceKey ? scanSourceAtom(activeSourceKey) : scanIdleAtom,
+  );
+  const runAutoExcludePreview = useAtomSet(autoExcludePreviewAtom, { mode: "promise" });
 
   const currentExcludedCells = useMemo(
     () => excludedCellsByPosition[selection.pos] ?? emptyExcludedCells,
@@ -154,6 +177,7 @@ export function useAlignState(): AlignState {
     [excludedCellsByPosition, loadedFrameSelection?.pos, selection.pos],
   );
   const cropping = cropProgress != null && !isDoneCropStatus(cropProgress.status);
+  const scanLoading = source != null && resultLoading(scanResult);
 
   const visibleCounts = useMemo(
     () =>
@@ -169,8 +193,8 @@ export function useAlignState(): AlignState {
       workspace.setWorkspacePath(workspacePath);
       return;
     }
-    setWorkspacePath(workspace.workspacePath);
-  }, [setWorkspacePath, workspace, workspacePath]);
+    alignerUiActions.setWorkspacePath(setUi, workspace.workspacePath);
+  }, [setUi, workspace, workspacePath]);
 
   useEffect(() => {
     const sourcePath = source?.path ?? null;
@@ -180,35 +204,37 @@ export function useAlignState(): AlignState {
   }, [source, workspace]);
 
   useEffect(() => {
-    if (source && scanQuery.isFetching) {
-      setError(null);
-      setStatus("Scanning source");
+    if (source && scanLoading) {
+      alignerUiActions.setError(setUi, null);
+      alignerUiActions.setStatus(setUi, "Scanning source");
     }
-  }, [scanQuery.isFetching, setError, setStatus, source]);
+  }, [scanLoading, setUi, source]);
 
   useEffect(() => {
-    if (!scanQuery.data || !activeSourceKey || scanSourceKey === activeSourceKey) return;
-    applySourceScan(activeSourceKey, scanQuery.data);
-  }, [activeSourceKey, applySourceScan, scanQuery.data, scanSourceKey]);
+    const scanData = resultData(scanResult);
+    if (!scanData || !activeSourceKey || scanSourceKey === activeSourceKey) return;
+    alignerUiActions.applySourceScan(setUi, activeSourceKey, scanData);
+  }, [activeSourceKey, scanResult, scanSourceKey, setUi]);
 
   useEffect(() => {
-    if (!scanQuery.error) return;
-    setFrame(null);
-    setError(toErrorMessage(scanQuery.error, "Source scan failed"));
-  }, [scanQuery.error, setError, setFrame]);
+    const scanError = resultFailureMessage(scanResult);
+    if (!scanError) return;
+    alignerUiActions.setFrame(setUi, null);
+    alignerUiActions.setError(setUi, toErrorMessage(scanError, "Source scan failed"));
+  }, [scanResult, setUi]);
 
   useEffect(() => {
     if (!source || !scan) {
-      setFrameLoading(false);
+      alignerUiActions.setFrameLoading(setUi, false);
       return;
     }
     const alignStateKey = workspacePath ? savedAlignStateKey(workspacePath, selection.pos) : null;
 
     return loadCanvasResources({
       start: () => {
-        setFrameLoading(true);
-        setError(null);
-        setStatus("Loading frame");
+        alignerUiActions.setFrameLoading(setUi, true);
+        alignerUiActions.setError(setUi, null);
+        alignerUiActions.setStatus(setUi, "Loading frame");
       },
       load: () =>
         Effect.all([
@@ -218,42 +244,35 @@ export function useAlignState(): AlignState {
             : Effect.succeed(null as SavedAlignState | null),
         ]),
       commit: ([nextFrame, savedAlignState]) => {
-        applyLoadedFrame(
-          selection,
-          nextFrame,
-          alignStateKey
-            ? { stateKey: alignStateKey, pos: selection.pos, saved: savedAlignState }
-            : null,
-        );
+        alignerUiActions.applyLoadedFrame(setUi, selection, nextFrame, alignStateKey
+          ? { stateKey: alignStateKey, pos: selection.pos, saved: savedAlignState }
+          : null);
       },
       reject: (cause) => {
-        setFrame(null);
-        setError(
+        alignerUiActions.setFrame(setUi, null);
+        alignerUiActions.setError(
+          setUi,
           cause instanceof Error && cause.message.startsWith("Frame request failed")
             ? effectErrorMessage(cause)
             : toErrorMessage(cause, "Frame or saved align state load failed"),
         );
       },
-      settle: () => setFrameLoading(false),
+      settle: () => alignerUiActions.setFrameLoading(setUi, false),
     });
   }, [
-    applyLoadedFrame,
     contrast,
     loadCanvasResources,
     scan,
     selection,
-    setError,
-    setFrame,
-    setFrameLoading,
-    setStatus,
+    setUi,
     source,
     workspacePath,
   ]);
 
   const saveCurrent = useCallback(async () => {
     if (!workspacePath || !frame) return false;
-    setSaving(true);
-    setError(null);
+    alignerUiActions.setSaving(setUi, true);
+    alignerUiActions.setError(setUi, null);
     try {
       const csv = buildBboxCsv(frame, grid, currentExcludedCells);
       const alignState = alignStateFromCurrent(grid, currentExcludedCells);
@@ -261,32 +280,23 @@ export function useAlignState(): AlignState {
         alignerClient.saveBbox(workspacePath, selection.pos, csv, alignState),
       );
       if (!result.ok) throw new Error(result.error ?? "Save failed");
-      setStatus(`Saved bbox/Pos${selection.pos}.csv`);
+      alignerUiActions.setStatus(setUi, `Saved bbox/Pos${selection.pos}.csv`);
       return true;
     } catch (cause) {
-      setError(toErrorMessage(cause, "Save failed"));
+      alignerUiActions.setError(setUi, toErrorMessage(cause, "Save failed"));
       return false;
     } finally {
-      setSaving(false);
+      alignerUiActions.setSaving(setUi, false);
     }
-  }, [
-    currentExcludedCells,
-    frame,
-    grid,
-    selection.pos,
-    setError,
-    setSaving,
-    setStatus,
-    workspacePath,
-  ]);
+  }, [currentExcludedCells, frame, grid, selection.pos, setUi, workspacePath]);
 
   const runCrop = useCallback(
     async (positions: number[], overwrite: boolean) => {
       if (!workspacePath || !source || positions.length === 0) return;
       const requestId = `crop-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       cropRequestIdRef.current = requestId;
-      setError(null);
-      setCropProgress({
+      alignerUiActions.setError(setUi, null);
+      alignerUiActions.setCropProgress(setUi, {
         requestId,
         status: "queued",
         position: null,
@@ -309,17 +319,19 @@ export function useAlignState(): AlignState {
           }),
         );
         stop = alignerClient.onCropRoiProgress(requestId, (progress) => {
-          setCropProgress(progress);
+          alignerUiActions.setCropProgress(setUi, progress);
           if (isDoneCropStatus(progress.status)) {
-            if (progress.status === "error") setError(progress.error ?? "Crop failed");
+            if (progress.status === "error") {
+              alignerUiActions.setError(setUi, progress.error ?? "Crop failed");
+            }
             stop();
           }
         });
       } catch (cause) {
         stop();
         const message = toErrorMessage(cause, "Crop failed");
-        setError(message);
-        setCropProgress({
+        alignerUiActions.setError(setUi, message);
+        alignerUiActions.setCropProgress(setUi, {
           requestId,
           status: "error",
           position: null,
@@ -332,7 +344,7 @@ export function useAlignState(): AlignState {
         });
       }
     },
-    [setCropProgress, setError, source, workspacePath],
+    [setUi, source, workspacePath],
   );
 
   const cropCurrent = useCallback(async () => {
@@ -355,14 +367,17 @@ export function useAlignState(): AlignState {
 
   const cropBatch = useCallback(async () => {
     if (!workspacePath || !source) return;
-    const savedPositionsResult = await savedPositionsQuery.refetch();
-    if (savedPositionsResult.error) {
-      setError(toErrorMessage(savedPositionsResult.error, "Saved bbox positions load failed"));
+    let savedPositions: number[];
+    try {
+      savedPositions = await runClientEffect(
+        alignerClient.listSavedBboxPositions(workspacePath),
+      );
+    } catch (cause) {
+      alignerUiActions.setError(setUi, toErrorMessage(cause, "Saved bbox positions load failed"));
       return;
     }
-    const savedPositions = savedPositionsResult.data ?? [];
     if (savedPositions.length === 0) {
-      setStatus("No saved bbox CSVs found");
+      alignerUiActions.setStatus(setUi, "No saved bbox CSVs found");
       return;
     }
     const existing = await runClientEffect(
@@ -387,7 +402,7 @@ export function useAlignState(): AlignState {
       return;
     }
     await runCrop(savedPositions, false);
-  }, [runCrop, savedPositionsQuery, setError, setStatus, source, workspacePath]);
+  }, [runCrop, setUi, source, workspacePath]);
 
   const confirmCropOverwrite = useCallback(() => {
     const next = cropConfirm;
@@ -403,11 +418,11 @@ export function useAlignState(): AlignState {
     const existing = new Set(next.existingPositions);
     const remaining = next.positions.filter((pos) => !existing.has(pos));
     if (remaining.length === 0) {
-      setStatus(`Skipped ${next.existingPositions.length} existing ROI output(s)`);
+      alignerUiActions.setStatus(setUi, `Skipped ${next.existingPositions.length} existing ROI output(s)`);
       return;
     }
     void runCrop(remaining, false);
-  }, [cropConfirm, runCrop, setStatus]);
+  }, [cropConfirm, runCrop, setUi]);
 
   const cancelCropConfirm = useCallback(() => {
     setCropConfirm(null);
@@ -416,19 +431,23 @@ export function useAlignState(): AlignState {
   const cancelCrop = useCallback(async () => {
     const requestId = cropRequestIdRef.current;
     if (!requestId) return;
-    setCropProgress(await runClientEffect(alignerClient.cancelCropRoi(requestId)));
-  }, [setCropProgress]);
+    alignerUiActions.setCropProgress(
+      setUi,
+      await runClientEffect(alignerClient.cancelCropRoi(requestId)),
+    );
+  }, [setUi]);
 
   const previewVariationExclude = useCallback(async () => {
     if (!source || !frame) return null;
     const cells = enumerateVisibleAlignGridCells(frame, grid);
     if (cells.length === 0) return null;
-    return autoExcludePreview.mutateAsync({
-      source,
-      selection,
-      cells,
-    });
-  }, [autoExcludePreview, frame, grid, selection, source]);
+    setVariationExcludeLoading(true);
+    try {
+      return await runAutoExcludePreview({ source, selection, cells });
+    } finally {
+      setVariationExcludeLoading(false);
+    }
+  }, [frame, grid, runAutoExcludePreview, selection, source]);
 
   const cellsBelowThreshold = useCallback(
     (preview: AutoExcludePreviewResponse, threshold: number): AlignGridCellCoord[] =>
@@ -438,18 +457,18 @@ export function useAlignState(): AlignState {
 
   const variationExclude = useCallback(async () => {
     if (!source || !frame) return;
-    setStatus("Variation exclude preview");
+    alignerUiActions.setStatus(setUi, "Variation exclude preview");
     try {
       const preview = await previewVariationExclude();
       if (!preview) {
-        setStatus("No visible cells for variation exclude");
+        alignerUiActions.setStatus(setUi, "No visible cells for variation exclude");
         return;
       }
       setVariationExcludePreview({ preview, threshold: preview.threshold });
     } catch (cause) {
-      setError(toErrorMessage(cause, "Variation exclude preview failed"));
+      alignerUiActions.setError(setUi, toErrorMessage(cause, "Variation exclude preview failed"));
     }
-  }, [frame, previewVariationExclude, setError, setStatus, source]);
+  }, [frame, previewVariationExclude, setUi, source]);
 
   const setVariationExcludeThreshold = useCallback((threshold: number) => {
     setVariationExcludePreview((current) => (current ? { ...current, threshold } : current));
@@ -457,8 +476,8 @@ export function useAlignState(): AlignState {
 
   const cancelVariationExclude = useCallback(() => {
     setVariationExcludePreview(null);
-    setStatus("Variation exclude cancelled");
-  }, [setStatus]);
+    alignerUiActions.setStatus(setUi, "Variation exclude cancelled");
+  }, [setUi]);
 
   const applyVariationExclude = useCallback(() => {
     if (!variationExcludePreview) return;
@@ -470,20 +489,21 @@ export function useAlignState(): AlignState {
       mergeExcludedAlignGridCells(currentExcludedCells, variationCells),
     );
     setVariationExcludePreview(null);
-    setStatus(
+    alignerUiActions.setStatus(
+      setUi,
       `Variation excluded ${variationCells.length} of ${variationExcludePreview.preview.eligibleCellCount} cells`,
     );
   }, [
     cellsBelowThreshold,
     currentExcludedCells,
     setExcludedCellsForCurrentPosition,
-    setStatus,
+    setUi,
     variationExcludePreview,
   ]);
 
   const autoExclude = useCallback(async () => {
     if (!source || !frame) return;
-    setStatus("Auto exclude");
+    alignerUiActions.setStatus(setUi, "Auto exclude");
     try {
       const edgeCells = collectAlignGridEdgeCells(frame, grid);
       const preview = await previewVariationExclude();
@@ -493,9 +513,12 @@ export function useAlignState(): AlignState {
         ...variationCells,
       ]);
       setExcludedCellsForCurrentPosition(finalExcludedCells);
-      setStatus(`Auto excluded ${finalExcludedCells.length - currentExcludedCells.length} cells`);
+      alignerUiActions.setStatus(
+        setUi,
+        `Auto excluded ${finalExcludedCells.length - currentExcludedCells.length} cells`,
+      );
     } catch (cause) {
-      setError(toErrorMessage(cause, "Auto exclude failed"));
+      alignerUiActions.setError(setUi, toErrorMessage(cause, "Auto exclude failed"));
     }
   }, [
     cellsBelowThreshold,
@@ -503,9 +526,8 @@ export function useAlignState(): AlignState {
     frame,
     grid,
     previewVariationExclude,
-    setError,
     setExcludedCellsForCurrentPosition,
-    setStatus,
+    setUi,
     source,
   ]);
 
@@ -514,7 +536,7 @@ export function useAlignState(): AlignState {
     source,
     setSource,
     scan,
-    scanLoading: source != null && scanQuery.isFetching,
+    scanLoading,
     frameLoading,
     error,
     selection,
@@ -546,7 +568,7 @@ export function useAlignState(): AlignState {
     cancelCropConfirm,
     cancelCrop,
     variationExcludePreview,
-    variationExcludeLoading: autoExcludePreview.isPending,
+    variationExcludeLoading,
     variationExclude,
     setVariationExcludeThreshold,
     cancelVariationExclude,

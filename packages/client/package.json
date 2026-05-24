@@ -66,6 +66,10 @@
     "./ports/types": {
       "types": "./src/ports/types.ts",
       "import": "./src/ports/types.ts"
+    },
+    "./atoms": {
+      "types": "./src/atoms/index.ts",
+      "import": "./src/atoms/index.ts"
     }
   },
   "scripts": {
@@ -75,9 +79,15 @@
     "typecheck": "tsc -p tsconfig.build.json --noEmit"
   },
   "dependencies": {
+    "@effect-atom/atom-react": "catalog:",
+    "@effect/experimental": "catalog:",
+    "@effect/platform-browser": "catalog:",
     "@lisca/contracts": "workspace:*",
     "@lisca/utils": "workspace:*",
     "effect": "catalog:"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
   },
   "devDependencies": {
     "typescript": "catalog:",
