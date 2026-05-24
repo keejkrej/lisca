@@ -26,6 +26,11 @@
       "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
+    },
+    "dist": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "outputs": ["release/**"]
     }
   }
 }

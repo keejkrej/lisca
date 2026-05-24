@@ -27,3 +27,4 @@ dist/
 # Electron
 out
 release
+apps/*/staging

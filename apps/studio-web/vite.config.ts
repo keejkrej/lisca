@@ -8,6 +8,7 @@ import { defineConfig } from "vite";
 const brandPublicDir = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../assets/brand");
 
 export default defineConfig({
+  base: process.env.VITE_DESKTOP === "1" ? "./" : "/",
   publicDir: brandPublicDir,
   plugins: [tanstackRouter({ target: "react", autoCodeSplitting: true }), react(), tailwindcss()],
   server: {

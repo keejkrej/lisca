@@ -6,6 +6,7 @@
   "scripts": {
     "build": "bun --filter @lisca/aligner-web build && bun --filter @lisca/aligner-server build",
     "dev": "concurrently -k -n web,desk \"bun --filter @lisca/aligner-web dev\" \"cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5173 wait-on -t 120000 tcp:127.0.0.1:5173 && electron .\"",
+    "dist": "bun ../../scripts/package-desktop.mjs aligner",
     "typecheck": "bunx oxlint electron/main.cjs electron/preload.cjs"
   },
   "devDependencies": {
@@ -14,6 +15,7 @@
     "concurrently": "^9.1.2",
     "cross-env": "^7.0.3",
     "electron": "catalog:",
+    "electron-builder": "^25.1.8",
     "wait-on": "^8.0.3"
   }
 }

@@ -10,6 +10,7 @@
  *   bun lisca dev aligner
  *   bun lisca dev aligner web
  *   bun lisca build studio
+ *   bun lisca dist aligner
  *   bun lisca typecheck annotator
  *   bun lisca typecheck annotator server
  *   bun lisca preview studio
@@ -34,7 +35,7 @@ function usage() {
   console.error(`
 Usage: bun lisca <task> <product> [target] [-- <turbo passthrough>]
 
-  task     dev | build | typecheck | preview
+  task     dev | build | dist | typecheck | preview
   product  aligner | annotator | studio
   target   desktop | web | server | mobile | all
            (optional — sensible defaults per task)
@@ -48,6 +49,7 @@ Examples:
   bun lisca dev aligner
   bun lisca dev annotator web
   bun lisca build studio
+  bun lisca dist aligner
   bun lisca typecheck aligner
   bun lisca typecheck aligner server
   bun lisca preview studio
@@ -90,8 +92,8 @@ function main() {
     process.exit(task ? 0 : 1);
   }
 
-  if (!["dev", "build", "typecheck", "preview"].includes(task)) {
-    console.error(`Unknown task "${task}". Use: dev | build | typecheck | preview`);
+  if (!["dev", "build", "dist", "typecheck", "preview"].includes(task)) {
+    console.error(`Unknown task "${task}". Use: dev | build | dist | typecheck | preview`);
     process.exit(1);
   }
 
