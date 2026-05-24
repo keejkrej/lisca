@@ -27,7 +27,9 @@ dependencies = [
 name = "aligner-server"
 version = "0.1.0"
 dependencies = [
+ "axum",
  "lisca",
+ "serde",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -37,7 +39,9 @@ dependencies = [
 name = "annotator-server"
 version = "0.1.0"
 dependencies = [
+ "axum",
  "lisca",
+ "serde",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -986,7 +990,12 @@ dependencies = [
 name = "studio-server"
 version = "0.1.0"
 dependencies = [
+ "aligner-server",
+ "annotator-server",
+ "axum",
+ "base64",
  "lisca",
+ "serde",
  "tokio",
  "tracing",
  "tracing-subscriber",

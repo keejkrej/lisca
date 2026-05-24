@@ -6,12 +6,21 @@ license.workspace = true
 repository.workspace = true
 description = "WebSocket server for the Studio desktop/web stack."
 
+[lib]
+name = "studio_server"
+path = "src/lib.rs"
+
 [[bin]]
 name = "studio-server"
 path = "src/main.rs"
 
 [dependencies]
+aligner-server = { path = "../aligner-server" }
+annotator-server = { path = "../annotator-server" }
+axum.workspace = true
+base64.workspace = true
 lisca.workspace = true
+serde.workspace = true
 tokio.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
