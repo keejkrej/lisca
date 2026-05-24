@@ -21,7 +21,6 @@ import {
   type AlignGridToolMode,
 } from "@lisca/utils";
 import { Effect } from "effect";
-import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -30,7 +29,7 @@ import { studioClient } from "../api/studio-port";
 import { useAutoExcludePreviewMutation, useScanSourceQuery } from "../api/studio-queries";
 import { effectErrorMessage, loadFrameEffect } from "../effects/frame-loader";
 import { isDoneCropStatus } from "@lisca/client/crop-status";
-import { runClientEffect, toClientError } from "@lisca/client/runtime";
+import { runClientEffect } from "@lisca/client/runtime";
 import { lockedStudioSelection, studioMaskChannel, toStudioSource } from "../utils/studio-source";
 import {
   savedAlignStateKey,
@@ -156,7 +155,6 @@ export function useStudioAlignState(): StudioAlignState {
   );
   const scanQuery = useScanSourceQuery(source);
   const autoExcludePreview = useAutoExcludePreviewMutation();
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const currentExcludedCells = useMemo(
@@ -236,18 +234,7 @@ export function useStudioAlignState(): StudioAlignState {
         Effect.all([
           loadFrameEffect(studioClient, source, lockedSelection, null),
           workspacePath
-            ? Effect.tryPromise({
-                try: () =>
-                  queryClient.fetchQuery<SavedAlignState | null>({
-                    queryKey: ["studio", "align-state", alignStateKey],
-                    queryFn: () =>
-                      runClientEffect(
-                        studioClient.loadAlignState(workspacePath, lockedSelection.pos),
-                      ),
-                    retry: false,
-                  }),
-                catch: toClientError,
-              })
+            ? studioClient.loadAlignState(workspacePath, lockedSelection.pos)
             : Effect.succeed(null as SavedAlignState | null),
         ]),
       commit: ([nextFrame, savedAlignState]) => {
@@ -273,7 +260,6 @@ export function useStudioAlignState(): StudioAlignState {
     applyLoadedFrame,
     lockedSelection,
     loadCanvasResources,
-    queryClient,
     scan,
     setError,
     setFrame,
@@ -491,10 +477,8 @@ export function useStudioAlignState(): StudioAlignState {
     setError(null);
     let advanced = false;
     try {
-      const [edgeCells, thresholdCells] = await Promise.all([
-        Promise.resolve(collectAlignGridEdgeCells(frame, grid)),
-        variationExcludeCells(),
-      ]);
+      const edgeCells = collectAlignGridEdgeCells(frame, grid);
+      const thresholdCells = await variationExcludeCells();
       const finalExcludedCells = mergeExcludedAlignGridCells(currentExcludedCells, [
         ...edgeCells,
         ...thresholdCells,
@@ -506,10 +490,6 @@ export function useStudioAlignState(): StudioAlignState {
         studioClient.saveBbox(workspacePath, lockedSelection.pos, csv, alignState),
       );
       if (!result.ok) throw new Error(result.error ?? "Save failed");
-      queryClient.setQueryData<SavedAlignState | null>(
-        ["studio", "align-state", savedAlignStateKey(workspacePath, lockedSelection.pos)],
-        alignState,
-      );
       setStatus(`Saved bbox/Pos${lockedSelection.pos}.csv`);
     } catch (cause) {
       setError(toErrorMessage(cause, "Save failed"));
@@ -532,7 +512,6 @@ export function useStudioAlignState(): StudioAlignState {
     grid,
     lockedSelection.pos,
     maybeCropWhenAllPositionsSaved,
-    queryClient,
     setError,
     setExcludedCellsForCurrentPosition,
     setSaving,
@@ -545,10 +524,8 @@ export function useStudioAlignState(): StudioAlignState {
     if (!frame) return;
     try {
       setStatus("Auto exclude preview");
-      const [edgeCells, variationCells] = await Promise.all([
-        Promise.resolve(collectAlignGridEdgeCells(frame, grid)),
-        variationExcludeCells(),
-      ]);
+      const edgeCells = collectAlignGridEdgeCells(frame, grid);
+      const variationCells = await variationExcludeCells();
       const finalExcludedCells = mergeExcludedAlignGridCells(currentExcludedCells, [
         ...edgeCells,
         ...variationCells,

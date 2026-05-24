@@ -20,7 +20,6 @@ import {
   mergeExcludedAlignGridCells,
   type AlignGridToolMode,
 } from "@lisca/utils";
-import { useQueryClient } from "@tanstack/react-query";
 import { Effect } from "effect";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -33,7 +32,7 @@ import {
 } from "../api/aligner-queries";
 import { effectErrorMessage, loadFrameEffect } from "../effects/frame-loader";
 import { isDoneCropStatus } from "@lisca/client/crop-status";
-import { runClientEffect, toClientError } from "@lisca/client/runtime";
+import { runClientEffect } from "@lisca/client/runtime";
 import {
   savedAlignStateKey,
   sourceKey,
@@ -145,7 +144,6 @@ export function useAlignState(): AlignState {
   const scanQuery = useScanSourceQuery(source);
   const savedPositionsQuery = useSavedBboxPositionsQuery(workspacePath, Boolean(workspacePath));
   const autoExcludePreview = useAutoExcludePreviewMutation();
-  const queryClient = useQueryClient();
 
   const currentExcludedCells = useMemo(
     () => excludedCellsByPosition[selection.pos] ?? emptyExcludedCells,
@@ -216,18 +214,7 @@ export function useAlignState(): AlignState {
         Effect.all([
           loadFrameEffect(alignerClient, source, selection, contrast),
           workspacePath
-            ? Effect.tryPromise({
-                try: () =>
-                  queryClient.fetchQuery<SavedAlignState | null>({
-                    queryKey: ["aligner", "align-state", alignStateKey],
-                    queryFn: () =>
-                      runClientEffect(
-                        alignerClient.loadAlignState(workspacePath, selection.pos),
-                      ),
-                    retry: false,
-                  }),
-                catch: toClientError,
-              })
+            ? alignerClient.loadAlignState(workspacePath, selection.pos)
             : Effect.succeed(null as SavedAlignState | null),
         ]),
       commit: ([nextFrame, savedAlignState]) => {
@@ -253,7 +240,6 @@ export function useAlignState(): AlignState {
     applyLoadedFrame,
     contrast,
     loadCanvasResources,
-    queryClient,
     scan,
     selection,
     setError,
@@ -275,10 +261,6 @@ export function useAlignState(): AlignState {
         alignerClient.saveBbox(workspacePath, selection.pos, csv, alignState),
       );
       if (!result.ok) throw new Error(result.error ?? "Save failed");
-      queryClient.setQueryData<SavedAlignState | null>(
-        ["aligner", "align-state", savedAlignStateKey(workspacePath, selection.pos)],
-        alignState,
-      );
       setStatus(`Saved bbox/Pos${selection.pos}.csv`);
       return true;
     } catch (cause) {
@@ -291,7 +273,6 @@ export function useAlignState(): AlignState {
     currentExcludedCells,
     frame,
     grid,
-    queryClient,
     selection.pos,
     setError,
     setSaving,
@@ -504,10 +485,8 @@ export function useAlignState(): AlignState {
     if (!source || !frame) return;
     setStatus("Auto exclude");
     try {
-      const [edgeCells, preview] = await Promise.all([
-        Promise.resolve(collectAlignGridEdgeCells(frame, grid)),
-        previewVariationExclude(),
-      ]);
+      const edgeCells = collectAlignGridEdgeCells(frame, grid);
+      const preview = await previewVariationExclude();
       const variationCells = preview ? cellsBelowThreshold(preview, preview.threshold) : [];
       const finalExcludedCells = mergeExcludedAlignGridCells(currentExcludedCells, [
         ...edgeCells,
