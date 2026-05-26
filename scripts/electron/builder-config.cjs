@@ -11,6 +11,13 @@ function createBuilderConfig(product) {
     throw new Error(`Unknown desktop product "${product}"`);
   }
 
+  const codeSign = Boolean(
+    process.env.CSC_LINK ||
+      process.env.WIN_CSC_LINK ||
+      process.env.CSC_LINK_FILE ||
+      process.env.LISCA_CODE_SIGN === "1",
+  );
+
   return {
     appId: cfg.appId,
     productName: cfg.productName,
@@ -51,6 +58,9 @@ function createBuilderConfig(product) {
     win: {
       target: ["nsis"],
       icon: brandIcons.ico,
+      // Unsigned local builds must skip rcedit/winCodeSign — extracting that bundle
+      // needs symlink privileges on Windows (Developer Mode or admin).
+      signAndEditExecutable: codeSign,
     },
     nsis: {
       oneClick: false,
