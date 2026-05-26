@@ -1,6 +1,16 @@
 const path = require("node:path");
+const fs = require("node:fs");
 const { DESKTOP_PRODUCTS } = require("./products.cjs");
 const { brandDir, brandIcons } = require("./brand.cjs");
+
+function codeSigningEnabled() {
+  return Boolean(
+    process.env.CSC_LINK ||
+      process.env.WIN_CSC_LINK ||
+      process.env.CSC_LINK_FILE ||
+      process.env.LISCA_CODE_SIGN === "1",
+  );
+}
 
 /**
  * @param {keyof typeof DESKTOP_PRODUCTS} product
@@ -11,17 +21,13 @@ function createBuilderConfig(product) {
     throw new Error(`Unknown desktop product "${product}"`);
   }
 
-  const codeSign = Boolean(
-    process.env.CSC_LINK ||
-      process.env.WIN_CSC_LINK ||
-      process.env.CSC_LINK_FILE ||
-      process.env.LISCA_CODE_SIGN === "1",
-  );
+  const codeSign = codeSigningEnabled();
 
   return {
     appId: cfg.appId,
     productName: cfg.productName,
     executableName: cfg.executableName,
+    icon: brandIcons.png,
     extraMetadata: {
       description: cfg.productName,
       homepage: "https://github.com/lisca/lisca",
@@ -38,6 +44,7 @@ function createBuilderConfig(product) {
     extraResources: [
       { from: "staging/web", to: "web", filter: ["**/*"] },
       { from: "staging/server", to: "server", filter: ["**/*"] },
+      { from: "staging/brand", to: "brand", filter: ["**/*"] },
     ],
     asar: true,
     linux: {
@@ -65,8 +72,23 @@ function createBuilderConfig(product) {
     nsis: {
       oneClick: false,
       allowToChangeInstallationDirectory: true,
+      installerIcon: brandIcons.ico,
+      uninstallerIcon: brandIcons.ico,
+    },
+    async afterPack(context) {
+      if (process.platform !== "win32" || codeSign) {
+        return;
+      }
+
+      const exePath = path.join(context.appOutDir, `${cfg.executableName}.exe`);
+      if (!fs.existsSync(exePath)) {
+        return;
+      }
+
+      const rcedit = (await import("rcedit")).default;
+      await rcedit(exePath, { icon: brandIcons.ico });
     },
   };
 }
 
-module.exports = { createBuilderConfig };
+module.exports = { createBuilderConfig, codeSigningEnabled };

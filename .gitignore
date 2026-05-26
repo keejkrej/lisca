@@ -28,3 +28,5 @@ dist/
 out
 release
 apps/*/staging
+apps/*/electron/desktop-main.cjs
+apps/*/electron/brand.cjs

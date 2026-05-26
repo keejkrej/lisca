@@ -64,7 +64,24 @@ function stageArtifacts(product, cfg) {
     fs.chmodSync(serverDest, 0o755);
   }
 
+  const brandSrc = path.join(root, "assets", "brand");
+  if (!fs.existsSync(brandSrc)) {
+    console.error(`Missing brand assets at ${brandSrc}`);
+    process.exit(1);
+  }
+  fs.cpSync(brandSrc, path.join(stagingDir, "brand"), { recursive: true });
+
+  stageSharedElectron(desktopDir);
+
   return desktopDir;
+}
+
+function stageSharedElectron(desktopDir) {
+  const electronDir = path.join(desktopDir, "electron");
+  const sharedDir = path.join(root, "scripts", "electron");
+  for (const file of ["desktop-main.cjs", "brand.cjs"]) {
+    fs.copyFileSync(path.join(sharedDir, file), path.join(electronDir, file));
+  }
 }
 
 function main() {

@@ -9,13 +9,15 @@
     "dist": "bun ../../scripts/package-desktop.mjs aligner",
     "typecheck": "bunx oxlint electron/main.cjs electron/preload.cjs"
   },
+  "dependencies": {
+    "wait-on": "^8.0.3"
+  },
   "devDependencies": {
     "@lisca/aligner-server": "workspace:*",
     "@lisca/aligner-web": "workspace:*",
     "concurrently": "^9.1.2",
     "cross-env": "^7.0.3",
     "electron": "catalog:",
-    "electron-builder": "^25.1.8",
-    "wait-on": "^8.0.3"
+    "electron-builder": "^25.1.8"
   }
 }

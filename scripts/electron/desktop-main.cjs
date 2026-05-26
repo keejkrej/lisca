@@ -73,7 +73,9 @@ function runDesktopMain(config) {
       interval: 250,
     });
 
-    const windowIcon = runtimeIconPath();
+    const windowIcon = runtimeIconPath(
+      app.isPackaged ? { resourcesPath: process.resourcesPath } : {},
+    );
     const mainWindow = new BrowserWindow({
       width: 1280,
       height: 800,
