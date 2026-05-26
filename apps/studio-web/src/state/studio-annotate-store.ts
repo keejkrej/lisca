@@ -8,7 +8,7 @@ import type {
   StudioAnalysisCsvFile,
 } from "@lisca/contracts";
 import { Atom, useAtom } from "@effect-atom/atom-react";
-import { useMemo } from "react";
+import { useCallback } from "react";
 
 export type StudioAnnotateSelection = {
   pos: number | null;
@@ -234,29 +234,76 @@ export const studioAnnotateUiActions = {
   },
 };
 
-function bindStudioAnnotateStore(
-  state: StudioAnnotateStoreState,
-  set: (update: StateUpdater<StudioAnnotateStoreState>) => void,
-): StudioAnnotateStore {
-  return {
-    ...state,
-    setWorkspacePath: (workspacePath) => studioAnnotateUiActions.setWorkspacePath(set, workspacePath),
-    setAnalysisStartConfirm: (value) => studioAnnotateUiActions.setAnalysisStartConfirm(set, value),
-    setAnalysisRequestId: (requestId) => studioAnnotateUiActions.setAnalysisRequestId(set, requestId),
-    setAnalysisProgress: (progress) => studioAnnotateUiActions.setAnalysisProgress(set, progress),
-    setAnalysisResultFiles: (files) => studioAnnotateUiActions.setAnalysisResultFiles(set, files),
-    setSelection: (patch) => studioAnnotateUiActions.setSelection(set, patch),
-    setFrame: (frame) => studioAnnotateUiActions.setFrame(set, frame),
-    setContrast: (contrast) => studioAnnotateUiActions.setContrast(set, contrast),
-    setContrastState: (frame) => studioAnnotateUiActions.setContrastState(set, frame),
-    setFrameLoading: (frameLoading) => studioAnnotateUiActions.setFrameLoading(set, frameLoading),
-    setScanError: (scanError) => studioAnnotateUiActions.setScanError(set, scanError),
-    setFrameError: (frameError) => studioAnnotateUiActions.setFrameError(set, frameError),
-    setStatus: (status) => studioAnnotateUiActions.setStatus(set, status),
-  };
-}
-
 export function useStudioAnnotateStore(): StudioAnnotateStore {
   const [state, setState] = useAtom(studioAnnotateUiAtom);
-  return useMemo(() => bindStudioAnnotateStore(state, setState), [state, setState]);
+
+  const setWorkspacePath = useCallback(
+    (workspacePath: string | null) => studioAnnotateUiActions.setWorkspacePath(setState, workspacePath),
+    [setState],
+  );
+  const setAnalysisStartConfirm = useCallback(
+    (value: boolean) => studioAnnotateUiActions.setAnalysisStartConfirm(setState, value),
+    [setState],
+  );
+  const setAnalysisRequestId = useCallback(
+    (requestId: string | null) => studioAnnotateUiActions.setAnalysisRequestId(setState, requestId),
+    [setState],
+  );
+  const setAnalysisProgress = useCallback(
+    (progress: AnalysisProgress | null) => studioAnnotateUiActions.setAnalysisProgress(setState, progress),
+    [setState],
+  );
+  const setAnalysisResultFiles = useCallback(
+    (files: StudioAnalysisCsvFile[]) => studioAnnotateUiActions.setAnalysisResultFiles(setState, files),
+    [setState],
+  );
+  const setSelection = useCallback(
+    (patch: Partial<StudioAnnotateSelection>) => studioAnnotateUiActions.setSelection(setState, patch),
+    [setState],
+  );
+  const setFrame = useCallback(
+    (frame: FrameResult | null) => studioAnnotateUiActions.setFrame(setState, frame),
+    [setState],
+  );
+  const setContrast = useCallback(
+    (contrast: ContrastWindow | null) => studioAnnotateUiActions.setContrast(setState, contrast),
+    [setState],
+  );
+  const setContrastState = useCallback(
+    (frame: FrameResult) => studioAnnotateUiActions.setContrastState(setState, frame),
+    [setState],
+  );
+  const setFrameLoading = useCallback(
+    (frameLoading: boolean) => studioAnnotateUiActions.setFrameLoading(setState, frameLoading),
+    [setState],
+  );
+  const setScanError = useCallback(
+    (scanError: string | null) => studioAnnotateUiActions.setScanError(setState, scanError),
+    [setState],
+  );
+  const setFrameError = useCallback(
+    (frameError: string | null) => studioAnnotateUiActions.setFrameError(setState, frameError),
+    [setState],
+  );
+  const setStatus = useCallback(
+    (status: string | null) => studioAnnotateUiActions.setStatus(setState, status),
+    [setState],
+  );
+
+  return {
+    ...state,
+    setWorkspacePath,
+    setAnalysisStartConfirm,
+    setAnalysisRequestId,
+    setAnalysisProgress,
+    setAnalysisResultFiles,
+    setSelection,
+    setFrame,
+    setContrast,
+    setContrastState,
+    setFrameLoading,
+    setScanError,
+    setFrameError,
+    setStatus,
+  };
 }

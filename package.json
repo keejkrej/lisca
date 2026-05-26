@@ -48,7 +48,8 @@
     "oxlint": "^1.63.0",
     "turbo": "^2.5.4",
     "typescript": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "wait-on": "^8.0.3"
   },
   "overrides": {
     "effect": "catalog:",

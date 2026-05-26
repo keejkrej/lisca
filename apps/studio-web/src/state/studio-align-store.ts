@@ -14,9 +14,8 @@ import {
   setExcludedAlignGridCellsForPosition,
   type AlignGridToolMode,
 } from "@lisca/utils";
-import { Atom } from "@effect-atom/atom-react";
-import { useAtom } from "@effect-atom/atom-react";
-import { useMemo } from "react";
+import { Atom, useAtom } from "@effect-atom/atom-react";
+import { useCallback } from "react";
 
 export type ExcludedByPosition = Record<number, AlignGridCellCoord[]>;
 type StateUpdater<T> = T | ((current: T) => T);
@@ -338,35 +337,98 @@ export const studioAlignUiActions = {
   },
 };
 
-function bindStudioAlignStore(
-  state: StudioAlignStoreState,
-  set: (update: StateUpdater<StudioAlignStoreState>) => void,
-): StudioAlignStore {
-  return {
-    ...state,
-    setWorkspacePath: (workspacePath) => studioAlignUiActions.setWorkspacePath(set, workspacePath),
-    setSource: (source) => studioAlignUiActions.setSource(set, source),
-    applySourceScan: (sourceKey, scan) => studioAlignUiActions.applySourceScan(set, sourceKey, scan),
-    applySavedAlignState: (stateKey, pos, saved) =>
-      studioAlignUiActions.applySavedAlignState(set, stateKey, pos, saved),
-    applyLoadedFrame: (selection, frame, savedAlignState) =>
-      studioAlignUiActions.applyLoadedFrame(set, selection, frame, savedAlignState),
-    setSelection: (patch) => studioAlignUiActions.setSelection(set, patch),
-    setFrame: (frame) => studioAlignUiActions.setFrame(set, frame),
-    setContrast: (contrast) => studioAlignUiActions.setContrast(set, contrast),
-    setGrid: (next) => studioAlignUiActions.setGrid(set, next),
-    setToolMode: (mode) => studioAlignUiActions.setToolMode(set, mode),
-    setPatternZoomLocked: (locked) => studioAlignUiActions.setPatternZoomLocked(set, locked),
-    setExcludedCellsForCurrentPosition: (cells) =>
-      studioAlignUiActions.setExcludedCellsForCurrentPosition(set, cells),
-    setFrameLoading: (frameLoading) => studioAlignUiActions.setFrameLoading(set, frameLoading),
-    setSaving: (saving) => studioAlignUiActions.setSaving(set, saving),
-    setError: (error) => studioAlignUiActions.setError(set, error),
-    setStatus: (status) => studioAlignUiActions.setStatus(set, status),
-  };
-}
-
 export function useStudioAlignStore(): StudioAlignStore {
   const [state, setState] = useAtom(studioAlignUiAtom);
-  return useMemo(() => bindStudioAlignStore(state, setState), [state, setState]);
+
+  const setWorkspacePath = useCallback(
+    (workspacePath: string | null) => studioAlignUiActions.setWorkspacePath(setState, workspacePath),
+    [setState],
+  );
+  const setSource = useCallback(
+    (source: AlignerSource | null) => studioAlignUiActions.setSource(setState, source),
+    [setState],
+  );
+  const applySourceScan = useCallback(
+    (sourceKey: string, scan: WorkspaceScan) =>
+      studioAlignUiActions.applySourceScan(setState, sourceKey, scan),
+    [setState],
+  );
+  const applySavedAlignState = useCallback(
+    (stateKey: string, pos: number, saved: SavedAlignState | null) =>
+      studioAlignUiActions.applySavedAlignState(setState, stateKey, pos, saved),
+    [setState],
+  );
+  const applyLoadedFrame = useCallback(
+    (
+      selection: FrameRequest,
+      frame: FrameResult,
+      savedAlignState: LoadedSavedAlignState | null,
+    ) => studioAlignUiActions.applyLoadedFrame(setState, selection, frame, savedAlignState),
+    [setState],
+  );
+  const setSelection = useCallback(
+    (patch: Partial<FrameRequest>) => studioAlignUiActions.setSelection(setState, patch),
+    [setState],
+  );
+  const setFrame = useCallback(
+    (frame: FrameResult | null) => studioAlignUiActions.setFrame(setState, frame),
+    [setState],
+  );
+  const setContrast = useCallback(
+    (contrast: ContrastWindow | null) => studioAlignUiActions.setContrast(setState, contrast),
+    [setState],
+  );
+  const setGrid = useCallback(
+    (next: StateUpdater<AlignGridState>) => studioAlignUiActions.setGrid(setState, next),
+    [setState],
+  );
+  const setToolMode = useCallback(
+    (mode: AlignGridToolMode) => studioAlignUiActions.setToolMode(setState, mode),
+    [setState],
+  );
+  const setPatternZoomLocked = useCallback(
+    (locked: boolean) => studioAlignUiActions.setPatternZoomLocked(setState, locked),
+    [setState],
+  );
+  const setExcludedCellsForCurrentPosition = useCallback(
+    (cells: Iterable<AlignGridCellCoord>) =>
+      studioAlignUiActions.setExcludedCellsForCurrentPosition(setState, cells),
+    [setState],
+  );
+  const setFrameLoading = useCallback(
+    (frameLoading: boolean) => studioAlignUiActions.setFrameLoading(setState, frameLoading),
+    [setState],
+  );
+  const setSaving = useCallback(
+    (saving: boolean) => studioAlignUiActions.setSaving(setState, saving),
+    [setState],
+  );
+  const setError = useCallback(
+    (error: string | null) => studioAlignUiActions.setError(setState, error),
+    [setState],
+  );
+  const setStatus = useCallback(
+    (status: string | null) => studioAlignUiActions.setStatus(setState, status),
+    [setState],
+  );
+
+  return {
+    ...state,
+    setWorkspacePath,
+    setSource,
+    applySourceScan,
+    applySavedAlignState,
+    applyLoadedFrame,
+    setSelection,
+    setFrame,
+    setContrast,
+    setGrid,
+    setToolMode,
+    setPatternZoomLocked,
+    setExcludedCellsForCurrentPosition,
+    setFrameLoading,
+    setSaving,
+    setError,
+    setStatus,
+  };
 }

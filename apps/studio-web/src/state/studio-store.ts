@@ -18,7 +18,7 @@ import {
   DEFAULT_FOLDER_SOURCE_TEMPLATE,
 } from "@lisca/contracts";
 import { Atom, useAtom } from "@effect-atom/atom-react";
-import { useMemo, useRef } from "react";
+import { useCallback, useRef } from "react";
 
 export type {
   AssayId,
@@ -430,89 +430,144 @@ function patchStudioWizard(
   });
 }
 
-function bindStudioStore(
-  state: StudioWizardData,
-  set: (update: StateUpdater<StudioWizardData>) => void,
-): StudioState {
-  return {
-    ...state,
-    setInfoStep: (infoStep) => patchStudioWizard(set, { infoStep }),
-    setDataSourceKind: (dataSourceKind) => patchStudioWizard(set, { dataSourceKind }),
-    loadAssayJson: (assayJson) =>
-      patchStudioWizard(set, {
-        assayId: enabledAssayId(assayJson.assayId),
-        infoStep: 1,
-        dataSourceKind: assayJson.dataSourceKind ?? inferDataSourceKind(assayJson.info1.dataPath),
-        info1: { ...assayJson.info1 },
-        info2: {
-          ...assayJson.info2,
-          selectedFeatures: normalizeSelectedFeaturesForAssay(
-            assayJson.assayId,
-            assayJson.info2.selectedFeatures,
-          ),
-        },
-        info3: {
-          selectedSlideId: assayJson.info3.selectedSlideId,
-          samplesBySlide: cloneSamplesBySlide(assayJson.info3.samplesBySlide),
-        },
-      }),
-    setAssayId: (assayId) => {
-      const nextAssayId = enabledAssayId(assayId);
-      patchStudioWizard(set, (current) => ({
-        ...current,
-        assayId: nextAssayId,
-        info2: {
-          ...current.info2,
-          selectedFeatures: normalizeSelectedFeaturesForAssay(
-            nextAssayId,
-            nextAssayId === ASSAY_NAME.GENE_EXPRESSION ? current.info2.selectedFeatures : [],
-          ),
-        },
-      }));
-    },
-    setInfo1: (patch) => patchStudioWizard(set, (current) => ({ ...current, info1: { ...current.info1, ...patch } })),
-    setInfo2: (patch) =>
-      patchStudioWizard(set, (current) => ({
-        ...current,
-        info2: isGeneExpressionAssay(current.assayId)
-          ? {
-              ...current.info2,
-              ...patch,
-              selectedFeatures:
-                patch.selectedFeatures == null
-                  ? current.info2.selectedFeatures
-                  : normalizeSelectedFeaturesForAssay(current.assayId, patch.selectedFeatures),
-            }
-          : {
-              ...current.info2,
-              ...patch,
-              selectedFeatures: [],
-            },
-      })),
-    setInfo3: (patch) => patchStudioWizard(set, (current) => ({ ...current, info3: { ...current.info3, ...patch } })),
-    updateInfo3Sample: (index, patch) =>
-      patchStudioWizard(set, (current) => {
-        const selectedSlideId = current.info3.selectedSlideId;
-        const samples = current.info3.samplesBySlide[selectedSlideId].map((row, i) =>
-          i === index ? { ...row, ...patch } : row,
-        );
-        return {
-          ...current,
-          info3: {
-            ...current.info3,
-            samplesBySlide: {
-              ...current.info3.samplesBySlide,
-              [selectedSlideId]: samples,
-            },
+export const studioWizardActions = {
+  setInfoStep(set: (update: StateUpdater<StudioWizardData>) => void, infoStep: InfoStep) {
+    patchStudioWizard(set, { infoStep });
+  },
+  setDataSourceKind(set: (update: StateUpdater<StudioWizardData>) => void, dataSourceKind: StudioDataSourceKind) {
+    patchStudioWizard(set, { dataSourceKind });
+  },
+  loadAssayJson(set: (update: StateUpdater<StudioWizardData>) => void, assayJson: StudioAssayJson) {
+    patchStudioWizard(set, {
+      assayId: enabledAssayId(assayJson.assayId),
+      infoStep: 1,
+      dataSourceKind: assayJson.dataSourceKind ?? inferDataSourceKind(assayJson.info1.dataPath),
+      info1: { ...assayJson.info1 },
+      info2: {
+        ...assayJson.info2,
+        selectedFeatures: normalizeSelectedFeaturesForAssay(
+          assayJson.assayId,
+          assayJson.info2.selectedFeatures,
+        ),
+      },
+      info3: {
+        selectedSlideId: assayJson.info3.selectedSlideId,
+        samplesBySlide: cloneSamplesBySlide(assayJson.info3.samplesBySlide),
+      },
+    });
+  },
+  setAssayId(set: (update: StateUpdater<StudioWizardData>) => void, assayId: AssayId | null) {
+    const nextAssayId = enabledAssayId(assayId);
+    patchStudioWizard(set, (current) => ({
+      ...current,
+      assayId: nextAssayId,
+      info2: {
+        ...current.info2,
+        selectedFeatures: normalizeSelectedFeaturesForAssay(
+          nextAssayId,
+          nextAssayId === ASSAY_NAME.GENE_EXPRESSION ? current.info2.selectedFeatures : [],
+        ),
+      },
+    }));
+  },
+  setInfo1(set: (update: StateUpdater<StudioWizardData>) => void, patch: Partial<BasicInfoStep1>) {
+    patchStudioWizard(set, (current) => ({ ...current, info1: { ...current.info1, ...patch } }));
+  },
+  setInfo2(set: (update: StateUpdater<StudioWizardData>) => void, patch: Partial<BasicInfoStep2>) {
+    patchStudioWizard(set, (current) => ({
+      ...current,
+      info2: isGeneExpressionAssay(current.assayId)
+        ? {
+            ...current.info2,
+            ...patch,
+            selectedFeatures:
+              patch.selectedFeatures == null
+                ? current.info2.selectedFeatures
+                : normalizeSelectedFeaturesForAssay(current.assayId, patch.selectedFeatures),
+          }
+        : {
+            ...current.info2,
+            ...patch,
+            selectedFeatures: [],
           },
-        };
-      }),
-  };
-}
+    }));
+  },
+  setInfo3(set: (update: StateUpdater<StudioWizardData>) => void, patch: Partial<BasicInfoStep3>) {
+    patchStudioWizard(set, (current) => ({ ...current, info3: { ...current.info3, ...patch } }));
+  },
+  updateInfo3Sample(
+    set: (update: StateUpdater<StudioWizardData>) => void,
+    index: number,
+    patch: Partial<BasicInfoSampleRow>,
+  ) {
+    patchStudioWizard(set, (current) => {
+      const selectedSlideId = current.info3.selectedSlideId;
+      const samples = current.info3.samplesBySlide[selectedSlideId].map((row, i) =>
+        i === index ? { ...row, ...patch } : row,
+      );
+      return {
+        ...current,
+        info3: {
+          ...current.info3,
+          samplesBySlide: {
+            ...current.info3.samplesBySlide,
+            [selectedSlideId]: samples,
+          },
+        },
+      };
+    });
+  },
+};
 
 function useStudioStoreApi(): StudioState {
   const [state, setState] = useAtom(studioWizardAtom);
-  return useMemo(() => bindStudioStore(state, setState), [state, setState]);
+
+  const setInfoStep = useCallback(
+    (infoStep: InfoStep) => studioWizardActions.setInfoStep(setState, infoStep),
+    [setState],
+  );
+  const setDataSourceKind = useCallback(
+    (dataSourceKind: StudioDataSourceKind) =>
+      studioWizardActions.setDataSourceKind(setState, dataSourceKind),
+    [setState],
+  );
+  const loadAssayJson = useCallback(
+    (assayJson: StudioAssayJson) => studioWizardActions.loadAssayJson(setState, assayJson),
+    [setState],
+  );
+  const setAssayId = useCallback(
+    (assayId: AssayId | null) => studioWizardActions.setAssayId(setState, assayId),
+    [setState],
+  );
+  const setInfo1 = useCallback(
+    (patch: Partial<BasicInfoStep1>) => studioWizardActions.setInfo1(setState, patch),
+    [setState],
+  );
+  const setInfo2 = useCallback(
+    (patch: Partial<BasicInfoStep2>) => studioWizardActions.setInfo2(setState, patch),
+    [setState],
+  );
+  const setInfo3 = useCallback(
+    (patch: Partial<BasicInfoStep3>) => studioWizardActions.setInfo3(setState, patch),
+    [setState],
+  );
+  const updateInfo3Sample = useCallback(
+    (index: number, patch: Partial<BasicInfoSampleRow>) =>
+      studioWizardActions.updateInfo3Sample(setState, index, patch),
+    [setState],
+  );
+
+  return {
+    ...state,
+    setInfoStep,
+    setDataSourceKind,
+    loadAssayJson,
+    setAssayId,
+    setInfo1,
+    setInfo2,
+    setInfo3,
+    updateInfo3Sample,
+  };
 }
 
 export function useStudioStore<T>(selector: (state: StudioState) => T): T {
