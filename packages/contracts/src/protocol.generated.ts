@@ -141,6 +141,7 @@ export type CropRoiProgress = {
 	totalRois: number,
 	message: string | null,
 	error: string | null,
+	skippedPositions?: number[],
 };
 
 export type CropRoiProgressMessage = {

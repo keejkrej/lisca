@@ -271,6 +271,14 @@ export function useAlignState(): AlignState {
 
   const saveCurrent = useCallback(async () => {
     if (!workspacePath || !frame) return false;
+    const { included } = countVisibleAlignGridCells(frame, grid, currentExcludedCells);
+    if (included === 0) {
+      alignerUiActions.setError(
+        setUi,
+        "All grid cells are excluded — adjust exclusions before saving.",
+      );
+      return false;
+    }
     alignerUiActions.setSaving(setUi, true);
     alignerUiActions.setError(setUi, null);
     try {
@@ -323,6 +331,9 @@ export function useAlignState(): AlignState {
           if (isDoneCropStatus(progress.status)) {
             if (progress.status === "error") {
               alignerUiActions.setError(setUi, progress.error ?? "Crop failed");
+            }
+            if (progress.status === "completed" && progress.message) {
+              alignerUiActions.setStatus(setUi, progress.message);
             }
             stop();
           }

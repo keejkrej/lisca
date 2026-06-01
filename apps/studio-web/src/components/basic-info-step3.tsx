@@ -59,13 +59,17 @@ export function BasicInfoStep3() {
       <div className={cn(ROW, "min-h-0")}>
         <Field className="min-h-0 gap-2.5" name="samples">
           <FieldLabel className="text-2xl font-normal">Samples</FieldLabel>
-          <div className="mt-0 w-full min-w-0">
-            <table className="w-full table-fixed border-separate border-spacing-0 text-base">
+          <p className="text-muted-foreground text-sm">
+            Position start and finish use 1-based indexing (Pos1, Pos2, …).
+          </p>
+          <div className="mt-0 w-full min-w-0 overflow-x-auto">
+            <table className="w-full min-w-[44rem] table-fixed border-separate border-spacing-0 text-base">
               <thead>
                 <tr className="text-left text-sm text-muted-foreground">
                   <th className="border-b border-border px-2 py-2 font-medium">Channel</th>
                   <th className="border-b border-border px-2 py-2 font-medium">Name</th>
-                  <th className="border-b border-border px-2 py-2 font-medium">Positions</th>
+                  <th className="border-b border-border px-2 py-2 font-medium">Start</th>
+                  <th className="border-b border-border px-2 py-2 font-medium">Finish</th>
                   <th className="border-b border-border px-2 py-2 font-medium">Mask channel</th>
                   <th className="border-b border-border px-2 py-2 font-medium">Signal channel</th>
                 </tr>
@@ -78,6 +82,7 @@ export function BasicInfoStep3() {
                         aria-label={`Channel row ${index + 1}`}
                         autoComplete="off"
                         className="w-full"
+                        inputMode="numeric"
                         value={row.channel}
                         onChange={(event) =>
                           updateInfo3Sample(index, { channel: event.target.value })
@@ -95,12 +100,25 @@ export function BasicInfoStep3() {
                     </td>
                     <td className="px-2 py-1.5">
                       <Input
-                        aria-label={`Positions row ${index + 1}`}
+                        aria-label={`Position start row ${index + 1}`}
                         autoComplete="off"
                         className="w-full"
-                        value={row.positions}
+                        inputMode="numeric"
+                        value={row.positionStart}
                         onChange={(event) =>
-                          updateInfo3Sample(index, { positions: event.target.value })
+                          updateInfo3Sample(index, { positionStart: event.target.value })
+                        }
+                      />
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <Input
+                        aria-label={`Position finish row ${index + 1}`}
+                        autoComplete="off"
+                        className="w-full"
+                        inputMode="numeric"
+                        value={row.positionFinish}
+                        onChange={(event) =>
+                          updateInfo3Sample(index, { positionFinish: event.target.value })
                         }
                       />
                     </td>
@@ -109,6 +127,7 @@ export function BasicInfoStep3() {
                         aria-label={`Mask channel row ${index + 1}`}
                         autoComplete="off"
                         className="w-full"
+                        inputMode="numeric"
                         value={row.maskChannel}
                         onChange={(event) =>
                           updateInfo3Sample(index, { maskChannel: event.target.value })
@@ -120,6 +139,7 @@ export function BasicInfoStep3() {
                         aria-label={`Signal channel row ${index + 1}`}
                         autoComplete="off"
                         className="w-full"
+                        inputMode="numeric"
                         value={row.signalChannel}
                         onChange={(event) =>
                           updateInfo3Sample(index, { signalChannel: event.target.value })

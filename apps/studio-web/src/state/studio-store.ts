@@ -20,6 +20,8 @@ import {
 import { Atom, useAtom } from "@effect-atom/atom-react";
 import { useCallback, useRef } from "react";
 
+import { sampleRowFromDisk, sampleRowToDisk } from "../utils/sample-positions";
+
 export type {
   AssayId,
   BasicInfo2FeatureId,
@@ -92,7 +94,21 @@ export function buildStudioAssayJson({
     dataSourceKind,
     info1,
     info2,
-    info3,
+    info3: normalizeInfo3ForAssay(info3),
+  };
+}
+
+function normalizeSampleRowForAssay(row: BasicInfoSampleRow) {
+  return sampleRowToDisk(row);
+}
+
+function normalizeInfo3ForAssay(info3: BasicInfoStep3) {
+  return {
+    selectedSlideId: info3.selectedSlideId,
+    samplesBySlide: {
+      "slide-i": info3.samplesBySlide["slide-i"].map(normalizeSampleRowForAssay),
+      "slide-vi": info3.samplesBySlide["slide-vi"].map(normalizeSampleRowForAssay),
+    },
   };
 }
 
@@ -227,12 +243,22 @@ function parseSampleRows(value: unknown, label: string): BasicInfoSampleRow[] {
   if (!Array.isArray(value)) throw new Error(`Invalid assay.json: ${label} must be an array.`);
   return value.map((row, index) => {
     const record = requireRecord(row, `${label}[${index}]`);
-    return {
+    const parsed = sampleRowFromDisk({
       channel: requireString(record, "channel", `${label}[${index}].channel`),
       name: requireString(record, "name", `${label}[${index}].name`),
-      positions: requireString(record, "positions", `${label}[${index}].positions`),
+      positions: optionalString(record, "positions"),
+      positionStart: optionalString(record, "positionStart"),
+      positionFinish: optionalString(record, "positionFinish"),
       maskChannel: optionalString(record, "maskChannel"),
       signalChannel: optionalString(record, "signalChannel"),
+    });
+    return {
+      channel: parsed.channel,
+      name: parsed.name,
+      positionStart: parsed.positionStart,
+      positionFinish: parsed.positionFinish,
+      maskChannel: parsed.maskChannel,
+      signalChannel: parsed.signalChannel,
     };
   });
 }
@@ -321,35 +347,48 @@ const initialInfo2: BasicInfoStep2 = {
   timelapseUnit: "minute",
   selectedFeatures: [ASSAY_FEATURE.TOTAL_FLUOR],
 };
+const emptySampleRow = (): BasicInfoSampleRow => ({
+  channel: "",
+  name: "",
+  positionStart: "",
+  positionFinish: "",
+  maskChannel: "",
+  signalChannel: "",
+});
+
 const initialInfo3: BasicInfoStep3 = {
   selectedSlideId: "slide-vi",
   samplesBySlide: {
-    "slide-i": [{ channel: "0", name: "", positions: "", maskChannel: "", signalChannel: "" }],
+    "slide-i": [{ ...emptySampleRow(), channel: "0" }],
     "slide-vi": [
-      { channel: "0", name: "", positions: "", maskChannel: "", signalChannel: "" },
-      { channel: "1", name: "", positions: "", maskChannel: "", signalChannel: "" },
-      { channel: "2", name: "", positions: "", maskChannel: "", signalChannel: "" },
-      { channel: "3", name: "", positions: "", maskChannel: "", signalChannel: "" },
-      { channel: "4", name: "", positions: "", maskChannel: "", signalChannel: "" },
-      { channel: "5", name: "", positions: "", maskChannel: "", signalChannel: "" },
+      { ...emptySampleRow(), channel: "0" },
+      { ...emptySampleRow(), channel: "1" },
+      { ...emptySampleRow(), channel: "2" },
+      { ...emptySampleRow(), channel: "3" },
+      { ...emptySampleRow(), channel: "4" },
+      { ...emptySampleRow(), channel: "5" },
     ],
   },
 };
+
+function cloneSampleRow(row: BasicInfoSampleRow & { positions?: string }): BasicInfoSampleRow {
+  return sampleRowFromDisk({
+    channel: row.channel,
+    name: row.name,
+    positions: row.positions,
+    positionStart: row.positionStart,
+    positionFinish: row.positionFinish,
+    maskChannel: row.maskChannel ?? "",
+    signalChannel: row.signalChannel ?? "",
+  });
+}
 
 function cloneSamplesBySlide(
   samplesBySlide: Record<BasicInfoSlideId, BasicInfoSampleRow[]>,
 ): Record<BasicInfoSlideId, BasicInfoSampleRow[]> {
   return {
-    "slide-i": samplesBySlide["slide-i"].map((row) => ({
-      ...row,
-      maskChannel: row.maskChannel ?? "",
-      signalChannel: row.signalChannel ?? "",
-    })),
-    "slide-vi": samplesBySlide["slide-vi"].map((row) => ({
-      ...row,
-      maskChannel: row.maskChannel ?? "",
-      signalChannel: row.signalChannel ?? "",
-    })),
+    "slide-i": samplesBySlide["slide-i"].map(cloneSampleRow),
+    "slide-vi": samplesBySlide["slide-vi"].map(cloneSampleRow),
   };
 }
 

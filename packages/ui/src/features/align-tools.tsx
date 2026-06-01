@@ -12,6 +12,7 @@ import type { LucideIcon } from "lucide-react";
 import type { AlignGridToolMode } from "@lisca/utils";
 
 import { Button } from "../components/ui/button";
+import { dockToolLabel, useDockToolShortcuts, type DockToolAction } from "../shell/dock-tool-shortcuts";
 import { Section } from "../shell/section";
 
 export type AlignToolsProps = {
@@ -25,6 +26,8 @@ export type AlignToolsProps = {
   sectionContentClassName?: string;
   /** When true, render only the toolbar (no surrounding {@link Section}). */
   bare?: boolean;
+  /** When false, number-key shortcuts are disabled. */
+  shortcutsEnabled?: boolean;
 };
 
 export const alignToolDefinitions: {
@@ -65,6 +68,18 @@ export function AlignToolButton(props: {
   );
 }
 
+export function buildAlignToolActions(
+  mode: AlignGridToolMode,
+  onModeChange: (mode: AlignGridToolMode) => void,
+): DockToolAction[] {
+  return alignToolDefinitions.map(({ mode: toolMode, label }) => ({
+    id: toolMode,
+    label,
+    active: mode === toolMode,
+    onSelect: () => onModeChange(toolMode),
+  }));
+}
+
 export function AlignTools({
   mode,
   onModeChange,
@@ -75,21 +90,26 @@ export function AlignTools({
   sectionClassName,
   sectionContentClassName,
   bare = false,
+  shortcutsEnabled = true,
 }: AlignToolsProps) {
+  const toolActions = buildAlignToolActions(mode, onModeChange);
+  useDockToolShortcuts(toolActions, { enabled: shortcutsEnabled });
+
   const toolbar = (
     <div
       aria-label="Align canvas tool"
       className="grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-2"
       role="toolbar"
     >
-      {alignToolDefinitions.map(({ mode: toolMode, label, Icon }) =>
-        toolMode === "zoom-pattern" ? (
+      {alignToolDefinitions.map(({ mode: toolMode, label, Icon }, index) => {
+        const shortcutLabel = dockToolLabel(label, index);
+        return toolMode === "zoom-pattern" ? (
           <div key={toolMode} className="grid min-h-0 min-w-0 grid-cols-[1fr_2rem] gap-1">
             <AlignToolButton
               active={mode === toolMode}
               className="h-full w-full min-w-0 justify-center gap-2 px-2"
               Icon={Icon}
-              label={label}
+              label={shortcutLabel}
               mode={toolMode}
               onClick={() => onModeChange(toolMode)}
             />
@@ -116,12 +136,12 @@ export function AlignTools({
             key={toolMode}
             active={mode === toolMode}
             Icon={Icon}
-            label={label}
+            label={shortcutLabel}
             mode={toolMode}
             onClick={() => onModeChange(toolMode)}
           />
-        ),
-      )}
+        );
+      })}
     </div>
   );
 

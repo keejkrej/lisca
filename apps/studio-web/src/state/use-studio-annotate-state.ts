@@ -24,7 +24,8 @@ import {
   currentAnnotateRoi,
   useStudioAnnotateStore,
 } from "./studio-annotate-store";
-import { useStudioStore } from "./studio-store";
+import { buildStudioAssayJson, useStudioStore } from "./studio-store";
+import { validateAssayForAnalysis } from "../utils/studio-assay-validation";
 
 function isAbortError(cause: unknown): boolean {
   return cause instanceof DOMException && cause.name === "AbortError";
@@ -86,6 +87,11 @@ export type StudioAnnotateState = {
 
 export function useStudioAnnotateState(): StudioAnnotateState {
   const saveTo = useStudioStore((state) => state.info1.saveTo);
+  const assayId = useStudioStore((state) => state.assayId);
+  const dataSourceKind = useStudioStore((state) => state.dataSourceKind);
+  const info1 = useStudioStore((state) => state.info1);
+  const info2 = useStudioStore((state) => state.info2);
+  const info3 = useStudioStore((state) => state.info3);
   const activeWorkspacePath = saveTo.trim() || null;
   const navigate = useNavigate();
   const {
@@ -281,8 +287,14 @@ export function useStudioAnnotateState(): StudioAnnotateState {
 
   const startAnalysis = useCallback(() => {
     if (!workspacePath) return;
+    const validation = validateAssayForAnalysis({ assayId, info1, info2, info3 });
+    if (!validation.ok || !assayId) {
+      setStatus(validation.ok ? "Assay type is missing" : validation.errors[0] ?? "Invalid assay");
+      return;
+    }
+
     setAnalysisStartConfirm(false);
-    setStatus("Starting analysis");
+    setStatus("Saving assay.json");
     const requestId = `studio-analysis-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     setAnalysisRequestId(requestId);
     setAnalysisResultFiles([]);
@@ -291,7 +303,7 @@ export function useStudioAnnotateState(): StudioAnnotateState {
       status: "queued",
       stage: "queued",
       progress: 0,
-      message: "Queued analysis",
+      message: "Saving assay.json",
       resultFiles: [],
       error: null,
     });
@@ -317,6 +329,26 @@ export function useStudioAnnotateState(): StudioAnnotateState {
 
     void (async () => {
       try {
+        const assayJson = buildStudioAssayJson({
+          assayId,
+          dataSourceKind,
+          info1,
+          info2,
+          info3,
+        });
+        await runClientEffect(
+          studioClient.saveAssayJson(workspacePath, JSON.stringify(assayJson, null, 2)),
+        );
+        setStatus("Starting analysis");
+        setAnalysisProgress({
+          requestId,
+          status: "queued",
+          stage: "queued",
+          progress: 0,
+          message: "Queued analysis",
+          resultFiles: [],
+          error: null,
+        });
         const initialProgress = await runClientEffect(
           studioClient.startAnalysis({
             workspacePath,
@@ -341,6 +373,11 @@ export function useStudioAnnotateState(): StudioAnnotateState {
       }
     })();
   }, [
+    assayId,
+    dataSourceKind,
+    info1,
+    info2,
+    info3,
     navigate,
     setAnalysisProgress,
     setAnalysisRequestId,

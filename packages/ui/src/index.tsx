@@ -106,6 +106,15 @@ export { ShellWorkspaceProvider, useShellWorkspace, type ShellWorkspace } from "
 
 export { DialogSurface, type DialogSurfaceMaxWidth } from "./shell/dialog-surface";
 export { DockButton } from "./shell/dock-button";
+export {
+  DockToolGrid,
+  type DockToolGridProps,
+} from "./shell/dock-tool-grid";
+export {
+  dockToolLabel,
+  useDockToolShortcuts,
+  type DockToolAction,
+} from "./shell/dock-tool-shortcuts";
 export { ModalScrim } from "./shell/modal-scrim";
 export { Panel, PanelContent, PanelDescription, PanelHeader, PanelTitle } from "./shell/panel";
 export { ReadonlyPathField } from "./shell/readonly-path-field";
@@ -118,6 +127,7 @@ export {
   AlignToolButton,
   AlignTools,
   alignToolDefinitions,
+  buildAlignToolActions,
   type AlignToolsProps,
 } from "./features/align-tools";
 

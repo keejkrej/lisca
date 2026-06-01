@@ -190,6 +190,7 @@ async fn crop_roi_handler<S: HasCropJobs>(
         total_rois: 0,
         message: Some("Queued crop".to_string()),
         error: None,
+        skipped_positions: Vec::new(),
     };
     let cancel = Arc::new(AtomicBool::new(false));
     {

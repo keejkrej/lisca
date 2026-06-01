@@ -280,6 +280,8 @@ pub struct CropRoiProgress {
     pub total_rois: u32,
     pub message: Option<String>,
     pub error: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub skipped_positions: Vec<u32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]

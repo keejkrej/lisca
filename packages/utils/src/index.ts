@@ -536,6 +536,12 @@ export function minimumAlignGridSpacing(cellWidth: number, cellHeight: number): 
   return Math.max(1, Math.min(cellWidth, cellHeight));
 }
 
+function normalizeAlignGridShape(shape: AlignGridShape | undefined): AlignGridShape {
+  if (shape == null) return "rect";
+  if (shape === "square") return "rect";
+  return shape;
+}
+
 export function normalizeAlignGridState(input?: Partial<AlignGridState>): AlignGridState {
   const base = createDefaultAlignGrid();
   if (!input) return base;
@@ -545,7 +551,7 @@ export function normalizeAlignGridState(input?: Partial<AlignGridState>): AlignG
 
   return {
     enabled: input.enabled ?? base.enabled,
-    shape: input.shape ?? base.shape,
+    shape: normalizeAlignGridShape(input.shape ?? base.shape),
     tx: input.tx ?? base.tx,
     ty: input.ty ?? base.ty,
     rotation: normalizeRadians(input.rotation ?? base.rotation),
@@ -563,7 +569,8 @@ export function alignGridBasis(
   spacingA: number,
   spacingB: number,
 ) {
-  const secondAngle = rotation + (shape === "rect" ? Math.PI / 2 : Math.PI / 3);
+  const isRect = shape === "rect" || shape === "square";
+  const secondAngle = rotation + (isRect ? Math.PI / 2 : Math.PI / 3);
   return {
     a: {
       x: Math.cos(rotation) * spacingA,

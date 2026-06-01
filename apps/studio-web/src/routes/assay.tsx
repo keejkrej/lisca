@@ -1,9 +1,9 @@
 import type { HostPort } from "@lisca/client/ports/types";
 import { runClientEffect } from "@lisca/client/runtime";
-import { AppShell, DockButton, HostFilePickerDialog } from "@lisca/ui";
+import { AppShell, DockButton, DockToolGrid, HostFilePickerDialog } from "@lisca/ui";
 import { createFileRoute } from "@tanstack/react-router";
 import { useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { studioClient } from "../api/studio-port";
 import { StudioDock } from "../components/studio-dock";
@@ -23,6 +23,18 @@ function AssayPage() {
   const loadAssayJson = useStudioStore((state) => state.loadAssayJson);
   const [openingAssay, setOpeningAssay] = useState(false);
   const [assayPickerOpen, setAssayPickerOpen] = useState(false);
+
+  const toolActions = useMemo(
+    () => [
+      {
+        id: "open-assay",
+        label: "Open assay",
+        disabled: openingAssay || assayPickerOpen,
+        onSelect: () => setAssayPickerOpen(true),
+      },
+    ],
+    [assayPickerOpen, openingAssay],
+  );
 
   const openAssayJson = async (path: string) => {
     setAssayPickerOpen(false);
@@ -64,9 +76,7 @@ function AssayPage() {
                 </DockButton>
               }
               tool={
-                <DockButton disabled={openingAssay} onClick={() => setAssayPickerOpen(true)}>
-                  Open assay
-                </DockButton>
+                <DockToolGrid actions={toolActions} columns={1} enabled={!assayPickerOpen} />
               }
             />
           </AppShell.Dock>

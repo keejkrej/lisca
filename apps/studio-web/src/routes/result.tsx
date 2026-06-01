@@ -1,7 +1,7 @@
 import type { StudioAnalysisCsvFile } from "@lisca/contracts";
 import { resultData } from "@lisca/client/atoms";
 import { RegistryContext, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
-import { AppShell, DockButton, Spinner, ViewportCard } from "@lisca/ui";
+import { AppShell, DockButton, DockToolGrid, Spinner, ViewportCard } from "@lisca/ui";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
@@ -292,6 +292,32 @@ function ResultPage() {
   const dockInstruction = saveMessage ?? panelError ?? defaultInstruction;
   const isBusy = isSectionLoading || isSaving;
 
+  const sectionToolActions = useMemo(
+    () => [
+      {
+        id: "timeseries",
+        label: "Timeseries",
+        disabled: !hasTimeseriesFiles || isBusy,
+        active: activeSection === "timeseries",
+        onSelect: () => switchSection("timeseries"),
+      },
+      {
+        id: "parameters",
+        label: "Parameters",
+        disabled: !hasParameterFiles || isBusy,
+        active: activeSection === "parameters",
+        onSelect: () => switchSection("parameters"),
+      },
+    ],
+    [
+      activeSection,
+      hasParameterFiles,
+      hasTimeseriesFiles,
+      isBusy,
+      switchSection,
+    ],
+  );
+
   return (
     <AppShell>
       <AppShell.Body>
@@ -342,24 +368,7 @@ function ResultPage() {
             <StudioDock
               instruction={dockInstruction}
               tool={
-                <div className="flex w-full flex-col gap-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    <DockButton
-                      active={activeSection === "timeseries"}
-                      disabled={!hasTimeseriesFiles || isBusy}
-                      onClick={() => switchSection("timeseries")}
-                    >
-                      Timeseries
-                    </DockButton>
-                    <DockButton
-                      active={activeSection === "parameters"}
-                      disabled={!hasParameterFiles || isBusy}
-                      onClick={() => switchSection("parameters")}
-                    >
-                      Parameters
-                    </DockButton>
-                  </div>
-                </div>
+                <DockToolGrid actions={sectionToolActions} enabled={!isBusy} />
               }
               action={
                 <DockButton

@@ -15,6 +15,7 @@ export function AlignToolSection({ state }: { state: AlignState }) {
       onPatternZoomLockedChange={(locked) => {
         if (!state.cropping) state.setPatternZoomLocked(locked);
       }}
+      shortcutsEnabled={!state.cropping}
     />
   );
 }

@@ -51,6 +51,15 @@ describe("align grid utils", () => {
     expect(basis.b.y).toBeCloseTo(20, 6);
   });
 
+  test("normalizes legacy square shape to rect", () => {
+    const grid = normalizeAlignGridState({ shape: "square", enabled: true });
+    expect(grid.shape).toBe("rect");
+
+    const basis = alignGridBasis("square", 0, 10, 20);
+    expect(basis.b.x).toBeCloseTo(0, 6);
+    expect(basis.b.y).toBeCloseTo(20, 6);
+  });
+
   test("keeps translated lattice cells visible", () => {
     const cells = enumerateVisibleAlignGridCells(
       { width: 100, height: 100 },

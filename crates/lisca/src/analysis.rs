@@ -285,13 +285,13 @@ fn build_slide_mapping(info3: &AssayInfo3) -> Result<BTreeMap<u32, SlideSampleEn
 
     let mut mapping = BTreeMap::new();
     for row in rows {
+        let sample_name = row.name.trim().to_string();
+        if sample_name.is_empty() {
+            continue;
+        }
         let signal_channel = parse_u32(&row.signal_channel, "signalChannel")?;
         let mask_channel = parse_u32(&row.mask_channel, "maskChannel")?;
         let channel = parse_u32(&row.channel, "channel")?;
-        let sample_name = row.name.trim().to_string();
-        if sample_name.is_empty() {
-            return Err(format!("sample name is empty for channel {channel}"));
-        }
         let positions = parse_positions(&row.positions)?;
         mapping.insert(
             channel,

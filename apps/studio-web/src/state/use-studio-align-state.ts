@@ -380,7 +380,10 @@ export function useStudioAlignState(): StudioAlignState {
           setCropProgress(progress);
           if (isDoneCropStatus(progress.status)) {
             if (progress.status === "error") setError(progress.error ?? "Crop failed");
-            if (progress.status === "completed") void navigate({ to: "/annotate" });
+            if (progress.status === "completed") {
+              setStatus(progress.message ?? "Crop completed");
+              void navigate({ to: "/annotate" });
+            }
             stop();
           }
         });
@@ -401,7 +404,7 @@ export function useStudioAlignState(): StudioAlignState {
         });
       }
     },
-    [navigate, setError, source, workspacePath],
+    [navigate, setError, setStatus, source, workspacePath],
   );
 
   const cropBatchWithOverwriteCheck = useCallback(
@@ -483,16 +486,21 @@ export function useStudioAlignState(): StudioAlignState {
 
   const saveAndAdvance = useCallback(async () => {
     if (!workspacePath || !frame) return false;
+    const edgeCells = collectAlignGridEdgeCells(frame, grid);
+    const thresholdCells = await variationExcludeCells();
+    const finalExcludedCells = mergeExcludedAlignGridCells(currentExcludedCells, [
+      ...edgeCells,
+      ...thresholdCells,
+    ]);
+    const { included } = countVisibleAlignGridCells(frame, grid, finalExcludedCells);
+    if (included === 0) {
+      setError("All grid cells are excluded — adjust exclusions before saving.");
+      return false;
+    }
     setSaving(true);
     setError(null);
     let advanced = false;
     try {
-      const edgeCells = collectAlignGridEdgeCells(frame, grid);
-      const thresholdCells = await variationExcludeCells();
-      const finalExcludedCells = mergeExcludedAlignGridCells(currentExcludedCells, [
-        ...edgeCells,
-        ...thresholdCells,
-      ]);
       setExcludedCellsForCurrentPosition(finalExcludedCells);
       const csv = buildBboxCsv(frame, grid, finalExcludedCells);
       const alignState = alignStateFromCurrent(grid, finalExcludedCells);

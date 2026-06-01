@@ -276,6 +276,7 @@ export const CropRoiProgressSchema = Schema.Struct({
   totalRois: UInt,
   message: Schema.NullOr(Schema.String),
   error: Schema.optional(Schema.NullOr(Schema.String)),
+  skippedPositions: Schema.optional(Schema.mutable(Schema.Array(UInt))),
 }) satisfies Schema.Schema<CropRoiProgress>;
 
 export const CropRoiProgressMessageSchema = Schema.Struct({

@@ -82,6 +82,12 @@ export function RoiPage() {
               mode={page.mode}
               request={page.request}
               saving={page.saving}
+              shortcutsEnabled={
+                page.mode === "segmentation" &&
+                page.canEditSegmentation &&
+                !page.labelDialogOpen &&
+                !page.filePickerOpen
+              }
               tool={page.tool}
               onSave={() => void page.handleSave()}
               onToolChange={page.setTool}

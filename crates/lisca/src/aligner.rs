@@ -109,6 +109,14 @@ pub fn crop_roi<F>(
 where
     F: FnMut(CropRoiProgress),
 {
+    let workspace = Path::new(&request.workspace_path);
+    if !workspace.is_dir() {
+        return Err(format!(
+            "workspace path does not exist or is not a directory: {}",
+            workspace.display()
+        ));
+    }
+
     let scan = scan_source(request.source.clone())?;
     let positions = if request.positions.is_empty() {
         list_saved_bbox_positions(&request.workspace_path)?
@@ -120,9 +128,18 @@ where
     }
 
     let mut position_bboxes = Vec::<(u32, Vec<RoiBbox>)>::new();
+    let mut skipped_positions = Vec::<u32>::new();
     let mut total_rois = 0_u32;
     for pos in &positions {
-        let bboxes = read_bbox_csv(&workspace_bbox_csv_path(&request.workspace_path, *pos))?;
+        let bbox_path = workspace_bbox_csv_path(&request.workspace_path, *pos);
+        if !bbox_path.is_file() {
+            return Err(format!("missing bbox CSV: {}", bbox_path.display()));
+        }
+        let bboxes = parse_bbox_csv(&bbox_path)?;
+        if bboxes.is_empty() {
+            skipped_positions.push(*pos);
+            continue;
+        }
         total_rois = total_rois.saturating_add(
             (bboxes.len() as u32)
                 .saturating_mul(scan.times.len().max(1) as u32)
@@ -130,6 +147,19 @@ where
                 .saturating_mul(scan.z_slices.len().max(1) as u32),
         );
         position_bboxes.push((*pos, bboxes));
+    }
+    if position_bboxes.is_empty() {
+        if skipped_positions.is_empty() {
+            return Err("no positions with crop boxes".to_string());
+        }
+        return Err(format!(
+            "no positions with crop boxes (skipped Pos{})",
+            skipped_positions
+                .iter()
+                .map(|pos| pos.to_string())
+                .collect::<Vec<_>>()
+                .join(", ")
+        ));
     }
     if !request.overwrite {
         for (pos, _) in &position_bboxes {
@@ -149,6 +179,7 @@ where
         total_rois,
         message: Some("Starting crop".to_string()),
         error: None,
+        skipped_positions: skipped_positions.clone(),
     };
     on_progress(progress.clone());
 
@@ -223,7 +254,19 @@ where
 
     progress.status = CropRoiStatus::Completed;
     progress.position = None;
-    progress.message = Some("Crop completed".to_string());
+    progress.skipped_positions = skipped_positions.clone();
+    progress.message = Some(if skipped_positions.is_empty() {
+        "Crop completed".to_string()
+    } else {
+        format!(
+            "Crop completed (skipped Pos{} with no crop boxes)",
+            skipped_positions
+                .iter()
+                .map(|pos| pos.to_string())
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
+    });
     on_progress(progress);
     Ok(())
 }
@@ -456,7 +499,7 @@ fn parse_bbox_csv_value(value: &str, label: &str) -> Result<u32, String> {
         .map_err(|error| format!("invalid bbox {label}: {error}"))
 }
 
-fn read_bbox_csv(path: &Path) -> Result<Vec<RoiBbox>, String> {
+fn parse_bbox_csv(path: &Path) -> Result<Vec<RoiBbox>, String> {
     let text = fs::read_to_string(path).map_err(|error| format!("{}: {error}", path.display()))?;
     let mut bboxes = Vec::new();
     for (line_index, line) in text.lines().enumerate() {
@@ -484,9 +527,6 @@ fn read_bbox_csv(path: &Path) -> Result<Vec<RoiBbox>, String> {
             continue;
         }
         bboxes.push(RoiBbox { roi, x, y, w, h });
-    }
-    if bboxes.is_empty() {
-        return Err(format!("{} contains no crop boxes", path.display()));
     }
     Ok(bboxes)
 }
@@ -657,7 +697,16 @@ fn write_roi_tiff_chunk_frame_major(
                         time,
                         z,
                     },
-                )?;
+                )
+                .map_err(|error| {
+                    format!(
+                        "Pos{pos} channel={channel} time={time} z={z}: {error}",
+                        pos = pos,
+                        channel = channel,
+                        time = time,
+                        z = z,
+                    )
+                })?;
                 for writer in &mut writers {
                     let pixels = crop_frame(&raw, &writer.bbox)?;
                     write_roi_tiff_page(&mut writer.encoder, &writer.bbox, &pixels)?;
@@ -746,5 +795,24 @@ pub fn output_paths(pos: u32) -> AlignOutputPaths {
         bbox: format!("bbox/Pos{pos}.csv"),
         align: format!("align/Pos{pos}.json"),
         roi: format!("roi/Pos{pos}.tif"),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+
+    #[test]
+    fn parse_bbox_csv_returns_empty_for_header_only_file() {
+        let path = std::env::temp_dir().join(format!(
+            "lisca-empty-bbox-{}.csv",
+            std::process::id()
+        ));
+        let mut file = fs::File::create(&path).expect("create csv");
+        writeln!(file, "roi,x,y,w,h,i,j").expect("write header");
+        let bboxes = parse_bbox_csv(&path).expect("parse csv");
+        assert!(bboxes.is_empty());
+        let _ = fs::remove_file(path);
     }
 }

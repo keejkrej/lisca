@@ -6,6 +6,14 @@ import type {
   StudioStep,
 } from "./studio-store";
 import { ASSAY_NAME } from "@lisca/contracts";
+import { isValidSamplePositionRange } from "../utils/sample-positions";
+
+function parseNonNegativeInteger(value: string): number | null {
+  const trimmed = value.trim();
+  if (!/^\d+$/.test(trimmed)) return null;
+  const parsed = Number(trimmed);
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
+}
 
 export function validInfo1(info1: BasicInfoStep1): boolean {
   return (
@@ -32,11 +40,11 @@ export function validInfo3(info3: BasicInfoStep3): boolean {
     activeSamples.length > 0 &&
     activeSamples.every(
       (row) =>
-        row.channel.trim().length > 0 &&
+        parseNonNegativeInteger(row.channel) != null &&
         row.name.trim().length > 0 &&
-        row.positions.trim().length > 0 &&
-        row.maskChannel.trim().length > 0 &&
-        row.signalChannel.trim().length > 0,
+        isValidSamplePositionRange(row.positionStart, row.positionFinish) &&
+        parseNonNegativeInteger(row.maskChannel) != null &&
+        parseNonNegativeInteger(row.signalChannel) != null,
     )
   );
 }

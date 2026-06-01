@@ -1,6 +1,35 @@
 import type { AnnotationMode, RoiFrameRequest } from "@lisca/contracts";
-import { Button, ReadonlyPathField, Section, cn, type AnnotationTool } from "@lisca/ui";
+import {
+  Button,
+  DockToolGrid,
+  ReadonlyPathField,
+  Section,
+  cn,
+  type AnnotationTool,
+  type DockToolAction,
+} from "@lisca/ui";
 import { annotationOutputPaths } from "../utils/annotation-output";
+
+const annotationToolDefinitions: { id: AnnotationTool; label: string }[] = [
+  { id: "brush", label: "Brush" },
+  { id: "brush-erase", label: "Brush Erase" },
+  { id: "lasso", label: "Lasso" },
+  { id: "lasso-erase", label: "Lasso Erase" },
+];
+
+function buildAnnotationToolActions(
+  tool: AnnotationTool,
+  onToolChange: (tool: AnnotationTool) => void,
+  disabled: boolean,
+): DockToolAction[] {
+  return annotationToolDefinitions.map(({ id, label }) => ({
+    id,
+    label,
+    disabled,
+    active: tool === id,
+    onSelect: () => onToolChange(id),
+  }));
+}
 
 export function AnnotatorDock(props: {
   mode: AnnotationMode;
@@ -8,10 +37,18 @@ export function AnnotatorDock(props: {
   request: RoiFrameRequest | null;
   canSave: boolean;
   saving: boolean;
+  shortcutsEnabled?: boolean;
   onToolChange: (tool: AnnotationTool) => void;
   onSave: () => void;
 }) {
   const paths = annotationOutputPaths(props.request, props.mode);
+  const canEditTools = props.mode === "segmentation" && props.shortcutsEnabled !== false;
+  const toolActions = buildAnnotationToolActions(
+    props.tool,
+    props.onToolChange,
+    !canEditTools,
+  );
+
   return (
     <div className="flex h-full min-h-0 w-full gap-3 p-3">
       <Section
@@ -20,42 +57,22 @@ export function AnnotatorDock(props: {
         title="Tool"
       >
         {props.mode === "segmentation" ? (
-          <>
-            <div className="grid flex-1 grid-cols-2 gap-2">
+          <DockToolGrid
+            actions={toolActions}
+            className="grid flex-1 grid-cols-2 gap-2"
+            enabled={canEditTools}
+            renderAction={(action, _index, label) => (
               <Button
                 className="h-full justify-center"
+                disabled={action.disabled}
                 type="button"
-                variant={props.tool === "brush" ? "default" : "outline"}
-                onClick={() => props.onToolChange("brush")}
+                variant={action.active ? "default" : "outline"}
+                onClick={action.onSelect}
               >
-                Brush
+                {label}
               </Button>
-              <Button
-                className="h-full justify-center"
-                type="button"
-                variant={props.tool === "brush-erase" ? "default" : "outline"}
-                onClick={() => props.onToolChange("brush-erase")}
-              >
-                Brush Erase
-              </Button>
-              <Button
-                className="h-full justify-center"
-                type="button"
-                variant={props.tool === "lasso" ? "default" : "outline"}
-                onClick={() => props.onToolChange("lasso")}
-              >
-                Lasso
-              </Button>
-              <Button
-                className="h-full justify-center"
-                type="button"
-                variant={props.tool === "lasso-erase" ? "default" : "outline"}
-                onClick={() => props.onToolChange("lasso-erase")}
-              >
-                Lasso Erase
-              </Button>
-            </div>
-          </>
+            )}
+          />
         ) : (
           <div className="flex flex-1 items-center justify-center text-muted-foreground text-xs">
             Classification

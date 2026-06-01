@@ -110,14 +110,25 @@ export type StudioBasicInfoStep2 = {
 export type StudioBasicInfoSampleRow = {
   channel: string;
   name: string;
-  positions: string;
+  positionStart: string;
+  positionFinish: string;
   maskChannel: string;
   signalChannel: string;
+};
+
+/** Sample row as written to assay.json (includes legacy `positions` for the analysis pipeline). */
+export type StudioAssaySampleRowOnDisk = StudioBasicInfoSampleRow & {
+  positions: string;
 };
 
 export type StudioBasicInfoStep3 = {
   selectedSlideId: StudioBasicInfoSlideId;
   samplesBySlide: Record<StudioBasicInfoSlideId, StudioBasicInfoSampleRow[]>;
+};
+
+export type StudioBasicInfoStep3OnDisk = {
+  selectedSlideId: StudioBasicInfoSlideId;
+  samplesBySlide: Record<StudioBasicInfoSlideId, StudioAssaySampleRowOnDisk[]>;
 };
 
 export type StudioAssayJson = {
@@ -126,7 +137,7 @@ export type StudioAssayJson = {
   dataSourceKind?: StudioDataSourceKind;
   info1: StudioBasicInfoStep1;
   info2: StudioBasicInfoStep2;
-  info3: StudioBasicInfoStep3;
+  info3: StudioBasicInfoStep3OnDisk;
 };
 
 export type { PixelType } from "./constants.ts";
