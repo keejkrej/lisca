@@ -49,8 +49,11 @@ export function lockedStudioSelection(
   scan: WorkspaceScan,
   current: FrameRequest,
   maskChannel: number,
+  positionOptions: number[] = scan.positions,
 ): FrameRequest {
-  const position = scan.positions.includes(current.pos) ? current.pos : firstOrZero(scan.positions);
+  const position = positionOptions.includes(current.pos)
+    ? current.pos
+    : firstOrZero(positionOptions);
   return {
     pos: position,
     channel: maskChannel,

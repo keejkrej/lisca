@@ -28,8 +28,8 @@ export function StudioAlignMain({ state }: { state: StudioAlignState }) {
       : state.scanLoading
         ? "Scanning source"
         : visibleStatus;
-  const positionIndex = state.scan?.positions.indexOf(state.selection.pos) ?? -1;
-  const positionCount = state.scan?.positions.length ?? 0;
+  const positionIndex = state.alignPositions.indexOf(state.selection.pos);
+  const positionCount = state.alignPositions.length;
   const positionMessage =
     positionIndex >= 0 && positionCount > 0 ? `Pos ${positionIndex}/${positionCount}` : null;
   const messages = useMemo(() => {

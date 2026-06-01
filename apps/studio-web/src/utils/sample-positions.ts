@@ -1,3 +1,5 @@
+import type { StudioBasicInfoStep3 } from "@lisca/contracts";
+
 export type SamplePositionRange = {
   positionStart: string;
   positionFinish: string;
@@ -118,4 +120,38 @@ export function isValidSamplePositionRange(positionStart: string, positionFinish
   const start = parsePositiveInteger(positionStart);
   const finish = parsePositiveInteger(positionFinish);
   return start != null && finish != null && finish >= start;
+}
+
+/** Expand an inclusive 1-based position range into individual position indices. */
+export function expandPositionRange(positionStart: string, positionFinish: string): number[] {
+  const start = parsePositiveInteger(positionStart);
+  const finish = parsePositiveInteger(positionFinish);
+  if (start == null || finish == null || finish < start) return [];
+  const positions: number[] = [];
+  for (let pos = start; pos <= finish; pos += 1) {
+    positions.push(pos);
+  }
+  return positions;
+}
+
+/** Union of all sample-row position ranges on the selected slide, sorted unique. */
+export function collectAssayPositions(info3: StudioBasicInfoStep3): number[] {
+  const rows = info3.samplesBySlide[info3.selectedSlideId] ?? [];
+  const seen = new Set<number>();
+  for (const row of rows) {
+    for (const pos of expandPositionRange(row.positionStart, row.positionFinish)) {
+      seen.add(pos);
+    }
+  }
+  return [...seen].sort((a, b) => a - b);
+}
+
+/** Keep source scan order, retaining only positions declared in the assay. */
+export function filterScanPositionsForAssay(
+  scanPositions: number[],
+  assayPositions: number[],
+): number[] {
+  if (assayPositions.length === 0) return [];
+  const allowed = new Set(assayPositions);
+  return scanPositions.filter((pos) => allowed.has(pos));
 }

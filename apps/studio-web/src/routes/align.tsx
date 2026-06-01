@@ -40,7 +40,7 @@ function AlignPage() {
                     <DockButton
                       disabled={
                         !alignState.workspacePath ||
-                        !alignState.scan ||
+                        alignState.alignPositions.length === 0 ||
                         alignState.saving ||
                         alignState.cropping ||
                         alignState.findingFirstUnaligned

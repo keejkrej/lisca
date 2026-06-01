@@ -38,6 +38,10 @@ import { isDoneCropStatus } from "@lisca/client/crop-status";
 import { runClientEffect } from "@lisca/client/runtime";
 import { lockedStudioSelection, studioMaskChannel, toStudioSource } from "../utils/studio-source";
 import {
+  collectAssayPositions,
+  filterScanPositionsForAssay,
+} from "../utils/sample-positions";
+import {
   savedAlignStateKey,
   sourceKey,
   useStudioAlignStore,
@@ -56,6 +60,7 @@ export type StudioAlignState = {
   workspacePath: string | null;
   source: AlignerSource | null;
   scan: WorkspaceScan | null;
+  alignPositions: number[];
   scanLoading: boolean;
   frameLoading: boolean;
   error: string | null;
@@ -155,9 +160,17 @@ export function useStudioAlignState(): StudioAlignState {
   const activeWorkspacePath = info1.saveTo.trim() || null;
   const activeSourceKey = sourceKey(source);
   const maskChannel = useMemo(() => studioMaskChannel(info3), [info3]);
+  const assayPositions = useMemo(() => collectAssayPositions(info3), [info3]);
+  const alignPositions = useMemo(() => {
+    if (!scan) return [];
+    return filterScanPositionsForAssay(scan.positions, assayPositions);
+  }, [assayPositions, scan]);
   const lockedSelection = useMemo(
-    () => (scan ? lockedStudioSelection(scan, selection, maskChannel) : selection),
-    [maskChannel, scan, selection],
+    () =>
+      scan
+        ? lockedStudioSelection(scan, selection, maskChannel, alignPositions)
+        : selection,
+    [alignPositions, maskChannel, scan, selection],
   );
   const scanResult = useAtomValue(
     activeSourceKey ? scanSourceAtom(activeSourceKey) : scanIdleAtom,
@@ -214,6 +227,18 @@ export function useStudioAlignState(): StudioAlignState {
 
   useEffect(() => {
     if (!scan) return;
+    if (alignPositions.length === 0) {
+      setError("No assay positions found in source scan — check position ranges in basic info");
+      return;
+    }
+    const skipped = assayPositions.length - alignPositions.length;
+    if (skipped > 0) {
+      setStatus(`${skipped} assay position(s) not found in source scan`);
+    }
+  }, [alignPositions, assayPositions.length, scan, setError, setStatus]);
+
+  useEffect(() => {
+    if (!scan) return;
     if (
       selection.pos === lockedSelection.pos &&
       selection.channel === lockedSelection.channel &&
@@ -226,7 +251,7 @@ export function useStudioAlignState(): StudioAlignState {
   }, [lockedSelection, scan, selection, setSelection]);
 
   useEffect(() => {
-    if (!source || !scan) {
+    if (!source || !scan || alignPositions.length === 0) {
       setFrameLoading(false);
       return;
     }
@@ -277,6 +302,7 @@ export function useStudioAlignState(): StudioAlignState {
     setStatus,
     source,
     workspacePath,
+    alignPositions.length,
   ]);
 
   const variationExcludeCells = useCallback(async (): Promise<AlignGridCellCoord[]> => {
@@ -294,14 +320,14 @@ export function useStudioAlignState(): StudioAlignState {
   }, [frame, grid, lockedSelection, runAutoExcludePreview, source]);
 
   const positionIndex = useMemo(
-    () => scan?.positions.indexOf(lockedSelection.pos) ?? -1,
-    [lockedSelection.pos, scan],
+    () => alignPositions.indexOf(lockedSelection.pos),
+    [alignPositions, lockedSelection.pos],
   );
   const canGoBack = positionIndex > 0;
   const goBack = useCallback(() => {
-    if (saving || !scan || positionIndex <= 0) return;
-    setSelection({ pos: scan.positions[positionIndex - 1] });
-  }, [positionIndex, saving, scan, setSelection]);
+    if (saving || positionIndex <= 0) return;
+    setSelection({ pos: alignPositions[positionIndex - 1] });
+  }, [alignPositions, positionIndex, saving, setSelection]);
 
   const resetCurrent = useCallback(() => {
     if (saving) return;
@@ -311,7 +337,7 @@ export function useStudioAlignState(): StudioAlignState {
   }, [lockedSelection.pos, saving, setExcludedCellsForCurrentPosition, setGrid, setStatus]);
 
   const goToFirstUnaligned = useCallback(async () => {
-    if (!workspacePath || !scan || saving || findingFirstUnaligned) return;
+    if (!workspacePath || alignPositions.length === 0 || saving || findingFirstUnaligned) return;
     setFindingFirstUnaligned(true);
     setError(null);
     try {
@@ -319,11 +345,11 @@ export function useStudioAlignState(): StudioAlignState {
       const savedPositions = new Set(
         await runClientEffect(studioClient.listSavedBboxPositions(workspacePath)),
       );
-      const firstUnaligned = scan.positions.find((pos) => !savedPositions.has(pos));
+      const firstUnaligned = alignPositions.find((pos) => !savedPositions.has(pos));
       if (firstUnaligned == null) {
-        const lastPos = scan.positions.at(-1);
+        const lastPos = alignPositions.at(-1);
         if (lastPos == null) {
-          setStatus("No positions in scan");
+          setStatus("No positions in assay scope");
           return;
         }
         setSelection({ pos: lastPos });
@@ -337,16 +363,23 @@ export function useStudioAlignState(): StudioAlignState {
     } finally {
       setFindingFirstUnaligned(false);
     }
-  }, [findingFirstUnaligned, saving, scan, setError, setSelection, setStatus, workspacePath]);
+  }, [
+    alignPositions,
+    findingFirstUnaligned,
+    saving,
+    setError,
+    setSelection,
+    setStatus,
+    workspacePath,
+  ]);
 
   const advanceToNextPosition = useCallback(() => {
-    const posOptions = scan?.positions ?? [];
-    const currentIndex = posOptions.indexOf(lockedSelection.pos);
-    const nextPos = currentIndex >= 0 ? posOptions[currentIndex + 1] : null;
+    const currentIndex = alignPositions.indexOf(lockedSelection.pos);
+    const nextPos = currentIndex >= 0 ? alignPositions[currentIndex + 1] : null;
     if (nextPos == null) return false;
     setSelection({ pos: nextPos });
     return true;
-  }, [lockedSelection.pos, scan, setSelection]);
+  }, [alignPositions, lockedSelection.pos, setSelection]);
 
   const runCrop = useCallback(
     async (positions: number[], overwrite: boolean) => {
@@ -433,14 +466,14 @@ export function useStudioAlignState(): StudioAlignState {
   );
 
   const maybeCropWhenAllPositionsSaved = useCallback(async () => {
-    if (!workspacePath || !scan) return;
+    if (!workspacePath || alignPositions.length === 0) return;
     const savedPositions = new Set(
       await runClientEffect(studioClient.listSavedBboxPositions(workspacePath)),
     );
-    const allPositionsSaved = scan.positions.every((pos) => savedPositions.has(pos));
+    const allPositionsSaved = alignPositions.every((pos) => savedPositions.has(pos));
     if (!allPositionsSaved) return;
-    setCropStartConfirm({ positions: scan.positions });
-  }, [scan, workspacePath]);
+    setCropStartConfirm({ positions: alignPositions });
+  }, [alignPositions, workspacePath]);
 
   const startConfirmedCrop = useCallback(() => {
     const next = cropStartConfirm;
@@ -567,6 +600,7 @@ export function useStudioAlignState(): StudioAlignState {
     workspacePath,
     source,
     scan,
+    alignPositions,
     scanLoading: source != null && resultLoading(scanResult),
     frameLoading,
     error,

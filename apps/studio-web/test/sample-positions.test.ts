@@ -1,6 +1,11 @@
 import { describe, expect, test } from "vitest";
 
+import type { StudioBasicInfoStep3 } from "@lisca/contracts";
+
 import {
+  collectAssayPositions,
+  expandPositionRange,
+  filterScanPositionsForAssay,
   formatSamplePositions,
   isValidSamplePositionRange,
   parseLegacySamplePositions,
@@ -75,5 +80,32 @@ describe("sample positions", () => {
       maskChannel: "0",
       signalChannel: "1",
     });
+  });
+
+  test("expands inclusive position ranges", () => {
+    expect(expandPositionRange("3", "3")).toEqual([3]);
+    expect(expandPositionRange("1", "4")).toEqual([1, 2, 3, 4]);
+    expect(expandPositionRange("", "4")).toEqual([]);
+    expect(expandPositionRange("4", "1")).toEqual([]);
+  });
+
+  test("collects union of assay sample rows on the selected slide", () => {
+    const info3: StudioBasicInfoStep3 = {
+      selectedSlideId: "slide-vi",
+      samplesBySlide: {
+        "slide-i": [{ channel: "0", name: "a", positionStart: "99", positionFinish: "99", maskChannel: "0", signalChannel: "1" }],
+        "slide-vi": [
+          { channel: "0", name: "a", positionStart: "1", positionFinish: "4", maskChannel: "0", signalChannel: "1" },
+          { channel: "1", name: "b", positionStart: "3", positionFinish: "6", maskChannel: "0", signalChannel: "1" },
+        ],
+      },
+    };
+    expect(collectAssayPositions(info3)).toEqual([1, 2, 3, 4, 5, 6]);
+  });
+
+  test("filters scan positions to assay positions in scan order", () => {
+    expect(filterScanPositionsForAssay([1, 2, 3, 4, 5], [2, 4])).toEqual([2, 4]);
+    expect(filterScanPositionsForAssay([10, 11, 12], [1, 2, 3])).toEqual([]);
+    expect(filterScanPositionsForAssay([1, 2, 3], [])).toEqual([]);
   });
 });
