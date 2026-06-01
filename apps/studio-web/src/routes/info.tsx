@@ -1,19 +1,14 @@
 import { AppShell, DockButton } from "@lisca/ui";
-import { createFileRoute } from "@tanstack/react-router";
-import { useNavigate } from "@tanstack/react-router";
-import { runClientEffect } from "@lisca/client/runtime";
-import { useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 
-import { studioClient } from "../api/studio-port";
-import { AssayOverwriteConfirmModal } from "../components/assay-overwrite-confirm-modal";
-import { AssaySaveConfirmModal } from "../components/assay-save-confirm-modal";
 import { BasicInfoStep1 } from "../components/basic-info-step1";
 import { BasicInfoStep2 } from "../components/basic-info-step2";
 import { BasicInfoStep3 } from "../components/basic-info-step3";
 import { StudioDock } from "../components/studio-dock";
 import { StudioLeft } from "../components/studio-left";
 import { instructionForStep, validInfo1, validInfo2, validInfo3 } from "../state/studio-routes";
-import { buildStudioAssayJson, useStudioStore } from "../state/studio-store";
+import { useStudioStore } from "../state/studio-store";
+import { studioClient } from "../api/studio-port";
 
 export const Route = createFileRoute("/info")({
   component: InfoPage,
@@ -24,13 +19,9 @@ function InfoPage() {
   const assayId = useStudioStore((state) => state.assayId);
   const infoStep = useStudioStore((state) => state.infoStep);
   const setInfoStep = useStudioStore((state) => state.setInfoStep);
-  const dataSourceKind = useStudioStore((state) => state.dataSourceKind);
   const info1 = useStudioStore((state) => state.info1);
   const info2 = useStudioStore((state) => state.info2);
   const info3 = useStudioStore((state) => state.info3);
-  const [savingAssay, setSavingAssay] = useState(false);
-  const [saveConfirmOpen, setSaveConfirmOpen] = useState(false);
-  const [overwriteConfirmOpen, setOverwriteConfirmOpen] = useState(false);
   const canContinue =
     infoStep === 1
       ? validInfo1(info1)
@@ -38,40 +29,6 @@ function InfoPage() {
         ? validInfo2(info2, assayId)
         : validInfo3(info3);
   const step = infoStep === 1 ? "info1" : infoStep === 2 ? "info2" : "info3";
-  const assayJsonSaveTo = info1.saveTo.trim();
-
-  const goAlign = async () => {
-    await navigate({ to: "/align" });
-  };
-
-  const assayJsonExists = async () => {
-    try {
-      const list = await runClientEffect(studioClient.listDirectory(assayJsonSaveTo));
-      return list.entries.some((entry) => !entry.isDirectory && entry.name === "assay.json");
-    } catch {
-      return false;
-    }
-  };
-
-  const saveAssayAndGoAlign = async (overwrite: boolean) => {
-    if (!assayId || savingAssay) return;
-    setSavingAssay(true);
-    try {
-      if (!overwrite && (await assayJsonExists())) {
-        setOverwriteConfirmOpen(true);
-        return;
-      }
-      const assayJson = buildStudioAssayJson({ assayId, dataSourceKind, info1, info2, info3 });
-      await runClientEffect(
-        studioClient.saveAssayJson(assayJsonSaveTo, JSON.stringify(assayJson, null, 2)),
-      );
-      await goAlign();
-    } catch (cause) {
-      window.alert(cause instanceof Error ? cause.message : String(cause));
-    } finally {
-      setSavingAssay(false);
-    }
-  };
 
   const firstInvalidInfoStep = (): 1 | 2 | 3 | null => {
     if (!validInfo1(info1)) return 1;
@@ -80,7 +37,7 @@ function InfoPage() {
     return null;
   };
 
-  const next = async () => {
+  const next = () => {
     if (infoStep < 3) {
       setInfoStep((infoStep + 1) as 1 | 2 | 3);
       return;
@@ -90,11 +47,10 @@ function InfoPage() {
       setInfoStep(invalidStep);
       return;
     }
-    setSaveConfirmOpen(true);
+    void navigate({ to: "/align" });
   };
 
   const back = () => {
-    if (savingAssay) return;
     if (infoStep > 1) {
       setInfoStep((infoStep - 1) as 1 | 2 | 3);
     }
@@ -119,10 +75,10 @@ function InfoPage() {
               instruction={instructionForStep(step)}
               action={
                 <div className="flex w-full flex-col gap-2">
-                  <DockButton disabled={infoStep === 1 || savingAssay} onClick={back}>
+                  <DockButton disabled={infoStep === 1} onClick={back}>
                     Back
                   </DockButton>
-                  <DockButton disabled={!canContinue || savingAssay} onClick={() => void next()}>
+                  <DockButton disabled={!canContinue} onClick={next}>
                     Next
                   </DockButton>
                 </div>
@@ -132,27 +88,6 @@ function InfoPage() {
         </AppShell.MainColumn>
         <AppShell.Right widthClass="w-60" />
       </AppShell.Body>
-      <AssaySaveConfirmModal
-        open={saveConfirmOpen}
-        onCancel={() => setSaveConfirmOpen(false)}
-        onSave={() => {
-          setSaveConfirmOpen(false);
-          void saveAssayAndGoAlign(false);
-        }}
-        onSkip={() => {
-          setSaveConfirmOpen(false);
-          void goAlign();
-        }}
-      />
-      <AssayOverwriteConfirmModal
-        open={overwriteConfirmOpen}
-        saveTo={assayJsonSaveTo}
-        onCancel={() => setOverwriteConfirmOpen(false)}
-        onOverwrite={() => {
-          setOverwriteConfirmOpen(false);
-          void saveAssayAndGoAlign(true);
-        }}
-      />
     </AppShell>
   );
 }

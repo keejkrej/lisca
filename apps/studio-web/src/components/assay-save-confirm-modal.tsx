@@ -2,11 +2,13 @@ import { Button, DialogSurface, ModalScrim } from "@lisca/ui";
 
 export function AssaySaveConfirmModal({
   open,
+  saving = false,
   onCancel,
   onSave,
   onSkip,
 }: {
   open: boolean;
+  saving?: boolean;
   onCancel: () => void;
   onSave: () => void;
   onSkip: () => void;
@@ -19,21 +21,21 @@ export function AssaySaveConfirmModal({
         <div className="space-y-4">
           <div className="space-y-1">
             <h2 id="assay-save-confirm-title" className="font-medium text-foreground">
-              Basic info complete
+              Basic info changed
             </h2>
             <p className="text-muted-foreground text-sm">
-              All required basic info is filled. Save assay.json before continuing to alignment?
+              Save assay.json before leaving basic info?
             </p>
           </div>
           <div className="flex justify-end gap-2">
-            <Button size="sm" type="button" variant="outline" onClick={onCancel}>
+            <Button disabled={saving} size="sm" type="button" variant="outline" onClick={onCancel}>
               Cancel
             </Button>
-            <Button size="sm" type="button" variant="outline" onClick={onSkip}>
+            <Button disabled={saving} size="sm" type="button" variant="outline" onClick={onSkip}>
               Skip Save
             </Button>
-            <Button size="sm" type="button" onClick={onSave}>
-              Save
+            <Button disabled={saving} size="sm" type="button" onClick={onSave}>
+              {saving ? "Saving…" : "Save"}
             </Button>
           </div>
         </div>

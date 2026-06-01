@@ -24,7 +24,11 @@ import {
   currentAnnotateRoi,
   useStudioAnnotateStore,
 } from "./studio-annotate-store";
-import { buildStudioAssayJson, useStudioStore } from "./studio-store";
+import {
+  buildStudioAssayJson,
+  serializeBasicInfoSnapshot,
+  useStudioStore,
+} from "./studio-store";
 import { validateAssayForAnalysis } from "../utils/studio-assay-validation";
 
 function isAbortError(cause: unknown): boolean {
@@ -92,6 +96,7 @@ export function useStudioAnnotateState(): StudioAnnotateState {
   const info1 = useStudioStore((state) => state.info1);
   const info2 = useStudioStore((state) => state.info2);
   const info3 = useStudioStore((state) => state.info3);
+  const setBasicInfoSavedSnapshot = useStudioStore((state) => state.setBasicInfoSavedSnapshot);
   const activeWorkspacePath = saveTo.trim() || null;
   const navigate = useNavigate();
   const {
@@ -339,6 +344,15 @@ export function useStudioAnnotateState(): StudioAnnotateState {
         await runClientEffect(
           studioClient.saveAssayJson(workspacePath, JSON.stringify(assayJson, null, 2)),
         );
+        setBasicInfoSavedSnapshot(
+          serializeBasicInfoSnapshot({
+            assayId,
+            dataSourceKind,
+            info1,
+            info2,
+            info3,
+          }),
+        );
         setStatus("Starting analysis");
         setAnalysisProgress({
           requestId,
@@ -383,6 +397,7 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     setAnalysisRequestId,
     setAnalysisResultFiles,
     setAnalysisStartConfirm,
+    setBasicInfoSavedSnapshot,
     setStatus,
     workspacePath,
   ]);

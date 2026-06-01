@@ -309,6 +309,7 @@ type StudioWizardData = {
   info1: BasicInfoStep1;
   info2: BasicInfoStep2;
   info3: BasicInfoStep3;
+  basicInfoSavedSnapshot: string | null;
 };
 
 type StudioState = StudioWizardData & {
@@ -320,7 +321,33 @@ type StudioState = StudioWizardData & {
   setInfo2: (patch: Partial<BasicInfoStep2>) => void;
   setInfo3: (patch: Partial<BasicInfoStep3>) => void;
   updateInfo3Sample: (index: number, patch: Partial<BasicInfoSampleRow>) => void;
+  setBasicInfoSavedSnapshot: (snapshot: string | null) => void;
 };
+
+export function serializeBasicInfoSnapshot(
+  state: Pick<
+    StudioWizardData,
+    "assayId" | "dataSourceKind" | "info1" | "info2" | "info3"
+  >,
+): string {
+  const assayId = state.assayId ?? ENABLED_ASSAY_ID;
+  return JSON.stringify(
+    buildStudioAssayJson({
+      assayId,
+      dataSourceKind: state.dataSourceKind,
+      info1: state.info1,
+      info2: state.info2,
+      info3: state.info3,
+    }),
+  );
+}
+
+export function isBasicInfoDirty(state: StudioWizardData): boolean {
+  const current = serializeBasicInfoSnapshot(state);
+  const baseline =
+    state.basicInfoSavedSnapshot ?? serializeBasicInfoSnapshot(createInitialWizardData());
+  return current !== baseline;
+}
 
 const initialInfo1: BasicInfoStep1 = {
   name: "",
@@ -411,6 +438,10 @@ function mergeStudioState(persisted: unknown, current: StudioWizardData): Studio
     info1: persistedState.info1 ? normalizeInfo1(persistedState.info1) : current.info1,
     info2: mergedInfo2,
     info3: persistedState.info3 ? normalizeInfo3(persistedState.info3) : current.info3,
+    basicInfoSavedSnapshot:
+      typeof persistedState.basicInfoSavedSnapshot === "string"
+        ? persistedState.basicInfoSavedSnapshot
+        : null,
   };
 }
 
@@ -427,6 +458,7 @@ function createInitialWizardData(): StudioWizardData {
       selectedSlideId: initialInfo3.selectedSlideId,
       samplesBySlide: cloneSamplesBySlide(initialInfo3.samplesBySlide),
     },
+    basicInfoSavedSnapshot: null,
   };
 }
 
@@ -477,22 +509,35 @@ export const studioWizardActions = {
     patchStudioWizard(set, { dataSourceKind });
   },
   loadAssayJson(set: (update: StateUpdater<StudioWizardData>) => void, assayJson: StudioAssayJson) {
+    const nextAssayId = enabledAssayId(assayJson.assayId) ?? ENABLED_ASSAY_ID;
+    const nextInfo1 = { ...assayJson.info1 };
+    const nextInfo2 = {
+      ...assayJson.info2,
+      selectedFeatures: normalizeSelectedFeaturesForAssay(
+        assayJson.assayId,
+        assayJson.info2.selectedFeatures,
+      ),
+    };
+    const nextInfo3 = {
+      selectedSlideId: assayJson.info3.selectedSlideId,
+      samplesBySlide: cloneSamplesBySlide(assayJson.info3.samplesBySlide),
+    };
     patchStudioWizard(set, {
-      assayId: enabledAssayId(assayJson.assayId),
+      assayId: nextAssayId,
       infoStep: 1,
       dataSourceKind: assayJson.dataSourceKind ?? inferDataSourceKind(assayJson.info1.dataPath),
-      info1: { ...assayJson.info1 },
-      info2: {
-        ...assayJson.info2,
-        selectedFeatures: normalizeSelectedFeaturesForAssay(
-          assayJson.assayId,
-          assayJson.info2.selectedFeatures,
-        ),
-      },
-      info3: {
-        selectedSlideId: assayJson.info3.selectedSlideId,
-        samplesBySlide: cloneSamplesBySlide(assayJson.info3.samplesBySlide),
-      },
+      info1: nextInfo1,
+      info2: nextInfo2,
+      info3: nextInfo3,
+      basicInfoSavedSnapshot: JSON.stringify(
+        buildStudioAssayJson({
+          assayId: nextAssayId,
+          dataSourceKind: assayJson.dataSourceKind ?? inferDataSourceKind(assayJson.info1.dataPath),
+          info1: nextInfo1,
+          info2: nextInfo2,
+          info3: nextInfo3,
+        }),
+      ),
     });
   },
   setAssayId(set: (update: StateUpdater<StudioWizardData>) => void, assayId: AssayId | null) {
@@ -556,6 +601,12 @@ export const studioWizardActions = {
       };
     });
   },
+  setBasicInfoSavedSnapshot(
+    set: (update: StateUpdater<StudioWizardData>) => void,
+    basicInfoSavedSnapshot: string | null,
+  ) {
+    patchStudioWizard(set, { basicInfoSavedSnapshot });
+  },
 };
 
 function useStudioStoreApi(): StudioState {
@@ -595,6 +646,11 @@ function useStudioStoreApi(): StudioState {
       studioWizardActions.updateInfo3Sample(setState, index, patch),
     [setState],
   );
+  const setBasicInfoSavedSnapshot = useCallback(
+    (basicInfoSavedSnapshot: string | null) =>
+      studioWizardActions.setBasicInfoSavedSnapshot(setState, basicInfoSavedSnapshot),
+    [setState],
+  );
 
   return {
     ...state,
@@ -606,6 +662,7 @@ function useStudioStoreApi(): StudioState {
     setInfo2,
     setInfo3,
     updateInfo3Sample,
+    setBasicInfoSavedSnapshot,
   };
 }
 
