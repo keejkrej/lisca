@@ -11,9 +11,9 @@ repository = "https://github.com/lisca/lisca"
 [workspace.dependencies]
 axum = { version = "0.8", features = ["ws"] }
 base64 = "0.22"
-czi-rs = { path = "../czi-rs", features = ["smb"] }
+czi-rs = { git = "https://github.com/keejkrej/czi-rs", features = ["smb"] }
 image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
-nd2-rs = { path = "../nd2-rs", features = ["smb"] }
+nd2-rs = { git = "https://github.com/keejkrej/nd2-rs", features = ["smb"] }
 mdat-smb-rs = { git = "https://github.com/keejkrej/mdat-smb-rs" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

@@ -371,6 +371,7 @@ dependencies = [
 [[package]]
 name = "czi-rs"
 version = "0.2.0"
+source = "git+https://github.com/keejkrej/czi-rs#d7140421a000892e125ceb80d98a521e7ed5f805"
 dependencies = [
  "mdat-smb-rs",
  "roxmltree",
@@ -916,6 +917,7 @@ dependencies = [
 [[package]]
 name = "nd2-rs"
 version = "0.2.0"
+source = "git+https://github.com/keejkrej/nd2-rs#a07db3ea7072574d83284a87f7d7d41b2b8bebd9"
 dependencies = [
  "byteorder",
  "flate2",
