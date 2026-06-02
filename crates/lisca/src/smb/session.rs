@@ -16,11 +16,9 @@ use uuid::Uuid;
 
 use crate::protocol::{HostFsEntry, HostListDirectoryResult, SmbConnectResponse};
 
-use super::{
-    path::{format_smb_path, parse_smb_path},
-    runtime::block_on,
-    url::parse_smb_url,
-};
+use mdat_smb_rs::{format_smb_path, parse_smb_path, parse_smb_url};
+
+use super::runtime::block_on;
 
 pub(crate) struct SmbSession {
     pub(crate) client: SmbClient,

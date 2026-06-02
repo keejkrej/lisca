@@ -866,7 +866,7 @@ dependencies = [
 [[package]]
 name = "mdat-smb-rs"
 version = "0.1.0"
-source = "git+https://github.com/keejkrej/mdat-smb-rs#c8334f45576b605fb6438412c17032aa847c7349"
+source = "git+https://github.com/keejkrej/mdat-smb-rs#646376af740c8ef1bc3b5f514a6c32b8aae5fce2"
 dependencies = [
  "thiserror 1.0.69",
 ]
