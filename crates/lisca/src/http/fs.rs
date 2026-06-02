@@ -131,7 +131,8 @@ fn list_directory(path: Option<String>) -> Result<HostListDirectoryResult, FsErr
 
 fn read_text_file(path: &str) -> Result<ReadTextFileResponse, FsError> {
     if is_smb_path(path) {
-        let contents = String::from_utf8(smb::read_bytes(path).map_err(FsError::new)?)
+        const MAX_TEXT_BYTES: u64 = 64 * 1024 * 1024;
+        let contents = String::from_utf8(smb::read_bytes_bounded(path, MAX_TEXT_BYTES).map_err(FsError::new)?)
             .map_err(|error| FsError::new(format!("SMB text file is not valid UTF-8: {error}")))?;
         return Ok(ReadTextFileResponse { contents });
     }

@@ -5,6 +5,11 @@ use std::{
 };
 
 use smb2::client::{ClientConfig, SmbClient};
+use smb2::msg::close::CloseRequest;
+use smb2::msg::read::{ReadRequest, ReadResponse, SMB2_CHANNEL_NONE};
+use smb2::pack::{ReadCursor, Unpack};
+use smb2::types::status::NtStatus;
+use smb2::types::{Command, FileId};
 use smb2::Tree;
 use tokio::sync::Mutex;
 use uuid::Uuid;
@@ -17,9 +22,9 @@ use super::{
     url::parse_smb_url,
 };
 
-struct SmbSession {
-    client: SmbClient,
-    tree: Tree,
+pub(crate) struct SmbSession {
+    pub(crate) client: SmbClient,
+    pub(crate) tree: Tree,
 }
 
 struct SmbSessionStore {
@@ -195,3 +200,120 @@ pub async fn read_bytes_async(path: &str) -> Result<Vec<u8>, String> {
 pub fn read_bytes(path: &str) -> Result<Vec<u8>, String> {
     block_on(read_bytes_async(path))
 }
+
+pub async fn stat_file_async(session_id: &str, relative_path: &str) -> Result<u64, String> {
+    let mut guard = store().lock().await;
+    let session = guard
+        .sessions
+        .get_mut(session_id)
+        .ok_or_else(|| format!("SMB session not found: {session_id}"))?;
+    let info = session
+        .client
+        .stat(&mut session.tree, relative_path)
+        .await
+        .map_err(|error| format!("SMB stat failed: {error}"))?;
+    Ok(info.size)
+}
+
+pub(crate) async fn open_smb_file_async(
+    session_id: &str,
+    relative_path: &str,
+) -> Result<(FileId, u64), String> {
+    let mut guard = store().lock().await;
+    let session = guard
+        .sessions
+        .get_mut(session_id)
+        .ok_or_else(|| format!("SMB session not found: {session_id}"))?;
+    let conn = session.client.connection_mut();
+    session
+        .tree
+        .open_file(conn, relative_path)
+        .await
+        .map_err(|error| format!("SMB open file failed: {error}"))
+}
+
+pub(crate) async fn read_smb_file_at_async(
+    session_id: &str,
+    file_id: FileId,
+    offset: u64,
+    buf: &mut [u8],
+) -> Result<usize, String> {
+    if buf.is_empty() {
+        return Ok(0);
+    }
+    let mut guard = store().lock().await;
+    let session = guard
+        .sessions
+        .get_mut(session_id)
+        .ok_or_else(|| format!("SMB session not found: {session_id}"))?;
+    let conn = session.client.connection_mut();
+    let max_read = conn
+        .params()
+        .map(|params| params.max_read_size)
+        .unwrap_or(65536);
+    let chunk_size = buf.len().min(max_read as usize) as u32;
+
+    let request = ReadRequest {
+        padding: 0x50,
+        flags: 0,
+        length: chunk_size,
+        offset,
+        file_id,
+        minimum_count: 0,
+        channel: SMB2_CHANNEL_NONE,
+        remaining_bytes: 0,
+        read_channel_info: vec![],
+    };
+
+    let frame = conn
+        .execute(Command::Read, &request, Some(session.tree.tree_id))
+        .await
+        .map_err(|error| format!("SMB read failed: {error}"))?;
+
+    if frame.header.status == NtStatus::END_OF_FILE {
+        return Ok(0);
+    }
+    if frame.header.status != NtStatus::SUCCESS {
+        return Err(format!("SMB read status: {:?}", frame.header.status));
+    }
+
+    let mut cursor = ReadCursor::new(&frame.body);
+    let response = ReadResponse::unpack(&mut cursor)
+        .map_err(|error| format!("SMB read decode failed: {error}"))?;
+    let len = response.data.len().min(buf.len());
+    buf[..len].copy_from_slice(&response.data[..len]);
+    Ok(len)
+}
+
+pub(crate) async fn close_smb_file_async(session_id: &str, file_id: FileId) -> Result<(), String> {
+    let mut guard = store().lock().await;
+    let session = guard
+        .sessions
+        .get_mut(session_id)
+        .ok_or_else(|| format!("SMB session not found: {session_id}"))?;
+    let conn = session.client.connection_mut();
+    let request = CloseRequest { flags: 0, file_id };
+    let frame = conn
+        .execute(Command::Close, &request, Some(session.tree.tree_id))
+        .await
+        .map_err(|error| format!("SMB close failed: {error}"))?;
+    if frame.header.status != NtStatus::SUCCESS {
+        return Err(format!("SMB close status: {:?}", frame.header.status));
+    }
+    Ok(())
+}
+
+pub fn read_bytes_bounded(path: &str, max_len: u64) -> Result<Vec<u8>, String> {
+    let parsed = parse_smb_path(path)?;
+    let size = block_on(stat_file_async(
+        &parsed.session_id,
+        &parsed.relative_path,
+    ))?;
+    if size > max_len {
+        return Err(format!(
+            "SMB file size {size} exceeds limit {max_len} bytes"
+        ));
+    }
+    read_bytes(path)
+}
+

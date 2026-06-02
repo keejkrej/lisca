@@ -1,6 +1,7 @@
 use std::{
     collections::{BTreeSet, HashMap, HashSet},
     fs,
+    io::BufReader,
     path::{Path, PathBuf},
 };
 
@@ -14,7 +15,8 @@ use crate::{
     protocol::{
         AlignerSource, ContrastWindow, FramePayload, FrameRequest, ImageSource, WorkspaceScan,
     },
-    smb::{self, is_smb_path, list_directory},
+    smb::{is_smb_path, list_directory},
+    // imaging_smb_io used for seekable SMB reads in open_nd2/open_czi/load_image_frame
     tiff_io::{self, TiffFrame16},
 };
 
@@ -209,15 +211,11 @@ enum SourceReader {
 
 impl SourceReader {
     fn open_nd2(path: &Path) -> Result<Self, String> {
-        Ok(Self::Nd2(
-            Nd2File::open(path).map_err(|error| error.to_string())?,
-        ))
+        Ok(Self::Nd2(open_nd2(path)?))
     }
 
     fn open_czi(path: &Path) -> Result<Self, String> {
-        Ok(Self::Czi(
-            CziFile::open(path).map_err(|error| error.to_string())?,
-        ))
+        Ok(Self::Czi(open_czi(path)?))
     }
 
     fn metadata(&mut self) -> Result<SourceMetadata, String> {
@@ -321,29 +319,41 @@ pub fn to_frame_payload(raw: RawFrame, contrast: Option<ContrastWindow>) -> Fram
     }
 }
 
+fn open_nd2(path: &Path) -> Result<Nd2File, String> {
+    if path.to_str().is_some_and(is_smb_path) {
+        return Nd2File::open_smb(path.to_str().expect("smb path utf-8"))
+            .map_err(|error| error.to_string());
+    }
+    Nd2File::open(path).map_err(|error| error.to_string())
+}
+
+fn open_czi(path: &Path) -> Result<CziFile, String> {
+    if path.to_str().is_some_and(is_smb_path) {
+        return CziFile::open_smb(path.to_str().expect("smb path utf-8"))
+            .map_err(|error| error.to_string());
+    }
+    CziFile::open(path).map_err(|error| error.to_string())
+}
+
 fn scan_nd2(path: &Path) -> Result<WorkspaceScan, String> {
-    let local = smb::resolve_local_path(path)?;
-    let mut reader = SourceReader::open_nd2(&local)?;
+    let mut reader = SourceReader::open_nd2(path)?;
     Ok(reader.metadata()?.workspace_scan())
 }
 
 fn scan_czi(path: &Path) -> Result<WorkspaceScan, String> {
-    let local = smb::resolve_local_path(path)?;
-    let mut reader = SourceReader::open_czi(&local)?;
+    let mut reader = SourceReader::open_czi(path)?;
     Ok(reader.metadata()?.workspace_scan())
 }
 
 fn load_nd2_frame(path: &Path, request: FrameRequest) -> Result<RawFrame, String> {
-    let local = smb::resolve_local_path(path)?;
-    let mut reader = SourceReader::open_nd2(&local)?;
+    let mut reader = SourceReader::open_nd2(path)?;
     let metadata = reader.metadata()?;
     let (pos, time, channel, z) = metadata.indices_for_request(&request)?;
     reader.read_frame_2d(pos, time, channel, z)
 }
 
 fn load_czi_frame(path: &Path, request: FrameRequest) -> Result<RawFrame, String> {
-    let local = smb::resolve_local_path(path)?;
-    let mut reader = SourceReader::open_czi(&local)?;
+    let mut reader = SourceReader::open_czi(path)?;
     let metadata = reader.metadata()?;
     let (pos, time, channel, z) = metadata.indices_for_request(&request)?;
     reader.read_frame_2d(pos, time, channel, z)
@@ -865,18 +875,39 @@ fn is_supported_source_image(path: &Path) -> bool {
 }
 
 fn load_image_frame(path: &Path) -> Result<RawFrame, String> {
-    let local = smb::resolve_local_path(path)?;
-    match local
+    let ext = path
         .extension()
         .and_then(|value| value.to_str())
-        .map(|value| value.to_ascii_lowercase())
-        .as_deref()
-    {
-        Some("tif" | "tiff") => tiff_io::load_tiff_frame_page(&local, 0).map(raw_frame_from_tiff),
-        Some("png" | "jpg" | "jpeg") => load_raster_frame(&local),
+        .map(|value| value.to_ascii_lowercase());
+
+    match ext.as_deref() {
+        Some("tif" | "tiff") if !path.to_str().is_some_and(is_smb_path) => {
+            tiff_io::load_tiff_frame_page(path, 0).map(raw_frame_from_tiff)
+        }
+        Some("png" | "jpg" | "jpeg") if !path.to_str().is_some_and(is_smb_path) => {
+            load_raster_frame(path)
+        }
+        Some("tif" | "tiff" | "png" | "jpg" | "jpeg") => {
+            if let Some(path_str) = path.to_str().filter(|value| is_smb_path(value)) {
+                let reader = imaging_smb_io::open_path(path_str)?;
+                let image = ImageReader::new(BufReader::new(reader))
+                    .with_guessed_format()
+                    .map_err(|error| error.to_string())?
+                    .decode()
+                    .map_err(|error| error.to_string())?;
+                return Ok(raw_frame_from_dynamic_image(image));
+            }
+            let file = fs::File::open(path).map_err(|error| error.to_string())?;
+            let image = ImageReader::new(BufReader::new(file))
+                .with_guessed_format()
+                .map_err(|error| error.to_string())?
+                .decode()
+                .map_err(|error| error.to_string())?;
+            Ok(raw_frame_from_dynamic_image(image))
+        }
         _ => Err(format!(
             "unsupported source image extension for {}",
-            local.display()
+            path.display()
         )),
     }
 }

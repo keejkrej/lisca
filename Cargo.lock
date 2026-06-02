@@ -371,8 +371,8 @@ dependencies = [
 [[package]]
 name = "czi-rs"
 version = "0.2.0"
-source = "git+https://github.com/keejkrej/czi-rs#f68b043065900a30c59ba6df7d6e48efbccc7378"
 dependencies = [
+ "imaging-smb-io",
  "roxmltree",
  "thiserror 1.0.69",
  "zstd",
@@ -714,6 +714,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "imaging-smb-io"
+version = "0.1.0"
+dependencies = [
+ "thiserror 1.0.69",
+]
+
+[[package]]
 name = "indexmap"
 version = "2.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -788,6 +795,7 @@ dependencies = [
  "base64",
  "czi-rs",
  "image",
+ "imaging-smb-io",
  "nd2-rs",
  "serde",
  "serde_json",
@@ -907,10 +915,10 @@ dependencies = [
 [[package]]
 name = "nd2-rs"
 version = "0.2.0"
-source = "git+https://github.com/keejkrej/nd2-rs#b3c28e1c8a90845ab094bf9e2bfd9e20fece5393"
 dependencies = [
  "byteorder",
  "flate2",
+ "imaging-smb-io",
  "serde",
  "thiserror 1.0.69",
 ]
