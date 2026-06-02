@@ -716,6 +716,7 @@ dependencies = [
 [[package]]
 name = "imaging-smb-io"
 version = "0.1.0"
+source = "git+https://github.com/keejkrej/imaging-smb-io#f38d4f9750ffbddb0f50d0873033d1140ab98f33"
 dependencies = [
  "thiserror 1.0.69",
 ]
