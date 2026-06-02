@@ -16,7 +16,7 @@ use crate::{
         AlignerSource, ContrastWindow, FramePayload, FrameRequest, ImageSource, WorkspaceScan,
     },
     smb::{is_smb_path, list_directory},
-    // imaging_smb_io used for seekable SMB reads in open_nd2/open_czi/load_image_frame
+    // mdat_smb_rs used for seekable SMB reads in open_nd2/open_czi/load_image_frame
     tiff_io::{self, TiffFrame16},
 };
 
@@ -889,7 +889,7 @@ fn load_image_frame(path: &Path) -> Result<RawFrame, String> {
         }
         Some("tif" | "tiff" | "png" | "jpg" | "jpeg") => {
             if let Some(path_str) = path.to_str().filter(|value| is_smb_path(value)) {
-                let reader = imaging_smb_io::open_path(path_str)?;
+                let reader = mdat_smb_rs::open_path(path_str)?;
                 let image = ImageReader::new(BufReader::new(reader))
                     .with_guessed_format()
                     .map_err(|error| error.to_string())?

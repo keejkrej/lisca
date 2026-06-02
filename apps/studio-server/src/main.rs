@@ -53,7 +53,7 @@ async fn main() {
         )
         .init();
 
-    if let Err(error) = lisca::smb::register_imaging_smb_provider() {
+    if let Err(error) = lisca::smb::register_mdat_smb_provider() {
         tracing::warn!(%error, "SMB imaging provider not registered");
     }
 

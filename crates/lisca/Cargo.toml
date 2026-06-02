@@ -12,7 +12,7 @@ axum.workspace = true
 base64.workspace = true
 czi-rs = { workspace = true }
 image.workspace = true
-imaging-smb-io.workspace = true
+mdat-smb-rs.workspace = true
 nd2-rs = { workspace = true }
 serde.workspace = true
 serde_json.workspace = true
