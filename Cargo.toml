@@ -22,6 +22,8 @@ tower-http = { version = "0.6", features = ["cors", "trace"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 walkdir = "2.5"
+smb2 = "0.10"
+uuid = { version = "1", features = ["v4"] }
 specta = { version = "2.0.0-rc.25", features = ["derive", "collect"] }
 specta-serde = "0.0.12"
 specta-typescript = "0.0.12"

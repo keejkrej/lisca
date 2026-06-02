@@ -49,6 +49,27 @@ pub struct ReadTextFileResponse {
 
 #[derive(Debug, Clone, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
+pub struct SmbConnectRequest {
+    pub url: String,
+    pub username: String,
+    pub password: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct SmbConnectResponse {
+    pub session_id: String,
+    pub root_path: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct SmbDisconnectRequest {
+    pub session_id: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct SaveAssayJsonRequest {
     pub save_to: String,
     pub contents: String,

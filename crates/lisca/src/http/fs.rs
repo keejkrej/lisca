@@ -2,12 +2,18 @@ use std::path::PathBuf;
 
 use axum::{
     extract::Query,
-    routing::get,
+    routing::{get, post},
     Json, Router,
 };
 use serde::Deserialize;
 
-use crate::protocol::{HostFsEntry, HostListDirectoryResult};
+use crate::{
+    protocol::{
+        HomeDirectoryResponse, HostFsEntry, HostListDirectoryResult, ReadTextFileResponse,
+        SmbConnectRequest, SmbConnectResponse, SmbDisconnectRequest,
+    },
+    smb::{self, is_smb_path},
+};
 
 use super::error::FsError;
 
@@ -29,6 +35,8 @@ where
         .route("/fs/list", get(list_directory_handler))
         .route("/fs/home", get(home_directory_handler))
         .route("/fs/read-text", get(read_text_file_handler))
+        .route("/fs/smb/connect", post(smb_connect_handler))
+        .route("/fs/smb/disconnect", post(smb_disconnect_handler))
 }
 
 async fn list_directory_handler(
@@ -37,17 +45,31 @@ async fn list_directory_handler(
     list_directory(query.path).map(Json)
 }
 
-async fn home_directory_handler() -> Result<Json<crate::protocol::HomeDirectoryResponse>, FsError> {
+async fn home_directory_handler() -> Result<Json<HomeDirectoryResponse>, FsError> {
     let home = user_home_directory().ok_or_else(|| FsError::new("home directory not found"))?;
-    Ok(Json(crate::protocol::HomeDirectoryResponse { path: home }))
+    Ok(Json(HomeDirectoryResponse { path: home }))
 }
 
 async fn read_text_file_handler(
     Query(query): Query<ReadTextFileQuery>,
-) -> Result<Json<crate::protocol::ReadTextFileResponse>, FsError> {
-    let contents = std::fs::read_to_string(&query.path)
-        .map_err(|error| FsError::new(format!("failed to read text file: {error}")))?;
-    Ok(Json(crate::protocol::ReadTextFileResponse { contents }))
+) -> Result<Json<ReadTextFileResponse>, FsError> {
+    read_text_file(&query.path).map(Json)
+}
+
+async fn smb_connect_handler(
+    Json(request): Json<SmbConnectRequest>,
+) -> Result<Json<SmbConnectResponse>, FsError> {
+    smb::connect(&request.url, &request.username, &request.password)
+        .map(Json)
+        .map_err(FsError::new)
+}
+
+async fn smb_disconnect_handler(
+    Json(request): Json<SmbDisconnectRequest>,
+) -> Result<Json<serde_json::Value>, FsError> {
+    smb::disconnect(&request.session_id)
+        .map(|_| Json(serde_json::json!({ "ok": true })))
+        .map_err(FsError::new)
 }
 
 fn user_home_directory() -> Option<String> {
@@ -58,6 +80,11 @@ fn user_home_directory() -> Option<String> {
 }
 
 fn list_directory(path: Option<String>) -> Result<HostListDirectoryResult, FsError> {
+    if path.as_deref().is_some_and(is_smb_path) {
+        return smb::list_directory(path.as_deref().expect("checked above"))
+            .map_err(FsError::new);
+    }
+
     if path.as_deref().map(str::is_empty).unwrap_or(true) {
         return Ok(list_roots());
     }
@@ -100,6 +127,18 @@ fn list_directory(path: Option<String>) -> Result<HostListDirectoryResult, FsErr
         path: Some(path.to_string_lossy().to_string()),
         entries,
     })
+}
+
+fn read_text_file(path: &str) -> Result<ReadTextFileResponse, FsError> {
+    if is_smb_path(path) {
+        let contents = String::from_utf8(smb::read_bytes(path).map_err(FsError::new)?)
+            .map_err(|error| FsError::new(format!("SMB text file is not valid UTF-8: {error}")))?;
+        return Ok(ReadTextFileResponse { contents });
+    }
+
+    let contents = std::fs::read_to_string(path)
+        .map_err(|error| FsError::new(format!("failed to read text file: {error}")))?;
+    Ok(ReadTextFileResponse { contents })
 }
 
 #[cfg(windows)]

@@ -31,6 +31,9 @@ import type {
   HostListDirectoryResult,
   LoadedRoiFrameAnnotation,
   ReadTextFileResponse,
+  SmbConnectRequest,
+  SmbConnectResponse,
+  SmbDisconnectRequest,
   RoiBbox,
   RoiFrameAnnotation,
   RoiFrameAnnotationPayload,
@@ -50,7 +53,15 @@ import type {
 
 export type { AppId };
 export type HelloMessage = Hello;
-export type { HostFsEntry, HostListDirectoryResult, HomeDirectoryResponse, ReadTextFileResponse };
+export type {
+  HostFsEntry,
+  HostListDirectoryResult,
+  HomeDirectoryResponse,
+  ReadTextFileResponse,
+  SmbConnectRequest,
+  SmbConnectResponse,
+  SmbDisconnectRequest,
+};
 export type {
   SaveAssayJsonRequest,
   SaveAssayJsonResponse,

@@ -35,6 +35,9 @@ import type {
   HostListDirectoryResult,
   LoadedRoiFrameAnnotation,
   ReadTextFileResponse,
+  SmbConnectRequest,
+  SmbConnectResponse,
+  SmbDisconnectRequest,
   RoiBbox,
   RoiFrameAnnotation,
   RoiFrameAnnotationPayload,
@@ -89,6 +92,21 @@ export const HomeDirectoryResponseSchema = Schema.Struct({
 export const ReadTextFileResponseSchema = Schema.Struct({
   contents: Schema.String,
 }) satisfies Schema.Schema<ReadTextFileResponse>;
+
+export const SmbConnectRequestSchema = Schema.Struct({
+  url: Schema.String,
+  username: Schema.String,
+  password: Schema.String,
+}) satisfies Schema.Schema<SmbConnectRequest>;
+
+export const SmbConnectResponseSchema = Schema.Struct({
+  sessionId: Schema.String,
+  rootPath: Schema.String,
+}) satisfies Schema.Schema<SmbConnectResponse>;
+
+export const SmbDisconnectRequestSchema = Schema.Struct({
+  sessionId: Schema.String,
+}) satisfies Schema.Schema<SmbDisconnectRequest>;
 
 export const SaveAssayJsonRequestSchema = Schema.Struct({
   saveTo: Schema.String,

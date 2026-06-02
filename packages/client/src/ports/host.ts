@@ -1,7 +1,10 @@
 import {
   HomeDirectoryResponseSchema,
   HostListDirectoryResultSchema,
+  SmbConnectResponseSchema,
+  SmbDisconnectRequestSchema,
 } from "@lisca/contracts";
+import * as Schema from "effect/Schema";
 import { Effect } from "effect";
 
 import { createJsonFetch } from "../fetch.ts";
@@ -30,6 +33,19 @@ export function createHostPort(deps: HostPortDeps): HostPort {
       return json
         .getJson("/fs/home", HomeDirectoryResponseSchema, undefined, signal)
         .pipe(Effect.map((result) => result.path));
+    },
+    connectSmb(request, signal) {
+      return json.postJson("/fs/smb/connect", request, SmbConnectResponseSchema, signal);
+    },
+    disconnectSmb(sessionId, signal) {
+      return json
+        .postJson(
+          "/fs/smb/disconnect",
+          { sessionId },
+          Schema.Struct({ ok: Schema.Boolean }),
+          signal,
+        )
+        .pipe(Effect.asVoid);
     },
   };
 }

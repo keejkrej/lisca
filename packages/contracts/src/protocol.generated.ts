@@ -131,7 +131,21 @@ export type ContrastWindow = {
 
 export type CropOutputFormat = "tiff";
 
-export type CropRoiProgress = {
+export type CropRoiProgress = CropRoiProgress_Serialize | CropRoiProgress_Deserialize;
+
+export type CropRoiProgressMessage = CropRoiProgressMessage_Serialize | CropRoiProgressMessage_Deserialize;
+
+export type CropRoiProgressMessage_Deserialize = {
+	type: string,
+	progress: CropRoiProgress_Deserialize,
+};
+
+export type CropRoiProgressMessage_Serialize = {
+	type: string,
+	progress: CropRoiProgress_Serialize,
+};
+
+export type CropRoiProgress_Deserialize = {
 	requestId: string,
 	status: CropRoiStatus,
 	position: number | null,
@@ -144,9 +158,17 @@ export type CropRoiProgress = {
 	skippedPositions?: number[],
 };
 
-export type CropRoiProgressMessage = {
-	type: string,
-	progress: CropRoiProgress,
+export type CropRoiProgress_Serialize = {
+	requestId: string,
+	status: CropRoiStatus,
+	position: number | null,
+	completedPositions: number,
+	totalPositions: number,
+	completedRois: number,
+	totalRois: number,
+	message: string | null,
+	error: string | null,
+	skippedPositions?: number[],
 };
 
 export type CropRoiRequest = {
@@ -311,6 +333,21 @@ export type SavedAlignState_Deserialize = {
 export type SavedAlignState_Serialize = {
 	grid: AlignGridState_Serialize,
 	excludedCells: AlignGridCellCoord[],
+};
+
+export type SmbConnectRequest = {
+	url: string,
+	username: string,
+	password: string,
+};
+
+export type SmbConnectResponse = {
+	sessionId: string,
+	rootPath: string,
+};
+
+export type SmbDisconnectRequest = {
+	sessionId: string,
 };
 
 export type WorkspaceScan = {

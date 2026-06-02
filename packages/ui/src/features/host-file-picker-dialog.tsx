@@ -1,12 +1,20 @@
 "use client";
 
-import type { HostFilePickerMode, HostFsEntry, HostListDirectoryResult } from "@lisca/contracts";
+import {
+  DEFAULT_SMB_SOURCE_URL,
+  type HostFilePickerMode,
+  type HostFsEntry,
+  type HostListDirectoryResult,
+} from "@lisca/contracts";
 import type { HostPort } from "@lisca/client/ports/types";
 import { runClientEffect } from "@lisca/client/runtime";
 import { FileIcon, FolderIcon, Home, X } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "../components/ui/button";
+import { Field, FieldLabel } from "../components/ui/field";
+import { Input } from "../components/ui/input";
+import { Toggle } from "../components/ui/toggle";
 import { DialogSurface } from "../shell/dialog-surface";
 import { cn } from "../lib/utils";
 import { ModalScrim } from "../shell/modal-scrim";
@@ -33,7 +41,7 @@ function isDirectoryMode(mode: HostFilePickerMode): boolean {
 export type HostFilePickerDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  hostPort: Pick<HostPort, "listDirectory" | "userHomeDirectory">;
+  hostPort: Pick<HostPort, "listDirectory" | "userHomeDirectory" | "connectSmb" | "disconnectSmb">;
   mode: HostFilePickerMode;
   title: string;
   description?: string;
@@ -51,10 +59,32 @@ export function HostFilePickerDialog({
   onPickDirectory,
   onPickFile,
 }: HostFilePickerDialogProps) {
+  const showSmb = mode !== "workspace";
   const [list, setList] = useState<HostListDirectoryResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<HostFsEntry | null>(null);
+  const [useSmb, setUseSmb] = useState(false);
+  const [smbUrl, setSmbUrl] = useState(DEFAULT_SMB_SOURCE_URL);
+  const [smbUsername, setSmbUsername] = useState("");
+  const [smbPassword, setSmbPassword] = useState("");
+  const [smbSessionId, setSmbSessionId] = useState<string | null>(null);
+  const [smbRootPath, setSmbRootPath] = useState<string | null>(null);
+  const [connecting, setConnecting] = useState(false);
+  const smbSessionIdRef = useRef<string | null>(null);
+
+  const disconnectSmb = useCallback(async () => {
+    const sessionId = smbSessionIdRef.current;
+    if (!sessionId) return;
+    smbSessionIdRef.current = null;
+    setSmbSessionId(null);
+    setSmbRootPath(null);
+    try {
+      await runClientEffect(hostPort.disconnectSmb(sessionId));
+    } catch {
+      // ignore disconnect errors
+    }
+  }, [hostPort]);
 
   const loadPath = useCallback(
     async (path: string | null) => {
@@ -74,10 +104,45 @@ export function HostFilePickerDialog({
     [hostPort],
   );
 
+  const connectSmbShare = useCallback(async () => {
+    setConnecting(true);
+    setError(null);
+    try {
+      await disconnectSmb();
+      const response = await runClientEffect(
+        hostPort.connectSmb({
+          url: smbUrl.trim(),
+          username: smbUsername.trim(),
+          password: smbPassword,
+        }),
+      );
+      smbSessionIdRef.current = response.sessionId;
+      setSmbSessionId(response.sessionId);
+      setSmbRootPath(response.rootPath);
+      await loadPath(response.rootPath);
+    } catch (cause) {
+      setList(null);
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setConnecting(false);
+    }
+  }, [disconnectSmb, hostPort, loadPath, smbPassword, smbUrl, smbUsername]);
+
   useEffect(() => {
-    if (!open) return;
-    void loadPath(null);
-  }, [open, loadPath]);
+    if (!open) {
+      void disconnectSmb();
+      setUseSmb(false);
+      setSmbPassword("");
+      return;
+    }
+    if (useSmb && smbRootPath) {
+      void loadPath(smbRootPath);
+      return;
+    }
+    if (!useSmb) {
+      void loadPath(null);
+    }
+  }, [open, useSmb, smbRootPath, loadPath, disconnectSmb]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -91,19 +156,25 @@ export function HostFilePickerDialog({
   if (!open) return null;
 
   const dirMode = isDirectoryMode(mode);
-  const canGoUp = Boolean(list?.path);
+  const smbActive = useSmb && Boolean(smbSessionId);
+  const canGoUp = Boolean(list?.path) && (smbActive ? Boolean(list?.parent) : true);
   const locationLabel = list?.path ?? null;
+  const browseReady = smbActive || !useSmb;
 
   const goUp = () => {
     if (!list) return;
     if (list.parent) {
       void loadPath(list.parent);
-    } else if (list.path) {
+    } else if (list.path && !smbActive) {
       void loadPath(null);
     }
   };
 
   const goHome = async () => {
+    if (smbActive && smbRootPath) {
+      await loadPath(smbRootPath);
+      return;
+    }
     try {
       const home = await runClientEffect(hostPort.userHomeDirectory());
       await loadPath(home);
@@ -154,6 +225,16 @@ export function HostFilePickerDialog({
     }
   };
 
+  const handleSmbToggle = (pressed: boolean) => {
+    setUseSmb(pressed);
+    setError(null);
+    setList(null);
+    setSelectedFile(null);
+    if (!pressed) {
+      void disconnectSmb();
+    }
+  };
+
   return (
     <ModalScrim
       onMouseDown={(event) => {
@@ -192,9 +273,69 @@ export function HostFilePickerDialog({
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col gap-3 px-5 py-4">
+          {showSmb ? (
+            <div className="flex flex-col gap-3 rounded-md border border-border bg-muted/15 p-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <Toggle
+                  aria-label="Use network share (SMB)"
+                  pressed={useSmb}
+                  size="sm"
+                  variant="outline"
+                  onPressedChange={handleSmbToggle}
+                >
+                  Network share (SMB)
+                </Toggle>
+              </div>
+              {useSmb ? (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Field className="gap-1.5 sm:col-span-2">
+                    <FieldLabel htmlFor="host-file-picker-smb-url">Share URL</FieldLabel>
+                    <Input
+                      autoComplete="off"
+                      id="host-file-picker-smb-url"
+                      placeholder={DEFAULT_SMB_SOURCE_URL}
+                      value={smbUrl}
+                      onChange={(event) => setSmbUrl(event.target.value)}
+                    />
+                  </Field>
+                  <Field className="gap-1.5">
+                    <FieldLabel htmlFor="host-file-picker-smb-user">Username</FieldLabel>
+                    <Input
+                      autoComplete="username"
+                      id="host-file-picker-smb-user"
+                      placeholder="DOMAIN\\user"
+                      value={smbUsername}
+                      onChange={(event) => setSmbUsername(event.target.value)}
+                    />
+                  </Field>
+                  <Field className="gap-1.5">
+                    <FieldLabel htmlFor="host-file-picker-smb-password">Password</FieldLabel>
+                    <Input
+                      autoComplete="current-password"
+                      id="host-file-picker-smb-password"
+                      type="password"
+                      value={smbPassword}
+                      onChange={(event) => setSmbPassword(event.target.value)}
+                    />
+                  </Field>
+                  <div className="sm:col-span-2">
+                    <Button
+                      disabled={connecting || !smbUrl.trim() || !smbUsername.trim()}
+                      size="sm"
+                      type="button"
+                      onClick={() => void connectSmbShare()}
+                    >
+                      {connecting ? "Connecting..." : "Connect"}
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
           <div className="flex flex-wrap items-center gap-2">
             <Button
-              disabled={!canGoUp || loading}
+              disabled={!canGoUp || loading || !browseReady}
               size="sm"
               type="button"
               variant="outline"
@@ -203,20 +344,24 @@ export function HostFilePickerDialog({
               Up
             </Button>
             <Button
-              aria-label="Go to user home"
-              disabled={loading}
+              aria-label={smbActive ? "Go to share root" : "Go to user home"}
+              disabled={loading || !browseReady}
               size="sm"
               type="button"
               variant="outline"
               onClick={() => void goHome()}
             >
               <Home className="size-4" aria-hidden />
-              Home
+              {smbActive ? "Share root" : "Home"}
             </Button>
           </div>
 
           <div className="min-h-[220px] overflow-auto rounded-md border border-border bg-background/50">
-            {loading ? (
+            {!browseReady ? (
+              <div className="flex h-[220px] items-center justify-center px-4 text-center text-muted-foreground text-sm">
+                Connect to the network share to browse files.
+              </div>
+            ) : loading ? (
               <div className="flex h-[220px] items-center justify-center text-muted-foreground text-sm">
                 Loading...
               </div>
@@ -265,7 +410,11 @@ export function HostFilePickerDialog({
             Cancel
           </Button>
           {dirMode ? (
-            <Button disabled={!list?.path || loading} type="button" onClick={confirmDirectory}>
+            <Button
+              disabled={!list?.path || loading || !browseReady}
+              type="button"
+              onClick={confirmDirectory}
+            >
               Select folder
             </Button>
           ) : (
@@ -274,7 +423,8 @@ export function HostFilePickerDialog({
                 !selectedFile ||
                 selectedFile.isDirectory ||
                 !fileMatchesMode(mode, selectedFile) ||
-                loading
+                loading ||
+                !browseReady
               }
               type="button"
               onClick={confirmFile}

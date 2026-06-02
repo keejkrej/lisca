@@ -14,8 +14,106 @@ use crate::{
     protocol::{
         AlignerSource, ContrastWindow, FramePayload, FrameRequest, ImageSource, WorkspaceScan,
     },
+    smb::{self, is_smb_path, list_directory},
     tiff_io::{self, TiffFrame16},
 };
+
+#[derive(Clone, Debug)]
+struct FsDirEntry {
+    name: String,
+    path: PathBuf,
+    is_directory: bool,
+}
+
+fn read_dir_entries(dir: &Path) -> Result<Vec<FsDirEntry>, String> {
+    let dir_str = dir
+        .to_str()
+        .ok_or_else(|| format!("path is not valid UTF-8: {}", dir.display()))?;
+    if is_smb_path(dir_str) {
+        let listing = list_directory(dir_str)?;
+        return Ok(
+            listing
+                .entries
+                .into_iter()
+                .map(|entry| FsDirEntry {
+                    name: entry.name,
+                    path: PathBuf::from(entry.path),
+                    is_directory: entry.is_directory,
+                })
+                .collect(),
+        );
+    }
+
+    let mut entries = Vec::new();
+    for entry in fs::read_dir(dir).map_err(|error| error.to_string())?.flatten() {
+        let Ok(file_type) = entry.file_type() else {
+            continue;
+        };
+        entries.push(FsDirEntry {
+            name: entry.file_name().to_string_lossy().to_string(),
+            path: entry.path(),
+            is_directory: file_type.is_dir(),
+        });
+    }
+    Ok(entries)
+}
+
+fn collect_source_images(folder: &Path) -> Vec<(PathBuf, ParsedSourceImageName)> {
+    if folder
+        .to_str()
+        .is_some_and(is_smb_path)
+    {
+        return collect_source_images_smb(folder, 6);
+    }
+
+    WalkDir::new(folder)
+        .max_depth(6)
+        .into_iter()
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| entry.file_type().is_file())
+        .filter_map(|entry| {
+            let file_name = entry.path().file_name()?.to_str()?;
+            let parsed = parse_source_image_name(file_name, infer_position_hint(entry.path()))?;
+            Some((entry.into_path(), parsed))
+        })
+        .collect()
+}
+
+fn collect_source_images_smb(folder: &Path, max_depth: usize) -> Vec<(PathBuf, ParsedSourceImageName)> {
+    let folder_str = folder.to_str().expect("smb path is utf-8");
+    let mut queue = vec![(folder_str.to_string(), 0usize)];
+    let mut results = Vec::new();
+
+    while let Some((current, depth)) = queue.pop() {
+        let entries = match list_directory(&current) {
+            Ok(listing) => listing.entries,
+            Err(_) => continue,
+        };
+        for entry in entries {
+            if entry.is_directory {
+                if depth + 1 < max_depth {
+                    queue.push((entry.path.clone(), depth + 1));
+                }
+                continue;
+            }
+            let path = PathBuf::from(&entry.path);
+            if !is_supported_source_image(&path) {
+                continue;
+            }
+            let Some(file_name) = path.file_name().and_then(|value| value.to_str()) else {
+                continue;
+            };
+            let Some(parsed) =
+                parse_source_image_name(file_name, infer_position_hint(&path))
+            else {
+                continue;
+            };
+            results.push((path, parsed));
+        }
+    }
+
+    results
+}
 
 const CONTRAST_SAMPLE_SIZE: usize = 2048;
 
@@ -224,24 +322,28 @@ pub fn to_frame_payload(raw: RawFrame, contrast: Option<ContrastWindow>) -> Fram
 }
 
 fn scan_nd2(path: &Path) -> Result<WorkspaceScan, String> {
-    let mut reader = SourceReader::open_nd2(path)?;
+    let local = smb::resolve_local_path(path)?;
+    let mut reader = SourceReader::open_nd2(&local)?;
     Ok(reader.metadata()?.workspace_scan())
 }
 
 fn scan_czi(path: &Path) -> Result<WorkspaceScan, String> {
-    let mut reader = SourceReader::open_czi(path)?;
+    let local = smb::resolve_local_path(path)?;
+    let mut reader = SourceReader::open_czi(&local)?;
     Ok(reader.metadata()?.workspace_scan())
 }
 
 fn load_nd2_frame(path: &Path, request: FrameRequest) -> Result<RawFrame, String> {
-    let mut reader = SourceReader::open_nd2(path)?;
+    let local = smb::resolve_local_path(path)?;
+    let mut reader = SourceReader::open_nd2(&local)?;
     let metadata = reader.metadata()?;
     let (pos, time, channel, z) = metadata.indices_for_request(&request)?;
     reader.read_frame_2d(pos, time, channel, z)
 }
 
 fn load_czi_frame(path: &Path, request: FrameRequest) -> Result<RawFrame, String> {
-    let mut reader = SourceReader::open_czi(path)?;
+    let local = smb::resolve_local_path(path)?;
+    let mut reader = SourceReader::open_czi(&local)?;
     let metadata = reader.metadata()?;
     let (pos, time, channel, z) = metadata.indices_for_request(&request)?;
     reader.read_frame_2d(pos, time, channel, z)
@@ -340,7 +442,11 @@ fn build_series_dataset(
     filename_template: &str,
 ) -> Result<SeriesDataset, String> {
     let root = Path::new(root);
-    if !root.is_dir() {
+    if root
+        .to_str()
+        .is_none_or(|value| !is_smb_path(value))
+        && !root.is_dir()
+    {
         return Err(format!("{} is not a directory", root.display()));
     }
 
@@ -363,22 +469,19 @@ fn build_series_dataset(
     if subfolder_template.is_empty() {
         collect_series_records(root, "", &subfolder_parts, &filename_parts, &mut records)?;
     } else {
-        let mut folders = fs::read_dir(root)
-            .map_err(|error| error.to_string())?
-            .flatten()
-            .filter(|entry| entry.path().is_dir())
+        let mut folders = read_dir_entries(root)?
+            .into_iter()
+            .filter(|entry| entry.is_directory)
             .collect::<Vec<_>>();
-        folders.sort_by_key(|entry| entry.path());
+        folders.sort_by_key(|entry| entry.path.clone());
 
         for folder in folders {
-            let Some(name) = folder.file_name().to_str().map(str::to_string) else {
-                continue;
-            };
+            let name = folder.name;
             if match_series_template(&subfolder_parts, &name, false).is_none() {
                 continue;
             }
             collect_series_records(
-                &folder.path(),
+                &folder.path,
                 &name,
                 &subfolder_parts,
                 &filename_parts,
@@ -458,19 +561,16 @@ fn collect_series_records(
 ) -> Result<(), String> {
     let subfolder_values =
         match_series_template(subfolder_parts, subfolder_name, false).unwrap_or_default();
-    let mut files = fs::read_dir(folder)
-        .map_err(|error| error.to_string())?
-        .flatten()
-        .filter(|entry| entry.path().is_file() && is_supported_source_image(&entry.path()))
+    let mut files = read_dir_entries(folder)?
+        .into_iter()
+        .filter(|entry| !entry.is_directory && is_supported_source_image(&entry.path))
         .collect::<Vec<_>>();
-    files.sort_by_key(|entry| entry.path());
+    files.sort_by_key(|entry| entry.path.clone());
 
     for file in files {
-        let Some(name) = file.file_name().to_str().map(str::to_string) else {
-            continue;
-        };
+        let name = file.name;
         let filename_values = match_series_template(filename_parts, &name, true).or_else(|| {
-            file.path()
+            file.path
                 .file_stem()
                 .and_then(|stem| stem.to_str())
                 .and_then(|stem| match_series_template(filename_parts, stem, true))
@@ -480,7 +580,7 @@ fn collect_series_records(
         };
         let values = merge_series_values(&subfolder_values, &filename_values, &name)?;
         records.push(SeriesRecord {
-            path: file.path(),
+            path: file.path,
             position: values
                 .get(&SeriesAxis::Position)
                 .cloned()
@@ -504,19 +604,15 @@ fn collect_series_records(
 }
 
 fn scan_legacy_image_folder(root: &str) -> Result<WorkspaceScan, String> {
-    let entries = fs::read_dir(root).map_err(|error| error.to_string())?;
+    let entries = read_dir_entries(Path::new(root))?;
     let mut position_dirs = Vec::<(u32, PathBuf)>::new();
 
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if !path.is_dir() {
+    for entry in entries {
+        if !entry.is_directory {
             continue;
         }
-        let Some(name) = entry.file_name().to_str().map(str::to_string) else {
-            continue;
-        };
-        if let Some(position) = parse_pos_dir_name(&name) {
-            position_dirs.push((position, path));
+        if let Some(position) = parse_pos_dir_name(&entry.name) {
+            position_dirs.push((position, entry.path));
         }
     }
 
@@ -768,32 +864,19 @@ fn is_supported_source_image(path: &Path) -> bool {
     )
 }
 
-fn collect_source_images(folder: &Path) -> Vec<(PathBuf, ParsedSourceImageName)> {
-    WalkDir::new(folder)
-        .max_depth(6)
-        .into_iter()
-        .filter_map(|entry| entry.ok())
-        .filter(|entry| entry.file_type().is_file())
-        .filter_map(|entry| {
-            let file_name = entry.path().file_name()?.to_str()?;
-            let parsed = parse_source_image_name(file_name, infer_position_hint(entry.path()))?;
-            Some((entry.into_path(), parsed))
-        })
-        .collect()
-}
-
 fn load_image_frame(path: &Path) -> Result<RawFrame, String> {
-    match path
+    let local = smb::resolve_local_path(path)?;
+    match local
         .extension()
         .and_then(|value| value.to_str())
         .map(|value| value.to_ascii_lowercase())
         .as_deref()
     {
-        Some("tif" | "tiff") => tiff_io::load_tiff_frame_page(path, 0).map(raw_frame_from_tiff),
-        Some("png" | "jpg" | "jpeg") => load_raster_frame(path),
+        Some("tif" | "tiff") => tiff_io::load_tiff_frame_page(&local, 0).map(raw_frame_from_tiff),
+        Some("png" | "jpg" | "jpeg") => load_raster_frame(&local),
         _ => Err(format!(
             "unsupported source image extension for {}",
-            path.display()
+            local.display()
         )),
     }
 }
@@ -943,16 +1026,12 @@ fn build_channel_mapping<'a>(
 }
 
 fn find_position_dir(root: &Path, position: u32) -> Result<PathBuf, String> {
-    let entries = fs::read_dir(root).map_err(|error| error.to_string())?;
-    for entry in entries.flatten() {
-        if !entry.path().is_dir() {
+    for entry in read_dir_entries(root)? {
+        if !entry.is_directory {
             continue;
         }
-        let Some(name) = entry.file_name().to_str().map(str::to_string) else {
-            continue;
-        };
-        if parse_pos_dir_name(&name) == Some(position) {
-            return Ok(entry.path());
+        if parse_pos_dir_name(&entry.name) == Some(position) {
+            return Ok(entry.path);
         }
     }
 

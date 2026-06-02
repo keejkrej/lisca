@@ -6,6 +6,7 @@ pub mod http;
 pub mod image_source;
 pub mod protocol;
 pub mod roi;
+pub mod smb;
 mod tiff_io;
 
 pub use protocol::AppId;
@@ -14,6 +15,9 @@ pub use protocol::AppId;
 fn link_protocol_types_for_export() {
     fn register<T: specta::Type>() {}
     register::<protocol::Hello>();
+    register::<protocol::SmbConnectRequest>();
+    register::<protocol::SmbConnectResponse>();
+    register::<protocol::SmbDisconnectRequest>();
     register::<protocol::CropRoiProgressMessage>();
     register::<protocol::AnalysisProgressMessage>();
 }
