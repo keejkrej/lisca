@@ -15,8 +15,7 @@ import { useCallback, useEffect, useMemo } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
 import { runClientEffect } from "@lisca/client/runtime";
-import { toErrorMessage } from "../api/studio-client";
-import { studioClient } from "../api/studio-port";
+import { studioClient, toErrorMessage } from "../api/studio-port";
 import { roiScanIdleAtom, roiWorkspaceScanAtom } from "../atoms/studio-query-atoms";
 import {
   annotateRequestKey,
@@ -235,7 +234,8 @@ export function useStudioAnnotateState(): StudioAnnotateState {
         setFrameError(null);
         setStatus("Loading ROI frame");
       },
-      load: (signal) => studioClient.loadRoiFrame(workspacePath, request, null, signal),
+      load: (signal) =>
+        runClientEffect(studioClient.loadRoiFrame(workspacePath, request, null, signal), { signal }),
       commit: (nextFrame) => {
         setFrame(nextFrame);
         setContrastState(nextFrame);

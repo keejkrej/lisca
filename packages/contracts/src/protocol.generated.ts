@@ -88,6 +88,61 @@ export type AnnotationLabel = {
 
 export type AppId = "aligner" | "annotator" | "studio";
 
+export type AssayBasicInfoStep1 = {
+	name: string,
+	date: string,
+	dataPath: string,
+	folderSubfolderTemplate: string,
+	folderFilenameTemplate: string,
+	saveTo: string,
+};
+
+export type AssayBasicInfoStep2 = {
+	pattern: string,
+	timelapseAmount: number | null,
+	timelapseUnit: AssayTimelapseUnit,
+	selectedFeatures: AssayFeature[],
+};
+
+export type AssayBasicInfoStep3 = {
+	selectedSlideId: AssaySlideId,
+	samplesBySlide: AssaySamplesBySlide,
+};
+
+export type AssayDataSourceKind = "folder" | "tif" | "jpg" | "nd2" | "czi";
+
+export type AssayFeature = "morphology" | "partcount" | "partfluor" | "totalfluor";
+
+export type AssayJsonFile = {
+	assayId: AssayName,
+	assayLabel: string,
+	dataSourceKind: AssayDataSourceKind | null,
+	info1: AssayBasicInfoStep1,
+	info2: AssayBasicInfoStep2,
+	info3: AssayBasicInfoStep3,
+};
+
+export type AssayName = "gene-expression" | "immune-killing" | "lnp-binding" | "custom-assay";
+
+export type AssaySampleRow = {
+	channel: string,
+	name: string,
+	positionStart: string,
+	positionFinish: string,
+	maskChannel: string,
+	signalChannel: string,
+	positions: string,
+};
+
+export type AssaySamplesBySlide = {
+	"slide-i": AssaySampleRow[],
+	"slide-vi": AssaySampleRow[],
+};
+
+export type AssaySlideId = "slide-i" | "slide-vi";
+
+export type AssayTimelapseUnit = "second" | "minute" | "hour";
+
 export type AutoExcludeHistogramBin = {
 	start: number | null,
 	end: number | null,

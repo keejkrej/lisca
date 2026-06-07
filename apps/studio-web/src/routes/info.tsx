@@ -8,7 +8,7 @@ import { StudioDock } from "../components/studio-dock";
 import { StudioLeft } from "../components/studio-left";
 import { instructionForStep, validInfo1, validInfo2, validInfo3 } from "../state/studio-routes";
 import { useStudioStore } from "../state/studio-store";
-import { studioClient } from "../api/studio-port";
+import { studioHostOperations } from "../api/studio-port";
 
 export const Route = createFileRoute("/info")({
   component: InfoPage,
@@ -65,7 +65,7 @@ function InfoPage() {
         <AppShell.MainColumn>
           <AppShell.Main>
             <div className="mx-auto flex min-h-full w-full min-w-0 max-w-[52rem] flex-col items-center justify-center px-4 py-6 md:px-[100px] md:py-10">
-              {infoStep === 1 ? <BasicInfoStep1 hostPort={studioClient} /> : null}
+              {infoStep === 1 ? <BasicInfoStep1 hostPort={studioHostOperations} /> : null}
               {infoStep === 2 ? <BasicInfoStep2 /> : null}
               {infoStep === 3 ? <BasicInfoStep3 /> : null}
             </div>

@@ -1,16 +1,11 @@
-import { RouterProvider, createHashHistory, createRouter } from "@tanstack/react-router";
-import { ShellServerProvider, ShellThemeProvider, ShellWorkspaceProvider } from "@lisca/ui";
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
+import { createLiscaWebApp } from "@lisca/web-app";
+import { createHashHistory, createRouter } from "@tanstack/react-router";
 
 import { AnnotatorAtomsProvider } from "./components/annotator-atoms-provider";
 import "./index.css";
 import { routeTree } from "./routeTree.gen";
 
-const router = createRouter({
-  routeTree,
-  history: createHashHistory(),
-});
+const router = createRouter({ routeTree, history: createHashHistory() });
 
 declare module "@tanstack/react-router" {
   interface Register {
@@ -18,16 +13,4 @@ declare module "@tanstack/react-router" {
   }
 }
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <AnnotatorAtomsProvider>
-      <ShellThemeProvider>
-        <ShellServerProvider defaultPort={8766}>
-          <ShellWorkspaceProvider>
-            <RouterProvider router={router} />
-          </ShellWorkspaceProvider>
-        </ShellServerProvider>
-      </ShellThemeProvider>
-    </AnnotatorAtomsProvider>
-  </StrictMode>,
-);
+createLiscaWebApp({ router, defaultPort: 8766, AtomsProvider: AnnotatorAtomsProvider });

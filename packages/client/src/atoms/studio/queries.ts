@@ -1,5 +1,4 @@
 import type {
-  AlignerSource,
   AutoExcludePreviewRequest,
   AutoExcludePreviewResponse,
   RoiWorkspaceScan,
@@ -12,6 +11,7 @@ import type { ClientError } from "../../client-error.ts";
 import { StudioPortService } from "../ports.ts";
 import { ReactivityKeys } from "../reactivity.ts";
 import type { AppRuntime } from "../runtime.ts";
+import { createSourceQueryAtoms } from "../source-queries.ts";
 
 export type StudioQueryAtoms = {
   scanSourceAtom: (sourceKey: string) => Atom.Atom<Result.Result<WorkspaceScan, ClientError>>;
@@ -24,19 +24,9 @@ export type StudioQueryAtoms = {
 };
 
 export function createStudioQueryAtoms(runtime: AppRuntime<StudioPortService>): StudioQueryAtoms {
-  const scanSourceAtom = Atom.family((sourceKey: string) =>
-    runtime
-      .atom(
-        Effect.gen(function* () {
-          const port = yield* StudioPortService;
-          const source = JSON.parse(sourceKey) as AlignerSource;
-          return yield* port.scanSource(source);
-        }),
-      )
-      .pipe(
-        Atom.keepAlive,
-        Atom.withReactivity([ReactivityKeys.scanSource(sourceKey)]),
-      ),
+  const { scanSourceAtom, autoExcludePreviewAtom } = createSourceQueryAtoms(
+    runtime,
+    StudioPortService,
   );
 
   const roiWorkspaceScanAtom = Atom.family((workspacePath: string) =>
@@ -51,13 +41,6 @@ export function createStudioQueryAtoms(runtime: AppRuntime<StudioPortService>): 
         Atom.keepAlive,
         Atom.withReactivity([ReactivityKeys.roiWorkspace(workspacePath)]),
       ),
-  );
-
-  const autoExcludePreviewAtom = runtime.fn(
-    Effect.fnUntraced(function* (request: AutoExcludePreviewRequest) {
-      const port = yield* StudioPortService;
-      return yield* port.autoExcludePreview(request);
-    }),
   );
 
   return {

@@ -14,7 +14,7 @@ import {
 import type { AlignerSource, HostFilePickerMode } from "@lisca/contracts";
 import { useRef, useState } from "react";
 
-import { alignerClient } from "../api/aligner-port.ts";
+import { alignerHostOperations } from "../api/aligner-port.ts";
 
 function ToolsMenuChevron(props: { className?: string }) {
   return (
@@ -133,7 +133,7 @@ export function AlignerHeader(props: { onSourcePicked: (source: AlignerSource | 
       />
 
       <FolderSourceParseModal
-        hostPort={alignerClient}
+        hostPort={alignerHostOperations}
         path={folderSourcePath}
         onClose={() => setFolderSourcePath(null)}
         onConfirm={(source) => {
@@ -144,7 +144,7 @@ export function AlignerHeader(props: { onSourcePicked: (source: AlignerSource | 
       />
 
       <HostFilePickerDialog
-        hostPort={alignerClient}
+        hostPort={alignerHostOperations}
         mode={filePicker.mode}
         open={filePicker.open}
         title={filePicker.title}

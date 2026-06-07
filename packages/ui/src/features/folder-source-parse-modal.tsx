@@ -5,8 +5,6 @@ import {
   FOLDER_SOURCE_TEMPLATE_PRESETS,
   type FolderSource,
 } from "@lisca/contracts";
-import type { HostPort } from "@lisca/client/ports/types";
-import { runClientEffect } from "@lisca/client/runtime";
 import { useEffect, useState } from "react";
 
 import { Button } from "../components/ui/button";
@@ -14,10 +12,11 @@ import { Field, FieldLabel } from "../components/ui/field";
 import { Input } from "../components/ui/input";
 import { DialogSurface } from "../shell/dialog-surface";
 import { ModalScrim } from "../shell/modal-scrim";
+import type { HostFilePickerOperations } from "./host-operations";
 
 export type FolderSourceParseModalProps = {
   path: string | null;
-  hostPort: Pick<HostPort, "listDirectory">;
+  hostPort: Pick<HostFilePickerOperations, "listDirectory">;
   onClose: () => void;
   onConfirm: (source: FolderSource) => void;
 };
@@ -53,9 +52,9 @@ function isSupportedImageName(name: string): boolean {
 
 async function detectFolderSourceTemplate(
   path: string,
-  hostPort: Pick<HostPort, "listDirectory">,
+  hostPort: Pick<HostFilePickerOperations, "listDirectory">,
 ): Promise<(typeof FOLDER_SOURCE_TEMPLATE_PRESETS)[number] | null> {
-  const root = await runClientEffect(hostPort.listDirectory(path));
+  const root = await hostPort.listDirectory(path);
   const directories = root.entries.filter((entry) => entry.isDirectory);
 
   for (const preset of FOLDER_SOURCE_TEMPLATE_PRESETS) {
@@ -64,7 +63,7 @@ async function detectFolderSourceTemplate(
     const matchingDirectories = directories.filter((entry) => subfolderRegex.test(entry.name));
 
     for (const directory of matchingDirectories.slice(0, 12)) {
-      const listing = await runClientEffect(hostPort.listDirectory(directory.path));
+      const listing = await hostPort.listDirectory(directory.path);
       const matched = listing.entries
         .filter((entry) => !entry.isDirectory && isSupportedImageName(entry.name))
         .some((entry) => filenameRegex.test(filenameStem(entry.name)));

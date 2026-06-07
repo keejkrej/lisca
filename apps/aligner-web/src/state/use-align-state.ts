@@ -10,6 +10,7 @@ import type {
   SavedAlignState,
   WorkspaceScan,
 } from "@lisca/contracts";
+import { runCropRoi } from "@lisca/client/align-session";
 import { resultData, resultFailureMessage, resultLoading } from "@lisca/client/atoms";
 import { isDoneCropStatus } from "@lisca/client/crop-status";
 import { runClientEffect } from "@lisca/client/runtime";
@@ -27,8 +28,7 @@ import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { Effect } from "effect";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { alignerClient } from "../api/aligner-port";
-import { toErrorMessage } from "../api/aligner-client";
+import { alignerClient, toErrorMessage } from "../api/aligner-port";
 import {
   autoExcludePreviewAtom,
   scanIdleAtom,
@@ -236,13 +236,16 @@ export function useAlignState(): AlignState {
         alignerUiActions.setError(setUi, null);
         alignerUiActions.setStatus(setUi, "Loading frame");
       },
-      load: () =>
-        Effect.all([
-          loadFrameEffect(alignerClient, source, selection, contrast),
-          workspacePath
-            ? alignerClient.loadAlignState(workspacePath, selection.pos)
-            : Effect.succeed(null as SavedAlignState | null),
-        ]),
+      load: (signal) =>
+        runClientEffect(
+          Effect.all([
+            loadFrameEffect(alignerClient, source, selection, contrast),
+            workspacePath
+              ? alignerClient.loadAlignState(workspacePath, selection.pos)
+              : Effect.succeed(null as SavedAlignState | null),
+          ]),
+          { signal },
+        ),
       commit: ([nextFrame, savedAlignState]) => {
         alignerUiActions.applyLoadedFrame(setUi, selection, nextFrame, alignStateKey
           ? { stateKey: alignStateKey, pos: selection.pos, saved: savedAlignState }
@@ -304,56 +307,16 @@ export function useAlignState(): AlignState {
       const requestId = `crop-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       cropRequestIdRef.current = requestId;
       alignerUiActions.setError(setUi, null);
-      alignerUiActions.setCropProgress(setUi, {
-        requestId,
-        status: "queued",
-        position: null,
-        completedPositions: 0,
-        totalPositions: positions.length,
-        completedRois: 0,
-        totalRois: 0,
-        message: "Queued crop",
+      await runCropRoi({
+        client: alignerClient,
+        request: { requestId, workspacePath, source, positions, overwrite, outputFormat: "tiff" },
+        onProgress: (progress) => alignerUiActions.setCropProgress(setUi, progress),
+        onError: (message) => alignerUiActions.setError(setUi, message),
+        onCompleted: (progress) => {
+          if (progress.message) alignerUiActions.setStatus(setUi, progress.message);
+        },
+        toErrorMessage,
       });
-      let stop = () => {};
-      try {
-        await runClientEffect(
-          alignerClient.cropRoi({
-            requestId,
-            workspacePath,
-            source,
-            positions,
-            overwrite,
-            outputFormat: "tiff",
-          }),
-        );
-        stop = alignerClient.onCropRoiProgress(requestId, (progress) => {
-          alignerUiActions.setCropProgress(setUi, progress);
-          if (isDoneCropStatus(progress.status)) {
-            if (progress.status === "error") {
-              alignerUiActions.setError(setUi, progress.error ?? "Crop failed");
-            }
-            if (progress.status === "completed" && progress.message) {
-              alignerUiActions.setStatus(setUi, progress.message);
-            }
-            stop();
-          }
-        });
-      } catch (cause) {
-        stop();
-        const message = toErrorMessage(cause, "Crop failed");
-        alignerUiActions.setError(setUi, message);
-        alignerUiActions.setCropProgress(setUi, {
-          requestId,
-          status: "error",
-          position: null,
-          completedPositions: 0,
-          totalPositions: positions.length,
-          completedRois: 0,
-          totalRois: 0,
-          message,
-          error: message,
-        });
-      }
     },
     [setUi, source, workspacePath],
   );

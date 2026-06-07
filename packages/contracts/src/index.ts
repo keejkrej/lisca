@@ -119,29 +119,26 @@ export type StudioBasicInfoSampleRow = {
   signalChannel: string;
 };
 
-/** Sample row as written to assay.json (includes legacy `positions` for the analysis pipeline). */
-export type StudioAssaySampleRowOnDisk = StudioBasicInfoSampleRow & {
-  positions: string;
-};
-
 export type StudioBasicInfoStep3 = {
   selectedSlideId: StudioBasicInfoSlideId;
   samplesBySlide: Record<StudioBasicInfoSlideId, StudioBasicInfoSampleRow[]>;
 };
 
-export type StudioBasicInfoStep3OnDisk = {
-  selectedSlideId: StudioBasicInfoSlideId;
-  samplesBySlide: Record<StudioBasicInfoSlideId, StudioAssaySampleRowOnDisk[]>;
-};
+// The assay.json on-disk shape has a single source of truth in Rust
+// (`crates/lisca/src/protocol.rs`); these aliases surface the generated types
+// under the names studio app code already uses.
+import type {
+  AssayBasicInfoStep3 as GeneratedAssayBasicInfoStep3,
+  AssayJsonFile as GeneratedAssayJsonFile,
+  AssaySampleRow as GeneratedAssaySampleRow,
+} from "./protocol.generated.ts";
 
-export type StudioAssayJson = {
-  assayId: StudioAssayId;
-  assayLabel: string;
-  dataSourceKind?: StudioDataSourceKind;
-  info1: StudioBasicInfoStep1;
-  info2: StudioBasicInfoStep2;
-  info3: StudioBasicInfoStep3OnDisk;
-};
+/** Sample row as written to assay.json (includes `positions` for the analysis pipeline). */
+export type StudioAssaySampleRowOnDisk = GeneratedAssaySampleRow;
+
+export type StudioBasicInfoStep3OnDisk = GeneratedAssayBasicInfoStep3;
+
+export type StudioAssayJson = GeneratedAssayJsonFile;
 
 export type { PixelType } from "./constants.ts";
 export { PIXEL_TYPES } from "./constants.ts";
@@ -180,3 +177,10 @@ export type CanvasStatusMessage = {
 export type AlignCanvasStatusTone = CanvasStatusTone;
 
 export type AlignCanvasStatusMessage = CanvasStatusMessage;
+
+import type { CropRoiProgress } from "./protocol.wire.ts";
+
+/** True once a crop ROI job has reached a terminal state. */
+export function isDoneCropStatus(status: CropRoiProgress["status"]): boolean {
+  return status === "completed" || status === "cancelled" || status === "error";
+}

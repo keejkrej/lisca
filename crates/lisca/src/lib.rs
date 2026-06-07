@@ -20,6 +20,7 @@ fn link_protocol_types_for_export() {
     register::<protocol::SmbDisconnectRequest>();
     register::<protocol::CropRoiProgressMessage>();
     register::<protocol::AnalysisProgressMessage>();
+    register::<protocol::AssayJsonFile>();
 }
 
 #[cfg(feature = "export-typescript")]

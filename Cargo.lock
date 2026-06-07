@@ -66,8 +66,6 @@ dependencies = [
  "lisca",
  "serde",
  "tokio",
- "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]
@@ -78,8 +76,6 @@ dependencies = [
  "lisca",
  "serde",
  "tokio",
- "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]
@@ -801,6 +797,7 @@ dependencies = [
  "tokio",
  "tower-http",
  "tracing",
+ "tracing-subscriber",
  "uuid",
  "walkdir",
 ]
@@ -1464,8 +1461,6 @@ dependencies = [
  "lisca",
  "serde",
  "tokio",
- "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]

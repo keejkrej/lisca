@@ -1,11 +1,10 @@
-import type { HostPort } from "@lisca/client/ports/types";
 import { runClientEffect } from "@lisca/client/runtime";
 import { AppShell, DockButton, DockToolGrid, HostFilePickerDialog } from "@lisca/ui";
 import { createFileRoute } from "@tanstack/react-router";
 import { useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
-import { studioClient } from "../api/studio-port";
+import { studioClient, studioHostOperations } from "../api/studio-port";
 import { StudioDock } from "../components/studio-dock";
 import { StudioLeft } from "../components/studio-left";
 import { ChooseAssay } from "../components/choose-assay";
@@ -85,7 +84,7 @@ function AssayPage() {
       </AppShell.Body>
       <HostFilePickerDialog
         description="Choose a JSON file from a prior Studio export."
-        hostPort={studioClient}
+        hostPort={studioHostOperations}
         mode="assay_json_file"
         open={assayPickerOpen}
         title="Open assay.json"

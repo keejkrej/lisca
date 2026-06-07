@@ -1,6 +1,6 @@
 import { createAlignerFrameLoader } from "@lisca/client/frame-loader";
 
-import { resolveStudioHttpBaseUrl } from "../api/studio-client";
+import { resolveStudioHttpBaseUrl } from "../api/studio-port";
 
 const loader = createAlignerFrameLoader({
   spanName: "studio-web.load-frame",

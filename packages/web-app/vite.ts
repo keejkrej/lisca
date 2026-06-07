@@ -1,0 +1,28 @@
+import tailwindcss from "@tailwindcss/vite";
+import { tanstackRouter } from "@tanstack/router-plugin/vite";
+import react from "@vitejs/plugin-react";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { defineConfig, type UserConfig } from "vite";
+
+const brandPublicDir = resolve(
+  fileURLToPath(new URL(".", import.meta.url)),
+  "../../assets/brand",
+);
+
+/**
+ * Shared Vite configuration for every Lisca web app. Apps supply only their dev
+ * server port; the plugin set, brand assets, and desktop base path are uniform.
+ */
+export function createLiscaViteConfig(options: { port: number }): UserConfig {
+  return defineConfig({
+    base: process.env.VITE_DESKTOP === "1" ? "./" : "/",
+    publicDir: brandPublicDir,
+    plugins: [tanstackRouter({ target: "react", autoCodeSplitting: true }), react(), tailwindcss()],
+    server: {
+      host: true,
+      port: options.port,
+      strictPort: true,
+    },
+  });
+}

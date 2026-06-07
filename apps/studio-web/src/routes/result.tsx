@@ -7,8 +7,7 @@ import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "r
 import { flushSync } from "react-dom";
 
 import { runClientEffect } from "@lisca/client/runtime";
-import { toErrorMessage } from "../api/studio-client";
-import { studioClient } from "../api/studio-port";
+import { studioClient, toErrorMessage } from "../api/studio-port";
 import {
   analysisPanelsAtom,
   analysisPanelsParamsKey,

@@ -9,6 +9,7 @@ import type {
   SavedAlignState,
   WorkspaceScan,
 } from "@lisca/contracts";
+import { runCropRoi } from "@lisca/client/align-session";
 import { resultData, resultFailureMessage, resultLoading } from "@lisca/client/atoms";
 import { useCanvasResourceTransaction } from "@lisca/ui";
 import {
@@ -26,8 +27,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { toErrorMessage } from "../api/studio-client";
-import { studioClient } from "../api/studio-port";
+import { studioClient, toErrorMessage } from "../api/studio-port";
 import {
   autoExcludePreviewAtom,
   scanIdleAtom,
@@ -265,13 +265,16 @@ export function useStudioAlignState(): StudioAlignState {
         setError(null);
         setStatus("Loading frame");
       },
-      load: () =>
-        Effect.all([
-          loadFrameEffect(studioClient, source, lockedSelection, null),
-          workspacePath
-            ? studioClient.loadAlignState(workspacePath, lockedSelection.pos)
-            : Effect.succeed(null as SavedAlignState | null),
-        ]),
+      load: (signal) =>
+        runClientEffect(
+          Effect.all([
+            loadFrameEffect(studioClient, source, lockedSelection, null),
+            workspacePath
+              ? studioClient.loadAlignState(workspacePath, lockedSelection.pos)
+              : Effect.succeed(null as SavedAlignState | null),
+          ]),
+          { signal },
+        ),
       commit: ([nextFrame, savedAlignState]) => {
         applyLoadedFrame(
           lockedSelection,
@@ -387,55 +390,17 @@ export function useStudioAlignState(): StudioAlignState {
       const requestId = `studio-crop-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       cropRequestIdRef.current = requestId;
       setError(null);
-      setCropProgress({
-        requestId,
-        status: "queued",
-        position: null,
-        completedPositions: 0,
-        totalPositions: positions.length,
-        completedRois: 0,
-        totalRois: 0,
-        message: "Queued crop",
+      await runCropRoi({
+        client: studioClient,
+        request: { requestId, workspacePath, source, positions, overwrite, outputFormat: "tiff" },
+        onProgress: setCropProgress,
+        onError: setError,
+        onCompleted: (progress) => {
+          setStatus(progress.message ?? "Crop completed");
+          void navigate({ to: "/annotate" });
+        },
+        toErrorMessage,
       });
-      let stop = () => {};
-      try {
-        await runClientEffect(
-          studioClient.cropRoi({
-            requestId,
-            workspacePath,
-            source,
-            positions,
-            overwrite,
-            outputFormat: "tiff",
-          }),
-        );
-        stop = studioClient.onCropRoiProgress(requestId, (progress) => {
-          setCropProgress(progress);
-          if (isDoneCropStatus(progress.status)) {
-            if (progress.status === "error") setError(progress.error ?? "Crop failed");
-            if (progress.status === "completed") {
-              setStatus(progress.message ?? "Crop completed");
-              void navigate({ to: "/annotate" });
-            }
-            stop();
-          }
-        });
-      } catch (cause) {
-        stop();
-        const message = toErrorMessage(cause, "Crop failed");
-        setError(message);
-        setCropProgress({
-          requestId,
-          status: "error",
-          position: null,
-          completedPositions: 0,
-          totalPositions: positions.length,
-          completedRois: 0,
-          totalRois: 0,
-          message,
-          error: message,
-        });
-      }
     },
     [navigate, setError, setStatus, source, workspacePath],
   );

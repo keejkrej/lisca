@@ -91,9 +91,9 @@ export function buildStudioAssayJson({
   return {
     assayId,
     assayLabel: ASSAY_CHOICE_LABEL[assayId],
-    dataSourceKind,
+    dataSourceKind: dataSourceKind ?? null,
     info1,
-    info2,
+    info2: { ...info2, selectedFeatures: [...info2.selectedFeatures] },
     info3: normalizeInfo3ForAssay(info3),
   };
 }

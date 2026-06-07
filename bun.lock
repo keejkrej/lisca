@@ -58,6 +58,7 @@
         "@lisca/contracts": "workspace:*",
         "@lisca/ui": "workspace:*",
         "@lisca/utils": "workspace:*",
+        "@lisca/web-app": "workspace:*",
         "@tanstack/react-router": "catalog:",
         "effect": "catalog:",
         "react": "catalog:",
@@ -117,6 +118,7 @@
         "@lisca/contracts": "workspace:*",
         "@lisca/ui": "workspace:*",
         "@lisca/utils": "workspace:*",
+        "@lisca/web-app": "workspace:*",
         "@tanstack/react-router": "catalog:",
         "effect": "catalog:",
         "lucide-react": "^0.511.0",
@@ -177,6 +179,7 @@
         "@lisca/contracts": "workspace:*",
         "@lisca/ui": "workspace:*",
         "@lisca/utils": "workspace:*",
+        "@lisca/web-app": "workspace:*",
         "@observablehq/plot": "^0.6.17",
         "@tanstack/react-router": "catalog:",
         "effect": "catalog:",
@@ -231,7 +234,6 @@
       "version": "0.1.0",
       "dependencies": {
         "@base-ui/react": "^1.4.1",
-        "@lisca/client": "workspace:*",
         "@lisca/contracts": "workspace:*",
         "@lisca/utils": "workspace:*",
         "class-variance-authority": "^0.7.1",
@@ -260,6 +262,33 @@
       "devDependencies": {
         "typescript": "catalog:",
         "vitest": "catalog:",
+      },
+    },
+    "packages/web-app": {
+      "name": "@lisca/web-app",
+      "version": "0.1.0",
+      "dependencies": {
+        "@lisca/client": "workspace:*",
+        "@lisca/contracts": "workspace:*",
+        "@lisca/ui": "workspace:*",
+        "@tailwindcss/vite": "catalog:",
+        "@tanstack/react-router": "catalog:",
+        "@tanstack/router-plugin": "catalog:",
+        "@vitejs/plugin-react": "catalog:",
+        "tailwindcss": "catalog:",
+        "vite": "catalog:",
+      },
+      "devDependencies": {
+        "@types/node": "catalog:",
+        "@types/react": "catalog:",
+        "@types/react-dom": "catalog:",
+        "react": "catalog:",
+        "react-dom": "catalog:",
+        "typescript": "catalog:",
+      },
+      "peerDependencies": {
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0",
       },
     },
   },
@@ -703,6 +732,8 @@
     "@lisca/ui": ["@lisca/ui@workspace:packages/ui"],
 
     "@lisca/utils": ["@lisca/utils@workspace:packages/utils"],
+
+    "@lisca/web-app": ["@lisca/web-app@workspace:packages/web-app"],
 
     "@malept/cross-spawn-promise": ["@malept/cross-spawn-promise@1.1.1", "", { "dependencies": { "cross-spawn": "^7.0.1" } }, "sha512-RTBGWL5FWQcg9orDOCcp4LvItNzUPcyEU9bwaeJX0rJ1IQxzucC48Y0/sQLp/g6t99IQgAlGIaesJS+gTn7tVQ=="],
 

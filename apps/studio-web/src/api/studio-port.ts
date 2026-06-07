@@ -1,28 +1,32 @@
 import type { StudioDataPort } from "@lisca/client/ports/types";
-import { createPortRegistry } from "@lisca/client/port-registry";
 import { createStudioPort } from "@lisca/client/ports/studio";
+import { createLiscaPort, toHostFilePickerOperations } from "@lisca/web-app";
 
-import { createStudioPortDeps } from "./studio-client";
+const port = createLiscaPort<StudioDataPort>({
+  defaultPort: 8767,
+  env: {
+    httpUrl: import.meta.env.VITE_HTTP_URL,
+    wsUrl: import.meta.env.VITE_WS_URL,
+    wsHost: import.meta.env.VITE_WS_HOST,
+    wsPort: import.meta.env.VITE_WS_PORT,
+    dev: import.meta.env.DEV,
+  },
+  createPort: createStudioPort,
+});
 
-const registry = createPortRegistry(() => createStudioPort(createStudioPortDeps()));
+export const studioPortRegistry = port.registry;
 
-export const studioPortRegistry = registry;
+export const readStudioPort = port.read;
+export const ensureStudioPort = port.ensure;
+export const setStudioPortForTests = port.setForTests;
+export const resetStudioPortForTests = port.resetForTests;
 
-export function readStudioPort(): StudioDataPort | undefined {
-  return registry.read();
-}
-
-export function ensureStudioPort(): StudioDataPort {
-  return registry.ensure();
-}
-
-export function setStudioPortForTests(port: StudioDataPort): void {
-  registry.setForTests(port);
-}
-
-export function resetStudioPortForTests(): void {
-  registry.resetForTests();
-}
+export const resolveStudioHttpBaseUrl = port.httpBaseUrl;
+export const resolveStudioWsUrl = port.wsUrl;
+export const toErrorMessage = port.toErrorMessage;
 
 /** Primary studio API for app code. */
-export const studioClient = ensureStudioPort();
+export const studioClient = port.ensure();
+
+/** Promise-based host operations for `@lisca/ui` file pickers. */
+export const studioHostOperations = toHostFilePickerOperations(studioClient);

@@ -3,11 +3,11 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use serde::Deserialize;
 use tokio::process::Command;
 
 use crate::protocol::{
-    AnalysisCsvFile, AnalysisProgress, AnalysisStage, AnalysisStatus,
+    AnalysisCsvFile, AnalysisProgress, AnalysisStage, AnalysisStatus, AssayBasicInfoStep3,
+    AssayJsonFile,
 };
 
 #[derive(Debug, Clone)]
@@ -18,37 +18,6 @@ enum TransfectionRunner {
     PythonModule {
         workdir: PathBuf,
     },
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct AssayJson {
-    info2: Option<AssayInfo2>,
-    info3: AssayInfo3,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct AssayInfo2 {
-    timelapse_amount: Option<f64>,
-    timelapse_unit: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct AssayInfo3 {
-    selected_slide_id: String,
-    samples_by_slide: BTreeMap<String, Vec<AssaySampleRow>>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct AssaySampleRow {
-    channel: String,
-    name: String,
-    positions: String,
-    mask_channel: String,
-    signal_channel: String,
 }
 
 #[derive(Debug, serde::Serialize)]
@@ -84,14 +53,14 @@ where
 
     let assay_contents = fs::read_to_string(&assay_path)
         .map_err(|error| format!("failed to read assay.json: {error}"))?;
-    let assay_json: AssayJson = serde_json::from_str(&assay_contents)
+    let assay_json: AssayJsonFile = serde_json::from_str(&assay_contents)
         .map_err(|error| format!("invalid assay.json: {error}"))?;
 
-    let interval = assay_json
-        .info2
-        .as_ref()
-        .and_then(|info2| parse_interval_minutes(info2.timelapse_amount, info2.timelapse_unit.as_deref()))
-        .ok_or_else(|| "invalid timelapseAmount/timelapseUnit in assay.json".to_string())?;
+    let interval = parse_interval_minutes(
+        assay_json.info2.timelapse_amount,
+        Some(assay_json.info2.timelapse_unit.as_str()),
+    )
+    .ok_or_else(|| "invalid timelapseAmount/timelapseUnit in assay.json".to_string())?;
 
     let sample_mapping = build_slide_mapping(&assay_json.info3)?;
 
@@ -277,11 +246,8 @@ fn parse_u32(raw: &str, field_name: &str) -> Result<u32, String> {
     parse_position(raw).map_err(|error| format!("invalid {field_name}: {error}"))
 }
 
-fn build_slide_mapping(info3: &AssayInfo3) -> Result<BTreeMap<u32, SlideSampleEntry>, String> {
-    let rows = info3
-        .samples_by_slide
-        .get(&info3.selected_slide_id)
-        .ok_or_else(|| "selected slide id is missing from assay.json".to_string())?;
+fn build_slide_mapping(info3: &AssayBasicInfoStep3) -> Result<BTreeMap<u32, SlideSampleEntry>, String> {
+    let rows = info3.samples_by_slide.rows_for(info3.selected_slide_id);
 
     let mut mapping = BTreeMap::new();
     for row in rows {

@@ -19,5 +19,3 @@ axum.workspace = true
 lisca.workspace = true
 serde.workspace = true
 tokio.workspace = true
-tracing.workspace = true
-tracing-subscriber.workspace = true

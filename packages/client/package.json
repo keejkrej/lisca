@@ -39,6 +39,10 @@
       "types": "./src/crop-status.ts",
       "import": "./src/crop-status.ts"
     },
+    "./align-session": {
+      "types": "./src/align-session.ts",
+      "import": "./src/align-session.ts"
+    },
     "./frame-loader": {
       "types": "./src/frame-loader.ts",
       "import": "./src/frame-loader.ts"

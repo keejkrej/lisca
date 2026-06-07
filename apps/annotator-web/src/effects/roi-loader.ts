@@ -9,7 +9,7 @@ import type {
 import { normalizeFrameContrast } from "@lisca/utils";
 import { Effect } from "effect";
 
-import { toErrorMessage } from "../api/annotator-client";
+import { toErrorMessage } from "../api/annotator-port";
 import {
   createEmptyMask,
   decodeMaskBase64Png,

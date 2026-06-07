@@ -123,6 +123,8 @@ export { ViewportCard } from "./shell/viewport-card";
 
 export { AlignGrid, type AlignGridProps } from "./features/align-grid";
 
+export { CropProgressModal, type CropProgressModalProps } from "./features/crop-progress-modal";
+
 export {
   AlignToolButton,
   AlignTools,
@@ -186,6 +188,8 @@ export {
   HostFilePickerDialog,
   type HostFilePickerDialogProps,
 } from "./features/host-file-picker-dialog";
+
+export type { HostFilePickerOperations } from "./features/host-operations";
 
 export { SourcePickerModal, type SourcePickerModalProps } from "./features/source-picker-modal";
 

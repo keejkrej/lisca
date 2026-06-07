@@ -1,5 +1,6 @@
 import type { AnnotationLabel } from "@lisca/contracts";
 import { resultData, resultFailureMessage, resultLoading } from "@lisca/client/atoms";
+import { runClientEffect } from "@lisca/client/runtime";
 import {
   useCanvasResourceTransaction,
   useCanvasTransientStatus,
@@ -9,7 +10,7 @@ import { clamp } from "@lisca/utils";
 import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { annotatorClient, toErrorMessage } from "../api/annotator-queries";
+import { annotatorClient, toErrorMessage } from "../api/annotator-port";
 import {
   annotationLabelsAtom,
   labelsIdleAtom,
@@ -266,8 +267,11 @@ export function useRoiPageState() {
         annotatorUiActions.setAnnotationError(setUi, null);
         annotatorUiActions.setStatus(setUi, "Loading ROI frame");
       },
-      load: () =>
-        loadRoiFrameWithAnnotationEffect(annotatorClient, workspacePath, request, contrast),
+      load: (signal) =>
+        runClientEffect(
+          loadRoiFrameWithAnnotationEffect(annotatorClient, workspacePath, request, contrast),
+          { signal },
+        ),
       commit: ({ frame: nextFrame, annotation: nextAnnotation }) => {
         resetAnnotation(nextAnnotation);
         annotatorUiActions.setFrame(setUi, nextFrame);

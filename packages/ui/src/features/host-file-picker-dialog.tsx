@@ -6,8 +6,6 @@ import {
   type HostFsEntry,
   type HostListDirectoryResult,
 } from "@lisca/contracts";
-import type { HostPort } from "@lisca/client/ports/types";
-import { runClientEffect } from "@lisca/client/runtime";
 import { FileIcon, FolderIcon, Home, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -18,6 +16,7 @@ import { Toggle } from "../components/ui/toggle";
 import { DialogSurface } from "../shell/dialog-surface";
 import { cn } from "../lib/utils";
 import { ModalScrim } from "../shell/modal-scrim";
+import type { HostFilePickerOperations } from "./host-operations";
 
 function pathExtLower(name: string): string {
   const index = name.lastIndexOf(".");
@@ -41,7 +40,7 @@ function isDirectoryMode(mode: HostFilePickerMode): boolean {
 export type HostFilePickerDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  hostPort: Pick<HostPort, "listDirectory" | "userHomeDirectory" | "connectSmb" | "disconnectSmb">;
+  hostPort: HostFilePickerOperations;
   mode: HostFilePickerMode;
   title: string;
   description?: string;
@@ -80,7 +79,7 @@ export function HostFilePickerDialog({
     setSmbSessionId(null);
     setSmbRootPath(null);
     try {
-      await runClientEffect(hostPort.disconnectSmb(sessionId));
+      await hostPort.disconnectSmb(sessionId);
     } catch {
       // ignore disconnect errors
     }
@@ -91,7 +90,7 @@ export function HostFilePickerDialog({
       setLoading(true);
       setError(null);
       try {
-        const result = await runClientEffect(hostPort.listDirectory(path));
+        const result = await hostPort.listDirectory(path);
         setList(result);
         setSelectedFile(null);
       } catch (cause) {
@@ -109,13 +108,11 @@ export function HostFilePickerDialog({
     setError(null);
     try {
       await disconnectSmb();
-      const response = await runClientEffect(
-        hostPort.connectSmb({
-          url: smbUrl.trim(),
-          username: smbUsername.trim(),
-          password: smbPassword,
-        }),
-      );
+      const response = await hostPort.connectSmb({
+        url: smbUrl.trim(),
+        username: smbUsername.trim(),
+        password: smbPassword,
+      });
       smbSessionIdRef.current = response.sessionId;
       setSmbSessionId(response.sessionId);
       setSmbRootPath(response.rootPath);
@@ -176,7 +173,7 @@ export function HostFilePickerDialog({
       return;
     }
     try {
-      const home = await runClientEffect(hostPort.userHomeDirectory());
+      const home = await hostPort.userHomeDirectory();
       await loadPath(home);
     } catch (cause) {
       setList(null);

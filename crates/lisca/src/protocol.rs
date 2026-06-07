@@ -473,3 +473,128 @@ pub struct AnalysisProgressMessage {
     pub message_type: String,
     pub progress: AnalysisProgress,
 }
+
+// --- assay.json on-disk contract ---------------------------------------------
+// Single source of truth for the studio `assay.json` file. The studio web
+// wizard authors this shape and the analysis pipeline parses it; both sides
+// share this definition via the generated TypeScript types.
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "kebab-case")]
+pub enum AssayName {
+    GeneExpression,
+    ImmuneKilling,
+    LnpBinding,
+    CustomAssay,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "lowercase")]
+pub enum AssayFeature {
+    Morphology,
+    PartCount,
+    PartFluor,
+    TotalFluor,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "lowercase")]
+pub enum AssayTimelapseUnit {
+    Second,
+    Minute,
+    Hour,
+}
+
+impl AssayTimelapseUnit {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            AssayTimelapseUnit::Second => "second",
+            AssayTimelapseUnit::Minute => "minute",
+            AssayTimelapseUnit::Hour => "hour",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "kebab-case")]
+pub enum AssaySlideId {
+    SlideI,
+    SlideVi,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "lowercase")]
+pub enum AssayDataSourceKind {
+    Folder,
+    Tif,
+    Jpg,
+    Nd2,
+    Czi,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct AssayBasicInfoStep1 {
+    pub name: String,
+    pub date: String,
+    pub data_path: String,
+    pub folder_subfolder_template: String,
+    pub folder_filename_template: String,
+    pub save_to: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct AssayBasicInfoStep2 {
+    pub pattern: String,
+    pub timelapse_amount: Option<f64>,
+    pub timelapse_unit: AssayTimelapseUnit,
+    pub selected_features: Vec<AssayFeature>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct AssaySampleRow {
+    pub channel: String,
+    pub name: String,
+    pub position_start: String,
+    pub position_finish: String,
+    pub mask_channel: String,
+    pub signal_channel: String,
+    pub positions: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+pub struct AssaySamplesBySlide {
+    #[serde(rename = "slide-i")]
+    pub slide_i: Vec<AssaySampleRow>,
+    #[serde(rename = "slide-vi")]
+    pub slide_vi: Vec<AssaySampleRow>,
+}
+
+impl AssaySamplesBySlide {
+    pub fn rows_for(&self, slide: AssaySlideId) -> &[AssaySampleRow] {
+        match slide {
+            AssaySlideId::SlideI => &self.slide_i,
+            AssaySlideId::SlideVi => &self.slide_vi,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct AssayBasicInfoStep3 {
+    pub selected_slide_id: AssaySlideId,
+    pub samples_by_slide: AssaySamplesBySlide,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct AssayJsonFile {
+    pub assay_id: AssayName,
+    pub assay_label: String,
+    pub data_source_kind: Option<AssayDataSourceKind>,
+    pub info1: AssayBasicInfoStep1,
+    pub info2: AssayBasicInfoStep2,
+    pub info3: AssayBasicInfoStep3,
+}

@@ -1,5 +1,4 @@
 import type {
-  AlignerSource,
   AutoExcludePreviewRequest,
   AutoExcludePreviewResponse,
   WorkspaceScan,
@@ -10,6 +9,7 @@ import { Effect } from "effect";
 import { AlignerPortService } from "../ports.ts";
 import { ReactivityKeys } from "../reactivity.ts";
 import type { AppRuntime } from "../runtime.ts";
+import { createSourceQueryAtoms } from "../source-queries.ts";
 import type { ClientError } from "../../client-error.ts";
 
 export type AlignerQueryAtoms = {
@@ -23,19 +23,9 @@ export type AlignerQueryAtoms = {
 };
 
 export function createAlignerQueryAtoms(runtime: AppRuntime<AlignerPortService>): AlignerQueryAtoms {
-  const scanSourceAtom = Atom.family((sourceKey: string) =>
-    runtime
-      .atom(
-        Effect.gen(function* () {
-          const port = yield* AlignerPortService;
-          const source = JSON.parse(sourceKey) as AlignerSource;
-          return yield* port.scanSource(source);
-        }),
-      )
-      .pipe(
-        Atom.keepAlive,
-        Atom.withReactivity([ReactivityKeys.scanSource(sourceKey)]),
-      ),
+  const { scanSourceAtom, autoExcludePreviewAtom } = createSourceQueryAtoms(
+    runtime,
+    AlignerPortService,
   );
 
   const savedBboxPositionsAtom = Atom.family((workspacePath: string) =>
@@ -50,13 +40,6 @@ export function createAlignerQueryAtoms(runtime: AppRuntime<AlignerPortService>)
         Atom.keepAlive,
         Atom.withReactivity([ReactivityKeys.savedBboxPositions(workspacePath)]),
       ),
-  );
-
-  const autoExcludePreviewAtom = runtime.fn(
-    Effect.fnUntraced(function* (request: AutoExcludePreviewRequest) {
-      const port = yield* AlignerPortService;
-      return yield* port.autoExcludePreview(request);
-    }),
   );
 
   return {
