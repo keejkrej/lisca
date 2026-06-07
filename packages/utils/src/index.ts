@@ -9,6 +9,7 @@ import type {
   PixelType,
   SavedAlignState,
 } from "@lisca/contracts";
+import { liscaLocalStorage } from "@lisca/storage";
 
 export function formatWsUrl(host: string, port: number, path: string): string {
   const proto = host === "localhost" || host === "127.0.0.1" ? "ws" : "wss";
@@ -32,20 +33,19 @@ export function setLiscaActiveServerAddress(value: string | null): void {
 }
 
 function migrateLegacyServerOverride(): void {
-  if (typeof localStorage === "undefined") return;
-  const legacy = localStorage.getItem(LISCA_SERVER_ADDRESS_STORAGE_KEY)?.trim();
+  const storage = liscaLocalStorage();
+  const legacy = storage.getItem(LISCA_SERVER_ADDRESS_STORAGE_KEY)?.trim();
   if (!legacy) return;
   const saved = readLiscaSavedServers();
   if (!saved.includes(legacy)) {
     writeLiscaSavedServers([legacy, ...saved]);
   }
-  localStorage.removeItem(LISCA_SERVER_ADDRESS_STORAGE_KEY);
+  storage.removeItem(LISCA_SERVER_ADDRESS_STORAGE_KEY);
 }
 
 export function readLiscaSavedServers(): string[] {
-  if (typeof localStorage === "undefined") return [];
   migrateLegacyServerOverride();
-  const raw = localStorage.getItem(LISCA_SAVED_SERVERS_STORAGE_KEY);
+  const raw = liscaLocalStorage().getItem(LISCA_SAVED_SERVERS_STORAGE_KEY);
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw) as unknown;
@@ -59,13 +59,13 @@ export function readLiscaSavedServers(): string[] {
 }
 
 export function writeLiscaSavedServers(servers: string[]): void {
-  if (typeof localStorage === "undefined") return;
+  const storage = liscaLocalStorage();
   const unique = [...new Set(servers.map((entry) => entry.trim()).filter(Boolean))];
   if (unique.length === 0) {
-    localStorage.removeItem(LISCA_SAVED_SERVERS_STORAGE_KEY);
+    storage.removeItem(LISCA_SAVED_SERVERS_STORAGE_KEY);
     return;
   }
-  localStorage.setItem(LISCA_SAVED_SERVERS_STORAGE_KEY, JSON.stringify(unique));
+  storage.setItem(LISCA_SAVED_SERVERS_STORAGE_KEY, JSON.stringify(unique));
 }
 
 export function addLiscaSavedServer(

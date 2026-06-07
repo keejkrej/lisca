@@ -7,6 +7,7 @@ import type {
   RoiWorkspaceScan,
 } from "@lisca/contracts";
 import type { AnnotationTool } from "@lisca/ui";
+import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/storage";
 import { Atom } from "@effect-atom/atom-react";
 
 export type RoiSelection = {
@@ -119,26 +120,13 @@ export type AnnotatorSessionPersist = {
 };
 
 export function readAnnotatorSession(): AnnotatorSessionPersist | null {
-  try {
-    const raw = sessionStorage.getItem(ANNOTATOR_SESSION_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as AnnotatorSessionPersist;
-  } catch {
-    return null;
-  }
+  return readStorageJson<AnnotatorSessionPersist>(liscaSessionStorage(), ANNOTATOR_SESSION_KEY);
 }
 
 export function writeAnnotatorSession(state: AnnotatorUiState): void {
-  try {
-    sessionStorage.setItem(
-      ANNOTATOR_SESSION_KEY,
-      JSON.stringify({
-        workspacePath: state.workspacePath,
-      } satisfies AnnotatorSessionPersist),
-    );
-  } catch {
-    // ignore
-  }
+  writeStorageJson(liscaSessionStorage(), ANNOTATOR_SESSION_KEY, {
+    workspacePath: state.workspacePath,
+  } satisfies AnnotatorSessionPersist);
 }
 
 export function createInitialAnnotatorUiState(): AnnotatorUiState {

@@ -4,30 +4,17 @@
     "slug": "lisca-studio-mobile",
     "version": "0.1.0",
     "orientation": "default",
-    "icon": "./assets/icon.png",
+    "scheme": "lisca-studio",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.lisca.studio.mobile"
     },
     "android": {
       "package": "com.lisca.studio.mobile",
-      "usesCleartextTraffic": true,
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "usesCleartextTraffic": true
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    }
+    "plugins": ["expo-router"]
   }
 }

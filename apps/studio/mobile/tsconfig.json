@@ -1,6 +1,9 @@
 {
-  "extends": "expo/tsconfig.base",
+  "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "strict": true
-  }
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM"],
+    "noEmit": true
+  },
+  "include": ["app/**/*.ts", "app/**/*.tsx", "src/**/*.ts", "src/**/*.tsx"]
 }

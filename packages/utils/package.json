@@ -21,7 +21,8 @@
     "typecheck": "tsc -p tsconfig.build.json --noEmit"
   },
   "dependencies": {
-    "@lisca/contracts": "workspace:*"
+    "@lisca/contracts": "workspace:*",
+    "@lisca/storage": "workspace:*"
   },
   "devDependencies": {
     "typescript": "catalog:",

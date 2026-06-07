@@ -13,6 +13,8 @@
     "@effect-atom/atom-react": "catalog:",
     "@lisca/client": "workspace:*",
     "@lisca/contracts": "workspace:*",
+    "@lisca/storage": "workspace:*",
+    "@lisca/studio-result": "workspace:*",
     "@lisca/ui": "workspace:*",
     "@lisca/utils": "workspace:*",
     "@lisca/web-app": "workspace:*",

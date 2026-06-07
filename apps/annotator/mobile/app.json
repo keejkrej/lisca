@@ -4,30 +4,17 @@
     "slug": "lisca-annotator-mobile",
     "version": "0.1.0",
     "orientation": "default",
-    "icon": "./assets/icon.png",
+    "scheme": "lisca-annotator",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.lisca.annotator.mobile"
     },
     "android": {
       "package": "com.lisca.annotator.mobile",
-      "usesCleartextTraffic": true,
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "usesCleartextTraffic": true
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    }
+    "plugins": ["expo-router"]
   }
 }
