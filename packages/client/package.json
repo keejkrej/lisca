@@ -7,10 +7,6 @@
   ],
   "type": "module",
   "exports": {
-    "./fetch": {
-      "types": "./src/fetch.ts",
-      "import": "./src/fetch.ts"
-    },
     "./urls": {
       "types": "./src/urls.ts",
       "import": "./src/urls.ts"
@@ -85,6 +81,7 @@
   "dependencies": {
     "@effect-atom/atom-react": "catalog:",
     "@effect/experimental": "catalog:",
+    "@effect/platform": "catalog:",
     "@effect/platform-browser": "catalog:",
     "@lisca/contracts": "workspace:*",
     "@lisca/utils": "workspace:*",

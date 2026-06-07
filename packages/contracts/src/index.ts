@@ -1,7 +1,7 @@
 export { WS_PATH } from "./constants.ts";
+export * from "./assay.schema.ts";
 export * from "./decode.ts";
 export * from "./protocol.schema.ts";
-export * from "./protocol.wire.ts";
 
 export type FolderSourceTemplatePreset = {
   label: string;
@@ -85,8 +85,7 @@ export type StudioAssayId = AssayName;
 
 export type StudioDataSourceKind = AlignerSource["kind"] | null;
 
-import type { AlignerSource, FolderSource, Nd2Source, CziSource } from "./protocol.wire.ts";
-export type { FolderSource, Nd2Source, CziSource };
+import type { AlignerSource } from "./protocol.schema.ts";
 
 export type StudioTimelapseUnit = "second" | "minute" | "hour";
 
@@ -124,21 +123,21 @@ export type StudioBasicInfoStep3 = {
   samplesBySlide: Record<StudioBasicInfoSlideId, StudioBasicInfoSampleRow[]>;
 };
 
-// The assay.json on-disk shape has a single source of truth in Rust
-// (`crates/lisca/src/protocol.rs`); these aliases surface the generated types
-// under the names studio app code already uses.
+// The assay.json on-disk shape has a single source of truth in the Effect
+// schema (`assay.schema.ts`); these aliases surface the derived types under the
+// names studio app code already uses.
 import type {
-  AssayBasicInfoStep3 as GeneratedAssayBasicInfoStep3,
-  AssayJsonFile as GeneratedAssayJsonFile,
-  AssaySampleRow as GeneratedAssaySampleRow,
-} from "./protocol.generated.ts";
+  AssayBasicInfoStep3,
+  AssayJsonFile,
+  AssaySampleRow,
+} from "./assay.schema.ts";
 
 /** Sample row as written to assay.json (includes `positions` for the analysis pipeline). */
-export type StudioAssaySampleRowOnDisk = GeneratedAssaySampleRow;
+export type StudioAssaySampleRowOnDisk = AssaySampleRow;
 
-export type StudioBasicInfoStep3OnDisk = GeneratedAssayBasicInfoStep3;
+export type StudioBasicInfoStep3OnDisk = AssayBasicInfoStep3;
 
-export type StudioAssayJson = GeneratedAssayJsonFile;
+export type StudioAssayJson = AssayJsonFile;
 
 export type { PixelType } from "./constants.ts";
 export { PIXEL_TYPES } from "./constants.ts";
@@ -163,7 +162,7 @@ export type FrameResult = {
   appliedContrast?: ContrastWindow;
 };
 
-import type { ContrastWindow } from "./protocol.wire.ts";
+import type { ContrastWindow } from "./protocol.schema.ts";
 
 export type AnnotationMode = "classification" | "segmentation";
 
@@ -178,7 +177,7 @@ export type AlignCanvasStatusTone = CanvasStatusTone;
 
 export type AlignCanvasStatusMessage = CanvasStatusMessage;
 
-import type { CropRoiProgress } from "./protocol.wire.ts";
+import type { CropRoiProgress } from "./protocol.schema.ts";
 
 /** True once a crop ROI job has reached a terminal state. */
 export function isDoneCropStatus(status: CropRoiProgress["status"]): boolean {

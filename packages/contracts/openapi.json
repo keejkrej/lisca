@@ -1,0 +1,3047 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Api",
+    "version": "0.0.1"
+  },
+  "paths": {
+    "/fs/list": {
+      "get": {
+        "tags": [
+          "fs"
+        ],
+        "operationId": "fs.listDirectory",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "HostListDirectoryResult",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HostListDirectoryResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fs/home": {
+      "get": {
+        "tags": [
+          "fs"
+        ],
+        "operationId": "fs.userHomeDirectory",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "HomeDirectoryResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HomeDirectoryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fs/read-text": {
+      "get": {
+        "tags": [
+          "fs"
+        ],
+        "operationId": "fs.readTextFile",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "ReadTextFileResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadTextFileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fs/smb/connect": {
+      "post": {
+        "tags": [
+          "fs"
+        ],
+        "operationId": "fs.connectSmb",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "SmbConnectResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SmbConnectResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SmbConnectRequest"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/fs/smb/disconnect": {
+      "post": {
+        "tags": [
+          "fs"
+        ],
+        "operationId": "fs.disconnectSmb",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "OkResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SmbDisconnectRequest"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/align/scan-source": {
+      "post": {
+        "tags": [
+          "align"
+        ],
+        "operationId": "align.scanSource",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "WorkspaceScan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceScan"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "source"
+                ],
+                "properties": {
+                  "source": {
+                    "$ref": "#/components/schemas/AlignerSource"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/align/load-frame": {
+      "post": {
+        "tags": [
+          "align"
+        ],
+        "operationId": "align.loadFrame",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "FramePayload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FramePayload"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "source",
+                  "request",
+                  "contrast"
+                ],
+                "properties": {
+                  "source": {
+                    "$ref": "#/components/schemas/AlignerSource"
+                  },
+                  "request": {
+                    "$ref": "#/components/schemas/FrameRequest"
+                  },
+                  "contrast": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/ContrastWindow"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/align/auto-exclude-preview": {
+      "post": {
+        "tags": [
+          "align"
+        ],
+        "operationId": "align.autoExcludePreview",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "AutoExcludePreviewResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutoExcludePreviewResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutoExcludePreviewRequest"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/align/save-bbox": {
+      "post": {
+        "tags": [
+          "align"
+        ],
+        "operationId": "align.saveBbox",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "SaveBboxResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaveBboxResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "workspacePath",
+                  "pos",
+                  "csv",
+                  "alignState"
+                ],
+                "properties": {
+                  "workspacePath": {
+                    "type": "string"
+                  },
+                  "pos": {
+                    "type": "number"
+                  },
+                  "csv": {
+                    "type": "string"
+                  },
+                  "alignState": {
+                    "$ref": "#/components/schemas/SavedAlignState"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/align/align-state": {
+      "get": {
+        "tags": [
+          "align"
+        ],
+        "operationId": "align.loadAlignState",
+        "parameters": [
+          {
+            "name": "workspacePath",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "pos",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0
+            },
+            "required": true
+          }
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "SavedAlignState",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/SavedAlignState"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/align/output-paths": {
+      "get": {
+        "tags": [
+          "align"
+        ],
+        "operationId": "align.outputPaths",
+        "parameters": [
+          {
+            "name": "pos",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0
+            },
+            "required": true
+          }
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "AlignOutputPaths",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlignOutputPaths"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/align/saved-bbox-positions": {
+      "get": {
+        "tags": [
+          "align"
+        ],
+        "operationId": "align.listSavedBboxPositions",
+        "parameters": [
+          {
+            "name": "workspacePath",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "uint32",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/align/roi-pos-exists": {
+      "get": {
+        "tags": [
+          "align"
+        ],
+        "operationId": "align.roiPosExists",
+        "parameters": [
+          {
+            "name": "workspacePath",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "pos",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0
+            },
+            "required": true
+          }
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "RoiPosExistsResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoiPosExistsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/align/crop-roi": {
+      "post": {
+        "tags": [
+          "align"
+        ],
+        "operationId": "align.cropRoi",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "CropRoiResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CropRoiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CropRoiRequest"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/align/cancel-crop-roi": {
+      "post": {
+        "tags": [
+          "align"
+        ],
+        "operationId": "align.cancelCropRoi",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "CropRoiProgress",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CropRoiProgress"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "requestId"
+                ],
+                "properties": {
+                  "requestId": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/align/crop-roi-progress": {
+      "get": {
+        "tags": [
+          "align"
+        ],
+        "operationId": "align.cropRoiProgress",
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "CropRoiProgress",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CropRoiProgress"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/annotate/scan-roi-workspace": {
+      "post": {
+        "tags": [
+          "annotate"
+        ],
+        "operationId": "annotate.scanRoiWorkspace",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "RoiWorkspaceScan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoiWorkspaceScan"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "workspacePath"
+                ],
+                "properties": {
+                  "workspacePath": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/annotate/load-labels": {
+      "post": {
+        "tags": [
+          "annotate"
+        ],
+        "operationId": "annotate.loadLabels",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AnnotationLabel"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "workspacePath"
+                ],
+                "properties": {
+                  "workspacePath": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/annotate/save-labels": {
+      "post": {
+        "tags": [
+          "annotate"
+        ],
+        "operationId": "annotate.saveLabels",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AnnotationLabel"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "workspacePath",
+                  "labels"
+                ],
+                "properties": {
+                  "workspacePath": {
+                    "type": "string"
+                  },
+                  "labels": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/AnnotationLabel"
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/annotate/load-roi-frame": {
+      "post": {
+        "tags": [
+          "annotate"
+        ],
+        "operationId": "annotate.loadRoiFrame",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "FramePayload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FramePayload"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "workspacePath",
+                  "request",
+                  "contrast"
+                ],
+                "properties": {
+                  "workspacePath": {
+                    "type": "string"
+                  },
+                  "request": {
+                    "$ref": "#/components/schemas/RoiFrameRequest"
+                  },
+                  "contrast": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/ContrastWindow"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/annotate/load-roi-frame-annotation": {
+      "post": {
+        "tags": [
+          "annotate"
+        ],
+        "operationId": "annotate.loadRoiFrameAnnotation",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "LoadedRoiFrameAnnotation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoadedRoiFrameAnnotation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "workspacePath",
+                  "request"
+                ],
+                "properties": {
+                  "workspacePath": {
+                    "type": "string"
+                  },
+                  "request": {
+                    "$ref": "#/components/schemas/RoiFrameRequest"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/annotate/save-roi-frame-annotation": {
+      "post": {
+        "tags": [
+          "annotate"
+        ],
+        "operationId": "annotate.saveRoiFrameAnnotation",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "RoiFrameAnnotation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoiFrameAnnotation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "workspacePath",
+                  "request",
+                  "annotation"
+                ],
+                "properties": {
+                  "workspacePath": {
+                    "type": "string"
+                  },
+                  "request": {
+                    "$ref": "#/components/schemas/RoiFrameRequest"
+                  },
+                  "annotation": {
+                    "$ref": "#/components/schemas/RoiFrameAnnotationPayload"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/studio/save-assay-json": {
+      "post": {
+        "tags": [
+          "studio"
+        ],
+        "operationId": "studio.saveAssayJson",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "SaveAssayJsonResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaveAssayJsonResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveAssayJsonRequest"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/studio/save-result-pdf": {
+      "post": {
+        "tags": [
+          "studio"
+        ],
+        "operationId": "studio.saveResultPdf",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "SaveResultPdfResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaveResultPdfResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveResultPdfRequest"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/studio/start-analysis": {
+      "post": {
+        "tags": [
+          "studio"
+        ],
+        "operationId": "studio.startAnalysis",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "AnalysisProgress",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisProgress"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisStartRequest"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/studio/analysis-progress": {
+      "get": {
+        "tags": [
+          "studio"
+        ],
+        "operationId": "studio.getAnalysisProgress",
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "AnalysisProgress",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisProgress"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/studio/latest-analysis": {
+      "get": {
+        "tags": [
+          "studio"
+        ],
+        "operationId": "studio.getLatestAnalysisProgress",
+        "parameters": [
+          {
+            "name": "workspacePath",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "AnalysisProgress",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AnalysisProgress"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/studio/analysis-results": {
+      "get": {
+        "tags": [
+          "studio"
+        ],
+        "operationId": "studio.getAnalysisResults",
+        "parameters": [
+          {
+            "name": "workspacePath",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "AnalysisProgress",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AnalysisProgress"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HostListDirectoryResult": {
+        "type": "object",
+        "required": [
+          "path",
+          "parent",
+          "entries"
+        ],
+        "properties": {
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HostFsEntry"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "HostFsEntry": {
+        "type": "object",
+        "required": [
+          "name",
+          "path",
+          "isDirectory"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "isDirectory": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "HttpApiDecodeError": {
+        "type": "object",
+        "required": [
+          "issues",
+          "message",
+          "_tag"
+        ],
+        "properties": {
+          "issues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Issue"
+            }
+          },
+          "message": {
+            "type": "string"
+          },
+          "_tag": {
+            "type": "string",
+            "enum": [
+              "HttpApiDecodeError"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "description": "The request did not match the expected schema"
+      },
+      "Issue": {
+        "type": "object",
+        "required": [
+          "_tag",
+          "path",
+          "message"
+        ],
+        "properties": {
+          "_tag": {
+            "type": "string",
+            "enum": [
+              "Pointer",
+              "Unexpected",
+              "Missing",
+              "Composite",
+              "Refinement",
+              "Transformation",
+              "Type",
+              "Forbidden"
+            ],
+            "description": "The tag identifying the type of parse issue"
+          },
+          "path": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PropertyKey"
+            },
+            "description": "The path to the property where the issue occurred"
+          },
+          "message": {
+            "type": "string",
+            "description": "A descriptive message explaining the issue"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Represents an error encountered while parsing a value to match the schema"
+      },
+      "PropertyKey": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "object",
+            "required": [
+              "_tag",
+              "key"
+            ],
+            "properties": {
+              "_tag": {
+                "type": "string",
+                "enum": [
+                  "symbol"
+                ]
+              },
+              "key": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false,
+            "description": "an object to be decoded into a globally shared symbol"
+          }
+        ]
+      },
+      "RequestError": {
+        "type": "object",
+        "required": [
+          "message",
+          "_tag"
+        ],
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "_tag": {
+            "type": "string",
+            "enum": [
+              "RequestError"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "HomeDirectoryResponse": {
+        "type": "object",
+        "required": [
+          "path"
+        ],
+        "properties": {
+          "path": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReadTextFileResponse": {
+        "type": "object",
+        "required": [
+          "contents"
+        ],
+        "properties": {
+          "contents": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SmbConnectRequest": {
+        "type": "object",
+        "required": [
+          "url",
+          "username",
+          "password"
+        ],
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SmbConnectResponse": {
+        "type": "object",
+        "required": [
+          "sessionId",
+          "rootPath"
+        ],
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          },
+          "rootPath": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SmbDisconnectRequest": {
+        "type": "object",
+        "required": [
+          "sessionId"
+        ],
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "OkResponse": {
+        "type": "object",
+        "required": [
+          "ok"
+        ],
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AlignerSource": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/FolderSource"
+          },
+          {
+            "type": "object",
+            "required": [
+              "kind",
+              "path"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "tif"
+                ]
+              },
+              "path": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "kind",
+              "path"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "jpg"
+                ]
+              },
+              "path": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "kind",
+              "path"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "nd2"
+                ]
+              },
+              "path": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "kind",
+              "path"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "czi"
+                ]
+              },
+              "path": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+      "FolderSource": {
+        "type": "object",
+        "required": [
+          "kind",
+          "path",
+          "subfolderTemplate",
+          "filenameTemplate"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "folder"
+            ]
+          },
+          "path": {
+            "type": "string"
+          },
+          "subfolderTemplate": {
+            "type": "string"
+          },
+          "filenameTemplate": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "WorkspaceScan": {
+        "type": "object",
+        "required": [
+          "positions",
+          "channels",
+          "times",
+          "zSlices"
+        ],
+        "properties": {
+          "positions": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0
+            }
+          },
+          "channels": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0
+            }
+          },
+          "times": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0
+            }
+          },
+          "zSlices": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "FrameRequest": {
+        "type": "object",
+        "required": [
+          "pos",
+          "channel",
+          "time",
+          "z"
+        ],
+        "properties": {
+          "pos": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "channel": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "time": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "z": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "ContrastWindow": {
+        "type": "object",
+        "required": [
+          "min",
+          "max"
+        ],
+        "properties": {
+          "min": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "max": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "FramePayload": {
+        "type": "object",
+        "required": [
+          "width",
+          "height",
+          "dataBase64",
+          "pixelType",
+          "contrastDomain",
+          "suggestedContrast",
+          "appliedContrast"
+        ],
+        "properties": {
+          "width": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "height": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "dataBase64": {
+            "type": "string"
+          },
+          "pixelType": {
+            "$ref": "#/components/schemas/PixelType"
+          },
+          "contrastDomain": {
+            "$ref": "#/components/schemas/ContrastWindow"
+          },
+          "suggestedContrast": {
+            "$ref": "#/components/schemas/ContrastWindow"
+          },
+          "appliedContrast": {
+            "$ref": "#/components/schemas/ContrastWindow"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PixelType": {
+        "type": "string",
+        "enum": [
+          "uint8",
+          "uint8clamped",
+          "int8",
+          "uint16",
+          "int16",
+          "uint32",
+          "int32"
+        ]
+      },
+      "AutoExcludePreviewRequest": {
+        "type": "object",
+        "required": [
+          "source",
+          "selection",
+          "cells"
+        ],
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/AlignerSource"
+          },
+          "selection": {
+            "$ref": "#/components/schemas/FrameRequest"
+          },
+          "cells": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutoExcludePreviewCell"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "AutoExcludePreviewCell": {
+        "type": "object",
+        "required": [
+          "i",
+          "j",
+          "x",
+          "y",
+          "w",
+          "h"
+        ],
+        "properties": {
+          "i": {
+            "type": "integer",
+            "description": "an integer",
+            "title": "int",
+            "format": "int32"
+          },
+          "j": {
+            "type": "integer",
+            "description": "an integer",
+            "title": "int",
+            "format": "int32"
+          },
+          "x": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "y": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "w": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "h": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "AutoExcludePreviewResponse": {
+        "type": "object",
+        "required": [
+          "eligibleCellCount",
+          "cellScores",
+          "histogramBins",
+          "scoreMin",
+          "scoreMax",
+          "threshold"
+        ],
+        "properties": {
+          "eligibleCellCount": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "cellScores": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutoExcludePreviewCellScore"
+            }
+          },
+          "histogramBins": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutoExcludeHistogramBin"
+            }
+          },
+          "scoreMin": {
+            "type": "number",
+            "format": "double"
+          },
+          "scoreMax": {
+            "type": "number",
+            "format": "double"
+          },
+          "threshold": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AutoExcludePreviewCellScore": {
+        "type": "object",
+        "required": [
+          "i",
+          "j",
+          "score"
+        ],
+        "properties": {
+          "i": {
+            "type": "integer",
+            "description": "an integer",
+            "title": "int",
+            "format": "int32"
+          },
+          "j": {
+            "type": "integer",
+            "description": "an integer",
+            "title": "int",
+            "format": "int32"
+          },
+          "score": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AutoExcludeHistogramBin": {
+        "type": "object",
+        "required": [
+          "start",
+          "end",
+          "count"
+        ],
+        "properties": {
+          "start": {
+            "type": "number",
+            "format": "double"
+          },
+          "end": {
+            "type": "number",
+            "format": "double"
+          },
+          "count": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "SavedAlignState": {
+        "type": "object",
+        "required": [
+          "grid",
+          "excludedCells"
+        ],
+        "properties": {
+          "grid": {
+            "$ref": "#/components/schemas/AlignGridState"
+          },
+          "excludedCells": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlignGridCellCoord"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "AlignGridState": {
+        "type": "object",
+        "required": [
+          "enabled",
+          "shape",
+          "tx",
+          "ty",
+          "rotation",
+          "spacingA",
+          "spacingB",
+          "cellWidth",
+          "cellHeight",
+          "opacity"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "shape": {
+            "$ref": "#/components/schemas/AlignGridShape"
+          },
+          "tx": {
+            "type": "number",
+            "format": "double"
+          },
+          "ty": {
+            "type": "number",
+            "format": "double"
+          },
+          "rotation": {
+            "type": "number",
+            "format": "double"
+          },
+          "spacingA": {
+            "type": "number",
+            "format": "double"
+          },
+          "spacingB": {
+            "type": "number",
+            "format": "double"
+          },
+          "cellWidth": {
+            "type": "number",
+            "format": "double"
+          },
+          "cellHeight": {
+            "type": "number",
+            "format": "double"
+          },
+          "opacity": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AlignGridShape": {
+        "type": "string",
+        "enum": [
+          "rect",
+          "square",
+          "hex"
+        ]
+      },
+      "AlignGridCellCoord": {
+        "type": "object",
+        "required": [
+          "i",
+          "j"
+        ],
+        "properties": {
+          "i": {
+            "type": "integer",
+            "description": "an integer",
+            "title": "int",
+            "format": "int32"
+          },
+          "j": {
+            "type": "integer",
+            "description": "an integer",
+            "title": "int",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SaveBboxResponse": {
+        "type": "object",
+        "required": [
+          "ok",
+          "error"
+        ],
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "AlignOutputPaths": {
+        "type": "object",
+        "required": [
+          "bbox",
+          "align",
+          "roi"
+        ],
+        "properties": {
+          "bbox": {
+            "type": "string"
+          },
+          "align": {
+            "type": "string"
+          },
+          "roi": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "RoiPosExistsResponse": {
+        "type": "object",
+        "required": [
+          "exists"
+        ],
+        "properties": {
+          "exists": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CropRoiRequest": {
+        "type": "object",
+        "required": [
+          "requestId",
+          "workspacePath",
+          "source",
+          "positions",
+          "overwrite"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "workspacePath": {
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/AlignerSource"
+          },
+          "positions": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0
+            }
+          },
+          "overwrite": {
+            "type": "boolean"
+          },
+          "outputFormat": {
+            "$ref": "#/components/schemas/CropOutputFormat"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CropOutputFormat": {
+        "type": "string",
+        "enum": [
+          "tiff"
+        ]
+      },
+      "CropRoiResponse": {
+        "type": "object",
+        "required": [
+          "requestId",
+          "status"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CropRoiStatus"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CropRoiStatus": {
+        "type": "string",
+        "enum": [
+          "queued",
+          "running",
+          "completed",
+          "cancelled",
+          "error"
+        ]
+      },
+      "CropRoiProgress": {
+        "type": "object",
+        "required": [
+          "requestId",
+          "status",
+          "position",
+          "completedPositions",
+          "totalPositions",
+          "completedRois",
+          "totalRois",
+          "message"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CropRoiStatus"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "format": "uint32",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "completedPositions": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "totalPositions": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "completedRois": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "totalRois": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "skippedPositions": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "RoiWorkspaceScan": {
+        "type": "object",
+        "required": [
+          "positions"
+        ],
+        "properties": {
+          "positions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoiPositionScan"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "RoiPositionScan": {
+        "type": "object",
+        "required": [
+          "pos",
+          "source",
+          "channels",
+          "times",
+          "zSlices",
+          "rois"
+        ],
+        "properties": {
+          "pos": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "source": {
+            "$ref": "#/components/schemas/AlignerSource"
+          },
+          "channels": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0
+            }
+          },
+          "times": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0
+            }
+          },
+          "zSlices": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0
+            }
+          },
+          "rois": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoiIndexEntry"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "RoiIndexEntry": {
+        "type": "object",
+        "required": [
+          "roi",
+          "fileName",
+          "bbox",
+          "shape"
+        ],
+        "properties": {
+          "roi": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "bbox": {
+            "$ref": "#/components/schemas/RoiBbox"
+          },
+          "shape": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0
+            },
+            "minItems": 5,
+            "maxItems": 5
+          }
+        },
+        "additionalProperties": false
+      },
+      "RoiBbox": {
+        "type": "object",
+        "required": [
+          "roi",
+          "x",
+          "y",
+          "w",
+          "h"
+        ],
+        "properties": {
+          "roi": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "x": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "y": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "w": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "h": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "AnnotationLabel": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "color"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "RoiFrameRequest": {
+        "type": "object",
+        "required": [
+          "pos",
+          "roi",
+          "channel",
+          "time",
+          "z"
+        ],
+        "properties": {
+          "pos": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "roi": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "channel": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "time": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "z": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "LoadedRoiFrameAnnotation": {
+        "type": "object",
+        "required": [
+          "annotation",
+          "maskBase64Png"
+        ],
+        "properties": {
+          "annotation": {
+            "$ref": "#/components/schemas/RoiFrameAnnotation"
+          },
+          "maskBase64Png": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "RoiFrameAnnotation": {
+        "type": "object",
+        "required": [
+          "classificationLabelId",
+          "maskPath",
+          "updatedAt"
+        ],
+        "properties": {
+          "classificationLabelId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "maskPath": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updatedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "RoiFrameAnnotationPayload": {
+        "type": "object",
+        "required": [
+          "classificationLabelId",
+          "maskBase64Png"
+        ],
+        "properties": {
+          "classificationLabelId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "maskBase64Png": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "SaveAssayJsonRequest": {
+        "type": "object",
+        "required": [
+          "saveTo",
+          "contents"
+        ],
+        "properties": {
+          "saveTo": {
+            "type": "string"
+          },
+          "contents": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SaveAssayJsonResponse": {
+        "type": "object",
+        "required": [
+          "ok",
+          "path"
+        ],
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "path": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SaveResultPdfRequest": {
+        "type": "object",
+        "required": [
+          "workspacePath",
+          "fileName",
+          "contentsBase64"
+        ],
+        "properties": {
+          "workspacePath": {
+            "type": "string"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "contentsBase64": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SaveResultPdfResponse": {
+        "type": "object",
+        "required": [
+          "ok",
+          "directory",
+          "path"
+        ],
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "directory": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AnalysisStartRequest": {
+        "type": "object",
+        "required": [
+          "workspacePath",
+          "requestId"
+        ],
+        "properties": {
+          "workspacePath": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AnalysisProgress": {
+        "type": "object",
+        "required": [
+          "requestId",
+          "status",
+          "stage",
+          "progress",
+          "message",
+          "error"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AnalysisStatus"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/AnalysisStage"
+          },
+          "progress": {
+            "type": "number",
+            "format": "double"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resultFiles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalysisCsvFile"
+            }
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "AnalysisStatus": {
+        "type": "string",
+        "enum": [
+          "queued",
+          "running",
+          "completed",
+          "error"
+        ]
+      },
+      "AnalysisStage": {
+        "type": "string",
+        "enum": [
+          "queued",
+          "preparing",
+          "segment",
+          "timeseries",
+          "auc",
+          "fit",
+          "completed"
+        ]
+      },
+      "AnalysisCsvFile": {
+        "type": "object",
+        "required": [
+          "kind",
+          "fileName",
+          "path",
+          "csv"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "csv": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {}
+  },
+  "security": [],
+  "tags": [
+    {
+      "name": "fs"
+    },
+    {
+      "name": "align"
+    },
+    {
+      "name": "annotate"
+    },
+    {
+      "name": "studio"
+    }
+  ]
+}

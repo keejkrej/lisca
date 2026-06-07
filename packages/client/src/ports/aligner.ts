@@ -1,27 +1,12 @@
 import {
-  AutoExcludePreviewResponseSchema,
   CropRoiProgressMessageSchema,
-  CropRoiProgressSchema,
-  CropRoiResponseSchema,
-  FramePayloadSchema,
-  NullableSavedAlignStateSchema,
-  RoiPosExistsResponseSchema,
-  SaveBboxResponseSchema,
-  UIntArraySchema,
-  WorkspaceScanSchema,
   schemaDecoderEither,
-  type AlignerSource,
-  type AutoExcludePreviewRequest,
-  type ContrastWindow,
   type CropRoiProgress,
-  type CropRoiRequest,
-  type FrameRequest,
-  type SavedAlignState,
 } from "@lisca/contracts";
 import { decodeFramePayload } from "@lisca/utils";
 import { Effect } from "effect";
 
-import { createJsonFetch, type JsonFetch } from "../fetch.ts";
+import { createApiClient, toClientEffect, type LiscaApiClient } from "../api-client.ts";
 import { pollProgressLoop, subscribeProgress } from "../progress-subscribe.ts";
 import { createHostPort, type HostPortDeps } from "./host.ts";
 import type { AlignerDataPort } from "./types.ts";
@@ -38,67 +23,61 @@ export type AlignerPortDeps = HostPortDeps & {
 };
 
 export function createAlignerPort(deps: AlignerPortDeps): AlignerDataPort {
-  const json = createJsonFetch(deps.baseUrl, deps.fetch);
+  const client = createApiClient(deps);
   const host = createHostPort(deps);
 
   return {
     ...host,
     scanSource(source) {
-      return json.postJson("/align/scan-source", { source }, WorkspaceScanSchema);
+      return toClientEffect(client.align.scanSource({ payload: { source } }));
     },
-    loadFrame(source, request, contrast, signal) {
-      return json
-        .postJson(
-          "/align/load-frame",
-          { source, request, contrast: contrast ?? null },
-          FramePayloadSchema,
-          signal,
-        )
-        .pipe(Effect.map(decodeFramePayload));
+    loadFrame(source, request, contrast) {
+      return toClientEffect(
+        client.align
+          .loadFrame({ payload: { source, request, contrast: contrast ?? null } })
+          .pipe(Effect.map(decodeFramePayload)),
+      );
     },
     loadAlignState(workspacePath, pos) {
-      return json.getJson("/align/align-state", NullableSavedAlignStateSchema, {
-        workspacePath,
-        pos,
-      });
+      return toClientEffect(
+        client.align.loadAlignState({ urlParams: { workspacePath, pos } }),
+      );
     },
     saveBbox(workspacePath, pos, csv, alignState) {
-      return json.postJson(
-        "/align/save-bbox",
-        { workspacePath, pos, csv, alignState },
-        SaveBboxResponseSchema,
+      return toClientEffect(
+        client.align.saveBbox({ payload: { workspacePath, pos, csv, alignState } }),
       );
     },
     autoExcludePreview(request) {
-      return json.postJson(
-        "/align/auto-exclude-preview",
-        request,
-        AutoExcludePreviewResponseSchema,
-      );
+      return toClientEffect(client.align.autoExcludePreview({ payload: request }));
     },
     listSavedBboxPositions(workspacePath) {
-      return json.getJson("/align/saved-bbox-positions", UIntArraySchema, { workspacePath });
+      return toClientEffect(
+        client.align.listSavedBboxPositions({ urlParams: { workspacePath } }),
+      );
     },
     cropRoi(request) {
-      return json.postJson("/align/crop-roi", request, CropRoiResponseSchema);
+      return toClientEffect(client.align.cropRoi({ payload: request }));
     },
     cancelCropRoi(requestId) {
-      return json.postJson("/align/cancel-crop-roi", { requestId }, CropRoiProgressSchema);
+      return toClientEffect(client.align.cancelCropRoi({ payload: { requestId } }));
     },
     onCropRoiProgress(requestId, onProgress) {
-      return createCropRoiProgressSubscription(json, deps, requestId, onProgress);
+      return createCropRoiProgressSubscription(client, deps, requestId, onProgress);
     },
     roiPosExists(workspacePath, pos) {
-      return json
-        .getJson("/align/roi-pos-exists", RoiPosExistsResponseSchema, { workspacePath, pos })
-        .pipe(Effect.map((result) => result.exists));
+      return toClientEffect(
+        client.align
+          .roiPosExists({ urlParams: { workspacePath, pos } })
+          .pipe(Effect.map((result) => result.exists)),
+      );
     },
   };
 }
 
 export function createCropRoiProgressSubscription(
-  json: JsonFetch,
-  deps: Pick<AlignerPortDeps, "baseUrl" | "wsUrl" | "isDev">,
+  client: LiscaApiClient,
+  deps: Pick<AlignerPortDeps, "wsUrl" | "isDev">,
   requestId: string,
   onProgress: (progress: CropRoiProgress) => void,
 ) {
@@ -107,7 +86,7 @@ export function createCropRoiProgressSubscription(
     requestId,
     onProgress,
     pollProgress: () =>
-      json.getJson("/align/crop-roi-progress", CropRoiProgressSchema, { requestId }),
+      toClientEffect(client.align.cropRoiProgress({ urlParams: { requestId } })),
     decodeMessage: decodeCropRoiProgressMessage,
     extractProgress: (message) => message.progress,
     matchRequestId: (message, id) => message.progress.requestId === id,

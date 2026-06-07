@@ -12,15 +12,24 @@
     ".": {
       "types": "./src/index.ts",
       "import": "./src/index.ts"
-    }
+    },
+    "./http-api": {
+      "types": "./src/http-api.ts",
+      "import": "./src/http-api.ts"
+    },
+    "./openapi.json": "./openapi.json"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
-    "generate": "cargo run -p lisca --features export-typescript --bin export-typescript --manifest-path ../../crates/lisca/Cargo.toml",
+    "openapi": "bun scripts/gen-openapi.ts",
+    "contract-schema": "bun scripts/gen-rust-schema.ts",
+    "rust-types": "bun scripts/gen-rust-schema.ts && cargo typify contract.schema.json --crate 'lisca@0.1.0' --unknown-crates allow -o ../../crates/lisca/src/protocol/generated.rs",
+    "generate": "bun scripts/gen-openapi.ts && bun scripts/gen-rust-schema.ts",
     "typecheck": "tsc -p tsconfig.build.json --noEmit"
   },
   "dependencies": {
+    "@effect/platform": "catalog:",
     "effect": "catalog:"
   },
   "devDependencies": {

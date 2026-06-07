@@ -1,0 +1,1577 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LiscaContract",
+  "definitions": {
+    "HostListDirectoryResult": {
+      "type": "object",
+      "required": [
+        "path",
+        "parent",
+        "entries"
+      ],
+      "properties": {
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/HostFsEntry"
+          }
+        }
+      }
+    },
+    "HostFsEntry": {
+      "type": "object",
+      "required": [
+        "name",
+        "path",
+        "isDirectory"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "isDirectory": {
+          "type": "boolean"
+        }
+      }
+    },
+    "HomeDirectoryResponse": {
+      "type": "object",
+      "required": [
+        "path"
+      ],
+      "properties": {
+        "path": {
+          "type": "string"
+        }
+      }
+    },
+    "ReadTextFileResponse": {
+      "type": "object",
+      "required": [
+        "contents"
+      ],
+      "properties": {
+        "contents": {
+          "type": "string"
+        }
+      }
+    },
+    "SmbConnectRequest": {
+      "type": "object",
+      "required": [
+        "url",
+        "username",
+        "password"
+      ],
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      }
+    },
+    "SmbConnectResponse": {
+      "type": "object",
+      "required": [
+        "sessionId",
+        "rootPath"
+      ],
+      "properties": {
+        "sessionId": {
+          "type": "string"
+        },
+        "rootPath": {
+          "type": "string"
+        }
+      }
+    },
+    "SmbDisconnectRequest": {
+      "type": "object",
+      "required": [
+        "sessionId"
+      ],
+      "properties": {
+        "sessionId": {
+          "type": "string"
+        }
+      }
+    },
+    "OkResponse": {
+      "type": "object",
+      "required": [
+        "ok"
+      ],
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        }
+      }
+    },
+    "AlignerSource": {
+      "x-rust-type": {
+        "crate": "lisca",
+        "version": "*",
+        "path": "lisca::protocol::AlignerSource"
+      }
+    },
+    "FolderSource": {
+      "type": "object",
+      "required": [
+        "kind",
+        "path",
+        "subfolderTemplate",
+        "filenameTemplate"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "folder"
+          ]
+        },
+        "path": {
+          "type": "string"
+        },
+        "subfolderTemplate": {
+          "type": "string"
+        },
+        "filenameTemplate": {
+          "type": "string"
+        }
+      }
+    },
+    "WorkspaceScan": {
+      "type": "object",
+      "required": [
+        "positions",
+        "channels",
+        "times",
+        "zSlices"
+      ],
+      "properties": {
+        "positions": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          }
+        },
+        "channels": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          }
+        },
+        "times": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          }
+        },
+        "zSlices": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "FrameRequest": {
+      "type": "object",
+      "required": [
+        "pos",
+        "channel",
+        "time",
+        "z"
+      ],
+      "properties": {
+        "pos": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "channel": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "time": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "z": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        }
+      }
+    },
+    "ContrastWindow": {
+      "type": "object",
+      "required": [
+        "min",
+        "max"
+      ],
+      "properties": {
+        "min": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "max": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        }
+      }
+    },
+    "FramePayload": {
+      "type": "object",
+      "required": [
+        "width",
+        "height",
+        "dataBase64",
+        "pixelType",
+        "contrastDomain",
+        "suggestedContrast",
+        "appliedContrast"
+      ],
+      "properties": {
+        "width": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "height": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "dataBase64": {
+          "type": "string"
+        },
+        "pixelType": {
+          "$ref": "#/definitions/PixelType"
+        },
+        "contrastDomain": {
+          "$ref": "#/definitions/ContrastWindow"
+        },
+        "suggestedContrast": {
+          "$ref": "#/definitions/ContrastWindow"
+        },
+        "appliedContrast": {
+          "$ref": "#/definitions/ContrastWindow"
+        }
+      }
+    },
+    "PixelType": {
+      "type": "string",
+      "enum": [
+        "uint8",
+        "uint8clamped",
+        "int8",
+        "uint16",
+        "int16",
+        "uint32",
+        "int32"
+      ]
+    },
+    "AutoExcludePreviewRequest": {
+      "type": "object",
+      "required": [
+        "source",
+        "selection",
+        "cells"
+      ],
+      "properties": {
+        "source": {
+          "$ref": "#/definitions/AlignerSource"
+        },
+        "selection": {
+          "$ref": "#/definitions/FrameRequest"
+        },
+        "cells": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AutoExcludePreviewCell"
+          }
+        }
+      }
+    },
+    "AutoExcludePreviewCell": {
+      "type": "object",
+      "required": [
+        "i",
+        "j",
+        "x",
+        "y",
+        "w",
+        "h"
+      ],
+      "properties": {
+        "i": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int",
+          "format": "int32"
+        },
+        "j": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int",
+          "format": "int32"
+        },
+        "x": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "y": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "w": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "h": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        }
+      }
+    },
+    "AutoExcludePreviewResponse": {
+      "type": "object",
+      "required": [
+        "eligibleCellCount",
+        "cellScores",
+        "histogramBins",
+        "scoreMin",
+        "scoreMax",
+        "threshold"
+      ],
+      "properties": {
+        "eligibleCellCount": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "cellScores": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AutoExcludePreviewCellScore"
+          }
+        },
+        "histogramBins": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AutoExcludeHistogramBin"
+          }
+        },
+        "scoreMin": {
+          "type": "number",
+          "format": "double"
+        },
+        "scoreMax": {
+          "type": "number",
+          "format": "double"
+        },
+        "threshold": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "AutoExcludePreviewCellScore": {
+      "type": "object",
+      "required": [
+        "i",
+        "j",
+        "score"
+      ],
+      "properties": {
+        "i": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int",
+          "format": "int32"
+        },
+        "j": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int",
+          "format": "int32"
+        },
+        "score": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "AutoExcludeHistogramBin": {
+      "type": "object",
+      "required": [
+        "start",
+        "end",
+        "count"
+      ],
+      "properties": {
+        "start": {
+          "type": "number",
+          "format": "double"
+        },
+        "end": {
+          "type": "number",
+          "format": "double"
+        },
+        "count": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        }
+      }
+    },
+    "SavedAlignState": {
+      "type": "object",
+      "required": [
+        "grid",
+        "excludedCells"
+      ],
+      "properties": {
+        "grid": {
+          "$ref": "#/definitions/AlignGridState"
+        },
+        "excludedCells": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AlignGridCellCoord"
+          }
+        }
+      }
+    },
+    "AlignGridState": {
+      "type": "object",
+      "required": [
+        "enabled",
+        "shape",
+        "tx",
+        "ty",
+        "rotation",
+        "spacingA",
+        "spacingB",
+        "cellWidth",
+        "cellHeight",
+        "opacity"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "shape": {
+          "$ref": "#/definitions/AlignGridShape"
+        },
+        "tx": {
+          "type": "number",
+          "format": "double"
+        },
+        "ty": {
+          "type": "number",
+          "format": "double"
+        },
+        "rotation": {
+          "type": "number",
+          "format": "double"
+        },
+        "spacingA": {
+          "type": "number",
+          "format": "double"
+        },
+        "spacingB": {
+          "type": "number",
+          "format": "double"
+        },
+        "cellWidth": {
+          "type": "number",
+          "format": "double"
+        },
+        "cellHeight": {
+          "type": "number",
+          "format": "double"
+        },
+        "opacity": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "AlignGridShape": {
+      "type": "string",
+      "enum": [
+        "rect",
+        "square",
+        "hex"
+      ]
+    },
+    "AlignGridCellCoord": {
+      "type": "object",
+      "required": [
+        "i",
+        "j"
+      ],
+      "properties": {
+        "i": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int",
+          "format": "int32"
+        },
+        "j": {
+          "type": "integer",
+          "description": "an integer",
+          "title": "int",
+          "format": "int32"
+        }
+      }
+    },
+    "SaveBboxResponse": {
+      "type": "object",
+      "required": [
+        "ok",
+        "error"
+      ],
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "AlignOutputPaths": {
+      "type": "object",
+      "required": [
+        "bbox",
+        "align",
+        "roi"
+      ],
+      "properties": {
+        "bbox": {
+          "type": "string"
+        },
+        "align": {
+          "type": "string"
+        },
+        "roi": {
+          "type": "string"
+        }
+      }
+    },
+    "RoiPosExistsResponse": {
+      "type": "object",
+      "required": [
+        "exists"
+      ],
+      "properties": {
+        "exists": {
+          "type": "boolean"
+        }
+      }
+    },
+    "CropRoiRequest": {
+      "type": "object",
+      "required": [
+        "requestId",
+        "workspacePath",
+        "source",
+        "positions",
+        "overwrite"
+      ],
+      "properties": {
+        "requestId": {
+          "type": "string"
+        },
+        "workspacePath": {
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/definitions/AlignerSource"
+        },
+        "positions": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          }
+        },
+        "overwrite": {
+          "type": "boolean"
+        },
+        "outputFormat": {
+          "$ref": "#/definitions/CropOutputFormat"
+        }
+      }
+    },
+    "CropOutputFormat": {
+      "type": "string",
+      "enum": [
+        "tiff"
+      ]
+    },
+    "CropRoiResponse": {
+      "type": "object",
+      "required": [
+        "requestId",
+        "status"
+      ],
+      "properties": {
+        "requestId": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/CropRoiStatus"
+        }
+      }
+    },
+    "CropRoiStatus": {
+      "type": "string",
+      "enum": [
+        "queued",
+        "running",
+        "completed",
+        "cancelled",
+        "error"
+      ]
+    },
+    "CropRoiProgress": {
+      "type": "object",
+      "required": [
+        "requestId",
+        "status",
+        "position",
+        "completedPositions",
+        "totalPositions",
+        "completedRois",
+        "totalRois",
+        "message"
+      ],
+      "properties": {
+        "requestId": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/CropRoiStatus"
+        },
+        "position": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "completedPositions": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "totalPositions": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "completedRois": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "totalRois": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "message": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "skippedPositions": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "RoiWorkspaceScan": {
+      "type": "object",
+      "required": [
+        "positions"
+      ],
+      "properties": {
+        "positions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RoiPositionScan"
+          }
+        }
+      }
+    },
+    "RoiPositionScan": {
+      "type": "object",
+      "required": [
+        "pos",
+        "source",
+        "channels",
+        "times",
+        "zSlices",
+        "rois"
+      ],
+      "properties": {
+        "pos": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "source": {
+          "$ref": "#/definitions/AlignerSource"
+        },
+        "channels": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          }
+        },
+        "times": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          }
+        },
+        "zSlices": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          }
+        },
+        "rois": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RoiIndexEntry"
+          }
+        }
+      }
+    },
+    "RoiIndexEntry": {
+      "type": "object",
+      "required": [
+        "roi",
+        "fileName",
+        "bbox",
+        "shape"
+      ],
+      "properties": {
+        "roi": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "fileName": {
+          "type": "string"
+        },
+        "bbox": {
+          "$ref": "#/definitions/RoiBbox"
+        },
+        "shape": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "minItems": 5,
+          "maxItems": 5
+        }
+      }
+    },
+    "RoiBbox": {
+      "type": "object",
+      "required": [
+        "roi",
+        "x",
+        "y",
+        "w",
+        "h"
+      ],
+      "properties": {
+        "roi": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "x": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "y": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "w": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "h": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        }
+      }
+    },
+    "AnnotationLabel": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "color"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string"
+        }
+      }
+    },
+    "RoiFrameRequest": {
+      "type": "object",
+      "required": [
+        "pos",
+        "roi",
+        "channel",
+        "time",
+        "z"
+      ],
+      "properties": {
+        "pos": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "roi": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "channel": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "time": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "z": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        }
+      }
+    },
+    "LoadedRoiFrameAnnotation": {
+      "type": "object",
+      "required": [
+        "annotation",
+        "maskBase64Png"
+      ],
+      "properties": {
+        "annotation": {
+          "$ref": "#/definitions/RoiFrameAnnotation"
+        },
+        "maskBase64Png": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "RoiFrameAnnotation": {
+      "type": "object",
+      "required": [
+        "classificationLabelId",
+        "maskPath",
+        "updatedAt"
+      ],
+      "properties": {
+        "classificationLabelId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "maskPath": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "updatedAt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "RoiFrameAnnotationPayload": {
+      "type": "object",
+      "required": [
+        "classificationLabelId",
+        "maskBase64Png"
+      ],
+      "properties": {
+        "classificationLabelId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "maskBase64Png": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "SaveAssayJsonRequest": {
+      "type": "object",
+      "required": [
+        "saveTo",
+        "contents"
+      ],
+      "properties": {
+        "saveTo": {
+          "type": "string"
+        },
+        "contents": {
+          "type": "string"
+        }
+      }
+    },
+    "SaveAssayJsonResponse": {
+      "type": "object",
+      "required": [
+        "ok",
+        "path"
+      ],
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "path": {
+          "type": "string"
+        }
+      }
+    },
+    "SaveResultPdfRequest": {
+      "type": "object",
+      "required": [
+        "workspacePath",
+        "fileName",
+        "contentsBase64"
+      ],
+      "properties": {
+        "workspacePath": {
+          "type": "string"
+        },
+        "fileName": {
+          "type": "string"
+        },
+        "contentsBase64": {
+          "type": "string"
+        }
+      }
+    },
+    "SaveResultPdfResponse": {
+      "type": "object",
+      "required": [
+        "ok",
+        "directory",
+        "path"
+      ],
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "directory": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        }
+      }
+    },
+    "AnalysisStartRequest": {
+      "type": "object",
+      "required": [
+        "workspacePath",
+        "requestId"
+      ],
+      "properties": {
+        "workspacePath": {
+          "type": "string"
+        },
+        "requestId": {
+          "type": "string"
+        }
+      }
+    },
+    "AnalysisProgress": {
+      "type": "object",
+      "required": [
+        "requestId",
+        "status",
+        "stage",
+        "progress",
+        "message",
+        "error"
+      ],
+      "properties": {
+        "requestId": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/AnalysisStatus"
+        },
+        "stage": {
+          "$ref": "#/definitions/AnalysisStage"
+        },
+        "progress": {
+          "type": "number",
+          "format": "double"
+        },
+        "message": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "resultFiles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AnalysisCsvFile"
+          }
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "AnalysisStatus": {
+      "type": "string",
+      "enum": [
+        "queued",
+        "running",
+        "completed",
+        "error"
+      ]
+    },
+    "AnalysisStage": {
+      "type": "string",
+      "enum": [
+        "queued",
+        "preparing",
+        "segment",
+        "timeseries",
+        "auc",
+        "fit",
+        "completed"
+      ]
+    },
+    "AnalysisCsvFile": {
+      "type": "object",
+      "required": [
+        "kind",
+        "fileName",
+        "path",
+        "csv"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "fileName": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "csv": {
+          "type": "string"
+        }
+      }
+    },
+    "AssayJsonFile": {
+      "type": "object",
+      "required": [
+        "assayId",
+        "assayLabel",
+        "dataSourceKind",
+        "info1",
+        "info2",
+        "info3"
+      ],
+      "properties": {
+        "assayId": {
+          "$ref": "#/definitions/AssayName"
+        },
+        "assayLabel": {
+          "type": "string"
+        },
+        "dataSourceKind": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/AssayDataSourceKind"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "info1": {
+          "$ref": "#/definitions/AssayBasicInfoStep1"
+        },
+        "info2": {
+          "$ref": "#/definitions/AssayBasicInfoStep2"
+        },
+        "info3": {
+          "$ref": "#/definitions/AssayBasicInfoStep3"
+        }
+      }
+    },
+    "AssayName": {
+      "type": "string",
+      "enum": [
+        "gene-expression",
+        "immune-killing",
+        "lnp-binding",
+        "custom-assay"
+      ]
+    },
+    "AssayDataSourceKind": {
+      "type": "string",
+      "enum": [
+        "folder",
+        "tif",
+        "jpg",
+        "nd2",
+        "czi"
+      ]
+    },
+    "AssayBasicInfoStep1": {
+      "type": "object",
+      "required": [
+        "name",
+        "date",
+        "dataPath",
+        "folderSubfolderTemplate",
+        "folderFilenameTemplate",
+        "saveTo"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string"
+        },
+        "dataPath": {
+          "type": "string"
+        },
+        "folderSubfolderTemplate": {
+          "type": "string"
+        },
+        "folderFilenameTemplate": {
+          "type": "string"
+        },
+        "saveTo": {
+          "type": "string"
+        }
+      }
+    },
+    "AssayBasicInfoStep2": {
+      "type": "object",
+      "required": [
+        "pattern",
+        "timelapseAmount",
+        "timelapseUnit",
+        "selectedFeatures"
+      ],
+      "properties": {
+        "pattern": {
+          "type": "string"
+        },
+        "timelapseAmount": {
+          "anyOf": [
+            {
+              "type": "number",
+              "format": "double"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "timelapseUnit": {
+          "$ref": "#/definitions/AssayTimelapseUnit"
+        },
+        "selectedFeatures": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AssayFeature"
+          }
+        }
+      }
+    },
+    "AssayTimelapseUnit": {
+      "type": "string",
+      "enum": [
+        "second",
+        "minute",
+        "hour"
+      ]
+    },
+    "AssayFeature": {
+      "type": "string",
+      "enum": [
+        "morphology",
+        "partcount",
+        "partfluor",
+        "totalfluor"
+      ]
+    },
+    "AssayBasicInfoStep3": {
+      "type": "object",
+      "required": [
+        "selectedSlideId",
+        "samplesBySlide"
+      ],
+      "properties": {
+        "selectedSlideId": {
+          "$ref": "#/definitions/AssaySlideId"
+        },
+        "samplesBySlide": {
+          "$ref": "#/definitions/AssaySamplesBySlide"
+        }
+      }
+    },
+    "AssaySlideId": {
+      "type": "string",
+      "enum": [
+        "slide-i",
+        "slide-vi"
+      ]
+    },
+    "AssaySamplesBySlide": {
+      "type": "object",
+      "required": [
+        "slide-i",
+        "slide-vi"
+      ],
+      "properties": {
+        "slide-i": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AssaySampleRow"
+          }
+        },
+        "slide-vi": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AssaySampleRow"
+          }
+        }
+      }
+    },
+    "AssaySampleRow": {
+      "type": "object",
+      "required": [
+        "channel",
+        "name",
+        "positionStart",
+        "positionFinish",
+        "maskChannel",
+        "signalChannel",
+        "positions"
+      ],
+      "properties": {
+        "channel": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "positionStart": {
+          "type": "string"
+        },
+        "positionFinish": {
+          "type": "string"
+        },
+        "maskChannel": {
+          "type": "string"
+        },
+        "signalChannel": {
+          "type": "string"
+        },
+        "positions": {
+          "type": "string"
+        }
+      }
+    },
+    "ServerWsMessage": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Hello"
+        },
+        {
+          "$ref": "#/definitions/CropRoiProgressMessage"
+        },
+        {
+          "$ref": "#/definitions/AnalysisProgressMessage"
+        }
+      ]
+    },
+    "Hello": {
+      "type": "object",
+      "required": [
+        "app",
+        "version"
+      ],
+      "properties": {
+        "app": {
+          "$ref": "#/definitions/AppId"
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    },
+    "AppId": {
+      "type": "string",
+      "enum": [
+        "aligner",
+        "annotator",
+        "studio"
+      ]
+    },
+    "CropRoiProgressMessage": {
+      "type": "object",
+      "required": [
+        "type",
+        "progress"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "cropRoiProgress"
+          ]
+        },
+        "progress": {
+          "$ref": "#/definitions/CropRoiProgress"
+        }
+      }
+    },
+    "AnalysisProgressMessage": {
+      "type": "object",
+      "required": [
+        "type",
+        "progress"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "analysisProgress"
+          ]
+        },
+        "progress": {
+          "$ref": "#/definitions/AnalysisProgress"
+        }
+      }
+    },
+    "RoiIndexFile": {
+      "type": "object",
+      "required": [
+        "position",
+        "axisOrder",
+        "pageOrder",
+        "timeCount",
+        "channelCount",
+        "zCount",
+        "source",
+        "rois"
+      ],
+      "properties": {
+        "position": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "axisOrder": {
+          "type": "string"
+        },
+        "pageOrder": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "timeCount": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "channelCount": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "zCount": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "source": {
+          "$ref": "#/definitions/AlignerSource"
+        },
+        "rois": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RoiIndexEntry"
+          }
+        }
+      }
+    }
+  }
+}

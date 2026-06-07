@@ -1,51 +1,33 @@
-import {
-  HomeDirectoryResponseSchema,
-  HostListDirectoryResultSchema,
-  SmbConnectResponseSchema,
-  SmbDisconnectRequestSchema,
-} from "@lisca/contracts";
-import * as Schema from "effect/Schema";
 import { Effect } from "effect";
 
-import { createJsonFetch } from "../fetch.ts";
+import { createApiClient, toClientEffect, type ApiClientDeps } from "../api-client.ts";
 import type { HostPort } from "./types.ts";
 
 export type { HostPort } from "./types.ts";
 
-export type HostPortDeps = {
-  baseUrl: () => string;
-  fetch?: typeof fetch;
-};
+export type HostPortDeps = ApiClientDeps;
 
 export function createHostPort(deps: HostPortDeps): HostPort {
-  const json = createJsonFetch(deps.baseUrl, deps.fetch);
+  const client = createApiClient(deps);
 
   return {
-    listDirectory(path, signal) {
-      return json.getJson(
-        "/fs/list",
-        HostListDirectoryResultSchema,
-        path ? { path } : undefined,
-        signal,
+    listDirectory(path) {
+      return toClientEffect(
+        client.fs.listDirectory({ urlParams: { path: path ?? undefined } }),
       );
     },
-    userHomeDirectory(signal) {
-      return json
-        .getJson("/fs/home", HomeDirectoryResponseSchema, undefined, signal)
-        .pipe(Effect.map((result) => result.path));
+    userHomeDirectory() {
+      return toClientEffect(
+        client.fs.userHomeDirectory().pipe(Effect.map((result) => result.path)),
+      );
     },
-    connectSmb(request, signal) {
-      return json.postJson("/fs/smb/connect", request, SmbConnectResponseSchema, signal);
+    connectSmb(request) {
+      return toClientEffect(client.fs.connectSmb({ payload: request }));
     },
-    disconnectSmb(sessionId, signal) {
-      return json
-        .postJson(
-          "/fs/smb/disconnect",
-          { sessionId },
-          Schema.Struct({ ok: Schema.Boolean }),
-          signal,
-        )
-        .pipe(Effect.asVoid);
+    disconnectSmb(sessionId) {
+      return toClientEffect(
+        client.fs.disconnectSmb({ payload: { sessionId } }).pipe(Effect.asVoid),
+      );
     },
   };
 }

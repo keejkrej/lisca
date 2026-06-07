@@ -1,12 +1,11 @@
 import {
   AnalysisProgressMessageSchema,
-  AnalysisProgressSchema,
   schemaDecoderEither,
   type AnalysisProgress,
   type AnalysisStartRequest,
 } from "@lisca/contracts";
 
-import { createJsonFetch, type JsonFetch } from "../fetch.ts";
+import { createApiClient, toClientEffect, type LiscaApiClient } from "../api-client.ts";
 import { subscribeProgress } from "../progress-subscribe.ts";
 import type { AnalysisDataPort } from "./types.ts";
 
@@ -24,23 +23,23 @@ export type AnalysisPortDeps = {
 };
 
 export function createAnalysisPort(deps: AnalysisPortDeps): AnalysisDataPort {
-  const json = createJsonFetch(deps.baseUrl, deps.fetch);
+  const client = createApiClient(deps);
 
   return {
     startAnalysis(request: AnalysisStartRequest) {
-      return json.postJson("/studio/start-analysis", request, AnalysisProgressSchema);
+      return toClientEffect(client.studio.startAnalysis({ payload: request }));
     },
     getAnalysisProgress(requestId: string) {
-      return json.getJson("/studio/analysis-progress", AnalysisProgressSchema, { requestId });
+      return toClientEffect(client.studio.getAnalysisProgress({ urlParams: { requestId } }));
     },
     onAnalysisProgress(requestId: string, onProgress: (progress: AnalysisProgress) => void) {
-      return createAnalysisProgressSubscription(json, deps, requestId, onProgress);
+      return createAnalysisProgressSubscription(client, deps, requestId, onProgress);
     },
   };
 }
 
 export function createAnalysisProgressSubscription(
-  json: JsonFetch,
+  client: LiscaApiClient,
   deps: Pick<AnalysisPortDeps, "wsUrl" | "isDev">,
   requestId: string,
   onProgress: (progress: AnalysisProgress) => void,
@@ -50,7 +49,7 @@ export function createAnalysisProgressSubscription(
     requestId,
     onProgress,
     pollProgress: () =>
-      json.getJson("/studio/analysis-progress", AnalysisProgressSchema, { requestId }),
+      toClientEffect(client.studio.getAnalysisProgress({ urlParams: { requestId } })),
     decodeMessage: decodeAnalysisProgressMessage,
     extractProgress: (message) => message.progress,
     matchRequestId: (message, id) => message.progress.requestId === id,

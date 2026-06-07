@@ -13,7 +13,8 @@ use walkdir::WalkDir;
 
 use crate::{
     protocol::{
-        AlignerSource, ContrastWindow, FramePayload, FrameRequest, ImageSource, WorkspaceScan,
+        AlignerSource, ContrastWindow, FramePayload, FrameRequest, ImageSource, PixelType,
+        WorkspaceScan,
     },
     smb::{is_smb_path, list_directory},
     // mdat_smb_rs used for seekable SMB reads in open_nd2/open_czi/load_image_frame
@@ -312,7 +313,7 @@ pub fn to_frame_payload(raw: RawFrame, contrast: Option<ContrastWindow>) -> Fram
         width: raw.width,
         height: raw.height,
         data_base64: BASE64_STANDARD.encode(pixels),
-        pixel_type: "uint8",
+        pixel_type: PixelType::Uint8,
         contrast_domain: domain,
         suggested_contrast: suggested,
         applied_contrast: applied,

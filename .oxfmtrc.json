@@ -6,7 +6,6 @@
     "**/.turbo/**",
     "**/coverage/**",
     "**/routeTree.gen.ts",
-    "**/protocol.generated.ts",
     "bun.lock"
   ],
   "sortPackageJson": {}

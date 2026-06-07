@@ -206,6 +206,7 @@
       "dependencies": {
         "@effect-atom/atom-react": "catalog:",
         "@effect/experimental": "catalog:",
+        "@effect/platform": "catalog:",
         "@effect/platform-browser": "catalog:",
         "@lisca/contracts": "workspace:*",
         "@lisca/utils": "workspace:*",
@@ -223,6 +224,7 @@
       "name": "@lisca/contracts",
       "version": "0.1.0",
       "dependencies": {
+        "@effect/platform": "catalog:",
         "effect": "catalog:",
       },
       "devDependencies": {
@@ -305,6 +307,7 @@
   "catalog": {
     "@effect-atom/atom-react": "^0.5.0",
     "@effect/experimental": "^0.60.0",
+    "@effect/platform": "^0.96.1",
     "@effect/platform-browser": "^0.60.0",
     "@tailwindcss/vite": "^4.1.8",
     "@tanstack/react-router": "^1.169.2",

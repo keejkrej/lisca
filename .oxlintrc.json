@@ -7,8 +7,7 @@
     "**/node_modules/**",
     "**/coverage/**",
     "*.tsbuildinfo",
-    "**/routeTree.gen.ts",
-    "**/protocol.generated.ts"
+    "**/routeTree.gen.ts"
   ],
   "plugins": ["eslint", "oxc", "react", "unicorn", "typescript"],
   "categories": {
