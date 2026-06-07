@@ -1,5 +1,11 @@
 export { AppShell, ShellDock, ShellSidebar, type AppShellCompound } from "./shell/app-shell.tsx";
 export { Button, DockButton, SegmentedToggle } from "./shell/buttons.tsx";
+export { DockToolGrid, type DockToolGridProps } from "./shell/dock-tool-grid.tsx";
+export {
+  dockToolLabel,
+  useDockToolShortcuts,
+  type DockToolAction,
+} from "./shell/dock-tool-shortcuts.ts";
 export type { ConnectionState } from "./state/use-shell-ws-probe.ts";
 export { ConnectionStatus } from "./shell/connection-status.tsx";
 export {
@@ -34,6 +40,9 @@ export {
   type UseAlignCanvasGridHandlersOptions,
 } from "./features/align-canvas-handlers.ts";
 export { AnnotationCanvas, type AnnotationCanvasProps, type AnnotationTool } from "./features/annotation-canvas.tsx";
+export { AnnotationModeToggle } from "./features/annotation-mode-toggle.tsx";
+export { AnnotationToolSlider } from "./features/annotation-tool-slider.tsx";
+export { labelColorStyle } from "./features/label-color-style.ts";
 export { useCanvasResourceTransaction } from "./features/canvas-resource-transaction.ts";
 export { useCanvasTransientStatus } from "./features/canvas-transient-status.ts";
 export { CropProgressModal, type CropProgressModalProps } from "./features/crop-progress-modal.tsx";
@@ -59,3 +68,5 @@ export {
   VariationScoreHistogram,
   type VariationHistogramBin,
 } from "./features/variation-score-histogram.tsx";
+export { StudioDock } from "./features/studio-dock.tsx";
+export { StudioNavButton } from "./features/studio-nav-button.tsx";

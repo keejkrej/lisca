@@ -1,17 +1,13 @@
-import { AppShell, AnnotationCanvas, Button, Section, ViewportCard } from "@lisca/ui-native";
-import { useMemo } from "react";
+import { AppShell, DockButton, StudioDock } from "@lisca/ui-native";
 import { StyleSheet, View } from "react-native";
 
-import { StudioAnalysisProgressModal, StudioAnalysisStartModal } from "../src/components/studio-analysis-modals";
-import { StudioNavRail } from "../src/components/studio-nav-rail";
+import { STUDIO_NAV_WIDTH } from "../src/components/studio-layout";
+import { StudioAnnotateMain } from "../src/components/studio-annotate-main";
+import { StudioLeft } from "../src/components/studio-left";
 import { useStudioAnnotateState } from "../src/state/use-studio-annotate-state";
 
 export default function AnnotateRoute() {
   const state = useStudioAnnotateState();
-  const emptyMask = useMemo(
-    () => (state.frame ? new Uint8Array(state.frame.width * state.frame.height) : new Uint8Array()),
-    [state.frame],
-  );
   const analysisBusy = Boolean(
     state.analysisProgress &&
       (state.analysisProgress.status === "queued" || state.analysisProgress.status === "running"),
@@ -22,49 +18,51 @@ export default function AnnotateRoute() {
   return (
     <AppShell>
       <AppShell.Body>
-        <AppShell.Left width={96}>
-          <StudioNavRail />
+        <AppShell.Left width={STUDIO_NAV_WIDTH}>
+          <StudioLeft />
         </AppShell.Left>
         <AppShell.MainColumn>
           <AppShell.Main>
-            <ViewportCard>
-              <AnnotationCanvas
-                activeLabelId={null}
-                brushSize={1}
-                disabled
-                frame={state.frame}
-                labels={[]}
-                mask={emptyMask}
-                overlayOpacity={0}
-                toasts={state.toasts}
-                tool="brush"
-                onMaskCommit={() => undefined}
-              />
-            </ViewportCard>
+            <StudioAnnotateMain state={state} />
           </AppShell.Main>
           <AppShell.Dock>
-            <View style={styles.dock}>
-              <Section title="Review cropped ROI frames">
-                <View style={styles.row}>
-                  <Button label="Shuffle" disabled={disableShuffle} onPress={state.shuffleSelection} />
-                  <Button
-                    label="Next"
-                    disabled={disableNext}
-                    onPress={() => state.setAnalysisStartConfirm(true)}
-                  />
+            <StudioDock
+              instruction="Review cropped ROI frames."
+              action={
+                <View style={styles.gridRow}>
+                  <View style={styles.gridCell}>
+                    <DockButton
+                      disabled={disableShuffle}
+                      label="Shuffle"
+                      onPress={state.shuffleSelection}
+                    />
+                  </View>
+                  <View style={styles.gridCell}>
+                    <DockButton
+                      disabled={disableNext}
+                      label="Next"
+                      onPress={() => state.setAnalysisStartConfirm(true)}
+                    />
+                  </View>
                 </View>
-              </Section>
-            </View>
+              }
+            />
           </AppShell.Dock>
         </AppShell.MainColumn>
+        <AppShell.Right width={STUDIO_NAV_WIDTH} />
       </AppShell.Body>
-      <StudioAnalysisStartModal state={state} />
-      <StudioAnalysisProgressModal state={state} />
     </AppShell>
   );
 }
 
 const styles = StyleSheet.create({
-  dock: { padding: 12 },
-  row: { flexDirection: "row", gap: 8 },
+  gridRow: {
+    flexDirection: "row",
+    gap: 8,
+    width: "100%",
+  },
+  gridCell: {
+    flex: 1,
+    minWidth: 0,
+  },
 });

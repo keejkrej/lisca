@@ -16,6 +16,7 @@ export type AlignToolsProps = {
   sectionDescription?: string;
   sectionStyle?: object;
   sectionContentStyle?: object;
+  bare?: boolean;
 };
 
 const alignToolDefinitions: { mode: AlignGridToolMode; label: string }[] = [
@@ -70,6 +71,7 @@ export function AlignTools(props: AlignToolsProps) {
     sectionDescription,
     sectionStyle,
     sectionContentStyle,
+    bare = false,
   } = props;
 
   const toolbar = (
@@ -101,6 +103,10 @@ export function AlignTools(props: AlignToolsProps) {
       )}
     </View>
   );
+
+  if (bare) {
+    return <View style={sectionStyle}>{toolbar}</View>;
+  }
 
   return (
     <Section

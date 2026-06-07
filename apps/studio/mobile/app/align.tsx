@@ -1,75 +1,92 @@
-import {
-  AppShell,
-  AlignCanvas,
-  ViewportCard,
-  useAlignCanvasGridHandlers,
-  useCanvasTransientStatus,
-  cursorForAlignTool,
-  Button,
-  Section,
-} from "@lisca/ui-native";
-import { useRouter } from "expo-router";
-import { useMemo } from "react";
+import { AppShell, DockButton, StudioDock } from "@lisca/ui-native";
 import { StyleSheet, View } from "react-native";
 
-import { StudioNavRail } from "../src/components/studio-nav-rail";
+import { STUDIO_NAV_WIDTH } from "../src/components/studio-layout";
+import { StudioAlignMain } from "../src/components/studio-align-main";
+import { StudioAlignTools } from "../src/components/studio-align-tools";
+import { StudioLeft } from "../src/components/studio-left";
+import { instructionForStep } from "../src/state/studio-routes";
 import { useStudioAlignState } from "../src/state/use-studio-align-state";
 
 export default function AlignRoute() {
-  const router = useRouter();
-  const state = useStudioAlignState();
-  const handlers = useAlignCanvasGridHandlers({
-    disabled: state.cropping,
-    grid: state.grid,
-    patternZoomLocked: state.patternZoomLocked,
-    setGrid: state.setGrid,
-    toolMode: state.toolMode,
-  });
-  const visibleStatus = useCanvasTransientStatus(state.status);
-  const toasts = useMemo(() => {
-    if (state.error) return [{ text: state.error, tone: "error" as const }];
-    if (visibleStatus) return [{ text: visibleStatus }];
-    return [];
-  }, [state.error, visibleStatus]);
+  const alignState = useStudioAlignState();
 
   return (
     <AppShell>
       <AppShell.Body>
-        <AppShell.Left width={96}>
-          <StudioNavRail />
+        <AppShell.Left width={STUDIO_NAV_WIDTH}>
+          <StudioLeft />
         </AppShell.Left>
         <AppShell.MainColumn>
           <AppShell.Main>
-            <ViewportCard>
-              <AlignCanvas
-                frame={state.frame}
-                grid={state.grid}
-                previewGrid={handlers.previewGrid}
-                excludedCells={state.displayedExcludedCells}
-                loading={state.scanLoading || state.frameLoading}
-                toasts={toasts}
-                cursor={cursorForAlignTool(state.toolMode, state.grid.enabled, handlers.previewGrid != null)}
-                onVirtualPointerDown={handlers.handlePointerDown}
-                onVirtualPointerMove={handlers.handlePointerMove}
-                onVirtualPointerUp={handlers.handlePointerEnd}
-                onVirtualPointerCancel={handlers.handlePointerEnd}
-              />
-            </ViewportCard>
+            <StudioAlignMain state={alignState} />
           </AppShell.Main>
           <AppShell.Dock>
-            <View style={styles.dock}>
-              <Section title="Studio align">
-                <Button label="Continue to annotate" onPress={() => router.push("/annotate")} />
-                <Button label="Save bbox" variant="outline" onPress={() => void state.saveAndAdvance()} />
-              </Section>
-            </View>
+            <StudioDock
+              instruction={instructionForStep("alignPattern")}
+              action={
+                <View style={styles.actions}>
+                  <View style={styles.gridRow}>
+                    <View style={styles.gridCell}>
+                      <DockButton
+                        disabled={!alignState.frame || alignState.saving || alignState.cropping}
+                        label="Reset"
+                        onPress={alignState.resetCurrent}
+                      />
+                    </View>
+                    <View style={styles.gridCell}>
+                      <DockButton
+                        disabled={
+                          !alignState.workspacePath ||
+                          alignState.alignPositions.length === 0 ||
+                          alignState.saving ||
+                          alignState.cropping ||
+                          alignState.findingFirstUnaligned
+                        }
+                        label="Jump"
+                        onPress={() => void alignState.goToFirstUnaligned()}
+                      />
+                    </View>
+                  </View>
+                  <View style={styles.gridRow}>
+                    <View style={styles.gridCell}>
+                      <DockButton
+                        disabled={!alignState.canGoBack || alignState.saving || alignState.cropping}
+                        label="Back"
+                        onPress={alignState.goBack}
+                      />
+                    </View>
+                    <View style={styles.gridCell}>
+                      <DockButton
+                        disabled={!alignState.frame || alignState.saving || alignState.cropping}
+                        label="Next"
+                        onPress={() => void alignState.saveAndAdvance()}
+                      />
+                    </View>
+                  </View>
+                </View>
+              }
+              tool={<StudioAlignTools state={alignState} />}
+            />
           </AppShell.Dock>
         </AppShell.MainColumn>
+        <AppShell.Right width={STUDIO_NAV_WIDTH} />
       </AppShell.Body>
     </AppShell>
   );
 }
 
 const styles = StyleSheet.create({
-  dock: { padding: 12 },
+  actions: {
+    gap: 8,
+    width: "100%",
+  },
+  gridRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  gridCell: {
+    flex: 1,
+    minWidth: 0,
+  },
 });

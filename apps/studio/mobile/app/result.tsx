@@ -1,16 +1,27 @@
-import { AppShell, Button, Panel, Section } from "@lisca/ui-native";
+import {
+  AppShell,
+  DockButton,
+  DockToolGrid,
+  Spinner,
+  StudioDock,
+  ViewportCard,
+  useShellTheme,
+} from "@lisca/ui-native";
 import { resultData } from "@lisca/client/atoms";
 import { runClientEffect } from "@lisca/client/runtime";
 import {
+  collectDisplayedParameterPanels,
   collectTimeseriesPanels,
+  defaultResultPlotSection,
   filterResultFilesBySection,
   intervalFromAssaySettings,
   type ResultPanel,
+  type ResultPlotSection,
   type SlideChannelLabels,
 } from "@lisca/studio-result";
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-react";
-import { useEffect, useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { StyleSheet, Text, useWindowDimensions, View } from "react-native";
 
 import { studioClient } from "../src/api/studio-port";
 import {
@@ -19,17 +30,19 @@ import {
   loadAnalysisPanelsAtom,
   slideChannelLabelsCacheKey,
 } from "../src/atoms/studio-analysis-atoms";
-import { StudioNavRail } from "../src/components/studio-nav-rail";
+import { STUDIO_NAV_WIDTH } from "../src/components/studio-layout";
+import { StudioLeft } from "../src/components/studio-left";
 import {
   ResultPanelsGridView,
-  pdfBytesToBase64,
   buildResultPdfFromCaptures,
+  pdfBytesToBase64,
 } from "../src/result/native-charts";
 import { useStudioAnnotateState } from "../src/state/use-studio-annotate-state";
 import { useStudioStore } from "../src/state/studio-store";
 
 export default function ResultRoute() {
   const { width } = useWindowDimensions();
+  const { colors } = useShellTheme();
   const { workspacePath, analysisResultFiles } = useStudioAnnotateState();
   const info2 = useStudioStore((state) => state.info2);
   const info3 = useStudioStore((state) => state.info3);
@@ -37,6 +50,11 @@ export default function ResultRoute() {
   const results = useAtomValue(resultsAtom);
   const progress = resultData(results);
   const [exporting, setExporting] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<ResultPlotSection>("timeseries");
+  const [isSectionLoading, setIsSectionLoading] = useState(false);
+  const [panelError, setPanelError] = useState<string | null>(null);
+  const [sectionPanels, setSectionPanels] = useState<ResultPanel[]>([]);
 
   const timeseriesXScale = intervalFromAssaySettings(info2.timelapseAmount, info2.timelapseUnit);
   const slideChannelLabels = useMemo<SlideChannelLabels>(() => {
@@ -54,28 +72,58 @@ export default function ResultRoute() {
     [slideChannelLabels],
   );
 
-  const timeseriesFiles = useMemo(
-    () => filterResultFilesBySection(analysisResultFiles, "timeseries"),
+  const sectionFiles = useMemo(
+    () => filterResultFilesBySection(analysisResultFiles, activeSection),
+    [activeSection, analysisResultFiles],
+  );
+  const hasTimeseriesFiles = useMemo(
+    () => filterResultFilesBySection(analysisResultFiles, "timeseries").length > 0,
     [analysisResultFiles],
   );
+  const hasParameterFiles = useMemo(
+    () => filterResultFilesBySection(analysisResultFiles, "parameters").length > 0,
+    [analysisResultFiles],
+  );
+  const hasAnyResultFiles = analysisResultFiles.length > 0;
+  const isBusy = isSectionLoading || exporting;
+  const chartWidth = width - STUDIO_NAV_WIDTH * 2 - 48;
 
-  const [panels, setPanels] = useState<ResultPanel[]>([]);
-  const [panelError, setPanelError] = useState<string | null>(null);
   const runLoadPanels = useAtomSet(loadAnalysisPanelsAtom, { mode: "promise" });
 
+  const switchSection = useCallback(
+    (section: ResultPlotSection) => {
+      if (section === activeSection || isBusy) return;
+      setActiveSection(section);
+    },
+    [activeSection, isBusy],
+  );
+
   useEffect(() => {
-    if (!workspacePath || timeseriesFiles.length === 0) {
-      setPanels([]);
-      setPanelError(null);
+    if (analysisResultFiles.length === 0) return;
+    setActiveSection((current) => {
+      const currentFiles = filterResultFilesBySection(analysisResultFiles, current);
+      if (currentFiles.length > 0) return current;
+      return defaultResultPlotSection(analysisResultFiles);
+    });
+  }, [analysisResultFiles]);
+
+  useEffect(() => {
+    if (sectionFiles.length === 0) {
+      setSectionPanels([]);
+      setIsSectionLoading(false);
       return;
     }
+
     let cancelled = false;
+    setIsSectionLoading(true);
+    setPanelError(null);
+
     void (async () => {
       try {
         const panelsByFile = await Promise.all(
-          timeseriesFiles.map((file) =>
+          sectionFiles.map((file) =>
             runLoadPanels({
-              workspacePath,
+              workspacePath: workspacePath ?? "",
               file,
               timeseriesXScale,
               slideChannelLabels,
@@ -83,32 +131,65 @@ export default function ResultRoute() {
             }),
           ),
         );
-        if (!cancelled) {
-          setPanels(collectTimeseriesPanels(panelsByFile));
-          setPanelError(null);
-        }
+        if (cancelled) return;
+        setSectionPanels(
+          activeSection === "timeseries"
+            ? collectTimeseriesPanels(panelsByFile)
+            : collectDisplayedParameterPanels(panelsByFile),
+        );
       } catch (cause) {
-        if (!cancelled) {
-          setPanels([]);
-          setPanelError(cause instanceof Error ? cause.message : "Failed to load result plots");
-        }
+        if (cancelled) return;
+        setSectionPanels([]);
+        setPanelError(cause instanceof Error ? cause.message : "Failed to load result plots");
+      } finally {
+        if (!cancelled) setIsSectionLoading(false);
       }
     })();
+
     return () => {
       cancelled = true;
     };
   }, [
-    workspacePath,
-    timeseriesFiles,
-    timeseriesXScale,
+    activeSection,
+    runLoadPanels,
+    sectionFiles,
     slideChannelLabels,
     slideChannelLabelsKey,
-    runLoadPanels,
+    timeseriesXScale,
+    workspacePath,
   ]);
 
+  const defaultInstruction =
+    activeSection === "timeseries"
+      ? "All timeseries plots are shown below."
+      : "Parameter plots: mRNA lifetime, AUC, transfection efficiency, and translation onset.";
+  const dockInstruction = saveMessage ?? panelError ?? defaultInstruction;
+
+  const sectionToolActions = useMemo(
+    () => [
+      {
+        id: "timeseries",
+        label: "Timeseries",
+        disabled: !hasTimeseriesFiles || isBusy,
+        active: activeSection === "timeseries",
+        onSelect: () => switchSection("timeseries"),
+      },
+      {
+        id: "parameters",
+        label: "Parameters",
+        disabled: !hasParameterFiles || isBusy,
+        active: activeSection === "parameters",
+        onSelect: () => switchSection("parameters"),
+      },
+    ],
+    [activeSection, hasParameterFiles, hasTimeseriesFiles, isBusy, switchSection],
+  );
+
   const exportPdf = async () => {
-    if (!workspacePath) return;
+    if (!workspacePath || exporting || isSectionLoading || !hasAnyResultFiles) return;
     setExporting(true);
+    setSaveMessage(null);
+    setPanelError(null);
     try {
       const bytes = buildResultPdfFromCaptures([]);
       await runClientEffect(
@@ -118,6 +199,9 @@ export default function ResultRoute() {
           contentsBase64: pdfBytesToBase64(bytes),
         }),
       );
+      setSaveMessage("Saved PDF to result.pdf");
+    } catch (cause) {
+      setSaveMessage(cause instanceof Error ? cause.message : "Failed to save PDF");
     } finally {
       setExporting(false);
     }
@@ -126,36 +210,69 @@ export default function ResultRoute() {
   return (
     <AppShell>
       <AppShell.Body>
-        <AppShell.Left width={96}>
-          <StudioNavRail />
+        <AppShell.Left width={STUDIO_NAV_WIDTH}>
+          <StudioLeft />
         </AppShell.Left>
         <AppShell.MainColumn>
           <AppShell.Main>
-            <ScrollView contentContainerStyle={styles.content}>
-              <Panel title="Analysis results">
-                <Text>Status: {progress?.status ?? "idle"}</Text>
-                <Text>CSV files: {analysisResultFiles.length}</Text>
-                <Text>Timeseries plots: {panels.length}</Text>
-                {panelError ? <Text style={styles.error}>{panelError}</Text> : null}
-                <ResultPanelsGridView panels={panels} width={width - 140} />
-              </Panel>
-            </ScrollView>
+            <ViewportCard>
+              <View style={styles.viewportContent}>
+                {isSectionLoading ? (
+                  <View style={[styles.loadingOverlay, { backgroundColor: `${colors.background}B3` }]}>
+                    <Spinner size="small" />
+                  </View>
+                ) : null}
+                {sectionPanels.length > 0 ? (
+                  <ResultPanelsGridView panels={sectionPanels} width={chartWidth} />
+                ) : (
+                  <View style={styles.emptyState}>
+                    <Text style={{ color: colors.mutedForeground, fontSize: 14 }}>
+                      Status: {progress?.status ?? "idle"}
+                    </Text>
+                    <Text style={{ color: colors.mutedForeground, fontSize: 14 }}>
+                      CSV files: {analysisResultFiles.length}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </ViewportCard>
           </AppShell.Main>
           <AppShell.Dock>
-            <View style={styles.dock}>
-              <Section title="Export">
-                <Button label={exporting ? "Exporting..." : "Save result PDF"} onPress={() => void exportPdf()} />
-              </Section>
-            </View>
+            <StudioDock
+              instruction={dockInstruction}
+              action={
+                <DockButton
+                  disabled={!workspacePath || !hasAnyResultFiles || isBusy}
+                  label={exporting ? "Saving..." : "Save"}
+                  onPress={() => void exportPdf()}
+                />
+              }
+              tool={<DockToolGrid actions={sectionToolActions} enabled={!isBusy} />}
+            />
           </AppShell.Dock>
         </AppShell.MainColumn>
+        <AppShell.Right width={STUDIO_NAV_WIDTH} />
       </AppShell.Body>
     </AppShell>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 16, gap: 16 },
-  dock: { padding: 12 },
-  error: { color: "#ef4444" },
+  viewportContent: {
+    flex: 1,
+    minHeight: 0,
+    padding: 16,
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1,
+  },
+  emptyState: {
+    flex: 1,
+    gap: 8,
+    justifyContent: "center",
+    padding: 16,
+  },
 });

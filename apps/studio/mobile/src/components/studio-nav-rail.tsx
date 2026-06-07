@@ -1,34 +1,54 @@
-import { Button, ConnectionStatus, useShellServer } from "@lisca/ui-native";
+import {
+  ConnectionStatus,
+  Panel,
+  ShellThemeToggle,
+  StudioNavButton,
+  useShellServer,
+  useShellTheme,
+} from "@lisca/ui-native";
 import { Link, usePathname } from "expo-router";
 import { StyleSheet, View } from "react-native";
 
 const ROUTES = [
-  { href: "/assay", label: "Assay" },
-  { href: "/info", label: "Info" },
-  { href: "/align", label: "Align" },
-  { href: "/annotate", label: "Annotate" },
-  { href: "/result", label: "Result" },
+  { href: "/assay", label: "Choose assay" },
+  { href: "/info", label: "Basic info" },
+  { href: "/align", label: "Align pattern" },
+  { href: "/annotate", label: "Annotate ROI" },
+  { href: "/result", label: "View results" },
 ] as const;
 
 export function StudioNavRail() {
   const pathname = usePathname();
   const server = useShellServer();
+  const { colors } = useShellTheme();
 
   return (
-    <View style={styles.root}>
-      {ROUTES.map((route) => (
-        <Link key={route.href} href={route.href} asChild>
-          <Button
-            label={route.label}
-            compact
-            variant={pathname === route.href ? "default" : "outline"}
-            onPress={() => undefined}
-          />
-        </Link>
-      ))}
-      <View style={styles.spacer} />
-      <Button label="Server" variant="ghost" compact onPress={server.openSettings} />
-      <ConnectionStatus state={server.state} />
+    <View style={[styles.root, { backgroundColor: colors.railChrome }]}>
+      <View style={styles.navCenter}>
+        <Panel>
+          <View style={styles.navStack}>
+            {ROUTES.map((route) => (
+              <Link key={route.href} href={route.href} asChild>
+                <StudioNavButton
+                  active={pathname === route.href}
+                  onPress={() => undefined}
+                >
+                  {route.label}
+                </StudioNavButton>
+              </Link>
+            ))}
+          </View>
+        </Panel>
+      </View>
+      <View style={styles.footer}>
+        <View style={styles.footerSpacer} />
+        <ConnectionStatus
+          state={server.state}
+          wsUrl={server.wsUrl}
+          onOpenSettings={server.openSettings}
+        />
+        <ShellThemeToggle />
+      </View>
     </View>
   );
 }
@@ -36,9 +56,28 @@ export function StudioNavRail() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    padding: 8,
-    gap: 8,
-    alignItems: "stretch",
+    gap: 10,
+    margin: -12,
+    minHeight: 0,
+    padding: 10,
   },
-  spacer: { flex: 1 },
+  navCenter: {
+    flex: 1,
+    justifyContent: "center",
+    minHeight: 0,
+  },
+  navStack: {
+    alignItems: "center",
+    gap: 24,
+    paddingVertical: 12,
+  },
+  footer: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "space-between",
+  },
+  footerSpacer: {
+    flex: 1,
+  },
 });

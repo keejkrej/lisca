@@ -1,18 +1,14 @@
-import {
-  AppShell,
-  Button,
-  ContrastControl,
-  HostFilePickerDialog,
-  Panel,
-  Section,
-  ShellNavbar,
-  ViewportCard,
-  AnnotationCanvas,
-} from "@lisca/ui-native";
-import { StyleSheet, Text, View } from "react-native";
+import { AppShell, HostFilePickerDialog } from "@lisca/ui-native";
 
 import { annotatorHostOperations } from "../api/annotator-port";
 import { useRoiPageState } from "../state/use-roi-page-state";
+import { createEmptyMask } from "../utils/annotation-utils";
+import { AnnotatorDock } from "./annotator-dock";
+import { AnnotatorHeader } from "./annotator-header";
+import { AnnotatorLeft } from "./annotator-left";
+import { AnnotatorMain } from "./annotator-main";
+import { AnnotatorRight } from "./annotator-right";
+import { LabelCreationDialog } from "./label-creation-dialog";
 
 export function RoiPage() {
   const page = useRoiPageState();
@@ -20,116 +16,144 @@ export function RoiPage() {
   return (
     <AppShell>
       <AppShell.Header>
-        <ShellNavbar
-          routeItems={[{ value: "annotate", label: "Annotate" }]}
-          routeValue="annotate"
+        <AnnotatorHeader
+          workspacePath={page.workspacePath}
+          onCreateLabels={() => {
+            page.setLabelError(null);
+            page.setLabelDialogOpen(true);
+          }}
           onPickWorkspace={() => page.setFilePickerOpen(true)}
-          onPickSource={() => undefined}
-          onRouteChange={() => undefined}
         />
       </AppShell.Header>
       <AppShell.Body>
-        <AppShell.Left>
-          <View style={styles.rail}>
-            <Panel title="Workspace">
-              <Text numberOfLines={2}>{page.workspacePath ?? "Not selected"}</Text>
-            </Panel>
-            <ContrastControl
-              disabled={!page.frame}
-              domainMin={page.contrastDomain.min}
-              domainMax={page.contrastDomain.max}
-              minValue={page.contrastMin}
-              maxValue={page.contrastMax}
-              onAutoRange={() => page.setContrast(null)}
-              onMinCommit={(min) => page.setContrast({ min, max: page.contrastMax })}
-              onMaxCommit={(max) => page.setContrast({ min: page.contrastMin, max })}
-            />
-          </View>
+        <AppShell.Left width={288}>
+          <AnnotatorLeft
+            channel={page.selection.channel}
+            contrastDomain={page.contrastDomain}
+            contrastMax={page.contrastMax}
+            contrastMin={page.contrastMin}
+            position={page.position}
+            pos={page.selection.pos}
+            roi={page.selection.roi}
+            scan={page.scan}
+            timeIndex={page.selection.timeIndex}
+            zIndex={page.selection.zIndex}
+            onChannelChange={(value) =>
+              page.changeSelection(() => page.setSelection({ channel: value }))
+            }
+            onContrastChange={page.setContrast}
+            onPosChange={(value) =>
+              page.changeSelection(() => {
+                page.setSelection({ pos: value, roi: null });
+              })
+            }
+            onRoiChange={(value) => page.changeSelection(() => page.setSelection({ roi: value }))}
+            onTimeIndexChange={(value) =>
+              page.changeSelection(() => page.setSelection({ timeIndex: value }))
+            }
+            onZIndexChange={(value) =>
+              page.changeSelection(() => page.setSelection({ zIndex: value }))
+            }
+          />
         </AppShell.Left>
         <AppShell.MainColumn>
           <AppShell.Main>
-            <ViewportCard>
-              <AnnotationCanvas
-                frame={page.frame}
-                labels={page.labels}
-                mask={page.annotation.current.mask}
-                activeLabelId={page.activeLabelId}
-                tool={page.tool}
-                brushSize={page.brushSize}
-                overlayOpacity={page.overlayOpacity}
-                toasts={page.canvasToasts}
-                disabled={!page.canEditSegmentation}
-                onMaskCommit={(mask) =>
-                  page.annotation.commit({
-                    classificationLabelId: page.annotation.current.classificationLabelId,
-                    mask,
-                  })
-                }
-              />
-            </ViewportCard>
+            <AnnotatorMain
+              activeLabelId={page.activeLabelId}
+              brushSize={page.brushSize}
+              disabled={!page.canEditSegmentation}
+              frame={page.frame}
+              labels={page.labels}
+              mask={page.annotation.current.mask}
+              overlayOpacity={page.overlayOpacity}
+              toasts={page.canvasToasts}
+              tool={page.tool}
+              onMaskCommit={(mask) =>
+                page.annotation.commit({
+                  classificationLabelId: page.annotation.current.classificationLabelId,
+                  mask,
+                })
+              }
+            />
           </AppShell.Main>
           <AppShell.Dock>
-            <View style={styles.dock}>
-              <Section title="Mode">
-                <View style={styles.row}>
-                  <Button
-                    label="Classification"
-                    variant={page.mode === "classification" ? "default" : "outline"}
-                    onPress={() => page.setMode("classification")}
-                  />
-                  <Button
-                    label="Segmentation"
-                    variant={page.mode === "segmentation" ? "default" : "outline"}
-                    onPress={() => page.setMode("segmentation")}
-                  />
-                </View>
-              </Section>
-              <Section title="Save">
-                <Button
-                  label={page.saving ? "Saving..." : "Save annotation"}
-                  disabled={!page.canSave || page.saving}
-                  onPress={() => void page.handleSave()}
-                />
-              </Section>
-            </View>
+            <AnnotatorDock
+              canSave={page.canSave}
+              mode={page.mode}
+              request={page.request}
+              saving={page.saving}
+              shortcutsEnabled={
+                page.mode === "segmentation" &&
+                page.canEditSegmentation &&
+                !page.labelDialogOpen &&
+                !page.filePickerOpen
+              }
+              tool={page.tool}
+              onSave={() => void page.handleSave()}
+              onToolChange={page.setTool}
+            />
           </AppShell.Dock>
         </AppShell.MainColumn>
-        <AppShell.Right>
-          <View style={styles.rail}>
-            <Panel title="Labels">
-              {page.labels.map((label) => (
-                <Button
-                  key={label.id}
-                  label={label.name}
-                  variant={page.activeLabelId === label.id ? "default" : "outline"}
-                  onPress={() => page.setActiveLabelId(label.id)}
-                />
-              ))}
-              <Button label="Create labels" variant="outline" onPress={() => page.setLabelDialogOpen(true)} />
-            </Panel>
-            {page.scanError ? <Text style={styles.error}>{page.scanError}</Text> : null}
-            {page.frameError ? <Text style={styles.error}>{page.frameError}</Text> : null}
-            {page.saveError ? <Text style={styles.error}>{page.saveError}</Text> : null}
-          </View>
+        <AppShell.Right width={288}>
+          <AnnotatorRight
+            activeLabelId={page.activeLabelId}
+            annotation={page.annotation.current}
+            annotationError={page.annotationError}
+            annotationLoading={page.annotationLoading}
+            brushSize={page.brushSize}
+            canRedo={page.annotation.canRedo}
+            canEdit={page.canEdit}
+            canUndo={page.annotation.canUndo}
+            dirty={page.annotation.dirty}
+            frameError={page.frameError}
+            frameLoading={page.frameLoading}
+            labels={page.labels}
+            mode={page.mode}
+            overlayOpacity={page.overlayOpacity}
+            saveError={page.saveError}
+            scanError={page.scanError}
+            scanLoading={page.scanLoading}
+            onClassificationChange={(labelId) =>
+              page.annotation.commit({
+                classificationLabelId: labelId,
+                mask: page.annotation.current.mask,
+              })
+            }
+            onClear={() =>
+              page.frame &&
+              page.annotation.commit({
+                classificationLabelId: page.annotation.current.classificationLabelId,
+                mask: createEmptyMask(page.frame.width, page.frame.height),
+              })
+            }
+            onDiscard={page.annotation.discard}
+            onBrushSizeChange={page.setBrushSize}
+            onModeChange={page.setMode}
+            onOverlayOpacityChange={page.setOverlayOpacity}
+            onPaintLabelChange={page.setActiveLabelId}
+            onRedo={page.annotation.redo}
+            onUndo={page.annotation.undo}
+          />
         </AppShell.Right>
       </AppShell.Body>
-
       <HostFilePickerDialog
         hostPort={annotatorHostOperations}
         mode="workspace"
         open={page.filePickerOpen}
         title="Workspace folder"
         onOpenChange={page.setFilePickerOpen}
-        onPickDirectory={(path) => page.pickWorkspace(path)}
+        onPickDirectory={page.pickWorkspace}
         onPickFile={() => undefined}
+      />
+      <LabelCreationDialog
+        error={page.labelError}
+        labels={page.labels}
+        open={page.labelDialogOpen}
+        saving={page.saveLabelsPending}
+        workspacePath={page.workspacePath}
+        onOpenChange={page.setLabelDialogOpen}
+        onSave={(nextLabels) => void page.handleSaveLabels(nextLabels)}
       />
     </AppShell>
   );
 }
-
-const styles = StyleSheet.create({
-  rail: { flex: 1, gap: 8, padding: 12 },
-  dock: { flex: 1, flexDirection: "row", gap: 12, padding: 12 },
-  row: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
-  error: { color: "#dc2626", fontSize: 12 },
-});
