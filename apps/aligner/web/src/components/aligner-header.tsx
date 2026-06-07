@@ -8,7 +8,7 @@ import type { AlignerSource, HostFilePickerMode } from "@lisca/contracts";
 import { useRef, useState } from "react";
 
 import { alignerHostOperations } from "../api/aligner-port.ts";
-import { useAlignPage } from "../state/align-page-context";
+import { useAlignSource } from "../state/align-page-selectors";
 
 function filePickerTitle(mode: HostFilePickerMode): string {
   if (mode === "workspace") return "Workspace folder";
@@ -19,7 +19,7 @@ function filePickerTitle(mode: HostFilePickerMode): string {
 }
 
 export function AlignerHeader() {
-  const { actions } = useAlignPage();
+  const alignSource = useAlignSource();
   const workspace = useShellWorkspace();
   const pickerModeRef = useRef<HostFilePickerMode | null>(null);
   const [sourcePickerOpen, setSourcePickerOpen] = useState(false);
@@ -39,7 +39,7 @@ export function AlignerHeader() {
     const mode = pickerModeRef.current;
     if (mode === "workspace") {
       workspace.setWorkspacePath(path);
-      actions.setSource(null);
+      alignSource.setSource(null);
       return;
     }
     if (mode === "folder") {
@@ -51,11 +51,11 @@ export function AlignerHeader() {
     const mode = pickerModeRef.current;
     if (mode === "nd2_file") {
       workspace.setSourcePath(path);
-      actions.setSource({ kind: "nd2", path });
+      alignSource.setSource({ kind: "nd2", path });
     }
     if (mode === "czi_file") {
       workspace.setSourcePath(path);
-      actions.setSource({ kind: "czi", path });
+      alignSource.setSource({ kind: "czi", path });
     }
   };
 
@@ -80,7 +80,7 @@ export function AlignerHeader() {
         onClose={() => setFolderSourcePath(null)}
         onConfirm={(source) => {
           workspace.setSourcePath(source.path);
-          actions.setSource(source);
+          alignSource.setSource(source);
           setFolderSourcePath(null);
         }}
       />

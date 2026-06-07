@@ -1,4 +1,4 @@
-import { AlignTools } from "@lisca/ui";
+import { AlignTools } from "@lisca/ui/features";;
 
 import type { DemoAlignState } from "../state/use-demo-align-state";
 

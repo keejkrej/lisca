@@ -1,5 +1,5 @@
-import { RoiPage } from "../src/components/roi-page";
+import { AnnotatePage } from "../src/components/annotate-page";
 
 export default function IndexRoute() {
-  return <RoiPage />;
+  return <AnnotatePage />;
 }

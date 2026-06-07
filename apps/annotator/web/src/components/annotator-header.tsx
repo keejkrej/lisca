@@ -1,11 +1,11 @@
-import { Menu, MenuItem, MenuPopup, MenuTrigger, buttonVariants, cn } from "@lisca/ui";
+import { Menu, MenuItem, MenuPopup, MenuTrigger, buttonVariants, cn } from "@lisca/ui/components";;
 import { ShellNavbar } from "@lisca/ui/shell";
 import { ChevronDown, Tags } from "lucide-react";
 
-import { useRoiPage } from "../state/roi-page-context";
+import { useAnnotatePage } from "../state/annotate-page-context";
 
 export function AnnotatorHeader() {
-  const { page } = useRoiPage();
+  const { state } = useAnnotatePage();
 
   return (
     <ShellNavbar.Annotator
@@ -31,11 +31,11 @@ export function AnnotatorHeader() {
             sideOffset={8}
           >
             <MenuItem
-              disabled={!page.workspacePath}
+              disabled={!state.workspacePath}
               className="h-auto min-h-0 items-start gap-2 py-2.5 text-left"
               onClick={() => {
-                page.setLabelError(null);
-                page.setLabelDialogOpen(true);
+                state.setLabelError(null);
+                state.setLabelDialogOpen(true);
               }}
             >
               <Tags className="size-4 shrink-0 text-muted-foreground" />
@@ -47,7 +47,7 @@ export function AnnotatorHeader() {
           </MenuPopup>
         </Menu>
       }
-      onPickWorkspace={() => page.setFilePickerOpen(true)}
+      onPickWorkspace={() => state.setFilePickerOpen(true)}
     />
   );
 }

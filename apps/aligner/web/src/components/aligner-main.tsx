@@ -7,38 +7,39 @@ import {
 import { ViewportCard } from "@lisca/ui/shell";
 import { useMemo } from "react";
 
-import { useAlignPage } from "../state/align-page-context";
+import { useAlignCanvas, useAlignCrop } from "../state/align-page-selectors";
 import { CropConfirmModal } from "./crop-confirm-modal";
 import { CropProgressModal } from "./crop-progress-modal";
 
 export function AlignerMain() {
-  const { state } = useAlignPage();
+  const canvas = useAlignCanvas();
+  const crop = useAlignCrop();
   const { handlePointerDown, handlePointerMove, handlePointerEnd, previewGrid } =
     useAlignCanvasGridHandlers({
-      disabled: state.cropping,
-      grid: state.grid,
-      patternZoomLocked: state.patternZoomLocked,
-      setGrid: state.setGrid,
-      toolMode: state.toolMode,
+      disabled: crop.cropping,
+      grid: canvas.grid,
+      patternZoomLocked: canvas.patternZoomLocked,
+      setGrid: canvas.setGrid,
+      toolMode: canvas.toolMode,
     });
-  const visibleStatus = useCanvasTransientStatus(state.status);
-  const activeToastStatus = state.frameLoading
+  const visibleStatus = useCanvasTransientStatus(canvas.status);
+  const activeToastStatus = canvas.frameLoading
     ? "Loading frame"
-    : state.scanLoading
+    : canvas.scanLoading
       ? "Scanning source"
       : visibleStatus;
   const toasts = useMemo(() => {
-    if (state.error) return [{ text: state.error, tone: "error" as const }];
+    if (canvas.error) return [{ text: canvas.error, tone: "error" as const }];
     if (activeToastStatus) return [{ text: activeToastStatus }];
     return [];
-  }, [activeToastStatus, state.error]);
+  }, [activeToastStatus, canvas.error]);
 
-  const emptyText = !state.workspacePath
+  const emptyText = !canvas.workspacePath
     ? "Pick a workspace."
-    : !state.source
+    : !canvas.source
       ? "Pick a source."
-      : state.scanLoading
-        ? "Scanning source..."
+      : canvas.scanLoading
+        ? "Scanning source…"
         : "No frame loaded.";
 
   return (
@@ -46,12 +47,12 @@ export function AlignerMain() {
       <ViewportCard>
         <AlignCanvas
           className="min-h-0 flex-1"
-          cursor={cursorForAlignTool(state.toolMode, state.grid.enabled, previewGrid != null)}
+          cursor={cursorForAlignTool(canvas.toolMode, canvas.grid.enabled, previewGrid != null)}
           emptyText={emptyText}
-          excludedCells={state.displayedExcludedCells}
-          frame={state.frame}
-          grid={state.grid}
-          loading={state.scanLoading || state.frameLoading}
+          excludedCells={canvas.displayedExcludedCells}
+          frame={canvas.frame}
+          grid={canvas.grid}
+          loading={canvas.scanLoading || canvas.frameLoading}
           previewGrid={previewGrid}
           toasts={toasts}
           onVirtualPointerCancel={handlePointerEnd}

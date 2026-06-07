@@ -1,0 +1,41 @@
+import { describe, expect, it } from "vitest";
+
+import {
+  createAnnotatorPersist,
+  createAnnotatorUiActions,
+  createInitialAnnotatorUiState,
+  roiRequestSelectionKey,
+} from "../src/atoms/annotator-ui.ts";
+
+describe("annotate-session helpers", () => {
+  const persist = createAnnotatorPersist("test-annotator-session");
+  const actions = createAnnotatorUiActions(persist);
+
+  it("roiRequestSelectionKey encodes selection dimensions", () => {
+    expect(
+      roiRequestSelectionKey({
+        pos: 1,
+        roi: 2,
+        channel: 3,
+        timeIndex: 4,
+        zIndex: 5,
+      }),
+    ).toBe("1:2:3:4:5");
+  });
+
+  it("setWorkspacePath clears frame and selection", () => {
+    let state = {
+      ...createInitialAnnotatorUiState(),
+      workspacePath: "/old",
+      selection: { pos: 1, roi: 1, channel: 0, timeIndex: 0, zIndex: 0 },
+      frame: { width: 10, height: 10 } as never,
+    };
+    const set = (update: typeof state | ((current: typeof state) => typeof state)) => {
+      state = typeof update === "function" ? update(state) : update;
+    };
+    actions.setWorkspacePath(set, "/new");
+    expect(state.workspacePath).toBe("/new");
+    expect(state.selection.pos).toBeNull();
+    expect(state.frame).toBeNull();
+  });
+});

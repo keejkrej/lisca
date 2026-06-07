@@ -1,8 +1,7 @@
 import type { AnnotationLabel, AnnotationMode } from "@lisca/contracts";
-import { Button, Section, cn } from "@lisca/ui";
-
-import { AnnotationModeToggle } from "@lisca/ui";
-import { AnnotationToolSlider } from "@lisca/ui";
+import { Button, cn } from "@lisca/ui/components";
+import { AnnotationModeToggle, AnnotationToolSlider } from "@lisca/ui/features";
+import { Section } from "@lisca/ui/shell";
 import { labelColorStyle, type AnnotationValue } from "../utils/annotation-utils";
 
 export function DemoAnnotatorRight(props: {

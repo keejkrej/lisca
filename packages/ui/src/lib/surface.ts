@@ -20,7 +20,7 @@ export const surfaceDialogClass =
 
 /** Full-screen modal backdrop. */
 export const modalOverlayClass =
-  "fixed inset-0 flex items-center justify-center bg-black/55 px-6 backdrop-blur-sm";
+  "fixed inset-0 flex items-center justify-center overscroll-contain bg-black/55 px-6 backdrop-blur-sm";
 
 /** Left/right shell sidebar tint (behind panel cards). */
 export const shellRailChromeClass = "bg-card/32";

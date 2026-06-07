@@ -1,4 +1,5 @@
-import { AppShell, LabelCreationDialog } from "@lisca/ui";
+import { AppShell } from "@lisca/ui/shell";
+import { LabelCreationDialog } from "@lisca/ui/features";;
 import { DemoNavbar, DemoNavbarActionButton } from "@lisca/web-demo";
 import { createFileRoute } from "@tanstack/react-router";
 import { Tags } from "lucide-react";

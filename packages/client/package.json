@@ -70,6 +70,30 @@
     "./atoms": {
       "types": "./src/atoms/index.ts",
       "import": "./src/atoms/index.ts"
+    },
+    "./atoms/align-ui": {
+      "types": "./src/atoms/align-ui.ts",
+      "import": "./src/atoms/align-ui.ts"
+    },
+    "./atoms/align-ui-aligner": {
+      "types": "./src/atoms/align-ui-aligner.ts",
+      "import": "./src/atoms/align-ui-aligner.ts"
+    },
+    "./atoms/align-ui-studio": {
+      "types": "./src/atoms/align-ui-studio.ts",
+      "import": "./src/atoms/align-ui-studio.ts"
+    },
+    "./atoms/annotator-ui": {
+      "types": "./src/atoms/annotator-ui.ts",
+      "import": "./src/atoms/annotator-ui.ts"
+    },
+    "./align-session/react": {
+      "types": "./src/use-align-session.ts",
+      "import": "./src/use-align-session.ts"
+    },
+    "./annotate-session/react": {
+      "types": "./src/use-annotate-session.ts",
+      "import": "./src/use-annotate-session.ts"
     }
   },
   "scripts": {
@@ -84,6 +108,7 @@
     "@effect/platform": "catalog:",
     "@effect/platform-browser": "catalog:",
     "@lisca/contracts": "workspace:*",
+    "@lisca/storage": "workspace:*",
     "@lisca/utils": "workspace:*",
     "effect": "catalog:"
   },
@@ -91,6 +116,7 @@
     "react": "^19.0.0"
   },
   "devDependencies": {
+    "@types/react": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

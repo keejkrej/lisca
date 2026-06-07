@@ -2,35 +2,35 @@ import { AnnotationCanvas } from "@lisca/ui/features";
 import { ViewportCard } from "@lisca/ui/shell";
 import { useCallback } from "react";
 
-import { useRoiPage } from "../state/roi-page-context";
+import { useAnnotatePage } from "../state/annotate-page-context";
 
 export function AnnotatorMain() {
-  const { page } = useRoiPage();
-  const classificationLabelId = page.annotation.current.classificationLabelId;
+  const { state } = useAnnotatePage();
+  const classificationLabelId = state.annotation.current.classificationLabelId;
 
   const onMaskCommit = useCallback(
     (mask: Uint8Array) => {
-      page.annotation.commit({
+      state.annotation.commit({
         classificationLabelId,
         mask,
       });
     },
-    [classificationLabelId, page.annotation.commit],
+    [classificationLabelId, state.annotation.commit],
   );
 
   return (
     <ViewportCard>
       <AnnotationCanvas
-        activeLabelId={page.activeLabelId}
-        brushSize={page.brushSize}
+        activeLabelId={state.activeLabelId}
+        brushSize={state.brushSize}
         className="min-h-0 flex-1"
-        disabled={!page.canEditSegmentation}
-        frame={page.frame}
-        labels={page.labels}
-        mask={page.annotation.current.mask}
-        overlayOpacity={page.overlayOpacity}
-        toasts={page.canvasToasts}
-        tool={page.tool}
+        disabled={!state.canEditSegmentation}
+        frame={state.frame}
+        labels={state.labels}
+        mask={state.annotation.current.mask}
+        overlayOpacity={state.overlayOpacity}
+        toasts={state.canvasToasts}
+        tool={state.tool}
         onMaskCommit={onMaskCommit}
       />
     </ViewportCard>

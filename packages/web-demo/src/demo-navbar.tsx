@@ -1,4 +1,5 @@
-import { Button, ShellThemeToggle } from "@lisca/ui";
+import { Button } from "@lisca/ui/components";
+import { ShellThemeToggle } from "@lisca/ui/shell";;
 import { ImageIcon } from "lucide-react";
 import { useRef, type ChangeEvent, type ReactNode } from "react";
 

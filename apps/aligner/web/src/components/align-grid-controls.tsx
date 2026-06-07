@@ -1,14 +1,15 @@
 import { AlignGridRail } from "@lisca/ui/features";
 
-import { useAlignPage } from "../state/align-page-context";
+import { useAlignCanvas, useAlignCrop } from "../state/align-page-selectors";
 
 export function AlignGridControls() {
-  const { state } = useAlignPage();
+  const canvas = useAlignCanvas();
+  const crop = useAlignCrop();
   return (
     <AlignGridRail
-      disabled={state.cropping || !state.frame}
-      grid={state.grid}
-      onGridChange={state.setGrid}
+      disabled={crop.cropping || !canvas.frame}
+      grid={canvas.grid}
+      onGridChange={canvas.setGrid}
     />
   );
 }

@@ -1,12 +1,12 @@
 import type { AnnotationLabel } from "@lisca/contracts";
 import { resultData, resultFailureMessage, resultLoading } from "@lisca/client/atoms";
+import { useAnnotateSessionCore } from "@lisca/client/annotate-session/react";
 import { runClientEffect } from "@lisca/client/runtime";
 import {
   useCanvasResourceTransaction,
   useCanvasTransientStatus,
-  useShellWorkspace,
-} from "@lisca/ui";
-import { clamp } from "@lisca/utils";
+} from "@lisca/ui/features";
+import { useShellWorkspace } from "@lisca/ui/shell";
 import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -22,7 +22,6 @@ import {
 import {
   annotatorUiActions,
   annotatorUiAtom,
-  currentPosition,
   currentRoi,
   requestKey,
   roiRequestSelectionKey,
@@ -32,11 +31,31 @@ import { emptyValueFor, useAnnotationHistory } from "./use-annotation-history";
 import { makeRequest } from "../utils/roi-request";
 import { encodeMaskToBase64Png, maskHasPixels } from "../utils/annotation-utils";
 
-export function useRoiPageState() {
+export function useAnnotateState() {
   const workspace = useShellWorkspace();
   const shellWorkspacePath = workspace.workspacePath;
   const [filePickerOpen, setFilePickerOpen] = useState(false);
   const [ui, setUi] = useAtom(annotatorUiAtom);
+
+  const scanResult = useAtomValue(
+    shellWorkspacePath ? roiWorkspaceScanAtom(shellWorkspacePath) : roiScanIdleAtom,
+  );
+  const labelsResult = useAtomValue(
+    shellWorkspacePath ? annotationLabelsAtom(shellWorkspacePath) : labelsIdleAtom,
+  );
+  const saveLabelsResult = useAtomValue(saveAnnotationLabelsAtom);
+  const runSaveLabels = useAtomSet(saveAnnotationLabelsAtom, { mode: "promise" });
+  const runSaveAnnotation = useAtomSet(saveRoiFrameAnnotationAtom, { mode: "promise" });
+
+  const session = useAnnotateSessionCore({
+    ui,
+    setUi,
+    actions: annotatorUiActions,
+    workspace,
+    scan: { scanResult, labelsResult, shellWorkspacePath },
+    toErrorMessage,
+  });
+
   const {
     workspacePath,
     selection,
@@ -60,67 +79,29 @@ export function useRoiPageState() {
     labelError,
     status,
     labelDialogOpen,
-  } = ui;
+  } = session.state;
 
-  const setSelection = useCallback(
-    (patch: Partial<typeof selection>) => annotatorUiActions.setSelection(setUi, patch),
-    [setUi],
-  );
-  const setContrast = useCallback(
-    (next: typeof contrast) => annotatorUiActions.setContrast(setUi, next),
-    [setUi],
-  );
-  const setMode = useCallback(
-    (next: typeof mode) => annotatorUiActions.setMode(setUi, next),
-    [setUi],
-  );
-  const setTool = useCallback(
-    (next: typeof tool) => annotatorUiActions.setTool(setUi, next),
-    [setUi],
-  );
-  const setBrushSize = useCallback(
-    (next: number) => annotatorUiActions.setBrushSize(setUi, next),
-    [setUi],
-  );
-  const setOverlayOpacity = useCallback(
-    (next: number) => annotatorUiActions.setOverlayOpacity(setUi, next),
-    [setUi],
-  );
-  const setActiveLabelId = useCallback(
-    (next: string | null) => annotatorUiActions.setActiveLabelId(setUi, next),
-    [setUi],
-  );
-  const setLabelDialogOpen = useCallback(
-    (open: boolean) => annotatorUiActions.setLabelDialogOpen(setUi, open),
-    [setUi],
-  );
-  const setLabelError = useCallback(
-    (error: string | null) => annotatorUiActions.setLabelError(setUi, error),
-    [setUi],
-  );
+  const {
+    setSelection,
+    setContrast,
+    setMode,
+    setTool,
+    setBrushSize,
+    setOverlayOpacity,
+    setActiveLabelId,
+    setLabelDialogOpen,
+    setLabelError,
+  } = session.actions;
+
+  const { scanLoading } = session.meta;
+  const { scan, position } = session.derived;
 
   const annotation = useAnnotationHistory(frame);
   const resetAnnotation = annotation.reset;
   const selectionChangingRef = useRef(false);
   const loadCanvasResources = useCanvasResourceTransaction();
 
-  const scanResult = useAtomValue(
-    shellWorkspacePath ? roiWorkspaceScanAtom(shellWorkspacePath) : roiScanIdleAtom,
-  );
-  const labelsResult = useAtomValue(
-    shellWorkspacePath ? annotationLabelsAtom(shellWorkspacePath) : labelsIdleAtom,
-  );
-  const saveLabelsResult = useAtomValue(saveAnnotationLabelsAtom);
-  const runSaveLabels = useAtomSet(saveAnnotationLabelsAtom, { mode: "promise" });
-  const runSaveAnnotation = useAtomSet(saveRoiFrameAnnotationAtom, { mode: "promise" });
-
-  const scan = resultData(scanResult) ?? null;
   const labels = resultData(labelsResult) ?? [];
-  const scanLoading = Boolean(
-    shellWorkspacePath && (resultLoading(scanResult) || resultLoading(labelsResult)),
-  );
-
-  const position = useMemo(() => currentPosition(scan, selection.pos), [scan, selection.pos]);
   const selectedRoi = useMemo(() => currentRoi(position, selection.roi), [position, selection.roi]);
   const request = useMemo(
     () =>
@@ -172,79 +153,6 @@ export function useRoiPageState() {
     },
     [guardDirty],
   );
-
-  useEffect(() => {
-    if (workspace.workspacePath === workspacePath) return;
-    if (workspace.workspacePath == null && workspacePath != null) {
-      workspace.setWorkspacePath(workspacePath);
-      return;
-    }
-    annotatorUiActions.setWorkspacePath(setUi, workspace.workspacePath);
-  }, [setUi, workspace, workspacePath]);
-
-  useEffect(() => {
-    if (scanLoading) {
-      annotatorUiActions.setScanError(setUi, null);
-      annotatorUiActions.setStatus(setUi, "Scanning ROI workspace");
-    }
-  }, [scanLoading, setUi]);
-
-  useEffect(() => {
-    if (workspacePath !== shellWorkspacePath) return;
-    if (scan) annotatorUiActions.setStatus(setUi, "ROI workspace loaded");
-  }, [scan, setUi, shellWorkspacePath, workspacePath]);
-
-  useEffect(() => {
-    if (workspacePath !== shellWorkspacePath) return;
-    if (labels.length === 0) return;
-    annotatorUiActions.syncActiveLabelFromLabels(
-      setUi,
-      labels.map((label) => label.id),
-    );
-  }, [labels, setUi, shellWorkspacePath, workspacePath]);
-
-  useEffect(() => {
-    if (workspacePath !== shellWorkspacePath) return;
-    const scanLoadError = resultFailureMessage(scanResult);
-    const labelsLoadError = resultFailureMessage(labelsResult);
-    const error = scanLoadError ?? labelsLoadError;
-    if (!error) return;
-    annotatorUiActions.setFrame(setUi, null);
-    annotatorUiActions.setScanError(setUi, toErrorMessage(error, "ROI workspace load failed"));
-  }, [labelsResult, scanResult, setUi, shellWorkspacePath, workspacePath]);
-
-  useEffect(() => {
-    const firstPosition = scan?.positions[0] ?? null;
-    if (!firstPosition) {
-      setSelection({ pos: null, roi: null, channel: null, timeIndex: 0, zIndex: 0 });
-      return;
-    }
-    if (!scan?.positions.some((entry) => entry.pos === selection.pos)) {
-      setSelection({ pos: firstPosition.pos });
-    }
-  }, [scan, selection.pos, setSelection]);
-
-  useEffect(() => {
-    if (!position) return;
-    const patch = {
-      channel: position.channels.includes(selection.channel ?? Number.NaN)
-        ? selection.channel
-        : (position.channels[0] ?? null),
-      roi: position.rois.some((entry) => entry.roi === selection.roi)
-        ? selection.roi
-        : (position.rois[0]?.roi ?? null),
-      timeIndex: clamp(selection.timeIndex, 0, Math.max(0, position.times.length - 1)),
-      zIndex: clamp(selection.zIndex, 0, Math.max(0, position.zSlices.length - 1)),
-    };
-    if (
-      patch.channel !== selection.channel ||
-      patch.roi !== selection.roi ||
-      patch.timeIndex !== selection.timeIndex ||
-      patch.zIndex !== selection.zIndex
-    ) {
-      setSelection(patch);
-    }
-  }, [position, selection, setSelection]);
 
   useEffect(() => {
     setContrast(null);

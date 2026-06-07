@@ -1,12 +1,14 @@
-import { Button, ReadonlyPathField, Section } from "@lisca/ui";
+import { Button } from "@lisca/ui/components";
+import { ReadonlyPathField, Section } from "@lisca/ui/shell";
 
-import { useAlignPage } from "../state/align-page-context";
+import { useAlignCrop, useAlignNav } from "../state/align-page-selectors";
 
 export function AlignSaveSection() {
-  const { state } = useAlignPage();
-  const pos = state.selection.pos;
-  const canSave = Boolean(state.workspacePath && state.frame && !state.cropping);
-  const canCrop = Boolean(state.workspacePath && state.source && state.frame && !state.cropping);
+  const nav = useAlignNav();
+  const crop = useAlignCrop();
+  const pos = nav.selection.pos;
+  const canSave = Boolean(nav.workspacePath && nav.frame && !crop.cropping);
+  const canCrop = Boolean(nav.workspacePath && nav.source && nav.frame && !crop.cropping);
 
   return (
     <Section
@@ -28,12 +30,12 @@ export function AlignSaveSection() {
       <div className="grid grid-cols-3 gap-2">
         <Button
           className="w-full justify-center"
-          disabled={!canSave || state.saving}
-          loading={state.saving}
+          disabled={!canSave || nav.saving}
+          loading={nav.saving}
           size="sm"
           type="button"
           variant="outline"
-          onClick={() => void state.saveCurrent()}
+          onClick={() => void nav.saveCurrent()}
         >
           Save
         </Button>
@@ -43,17 +45,17 @@ export function AlignSaveSection() {
           size="sm"
           type="button"
           variant="outline"
-          onClick={() => void state.cropCurrent()}
+          onClick={() => void nav.cropCurrent()}
         >
           Crop
         </Button>
         <Button
           className="w-full justify-center"
-          disabled={!state.workspacePath || !state.source || state.cropping}
+          disabled={!nav.workspacePath || !nav.source || crop.cropping}
           size="sm"
           type="button"
           variant="outline"
-          onClick={() => void state.cropBatch()}
+          onClick={() => void nav.cropBatch()}
         >
           Batch
         </Button>

@@ -80,7 +80,6 @@
         "react-dom": "19.1.0",
         "react-native": "0.81.5",
         "react-native-gesture-handler": "~2.28.0",
-        "react-native-reanimated": "~4.1.1",
         "react-native-safe-area-context": "~5.6.0",
         "react-native-screens": "~4.16.0",
         "react-native-svg": "15.12.1",
@@ -105,6 +104,7 @@
         "@lisca/contracts": "workspace:*",
         "@lisca/storage": "workspace:*",
         "@lisca/ui": "workspace:*",
+        "@lisca/ui-headless": "workspace:*",
         "@lisca/utils": "workspace:*",
         "@lisca/web-app": "workspace:*",
         "@tanstack/react-router": "catalog:",
@@ -189,7 +189,6 @@
         "react-dom": "19.1.0",
         "react-native": "0.81.5",
         "react-native-gesture-handler": "~2.28.0",
-        "react-native-reanimated": "~4.1.1",
         "react-native-safe-area-context": "~5.6.0",
         "react-native-screens": "~4.16.0",
         "react-native-svg": "15.12.1",
@@ -275,7 +274,6 @@
         "react-dom": "19.1.0",
         "react-native": "0.81.5",
         "react-native-gesture-handler": "~2.28.0",
-        "react-native-reanimated": "~4.1.1",
         "react-native-safe-area-context": "~5.6.0",
         "react-native-screens": "~4.16.0",
         "react-native-svg": "15.12.1",
@@ -302,6 +300,7 @@
         "@lisca/storage": "workspace:*",
         "@lisca/studio-result": "workspace:*",
         "@lisca/ui": "workspace:*",
+        "@lisca/ui-headless": "workspace:*",
         "@lisca/utils": "workspace:*",
         "@lisca/web-app": "workspace:*",
         "@observablehq/plot": "^0.6.17",
@@ -346,10 +345,12 @@
         "@effect/platform": "catalog:",
         "@effect/platform-browser": "catalog:",
         "@lisca/contracts": "workspace:*",
+        "@lisca/storage": "workspace:*",
         "@lisca/utils": "workspace:*",
         "effect": "catalog:",
       },
       "devDependencies": {
+        "@types/react": "catalog:",
         "typescript": "catalog:",
         "vitest": "catalog:",
       },
@@ -418,6 +419,7 @@
       "dependencies": {
         "@base-ui/react": "^1.4.1",
         "@lisca/contracts": "workspace:*",
+        "@lisca/ui-headless": "workspace:*",
         "@lisca/utils": "workspace:*",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
@@ -436,12 +438,28 @@
         "react-dom": "^19.0.0",
       },
     },
+    "packages/ui-headless": {
+      "name": "@lisca/ui-headless",
+      "version": "0.1.0",
+      "dependencies": {
+        "@lisca/contracts": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/react": "catalog:",
+        "typescript": "catalog:",
+        "vitest": "catalog:",
+      },
+      "peerDependencies": {
+        "react": "^19.0.0",
+      },
+    },
     "packages/ui-native": {
       "name": "@lisca/ui-native",
       "version": "0.1.0",
       "dependencies": {
         "@lisca/contracts": "workspace:*",
         "@lisca/storage": "workspace:*",
+        "@lisca/ui-headless": "workspace:*",
         "@lisca/utils": "workspace:*",
         "@react-native-community/slider": "^4.5.7",
         "@shopify/react-native-skia": "^2.2.12",
@@ -480,6 +498,7 @@
         "@lisca/client": "workspace:*",
         "@lisca/contracts": "workspace:*",
         "@lisca/ui": "workspace:*",
+        "@lisca/ui-headless": "workspace:*",
         "@tailwindcss/vite": "catalog:",
         "@tanstack/react-router": "catalog:",
         "@tanstack/router-plugin": "catalog:",
@@ -534,6 +553,8 @@
   ],
   "overrides": {
     "effect": "catalog:",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
   },
   "catalog": {
     "@effect-atom/atom-react": "^0.5.0",
@@ -982,6 +1003,8 @@
     "@lisca/studio-web": ["@lisca/studio-web@workspace:apps/studio/web"],
 
     "@lisca/ui": ["@lisca/ui@workspace:packages/ui"],
+
+    "@lisca/ui-headless": ["@lisca/ui-headless@workspace:packages/ui-headless"],
 
     "@lisca/ui-native": ["@lisca/ui-native@workspace:packages/ui-native"],
 
@@ -2971,10 +2994,6 @@
 
     "@istanbuljs/load-nyc-config/js-yaml": ["js-yaml@3.14.2", "", { "dependencies": { "argparse": "^1.0.7", "esprima": "^4.0.0" }, "bin": { "js-yaml": "bin/js-yaml.js" } }, "sha512-PMSmkqxr106Xa156c2M265Z+FTrPl+oxd/rgOQy2tijQeK5TxQ43psO1ZCwhVOSdnn+RzkzlRz/eY4BgJBYVpg=="],
 
-    "@lisca/studio-web/react": ["react@19.3.0-canary-f0dfee38-20260529", "", {}, "sha512-Zzp9+X7SzT40LLcIv2Mm0decTE0NCmze39Jt9kVH0oZ1c3UWD3fU8ho6yVjYv6YHPgkYWheHTqe55XXUpQ5zDQ=="],
-
-    "@lisca/studio-web/react-dom": ["react-dom@19.3.0-canary-f0dfee38-20260529", "", { "dependencies": { "scheduler": "0.28.0-canary-f0dfee38-20260529" }, "peerDependencies": { "react": "19.3.0-canary-f0dfee38-20260529" } }, "sha512-gwg+iDe5lazuQOtRIL8PWwkuFtQohGsrEqCIWuF8ORLskWVUyGQK1K0LJoV6Ge+MmLJ0zl2ElMRvPcjE+MYHPQ=="],
-
     "@malept/flatpak-bundler/fs-extra": ["fs-extra@9.1.0", "", { "dependencies": { "at-least-node": "^1.0.0", "graceful-fs": "^4.2.0", "jsonfile": "^6.0.1", "universalify": "^2.0.0" } }, "sha512-hcg3ZmepS30/7BSFqRvoo3DOMQu7IjqxO5nCDt+zM9XWjb33Wg7ziNT+Qvqbuc3+gWpzO02JubVyk2G4Zvo1OQ=="],
 
     "@npmcli/fs/semver": ["semver@7.8.0", "", { "bin": { "semver": "bin/semver.js" } }, "sha512-AcM7dV/5ul4EekoQ29Agm5vri8JNqRyj39o0qpX6vDF2GZrtutZl5RwgD1XnZjiTAfncsJhMI48QQH3sN87YNA=="],
@@ -3272,8 +3291,6 @@
     "@isaacs/cliui/wrap-ansi/ansi-styles": ["ansi-styles@6.2.3", "", {}, "sha512-4Dj6M28JB+oAH8kFkTLUo+a2jwOFkuqb3yucU0CANcRRUbxS0cP0nZYCGjcc3BNXwRIsUVmDGgzawme7zvJHvg=="],
 
     "@istanbuljs/load-nyc-config/js-yaml/argparse": ["argparse@1.0.10", "", { "dependencies": { "sprintf-js": "~1.0.2" } }, "sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg=="],
-
-    "@lisca/studio-web/react-dom/scheduler": ["scheduler@0.28.0-canary-f0dfee38-20260529", "", {}, "sha512-HWtshlwW9GuncH7qQ+xRwMpYqT7CuPtJwbezV15dY+6S59UdPzr8OKjHEU1Xl/lP+dc7XnZzim0KY5epbWj09Q=="],
 
     "@react-native/metro-babel-transformer/@react-native/babel-preset/@react-native/babel-plugin-codegen": ["@react-native/babel-plugin-codegen@0.85.3", "", { "dependencies": { "@babel/traverse": "^7.29.0", "@react-native/codegen": "0.85.3" } }, "sha512-Wc94zGfeFG8Njf9SHMPfYZP04kjigkOps6F1TYTvd7ZVXuGxqseCDgxc50LWcOhOCLypI9n3oVVqz81C3p44ZA=="],
 

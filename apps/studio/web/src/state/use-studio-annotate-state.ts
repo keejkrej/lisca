@@ -8,7 +8,7 @@ import type {
   RoiWorkspaceScan,
 } from "@lisca/contracts";
 import { resultData, resultFailureMessage, resultLoading } from "@lisca/client/atoms";
-import { useCanvasResourceTransaction, useCanvasTransientStatus } from "@lisca/ui";
+import { useCanvasResourceTransaction, useCanvasTransientStatus } from "@lisca/ui/features";;
 import { clamp } from "@lisca/utils";
 import { useAtomValue } from "@effect-atom/atom-react";
 import { useCallback, useEffect, useMemo } from "react";

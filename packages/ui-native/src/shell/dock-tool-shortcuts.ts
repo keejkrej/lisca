@@ -1,16 +1,8 @@
+import { dockToolLabel, type DockToolAction } from "@lisca/ui-headless/dock";
 import { useEffect } from "react";
 
-export type DockToolAction = {
-  id: string;
-  label: string;
-  disabled?: boolean;
-  active?: boolean;
-  onSelect: () => void;
-};
-
-export function dockToolLabel(label: string, index: number): string {
-  return `${label} (${index + 1})`;
-}
+export type { DockToolAction };
+export { dockToolLabel };
 
 /** Keyboard shortcuts are no-ops on native; hook kept for API parity with web. */
 export function useDockToolShortcuts(

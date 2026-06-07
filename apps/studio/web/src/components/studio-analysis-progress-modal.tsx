@@ -1,4 +1,5 @@
-import { Spinner, DialogSurface, ModalScrim } from "@lisca/ui";
+import { Spinner } from "@lisca/ui/components";
+import { DialogSurface, ModalScrim } from "@lisca/ui/shell";;
 
 import { clamp } from "@lisca/utils";
 

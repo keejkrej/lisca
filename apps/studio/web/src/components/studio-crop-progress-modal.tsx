@@ -1,4 +1,4 @@
-import { CropProgressModal } from "@lisca/ui";
+import { CropProgressModal } from "@lisca/ui/features";;
 
 import { useStudioAlignPage } from "../state/studio-align-page-context";
 

@@ -11,7 +11,7 @@ import {
   loadImageFile,
   stemName,
 } from "@lisca/browser-frame";
-import type { AnnotationTool } from "@lisca/ui";
+import type { AnnotationTool } from "@lisca/ui/features";
 import { defaultContrastDomain } from "@lisca/utils";
 import { useCallback, useState } from "react";
 

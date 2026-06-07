@@ -1,5 +1,6 @@
 import { AlignSelectionCounts } from "@lisca/ui/features";
-import { Button, Section } from "@lisca/ui";
+import { Button } from "@lisca/ui/components";
+import { Section } from "@lisca/ui/shell";;
 
 import type { DemoAlignState } from "../state/use-demo-align-state";
 

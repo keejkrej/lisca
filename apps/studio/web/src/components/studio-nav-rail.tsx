@@ -1,11 +1,11 @@
+import { cn } from "@lisca/ui/components";
 import {
-  cn,
   ConnectionStatus,
   ShellThemeToggle,
   shellRailChromeClass,
   surfacePanelClass,
   useShellServer,
-} from "@lisca/ui";
+} from "@lisca/ui/shell";
 import { useRouterState } from "@tanstack/react-router";
 
 import { NavButton } from "./studio-nav-button";

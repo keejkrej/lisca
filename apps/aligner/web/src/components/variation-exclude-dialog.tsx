@@ -1,4 +1,5 @@
-import { Button, cn, DialogSurface, Input, ModalScrim, Slider } from "@lisca/ui";
+import { Button, cn, Input, Slider } from "@lisca/ui/components";
+import { DialogSurface, ModalScrim } from "@lisca/ui/shell";;
 import { useMemo } from "react";
 
 import type { VariationExcludePreview } from "../state/use-align-state";

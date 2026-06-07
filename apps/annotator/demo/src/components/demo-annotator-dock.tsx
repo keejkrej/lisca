@@ -1,11 +1,6 @@
-import {
-  Button,
-  DockToolGrid,
-  ReadonlyPathField,
-  Section,
-  type AnnotationTool,
-  type DockToolAction,
-} from "@lisca/ui";
+import { Button } from "@lisca/ui/components";
+import type { AnnotationTool } from "@lisca/ui/features";
+import { DockToolGrid, ReadonlyPathField, Section, type DockToolAction } from "@lisca/ui/shell";
 import { stemName } from "@lisca/browser-frame";
 
 import type { DemoAnnotatorState } from "../state/use-demo-annotator-state";

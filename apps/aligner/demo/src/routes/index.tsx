@@ -1,4 +1,4 @@
-import { AppShell } from "@lisca/ui";
+import { AppShell } from "@lisca/ui/shell";;
 import { DemoNavbar } from "@lisca/web-demo";
 import { createFileRoute } from "@tanstack/react-router";
 

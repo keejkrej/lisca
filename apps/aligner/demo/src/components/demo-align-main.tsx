@@ -1,10 +1,5 @@
-import {
-  AlignCanvas,
-  cursorForAlignTool,
-  useAlignCanvasGridHandlers,
-  useCanvasTransientStatus,
-  ViewportCard,
-} from "@lisca/ui";
+import { ViewportCard } from "@lisca/ui/shell";
+import { AlignCanvas, cursorForAlignTool, useAlignCanvasGridHandlers, useCanvasTransientStatus } from "@lisca/ui/features";;
 import { frameWithContrast } from "@lisca/browser-frame";
 import { useMemo } from "react";
 

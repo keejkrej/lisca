@@ -1,12 +1,19 @@
-import { Button, DialogSurface, ModalScrim } from "@lisca/ui";
+import { cropConfirmCopy } from "@lisca/ui-headless/crop";
+import { Button } from "@lisca/ui/components";
+import { DialogSurface, ModalScrim } from "@lisca/ui/shell";
 
-import { useAlignPage } from "../state/align-page-context";
+import { useAlignCrop } from "../state/align-page-selectors";
 
 export function CropConfirmModal() {
-  const { state } = useAlignPage();
-  const confirm = state.cropConfirm;
+  const crop = useAlignCrop();
+  const confirm = crop.cropConfirm;
   if (!confirm) return null;
 
+  const copy = cropConfirmCopy({
+    existingCount: confirm.existingPositions.length,
+    totalCount: confirm.positions.length,
+    singlePosition: confirm.kind === "single" ? confirm.positions[0] : undefined,
+  });
   const existingList = confirm.existingPositions.map((pos) => `Pos${pos}`).join(", ");
 
   return (
@@ -15,27 +22,23 @@ export function CropConfirmModal() {
         <div className="space-y-4">
           <div className="space-y-1">
             <h2 id="crop-confirm-title" className="font-medium text-foreground">
-              ROI output already exists
+              {copy.title}
             </h2>
-            <p className="text-muted-foreground text-sm">
-              {confirm.kind === "single"
-                ? `roi/Pos${confirm.positions[0]} already exists. Overwrite the existing cropped ROI files for this position?`
-                : `${confirm.existingPositions.length} of ${confirm.positions.length} saved positions already have ROI output. Overwrite those folders or skip them and crop only the remaining positions.`}
-            </p>
-            {confirm.kind === "batch" ? (
+            <p className="text-muted-foreground text-sm">{copy.description}</p>
+            {copy.showSkipExisting ? (
               <p className="max-h-20 overflow-auto text-muted-foreground text-xs">{existingList}</p>
             ) : null}
           </div>
           <div className="flex justify-end gap-2">
-            <Button size="sm" type="button" variant="outline" onClick={state.cancelCropConfirm}>
+            <Button size="sm" type="button" variant="outline" onClick={crop.cancelCropConfirm}>
               Cancel
             </Button>
-            {confirm.kind === "batch" ? (
-              <Button size="sm" type="button" variant="outline" onClick={state.skipExistingCrop}>
+            {copy.showSkipExisting ? (
+              <Button size="sm" type="button" variant="outline" onClick={crop.skipExistingCrop}>
                 Skip Existing
               </Button>
             ) : null}
-            <Button size="sm" type="button" onClick={state.confirmCropOverwrite}>
+            <Button size="sm" type="button" onClick={crop.confirmCropOverwrite}>
               Overwrite
             </Button>
           </div>

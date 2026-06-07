@@ -1,7 +1,7 @@
 import type { StudioAnalysisCsvFile } from "@lisca/contracts";
 import { resultData } from "@lisca/client/atoms";
 import { RegistryContext, useAtomSet } from "@effect-atom/atom-react";
-import { Spinner } from "@lisca/ui";
+import { Spinner } from "@lisca/ui/components";;
 import { AppShell, DockButton, DockToolGrid, ViewportCard } from "@lisca/ui/shell";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";

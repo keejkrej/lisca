@@ -3,62 +3,63 @@ import {
   findNavigationOptionIndex,
   stepNavigationValue,
   toNavigationOptions,
-} from "@lisca/ui";
+} from "@lisca/ui/features";
 import { clamp, selectedIndex } from "@lisca/utils";
 import { useMemo } from "react";
 
-import { useAlignPage } from "../state/align-page-context";
+import { useAlignCrop, useAlignNav } from "../state/align-page-selectors";
 
 export function AlignFrameNavigation() {
-  const { state } = useAlignPage();
+  const nav = useAlignNav();
+  const crop = useAlignCrop();
   const positionOptions = useMemo(
-    () => toNavigationOptions(state.scan?.positions ?? []),
-    [state.scan],
+    () => toNavigationOptions(nav.scan?.positions ?? []),
+    [nav.scan],
   );
   const channelOptions = useMemo(
-    () => toNavigationOptions(state.scan?.channels ?? []),
-    [state.scan],
+    () => toNavigationOptions(nav.scan?.channels ?? []),
+    [nav.scan],
   );
-  const timeIndex = selectedIndex(state.scan?.times, state.selection.time);
-  const zIndex = selectedIndex(state.scan?.zSlices, state.selection.z);
-  const timeMax = Math.max(0, (state.scan?.times.length ?? 1) - 1);
-  const zMax = Math.max(0, (state.scan?.zSlices.length ?? 1) - 1);
-  const posIndex = findNavigationOptionIndex(positionOptions, state.selection.pos);
-  const chIndex = findNavigationOptionIndex(channelOptions, state.selection.channel);
-  const disabled = !state.scan || state.cropping;
+  const timeIndex = selectedIndex(nav.scan?.times, nav.selection.time);
+  const zIndex = selectedIndex(nav.scan?.zSlices, nav.selection.z);
+  const timeMax = Math.max(0, (nav.scan?.times.length ?? 1) - 1);
+  const zMax = Math.max(0, (nav.scan?.zSlices.length ?? 1) - 1);
+  const posIndex = findNavigationOptionIndex(positionOptions, nav.selection.pos);
+  const chIndex = findNavigationOptionIndex(channelOptions, nav.selection.channel);
+  const disabled = !nav.scan || crop.cropping;
 
   return (
     <FrameNavigation
       position={{
-        value: state.selection.pos,
+        value: nav.selection.pos,
         options: positionOptions,
         disabled,
-        onChange: (pos) => state.setSelection({ pos }),
+        onChange: (pos) => nav.setSelection({ pos }),
         previousDisabled: disabled || posIndex <= 0,
         nextDisabled: disabled || posIndex >= positionOptions.length - 1,
         onPrevious: () => {
-          const next = stepNavigationValue(positionOptions, state.selection.pos, -1);
-          if (next != null) state.setSelection({ pos: next });
+          const next = stepNavigationValue(positionOptions, nav.selection.pos, -1);
+          if (next != null) nav.setSelection({ pos: next });
         },
         onNext: () => {
-          const next = stepNavigationValue(positionOptions, state.selection.pos, 1);
-          if (next != null) state.setSelection({ pos: next });
+          const next = stepNavigationValue(positionOptions, nav.selection.pos, 1);
+          if (next != null) nav.setSelection({ pos: next });
         },
       }}
       channel={{
-        value: state.selection.channel,
+        value: nav.selection.channel,
         options: channelOptions,
         disabled,
-        onChange: (channel) => state.setSelection({ channel }),
+        onChange: (channel) => nav.setSelection({ channel }),
         previousDisabled: disabled || chIndex <= 0,
         nextDisabled: disabled || chIndex >= channelOptions.length - 1,
         onPrevious: () => {
-          const next = stepNavigationValue(channelOptions, state.selection.channel, -1);
-          if (next != null) state.setSelection({ channel: next });
+          const next = stepNavigationValue(channelOptions, nav.selection.channel, -1);
+          if (next != null) nav.setSelection({ channel: next });
         },
         onNext: () => {
-          const next = stepNavigationValue(channelOptions, state.selection.channel, 1);
-          if (next != null) state.setSelection({ channel: next });
+          const next = stepNavigationValue(channelOptions, nav.selection.channel, 1);
+          if (next != null) nav.setSelection({ channel: next });
         },
       }}
       timepoint={{
@@ -68,13 +69,13 @@ export function AlignFrameNavigation() {
         step: 1,
         disabled: disabled || timeMax <= 0,
         onCommit: (i) =>
-          state.setSelection({ time: state.scan?.times[clamp(Math.round(i), 0, timeMax)] ?? 0 }),
+          nav.setSelection({ time: nav.scan?.times[clamp(Math.round(i), 0, timeMax)] ?? 0 }),
         previousDisabled: disabled || timeIndex <= 0,
         nextDisabled: disabled || timeIndex >= timeMax,
         onPrevious: () =>
-          state.setSelection({ time: state.scan?.times[Math.max(0, timeIndex - 1)] ?? 0 }),
+          nav.setSelection({ time: nav.scan?.times[Math.max(0, timeIndex - 1)] ?? 0 }),
         onNext: () =>
-          state.setSelection({ time: state.scan?.times[Math.min(timeMax, timeIndex + 1)] ?? 0 }),
+          nav.setSelection({ time: nav.scan?.times[Math.min(timeMax, timeIndex + 1)] ?? 0 }),
       }}
       zPlane={{
         value: zIndex,
@@ -83,13 +84,13 @@ export function AlignFrameNavigation() {
         step: 1,
         disabled: disabled || zMax <= 0,
         onCommit: (i) =>
-          state.setSelection({ z: state.scan?.zSlices[clamp(Math.round(i), 0, zMax)] ?? 0 }),
+          nav.setSelection({ z: nav.scan?.zSlices[clamp(Math.round(i), 0, zMax)] ?? 0 }),
         previousDisabled: disabled || zIndex <= 0,
         nextDisabled: disabled || zIndex >= zMax,
         onPrevious: () =>
-          state.setSelection({ z: state.scan?.zSlices[Math.max(0, zIndex - 1)] ?? 0 }),
+          nav.setSelection({ z: nav.scan?.zSlices[Math.max(0, zIndex - 1)] ?? 0 }),
         onNext: () =>
-          state.setSelection({ z: state.scan?.zSlices[Math.min(zMax, zIndex + 1)] ?? 0 }),
+          nav.setSelection({ z: nav.scan?.zSlices[Math.min(zMax, zIndex + 1)] ?? 0 }),
       }}
     />
   );

@@ -1,6 +1,6 @@
-import { Spinner } from "@lisca/ui";
+import { Spinner } from "@lisca/ui/components";
 import { createFileRoute } from "@tanstack/react-router";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, ViewTransition } from "react";
 
 const ResultPage = lazy(() => import("../result/result-page"));
 
@@ -14,8 +14,16 @@ function ResultPageFallback() {
 
 export const Route = createFileRoute("/result")({
   component: () => (
-    <Suspense fallback={<ResultPageFallback />}>
-      <ResultPage />
+    <Suspense
+      fallback={
+        <ViewTransition exit="fade-out" default="none">
+          <ResultPageFallback />
+        </ViewTransition>
+      }
+    >
+      <ViewTransition enter="fade-in" default="none">
+        <ResultPage />
+      </ViewTransition>
     </Suspense>
   ),
 });

@@ -1,5 +1,14 @@
-import type { CropRoiProgress, CropRoiRequest } from "@lisca/contracts";
+import type {
+  AlignGridCellCoord,
+  AlignGridState,
+  AutoExcludePreviewResponse,
+  CropRoiProgress,
+  CropRoiRequest,
+  FrameRequest,
+  FrameResult,
+} from "@lisca/contracts";
 import { isDoneCropStatus } from "@lisca/contracts";
+import { countVisibleAlignGridCells } from "@lisca/utils";
 
 import type { AlignerDataPort } from "./ports/types.ts";
 import { runClientEffect } from "./runtime.ts";
@@ -55,6 +64,75 @@ export type RunCropRoiOptions = {
  * state. Shared by the aligner and studio align sessions; callers supply the
  * request and the side effects (progress/status/navigation) they care about.
  */
+export type ExcludedByPosition = Record<number, AlignGridCellCoord[]>;
+
+const emptyExcludedCells: AlignGridCellCoord[] = [];
+
+export function deriveCurrentExcludedCells(
+  excludedCellsByPosition: ExcludedByPosition,
+  position: number,
+): AlignGridCellCoord[] {
+  return excludedCellsByPosition[position] ?? emptyExcludedCells;
+}
+
+export function deriveDisplayedExcludedCells(
+  excludedCellsByPosition: ExcludedByPosition,
+  loadedFramePosition: number | undefined,
+  selectionPosition: number,
+): AlignGridCellCoord[] {
+  return (
+    excludedCellsByPosition[loadedFramePosition ?? selectionPosition] ?? emptyExcludedCells
+  );
+}
+
+export function deriveVisibleCounts(
+  frame: FrameResult | null,
+  grid: AlignGridState,
+  displayedExcludedCells: Iterable<AlignGridCellCoord>,
+): { included: number; excluded: number } {
+  return frame
+    ? countVisibleAlignGridCells(frame, grid, displayedExcludedCells)
+    : { included: 0, excluded: 0 };
+}
+
+export function isCropping(cropProgress: CropRoiProgress | null): boolean {
+  return cropProgress != null && !isDoneCropStatus(cropProgress.status);
+}
+
+export function cellsBelowVariationThreshold(
+  preview: AutoExcludePreviewResponse,
+  threshold: number,
+): AlignGridCellCoord[] {
+  return preview.cellScores
+    .filter((cell) => cell.score <= threshold)
+    .map(({ i, j }) => ({ i, j }));
+}
+
+export type CropConfirmState = {
+  kind: "single" | "batch";
+  positions: number[];
+  existingPositions: number[];
+};
+
+export function cropPositionsAfterSkip(
+  positions: number[],
+  existingPositions: number[],
+): number[] {
+  const existing = new Set(existingPositions);
+  return positions.filter((pos) => !existing.has(pos));
+}
+
+export function shouldApplySourceScan(
+  scanSourceKey: string | null,
+  activeSourceKey: string,
+): boolean {
+  return scanSourceKey !== activeSourceKey;
+}
+
+export function frameLoadSelectionKey(selection: FrameRequest): string {
+  return JSON.stringify(selection);
+}
+
 export async function runCropRoi(options: RunCropRoiOptions): Promise<void> {
   const { client, request, onProgress, onError, onCompleted, toErrorMessage } = options;
   const totalPositions = request.positions.length;

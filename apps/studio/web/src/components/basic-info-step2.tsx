@@ -1,4 +1,5 @@
 import {
+  cn,
   Field,
   FieldLabel,
   Input,
@@ -7,8 +8,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  cn,
-} from "@lisca/ui";
+} from "@lisca/ui/components";
 
 import morphologyUrl from "../assets/features/morphology.svg?url";
 import partcountUrl from "../assets/features/partcount.svg?url";

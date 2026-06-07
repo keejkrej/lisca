@@ -1,4 +1,4 @@
-import { ShellThemeProvider } from "@lisca/ui";
+import { ShellThemeProvider } from "@lisca/ui/shell";;
 import { RouterProvider, type AnyRouter } from "@tanstack/react-router";
 import { StrictMode, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";

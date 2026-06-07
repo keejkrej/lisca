@@ -1,4 +1,5 @@
-import { Button, ReadonlyPathField, Section } from "@lisca/ui";
+import { Button } from "@lisca/ui/components";
+import { ReadonlyPathField, Section } from "@lisca/ui/shell";;
 import { stemName } from "@lisca/browser-frame";
 
 import type { DemoAlignState } from "../state/use-demo-align-state";

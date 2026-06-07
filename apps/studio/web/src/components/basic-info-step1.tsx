@@ -1,13 +1,11 @@
 import type { HostFilePickerMode, StudioDataSourceKind } from "@lisca/contracts";
+import { Field, FieldLabel, Input } from "@lisca/ui/components";
 import {
-  Field,
-  FieldLabel,
   FolderSourceParseModal,
-  type HostFilePickerOperations,
   HostFilePickerDialog,
-  Input,
   SourcePickerModal,
-} from "@lisca/ui";
+} from "@lisca/ui/features";
+import type { HostFilePickerOperations } from "@lisca/ui-headless/host";
 import { useState } from "react";
 
 import { useStudioStore } from "../state/studio-store";
@@ -98,7 +96,7 @@ export function BasicInfoStep1({ hostPort }: { hostPort: HostFilePickerOperation
               autoComplete="off"
               className="w-full cursor-pointer"
               id="studio-data-path"
-              placeholder="Click to choose source..."
+              placeholder="Click to choose source…"
               value={info1.dataPath}
               onClick={() => setOpenDataModalOpen(true)}
               onKeyDown={(event) => {
@@ -120,7 +118,7 @@ export function BasicInfoStep1({ hostPort }: { hostPort: HostFilePickerOperation
               autoComplete="off"
               className="w-full cursor-pointer"
               id="studio-save-to"
-              placeholder="Click to choose folder..."
+              placeholder="Click to choose folder…"
               value={info1.saveTo}
               onClick={() => setPathPicker({ kind: "save" })}
               onKeyDown={(event) => {

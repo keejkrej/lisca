@@ -1,6 +1,7 @@
-import { Button, cn, type AnnotationTool } from "@lisca/ui";
+import { Button, cn } from "@lisca/ui/components";
+import type { AnnotationTool } from "@lisca/ui/features";
 import { DockToolGrid, ReadonlyPathField, Section, type DockToolAction } from "@lisca/ui/shell";
-import { useRoiPage } from "../state/roi-page-context";
+import { useAnnotatePage } from "../state/annotate-page-context";
 import { annotationOutputPaths } from "../utils/annotation-output";
 
 const annotationToolDefinitions: { id: AnnotationTool; label: string }[] = [
@@ -24,16 +25,50 @@ function buildAnnotationToolActions(
   }));
 }
 
+function SegmentationDock(props: {
+  tool: AnnotationTool;
+  setTool: (tool: AnnotationTool) => void;
+  canEditTools: boolean;
+  toolActions: DockToolAction[];
+}) {
+  return (
+    <DockToolGrid
+      actions={props.toolActions}
+      className="grid flex-1 grid-cols-2 gap-2"
+      enabled={props.canEditTools}
+      renderAction={(action, _index, label) => (
+        <Button
+          className="h-full justify-center"
+          disabled={action.disabled}
+          type="button"
+          variant={action.active ? "default" : "outline"}
+          onClick={action.onSelect}
+        >
+          {label}
+        </Button>
+      )}
+    />
+  );
+}
+
+function ClassificationDock() {
+  return (
+    <div className="flex flex-1 items-center justify-center text-muted-foreground text-xs">
+      Classification
+    </div>
+  );
+}
+
 export function AnnotatorDock() {
-  const { page } = useRoiPage();
-  const paths = annotationOutputPaths(page.request, page.mode);
+  const { state } = useAnnotatePage();
+  const paths = annotationOutputPaths(state.request, state.mode);
   const shortcutsEnabled =
-    page.mode === "segmentation" &&
-    page.canEditSegmentation &&
-    !page.labelDialogOpen &&
-    !page.filePickerOpen;
-  const canEditTools = page.mode === "segmentation" && shortcutsEnabled;
-  const toolActions = buildAnnotationToolActions(page.tool, page.setTool, !canEditTools);
+    state.mode === "segmentation" &&
+    state.canEditSegmentation &&
+    !state.labelDialogOpen &&
+    !state.filePickerOpen;
+  const canEditTools = state.mode === "segmentation" && shortcutsEnabled;
+  const toolActions = buildAnnotationToolActions(state.tool, state.setTool, !canEditTools);
 
   return (
     <div className="flex h-full min-h-0 w-full gap-3 p-3">
@@ -42,27 +77,15 @@ export function AnnotatorDock() {
         contentClassName="flex min-h-0 flex-1 flex-col gap-2"
         title="Tool"
       >
-        {page.mode === "segmentation" ? (
-          <DockToolGrid
-            actions={toolActions}
-            className="grid flex-1 grid-cols-2 gap-2"
-            enabled={canEditTools}
-            renderAction={(action, _index, label) => (
-              <Button
-                className="h-full justify-center"
-                disabled={action.disabled}
-                type="button"
-                variant={action.active ? "default" : "outline"}
-                onClick={action.onSelect}
-              >
-                {label}
-              </Button>
-            )}
+        {state.mode === "segmentation" ? (
+          <SegmentationDock
+            canEditTools={canEditTools}
+            setTool={state.setTool}
+            tool={state.tool}
+            toolActions={toolActions}
           />
         ) : (
-          <div className="flex flex-1 items-center justify-center text-muted-foreground text-xs">
-            Classification
-          </div>
+          <ClassificationDock />
         )}
       </Section>
       <Section
@@ -77,13 +100,13 @@ export function AnnotatorDock() {
         </div>
         <Button
           className="w-full justify-center"
-          disabled={!page.canSave}
+          disabled={!state.canSave}
           size="sm"
           type="button"
           variant="outline"
-          onClick={() => void page.handleSave()}
+          onClick={() => void state.handleSave()}
         >
-          {page.saving ? "Saving…" : "Save"}
+          {state.saving ? "Saving…" : "Save"}
         </Button>
       </Section>
     </div>

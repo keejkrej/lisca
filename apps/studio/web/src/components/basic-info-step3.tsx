@@ -1,4 +1,4 @@
-import { Field, FieldLabel, Input, cn } from "@lisca/ui";
+import { Field, FieldLabel, Input, cn } from "@lisca/ui/components";;
 
 import slideIImage from "../assets/slides/slide-i.webp";
 import slideVIImage from "../assets/slides/slide-vi.webp";

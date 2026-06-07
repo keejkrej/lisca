@@ -21,13 +21,28 @@ body {
 
 @keyframes fade {
   from {
-    filter: blur(3px);
     opacity: 0;
   }
   to {
-    filter: blur(0);
     opacity: 1;
   }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+::view-transition-old(.fade-out) {
+  animation: var(--duration-exit) ease-in both fade-out;
+}
+
+::view-transition-new(.fade-in) {
+  animation: var(--duration-enter) ease-out both fade;
 }
 
 @keyframes slide {
@@ -77,7 +92,7 @@ body {
 
 @keyframes via-blur {
   30% {
-    filter: blur(3px);
+    opacity: 0.85;
   }
 }
 

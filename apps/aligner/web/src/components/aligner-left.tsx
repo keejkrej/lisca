@@ -1,4 +1,4 @@
-import { cn } from "@lisca/ui";
+import { cn } from "@lisca/ui/components";;
 import { shellRailChromeClass } from "@lisca/ui/shell";
 import { AlignContrastControls } from "./align-contrast-controls";
 import { AlignFrameNavigation } from "./align-frame-navigation";

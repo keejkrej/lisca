@@ -1,15 +1,16 @@
 import { AlignContrastRail } from "@lisca/ui/features";
 
-import { useAlignPage } from "../state/align-page-context";
+import { useAlignCanvas, useAlignCrop } from "../state/align-page-selectors";
 
 export function AlignContrastControls() {
-  const { state } = useAlignPage();
+  const canvas = useAlignCanvas();
+  const crop = useAlignCrop();
   return (
     <AlignContrastRail
-      contrast={state.contrast}
-      disabled={!state.frame || state.cropping}
-      frame={state.frame}
-      onContrastChange={state.setContrast}
+      contrast={canvas.contrast}
+      disabled={!canvas.frame || crop.cropping}
+      frame={canvas.frame}
+      onContrastChange={canvas.setContrast}
     />
   );
 }

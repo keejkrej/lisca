@@ -10,7 +10,8 @@ import type {
   WorkspaceScan,
 } from "@lisca/contracts";
 import { runCropRoi } from "@lisca/client/align-session";
-import { resultData, resultFailureMessage, resultLoading } from "@lisca/client/atoms";
+import { useAlignSessionCore } from "@lisca/client/align-session/react";
+import { resultLoading } from "@lisca/client/atoms";
 import { useCanvasResourceTransaction } from "@lisca/ui-native";
 import {
   alignStateFromCurrent,
@@ -24,7 +25,7 @@ import {
 } from "@lisca/utils";
 import { Effect } from "effect";
 import { useRouter } from "expo-router";
-import { useAtomSet, useAtomValue } from "@effect-atom/atom-react";
+import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { studioClient, toErrorMessage } from "../api/studio-port";
@@ -44,12 +45,12 @@ import {
 import {
   savedAlignStateKey,
   sourceKey,
-  useStudioAlignStore,
+  studioAlignUiActions,
+  studioAlignUiAtom,
   type ExcludedByPosition,
 } from "./studio-align-store";
 import { useStudioStore } from "./studio-store";
 
-const emptyExcludedCells: AlignGridCellCoord[] = [];
 const nextExclusionPreviewMs = 1000;
 
 function delay(ms: number): Promise<void> {
@@ -114,39 +115,87 @@ export function useStudioAlignState(): StudioAlignState {
   const info1 = useStudioStore((state) => state.info1);
   const info3 = useStudioStore((state) => state.info3);
   const dataSourceKind = useStudioStore((state) => state.dataSourceKind);
+  const [ui, setUi] = useAtom(studioAlignUiAtom);
   const {
     source,
-    setSource,
     workspacePath,
-    setWorkspacePath,
     scan,
-    scanSourceKey,
     selection,
     loadedFrameSelection,
-    setSelection,
     contrast,
-    setContrast,
     frame,
-    setFrame,
     grid,
-    setGrid,
     toolMode,
-    setToolMode,
     patternZoomLocked,
-    setPatternZoomLocked,
     excludedCellsByPosition,
-    setExcludedCellsForCurrentPosition,
     frameLoading,
-    setFrameLoading,
     saving,
-    setSaving,
     error,
-    setError,
     status,
-    setStatus,
-    applySourceScan,
-    applyLoadedFrame,
-  } = useStudioAlignStore();
+  } = ui;
+
+  const setWorkspacePath = useCallback(
+    (path: string | null) => studioAlignUiActions.setWorkspacePath(setUi, path),
+    [setUi],
+  );
+  const setSource = useCallback(
+    (next: AlignerSource | null) => studioAlignUiActions.setSource(setUi, next),
+    [setUi],
+  );
+  const setSelection = useCallback(
+    (patch: Partial<FrameRequest>) => studioAlignUiActions.setSelection(setUi, patch),
+    [setUi],
+  );
+  const setContrast = useCallback(
+    (next: ContrastWindow | null) => studioAlignUiActions.setContrast(setUi, next),
+    [setUi],
+  );
+  const setFrame = useCallback(
+    (next: FrameResult | null) => studioAlignUiActions.setFrame(setUi, next),
+    [setUi],
+  );
+  const setGrid = useCallback(
+    (next: AlignGridState | ((current: AlignGridState) => AlignGridState)) =>
+      studioAlignUiActions.setGrid(setUi, next),
+    [setUi],
+  );
+  const setToolMode = useCallback(
+    (mode: AlignGridToolMode) => studioAlignUiActions.setToolMode(setUi, mode),
+    [setUi],
+  );
+  const setPatternZoomLocked = useCallback(
+    (locked: boolean) => studioAlignUiActions.setPatternZoomLocked(setUi, locked),
+    [setUi],
+  );
+  const setExcludedCellsForCurrentPosition = useCallback(
+    (cells: Iterable<AlignGridCellCoord>) =>
+      studioAlignUiActions.setExcludedCellsForCurrentPosition(setUi, cells),
+    [setUi],
+  );
+  const setFrameLoading = useCallback(
+    (loading: boolean) => studioAlignUiActions.setFrameLoading(setUi, loading),
+    [setUi],
+  );
+  const setSaving = useCallback(
+    (next: boolean) => studioAlignUiActions.setSaving(setUi, next),
+    [setUi],
+  );
+  const setError = useCallback(
+    (next: string | null) => studioAlignUiActions.setError(setUi, next),
+    [setUi],
+  );
+  const setStatus = useCallback(
+    (next: string | null) => studioAlignUiActions.setStatus(setUi, next),
+    [setUi],
+  );
+  const applyLoadedFrame = useCallback(
+    (
+      loadedSelection: FrameRequest,
+      nextFrame: FrameResult,
+      savedAlignState: { stateKey: string; pos: number; saved: SavedAlignState | null } | null,
+    ) => studioAlignUiActions.applyLoadedFrame(setUi, loadedSelection, nextFrame, savedAlignState),
+    [setUi],
+  );
   const [findingFirstUnaligned, setFindingFirstUnaligned] = useState(false);
   const [cropProgress, setCropProgress] = useState<CropRoiProgress | null>(null);
   const [cropStartConfirm, setCropStartConfirm] = useState<CropStartConfirmState | null>(null);
@@ -178,23 +227,17 @@ export function useStudioAlignState(): StudioAlignState {
   const runAutoExcludePreview = useAtomSet(autoExcludePreviewAtom, { mode: "promise" });
   const router = useRouter();
 
-  const currentExcludedCells = useMemo(
-    () => excludedCellsByPosition[lockedSelection.pos] ?? emptyExcludedCells,
-    [excludedCellsByPosition, lockedSelection.pos],
-  );
-  const displayedExcludedCells = useMemo(
-    () =>
-      excludedCellsByPosition[loadedFrameSelection?.pos ?? lockedSelection.pos] ??
-      emptyExcludedCells,
-    [excludedCellsByPosition, loadedFrameSelection?.pos, lockedSelection.pos],
-  );
-  const visibleCounts = useMemo(
-    () =>
-      frame
-        ? countVisibleAlignGridCells(frame, grid, displayedExcludedCells)
-        : { included: 0, excluded: 0 },
-    [displayedExcludedCells, frame, grid],
-  );
+  const {
+    meta: { scanLoading },
+    derived: { currentExcludedCells, displayedExcludedCells, visibleCounts },
+  } = useAlignSessionCore({
+    ui,
+    setUi,
+    actions: studioAlignUiActions,
+    scan: { scanResult, activeSourceKey },
+    toErrorMessage,
+    effectiveSelection: lockedSelection,
+  });
   const cropping = cropProgress != null && !isDoneCropStatus(cropProgress.status);
 
   useEffect(() => {
@@ -204,26 +247,6 @@ export function useStudioAlignState(): StudioAlignState {
   useEffect(() => {
     setSource(activeSource);
   }, [activeSource, setSource]);
-
-  useEffect(() => {
-    if (source && resultLoading(scanResult)) {
-      setError(null);
-      setStatus("Scanning source");
-    }
-  }, [scanResult, setError, setStatus, source]);
-
-  useEffect(() => {
-    const scanData = resultData(scanResult);
-    if (!scanData || !activeSourceKey || scanSourceKey === activeSourceKey) return;
-    applySourceScan(activeSourceKey, scanData);
-  }, [activeSourceKey, applySourceScan, scanResult, scanSourceKey]);
-
-  useEffect(() => {
-    const scanLoadError = resultFailureMessage(scanResult);
-    if (!scanLoadError) return;
-    setFrame(null);
-    setError(toErrorMessage(scanLoadError, "Source scan failed"));
-  }, [scanResult, setError, setFrame]);
 
   useEffect(() => {
     if (!scan) return;
@@ -566,7 +589,7 @@ export function useStudioAlignState(): StudioAlignState {
     source,
     scan,
     alignPositions,
-    scanLoading: source != null && resultLoading(scanResult),
+    scanLoading,
     frameLoading,
     error,
     selection: lockedSelection,

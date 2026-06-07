@@ -16,6 +16,7 @@
     "@lisca/storage": "workspace:*",
     "@lisca/studio-result": "workspace:*",
     "@lisca/ui": "workspace:*",
+    "@lisca/ui-headless": "workspace:*",
     "@lisca/utils": "workspace:*",
     "@lisca/web-app": "workspace:*",
     "@observablehq/plot": "^0.6.17",

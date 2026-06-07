@@ -141,6 +141,7 @@ export function ServerAddressDialog({
                       Connect
                     </Button>
                     <Button
+                      aria-label={`Remove server ${address}`}
                       size="icon-xs"
                       type="button"
                       variant="ghost"

@@ -1,4 +1,4 @@
-import { Section } from "@lisca/ui";
+import { Section } from "@lisca/ui/shell";;
 import type { ReactNode } from "react";
 
 const columnClass = "flex min-h-0 min-w-0 basis-0 flex-col";

@@ -1,4 +1,4 @@
-import { ContrastControl } from "@lisca/ui";
+import { ContrastControl } from "@lisca/ui/features";;
 
 import type { DemoAnnotatorState } from "../state/use-demo-annotator-state";
 

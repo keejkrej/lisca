@@ -1,5 +1,6 @@
 import { runClientEffect } from "@lisca/client/runtime";
-import { AppShell, DockButton, DockToolGrid, HostFilePickerDialog, RouteLoadingFallback } from "@lisca/ui";
+import { AppShell, DockButton, DockToolGrid, RouteLoadingFallback } from "@lisca/ui/shell";
+import { HostFilePickerDialog } from "@lisca/ui/features";;
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 

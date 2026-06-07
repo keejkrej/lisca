@@ -1,4 +1,5 @@
-import { Button, DialogSurface, ModalScrim } from "@lisca/ui";
+import { Button } from "@lisca/ui/components";
+import { DialogSurface, ModalScrim } from "@lisca/ui/shell";;
 
 import { useStudioAlignPage } from "../state/studio-align-page-context";
 

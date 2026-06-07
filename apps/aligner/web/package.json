@@ -15,6 +15,7 @@
     "@lisca/contracts": "workspace:*",
     "@lisca/storage": "workspace:*",
     "@lisca/ui": "workspace:*",
+    "@lisca/ui-headless": "workspace:*",
     "@lisca/utils": "workspace:*",
     "@lisca/web-app": "workspace:*",
     "@tanstack/react-router": "catalog:",

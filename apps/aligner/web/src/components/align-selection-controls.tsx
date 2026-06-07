@@ -1,5 +1,5 @@
 import { AlignSelectionCounts } from "@lisca/ui/features";
-import { Button } from "@lisca/ui";
+import { Button } from "@lisca/ui/components";;
 import { Section } from "@lisca/ui/shell";
 import {
   collectAlignGridEdgeCells,

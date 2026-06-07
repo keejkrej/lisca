@@ -1,4 +1,4 @@
-import { AppShell, DockButton, RouteLoadingFallback } from "@lisca/ui";
+import { AppShell, DockButton, RouteLoadingFallback } from "@lisca/ui/shell";;
 import { createFileRoute } from "@tanstack/react-router";
 
 import { BasicInfoStep1 } from "../components/basic-info-step1";

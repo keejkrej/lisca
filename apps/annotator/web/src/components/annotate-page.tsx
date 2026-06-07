@@ -2,15 +2,15 @@ import { HostFilePickerDialog, LabelCreationDialog } from "@lisca/ui/features";
 import { AppShell } from "@lisca/ui/shell";
 
 import { annotatorHostOperations } from "../api/annotator-port";
-import { useRoiPage } from "../state/roi-page-context";
+import { useAnnotatePage } from "../state/annotate-page-context";
 import { AnnotatorDock } from "./annotator-dock";
 import { AnnotatorHeader } from "./annotator-header";
 import { AnnotatorLeft } from "./annotator-left";
 import { AnnotatorMain } from "./annotator-main";
 import { AnnotatorRight } from "./annotator-right";
 
-export function RoiPage() {
-  const { page } = useRoiPage();
+export function AnnotatePage() {
+  const { state } = useAnnotatePage();
 
   return (
     <AppShell>
@@ -36,20 +36,20 @@ export function RoiPage() {
       <HostFilePickerDialog
         hostPort={annotatorHostOperations}
         mode="workspace"
-        open={page.filePickerOpen}
+        open={state.filePickerOpen}
         title="Workspace folder"
-        onOpenChange={page.setFilePickerOpen}
-        onPickDirectory={page.pickWorkspace}
+        onOpenChange={state.setFilePickerOpen}
+        onPickDirectory={state.pickWorkspace}
         onPickFile={() => undefined}
       />
       <LabelCreationDialog
-        error={page.labelError}
-        labels={page.labels}
-        open={page.labelDialogOpen}
-        saving={page.saveLabelsPending}
-        workspacePath={page.workspacePath}
-        onOpenChange={page.setLabelDialogOpen}
-        onSave={(nextLabels) => void page.handleSaveLabels(nextLabels)}
+        error={state.labelError}
+        labels={state.labels}
+        open={state.labelDialogOpen}
+        saving={state.saveLabelsPending}
+        workspacePath={state.workspacePath}
+        onOpenChange={state.setLabelDialogOpen}
+        onSave={(nextLabels) => void state.handleSaveLabels(nextLabels)}
       />
     </AppShell>
   );

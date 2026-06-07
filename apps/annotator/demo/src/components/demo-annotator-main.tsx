@@ -1,8 +1,5 @@
-import {
-  AnnotationCanvas,
-  useCanvasTransientStatus,
-  ViewportCard,
-} from "@lisca/ui";
+import { ViewportCard } from "@lisca/ui/shell";
+import { AnnotationCanvas, useCanvasTransientStatus } from "@lisca/ui/features";;
 import { toDisplayFrame } from "@lisca/browser-frame";
 import { useMemo } from "react";
 
