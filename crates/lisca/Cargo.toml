@@ -23,3 +23,7 @@ tracing-subscriber.workspace = true
 walkdir.workspace = true
 smb2.workspace = true
 uuid.workspace = true
+csv.workspace = true
+rayon.workspace = true
+plotpy.workspace = true
+rust_xlsxwriter.workspace = true

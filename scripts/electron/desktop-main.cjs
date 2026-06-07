@@ -38,6 +38,13 @@ function runDesktopMain(config) {
 
     if (app.isPackaged) {
       const bundled = path.join(process.resourcesPath, "server", exeName);
+      const bundledPython =
+        process.platform === "win32"
+          ? path.join(process.resourcesPath, "python", "python.exe")
+          : path.join(process.resourcesPath, "python", "bin", "python3");
+      if (fs.existsSync(bundledPython)) {
+        env.LISCA_PYTHON = bundledPython;
+      }
       serverChild = spawn(bundled, [], spawnOpts);
       return;
     }

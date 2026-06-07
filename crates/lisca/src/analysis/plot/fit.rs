@@ -1,0 +1,301 @@
+use std::collections::BTreeMap;
+use std::path::{Path, PathBuf};
+
+use plotpy::{Boxplot, Curve, Plot};
+
+use super::super::auc::{discover_timeseries_csvs, parse_slide_channel};
+use super::super::csv_io::{column_index, parse_f64, read_csv};
+use super::super::slide::SlideMapping;
+use super::plotpy_config::{configure_plot, save_plot};
+use super::util::{
+    boxplot_tick_label, boxplot_x_axis_label, grid_dimensions, percentile_ylim,
+    quartile_axis_upper, slide_channel_labels, subplot_title, trace_color_alpha,
+    trace_naming_haystack,
+};
+
+const PLOTTED_PARAMETERS: [(&str, &str); 5] = [
+    ("intensity_offset", "intensity offset"),
+    ("protein_lifetime", "protein lifetime"),
+    ("mrna_lifetime", "mRNA lifetime"),
+    ("translation_onset", "translation onset"),
+    ("transfection_efficiency", "transfection efficiency"),
+];
+
+#[derive(Debug, Clone)]
+struct FitPlotRow {
+    slide_channel: u32,
+    pos: i64,
+    roi: i64,
+    success: bool,
+    intensity_offset: Option<f64>,
+    protein_decay_rate: Option<f64>,
+    mrna_decay_rate: Option<f64>,
+    translation_onset: Option<f64>,
+    expression_amplitude: Option<f64>,
+    protein_lifetime: Option<f64>,
+    mrna_lifetime: Option<f64>,
+    transfection_efficiency: Option<f64>,
+}
+
+pub fn run_plot_fit(
+    workspace: &Path,
+    mapping: &SlideMapping,
+    interval: f64,
+    columns: usize,
+) -> Result<(), String> {
+    let fit_csv = workspace.join("results").join("fit.csv");
+    let rows = load_fit_rows(&fit_csv)?;
+    let labels = slide_channel_labels(mapping);
+    let results_dir = workspace.join("results");
+
+    for (parameter, label) in PLOTTED_PARAMETERS {
+        write_fit_boxplot(
+            &rows,
+            parameter,
+            label,
+            &results_dir.join(format!("{parameter}.png")),
+            &labels,
+        )?;
+    }
+
+    let timeseries_csvs = discover_timeseries_csvs(&workspace.join("timeseries"))?;
+    write_fitted_trace_grid(
+        &rows,
+        &timeseries_csvs,
+        &results_dir.join("traces_fit.png"),
+        interval,
+        columns,
+        &labels,
+    )?;
+    Ok(())
+}
+
+fn load_fit_rows(path: &Path) -> Result<Vec<FitPlotRow>, String> {
+    let (headers, rows) = read_csv(path)?;
+    let slide_channel_index =
+        column_index(&headers, "slide_channel").ok_or("missing slide_channel")?;
+    let pos_index = column_index(&headers, "pos").ok_or("missing pos")?;
+    let roi_index = column_index(&headers, "roi").ok_or("missing roi")?;
+    let success_index = column_index(&headers, "success").ok_or("missing success")?;
+
+    let read_opt = |row: &Vec<String>, name: &str| -> Option<f64> {
+        column_index(&headers, name).and_then(|index| parse_f64(&row[index]))
+    };
+
+    let mut parsed = Vec::new();
+    for row in rows {
+        let Some(slide_channel) = parse_f64(&row[slide_channel_index]).map(|value| value as u32)
+        else {
+            continue;
+        };
+        let pos = parse_f64(&row[pos_index]).ok_or("invalid pos")? as i64;
+        let roi = parse_f64(&row[roi_index]).ok_or("invalid roi")? as i64;
+        let success = row[success_index].trim().eq_ignore_ascii_case("true");
+        let protein_decay_rate = read_opt(&row, "protein_decay_rate");
+        let mrna_decay_rate = read_opt(&row, "mrna_decay_rate");
+        let expression_amplitude = read_opt(&row, "expression_amplitude");
+        parsed.push(FitPlotRow {
+            slide_channel,
+            pos,
+            roi,
+            success,
+            intensity_offset: read_opt(&row, "intensity_offset"),
+            protein_decay_rate,
+            mrna_decay_rate,
+            translation_onset: read_opt(&row, "translation_onset"),
+            expression_amplitude,
+            protein_lifetime: read_opt(&row, "protein_lifetime")
+                .or_else(|| protein_decay_rate.map(|rate| 1.0 / rate)),
+            mrna_lifetime: read_opt(&row, "mrna_lifetime")
+                .or_else(|| mrna_decay_rate.map(|rate| 1.0 / rate)),
+            transfection_efficiency: read_opt(&row, "transfection_efficiency").or_else(|| {
+                match (expression_amplitude, mrna_decay_rate, protein_decay_rate) {
+                    (Some(amp), Some(mrna), Some(protein)) => Some(amp * (mrna - protein)),
+                    _ => None,
+                }
+            }),
+        });
+    }
+    if parsed.is_empty() {
+        return Err(format!(
+            "{} has no fit rows with slide_channel values",
+            path.display()
+        ));
+    }
+    Ok(parsed)
+}
+
+fn parameter_value(row: &FitPlotRow, parameter: &str) -> Option<f64> {
+    match parameter {
+        "intensity_offset" => row.intensity_offset,
+        "protein_lifetime" => row.protein_lifetime,
+        "mrna_lifetime" => row.mrna_lifetime,
+        "translation_onset" => row.translation_onset,
+        "transfection_efficiency" => row.transfection_efficiency,
+        _ => None,
+    }
+}
+
+fn write_fit_boxplot(
+    rows: &[FitPlotRow],
+    parameter: &str,
+    ylabel: &str,
+    output_plot: &Path,
+    labels: &BTreeMap<u32, String>,
+) -> Result<(), String> {
+    let use_log_scale = parameter == "transfection_efficiency";
+    let mut grouped: BTreeMap<u32, Vec<f64>> = BTreeMap::new();
+    for row in rows {
+        let Some(value) = parameter_value(row, parameter) else {
+            continue;
+        };
+        if use_log_scale && value <= 0.0 {
+            continue;
+        }
+        grouped.entry(row.slide_channel).or_default().push(value);
+    }
+    if grouped.is_empty() {
+        return Err(format!("No finite rows available to plot parameter {parameter:?}"));
+    }
+
+    let channels: Vec<u32> = grouped.keys().copied().collect();
+    let grouped_values: Vec<Vec<f64>> = channels
+        .iter()
+        .map(|channel| grouped.get(channel).cloned().unwrap_or_default())
+        .collect();
+    let ticks: Vec<f64> = (1..=channels.len()).map(|index| index as f64).collect();
+    let tick_labels: Vec<String> = channels
+        .iter()
+        .enumerate()
+        .map(|(index, channel)| {
+            boxplot_tick_label(*channel, grouped_values[index].len(), labels)
+        })
+        .collect();
+
+    let mut boxes = Boxplot::new();
+    boxes.draw(&grouped_values);
+
+    let mut plot = Plot::new();
+    configure_plot(&mut plot);
+    if use_log_scale {
+        plot.set_log_y(true);
+    }
+    plot.add(&boxes)
+        .set_label_x(boxplot_x_axis_label(labels))
+        .set_label_y(ylabel)
+        .set_ticks_x_labels(&ticks, &tick_labels);
+    if !use_log_scale {
+        plot.set_yrange(0.0, quartile_axis_upper(&grouped_values));
+    }
+
+    save_plot(&plot, output_plot)
+}
+
+fn write_fitted_trace_grid(
+    fit_rows: &[FitPlotRow],
+    timeseries_csvs: &[PathBuf],
+    output_plot: &Path,
+    interval: f64,
+    columns: usize,
+    labels: &BTreeMap<u32, String>,
+) -> Result<(), String> {
+    let fit_lookup: BTreeMap<(Option<u32>, i64, i64), &FitPlotRow> = fit_rows
+        .iter()
+        .filter(|row| row.success)
+        .map(|row| ((Some(row.slide_channel), row.pos, row.roi), row))
+        .collect();
+
+    let (rows, cols) = grid_dimensions(timeseries_csvs.len(), columns);
+    let mut plot = Plot::new();
+    configure_plot(&mut plot);
+    let mut plotted_trace_count = 0usize;
+
+    for (index, csv_path) in timeseries_csvs.iter().enumerate() {
+        let (headers, data_rows) = read_csv(csv_path)?;
+        let t_index = column_index(&headers, "t").ok_or("missing t column")?;
+        let corrected_index =
+            column_index(&headers, "corrected").ok_or("missing corrected column")?;
+        let pos_index = column_index(&headers, "pos");
+        let roi_index = column_index(&headers, "roi").ok_or("missing roi column")?;
+        let slide_channel = parse_slide_channel(csv_path);
+
+        let mut groups: BTreeMap<(i64, i64), Vec<(f64, f64)>> = BTreeMap::new();
+        let mut corrected_values = Vec::new();
+        for row in data_rows {
+            let pos = pos_index
+                .and_then(|idx| parse_f64(&row[idx]))
+                .map(|value| value as i64)
+                .unwrap_or(0);
+            let roi = parse_f64(&row[roi_index]).ok_or("invalid roi")? as i64;
+            let t = parse_f64(&row[t_index]).ok_or("invalid t")?;
+            let corrected = parse_f64(&row[corrected_index]).ok_or("invalid corrected")?;
+            groups.entry((pos, roi)).or_default().push((t, corrected));
+            corrected_values.push(corrected);
+        }
+
+        let (y_low, y_high) = percentile_ylim(&corrected_values);
+        let max_t = groups
+            .values()
+            .flat_map(|trace| trace.iter().map(|point| point.0))
+            .fold(0.0f64, f64::max)
+            * interval;
+        let (color, alpha) = trace_color_alpha(&trace_naming_haystack(csv_path, labels));
+        let mut matched_traces = 0usize;
+
+        plot.set_subplot(rows, cols, index + 1);
+        for ((pos, roi), mut trace) in groups {
+            let Some(fit_row) = fit_lookup.get(&(slide_channel, pos, roi)) else {
+                continue;
+            };
+            trace.sort_by(|left, right| {
+                left.0
+                    .partial_cmp(&right.0)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            });
+            let x: Vec<f64> = trace.iter().map(|(t, _)| *t * interval).collect();
+            let y: Vec<f64> = trace
+                .iter()
+                .map(|(t, _)| fitted_trace_value(*t * interval, fit_row))
+                .collect();
+            let mut curve = Curve::new();
+            curve
+                .set_line_color(color)
+                .set_line_alpha(alpha)
+                .set_line_width(1.0)
+                .draw(&x, &y);
+            plot.add(&curve);
+            matched_traces += 1;
+            plotted_trace_count += 1;
+        }
+
+        plot.set_title(&subplot_title(csv_path, matched_traces, labels))
+            .set_labels("minutes", "corrected intensity")
+            .set_yrange(y_low, y_high)
+            .set_xrange(0.0, max_t.max(interval));
+    }
+
+    for index in timeseries_csvs.len()..(rows * cols) {
+        plot.set_subplot(rows, cols, index + 1).set_hide_axes(true);
+    }
+
+    if plotted_trace_count == 0 {
+        return Err("No successful fit rows matched the inferred timeseries CSVs".to_string());
+    }
+
+    save_plot(&plot, output_plot)
+}
+
+fn fitted_trace_value(time_minutes: f64, row: &FitPlotRow) -> f64 {
+    let intensity_offset = row.intensity_offset.unwrap_or(0.0);
+    let protein_decay_rate = row.protein_decay_rate.unwrap_or(0.0);
+    let mrna_decay_rate = row.mrna_decay_rate.unwrap_or(0.0);
+    let translation_onset = row.translation_onset.unwrap_or(0.0);
+    let expression_amplitude = row.expression_amplitude.unwrap_or(0.0);
+    if time_minutes < translation_onset {
+        return intensity_offset;
+    }
+    let dt = time_minutes - translation_onset;
+    intensity_offset
+        + expression_amplitude
+            * ((-protein_decay_rate * dt).exp() - (-mrna_decay_rate * dt).exp())
+}
