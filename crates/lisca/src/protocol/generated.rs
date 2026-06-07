@@ -267,6 +267,135 @@ impl AlignOutputPaths {
         Default::default()
     }
 }
+#[doc = "`AlignerSource`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"oneOf\": ["]
+#[doc = "    {"]
+#[doc = "      \"type\": \"object\","]
+#[doc = "      \"required\": ["]
+#[doc = "        \"filenameTemplate\","]
+#[doc = "        \"kind\","]
+#[doc = "        \"path\","]
+#[doc = "        \"subfolderTemplate\""]
+#[doc = "      ],"]
+#[doc = "      \"properties\": {"]
+#[doc = "        \"filenameTemplate\": {"]
+#[doc = "          \"type\": \"string\""]
+#[doc = "        },"]
+#[doc = "        \"kind\": {"]
+#[doc = "          \"type\": \"string\","]
+#[doc = "          \"enum\": ["]
+#[doc = "            \"folder\""]
+#[doc = "          ]"]
+#[doc = "        },"]
+#[doc = "        \"path\": {"]
+#[doc = "          \"type\": \"string\""]
+#[doc = "        },"]
+#[doc = "        \"subfolderTemplate\": {"]
+#[doc = "          \"type\": \"string\""]
+#[doc = "        }"]
+#[doc = "      }"]
+#[doc = "    },"]
+#[doc = "    {"]
+#[doc = "      \"type\": \"object\","]
+#[doc = "      \"required\": ["]
+#[doc = "        \"kind\","]
+#[doc = "        \"path\""]
+#[doc = "      ],"]
+#[doc = "      \"properties\": {"]
+#[doc = "        \"kind\": {"]
+#[doc = "          \"type\": \"string\","]
+#[doc = "          \"enum\": ["]
+#[doc = "            \"tif\""]
+#[doc = "          ]"]
+#[doc = "        },"]
+#[doc = "        \"path\": {"]
+#[doc = "          \"type\": \"string\""]
+#[doc = "        }"]
+#[doc = "      }"]
+#[doc = "    },"]
+#[doc = "    {"]
+#[doc = "      \"type\": \"object\","]
+#[doc = "      \"required\": ["]
+#[doc = "        \"kind\","]
+#[doc = "        \"path\""]
+#[doc = "      ],"]
+#[doc = "      \"properties\": {"]
+#[doc = "        \"kind\": {"]
+#[doc = "          \"type\": \"string\","]
+#[doc = "          \"enum\": ["]
+#[doc = "            \"jpg\""]
+#[doc = "          ]"]
+#[doc = "        },"]
+#[doc = "        \"path\": {"]
+#[doc = "          \"type\": \"string\""]
+#[doc = "        }"]
+#[doc = "      }"]
+#[doc = "    },"]
+#[doc = "    {"]
+#[doc = "      \"type\": \"object\","]
+#[doc = "      \"required\": ["]
+#[doc = "        \"kind\","]
+#[doc = "        \"path\""]
+#[doc = "      ],"]
+#[doc = "      \"properties\": {"]
+#[doc = "        \"kind\": {"]
+#[doc = "          \"type\": \"string\","]
+#[doc = "          \"enum\": ["]
+#[doc = "            \"nd2\""]
+#[doc = "          ]"]
+#[doc = "        },"]
+#[doc = "        \"path\": {"]
+#[doc = "          \"type\": \"string\""]
+#[doc = "        }"]
+#[doc = "      }"]
+#[doc = "    },"]
+#[doc = "    {"]
+#[doc = "      \"type\": \"object\","]
+#[doc = "      \"required\": ["]
+#[doc = "        \"kind\","]
+#[doc = "        \"path\""]
+#[doc = "      ],"]
+#[doc = "      \"properties\": {"]
+#[doc = "        \"kind\": {"]
+#[doc = "          \"type\": \"string\","]
+#[doc = "          \"enum\": ["]
+#[doc = "            \"czi\""]
+#[doc = "          ]"]
+#[doc = "        },"]
+#[doc = "        \"path\": {"]
+#[doc = "          \"type\": \"string\""]
+#[doc = "        }"]
+#[doc = "      }"]
+#[doc = "    }"]
+#[doc = "  ]"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+#[serde(tag = "kind")]
+pub enum AlignerSource {
+    #[serde(rename = "folder")]
+    Folder {
+        #[serde(rename = "filenameTemplate")]
+        filename_template: ::std::string::String,
+        path: ::std::string::String,
+        #[serde(rename = "subfolderTemplate")]
+        subfolder_template: ::std::string::String,
+    },
+    #[serde(rename = "tif")]
+    Tif { path: ::std::string::String },
+    #[serde(rename = "jpg")]
+    Jpg { path: ::std::string::String },
+    #[serde(rename = "nd2")]
+    Nd2 { path: ::std::string::String },
+    #[serde(rename = "czi")]
+    Czi { path: ::std::string::String },
+}
 #[doc = "`AnalysisCsvFile`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
@@ -1717,7 +1846,7 @@ impl AutoExcludePreviewCellScore {
 pub struct AutoExcludePreviewRequest {
     pub cells: ::std::vec::Vec<AutoExcludePreviewCell>,
     pub selection: FrameRequest,
-    pub source: ::lisca::protocol::AlignerSource,
+    pub source: AlignerSource,
 }
 impl AutoExcludePreviewRequest {
     pub fn builder() -> builder::AutoExcludePreviewRequest {
@@ -2169,7 +2298,7 @@ pub struct CropRoiRequest {
     pub positions: ::std::vec::Vec<u32>,
     #[serde(rename = "requestId")]
     pub request_id: ::std::string::String,
-    pub source: ::lisca::protocol::AlignerSource,
+    pub source: AlignerSource,
     #[serde(rename = "workspacePath")]
     pub workspace_path: ::std::string::String,
 }
@@ -2677,35 +2806,6 @@ pub struct HostListDirectoryResult {
 impl HostListDirectoryResult {
     pub fn builder() -> builder::HostListDirectoryResult {
         Default::default()
-    }
-}
-#[doc = "`LiscaContract`"]
-#[doc = r""]
-#[doc = r" <details><summary>JSON schema</summary>"]
-#[doc = r""]
-#[doc = r" ```json"]
-#[doc = "{"]
-#[doc = "  \"title\": \"LiscaContract\""]
-#[doc = "}"]
-#[doc = r" ```"]
-#[doc = r" </details>"]
-#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
-#[serde(transparent)]
-pub struct LiscaContract(pub ::serde_json::Value);
-impl ::std::ops::Deref for LiscaContract {
-    type Target = ::serde_json::Value;
-    fn deref(&self) -> &::serde_json::Value {
-        &self.0
-    }
-}
-impl ::std::convert::From<LiscaContract> for ::serde_json::Value {
-    fn from(value: LiscaContract) -> Self {
-        value.0
-    }
-}
-impl ::std::convert::From<::serde_json::Value> for LiscaContract {
-    fn from(value: ::serde_json::Value) -> Self {
-        Self(value)
     }
 }
 #[doc = "`LoadedRoiFrameAnnotation`"]
@@ -3244,7 +3344,7 @@ pub struct RoiIndexFile {
     pub page_order: ::std::vec::Vec<::std::string::String>,
     pub position: u32,
     pub rois: ::std::vec::Vec<RoiIndexEntry>,
-    pub source: ::lisca::protocol::AlignerSource,
+    pub source: AlignerSource,
     #[serde(rename = "timeCount")]
     pub time_count: u32,
     #[serde(rename = "zCount")]
@@ -3345,7 +3445,7 @@ pub struct RoiPositionScan {
     pub channels: ::std::vec::Vec<u32>,
     pub pos: u32,
     pub rois: ::std::vec::Vec<RoiIndexEntry>,
-    pub source: ::lisca::protocol::AlignerSource,
+    pub source: AlignerSource,
     pub times: ::std::vec::Vec<u32>,
     #[serde(rename = "zSlices")]
     pub z_slices: ::std::vec::Vec<u32>,
@@ -5284,7 +5384,7 @@ pub mod builder {
             ::std::string::String,
         >,
         selection: ::std::result::Result<super::FrameRequest, ::std::string::String>,
-        source: ::std::result::Result<::lisca::protocol::AlignerSource, ::std::string::String>,
+        source: ::std::result::Result<super::AlignerSource, ::std::string::String>,
     }
     impl ::std::default::Default for AutoExcludePreviewRequest {
         fn default() -> Self {
@@ -5318,7 +5418,7 @@ pub mod builder {
         }
         pub fn source<T>(mut self, value: T) -> Self
         where
-            T: ::std::convert::TryInto<::lisca::protocol::AlignerSource>,
+            T: ::std::convert::TryInto<super::AlignerSource>,
             T::Error: ::std::fmt::Display,
         {
             self.source = value
@@ -5753,7 +5853,7 @@ pub mod builder {
         overwrite: ::std::result::Result<bool, ::std::string::String>,
         positions: ::std::result::Result<::std::vec::Vec<u32>, ::std::string::String>,
         request_id: ::std::result::Result<::std::string::String, ::std::string::String>,
-        source: ::std::result::Result<::lisca::protocol::AlignerSource, ::std::string::String>,
+        source: ::std::result::Result<super::AlignerSource, ::std::string::String>,
         workspace_path: ::std::result::Result<::std::string::String, ::std::string::String>,
     }
     impl ::std::default::Default for CropRoiRequest {
@@ -5811,7 +5911,7 @@ pub mod builder {
         }
         pub fn source<T>(mut self, value: T) -> Self
         where
-            T: ::std::convert::TryInto<::lisca::protocol::AlignerSource>,
+            T: ::std::convert::TryInto<super::AlignerSource>,
             T::Error: ::std::fmt::Display,
         {
             self.source = value
@@ -6985,7 +7085,7 @@ pub mod builder {
             ::std::result::Result<::std::vec::Vec<::std::string::String>, ::std::string::String>,
         position: ::std::result::Result<u32, ::std::string::String>,
         rois: ::std::result::Result<::std::vec::Vec<super::RoiIndexEntry>, ::std::string::String>,
-        source: ::std::result::Result<::lisca::protocol::AlignerSource, ::std::string::String>,
+        source: ::std::result::Result<super::AlignerSource, ::std::string::String>,
         time_count: ::std::result::Result<u32, ::std::string::String>,
         z_count: ::std::result::Result<u32, ::std::string::String>,
     }
@@ -7056,7 +7156,7 @@ pub mod builder {
         }
         pub fn source<T>(mut self, value: T) -> Self
         where
-            T: ::std::convert::TryInto<::lisca::protocol::AlignerSource>,
+            T: ::std::convert::TryInto<super::AlignerSource>,
             T::Error: ::std::fmt::Display,
         {
             self.source = value
@@ -7161,7 +7261,7 @@ pub mod builder {
         channels: ::std::result::Result<::std::vec::Vec<u32>, ::std::string::String>,
         pos: ::std::result::Result<u32, ::std::string::String>,
         rois: ::std::result::Result<::std::vec::Vec<super::RoiIndexEntry>, ::std::string::String>,
-        source: ::std::result::Result<::lisca::protocol::AlignerSource, ::std::string::String>,
+        source: ::std::result::Result<super::AlignerSource, ::std::string::String>,
         times: ::std::result::Result<::std::vec::Vec<u32>, ::std::string::String>,
         z_slices: ::std::result::Result<::std::vec::Vec<u32>, ::std::string::String>,
     }
@@ -7210,7 +7310,7 @@ pub mod builder {
         }
         pub fn source<T>(mut self, value: T) -> Self
         where
-            T: ::std::convert::TryInto<::lisca::protocol::AlignerSource>,
+            T: ::std::convert::TryInto<super::AlignerSource>,
             T::Error: ::std::fmt::Display,
         {
             self.source = value

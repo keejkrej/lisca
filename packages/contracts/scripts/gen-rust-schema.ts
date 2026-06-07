@@ -15,9 +15,10 @@ import { RoiIndexFileSchema, ServerWsMessageSchema } from "../src/protocol.schem
  *   - the on-disk assay.json contract (not an HTTP payload)
  *   - the WebSocket server-push message union
  *
- * `AlignerSource` is a `#[serde(tag = "kind")]` enum in Rust whose ergonomics
- * typify cannot reproduce, so we hand-write it and point typify at the existing
- * type via the `x-rust-type` extension.
+ * Typify needs `oneOf` with inline object variants (not `anyOf` + `$ref`) to
+ * emit `#[serde(tag = "kind")]` internally-tagged enums. Effect/OpenAPI emit
+ * `anyOf` with `$ref` for unions — we normalize those shapes here without
+ * changing the wire JSON or the Effect schema authoring.
  */
 
 type JsonObject = Record<string, unknown>;
@@ -74,16 +75,42 @@ function rewriteRefs(value: unknown): unknown {
   return value;
 }
 
+function resolveDefinition(ref: string, definitions: JsonObject): JsonObject {
+  const name = ref.replace("#/definitions/", "");
+  const schema = definitions[name];
+  if (!schema) {
+    throw new Error(`gen-rust-schema: unresolved $ref ${ref}`);
+  }
+  return schema;
+}
+
+/** Expand `$ref` members so typify can detect a shared `kind` discriminant. */
+function inlineMember(member: JsonObject, definitions: JsonObject): JsonObject {
+  if (typeof member.$ref === "string") {
+    return inlineMember(resolveDefinition(member.$ref, definitions), definitions);
+  }
+  return member;
+}
+
+/**
+ * typify emits flat `#[serde(tag = "kind")]` enums only for `oneOf` whose
+ * members are inline objects with a required singleton `kind` string. Effect
+ * emits `anyOf` + `$ref` instead — same wire JSON, different encoding.
+ */
+function normalizeUnionForTypify(schema: JsonObject, definitions: JsonObject): JsonObject {
+  const members = (schema.oneOf ?? schema.anyOf) as JsonObject[] | undefined;
+  if (!members?.length) return schema;
+  return { oneOf: members.map((member) => inlineMember(member, definitions)) };
+}
+
 const normalized = rewriteRefs({ definitions }) as { definitions: JsonObject };
 
-// Point typify at the hand-written Rust enum for the tagged union.
-normalized.definitions.AlignerSource = {
-  "x-rust-type": {
-    crate: "lisca",
-    version: "*",
-    path: "lisca::protocol::AlignerSource",
-  },
-};
+if (normalized.definitions.AlignerSource) {
+  normalized.definitions.AlignerSource = normalizeUnionForTypify(
+    normalized.definitions.AlignerSource,
+    normalized.definitions,
+  );
+}
 
 // Drop OpenAPI/HttpApi-internal error envelope types that are not part of the
 // Rust contract.
@@ -92,9 +119,10 @@ delete normalized.definitions.Issue;
 delete normalized.definitions.PropertyKey;
 delete normalized.definitions.RequestError;
 
+// No root `title` — typify would otherwise emit a useless
+// `LiscaContract(serde_json::Value)` wrapper for the document.
 const doc = {
   $schema: "http://json-schema.org/draft-07/schema#",
-  title: "LiscaContract",
   definitions: normalized.definitions,
 };
 

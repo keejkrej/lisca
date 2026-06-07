@@ -1,43 +1,14 @@
 //! Cross-language wire + on-disk contract types.
 //!
-//! Effect Schema in `@lisca/contracts` is the single source of truth. The bulk
-//! of these types are generated from the contract's JSON Schema (via `typify`)
-//! into [`generated`] and re-exported here. `AlignerSource` is the one type
-//! whose `#[serde(tag = "kind")]` ergonomics the generator cannot reproduce, so
-//! it is hand-written below and wired into the generated code through the
-//! `x-rust-type` extension (see `packages/contracts/scripts/gen-rust-schema.ts`).
+//! Effect Schema in `@lisca/contracts` is the single source of truth. Types are
+//! generated from the contract JSON Schema (via `typify`) into [`generated`]
+//! and re-exported here. `gen-rust-schema.ts` normalizes union encoding
+//! (`anyOf` + `$ref` → inline `oneOf`) so typify emits internally-tagged
+//! enums like `AlignerSource`.
 
 mod generated;
 
 pub use generated::*;
-
-use serde::{Deserialize, Serialize};
-
-/// Tagged image source. Hand-written to preserve the internally-tagged enum
-/// shape; the contract references this via `x-rust-type`.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(tag = "kind", rename_all = "lowercase")]
-pub enum AlignerSource {
-    Folder {
-        path: String,
-        #[serde(rename = "subfolderTemplate")]
-        subfolder_template: String,
-        #[serde(rename = "filenameTemplate")]
-        filename_template: String,
-    },
-    Tif {
-        path: String,
-    },
-    Jpg {
-        path: String,
-    },
-    Nd2 {
-        path: String,
-    },
-    Czi {
-        path: String,
-    },
-}
 
 pub type ImageSource = AlignerSource;
 
@@ -74,8 +45,8 @@ impl AssaySamplesBySlide {
 mod contract_tests {
     //! Locks the cross-language wire shape of the generated types against the
     //! Effect contract. If the contract changes shape, these round-trips break
-    //! and signal that `crates/lisca/src/protocol/generated.rs` must be
-    //! regenerated (`bun run --cwd packages/contracts rust-types`).
+    //! and signal that protocol types must be regenerated
+    //! (`bun run --cwd packages/contracts rust-types`).
     use super::*;
     use serde_json::json;
 
@@ -89,8 +60,8 @@ mod contract_tests {
         let value = serde_json::to_value(&source).unwrap();
         assert_eq!(value["kind"], "folder");
         assert_eq!(value["subfolderTemplate"], "Pos{p}");
-        let back: AlignerSource = serde_json::from_value(value).unwrap();
-        assert_eq!(back, source);
+        let back: AlignerSource = serde_json::from_value(value.clone()).unwrap();
+        assert_eq!(serde_json::to_value(&back).unwrap(), value);
     }
 
     #[test]

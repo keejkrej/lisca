@@ -49,9 +49,9 @@ bun run --cwd packages/contracts rust-types
 - Give every named schema an `identifier` so OpenAPI/typify emit clean names.
 - Pin Rust numerics with JSON Schema `format` annotations: `uint32` → `u32`,
   `int32` → `i32`, `double` → `f64` (see the `U32`/`I32`/`F64` helpers).
-- `AlignerSource` (internally-tagged `#[serde(tag = "kind")]`) is hand-written in
-  `crates/lisca/src/protocol/mod.rs`; the contract references it via the
-  `x-rust-type` extension instead of regenerating it.
+- Discriminated unions (`AlignerSource`, etc.): Effect emits `anyOf` + `$ref`;
+  `gen-rust-schema.ts` rewrites to inline `oneOf` so typify emits
+  `#[serde(tag = "kind")]` enums (same wire JSON, typify-friendly encoding).
 - The HTTP error envelope is `RequestError` → `{ "_tag": "RequestError",
   "message": string }` with status 400; Rust mirrors it in `http/error.rs`.
 

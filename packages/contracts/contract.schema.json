@@ -1,6 +1,5 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "LiscaContract",
   "definitions": {
     "HostListDirectoryResult": {
       "type": "object",
@@ -136,11 +135,106 @@
       }
     },
     "AlignerSource": {
-      "x-rust-type": {
-        "crate": "lisca",
-        "version": "*",
-        "path": "lisca::protocol::AlignerSource"
-      }
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "path",
+            "subfolderTemplate",
+            "filenameTemplate"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "folder"
+              ]
+            },
+            "path": {
+              "type": "string"
+            },
+            "subfolderTemplate": {
+              "type": "string"
+            },
+            "filenameTemplate": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "path"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "tif"
+              ]
+            },
+            "path": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "path"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "jpg"
+              ]
+            },
+            "path": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "path"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "nd2"
+              ]
+            },
+            "path": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "path"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "czi"
+              ]
+            },
+            "path": {
+              "type": "string"
+            }
+          }
+        }
+      ]
     },
     "FolderSource": {
       "type": "object",
