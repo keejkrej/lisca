@@ -6,15 +6,15 @@ function loadDesktopMain() {
   if (fs.existsSync(packaged)) {
     return require(packaged);
   }
-  return require(path.join(__dirname, "../../../scripts/electron/desktop-main.cjs"));
+  return require(path.join(__dirname, "../../../../scripts/electron/desktop-main.cjs"));
 }
 
 const { runDesktopMain } = loadDesktopMain();
 
 runDesktopMain({
   desktopDir: path.join(__dirname, ".."),
-  wsPort: 8765,
-  webPort: 5173,
-  serverBinary: "aligner-server",
-  cargoPackage: "aligner-server",
+  wsPort: 8767,
+  webPort: 5175,
+  serverBinary: "studio-server",
+  cargoPackage: "studio-server",
 });

@@ -15,7 +15,7 @@
         "wait-on": "^8.0.3",
       },
     },
-    "apps/aligner-desktop": {
+    "apps/aligner/desktop": {
       "name": "@lisca/aligner-desktop",
       "version": "0.1.0",
       "dependencies": {
@@ -30,7 +30,7 @@
         "electron-builder": "^25.1.8",
       },
     },
-    "apps/aligner-mobile": {
+    "apps/aligner/mobile": {
       "name": "@lisca/aligner-mobile",
       "version": "0.1.0",
       "dependencies": {
@@ -45,11 +45,11 @@
         "typescript": "catalog:",
       },
     },
-    "apps/aligner-server": {
+    "apps/aligner/server": {
       "name": "@lisca/aligner-server",
       "version": "0.1.0",
     },
-    "apps/aligner-web": {
+    "apps/aligner/web": {
       "name": "@lisca/aligner-web",
       "version": "0.1.0",
       "dependencies": {
@@ -75,7 +75,7 @@
         "vite": "catalog:",
       },
     },
-    "apps/annotator-desktop": {
+    "apps/annotator/desktop": {
       "name": "@lisca/annotator-desktop",
       "version": "0.1.0",
       "dependencies": {
@@ -90,7 +90,7 @@
         "electron-builder": "^25.1.8",
       },
     },
-    "apps/annotator-mobile": {
+    "apps/annotator/mobile": {
       "name": "@lisca/annotator-mobile",
       "version": "0.1.0",
       "dependencies": {
@@ -105,11 +105,11 @@
         "typescript": "catalog:",
       },
     },
-    "apps/annotator-server": {
+    "apps/annotator/server": {
       "name": "@lisca/annotator-server",
       "version": "0.1.0",
     },
-    "apps/annotator-web": {
+    "apps/annotator/web": {
       "name": "@lisca/annotator-web",
       "version": "0.1.0",
       "dependencies": {
@@ -136,7 +136,7 @@
         "vite": "catalog:",
       },
     },
-    "apps/studio-desktop": {
+    "apps/studio/desktop": {
       "name": "@lisca/studio-desktop",
       "version": "0.1.0",
       "dependencies": {
@@ -151,7 +151,7 @@
         "electron-builder": "^25.1.8",
       },
     },
-    "apps/studio-mobile": {
+    "apps/studio/mobile": {
       "name": "@lisca/studio-mobile",
       "version": "0.1.0",
       "dependencies": {
@@ -166,11 +166,11 @@
         "typescript": "catalog:",
       },
     },
-    "apps/studio-server": {
+    "apps/studio/server": {
       "name": "@lisca/studio-server",
       "version": "0.1.0",
     },
-    "apps/studio-web": {
+    "apps/studio/web": {
       "name": "@lisca/studio-web",
       "version": "0.1.0",
       "dependencies": {
@@ -704,33 +704,33 @@
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
 
-    "@lisca/aligner-desktop": ["@lisca/aligner-desktop@workspace:apps/aligner-desktop"],
+    "@lisca/aligner-desktop": ["@lisca/aligner-desktop@workspace:apps/aligner/desktop"],
 
-    "@lisca/aligner-mobile": ["@lisca/aligner-mobile@workspace:apps/aligner-mobile"],
+    "@lisca/aligner-mobile": ["@lisca/aligner-mobile@workspace:apps/aligner/mobile"],
 
-    "@lisca/aligner-server": ["@lisca/aligner-server@workspace:apps/aligner-server"],
+    "@lisca/aligner-server": ["@lisca/aligner-server@workspace:apps/aligner/server"],
 
-    "@lisca/aligner-web": ["@lisca/aligner-web@workspace:apps/aligner-web"],
+    "@lisca/aligner-web": ["@lisca/aligner-web@workspace:apps/aligner/web"],
 
-    "@lisca/annotator-desktop": ["@lisca/annotator-desktop@workspace:apps/annotator-desktop"],
+    "@lisca/annotator-desktop": ["@lisca/annotator-desktop@workspace:apps/annotator/desktop"],
 
-    "@lisca/annotator-mobile": ["@lisca/annotator-mobile@workspace:apps/annotator-mobile"],
+    "@lisca/annotator-mobile": ["@lisca/annotator-mobile@workspace:apps/annotator/mobile"],
 
-    "@lisca/annotator-server": ["@lisca/annotator-server@workspace:apps/annotator-server"],
+    "@lisca/annotator-server": ["@lisca/annotator-server@workspace:apps/annotator/server"],
 
-    "@lisca/annotator-web": ["@lisca/annotator-web@workspace:apps/annotator-web"],
+    "@lisca/annotator-web": ["@lisca/annotator-web@workspace:apps/annotator/web"],
 
     "@lisca/client": ["@lisca/client@workspace:packages/client"],
 
     "@lisca/contracts": ["@lisca/contracts@workspace:packages/contracts"],
 
-    "@lisca/studio-desktop": ["@lisca/studio-desktop@workspace:apps/studio-desktop"],
+    "@lisca/studio-desktop": ["@lisca/studio-desktop@workspace:apps/studio/desktop"],
 
-    "@lisca/studio-mobile": ["@lisca/studio-mobile@workspace:apps/studio-mobile"],
+    "@lisca/studio-mobile": ["@lisca/studio-mobile@workspace:apps/studio/mobile"],
 
-    "@lisca/studio-server": ["@lisca/studio-server@workspace:apps/studio-server"],
+    "@lisca/studio-server": ["@lisca/studio-server@workspace:apps/studio/server"],
 
-    "@lisca/studio-web": ["@lisca/studio-web@workspace:apps/studio-web"],
+    "@lisca/studio-web": ["@lisca/studio-web@workspace:apps/studio/web"],
 
     "@lisca/ui": ["@lisca/ui@workspace:packages/ui"],
 

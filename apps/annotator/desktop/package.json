@@ -6,7 +6,7 @@
   "scripts": {
     "build": "bun --filter @lisca/annotator-web build && bun --filter @lisca/annotator-server build",
     "dev": "concurrently -k -n web,desk \"bun --filter @lisca/annotator-web dev\" \"cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5174 wait-on -t 120000 tcp:127.0.0.1:5174 && electron .\"",
-    "dist": "bun ../../scripts/package-desktop.mjs annotator",
+    "dist": "bun ../../../scripts/package-desktop.mjs annotator",
     "typecheck": "bunx oxlint electron/main.cjs electron/preload.cjs"
   },
   "dependencies": {

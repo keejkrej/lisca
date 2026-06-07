@@ -15,8 +15,8 @@ name = "studio-server"
 path = "src/main.rs"
 
 [dependencies]
-aligner-server = { path = "../aligner-server" }
-annotator-server = { path = "../annotator-server" }
+aligner-server = { path = "../../aligner/server" }
+annotator-server = { path = "../../annotator/server" }
 axum.workspace = true
 base64.workspace = true
 lisca.workspace = true

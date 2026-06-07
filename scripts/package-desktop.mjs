@@ -39,9 +39,9 @@ function run(command, args, options = {}) {
 }
 
 function stageArtifacts(product, cfg) {
-  const desktopDir = path.join(root, "apps", `${product}-desktop`);
+  const desktopDir = path.join(root, "apps", product, "desktop");
   const stagingDir = path.join(desktopDir, "staging");
-  const webDist = path.join(root, "apps", `${product}-web`, "dist");
+  const webDist = path.join(root, "apps", product, "web", "dist");
   const exeName = process.platform === "win32" ? `${cfg.serverBinary}.exe` : cfg.serverBinary;
   const serverSrc = path.join(root, "target", "release", exeName);
   const serverDest = path.join(stagingDir, "server", exeName);

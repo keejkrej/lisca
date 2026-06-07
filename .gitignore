@@ -1,6 +1,6 @@
 node_modules
 dist
-apps/*/dist
+apps/*/web/dist
 packages/*/dist
 dist-electron
 *.tsbuildinfo
@@ -27,6 +27,6 @@ dist/
 # Electron
 out
 release
-apps/*/staging
-apps/*/electron/desktop-main.cjs
-apps/*/electron/brand.cjs
+apps/*/desktop/staging
+apps/*/desktop/electron/desktop-main.cjs
+apps/*/desktop/electron/brand.cjs

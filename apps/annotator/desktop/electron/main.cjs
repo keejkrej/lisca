@@ -6,7 +6,7 @@ function loadDesktopMain() {
   if (fs.existsSync(packaged)) {
     return require(packaged);
   }
-  return require(path.join(__dirname, "../../../scripts/electron/desktop-main.cjs"));
+  return require(path.join(__dirname, "../../../../scripts/electron/desktop-main.cjs"));
 }
 
 const { runDesktopMain } = loadDesktopMain();

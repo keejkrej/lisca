@@ -16,7 +16,7 @@ const { runtimeIconPath } = require("./brand.cjs");
  */
 function runDesktopMain(config) {
   const { desktopDir, wsPort, webPort, serverBinary, cargoPackage } = config;
-  const repoRoot = path.resolve(desktopDir, "../..");
+  const repoRoot = path.resolve(desktopDir, "../../..");
   const devServerUrl = process.env.VITE_DEV_SERVER_URL?.trim();
 
   /** @type {import("node:child_process").ChildProcess | undefined} */

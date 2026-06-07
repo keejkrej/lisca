@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "cargo build --release -p annotator-server",
-    "dev": "cargo watch -w . -w ../../crates/lisca -w ../../Cargo.toml -w ../../Cargo.lock -x \"run -p annotator-server\"",
+    "dev": "cargo watch -w . -w ../../../crates/lisca -w ../../../Cargo.toml -w ../../../Cargo.lock -x \"run -p annotator-server\"",
     "typecheck": "cargo check -p annotator-server"
   }
 }
