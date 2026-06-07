@@ -367,6 +367,7 @@
       },
       "devDependencies": {
         "typescript": "catalog:",
+        "vitest": "catalog:",
       },
     },
     "packages/mobile-app": {

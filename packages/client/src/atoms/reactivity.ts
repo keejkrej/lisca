@@ -1,10 +1,24 @@
+import { Reactivity } from "@effect/experimental";
+import type { Effect } from "effect";
+
+/** Run an effect and invalidate related query atoms on success. */
+export function invalidateAfter<A, E, R>(
+  effect: Effect.Effect<A, E, R>,
+  keys: ReadonlyArray<unknown>,
+): Effect.Effect<A, E, R | Reactivity.Reactivity> {
+  return Reactivity.mutation(effect, keys);
+}
+
+/** Stable string keys — tuple keys hash by reference and break invalidation. */
 export const ReactivityKeys = {
-  scanSource: (key: string) => ["scan-source", key] as const,
-  roiWorkspace: (path: string) => ["roi-workspace", path] as const,
-  annotationLabels: (path: string) => ["annotation-labels", path] as const,
-  savedBboxPositions: (path: string) => ["saved-bbox-positions", path] as const,
-  analysisResults: (path: string) => ["analysis-results", path] as const,
-  analysisCsv: (path: string, filePath: string) => ["analysis-csv", path, filePath] as const,
+  scanSource: (key: string) => `scan-source:${key}`,
+  roiWorkspace: (path: string) => `roi-workspace:${path}`,
+  annotationLabels: (path: string) => `annotation-labels:${path}`,
+  savedBboxPositions: (path: string) => `saved-bbox-positions:${path}`,
+  loadFrame: (key: string) => `load-frame:${key}`,
+  loadRoiFrame: (key: string) => `load-roi-frame:${key}`,
+  analysisResults: (path: string) => `analysis-results:${path}`,
+  analysisCsv: (path: string, filePath: string) => `analysis-csv:${path}:${filePath}`,
   analysisPanels: (path: string, filePath: string, scale: number, labelsKey: string) =>
-    ["analysis-panels", path, filePath, scale, labelsKey] as const,
+    `analysis-panels:${path}:${filePath}:${scale}:${labelsKey}`,
 } as const;

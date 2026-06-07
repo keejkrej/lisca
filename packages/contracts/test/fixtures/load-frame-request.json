@@ -1,0 +1,10 @@
+{
+  "source": {
+    "kind": "folder",
+    "path": "/data/experiment",
+    "subfolderTemplate": "Pos{p}",
+    "filenameTemplate": "img_{t}"
+  },
+  "request": { "pos": 0, "channel": 0, "time": 0, "z": 0 },
+  "contrast": { "min": 0, "max": 255 }
+}

@@ -2,16 +2,19 @@ import type { RoiWorkspaceScan, WorkspaceScan } from "@lisca/contracts";
 import { Atom, Result } from "@effect-atom/atom-react";
 
 import {
-  createAppRuntime,
   createStudioQueryAtoms,
   studioPortLayer,
 } from "@lisca/client/atoms";
+import { createLiscaAppBootstrap } from "@lisca/client/bootstrap";
 
 import { ensureStudioPort } from "../api/studio-port";
 
-export const studioRuntime = createAppRuntime(studioPortLayer(ensureStudioPort()));
+const studioPort = ensureStudioPort();
+const bootstrap = createLiscaAppBootstrap(studioPortLayer(studioPort), studioPort);
 
-export const studioQueryAtoms = createStudioQueryAtoms(studioRuntime);
+export const studioRuntime = bootstrap.runtime;
+
+export const studioQueryAtoms = createStudioQueryAtoms(bootstrap.runtime);
 
 export const { scanSourceAtom, roiWorkspaceScanAtom, autoExcludePreviewAtom } = studioQueryAtoms;
 

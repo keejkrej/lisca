@@ -6,11 +6,18 @@ import type {
   RoiFrameRequest,
   RoiPositionScan,
   RoiWorkspaceScan,
+  AnnotationLabel,
 } from "@lisca/contracts";
-import { resultData, resultFailureMessage, resultLoading } from "@lisca/client/atoms";
-import { useCanvasResourceTransaction, useCanvasTransientStatus } from "@lisca/ui/features";;
-import { clamp } from "@lisca/utils";
-import { useAtomValue } from "@effect-atom/atom-react";
+import { useAnnotateSessionCore } from "@lisca/client/annotate-session/react";
+import { requestKey } from "@lisca/client/atoms/annotator-ui";
+import {
+  createStudioAnnotateSessionActions,
+  createStudioAnnotateSetUi,
+  studioAnnotateToAnnotatorUi,
+  type StudioAnnotateSessionActions,
+} from "@lisca/client/studio-annotate-session-bridge";
+import { useCanvasResourceTransaction, useCanvasTransientStatus } from "@lisca/ui/features";
+import { Atom, Result, useAtom, useAtomValue } from "@effect-atom/atom-react";
 import { useCallback, useEffect, useMemo } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 
@@ -19,9 +26,9 @@ import { studioNavigateWithTransition } from "../navigation/use-studio-navigate"
 import { studioClient, toErrorMessage } from "../api/studio-port";
 import { roiScanIdleAtom, roiWorkspaceScanAtom } from "../atoms/studio-query-atoms";
 import {
-  annotateRequestKey,
-  currentAnnotatePosition,
   currentAnnotateRoi,
+  studioAnnotateUiActions,
+  studioAnnotateUiAtom,
   useStudioAnnotateStore,
 } from "./studio-annotate-store";
 import {
@@ -30,6 +37,8 @@ import {
   useStudioStore,
 } from "./studio-store";
 import { validateAssayForAnalysis } from "../utils/studio-assay-validation";
+
+const labelsIdleAtom = Atom.make(Result.initial<AnnotationLabel[]>());
 
 function isAbortError(cause: unknown): boolean {
   return cause instanceof DOMException && cause.name === "AbortError";
@@ -115,13 +124,9 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     analysisRequestId,
     analysisProgress,
     analysisResultFiles,
-    setWorkspacePath,
-    setSelection,
-    setFrame,
     setContrast,
     setContrastState,
     setFrameLoading,
-    setScanError,
     setFrameError,
     setStatus,
     setAnalysisStartConfirm,
@@ -129,16 +134,38 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     setAnalysisProgress,
     setAnalysisResultFiles,
   } = useStudioAnnotateStore();
+
+  const [ui, setUi] = useAtom(studioAnnotateUiAtom);
+  const annotatorUi = useMemo(() => studioAnnotateToAnnotatorUi(ui), [ui]);
+  const setAnnotatorUi = useMemo(() => createStudioAnnotateSetUi(setUi), [setUi]);
+  const sessionActions = useMemo(
+    () => createStudioAnnotateSessionActions(studioAnnotateUiActions as StudioAnnotateSessionActions),
+    [],
+  );
   const scanResult = useAtomValue(
     activeWorkspacePath ? roiWorkspaceScanAtom(activeWorkspacePath) : roiScanIdleAtom,
   );
-  const scan = resultData(scanResult) ?? null;
-  const scanLoading = Boolean(activeWorkspacePath && resultLoading(scanResult));
-  const loadCanvasResources = useCanvasResourceTransaction();
-  const position = useMemo(
-    () => currentAnnotatePosition(scan, selection.pos),
-    [scan, selection.pos],
-  );
+  const labelsIdleResult = useAtomValue(labelsIdleAtom);
+
+  const session = useAnnotateSessionCore({
+    ui: annotatorUi,
+    setUi: setAnnotatorUi,
+    actions: sessionActions,
+    workspace: {
+      workspacePath: activeWorkspacePath,
+      setWorkspacePath: (path) => studioAnnotateUiActions.setWorkspacePath(setUi, path),
+    },
+    scan: {
+      scanResult,
+      labelsResult: labelsIdleResult,
+      shellWorkspacePath: activeWorkspacePath,
+    },
+    toErrorMessage,
+  });
+
+  const { scan, position } = session.derived;
+  const { scanLoading } = session.meta;
+
   const selectedRoi = useMemo(
     () => currentAnnotateRoi(position, selection.roi),
     [position, selection.roi],
@@ -154,7 +181,8 @@ export function useStudioAnnotateState(): StudioAnnotateState {
       ),
     [position, selectedRoi?.roi, selection.channel, selection.timeIndex, selection.zIndex],
   );
-  const activeRequestKey = annotateRequestKey(position, selectedRoi, selection);
+  const activeRequestKey = requestKey(position, selectedRoi, selection);
+  const loadCanvasResources = useCanvasResourceTransaction();
   const visibleStatus = useCanvasTransientStatus(status);
   const activeStatus = frameLoading
     ? "Loading ROI frame"
@@ -167,62 +195,6 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     if (activeStatus) return [{ text: activeStatus }];
     return [];
   }, [activeStatus, error]);
-
-  useEffect(() => {
-    setWorkspacePath(activeWorkspacePath);
-  }, [activeWorkspacePath, setWorkspacePath]);
-
-  useEffect(() => {
-    if (resultLoading(scanResult)) {
-      setScanError(null);
-      setStatus("Scanning ROI workspace");
-    }
-  }, [scanResult, setScanError, setStatus]);
-
-  useEffect(() => {
-    if (!scan || workspacePath !== activeWorkspacePath) return;
-    setStatus("ROI workspace loaded");
-  }, [activeWorkspacePath, scan, setStatus, workspacePath]);
-
-  useEffect(() => {
-    const scanLoadError = resultFailureMessage(scanResult);
-    if (!scanLoadError) return;
-    setFrame(null);
-    setScanError(toErrorMessage(scanLoadError, "ROI workspace load failed"));
-  }, [scanResult, setFrame, setScanError]);
-
-  useEffect(() => {
-    const firstPosition = scan?.positions[0] ?? null;
-    if (!firstPosition) {
-      setSelection({ pos: null, roi: null, channel: null, timeIndex: 0, zIndex: 0 });
-      return;
-    }
-    if (!scan?.positions.some((entry) => entry.pos === selection.pos)) {
-      setSelection({ pos: firstPosition.pos, roi: null, timeIndex: 0, zIndex: 0 });
-    }
-  }, [scan, selection.pos, setSelection]);
-
-  useEffect(() => {
-    if (!position) return;
-    const patch = {
-      channel: position.channels.includes(selection.channel ?? Number.NaN)
-        ? selection.channel
-        : (position.channels[0] ?? null),
-      roi: position.rois.some((entry) => entry.roi === selection.roi)
-        ? selection.roi
-        : (position.rois[0]?.roi ?? null),
-      timeIndex: clamp(selection.timeIndex, 0, Math.max(0, position.times.length - 1)),
-      zIndex: clamp(selection.zIndex, 0, Math.max(0, position.zSlices.length - 1)),
-    };
-    if (
-      patch.channel !== selection.channel ||
-      patch.roi !== selection.roi ||
-      patch.timeIndex !== selection.timeIndex ||
-      patch.zIndex !== selection.zIndex
-    ) {
-      setSelection(patch);
-    }
-  }, [position, selection, setSelection]);
 
   useEffect(() => {
     if (!workspacePath || workspacePath !== activeWorkspacePath || !request) {
@@ -239,12 +211,12 @@ export function useStudioAnnotateState(): StudioAnnotateState {
       load: (signal) =>
         runClientEffect(studioClient.loadRoiFrame(workspacePath, request, null, signal), { signal }),
       commit: (nextFrame) => {
-        setFrame(nextFrame);
+        studioAnnotateUiActions.setFrame(setUi, nextFrame);
         setContrastState(nextFrame);
       },
       reject: (cause) => {
         if (isAbortError(cause)) return;
-        setFrame(null);
+        studioAnnotateUiActions.setFrame(setUi, null);
         setFrameError(toErrorMessage(cause, "ROI frame load failed"));
       },
       settle: () => setFrameLoading(false),
@@ -255,16 +227,17 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     loadCanvasResources,
     request,
     setContrastState,
-    setFrame,
     setFrameError,
     setFrameLoading,
     setStatus,
+    setUi,
     workspacePath,
   ]);
 
   const changeSelection = useCallback(
-    (patch: Partial<StudioAnnotateState["selection"]>) => setSelection(patch),
-    [setSelection],
+    (patch: Partial<StudioAnnotateState["selection"]>) =>
+      studioAnnotateUiActions.setSelection(setUi, patch),
+    [setUi],
   );
 
   const shuffleSelection = useCallback(() => {
@@ -283,14 +256,14 @@ export function useStudioAnnotateState(): StudioAnnotateState {
         ? Math.floor(Math.random() * randomPosition.zSlices.length)
         : 0;
     if (!randomPosition) return;
-    setSelection({
+    studioAnnotateUiActions.setSelection(setUi, {
       pos: randomPosition.pos,
       roi,
       channel,
       timeIndex,
       zIndex,
     });
-  }, [scan?.positions, setSelection]);
+  }, [scan?.positions, setUi]);
 
   const startAnalysis = useCallback(() => {
     if (!workspacePath) return;

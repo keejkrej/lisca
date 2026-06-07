@@ -1,0 +1,6 @@
+{
+  "kind": "folder",
+  "path": "/data/experiment",
+  "subfolderTemplate": "Pos{p}",
+  "filenameTemplate": "img_{t}"
+}

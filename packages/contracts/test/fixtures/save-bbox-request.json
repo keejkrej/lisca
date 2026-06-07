@@ -1,0 +1,20 @@
+{
+  "workspacePath": "/workspace/Pos0",
+  "pos": 0,
+  "csv": "i,j\n0,0",
+  "alignState": {
+    "grid": {
+      "enabled": true,
+      "shape": "rect",
+      "tx": 0,
+      "ty": 0,
+      "rotation": 0,
+      "spacingA": 10,
+      "spacingB": 10,
+      "cellWidth": 12,
+      "cellHeight": 20,
+      "opacity": 0.5
+    },
+    "excludedCells": [{ "i": 0, "j": 1 }]
+  }
+}

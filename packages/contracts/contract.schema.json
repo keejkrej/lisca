@@ -134,6 +134,17 @@
         }
       }
     },
+    "ScanSourceRequest": {
+      "type": "object",
+      "required": [
+        "source"
+      ],
+      "properties": {
+        "source": {
+          "$ref": "#/definitions/AlignerSource"
+        }
+      }
+    },
     "AlignerSource": {
       "oneOf": [
         {
@@ -302,6 +313,32 @@
             "format": "uint32",
             "minimum": 0
           }
+        }
+      }
+    },
+    "LoadFrameRequest": {
+      "type": "object",
+      "required": [
+        "source",
+        "request",
+        "contrast"
+      ],
+      "properties": {
+        "source": {
+          "$ref": "#/definitions/AlignerSource"
+        },
+        "request": {
+          "$ref": "#/definitions/FrameRequest"
+        },
+        "contrast": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ContrastWindow"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       }
     },
@@ -561,6 +598,29 @@
           "type": "integer",
           "format": "uint32",
           "minimum": 0
+        }
+      }
+    },
+    "SaveBboxRequest": {
+      "type": "object",
+      "required": [
+        "workspacePath",
+        "pos",
+        "csv",
+        "alignState"
+      ],
+      "properties": {
+        "workspacePath": {
+          "type": "string"
+        },
+        "pos": {
+          "type": "number"
+        },
+        "csv": {
+          "type": "string"
+        },
+        "alignState": {
+          "$ref": "#/definitions/SavedAlignState"
         }
       }
     },

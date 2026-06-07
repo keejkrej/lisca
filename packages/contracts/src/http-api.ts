@@ -56,6 +56,26 @@ const U32Param = Schema.NumberFromString.annotations({
 
 const OkSchema = Schema.Struct({ ok: Schema.Boolean }).annotations({ identifier: "OkResponse" });
 
+/** POST /align/scan-source request body. */
+export const ScanSourceRequestSchema = Schema.Struct({
+  source: AlignerSourceSchema,
+}).annotations({ identifier: "ScanSourceRequest" });
+
+/** POST /align/load-frame request body. */
+export const LoadFrameRequestSchema = Schema.Struct({
+  source: AlignerSourceSchema,
+  request: FrameRequestSchema,
+  contrast: Schema.NullOr(ContrastWindowSchema),
+}).annotations({ identifier: "LoadFrameRequest" });
+
+/** POST /align/save-bbox request body. */
+export const SaveBboxRequestSchema = Schema.Struct({
+  workspacePath: Schema.String,
+  pos: Schema.Number,
+  csv: Schema.String,
+  alignState: SavedAlignStateSchema,
+}).annotations({ identifier: "SaveBboxRequest" });
+
 // --- fs group (shared host filesystem) ---------------------------------------
 const fsGroup = HttpApiGroup.make("fs")
   .add(
@@ -84,18 +104,12 @@ const fsGroup = HttpApiGroup.make("fs")
 const alignGroup = HttpApiGroup.make("align")
   .add(
     HttpApiEndpoint.post("scanSource", "/align/scan-source")
-      .setPayload(Schema.Struct({ source: AlignerSourceSchema }))
+      .setPayload(ScanSourceRequestSchema)
       .addSuccess(WorkspaceScanSchema),
   )
   .add(
     HttpApiEndpoint.post("loadFrame", "/align/load-frame")
-      .setPayload(
-        Schema.Struct({
-          source: AlignerSourceSchema,
-          request: FrameRequestSchema,
-          contrast: Schema.NullOr(ContrastWindowSchema),
-        }),
-      )
+      .setPayload(LoadFrameRequestSchema)
       .addSuccess(FramePayloadSchema),
   )
   .add(
@@ -105,14 +119,7 @@ const alignGroup = HttpApiGroup.make("align")
   )
   .add(
     HttpApiEndpoint.post("saveBbox", "/align/save-bbox")
-      .setPayload(
-        Schema.Struct({
-          workspacePath: Schema.String,
-          pos: Schema.Number,
-          csv: Schema.String,
-          alignState: SavedAlignStateSchema,
-        }),
-      )
+      .setPayload(SaveBboxRequestSchema)
       .addSuccess(SaveBboxResponseSchema),
   )
   .add(

@@ -4,14 +4,17 @@ import { Atom, Result } from "@effect-atom/atom-react";
 import {
   annotatorPortLayer,
   createAnnotatorQueryAtoms,
-  createAppRuntime,
 } from "@lisca/client/atoms";
+import { createLiscaAppBootstrap } from "@lisca/client/bootstrap";
 
 import { ensureAnnotatorPort } from "../api/annotator-port";
 
-export const annotatorRuntime = createAppRuntime(annotatorPortLayer(ensureAnnotatorPort()));
+const annotatorPort = ensureAnnotatorPort();
+const bootstrap = createLiscaAppBootstrap(annotatorPortLayer(annotatorPort), annotatorPort);
 
-export const annotatorQueryAtoms = createAnnotatorQueryAtoms(annotatorRuntime);
+export const annotatorRuntime = bootstrap.runtime;
+
+export const annotatorQueryAtoms = createAnnotatorQueryAtoms(bootstrap.runtime);
 
 export const {
   roiWorkspaceScanAtom,

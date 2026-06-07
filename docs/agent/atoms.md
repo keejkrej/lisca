@@ -19,7 +19,7 @@ Use `Atom.family` for parameterized queries. Serialize composite keys with `JSON
 
 ## Reactivity invalidation
 
-Query atoms use `Atom.withReactivity([ReactivityKeys.…])`. Shared key helpers are in `reactivity.ts`. Mutations that should refresh a query either return data consumed by the UI or invalidate via matching reactivity keys on success.
+Query atoms use `Atom.withReactivity([ReactivityKeys.…])`. Shared key helpers are in `reactivity.ts` (stable string keys). Mutations call `invalidateAfter(effect, [ReactivityKeys.…])` on success so related queries refresh.
 
 ## keepAlive vs default
 

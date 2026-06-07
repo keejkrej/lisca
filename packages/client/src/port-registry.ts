@@ -5,6 +5,7 @@ export type PortRegistry<T> = {
   resetForTests: () => void;
 };
 
+/** @deprecated Use `createLiscaAppBootstrap` — port registry duplicates atom runtime DI. */
 export function createPortRegistry<T>(createDefault: () => T): PortRegistry<T> {
   let singleton: T | undefined;
   const overrides = new Map<symbol, T>();

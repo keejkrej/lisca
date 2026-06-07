@@ -22,9 +22,10 @@ export type AnalysisPortDeps = {
   isDev?: boolean;
 };
 
-export function createAnalysisPort(deps: AnalysisPortDeps): AnalysisDataPort {
-  const client = createApiClient(deps);
-
+export function createAnalysisPort(
+  deps: AnalysisPortDeps,
+  client: LiscaApiClient = createApiClient(deps),
+): AnalysisDataPort {
   return {
     startAnalysis(request: AnalysisStartRequest) {
       return toClientEffect(client.studio.startAnalysis({ payload: request }));

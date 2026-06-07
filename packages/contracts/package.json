@@ -26,6 +26,7 @@
     "contract-schema": "bun scripts/gen-rust-schema.ts",
     "rust-types": "bun scripts/gen-rust-schema.ts && cargo typify contract.schema.json --crate 'lisca@0.1.0' --unknown-crates allow -o ../../crates/lisca/src/protocol/generated.rs",
     "generate": "bun scripts/gen-openapi.ts && bun scripts/gen-rust-schema.ts",
+    "test": "vitest run",
     "typecheck": "tsc -p tsconfig.build.json --noEmit"
   },
   "dependencies": {
@@ -33,6 +34,7 @@
     "effect": "catalog:"
   },
   "devDependencies": {
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

@@ -1,16 +1,25 @@
 import type {
   AutoExcludePreviewRequest,
   AutoExcludePreviewResponse,
+  SavedAlignState,
+  SaveBboxResponse,
   WorkspaceScan,
 } from "@lisca/contracts";
 import { Atom, type Result } from "@effect-atom/atom-react";
 import { Effect } from "effect";
 
+import type { ClientError } from "../../client-error.ts";
 import { AlignerPortService } from "../ports.ts";
-import { ReactivityKeys } from "../reactivity.ts";
+import { invalidateAfter, ReactivityKeys } from "../reactivity.ts";
 import type { AppRuntime } from "../runtime.ts";
 import { createSourceQueryAtoms } from "../source-queries.ts";
-import type { ClientError } from "../../client-error.ts";
+
+export type SaveBboxInput = {
+  workspacePath: string;
+  pos: number;
+  csv: string;
+  alignState: SavedAlignState;
+};
 
 export type AlignerQueryAtoms = {
   scanSourceAtom: (sourceKey: string) => Atom.Atom<Result.Result<WorkspaceScan, ClientError>>;
@@ -20,6 +29,7 @@ export type AlignerQueryAtoms = {
     AutoExcludePreviewResponse,
     ClientError
   >;
+  saveBboxAtom: Atom.AtomResultFn<SaveBboxInput, SaveBboxResponse, ClientError>;
 };
 
 export function createAlignerQueryAtoms(runtime: AppRuntime<AlignerPortService>): AlignerQueryAtoms {
@@ -42,10 +52,20 @@ export function createAlignerQueryAtoms(runtime: AppRuntime<AlignerPortService>)
       ),
   );
 
+  const saveBboxAtom = runtime.fn(
+    Effect.fnUntraced(function* ({ workspacePath, pos, csv, alignState }: SaveBboxInput) {
+      const port = yield* AlignerPortService;
+      return yield* invalidateAfter(port.saveBbox(workspacePath, pos, csv, alignState), [
+        ReactivityKeys.savedBboxPositions(workspacePath),
+      ]);
+    }),
+  );
+
   return {
     scanSourceAtom,
     savedBboxPositionsAtom,
     autoExcludePreviewAtom,
+    saveBboxAtom,
   };
 }
 

@@ -27,6 +27,10 @@
       "types": "./src/runtime.ts",
       "import": "./src/runtime.ts"
     },
+    "./bootstrap": {
+      "types": "./src/bootstrap.ts",
+      "import": "./src/bootstrap.ts"
+    },
     "./client-error": {
       "types": "./src/client-error.ts",
       "import": "./src/client-error.ts"
@@ -94,6 +98,26 @@
     "./annotate-session/react": {
       "types": "./src/use-annotate-session.ts",
       "import": "./src/use-annotate-session.ts"
+    },
+    "./use-align-state-core": {
+      "types": "./src/use-align-state-core.ts",
+      "import": "./src/use-align-state-core.ts"
+    },
+    "./use-annotate-state-core": {
+      "types": "./src/use-annotate-state-core.ts",
+      "import": "./src/use-annotate-state-core.ts"
+    },
+    "./studio-annotate-session-bridge": {
+      "types": "./src/studio-annotate-session-bridge.ts",
+      "import": "./src/studio-annotate-session-bridge.ts"
+    },
+    "./atoms/studio-ui": {
+      "types": "./src/atoms/studio-ui.ts",
+      "import": "./src/atoms/studio-ui.ts"
+    },
+    "./studio-assay-json": {
+      "types": "./src/studio-assay-json.ts",
+      "import": "./src/studio-assay-json.ts"
     }
   },
   "scripts": {

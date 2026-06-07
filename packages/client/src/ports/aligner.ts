@@ -6,7 +6,13 @@ import {
 import { decodeFramePayload } from "@lisca/utils";
 import { Effect } from "effect";
 
-import { createApiClient, toClientEffect, type LiscaApiClient } from "../api-client.ts";
+import {
+  createApiClient,
+  toClientEffect,
+  type ApiClientDeps,
+  type LiscaApiClient,
+} from "../api-client.ts";
+import { withOptionalAbortSignal } from "../with-abort-signal.ts";
 import { pollProgressLoop, subscribeProgress } from "../progress-subscribe.ts";
 import { createHostPort, type HostPortDeps } from "./host.ts";
 import type { AlignerDataPort } from "./types.ts";
@@ -22,52 +28,68 @@ export type AlignerPortDeps = HostPortDeps & {
   isDev?: boolean;
 };
 
-export function createAlignerPort(deps: AlignerPortDeps): AlignerDataPort {
-  const client = createApiClient(deps);
-  const host = createHostPort(deps);
+function withClientEffect<A, E>(
+  client: LiscaApiClient,
+  signal: AbortSignal | undefined,
+  run: (client: LiscaApiClient) => Effect.Effect<A, E>,
+) {
+  return withOptionalAbortSignal(toClientEffect(run(client)), signal);
+}
+
+export function createAlignerPort(
+  deps: AlignerPortDeps,
+  client: LiscaApiClient = createApiClient(deps),
+): AlignerDataPort {
+  const host = createHostPort(deps, client);
 
   return {
     ...host,
     scanSource(source) {
-      return toClientEffect(client.align.scanSource({ payload: { source } }));
+      return withClientEffect(client, undefined, (c) =>
+        c.align.scanSource({ payload: { source } }),
+      );
     },
-    loadFrame(source, request, contrast) {
-      return toClientEffect(
-        client.align
+    loadFrame(source, request, contrast, signal) {
+      return withClientEffect(client, signal, (c) =>
+        c.align
           .loadFrame({ payload: { source, request, contrast: contrast ?? null } })
           .pipe(Effect.map(decodeFramePayload)),
       );
     },
     loadAlignState(workspacePath, pos) {
-      return toClientEffect(
-        client.align.loadAlignState({ urlParams: { workspacePath, pos } }),
+      return withClientEffect(client, undefined, (c) =>
+        c.align.loadAlignState({ urlParams: { workspacePath, pos } }),
       );
     },
     saveBbox(workspacePath, pos, csv, alignState) {
-      return toClientEffect(
-        client.align.saveBbox({ payload: { workspacePath, pos, csv, alignState } }),
+      return withClientEffect(client, undefined, (c) =>
+        c.align.saveBbox({ payload: { workspacePath, pos, csv, alignState } }),
       );
     },
     autoExcludePreview(request) {
-      return toClientEffect(client.align.autoExcludePreview({ payload: request }));
+      return withClientEffect(client, undefined, (c) =>
+        c.align.autoExcludePreview({ payload: request }),
+      );
     },
     listSavedBboxPositions(workspacePath) {
-      return toClientEffect(
-        client.align.listSavedBboxPositions({ urlParams: { workspacePath } }),
+      return withClientEffect(client, undefined, (c) =>
+        c.align.listSavedBboxPositions({ urlParams: { workspacePath } }),
       );
     },
     cropRoi(request) {
-      return toClientEffect(client.align.cropRoi({ payload: request }));
+      return withClientEffect(client, undefined, (c) => c.align.cropRoi({ payload: request }));
     },
     cancelCropRoi(requestId) {
-      return toClientEffect(client.align.cancelCropRoi({ payload: { requestId } }));
+      return withClientEffect(client, undefined, (c) =>
+        c.align.cancelCropRoi({ payload: { requestId } }),
+      );
     },
     onCropRoiProgress(requestId, onProgress) {
       return createCropRoiProgressSubscription(client, deps, requestId, onProgress);
     },
     roiPosExists(workspacePath, pos) {
-      return toClientEffect(
-        client.align
+      return withClientEffect(client, undefined, (c) =>
+        c.align
           .roiPosExists({ urlParams: { workspacePath, pos } })
           .pipe(Effect.map((result) => result.exists)),
       );

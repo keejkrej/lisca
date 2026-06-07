@@ -1,32 +1,43 @@
 import { Effect } from "effect";
 
-import { createApiClient, toClientEffect, type ApiClientDeps } from "../api-client.ts";
+import { createApiClient, toClientEffect, type ApiClientDeps, type LiscaApiClient } from "../api-client.ts";
+import type { ClientEffect } from "../runtime.ts";
+import { withOptionalAbortSignal } from "../with-abort-signal.ts";
 import type { HostPort } from "./types.ts";
 
 export type { HostPort } from "./types.ts";
 
 export type HostPortDeps = ApiClientDeps;
 
-export function createHostPort(deps: HostPortDeps): HostPort {
-  const client = createApiClient(deps);
+function withClientEffect<A, E>(
+  client: LiscaApiClient,
+  signal: AbortSignal | undefined,
+  run: (client: LiscaApiClient) => Effect.Effect<A, E>,
+): ClientEffect<A> {
+  return withOptionalAbortSignal(toClientEffect(run(client)), signal);
+}
 
+export function createHostPort(
+  deps: HostPortDeps,
+  client: LiscaApiClient = createApiClient(deps),
+): HostPort {
   return {
-    listDirectory(path) {
-      return toClientEffect(
-        client.fs.listDirectory({ urlParams: { path: path ?? undefined } }),
+    listDirectory(path, signal) {
+      return withClientEffect(client, signal, (c) =>
+        c.fs.listDirectory({ urlParams: { path: path ?? undefined } }),
       );
     },
-    userHomeDirectory() {
-      return toClientEffect(
-        client.fs.userHomeDirectory().pipe(Effect.map((result) => result.path)),
+    userHomeDirectory(signal) {
+      return withClientEffect(client, signal, (c) =>
+        c.fs.userHomeDirectory().pipe(Effect.map((result) => result.path)),
       );
     },
-    connectSmb(request) {
-      return toClientEffect(client.fs.connectSmb({ payload: request }));
+    connectSmb(request, signal) {
+      return withClientEffect(client, signal, (c) => c.fs.connectSmb({ payload: request }));
     },
-    disconnectSmb(sessionId) {
-      return toClientEffect(
-        client.fs.disconnectSmb({ payload: { sessionId } }).pipe(Effect.asVoid),
+    disconnectSmb(sessionId, signal) {
+      return withClientEffect(client, signal, (c) =>
+        c.fs.disconnectSmb({ payload: { sessionId } }).pipe(Effect.asVoid),
       );
     },
   };

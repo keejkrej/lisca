@@ -1,0 +1,9 @@
+{
+  "width": 4,
+  "height": 4,
+  "dataBase64": "AA==",
+  "pixelType": "uint8",
+  "contrastDomain": { "min": 0, "max": 255 },
+  "suggestedContrast": { "min": 0, "max": 255 },
+  "appliedContrast": { "min": 0, "max": 255 }
+}

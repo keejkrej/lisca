@@ -10,7 +10,7 @@ import { Effect } from "effect";
 
 import type { ClientError } from "../../client-error.ts";
 import { AnnotatorPortService } from "../ports.ts";
-import { ReactivityKeys } from "../reactivity.ts";
+import { invalidateAfter, ReactivityKeys } from "../reactivity.ts";
 import type { AppRuntime } from "../runtime.ts";
 
 export type SaveAnnotationLabelsInput = {
@@ -73,14 +73,19 @@ export function createAnnotatorQueryAtoms(
   const saveAnnotationLabelsAtom = runtime.fn(
     Effect.fnUntraced(function* ({ workspacePath, labels }: SaveAnnotationLabelsInput) {
       const port = yield* AnnotatorPortService;
-      return yield* port.saveLabels(workspacePath, labels);
+      return yield* invalidateAfter(port.saveLabels(workspacePath, labels), [
+        ReactivityKeys.annotationLabels(workspacePath),
+      ]);
     }),
   );
 
   const saveRoiFrameAnnotationAtom = runtime.fn(
     Effect.fnUntraced(function* ({ workspacePath, request, annotation }: SaveRoiFrameAnnotationInput) {
       const port = yield* AnnotatorPortService;
-      return yield* port.saveRoiFrameAnnotation(workspacePath, request, annotation);
+      return yield* invalidateAfter(
+        port.saveRoiFrameAnnotation(workspacePath, request, annotation),
+        [ReactivityKeys.roiWorkspace(workspacePath)],
+      );
     }),
   );
 

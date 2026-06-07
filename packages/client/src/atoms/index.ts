@@ -3,6 +3,7 @@ export * from "./ports.ts";
 export * from "./runtime.ts";
 export * from "./result-utils.ts";
 export * from "./aligner/queries.ts";
+export * from "./aligner/frame-queries.ts";
 export * from "./annotator/queries.ts";
 export * from "./studio/queries.ts";
 export * from "./studio/analysis.ts";

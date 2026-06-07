@@ -279,16 +279,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "required": [
-                  "source"
-                ],
-                "properties": {
-                  "source": {
-                    "$ref": "#/components/schemas/AlignerSource"
-                  }
-                },
-                "additionalProperties": false
+                "$ref": "#/components/schemas/ScanSourceRequest"
               }
             }
           },
@@ -337,31 +328,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "required": [
-                  "source",
-                  "request",
-                  "contrast"
-                ],
-                "properties": {
-                  "source": {
-                    "$ref": "#/components/schemas/AlignerSource"
-                  },
-                  "request": {
-                    "$ref": "#/components/schemas/FrameRequest"
-                  },
-                  "contrast": {
-                    "anyOf": [
-                      {
-                        "$ref": "#/components/schemas/ContrastWindow"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
-                  }
-                },
-                "additionalProperties": false
+                "$ref": "#/components/schemas/LoadFrameRequest"
               }
             }
           },
@@ -459,28 +426,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "required": [
-                  "workspacePath",
-                  "pos",
-                  "csv",
-                  "alignState"
-                ],
-                "properties": {
-                  "workspacePath": {
-                    "type": "string"
-                  },
-                  "pos": {
-                    "type": "number"
-                  },
-                  "csv": {
-                    "type": "string"
-                  },
-                  "alignState": {
-                    "$ref": "#/components/schemas/SavedAlignState"
-                  }
-                },
-                "additionalProperties": false
+                "$ref": "#/components/schemas/SaveBboxRequest"
               }
             }
           },
@@ -1819,6 +1765,18 @@
         },
         "additionalProperties": false
       },
+      "ScanSourceRequest": {
+        "type": "object",
+        "required": [
+          "source"
+        ],
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/AlignerSource"
+          }
+        },
+        "additionalProperties": false
+      },
       "AlignerSource": {
         "anyOf": [
           {
@@ -1969,6 +1927,33 @@
               "format": "uint32",
               "minimum": 0
             }
+          }
+        },
+        "additionalProperties": false
+      },
+      "LoadFrameRequest": {
+        "type": "object",
+        "required": [
+          "source",
+          "request",
+          "contrast"
+        ],
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/AlignerSource"
+          },
+          "request": {
+            "$ref": "#/components/schemas/FrameRequest"
+          },
+          "contrast": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ContrastWindow"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false
@@ -2236,6 +2221,30 @@
             "type": "integer",
             "format": "uint32",
             "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "SaveBboxRequest": {
+        "type": "object",
+        "required": [
+          "workspacePath",
+          "pos",
+          "csv",
+          "alignState"
+        ],
+        "properties": {
+          "workspacePath": {
+            "type": "string"
+          },
+          "pos": {
+            "type": "number"
+          },
+          "csv": {
+            "type": "string"
+          },
+          "alignState": {
+            "$ref": "#/components/schemas/SavedAlignState"
           }
         },
         "additionalProperties": false
