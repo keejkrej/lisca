@@ -1,8 +1,8 @@
 import type { AnnotationLabel, AnnotationMode } from "@lisca/contracts";
 import { Button, Section, cn } from "@lisca/ui";
 
-import { AnnotationModeToggle } from "./annotation-mode-toggle";
-import { AnnotationToolSlider } from "./annotation-tool-slider";
+import { AnnotationModeToggle } from "@lisca/ui";
+import { AnnotationToolSlider } from "@lisca/ui";
 import { labelColorStyle, type AnnotationValue } from "../utils/annotation-utils";
 
 export function DemoAnnotatorRight(props: {
@@ -62,7 +62,7 @@ export function DemoAnnotatorRight(props: {
           );
         })}
         {props.frameLoading ? (
-          <p className="col-span-2 text-muted-foreground text-xs">Loading...</p>
+          <p className="col-span-2 text-muted-foreground text-xs">Loading…</p>
         ) : null}
         {props.error ? <p className="col-span-2 text-destructive text-xs">{props.error}</p> : null}
       </Section>

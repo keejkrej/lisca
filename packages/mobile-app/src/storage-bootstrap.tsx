@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorageImport from "@react-native-async-storage/async-storage";
 import {
   configureLiscaStorage,
   createNativeStorageAdapters,
@@ -6,6 +6,15 @@ import {
 } from "@lisca/storage";
 import { useEffect, useState, type ReactNode } from "react";
 import { Platform } from "react-native";
+
+type AsyncStorageApi = {
+  getItem: (key: string) => Promise<string | null>;
+  setItem: (key: string, value: string) => Promise<void>;
+  removeItem: (key: string) => Promise<void>;
+  getAllKeys: () => Promise<readonly string[]>;
+};
+
+const AsyncStorage = AsyncStorageImport as unknown as AsyncStorageApi;
 
 const asyncStorageBackend: NativeStorageBackend = {
   getItem: (key) => AsyncStorage.getItem(key),

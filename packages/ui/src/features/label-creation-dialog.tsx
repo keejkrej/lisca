@@ -1,7 +1,11 @@
 import type { AnnotationLabel } from "@lisca/contracts";
-import { Button, DialogSurface, Input, ModalScrim } from "@lisca/ui";
 import { Plus, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
+
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { DialogSurface } from "../shell/dialog-surface";
+import { ModalScrim } from "../shell/modal-scrim";
 
 type LabelDraft = {
   id: string;
@@ -27,35 +31,57 @@ function labelDraftsFrom(labels: AnnotationLabel[]) {
   return labels.length > 0 ? labels.map((label) => ({ ...label })) : defaultLabelDrafts;
 }
 
-export function LabelCreationDialog(props: {
+export type LabelCreationDialogProps = {
   open: boolean;
-  workspacePath: string | null;
   labels: AnnotationLabel[];
-  saving: boolean;
   error: string | null;
   onOpenChange: (open: boolean) => void;
   onSave: (labels: AnnotationLabel[]) => void;
-}) {
-  const [drafts, setDrafts] = useState<LabelDraft[]>(() => labelDraftsFrom(props.labels));
+  title?: string;
+  subtitle?: string;
+  workspacePath?: string | null;
+  saving?: boolean;
+  saveLabel?: string;
+};
+
+export function LabelCreationDialog({
+  open,
+  labels,
+  error,
+  onOpenChange,
+  onSave,
+  title = "Create labels",
+  subtitle,
+  workspacePath = null,
+  saving = false,
+  saveLabel = "Save labels",
+}: LabelCreationDialogProps) {
+  const [drafts, setDrafts] = useState<LabelDraft[]>(() => labelDraftsFrom(labels));
   const [localError, setLocalError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (props.open) {
-      setDrafts(labelDraftsFrom(props.labels));
+    if (open) {
+      setDrafts(labelDraftsFrom(labels));
       setLocalError(null);
     }
-  }, [props.labels, props.open]);
+  }, [labels, open]);
 
   useEffect(() => {
-    if (!props.open) return undefined;
+    if (!open) return undefined;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") props.onOpenChange(false);
+      if (event.key === "Escape") onOpenChange(false);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [props]);
+  }, [onOpenChange, open]);
 
-  if (!props.open) return null;
+  if (!open) return null;
+
+  const resolvedSubtitle =
+    subtitle ??
+    (workspacePath != null
+      ? workspacePath
+      : "Select a workspace first");
 
   const updateDraft = (index: number, patch: Partial<LabelDraft>) => {
     setDrafts((current) =>
@@ -79,42 +105,42 @@ export function LabelCreationDialog(props: {
   };
 
   const submit = () => {
-    const labels = drafts.map((draft) => ({
+    const nextLabels = drafts.map((draft) => ({
       id: normalizeLabelId(draft.id || draft.name),
       name: draft.name.trim(),
       color: draft.color.trim(),
     }));
-    if (labels.length === 0) {
+    if (nextLabels.length === 0) {
       setLocalError("Add at least one label.");
       return;
     }
-    if (labels.some((label) => !label.id || !label.name || !label.color)) {
+    if (nextLabels.some((label) => !label.id || !label.name || !label.color)) {
       setLocalError("Each label needs an id, name, and color.");
       return;
     }
-    if (new Set(labels.map((label) => label.id)).size !== labels.length) {
+    if (new Set(nextLabels.map((label) => label.id)).size !== nextLabels.length) {
       setLocalError("Label ids must be unique.");
       return;
     }
-    props.onSave(labels);
+    onSave(nextLabels);
   };
 
-  const activeError = localError ?? props.error;
+  const activeError = localError ?? error;
 
   return (
     <ModalScrim
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget) props.onOpenChange(false);
+        if (event.target === event.currentTarget) onOpenChange(false);
       }}
     >
       <DialogSurface aria-labelledby="label-dialog-title" className="max-h-[86vh]" maxWidth="2xl">
         <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
           <div className="min-w-0">
             <h2 className="font-semibold text-foreground text-lg" id="label-dialog-title">
-              Create labels
+              {title}
             </h2>
-            <p className="truncate text-muted-foreground text-sm" title={props.workspacePath ?? ""}>
-              {props.workspacePath ?? "Select a workspace first"}
+            <p className="truncate text-muted-foreground text-sm" title={resolvedSubtitle}>
+              {resolvedSubtitle}
             </p>
           </div>
           <Button
@@ -123,7 +149,7 @@ export function LabelCreationDialog(props: {
             size="icon-sm"
             type="button"
             variant="ghost"
-            onClick={() => props.onOpenChange(false)}
+            onClick={() => onOpenChange(false)}
           >
             <X className="size-4" aria-hidden />
           </Button>
@@ -181,16 +207,16 @@ export function LabelCreationDialog(props: {
         </div>
 
         <div className="flex justify-end gap-2 border-t border-border px-5 py-4">
-          <Button type="button" variant="outline" onClick={() => props.onOpenChange(false)}>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button
-            disabled={!props.workspacePath}
-            loading={props.saving}
+            disabled={workspacePath != null ? !workspacePath : false}
+            loading={saving}
             type="button"
             onClick={submit}
           >
-            Save labels
+            {saveLabel}
           </Button>
         </div>
       </DialogSurface>

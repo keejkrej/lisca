@@ -1,11 +1,14 @@
-import { AnnotationCanvas, ViewportCard } from "@lisca/ui";
+import { AnnotationCanvas } from "@lisca/ui/features";
+import { ViewportCard } from "@lisca/ui/shell";
 import { useMemo } from "react";
 
-import type { StudioAnnotateState } from "../state/use-studio-annotate-state";
+import { useStudioAnnotatePage } from "../state/studio-annotate-page-context";
+import { StudioCanvasTransition } from "./studio-canvas-transition";
 import { StudioAnalysisProgressModal } from "./studio-analysis-progress-modal";
 import { StudioAnalysisStartModal } from "./studio-analysis-start-modal";
 
-export function StudioAnnotateMain({ state }: { state: StudioAnnotateState }) {
+export function StudioAnnotateMain() {
+  const { state } = useStudioAnnotatePage();
   const emptyMask = useMemo(
     () => (state.frame ? new Uint8Array(state.frame.width * state.frame.height) : new Uint8Array()),
     [state.frame],
@@ -25,6 +28,11 @@ export function StudioAnnotateMain({ state }: { state: StudioAnnotateState }) {
   return (
     <>
       <ViewportCard className="relative">
+        <StudioCanvasTransition
+          transitionName={
+            state.workspacePath ? `studio-frame-${state.workspacePath}` : null
+          }
+        >
         <AnnotationCanvas
           activeLabelId={null}
           brushSize={1}
@@ -38,9 +46,10 @@ export function StudioAnnotateMain({ state }: { state: StudioAnnotateState }) {
           tool="brush"
           onMaskCommit={() => undefined}
         />
+        </StudioCanvasTransition>
       </ViewportCard>
-      <StudioAnalysisStartModal state={state} />
-      <StudioAnalysisProgressModal state={state} />
+      <StudioAnalysisStartModal />
+      <StudioAnalysisProgressModal />
     </>
   );
 }

@@ -1,7 +1,8 @@
 import { CropProgressModal as SharedCropProgressModal } from "@lisca/ui";
 
-import type { AlignState } from "../state/use-align-state";
+import { useAlignPage } from "../state/align-page-context";
 
-export function CropProgressModal({ state }: { state: AlignState }) {
+export function CropProgressModal() {
+  const { state } = useAlignPage();
   return <SharedCropProgressModal progress={state.cropProgress} onCancel={() => void state.cancelCrop()} />;
 }

@@ -24,8 +24,8 @@
     "html2canvas-pro": "^2.0.2",
     "jspdf": "^4.2.1",
     "lucide-react": "^0.511.0",
-    "react": "catalog:",
-    "react-dom": "catalog:"
+    "react": "19.3.0-canary-f0dfee38-20260529",
+    "react-dom": "19.3.0-canary-f0dfee38-20260529"
   },
   "devDependencies": {
     "@tailwindcss/vite": "catalog:",

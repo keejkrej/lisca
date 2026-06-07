@@ -83,7 +83,14 @@ export {
 
 export { AppShell, type AppShellCompound, ShellDock, ShellSidebar } from "./shell/shell";
 
-export { ShellNavbar, type ShellNavbarProps, type ShellNavbarRouteItem } from "./shell/navbar";
+export {
+  ShellNavbar,
+  type ShellNavbarAlignerProps,
+  type ShellNavbarAnnotatorProps,
+  type ShellNavbarCompound,
+  type ShellNavbarProps,
+  type ShellNavbarRouteItem,
+} from "./shell/navbar";
 
 export { PathButton } from "./shell/path-button";
 
@@ -120,6 +127,7 @@ export { Panel, PanelContent, PanelDescription, PanelHeader, PanelTitle } from "
 export { ReadonlyPathField } from "./shell/readonly-path-field";
 export { Section, type SectionProps } from "./shell/section";
 export { ViewportCard } from "./shell/viewport-card";
+export { RouteLoadingFallback } from "./shell/route-loading-fallback";
 
 export { AlignGrid, type AlignGridProps } from "./features/align-grid";
 
@@ -152,6 +160,14 @@ export {
   type AnnotationCanvasProps,
   type AnnotationTool,
 } from "./features/annotation-canvas";
+
+export { AnnotationModeToggle } from "./features/annotation-mode-toggle";
+export { AnnotationToolSlider } from "./features/annotation-tool-slider";
+
+export {
+  LabelCreationDialog,
+  type LabelCreationDialogProps,
+} from "./features/label-creation-dialog";
 
 export {
   CanvasStatusMessageStack,

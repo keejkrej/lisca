@@ -243,7 +243,7 @@ export default function ResultRoute() {
               action={
                 <DockButton
                   disabled={!workspacePath || !hasAnyResultFiles || isBusy}
-                  label={exporting ? "Saving..." : "Save"}
+                  label={exporting ? "Saving…" : "Save"}
                   onPress={() => void exportPdf()}
                 />
               }

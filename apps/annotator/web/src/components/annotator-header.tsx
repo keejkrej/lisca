@@ -1,17 +1,14 @@
-import { Menu, MenuItem, MenuPopup, MenuTrigger, ShellNavbar, buttonVariants, cn } from "@lisca/ui";
+import { Menu, MenuItem, MenuPopup, MenuTrigger, buttonVariants, cn } from "@lisca/ui";
+import { ShellNavbar } from "@lisca/ui/shell";
 import { ChevronDown, Tags } from "lucide-react";
 
-export function AnnotatorHeader(props: {
-  workspacePath: string | null;
-  onCreateLabels: () => void;
-  onPickWorkspace: () => void;
-}) {
+import { useRoiPage } from "../state/roi-page-context";
+
+export function AnnotatorHeader() {
+  const { page } = useRoiPage();
+
   return (
-    <ShellNavbar
-      routeItems={[{ value: "roi", label: "ROI" }]}
-      routeValue="roi"
-      showRouteToggle={false}
-      showSourceButton={false}
+    <ShellNavbar.Annotator
       endLeading={
         <Menu>
           <MenuTrigger
@@ -34,23 +31,23 @@ export function AnnotatorHeader(props: {
             sideOffset={8}
           >
             <MenuItem
-              disabled={!props.workspacePath}
+              disabled={!page.workspacePath}
               className="h-auto min-h-0 items-start gap-2 py-2.5 text-left"
-              onClick={props.onCreateLabels}
+              onClick={() => {
+                page.setLabelError(null);
+                page.setLabelDialogOpen(true);
+              }}
             >
-              <Tags className="mt-0.5 size-4 shrink-0" aria-hidden />
-              <span className="min-w-0">
-                <span className="block font-medium text-foreground text-sm">Create labels</span>
-                <span className="block text-muted-foreground text-xs">
-                  Write annotations/labels.json
-                </span>
+              <Tags className="size-4 shrink-0 text-muted-foreground" />
+              <span className="flex flex-col gap-0.5">
+                <span className="font-medium">Create labels</span>
+                <span className="text-muted-foreground text-xs">Define classification labels</span>
               </span>
             </MenuItem>
           </MenuPopup>
         </Menu>
       }
-      onRouteChange={() => undefined}
-      onPickWorkspace={props.onPickWorkspace}
+      onPickWorkspace={() => page.setFilePickerOpen(true)}
     />
   );
 }

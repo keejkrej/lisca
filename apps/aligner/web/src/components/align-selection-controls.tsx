@@ -1,4 +1,6 @@
-import { Button, Section } from "@lisca/ui";
+import { AlignSelectionCounts } from "@lisca/ui/features";
+import { Button } from "@lisca/ui";
+import { Section } from "@lisca/ui/shell";
 import {
   collectAlignGridEdgeCells,
   enumerateVisibleAlignGridCells,
@@ -6,10 +8,11 @@ import {
 } from "@lisca/utils";
 import { useMemo } from "react";
 
-import type { AlignState } from "../state/use-align-state";
+import { useAlignPage } from "../state/align-page-context";
 import { VariationExcludeDialog } from "./variation-exclude-dialog";
 
-export function AlignSelectionControls({ state }: { state: AlignState }) {
+export function AlignSelectionControls() {
+  const { state } = useAlignPage();
   const visibleCells = useMemo(
     () =>
       state.frame
@@ -28,16 +31,10 @@ export function AlignSelectionControls({ state }: { state: AlignState }) {
         contentClassName="flex min-h-0 flex-col gap-2 overflow-auto"
         title="Selection"
       >
-        <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-md border border-border bg-muted/30 px-2 py-2">
-            <div className="text-muted-foreground text-xs">Included cells</div>
-            <div className="mt-1 font-medium tabular-nums">{state.visibleCounts.included}</div>
-          </div>
-          <div className="rounded-md border border-border bg-muted/30 px-2 py-2">
-            <div className="text-muted-foreground text-xs">Excluded cells</div>
-            <div className="mt-1 font-medium tabular-nums">{state.visibleCounts.excluded}</div>
-          </div>
-        </div>
+        <AlignSelectionCounts
+          excluded={state.visibleCounts.excluded}
+          included={state.visibleCounts.included}
+        />
         <Button
           className="w-full"
           disabled={disabled || !hasExcludedCells}

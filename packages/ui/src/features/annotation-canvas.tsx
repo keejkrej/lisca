@@ -3,6 +3,7 @@
 import type { AnnotationLabel, CanvasStatusMessage, FrameResult } from "@lisca/contracts";
 import { clamp, fillPolygon, hexToRgb, strokeMask } from "@lisca/utils";
 import {
+  memo,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -13,6 +14,7 @@ import {
 } from "react";
 
 import { cn } from "../lib/utils";
+import { areAnnotationCanvasPropsEqual } from "./canvas-memo";
 import { resolvedCanvasBackground, useCanvasThemeRerender } from "./canvas-theme";
 import { CanvasStatusMessageStack, CanvasToastStack } from "./canvas-status";
 
@@ -107,7 +109,7 @@ function prepareMaskCanvas(
   return canvas;
 }
 
-export function AnnotationCanvas({
+function AnnotationCanvasInner({
   frame,
   labels,
   mask,
@@ -338,3 +340,5 @@ export function AnnotationCanvas({
     </div>
   );
 }
+
+export const AnnotationCanvas = memo(AnnotationCanvasInner, areAnnotationCanvasPropsEqual);

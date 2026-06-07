@@ -1,3 +1,4 @@
+import "./react-canary-types";
 import { createLiscaWebApp } from "@lisca/web-app";
 import { createHashHistory, createRouter } from "@tanstack/react-router";
 

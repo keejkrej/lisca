@@ -1,8 +1,9 @@
 import { Button, DialogSurface, ModalScrim } from "@lisca/ui";
 
-import type { AlignState } from "../state/use-align-state";
+import { useAlignPage } from "../state/align-page-context";
 
-export function CropConfirmModal({ state }: { state: AlignState }) {
+export function CropConfirmModal() {
+  const { state } = useAlignPage();
   const confirm = state.cropConfirm;
   if (!confirm) return null;
 

@@ -1,5 +1,7 @@
 import type { AnnotationMode } from "@lisca/contracts";
-import { ToggleGroup, ToggleGroupItem, cn } from "@lisca/ui";
+
+import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group";
+import { cn } from "../lib/utils";
 
 export function AnnotationModeToggle({
   mode,

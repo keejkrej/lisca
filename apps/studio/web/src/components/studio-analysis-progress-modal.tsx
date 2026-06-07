@@ -3,13 +3,14 @@ import { Spinner, DialogSurface, ModalScrim } from "@lisca/ui";
 import { clamp } from "@lisca/utils";
 
 import type { AnalysisProgress } from "@lisca/contracts";
-import type { StudioAnnotateState } from "../state/use-studio-annotate-state";
+import { useStudioAnnotatePage } from "../state/studio-annotate-page-context";
 
 function isDoneStatus(status: AnalysisProgress["status"]) {
   return status === "completed" || status === "error";
 }
 
-export function StudioAnalysisProgressModal({ state }: { state: StudioAnnotateState }) {
+export function StudioAnalysisProgressModal() {
+  const { state } = useStudioAnnotatePage();
   const progress = state.analysisProgress;
   if (!progress || isDoneStatus(progress.status)) return null;
 

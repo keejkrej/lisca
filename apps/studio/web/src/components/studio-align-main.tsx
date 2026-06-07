@@ -3,16 +3,18 @@ import {
   cursorForAlignTool,
   useAlignCanvasGridHandlers,
   useCanvasTransientStatus,
-  ViewportCard,
-} from "@lisca/ui";
+} from "@lisca/ui/features";
+import { ViewportCard } from "@lisca/ui/shell";
 import { useMemo } from "react";
 
+import { StudioCanvasTransition } from "./studio-canvas-transition";
 import { StudioCropConfirmModal } from "./studio-crop-confirm-modal";
 import { StudioCropProgressModal } from "./studio-crop-progress-modal";
 import { StudioCropStartModal } from "./studio-crop-start-modal";
-import type { StudioAlignState } from "../state/use-studio-align-state";
+import { useStudioAlignPage } from "../state/studio-align-page-context";
 
-export function StudioAlignMain({ state }: { state: StudioAlignState }) {
+export function StudioAlignMain() {
+  const { state } = useStudioAlignPage();
   const { handlePointerDown, handlePointerMove, handlePointerEnd, previewGrid } =
     useAlignCanvasGridHandlers({
       grid: state.grid,
@@ -44,6 +46,11 @@ export function StudioAlignMain({ state }: { state: StudioAlignState }) {
   return (
     <>
       <ViewportCard>
+        <StudioCanvasTransition
+          transitionName={
+            state.workspacePath ? `studio-frame-${state.workspacePath}` : null
+          }
+        >
         <AlignCanvas
           className="min-h-0 flex-1"
           cursor={cursorForAlignTool(state.toolMode, state.grid.enabled, previewGrid != null)}
@@ -59,10 +66,11 @@ export function StudioAlignMain({ state }: { state: StudioAlignState }) {
           onVirtualPointerMove={handlePointerMove}
           onVirtualPointerUp={handlePointerEnd}
         />
+        </StudioCanvasTransition>
       </ViewportCard>
-      <StudioCropStartModal state={state} />
-      <StudioCropConfirmModal state={state} />
-      <StudioCropProgressModal state={state} />
+      <StudioCropStartModal />
+      <StudioCropConfirmModal />
+      <StudioCropProgressModal />
     </>
   );
 }

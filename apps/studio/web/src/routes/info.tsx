@@ -1,5 +1,5 @@
-import { AppShell, DockButton } from "@lisca/ui";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { AppShell, DockButton, RouteLoadingFallback } from "@lisca/ui";
+import { createFileRoute } from "@tanstack/react-router";
 
 import { BasicInfoStep1 } from "../components/basic-info-step1";
 import { BasicInfoStep2 } from "../components/basic-info-step2";
@@ -9,13 +9,16 @@ import { StudioLeft } from "../components/studio-left";
 import { instructionForStep, validInfo1, validInfo2, validInfo3 } from "../state/studio-routes";
 import { useStudioStore } from "../state/studio-store";
 import { studioHostOperations } from "../api/studio-port";
+import { useStudioNavigate } from "../navigation/use-studio-navigate";
 
 export const Route = createFileRoute("/info")({
   component: InfoPage,
+  pendingComponent: RouteLoadingFallback,
+  pendingMs: 0,
 });
 
 function InfoPage() {
-  const navigate = useNavigate();
+  const { navigateTo } = useStudioNavigate();
   const assayId = useStudioStore((state) => state.assayId);
   const infoStep = useStudioStore((state) => state.infoStep);
   const setInfoStep = useStudioStore((state) => state.setInfoStep);
@@ -47,7 +50,7 @@ function InfoPage() {
       setInfoStep(invalidStep);
       return;
     }
-    void navigate({ to: "/align" });
+    navigateTo("/align");
   };
 
   const back = () => {

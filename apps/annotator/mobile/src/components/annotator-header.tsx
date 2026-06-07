@@ -8,7 +8,7 @@ export function AnnotatorHeader(props: {
 }) {
   return (
     <View style={styles.root}>
-      <ShellNavbar
+      <ShellNavbar.Annotator
         endLeading={
           <Button
             disabled={!props.workspacePath}
@@ -18,13 +18,7 @@ export function AnnotatorHeader(props: {
             onPress={props.onCreateLabels}
           />
         }
-        routeItems={[{ value: "roi", label: "ROI" }]}
-        routeValue="roi"
-        showRouteToggle={false}
-        showSourceButton={false}
-        onPickSource={() => undefined}
         onPickWorkspace={props.onPickWorkspace}
-        onRouteChange={() => undefined}
       />
     </View>
   );

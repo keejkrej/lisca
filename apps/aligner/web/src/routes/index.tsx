@@ -1,4 +1,4 @@
-import { AppShell } from "@lisca/ui";
+import { AppShell, RouteLoadingFallback } from "@lisca/ui/shell";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { AlignerDock } from "../components/aligner-dock";
@@ -6,36 +6,38 @@ import { AlignerHeader } from "../components/aligner-header";
 import { AlignerLeft } from "../components/aligner-left";
 import { AlignerMain } from "../components/aligner-main";
 import { AlignerRight } from "../components/aligner-right";
-import { useAlignState } from "../state/use-align-state";
+import { AlignPageProvider } from "../state/align-page-context";
 
 export const Route = createFileRoute("/")({
   component: AlignPage,
+  pendingComponent: RouteLoadingFallback,
+  pendingMs: 0,
 });
 
 function AlignPage() {
-  const alignState = useAlignState();
-
   return (
-    <AppShell>
-      <AppShell.Header>
-        <AlignerHeader onSourcePicked={alignState.setSource} />
-      </AppShell.Header>
-      <AppShell.Body>
-        <AppShell.Left widthClass="w-72">
-          <AlignerLeft alignState={alignState} />
-        </AppShell.Left>
-        <AppShell.MainColumn>
-          <AppShell.Main>
-            <AlignerMain state={alignState} />
-          </AppShell.Main>
-          <AppShell.Dock>
-            <AlignerDock alignState={alignState} />
-          </AppShell.Dock>
-        </AppShell.MainColumn>
-        <AppShell.Right widthClass="w-72">
-          <AlignerRight alignState={alignState} />
-        </AppShell.Right>
-      </AppShell.Body>
-    </AppShell>
+    <AlignPageProvider>
+      <AppShell>
+        <AppShell.Header>
+          <AlignerHeader />
+        </AppShell.Header>
+        <AppShell.Body>
+          <AppShell.Left widthClass="w-72">
+            <AlignerLeft />
+          </AppShell.Left>
+          <AppShell.MainColumn>
+            <AppShell.Main>
+              <AlignerMain />
+            </AppShell.Main>
+            <AppShell.Dock>
+              <AlignerDock />
+            </AppShell.Dock>
+          </AppShell.MainColumn>
+          <AppShell.Right widthClass="w-72">
+            <AlignerRight />
+          </AppShell.Right>
+        </AppShell.Body>
+      </AppShell>
+    </AlignPageProvider>
   );
 }

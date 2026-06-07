@@ -61,6 +61,8 @@ export function RoiPage() {
             <AnnotatorMain
               activeLabelId={page.activeLabelId}
               brushSize={page.brushSize}
+              classificationLabelId={page.annotation.current.classificationLabelId}
+              commitAnnotation={page.annotation.commit}
               disabled={!page.canEditSegmentation}
               frame={page.frame}
               labels={page.labels}
@@ -68,12 +70,6 @@ export function RoiPage() {
               overlayOpacity={page.overlayOpacity}
               toasts={page.canvasToasts}
               tool={page.tool}
-              onMaskCommit={(mask) =>
-                page.annotation.commit({
-                  classificationLabelId: page.annotation.current.classificationLabelId,
-                  mask,
-                })
-              }
             />
           </AppShell.Main>
           <AppShell.Dock>

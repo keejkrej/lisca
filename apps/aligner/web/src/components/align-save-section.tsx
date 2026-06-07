@@ -1,8 +1,9 @@
 import { Button, ReadonlyPathField, Section } from "@lisca/ui";
 
-import type { AlignState } from "../state/use-align-state";
+import { useAlignPage } from "../state/align-page-context";
 
-export function AlignSaveSection({ state }: { state: AlignState }) {
+export function AlignSaveSection() {
+  const { state } = useAlignPage();
   const pos = state.selection.pos;
   const canSave = Boolean(state.workspacePath && state.frame && !state.cropping);
   const canCrop = Boolean(state.workspacePath && state.source && state.frame && !state.cropping);

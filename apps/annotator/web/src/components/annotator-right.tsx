@@ -1,72 +1,44 @@
-import type { AnnotationLabel, AnnotationMode } from "@lisca/contracts";
-import { Button, Section, cn } from "@lisca/ui";
+import { Button, cn } from "@lisca/ui";
+import { AnnotationModeToggle, AnnotationToolSlider } from "@lisca/ui/features";
+import { Section } from "@lisca/ui/shell";
+import { useRoiPage } from "../state/roi-page-context";
+import { createEmptyMask, labelColorStyle } from "../utils/annotation-utils";
 
-import { AnnotationToolSlider } from "./annotation-tool-slider";
-import { AnnotationModeToggle } from "./annotation-mode-toggle";
-import { labelColorStyle, type AnnotationValue } from "../utils/annotation-utils";
-
-export function AnnotatorRight(props: {
-  labels: AnnotationLabel[];
-  mode: AnnotationMode;
-  overlayOpacity: number;
-  brushSize: number;
-  activeLabelId: string | null;
-  annotation: AnnotationValue;
-  canEdit: boolean;
-  canUndo: boolean;
-  canRedo: boolean;
-  dirty: boolean;
-  scanLoading: boolean;
-  frameLoading: boolean;
-  annotationLoading: boolean;
-  scanError: string | null;
-  frameError: string | null;
-  annotationError: string | null;
-  saveError: string | null;
-  onModeChange: (mode: AnnotationMode) => void;
-  onOverlayOpacityChange: (value: number) => void;
-  onBrushSizeChange: (value: number) => void;
-  onClassificationChange: (labelId: string | null) => void;
-  onPaintLabelChange: (labelId: string) => void;
-  onClear: () => void;
-  onUndo: () => void;
-  onRedo: () => void;
-  onDiscard: () => void;
-}) {
+export function AnnotatorRight() {
+  const { page } = useRoiPage();
   const activeError =
-    props.scanError ?? props.frameError ?? props.annotationError ?? props.saveError;
-  const loading = props.scanLoading || props.frameLoading || props.annotationLoading;
+    page.scanError ?? page.frameError ?? page.annotationError ?? page.saveError;
+  const loading = page.scanLoading || page.frameLoading || page.annotationLoading;
 
   return (
     <div className="flex min-h-0 flex-col gap-2 overflow-auto p-3">
       <Section title="Mode">
-        <AnnotationModeToggle
-          className="w-full"
-          mode={props.mode}
-          onModeChange={props.onModeChange}
-        />
+        <AnnotationModeToggle className="w-full" mode={page.mode} onModeChange={page.setMode} />
       </Section>
       <Section title="Labels" contentClassName="grid grid-cols-2 gap-2">
-        {props.labels.map((label) => {
+        {page.labels.map((label) => {
           const selected =
-            props.mode === "classification"
-              ? props.annotation.classificationLabelId === label.id
-              : props.activeLabelId === label.id;
+            page.mode === "classification"
+              ? page.annotation.current.classificationLabelId === label.id
+              : page.activeLabelId === label.id;
           return (
             <button
               key={label.id}
               className={cn(
                 "min-w-0 truncate rounded-md border px-2 py-2 text-center text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50",
               )}
-              disabled={!props.canEdit}
+              disabled={!page.canEdit}
               style={labelColorStyle(label, selected)}
               type="button"
               title={label.name}
               onClick={() => {
-                if (props.mode === "classification") {
-                  props.onClassificationChange(selected ? null : label.id);
+                if (page.mode === "classification") {
+                  page.annotation.commit({
+                    classificationLabelId: selected ? null : label.id,
+                    mask: page.annotation.current.mask,
+                  });
                 } else {
-                  props.onPaintLabelChange(label.id);
+                  page.setActiveLabelId(label.id);
                 }
               }}
             >
@@ -74,71 +46,77 @@ export function AnnotatorRight(props: {
             </button>
           );
         })}
-        {props.labels.length === 0 ? (
+        {page.labels.length === 0 ? (
           <div className="col-span-2 rounded-md border border-dashed border-border px-2 py-8 text-center text-muted-foreground text-xs">
             No labels loaded.
           </div>
         ) : null}
-        {loading ? <p className="col-span-2 text-muted-foreground text-xs">Loading...</p> : null}
+        {loading ? <p className="col-span-2 text-muted-foreground text-xs">Loading…</p> : null}
         {activeError ? <p className="col-span-2 text-destructive text-xs">{activeError}</p> : null}
       </Section>
       <Section title="Edit" contentClassName="grid grid-cols-2 gap-2">
         <Button
-          disabled={!props.canUndo}
+          disabled={!page.annotation.canUndo}
           size="sm"
           type="button"
           variant="outline"
-          onClick={props.onUndo}
+          onClick={page.annotation.undo}
         >
           Undo
         </Button>
         <Button
-          disabled={!props.canRedo}
+          disabled={!page.annotation.canRedo}
           size="sm"
           type="button"
           variant="outline"
-          onClick={props.onRedo}
+          onClick={page.annotation.redo}
         >
           Redo
         </Button>
         <Button
-          disabled={props.mode !== "segmentation" || !props.canEdit}
+          disabled={page.mode !== "segmentation" || !page.canEdit}
           size="sm"
           type="button"
           variant="outline"
-          onClick={props.onClear}
+          onClick={() =>
+            page.frame &&
+            page.annotation.commit({
+              classificationLabelId: page.annotation.current.classificationLabelId,
+              mask: createEmptyMask(page.frame.width, page.frame.height),
+            })
+          }
         >
           Clear
         </Button>
         <Button
-          disabled={!props.dirty}
+          disabled={!page.annotation.dirty}
           size="sm"
           type="button"
           variant="outline"
-          onClick={props.onDiscard}
+          onClick={page.annotation.discard}
         >
           Discard
         </Button>
       </Section>
-      {props.mode === "segmentation" ? (
+      {page.mode === "segmentation" ? (
         <Section title="Brush" contentClassName="flex flex-col gap-3">
           <AnnotationToolSlider
             label="Opacity"
             max={0.95}
             min={0.05}
             step={0.01}
-            value={props.overlayOpacity}
-            valueLabel={`${Math.round(props.overlayOpacity * 100)}%`}
-            onChange={props.onOverlayOpacityChange}
+            value={page.overlayOpacity}
+            valueLabel={`${Math.round(page.overlayOpacity * 100)}%`}
+            onChange={page.setOverlayOpacity}
           />
           <AnnotationToolSlider
             label="Brush Size"
             max={32}
             min={1}
             step={1}
-            value={props.brushSize}
-            valueLabel={String(Math.round(props.brushSize))}
-            onChange={(value) => props.onBrushSizeChange(Math.round(value))}
+            value={page.brushSize}
+            valueLabel={String(Math.round(page.brushSize))}
+            onChange={(value) => page.setBrushSize(Math.round(value))}
           />
         </Section>
       ) : null}

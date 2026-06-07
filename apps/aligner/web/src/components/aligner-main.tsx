@@ -3,15 +3,16 @@ import {
   cursorForAlignTool,
   useAlignCanvasGridHandlers,
   useCanvasTransientStatus,
-  ViewportCard,
-} from "@lisca/ui";
+} from "@lisca/ui/features";
+import { ViewportCard } from "@lisca/ui/shell";
 import { useMemo } from "react";
 
-import type { AlignState } from "../state/use-align-state";
+import { useAlignPage } from "../state/align-page-context";
 import { CropConfirmModal } from "./crop-confirm-modal";
 import { CropProgressModal } from "./crop-progress-modal";
 
-export function AlignerMain({ state }: { state: AlignState }) {
+export function AlignerMain() {
+  const { state } = useAlignPage();
   const { handlePointerDown, handlePointerMove, handlePointerEnd, previewGrid } =
     useAlignCanvasGridHandlers({
       disabled: state.cropping,
@@ -59,8 +60,8 @@ export function AlignerMain({ state }: { state: AlignState }) {
           onVirtualPointerUp={handlePointerEnd}
         />
       </ViewportCard>
-      <CropConfirmModal state={state} />
-      <CropProgressModal state={state} />
+      <CropConfirmModal />
+      <CropProgressModal />
     </>
   );
 }

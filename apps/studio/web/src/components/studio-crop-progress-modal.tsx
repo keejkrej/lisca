@@ -1,7 +1,8 @@
 import { CropProgressModal } from "@lisca/ui";
 
-import type { StudioAlignState } from "../state/use-studio-align-state";
+import { useStudioAlignPage } from "../state/studio-align-page-context";
 
-export function StudioCropProgressModal({ state }: { state: StudioAlignState }) {
+export function StudioCropProgressModal() {
+  const { state } = useStudioAlignPage();
   return <CropProgressModal progress={state.cropProgress} onCancel={() => void state.cancelCrop()} />;
 }

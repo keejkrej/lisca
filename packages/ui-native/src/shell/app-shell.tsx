@@ -96,7 +96,7 @@ function MainColumn(props: { children?: ReactNode }) {
 
 function Main(props: { children?: ReactNode }) {
   return (
-    <View style={styles.main}>
+    <View nativeID="main-content" style={styles.main}>
       <ShellScrollRegion contentStyle={styles.mainContent}>{props.children}</ShellScrollRegion>
     </View>
   );

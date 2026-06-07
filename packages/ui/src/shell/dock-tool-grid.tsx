@@ -1,9 +1,23 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { memo, type ReactNode } from "react";
 
 import { DockButton } from "./dock-button";
 import { dockToolLabel, useDockToolShortcuts, type DockToolAction } from "./dock-tool-shortcuts";
+
+const DockToolGridItem = memo(function DockToolGridItem({
+  action,
+  label,
+}: {
+  action: DockToolAction;
+  label: string;
+}) {
+  return (
+    <DockButton active={action.active} disabled={action.disabled} onClick={action.onSelect}>
+      {label}
+    </DockButton>
+  );
+});
 
 export type DockToolGridProps = {
   actions: readonly DockToolAction[];
@@ -39,14 +53,9 @@ export function DockToolGrid({
           return <div key={action.id}>{renderAction(action, index, label)}</div>;
         }
         return (
-          <DockButton
-            key={action.id}
-            active={action.active}
-            disabled={action.disabled}
-            onClick={action.onSelect}
-          >
-            {label}
-          </DockButton>
+          <div key={action.id}>
+            <DockToolGridItem action={action} label={label} />
+          </div>
         );
       })}
     </div>

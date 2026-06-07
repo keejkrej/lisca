@@ -7,9 +7,10 @@ import {
 import { clamp, selectedIndex } from "@lisca/utils";
 import { useMemo } from "react";
 
-import type { AlignState } from "../state/use-align-state";
+import { useAlignPage } from "../state/align-page-context";
 
-export function AlignFrameNavigation({ state }: { state: AlignState }) {
+export function AlignFrameNavigation() {
+  const { state } = useAlignPage();
   const positionOptions = useMemo(
     () => toNavigationOptions(state.scan?.positions ?? []),
     [state.scan],

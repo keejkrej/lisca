@@ -1,12 +1,14 @@
 import { Button, DialogSurface, ModalScrim } from "@lisca/ui";
 
 export function AssaySaveConfirmModal({
+  error,
   open,
   saving = false,
   onCancel,
   onSave,
   onSkip,
 }: {
+  error?: string | null;
   open: boolean;
   saving?: boolean;
   onCancel: () => void;
@@ -26,6 +28,11 @@ export function AssaySaveConfirmModal({
             <p className="text-muted-foreground text-sm">
               Save assay.json before leaving basic info?
             </p>
+            {error ? (
+              <p className="text-destructive-foreground text-sm" role="alert">
+                {error}
+              </p>
+            ) : null}
           </div>
           <div className="flex justify-end gap-2">
             <Button disabled={saving} size="sm" type="button" variant="outline" onClick={onCancel}>

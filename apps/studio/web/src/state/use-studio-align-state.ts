@@ -23,11 +23,12 @@ import {
   type AlignGridToolMode,
 } from "@lisca/utils";
 import { Effect } from "effect";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { studioClient, toErrorMessage } from "../api/studio-port";
+import { studioNavigateWithTransition } from "../navigation/use-studio-navigate";
 import {
   autoExcludePreviewAtom,
   scanIdleAtom,
@@ -177,6 +178,7 @@ export function useStudioAlignState(): StudioAlignState {
   );
   const runAutoExcludePreview = useAtomSet(autoExcludePreviewAtom, { mode: "promise" });
   const navigate = useNavigate();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
 
   const currentExcludedCells = useMemo(
     () => excludedCellsByPosition[lockedSelection.pos] ?? emptyExcludedCells,
@@ -397,12 +399,12 @@ export function useStudioAlignState(): StudioAlignState {
         onError: setError,
         onCompleted: (progress) => {
           setStatus(progress.message ?? "Crop completed");
-          void navigate({ to: "/annotate" });
+          studioNavigateWithTransition(navigate, pathname, "/annotate");
         },
         toErrorMessage,
       });
     },
-    [navigate, setError, setStatus, source, workspacePath],
+    [navigate, pathname, setError, setStatus, source, workspacePath],
   );
 
   const cropBatchWithOverwriteCheck = useCallback(
@@ -466,11 +468,11 @@ export function useStudioAlignState(): StudioAlignState {
     const remaining = next.positions.filter((pos) => !existing.has(pos));
     if (remaining.length === 0) {
       setStatus(`Skipped ${next.existingPositions.length} existing ROI output(s)`);
-      void navigate({ to: "/annotate" });
+      studioNavigateWithTransition(navigate, pathname, "/annotate");
       return;
     }
     void runCrop(remaining, false);
-  }, [cropConfirm, navigate, runCrop, setStatus]);
+  }, [cropConfirm, navigate, pathname, runCrop, setStatus]);
 
   const cancelCropConfirm = useCallback(() => {
     setCropConfirm(null);
@@ -561,48 +563,96 @@ export function useStudioAlignState(): StudioAlignState {
     variationExcludeCells,
   ]);
 
-  return {
-    workspacePath,
-    source,
-    scan,
-    alignPositions,
-    scanLoading: source != null && resultLoading(scanResult),
-    frameLoading,
-    error,
-    selection: lockedSelection,
-    setSelection,
-    contrast,
-    setContrast,
-    frame,
-    grid,
-    setGrid,
-    toolMode,
-    setToolMode,
-    patternZoomLocked,
-    setPatternZoomLocked,
-    excludedCellsByPosition,
-    setExcludedCellsForCurrentPosition,
-    currentExcludedCells,
-    displayedExcludedCells,
-    visibleCounts,
-    saving,
-    cropping,
-    cropProgress,
-    cropStartConfirm,
-    cropConfirm,
-    findingFirstUnaligned,
-    status,
-    canGoBack,
-    goBack,
-    resetCurrent,
-    goToFirstUnaligned,
-    startConfirmedCrop,
-    cancelCropStartConfirm,
-    confirmCropOverwrite,
-    skipExistingCrop,
-    cancelCropConfirm,
-    cancelCrop,
-    saveAndAdvance,
-    autoExclude,
-  };
+  const scanLoading = source != null && resultLoading(scanResult);
+
+  return useMemo(
+    () => ({
+      workspacePath,
+      source,
+      scan,
+      alignPositions,
+      scanLoading,
+      frameLoading,
+      error,
+      selection: lockedSelection,
+      setSelection,
+      contrast,
+      setContrast,
+      frame,
+      grid,
+      setGrid,
+      toolMode,
+      setToolMode,
+      patternZoomLocked,
+      setPatternZoomLocked,
+      excludedCellsByPosition,
+      setExcludedCellsForCurrentPosition,
+      currentExcludedCells,
+      displayedExcludedCells,
+      visibleCounts,
+      saving,
+      cropping,
+      cropProgress,
+      cropStartConfirm,
+      cropConfirm,
+      findingFirstUnaligned,
+      status,
+      canGoBack,
+      goBack,
+      resetCurrent,
+      goToFirstUnaligned,
+      startConfirmedCrop,
+      cancelCropStartConfirm,
+      confirmCropOverwrite,
+      skipExistingCrop,
+      cancelCropConfirm,
+      cancelCrop,
+      saveAndAdvance,
+      autoExclude,
+    }),
+    [
+      alignPositions,
+      autoExclude,
+      cancelCrop,
+      cancelCropConfirm,
+      cancelCropStartConfirm,
+      canGoBack,
+      confirmCropOverwrite,
+      contrast,
+      cropConfirm,
+      cropProgress,
+      cropStartConfirm,
+      cropping,
+      currentExcludedCells,
+      displayedExcludedCells,
+      error,
+      excludedCellsByPosition,
+      findingFirstUnaligned,
+      frame,
+      frameLoading,
+      goBack,
+      goToFirstUnaligned,
+      grid,
+      lockedSelection,
+      patternZoomLocked,
+      resetCurrent,
+      saveAndAdvance,
+      saving,
+      scan,
+      scanLoading,
+      setContrast,
+      setExcludedCellsForCurrentPosition,
+      setGrid,
+      setPatternZoomLocked,
+      setSelection,
+      setToolMode,
+      skipExistingCrop,
+      source,
+      startConfirmedCrop,
+      status,
+      toolMode,
+      visibleCounts,
+      workspacePath,
+    ],
+  );
 }

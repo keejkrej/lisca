@@ -1,53 +1,38 @@
-import type { ContrastWindow, RoiPositionScan, RoiWorkspaceScan } from "@lisca/contracts";
+import { cn } from "@lisca/ui";
 import {
-  cn,
   ContrastControl,
   FrameNavigation,
   findNavigationOptionIndex,
-  shellRailChromeClass,
   stepNavigationValue,
   toNavigationOptions,
-} from "@lisca/ui";
+} from "@lisca/ui/features";
+import { shellRailChromeClass } from "@lisca/ui/shell";
 import { clamp } from "@lisca/utils";
 import { useMemo } from "react";
 
-export function AnnotatorLeft(props: {
-  scan: RoiWorkspaceScan | null;
-  position: RoiPositionScan | null;
-  pos: number | null;
-  roi: number | null;
-  channel: number | null;
-  timeIndex: number;
-  zIndex: number;
-  contrastDomain: ContrastWindow;
-  contrastMin: number;
-  contrastMax: number;
-  onPosChange: (value: number) => void;
-  onRoiChange: (value: number) => void;
-  onChannelChange: (value: number) => void;
-  onTimeIndexChange: (value: number) => void;
-  onZIndexChange: (value: number) => void;
-  onContrastChange: (value: ContrastWindow) => void;
-}) {
+import { useRoiPage } from "../state/roi-page-context";
+
+export function AnnotatorLeft() {
+  const { page } = useRoiPage();
   const positionOptions = useMemo(
-    () => toNavigationOptions(props.scan?.positions.map((entry) => entry.pos) ?? []),
-    [props.scan],
+    () => toNavigationOptions(page.scan?.positions.map((entry) => entry.pos) ?? []),
+    [page.scan],
   );
   const roiOptions = useMemo(
     () =>
-      props.position?.rois.map((entry) => ({ value: entry.roi, label: String(entry.roi) })) ?? [],
-    [props.position],
+      page.position?.rois.map((entry) => ({ value: entry.roi, label: String(entry.roi) })) ?? [],
+    [page.position],
   );
   const channelOptions = useMemo(
-    () => toNavigationOptions(props.position?.channels ?? []),
-    [props.position],
+    () => toNavigationOptions(page.position?.channels ?? []),
+    [page.position],
   );
-  const timeMax = Math.max(0, (props.position?.times.length ?? 1) - 1);
-  const zMax = Math.max(0, (props.position?.zSlices.length ?? 1) - 1);
+  const timeMax = Math.max(0, (page.position?.times.length ?? 1) - 1);
+  const zMax = Math.max(0, (page.position?.zSlices.length ?? 1) - 1);
 
-  const posValue = props.pos ?? positionOptions[0]?.value ?? 0;
-  const roiValue = props.roi ?? roiOptions[0]?.value ?? 0;
-  const channelValue = props.channel ?? channelOptions[0]?.value ?? 0;
+  const posValue = page.selection.pos ?? positionOptions[0]?.value ?? 0;
+  const roiValue = page.selection.roi ?? roiOptions[0]?.value ?? 0;
+  const channelValue = page.selection.channel ?? channelOptions[0]?.value ?? 0;
 
   return (
     <div className={cn("flex min-h-0 flex-col gap-2 p-3", shellRailChromeClass)}>
@@ -59,14 +44,14 @@ export function AnnotatorLeft(props: {
           previousDisabled: findNavigationOptionIndex(positionOptions, posValue) <= 0,
           nextDisabled:
             findNavigationOptionIndex(positionOptions, posValue) >= positionOptions.length - 1,
-          onChange: props.onPosChange,
+          onChange: (value) => page.changeSelection(() => page.setSelection({ pos: value, roi: null })),
           onPrevious: () => {
             const next = stepNavigationValue(positionOptions, posValue, -1);
-            if (next != null) props.onPosChange(next);
+            if (next != null) page.changeSelection(() => page.setSelection({ pos: next, roi: null }));
           },
           onNext: () => {
             const next = stepNavigationValue(positionOptions, posValue, 1);
-            if (next != null) props.onPosChange(next);
+            if (next != null) page.changeSelection(() => page.setSelection({ pos: next, roi: null }));
           },
         }}
         roi={{
@@ -75,14 +60,14 @@ export function AnnotatorLeft(props: {
           disabled: roiOptions.length === 0,
           previousDisabled: findNavigationOptionIndex(roiOptions, roiValue) <= 0,
           nextDisabled: findNavigationOptionIndex(roiOptions, roiValue) >= roiOptions.length - 1,
-          onChange: props.onRoiChange,
+          onChange: (value) => page.changeSelection(() => page.setSelection({ roi: value })),
           onPrevious: () => {
             const next = stepNavigationValue(roiOptions, roiValue, -1);
-            if (next != null) props.onRoiChange(next);
+            if (next != null) page.changeSelection(() => page.setSelection({ roi: next }));
           },
           onNext: () => {
             const next = stepNavigationValue(roiOptions, roiValue, 1);
-            if (next != null) props.onRoiChange(next);
+            if (next != null) page.changeSelection(() => page.setSelection({ roi: next }));
           },
         }}
         channel={{
@@ -92,51 +77,69 @@ export function AnnotatorLeft(props: {
           previousDisabled: findNavigationOptionIndex(channelOptions, channelValue) <= 0,
           nextDisabled:
             findNavigationOptionIndex(channelOptions, channelValue) >= channelOptions.length - 1,
-          onChange: props.onChannelChange,
+          onChange: (value) => page.changeSelection(() => page.setSelection({ channel: value })),
           onPrevious: () => {
             const next = stepNavigationValue(channelOptions, channelValue, -1);
-            if (next != null) props.onChannelChange(next);
+            if (next != null) page.changeSelection(() => page.setSelection({ channel: next }));
           },
           onNext: () => {
             const next = stepNavigationValue(channelOptions, channelValue, 1);
-            if (next != null) props.onChannelChange(next);
+            if (next != null) page.changeSelection(() => page.setSelection({ channel: next }));
           },
         }}
         timepoint={{
-          value: props.timeIndex,
+          value: page.selection.timeIndex,
           min: 0,
           max: timeMax,
           step: 1,
           disabled: timeMax <= 0,
-          previousDisabled: props.timeIndex <= 0,
-          nextDisabled: props.timeIndex >= timeMax,
-          onCommit: (value) => props.onTimeIndexChange(clamp(Math.round(value), 0, timeMax)),
-          onPrevious: () => props.onTimeIndexChange(Math.max(0, props.timeIndex - 1)),
-          onNext: () => props.onTimeIndexChange(Math.min(timeMax, props.timeIndex + 1)),
+          previousDisabled: page.selection.timeIndex <= 0,
+          nextDisabled: page.selection.timeIndex >= timeMax,
+          onCommit: (value) =>
+            page.changeSelection(() =>
+              page.setSelection({ timeIndex: clamp(Math.round(value), 0, timeMax) }),
+            ),
+          onPrevious: () =>
+            page.changeSelection(() =>
+              page.setSelection({ timeIndex: Math.max(0, page.selection.timeIndex - 1) }),
+            ),
+          onNext: () =>
+            page.changeSelection(() =>
+              page.setSelection({ timeIndex: Math.min(timeMax, page.selection.timeIndex + 1) }),
+            ),
         }}
         zPlane={{
-          value: props.zIndex,
+          value: page.selection.zIndex,
           min: 0,
           max: zMax,
           step: 1,
           disabled: zMax <= 0,
-          previousDisabled: props.zIndex <= 0,
-          nextDisabled: props.zIndex >= zMax,
-          onCommit: (value) => props.onZIndexChange(clamp(Math.round(value), 0, zMax)),
-          onPrevious: () => props.onZIndexChange(Math.max(0, props.zIndex - 1)),
-          onNext: () => props.onZIndexChange(Math.min(zMax, props.zIndex + 1)),
+          previousDisabled: page.selection.zIndex <= 0,
+          nextDisabled: page.selection.zIndex >= zMax,
+          onCommit: (value) =>
+            page.changeSelection(() =>
+              page.setSelection({ zIndex: clamp(Math.round(value), 0, zMax) }),
+            ),
+          onPrevious: () =>
+            page.changeSelection(() =>
+              page.setSelection({ zIndex: Math.max(0, page.selection.zIndex - 1) }),
+            ),
+          onNext: () =>
+            page.changeSelection(() =>
+              page.setSelection({ zIndex: Math.min(zMax, page.selection.zIndex + 1) }),
+            ),
         }}
       />
       <ContrastControl
-        domainMax={props.contrastDomain.max}
-        domainMin={props.contrastDomain.min}
-        maxValue={props.contrastMax}
-        minValue={props.contrastMin}
+        domainMax={page.contrastDomain.max}
+        domainMin={page.contrastDomain.min}
+        maxValue={page.contrastMax}
+        minValue={page.contrastMin}
         onAutoRange={() =>
-          props.onContrastChange({ min: props.contrastDomain.min, max: props.contrastDomain.max })
+          page.setContrast({ min: page.contrastDomain.min, max: page.contrastDomain.max })
         }
-        onMaxCommit={(max) => props.onContrastChange({ min: props.contrastMin, max })}
-        onMinCommit={(min) => props.onContrastChange({ min, max: props.contrastMax })}
+        onMaxCommit={(max) => page.setContrast({ min: page.contrastMin, max })}
+        onMinCommit={(min) => page.setContrast({ min, max: page.contrastMax })}
       />
     </div>
   );

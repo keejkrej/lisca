@@ -6,7 +6,7 @@ import {
   type HostFsEntry,
   type HostListDirectoryResult,
 } from "@lisca/contracts";
-import { FileIcon, FolderIcon, Home, X } from "lucide-react";
+import { Home, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "../components/ui/button";
@@ -16,6 +16,7 @@ import { Toggle } from "../components/ui/toggle";
 import { DialogSurface } from "../shell/dialog-surface";
 import { cn } from "../lib/utils";
 import { ModalScrim } from "../shell/modal-scrim";
+import { HostFilePickerRow } from "./host-file-picker-row";
 import type { HostFilePickerOperations } from "./host-operations";
 
 function pathExtLower(name: string): string {
@@ -360,7 +361,7 @@ export function HostFilePickerDialog({
               </div>
             ) : loading ? (
               <div className="flex h-[220px] items-center justify-center text-muted-foreground text-sm">
-                Loading...
+                Loading…
               </div>
             ) : error ? (
               <div className="p-3 text-destructive-foreground text-sm">{error}</div>
@@ -370,33 +371,16 @@ export function HostFilePickerDialog({
               </div>
             ) : (
               <ul className="divide-y divide-border/60">
-                {(list?.entries ?? []).map((entry) => {
-                  const selected = selectedFile?.path === entry.path && !entry.isDirectory;
-                  const muted = !entry.isDirectory && !dirMode && !fileMatchesMode(mode, entry);
-                  return (
-                    <li key={entry.path}>
-                      <button
-                        className={cn(
-                          "flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                          selected && "bg-primary/15",
-                          muted && "text-muted-foreground/60",
-                        )}
-                        type="button"
-                        onClick={() => handleRowClick(entry)}
-                        onDoubleClick={() => handleRowDoubleClick(entry)}
-                      >
-                        <span className="inline-flex size-4 shrink-0 text-muted-foreground">
-                          {entry.isDirectory ? (
-                            <FolderIcon className="size-4" aria-hidden />
-                          ) : (
-                            <FileIcon className="size-4" aria-hidden />
-                          )}
-                        </span>
-                        <span className="min-w-0 flex-1 truncate">{entry.name}</span>
-                      </button>
-                    </li>
-                  );
-                })}
+                {(list?.entries ?? []).map((entry) => (
+                  <HostFilePickerRow
+                    key={entry.path}
+                    entry={entry}
+                    muted={!entry.isDirectory && !dirMode && !fileMatchesMode(mode, entry)}
+                    selected={selectedFile?.path === entry.path && !entry.isDirectory}
+                    onClick={handleRowClick}
+                    onDoubleClick={handleRowDoubleClick}
+                  />
+                ))}
               </ul>
             )}
           </div>

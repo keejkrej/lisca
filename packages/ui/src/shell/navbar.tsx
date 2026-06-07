@@ -37,7 +37,7 @@ export type ShellNavbarProps = {
  * Shared shell chrome: route toggle, workspace/source paths, WS status, theme.
  * Requires `ShellServerProvider` and `ShellWorkspaceProvider` above in the tree.
  */
-export function ShellNavbar(props: ShellNavbarProps) {
+function ShellNavbarRoot(props: ShellNavbarProps) {
   const server = useShellServer();
   const workspace = useShellWorkspace();
 
@@ -104,3 +104,63 @@ export function ShellNavbar(props: ShellNavbarProps) {
     </header>
   );
 }
+
+export type ShellNavbarAnnotatorProps = {
+  endLeading?: ReactNode;
+  onPickWorkspace?: () => void;
+};
+
+function ShellNavbarAnnotator(props: ShellNavbarAnnotatorProps) {
+  return (
+    <ShellNavbarRoot
+      endLeading={props.endLeading}
+      routeItems={[{ value: "roi", label: "ROI" }]}
+      routeValue="roi"
+      showRouteToggle={false}
+      showSourceButton={false}
+      onPickWorkspace={props.onPickWorkspace}
+      onRouteChange={() => undefined}
+    />
+  );
+}
+
+export type ShellNavbarAlignerProps = {
+  onPickSource?: () => void;
+  onPickWorkspace?: () => void;
+};
+
+function ShellNavbarAligner(props: ShellNavbarAlignerProps) {
+  return (
+    <ShellNavbarRoot
+      routeItems={[{ value: "align", label: "Align" }]}
+      routeValue="align"
+      showRouteToggle={false}
+      showToolsMenu={false}
+      onPickSource={props.onPickSource}
+      onPickWorkspace={props.onPickWorkspace}
+      onRouteChange={() => undefined}
+    />
+  );
+}
+
+function ShellNavbarLeading(props: { children?: ReactNode }) {
+  return props.children ?? null;
+}
+
+function ShellNavbarActions(props: { children?: ReactNode }) {
+  return props.children ?? null;
+}
+
+export type ShellNavbarCompound = typeof ShellNavbarRoot & {
+  Leading: typeof ShellNavbarLeading;
+  Actions: typeof ShellNavbarActions;
+  Annotator: typeof ShellNavbarAnnotator;
+  Aligner: typeof ShellNavbarAligner;
+};
+
+export const ShellNavbar: ShellNavbarCompound = Object.assign(ShellNavbarRoot, {
+  Leading: ShellNavbarLeading,
+  Actions: ShellNavbarActions,
+  Annotator: ShellNavbarAnnotator,
+  Aligner: ShellNavbarAligner,
+});

@@ -12,9 +12,10 @@ import { useCanvasResourceTransaction, useCanvasTransientStatus } from "@lisca/u
 import { clamp } from "@lisca/utils";
 import { useAtomValue } from "@effect-atom/atom-react";
 import { useCallback, useEffect, useMemo } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 
 import { runClientEffect } from "@lisca/client/runtime";
+import { studioNavigateWithTransition } from "../navigation/use-studio-navigate";
 import { studioClient, toErrorMessage } from "../api/studio-port";
 import { roiScanIdleAtom, roiWorkspaceScanAtom } from "../atoms/studio-query-atoms";
 import {
@@ -98,6 +99,7 @@ export function useStudioAnnotateState(): StudioAnnotateState {
   const setBasicInfoSavedSnapshot = useStudioStore((state) => state.setBasicInfoSavedSnapshot);
   const activeWorkspacePath = saveTo.trim() || null;
   const navigate = useNavigate();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const {
     workspacePath,
     selection,
@@ -323,7 +325,7 @@ export function useStudioAnnotateState(): StudioAnnotateState {
         stop?.();
         stop = null;
         setStatus("Analysis completed");
-        void navigate({ to: "/result" });
+        studioNavigateWithTransition(navigate, pathname, "/result");
       }
       if (progress.status === "error") {
         stop?.();
@@ -393,6 +395,7 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     info2,
     info3,
     navigate,
+    pathname,
     setAnalysisProgress,
     setAnalysisRequestId,
     setAnalysisResultFiles,
@@ -402,30 +405,58 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     workspacePath,
   ]);
 
-  return {
-    workspacePath,
-    scan,
-    analysisStartConfirm,
-    analysisRequestId,
-    analysisProgress,
-    analysisResultFiles,
-    position,
-    request,
-    frame,
-    contrastDomain,
-    contrastMin,
-    contrastMax,
-    scanLoading,
-    frameLoading,
-    error,
-    toasts,
-    selection,
-    setAnalysisProgress,
-    setAnalysisResultFiles,
-    setSelection: changeSelection,
-    setAnalysisStartConfirm,
-    startAnalysis,
-    setContrast,
-    shuffleSelection,
-  };
+  return useMemo(
+    () => ({
+      workspacePath,
+      scan,
+      analysisStartConfirm,
+      analysisRequestId,
+      analysisProgress,
+      analysisResultFiles,
+      position,
+      request,
+      frame,
+      contrastDomain,
+      contrastMin,
+      contrastMax,
+      scanLoading,
+      frameLoading,
+      error,
+      toasts,
+      selection,
+      setAnalysisProgress,
+      setAnalysisResultFiles,
+      setSelection: changeSelection,
+      setAnalysisStartConfirm,
+      startAnalysis,
+      setContrast,
+      shuffleSelection,
+    }),
+    [
+      analysisProgress,
+      analysisRequestId,
+      analysisResultFiles,
+      analysisStartConfirm,
+      changeSelection,
+      contrastDomain,
+      contrastMax,
+      contrastMin,
+      error,
+      frame,
+      frameLoading,
+      position,
+      request,
+      scan,
+      scanLoading,
+      selection,
+      setAnalysisProgress,
+      setAnalysisResultFiles,
+      setAnalysisStartConfirm,
+      setContrast,
+      shuffleSelection,
+      startAnalysis,
+      toasts,
+      workspacePath,
+    ],
+  );
 }

@@ -1,10 +1,11 @@
 import type { HostFilePickerMode, HostFsEntry, HostListDirectoryResult } from "@lisca/contracts";
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
 
 import { Button } from "../shell/buttons.tsx";
 import { DialogSurface, ModalScrim } from "../shell/modal.tsx";
 import { useShellTheme } from "../theme/shell-theme.tsx";
+import { FILE_PICKER_ROW_HEIGHT, FilePickerRow } from "./host-file-picker-row.tsx";
 import type { HostFilePickerOperations } from "./host-operations.ts";
 
 function pathExtLower(name: string): string {
@@ -78,33 +79,41 @@ export function HostFilePickerDialog({
 
   return (
     <ModalScrim open={open} onClose={() => onOpenChange(false)}>
-      <DialogSurface>
+      <DialogSurface accessibilityLabel={title}>
         <Text style={[styles.title, { color: colors.foreground }]}>{title}</Text>
         {list?.path ? (
           <Text style={{ color: colors.mutedForeground, fontSize: 12 }} numberOfLines={2}>
             {list.path}
           </Text>
         ) : null}
-        {loading ? <ActivityIndicator color={colors.primary} /> : null}
+        {loading ? (
+          <ActivityIndicator
+            accessibilityLabel="Loading directory"
+            color={colors.primary}
+          />
+        ) : null}
         {error ? <Text style={{ color: colors.destructive }}>{error}</Text> : null}
         <FlatList
           data={entries}
+          getItemLayout={(_, index) => ({
+            index,
+            length: FILE_PICKER_ROW_HEIGHT,
+            offset: FILE_PICKER_ROW_HEIGHT * index,
+          })}
+          initialNumToRender={16}
           keyExtractor={(item) => item.path}
+          removeClippedSubviews
           style={styles.list}
+          windowSize={8}
           renderItem={({ item }) => (
-            <Pressable
-              style={[styles.row, { borderColor: colors.border }]}
-              onPress={() => {
-                if (item.isDirectory) {
-                  void loadPath(item.path);
-                  return;
-                }
-                onPickFile(item.path);
-                onOpenChange(false);
-              }}
-            >
-              <Text style={{ color: colors.foreground }}>{item.isDirectory ? "📁" : "📄"} {item.name}</Text>
-            </Pressable>
+            <FilePickerRow
+              borderColor={colors.border}
+              entry={item}
+              foregroundColor={colors.foreground}
+              onClose={() => onOpenChange(false)}
+              onOpenDirectory={(path) => void loadPath(path)}
+              onPickFile={onPickFile}
+            />
           )}
         />
         <View style={styles.actions}>
@@ -134,10 +143,6 @@ const styles = StyleSheet.create({
   },
   list: {
     maxHeight: 320,
-  },
-  row: {
-    paddingVertical: 10,
-    borderBottomWidth: 1,
   },
   actions: {
     flexDirection: "row",

@@ -1,13 +1,6 @@
-import type { AnnotationMode, RoiFrameRequest } from "@lisca/contracts";
-import {
-  Button,
-  DockToolGrid,
-  ReadonlyPathField,
-  Section,
-  cn,
-  type AnnotationTool,
-  type DockToolAction,
-} from "@lisca/ui";
+import { Button, cn, type AnnotationTool } from "@lisca/ui";
+import { DockToolGrid, ReadonlyPathField, Section, type DockToolAction } from "@lisca/ui/shell";
+import { useRoiPage } from "../state/roi-page-context";
 import { annotationOutputPaths } from "../utils/annotation-output";
 
 const annotationToolDefinitions: { id: AnnotationTool; label: string }[] = [
@@ -31,23 +24,16 @@ function buildAnnotationToolActions(
   }));
 }
 
-export function AnnotatorDock(props: {
-  mode: AnnotationMode;
-  tool: AnnotationTool;
-  request: RoiFrameRequest | null;
-  canSave: boolean;
-  saving: boolean;
-  shortcutsEnabled?: boolean;
-  onToolChange: (tool: AnnotationTool) => void;
-  onSave: () => void;
-}) {
-  const paths = annotationOutputPaths(props.request, props.mode);
-  const canEditTools = props.mode === "segmentation" && props.shortcutsEnabled !== false;
-  const toolActions = buildAnnotationToolActions(
-    props.tool,
-    props.onToolChange,
-    !canEditTools,
-  );
+export function AnnotatorDock() {
+  const { page } = useRoiPage();
+  const paths = annotationOutputPaths(page.request, page.mode);
+  const shortcutsEnabled =
+    page.mode === "segmentation" &&
+    page.canEditSegmentation &&
+    !page.labelDialogOpen &&
+    !page.filePickerOpen;
+  const canEditTools = page.mode === "segmentation" && shortcutsEnabled;
+  const toolActions = buildAnnotationToolActions(page.tool, page.setTool, !canEditTools);
 
   return (
     <div className="flex h-full min-h-0 w-full gap-3 p-3">
@@ -56,7 +42,7 @@ export function AnnotatorDock(props: {
         contentClassName="flex min-h-0 flex-1 flex-col gap-2"
         title="Tool"
       >
-        {props.mode === "segmentation" ? (
+        {page.mode === "segmentation" ? (
           <DockToolGrid
             actions={toolActions}
             className="grid flex-1 grid-cols-2 gap-2"
@@ -91,13 +77,13 @@ export function AnnotatorDock(props: {
         </div>
         <Button
           className="w-full justify-center"
-          disabled={!props.canSave}
+          disabled={!page.canSave}
           size="sm"
           type="button"
           variant="outline"
-          onClick={props.onSave}
+          onClick={() => void page.handleSave()}
         >
-          {props.saving ? "Saving" : "Save"}
+          {page.saving ? "Saving…" : "Save"}
         </Button>
       </Section>
     </div>

@@ -91,7 +91,7 @@ export function AnnotatorRight(props: {
           </View>
         ) : null}
         {loading ? (
-          <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>Loading...</Text>
+          <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>Loading…</Text>
         ) : null}
         {activeError ? (
           <Text style={{ color: colors.destructive, fontSize: 12 }}>{activeError}</Text>

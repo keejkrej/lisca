@@ -9,7 +9,13 @@ export function ModalScrim(props: {
   children: ReactNode;
 }) {
   return (
-    <Modal visible={props.open} transparent animationType="fade" onRequestClose={props.onClose}>
+    <Modal
+      accessibilityViewIsModal
+      animationType="fade"
+      transparent
+      visible={props.open}
+      onRequestClose={props.onClose}
+    >
       <Pressable style={styles.scrim} onPress={props.onClose}>
         <Pressable style={styles.content} onPress={(event) => event.stopPropagation()}>
           {props.children}
@@ -23,10 +29,12 @@ export function DialogSurface(props: {
   children: ReactNode;
   maxWidth?: number;
   padded?: boolean;
+  accessibilityLabel?: string;
 }) {
   const { colors } = useShellTheme();
   return (
     <View
+      accessibilityLabel={props.accessibilityLabel}
       style={[
         styles.surface,
         props.padded === false ? styles.surfaceFlush : null,

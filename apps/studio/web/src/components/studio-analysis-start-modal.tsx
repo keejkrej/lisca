@@ -1,10 +1,11 @@
 import { Button, DialogSurface, ModalScrim } from "@lisca/ui";
 
-import type { StudioAnnotateState } from "../state/use-studio-annotate-state";
+import { useStudioAnnotatePage } from "../state/studio-annotate-page-context";
 import { useStudioStore } from "../state/studio-store";
 import { validateAssayForAnalysis } from "../utils/studio-assay-validation";
 
-export function StudioAnalysisStartModal({ state }: { state: StudioAnnotateState }) {
+export function StudioAnalysisStartModal() {
+  const { state } = useStudioAnnotatePage();
   const assayId = useStudioStore((store) => store.assayId);
   const dataSourceKind = useStudioStore((store) => store.dataSourceKind);
   const info1 = useStudioStore((store) => store.info1);

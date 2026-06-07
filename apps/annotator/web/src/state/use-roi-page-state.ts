@@ -302,7 +302,7 @@ export function useRoiPageState() {
     shellWorkspacePath,
   ]);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!shellWorkspacePath || !request || !frame || !canSave) return;
     annotatorUiActions.setSaving(setUi, true);
     annotatorUiActions.setSaveError(setUi, null);
@@ -325,24 +325,35 @@ export function useRoiPageState() {
     } finally {
       annotatorUiActions.setSaving(setUi, false);
     }
-  };
+  }, [
+    annotation,
+    canSave,
+    frame,
+    request,
+    runSaveAnnotation,
+    setUi,
+    shellWorkspacePath,
+  ]);
 
-  const handleSaveLabels = async (nextLabels: AnnotationLabel[]) => {
-    if (!shellWorkspacePath) {
-      setLabelError("Select a workspace first.");
-      return;
-    }
-    setLabelError(null);
-    try {
-      const savedLabels = await runSaveLabels({
-        workspacePath: shellWorkspacePath,
-        labels: nextLabels,
-      });
-      annotatorUiActions.applySavedLabels(setUi, savedLabels);
-    } catch (cause) {
-      setLabelError(toErrorMessage(cause, "Annotation labels save failed"));
-    }
-  };
+  const handleSaveLabels = useCallback(
+    async (nextLabels: AnnotationLabel[]) => {
+      if (!shellWorkspacePath) {
+        setLabelError("Select a workspace first.");
+        return;
+      }
+      setLabelError(null);
+      try {
+        const savedLabels = await runSaveLabels({
+          workspacePath: shellWorkspacePath,
+          labels: nextLabels,
+        });
+        annotatorUiActions.applySavedLabels(setUi, savedLabels);
+      } catch (cause) {
+        setLabelError(toErrorMessage(cause, "Annotation labels save failed"));
+      }
+    },
+    [runSaveLabels, setLabelError, setUi, shellWorkspacePath],
+  );
 
   const pickWorkspace = useCallback(
     (path: string) => {
@@ -352,52 +363,101 @@ export function useRoiPageState() {
     [workspace],
   );
 
-  return {
-    workspacePath,
-    scan,
-    labels,
-    selection,
-    activeLabelId,
-    mode,
-    tool,
-    brushSize,
-    overlayOpacity,
-    frame,
-    contrastDomain,
-    contrastMin,
-    contrastMax,
-    scanLoading,
-    frameLoading,
-    annotationLoading,
-    saving,
-    scanError,
-    frameError,
-    annotationError,
-    saveError,
-    labelError,
-    labelDialogOpen,
-    filePickerOpen,
-    position,
-    request,
-    annotation,
-    canEdit,
-    canEditSegmentation,
-    canSave,
-    canvasToasts,
-    setFilePickerOpen,
-    setLabelDialogOpen,
-    setLabelError,
-    setSelection,
-    setContrast,
-    setMode,
-    setTool,
-    setBrushSize,
-    setOverlayOpacity,
-    setActiveLabelId,
-    changeSelection,
-    handleSave,
-    handleSaveLabels,
-    saveLabelsPending,
-    pickWorkspace,
-  };
+  return useMemo(
+    () => ({
+      workspacePath,
+      scan,
+      labels,
+      selection,
+      activeLabelId,
+      mode,
+      tool,
+      brushSize,
+      overlayOpacity,
+      frame,
+      contrastDomain,
+      contrastMin,
+      contrastMax,
+      scanLoading,
+      frameLoading,
+      annotationLoading,
+      saving,
+      scanError,
+      frameError,
+      annotationError,
+      saveError,
+      labelError,
+      labelDialogOpen,
+      filePickerOpen,
+      position,
+      request,
+      annotation,
+      canEdit,
+      canEditSegmentation,
+      canSave,
+      canvasToasts,
+      setFilePickerOpen,
+      setLabelDialogOpen,
+      setLabelError,
+      setSelection,
+      setContrast,
+      setMode,
+      setTool,
+      setBrushSize,
+      setOverlayOpacity,
+      setActiveLabelId,
+      changeSelection,
+      handleSave,
+      handleSaveLabels,
+      saveLabelsPending,
+      pickWorkspace,
+    }),
+    [
+      activeLabelId,
+      annotation,
+      annotationError,
+      annotationLoading,
+      brushSize,
+      canEdit,
+      canEditSegmentation,
+      canSave,
+      canvasToasts,
+      changeSelection,
+      contrastDomain,
+      contrastMax,
+      contrastMin,
+      filePickerOpen,
+      frame,
+      frameError,
+      frameLoading,
+      handleSave,
+      handleSaveLabels,
+      labelDialogOpen,
+      labelError,
+      labels,
+      mode,
+      overlayOpacity,
+      pickWorkspace,
+      position,
+      request,
+      saveError,
+      saveLabelsPending,
+      saving,
+      scan,
+      scanError,
+      scanLoading,
+      selection,
+      setActiveLabelId,
+      setBrushSize,
+      setContrast,
+      setLabelDialogOpen,
+      setLabelError,
+      setMode,
+      setOverlayOpacity,
+      setSelection,
+      setTool,
+      tool,
+      workspacePath,
+    ],
+  );
 }

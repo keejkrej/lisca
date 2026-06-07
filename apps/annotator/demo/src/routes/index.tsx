@@ -1,4 +1,4 @@
-import { AppShell } from "@lisca/ui";
+import { AppShell, LabelCreationDialog } from "@lisca/ui";
 import { DemoNavbar, DemoNavbarActionButton } from "@lisca/web-demo";
 import { createFileRoute } from "@tanstack/react-router";
 import { Tags } from "lucide-react";
@@ -7,7 +7,6 @@ import { DemoAnnotatorDock } from "../components/demo-annotator-dock";
 import { DemoAnnotatorLeft } from "../components/demo-annotator-left";
 import { DemoAnnotatorMain } from "../components/demo-annotator-main";
 import { DemoAnnotatorRight } from "../components/demo-annotator-right";
-import { LabelCreationDialog } from "../components/label-creation-dialog";
 import { useDemoAnnotatorState } from "../state/use-demo-annotator-state";
 import { createEmptyMask } from "../utils/annotation-utils";
 
@@ -91,6 +90,9 @@ function AnnotatorDemoPage() {
         error={state.labelError}
         labels={state.labels}
         open={state.labelDialogOpen}
+        saveLabel="Apply labels"
+        subtitle="Labels are kept in memory for this session."
+        title="Edit labels"
         onOpenChange={state.setLabelDialogOpen}
         onSave={state.saveLabels}
       />

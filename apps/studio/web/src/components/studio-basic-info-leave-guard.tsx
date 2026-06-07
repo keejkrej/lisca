@@ -25,6 +25,7 @@ export function StudioBasicInfoLeaveGuard() {
   } = wizard;
 
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [overwriteOpen, setOverwriteOpen] = useState(false);
 
   const dirty = isBasicInfoDirty(wizard);
@@ -43,6 +44,7 @@ export function StudioBasicInfoLeaveGuard() {
     async (overwrite: boolean) => {
       if (!assayId || !saveTo || saving) return false;
       setSaving(true);
+      setSaveError(null);
       try {
         if (!overwrite && (await assayJsonExists(saveTo))) {
           setOverwriteOpen(true);
@@ -59,7 +61,11 @@ export function StudioBasicInfoLeaveGuard() {
         setBasicInfoSavedSnapshot(serializeBasicInfoSnapshot(wizard));
         return true;
       } catch (cause) {
-        window.alert(cause instanceof Error ? cause.message : String(cause));
+        setSaveError(
+          cause instanceof Error
+            ? cause.message
+            : "Could not save assay.json. Check the save path and try again.",
+        );
         return false;
       } finally {
         setSaving(false);
@@ -84,6 +90,7 @@ export function StudioBasicInfoLeaveGuard() {
 
   const cancelLeave = useCallback(() => {
     setOverwriteOpen(false);
+    setSaveError(null);
     reset?.();
   }, [reset]);
 
@@ -101,6 +108,7 @@ export function StudioBasicInfoLeaveGuard() {
   return (
     <>
       <AssaySaveConfirmModal
+        error={saveError}
         open={blocked && !overwriteOpen}
         saving={saving}
         onCancel={cancelLeave}

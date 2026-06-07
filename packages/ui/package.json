@@ -14,6 +14,14 @@
       "types": "./src/index.tsx",
       "import": "./src/index.tsx"
     },
+    "./shell": {
+      "types": "./src/shell/index.ts",
+      "import": "./src/shell/index.ts"
+    },
+    "./features": {
+      "types": "./src/features/index.ts",
+      "import": "./src/features/index.ts"
+    },
     "./coss-theme.css": "./coss-theme.css"
   },
   "scripts": {

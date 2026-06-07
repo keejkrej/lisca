@@ -1,9 +1,9 @@
 import { runClientEffect } from "@lisca/client/runtime";
-import { AppShell, DockButton, DockToolGrid, HostFilePickerDialog } from "@lisca/ui";
+import { AppShell, DockButton, DockToolGrid, HostFilePickerDialog, RouteLoadingFallback } from "@lisca/ui";
 import { createFileRoute } from "@tanstack/react-router";
-import { useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
+import { useStudioNavigate } from "../navigation/use-studio-navigate";
 import { studioClient, studioHostOperations } from "../api/studio-port";
 import { StudioDock } from "../components/studio-dock";
 import { StudioLeft } from "../components/studio-left";
@@ -13,15 +13,18 @@ import { parseStudioAssayJson, useStudioStore } from "../state/studio-store";
 
 export const Route = createFileRoute("/assay")({
   component: AssayPage,
+  pendingComponent: RouteLoadingFallback,
+  pendingMs: 0,
 });
 
 function AssayPage() {
-  const navigate = useNavigate();
+  const { navigateTo } = useStudioNavigate();
   const assayId = useStudioStore((state) => state.assayId);
   const setInfoStep = useStudioStore((state) => state.setInfoStep);
   const loadAssayJson = useStudioStore((state) => state.loadAssayJson);
   const [openingAssay, setOpeningAssay] = useState(false);
   const [assayPickerOpen, setAssayPickerOpen] = useState(false);
+  const [openAssayError, setOpenAssayError] = useState<string | null>(null);
 
   const toolActions = useMemo(
     () => [
@@ -38,12 +41,15 @@ function AssayPage() {
   const openAssayJson = async (path: string) => {
     setAssayPickerOpen(false);
     setOpeningAssay(true);
+    setOpenAssayError(null);
     try {
       const contents = await runClientEffect(studioClient.readTextFile(path));
       loadAssayJson(parseStudioAssayJson(contents));
-      await navigate({ to: "/info" });
+      navigateTo("/info");
     } catch (cause) {
-      window.alert(cause instanceof Error ? cause.message : String(cause));
+      setOpenAssayError(
+        cause instanceof Error ? cause.message : "Could not open assay.json. Check the file and try again.",
+      );
     } finally {
       setOpeningAssay(false);
     }
@@ -58,6 +64,11 @@ function AssayPage() {
         <AppShell.MainColumn>
           <AppShell.Main>
             <div className="mx-auto flex min-h-full w-full min-w-0 max-w-[52rem] flex-col items-center justify-center px-4 py-6 md:px-[100px] md:py-10">
+              {openAssayError ? (
+                <p className="mb-4 w-full max-w-[28rem] rounded-lg border border-destructive/35 bg-destructive/10 px-3 py-2 text-destructive-foreground text-sm" role="alert">
+                  {openAssayError}
+                </p>
+              ) : null}
               <ChooseAssay />
             </div>
           </AppShell.Main>
@@ -68,7 +79,8 @@ function AssayPage() {
                 <DockButton
                   disabled={!assayId}
                   onClick={() => {
-                    void navigate({ to: "/info" }).then(() => setInfoStep(1));
+                    navigateTo("/info");
+                    setInfoStep(1);
                   }}
                 >
                   Next

@@ -65,14 +65,10 @@ export function AlignerHeader(props: { onSourcePicked: (source: AlignerSource | 
   return (
     <>
       <View style={styles.root}>
-        <ShellNavbar
+        <ShellNavbar.Aligner
           endLeading={<ToolsMenuPlaceholder />}
-          routeItems={[{ value: "align", label: "Align" }]}
-          routeValue="align"
-          showRouteToggle={false}
           onPickSource={() => setSourcePickerOpen(true)}
           onPickWorkspace={() => openFilePicker("workspace")}
-          onRouteChange={() => undefined}
         />
       </View>
       <SourcePickerModal

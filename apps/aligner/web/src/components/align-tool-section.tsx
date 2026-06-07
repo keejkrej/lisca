@@ -1,8 +1,9 @@
 import { AlignTools } from "@lisca/ui";
 
-import type { AlignState } from "../state/use-align-state";
+import { useAlignPage } from "../state/align-page-context";
 
-export function AlignToolSection({ state }: { state: AlignState }) {
+export function AlignToolSection() {
+  const { state } = useAlignPage();
   return (
     <AlignTools
       mode={state.toolMode}

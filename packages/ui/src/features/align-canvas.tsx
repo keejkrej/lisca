@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  memo,
   type PointerEvent as ReactPointerEvent,
   type WheelEvent as ReactWheelEvent,
   useCallback,
@@ -24,6 +25,7 @@ import {
 } from "@lisca/utils";
 
 import { cn } from "../lib/utils";
+import { areAlignCanvasPropsEqual } from "./canvas-memo";
 import { CanvasStatusMessageStack, CanvasToastStack } from "./canvas-status";
 import { resolvedCanvasBackground, useCanvasThemeRerender } from "./canvas-theme";
 
@@ -179,7 +181,7 @@ function drawGridOverlay(
   ctx.restore();
 }
 
-export function AlignCanvas({
+function AlignCanvasInner({
   frame,
   grid,
   previewGrid,
@@ -416,3 +418,5 @@ export function AlignCanvas({
     </div>
   );
 }
+
+export const AlignCanvas = memo(AlignCanvasInner, areAlignCanvasPropsEqual);

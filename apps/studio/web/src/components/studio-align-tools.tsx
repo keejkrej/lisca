@@ -1,8 +1,9 @@
-import { AlignTools } from "@lisca/ui";
+import { AlignTools } from "@lisca/ui/features";
 
-import type { StudioAlignState } from "../state/use-studio-align-state";
+import { useStudioAlignPage } from "../state/studio-align-page-context";
 
-export function StudioAlignTools({ state }: { state: StudioAlignState }) {
+export function StudioAlignTools() {
+  const { state } = useStudioAlignPage();
   return (
     <AlignTools
       bare

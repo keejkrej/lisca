@@ -28,7 +28,7 @@ export type ShellNavbarProps = {
   workspaceTrailing?: ReactNode;
 };
 
-export function ShellNavbar(props: ShellNavbarProps) {
+function ShellNavbarRoot(props: ShellNavbarProps) {
   const server = useShellServer();
   const workspace = useShellWorkspace();
   const { colors } = useShellTheme();
@@ -67,6 +67,56 @@ export function ShellNavbar(props: ShellNavbarProps) {
     </ScrollView>
   );
 }
+
+export type ShellNavbarAnnotatorProps = {
+  endLeading?: ReactNode;
+  onPickWorkspace: () => void;
+};
+
+function ShellNavbarAnnotator(props: ShellNavbarAnnotatorProps) {
+  return (
+    <ShellNavbarRoot
+      endLeading={props.endLeading}
+      routeItems={[{ value: "roi", label: "ROI" }]}
+      routeValue="roi"
+      showRouteToggle={false}
+      showSourceButton={false}
+      onPickSource={() => undefined}
+      onPickWorkspace={props.onPickWorkspace}
+      onRouteChange={() => undefined}
+    />
+  );
+}
+
+export type ShellNavbarAlignerProps = {
+  endLeading?: ReactNode;
+  onPickSource: () => void;
+  onPickWorkspace: () => void;
+};
+
+function ShellNavbarAligner(props: ShellNavbarAlignerProps) {
+  return (
+    <ShellNavbarRoot
+      endLeading={props.endLeading}
+      routeItems={[{ value: "align", label: "Align" }]}
+      routeValue="align"
+      showRouteToggle={false}
+      onPickSource={props.onPickSource}
+      onPickWorkspace={props.onPickWorkspace}
+      onRouteChange={() => undefined}
+    />
+  );
+}
+
+export type ShellNavbarCompound = typeof ShellNavbarRoot & {
+  Annotator: typeof ShellNavbarAnnotator;
+  Aligner: typeof ShellNavbarAligner;
+};
+
+export const ShellNavbar: ShellNavbarCompound = Object.assign(ShellNavbarRoot, {
+  Annotator: ShellNavbarAnnotator,
+  Aligner: ShellNavbarAligner,
+});
 
 const styles = StyleSheet.create({
   scrollContent: {

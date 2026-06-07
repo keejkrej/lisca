@@ -32,9 +32,21 @@ function ShellSidebarInner(props: {
   );
 }
 
+function SkipToMainLink() {
+  return (
+    <a
+      className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-foreground focus:shadow-md focus:outline-none focus:ring-2 focus:ring-ring"
+      href="#main-content"
+    >
+      Skip to main content
+    </a>
+  );
+}
+
 function AppShellRoot(props: { children?: ReactNode }) {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background text-foreground">
+      <SkipToMainLink />
       {props.children}
     </div>
   );
@@ -98,7 +110,11 @@ function AppShellRight(props: {
 AppShellRight.displayName = "AppShell.Right";
 
 function AppShellMain(props: { children?: ReactNode }) {
-  return <main className="min-h-0 flex-1 overflow-auto">{props.children}</main>;
+  return (
+    <main className="min-h-0 flex-1 overflow-auto" id="main-content">
+      {props.children}
+    </main>
+  );
 }
 AppShellMain.displayName = "AppShell.Main";
 

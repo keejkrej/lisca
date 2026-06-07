@@ -1,26 +1,39 @@
-import { AppShell, DockButton } from "@lisca/ui";
+import { AppShell, DockButton, RouteLoadingFallback } from "@lisca/ui/shell";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { StudioAnnotateMain } from "../components/studio-annotate-main";
 import { StudioDock } from "../components/studio-dock";
 import { StudioLeft } from "../components/studio-left";
-import { useStudioAnnotateState } from "../state/use-studio-annotate-state";
+import {
+  StudioAnnotatePageProvider,
+  useStudioAnnotatePage,
+} from "../state/studio-annotate-page-context";
 
 export const Route = createFileRoute("/annotate")({
   component: AnnotatePage,
+  pendingComponent: RouteLoadingFallback,
+  pendingMs: 0,
 });
 
 function AnnotatePage() {
-  const annotateState = useStudioAnnotateState();
+  return (
+    <StudioAnnotatePageProvider>
+      <AnnotatePageContent />
+    </StudioAnnotatePageProvider>
+  );
+}
+
+function AnnotatePageContent() {
+  const { state } = useStudioAnnotatePage();
   const analysisBusy = Boolean(
-    annotateState.analysisProgress &&
-    (annotateState.analysisProgress.status === "queued" ||
-      annotateState.analysisProgress.status === "running"),
+    state.analysisProgress &&
+    (state.analysisProgress.status === "queued" ||
+      state.analysisProgress.status === "running"),
   );
 
   const disableShuffle =
-    annotateState.scanLoading || annotateState.scan === null || Boolean(annotateState.error);
-  const disableNext = annotateState.frameLoading || !annotateState.request || analysisBusy;
+    state.scanLoading || state.scan === null || Boolean(state.error);
+  const disableNext = state.frameLoading || !state.request || analysisBusy;
 
   return (
     <AppShell>
@@ -30,7 +43,7 @@ function AnnotatePage() {
         </AppShell.Left>
         <AppShell.MainColumn>
           <AppShell.Main>
-            <StudioAnnotateMain state={annotateState} />
+            <StudioAnnotateMain />
           </AppShell.Main>
           <AppShell.Dock>
             <StudioDock
@@ -38,13 +51,13 @@ function AnnotatePage() {
               action={
                 <div className="flex w-full flex-col gap-2">
                   <div className="grid grid-cols-2 gap-2">
-                    <DockButton disabled={disableShuffle} onClick={annotateState.shuffleSelection}>
+                    <DockButton disabled={disableShuffle} onClick={state.shuffleSelection}>
                       Shuffle
                     </DockButton>
                     <DockButton
                       disabled={disableNext}
                       onClick={() => {
-                        annotateState.setAnalysisStartConfirm(true);
+                        state.setAnalysisStartConfirm(true);
                       }}
                     >
                       Next

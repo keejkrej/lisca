@@ -36,9 +36,19 @@ export function ConnectionStatus(props: {
     ? `${props.wsUrl}\nClick to change server address`
     : props.wsUrl;
 
+  const ariaLabel = props.onOpenSettings
+    ? `${title}: ${statusLabel}. Click to change server address.`
+    : `${title}: ${statusLabel}`;
+
   if (props.onOpenSettings) {
     return (
-      <button className={className} title={titleAttr} type="button" onClick={props.onOpenSettings}>
+      <button
+        aria-label={ariaLabel}
+        className={className}
+        title={titleAttr}
+        type="button"
+        onClick={props.onOpenSettings}
+      >
         <span className={`size-2 shrink-0 rounded-full ${dot}`} aria-hidden />
         <span className="font-medium">{title}</span>
         <span className="opacity-70">{statusLabel}</span>
