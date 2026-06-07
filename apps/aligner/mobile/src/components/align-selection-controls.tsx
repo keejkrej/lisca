@@ -29,19 +29,23 @@ export function AlignSelectionControls({ state }: { state: AlignState }) {
           <StatTile label="Included cells" value={state.visibleCounts.included} />
           <StatTile label="Excluded cells" value={state.visibleCounts.excluded} />
         </View>
-        <Button
-          disabled={disabled || !hasExcludedCells}
-          label="Reset"
-          size="sm"
-          variant="outline"
-          onPress={() => state.setExcludedCellsForCurrentPosition([])}
-        />
+        <View style={styles.gridCell}>
+          <Button
+            disabled={disabled || !hasExcludedCells}
+            label="Reset"
+            size="sm"
+            style={styles.fullWidthButton}
+            variant="outline"
+            onPress={() => state.setExcludedCellsForCurrentPosition([])}
+          />
+        </View>
         <View style={styles.row}>
           <View style={styles.gridCell}>
             <Button
               disabled={disabled || !hasVisibleCells}
               label="Exclude all"
               size="sm"
+              style={styles.fullWidthButton}
               variant="outline"
               onPress={() => state.setExcludedCellsForCurrentPosition(visibleCells)}
             />
@@ -51,6 +55,7 @@ export function AlignSelectionControls({ state }: { state: AlignState }) {
               disabled={disabled || !hasVisibleCells}
               label="Edge exclude"
               size="sm"
+              style={styles.fullWidthButton}
               variant="outline"
               onPress={() => {
                 if (!state.frame) return;
@@ -66,9 +71,10 @@ export function AlignSelectionControls({ state }: { state: AlignState }) {
           <View style={styles.gridCell}>
             <Button
               disabled={disabled || !hasVisibleCells || state.variationExcludeLoading}
-              label="Variation exclude"
+              label="Var exclude"
               loading={state.variationExcludeLoading}
               size="sm"
+              style={styles.fullWidthButton}
               variant="outline"
               onPress={() => void state.variationExclude()}
             />
@@ -79,6 +85,7 @@ export function AlignSelectionControls({ state }: { state: AlignState }) {
               label="Auto exclude"
               loading={state.variationExcludeLoading}
               size="sm"
+              style={styles.fullWidthButton}
               variant="outline"
               onPress={() => void state.autoExclude()}
             />
@@ -113,5 +120,9 @@ const styles = StyleSheet.create({
   gridCell: {
     flex: 1,
     minWidth: 0,
+  },
+  fullWidthButton: {
+    alignSelf: "stretch",
+    width: "100%",
   },
 });

@@ -55,7 +55,7 @@ export function VariationExcludeDialog({
     <ModalScrim open={true} onClose={onCancel}>
       <DialogSurface maxWidth={640} padded={false}>
         <DialogHeader>
-          <Text style={[styles.title, { color: colors.foreground }]}>Variation exclude</Text>
+          <Text style={[styles.title, { color: colors.foreground }]}>Var exclude</Text>
         </DialogHeader>
 
         <DialogBody>
@@ -97,7 +97,7 @@ export function VariationExcludeDialog({
               onChangeText={(text) => onThresholdChange(clampThreshold(Number(text), min, max))}
               style={[
                 styles.input,
-                { borderColor: colors.border, color: colors.foreground, backgroundColor: colors.background },
+                { borderColor: colors.input, color: colors.foreground, backgroundColor: colors.controlSurface },
               ]}
             />
           </View>

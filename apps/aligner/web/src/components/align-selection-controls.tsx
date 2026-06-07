@@ -83,7 +83,7 @@ export function AlignSelectionControls({ state }: { state: AlignState }) {
             variant="outline"
             onClick={() => void state.variationExclude()}
           >
-            Variation exclude
+            Var exclude
           </Button>
           <Button
             disabled={disabled || !hasVisibleCells || state.variationExcludeLoading}

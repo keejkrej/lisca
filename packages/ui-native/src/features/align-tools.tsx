@@ -1,7 +1,9 @@
 import type { AlignGridToolMode } from "@lisca/utils";
-import { StyleSheet, Switch, Text, View } from "react-native";
+import { Lock, Unlock } from "lucide-react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
-import { Button, DockButton } from "../shell/buttons.tsx";
+import { DockButton } from "../shell/buttons.tsx";
+import { shellOutlineElevation } from "../shell/shell-chrome.ts";
 import { Section } from "../shell/section.tsx";
 import { useShellTheme } from "../theme/shell-theme.tsx";
 
@@ -22,6 +24,41 @@ const alignToolDefinitions: { mode: AlignGridToolMode; label: string }[] = [
   { mode: "zoom-vector", label: "Zoom vector" },
   { mode: "zoom-pattern", label: "Zoom pattern" },
 ];
+
+function PatternZoomLockButton(props: {
+  locked: boolean;
+  disabled?: boolean;
+  onPress: () => void;
+}) {
+  const { colors, mode } = useShellTheme();
+  const Icon = props.locked ? Lock : Unlock;
+  const active = props.locked;
+
+  return (
+    <Pressable
+      accessibilityLabel={props.locked ? "Unlock pattern zoom" : "Lock pattern zoom"}
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      disabled={props.disabled}
+      onPress={props.onPress}
+      style={[
+        styles.lockButton,
+        !active ? shellOutlineElevation(mode) : null,
+        {
+          backgroundColor: active ? colors.primary : colors.outlineSurface,
+          borderColor: colors.input,
+          opacity: props.disabled ? 0.64 : 1,
+        },
+      ]}
+    >
+      <Icon
+        color={active ? colors.primaryForeground : colors.foreground}
+        size={16}
+        strokeWidth={2}
+      />
+    </Pressable>
+  );
+}
 
 export function AlignTools(props: AlignToolsProps) {
   const {
@@ -46,13 +83,9 @@ export function AlignTools(props: AlignToolsProps) {
               style={styles.patternButton}
               onPress={() => onModeChange(toolMode)}
             />
-            <Button
-              compact
+            <PatternZoomLockButton
               disabled={!onPatternZoomLockedChange}
-              label={patternZoomLocked ? "🔒" : "🔓"}
-              size="sm"
-              style={styles.lockButton}
-              variant={patternZoomLocked ? "default" : "outline"}
+              locked={patternZoomLocked}
               onPress={() => onPatternZoomLockedChange?.(!patternZoomLocked)}
             />
           </View>
@@ -108,6 +141,10 @@ const styles = StyleSheet.create({
   lockButton: {
     width: 40,
     minWidth: 40,
-    paddingHorizontal: 0,
+    minHeight: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderRadius: 10,
   },
 });

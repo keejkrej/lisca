@@ -21,7 +21,7 @@ function filePickerTitle(mode: HostFilePickerMode): string {
 }
 
 function ToolsMenuPlaceholder() {
-  return <Button compact label="Tools" size="sm" variant="outline" disabled />;
+  return <Button disabled label="Tools" size="sm" variant="outline" />;
 }
 
 export function AlignerHeader(props: { onSourcePicked: (source: AlignerSource | null) => void }) {

@@ -1,6 +1,11 @@
 import type { ReactNode } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text } from "react-native";
 
+import {
+  shellChromeMetrics,
+  shellOutlineButtonStyle,
+  shellOutlineSurface,
+} from "./shell-chrome.ts";
 import { useShellTheme } from "../theme/shell-theme.tsx";
 
 function basename(value: string | null): string | null {
@@ -18,7 +23,7 @@ export function PathButton(props: {
   disabled?: boolean;
   onPress?: () => void;
 }) {
-  const { colors } = useShellTheme();
+  const { colors, mode } = useShellTheme();
   const display = basename(props.value) ?? props.label;
   const disabled = props.disabled ?? !props.onPress;
 
@@ -28,15 +33,13 @@ export function PathButton(props: {
       disabled={disabled}
       onPress={props.onPress}
       style={[
+        shellOutlineButtonStyle,
+        shellOutlineSurface(colors, mode),
         styles.root,
-        {
-          borderColor: colors.border,
-          backgroundColor: colors.background,
-          opacity: disabled ? 0.5 : 1,
-        },
+        { opacity: disabled ? 0.64 : 1 },
       ]}
     >
-      {props.icon ? <View style={styles.icon}>{props.icon}</View> : null}
+      {props.icon}
       <Text numberOfLines={1} style={[styles.label, { color: colors.foreground }]}>
         {display}
       </Text>
@@ -46,22 +49,13 @@ export function PathButton(props: {
 
 const styles = StyleSheet.create({
   root: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
     maxWidth: 288,
     minWidth: 0,
-  },
-  icon: {
-    flexShrink: 0,
+    flexShrink: 1,
   },
   label: {
     flexShrink: 1,
-    fontSize: 13,
+    fontSize: shellChromeMetrics.fontSize,
     fontWeight: "400",
   },
 });

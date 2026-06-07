@@ -31,12 +31,12 @@ export function ServerAddressDialog(props: ServerAddressDialogProps) {
   return (
     <Modal visible={props.open} animationType="slide" transparent onRequestClose={() => props.onOpenChange(false)}>
       <View style={styles.scrim}>
-        <View style={[styles.surface, { backgroundColor: colors.background, borderColor: colors.border }]}>
+        <View style={[styles.surface, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.title, { color: colors.foreground }]}>Server address</Text>
           <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>{props.currentWsUrl}</Text>
 
           <Pressable
-            style={[styles.rowButton, { borderColor: colors.border }]}
+            style={[styles.rowButton, { borderColor: colors.border, backgroundColor: colors.controlSurface }]}
             onPress={() => {
               props.onConnect(null);
               props.onOpenChange(false);
@@ -47,7 +47,7 @@ export function ServerAddressDialog(props: ServerAddressDialogProps) {
 
           <ScrollView style={styles.list}>
             {props.savedServers.map((server) => (
-              <View key={server} style={[styles.savedRow, { borderColor: colors.border }]}>
+              <View key={server} style={[styles.savedRow, { borderColor: colors.border, backgroundColor: colors.controlSurface }]}>
                 <Pressable
                   style={styles.savedConnect}
                   onPress={() => {
@@ -71,7 +71,7 @@ export function ServerAddressDialog(props: ServerAddressDialogProps) {
             placeholderTextColor={colors.mutedForeground}
             autoCapitalize="none"
             autoCorrect={false}
-            style={[styles.input, { color: colors.foreground, borderColor: colors.border }]}
+            style={[styles.input, { color: colors.foreground, borderColor: colors.input, backgroundColor: colors.controlSurface }]}
           />
 
           <View style={styles.actions}>

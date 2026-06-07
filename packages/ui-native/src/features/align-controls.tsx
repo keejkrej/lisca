@@ -56,7 +56,7 @@ function AlignNumberInput(props: {
       onSubmitEditing={commit}
       style={[
         styles.numberInput,
-        { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background },
+        { color: colors.foreground, borderColor: colors.input, backgroundColor: colors.controlSurface },
       ]}
     />
   );
@@ -277,7 +277,7 @@ export function ReadonlyPathField(props: { value: string; style?: object }) {
     <View
       style={[
         pathStyles.root,
-        { borderColor: colors.border, backgroundColor: colors.muted },
+        { borderColor: colors.border, backgroundColor: colors.inset },
         props.style,
       ]}
     >

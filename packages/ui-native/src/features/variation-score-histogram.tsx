@@ -21,7 +21,7 @@ export function VariationScoreHistogram(props: {
     <View
       style={[
         styles.root,
-        { height, borderColor: colors.border, backgroundColor: colors.background },
+        { height, borderColor: colors.border, backgroundColor: colors.histogramSurface },
       ]}
     >
       <View style={styles.bars}>

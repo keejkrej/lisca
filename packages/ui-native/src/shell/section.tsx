@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { useShellTheme } from "../theme/shell-theme.tsx";
@@ -15,12 +16,13 @@ export function Section(props: {
 }) {
   const { colors } = useShellTheme();
   const [collapsed, setCollapsed] = useState(props.defaultCollapsed ?? false);
+  const CollapseIcon = collapsed ? ChevronRight : ChevronDown;
 
   return (
     <View
       style={[
         styles.panel,
-        { borderColor: colors.border, backgroundColor: colors.panel },
+        { borderColor: colors.border, backgroundColor: colors.card },
         props.style,
       ]}
     >
@@ -38,13 +40,12 @@ export function Section(props: {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={collapsed ? `Expand ${props.title}` : `Collapse ${props.title}`}
+            accessibilityState={{ expanded: !collapsed }}
             hitSlop={8}
             onPress={() => setCollapsed((current) => !current)}
             style={styles.collapseButton}
           >
-            <Text style={{ color: colors.mutedForeground, fontSize: 14 }}>
-              {collapsed ? "▸" : "▾"}
-            </Text>
+            <CollapseIcon color={colors.mutedForeground} size={16} strokeWidth={2} />
           </Pressable>
         </View>
       </View>
@@ -87,7 +88,11 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   collapseButton: {
-    padding: 4,
+    alignItems: "center",
+    justifyContent: "center",
+    width: 28,
+    height: 28,
+    borderRadius: 8,
   },
   content: {
     gap: 8,

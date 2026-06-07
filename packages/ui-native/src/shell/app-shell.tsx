@@ -61,7 +61,7 @@ function Left(props: { children?: ReactNode; width?: number }) {
         {
           width,
           borderRightColor: colors.border,
-          backgroundColor: colors.muted,
+          backgroundColor: colors.background,
         },
       ]}
     >
@@ -81,7 +81,7 @@ function Right(props: { children?: ReactNode; width?: number }) {
         {
           width,
           borderLeftColor: colors.border,
-          backgroundColor: colors.muted,
+          backgroundColor: colors.background,
         },
       ]}
     >
@@ -105,7 +105,7 @@ function Main(props: { children?: ReactNode }) {
 function Dock(props: { children?: ReactNode }) {
   const { colors } = useShellTheme();
   return (
-    <View style={[styles.dock, { borderTopColor: colors.border, backgroundColor: colors.panel }]}>
+    <View style={[styles.dock, { borderTopColor: colors.border, backgroundColor: colors.background }]}>
       <SafeAreaView edges={["bottom"]} style={styles.dockSafeArea}>
         <ShellScrollRegion contentStyle={styles.dockContent}>{props.children}</ShellScrollRegion>
       </SafeAreaView>
@@ -192,7 +192,6 @@ const styles = StyleSheet.create({
   },
   mainContent: {
     flexGrow: 1,
-    padding: 8,
   },
   dock: {
     borderTopWidth: 1,

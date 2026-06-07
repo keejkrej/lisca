@@ -431,16 +431,16 @@ export function useAlignState(): AlignState {
 
   const variationExclude = useCallback(async () => {
     if (!source || !frame) return;
-    alignerUiActions.setStatus(setUi, "Variation exclude preview");
+    alignerUiActions.setStatus(setUi, "Var exclude preview");
     try {
       const preview = await previewVariationExclude();
       if (!preview) {
-        alignerUiActions.setStatus(setUi, "No visible cells for variation exclude");
+        alignerUiActions.setStatus(setUi, "No visible cells for var exclude");
         return;
       }
       setVariationExcludePreview({ preview, threshold: preview.threshold });
     } catch (cause) {
-      alignerUiActions.setError(setUi, toErrorMessage(cause, "Variation exclude preview failed"));
+      alignerUiActions.setError(setUi, toErrorMessage(cause, "Var exclude preview failed"));
     }
   }, [frame, previewVariationExclude, setUi, source]);
 
@@ -450,7 +450,7 @@ export function useAlignState(): AlignState {
 
   const cancelVariationExclude = useCallback(() => {
     setVariationExcludePreview(null);
-    alignerUiActions.setStatus(setUi, "Variation exclude cancelled");
+    alignerUiActions.setStatus(setUi, "Var exclude cancelled");
   }, [setUi]);
 
   const applyVariationExclude = useCallback(() => {
@@ -465,7 +465,7 @@ export function useAlignState(): AlignState {
     setVariationExcludePreview(null);
     alignerUiActions.setStatus(
       setUi,
-      `Variation excluded ${variationCells.length} of ${variationExcludePreview.preview.eligibleCellCount} cells`,
+      `Var excluded ${variationCells.length} of ${variationExcludePreview.preview.eligibleCellCount} cells`,
     );
   }, [
     cellsBelowThreshold,

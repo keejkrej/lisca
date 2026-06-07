@@ -11,6 +11,7 @@
  *   bun lisca dev aligner web
  *   bun lisca dev aligner mobile
  *   bun lisca dev aligner mobile-web
+ *   bun lisca dev aligner demo
  *   bun lisca build studio
  *   bun lisca dist aligner
  *   bun lisca typecheck annotator
@@ -24,8 +25,8 @@ import path from "node:path";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 const PRODUCTS = new Set(["aligner", "annotator", "studio"]);
-const TYPECHECK_TARGETS = new Set(["desktop", "web", "server", "mobile", "all"]);
-const APP_TARGETS = new Set(["desktop", "web", "server", "mobile", "mobile-web"]);
+const TYPECHECK_TARGETS = new Set(["desktop", "web", "demo", "server", "mobile", "all"]);
+const APP_TARGETS = new Set(["desktop", "web", "demo", "server", "mobile", "mobile-web"]);
 
 const MOBILE_PORTS = {
   aligner: 8081,
@@ -45,7 +46,7 @@ Usage: bun lisca <task> <product> [target] [-- <turbo passthrough>]
 
   task     dev | build | dist | typecheck | preview
   product  aligner | annotator | studio
-  target   desktop | web | server | mobile | mobile-web | all
+  target   desktop | web | demo | server | mobile | mobile-web | all
            (optional — sensible defaults per task)
 
 Defaults:
@@ -61,6 +62,7 @@ Examples:
   bun lisca dev annotator web
   bun lisca dev aligner mobile
   bun lisca dev aligner mobile-web
+  bun lisca dev aligner demo
   bun lisca build studio
   bun lisca dist aligner
   bun lisca typecheck aligner
@@ -75,7 +77,9 @@ function filterFor(task, product, target) {
     if (t === "all") return `@lisca/${product}-*`;
     if (t === "mobile-web") return `@lisca/${product}-mobile`;
     if (!TYPECHECK_TARGETS.has(t)) {
-      console.error(`Invalid typecheck target "${t}". Use: web | server | desktop | mobile | all`);
+      console.error(
+        `Invalid typecheck target "${t}". Use: web | demo | server | desktop | mobile | all`,
+      );
       process.exit(1);
     }
     return `@lisca/${product}-${t}`;
@@ -88,12 +92,14 @@ function filterFor(task, product, target) {
   }
 
   if (!APP_TARGETS.has(t)) {
-    console.error(`Invalid target "${t}". Use: desktop | web | server | mobile | mobile-web`);
+    console.error(`Invalid target "${t}". Use: desktop | web | demo | server | mobile | mobile-web`);
     process.exit(1);
   }
 
-  if (task === "preview" && t !== "web") {
-    console.error('preview only applies to "web" (Vite). Example: bun lisca preview aligner web');
+  if (task === "preview" && t !== "web" && t !== "demo") {
+    console.error(
+      'preview only applies to "web" or "demo" (Vite). Example: bun lisca preview aligner demo',
+    );
     process.exit(1);
   }
 

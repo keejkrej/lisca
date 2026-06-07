@@ -1,0 +1,33 @@
+{
+  "name": "@lisca/annotator-demo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.json --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@lisca/browser-frame": "workspace:*",
+    "@lisca/contracts": "workspace:*",
+    "@lisca/ui": "workspace:*",
+    "@lisca/utils": "workspace:*",
+    "@lisca/web-demo": "workspace:*",
+    "@tanstack/react-router": "catalog:",
+    "lucide-react": "^0.511.0",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "catalog:",
+    "@tanstack/router-plugin": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  }
+}

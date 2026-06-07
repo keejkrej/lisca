@@ -28,7 +28,7 @@
   "scripts": {
     "build": "turbo run build",
     "build:packages": "turbo run build --filter=./packages/*",
-    "build:webs": "turbo run build --filter=@lisca/*-web",
+    "build:webs": "turbo run build --filter=@lisca/*-web --filter=@lisca/*-demo",
     "check": "bun run lint && bun run typecheck && bun run check:rust",
     "check:rust": "cargo check --workspace",
     "contracts:generate": "bun --filter @lisca/contracts generate",

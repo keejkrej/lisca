@@ -1,31 +1,22 @@
-import { Pressable, StyleSheet, Text } from "react-native";
+import { Moon, Sun } from "lucide-react-native";
+import { Pressable } from "react-native";
 
+import { shellChromeMetrics, shellGhostIconButtonStyle } from "../shell/shell-chrome.ts";
 import { useShellTheme } from "./shell-theme.tsx";
 
 export function ShellThemeToggle() {
-  const { mode, toggleLightDark } = useShellTheme();
+  const { mode, toggleLightDark, colors } = useShellTheme();
   const title = mode === "light" ? "Switch to dark theme" : "Switch to light theme";
+  const Icon = mode === "light" ? Moon : Sun;
 
   return (
     <Pressable
       accessibilityLabel={title}
       accessibilityRole="button"
       onPress={toggleLightDark}
-      style={styles.root}
+      style={shellGhostIconButtonStyle}
     >
-      <Text style={styles.icon}>{mode === "light" ? "☾" : "☀"}</Text>
+      <Icon color={colors.foreground} size={shellChromeMetrics.iconSize} strokeWidth={2} />
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 8,
-    borderRadius: 8,
-  },
-  icon: {
-    fontSize: 16,
-  },
-});

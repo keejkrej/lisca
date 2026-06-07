@@ -1,8 +1,10 @@
 import type { ReactNode } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Folder, HardDrive } from "lucide-react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 
 import { ConnectionStatus } from "./connection-status.tsx";
 import { PathButton } from "./path-button.tsx";
+import { shellChromeMetrics } from "./shell-chrome.ts";
 import { useShellServer } from "../state/shell-server.tsx";
 import { useShellWorkspace } from "../state/workspace.tsx";
 import { ShellThemeToggle } from "../theme/shell-theme-toggle.tsx";
@@ -40,7 +42,7 @@ export function ShellNavbar(props: ShellNavbarProps) {
     >
       <View style={styles.leading}>
         <PathButton
-          icon={<FolderIcon color={colors.foreground} />}
+          icon={<Folder color={colors.foreground} opacity={0.8} size={shellChromeMetrics.iconSize} strokeWidth={2} />}
           label="Workspace"
           value={workspace.workspacePath}
           onPress={props.onPickWorkspace}
@@ -49,52 +51,21 @@ export function ShellNavbar(props: ShellNavbarProps) {
         {props.showSourceButton === false ? null : (
           <PathButton
             disabled={!workspace.workspacePath}
-            icon={<SourceIcon color={colors.foreground} />}
+            icon={<HardDrive color={colors.foreground} opacity={0.8} size={shellChromeMetrics.iconSize} strokeWidth={2} />}
             label="Source"
             value={workspace.sourcePath}
             onPress={workspace.workspacePath ? props.onPickSource : undefined}
           />
         )}
-        {props.showRouteToggle === false ? (
-          props.routeItems.map((item) => (
-            <View key={item.value}>
-              <RouteLabel active={item.value === props.routeValue} label={item.label} />
-            </View>
-          ))
-        ) : null}
       </View>
 
       <View style={styles.trailing}>
-        <Pressable onPress={server.openSettings}>
-          <ConnectionStatus state={server.state} />
-        </Pressable>
+        <ConnectionStatus state={server.state} wsUrl={server.wsUrl} onOpenSettings={server.openSettings} />
         {props.showToolsMenu !== false ? props.endLeading : null}
         <ShellThemeToggle />
       </View>
     </ScrollView>
   );
-}
-
-function RouteLabel(props: { label: string; active: boolean }) {
-  const { colors } = useShellTheme();
-  return (
-    <Text
-      style={[
-        styles.routeText,
-        { color: props.active ? colors.primary : colors.foreground },
-      ]}
-    >
-      {props.label}
-    </Text>
-  );
-}
-
-function FolderIcon(props: { color: string }) {
-  return <View style={[styles.iconBox, { borderColor: props.color }]} />;
-}
-
-function SourceIcon(props: { color: string }) {
-  return <View style={[styles.iconDisk, { borderColor: props.color }]} />;
 }
 
 const styles = StyleSheet.create({
@@ -103,14 +74,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 12,
-    minHeight: 48,
+    gap: 16,
+    minHeight: shellChromeMetrics.height,
   },
   leading: {
     flexDirection: "row",
     alignItems: "center",
     flexWrap: "wrap",
-    gap: 8,
+    gap: 12,
     flexShrink: 1,
   },
   trailing: {
@@ -118,22 +89,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     flexShrink: 0,
-  },
-  routeText: {
-    fontSize: 16,
-    fontWeight: "600",
-    paddingHorizontal: 4,
-  },
-  iconBox: {
-    width: 14,
-    height: 12,
-    borderWidth: 1.5,
-    borderRadius: 2,
-  },
-  iconDisk: {
-    width: 14,
-    height: 14,
-    borderWidth: 1.5,
-    borderRadius: 7,
   },
 });

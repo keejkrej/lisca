@@ -3,6 +3,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-nati
 
 import { Button } from "../shell/buttons.tsx";
 import { Field, FieldLabel } from "../shell/field.tsx";
+import { shellOutlineElevation } from "../shell/shell-chrome.ts";
 import { Section } from "../shell/section.tsx";
 import { Slider } from "../shell/slider.tsx";
 import { useShellTheme } from "../theme/shell-theme.tsx";
@@ -78,7 +79,7 @@ function SelectPicker<T extends NavigationValue>(props: {
   disabled?: boolean;
   onChange: (value: T) => void;
 }) {
-  const { colors } = useShellTheme();
+  const { colors, mode } = useShellTheme();
   const [open, setOpen] = useState(false);
   const selected = props.options.find((option) => option.value === props.value);
 
@@ -89,7 +90,8 @@ function SelectPicker<T extends NavigationValue>(props: {
         onPress={() => setOpen(true)}
         style={[
           styles.selectTrigger,
-          { borderColor: colors.border, backgroundColor: colors.background, opacity: props.disabled ? 0.5 : 1 },
+          shellOutlineElevation(mode),
+          { borderColor: colors.input, backgroundColor: colors.outlineSurface, opacity: props.disabled ? 0.64 : 1 },
         ]}
       >
         <Text numberOfLines={1} style={{ color: colors.foreground, fontSize: 14 }}>
@@ -98,7 +100,7 @@ function SelectPicker<T extends NavigationValue>(props: {
       </Pressable>
       <Modal transparent visible={open} animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable style={styles.pickerScrim} onPress={() => setOpen(false)}>
-          <Pressable style={[styles.pickerSheet, { backgroundColor: colors.panel, borderColor: colors.border }]}>
+          <Pressable style={[styles.pickerSheet, { backgroundColor: colors.popover, borderColor: colors.border }]}>
             <ScrollView>
               {props.options.map((option) => (
                 <Pressable
@@ -109,7 +111,7 @@ function SelectPicker<T extends NavigationValue>(props: {
                   }}
                   style={[
                     styles.pickerItem,
-                    option.value === props.value ? { backgroundColor: colors.muted } : null,
+                    option.value === props.value ? { backgroundColor: colors.accent } : null,
                   ]}
                 >
                   <Text style={{ color: colors.foreground }}>{option.label}</Text>

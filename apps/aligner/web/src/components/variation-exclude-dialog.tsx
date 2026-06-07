@@ -49,10 +49,10 @@ export function VariationExcludeDialog({
         if (event.target === event.currentTarget) onCancel();
       }}
     >
-      <DialogSurface aria-labelledby="variation-exclude-title" maxWidth="xl">
+      <DialogSurface aria-labelledby="var-exclude-title" maxWidth="xl">
         <div className="border-b border-border px-5 py-4">
-          <h2 className="font-semibold text-foreground text-lg" id="variation-exclude-title">
-            Variation exclude
+          <h2 className="font-semibold text-foreground text-lg" id="var-exclude-title">
+            Var exclude
           </h2>
         </div>
 

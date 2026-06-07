@@ -8,7 +8,7 @@ export function StatTile(props: { label: string; value: string | number; style?:
     <View
       style={[
         styles.root,
-        { borderColor: colors.border, backgroundColor: colors.muted },
+        { borderColor: colors.border, backgroundColor: colors.stat },
         props.style,
       ]}
     >
