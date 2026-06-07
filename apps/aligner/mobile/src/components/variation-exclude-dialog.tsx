@@ -1,8 +1,17 @@
-import Slider from "@react-native-community/slider";
+import {
+  Button,
+  DialogBody,
+  DialogFooter,
+  DialogHeader,
+  DialogSurface,
+  ModalScrim,
+  Slider,
+  StatTile,
+  useShellTheme,
+  VariationScoreHistogram,
+} from "@lisca/ui-native";
 import { useMemo } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
-
-import { Button, DialogSurface, ModalScrim } from "@lisca/ui-native";
 
 import type { VariationExcludePreview } from "../state/use-align-state";
 
@@ -28,6 +37,7 @@ export function VariationExcludeDialog({
   onCancel,
   onThresholdChange,
 }: VariationExcludeDialogProps) {
+  const { colors } = useShellTheme();
   const preview = state?.preview ?? null;
   const threshold = state?.threshold ?? 0;
   const selectedCount = useMemo(
@@ -39,42 +49,111 @@ export function VariationExcludeDialog({
 
   const min = preview.scoreMin;
   const max = preview.scoreMax > preview.scoreMin ? preview.scoreMax : preview.scoreMin + 1;
+  const step = Math.max((max - min) / 500, 0.001);
 
   return (
-    <ModalScrim open onClose={onCancel}>
-      <DialogSurface maxWidth={520}>
-        <Text style={styles.title}>Variation exclude</Text>
-        <View style={styles.stats}>
-          <Text>Eligible: {preview.eligibleCellCount}</Text>
-          <Text>Selected: {selectedCount}</Text>
-          <Text>
-            Range: {formatScore(preview.scoreMin)} - {formatScore(preview.scoreMax)}
-          </Text>
-        </View>
-        <Slider
-          minimumValue={min}
-          maximumValue={max}
-          value={threshold}
-          onSlidingComplete={(value) => onThresholdChange(clampThreshold(value, min, max))}
-        />
-        <TextInput
-          keyboardType="decimal-pad"
-          value={String(threshold)}
-          onChangeText={(text) => onThresholdChange(clampThreshold(Number(text), min, max))}
-          style={styles.input}
-        />
-        <View style={styles.actions}>
+    <ModalScrim open={true} onClose={onCancel}>
+      <DialogSurface maxWidth={640} padded={false}>
+        <DialogHeader>
+          <Text style={[styles.title, { color: colors.foreground }]}>Variation exclude</Text>
+        </DialogHeader>
+
+        <DialogBody>
+          <View style={styles.statsRow}>
+            <StatTile label="Eligible cells" value={preview.eligibleCellCount} />
+            <StatTile label="Selected cells" value={selectedCount} />
+            <StatTile
+              label="Score range"
+              value={`${formatScore(preview.scoreMin)} - ${formatScore(preview.scoreMax)}`}
+            />
+          </View>
+
+          <VariationScoreHistogram bins={preview.histogramBins} threshold={threshold} />
+
+          <View style={styles.thresholdRow}>
+            <View style={styles.thresholdSlider}>
+              <View style={styles.thresholdHeader}>
+                <Text style={[styles.thresholdLabel, { color: colors.foreground }]}>Threshold</Text>
+                <Text style={[styles.thresholdValue, { color: colors.mutedForeground }]}>
+                  {formatScore(threshold)}
+                </Text>
+              </View>
+              <Slider
+                maximumValue={max}
+                minimumValue={min}
+                step={step}
+                style={styles.slider}
+                thumbTintColor={colors.primary}
+                minimumTrackTintColor={colors.primary}
+                maximumTrackTintColor={colors.border}
+                value={threshold}
+                onSlidingComplete={(value) => onThresholdChange(clampThreshold(value, min, max))}
+                onValueChange={(value) => onThresholdChange(clampThreshold(value, min, max))}
+              />
+            </View>
+            <TextInput
+              keyboardType="decimal-pad"
+              value={String(threshold)}
+              onChangeText={(text) => onThresholdChange(clampThreshold(Number(text), min, max))}
+              style={[
+                styles.input,
+                { borderColor: colors.border, color: colors.foreground, backgroundColor: colors.background },
+              ]}
+            />
+          </View>
+        </DialogBody>
+
+        <DialogFooter>
           <Button label="Cancel" variant="outline" onPress={onCancel} />
           <Button label="Apply" onPress={onApply} />
-        </View>
+        </DialogFooter>
       </DialogSurface>
     </ModalScrim>
   );
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 18, fontWeight: "600" },
-  stats: { gap: 4 },
-  input: { borderWidth: 1, borderRadius: 8, padding: 8, borderColor: "#e4e4e7" },
-  actions: { flexDirection: "row", gap: 8, justifyContent: "flex-end" },
+  title: {
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  statsRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  thresholdRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 12,
+  },
+  thresholdSlider: {
+    flex: 1,
+    gap: 8,
+    minWidth: 0,
+  },
+  thresholdHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  thresholdLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  thresholdValue: {
+    fontSize: 12,
+    fontVariant: ["tabular-nums"],
+  },
+  slider: {
+    width: "100%",
+    height: 32,
+  },
+  input: {
+    width: 112,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    fontSize: 14,
+  },
 });

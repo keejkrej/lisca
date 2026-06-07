@@ -7,8 +7,10 @@ export function AlignToolSection({ state }: { state: AlignState }) {
     <AlignTools
       mode={state.toolMode}
       patternZoomLocked={state.patternZoomLocked}
+      sectionContentStyle={{ flex: 1, minHeight: 0 }}
+      sectionStyle={{ flex: 1, minWidth: 0 }}
       onModeChange={(mode) => {
-        if (!state.cropping) state.setToolMode(mode as typeof state.toolMode);
+        if (!state.cropping) state.setToolMode(mode);
       }}
       onPatternZoomLockedChange={(locked) => {
         if (!state.cropping) state.setPatternZoomLocked(locked);

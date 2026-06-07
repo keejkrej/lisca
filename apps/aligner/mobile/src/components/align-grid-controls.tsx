@@ -45,6 +45,7 @@ export function AlignGridControls({ state }: { state: AlignState }) {
       onShapeChange={(shape) => updateGrid({ shape })}
       onVectorAChange={(spacingA) => updateGrid({ spacingA })}
       onVectorBChange={(spacingB) => updateGrid({ spacingB })}
+      sectionStyle={{ flexShrink: 0 }}
     />
   );
 }

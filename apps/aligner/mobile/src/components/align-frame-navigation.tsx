@@ -29,7 +29,6 @@ export function AlignFrameNavigation({ state }: { state: AlignState }) {
   return (
     <FrameNavigation
       position={{
-        label: "Pos",
         value: state.selection.pos,
         options: positionOptions,
         disabled,
@@ -46,7 +45,6 @@ export function AlignFrameNavigation({ state }: { state: AlignState }) {
         },
       }}
       channel={{
-        label: "Ch",
         value: state.selection.channel,
         options: channelOptions,
         disabled,
@@ -63,10 +61,10 @@ export function AlignFrameNavigation({ state }: { state: AlignState }) {
         },
       }}
       timepoint={{
-        label: "T",
         value: timeIndex,
         min: 0,
         max: timeMax,
+        step: 1,
         disabled: disabled || timeMax <= 0,
         onCommit: (i) =>
           state.setSelection({ time: state.scan?.times[clamp(Math.round(i), 0, timeMax)] ?? 0 }),
@@ -78,10 +76,10 @@ export function AlignFrameNavigation({ state }: { state: AlignState }) {
           state.setSelection({ time: state.scan?.times[Math.min(timeMax, timeIndex + 1)] ?? 0 }),
       }}
       zPlane={{
-        label: "Z",
         value: zIndex,
         min: 0,
         max: zMax,
+        step: 1,
         disabled: disabled || zMax <= 0,
         onCommit: (i) =>
           state.setSelection({ z: state.scan?.zSlices[clamp(Math.round(i), 0, zMax)] ?? 0 }),

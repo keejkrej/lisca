@@ -16,7 +16,7 @@ export default function IndexRoute() {
         <AlignerHeader onSourcePicked={alignState.setSource} />
       </AppShell.Header>
       <AppShell.Body>
-        <AppShell.Left>
+        <AppShell.Left width={288}>
           <AlignerLeft alignState={alignState} />
         </AppShell.Left>
         <AppShell.MainColumn>
@@ -27,7 +27,7 @@ export default function IndexRoute() {
             <AlignerDock alignState={alignState} />
           </AppShell.Dock>
         </AppShell.MainColumn>
-        <AppShell.Right>
+        <AppShell.Right width={288}>
           <AlignerRight alignState={alignState} />
         </AppShell.Right>
       </AppShell.Body>

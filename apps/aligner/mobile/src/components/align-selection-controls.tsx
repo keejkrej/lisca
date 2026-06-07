@@ -1,11 +1,11 @@
-import { Button, Section } from "@lisca/ui-native";
+import { Button, Section, StatTile } from "@lisca/ui-native";
 import {
   collectAlignGridEdgeCells,
   enumerateVisibleAlignGridCells,
   mergeExcludedAlignGridCells,
 } from "@lisca/utils";
 import { useMemo } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import type { AlignState } from "../state/use-align-state";
 import { VariationExcludeDialog } from "./variation-exclude-dialog";
@@ -24,50 +24,65 @@ export function AlignSelectionControls({ state }: { state: AlignState }) {
 
   return (
     <>
-      <Section title="Selection">
+      <Section contentStyle={styles.sectionContent} style={styles.section} title="Selection">
         <View style={styles.statsRow}>
-          <Stat label="Included" value={state.visibleCounts.included} />
-          <Stat label="Excluded" value={state.visibleCounts.excluded} />
+          <StatTile label="Included cells" value={state.visibleCounts.included} />
+          <StatTile label="Excluded cells" value={state.visibleCounts.excluded} />
         </View>
         <Button
-          label="Reset"
-          variant="outline"
           disabled={disabled || !hasExcludedCells}
+          label="Reset"
+          size="sm"
+          variant="outline"
           onPress={() => state.setExcludedCellsForCurrentPosition([])}
         />
         <View style={styles.row}>
-          <Button
-            label="Exclude all"
-            variant="outline"
-            disabled={disabled || !hasVisibleCells}
-            onPress={() => state.setExcludedCellsForCurrentPosition(visibleCells)}
-          />
-          <Button
-            label="Edge exclude"
-            variant="outline"
-            disabled={disabled || !hasVisibleCells}
-            onPress={() => {
-              if (!state.frame) return;
-              const edgeCells = collectAlignGridEdgeCells(state.frame, state.grid);
-              state.setExcludedCellsForCurrentPosition(
-                mergeExcludedAlignGridCells(state.currentExcludedCells, edgeCells),
-              );
-            }}
-          />
+          <View style={styles.gridCell}>
+            <Button
+              disabled={disabled || !hasVisibleCells}
+              label="Exclude all"
+              size="sm"
+              variant="outline"
+              onPress={() => state.setExcludedCellsForCurrentPosition(visibleCells)}
+            />
+          </View>
+          <View style={styles.gridCell}>
+            <Button
+              disabled={disabled || !hasVisibleCells}
+              label="Edge exclude"
+              size="sm"
+              variant="outline"
+              onPress={() => {
+                if (!state.frame) return;
+                const edgeCells = collectAlignGridEdgeCells(state.frame, state.grid);
+                state.setExcludedCellsForCurrentPosition(
+                  mergeExcludedAlignGridCells(state.currentExcludedCells, edgeCells),
+                );
+              }}
+            />
+          </View>
         </View>
         <View style={styles.row}>
-          <Button
-            label="Variation exclude"
-            variant="outline"
-            disabled={disabled || !hasVisibleCells || state.variationExcludeLoading}
-            onPress={() => void state.variationExclude()}
-          />
-          <Button
-            label="Auto exclude"
-            variant="outline"
-            disabled={disabled || !hasVisibleCells || state.variationExcludeLoading}
-            onPress={() => void state.autoExclude()}
-          />
+          <View style={styles.gridCell}>
+            <Button
+              disabled={disabled || !hasVisibleCells || state.variationExcludeLoading}
+              label="Variation exclude"
+              loading={state.variationExcludeLoading}
+              size="sm"
+              variant="outline"
+              onPress={() => void state.variationExclude()}
+            />
+          </View>
+          <View style={styles.gridCell}>
+            <Button
+              disabled={disabled || !hasVisibleCells || state.variationExcludeLoading}
+              label="Auto exclude"
+              loading={state.variationExcludeLoading}
+              size="sm"
+              variant="outline"
+              onPress={() => void state.autoExclude()}
+            />
+          </View>
         </View>
       </Section>
       <VariationExcludeDialog
@@ -80,19 +95,23 @@ export function AlignSelectionControls({ state }: { state: AlignState }) {
   );
 }
 
-function Stat(props: { label: string; value: number }) {
-  return (
-    <View style={styles.stat}>
-      <Text style={styles.statLabel}>{props.label}</Text>
-      <Text style={styles.statValue}>{props.value}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  statsRow: { flexDirection: "row", gap: 8 },
-  stat: { flex: 1, borderWidth: 1, borderRadius: 8, padding: 8, borderColor: "#e4e4e7" },
-  statLabel: { fontSize: 11, color: "#71717a" },
-  statValue: { fontSize: 16, fontWeight: "600" },
-  row: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
+  section: {
+    flexShrink: 0,
+  },
+  sectionContent: {
+    gap: 8,
+  },
+  statsRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  row: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  gridCell: {
+    flex: 1,
+    minWidth: 0,
+  },
 });

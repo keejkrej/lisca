@@ -1,4 +1,5 @@
 import {
+  Button,
   FolderSourceParseModal,
   HostFilePickerDialog,
   ShellNavbar,
@@ -7,6 +8,7 @@ import {
 } from "@lisca/ui-native";
 import type { AlignerSource, HostFilePickerMode } from "@lisca/contracts";
 import { useRef, useState } from "react";
+import { StyleSheet, View } from "react-native";
 
 import { alignerHostOperations } from "../api/aligner-port";
 
@@ -16,6 +18,10 @@ function filePickerTitle(mode: HostFilePickerMode): string {
   if (mode === "nd2_file") return "ND2 file";
   if (mode === "czi_file") return "CZI file";
   return "File";
+}
+
+function ToolsMenuPlaceholder() {
+  return <Button compact label="Tools" size="sm" variant="outline" disabled />;
 }
 
 export function AlignerHeader(props: { onSourcePicked: (source: AlignerSource | null) => void }) {
@@ -58,14 +64,17 @@ export function AlignerHeader(props: { onSourcePicked: (source: AlignerSource | 
 
   return (
     <>
-      <ShellNavbar
-        routeItems={[{ value: "align", label: "Align" }]}
-        routeValue="align"
-        showRouteToggle={false}
-        onPickSource={() => setSourcePickerOpen(true)}
-        onPickWorkspace={() => openFilePicker("workspace")}
-        onRouteChange={() => undefined}
-      />
+      <View style={styles.root}>
+        <ShellNavbar
+          endLeading={<ToolsMenuPlaceholder />}
+          routeItems={[{ value: "align", label: "Align" }]}
+          routeValue="align"
+          showRouteToggle={false}
+          onPickSource={() => setSourcePickerOpen(true)}
+          onPickWorkspace={() => openFilePicker("workspace")}
+          onRouteChange={() => undefined}
+        />
+      </View>
       <SourcePickerModal
         open={sourcePickerOpen}
         onClose={() => setSourcePickerOpen(false)}
@@ -98,3 +107,10 @@ export function AlignerHeader(props: { onSourcePicked: (source: AlignerSource | 
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    justifyContent: "center",
+  },
+});

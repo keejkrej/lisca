@@ -7,8 +7,12 @@ import { AlignToolSection } from "./align-tool-section";
 export function AlignerDock(props: { alignState: AlignState }) {
   return (
     <View style={styles.root}>
-      <AlignToolSection state={props.alignState} />
-      <AlignSaveSection state={props.alignState} />
+      <View style={styles.section}>
+        <AlignToolSection state={props.alignState} />
+      </View>
+      <View style={styles.section}>
+        <AlignSaveSection state={props.alignState} />
+      </View>
     </View>
   );
 }
@@ -19,5 +23,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 12,
     padding: 12,
+    minHeight: 0,
+  },
+  section: {
+    flex: 1,
+    minWidth: 0,
   },
 });

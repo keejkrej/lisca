@@ -15,8 +15,6 @@ export function AlignerRight(props: { alignState: AlignState }) {
 
 const styles = StyleSheet.create({
   root: {
-    flex: 1,
     gap: 8,
-    padding: 12,
   },
 });

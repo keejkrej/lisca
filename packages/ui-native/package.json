@@ -18,6 +18,7 @@
     "@lisca/contracts": "workspace:*",
     "@lisca/storage": "workspace:*",
     "@lisca/utils": "workspace:*",
+    "@react-native-community/slider": "^4.5.7",
     "@shopify/react-native-skia": "^2.2.12",
     "react-native-gesture-handler": "~2.28.0",
     "react-native-reanimated": "~4.1.1",
@@ -25,10 +26,12 @@
   },
   "devDependencies": {
     "@types/react": "catalog:",
+    "react-native-safe-area-context": "~5.6.0",
     "typescript": "catalog:"
   },
   "peerDependencies": {
     "react": "^19.0.0",
-    "react-native": "*"
+    "react-native": "*",
+    "react-native-safe-area-context": "*"
   }
 }

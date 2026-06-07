@@ -19,17 +19,44 @@ export function ModalScrim(props: {
   );
 }
 
-export function DialogSurface(props: { children: ReactNode; maxWidth?: number }) {
+export function DialogSurface(props: {
+  children: ReactNode;
+  maxWidth?: number;
+  padded?: boolean;
+}) {
   const { colors } = useShellTheme();
   return (
     <View
       style={[
         styles.surface,
-        { backgroundColor: colors.background, borderColor: colors.border, maxWidth: props.maxWidth ?? 480 },
+        props.padded === false ? styles.surfaceFlush : null,
+        {
+          backgroundColor: colors.background,
+          borderColor: colors.border,
+          maxWidth: props.maxWidth ?? 480,
+        },
       ]}
     >
       {props.children}
     </View>
+  );
+}
+
+export function DialogHeader(props: { children: ReactNode }) {
+  const { colors } = useShellTheme();
+  return (
+    <View style={[styles.header, { borderBottomColor: colors.border }]}>{props.children}</View>
+  );
+}
+
+export function DialogBody(props: { children: ReactNode; style?: object }) {
+  return <View style={[styles.body, props.style]}>{props.children}</View>;
+}
+
+export function DialogFooter(props: { children: ReactNode }) {
+  const { colors } = useShellTheme();
+  return (
+    <View style={[styles.footer, { borderTopColor: colors.border }]}>{props.children}</View>
   );
 }
 
@@ -49,7 +76,27 @@ const styles = StyleSheet.create({
     width: "100%",
     borderRadius: 16,
     borderWidth: 1,
-    padding: 16,
-    gap: 12,
+    overflow: "hidden",
+  },
+  surfaceFlush: {
+    padding: 0,
+  },
+  header: {
+    borderBottomWidth: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  body: {
+    gap: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  footer: {
+    borderTopWidth: 1,
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "flex-end",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
 });
