@@ -27,10 +27,10 @@ export const shellThemeColors = {
     ring: "#a3a3a3",
     /** `bg-card/32` rail tint — on light background this matches `background` */
     railChrome: "#ffffff",
-    /** `bg-muted/20` read-only path chips */
-    inset: "#f4f4f5",
-    /** `bg-muted/30` stat tiles */
-    stat: "#f0f0f0",
+    /** `bg-muted/20` read-only path chips (save section paths, etc.) */
+    inset: "#fdfdfd",
+    /** `bg-muted/30` stat tiles (included/excluded cells, etc.) */
+    stat: "#fcfcfc",
     /** `bg-muted/20` viewport outer padding band */
     viewportChrome: "#fdfdfd",
     /** Outline buttons — web `bg-popover` light / `dark:bg-input/32` */
@@ -65,8 +65,8 @@ export const shellThemeColors = {
     input: "#2e2e2e",
     ring: "#737373",
     railChrome: "#0d0d0d",
-    inset: "#121212",
-    stat: "#141414",
+    inset: "#0d0d0d",
+    stat: "#0f0f0f",
     viewportChrome: "#0c0c0c",
     /** Outline buttons — web `dark:bg-input/32` (lighter than canvas background) */
     outlineSurface: "#151515",
