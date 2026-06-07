@@ -15,6 +15,10 @@
       "package": "com.lisca.annotator.mobile",
       "usesCleartextTraffic": true
     },
-    "plugins": ["expo-router"]
+    "plugins": ["expo-router"],
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    }
   }
 }

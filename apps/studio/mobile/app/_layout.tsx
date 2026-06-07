@@ -1,11 +1,10 @@
-import { LiscaMobileProviders } from "@lisca/mobile-app";
-import { Redirect, Stack } from "expo-router";
+import { LiscaMobileProviders, StorageBootstrap } from "@lisca/mobile-app";
+import { Stack } from "expo-router";
 import { StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { StudioAtomsProvider } from "../src/components/studio-atoms-provider";
-import { StorageBootstrap } from "../src/storage-bootstrap";
 
 export default function RootLayout() {
   return (

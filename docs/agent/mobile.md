@@ -24,12 +24,21 @@ On a physical device, point at your machine: `EXPO_PUBLIC_LISCA_WS_HOST=192.168.
 ## Dev
 
 ```bash
-bun lisca dev aligner mobile    # Metro http://localhost:8081
-bun lisca dev annotator mobile  # Metro http://localhost:8082
-bun lisca dev studio mobile     # Metro http://localhost:8083
+bun lisca dev aligner mobile        # Expo CLI (i/a/w keys work) — Metro :8081
+bun lisca dev aligner mobile-web    # same app in the browser — http://localhost:8081
+bun lisca dev annotator mobile      # Metro :8082
+bun lisca dev annotator mobile-web  # http://localhost:8082
+bun lisca dev studio mobile         # Metro :8083
+bun lisca dev studio mobile-web     # http://localhost:8083
 ```
 
-Each app uses a fixed Metro port so all three can run in parallel without interactive prompts.
+Mobile dev runs **Expo directly** (not through turbo) so keyboard shortcuts work. Turbo still builds workspace dependencies first.
+
+For production UI parity in a browser, use the Vite web apps (`bun lisca dev aligner web` → http://localhost:5173). `mobile-web` loads CanvasKit (Skia WASM) before Expo Router starts; the first load may take a few seconds.
+
+Connect to a running Rust server (`bun lisca dev aligner server`) or set server address in the app shell — otherwise the WebSocket probe to port 8765 will fail (expected).
+
+Each app uses a fixed Metro port so all three can run in parallel.
 
 Monorepo Metro config: `scripts/metro-monorepo.cjs` (resolved from each app's `metro.config.js`). Requires `babel-preset-expo` and expo-router peers (`@expo/metro-runtime`, `expo-constants`, `expo-linking`) in the mobile app package.
 
