@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { shellChromeClass } from "../lib/surface";
+
 const shellDivider = "border-border";
 
 /** Fixed-height header strip (`h-16`); scrolls inside if content overflows. */
@@ -10,7 +12,11 @@ const shellDockFixed = "flex h-[11rem] shrink-0 flex-col overflow-hidden";
 
 function ShellDockInner(props: { children?: ReactNode }) {
   return (
-    <div role="region" aria-label="Dock" className={`${shellDockFixed} border-t ${shellDivider}`}>
+    <div
+      role="region"
+      aria-label="Dock"
+      className={`${shellDockFixed} border-t ${shellDivider} ${shellChromeClass}`}
+    >
       <div className="min-h-0 flex-1 overflow-auto">{props.children}</div>
     </div>
   );
@@ -25,7 +31,7 @@ function ShellSidebarInner(props: {
   return (
     <aside
       aria-label={props.side === "left" ? "Left panel" : "Right panel"}
-      className={`flex min-h-0 shrink-0 flex-col overflow-y-auto ${props.widthClass ?? "w-56"} ${edge}`}
+      className={`flex min-h-0 shrink-0 flex-col overflow-y-auto ${shellChromeClass} ${props.widthClass ?? "w-56"} ${edge}`}
     >
       {props.children}
     </aside>
@@ -57,7 +63,7 @@ AppShellRoot.displayName = "AppShell";
 function AppShellHeader(props: { children?: ReactNode }) {
   return (
     <header
-      className={`${shellHeaderFixed} border-b ${shellDivider}`}
+      className={`${shellHeaderFixed} border-b ${shellDivider} ${shellChromeClass}`}
       aria-label="Application header"
     >
       <div className="min-h-0 flex-1 overflow-auto">{props.children}</div>
@@ -71,14 +77,16 @@ AppShellHeader.displayName = "AppShell.Header";
  * Use `flex-1` so it fills remaining height when a `Header` is present.
  */
 function AppShellBody(props: { children?: ReactNode }) {
-  return <div className="flex min-h-0 flex-1 overflow-hidden">{props.children}</div>;
+  return <div className={`flex min-h-0 flex-1 overflow-hidden ${shellChromeClass}`}>{props.children}</div>;
 }
 AppShellBody.displayName = "AppShell.Body";
 
 /** Center stack: scrollable `Main` plus optional fixed-height `Dock`. */
 function AppShellMainColumn(props: { children?: ReactNode }) {
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{props.children}</div>
+    <div className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden ${shellChromeClass}`}>
+      {props.children}
+    </div>
   );
 }
 AppShellMainColumn.displayName = "AppShell.MainColumn";
@@ -111,7 +119,7 @@ AppShellRight.displayName = "AppShell.Right";
 
 function AppShellMain(props: { children?: ReactNode }) {
   return (
-    <main className="min-h-0 flex-1 overflow-auto" id="main-content">
+    <main className={`min-h-0 flex-1 overflow-auto ${shellChromeClass}`} id="main-content">
       {props.children}
     </main>
   );

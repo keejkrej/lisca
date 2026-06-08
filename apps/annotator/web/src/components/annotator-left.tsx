@@ -1,4 +1,3 @@
-import { cn } from "@lisca/ui/components";;
 import {
   ContrastControl,
   FrameNavigation,
@@ -6,7 +5,6 @@ import {
   stepNavigationValue,
   toNavigationOptions,
 } from "@lisca/ui/features";
-import { shellRailChromeClass } from "@lisca/ui/shell";
 import { clamp } from "@lisca/utils";
 import { useMemo } from "react";
 
@@ -35,7 +33,7 @@ export function AnnotatorLeft() {
   const channelValue = state.selection.channel ?? channelOptions[0]?.value ?? 0;
 
   return (
-    <div className={cn("flex min-h-0 flex-col gap-2 p-3", shellRailChromeClass)}>
+    <div className="flex min-h-0 flex-col gap-2 p-3">
       <FrameNavigation
         position={{
           value: posValue,

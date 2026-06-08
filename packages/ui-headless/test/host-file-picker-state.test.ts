@@ -4,6 +4,7 @@ import {
   canGoUpFromList,
   fileMatchesMode,
   isDirectoryMode,
+  parentPathForGoUp,
 } from "../src/host-file-picker-state.ts";
 
 describe("host-file-picker-state", () => {
@@ -17,9 +18,16 @@ describe("host-file-picker-state", () => {
     expect(canGoUpFromList(null)).toBe(false);
     expect(canGoUpFromList({ path: null, parent: null, entries: [] })).toBe(false);
     expect(canGoUpFromList({ path: "/", parent: null, entries: [] })).toBe(false);
+    expect(canGoUpFromList({ path: "/workspace", parent: "", entries: [] })).toBe(true);
     expect(
       canGoUpFromList({ path: "/workspace/run-1", parent: "/workspace", entries: [] }),
     ).toBe(true);
+  });
+
+  it("parentPathForGoUp maps chroot boundary to synthetic roots", () => {
+    expect(parentPathForGoUp(null)).toBe(null);
+    expect(parentPathForGoUp("")).toBe(null);
+    expect(parentPathForGoUp("/workspace")).toBe("/workspace");
   });
 
   it("fileMatchesMode filters by extension", () => {

@@ -75,6 +75,7 @@ export {
 export { cn } from "./lib/utils";
 export {
   modalOverlayClass,
+  shellChromeClass,
   shellRailChromeClass,
   surfaceDialogClass,
   surfaceInsetClass,

@@ -12,8 +12,6 @@ import type {
   FrameRequest,
   FrameResult,
   HostListDirectoryResult,
-  SmbConnectRequest,
-  SmbConnectResponse,
   LoadedRoiFrameAnnotation,
   RoiFrameAnnotation,
   RoiFrameAnnotationPayload,
@@ -32,11 +30,6 @@ import type { ClientEffect } from "../runtime.ts";
 export type HostPort = {
   listDirectory(path: string | null, signal?: AbortSignal): ClientEffect<HostListDirectoryResult>;
   userHomeDirectory(signal?: AbortSignal): ClientEffect<string>;
-  connectSmb(
-    request: SmbConnectRequest,
-    signal?: AbortSignal,
-  ): ClientEffect<SmbConnectResponse>;
-  disconnectSmb(sessionId: string, signal?: AbortSignal): ClientEffect<void>;
 };
 
 export type StudioHostPort = HostPort & {

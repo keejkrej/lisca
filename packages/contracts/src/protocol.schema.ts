@@ -49,21 +49,6 @@ export const ReadTextFileResponseSchema = Schema.Struct({
   contents: Schema.String,
 }).annotations({ identifier: "ReadTextFileResponse" });
 
-export const SmbConnectRequestSchema = Schema.Struct({
-  url: Schema.String,
-  username: Schema.String,
-  password: Schema.String,
-}).annotations({ identifier: "SmbConnectRequest" });
-
-export const SmbConnectResponseSchema = Schema.Struct({
-  sessionId: Schema.String,
-  rootPath: Schema.String,
-}).annotations({ identifier: "SmbConnectResponse" });
-
-export const SmbDisconnectRequestSchema = Schema.Struct({
-  sessionId: Schema.String,
-}).annotations({ identifier: "SmbDisconnectRequest" });
-
 export const SaveAssayJsonRequestSchema = Schema.Struct({
   saveTo: Schema.String,
   contents: Schema.String,
@@ -403,9 +388,6 @@ export type HostFsEntry = typeof HostFsEntrySchema.Type;
 export type HostListDirectoryResult = typeof HostListDirectoryResultSchema.Type;
 export type HomeDirectoryResponse = typeof HomeDirectoryResponseSchema.Type;
 export type ReadTextFileResponse = typeof ReadTextFileResponseSchema.Type;
-export type SmbConnectRequest = typeof SmbConnectRequestSchema.Type;
-export type SmbConnectResponse = typeof SmbConnectResponseSchema.Type;
-export type SmbDisconnectRequest = typeof SmbDisconnectRequestSchema.Type;
 export type SaveAssayJsonRequest = typeof SaveAssayJsonRequestSchema.Type;
 export type SaveAssayJsonResponse = typeof SaveAssayJsonResponseSchema.Type;
 export type SaveResultPdfRequest = typeof SaveResultPdfRequestSchema.Type;

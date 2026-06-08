@@ -5,7 +5,6 @@ import {
   FrameNavigation,
   stepNavigationValue,
   toNavigationOptions,
-  useShellTheme,
 } from "@lisca/ui-native";
 import { clamp } from "@lisca/utils";
 import { useMemo } from "react";
@@ -29,7 +28,6 @@ export function AnnotatorLeft(props: {
   onZIndexChange: (value: number) => void;
   onContrastChange: (value: ContrastWindow) => void;
 }) {
-  const { colors } = useShellTheme();
   const positionOptions = useMemo(
     () => toNavigationOptions(props.scan?.positions.map((entry) => entry.pos) ?? []),
     [props.scan],
@@ -51,7 +49,7 @@ export function AnnotatorLeft(props: {
   const channelValue = props.channel ?? channelOptions[0]?.value ?? 0;
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.railChrome }]}>
+    <View style={styles.root}>
       <FrameNavigation
         channel={{
           value: channelValue,

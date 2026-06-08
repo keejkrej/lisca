@@ -25,7 +25,7 @@ export const shellThemeColors = {
     border: "#e5e5e5",
     input: "#e0e0e0",
     ring: "#a3a3a3",
-    /** `bg-card/32` rail tint — on light background this matches `background` */
+    /** Legacy alias — AppShell regions use `background` */
     railChrome: "#ffffff",
     /** `bg-muted/20` read-only path chips (save section paths, etc.) */
     inset: "#fdfdfd",
@@ -64,7 +64,7 @@ export const shellThemeColors = {
     border: "#262626",
     input: "#2e2e2e",
     ring: "#737373",
-    railChrome: "#0d0d0d",
+    railChrome: "#0a0a0a",
     inset: "#0d0d0d",
     stat: "#0f0f0f",
     viewportChrome: "#0c0c0c",

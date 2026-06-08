@@ -47,7 +47,8 @@ function Header(props: { children?: ReactNode }) {
 }
 
 function Body(props: { children?: ReactNode }) {
-  return <View style={styles.body}>{props.children}</View>;
+  const { colors } = useShellTheme();
+  return <View style={[styles.body, { backgroundColor: colors.background }]}>{props.children}</View>;
 }
 
 function Left(props: { children?: ReactNode; width?: number }) {
@@ -91,12 +92,16 @@ function Right(props: { children?: ReactNode; width?: number }) {
 }
 
 function MainColumn(props: { children?: ReactNode }) {
-  return <View style={styles.mainColumn}>{props.children}</View>;
+  const { colors } = useShellTheme();
+  return (
+    <View style={[styles.mainColumn, { backgroundColor: colors.background }]}>{props.children}</View>
+  );
 }
 
 function Main(props: { children?: ReactNode }) {
+  const { colors } = useShellTheme();
   return (
-    <View nativeID="main-content" style={styles.main}>
+    <View nativeID="main-content" style={[styles.main, { backgroundColor: colors.background }]}>
       <ShellScrollRegion contentStyle={styles.mainContent}>{props.children}</ShellScrollRegion>
     </View>
   );

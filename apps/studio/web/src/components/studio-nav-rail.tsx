@@ -2,7 +2,6 @@ import { cn } from "@lisca/ui/components";
 import {
   ConnectionStatus,
   ShellThemeToggle,
-  shellRailChromeClass,
   surfacePanelClass,
   useShellServer,
 } from "@lisca/ui/shell";
@@ -18,10 +17,7 @@ export function StudioNavRail() {
   return (
     <nav
       aria-label="Primary"
-      className={cn(
-        "flex h-full min-h-0 flex-col items-stretch gap-2.5 p-2.5",
-        shellRailChromeClass,
-      )}
+      className="flex h-full min-h-0 flex-col items-stretch gap-2.5 p-2.5"
     >
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
         <div className={cn("w-full shrink-0", surfacePanelClass)}>

@@ -1,7 +1,6 @@
 use std::{
     collections::{BTreeSet, HashMap, HashSet},
     fs,
-    io::BufReader,
     path::{Path, PathBuf},
 };
 
@@ -16,8 +15,6 @@ use crate::{
         AlignerSource, ContrastWindow, FramePayload, FrameRequest, ImageSource, PixelType,
         WorkspaceScan,
     },
-    smb::{is_smb_path, list_directory},
-    // mdat_smb_rs used for seekable SMB reads in open_nd2/open_czi/load_image_frame
     tiff_io::{self, TiffFrame16},
 };
 
@@ -29,24 +26,6 @@ struct FsDirEntry {
 }
 
 fn read_dir_entries(dir: &Path) -> Result<Vec<FsDirEntry>, String> {
-    let dir_str = dir
-        .to_str()
-        .ok_or_else(|| format!("path is not valid UTF-8: {}", dir.display()))?;
-    if is_smb_path(dir_str) {
-        let listing = list_directory(dir_str)?;
-        return Ok(
-            listing
-                .entries
-                .into_iter()
-                .map(|entry| FsDirEntry {
-                    name: entry.name,
-                    path: PathBuf::from(entry.path),
-                    is_directory: entry.is_directory,
-                })
-                .collect(),
-        );
-    }
-
     let mut entries = Vec::new();
     for entry in fs::read_dir(dir).map_err(|error| error.to_string())?.flatten() {
         let Ok(file_type) = entry.file_type() else {
@@ -62,13 +41,6 @@ fn read_dir_entries(dir: &Path) -> Result<Vec<FsDirEntry>, String> {
 }
 
 fn collect_source_images(folder: &Path) -> Vec<(PathBuf, ParsedSourceImageName)> {
-    if folder
-        .to_str()
-        .is_some_and(is_smb_path)
-    {
-        return collect_source_images_smb(folder, 6);
-    }
-
     WalkDir::new(folder)
         .max_depth(6)
         .into_iter()
@@ -80,42 +52,6 @@ fn collect_source_images(folder: &Path) -> Vec<(PathBuf, ParsedSourceImageName)>
             Some((entry.into_path(), parsed))
         })
         .collect()
-}
-
-fn collect_source_images_smb(folder: &Path, max_depth: usize) -> Vec<(PathBuf, ParsedSourceImageName)> {
-    let folder_str = folder.to_str().expect("smb path is utf-8");
-    let mut queue = vec![(folder_str.to_string(), 0usize)];
-    let mut results = Vec::new();
-
-    while let Some((current, depth)) = queue.pop() {
-        let entries = match list_directory(&current) {
-            Ok(listing) => listing.entries,
-            Err(_) => continue,
-        };
-        for entry in entries {
-            if entry.is_directory {
-                if depth + 1 < max_depth {
-                    queue.push((entry.path.clone(), depth + 1));
-                }
-                continue;
-            }
-            let path = PathBuf::from(&entry.path);
-            if !is_supported_source_image(&path) {
-                continue;
-            }
-            let Some(file_name) = path.file_name().and_then(|value| value.to_str()) else {
-                continue;
-            };
-            let Some(parsed) =
-                parse_source_image_name(file_name, infer_position_hint(&path))
-            else {
-                continue;
-            };
-            results.push((path, parsed));
-        }
-    }
-
-    results
 }
 
 const CONTRAST_SAMPLE_SIZE: usize = 2048;
@@ -321,18 +257,10 @@ pub fn to_frame_payload(raw: RawFrame, contrast: Option<ContrastWindow>) -> Fram
 }
 
 fn open_nd2(path: &Path) -> Result<Nd2File, String> {
-    if path.to_str().is_some_and(is_smb_path) {
-        return Nd2File::open_smb(path.to_str().expect("smb path utf-8"))
-            .map_err(|error| error.to_string());
-    }
     Nd2File::open(path).map_err(|error| error.to_string())
 }
 
 fn open_czi(path: &Path) -> Result<CziFile, String> {
-    if path.to_str().is_some_and(is_smb_path) {
-        return CziFile::open_smb(path.to_str().expect("smb path utf-8"))
-            .map_err(|error| error.to_string());
-    }
     CziFile::open(path).map_err(|error| error.to_string())
 }
 
@@ -453,11 +381,7 @@ fn build_series_dataset(
     filename_template: &str,
 ) -> Result<SeriesDataset, String> {
     let root = Path::new(root);
-    if root
-        .to_str()
-        .is_none_or(|value| !is_smb_path(value))
-        && !root.is_dir()
-    {
+    if !root.is_dir() {
         return Err(format!("{} is not a directory", root.display()));
     }
 
@@ -882,30 +806,8 @@ fn load_image_frame(path: &Path) -> Result<RawFrame, String> {
         .map(|value| value.to_ascii_lowercase());
 
     match ext.as_deref() {
-        Some("tif" | "tiff") if !path.to_str().is_some_and(is_smb_path) => {
-            tiff_io::load_tiff_frame_page(path, 0).map(raw_frame_from_tiff)
-        }
-        Some("png" | "jpg" | "jpeg") if !path.to_str().is_some_and(is_smb_path) => {
-            load_raster_frame(path)
-        }
-        Some("tif" | "tiff" | "png" | "jpg" | "jpeg") => {
-            if let Some(path_str) = path.to_str().filter(|value| is_smb_path(value)) {
-                let reader = mdat_smb_rs::open_path(path_str)?;
-                let image = ImageReader::new(BufReader::new(reader))
-                    .with_guessed_format()
-                    .map_err(|error| error.to_string())?
-                    .decode()
-                    .map_err(|error| error.to_string())?;
-                return Ok(raw_frame_from_dynamic_image(image));
-            }
-            let file = fs::File::open(path).map_err(|error| error.to_string())?;
-            let image = ImageReader::new(BufReader::new(file))
-                .with_guessed_format()
-                .map_err(|error| error.to_string())?
-                .decode()
-                .map_err(|error| error.to_string())?;
-            Ok(raw_frame_from_dynamic_image(image))
-        }
+        Some("tif" | "tiff") => tiff_io::load_tiff_frame_page(path, 0).map(raw_frame_from_tiff),
+        Some("png" | "jpg" | "jpeg") => load_raster_frame(path),
         _ => Err(format!(
             "unsupported source image extension for {}",
             path.display()

@@ -78,62 +78,6 @@
         }
       }
     },
-    "SmbConnectRequest": {
-      "type": "object",
-      "required": [
-        "url",
-        "username",
-        "password"
-      ],
-      "properties": {
-        "url": {
-          "type": "string"
-        },
-        "username": {
-          "type": "string"
-        },
-        "password": {
-          "type": "string"
-        }
-      }
-    },
-    "SmbConnectResponse": {
-      "type": "object",
-      "required": [
-        "sessionId",
-        "rootPath"
-      ],
-      "properties": {
-        "sessionId": {
-          "type": "string"
-        },
-        "rootPath": {
-          "type": "string"
-        }
-      }
-    },
-    "SmbDisconnectRequest": {
-      "type": "object",
-      "required": [
-        "sessionId"
-      ],
-      "properties": {
-        "sessionId": {
-          "type": "string"
-        }
-      }
-    },
-    "OkResponse": {
-      "type": "object",
-      "required": [
-        "ok"
-      ],
-      "properties": {
-        "ok": {
-          "type": "boolean"
-        }
-      }
-    },
     "ScanSourceRequest": {
       "type": "object",
       "required": [

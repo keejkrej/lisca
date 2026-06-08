@@ -2808,6 +2808,50 @@ impl HostListDirectoryResult {
         Default::default()
     }
 }
+#[doc = "`LoadFrameRequest`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"contrast\","]
+#[doc = "    \"request\","]
+#[doc = "    \"source\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"contrast\": {"]
+#[doc = "      \"anyOf\": ["]
+#[doc = "        {"]
+#[doc = "          \"$ref\": \"#/definitions/ContrastWindow\""]
+#[doc = "        },"]
+#[doc = "        {"]
+#[doc = "          \"type\": \"null\""]
+#[doc = "        }"]
+#[doc = "      ]"]
+#[doc = "    },"]
+#[doc = "    \"request\": {"]
+#[doc = "      \"$ref\": \"#/definitions/FrameRequest\""]
+#[doc = "    },"]
+#[doc = "    \"source\": {"]
+#[doc = "      \"$ref\": \"#/definitions/AlignerSource\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct LoadFrameRequest {
+    pub contrast: ::std::option::Option<ContrastWindow>,
+    pub request: FrameRequest,
+    pub source: AlignerSource,
+}
+impl LoadFrameRequest {
+    pub fn builder() -> builder::LoadFrameRequest {
+        Default::default()
+    }
+}
 #[doc = "`LoadedRoiFrameAnnotation`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
@@ -2845,33 +2889,6 @@ pub struct LoadedRoiFrameAnnotation {
 }
 impl LoadedRoiFrameAnnotation {
     pub fn builder() -> builder::LoadedRoiFrameAnnotation {
-        Default::default()
-    }
-}
-#[doc = "`OkResponse`"]
-#[doc = r""]
-#[doc = r" <details><summary>JSON schema</summary>"]
-#[doc = r""]
-#[doc = r" ```json"]
-#[doc = "{"]
-#[doc = "  \"type\": \"object\","]
-#[doc = "  \"required\": ["]
-#[doc = "    \"ok\""]
-#[doc = "  ],"]
-#[doc = "  \"properties\": {"]
-#[doc = "    \"ok\": {"]
-#[doc = "      \"type\": \"boolean\""]
-#[doc = "    }"]
-#[doc = "  }"]
-#[doc = "}"]
-#[doc = r" ```"]
-#[doc = r" </details>"]
-#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
-pub struct OkResponse {
-    pub ok: bool,
-}
-impl OkResponse {
-    pub fn builder() -> builder::OkResponse {
         Default::default()
     }
 }
@@ -3550,6 +3567,50 @@ impl SaveAssayJsonResponse {
         Default::default()
     }
 }
+#[doc = "`SaveBboxRequest`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"alignState\","]
+#[doc = "    \"csv\","]
+#[doc = "    \"pos\","]
+#[doc = "    \"workspacePath\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"alignState\": {"]
+#[doc = "      \"$ref\": \"#/definitions/SavedAlignState\""]
+#[doc = "    },"]
+#[doc = "    \"csv\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    },"]
+#[doc = "    \"pos\": {"]
+#[doc = "      \"type\": \"number\""]
+#[doc = "    },"]
+#[doc = "    \"workspacePath\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct SaveBboxRequest {
+    #[serde(rename = "alignState")]
+    pub align_state: SavedAlignState,
+    pub csv: ::std::string::String,
+    pub pos: f64,
+    #[serde(rename = "workspacePath")]
+    pub workspace_path: ::std::string::String,
+}
+impl SaveBboxRequest {
+    pub fn builder() -> builder::SaveBboxRequest {
+        Default::default()
+    }
+}
 #[doc = "`SaveBboxResponse`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
@@ -3702,6 +3763,33 @@ impl SavedAlignState {
         Default::default()
     }
 }
+#[doc = "`ScanSourceRequest`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"source\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"source\": {"]
+#[doc = "      \"$ref\": \"#/definitions/AlignerSource\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct ScanSourceRequest {
+    pub source: AlignerSource,
+}
+impl ScanSourceRequest {
+    pub fn builder() -> builder::ScanSourceRequest {
+        Default::default()
+    }
+}
 #[doc = "`ServerWsMessage`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
@@ -3742,105 +3830,6 @@ impl ::std::convert::From<CropRoiProgressMessage> for ServerWsMessage {
 impl ::std::convert::From<AnalysisProgressMessage> for ServerWsMessage {
     fn from(value: AnalysisProgressMessage) -> Self {
         Self::AnalysisProgressMessage(value)
-    }
-}
-#[doc = "`SmbConnectRequest`"]
-#[doc = r""]
-#[doc = r" <details><summary>JSON schema</summary>"]
-#[doc = r""]
-#[doc = r" ```json"]
-#[doc = "{"]
-#[doc = "  \"type\": \"object\","]
-#[doc = "  \"required\": ["]
-#[doc = "    \"password\","]
-#[doc = "    \"url\","]
-#[doc = "    \"username\""]
-#[doc = "  ],"]
-#[doc = "  \"properties\": {"]
-#[doc = "    \"password\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    },"]
-#[doc = "    \"url\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    },"]
-#[doc = "    \"username\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    }"]
-#[doc = "  }"]
-#[doc = "}"]
-#[doc = r" ```"]
-#[doc = r" </details>"]
-#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
-pub struct SmbConnectRequest {
-    pub password: ::std::string::String,
-    pub url: ::std::string::String,
-    pub username: ::std::string::String,
-}
-impl SmbConnectRequest {
-    pub fn builder() -> builder::SmbConnectRequest {
-        Default::default()
-    }
-}
-#[doc = "`SmbConnectResponse`"]
-#[doc = r""]
-#[doc = r" <details><summary>JSON schema</summary>"]
-#[doc = r""]
-#[doc = r" ```json"]
-#[doc = "{"]
-#[doc = "  \"type\": \"object\","]
-#[doc = "  \"required\": ["]
-#[doc = "    \"rootPath\","]
-#[doc = "    \"sessionId\""]
-#[doc = "  ],"]
-#[doc = "  \"properties\": {"]
-#[doc = "    \"rootPath\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    },"]
-#[doc = "    \"sessionId\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    }"]
-#[doc = "  }"]
-#[doc = "}"]
-#[doc = r" ```"]
-#[doc = r" </details>"]
-#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
-pub struct SmbConnectResponse {
-    #[serde(rename = "rootPath")]
-    pub root_path: ::std::string::String,
-    #[serde(rename = "sessionId")]
-    pub session_id: ::std::string::String,
-}
-impl SmbConnectResponse {
-    pub fn builder() -> builder::SmbConnectResponse {
-        Default::default()
-    }
-}
-#[doc = "`SmbDisconnectRequest`"]
-#[doc = r""]
-#[doc = r" <details><summary>JSON schema</summary>"]
-#[doc = r""]
-#[doc = r" ```json"]
-#[doc = "{"]
-#[doc = "  \"type\": \"object\","]
-#[doc = "  \"required\": ["]
-#[doc = "    \"sessionId\""]
-#[doc = "  ],"]
-#[doc = "  \"properties\": {"]
-#[doc = "    \"sessionId\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    }"]
-#[doc = "  }"]
-#[doc = "}"]
-#[doc = r" ```"]
-#[doc = r" </details>"]
-#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
-pub struct SmbDisconnectRequest {
-    #[serde(rename = "sessionId")]
-    pub session_id: ::std::string::String,
-}
-impl SmbDisconnectRequest {
-    pub fn builder() -> builder::SmbDisconnectRequest {
-        Default::default()
     }
 }
 #[doc = "`WorkspaceScan`"]
@@ -6532,6 +6521,77 @@ pub mod builder {
         }
     }
     #[derive(Clone, Debug)]
+    pub struct LoadFrameRequest {
+        contrast: ::std::result::Result<
+            ::std::option::Option<super::ContrastWindow>,
+            ::std::string::String,
+        >,
+        request: ::std::result::Result<super::FrameRequest, ::std::string::String>,
+        source: ::std::result::Result<super::AlignerSource, ::std::string::String>,
+    }
+    impl ::std::default::Default for LoadFrameRequest {
+        fn default() -> Self {
+            Self {
+                contrast: Err("no value supplied for contrast".to_string()),
+                request: Err("no value supplied for request".to_string()),
+                source: Err("no value supplied for source".to_string()),
+            }
+        }
+    }
+    impl LoadFrameRequest {
+        pub fn contrast<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<super::ContrastWindow>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.contrast = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for contrast: {e}"));
+            self
+        }
+        pub fn request<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::FrameRequest>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.request = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for request: {e}"));
+            self
+        }
+        pub fn source<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::AlignerSource>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.source = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for source: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<LoadFrameRequest> for super::LoadFrameRequest {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: LoadFrameRequest,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                contrast: value.contrast?,
+                request: value.request?,
+                source: value.source?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::LoadFrameRequest> for LoadFrameRequest {
+        fn from(value: super::LoadFrameRequest) -> Self {
+            Self {
+                contrast: Ok(value.contrast),
+                request: Ok(value.request),
+                source: Ok(value.source),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
     pub struct LoadedRoiFrameAnnotation {
         annotation: ::std::result::Result<super::RoiFrameAnnotation, ::std::string::String>,
         mask_base64_png: ::std::result::Result<
@@ -6586,42 +6646,6 @@ pub mod builder {
                 annotation: Ok(value.annotation),
                 mask_base64_png: Ok(value.mask_base64_png),
             }
-        }
-    }
-    #[derive(Clone, Debug)]
-    pub struct OkResponse {
-        ok: ::std::result::Result<bool, ::std::string::String>,
-    }
-    impl ::std::default::Default for OkResponse {
-        fn default() -> Self {
-            Self {
-                ok: Err("no value supplied for ok".to_string()),
-            }
-        }
-    }
-    impl OkResponse {
-        pub fn ok<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<bool>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.ok = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for ok: {e}"));
-            self
-        }
-    }
-    impl ::std::convert::TryFrom<OkResponse> for super::OkResponse {
-        type Error = super::error::ConversionError;
-        fn try_from(
-            value: OkResponse,
-        ) -> ::std::result::Result<Self, super::error::ConversionError> {
-            Ok(Self { ok: value.ok? })
-        }
-    }
-    impl ::std::convert::From<super::OkResponse> for OkResponse {
-        fn from(value: super::OkResponse) -> Self {
-            Self { ok: Ok(value.ok) }
         }
     }
     #[derive(Clone, Debug)]
@@ -7516,6 +7540,88 @@ pub mod builder {
         }
     }
     #[derive(Clone, Debug)]
+    pub struct SaveBboxRequest {
+        align_state: ::std::result::Result<super::SavedAlignState, ::std::string::String>,
+        csv: ::std::result::Result<::std::string::String, ::std::string::String>,
+        pos: ::std::result::Result<f64, ::std::string::String>,
+        workspace_path: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for SaveBboxRequest {
+        fn default() -> Self {
+            Self {
+                align_state: Err("no value supplied for align_state".to_string()),
+                csv: Err("no value supplied for csv".to_string()),
+                pos: Err("no value supplied for pos".to_string()),
+                workspace_path: Err("no value supplied for workspace_path".to_string()),
+            }
+        }
+    }
+    impl SaveBboxRequest {
+        pub fn align_state<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::SavedAlignState>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.align_state = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for align_state: {e}"));
+            self
+        }
+        pub fn csv<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.csv = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for csv: {e}"));
+            self
+        }
+        pub fn pos<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<f64>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.pos = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for pos: {e}"));
+            self
+        }
+        pub fn workspace_path<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.workspace_path = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for workspace_path: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<SaveBboxRequest> for super::SaveBboxRequest {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: SaveBboxRequest,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                align_state: value.align_state?,
+                csv: value.csv?,
+                pos: value.pos?,
+                workspace_path: value.workspace_path?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::SaveBboxRequest> for SaveBboxRequest {
+        fn from(value: super::SaveBboxRequest) -> Self {
+            Self {
+                align_state: Ok(value.align_state),
+                csv: Ok(value.csv),
+                pos: Ok(value.pos),
+                workspace_path: Ok(value.workspace_path),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
     pub struct SaveBboxResponse {
         error: ::std::result::Result<
             ::std::option::Option<::std::string::String>,
@@ -7766,164 +7872,42 @@ pub mod builder {
         }
     }
     #[derive(Clone, Debug)]
-    pub struct SmbConnectRequest {
-        password: ::std::result::Result<::std::string::String, ::std::string::String>,
-        url: ::std::result::Result<::std::string::String, ::std::string::String>,
-        username: ::std::result::Result<::std::string::String, ::std::string::String>,
+    pub struct ScanSourceRequest {
+        source: ::std::result::Result<super::AlignerSource, ::std::string::String>,
     }
-    impl ::std::default::Default for SmbConnectRequest {
+    impl ::std::default::Default for ScanSourceRequest {
         fn default() -> Self {
             Self {
-                password: Err("no value supplied for password".to_string()),
-                url: Err("no value supplied for url".to_string()),
-                username: Err("no value supplied for username".to_string()),
+                source: Err("no value supplied for source".to_string()),
             }
         }
     }
-    impl SmbConnectRequest {
-        pub fn password<T>(mut self, value: T) -> Self
+    impl ScanSourceRequest {
+        pub fn source<T>(mut self, value: T) -> Self
         where
-            T: ::std::convert::TryInto<::std::string::String>,
+            T: ::std::convert::TryInto<super::AlignerSource>,
             T::Error: ::std::fmt::Display,
         {
-            self.password = value
+            self.source = value
                 .try_into()
-                .map_err(|e| format!("error converting supplied value for password: {e}"));
-            self
-        }
-        pub fn url<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::string::String>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.url = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for url: {e}"));
-            self
-        }
-        pub fn username<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::string::String>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.username = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for username: {e}"));
+                .map_err(|e| format!("error converting supplied value for source: {e}"));
             self
         }
     }
-    impl ::std::convert::TryFrom<SmbConnectRequest> for super::SmbConnectRequest {
+    impl ::std::convert::TryFrom<ScanSourceRequest> for super::ScanSourceRequest {
         type Error = super::error::ConversionError;
         fn try_from(
-            value: SmbConnectRequest,
+            value: ScanSourceRequest,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
-                password: value.password?,
-                url: value.url?,
-                username: value.username?,
+                source: value.source?,
             })
         }
     }
-    impl ::std::convert::From<super::SmbConnectRequest> for SmbConnectRequest {
-        fn from(value: super::SmbConnectRequest) -> Self {
+    impl ::std::convert::From<super::ScanSourceRequest> for ScanSourceRequest {
+        fn from(value: super::ScanSourceRequest) -> Self {
             Self {
-                password: Ok(value.password),
-                url: Ok(value.url),
-                username: Ok(value.username),
-            }
-        }
-    }
-    #[derive(Clone, Debug)]
-    pub struct SmbConnectResponse {
-        root_path: ::std::result::Result<::std::string::String, ::std::string::String>,
-        session_id: ::std::result::Result<::std::string::String, ::std::string::String>,
-    }
-    impl ::std::default::Default for SmbConnectResponse {
-        fn default() -> Self {
-            Self {
-                root_path: Err("no value supplied for root_path".to_string()),
-                session_id: Err("no value supplied for session_id".to_string()),
-            }
-        }
-    }
-    impl SmbConnectResponse {
-        pub fn root_path<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::string::String>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.root_path = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for root_path: {e}"));
-            self
-        }
-        pub fn session_id<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::string::String>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.session_id = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for session_id: {e}"));
-            self
-        }
-    }
-    impl ::std::convert::TryFrom<SmbConnectResponse> for super::SmbConnectResponse {
-        type Error = super::error::ConversionError;
-        fn try_from(
-            value: SmbConnectResponse,
-        ) -> ::std::result::Result<Self, super::error::ConversionError> {
-            Ok(Self {
-                root_path: value.root_path?,
-                session_id: value.session_id?,
-            })
-        }
-    }
-    impl ::std::convert::From<super::SmbConnectResponse> for SmbConnectResponse {
-        fn from(value: super::SmbConnectResponse) -> Self {
-            Self {
-                root_path: Ok(value.root_path),
-                session_id: Ok(value.session_id),
-            }
-        }
-    }
-    #[derive(Clone, Debug)]
-    pub struct SmbDisconnectRequest {
-        session_id: ::std::result::Result<::std::string::String, ::std::string::String>,
-    }
-    impl ::std::default::Default for SmbDisconnectRequest {
-        fn default() -> Self {
-            Self {
-                session_id: Err("no value supplied for session_id".to_string()),
-            }
-        }
-    }
-    impl SmbDisconnectRequest {
-        pub fn session_id<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::string::String>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.session_id = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for session_id: {e}"));
-            self
-        }
-    }
-    impl ::std::convert::TryFrom<SmbDisconnectRequest> for super::SmbDisconnectRequest {
-        type Error = super::error::ConversionError;
-        fn try_from(
-            value: SmbDisconnectRequest,
-        ) -> ::std::result::Result<Self, super::error::ConversionError> {
-            Ok(Self {
-                session_id: value.session_id?,
-            })
-        }
-    }
-    impl ::std::convert::From<super::SmbDisconnectRequest> for SmbDisconnectRequest {
-        fn from(value: super::SmbDisconnectRequest) -> Self {
-            Self {
-                session_id: Ok(value.session_id),
+                source: Ok(value.source),
             }
         }
     }

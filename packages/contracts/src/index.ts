@@ -24,9 +24,6 @@ export const FOLDER_SOURCE_TEMPLATE_PRESETS = [
 
 export const DEFAULT_FOLDER_SOURCE_TEMPLATE = FOLDER_SOURCE_TEMPLATE_PRESETS[0];
 
-export const DEFAULT_SMB_SOURCE_URL =
-  "//z-sv-dfsroot.ad.physik.uni-muenchen.de/dfsroot/project/ag-moonraedler";
-
 export type HostFilePickerMode =
   | "workspace"
   | "folder"

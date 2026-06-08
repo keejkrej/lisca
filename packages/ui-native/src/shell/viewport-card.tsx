@@ -7,8 +7,8 @@ import { useShellTheme } from "../theme/shell-theme.tsx";
 export function ViewportCard({ children }: { children: ReactNode }) {
   const { colors } = useShellTheme();
   return (
-    <View style={[styles.outer, { backgroundColor: colors.viewportChrome }]}>
-      <View style={[styles.inner, { backgroundColor: colors.canvasBackground, borderColor: colors.border }]}>
+    <View style={[styles.outer, { backgroundColor: colors.background }]}>
+      <View style={[styles.inner, { backgroundColor: colors.panel, borderColor: colors.border }]}>
         {children}
       </View>
     </View>

@@ -1,6 +1,7 @@
 /**
  * Brand surface tiers (appearance tokens):
  *
+ * - **shell** (`shellChromeClass`): AppShell regions and viewport padding share `bg-background`
  * - **panel** (`surfacePanelClass`): dock sections, viewport inner frame, nav card
  * - **dialog** (`surfaceDialogClass`): modal panels (elevated shadow)
  * - **inset** (`surfaceInsetClass`): read-only monospace chips (paths, values)
@@ -22,8 +23,11 @@ export const surfaceDialogClass =
 export const modalOverlayClass =
   "fixed inset-0 flex items-center justify-center overscroll-contain bg-black/55 px-6 backdrop-blur-sm";
 
-/** Left/right shell sidebar tint (behind panel cards). */
-export const shellRailChromeClass = "bg-card/32";
+/** AppShell surface (header, body, rails, main, dock). */
+export const shellChromeClass = "bg-background";
+
+/** @deprecated Use {@link shellChromeClass}. */
+export const shellRailChromeClass = shellChromeClass;
 
 /** Read-only path / monospace value chip. */
 export const surfaceInsetClass = "rounded-md border border-border bg-muted/20 text-foreground";

@@ -32,13 +32,5 @@ export function createHostPort(
         c.fs.userHomeDirectory().pipe(Effect.map((result) => result.path)),
       );
     },
-    connectSmb(request, signal) {
-      return withClientEffect(client, signal, (c) => c.fs.connectSmb({ payload: request }));
-    },
-    disconnectSmb(sessionId, signal) {
-      return withClientEffect(client, signal, (c) =>
-        c.fs.disconnectSmb({ payload: { sessionId } }).pipe(Effect.asVoid),
-      );
-    },
   };
 }

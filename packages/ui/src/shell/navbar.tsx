@@ -45,7 +45,7 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
   const handleWorkspace = props.onPickWorkspace ?? (() => workspace.pickWorkspace());
 
   return (
-    <header className="h-full bg-background px-6">
+    <header className="h-full px-6">
       <div className="grid h-full grid-cols-[1fr_auto_1fr] items-center gap-4">
         <div className="flex min-w-0 max-w-[56rem] flex-wrap items-center justify-start gap-3">
           <PathButton

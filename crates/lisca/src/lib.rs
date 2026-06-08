@@ -10,7 +10,6 @@ pub mod http;
 pub mod image_source;
 pub mod protocol;
 pub mod roi;
-pub mod smb;
 mod tiff_io;
 
 pub use protocol::AppId;

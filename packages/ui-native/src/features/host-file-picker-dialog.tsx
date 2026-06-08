@@ -118,7 +118,12 @@ export function HostFilePickerDialog({
         />
         <View style={styles.actions}>
           {list?.parent != null ? (
-            <Button label="Up" variant="outline" compact onPress={() => void loadPath(list.parent)} />
+            <Button
+              label="Up"
+              variant="outline"
+              compact
+              onPress={() => void loadPath(list.parent === "" ? null : list.parent)}
+            />
           ) : null}
           {isDirectoryMode(mode) && list?.path ? (
             <Button

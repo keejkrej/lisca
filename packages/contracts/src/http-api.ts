@@ -32,9 +32,6 @@ import {
   SaveResultPdfRequestSchema,
   SaveResultPdfResponseSchema,
   SavedAlignStateSchema,
-  SmbConnectRequestSchema,
-  SmbConnectResponseSchema,
-  SmbDisconnectRequestSchema,
   UIntArraySchema,
   WorkspaceScanSchema,
 } from "./protocol.schema.ts";
@@ -88,16 +85,6 @@ const fsGroup = HttpApiGroup.make("fs")
     HttpApiEndpoint.get("readTextFile", "/fs/read-text")
       .setUrlParams(Schema.Struct({ path: Schema.String }))
       .addSuccess(ReadTextFileResponseSchema),
-  )
-  .add(
-    HttpApiEndpoint.post("connectSmb", "/fs/smb/connect")
-      .setPayload(SmbConnectRequestSchema)
-      .addSuccess(SmbConnectResponseSchema),
-  )
-  .add(
-    HttpApiEndpoint.post("disconnectSmb", "/fs/smb/disconnect")
-      .setPayload(SmbDisconnectRequestSchema)
-      .addSuccess(OkSchema),
   );
 
 // --- align group -------------------------------------------------------------

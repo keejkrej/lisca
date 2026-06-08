@@ -4,7 +4,6 @@ import {
   ShellThemeToggle,
   StudioNavButton,
   useShellServer,
-  useShellTheme,
 } from "@lisca/ui-native";
 import { Link, usePathname } from "expo-router";
 import { StyleSheet, View } from "react-native";
@@ -20,10 +19,8 @@ const ROUTES = [
 export function StudioNavRail() {
   const pathname = usePathname();
   const server = useShellServer();
-  const { colors } = useShellTheme();
-
   return (
-    <View style={[styles.root, { backgroundColor: colors.railChrome }]}>
+    <View style={styles.root}>
       <View style={styles.navCenter}>
         <Panel>
           <View style={styles.navStack}>
