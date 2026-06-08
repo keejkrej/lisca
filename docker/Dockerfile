@@ -43,6 +43,9 @@ RUN apt-get update \
     ca-certificates \
     gettext-base \
     nginx \
+  && if [ "$PRODUCT" = "studio" ]; then \
+    apt-get install -y --no-install-recommends libfontconfig1; \
+  fi \
   && rm -rf /var/lib/apt/lists/*
 
 COPY docker/nginx.conf.template /etc/nginx/templates/default.conf.template
