@@ -1,6 +1,13 @@
 import { Button, cn } from "@lisca/ui/components";
 import type { AnnotationTool } from "@lisca/ui/features";
-import { DockToolGrid, ReadonlyPathField, Section, type DockToolAction } from "@lisca/ui/shell";
+import {
+  dockLayoutClass,
+  dockSectionClass,
+  DockToolGrid,
+  ReadonlyPathField,
+  Section,
+  type DockToolAction,
+} from "@lisca/ui/shell";
 import { useAnnotatePage } from "../state/annotate-page-context";
 import { annotationOutputPaths } from "../utils/annotation-output";
 
@@ -71,9 +78,9 @@ export function AnnotatorDock() {
   const toolActions = buildAnnotationToolActions(state.tool, state.setTool, !canEditTools);
 
   return (
-    <div className="flex h-full min-h-0 w-full gap-3 p-3">
+    <div className={dockLayoutClass}>
       <Section
-        className="flex min-h-0 min-w-0 flex-1 basis-0 flex-col"
+        className={dockSectionClass}
         contentClassName="flex min-h-0 flex-1 flex-col gap-2"
         title="Tool"
       >
@@ -89,7 +96,7 @@ export function AnnotatorDock() {
         )}
       </Section>
       <Section
-        className="flex min-h-0 min-w-0 flex-1 basis-0 flex-col"
+        className={dockSectionClass}
         contentClassName="flex min-h-0 flex-col gap-2"
         title="Save"
       >
@@ -99,7 +106,7 @@ export function AnnotatorDock() {
           ))}
         </div>
         <Button
-          className="w-full justify-center"
+          className="w-full max-w-48 justify-center"
           disabled={!state.canSave}
           size="sm"
           type="button"

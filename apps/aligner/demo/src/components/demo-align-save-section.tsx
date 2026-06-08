@@ -1,5 +1,5 @@
 import { Button } from "@lisca/ui/components";
-import { ReadonlyPathField, Section } from "@lisca/ui/shell";;
+import { dockSectionClass, ReadonlyPathField, Section } from "@lisca/ui/shell";
 import { stemName } from "@lisca/browser-frame";
 
 import type { DemoAlignState } from "../state/use-demo-align-state";
@@ -10,7 +10,7 @@ export function DemoAlignSaveSection({ state }: { state: DemoAlignState }) {
 
   return (
     <Section
-      className="flex min-h-0 min-w-0 flex-1 basis-0 flex-col"
+      className={dockSectionClass}
       contentClassName="flex min-h-0 flex-col gap-2"
       title="Save"
     >

@@ -18,6 +18,12 @@ export {
 } from "./shell-theme";
 export { DialogSurface, type DialogSurfaceMaxWidth } from "./dialog-surface";
 export { DockButton } from "./dock-button";
+export {
+  dockLayout,
+  dockLayoutClass,
+  dockSection,
+  dockSectionClass,
+} from "./dock-layout";
 export { DockToolGrid, type DockToolGridProps } from "./dock-tool-grid";
 export {
   dockToolLabel,

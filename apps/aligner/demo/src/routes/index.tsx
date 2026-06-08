@@ -1,4 +1,4 @@
-import { AppShell } from "@lisca/ui/shell";;
+import { AppShell, dockLayoutClass } from "@lisca/ui/shell";
 import { DemoNavbar } from "@lisca/web-demo";
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -37,7 +37,7 @@ function AlignDemoPage() {
             <DemoAlignMain state={state} />
           </AppShell.Main>
           <AppShell.Dock>
-            <div className="flex h-full min-h-0 w-full gap-3 p-3">
+            <div className={dockLayoutClass}>
               <DemoAlignToolSection state={state} />
               <DemoAlignSaveSection state={state} />
             </div>

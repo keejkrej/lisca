@@ -1,6 +1,13 @@
 import { Button } from "@lisca/ui/components";
 import type { AnnotationTool } from "@lisca/ui/features";
-import { DockToolGrid, ReadonlyPathField, Section, type DockToolAction } from "@lisca/ui/shell";
+import {
+  dockLayoutClass,
+  dockSectionClass,
+  DockToolGrid,
+  ReadonlyPathField,
+  Section,
+  type DockToolAction,
+} from "@lisca/ui/shell";
 import { stemName } from "@lisca/browser-frame";
 
 import type { DemoAnnotatorState } from "../state/use-demo-annotator-state";
@@ -32,9 +39,9 @@ export function DemoAnnotatorDock({ state }: { state: DemoAnnotatorState }) {
   const toolActions = buildAnnotationToolActions(state.tool, state.setTool, !canEditTools);
 
   return (
-    <div className="flex h-full min-h-0 w-full gap-3 p-3">
+    <div className={dockLayoutClass}>
       <Section
-        className="flex min-h-0 min-w-0 flex-1 basis-0 flex-col"
+        className={dockSectionClass}
         contentClassName="flex min-h-0 flex-1 flex-col gap-2"
         title="Tool"
       >
@@ -62,7 +69,7 @@ export function DemoAnnotatorDock({ state }: { state: DemoAnnotatorState }) {
         )}
       </Section>
       <Section
-        className="flex min-h-0 min-w-0 flex-1 basis-0 flex-col"
+        className={dockSectionClass}
         contentClassName="flex min-h-0 flex-col gap-2"
         title="Save"
       >

@@ -10,7 +10,7 @@ export function DockButton(props: {
 }) {
   return (
     <Button
-      className="w-full justify-center"
+      className="w-full max-w-48 justify-center"
       disabled={props.disabled}
       size="sm"
       type="button"

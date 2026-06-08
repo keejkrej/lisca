@@ -1,4 +1,5 @@
-import { AlignTools } from "@lisca/ui/features";;
+import { AlignTools } from "@lisca/ui/features";
+import { dockSectionClass } from "@lisca/ui/shell";
 
 import type { DemoAlignState } from "../state/use-demo-align-state";
 
@@ -7,7 +8,7 @@ export function DemoAlignToolSection({ state }: { state: DemoAlignState }) {
     <AlignTools
       mode={state.toolMode}
       patternZoomLocked={state.patternZoomLocked}
-      sectionClassName="flex min-h-0 min-w-0 flex-1 basis-0 flex-col"
+      sectionClassName={dockSectionClass}
       sectionContentClassName="flex min-h-0 flex-1 flex-col"
       onModeChange={state.setToolMode}
       onPatternZoomLockedChange={state.setPatternZoomLocked}

@@ -23,8 +23,13 @@ Compose apps from shell primitives, not exported class strings:
 | `Section` | Collapsible dock section inside a `Panel` |
 | `DialogSurface` / `ModalScrim` | Modal chrome |
 | `StatTile` | Count/metric tile: `border border-border bg-background` |
+| `dockLayoutClass` / `dockSectionClass` | Dock row + section width caps (`max-w-sm` per panel) |
 
 Frame styling lives inside `panel.tsx` (`panelFrameClass`); not exported from the package.
+
+## Dock width
+
+The dock spans the full main column, but **section panels** should not grow without bound on wide windows. Use `dockLayoutClass` on the dock row (`justify-center`) and `dockSectionClass` on each `Section` (`max-w-sm`, 24rem). `DockButton` also caps at `max-w-48` for single-action slots.
 
 ## Rules
 
