@@ -11,7 +11,6 @@ export function AlignToolSection() {
       mode={canvas.toolMode}
       patternZoomLocked={canvas.patternZoomLocked}
       sectionClassName={dockSectionClass}
-      sectionContentClassName="flex min-h-0 flex-1 flex-col"
       onModeChange={(mode) => {
         if (!crop.cropping) canvas.setToolMode(mode);
       }}

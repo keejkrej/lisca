@@ -2,8 +2,14 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { useShellTheme } from "../theme/shell-theme.tsx";
 
-export function StatTile(props: { label: string; value: string | number; style?: object }) {
+export function StatTile(props: {
+  label: string;
+  value: string | number;
+  centered?: boolean;
+  style?: object;
+}) {
   const { colors } = useShellTheme();
+  const textAlign = props.centered ? "center" : "left";
   return (
     <View
       style={[
@@ -12,8 +18,8 @@ export function StatTile(props: { label: string; value: string | number; style?:
         props.style,
       ]}
     >
-      <Text style={[styles.label, { color: colors.mutedForeground }]}>{props.label}</Text>
-      <Text style={[styles.value, { color: colors.foreground }]}>{props.value}</Text>
+      <Text style={[styles.label, { color: colors.mutedForeground, textAlign }]}>{props.label}</Text>
+      <Text style={[styles.value, { color: colors.foreground, textAlign }]}>{props.value}</Text>
     </View>
   );
 }

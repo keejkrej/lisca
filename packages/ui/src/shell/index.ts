@@ -19,10 +19,16 @@ export {
 export { DialogSurface, type DialogSurfaceMaxWidth } from "./dialog-surface";
 export { DockButton } from "./dock-button";
 export {
+  dockGridClass,
   dockLayout,
+  dockLayout2Class,
+  dockLayout3Class,
   dockLayoutClass,
+  dockSaveGrid2Class,
+  dockSaveGrid3Class,
   dockSection,
   dockSectionClass,
+  dockToolGridClass,
 } from "./dock-layout";
 export { DockToolGrid, type DockToolGridProps } from "./dock-tool-grid";
 export {

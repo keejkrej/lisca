@@ -1,4 +1,4 @@
-import { dockLayoutClass, dockSectionClass, Section } from "@lisca/ui/shell";
+import { dockLayout3Class, dockSectionClass, Section } from "@lisca/ui/shell";
 import type { ReactNode } from "react";
 
 export function StudioDock({
@@ -11,10 +11,10 @@ export function StudioDock({
   tool?: ReactNode;
 }) {
   return (
-    <div className={dockLayoutClass}>
+    <div className={dockLayout3Class}>
       <Section
-        className={`${dockSectionClass} flex-[2]`}
-        contentClassName="flex min-h-0 flex-1 items-center justify-center"
+        className={dockSectionClass}
+        contentClassName="flex min-h-0 items-center justify-center space-y-0"
         title="Instruction"
       >
         {instruction ? (
@@ -22,15 +22,15 @@ export function StudioDock({
         ) : null}
       </Section>
       <Section
-        className={`${dockSectionClass} flex-[3]`}
-        contentClassName="flex min-h-0 flex-1 items-center justify-center"
+        className={dockSectionClass}
+        contentClassName="flex min-h-0 items-center justify-center space-y-0"
         title="Tool"
       >
         {tool}
       </Section>
       <Section
-        className={`${dockSectionClass} flex-[2]`}
-        contentClassName="flex min-h-0 flex-1 items-center justify-center"
+        className={dockSectionClass}
+        contentClassName="flex min-h-0 items-center justify-center space-y-0"
         title="Action"
       >
         {action}

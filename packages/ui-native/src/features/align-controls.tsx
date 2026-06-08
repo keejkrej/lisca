@@ -314,12 +314,13 @@ const styles = StyleSheet.create({
 
 const pathStyles = StyleSheet.create({
   root: {
+    alignSelf: "flex-start",
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 6,
-    flex: 1,
     minWidth: 0,
+    width: "100%",
   },
   text: {
     fontSize: 12,

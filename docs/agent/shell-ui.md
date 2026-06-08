@@ -23,13 +23,18 @@ Compose apps from shell primitives, not exported class strings:
 | `Section` | Collapsible dock section inside a `Panel` |
 | `DialogSurface` / `ModalScrim` | Modal chrome |
 | `StatTile` | Count/metric tile: `border border-border bg-background` |
-| `dockLayoutClass` / `dockSectionClass` | Dock row + section width caps (`max-w-sm` per panel) |
+| `dockLayout2Class` / `dockToolGridClass` / `dockSaveGrid3Class` | Dock layout + flat section content grids |
 
 Frame styling lives inside `panel.tsx` (`panelFrameClass`); not exported from the package.
 
-## Dock width
+## Dock layout
 
-The dock spans the full main column, but **section panels** should not grow without bound on wide windows. Use `dockLayoutClass` on the dock row (`justify-center`) and `dockSectionClass` on each `Section` (`max-w-sm`, 24rem). `DockButton` also caps at `max-w-48` for single-action slots.
+Use **grid** for dock strips and section content. **Section panels stretch** to fill the dock band (`items-stretch`, `dockSectionClass` includes `h-full`); inner tool/save grids and buttons stay content-sized.
+
+- **Strip:** `dockLayout2Class` (two panels) or `dockLayout3Class` (studio)
+- **Tool:** `dockToolGridClass` — `grid-cols-2 grid-rows-2`, children placed directly in `Section`
+- **Save:** `dockSaveGrid3Class` (align) or `dockSaveGrid2Class` (annotator) — paths then buttons in one flat grid
+- **Buttons:** natural `sm` height (`w-full justify-center` only). `DockButton` caps at `max-w-48`.
 
 ## Rules
 

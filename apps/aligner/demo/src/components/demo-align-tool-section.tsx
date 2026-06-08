@@ -9,7 +9,6 @@ export function DemoAlignToolSection({ state }: { state: DemoAlignState }) {
       mode={state.toolMode}
       patternZoomLocked={state.patternZoomLocked}
       sectionClassName={dockSectionClass}
-      sectionContentClassName="flex min-h-0 flex-1 flex-col"
       onModeChange={state.setToolMode}
       onPatternZoomLockedChange={state.setPatternZoomLocked}
     />

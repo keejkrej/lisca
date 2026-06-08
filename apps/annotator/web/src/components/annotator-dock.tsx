@@ -1,11 +1,15 @@
 import { Button, cn } from "@lisca/ui/components";
 import type { AnnotationTool } from "@lisca/ui/features";
 import {
-  dockLayoutClass,
+  dockLayout2Class,
+  dockGridClass,
   dockSectionClass,
-  DockToolGrid,
+  dockToolGridClass,
+  dockSaveGrid2Class,
+  dockToolLabel,
   ReadonlyPathField,
   Section,
+  useDockToolShortcuts,
   type DockToolAction,
 } from "@lisca/ui/shell";
 import { useAnnotatePage } from "../state/annotate-page-context";
@@ -32,38 +36,28 @@ function buildAnnotationToolActions(
   }));
 }
 
-function SegmentationDock(props: {
-  tool: AnnotationTool;
-  setTool: (tool: AnnotationTool) => void;
+function SegmentationToolButtons(props: {
   canEditTools: boolean;
   toolActions: DockToolAction[];
 }) {
-  return (
-    <DockToolGrid
-      actions={props.toolActions}
-      className="grid flex-1 grid-cols-2 gap-2"
-      enabled={props.canEditTools}
-      renderAction={(action, _index, label) => (
-        <Button
-          className="h-full justify-center"
-          disabled={action.disabled}
-          type="button"
-          variant={action.active ? "default" : "outline"}
-          onClick={action.onSelect}
-        >
-          {label}
-        </Button>
-      )}
-    />
-  );
-}
+  useDockToolShortcuts(props.toolActions, { enabled: props.canEditTools });
 
-function ClassificationDock() {
-  return (
-    <div className="flex flex-1 items-center justify-center text-muted-foreground text-xs">
-      Classification
-    </div>
-  );
+  return props.toolActions.map((action, index) => {
+    const label = dockToolLabel(action.label, index);
+    return (
+      <Button
+        key={action.id}
+        className="w-full justify-center"
+        disabled={action.disabled}
+        size="sm"
+        type="button"
+        variant={action.active ? "default" : "outline"}
+        onClick={action.onSelect}
+      >
+        {label}
+      </Button>
+    );
+  });
 }
 
 export function AnnotatorDock() {
@@ -76,37 +70,28 @@ export function AnnotatorDock() {
     !state.filePickerOpen;
   const canEditTools = state.mode === "segmentation" && shortcutsEnabled;
   const toolActions = buildAnnotationToolActions(state.tool, state.setTool, !canEditTools);
+  const saveGridClass =
+    paths.length > 1
+      ? dockSaveGrid2Class
+      : cn(dockGridClass, "grid-cols-1 grid-rows-2");
 
   return (
-    <div className={dockLayoutClass}>
-      <Section
-        className={dockSectionClass}
-        contentClassName="flex min-h-0 flex-1 flex-col gap-2"
-        title="Tool"
-      >
+    <div className={dockLayout2Class}>
+      <Section className={dockSectionClass} contentClassName={dockToolGridClass} title="Tool">
         {state.mode === "segmentation" ? (
-          <SegmentationDock
-            canEditTools={canEditTools}
-            setTool={state.setTool}
-            tool={state.tool}
-            toolActions={toolActions}
-          />
+          <SegmentationToolButtons canEditTools={canEditTools} toolActions={toolActions} />
         ) : (
-          <ClassificationDock />
+          <div className="col-span-2 row-span-2 flex items-center justify-center text-muted-foreground text-xs">
+            Classification
+          </div>
         )}
       </Section>
-      <Section
-        className={dockSectionClass}
-        contentClassName="flex min-h-0 flex-col gap-2"
-        title="Save"
-      >
-        <div className={cn("grid min-w-0 gap-2", paths.length > 1 ? "grid-cols-2" : "grid-cols-1")}>
-          {paths.map((path) => (
-            <ReadonlyPathField key={path} aria-label={`Output path ${path}`} value={path} />
-          ))}
-        </div>
+      <Section className={dockSectionClass} contentClassName={saveGridClass} title="Save">
+        {paths.map((path) => (
+          <ReadonlyPathField key={path} aria-label={`Output path ${path}`} value={path} />
+        ))}
         <Button
-          className="w-full max-w-48 justify-center"
+          className={cn("w-full justify-center", paths.length > 1 && "col-span-2")}
           disabled={!state.canSave}
           size="sm"
           type="button"

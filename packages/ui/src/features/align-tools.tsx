@@ -12,6 +12,8 @@ import type { LucideIcon } from "lucide-react";
 import type { AlignGridToolMode } from "@lisca/utils";
 
 import { Button } from "../components/ui/button";
+import { cn } from "../lib/utils";
+import { dockToolGridClass } from "../shell/dock-layout";
 import { dockToolLabel, useDockToolShortcuts, type DockToolAction } from "../shell/dock-tool-shortcuts";
 import { Section } from "../shell/section";
 
@@ -54,7 +56,7 @@ export function AlignToolButton(props: {
     <Button
       aria-label={label}
       aria-pressed={active}
-      className={className ?? "h-full w-full min-w-0 justify-center gap-2 px-3"}
+      className={className ?? "w-full min-w-0 justify-center gap-2 px-3"}
       key={mode}
       size="sm"
       title={label}
@@ -80,6 +82,59 @@ export function buildAlignToolActions(
   }));
 }
 
+function renderAlignToolCell(
+  tool: (typeof alignToolDefinitions)[number],
+  index: number,
+  mode: AlignGridToolMode,
+  onModeChange: (mode: AlignGridToolMode) => void,
+  patternZoomLocked: boolean,
+  onPatternZoomLockedChange?: (locked: boolean) => void,
+) {
+  const shortcutLabel = dockToolLabel(tool.label, index);
+  if (tool.mode === "zoom-pattern") {
+    return (
+      <div key={tool.mode} className="grid min-w-0 grid-cols-[1fr_2rem] gap-1">
+        <AlignToolButton
+          active={mode === tool.mode}
+          className="w-full min-w-0 justify-center gap-2 px-2"
+          Icon={tool.Icon}
+          label={shortcutLabel}
+          mode={tool.mode}
+          onClick={() => onModeChange(tool.mode)}
+        />
+        <Button
+          aria-label={patternZoomLocked ? "Unlock pattern zoom" : "Lock pattern zoom"}
+          aria-pressed={patternZoomLocked}
+          className="w-full px-0"
+          disabled={!onPatternZoomLockedChange}
+          size="sm"
+          title={patternZoomLocked ? "Unlock pattern zoom" : "Lock pattern zoom"}
+          type="button"
+          variant={patternZoomLocked ? "default" : "outline"}
+          onClick={() => onPatternZoomLockedChange?.(!patternZoomLocked)}
+        >
+          {patternZoomLocked ? (
+            <Lock aria-hidden="true" className="size-4" />
+          ) : (
+            <Unlock aria-hidden="true" className="size-4" />
+          )}
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <AlignToolButton
+      key={tool.mode}
+      active={mode === tool.mode}
+      Icon={tool.Icon}
+      label={shortcutLabel}
+      mode={tool.mode}
+      onClick={() => onModeChange(tool.mode)}
+    />
+  );
+}
+
 export function AlignTools({
   mode,
   onModeChange,
@@ -95,53 +150,17 @@ export function AlignTools({
   const toolActions = buildAlignToolActions(mode, onModeChange);
   useDockToolShortcuts(toolActions, { enabled: shortcutsEnabled });
 
+  const toolbarCells = alignToolDefinitions.map((tool, index) =>
+    renderAlignToolCell(tool, index, mode, onModeChange, patternZoomLocked, onPatternZoomLockedChange),
+  );
+
   const toolbar = (
     <div
       aria-label="Align canvas tool"
-      className="grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-2"
+      className={dockToolGridClass}
       role="toolbar"
     >
-      {alignToolDefinitions.map(({ mode: toolMode, label, Icon }, index) => {
-        const shortcutLabel = dockToolLabel(label, index);
-        return toolMode === "zoom-pattern" ? (
-          <div key={toolMode} className="grid min-h-0 min-w-0 grid-cols-[1fr_2rem] gap-1">
-            <AlignToolButton
-              active={mode === toolMode}
-              className="h-full w-full min-w-0 justify-center gap-2 px-2"
-              Icon={Icon}
-              label={shortcutLabel}
-              mode={toolMode}
-              onClick={() => onModeChange(toolMode)}
-            />
-            <Button
-              aria-label={patternZoomLocked ? "Unlock pattern zoom" : "Lock pattern zoom"}
-              aria-pressed={patternZoomLocked}
-              className="h-full w-full px-0"
-              disabled={!onPatternZoomLockedChange}
-              size="sm"
-              title={patternZoomLocked ? "Unlock pattern zoom" : "Lock pattern zoom"}
-              type="button"
-              variant={patternZoomLocked ? "default" : "outline"}
-              onClick={() => onPatternZoomLockedChange?.(!patternZoomLocked)}
-            >
-              {patternZoomLocked ? (
-                <Lock aria-hidden="true" className="size-4" />
-              ) : (
-                <Unlock aria-hidden="true" className="size-4" />
-              )}
-            </Button>
-          </div>
-        ) : (
-          <AlignToolButton
-            key={toolMode}
-            active={mode === toolMode}
-            Icon={Icon}
-            label={shortcutLabel}
-            mode={toolMode}
-            onClick={() => onModeChange(toolMode)}
-          />
-        );
-      })}
+      {toolbarCells}
     </div>
   );
 
@@ -152,11 +171,11 @@ export function AlignTools({
   return (
     <Section
       className={sectionClassName}
-      contentClassName={sectionContentClassName}
+      contentClassName={sectionContentClassName ?? dockToolGridClass}
       description={sectionDescription}
       title={sectionTitle}
     >
-      {toolbar}
+      {toolbarCells}
     </Section>
   );
 }

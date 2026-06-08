@@ -26,8 +26,8 @@ export function AlignSelectionControls({ state }: { state: AlignState }) {
     <>
       <Section contentStyle={styles.sectionContent} style={styles.section} title="Selection">
         <View style={styles.statsRow}>
-          <StatTile label="Included cells" value={state.visibleCounts.included} />
-          <StatTile label="Excluded cells" value={state.visibleCounts.excluded} />
+          <StatTile centered label="Included cells" value={state.visibleCounts.included} />
+          <StatTile centered label="Excluded cells" value={state.visibleCounts.excluded} />
         </View>
         <View style={styles.gridCell}>
           <Button
