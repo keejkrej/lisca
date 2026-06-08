@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Component, Path, PathBuf};
 
 use axum::{
     extract::Query,
@@ -90,6 +90,7 @@ fn list_directory(path: Option<String>) -> Result<HostListDirectoryResult, FsErr
     }
 
     let path = PathBuf::from(path.expect("checked above"));
+    ensure_local_path_allowed(&path)?;
     let metadata = std::fs::metadata(&path)
         .map_err(|error| FsError::new(format!("failed to read directory: {error}")))?;
     if !metadata.is_dir() {
@@ -121,9 +122,7 @@ fn list_directory(path: Option<String>) -> Result<HostListDirectoryResult, FsErr
     });
 
     Ok(HostListDirectoryResult {
-        parent: path
-            .parent()
-            .map(|parent| parent.to_string_lossy().to_string()),
+        parent: list_parent_path(&path),
         path: Some(path.to_string_lossy().to_string()),
         entries,
     })
@@ -137,9 +136,99 @@ fn read_text_file(path: &str) -> Result<ReadTextFileResponse, FsError> {
         return Ok(ReadTextFileResponse { contents });
     }
 
+    ensure_local_path_allowed(Path::new(path))?;
     let contents = std::fs::read_to_string(path)
         .map_err(|error| FsError::new(format!("failed to read text file: {error}")))?;
     Ok(ReadTextFileResponse { contents })
+}
+
+fn browse_roots() -> Option<Vec<PathBuf>> {
+    let value = std::env::var("LISCA_FS_ROOTS").ok()?;
+    let roots = value
+        .split(':')
+        .map(str::trim)
+        .filter(|segment| !segment.is_empty())
+        .map(PathBuf::from)
+        .collect::<Vec<_>>();
+    if roots.is_empty() {
+        None
+    } else {
+        Some(roots)
+    }
+}
+
+fn normalize_local_path(path: &Path) -> Result<PathBuf, FsError> {
+    let mut normalized = PathBuf::new();
+    for component in path.components() {
+        match component {
+            Component::Prefix(_) | Component::RootDir => normalized.push(component.as_os_str()),
+            Component::CurDir => {}
+            Component::ParentDir => {
+                if !normalized.pop() {
+                    return Err(FsError::new("path escapes above root"));
+                }
+            }
+            Component::Normal(segment) => normalized.push(segment),
+        }
+    }
+    Ok(normalized)
+}
+
+fn path_is_under_root(path: &Path, root: &Path) -> bool {
+    path == root || path.starts_with(root)
+}
+
+fn ensure_local_path_allowed(path: &Path) -> Result<(), FsError> {
+    let Some(roots) = browse_roots() else {
+        return Ok(());
+    };
+
+    let normalized = normalize_local_path(path)?;
+    let allowed = roots.iter().any(|root| {
+        normalize_local_path(root)
+            .ok()
+            .is_some_and(|normalized_root| path_is_under_root(&normalized, &normalized_root))
+    });
+    if allowed {
+        Ok(())
+    } else {
+        Err(FsError::new("path is outside allowed directories"))
+    }
+}
+
+fn list_parent_path(path: &Path) -> Option<String> {
+    let parent = path.parent()?;
+    if browse_roots().is_some() && ensure_local_path_allowed(parent).is_err() {
+        return None;
+    }
+    Some(parent.to_string_lossy().to_string())
+}
+
+fn roots_from_env() -> Option<HostListDirectoryResult> {
+    let roots = browse_roots()?;
+    let mut entries = Vec::new();
+    for root in roots {
+        if !root.is_dir() {
+            continue;
+        }
+        let name = root
+            .file_name()
+            .map(|segment| segment.to_string_lossy().to_string())
+            .unwrap_or_else(|| root.to_string_lossy().to_string());
+        entries.push(HostFsEntry {
+            name,
+            path: root.to_string_lossy().to_string(),
+            is_directory: true,
+        });
+    }
+    if entries.is_empty() {
+        return None;
+    }
+    Some(HostListDirectoryResult {
+        path: None,
+        parent: None,
+        entries,
+    })
 }
 
 #[cfg(windows)]
@@ -165,6 +254,10 @@ fn list_roots() -> HostListDirectoryResult {
 
 #[cfg(not(windows))]
 fn list_roots() -> HostListDirectoryResult {
+    if let Some(result) = roots_from_env() {
+        return result;
+    }
+
     let mut entries = Vec::new();
     for (name, path) in [("workspace", "/workspace"), ("source", "/source")] {
         if std::path::Path::new(path).is_dir() {
@@ -186,5 +279,44 @@ fn list_roots() -> HostListDirectoryResult {
         path: None,
         parent: None,
         entries,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn normalize_local_path_resolves_parent_segments() {
+        let path = normalize_local_path(Path::new("/workspace/../workspace/run-1")).unwrap();
+        assert_eq!(path, Path::new("/workspace/run-1"));
+    }
+
+    #[test]
+    fn path_is_under_root_matches_descendants() {
+        assert!(path_is_under_root(
+            Path::new("/workspace/run-1"),
+            Path::new("/workspace")
+        ));
+        assert!(!path_is_under_root(Path::new("/etc"), Path::new("/workspace")));
+    }
+
+    #[test]
+    fn list_parent_path_hides_parent_outside_allowed_roots() {
+        let parent = list_parent_path(Path::new("/workspace/run-1"));
+        assert_eq!(parent.as_deref(), Some("/workspace"));
+
+        std::env::set_var("LISCA_FS_ROOTS", "/workspace:/source");
+        let parent = list_parent_path(Path::new("/workspace"));
+        assert_eq!(parent, None);
+        std::env::remove_var("LISCA_FS_ROOTS");
+    }
+
+    #[test]
+    fn ensure_local_path_allowed_rejects_paths_outside_roots() {
+        std::env::set_var("LISCA_FS_ROOTS", "/workspace:/source");
+        assert!(ensure_local_path_allowed(Path::new("/workspace/run-1")).is_ok());
+        assert!(ensure_local_path_allowed(Path::new("/etc")).is_err());
+        std::env::remove_var("LISCA_FS_ROOTS");
     }
 }

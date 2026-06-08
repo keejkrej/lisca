@@ -27,6 +27,10 @@ export function isDirectoryMode(mode: HostFilePickerMode): boolean {
   return mode === "workspace" || mode === "folder";
 }
 
+export function canGoUpFromList(list: HostListDirectoryResult | null): boolean {
+  return Boolean(list?.path && list?.parent);
+}
+
 export type UseHostFilePickerStateOptions = {
   open: boolean;
   mode: HostFilePickerMode;
@@ -123,17 +127,13 @@ export function useHostFilePickerState(options: UseHostFilePickerStateOptions) {
 
   const dirMode = isDirectoryMode(mode);
   const smbActive = useSmb && Boolean(smbSessionId);
-  const canGoUp = Boolean(list?.path) && (smbActive ? Boolean(list?.parent) : true);
+  const canGoUp = canGoUpFromList(list);
   const locationLabel = list?.path ?? null;
   const browseReady = smbActive || !useSmb;
 
   const goUp = () => {
-    if (!list) return;
-    if (list.parent) {
-      void loadPath(list.parent);
-    } else if (list.path && !smbActive) {
-      void loadPath(null);
-    }
+    if (!list?.parent) return;
+    void loadPath(list.parent);
   };
 
   const goHome = async () => {

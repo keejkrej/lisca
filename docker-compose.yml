@@ -11,6 +11,7 @@ x-lisca-env: &lisca-env
   PORT: 3000
   HOME: /workspace
   RUST_LOG: info
+  LISCA_FS_ROOTS: /workspace:/source
 
 services:
   aligner:
@@ -46,6 +47,7 @@ services:
       PUBLIC_PORT: 8766
     volumes:
       - ${LISCA_ROOT:-/var/lisca}/workspace:/workspace
+      - ${LISCA_ROOT:-/var/lisca}/source:/source:ro
     restart: unless-stopped
 
   studio:

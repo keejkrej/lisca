@@ -1,12 +1,25 @@
 import { describe, expect, it } from "vitest";
 
-import { fileMatchesMode, isDirectoryMode } from "../src/host-file-picker-state.ts";
+import {
+  canGoUpFromList,
+  fileMatchesMode,
+  isDirectoryMode,
+} from "../src/host-file-picker-state.ts";
 
 describe("host-file-picker-state", () => {
   it("isDirectoryMode recognizes workspace and folder", () => {
     expect(isDirectoryMode("workspace")).toBe(true);
     expect(isDirectoryMode("folder")).toBe(true);
     expect(isDirectoryMode("nd2_file")).toBe(false);
+  });
+
+  it("canGoUpFromList requires a parent path", () => {
+    expect(canGoUpFromList(null)).toBe(false);
+    expect(canGoUpFromList({ path: null, parent: null, entries: [] })).toBe(false);
+    expect(canGoUpFromList({ path: "/", parent: null, entries: [] })).toBe(false);
+    expect(
+      canGoUpFromList({ path: "/workspace/run-1", parent: "/workspace", entries: [] }),
+    ).toBe(true);
   });
 
   it("fileMatchesMode filters by extension", () => {
