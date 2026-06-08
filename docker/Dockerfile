@@ -16,10 +16,13 @@ ARG PRODUCT
 WORKDIR /app
 
 COPY --from=web-prune /app/out/json/ .
+# turbo prune omits root tsconfig; workspace packages extend it.
+COPY --from=web-prune /app/tsconfig.base.json ./tsconfig.base.json
 RUN --mount=type=cache,target=/root/.bun/install/cache,id=lisca-bun-cache \
     bun install --frozen-lockfile --ignore-scripts
 
 COPY --from=web-prune /app/out/full/ .
+COPY --from=web-prune /app/tsconfig.base.json ./tsconfig.base.json
 RUN --mount=type=cache,target=/root/.bun/install/cache,id=lisca-bun-cache \
     --mount=type=cache,target=/app/.turbo,id=lisca-turbo-cache,sharing=locked \
     --mount=type=cache,target=/app/node_modules/.cache,id=lisca-node-cache,sharing=locked \
