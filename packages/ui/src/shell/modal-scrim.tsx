@@ -1,6 +1,7 @@
 import type { ComponentProps, ReactNode } from "react";
 
-import { modalOverlayClass } from "../lib/surface";
+const modalScrimClass =
+  "fixed inset-0 flex items-center justify-center overscroll-contain bg-black/55 px-6 backdrop-blur-sm";
 import { cn } from "../lib/utils";
 
 export function ModalScrim({
@@ -13,7 +14,7 @@ export function ModalScrim({
   zIndex?: "z-40" | "z-50";
 }) {
   return (
-    <div className={cn(modalOverlayClass, zIndex, className)} {...props}>
+    <div className={cn(modalScrimClass, zIndex, className)} {...props}>
       {children}
     </div>
   );

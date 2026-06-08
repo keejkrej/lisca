@@ -1,6 +1,7 @@
 import type { ComponentProps, ReactNode } from "react";
 
-import { surfaceDialogClass } from "../lib/surface";
+const dialogSurfaceClass =
+  "rounded-xl border border-border bg-background text-foreground shadow-2xl";
 import { cn } from "../lib/utils";
 
 const maxWidthClass = {
@@ -27,7 +28,7 @@ export function DialogSurface({
     <div
       aria-labelledby={ariaLabelledBy}
       aria-modal="true"
-      className={cn("flex w-full flex-col", maxWidthClass[maxWidth], surfaceDialogClass, className)}
+      className={cn("flex w-full flex-col", maxWidthClass[maxWidth], dialogSurfaceClass, className)}
       role="dialog"
       {...props}
     >

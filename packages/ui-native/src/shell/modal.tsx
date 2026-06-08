@@ -39,7 +39,7 @@ export function DialogSurface(props: {
         styles.surface,
         props.padded === false ? styles.surfaceFlush : null,
         {
-          backgroundColor: colors.card,
+          backgroundColor: colors.background,
           borderColor: colors.border,
           maxWidth: props.maxWidth ?? 480,
         },

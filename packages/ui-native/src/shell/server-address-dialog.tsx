@@ -31,7 +31,7 @@ export function ServerAddressDialog(props: ServerAddressDialogProps) {
   return (
     <Modal visible={props.open} animationType="slide" transparent onRequestClose={() => props.onOpenChange(false)}>
       <View style={styles.scrim}>
-        <View style={[styles.surface, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={[styles.surface, { backgroundColor: colors.background, borderColor: colors.border }]}>
           <Text style={[styles.title, { color: colors.foreground }]}>Server address</Text>
           <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>{props.currentWsUrl}</Text>
 

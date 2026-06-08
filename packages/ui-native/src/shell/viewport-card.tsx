@@ -8,7 +8,7 @@ export function ViewportCard({ children }: { children: ReactNode }) {
   const { colors } = useShellTheme();
   return (
     <View style={[styles.outer, { backgroundColor: colors.background }]}>
-      <View style={[styles.inner, { backgroundColor: colors.panel, borderColor: colors.border }]}>
+      <View style={[styles.inner, { backgroundColor: colors.background, borderColor: colors.border }]}>
         {children}
       </View>
     </View>

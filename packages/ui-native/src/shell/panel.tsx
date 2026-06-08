@@ -23,7 +23,7 @@ const styles = StyleSheet.create({
 export function Panel(props: { title?: string; children: ReactNode }) {
   const { colors } = useShellTheme();
   return (
-    <View style={[panelStyles.root, { backgroundColor: colors.card, borderColor: colors.border }]}>
+    <View style={[panelStyles.root, { backgroundColor: colors.background, borderColor: colors.border }]}>
       {props.title ? (
         <Text style={[panelStyles.title, { color: colors.foreground }]}>{props.title}</Text>
       ) : null}

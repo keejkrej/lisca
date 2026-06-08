@@ -22,7 +22,7 @@ export function Section(props: {
     <View
       style={[
         styles.panel,
-        { borderColor: colors.border, backgroundColor: colors.card },
+        { borderColor: colors.border, backgroundColor: colors.background },
         props.style,
       ]}
     >

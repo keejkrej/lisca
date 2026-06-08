@@ -73,14 +73,7 @@ export {
 } from "./components/ui";
 
 export { cn } from "./lib/utils";
-export {
-  modalOverlayClass,
-  shellChromeClass,
-  shellRailChromeClass,
-  surfaceDialogClass,
-  surfaceInsetClass,
-  surfacePanelClass,
-} from "./lib/surface";
+export { surfacePanelClass } from "./lib/surface";
 
 export { AppShell, type AppShellCompound, ShellDock, ShellSidebar } from "./shell/shell";
 

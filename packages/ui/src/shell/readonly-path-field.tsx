@@ -1,4 +1,4 @@
-import { surfaceInsetClass } from "../lib/surface";
+const pathChipClass = "rounded-md border border-border bg-muted/20 text-foreground";
 import { cn } from "../lib/utils";
 
 export function ReadonlyPathField({
@@ -13,7 +13,7 @@ export function ReadonlyPathField({
   return (
     <div
       aria-label={ariaLabel ?? `Path ${value}`}
-      className={cn("min-w-0 truncate px-2 py-1.5 font-mono text-xs", surfaceInsetClass, className)}
+      className={cn("min-w-0 truncate px-2 py-1.5 font-mono text-xs", pathChipClass, className)}
       title={value}
     >
       {value}
