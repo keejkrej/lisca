@@ -1,13 +1,10 @@
 import type { ReactNode } from "react";
 
-import type { DockGridLayout } from "./dock-grid";
 import { DockSection } from "./dock-section";
 import { DockStrip } from "./dock-strip";
 
 export function StudioDock(props: {
   action?: ReactNode;
-  /** When set, action children are placed in a centered {@link DockGrid}. */
-  actionLayout?: DockGridLayout;
   instruction?: string;
   tool?: ReactNode;
 }) {
@@ -19,9 +16,7 @@ export function StudioDock(props: {
         ) : null}
       </DockSection>
       {props.tool ? <DockSection title="Tool">{props.tool}</DockSection> : null}
-      <DockSection centered={props.actionLayout != null} layout={props.actionLayout} title="Action">
-        {props.action}
-      </DockSection>
+      <DockSection title="Action">{props.action}</DockSection>
     </DockStrip>
   );
 }

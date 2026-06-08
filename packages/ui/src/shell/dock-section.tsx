@@ -14,17 +14,14 @@ export type DockSectionProps = Omit<SectionProps, "className" | "contentClassNam
   contentClassName?: string;
   /** When set, children are wrapped in {@link DockGrid}. */
   layout?: DockGridLayout;
-  /** Compact centered grid (studio action sections). */
-  centered?: boolean;
   gridClassName?: string;
-  gridProps?: Omit<DockGridProps, "layout" | "centered" | "className" | "children">;
+  gridProps?: Omit<DockGridProps, "layout" | "className" | "children">;
 };
 
 export function DockSection({
   className,
   contentClassName,
   layout,
-  centered = false,
   gridClassName,
   gridProps,
   children,
@@ -32,12 +29,7 @@ export function DockSection({
 }: DockSectionProps) {
   const content =
     layout != null ? (
-      <DockGrid
-        centered={centered}
-        className={cn(!centered && "w-full", gridClassName)}
-        layout={layout}
-        {...gridProps}
-      >
+      <DockGrid className={gridClassName} layout={layout} {...gridProps}>
         {children}
       </DockGrid>
     ) : (

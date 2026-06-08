@@ -2,7 +2,14 @@ import type { StudioAnalysisCsvFile } from "@lisca/contracts";
 import { resultData } from "@lisca/client/atoms";
 import { RegistryContext, useAtomSet } from "@effect-atom/atom-react";
 import { Spinner } from "@lisca/ui/components";;
-import { AppShell, DockButton, DockToolGrid, StudioDock, ViewportCard } from "@lisca/ui/shell";
+import {
+  AppShell,
+  DockButton,
+  DockSection,
+  DockStrip,
+  DockToolGrid,
+  ViewportCard,
+} from "@lisca/ui/shell";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
@@ -334,8 +341,14 @@ export default function ResultPage() {
             </ViewportCard>
           </AppShell.Main>
           <AppShell.Dock>
-            <StudioDock
-              action={
+            <DockStrip panels={3}>
+              <DockSection title="Instruction">
+                <p className="line-clamp-4 text-center text-sm leading-snug">{dockInstruction}</p>
+              </DockSection>
+              <DockSection title="Tool">
+                <DockToolGrid actions={sectionToolActions} enabled={!isBusy} />
+              </DockSection>
+              <DockSection layout="2x1" title="Action">
                 <DockButton
                   disabled={!activeWorkspacePath || !hasAnyResultFiles || isBusy}
                   onClick={() => {
@@ -344,11 +357,8 @@ export default function ResultPage() {
                 >
                   {isSaving ? "Saving…" : "Save"}
                 </DockButton>
-              }
-              actionLayout="2x1"
-              instruction={dockInstruction}
-              tool={<DockToolGrid actions={sectionToolActions} enabled={!isBusy} />}
-            />
+              </DockSection>
+            </DockStrip>
           </AppShell.Dock>
         </AppShell.MainColumn>
         <AppShell.Right widthClass="w-60" />

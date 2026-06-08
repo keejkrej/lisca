@@ -23,8 +23,8 @@ Compose apps from shell primitives, not exported class strings:
 | `Section` | Collapsible in-app section inside a `Panel` (sidebars, etc.) |
 | `DockSection` | Dock panel section — stretch chrome + centered content; optional `layout` wraps children in `DockGrid` |
 | `DockStrip` | Outer dock band — `panels={2}` (aligner, annotator) or `panels={3}` (studio) |
-| `DockGrid` | Inner grid — `layout="2x1" \| "2x2" \| "2x3"`; add `centered` for compact studio actions |
-| `StudioDock` | Studio instruction / tool / action strip (uses `DockStrip` + `DockSection`) |
+| `DockGrid` | Inner grid — `layout="2x1" \| "2x2" \| "2x3"` |
+| `StudioDock` | Optional sugar for studio instruction / tool / action titles (same `DockSection` rules) |
 | `DialogSurface` / `ModalScrim` | Modal chrome |
 | `StatTile` | Count/metric tile: `border border-border bg-background` |
 
@@ -35,8 +35,8 @@ Frame styling lives inside `panel.tsx` (`panelFrameClass`); not exported from th
 Use **grid** for dock strips and section content. **Section panels stretch** to fill the dock band (`items-stretch`, `dockSectionClass` includes `h-full`); inner tool/save grids and buttons stay content-sized.
 
 - **Strip:** `<DockStrip panels={2}>` or `<DockStrip panels={3}>`
-- **Tool / save:** `<DockSection layout="2x2" title="Tool">` (or `2x1` / `2x3` for save)
-- **Studio:** `<StudioDock actionLayout="2x1" action={…} />` — action grid is centered automatically
+- **Any grid section:** `<DockSection layout="2x2" title="Tool">` (tool, save, action — same API)
+- **Studio:** `DockStrip` + `DockSection`, or `StudioDock` when slots need no grid wrapper
 - **Buttons:** natural `sm` height (`w-full justify-center` in save/tool sections). `DockButton` caps at `max-w-48`.
 
 ## Rules
