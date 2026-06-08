@@ -1,5 +1,5 @@
 import {
-  ContrastControl,
+  AnnotatorContrastRail,
   FrameNavigation,
   findNavigationOptionIndex,
   stepNavigationValue,
@@ -128,16 +128,10 @@ export function AnnotatorLeft() {
             ),
         }}
       />
-      <ContrastControl
-        domainMax={state.contrastDomain.max}
-        domainMin={state.contrastDomain.min}
-        maxValue={state.contrastMax}
-        minValue={state.contrastMin}
-        onAutoRange={() =>
-          state.setContrast({ min: state.contrastDomain.min, max: state.contrastDomain.max })
-        }
-        onMaxCommit={(max) => state.setContrast({ min: state.contrastMin, max })}
-        onMinCommit={(min) => state.setContrast({ min, max: state.contrastMax })}
+      <AnnotatorContrastRail
+        contrast={state.contrast}
+        frame={state.frame}
+        onContrastChange={state.setContrast}
       />
     </div>
   );

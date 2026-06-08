@@ -1,4 +1,4 @@
-import type { ContrastWindow, RoiPositionScan, RoiWorkspaceScan } from "@lisca/contracts";
+import type { ContrastWindow, FrameResult, RoiPositionScan, RoiWorkspaceScan } from "@lisca/contracts";
 import {
   ContrastControl,
   findNavigationOptionIndex,
@@ -18,16 +18,20 @@ export function AnnotatorLeft(props: {
   channel: number | null;
   timeIndex: number;
   zIndex: number;
-  contrastDomain: ContrastWindow;
-  contrastMin: number;
-  contrastMax: number;
+  frame: FrameResult | null;
+  contrast: ContrastWindow | null;
   onPosChange: (value: number) => void;
   onRoiChange: (value: number) => void;
   onChannelChange: (value: number) => void;
   onTimeIndexChange: (value: number) => void;
   onZIndexChange: (value: number) => void;
-  onContrastChange: (value: ContrastWindow) => void;
+  onContrastChange: (value: ContrastWindow | null) => void;
 }) {
+  const domain = props.frame?.contrastDomain ?? { min: 0, max: 255 };
+  const value = props.contrast ?? { min: domain.min, max: domain.max };
+  const suggestedContrast =
+    props.frame?.suggestedContrast ??
+    props.frame?.appliedContrast ?? { min: domain.min, max: domain.max };
   const positionOptions = useMemo(
     () => toNavigationOptions(props.scan?.positions.map((entry) => entry.pos) ?? []),
     [props.scan],
@@ -127,15 +131,14 @@ export function AnnotatorLeft(props: {
         }}
       />
       <ContrastControl
-        domainMax={props.contrastDomain.max}
-        domainMin={props.contrastDomain.min}
-        maxValue={props.contrastMax}
-        minValue={props.contrastMin}
-        onAutoRange={() =>
-          props.onContrastChange({ min: props.contrastDomain.min, max: props.contrastDomain.max })
-        }
-        onMaxCommit={(max) => props.onContrastChange({ min: props.contrastMin, max })}
-        onMinCommit={(min) => props.onContrastChange({ min, max: props.contrastMax })}
+        disabled={!props.frame}
+        domainMax={domain.max}
+        domainMin={domain.min}
+        maxValue={value.max}
+        minValue={value.min}
+        onAutoRange={() => props.onContrastChange(suggestedContrast)}
+        onMaxCommit={(max) => props.onContrastChange({ min: value.min, max })}
+        onMinCommit={(min) => props.onContrastChange({ min, max: value.max })}
       />
     </View>
   );

@@ -12,7 +12,6 @@ import {
   stemName,
 } from "@lisca/browser-frame";
 import type { AnnotationTool } from "@lisca/ui/features";
-import { defaultContrastDomain } from "@lisca/utils";
 import { useCallback, useState } from "react";
 
 import { useAnnotationHistory } from "./use-annotation-history";
@@ -31,10 +30,7 @@ export type DemoAnnotatorState = {
   error: string | null;
   status: string | null;
   frame: FrameResult | null;
-  contrast: ContrastWindow;
-  contrastDomain: ContrastWindow;
-  contrastMin: number;
-  contrastMax: number;
+  contrast: ContrastWindow | null;
   labels: AnnotationLabel[];
   activeLabelId: string | null;
   mode: AnnotationMode;
@@ -52,7 +48,7 @@ export type DemoAnnotatorState = {
   setTool: (tool: AnnotationTool) => void;
   setBrushSize: (value: number) => void;
   setOverlayOpacity: (value: number) => void;
-  setContrast: (value: ContrastWindow) => void;
+  setContrast: (value: ContrastWindow | null) => void;
   setLabelDialogOpen: (open: boolean) => void;
   setLabelError: (error: string | null) => void;
   openImage: (file: File) => Promise<void>;
@@ -67,7 +63,7 @@ export function useDemoAnnotatorState(): DemoAnnotatorState {
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [frame, setFrame] = useState<FrameResult | null>(null);
-  const [contrast, setContrast] = useState<ContrastWindow>({ min: 0, max: 255 });
+  const [contrast, setContrast] = useState<ContrastWindow | null>(null);
   const [labels, setLabels] = useState<AnnotationLabel[]>(defaultLabels);
   const [activeLabelId, setActiveLabelId] = useState<string | null>(defaultLabels[0]?.id ?? null);
   const [mode, setMode] = useState<AnnotationMode>("segmentation");
@@ -78,8 +74,6 @@ export function useDemoAnnotatorState(): DemoAnnotatorState {
   const [labelError, setLabelError] = useState<string | null>(null);
 
   const annotation = useAnnotationHistory(frame);
-  const contrastDomain = frame ? (frame.contrastDomain ?? defaultContrastDomain(frame)) : { min: 0, max: 255 };
-
   const openImage = useCallback(
     async (file: File) => {
       if (annotation.dirty && !window.confirm("Discard unsaved annotation changes?")) {
@@ -92,8 +86,7 @@ export function useDemoAnnotatorState(): DemoAnnotatorState {
         const nextFrame = await loadImageFile(file);
         setFileName(file.name);
         setFrame(nextFrame);
-        const domain = nextFrame.contrastDomain ?? defaultContrastDomain(nextFrame);
-        setContrast(nextFrame.appliedContrast ?? domain);
+        setContrast(null);
         annotation.reset({
           classificationLabelId: null,
           mask: new Uint8Array(nextFrame.width * nextFrame.height),
@@ -169,9 +162,6 @@ export function useDemoAnnotatorState(): DemoAnnotatorState {
     status,
     frame,
     contrast,
-    contrastDomain,
-    contrastMin: contrast.min,
-    contrastMax: contrast.max,
     labels,
     activeLabelId,
     mode,

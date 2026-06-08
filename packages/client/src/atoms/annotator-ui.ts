@@ -222,17 +222,20 @@ export function createAnnotatorUiActions(persist: ReturnType<typeof createAnnota
       patch(set, (state) => ({
         ...state,
         contrast,
-        contrastMin: contrast?.min ?? state.contrastMin,
-        contrastMax: contrast?.max ?? state.contrastMax,
+        contrastMin: contrast?.min ?? state.contrastDomain.min,
+        contrastMax: contrast?.max ?? state.contrastDomain.max,
       }));
     },
     setContrastState(set: (update: StateUpdater<AnnotatorUiState>) => void, frame: FrameResult) {
-      patch(set, (state) => ({
-        ...state,
-        contrastDomain: frame.contrastDomain ?? defaultContrastDomain,
-        contrastMin: frame.appliedContrast?.min ?? state.contrastMin,
-        contrastMax: frame.appliedContrast?.max ?? state.contrastMax,
-      }));
+      patch(set, (state) => {
+        const domain = frame.contrastDomain ?? defaultContrastDomain;
+        return {
+          ...state,
+          contrastDomain: domain,
+          contrastMin: state.contrast?.min ?? domain.min,
+          contrastMax: state.contrast?.max ?? domain.max,
+        };
+      });
     },
     setFrameLoading(set: (update: StateUpdater<AnnotatorUiState>) => void, frameLoading: boolean) {
       patch(set, (state) => ({ ...state, frameLoading }));

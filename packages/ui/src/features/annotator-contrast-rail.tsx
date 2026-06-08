@@ -2,7 +2,7 @@ import type { ContrastWindow, FrameResult } from "@lisca/contracts";
 
 import { PinnedContrastRail } from "./pinned-contrast-rail";
 
-export function AlignContrastRail(props: {
+export function AnnotatorContrastRail(props: {
   frame: FrameResult | null;
   contrast: ContrastWindow | null;
   disabled?: boolean;
@@ -13,8 +13,6 @@ export function AlignContrastRail(props: {
       contrast={props.contrast}
       disabled={props.disabled}
       frame={props.frame}
-      sectionClassName="min-h-0 shrink-0"
-      sectionContentClassName="flex min-h-0 flex-col overflow-auto"
       onContrastChange={props.onContrastChange}
     />
   );

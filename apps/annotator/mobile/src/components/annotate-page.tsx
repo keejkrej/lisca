@@ -29,9 +29,8 @@ export function AnnotatePage() {
         <AppShell.Left width={288}>
           <AnnotatorLeft
             channel={state.selection.channel}
-            contrastDomain={state.contrastDomain}
-            contrastMax={state.contrastMax}
-            contrastMin={state.contrastMin}
+            contrast={state.contrast}
+            frame={state.frame}
             position={state.position}
             pos={state.selection.pos}
             roi={state.selection.roi}

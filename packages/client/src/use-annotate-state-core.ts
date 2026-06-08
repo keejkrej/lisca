@@ -172,7 +172,6 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
       deps.makeRequest(position, selectedRoi, selection.channel, selection.timeIndex, selection.zIndex),
     [deps, position, selectedRoi, selection.channel, selection.timeIndex, selection.zIndex],
   );
-  const activeSelectionKey = deps.roiRequestSelectionKey(selection);
   const activeRequestKey = deps.requestKey(position, selectedRoi, selection);
   const activeLabelValue = labels.findIndex((label) => label.id === activeLabelId) + 1;
   const canEdit =
@@ -216,10 +215,6 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
     },
     [guardDirty],
   );
-
-  useEffect(() => {
-    setContrast(null);
-  }, [activeSelectionKey, setContrast]);
 
   useEffect(() => {
     if (!workspacePath || workspacePath !== shellWorkspacePath || !request) {
@@ -357,6 +352,7 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
       brushSize,
       overlayOpacity,
       frame,
+      contrast,
       contrastDomain,
       contrastMin,
       contrastMax,
@@ -405,6 +401,7 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
       canSave,
       canvasToasts,
       changeSelection,
+      contrast,
       contrastDomain,
       contrastMax,
       contrastMin,
