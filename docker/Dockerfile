@@ -56,9 +56,9 @@ ENV PRODUCT=${PRODUCT} \
     PUBLIC_PORT=${PUBLIC_PORT} \
     HOST=0.0.0.0 \
     PORT=3000 \
-    HOME=/data
+    HOME=/workspace
 
-VOLUME ["/data"]
+VOLUME ["/workspace", "/source"]
 EXPOSE ${PUBLIC_PORT}
 
 ENTRYPOINT ["/entrypoint.sh"]

@@ -165,13 +165,26 @@ fn list_roots() -> HostListDirectoryResult {
 
 #[cfg(not(windows))]
 fn list_roots() -> HostListDirectoryResult {
-    HostListDirectoryResult {
-        path: None,
-        parent: None,
-        entries: vec![HostFsEntry {
+    let mut entries = Vec::new();
+    for (name, path) in [("workspace", "/workspace"), ("source", "/source")] {
+        if std::path::Path::new(path).is_dir() {
+            entries.push(HostFsEntry {
+                name: name.to_string(),
+                path: path.to_string(),
+                is_directory: true,
+            });
+        }
+    }
+    if entries.is_empty() {
+        entries.push(HostFsEntry {
             name: "/".to_string(),
             path: "/".to_string(),
             is_directory: true,
-        }],
+        });
+    }
+    HostListDirectoryResult {
+        path: None,
+        parent: None,
+        entries,
     }
 }

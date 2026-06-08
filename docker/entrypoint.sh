@@ -13,8 +13,6 @@ esac
 
 export PUBLIC_PORT
 
-mkdir -p /data
-
 envsubst '${PUBLIC_PORT} ${PORT}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf
 
 /usr/local/bin/lisca-server &
