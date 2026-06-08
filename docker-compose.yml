@@ -1,0 +1,77 @@
+# Profiles: `.env` sets COMPOSE_PROFILES=all so `docker compose up --build` starts every app.
+# Single app: COMPOSE_PROFILES=studio docker compose up --build
+#
+# Bind-mount experiment data for the filesystem picker (uncomment one per service):
+#   volumes: [./experiments:/data:ro]
+#
+# Or replace the named volume below with a host path:
+#   volumes: [/path/to/experiments:/data:ro]
+
+services:
+  aligner:
+    profiles: [aligner, all]
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        PRODUCT: aligner
+        PUBLIC_PORT: 8765
+    ports:
+      - "8765:8765"
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+      PUBLIC_PORT: 8765
+      LISCA_PYTHON: python3
+      HOME: /data
+      RUST_LOG: info
+    volumes:
+      - aligner-data:/data
+    restart: unless-stopped
+
+  annotator:
+    profiles: [annotator, all]
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        PRODUCT: annotator
+        PUBLIC_PORT: 8766
+    ports:
+      - "8766:8766"
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+      PUBLIC_PORT: 8766
+      LISCA_PYTHON: python3
+      HOME: /data
+      RUST_LOG: info
+    volumes:
+      - annotator-data:/data
+    restart: unless-stopped
+
+  studio:
+    profiles: [studio, all]
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        PRODUCT: studio
+        PUBLIC_PORT: 8767
+    ports:
+      - "8767:8767"
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+      PUBLIC_PORT: 8767
+      LISCA_PYTHON: python3
+      HOME: /data
+      RUST_LOG: info
+    volumes:
+      - studio-data:/data
+    restart: unless-stopped
+
+volumes:
+  aligner-data:
+  annotator-data:
+  studio-data:

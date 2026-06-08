@@ -1,0 +1,11 @@
+.git
+.github
+.turbo
+**/node_modules
+**/dist
+**/release
+target
+apps/aligner-desktop
+**/.env*
+**/*.log
+**/.DS_Store
