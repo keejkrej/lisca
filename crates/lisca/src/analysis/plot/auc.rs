@@ -1,11 +1,11 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use plotpy::{Boxplot, Plot};
+use mplot::prelude::{AxesStyle, BoxplotStyle, GridPos, Scale};
 
 use super::super::csv_io::{column_index, parse_f64, read_csv};
 use super::super::slide::SlideMapping;
-use super::plotpy_config::{configure_plot, save_plot};
+use super::mplot_config::{default_figure_builder, save_figure};
 use super::util::{boxplot_tick_label, boxplot_x_axis_label, slide_channel_labels};
 
 pub fn run_plot_auc(workspace: &Path, mapping: &SlideMapping) -> Result<(), String> {
@@ -52,7 +52,7 @@ fn write_auc_boxplot(
     grouped_values: &[Vec<f64>],
     labels: &BTreeMap<u32, String>,
 ) -> Result<(), String> {
-    let ticks: Vec<f64> = (1..=channels.len()).map(|index| index as f64).collect();
+    let ticks: Vec<i32> = (1..=channels.len()).map(|index| index as i32).collect();
     let tick_labels: Vec<String> = channels
         .iter()
         .enumerate()
@@ -61,16 +61,18 @@ fn write_auc_boxplot(
         })
         .collect();
 
-    let mut boxes = Boxplot::new();
-    boxes.draw(&grouped_values.to_vec());
+    let figure = default_figure_builder()
+        .panel(GridPos::new(1, 1, 1), |p| {
+            p.boxplot(grouped_values, BoxplotStyle::new()).axes(
+                AxesStyle::new()
+                    .x_label(boxplot_x_axis_label(labels))
+                    .y_label("AUC")
+                    .y_scale(Scale::Log)
+                    .x_tick_labels(&ticks, &tick_labels),
+            );
+        })
+        .build()
+        .map_err(|error| error.to_string())?;
 
-    let mut plot = Plot::new();
-    configure_plot(&mut plot);
-    plot.set_log_y(true)
-        .add(&boxes)
-        .set_label_x(boxplot_x_axis_label(labels))
-        .set_label_y("AUC")
-        .set_ticks_x_labels(&ticks, &tick_labels);
-
-    save_plot(&plot, output_plot)
+    save_figure(&figure, output_plot)
 }

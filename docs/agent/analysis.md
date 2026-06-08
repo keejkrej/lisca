@@ -1,6 +1,6 @@
 # Studio analysis (Rust)
 
-Native analysis pipeline in `crates/lisca/src/analysis/`. Ports the reference algorithms from the sibling [`transfection`](../../transfection) Python package. Numeric stages (segment, timeseries, AUC, fit) run in Rust; PNG plots use **plotpy** (matplotlib via a bundled or system Python interpreter).
+Native analysis pipeline in `crates/lisca/src/analysis/`. Ports the reference algorithms from the sibling [`transfection`](../../transfection) Python package. Numeric stages (segment, timeseries, AUC, fit) and PNG plots run in Rust via [**mplot-rs**](https://github.com/keejkrej/mplot-rs).
 
 ## Pipeline
 
@@ -44,19 +44,12 @@ Studio results UI reads CSVs for interactive charts; PNG filenames match transfe
 | `auc.rs` | `services/auc.py` |
 | `fit.rs` | `services/fit.py` |
 | `export.rs` | `core/export.py` (parallel `.xlsx` sidecars) |
-| `plot/` | `services/plot_*.py` via plotpy/matplotlib |
+| `plot/` | `services/plot_*.py` via mplot-rs |
 | `pipeline.rs` | orchestration |
 
-## Plot runtime (Electron)
+## Plot runtime
 
-Plotpy invokes Python 3 + matplotlib. No separate transfection install is required.
-
-| Context | Python resolution |
-| --- | --- |
-| Packaged Electron app | `LISCA_PYTHON` → `resources/python/bin/python3` (or `python.exe` on Windows) when bundled |
-| Development | `LISCA_PYTHON` env var, else `python3` on `PATH` |
-
-Packaging must ship a standalone Python with matplotlib (and numpy) under `resources/python/`. Figure layout constants match transfection (`12×8` in, log-scale AUC boxplot, fluor trace colors, etc.).
+Plots render natively in Rust (no Python sidecar). Figure layout constants match transfection (`12×8` in, log-scale AUC boxplot, fluor trace colors, etc.).
 
 ## Parity expectations
 

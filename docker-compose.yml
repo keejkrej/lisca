@@ -22,7 +22,6 @@ services:
       HOST: 0.0.0.0
       PORT: 3000
       PUBLIC_PORT: 8765
-      LISCA_PYTHON: python3
       HOME: /data
       RUST_LOG: info
     volumes:
@@ -43,7 +42,6 @@ services:
       HOST: 0.0.0.0
       PORT: 3000
       PUBLIC_PORT: 8766
-      LISCA_PYTHON: python3
       HOME: /data
       RUST_LOG: info
     volumes:
@@ -64,7 +62,6 @@ services:
       HOST: 0.0.0.0
       PORT: 3000
       PUBLIC_PORT: 8767
-      LISCA_PYTHON: python3
       HOME: /data
       RUST_LOG: info
     volumes:

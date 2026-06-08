@@ -43,8 +43,6 @@ RUN apt-get update \
     ca-certificates \
     gettext-base \
     nginx \
-    python3 \
-    python3-matplotlib \
   && rm -rf /var/lib/apt/lists/*
 
 COPY docker/nginx.conf.template /etc/nginx/templates/default.conf.template
@@ -58,7 +56,6 @@ ENV PRODUCT=${PRODUCT} \
     PUBLIC_PORT=${PUBLIC_PORT} \
     HOST=0.0.0.0 \
     PORT=3000 \
-    LISCA_PYTHON=python3 \
     HOME=/data
 
 VOLUME ["/data"]

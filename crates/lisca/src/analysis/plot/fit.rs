@@ -1,12 +1,12 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-use plotpy::{Boxplot, Curve, Plot};
+use mplot::prelude::{AxesStyle, BoxplotStyle, GridPos, Scale};
 
 use super::super::auc::{discover_timeseries_csvs, parse_slide_channel};
 use super::super::csv_io::{column_index, parse_f64, read_csv};
 use super::super::slide::SlideMapping;
-use super::plotpy_config::{configure_plot, save_plot};
+use super::mplot_config::{default_figure_builder, save_figure, trace_line_style};
 use super::util::{
     boxplot_tick_label, boxplot_x_axis_label, grid_dimensions, percentile_ylim,
     quartile_axis_upper, slide_channel_labels, subplot_title, trace_color_alpha,
@@ -163,7 +163,7 @@ fn write_fit_boxplot(
         .iter()
         .map(|channel| grouped.get(channel).cloned().unwrap_or_default())
         .collect();
-    let ticks: Vec<f64> = (1..=channels.len()).map(|index| index as f64).collect();
+    let ticks: Vec<i32> = (1..=channels.len()).map(|index| index as i32).collect();
     let tick_labels: Vec<String> = channels
         .iter()
         .enumerate()
@@ -171,24 +171,27 @@ fn write_fit_boxplot(
             boxplot_tick_label(*channel, grouped_values[index].len(), labels)
         })
         .collect();
+    let y_upper = quartile_axis_upper(&grouped_values);
+    let x_label = boxplot_x_axis_label(labels).to_string();
+    let ylabel = ylabel.to_string();
 
-    let mut boxes = Boxplot::new();
-    boxes.draw(&grouped_values);
+    let figure = default_figure_builder()
+        .panel(GridPos::new(1, 1, 1), move |p| {
+            let mut axes = AxesStyle::new()
+                .x_label(x_label)
+                .y_label(ylabel)
+                .x_tick_labels(&ticks, &tick_labels);
+            if use_log_scale {
+                axes = axes.y_scale(Scale::Log);
+            } else {
+                axes = axes.y_range(0.0, y_upper);
+            }
+            p.boxplot(&grouped_values, BoxplotStyle::new()).axes(axes);
+        })
+        .build()
+        .map_err(|error| error.to_string())?;
 
-    let mut plot = Plot::new();
-    configure_plot(&mut plot);
-    if use_log_scale {
-        plot.set_log_y(true);
-    }
-    plot.add(&boxes)
-        .set_label_x(boxplot_x_axis_label(labels))
-        .set_label_y(ylabel)
-        .set_ticks_x_labels(&ticks, &tick_labels);
-    if !use_log_scale {
-        plot.set_yrange(0.0, quartile_axis_upper(&grouped_values));
-    }
-
-    save_plot(&plot, output_plot)
+    save_figure(&figure, output_plot)
 }
 
 fn write_fitted_trace_grid(
@@ -206,8 +209,7 @@ fn write_fitted_trace_grid(
         .collect();
 
     let (rows, cols) = grid_dimensions(timeseries_csvs.len(), columns);
-    let mut plot = Plot::new();
-    configure_plot(&mut plot);
+    let mut builder = default_figure_builder();
     let mut plotted_trace_count = 0usize;
 
     for (index, csv_path) in timeseries_csvs.iter().enumerate() {
@@ -241,8 +243,8 @@ fn write_fitted_trace_grid(
             * interval;
         let (color, alpha) = trace_color_alpha(&trace_naming_haystack(csv_path, labels));
         let mut matched_traces = 0usize;
+        let mut series: Vec<(Vec<f64>, Vec<f64>)> = Vec::new();
 
-        plot.set_subplot(rows, cols, index + 1);
         for ((pos, roi), mut trace) in groups {
             let Some(fit_row) = fit_lookup.get(&(slide_channel, pos, roi)) else {
                 continue;
@@ -257,32 +259,39 @@ fn write_fitted_trace_grid(
                 .iter()
                 .map(|(t, _)| fitted_trace_value(*t * interval, fit_row))
                 .collect();
-            let mut curve = Curve::new();
-            curve
-                .set_line_color(color)
-                .set_line_alpha(alpha)
-                .set_line_width(1.0)
-                .draw(&x, &y);
-            plot.add(&curve);
+            series.push((x, y));
             matched_traces += 1;
             plotted_trace_count += 1;
         }
 
-        plot.set_title(&subplot_title(csv_path, matched_traces, labels))
-            .set_labels("minutes", "corrected intensity")
-            .set_yrange(y_low, y_high)
-            .set_xrange(0.0, max_t.max(interval));
+        let title = subplot_title(csv_path, matched_traces, labels);
+        builder = builder.panel(GridPos::new(rows, cols, index + 1), move |p| {
+            for (x, y) in &series {
+                p.line(x, y, trace_line_style(color, alpha));
+            }
+            p.axes(
+                AxesStyle::new()
+                    .title(title)
+                    .x_label("minutes")
+                    .y_label("corrected intensity")
+                    .y_range(y_low, y_high)
+                    .x_range(0.0, max_t.max(interval)),
+            );
+        });
     }
 
     for index in timeseries_csvs.len()..(rows * cols) {
-        plot.set_subplot(rows, cols, index + 1).set_hide_axes(true);
+        builder = builder.panel(GridPos::new(rows, cols, index + 1), |p| {
+            p.axes(AxesStyle::new().hide(true));
+        });
     }
 
     if plotted_trace_count == 0 {
         return Err("No successful fit rows matched the inferred timeseries CSVs".to_string());
     }
 
-    save_plot(&plot, output_plot)
+    let figure = builder.build().map_err(|error| error.to_string())?;
+    save_figure(&figure, output_plot)
 }
 
 fn fitted_trace_value(time_minutes: f64, row: &FitPlotRow) -> f64 {

@@ -1,12 +1,12 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-use plotpy::{Curve, Plot};
+use mplot::prelude::{AxesStyle, GridPos};
 
 use super::super::auc::discover_timeseries_csvs;
 use super::super::csv_io::{column_index, parse_f64, read_csv};
 use super::super::slide::SlideMapping;
-use super::plotpy_config::{configure_plot, save_plot};
+use super::mplot_config::{default_figure_builder, save_figure, trace_line_style};
 use super::util::{
     expand_degenerate_ylim, grid_dimensions, percentile_ylim, slide_channel_labels,
     subplot_title, trace_color_alpha, trace_naming_haystack,
@@ -177,8 +177,7 @@ fn write_subplot_grid(
     ylim_for_panel: impl Fn(usize) -> (f64, f64),
 ) -> Result<(), String> {
     let (rows, cols) = grid_dimensions(panels.len(), columns);
-    let mut plot = Plot::new();
-    configure_plot(&mut plot);
+    let mut builder = default_figure_builder();
 
     for (index, panel) in panels.iter().enumerate() {
         let (y_low, y_high) = ylim_for_panel(index);
@@ -189,28 +188,33 @@ fn write_subplot_grid(
             .fold(0.0f64, f64::max)
             * interval;
         let (color, alpha) = trace_color_alpha(&trace_naming_haystack(&panel.path, labels));
+        let title = subplot_title(&panel.path, panel.traces.len(), labels);
+        let traces = panel.traces.clone();
+        let y_label = y_label.to_string();
 
-        plot.set_subplot(rows, cols, index + 1);
-        for trace in &panel.traces {
-            let x: Vec<f64> = trace.iter().map(|(t, _)| t * interval).collect();
-            let y: Vec<f64> = trace.iter().map(|(_, value)| *value).collect();
-            let mut curve = Curve::new();
-            curve
-                .set_line_color(color)
-                .set_line_alpha(alpha)
-                .set_line_width(1.0)
-                .draw(&x, &y);
-            plot.add(&curve);
-        }
-        plot.set_title(&subplot_title(&panel.path, panel.traces.len(), labels))
-            .set_labels("minutes", y_label)
-            .set_yrange(y_low, y_high)
-            .set_xrange(0.0, max_t.max(interval));
+        builder = builder.panel(GridPos::new(rows, cols, index + 1), move |p| {
+            for trace in &traces {
+                let x: Vec<f64> = trace.iter().map(|(t, _)| t * interval).collect();
+                let y: Vec<f64> = trace.iter().map(|(_, value)| *value).collect();
+                p.line(&x, &y, trace_line_style(color, alpha));
+            }
+            p.axes(
+                AxesStyle::new()
+                    .title(title)
+                    .x_label("minutes")
+                    .y_label(y_label)
+                    .y_range(y_low, y_high)
+                    .x_range(0.0, max_t.max(interval)),
+            );
+        });
     }
 
     for index in panels.len()..(rows * cols) {
-        plot.set_subplot(rows, cols, index + 1).set_hide_axes(true);
+        builder = builder.panel(GridPos::new(rows, cols, index + 1), |p| {
+            p.axes(AxesStyle::new().hide(true));
+        });
     }
 
-    save_plot(&plot, output_plot)
+    let figure = builder.build().map_err(|error| error.to_string())?;
+    save_figure(&figure, output_plot)
 }

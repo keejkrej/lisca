@@ -1,6 +1,6 @@
 mod auc;
 mod fit;
-mod plotpy_config;
+mod mplot_config;
 mod timeseries;
 mod util;
 
