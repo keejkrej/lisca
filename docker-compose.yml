@@ -4,6 +4,10 @@
 # Profiles: `.env` sets COMPOSE_PROFILES=all so `docker compose up --build` starts every app.
 # Single app: COMPOSE_PROFILES=studio docker compose up --build
 #
+# Build cache: Dockerfile uses BuildKit cache mounts (bun, turbo, cargo) and turbo prune /
+# cargo-chef dependency layers. Requires BuildKit (default in Docker 23+). Rebuilds after
+# source edits reuse registry/target/vite caches; avoid `--no-cache` unless debugging images.
+#
 # In the UI, pick workspace paths like /workspace/<your-run-folder> and sources under /source/.
 
 x-lisca-env: &lisca-env

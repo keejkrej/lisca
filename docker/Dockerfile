@@ -2,35 +2,60 @@
 
 ARG PRODUCT=aligner
 
+# --- Web: pruned install layer + cached turbo/vite build ---
+FROM oven/bun:1.3.14 AS web-prune
+ARG PRODUCT
+
+WORKDIR /app
+COPY . .
+RUN bunx turbo prune @lisca/${PRODUCT}-web --docker
+
 FROM oven/bun:1.3.14 AS web-build
 ARG PRODUCT
 
 WORKDIR /app
 
-COPY package.json bun.lock turbo.json tsconfig.base.json ./
-COPY apps ./apps
-COPY packages ./packages
-COPY assets ./assets
-COPY scripts/install-electron.mjs ./scripts/install-electron.mjs
+COPY --from=web-prune /app/out/json/ .
+RUN --mount=type=cache,target=/root/.bun/install/cache,id=lisca-bun-cache \
+    bun install --frozen-lockfile --ignore-scripts
 
-RUN bun install --frozen-lockfile --ignore-scripts
+COPY --from=web-prune /app/out/full/ .
+RUN --mount=type=cache,target=/root/.bun/install/cache,id=lisca-bun-cache \
+    --mount=type=cache,target=/app/.turbo,id=lisca-turbo-cache,sharing=locked \
+    --mount=type=cache,target=/app/node_modules/.cache,id=lisca-node-cache,sharing=locked \
+    bun x turbo run build --filter=@lisca/${PRODUCT}-web...
 
-RUN bun x turbo run build --filter=@lisca/${PRODUCT}-web...
-
-FROM rust:1-bookworm AS rust-build
-ARG PRODUCT
-
+# --- Rust: cargo-chef dep layer + cached target ---
+FROM rust:1-bookworm AS chef
+RUN cargo install cargo-chef --locked
 WORKDIR /app
+
+FROM chef AS rust-planner
+COPY Cargo.toml Cargo.lock ./
+COPY crates ./crates
+COPY apps ./apps
+RUN cargo chef prepare --recipe-path recipe.json
+
+FROM chef AS rust-build
+ARG PRODUCT
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends pkg-config libssl-dev \
   && rm -rf /var/lib/apt/lists/*
 
+COPY --from=rust-planner /app/recipe.json recipe.json
+RUN --mount=type=cache,target=/usr/local/cargo/registry,id=lisca-cargo-registry \
+    --mount=type=cache,target=/usr/local/cargo/git,id=lisca-cargo-git \
+    --mount=type=cache,target=/app/target,id=lisca-cargo-target,sharing=locked \
+    cargo chef cook --release --recipe-path recipe.json
+
 COPY Cargo.toml Cargo.lock ./
 COPY crates ./crates
 COPY apps ./apps
-
-RUN cargo build --release -p ${PRODUCT}-server
+RUN --mount=type=cache,target=/usr/local/cargo/registry,id=lisca-cargo-registry \
+    --mount=type=cache,target=/usr/local/cargo/git,id=lisca-cargo-git \
+    --mount=type=cache,target=/app/target,id=lisca-cargo-target,sharing=locked \
+    cargo build --release -p ${PRODUCT}-server
 
 FROM debian:bookworm-slim AS runtime
 ARG PRODUCT

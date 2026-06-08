@@ -1,6 +1,7 @@
 .git
 .github
 .turbo
+out
 **/node_modules
 **/dist
 **/release
