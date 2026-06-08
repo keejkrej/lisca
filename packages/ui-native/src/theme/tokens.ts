@@ -25,24 +25,11 @@ export const shellThemeColors = {
     border: "#e5e5e5",
     input: "#e0e0e0",
     ring: "#a3a3a3",
-    /** Legacy alias — AppShell regions use `background` */
-    railChrome: "#ffffff",
-    /** `bg-muted/20` read-only path chips (save section paths, etc.) */
-    inset: "#fdfdfd",
-    /** `bg-muted/30` stat tiles (included/excluded cells, etc.) */
-    stat: "#fcfcfc",
-    /** `bg-muted/20` viewport outer padding band */
-    viewportChrome: "#fdfdfd",
     /** Outline buttons — web `bg-popover` light / `dark:bg-input/32` */
     outlineSurface: "#ffffff",
     /** Text inputs, inactive toggles on card — web `bg-background` light / `dark:bg-input/32` */
     controlSurface: "#ffffff",
-    /** Histogram tray — web `bg-background/50` */
-    histogramSurface: "#fafafa",
     success: "#22c55e",
-    /** Alias for card — dock sections, viewport inner frame */
-    panel: "#ffffff",
-    canvasBackground: "#ffffff",
   },
   dark: {
     background: "#0a0a0a",
@@ -64,17 +51,10 @@ export const shellThemeColors = {
     border: "#262626",
     input: "#2e2e2e",
     ring: "#737373",
-    railChrome: "#0a0a0a",
-    inset: "#0d0d0d",
-    stat: "#0f0f0f",
-    viewportChrome: "#0c0c0c",
     /** Outline buttons — web `dark:bg-input/32` (lighter than canvas background) */
     outlineSurface: "#151515",
     controlSurface: "#151515",
-    histogramSurface: "#0d0d0d",
     success: "#22c55e",
-    panel: "#111111",
-    canvasBackground: "#0a0a0a",
   },
 } as const;
 

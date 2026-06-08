@@ -277,7 +277,7 @@ export function ReadonlyPathField(props: { value: string; style?: object }) {
     <View
       style={[
         pathStyles.root,
-        { borderColor: colors.border, backgroundColor: colors.inset },
+        { borderColor: colors.border, backgroundColor: colors.muted },
         props.style,
       ]}
     >

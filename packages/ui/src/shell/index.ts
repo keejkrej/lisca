@@ -26,10 +26,10 @@ export {
 } from "./dock-tool-shortcuts";
 export { ModalScrim } from "./modal-scrim";
 export { Panel, PanelContent, PanelDescription, PanelHeader, PanelTitle } from "./panel";
+export { StatTile } from "./stat-tile";
 export { ReadonlyPathField } from "./readonly-path-field";
 export { Section, type SectionProps } from "./section";
 export { ViewportCard } from "./viewport-card";
 export { RouteLoadingFallback } from "./route-loading-fallback";
-export { surfacePanelClass } from "../lib/surface";
 export { ShellServerProvider, useShellServer, type ShellServer } from "../state/shell-server";
 export { ShellWorkspaceProvider, useShellWorkspace, type ShellWorkspace } from "../state/workspace";

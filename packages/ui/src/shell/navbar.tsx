@@ -71,7 +71,7 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
         ) : props.routeItems.length > 1 ? (
           <div className="min-w-0 justify-self-start">
             <ToggleGroup
-              className="flex-nowrap gap-1 rounded-xl border border-border bg-muted/35 p-1"
+              className="flex-nowrap gap-1 rounded-xl border border-border bg-background p-1"
               multiple={false}
               size="sm"
               value={[props.routeValue]}

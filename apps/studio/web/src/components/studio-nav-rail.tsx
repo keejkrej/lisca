@@ -1,8 +1,7 @@
-import { cn } from "@lisca/ui/components";
 import {
   ConnectionStatus,
+  Panel,
   ShellThemeToggle,
-  surfacePanelClass,
   useShellServer,
 } from "@lisca/ui/shell";
 import { useRouterState } from "@tanstack/react-router";
@@ -20,7 +19,7 @@ export function StudioNavRail() {
       className="flex h-full min-h-0 flex-col items-stretch gap-2.5 p-2.5"
     >
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
-        <div className={cn("w-full shrink-0", surfacePanelClass)}>
+        <Panel className="w-full shrink-0">
           <div className="flex flex-col items-center gap-6 p-3">
             <NavButton active={routeId === "assay"} to="/assay">
               Choose assay
@@ -38,7 +37,7 @@ export function StudioNavRail() {
               View results
             </NavButton>
           </div>
-        </div>
+        </Panel>
       </div>
       <div className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center">
         <div />

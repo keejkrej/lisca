@@ -170,7 +170,7 @@ export function AlignCanvas({
 
   return (
     <View
-      style={[styles.root, { backgroundColor: colors.canvasBackground }]}
+      style={[styles.root, { backgroundColor: colors.background }]}
       onLayout={(event) => {
         const { width, height, x, y } = event.nativeEvent.layout;
         setLayout({ width: Math.max(1, width), height: Math.max(1, height) });
@@ -180,7 +180,7 @@ export function AlignCanvas({
       <GestureDetector gesture={pan}>
         <View style={styles.canvasWrap}>
           <Canvas ref={canvasRef} style={styles.canvas}>
-            <Rect x={0} y={0} width={layout.width} height={layout.height} color={colors.canvasBackground} />
+            <Rect x={0} y={0} width={layout.width} height={layout.height} color={colors.background} />
             {skImage && frameLayout ? (
               <Group>
                 <Image

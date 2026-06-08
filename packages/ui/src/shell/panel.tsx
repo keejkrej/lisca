@@ -1,12 +1,15 @@
 import type { ComponentProps } from "react";
 
-import { surfacePanelClass } from "../lib/surface";
 import { cn } from "../lib/utils";
+
+/** Bordered in-app frame (dock, viewport, nav rail). Shell-internal; use Panel/ViewportCard in apps. */
+export const panelFrameClass =
+  "rounded-xl border border-border bg-background text-foreground shadow-none";
 
 export function Panel({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
-      className={cn("relative flex flex-col", surfacePanelClass, className)}
+      className={cn("relative flex flex-col", panelFrameClass, className)}
       data-slot="panel"
       {...props}
     />

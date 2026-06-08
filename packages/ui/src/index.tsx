@@ -73,7 +73,6 @@ export {
 } from "./components/ui";
 
 export { cn } from "./lib/utils";
-export { surfacePanelClass } from "./lib/surface";
 
 export { AppShell, type AppShellCompound, ShellDock, ShellSidebar } from "./shell/shell";
 
@@ -118,6 +117,7 @@ export {
 } from "./shell/dock-tool-shortcuts";
 export { ModalScrim } from "./shell/modal-scrim";
 export { Panel, PanelContent, PanelDescription, PanelHeader, PanelTitle } from "./shell/panel";
+export { StatTile } from "./shell/stat-tile";
 export { ReadonlyPathField } from "./shell/readonly-path-field";
 export { Section, type SectionProps } from "./shell/section";
 export { ViewportCard } from "./shell/viewport-card";

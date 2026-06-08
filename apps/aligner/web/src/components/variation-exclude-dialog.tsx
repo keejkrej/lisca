@@ -1,5 +1,5 @@
 import { Button, cn, Input, Slider } from "@lisca/ui/components";
-import { DialogSurface, ModalScrim } from "@lisca/ui/shell";;
+import { DialogSurface, ModalScrim, StatTile } from "@lisca/ui/shell";
 import { useMemo } from "react";
 
 import type { VariationExcludePreview } from "../state/use-align-state";
@@ -59,20 +59,16 @@ export function VariationExcludeDialog({
 
         <div className="flex flex-col gap-4 px-5 py-4">
           <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-md border border-border bg-muted/30 px-2 py-2">
-              <div className="text-muted-foreground text-xs">Eligible cells</div>
-              <div className="mt-1 font-medium tabular-nums">{preview.eligibleCellCount}</div>
-            </div>
-            <div className="rounded-md border border-border bg-muted/30 px-2 py-2">
-              <div className="text-muted-foreground text-xs">Selected cells</div>
-              <div className="mt-1 font-medium tabular-nums">{selectedCount}</div>
-            </div>
-            <div className="rounded-md border border-border bg-muted/30 px-2 py-2">
-              <div className="text-muted-foreground text-xs">Score range</div>
-              <div className="mt-1 font-medium text-xs tabular-nums">
-                {formatScore(preview.scoreMin)} - {formatScore(preview.scoreMax)}
-              </div>
-            </div>
+            <StatTile label="Eligible cells" value={preview.eligibleCellCount} />
+            <StatTile label="Selected cells" value={selectedCount} />
+            <StatTile
+              label="Score range"
+              value={
+                <span className="text-xs">
+                  {formatScore(preview.scoreMin)} - {formatScore(preview.scoreMax)}
+                </span>
+              }
+            />
           </div>
 
           <div

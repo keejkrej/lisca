@@ -78,14 +78,14 @@ export function AnnotationCanvas({
 
   return (
     <View
-      style={[styles.root, { backgroundColor: colors.canvasBackground }]}
+      style={[styles.root, { backgroundColor: colors.background }]}
       onLayout={(event) => {
         const { width, height } = event.nativeEvent.layout;
         setLayout({ width: Math.max(1, width), height: Math.max(1, height) });
       }}
     >
       <Canvas style={styles.canvas}>
-        <Rect x={0} y={0} width={layout.width} height={layout.height} color={colors.canvasBackground} />
+        <Rect x={0} y={0} width={layout.width} height={layout.height} color={colors.background} />
         {skImage && frameLayout ? (
           <Group>
             <Image
