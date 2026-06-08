@@ -20,10 +20,13 @@ Compose apps from shell primitives, not exported class strings:
 | `AppShell` | Root layout; all regions use `bg-background` |
 | `Panel` | Bordered in-app frame (dock, nav rail, sidebar cards) |
 | `ViewportCard` | Padded main column; inner frame matches `Panel` |
-| `Section` | Collapsible dock section inside a `Panel` |
+| `Section` | Collapsible in-app section inside a `Panel` (sidebars, etc.) |
+| `DockSection` | Dock panel section — stretch chrome + centered content; optional `layout` wraps children in `DockGrid` |
+| `DockStrip` | Outer dock band — `panels={2}` (aligner, annotator) or `panels={3}` (studio) |
+| `DockGrid` | Inner grid — `layout="2x1" \| "2x2" \| "2x3"`; add `centered` for compact studio actions |
+| `StudioDock` | Studio instruction / tool / action strip (uses `DockStrip` + `DockSection`) |
 | `DialogSurface` / `ModalScrim` | Modal chrome |
 | `StatTile` | Count/metric tile: `border border-border bg-background` |
-| `dockLayout2Class` / `dockToolGridClass` / `dockSaveGrid3Class` | Dock layout + flat section content grids |
 
 Frame styling lives inside `panel.tsx` (`panelFrameClass`); not exported from the package.
 
@@ -31,10 +34,10 @@ Frame styling lives inside `panel.tsx` (`panelFrameClass`); not exported from th
 
 Use **grid** for dock strips and section content. **Section panels stretch** to fill the dock band (`items-stretch`, `dockSectionClass` includes `h-full`); inner tool/save grids and buttons stay content-sized.
 
-- **Strip:** `dockLayout2Class` (two panels) or `dockLayout3Class` (studio)
-- **Tool:** `dockToolGridClass` — `grid-cols-2 grid-rows-2`, children placed directly in `Section`
-- **Save:** `dockSaveGrid3Class` (align) or `dockSaveGrid2Class` (annotator) — paths then buttons in one flat grid
-- **Buttons:** natural `sm` height (`w-full justify-center` only). `DockButton` caps at `max-w-48`.
+- **Strip:** `<DockStrip panels={2}>` or `<DockStrip panels={3}>`
+- **Tool / save:** `<DockSection layout="2x2" title="Tool">` (or `2x1` / `2x3` for save)
+- **Studio:** `<StudioDock actionLayout="2x1" action={…} />` — action grid is centered automatically
+- **Buttons:** natural `sm` height (`w-full justify-center` in save/tool sections). `DockButton` caps at `max-w-48`.
 
 ## Rules
 

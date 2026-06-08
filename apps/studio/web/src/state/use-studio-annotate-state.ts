@@ -19,10 +19,10 @@ import {
 import { useCanvasResourceTransaction, useCanvasTransientStatus } from "@lisca/ui/features";
 import { Atom, Result, useAtom, useAtomValue } from "@effect-atom/atom-react";
 import { useCallback, useEffect, useMemo } from "react";
-import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 
 import { runClientEffect } from "@lisca/client/runtime";
-import { studioNavigateWithTransition } from "../navigation/use-studio-navigate";
+import { studioNavigate } from "../navigation/use-studio-navigate";
 import { studioClient, toErrorMessage } from "../api/studio-port";
 import { roiScanIdleAtom, roiWorkspaceScanAtom } from "../atoms/studio-query-atoms";
 import {
@@ -75,6 +75,7 @@ export type StudioAnnotateState = {
   analysisResultFiles: StudioAnalysisCsvFile[];
   request: RoiFrameRequest | null;
   frame: FrameResult | null;
+  contrast: ContrastWindow | null;
   contrastDomain: ContrastWindow;
   contrastMin: number;
   contrastMax: number;
@@ -92,7 +93,7 @@ export type StudioAnnotateState = {
   setAnalysisProgress: (progress: AnalysisProgress | null) => void;
   setAnalysisResultFiles: (files: StudioAnalysisCsvFile[]) => void;
   setSelection: (patch: Partial<StudioAnnotateState["selection"]>) => void;
-  setContrast: (contrast: ContrastWindow) => void;
+  setContrast: (contrast: ContrastWindow | null) => void;
   startAnalysis: () => void;
   setAnalysisStartConfirm: (value: boolean) => void;
   shuffleSelection: () => void;
@@ -108,11 +109,11 @@ export function useStudioAnnotateState(): StudioAnnotateState {
   const setBasicInfoSavedSnapshot = useStudioStore((state) => state.setBasicInfoSavedSnapshot);
   const activeWorkspacePath = saveTo.trim() || null;
   const navigate = useNavigate();
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const {
     workspacePath,
     selection,
     frame,
+    contrast,
     contrastDomain,
     contrastMin,
     contrastMax,
@@ -204,6 +205,7 @@ export function useStudioAnnotateState(): StudioAnnotateState {
 
     return loadCanvasResources({
       start: () => {
+        setContrast(null);
         setFrameLoading(true);
         setFrameError(null);
         setStatus("Loading ROI frame");
@@ -226,10 +228,48 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     activeWorkspacePath,
     loadCanvasResources,
     request,
+    setContrast,
     setContrastState,
     setFrameError,
     setFrameLoading,
     setStatus,
+    setUi,
+    workspacePath,
+  ]);
+
+  useEffect(() => {
+    if (!contrast || !workspacePath || workspacePath !== activeWorkspacePath || !request) {
+      return;
+    }
+
+    return loadCanvasResources({
+      start: () => {
+        setFrameLoading(true);
+        setFrameError(null);
+      },
+      load: (signal) =>
+        runClientEffect(
+          studioClient.loadRoiFrame(workspacePath, request, contrast, signal),
+          { signal },
+        ),
+      commit: (nextFrame) => {
+        studioAnnotateUiActions.setFrame(setUi, nextFrame);
+        setContrastState(nextFrame);
+      },
+      reject: (cause) => {
+        if (isAbortError(cause)) return;
+        setFrameError(toErrorMessage(cause, "ROI frame contrast update failed"));
+      },
+      settle: () => setFrameLoading(false),
+    });
+  }, [
+    activeWorkspacePath,
+    contrast,
+    loadCanvasResources,
+    request,
+    setContrastState,
+    setFrameError,
+    setFrameLoading,
     setUi,
     workspacePath,
   ]);
@@ -298,7 +338,7 @@ export function useStudioAnnotateState(): StudioAnnotateState {
         stop?.();
         stop = null;
         setStatus("Analysis completed");
-        studioNavigateWithTransition(navigate, pathname, "/result");
+        studioNavigate(navigate, "/result");
       }
       if (progress.status === "error") {
         stop?.();
@@ -368,7 +408,6 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     info2,
     info3,
     navigate,
-    pathname,
     setAnalysisProgress,
     setAnalysisRequestId,
     setAnalysisResultFiles,
@@ -389,6 +428,7 @@ export function useStudioAnnotateState(): StudioAnnotateState {
       position,
       request,
       frame,
+      contrast,
       contrastDomain,
       contrastMin,
       contrastMax,
@@ -411,6 +451,7 @@ export function useStudioAnnotateState(): StudioAnnotateState {
       analysisResultFiles,
       analysisStartConfirm,
       changeSelection,
+      contrast,
       contrastDomain,
       contrastMax,
       contrastMin,

@@ -200,17 +200,21 @@ export const studioAnnotateUiActions = {
     patchStudioAnnotateUi(set, (state) => ({
       ...state,
       contrast,
-      contrastMin: contrast?.min ?? state.contrastMin,
-      contrastMax: contrast?.max ?? state.contrastMax,
+      contrastMin: contrast?.min ?? state.contrastDomain.min,
+      contrastMax: contrast?.max ?? state.contrastDomain.max,
     }));
   },
   setContrastState(set: (update: StateUpdater<StudioAnnotateStoreState>) => void, frame: FrameResult) {
-    patchStudioAnnotateUi(set, (state) => ({
-      ...state,
-      contrastDomain: frame.contrastDomain ?? defaultContrastDomain,
-      contrastMin: frame.appliedContrast?.min ?? state.contrastMin,
-      contrastMax: frame.appliedContrast?.max ?? state.contrastMax,
-    }));
+    patchStudioAnnotateUi(set, (state) => {
+      const domain = frame.contrastDomain ?? defaultContrastDomain;
+      const autoContrast = frame.appliedContrast ?? frame.suggestedContrast ?? domain;
+      return {
+        ...state,
+        contrastDomain: domain,
+        contrastMin: state.contrast?.min ?? autoContrast.min,
+        contrastMax: state.contrast?.max ?? autoContrast.max,
+      };
+    });
   },
   setFrameLoading(set: (update: StateUpdater<StudioAnnotateStoreState>) => void, frameLoading: boolean) {
     patchStudioAnnotateUi(set, (state) => ({ ...state, frameLoading }));

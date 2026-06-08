@@ -1,5 +1,5 @@
 import { Button } from "@lisca/ui/components";
-import { dockSaveGrid3Class, dockSectionClass, ReadonlyPathField, Section } from "@lisca/ui/shell";
+import { DockSection, ReadonlyPathField } from "@lisca/ui/shell";
 
 import { useAlignCrop, useAlignNav } from "../state/align-page-selectors";
 
@@ -11,7 +11,7 @@ export function AlignSaveSection() {
   const canCrop = Boolean(nav.workspacePath && nav.source && nav.frame && !crop.cropping);
 
   return (
-    <Section className={dockSectionClass} contentClassName={dockSaveGrid3Class} title="Save">
+    <DockSection layout="2x3" title="Save">
       <ReadonlyPathField
         aria-label={`Output path bbox/Pos${pos}.csv`}
         value={`bbox/Pos${pos}.csv`}
@@ -56,6 +56,6 @@ export function AlignSaveSection() {
       >
         Batch
       </Button>
-    </Section>
+    </DockSection>
   );
 }

@@ -13,9 +13,9 @@ import type { AlignGridToolMode } from "@lisca/utils";
 
 import { Button } from "../components/ui/button";
 import { cn } from "../lib/utils";
-import { dockToolGridClass } from "../shell/dock-layout";
+import { DockGrid } from "../shell/dock-grid";
+import { DockSection } from "../shell/dock-section";
 import { dockToolLabel, useDockToolShortcuts, type DockToolAction } from "../shell/dock-tool-shortcuts";
-import { Section } from "../shell/section";
 
 export type AlignToolsProps = {
   mode: AlignGridToolMode;
@@ -155,13 +155,9 @@ export function AlignTools({
   );
 
   const toolbar = (
-    <div
-      aria-label="Align canvas tool"
-      className={dockToolGridClass}
-      role="toolbar"
-    >
+    <DockGrid aria-label="Align canvas tool" layout="2x2" role="toolbar">
       {toolbarCells}
-    </div>
+    </DockGrid>
   );
 
   if (bare) {
@@ -169,13 +165,15 @@ export function AlignTools({
   }
 
   return (
-    <Section
+    <DockSection
       className={sectionClassName}
-      contentClassName={sectionContentClassName ?? dockToolGridClass}
+      contentClassName={sectionContentClassName}
       description={sectionDescription}
+      layout="2x2"
+      gridProps={{ "aria-label": "Align canvas tool", role: "toolbar" }}
       title={sectionTitle}
     >
       {toolbarCells}
-    </Section>
+    </DockSection>
   );
 }

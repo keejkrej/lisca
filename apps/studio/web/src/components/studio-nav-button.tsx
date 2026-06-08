@@ -1,8 +1,8 @@
 import { buttonVariants, cn } from "@lisca/ui/components";
-import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
-import { studioNavigateWithTransition, type StudioRouteTo } from "../navigation/use-studio-navigate";
+import { studioNavigate, type StudioRouteTo } from "../navigation/use-studio-navigate";
 
 const navButtonClass =
   "h-auto w-auto min-w-0 max-w-full shrink-0 rounded-lg px-5 py-2.5 text-xl font-medium";
@@ -19,7 +19,6 @@ export function NavButton({
   onClick?: () => void;
 }) {
   const navigate = useNavigate();
-  const pathname = useRouterState({ select: (state) => state.location.pathname }) ?? "/assay";
 
   return (
     <Link
@@ -37,7 +36,7 @@ export function NavButton({
           return;
         }
         event.preventDefault();
-        studioNavigateWithTransition(navigate, pathname, to);
+        studioNavigate(navigate, to);
       }}
     >
       {children}

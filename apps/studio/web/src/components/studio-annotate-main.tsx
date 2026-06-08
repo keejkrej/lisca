@@ -3,7 +3,6 @@ import { ViewportCard } from "@lisca/ui/shell";
 import { useMemo } from "react";
 
 import { useStudioAnnotatePage } from "../state/studio-annotate-page-context";
-import { StudioCanvasTransition } from "./studio-canvas-transition";
 import { StudioAnalysisProgressModal } from "./studio-analysis-progress-modal";
 import { StudioAnalysisStartModal } from "./studio-analysis-start-modal";
 
@@ -28,11 +27,6 @@ export function StudioAnnotateMain() {
   return (
     <>
       <ViewportCard className="relative">
-        <StudioCanvasTransition
-          transitionName={
-            state.workspacePath ? `studio-frame-${state.workspacePath}` : null
-          }
-        >
         <AnnotationCanvas
           activeLabelId={null}
           brushSize={1}
@@ -46,7 +40,6 @@ export function StudioAnnotateMain() {
           tool="brush"
           onMaskCommit={() => undefined}
         />
-        </StudioCanvasTransition>
       </ViewportCard>
       <StudioAnalysisStartModal />
       <StudioAnalysisProgressModal />

@@ -18,18 +18,15 @@ export {
 } from "./shell-theme";
 export { DialogSurface, type DialogSurfaceMaxWidth } from "./dialog-surface";
 export { DockButton } from "./dock-button";
+export { dockSectionClass } from "./dock-layout";
+export { DockGrid, type DockGridLayout, type DockGridProps } from "./dock-grid";
 export {
-  dockGridClass,
-  dockLayout,
-  dockLayout2Class,
-  dockLayout3Class,
-  dockLayoutClass,
-  dockSaveGrid2Class,
-  dockSaveGrid3Class,
-  dockSection,
-  dockSectionClass,
-  dockToolGridClass,
-} from "./dock-layout";
+  DockSection,
+  dockSectionContentClass,
+  type DockSectionProps,
+} from "./dock-section";
+export { DockStrip } from "./dock-strip";
+export { StudioDock } from "./studio-dock";
 export { DockToolGrid, type DockToolGridProps } from "./dock-tool-grid";
 export {
   dockToolLabel,

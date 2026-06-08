@@ -12,6 +12,7 @@ export {
 } from "./align-canvas-handlers";
 export { AlignContrastRail } from "./align-contrast-rail";
 export { AnnotatorContrastRail } from "./annotator-contrast-rail";
+export { StudioContrastRail } from "./studio-contrast-rail";
 export { AlignGrid, type AlignGridProps } from "./align-grid";
 export { AlignGridRail } from "./align-grid-rail";
 export { AlignSelectionCounts } from "./align-selection-counts";

@@ -1,5 +1,5 @@
 import { Button } from "@lisca/ui/components";
-import { dockSaveGrid2Class, dockSectionClass, ReadonlyPathField, Section } from "@lisca/ui/shell";
+import { DockSection, ReadonlyPathField } from "@lisca/ui/shell";
 import { stemName } from "@lisca/browser-frame";
 
 import type { DemoAlignState } from "../state/use-demo-align-state";
@@ -9,7 +9,7 @@ export function DemoAlignSaveSection({ state }: { state: DemoAlignState }) {
   const canSave = Boolean(state.frame);
 
   return (
-    <Section className={dockSectionClass} contentClassName={dockSaveGrid2Class} title="Save">
+    <DockSection layout="2x2" title="Save">
       <ReadonlyPathField aria-label="Output bbox CSV" value={`${stem}.bbox.csv`} />
       <ReadonlyPathField aria-label="Output align JSON" value={`${stem}.align.json`} />
       <Button
@@ -23,6 +23,6 @@ export function DemoAlignSaveSection({ state }: { state: DemoAlignState }) {
       >
         Download
       </Button>
-    </Section>
+    </DockSection>
   );
 }

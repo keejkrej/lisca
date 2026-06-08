@@ -1,87 +1,9 @@
-import { AppShell, DockButton, RouteLoadingFallback } from "@lisca/ui/shell";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from '@tanstack/react-router'
 
-import { StudioAlignMain } from "../components/studio-align-main";
-import { StudioAlignTools } from "../components/studio-align-tools";
-import { StudioDock } from "../components/studio-dock";
-import { StudioLeft } from "../components/studio-left";
-import { StudioAlignPageProvider, useStudioAlignPage } from "../state/studio-align-page-context";
-import { instructionForStep } from "../state/studio-routes";
+export const Route = createFileRoute('/align')({
+  component: RouteComponent,
+})
 
-export const Route = createFileRoute("/align")({
-  component: AlignPage,
-  pendingComponent: RouteLoadingFallback,
-  pendingMs: 0,
-});
-
-function AlignPage() {
-  return (
-    <StudioAlignPageProvider>
-      <AlignPageContent />
-    </StudioAlignPageProvider>
-  );
-}
-
-function AlignPageContent() {
-  const { state } = useStudioAlignPage();
-
-  return (
-    <AppShell>
-      <AppShell.Body>
-        <AppShell.Left widthClass="w-60">
-          <StudioLeft />
-        </AppShell.Left>
-        <AppShell.MainColumn>
-          <AppShell.Main>
-            <StudioAlignMain />
-          </AppShell.Main>
-          <AppShell.Dock>
-            <StudioDock
-              instruction={instructionForStep("alignPattern")}
-              action={
-                <div className="flex w-full flex-col gap-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    <DockButton
-                      disabled={!state.frame || state.saving || state.cropping}
-                      onClick={state.resetCurrent}
-                    >
-                      Reset
-                    </DockButton>
-                    <DockButton
-                      disabled={
-                        !state.workspacePath ||
-                        state.alignPositions.length === 0 ||
-                        state.saving ||
-                        state.cropping ||
-                        state.findingFirstUnaligned
-                      }
-                      onClick={() => void state.goToFirstUnaligned()}
-                    >
-                      Jump
-                    </DockButton>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <DockButton
-                      disabled={!state.canGoBack || state.saving || state.cropping}
-                      onClick={state.goBack}
-                    >
-                      Back
-                    </DockButton>
-                    <DockButton
-                      disabled={!state.frame || state.saving || state.cropping}
-                      onClick={() => void state.saveAndAdvance()}
-                    >
-                      Next
-                    </DockButton>
-                  </div>
-                </div>
-              }
-              tool={<StudioAlignTools />}
-            />
-          </AppShell.Dock>
-        </AppShell.MainColumn>
-        <AppShell.Right widthClass="w-60" />
-      </AppShell.Body>
-    </AppShell>
-  );
+function RouteComponent() {
+  return <div>Hello "/align"!</div>
 }

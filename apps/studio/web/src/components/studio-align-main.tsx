@@ -7,7 +7,6 @@ import {
 import { ViewportCard } from "@lisca/ui/shell";
 import { useMemo } from "react";
 
-import { StudioCanvasTransition } from "./studio-canvas-transition";
 import { StudioCropConfirmModal } from "./studio-crop-confirm-modal";
 import { StudioCropProgressModal } from "./studio-crop-progress-modal";
 import { StudioCropStartModal } from "./studio-crop-start-modal";
@@ -48,11 +47,6 @@ export function StudioAlignMain() {
   return (
     <>
       <ViewportCard>
-        <StudioCanvasTransition
-          transitionName={
-            canvas.workspacePath ? `studio-frame-${canvas.workspacePath}` : null
-          }
-        >
         <AlignCanvas
           className="min-h-0 flex-1"
           cursor={cursorForAlignTool(canvas.toolMode, canvas.grid.enabled, previewGrid != null)}
@@ -68,7 +62,6 @@ export function StudioAlignMain() {
           onVirtualPointerMove={handlePointerMove}
           onVirtualPointerUp={handlePointerEnd}
         />
-        </StudioCanvasTransition>
       </ViewportCard>
       <StudioCropStartModal />
       <StudioCropConfirmModal />

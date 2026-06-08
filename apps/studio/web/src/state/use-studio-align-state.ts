@@ -23,12 +23,12 @@ import {
   type AlignGridToolMode,
 } from "@lisca/utils";
 import { Effect } from "effect";
-import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { studioClient, toErrorMessage } from "../api/studio-port";
-import { studioNavigateWithTransition } from "../navigation/use-studio-navigate";
+import { studioNavigate } from "../navigation/use-studio-navigate";
 import {
   autoExcludePreviewAtom,
   scanIdleAtom,
@@ -233,7 +233,6 @@ export function useStudioAlignState(): StudioAlignState {
   );
   const runAutoExcludePreview = useAtomSet(autoExcludePreviewAtom, { mode: "promise" });
   const navigate = useNavigate();
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
 
   const {
     meta: { scanLoading },
@@ -292,6 +291,7 @@ export function useStudioAlignState(): StudioAlignState {
 
     return loadCanvasResources({
       start: () => {
+        setContrast(null);
         setFrameLoading(true);
         setError(null);
         setStatus("Loading frame");
@@ -330,6 +330,7 @@ export function useStudioAlignState(): StudioAlignState {
     lockedSelection,
     loadCanvasResources,
     scan,
+    setContrast,
     setError,
     setFrame,
     setFrameLoading,
@@ -337,6 +338,46 @@ export function useStudioAlignState(): StudioAlignState {
     source,
     workspacePath,
     alignPositions.length,
+  ]);
+
+  useEffect(() => {
+    if (!contrast || !source || !scan || alignPositions.length === 0) {
+      return;
+    }
+
+    return loadCanvasResources({
+      start: () => {
+        setFrameLoading(true);
+        setError(null);
+      },
+      load: (signal) =>
+        runClientEffect(loadFrameEffect(studioClient, source, lockedSelection, contrast), {
+          signal,
+        }),
+      commit: (nextFrame) => {
+        setFrame(nextFrame);
+        setStatus(null);
+      },
+      reject: (cause) => {
+        setError(
+          cause instanceof Error && cause.message.startsWith("Frame request failed")
+            ? effectErrorMessage(cause)
+            : toErrorMessage(cause, "Frame contrast update failed"),
+        );
+      },
+      settle: () => setFrameLoading(false),
+    });
+  }, [
+    alignPositions.length,
+    contrast,
+    loadCanvasResources,
+    lockedSelection,
+    scan,
+    setError,
+    setFrame,
+    setFrameLoading,
+    setStatus,
+    source,
   ]);
 
   const variationExcludeCells = useCallback(async (): Promise<AlignGridCellCoord[]> => {
@@ -428,12 +469,12 @@ export function useStudioAlignState(): StudioAlignState {
         onError: setError,
         onCompleted: (progress) => {
           setStatus(progress.message ?? "Crop completed");
-          studioNavigateWithTransition(navigate, pathname, "/annotate");
+          studioNavigate(navigate, "/annotate");
         },
         toErrorMessage,
       });
     },
-    [navigate, pathname, setError, setStatus, source, workspacePath],
+    [navigate, setError, setStatus, source, workspacePath],
   );
 
   const cropBatchWithOverwriteCheck = useCallback(
@@ -497,11 +538,11 @@ export function useStudioAlignState(): StudioAlignState {
     const remaining = next.positions.filter((pos) => !existing.has(pos));
     if (remaining.length === 0) {
       setStatus(`Skipped ${next.existingPositions.length} existing ROI output(s)`);
-      studioNavigateWithTransition(navigate, pathname, "/annotate");
+      studioNavigate(navigate, "/annotate");
       return;
     }
     void runCrop(remaining, false);
-  }, [cropConfirm, navigate, pathname, runCrop, setStatus]);
+  }, [cropConfirm, navigate, runCrop, setStatus]);
 
   const cancelCropConfirm = useCallback(() => {
     setCropConfirm(null);

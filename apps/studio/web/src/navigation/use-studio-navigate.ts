@@ -1,31 +1,24 @@
-import { useNavigate, useRouterState } from "@tanstack/react-router";
-import { addTransitionType, startTransition, useCallback } from "react";
-
-import { studioNavTransitionType } from "../components/studio-route-order";
+import { useNavigate } from "@tanstack/react-router";
+import { useCallback } from "react";
 
 export type StudioRouteTo = "/assay" | "/info" | "/align" | "/annotate" | "/result";
 
-export function studioNavigateWithTransition(
+export function studioNavigate(
   navigate: ReturnType<typeof useNavigate>,
-  currentPath: string,
   to: StudioRouteTo,
 ): void {
-  startTransition(() => {
-    addTransitionType(studioNavTransitionType(currentPath, to));
-    void navigate({ to });
-  });
+  void navigate({ to });
 }
 
 export function useStudioNavigate() {
   const navigate = useNavigate();
-  const pathname = useRouterState({ select: (state) => state.location.pathname }) ?? "/assay";
 
   const navigateTo = useCallback(
     (to: StudioRouteTo) => {
-      studioNavigateWithTransition(navigate, pathname, to);
+      studioNavigate(navigate, to);
     },
-    [navigate, pathname],
+    [navigate],
   );
 
-  return { navigate, navigateTo, pathname };
+  return { navigate, navigateTo };
 }

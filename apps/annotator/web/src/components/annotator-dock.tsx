@@ -1,15 +1,12 @@
 import { Button, cn } from "@lisca/ui/components";
 import type { AnnotationTool } from "@lisca/ui/features";
 import {
-  dockLayout2Class,
-  dockGridClass,
-  dockSectionClass,
-  dockToolGridClass,
-  dockSaveGrid2Class,
+  DockSection,
+  DockStrip,
   dockToolLabel,
   ReadonlyPathField,
-  Section,
   useDockToolShortcuts,
+  type DockGridLayout,
   type DockToolAction,
 } from "@lisca/ui/shell";
 import { useAnnotatePage } from "../state/annotate-page-context";
@@ -70,14 +67,11 @@ export function AnnotatorDock() {
     !state.filePickerOpen;
   const canEditTools = state.mode === "segmentation" && shortcutsEnabled;
   const toolActions = buildAnnotationToolActions(state.tool, state.setTool, !canEditTools);
-  const saveGridClass =
-    paths.length > 1
-      ? dockSaveGrid2Class
-      : cn(dockGridClass, "grid-cols-1 grid-rows-2");
+  const saveLayout: DockGridLayout = paths.length > 1 ? "2x2" : "2x1";
 
   return (
-    <div className={dockLayout2Class}>
-      <Section className={dockSectionClass} contentClassName={dockToolGridClass} title="Tool">
+    <DockStrip panels={2}>
+      <DockSection layout="2x2" title="Tool">
         {state.mode === "segmentation" ? (
           <SegmentationToolButtons canEditTools={canEditTools} toolActions={toolActions} />
         ) : (
@@ -85,8 +79,8 @@ export function AnnotatorDock() {
             Classification
           </div>
         )}
-      </Section>
-      <Section className={dockSectionClass} contentClassName={saveGridClass} title="Save">
+      </DockSection>
+      <DockSection layout={saveLayout} title="Save">
         {paths.map((path) => (
           <ReadonlyPathField key={path} aria-label={`Output path ${path}`} value={path} />
         ))}
@@ -100,7 +94,7 @@ export function AnnotatorDock() {
         >
           {state.saving ? "Saving…" : "Save"}
         </Button>
-      </Section>
-    </div>
+      </DockSection>
+    </DockStrip>
   );
 }

@@ -1,13 +1,10 @@
 import { Button } from "@lisca/ui/components";
 import type { AnnotationTool } from "@lisca/ui/features";
 import {
-  dockLayout2Class,
-  dockSaveGrid2Class,
-  dockSectionClass,
-  dockToolGridClass,
+  DockSection,
+  DockStrip,
   dockToolLabel,
   ReadonlyPathField,
-  Section,
   useDockToolShortcuts,
   type DockToolAction,
 } from "@lisca/ui/shell";
@@ -66,8 +63,8 @@ export function DemoAnnotatorDock({ state }: { state: DemoAnnotatorState }) {
   const toolActions = buildAnnotationToolActions(state.tool, state.setTool, !canEditTools);
 
   return (
-    <div className={dockLayout2Class}>
-      <Section className={dockSectionClass} contentClassName={dockToolGridClass} title="Tool">
+    <DockStrip panels={2}>
+      <DockSection layout="2x2" title="Tool">
         {state.mode === "segmentation" ? (
           <SegmentationToolButtons canEditTools={canEditTools} toolActions={toolActions} />
         ) : (
@@ -75,8 +72,8 @@ export function DemoAnnotatorDock({ state }: { state: DemoAnnotatorState }) {
             Classification
           </div>
         )}
-      </Section>
-      <Section className={dockSectionClass} contentClassName={dockSaveGrid2Class} title="Save">
+      </DockSection>
+      <DockSection layout="2x2" title="Save">
         <ReadonlyPathField aria-label="Output annotation JSON" value={`${stem}.annotation.json`} />
         <ReadonlyPathField aria-label="Output mask PNG" value={`${stem}.mask.png`} />
         <Button
@@ -90,7 +87,7 @@ export function DemoAnnotatorDock({ state }: { state: DemoAnnotatorState }) {
         >
           Download
         </Button>
-      </Section>
-    </div>
+      </DockSection>
+    </DockStrip>
   );
 }

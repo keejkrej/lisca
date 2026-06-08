@@ -1,5 +1,4 @@
 import { AlignTools } from "@lisca/ui/features";
-import { dockSectionClass } from "@lisca/ui/shell";
 
 import { useAlignCanvas, useAlignCrop } from "../state/align-page-selectors";
 
@@ -10,7 +9,6 @@ export function AlignToolSection() {
     <AlignTools
       mode={canvas.toolMode}
       patternZoomLocked={canvas.patternZoomLocked}
-      sectionClassName={dockSectionClass}
       onModeChange={(mode) => {
         if (!crop.cropping) canvas.setToolMode(mode);
       }}
