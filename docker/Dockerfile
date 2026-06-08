@@ -58,7 +58,8 @@ COPY apps ./apps
 RUN --mount=type=cache,target=/usr/local/cargo/registry,id=lisca-cargo-registry \
     --mount=type=cache,target=/usr/local/cargo/git,id=lisca-cargo-git \
     --mount=type=cache,target=/app/target,id=lisca-cargo-target,sharing=locked \
-    cargo build --release -p ${PRODUCT}-server
+    cargo build --release -p ${PRODUCT}-server \
+ && cp /app/target/release/${PRODUCT}-server /app/lisca-server
 
 FROM debian:bookworm-slim AS runtime
 ARG PRODUCT
@@ -80,7 +81,7 @@ COPY docker/nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-COPY --from=rust-build /app/target/release/${PRODUCT}-server /usr/local/bin/lisca-server
+COPY --from=rust-build /app/lisca-server /usr/local/bin/lisca-server
 COPY --from=web-build /app/apps/${PRODUCT}/web/dist /srv/web
 
 ENV PRODUCT=${PRODUCT} \
