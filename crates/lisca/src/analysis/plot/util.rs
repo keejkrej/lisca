@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use super::super::auc::parse_slide_channel;
-use super::super::slide::SlideMapping;
+use crate::analysis::array::percentile;
+use crate::analysis::slide::SlideMapping;
 
 pub const DEFAULT_PLOT_COLUMNS: usize = 3;
 
@@ -13,30 +13,21 @@ pub fn slide_channel_labels(mapping: &SlideMapping) -> BTreeMap<u32, String> {
         .collect()
 }
 
+pub fn parse_slide_channel(path: &Path) -> Option<u32> {
+    let stem = path.file_stem()?.to_str()?;
+    let rest = stem.strip_prefix("sc")?;
+    let channel = rest.split('_').next()?;
+    channel.parse().ok()
+}
+
 pub fn percentile_ylim(values: &[f64]) -> (f64, f64) {
     let finite: Vec<f64> = values.iter().copied().filter(|value| value.is_finite()).collect();
     if finite.is_empty() {
         return (0.0, 1.0);
     }
-    let mut sorted = finite;
-    sorted.sort_by(|left, right| left.partial_cmp(right).unwrap_or(std::cmp::Ordering::Equal));
-    let low = percentile(&sorted, 1.0);
-    let high = percentile(&sorted, 99.0);
+    let low = percentile(&finite, 1.0);
+    let high = percentile(&finite, 99.0);
     expand_degenerate_ylim(low, high)
-}
-
-fn percentile(sorted: &[f64], pct: f64) -> f64 {
-    if sorted.is_empty() {
-        return 0.0;
-    }
-    if sorted.len() == 1 {
-        return sorted[0];
-    }
-    let rank = (pct / 100.0) * (sorted.len() - 1) as f64;
-    let lower = rank.floor() as usize;
-    let upper = rank.ceil() as usize;
-    let weight = rank - lower as f64;
-    sorted[lower] * (1.0 - weight) + sorted[upper] * weight
 }
 
 pub fn expand_degenerate_ylim(low: f64, high: f64) -> (f64, f64) {
@@ -140,7 +131,5 @@ fn quartile(values: &[f64], q: f64) -> Option<f64> {
     if values.is_empty() {
         return None;
     }
-    let mut sorted = values.to_vec();
-    sorted.sort_by(|left, right| left.partial_cmp(right).unwrap_or(std::cmp::Ordering::Equal));
-    Some(percentile(&sorted, q * 100.0))
+    Some(crate::analysis::array::quantile(values, q))
 }

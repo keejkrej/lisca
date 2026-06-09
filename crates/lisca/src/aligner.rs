@@ -10,9 +10,11 @@ use std::{
     },
 };
 
+use ndarray_stats::SummaryStatisticsExt as _;
 use tiff::encoder::{colortype, TiffEncoder};
 
 use crate::{
+    analysis::array::otsu_on_histogram,
     image_source::{load_frame, RawFrame},
     protocol::{
         AutoExcludeHistogramBin, AutoExcludePreviewCell, AutoExcludePreviewCellScore,
@@ -350,8 +352,9 @@ fn mean_u16(values: &[u16]) -> f64 {
     if values.is_empty() {
         return 0.0;
     }
-    let sum: u64 = values.iter().map(|value| u64::from(*value)).sum();
-    sum as f64 / values.len() as f64
+    ndarray::Array1::from_iter(values.iter().map(|value| f64::from(*value)))
+        .mean()
+        .unwrap_or(0.0)
 }
 
 fn flatness_score(values: &[u16]) -> Option<f64> {
@@ -418,53 +421,12 @@ fn build_histogram(scores: &[f64]) -> HistogramResult {
 }
 
 fn otsu_threshold(bins: &[AutoExcludeHistogramBin]) -> f64 {
-    let total: f64 = bins.iter().map(|bin| bin.count as f64).sum();
-    if total <= 0.0 {
-        return 0.0;
-    }
-
-    let centers = bins
+    let counts: Vec<f64> = bins.iter().map(|bin| bin.count as f64).collect();
+    let centers: Vec<f64> = bins
         .iter()
         .map(|bin| (bin.start + bin.end) / 2.0)
-        .collect::<Vec<_>>();
-    let total_mean = bins
-        .iter()
-        .zip(centers.iter())
-        .map(|(bin, center)| *center * bin.count as f64)
-        .sum::<f64>()
-        / total;
-
-    let mut weight_background = 0.0;
-    let mut sum_background = 0.0;
-    let mut best_variance = f64::NEG_INFINITY;
-    let mut best_threshold = centers[0];
-
-    for (bin, center) in bins.iter().zip(centers.iter()) {
-        weight_background += bin.count as f64;
-        if weight_background <= 0.0 || weight_background >= total {
-            continue;
-        }
-
-        sum_background += *center * bin.count as f64;
-        let weight_foreground = total - weight_background;
-        if weight_foreground <= 0.0 {
-            continue;
-        }
-
-        let mean_background = sum_background / weight_background;
-        let mean_foreground = (total_mean * total - sum_background) / weight_foreground;
-        let variance = weight_background
-            * weight_foreground
-            * (mean_background - mean_foreground)
-            * (mean_background - mean_foreground);
-
-        if variance > best_variance {
-            best_variance = variance;
-            best_threshold = *center;
-        }
-    }
-
-    best_threshold
+        .collect();
+    otsu_on_histogram(&counts, &centers)
 }
 
 fn workspace_bbox_csv_path(root: &str, pos: u32) -> PathBuf {

@@ -1,7 +1,7 @@
 import { Button, cn } from "@lisca/ui/components";;
 
 import { ASSAY_CHOICE_LABEL, type AssayId, useStudioStore } from "../state/studio-store";
-import { ASSAY_NAME } from "@lisca/contracts";
+import { ASSAY_NAME, ENABLED_STUDIO_ASSAY_IDS } from "@lisca/contracts";
 
 const ASSAY_ORDER: AssayId[] = [
   ASSAY_NAME.GENE_EXPRESSION,
@@ -9,7 +9,7 @@ const ASSAY_ORDER: AssayId[] = [
   ASSAY_NAME.LNP_BINDING,
   ASSAY_NAME.CUSTOM_ASSAY,
 ];
-const ENABLED_ASSAY_ID: AssayId = ASSAY_NAME.GENE_EXPRESSION;
+const ENABLED_ASSAY_IDS = new Set<AssayId>(ENABLED_STUDIO_ASSAY_IDS);
 
 export function ChooseAssay() {
   const assayId = useStudioStore((state) => state.assayId);
@@ -25,7 +25,7 @@ export function ChooseAssay() {
       >
         {ASSAY_ORDER.map((id) => {
           const selected = assayId === id;
-          const disabled = id !== ENABLED_ASSAY_ID;
+          const disabled = !ENABLED_ASSAY_IDS.has(id);
           return (
             <Button
               key={id}

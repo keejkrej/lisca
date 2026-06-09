@@ -3,15 +3,17 @@ use std::path::{Path, PathBuf};
 
 use mplot::prelude::{AxesStyle, BoxplotStyle, GridPos, Scale};
 
-use super::super::auc::{discover_timeseries_csvs, parse_slide_channel};
-use super::super::csv_io::{column_index, parse_f64, read_csv};
-use super::super::slide::SlideMapping;
-use super::mplot_config::{default_figure_builder, save_figure, trace_line_style};
-use super::util::{
-    boxplot_tick_label, boxplot_x_axis_label, grid_dimensions, percentile_ylim,
-    quartile_axis_upper, slide_channel_labels, subplot_title, trace_color_alpha,
+use crate::analysis::array::{fitted_trace_value, KineticFitCoeffs};
+use crate::analysis::assays::gene_expression::auc::discover_timeseries_csvs;
+use crate::analysis::assays::gene_expression::traces::group_timeseries_rows;
+use crate::analysis::csv_io::{column_index, parse_f64, read_csv};
+use crate::analysis::plot::{
+    boxplot_tick_label, boxplot_x_axis_label, default_figure_builder, grid_dimensions,
+    parse_slide_channel, percentile_ylim, quartile_axis_upper, save_figure,
+    slide_channel_labels, subplot_title, trace_color_alpha, trace_line_style,
     trace_naming_haystack,
 };
+use crate::analysis::slide::SlideMapping;
 
 const PLOTTED_PARAMETERS: [(&str, &str); 5] = [
     ("intensity_offset", "intensity offset"),
@@ -214,26 +216,10 @@ fn write_fitted_trace_grid(
 
     for (index, csv_path) in timeseries_csvs.iter().enumerate() {
         let (headers, data_rows) = read_csv(csv_path)?;
-        let t_index = column_index(&headers, "t").ok_or("missing t column")?;
-        let corrected_index =
-            column_index(&headers, "corrected").ok_or("missing corrected column")?;
-        let pos_index = column_index(&headers, "pos");
-        let roi_index = column_index(&headers, "roi").ok_or("missing roi column")?;
         let slide_channel = parse_slide_channel(csv_path);
 
-        let mut groups: BTreeMap<(i64, i64), Vec<(f64, f64)>> = BTreeMap::new();
-        let mut corrected_values = Vec::new();
-        for row in data_rows {
-            let pos = pos_index
-                .and_then(|idx| parse_f64(&row[idx]))
-                .map(|value| value as i64)
-                .unwrap_or(0);
-            let roi = parse_f64(&row[roi_index]).ok_or("invalid roi")? as i64;
-            let t = parse_f64(&row[t_index]).ok_or("invalid t")?;
-            let corrected = parse_f64(&row[corrected_index]).ok_or("invalid corrected")?;
-            groups.entry((pos, roi)).or_default().push((t, corrected));
-            corrected_values.push(corrected);
-        }
+        let groups = group_timeseries_rows(&headers, &data_rows, "corrected", false)?;
+        let corrected_values: Vec<f64> = groups.values().flat_map(|trace| trace.iter().map(|(_, value)| *value)).collect();
 
         let (y_low, y_high) = percentile_ylim(&corrected_values);
         let max_t = groups
@@ -255,9 +241,10 @@ fn write_fitted_trace_grid(
                     .unwrap_or(std::cmp::Ordering::Equal)
             });
             let x: Vec<f64> = trace.iter().map(|(t, _)| *t * interval).collect();
+            let coeffs = fit_row.kinetic_coeffs();
             let y: Vec<f64> = trace
                 .iter()
-                .map(|(t, _)| fitted_trace_value(*t * interval, fit_row))
+                .map(|(t, _)| fitted_trace_value(*t * interval, &coeffs))
                 .collect();
             series.push((x, y));
             matched_traces += 1;
@@ -294,17 +281,14 @@ fn write_fitted_trace_grid(
     save_figure(&figure, output_plot)
 }
 
-fn fitted_trace_value(time_minutes: f64, row: &FitPlotRow) -> f64 {
-    let intensity_offset = row.intensity_offset.unwrap_or(0.0);
-    let protein_decay_rate = row.protein_decay_rate.unwrap_or(0.0);
-    let mrna_decay_rate = row.mrna_decay_rate.unwrap_or(0.0);
-    let translation_onset = row.translation_onset.unwrap_or(0.0);
-    let expression_amplitude = row.expression_amplitude.unwrap_or(0.0);
-    if time_minutes < translation_onset {
-        return intensity_offset;
+impl FitPlotRow {
+    fn kinetic_coeffs(&self) -> KineticFitCoeffs {
+        KineticFitCoeffs {
+            intensity_offset: self.intensity_offset.unwrap_or(0.0),
+            protein_decay_rate: self.protein_decay_rate.unwrap_or(0.0),
+            mrna_decay_rate: self.mrna_decay_rate.unwrap_or(0.0),
+            translation_onset: self.translation_onset.unwrap_or(0.0),
+            expression_amplitude: self.expression_amplitude.unwrap_or(0.0),
+        }
     }
-    let dt = time_minutes - translation_onset;
-    intensity_offset
-        + expression_amplitude
-            * ((-protein_decay_rate * dt).exp() - (-mrna_decay_rate * dt).exp())
 }

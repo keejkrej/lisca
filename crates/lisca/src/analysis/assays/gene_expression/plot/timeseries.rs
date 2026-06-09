@@ -1,22 +1,17 @@
 use std::collections::BTreeMap;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use mplot::prelude::{AxesStyle, GridPos};
 
-use super::super::auc::discover_timeseries_csvs;
-use super::super::csv_io::{column_index, parse_f64, read_csv};
-use super::super::slide::SlideMapping;
-use super::mplot_config::{default_figure_builder, save_figure, trace_line_style};
-use super::util::{
-    expand_degenerate_ylim, grid_dimensions, percentile_ylim, slide_channel_labels,
-    subplot_title, trace_color_alpha, trace_naming_haystack,
+use crate::analysis::assays::gene_expression::auc::discover_timeseries_csvs;
+use crate::analysis::assays::gene_expression::traces::{load_trace_panel, TracePanel};
+use crate::analysis::csv_io::{column_index, read_csv};
+use crate::analysis::plot::{
+    default_figure_builder, expand_degenerate_ylim, grid_dimensions, percentile_ylim,
+    save_figure, slide_channel_labels, subplot_title, trace_color_alpha, trace_line_style,
+    trace_naming_haystack,
 };
-
-struct TimeseriesPanel {
-    path: PathBuf,
-    traces: Vec<Vec<(f64, f64)>>,
-    y_values: Vec<f64>,
-}
+use crate::analysis::slide::SlideMapping;
 
 pub fn run_plot_timeseries(
     workspace: &Path,
@@ -31,7 +26,7 @@ pub fn run_plot_timeseries(
     let csvs = discover_timeseries_csvs(&workspace.join("timeseries"))?;
     let corrected_panels = csvs
         .iter()
-        .map(|path| load_panel(path, "corrected"))
+        .map(|path| load_trace_panel(path, "corrected"))
         .collect::<Result<Vec<_>, String>>()?;
     if corrected_panels.is_empty() {
         return Err("no timeseries panels to plot".to_string());
@@ -55,7 +50,7 @@ pub fn run_plot_timeseries(
     {
         let area_panels = csvs
             .iter()
-            .map(|path| load_panel(path, "area"))
+            .map(|path| load_trace_panel(path, "area"))
             .collect::<Result<Vec<_>, String>>()?;
         write_metric_plots(
             &area_panels,
@@ -76,49 +71,8 @@ fn panel_has_column(path: &Path, column: &str) -> bool {
         .is_some()
 }
 
-fn load_panel(path: &Path, y_column: &str) -> Result<TimeseriesPanel, String> {
-    let (headers, rows) = read_csv(path)?;
-    let t_index = column_index(&headers, "t").ok_or("missing t column")?;
-    let y_index = column_index(&headers, y_column)
-        .ok_or_else(|| format!("missing {y_column} column"))?;
-    let pos_index = column_index(&headers, "pos");
-    let roi_index = column_index(&headers, "roi").ok_or("missing roi column")?;
-
-    let mut groups: BTreeMap<(i64, i64), Vec<(f64, f64)>> = BTreeMap::new();
-    let mut y_values = Vec::new();
-    for row in rows {
-        let pos = pos_index
-            .and_then(|index| parse_f64(&row[index]))
-            .map(|value| value as i64)
-            .unwrap_or(0);
-        let roi = parse_f64(&row[roi_index]).ok_or("invalid roi")? as i64;
-        let t = parse_f64(&row[t_index]).ok_or("invalid t")?;
-        let y = parse_f64(&row[y_index]).ok_or("invalid y")?;
-        groups.entry((pos, roi)).or_default().push((t, y));
-        y_values.push(y);
-    }
-
-    let traces = groups
-        .into_values()
-        .map(|mut points| {
-            points.sort_by(|left, right| {
-                left.0
-                    .partial_cmp(&right.0)
-                    .unwrap_or(std::cmp::Ordering::Equal)
-            });
-            points
-        })
-        .collect();
-
-    Ok(TimeseriesPanel {
-        path: path.to_path_buf(),
-        traces,
-        y_values,
-    })
-}
-
 fn write_metric_plots(
-    panels: &[TimeseriesPanel],
+    panels: &[TracePanel],
     output_plot: &Path,
     y_label: &str,
     interval: f64,
@@ -168,7 +122,7 @@ fn write_metric_plots(
 }
 
 fn write_subplot_grid(
-    panels: &[TimeseriesPanel],
+    panels: &[TracePanel],
     output_plot: &Path,
     y_label: &str,
     interval: f64,

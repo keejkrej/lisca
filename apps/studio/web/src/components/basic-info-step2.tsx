@@ -46,6 +46,7 @@ export function BasicInfoStep2() {
   const info2 = useStudioStore((state) => state.info2);
   const setInfo2 = useStudioStore((state) => state.setInfo2);
   const isGeneExpression = assayId === ASSAY_NAME.GENE_EXPRESSION;
+  const showFeaturePicker = isGeneExpression;
   const isSelected = (id: BasicInfo2FeatureId) =>
     Array.isArray(info2.selectedFeatures) && info2.selectedFeatures.includes(id);
   const selectedFeatures = Array.isArray(info2.selectedFeatures) ? info2.selectedFeatures : [];
@@ -126,7 +127,7 @@ export function BasicInfoStep2() {
           </div>
         </Field>
       </div>
-      {selectableFeatures.length > 0 ? (
+      {showFeaturePicker && selectableFeatures.length > 0 ? (
         <div className="min-h-[200px] w-full p-2.5">
           <Field className="h-full min-h-[200px] gap-2.5" name="features">
             <FieldLabel className="text-2xl font-normal">Features</FieldLabel>

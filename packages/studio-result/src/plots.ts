@@ -93,6 +93,11 @@ export const TIMESERIES_RESULT_PLOT_FILES = {
   areaSharedY: "area_shared_y.png",
 } as const;
 
+/** PNG filenames for immune killing assay results. */
+export const IMMUNE_KILLING_RESULT_PLOT_FILES = {
+  killCurve: "kill_curve.png",
+} as const;
+
 export type DisplayedParameterPlotId = (typeof DISPLAYED_PARAMETER_PLOTS)[number]["id"];
 
 export function displayedParameterPlotFileName(id: DisplayedParameterPlotId): string {
@@ -155,9 +160,12 @@ const MAX_POINTS_PER_TRACE = 400;
 export function sortResultFiles(files: StudioAnalysisCsvFile[]) {
   const rank = (file: StudioAnalysisCsvFile) => {
     if (file.kind === "timeseries") return 0;
+    if (file.fileName === "kill_curve.csv") return 0;
     if (file.fileName === "auc.csv") return 1;
     if (file.fileName === "fit.csv") return 2;
-    return 3;
+    if (file.fileName === "death_times.csv") return 3;
+    if (file.fileName === "predictions_cleaned.csv") return 4;
+    return 5;
   };
 
   return [...files].sort((left, right) => {
@@ -420,6 +428,82 @@ export function parsePanelGroups(
     });
   };
 
+  const nAliveIndex = headerIndex(headers, "n_alive");
+  const deathTimeIndex = headerIndex(headers, "death_time");
+  const slideChannelForKillIndex = headerIndex(headers, "slide_channel");
+
+  if (tIndex >= 0 && nAliveIndex >= 0) {
+    const grouped = new Map<number, Array<{ x: number; y: number }>>();
+    for (const row of rows) {
+      const t = parseNumeric(row[tIndex] ?? "");
+      const nAlive = parseNumeric(row[nAliveIndex] ?? "");
+      if (t === null || nAlive === null) continue;
+      const slideChannel =
+        slideChannelForKillIndex >= 0
+          ? parseNumeric(row[slideChannelForKillIndex] ?? "")
+          : 0;
+      if (slideChannel === null || !Number.isInteger(slideChannel)) continue;
+      const bucket = grouped.get(slideChannel) ?? [];
+      bucket.push({ x: t * timeseriesXScale, y: nAlive });
+      grouped.set(slideChannel, bucket);
+    }
+
+    for (const [slideChannel, points] of Array.from(grouped.entries()).sort(
+      ([left], [right]) => left - right,
+    )) {
+      if (points.length === 0) continue;
+      const label = formatSlideChannelTickLabel(
+        slideChannel,
+        points.length,
+        slideChannelLabels,
+      );
+      resultPanels.push({
+        kind: "generic",
+        title: `Kill curve (${label})`,
+        fileName: file.fileName,
+        path: file.path,
+        xAxisLabel: "minutes",
+        yAxisLabel: "n alive",
+        series: [
+          {
+            dataKey: `kill_curve_${slideChannel}`,
+            label,
+            points: downsamplePoints(
+              points.sort((left, right) => left.x - right.x),
+              MAX_POINTS_PER_TRACE,
+            ),
+          },
+        ],
+      });
+    }
+    if (resultPanels.length > 0) return resultPanels;
+  }
+
+  if (deathTimeIndex >= 0) {
+    const values: number[] = [];
+    for (const row of rows) {
+      const deathTime = parseNumeric(row[deathTimeIndex] ?? "");
+      if (deathTime === null || deathTime <= 0) continue;
+      if (slideChannelForKillIndex >= 0) {
+        const slideChannel = parseNumeric(row[slideChannelForKillIndex] ?? "");
+        if (slideChannel === null || !Number.isInteger(slideChannel)) continue;
+      }
+      values.push(deathTime * timeseriesXScale);
+    }
+    if (values.length > 0) {
+      resultPanels.push({
+        kind: "histogram",
+        title: `${file.fileName}: death time distribution`,
+        fileName: file.fileName,
+        path: file.path,
+        xAxisLabel: "minutes",
+        yAxisLabel: "n crops",
+        values,
+      });
+      return resultPanels;
+    }
+  }
+
   if (tIndex >= 0 && (correctedIndex >= 0 || areaIndex >= 0)) {
     if (correctedIndex >= 0) makeTimeseriesPanel(correctedIndex, "corrected");
     if (areaIndex >= 0) makeTimeseriesPanel(areaIndex, "area");
@@ -516,7 +600,10 @@ export function parsePanelGroups(
 export type ResultPlotSection = "timeseries" | "parameters";
 
 export function resultPlotSection(file: StudioAnalysisCsvFile): ResultPlotSection {
-  return file.kind === "timeseries" ? "timeseries" : "parameters";
+  if (file.kind === "timeseries" || file.fileName === "kill_curve.csv") {
+    return "timeseries";
+  }
+  return "parameters";
 }
 
 export function filterResultFilesBySection(
@@ -528,7 +615,7 @@ export function filterResultFilesBySection(
 
 export function defaultResultPlotSection(files: StudioAnalysisCsvFile[]): ResultPlotSection {
   const sorted = sortResultFiles(files);
-  if (sorted.some((file) => file.kind === "timeseries")) return "timeseries";
+  if (sorted.some((file) => resultPlotSection(file) === "timeseries")) return "timeseries";
   return "parameters";
 }
 

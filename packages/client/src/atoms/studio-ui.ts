@@ -13,9 +13,11 @@ import type {
 } from "@lisca/contracts";
 import {
   ASSAY_NAME,
+  ENABLED_STUDIO_ASSAY_IDS,
   GENE_EXPRESSION_FEATURE_IDS as CONTRACT_GENE_EXPRESSION_FEATURE_IDS,
   ASSAY_FEATURE,
   DEFAULT_FOLDER_SOURCE_TEMPLATE,
+  type EnabledStudioAssayId,
 } from "@lisca/contracts";
 import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/storage";
 import { Atom } from "@effect-atom/atom-react";
@@ -74,7 +76,8 @@ export type StudioSampleRowAdapters = {
 const BASIC_INFO_FEATURE_IDS: ReadonlyArray<BasicInfo2FeatureId> =
   CONTRACT_GENE_EXPRESSION_FEATURE_IDS;
 const TIMELAPSE_UNITS: TimelapseUnit[] = ["second", "minute", "hour"];
-const ENABLED_ASSAY_ID: AssayId = ASSAY_NAME.GENE_EXPRESSION;
+const ENABLED_ASSAY_IDS = new Set<EnabledStudioAssayId>(ENABLED_STUDIO_ASSAY_IDS);
+const DEFAULT_ASSAY_ID: AssayId = ASSAY_NAME.GENE_EXPRESSION;
 
 function isGeneExpressionAssay(assayId: AssayId | null): assayId is GeneExpressionAssayName {
   return assayId === ASSAY_NAME.GENE_EXPRESSION;
@@ -133,7 +136,10 @@ export function createStudioUi(adapters: StudioSampleRowAdapters) {
   }
 
   function enabledAssayId(assayId: AssayId | null): AssayId | null {
-    return assayId === ENABLED_ASSAY_ID ? assayId : ENABLED_ASSAY_ID;
+    if (assayId && ENABLED_ASSAY_IDS.has(assayId as EnabledStudioAssayId)) {
+      return assayId;
+    }
+    return DEFAULT_ASSAY_ID;
   }
 
   function isBasicInfoFeatureId(value: unknown): value is BasicInfo2FeatureId {
@@ -220,7 +226,7 @@ export function createStudioUi(adapters: StudioSampleRowAdapters) {
       "assayId" | "dataSourceKind" | "info1" | "info2" | "info3"
     >,
   ): string {
-    const assayId = state.assayId ?? ENABLED_ASSAY_ID;
+    const assayId = state.assayId ?? DEFAULT_ASSAY_ID;
     return JSON.stringify(
       buildStudioAssayJson({
         assayId,
@@ -339,7 +345,7 @@ export function createStudioUi(adapters: StudioSampleRowAdapters) {
 
   function createInitialWizardData(): StudioWizardData {
     return {
-      assayId: ENABLED_ASSAY_ID,
+      assayId: DEFAULT_ASSAY_ID,
       infoStep: 1,
       dataSourceKind: null,
       info1: { ...initialInfo1 },
@@ -396,7 +402,7 @@ export function createStudioUi(adapters: StudioSampleRowAdapters) {
       patchStudioWizard(set, { dataSourceKind });
     },
     loadAssayJson(set: (update: StateUpdater<StudioWizardData>) => void, assayJson: StudioAssayJson) {
-      const nextAssayId = enabledAssayId(assayJson.assayId) ?? ENABLED_ASSAY_ID;
+      const nextAssayId = enabledAssayId(assayJson.assayId) ?? DEFAULT_ASSAY_ID;
       const nextInfo1 = { ...assayJson.info1 };
       const nextInfo2 = {
         ...assayJson.info2,

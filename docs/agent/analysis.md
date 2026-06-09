@@ -1,8 +1,25 @@
 # Studio analysis (Rust)
 
-Native analysis pipeline in `crates/lisca/src/analysis/`. Ports the reference algorithms from the sibling [`transfection`](../../transfection) Python package. Numeric stages (segment, timeseries, AUC, fit) and PNG plots run in Rust via [**mplot-rs**](https://github.com/keejkrej/mplot-rs).
+Native analysis pipeline in `crates/lisca/src/analysis/`. The running workflow depends on `assay.json` → `assayId`:
 
-## Pipeline
+| Assay | Goal source (not implementation reference) | Pipeline |
+| --- | --- | --- |
+| `gene-expression` | sibling [`transfection`](../../transfection) — stages, CSV columns, plot names | segment → timeseries → AUC → fit (+ plots) |
+| `immune-killing` | [mupattern](https://github.com/keejkrej/mupattern) — kill curve semantics, ResNet classifier | predict → clean → death times → kill curve plot |
+
+Numeric stages and PNG plots run in Rust via [**mplot-rs**](https://github.com/keejkrej/mplot-rs). Immune killing inference uses ONNX Runtime (`ort`) with the `keejkrej/mupattern-resnet18` model.
+
+## Design stance
+
+Sibling repos (**transfection**, **mupattern**) describe **what** to compute and **which files** to read/write. They are **not** Rust implementation references — do not mirror their NumPy loops, module layout, or Python packaging.
+
+Rust should be idiomatic for this crate:
+
+- Shared ROI math in `array.rs` (`ndarray`, `ndarray-stats`) and segmentation via `ndarray-ndimage` + `imageproc` (Otsu).
+- Per-assay pipelines under `assays/<name>/`.
+- Parity is judged on **workspace outputs and scientific meaning** (tolerances in tests), not on matching Python evaluation order or data structures.
+
+## Gene expression pipeline
 
 Order matches `transfection-analyze.sh`:
 
@@ -13,6 +30,42 @@ assay.json → slide.json → segment → timeseries → plot-timeseries → auc
 Progress stages (HTTP/WS contract): `preparing → segment → timeseries → auc → fit → completed`.
 
 Plot steps run between their corresponding table stages but do not emit separate progress events.
+
+## Immune killing pipeline
+
+Ports the mupattern kill workflow (predict → clean → plot) to Studio ROI stacks (`roi/PosN/` TIFF stacks, not crops.zarr):
+
+```
+assay.json → slide.json → predict (ResNet ONNX) → clean (monotonicity) → death times → plot kill curve
+```
+
+Progress reuses the same HTTP stage names with kill-specific messages:
+
+| Stage | Kill step |
+| --- | --- |
+| `preparing` | Resolve ONNX model + slide mapping |
+| `segment` | Cell presence inference |
+| `timeseries` | Monotonicity clean |
+| `auc` | Death times + kill curve table |
+| `fit` | Kill curve PNG |
+
+### Kill model path
+
+Set `LISCA_KILL_MODEL` to a directory containing `model.onnx`, or place the exported ONNX model at `workspace/models/mupattern-resnet18/model.onnx`. Export from Hugging Face:
+
+```sh
+uv run optimum-cli export onnx --model keejkrej/mupattern-resnet18 ./models/mupattern-resnet18
+```
+
+### Immune killing outputs
+
+| Path | Role |
+| --- | --- |
+| `results/predictions.csv` | Raw `(t, crop, label, pos, slide_channel)` from ResNet |
+| `results/predictions_cleaned.csv` | Monotonicity-enforced labels |
+| `results/death_times.csv` | Per-ROI death frame (`≥80%` true span, mupattern clean logic) |
+| `results/kill_curve.csv` | `n_alive` vs time per slide channel |
+| `results/kill_curve.png` | Kill curve plot |
 
 ## Workspace I/O
 
@@ -33,30 +86,46 @@ Studio results UI reads CSVs for interactive charts; PNG filenames match transfe
 
 ## Module map
 
-| Module | transfection reference |
+```
+analysis.rs            # crate module root (no mod.rs)
+analysis/
+  pipeline.rs          # load assay.json, dispatch
+  progress.rs          # shared progress + spawn_blocking helper
+  array.rs             # Frame2D, masked ROI stats, trapz AUC, kinetic basis, ndarray-stats quantiles
+  slide.rs             # slide channel mapping (shared)
+  roi_stack.rs         # ROI TIFF stacks (shared)
+  csv_io.rs, output.rs, export.rs
+  plot.rs + plot/      # shared mplot-rs helpers
+  assays.rs            # match assayId → pipeline
+  assays/
+    gene_expression.rs + gene_expression/
+      traces.rs        # shared timeseries CSV grouping for AUC/fit/plots
+    immune_killing.rs + immune_killing/
+```
+
+| Module | Goal |
 | --- | --- |
-| `slide.rs` | `core/slide.py` + assay mapping |
-| `roi_stack.rs` | `core/roi.py`, `core/mask.py` |
-| `image_ops.rs` | `core/segment.py` filters |
-| `segment.rs` | `services/segment.py` |
-| `metrics.rs` | `core/metrics.py` |
-| `timeseries.rs` | `services/timeseries.py` |
-| `auc.rs` | `services/auc.py` |
-| `fit.rs` | `services/fit.py` |
-| `export.rs` | `core/export.py` (parallel `.xlsx` sidecars) |
-| `plot/` | `services/plot_*.py` via mplot-rs |
-| `pipeline.rs` | orchestration |
+| `assays/gene_expression/segment.rs` | Otsu mask per ROI frame |
+| `assays/gene_expression/timeseries.rs` | Mask-corrected intensity traces → `timeseries/` CSVs |
+| `assays/gene_expression/auc.rs` | Trapezoidal AUC per trace |
+| `assays/gene_expression/fit.rs` | Two-exponential kinetic fit |
+| `assays/gene_expression/plot/` | PNGs for traces, AUC, fit parameters |
+| `assays/immune_killing/` | ResNet presence, monotonicity clean, death times, kill curve |
+
+Adding a new assay type: create `assays/<name>.rs` plus `assays/<name>/`, implement `run` (async) and optionally `run_sync`, then register in `assays.rs`.
 
 ## Plot runtime
 
 Plots render natively in Rust (no Python sidecar). Figure layout constants match transfection (`12×8` in, log-scale AUC boxplot, fluor trace colors, etc.).
 
-## Parity expectations
+## Parity expectations (outputs, not code)
 
-- Position ranges in `assay.json` use **inclusive** Studio semantics (`1:12` → positions 1…12); expanded to explicit lists in `slide.json`.
+- **Contract parity**: `assay.json` / `slide.json` semantics, output paths, CSV column names, PNG filenames Studio expects.
+- **Scientific parity**: same definitions (e.g. corrected = intensity − area × background; trapezoidal AUC; kill monotonicity clean).
+- **Not required**: matching transfection/mupattern module names, NumPy vs loop structure, or bitwise float identity.
+- Position ranges in `assay.json` use **inclusive** Studio semantics (`1:12` → positions 1…12).
 - Segmentation defaults: `variation_radius=2`, `gaussian_sigma=1.0`.
 - Fit uses the two-pass pooled-protein strategy with `max_onset_minutes=0` unless extended later.
-- Float CSV values may differ slightly from Python due to evaluation order; tests use tolerance, not bitwise equality.
 
 ## Tests
 
@@ -64,4 +133,4 @@ Plots render natively in Rust (no Python sidecar). Figure layout constants match
 cargo test -p lisca
 ```
 
-Unit tests live under each `analysis/` submodule. Optional golden parity against transfection can be added when a shared fixture workspace exists.
+Unit tests live under each `analysis/` submodule. Golden workspace fixtures (when available) assert output shape and numeric tolerance — not Python source equivalence.
