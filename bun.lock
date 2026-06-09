@@ -232,6 +232,25 @@
         "vite": "catalog:",
       },
     },
+    "apps/landing/web": {
+      "name": "@lisca/landing-web",
+      "version": "0.1.0",
+      "dependencies": {
+        "@lisca/ui": "workspace:*",
+        "lucide-react": "^0.511.0",
+        "react": "catalog:",
+        "react-dom": "catalog:",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "catalog:",
+        "@types/react": "catalog:",
+        "@types/react-dom": "catalog:",
+        "@vitejs/plugin-react": "catalog:",
+        "tailwindcss": "catalog:",
+        "typescript": "catalog:",
+        "vite": "catalog:",
+      },
+    },
     "apps/studio/desktop": {
       "name": "@lisca/studio-desktop",
       "version": "0.1.0",
@@ -309,8 +328,8 @@
         "html2canvas-pro": "^2.0.2",
         "jspdf": "^4.2.1",
         "lucide-react": "^0.511.0",
-        "react": "19.3.0-canary-f0dfee38-20260529",
-        "react-dom": "19.3.0-canary-f0dfee38-20260529",
+        "react": "catalog:",
+        "react-dom": "catalog:",
       },
       "devDependencies": {
         "@tailwindcss/vite": "catalog:",
@@ -988,6 +1007,8 @@
     "@lisca/client": ["@lisca/client@workspace:packages/client"],
 
     "@lisca/contracts": ["@lisca/contracts@workspace:packages/contracts"],
+
+    "@lisca/landing-web": ["@lisca/landing-web@workspace:apps/landing/web"],
 
     "@lisca/mobile-app": ["@lisca/mobile-app@workspace:packages/mobile-app"],
 

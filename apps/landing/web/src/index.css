@@ -1,0 +1,50 @@
+@import "tailwindcss";
+@import "@lisca/ui/coss-theme.css";
+@custom-variant dark (&:where(.dark, .dark *));
+@source "../../../../packages/ui/src";
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-background text-foreground antialiased;
+}
+
+.landing-grid-bg {
+  background-image:
+    linear-gradient(
+      to right,
+      color-mix(in oklab, var(--foreground) 6%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--foreground) 6%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 0%, black 20%, transparent 75%);
+}
+
+.landing-hero-glow {
+  background:
+    radial-gradient(
+      ellipse 60% 50% at 50% -10%,
+      color-mix(in oklab, var(--foreground) 12%, transparent),
+      transparent
+    ),
+    radial-gradient(
+      ellipse 40% 30% at 80% 20%,
+      color-mix(in oklab, var(--foreground) 8%, transparent),
+      transparent
+    );
+}
+
+.landing-demo-frame {
+  @apply overflow-hidden rounded-2xl border border-border bg-background shadow-xs/5;
+}
+
+.landing-demo-frame iframe {
+  @apply block w-full border-0 bg-background;
+}
