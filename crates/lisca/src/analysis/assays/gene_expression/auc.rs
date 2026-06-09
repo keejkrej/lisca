@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 
-use super::csv_io::{column_index, parse_f64, read_csv, write_csv};
+use crate::analysis::csv_io::{column_index, parse_f64, read_csv, write_csv};
+use crate::analysis::plot::parse_slide_channel;
 
 const GROUP_COLUMNS: [&str; 2] = ["pos", "roi"];
 const OUTPUT_COLUMNS: [&str; 4] = ["slide_channel", "pos", "roi", "auc"];
@@ -118,13 +119,6 @@ fn integrate_trace(trace: &[(f64, f64)], interval: f64) -> f64 {
         total += (t1 - t0) * (v0 + v1) * 0.5;
     }
     total
-}
-
-pub(crate) fn parse_slide_channel(path: &Path) -> Option<u32> {
-    let stem = path.file_stem()?.to_str()?;
-    let rest = stem.strip_prefix("sc")?;
-    let channel = rest.split('_').next()?;
-    channel.parse().ok()
 }
 
 fn write_auc_csv(path: &Path, rows: &[AucRow]) -> Result<(), String> {

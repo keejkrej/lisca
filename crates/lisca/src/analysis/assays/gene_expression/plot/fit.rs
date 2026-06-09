@@ -3,15 +3,15 @@ use std::path::{Path, PathBuf};
 
 use mplot::prelude::{AxesStyle, BoxplotStyle, GridPos, Scale};
 
-use super::super::auc::{discover_timeseries_csvs, parse_slide_channel};
-use super::super::csv_io::{column_index, parse_f64, read_csv};
-use super::super::slide::SlideMapping;
-use super::mplot_config::{default_figure_builder, save_figure, trace_line_style};
-use super::util::{
-    boxplot_tick_label, boxplot_x_axis_label, grid_dimensions, percentile_ylim,
-    quartile_axis_upper, slide_channel_labels, subplot_title, trace_color_alpha,
+use crate::analysis::assays::gene_expression::auc::discover_timeseries_csvs;
+use crate::analysis::csv_io::{column_index, parse_f64, read_csv};
+use crate::analysis::plot::{
+    boxplot_tick_label, boxplot_x_axis_label, default_figure_builder, grid_dimensions,
+    parse_slide_channel, percentile_ylim, quartile_axis_upper, save_figure,
+    slide_channel_labels, subplot_title, trace_color_alpha, trace_line_style,
     trace_naming_haystack,
 };
+use crate::analysis::slide::SlideMapping;
 
 const PLOTTED_PARAMETERS: [(&str, &str); 5] = [
     ("intensity_offset", "intensity offset"),

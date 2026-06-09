@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use super::super::csv_io::{column_index, parse_f64, read_csv, write_csv};
-use super::super::slide::SlideMapping;
+use crate::analysis::csv_io::{column_index, parse_f64, read_csv, write_csv};
+use crate::analysis::slide::SlideMapping;
 
 pub const CLEAN_THRESHOLD: f64 = 0.8;
 

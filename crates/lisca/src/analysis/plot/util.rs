@@ -1,8 +1,7 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use super::super::auc::parse_slide_channel;
-use super::super::slide::SlideMapping;
+use crate::analysis::slide::SlideMapping;
 
 pub const DEFAULT_PLOT_COLUMNS: usize = 3;
 
@@ -11,6 +10,13 @@ pub fn slide_channel_labels(mapping: &SlideMapping) -> BTreeMap<u32, String> {
         .iter()
         .map(|(channel, entry)| (*channel, entry.sample_name.clone()))
         .collect()
+}
+
+pub fn parse_slide_channel(path: &Path) -> Option<u32> {
+    let stem = path.file_stem()?.to_str()?;
+    let rest = stem.strip_prefix("sc")?;
+    let channel = rest.split('_').next()?;
+    channel.parse().ok()
 }
 
 pub fn percentile_ylim(values: &[f64]) -> (f64, f64) {

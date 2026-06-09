@@ -4,9 +4,12 @@ use std::path::Path;
 use rayon::prelude::*;
 use tiff::encoder::{colortype, TiffEncoder};
 
+use crate::analysis::roi_stack::{
+    position_dir, read_position_index, roi_frame_2d, validate_channel_index, RoiStack,
+};
+use crate::analysis::slide::SlideMapping;
+
 use super::image_ops::segment_frame;
-use super::roi_stack::{read_position_index, roi_frame_2d, validate_channel_index, RoiStack};
-use super::slide::SlideMapping;
 
 #[derive(Debug, Clone)]
 pub struct SegmentOptions {
@@ -71,7 +74,7 @@ fn run_position_segmentation(
     position: u32,
     options: &SegmentOptions,
 ) -> Result<(), String> {
-    let pos_dir = match super::roi_stack::position_dir(workspace, position) {
+    let pos_dir = match position_dir(workspace, position) {
         Ok(path) => path,
         Err(_) => return Ok(()),
     };
@@ -79,7 +82,11 @@ fn run_position_segmentation(
     validate_channel_index(&index, mask_channel)?;
 
     for roi in &index.rois {
-        let output_path = super::roi_stack::default_mask_path(workspace, index.position, &roi.file_name);
+        let output_path = crate::analysis::roi_stack::default_mask_path(
+            workspace,
+            index.position,
+            &roi.file_name,
+        );
         if output_path.exists() && !options.force {
             continue;
         }

@@ -1,8 +1,7 @@
 use std::path::Path;
 
-use super::roi_stack::{
-    default_mask_path, roi_frame_2d, validate_channel_index, MaskStack,
-    PositionIndex, RoiStack,
+use crate::analysis::roi_stack::{
+    default_mask_path, roi_frame_2d, validate_channel_index, MaskStack, PositionIndex, RoiStack,
 };
 
 #[derive(Debug, Clone)]

@@ -76,19 +76,30 @@ Studio results UI reads CSVs for interactive charts; PNG filenames match transfe
 
 ## Module map
 
-| Module | transfection reference |
+```
+analysis/
+  pipeline.rs          # load assay.json, dispatch
+  progress.rs          # shared progress + spawn_blocking helper
+  slide.rs             # slide channel mapping (shared)
+  roi_stack.rs         # ROI TIFF stacks (shared)
+  csv_io.rs, output.rs, export.rs
+  plot/                # shared mplot-rs helpers
+  assays/
+    mod.rs             # match assayId → pipeline
+    gene_expression/   # transfection-style pipeline
+    immune_killing/    # mupattern ResNet kill pipeline
+```
+
+| Module | transfection / mupattern reference |
 | --- | --- |
-| `slide.rs` | `core/slide.py` + assay mapping |
-| `roi_stack.rs` | `core/roi.py`, `core/mask.py` |
-| `image_ops.rs` | `core/segment.py` filters |
-| `segment.rs` | `services/segment.py` |
-| `metrics.rs` | `core/metrics.py` |
-| `timeseries.rs` | `services/timeseries.py` |
-| `auc.rs` | `services/auc.py` |
-| `fit.rs` | `services/fit.py` |
-| `export.rs` | `core/export.py` (parallel `.xlsx` sidecars) |
-| `plot/` | `services/plot_*.py` via mplot-rs |
-| `pipeline.rs` | orchestration |
+| `assays/gene_expression/segment.rs` | `services/segment.py` |
+| `assays/gene_expression/timeseries.rs` | `services/timeseries.py` |
+| `assays/gene_expression/auc.rs` | `services/auc.py` |
+| `assays/gene_expression/fit.rs` | `services/fit.py` |
+| `assays/gene_expression/plot/` | `services/plot_*.py` via mplot-rs |
+| `assays/immune_killing/` | mupattern `kill` (predict, clean, plot) |
+
+Adding a new assay type: create `assays/<name>/` with `run` (async) and optionally `run_sync`, then register in `assays/mod.rs`.
 
 ## Plot runtime
 

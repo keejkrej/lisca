@@ -3,10 +3,12 @@ use std::path::Path;
 
 use mplot::prelude::{AxesStyle, BoxplotStyle, GridPos, Scale};
 
-use super::super::csv_io::{column_index, parse_f64, read_csv};
-use super::super::slide::SlideMapping;
-use super::mplot_config::{default_figure_builder, save_figure};
-use super::util::{boxplot_tick_label, boxplot_x_axis_label, slide_channel_labels};
+use crate::analysis::csv_io::{column_index, parse_f64, read_csv};
+use crate::analysis::plot::{
+    boxplot_tick_label, boxplot_x_axis_label, default_figure_builder, save_figure,
+    slide_channel_labels,
+};
+use crate::analysis::slide::SlideMapping;
 
 pub fn run_plot_auc(workspace: &Path, mapping: &SlideMapping) -> Result<(), String> {
     let auc_csv = workspace.join("results").join("auc.csv");

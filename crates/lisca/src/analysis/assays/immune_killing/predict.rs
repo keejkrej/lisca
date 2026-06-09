@@ -6,11 +6,11 @@ use ndarray::{Array, Ix4};
 use ort::session::Session;
 use ort::value::Tensor;
 
-use super::super::roi_stack::{
+use crate::analysis::csv_io::write_csv;
+use crate::analysis::roi_stack::{
     position_dir, read_position_index, roi_frame_2d, validate_channel_index, RoiStack,
 };
-use super::super::slide::SlideMapping;
-use super::super::csv_io::write_csv;
+use crate::analysis::slide::SlideMapping;
 
 const IMAGE_SIZE: u32 = 224;
 const IMAGENET_MEAN: [f32; 3] = [0.485, 0.456, 0.406];

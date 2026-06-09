@@ -3,14 +3,14 @@ use std::path::{Path, PathBuf};
 
 use mplot::prelude::{AxesStyle, GridPos};
 
-use super::super::auc::discover_timeseries_csvs;
-use super::super::csv_io::{column_index, parse_f64, read_csv};
-use super::super::slide::SlideMapping;
-use super::mplot_config::{default_figure_builder, save_figure, trace_line_style};
-use super::util::{
-    expand_degenerate_ylim, grid_dimensions, percentile_ylim, slide_channel_labels,
-    subplot_title, trace_color_alpha, trace_naming_haystack,
+use crate::analysis::assays::gene_expression::auc::discover_timeseries_csvs;
+use crate::analysis::csv_io::{column_index, parse_f64, read_csv};
+use crate::analysis::plot::{
+    default_figure_builder, expand_degenerate_ylim, grid_dimensions, percentile_ylim,
+    save_figure, slide_channel_labels, subplot_title, trace_color_alpha, trace_line_style,
+    trace_naming_haystack,
 };
+use crate::analysis::slide::SlideMapping;
 
 struct TimeseriesPanel {
     path: PathBuf,

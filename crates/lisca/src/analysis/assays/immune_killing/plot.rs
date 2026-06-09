@@ -3,10 +3,11 @@ use std::path::Path;
 
 use mplot::prelude::{AxesStyle, GridPos};
 
-use super::super::csv_io::{column_index, parse_f64, read_csv};
-use super::super::plot::mplot_config::{default_figure_builder, save_figure, trace_line_style};
-use super::super::plot::util::{grid_dimensions, slide_channel_labels};
-use super::super::slide::SlideMapping;
+use crate::analysis::csv_io::{column_index, parse_f64, read_csv};
+use crate::analysis::plot::{
+    default_figure_builder, grid_dimensions, save_figure, slide_channel_labels, trace_line_style,
+};
+use crate::analysis::slide::SlideMapping;
 
 pub fn run_plot_kill(workspace: &Path, mapping: &SlideMapping, interval: f64) -> Result<(), String> {
     if interval <= 0.0 {

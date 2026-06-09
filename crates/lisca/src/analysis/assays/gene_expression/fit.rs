@@ -2,8 +2,9 @@ use std::path::{Path, PathBuf};
 
 use rayon::prelude::*;
 
+use crate::analysis::csv_io::{column_index, parse_f64, read_csv, write_csv};
+
 use super::auc::discover_timeseries_csvs;
-use super::csv_io::{column_index, parse_f64, read_csv, write_csv};
 use super::segment::default_jobs;
 
 const RATE_COARSE_CANDIDATE_COUNT: usize = 24;
@@ -56,7 +57,7 @@ pub fn run_fit(workspace: &Path, interval: f64, max_onset_minutes: f64, jobs: us
 fn build_fit_tasks(csvs: &[PathBuf]) -> Result<Vec<FitTask>, String> {
     let mut tasks = Vec::new();
     for csv_path in csvs {
-        let slide_channel = super::auc::parse_slide_channel(csv_path);
+        let slide_channel = crate::analysis::plot::parse_slide_channel(csv_path);
         let (headers, rows) = read_csv(csv_path)?;
         let t_index = column_index(&headers, "t").ok_or("missing t column")?;
         let corrected_index = column_index(&headers, "corrected").ok_or("missing corrected column")?;
