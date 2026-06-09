@@ -12,6 +12,9 @@
  *   bun lisca dev aligner mobile
  *   bun lisca dev aligner mobile-web
  *   bun lisca dev aligner demo
+ *   bun lisca dev landing
+ *   bun lisca dev landing web
+ *   bun lisca dev landing site
  *   bun lisca build studio
  *   bun lisca dist aligner
  *   bun lisca typecheck annotator
@@ -24,9 +27,16 @@ import path from "node:path";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-const PRODUCTS = new Set(["aligner", "annotator", "studio"]);
+const PRODUCTS = new Set(["aligner", "annotator", "studio", "landing"]);
 const TYPECHECK_TARGETS = new Set(["desktop", "web", "demo", "server", "mobile", "all"]);
 const APP_TARGETS = new Set(["desktop", "web", "demo", "server", "mobile", "mobile-web"]);
+const LANDING_TARGETS = new Set(["web", "site"]);
+
+const LANDING_SITE_DEV_FILTERS = [
+  "@lisca/landing-web",
+  "@lisca/aligner-demo",
+  "@lisca/annotator-demo",
+];
 
 const MOBILE_PORTS = {
   aligner: 8081,
@@ -45,12 +55,13 @@ function usage() {
 Usage: bun lisca <task> <product> [target] [-- <turbo passthrough>]
 
   task     dev | build | dist | typecheck | preview
-  product  aligner | annotator | studio
-  target   desktop | web | demo | server | mobile | mobile-web | all
+  product  aligner | annotator | studio | landing
+  target   desktop | web | demo | server | mobile | mobile-web | all | site
            (optional — sensible defaults per task)
 
 Defaults:
   dev, build      → target desktop (Electron stack; desktop scripts pull web + Rust)
+  dev, build      → target web for landing (site = landing + embedded demos)
   typecheck       → target all (every package matching @lisca/<product>-*)
   preview         → target web (Vite preview)
 
@@ -63,6 +74,8 @@ Examples:
   bun lisca dev aligner mobile
   bun lisca dev aligner mobile-web
   bun lisca dev aligner demo
+  bun lisca dev landing web
+  bun lisca dev landing site
   bun lisca build studio
   bun lisca dist aligner
   bun lisca typecheck aligner
@@ -71,7 +84,34 @@ Examples:
 `);
 }
 
+function isLanding(product) {
+  return product === "landing";
+}
+
+function landingTarget(task, target) {
+  const t = target ?? (task === "typecheck" ? "all" : "web");
+  if (!LANDING_TARGETS.has(t) && !(task === "typecheck" && t === "all")) {
+    console.error(
+      `Landing only supports target web | site${task === "typecheck" ? " | all" : ""}.`,
+    );
+    process.exit(1);
+  }
+  if (t === "site") {
+    if (task !== "dev" && task !== "build") {
+      console.error('"site" only applies to dev | build for landing.');
+      process.exit(1);
+    }
+    return null;
+  }
+  if (t === "all") return "@lisca/landing-*";
+  return "@lisca/landing-web";
+}
+
 function filterFor(task, product, target) {
+  if (isLanding(product)) {
+    return landingTarget(task, target);
+  }
+
   if (task === "typecheck") {
     const t = target ?? "all";
     if (t === "all") return `@lisca/${product}-*`;
@@ -106,6 +146,33 @@ function filterFor(task, product, target) {
   if (t === "mobile-web") return `@lisca/${product}-mobile`;
 
   return `@lisca/${product}-${t}`;
+}
+
+function runTurbo(task, { filters = [], extra = turboExtra } = {}) {
+  const cmd = ["x", "turbo", "run", task];
+  for (const filter of filters) cmd.push(`--filter=${filter}`);
+  cmd.push(...extra);
+
+  const result = spawnSync("bun", cmd, {
+    cwd: root,
+    stdio: "inherit",
+    shell: process.platform === "win32",
+  });
+  process.exit(result.status ?? 1);
+}
+
+function runLandingSite(task) {
+  if (task === "dev") {
+    runTurbo("dev", { filters: LANDING_SITE_DEV_FILTERS });
+    return;
+  }
+
+  const result = spawnSync("bun", ["run", "build:site", ...turboExtra], {
+    cwd: root,
+    stdio: "inherit",
+    shell: process.platform === "win32",
+  });
+  process.exit(result.status ?? 1);
 }
 
 function runMobileDev(product, { web = false } = {}) {
@@ -144,8 +211,18 @@ function main() {
   }
 
   if (!PRODUCTS.has(product)) {
-    console.error(`Unknown product "${product}". Use: aligner | annotator | studio`);
+    console.error(`Unknown product "${product}". Use: aligner | annotator | studio | landing`);
     process.exit(1);
+  }
+
+  if (isLanding(product) && task === "dist") {
+    console.error('dist does not apply to landing. Use: bun lisca build landing [web|site]');
+    process.exit(1);
+  }
+
+  if (isLanding(product) && targetArg === "site" && (task === "dev" || task === "build")) {
+    runLandingSite(task);
+    return;
   }
 
   if (task === "dev" && (targetArg === "mobile" || targetArg === "mobile-web")) {
@@ -154,15 +231,7 @@ function main() {
   }
 
   const filter = filterFor(task, product, targetArg);
-  const cmd = ["x", "turbo", "run", task, `--filter=${filter}`, ...turboExtra];
-
-  const result = spawnSync("bun", cmd, {
-    cwd: root,
-    stdio: "inherit",
-    shell: process.platform === "win32",
-  });
-
-  process.exit(result.status ?? 1);
+  runTurbo(task, { filters: [filter] });
 }
 
 main();
