@@ -1,3 +1,5 @@
+import { AlignDemo } from "@lisca/aligner-demo";
+import { AnnotatorDemo } from "@lisca/annotator-demo";
 import { Button } from "@lisca/ui/components";
 import {
   Card,
@@ -7,7 +9,9 @@ import {
   CardPanel,
   CardTitle,
 } from "@lisca/ui/components";
+import { Link } from "@tanstack/react-router";
 import { ExternalLink, Grid3x3, Paintbrush } from "lucide-react";
+import type { ComponentType } from "react";
 
 import { ALIGNER_DEMO_PATH, ANNOTATOR_DEMO_PATH } from "../lib/constants";
 
@@ -20,6 +24,7 @@ const demos = [
     href: ALIGNER_DEMO_PATH,
     icon: Grid3x3,
     features: ["Grid alignment", "Cell include/exclude", "CSV & JSON export"],
+    Demo: AlignDemo,
   },
   {
     id: "annotator",
@@ -29,8 +34,17 @@ const demos = [
     href: ANNOTATOR_DEMO_PATH,
     icon: Paintbrush,
     features: ["Mask painting", "Label classes", "PNG & JSON export"],
+    Demo: AnnotatorDemo,
   },
-] as const;
+] as const satisfies ReadonlyArray<{
+  id: string;
+  title: string;
+  description: string;
+  href: string;
+  icon: ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
+  features: readonly string[];
+  Demo: ComponentType<{ embedded?: boolean }>;
+}>;
 
 export function DemoShowcase() {
   return (
@@ -64,14 +78,8 @@ export function DemoShowcase() {
               </CardHeader>
 
               <CardPanel className="px-4 pt-0 sm:px-6">
-                <div className="landing-demo-frame">
-                  <iframe
-                    loading="lazy"
-                    sandbox="allow-scripts allow-same-origin allow-downloads allow-forms"
-                    src={demo.href}
-                    title={`${demo.title} interactive demo`}
-                    className="h-[min(52vh,420px)]"
-                  />
+                <div className="landing-demo-frame h-[min(52vh,420px)]">
+                  <demo.Demo embedded />
                 </div>
                 <ul className="mt-4 flex flex-wrap gap-2">
                   {demo.features.map((feature) => (
@@ -89,10 +97,10 @@ export function DemoShowcase() {
                 <Button
                   className="gap-2"
                   render={
-                    <a href={demo.href}>
+                    <Link to={demo.href}>
                       Open full demo
                       <ExternalLink aria-hidden className="size-4" />
-                    </a>
+                    </Link>
                   }
                 />
               </CardFooter>

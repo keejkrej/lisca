@@ -236,13 +236,17 @@
       "name": "@lisca/landing-web",
       "version": "0.1.0",
       "dependencies": {
+        "@lisca/aligner-demo": "workspace:*",
+        "@lisca/annotator-demo": "workspace:*",
         "@lisca/ui": "workspace:*",
+        "@tanstack/react-router": "catalog:",
         "lucide-react": "^0.511.0",
         "react": "catalog:",
         "react-dom": "catalog:",
       },
       "devDependencies": {
         "@tailwindcss/vite": "catalog:",
+        "@tanstack/router-plugin": "catalog:",
         "@types/react": "catalog:",
         "@types/react-dom": "catalog:",
         "@vitejs/plugin-react": "catalog:",

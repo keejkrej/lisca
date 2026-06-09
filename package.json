@@ -33,7 +33,7 @@
     "build:packages": "turbo run build --filter=./packages/*",
     "build:site": "bun scripts/build-landing-site.mjs",
     "build:webs": "turbo run build --filter=@lisca/*-web --filter=@lisca/*-demo --filter=@lisca/landing-web",
-    "dev:site": "turbo run dev --filter=@lisca/landing-web --filter=@lisca/aligner-demo --filter=@lisca/annotator-demo",
+    "dev:site": "turbo run dev --filter=@lisca/landing-web",
     "check": "bun run lint && bun run typecheck && bun run check:contracts && bun run check:rust",
     "check:contracts": "bun run contracts:generate && bun scripts/check-openapi-routes.ts && bun --filter @lisca/contracts test",
     "check:rust": "cargo check --workspace",

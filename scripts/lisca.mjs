@@ -32,12 +32,6 @@ const TYPECHECK_TARGETS = new Set(["desktop", "web", "demo", "server", "mobile",
 const APP_TARGETS = new Set(["desktop", "web", "demo", "server", "mobile", "mobile-web"]);
 const LANDING_TARGETS = new Set(["web", "site"]);
 
-const LANDING_SITE_DEV_FILTERS = [
-  "@lisca/landing-web",
-  "@lisca/aligner-demo",
-  "@lisca/annotator-demo",
-];
-
 const MOBILE_PORTS = {
   aligner: 8081,
   annotator: 8082,
@@ -61,7 +55,7 @@ Usage: bun lisca <task> <product> [target] [-- <turbo passthrough>]
 
 Defaults:
   dev, build      → target desktop (Electron stack; desktop scripts pull web + Rust)
-  dev, build      → target web for landing (site = landing + embedded demos)
+  dev, build      → target web for landing (site is an alias for the single-bundle site)
   typecheck       → target all (every package matching @lisca/<product>-*)
   preview         → target web (Vite preview)
 
@@ -96,13 +90,7 @@ function landingTarget(task, target) {
     );
     process.exit(1);
   }
-  if (t === "site") {
-    if (task !== "dev" && task !== "build") {
-      console.error('"site" only applies to dev | build for landing.');
-      process.exit(1);
-    }
-    return null;
-  }
+  if (t === "site") return "@lisca/landing-web";
   if (t === "all") return "@lisca/landing-*";
   return "@lisca/landing-web";
 }
@@ -161,20 +149,6 @@ function runTurbo(task, { filters = [], extra = turboExtra } = {}) {
   process.exit(result.status ?? 1);
 }
 
-function runLandingSite(task) {
-  if (task === "dev") {
-    runTurbo("dev", { filters: LANDING_SITE_DEV_FILTERS });
-    return;
-  }
-
-  const result = spawnSync("bun", ["run", "build:site", ...turboExtra], {
-    cwd: root,
-    stdio: "inherit",
-    shell: process.platform === "win32",
-  });
-  process.exit(result.status ?? 1);
-}
-
 function runMobileDev(product, { web = false } = {}) {
   const mobileDir = path.join(root, "apps", product, "mobile");
   const port = MOBILE_PORTS[product];
@@ -218,11 +192,6 @@ function main() {
   if (isLanding(product) && task === "dist") {
     console.error('dist does not apply to landing. Use: bun lisca build landing [web|site]');
     process.exit(1);
-  }
-
-  if (isLanding(product) && targetArg === "site" && (task === "dev" || task === "build")) {
-    runLandingSite(task);
-    return;
   }
 
   if (task === "dev" && (targetArg === "mobile" || targetArg === "mobile-web")) {

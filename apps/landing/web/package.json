@@ -6,18 +6,22 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -p tsconfig.json --noEmit && vite build",
-    "build:site": "bun ../../../scripts/build-landing-site.mjs",
+    "build:site": "bun run build",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@lisca/aligner-demo": "workspace:*",
+    "@lisca/annotator-demo": "workspace:*",
     "@lisca/ui": "workspace:*",
+    "@tanstack/react-router": "catalog:",
     "lucide-react": "^0.511.0",
     "react": "catalog:",
     "react-dom": "catalog:"
   },
   "devDependencies": {
     "@tailwindcss/vite": "catalog:",
+    "@tanstack/router-plugin": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",

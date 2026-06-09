@@ -1,4 +1,5 @@
 import { Button } from "@lisca/ui/components";
+import { Link } from "@tanstack/react-router";
 import { ArrowRight, Grid3x3, Paintbrush } from "lucide-react";
 
 import { ALIGNER_DEMO_PATH, ANNOTATOR_DEMO_PATH } from "../lib/constants";
@@ -30,20 +31,20 @@ export function HeroSection() {
           <Button
             className="gap-2"
             render={
-              <a href={ALIGNER_DEMO_PATH}>
+              <Link to={ALIGNER_DEMO_PATH}>
                 <Grid3x3 aria-hidden />
                 Try Aligner demo
-              </a>
+              </Link>
             }
             size="lg"
           />
           <Button
             className="gap-2"
             render={
-              <a href={ANNOTATOR_DEMO_PATH}>
+              <Link to={ANNOTATOR_DEMO_PATH}>
                 <Paintbrush aria-hidden />
                 Try Annotator demo
-              </a>
+              </Link>
             }
             size="lg"
             variant="outline"

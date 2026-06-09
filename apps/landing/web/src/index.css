@@ -2,6 +2,8 @@
 @import "@lisca/ui/coss-theme.css";
 @custom-variant dark (&:where(.dark, .dark *));
 @source "../../../../packages/ui/src";
+@source "../../../../apps/aligner/demo/src";
+@source "../../../../apps/annotator/demo/src";
 
 html {
   scroll-behavior: smooth;
@@ -45,6 +47,6 @@ body {
   @apply overflow-hidden rounded-2xl border border-border bg-background shadow-xs/5;
 }
 
-.landing-demo-frame iframe {
-  @apply block w-full border-0 bg-background;
+.landing-demo-frame > * {
+  @apply h-full min-h-0;
 }

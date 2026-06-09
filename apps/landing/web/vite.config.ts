@@ -1,4 +1,5 @@
 import tailwindcss from "@tailwindcss/vite";
+import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,22 +13,10 @@ const brandPublicDir = resolve(
 export default defineConfig({
   base: "/",
   publicDir: brandPublicDir,
-  plugins: [react(), tailwindcss()],
+  plugins: [tanstackRouter({ target: "react", autoCodeSplitting: true }), react(), tailwindcss()],
   server: {
     host: true,
     port: 5180,
     strictPort: true,
-    proxy: {
-      "/aligner-demo": {
-        target: "http://localhost:5175",
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/aligner-demo\/?/, "/") || "/",
-      },
-      "/annotator-demo": {
-        target: "http://localhost:5176",
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/annotator-demo\/?/, "/") || "/",
-      },
-    },
   },
 });
