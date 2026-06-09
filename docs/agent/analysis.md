@@ -87,6 +87,7 @@ Studio results UI reads CSVs for interactive charts; PNG filenames match transfe
 ## Module map
 
 ```
+analysis.rs            # crate module root (no mod.rs)
 analysis/
   pipeline.rs          # load assay.json, dispatch
   progress.rs          # shared progress + spawn_blocking helper
@@ -94,12 +95,12 @@ analysis/
   slide.rs             # slide channel mapping (shared)
   roi_stack.rs         # ROI TIFF stacks (shared)
   csv_io.rs, output.rs, export.rs
-  plot/                # shared mplot-rs helpers
+  plot.rs + plot/      # shared mplot-rs helpers
+  assays.rs            # match assayId → pipeline
   assays/
-    mod.rs             # match assayId → pipeline
-    gene_expression/   # transfection-style pipeline
+    gene_expression.rs + gene_expression/
       traces.rs        # shared timeseries CSV grouping for AUC/fit/plots
-    immune_killing/    # mupattern ResNet kill pipeline
+    immune_killing.rs + immune_killing/
 ```
 
 | Module | Goal |
