@@ -125,7 +125,7 @@ pub fn roi_stats(frame: &[f64], mask: &[bool]) -> Result<RoiStats, String> {
     })
 }
 
-/// Linear interpolation quantile on unsorted values (matches `numpy.quantile` default).
+/// Linear interpolation quantile on unsorted `f64` values (`numpy.quantile` default).
 pub fn quantile(values: &[f64], q: f64) -> f64 {
     if values.is_empty() {
         return 0.0;
@@ -135,6 +135,17 @@ pub fn quantile(values: &[f64], q: f64) -> f64 {
     }
     let mut sorted = values.to_vec();
     sorted.sort_by(|left, right| left.partial_cmp(right).unwrap_or(std::cmp::Ordering::Equal));
+    quantile_linear_sorted(&sorted, q)
+}
+
+/// Linear interpolation quantile on a pre-sorted slice (`q` in `[0, 1]`).
+pub fn quantile_linear_sorted(sorted: &[f64], q: f64) -> f64 {
+    if sorted.is_empty() {
+        return 0.0;
+    }
+    if sorted.len() == 1 {
+        return sorted[0];
+    }
     let position = q.clamp(0.0, 1.0) * (sorted.len() - 1) as f64;
     let lower = position.floor() as usize;
     let upper = position.ceil() as usize;
@@ -144,6 +155,57 @@ pub fn quantile(values: &[f64], q: f64) -> f64 {
         let weight = position - lower as f64;
         sorted[lower] * (1.0 - weight) + sorted[upper] * weight
     }
+}
+
+/// Percentile on unsorted `f64` values (`pct` in `[0, 100]`, linear interpolation).
+pub fn percentile(values: &[f64], pct: f64) -> f64 {
+    quantile(values, pct / 100.0)
+}
+
+/// Floor-index quantile on pre-sorted data (viewer contrast semantics).
+pub fn quantile_floor_sorted(sorted: &[f64], q: f64) -> f64 {
+    if sorted.is_empty() {
+        return 0.0;
+    }
+    let clamped = q.clamp(0.0, 1.0);
+    let index = (clamped * (sorted.len().saturating_sub(1)) as f64).floor() as usize;
+    sorted[index.min(sorted.len() - 1)]
+}
+
+/// Floor-index quantile on pre-sorted `u16` samples (viewer contrast semantics).
+pub fn quantile_floor_sorted_u16(sorted: &[u16], q: f64) -> u16 {
+    if sorted.is_empty() {
+        return 0;
+    }
+    let clamped = q.clamp(0.0, 1.0);
+    let index = (clamped * (sorted.len().saturating_sub(1)) as f64).floor() as usize;
+    sorted[index.min(sorted.len() - 1)]
+}
+
+/// Evenly subsample then sort (used for large-frame contrast estimation).
+pub fn subsample_sorted_u16(values: &[u16], sample_size: usize) -> Vec<u16> {
+    if values.is_empty() {
+        return vec![0];
+    }
+    if values.len() <= sample_size {
+        let mut copy = values.to_vec();
+        copy.sort_unstable();
+        return copy;
+    }
+
+    let step = values.len() as f64 / sample_size as f64;
+    let mut sample = Vec::with_capacity(sample_size);
+    for index in 0..sample_size {
+        let position = (index as f64 * step).floor() as usize;
+        sample.push(values[position.min(values.len() - 1)]);
+    }
+    sample.sort_unstable();
+    sample
+}
+
+/// Subsampled floor quantile for `u16` frame pixels (aligner/viewer auto-contrast).
+pub fn quantile_floor_subsampled_u16(values: &[u16], q: f64, sample_size: usize) -> u16 {
+    quantile_floor_sorted_u16(&subsample_sorted_u16(values, sample_size), q)
 }
 
 /// Otsu threshold from histogram bin counts and bin centers.
@@ -301,6 +363,18 @@ mod tests {
         assert!((stats.intensity - 30.0).abs() < 1e-9);
         assert!((stats.background - 35.0).abs() < 1e-9);
         assert!((stats.corrected - (-40.0)).abs() < 1e-9);
+    }
+
+    #[test]
+    fn percentile_matches_quantile_scale() {
+        let values = [1.0, 2.0, 3.0, 4.0];
+        assert!((percentile(&values, 50.0) - quantile(&values, 0.5)).abs() < 1e-9);
+    }
+
+    #[test]
+    fn quantile_floor_uses_lower_index() {
+        let sorted = [1.0, 2.0, 3.0, 4.0];
+        assert_eq!(quantile_floor_sorted(&sorted, 0.75), 3.0);
     }
 
     #[test]

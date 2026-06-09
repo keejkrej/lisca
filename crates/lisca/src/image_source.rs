@@ -870,43 +870,21 @@ fn raw_frame_from_dynamic_image(image: DynamicImage) -> RawFrame {
     }
 }
 
-fn sampled_values(values: &[u16]) -> Vec<u16> {
-    if values.is_empty() {
-        return vec![0];
-    }
-    if values.len() <= CONTRAST_SAMPLE_SIZE {
-        let mut copy = values.to_vec();
-        copy.sort_unstable();
-        return copy;
-    }
-
-    let step = values.len() as f64 / CONTRAST_SAMPLE_SIZE as f64;
-    let mut sample = Vec::with_capacity(CONTRAST_SAMPLE_SIZE);
-    for index in 0..CONTRAST_SAMPLE_SIZE {
-        let position = (index as f64 * step).floor() as usize;
-        sample.push(values[position.min(values.len() - 1)]);
-    }
-    sample.sort_unstable();
-    sample
-}
-
-fn percentile(values: &[u16], q: f64) -> u16 {
-    if values.is_empty() {
-        return 0;
-    }
-    let sorted = sampled_values(values);
-    let clamped_q = q.clamp(0.0, 1.0);
-    let index = (clamped_q * (sorted.len().saturating_sub(1)) as f64).floor() as usize;
-    sorted[index.min(sorted.len() - 1)]
-}
-
 fn auto_contrast(values: &[u16]) -> ContrastWindow {
     if values.is_empty() {
         return ContrastWindow { min: 0, max: 1 };
     }
 
-    let min = percentile(values, 0.001) as u32;
-    let max = percentile(values, 0.999) as u32;
+    let min = crate::analysis::array::quantile_floor_subsampled_u16(
+        values,
+        0.001,
+        CONTRAST_SAMPLE_SIZE,
+    ) as u32;
+    let max = crate::analysis::array::quantile_floor_subsampled_u16(
+        values,
+        0.999,
+        CONTRAST_SAMPLE_SIZE,
+    ) as u32;
     ContrastWindow {
         min,
         max: max.max(min + 1),

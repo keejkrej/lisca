@@ -15,7 +15,7 @@ Sibling repos (**transfection**, **mupattern**) describe **what** to compute and
 
 Rust should be idiomatic for this crate:
 
-- Shared ROI math in `array.rs` (`ndarray`) where array ops help today or for upcoming morphology/part-metrics.
+- Shared ROI math in `array.rs` (`ndarray`) and segmentation filters via `ndarray-ndimage` (scipy `ndimage` subset).
 - Per-assay pipelines under `assays/<name>/`.
 - Parity is judged on **workspace outputs and scientific meaning** (tolerances in tests), not on matching Python evaluation order or data structures.
 
@@ -90,7 +90,7 @@ Studio results UI reads CSVs for interactive charts; PNG filenames match transfe
 analysis/
   pipeline.rs          # load assay.json, dispatch
   progress.rs          # shared progress + spawn_blocking helper
-  array.rs             # Frame2D, masked ROI stats, Otsu, kinetic basis, quantiles
+  array.rs             # Frame2D, masked ROI stats, Otsu, kinetic basis, quantiles/percentiles
   slide.rs             # slide channel mapping (shared)
   roi_stack.rs         # ROI TIFF stacks (shared)
   csv_io.rs, output.rs, export.rs

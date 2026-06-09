@@ -14,6 +14,7 @@ base64 = "0.22"
 czi-rs = { git = "https://github.com/keejkrej/czi-rs" }
 image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
 ndarray = "0.17"
+ndarray-ndimage = "0.6"
 ort = { version = "=2.0.0-rc.11", default-features = false, features = ["std", "ndarray", "download-binaries", "tls-rustls", "copy-dylibs"] }
 nd2-rs = { git = "https://github.com/keejkrej/nd2-rs" }
 serde = { version = "1", features = ["derive"] }
