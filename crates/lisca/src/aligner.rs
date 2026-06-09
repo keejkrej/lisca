@@ -10,6 +10,7 @@ use std::{
     },
 };
 
+use ndarray_stats::SummaryStatisticsExt as _;
 use tiff::encoder::{colortype, TiffEncoder};
 
 use crate::{
@@ -351,8 +352,9 @@ fn mean_u16(values: &[u16]) -> f64 {
     if values.is_empty() {
         return 0.0;
     }
-    let sum: u64 = values.iter().map(|value| u64::from(*value)).sum();
-    sum as f64 / values.len() as f64
+    ndarray::Array1::from_iter(values.iter().map(|value| f64::from(*value)))
+        .mean()
+        .unwrap_or(0.0)
 }
 
 fn flatness_score(values: &[u16]) -> Option<f64> {

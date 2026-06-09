@@ -2,7 +2,8 @@ use std::fs;
 use std::path::Path;
 
 use image::{imageops::FilterType, GrayImage, ImageBuffer, Luma};
-use ndarray::{Array, Ix4};
+use ndarray::{Array, Array1, Axis, Ix4};
+use ndarray_stats::QuantileExt;
 use ort::session::Session;
 use ort::value::Tensor;
 
@@ -48,9 +49,9 @@ fn normalize_frame(data: &[f64]) -> Vec<u8> {
     if data.is_empty() {
         return vec![];
     }
-    let (min, max) = data
-        .iter()
-        .fold((data[0], data[0]), |(min, max), &value| (min.min(value), max.max(value)));
+    let values = Array1::from_iter(data.iter().copied());
+    let min = values.min().copied().unwrap_or(0.0);
+    let max = values.max().copied().unwrap_or(0.0);
     let range = max - min;
     data.iter()
         .map(|&value| {
@@ -71,11 +72,12 @@ fn resize_to_224(data: &[u8], width: u32, height: u32) -> GrayImage {
 
 fn to_nchw_normalized(gray: &GrayImage) -> Vec<f32> {
     let n = (IMAGE_SIZE * IMAGE_SIZE) as usize;
+    let normalized = Array1::from_iter(gray.as_raw().iter().map(|&value| value as f32 / 255.0));
     let mut out = vec![0.0f32; 3 * n];
-    for (index, &value) in gray.as_raw().iter().enumerate() {
-        let normalized = value as f32 / 255.0;
-        for channel in 0..3 {
-            out[channel * n + index] = (normalized - IMAGENET_MEAN[channel]) / IMAGENET_STD[channel];
+    for channel in 0..3 {
+        let offset = channel * n;
+        for (index, value) in normalized.iter().enumerate() {
+            out[offset + index] = (value - IMAGENET_MEAN[channel]) / IMAGENET_STD[channel];
         }
     }
     out
@@ -154,27 +156,28 @@ fn run_batch_inference(
         2
     };
 
-    let mut predictions = Vec::with_capacity(batch_len);
-    for index in 0..batch_len {
-        let mut max_idx = 0;
-        let mut max_val = if ndim == 2 {
-            logits[[index, 0]]
-        } else {
-            logits[[index, 0, 0, 0]]
-        };
-        for class_index in 1..num_classes {
-            let value = if ndim == 2 {
-                logits[[index, class_index]]
+    let predictions = (0..batch_len)
+        .map(|index| {
+            let class_index = if ndim == 2 {
+                logits
+                    .index_axis(Axis(0), index)
+                    .iter()
+                    .enumerate()
+                    .max_by(|(_, left), (_, right)| left.partial_cmp(right).unwrap_or(std::cmp::Ordering::Equal))
+                    .map(|(class_index, _)| class_index)
+                    .unwrap_or(0)
             } else {
-                logits[[index, class_index, 0, 0]]
+                (0..num_classes)
+                    .max_by(|&left, &right| {
+                        logits[[index, left, 0, 0]]
+                            .partial_cmp(&logits[[index, right, 0, 0]])
+                            .unwrap_or(std::cmp::Ordering::Equal)
+                    })
+                    .unwrap_or(0)
             };
-            if value > max_val {
-                max_val = value;
-                max_idx = class_index;
-            }
-        }
-        predictions.push(max_idx == 1);
-    }
+            class_index == 1
+        })
+        .collect();
     Ok(predictions)
 }
 

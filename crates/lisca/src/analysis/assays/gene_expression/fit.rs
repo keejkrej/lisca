@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 
+use ndarray::linspace;
 use rayon::prelude::*;
 
 use crate::analysis::array::{evaluate_kinetic_candidate, KineticFitCoeffs};
@@ -126,8 +127,8 @@ fn fit_trace_points(
     for candidate_count in std::iter::once(RATE_COARSE_CANDIDATE_COUNT).chain(
         std::iter::repeat(RATE_REFINE_CANDIDATE_COUNT).take(RATE_REFINE_PASSES),
     ) {
-        let protein_logs = linspace(protein_lower, protein_upper, candidate_count);
-        let mrna_logs = linspace(mrna_lower, mrna_upper, candidate_count);
+        let protein_logs = linspace_values(protein_lower, protein_upper, candidate_count);
+        let mrna_logs = linspace_values(mrna_lower, mrna_upper, candidate_count);
         let mut stage_best: Option<(f64, KineticFitCoeffs)> = None;
         let mut best_indices: Option<(usize, usize)> = None;
 
@@ -208,7 +209,7 @@ fn fit_trace_points_with_fixed_protein(
         for candidate_count in std::iter::once(RATE_COARSE_CANDIDATE_COUNT).chain(
             std::iter::repeat(RATE_REFINE_CANDIDATE_COUNT).take(RATE_REFINE_PASSES),
         ) {
-            let mrna_logs = linspace(mrna_lower, mrna_upper, candidate_count);
+            let mrna_logs = linspace_values(mrna_lower, mrna_upper, candidate_count);
             let mut stage_best: Option<(f64, KineticFitCoeffs)> = None;
             let mut best_index: Option<usize> = None;
             for (index, mrna_log) in mrna_logs.iter().enumerate() {
@@ -272,12 +273,11 @@ fn candidate_onset_indices(times: &[f64], max_onset_minutes: f64) -> Vec<usize> 
     (0..=end).collect()
 }
 
-fn linspace(start: f64, end: f64, count: usize) -> Vec<f64> {
+fn linspace_values(start: f64, end: f64, count: usize) -> Vec<f64> {
     if count <= 1 {
         return vec![start];
     }
-    let step = (end - start) / (count - 1) as f64;
-    (0..count).map(|index| start + step * index as f64).collect()
+    linspace(start, end, count).collect()
 }
 
 fn pooled_protein_decay_rate(rows: &[FitCsvRow]) -> Option<f64> {

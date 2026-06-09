@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 
+use crate::analysis::array::trapezoidal_integral;
 use crate::analysis::csv_io::{format_float, write_csv};
 use crate::analysis::plot::parse_slide_channel;
 
@@ -70,11 +71,13 @@ fn compute_auc_table(csvs: &[PathBuf], interval: f64) -> Result<Vec<AucRow>, Str
                     .partial_cmp(&right.0)
                     .unwrap_or(std::cmp::Ordering::Equal)
             });
+            let times: Vec<f64> = trace.iter().map(|(t, _)| *t * interval).collect();
+            let values: Vec<f64> = trace.iter().map(|(_, value)| *value).collect();
             rows.push(AucRow {
                 slide_channel,
                 pos,
                 roi,
-                auc: integrate_trace(&trace, interval),
+                auc: trapezoidal_integral(&times, &values),
             });
         }
     }
@@ -90,21 +93,6 @@ fn compute_auc_table(csvs: &[PathBuf], interval: f64) -> Result<Vec<AucRow>, Str
             .cmp(&(right.slide_channel, right.pos, right.roi))
     });
     Ok(rows)
-}
-
-fn integrate_trace(trace: &[(f64, f64)], interval: f64) -> f64 {
-    if trace.len() < 2 {
-        return 0.0;
-    }
-    let mut total = 0.0;
-    for window in trace.windows(2) {
-        let t0 = window[0].0 * interval;
-        let t1 = window[1].0 * interval;
-        let v0 = window[0].1;
-        let v1 = window[1].1;
-        total += (t1 - t0) * (v0 + v1) * 0.5;
-    }
-    total
 }
 
 fn write_auc_csv(path: &Path, rows: &[AucRow]) -> Result<(), String> {
@@ -130,8 +118,9 @@ mod tests {
 
     #[test]
     fn trapezoidal_auc_matches_reference() {
-        let trace = vec![(0.0, 0.0), (1.0, 2.0), (2.0, 4.0)];
-        let auc = integrate_trace(&trace, 1.0);
+        let times = [0.0, 1.0, 2.0];
+        let values = [0.0, 2.0, 4.0];
+        let auc = trapezoidal_integral(&times, &values);
         assert!((auc - 4.0).abs() < 1e-9);
     }
 }

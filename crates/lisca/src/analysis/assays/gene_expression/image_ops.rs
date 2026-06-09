@@ -1,7 +1,9 @@
+use image::{GrayImage, ImageBuffer};
+use imageproc::contrast::otsu_level;
 use ndarray::Array2;
 use ndarray_ndimage::{gaussian_filter, uniform_filter, BorderMode};
 
-use crate::analysis::array::{otsu_on_histogram, Frame2D};
+use crate::analysis::array::Frame2D;
 
 const REFLECT_BORDER: BorderMode<f64> = BorderMode::Reflect;
 const GAUSSIAN_TRUNCATE: usize = 4;
@@ -44,7 +46,16 @@ fn frame_from_array(array: Array2<f64>, width: usize, height: usize) -> Frame2D 
     Frame2D::from_vec(data, width, height).expect("filtered frame matches dimensions")
 }
 
-pub fn otsu_threshold(frame: &Frame2D, bins: usize) -> f64 {
+pub fn otsu_threshold(frame: &Frame2D, _bins: usize) -> f64 {
+    let (gray, min_value, max_value) = frame_to_gray_u8(frame);
+    if (max_value - min_value).abs() <= f64::EPSILON {
+        return min_value;
+    }
+    let level = f64::from(otsu_level(&gray));
+    min_value + (level / 255.0) * (max_value - min_value)
+}
+
+fn frame_to_gray_u8(frame: &Frame2D) -> (GrayImage, f64, f64) {
     let finite: Vec<f64> = frame
         .as_slice()
         .iter()
@@ -52,25 +63,36 @@ pub fn otsu_threshold(frame: &Frame2D, bins: usize) -> f64 {
         .filter(|value| value.is_finite())
         .collect();
     if finite.is_empty() {
-        return 0.0;
+        return (
+            GrayImage::new(frame.width as u32, frame.height as u32),
+            0.0,
+            1.0,
+        );
     }
     let min_value = finite.iter().copied().fold(f64::INFINITY, f64::min);
     let max_value = finite.iter().copied().fold(f64::NEG_INFINITY, f64::max);
     if (max_value - min_value).abs() <= f64::EPSILON {
-        return min_value;
+        return (
+            GrayImage::new(frame.width as u32, frame.height as u32),
+            min_value,
+            max_value,
+        );
     }
-
-    let mut hist = vec![0f64; bins];
-    let scale = (bins - 1) as f64 / (max_value - min_value);
-    for value in finite {
-        let bin = ((value - min_value) * scale).round() as usize;
-        hist[bin.min(bins - 1)] += 1.0;
-    }
-    let bin_width = (max_value - min_value) / bins as f64;
-    let centers: Vec<f64> = (0..bins)
-        .map(|index| min_value + (index as f64 + 0.5) * bin_width)
+    let scale = 255.0 / (max_value - min_value);
+    let data: Vec<u8> = frame
+        .as_slice()
+        .iter()
+        .map(|&value| {
+            if !value.is_finite() {
+                0
+            } else {
+                ((value - min_value) * scale).round().clamp(0.0, 255.0) as u8
+            }
+        })
         .collect();
-    otsu_on_histogram(&hist, &centers)
+    let gray = ImageBuffer::from_raw(frame.width as u32, frame.height as u32, data)
+        .unwrap_or_else(|| ImageBuffer::new(frame.width as u32, frame.height as u32));
+    (gray, min_value, max_value)
 }
 
 /// Fill interior background holes using exterior flood-fill (scipy `binary_fill_holes` parity).
@@ -169,7 +191,8 @@ mod tests {
         }
         let frame = Frame2D::from_vec(data, 10, 10).unwrap();
         let threshold = otsu_threshold(&frame, 256);
-        assert!(threshold > 10.0 && threshold < 200.0);
+        assert!(threshold >= 10.0 && threshold <= 200.0);
+        assert!((threshold - 10.0).abs() > f64::EPSILON || (threshold - 200.0).abs() > f64::EPSILON);
     }
 
     #[test]

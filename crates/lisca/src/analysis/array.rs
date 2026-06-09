@@ -1,9 +1,14 @@
 //! NumPy-style array helpers for ROI frames, masks, and shared numeric kernels.
 //!
 //! Transfection describes **goals** for masked reductions and morphology metrics; implementations
-//! belong here (`ndarray`) rather than hand-rolled pixel loops.
+//! use the `ndarray` ecosystem (`ndarray-stats`, `ndarray-ndimage`) rather than hand-rolled loops.
 
-use ndarray::{Array1, ArrayView2};
+use ndarray::{s, Array1, ArrayView2};
+use ndarray_stats::{
+    interpolate::{Linear, Lower},
+    Quantile1dExt, SummaryStatisticsExt,
+};
+use noisy_float::types::{n64, N64};
 
 #[derive(Debug, Clone)]
 pub struct Frame2D {
@@ -85,13 +90,10 @@ pub fn masked_roi_stats(frame: &[f64], mask: &[bool]) -> Result<MaskedRoiStats, 
     let background_weight = 1.0 - &foreground_weight;
 
     let area = foreground_weight.sum() as u32;
-    let intensity = (&values * &foreground_weight).sum();
-    let background_count = background_weight.sum();
-    let background = if background_count > 0.0 {
-        (&values * &background_weight).sum() / background_count
-    } else {
-        0.0
-    };
+    let intensity = values
+        .weighted_sum(&foreground_weight)
+        .map_err(|error| error.to_string())?;
+    let background = values.weighted_mean(&background_weight).unwrap_or(0.0);
     let corrected = intensity - f64::from(area) * background;
 
     Ok(MaskedRoiStats {
@@ -113,7 +115,9 @@ pub fn roi_stats(frame: &[f64], mask: &[bool]) -> Result<RoiStats, String> {
     let unmasked_mean = if frame.is_empty() {
         0.0
     } else {
-        frame.iter().sum::<f64>() / frame.len() as f64
+        Array1::from_iter(frame.iter().copied())
+            .mean()
+            .unwrap_or(0.0)
     };
     Ok(RoiStats {
         masked,
@@ -127,34 +131,32 @@ pub fn roi_stats(frame: &[f64], mask: &[bool]) -> Result<RoiStats, String> {
 
 /// Linear interpolation quantile on unsorted `f64` values (`numpy.quantile` default).
 pub fn quantile(values: &[f64], q: f64) -> f64 {
+    quantile_linear(values, q)
+}
+
+/// Linear interpolation quantile on unsorted `f64` values via `ndarray-stats`.
+pub fn quantile_linear(values: &[f64], q: f64) -> f64 {
     if values.is_empty() {
         return 0.0;
     }
     if values.len() == 1 {
         return values[0];
     }
-    let mut sorted = values.to_vec();
-    sorted.sort_by(|left, right| left.partial_cmp(right).unwrap_or(std::cmp::Ordering::Equal));
-    quantile_linear_sorted(&sorted, q)
+    let mut arr = Array1::from_iter(values.iter().copied().filter(|value| value.is_finite()).map(N64::new));
+    if arr.is_empty() {
+        return 0.0;
+    }
+    if arr.len() == 1 {
+        return arr[0].raw();
+    }
+    arr.quantile_mut(n64(q.clamp(0.0, 1.0)), &Linear)
+        .map(|value| value.raw())
+        .unwrap_or(0.0)
 }
 
 /// Linear interpolation quantile on a pre-sorted slice (`q` in `[0, 1]`).
 pub fn quantile_linear_sorted(sorted: &[f64], q: f64) -> f64 {
-    if sorted.is_empty() {
-        return 0.0;
-    }
-    if sorted.len() == 1 {
-        return sorted[0];
-    }
-    let position = q.clamp(0.0, 1.0) * (sorted.len() - 1) as f64;
-    let lower = position.floor() as usize;
-    let upper = position.ceil() as usize;
-    if lower == upper {
-        sorted[lower]
-    } else {
-        let weight = position - lower as f64;
-        sorted[lower] * (1.0 - weight) + sorted[upper] * weight
-    }
+    quantile_linear(sorted, q)
 }
 
 /// Percentile on unsorted `f64` values (`pct` in `[0, 100]`, linear interpolation).
@@ -177,9 +179,12 @@ pub fn quantile_floor_sorted_u16(sorted: &[u16], q: f64) -> u16 {
     if sorted.is_empty() {
         return 0;
     }
-    let clamped = q.clamp(0.0, 1.0);
-    let index = (clamped * (sorted.len().saturating_sub(1)) as f64).floor() as usize;
-    sorted[index.min(sorted.len() - 1)]
+    if sorted.len() == 1 {
+        return sorted[0];
+    }
+    let mut arr = Array1::from_iter(sorted.iter().copied());
+    arr.quantile_mut(n64(q.clamp(0.0, 1.0)), &Lower)
+        .unwrap_or(0)
 }
 
 /// Evenly subsample then sort (used for large-frame contrast estimation).
@@ -249,6 +254,18 @@ pub fn otsu_on_histogram(counts: &[f64], centers: &[f64]) -> f64 {
         }
     }
     best_threshold
+}
+
+/// Trapezoidal integration of `(times, values)` pairs (`numpy.trapz` parity).
+pub fn trapezoidal_integral(times: &[f64], values: &[f64]) -> f64 {
+    if times.len() < 2 || times.len() != values.len() {
+        return 0.0;
+    }
+    let t = Array1::from_iter(times.iter().copied());
+    let y = Array1::from_iter(values.iter().copied());
+    let dt = (&t.slice(s![1..]) - &t.slice(s![..t.len() - 1])) * 0.5;
+    let heights = &y.slice(s![..y.len() - 1]) + &y.slice(s![1..]);
+    (dt * heights).sum()
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -407,6 +424,13 @@ mod tests {
         let centers = vec![5.0, 15.0, 185.0, 205.0];
         let threshold = otsu_on_histogram(&counts, &centers);
         assert!(threshold >= 15.0 && threshold <= 185.0);
+    }
+
+    #[test]
+    fn trapezoidal_integral_matches_reference() {
+        let times = [0.0, 1.0, 2.0];
+        let values = [0.0, 2.0, 4.0];
+        assert!((trapezoidal_integral(&times, &values) - 4.0).abs() < 1e-9);
     }
 
     #[test]
