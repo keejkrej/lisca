@@ -2,14 +2,22 @@
 
 Native analysis pipeline in `crates/lisca/src/analysis/`. The running workflow depends on `assay.json` → `assayId`:
 
-| Assay | Reference | Pipeline |
+| Assay | Goal source (not implementation reference) | Pipeline |
 | --- | --- | --- |
-| `gene-expression` | sibling [`transfection`](../../transfection) Python package | segment → timeseries → AUC → fit (+ plots) |
-| `immune-killing` | [mupattern](https://github.com/keejkrej/mupattern) kill ResNet classifier | predict → clean → death times → kill curve plot |
+| `gene-expression` | sibling [`transfection`](../../transfection) — stages, CSV columns, plot names | segment → timeseries → AUC → fit (+ plots) |
+| `immune-killing` | [mupattern](https://github.com/keejkrej/mupattern) — kill curve semantics, ResNet classifier | predict → clean → death times → kill curve plot |
 
 Numeric stages and PNG plots run in Rust via [**mplot-rs**](https://github.com/keejkrej/mplot-rs). Immune killing inference uses ONNX Runtime (`ort`) with the `keejkrej/mupattern-resnet18` model.
 
-Shared numeric helpers live in `array.rs` (`ndarray`). Masked ROI metrics use the same reductions as transfection's NumPy code (`frame[mask].sum()`, `frame[~mask].mean()`). Segmentation filters in `image_ops.rs` are still hand-rolled equivalents of transfection's `np.pad` / `cumsum` path and are candidates for a future `ndarray` pass when morphology or richer filters land.
+## Design stance
+
+Sibling repos (**transfection**, **mupattern**) describe **what** to compute and **which files** to read/write. They are **not** Rust implementation references — do not mirror their NumPy loops, module layout, or Python packaging.
+
+Rust should be idiomatic for this crate:
+
+- Shared ROI math in `array.rs` (`ndarray`) where array ops help today or for upcoming morphology/part-metrics.
+- Per-assay pipelines under `assays/<name>/`.
+- Parity is judged on **workspace outputs and scientific meaning** (tolerances in tests), not on matching Python evaluation order or data structures.
 
 ## Gene expression pipeline
 
@@ -92,14 +100,14 @@ analysis/
     immune_killing/    # mupattern ResNet kill pipeline
 ```
 
-| Module | transfection / mupattern reference |
+| Module | Goal |
 | --- | --- |
-| `assays/gene_expression/segment.rs` | `services/segment.py` |
-| `assays/gene_expression/timeseries.rs` | `services/timeseries.py` |
-| `assays/gene_expression/auc.rs` | `services/auc.py` |
-| `assays/gene_expression/fit.rs` | `services/fit.py` |
-| `assays/gene_expression/plot/` | `services/plot_*.py` via mplot-rs |
-| `assays/immune_killing/` | mupattern `kill` (predict, clean, plot) |
+| `assays/gene_expression/segment.rs` | Otsu mask per ROI frame |
+| `assays/gene_expression/timeseries.rs` | Mask-corrected intensity traces → `timeseries/` CSVs |
+| `assays/gene_expression/auc.rs` | Trapezoidal AUC per trace |
+| `assays/gene_expression/fit.rs` | Two-exponential kinetic fit |
+| `assays/gene_expression/plot/` | PNGs for traces, AUC, fit parameters |
+| `assays/immune_killing/` | ResNet presence, monotonicity clean, death times, kill curve |
 
 Adding a new assay type: create `assays/<name>/` with `run` (async) and optionally `run_sync`, then register in `assays/mod.rs`.
 
@@ -107,12 +115,14 @@ Adding a new assay type: create `assays/<name>/` with `run` (async) and optional
 
 Plots render natively in Rust (no Python sidecar). Figure layout constants match transfection (`12×8` in, log-scale AUC boxplot, fluor trace colors, etc.).
 
-## Parity expectations
+## Parity expectations (outputs, not code)
 
-- Position ranges in `assay.json` use **inclusive** Studio semantics (`1:12` → positions 1…12); expanded to explicit lists in `slide.json`.
+- **Contract parity**: `assay.json` / `slide.json` semantics, output paths, CSV column names, PNG filenames Studio expects.
+- **Scientific parity**: same definitions (e.g. corrected = intensity − area × background; trapezoidal AUC; kill monotonicity clean).
+- **Not required**: matching transfection/mupattern module names, NumPy vs loop structure, or bitwise float identity.
+- Position ranges in `assay.json` use **inclusive** Studio semantics (`1:12` → positions 1…12).
 - Segmentation defaults: `variation_radius=2`, `gaussian_sigma=1.0`.
 - Fit uses the two-pass pooled-protein strategy with `max_onset_minutes=0` unless extended later.
-- Float CSV values may differ slightly from Python due to evaluation order; tests use tolerance, not bitwise equality.
 
 ## Tests
 
@@ -120,4 +130,4 @@ Plots render natively in Rust (no Python sidecar). Figure layout constants match
 cargo test -p lisca
 ```
 
-Unit tests live under each `analysis/` submodule. Optional golden parity against transfection can be added when a shared fixture workspace exists.
+Unit tests live under each `analysis/` submodule. Golden workspace fixtures (when available) assert output shape and numeric tolerance — not Python source equivalence.
