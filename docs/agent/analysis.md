@@ -9,6 +9,8 @@ Native analysis pipeline in `crates/lisca/src/analysis/`. The running workflow d
 
 Numeric stages and PNG plots run in Rust via [**mplot-rs**](https://github.com/keejkrej/mplot-rs). Immune killing inference uses ONNX Runtime (`ort`) with the `keejkrej/mupattern-resnet18` model.
 
+Shared numeric helpers live in `array.rs` (`ndarray`). Masked ROI metrics use the same reductions as transfection's NumPy code (`frame[mask].sum()`, `frame[~mask].mean()`). Segmentation filters in `image_ops.rs` are still hand-rolled equivalents of transfection's `np.pad` / `cumsum` path and are candidates for a future `ndarray` pass when morphology or richer filters land.
+
 ## Gene expression pipeline
 
 Order matches `transfection-analyze.sh`:

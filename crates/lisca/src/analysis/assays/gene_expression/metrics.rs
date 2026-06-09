@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use crate::analysis::array::masked_roi_stats;
 use crate::analysis::roi_stack::{
     default_mask_path, roi_frame_2d, validate_channel_index, MaskStack, PositionIndex, RoiStack,
 };
@@ -48,32 +49,15 @@ pub fn compute_masked_roi_metrics(
                 0,
             )?;
             let mask = &mask_stack.masks[timepoint as usize];
-            let mut area = 0u32;
-            let mut intensity = 0.0;
-            let mut background_sum = 0.0;
-            let mut background_count = 0usize;
-            for (pixel, masked) in frame.iter().zip(mask.iter()) {
-                if *masked {
-                    area = area.saturating_add(1);
-                    intensity += pixel;
-                } else {
-                    background_sum += pixel;
-                    background_count += 1;
-                }
-            }
-            let background = if background_count == 0 {
-                0.0
-            } else {
-                background_sum / background_count as f64
-            };
+            let stats = masked_roi_stats(&frame, mask)?;
             rows.push(MetricRow {
                 pos: index.position,
                 roi: roi.roi,
                 t: timepoint,
-                area,
-                background,
-                intensity,
-                corrected: intensity - area as f64 * background,
+                area: stats.area,
+                background: stats.background,
+                intensity: stats.intensity,
+                corrected: stats.corrected,
             });
         }
     }
@@ -82,32 +66,4 @@ pub fn compute_masked_roi_metrics(
     }
     rows.sort_by(|left, right| (left.roi, left.t).cmp(&(right.roi, right.t)));
     Ok(rows)
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn corrected_intensity_matches_formula() {
-        let frame = vec![10.0, 20.0, 30.0, 40.0];
-        let mask = vec![true, true, false, false];
-        let mut area = 0u32;
-        let mut intensity = 0.0;
-        let mut background_sum = 0.0;
-        let mut background_count = 0usize;
-        for (pixel, masked) in frame.iter().zip(mask.iter()) {
-            if *masked {
-                area += 1;
-                intensity += pixel;
-            } else {
-                background_sum += pixel;
-                background_count += 1;
-            }
-        }
-        let background = background_sum / background_count as f64;
-        let corrected = intensity - area as f64 * background;
-        assert_eq!(area, 2);
-        assert!((intensity - 30.0).abs() < 1e-9);
-        assert!((background - 35.0).abs() < 1e-9);
-        assert!((corrected - (-40.0)).abs() < 1e-9);
-    }
 }
