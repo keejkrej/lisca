@@ -90,6 +90,7 @@ Studio results UI reads CSVs for interactive charts; PNG filenames match transfe
 analysis/
   pipeline.rs          # load assay.json, dispatch
   progress.rs          # shared progress + spawn_blocking helper
+  array.rs             # Frame2D, masked ROI stats, Otsu, kinetic basis, quantiles
   slide.rs             # slide channel mapping (shared)
   roi_stack.rs         # ROI TIFF stacks (shared)
   csv_io.rs, output.rs, export.rs
@@ -97,6 +98,7 @@ analysis/
   assays/
     mod.rs             # match assayId → pipeline
     gene_expression/   # transfection-style pipeline
+      traces.rs        # shared timeseries CSV grouping for AUC/fit/plots
     immune_killing/    # mupattern ResNet kill pipeline
 ```
 

@@ -1,32 +1,40 @@
 use std::collections::VecDeque;
 
-pub fn variation_filter_2d(image: &[f64], width: usize, height: usize, radius: u32) -> Vec<f64> {
+use ndarray::ArrayView2;
+
+use crate::analysis::array::{otsu_on_histogram, Frame2D};
+
+pub fn variation_filter_2d(frame: &Frame2D, radius: u32) -> Frame2D {
     if radius == 0 {
-        return image.to_vec();
+        return frame.clone();
     }
-    let mean = box_mean_2d(image, width, height, radius);
-    let squared: Vec<f64> = image.iter().map(|value| value * value).collect();
-    let mean_square = box_mean_2d(&squared, width, height, radius);
-    mean.iter()
+    let view = frame.as_view();
+    let mean = box_mean_2d(view, radius);
+    let squared = view.mapv(|value| value * value);
+    let mean_square = box_mean_2d(squared.view(), radius);
+    let out: Vec<f64> = mean
+        .iter()
         .zip(mean_square.iter())
         .map(|(m, ms)| (ms - m * m).max(0.0).sqrt())
-        .collect()
+        .collect();
+    Frame2D::from_vec(out, frame.width, frame.height).expect("filtered frame matches dimensions")
 }
 
-fn box_mean_2d(image: &[f64], width: usize, height: usize, radius: u32) -> Vec<f64> {
+fn box_mean_2d(image: ArrayView2<f64>, radius: u32) -> Vec<f64> {
+    let height = image.nrows();
+    let width = image.ncols();
     let window = (radius * 2 + 1) as usize;
     let padded_w = width + 2 * radius as usize;
     let padded_h = height + 2 * radius as usize;
     let mut padded = vec![0.0; padded_w * padded_h];
     for y in 0..height {
         for x in 0..width {
-            padded[(y + radius as usize) * padded_w + (x + radius as usize)] =
-                image[y * width + x];
+            padded[(y + radius as usize) * padded_w + (x + radius as usize)] = image[[y, x]];
         }
     }
     for y in 0..radius as usize {
         for x in 0..width {
-            let src = image[x];
+            let src = image[[0, x]];
             padded[y * padded_w + (x + radius as usize)] = src;
             padded[(padded_h - 1 - y) * padded_w + (x + radius as usize)] = src;
         }
@@ -67,13 +75,16 @@ fn box_mean_2d(image: &[f64], width: usize, height: usize, radius: u32) -> Vec<f
     out
 }
 
-pub fn gaussian_filter_2d(image: &[f64], width: usize, height: usize, sigma: f64) -> Vec<f64> {
+pub fn gaussian_filter_2d(frame: &Frame2D, sigma: f64) -> Frame2D {
     if sigma < 0.0 {
-        return image.to_vec();
+        return frame.clone();
     }
     let kernel = gaussian_kernel_1d(sigma);
-    let row_filtered = convolve_axis_reflect(image, width, height, &kernel, true);
-    convolve_axis_reflect(&row_filtered, width, height, &kernel, false)
+    let row_filtered = convolve_axis_reflect(frame.as_view(), &kernel, true);
+    let row_view = ArrayView2::from_shape((frame.height, frame.width), &row_filtered)
+        .expect("row filter matches frame dimensions");
+    let filtered = convolve_axis_reflect(row_view, &kernel, false);
+    Frame2D::from_vec(filtered, frame.width, frame.height).expect("filtered frame matches dimensions")
 }
 
 fn gaussian_kernel_1d(sigma: f64) -> Vec<f64> {
@@ -92,18 +103,14 @@ fn gaussian_kernel_1d(sigma: f64) -> Vec<f64> {
     kernel
 }
 
-fn convolve_axis_reflect(
-    image: &[f64],
-    width: usize,
-    height: usize,
-    kernel: &[f64],
-    horizontal: bool,
-) -> Vec<f64> {
+fn convolve_axis_reflect(image: ArrayView2<f64>, kernel: &[f64], horizontal: bool) -> Vec<f64> {
+    let width = image.ncols();
+    let height = image.nrows();
     let pad = kernel.len() / 2;
     if pad == 0 {
-        return image.to_vec();
+        return image.iter().copied().collect();
     }
-    let mut out = vec![0.0; image.len()];
+    let mut out = vec![0.0; width * height];
     if horizontal {
         for y in 0..height {
             for x in 0..width {
@@ -111,7 +118,7 @@ fn convolve_axis_reflect(
                 for (k, weight) in kernel.iter().enumerate() {
                     let offset = k as i32 - pad as i32;
                     let sample_x = reflect_index(x as i32 + offset, width as i32);
-                    sum += image[y * width + sample_x as usize] * weight;
+                    sum += image[[y, sample_x as usize]] * weight;
                 }
                 out[y * width + x] = sum;
             }
@@ -123,7 +130,7 @@ fn convolve_axis_reflect(
                 for (k, weight) in kernel.iter().enumerate() {
                     let offset = k as i32 - pad as i32;
                     let sample_y = reflect_index(y as i32 + offset, height as i32);
-                    sum += image[sample_y as usize * width + x] * weight;
+                    sum += image[[sample_y as usize, x]] * weight;
                 }
                 out[y * width + x] = sum;
             }
@@ -147,67 +154,33 @@ fn reflect_index(index: i32, size: i32) -> i32 {
     value
 }
 
-pub fn otsu_threshold(image: &[f64], bins: usize) -> f64 {
-    let finite: Vec<f64> = image.iter().copied().filter(|value| value.is_finite()).collect();
+pub fn otsu_threshold(frame: &Frame2D, bins: usize) -> f64 {
+    let finite: Vec<f64> = frame
+        .as_slice()
+        .iter()
+        .copied()
+        .filter(|value| value.is_finite())
+        .collect();
     if finite.is_empty() {
         return 0.0;
     }
-    let min_value = finite
-        .iter()
-        .copied()
-        .fold(f64::INFINITY, f64::min);
-    let max_value = finite
-        .iter()
-        .copied()
-        .fold(f64::NEG_INFINITY, f64::max);
+    let min_value = finite.iter().copied().fold(f64::INFINITY, f64::min);
+    let max_value = finite.iter().copied().fold(f64::NEG_INFINITY, f64::max);
     if (max_value - min_value).abs() <= f64::EPSILON {
         return min_value;
     }
 
-    let mut hist = vec![0u64; bins];
+    let mut hist = vec![0f64; bins];
     let scale = (bins - 1) as f64 / (max_value - min_value);
     for value in finite {
         let bin = ((value - min_value) * scale).round() as usize;
-        hist[bin.min(bins - 1)] += 1;
+        hist[bin.min(bins - 1)] += 1.0;
     }
-    let total = hist.iter().sum::<u64>() as f64;
     let bin_width = (max_value - min_value) / bins as f64;
     let centers: Vec<f64> = (0..bins)
         .map(|index| min_value + (index as f64 + 0.5) * bin_width)
         .collect();
-
-    let mut weight_background = 0.0;
-    let mut sum_background = 0.0;
-    let total_intensity: f64 = hist
-        .iter()
-        .zip(centers.iter())
-        .map(|(count, center)| *count as f64 * center)
-        .sum();
-    let mut best_variance = f64::NEG_INFINITY;
-    let mut best_threshold = centers[0];
-
-    for (count, center) in hist.iter().zip(centers.iter()) {
-        weight_background += *count as f64;
-        if weight_background <= 0.0 || weight_background >= total {
-            sum_background += *center * *count as f64;
-            continue;
-        }
-        sum_background += *center * *count as f64;
-        let weight_foreground = total - weight_background;
-        if weight_foreground <= 0.0 {
-            continue;
-        }
-        let mean_background = sum_background / weight_background;
-        let mean_foreground = (total_intensity - sum_background) / weight_foreground;
-        let variance = weight_background
-            * weight_foreground
-            * (mean_background - mean_foreground).powi(2);
-        if variance > best_variance {
-            best_variance = variance;
-            best_threshold = *center;
-        }
-    }
-    best_threshold
+    otsu_on_histogram(&hist, &centers)
 }
 
 pub fn fill_binary_holes_2d(mask: &[bool], width: usize, height: usize) -> Vec<bool> {
@@ -260,20 +233,19 @@ pub fn fill_binary_holes_2d(mask: &[bool], width: usize, height: usize) -> Vec<b
 }
 
 pub fn segment_frame(
-    frame: &[f64],
-    width: usize,
-    height: usize,
+    frame: &Frame2D,
     variation_radius: u32,
     gaussian_sigma: f64,
 ) -> Vec<bool> {
-    let varied = variation_filter_2d(frame, width, height, variation_radius);
-    let smoothed = gaussian_filter_2d(&varied, width, height, gaussian_sigma);
+    let varied = variation_filter_2d(frame, variation_radius);
+    let smoothed = gaussian_filter_2d(&varied, gaussian_sigma);
     let threshold = otsu_threshold(&smoothed, 256);
     let raw_mask = smoothed
+        .as_slice()
         .iter()
         .map(|value| *value > threshold)
         .collect::<Vec<_>>();
-    fill_binary_holes_2d(&raw_mask, width, height)
+    fill_binary_holes_2d(&raw_mask, frame.width, frame.height)
 }
 
 #[cfg(test)]
@@ -282,14 +254,15 @@ mod tests {
 
     #[test]
     fn otsu_splits_bimodal_image() {
-        let mut image = vec![0.0; 100];
-        for value in image.iter_mut().take(50) {
+        let mut data = vec![0.0; 100];
+        for value in data.iter_mut().take(50) {
             *value = 10.0;
         }
-        for value in image.iter_mut().skip(50) {
+        for value in data.iter_mut().skip(50) {
             *value = 200.0;
         }
-        let threshold = otsu_threshold(&image, 256);
+        let frame = Frame2D::from_vec(data, 10, 10).unwrap();
+        let threshold = otsu_threshold(&frame, 256);
         assert!(threshold > 10.0 && threshold < 200.0);
     }
 

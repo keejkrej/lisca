@@ -2,32 +2,16 @@ use std::path::{Path, PathBuf};
 
 use rayon::prelude::*;
 
-use crate::analysis::csv_io::{column_index, parse_f64, read_csv, write_csv};
+use crate::analysis::array::{evaluate_kinetic_candidate, KineticFitCoeffs};
+use crate::analysis::csv_io::write_csv;
 
 use super::auc::discover_timeseries_csvs;
 use super::segment::default_jobs;
+use super::traces::{build_fit_tasks, FitTraceTask};
 
 const RATE_COARSE_CANDIDATE_COUNT: usize = 24;
 const RATE_REFINE_CANDIDATE_COUNT: usize = 12;
 const RATE_REFINE_PASSES: usize = 2;
-
-#[derive(Debug, Clone)]
-struct FitResult {
-    intensity_offset: f64,
-    protein_decay_rate: f64,
-    mrna_decay_rate: f64,
-    translation_onset: f64,
-    expression_amplitude: f64,
-}
-
-#[derive(Debug, Clone)]
-struct FitTask {
-    slide_channel: Option<u32>,
-    pos: i64,
-    roi: i64,
-    times: Vec<f64>,
-    values: Vec<f64>,
-}
 
 pub fn run_fit(workspace: &Path, interval: f64, max_onset_minutes: f64, jobs: usize) -> Result<PathBuf, String> {
     if interval <= 0.0 {
@@ -54,51 +38,14 @@ pub fn run_fit(workspace: &Path, interval: f64, max_onset_minutes: f64, jobs: us
     Ok(output)
 }
 
-fn build_fit_tasks(csvs: &[PathBuf]) -> Result<Vec<FitTask>, String> {
-    let mut tasks = Vec::new();
-    for csv_path in csvs {
-        let slide_channel = crate::analysis::plot::parse_slide_channel(csv_path);
-        let (headers, rows) = read_csv(csv_path)?;
-        let t_index = column_index(&headers, "t").ok_or("missing t column")?;
-        let corrected_index = column_index(&headers, "corrected").ok_or("missing corrected column")?;
-        let pos_index = column_index(&headers, "pos").ok_or("missing pos column")?;
-        let roi_index = column_index(&headers, "roi").ok_or("missing roi column")?;
-
-        let mut groups: std::collections::BTreeMap<(i64, i64), Vec<(f64, f64)>> =
-            std::collections::BTreeMap::new();
-        for row in rows {
-            let pos = parse_f64(&row[pos_index]).ok_or("invalid pos")? as i64;
-            let roi = parse_f64(&row[roi_index]).ok_or("invalid roi")? as i64;
-            let t = parse_f64(&row[t_index]).ok_or("invalid t")?;
-            let corrected = parse_f64(&row[corrected_index]).ok_or("invalid corrected")?;
-            groups.entry((pos, roi)).or_default().push((t, corrected));
-        }
-
-        for ((pos, roi), mut trace) in groups {
-            trace.sort_by(|left, right| left.0.partial_cmp(&right.0).unwrap_or(std::cmp::Ordering::Equal));
-            tasks.push(FitTask {
-                slide_channel,
-                pos,
-                roi,
-                times: trace.iter().map(|point| point.0).collect(),
-                values: trace.iter().map(|point| point.1).collect(),
-            });
-        }
-    }
-    if tasks.is_empty() {
-        return Err("No fit rows produced".to_string());
-    }
-    Ok(tasks)
-}
-
 fn run_fit_tasks(
-    tasks: &[FitTask],
+    tasks: &[FitTraceTask],
     interval: f64,
     fixed_protein_decay_rate: Option<f64>,
     max_onset_minutes: f64,
     jobs: usize,
 ) -> Vec<FitCsvRow> {
-    let fit = |task: &FitTask| fit_task(task, interval, fixed_protein_decay_rate, max_onset_minutes);
+    let fit = |task: &FitTraceTask| fit_task(task, interval, fixed_protein_decay_rate, max_onset_minutes);
     if jobs == 1 || tasks.len() <= 1 {
         return tasks.iter().map(fit).collect();
     }
@@ -106,7 +53,7 @@ fn run_fit_tasks(
 }
 
 fn fit_task(
-    task: &FitTask,
+    task: &FitTraceTask,
     interval: f64,
     fixed_protein_decay_rate: Option<f64>,
     max_onset_minutes: f64,
@@ -124,7 +71,7 @@ fn fit_trace_points(
     values: &[f64],
     fixed_protein_decay_rate: Option<f64>,
     max_onset_minutes: f64,
-) -> Option<FitResult> {
+) -> Option<KineticFitCoeffs> {
     if times.len() < 3 || values.len() < 3 {
         return None;
     }
@@ -173,7 +120,7 @@ fn fit_trace_points(
     let mut protein_upper = max_rate.ln();
     let mut mrna_lower = min_rate.ln();
     let mut mrna_upper = max_rate.ln();
-    let mut best_result: Option<FitResult> = None;
+    let mut best_result: Option<KineticFitCoeffs> = None;
     let mut best_sse: Option<f64> = None;
 
     for candidate_count in std::iter::once(RATE_COARSE_CANDIDATE_COUNT).chain(
@@ -181,7 +128,7 @@ fn fit_trace_points(
     ) {
         let protein_logs = linspace(protein_lower, protein_upper, candidate_count);
         let mrna_logs = linspace(mrna_lower, mrna_upper, candidate_count);
-        let mut stage_best: Option<(f64, FitResult)> = None;
+        let mut stage_best: Option<(f64, KineticFitCoeffs)> = None;
         let mut best_indices: Option<(usize, usize)> = None;
 
         for (protein_index, protein_log) in protein_logs.iter().enumerate() {
@@ -191,7 +138,7 @@ fn fit_trace_points(
                 if mrna_decay_rate <= protein_decay_rate {
                     continue;
                 }
-                if let Some((sse, candidate)) = evaluate_rate_candidate(
+                if let Some((sse, candidate)) = evaluate_kinetic_candidate(
                     times,
                     values,
                     protein_decay_rate,
@@ -238,7 +185,7 @@ fn fit_trace_points_with_fixed_protein(
     min_rate: f64,
     max_rate: f64,
     max_onset_minutes: f64,
-) -> Option<FitResult> {
+) -> Option<KineticFitCoeffs> {
     if !fixed_protein_decay_rate.is_finite() || fixed_protein_decay_rate <= 0.0 {
         return None;
     }
@@ -247,7 +194,7 @@ fn fit_trace_points_with_fixed_protein(
         return None;
     }
 
-    let mut best_result: Option<FitResult> = None;
+    let mut best_result: Option<KineticFitCoeffs> = None;
     let mut best_sse: Option<f64> = None;
     for onset_index in candidate_onset_indices(times, max_onset_minutes) {
         let t_onset = times[onset_index];
@@ -256,16 +203,16 @@ fn fit_trace_points_with_fixed_protein(
         }
         let mut mrna_lower = mrna_min_rate.ln();
         let mut mrna_upper = max_rate.ln();
-        let mut onset_best: Option<(f64, FitResult)> = None;
+        let mut onset_best: Option<(f64, KineticFitCoeffs)> = None;
 
         for candidate_count in std::iter::once(RATE_COARSE_CANDIDATE_COUNT).chain(
             std::iter::repeat(RATE_REFINE_CANDIDATE_COUNT).take(RATE_REFINE_PASSES),
         ) {
             let mrna_logs = linspace(mrna_lower, mrna_upper, candidate_count);
-            let mut stage_best: Option<(f64, FitResult)> = None;
+            let mut stage_best: Option<(f64, KineticFitCoeffs)> = None;
             let mut best_index: Option<usize> = None;
             for (index, mrna_log) in mrna_logs.iter().enumerate() {
-                if let Some((sse, candidate)) = evaluate_rate_candidate(
+                if let Some((sse, candidate)) = evaluate_kinetic_candidate(
                     times,
                     values,
                     fixed_protein_decay_rate,
@@ -306,74 +253,6 @@ fn fit_trace_points_with_fixed_protein(
         }
     }
     best_result
-}
-
-fn evaluate_rate_candidate(
-    times: &[f64],
-    values: &[f64],
-    protein_decay_rate: f64,
-    mrna_decay_rate: f64,
-    translation_onset: f64,
-) -> Option<(f64, FitResult)> {
-    let mut basis = vec![0.0; times.len()];
-    for (index, time) in times.iter().enumerate() {
-        if *time < translation_onset {
-            basis[index] = 0.0;
-            continue;
-        }
-        let dt = time - translation_onset;
-        basis[index] = (-protein_decay_rate * dt).exp() - (-mrna_decay_rate * dt).exp();
-    }
-    if !basis.iter().all(|value| value.is_finite()) {
-        return None;
-    }
-    let (intensity_offset, expression_amplitude) = lstsq_affine(&basis, values)?;
-    if !intensity_offset.is_finite() || !expression_amplitude.is_finite() || expression_amplitude <= 0.0 {
-        return None;
-    }
-    let mut sse = 0.0;
-    for (index, value) in values.iter().enumerate() {
-        let predicted = intensity_offset + expression_amplitude * basis[index];
-        if !predicted.is_finite() {
-            return None;
-        }
-        let delta = predicted - value;
-        sse += delta * delta;
-    }
-    if !sse.is_finite() {
-        return None;
-    }
-    Some((
-        sse,
-        FitResult {
-            intensity_offset,
-            protein_decay_rate,
-            mrna_decay_rate,
-            translation_onset,
-            expression_amplitude,
-        },
-    ))
-}
-
-fn lstsq_affine(basis: &[f64], values: &[f64]) -> Option<(f64, f64)> {
-    let n = basis.len() as f64;
-    let sum_1 = n;
-    let sum_x = basis.iter().sum::<f64>();
-    let sum_xx = basis.iter().map(|value| value * value).sum::<f64>();
-    let sum_y = values.iter().sum::<f64>();
-    let sum_xy = basis
-        .iter()
-        .zip(values.iter())
-        .map(|(x, y)| x * y)
-        .sum::<f64>();
-
-    let det = sum_1 * sum_xx - sum_x * sum_x;
-    if det.abs() <= f64::EPSILON {
-        return None;
-    }
-    let offset = (sum_y * sum_xx - sum_x * sum_xy) / det;
-    let amplitude = (sum_1 * sum_xy - sum_x * sum_y) / det;
-    Some((offset, amplitude))
 }
 
 fn candidate_onset_indices(times: &[f64], max_onset_minutes: f64) -> Vec<usize> {
@@ -434,7 +313,7 @@ fn successful_fit_row(
     slide_channel: Option<u32>,
     pos: i64,
     roi: i64,
-    result: FitResult,
+    result: KineticFitCoeffs,
 ) -> FitCsvRow {
     FitCsvRow {
         slide_channel,
@@ -523,7 +402,7 @@ pub fn default_fit_jobs() -> usize {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::analysis::array::lstsq_affine;
 
     #[test]
     fn lstsq_recovers_affine_coefficients() {

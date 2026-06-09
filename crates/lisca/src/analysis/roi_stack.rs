@@ -5,6 +5,8 @@ use std::path::{Path, PathBuf};
 use serde::Deserialize;
 use tiff::decoder::{Decoder, DecodingResult};
 
+use crate::analysis::array::Frame2D;
+
 #[derive(Debug, Clone)]
 pub struct RoiCrop {
     pub roi: u32,
@@ -175,7 +177,7 @@ pub fn roi_frame_2d(
     timepoint: u32,
     channel: u32,
     z_index: u32,
-) -> Result<Vec<f64>, String> {
+) -> Result<Frame2D, String> {
     if axis_order.len() != stack.shape.len() {
         return Err(format!(
             "Axis order {axis_order:?} does not match ROI stack ndim={}",
@@ -237,7 +239,7 @@ pub fn roi_frame_2d(
             frame[y * width + x] = stack_value(stack, &fixed_indices)?;
         }
     }
-    Ok(frame)
+    Frame2D::from_vec(frame, width, height)
 }
 
 fn stack_value(stack: &RoiStack, indices: &[usize]) -> Result<f64, String> {

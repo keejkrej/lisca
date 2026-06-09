@@ -5,6 +5,7 @@ mod metrics;
 mod plot;
 mod segment;
 mod timeseries;
+mod traces;
 
 use std::path::{Path, PathBuf};
 

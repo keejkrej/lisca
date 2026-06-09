@@ -1,9 +1,10 @@
 use std::path::{Path, PathBuf};
 
-use crate::analysis::csv_io::{column_index, parse_f64, read_csv, write_csv};
+use crate::analysis::csv_io::{format_float, write_csv};
 use crate::analysis::plot::parse_slide_channel;
 
-const GROUP_COLUMNS: [&str; 2] = ["pos", "roi"];
+use super::traces::group_timeseries_rows;
+
 const OUTPUT_COLUMNS: [&str; 4] = ["slide_channel", "pos", "roi", "auc"];
 
 pub fn run_auc(workspace: &Path, interval: f64) -> Result<PathBuf, String> {
@@ -61,29 +62,14 @@ fn compute_auc_table(csvs: &[PathBuf], interval: f64) -> Result<Vec<AucRow>, Str
     let mut rows = Vec::new();
     for csv_path in csvs {
         let slide_channel = parse_slide_channel(csv_path);
-        let (headers, data_rows) = read_csv(csv_path)?;
-        let t_index = column_index(&headers, "t").ok_or("missing t column")?;
-        let corrected_index = column_index(&headers, "corrected").ok_or("missing corrected column")?;
-        let group_indices = GROUP_COLUMNS
-            .iter()
-            .map(|name| {
-                column_index(&headers, name)
-                    .ok_or_else(|| format!("missing {name} column"))
-            })
-            .collect::<Result<Vec<_>, String>>()?;
-
-        let mut groups: std::collections::BTreeMap<(i64, i64), Vec<(f64, f64)>> =
-            std::collections::BTreeMap::new();
-        for row in data_rows {
-            let pos = parse_f64(&row[group_indices[0]]).ok_or("invalid pos")? as i64;
-            let roi = parse_f64(&row[group_indices[1]]).ok_or("invalid roi")? as i64;
-            let t = parse_f64(&row[t_index]).ok_or("invalid t")?;
-            let corrected = parse_f64(&row[corrected_index]).ok_or("invalid corrected")?;
-            groups.entry((pos, roi)).or_default().push((t, corrected));
-        }
-
+        let (headers, data_rows) = crate::analysis::csv_io::read_csv(csv_path)?;
+        let groups = group_timeseries_rows(&headers, &data_rows, "corrected", true)?;
         for ((pos, roi), mut trace) in groups {
-            trace.sort_by(|left, right| left.0.partial_cmp(&right.0).unwrap_or(std::cmp::Ordering::Equal));
+            trace.sort_by(|left, right| {
+                left.0
+                    .partial_cmp(&right.0)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            });
             rows.push(AucRow {
                 slide_channel,
                 pos,
@@ -136,14 +122,6 @@ fn write_auc_csv(path: &Path, rows: &[AucRow]) -> Result<(), String> {
         })
         .collect::<Vec<_>>();
     write_csv(path, &OUTPUT_COLUMNS, &csv_rows)
-}
-
-fn format_float(value: f64) -> String {
-    if value.is_finite() {
-        value.to_string()
-    } else {
-        "nan".to_string()
-    }
 }
 
 #[cfg(test)]

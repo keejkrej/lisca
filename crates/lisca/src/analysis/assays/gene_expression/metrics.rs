@@ -49,7 +49,7 @@ pub fn compute_masked_roi_metrics(
                 0,
             )?;
             let mask = &mask_stack.masks[timepoint as usize];
-            let stats = masked_roi_stats(&frame, mask)?;
+            let stats = masked_roi_stats(frame.as_slice(), mask)?;
             rows.push(MetricRow {
                 pos: index.position,
                 roi: roi.roi,

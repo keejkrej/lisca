@@ -1,6 +1,6 @@
 //! Studio analysis: shared workspace I/O plus per-assay pipelines under `assays/`.
 
-mod array;
+pub mod array;
 mod assays;
 mod csv_io;
 mod export;

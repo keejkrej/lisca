@@ -2,7 +2,7 @@ use std::path::Path;
 
 use rayon::prelude::*;
 
-use crate::analysis::csv_io::write_csv;
+use crate::analysis::csv_io::{format_float, write_csv};
 use crate::analysis::roi_stack::{position_dir, read_position_index};
 use crate::analysis::slide::SlideMapping;
 
@@ -67,14 +67,6 @@ fn write_metric_csv(path: &Path, rows: &[MetricRow]) -> Result<(), String> {
         })
         .collect::<Vec<_>>();
     write_csv(path, &headers, &csv_rows)
-}
-
-fn format_float(value: f64) -> String {
-    if value.is_finite() {
-        value.to_string()
-    } else {
-        "nan".to_string()
-    }
 }
 
 pub fn default_timeseries_jobs() -> usize {

@@ -111,8 +111,6 @@ fn run_position_segmentation(
             )?;
             masks.push(segment_frame(
                 &frame,
-                width,
-                height,
                 options.variation_radius,
                 options.gaussian_sigma,
             ));

@@ -101,17 +101,15 @@ fn collect_position_frames(
         let stack = RoiStack::load(&stack_path, roi_crop.shape)?;
 
         for t in 0..index.time_count {
-            let pixels = roi_frame_2d(&stack, &index.axis_order, t, signal_channel, 0)?;
-            let y_axis = index.axis_order.find('Y').ok_or("missing Y axis")?;
-            let x_axis = index.axis_order.find('X').ok_or("missing X axis")?;
+            let frame = roi_frame_2d(&stack, &index.axis_order, t, signal_channel, 0)?;
             frames.push(FrameBatchItem {
                 pos: position,
                 slide_channel,
                 crop: roi_crop.roi,
                 t,
-                pixels,
-                width: stack.shape[x_axis],
-                height: stack.shape[y_axis],
+                width: frame.width,
+                height: frame.height,
+                pixels: frame.into_vec(),
             });
         }
     }
