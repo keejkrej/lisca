@@ -40,6 +40,15 @@ export const ASSAY_NAME = {
 
 export type AssayName = (typeof ASSAY_NAME)[keyof typeof ASSAY_NAME];
 export type GeneExpressionAssayName = typeof ASSAY_NAME.GENE_EXPRESSION;
+export type ImmuneKillingAssayName = typeof ASSAY_NAME.IMMUNE_KILLING;
+
+/** Assay types selectable in the Studio wizard today. */
+export const ENABLED_STUDIO_ASSAY_IDS = [
+  ASSAY_NAME.GENE_EXPRESSION,
+  ASSAY_NAME.IMMUNE_KILLING,
+] as const;
+
+export type EnabledStudioAssayId = (typeof ENABLED_STUDIO_ASSAY_IDS)[number];
 
 export const ASSAY_FEATURE = {
   MORPHOLOGY: "morphology",

@@ -1,8 +1,15 @@
 # Studio analysis (Rust)
 
-Native analysis pipeline in `crates/lisca/src/analysis/`. Ports the reference algorithms from the sibling [`transfection`](../../transfection) Python package. Numeric stages (segment, timeseries, AUC, fit) and PNG plots run in Rust via [**mplot-rs**](https://github.com/keejkrej/mplot-rs).
+Native analysis pipeline in `crates/lisca/src/analysis/`. The running workflow depends on `assay.json` → `assayId`:
 
-## Pipeline
+| Assay | Reference | Pipeline |
+| --- | --- | --- |
+| `gene-expression` | sibling [`transfection`](../../transfection) Python package | segment → timeseries → AUC → fit (+ plots) |
+| `immune-killing` | [mupattern](https://github.com/keejkrej/mupattern) kill ResNet classifier | predict → clean → death times → kill curve plot |
+
+Numeric stages and PNG plots run in Rust via [**mplot-rs**](https://github.com/keejkrej/mplot-rs). Immune killing inference uses ONNX Runtime (`ort`) with the `keejkrej/mupattern-resnet18` model.
+
+## Gene expression pipeline
 
 Order matches `transfection-analyze.sh`:
 
@@ -13,6 +20,42 @@ assay.json → slide.json → segment → timeseries → plot-timeseries → auc
 Progress stages (HTTP/WS contract): `preparing → segment → timeseries → auc → fit → completed`.
 
 Plot steps run between their corresponding table stages but do not emit separate progress events.
+
+## Immune killing pipeline
+
+Ports the mupattern kill workflow (predict → clean → plot) to Studio ROI stacks (`roi/PosN/` TIFF stacks, not crops.zarr):
+
+```
+assay.json → slide.json → predict (ResNet ONNX) → clean (monotonicity) → death times → plot kill curve
+```
+
+Progress reuses the same HTTP stage names with kill-specific messages:
+
+| Stage | Kill step |
+| --- | --- |
+| `preparing` | Resolve ONNX model + slide mapping |
+| `segment` | Cell presence inference |
+| `timeseries` | Monotonicity clean |
+| `auc` | Death times + kill curve table |
+| `fit` | Kill curve PNG |
+
+### Kill model path
+
+Set `LISCA_KILL_MODEL` to a directory containing `model.onnx`, or place the exported ONNX model at `workspace/models/mupattern-resnet18/model.onnx`. Export from Hugging Face:
+
+```sh
+uv run optimum-cli export onnx --model keejkrej/mupattern-resnet18 ./models/mupattern-resnet18
+```
+
+### Immune killing outputs
+
+| Path | Role |
+| --- | --- |
+| `results/predictions.csv` | Raw `(t, crop, label, pos, slide_channel)` from ResNet |
+| `results/predictions_cleaned.csv` | Monotonicity-enforced labels |
+| `results/death_times.csv` | Per-ROI death frame (`≥80%` true span, mupattern clean logic) |
+| `results/kill_curve.csv` | `n_alive` vs time per slide channel |
+| `results/kill_curve.png` | Kill curve plot |
 
 ## Workspace I/O
 

@@ -1,8 +1,8 @@
 mod auc;
 mod fit;
-mod mplot_config;
+pub(crate) mod mplot_config;
 mod timeseries;
-mod util;
+pub(crate) mod util;
 
 pub use auc::run_plot_auc;
 pub use fit::run_plot_fit;

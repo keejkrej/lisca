@@ -27,6 +27,7 @@ export function BasicInfoStep2() {
   const info2 = useStudioStore((state) => state.info2);
   const setInfo2 = useStudioStore((state) => state.setInfo2);
   const isGeneExpression = assayId === ASSAY_NAME.GENE_EXPRESSION;
+  const showFeaturePicker = isGeneExpression;
   const selectedFeatures = Array.isArray(info2.selectedFeatures) ? info2.selectedFeatures : [];
   const inputStyle = [
     styles.input,
@@ -90,7 +91,7 @@ export function BasicInfoStep2() {
           </View>
         </View>
       </Section>
-      {FEATURES.length > 0 ? (
+      {showFeaturePicker && FEATURES.length > 0 ? (
         <Section contentStyle={styles.featuresGrid} title="Features">
           {FEATURES.map(({ id, title }) => {
             const selected = isSelected(id);

@@ -2,11 +2,12 @@ use std::fs;
 use std::path::PathBuf;
 
 use crate::protocol::{
-    AnalysisCsvFile, AnalysisProgress, AnalysisStage, AnalysisStatus, AssayJsonFile,
+    AnalysisCsvFile, AnalysisProgress, AnalysisStage, AnalysisStatus, AssayJsonFile, AssayName,
 };
 
 use super::auc::run_auc;
 use super::fit::{default_fit_jobs, run_fit};
+use super::kill;
 use super::output::collect_csv_outputs;
 use super::plot::{run_plot_auc, run_plot_fit, run_plot_timeseries, DEFAULT_PLOT_COLUMNS};
 use super::segment::{run_segment, SegmentOptions};
@@ -38,6 +39,92 @@ where
     let assay_json: AssayJsonFile = serde_json::from_str(&assay_contents)
         .map_err(|error| format!("invalid assay.json: {error}"))?;
 
+    match assay_json.assay_id {
+        AssayName::ImmuneKilling => {
+            run_immune_killing_pipeline(workspace_path, request_id, assay_json, update_progress).await
+        }
+        AssayName::GeneExpression | AssayName::LnpBinding | AssayName::CustomAssay => {
+            run_gene_expression_pipeline(workspace_path, request_id, assay_json, update_progress).await
+        }
+    }
+}
+
+async fn run_immune_killing_pipeline<F>(
+    workspace_path: PathBuf,
+    request_id: String,
+    assay_json: AssayJsonFile,
+    update_progress: F,
+) -> Result<Vec<AnalysisCsvFile>, String>
+where
+    F: Fn(AnalysisProgress) + Send + Sync + 'static,
+{
+    let request_id_for_progress = request_id.clone();
+    let make_progress = move |stage: AnalysisStage, progress: f64, message: &str| AnalysisProgress {
+        request_id: request_id_for_progress.clone(),
+        status: if stage == AnalysisStage::Completed {
+            AnalysisStatus::Completed
+        } else {
+            AnalysisStatus::Running
+        },
+        stage,
+        progress,
+        message: Some(message.to_string()),
+        result_files: Vec::new(),
+        error: None,
+    };
+
+    update_progress(make_progress(
+        AnalysisStage::Preparing,
+        5.0,
+        "Preparing immune killing analysis",
+    ));
+
+    let kill_workspace = workspace_path.clone();
+    let kill_assay = assay_json.clone();
+    tokio::task::spawn_blocking(move || kill::run_kill_pipeline(&kill_workspace, &kill_assay))
+        .await
+        .map_err(|error| format!("analysis task join failed: {error}"))?
+        .map_err(|error| format!("immune killing analysis failed: {error}"))?;
+
+    update_progress(make_progress(
+        AnalysisStage::Segment,
+        35.0,
+        "Completed cell presence inference",
+    ));
+    update_progress(make_progress(
+        AnalysisStage::Timeseries,
+        65.0,
+        "Cleaned kill predictions",
+    ));
+    update_progress(make_progress(
+        AnalysisStage::Auc,
+        85.0,
+        "Computed death times and kill curve",
+    ));
+    update_progress(make_progress(
+        AnalysisStage::Fit,
+        98.0,
+        "Generated kill curve plots",
+    ));
+
+    let outputs = kill::collect_kill_outputs(&workspace_path)?;
+    update_progress(make_progress(
+        AnalysisStage::Completed,
+        100.0,
+        "Immune killing analysis completed",
+    ));
+    Ok(outputs)
+}
+
+async fn run_gene_expression_pipeline<F>(
+    workspace_path: PathBuf,
+    request_id: String,
+    assay_json: AssayJsonFile,
+    update_progress: F,
+) -> Result<Vec<AnalysisCsvFile>, String>
+where
+    F: Fn(AnalysisProgress) + Send + Sync + 'static,
+{
     let interval = parse_interval_minutes(
         assay_json.info2.timelapse_amount,
         Some(assay_json.info2.timelapse_unit.as_str()),
@@ -46,7 +133,6 @@ where
 
     let mapping = build_slide_mapping(&assay_json.info3)?;
     let jobs = default_timeseries_jobs();
-    let workspace = workspace_path.clone();
     let request_id_for_progress = request_id.clone();
 
     let make_progress = move |stage: AnalysisStage, progress: f64, message: &str| AnalysisProgress {
@@ -152,7 +238,7 @@ where
     .map_err(|error| format!("analysis task join failed: {error}"))?
     .map_err(|error| format!("plot-fit step failed: {error}"))?;
 
-    let outputs = collect_csv_outputs(&workspace)?;
+    let outputs = collect_csv_outputs(&workspace_path)?;
     update_progress(make_progress(
         AnalysisStage::Completed,
         100.0,

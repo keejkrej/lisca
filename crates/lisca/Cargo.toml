@@ -25,3 +25,5 @@ csv.workspace = true
 rayon.workspace = true
 mplot.workspace = true
 rust_xlsxwriter.workspace = true
+ndarray.workspace = true
+ort.workspace = true

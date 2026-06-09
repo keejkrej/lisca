@@ -3,6 +3,7 @@ mod csv_io;
 mod export;
 mod fit;
 mod image_ops;
+mod kill;
 mod metrics;
 mod output;
 mod pipeline;

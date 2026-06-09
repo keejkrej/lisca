@@ -1,4 +1,4 @@
-import { ASSAY_NAME } from "@lisca/contracts";
+import { ASSAY_NAME, ENABLED_STUDIO_ASSAY_IDS } from "@lisca/contracts";
 import { Button, useShellTheme } from "@lisca/ui-native";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -10,7 +10,7 @@ const ASSAY_ORDER: AssayId[] = [
   ASSAY_NAME.LNP_BINDING,
   ASSAY_NAME.CUSTOM_ASSAY,
 ];
-const ENABLED_ASSAY_ID: AssayId = ASSAY_NAME.GENE_EXPRESSION;
+const ENABLED_ASSAY_IDS = new Set<AssayId>(ENABLED_STUDIO_ASSAY_IDS);
 
 export function ChooseAssay() {
   const { colors } = useShellTheme();
@@ -23,7 +23,7 @@ export function ChooseAssay() {
       <View accessibilityRole="radiogroup" style={styles.grid}>
         {ASSAY_ORDER.map((id) => {
           const selected = assayId === id;
-          const disabled = id !== ENABLED_ASSAY_ID;
+          const disabled = !ENABLED_ASSAY_IDS.has(id);
           return (
             <View key={id} style={styles.cell}>
               <Button
