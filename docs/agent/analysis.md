@@ -111,7 +111,7 @@ analysis/
 | `assays/gene_expression/plot/` | PNGs for traces, AUC, fit parameters |
 | `assays/immune_killing/` | ResNet presence, monotonicity clean, death times, kill curve |
 
-Adding a new assay type: create `assays/<name>/` with `run` (async) and optionally `run_sync`, then register in `assays/mod.rs`.
+Adding a new assay type: create `assays/<name>.rs` plus `assays/<name>/`, implement `run` (async) and optionally `run_sync`, then register in `assays.rs`.
 
 ## Plot runtime
 
