@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { cn } from "../../lib/utils";
+
 const shellDivider = "border-border";
 const shellSurface = "bg-background";
 
@@ -9,12 +11,12 @@ const shellHeaderFixed = "flex h-16 shrink-0 flex-col overflow-hidden";
 /** Fixed-height dock strip (`11rem`); scrolls inside if content overflows. */
 const shellDockFixed = "flex h-[11rem] shrink-0 flex-col overflow-hidden";
 
-function ShellDockInner(props: { children?: ReactNode }) {
+function ShellDockInner(props: { children?: ReactNode; className?: string }) {
   return (
     <div
       role="region"
       aria-label="Dock"
-      className={`${shellDockFixed} border-t ${shellDivider} ${shellSurface}`}
+      className={cn(shellDockFixed, "border-t", shellDivider, shellSurface, props.className)}
     >
       <div className="min-h-0 flex-1 overflow-auto">{props.children}</div>
     </div>
@@ -127,8 +129,8 @@ function AppShellMain(props: { children?: ReactNode }) {
 }
 AppShellMain.displayName = "AppShell.Main";
 
-function AppShellDock(props: { children?: ReactNode }) {
-  return <ShellDockInner>{props.children}</ShellDockInner>;
+function AppShellDock(props: { children?: ReactNode; className?: string }) {
+  return <ShellDockInner className={props.className}>{props.children}</ShellDockInner>;
 }
 AppShellDock.displayName = "AppShell.Dock";
 
@@ -178,8 +180,8 @@ export const AppShell: AppShellCompound = Object.assign(AppShellRoot, {
 });
 
 /** Stand-alone dock strip (same fixed height as `AppShell.Dock`). */
-export function ShellDock(props: { children?: ReactNode }) {
-  return <ShellDockInner>{props.children}</ShellDockInner>;
+export function ShellDock(props: { children?: ReactNode; className?: string }) {
+  return <ShellDockInner className={props.className}>{props.children}</ShellDockInner>;
 }
 
 /** Stand-alone sidebar (same fixed width as `AppShell.Left` / `AppShell.Right`). */

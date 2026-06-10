@@ -29,7 +29,15 @@ export {
 } from "./host/host-file-picker-dialog";
 export type { HostFilePickerMode, HostFilePickerOperations } from "./host/host-operations";
 export { SourcePickerModal, type SourcePickerModalProps } from "./host/source-picker-modal";
-export { AlignGrid, ReadonlyPathField } from "./align/align-controls";
+export { AlignGrid, ReadonlyPathField, type AlignGridProps } from "./align/align-controls";
+export {
+  AlignGridShapeDockSection,
+  type AlignGridShapeDockSectionProps,
+} from "./align/align-grid-shape-dock-section";
+export {
+  AlignGridShapeToggle,
+  type AlignGridShapeToggleProps,
+} from "./align/align-grid-shape-toggle";
 export {
   AlignToolSection,
   AlignToolToolbar,

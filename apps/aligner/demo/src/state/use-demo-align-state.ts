@@ -1,9 +1,7 @@
 import type { AlignGridCellCoord, AlignGridState, ContrastWindow } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
-import { downloadJson, downloadText, loadImageFile, stemName } from "@lisca/web-demo/browser";
+import { buildRoiExportZip, downloadBlob, loadImageFile, stemName } from "@lisca/web-demo/browser";
 import {
-  alignStateFromCurrent,
-  buildBboxCsv,
   collectAlignGridEdgeCells,
   countVisibleAlignGridCells,
   createDefaultAlignGrid,
@@ -116,9 +114,17 @@ export function useDemoAlignState(): DemoAlignState {
     setError(null);
     try {
       const stem = stemName(fileName);
-      downloadText(`${stem}.bbox.csv`, buildBboxCsv(frame, grid, excludedCells));
-      downloadJson(`${stem}.align.json`, alignStateFromCurrent(grid, excludedCells));
-      setStatus(`Downloaded ${stem}.bbox.csv and ${stem}.align.json`);
+      const zip = buildRoiExportZip({
+        fileName,
+        frame,
+        grid,
+        excludedCells,
+      });
+      downloadBlob(
+        `${stem}-rois.zip`,
+        new Blob([new Uint8Array(zip)], { type: "application/zip" }),
+      );
+      setStatus(`Downloaded ${stem}-rois.zip (${included} ROI${included === 1 ? "" : "s"})`);
       return true;
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));

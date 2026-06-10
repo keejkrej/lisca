@@ -12,6 +12,14 @@ export {
 } from "./align/align-canvas-handlers";
 export { AlignGrid, type AlignGridProps } from "./align/align-grid";
 export { AlignGridRail } from "./align/align-grid-rail";
+export {
+  AlignGridShapeDockSection,
+  type AlignGridShapeDockSectionProps,
+} from "./align/align-grid-shape-dock-section";
+export {
+  AlignGridShapeToggle,
+  type AlignGridShapeToggleProps,
+} from "./align/align-grid-shape-toggle";
 export { AlignSelectionCounts } from "./align/align-selection-counts";
 export {
   AlignToolButton,

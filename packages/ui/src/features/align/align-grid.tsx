@@ -1,23 +1,17 @@
 "use client";
 
+import type { AlignGridShape } from "@lisca/contracts";
 import { clamp } from "@lisca/utils";
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "../../components/ui/button";
 import { Field, FieldLabel } from "../../components/ui/field";
 import { Input } from "../../components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "../../components/ui/toggle-group";
 
 import { Slider } from "../../components/ui/slider";
-import type { NavigationOption, NavigationValue } from "../navigation/frame-navigation";
 import { Section } from "../../shell/regions/section";
+import { AlignGridShapeToggle } from "./align-grid-shape-toggle";
 
 function AlignNumberInput(props: {
   value: number;
@@ -77,13 +71,12 @@ function formatNumber(value: number) {
   return Number.isFinite(value) ? String(value) : "";
 }
 
-export type AlignGridProps<TShape extends NavigationValue = string> = {
+export type AlignGridProps = {
   overlayVisible: boolean;
   onOverlayVisibleChange: (visible: boolean) => void;
 
-  shape: TShape;
-  shapeOptions: readonly NavigationOption<TShape>[];
-  onShapeChange: (shape: TShape) => void;
+  shape: AlignGridShape;
+  onShapeChange: (shape: AlignGridShape) => void;
 
   rotationDegrees: number;
   onRotationDegreesChange: (degrees: number) => void;
@@ -121,14 +114,13 @@ export type AlignGridProps<TShape extends NavigationValue = string> = {
 
 /**
  * Grid controls in a {@link Section} card: overlay row (**Hide** / **Show** / **Reset**), **Opacity**, then
- * shape select, rotation, vectors A/B, pattern width/height, offsets.
+ * shape toggle, rotation, vectors A/B, pattern width/height, offsets.
  */
-export function AlignGrid<TShape extends NavigationValue = string>(props: AlignGridProps<TShape>) {
+export function AlignGrid(props: AlignGridProps) {
   const {
     overlayVisible,
     onOverlayVisibleChange,
     shape,
-    shapeOptions,
     onShapeChange,
     rotationDegrees,
     onRotationDegreesChange,
@@ -230,24 +222,11 @@ export function AlignGrid<TShape extends NavigationValue = string>(props: AlignG
 
         <Field className="min-w-0 w-full">
           <FieldLabel>Grid shape</FieldLabel>
-          <Select<TShape>
+          <AlignGridShapeToggle
             disabled={disabled}
-            items={[...shapeOptions]}
-            modal={false}
-            value={shape}
-            onValueChange={(next) => next != null && onShapeChange(next)}
-          >
-            <SelectTrigger className="min-w-0 text-sm" size="sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {shapeOptions.map((option) => (
-                <SelectItem key={String(option.value)} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            shape={shape}
+            onShapeChange={onShapeChange}
+          />
         </Field>
 
         <Field className="min-w-0 w-full">

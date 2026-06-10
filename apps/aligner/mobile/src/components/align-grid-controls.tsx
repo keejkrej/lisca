@@ -1,14 +1,9 @@
-import type { AlignGridShape, AlignGridState } from "@lisca/contracts";
-import { AlignGrid, type NavigationOption } from "@lisca/ui-native";
+import { AlignGrid } from "@lisca/ui-native";
 import { createDefaultAlignGrid, degreesToRadians, radiansToDegrees } from "@lisca/utils";
 import type { AlignState } from "../state/use-align-state";
 export function AlignGridControls({ state }: { state: AlignState }) {
-  const shapeOptions: NavigationOption<AlignGridShape>[] = [
-    { label: "Rectangle", value: "rect" },
-    { label: "Hexagon", value: "hex" },
-  ];
   const disabled = state.cropping || !state.frame;
-  const updateGrid = (patch: Partial<AlignGridState>) => {
+  const updateGrid = (patch: Partial<typeof state.grid>) => {
     if (disabled) return;
     state.setGrid((grid) => ({
       ...grid,
@@ -26,7 +21,6 @@ export function AlignGridControls({ state }: { state: AlignState }) {
       patternWidth={state.grid.cellWidth}
       rotationDegrees={radiansToDegrees(state.grid.rotation)}
       shape={state.grid.shape}
-      shapeOptions={shapeOptions}
       vectorA={state.grid.spacingA}
       vectorB={state.grid.spacingB}
       vectorMin={1}

@@ -551,6 +551,7 @@
         "@tanstack/react-router": "catalog:",
         "@tanstack/router-plugin": "catalog:",
         "@vitejs/plugin-react": "catalog:",
+        "fflate": "^0.8.2",
         "lucide-react": "^0.511.0",
         "tailwindcss": "catalog:",
         "utif": "^3.1.0",

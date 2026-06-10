@@ -44,7 +44,7 @@ body {
 }
 
 .landing-demo-frame {
-  @apply overflow-hidden rounded-2xl border border-border bg-background shadow-xs/5;
+  @apply overflow-auto rounded-2xl border border-border bg-background shadow-xs/5;
 }
 
 .landing-demo-frame > * {

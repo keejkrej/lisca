@@ -1,16 +1,11 @@
-import type { AlignGridShape, AlignGridState } from "@lisca/contracts";
+import type { AlignGridState } from "@lisca/contracts";
 import { createDefaultAlignGrid, degreesToRadians, radiansToDegrees } from "@lisca/utils";
 import { AlignGrid } from "./align-grid";
-import type { NavigationOption } from "../navigation/frame-navigation";
 export function AlignGridRail(props: {
   grid: AlignGridState;
   disabled?: boolean;
   onGridChange: (next: AlignGridState | ((current: AlignGridState) => AlignGridState)) => void;
 }) {
-  const shapeOptions: NavigationOption<AlignGridShape>[] = [
-    { label: "Rectangle", value: "rect" },
-    { label: "Hexagon", value: "hex" },
-  ];
   const disabled = props.disabled ?? false;
   const updateGrid = (patch: Partial<AlignGridState>) => {
     if (disabled) return;
@@ -65,7 +60,7 @@ export function AlignGridRail(props: {
           rotation: degreesToRadians(degrees),
         })
       }
-      onShapeChange={(shape: AlignGridShape) =>
+      onShapeChange={(shape) =>
         updateGrid({
           shape,
         })
@@ -88,7 +83,6 @@ export function AlignGridRail(props: {
       rotationDegrees={radiansToDegrees(props.grid.rotation)}
       sectionClassName="min-h-0 shrink-0"
       shape={props.grid.shape}
-      shapeOptions={shapeOptions}
       vectorA={props.grid.spacingA}
       vectorB={props.grid.spacingB}
       vectorMin={1}

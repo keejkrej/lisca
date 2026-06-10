@@ -1,4 +1,11 @@
-import { AlignToolToolbar, Button, DockSection, DockStrip, useShellTheme } from "@lisca/ui-native";
+import {
+  AlignGridShapeDockSection,
+  AlignToolToolbar,
+  Button,
+  DockSection,
+  DockStrip,
+  useShellTheme,
+} from "@lisca/ui-native";
 import { StyleSheet, Text, View } from "react-native";
 
 import type { StudioAlignState } from "../state/use-studio-align-state";
@@ -6,6 +13,7 @@ import { instructionForStep } from "../state/studio-routes";
 
 export function StudioAlignDock({ state }: { state: StudioAlignState }) {
   const { colors } = useShellTheme();
+  const gridDisabled = state.cropping || !state.frame;
 
   return (
     <DockStrip>
@@ -14,6 +22,16 @@ export function StudioAlignDock({ state }: { state: StudioAlignState }) {
           {instructionForStep("alignPattern")}
         </Text>
       </DockSection>
+      <AlignGridShapeDockSection
+        disabled={gridDisabled}
+        shape={state.grid.shape}
+        onShapeChange={(shape) =>
+          state.setGrid((grid) => ({
+            ...grid,
+            shape,
+          }))
+        }
+      />
       <DockSection style={styles.section} title="Tool">
         <AlignToolToolbar
           mode={state.toolMode}

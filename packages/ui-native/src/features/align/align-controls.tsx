@@ -7,7 +7,9 @@ import { Field } from "../../shell/chrome/field";
 import { Section } from "../../shell/regions/section";
 import { Slider } from "../../shell/chrome/slider";
 import { useShellTheme } from "../../theme/shell-theme";
-import type { NavigationOption, NavigationValue } from "../navigation/frame-navigation";
+import { AlignGridShapeToggle, type AlignGridShapeToggleProps } from "./align-grid-shape-toggle";
+
+type AlignGridShape = AlignGridShapeToggleProps["shape"];
 
 function formatNumber(value: number) {
   return Number.isFinite(value) ? String(value) : "";
@@ -65,12 +67,11 @@ function AlignNumberInput(props: {
   );
 }
 
-export type AlignGridProps<TShape extends NavigationValue = string> = {
+export type AlignGridProps = {
   overlayVisible: boolean;
   onOverlayVisibleChange: (visible: boolean) => void;
-  shape: TShape;
-  shapeOptions: readonly NavigationOption<TShape>[];
-  onShapeChange: (shape: TShape) => void;
+  shape: AlignGridShape;
+  onShapeChange: (shape: AlignGridShape) => void;
   rotationDegrees: number;
   onRotationDegreesChange: (degrees: number) => void;
   vectorA: number;
@@ -98,13 +99,12 @@ export type AlignGridProps<TShape extends NavigationValue = string> = {
   sectionContentStyle?: object;
 };
 
-export function AlignGrid<TShape extends NavigationValue = string>(props: AlignGridProps<TShape>) {
+export function AlignGrid(props: AlignGridProps) {
   const { colors } = useShellTheme();
   const {
     overlayVisible,
     onOverlayVisibleChange,
     shape,
-    shapeOptions,
     onShapeChange,
     rotationDegrees,
     onRotationDegreesChange,
@@ -191,18 +191,7 @@ export function AlignGrid<TShape extends NavigationValue = string>(props: AlignG
       </Field>
 
       <Field label="Grid shape">
-        <SegmentedToggle
-          disabled={disabled}
-          options={shapeOptions.map((option) => ({
-            value: String(option.value),
-            label: option.label,
-          }))}
-          value={String(shape)}
-          onChange={(value) => {
-            const match = shapeOptions.find((option) => String(option.value) === value);
-            if (match) onShapeChange(match.value);
-          }}
-        />
+        <AlignGridShapeToggle disabled={disabled} shape={shape} onShapeChange={onShapeChange} />
       </Field>
 
       <Field label="Rotation">

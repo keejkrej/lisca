@@ -1,12 +1,12 @@
-import { AppShell, DockStrip } from "@lisca/ui/shell";
+import { AlignGridShapeToggle } from "@lisca/ui/features";
+import { AppShell } from "@lisca/ui/shell";
 import { DemoNavbar } from "@lisca/web-demo";
 
 import { DemoAlignContrastControls } from "./components/demo-align-contrast-controls";
 import { DemoAlignGridControls } from "./components/demo-align-grid-controls";
 import { DemoAlignMain } from "./components/demo-align-main";
-import { DemoAlignSaveSection } from "./components/demo-align-save-section";
 import { DemoAlignSelectionControls } from "./components/demo-align-selection-controls";
-import { DemoAlignToolSection, DemoInlineAlignToolbar } from "./components/demo-align-tool-section";
+import { DemoAlignDock, DemoInlineAlignDock } from "./components/demo-align-tool-section";
 import { useDemoAlignState } from "./state/use-demo-align-state";
 
 export type AlignDemoProps = {
@@ -23,6 +23,21 @@ export function AlignDemo({ embedded = false }: AlignDemoProps) {
           fileName={state.fileName}
           loading={state.frameLoading}
           showThemeToggle={!embedded}
+          endLeading={
+            embedded ? (
+              <AlignGridShapeToggle
+                className="w-[9rem]"
+                disabled={!state.frame}
+                shape={state.grid.shape}
+                onShapeChange={(shape) =>
+                  state.setGrid((grid) => ({
+                    ...grid,
+                    shape,
+                  }))
+                }
+              />
+            ) : undefined
+          }
           onOpenFile={(file) => void state.openImage(file)}
         />
       </AppShell.Header>
@@ -39,10 +54,7 @@ export function AlignDemo({ embedded = false }: AlignDemoProps) {
                 <DemoAlignMain state={state} />
               </AppShell.Main>
               <AppShell.Dock>
-                <DockStrip>
-                  <DemoAlignToolSection state={state} />
-                  <DemoAlignSaveSection state={state} />
-                </DockStrip>
+                <DemoAlignDock state={state} />
               </AppShell.Dock>
             </AppShell.MainColumn>
             <AppShell.Right widthClass="w-72">
@@ -57,7 +69,9 @@ export function AlignDemo({ embedded = false }: AlignDemoProps) {
             <AppShell.Main>
               <DemoAlignMain state={state} />
             </AppShell.Main>
-            <DemoInlineAlignToolbar state={state} />
+            <AppShell.Dock className="h-[9.5rem]">
+              <DemoInlineAlignDock state={state} />
+            </AppShell.Dock>
           </AppShell.MainColumn>
         )}
       </AppShell.Body>
