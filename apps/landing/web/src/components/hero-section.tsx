@@ -1,8 +1,5 @@
 import { Button } from "@lisca/ui/components";
-import { Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
-
-import { landingDemos } from "../lib/demos";
 
 export function HeroSection() {
   return (
@@ -15,43 +12,31 @@ export function HeroSection() {
 
       <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
         <p className="mb-4 font-mono text-muted-foreground text-sm tracking-wide">
-          open-source · browser demos · no install
+          micropatterned slides · live-cell imaging · single-cell arrays
         </p>
 
         <h1 className="max-w-4xl font-semibold text-4xl tracking-tight sm:text-5xl lg:text-6xl lg:leading-[1.08]">
-          Live-cell imaging on <span className="text-muted-foreground">single cell arrays.</span>
+          Live-cell imaging on{" "}
+          <span className="text-muted-foreground">single-cell arrays.</span>
         </h1>
 
         <p className="mt-6 max-w-2xl text-lg text-muted-foreground leading-relaxed sm:text-xl">
-          Align grids, annotate ROIs, and run assays on microscopy images — try the interactive
-          demos right in your browser, or explore the full stack on GitHub.
+          LiSCA is analysis software for micropatterned ibidi µ-Slides and custom
+          photopatterns — whether you start from prepatterned labware or pattern surfaces with
+          the Micro Illumination System. Align images to the grid, annotate regions of interest,
+          and read out assays from timelapse data on your array.
         </p>
 
-        <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          {landingDemos.map((demo) => (
-            <Button
-              key={demo.id}
-              className="gap-2"
-              render={
-                <Link to={demo.href}>
-                  <demo.icon aria-hidden />
-                  {demo.heroCta}
-                </Link>
-              }
-              size="lg"
-              variant={demo.id === "aligner" ? "default" : "outline"}
-            />
-          ))}
+        <div className="mt-10">
           <Button
             className="gap-2"
             render={
               <a href="#demos">
-                Preview below
+                Try with your images
                 <ArrowRight aria-hidden />
               </a>
             }
             size="lg"
-            variant="ghost"
           />
         </div>
       </div>

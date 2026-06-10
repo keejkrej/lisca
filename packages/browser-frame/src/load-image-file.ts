@@ -1,5 +1,5 @@
 import type { FrameResult, PixelType } from "@lisca/contracts";
-import { normalizeFrameContrast } from "@lisca/utils";
+import { autoContrastForGrayPixels, normalizeFrameContrast } from "@lisca/utils";
 import UTIF from "utif";
 
 function luminance(r: number, g: number, b: number): number {
@@ -29,14 +29,15 @@ function frameFromGrayPixels(
   pixelType: PixelType,
 ): FrameResult {
   const template = contrastForPixelType(pixelType);
+  const suggested = autoContrastForGrayPixels(pixels, pixelType);
   return normalizeFrameContrast({
     width,
     height,
     pixels,
     pixelType: template.pixelType,
     contrastDomain: template.contrastDomain,
-    suggestedContrast: template.suggestedContrast,
-    appliedContrast: template.appliedContrast,
+    suggestedContrast: suggested,
+    appliedContrast: suggested,
   });
 }
 
@@ -63,6 +64,23 @@ async function loadRasterImage(file: File): Promise<FrameResult> {
   } finally {
     bitmap.close();
   }
+}
+
+function normalizeTiffImageData(
+  width: number,
+  height: number,
+  data: Uint8Array | Uint16Array | Int16Array | Float32Array,
+): Uint8Array | Uint16Array | Int16Array | Float32Array {
+  const pixelCount = width * height;
+  if (data instanceof Uint8Array && data.length === pixelCount * 2) {
+    const pixels = new Uint16Array(pixelCount);
+    const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+    for (let index = 0; index < pixelCount; index += 1) {
+      pixels[index] = view.getUint16(index * 2, true);
+    }
+    return pixels;
+  }
+  return data;
 }
 
 function grayPixelsFromTiffData(
@@ -122,7 +140,8 @@ async function loadTiffImage(file: File): Promise<FrameResult> {
   if (!width || !height) throw new Error("TIFF image dimensions are missing");
   const data = first.data;
   if (!data) throw new Error("TIFF image data is missing");
-  const { pixels, pixelType } = grayPixelsFromTiffData(width, height, data);
+  const normalized = normalizeTiffImageData(width, height, data);
+  const { pixels, pixelType } = grayPixelsFromTiffData(width, height, normalized);
   return frameFromGrayPixels(width, height, pixels, pixelType);
 }
 

@@ -8,6 +8,7 @@ import type {
   RoiWorkspaceScan,
   AnnotationLabel,
 } from "@lisca/contracts";
+import { ASSAY_NAME } from "@lisca/contracts";
 import { useAnnotateSessionCore } from "@lisca/client/annotate-session/react";
 import { requestKey } from "@lisca/client/atoms/annotator-ui";
 import {
@@ -31,7 +32,6 @@ import {
   useStudioAnnotateStore,
 } from "./studio-annotate-store";
 import { buildStudioAssayJson, serializeBasicInfoSnapshot, useStudioStore } from "./studio-store";
-import { validateAssayForAnalysis } from "../utils/studio-assay-validation";
 const labelsIdleAtom = Atom.make(Result.initial<AnnotationLabel[]>());
 function isAbortError(cause: unknown): boolean {
   return cause instanceof DOMException && cause.name === "AbortError";
@@ -290,18 +290,6 @@ export function useStudioAnnotateState(): StudioAnnotateState {
   };
   const startAnalysis = () => {
     if (!workspacePath) return;
-    const validation = validateAssayForAnalysis({
-      assayId,
-      info1,
-      info2,
-      info3,
-    });
-    if (!validation.ok || !assayId) {
-      setStatus(
-        validation.ok ? "Assay type is missing" : (validation.errors[0] ?? "Invalid assay"),
-      );
-      return;
-    }
     setAnalysisStartConfirm(false);
     setStatus("Saving assay.json");
     const requestId = `studio-analysis-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -337,7 +325,7 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     void (async () => {
       try {
         const assayJson = buildStudioAssayJson({
-          assayId,
+          assayId: assayId ?? ASSAY_NAME.CUSTOM_ASSAY,
           dataSourceKind,
           info1,
           info2,

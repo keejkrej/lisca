@@ -20,10 +20,9 @@ export function StudioBasicInfoLeaveGuard() {
   const dirty = isBasicInfoDirty(wizard);
   const saveTo = info1.saveTo.trim();
   const { proceed, reset, status } = useBlocker({
-    shouldBlockFn: ({ current, next }) =>
-      current.pathname === "/info" && next.pathname !== "/info" && dirty,
+    shouldBlockFn: () => false,
     withResolver: true,
-    enableBeforeUnload: dirty,
+    enableBeforeUnload: false,
   });
   const blocked = status === "blocked";
   const saveAssay = async (overwrite: boolean) => {

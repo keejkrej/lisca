@@ -363,6 +363,47 @@ export function defaultContrastDomain(frame: FrameResult): ContrastWindow {
   return { min: 0, max: 65535 };
 }
 
+const CONTRAST_SAMPLE_SIZE = 2048;
+
+function subsampleSortedGray(values: ArrayLike<number>, sampleSize: number): number[] {
+  const length = values.length;
+  if (length === 0) return [0];
+  if (length <= sampleSize) {
+    const copy = Array.from({ length }, (_, index) => Number(values[index] ?? 0));
+    copy.sort((left, right) => left - right);
+    return copy;
+  }
+
+  const step = length / sampleSize;
+  const sample = new Array<number>(sampleSize);
+  for (let index = 0; index < sampleSize; index += 1) {
+    const position = Math.min(length - 1, Math.floor(index * step));
+    sample[index] = Number(values[position] ?? 0);
+  }
+  sample.sort((left, right) => left - right);
+  return sample;
+}
+
+function quantileFloorSorted(sorted: number[], q: number): number {
+  if (sorted.length === 0) return 0;
+  if (sorted.length === 1) return sorted[0] ?? 0;
+  const clamped = Math.max(0, Math.min(1, q));
+  const index = Math.floor(clamped * (sorted.length - 1));
+  return sorted[index] ?? 0;
+}
+
+/** Match server-side auto-contrast (0.1% / 99.9% subsampled quantiles). */
+export function autoContrastForGrayPixels(
+  pixels: PixelArray,
+  pixelType: PixelType,
+): ContrastWindow {
+  const sorted = subsampleSortedGray(pixels, CONTRAST_SAMPLE_SIZE);
+  const min = quantileFloorSorted(sorted, 0.001);
+  const max = Math.max(min + 1, quantileFloorSorted(sorted, 0.999));
+  const domain = defaultContrastDomain({ pixelType } as FrameResult);
+  return normalizeContrastWindow({ min, max }, domain);
+}
+
 export function normalizeContrastWindow(
   window: ContrastWindow,
   domain: ContrastWindow,

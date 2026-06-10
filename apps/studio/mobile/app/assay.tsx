@@ -17,7 +17,6 @@ import { instructionForStep } from "../src/state/studio-routes";
 import { parseStudioAssayJson, useStudioStore } from "../src/state/studio-store";
 export default function AssayRoute() {
   const router = useRouter();
-  const assayId = useStudioStore((state) => state.assayId);
   const setInfoStep = useStudioStore((state) => state.setInfoStep);
   const loadAssayJson = useStudioStore((state) => state.loadAssayJson);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -58,7 +57,6 @@ export default function AssayRoute() {
               instruction={instructionForStep("chooseAssay")}
               action={
                 <DockButton
-                  disabled={!assayId}
                   label="Next"
                   onPress={() => {
                     setInfoStep(1);

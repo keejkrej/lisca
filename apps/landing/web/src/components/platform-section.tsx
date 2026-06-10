@@ -1,26 +1,30 @@
 import { Card, CardDescription, CardHeader, CardPanel, CardTitle } from "@lisca/ui/components";
-import { FlaskConical, Grid3x3, Layers, Paintbrush } from "lucide-react";
+import { FlaskConical, Grid3x3, LayoutGrid, Paintbrush } from "lucide-react";
 
 const products = [
   {
     icon: Grid3x3,
     title: "Aligner",
-    description: "Grid-based cell placement for high-throughput array imaging workflows.",
+    description:
+      "Map each imaging field to the adhesive-site grid on your slide. Score occupancy, exclude empty patterns, and keep site identities consistent across wells and time points.",
   },
   {
     icon: Paintbrush,
     title: "Annotator",
-    description: "ROI masks and classification labels for training and QC on live-cell data.",
+    description:
+      "Draw masks and labels on cells within patterned regions — for segmentation models, phenotype classes, or spot-checking automated calls on live-cell data.",
   },
   {
     icon: FlaskConical,
     title: "Studio",
-    description: "End-to-end assay pipeline — crop, align, annotate, analyze, and view results.",
+    description:
+      "Carry a full experiment from well selection through alignment, annotation, and assay analysis — built around multi-site arrays rather than one field of view.",
   },
   {
-    icon: Layers,
-    title: "Shared core",
-    description: "Rust image I/O and analysis, Effect contracts, and cross-platform UI shells.",
+    icon: LayoutGrid,
+    title: "Pattern-first by design",
+    description:
+      "Every step assumes the regular geometry you get from micropatterned µ-Slides and UV photopatterning — not unconstrained monolayers on plain plastic.",
   },
 ] as const;
 
@@ -30,11 +34,13 @@ export function PlatformSection() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="max-w-2xl">
           <h2 className="font-semibold text-3xl tracking-tight sm:text-4xl">
-            One platform, three apps
+            From patterned surface to readout
           </h2>
           <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
-            Lisca ships as web, desktop, and mobile surfaces over a shared Rust core and typed
-            contracts — built for reproducible live-cell experiments on single-cell arrays.
+            Live-cell imaging on single-cell arrays starts with patterned adhesion sites — on
+            prepatterned ibidi labware or surfaces you define with a photomask and the Micro
+            Illumination System. Seed cells, image over time, then quantify in LiSCA from the
+            first frame to the final assay table.
           </p>
         </div>
 

@@ -12,7 +12,6 @@ export type LandingDemo = {
   href: string;
   icon: ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
   Demo: ComponentType<{ embedded?: boolean }>;
-  heroCta: string;
 };
 
 export const landingDemos = [
@@ -20,20 +19,18 @@ export const landingDemos = [
     id: "aligner",
     title: "Aligner",
     description:
-      "Place and exclude cells on a regular grid. Open a microscopy image, tune contrast, and export bounding boxes — all client-side.",
+      "Register your microscopy image to the micropattern grid. Mark which adhesive sites hold cells and which are empty, correct for slight rotation or stage drift, and export positions for counting and assay readouts.",
     href: ALIGNER_DEMO_PATH,
     icon: Grid3x3,
     Demo: AlignDemo,
-    heroCta: "Try Aligner demo",
   },
   {
     id: "annotator",
     title: "Annotator",
     description:
-      "Paint ROI masks and assign labels on live-cell frames. Brush tools, label classes, and annotation export without a backend.",
+      "Outline cells and regions within each pattern site on live-cell frames. Assign labels for phenotyping, segmentation training, or manual quality control across your timelapse.",
     href: ANNOTATOR_DEMO_PATH,
     icon: Paintbrush,
     Demo: AnnotatorDemo,
-    heroCta: "Try Annotator demo",
   },
 ] as const satisfies readonly LandingDemo[];

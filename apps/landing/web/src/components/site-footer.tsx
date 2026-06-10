@@ -10,8 +10,10 @@ export function SiteFooter() {
         <div className="flex items-center gap-3">
           <img alt="" className="size-7 rounded-md" height={28} src="/icon.png" width={28} />
           <div>
-            <p className="font-medium">Lisca</p>
-            <p className="text-muted-foreground text-sm">Live-cell imaging on single cell arrays</p>
+            <p className="font-medium">LiSCA</p>
+            <p className="text-muted-foreground text-sm">
+              Live-cell imaging on single-cell arrays
+            </p>
           </div>
         </div>
 
