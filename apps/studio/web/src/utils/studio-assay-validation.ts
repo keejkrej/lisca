@@ -1,10 +1,5 @@
-import type {
-  StudioAssayId,
-  StudioBasicInfoStep1,
-  StudioBasicInfoStep2,
-  StudioBasicInfoStep3,
-} from "@lisca/contracts";
-
+import type { StudioAssayId } from "@lisca/contracts/assay";
+import type { StudioBasicInfoStep1, StudioBasicInfoStep2, StudioBasicInfoStep3 } from "@lisca/contracts/assay";
 import { validInfo1, validInfo2 } from "../state/studio-routes";
 import { isValidSamplePositionRange } from "./sample-positions";
 

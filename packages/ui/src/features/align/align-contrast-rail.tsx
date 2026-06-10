@@ -1,5 +1,5 @@
-import type { ContrastWindow, FrameResult } from "@lisca/contracts";
-
+import type { ContrastWindow } from "@lisca/contracts";
+import type { FrameResult } from "@lisca/utils";
 import { PinnedContrastRail } from "../contrast/pinned-contrast-rail";
 
 export function AlignContrastRail(props: {

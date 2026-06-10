@@ -26,7 +26,7 @@ import {
   type ResultPanel,
   type ResultPlotSection,
   type SlideChannelLabels,
-} from "./plots";
+} from "@lisca/analysis";
 import { useStudioResultState } from "../state/use-studio-result-state";
 import { useStudioStore } from "../state/studio-store";
 export default function ResultPage() {

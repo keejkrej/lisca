@@ -1,5 +1,5 @@
 import type { CropRoiProgress } from "@lisca/contracts";
-import { isDoneCropStatus } from "@lisca/contracts";
+import { isDoneCropStatus } from "@lisca/utils";
 import { clamp } from "@lisca/utils";
 
 import { Button } from "../../components/ui/button";

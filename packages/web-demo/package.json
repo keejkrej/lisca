@@ -19,13 +19,19 @@
       "types": "./vite.ts",
       "import": "./vite.ts"
     },
-    "./app.css": "./app.css"
+    "./app.css": "./app.css",
+    "./browser": {
+      "types": "./src/browser/index.ts",
+      "import": "./src/browser/index.ts"
+    }
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@lisca/contracts": "workspace:*",
     "@lisca/ui": "workspace:*",
+    "@lisca/utils": "workspace:*",
     "@lisca/web-app": "workspace:*",
     "@tailwindcss/vite": "catalog:",
     "@tanstack/react-router": "catalog:",
@@ -33,12 +39,14 @@
     "@vitejs/plugin-react": "catalog:",
     "lucide-react": "^0.511.0",
     "tailwindcss": "catalog:",
+    "utif": "^3.1.0",
     "vite": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
+    "@types/utif": "^3.0.6",
     "react": "catalog:",
     "react-dom": "catalog:",
     "typescript": "catalog:"

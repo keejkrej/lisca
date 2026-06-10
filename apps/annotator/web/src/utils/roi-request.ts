@@ -1,5 +1,4 @@
 import type { RoiFrameRequest, RoiIndexEntry, RoiPositionScan } from "@lisca/contracts";
-
 export function makeRequest(
   position: RoiPositionScan | null,
   roi: RoiIndexEntry | null,

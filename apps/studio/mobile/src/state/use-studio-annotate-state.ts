@@ -1,14 +1,6 @@
-import type {
-  AnalysisProgress,
-  ContrastWindow,
-  FrameResult,
-  StudioAnalysisCsvFile,
-  RoiFrameRequest,
-  RoiPositionScan,
-  RoiWorkspaceScan,
-  AnnotationLabel,
-} from "@lisca/contracts";
-import { ASSAY_TYPE } from "@lisca/contracts";
+import type { AnalysisProgress, ContrastWindow, StudioAnalysisCsvFile, RoiFrameRequest, RoiPositionScan, RoiWorkspaceScan, AnnotationLabel } from "@lisca/contracts";
+import type { FrameResult } from "@lisca/utils";
+import { ASSAY_TYPE } from "@lisca/contracts/assay";
 import { useAnnotateSessionCore } from "@lisca/client/annotate-session/react";
 import { requestKey } from "@lisca/client/atoms/annotator-ui";
 import {

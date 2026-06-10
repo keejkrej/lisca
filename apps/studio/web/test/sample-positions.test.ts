@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import type { StudioBasicInfoStep3 } from "@lisca/contracts";
-
+import type { StudioBasicInfoStep3 } from "@lisca/contracts/assay";
 import {
   collectAssayPositions,
   expandPositionRange,

@@ -17,6 +17,10 @@
       "types": "./src/http-api.ts",
       "import": "./src/http-api.ts"
     },
+    "./assay": {
+      "types": "./src/assay.ts",
+      "import": "./src/assay.ts"
+    },
     "./openapi.json": "./openapi.json"
   },
   "scripts": {

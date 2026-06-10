@@ -1,6 +1,6 @@
 import { Button } from "@lisca/ui/components";
 import { DockSection, DockStrip, ReadonlyPathField } from "@lisca/ui/shell";
-import { stemName } from "@lisca/browser-frame";
+import { stemName } from "@lisca/web-demo/browser";
 
 import type { DemoAnnotatorState } from "../state/use-demo-annotator-state";
 import { DemoAnnotatorToolSection } from "./demo-annotator-tool-section";

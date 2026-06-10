@@ -19,8 +19,7 @@ import {
   type TimelapseUnit,
   useStudioStore,
 } from "../state/studio-store";
-import { ASSAY_FEATURE, ASSAY_TYPE } from "@lisca/contracts";
-
+import { ASSAY_FEATURE, ASSAY_TYPE } from "@lisca/contracts/assay";
 const ROW = "flex min-h-[100px] w-full flex-col gap-2.5 p-2.5";
 const FEATURES: { id: BasicInfo2FeatureId; title: string }[] = [
   { id: ASSAY_FEATURE.MORPHOLOGY, title: "Morphology" },

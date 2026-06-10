@@ -1,4 +1,17 @@
-# Studio analysis (Rust)
+# Studio analysis
+
+## TypeScript (`@lisca/analysis`)
+
+Shared results UI for web and mobile Studio apps. Layout mirrors Rust `analysis/assays/<name>/`:
+
+- `shared/panels.ts` — parse analysis CSVs, build chart panels
+- `assays/gene-expression/catalog.ts` — gene-expression plot IDs and labels
+- `assays/immune-killing/catalog.ts` — immune-killing result file ordering
+- `atoms/analysis-panels.ts` — `createAnalysisPanelAtoms(runtime)` factory
+
+Apps import `@lisca/analysis` and wire the factory with their `StudioPortService` runtime.
+
+## Rust pipeline
 
 Native analysis pipeline in `crates/lisca/src/analysis/`. The running workflow depends on `assay.json` → `assayId`:
 

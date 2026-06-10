@@ -1,14 +1,9 @@
-import type {
-  AlignerSource,
-  AutoExcludePreviewRequest,
-  AutoExcludePreviewResponse,
-  WorkspaceScan,
-} from "@lisca/contracts";
+import type { AlignerSource, AutoExcludePreviewRequest, AutoExcludePreviewResponse, WorkspaceScan } from "@lisca/contracts";
 import { Atom, type Result } from "@effect-atom/atom-react";
 import { type Context, Effect } from "effect";
 
-import type { ClientError } from "../client-error.ts";
-import type { ClientEffect } from "../runtime.ts";
+import type { ClientError } from "../infra/client-error.ts";
+import type { ClientEffect } from "../infra/runtime.ts";
 import { ReactivityKeys } from "./reactivity.ts";
 import type { AppRuntime } from "./runtime.ts";
 

@@ -14,10 +14,20 @@ swapped for any other backend (Node, FastAPI, …) without touching the schema.
 | ------------------------ | ------------------------------------------------------------------ |
 | `src/protocol.schema.ts` | Canonical Effect schemas for HTTP/WS wire types + derived TS types |
 | `src/assay.schema.ts`    | Canonical schemas for the on-disk `assay.json` contract            |
+| `src/assay-ui.ts`        | Wizard / Studio UI assay types (not wire protocol)                 |
+| `src/assay.ts`           | Barrel for `@lisca/contracts/assay` subpath                        |
 | `src/http-api.ts`        | Effect `HttpApi` definition (groups, endpoints, error envelope)    |
 | `src/decode.ts`          | Schema decode helpers                                              |
 | `openapi.json`           | Generated OpenAPI 3.1 spec (`OpenApi.fromApi`)                     |
 | `contract.schema.json`   | Generated JSON Schema bundle fed to `typify`                       |
+
+## Import paths
+
+- **`@lisca/contracts`** — wire types, decode, `WS_PATH`, on-disk assay schema symbols re-exported from `assay.schema.ts`.
+- **`@lisca/contracts/assay`** — wizard constants and UI types (`ASSAY_TYPE`, `StudioBasicInfoStep*`, `StudioAssayJson`, etc.).
+
+Client-side frame decoding types (`FrameResult`, `PixelArray`) live in **`@lisca/utils`**, not contracts.
+Canvas status and host picker modes live in **`@lisca/ui-headless`**.
 
 ## Generation pipeline
 

@@ -1,4 +1,5 @@
-import type { AnnotationMode, RoiFrameRequest } from "@lisca/contracts";
+import type { RoiFrameRequest } from "@lisca/contracts";
+import type { AnnotationMode } from "@lisca/ui-native/features";
 import {
   Button,
   DockSection,

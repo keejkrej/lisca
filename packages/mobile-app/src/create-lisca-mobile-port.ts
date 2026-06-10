@@ -1,7 +1,7 @@
-import { WS_PATH } from "@lisca/contracts";
-import { toFetchErrorMessage } from "@lisca/client/errors";
-import { createPortRegistry, type PortRegistry } from "@lisca/client/port-registry";
-import { createLiscaUrlResolver } from "@lisca/client/urls";
+import {
+  createLiscaPortCore,
+  type LiscaPortDeps,
+} from "@lisca/client/port-core";
 
 export type LiscaMobilePortEnv = {
   httpUrl?: string | undefined;
@@ -12,22 +12,7 @@ export type LiscaMobilePortEnv = {
   searchParams?: URLSearchParams | null;
 };
 
-export type LiscaPortDeps = {
-  baseUrl: () => string;
-  wsUrl: () => string;
-  isDev: boolean;
-};
-
-export type LiscaMobilePort<T> = {
-  registry: PortRegistry<T>;
-  read: () => T | undefined;
-  ensure: () => T;
-  setForTests: (port: T) => void;
-  resetForTests: () => void;
-  httpBaseUrl: () => string;
-  wsUrl: () => string;
-  toErrorMessage: (cause: unknown, fallback: string) => string;
-};
+export type LiscaMobilePort<T> = ReturnType<typeof createLiscaPortCore<T>>;
 
 function readExpoEnv(): LiscaMobilePortEnv {
   const env = process.env;
@@ -46,31 +31,14 @@ export function createLiscaMobilePort<T>(config: {
   createPort: (deps: LiscaPortDeps) => T;
 }): LiscaMobilePort<T> {
   const env = { ...readExpoEnv(), ...config.env };
-  const urls = createLiscaUrlResolver({
-    searchParams: env.searchParams ?? null,
-    viteHttpUrl: env.httpUrl,
-    viteWsUrl: env.wsUrl,
-    viteWsHost: env.wsHost,
-    viteWsPort: env.wsPort,
+  return createLiscaPortCore({
     defaultPort: config.defaultPort,
-    wsPath: WS_PATH,
+    searchParams: env.searchParams ?? null,
+    httpUrl: env.httpUrl,
+    wsUrl: env.wsUrl,
+    wsHost: env.wsHost,
+    wsPort: env.wsPort,
+    dev: env.dev,
+    createPort: config.createPort,
   });
-
-  const httpBaseUrl = () => urls.httpBaseUrl();
-  const wsUrl = () => urls.wsUrl();
-
-  const registry = createPortRegistry(() =>
-    config.createPort({ baseUrl: httpBaseUrl, wsUrl, isDev: env.dev ?? false }),
-  );
-
-  return {
-    registry,
-    read: () => registry.read(),
-    ensure: () => registry.ensure(),
-    setForTests: (port: T) => registry.setForTests(port),
-    resetForTests: () => registry.resetForTests(),
-    httpBaseUrl,
-    wsUrl,
-    toErrorMessage: (cause, fallback) => toFetchErrorMessage(cause, fallback, httpBaseUrl()),
-  };
 }

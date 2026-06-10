@@ -1,11 +1,7 @@
 import type { AnnotatorDataPort } from "@lisca/client/ports/types";
 import { ClientError } from "@lisca/client/client-error";
-import type {
-  ContrastWindow,
-  FrameResult,
-  LoadedRoiFrameAnnotation,
-  RoiFrameRequest,
-} from "@lisca/contracts";
+import type { ContrastWindow, LoadedRoiFrameAnnotation, RoiFrameRequest } from "@lisca/contracts";
+import type { FrameResult } from "@lisca/utils";
 import { normalizeFrameContrast } from "@lisca/utils";
 import { Effect } from "effect";
 

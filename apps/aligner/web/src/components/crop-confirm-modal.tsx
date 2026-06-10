@@ -1,4 +1,4 @@
-import { cropConfirmCopy } from "@lisca/ui-headless/crop";
+import { cropConfirmCopy } from "@lisca/ui/features";
 import { Button } from "@lisca/ui/components";
 import { DialogSurface, ModalScrim } from "@lisca/ui/shell";
 

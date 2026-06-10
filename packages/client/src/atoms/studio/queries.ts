@@ -1,13 +1,8 @@
-import type {
-  AutoExcludePreviewRequest,
-  AutoExcludePreviewResponse,
-  RoiWorkspaceScan,
-  WorkspaceScan,
-} from "@lisca/contracts";
+import type { AutoExcludePreviewRequest, AutoExcludePreviewResponse, RoiWorkspaceScan, WorkspaceScan } from "@lisca/contracts";
 import { Atom, type Result } from "@effect-atom/atom-react";
 import { Effect } from "effect";
 
-import type { ClientError } from "../../client-error.ts";
+import type { ClientError } from "../../infra/client-error.ts";
 import { StudioPortService } from "../ports.ts";
 import { ReactivityKeys } from "../reactivity.ts";
 import type { AppRuntime } from "../runtime.ts";

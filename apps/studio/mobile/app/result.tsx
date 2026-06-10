@@ -10,7 +10,7 @@ import {
   type ResultPanel,
   type ResultPlotSection,
   type SlideChannelLabels,
-} from "@lisca/studio-result";
+} from "@lisca/analysis";
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, useWindowDimensions, View } from "react-native";

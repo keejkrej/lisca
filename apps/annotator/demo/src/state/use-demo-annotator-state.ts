@@ -1,11 +1,7 @@
-import type {
-  AnnotationLabel,
-  AnnotationMode,
-  ContrastWindow,
-  FrameResult,
-  RoiFrameAnnotation,
-} from "@lisca/contracts";
-import { downloadBase64Png, downloadJson, loadImageFile, stemName } from "@lisca/browser-frame";
+import type { AnnotationLabel, ContrastWindow, RoiFrameAnnotation } from "@lisca/contracts";
+import type { FrameResult } from "@lisca/utils";
+import type { AnnotationMode } from "@lisca/ui/features";
+import { downloadBase64Png, downloadJson, loadImageFile, stemName } from "@lisca/web-demo/browser";
 import type { AnnotationTool } from "@lisca/ui/features";
 import { useState } from "react";
 import { useAnnotationHistory } from "./use-annotation-history";

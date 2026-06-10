@@ -1,1 +1,1 @@
-export type { HostFilePickerOperations } from "@lisca/ui-headless/host";
+export type { HostFilePickerMode, HostFilePickerOperations } from "@lisca/ui-headless/host";

@@ -1,4 +1,4 @@
-import type { FrameResult } from "@lisca/contracts";
+import type { FrameResult } from "@lisca/utils";
 import { clamp } from "@lisca/utils";
 
 export function pixelToDisplayValue(frame: FrameResult, index: number): number {

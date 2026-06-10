@@ -30,6 +30,7 @@ export {
   type AnnotationTool,
 } from "./annotate/annotation-canvas";
 export { AnnotationModeToggle } from "./annotate/annotation-mode-toggle";
+export type { AnnotationMode } from "@lisca/ui-headless/types";
 export { AnnotationToolSlider } from "./annotate/annotation-tool-slider";
 export {
   CanvasStatusMessageStack,
@@ -42,6 +43,7 @@ export {
 } from "./canvas/canvas-resource-transaction";
 export { ContrastControl, type ContrastControlProps, type ContrastWindow } from "./contrast/contrast-control";
 export { CropProgressModal, type CropProgressModalProps } from "./align/crop-progress-modal";
+export { cropConfirmCopy } from "@lisca/ui-headless/crop";
 export {
   FolderSourceParseModal,
   type FolderSourceParseModalProps,
@@ -60,6 +62,6 @@ export {
   type SliderNavigationControlProps,
 } from "./navigation/frame-navigation";
 export { HostFilePickerDialog, type HostFilePickerDialogProps } from "./host/host-file-picker-dialog";
-export type { HostFilePickerOperations } from "./host/host-operations";
+export type { HostFilePickerMode, HostFilePickerOperations } from "./host/host-operations";
 export { LabelCreationDialog, type LabelCreationDialogProps } from "./annotate/label-creation-dialog";
 export { SourcePickerModal, type SourcePickerModalProps } from "./host/source-picker-modal";

@@ -1,4 +1,4 @@
-import type { StudioAssayJson } from "@lisca/contracts";
+import type { StudioAssayJson } from "@lisca/contracts/assay";
 import { runClientEffect } from "@lisca/client/runtime";
 
 import { studioClient } from "../api/studio-port";

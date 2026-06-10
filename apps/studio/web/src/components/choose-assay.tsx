@@ -1,8 +1,7 @@
 import { Button, cn } from "@lisca/ui/components";
 
 import { ASSAY_CHOICE_LABEL, type AssayId, useStudioStore } from "../state/studio-store";
-import { ASSAY_TYPE, ENABLED_STUDIO_ASSAY_IDS } from "@lisca/contracts";
-
+import { ASSAY_TYPE, ENABLED_STUDIO_ASSAY_IDS } from "@lisca/contracts/assay";
 const ASSAY_ORDER: AssayId[] = [
   ASSAY_TYPE.GENE_EXPRESSION,
   ASSAY_TYPE.IMMUNE_KILLING,

@@ -1,4 +1,4 @@
-import type { FrameResult } from "@lisca/contracts";
+import type { FrameResult } from "@lisca/utils";
 import { useEffect, useState } from "react";
 import {
   annotationValuesEqual,

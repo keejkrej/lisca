@@ -1,6 +1,6 @@
 "use client";
 
-import type { HostFilePickerMode } from "@lisca/contracts";
+import type { HostFilePickerMode } from "@lisca/ui-headless/host";
 import { useHostFilePickerState } from "@lisca/ui-headless/host-file-picker-state";
 import { Home, X } from "lucide-react";
 import { useEffect } from "react";

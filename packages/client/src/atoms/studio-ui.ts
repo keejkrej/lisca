@@ -6,21 +6,21 @@ import type {
   StudioBasicInfoSampleRowFields as BasicInfoSampleRowFields,
   StudioBasicInfoStep3OnDisk as BasicInfoStep3OnDisk,
   StudioBasicInfoSlideId as BasicInfoSlideId,
+  StudioTimelapseUnit as TimelapseUnit,
   StudioBasicInfoStep1 as BasicInfoStep1,
   StudioBasicInfoStep2 as BasicInfoStep2,
   StudioBasicInfoStep3 as BasicInfoStep3,
   GeneExpressionAssayType,
   StudioDataSourceKind,
-  StudioTimelapseUnit as TimelapseUnit,
-} from "@lisca/contracts";
+  EnabledStudioAssayId,
+} from "@lisca/contracts/assay";
 import {
   ASSAY_TYPE,
   ENABLED_STUDIO_ASSAY_IDS,
   GENE_EXPRESSION_FEATURE_IDS as CONTRACT_GENE_EXPRESSION_FEATURE_IDS,
   ASSAY_FEATURE,
   DEFAULT_FOLDER_SOURCE_TEMPLATE,
-  type EnabledStudioAssayId,
-} from "@lisca/contracts";
+} from "@lisca/contracts/assay";
 import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/storage";
 import { Atom } from "@effect-atom/atom-react";
 
@@ -30,7 +30,7 @@ import {
   inferDataSourceKind,
   normalizeSelectedFeaturesForAssay,
   parseStudioAssayJson as parseStudioAssayJsonCore,
-} from "../studio-assay-json.ts";
+} from "../studio/studio-assay-json.ts";
 
 export type {
   AssayId,
@@ -52,7 +52,7 @@ export {
   ASSAY_CHOICE_LABEL,
   inferDataSourceKind,
   normalizeSelectedFeaturesForAssay,
-} from "../studio-assay-json.ts";
+} from "../studio/studio-assay-json.ts";
 
 export type StudioSampleRowAdapters = {
   sampleRowFromDisk: (record: {

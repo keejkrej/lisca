@@ -401,6 +401,7 @@ export type CziSource = Extract<AlignerSource, { kind: "czi" }>;
 export type FrameRequest = typeof FrameRequestSchema.Type;
 export type ContrastWindow = typeof ContrastWindowSchema.Type;
 export type FramePayload = typeof FramePayloadSchema.Type;
+export type PixelType = typeof PixelTypeSchema.Type;
 export type AlignGridShape = typeof AlignGridShapeSchema.Type;
 export type AlignGridState = typeof AlignGridStateSchema.Type;
 export type AlignGridCellCoord = typeof AlignGridCellCoordSchema.Type;

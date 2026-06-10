@@ -1,8 +1,5 @@
-import {
-  type HostFilePickerMode,
-  type HostFsEntry,
-  type HostListDirectoryResult,
-} from "@lisca/contracts";
+import type { HostFsEntry, HostListDirectoryResult } from "@lisca/contracts";
+import type { HostFilePickerMode } from "@lisca/ui-headless/host";
 import { useEffect, useState } from "react";
 import type { HostFilePickerOperations } from "./host.ts";
 function pathExtLower(name: string): string {

@@ -1,8 +1,5 @@
-import {
-  DEFAULT_FOLDER_SOURCE_TEMPLATE,
-  FOLDER_SOURCE_TEMPLATE_PRESETS,
-  type FolderSource,
-} from "@lisca/contracts";
+import type { FolderSource } from "@lisca/contracts";
+import { DEFAULT_FOLDER_SOURCE_TEMPLATE, FOLDER_SOURCE_TEMPLATE_PRESETS } from "@lisca/contracts/assay";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, TextInput, View } from "react-native";
 

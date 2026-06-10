@@ -1,5 +1,4 @@
-import type { AnnotationMode } from "@lisca/contracts";
-
+import type { AnnotationMode } from "@lisca/ui-headless";
 import { ToggleGroup, ToggleGroupItem } from "../../components/ui/toggle-group";
 import { cn } from "../../lib/utils";
 

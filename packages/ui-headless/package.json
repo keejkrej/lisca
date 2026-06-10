@@ -27,6 +27,10 @@
     "./host-file-picker-state": {
       "types": "./src/host-file-picker-state.ts",
       "import": "./src/host-file-picker-state.ts"
+    },
+    "./types": {
+      "types": "./src/types.ts",
+      "import": "./src/types.ts"
     }
   },
   "scripts": {

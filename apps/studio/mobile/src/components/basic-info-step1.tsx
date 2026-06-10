@@ -1,4 +1,5 @@
-import type { HostFilePickerMode, StudioDataSourceKind } from "@lisca/contracts";
+import type { StudioDataSourceKind } from "@lisca/contracts/assay";
+import type { HostFilePickerMode } from "@lisca/ui-native/features";
 import {
   Field,
   FolderSourceParseModal,

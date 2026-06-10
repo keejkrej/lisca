@@ -1,10 +1,11 @@
 import type { AlignerDataPort } from "./ports/types.ts";
-import type { AlignerSource, ContrastWindow, FrameRequest, FrameResult } from "@lisca/contracts";
+import type { AlignerSource, ContrastWindow, FrameRequest } from "@lisca/contracts";
+import type { FrameResult } from "@lisca/utils";
 import { normalizeFrameContrast } from "@lisca/utils";
 import { Effect } from "effect";
 
-import { ClientError } from "./client-error.ts";
-import { toFetchErrorMessage } from "./errors.ts";
+import { ClientError } from "./infra/client-error.ts";
+import { toFetchErrorMessage } from "./infra/errors.ts";
 
 class FrameCache {
   private readonly frames = new Map<string, FrameResult>();

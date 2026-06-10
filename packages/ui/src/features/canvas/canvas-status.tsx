@@ -3,8 +3,7 @@
 import { CircleAlert, Loader2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import type { CanvasStatusMessage, CanvasStatusTone } from "@lisca/contracts";
-
+import type { CanvasStatusMessage, CanvasStatusTone } from "@lisca/ui-headless";
 import { cn } from "../../lib/utils";
 
 function messageToneClassName(tone: CanvasStatusTone | undefined) {

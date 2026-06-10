@@ -1,4 +1,4 @@
-import type { ResultPanel, TimeseriesPanel, BoxPlotPanel } from "@lisca/studio-result";
+import type { ResultPanel, TimeseriesPanel, BoxPlotPanel } from "@lisca/analysis";
 import Svg, { Polyline, Rect, Text as SvgText } from "react-native-svg";
 import { View } from "react-native";
 

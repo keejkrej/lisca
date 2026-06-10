@@ -5,7 +5,7 @@ import {
   useAlignCanvasGridHandlers,
   useCanvasTransientStatus,
 } from "@lisca/ui/features";
-import { frameWithContrast } from "@lisca/browser-frame";
+import { frameWithContrast } from "@lisca/web-demo/browser";
 import type { DemoAlignState } from "../state/use-demo-align-state";
 export function DemoAlignMain({ state }: { state: DemoAlignState }) {
   const { handlePointerDown, handlePointerMove, handlePointerEnd, previewGrid } =

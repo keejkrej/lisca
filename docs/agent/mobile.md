@@ -56,4 +56,4 @@ Imaging uses `@shopify/react-native-skia`. Grid math and contrast live in `@lisc
 
 ## Studio results
 
-Plot parsing lives in `@lisca/studio-result`. Native charts use `react-native-svg`; PDF export uses `buildResultPdfFromCaptures` + `studioClient.saveResultPdf`.
+Plot parsing lives in `@lisca/analysis`. Native charts use `react-native-svg`; PDF export uses `buildResultPdfFromCaptures` + `studioClient.saveResultPdf`.

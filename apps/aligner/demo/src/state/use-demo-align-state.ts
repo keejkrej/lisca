@@ -1,10 +1,6 @@
-import type {
-  AlignGridCellCoord,
-  AlignGridState,
-  ContrastWindow,
-  FrameResult,
-} from "@lisca/contracts";
-import { downloadJson, downloadText, loadImageFile, stemName } from "@lisca/browser-frame";
+import type { AlignGridCellCoord, AlignGridState, ContrastWindow } from "@lisca/contracts";
+import type { FrameResult } from "@lisca/utils";
+import { downloadJson, downloadText, loadImageFile, stemName } from "@lisca/web-demo/browser";
 import {
   alignStateFromCurrent,
   buildBboxCsv,

@@ -1,4 +1,5 @@
-import type { HostFilePickerMode, HostFsEntry, HostListDirectoryResult } from "@lisca/contracts";
+import type { HostFsEntry, HostListDirectoryResult } from "@lisca/contracts";
+import type { HostFilePickerMode } from "@lisca/ui-headless/host";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
 import { Button } from "../../shell/chrome/buttons.tsx";

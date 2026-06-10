@@ -1,6 +1,8 @@
 "use client";
 
-import type { AnnotationLabel, CanvasStatusMessage, FrameResult } from "@lisca/contracts";
+import type { AnnotationLabel } from "@lisca/contracts";
+import type { FrameResult } from "@lisca/utils";
+import type { CanvasStatusMessage } from "@lisca/ui-headless";
 import { clamp, fillPolygon, hexToRgb, strokeMask } from "@lisca/utils";
 import {
   useEffect,

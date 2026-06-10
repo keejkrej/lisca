@@ -8,40 +8,44 @@
   "type": "module",
   "exports": {
     "./urls": {
-      "types": "./src/urls.ts",
-      "import": "./src/urls.ts"
+      "types": "./src/infra/urls.ts",
+      "import": "./src/infra/urls.ts"
     },
     "./progress": {
-      "types": "./src/progress-subscribe.ts",
-      "import": "./src/progress-subscribe.ts"
+      "types": "./src/session/progress-subscribe.ts",
+      "import": "./src/session/progress-subscribe.ts"
     },
     "./port-registry": {
-      "types": "./src/port-registry.ts",
-      "import": "./src/port-registry.ts"
+      "types": "./src/infra/port-registry.ts",
+      "import": "./src/infra/port-registry.ts"
+    },
+    "./port-core": {
+      "types": "./src/infra/port-core.ts",
+      "import": "./src/infra/port-core.ts"
     },
     "./errors": {
-      "types": "./src/errors.ts",
-      "import": "./src/errors.ts"
+      "types": "./src/infra/errors.ts",
+      "import": "./src/infra/errors.ts"
     },
     "./runtime": {
-      "types": "./src/runtime.ts",
-      "import": "./src/runtime.ts"
+      "types": "./src/infra/runtime.ts",
+      "import": "./src/infra/runtime.ts"
     },
     "./bootstrap": {
-      "types": "./src/bootstrap.ts",
-      "import": "./src/bootstrap.ts"
+      "types": "./src/infra/bootstrap.ts",
+      "import": "./src/infra/bootstrap.ts"
     },
     "./client-error": {
-      "types": "./src/client-error.ts",
-      "import": "./src/client-error.ts"
+      "types": "./src/infra/client-error.ts",
+      "import": "./src/infra/client-error.ts"
     },
     "./crop-status": {
-      "types": "./src/crop-status.ts",
-      "import": "./src/crop-status.ts"
+      "types": "./src/session/crop-status.ts",
+      "import": "./src/session/crop-status.ts"
     },
     "./align-session": {
-      "types": "./src/align-session.ts",
-      "import": "./src/align-session.ts"
+      "types": "./src/session/align-session.ts",
+      "import": "./src/session/align-session.ts"
     },
     "./frame-loader": {
       "types": "./src/frame-loader.ts",
@@ -75,6 +79,10 @@
       "types": "./src/atoms/index.ts",
       "import": "./src/atoms/index.ts"
     },
+    "./atoms/runtime": {
+      "types": "./src/atoms/runtime.ts",
+      "import": "./src/atoms/runtime.ts"
+    },
     "./atoms/align-ui": {
       "types": "./src/atoms/align-ui.ts",
       "import": "./src/atoms/align-ui.ts"
@@ -92,32 +100,32 @@
       "import": "./src/atoms/annotator-ui.ts"
     },
     "./align-session/react": {
-      "types": "./src/use-align-session.ts",
-      "import": "./src/use-align-session.ts"
+      "types": "./src/session/use-align-session.ts",
+      "import": "./src/session/use-align-session.ts"
     },
     "./annotate-session/react": {
-      "types": "./src/use-annotate-session.ts",
-      "import": "./src/use-annotate-session.ts"
+      "types": "./src/session/use-annotate-session.ts",
+      "import": "./src/session/use-annotate-session.ts"
     },
     "./use-align-state-core": {
-      "types": "./src/use-align-state-core.ts",
-      "import": "./src/use-align-state-core.ts"
+      "types": "./src/hooks/use-align-state-core.ts",
+      "import": "./src/hooks/use-align-state-core.ts"
     },
     "./use-annotate-state-core": {
-      "types": "./src/use-annotate-state-core.ts",
-      "import": "./src/use-annotate-state-core.ts"
+      "types": "./src/hooks/use-annotate-state-core.ts",
+      "import": "./src/hooks/use-annotate-state-core.ts"
     },
     "./studio-annotate-session-bridge": {
-      "types": "./src/studio-annotate-session-bridge.ts",
-      "import": "./src/studio-annotate-session-bridge.ts"
+      "types": "./src/session/studio-annotate-session-bridge.ts",
+      "import": "./src/session/studio-annotate-session-bridge.ts"
     },
     "./atoms/studio-ui": {
       "types": "./src/atoms/studio-ui.ts",
       "import": "./src/atoms/studio-ui.ts"
     },
     "./studio-assay-json": {
-      "types": "./src/studio-assay-json.ts",
-      "import": "./src/studio-assay-json.ts"
+      "types": "./src/studio/studio-assay-json.ts",
+      "import": "./src/studio/studio-assay-json.ts"
     }
   },
   "scripts": {

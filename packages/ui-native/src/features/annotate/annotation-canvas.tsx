@@ -1,4 +1,6 @@
-import type { AnnotationLabel, CanvasStatusMessage, FrameResult } from "@lisca/contracts";
+import type { AnnotationLabel } from "@lisca/contracts";
+import type { FrameResult } from "@lisca/utils";
+import type { CanvasStatusMessage } from "@lisca/ui-headless";
 import { Canvas, Group, Image, Rect, Skia } from "@shopify/react-native-skia";
 import { useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";

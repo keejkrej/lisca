@@ -7,7 +7,7 @@ import {
   collectTimeseriesPanels,
   type ResultPanel,
   type TimeseriesPanel,
-} from "./plots";
+} from "@lisca/analysis";
 
 export const RESULT_PDF_FILE_NAME = "results.pdf";
 

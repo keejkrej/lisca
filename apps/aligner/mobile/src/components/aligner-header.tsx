@@ -6,7 +6,8 @@ import {
   SourcePickerModal,
   useShellWorkspace,
 } from "@lisca/ui-native";
-import type { AlignerSource, HostFilePickerMode } from "@lisca/contracts";
+import type { AlignerSource } from "@lisca/contracts";
+import type { HostFilePickerMode } from "@lisca/ui-native/features";
 import { useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 

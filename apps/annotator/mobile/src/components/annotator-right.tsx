@@ -1,4 +1,5 @@
-import type { AnnotationLabel, AnnotationMode } from "@lisca/contracts";
+import type { AnnotationLabel } from "@lisca/contracts";
+import type { AnnotationMode } from "@lisca/ui-native/features";
 import {
   AnnotationModeToggle,
   AnnotationToolSlider,

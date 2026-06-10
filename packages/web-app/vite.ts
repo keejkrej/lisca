@@ -24,9 +24,9 @@ const brandPublicDir = resolve(fileURLToPath(new URL(".", import.meta.url)), "..
  * Shared Vite configuration for every Lisca web app. Apps supply only their dev
  * server port; the plugin set, brand assets, and desktop base path are uniform.
  */
-export function createLiscaViteConfig(options: { port: number }): UserConfig {
+export function createLiscaViteConfig(options: { port: number; base?: string }): UserConfig {
   return defineConfig({
-    base: process.env.VITE_DESKTOP === "1" ? "./" : "/",
+    base: options.base ?? (process.env.VITE_DESKTOP === "1" ? "./" : "/"),
     publicDir: brandPublicDir,
     plugins: [
       tanstackRouter({ target: "react", autoCodeSplitting: true }),

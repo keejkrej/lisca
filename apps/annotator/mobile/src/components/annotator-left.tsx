@@ -1,9 +1,5 @@
-import type {
-  ContrastWindow,
-  FrameResult,
-  RoiPositionScan,
-  RoiWorkspaceScan,
-} from "@lisca/contracts";
+import type { ContrastWindow, RoiPositionScan, RoiWorkspaceScan } from "@lisca/contracts";
+import type { FrameResult } from "@lisca/utils";
 import {
   ContrastControl,
   findNavigationOptionIndex,

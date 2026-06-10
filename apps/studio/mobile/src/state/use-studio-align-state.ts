@@ -1,14 +1,5 @@
-import type {
-  AlignGridCellCoord,
-  AlignGridState,
-  AlignerSource,
-  ContrastWindow,
-  CropRoiProgress,
-  FrameRequest,
-  FrameResult,
-  SavedAlignState,
-  WorkspaceScan,
-} from "@lisca/contracts";
+import type { AlignGridCellCoord, AlignGridState, AlignerSource, ContrastWindow, CropRoiProgress, FrameRequest, SavedAlignState, WorkspaceScan } from "@lisca/contracts";
+import type { FrameResult } from "@lisca/utils";
 import { runCropRoi } from "@lisca/client/align-session";
 import { useAlignSessionCore } from "@lisca/client/align-session/react";
 import { useCanvasResourceTransaction } from "@lisca/ui-native";

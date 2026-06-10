@@ -1,6 +1,6 @@
 import { Button } from "@lisca/ui/components";
 import { DockSection, ReadonlyPathField } from "@lisca/ui/shell";
-import { stemName } from "@lisca/browser-frame";
+import { stemName } from "@lisca/web-demo/browser";
 
 import type { DemoAlignState } from "../state/use-demo-align-state";
 

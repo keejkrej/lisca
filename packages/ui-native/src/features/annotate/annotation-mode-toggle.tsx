@@ -1,5 +1,4 @@
-import type { AnnotationMode } from "@lisca/contracts";
-
+import type { AnnotationMode } from "@lisca/ui-headless";
 import { SegmentedToggle } from "../../shell/chrome/buttons.tsx";
 
 const MODE_OPTIONS = [

@@ -1,9 +1,10 @@
-import type { AlignerSource, ContrastWindow, FrameRequest, FrameResult } from "@lisca/contracts";
+import type { AlignerSource, ContrastWindow, FrameRequest } from "@lisca/contracts";
+import type { FrameResult } from "@lisca/utils";
 import { normalizeFrameContrast } from "@lisca/utils";
 import { Atom, type Result } from "@effect-atom/atom-react";
 import { Effect } from "effect";
 
-import type { ClientError } from "../../client-error.ts";
+import type { ClientError } from "../../infra/client-error.ts";
 import { frameCacheKey } from "../../frame-loader.ts";
 import { AlignerPortService } from "../ports.ts";
 import { ReactivityKeys } from "../reactivity.ts";

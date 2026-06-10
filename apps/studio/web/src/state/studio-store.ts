@@ -1,4 +1,5 @@
-import type { StudioAssayJson, StudioDataSourceKind } from "@lisca/contracts";
+import type { StudioAssayJson } from "@lisca/contracts/assay";
+import type { StudioDataSourceKind } from "@lisca/contracts/assay";
 import { createStudioUi } from "@lisca/client/atoms/studio-ui";
 import { useAtom } from "@effect-atom/atom-react";
 import { useRef } from "react";

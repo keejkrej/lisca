@@ -7,12 +7,9 @@ import {
   useLayoutEffect,
   useRef,
 } from "react";
-import type {
-  AlignGridCellCoord,
-  AlignGridState,
-  CanvasStatusMessage,
-  FrameResult,
-} from "@lisca/contracts";
+import type { AlignGridCellCoord, AlignGridState } from "@lisca/contracts";
+import type { FrameResult } from "@lisca/utils";
+import type { CanvasStatusMessage } from "@lisca/ui-headless";
 import {
   alignGridBasis,
   clamp,

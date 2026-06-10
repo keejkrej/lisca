@@ -1,11 +1,6 @@
-import type {
-  AnnotationMode,
-  ContrastWindow,
-  FrameResult,
-  RoiIndexEntry,
-  RoiPositionScan,
-  RoiWorkspaceScan,
-} from "@lisca/contracts";
+import type { ContrastWindow, RoiIndexEntry, RoiPositionScan, RoiWorkspaceScan } from "@lisca/contracts";
+import type { FrameResult } from "@lisca/utils";
+export type AnnotationMode = "classification" | "segmentation";
 import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/storage";
 import { Atom } from "@effect-atom/atom-react";
 

@@ -1,5 +1,5 @@
 import type { CropRoiProgress } from "@lisca/contracts";
-import { isDoneCropStatus } from "@lisca/contracts";
+import { isDoneCropStatus } from "@lisca/utils";
 import { StyleSheet, Text } from "react-native";
 
 import { Button } from "../../shell/chrome/buttons.tsx";

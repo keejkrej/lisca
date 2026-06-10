@@ -14,6 +14,7 @@ export {
   type AnnotationTool,
 } from "./annotate/annotation-canvas.tsx";
 export { AnnotationModeToggle } from "./annotate/annotation-mode-toggle.tsx";
+export type { AnnotationMode } from "@lisca/ui-headless";
 export { AnnotationToolSlider } from "./annotate/annotation-tool-slider.tsx";
 export { useCanvasResourceTransaction } from "./canvas/canvas-resource-transaction.ts";
 export { useCanvasTransientStatus } from "./canvas/canvas-transient-status.ts";
@@ -26,7 +27,7 @@ export {
   HostFilePickerDialog,
   type HostFilePickerDialogProps,
 } from "./host/host-file-picker-dialog.tsx";
-export type { HostFilePickerOperations } from "./host/host-operations.ts";
+export type { HostFilePickerMode, HostFilePickerOperations } from "./host/host-operations.ts";
 export { SourcePickerModal, type SourcePickerModalProps } from "./host/source-picker-modal.tsx";
 export { AlignGrid, ReadonlyPathField } from "./align/align-controls.tsx";
 export {

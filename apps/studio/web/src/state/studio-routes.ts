@@ -5,7 +5,7 @@ import type {
   BasicInfoStep3,
   StudioStep,
 } from "./studio-store";
-import { ASSAY_TYPE } from "@lisca/contracts";
+import { ASSAY_TYPE } from "@lisca/contracts/assay";
 import { isValidSamplePositionRange } from "../utils/sample-positions";
 
 function parseNonNegativeInteger(value: string): number | null {

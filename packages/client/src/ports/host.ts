@@ -5,9 +5,9 @@ import {
   toClientEffect,
   type ApiClientDeps,
   type LiscaApiClient,
-} from "../api-client.ts";
-import type { ClientEffect } from "../runtime.ts";
-import { withOptionalAbortSignal } from "../with-abort-signal.ts";
+} from "../infra/api-client.ts";
+import type { ClientEffect } from "../infra/runtime.ts";
+import { withOptionalAbortSignal } from "../infra/with-abort-signal.ts";
 import type { HostPort } from "./types.ts";
 
 export type { HostPort } from "./types.ts";

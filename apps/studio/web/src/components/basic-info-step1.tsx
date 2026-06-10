@@ -1,11 +1,12 @@
-import type { HostFilePickerMode, StudioDataSourceKind } from "@lisca/contracts";
+import type { StudioDataSourceKind } from "@lisca/contracts/assay";
+import type { HostFilePickerMode } from "@lisca/ui/features";
 import { Field, FieldLabel, Input } from "@lisca/ui/components";
 import {
   FolderSourceParseModal,
   HostFilePickerDialog,
   SourcePickerModal,
 } from "@lisca/ui/features";
-import type { HostFilePickerOperations } from "@lisca/ui-headless/host";
+import type { HostFilePickerOperations } from "@lisca/ui/features";
 import { useState } from "react";
 
 import { useStudioStore } from "../state/studio-store";

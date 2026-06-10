@@ -6,7 +6,7 @@ import {
   type ResultPanel,
   type ResultPlotSection,
   type TimeseriesPanel,
-} from "./plots";
+} from "@lisca/analysis";
 const TRACE_PALETTE = [
   "#60a5fa",
   "#22c55e",

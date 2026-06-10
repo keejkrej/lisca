@@ -1,6 +1,6 @@
 import { ViewportCard } from "@lisca/ui/shell";
 import { AnnotationCanvas, useCanvasTransientStatus } from "@lisca/ui/features";
-import { toDisplayFrame } from "@lisca/browser-frame";
+import { toDisplayFrame } from "@lisca/web-demo/browser";
 import type { DemoAnnotatorState } from "../state/use-demo-annotator-state";
 export function DemoAnnotatorMain({ state }: { state: DemoAnnotatorState }) {
   const displayFrame = state.frame ? toDisplayFrame(state.frame, state.contrast) : null;

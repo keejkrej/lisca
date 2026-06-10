@@ -1,12 +1,5 @@
-import type {
-  AnalysisProgress,
-  ContrastWindow,
-  FrameResult,
-  RoiIndexEntry,
-  RoiPositionScan,
-  RoiWorkspaceScan,
-  StudioAnalysisCsvFile,
-} from "@lisca/contracts";
+import type { AnalysisProgress, ContrastWindow, RoiIndexEntry, RoiPositionScan, RoiWorkspaceScan, StudioAnalysisCsvFile } from "@lisca/contracts";
+import type { FrameResult } from "@lisca/utils";
 import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/storage";
 import { Atom, useAtom } from "@effect-atom/atom-react";
 export type StudioAnnotateSelection = {

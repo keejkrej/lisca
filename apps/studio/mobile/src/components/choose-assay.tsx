@@ -1,4 +1,4 @@
-import { ASSAY_TYPE, ENABLED_STUDIO_ASSAY_IDS } from "@lisca/contracts";
+import { ASSAY_TYPE, ENABLED_STUDIO_ASSAY_IDS } from "@lisca/contracts/assay";
 import { Button, useShellTheme } from "@lisca/ui-native";
 import { StyleSheet, Text, View } from "react-native";
 
