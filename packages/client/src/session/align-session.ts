@@ -3,8 +3,8 @@ import type { FrameResult } from "@lisca/utils";
 import { isDoneCropStatus } from "@lisca/client/crop-status";
 import { countVisibleAlignGridCells } from "@lisca/utils";
 
-import type { AlignerDataPort } from "../ports/types.ts";
-import { runClientEffect } from "../infra/runtime.ts";
+import type { AlignerDataPort } from "../ports/types";
+import { runClientEffect } from "../infra/runtime";
 
 /** Initial `queued` progress for a freshly-submitted crop job. */
 export function makeQueuedCropProgress(requestId: string, totalPositions: number): CropRoiProgress {

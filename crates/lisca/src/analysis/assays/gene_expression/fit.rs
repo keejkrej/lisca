@@ -125,7 +125,7 @@ fn fit_trace_points(
     let mut best_sse: Option<f64> = None;
 
     for candidate_count in std::iter::once(RATE_COARSE_CANDIDATE_COUNT).chain(
-        std::iter::repeat(RATE_REFINE_CANDIDATE_COUNT).take(RATE_REFINE_PASSES),
+        std::iter::repeat_n(RATE_REFINE_CANDIDATE_COUNT, RATE_REFINE_PASSES),
     ) {
         let protein_logs = linspace_values(protein_lower, protein_upper, candidate_count);
         let mrna_logs = linspace_values(mrna_lower, mrna_upper, candidate_count);
@@ -207,7 +207,7 @@ fn fit_trace_points_with_fixed_protein(
         let mut onset_best: Option<(f64, KineticFitCoeffs)> = None;
 
         for candidate_count in std::iter::once(RATE_COARSE_CANDIDATE_COUNT).chain(
-            std::iter::repeat(RATE_REFINE_CANDIDATE_COUNT).take(RATE_REFINE_PASSES),
+            std::iter::repeat_n(RATE_REFINE_CANDIDATE_COUNT, RATE_REFINE_PASSES),
         ) {
             let mrna_logs = linspace_values(mrna_lower, mrna_upper, candidate_count);
             let mut stage_best: Option<(f64, KineticFitCoeffs)> = None;
@@ -240,7 +240,7 @@ fn fit_trace_points_with_fixed_protein(
             }
             mrna_lower = mrna_logs[best_index.saturating_sub(1)];
             mrna_upper = mrna_logs[best_index.min(mrna_logs.len() - 1).max(1)];
-            if !(mrna_upper > mrna_lower) {
+            if mrna_upper <= mrna_lower {
                 break;
             }
         }

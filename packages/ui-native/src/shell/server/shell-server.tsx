@@ -16,9 +16,9 @@ import {
   type Dispatch,
   type ReactNode,
 } from "react";
-import { useWsProbeForUrl } from "./use-shell-ws-probe.ts";
-import type { ConnectionState } from "./use-shell-ws-probe.ts";
-import { ServerAddressDialog } from "./server-address-dialog.tsx";
+import { useWsProbeForUrl } from "./use-shell-ws-probe";
+import type { ConnectionState } from "./use-shell-ws-probe";
+import { ServerAddressDialog } from "./server-address-dialog";
 
 export type ShellServer = {
   wsUrl: string;

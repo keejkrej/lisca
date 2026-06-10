@@ -2,10 +2,10 @@ import type { AlignGridToolMode } from "@lisca/utils";
 import { Lock, Unlock } from "lucide-react-native";
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { Button } from "../../shell/chrome/buttons.tsx";
-import { DockSection } from "../../shell/regions/dock-section.tsx";
-import { shellOutlineElevation } from "../../shell/chrome/shell-chrome.ts";
-import { useShellTheme } from "../../theme/shell-theme.tsx";
+import { Button } from "../../shell/chrome/buttons";
+import { DockSection } from "../../shell/regions/dock-section";
+import { shellOutlineElevation } from "../../shell/chrome/shell-chrome";
+import { useShellTheme } from "../../theme/shell-theme";
 
 export type AlignToolSectionProps = {
   mode: AlignGridToolMode;

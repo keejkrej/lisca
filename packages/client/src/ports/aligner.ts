@@ -2,13 +2,13 @@ import { CropRoiProgressMessageSchema, schemaDecoderEither, type CropRoiProgress
 import { decodeFramePayload } from "@lisca/utils";
 import { Effect } from "effect";
 
-import { createApiClient, toClientEffect, type LiscaApiClient } from "../infra/api-client.ts";
-import { withOptionalAbortSignal } from "../infra/with-abort-signal.ts";
-import { pollProgressLoop, subscribeProgress } from "../session/progress-subscribe.ts";
-import { createHostPort, type HostPortDeps } from "./host.ts";
-import type { AlignerDataPort } from "./types.ts";
+import { createApiClient, toClientEffect, type LiscaApiClient } from "../infra/api-client";
+import { withOptionalAbortSignal } from "../infra/with-abort-signal";
+import { pollProgressLoop, subscribeProgress } from "../session/progress-subscribe";
+import { createHostPort, type HostPortDeps } from "./host";
+import type { AlignerDataPort } from "./types";
 
-export type { AlignerDataPort } from "./types.ts";
+export type { AlignerDataPort } from "./types";
 
 const decodeCropRoiProgressMessage = schemaDecoderEither(CropRoiProgressMessageSchema);
 

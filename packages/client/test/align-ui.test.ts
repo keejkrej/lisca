@@ -5,7 +5,7 @@ import {
   createAlignerPersist,
   createInitialAlignUiState,
   type AlignUiState,
-} from "../src/atoms/align-ui.ts";
+} from "../src/atoms/align-ui";
 
 function runReducer(
   state: AlignUiState,

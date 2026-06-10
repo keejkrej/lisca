@@ -3,10 +3,10 @@ import { DEFAULT_FOLDER_SOURCE_TEMPLATE, FOLDER_SOURCE_TEMPLATE_PRESETS } from "
 import { useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, TextInput, View } from "react-native";
 
-import { Button } from "../../shell/chrome/buttons.tsx";
-import { DialogSurface, ModalScrim } from "../../shell/modal/modal.tsx";
-import { useShellTheme } from "../../theme/shell-theme.tsx";
-import type { HostFilePickerOperations } from "./host-operations.ts";
+import { Button } from "../../shell/chrome/buttons";
+import { DialogSurface, ModalScrim } from "../../shell/modal/modal";
+import { useShellTheme } from "../../theme/shell-theme";
+import type { HostFilePickerOperations } from "./host-operations";
 
 export type FolderSourceParseModalProps = {
   path: string | null;

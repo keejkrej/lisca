@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 
-import type { ClientEffect } from "./runtime.ts";
-import { clientFail } from "./runtime.ts";
+import type { ClientEffect } from "./runtime";
+import { clientFail } from "./runtime";
 
 /** Link an optional `AbortSignal` to effect interruption. */
 export function withOptionalAbortSignal<A>(

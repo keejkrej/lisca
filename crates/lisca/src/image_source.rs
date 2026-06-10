@@ -142,17 +142,17 @@ impl SourceMetadata {
 }
 
 enum SourceReader {
-    Nd2(Nd2File),
-    Czi(CziFile),
+    Nd2(Box<Nd2File>),
+    Czi(Box<CziFile>),
 }
 
 impl SourceReader {
     fn open_nd2(path: &Path) -> Result<Self, String> {
-        Ok(Self::Nd2(open_nd2(path)?))
+        Ok(Self::Nd2(Box::new(open_nd2(path)?)))
     }
 
     fn open_czi(path: &Path) -> Result<Self, String> {
-        Ok(Self::Czi(open_czi(path)?))
+        Ok(Self::Czi(Box::new(open_czi(path)?)))
     }
 
     fn metadata(&mut self) -> Result<SourceMetadata, String> {

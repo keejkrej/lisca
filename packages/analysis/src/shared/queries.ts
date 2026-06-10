@@ -1,4 +1,4 @@
-import type { SlideChannelLabels } from "./panels.ts";
+import type { SlideChannelLabels } from "./panels";
 
 export function slideChannelLabelsCacheKey(slideChannelLabels: SlideChannelLabels): string {
   return JSON.stringify(slideChannelLabels);

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { useShellTheme } from "../../theme/shell-theme.tsx";
+import { useShellTheme } from "../../theme/shell-theme";
 
 export function Section(props: {
   title: string;

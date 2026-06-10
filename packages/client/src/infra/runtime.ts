@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 
-import { ClientError, toClientError } from "./client-error.ts";
+import { ClientError, toClientError } from "./client-error";
 
 export type ClientEffect<A> = Effect.Effect<A, ClientError>;
 

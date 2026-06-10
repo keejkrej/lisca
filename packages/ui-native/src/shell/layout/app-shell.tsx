@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { useShellTheme } from "../../theme/shell-theme.tsx";
+import { useShellTheme } from "../../theme/shell-theme";
 
 const DEFAULT_RAIL_WIDTH = 288;
 const HEADER_HEIGHT = 64;

@@ -30,7 +30,7 @@ import {
   inferDataSourceKind,
   normalizeSelectedFeaturesForAssay,
   parseStudioAssayJson as parseStudioAssayJsonCore,
-} from "../studio/studio-assay-json.ts";
+} from "../studio/studio-assay-json";
 
 export type {
   AssayId,
@@ -52,7 +52,7 @@ export {
   ASSAY_CHOICE_LABEL,
   inferDataSourceKind,
   normalizeSelectedFeaturesForAssay,
-} from "../studio/studio-assay-json.ts";
+} from "../studio/studio-assay-json";
 
 export type StudioSampleRowAdapters = {
   sampleRowFromDisk: (record: {

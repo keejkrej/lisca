@@ -6,6 +6,9 @@ license.workspace = true
 repository.workspace = true
 description = "Shared Rust contracts, domain logic, and HTTP infrastructure for Lisca apps."
 
+[lints]
+workspace = true
+
 [dependencies]
 axum.workspace = true
 base64.workspace = true

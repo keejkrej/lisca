@@ -2,11 +2,11 @@ import type { HostFsEntry, HostListDirectoryResult } from "@lisca/contracts";
 import type { HostFilePickerMode } from "@lisca/ui-headless/host";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
-import { Button } from "../../shell/chrome/buttons.tsx";
-import { DialogSurface, ModalScrim } from "../../shell/modal/modal.tsx";
-import { useShellTheme } from "../../theme/shell-theme.tsx";
-import { FILE_PICKER_ROW_HEIGHT, FilePickerRow } from "./host-file-picker-row.tsx";
-import type { HostFilePickerOperations } from "./host-operations.ts";
+import { Button } from "../../shell/chrome/buttons";
+import { DialogSurface, ModalScrim } from "../../shell/modal/modal";
+import { useShellTheme } from "../../theme/shell-theme";
+import { FILE_PICKER_ROW_HEIGHT, FilePickerRow } from "./host-file-picker-row";
+import type { HostFilePickerOperations } from "./host-operations";
 function pathExtLower(name: string): string {
   const index = name.lastIndexOf(".");
   if (index <= 0 || index === name.length - 1) return "";

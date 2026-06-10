@@ -64,6 +64,6 @@ pub fn compute_masked_roi_metrics(
     if rows.is_empty() {
         return Err("No rows produced".to_string());
     }
-    rows.sort_by(|left, right| (left.roi, left.t).cmp(&(right.roi, right.t)));
+    rows.sort_by_key(|row| (row.roi, row.t));
     Ok(rows)
 }

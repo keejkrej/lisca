@@ -1,8 +1,8 @@
 import { Moon, Sun } from "lucide-react-native";
 import { Pressable } from "react-native";
 
-import { shellChromeMetrics, shellGhostIconButtonStyle } from "../shell/chrome/shell-chrome.ts";
-import { useShellTheme } from "./shell-theme.tsx";
+import { shellChromeMetrics, shellGhostIconButtonStyle } from "../shell/chrome/shell-chrome";
+import { useShellTheme } from "./shell-theme";
 
 export function ShellThemeToggle() {
   const { mode, toggleLightDark, colors } = useShellTheme();

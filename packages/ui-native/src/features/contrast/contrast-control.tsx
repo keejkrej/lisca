@@ -2,10 +2,10 @@ import { clamp } from "@lisca/utils";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { Button } from "../../shell/chrome/buttons.tsx";
-import { Section } from "../../shell/regions/section.tsx";
-import { Slider } from "../../shell/chrome/slider.tsx";
-import { useShellTheme } from "../../theme/shell-theme.tsx";
+import { Button } from "../../shell/chrome/buttons";
+import { Section } from "../../shell/regions/section";
+import { Slider } from "../../shell/chrome/slider";
+import { useShellTheme } from "../../theme/shell-theme";
 
 export type ContrastWindow = {
   min: number;

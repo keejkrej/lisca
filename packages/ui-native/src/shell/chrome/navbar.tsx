@@ -2,13 +2,13 @@ import type { ReactNode } from "react";
 import { Folder, HardDrive } from "lucide-react-native";
 import { ScrollView, StyleSheet, View } from "react-native";
 
-import { ConnectionStatus } from "./connection-status.tsx";
-import { PathButton } from "./path-button.tsx";
-import { shellChromeMetrics } from "./shell-chrome.ts";
-import { useShellServer } from "../server/shell-server.tsx";
-import { useShellWorkspace } from "../workspace/workspace.tsx";
-import { ShellThemeToggle } from "../../theme/shell-theme-toggle.tsx";
-import { useShellTheme } from "../../theme/shell-theme.tsx";
+import { ConnectionStatus } from "./connection-status";
+import { PathButton } from "./path-button";
+import { shellChromeMetrics } from "./shell-chrome";
+import { useShellServer } from "../server/shell-server";
+import { useShellWorkspace } from "../workspace/workspace";
+import { ShellThemeToggle } from "../../theme/shell-theme-toggle";
+import { useShellTheme } from "../../theme/shell-theme";
 
 export type ShellNavbarRouteItem = {
   value: string;

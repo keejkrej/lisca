@@ -4,9 +4,9 @@ import {
   shellChromeMetrics,
   shellOutlineButtonStyle,
   shellOutlineSurface,
-} from "./shell-chrome.ts";
-import { useShellTheme } from "../../theme/shell-theme.tsx";
-import type { ConnectionState } from "../server/use-shell-ws-probe.ts";
+} from "./shell-chrome";
+import { useShellTheme } from "../../theme/shell-theme";
+import type { ConnectionState } from "../server/use-shell-ws-probe";
 
 const STATUS_LABELS: Record<ConnectionState, string> = {
   idle: "Idle",

@@ -5,7 +5,7 @@ import type {
   AnnotatorUiState,
   RoiSelection,
   StateUpdater,
-} from "../atoms/annotator-ui.ts";
+} from "../atoms/annotator-ui";
 
 export type StudioAnnotateRoiViewState = {
   workspacePath: string | null;

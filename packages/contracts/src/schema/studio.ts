@@ -1,6 +1,6 @@
 import * as Schema from "effect/Schema";
 
-import { F64 } from "./primitives.ts";
+import { F64 } from "./primitives";
 
 export const SaveAssayJsonRequestSchema = Schema.Struct({
   saveTo: Schema.String,

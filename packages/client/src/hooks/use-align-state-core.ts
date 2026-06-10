@@ -5,11 +5,11 @@ import {
   cropPositionsAfterSkip,
   runCropRoi,
   type CropConfirmState,
-} from "../session/align-session.ts";
-import type { AlignerDataPort } from "../ports/types.ts";
-import { useAlignSessionCore, type AlignWorkspaceSync } from "../session/use-align-session.ts";
-import { runClientEffect } from "../infra/runtime.ts";
-import type { CanvasResourceTransactionOptions } from "../canvas-resource-transaction.ts";
+} from "../session/align-session";
+import type { AlignerDataPort } from "../ports/types";
+import { useAlignSessionCore, type AlignWorkspaceSync } from "../session/use-align-session";
+import { runClientEffect } from "../infra/runtime";
+import type { CanvasResourceTransactionOptions } from "../canvas-resource-transaction";
 import {
   alignStateFromCurrent,
   buildBboxCsv,
@@ -28,8 +28,8 @@ import type {
   AlignUiAtom,
   ExcludedByPosition,
   StateUpdater,
-} from "../atoms/align-ui.ts";
-import { toClientError } from "../infra/client-error.ts";
+} from "../atoms/align-ui";
+import { toClientError } from "../infra/client-error";
 export type { CropConfirmState };
 export type VariationExcludePreview = {
   preview: AutoExcludePreviewResponse;

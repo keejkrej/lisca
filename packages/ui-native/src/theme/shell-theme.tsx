@@ -7,7 +7,7 @@ import {
   type Dispatch,
   type ReactNode,
 } from "react";
-import { shellThemeColors, type ShellThemeColors, type ShellThemeMode } from "./tokens.ts";
+import { shellThemeColors, type ShellThemeColors, type ShellThemeMode } from "./tokens";
 
 type ShellThemeContextValue = {
   mode: ShellThemeMode;

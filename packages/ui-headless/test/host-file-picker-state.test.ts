@@ -5,7 +5,7 @@ import {
   fileMatchesMode,
   isDirectoryMode,
   parentPathForGoUp,
-} from "../src/host-file-picker-state.ts";
+} from "../src/host-file-picker-state";
 
 describe("host-file-picker-state", () => {
   it("isDirectoryMode recognizes workspace and folder", () => {

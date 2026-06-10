@@ -17,6 +17,16 @@
     "perf": "warn"
   },
   "rules": {
+    "import/extensions": [
+      "error",
+      {
+        "js": "never",
+        "jsx": "never",
+        "ts": "never",
+        "tsx": "never",
+        "ignorePackages": true
+      }
+    ],
     "react-in-jsx-scope": "off",
     "no-restricted-imports": [
       "error",

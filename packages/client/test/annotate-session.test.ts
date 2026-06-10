@@ -5,7 +5,7 @@ import {
   createAnnotatorUiActions,
   createInitialAnnotatorUiState,
   roiRequestSelectionKey,
-} from "../src/atoms/annotator-ui.ts";
+} from "../src/atoms/annotator-ui";
 
 describe("annotate-session helpers", () => {
   const persist = createAnnotatorPersist("test-annotator-session");

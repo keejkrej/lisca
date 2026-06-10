@@ -4,8 +4,8 @@ import type { CanvasStatusMessage } from "@lisca/ui-headless";
 import { Canvas, Group, Image, Rect, Skia } from "@shopify/react-native-skia";
 import { useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
-import { useShellTheme } from "../../theme/shell-theme.tsx";
-import { computeFrameLayout, prepareFrameRgba } from "../canvas/frame-pixels.ts";
+import { useShellTheme } from "../../theme/shell-theme";
+import { computeFrameLayout, prepareFrameRgba } from "../canvas/frame-pixels";
 export type AnnotationTool = "brush" | "brush-erase" | "lasso" | "lasso-erase";
 export type AnnotationCanvasProps = {
   frame: FrameResult | null;

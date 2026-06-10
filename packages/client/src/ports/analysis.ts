@@ -1,9 +1,9 @@
 import { AnalysisProgressMessageSchema, schemaDecoderEither, type AnalysisProgress, type AnalysisStartRequest } from "@lisca/contracts";
-import { createApiClient, toClientEffect, type LiscaApiClient } from "../infra/api-client.ts";
-import { subscribeProgress } from "../session/progress-subscribe.ts";
-import type { AnalysisDataPort } from "./types.ts";
+import { createApiClient, toClientEffect, type LiscaApiClient } from "../infra/api-client";
+import { subscribeProgress } from "../session/progress-subscribe";
+import type { AnalysisDataPort } from "./types";
 
-export type { AnalysisDataPort } from "./types.ts";
+export type { AnalysisDataPort } from "./types";
 
 const decodeAnalysisProgressMessage = schemaDecoderEither(AnalysisProgressMessageSchema);
 

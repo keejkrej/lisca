@@ -10,8 +10,8 @@ import { Canvas, Group, Image, Rect, Skia, useCanvasRef } from "@shopify/react-n
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
-import { useShellTheme } from "../../theme/shell-theme.tsx";
-import { clientToFramePoint, computeFrameLayout, prepareFrameRgba } from "../canvas/frame-pixels.ts";
+import { useShellTheme } from "../../theme/shell-theme";
+import { clientToFramePoint, computeFrameLayout, prepareFrameRgba } from "../canvas/frame-pixels";
 export type AlignCanvasFramePoint = {
   x: number;
   y: number;

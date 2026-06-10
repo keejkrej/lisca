@@ -34,7 +34,7 @@
     "dev": "bun lisca dev workspace all",
     "check": "bun run lint && bun run typecheck && bun run check:contracts && bun run check:rust",
     "check:contracts": "bun run contracts:generate && bun scripts/check-openapi-routes.ts && bun --filter @lisca/contracts test",
-    "check:rust": "cargo check --workspace",
+    "check:rust": "cargo check --workspace && cargo clippy --workspace -- -D warnings",
     "contracts:generate": "bun --filter @lisca/contracts generate",
     "fmt": "oxfmt .",
     "fmt:check": "oxfmt . --check",

@@ -1,18 +1,18 @@
 import type { AnnotationLabel, RoiFrameRequest, RoiIndexEntry, RoiPositionScan } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
-import { resultData, resultLoading } from "../atoms/result-utils.ts";
-import { useAnnotateSessionCore, type AnnotateWorkspaceSync } from "../session/use-annotate-session.ts";
-import { runClientEffect } from "../infra/runtime.ts";
-import type { CanvasResourceTransactionOptions } from "../canvas-resource-transaction.ts";
+import { resultData, resultLoading } from "../atoms/result-utils";
+import { useAnnotateSessionCore, type AnnotateWorkspaceSync } from "../session/use-annotate-session";
+import { runClientEffect } from "../infra/runtime";
+import type { CanvasResourceTransactionOptions } from "../canvas-resource-transaction";
 import type {
   AnnotatorUiActions,
   AnnotatorUiAtom,
   AnnotatorUiState,
   RoiSelection,
   StateUpdater,
-} from "../atoms/annotator-ui.ts";
-import { toClientError } from "../infra/client-error.ts";
-import type { AnnotatorDataPort } from "../ports/types.ts";
+} from "../atoms/annotator-ui";
+import { toClientError } from "../infra/client-error";
+import type { AnnotatorDataPort } from "../ports/types";
 import type { Atom, Result } from "@effect-atom/atom-react";
 import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { Effect } from "effect";

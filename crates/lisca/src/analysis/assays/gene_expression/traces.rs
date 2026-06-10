@@ -43,12 +43,14 @@ pub fn load_trace_panel(path: &Path, y_column: &str) -> Result<TracePanel, Strin
     })
 }
 
+type TracePointGroup = BTreeMap<(i64, i64), Vec<(f64, f64)>>;
+
 pub fn group_timeseries_rows(
     headers: &[String],
     rows: &[Vec<String>],
     y_column: &str,
     require_pos: bool,
-) -> Result<BTreeMap<(i64, i64), Vec<(f64, f64)>>, String> {
+) -> Result<TracePointGroup, String> {
     let t_index = column_index(headers, "t").ok_or("missing t column")?;
     let y_index = column_index(headers, y_column)
         .ok_or_else(|| format!("missing {y_column} column"))?;

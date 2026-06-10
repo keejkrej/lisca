@@ -8,7 +8,7 @@ import {
   type AlignGridToolMode,
 } from "@lisca/utils";
 import { useRef, useState } from "react";
-import type { AlignCanvasPointerEvent } from "./align-canvas.tsx";
+import type { AlignCanvasPointerEvent } from "./align-canvas";
 export type UseAlignCanvasGridHandlersOptions = {
   grid: AlignGridState;
   setGrid: (grid: AlignGridState) => void;

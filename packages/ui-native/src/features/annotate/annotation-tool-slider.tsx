@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 
-import { Slider } from "../../shell/chrome/slider.tsx";
-import { useShellTheme } from "../../theme/shell-theme.tsx";
+import { Slider } from "../../shell/chrome/slider";
+import { useShellTheme } from "../../theme/shell-theme";
 
 export function AnnotationToolSlider(props: {
   label: string;

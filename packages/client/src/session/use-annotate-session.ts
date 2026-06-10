@@ -7,9 +7,9 @@ import type {
   AnnotatorUiState,
   RoiSelection,
   StateUpdater,
-} from "../atoms/annotator-ui.ts";
-import { currentPosition } from "../atoms/annotator-ui.ts";
-import { resultData, resultFailureMessage, resultLoading } from "../atoms/result-utils.ts";
+} from "../atoms/annotator-ui";
+import { currentPosition } from "../atoms/annotator-ui";
+import { resultData, resultFailureMessage, resultLoading } from "../atoms/result-utils";
 export type AnnotateWorkspaceSync = {
   workspacePath: string | null;
   setWorkspacePath: (path: string | null) => void;

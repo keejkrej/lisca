@@ -8,6 +8,9 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/lisca/lisca"
 
+[workspace.lints.clippy]
+all = "warn"
+
 [workspace.dependencies]
 axum = { version = "0.8", features = ["ws"] }
 base64 = "0.22"

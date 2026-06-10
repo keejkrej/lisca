@@ -2,8 +2,8 @@ import { FetchHttpClient, HttpApiClient, HttpClient, HttpClientRequest } from "@
 import { liscaApi } from "@lisca/contracts/http-api";
 import { Context, Effect, Layer } from "effect";
 
-import { toClientError } from "./client-error.ts";
-import type { ClientEffect } from "./runtime.ts";
+import { toClientError } from "./client-error";
+import type { ClientEffect } from "./runtime";
 
 export type ApiClientDeps = {
   baseUrl: () => string;

@@ -1,6 +1,6 @@
 import { Context, Layer } from "effect";
 
-import type { AlignerDataPort, AnnotatorDataPort, StudioDataPort } from "../ports/types.ts";
+import type { AlignerDataPort, AnnotatorDataPort, StudioDataPort } from "../ports/types";
 
 export class AlignerPortService extends Context.Tag("@lisca/AlignerPort")<
   AlignerPortService,

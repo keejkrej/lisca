@@ -1,6 +1,6 @@
 import type { AlignerSource, AnalysisProgress, AnalysisStartRequest, AnnotationLabel, AutoExcludePreviewRequest, AutoExcludePreviewResponse, ContrastWindow, CropRoiProgress, CropRoiRequest, CropRoiResponse, FrameRequest, HostListDirectoryResult, LoadedRoiFrameAnnotation, RoiFrameAnnotation, RoiFrameAnnotationPayload, RoiFrameRequest, RoiWorkspaceScan, SaveAssayJsonResponse, SaveBboxResponse, SavedAlignState, SaveResultPdfRequest, SaveResultPdfResponse, WorkspaceScan } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
-import type { ClientEffect } from "../infra/runtime.ts";
+import type { ClientEffect } from "../infra/runtime";
 
 export type HostPort = {
   listDirectory(path: string | null, signal?: AbortSignal): ClientEffect<HostListDirectoryResult>;

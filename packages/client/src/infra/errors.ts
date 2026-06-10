@@ -1,4 +1,4 @@
-import { ClientError } from "./client-error.ts";
+import { ClientError } from "./client-error";
 
 export function toFetchErrorMessage(
   cause: unknown,

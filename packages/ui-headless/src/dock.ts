@@ -2,7 +2,7 @@ import {
   resolveKeyboardShortcut,
   type KeyboardShortcut,
   type KeyboardShortcutContext,
-} from "./shortcuts.ts";
+} from "./shortcuts";
 
 export type DockToolAction = {
   id: string;

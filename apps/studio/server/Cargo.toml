@@ -6,6 +6,9 @@ license.workspace = true
 repository.workspace = true
 description = "WebSocket server for the Studio desktop/web stack."
 
+[lints]
+workspace = true
+
 [lib]
 name = "studio_server"
 path = "src/lib.rs"

@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   resolveKeyboardShortcut,
   type KeyboardShortcut,
-} from "../src/shortcuts.ts";
+} from "../src/shortcuts";
 
 function shortcut(id: string, overrides?: Partial<KeyboardShortcut>): KeyboardShortcut {
   return {

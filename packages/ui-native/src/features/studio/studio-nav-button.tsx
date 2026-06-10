@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Text } from "react-native";
 
-import { useShellTheme } from "../../theme/shell-theme.tsx";
+import { useShellTheme } from "../../theme/shell-theme";
 
 export function StudioNavButton(props: {
   active: boolean;

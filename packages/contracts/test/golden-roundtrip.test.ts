@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import * as Either from "effect/Either";
 import { describe, expect, it } from "vitest";
 
-import { decodeJsonEither, formatSchemaError } from "../src/decode.ts";
+import { decodeJsonEither, formatSchemaError } from "../src/decode";
 import {
   AlignerSourceSchema,
   FramePayloadSchema,
@@ -13,7 +13,7 @@ import {
   SaveBboxRequestSchema,
   ScanSourceRequestSchema,
   WorkspaceScanSchema,
-} from "../src/schema/index.ts";
+} from "../src/schema/index";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixturesDir = join(here, "fixtures");

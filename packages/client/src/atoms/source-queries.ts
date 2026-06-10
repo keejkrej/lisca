@@ -2,10 +2,10 @@ import type { AlignerSource, AutoExcludePreviewRequest, AutoExcludePreviewRespon
 import { Atom, type Result } from "@effect-atom/atom-react";
 import { type Context, Effect } from "effect";
 
-import type { ClientError } from "../infra/client-error.ts";
-import type { ClientEffect } from "../infra/runtime.ts";
-import { ReactivityKeys } from "./reactivity.ts";
-import type { AppRuntime } from "./runtime.ts";
+import type { ClientError } from "../infra/client-error";
+import type { ClientEffect } from "../infra/runtime";
+import { ReactivityKeys } from "./reactivity";
+import type { AppRuntime } from "./runtime";
 
 /** Port surface shared by the aligner and studio source-scan query atoms. */
 export type SourceQueryPort = {

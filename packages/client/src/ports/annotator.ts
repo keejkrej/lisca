@@ -1,12 +1,12 @@
 import { decodeFramePayload } from "@lisca/utils";
 import { Effect } from "effect";
 
-import { createApiClient, toClientEffect, type LiscaApiClient } from "../infra/api-client.ts";
-import { withOptionalAbortSignal } from "../infra/with-abort-signal.ts";
-import { createHostPort, type HostPortDeps } from "./host.ts";
-import type { AnnotatorDataPort } from "./types.ts";
+import { createApiClient, toClientEffect, type LiscaApiClient } from "../infra/api-client";
+import { withOptionalAbortSignal } from "../infra/with-abort-signal";
+import { createHostPort, type HostPortDeps } from "./host";
+import type { AnnotatorDataPort } from "./types";
 
-export type { AnnotatorDataPort } from "./types.ts";
+export type { AnnotatorDataPort } from "./types";
 
 export type AnnotatorPortDeps = HostPortDeps;
 

@@ -2,11 +2,11 @@ import type { AutoExcludePreviewRequest, AutoExcludePreviewResponse, RoiWorkspac
 import { Atom, type Result } from "@effect-atom/atom-react";
 import { Effect } from "effect";
 
-import type { ClientError } from "../../infra/client-error.ts";
-import { StudioPortService } from "../ports.ts";
-import { ReactivityKeys } from "../reactivity.ts";
-import type { AppRuntime } from "../runtime.ts";
-import { createSourceQueryAtoms } from "../source-queries.ts";
+import type { ClientError } from "../../infra/client-error";
+import { StudioPortService } from "../ports";
+import { ReactivityKeys } from "../reactivity";
+import type { AppRuntime } from "../runtime";
+import { createSourceQueryAtoms } from "../source-queries";
 
 export type StudioQueryAtoms = {
   scanSourceAtom: (sourceKey: string) => Atom.Atom<Result.Result<WorkspaceScan, ClientError>>;

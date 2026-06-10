@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { Button } from "../../shell/chrome/buttons.tsx";
-import { Field } from "../../shell/chrome/field.tsx";
-import { shellOutlineElevation } from "../../shell/chrome/shell-chrome.ts";
-import { Section } from "../../shell/regions/section.tsx";
-import { Slider } from "../../shell/chrome/slider.tsx";
-import { useShellTheme } from "../../theme/shell-theme.tsx";
+import { Button } from "../../shell/chrome/buttons";
+import { Field } from "../../shell/chrome/field";
+import { shellOutlineElevation } from "../../shell/chrome/shell-chrome";
+import { Section } from "../../shell/regions/section";
+import { Slider } from "../../shell/chrome/slider";
+import { useShellTheme } from "../../theme/shell-theme";
 
 export type NavigationValue = number | string;
 

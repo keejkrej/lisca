@@ -1,6 +1,6 @@
 import * as Schema from "effect/Schema";
 
-import { U32 } from "./primitives.ts";
+import { U32 } from "./primitives";
 
 export const RoiBboxSchema = Schema.Struct({
   roi: U32,

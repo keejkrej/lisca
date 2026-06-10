@@ -1,7 +1,7 @@
 import * as Schema from "effect/Schema";
 
-import { AlignerSourceSchema, ContrastWindowSchema, FrameRequestSchema } from "./shared.ts";
-import { F64, I32, NumArray, U32 } from "./primitives.ts";
+import { AlignerSourceSchema, ContrastWindowSchema, FrameRequestSchema } from "./shared";
+import { F64, I32, NumArray, U32 } from "./primitives";
 
 export const AlignGridShapeSchema = Schema.Literal("rect", "square", "hex").annotations({
   identifier: "AlignGridShape",

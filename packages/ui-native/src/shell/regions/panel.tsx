@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
-import { useShellTheme } from "../../theme/shell-theme.tsx";
+import { useShellTheme } from "../../theme/shell-theme";
 
 export function Spinner(props: { size?: "small" | "large" }) {
   const { colors } = useShellTheme();

@@ -1,7 +1,7 @@
 import { WS_PATH } from "@lisca/contracts";
-import { toFetchErrorMessage } from "./errors.ts";
-import { createPortRegistry, type PortRegistry } from "./port-registry.ts";
-import { createLiscaUrlResolver } from "./urls.ts";
+import { toFetchErrorMessage } from "./errors";
+import { createPortRegistry, type PortRegistry } from "./port-registry";
+import { createLiscaUrlResolver } from "./urls";
 
 /** Dependencies handed to every `create*Port` factory. */
 export type LiscaPortDeps = {

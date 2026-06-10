@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
-import { useShellTheme } from "../../theme/shell-theme.tsx";
+import { useShellTheme } from "../../theme/shell-theme";
 
 export type ServerAddressDialogProps = {
   open: boolean;

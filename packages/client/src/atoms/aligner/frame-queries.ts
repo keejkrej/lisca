@@ -4,11 +4,11 @@ import { normalizeFrameContrast } from "@lisca/utils";
 import { Atom, type Result } from "@effect-atom/atom-react";
 import { Effect } from "effect";
 
-import type { ClientError } from "../../infra/client-error.ts";
-import { frameCacheKey } from "../../frame-loader.ts";
-import { AlignerPortService } from "../ports.ts";
-import { ReactivityKeys } from "../reactivity.ts";
-import type { AppRuntime } from "../runtime.ts";
+import type { ClientError } from "../../infra/client-error";
+import { frameCacheKey } from "../../frame-loader";
+import { AlignerPortService } from "../ports";
+import { ReactivityKeys } from "../reactivity";
+import type { AppRuntime } from "../runtime";
 
 export type LoadFrameInput = {
   source: AlignerSource;

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { StyleSheet } from "react-native";
 
-import { Section } from "./section.tsx";
+import { Section } from "./section";
 
 export function SidebarSection(props: {
   title: string;

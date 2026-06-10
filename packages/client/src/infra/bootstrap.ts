@@ -1,9 +1,9 @@
 import type { Layer } from "effect";
 import { Effect } from "effect";
 
-import type { ClientError } from "./client-error.ts";
-import { createAppRuntime, type AppRuntime } from "../atoms/runtime.ts";
-import { runClientEffect } from "./runtime.ts";
+import type { ClientError } from "./client-error";
+import { createAppRuntime, type AppRuntime } from "../atoms/runtime";
+import { runClientEffect } from "./runtime";
 
 /**
  * Single bootstrap for an app: one port instance, one atom runtime, one effect runner.

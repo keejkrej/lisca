@@ -34,7 +34,7 @@ import {
   ScanSourceRequestSchema,
   UIntArraySchema,
   WorkspaceScanSchema,
-} from "./schema/index.ts";
+} from "./schema/index";
 
 /**
  * Structured request error. Replaces the previous plain-text 400 so every

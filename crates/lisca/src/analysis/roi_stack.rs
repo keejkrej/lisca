@@ -164,7 +164,7 @@ fn decode_page_to_f64(data: DecodingResult, width: usize, height: usize) -> Resu
             if values.len() != expected_len {
                 return Err("unexpected TIFF page dimensions".to_string());
             }
-            Ok(values.into_iter().map(|value| f64::from(value)).collect())
+            Ok(values.into_iter().map(f64::from).collect())
         }
         DecodingResult::U16(values) => to_f64(values),
         _ => Err("unsupported TIFF pixel type for ROI stack".to_string()),

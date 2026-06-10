@@ -11,7 +11,7 @@ import {
   type AlignUiState,
   type LoadedSavedAlignState,
   type StateUpdater,
-} from "./align-ui.ts";
+} from "./align-ui";
 export const STUDIO_ALIGN_SESSION_KEY = "lisca-studio-align-session";
 const studioPersist = createStudioPersist(STUDIO_ALIGN_SESSION_KEY);
 export const studioAlignUiAtom: AlignUiAtom = createAlignUiAtom();

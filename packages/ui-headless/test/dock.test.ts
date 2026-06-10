@@ -5,7 +5,7 @@ import {
   dockToolShortcuts,
   resolveDockToolShortcut,
   type DockToolAction,
-} from "../src/dock.ts";
+} from "../src/dock";
 
 function action(id: string, overrides?: Partial<DockToolAction>): DockToolAction {
   return {

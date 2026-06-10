@@ -14,12 +14,12 @@ import {
   parsePanelGroups,
   type ResultPanel,
   type SlideChannelLabels,
-} from "../shared/panels.ts";
+} from "../shared/panels";
 import {
   analysisPanelsParamsKey,
   slideChannelLabelsCacheKey,
   type AnalysisPanelsParams,
-} from "../shared/queries.ts";
+} from "../shared/queries";
 
 export function createAnalysisPanelAtoms(runtime: AppRuntime<StudioPortService>) {
   const studioAnalysisAtoms = createStudioAnalysisAtoms(runtime);

@@ -1,9 +1,9 @@
-export * from "./assays/gene-expression/catalog.ts";
-export * from "./assays/immune-killing/catalog.ts";
-export * from "./shared/panels.ts";
-export * from "./shared/queries.ts";
+export * from "./assays/gene-expression/catalog";
+export * from "./assays/immune-killing/catalog";
+export * from "./shared/panels";
+export * from "./shared/queries";
 export {
   createAnalysisPanelAtoms,
   type AnalysisPanelsParams,
   type SlideChannelLabels,
-} from "./atoms/analysis-panels.ts";
+} from "./atoms/analysis-panels";

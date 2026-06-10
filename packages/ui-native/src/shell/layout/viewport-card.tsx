@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 
-import { useShellTheme } from "../../theme/shell-theme.tsx";
+import { useShellTheme } from "../../theme/shell-theme";
 
 /** Padded main-column frame for canvas, plots, and other primary viewport content. */
 export function ViewportCard({ children }: { children: ReactNode }) {

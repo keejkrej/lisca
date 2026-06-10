@@ -8,9 +8,9 @@ import {
   deriveVisibleCounts,
   isCropping,
   shouldApplySourceScan,
-} from "./align-session.ts";
-import type { AlignUiActions, AlignUiState, StateUpdater } from "../atoms/align-ui.ts";
-import { resultData, resultFailureMessage, resultLoading } from "../atoms/result-utils.ts";
+} from "./align-session";
+import type { AlignUiActions, AlignUiState, StateUpdater } from "../atoms/align-ui";
+import { resultData, resultFailureMessage, resultLoading } from "../atoms/result-utils";
 export type AlignSessionMeta = {
   scanLoading: boolean;
   frameLoading: boolean;

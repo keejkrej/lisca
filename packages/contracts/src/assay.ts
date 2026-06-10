@@ -1,1 +1,1 @@
-export * from "./assay-ui.ts";
+export * from "./assay-ui";

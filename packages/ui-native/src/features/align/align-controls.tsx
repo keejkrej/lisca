@@ -2,12 +2,12 @@ import { clamp } from "@lisca/utils";
 import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 
-import { Button, SegmentedToggle } from "../../shell/chrome/buttons.tsx";
-import { Field } from "../../shell/chrome/field.tsx";
-import { Section } from "../../shell/regions/section.tsx";
-import { Slider } from "../../shell/chrome/slider.tsx";
-import { useShellTheme } from "../../theme/shell-theme.tsx";
-import type { NavigationOption, NavigationValue } from "../navigation/frame-navigation.tsx";
+import { Button, SegmentedToggle } from "../../shell/chrome/buttons";
+import { Field } from "../../shell/chrome/field";
+import { Section } from "../../shell/regions/section";
+import { Slider } from "../../shell/chrome/slider";
+import { useShellTheme } from "../../theme/shell-theme";
+import type { NavigationOption, NavigationValue } from "../navigation/frame-navigation";
 
 function formatNumber(value: number) {
   return Number.isFinite(value) ? String(value) : "";

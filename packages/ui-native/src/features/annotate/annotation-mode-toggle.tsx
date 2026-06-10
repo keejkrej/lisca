@@ -1,5 +1,5 @@
 import type { AnnotationMode } from "@lisca/ui-headless";
-import { SegmentedToggle } from "../../shell/chrome/buttons.tsx";
+import { SegmentedToggle } from "../../shell/chrome/buttons";
 
 const MODE_OPTIONS = [
   { value: "classification", label: "Classification" },

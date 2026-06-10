@@ -1,4 +1,4 @@
-import type { AlignerSource } from "./schema/shared.ts";
+import type { AlignerSource } from "./schema/shared";
 import type {
   AssayBasicInfoStep1,
   AssayBasicInfoStep2,
@@ -7,7 +7,7 @@ import type {
   AssaySampleRow,
   AssaySlideId,
   AssayTimelapseUnit,
-} from "./assay.schema.ts";
+} from "./assay.schema";
 
 export type FolderSourceTemplatePreset = {
   label: string;

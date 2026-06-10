@@ -7,7 +7,7 @@ import { ShellNavbar, useShellWorkspace } from "@lisca/ui/shell";
 import type { HostFilePickerMode } from "@lisca/ui/features";
 import { useRef, useState } from "react";
 
-import { alignerHostOperations } from "../api/aligner-port.ts";
+import { alignerHostOperations } from "../api/aligner-port";
 import { useAlignSource } from "../state/align-page-selectors";
 
 function filePickerTitle(mode: HostFilePickerMode): string {

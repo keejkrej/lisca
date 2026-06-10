@@ -2,41 +2,41 @@ export {
   AlignCanvas,
   type AlignCanvasPointerEvent,
   type AlignCanvasProps,
-} from "./align/align-canvas.tsx";
+} from "./align/align-canvas";
 export {
   cursorForAlignTool,
   useAlignCanvasGridHandlers,
   type UseAlignCanvasGridHandlersOptions,
-} from "./align/align-canvas-handlers.ts";
+} from "./align/align-canvas-handlers";
 export {
   AnnotationCanvas,
   type AnnotationCanvasProps,
   type AnnotationTool,
-} from "./annotate/annotation-canvas.tsx";
-export { AnnotationModeToggle } from "./annotate/annotation-mode-toggle.tsx";
+} from "./annotate/annotation-canvas";
+export { AnnotationModeToggle } from "./annotate/annotation-mode-toggle";
 export type { AnnotationMode } from "@lisca/ui-headless";
-export { AnnotationToolSlider } from "./annotate/annotation-tool-slider.tsx";
-export { useCanvasResourceTransaction } from "./canvas/canvas-resource-transaction.ts";
-export { useCanvasTransientStatus } from "./canvas/canvas-transient-status.ts";
-export { CropProgressModal, type CropProgressModalProps } from "./align/crop-progress-modal.tsx";
+export { AnnotationToolSlider } from "./annotate/annotation-tool-slider";
+export { useCanvasResourceTransaction } from "./canvas/canvas-resource-transaction";
+export { useCanvasTransientStatus } from "./canvas/canvas-transient-status";
+export { CropProgressModal, type CropProgressModalProps } from "./align/crop-progress-modal";
 export {
   FolderSourceParseModal,
   type FolderSourceParseModalProps,
-} from "./host/folder-source-parse-modal.tsx";
+} from "./host/folder-source-parse-modal";
 export {
   HostFilePickerDialog,
   type HostFilePickerDialogProps,
-} from "./host/host-file-picker-dialog.tsx";
-export type { HostFilePickerMode, HostFilePickerOperations } from "./host/host-operations.ts";
-export { SourcePickerModal, type SourcePickerModalProps } from "./host/source-picker-modal.tsx";
-export { AlignGrid, ReadonlyPathField } from "./align/align-controls.tsx";
+} from "./host/host-file-picker-dialog";
+export type { HostFilePickerMode, HostFilePickerOperations } from "./host/host-operations";
+export { SourcePickerModal, type SourcePickerModalProps } from "./host/source-picker-modal";
+export { AlignGrid, ReadonlyPathField } from "./align/align-controls";
 export {
   AlignToolSection,
   AlignToolToolbar,
   type AlignToolSectionProps,
   type AlignToolToolbarProps,
-} from "./align/align-tools.tsx";
-export { ContrastControl, type ContrastControlProps } from "./contrast/contrast-control.tsx";
+} from "./align/align-tools";
+export { ContrastControl, type ContrastControlProps } from "./contrast/contrast-control";
 export {
   FrameNavigation,
   findNavigationOptionIndex,
@@ -45,4 +45,4 @@ export {
   type FrameNavigationProps,
   type NavigationOption,
   type NavigationValue,
-} from "./navigation/frame-navigation.tsx";
+} from "./navigation/frame-navigation";

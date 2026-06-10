@@ -5,8 +5,8 @@ import {
   shellChromeMetrics,
   shellOutlineButtonStyle,
   shellOutlineSurface,
-} from "./shell-chrome.ts";
-import { useShellTheme } from "../../theme/shell-theme.tsx";
+} from "./shell-chrome";
+import { useShellTheme } from "../../theme/shell-theme";
 
 function basename(value: string | null): string | null {
   if (!value) return null;

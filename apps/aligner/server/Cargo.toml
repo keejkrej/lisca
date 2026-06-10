@@ -6,6 +6,9 @@ license.workspace = true
 repository.workspace = true
 description = "WebSocket server for the Aligner desktop/web stack."
 
+[lints]
+workspace = true
+
 [lib]
 name = "aligner_server"
 path = "src/lib.rs"

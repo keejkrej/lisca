@@ -2,10 +2,10 @@ import type { AnnotationLabel, RoiFrameAnnotation, RoiFrameAnnotationPayload, Ro
 import { Atom, type Result } from "@effect-atom/atom-react";
 import { Effect } from "effect";
 
-import type { ClientError } from "../../infra/client-error.ts";
-import { AnnotatorPortService } from "../ports.ts";
-import { invalidateAfter, ReactivityKeys } from "../reactivity.ts";
-import type { AppRuntime } from "../runtime.ts";
+import type { ClientError } from "../../infra/client-error";
+import { AnnotatorPortService } from "../ports";
+import { invalidateAfter, ReactivityKeys } from "../reactivity";
+import type { AppRuntime } from "../runtime";
 
 export type SaveAnnotationLabelsInput = {
   workspacePath: string;

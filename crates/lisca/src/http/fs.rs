@@ -171,6 +171,7 @@ fn list_parent_path(path: &Path) -> Option<String> {
     Some(parent.to_string_lossy().to_string())
 }
 
+#[cfg(not(windows))]
 fn roots_from_env() -> Option<HostListDirectoryResult> {
     let roots = browse_roots()?;
     let mut entries = Vec::new();

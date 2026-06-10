@@ -3,9 +3,9 @@ import * as Either from "effect/Either";
 import { Effect, Exit, Option, Ref, Scope, Stream } from "effect";
 import type * as ParseResult from "effect/ParseResult";
 
-import type { ClientEffect } from "../infra/runtime.ts";
-import { runClientEffect } from "../infra/runtime.ts";
-import { withOptionalAbortSignal } from "../infra/with-abort-signal.ts";
+import type { ClientEffect } from "../infra/runtime";
+import { runClientEffect } from "../infra/runtime";
+import { withOptionalAbortSignal } from "../infra/with-abort-signal";
 
 export type ProgressPollOptions<TProgress> = {
   pollProgress: () => ClientEffect<TProgress>;

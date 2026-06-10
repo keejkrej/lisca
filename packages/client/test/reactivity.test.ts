@@ -2,7 +2,7 @@ import { Reactivity } from "@effect/experimental";
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
 
-import { invalidateAfter, ReactivityKeys } from "../src/atoms/reactivity.ts";
+import { invalidateAfter, ReactivityKeys } from "../src/atoms/reactivity";
 
 describe("invalidateAfter", () => {
   it("invalidates registered reactivity keys after the effect completes", async () => {

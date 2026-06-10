@@ -3,7 +3,7 @@ import {
   DISPLAYED_PARAMETER_PLOTS,
   PLOTTED_FIT_PARAMETERS,
   type DisplayedParameterPlotId,
-} from "../assays/gene-expression/catalog.ts";
+} from "../assays/gene-expression/catalog";
 
 export type ParsedCsvFile = {
   kind: string;

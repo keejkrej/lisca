@@ -6,6 +6,9 @@ license.workspace = true
 repository.workspace = true
 description = "WebSocket server for the Annotator desktop/web stack."
 
+[lints]
+workspace = true
+
 [lib]
 name = "annotator_server"
 path = "src/lib.rs"

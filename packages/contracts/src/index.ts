@@ -1,4 +1,4 @@
-export { WS_PATH } from "./constants.ts";
-export * from "./assay.schema.ts";
-export * from "./decode.ts";
-export * from "./schema/index.ts";
+export { WS_PATH } from "./constants";
+export * from "./assay.schema";
+export * from "./decode";
+export * from "./schema/index";

@@ -1,4 +1,4 @@
-import type { ShellThemeColors, ShellThemeMode } from "../../theme/tokens.ts";
+import type { ShellThemeColors, ShellThemeMode } from "../../theme/tokens";
 
 /** Matches web `buttonVariants` size `sm` / `icon-sm` in shell navbar. */
 export const shellChromeMetrics = {

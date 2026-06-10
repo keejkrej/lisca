@@ -1,8 +1,8 @@
 import * as Schema from "effect/Schema";
 
-import { AlignerSourceSchema } from "./shared.ts";
-import { NumArray, StrArray, U32 } from "./primitives.ts";
-import { RoiBboxSchema } from "./roi-bbox.ts";
+import { AlignerSourceSchema } from "./shared";
+import { NumArray, StrArray, U32 } from "./primitives";
+import { RoiBboxSchema } from "./roi-bbox";
 
 export const RoiFrameRequestSchema = Schema.Struct({
   pos: U32,

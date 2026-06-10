@@ -29,6 +29,6 @@ export {
   createLiscaMobilePort,
   type LiscaMobilePort,
   type LiscaMobilePortEnv,
-} from "./create-lisca-mobile-port.ts";
-export { toHostFilePickerOperations } from "./host-operations.ts";
-export { StorageBootstrap } from "./storage-bootstrap.tsx";
+} from "./create-lisca-mobile-port";
+export { toHostFilePickerOperations } from "./host-operations";
+export { StorageBootstrap } from "./storage-bootstrap";

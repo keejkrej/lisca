@@ -41,7 +41,7 @@ pub fn run_timeseries(workspace: &Path, mapping: &SlideMapping, jobs: usize) -> 
             .into_iter()
             .flat_map(|rows| rows.into_iter())
             .collect::<Vec<MetricRow>>();
-        rows.sort_by(|left, right| (left.pos, left.roi, left.t).cmp(&(right.pos, right.roi, right.t)));
+        rows.sort_by_key(|row| (row.pos, row.roi, row.t));
         let output = workspace
             .join("timeseries")
             .join(format!("sc{slide_channel}_ch{}", entry.signal_channel));

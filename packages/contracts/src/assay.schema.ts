@@ -1,6 +1,6 @@
 import * as Schema from "effect/Schema";
 
-import { F64 } from "./schema/primitives.ts";
+import { F64 } from "./schema/primitives";
 
 /**
  * Effect Schema source of truth for the studio `assay.json` on-disk contract.

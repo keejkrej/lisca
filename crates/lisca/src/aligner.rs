@@ -10,7 +10,6 @@ use std::{
     },
 };
 
-use ndarray_stats::SummaryStatisticsExt as _;
 use tiff::encoder::{colortype, TiffEncoder};
 
 use crate::{
@@ -390,7 +389,7 @@ fn build_histogram(scores: &[f64]) -> HistogramResult {
         raw_score_max
     };
     let width = (score_max - score_min) / AUTO_EXCLUDE_BIN_COUNT as f64;
-    let mut counts = vec![0_u32; AUTO_EXCLUDE_BIN_COUNT];
+    let mut counts = [0_u32; AUTO_EXCLUDE_BIN_COUNT];
 
     for score in scores {
         let relative = ((score - score_min) / width).floor();
@@ -544,10 +543,12 @@ impl RoiTiffWriter {
     }
 }
 
+type CropJobQueue = Arc<Mutex<VecDeque<(u32, Vec<RoiBbox>)>>>;
+
 fn crop_position_worker(
     request: Arc<CropRoiRequest>,
     scan: Arc<WorkspaceScan>,
-    queue: Arc<Mutex<VecDeque<(u32, Vec<RoiBbox>)>>>,
+    queue: CropJobQueue,
     cancel: &AtomicBool,
     event_sender: mpsc::Sender<CropPositionEvent>,
 ) {
@@ -695,10 +696,7 @@ fn crop_position_worker_count(position_count: usize) -> usize {
     let available = std::thread::available_parallelism()
         .map(usize::from)
         .unwrap_or(1);
-    position_count
-        .min(available)
-        .min(CROP_MAX_POSITION_WORKERS)
-        .max(1)
+    position_count.min(available).clamp(1, CROP_MAX_POSITION_WORKERS)
 }
 
 fn scan_page_count(scan: &WorkspaceScan) -> u32 {

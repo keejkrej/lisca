@@ -6,7 +6,7 @@ import {
   cropPositionsAfterSkip,
   deriveVisibleCounts,
   shouldApplySourceScan,
-} from "../src/session/align-session.ts";
+} from "../src/session/align-session";
 
 describe("align-session helpers", () => {
   it("shouldApplySourceScan returns true when keys differ", () => {

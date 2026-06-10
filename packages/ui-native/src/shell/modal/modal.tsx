@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Modal, Pressable, StyleSheet, View } from "react-native";
 
-import { useShellTheme } from "../../theme/shell-theme.tsx";
+import { useShellTheme } from "../../theme/shell-theme";
 
 export function ModalScrim(props: { open: boolean; onClose: () => void; children: ReactNode }) {
   return (

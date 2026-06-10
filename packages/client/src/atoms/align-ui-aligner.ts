@@ -6,7 +6,7 @@ import {
   hydrateAlignUi,
   type AlignUiAtom,
   type AlignUiState,
-} from "./align-ui.ts";
+} from "./align-ui";
 
 export const ALIGNER_SESSION_KEY = "lisca-aligner-session";
 

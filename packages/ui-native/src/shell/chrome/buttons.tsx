@@ -5,8 +5,8 @@ import {
   shellOutlineButtonStyle,
   shellOutlineElevation,
   shellOutlineSurface,
-} from "./shell-chrome.ts";
-import { useShellTheme } from "../../theme/shell-theme.tsx";
+} from "./shell-chrome";
+import { useShellTheme } from "../../theme/shell-theme";
 
 export function Button(props: {
   label: string;

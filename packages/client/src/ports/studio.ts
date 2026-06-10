@@ -1,13 +1,13 @@
 import { decodeFramePayload } from "@lisca/utils";
 import { Effect } from "effect";
 
-import { createApiClient, toClientEffect, type LiscaApiClient } from "../infra/api-client.ts";
-import { createAlignerPort, type AlignerPortDeps } from "./aligner.ts";
-import { createAnalysisPort } from "./analysis.ts";
-import { withOptionalAbortSignal } from "../infra/with-abort-signal.ts";
-import type { StudioDataPort } from "./types.ts";
+import { createApiClient, toClientEffect, type LiscaApiClient } from "../infra/api-client";
+import { createAlignerPort, type AlignerPortDeps } from "./aligner";
+import { createAnalysisPort } from "./analysis";
+import { withOptionalAbortSignal } from "../infra/with-abort-signal";
+import type { StudioDataPort } from "./types";
 
-export type { StudioDataPort, StudioHostPort } from "./types.ts";
+export type { StudioDataPort, StudioHostPort } from "./types";
 export type { AnalysisProgress } from "@lisca/contracts";
 
 export type StudioPortDeps = AlignerPortDeps;
