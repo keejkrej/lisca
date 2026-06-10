@@ -1,6 +1,5 @@
-import type { AlignGridCellCoord, AlignGridShape, AlignGridState, ContrastWindow, FramePayload, PixelType, SavedAlignState } from "@lisca/contracts";
-import { clamp, type FrameResult, type PixelArray } from "./frame";
-import { liscaLocalStorage } from "@lisca/storage";
+import type { AlignGridCellCoord, AlignGridShape, AlignGridState, SavedAlignState } from "@lisca/contracts";
+import { clamp } from "./frame";
 
 export type AlignGridFrameBounds = {
   width: number;

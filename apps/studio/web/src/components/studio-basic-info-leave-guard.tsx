@@ -20,7 +20,7 @@ export function StudioBasicInfoLeaveGuard() {
   const dirty = isBasicInfoDirty(wizard);
   const saveTo = info1.saveTo.trim();
   const { proceed, reset, status } = useBlocker({
-    shouldBlockFn: () => false,
+    shouldBlockFn: () => dirty,
     withResolver: true,
     enableBeforeUnload: false,
   });

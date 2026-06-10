@@ -1,5 +1,4 @@
-import type { AlignGridCellCoord, AlignGridShape, AlignGridState, ContrastWindow, FramePayload, PixelType, SavedAlignState } from "@lisca/contracts";
-import { liscaLocalStorage } from "@lisca/storage";
+import type { ContrastWindow, FramePayload, PixelType } from "@lisca/contracts";
 
 export type PixelArray =
   | Uint8Array
@@ -79,7 +78,7 @@ function subsampleSortedGray(values: ArrayLike<number>, sampleSize: number): num
   }
 
   const step = length / sampleSize;
-  const sample = new Array<number>(sampleSize);
+  const sample = Array.from({ length: sampleSize }, () => 0);
   for (let index = 0; index < sampleSize; index += 1) {
     const position = Math.min(length - 1, Math.floor(index * step));
     sample[index] = Number(values[position] ?? 0);

@@ -1,4 +1,3 @@
-import type { ContrastWindow, FramePayload, PixelType } from "@lisca/contracts";
 import { liscaLocalStorage } from "@lisca/storage";
 
 export function formatWsUrl(host: string, port: number, path: string): string {

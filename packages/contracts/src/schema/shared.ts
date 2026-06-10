@@ -1,7 +1,7 @@
 import * as Schema from "effect/Schema";
 
 import { PIXEL_TYPES } from "../constants";
-import { F64, NumArray, U32 } from "./primitives";
+import { NumArray, U32 } from "./primitives";
 
 export const AppIdSchema = Schema.Literal("aligner", "annotator", "studio").annotations({
   identifier: "AppId",

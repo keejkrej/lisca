@@ -95,7 +95,8 @@ function migrateSource(text: string): string {
   return text.replace(importRe, (full, typeOnlyPrefix: string | undefined, inner: string) => {
     const forceType = Boolean(typeOnlyPrefix);
     const specs = parseNamedImports(`{${inner}}`).map((s) => ({
-      ...s,
+      name: s.name,
+      alias: s.alias,
       isType: forceType || s.isType,
     }));
 
@@ -136,26 +137,31 @@ function migrateSource(text: string): string {
 }
 
 async function walk(dir: string, files: string[] = []): Promise<string[]> {
-  for (const entry of await readdir(dir, { withFileTypes: true })) {
-    if (entry.name === "node_modules" || entry.name === ".git" || entry.name === "dist") continue;
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) await walk(full, files);
-    else if (/\.(ts|tsx)$/.test(entry.name) && !entry.name.endsWith(".d.ts")) files.push(full);
-  }
+  const entries = await readdir(dir, { withFileTypes: true });
+  await Promise.all(
+    entries.map(async (entry) => {
+      if (entry.name === "node_modules" || entry.name === ".git" || entry.name === "dist") return;
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) await walk(full, files);
+      else if (/\.(ts|tsx)$/.test(entry.name) && !entry.name.endsWith(".d.ts")) files.push(full);
+    }),
+  );
   return files;
 }
 
 const files = await walk(ROOT);
-let changed = 0;
-for (const file of files) {
-  if (file.includes("migrate-contract-imports.ts")) continue;
-  if (file.includes("packages/contracts/src/assay-ui.ts")) continue;
-  const before = await readFile(file, "utf8");
-  const after = migrateSource(before);
-  if (after !== before) {
-    await writeFile(file, after);
-    changed++;
-    console.log("updated", path.relative(ROOT, file));
-  }
-}
+const changed = (
+  await Promise.all(
+    files.map(async (file) => {
+      if (file.includes("migrate-contract-imports.ts")) return false;
+      if (file.includes("packages/contracts/src/assay-ui.ts")) return false;
+      const before = await readFile(file, "utf8");
+      const after = migrateSource(before);
+      if (after === before) return false;
+      await writeFile(file, after);
+      console.log("updated", path.relative(ROOT, file));
+      return true;
+    }),
+  )
+).filter(Boolean).length;
 console.log(`Done. ${changed} files updated.`);

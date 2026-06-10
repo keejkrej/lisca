@@ -1,7 +1,6 @@
-import type { AlignGridCellCoord, AlignGridShape, AlignGridState, ContrastWindow, FramePayload, PixelType, SavedAlignState } from "@lisca/contracts";
+import type { AlignGridCellCoord, AlignGridState } from "@lisca/contracts";
 import { enumerateVisibleAlignGridCells } from "./align-grid";
-import type { FrameResult, PixelArray } from "./frame";
-import { liscaLocalStorage } from "@lisca/storage";
+import type { FrameResult } from "./frame";
 
 export type RgbColor = {
   r: number;
