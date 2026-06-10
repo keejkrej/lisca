@@ -1,14 +1,14 @@
-import { ASSAY_NAME, ENABLED_STUDIO_ASSAY_IDS } from "@lisca/contracts";
+import { ASSAY_TYPE, ENABLED_STUDIO_ASSAY_IDS } from "@lisca/contracts";
 import { Button, useShellTheme } from "@lisca/ui-native";
 import { StyleSheet, Text, View } from "react-native";
 
 import { ASSAY_CHOICE_LABEL, type AssayId, useStudioStore } from "../state/studio-store";
 
 const ASSAY_ORDER: AssayId[] = [
-  ASSAY_NAME.GENE_EXPRESSION,
-  ASSAY_NAME.IMMUNE_KILLING,
-  ASSAY_NAME.LNP_BINDING,
-  ASSAY_NAME.CUSTOM_ASSAY,
+  ASSAY_TYPE.GENE_EXPRESSION,
+  ASSAY_TYPE.IMMUNE_KILLING,
+  ASSAY_TYPE.LNP_BINDING,
+  ASSAY_TYPE.CUSTOM_ASSAY,
 ];
 const ENABLED_ASSAY_IDS = new Set<AssayId>(ENABLED_STUDIO_ASSAY_IDS);
 

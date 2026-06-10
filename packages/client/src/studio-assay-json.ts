@@ -1,10 +1,10 @@
 import {
   ASSAY_FEATURE,
-  ASSAY_NAME,
+  ASSAY_TYPE,
   AssayJsonFileSchema,
   decodeJsonResult,
   formatSchemaError,
-  type AssayName,
+  type AssayType,
   type StudioAssayJson,
   type StudioBasicInfoFeatureId,
   type StudioBasicInfoStep1,
@@ -16,20 +16,20 @@ import {
 import { GENE_EXPRESSION_FEATURE_IDS } from "@lisca/contracts";
 import * as Either from "effect/Either";
 
-export const ASSAY_CHOICE_LABEL: Record<AssayName, string> = {
-  [ASSAY_NAME.GENE_EXPRESSION]: "Gene expression",
-  [ASSAY_NAME.IMMUNE_KILLING]: "Immune killing",
-  [ASSAY_NAME.LNP_BINDING]: "LNP binding",
-  [ASSAY_NAME.CUSTOM_ASSAY]: "Custom assay",
+export const ASSAY_CHOICE_LABEL: Record<AssayType, string> = {
+  [ASSAY_TYPE.GENE_EXPRESSION]: "Gene expression",
+  [ASSAY_TYPE.IMMUNE_KILLING]: "Immune killing",
+  [ASSAY_TYPE.LNP_BINDING]: "LNP binding",
+  [ASSAY_TYPE.CUSTOM_ASSAY]: "Custom assay",
 };
 
 const BASIC_INFO_FEATURE_IDS: ReadonlyArray<StudioBasicInfoFeatureId> = GENE_EXPRESSION_FEATURE_IDS;
 
-const ASSAY_DEFAULT_INFO_FEATURES: Record<AssayName, readonly StudioBasicInfoFeatureId[]> = {
-  [ASSAY_NAME.GENE_EXPRESSION]: [ASSAY_FEATURE.TOTAL_FLUOR],
-  [ASSAY_NAME.IMMUNE_KILLING]: [],
-  [ASSAY_NAME.LNP_BINDING]: [],
-  [ASSAY_NAME.CUSTOM_ASSAY]: [],
+const ASSAY_DEFAULT_INFO_FEATURES: Record<AssayType, readonly StudioBasicInfoFeatureId[]> = {
+  [ASSAY_TYPE.GENE_EXPRESSION]: [ASSAY_FEATURE.TOTAL_FLUOR],
+  [ASSAY_TYPE.IMMUNE_KILLING]: [],
+  [ASSAY_TYPE.LNP_BINDING]: [],
+  [ASSAY_TYPE.CUSTOM_ASSAY]: [],
 };
 
 export function inferDataSourceKind(path: string): StudioDataSourceKind {
@@ -41,7 +41,7 @@ export function inferDataSourceKind(path: string): StudioDataSourceKind {
 }
 
 export function normalizeSelectedFeaturesForAssay(
-  assayId: AssayName | null,
+  assayId: AssayType | null,
   selectedFeatures: readonly StudioBasicInfoFeatureId[],
 ): StudioBasicInfoFeatureId[] {
   const defaults = assayId ? ASSAY_DEFAULT_INFO_FEATURES[assayId] : [];
@@ -80,7 +80,7 @@ export function buildStudioAssayJson({
   info3,
   sampleRowToDisk,
 }: {
-  assayId: AssayName;
+  assayId: AssayType;
   dataSourceKind: StudioDataSourceKind;
   info1: StudioBasicInfoStep1;
   info2: StudioBasicInfoStep2;

@@ -9,7 +9,7 @@ import { Link, usePathname } from "expo-router";
 import { StyleSheet, View } from "react-native";
 
 const ROUTES = [
-  { href: "/assay", label: "Choose assay" },
+  { href: "/assay", label: "Assay type" },
   { href: "/info", label: "Basic info" },
   { href: "/align", label: "Align pattern" },
   { href: "/annotate", label: "Annotate ROI" },

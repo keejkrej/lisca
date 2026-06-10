@@ -14,7 +14,7 @@ export function StudioNavRail() {
         <Panel className="w-full shrink-0">
           <div className="flex flex-col items-center gap-6 p-3">
             <NavButton active={routeId === "assay"} to="/assay">
-              Choose assay
+              Assay type
             </NavButton>
             <NavButton active={routeId === "info"} to="/info">
               Basic info

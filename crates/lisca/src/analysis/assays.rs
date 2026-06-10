@@ -6,7 +6,7 @@ pub mod immune_killing;
 
 use std::path::PathBuf;
 
-use crate::protocol::{AnalysisCsvFile, AnalysisProgress, AssayJsonFile, AssayName};
+use crate::protocol::{AnalysisCsvFile, AnalysisProgress, AssayJsonFile, AssayType};
 
 pub async fn run<F>(
     workspace_path: PathBuf,
@@ -18,10 +18,10 @@ where
     F: Fn(AnalysisProgress) + Send + Sync + 'static,
 {
     match assay_json.assay_id {
-        AssayName::ImmuneKilling => {
+        AssayType::ImmuneKilling => {
             immune_killing::run(workspace_path, request_id, assay_json, update_progress).await
         }
-        AssayName::GeneExpression | AssayName::LnpBinding | AssayName::CustomAssay => {
+        AssayType::GeneExpression | AssayType::LnpBinding | AssayType::CustomAssay => {
             gene_expression::run(workspace_path, request_id, assay_json, update_progress).await
         }
     }

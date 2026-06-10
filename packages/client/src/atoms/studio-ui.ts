@@ -9,12 +9,12 @@ import type {
   StudioBasicInfoStep1 as BasicInfoStep1,
   StudioBasicInfoStep2 as BasicInfoStep2,
   StudioBasicInfoStep3 as BasicInfoStep3,
-  GeneExpressionAssayName,
+  GeneExpressionAssayType,
   StudioDataSourceKind,
   StudioTimelapseUnit as TimelapseUnit,
 } from "@lisca/contracts";
 import {
-  ASSAY_NAME,
+  ASSAY_TYPE,
   ENABLED_STUDIO_ASSAY_IDS,
   GENE_EXPRESSION_FEATURE_IDS as CONTRACT_GENE_EXPRESSION_FEATURE_IDS,
   ASSAY_FEATURE,
@@ -80,10 +80,10 @@ const BASIC_INFO_FEATURE_IDS: ReadonlyArray<BasicInfo2FeatureId> =
 const BASIC_INFO_FEATURE_ID_SET = new Set<string>(BASIC_INFO_FEATURE_IDS);
 const TIMELAPSE_UNIT_SET = new Set<TimelapseUnit>(["second", "minute", "hour"]);
 const ENABLED_ASSAY_IDS = new Set<EnabledStudioAssayId>(ENABLED_STUDIO_ASSAY_IDS);
-const DEFAULT_ASSAY_ID: AssayId = ASSAY_NAME.GENE_EXPRESSION;
+const DEFAULT_ASSAY_ID: AssayId = ASSAY_TYPE.GENE_EXPRESSION;
 
-function isGeneExpressionAssay(assayId: AssayId | null): assayId is GeneExpressionAssayName {
-  return assayId === ASSAY_NAME.GENE_EXPRESSION;
+function isGeneExpressionAssay(assayId: AssayId | null): assayId is GeneExpressionAssayType {
+  return assayId === ASSAY_TYPE.GENE_EXPRESSION;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -142,7 +142,7 @@ export function createStudioUi(adapters: StudioSampleRowAdapters) {
 
   function basicInfoAssayTitle(assayId: AssayId | null): string {
     if (!assayId) return "Assay";
-    if (assayId === ASSAY_NAME.CUSTOM_ASSAY) return ASSAY_CHOICE_LABEL[ASSAY_NAME.CUSTOM_ASSAY];
+    if (assayId === ASSAY_TYPE.CUSTOM_ASSAY) return ASSAY_CHOICE_LABEL[ASSAY_TYPE.CUSTOM_ASSAY];
     return `${ASSAY_CHOICE_LABEL[assayId]} assay`;
   }
 
@@ -454,7 +454,7 @@ export function createStudioUi(adapters: StudioSampleRowAdapters) {
           ...current.info2,
           selectedFeatures: normalizeSelectedFeaturesForAssay(
             nextAssayId,
-            nextAssayId === ASSAY_NAME.GENE_EXPRESSION ? current.info2.selectedFeatures : [],
+            nextAssayId === ASSAY_TYPE.GENE_EXPRESSION ? current.info2.selectedFeatures : [],
           ),
         },
       }));

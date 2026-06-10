@@ -19,7 +19,7 @@ import {
   type TimelapseUnit,
   useStudioStore,
 } from "../state/studio-store";
-import { ASSAY_FEATURE, ASSAY_NAME } from "@lisca/contracts";
+import { ASSAY_FEATURE, ASSAY_TYPE } from "@lisca/contracts";
 
 const ROW = "flex min-h-[100px] w-full flex-col gap-2.5 p-2.5";
 const FEATURES: { id: BasicInfo2FeatureId; title: string }[] = [
@@ -45,7 +45,7 @@ export function BasicInfoStep2() {
   const assayId = useStudioStore((state) => state.assayId);
   const info2 = useStudioStore((state) => state.info2);
   const setInfo2 = useStudioStore((state) => state.setInfo2);
-  const isGeneExpression = assayId === ASSAY_NAME.GENE_EXPRESSION;
+  const isGeneExpression = assayId === ASSAY_TYPE.GENE_EXPRESSION;
   const showFeaturePicker = isGeneExpression;
   const isSelected = (id: BasicInfo2FeatureId) =>
     Array.isArray(info2.selectedFeatures) && info2.selectedFeatures.includes(id);
@@ -55,7 +55,7 @@ export function BasicInfoStep2() {
     isGeneExpression && id !== ASSAY_FEATURE.TOTAL_FLUOR;
 
   const toggleFeature = (id: BasicInfo2FeatureId) => {
-    if (assayId === ASSAY_NAME.GENE_EXPRESSION) {
+    if (assayId === ASSAY_TYPE.GENE_EXPRESSION) {
       setInfo2({ selectedFeatures: [ASSAY_FEATURE.TOTAL_FLUOR] });
       return;
     }

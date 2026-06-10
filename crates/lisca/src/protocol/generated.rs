@@ -1281,7 +1281,7 @@ impl ::std::convert::TryFrom<::std::string::String> for AssayFeature {
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
 #[doc = "    \"assayId\": {"]
-#[doc = "      \"$ref\": \"#/definitions/AssayName\""]
+#[doc = "      \"$ref\": \"#/definitions/AssayType\""]
 #[doc = "    },"]
 #[doc = "    \"assayLabel\": {"]
 #[doc = "      \"type\": \"string\""]
@@ -1312,7 +1312,7 @@ impl ::std::convert::TryFrom<::std::string::String> for AssayFeature {
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct AssayJsonFile {
     #[serde(rename = "assayId")]
-    pub assay_id: AssayName,
+    pub assay_id: AssayType,
     #[serde(rename = "assayLabel")]
     pub assay_label: ::std::string::String,
     #[serde(rename = "dataSourceKind")]
@@ -1326,7 +1326,7 @@ impl AssayJsonFile {
         Default::default()
     }
 }
-#[doc = "`AssayName`"]
+#[doc = "`AssayType`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
 #[doc = r""]
@@ -1354,7 +1354,7 @@ impl AssayJsonFile {
     PartialEq,
     PartialOrd,
 )]
-pub enum AssayName {
+pub enum AssayType {
     #[serde(rename = "gene-expression")]
     GeneExpression,
     #[serde(rename = "immune-killing")]
@@ -1364,7 +1364,7 @@ pub enum AssayName {
     #[serde(rename = "custom-assay")]
     CustomAssay,
 }
-impl ::std::fmt::Display for AssayName {
+impl ::std::fmt::Display for AssayType {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
             Self::GeneExpression => f.write_str("gene-expression"),
@@ -1374,7 +1374,7 @@ impl ::std::fmt::Display for AssayName {
         }
     }
 }
-impl ::std::str::FromStr for AssayName {
+impl ::std::str::FromStr for AssayType {
     type Err = self::error::ConversionError;
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
@@ -1386,13 +1386,13 @@ impl ::std::str::FromStr for AssayName {
         }
     }
 }
-impl ::std::convert::TryFrom<&str> for AssayName {
+impl ::std::convert::TryFrom<&str> for AssayType {
     type Error = self::error::ConversionError;
     fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<&::std::string::String> for AssayName {
+impl ::std::convert::TryFrom<&::std::string::String> for AssayType {
     type Error = self::error::ConversionError;
     fn try_from(
         value: &::std::string::String,
@@ -1400,7 +1400,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for AssayName {
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<::std::string::String> for AssayName {
+impl ::std::convert::TryFrom<::std::string::String> for AssayType {
     type Error = self::error::ConversionError;
     fn try_from(
         value: ::std::string::String,
@@ -4829,7 +4829,7 @@ pub mod builder {
     }
     #[derive(Clone, Debug)]
     pub struct AssayJsonFile {
-        assay_id: ::std::result::Result<super::AssayName, ::std::string::String>,
+        assay_id: ::std::result::Result<super::AssayType, ::std::string::String>,
         assay_label: ::std::result::Result<::std::string::String, ::std::string::String>,
         data_source_kind: ::std::result::Result<
             ::std::option::Option<super::AssayDataSourceKind>,
@@ -4854,7 +4854,7 @@ pub mod builder {
     impl AssayJsonFile {
         pub fn assay_id<T>(mut self, value: T) -> Self
         where
-            T: ::std::convert::TryInto<super::AssayName>,
+            T: ::std::convert::TryInto<super::AssayType>,
             T::Error: ::std::fmt::Display,
         {
             self.assay_id = value

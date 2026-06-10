@@ -1,4 +1,4 @@
-import { ASSAY_FEATURE, ASSAY_NAME } from "@lisca/contracts";
+import { ASSAY_FEATURE, ASSAY_TYPE } from "@lisca/contracts";
 import { Button, Section, useShellTheme } from "@lisca/ui-native";
 import { StyleSheet, TextInput, View } from "react-native";
 
@@ -26,7 +26,7 @@ export function BasicInfoStep2() {
   const assayId = useStudioStore((state) => state.assayId);
   const info2 = useStudioStore((state) => state.info2);
   const setInfo2 = useStudioStore((state) => state.setInfo2);
-  const isGeneExpression = assayId === ASSAY_NAME.GENE_EXPRESSION;
+  const isGeneExpression = assayId === ASSAY_TYPE.GENE_EXPRESSION;
   const showFeaturePicker = isGeneExpression;
   const selectedFeatures = Array.isArray(info2.selectedFeatures) ? info2.selectedFeatures : [];
   const inputStyle = [

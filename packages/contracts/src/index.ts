@@ -31,21 +31,21 @@ export type HostFilePickerMode =
   | "czi_file"
   | "assay_json_file";
 
-export const ASSAY_NAME = {
+export const ASSAY_TYPE = {
   GENE_EXPRESSION: "gene-expression",
   IMMUNE_KILLING: "immune-killing",
   LNP_BINDING: "lnp-binding",
   CUSTOM_ASSAY: "custom-assay",
 } as const;
 
-export type AssayName = (typeof ASSAY_NAME)[keyof typeof ASSAY_NAME];
-export type GeneExpressionAssayName = typeof ASSAY_NAME.GENE_EXPRESSION;
-export type ImmuneKillingAssayName = typeof ASSAY_NAME.IMMUNE_KILLING;
+export type AssayType = (typeof ASSAY_TYPE)[keyof typeof ASSAY_TYPE];
+export type GeneExpressionAssayType = typeof ASSAY_TYPE.GENE_EXPRESSION;
+export type ImmuneKillingAssayType = typeof ASSAY_TYPE.IMMUNE_KILLING;
 
 /** Assay types selectable in the Studio wizard today. */
 export const ENABLED_STUDIO_ASSAY_IDS = [
-  ASSAY_NAME.GENE_EXPRESSION,
-  ASSAY_NAME.IMMUNE_KILLING,
+  ASSAY_TYPE.GENE_EXPRESSION,
+  ASSAY_TYPE.IMMUNE_KILLING,
 ] as const;
 
 export type EnabledStudioAssayId = (typeof ENABLED_STUDIO_ASSAY_IDS)[number];
@@ -71,7 +71,7 @@ export type AssayFeatureList = readonly AssayFeature[];
 export type NonEmptyAssayFeatureList = [AssayFeature, ...AssayFeature[]];
 
 export type Assay = {
-  name: AssayName;
+  assayType: AssayType;
   features: AssayFeatureList;
 };
 
@@ -83,11 +83,11 @@ export type GeneExpressionFeatureList = [
 export type GeneExpressionAssayFeature = (typeof GENE_EXPRESSION_FEATURE_IDS)[number];
 
 export type GeneExpressionAssay = {
-  name: GeneExpressionAssayName;
+  assayType: GeneExpressionAssayType;
   features: GeneExpressionFeatureList;
 };
 
-export type StudioAssayId = AssayName;
+export type StudioAssayId = AssayType;
 
 export type StudioDataSourceKind = AlignerSource["kind"] | null;
 

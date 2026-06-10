@@ -10,12 +10,12 @@ import * as Schema from "effect/Schema";
 
 const F64 = Schema.Number.annotations({ jsonSchema: { type: "number", format: "double" } });
 
-export const AssayNameSchema = Schema.Literal(
+export const AssayTypeSchema = Schema.Literal(
   "gene-expression",
   "immune-killing",
   "lnp-binding",
   "custom-assay",
-).annotations({ identifier: "AssayName" });
+).annotations({ identifier: "AssayType" });
 
 export const AssayFeatureSchema = Schema.Literal(
   "morphology",
@@ -77,7 +77,7 @@ export const AssayBasicInfoStep3Schema = Schema.Struct({
 }).annotations({ identifier: "AssayBasicInfoStep3" });
 
 export const AssayJsonFileSchema = Schema.Struct({
-  assayId: AssayNameSchema,
+  assayId: AssayTypeSchema,
   assayLabel: Schema.String,
   dataSourceKind: Schema.NullOr(AssayDataSourceKindSchema),
   info1: AssayBasicInfoStep1Schema,
@@ -86,7 +86,7 @@ export const AssayJsonFileSchema = Schema.Struct({
 }).annotations({ identifier: "AssayJsonFile" });
 
 // Derived on-disk types (names that don't collide with the const-derived
-// `AssayName`/`AssayFeature` unions exported from `index.ts`).
+// `AssayType`/`AssayFeature` unions exported from `index.ts`).
 export type AssaySampleRow = typeof AssaySampleRowSchema.Type;
 export type AssayBasicInfoStep3 = typeof AssayBasicInfoStep3Schema.Type;
 export type AssayJsonFile = typeof AssayJsonFileSchema.Type;

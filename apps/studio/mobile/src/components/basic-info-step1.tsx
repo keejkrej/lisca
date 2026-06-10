@@ -64,7 +64,7 @@ export function BasicInfoStep1({ hostPort }: { hostPort: HostFilePickerOperation
     <>
       <View style={styles.root}>
         <Section contentStyle={styles.sectionContent} title="Name">
-          <Field label="Assay name">
+          <Field label="Name">
             <TextInput
               autoComplete="off"
               placeholder="My assay"

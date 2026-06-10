@@ -8,7 +8,7 @@ import type {
   RoiWorkspaceScan,
   AnnotationLabel,
 } from "@lisca/contracts";
-import { ASSAY_NAME } from "@lisca/contracts";
+import { ASSAY_TYPE } from "@lisca/contracts";
 import { useAnnotateSessionCore } from "@lisca/client/annotate-session/react";
 import { requestKey } from "@lisca/client/atoms/annotator-ui";
 import {
@@ -325,7 +325,7 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     void (async () => {
       try {
         const assayJson = buildStudioAssayJson({
-          assayId: assayId ?? ASSAY_NAME.CUSTOM_ASSAY,
+          assayId: assayId ?? ASSAY_TYPE.CUSTOM_ASSAY,
           dataSourceKind,
           info1,
           info2,
