@@ -9,7 +9,7 @@ export type CanvasResourceTransactionOptions<T> = {
 };
 export function useCanvasResourceTransaction() {
   const transactionIdRef = useRef(0);
-  return <T>(options: CanvasResourceTransactionOptions<T>) => {
+  const runRef = useRef(<T>(options: CanvasResourceTransactionOptions<T>) => {
     transactionIdRef.current += 1;
     const transactionId = transactionIdRef.current;
     const abortController = new AbortController();
@@ -25,5 +25,6 @@ export function useCanvasResourceTransaction() {
       .catch((cause) => applyIfCurrent(() => options.reject(cause)))
       .finally(() => applyIfCurrent(() => options.settle?.()));
     return () => abortController.abort();
-  };
+  });
+  return runRef.current;
 }

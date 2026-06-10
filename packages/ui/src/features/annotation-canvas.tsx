@@ -10,6 +10,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { cn } from "../lib/utils";
+import { useLatest } from "../hooks/use-latest";
 import { resolvedCanvasBackground, useCanvasThemeRerender } from "./canvas-theme";
 import { CanvasStatusMessageStack, CanvasToastStack } from "./canvas-status";
 type FramePoint = {
@@ -175,6 +176,7 @@ export function AnnotationCanvas({
     }
     ctx.restore();
   };
+  const renderNowLatest = useLatest(renderNow);
   useCanvasThemeRerender(renderNow);
   useLayoutEffect(() => {
     if (frame && preparedFrame) {
@@ -185,11 +187,11 @@ export function AnnotationCanvas({
     } else if (!frame) {
       latestFrameRef.current = null;
     }
-    renderNow();
-  }, [frame, preparedFrame, renderNow]);
+    renderNowLatest.current();
+  }, [frame, preparedFrame, renderNowLatest]);
   useEffect(() => {
-    renderNow();
-  }, [labels, lassoPoints, mask, overlayOpacity, renderNow]);
+    renderNowLatest.current();
+  }, [labels, lassoPoints, mask, overlayOpacity, renderNowLatest]);
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
     const viewport = viewportRef.current;
@@ -210,7 +212,7 @@ export function AnnotationCanvas({
         const cssHeight = `${viewport.clientHeight}px`;
         if (canvas.style.width !== cssWidth) canvas.style.width = cssWidth;
         if (canvas.style.height !== cssHeight) canvas.style.height = cssHeight;
-        renderNow();
+        renderNowLatest.current();
       });
     };
     const observer = new ResizeObserver(() => resize());
@@ -227,7 +229,7 @@ export function AnnotationCanvas({
       }
       observer.disconnect();
     };
-  }, [renderNow]);
+  }, [renderNowLatest]);
   const framePointFromEvent = (event: ReactPointerEvent<HTMLCanvasElement>): FramePoint | null => {
     const viewport = viewportRef.current;
     const cached = latestFrameRef.current;

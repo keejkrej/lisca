@@ -59,8 +59,28 @@ export function HostFilePickerDialog({
   };
   useEffect(() => {
     if (!open) return;
-    void loadPath(null);
-  }, [loadPath, open]);
+    let cancelled = false;
+    void (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await hostPort.listDirectory(null);
+        if (!cancelled) {
+          setList(result);
+        }
+      } catch (cause) {
+        if (!cancelled) {
+          setList(null);
+          setError(cause instanceof Error ? cause.message : String(cause));
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [hostPort, open]);
   const entries = (list?.entries ?? []).filter(
     (entry) => entry.isDirectory || fileMatchesMode(mode, entry) || isDirectoryMode(mode),
   );

@@ -297,6 +297,8 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
         deps.annotatorUiActions.setAnnotationLoading(setUi, false);
       },
     });
+    // deps members are listed individually; omitting the aggregate avoids unrelated reruns.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [
     activeRequestKey,
     contrast,

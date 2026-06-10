@@ -1,7 +1,17 @@
 import { Moon, Sun } from "lucide-react";
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useReducer,
+  useRef,
+  type Dispatch,
+  type ReactNode,
+} from "react";
 import { Button } from "../components/ui/button";
+
 export type ShellThemeMode = "light" | "dark";
+
 type ShellThemeContextValue = {
   mode: ShellThemeMode;
   setMode: (mode: ShellThemeMode) => void;
@@ -9,8 +19,19 @@ type ShellThemeContextValue = {
   resolvedTheme: ShellThemeMode;
   toggleLightDark: () => void;
 };
-const ShellThemeContext = createContext<ShellThemeContextValue | null>(null);
+
+type ThemeAction =
+  | { type: "setMode"; mode: ShellThemeMode; storageKey: string }
+  | { type: "toggle"; storageKey: string };
+
+const ShellThemeModeContext = createContext<ShellThemeMode | null>(null);
+const ShellThemeControlsContext = createContext<{
+  setMode: (mode: ShellThemeMode) => void;
+  toggleLightDark: () => void;
+} | null>(null);
+
 const DEFAULT_STORAGE_KEY = "lisca-shell-theme";
+
 function readStoredMode(storageKey: string, fallback: ShellThemeMode): ShellThemeMode {
   try {
     const raw = localStorage.getItem(storageKey);
@@ -20,6 +41,27 @@ function readStoredMode(storageKey: string, fallback: ShellThemeMode): ShellThem
     /* ignore */
   }
   return fallback;
+}
+
+function themeReducer(state: ShellThemeMode, action: ThemeAction): ShellThemeMode {
+  const next = action.type === "setMode" ? action.mode : state === "dark" ? "light" : "dark";
+  try {
+    localStorage.setItem(action.storageKey, next);
+  } catch {
+    /* ignore */
+  }
+  return next;
+}
+
+function createThemeControls(
+  dispatch: Dispatch<ThemeAction>,
+  storageKeyRef: { current: string },
+) {
+  return {
+    setMode: (mode: ShellThemeMode) =>
+      dispatch({ type: "setMode", mode, storageKey: storageKeyRef.current }),
+    toggleLightDark: () => dispatch({ type: "toggle", storageKey: storageKeyRef.current }),
+  };
 }
 
 /**
@@ -35,41 +77,41 @@ export function ShellThemeProvider(props: {
 }) {
   const defaultMode = props.defaultMode ?? "light";
   const storageKey = props.storageKey ?? DEFAULT_STORAGE_KEY;
-  const [mode, setModeState] = useState<ShellThemeMode>(() => {
-    if (typeof window === "undefined") return defaultMode;
-    return readStoredMode(storageKey, defaultMode);
+  const storageKeyRef = useRef(storageKey);
+  storageKeyRef.current = storageKey;
+  const [mode, dispatch] = useReducer(themeReducer, defaultMode, (fallback) => {
+    if (typeof window === "undefined") return fallback;
+    return readStoredMode(storageKey, fallback);
   });
-  const setMode = (next: ShellThemeMode) => {
-    setModeState(next);
-    try {
-      localStorage.setItem(storageKey, next);
-    } catch {
-      /* ignore */
-    }
-  };
-  const resolvedTheme = mode;
+  const controlsRef = useRef<ReturnType<typeof createThemeControls>>(null!);
+  if (!controlsRef.current) {
+    controlsRef.current = createThemeControls(dispatch, storageKeyRef);
+  }
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.toggle("dark", resolvedTheme === "dark");
-    root.style.colorScheme = resolvedTheme === "dark" ? "dark" : "light";
-  }, [resolvedTheme]);
-  const toggleLightDark = () => {
-    setMode(resolvedTheme === "dark" ? "light" : "dark");
-  };
-  const value = {
-    mode,
-    setMode,
-    resolvedTheme,
-    toggleLightDark,
-  };
-  return <ShellThemeContext.Provider value={value}>{props.children}</ShellThemeContext.Provider>;
+    root.classList.toggle("dark", mode === "dark");
+    root.style.colorScheme = mode === "dark" ? "dark" : "light";
+  }, [mode]);
+
+  return (
+    <ShellThemeControlsContext.Provider value={controlsRef.current}>
+      <ShellThemeModeContext.Provider value={mode}>{props.children}</ShellThemeModeContext.Provider>
+    </ShellThemeControlsContext.Provider>
+  );
 }
+
 export function useShellTheme(): ShellThemeContextValue {
-  const ctx = useContext(ShellThemeContext);
-  if (!ctx) {
+  const mode = useContext(ShellThemeModeContext);
+  const controls = useContext(ShellThemeControlsContext);
+  if (!mode || !controls) {
     throw new Error("useShellTheme must be used within ShellThemeProvider");
   }
-  return ctx;
+  return {
+    mode,
+    setMode: controls.setMode,
+    resolvedTheme: mode,
+    toggleLightDark: controls.toggleLightDark,
+  };
 }
 
 /**

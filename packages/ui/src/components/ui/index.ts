@@ -33,7 +33,8 @@ export { Spinner } from "./spinner";
 export { Toggle, toggleVariants, TogglePrimitive } from "./toggle";
 export {
   ToggleGroup,
-  ToggleGroupContext,
+  ToggleGroupSizeContext,
+  ToggleGroupVariantContext,
   ToggleGroupItem,
   ToggleGroupPrimitive,
   ToggleGroupSeparator,

@@ -231,6 +231,8 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
       },
       settle: () => deps.alignerUiActions.setFrameLoading(setUi, false),
     });
+    // deps members are listed individually; omitting the aggregate avoids unrelated reruns.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [
     contrast,
     deps.alignerClient,

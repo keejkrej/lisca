@@ -20,6 +20,7 @@ import {
   type AlignGridWheelViewport,
 } from "@lisca/utils";
 import { cn } from "../lib/utils";
+import { useLatest } from "../hooks/use-latest";
 import { CanvasStatusMessageStack, CanvasToastStack } from "./canvas-status";
 import { resolvedCanvasBackground, useCanvasThemeRerender } from "./canvas-theme";
 export type AlignCanvasFramePoint = {
@@ -219,6 +220,7 @@ export function AlignCanvas({
     }
     ctx.restore();
   };
+  const renderNowLatest = useLatest(renderNow);
   useEffect(() => {
     latestFrameRef.current =
       frame && preparedFrame
@@ -227,14 +229,14 @@ export function AlignCanvas({
             prepared: preparedFrame,
           }
         : null;
-    renderNow();
-  }, [frame, preparedFrame, renderNow]);
+    renderNowLatest.current();
+  }, [frame, preparedFrame, renderNowLatest]);
   useEffect(() => {
-    renderNow();
-  }, [grid, previewGrid, renderNow]);
+    renderNowLatest.current();
+  }, [grid, previewGrid, renderNowLatest]);
   useEffect(() => {
-    renderNow();
-  }, [activeExcludedCellKeys, renderNow]);
+    renderNowLatest.current();
+  }, [excludedCells, renderNowLatest]);
   useCanvasThemeRerender(renderNow);
   useLayoutEffect(() => {
     const view = viewportRef.current;
@@ -256,7 +258,7 @@ export function AlignCanvas({
         const cssHeight = `${view.clientHeight}px`;
         if (canvas.style.width !== cssWidth) canvas.style.width = cssWidth;
         if (canvas.style.height !== cssHeight) canvas.style.height = cssHeight;
-        renderNow();
+        renderNowLatest.current();
       });
     };
     const observer = new ResizeObserver(() => resize());
@@ -273,7 +275,7 @@ export function AlignCanvas({
       }
       observer.disconnect();
     };
-  }, [renderNow]);
+  }, [renderNowLatest]);
   const getFramePointFromClient = (
     clientX: number,
     clientY: number,

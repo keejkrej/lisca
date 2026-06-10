@@ -39,6 +39,7 @@ export {
   useCanvasResourceTransaction,
   type CanvasResourceTransactionOptions,
 } from "./canvas-resource-transaction";
+export { useLatest } from "../hooks/use-latest";
 export { ContrastControl, type ContrastControlProps } from "./contrast-control";
 export { CropProgressModal, type CropProgressModalProps } from "./crop-progress-modal";
 export {

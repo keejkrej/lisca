@@ -58,8 +58,29 @@ export function useHostFilePickerState(options: UseHostFilePickerStateOptions) {
   };
   useEffect(() => {
     if (!open) return;
-    void loadPath(null);
-  }, [open, loadPath]);
+    let cancelled = false;
+    void (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await hostPort.listDirectory(null);
+        if (!cancelled) {
+          setList(result);
+          setSelectedFile(null);
+        }
+      } catch (cause) {
+        if (!cancelled) {
+          setList(null);
+          setError(cause instanceof Error ? cause.message : String(cause));
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [hostPort, open]);
   const dirMode = isDirectoryMode(mode);
   const canGoUp = canGoUpFromList(list);
   const locationLabel = list?.path ?? null;

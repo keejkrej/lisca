@@ -14,12 +14,12 @@ import { cn } from "../../lib/utils";
 import { Separator } from "./separator";
 import { Toggle as ToggleComponent, type toggleVariants } from "./toggle";
 
-export const ToggleGroupContext: Context<VariantProps<typeof toggleVariants>> = createContext<
-  VariantProps<typeof toggleVariants>
->({
-  size: "default",
-  variant: "default",
-});
+type ToggleGroupSize = NonNullable<VariantProps<typeof toggleVariants>["size"]>;
+type ToggleGroupVariant = NonNullable<VariantProps<typeof toggleVariants>["variant"]>;
+
+export const ToggleGroupSizeContext: Context<ToggleGroupSize> = createContext<ToggleGroupSize>("default");
+export const ToggleGroupVariantContext: Context<ToggleGroupVariant> =
+  createContext<ToggleGroupVariant>("default");
 
 export function ToggleGroup({
   className,
@@ -49,9 +49,11 @@ export function ToggleGroup({
       orientation={orientation}
       {...props}
     >
-      <ToggleGroupContext.Provider value={{ size, variant }}>
-        {children}
-      </ToggleGroupContext.Provider>
+      <ToggleGroupSizeContext.Provider value={size ?? "default"}>
+        <ToggleGroupVariantContext.Provider value={variant ?? "default"}>
+          {children}
+        </ToggleGroupVariantContext.Provider>
+      </ToggleGroupSizeContext.Provider>
     </ToggleGroupPrimitive>
   );
 }
@@ -63,10 +65,11 @@ export function ToggleGroupItem({
   size,
   ...props
 }: TogglePrimitive.Props & VariantProps<typeof toggleVariants>): ReactElement {
-  const context = useContext(ToggleGroupContext);
+  const contextSize = useContext(ToggleGroupSizeContext);
+  const contextVariant = useContext(ToggleGroupVariantContext);
 
-  const resolvedVariant = context.variant || variant;
-  const resolvedSize = context.size || size;
+  const resolvedVariant = contextVariant || variant;
+  const resolvedSize = contextSize || size;
 
   return (
     <ToggleComponent

@@ -1,5 +1,6 @@
 import { createContext, useContext, type ReactNode } from "react";
 import { useAlignState, type AlignState } from "./use-align-state";
+
 type AlignPageContextValue = {
   state: AlignState;
   actions: Pick<
@@ -13,33 +14,33 @@ type AlignPageContextValue = {
     cropping: boolean;
   };
 };
-const AlignPageContext = createContext<AlignPageContextValue | null>(null);
+
+const AlignPageContext = createContext<AlignState | null>(null);
+
 export function AlignPageProvider({ children }: { children: ReactNode }) {
   const state = useAlignState();
-  const actions = {
-    setSource: state.setSource,
-    setSelection: state.setSelection,
-    setContrast: state.setContrast,
-    setGrid: state.setGrid,
-    setToolMode: state.setToolMode,
-  };
-  const meta = {
-    scanLoading: state.scanLoading,
-    frameLoading: state.frameLoading,
-    saving: state.saving,
-    cropping: state.cropping,
-  };
-  const value = {
-    state,
-    actions,
-    meta,
-  };
-  return <AlignPageContext.Provider value={value}>{children}</AlignPageContext.Provider>;
+  return <AlignPageContext.Provider value={state}>{children}</AlignPageContext.Provider>;
 }
+
 export function useAlignPage(): AlignPageContextValue {
-  const context = useContext(AlignPageContext);
-  if (!context) {
+  const state = useContext(AlignPageContext);
+  if (!state) {
     throw new Error("useAlignPage must be used within AlignPageProvider");
   }
-  return context;
+  return {
+    state,
+    actions: {
+      setSource: state.setSource,
+      setSelection: state.setSelection,
+      setContrast: state.setContrast,
+      setGrid: state.setGrid,
+      setToolMode: state.setToolMode,
+    },
+    meta: {
+      scanLoading: state.scanLoading,
+      frameLoading: state.frameLoading,
+      saving: state.saving,
+      cropping: state.cropping,
+    },
+  };
 }

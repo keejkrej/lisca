@@ -121,14 +121,10 @@ export function useStudioAlignState(): StudioAlignState {
     error,
     status,
   } = ui;
-  const setWorkspacePath = (path: string | null) =>
-    studioAlignUiActions.setWorkspacePath(setUi, path);
-  const setSource = (next: AlignerSource | null) => studioAlignUiActions.setSource(setUi, next);
   const setSelection = (patch: Partial<FrameRequest>) =>
     studioAlignUiActions.setSelection(setUi, patch);
   const setContrast = (next: ContrastWindow | null) =>
     studioAlignUiActions.setContrast(setUi, next);
-  const setFrame = (next: FrameResult | null) => studioAlignUiActions.setFrame(setUi, next);
   const setGrid = (next: AlignGridState | ((current: AlignGridState) => AlignGridState)) =>
     studioAlignUiActions.setGrid(setUi, next);
   const setToolMode = (mode: AlignGridToolMode) => studioAlignUiActions.setToolMode(setUi, mode);
@@ -136,20 +132,9 @@ export function useStudioAlignState(): StudioAlignState {
     studioAlignUiActions.setPatternZoomLocked(setUi, locked);
   const setExcludedCellsForCurrentPosition = (cells: Iterable<AlignGridCellCoord>) =>
     studioAlignUiActions.setExcludedCellsForCurrentPosition(setUi, cells);
-  const setFrameLoading = (loading: boolean) =>
-    studioAlignUiActions.setFrameLoading(setUi, loading);
   const setSaving = (next: boolean) => studioAlignUiActions.setSaving(setUi, next);
   const setError = (next: string | null) => studioAlignUiActions.setError(setUi, next);
   const setStatus = (next: string | null) => studioAlignUiActions.setStatus(setUi, next);
-  const applyLoadedFrame = (
-    loadedSelection: FrameRequest,
-    nextFrame: FrameResult,
-    savedAlignState: {
-      stateKey: string;
-      pos: number;
-      saved: SavedAlignState | null;
-    } | null,
-  ) => studioAlignUiActions.applyLoadedFrame(setUi, loadedSelection, nextFrame, savedAlignState);
   const [findingFirstUnaligned, setFindingFirstUnaligned] = useState(false);
   const [cropProgress, setCropProgress] = useState<CropRoiProgress | null>(null);
   const [cropStartConfirm, setCropStartConfirm] = useState<CropStartConfirmState | null>(null);
@@ -189,22 +174,28 @@ export function useStudioAlignState(): StudioAlignState {
   });
   const cropping = cropProgress != null && !isDoneCropStatus(cropProgress.status);
   useEffect(() => {
-    setWorkspacePath(activeWorkspacePath);
-  }, [activeWorkspacePath, setWorkspacePath]);
+    studioAlignUiActions.setWorkspacePath(setUi, activeWorkspacePath);
+  }, [activeWorkspacePath, setUi]);
   useEffect(() => {
-    setSource(activeSource);
-  }, [activeSource, setSource]);
+    studioAlignUiActions.setSource(setUi, activeSource);
+  }, [activeSource, setUi]);
   useEffect(() => {
     if (!scan) return;
     if (alignPositions.length === 0) {
-      setError("No assay positions found in source scan — check position ranges in basic info");
+      studioAlignUiActions.setError(
+        setUi,
+        "No assay positions found in source scan — check position ranges in basic info",
+      );
       return;
     }
     const skipped = assayPositions.length - alignPositions.length;
     if (skipped > 0) {
-      setStatus(`${skipped} assay position(s) not found in source scan`);
+      studioAlignUiActions.setStatus(
+        setUi,
+        `${skipped} assay position(s) not found in source scan`,
+      );
     }
-  }, [alignPositions, assayPositions.length, scan, setError, setStatus]);
+  }, [alignPositions, assayPositions.length, scan, setUi]);
   useEffect(() => {
     if (!scan) return;
     if (
@@ -215,11 +206,11 @@ export function useStudioAlignState(): StudioAlignState {
     ) {
       return;
     }
-    setSelection(lockedSelection);
-  }, [lockedSelection, scan, selection, setSelection]);
+    studioAlignUiActions.setSelection(setUi, lockedSelection);
+  }, [lockedSelection, scan, selection, setUi]);
   useEffect(() => {
     if (!source || !scan || alignPositions.length === 0) {
-      setFrameLoading(false);
+      studioAlignUiActions.setFrameLoading(setUi, false);
       return;
     }
     const alignStateKey = workspacePath
@@ -227,10 +218,10 @@ export function useStudioAlignState(): StudioAlignState {
       : null;
     return loadCanvasResources({
       start: () => {
-        setContrast(null);
-        setFrameLoading(true);
-        setError(null);
-        setStatus("Loading frame");
+        studioAlignUiActions.setContrast(setUi, null);
+        studioAlignUiActions.setFrameLoading(setUi, true);
+        studioAlignUiActions.setError(setUi, null);
+        studioAlignUiActions.setStatus(setUi, "Loading frame");
       },
       load: (signal) =>
         runClientEffect(
@@ -245,7 +236,8 @@ export function useStudioAlignState(): StudioAlignState {
           },
         ),
       commit: ([nextFrame, savedAlignState]) => {
-        applyLoadedFrame(
+        studioAlignUiActions.applyLoadedFrame(
+          setUi,
           lockedSelection,
           nextFrame,
           alignStateKey
@@ -258,28 +250,24 @@ export function useStudioAlignState(): StudioAlignState {
         );
       },
       reject: (cause) => {
-        setFrame(null);
-        setError(
+        studioAlignUiActions.setFrame(setUi, null);
+        studioAlignUiActions.setError(
+          setUi,
           cause instanceof Error && cause.message.startsWith("Frame request failed")
             ? effectErrorMessage(cause)
             : toErrorMessage(cause, "Frame or saved align state load failed"),
         );
       },
-      settle: () => setFrameLoading(false),
+      settle: () => studioAlignUiActions.setFrameLoading(setUi, false),
     });
   }, [
-    applyLoadedFrame,
-    lockedSelection,
+    alignPositions.length,
     loadCanvasResources,
+    lockedSelection,
     scan,
-    setContrast,
-    setError,
-    setFrame,
-    setFrameLoading,
-    setStatus,
+    setUi,
     source,
     workspacePath,
-    alignPositions.length,
   ]);
   useEffect(() => {
     if (!contrast || !source || !scan || alignPositions.length === 0) {
@@ -287,25 +275,26 @@ export function useStudioAlignState(): StudioAlignState {
     }
     return loadCanvasResources({
       start: () => {
-        setFrameLoading(true);
-        setError(null);
+        studioAlignUiActions.setFrameLoading(setUi, true);
+        studioAlignUiActions.setError(setUi, null);
       },
       load: (signal) =>
         runClientEffect(loadFrameEffect(studioClient, source, lockedSelection, contrast), {
           signal,
         }),
       commit: (nextFrame) => {
-        setFrame(nextFrame);
-        setStatus(null);
+        studioAlignUiActions.setFrame(setUi, nextFrame);
+        studioAlignUiActions.setStatus(setUi, null);
       },
       reject: (cause) => {
-        setError(
+        studioAlignUiActions.setError(
+          setUi,
           cause instanceof Error && cause.message.startsWith("Frame request failed")
             ? effectErrorMessage(cause)
             : toErrorMessage(cause, "Frame contrast update failed"),
         );
       },
-      settle: () => setFrameLoading(false),
+      settle: () => studioAlignUiActions.setFrameLoading(setUi, false),
     });
   }, [
     alignPositions.length,
@@ -313,10 +302,7 @@ export function useStudioAlignState(): StudioAlignState {
     loadCanvasResources,
     lockedSelection,
     scan,
-    setError,
-    setFrame,
-    setFrameLoading,
-    setStatus,
+    setUi,
     source,
   ]);
   const variationExcludeCells = async (): Promise<AlignGridCellCoord[]> => {

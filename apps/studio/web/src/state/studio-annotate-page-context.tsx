@@ -1,24 +1,23 @@
 import { createContext, useContext, type ReactNode } from "react";
 import { useStudioAnnotateState, type StudioAnnotateState } from "./use-studio-annotate-state";
+
 type StudioAnnotatePageContextValue = {
   state: StudioAnnotateState;
 };
-const StudioAnnotatePageContext = createContext<StudioAnnotatePageContextValue | null>(null);
+
+const StudioAnnotatePageContext = createContext<StudioAnnotateState | null>(null);
+
 export function StudioAnnotatePageProvider({ children }: { children: ReactNode }) {
   const state = useStudioAnnotateState();
-  const value = {
-    state,
-  };
   return (
-    <StudioAnnotatePageContext.Provider value={value}>
-      {children}
-    </StudioAnnotatePageContext.Provider>
+    <StudioAnnotatePageContext.Provider value={state}>{children}</StudioAnnotatePageContext.Provider>
   );
 }
+
 export function useStudioAnnotatePage(): StudioAnnotatePageContextValue {
-  const context = useContext(StudioAnnotatePageContext);
-  if (!context) {
+  const state = useContext(StudioAnnotatePageContext);
+  if (!state) {
     throw new Error("useStudioAnnotatePage must be used within StudioAnnotatePageProvider");
   }
-  return context;
+  return { state };
 }

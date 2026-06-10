@@ -10,6 +10,7 @@ import {
   DockToolGrid,
   ViewportCard,
 } from "@lisca/ui/shell";
+import { useLatest } from "@lisca/ui/features";
 import { useContext, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { runClientEffect } from "@lisca/client/runtime";
@@ -90,6 +91,8 @@ export default function ResultPage() {
     const atom = analysisPanelsAtom(analysisPanelsParamsKey(panelsParams(file)));
     return resultData(registry.get(atom));
   };
+  const loadPanelsForFileLatest = useLatest(loadPanelsForFile);
+  const getCachedAnalysisPanelsLatest = useLatest(getCachedAnalysisPanels);
   const hasAnyResultFiles = analysisResultFiles.length > 0;
   const countRenderablePanels = (panels: ResultPanel[]) =>
     panels.filter((panel) => plotOptionsForPanel(panel) !== null).length;
@@ -172,7 +175,7 @@ export default function ResultPage() {
     let cancelled = false;
     setIsSectionLoading(true);
     setPanelError(null);
-    const getPanels = (file: StudioAnalysisCsvFile) => getCachedAnalysisPanels(file);
+    const getPanels = (file: StudioAnalysisCsvFile) => getCachedAnalysisPanelsLatest.current(file);
     const collectPanels = (panelsByFile: ResultPanel[][]) =>
       activeSection === "timeseries"
         ? collectTimeseriesPanels(panelsByFile)
@@ -185,7 +188,9 @@ export default function ResultPage() {
     }
     void (async () => {
       try {
-        const panelsByFile = await Promise.all(sectionFiles.map((file) => loadPanelsForFile(file)));
+        const panelsByFile = await Promise.all(
+          sectionFiles.map((file) => loadPanelsForFileLatest.current(file)),
+        );
         if (cancelled) return;
         setSectionPanels(collectPanels(panelsByFile));
       } catch (cause) {
@@ -203,8 +208,8 @@ export default function ResultPage() {
     };
   }, [
     activeSection,
-    getCachedAnalysisPanels,
-    loadPanelsForFile,
+    getCachedAnalysisPanelsLatest,
+    loadPanelsForFileLatest,
     sectionFilePathsKey,
     sectionFiles,
   ]);

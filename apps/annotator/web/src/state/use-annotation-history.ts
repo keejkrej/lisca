@@ -47,8 +47,12 @@ export function useAnnotationHistory(frame: FrameResult | null) {
     });
   };
   useEffect(() => {
-    if (!frame) reset(emptyValueFor(null));
-  }, [frame, reset]);
+    if (!frame) {
+      const next = cloneAnnotationValue(emptyValueFor(null));
+      setInitialValue(next);
+      setState({ history: [cloneAnnotationValue(next)], index: 0 });
+    }
+  }, [frame]);
   return {
     current,
     dirty,
