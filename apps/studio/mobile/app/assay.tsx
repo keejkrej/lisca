@@ -1,10 +1,4 @@
-import {
-  AppShell,
-  DockButton,
-  DockToolGrid,
-  HostFilePickerDialog,
-  StudioDock,
-} from "@lisca/ui-native";
+import { AppShell, DockButton, HostFilePickerDialog, StudioDock } from "@lisca/ui-native";
 import { runClientEffect } from "@lisca/client/runtime";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -21,14 +15,6 @@ export default function AssayRoute() {
   const loadAssayJson = useStudioStore((state) => state.loadAssayJson);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [opening, setOpening] = useState(false);
-  const toolActions = [
-    {
-      id: "open-assay",
-      label: "Open assay",
-      disabled: opening || pickerOpen,
-      onSelect: () => setPickerOpen(true),
-    },
-  ];
   const openAssay = async (path: string) => {
     setPickerOpen(false);
     setOpening(true);
@@ -56,15 +42,21 @@ export default function AssayRoute() {
             <StudioDock
               instruction={instructionForStep("chooseAssay")}
               action={
-                <DockButton
-                  label="Next"
-                  onPress={() => {
-                    setInfoStep(1);
-                    router.push("/info");
-                  }}
-                />
+                <>
+                  <DockButton
+                    disabled={opening || pickerOpen}
+                    label="Open assay"
+                    onPress={() => setPickerOpen(true)}
+                  />
+                  <DockButton
+                    label="Next"
+                    onPress={() => {
+                      setInfoStep(1);
+                      router.push("/info");
+                    }}
+                  />
+                </>
               }
-              tool={<DockToolGrid actions={toolActions} columns={1} enabled={!pickerOpen} />}
             />
           </AppShell.Dock>
         </AppShell.MainColumn>

@@ -2,6 +2,7 @@
 
 import { type ReactNode } from "react";
 import { DockButton } from "./dock-button";
+import { DockGrid } from "./dock-grid";
 import { dockToolLabel, useDockToolShortcuts, type DockToolAction } from "./dock-tool-shortcuts";
 const DockToolGridItem = function DockToolGridItem({
   action,
@@ -20,41 +21,47 @@ export type DockToolGridProps = {
   actions: readonly DockToolAction[];
   enabled?: boolean;
   className?: string;
-  columns?: 1 | 2;
+  /** Compact centered grid for studio tool sections. */
+  centered?: boolean;
   renderAction?: (action: DockToolAction, index: number, label: string) => ReactNode;
 };
 export function DockToolGrid({
   actions,
   enabled = true,
   className,
-  columns = 2,
+  centered = false,
   renderAction,
 }: DockToolGridProps) {
   useDockToolShortcuts(actions, {
     enabled,
   });
+  const cells = actions.map((action, index) => {
+    const label = dockToolLabel(action.label, index);
+    if (renderAction) {
+      return <div key={action.id}>{renderAction(action, index, label)}</div>;
+    }
+    return <DockToolGridItem key={action.id} action={action} label={label} />;
+  });
+  if (centered) {
+    return (
+      <DockGrid
+        aria-label="Tool shortcuts"
+        centered
+        className={className}
+        layout="2x1"
+        role="toolbar"
+      >
+        {cells}
+      </DockGrid>
+    );
+  }
   return (
     <div
       aria-label="Tool shortcuts"
-      className={
-        className ??
-        (columns === 2
-          ? "grid min-h-0 flex-1 grid-cols-2 gap-2"
-          : "grid min-h-0 flex-1 grid-cols-1 gap-2")
-      }
+      className={className ?? "grid min-h-0 flex-1 grid-cols-1 gap-2"}
       role="toolbar"
     >
-      {actions.map((action, index) => {
-        const label = dockToolLabel(action.label, index);
-        if (renderAction) {
-          return <div key={action.id}>{renderAction(action, index, label)}</div>;
-        }
-        return (
-          <div key={action.id}>
-            <DockToolGridItem action={action} label={label} />
-          </div>
-        );
-      })}
+      {cells}
     </div>
   );
 }

@@ -107,13 +107,21 @@ export function useAnnotateSessionCore(options: UseAnnotateSessionCoreOptions) {
   useEffect(() => {
     const firstPosition = scanData?.positions[0] ?? null;
     if (!firstPosition) {
-      setSelection({
-        pos: null,
-        roi: null,
-        channel: null,
-        timeIndex: 0,
-        zIndex: 0,
-      });
+      if (
+        ui.selection.pos !== null ||
+        ui.selection.roi !== null ||
+        ui.selection.channel !== null ||
+        ui.selection.timeIndex !== 0 ||
+        ui.selection.zIndex !== 0
+      ) {
+        setSelection({
+          pos: null,
+          roi: null,
+          channel: null,
+          timeIndex: 0,
+          zIndex: 0,
+        });
+      }
       return;
     }
     if (!scanData?.positions.some((entry) => entry.pos === ui.selection.pos)) {
@@ -121,7 +129,7 @@ export function useAnnotateSessionCore(options: UseAnnotateSessionCoreOptions) {
         pos: firstPosition.pos,
       });
     }
-  }, [scanData, setSelection, ui.selection.pos]);
+  }, [scanData, setSelection, ui.selection]);
   const position = currentPosition(scanData ?? null, ui.selection.pos);
   useEffect(() => {
     if (!position) return;

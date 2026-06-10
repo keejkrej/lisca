@@ -20,9 +20,11 @@ export function StudioDock(props: { instruction?: string; tool?: ReactNode; acti
           </Text>
         ) : null}
       </Section>
-      <Section contentStyle={styles.centerContent} style={styles.toolSection} title="Tool">
-        {props.tool}
-      </Section>
+      {props.tool ? (
+        <Section contentStyle={styles.centerContent} style={styles.toolSection} title="Tool">
+          {props.tool}
+        </Section>
+      ) : null}
       <Section contentStyle={styles.centerContent} style={styles.actionSection} title="Action">
         {props.action}
       </Section>

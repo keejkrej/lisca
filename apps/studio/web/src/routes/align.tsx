@@ -36,46 +36,44 @@ function AlignPageContent() {
           </AppShell.Main>
           <AppShell.Dock>
             <StudioDock
+              actionLayout="2x2"
               instruction={instructionForStep("alignPattern")}
               action={
-                <div className="flex w-full flex-col gap-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    <DockButton
-                      disabled={!state.frame || state.saving || state.cropping}
-                      onClick={state.resetCurrent}
-                    >
-                      Reset
-                    </DockButton>
-                    <DockButton
-                      disabled={
-                        !state.workspacePath ||
-                        state.alignPositions.length === 0 ||
-                        state.saving ||
-                        state.cropping ||
-                        state.findingFirstUnaligned
-                      }
-                      onClick={() => void state.goToFirstUnaligned()}
-                    >
-                      Jump
-                    </DockButton>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <DockButton
-                      disabled={!state.canGoBack || state.saving || state.cropping}
-                      onClick={state.goBack}
-                    >
-                      Back
-                    </DockButton>
-                    <DockButton
-                      disabled={!state.frame || state.saving || state.cropping}
-                      onClick={() => void state.saveAndAdvance()}
-                    >
-                      Next
-                    </DockButton>
-                  </div>
-                </div>
+                <>
+                  <DockButton
+                    disabled={!state.frame || state.saving || state.cropping}
+                    onClick={state.resetCurrent}
+                  >
+                    Reset
+                  </DockButton>
+                  <DockButton
+                    disabled={
+                      !state.workspacePath ||
+                      state.alignPositions.length === 0 ||
+                      state.saving ||
+                      state.cropping ||
+                      state.findingFirstUnaligned
+                    }
+                    onClick={() => void state.goToFirstUnaligned()}
+                  >
+                    Jump
+                  </DockButton>
+                  <DockButton
+                    disabled={!state.canGoBack || state.saving || state.cropping}
+                    onClick={state.goBack}
+                  >
+                    Back
+                  </DockButton>
+                  <DockButton
+                    disabled={!state.frame || state.saving || state.cropping}
+                    onClick={() => void state.saveAndAdvance()}
+                  >
+                    Next
+                  </DockButton>
+                </>
               }
               tool={<StudioAlignTools />}
+              toolLayout="2x2"
             />
           </AppShell.Dock>
         </AppShell.MainColumn>

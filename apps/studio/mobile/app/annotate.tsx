@@ -29,21 +29,17 @@ export default function AnnotateRoute() {
             <StudioDock
               instruction="Review cropped ROI frames."
               action={
-                <View style={styles.gridRow}>
-                  <View style={styles.gridCell}>
-                    <DockButton
-                      disabled={disableShuffle}
-                      label="Shuffle"
-                      onPress={state.shuffleSelection}
-                    />
-                  </View>
-                  <View style={styles.gridCell}>
-                    <DockButton
-                      disabled={disableNext}
-                      label="Next"
-                      onPress={() => state.setAnalysisStartConfirm(true)}
-                    />
-                  </View>
+                <View style={styles.actions}>
+                  <DockButton
+                    disabled={disableShuffle}
+                    label="Shuffle"
+                    onPress={state.shuffleSelection}
+                  />
+                  <DockButton
+                    disabled={disableNext}
+                    label="Next"
+                    onPress={() => state.setAnalysisStartConfirm(true)}
+                  />
                 </View>
               }
             />
@@ -56,13 +52,8 @@ export default function AnnotateRoute() {
 }
 
 const styles = StyleSheet.create({
-  gridRow: {
-    flexDirection: "row",
+  actions: {
     gap: 8,
     width: "100%",
-  },
-  gridCell: {
-    flex: 1,
-    minWidth: 0,
   },
 });

@@ -206,13 +206,25 @@ export const studioAnnotateUiActions = {
     set: (update: StateUpdater<StudioAnnotateStoreState>) => void,
     patch: Partial<StudioAnnotateSelection>,
   ) {
-    patchStudioAnnotateUi(set, (state) => ({
-      ...state,
-      selection: {
+    patchStudioAnnotateUi(set, (state) => {
+      const nextSelection = {
         ...state.selection,
         ...patch,
-      },
-    }));
+      };
+      if (
+        nextSelection.pos === state.selection.pos &&
+        nextSelection.roi === state.selection.roi &&
+        nextSelection.channel === state.selection.channel &&
+        nextSelection.timeIndex === state.selection.timeIndex &&
+        nextSelection.zIndex === state.selection.zIndex
+      ) {
+        return state;
+      }
+      return {
+        ...state,
+        selection: nextSelection,
+      };
+    });
   },
   setFrame(
     set: (update: StateUpdater<StudioAnnotateStoreState>) => void,

@@ -7,7 +7,8 @@ import {
   DockButton,
   DockSection,
   DockStrip,
-  DockToolGrid,
+  dockToolLabel,
+  useDockToolShortcuts,
   ViewportCard,
 } from "@lisca/ui/shell";
 import { useLatest } from "@lisca/ui/features";
@@ -235,6 +236,7 @@ export default function ResultPage() {
       onSelect: () => switchSection("parameters"),
     },
   ];
+  useDockToolShortcuts(sectionToolActions, { enabled: !isBusy });
   return (
     <AppShell>
       <AppShell.Body>
@@ -286,8 +288,17 @@ export default function ResultPage() {
               <DockSection title="Instruction">
                 <p className="line-clamp-4 text-center text-sm leading-snug">{dockInstruction}</p>
               </DockSection>
-              <DockSection title="Tool">
-                <DockToolGrid actions={sectionToolActions} enabled={!isBusy} />
+              <DockSection layout="2x1" title="Tool">
+                {sectionToolActions.map((action, index) => (
+                  <DockButton
+                    key={action.id}
+                    active={action.active}
+                    disabled={action.disabled}
+                    onClick={action.onSelect}
+                  >
+                    {dockToolLabel(action.label, index)}
+                  </DockButton>
+                ))}
               </DockSection>
               <DockSection layout="2x1" title="Action">
                 <DockButton

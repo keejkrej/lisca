@@ -31,6 +31,8 @@ export type AlignToolsProps = {
   sectionContentClassName?: string;
   /** When true, render only the toolbar (no surrounding {@link Section}). */
   bare?: boolean;
+  /** When true, render only toolbar cells for a parent {@link DockSection} layout. */
+  embedded?: boolean;
   /** When false, number-key shortcuts are disabled. */
   shortcutsEnabled?: boolean;
 };
@@ -148,6 +150,7 @@ export function AlignTools({
   sectionClassName,
   sectionContentClassName,
   bare = false,
+  embedded = false,
   shortcutsEnabled = true,
 }: AlignToolsProps) {
   const toolActions = buildAlignToolActions(mode, onModeChange);
@@ -169,6 +172,10 @@ export function AlignTools({
       {toolbarCells}
     </DockGrid>
   );
+
+  if (embedded) {
+    return toolbarCells;
+  }
 
   if (bare) {
     return <div className={sectionClassName}>{toolbar}</div>;

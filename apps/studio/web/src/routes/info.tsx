@@ -52,14 +52,15 @@ function InfoPage() {
           </AppShell.Main>
           <AppShell.Dock>
             <StudioDock
+              actionLayout="2x1"
               instruction={instructionForStep(step)}
               action={
-                <div className="flex w-full flex-col gap-2">
+                <>
                   <DockButton disabled={infoStep === 1} onClick={back}>
                     Back
                   </DockButton>
                   <DockButton onClick={next}>Next</DockButton>
-                </div>
+                </>
               }
             />
           </AppShell.Dock>

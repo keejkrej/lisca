@@ -7,7 +7,6 @@ import { dockToolLabel, useDockToolShortcuts, type DockToolAction } from "./dock
 export type DockToolGridProps = {
   actions: readonly DockToolAction[];
   enabled?: boolean;
-  columns?: 1 | 2;
   style?: object;
   renderAction?: (action: DockToolAction, index: number, label: string) => ReactNode;
 };
@@ -15,7 +14,6 @@ export type DockToolGridProps = {
 export function DockToolGrid({
   actions,
   enabled = true,
-  columns = 2,
   style,
   renderAction,
 }: DockToolGridProps) {
@@ -25,7 +23,7 @@ export function DockToolGrid({
     <View
       accessibilityRole="toolbar"
       accessibilityLabel="Tool shortcuts"
-      style={[columns === 2 ? styles.grid2 : styles.grid1, style]}
+      style={[styles.grid1, style]}
     >
       {actions.map((action, index) => {
         const label = dockToolLabel(action.label, index);
@@ -48,21 +46,13 @@ export function DockToolGrid({
 }
 
 const styles = StyleSheet.create({
-  grid2: {
-    flex: 1,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    minHeight: 0,
-  },
   grid1: {
     flex: 1,
     gap: 8,
     minHeight: 0,
   },
   toolButton: {
-    flexBasis: "48%",
-    flexGrow: 1,
     minWidth: 120,
+    width: "100%",
   },
 });

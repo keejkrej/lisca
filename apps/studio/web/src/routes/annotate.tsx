@@ -44,23 +44,22 @@ function AnnotatePageContent() {
           </AppShell.Main>
           <AppShell.Dock>
             <StudioDock
+              actionLayout="2x1"
               instruction="Review cropped ROI frames."
               action={
-                <div className="flex w-full flex-col gap-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    <DockButton disabled={disableShuffle} onClick={state.shuffleSelection}>
-                      Shuffle
-                    </DockButton>
-                    <DockButton
-                      disabled={disableNext}
-                      onClick={() => {
-                        state.setAnalysisStartConfirm(true);
-                      }}
-                    >
-                      Next
-                    </DockButton>
-                  </div>
-                </div>
+                <>
+                  <DockButton disabled={disableShuffle} onClick={state.shuffleSelection}>
+                    Shuffle
+                  </DockButton>
+                  <DockButton
+                    disabled={disableNext}
+                    onClick={() => {
+                      state.setAnalysisStartConfirm(true);
+                    }}
+                  >
+                    Next
+                  </DockButton>
+                </>
               }
             />
           </AppShell.Dock>

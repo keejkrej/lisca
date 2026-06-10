@@ -19,7 +19,7 @@ import {
 } from "@lisca/client/studio-annotate-session-bridge";
 import { useCanvasResourceTransaction, useCanvasTransientStatus } from "@lisca/ui/features";
 import { Atom, Result, useAtom, useAtomValue } from "@effect-atom/atom-react";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { runClientEffect } from "@lisca/client/runtime";
 import { studioNavigate } from "../navigation/use-studio-navigate";
@@ -130,9 +130,21 @@ export function useStudioAnnotateState(): StudioAnnotateState {
   } = useStudioAnnotateStore();
   const [ui, setUi] = useAtom(studioAnnotateUiAtom);
   const annotatorUi = studioAnnotateToAnnotatorUi(ui);
-  const setAnnotatorUi = createStudioAnnotateSetUi(setUi);
-  const sessionActions = createStudioAnnotateSessionActions(
-    studioAnnotateUiActions as StudioAnnotateSessionActions,
+  const setAnnotatorUi = useMemo(() => createStudioAnnotateSetUi(setUi), [setUi]);
+  const sessionActions = useMemo(
+    () =>
+      createStudioAnnotateSessionActions(
+        studioAnnotateUiActions as StudioAnnotateSessionActions,
+      ),
+    [],
+  );
+  const workspaceSync = useMemo(
+    () => ({
+      workspacePath: activeWorkspacePath,
+      setWorkspacePath: (path: string | null) =>
+        studioAnnotateUiActions.setWorkspacePath(setUi, path),
+    }),
+    [activeWorkspacePath, setUi],
   );
   const scanResult = useAtomValue(
     activeWorkspacePath ? roiWorkspaceScanAtom(activeWorkspacePath) : roiScanIdleAtom,
@@ -142,10 +154,7 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     ui: annotatorUi,
     setUi: setAnnotatorUi,
     actions: sessionActions,
-    workspace: {
-      workspacePath: activeWorkspacePath,
-      setWorkspacePath: (path) => studioAnnotateUiActions.setWorkspacePath(setUi, path),
-    },
+    workspace: workspaceSync,
     scan: {
       scanResult,
       labelsResult: labelsIdleResult,

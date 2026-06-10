@@ -1,6 +1,6 @@
 import { runClientEffect } from "@lisca/client/runtime";
 import { HostFilePickerDialog } from "@lisca/ui/features";
-import { AppShell, DockButton, DockToolGrid, RouteLoadingFallback, StudioDock } from "@lisca/ui/shell";
+import { AppShell, DockButton, RouteLoadingFallback, StudioDock } from "@lisca/ui/shell";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -24,15 +24,6 @@ function AssayPage() {
   const [openingAssay, setOpeningAssay] = useState(false);
   const [assayPickerOpen, setAssayPickerOpen] = useState(false);
   const [openAssayError, setOpenAssayError] = useState<string | null>(null);
-
-  const toolActions = [
-    {
-      id: "open-assay",
-      label: "Open assay",
-      disabled: openingAssay || assayPickerOpen,
-      onSelect: () => setAssayPickerOpen(true),
-    },
-  ];
 
   const openAssayJson = async (path: string) => {
     setAssayPickerOpen(false);
@@ -73,19 +64,25 @@ function AssayPage() {
           </AppShell.Main>
           <AppShell.Dock>
             <StudioDock
+              actionLayout="2x1"
               instruction={instructionForStep("chooseAssay")}
               action={
-                <DockButton
-                  onClick={() => {
-                    navigateTo("/info");
-                    setInfoStep(1);
-                  }}
-                >
-                  Next
-                </DockButton>
-              }
-              tool={
-                <DockToolGrid actions={toolActions} columns={1} enabled={!assayPickerOpen} />
+                <>
+                  <DockButton
+                    disabled={openingAssay || assayPickerOpen}
+                    onClick={() => setAssayPickerOpen(true)}
+                  >
+                    Open assay
+                  </DockButton>
+                  <DockButton
+                    onClick={() => {
+                      navigateTo("/info");
+                      setInfoStep(1);
+                    }}
+                  >
+                    Next
+                  </DockButton>
+                </>
               }
             />
           </AppShell.Dock>
