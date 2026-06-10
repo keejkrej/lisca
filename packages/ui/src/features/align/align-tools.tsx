@@ -10,6 +10,10 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { AlignGridToolMode } from "@lisca/utils";
+import {
+  alignToolDefinitions as headlessAlignToolDefinitions,
+  buildAlignToolActions,
+} from "@lisca/ui-headless/align-tools";
 
 import { Button } from "../../components/ui/button";
 import { DockSection } from "../../shell/regions/dock-section";
@@ -32,16 +36,20 @@ export type AlignToolSectionProps = {
   shortcutsEnabled?: boolean;
 };
 
-export const alignToolDefinitions: {
-  mode: AlignGridToolMode;
-  label: string;
-  Icon: LucideIcon;
-}[] = [
-  { mode: "pan", label: "Pan", Icon: Move },
-  { mode: "rotate", label: "Rotate", Icon: RotateCw },
-  { mode: "zoom-vector", label: "Zoom vector", Icon: ArrowLeftRight },
-  { mode: "zoom-pattern", label: "Zoom pattern", Icon: SquareDashedMousePointer },
-];
+const alignToolIcons: Partial<Record<AlignGridToolMode, LucideIcon>> = {
+  pan: Move,
+  rotate: RotateCw,
+  "zoom-vector": ArrowLeftRight,
+  "zoom-pattern": SquareDashedMousePointer,
+};
+
+export const alignToolDefinitions = headlessAlignToolDefinitions.map(({ mode, label }) => ({
+  mode,
+  label,
+  Icon: alignToolIcons[mode] ?? SquareDashedMousePointer,
+}));
+
+export { buildAlignToolActions };
 
 export function AlignToolButton(props: {
   mode: AlignGridToolMode;
@@ -68,18 +76,6 @@ export function AlignToolButton(props: {
       <span className="max-w-full truncate text-xs">{label}</span>
     </Button>
   );
-}
-
-export function buildAlignToolActions(
-  mode: AlignGridToolMode,
-  onModeChange: (mode: AlignGridToolMode) => void,
-): DockToolAction[] {
-  return alignToolDefinitions.map(({ mode: toolMode, label }) => ({
-    id: toolMode,
-    label,
-    active: mode === toolMode,
-    onSelect: () => onModeChange(toolMode),
-  }));
 }
 
 function renderAlignToolCell(

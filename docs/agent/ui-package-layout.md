@@ -15,16 +15,26 @@ Source layout for `@lisca/ui` (web) and `@lisca/ui-native` (mobile). Both packag
 
 Shell composition rules live in [shell-ui.md](./shell-ui.md).
 
+## Headless vs platform split
+
+| Layer | Package | Responsibility |
+| ----- | ------- | -------------- |
+| Pure domain logic | `@lisca/utils` | Navigation label math, folder template detection, align grid math, frame helpers |
+| Headless UI state | `@lisca/ui-headless` | React hooks and render-prop components: contrast control, canvas transactions, align handlers, host picker state, slider stepper draft state, crop progress derive, folder parse modal state |
+| Platform UI | `@lisca/ui` / `@lisca/ui-native` | DOM or React Native rendering only; import headless hooks and utils, re-export public APIs from `features/index.ts` |
+
+Pattern: headless component exposes `children(state)` (see `ContrastControl`); hooks expose derived state + handlers for platform shells to render.
+
 ## Feature domains
 
 Each domain is a subfolder under `features/` with a single responsibility:
 
 | Domain | Contents |
 | ------ | -------- |
-| `align/` | Align canvas, grid, tools, selection counts, contrast rail, crop progress |
-| `annotate/` | Annotation canvas, mode toggle, tool slider, label dialog, contrast rail |
+| `align/` | Align canvas, grid, tools, selection counts, crop progress |
+| `annotate/` | Annotation canvas, mode toggle, tool slider, label dialog |
 | `canvas/` | Shared canvas infra (status toasts, theme hook, resource transactions) |
-| `contrast/` | Core contrast control and pinned/studio rail wrappers |
+| `contrast/` | Platform contrast control wrapping headless `ContrastControl` |
 | `host/` | Host file picker, folder parse modal, source picker |
 | `navigation/` | Frame/position/ROI steppers |
 | `studio/` | Native-only studio widgets (histogram, nav button) |
@@ -32,17 +42,14 @@ Each domain is a subfolder under `features/` with a single responsibility:
 ### Dependency rules
 
 - `canvas/` is shared infrastructure — `align/` and `annotate/` may import from it; `canvas/` must not import from other feature domains.
-- App-specific contrast rails (`align-contrast-rail`, `annotator-contrast-rail`) live in their app domain and wrap `contrast/pinned-contrast-rail`.
 - No cross-domain imports (e.g. `host/` must not import from `align/`).
-- Features may import `shell/*` and `components/ui/*` (web); they must not import app code.
+- Features may import `shell/*`, `@lisca/ui-headless/*`, `@lisca/utils`, and `components/ui/*` (web); they must not import app code.
 
 ### Internal vs public
 
 Files used only inside a domain (not re-exported from `features/index.ts`) include:
 
 - `canvas/canvas-theme.ts`
-- `contrast/pinned-contrast-rail.tsx`
-- `contrast/studio-contrast-rail.tsx`
 - `host/host-file-picker-row.tsx`
 
 Treat these as implementation details; do not import them from apps.
@@ -79,4 +86,4 @@ Do not import feature files by deep path (e.g. `@lisca/ui/src/features/align/...
 
 ## Native parity
 
-When adding a web feature file, check whether `@lisca/ui-native` needs a parallel under the same domain folder. Native-only extras belong in `features/studio/` or the relevant domain with a comment if web has no counterpart.
+When adding a web feature file, check whether `@lisca/ui-native` needs a parallel under the same domain folder. Shared logic belongs in `@lisca/ui-headless` or `@lisca/utils` first; platform files should be thin renderers. Native-only extras belong in `features/studio/` or the relevant domain with a comment if web has no counterpart.

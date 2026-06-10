@@ -2,11 +2,16 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   createAxisIndexSliderControl,
+  findNavigationOptionIndex,
   formatAxisAriaValueText,
   formatAxisValueLabel,
+  formatNavigationOptionDisplayLabel,
   resolveAxisSelection,
   selectedAxisIndex,
+  stepNavigationValue,
+  stripZeroPaddingFromNumericDisplay,
   toAxisNavigationOptions,
+  toNavigationOptions,
 } from "../src/navigation";
 
 describe("formatAxisValueLabel", () => {
@@ -159,5 +164,47 @@ describe("createAxisIndexSliderControl", () => {
     expect(control.disabled).toBe(true);
     expect(control.previousDisabled).toBe(true);
     expect(control.nextDisabled).toBe(true);
+  });
+});
+
+describe("toNavigationOptions", () => {
+  it("maps numeric values to labels", () => {
+    expect(toNavigationOptions([1, 2, 3])).toEqual([
+      { value: 1, label: "1" },
+      { value: 2, label: "2" },
+      { value: 3, label: "3" },
+    ]);
+  });
+});
+
+describe("findNavigationOptionIndex", () => {
+  it("returns matching index or zero", () => {
+    const options = toNavigationOptions([10, 20, 30]);
+    expect(findNavigationOptionIndex(options, 20)).toBe(1);
+    expect(findNavigationOptionIndex(options, 99)).toBe(0);
+    expect(findNavigationOptionIndex([], 1)).toBe(-1);
+  });
+});
+
+describe("stepNavigationValue", () => {
+  it("steps within option bounds", () => {
+    const options = toNavigationOptions([10, 20, 30]);
+    expect(stepNavigationValue(options, 20, -1)).toBe(10);
+    expect(stepNavigationValue(options, 20, 1)).toBe(30);
+    expect(stepNavigationValue(options, 10, -1)).toBe(10);
+  });
+});
+
+describe("formatNavigationOptionDisplayLabel", () => {
+  it("strips zero padding from numeric axis labels", () => {
+    expect(formatNavigationOptionDisplayLabel("000000012 (2/13)")).toBe("12 (2/13)");
+    expect(formatNavigationOptionDisplayLabel("GFP (1/2)")).toBe("GFP (1/2)");
+  });
+});
+
+describe("stripZeroPaddingFromNumericDisplay", () => {
+  it("strips leading zeros from numeric strings", () => {
+    expect(stripZeroPaddingFromNumericDisplay("00012")).toBe("12");
+    expect(stripZeroPaddingFromNumericDisplay("GFP")).toBe("GFP");
   });
 });

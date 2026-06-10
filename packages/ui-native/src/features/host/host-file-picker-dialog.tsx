@@ -1,28 +1,13 @@
-import type { HostFsEntry, HostListDirectoryResult } from "@lisca/contracts";
 import type { HostFilePickerMode } from "@lisca/ui-headless/host";
-import { useEffect, useState } from "react";
+import { useHostFilePickerState } from "@lisca/ui-headless/host-file-picker-state";
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
+
 import { Button } from "../../shell/chrome/buttons";
 import { DialogSurface, ModalScrim } from "../../shell/modal/modal";
 import { useShellTheme } from "../../theme/shell-theme";
 import { FILE_PICKER_ROW_HEIGHT, FilePickerRow } from "./host-file-picker-row";
 import type { HostFilePickerOperations } from "./host-operations";
-function pathExtLower(name: string): string {
-  const index = name.lastIndexOf(".");
-  if (index <= 0 || index === name.length - 1) return "";
-  return name.slice(index).toLowerCase();
-}
-function fileMatchesMode(mode: HostFilePickerMode, entry: HostFsEntry): boolean {
-  if (entry.isDirectory) return false;
-  const ext = pathExtLower(entry.name);
-  if (mode === "nd2_file") return ext === ".nd2";
-  if (mode === "czi_file") return ext === ".czi";
-  if (mode === "assay_json_file") return ext === ".json";
-  return false;
-}
-function isDirectoryMode(mode: HostFilePickerMode): boolean {
-  return mode === "workspace" || mode === "folder";
-}
+
 export type HostFilePickerDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -32,6 +17,7 @@ export type HostFilePickerDialogProps = {
   onPickDirectory: (path: string) => void;
   onPickFile: (path: string) => void;
 };
+
 export function HostFilePickerDialog({
   open,
   onOpenChange,
@@ -42,84 +28,33 @@ export function HostFilePickerDialog({
   onPickFile,
 }: HostFilePickerDialogProps) {
   const { colors } = useShellTheme();
-  const [list, setList] = useState<HostListDirectoryResult | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const loadPath = async (path: string | null) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await hostPort.listDirectory(path);
-      setList(result);
-    } catch (cause) {
-      setList(null);
-      setError(cause instanceof Error ? cause.message : String(cause));
-    } finally {
-      setLoading(false);
-    }
-  };
-  useEffect(() => {
-    if (!open) return;
-    let cancelled = false;
-    void (async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const result = await hostPort.listDirectory(null);
-        if (!cancelled) {
-          setList(result);
-        }
-      } catch (cause) {
-        if (!cancelled) {
-          setList(null);
-          setError(cause instanceof Error ? cause.message : String(cause));
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [hostPort, open]);
-  const entries = (list?.entries ?? []).filter(
-    (entry) => entry.isDirectory || fileMatchesMode(mode, entry) || isDirectoryMode(mode),
-  );
+  const picker = useHostFilePickerState({
+    open,
+    mode,
+    hostPort,
+    onOpenChange,
+    onPickDirectory,
+    onPickFile,
+  });
+
+  if (!open) return null;
+
+  const entries = picker.list?.entries ?? [];
+
   return (
     <ModalScrim open={open} onClose={() => onOpenChange(false)}>
       <DialogSurface accessibilityLabel={title}>
-        <Text
-          style={[
-            styles.title,
-            {
-              color: colors.foreground,
-            },
-          ]}
-        >
-          {title}
-        </Text>
-        {list?.path ? (
-          <Text
-            style={{
-              color: colors.mutedForeground,
-              fontSize: 12,
-            }}
-            numberOfLines={2}
-          >
-            {list.path}
+        <Text style={[styles.title, { color: colors.foreground }]}>{title}</Text>
+        {picker.locationLabel ? (
+          <Text numberOfLines={2} style={{ color: colors.mutedForeground, fontSize: 12 }}>
+            {picker.locationLabel}
           </Text>
         ) : null}
-        {loading ? (
+        {picker.loading ? (
           <ActivityIndicator accessibilityLabel="Loading directory" color={colors.primary} />
         ) : null}
-        {error ? (
-          <Text
-            style={{
-              color: colors.destructive,
-            }}
-          >
-            {error}
-          </Text>
+        {picker.error ? (
+          <Text style={{ color: colors.destructive }}>{picker.error}</Text>
         ) : null}
         <FlatList
           data={entries}
@@ -138,36 +73,40 @@ export function HostFilePickerDialog({
               borderColor={colors.border}
               entry={item}
               foregroundColor={colors.foreground}
-              onClose={() => onOpenChange(false)}
-              onOpenDirectory={(path) => void loadPath(path)}
-              onPickFile={onPickFile}
+              muted={!item.isDirectory && !picker.dirMode && !picker.fileMatchesMode(item)}
+              selected={picker.selectedFile?.path === item.path && !item.isDirectory}
+              onPress={picker.handleRowClick}
             />
           )}
         />
         <View style={styles.actions}>
-          {list?.parent != null ? (
-            <Button
-              label="Up"
-              variant="outline"
-              compact
-              onPress={() => void loadPath(list.parent === "" ? null : list.parent)}
-            />
+          {picker.canGoUp ? (
+            <Button compact label="Up" variant="outline" onPress={picker.goUp} />
           ) : null}
-          {isDirectoryMode(mode) && list?.path ? (
+          {picker.dirMode && picker.list?.path ? (
             <Button
               label="Select folder"
-              onPress={() => {
-                onPickDirectory(list.path!);
-                onOpenChange(false);
-              }}
+              onPress={picker.confirmDirectory}
             />
-          ) : null}
+          ) : (
+            <Button
+              disabled={
+                !picker.selectedFile ||
+                picker.selectedFile.isDirectory ||
+                !picker.fileMatchesMode(picker.selectedFile) ||
+                picker.loading
+              }
+              label="Select file"
+              onPress={picker.confirmFile}
+            />
+          )}
           <Button label="Close" variant="ghost" onPress={() => onOpenChange(false)} />
         </View>
       </DialogSurface>
     </ModalScrim>
   );
 }
+
 const styles = StyleSheet.create({
   title: {
     fontSize: 18,

@@ -1,9 +1,9 @@
 "use client";
 
 import { CircleAlert, Loader2Icon } from "lucide-react";
-import { useEffect, useState } from "react";
 
 import type { CanvasStatusMessage, CanvasStatusTone } from "@lisca/ui-headless";
+import { useCanvasTransientStatus } from "@lisca/ui-headless/canvas-transient-status";
 import { cn } from "../../lib/utils";
 
 function messageToneClassName(tone: CanvasStatusTone | undefined) {
@@ -117,30 +117,4 @@ export function CanvasToastStack({
   );
 }
 
-export function useCanvasTransientStatus(
-  status: string | null,
-  options?: {
-    hideAfterMs?: number;
-    persistentStatuses?: readonly string[];
-  },
-): string | null {
-  const [visibleStatus, setVisibleStatus] = useState<string | null>(status);
-  const hideAfterMs = options?.hideAfterMs ?? 2500;
-  const persistentStatuses = options?.persistentStatuses;
-
-  useEffect(() => {
-    if (!status) {
-      setVisibleStatus(null);
-      return;
-    }
-    setVisibleStatus(status);
-    if (persistentStatuses?.includes(status)) return;
-
-    const timeoutId = window.setTimeout(() => {
-      setVisibleStatus((current) => (current === status ? null : current));
-    }, hideAfterMs);
-    return () => window.clearTimeout(timeoutId);
-  }, [hideAfterMs, persistentStatuses, status]);
-
-  return visibleStatus;
-}
+export { useCanvasTransientStatus } from "@lisca/ui-headless/canvas-transient-status";

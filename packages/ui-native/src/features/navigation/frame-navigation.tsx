@@ -1,5 +1,13 @@
-import { formatAxisAriaValueText, formatAxisValueLabel } from "@lisca/utils";
-import { useEffect, useState } from "react";
+import {
+  findNavigationOptionIndex,
+  formatNavigationOptionDisplayLabel,
+  stepNavigationValue,
+  toNavigationOptions,
+  type NavigationOption,
+  type NavigationValue,
+} from "@lisca/utils";
+import { useSliderStepperField } from "@lisca/ui-headless/slider-stepper-field";
+import { useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { Button } from "../../shell/chrome/buttons";
@@ -9,36 +17,8 @@ import { Section } from "../../shell/regions/section";
 import { Slider } from "../../shell/chrome/slider";
 import { useShellTheme } from "../../theme/shell-theme";
 
-export type NavigationValue = number | string;
-
-export type NavigationOption<T extends NavigationValue = number> = {
-  label: string;
-  value: T;
-};
-
-export function toNavigationOptions(values: readonly number[]): NavigationOption<number>[] {
-  return values.map((value) => ({ label: String(value), value }));
-}
-
-export function findNavigationOptionIndex<T extends NavigationValue>(
-  options: NavigationOption<T>[],
-  value: T | null | undefined,
-): number {
-  if (options.length === 0) return -1;
-  const index = options.findIndex((option) => option.value === value);
-  return index >= 0 ? index : 0;
-}
-
-export function stepNavigationValue<T extends NavigationValue>(
-  options: NavigationOption<T>[],
-  value: T | null | undefined,
-  direction: -1 | 1,
-): T | null {
-  const index = findNavigationOptionIndex(options, value);
-  if (index < 0) return null;
-  const nextIndex = Math.min(options.length - 1, Math.max(0, index + direction));
-  return options[nextIndex]?.value ?? null;
-}
+export type { NavigationOption, NavigationValue };
+export { findNavigationOptionIndex, stepNavigationValue, toNavigationOptions };
 
 type SelectNavigationFieldProps<T extends NavigationValue> = {
   label: string;
@@ -76,27 +56,6 @@ export type SelectNavigationControlProps<T extends NavigationValue> = Omit<
 >;
 
 export type SliderNavigationControlProps = Omit<SliderNavigationFieldProps, "label">;
-
-/** Strip leading zeros from numeric axis labels for display only. */
-function stripZeroPaddingFromNumericDisplay(value: string): string {
-  if (/^\d+$/.test(value)) {
-    return String(Number.parseInt(value, 10));
-  }
-  return value;
-}
-
-function displayAxisLabels(
-  labels: readonly string[] | undefined,
-): readonly string[] | undefined {
-  return labels?.map(stripZeroPaddingFromNumericDisplay);
-}
-
-function formatNavigationOptionDisplayLabel(label: string): string {
-  const match = /^(.+?) \((\d+\/\d+)\)$/.exec(label);
-  if (!match) return stripZeroPaddingFromNumericDisplay(label);
-  const [, value, position] = match;
-  return `${stripZeroPaddingFromNumericDisplay(value)} (${position})`;
-}
 
 function SelectPicker<T extends NavigationValue>(props: {
   value: T;
@@ -200,34 +159,16 @@ function SelectStepperField<T extends NavigationValue>(props: SelectNavigationFi
 
 function SliderStepperField(props: SliderNavigationFieldProps) {
   const { colors } = useShellTheme();
-  const [draftValue, setDraftValue] = useState(props.value);
+  const { draftValue, setDraftValue, displayLabel, ariaValueText } = useSliderStepperField({
+    value: props.value,
+    axisValues: props.axisValues,
+    axisLabels: props.axisLabels,
+    valueLabel: props.valueLabel,
+  });
   const commitValue = props.onCommit ?? props.onChange;
-  const displayLabel = props.axisValues
-    ? formatAxisValueLabel(
-        props.axisValues,
-        draftValue,
-        displayAxisLabels(props.axisLabels),
-      )
-    : props.valueLabel
-      ? formatNavigationOptionDisplayLabel(props.valueLabel)
-      : undefined;
-  const ariaValueText = props.axisValues
-    ? formatAxisAriaValueText(
-        props.axisValues,
-        draftValue,
-        displayAxisLabels(props.axisLabels),
-      )
-    : displayLabel;
-
-  useEffect(() => {
-    setDraftValue(props.value);
-  }, [props.value]);
 
   return (
-    <Field
-      label={props.label}
-      valueLabel={displayLabel}
-    >
+    <Field label={props.label} valueLabel={displayLabel}>
       <View style={styles.stepperRow}>
         <Button
           compact

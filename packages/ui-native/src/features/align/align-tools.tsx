@@ -1,4 +1,5 @@
 import type { AlignGridToolMode } from "@lisca/utils";
+import { alignToolDefinitions } from "@lisca/ui-headless/align-tools";
 import { Lock, Unlock } from "lucide-react-native";
 import { Pressable, StyleSheet, View } from "react-native";
 
@@ -17,14 +18,6 @@ export type AlignToolSectionProps = {
   sectionStyle?: object;
   sectionContentStyle?: object;
 };
-
-const alignToolDefinitions: { mode: AlignGridToolMode; label: string }[] = [
-  { mode: "pan", label: "Pan" },
-  { mode: "rotate", label: "Rotate" },
-  { mode: "zoom-vector", label: "Zoom vector" },
-  { mode: "zoom-pattern", label: "Zoom pattern" },
-];
-
 function PatternZoomLockButton(props: {
   locked: boolean;
   disabled?: boolean;

@@ -8,29 +8,57 @@
       "types": "./src/index.ts",
       "import": "./src/index.ts"
     },
-    "./dock": {
-      "types": "./src/dock.ts",
-      "import": "./src/dock.ts"
+    "./align-canvas-handlers": {
+      "types": "./src/align-canvas-handlers.ts",
+      "import": "./src/align-canvas-handlers.ts"
     },
-    "./shortcuts": {
-      "types": "./src/shortcuts.ts",
-      "import": "./src/shortcuts.ts"
+    "./align-tools": {
+      "types": "./src/align-tools.ts",
+      "import": "./src/align-tools.ts"
     },
-    "./host": {
-      "types": "./src/host.ts",
-      "import": "./src/host.ts"
+    "./canvas-resource-transaction": {
+      "types": "./src/canvas-resource-transaction.ts",
+      "import": "./src/canvas-resource-transaction.ts"
     },
-    "./crop": {
-      "types": "./src/crop.ts",
-      "import": "./src/crop.ts"
+    "./canvas-transient-status": {
+      "types": "./src/canvas-transient-status.ts",
+      "import": "./src/canvas-transient-status.ts"
     },
     "./contrast-control": {
       "types": "./src/contrast-control.ts",
       "import": "./src/contrast-control.ts"
     },
+    "./crop-progress-modal": {
+      "types": "./src/crop-progress-modal.ts",
+      "import": "./src/crop-progress-modal.ts"
+    },
+    "./dock": {
+      "types": "./src/dock.ts",
+      "import": "./src/dock.ts"
+    },
+    "./folder-source-parse-modal": {
+      "types": "./src/folder-source-parse-modal.ts",
+      "import": "./src/folder-source-parse-modal.ts"
+    },
+    "./host": {
+      "types": "./src/host.ts",
+      "import": "./src/host.ts"
+    },
     "./host-file-picker-state": {
       "types": "./src/host-file-picker-state.ts",
       "import": "./src/host-file-picker-state.ts"
+    },
+    "./shortcuts": {
+      "types": "./src/shortcuts.ts",
+      "import": "./src/shortcuts.ts"
+    },
+    "./slider-stepper-field": {
+      "types": "./src/slider-stepper-field.ts",
+      "import": "./src/slider-stepper-field.ts"
+    },
+    "./crop": {
+      "types": "./src/crop.ts",
+      "import": "./src/crop.ts"
     },
     "./types": {
       "types": "./src/types.ts",

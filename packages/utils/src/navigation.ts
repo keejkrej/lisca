@@ -1,5 +1,58 @@
 import { clamp } from "./frame";
 
+export type NavigationValue = number | string;
+
+export type NavigationOption<T extends NavigationValue = number> = {
+  label: string;
+  value: T;
+};
+
+export function toNavigationOptions(values: readonly number[]): NavigationOption<number>[] {
+  return values.map((value) => ({ value, label: String(value) }));
+}
+
+export function findNavigationOptionIndex<T extends NavigationValue>(
+  options: NavigationOption<T>[],
+  value: T | null | undefined,
+): number {
+  if (options.length === 0) return -1;
+  const index = options.findIndex((option) => option.value === value);
+  return index >= 0 ? index : 0;
+}
+
+export function stepNavigationValue<T extends NavigationValue>(
+  options: NavigationOption<T>[],
+  value: T | null | undefined,
+  direction: -1 | 1,
+): T | null {
+  const index = findNavigationOptionIndex(options, value);
+  if (index < 0) return null;
+  const nextIndex = Math.min(options.length - 1, Math.max(0, index + direction));
+  return options[nextIndex]?.value ?? null;
+}
+
+/** Strip leading zeros from numeric axis labels for display only. */
+export function stripZeroPaddingFromNumericDisplay(value: string): string {
+  if (/^\d+$/.test(value)) {
+    return String(Number.parseInt(value, 10));
+  }
+  return value;
+}
+
+export function displayAxisLabels(
+  labels: readonly string[] | undefined,
+): readonly string[] | undefined {
+  return labels?.map(stripZeroPaddingFromNumericDisplay);
+}
+
+/** Format select option labels such as `00012 (2/3)` for display. */
+export function formatNavigationOptionDisplayLabel(label: string): string {
+  const match = /^(.+?) \((\d+\/\d+)\)$/.exec(label);
+  if (!match) return stripZeroPaddingFromNumericDisplay(label);
+  const [, value, position] = match;
+  return `${stripZeroPaddingFromNumericDisplay(value)} (${position})`;
+}
+
 export type AxisIndexSliderControl = {
   value: number;
   min: number;

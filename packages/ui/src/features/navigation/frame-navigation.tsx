@@ -1,8 +1,15 @@
 "use client";
 
-import { formatAxisAriaValueText, formatAxisValueLabel } from "@lisca/utils";
+import {
+  findNavigationOptionIndex,
+  formatNavigationOptionDisplayLabel,
+  stepNavigationValue,
+  toNavigationOptions,
+  type NavigationOption,
+  type NavigationValue,
+} from "@lisca/utils";
+import { useSliderStepperField } from "@lisca/ui-headless/slider-stepper-field";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useState } from "react";
 
 import { Button } from "../../components/ui/button";
 import {
@@ -16,36 +23,8 @@ import { Field, FieldLabel } from "../../components/ui/field";
 import { Slider } from "../../components/ui/slider";
 import { Section } from "../../shell/regions/section";
 
-export type NavigationValue = number | string;
-
-export type NavigationOption<T extends NavigationValue> = {
-  label: string;
-  value: T;
-};
-
-export function toNavigationOptions(values: number[]): NavigationOption<number>[] {
-  return values.map((value) => ({ value, label: String(value) }));
-}
-
-export function findNavigationOptionIndex<T extends NavigationValue>(
-  options: NavigationOption<T>[],
-  value: T | null | undefined,
-): number {
-  if (options.length === 0) return -1;
-  const index = options.findIndex((option) => option.value === value);
-  return index >= 0 ? index : 0;
-}
-
-export function stepNavigationValue<T extends NavigationValue>(
-  options: NavigationOption<T>[],
-  value: T | null | undefined,
-  direction: -1 | 1,
-): T | null {
-  const index = findNavigationOptionIndex(options, value);
-  if (index < 0) return null;
-  const nextIndex = Math.min(options.length - 1, Math.max(0, index + direction));
-  return options[nextIndex]?.value ?? null;
-}
+export type { NavigationOption, NavigationValue };
+export { findNavigationOptionIndex, stepNavigationValue, toNavigationOptions };
 
 type SelectNavigationFieldProps<T extends NavigationValue> = {
   label: string;
@@ -83,28 +62,6 @@ export type SelectNavigationControlProps<T extends NavigationValue> = Omit<
 >;
 
 export type SliderNavigationControlProps = Omit<SliderNavigationFieldProps, "label">;
-
-/** Strip leading zeros from numeric axis labels for display only. */
-function stripZeroPaddingFromNumericDisplay(value: string): string {
-  if (/^\d+$/.test(value)) {
-    return String(Number.parseInt(value, 10));
-  }
-  return value;
-}
-
-function displayAxisLabels(
-  labels: readonly string[] | undefined,
-): readonly string[] | undefined {
-  return labels?.map(stripZeroPaddingFromNumericDisplay);
-}
-
-/** Format select option labels such as `00012 (2/3)` for display. */
-function formatNavigationOptionDisplayLabel(label: string): string {
-  const match = /^(.+?) \((\d+\/\d+)\)$/.exec(label);
-  if (!match) return stripZeroPaddingFromNumericDisplay(label);
-  const [, value, position] = match;
-  return `${stripZeroPaddingFromNumericDisplay(value)} (${position})`;
-}
 
 export function SelectStepperField<T extends NavigationValue>(
   props: SelectNavigationFieldProps<T>,
@@ -159,29 +116,13 @@ export function SelectStepperField<T extends NavigationValue>(
 }
 
 export function SliderStepperField(props: SliderNavigationFieldProps) {
-  const [draftValue, setDraftValue] = useState(props.value);
-
-  useEffect(() => {
-    setDraftValue(props.value);
-  }, [props.value]);
-
+  const { draftValue, setDraftValue, displayLabel, ariaValueText } = useSliderStepperField({
+    value: props.value,
+    axisValues: props.axisValues,
+    axisLabels: props.axisLabels,
+    valueLabel: props.valueLabel,
+  });
   const commitValue = props.onCommit ?? props.onChange;
-  const displayLabel = props.axisValues
-    ? formatAxisValueLabel(
-        props.axisValues,
-        draftValue,
-        displayAxisLabels(props.axisLabels),
-      )
-    : props.valueLabel
-      ? formatNavigationOptionDisplayLabel(props.valueLabel)
-      : undefined;
-  const ariaValueText = props.axisValues
-    ? formatAxisAriaValueText(
-        props.axisValues,
-        draftValue,
-        displayAxisLabels(props.axisLabels),
-      )
-    : displayLabel;
 
   return (
     <Field className="min-w-0 w-full">
@@ -238,11 +179,8 @@ export type FrameNavigationProps<T extends NavigationValue> = {
   channel?: SelectNavigationControlProps<T>;
   timepoint?: SliderNavigationControlProps;
   zPlane?: SliderNavigationControlProps;
-  /** ROI / tile index stepper (e.g. inspect mode). */
   roi?: SelectNavigationControlProps<T>;
-  /** Inner controls wrapper class (layout of fields). */
   className?: string;
-  /** Section card title (default: Navigation). */
   sectionTitle?: string;
   sectionDescription?: string;
   sectionClassName?: string;

@@ -20,23 +20,11 @@ import { cn } from "../../lib/utils";
 import { useLatest } from "../../hooks/use-latest";
 import { CanvasStatusMessageStack, CanvasToastStack } from "../canvas/canvas-status";
 import { resolvedCanvasBackground, useCanvasThemeRerender } from "../canvas/canvas-theme";
-export type AlignCanvasFramePoint = {
-  x: number;
-  y: number;
-};
-export type AlignCanvasPointerEvent = {
-  pointerId: number;
-  pointerType: string;
-  button: number;
-  buttons: number;
-  clientX: number;
-  clientY: number;
-  framePoint: AlignCanvasFramePoint | null;
-  viewport: AlignGridWheelViewport | null;
-  preventDefault: () => void;
-  capturePointer: () => void;
-  releasePointer: () => void;
-};
+export type {
+  AlignCanvasFramePoint,
+  AlignCanvasPointerEvent,
+} from "./align-canvas-handlers";
+import type { AlignCanvasFramePoint, AlignCanvasPointerEvent } from "./align-canvas-handlers";
 export type AlignCanvasWheelEvent = {
   deltaMode: number;
   deltaX: number;

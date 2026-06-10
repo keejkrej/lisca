@@ -4,3 +4,4 @@ export * from "./frame";
 export * from "./annotate";
 export * from "./align-grid";
 export * from "./navigation";
+export * from "./folder-source-parse";

@@ -12,23 +12,11 @@ import { useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { useShellTheme } from "../../theme/shell-theme";
 import { clientToFramePoint, computeFrameLayout, prepareFrameRgba } from "../canvas/frame-pixels";
-export type AlignCanvasFramePoint = {
-  x: number;
-  y: number;
-};
-export type AlignCanvasPointerEvent = {
-  pointerId: number;
-  pointerType: string;
-  button: number;
-  buttons: number;
-  clientX: number;
-  clientY: number;
-  framePoint: AlignCanvasFramePoint | null;
-  viewport: AlignGridWheelViewport | null;
-  preventDefault: () => void;
-  capturePointer: () => void;
-  releasePointer: () => void;
-};
+export type {
+  AlignCanvasFramePoint,
+  AlignCanvasPointerEvent,
+} from "./align-canvas-handlers";
+import type { AlignCanvasFramePoint, AlignCanvasPointerEvent } from "./align-canvas-handlers";
 export type AlignCanvasProps = {
   frame: FrameResult | null;
   grid: AlignGridState;

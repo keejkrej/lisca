@@ -1,6 +1,6 @@
 import type { CropRoiProgress } from "@lisca/contracts";
-import { isDoneCropStatus } from "@lisca/utils";
-import { StyleSheet, Text } from "react-native";
+import { useCropProgressModal } from "@lisca/ui-headless/crop-progress-modal";
+import { StyleSheet, Text, View } from "react-native";
 
 import { Button } from "../../shell/chrome/buttons";
 import { DialogSurface, ModalScrim } from "../../shell/modal/modal";
@@ -14,16 +14,22 @@ export type CropProgressModalProps = {
 
 export function CropProgressModal({ progress, onCancel }: CropProgressModalProps) {
   const { colors } = useShellTheme();
-  if (!progress || isDoneCropStatus(progress.status)) return null;
+  const state = useCropProgressModal(progress);
+  if (!state) return null;
 
   return (
     <ModalScrim open onClose={() => undefined}>
       <DialogSurface>
-        <Text style={[styles.title, { color: colors.foreground }]}>Cropping ROI</Text>
+        <Text style={[styles.title, { color: colors.foreground }]}>Cropping ROI output</Text>
         <Spinner />
-        <Text style={{ color: colors.foreground }}>
-          {progress.message ?? progress.status} ({progress.completedPositions}/
-          {progress.totalPositions})
+        <Text style={{ color: colors.foreground }}>{state.message}</Text>
+        <View style={[styles.progressTrack, { backgroundColor: colors.muted }]}>
+          <View
+            style={[styles.progressFill, { backgroundColor: colors.primary, width: `${state.pct}%` }]}
+          />
+        </View>
+        <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>
+          {state.done} / {state.total}
         </Text>
         {onCancel ? <Button label="Cancel" variant="destructive" onPress={onCancel} /> : null}
       </DialogSurface>
@@ -35,5 +41,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: "600",
+  },
+  progressTrack: {
+    height: 8,
+    borderRadius: 999,
+    overflow: "hidden",
+    width: "100%",
+  },
+  progressFill: {
+    height: "100%",
   },
 });
