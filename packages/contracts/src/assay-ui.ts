@@ -88,11 +88,6 @@ export type GeneExpressionAssay = {
   features: GeneExpressionFeatureList;
 };
 
-/** @deprecated Use `StudioAssayType` — kept for existing imports. */
-export type AssayType = StudioAssayType;
-/** @deprecated Use `StudioAssayFeature` — kept for existing imports. */
-export type AssayFeature = StudioAssayFeature;
-
 export type StudioAssayId = StudioAssayType;
 
 export type StudioDataSourceKind = AlignerSource["kind"] | null;

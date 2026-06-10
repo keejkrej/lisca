@@ -1,8 +1,8 @@
 import { AssayJsonFileSchema, decodeJsonResult, formatSchemaError } from "@lisca/contracts";
 import { ASSAY_FEATURE, ASSAY_TYPE } from "@lisca/contracts/assay";
 import type {
-  AssayType,
   StudioAssayJson,
+  StudioAssayType,
   StudioBasicInfoFeatureId,
   StudioBasicInfoSampleRowFields,
   StudioBasicInfoStep1,
@@ -13,7 +13,7 @@ import type {
 import { GENE_EXPRESSION_FEATURE_IDS } from "@lisca/contracts/assay";
 import * as Either from "effect/Either";
 
-export const ASSAY_CHOICE_LABEL: Record<AssayType, string> = {
+export const ASSAY_CHOICE_LABEL: Record<StudioAssayType, string> = {
   [ASSAY_TYPE.GENE_EXPRESSION]: "Gene expression",
   [ASSAY_TYPE.IMMUNE_KILLING]: "Immune killing",
   [ASSAY_TYPE.LNP_BINDING]: "LNP binding",
@@ -22,7 +22,7 @@ export const ASSAY_CHOICE_LABEL: Record<AssayType, string> = {
 
 const BASIC_INFO_FEATURE_IDS: ReadonlyArray<StudioBasicInfoFeatureId> = GENE_EXPRESSION_FEATURE_IDS;
 
-const ASSAY_DEFAULT_INFO_FEATURES: Record<AssayType, readonly StudioBasicInfoFeatureId[]> = {
+const ASSAY_DEFAULT_INFO_FEATURES: Record<StudioAssayType, readonly StudioBasicInfoFeatureId[]> = {
   [ASSAY_TYPE.GENE_EXPRESSION]: [ASSAY_FEATURE.TOTAL_FLUOR],
   [ASSAY_TYPE.IMMUNE_KILLING]: [],
   [ASSAY_TYPE.LNP_BINDING]: [],
@@ -38,7 +38,7 @@ export function inferDataSourceKind(path: string): StudioDataSourceKind {
 }
 
 export function normalizeSelectedFeaturesForAssay(
-  assayId: AssayType | null,
+  assayId: StudioAssayType | null,
   selectedFeatures: readonly StudioBasicInfoFeatureId[],
 ): StudioBasicInfoFeatureId[] {
   const defaults = assayId ? ASSAY_DEFAULT_INFO_FEATURES[assayId] : [];
@@ -77,7 +77,7 @@ export function buildStudioAssayJson({
   info3,
   sampleRowToDisk,
 }: {
-  assayId: AssayType;
+  assayId: StudioAssayType;
   dataSourceKind: StudioDataSourceKind;
   info1: StudioBasicInfoStep1;
   info2: StudioBasicInfoStep2;

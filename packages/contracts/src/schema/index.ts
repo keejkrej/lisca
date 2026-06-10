@@ -1,7 +1,4 @@
-/**
- * Wire contract schemas grouped by domain. Import from here or the
- * `protocol.schema.ts` barrel; both resolve to the same symbols.
- */
+/** Wire contract schemas grouped by domain. */
 export * from "./primitives.ts";
 export * from "./shared.ts";
 export * from "./host.ts";

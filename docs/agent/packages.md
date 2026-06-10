@@ -22,7 +22,7 @@ Desktop Electron wrappers live under `apps/*/desktop`, not in `packages/*`.
 
 ## `@lisca/contracts` boundaries
 
-- **`@lisca/contracts`** — HTTP/WS wire types from `src/schema/` (barrel: `protocol.schema.ts`), assay on-disk schema from `assay.schema.ts`, decode helpers, `WS_PATH`.
+- **`@lisca/contracts`** — HTTP/WS wire types from `src/schema/`, assay on-disk schema from `assay.schema.ts`, decode helpers, `WS_PATH`.
 - **`@lisca/contracts/assay`** — Wizard and Studio UI assay types (`ASSAY_TYPE`, `StudioBasicInfoStep*`, `StudioAssayJson`, folder-source presets). Not part of the OpenAPI surface.
 
 Do not import wizard types from the root contracts entry; use `/assay`.

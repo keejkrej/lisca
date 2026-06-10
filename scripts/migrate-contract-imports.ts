@@ -17,11 +17,11 @@ const ASSAY_VALUES = new Set([
 ]);
 
 const ASSAY_TYPES = new Set([
-  "AssayType",
+  "StudioAssayType",
   "GeneExpressionAssayType",
   "ImmuneKillingAssayType",
   "EnabledStudioAssayId",
-  "AssayFeature",
+  "StudioAssayFeature",
   "AssayFeatureList",
   "NonEmptyAssayFeatureList",
   "Assay",

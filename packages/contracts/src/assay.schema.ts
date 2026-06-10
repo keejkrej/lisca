@@ -85,8 +85,8 @@ export const AssayJsonFileSchema = Schema.Struct({
   info3: AssayBasicInfoStep3Schema,
 }).annotations({ identifier: "AssayJsonFile" });
 
-// Derived on-disk types (names that don't collide with the const-derived
-// `AssayType`/`AssayFeature` unions exported from `@lisca/contracts/assay`).
+// Derived on-disk types (`AssayType`/`AssayFeature` here are schema unions;
+// wizard const-derived ids live under `@lisca/contracts/assay` as `StudioAssay*`).
 export type AssayType = typeof AssayTypeSchema.Type;
 export type AssayFeature = typeof AssayFeatureSchema.Type;
 export type AssayTimelapseUnit = typeof AssayTimelapseUnitSchema.Type;
