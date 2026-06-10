@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: lisca-landing
+    runtime: static
+    buildCommand: bun install && bun lisca build landing
+    staticPublishPath: apps/landing/web/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    buildFilter:
+      paths:
+        - apps/landing/**
+        - packages/**
+        - assets/**
+        - scripts/lisca.mjs
+        - package.json
+        - bun.lock
+        - turbo.json
