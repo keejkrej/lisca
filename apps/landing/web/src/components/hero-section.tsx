@@ -1,8 +1,8 @@
 import { Button } from "@lisca/ui/components";
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, Grid3x3, Paintbrush } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
-import { ALIGNER_DEMO_PATH, ANNOTATOR_DEMO_PATH } from "../lib/constants";
+import { landingDemos } from "../lib/demos";
 
 export function HeroSection() {
   return (
@@ -28,27 +28,20 @@ export function HeroSection() {
         </p>
 
         <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          <Button
-            className="gap-2"
-            render={
-              <Link to={ALIGNER_DEMO_PATH}>
-                <Grid3x3 aria-hidden />
-                Try Aligner demo
-              </Link>
-            }
-            size="lg"
-          />
-          <Button
-            className="gap-2"
-            render={
-              <Link to={ANNOTATOR_DEMO_PATH}>
-                <Paintbrush aria-hidden />
-                Try Annotator demo
-              </Link>
-            }
-            size="lg"
-            variant="outline"
-          />
+          {landingDemos.map((demo) => (
+            <Button
+              key={demo.id}
+              className="gap-2"
+              render={
+                <Link to={demo.href}>
+                  <demo.icon aria-hidden />
+                  {demo.heroCta}
+                </Link>
+              }
+              size="lg"
+              variant={demo.id === "aligner" ? "default" : "outline"}
+            />
+          ))}
           <Button
             className="gap-2"
             render={

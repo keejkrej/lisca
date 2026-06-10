@@ -22,6 +22,7 @@ export function AlignDemo({ embedded = false }: AlignDemoProps) {
         <DemoNavbar
           fileName={state.fileName}
           loading={state.frameLoading}
+          showThemeToggle={!embedded}
           onOpenFile={(file) => void state.openImage(file)}
         />
       </AppShell.Header>
@@ -56,6 +57,7 @@ export function AlignDemo({ embedded = false }: AlignDemoProps) {
             <AppShell.Main>
               <DemoAlignMain state={state} />
             </AppShell.Main>
+            <DemoAlignToolSection bare state={state} />
           </AppShell.MainColumn>
         )}
       </AppShell.Body>

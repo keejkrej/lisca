@@ -1,14 +1,8 @@
 import { AnnotatorDemo } from "@lisca/annotator-demo";
 import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/annotator-demo/")({
-  component: AnnotatorDemoPage,
-});
+import { DemoRoutePage } from "../../lib/demo-route-page";
 
-function AnnotatorDemoPage() {
-  return (
-    <div className="h-dvh">
-      <AnnotatorDemo />
-    </div>
-  );
-}
+export const Route = createFileRoute("/annotator-demo/")({
+  component: () => <DemoRoutePage Demo={AnnotatorDemo} />,
+});

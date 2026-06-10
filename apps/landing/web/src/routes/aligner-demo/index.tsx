@@ -1,14 +1,8 @@
 import { AlignDemo } from "@lisca/aligner-demo";
 import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/aligner-demo/")({
-  component: AlignerDemoPage,
-});
+import { DemoRoutePage } from "../../lib/demo-route-page";
 
-function AlignerDemoPage() {
-  return (
-    <div className="h-dvh">
-      <AlignDemo />
-    </div>
-  );
-}
+export const Route = createFileRoute("/aligner-demo/")({
+  component: () => <DemoRoutePage Demo={AlignDemo} />,
+});

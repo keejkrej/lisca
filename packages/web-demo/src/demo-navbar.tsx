@@ -9,6 +9,8 @@ export type DemoNavbarProps = {
   fileName: string | null;
   loading?: boolean;
   endLeading?: ReactNode;
+  /** When false, the navbar omits its theme toggle (e.g. embedded landing previews). */
+  showThemeToggle?: boolean;
   onOpenFile: (file: File) => void;
 };
 
@@ -52,7 +54,7 @@ export function DemoNavbar(props: DemoNavbarProps) {
 
         <div className="flex min-w-0 items-center justify-end justify-self-end gap-1 sm:gap-2">
           {props.endLeading}
-          <ShellThemeToggle />
+          {props.showThemeToggle !== false ? <ShellThemeToggle /> : null}
         </div>
       </div>
     </header>

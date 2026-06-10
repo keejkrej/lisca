@@ -1,7 +1,7 @@
 import { Button } from "@lisca/ui/components";
 import { Github } from "lucide-react";
 
-import { GITHUB_URL } from "../lib/constants";
+import { GITHUB_REPO, GITHUB_URL } from "../lib/constants";
 
 export function SiteFooter() {
   return (
@@ -19,7 +19,7 @@ export function SiteFooter() {
           render={
             <a href={GITHUB_URL} rel="noopener noreferrer" target="_blank">
               <Github aria-hidden />
-              github.com/lisca/lisca
+              github.com/{GITHUB_REPO}
             </a>
           }
           variant="outline"

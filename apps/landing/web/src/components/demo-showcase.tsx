@@ -1,50 +1,9 @@
-import { AlignDemo } from "@lisca/aligner-demo";
-import { AnnotatorDemo } from "@lisca/annotator-demo";
 import { Button } from "@lisca/ui/components";
-import {
-  Card,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardPanel,
-  CardTitle,
-} from "@lisca/ui/components";
+import { Card, CardDescription, CardHeader, CardPanel, CardTitle } from "@lisca/ui/components";
 import { Link } from "@tanstack/react-router";
-import { ExternalLink, Grid3x3, Paintbrush } from "lucide-react";
-import type { ComponentType } from "react";
+import { ExternalLink } from "lucide-react";
 
-import { ALIGNER_DEMO_PATH, ANNOTATOR_DEMO_PATH } from "../lib/constants";
-
-const demos = [
-  {
-    id: "aligner",
-    title: "Aligner",
-    description:
-      "Place and exclude cells on a regular grid. Open a microscopy image, tune contrast, and export bounding boxes — all client-side.",
-    href: ALIGNER_DEMO_PATH,
-    icon: Grid3x3,
-    features: ["Grid alignment", "Cell include/exclude", "CSV & JSON export"],
-    Demo: AlignDemo,
-  },
-  {
-    id: "annotator",
-    title: "Annotator",
-    description:
-      "Paint ROI masks and assign labels on live-cell frames. Brush tools, label classes, and annotation export without a backend.",
-    href: ANNOTATOR_DEMO_PATH,
-    icon: Paintbrush,
-    features: ["Mask painting", "Label classes", "PNG & JSON export"],
-    Demo: AnnotatorDemo,
-  },
-] as const satisfies ReadonlyArray<{
-  id: string;
-  title: string;
-  description: string;
-  href: string;
-  icon: ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
-  features: readonly string[];
-  Demo: ComponentType<{ embedded?: boolean }>;
-}>;
+import { landingDemos } from "../lib/demos";
 
 export function DemoShowcase() {
   return (
@@ -60,50 +19,36 @@ export function DemoShowcase() {
           </p>
         </div>
 
-        <div className="mt-12 grid gap-8 lg:grid-cols-2">
-          {demos.map((demo) => (
+        <div className="mt-12 flex flex-col gap-12">
+          {landingDemos.map((demo) => (
             <Card className="overflow-hidden" key={demo.id}>
               <CardHeader>
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <CardTitle className="flex items-center gap-2 text-xl">
-                      <demo.icon aria-hidden className="size-5 opacity-80" />
-                      {demo.title}
-                    </CardTitle>
-                    <CardDescription className="mt-2 text-base leading-relaxed">
-                      {demo.description}
-                    </CardDescription>
-                  </div>
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <demo.icon aria-hidden className="size-5 opacity-80" />
+                  {demo.title}
+                </CardTitle>
+                <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                  <CardDescription className="text-base leading-relaxed">
+                    {demo.description}
+                  </CardDescription>
+                  <Button
+                    className="shrink-0 gap-2"
+                    render={
+                      <Link to={demo.href}>
+                        Open full demo
+                        <ExternalLink aria-hidden className="size-4" />
+                      </Link>
+                    }
+                    variant="outline"
+                  />
                 </div>
               </CardHeader>
 
               <CardPanel className="px-4 pt-0 sm:px-6">
-                <div className="landing-demo-frame h-[min(52vh,420px)]">
+                <div className="landing-demo-frame h-[min(60vh,520px)]">
                   <demo.Demo embedded />
                 </div>
-                <ul className="mt-4 flex flex-wrap gap-2">
-                  {demo.features.map((feature) => (
-                    <li
-                      className="rounded-full border border-border bg-muted/30 px-3 py-1 font-mono text-muted-foreground text-xs"
-                      key={feature}
-                    >
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
               </CardPanel>
-
-              <CardFooter className="gap-3">
-                <Button
-                  className="gap-2"
-                  render={
-                    <Link to={demo.href}>
-                      Open full demo
-                      <ExternalLink aria-hidden className="size-4" />
-                    </Link>
-                  }
-                />
-              </CardFooter>
             </Card>
           ))}
         </div>
