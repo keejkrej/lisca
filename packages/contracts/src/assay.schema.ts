@@ -34,8 +34,6 @@ export const AssaySlideIdSchema = Schema.Literal("slide-i", "slide-vi").annotati
 
 export const AssayDataSourceKindSchema = Schema.Literal(
   "folder",
-  "tif",
-  "jpg",
   "nd2",
   "czi",
 ).annotations({ identifier: "AssayDataSourceKind" });

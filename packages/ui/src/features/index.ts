@@ -10,8 +10,6 @@ export {
   useAlignCanvasGridHandlers,
   type UseAlignCanvasGridHandlersOptions,
 } from "./align/align-canvas-handlers";
-export { AlignContrastRail } from "./align/align-contrast-rail";
-export { AnnotatorContrastRail } from "./annotate/annotator-contrast-rail";
 export { AlignGrid, type AlignGridProps } from "./align/align-grid";
 export { AlignGridRail } from "./align/align-grid-rail";
 export { AlignSelectionCounts } from "./align/align-selection-counts";
@@ -41,13 +39,22 @@ export {
   useCanvasResourceTransaction,
   type CanvasResourceTransactionOptions,
 } from "./canvas/canvas-resource-transaction";
-export { ContrastControl, type ContrastControlProps, type ContrastWindow } from "./contrast/contrast-control";
+export { ContrastControl, type ContrastControlProps } from "./contrast/contrast-control";
 export { CropProgressModal, type CropProgressModalProps } from "./align/crop-progress-modal";
 export { cropConfirmCopy } from "@lisca/ui-headless/crop";
 export {
   FolderSourceParseModal,
   type FolderSourceParseModalProps,
 } from "./host/folder-source-parse-modal";
+export {
+  createAxisIndexSliderControl,
+  formatAxisAriaValueText,
+  formatAxisValueLabel,
+  resolveAxisSelection,
+  selectedAxisIndex,
+  toAxisNavigationOptions,
+  type AxisIndexSliderControl,
+} from "@lisca/utils";
 export {
   FrameNavigation,
   SelectStepperField,

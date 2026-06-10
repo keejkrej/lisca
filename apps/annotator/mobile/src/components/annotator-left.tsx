@@ -2,12 +2,12 @@ import type { ContrastWindow, RoiPositionScan, RoiWorkspaceScan } from "@lisca/c
 import type { FrameResult } from "@lisca/utils";
 import {
   ContrastControl,
+  createAxisIndexSliderControl,
   findNavigationOptionIndex,
   FrameNavigation,
   stepNavigationValue,
-  toNavigationOptions,
+  toAxisNavigationOptions,
 } from "@lisca/ui-native";
-import { clamp } from "@lisca/utils";
 import { StyleSheet, View } from "react-native";
 export function AnnotatorLeft(props: {
   scan: RoiWorkspaceScan | null;
@@ -26,20 +26,7 @@ export function AnnotatorLeft(props: {
   onZIndexChange: (value: number) => void;
   onContrastChange: (value: ContrastWindow | null) => void;
 }) {
-  const domain = props.frame?.contrastDomain ?? {
-    min: 0,
-    max: 255,
-  };
-  const value = props.contrast ?? {
-    min: domain.min,
-    max: domain.max,
-  };
-  const suggestedContrast = props.frame?.suggestedContrast ??
-    props.frame?.appliedContrast ?? {
-      min: domain.min,
-      max: domain.max,
-    };
-  const positionOptions = toNavigationOptions(
+  const positionOptions = toAxisNavigationOptions(
     props.scan?.positions.map((entry) => entry.pos) ?? [],
   );
   const roiOptions =
@@ -47,9 +34,7 @@ export function AnnotatorLeft(props: {
       value: entry.roi,
       label: String(entry.roi),
     })) ?? [];
-  const channelOptions = toNavigationOptions(props.position?.channels ?? []);
-  const timeMax = Math.max(0, (props.position?.times.length ?? 1) - 1);
-  const zMax = Math.max(0, (props.position?.zSlices.length ?? 1) - 1);
+  const channelOptions = toAxisNavigationOptions(props.position?.channels ?? []);
   const posValue = props.pos ?? positionOptions[0]?.value ?? 0;
   const roiValue = props.roi ?? roiOptions[0]?.value ?? 0;
   const channelValue = props.channel ?? channelOptions[0]?.value ?? 0;
@@ -106,51 +91,22 @@ export function AnnotatorLeft(props: {
             if (next != null) props.onRoiChange(next);
           },
         }}
-        timepoint={{
-          value: props.timeIndex,
-          min: 0,
-          max: timeMax,
-          step: 1,
-          disabled: timeMax <= 0,
-          previousDisabled: props.timeIndex <= 0,
-          nextDisabled: props.timeIndex >= timeMax,
-          onCommit: (nextValue) =>
-            props.onTimeIndexChange(clamp(Math.round(nextValue), 0, timeMax)),
-          onPrevious: () => props.onTimeIndexChange(Math.max(0, props.timeIndex - 1)),
-          onNext: () => props.onTimeIndexChange(Math.min(timeMax, props.timeIndex + 1)),
-        }}
-        zPlane={{
-          value: props.zIndex,
-          min: 0,
-          max: zMax,
-          step: 1,
-          disabled: zMax <= 0,
-          previousDisabled: props.zIndex <= 0,
-          nextDisabled: props.zIndex >= zMax,
-          onCommit: (nextValue) => props.onZIndexChange(clamp(Math.round(nextValue), 0, zMax)),
-          onPrevious: () => props.onZIndexChange(Math.max(0, props.zIndex - 1)),
-          onNext: () => props.onZIndexChange(Math.min(zMax, props.zIndex + 1)),
-        }}
+        timepoint={createAxisIndexSliderControl({
+          axisValues: props.position?.times,
+          index: props.timeIndex,
+          onIndexChange: props.onTimeIndexChange,
+        })}
+        zPlane={createAxisIndexSliderControl({
+          axisValues: props.position?.zSlices,
+          index: props.zIndex,
+          onIndexChange: props.onZIndexChange,
+        })}
       />
       <ContrastControl
+        contrast={props.contrast}
         disabled={!props.frame}
-        domainMax={domain.max}
-        domainMin={domain.min}
-        maxValue={value.max}
-        minValue={value.min}
-        onAutoRange={() => props.onContrastChange(suggestedContrast)}
-        onMaxCommit={(max) =>
-          props.onContrastChange({
-            min: value.min,
-            max,
-          })
-        }
-        onMinCommit={(min) =>
-          props.onContrastChange({
-            min,
-            max: value.max,
-          })
-        }
+        frame={props.frame}
+        onContrastChange={props.onContrastChange}
       />
     </View>
   );

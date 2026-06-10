@@ -243,11 +243,13 @@ export function createAnnotatorUiActions(persist: ReturnType<typeof createAnnota
     setContrastState(set: (update: StateUpdater<AnnotatorUiState>) => void, frame: FrameResult) {
       patch(set, (state) => {
         const domain = frame.contrastDomain ?? defaultContrastDomain;
+        const autoContrast =
+          frame.appliedContrast ?? frame.suggestedContrast ?? domain;
         return {
           ...state,
           contrastDomain: domain,
-          contrastMin: state.contrast?.min ?? domain.min,
-          contrastMax: state.contrast?.max ?? domain.max,
+          contrastMin: state.contrast?.min ?? autoContrast.min,
+          contrastMax: state.contrast?.max ?? autoContrast.max,
         };
       });
     },

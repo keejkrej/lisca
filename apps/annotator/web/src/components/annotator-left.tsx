@@ -1,15 +1,15 @@
 import {
-  AnnotatorContrastRail,
+  ContrastControl,
+  createAxisIndexSliderControl,
   FrameNavigation,
   findNavigationOptionIndex,
   stepNavigationValue,
-  toNavigationOptions,
+  toAxisNavigationOptions,
 } from "@lisca/ui/features";
-import { clamp } from "@lisca/utils";
 import { useAnnotatePage } from "../state/annotate-page-context";
 export function AnnotatorLeft() {
   const { state } = useAnnotatePage();
-  const positionOptions = toNavigationOptions(
+  const positionOptions = toAxisNavigationOptions(
     state.scan?.positions.map((entry) => entry.pos) ?? [],
   );
   const roiOptions =
@@ -17,9 +17,7 @@ export function AnnotatorLeft() {
       value: entry.roi,
       label: String(entry.roi),
     })) ?? [];
-  const channelOptions = toNavigationOptions(state.position?.channels ?? []);
-  const timeMax = Math.max(0, (state.position?.times.length ?? 1) - 1);
-  const zMax = Math.max(0, (state.position?.zSlices.length ?? 1) - 1);
+  const channelOptions = toAxisNavigationOptions(state.position?.channels ?? []);
   const posValue = state.selection.pos ?? positionOptions[0]?.value ?? 0;
   const roiValue = state.selection.roi ?? roiOptions[0]?.value ?? 0;
   const channelValue = state.selection.channel ?? channelOptions[0]?.value ?? 0;
@@ -124,64 +122,33 @@ export function AnnotatorLeft() {
               );
           },
         }}
-        timepoint={{
-          value: state.selection.timeIndex,
-          min: 0,
-          max: timeMax,
-          step: 1,
-          disabled: timeMax <= 0,
-          previousDisabled: state.selection.timeIndex <= 0,
-          nextDisabled: state.selection.timeIndex >= timeMax,
-          onCommit: (value) =>
+        timepoint={createAxisIndexSliderControl({
+          axisValues: state.position?.times,
+          index: state.selection.timeIndex,
+          onIndexChange: (timeIndex) =>
             state.changeSelection(() =>
               state.setSelection({
-                timeIndex: clamp(Math.round(value), 0, timeMax),
+                timeIndex,
               }),
             ),
-          onPrevious: () =>
+        })}
+        zPlane={createAxisIndexSliderControl({
+          axisValues: state.position?.zSlices,
+          index: state.selection.zIndex,
+          onIndexChange: (zIndex) =>
             state.changeSelection(() =>
               state.setSelection({
-                timeIndex: Math.max(0, state.selection.timeIndex - 1),
+                zIndex,
               }),
             ),
-          onNext: () =>
-            state.changeSelection(() =>
-              state.setSelection({
-                timeIndex: Math.min(timeMax, state.selection.timeIndex + 1),
-              }),
-            ),
-        }}
-        zPlane={{
-          value: state.selection.zIndex,
-          min: 0,
-          max: zMax,
-          step: 1,
-          disabled: zMax <= 0,
-          previousDisabled: state.selection.zIndex <= 0,
-          nextDisabled: state.selection.zIndex >= zMax,
-          onCommit: (value) =>
-            state.changeSelection(() =>
-              state.setSelection({
-                zIndex: clamp(Math.round(value), 0, zMax),
-              }),
-            ),
-          onPrevious: () =>
-            state.changeSelection(() =>
-              state.setSelection({
-                zIndex: Math.max(0, state.selection.zIndex - 1),
-              }),
-            ),
-          onNext: () =>
-            state.changeSelection(() =>
-              state.setSelection({
-                zIndex: Math.min(zMax, state.selection.zIndex + 1),
-              }),
-            ),
-        }}
+        })}
       />
-      <AnnotatorContrastRail
+      <ContrastControl
+        aria-label="Contrast"
         contrast={state.contrast}
+        disabled={!state.frame}
         frame={state.frame}
+        role="region"
         onContrastChange={state.setContrast}
       />
     </div>

@@ -481,7 +481,12 @@ mod tests {
         fs::write(
             workspace.join("roi").join("Pos0").join("index.json"),
             serde_json::to_vec_pretty(&json!({
-                "source": { "kind": "tif", "path": "source" },
+                "source": {
+                    "kind": "folder",
+                    "path": "source",
+                    "subfolderTemplate": "Pos{p}",
+                    "filenameTemplate": "img_channel{c}_position{p}_time{t}_z{z}"
+                },
                 "position": 0,
                 "axisOrder": "TCZYX",
                 "pageOrder": ["t", "c", "z"],

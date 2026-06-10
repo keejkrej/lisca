@@ -51,6 +51,15 @@ export type UseAnnotateStateCoreDeps = {
     },
     import("../infra/client-error.ts").ClientError
   >;
+  loadRoiFrameEffect: (
+    backend: AnnotatorDataPort,
+    workspacePath: string,
+    request: RoiFrameRequest,
+    contrast: AnnotatorUiState["contrast"],
+  ) => import("effect").Effect.Effect<
+    FrameResult,
+    import("../infra/client-error.ts").ClientError
+  >;
   annotatorUiAtom: AnnotatorUiAtom;
   annotatorUiActions: AnnotatorUiActions;
   roiWorkspaceScanAtom: (
@@ -253,6 +262,7 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
       };
     }>({
       start: () => {
+        deps.annotatorUiActions.setContrast(setUi, null);
         deps.annotatorUiActions.setFrameLoading(setUi, true);
         deps.annotatorUiActions.setAnnotationLoading(setUi, true);
         deps.annotatorUiActions.setFrameError(setUi, null);
@@ -266,7 +276,7 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
               deps.annotatorClient,
               workspacePath,
               request,
-              contrast,
+              null,
             )
             .pipe(Effect.mapError(toClientError)),
           {
@@ -292,11 +302,9 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
         deps.annotatorUiActions.setAnnotationLoading(setUi, false);
       },
     });
-    // deps members are listed individually; omitting the aggregate avoids unrelated reruns.
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [
     activeRequestKey,
-    contrast,
     deps.annotatorClient,
     deps.annotatorUiActions,
     deps.emptyValueFor,
@@ -305,10 +313,42 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
     loadCanvasResources,
     request,
     resetAnnotation,
+    setContrast,
     setUi,
     workspacePath,
     shellWorkspacePath,
   ]);
+  useEffect(() => {
+    if (!contrast || !workspacePath || workspacePath !== shellWorkspacePath || !request) {
+      return;
+    }
+    return loadCanvasResources({
+      start: () => {
+        deps.annotatorUiActions.setFrameLoading(setUi, true);
+        deps.annotatorUiActions.setFrameError(setUi, null);
+      },
+      load: (signal) =>
+        runClientEffect(
+          deps
+            .loadRoiFrameEffect(deps.annotatorClient, workspacePath, request, contrast)
+            .pipe(Effect.mapError(toClientError)),
+          { signal },
+        ),
+      commit: (nextFrame) => {
+        deps.annotatorUiActions.setFrame(setUi, nextFrame);
+        deps.annotatorUiActions.setContrastState(setUi, nextFrame);
+      },
+      reject: (cause) => {
+        deps.annotatorUiActions.setFrameError(
+          setUi,
+          deps.effectErrorMessage(cause, "ROI frame contrast update failed"),
+        );
+      },
+      settle: () => deps.annotatorUiActions.setFrameLoading(setUi, false),
+    });
+    // Intentionally contrast-only: ROI navigation is handled by the effect above.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [contrast]);
   const handleSave = async () => {
     if (!shellWorkspacePath || !request || !frame || !canSave) return;
     deps.annotatorUiActions.setSaving(setUi, true);

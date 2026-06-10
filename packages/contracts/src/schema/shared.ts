@@ -1,7 +1,7 @@
 import * as Schema from "effect/Schema";
 
 import { PIXEL_TYPES } from "../constants";
-import { NumArray, U32 } from "./primitives";
+import { NumArray, StrArray, U32 } from "./primitives";
 
 export const AppIdSchema = Schema.Literal("aligner", "annotator", "studio").annotations({
   identifier: "AppId",
@@ -12,6 +12,10 @@ export const WorkspaceScanSchema = Schema.Struct({
   channels: NumArray,
   times: NumArray,
   zSlices: NumArray,
+  positionLabels: Schema.optional(StrArray),
+  channelLabels: Schema.optional(StrArray),
+  timeLabels: Schema.optional(StrArray),
+  zSliceLabels: Schema.optional(StrArray),
 }).annotations({ identifier: "WorkspaceScan" });
 
 export const FolderSourceSchema = Schema.Struct({
@@ -23,8 +27,6 @@ export const FolderSourceSchema = Schema.Struct({
 
 export const AlignerSourceSchema = Schema.Union(
   FolderSourceSchema,
-  Schema.Struct({ kind: Schema.Literal("tif"), path: Schema.String }),
-  Schema.Struct({ kind: Schema.Literal("jpg"), path: Schema.String }),
   Schema.Struct({ kind: Schema.Literal("nd2"), path: Schema.String }),
   Schema.Struct({ kind: Schema.Literal("czi"), path: Schema.String }),
 ).annotations({ identifier: "AlignerSource" });

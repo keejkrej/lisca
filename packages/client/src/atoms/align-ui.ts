@@ -3,6 +3,7 @@ import type { FrameResult } from "@lisca/utils";
 import {
   createDefaultAlignGrid,
   normalizeAlignGridState,
+  resolveAxisSelection,
   setExcludedAlignGridCellsForPosition,
   type AlignGridToolMode,
 } from "@lisca/utils";
@@ -47,7 +48,7 @@ function firstOrZero(values: number[] | undefined): number {
 }
 
 function scanValueOrFirst(values: number[] | undefined, preferred: number): number {
-  return values?.includes(preferred) ? preferred : firstOrZero(values);
+  return resolveAxisSelection(values, preferred);
 }
 
 function resolveNextValue<T>(current: T, next: StateUpdater<T>): T {

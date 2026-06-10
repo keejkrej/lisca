@@ -1,5 +1,6 @@
 "use client";
 
+import { formatAxisAriaValueText, formatAxisValueLabel } from "@lisca/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -64,6 +65,9 @@ type SliderNavigationFieldProps = {
   min: number;
   max: number;
   step: number;
+  valueLabel?: string;
+  axisValues?: readonly number[];
+  axisLabels?: readonly string[];
   onChange?: (value: number) => void;
   onCommit?: (value: number) => void;
   disabled?: boolean;
@@ -79,6 +83,28 @@ export type SelectNavigationControlProps<T extends NavigationValue> = Omit<
 >;
 
 export type SliderNavigationControlProps = Omit<SliderNavigationFieldProps, "label">;
+
+/** Strip leading zeros from numeric axis labels for display only. */
+function stripZeroPaddingFromNumericDisplay(value: string): string {
+  if (/^\d+$/.test(value)) {
+    return String(Number.parseInt(value, 10));
+  }
+  return value;
+}
+
+function displayAxisLabels(
+  labels: readonly string[] | undefined,
+): readonly string[] | undefined {
+  return labels?.map(stripZeroPaddingFromNumericDisplay);
+}
+
+/** Format select option labels such as `00012 (2/3)` for display. */
+function formatNavigationOptionDisplayLabel(label: string): string {
+  const match = /^(.+?) \((\d+\/\d+)\)$/.exec(label);
+  if (!match) return stripZeroPaddingFromNumericDisplay(label);
+  const [, value, position] = match;
+  return `${stripZeroPaddingFromNumericDisplay(value)} (${position})`;
+}
 
 export function SelectStepperField<T extends NavigationValue>(
   props: SelectNavigationFieldProps<T>,
@@ -111,7 +137,7 @@ export function SelectStepperField<T extends NavigationValue>(
           <SelectContent>
             {props.options.map((option) => (
               <SelectItem key={String(option.value)} value={option.value}>
-                {option.label}
+                {formatNavigationOptionDisplayLabel(option.label)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -140,10 +166,31 @@ export function SliderStepperField(props: SliderNavigationFieldProps) {
   }, [props.value]);
 
   const commitValue = props.onCommit ?? props.onChange;
+  const displayLabel = props.axisValues
+    ? formatAxisValueLabel(
+        props.axisValues,
+        draftValue,
+        displayAxisLabels(props.axisLabels),
+      )
+    : props.valueLabel
+      ? formatNavigationOptionDisplayLabel(props.valueLabel)
+      : undefined;
+  const ariaValueText = props.axisValues
+    ? formatAxisAriaValueText(
+        props.axisValues,
+        draftValue,
+        displayAxisLabels(props.axisLabels),
+      )
+    : displayLabel;
 
   return (
     <Field className="min-w-0 w-full">
-      <FieldLabel>{props.label}</FieldLabel>
+      <FieldLabel className="w-full justify-between">
+        <span>{props.label}</span>
+        {displayLabel ? (
+          <span className="font-normal text-muted-foreground">{displayLabel}</span>
+        ) : null}
+      </FieldLabel>
       <div className="grid w-full grid-cols-[2rem_minmax(0,1fr)_2rem] items-center gap-2">
         <Button
           aria-label={`Previous ${props.label}`}
@@ -157,6 +204,7 @@ export function SliderStepperField(props: SliderNavigationFieldProps) {
           <ChevronLeft aria-hidden="true" />
         </Button>
         <Slider
+          aria-valuetext={ariaValueText}
           controlClassName="data-[orientation=horizontal]:!min-w-0"
           disabled={props.disabled}
           max={props.max}

@@ -310,42 +310,6 @@ impl AlignOutputPaths {
 #[doc = "        \"kind\": {"]
 #[doc = "          \"type\": \"string\","]
 #[doc = "          \"enum\": ["]
-#[doc = "            \"tif\""]
-#[doc = "          ]"]
-#[doc = "        },"]
-#[doc = "        \"path\": {"]
-#[doc = "          \"type\": \"string\""]
-#[doc = "        }"]
-#[doc = "      }"]
-#[doc = "    },"]
-#[doc = "    {"]
-#[doc = "      \"type\": \"object\","]
-#[doc = "      \"required\": ["]
-#[doc = "        \"kind\","]
-#[doc = "        \"path\""]
-#[doc = "      ],"]
-#[doc = "      \"properties\": {"]
-#[doc = "        \"kind\": {"]
-#[doc = "          \"type\": \"string\","]
-#[doc = "          \"enum\": ["]
-#[doc = "            \"jpg\""]
-#[doc = "          ]"]
-#[doc = "        },"]
-#[doc = "        \"path\": {"]
-#[doc = "          \"type\": \"string\""]
-#[doc = "        }"]
-#[doc = "      }"]
-#[doc = "    },"]
-#[doc = "    {"]
-#[doc = "      \"type\": \"object\","]
-#[doc = "      \"required\": ["]
-#[doc = "        \"kind\","]
-#[doc = "        \"path\""]
-#[doc = "      ],"]
-#[doc = "      \"properties\": {"]
-#[doc = "        \"kind\": {"]
-#[doc = "          \"type\": \"string\","]
-#[doc = "          \"enum\": ["]
 #[doc = "            \"nd2\""]
 #[doc = "          ]"]
 #[doc = "        },"]
@@ -387,10 +351,6 @@ pub enum AlignerSource {
         #[serde(rename = "subfolderTemplate")]
         subfolder_template: ::std::string::String,
     },
-    #[serde(rename = "tif")]
-    Tif { path: ::std::string::String },
-    #[serde(rename = "jpg")]
-    Jpg { path: ::std::string::String },
     #[serde(rename = "nd2")]
     Nd2 { path: ::std::string::String },
     #[serde(rename = "czi")]
@@ -1104,8 +1064,6 @@ impl AssayBasicInfoStep3 {
 #[doc = "  \"type\": \"string\","]
 #[doc = "  \"enum\": ["]
 #[doc = "    \"folder\","]
-#[doc = "    \"tif\","]
-#[doc = "    \"jpg\","]
 #[doc = "    \"nd2\","]
 #[doc = "    \"czi\""]
 #[doc = "  ]"]
@@ -1127,10 +1085,6 @@ impl AssayBasicInfoStep3 {
 pub enum AssayDataSourceKind {
     #[serde(rename = "folder")]
     Folder,
-    #[serde(rename = "tif")]
-    Tif,
-    #[serde(rename = "jpg")]
-    Jpg,
     #[serde(rename = "nd2")]
     Nd2,
     #[serde(rename = "czi")]
@@ -1140,8 +1094,6 @@ impl ::std::fmt::Display for AssayDataSourceKind {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
             Self::Folder => f.write_str("folder"),
-            Self::Tif => f.write_str("tif"),
-            Self::Jpg => f.write_str("jpg"),
             Self::Nd2 => f.write_str("nd2"),
             Self::Czi => f.write_str("czi"),
         }
@@ -1152,8 +1104,6 @@ impl ::std::str::FromStr for AssayDataSourceKind {
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
             "folder" => Ok(Self::Folder),
-            "tif" => Ok(Self::Tif),
-            "jpg" => Ok(Self::Jpg),
             "nd2" => Ok(Self::Nd2),
             "czi" => Ok(Self::Czi),
             _ => Err("invalid value".into()),
@@ -1324,88 +1274,6 @@ pub struct AssayJsonFile {
 impl AssayJsonFile {
     pub fn builder() -> builder::AssayJsonFile {
         Default::default()
-    }
-}
-#[doc = "`AssayType`"]
-#[doc = r""]
-#[doc = r" <details><summary>JSON schema</summary>"]
-#[doc = r""]
-#[doc = r" ```json"]
-#[doc = "{"]
-#[doc = "  \"type\": \"string\","]
-#[doc = "  \"enum\": ["]
-#[doc = "    \"gene-expression\","]
-#[doc = "    \"immune-killing\","]
-#[doc = "    \"lnp-binding\","]
-#[doc = "    \"custom-assay\""]
-#[doc = "  ]"]
-#[doc = "}"]
-#[doc = r" ```"]
-#[doc = r" </details>"]
-#[derive(
-    :: serde :: Deserialize,
-    :: serde :: Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum AssayType {
-    #[serde(rename = "gene-expression")]
-    GeneExpression,
-    #[serde(rename = "immune-killing")]
-    ImmuneKilling,
-    #[serde(rename = "lnp-binding")]
-    LnpBinding,
-    #[serde(rename = "custom-assay")]
-    CustomAssay,
-}
-impl ::std::fmt::Display for AssayType {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::GeneExpression => f.write_str("gene-expression"),
-            Self::ImmuneKilling => f.write_str("immune-killing"),
-            Self::LnpBinding => f.write_str("lnp-binding"),
-            Self::CustomAssay => f.write_str("custom-assay"),
-        }
-    }
-}
-impl ::std::str::FromStr for AssayType {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "gene-expression" => Ok(Self::GeneExpression),
-            "immune-killing" => Ok(Self::ImmuneKilling),
-            "lnp-binding" => Ok(Self::LnpBinding),
-            "custom-assay" => Ok(Self::CustomAssay),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for AssayType {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for AssayType {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for AssayType {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
     }
 }
 #[doc = "`AssaySampleRow`"]
@@ -1651,6 +1519,88 @@ impl ::std::convert::TryFrom<&::std::string::String> for AssayTimelapseUnit {
     }
 }
 impl ::std::convert::TryFrom<::std::string::String> for AssayTimelapseUnit {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[doc = "`AssayType`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"string\","]
+#[doc = "  \"enum\": ["]
+#[doc = "    \"gene-expression\","]
+#[doc = "    \"immune-killing\","]
+#[doc = "    \"lnp-binding\","]
+#[doc = "    \"custom-assay\""]
+#[doc = "  ]"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(
+    :: serde :: Deserialize,
+    :: serde :: Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum AssayType {
+    #[serde(rename = "gene-expression")]
+    GeneExpression,
+    #[serde(rename = "immune-killing")]
+    ImmuneKilling,
+    #[serde(rename = "lnp-binding")]
+    LnpBinding,
+    #[serde(rename = "custom-assay")]
+    CustomAssay,
+}
+impl ::std::fmt::Display for AssayType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::GeneExpression => f.write_str("gene-expression"),
+            Self::ImmuneKilling => f.write_str("immune-killing"),
+            Self::LnpBinding => f.write_str("lnp-binding"),
+            Self::CustomAssay => f.write_str("custom-assay"),
+        }
+    }
+}
+impl ::std::str::FromStr for AssayType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "gene-expression" => Ok(Self::GeneExpression),
+            "immune-killing" => Ok(Self::ImmuneKilling),
+            "lnp-binding" => Ok(Self::LnpBinding),
+            "custom-assay" => Ok(Self::CustomAssay),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for AssayType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for AssayType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for AssayType {
     type Error = self::error::ConversionError;
     fn try_from(
         value: ::std::string::String,
@@ -3846,12 +3796,24 @@ impl ::std::convert::From<AnalysisProgressMessage> for ServerWsMessage {
 #[doc = "    \"zSlices\""]
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
+#[doc = "    \"channelLabels\": {"]
+#[doc = "      \"type\": \"array\","]
+#[doc = "      \"items\": {"]
+#[doc = "        \"type\": \"string\""]
+#[doc = "      }"]
+#[doc = "    },"]
 #[doc = "    \"channels\": {"]
 #[doc = "      \"type\": \"array\","]
 #[doc = "      \"items\": {"]
 #[doc = "        \"type\": \"integer\","]
 #[doc = "        \"format\": \"uint32\","]
 #[doc = "        \"minimum\": 0.0"]
+#[doc = "      }"]
+#[doc = "    },"]
+#[doc = "    \"positionLabels\": {"]
+#[doc = "      \"type\": \"array\","]
+#[doc = "      \"items\": {"]
+#[doc = "        \"type\": \"string\""]
 #[doc = "      }"]
 #[doc = "    },"]
 #[doc = "    \"positions\": {"]
@@ -3862,12 +3824,24 @@ impl ::std::convert::From<AnalysisProgressMessage> for ServerWsMessage {
 #[doc = "        \"minimum\": 0.0"]
 #[doc = "      }"]
 #[doc = "    },"]
+#[doc = "    \"timeLabels\": {"]
+#[doc = "      \"type\": \"array\","]
+#[doc = "      \"items\": {"]
+#[doc = "        \"type\": \"string\""]
+#[doc = "      }"]
+#[doc = "    },"]
 #[doc = "    \"times\": {"]
 #[doc = "      \"type\": \"array\","]
 #[doc = "      \"items\": {"]
 #[doc = "        \"type\": \"integer\","]
 #[doc = "        \"format\": \"uint32\","]
 #[doc = "        \"minimum\": 0.0"]
+#[doc = "      }"]
+#[doc = "    },"]
+#[doc = "    \"zSliceLabels\": {"]
+#[doc = "      \"type\": \"array\","]
+#[doc = "      \"items\": {"]
+#[doc = "        \"type\": \"string\""]
 #[doc = "      }"]
 #[doc = "    },"]
 #[doc = "    \"zSlices\": {"]
@@ -3884,9 +3858,33 @@ impl ::std::convert::From<AnalysisProgressMessage> for ServerWsMessage {
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct WorkspaceScan {
+    #[serde(
+        rename = "channelLabels",
+        default,
+        skip_serializing_if = "::std::vec::Vec::is_empty"
+    )]
+    pub channel_labels: ::std::vec::Vec<::std::string::String>,
     pub channels: ::std::vec::Vec<u32>,
+    #[serde(
+        rename = "positionLabels",
+        default,
+        skip_serializing_if = "::std::vec::Vec::is_empty"
+    )]
+    pub position_labels: ::std::vec::Vec<::std::string::String>,
     pub positions: ::std::vec::Vec<u32>,
+    #[serde(
+        rename = "timeLabels",
+        default,
+        skip_serializing_if = "::std::vec::Vec::is_empty"
+    )]
+    pub time_labels: ::std::vec::Vec<::std::string::String>,
     pub times: ::std::vec::Vec<u32>,
+    #[serde(
+        rename = "zSliceLabels",
+        default,
+        skip_serializing_if = "::std::vec::Vec::is_empty"
+    )]
+    pub z_slice_labels: ::std::vec::Vec<::std::string::String>,
     #[serde(rename = "zSlices")]
     pub z_slices: ::std::vec::Vec<u32>,
 }
@@ -7913,22 +7911,44 @@ pub mod builder {
     }
     #[derive(Clone, Debug)]
     pub struct WorkspaceScan {
+        channel_labels:
+            ::std::result::Result<::std::vec::Vec<::std::string::String>, ::std::string::String>,
         channels: ::std::result::Result<::std::vec::Vec<u32>, ::std::string::String>,
+        position_labels:
+            ::std::result::Result<::std::vec::Vec<::std::string::String>, ::std::string::String>,
         positions: ::std::result::Result<::std::vec::Vec<u32>, ::std::string::String>,
+        time_labels:
+            ::std::result::Result<::std::vec::Vec<::std::string::String>, ::std::string::String>,
         times: ::std::result::Result<::std::vec::Vec<u32>, ::std::string::String>,
+        z_slice_labels:
+            ::std::result::Result<::std::vec::Vec<::std::string::String>, ::std::string::String>,
         z_slices: ::std::result::Result<::std::vec::Vec<u32>, ::std::string::String>,
     }
     impl ::std::default::Default for WorkspaceScan {
         fn default() -> Self {
             Self {
+                channel_labels: Ok(Default::default()),
                 channels: Err("no value supplied for channels".to_string()),
+                position_labels: Ok(Default::default()),
                 positions: Err("no value supplied for positions".to_string()),
+                time_labels: Ok(Default::default()),
                 times: Err("no value supplied for times".to_string()),
+                z_slice_labels: Ok(Default::default()),
                 z_slices: Err("no value supplied for z_slices".to_string()),
             }
         }
     }
     impl WorkspaceScan {
+        pub fn channel_labels<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::vec::Vec<::std::string::String>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.channel_labels = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for channel_labels: {e}"));
+            self
+        }
         pub fn channels<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<::std::vec::Vec<u32>>,
@@ -7937,6 +7957,16 @@ pub mod builder {
             self.channels = value
                 .try_into()
                 .map_err(|e| format!("error converting supplied value for channels: {e}"));
+            self
+        }
+        pub fn position_labels<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::vec::Vec<::std::string::String>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.position_labels = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for position_labels: {e}"));
             self
         }
         pub fn positions<T>(mut self, value: T) -> Self
@@ -7949,6 +7979,16 @@ pub mod builder {
                 .map_err(|e| format!("error converting supplied value for positions: {e}"));
             self
         }
+        pub fn time_labels<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::vec::Vec<::std::string::String>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.time_labels = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for time_labels: {e}"));
+            self
+        }
         pub fn times<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<::std::vec::Vec<u32>>,
@@ -7957,6 +7997,16 @@ pub mod builder {
             self.times = value
                 .try_into()
                 .map_err(|e| format!("error converting supplied value for times: {e}"));
+            self
+        }
+        pub fn z_slice_labels<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::vec::Vec<::std::string::String>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.z_slice_labels = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for z_slice_labels: {e}"));
             self
         }
         pub fn z_slices<T>(mut self, value: T) -> Self
@@ -7976,9 +8026,13 @@ pub mod builder {
             value: WorkspaceScan,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
+                channel_labels: value.channel_labels?,
                 channels: value.channels?,
+                position_labels: value.position_labels?,
                 positions: value.positions?,
+                time_labels: value.time_labels?,
                 times: value.times?,
+                z_slice_labels: value.z_slice_labels?,
                 z_slices: value.z_slices?,
             })
         }
@@ -7986,9 +8040,13 @@ pub mod builder {
     impl ::std::convert::From<super::WorkspaceScan> for WorkspaceScan {
         fn from(value: super::WorkspaceScan) -> Self {
             Self {
+                channel_labels: Ok(value.channel_labels),
                 channels: Ok(value.channels),
+                position_labels: Ok(value.position_labels),
                 positions: Ok(value.positions),
+                time_labels: Ok(value.time_labels),
                 times: Ok(value.times),
+                z_slice_labels: Ok(value.z_slice_labels),
                 z_slices: Ok(value.z_slices),
             }
         }

@@ -1,14 +1,19 @@
+import { ContrastControl } from "@lisca/ui-native";
 import { StyleSheet, View } from "react-native";
 
 import type { AlignState } from "../state/use-align-state";
-import { AlignContrastControls } from "./align-contrast-controls";
 import { AlignFrameNavigation } from "./align-frame-navigation";
 
 export function AlignerLeft(props: { alignState: AlignState }) {
   return (
     <View style={styles.root}>
       <AlignFrameNavigation state={props.alignState} />
-      <AlignContrastControls state={props.alignState} />
+      <ContrastControl
+        contrast={props.alignState.contrast}
+        disabled={!props.alignState.frame || props.alignState.cropping}
+        frame={props.alignState.frame}
+        onContrastChange={props.alignState.setContrast}
+      />
     </View>
   );
 }

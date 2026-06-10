@@ -1,3 +1,4 @@
+import { formatAxisAriaValueText, formatAxisValueLabel } from "@lisca/utils";
 import { useEffect, useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
@@ -57,6 +58,9 @@ type SliderNavigationFieldProps = {
   min: number;
   max: number;
   step?: number;
+  valueLabel?: string;
+  axisValues?: readonly number[];
+  axisLabels?: readonly string[];
   onChange?: (value: number) => void;
   onCommit?: (value: number) => void;
   disabled?: boolean;
@@ -72,6 +76,27 @@ export type SelectNavigationControlProps<T extends NavigationValue> = Omit<
 >;
 
 export type SliderNavigationControlProps = Omit<SliderNavigationFieldProps, "label">;
+
+/** Strip leading zeros from numeric axis labels for display only. */
+function stripZeroPaddingFromNumericDisplay(value: string): string {
+  if (/^\d+$/.test(value)) {
+    return String(Number.parseInt(value, 10));
+  }
+  return value;
+}
+
+function displayAxisLabels(
+  labels: readonly string[] | undefined,
+): readonly string[] | undefined {
+  return labels?.map(stripZeroPaddingFromNumericDisplay);
+}
+
+function formatNavigationOptionDisplayLabel(label: string): string {
+  const match = /^(.+?) \((\d+\/\d+)\)$/.exec(label);
+  if (!match) return stripZeroPaddingFromNumericDisplay(label);
+  const [, value, position] = match;
+  return `${stripZeroPaddingFromNumericDisplay(value)} (${position})`;
+}
 
 function SelectPicker<T extends NavigationValue>(props: {
   value: T;
@@ -99,7 +124,9 @@ function SelectPicker<T extends NavigationValue>(props: {
         ]}
       >
         <Text numberOfLines={1} style={{ color: colors.foreground, fontSize: 14 }}>
-          {selected?.label ?? String(props.value)}
+          {selected
+            ? formatNavigationOptionDisplayLabel(selected.label)
+            : String(props.value)}
         </Text>
       </Pressable>
       <Modal transparent visible={open} animationType="fade" onRequestClose={() => setOpen(false)}>
@@ -123,7 +150,9 @@ function SelectPicker<T extends NavigationValue>(props: {
                     option.value === props.value ? { backgroundColor: colors.accent } : null,
                   ]}
                 >
-                  <Text style={{ color: colors.foreground }}>{option.label}</Text>
+                  <Text style={{ color: colors.foreground }}>
+                    {formatNavigationOptionDisplayLabel(option.label)}
+                  </Text>
                 </Pressable>
               ))}
             </ScrollView>
@@ -173,13 +202,32 @@ function SliderStepperField(props: SliderNavigationFieldProps) {
   const { colors } = useShellTheme();
   const [draftValue, setDraftValue] = useState(props.value);
   const commitValue = props.onCommit ?? props.onChange;
+  const displayLabel = props.axisValues
+    ? formatAxisValueLabel(
+        props.axisValues,
+        draftValue,
+        displayAxisLabels(props.axisLabels),
+      )
+    : props.valueLabel
+      ? formatNavigationOptionDisplayLabel(props.valueLabel)
+      : undefined;
+  const ariaValueText = props.axisValues
+    ? formatAxisAriaValueText(
+        props.axisValues,
+        draftValue,
+        displayAxisLabels(props.axisLabels),
+      )
+    : displayLabel;
 
   useEffect(() => {
     setDraftValue(props.value);
   }, [props.value]);
 
   return (
-    <Field label={props.label}>
+    <Field
+      label={props.label}
+      valueLabel={displayLabel}
+    >
       <View style={styles.stepperRow}>
         <Button
           compact
@@ -190,7 +238,11 @@ function SliderStepperField(props: SliderNavigationFieldProps) {
           variant="outline"
           onPress={props.onPrevious}
         />
-        <View style={styles.stepperCenter}>
+        <View
+          accessibilityLabel={ariaValueText}
+          accessibilityRole="adjustable"
+          style={styles.stepperCenter}
+        >
           <Slider
             disabled={props.disabled}
             maximumValue={props.max}

@@ -1,18 +1,23 @@
 import {
+  createAxisIndexSliderControl,
   findNavigationOptionIndex,
   FrameNavigation,
+  selectedAxisIndex,
   stepNavigationValue,
-  toNavigationOptions,
+  toAxisNavigationOptions,
 } from "@lisca/ui-native";
-import { clamp, selectedIndex } from "@lisca/utils";
 import type { AlignState } from "../state/use-align-state";
 export function AlignFrameNavigation({ state }: { state: AlignState }) {
-  const positionOptions = toNavigationOptions(state.scan?.positions ?? []);
-  const channelOptions = toNavigationOptions(state.scan?.channels ?? []);
-  const timeIndex = selectedIndex(state.scan?.times, state.selection.time);
-  const zIndex = selectedIndex(state.scan?.zSlices, state.selection.z);
-  const timeMax = Math.max(0, (state.scan?.times.length ?? 1) - 1);
-  const zMax = Math.max(0, (state.scan?.zSlices.length ?? 1) - 1);
+  const positionOptions = toAxisNavigationOptions(
+    state.scan?.positions ?? [],
+    state.scan?.positionLabels,
+  );
+  const channelOptions = toAxisNavigationOptions(
+    state.scan?.channels ?? [],
+    state.scan?.channelLabels,
+  );
+  const timeIndex = selectedAxisIndex(state.scan?.times, state.selection.time);
+  const zIndex = selectedAxisIndex(state.scan?.zSlices, state.selection.z);
   const posIndex = findNavigationOptionIndex(positionOptions, state.selection.pos);
   const chIndex = findNavigationOptionIndex(channelOptions, state.selection.channel);
   const disabled = !state.scan || state.cropping;
@@ -68,48 +73,26 @@ export function AlignFrameNavigation({ state }: { state: AlignState }) {
             });
         },
       }}
-      timepoint={{
-        value: timeIndex,
-        min: 0,
-        max: timeMax,
-        step: 1,
-        disabled: disabled || timeMax <= 0,
-        onCommit: (i) =>
+      timepoint={createAxisIndexSliderControl({
+        axisValues: state.scan?.times,
+        axisLabels: state.scan?.timeLabels,
+        index: timeIndex,
+        disabled,
+        onIndexChange: (index) =>
           state.setSelection({
-            time: state.scan?.times[clamp(Math.round(i), 0, timeMax)] ?? 0,
+            time: state.scan?.times[index] ?? 0,
           }),
-        previousDisabled: disabled || timeIndex <= 0,
-        nextDisabled: disabled || timeIndex >= timeMax,
-        onPrevious: () =>
+      })}
+      zPlane={createAxisIndexSliderControl({
+        axisValues: state.scan?.zSlices,
+        axisLabels: state.scan?.zSliceLabels,
+        index: zIndex,
+        disabled,
+        onIndexChange: (index) =>
           state.setSelection({
-            time: state.scan?.times[Math.max(0, timeIndex - 1)] ?? 0,
+            z: state.scan?.zSlices[index] ?? 0,
           }),
-        onNext: () =>
-          state.setSelection({
-            time: state.scan?.times[Math.min(timeMax, timeIndex + 1)] ?? 0,
-          }),
-      }}
-      zPlane={{
-        value: zIndex,
-        min: 0,
-        max: zMax,
-        step: 1,
-        disabled: disabled || zMax <= 0,
-        onCommit: (i) =>
-          state.setSelection({
-            z: state.scan?.zSlices[clamp(Math.round(i), 0, zMax)] ?? 0,
-          }),
-        previousDisabled: disabled || zIndex <= 0,
-        nextDisabled: disabled || zIndex >= zMax,
-        onPrevious: () =>
-          state.setSelection({
-            z: state.scan?.zSlices[Math.max(0, zIndex - 1)] ?? 0,
-          }),
-        onNext: () =>
-          state.setSelection({
-            z: state.scan?.zSlices[Math.min(zMax, zIndex + 1)] ?? 0,
-          }),
-      }}
+      })}
     />
   );
 }

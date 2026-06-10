@@ -1,3 +1,4 @@
+export * from "./contrast-control";
 export * from "./types";
 export * from "./dock";
 export * from "./shortcuts";

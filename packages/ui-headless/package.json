@@ -24,6 +24,10 @@
       "types": "./src/crop.ts",
       "import": "./src/crop.ts"
     },
+    "./contrast-control": {
+      "types": "./src/contrast-control.ts",
+      "import": "./src/contrast-control.ts"
+    },
     "./host-file-picker-state": {
       "types": "./src/host-file-picker-state.ts",
       "import": "./src/host-file-picker-state.ts"
@@ -38,10 +42,15 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@lisca/contracts": "workspace:*"
+    "@lisca/contracts": "workspace:*",
+    "@lisca/utils": "workspace:*"
   },
   "devDependencies": {
+    "@testing-library/react": "^16.3.0",
     "@types/react": "catalog:",
+    "jsdom": "^26.1.0",
+    "react": "catalog:",
+    "react-dom": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },

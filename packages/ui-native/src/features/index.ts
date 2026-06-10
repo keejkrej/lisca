@@ -38,6 +38,15 @@ export {
 } from "./align/align-tools";
 export { ContrastControl, type ContrastControlProps } from "./contrast/contrast-control";
 export {
+  createAxisIndexSliderControl,
+  formatAxisAriaValueText,
+  formatAxisValueLabel,
+  resolveAxisSelection,
+  selectedAxisIndex,
+  toAxisNavigationOptions,
+  type AxisIndexSliderControl,
+} from "@lisca/utils";
+export {
   FrameNavigation,
   findNavigationOptionIndex,
   stepNavigationValue,
@@ -45,4 +54,6 @@ export {
   type FrameNavigationProps,
   type NavigationOption,
   type NavigationValue,
+  type SelectNavigationControlProps,
+  type SliderNavigationControlProps,
 } from "./navigation/frame-navigation";

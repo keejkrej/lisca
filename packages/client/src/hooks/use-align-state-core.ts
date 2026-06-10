@@ -179,6 +179,7 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
       : null;
     return loadCanvasResources({
       start: () => {
+        deps.alignerUiActions.setContrast(setUi, null);
         deps.alignerUiActions.setFrameLoading(setUi, true);
         deps.alignerUiActions.setError(setUi, null);
         deps.alignerUiActions.setStatus(setUi, "Loading frame");
@@ -186,7 +187,7 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
       load: (signal) =>
         runClientEffect(
           Effect.all([
-            deps.loadFrameEffect(deps.alignerClient, source, selection, contrast),
+            deps.loadFrameEffect(deps.alignerClient, source, selection, null),
             workspacePath
               ? deps.alignerClient.loadAlignState(workspacePath, selection.pos)
               : Effect.succeed(null as SavedAlignState | null),
@@ -223,7 +224,6 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
     // deps members are listed individually; omitting the aggregate avoids unrelated reruns.
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    contrast,
     deps.alignerClient,
     deps.alignerUiActions,
     deps.loadFrameEffect,
@@ -237,6 +237,40 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
     source,
     workspacePath,
   ]);
+  useEffect(() => {
+    if (!contrast || !source || !scan) {
+      return;
+    }
+    return loadCanvasResources({
+      start: () => {
+        deps.alignerUiActions.setFrameLoading(setUi, true);
+        deps.alignerUiActions.setError(setUi, null);
+      },
+      load: (signal) =>
+        runClientEffect(
+          deps.loadFrameEffect(deps.alignerClient, source, selection, contrast).pipe(
+            Effect.mapError(toClientError),
+          ),
+          { signal },
+        ),
+      commit: (nextFrame) => {
+        deps.alignerUiActions.setFrame(setUi, nextFrame);
+        deps.alignerUiActions.setStatus(setUi, null);
+      },
+      reject: (cause) => {
+        deps.alignerUiActions.setFrame(setUi, null);
+        deps.alignerUiActions.setError(
+          setUi,
+          cause instanceof Error && cause.message.startsWith("Frame request failed")
+            ? deps.effectErrorMessage(cause)
+            : deps.toErrorMessage(cause, "Frame contrast update failed"),
+        );
+      },
+      settle: () => deps.alignerUiActions.setFrameLoading(setUi, false),
+    });
+    // Intentionally contrast-only: frame navigation is handled by the effect above.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [contrast]);
   const saveCurrent = async () => {
     if (!workspacePath || !frame) return false;
     const { included } = countVisibleAlignGridCells(frame, grid, currentExcludedCells);

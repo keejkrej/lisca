@@ -8,8 +8,6 @@ use base64::prelude::{Engine as _, BASE64_STANDARD};
 use czi_rs::CziFile;
 use image::{DynamicImage, ImageReader};
 use nd2_rs::Nd2File;
-use walkdir::WalkDir;
-
 use crate::{
     protocol::{
         AlignerSource, ContrastWindow, FramePayload, FrameRequest, ImageSource, PixelType,
@@ -40,20 +38,6 @@ fn read_dir_entries(dir: &Path) -> Result<Vec<FsDirEntry>, String> {
     Ok(entries)
 }
 
-fn collect_source_images(folder: &Path) -> Vec<(PathBuf, ParsedSourceImageName)> {
-    WalkDir::new(folder)
-        .max_depth(6)
-        .into_iter()
-        .filter_map(|entry| entry.ok())
-        .filter(|entry| entry.file_type().is_file())
-        .filter_map(|entry| {
-            let file_name = entry.path().file_name()?.to_str()?;
-            let parsed = parse_source_image_name(file_name, infer_position_hint(entry.path()))?;
-            Some((entry.into_path(), parsed))
-        })
-        .collect()
-}
-
 const CONTRAST_SAMPLE_SIZE: usize = 2048;
 
 #[derive(Clone, Debug)]
@@ -62,20 +46,6 @@ pub struct RawFrame {
     pub height: u32,
     pub data: Vec<u16>,
     pub contrast_domain: ContrastWindow,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
-enum ParsedSourceChannel {
-    Numeric(u32),
-    Named(String),
-}
-
-#[derive(Clone, Debug)]
-struct ParsedSourceImageName {
-    channel: ParsedSourceChannel,
-    position: u32,
-    time: u32,
-    z: u32,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -125,6 +95,10 @@ impl SourceMetadata {
             channels: self.channels.clone(),
             times: self.times.clone(),
             z_slices: self.z_slices.clone(),
+            position_labels: u32_labels(&self.positions),
+            channel_labels: u32_labels(&self.channels),
+            time_labels: u32_labels(&self.times),
+            z_slice_labels: u32_labels(&self.z_slices),
         }
     }
 
@@ -205,9 +179,6 @@ pub fn scan_source(source: ImageSource) -> Result<WorkspaceScan, String> {
             subfolder_template,
             filename_template,
         } => scan_image_folder(&path, &subfolder_template, &filename_template),
-        AlignerSource::Tif { path } | AlignerSource::Jpg { path } => {
-            scan_legacy_image_folder(&path)
-        }
         AlignerSource::Nd2 { path } => scan_nd2(Path::new(&path)),
         AlignerSource::Czi { path } => scan_czi(Path::new(&path)),
     }
@@ -220,9 +191,6 @@ pub fn load_frame(source: ImageSource, request: FrameRequest) -> Result<RawFrame
             subfolder_template,
             filename_template,
         } => load_image_folder_frame(&path, &subfolder_template, &filename_template, request),
-        AlignerSource::Tif { path } | AlignerSource::Jpg { path } => {
-            load_legacy_image_folder_frame(&path, request)
-        }
         AlignerSource::Nd2 { path } => load_nd2_frame(Path::new(&path), request),
         AlignerSource::Czi { path } => load_czi_frame(Path::new(&path), request),
     }
@@ -342,9 +310,13 @@ fn scan_image_folder(
     let dataset = build_series_dataset(root, subfolder_template, filename_template)?;
     Ok(WorkspaceScan {
         positions: workspace_axis_values(&dataset.positions),
+        position_labels: axis_label_values(&dataset.positions),
         channels: workspace_axis_values(&dataset.channels),
+        channel_labels: axis_label_values(&dataset.channels),
         times: workspace_axis_values(&dataset.times),
+        time_labels: axis_label_values(&dataset.times),
         z_slices: workspace_axis_values(&dataset.z_slices),
+        z_slice_labels: axis_label_values(&dataset.z_slices),
     })
 }
 
@@ -355,10 +327,26 @@ fn load_image_folder_frame(
     request: FrameRequest,
 ) -> Result<RawFrame, String> {
     let dataset = build_series_dataset(root, subfolder_template, filename_template)?;
-    let position = axis_value("Position", &dataset.positions, request.pos)?;
-    let time = axis_value("Time", &dataset.times, request.time)?;
-    let channel = axis_value("Channel", &dataset.channels, request.channel)?;
-    let z = axis_value("Z", &dataset.z_slices, request.z)?;
+    let position = axis_value(
+        "Position",
+        &dataset.positions,
+        axis_index_for_request("Position", &dataset.positions, request.pos)?,
+    )?;
+    let time = axis_value(
+        "Time",
+        &dataset.times,
+        axis_index_for_request("Time", &dataset.times, request.time)?,
+    )?;
+    let channel = axis_value(
+        "Channel",
+        &dataset.channels,
+        axis_index_for_request("Channel", &dataset.channels, request.channel)?,
+    )?;
+    let z = axis_value(
+        "Z",
+        &dataset.z_slices,
+        axis_index_for_request("Z", &dataset.z_slices, request.z)?,
+    )?;
 
     let matching = dataset
         .records
@@ -538,72 +526,6 @@ fn collect_series_records(
     Ok(())
 }
 
-fn scan_legacy_image_folder(root: &str) -> Result<WorkspaceScan, String> {
-    let entries = read_dir_entries(Path::new(root))?;
-    let mut position_dirs = Vec::<(u32, PathBuf)>::new();
-
-    for entry in entries {
-        if !entry.is_directory {
-            continue;
-        }
-        if let Some(position) = parse_pos_dir_name(&entry.name) {
-            position_dirs.push((position, entry.path));
-        }
-    }
-
-    position_dirs.sort_by_key(|(position, _)| *position);
-
-    let mut positions = Vec::new();
-    let mut channels = BTreeSet::new();
-    let mut times = BTreeSet::new();
-    let mut z_slices = BTreeSet::new();
-    let mut parsed_images = Vec::<ParsedSourceImageName>::new();
-
-    for (position, folder) in position_dirs {
-        positions.push(position);
-        parsed_images.extend(
-            collect_source_images(&folder)
-                .into_iter()
-                .map(|(_, parsed)| parsed),
-        );
-    }
-
-    let channel_mapping = build_channel_mapping(parsed_images.iter().map(|parsed| &parsed.channel));
-    for parsed in parsed_images {
-        if let Some(channel) = channel_mapping.get(&parsed.channel) {
-            channels.insert(*channel);
-        }
-        times.insert(parsed.time);
-        z_slices.insert(parsed.z);
-    }
-
-    Ok(WorkspaceScan {
-        positions,
-        channels: channels.into_iter().collect(),
-        times: times.into_iter().collect(),
-        z_slices: z_slices.into_iter().collect(),
-    })
-}
-
-fn load_legacy_image_folder_frame(root: &str, request: FrameRequest) -> Result<RawFrame, String> {
-    let pos_dir = find_position_dir(Path::new(root), request.pos)?;
-    let source_images = collect_source_images(&pos_dir);
-    let channel_mapping =
-        build_channel_mapping(source_images.iter().map(|(_, parsed)| &parsed.channel));
-    let matching = source_images
-        .into_iter()
-        .find(|(_, parsed)| {
-            parsed.position == request.pos
-                && channel_mapping.get(&parsed.channel).copied() == Some(request.channel)
-                && parsed.time == request.time
-                && parsed.z == request.z
-        })
-        .map(|(path, _)| path)
-        .ok_or_else(|| "requested image frame not found".to_string())?;
-
-    load_image_frame(&matching)
-}
-
 fn compile_series_template(
     template: &str,
     allow_empty: bool,
@@ -769,9 +691,45 @@ fn sorted_axis_values<'a>(values: impl IntoIterator<Item = &'a String>) -> Vec<S
 }
 
 fn workspace_axis_values(values: &[String]) -> Vec<u32> {
-    (0..values.len())
-        .filter_map(|value| u32::try_from(value).ok())
+    let mut parsed = Vec::with_capacity(values.len());
+    for value in values {
+        match value.parse::<u32>() {
+            Ok(number) => parsed.push(number),
+            Err(_) => {
+                return (0..values.len())
+                    .filter_map(|index| u32::try_from(index).ok())
+                    .collect();
+            }
+        }
+    }
+    parsed
+}
+
+fn u32_labels(values: &[u32]) -> Vec<String> {
+    values.iter().map(|value| value.to_string()).collect()
+}
+
+fn axis_label_values(values: &[String]) -> Vec<String> {
+    values
+        .iter()
+        .map(|value| strip_supported_image_extension(value).to_string())
         .collect()
+}
+
+fn axis_index_for_request(label: &str, values: &[String], request_value: u32) -> Result<u32, String> {
+    if let Some(index) = values.iter().position(|value| {
+        value.parse::<u32>().ok() == Some(request_value)
+    }) {
+        return u32::try_from(index)
+            .map_err(|error| format!("{label} index {index} is out of range: {error}"));
+    }
+
+    let index = request_value as usize;
+    if index < values.len() {
+        return Ok(request_value);
+    }
+
+    Err(format!("{label} value {request_value} is out of range"))
 }
 
 fn axis_value(label: &str, values: &[String], index: u32) -> Result<String, String> {
@@ -911,132 +869,6 @@ fn apply_contrast(values: &[u16], contrast: &ContrastWindow) -> Vec<u8> {
         .collect()
 }
 
-fn build_channel_mapping<'a>(
-    channels: impl IntoIterator<Item = &'a ParsedSourceChannel>,
-) -> HashMap<ParsedSourceChannel, u32> {
-    let unique = channels.into_iter().cloned().collect::<BTreeSet<_>>();
-    if unique
-        .iter()
-        .all(|channel| matches!(channel, ParsedSourceChannel::Numeric(_)))
-    {
-        return unique
-            .into_iter()
-            .filter_map(|channel| match channel {
-                ParsedSourceChannel::Numeric(value) => {
-                    Some((ParsedSourceChannel::Numeric(value), value))
-                }
-                ParsedSourceChannel::Named(_) => None,
-            })
-            .collect();
-    }
-
-    unique
-        .into_iter()
-        .enumerate()
-        .map(|(index, channel)| (channel, index as u32))
-        .collect()
-}
-
-fn find_position_dir(root: &Path, position: u32) -> Result<PathBuf, String> {
-    for entry in read_dir_entries(root)? {
-        if !entry.is_directory {
-            continue;
-        }
-        if parse_pos_dir_name(&entry.name) == Some(position) {
-            return Ok(entry.path);
-        }
-    }
-
-    Err(format!("position directory not found for Pos{position}"))
-}
-
-fn infer_position_hint(path: &Path) -> Option<u32> {
-    path.ancestors().find_map(|ancestor| {
-        ancestor
-            .file_name()
-            .and_then(|value| value.to_str())
-            .and_then(parse_pos_dir_name)
-    })
-}
-
-fn parse_pos_dir_name(name: &str) -> Option<u32> {
-    let normalized: String = name.chars().filter(|c| !c.is_whitespace()).collect();
-    if normalized.is_empty() {
-        return None;
-    }
-
-    let lower = normalized.to_ascii_lowercase();
-    for prefix in ["position", "pos"] {
-        if let Some(rest) = lower.strip_prefix(prefix) {
-            let trimmed = rest.trim_start_matches(['-', '_']);
-            if !trimmed.is_empty() && trimmed.chars().all(|c| c.is_ascii_digit()) {
-                return trimmed.parse().ok();
-            }
-        }
-    }
-
-    if lower.chars().all(|c| c.is_ascii_digit()) {
-        return lower.parse().ok();
-    }
-
-    None
-}
-
-fn parse_source_image_name(
-    name: &str,
-    position_hint: Option<u32>,
-) -> Option<ParsedSourceImageName> {
-    let extension = Path::new(name)
-        .extension()
-        .and_then(|value| value.to_str())?
-        .to_ascii_lowercase();
-    if !matches!(extension.as_str(), "tif" | "tiff" | "png" | "jpg" | "jpeg") {
-        return None;
-    }
-
-    let stem = Path::new(name).file_stem()?.to_str()?;
-    let lower = stem.to_ascii_lowercase();
-
-    if let Some(rest) = lower.strip_prefix("img_channel") {
-        let parts: Vec<&str> = rest.split('_').collect();
-        if parts.len() == 4 {
-            let channel = parts[0].parse().ok()?;
-            let position = parts[1].strip_prefix("position")?.parse().ok()?;
-            let time = parts[2].strip_prefix("time")?.parse().ok()?;
-            let z = parts[3].strip_prefix("z")?.parse().ok()?;
-
-            return Some(ParsedSourceImageName {
-                channel: ParsedSourceChannel::Numeric(channel),
-                position,
-                time,
-                z,
-            });
-        }
-    }
-
-    let position = position_hint?;
-    let rest = stem.strip_prefix("img_")?;
-    let first_sep = rest.find('_')?;
-    let last_sep = rest.rfind('_')?;
-    if first_sep == last_sep {
-        return None;
-    }
-
-    let time = rest[..first_sep].parse().ok()?;
-    let channel = &rest[first_sep + 1..last_sep];
-    if channel.is_empty() {
-        return None;
-    }
-    let z = rest[last_sep + 1..].parse().ok()?;
-
-    Some(ParsedSourceImageName {
-        channel: ParsedSourceChannel::Named(channel.to_string()),
-        position,
-        time,
-        z,
-    })
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1118,6 +950,96 @@ mod tests {
         assert_eq!(scan.channels, vec![0]);
         assert_eq!(scan.times, vec![0]);
         assert_eq!(scan.z_slices, vec![0]);
+
+        fs::remove_dir_all(root).expect("cleanup");
+    }
+
+    #[test]
+    fn scans_folder_source_with_sparse_numeric_axes() {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock")
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("lisca-series-sparse-test-{unique}"));
+        let pos = root.join("Pos138");
+        fs::create_dir_all(&pos).expect("pos");
+        fs::write(
+            pos.join("img_channel000_position138_time000000000_z000.png"),
+            [],
+        )
+        .expect("t0");
+        fs::write(
+            pos.join("img_channel000_position138_time000000012_z000.png"),
+            [],
+        )
+        .expect("t12");
+        fs::write(
+            pos.join("img_channel000_position138_time000000024_z000.png"),
+            [],
+        )
+        .expect("t24");
+
+        let template = "img_channel{c}_position{p}_time{t}_z{z}.png";
+        let scan = scan_image_folder(
+            root.to_str().expect("temp path"),
+            "Pos{p}",
+            template,
+        )
+        .expect("scan");
+
+        assert_eq!(scan.positions, vec![138]);
+        assert_eq!(scan.position_labels, vec!["138"]);
+        assert_eq!(scan.channels, vec![0]);
+        assert_eq!(scan.channel_labels, vec!["000"]);
+        assert_eq!(scan.times, vec![0, 12, 24]);
+        assert_eq!(scan.time_labels, vec!["000000000", "000000012", "000000024"]);
+        assert_eq!(scan.z_slices, vec![0]);
+        assert_eq!(scan.z_slice_labels, vec!["000"]);
+
+        fs::remove_dir_all(root).expect("cleanup");
+    }
+
+    #[test]
+    fn scans_mcf_cart_single_fixture_positions() {
+        let root = "/home/jack/data/mcf_cart_single";
+        if !Path::new(root).is_dir() {
+            return;
+        }
+
+        let scan = scan_image_folder(
+            root,
+            "Pos{p}",
+            "img_channel{c}_position{p}_time{t}_z{z}",
+        )
+        .expect("scan");
+
+        assert_eq!(scan.positions, vec![138, 144, 161]);
+        assert!(scan.times.len() > 1);
+        assert_eq!(scan.times[1], 12);
+        assert_eq!(scan.time_labels[1], "000000012");
+    }
+
+    #[test]
+    fn scans_folder_source_with_named_channels() {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock")
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("lisca-series-channel-test-{unique}"));
+        let pos0 = root.join("Pos0");
+        fs::create_dir_all(&pos0).expect("pos0");
+        fs::write(pos0.join("img_0_DAPI_0.png"), []).expect("dapi");
+        fs::write(pos0.join("img_0_GFP_0.png"), []).expect("gfp");
+
+        let scan = scan_image_folder(
+            root.to_str().expect("temp path"),
+            "Pos{p}",
+            "img_{t}_{c}_{z}",
+        )
+        .expect("scan");
+
+        assert_eq!(scan.channels, vec![0, 1]);
+        assert_eq!(scan.channel_labels, vec!["DAPI", "GFP"]);
 
         fs::remove_dir_all(root).expect("cleanup");
     }

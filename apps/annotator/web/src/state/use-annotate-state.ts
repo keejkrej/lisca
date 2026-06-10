@@ -18,7 +18,7 @@ import {
   requestKey,
   roiRequestSelectionKey,
 } from "../atoms/annotator-ui-atoms";
-import { effectErrorMessage, loadRoiFrameWithAnnotationEffect } from "../effects/roi-loader";
+import { effectErrorMessage, loadRoiFrameEffect, loadRoiFrameWithAnnotationEffect } from "../effects/roi-loader";
 import { emptyValueFor, useAnnotationHistory } from "./use-annotation-history";
 import { makeRequest } from "../utils/roi-request";
 import { encodeMaskToBase64Png, maskHasPixels } from "../utils/annotation-utils";
@@ -29,6 +29,7 @@ export function useAnnotateState() {
     toErrorMessage,
     effectErrorMessage,
     loadRoiFrameWithAnnotationEffect,
+    loadRoiFrameEffect,
     annotatorUiAtom,
     annotatorUiActions,
     roiWorkspaceScanAtom,

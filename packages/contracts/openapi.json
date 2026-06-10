@@ -1634,44 +1634,6 @@
               "kind": {
                 "type": "string",
                 "enum": [
-                  "tif"
-                ]
-              },
-              "path": {
-                "type": "string"
-              }
-            },
-            "additionalProperties": false
-          },
-          {
-            "type": "object",
-            "required": [
-              "kind",
-              "path"
-            ],
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": [
-                  "jpg"
-                ]
-              },
-              "path": {
-                "type": "string"
-              }
-            },
-            "additionalProperties": false
-          },
-          {
-            "type": "object",
-            "required": [
-              "kind",
-              "path"
-            ],
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": [
                   "nd2"
                 ]
               },
@@ -1768,6 +1730,30 @@
               "type": "integer",
               "format": "uint32",
               "minimum": 0
+            }
+          },
+          "positionLabels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "channelLabels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "timeLabels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "zSliceLabels": {
+            "type": "array",
+            "items": {
+              "type": "string"
             }
           }
         },

@@ -1,5 +1,8 @@
 "use client";
 
+import type { ContrastWindow } from "@lisca/contracts";
+import { ContrastControl as HeadlessContrastControl } from "@lisca/ui-headless/contrast-control";
+import type { FrameResult } from "@lisca/utils";
 import { clamp } from "@lisca/utils";
 import { type AriaRole, useEffect, useState } from "react";
 
@@ -8,30 +11,19 @@ import { Slider } from "../../components/ui/slider";
 import { cn } from "../../lib/utils";
 import { Section } from "../../shell/regions/section";
 
-export type ContrastWindow = {
-  min: number;
-  max: number;
-};
+export type { ContrastWindow };
 
 export type ContrastControlProps = {
-  domainMin: number;
-  domainMax: number;
-  minValue: number;
-  maxValue: number;
+  frame: FrameResult | null;
+  contrast: ContrastWindow | null;
+  onContrastChange: (contrast: ContrastWindow | null) => void;
   disabled?: boolean;
-  onMinCommit: (value: number) => void;
-  onMaxCommit: (value: number) => void;
-  onAutoRange?: () => void;
-  autoRangeDisabled?: boolean;
-  /** Optional label above the controls inside the section (section title uses {@link sectionTitle}). */
   title?: string;
   className?: string;
-  /** Section card title (default: Contrast). */
   sectionTitle?: string;
   sectionDescription?: string;
   sectionClassName?: string;
   sectionContentClassName?: string;
-  /** Passed to the enclosing Section card (e.g. region labeling). */
   "aria-label"?: string;
   role?: AriaRole;
 };
@@ -42,15 +34,91 @@ export type ContrastControlProps = {
  */
 export function ContrastControl(props: ContrastControlProps) {
   const {
+    frame,
+    contrast,
+    onContrastChange,
+    disabled: disabledOverride,
+    title,
+    className,
+    sectionTitle = "Contrast",
+    sectionDescription,
+    sectionClassName,
+    sectionContentClassName,
+    "aria-label": ariaLabel,
+    role,
+  } = props;
+
+  return (
+    <HeadlessContrastControl
+      contrast={contrast}
+      disabled={disabledOverride}
+      frame={frame}
+      onContrastChange={onContrastChange}
+    >
+      {({
+        domainMin,
+        domainMax,
+        minValue,
+        maxValue,
+        disabled,
+        autoRangeDisabled,
+        onAutoRange,
+        onMinCommit,
+        onMaxCommit,
+      }) => (
+        <ContrastControlBody
+          aria-label={ariaLabel}
+          autoRangeDisabled={autoRangeDisabled}
+          className={className}
+          disabled={disabled}
+          domainMax={domainMax}
+          domainMin={domainMin}
+          maxValue={maxValue}
+          minValue={minValue}
+          role={role}
+          sectionClassName={sectionClassName}
+          sectionContentClassName={sectionContentClassName}
+          sectionDescription={sectionDescription}
+          sectionTitle={sectionTitle}
+          title={title}
+          onAutoRange={onAutoRange}
+          onMaxCommit={onMaxCommit}
+          onMinCommit={onMinCommit}
+        />
+      )}
+    </HeadlessContrastControl>
+  );
+}
+
+function ContrastControlBody(props: {
+  domainMin: number;
+  domainMax: number;
+  minValue: number;
+  maxValue: number;
+  disabled: boolean;
+  autoRangeDisabled: boolean;
+  onAutoRange: () => void;
+  onMinCommit: (min: number) => void;
+  onMaxCommit: (max: number) => void;
+  title?: string;
+  className?: string;
+  sectionTitle?: string;
+  sectionDescription?: string;
+  sectionClassName?: string;
+  sectionContentClassName?: string;
+  "aria-label"?: string;
+  role?: AriaRole;
+}) {
+  const {
     domainMin,
     domainMax,
     minValue,
     maxValue,
     disabled,
+    autoRangeDisabled,
+    onAutoRange,
     onMinCommit,
     onMaxCommit,
-    onAutoRange,
-    autoRangeDisabled,
     title,
     className,
     sectionTitle = "Contrast",
@@ -62,7 +130,6 @@ export function ContrastControl(props: ContrastControlProps) {
   } = props;
 
   const domainOk = domainMax > domainMin;
-
   const [draft, setDraft] = useState<ContrastWindow | null>(null);
 
   useEffect(() => {
@@ -105,18 +172,16 @@ export function ContrastControl(props: ContrastControlProps) {
         ) : null}
 
         <div className="flex w-full min-w-0 flex-col gap-3">
-          {onAutoRange ? (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              disabled={disabled || autoRangeDisabled}
-              className="h-8 w-full px-2.5 text-xs"
-              onClick={onAutoRange}
-            >
-              Auto Range
-            </Button>
-          ) : null}
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={disabled || autoRangeDisabled}
+            className="h-8 w-full px-2.5 text-xs"
+            onClick={onAutoRange}
+          >
+            Auto Range
+          </Button>
 
           <div className="flex min-h-0 min-w-0 flex-col gap-3">
             <div className={sliderCol}>
