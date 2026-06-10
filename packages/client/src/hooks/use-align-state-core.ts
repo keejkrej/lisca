@@ -30,6 +30,11 @@ import type {
   StateUpdater,
 } from "../atoms/align-ui";
 import { toClientError } from "../infra/client-error";
+import {
+  frameLoadRequest,
+  shouldResetContrastBeforeNavigationLoad,
+  shouldRunContrastFrameLoad,
+} from "../session/frame-load-policy";
 export type { CropConfirmState };
 export type VariationExcludePreview = {
   preview: AutoExcludePreviewResponse;
@@ -179,7 +184,9 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
       : null;
     return loadCanvasResources({
       start: () => {
-        deps.alignerUiActions.setContrast(setUi, null);
+        if (shouldResetContrastBeforeNavigationLoad()) {
+          deps.alignerUiActions.setContrast(setUi, null);
+        }
         deps.alignerUiActions.setFrameLoading(setUi, true);
         deps.alignerUiActions.setError(setUi, null);
         deps.alignerUiActions.setStatus(setUi, "Loading frame");
@@ -187,7 +194,12 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
       load: (signal) =>
         runClientEffect(
           Effect.all([
-            deps.loadFrameEffect(deps.alignerClient, source, selection, null),
+            deps.loadFrameEffect(
+              deps.alignerClient,
+              source,
+              selection,
+              frameLoadRequest({ kind: "navigation", contrast }),
+            ),
             workspacePath
               ? deps.alignerClient.loadAlignState(workspacePath, selection.pos)
               : Effect.succeed(null as SavedAlignState | null),
@@ -238,7 +250,7 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
     workspacePath,
   ]);
   useEffect(() => {
-    if (!contrast || !source || !scan) {
+    if (!shouldRunContrastFrameLoad(contrast) || !source || !scan) {
       return;
     }
     return loadCanvasResources({
@@ -248,7 +260,12 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
       },
       load: (signal) =>
         runClientEffect(
-          deps.loadFrameEffect(deps.alignerClient, source, selection, contrast).pipe(
+          deps.loadFrameEffect(
+            deps.alignerClient,
+            source,
+            selection,
+            frameLoadRequest({ kind: "contrast", contrast }),
+          ).pipe(
             Effect.mapError(toClientError),
           ),
           { signal },

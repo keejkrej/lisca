@@ -87,3 +87,23 @@ Do not import feature files by deep path (e.g. `@lisca/ui/src/features/align/...
 ## Native parity
 
 When adding a web feature file, check whether `@lisca/ui-native` needs a parallel under the same domain folder. Shared logic belongs in `@lisca/ui-headless` or `@lisca/utils` first; platform files should be thin renderers. Native-only extras belong in `features/studio/` or the relevant domain with a comment if web has no counterpart.
+
+## Testing
+
+Extract logic before testing. Never mount coss or React Native components for behavioral coverage.
+
+| Logic kind | Package | Test with |
+| ---------- | ------- | --------- |
+| Pure math, parsing, contrast derive | `@lisca/utils` | Vitest, no React |
+| React UI state (hooks, render-prop) | `@lisca/ui-headless` | `renderHook` / render-prop children |
+| Session atoms, frame-load policy, studio utils | `@lisca/client` | Reducer runner + Effect mocks |
+| DOM / RN rendering | `@lisca/ui`, `@lisca/ui-native` | Skip (or one smoke test max) |
+
+Decision tree for new code:
+
+1. No React imports → `@lisca/utils` (or `@lisca/client/studio/*` for studio wizard helpers).
+2. React state without platform widgets → `@lisca/ui-headless`.
+3. Atoms, session effects, API wiring → `@lisca/client`.
+4. Presentation only → platform package; import headless hooks.
+
+Co-locate tests under `packages/*/test/` mirroring the module path. Root `check` runs `@lisca/utils`, `@lisca/ui-headless`, and `@lisca/client` tests via `test:packages`.

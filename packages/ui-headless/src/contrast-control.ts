@@ -2,8 +2,7 @@ import type { ContrastWindow } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
-
-const defaultContrastDomain: ContrastWindow = { min: 0, max: 255 };
+import { deriveContrastControlState } from "@lisca/utils";
 
 export type ContrastControlState = {
   domainMin: number;
@@ -29,12 +28,7 @@ export type ContrastControlProps = {
 export function ContrastControl(props: ContrastControlProps) {
   const { frame, contrast, disabled: disabledOverride, onContrastChange, children } = props;
 
-  const domain = frame?.contrastDomain ?? defaultContrastDomain;
-  const autoContrast =
-    frame?.appliedContrast ??
-    frame?.suggestedContrast ?? { min: domain.min, max: domain.max };
-  const suggestedContrast = frame?.suggestedContrast ?? autoContrast;
-  const value = contrast ?? autoContrast;
+  const { domain, suggestedContrast, value } = deriveContrastControlState(frame, contrast);
   const disabled = disabledOverride ?? !frame;
 
   const state = useMemo(

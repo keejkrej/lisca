@@ -1,6 +1,11 @@
-import type { StudioAssayId } from "@lisca/contracts/assay";
-import type { StudioBasicInfoStep1, StudioBasicInfoStep2, StudioBasicInfoStep3 } from "@lisca/contracts/assay";
-import { validInfo1, validInfo2 } from "../state/studio-routes";
+import type {
+  StudioAssayId,
+  StudioBasicInfoStep1,
+  StudioBasicInfoStep2,
+  StudioBasicInfoStep3,
+} from "@lisca/contracts/assay";
+import { ASSAY_TYPE } from "@lisca/contracts/assay";
+
 import { isValidSamplePositionRange } from "./sample-positions";
 
 function parseNonNegativeInteger(value: string): number | null {
@@ -8,6 +13,40 @@ function parseNonNegativeInteger(value: string): number | null {
   if (!/^\d+$/.test(trimmed)) return null;
   const parsed = Number(trimmed);
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
+}
+
+export function validInfo1(info1: StudioBasicInfoStep1): boolean {
+  return (
+    info1.name.trim().length > 0 &&
+    info1.date.trim().length > 0 &&
+    info1.dataPath.trim().length > 0 &&
+    info1.saveTo.trim().length > 0
+  );
+}
+
+export function validInfo2(info2: StudioBasicInfoStep2, assayId: StudioAssayId | null): boolean {
+  return (
+    info2.pattern.trim().length > 0 &&
+    info2.timelapseAmount != null &&
+    info2.timelapseAmount > 0 &&
+    (assayId !== ASSAY_TYPE.GENE_EXPRESSION ||
+      (Array.isArray(info2.selectedFeatures) && info2.selectedFeatures.length > 0))
+  );
+}
+
+export function validInfo3(info3: StudioBasicInfoStep3): boolean {
+  const activeSamples = info3.samplesBySlide[info3.selectedSlideId];
+  return (
+    activeSamples.length > 0 &&
+    activeSamples.every(
+      (row) =>
+        parseNonNegativeInteger(row.channel) != null &&
+        row.name.trim().length > 0 &&
+        isValidSamplePositionRange(row.positionStart, row.positionFinish) &&
+        parseNonNegativeInteger(row.maskChannel) != null &&
+        parseNonNegativeInteger(row.signalChannel) != null,
+    )
+  );
 }
 
 export type AssayValidationResult = { ok: true } | { ok: false; errors: string[] };

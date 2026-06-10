@@ -22,8 +22,8 @@ import { autoExcludePreviewAtom, scanIdleAtom, scanSourceAtom } from "../atoms/s
 import { effectErrorMessage, loadFrameEffect } from "../effects/frame-loader";
 import { isDoneCropStatus } from "@lisca/client/crop-status";
 import { runClientEffect } from "@lisca/client/runtime";
-import { lockedStudioSelection, studioMaskChannel, toStudioSource } from "../utils/studio-source";
-import { collectAssayPositions, filterScanPositionsForAssay } from "../utils/sample-positions";
+import { lockedStudioSelection, studioMaskChannel, toStudioSource } from "@lisca/client/studio/source";
+import { collectAssayPositions, filterScanPositionsForAssay } from "@lisca/client/studio/sample-positions";
 import {
   savedAlignStateKey,
   sourceKey,

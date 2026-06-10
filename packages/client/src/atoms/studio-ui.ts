@@ -31,6 +31,8 @@ import {
   normalizeSelectedFeaturesForAssay,
   parseStudioAssayJson as parseStudioAssayJsonCore,
 } from "../studio/studio-assay-json";
+import { sampleRowFromDisk, sampleRowToDisk } from "../studio/sample-positions";
+import { isBasicInfoDirty as isBasicInfoDirtyCore, serializeBasicInfoSnapshot as serializeBasicInfoSnapshotCore } from "../studio/wizard-state";
 
 export type {
   AssayId,
@@ -137,7 +139,9 @@ function enabledAssayId(assayId: AssayId | null): AssayId | null {
   return DEFAULT_ASSAY_ID;
 }
 
-export function createStudioUi(adapters: StudioSampleRowAdapters) {
+export function createStudioUi(
+  adapters: StudioSampleRowAdapters = { sampleRowFromDisk, sampleRowToDisk },
+) {
   const { sampleRowFromDisk, sampleRowToDisk } = adapters;
 
   function basicInfoAssayTitle(assayId: AssayId | null): string {
@@ -238,23 +242,11 @@ export function createStudioUi(adapters: StudioSampleRowAdapters) {
   function serializeBasicInfoSnapshot(
     state: Pick<StudioWizardState, "assayId" | "dataSourceKind" | "info1" | "info2" | "info3">,
   ): string {
-    const assayId = state.assayId ?? DEFAULT_ASSAY_ID;
-    return JSON.stringify(
-      buildStudioAssayJson({
-        assayId,
-        dataSourceKind: state.dataSourceKind,
-        info1: state.info1,
-        info2: state.info2,
-        info3: state.info3,
-      }),
-    );
+    return serializeBasicInfoSnapshotCore(state);
   }
 
   function isBasicInfoDirty(state: StudioWizardState): boolean {
-    const current = serializeBasicInfoSnapshot(state);
-    const baseline =
-      state.basicInfoSavedSnapshot ?? serializeBasicInfoSnapshot(createInitialWizardData());
-    return current !== baseline;
+    return isBasicInfoDirtyCore(state, serializeBasicInfoSnapshot(createInitialWizardData()));
   }
 
   const initialInfo1: BasicInfoStep1 = {

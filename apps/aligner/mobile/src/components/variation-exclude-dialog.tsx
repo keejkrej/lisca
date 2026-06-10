@@ -1,4 +1,9 @@
 import {
+  deriveVariationExcludePreview,
+  formatVariationScore,
+  nextVariationExcludeThreshold,
+} from "@lisca/ui-headless/variation-exclude-preview";
+import {
   Button,
   DialogBody,
   DialogFooter,
@@ -12,19 +17,14 @@ import {
 } from "@lisca/ui-native";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import type { VariationExcludePreview } from "../state/use-align-state";
+
 type VariationExcludeDialogProps = {
   state: VariationExcludePreview | null;
   onApply: () => void;
   onCancel: () => void;
   onThresholdChange: (threshold: number) => void;
 };
-function formatScore(value: number): string {
-  return Number.isFinite(value) ? value.toFixed(3) : "0.000";
-}
-function clampThreshold(value: number, min: number, max: number): number {
-  if (!Number.isFinite(value)) return min;
-  return Math.min(max, Math.max(min, value));
-}
+
 export function VariationExcludeDialog({
   state,
   onApply,
@@ -32,13 +32,14 @@ export function VariationExcludeDialog({
   onThresholdChange,
 }: VariationExcludeDialogProps) {
   const { colors } = useShellTheme();
-  const preview = state?.preview ?? null;
-  const threshold = state?.threshold ?? 0;
-  const selectedCount = preview?.cellScores.filter((cell) => cell.score <= threshold).length ?? 0;
-  if (!preview) return null;
-  const min = preview.scoreMin;
-  const max = preview.scoreMax > preview.scoreMin ? preview.scoreMax : preview.scoreMin + 1;
-  const step = Math.max((max - min) / 500, 0.001);
+  const derived = deriveVariationExcludePreview(state);
+  if (!derived) return null;
+  const { preview, threshold, selectedCount, metrics } = derived;
+  const setThreshold = (value: number) => {
+    const next = nextVariationExcludeThreshold(state, value);
+    if (next != null) onThresholdChange(next);
+  };
+
   return (
     <ModalScrim open={true} onClose={onCancel}>
       <DialogSurface maxWidth={640} padded={false}>
@@ -61,7 +62,7 @@ export function VariationExcludeDialog({
             <StatTile label="Selected cells" value={selectedCount} />
             <StatTile
               label="Score range"
-              value={`${formatScore(preview.scoreMin)} - ${formatScore(preview.scoreMax)}`}
+              value={`${formatVariationScore(preview.scoreMin)} - ${formatVariationScore(preview.scoreMax)}`}
             />
           </View>
 
@@ -88,26 +89,26 @@ export function VariationExcludeDialog({
                     },
                   ]}
                 >
-                  {formatScore(threshold)}
+                  {formatVariationScore(threshold)}
                 </Text>
               </View>
               <Slider
-                maximumValue={max}
-                minimumValue={min}
-                step={step}
+                maximumValue={metrics.max}
+                minimumValue={metrics.min}
+                step={metrics.step}
                 style={styles.slider}
                 thumbTintColor={colors.primary}
                 minimumTrackTintColor={colors.primary}
                 maximumTrackTintColor={colors.border}
                 value={threshold}
-                onSlidingComplete={(value) => onThresholdChange(clampThreshold(value, min, max))}
-                onValueChange={(value) => onThresholdChange(clampThreshold(value, min, max))}
+                onSlidingComplete={setThreshold}
+                onValueChange={setThreshold}
               />
             </View>
             <TextInput
               keyboardType="decimal-pad"
               value={String(threshold)}
-              onChangeText={(text) => onThresholdChange(clampThreshold(Number(text), min, max))}
+              onChangeText={(text) => setThreshold(Number(text))}
               style={[
                 styles.input,
                 {
@@ -128,6 +129,7 @@ export function VariationExcludeDialog({
     </ModalScrim>
   );
 }
+
 const styles = StyleSheet.create({
   title: {
     fontSize: 18,

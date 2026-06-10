@@ -1,0 +1,43 @@
+import type {
+  StudioAssayId,
+  StudioBasicInfoStep1,
+  StudioBasicInfoStep2,
+  StudioBasicInfoStep3,
+  StudioDataSourceKind,
+} from "@lisca/contracts/assay";
+import { ASSAY_TYPE } from "@lisca/contracts/assay";
+
+import { sampleRowToDisk } from "./sample-positions";
+import { buildStudioAssayJson } from "./studio-assay-json";
+
+export type BasicInfoSnapshotState = {
+  assayId: StudioAssayId | null;
+  dataSourceKind: StudioDataSourceKind;
+  info1: StudioBasicInfoStep1;
+  info2: StudioBasicInfoStep2;
+  info3: StudioBasicInfoStep3;
+};
+
+export type BasicInfoDirtyState = BasicInfoSnapshotState & {
+  basicInfoSavedSnapshot: string | null;
+};
+
+export function serializeBasicInfoSnapshot(state: BasicInfoSnapshotState): string {
+  const assayId = state.assayId ?? ASSAY_TYPE.GENE_EXPRESSION;
+  return JSON.stringify(
+    buildStudioAssayJson({
+      assayId,
+      dataSourceKind: state.dataSourceKind,
+      info1: state.info1,
+      info2: state.info2,
+      info3: state.info3,
+      sampleRowToDisk,
+    }),
+  );
+}
+
+export function isBasicInfoDirty(state: BasicInfoDirtyState, baselineSnapshot: string): boolean {
+  const current = serializeBasicInfoSnapshot(state);
+  const baseline = state.basicInfoSavedSnapshot ?? baselineSnapshot;
+  return current !== baseline;
+}

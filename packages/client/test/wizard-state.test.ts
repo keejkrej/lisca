@@ -1,15 +1,16 @@
 import { describe, expect, test } from "vitest";
 
-import {
-  createInitialStudioWizardState,
-  isBasicInfoDirty,
-  serializeBasicInfoSnapshot,
-} from "../src/state/studio-store";
+import { createStudioUi } from "../src/atoms/studio-ui";
+import { isBasicInfoDirty, serializeBasicInfoSnapshot } from "../src/studio/wizard-state";
+
+const { createInitialStudioWizardState } = createStudioUi();
 
 describe("basic info leave guard snapshot", () => {
   test("is not dirty on initial wizard state", () => {
     const initial = createInitialStudioWizardState();
-    expect(isBasicInfoDirty(initial)).toBe(false);
+    expect(
+      isBasicInfoDirty(initial, serializeBasicInfoSnapshot(createInitialStudioWizardState())),
+    ).toBe(false);
   });
 
   test("is dirty after editing basic info", () => {
@@ -18,7 +19,9 @@ describe("basic info leave guard snapshot", () => {
       ...initial,
       info1: { ...initial.info1, name: "Experiment A" },
     };
-    expect(isBasicInfoDirty(edited)).toBe(true);
+    expect(
+      isBasicInfoDirty(edited, serializeBasicInfoSnapshot(createInitialStudioWizardState())),
+    ).toBe(true);
   });
 
   test("is not dirty after marking saved snapshot", () => {
@@ -31,6 +34,8 @@ describe("basic info leave guard snapshot", () => {
         info1: { ...initial.info1, name: "Experiment A" },
       }),
     };
-    expect(isBasicInfoDirty(edited)).toBe(false);
+    expect(
+      isBasicInfoDirty(edited, serializeBasicInfoSnapshot(createInitialStudioWizardState())),
+    ).toBe(false);
   });
 });

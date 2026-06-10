@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { normalizeAlignGridState } from "@lisca/utils";
 
 import {
   createAlignUiActions,
@@ -53,5 +54,83 @@ describe("align-ui actions", () => {
     const next = runReducer(withSource, (set) => actions.setWorkspacePath(set, "/other"));
     expect(next.workspacePath).toBe("/other");
     expect(next.source).toBeNull();
+  });
+
+  it("applyLoadedFrame applies saved align state when key differs", () => {
+    const initialGrid = normalizeAlignGridState({ opacity: 0.2 });
+    const savedGrid = normalizeAlignGridState({ opacity: 0.8 });
+    const initial = {
+      ...createInitialAlignUiState(),
+      appliedAlignStateKey: null,
+      grid: initialGrid,
+    };
+    const frame = {
+      width: 1,
+      height: 1,
+      pixels: new Uint8Array([0]),
+      contrastDomain: { min: 0, max: 255 },
+    };
+    const selection = { pos: 1, channel: 0, time: 0, z: 0 };
+    const next = runReducer(initial, (set) =>
+      actions.applyLoadedFrame(set, selection, frame, {
+        stateKey: "pos:1",
+        pos: 1,
+        saved: {
+          grid: savedGrid,
+          excludedCells: [{ i: 0, j: 0 }],
+        },
+      }),
+    );
+    expect(next.frame).toEqual(frame);
+    expect(next.loadedFrameSelection).toEqual(selection);
+    expect(next.appliedAlignStateKey).toBe("pos:1");
+    expect(next.grid.opacity).toBe(0.8);
+    expect(next.excludedCellsByPosition[1]).toEqual([{ i: 0, j: 0 }]);
+  });
+
+  it("applyLoadedFrame skips saved state when key already applied", () => {
+    const initialGrid = normalizeAlignGridState({ opacity: 0.2 });
+    const initial = {
+      ...createInitialAlignUiState(),
+      appliedAlignStateKey: "pos:1",
+      grid: initialGrid,
+    };
+    const frame = {
+      width: 1,
+      height: 1,
+      pixels: new Uint8Array([0]),
+      contrastDomain: { min: 0, max: 255 },
+    };
+    const next = runReducer(initial, (set) =>
+      actions.applyLoadedFrame(set, { pos: 1, channel: 0, time: 0, z: 0 }, frame, {
+        stateKey: "pos:1",
+        pos: 1,
+        saved: {
+          grid: normalizeAlignGridState({ opacity: 0.9 }),
+          excludedCells: [],
+        },
+      }),
+    );
+    expect(next.grid.opacity).toBe(0.2);
+  });
+
+  it("setSelection clears appliedAlignStateKey when position changes", () => {
+    const initial = {
+      ...createInitialAlignUiState(),
+      selection: { pos: 1, channel: 0, time: 0, z: 0 },
+      appliedAlignStateKey: "pos:1",
+    };
+    const next = runReducer(initial, (set) => actions.setSelection(set, { pos: 2 }));
+    expect(next.selection.pos).toBe(2);
+    expect(next.appliedAlignStateKey).toBeNull();
+  });
+
+  it("setContrast clears manual contrast window", () => {
+    const initial = {
+      ...createInitialAlignUiState(),
+      contrast: { min: 10, max: 20 },
+    };
+    const next = runReducer(initial, (set) => actions.setContrast(set, null));
+    expect(next.contrast).toBeNull();
   });
 });

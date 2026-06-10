@@ -3,11 +3,7 @@ import type { StudioDataSourceKind } from "@lisca/contracts/assay";
 import { createStudioUi } from "@lisca/client/atoms/studio-ui";
 import { useAtom } from "@effect-atom/atom-react";
 import { useRef } from "react";
-import { sampleRowFromDisk, sampleRowToDisk } from "../utils/sample-positions";
-const studioUi = createStudioUi({
-  sampleRowFromDisk,
-  sampleRowToDisk,
-});
+const studioUi = createStudioUi();
 export type {
   AssayId,
   BasicInfo2FeatureId,

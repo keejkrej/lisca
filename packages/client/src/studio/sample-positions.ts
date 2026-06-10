@@ -1,4 +1,5 @@
 import type { StudioBasicInfoStep3 } from "@lisca/contracts/assay";
+
 export type SamplePositionRange = {
   positionStart: string;
   positionFinish: string;

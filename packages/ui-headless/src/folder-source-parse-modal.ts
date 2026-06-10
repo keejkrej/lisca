@@ -9,6 +9,15 @@ export type UseFolderSourceParseModalOptions = {
   onConfirm: (source: FolderSource) => void;
 };
 
+export function folderParseConfirmError(args: {
+  path: string | null;
+  filenameTemplate: string;
+}): string | null {
+  if (!args.path) return null;
+  if (!args.filenameTemplate.trim()) return "Filename template is required.";
+  return null;
+}
+
 export function useFolderSourceParseModal(options: UseFolderSourceParseModalOptions) {
   const { path, hostPort, onConfirm } = options;
   const [subfolderTemplate, setSubfolderTemplate] = useState<string>(
@@ -58,18 +67,18 @@ export function useFolderSourceParseModal(options: UseFolderSourceParseModalOpti
       : "Using default image naming pattern.";
 
   const confirm = () => {
-    if (!path) return;
-    const filename = filenameTemplate.trim();
-    if (!filename) {
-      setError("Filename template is required.");
+    const validationError = folderParseConfirmError({ path, filenameTemplate });
+    if (validationError) {
+      setError(validationError);
       return;
     }
+    if (!path) return;
 
     onConfirm({
       kind: "folder",
       path,
       subfolderTemplate: subfolderTemplate.trim(),
-      filenameTemplate: filename,
+      filenameTemplate: filenameTemplate.trim(),
     });
   };
 

@@ -1,35 +1,12 @@
 import type { AnnotationLabel } from "@lisca/contracts";
+import { useLabelCreationForm, normalizeLabelId } from "@lisca/ui-headless/label-creation-form";
 import { Plus, Trash2, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { DialogSurface } from "../../shell/modal/dialog-surface";
 import { ModalScrim } from "../../shell/modal/modal-scrim";
-
-type LabelDraft = {
-  id: string;
-  name: string;
-  color: string;
-};
-
-const defaultLabelDrafts: LabelDraft[] = [
-  { id: "class-1", name: "Class 1", color: "#22c55e" },
-  { id: "class-2", name: "Class 2", color: "#3b82f6" },
-  { id: "class-3", name: "Class 3", color: "#f59e0b" },
-];
-
-function normalizeLabelId(value: string) {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
-function labelDraftsFrom(labels: AnnotationLabel[]) {
-  return labels.length > 0 ? labels.map((label) => ({ ...label })) : defaultLabelDrafts;
-}
 
 export type LabelCreationDialogProps = {
   open: boolean;
@@ -56,15 +33,7 @@ export function LabelCreationDialog({
   saving = false,
   saveLabel = "Save labels",
 }: LabelCreationDialogProps) {
-  const [drafts, setDrafts] = useState<LabelDraft[]>(() => labelDraftsFrom(labels));
-  const [localError, setLocalError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (open) {
-      setDrafts(labelDraftsFrom(labels));
-      setLocalError(null);
-    }
-  }, [labels, open]);
+  const form = useLabelCreationForm({ open, labels, error });
 
   useEffect(() => {
     if (!open) return undefined;
@@ -80,49 +49,10 @@ export function LabelCreationDialog({
   const resolvedSubtitle =
     subtitle ?? (workspacePath != null ? workspacePath : "Select a workspace first");
 
-  const updateDraft = (index: number, patch: Partial<LabelDraft>) => {
-    setDrafts((current) =>
-      current.map((draft, draftIndex) => (draftIndex === index ? { ...draft, ...patch } : draft)),
-    );
-  };
-
-  const addDraft = () => {
-    setDrafts((current) => [
-      ...current,
-      {
-        id: `class-${current.length + 1}`,
-        name: `Class ${current.length + 1}`,
-        color: "#a855f7",
-      },
-    ]);
-  };
-
-  const removeDraft = (index: number) => {
-    setDrafts((current) => current.filter((_, draftIndex) => draftIndex !== index));
-  };
-
   const submit = () => {
-    const nextLabels = drafts.map((draft) => ({
-      id: normalizeLabelId(draft.id || draft.name),
-      name: draft.name.trim(),
-      color: draft.color.trim(),
-    }));
-    if (nextLabels.length === 0) {
-      setLocalError("Add at least one label.");
-      return;
-    }
-    if (nextLabels.some((label) => !label.id || !label.name || !label.color)) {
-      setLocalError("Each label needs an id, name, and color.");
-      return;
-    }
-    if (new Set(nextLabels.map((label) => label.id)).size !== nextLabels.length) {
-      setLocalError("Label ids must be unique.");
-      return;
-    }
-    onSave(nextLabels);
+    const nextLabels = form.submit();
+    if (nextLabels) onSave(nextLabels);
   };
-
-  const activeError = localError ?? error;
 
   return (
     <ModalScrim
@@ -159,7 +89,7 @@ export function LabelCreationDialog({
             <span>Color</span>
             <span />
           </div>
-          {drafts.map((draft, index) => (
+          {form.drafts.map((draft, index) => (
             <div
               key={draft.id}
               className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_4rem_2rem] items-center gap-2"
@@ -169,38 +99,38 @@ export function LabelCreationDialog({
                 value={draft.name}
                 onChange={(event) => {
                   const name = event.target.value;
-                  updateDraft(index, { name, id: normalizeLabelId(name) || draft.id });
+                  form.updateDraft(index, { name, id: normalizeLabelId(name) || draft.id });
                 }}
               />
               <Input
                 aria-label={`Label ${index + 1} id`}
                 value={draft.id}
-                onChange={(event) => updateDraft(index, { id: event.target.value })}
+                onChange={(event) => form.updateDraft(index, { id: event.target.value })}
               />
               <Input
                 aria-label={`Label ${index + 1} color`}
                 nativeInput
                 type="color"
                 value={draft.color}
-                onChange={(event) => updateDraft(index, { color: event.target.value })}
+                onChange={(event) => form.updateDraft(index, { color: event.target.value })}
               />
               <Button
                 aria-label={`Remove ${draft.name || `label ${index + 1}`}`}
-                disabled={drafts.length <= 1}
+                disabled={form.drafts.length <= 1}
                 size="icon-sm"
                 type="button"
                 variant="ghost"
-                onClick={() => removeDraft(index)}
+                onClick={() => form.removeDraft(index)}
               >
                 <Trash2 className="size-4" aria-hidden />
               </Button>
             </div>
           ))}
-          <Button className="w-fit" size="sm" type="button" variant="outline" onClick={addDraft}>
+          <Button className="w-fit" size="sm" type="button" variant="outline" onClick={form.addDraft}>
             <Plus className="size-4" aria-hidden />
             Add label
           </Button>
-          {activeError ? <p className="text-destructive text-sm">{activeError}</p> : null}
+          {form.activeError ? <p className="text-destructive text-sm">{form.activeError}</p> : null}
         </div>
 
         <div className="flex justify-end gap-2 border-t border-border px-5 py-4">

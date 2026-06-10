@@ -1,5 +1,6 @@
 import type { AlignerSource, FrameRequest, WorkspaceScan } from "@lisca/contracts";
 import type { StudioBasicInfoStep1, StudioBasicInfoStep3 } from "@lisca/contracts/assay";
+
 export function toStudioSource(
   kind: AlignerSource["kind"] | null,
   info1: StudioBasicInfoStep1,

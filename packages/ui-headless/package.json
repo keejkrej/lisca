@@ -20,6 +20,10 @@
       "types": "./src/canvas-resource-transaction.ts",
       "import": "./src/canvas-resource-transaction.ts"
     },
+    "./canvas-status": {
+      "types": "./src/canvas-status.ts",
+      "import": "./src/canvas-status.ts"
+    },
     "./canvas-transient-status": {
       "types": "./src/canvas-transient-status.ts",
       "import": "./src/canvas-transient-status.ts"
@@ -63,6 +67,14 @@
     "./types": {
       "types": "./src/types.ts",
       "import": "./src/types.ts"
+    },
+    "./label-creation-form": {
+      "types": "./src/label-creation-form.ts",
+      "import": "./src/label-creation-form.ts"
+    },
+    "./variation-exclude-preview": {
+      "types": "./src/variation-exclude-preview.ts",
+      "import": "./src/variation-exclude-preview.ts"
     }
   },
   "scripts": {

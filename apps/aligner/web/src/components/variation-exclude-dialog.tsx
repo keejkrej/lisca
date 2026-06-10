@@ -1,36 +1,33 @@
 import { Button, cn, Input, Slider } from "@lisca/ui/components";
+import {
+  deriveVariationExcludePreview,
+  formatVariationScore,
+  nextVariationExcludeThreshold,
+} from "@lisca/ui-headless/variation-exclude-preview";
 import { DialogSurface, ModalScrim, StatTile } from "@lisca/ui/shell";
 import type { VariationExcludePreview } from "../state/use-align-state";
+
 type VariationExcludeDialogProps = {
   state: VariationExcludePreview | null;
   onApply: () => void;
   onCancel: () => void;
   onThresholdChange: (threshold: number) => void;
 };
-function formatScore(value: number): string {
-  return Number.isFinite(value) ? value.toFixed(3) : "0.000";
-}
-function clampThreshold(value: number, min: number, max: number): number {
-  if (!Number.isFinite(value)) return min;
-  return Math.min(max, Math.max(min, value));
-}
+
 export function VariationExcludeDialog({
   state,
   onApply,
   onCancel,
   onThresholdChange,
 }: VariationExcludeDialogProps) {
-  const preview = state?.preview ?? null;
-  const threshold = state?.threshold ?? 0;
-  const selectedCount = preview?.cellScores.filter((cell) => cell.score <= threshold).length ?? 0;
-  if (!preview) return null;
-  const min = preview.scoreMin;
-  const max = preview.scoreMax > preview.scoreMin ? preview.scoreMax : preview.scoreMin + 1;
-  const step = Math.max((max - min) / 500, 0.001);
-  const maxBinCount = Math.max(1, ...preview.histogramBins.map((bin) => bin.count));
+  const derived = deriveVariationExcludePreview(state);
+  if (!derived) return null;
+  const { preview, threshold, selectedCount, metrics } = derived;
   const setThreshold = (value: number) => {
-    onThresholdChange(clampThreshold(value, min, max));
+    const next = nextVariationExcludeThreshold(state, value);
+    if (next != null) onThresholdChange(next);
   };
+
   return (
     <ModalScrim
       onMouseDown={(event) => {
@@ -52,7 +49,7 @@ export function VariationExcludeDialog({
               label="Score range"
               value={
                 <span className="text-xs">
-                  {formatScore(preview.scoreMin)} - {formatScore(preview.scoreMax)}
+                  {formatVariationScore(preview.scoreMin)} - {formatVariationScore(preview.scoreMax)}
                 </span>
               }
             />
@@ -72,9 +69,9 @@ export function VariationExcludeDialog({
                     active ? "bg-primary" : "bg-muted-foreground/28",
                   )}
                   style={{
-                    height: `${Math.max(4, (bin.count / maxBinCount) * 100)}%`,
+                    height: `${Math.max(4, (bin.count / metrics.maxBinCount) * 100)}%`,
                   }}
-                  title={`${formatScore(bin.start)} - ${formatScore(bin.end)}: ${bin.count}`}
+                  title={`${formatVariationScore(bin.start)} - ${formatVariationScore(bin.end)}: ${bin.count}`}
                 />
               );
             })}
@@ -90,13 +87,13 @@ export function VariationExcludeDialog({
                   Threshold
                 </label>
                 <span className="text-muted-foreground text-xs tabular-nums">
-                  {formatScore(threshold)}
+                  {formatVariationScore(threshold)}
                 </span>
               </div>
               <Slider
-                max={max}
-                min={min}
-                step={step}
+                max={metrics.max}
+                min={metrics.min}
+                step={metrics.step}
                 value={threshold}
                 onValueChange={setThreshold}
               />
@@ -105,11 +102,11 @@ export function VariationExcludeDialog({
               nativeInput
               aria-label="Threshold value"
               id="variation-threshold"
-              max={max}
-              min={min}
-              step={step}
+              max={metrics.max}
+              min={metrics.min}
+              step={metrics.step}
               type="number"
-              value={Number.isFinite(threshold) ? threshold : min}
+              value={Number.isFinite(threshold) ? threshold : metrics.min}
               onChange={(event) => setThreshold(Number(event.target.value))}
             />
           </div>

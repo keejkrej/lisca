@@ -12,6 +12,11 @@ import type {
   StateUpdater,
 } from "../atoms/annotator-ui";
 import { toClientError } from "../infra/client-error";
+import {
+  frameLoadRequest,
+  shouldResetContrastBeforeNavigationLoad,
+  shouldRunContrastFrameLoad,
+} from "../session/frame-load-policy";
 import type { AnnotatorDataPort } from "../ports/types";
 import type { Atom, Result } from "@effect-atom/atom-react";
 import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
@@ -262,7 +267,9 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
       };
     }>({
       start: () => {
-        deps.annotatorUiActions.setContrast(setUi, null);
+        if (shouldResetContrastBeforeNavigationLoad()) {
+          deps.annotatorUiActions.setContrast(setUi, null);
+        }
         deps.annotatorUiActions.setFrameLoading(setUi, true);
         deps.annotatorUiActions.setAnnotationLoading(setUi, true);
         deps.annotatorUiActions.setFrameError(setUi, null);
@@ -276,7 +283,7 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
               deps.annotatorClient,
               workspacePath,
               request,
-              null,
+              frameLoadRequest({ kind: "navigation", contrast }),
             )
             .pipe(Effect.mapError(toClientError)),
           {
@@ -319,7 +326,7 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
     shellWorkspacePath,
   ]);
   useEffect(() => {
-    if (!contrast || !workspacePath || workspacePath !== shellWorkspacePath || !request) {
+    if (!shouldRunContrastFrameLoad(contrast) || !workspacePath || workspacePath !== shellWorkspacePath || !request) {
       return;
     }
     return loadCanvasResources({
@@ -330,7 +337,12 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
       load: (signal) =>
         runClientEffect(
           deps
-            .loadRoiFrameEffect(deps.annotatorClient, workspacePath, request, contrast)
+            .loadRoiFrameEffect(
+              deps.annotatorClient,
+              workspacePath,
+              request,
+              frameLoadRequest({ kind: "contrast", contrast }),
+            )
             .pipe(Effect.mapError(toClientError)),
           { signal },
         ),

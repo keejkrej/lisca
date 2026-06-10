@@ -10,7 +10,7 @@ import {
   parseLegacySamplePositions,
   sampleRowFromDisk,
   sampleRowToDisk,
-} from "../src/utils/sample-positions";
+} from "../src/studio/sample-positions";
 
 describe("sample positions", () => {
   test("formats single position and inclusive ranges", () => {
@@ -44,7 +44,6 @@ describe("sample positions", () => {
   test("adds positions only when serializing to disk", () => {
     expect(
       sampleRowToDisk({
-        id: "slide-i:0",
         channel: "0",
         name: "sample",
         positionStart: "2",

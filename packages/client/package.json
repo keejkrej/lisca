@@ -126,6 +126,22 @@
     "./studio-assay-json": {
       "types": "./src/studio/studio-assay-json.ts",
       "import": "./src/studio/studio-assay-json.ts"
+    },
+    "./studio/sample-positions": {
+      "types": "./src/studio/sample-positions.ts",
+      "import": "./src/studio/sample-positions.ts"
+    },
+    "./studio/assay-validation": {
+      "types": "./src/studio/assay-validation.ts",
+      "import": "./src/studio/assay-validation.ts"
+    },
+    "./studio/source": {
+      "types": "./src/studio/source.ts",
+      "import": "./src/studio/source.ts"
+    },
+    "./studio/wizard-state": {
+      "types": "./src/studio/wizard-state.ts",
+      "import": "./src/studio/wizard-state.ts"
     }
   },
   "scripts": {

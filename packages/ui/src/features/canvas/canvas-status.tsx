@@ -3,6 +3,10 @@
 import { CircleAlert, Loader2Icon } from "lucide-react";
 
 import type { CanvasStatusMessage, CanvasStatusTone } from "@lisca/ui-headless";
+import {
+  canvasToastPresentation,
+  shouldHideToastText,
+} from "@lisca/ui-headless/canvas-status";
 import { useCanvasTransientStatus } from "@lisca/ui-headless/canvas-transient-status";
 import { cn } from "../../lib/utils";
 
@@ -25,20 +29,12 @@ function toastToneClassName(tone: CanvasStatusTone | undefined) {
   return "border-border/80 text-popover-foreground";
 }
 
-function shouldShowLoadingIcon(message: CanvasStatusMessage): boolean {
-  if (message.tone != null) return false;
-  return /loading|scanning|preview/i.test(message.text);
-}
-
-function shouldHideToastText(message: CanvasStatusMessage): boolean {
-  return shouldShowLoadingIcon(message);
-}
-
 function toastIcon(message: CanvasStatusMessage) {
-  if (message.tone === "error") {
+  const presentation = canvasToastPresentation(message);
+  if (presentation === "error") {
     return <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />;
   }
-  if (shouldShowLoadingIcon(message)) {
+  if (presentation === "loading") {
     return <Loader2Icon aria-hidden="true" className="mt-0.5 size-4 shrink-0 animate-spin" />;
   }
   return null;
