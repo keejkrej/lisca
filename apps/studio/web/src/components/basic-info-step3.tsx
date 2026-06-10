@@ -76,7 +76,7 @@ export function BasicInfoStep3() {
               </thead>
               <tbody>
                 {activeSamples.map((row, index) => (
-                  <tr key={index}>
+                  <tr key={row.id}>
                     <td className="px-2 py-1.5">
                       <Input
                         aria-label={`Channel row ${index + 1}`}

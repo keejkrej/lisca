@@ -3,6 +3,8 @@ import type {
   StudioAssayJson,
   StudioBasicInfoFeatureId as BasicInfo2FeatureId,
   StudioBasicInfoSampleRow as BasicInfoSampleRow,
+  StudioBasicInfoSampleRowFields as BasicInfoSampleRowFields,
+  StudioBasicInfoStep3OnDisk as BasicInfoStep3OnDisk,
   StudioBasicInfoSlideId as BasicInfoSlideId,
   StudioBasicInfoStep1 as BasicInfoStep1,
   StudioBasicInfoStep2 as BasicInfoStep2,
@@ -61,7 +63,7 @@ export type StudioSampleRowAdapters = {
     name: string;
     maskChannel: string;
     signalChannel: string;
-  }) => BasicInfoSampleRow;
+  }) => BasicInfoSampleRowFields;
   sampleRowToDisk: (row: BasicInfoSampleRow) => {
     channel: string;
     name: string;
@@ -104,8 +106,9 @@ function optionalString(record: Record<string, unknown>, key: string): string {
   return typeof value === "string" ? value : "";
 }
 
-function emptySampleRow(): BasicInfoSampleRow {
+function emptySampleRow(id: string): BasicInfoSampleRow {
   return {
+    id,
     channel: "",
     name: "",
     positionStart: "",
@@ -283,36 +286,40 @@ export function createStudioUi(adapters: StudioSampleRowAdapters) {
   const initialInfo3: BasicInfoStep3 = {
     selectedSlideId: "slide-vi",
     samplesBySlide: {
-      "slide-i": [{ ...emptySampleRow(), channel: "0" }],
+      "slide-i": [{ ...emptySampleRow("slide-i:0"), channel: "0" }],
       "slide-vi": [
-        { ...emptySampleRow(), channel: "0" },
-        { ...emptySampleRow(), channel: "1" },
-        { ...emptySampleRow(), channel: "2" },
-        { ...emptySampleRow(), channel: "3" },
-        { ...emptySampleRow(), channel: "4" },
-        { ...emptySampleRow(), channel: "5" },
+        { ...emptySampleRow("slide-vi:0"), channel: "0" },
+        { ...emptySampleRow("slide-vi:1"), channel: "1" },
+        { ...emptySampleRow("slide-vi:2"), channel: "2" },
+        { ...emptySampleRow("slide-vi:3"), channel: "3" },
+        { ...emptySampleRow("slide-vi:4"), channel: "4" },
+        { ...emptySampleRow("slide-vi:5"), channel: "5" },
       ],
     },
   };
 
-  function cloneSampleRow(row: BasicInfoSampleRow & { positions?: string }): BasicInfoSampleRow {
-    return sampleRowFromDisk({
-      channel: row.channel,
-      name: row.name,
-      positions: row.positions,
-      positionStart: row.positionStart,
-      positionFinish: row.positionFinish,
-      maskChannel: row.maskChannel ?? "",
-      signalChannel: row.signalChannel ?? "",
-    });
+  function cloneSampleRow(
+    id: string,
+    row: Parameters<StudioSampleRowAdapters["sampleRowFromDisk"]>[0],
+  ): BasicInfoSampleRow {
+    return {
+      id,
+      ...sampleRowFromDisk(row),
+    };
   }
 
   function cloneSamplesBySlide(
-    samplesBySlide: Record<BasicInfoSlideId, BasicInfoSampleRow[]>,
+    samplesBySlide:
+      | Record<BasicInfoSlideId, BasicInfoSampleRow[]>
+      | BasicInfoStep3OnDisk["samplesBySlide"],
   ): Record<BasicInfoSlideId, BasicInfoSampleRow[]> {
     return {
-      "slide-i": samplesBySlide["slide-i"].map(cloneSampleRow),
-      "slide-vi": samplesBySlide["slide-vi"].map(cloneSampleRow),
+      "slide-i": samplesBySlide["slide-i"].map((row, index) =>
+        cloneSampleRow("id" in row && row.id ? row.id : `slide-i:${index}`, row),
+      ),
+      "slide-vi": samplesBySlide["slide-vi"].map((row, index) =>
+        cloneSampleRow("id" in row && row.id ? row.id : `slide-vi:${index}`, row),
+      ),
     };
   }
 

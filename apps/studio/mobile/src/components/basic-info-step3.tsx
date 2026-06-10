@@ -48,7 +48,7 @@ export function BasicInfoStep3() {
               ))}
             </View>
             {activeSamples.map((row, index) => (
-              <View key={index} style={styles.dataRow}>
+              <View key={row.id} style={styles.dataRow}>
                 <TextInput
                   keyboardType="numeric"
                   style={[inputStyle, styles.cellInput]}

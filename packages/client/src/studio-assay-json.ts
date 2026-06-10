@@ -9,6 +9,7 @@ import {
   type StudioBasicInfoFeatureId,
   type StudioBasicInfoStep1,
   type StudioBasicInfoStep2,
+  type StudioBasicInfoSampleRowFields,
   type StudioBasicInfoStep3,
   type StudioDataSourceKind,
 } from "@lisca/contracts";
@@ -117,7 +118,7 @@ export function parseStudioAssayJson(
     name: string;
     maskChannel: string;
     signalChannel: string;
-  }) => StudioBasicInfoStep3["samplesBySlide"]["slide-i"][number],
+  }) => StudioBasicInfoSampleRowFields,
   sampleRowToDisk: (row: StudioBasicInfoStep3["samplesBySlide"]["slide-i"][number]) => {
     channel: string;
     name: string;
@@ -138,8 +139,14 @@ export function parseStudioAssayJson(
   const info3: StudioBasicInfoStep3 = {
     selectedSlideId: root.info3.selectedSlideId,
     samplesBySlide: {
-      "slide-i": root.info3.samplesBySlide["slide-i"].map(sampleRowFromDisk),
-      "slide-vi": root.info3.samplesBySlide["slide-vi"].map(sampleRowFromDisk),
+      "slide-i": root.info3.samplesBySlide["slide-i"].map((row, index) => ({
+        id: `slide-i:${index}`,
+        ...sampleRowFromDisk(row),
+      })),
+      "slide-vi": root.info3.samplesBySlide["slide-vi"].map((row, index) => ({
+        id: `slide-vi:${index}`,
+        ...sampleRowFromDisk(row),
+      })),
     },
   };
 

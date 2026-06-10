@@ -45,6 +45,7 @@ describe("sample positions", () => {
   test("adds positions only when serializing to disk", () => {
     expect(
       sampleRowToDisk({
+        id: "slide-i:0",
         channel: "0",
         name: "sample",
         positionStart: "2",
@@ -95,6 +96,7 @@ describe("sample positions", () => {
       samplesBySlide: {
         "slide-i": [
           {
+            id: "slide-i:0",
             channel: "0",
             name: "a",
             positionStart: "99",
@@ -105,6 +107,7 @@ describe("sample positions", () => {
         ],
         "slide-vi": [
           {
+            id: "slide-vi:0",
             channel: "0",
             name: "a",
             positionStart: "1",
@@ -113,6 +116,7 @@ describe("sample positions", () => {
             signalChannel: "1",
           },
           {
+            id: "slide-vi:1",
             channel: "1",
             name: "b",
             positionStart: "3",

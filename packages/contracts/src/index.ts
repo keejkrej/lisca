@@ -116,6 +116,8 @@ export type StudioBasicInfoStep2 = {
 };
 
 export type StudioBasicInfoSampleRow = {
+  /** Stable UI row identity; not persisted to assay.json. */
+  id: string;
   channel: string;
   name: string;
   positionStart: string;
@@ -123,6 +125,9 @@ export type StudioBasicInfoSampleRow = {
   maskChannel: string;
   signalChannel: string;
 };
+
+/** Sample row fields loaded from assay.json before a UI row id is assigned. */
+export type StudioBasicInfoSampleRowFields = Omit<StudioBasicInfoSampleRow, "id">;
 
 export type StudioBasicInfoStep3 = {
   selectedSlideId: StudioBasicInfoSlideId;

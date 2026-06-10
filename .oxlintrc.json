@@ -59,16 +59,5 @@
     "react": {
       "version": "19.1.0"
     }
-  },
-  "overrides": [
-    {
-      "files": [
-        "**/basic-info-step3.tsx",
-        "packages/ui/src/components/ui/slider.tsx"
-      ],
-      "rules": {
-        "react/no-array-index-key": "off"
-      }
-    }
-  ]
+  }
 }
