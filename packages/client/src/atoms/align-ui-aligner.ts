@@ -36,9 +36,7 @@ export function createInitialAlignerUiState(): AlignUiState {
   return createInitialAlignUiState();
 }
 
-export function hydrateAlignerSession(
-  set: Parameters<typeof hydrateAlignUi>[0],
-): void {
+export function hydrateAlignerSession(set: Parameters<typeof hydrateAlignUi>[0]): void {
   hydrateAlignUi(set, alignerPersist);
 }
 

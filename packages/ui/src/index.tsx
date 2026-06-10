@@ -106,10 +106,7 @@ export { ShellWorkspaceProvider, useShellWorkspace, type ShellWorkspace } from "
 
 export { DialogSurface, type DialogSurfaceMaxWidth } from "./shell/dialog-surface";
 export { DockButton } from "./shell/dock-button";
-export {
-  DockToolGrid,
-  type DockToolGridProps,
-} from "./shell/dock-tool-grid";
+export { DockToolGrid, type DockToolGridProps } from "./shell/dock-tool-grid";
 export {
   dockToolLabel,
   useDockToolShortcuts,

@@ -20,7 +20,11 @@ function runtimeIconPath(options = {}) {
   const { resourcesPath } = options;
   if (resourcesPath) {
     const bundledName =
-      process.platform === "win32" ? "icon.ico" : process.platform === "darwin" ? "AppIcon.icns" : "icon.png";
+      process.platform === "win32"
+        ? "icon.ico"
+        : process.platform === "darwin"
+          ? "AppIcon.icns"
+          : "icon.png";
     const bundled = path.join(resourcesPath, "brand", bundledName);
     if (fs.existsSync(bundled)) {
       return bundled;

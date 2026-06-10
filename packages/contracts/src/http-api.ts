@@ -177,9 +177,7 @@ const annotateGroup = HttpApiGroup.make("annotate")
   )
   .add(
     HttpApiEndpoint.post("loadRoiFrameAnnotation", "/annotate/load-roi-frame-annotation")
-      .setPayload(
-        Schema.Struct({ workspacePath: Schema.String, request: RoiFrameRequestSchema }),
-      )
+      .setPayload(Schema.Struct({ workspacePath: Schema.String, request: RoiFrameRequestSchema }))
       .addSuccess(LoadedRoiFrameAnnotationSchema),
   )
   .add(

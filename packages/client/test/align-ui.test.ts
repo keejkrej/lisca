@@ -45,7 +45,11 @@ describe("align-ui actions", () => {
   });
 
   it("setWorkspacePath clears source when aligner behavior enabled", () => {
-    const withSource = { ...createInitialAlignUiState(), workspacePath: "/ws", source: { kind: "folder", path: "/data" } as const };
+    const withSource = {
+      ...createInitialAlignUiState(),
+      workspacePath: "/ws",
+      source: { kind: "folder", path: "/data" } as const,
+    };
     const next = runReducer(withSource, (set) => actions.setWorkspacePath(set, "/other"));
     expect(next.workspacePath).toBe("/other");
     expect(next.source).toBeNull();

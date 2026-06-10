@@ -134,7 +134,10 @@ export function patchAlignUi(
 
 export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiBehavior) {
   const base = {
-    setWorkspacePath(set: (update: StateUpdater<AlignUiState>) => void, workspacePath: string | null) {
+    setWorkspacePath(
+      set: (update: StateUpdater<AlignUiState>) => void,
+      workspacePath: string | null,
+    ) {
       patchAlignUi(set, persist, (state) => {
         if (state.workspacePath === workspacePath) return state;
         if (behavior.clearSourceOnWorkspaceChange) {
@@ -252,7 +255,9 @@ export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiB
         ...state,
         selection: { ...state.selection, ...patch },
         appliedAlignStateKey:
-          patch.pos != null && patch.pos !== state.selection.pos ? null : state.appliedAlignStateKey,
+          patch.pos != null && patch.pos !== state.selection.pos
+            ? null
+            : state.appliedAlignStateKey,
       }));
     },
     setFrame(set: (update: StateUpdater<AlignUiState>) => void, frame: FrameResult | null) {
@@ -262,7 +267,10 @@ export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiB
         loadedFrameSelection: frame ? state.loadedFrameSelection : null,
       }));
     },
-    setContrast(set: (update: StateUpdater<AlignUiState>) => void, contrast: ContrastWindow | null) {
+    setContrast(
+      set: (update: StateUpdater<AlignUiState>) => void,
+      contrast: ContrastWindow | null,
+    ) {
       patchAlignUi(set, persist, (state) => ({ ...state, contrast }));
     },
     setGrid(set: (update: StateUpdater<AlignUiState>) => void, next: StateUpdater<AlignGridState>) {
@@ -274,7 +282,10 @@ export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiB
     setToolMode(set: (update: StateUpdater<AlignUiState>) => void, toolMode: AlignGridToolMode) {
       patchAlignUi(set, persist, (state) => ({ ...state, toolMode }));
     },
-    setPatternZoomLocked(set: (update: StateUpdater<AlignUiState>) => void, patternZoomLocked: boolean) {
+    setPatternZoomLocked(
+      set: (update: StateUpdater<AlignUiState>) => void,
+      patternZoomLocked: boolean,
+    ) {
       patchAlignUi(set, persist, (state) => ({ ...state, patternZoomLocked }));
     },
     setExcludedCellsForCurrentPosition(
@@ -296,7 +307,10 @@ export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiB
     setSaving(set: (update: StateUpdater<AlignUiState>) => void, saving: boolean) {
       patchAlignUi(set, persist, (state) => ({ ...state, saving }));
     },
-    setCropProgress(set: (update: StateUpdater<AlignUiState>) => void, cropProgress: CropRoiProgress | null) {
+    setCropProgress(
+      set: (update: StateUpdater<AlignUiState>) => void,
+      cropProgress: CropRoiProgress | null,
+    ) {
       patchAlignUi(set, persist, (state) => ({ ...state, cropProgress }));
     },
     setError(set: (update: StateUpdater<AlignUiState>) => void, error: string | null) {
@@ -318,7 +332,11 @@ export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiB
           patchAlignUi(set, persist, (state) => {
             if (state.appliedAlignStateKey === stateKey) return state;
             const nextExcluded = saved
-              ? setExcludedAlignGridCellsForPosition(state.excludedCellsByPosition, pos, saved.excludedCells)
+              ? setExcludedAlignGridCellsForPosition(
+                  state.excludedCellsByPosition,
+                  pos,
+                  saved.excludedCells,
+                )
               : state.excludedCellsByPosition;
             return {
               ...state,
@@ -346,10 +364,10 @@ export function createAlignerPersist(sessionKey: string): AlignUiPersist {
       });
     },
     read() {
-      const session = readStorageJson<{ workspacePath: string | null; source: AlignerSource | null }>(
-        liscaSessionStorage(),
-        sessionKey,
-      );
+      const session = readStorageJson<{
+        workspacePath: string | null;
+        source: AlignerSource | null;
+      }>(liscaSessionStorage(), sessionKey);
       if (!session) return null;
       return { workspacePath: session.workspacePath, source: session.source };
     },
@@ -369,14 +387,20 @@ export function createStudioPersist(sessionKey: string): AlignUiPersist {
     },
     read() {
       const parsed = readStorageJson<{
-        state?: { workspacePath: string | null; source: AlignerSource | null; selection: FrameRequest };
+        state?: {
+          workspacePath: string | null;
+          source: AlignerSource | null;
+          selection: FrameRequest;
+        };
       }>(liscaSessionStorage(), sessionKey);
       if (!parsed) return null;
-      const session = parsed.state ?? (parsed as {
-        workspacePath: string | null;
-        source: AlignerSource | null;
-        selection: FrameRequest;
-      });
+      const session =
+        parsed.state ??
+        (parsed as {
+          workspacePath: string | null;
+          source: AlignerSource | null;
+          selection: FrameRequest;
+        });
       return {
         workspacePath: session.workspacePath,
         source: session.source,

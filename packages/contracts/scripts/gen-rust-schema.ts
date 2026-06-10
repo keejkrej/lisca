@@ -62,10 +62,9 @@ function rewriteRefs(value: unknown): unknown {
       // fields), rather than emitting `#[serde(deny_unknown_fields)]`.
       if (key === "additionalProperties" && child === false) continue;
       if (key === "$ref" && typeof child === "string") {
-        out.$ref = child.replace("#/components/schemas/", "#/definitions/").replace(
-          "#/$defs/",
-          "#/definitions/",
-        );
+        out.$ref = child
+          .replace("#/components/schemas/", "#/definitions/")
+          .replace("#/$defs/", "#/definitions/");
       } else {
         out[key] = rewriteRefs(child);
       }

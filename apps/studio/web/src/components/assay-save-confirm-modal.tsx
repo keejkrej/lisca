@@ -1,5 +1,5 @@
 import { Button } from "@lisca/ui/components";
-import { DialogSurface, ModalScrim } from "@lisca/ui/shell";;
+import { DialogSurface, ModalScrim } from "@lisca/ui/shell";
 
 export function AssaySaveConfirmModal({
   error,

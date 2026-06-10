@@ -151,14 +151,18 @@ export function createAnnotatorUiActions(persist: ReturnType<typeof createAnnota
     patchValue: Partial<AnnotatorUiState> | ((state: AnnotatorUiState) => AnnotatorUiState),
   ) {
     set((state) => {
-      const next = typeof patchValue === "function" ? patchValue(state) : { ...state, ...patchValue };
+      const next =
+        typeof patchValue === "function" ? patchValue(state) : { ...state, ...patchValue };
       persist.write(next);
       return next;
     });
   }
 
   return {
-    setWorkspacePath(set: (update: StateUpdater<AnnotatorUiState>) => void, workspacePath: string | null) {
+    setWorkspacePath(
+      set: (update: StateUpdater<AnnotatorUiState>) => void,
+      workspacePath: string | null,
+    ) {
       patch(set, (state) => {
         if (state.workspacePath === workspacePath) return state;
         return {
@@ -180,10 +184,16 @@ export function createAnnotatorUiActions(persist: ReturnType<typeof createAnnota
         };
       });
     },
-    setSelection(set: (update: StateUpdater<AnnotatorUiState>) => void, selectionPatch: Partial<RoiSelection>) {
+    setSelection(
+      set: (update: StateUpdater<AnnotatorUiState>) => void,
+      selectionPatch: Partial<RoiSelection>,
+    ) {
       patch(set, (state) => ({ ...state, selection: { ...state.selection, ...selectionPatch } }));
     },
-    setActiveLabelId(set: (update: StateUpdater<AnnotatorUiState>) => void, activeLabelId: string | null) {
+    setActiveLabelId(
+      set: (update: StateUpdater<AnnotatorUiState>) => void,
+      activeLabelId: string | null,
+    ) {
       patch(set, (state) => ({ ...state, activeLabelId }));
     },
     syncActiveLabelFromLabels(
@@ -195,7 +205,10 @@ export function createAnnotatorUiActions(persist: ReturnType<typeof createAnnota
         return { ...state, activeLabelId: labelIds[0] ?? null };
       });
     },
-    applySavedLabels(set: (update: StateUpdater<AnnotatorUiState>) => void, labels: readonly { id: string }[]) {
+    applySavedLabels(
+      set: (update: StateUpdater<AnnotatorUiState>) => void,
+      labels: readonly { id: string }[],
+    ) {
       patch(set, (state) => ({
         ...state,
         activeLabelId: labels[0]?.id ?? null,
@@ -212,13 +225,19 @@ export function createAnnotatorUiActions(persist: ReturnType<typeof createAnnota
     setBrushSize(set: (update: StateUpdater<AnnotatorUiState>) => void, brushSize: number) {
       patch(set, (state) => ({ ...state, brushSize }));
     },
-    setOverlayOpacity(set: (update: StateUpdater<AnnotatorUiState>) => void, overlayOpacity: number) {
+    setOverlayOpacity(
+      set: (update: StateUpdater<AnnotatorUiState>) => void,
+      overlayOpacity: number,
+    ) {
       patch(set, (state) => ({ ...state, overlayOpacity }));
     },
     setFrame(set: (update: StateUpdater<AnnotatorUiState>) => void, frame: FrameResult | null) {
       patch(set, (state) => ({ ...state, frame }));
     },
-    setContrast(set: (update: StateUpdater<AnnotatorUiState>) => void, contrast: ContrastWindow | null) {
+    setContrast(
+      set: (update: StateUpdater<AnnotatorUiState>) => void,
+      contrast: ContrastWindow | null,
+    ) {
       patch(set, (state) => ({
         ...state,
         contrast,
@@ -240,7 +259,10 @@ export function createAnnotatorUiActions(persist: ReturnType<typeof createAnnota
     setFrameLoading(set: (update: StateUpdater<AnnotatorUiState>) => void, frameLoading: boolean) {
       patch(set, (state) => ({ ...state, frameLoading }));
     },
-    setAnnotationLoading(set: (update: StateUpdater<AnnotatorUiState>) => void, annotationLoading: boolean) {
+    setAnnotationLoading(
+      set: (update: StateUpdater<AnnotatorUiState>) => void,
+      annotationLoading: boolean,
+    ) {
       patch(set, (state) => ({ ...state, annotationLoading }));
     },
     setSaving(set: (update: StateUpdater<AnnotatorUiState>) => void, saving: boolean) {
@@ -249,22 +271,34 @@ export function createAnnotatorUiActions(persist: ReturnType<typeof createAnnota
     setScanError(set: (update: StateUpdater<AnnotatorUiState>) => void, scanError: string | null) {
       patch(set, (state) => ({ ...state, scanError }));
     },
-    setFrameError(set: (update: StateUpdater<AnnotatorUiState>) => void, frameError: string | null) {
+    setFrameError(
+      set: (update: StateUpdater<AnnotatorUiState>) => void,
+      frameError: string | null,
+    ) {
       patch(set, (state) => ({ ...state, frameError }));
     },
-    setAnnotationError(set: (update: StateUpdater<AnnotatorUiState>) => void, annotationError: string | null) {
+    setAnnotationError(
+      set: (update: StateUpdater<AnnotatorUiState>) => void,
+      annotationError: string | null,
+    ) {
       patch(set, (state) => ({ ...state, annotationError }));
     },
     setSaveError(set: (update: StateUpdater<AnnotatorUiState>) => void, saveError: string | null) {
       patch(set, (state) => ({ ...state, saveError }));
     },
-    setLabelError(set: (update: StateUpdater<AnnotatorUiState>) => void, labelError: string | null) {
+    setLabelError(
+      set: (update: StateUpdater<AnnotatorUiState>) => void,
+      labelError: string | null,
+    ) {
       patch(set, (state) => ({ ...state, labelError }));
     },
     setStatus(set: (update: StateUpdater<AnnotatorUiState>) => void, status: string | null) {
       patch(set, (state) => ({ ...state, status }));
     },
-    setLabelDialogOpen(set: (update: StateUpdater<AnnotatorUiState>) => void, labelDialogOpen: boolean) {
+    setLabelDialogOpen(
+      set: (update: StateUpdater<AnnotatorUiState>) => void,
+      labelDialogOpen: boolean,
+    ) {
       patch(set, (state) => ({ ...state, labelDialogOpen }));
     },
   };

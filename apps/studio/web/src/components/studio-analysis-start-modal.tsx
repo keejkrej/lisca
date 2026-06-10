@@ -1,5 +1,5 @@
 import { Button } from "@lisca/ui/components";
-import { DialogSurface, ModalScrim } from "@lisca/ui/shell";;
+import { DialogSurface, ModalScrim } from "@lisca/ui/shell";
 
 import { useStudioAnnotatePage } from "../state/studio-annotate-page-context";
 import { useStudioStore } from "../state/studio-store";

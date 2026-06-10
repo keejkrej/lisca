@@ -3,16 +3,23 @@
 import type { Toggle as TogglePrimitive } from "@base-ui/react/toggle";
 import { ToggleGroup as ToggleGroupPrimitive } from "@base-ui/react/toggle-group";
 import type { VariantProps } from "class-variance-authority";
-import * as React from "react";
+import {
+  createContext,
+  useContext,
+  type ComponentProps,
+  type Context,
+  type ReactElement,
+} from "react";
 import { cn } from "../../lib/utils";
 import { Separator } from "./separator";
 import { Toggle as ToggleComponent, type toggleVariants } from "./toggle";
 
-export const ToggleGroupContext: React.Context<VariantProps<typeof toggleVariants>> =
-  React.createContext<VariantProps<typeof toggleVariants>>({
-    size: "default",
-    variant: "default",
-  });
+export const ToggleGroupContext: Context<VariantProps<typeof toggleVariants>> = createContext<
+  VariantProps<typeof toggleVariants>
+>({
+  size: "default",
+  variant: "default",
+});
 
 export function ToggleGroup({
   className,
@@ -21,7 +28,7 @@ export function ToggleGroup({
   orientation = "horizontal",
   children,
   ...props
-}: ToggleGroupPrimitive.Props & VariantProps<typeof toggleVariants>): React.ReactElement {
+}: ToggleGroupPrimitive.Props & VariantProps<typeof toggleVariants>): ReactElement {
   return (
     <ToggleGroupPrimitive
       className={cn(
@@ -55,8 +62,8 @@ export function ToggleGroupItem({
   variant,
   size,
   ...props
-}: TogglePrimitive.Props & VariantProps<typeof toggleVariants>): React.ReactElement {
-  const context = React.useContext(ToggleGroupContext);
+}: TogglePrimitive.Props & VariantProps<typeof toggleVariants>): ReactElement {
+  const context = useContext(ToggleGroupContext);
 
   const resolvedVariant = context.variant || variant;
   const resolvedSize = context.size || size;
@@ -81,7 +88,7 @@ export function ToggleGroupSeparator({
   ...props
 }: {
   className?: string;
-} & React.ComponentProps<typeof Separator>): React.ReactElement {
+} & ComponentProps<typeof Separator>): ReactElement {
   return (
     <Separator
       className={cn(

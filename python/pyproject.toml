@@ -16,8 +16,6 @@ dependencies = []
 dev = ["pytest>=8.3.5,<9"]
 
 [tool.uv]
-constraint-dependencies = [
-  "pytest>=8.3.5,<9",
-]
+constraint-dependencies = ["pytest>=8.3.5,<9"]
 exclude-newer = "7 days"
 default-groups = ["dev"]

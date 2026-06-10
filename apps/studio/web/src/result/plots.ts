@@ -439,9 +439,7 @@ export function parsePanelGroups(
       const nAlive = parseNumeric(row[nAliveIndex] ?? "");
       if (t === null || nAlive === null) continue;
       const slideChannel =
-        slideChannelForKillIndex >= 0
-          ? parseNumeric(row[slideChannelForKillIndex] ?? "")
-          : 0;
+        slideChannelForKillIndex >= 0 ? parseNumeric(row[slideChannelForKillIndex] ?? "") : 0;
       if (slideChannel === null || !Number.isInteger(slideChannel)) continue;
       const bucket = grouped.get(slideChannel) ?? [];
       bucket.push({ x: t * timeseriesXScale, y: nAlive });
@@ -452,11 +450,7 @@ export function parsePanelGroups(
       ([left], [right]) => left - right,
     )) {
       if (points.length === 0) continue;
-      const label = formatSlideChannelTickLabel(
-        slideChannel,
-        points.length,
-        slideChannelLabels,
-      );
+      const label = formatSlideChannelTickLabel(slideChannel, points.length, slideChannelLabels);
       resultPanels.push({
         kind: "generic",
         title: `Kill curve (${label})`,

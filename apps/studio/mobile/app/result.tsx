@@ -20,9 +20,8 @@ import {
   type SlideChannelLabels,
 } from "@lisca/studio-result";
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, Text, useWindowDimensions, View } from "react-native";
-
 import { studioClient } from "../src/api/studio-port";
 import {
   analysisResultsAtom,
@@ -39,7 +38,6 @@ import {
 } from "../src/result/native-charts";
 import { useStudioAnnotateState } from "../src/state/use-studio-annotate-state";
 import { useStudioStore } from "../src/state/studio-store";
-
 export default function ResultRoute() {
   const { width } = useWindowDimensions();
   const { colors } = useShellTheme();
@@ -55,9 +53,8 @@ export default function ResultRoute() {
   const [isSectionLoading, setIsSectionLoading] = useState(false);
   const [panelError, setPanelError] = useState<string | null>(null);
   const [sectionPanels, setSectionPanels] = useState<ResultPanel[]>([]);
-
   const timeseriesXScale = intervalFromAssaySettings(info2.timelapseAmount, info2.timelapseUnit);
-  const slideChannelLabels = useMemo<SlideChannelLabels>(() => {
+  const slideChannelLabels = (() => {
     const labels: SlideChannelLabels = {};
     for (const row of info3.samplesBySlide[info3.selectedSlideId]) {
       const channel = Number(row.channel);
@@ -66,38 +63,23 @@ export default function ResultRoute() {
       }
     }
     return labels;
-  }, [info3]);
-  const slideChannelLabelsKey = useMemo(
-    () => slideChannelLabelsCacheKey(slideChannelLabels),
-    [slideChannelLabels],
-  );
-
-  const sectionFiles = useMemo(
-    () => filterResultFilesBySection(analysisResultFiles, activeSection),
-    [activeSection, analysisResultFiles],
-  );
-  const hasTimeseriesFiles = useMemo(
-    () => filterResultFilesBySection(analysisResultFiles, "timeseries").length > 0,
-    [analysisResultFiles],
-  );
-  const hasParameterFiles = useMemo(
-    () => filterResultFilesBySection(analysisResultFiles, "parameters").length > 0,
-    [analysisResultFiles],
-  );
+  })();
+  const slideChannelLabelsKey = slideChannelLabelsCacheKey(slideChannelLabels);
+  const sectionFiles = filterResultFilesBySection(analysisResultFiles, activeSection);
+  const hasTimeseriesFiles =
+    filterResultFilesBySection(analysisResultFiles, "timeseries").length > 0;
+  const hasParameterFiles =
+    filterResultFilesBySection(analysisResultFiles, "parameters").length > 0;
   const hasAnyResultFiles = analysisResultFiles.length > 0;
   const isBusy = isSectionLoading || exporting;
   const chartWidth = width - STUDIO_NAV_WIDTH * 2 - 48;
-
-  const runLoadPanels = useAtomSet(loadAnalysisPanelsAtom, { mode: "promise" });
-
-  const switchSection = useCallback(
-    (section: ResultPlotSection) => {
-      if (section === activeSection || isBusy) return;
-      setActiveSection(section);
-    },
-    [activeSection, isBusy],
-  );
-
+  const runLoadPanels = useAtomSet(loadAnalysisPanelsAtom, {
+    mode: "promise",
+  });
+  const switchSection = (section: ResultPlotSection) => {
+    if (section === activeSection || isBusy) return;
+    setActiveSection(section);
+  };
   useEffect(() => {
     if (analysisResultFiles.length === 0) return;
     setActiveSection((current) => {
@@ -106,18 +88,15 @@ export default function ResultRoute() {
       return defaultResultPlotSection(analysisResultFiles);
     });
   }, [analysisResultFiles]);
-
   useEffect(() => {
     if (sectionFiles.length === 0) {
       setSectionPanels([]);
       setIsSectionLoading(false);
       return;
     }
-
     let cancelled = false;
     setIsSectionLoading(true);
     setPanelError(null);
-
     void (async () => {
       try {
         const panelsByFile = await Promise.all(
@@ -145,7 +124,6 @@ export default function ResultRoute() {
         if (!cancelled) setIsSectionLoading(false);
       }
     })();
-
     return () => {
       cancelled = true;
     };
@@ -158,33 +136,27 @@ export default function ResultRoute() {
     timeseriesXScale,
     workspacePath,
   ]);
-
   const defaultInstruction =
     activeSection === "timeseries"
       ? "All timeseries plots are shown below."
       : "Parameter plots: mRNA lifetime, AUC, transfection efficiency, and translation onset.";
   const dockInstruction = saveMessage ?? panelError ?? defaultInstruction;
-
-  const sectionToolActions = useMemo(
-    () => [
-      {
-        id: "timeseries",
-        label: "Timeseries",
-        disabled: !hasTimeseriesFiles || isBusy,
-        active: activeSection === "timeseries",
-        onSelect: () => switchSection("timeseries"),
-      },
-      {
-        id: "parameters",
-        label: "Parameters",
-        disabled: !hasParameterFiles || isBusy,
-        active: activeSection === "parameters",
-        onSelect: () => switchSection("parameters"),
-      },
-    ],
-    [activeSection, hasParameterFiles, hasTimeseriesFiles, isBusy, switchSection],
-  );
-
+  const sectionToolActions = [
+    {
+      id: "timeseries",
+      label: "Timeseries",
+      disabled: !hasTimeseriesFiles || isBusy,
+      active: activeSection === "timeseries",
+      onSelect: () => switchSection("timeseries"),
+    },
+    {
+      id: "parameters",
+      label: "Parameters",
+      disabled: !hasParameterFiles || isBusy,
+      active: activeSection === "parameters",
+      onSelect: () => switchSection("parameters"),
+    },
+  ];
   const exportPdf = async () => {
     if (!workspacePath || exporting || isSectionLoading || !hasAnyResultFiles) return;
     setExporting(true);
@@ -206,7 +178,6 @@ export default function ResultRoute() {
       setExporting(false);
     }
   };
-
   return (
     <AppShell>
       <AppShell.Body>
@@ -218,7 +189,14 @@ export default function ResultRoute() {
             <ViewportCard>
               <View style={styles.viewportContent}>
                 {isSectionLoading ? (
-                  <View style={[styles.loadingOverlay, { backgroundColor: `${colors.background}B3` }]}>
+                  <View
+                    style={[
+                      styles.loadingOverlay,
+                      {
+                        backgroundColor: `${colors.background}B3`,
+                      },
+                    ]}
+                  >
                     <Spinner size="small" />
                   </View>
                 ) : null}
@@ -226,10 +204,20 @@ export default function ResultRoute() {
                   <ResultPanelsGridView panels={sectionPanels} width={chartWidth} />
                 ) : (
                   <View style={styles.emptyState}>
-                    <Text style={{ color: colors.mutedForeground, fontSize: 14 }}>
+                    <Text
+                      style={{
+                        color: colors.mutedForeground,
+                        fontSize: 14,
+                      }}
+                    >
                       Status: {progress?.status ?? "idle"}
                     </Text>
-                    <Text style={{ color: colors.mutedForeground, fontSize: 14 }}>
+                    <Text
+                      style={{
+                        color: colors.mutedForeground,
+                        fontSize: 14,
+                      }}
+                    >
                       CSV files: {analysisResultFiles.length}
                     </Text>
                   </View>
@@ -256,7 +244,6 @@ export default function ResultRoute() {
     </AppShell>
   );
 }
-
 const styles = StyleSheet.create({
   viewportContent: {
     flex: 1,

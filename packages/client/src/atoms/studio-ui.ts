@@ -126,7 +126,8 @@ export function createStudioUi(adapters: StudioSampleRowAdapters) {
 
   function requireString(record: Record<string, unknown>, key: string, label = key): string {
     const value = record[key];
-    if (typeof value !== "string") throw new Error(`Invalid assay.json: ${label} must be a string.`);
+    if (typeof value !== "string")
+      throw new Error(`Invalid assay.json: ${label} must be a string.`);
     return value;
   }
 
@@ -143,7 +144,9 @@ export function createStudioUi(adapters: StudioSampleRowAdapters) {
   }
 
   function isBasicInfoFeatureId(value: unknown): value is BasicInfo2FeatureId {
-    return typeof value === "string" && BASIC_INFO_FEATURE_IDS.includes(value as BasicInfo2FeatureId);
+    return (
+      typeof value === "string" && BASIC_INFO_FEATURE_IDS.includes(value as BasicInfo2FeatureId)
+    );
   }
 
   function isBasicInfoFeatureList(value: unknown): value is BasicInfo2FeatureId[] {
@@ -221,10 +224,7 @@ export function createStudioUi(adapters: StudioSampleRowAdapters) {
   };
 
   function serializeBasicInfoSnapshot(
-    state: Pick<
-      StudioWizardData,
-      "assayId" | "dataSourceKind" | "info1" | "info2" | "info3"
-    >,
+    state: Pick<StudioWizardData, "assayId" | "dataSourceKind" | "info1" | "info2" | "info3">,
   ): string {
     const assayId = state.assayId ?? DEFAULT_ASSAY_ID;
     return JSON.stringify(
@@ -401,7 +401,10 @@ export function createStudioUi(adapters: StudioSampleRowAdapters) {
     ) {
       patchStudioWizard(set, { dataSourceKind });
     },
-    loadAssayJson(set: (update: StateUpdater<StudioWizardData>) => void, assayJson: StudioAssayJson) {
+    loadAssayJson(
+      set: (update: StateUpdater<StudioWizardData>) => void,
+      assayJson: StudioAssayJson,
+    ) {
       const nextAssayId = enabledAssayId(assayJson.assayId) ?? DEFAULT_ASSAY_ID;
       const nextInfo1 = { ...assayJson.info1 };
       const nextInfo2 = {
@@ -425,7 +428,8 @@ export function createStudioUi(adapters: StudioSampleRowAdapters) {
         basicInfoSavedSnapshot: JSON.stringify(
           buildStudioAssayJson({
             assayId: nextAssayId,
-            dataSourceKind: assayJson.dataSourceKind ?? inferDataSourceKind(assayJson.info1.dataPath),
+            dataSourceKind:
+              assayJson.dataSourceKind ?? inferDataSourceKind(assayJson.info1.dataPath),
             info1: nextInfo1,
             info2: nextInfo2,
             info3: nextInfo3,
@@ -447,10 +451,16 @@ export function createStudioUi(adapters: StudioSampleRowAdapters) {
         },
       }));
     },
-    setInfo1(set: (update: StateUpdater<StudioWizardData>) => void, patch: Partial<BasicInfoStep1>) {
+    setInfo1(
+      set: (update: StateUpdater<StudioWizardData>) => void,
+      patch: Partial<BasicInfoStep1>,
+    ) {
       patchStudioWizard(set, (current) => ({ ...current, info1: { ...current.info1, ...patch } }));
     },
-    setInfo2(set: (update: StateUpdater<StudioWizardData>) => void, patch: Partial<BasicInfoStep2>) {
+    setInfo2(
+      set: (update: StateUpdater<StudioWizardData>) => void,
+      patch: Partial<BasicInfoStep2>,
+    ) {
       patchStudioWizard(set, (current) => ({
         ...current,
         info2: isGeneExpressionAssay(current.assayId)
@@ -469,7 +479,10 @@ export function createStudioUi(adapters: StudioSampleRowAdapters) {
             },
       }));
     },
-    setInfo3(set: (update: StateUpdater<StudioWizardData>) => void, patch: Partial<BasicInfoStep3>) {
+    setInfo3(
+      set: (update: StateUpdater<StudioWizardData>) => void,
+      patch: Partial<BasicInfoStep3>,
+    ) {
       patchStudioWizard(set, (current) => ({ ...current, info3: { ...current.info3, ...patch } }));
     },
     updateInfo3Sample(

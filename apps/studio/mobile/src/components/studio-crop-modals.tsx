@@ -16,7 +16,12 @@ export function StudioCropStartModal({ state }: { state: StudioAlignState }) {
           {`${confirm.positions.length} positions have saved alignment output. Start cropping ROI output now?`}
         </Text>
         <View style={styles.actions}>
-          <Button label="Cancel" size="sm" variant="outline" onPress={state.cancelCropStartConfirm} />
+          <Button
+            label="Cancel"
+            size="sm"
+            variant="outline"
+            onPress={state.cancelCropStartConfirm}
+          />
           <Button label="Start" size="sm" onPress={state.startConfirmedCrop} />
         </View>
       </DialogSurface>
@@ -43,7 +48,12 @@ export function StudioCropConfirmModal({ state }: { state: StudioAlignState }) {
         </Text>
         <View style={styles.actions}>
           <Button label="Cancel" size="sm" variant="outline" onPress={state.cancelCropConfirm} />
-          <Button label="Skip Existing" size="sm" variant="outline" onPress={state.skipExistingCrop} />
+          <Button
+            label="Skip Existing"
+            size="sm"
+            variant="outline"
+            onPress={state.skipExistingCrop}
+          />
           <Button label="Overwrite" size="sm" onPress={state.confirmCropOverwrite} />
         </View>
       </DialogSurface>

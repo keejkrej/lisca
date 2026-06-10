@@ -15,7 +15,9 @@ import { createSourceQueryAtoms } from "../source-queries.ts";
 
 export type StudioQueryAtoms = {
   scanSourceAtom: (sourceKey: string) => Atom.Atom<Result.Result<WorkspaceScan, ClientError>>;
-  roiWorkspaceScanAtom: (workspacePath: string) => Atom.Atom<Result.Result<RoiWorkspaceScan, ClientError>>;
+  roiWorkspaceScanAtom: (
+    workspacePath: string,
+  ) => Atom.Atom<Result.Result<RoiWorkspaceScan, ClientError>>;
   autoExcludePreviewAtom: Atom.AtomResultFn<
     AutoExcludePreviewRequest,
     AutoExcludePreviewResponse,
@@ -37,10 +39,7 @@ export function createStudioQueryAtoms(runtime: AppRuntime<StudioPortService>): 
           return yield* port.scanRoiWorkspace(workspacePath);
         }),
       )
-      .pipe(
-        Atom.keepAlive,
-        Atom.withReactivity([ReactivityKeys.roiWorkspace(workspacePath)]),
-      ),
+      .pipe(Atom.keepAlive, Atom.withReactivity([ReactivityKeys.roiWorkspace(workspacePath)])),
   );
 
   return {

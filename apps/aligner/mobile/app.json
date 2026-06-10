@@ -7,6 +7,9 @@
     "scheme": "lisca-aligner",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "experiments": {
+      "reactCompiler": true
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.lisca.aligner.mobile"

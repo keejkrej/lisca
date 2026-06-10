@@ -2,14 +2,14 @@
   "name": "@lisca/web-app",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
   "files": [
     "src",
     "vite.ts",
     "app.css"
   ],
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
   "exports": {
     ".": {
       "types": "./src/index.ts",
@@ -33,6 +33,7 @@
     "@tanstack/react-router": "catalog:",
     "@tanstack/router-plugin": "catalog:",
     "@vitejs/plugin-react": "catalog:",
+    "babel-plugin-react-compiler": "catalog:",
     "tailwindcss": "catalog:",
     "vite": "catalog:"
   },

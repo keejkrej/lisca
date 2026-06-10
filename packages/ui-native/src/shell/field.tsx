@@ -14,9 +14,7 @@ export function Field(props: { label: string; children: ReactNode; style?: objec
 
 export function FieldLabel(props: { children: ReactNode }) {
   const { colors } = useShellTheme();
-  return (
-    <Text style={[styles.label, { color: colors.mutedForeground }]}>{props.children}</Text>
-  );
+  return <Text style={[styles.label, { color: colors.mutedForeground }]}>{props.children}</Text>;
 }
 
 const styles = StyleSheet.create({

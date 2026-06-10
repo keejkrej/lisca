@@ -120,7 +120,9 @@ function filterFor(task, product, target) {
   }
 
   if (!APP_TARGETS.has(t)) {
-    console.error(`Invalid target "${t}". Use: desktop | web | demo | server | mobile | mobile-web`);
+    console.error(
+      `Invalid target "${t}". Use: desktop | web | demo | server | mobile | mobile-web`,
+    );
     process.exit(1);
   }
 
@@ -190,7 +192,7 @@ function main() {
   }
 
   if (isLanding(product) && task === "dist") {
-    console.error('dist does not apply to landing. Use: bun lisca build landing [web|site]');
+    console.error("dist does not apply to landing. Use: bun lisca build landing [web|site]");
     process.exit(1);
   }
 

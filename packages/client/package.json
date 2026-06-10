@@ -136,12 +136,12 @@
     "@lisca/utils": "workspace:*",
     "effect": "catalog:"
   },
-  "peerDependencies": {
-    "react": "^19.0.0"
-  },
   "devDependencies": {
     "@types/react": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
   }
 }

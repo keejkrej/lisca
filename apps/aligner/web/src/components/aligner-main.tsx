@@ -5,12 +5,9 @@ import {
   useCanvasTransientStatus,
 } from "@lisca/ui/features";
 import { ViewportCard } from "@lisca/ui/shell";
-import { useMemo } from "react";
-
 import { useAlignCanvas, useAlignCrop } from "../state/align-page-selectors";
 import { CropConfirmModal } from "./crop-confirm-modal";
 import { CropProgressModal } from "./crop-progress-modal";
-
 export function AlignerMain() {
   const canvas = useAlignCanvas();
   const crop = useAlignCrop();
@@ -28,12 +25,22 @@ export function AlignerMain() {
     : canvas.scanLoading
       ? "Scanning source"
       : visibleStatus;
-  const toasts = useMemo(() => {
-    if (canvas.error) return [{ text: canvas.error, tone: "error" as const }];
-    if (activeToastStatus) return [{ text: activeToastStatus }];
+  const toasts = (() => {
+    if (canvas.error)
+      return [
+        {
+          text: canvas.error,
+          tone: "error" as const,
+        },
+      ];
+    if (activeToastStatus)
+      return [
+        {
+          text: activeToastStatus,
+        },
+      ];
     return [];
-  }, [activeToastStatus, canvas.error]);
-
+  })();
   const emptyText = !canvas.workspacePath
     ? "Pick a workspace."
     : !canvas.source
@@ -41,7 +48,6 @@ export function AlignerMain() {
       : canvas.scanLoading
         ? "Scanning source…"
         : "No frame loaded.";
-
   return (
     <>
       <ViewportCard>

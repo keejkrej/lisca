@@ -168,11 +168,11 @@ function hasExplicitViteEndpoint(options: {
 }): boolean {
   return Boolean(
     options.viteWsUrl?.trim() ||
-      options.viteHttpUrl?.trim() ||
-      options.viteWsHost?.trim() ||
-      (options.viteWsPort !== undefined &&
-        options.viteWsPort !== null &&
-        String(options.viteWsPort).trim() !== ""),
+    options.viteHttpUrl?.trim() ||
+    options.viteWsHost?.trim() ||
+    (options.viteWsPort !== undefined &&
+      options.viteWsPort !== null &&
+      String(options.viteWsPort).trim() !== ""),
   );
 }
 

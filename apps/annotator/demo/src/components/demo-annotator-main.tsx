@@ -1,23 +1,27 @@
 import { ViewportCard } from "@lisca/ui/shell";
-import { AnnotationCanvas, useCanvasTransientStatus } from "@lisca/ui/features";;
+import { AnnotationCanvas, useCanvasTransientStatus } from "@lisca/ui/features";
 import { toDisplayFrame } from "@lisca/browser-frame";
-import { useMemo } from "react";
-
 import type { DemoAnnotatorState } from "../state/use-demo-annotator-state";
-
 export function DemoAnnotatorMain({ state }: { state: DemoAnnotatorState }) {
-  const displayFrame = useMemo(
-    () => (state.frame ? toDisplayFrame(state.frame, state.contrast) : null),
-    [state.contrast, state.frame],
-  );
+  const displayFrame = state.frame ? toDisplayFrame(state.frame, state.contrast) : null;
   const visibleStatus = useCanvasTransientStatus(state.status);
   const activeToastStatus = state.frameLoading ? "Loading image" : visibleStatus;
-  const toasts = useMemo(() => {
-    if (state.error) return [{ text: state.error, tone: "error" as const }];
-    if (activeToastStatus) return [{ text: activeToastStatus }];
+  const toasts = (() => {
+    if (state.error)
+      return [
+        {
+          text: state.error,
+          tone: "error" as const,
+        },
+      ];
+    if (activeToastStatus)
+      return [
+        {
+          text: activeToastStatus,
+        },
+      ];
     return [];
-  }, [activeToastStatus, state.error]);
-
+  })();
   return (
     <ViewportCard>
       <AnnotationCanvas

@@ -15,18 +15,18 @@ Do not scatter layout tint tokens (`railChrome`, `panel`, `stat`, etc.); shell s
 
 Compose apps from shell primitives, not exported class strings:
 
-| Component | Role |
-|-----------|------|
-| `AppShell` | Root layout; all regions use `bg-background` |
-| `Panel` | Bordered in-app frame (dock, nav rail, sidebar cards) |
-| `ViewportCard` | Padded main column; inner frame matches `Panel` |
-| `Section` | Collapsible in-app section inside a `Panel` (sidebars, etc.) |
-| `DockSection` | Dock panel section — stretch chrome + centered content; optional `layout` wraps children in `DockGrid` |
-| `DockStrip` | Outer dock band — `panels={2}` (aligner, annotator) or `panels={3}` (studio) |
-| `DockGrid` | Inner grid — `layout="2x1" \| "2x2" \| "2x3"` |
-| `StudioDock` | Optional sugar for studio instruction / tool / action titles (same `DockSection` rules) |
-| `DialogSurface` / `ModalScrim` | Modal chrome |
-| `StatTile` | Count/metric tile: `border border-border bg-background` |
+| Component                      | Role                                                                                                   |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| `AppShell`                     | Root layout; all regions use `bg-background`                                                           |
+| `Panel`                        | Bordered in-app frame (dock, nav rail, sidebar cards)                                                  |
+| `ViewportCard`                 | Padded main column; inner frame matches `Panel`                                                        |
+| `Section`                      | Collapsible in-app section inside a `Panel` (sidebars, etc.)                                           |
+| `DockSection`                  | Dock panel section — stretch chrome + centered content; optional `layout` wraps children in `DockGrid` |
+| `DockStrip`                    | Outer dock band — `panels={2}` (aligner, annotator) or `panels={3}` (studio)                           |
+| `DockGrid`                     | Inner grid — `layout="2x1" \| "2x2" \| "2x3"`                                                          |
+| `StudioDock`                   | Optional sugar for studio instruction / tool / action titles (same `DockSection` rules)                |
+| `DialogSurface` / `ModalScrim` | Modal chrome                                                                                           |
+| `StatTile`                     | Count/metric tile: `border border-border bg-background`                                                |
 
 Frame styling lives inside `panel.tsx` (`panelFrameClass`); not exported from the package.
 

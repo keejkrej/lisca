@@ -1,23 +1,15 @@
 import { AnnotationCanvas } from "@lisca/ui/features";
 import { ViewportCard } from "@lisca/ui/shell";
-import { useCallback } from "react";
-
 import { useAnnotatePage } from "../state/annotate-page-context";
-
 export function AnnotatorMain() {
   const { state } = useAnnotatePage();
   const classificationLabelId = state.annotation.current.classificationLabelId;
-
-  const onMaskCommit = useCallback(
-    (mask: Uint8Array) => {
-      state.annotation.commit({
-        classificationLabelId,
-        mask,
-      });
-    },
-    [classificationLabelId, state.annotation.commit],
-  );
-
+  const onMaskCommit = (mask: Uint8Array) => {
+    state.annotation.commit({
+      classificationLabelId,
+      mask,
+    });
+  };
   return (
     <ViewportCard>
       <AnnotationCanvas

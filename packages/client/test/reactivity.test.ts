@@ -21,9 +21,7 @@ describe("invalidateAfter", () => {
       unregister();
     });
 
-    await Effect.runPromise(
-      program.pipe(Effect.scoped, Effect.provide(Reactivity.layer)),
-    );
+    await Effect.runPromise(program.pipe(Effect.scoped, Effect.provide(Reactivity.layer)));
     expect(refreshed).toBe(true);
   });
 });

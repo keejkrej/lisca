@@ -5,8 +5,7 @@ import type { AlignState } from "../state/use-align-state";
 export function AlignContrastControls({ state }: { state: AlignState }) {
   const domain = state.frame?.contrastDomain ?? { min: 0, max: 255 };
   const value = state.contrast ?? { min: domain.min, max: domain.max };
-  const suggestedContrast =
-    state.frame?.suggestedContrast ??
+  const suggestedContrast = state.frame?.suggestedContrast ??
     state.frame?.appliedContrast ?? { min: domain.min, max: domain.max };
   return (
     <ContrastControl

@@ -22,7 +22,8 @@ export function CropProgressModal({ progress, onCancel }: CropProgressModalProps
         <Text style={[styles.title, { color: colors.foreground }]}>Cropping ROI</Text>
         <Spinner />
         <Text style={{ color: colors.foreground }}>
-          {progress.message ?? progress.status} ({progress.completedPositions}/{progress.totalPositions})
+          {progress.message ?? progress.status} ({progress.completedPositions}/
+          {progress.totalPositions})
         </Text>
         {onCancel ? <Button label="Cancel" variant="destructive" onPress={onCancel} /> : null}
       </DialogSurface>

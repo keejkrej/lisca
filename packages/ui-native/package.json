@@ -24,8 +24,8 @@
   },
   "dependencies": {
     "@lisca/contracts": "workspace:*",
-    "@lisca/ui-headless": "workspace:*",
     "@lisca/storage": "workspace:*",
+    "@lisca/ui-headless": "workspace:*",
     "@lisca/utils": "workspace:*",
     "@react-native-community/slider": "^4.5.7",
     "@shopify/react-native-skia": "^2.2.12",

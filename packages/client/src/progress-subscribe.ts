@@ -44,7 +44,11 @@ function createProgressPollStream<TProgress>(
   const schedule = options.schedule ?? defaultSchedule;
   const clearSchedule = options.clearSchedule ?? defaultClearSchedule;
 
-  const pollOnce = (): Effect.Effect<{ progress: TProgress; continue: boolean }, never, Scope.Scope> =>
+  const pollOnce = (): Effect.Effect<
+    { progress: TProgress; continue: boolean },
+    never,
+    Scope.Scope
+  > =>
     options.pollProgress().pipe(
       Effect.match({
         onFailure: (cause) => ({
@@ -58,28 +62,26 @@ function createProgressPollStream<TProgress>(
       }),
     );
 
-  return Stream.unfoldEffect(
-    { delayed: false } as PollState | null,
-    (state) =>
-      Effect.gen(function* () {
-        if (state === null) {
-          return Option.none();
-        }
-        if (state.delayed) {
-          if (yield* Ref.get(closed)) {
-            return Option.none();
-          }
-          yield* createScheduledDelay(schedule, clearSchedule, pollIntervalMs);
-          if (yield* Ref.get(closed)) {
-            return Option.none();
-          }
-        }
-        const { progress, continue: shouldContinue } = yield* pollOnce();
+  return Stream.unfoldEffect({ delayed: false } as PollState | null, (state) =>
+    Effect.gen(function* () {
+      if (state === null) {
+        return Option.none();
+      }
+      if (state.delayed) {
         if (yield* Ref.get(closed)) {
           return Option.none();
         }
-        return Option.some([progress, shouldContinue ? { delayed: true } : null] as const);
-      }),
+        yield* createScheduledDelay(schedule, clearSchedule, pollIntervalMs);
+        if (yield* Ref.get(closed)) {
+          return Option.none();
+        }
+      }
+      const { progress, continue: shouldContinue } = yield* pollOnce();
+      if (yield* Ref.get(closed)) {
+        return Option.none();
+      }
+      return Option.some([progress, shouldContinue ? { delayed: true } : null] as const);
+    }),
   );
 }
 

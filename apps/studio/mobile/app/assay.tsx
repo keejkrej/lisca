@@ -7,16 +7,14 @@ import {
 } from "@lisca/ui-native";
 import { runClientEffect } from "@lisca/client/runtime";
 import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-
 import { studioClient, studioHostOperations } from "../src/api/studio-port";
 import { ChooseAssay } from "../src/components/choose-assay";
 import { STUDIO_NAV_WIDTH } from "../src/components/studio-layout";
 import { StudioLeft } from "../src/components/studio-left";
 import { instructionForStep } from "../src/state/studio-routes";
 import { parseStudioAssayJson, useStudioStore } from "../src/state/studio-store";
-
 export default function AssayRoute() {
   const router = useRouter();
   const assayId = useStudioStore((state) => state.assayId);
@@ -24,19 +22,14 @@ export default function AssayRoute() {
   const loadAssayJson = useStudioStore((state) => state.loadAssayJson);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [opening, setOpening] = useState(false);
-
-  const toolActions = useMemo(
-    () => [
-      {
-        id: "open-assay",
-        label: "Open assay",
-        disabled: opening || pickerOpen,
-        onSelect: () => setPickerOpen(true),
-      },
-    ],
-    [opening, pickerOpen],
-  );
-
+  const toolActions = [
+    {
+      id: "open-assay",
+      label: "Open assay",
+      disabled: opening || pickerOpen,
+      onSelect: () => setPickerOpen(true),
+    },
+  ];
   const openAssay = async (path: string) => {
     setPickerOpen(false);
     setOpening(true);
@@ -48,7 +41,6 @@ export default function AssayRoute() {
       setOpening(false);
     }
   };
-
   return (
     <AppShell>
       <AppShell.Body>
@@ -92,7 +84,6 @@ export default function AssayRoute() {
     </AppShell>
   );
 }
-
 const styles = StyleSheet.create({
   mainContent: {
     flexGrow: 1,

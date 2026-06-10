@@ -18,11 +18,15 @@ export function analysisCsvInputKey(input: AnalysisCsvInput): string {
 }
 
 export type StudioAnalysisAtoms = {
-  analysisResultsAtom: (workspacePath: string) => Atom.Atom<Result.Result<AnalysisProgress | null, ClientError>>;
+  analysisResultsAtom: (
+    workspacePath: string,
+  ) => Atom.Atom<Result.Result<AnalysisProgress | null, ClientError>>;
   analysisCsvAtom: (inputKey: string) => Atom.Atom<Result.Result<string, ClientError>>;
 };
 
-export function createStudioAnalysisAtoms(runtime: AppRuntime<StudioPortService>): StudioAnalysisAtoms {
+export function createStudioAnalysisAtoms(
+  runtime: AppRuntime<StudioPortService>,
+): StudioAnalysisAtoms {
   const analysisResultsAtom = Atom.family((workspacePath: string) =>
     runtime
       .atom(
@@ -31,10 +35,7 @@ export function createStudioAnalysisAtoms(runtime: AppRuntime<StudioPortService>
           return yield* port.getAnalysisResults(workspacePath);
         }),
       )
-      .pipe(
-        Atom.keepAlive,
-        Atom.withReactivity([ReactivityKeys.analysisResults(workspacePath)]),
-      ),
+      .pipe(Atom.keepAlive, Atom.withReactivity([ReactivityKeys.analysisResults(workspacePath)])),
   );
 
   const analysisCsvAtom = Atom.family((inputKey: string) => {

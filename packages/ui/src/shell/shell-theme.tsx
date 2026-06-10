@@ -1,18 +1,7 @@
 import { Moon, Sun } from "lucide-react";
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
-
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { Button } from "../components/ui/button";
-
 export type ShellThemeMode = "light" | "dark";
-
 type ShellThemeContextValue = {
   mode: ShellThemeMode;
   setMode: (mode: ShellThemeMode) => void;
@@ -20,11 +9,8 @@ type ShellThemeContextValue = {
   resolvedTheme: ShellThemeMode;
   toggleLightDark: () => void;
 };
-
 const ShellThemeContext = createContext<ShellThemeContextValue | null>(null);
-
 const DEFAULT_STORAGE_KEY = "lisca-shell-theme";
-
 function readStoredMode(storageKey: string, fallback: ShellThemeMode): ShellThemeMode {
   try {
     const raw = localStorage.getItem(storageKey);
@@ -49,49 +35,35 @@ export function ShellThemeProvider(props: {
 }) {
   const defaultMode = props.defaultMode ?? "light";
   const storageKey = props.storageKey ?? DEFAULT_STORAGE_KEY;
-
   const [mode, setModeState] = useState<ShellThemeMode>(() => {
     if (typeof window === "undefined") return defaultMode;
     return readStoredMode(storageKey, defaultMode);
   });
-
-  const setMode = useCallback(
-    (next: ShellThemeMode) => {
-      setModeState(next);
-      try {
-        localStorage.setItem(storageKey, next);
-      } catch {
-        /* ignore */
-      }
-    },
-    [storageKey],
-  );
-
+  const setMode = (next: ShellThemeMode) => {
+    setModeState(next);
+    try {
+      localStorage.setItem(storageKey, next);
+    } catch {
+      /* ignore */
+    }
+  };
   const resolvedTheme = mode;
-
   useEffect(() => {
     const root = document.documentElement;
     root.classList.toggle("dark", resolvedTheme === "dark");
     root.style.colorScheme = resolvedTheme === "dark" ? "dark" : "light";
   }, [resolvedTheme]);
-
-  const toggleLightDark = useCallback(() => {
+  const toggleLightDark = () => {
     setMode(resolvedTheme === "dark" ? "light" : "dark");
-  }, [resolvedTheme, setMode]);
-
-  const value = useMemo(
-    () => ({
-      mode,
-      setMode,
-      resolvedTheme,
-      toggleLightDark,
-    }),
-    [mode, resolvedTheme, setMode, toggleLightDark],
-  );
-
+  };
+  const value = {
+    mode,
+    setMode,
+    resolvedTheme,
+    toggleLightDark,
+  };
   return <ShellThemeContext.Provider value={value}>{props.children}</ShellThemeContext.Provider>;
 }
-
 export function useShellTheme(): ShellThemeContextValue {
   const ctx = useContext(ShellThemeContext);
   if (!ctx) {
@@ -106,7 +78,6 @@ export function useShellTheme(): ShellThemeContextValue {
 export function ShellThemeToggle(props: { className?: string }) {
   const { mode, toggleLightDark } = useShellTheme();
   const title = mode === "light" ? "Switch to dark theme" : "Switch to light theme";
-
   return (
     <Button
       type="button"

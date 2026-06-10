@@ -1,11 +1,9 @@
 "use client";
 
-import { memo, type ReactNode } from "react";
-
+import { type ReactNode } from "react";
 import { DockButton } from "./dock-button";
 import { dockToolLabel, useDockToolShortcuts, type DockToolAction } from "./dock-tool-shortcuts";
-
-const DockToolGridItem = memo(function DockToolGridItem({
+const DockToolGridItem = function DockToolGridItem({
   action,
   label,
 }: {
@@ -17,8 +15,7 @@ const DockToolGridItem = memo(function DockToolGridItem({
       {label}
     </DockButton>
   );
-});
-
+};
 export type DockToolGridProps = {
   actions: readonly DockToolAction[];
   enabled?: boolean;
@@ -26,7 +23,6 @@ export type DockToolGridProps = {
   columns?: 1 | 2;
   renderAction?: (action: DockToolAction, index: number, label: string) => ReactNode;
 };
-
 export function DockToolGrid({
   actions,
   enabled = true,
@@ -34,8 +30,9 @@ export function DockToolGrid({
   columns = 2,
   renderAction,
 }: DockToolGridProps) {
-  useDockToolShortcuts(actions, { enabled });
-
+  useDockToolShortcuts(actions, {
+    enabled,
+  });
   return (
     <div
       aria-label="Tool shortcuts"

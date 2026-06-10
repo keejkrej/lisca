@@ -12,8 +12,9 @@ export async function assayJsonExists(saveTo: string): Promise<boolean> {
   }
 }
 
-export async function writeStudioAssayJson(saveTo: string, assayJson: StudioAssayJson): Promise<void> {
-  await runClientEffect(
-    studioClient.saveAssayJson(saveTo, JSON.stringify(assayJson, null, 2)),
-  );
+export async function writeStudioAssayJson(
+  saveTo: string,
+  assayJson: StudioAssayJson,
+): Promise<void> {
+  await runClientEffect(studioClient.saveAssayJson(saveTo, JSON.stringify(assayJson, null, 2)));
 }

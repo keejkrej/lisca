@@ -93,10 +93,33 @@ describe("sample positions", () => {
     const info3: StudioBasicInfoStep3 = {
       selectedSlideId: "slide-vi",
       samplesBySlide: {
-        "slide-i": [{ channel: "0", name: "a", positionStart: "99", positionFinish: "99", maskChannel: "0", signalChannel: "1" }],
+        "slide-i": [
+          {
+            channel: "0",
+            name: "a",
+            positionStart: "99",
+            positionFinish: "99",
+            maskChannel: "0",
+            signalChannel: "1",
+          },
+        ],
         "slide-vi": [
-          { channel: "0", name: "a", positionStart: "1", positionFinish: "4", maskChannel: "0", signalChannel: "1" },
-          { channel: "1", name: "b", positionStart: "3", positionFinish: "6", maskChannel: "0", signalChannel: "1" },
+          {
+            channel: "0",
+            name: "a",
+            positionStart: "1",
+            positionFinish: "4",
+            maskChannel: "0",
+            signalChannel: "1",
+          },
+          {
+            channel: "1",
+            name: "b",
+            positionStart: "3",
+            positionFinish: "6",
+            maskChannel: "0",
+            signalChannel: "1",
+          },
         ],
       },
     };

@@ -5,24 +5,28 @@ import type {
   FrameResult,
   RoiFrameAnnotation,
 } from "@lisca/contracts";
-import {
-  downloadBase64Png,
-  downloadJson,
-  loadImageFile,
-  stemName,
-} from "@lisca/browser-frame";
+import { downloadBase64Png, downloadJson, loadImageFile, stemName } from "@lisca/browser-frame";
 import type { AnnotationTool } from "@lisca/ui/features";
-import { useCallback, useState } from "react";
-
+import { useState } from "react";
 import { useAnnotationHistory } from "./use-annotation-history";
 import { encodeMaskToBase64Png, maskHasPixels } from "../utils/annotation-utils";
-
 const defaultLabels: AnnotationLabel[] = [
-  { id: "class-1", name: "Class 1", color: "#22c55e" },
-  { id: "class-2", name: "Class 2", color: "#3b82f6" },
-  { id: "class-3", name: "Class 3", color: "#f59e0b" },
+  {
+    id: "class-1",
+    name: "Class 1",
+    color: "#22c55e",
+  },
+  {
+    id: "class-2",
+    name: "Class 2",
+    color: "#3b82f6",
+  },
+  {
+    id: "class-3",
+    name: "Class 3",
+    color: "#f59e0b",
+  },
 ];
-
 export type DemoAnnotatorState = {
   fileName: string | null;
   frameLoading: boolean;
@@ -55,7 +59,6 @@ export type DemoAnnotatorState = {
   saveCurrent: () => Promise<void>;
   saveLabels: (labels: AnnotationLabel[]) => void;
 };
-
 export function useDemoAnnotatorState(): DemoAnnotatorState {
   const [fileName, setFileName] = useState<string | null>(null);
   const [frameLoading, setFrameLoading] = useState(false);
@@ -72,58 +75,48 @@ export function useDemoAnnotatorState(): DemoAnnotatorState {
   const [overlayOpacity, setOverlayOpacity] = useState(0.45);
   const [labelDialogOpen, setLabelDialogOpen] = useState(false);
   const [labelError, setLabelError] = useState<string | null>(null);
-
   const annotation = useAnnotationHistory(frame);
-  const openImage = useCallback(
-    async (file: File) => {
-      if (annotation.dirty && !window.confirm("Discard unsaved annotation changes?")) {
-        return;
-      }
-      setFrameLoading(true);
-      setError(null);
-      setStatus("Loading image");
-      try {
-        const nextFrame = await loadImageFile(file);
-        setFileName(file.name);
-        setFrame(nextFrame);
-        setContrast(null);
-        annotation.reset({
-          classificationLabelId: null,
-          mask: new Uint8Array(nextFrame.width * nextFrame.height),
-        });
-        setStatus(null);
-      } catch (cause) {
-        setFrame(null);
-        setFileName(null);
-        setError(cause instanceof Error ? cause.message : String(cause));
-        setStatus(null);
-      } finally {
-        setFrameLoading(false);
-      }
-    },
-    [annotation],
-  );
-
-  const saveLabels = useCallback(
-    (nextLabels: AnnotationLabel[]) => {
-      setLabels(nextLabels);
-      if (!nextLabels.some((label) => label.id === activeLabelId)) {
-        setActiveLabelId(nextLabels[0]?.id ?? null);
-      }
-      setLabelDialogOpen(false);
-      setLabelError(null);
-    },
-    [activeLabelId],
-  );
-
+  const openImage = async (file: File) => {
+    if (annotation.dirty && !window.confirm("Discard unsaved annotation changes?")) {
+      return;
+    }
+    setFrameLoading(true);
+    setError(null);
+    setStatus("Loading image");
+    try {
+      const nextFrame = await loadImageFile(file);
+      setFileName(file.name);
+      setFrame(nextFrame);
+      setContrast(null);
+      annotation.reset({
+        classificationLabelId: null,
+        mask: new Uint8Array(nextFrame.width * nextFrame.height),
+      });
+      setStatus(null);
+    } catch (cause) {
+      setFrame(null);
+      setFileName(null);
+      setError(cause instanceof Error ? cause.message : String(cause));
+      setStatus(null);
+    } finally {
+      setFrameLoading(false);
+    }
+  };
+  const saveLabels = (nextLabels: AnnotationLabel[]) => {
+    setLabels(nextLabels);
+    if (!nextLabels.some((label) => label.id === activeLabelId)) {
+      setActiveLabelId(nextLabels[0]?.id ?? null);
+    }
+    setLabelDialogOpen(false);
+    setLabelError(null);
+  };
   const activeLabelValue = labels.findIndex((label) => label.id === activeLabelId) + 1;
   const toolCanRunWithoutLabel = tool === "brush-erase" || tool === "lasso-erase";
   const canEdit = Boolean(frame && labels.length > 0) && !frameLoading;
   const canEditSegmentation =
     canEdit && mode === "segmentation" && (activeLabelValue > 0 || toolCanRunWithoutLabel);
   const canSave = canEdit && annotation.dirty && !saving;
-
-  const saveCurrent = useCallback(async () => {
+  const saveCurrent = async () => {
     if (!frame || !fileName || !canSave) return;
     setSaving(true);
     setError(null);
@@ -152,8 +145,7 @@ export function useDemoAnnotatorState(): DemoAnnotatorState {
     } finally {
       setSaving(false);
     }
-  }, [annotation, canSave, fileName, frame]);
-
+  };
   return {
     fileName,
     frameLoading,

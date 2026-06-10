@@ -15,7 +15,11 @@ import { Button } from "../components/ui/button";
 import { cn } from "../lib/utils";
 import { DockGrid } from "../shell/dock-grid";
 import { DockSection } from "../shell/dock-section";
-import { dockToolLabel, useDockToolShortcuts, type DockToolAction } from "../shell/dock-tool-shortcuts";
+import {
+  dockToolLabel,
+  useDockToolShortcuts,
+  type DockToolAction,
+} from "../shell/dock-tool-shortcuts";
 
 export type AlignToolsProps = {
   mode: AlignGridToolMode;
@@ -151,7 +155,14 @@ export function AlignTools({
   useDockToolShortcuts(toolActions, { enabled: shortcutsEnabled });
 
   const toolbarCells = alignToolDefinitions.map((tool, index) =>
-    renderAlignToolCell(tool, index, mode, onModeChange, patternZoomLocked, onPatternZoomLockedChange),
+    renderAlignToolCell(
+      tool,
+      index,
+      mode,
+      onModeChange,
+      patternZoomLocked,
+      onPatternZoomLockedChange,
+    ),
   );
 
   const toolbar = (

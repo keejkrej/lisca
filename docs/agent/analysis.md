@@ -2,10 +2,10 @@
 
 Native analysis pipeline in `crates/lisca/src/analysis/`. The running workflow depends on `assay.json` → `assayId`:
 
-| Assay | Goal source (not implementation reference) | Pipeline |
-| --- | --- | --- |
-| `gene-expression` | sibling [`transfection`](../../transfection) — stages, CSV columns, plot names | segment → timeseries → AUC → fit (+ plots) |
-| `immune-killing` | [mupattern](https://github.com/keejkrej/mupattern) — kill curve semantics, ResNet classifier | predict → clean → death times → kill curve plot |
+| Assay             | Goal source (not implementation reference)                                                   | Pipeline                                        |
+| ----------------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `gene-expression` | sibling [`transfection`](../../transfection) — stages, CSV columns, plot names               | segment → timeseries → AUC → fit (+ plots)      |
+| `immune-killing`  | [mupattern](https://github.com/keejkrej/mupattern) — kill curve semantics, ResNet classifier | predict → clean → death times → kill curve plot |
 
 Numeric stages and PNG plots run in Rust via [**mplot-rs**](https://github.com/keejkrej/mplot-rs). Immune killing inference uses ONNX Runtime (`ort`) with the `keejkrej/mupattern-resnet18` model.
 
@@ -41,13 +41,13 @@ assay.json → slide.json → predict (ResNet ONNX) → clean (monotonicity) →
 
 Progress reuses the same HTTP stage names with kill-specific messages:
 
-| Stage | Kill step |
-| --- | --- |
-| `preparing` | Resolve ONNX model + slide mapping |
-| `segment` | Cell presence inference |
-| `timeseries` | Monotonicity clean |
-| `auc` | Death times + kill curve table |
-| `fit` | Kill curve PNG |
+| Stage        | Kill step                          |
+| ------------ | ---------------------------------- |
+| `preparing`  | Resolve ONNX model + slide mapping |
+| `segment`    | Cell presence inference            |
+| `timeseries` | Monotonicity clean                 |
+| `auc`        | Death times + kill curve table     |
+| `fit`        | Kill curve PNG                     |
 
 ### Kill model path
 
@@ -59,28 +59,28 @@ uv run optimum-cli export onnx --model keejkrej/mupattern-resnet18 ./models/mupa
 
 ### Immune killing outputs
 
-| Path | Role |
-| --- | --- |
-| `results/predictions.csv` | Raw `(t, crop, label, pos, slide_channel)` from ResNet |
-| `results/predictions_cleaned.csv` | Monotonicity-enforced labels |
-| `results/death_times.csv` | Per-ROI death frame (`≥80%` true span, mupattern clean logic) |
-| `results/kill_curve.csv` | `n_alive` vs time per slide channel |
-| `results/kill_curve.png` | Kill curve plot |
+| Path                              | Role                                                          |
+| --------------------------------- | ------------------------------------------------------------- |
+| `results/predictions.csv`         | Raw `(t, crop, label, pos, slide_channel)` from ResNet        |
+| `results/predictions_cleaned.csv` | Monotonicity-enforced labels                                  |
+| `results/death_times.csv`         | Per-ROI death frame (`≥80%` true span, mupattern clean logic) |
+| `results/kill_curve.csv`          | `n_alive` vs time per slide channel                           |
+| `results/kill_curve.png`          | Kill curve plot                                               |
 
 ## Workspace I/O
 
-| Path | Role |
-| --- | --- |
-| `assay.json` | Input contract from Studio basic info |
-| `slide.json` | Snake-case slide channel mapping (transfection format) |
-| `roi/PosN/` | Cropped ROI stacks + `index.json` (`axisOrder: TCZYX`) |
-| `mask/PosN/` | Per-frame segmentation masks (`uint8` TIFF stacks) |
-| `timeseries/sc{S}_ch{C}.csv` | Mask-corrected intensity metrics (+ parallel `.xlsx`) |
-| `results/auc.csv` | Trapezoidal AUC per `(pos, roi)` trace (+ `.xlsx`) |
-| `results/fit.csv` | Two-exponential kinetic fit parameters (+ `.xlsx`) |
-| `results/traces.png`, `traces_shared_y.png`, `area.png`, `area_shared_y.png` | Timeseries plots |
-| `results/auc.png` | AUC boxplot |
-| `results/{parameter}.png`, `results/traces_fit.png` | Fit parameter boxplots and fitted trace grid |
+| Path                                                                         | Role                                                   |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------ |
+| `assay.json`                                                                 | Input contract from Studio basic info                  |
+| `slide.json`                                                                 | Snake-case slide channel mapping (transfection format) |
+| `roi/PosN/`                                                                  | Cropped ROI stacks + `index.json` (`axisOrder: TCZYX`) |
+| `mask/PosN/`                                                                 | Per-frame segmentation masks (`uint8` TIFF stacks)     |
+| `timeseries/sc{S}_ch{C}.csv`                                                 | Mask-corrected intensity metrics (+ parallel `.xlsx`)  |
+| `results/auc.csv`                                                            | Trapezoidal AUC per `(pos, roi)` trace (+ `.xlsx`)     |
+| `results/fit.csv`                                                            | Two-exponential kinetic fit parameters (+ `.xlsx`)     |
+| `results/traces.png`, `traces_shared_y.png`, `area.png`, `area_shared_y.png` | Timeseries plots                                       |
+| `results/auc.png`                                                            | AUC boxplot                                            |
+| `results/{parameter}.png`, `results/traces_fit.png`                          | Fit parameter boxplots and fitted trace grid           |
 
 Studio results UI reads CSVs for interactive charts; PNG filenames match transfection output.
 
@@ -103,14 +103,14 @@ analysis/
     immune_killing.rs + immune_killing/
 ```
 
-| Module | Goal |
-| --- | --- |
-| `assays/gene_expression/segment.rs` | Otsu mask per ROI frame |
-| `assays/gene_expression/timeseries.rs` | Mask-corrected intensity traces → `timeseries/` CSVs |
-| `assays/gene_expression/auc.rs` | Trapezoidal AUC per trace |
-| `assays/gene_expression/fit.rs` | Two-exponential kinetic fit |
-| `assays/gene_expression/plot/` | PNGs for traces, AUC, fit parameters |
-| `assays/immune_killing/` | ResNet presence, monotonicity clean, death times, kill curve |
+| Module                                 | Goal                                                         |
+| -------------------------------------- | ------------------------------------------------------------ |
+| `assays/gene_expression/segment.rs`    | Otsu mask per ROI frame                                      |
+| `assays/gene_expression/timeseries.rs` | Mask-corrected intensity traces → `timeseries/` CSVs         |
+| `assays/gene_expression/auc.rs`        | Trapezoidal AUC per trace                                    |
+| `assays/gene_expression/fit.rs`        | Two-exponential kinetic fit                                  |
+| `assays/gene_expression/plot/`         | PNGs for traces, AUC, fit parameters                         |
+| `assays/immune_killing/`               | ResNet presence, monotonicity clean, death times, kill curve |
 
 Adding a new assay type: create `assays/<name>.rs` plus `assays/<name>/`, implement `run` (async) and optionally `run_sync`, then register in `assays.rs`.
 

@@ -1,15 +1,11 @@
 import { AnnotationCanvas, ViewportCard } from "@lisca/ui-native";
-import { useMemo } from "react";
-
 import type { StudioAnnotateState } from "../state/use-studio-annotate-state";
 import { StudioAnalysisProgressModal, StudioAnalysisStartModal } from "./studio-analysis-modals";
-
 export function StudioAnnotateMain({ state }: { state: StudioAnnotateState }) {
-  const emptyMask = useMemo(
-    () => (state.frame ? new Uint8Array(state.frame.width * state.frame.height) : new Uint8Array()),
-    [state.frame],
-  );
-  const messages = useMemo(() => {
+  const emptyMask = state.frame
+    ? new Uint8Array(state.frame.width * state.frame.height)
+    : new Uint8Array();
+  const messages = (() => {
     if (!state.request) return [];
     const positionIndex =
       state.scan?.positions.findIndex((entry) => entry.pos === state.request?.pos) ?? -1;
@@ -18,9 +14,12 @@ export function StudioAnnotateMain({ state }: { state: StudioAnnotateState }) {
       state.position?.rois.findIndex((entry) => entry.roi === state.request?.roi) ?? -1;
     const roiCount = state.position?.rois.length ?? 0;
     if (positionIndex < 0 || positionCount === 0 || roiIndex < 0 || roiCount === 0) return [];
-    return [{ text: `Pos ${positionIndex}/${positionCount}\nRoi ${roiIndex}/${roiCount}` }];
-  }, [state.position, state.request, state.scan]);
-
+    return [
+      {
+        text: `Pos ${positionIndex}/${positionCount}\nRoi ${roiIndex}/${roiCount}`,
+      },
+    ];
+  })();
   return (
     <>
       <ViewportCard>

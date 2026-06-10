@@ -5,19 +5,10 @@ import {
   toNavigationOptions,
 } from "@lisca/ui-native";
 import { clamp, selectedIndex } from "@lisca/utils";
-import { useMemo } from "react";
-
 import type { AlignState } from "../state/use-align-state";
-
 export function AlignFrameNavigation({ state }: { state: AlignState }) {
-  const positionOptions = useMemo(
-    () => toNavigationOptions(state.scan?.positions ?? []),
-    [state.scan],
-  );
-  const channelOptions = useMemo(
-    () => toNavigationOptions(state.scan?.channels ?? []),
-    [state.scan],
-  );
+  const positionOptions = toNavigationOptions(state.scan?.positions ?? []);
+  const channelOptions = toNavigationOptions(state.scan?.channels ?? []);
   const timeIndex = selectedIndex(state.scan?.times, state.selection.time);
   const zIndex = selectedIndex(state.scan?.zSlices, state.selection.z);
   const timeMax = Math.max(0, (state.scan?.times.length ?? 1) - 1);
@@ -25,39 +16,56 @@ export function AlignFrameNavigation({ state }: { state: AlignState }) {
   const posIndex = findNavigationOptionIndex(positionOptions, state.selection.pos);
   const chIndex = findNavigationOptionIndex(channelOptions, state.selection.channel);
   const disabled = !state.scan || state.cropping;
-
   return (
     <FrameNavigation
       position={{
         value: state.selection.pos,
         options: positionOptions,
         disabled,
-        onChange: (pos) => state.setSelection({ pos }),
+        onChange: (pos) =>
+          state.setSelection({
+            pos,
+          }),
         previousDisabled: disabled || posIndex <= 0,
         nextDisabled: disabled || posIndex >= positionOptions.length - 1,
         onPrevious: () => {
           const next = stepNavigationValue(positionOptions, state.selection.pos, -1);
-          if (next != null) state.setSelection({ pos: next });
+          if (next != null)
+            state.setSelection({
+              pos: next,
+            });
         },
         onNext: () => {
           const next = stepNavigationValue(positionOptions, state.selection.pos, 1);
-          if (next != null) state.setSelection({ pos: next });
+          if (next != null)
+            state.setSelection({
+              pos: next,
+            });
         },
       }}
       channel={{
         value: state.selection.channel,
         options: channelOptions,
         disabled,
-        onChange: (channel) => state.setSelection({ channel }),
+        onChange: (channel) =>
+          state.setSelection({
+            channel,
+          }),
         previousDisabled: disabled || chIndex <= 0,
         nextDisabled: disabled || chIndex >= channelOptions.length - 1,
         onPrevious: () => {
           const next = stepNavigationValue(channelOptions, state.selection.channel, -1);
-          if (next != null) state.setSelection({ channel: next });
+          if (next != null)
+            state.setSelection({
+              channel: next,
+            });
         },
         onNext: () => {
           const next = stepNavigationValue(channelOptions, state.selection.channel, 1);
-          if (next != null) state.setSelection({ channel: next });
+          if (next != null)
+            state.setSelection({
+              channel: next,
+            });
         },
       }}
       timepoint={{
@@ -67,13 +75,19 @@ export function AlignFrameNavigation({ state }: { state: AlignState }) {
         step: 1,
         disabled: disabled || timeMax <= 0,
         onCommit: (i) =>
-          state.setSelection({ time: state.scan?.times[clamp(Math.round(i), 0, timeMax)] ?? 0 }),
+          state.setSelection({
+            time: state.scan?.times[clamp(Math.round(i), 0, timeMax)] ?? 0,
+          }),
         previousDisabled: disabled || timeIndex <= 0,
         nextDisabled: disabled || timeIndex >= timeMax,
         onPrevious: () =>
-          state.setSelection({ time: state.scan?.times[Math.max(0, timeIndex - 1)] ?? 0 }),
+          state.setSelection({
+            time: state.scan?.times[Math.max(0, timeIndex - 1)] ?? 0,
+          }),
         onNext: () =>
-          state.setSelection({ time: state.scan?.times[Math.min(timeMax, timeIndex + 1)] ?? 0 }),
+          state.setSelection({
+            time: state.scan?.times[Math.min(timeMax, timeIndex + 1)] ?? 0,
+          }),
       }}
       zPlane={{
         value: zIndex,
@@ -82,13 +96,19 @@ export function AlignFrameNavigation({ state }: { state: AlignState }) {
         step: 1,
         disabled: disabled || zMax <= 0,
         onCommit: (i) =>
-          state.setSelection({ z: state.scan?.zSlices[clamp(Math.round(i), 0, zMax)] ?? 0 }),
+          state.setSelection({
+            z: state.scan?.zSlices[clamp(Math.round(i), 0, zMax)] ?? 0,
+          }),
         previousDisabled: disabled || zIndex <= 0,
         nextDisabled: disabled || zIndex >= zMax,
         onPrevious: () =>
-          state.setSelection({ z: state.scan?.zSlices[Math.max(0, zIndex - 1)] ?? 0 }),
+          state.setSelection({
+            z: state.scan?.zSlices[Math.max(0, zIndex - 1)] ?? 0,
+          }),
         onNext: () =>
-          state.setSelection({ z: state.scan?.zSlices[Math.min(zMax, zIndex + 1)] ?? 0 }),
+          state.setSelection({
+            z: state.scan?.zSlices[Math.min(zMax, zIndex + 1)] ?? 0,
+          }),
       }}
     />
   );

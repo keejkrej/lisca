@@ -12,9 +12,7 @@ export type ApiClientDeps = {
 
 function fetchLayerFor(deps: ApiClientDeps) {
   return deps.fetch
-    ? FetchHttpClient.layer.pipe(
-        Layer.provide(Layer.succeed(FetchHttpClient.Fetch, deps.fetch)),
-      )
+    ? FetchHttpClient.layer.pipe(Layer.provide(Layer.succeed(FetchHttpClient.Fetch, deps.fetch)))
     : FetchHttpClient.layer;
 }
 

@@ -1,10 +1,7 @@
 import type { RoiWorkspaceScan, WorkspaceScan } from "@lisca/contracts";
 import { Atom, Result } from "@effect-atom/atom-react";
 
-import {
-  createStudioQueryAtoms,
-  studioPortLayer,
-} from "@lisca/client/atoms";
+import { createStudioQueryAtoms, studioPortLayer } from "@lisca/client/atoms";
 import { createLiscaAppBootstrap } from "@lisca/client/bootstrap";
 
 import { ensureStudioPort } from "../api/studio-port";

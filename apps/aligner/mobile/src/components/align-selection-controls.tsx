@@ -4,24 +4,19 @@ import {
   enumerateVisibleAlignGridCells,
   mergeExcludedAlignGridCells,
 } from "@lisca/utils";
-import { useMemo } from "react";
 import { StyleSheet, View } from "react-native";
-
 import type { AlignState } from "../state/use-align-state";
 import { VariationExcludeDialog } from "./variation-exclude-dialog";
-
 export function AlignSelectionControls({ state }: { state: AlignState }) {
-  const visibleCells = useMemo(
-    () =>
-      state.frame
-        ? enumerateVisibleAlignGridCells(state.frame, state.grid).map(({ i, j }) => ({ i, j }))
-        : [],
-    [state.frame, state.grid],
-  );
+  const visibleCells = state.frame
+    ? enumerateVisibleAlignGridCells(state.frame, state.grid).map(({ i, j }) => ({
+        i,
+        j,
+      }))
+    : [];
   const hasVisibleCells = visibleCells.length > 0;
   const hasExcludedCells = state.currentExcludedCells.length > 0;
   const disabled = state.cropping || !state.frame;
-
   return (
     <>
       <Section contentStyle={styles.sectionContent} style={styles.section} title="Selection">
@@ -101,7 +96,6 @@ export function AlignSelectionControls({ state }: { state: AlignState }) {
     </>
   );
 }
-
 const styles = StyleSheet.create({
   section: {
     flexShrink: 0,

@@ -1,25 +1,19 @@
 import { Button, cn, Input, Slider } from "@lisca/ui/components";
 import { DialogSurface, ModalScrim, StatTile } from "@lisca/ui/shell";
-import { useMemo } from "react";
-
 import type { VariationExcludePreview } from "../state/use-align-state";
-
 type VariationExcludeDialogProps = {
   state: VariationExcludePreview | null;
   onApply: () => void;
   onCancel: () => void;
   onThresholdChange: (threshold: number) => void;
 };
-
 function formatScore(value: number): string {
   return Number.isFinite(value) ? value.toFixed(3) : "0.000";
 }
-
 function clampThreshold(value: number, min: number, max: number): number {
   if (!Number.isFinite(value)) return min;
   return Math.min(max, Math.max(min, value));
 }
-
 export function VariationExcludeDialog({
   state,
   onApply,
@@ -28,22 +22,15 @@ export function VariationExcludeDialog({
 }: VariationExcludeDialogProps) {
   const preview = state?.preview ?? null;
   const threshold = state?.threshold ?? 0;
-  const selectedCount = useMemo(
-    () => preview?.cellScores.filter((cell) => cell.score <= threshold).length ?? 0,
-    [preview, threshold],
-  );
-
+  const selectedCount = preview?.cellScores.filter((cell) => cell.score <= threshold).length ?? 0;
   if (!preview) return null;
-
   const min = preview.scoreMin;
   const max = preview.scoreMax > preview.scoreMin ? preview.scoreMax : preview.scoreMin + 1;
   const step = Math.max((max - min) / 500, 0.001);
   const maxBinCount = Math.max(1, ...preview.histogramBins.map((bin) => bin.count));
-
   const setThreshold = (value: number) => {
     onThresholdChange(clampThreshold(value, min, max));
   };
-
   return (
     <ModalScrim
       onMouseDown={(event) => {
@@ -84,7 +71,9 @@ export function VariationExcludeDialog({
                     "min-w-0 flex-1 rounded-t-sm",
                     active ? "bg-primary" : "bg-muted-foreground/28",
                   )}
-                  style={{ height: `${Math.max(4, (bin.count / maxBinCount) * 100)}%` }}
+                  style={{
+                    height: `${Math.max(4, (bin.count / maxBinCount) * 100)}%`,
+                  }}
                   title={`${formatScore(bin.start)} - ${formatScore(bin.end)}: ${bin.count}`}
                 />
               );

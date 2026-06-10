@@ -7,8 +7,7 @@ import { version } from "canvaskit-wasm/package.json";
 /** Load CanvasKit before Expo Router evaluates any Skia-backed screens. */
 export function startExpoRouterWithSkiaWeb() {
   void LoadSkiaWeb({
-    locateFile: (file) =>
-      `https://cdn.jsdelivr.net/npm/canvaskit-wasm@${version}/bin/full/${file}`,
+    locateFile: (file) => `https://cdn.jsdelivr.net/npm/canvaskit-wasm@${version}/bin/full/${file}`,
   }).then(() => {
     renderRootComponent(App);
   });

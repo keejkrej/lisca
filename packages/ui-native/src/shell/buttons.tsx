@@ -24,7 +24,9 @@ export function Button(props: {
   const size = props.size ?? (props.compact ? "sm" : "default");
   const isSm = size === "sm";
   const textColor =
-    variant === "default" || variant === "destructive" ? colors.primaryForeground : colors.foreground;
+    variant === "default" || variant === "destructive"
+      ? colors.primaryForeground
+      : colors.foreground;
   const borderColor = variant === "outline" ? colors.input : "transparent";
   const disabled = props.disabled || props.loading;
   const backgroundColor =
@@ -98,7 +100,10 @@ export function DockButton(props: {
       ]}
     >
       {props.loading ? (
-        <ActivityIndicator color={props.active ? colors.primaryForeground : colors.foreground} size="small" />
+        <ActivityIndicator
+          color={props.active ? colors.primaryForeground : colors.foreground}
+          size="small"
+        />
       ) : (
         <Text
           numberOfLines={1}
@@ -133,7 +138,9 @@ export function SegmentedToggle(props: {
             onPress={() => props.onChange(option.value)}
             style={[
               styles.segment,
-              !isLast ? { borderRightWidth: 1, borderRightColor: colors.border } : { borderRightWidth: 0 },
+              !isLast
+                ? { borderRightWidth: 1, borderRightColor: colors.border }
+                : { borderRightWidth: 0 },
               !active ? shellOutlineElevation(mode) : null,
               {
                 backgroundColor: active ? colors.primary : colors.outlineSurface,

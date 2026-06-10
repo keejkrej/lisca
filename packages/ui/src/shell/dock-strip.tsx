@@ -2,8 +2,7 @@ import type { ReactNode } from "react";
 
 import { cn } from "../lib/utils";
 
-const dockStripBaseClass =
-  "grid h-full min-h-0 w-full items-stretch justify-center gap-3 p-3";
+const dockStripBaseClass = "grid h-full min-h-0 w-full items-stretch justify-center gap-3 p-3";
 
 export function DockStrip(props: { panels: 2 | 3; children?: ReactNode; className?: string }) {
   return (

@@ -6,8 +6,7 @@ import { DockGrid, type DockGridLayout, type DockGridProps } from "./dock-grid";
 import { Section, type SectionProps } from "./section";
 
 /** Centered flex wrapper shared by every dock section panel. */
-export const dockSectionContentClass =
-  "flex min-h-0 items-center justify-center space-y-0";
+export const dockSectionContentClass = "flex min-h-0 items-center justify-center space-y-0";
 
 export type DockSectionProps = Omit<SectionProps, "className" | "contentClassName"> & {
   className?: string;

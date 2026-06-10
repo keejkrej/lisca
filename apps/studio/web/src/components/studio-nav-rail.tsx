@@ -1,9 +1,4 @@
-import {
-  ConnectionStatus,
-  Panel,
-  ShellThemeToggle,
-  useShellServer,
-} from "@lisca/ui/shell";
+import { ConnectionStatus, Panel, ShellThemeToggle, useShellServer } from "@lisca/ui/shell";
 import { useRouterState } from "@tanstack/react-router";
 
 import { NavButton } from "./studio-nav-button";
@@ -14,10 +9,7 @@ export function StudioNavRail() {
   const routeId = pathname.slice(1) || "assay";
 
   return (
-    <nav
-      aria-label="Primary"
-      className="flex h-full min-h-0 flex-col items-stretch gap-2.5 p-2.5"
-    >
+    <nav aria-label="Primary" className="flex h-full min-h-0 flex-col items-stretch gap-2.5 p-2.5">
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
         <Panel className="w-full shrink-0">
           <div className="flex flex-col items-center gap-6 p-3">

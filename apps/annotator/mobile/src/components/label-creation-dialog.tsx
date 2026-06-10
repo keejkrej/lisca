@@ -111,7 +111,12 @@ export function LabelCreationDialog(props: {
                 {props.workspacePath ?? "Select a workspace first"}
               </Text>
             </View>
-            <Button label="Close" size="sm" variant="ghost" onPress={() => props.onOpenChange(false)} />
+            <Button
+              label="Close"
+              size="sm"
+              variant="ghost"
+              onPress={() => props.onOpenChange(false)}
+            />
           </View>
         </DialogHeader>
 
@@ -122,7 +127,14 @@ export function LabelCreationDialog(props: {
                 <Field label="Name" style={styles.field}>
                   <TextInput
                     accessibilityLabel={`Label ${index + 1} name`}
-                    style={[styles.input, { borderColor: colors.input, color: colors.foreground, backgroundColor: colors.controlSurface }]}
+                    style={[
+                      styles.input,
+                      {
+                        borderColor: colors.input,
+                        color: colors.foreground,
+                        backgroundColor: colors.controlSurface,
+                      },
+                    ]}
                     value={draft.name}
                     onChangeText={(name) => {
                       updateDraft(index, { name, id: normalizeLabelId(name) || draft.id });
@@ -133,7 +145,14 @@ export function LabelCreationDialog(props: {
                   <TextInput
                     accessibilityLabel={`Label ${index + 1} id`}
                     autoCapitalize="none"
-                    style={[styles.input, { borderColor: colors.input, color: colors.foreground, backgroundColor: colors.controlSurface }]}
+                    style={[
+                      styles.input,
+                      {
+                        borderColor: colors.input,
+                        color: colors.foreground,
+                        backgroundColor: colors.controlSurface,
+                      },
+                    ]}
                     value={draft.id}
                     onChangeText={(id) => updateDraft(index, { id })}
                   />
@@ -142,7 +161,14 @@ export function LabelCreationDialog(props: {
                   <TextInput
                     accessibilityLabel={`Label ${index + 1} color`}
                     autoCapitalize="none"
-                    style={[styles.input, { borderColor: colors.input, color: colors.foreground, backgroundColor: colors.controlSurface }]}
+                    style={[
+                      styles.input,
+                      {
+                        borderColor: colors.input,
+                        color: colors.foreground,
+                        backgroundColor: colors.controlSurface,
+                      },
+                    ]}
                     value={draft.color}
                     onChangeText={(color) => updateDraft(index, { color })}
                   />

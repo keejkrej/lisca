@@ -14,6 +14,7 @@
     "@lisca/aligner-demo": "workspace:*",
     "@lisca/annotator-demo": "workspace:*",
     "@lisca/ui": "workspace:*",
+    "@lisca/web-app": "workspace:*",
     "@tanstack/react-router": "catalog:",
     "lucide-react": "^0.511.0",
     "react": "catalog:",

@@ -6,32 +6,23 @@ import {
   toNavigationOptions,
 } from "@lisca/ui/features";
 import { clamp } from "@lisca/utils";
-import { useMemo } from "react";
-
 import { useAnnotatePage } from "../state/annotate-page-context";
-
 export function AnnotatorLeft() {
   const { state } = useAnnotatePage();
-  const positionOptions = useMemo(
-    () => toNavigationOptions(state.scan?.positions.map((entry) => entry.pos) ?? []),
-    [state.scan],
+  const positionOptions = toNavigationOptions(
+    state.scan?.positions.map((entry) => entry.pos) ?? [],
   );
-  const roiOptions = useMemo(
-    () =>
-      state.position?.rois.map((entry) => ({ value: entry.roi, label: String(entry.roi) })) ?? [],
-    [state.position],
-  );
-  const channelOptions = useMemo(
-    () => toNavigationOptions(state.position?.channels ?? []),
-    [state.position],
-  );
+  const roiOptions =
+    state.position?.rois.map((entry) => ({
+      value: entry.roi,
+      label: String(entry.roi),
+    })) ?? [];
+  const channelOptions = toNavigationOptions(state.position?.channels ?? []);
   const timeMax = Math.max(0, (state.position?.times.length ?? 1) - 1);
   const zMax = Math.max(0, (state.position?.zSlices.length ?? 1) - 1);
-
   const posValue = state.selection.pos ?? positionOptions[0]?.value ?? 0;
   const roiValue = state.selection.roi ?? roiOptions[0]?.value ?? 0;
   const channelValue = state.selection.channel ?? channelOptions[0]?.value ?? 0;
-
   return (
     <div className="flex min-h-0 flex-col gap-2 p-3">
       <FrameNavigation
@@ -42,14 +33,32 @@ export function AnnotatorLeft() {
           previousDisabled: findNavigationOptionIndex(positionOptions, posValue) <= 0,
           nextDisabled:
             findNavigationOptionIndex(positionOptions, posValue) >= positionOptions.length - 1,
-          onChange: (value) => state.changeSelection(() => state.setSelection({ pos: value, roi: null })),
+          onChange: (value) =>
+            state.changeSelection(() =>
+              state.setSelection({
+                pos: value,
+                roi: null,
+              }),
+            ),
           onPrevious: () => {
             const next = stepNavigationValue(positionOptions, posValue, -1);
-            if (next != null) state.changeSelection(() => state.setSelection({ pos: next, roi: null }));
+            if (next != null)
+              state.changeSelection(() =>
+                state.setSelection({
+                  pos: next,
+                  roi: null,
+                }),
+              );
           },
           onNext: () => {
             const next = stepNavigationValue(positionOptions, posValue, 1);
-            if (next != null) state.changeSelection(() => state.setSelection({ pos: next, roi: null }));
+            if (next != null)
+              state.changeSelection(() =>
+                state.setSelection({
+                  pos: next,
+                  roi: null,
+                }),
+              );
           },
         }}
         roi={{
@@ -58,14 +67,29 @@ export function AnnotatorLeft() {
           disabled: roiOptions.length === 0,
           previousDisabled: findNavigationOptionIndex(roiOptions, roiValue) <= 0,
           nextDisabled: findNavigationOptionIndex(roiOptions, roiValue) >= roiOptions.length - 1,
-          onChange: (value) => state.changeSelection(() => state.setSelection({ roi: value })),
+          onChange: (value) =>
+            state.changeSelection(() =>
+              state.setSelection({
+                roi: value,
+              }),
+            ),
           onPrevious: () => {
             const next = stepNavigationValue(roiOptions, roiValue, -1);
-            if (next != null) state.changeSelection(() => state.setSelection({ roi: next }));
+            if (next != null)
+              state.changeSelection(() =>
+                state.setSelection({
+                  roi: next,
+                }),
+              );
           },
           onNext: () => {
             const next = stepNavigationValue(roiOptions, roiValue, 1);
-            if (next != null) state.changeSelection(() => state.setSelection({ roi: next }));
+            if (next != null)
+              state.changeSelection(() =>
+                state.setSelection({
+                  roi: next,
+                }),
+              );
           },
         }}
         channel={{
@@ -75,14 +99,29 @@ export function AnnotatorLeft() {
           previousDisabled: findNavigationOptionIndex(channelOptions, channelValue) <= 0,
           nextDisabled:
             findNavigationOptionIndex(channelOptions, channelValue) >= channelOptions.length - 1,
-          onChange: (value) => state.changeSelection(() => state.setSelection({ channel: value })),
+          onChange: (value) =>
+            state.changeSelection(() =>
+              state.setSelection({
+                channel: value,
+              }),
+            ),
           onPrevious: () => {
             const next = stepNavigationValue(channelOptions, channelValue, -1);
-            if (next != null) state.changeSelection(() => state.setSelection({ channel: next }));
+            if (next != null)
+              state.changeSelection(() =>
+                state.setSelection({
+                  channel: next,
+                }),
+              );
           },
           onNext: () => {
             const next = stepNavigationValue(channelOptions, channelValue, 1);
-            if (next != null) state.changeSelection(() => state.setSelection({ channel: next }));
+            if (next != null)
+              state.changeSelection(() =>
+                state.setSelection({
+                  channel: next,
+                }),
+              );
           },
         }}
         timepoint={{
@@ -95,15 +134,21 @@ export function AnnotatorLeft() {
           nextDisabled: state.selection.timeIndex >= timeMax,
           onCommit: (value) =>
             state.changeSelection(() =>
-              state.setSelection({ timeIndex: clamp(Math.round(value), 0, timeMax) }),
+              state.setSelection({
+                timeIndex: clamp(Math.round(value), 0, timeMax),
+              }),
             ),
           onPrevious: () =>
             state.changeSelection(() =>
-              state.setSelection({ timeIndex: Math.max(0, state.selection.timeIndex - 1) }),
+              state.setSelection({
+                timeIndex: Math.max(0, state.selection.timeIndex - 1),
+              }),
             ),
           onNext: () =>
             state.changeSelection(() =>
-              state.setSelection({ timeIndex: Math.min(timeMax, state.selection.timeIndex + 1) }),
+              state.setSelection({
+                timeIndex: Math.min(timeMax, state.selection.timeIndex + 1),
+              }),
             ),
         }}
         zPlane={{
@@ -116,15 +161,21 @@ export function AnnotatorLeft() {
           nextDisabled: state.selection.zIndex >= zMax,
           onCommit: (value) =>
             state.changeSelection(() =>
-              state.setSelection({ zIndex: clamp(Math.round(value), 0, zMax) }),
+              state.setSelection({
+                zIndex: clamp(Math.round(value), 0, zMax),
+              }),
             ),
           onPrevious: () =>
             state.changeSelection(() =>
-              state.setSelection({ zIndex: Math.max(0, state.selection.zIndex - 1) }),
+              state.setSelection({
+                zIndex: Math.max(0, state.selection.zIndex - 1),
+              }),
             ),
           onNext: () =>
             state.changeSelection(() =>
-              state.setSelection({ zIndex: Math.min(zMax, state.selection.zIndex + 1) }),
+              state.setSelection({
+                zIndex: Math.min(zMax, state.selection.zIndex + 1),
+              }),
             ),
         }}
       />

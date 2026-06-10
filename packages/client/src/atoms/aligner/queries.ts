@@ -23,7 +23,9 @@ export type SaveBboxInput = {
 
 export type AlignerQueryAtoms = {
   scanSourceAtom: (sourceKey: string) => Atom.Atom<Result.Result<WorkspaceScan, ClientError>>;
-  savedBboxPositionsAtom: (workspacePath: string) => Atom.Atom<Result.Result<number[], ClientError>>;
+  savedBboxPositionsAtom: (
+    workspacePath: string,
+  ) => Atom.Atom<Result.Result<number[], ClientError>>;
   autoExcludePreviewAtom: Atom.AtomResultFn<
     AutoExcludePreviewRequest,
     AutoExcludePreviewResponse,
@@ -32,7 +34,9 @@ export type AlignerQueryAtoms = {
   saveBboxAtom: Atom.AtomResultFn<SaveBboxInput, SaveBboxResponse, ClientError>;
 };
 
-export function createAlignerQueryAtoms(runtime: AppRuntime<AlignerPortService>): AlignerQueryAtoms {
+export function createAlignerQueryAtoms(
+  runtime: AppRuntime<AlignerPortService>,
+): AlignerQueryAtoms {
   const { scanSourceAtom, autoExcludePreviewAtom } = createSourceQueryAtoms(
     runtime,
     AlignerPortService,

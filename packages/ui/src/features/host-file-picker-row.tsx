@@ -2,10 +2,7 @@
 
 import type { HostFsEntry } from "@lisca/contracts";
 import { FileIcon, FolderIcon } from "lucide-react";
-import { memo } from "react";
-
 import { cn } from "../lib/utils";
-
 export type HostFilePickerRowProps = {
   entry: HostFsEntry;
   muted: boolean;
@@ -13,8 +10,7 @@ export type HostFilePickerRowProps = {
   onClick: (entry: HostFsEntry) => void;
   onDoubleClick: (entry: HostFsEntry) => void;
 };
-
-export const HostFilePickerRow = memo(function HostFilePickerRow({
+export const HostFilePickerRow = function HostFilePickerRow({
   entry,
   muted,
   selected,
@@ -44,4 +40,4 @@ export const HostFilePickerRow = memo(function HostFilePickerRow({
       </button>
     </li>
   );
-});
+};

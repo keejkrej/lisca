@@ -15,8 +15,7 @@ export function PinnedContrastRail(props: PinnedContrastRailProps) {
   const domain = props.frame?.contrastDomain ?? { min: 0, max: 255 };
   const value = props.contrast ?? { min: domain.min, max: domain.max };
   const disabled = props.disabled ?? !props.frame;
-  const suggestedContrast =
-    props.frame?.suggestedContrast ??
+  const suggestedContrast = props.frame?.suggestedContrast ??
     props.frame?.appliedContrast ?? { min: domain.min, max: domain.max };
 
   return (

@@ -1,16 +1,12 @@
 "use client";
 
 import {
-  memo,
   type PointerEvent as ReactPointerEvent,
   type WheelEvent as ReactWheelEvent,
-  useCallback,
   useEffect,
   useLayoutEffect,
-  useMemo,
   useRef,
 } from "react";
-
 import type {
   AlignGridCellCoord,
   AlignGridState,
@@ -23,17 +19,13 @@ import {
   enumerateVisibleAlignGridCells,
   type AlignGridWheelViewport,
 } from "@lisca/utils";
-
 import { cn } from "../lib/utils";
-import { areAlignCanvasPropsEqual } from "./canvas-memo";
 import { CanvasStatusMessageStack, CanvasToastStack } from "./canvas-status";
 import { resolvedCanvasBackground, useCanvasThemeRerender } from "./canvas-theme";
-
 export type AlignCanvasFramePoint = {
   x: number;
   y: number;
 };
-
 export type AlignCanvasPointerEvent = {
   pointerId: number;
   pointerType: string;
@@ -47,7 +39,6 @@ export type AlignCanvasPointerEvent = {
   capturePointer: () => void;
   releasePointer: () => void;
 };
-
 export type AlignCanvasWheelEvent = {
   deltaMode: number;
   deltaX: number;
@@ -60,7 +51,6 @@ export type AlignCanvasWheelEvent = {
   viewport: AlignGridWheelViewport | null;
   preventDefault: () => void;
 };
-
 export type AlignCanvasProps = {
   frame: FrameResult | null;
   grid: AlignGridState;
@@ -78,30 +68,25 @@ export type AlignCanvasProps = {
   onVirtualPointerCancel?: (event: AlignCanvasPointerEvent) => void;
   onVirtualWheel?: (event: AlignCanvasWheelEvent) => void;
 };
-
 type PreparedFrame = {
   frame: FrameResult;
   prepared: HTMLCanvasElement;
 };
-
 function pixelToDisplayValue(frame: FrameResult, index: number) {
   const raw = Number(frame.pixels[index] ?? 0);
   const contrast = frame.appliedContrast ?? frame.suggestedContrast ?? frame.contrastDomain;
   if (!contrast || frame.pixelType === "uint8" || frame.pixelType === "uint8clamped") {
     return clamp(Math.round(raw), 0, 255);
   }
-
   const span = Math.max(1, contrast.max - contrast.min);
   return clamp(Math.round(((raw - contrast.min) / span) * 255), 0, 255);
 }
-
 function prepareFrameCanvas(frame: FrameResult): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
   canvas.width = frame.width;
   canvas.height = frame.height;
   const ctx = canvas.getContext("2d");
   if (!ctx) return canvas;
-
   const rgba = new Uint8ClampedArray(frame.width * frame.height * 4);
   for (let index = 0; index < frame.width * frame.height; index += 1) {
     const value = pixelToDisplayValue(frame, index);
@@ -111,11 +96,9 @@ function prepareFrameCanvas(frame: FrameResult): HTMLCanvasElement {
     rgba[offset + 2] = value;
     rgba[offset + 3] = 255;
   }
-
   ctx.putImageData(new ImageData(rgba, frame.width, frame.height), 0, 0);
   return canvas;
 }
-
 function drawGridOverlay(
   ctx: CanvasRenderingContext2D,
   viewportWidth: number,
@@ -125,7 +108,6 @@ function drawGridOverlay(
   excludedCellKeys: ReadonlySet<string>,
 ) {
   if (!grid.enabled) return;
-
   const scale = Math.min(viewportWidth / frame.width, viewportHeight / frame.height);
   const drawWidth = frame.width * scale;
   const drawHeight = frame.height * scale;
@@ -134,14 +116,18 @@ function drawGridOverlay(
   const originX = drawX + (frame.width / 2 + grid.tx) * scale;
   const originY = drawY + (frame.height / 2 + grid.ty) * scale;
   const basis = alignGridBasis(grid.shape, grid.rotation, grid.spacingA, grid.spacingB);
-  const scaledA = { x: basis.a.x * scale, y: basis.a.y * scale };
-  const scaledB = { x: basis.b.x * scale, y: basis.b.y * scale };
-
+  const scaledA = {
+    x: basis.a.x * scale,
+    y: basis.a.y * scale,
+  };
+  const scaledB = {
+    x: basis.b.x * scale,
+    y: basis.b.y * scale,
+  };
   ctx.save();
   ctx.beginPath();
   ctx.rect(drawX, drawY, drawWidth, drawHeight);
   ctx.clip();
-
   for (const cell of enumerateVisibleAlignGridCells(frame, grid)) {
     const color = excludedCellKeys.has(`${cell.i}:${cell.j}`) ? "244, 63, 94" : "68, 151, 255";
     ctx.fillStyle = `rgba(${color}, ${grid.opacity * 0.55})`;
@@ -159,29 +145,24 @@ function drawGridOverlay(
       Math.max(0, scaledHeight - 1),
     );
   }
-
   ctx.strokeStyle = "rgba(255,255,255,0.9)";
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.arc(originX, originY, 4, 0, Math.PI * 2);
   ctx.stroke();
-
   ctx.strokeStyle = "rgba(249,115,22,0.95)";
   ctx.beginPath();
   ctx.moveTo(originX, originY);
   ctx.lineTo(originX + scaledA.x, originY + scaledA.y);
   ctx.stroke();
-
   ctx.strokeStyle = "rgba(34,197,94,0.95)";
   ctx.beginPath();
   ctx.moveTo(originX, originY);
   ctx.lineTo(originX + scaledB.x, originY + scaledB.y);
   ctx.stroke();
-
   ctx.restore();
 }
-
-function AlignCanvasInner({
+export function AlignCanvas({
   frame,
   grid,
   previewGrid,
@@ -202,24 +183,18 @@ function AlignCanvasInner({
   const resizeRafRef = useRef<number | null>(null);
   const latestFrameRef = useRef<PreparedFrame | null>(null);
   const dprRef = useRef(1);
-  const preparedFrame = useMemo(() => (frame ? prepareFrameCanvas(frame) : null), [frame]);
-
-  const activeExcludedCellKeys = useMemo(
-    () =>
-      new Set(Array.from(excludedCells ?? [], (cell: AlignGridCellCoord) => `${cell.i}:${cell.j}`)),
-    [excludedCells],
+  const preparedFrame = frame ? prepareFrameCanvas(frame) : null;
+  const activeExcludedCellKeys = new Set(
+    Array.from(excludedCells ?? [], (cell: AlignGridCellCoord) => `${cell.i}:${cell.j}`),
   );
-
-  const renderNow = useCallback(() => {
+  const renderNow = () => {
     renderRafRef.current = null;
     const canvas = canvasRef.current;
     const view = viewportRef.current;
     const cached = latestFrameRef.current;
     if (!canvas || !view) return;
-
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-
     const cssWidth = view.clientWidth;
     const cssHeight = view.clientHeight;
     const activeGrid = previewGrid ?? grid;
@@ -228,7 +203,6 @@ function AlignCanvasInner({
     ctx.scale(dprRef.current, dprRef.current);
     ctx.fillStyle = resolvedCanvasBackground(view);
     ctx.fillRect(0, 0, cssWidth, cssHeight);
-
     if (cached) {
       const scale = Math.min(cssWidth / cached.frame.width, cssHeight / cached.frame.height);
       const drawWidth = cached.frame.width * scale;
@@ -243,10 +217,8 @@ function AlignCanvasInner({
       ctx.drawImage(cached.prepared, drawX, drawY, drawWidth, drawHeight);
       drawGridOverlay(ctx, cssWidth, cssHeight, cached.frame, activeGrid, activeExcludedCellKeys);
     }
-
     ctx.restore();
-  }, [activeExcludedCellKeys, grid, previewGrid]);
-
+  };
   useEffect(() => {
     latestFrameRef.current =
       frame && preparedFrame
@@ -257,22 +229,17 @@ function AlignCanvasInner({
         : null;
     renderNow();
   }, [frame, preparedFrame, renderNow]);
-
   useEffect(() => {
     renderNow();
   }, [grid, previewGrid, renderNow]);
-
   useEffect(() => {
     renderNow();
   }, [activeExcludedCellKeys, renderNow]);
-
   useCanvasThemeRerender(renderNow);
-
   useLayoutEffect(() => {
     const view = viewportRef.current;
     const canvas = canvasRef.current;
     if (!view || !canvas) return;
-
     const resize = () => {
       if (resizeRafRef.current != null) {
         window.cancelAnimationFrame(resizeRafRef.current);
@@ -292,11 +259,9 @@ function AlignCanvasInner({
         renderNow();
       });
     };
-
     const observer = new ResizeObserver(() => resize());
     observer.observe(view);
     resize();
-
     return () => {
       if (resizeRafRef.current != null) {
         window.cancelAnimationFrame(resizeRafRef.current);
@@ -309,43 +274,35 @@ function AlignCanvasInner({
       observer.disconnect();
     };
   }, [renderNow]);
-
-  const getFramePointFromClient = useCallback(
-    (clientX: number, clientY: number): AlignCanvasFramePoint | null => {
-      const cached = latestFrameRef.current;
-      const view = viewportRef.current;
-      if (!cached || !view) return null;
-
-      const bounds = view.getBoundingClientRect();
-      const scale = Math.min(
-        bounds.width / cached.frame.width,
-        bounds.height / cached.frame.height,
-      );
-      const drawWidth = cached.frame.width * scale;
-      const drawHeight = cached.frame.height * scale;
-      const drawX = (bounds.width - drawWidth) / 2;
-      const drawY = (bounds.height - drawHeight) / 2;
-      const pointerX = clientX - bounds.left;
-      const pointerY = clientY - bounds.top;
-
-      if (
-        pointerX < drawX ||
-        pointerX > drawX + drawWidth ||
-        pointerY < drawY ||
-        pointerY > drawY + drawHeight
-      ) {
-        return null;
-      }
-
-      return {
-        x: (pointerX - drawX) / scale,
-        y: (pointerY - drawY) / scale,
-      };
-    },
-    [],
-  );
-
-  const getViewport = useCallback((): AlignGridWheelViewport | null => {
+  const getFramePointFromClient = (
+    clientX: number,
+    clientY: number,
+  ): AlignCanvasFramePoint | null => {
+    const cached = latestFrameRef.current;
+    const view = viewportRef.current;
+    if (!cached || !view) return null;
+    const bounds = view.getBoundingClientRect();
+    const scale = Math.min(bounds.width / cached.frame.width, bounds.height / cached.frame.height);
+    const drawWidth = cached.frame.width * scale;
+    const drawHeight = cached.frame.height * scale;
+    const drawX = (bounds.width - drawWidth) / 2;
+    const drawY = (bounds.height - drawHeight) / 2;
+    const pointerX = clientX - bounds.left;
+    const pointerY = clientY - bounds.top;
+    if (
+      pointerX < drawX ||
+      pointerX > drawX + drawWidth ||
+      pointerY < drawY ||
+      pointerY > drawY + drawHeight
+    ) {
+      return null;
+    }
+    return {
+      x: (pointerX - drawX) / scale,
+      y: (pointerY - drawY) / scale,
+    };
+  };
+  const getViewport = (): AlignGridWheelViewport | null => {
     const view = viewportRef.current;
     if (!view || !frame) return null;
     return {
@@ -354,45 +311,40 @@ function AlignCanvasInner({
       modelWidth: frame.width,
       modelHeight: frame.height,
     };
-  }, [frame]);
-
-  const toVirtualPointerEvent = useCallback(
-    (event: ReactPointerEvent<HTMLCanvasElement>): AlignCanvasPointerEvent => ({
-      pointerId: event.pointerId,
-      pointerType: event.pointerType,
-      button: event.button,
-      buttons: event.buttons,
-      clientX: event.clientX,
-      clientY: event.clientY,
-      framePoint: getFramePointFromClient(event.clientX, event.clientY),
-      viewport: getViewport(),
-      preventDefault: () => event.preventDefault(),
-      capturePointer: () => event.currentTarget.setPointerCapture(event.pointerId),
-      releasePointer: () => {
-        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-          event.currentTarget.releasePointerCapture(event.pointerId);
-        }
-      },
-    }),
-    [getFramePointFromClient, getViewport],
-  );
-
-  const toVirtualWheelEvent = useCallback(
-    (event: ReactWheelEvent<HTMLCanvasElement>): AlignCanvasWheelEvent => ({
-      deltaMode: event.deltaMode,
-      deltaX: event.deltaX,
-      deltaY: event.deltaY,
-      ctrlKey: event.ctrlKey,
-      shiftKey: event.shiftKey,
-      clientX: event.clientX,
-      clientY: event.clientY,
-      framePoint: getFramePointFromClient(event.clientX, event.clientY),
-      viewport: getViewport(),
-      preventDefault: () => event.preventDefault(),
-    }),
-    [getFramePointFromClient, getViewport],
-  );
-
+  };
+  const toVirtualPointerEvent = (
+    event: ReactPointerEvent<HTMLCanvasElement>,
+  ): AlignCanvasPointerEvent => ({
+    pointerId: event.pointerId,
+    pointerType: event.pointerType,
+    button: event.button,
+    buttons: event.buttons,
+    clientX: event.clientX,
+    clientY: event.clientY,
+    framePoint: getFramePointFromClient(event.clientX, event.clientY),
+    viewport: getViewport(),
+    preventDefault: () => event.preventDefault(),
+    capturePointer: () => event.currentTarget.setPointerCapture(event.pointerId),
+    releasePointer: () => {
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+    },
+  });
+  const toVirtualWheelEvent = (
+    event: ReactWheelEvent<HTMLCanvasElement>,
+  ): AlignCanvasWheelEvent => ({
+    deltaMode: event.deltaMode,
+    deltaX: event.deltaX,
+    deltaY: event.deltaY,
+    ctrlKey: event.ctrlKey,
+    shiftKey: event.shiftKey,
+    clientX: event.clientX,
+    clientY: event.clientY,
+    framePoint: getFramePointFromClient(event.clientX, event.clientY),
+    viewport: getViewport(),
+    preventDefault: () => event.preventDefault(),
+  });
   return (
     <div
       ref={viewportRef}
@@ -404,7 +356,10 @@ function AlignCanvasInner({
       <canvas
         ref={canvasRef}
         className="block h-full w-full select-none"
-        style={{ cursor: cursor ?? "default", touchAction: "none" }}
+        style={{
+          cursor: cursor ?? "default",
+          touchAction: "none",
+        }}
         onContextMenu={(event) => event.preventDefault()}
         onPointerCancel={(event) => onVirtualPointerCancel?.(toVirtualPointerEvent(event))}
         onPointerDown={(event) => onVirtualPointerDown?.(toVirtualPointerEvent(event))}
@@ -418,5 +373,3 @@ function AlignCanvasInner({
     </div>
   );
 }
-
-export const AlignCanvas = memo(AlignCanvasInner, areAlignCanvasPropsEqual);

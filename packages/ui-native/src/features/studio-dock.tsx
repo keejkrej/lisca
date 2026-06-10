@@ -4,11 +4,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { Section } from "../shell/section.tsx";
 import { useShellTheme } from "../theme/shell-theme.tsx";
 
-export function StudioDock(props: {
-  instruction?: string;
-  tool?: ReactNode;
-  action?: ReactNode;
-}) {
+export function StudioDock(props: { instruction?: string; tool?: ReactNode; action?: ReactNode }) {
   const { colors } = useShellTheme();
 
   return (
@@ -19,7 +15,9 @@ export function StudioDock(props: {
         title="Instruction"
       >
         {props.instruction ? (
-          <Text style={[styles.instructionText, { color: colors.foreground }]}>{props.instruction}</Text>
+          <Text style={[styles.instructionText, { color: colors.foreground }]}>
+            {props.instruction}
+          </Text>
         ) : null}
       </Section>
       <Section contentStyle={styles.centerContent} style={styles.toolSection} title="Tool">

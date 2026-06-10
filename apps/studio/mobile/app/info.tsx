@@ -8,12 +8,7 @@ import { BasicInfoStep2 } from "../src/components/basic-info-step2";
 import { BasicInfoStep3 } from "../src/components/basic-info-step3";
 import { STUDIO_NAV_WIDTH } from "../src/components/studio-layout";
 import { StudioLeft } from "../src/components/studio-left";
-import {
-  instructionForStep,
-  validInfo1,
-  validInfo2,
-  validInfo3,
-} from "../src/state/studio-routes";
+import { instructionForStep, validInfo1, validInfo2, validInfo3 } from "../src/state/studio-routes";
 import { useStudioStore } from "../src/state/studio-store";
 
 export default function InfoRoute() {

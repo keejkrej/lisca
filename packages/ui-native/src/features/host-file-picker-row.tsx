@@ -1,9 +1,6 @@
 import type { HostFsEntry } from "@lisca/contracts";
-import { memo, useCallback } from "react";
 import { Pressable, StyleSheet, Text } from "react-native";
-
 export const FILE_PICKER_ROW_HEIGHT = 44;
-
 export type FilePickerRowProps = {
   entry: HostFsEntry;
   borderColor: string;
@@ -12,8 +9,7 @@ export type FilePickerRowProps = {
   onPickFile: (path: string) => void;
   onClose: () => void;
 };
-
-export const FilePickerRow = memo(function FilePickerRow({
+export const FilePickerRow = function FilePickerRow({
   entry,
   borderColor,
   foregroundColor,
@@ -21,29 +17,36 @@ export const FilePickerRow = memo(function FilePickerRow({
   onPickFile,
   onClose,
 }: FilePickerRowProps) {
-  const handlePress = useCallback(() => {
+  const handlePress = () => {
     if (entry.isDirectory) {
       onOpenDirectory(entry.path);
       return;
     }
     onPickFile(entry.path);
     onClose();
-  }, [entry.isDirectory, entry.path, onClose, onOpenDirectory, onPickFile]);
-
+  };
   return (
     <Pressable
       accessibilityLabel={entry.isDirectory ? `Folder ${entry.name}` : `File ${entry.name}`}
       accessibilityRole="button"
-      style={[styles.row, { borderColor }]}
+      style={[
+        styles.row,
+        {
+          borderColor,
+        },
+      ]}
       onPress={handlePress}
     >
-      <Text style={{ color: foregroundColor }}>
+      <Text
+        style={{
+          color: foregroundColor,
+        }}
+      >
         {entry.isDirectory ? "Folder" : "File"} {entry.name}
       </Text>
     </Pressable>
   );
-});
-
+};
 const styles = StyleSheet.create({
   row: {
     borderBottomWidth: 1,

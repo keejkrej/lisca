@@ -154,7 +154,14 @@ export function FolderSourceParseModal({
           <TextInput
             value={subfolderTemplate}
             onChangeText={setSubfolderTemplate}
-            style={[styles.input, { color: colors.foreground, borderColor: colors.input, backgroundColor: colors.controlSurface }]}
+            style={[
+              styles.input,
+              {
+                color: colors.foreground,
+                borderColor: colors.input,
+                backgroundColor: colors.controlSurface,
+              },
+            ]}
           />
         </View>
         <View style={styles.field}>
@@ -165,7 +172,14 @@ export function FolderSourceParseModal({
               setFilenameTemplate(value);
               setError(null);
             }}
-            style={[styles.input, { color: colors.foreground, borderColor: colors.input, backgroundColor: colors.controlSurface }]}
+            style={[
+              styles.input,
+              {
+                color: colors.foreground,
+                borderColor: colors.input,
+                backgroundColor: colors.controlSurface,
+              },
+            ]}
           />
           {error ? <Text style={{ color: colors.destructive }}>{error}</Text> : null}
         </View>

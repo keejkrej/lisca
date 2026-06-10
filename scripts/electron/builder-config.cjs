@@ -6,9 +6,9 @@ const { brandDir, brandIcons } = require("./brand.cjs");
 function codeSigningEnabled() {
   return Boolean(
     process.env.CSC_LINK ||
-      process.env.WIN_CSC_LINK ||
-      process.env.CSC_LINK_FILE ||
-      process.env.LISCA_CODE_SIGN === "1",
+    process.env.WIN_CSC_LINK ||
+    process.env.CSC_LINK_FILE ||
+    process.env.LISCA_CODE_SIGN === "1",
   );
 }
 

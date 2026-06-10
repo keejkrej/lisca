@@ -32,7 +32,13 @@ export function NavButton({
       onClick={(event) => {
         onClick?.();
         if (event.defaultPrevented) return;
-        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
+        if (
+          event.metaKey ||
+          event.ctrlKey ||
+          event.shiftKey ||
+          event.altKey ||
+          event.button !== 0
+        ) {
           return;
         }
         event.preventDefault();

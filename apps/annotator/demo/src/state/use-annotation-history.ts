@@ -1,37 +1,34 @@
 import type { FrameResult } from "@lisca/contracts";
-import { useCallback, useEffect, useState } from "react";
-
+import { useEffect, useState } from "react";
 import {
   annotationValuesEqual,
   cloneAnnotationValue,
   createEmptyMask,
   type AnnotationValue,
 } from "../utils/annotation-utils";
-
 export function emptyValueFor(frame: FrameResult | null): AnnotationValue {
   return {
     classificationLabelId: null,
     mask: frame ? createEmptyMask(frame.width, frame.height) : new Uint8Array(),
   };
 }
-
 export function useAnnotationHistory(frame: FrameResult | null) {
   const [initialValue, setInitialValue] = useState<AnnotationValue>(() => emptyValueFor(null));
   const [state, setState] = useState(() => ({
     history: [emptyValueFor(null)],
     index: 0,
   }));
-
   const current = state.history[state.index] ?? initialValue;
   const dirty = !annotationValuesEqual(current, initialValue);
-
-  const reset = useCallback((value: AnnotationValue) => {
+  const reset = (value: AnnotationValue) => {
     const next = cloneAnnotationValue(value);
     setInitialValue(next);
-    setState({ history: [cloneAnnotationValue(next)], index: 0 });
-  }, []);
-
-  const commit = useCallback((value: AnnotationValue) => {
+    setState({
+      history: [cloneAnnotationValue(next)],
+      index: 0,
+    });
+  };
+  const commit = (value: AnnotationValue) => {
     setState((currentState) => {
       const active = currentState.history[currentState.index];
       if (active && annotationValuesEqual(active, value)) return currentState;
@@ -39,14 +36,15 @@ export function useAnnotationHistory(frame: FrameResult | null) {
         .slice(0, currentState.index + 1)
         .map(cloneAnnotationValue);
       history.push(cloneAnnotationValue(value));
-      return { history, index: history.length - 1 };
+      return {
+        history,
+        index: history.length - 1,
+      };
     });
-  }, []);
-
+  };
   useEffect(() => {
     if (!frame) reset(emptyValueFor(null));
   }, [frame, reset]);
-
   return {
     current,
     dirty,
@@ -54,7 +52,11 @@ export function useAnnotationHistory(frame: FrameResult | null) {
     canRedo: state.index < state.history.length - 1,
     reset,
     commit,
-    undo: () => setState((value) => ({ ...value, index: Math.max(0, value.index - 1) })),
+    undo: () =>
+      setState((value) => ({
+        ...value,
+        index: Math.max(0, value.index - 1),
+      })),
     redo: () =>
       setState((value) => ({
         ...value,

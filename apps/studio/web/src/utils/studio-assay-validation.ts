@@ -15,9 +15,7 @@ function parseNonNegativeInteger(value: string): number | null {
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
 }
 
-export type AssayValidationResult =
-  | { ok: true }
-  | { ok: false; errors: string[] };
+export type AssayValidationResult = { ok: true } | { ok: false; errors: string[] };
 
 export function validateAssayForAnalysis(input: {
   assayId: StudioAssayId | null;

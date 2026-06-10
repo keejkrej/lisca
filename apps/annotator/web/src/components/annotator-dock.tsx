@@ -33,10 +33,7 @@ function buildAnnotationToolActions(
   }));
 }
 
-function SegmentationToolButtons(props: {
-  canEditTools: boolean;
-  toolActions: DockToolAction[];
-}) {
+function SegmentationToolButtons(props: { canEditTools: boolean; toolActions: DockToolAction[] }) {
   useDockToolShortcuts(props.toolActions, { enabled: props.canEditTools });
 
   return props.toolActions.map((action, index) => {

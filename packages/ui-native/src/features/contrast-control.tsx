@@ -65,7 +65,9 @@ export function ContrastControl(props: ContrastControlProps) {
         style={sectionStyle}
         title={sectionTitle}
       >
-        <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>Invalid intensity domain.</Text>
+        <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>
+          Invalid intensity domain.
+        </Text>
       </Section>
     );
   }
@@ -78,7 +80,9 @@ export function ContrastControl(props: ContrastControlProps) {
       title={sectionTitle}
     >
       {title?.trim() ? (
-        <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: "500" }}>{title.trim()}</Text>
+        <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: "500" }}>
+          {title.trim()}
+        </Text>
       ) : null}
 
       {onAutoRange ? (
@@ -140,7 +144,9 @@ function ContrastSliderRow(props: {
         <Text style={{ color: colors.mutedForeground, fontSize: 12, fontWeight: "500" }}>
           {props.label}
         </Text>
-        <Text style={{ color: colors.mutedForeground, fontSize: 12, fontVariant: ["tabular-nums"] }}>
+        <Text
+          style={{ color: colors.mutedForeground, fontSize: 12, fontVariant: ["tabular-nums"] }}
+        >
           {String(Math.round(props.value))}
         </Text>
       </View>

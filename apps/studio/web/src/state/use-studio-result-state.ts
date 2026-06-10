@@ -17,19 +17,17 @@ export type StudioResultState = {
 export function useStudioResultState(): StudioResultState {
   const saveTo = useStudioStore((state) => state.info1.saveTo);
   const activeWorkspacePath = saveTo.trim() || null;
-  const {
-    workspacePath,
-    analysisResultFiles,
-    setAnalysisProgress,
-    setAnalysisResultFiles,
-  } = useStudioAnnotateStore();
+  const { workspacePath, analysisResultFiles, setAnalysisProgress, setAnalysisResultFiles } =
+    useStudioAnnotateStore();
 
   const resolvedWorkspacePath = workspacePath?.trim() || activeWorkspacePath;
   const hasStoredResultFiles = analysisResultFiles.length > 0;
   const resultsAtom = resolvedWorkspacePath
     ? analysisResultsAtom(resolvedWorkspacePath)
     : analysisResultsIdleAtom;
-  const resultsQueryResult = useAtomValue(hasStoredResultFiles ? analysisResultsIdleAtom : resultsAtom);
+  const resultsQueryResult = useAtomValue(
+    hasStoredResultFiles ? analysisResultsIdleAtom : resultsAtom,
+  );
 
   useEffect(() => {
     if (hasStoredResultFiles) return;

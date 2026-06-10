@@ -3,11 +3,7 @@ import { Modal, Pressable, StyleSheet, View } from "react-native";
 
 import { useShellTheme } from "../theme/shell-theme.tsx";
 
-export function ModalScrim(props: {
-  open: boolean;
-  onClose: () => void;
-  children: ReactNode;
-}) {
+export function ModalScrim(props: { open: boolean; onClose: () => void; children: ReactNode }) {
   return (
     <Modal
       accessibilityViewIsModal
@@ -63,9 +59,7 @@ export function DialogBody(props: { children: ReactNode; style?: object }) {
 
 export function DialogFooter(props: { children: ReactNode }) {
   const { colors } = useShellTheme();
-  return (
-    <View style={[styles.footer, { borderTopColor: colors.border }]}>{props.children}</View>
-  );
+  return <View style={[styles.footer, { borderTopColor: colors.border }]}>{props.children}</View>;
 }
 
 const styles = StyleSheet.create({

@@ -101,16 +101,14 @@ function grayPixelsFromTiffData(
     const pixels = new Uint8Array(pixelCount);
     for (let index = 0; index < pixelCount; index += 1) {
       const offset = index * 4;
-      pixels[index] = luminance(
-        data[offset] ?? 0,
-        data[offset + 1] ?? 0,
-        data[offset + 2] ?? 0,
-      );
+      pixels[index] = luminance(data[offset] ?? 0, data[offset + 1] ?? 0, data[offset + 2] ?? 0);
     }
     return { pixels, pixelType: "uint8" };
   }
 
-  throw new Error(`Unsupported TIFF sample layout (${data.length} samples for ${pixelCount} pixels)`);
+  throw new Error(
+    `Unsupported TIFF sample layout (${data.length} samples for ${pixelCount} pixels)`,
+  );
 }
 
 async function loadTiffImage(file: File): Promise<FrameResult> {

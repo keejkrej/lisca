@@ -15,17 +15,11 @@ export function StudioNavButton(props: {
       accessibilityRole="button"
       accessibilityState={{ selected: props.active }}
       onPress={props.onPress}
-      style={({ pressed }) => [
-        styles.root,
-        pressed ? { opacity: 0.7 } : null,
-      ]}
+      style={({ pressed }) => [styles.root, pressed ? { opacity: 0.7 } : null]}
     >
       <Text
         numberOfLines={2}
-        style={[
-          styles.label,
-          { color: props.active ? colors.foreground : colors.mutedForeground },
-        ]}
+        style={[styles.label, { color: props.active ? colors.foreground : colors.mutedForeground }]}
       >
         {props.children}
       </Text>

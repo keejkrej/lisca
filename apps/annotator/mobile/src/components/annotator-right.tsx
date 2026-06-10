@@ -76,7 +76,13 @@ export function AnnotatorRight(props: {
                   }
                 }}
               >
-                <Text numberOfLines={1} style={[styles.labelText, chipStyle ? { color: chipStyle.color } : { color: colors.foreground }]}>
+                <Text
+                  numberOfLines={1}
+                  style={[
+                    styles.labelText,
+                    chipStyle ? { color: chipStyle.color } : { color: colors.foreground },
+                  ]}
+                >
                   {label.name}
                 </Text>
               </Pressable>
@@ -99,10 +105,22 @@ export function AnnotatorRight(props: {
       </Section>
       <Section contentStyle={styles.editGrid} title="Edit">
         <View style={styles.gridCell}>
-          <Button disabled={!props.canUndo} label="Undo" size="sm" variant="outline" onPress={props.onUndo} />
+          <Button
+            disabled={!props.canUndo}
+            label="Undo"
+            size="sm"
+            variant="outline"
+            onPress={props.onUndo}
+          />
         </View>
         <View style={styles.gridCell}>
-          <Button disabled={!props.canRedo} label="Redo" size="sm" variant="outline" onPress={props.onRedo} />
+          <Button
+            disabled={!props.canRedo}
+            label="Redo"
+            size="sm"
+            variant="outline"
+            onPress={props.onRedo}
+          />
         </View>
         <View style={styles.gridCell}>
           <Button
@@ -114,7 +132,13 @@ export function AnnotatorRight(props: {
           />
         </View>
         <View style={styles.gridCell}>
-          <Button disabled={!props.dirty} label="Discard" size="sm" variant="outline" onPress={props.onDiscard} />
+          <Button
+            disabled={!props.dirty}
+            label="Discard"
+            size="sm"
+            variant="outline"
+            onPress={props.onDiscard}
+          />
         </View>
       </Section>
       {props.mode === "segmentation" ? (

@@ -39,10 +39,7 @@ export {
   useCanvasResourceTransaction,
   type CanvasResourceTransactionOptions,
 } from "./canvas-resource-transaction";
-export {
-  ContrastControl,
-  type ContrastControlProps,
-} from "./contrast-control";
+export { ContrastControl, type ContrastControlProps } from "./contrast-control";
 export { CropProgressModal, type CropProgressModalProps } from "./crop-progress-modal";
 export {
   FolderSourceParseModal,
@@ -61,13 +58,7 @@ export {
   type SelectNavigationControlProps,
   type SliderNavigationControlProps,
 } from "./frame-navigation";
-export {
-  HostFilePickerDialog,
-  type HostFilePickerDialogProps,
-} from "./host-file-picker-dialog";
+export { HostFilePickerDialog, type HostFilePickerDialogProps } from "./host-file-picker-dialog";
 export type { HostFilePickerOperations } from "./host-operations";
-export {
-  LabelCreationDialog,
-  type LabelCreationDialogProps,
-} from "./label-creation-dialog";
+export { LabelCreationDialog, type LabelCreationDialogProps } from "./label-creation-dialog";
 export { SourcePickerModal, type SourcePickerModalProps } from "./source-picker-modal";

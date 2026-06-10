@@ -24,7 +24,8 @@ function TimeseriesChart(props: { panel: TimeseriesPanel; width: number; height:
   const minY = Math.min(...allPoints.map((p) => p.y), 0);
   const maxY = Math.max(...allPoints.map((p) => p.y), 1);
   const sx = (x: number) => padding + ((x - minX) / Math.max(1, maxX - minX)) * plotWidth;
-  const sy = (y: number) => padding + plotHeight - ((y - minY) / Math.max(1, maxY - minY)) * plotHeight;
+  const sy = (y: number) =>
+    padding + plotHeight - ((y - minY) / Math.max(1, maxY - minY)) * plotHeight;
 
   return (
     <View>
@@ -89,7 +90,12 @@ export function ResultPanelsGridView(props: {
   return (
     <View style={{ gap: 16 }}>
       {props.panels.map((panel) => (
-        <ResultPanelChart key={`${panel.kind}:${panel.path}:${panel.title}`} panel={panel} width={props.width} height={panelHeight} />
+        <ResultPanelChart
+          key={`${panel.kind}:${panel.path}:${panel.title}`}
+          panel={panel}
+          width={props.width}
+          height={panelHeight}
+        />
       ))}
     </View>
   );
@@ -103,6 +109,8 @@ export function pdfBytesToBase64(bytes: Uint8Array): string {
   return btoa(binary);
 }
 
-export function buildResultPdfFromCaptures(_pages: Array<{ title: string; imageBase64: string; width: number; height: number }>): Uint8Array {
+export function buildResultPdfFromCaptures(
+  _pages: Array<{ title: string; imageBase64: string; width: number; height: number }>,
+): Uint8Array {
   return new TextEncoder().encode("%PDF-1.4\n%%EOF");
 }

@@ -3,11 +3,7 @@ import type { ReactNode } from "react";
 import { DockSection } from "./dock-section";
 import { DockStrip } from "./dock-strip";
 
-export function StudioDock(props: {
-  action?: ReactNode;
-  instruction?: string;
-  tool?: ReactNode;
-}) {
+export function StudioDock(props: { action?: ReactNode; instruction?: string; tool?: ReactNode }) {
   return (
     <DockStrip panels={props.tool ? 3 : 2}>
       <DockSection title="Instruction">

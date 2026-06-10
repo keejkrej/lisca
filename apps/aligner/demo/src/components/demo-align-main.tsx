@@ -1,10 +1,12 @@
 import { ViewportCard } from "@lisca/ui/shell";
-import { AlignCanvas, cursorForAlignTool, useAlignCanvasGridHandlers, useCanvasTransientStatus } from "@lisca/ui/features";;
+import {
+  AlignCanvas,
+  cursorForAlignTool,
+  useAlignCanvasGridHandlers,
+  useCanvasTransientStatus,
+} from "@lisca/ui/features";
 import { frameWithContrast } from "@lisca/browser-frame";
-import { useMemo } from "react";
-
 import type { DemoAlignState } from "../state/use-demo-align-state";
-
 export function DemoAlignMain({ state }: { state: DemoAlignState }) {
   const { handlePointerDown, handlePointerMove, handlePointerEnd, previewGrid } =
     useAlignCanvasGridHandlers({
@@ -14,18 +16,25 @@ export function DemoAlignMain({ state }: { state: DemoAlignState }) {
       setGrid: state.setGrid,
       toolMode: state.toolMode,
     });
-  const displayFrame = useMemo(
-    () => (state.frame ? frameWithContrast(state.frame, state.contrast) : null),
-    [state.contrast, state.frame],
-  );
+  const displayFrame = state.frame ? frameWithContrast(state.frame, state.contrast) : null;
   const visibleStatus = useCanvasTransientStatus(state.status);
   const activeToastStatus = state.frameLoading ? "Loading image" : visibleStatus;
-  const toasts = useMemo(() => {
-    if (state.error) return [{ text: state.error, tone: "error" as const }];
-    if (activeToastStatus) return [{ text: activeToastStatus }];
+  const toasts = (() => {
+    if (state.error)
+      return [
+        {
+          text: state.error,
+          tone: "error" as const,
+        },
+      ];
+    if (activeToastStatus)
+      return [
+        {
+          text: activeToastStatus,
+        },
+      ];
     return [];
-  }, [activeToastStatus, state.error]);
-
+  })();
   return (
     <ViewportCard>
       <AlignCanvas

@@ -107,8 +107,7 @@ export function createCropRoiProgressSubscription(
     wsUrl: deps.wsUrl(),
     requestId,
     onProgress,
-    pollProgress: () =>
-      toClientEffect(client.align.cropRoiProgress({ urlParams: { requestId } })),
+    pollProgress: () => toClientEffect(client.align.cropRoiProgress({ urlParams: { requestId } })),
     decodeMessage: decodeCropRoiProgressMessage,
     extractProgress: (message) => message.progress,
     matchRequestId: (message, id) => message.progress.requestId === id,

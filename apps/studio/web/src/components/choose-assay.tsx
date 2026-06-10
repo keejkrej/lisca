@@ -1,4 +1,4 @@
-import { Button, cn } from "@lisca/ui/components";;
+import { Button, cn } from "@lisca/ui/components";
 
 import { ASSAY_CHOICE_LABEL, type AssayId, useStudioStore } from "../state/studio-store";
 import { ASSAY_NAME, ENABLED_STUDIO_ASSAY_IDS } from "@lisca/contracts";

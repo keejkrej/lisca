@@ -1,7 +1,7 @@
 import type { StudioAnalysisCsvFile } from "@lisca/contracts";
 import { resultData } from "@lisca/client/atoms";
 import { RegistryContext, useAtomSet } from "@effect-atom/atom-react";
-import { Spinner } from "@lisca/ui/components";;
+import { Spinner } from "@lisca/ui/components";
 import {
   AppShell,
   DockButton,
@@ -10,9 +10,8 @@ import {
   DockToolGrid,
   ViewportCard,
 } from "@lisca/ui/shell";
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-
 import { runClientEffect } from "@lisca/client/runtime";
 import { studioClient, toErrorMessage } from "../api/studio-port";
 import {
@@ -35,7 +34,6 @@ import {
 } from "./plots";
 import { useStudioResultState } from "../state/use-studio-result-state";
 import { useStudioStore } from "../state/studio-store";
-
 export default function ResultPage() {
   const registry = useContext(RegistryContext);
   const { workspacePath, analysisResultFiles } = useStudioResultState();
@@ -44,7 +42,7 @@ export default function ResultPage() {
   const timelapseUnit = useStudioStore((state) => state.info2.timelapseUnit);
   const activeWorkspacePath = workspacePath?.trim() || null;
   const timeseriesXScale = intervalFromAssaySettings(timelapseAmount, timelapseUnit);
-  const slideChannelLabels = useMemo<SlideChannelLabels>(() => {
+  const slideChannelLabels = (() => {
     const labels: SlideChannelLabels = {};
     for (const row of info3.samplesBySlide[info3.selectedSlideId]) {
       const channel = Number(row.channel);
@@ -53,11 +51,8 @@ export default function ResultPage() {
       }
     }
     return labels;
-  }, [info3]);
-  const slideChannelLabelsKey = useMemo(
-    () => slideChannelLabelsCacheKey(slideChannelLabels),
-    [slideChannelLabels],
-  );
+  })();
+  const slideChannelLabelsKey = slideChannelLabelsCacheKey(slideChannelLabels);
   const [activeSection, setActiveSection] = useState<ResultPlotSection>("timeseries");
   const [isSectionLoading, setIsSectionLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -70,68 +65,39 @@ export default function ResultPage() {
   } | null>(null);
   const exportTimeseriesRef = useRef<HTMLDivElement>(null);
   const exportParametersRef = useRef<HTMLDivElement>(null);
-
-  const sectionFiles = useMemo(
-    () => filterResultFilesBySection(analysisResultFiles, activeSection),
-    [activeSection, analysisResultFiles],
-  );
-  const sectionFilePathsKey = useMemo(
-    () => sectionFiles.map((file) => file.path).join("\0"),
-    [sectionFiles],
-  );
-  const hasTimeseriesFiles = useMemo(
-    () => filterResultFilesBySection(analysisResultFiles, "timeseries").length > 0,
-    [analysisResultFiles],
-  );
-  const hasParameterFiles = useMemo(
-    () => filterResultFilesBySection(analysisResultFiles, "parameters").length > 0,
-    [analysisResultFiles],
-  );
-
-  const panelsParams = useCallback(
-    (file: StudioAnalysisCsvFile) => ({
-      workspacePath: activeWorkspacePath ?? "",
-      file,
-      timeseriesXScale,
-      slideChannelLabels,
-      slideChannelLabelsKey,
-    }),
-    [activeWorkspacePath, slideChannelLabels, slideChannelLabelsKey, timeseriesXScale],
-  );
-
-  const runLoadPanels = useAtomSet(loadAnalysisPanelsAtom, { mode: "promise" });
-
-  const loadPanelsForFile = useCallback(
-    async (file: StudioAnalysisCsvFile): Promise<ResultPanel[]> => {
-      if (!activeWorkspacePath) throw new Error("No workspace selected");
-      return (await runLoadPanels(panelsParams(file))) as ResultPanel[];
-    },
-    [activeWorkspacePath, panelsParams, runLoadPanels],
-  );
-
-  const getCachedAnalysisPanels = useCallback(
-    (file: StudioAnalysisCsvFile): ResultPanel[] | undefined => {
-      if (!activeWorkspacePath) return undefined;
-      const atom = analysisPanelsAtom(analysisPanelsParamsKey(panelsParams(file)));
-      return resultData(registry.get(atom));
-    },
-    [activeWorkspacePath, panelsParams, registry],
-  );
-
+  const sectionFiles = filterResultFilesBySection(analysisResultFiles, activeSection);
+  const sectionFilePathsKey = sectionFiles.map((file) => file.path).join("\0");
+  const hasTimeseriesFiles =
+    filterResultFilesBySection(analysisResultFiles, "timeseries").length > 0;
+  const hasParameterFiles =
+    filterResultFilesBySection(analysisResultFiles, "parameters").length > 0;
+  const panelsParams = (file: StudioAnalysisCsvFile) => ({
+    workspacePath: activeWorkspacePath ?? "",
+    file,
+    timeseriesXScale,
+    slideChannelLabels,
+    slideChannelLabelsKey,
+  });
+  const runLoadPanels = useAtomSet(loadAnalysisPanelsAtom, {
+    mode: "promise",
+  });
+  const loadPanelsForFile = async (file: StudioAnalysisCsvFile): Promise<ResultPanel[]> => {
+    if (!activeWorkspacePath) throw new Error("No workspace selected");
+    return (await runLoadPanels(panelsParams(file))) as ResultPanel[];
+  };
+  const getCachedAnalysisPanels = (file: StudioAnalysisCsvFile): ResultPanel[] | undefined => {
+    if (!activeWorkspacePath) return undefined;
+    const atom = analysisPanelsAtom(analysisPanelsParamsKey(panelsParams(file)));
+    return resultData(registry.get(atom));
+  };
   const hasAnyResultFiles = analysisResultFiles.length > 0;
-
-  const countRenderablePanels = useCallback(
-    (panels: ResultPanel[]) => panels.filter((panel) => plotOptionsForPanel(panel) !== null).length,
-    [],
-  );
-
-  const savePdf = useCallback(async () => {
+  const countRenderablePanels = (panels: ResultPanel[]) =>
+    panels.filter((panel) => plotOptionsForPanel(panel) !== null).length;
+  const savePdf = async () => {
     if (!activeWorkspacePath || isSaving || isSectionLoading || !hasAnyResultFiles) return;
-
     setIsSaving(true);
     setSaveMessage(null);
     setPanelError(null);
-
     try {
       const {
         buildResultPdf,
@@ -140,26 +106,24 @@ export default function ResultPage() {
         RESULT_PDF_FILE_NAME,
         waitForExportPlots,
       } = await import("./save-result-pdf");
-
       const { timeseriesPanels, parameterPanels } = await loadAllResultPlotPanels(
         analysisResultFiles,
         loadPanelsForFile,
       );
-
       flushSync(() => {
-        setExportCapture({ timeseriesPanels, parameterPanels });
+        setExportCapture({
+          timeseriesPanels,
+          parameterPanels,
+        });
       });
-
       const timeseriesPage = exportTimeseriesRef.current;
       const parametersPage = exportParametersRef.current;
       if (!timeseriesPage && !parametersPage) {
         throw new Error("Nothing to export");
       }
-
       const pages: HTMLElement[] = [];
       const expectedPlots =
         countRenderablePanels(timeseriesPanels) + countRenderablePanels(parameterPanels);
-
       if (timeseriesPage && timeseriesPanels.length > 0) {
         await waitForExportPlots(timeseriesPage, countRenderablePanels(timeseriesPanels));
         pages.push(timeseriesPage);
@@ -168,11 +132,9 @@ export default function ResultPage() {
         await waitForExportPlots(parametersPage, countRenderablePanels(parameterPanels));
         pages.push(parametersPage);
       }
-
       if (pages.length === 0) {
         throw new Error("No plots to export");
       }
-
       const pdfBytes = await buildResultPdf(pages);
       const response = await runClientEffect(
         studioClient.saveResultPdf({
@@ -188,24 +150,11 @@ export default function ResultPage() {
       setExportCapture(null);
       setIsSaving(false);
     }
-  }, [
-    activeWorkspacePath,
-    analysisResultFiles,
-    countRenderablePanels,
-    hasAnyResultFiles,
-    isSaving,
-    isSectionLoading,
-    loadPanelsForFile,
-  ]);
-
-  const switchSection = useCallback(
-    (section: ResultPlotSection) => {
-      if (section === activeSection || isSectionLoading || isSaving) return;
-      setActiveSection(section);
-    },
-    [activeSection, isSaving, isSectionLoading],
-  );
-
+  };
+  const switchSection = (section: ResultPlotSection) => {
+    if (section === activeSection || isSectionLoading || isSaving) return;
+    setActiveSection(section);
+  };
   useEffect(() => {
     if (analysisResultFiles.length === 0) return;
     setActiveSection((current) => {
@@ -214,32 +163,26 @@ export default function ResultPage() {
       return defaultResultPlotSection(analysisResultFiles);
     });
   }, [analysisResultFiles]);
-
   useEffect(() => {
     if (sectionFiles.length === 0) {
       setSectionPanels([]);
       setIsSectionLoading(false);
       return;
     }
-
     let cancelled = false;
     setIsSectionLoading(true);
     setPanelError(null);
-
     const getPanels = (file: StudioAnalysisCsvFile) => getCachedAnalysisPanels(file);
-
     const collectPanels = (panelsByFile: ResultPanel[][]) =>
       activeSection === "timeseries"
         ? collectTimeseriesPanels(panelsByFile)
         : collectDisplayedParameterPanels(panelsByFile);
-
     const syncPanels = sectionFiles.map((file) => getPanels(file));
     if (syncPanels.every((panels) => panels !== undefined)) {
       setSectionPanels(collectPanels(syncPanels as ResultPanel[][]));
       setIsSectionLoading(false);
       return;
     }
-
     void (async () => {
       try {
         const panelsByFile = await Promise.all(sectionFiles.map((file) => loadPanelsForFile(file)));
@@ -255,7 +198,6 @@ export default function ResultPage() {
         }
       }
     })();
-
     return () => {
       cancelled = true;
     };
@@ -266,34 +208,28 @@ export default function ResultPage() {
     sectionFilePathsKey,
     sectionFiles,
   ]);
-
   const defaultInstruction =
     activeSection === "timeseries"
       ? "All timeseries plots are shown below."
       : "Parameter plots: mRNA lifetime, AUC, transfection efficiency, and translation onset.";
   const dockInstruction = saveMessage ?? panelError ?? defaultInstruction;
   const isBusy = isSectionLoading || isSaving;
-
-  const sectionToolActions = useMemo(
-    () => [
-      {
-        id: "timeseries",
-        label: "Timeseries",
-        disabled: !hasTimeseriesFiles || isBusy,
-        active: activeSection === "timeseries",
-        onSelect: () => switchSection("timeseries"),
-      },
-      {
-        id: "parameters",
-        label: "Parameters",
-        disabled: !hasParameterFiles || isBusy,
-        active: activeSection === "parameters",
-        onSelect: () => switchSection("parameters"),
-      },
-    ],
-    [activeSection, hasParameterFiles, hasTimeseriesFiles, isBusy, switchSection],
-  );
-
+  const sectionToolActions = [
+    {
+      id: "timeseries",
+      label: "Timeseries",
+      disabled: !hasTimeseriesFiles || isBusy,
+      active: activeSection === "timeseries",
+      onSelect: () => switchSection("timeseries"),
+    },
+    {
+      id: "parameters",
+      label: "Parameters",
+      disabled: !hasParameterFiles || isBusy,
+      active: activeSection === "parameters",
+      onSelect: () => switchSection("parameters"),
+    },
+  ];
   return (
     <AppShell>
       <AppShell.Body>

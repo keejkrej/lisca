@@ -1,4 +1,4 @@
-import { Menu, MenuItem, MenuPopup, MenuTrigger, buttonVariants, cn } from "@lisca/ui/components";;
+import { Menu, MenuItem, MenuPopup, MenuTrigger, buttonVariants, cn } from "@lisca/ui/components";
 import { ShellNavbar } from "@lisca/ui/shell";
 import { ChevronDown, Tags } from "lucide-react";
 

@@ -1,10 +1,10 @@
-import type { AlignGridCellCoord, AlignGridState, ContrastWindow, FrameResult } from "@lisca/contracts";
-import {
-  downloadJson,
-  downloadText,
-  loadImageFile,
-  stemName,
-} from "@lisca/browser-frame";
+import type {
+  AlignGridCellCoord,
+  AlignGridState,
+  ContrastWindow,
+  FrameResult,
+} from "@lisca/contracts";
+import { downloadJson, downloadText, loadImageFile, stemName } from "@lisca/browser-frame";
 import {
   alignStateFromCurrent,
   buildBboxCsv,
@@ -15,8 +15,7 @@ import {
   mergeExcludedAlignGridCells,
   type AlignGridToolMode,
 } from "@lisca/utils";
-import { useCallback, useMemo, useState } from "react";
-
+import { useState } from "react";
 export type DemoAlignState = {
   fileName: string | null;
   frameLoading: boolean;
@@ -37,11 +36,13 @@ export type DemoAlignState = {
   excludeAllCells: () => void;
   excludeEdgeCells: () => void;
   resetExcludedCells: () => void;
-  visibleCounts: { included: number; excluded: number };
+  visibleCounts: {
+    included: number;
+    excluded: number;
+  };
   openImage: (file: File) => Promise<void>;
   saveCurrent: () => Promise<boolean>;
 };
-
 export function useDemoAlignState(): DemoAlignState {
   const [fileName, setFileName] = useState<string | null>(null);
   const [frameLoading, setFrameLoading] = useState(false);
@@ -57,38 +58,34 @@ export function useDemoAlignState(): DemoAlignState {
   const [toolMode, setToolMode] = useState<AlignGridToolMode>("pan");
   const [patternZoomLocked, setPatternZoomLocked] = useState(false);
   const [excludedCells, setExcludedCellsState] = useState<AlignGridCellCoord[]>([]);
-
-  const setExcludedCells = useCallback((cells: Iterable<AlignGridCellCoord>) => {
+  const setExcludedCells = (cells: Iterable<AlignGridCellCoord>) => {
     setExcludedCellsState(Array.from(cells));
-  }, []);
-
-  const resetExcludedCells = useCallback(() => {
+  };
+  const resetExcludedCells = () => {
     setExcludedCellsState([]);
-  }, []);
-
-  const excludeAllCells = useCallback(() => {
+  };
+  const excludeAllCells = () => {
     if (!frame) return;
     setExcludedCellsState(
-      enumerateVisibleAlignGridCells(frame, grid).map(({ i, j }) => ({ i, j })),
+      enumerateVisibleAlignGridCells(frame, grid).map(({ i, j }) => ({
+        i,
+        j,
+      })),
     );
-  }, [frame, grid]);
-
-  const excludeEdgeCells = useCallback(() => {
+  };
+  const excludeEdgeCells = () => {
     if (!frame) return;
     setExcludedCellsState((current) =>
       mergeExcludedAlignGridCells(current, collectAlignGridEdgeCells(frame, grid)),
     );
-  }, [frame, grid]);
-
-  const visibleCounts = useMemo(
-    () =>
-      frame
-        ? countVisibleAlignGridCells(frame, grid, excludedCells)
-        : { included: 0, excluded: 0 },
-    [excludedCells, frame, grid],
-  );
-
-  const openImage = useCallback(async (file: File) => {
+  };
+  const visibleCounts = frame
+    ? countVisibleAlignGridCells(frame, grid, excludedCells)
+    : {
+        included: 0,
+        excluded: 0,
+      };
+  const openImage = async (file: File) => {
     setFrameLoading(true);
     setError(null);
     setStatus("Loading image");
@@ -98,7 +95,10 @@ export function useDemoAlignState(): DemoAlignState {
       setFrame(nextFrame);
       setContrast(null);
       setExcludedCellsState([]);
-      setGrid({ ...createDefaultAlignGrid(), enabled: true });
+      setGrid({
+        ...createDefaultAlignGrid(),
+        enabled: true,
+      });
       setStatus(null);
     } catch (cause) {
       setFrame(null);
@@ -108,9 +108,8 @@ export function useDemoAlignState(): DemoAlignState {
     } finally {
       setFrameLoading(false);
     }
-  }, []);
-
-  const saveCurrent = useCallback(async () => {
+  };
+  const saveCurrent = async () => {
     if (!frame || !fileName) return false;
     const { included } = countVisibleAlignGridCells(frame, grid, excludedCells);
     if (included === 0) {
@@ -131,8 +130,7 @@ export function useDemoAlignState(): DemoAlignState {
     } finally {
       setSaving(false);
     }
-  }, [excludedCells, fileName, frame, grid]);
-
+  };
   return {
     fileName,
     frameLoading,

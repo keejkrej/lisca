@@ -10,7 +10,7 @@ export default function AnnotateRoute() {
   const state = useStudioAnnotateState();
   const analysisBusy = Boolean(
     state.analysisProgress &&
-      (state.analysisProgress.status === "queued" || state.analysisProgress.status === "running"),
+    (state.analysisProgress.status === "queued" || state.analysisProgress.status === "running"),
   );
   const disableShuffle = state.scanLoading || state.scan === null || Boolean(state.error);
   const disableNext = state.frameLoading || !state.request || analysisBusy;

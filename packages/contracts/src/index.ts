@@ -132,11 +132,7 @@ export type StudioBasicInfoStep3 = {
 // The assay.json on-disk shape has a single source of truth in the Effect
 // schema (`assay.schema.ts`); these aliases surface the derived types under the
 // names studio app code already uses.
-import type {
-  AssayBasicInfoStep3,
-  AssayJsonFile,
-  AssaySampleRow,
-} from "./assay.schema.ts";
+import type { AssayBasicInfoStep3, AssayJsonFile, AssaySampleRow } from "./assay.schema.ts";
 
 /** Sample row as written to assay.json (includes `positions` for the analysis pipeline). */
 export type StudioAssaySampleRowOnDisk = AssaySampleRow;

@@ -91,7 +91,11 @@ function SelectPicker<T extends NavigationValue>(props: {
         style={[
           styles.selectTrigger,
           shellOutlineElevation(mode),
-          { borderColor: colors.input, backgroundColor: colors.outlineSurface, opacity: props.disabled ? 0.64 : 1 },
+          {
+            borderColor: colors.input,
+            backgroundColor: colors.outlineSurface,
+            opacity: props.disabled ? 0.64 : 1,
+          },
         ]}
       >
         <Text numberOfLines={1} style={{ color: colors.foreground, fontSize: 14 }}>
@@ -100,7 +104,12 @@ function SelectPicker<T extends NavigationValue>(props: {
       </Pressable>
       <Modal transparent visible={open} animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable style={styles.pickerScrim} onPress={() => setOpen(false)}>
-          <Pressable style={[styles.pickerSheet, { backgroundColor: colors.popover, borderColor: colors.border }]}>
+          <Pressable
+            style={[
+              styles.pickerSheet,
+              { backgroundColor: colors.popover, borderColor: colors.border },
+            ]}
+          >
             <ScrollView>
               {props.options.map((option) => (
                 <Pressable
@@ -225,7 +234,9 @@ export type FrameNavigationProps<T extends NavigationValue = number> = {
   sectionContentStyle?: object;
 };
 
-export function FrameNavigation<T extends NavigationValue = number>(props: FrameNavigationProps<T>) {
+export function FrameNavigation<T extends NavigationValue = number>(
+  props: FrameNavigationProps<T>,
+) {
   const {
     position,
     channel,

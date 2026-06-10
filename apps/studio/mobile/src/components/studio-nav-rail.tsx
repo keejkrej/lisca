@@ -26,10 +26,7 @@ export function StudioNavRail() {
           <View style={styles.navStack}>
             {ROUTES.map((route) => (
               <Link key={route.href} href={route.href} asChild>
-                <StudioNavButton
-                  active={pathname === route.href}
-                  onPress={() => undefined}
-                >
+                <StudioNavButton active={pathname === route.href} onPress={() => undefined}>
                   {route.label}
                 </StudioNavButton>
               </Link>

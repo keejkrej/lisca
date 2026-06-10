@@ -10,27 +10,21 @@ import {
   useShellTheme,
   VariationScoreHistogram,
 } from "@lisca/ui-native";
-import { useMemo } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
-
 import type { VariationExcludePreview } from "../state/use-align-state";
-
 type VariationExcludeDialogProps = {
   state: VariationExcludePreview | null;
   onApply: () => void;
   onCancel: () => void;
   onThresholdChange: (threshold: number) => void;
 };
-
 function formatScore(value: number): string {
   return Number.isFinite(value) ? value.toFixed(3) : "0.000";
 }
-
 function clampThreshold(value: number, min: number, max: number): number {
   if (!Number.isFinite(value)) return min;
   return Math.min(max, Math.max(min, value));
 }
-
 export function VariationExcludeDialog({
   state,
   onApply,
@@ -40,22 +34,25 @@ export function VariationExcludeDialog({
   const { colors } = useShellTheme();
   const preview = state?.preview ?? null;
   const threshold = state?.threshold ?? 0;
-  const selectedCount = useMemo(
-    () => preview?.cellScores.filter((cell) => cell.score <= threshold).length ?? 0,
-    [preview, threshold],
-  );
-
+  const selectedCount = preview?.cellScores.filter((cell) => cell.score <= threshold).length ?? 0;
   if (!preview) return null;
-
   const min = preview.scoreMin;
   const max = preview.scoreMax > preview.scoreMin ? preview.scoreMax : preview.scoreMin + 1;
   const step = Math.max((max - min) / 500, 0.001);
-
   return (
     <ModalScrim open={true} onClose={onCancel}>
       <DialogSurface maxWidth={640} padded={false}>
         <DialogHeader>
-          <Text style={[styles.title, { color: colors.foreground }]}>Var exclude</Text>
+          <Text
+            style={[
+              styles.title,
+              {
+                color: colors.foreground,
+              },
+            ]}
+          >
+            Var exclude
+          </Text>
         </DialogHeader>
 
         <DialogBody>
@@ -73,8 +70,24 @@ export function VariationExcludeDialog({
           <View style={styles.thresholdRow}>
             <View style={styles.thresholdSlider}>
               <View style={styles.thresholdHeader}>
-                <Text style={[styles.thresholdLabel, { color: colors.foreground }]}>Threshold</Text>
-                <Text style={[styles.thresholdValue, { color: colors.mutedForeground }]}>
+                <Text
+                  style={[
+                    styles.thresholdLabel,
+                    {
+                      color: colors.foreground,
+                    },
+                  ]}
+                >
+                  Threshold
+                </Text>
+                <Text
+                  style={[
+                    styles.thresholdValue,
+                    {
+                      color: colors.mutedForeground,
+                    },
+                  ]}
+                >
                   {formatScore(threshold)}
                 </Text>
               </View>
@@ -97,7 +110,11 @@ export function VariationExcludeDialog({
               onChangeText={(text) => onThresholdChange(clampThreshold(Number(text), min, max))}
               style={[
                 styles.input,
-                { borderColor: colors.input, color: colors.foreground, backgroundColor: colors.controlSurface },
+                {
+                  borderColor: colors.input,
+                  color: colors.foreground,
+                  backgroundColor: colors.controlSurface,
+                },
               ]}
             />
           </View>
@@ -111,7 +128,6 @@ export function VariationExcludeDialog({
     </ModalScrim>
   );
 }
-
 const styles = StyleSheet.create({
   title: {
     fontSize: 18,

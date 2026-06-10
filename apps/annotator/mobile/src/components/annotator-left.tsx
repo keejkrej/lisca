@@ -1,4 +1,9 @@
-import type { ContrastWindow, FrameResult, RoiPositionScan, RoiWorkspaceScan } from "@lisca/contracts";
+import type {
+  ContrastWindow,
+  FrameResult,
+  RoiPositionScan,
+  RoiWorkspaceScan,
+} from "@lisca/contracts";
 import {
   ContrastControl,
   findNavigationOptionIndex,
@@ -7,9 +12,7 @@ import {
   toNavigationOptions,
 } from "@lisca/ui-native";
 import { clamp } from "@lisca/utils";
-import { useMemo } from "react";
 import { StyleSheet, View } from "react-native";
-
 export function AnnotatorLeft(props: {
   scan: RoiWorkspaceScan | null;
   position: RoiPositionScan | null;
@@ -27,31 +30,33 @@ export function AnnotatorLeft(props: {
   onZIndexChange: (value: number) => void;
   onContrastChange: (value: ContrastWindow | null) => void;
 }) {
-  const domain = props.frame?.contrastDomain ?? { min: 0, max: 255 };
-  const value = props.contrast ?? { min: domain.min, max: domain.max };
-  const suggestedContrast =
-    props.frame?.suggestedContrast ??
-    props.frame?.appliedContrast ?? { min: domain.min, max: domain.max };
-  const positionOptions = useMemo(
-    () => toNavigationOptions(props.scan?.positions.map((entry) => entry.pos) ?? []),
-    [props.scan],
+  const domain = props.frame?.contrastDomain ?? {
+    min: 0,
+    max: 255,
+  };
+  const value = props.contrast ?? {
+    min: domain.min,
+    max: domain.max,
+  };
+  const suggestedContrast = props.frame?.suggestedContrast ??
+    props.frame?.appliedContrast ?? {
+      min: domain.min,
+      max: domain.max,
+    };
+  const positionOptions = toNavigationOptions(
+    props.scan?.positions.map((entry) => entry.pos) ?? [],
   );
-  const roiOptions = useMemo(
-    () =>
-      props.position?.rois.map((entry) => ({ value: entry.roi, label: String(entry.roi) })) ?? [],
-    [props.position],
-  );
-  const channelOptions = useMemo(
-    () => toNavigationOptions(props.position?.channels ?? []),
-    [props.position],
-  );
+  const roiOptions =
+    props.position?.rois.map((entry) => ({
+      value: entry.roi,
+      label: String(entry.roi),
+    })) ?? [];
+  const channelOptions = toNavigationOptions(props.position?.channels ?? []);
   const timeMax = Math.max(0, (props.position?.times.length ?? 1) - 1);
   const zMax = Math.max(0, (props.position?.zSlices.length ?? 1) - 1);
-
   const posValue = props.pos ?? positionOptions[0]?.value ?? 0;
   const roiValue = props.roi ?? roiOptions[0]?.value ?? 0;
   const channelValue = props.channel ?? channelOptions[0]?.value ?? 0;
-
   return (
     <View style={styles.root}>
       <FrameNavigation
@@ -137,13 +142,22 @@ export function AnnotatorLeft(props: {
         maxValue={value.max}
         minValue={value.min}
         onAutoRange={() => props.onContrastChange(suggestedContrast)}
-        onMaxCommit={(max) => props.onContrastChange({ min: value.min, max })}
-        onMinCommit={(min) => props.onContrastChange({ min, max: value.max })}
+        onMaxCommit={(max) =>
+          props.onContrastChange({
+            min: value.min,
+            max,
+          })
+        }
+        onMinCommit={(min) =>
+          props.onContrastChange({
+            min,
+            max: value.max,
+          })
+        }
       />
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   root: {
     flex: 1,

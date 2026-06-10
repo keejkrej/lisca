@@ -6,11 +6,8 @@ import {
   ViewportCard,
   CropProgressModal,
 } from "@lisca/ui-native";
-import { useMemo } from "react";
-
 import type { AlignState } from "../state/use-align-state";
 import { CropConfirmModal } from "./crop-confirm-modal";
-
 export function AlignerMain({ state }: { state: AlignState }) {
   const { handlePointerDown, handlePointerMove, handlePointerEnd, previewGrid } =
     useAlignCanvasGridHandlers({
@@ -26,12 +23,22 @@ export function AlignerMain({ state }: { state: AlignState }) {
     : state.scanLoading
       ? "Scanning source"
       : visibleStatus;
-  const toasts = useMemo(() => {
-    if (state.error) return [{ text: state.error, tone: "error" as const }];
-    if (activeToastStatus) return [{ text: activeToastStatus }];
+  const toasts = (() => {
+    if (state.error)
+      return [
+        {
+          text: state.error,
+          tone: "error" as const,
+        },
+      ];
+    if (activeToastStatus)
+      return [
+        {
+          text: activeToastStatus,
+        },
+      ];
     return [];
-  }, [activeToastStatus, state.error]);
-
+  })();
   const emptyText = !state.workspacePath
     ? "Pick a workspace."
     : !state.source
@@ -39,7 +46,6 @@ export function AlignerMain({ state }: { state: AlignState }) {
       : state.scanLoading
         ? "Scanning source..."
         : "No frame loaded.";
-
   return (
     <>
       <ViewportCard>

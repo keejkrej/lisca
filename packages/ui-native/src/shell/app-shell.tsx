@@ -38,7 +38,11 @@ function Header(props: { children?: ReactNode }) {
     <View
       style={[
         styles.header,
-        { borderBottomColor: colors.border, backgroundColor: colors.background, maxHeight: HEADER_HEIGHT },
+        {
+          borderBottomColor: colors.border,
+          backgroundColor: colors.background,
+          maxHeight: HEADER_HEIGHT,
+        },
       ]}
     >
       <ShellScrollRegion contentStyle={styles.headerContent}>{props.children}</ShellScrollRegion>
@@ -48,7 +52,9 @@ function Header(props: { children?: ReactNode }) {
 
 function Body(props: { children?: ReactNode }) {
   const { colors } = useShellTheme();
-  return <View style={[styles.body, { backgroundColor: colors.background }]}>{props.children}</View>;
+  return (
+    <View style={[styles.body, { backgroundColor: colors.background }]}>{props.children}</View>
+  );
 }
 
 function Left(props: { children?: ReactNode; width?: number }) {
@@ -94,7 +100,9 @@ function Right(props: { children?: ReactNode; width?: number }) {
 function MainColumn(props: { children?: ReactNode }) {
   const { colors } = useShellTheme();
   return (
-    <View style={[styles.mainColumn, { backgroundColor: colors.background }]}>{props.children}</View>
+    <View style={[styles.mainColumn, { backgroundColor: colors.background }]}>
+      {props.children}
+    </View>
   );
 }
 
@@ -110,7 +118,9 @@ function Main(props: { children?: ReactNode }) {
 function Dock(props: { children?: ReactNode }) {
   const { colors } = useShellTheme();
   return (
-    <View style={[styles.dock, { borderTopColor: colors.border, backgroundColor: colors.background }]}>
+    <View
+      style={[styles.dock, { borderTopColor: colors.border, backgroundColor: colors.background }]}
+    >
       <SafeAreaView edges={["bottom"]} style={styles.dockSafeArea}>
         <ShellScrollRegion contentStyle={styles.dockContent}>{props.children}</ShellScrollRegion>
       </SafeAreaView>
@@ -142,7 +152,11 @@ export function ShellDock(props: { children?: ReactNode }) {
   return <Dock {...props} />;
 }
 
-export function ShellSidebar(props: { children?: ReactNode; side?: "left" | "right"; width?: number }) {
+export function ShellSidebar(props: {
+  children?: ReactNode;
+  side?: "left" | "right";
+  width?: number;
+}) {
   return props.side === "right" ? (
     <Right width={props.width}>{props.children}</Right>
   ) : (

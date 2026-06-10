@@ -1,4 +1,9 @@
-export type { AnnotationTool, AnnotatorSessionPersist, AnnotatorUiState, RoiSelection } from "@lisca/client/atoms/annotator-ui";
+export type {
+  AnnotationTool,
+  AnnotatorSessionPersist,
+  AnnotatorUiState,
+  RoiSelection,
+} from "@lisca/client/atoms/annotator-ui";
 export {
   ANNOTATOR_SESSION_KEY,
   annotatorUiActions,

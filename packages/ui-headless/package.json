@@ -25,19 +25,19 @@
       "import": "./src/host-file-picker-state.ts"
     }
   },
-  "dependencies": {
-    "@lisca/contracts": "workspace:*"
-  },
-  "peerDependencies": {
-    "react": "^19.0.0"
-  },
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@lisca/contracts": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
   }
 }

@@ -1,9 +1,9 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute('/annotate')({
+export const Route = createFileRoute("/annotate")({
   component: RouteComponent,
-})
+});
 
 function RouteComponent() {
-  return <div>Hello "/annotate"!</div>
+  return <div>Hello "/annotate"!</div>;
 }

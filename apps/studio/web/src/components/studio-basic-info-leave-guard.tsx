@@ -1,8 +1,7 @@
 "use client";
 
 import { useBlocker } from "@tanstack/react-router";
-import { useCallback, useState } from "react";
-
+import { useState } from "react";
 import {
   buildStudioAssayJson,
   isBasicInfoDirty,
@@ -12,99 +11,68 @@ import {
 import { assayJsonExists, writeStudioAssayJson } from "../utils/save-studio-assay";
 import { AssayOverwriteConfirmModal } from "./assay-overwrite-confirm-modal";
 import { AssaySaveConfirmModal } from "./assay-save-confirm-modal";
-
 export function StudioBasicInfoLeaveGuard() {
   const wizard = useStudioStore((state) => state);
-  const {
-    assayId,
-    dataSourceKind,
-    info1,
-    info2,
-    info3,
-    setBasicInfoSavedSnapshot,
-  } = wizard;
-
+  const { assayId, dataSourceKind, info1, info2, info3, setBasicInfoSavedSnapshot } = wizard;
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [overwriteOpen, setOverwriteOpen] = useState(false);
-
   const dirty = isBasicInfoDirty(wizard);
   const saveTo = info1.saveTo.trim();
-
   const { proceed, reset, status } = useBlocker({
     shouldBlockFn: ({ current, next }) =>
       current.pathname === "/info" && next.pathname !== "/info" && dirty,
     withResolver: true,
     enableBeforeUnload: dirty,
   });
-
   const blocked = status === "blocked";
-
-  const saveAssay = useCallback(
-    async (overwrite: boolean) => {
-      if (!assayId || !saveTo || saving) return false;
-      setSaving(true);
-      setSaveError(null);
-      try {
-        if (!overwrite && (await assayJsonExists(saveTo))) {
-          setOverwriteOpen(true);
-          return false;
-        }
-        const assayJson = buildStudioAssayJson({
-          assayId,
-          dataSourceKind,
-          info1,
-          info2,
-          info3,
-        });
-        await writeStudioAssayJson(saveTo, assayJson);
-        setBasicInfoSavedSnapshot(serializeBasicInfoSnapshot(wizard));
-        return true;
-      } catch (cause) {
-        setSaveError(
-          cause instanceof Error
-            ? cause.message
-            : "Could not save assay.json. Check the save path and try again.",
-        );
+  const saveAssay = async (overwrite: boolean) => {
+    if (!assayId || !saveTo || saving) return false;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      if (!overwrite && (await assayJsonExists(saveTo))) {
+        setOverwriteOpen(true);
         return false;
-      } finally {
-        setSaving(false);
       }
-    },
-    [
-      assayId,
-      dataSourceKind,
-      info1,
-      info2,
-      info3,
-      saveTo,
-      saving,
-      setBasicInfoSavedSnapshot,
-      wizard,
-    ],
-  );
-
-  const leaveWithoutSaving = useCallback(() => {
+      const assayJson = buildStudioAssayJson({
+        assayId,
+        dataSourceKind,
+        info1,
+        info2,
+        info3,
+      });
+      await writeStudioAssayJson(saveTo, assayJson);
+      setBasicInfoSavedSnapshot(serializeBasicInfoSnapshot(wizard));
+      return true;
+    } catch (cause) {
+      setSaveError(
+        cause instanceof Error
+          ? cause.message
+          : "Could not save assay.json. Check the save path and try again.",
+      );
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+  const leaveWithoutSaving = () => {
     proceed?.();
-  }, [proceed]);
-
-  const cancelLeave = useCallback(() => {
+  };
+  const cancelLeave = () => {
     setOverwriteOpen(false);
     setSaveError(null);
     reset?.();
-  }, [reset]);
-
-  const saveAndLeave = useCallback(async () => {
+  };
+  const saveAndLeave = async () => {
     const saved = await saveAssay(false);
     if (saved) proceed?.();
-  }, [proceed, saveAssay]);
-
-  const overwriteAndLeave = useCallback(async () => {
+  };
+  const overwriteAndLeave = async () => {
     setOverwriteOpen(false);
     const saved = await saveAssay(true);
     if (saved) proceed?.();
-  }, [proceed, saveAssay]);
-
+  };
   return (
     <>
       <AssaySaveConfirmModal

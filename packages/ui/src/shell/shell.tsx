@@ -76,7 +76,9 @@ AppShellHeader.displayName = "AppShell.Header";
  * Use `flex-1` so it fills remaining height when a `Header` is present.
  */
 function AppShellBody(props: { children?: ReactNode }) {
-  return <div className={`flex min-h-0 flex-1 overflow-hidden ${shellSurface}`}>{props.children}</div>;
+  return (
+    <div className={`flex min-h-0 flex-1 overflow-hidden ${shellSurface}`}>{props.children}</div>
+  );
 }
 AppShellBody.displayName = "AppShell.Body";
 

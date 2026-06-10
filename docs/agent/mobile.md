@@ -12,12 +12,12 @@ Mobile apps under `apps/*/mobile` are native clients for the external Rust serve
 
 ## Environment
 
-| Variable | Purpose |
-|----------|---------|
-| `EXPO_PUBLIC_LISCA_HTTP_URL` | Full HTTP base override |
-| `EXPO_PUBLIC_LISCA_WS_URL` | Full WebSocket URL override |
-| `EXPO_PUBLIC_LISCA_WS_HOST` | LAN host for dev (e.g. machine IP) |
-| `EXPO_PUBLIC_LISCA_WS_PORT` | Server port when using host/port |
+| Variable                     | Purpose                            |
+| ---------------------------- | ---------------------------------- |
+| `EXPO_PUBLIC_LISCA_HTTP_URL` | Full HTTP base override            |
+| `EXPO_PUBLIC_LISCA_WS_URL`   | Full WebSocket URL override        |
+| `EXPO_PUBLIC_LISCA_WS_HOST`  | LAN host for dev (e.g. machine IP) |
+| `EXPO_PUBLIC_LISCA_WS_PORT`  | Server port when using host/port   |
 
 On a physical device, point at your machine: `EXPO_PUBLIC_LISCA_WS_HOST=192.168.x.x`.
 

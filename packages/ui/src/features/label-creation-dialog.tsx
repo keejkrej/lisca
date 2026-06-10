@@ -78,10 +78,7 @@ export function LabelCreationDialog({
   if (!open) return null;
 
   const resolvedSubtitle =
-    subtitle ??
-    (workspacePath != null
-      ? workspacePath
-      : "Select a workspace first");
+    subtitle ?? (workspacePath != null ? workspacePath : "Select a workspace first");
 
   const updateDraft = (index: number, patch: Partial<LabelDraft>) => {
     setDrafts((current) =>

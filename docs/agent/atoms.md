@@ -46,11 +46,11 @@ Writable session/UI state stays in each app (`*-ui-atoms.ts` or `*-store.ts` ato
 
 ## Modules
 
-| Module | Atoms |
-|--------|--------|
-| `aligner/queries.ts` | scan source, saved bbox positions, auto-exclude preview |
-| `annotator/queries.ts` | ROI workspace scan, labels, save labels/annotation |
-| `studio/queries.ts` | scan source, ROI workspace scan, auto-exclude preview |
-| `studio/analysis.ts` | analysis results, analysis CSV text |
+| Module                 | Atoms                                                   |
+| ---------------------- | ------------------------------------------------------- |
+| `aligner/queries.ts`   | scan source, saved bbox positions, auto-exclude preview |
+| `annotator/queries.ts` | ROI workspace scan, labels, save labels/annotation      |
+| `studio/queries.ts`    | scan source, ROI workspace scan, auto-exclude preview   |
+| `studio/analysis.ts`   | analysis results, analysis CSV text                     |
 
 Panel parsing (CSV → plot panels) stays in `studio-web` because it depends on app-local plot parsers.

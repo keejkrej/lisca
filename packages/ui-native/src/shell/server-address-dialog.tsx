@@ -1,13 +1,5 @@
 import { useState } from "react";
-import {
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { useShellTheme } from "../theme/shell-theme.tsx";
 
@@ -29,14 +21,29 @@ export function ServerAddressDialog(props: ServerAddressDialogProps) {
   const [draft, setDraft] = useState("");
 
   return (
-    <Modal visible={props.open} animationType="slide" transparent onRequestClose={() => props.onOpenChange(false)}>
+    <Modal
+      visible={props.open}
+      animationType="slide"
+      transparent
+      onRequestClose={() => props.onOpenChange(false)}
+    >
       <View style={styles.scrim}>
-        <View style={[styles.surface, { backgroundColor: colors.background, borderColor: colors.border }]}>
+        <View
+          style={[
+            styles.surface,
+            { backgroundColor: colors.background, borderColor: colors.border },
+          ]}
+        >
           <Text style={[styles.title, { color: colors.foreground }]}>Server address</Text>
-          <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>{props.currentWsUrl}</Text>
+          <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
+            {props.currentWsUrl}
+          </Text>
 
           <Pressable
-            style={[styles.rowButton, { borderColor: colors.border, backgroundColor: colors.controlSurface }]}
+            style={[
+              styles.rowButton,
+              { borderColor: colors.border, backgroundColor: colors.controlSurface },
+            ]}
             onPress={() => {
               props.onConnect(null);
               props.onOpenChange(false);
@@ -47,7 +54,13 @@ export function ServerAddressDialog(props: ServerAddressDialogProps) {
 
           <ScrollView style={styles.list}>
             {props.savedServers.map((server) => (
-              <View key={server} style={[styles.savedRow, { borderColor: colors.border, backgroundColor: colors.controlSurface }]}>
+              <View
+                key={server}
+                style={[
+                  styles.savedRow,
+                  { borderColor: colors.border, backgroundColor: colors.controlSurface },
+                ]}
+              >
                 <Pressable
                   style={styles.savedConnect}
                   onPress={() => {
@@ -71,7 +84,14 @@ export function ServerAddressDialog(props: ServerAddressDialogProps) {
             placeholderTextColor={colors.mutedForeground}
             autoCapitalize="none"
             autoCorrect={false}
-            style={[styles.input, { color: colors.foreground, borderColor: colors.input, backgroundColor: colors.controlSurface }]}
+            style={[
+              styles.input,
+              {
+                color: colors.foreground,
+                borderColor: colors.input,
+                backgroundColor: colors.controlSurface,
+              },
+            ]}
           />
 
           <View style={styles.actions}>

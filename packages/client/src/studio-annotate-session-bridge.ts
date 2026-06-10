@@ -1,5 +1,10 @@
 import type { AnnotationLabel, ContrastWindow, FrameResult } from "@lisca/contracts";
-import type { AnnotatorUiActions, AnnotatorUiState, RoiSelection, StateUpdater } from "./atoms/annotator-ui.ts";
+import type {
+  AnnotatorUiActions,
+  AnnotatorUiState,
+  RoiSelection,
+  StateUpdater,
+} from "./atoms/annotator-ui.ts";
 
 export type StudioAnnotateRoiViewState = {
   workspacePath: string | null;

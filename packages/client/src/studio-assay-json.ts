@@ -23,8 +23,7 @@ export const ASSAY_CHOICE_LABEL: Record<AssayName, string> = {
   [ASSAY_NAME.CUSTOM_ASSAY]: "Custom assay",
 };
 
-const BASIC_INFO_FEATURE_IDS: ReadonlyArray<StudioBasicInfoFeatureId> =
-  GENE_EXPRESSION_FEATURE_IDS;
+const BASIC_INFO_FEATURE_IDS: ReadonlyArray<StudioBasicInfoFeatureId> = GENE_EXPRESSION_FEATURE_IDS;
 
 const ASSAY_DEFAULT_INFO_FEATURES: Record<AssayName, readonly StudioBasicInfoFeatureId[]> = {
   [ASSAY_NAME.GENE_EXPRESSION]: [ASSAY_FEATURE.TOTAL_FLUOR],

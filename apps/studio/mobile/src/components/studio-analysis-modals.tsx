@@ -32,10 +32,16 @@ export function StudioAnalysisStartModal({ state }: { state: StudioAnnotateState
             ))}
           </View>
         ) : (
-          <Text style={styles.body}>assay.json will be saved to the workspace before analysis starts.</Text>
+          <Text style={styles.body}>
+            assay.json will be saved to the workspace before analysis starts.
+          </Text>
         )}
         <View style={styles.actions}>
-          <Button label="Cancel" variant="outline" onPress={() => state.setAnalysisStartConfirm(false)} />
+          <Button
+            label="Cancel"
+            variant="outline"
+            onPress={() => state.setAnalysisStartConfirm(false)}
+          />
           <Button label="Start" disabled={!canStart} onPress={state.startAnalysis} />
         </View>
       </DialogSurface>

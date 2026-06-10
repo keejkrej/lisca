@@ -80,9 +80,7 @@ export function deriveDisplayedExcludedCells(
   loadedFramePosition: number | undefined,
   selectionPosition: number,
 ): AlignGridCellCoord[] {
-  return (
-    excludedCellsByPosition[loadedFramePosition ?? selectionPosition] ?? emptyExcludedCells
-  );
+  return excludedCellsByPosition[loadedFramePosition ?? selectionPosition] ?? emptyExcludedCells;
 }
 
 export function deriveVisibleCounts(
@@ -103,9 +101,7 @@ export function cellsBelowVariationThreshold(
   preview: AutoExcludePreviewResponse,
   threshold: number,
 ): AlignGridCellCoord[] {
-  return preview.cellScores
-    .filter((cell) => cell.score <= threshold)
-    .map(({ i, j }) => ({ i, j }));
+  return preview.cellScores.filter((cell) => cell.score <= threshold).map(({ i, j }) => ({ i, j }));
 }
 
 export type CropConfirmState = {
@@ -114,10 +110,7 @@ export type CropConfirmState = {
   existingPositions: number[];
 };
 
-export function cropPositionsAfterSkip(
-  positions: number[],
-  existingPositions: number[],
-): number[] {
+export function cropPositionsAfterSkip(positions: number[], existingPositions: number[]): number[] {
   const existing = new Set(existingPositions);
   return positions.filter((pos) => !existing.has(pos));
 }

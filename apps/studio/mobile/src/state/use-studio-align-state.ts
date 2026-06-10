@@ -26,22 +26,14 @@ import {
 import { Effect } from "effect";
 import { useRouter } from "expo-router";
 import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
+import { useEffect, useRef, useState } from "react";
 import { studioClient, toErrorMessage } from "../api/studio-port";
-import {
-  autoExcludePreviewAtom,
-  scanIdleAtom,
-  scanSourceAtom,
-} from "../atoms/studio-query-atoms";
+import { autoExcludePreviewAtom, scanIdleAtom, scanSourceAtom } from "../atoms/studio-query-atoms";
 import { effectErrorMessage, loadFrameEffect } from "../effects/frame-loader";
 import { isDoneCropStatus } from "@lisca/client/crop-status";
 import { runClientEffect } from "@lisca/client/runtime";
 import { lockedStudioSelection, studioMaskChannel, toStudioSource } from "../utils/studio-source";
-import {
-  collectAssayPositions,
-  filterScanPositionsForAssay,
-} from "../utils/sample-positions";
+import { collectAssayPositions, filterScanPositionsForAssay } from "../utils/sample-positions";
 import {
   savedAlignStateKey,
   sourceKey,
@@ -50,13 +42,10 @@ import {
   type ExcludedByPosition,
 } from "./studio-align-store";
 import { useStudioStore } from "./studio-store";
-
 const nextExclusionPreviewMs = 1000;
-
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
-
 export type StudioAlignState = {
   workspacePath: string | null;
   source: AlignerSource | null;
@@ -80,7 +69,10 @@ export type StudioAlignState = {
   setExcludedCellsForCurrentPosition: (cells: Iterable<AlignGridCellCoord>) => void;
   currentExcludedCells: AlignGridCellCoord[];
   displayedExcludedCells: AlignGridCellCoord[];
-  visibleCounts: { included: number; excluded: number };
+  visibleCounts: {
+    included: number;
+    excluded: number;
+  };
   saving: boolean;
   cropping: boolean;
   cropProgress: CropRoiProgress | null;
@@ -101,16 +93,13 @@ export type StudioAlignState = {
   saveAndAdvance: () => Promise<boolean>;
   autoExclude: () => Promise<void>;
 };
-
 export type CropStartConfirmState = {
   positions: number[];
 };
-
 export type CropConfirmState = {
   positions: number[];
   existingPositions: number[];
 };
-
 export function useStudioAlignState(): StudioAlignState {
   const info1 = useStudioStore((state) => state.info1);
   const info3 = useStudioStore((state) => state.info3);
@@ -133,100 +122,58 @@ export function useStudioAlignState(): StudioAlignState {
     error,
     status,
   } = ui;
-
-  const setWorkspacePath = useCallback(
-    (path: string | null) => studioAlignUiActions.setWorkspacePath(setUi, path),
-    [setUi],
-  );
-  const setSource = useCallback(
-    (next: AlignerSource | null) => studioAlignUiActions.setSource(setUi, next),
-    [setUi],
-  );
-  const setSelection = useCallback(
-    (patch: Partial<FrameRequest>) => studioAlignUiActions.setSelection(setUi, patch),
-    [setUi],
-  );
-  const setContrast = useCallback(
-    (next: ContrastWindow | null) => studioAlignUiActions.setContrast(setUi, next),
-    [setUi],
-  );
-  const setFrame = useCallback(
-    (next: FrameResult | null) => studioAlignUiActions.setFrame(setUi, next),
-    [setUi],
-  );
-  const setGrid = useCallback(
-    (next: AlignGridState | ((current: AlignGridState) => AlignGridState)) =>
-      studioAlignUiActions.setGrid(setUi, next),
-    [setUi],
-  );
-  const setToolMode = useCallback(
-    (mode: AlignGridToolMode) => studioAlignUiActions.setToolMode(setUi, mode),
-    [setUi],
-  );
-  const setPatternZoomLocked = useCallback(
-    (locked: boolean) => studioAlignUiActions.setPatternZoomLocked(setUi, locked),
-    [setUi],
-  );
-  const setExcludedCellsForCurrentPosition = useCallback(
-    (cells: Iterable<AlignGridCellCoord>) =>
-      studioAlignUiActions.setExcludedCellsForCurrentPosition(setUi, cells),
-    [setUi],
-  );
-  const setFrameLoading = useCallback(
-    (loading: boolean) => studioAlignUiActions.setFrameLoading(setUi, loading),
-    [setUi],
-  );
-  const setSaving = useCallback(
-    (next: boolean) => studioAlignUiActions.setSaving(setUi, next),
-    [setUi],
-  );
-  const setError = useCallback(
-    (next: string | null) => studioAlignUiActions.setError(setUi, next),
-    [setUi],
-  );
-  const setStatus = useCallback(
-    (next: string | null) => studioAlignUiActions.setStatus(setUi, next),
-    [setUi],
-  );
-  const applyLoadedFrame = useCallback(
-    (
-      loadedSelection: FrameRequest,
-      nextFrame: FrameResult,
-      savedAlignState: { stateKey: string; pos: number; saved: SavedAlignState | null } | null,
-    ) => studioAlignUiActions.applyLoadedFrame(setUi, loadedSelection, nextFrame, savedAlignState),
-    [setUi],
-  );
+  const setWorkspacePath = (path: string | null) =>
+    studioAlignUiActions.setWorkspacePath(setUi, path);
+  const setSource = (next: AlignerSource | null) => studioAlignUiActions.setSource(setUi, next);
+  const setSelection = (patch: Partial<FrameRequest>) =>
+    studioAlignUiActions.setSelection(setUi, patch);
+  const setContrast = (next: ContrastWindow | null) =>
+    studioAlignUiActions.setContrast(setUi, next);
+  const setFrame = (next: FrameResult | null) => studioAlignUiActions.setFrame(setUi, next);
+  const setGrid = (next: AlignGridState | ((current: AlignGridState) => AlignGridState)) =>
+    studioAlignUiActions.setGrid(setUi, next);
+  const setToolMode = (mode: AlignGridToolMode) => studioAlignUiActions.setToolMode(setUi, mode);
+  const setPatternZoomLocked = (locked: boolean) =>
+    studioAlignUiActions.setPatternZoomLocked(setUi, locked);
+  const setExcludedCellsForCurrentPosition = (cells: Iterable<AlignGridCellCoord>) =>
+    studioAlignUiActions.setExcludedCellsForCurrentPosition(setUi, cells);
+  const setFrameLoading = (loading: boolean) =>
+    studioAlignUiActions.setFrameLoading(setUi, loading);
+  const setSaving = (next: boolean) => studioAlignUiActions.setSaving(setUi, next);
+  const setError = (next: string | null) => studioAlignUiActions.setError(setUi, next);
+  const setStatus = (next: string | null) => studioAlignUiActions.setStatus(setUi, next);
+  const applyLoadedFrame = (
+    loadedSelection: FrameRequest,
+    nextFrame: FrameResult,
+    savedAlignState: {
+      stateKey: string;
+      pos: number;
+      saved: SavedAlignState | null;
+    } | null,
+  ) => studioAlignUiActions.applyLoadedFrame(setUi, loadedSelection, nextFrame, savedAlignState);
   const [findingFirstUnaligned, setFindingFirstUnaligned] = useState(false);
   const [cropProgress, setCropProgress] = useState<CropRoiProgress | null>(null);
   const [cropStartConfirm, setCropStartConfirm] = useState<CropStartConfirmState | null>(null);
   const [cropConfirm, setCropConfirm] = useState<CropConfirmState | null>(null);
   const cropRequestIdRef = useRef<string | null>(null);
   const loadCanvasResources = useCanvasResourceTransaction();
-  const activeSource = useMemo(
-    () => toStudioSource(dataSourceKind, info1),
-    [dataSourceKind, info1],
-  );
+  const activeSource = toStudioSource(dataSourceKind, info1);
   const activeWorkspacePath = info1.saveTo.trim() || null;
   const activeSourceKey = sourceKey(source);
-  const maskChannel = useMemo(() => studioMaskChannel(info3), [info3]);
-  const assayPositions = useMemo(() => collectAssayPositions(info3), [info3]);
-  const alignPositions = useMemo(() => {
+  const maskChannel = studioMaskChannel(info3);
+  const assayPositions = collectAssayPositions(info3);
+  const alignPositions = (() => {
     if (!scan) return [];
     return filterScanPositionsForAssay(scan.positions, assayPositions);
-  }, [assayPositions, scan]);
-  const lockedSelection = useMemo(
-    () =>
-      scan
-        ? lockedStudioSelection(scan, selection, maskChannel, alignPositions)
-        : selection,
-    [alignPositions, maskChannel, scan, selection],
-  );
-  const scanResult = useAtomValue(
-    activeSourceKey ? scanSourceAtom(activeSourceKey) : scanIdleAtom,
-  );
-  const runAutoExcludePreview = useAtomSet(autoExcludePreviewAtom, { mode: "promise" });
+  })();
+  const lockedSelection = scan
+    ? lockedStudioSelection(scan, selection, maskChannel, alignPositions)
+    : selection;
+  const scanResult = useAtomValue(activeSourceKey ? scanSourceAtom(activeSourceKey) : scanIdleAtom);
+  const runAutoExcludePreview = useAtomSet(autoExcludePreviewAtom, {
+    mode: "promise",
+  });
   const router = useRouter();
-
   const {
     meta: { scanLoading },
     derived: { currentExcludedCells, displayedExcludedCells, visibleCounts },
@@ -234,20 +181,20 @@ export function useStudioAlignState(): StudioAlignState {
     ui,
     setUi,
     actions: studioAlignUiActions,
-    scan: { scanResult, activeSourceKey },
+    scan: {
+      scanResult,
+      activeSourceKey,
+    },
     toErrorMessage,
     effectiveSelection: lockedSelection,
   });
   const cropping = cropProgress != null && !isDoneCropStatus(cropProgress.status);
-
   useEffect(() => {
     setWorkspacePath(activeWorkspacePath);
   }, [activeWorkspacePath, setWorkspacePath]);
-
   useEffect(() => {
     setSource(activeSource);
   }, [activeSource, setSource]);
-
   useEffect(() => {
     if (!scan) return;
     if (alignPositions.length === 0) {
@@ -259,7 +206,6 @@ export function useStudioAlignState(): StudioAlignState {
       setStatus(`${skipped} assay position(s) not found in source scan`);
     }
   }, [alignPositions, assayPositions.length, scan, setError, setStatus]);
-
   useEffect(() => {
     if (!scan) return;
     if (
@@ -272,7 +218,6 @@ export function useStudioAlignState(): StudioAlignState {
     }
     setSelection(lockedSelection);
   }, [lockedSelection, scan, selection, setSelection]);
-
   useEffect(() => {
     if (!source || !scan || alignPositions.length === 0) {
       setFrameLoading(false);
@@ -281,7 +226,6 @@ export function useStudioAlignState(): StudioAlignState {
     const alignStateKey = workspacePath
       ? savedAlignStateKey(workspacePath, lockedSelection.pos)
       : null;
-
     return loadCanvasResources({
       start: () => {
         setFrameLoading(true);
@@ -296,14 +240,20 @@ export function useStudioAlignState(): StudioAlignState {
               ? studioClient.loadAlignState(workspacePath, lockedSelection.pos)
               : Effect.succeed(null as SavedAlignState | null),
           ]),
-          { signal },
+          {
+            signal,
+          },
         ),
       commit: ([nextFrame, savedAlignState]) => {
         applyLoadedFrame(
           lockedSelection,
           nextFrame,
           alignStateKey
-            ? { stateKey: alignStateKey, pos: lockedSelection.pos, saved: savedAlignState }
+            ? {
+                stateKey: alignStateKey,
+                pos: lockedSelection.pos,
+                saved: savedAlignState,
+              }
             : null,
         );
       },
@@ -330,8 +280,7 @@ export function useStudioAlignState(): StudioAlignState {
     workspacePath,
     alignPositions.length,
   ]);
-
-  const variationExcludeCells = useCallback(async (): Promise<AlignGridCellCoord[]> => {
+  const variationExcludeCells = async (): Promise<AlignGridCellCoord[]> => {
     if (!source || !frame) return [];
     const cells = enumerateVisibleAlignGridCells(frame, grid);
     if (cells.length === 0) return [];
@@ -342,27 +291,29 @@ export function useStudioAlignState(): StudioAlignState {
     });
     return preview.cellScores
       .filter((cell) => cell.score <= preview.threshold)
-      .map(({ i, j }) => ({ i, j }));
-  }, [frame, grid, lockedSelection, runAutoExcludePreview, source]);
-
-  const positionIndex = useMemo(
-    () => alignPositions.indexOf(lockedSelection.pos),
-    [alignPositions, lockedSelection.pos],
-  );
+      .map(({ i, j }) => ({
+        i,
+        j,
+      }));
+  };
+  const positionIndex = alignPositions.indexOf(lockedSelection.pos);
   const canGoBack = positionIndex > 0;
-  const goBack = useCallback(() => {
+  const goBack = () => {
     if (saving || positionIndex <= 0) return;
-    setSelection({ pos: alignPositions[positionIndex - 1] });
-  }, [alignPositions, positionIndex, saving, setSelection]);
-
-  const resetCurrent = useCallback(() => {
+    setSelection({
+      pos: alignPositions[positionIndex - 1],
+    });
+  };
+  const resetCurrent = () => {
     if (saving) return;
-    setGrid({ ...createDefaultAlignGrid(), enabled: true });
+    setGrid({
+      ...createDefaultAlignGrid(),
+      enabled: true,
+    });
     setExcludedCellsForCurrentPosition([]);
     setStatus(`Reset Pos${lockedSelection.pos}`);
-  }, [lockedSelection.pos, saving, setExcludedCellsForCurrentPosition, setGrid, setStatus]);
-
-  const goToFirstUnaligned = useCallback(async () => {
+  };
+  const goToFirstUnaligned = async () => {
     if (!workspacePath || alignPositions.length === 0 || saving || findingFirstUnaligned) return;
     setFindingFirstUnaligned(true);
     setError(null);
@@ -378,110 +329,107 @@ export function useStudioAlignState(): StudioAlignState {
           setStatus("No positions in assay scope");
           return;
         }
-        setSelection({ pos: lastPos });
+        setSelection({
+          pos: lastPos,
+        });
         setStatus(`Jumped to Pos${lastPos}`);
         return;
       }
-      setSelection({ pos: firstUnaligned });
+      setSelection({
+        pos: firstUnaligned,
+      });
       setStatus(`Jumped to Pos${firstUnaligned}`);
     } catch (cause) {
       setError(toErrorMessage(cause, "Saved position scan failed"));
     } finally {
       setFindingFirstUnaligned(false);
     }
-  }, [
-    alignPositions,
-    findingFirstUnaligned,
-    saving,
-    setError,
-    setSelection,
-    setStatus,
-    workspacePath,
-  ]);
-
-  const advanceToNextPosition = useCallback(() => {
+  };
+  const advanceToNextPosition = () => {
     const currentIndex = alignPositions.indexOf(lockedSelection.pos);
     const nextPos = currentIndex >= 0 ? alignPositions[currentIndex + 1] : null;
     if (nextPos == null) return false;
-    setSelection({ pos: nextPos });
+    setSelection({
+      pos: nextPos,
+    });
     return true;
-  }, [alignPositions, lockedSelection.pos, setSelection]);
-
-  const runCrop = useCallback(
-    async (positions: number[], overwrite: boolean) => {
-      if (!workspacePath || !source || positions.length === 0) return;
-      const requestId = `studio-crop-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      cropRequestIdRef.current = requestId;
-      setError(null);
-      await runCropRoi({
-        client: studioClient,
-        request: { requestId, workspacePath, source, positions, overwrite, outputFormat: "tiff" },
-        onProgress: setCropProgress,
-        onError: setError,
-        onCompleted: (progress) => {
-          setStatus(progress.message ?? "Crop completed");
-          void router.push("/annotate");
-        },
-        toErrorMessage,
-      });
-    },
-    [router, setError, setStatus, source, workspacePath],
-  );
-
-  const cropBatchWithOverwriteCheck = useCallback(
-    async (positions: number[]) => {
-      if (!workspacePath || positions.length === 0) return;
-      const existing = await runClientEffect(
-        Effect.all(
-          positions.map((pos) =>
-            studioClient
-              .roiPosExists(workspacePath, pos)
-              .pipe(Effect.map((exists) => ({ pos, exists }))),
-          ),
-        ).pipe(
-          Effect.map((entries) =>
-            entries.filter((entry) => entry.exists).map((entry) => entry.pos),
+  };
+  const runCrop = async (positions: number[], overwrite: boolean) => {
+    if (!workspacePath || !source || positions.length === 0) return;
+    const requestId = `studio-crop-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    cropRequestIdRef.current = requestId;
+    setError(null);
+    await runCropRoi({
+      client: studioClient,
+      request: {
+        requestId,
+        workspacePath,
+        source,
+        positions,
+        overwrite,
+        outputFormat: "tiff",
+      },
+      onProgress: setCropProgress,
+      onError: setError,
+      onCompleted: (progress) => {
+        setStatus(progress.message ?? "Crop completed");
+        void router.push("/annotate");
+      },
+      toErrorMessage,
+    });
+  };
+  const cropBatchWithOverwriteCheck = async (positions: number[]) => {
+    if (!workspacePath || positions.length === 0) return;
+    const existing = await runClientEffect(
+      Effect.all(
+        positions.map((pos) =>
+          studioClient.roiPosExists(workspacePath, pos).pipe(
+            Effect.map((exists) => ({
+              pos,
+              exists,
+            })),
           ),
         ),
-      );
-      if (existing.length > 0) {
-        setCropConfirm({ positions, existingPositions: existing });
-        return;
-      }
-      await runCrop(positions, false);
-    },
-    [runCrop, workspacePath],
-  );
-
-  const maybeCropWhenAllPositionsSaved = useCallback(async () => {
+      ).pipe(
+        Effect.map((entries) => entries.filter((entry) => entry.exists).map((entry) => entry.pos)),
+      ),
+    );
+    if (existing.length > 0) {
+      setCropConfirm({
+        positions,
+        existingPositions: existing,
+      });
+      return;
+    }
+    await runCrop(positions, false);
+  };
+  const maybeCropWhenAllPositionsSaved = async () => {
     if (!workspacePath || alignPositions.length === 0) return;
     const savedPositions = new Set(
       await runClientEffect(studioClient.listSavedBboxPositions(workspacePath)),
     );
     const allPositionsSaved = alignPositions.every((pos) => savedPositions.has(pos));
     if (!allPositionsSaved) return;
-    setCropStartConfirm({ positions: alignPositions });
-  }, [alignPositions, workspacePath]);
-
-  const startConfirmedCrop = useCallback(() => {
+    setCropStartConfirm({
+      positions: alignPositions,
+    });
+  };
+  const startConfirmedCrop = () => {
     const next = cropStartConfirm;
     if (!next) return;
     setCropStartConfirm(null);
     void cropBatchWithOverwriteCheck(next.positions);
-  }, [cropBatchWithOverwriteCheck, cropStartConfirm]);
-
-  const cancelCropStartConfirm = useCallback(() => {
+  };
+  const cancelCropStartConfirm = () => {
     setCropStartConfirm(null);
-  }, []);
-
-  const confirmCropOverwrite = useCallback(() => {
+  };
+  const confirmCropOverwrite = () => {
     const next = cropConfirm;
     if (!next) return;
     setCropConfirm(null);
     void runCrop(next.positions, true);
-  }, [cropConfirm, runCrop]);
-
-  const skipExistingCrop = useCallback(() => {
+  };
+  const skipExistingCrop = () => {
     const next = cropConfirm;
     if (!next) return;
     setCropConfirm(null);
@@ -493,19 +441,16 @@ export function useStudioAlignState(): StudioAlignState {
       return;
     }
     void runCrop(remaining, false);
-  }, [cropConfirm, router, runCrop, setStatus]);
-
-  const cancelCropConfirm = useCallback(() => {
+  };
+  const cancelCropConfirm = () => {
     setCropConfirm(null);
-  }, []);
-
-  const cancelCrop = useCallback(async () => {
+  };
+  const cancelCrop = async () => {
     const requestId = cropRequestIdRef.current;
     if (!requestId) return;
     setCropProgress(await runClientEffect(studioClient.cancelCropRoi(requestId)));
-  }, []);
-
-  const saveAndAdvance = useCallback(async () => {
+  };
+  const saveAndAdvance = async () => {
     if (!workspacePath || !frame) return false;
     const edgeCells = collectAlignGridEdgeCells(frame, grid);
     const thresholdCells = await variationExcludeCells();
@@ -536,7 +481,6 @@ export function useStudioAlignState(): StudioAlignState {
     } finally {
       setSaving(false);
     }
-
     advanced = advanceToNextPosition();
     if (!advanced) {
       await maybeCropWhenAllPositionsSaved();
@@ -544,22 +488,8 @@ export function useStudioAlignState(): StudioAlignState {
     }
     await delay(nextExclusionPreviewMs);
     return true;
-  }, [
-    advanceToNextPosition,
-    currentExcludedCells,
-    frame,
-    grid,
-    lockedSelection.pos,
-    maybeCropWhenAllPositionsSaved,
-    setError,
-    setExcludedCellsForCurrentPosition,
-    setSaving,
-    setStatus,
-    variationExcludeCells,
-    workspacePath,
-  ]);
-
-  const autoExclude = useCallback(async () => {
+  };
+  const autoExclude = async () => {
     if (!frame) return;
     try {
       setStatus("Auto exclude preview");
@@ -574,16 +504,7 @@ export function useStudioAlignState(): StudioAlignState {
     } catch (cause) {
       setError(toErrorMessage(cause, "Auto exclude preview failed"));
     }
-  }, [
-    currentExcludedCells,
-    frame,
-    grid,
-    setError,
-    setExcludedCellsForCurrentPosition,
-    setStatus,
-    variationExcludeCells,
-  ]);
-
+  };
   return {
     workspacePath,
     source,

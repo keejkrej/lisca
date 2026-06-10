@@ -25,8 +25,12 @@ export type SaveRoiFrameAnnotationInput = {
 };
 
 export type AnnotatorQueryAtoms = {
-  roiWorkspaceScanAtom: (workspacePath: string) => Atom.Atom<Result.Result<RoiWorkspaceScan, ClientError>>;
-  annotationLabelsAtom: (workspacePath: string) => Atom.Atom<Result.Result<AnnotationLabel[], ClientError>>;
+  roiWorkspaceScanAtom: (
+    workspacePath: string,
+  ) => Atom.Atom<Result.Result<RoiWorkspaceScan, ClientError>>;
+  annotationLabelsAtom: (
+    workspacePath: string,
+  ) => Atom.Atom<Result.Result<AnnotationLabel[], ClientError>>;
   saveAnnotationLabelsAtom: Atom.AtomResultFn<
     SaveAnnotationLabelsInput,
     AnnotationLabel[],
@@ -50,10 +54,7 @@ export function createAnnotatorQueryAtoms(
           return yield* port.scanRoiWorkspace(workspacePath);
         }),
       )
-      .pipe(
-        Atom.keepAlive,
-        Atom.withReactivity([ReactivityKeys.roiWorkspace(workspacePath)]),
-      ),
+      .pipe(Atom.keepAlive, Atom.withReactivity([ReactivityKeys.roiWorkspace(workspacePath)])),
   );
 
   const annotationLabelsAtom = Atom.family((workspacePath: string) =>
@@ -64,10 +65,7 @@ export function createAnnotatorQueryAtoms(
           return yield* port.loadLabels(workspacePath);
         }),
       )
-      .pipe(
-        Atom.keepAlive,
-        Atom.withReactivity([ReactivityKeys.annotationLabels(workspacePath)]),
-      ),
+      .pipe(Atom.keepAlive, Atom.withReactivity([ReactivityKeys.annotationLabels(workspacePath)])),
   );
 
   const saveAnnotationLabelsAtom = runtime.fn(
@@ -80,7 +78,11 @@ export function createAnnotatorQueryAtoms(
   );
 
   const saveRoiFrameAnnotationAtom = runtime.fn(
-    Effect.fnUntraced(function* ({ workspacePath, request, annotation }: SaveRoiFrameAnnotationInput) {
+    Effect.fnUntraced(function* ({
+      workspacePath,
+      request,
+      annotation,
+    }: SaveRoiFrameAnnotationInput) {
       const port = yield* AnnotatorPortService;
       return yield* invalidateAfter(
         port.saveRoiFrameAnnotation(workspacePath, request, annotation),

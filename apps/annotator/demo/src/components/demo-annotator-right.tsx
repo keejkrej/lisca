@@ -30,7 +30,11 @@ export function DemoAnnotatorRight(props: {
   return (
     <div className="flex min-h-0 flex-col gap-2 overflow-auto p-3">
       <Section title="Mode">
-        <AnnotationModeToggle className="w-full" mode={props.mode} onModeChange={props.onModeChange} />
+        <AnnotationModeToggle
+          className="w-full"
+          mode={props.mode}
+          onModeChange={props.onModeChange}
+        />
       </Section>
       <Section title="Labels" contentClassName="grid grid-cols-2 gap-2">
         {props.labels.map((label) => {
@@ -66,10 +70,22 @@ export function DemoAnnotatorRight(props: {
         {props.error ? <p className="col-span-2 text-destructive text-xs">{props.error}</p> : null}
       </Section>
       <Section title="Edit" contentClassName="grid grid-cols-2 gap-2">
-        <Button disabled={!props.canUndo} size="sm" type="button" variant="outline" onClick={props.onUndo}>
+        <Button
+          disabled={!props.canUndo}
+          size="sm"
+          type="button"
+          variant="outline"
+          onClick={props.onUndo}
+        >
           Undo
         </Button>
-        <Button disabled={!props.canRedo} size="sm" type="button" variant="outline" onClick={props.onRedo}>
+        <Button
+          disabled={!props.canRedo}
+          size="sm"
+          type="button"
+          variant="outline"
+          onClick={props.onRedo}
+        >
           Redo
         </Button>
         <Button
@@ -81,7 +97,13 @@ export function DemoAnnotatorRight(props: {
         >
           Clear
         </Button>
-        <Button disabled={!props.dirty} size="sm" type="button" variant="outline" onClick={props.onDiscard}>
+        <Button
+          disabled={!props.dirty}
+          size="sm"
+          type="button"
+          variant="outline"
+          onClick={props.onDiscard}
+        >
           Discard
         </Button>
       </Section>

@@ -1,9 +1,9 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute('/align')({
+export const Route = createFileRoute("/align")({
   component: RouteComponent,
-})
+});
 
 function RouteComponent() {
-  return <div>Hello "/align"!</div>
+  return <div>Hello "/align"!</div>;
 }

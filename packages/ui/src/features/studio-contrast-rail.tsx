@@ -10,8 +10,7 @@ export function StudioContrastRail(props: {
   onContrastChange: (contrast: ContrastWindow | null) => void;
 }) {
   const domain = props.frame?.contrastDomain ?? { min: 0, max: 255 };
-  const autoContrast =
-    props.frame?.appliedContrast ??
+  const autoContrast = props.frame?.appliedContrast ??
     props.frame?.suggestedContrast ?? { min: domain.min, max: domain.max };
   const value = props.contrast ?? autoContrast;
   const disabled = props.disabled ?? !props.frame;

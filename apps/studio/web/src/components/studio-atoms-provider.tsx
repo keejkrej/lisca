@@ -1,6 +1,5 @@
 import { RegistryProvider, useAtomInitialValues } from "@effect-atom/atom-react";
-import { useMemo, type ReactNode } from "react";
-
+import { type ReactNode } from "react";
 import {
   createInitialStudioAlignUiState,
   readStudioAlignSession,
@@ -16,22 +15,18 @@ import {
   readStudioSession,
   studioWizardAtom,
 } from "../state/studio-store";
-
 function StudioWizardInitialValues() {
   useAtomInitialValues(
-    useMemo(() => {
+    (() => {
       const wizardSession = readStudioSession();
-      return [
-        [studioWizardAtom, wizardSession ?? createInitialStudioWizardState()] as const,
-      ];
-    }, []),
+      return [[studioWizardAtom, wizardSession ?? createInitialStudioWizardState()] as const];
+    })(),
   );
   return null;
 }
-
 function StudioAlignInitialValues() {
   useAtomInitialValues(
-    useMemo(() => {
+    (() => {
       const alignSession = readStudioAlignSession();
       if (!alignSession) return [];
       return [
@@ -43,14 +38,13 @@ function StudioAlignInitialValues() {
           },
         ] as const,
       ];
-    }, []),
+    })(),
   );
   return null;
 }
-
 function StudioAnnotateInitialValues() {
   useAtomInitialValues(
-    useMemo(() => {
+    (() => {
       const annotateSession = readStudioAnnotateSession();
       if (!annotateSession) return [];
       return [
@@ -62,11 +56,10 @@ function StudioAnnotateInitialValues() {
           },
         ] as const,
       ];
-    }, []),
+    })(),
   );
   return null;
 }
-
 export function StudioAtomsProvider({ children }: { children: ReactNode }) {
   return (
     <RegistryProvider>

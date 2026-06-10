@@ -1,6 +1,5 @@
-import { useCallback, useRef } from "react";
+import { useRef } from "react";
 import { unstable_batchedUpdates } from "react-dom";
-
 export type CanvasResourceTransactionOptions<T> = {
   start?: () => void;
   load: (signal: AbortSignal) => Promise<T>;
@@ -8,11 +7,9 @@ export type CanvasResourceTransactionOptions<T> = {
   reject: (cause: unknown) => void;
   settle?: () => void;
 };
-
 export function useCanvasResourceTransaction() {
   const transactionIdRef = useRef(0);
-
-  return useCallback(<T>(options: CanvasResourceTransactionOptions<T>) => {
+  return <T>(options: CanvasResourceTransactionOptions<T>) => {
     transactionIdRef.current += 1;
     const transactionId = transactionIdRef.current;
     const abortController = new AbortController();
@@ -21,14 +18,12 @@ export function useCanvasResourceTransaction() {
     const applyIfCurrent = (apply: () => void) => {
       if (isCurrent()) unstable_batchedUpdates(apply);
     };
-
     options.start?.();
     void options
       .load(abortController.signal)
       .then((value) => applyIfCurrent(() => options.commit(value)))
       .catch((cause) => applyIfCurrent(() => options.reject(cause)))
       .finally(() => applyIfCurrent(() => options.settle?.()));
-
     return () => abortController.abort();
-  }, []);
+  };
 }

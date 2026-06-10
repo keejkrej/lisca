@@ -18,9 +18,8 @@ import {
 } from "@lisca/client/studio-annotate-session-bridge";
 import { useCanvasResourceTransaction, useCanvasTransientStatus } from "@lisca/ui/features";
 import { Atom, Result, useAtom, useAtomValue } from "@effect-atom/atom-react";
-import { useCallback, useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
-
 import { runClientEffect } from "@lisca/client/runtime";
 import { studioNavigate } from "../navigation/use-studio-navigate";
 import { studioClient, toErrorMessage } from "../api/studio-port";
@@ -31,19 +30,12 @@ import {
   studioAnnotateUiAtom,
   useStudioAnnotateStore,
 } from "./studio-annotate-store";
-import {
-  buildStudioAssayJson,
-  serializeBasicInfoSnapshot,
-  useStudioStore,
-} from "./studio-store";
+import { buildStudioAssayJson, serializeBasicInfoSnapshot, useStudioStore } from "./studio-store";
 import { validateAssayForAnalysis } from "../utils/studio-assay-validation";
-
 const labelsIdleAtom = Atom.make(Result.initial<AnnotationLabel[]>());
-
 function isAbortError(cause: unknown): boolean {
   return cause instanceof DOMException && cause.name === "AbortError";
 }
-
 function makeRoiFrameRequest(
   position: RoiPositionScan | null,
   roi: number | null,
@@ -64,7 +56,6 @@ function makeRoiFrameRequest(
     z,
   };
 }
-
 export type StudioAnnotateState = {
   workspacePath: string | null;
   scan: RoiWorkspaceScan | null;
@@ -82,7 +73,10 @@ export type StudioAnnotateState = {
   scanLoading: boolean;
   frameLoading: boolean;
   error: string | null;
-  toasts: { text: string; tone?: "error" | "success" | "default" }[];
+  toasts: {
+    text: string;
+    tone?: "error" | "success" | "default";
+  }[];
   selection: {
     pos: number | null;
     roi: number | null;
@@ -98,7 +92,6 @@ export type StudioAnnotateState = {
   setAnalysisStartConfirm: (value: boolean) => void;
   shuffleSelection: () => void;
 };
-
 export function useStudioAnnotateState(): StudioAnnotateState {
   const saveTo = useStudioStore((state) => state.info1.saveTo);
   const assayId = useStudioStore((state) => state.assayId);
@@ -135,19 +128,16 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     setAnalysisProgress,
     setAnalysisResultFiles,
   } = useStudioAnnotateStore();
-
   const [ui, setUi] = useAtom(studioAnnotateUiAtom);
-  const annotatorUi = useMemo(() => studioAnnotateToAnnotatorUi(ui), [ui]);
-  const setAnnotatorUi = useMemo(() => createStudioAnnotateSetUi(setUi), [setUi]);
-  const sessionActions = useMemo(
-    () => createStudioAnnotateSessionActions(studioAnnotateUiActions as StudioAnnotateSessionActions),
-    [],
+  const annotatorUi = studioAnnotateToAnnotatorUi(ui);
+  const setAnnotatorUi = createStudioAnnotateSetUi(setUi);
+  const sessionActions = createStudioAnnotateSessionActions(
+    studioAnnotateUiActions as StudioAnnotateSessionActions,
   );
   const scanResult = useAtomValue(
     activeWorkspacePath ? roiWorkspaceScanAtom(activeWorkspacePath) : roiScanIdleAtom,
   );
   const labelsIdleResult = useAtomValue(labelsIdleAtom);
-
   const session = useAnnotateSessionCore({
     ui: annotatorUi,
     setUi: setAnnotatorUi,
@@ -163,24 +153,15 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     },
     toErrorMessage,
   });
-
   const { scan, position } = session.derived;
   const { scanLoading } = session.meta;
-
-  const selectedRoi = useMemo(
-    () => currentAnnotateRoi(position, selection.roi),
-    [position, selection.roi],
-  );
-  const request = useMemo(
-    () =>
-      makeRoiFrameRequest(
-        position,
-        selectedRoi?.roi ?? null,
-        selection.channel,
-        selection.timeIndex,
-        selection.zIndex,
-      ),
-    [position, selectedRoi?.roi, selection.channel, selection.timeIndex, selection.zIndex],
+  const selectedRoi = currentAnnotateRoi(position, selection.roi);
+  const request = makeRoiFrameRequest(
+    position,
+    selectedRoi?.roi ?? null,
+    selection.channel,
+    selection.timeIndex,
+    selection.zIndex,
   );
   const activeRequestKey = requestKey(position, selectedRoi, selection);
   const loadCanvasResources = useCanvasResourceTransaction();
@@ -191,18 +172,27 @@ export function useStudioAnnotateState(): StudioAnnotateState {
       ? "Scanning ROI workspace"
       : visibleStatus;
   const error = scanError ?? frameError;
-  const toasts = useMemo(() => {
-    if (error) return [{ text: error, tone: "error" as const }];
-    if (activeStatus) return [{ text: activeStatus }];
+  const toasts = (() => {
+    if (error)
+      return [
+        {
+          text: error,
+          tone: "error" as const,
+        },
+      ];
+    if (activeStatus)
+      return [
+        {
+          text: activeStatus,
+        },
+      ];
     return [];
-  }, [activeStatus, error]);
-
+  })();
   useEffect(() => {
     if (!workspacePath || workspacePath !== activeWorkspacePath || !request) {
       setFrameLoading(false);
       return;
     }
-
     return loadCanvasResources({
       start: () => {
         setContrast(null);
@@ -211,7 +201,9 @@ export function useStudioAnnotateState(): StudioAnnotateState {
         setStatus("Loading ROI frame");
       },
       load: (signal) =>
-        runClientEffect(studioClient.loadRoiFrame(workspacePath, request, null, signal), { signal }),
+        runClientEffect(studioClient.loadRoiFrame(workspacePath, request, null, signal), {
+          signal,
+        }),
       commit: (nextFrame) => {
         studioAnnotateUiActions.setFrame(setUi, nextFrame);
         setContrastState(nextFrame);
@@ -236,22 +228,19 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     setUi,
     workspacePath,
   ]);
-
   useEffect(() => {
     if (!contrast || !workspacePath || workspacePath !== activeWorkspacePath || !request) {
       return;
     }
-
     return loadCanvasResources({
       start: () => {
         setFrameLoading(true);
         setFrameError(null);
       },
       load: (signal) =>
-        runClientEffect(
-          studioClient.loadRoiFrame(workspacePath, request, contrast, signal),
-          { signal },
-        ),
+        runClientEffect(studioClient.loadRoiFrame(workspacePath, request, contrast, signal), {
+          signal,
+        }),
       commit: (nextFrame) => {
         studioAnnotateUiActions.setFrame(setUi, nextFrame);
         setContrastState(nextFrame);
@@ -273,14 +262,9 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     setUi,
     workspacePath,
   ]);
-
-  const changeSelection = useCallback(
-    (patch: Partial<StudioAnnotateState["selection"]>) =>
-      studioAnnotateUiActions.setSelection(setUi, patch),
-    [setUi],
-  );
-
-  const shuffleSelection = useCallback(() => {
+  const changeSelection = (patch: Partial<StudioAnnotateState["selection"]>) =>
+    studioAnnotateUiActions.setSelection(setUi, patch);
+  const shuffleSelection = () => {
     if (!scan?.positions.length) return;
     const randomPosition = scan.positions[Math.floor(Math.random() * scan.positions.length)];
     const randomRoi =
@@ -303,16 +287,21 @@ export function useStudioAnnotateState(): StudioAnnotateState {
       timeIndex,
       zIndex,
     });
-  }, [scan?.positions, setUi]);
-
-  const startAnalysis = useCallback(() => {
+  };
+  const startAnalysis = () => {
     if (!workspacePath) return;
-    const validation = validateAssayForAnalysis({ assayId, info1, info2, info3 });
+    const validation = validateAssayForAnalysis({
+      assayId,
+      info1,
+      info2,
+      info3,
+    });
     if (!validation.ok || !assayId) {
-      setStatus(validation.ok ? "Assay type is missing" : validation.errors[0] ?? "Invalid assay");
+      setStatus(
+        validation.ok ? "Assay type is missing" : (validation.errors[0] ?? "Invalid assay"),
+      );
       return;
     }
-
     setAnalysisStartConfirm(false);
     setStatus("Saving assay.json");
     const requestId = `studio-analysis-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -327,7 +316,6 @@ export function useStudioAnnotateState(): StudioAnnotateState {
       resultFiles: [],
       error: null,
     });
-
     let stop: (() => void) | null = null;
     const onProgress = (progress: AnalysisProgress) => {
       setAnalysisProgress(progress);
@@ -346,7 +334,6 @@ export function useStudioAnnotateState(): StudioAnnotateState {
         setStatus(progress.error ?? "Analysis failed");
       }
     };
-
     void (async () => {
       try {
         const assayJson = buildStudioAssayJson({
@@ -401,76 +388,32 @@ export function useStudioAnnotateState(): StudioAnnotateState {
         setStatus(toErrorMessage(cause, "Analysis failed"));
       }
     })();
-  }, [
-    assayId,
-    dataSourceKind,
-    info1,
-    info2,
-    info3,
-    navigate,
-    setAnalysisProgress,
-    setAnalysisRequestId,
-    setAnalysisResultFiles,
-    setAnalysisStartConfirm,
-    setBasicInfoSavedSnapshot,
-    setStatus,
+  };
+  return {
     workspacePath,
-  ]);
-
-  return useMemo(
-    () => ({
-      workspacePath,
-      scan,
-      analysisStartConfirm,
-      analysisRequestId,
-      analysisProgress,
-      analysisResultFiles,
-      position,
-      request,
-      frame,
-      contrast,
-      contrastDomain,
-      contrastMin,
-      contrastMax,
-      scanLoading,
-      frameLoading,
-      error,
-      toasts,
-      selection,
-      setAnalysisProgress,
-      setAnalysisResultFiles,
-      setSelection: changeSelection,
-      setAnalysisStartConfirm,
-      startAnalysis,
-      setContrast,
-      shuffleSelection,
-    }),
-    [
-      analysisProgress,
-      analysisRequestId,
-      analysisResultFiles,
-      analysisStartConfirm,
-      changeSelection,
-      contrast,
-      contrastDomain,
-      contrastMax,
-      contrastMin,
-      error,
-      frame,
-      frameLoading,
-      position,
-      request,
-      scan,
-      scanLoading,
-      selection,
-      setAnalysisProgress,
-      setAnalysisResultFiles,
-      setAnalysisStartConfirm,
-      setContrast,
-      shuffleSelection,
-      startAnalysis,
-      toasts,
-      workspacePath,
-    ],
-  );
+    scan,
+    analysisStartConfirm,
+    analysisRequestId,
+    analysisProgress,
+    analysisResultFiles,
+    position,
+    request,
+    frame,
+    contrast,
+    contrastDomain,
+    contrastMin,
+    contrastMax,
+    scanLoading,
+    frameLoading,
+    error,
+    toasts,
+    selection,
+    setAnalysisProgress,
+    setAnalysisResultFiles,
+    setSelection: changeSelection,
+    setAnalysisStartConfirm,
+    startAnalysis,
+    setContrast,
+    shuffleSelection,
+  };
 }

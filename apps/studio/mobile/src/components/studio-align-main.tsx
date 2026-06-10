@@ -6,11 +6,8 @@ import {
   useCanvasTransientStatus,
   ViewportCard,
 } from "@lisca/ui-native";
-import { useMemo } from "react";
-
 import type { StudioAlignState } from "../state/use-studio-align-state";
 import { StudioCropConfirmModal, StudioCropStartModal } from "./studio-crop-modals";
-
 export function StudioAlignMain({ state }: { state: StudioAlignState }) {
   const { handlePointerDown, handlePointerMove, handlePointerEnd, previewGrid } =
     useAlignCanvasGridHandlers({
@@ -32,16 +29,30 @@ export function StudioAlignMain({ state }: { state: StudioAlignState }) {
   const positionCount = state.alignPositions.length;
   const positionMessage =
     positionIndex >= 0 && positionCount > 0 ? `Pos ${positionIndex}/${positionCount}` : null;
-  const messages = useMemo(() => {
+  const messages = (() => {
     if (!positionMessage) return [];
-    return [{ text: positionMessage }];
-  }, [positionMessage]);
-  const toasts = useMemo(() => {
-    if (state.error) return [{ text: state.error, tone: "error" as const }];
-    if (activeToastStatus) return [{ text: activeToastStatus }];
+    return [
+      {
+        text: positionMessage,
+      },
+    ];
+  })();
+  const toasts = (() => {
+    if (state.error)
+      return [
+        {
+          text: state.error,
+          tone: "error" as const,
+        },
+      ];
+    if (activeToastStatus)
+      return [
+        {
+          text: activeToastStatus,
+        },
+      ];
     return [];
-  }, [activeToastStatus, state.error]);
-
+  })();
   return (
     <>
       <ViewportCard>

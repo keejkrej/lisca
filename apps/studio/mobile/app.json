@@ -7,6 +7,9 @@
     "scheme": "lisca-studio",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "experiments": {
+      "reactCompiler": true
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.lisca.studio.mobile"

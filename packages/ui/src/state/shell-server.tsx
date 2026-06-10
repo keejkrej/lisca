@@ -9,12 +9,10 @@ import {
   resolveLiscaWsUrl,
   setLiscaActiveServerAddress,
 } from "@lisca/utils";
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
-
+import { createContext, useContext, useState, type ReactNode } from "react";
 import { ServerAddressDialog } from "../shell/server-address-dialog";
 import type { ConnectionState } from "../shell/connection-status";
 import { useWsProbeForUrl } from "./use-shell-ws-probe";
-
 export type ShellServer = {
   wsUrl: string;
   httpBaseUrl: string;
@@ -27,9 +25,7 @@ export type ShellServer = {
   openSettings: () => void;
   closeSettings: () => void;
 };
-
 const ShellServerContext = createContext<ShellServer | null>(null);
-
 export function ShellServerProvider({
   defaultPort,
   children,
@@ -40,83 +36,64 @@ export function ShellServerProvider({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [savedServers, setSavedServers] = useState(() => readLiscaSavedServers());
   const [activeAddress, setActiveAddress] = useState<string | null>(null);
-
-  const resolveOptions = useMemo(
-    () => ({
-      searchParams:
-        typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null,
-      viteWsUrl: import.meta.env.VITE_WS_URL,
-      viteHttpUrl: import.meta.env.VITE_HTTP_URL,
-      viteWsHost: import.meta.env.VITE_WS_HOST,
-      viteWsPort: import.meta.env.VITE_WS_PORT,
-      defaultPort,
-      wsPath: WS_PATH,
-      activeAddress,
-    }),
-    [activeAddress, defaultPort],
-  );
-
-  const localLabel = useMemo(() => {
-    const url = resolveLiscaWsUrl({ ...resolveOptions, activeAddress: null });
+  const resolveOptions = {
+    searchParams:
+      typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null,
+    viteWsUrl: import.meta.env.VITE_WS_URL,
+    viteHttpUrl: import.meta.env.VITE_HTTP_URL,
+    viteWsHost: import.meta.env.VITE_WS_HOST,
+    viteWsPort: import.meta.env.VITE_WS_PORT,
+    defaultPort,
+    wsPath: WS_PATH,
+    activeAddress,
+  };
+  const localLabel = (() => {
+    const url = resolveLiscaWsUrl({
+      ...resolveOptions,
+      activeAddress: null,
+    });
     try {
       return new URL(url).host;
     } catch {
       return `127.0.0.1:${defaultPort}`;
     }
-  }, [defaultPort, resolveOptions]);
-
-  const wsUrl = useMemo(() => resolveLiscaWsUrl(resolveOptions), [resolveOptions]);
-  const httpBaseUrl = useMemo(() => resolveLiscaHttpBaseUrl(resolveOptions), [resolveOptions]);
-
+  })();
+  const wsUrl = resolveLiscaWsUrl(resolveOptions);
+  const httpBaseUrl = resolveLiscaHttpBaseUrl(resolveOptions);
   const probe = useWsProbeForUrl(wsUrl);
-
-  const connectTo = useCallback((address: string | null) => {
+  const connectTo = (address: string | null) => {
     const next = address?.trim() ? address.trim() : null;
     setLiscaActiveServerAddress(next);
     setActiveAddress(next);
-  }, []);
-
-  const handleAddServer = useCallback(
-    (address: string) => {
-      setSavedServers(addLiscaSavedServer(address, { defaultPort, wsPath: WS_PATH }));
-    },
-    [defaultPort],
-  );
-
-  const handleRemoveServer = useCallback((address: string) => {
+  };
+  const handleAddServer = (address: string) => {
+    setSavedServers(
+      addLiscaSavedServer(address, {
+        defaultPort,
+        wsPath: WS_PATH,
+      }),
+    );
+  };
+  const handleRemoveServer = (address: string) => {
     setSavedServers(removeLiscaSavedServer(address));
     setActiveAddress((current) => {
       if (current !== address.trim()) return current;
       setLiscaActiveServerAddress(null);
       return null;
     });
-  }, []);
-
-  const value = useMemo<ShellServer>(
-    () => ({
-      wsUrl,
-      httpBaseUrl,
-      state: probe.state,
-      defaultPort,
-      localLabel,
-      activeAddress,
-      savedServers,
-      settingsOpen,
-      openSettings: () => setSettingsOpen(true),
-      closeSettings: () => setSettingsOpen(false),
-    }),
-    [
-      activeAddress,
-      defaultPort,
-      httpBaseUrl,
-      localLabel,
-      probe.state,
-      savedServers,
-      settingsOpen,
-      wsUrl,
-    ],
-  );
-
+  };
+  const value = {
+    wsUrl,
+    httpBaseUrl,
+    state: probe.state,
+    defaultPort,
+    localLabel,
+    activeAddress,
+    savedServers,
+    settingsOpen,
+    openSettings: () => setSettingsOpen(true),
+    closeSettings: () => setSettingsOpen(false),
+  };
   return (
     <ShellServerContext.Provider value={value}>
       {children}
@@ -135,7 +112,6 @@ export function ShellServerProvider({
     </ShellServerContext.Provider>
   );
 }
-
 export function useShellServer(): ShellServer {
   const ctx = useContext(ShellServerContext);
   if (!ctx) {

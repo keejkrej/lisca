@@ -22,32 +22,53 @@ export { ShellNavbar, type ShellNavbarProps, type ShellNavbarRouteItem } from ".
 export { Panel, Spinner } from "./shell/panel.tsx";
 export { Section } from "./shell/section.tsx";
 export { StatTile } from "./shell/stat-tile.tsx";
-export { ServerAddressDialog, type ServerAddressDialogProps } from "./shell/server-address-dialog.tsx";
+export {
+  ServerAddressDialog,
+  type ServerAddressDialogProps,
+} from "./shell/server-address-dialog.tsx";
 export { ViewportCard } from "./shell/viewport-card.tsx";
 
 export { ShellServerProvider, useShellServer, type ShellServer } from "./state/shell-server.tsx";
-export { ShellWorkspaceProvider, useShellWorkspace, type ShellWorkspace } from "./state/workspace.tsx";
+export {
+  ShellWorkspaceProvider,
+  useShellWorkspace,
+  type ShellWorkspace,
+} from "./state/workspace.tsx";
 export { useWsProbeForUrl } from "./state/use-shell-ws-probe.ts";
 export { ShellThemeProvider, useShellTheme } from "./theme/shell-theme.tsx";
 export { ShellThemeToggle } from "./theme/shell-theme-toggle.tsx";
 export type { ShellThemeMode } from "./theme/tokens.ts";
 export { shellThemeColors } from "./theme/tokens.ts";
 
-export { AlignCanvas, type AlignCanvasPointerEvent, type AlignCanvasProps } from "./features/align-canvas.tsx";
+export {
+  AlignCanvas,
+  type AlignCanvasPointerEvent,
+  type AlignCanvasProps,
+} from "./features/align-canvas.tsx";
 export {
   cursorForAlignTool,
   useAlignCanvasGridHandlers,
   type UseAlignCanvasGridHandlersOptions,
 } from "./features/align-canvas-handlers.ts";
-export { AnnotationCanvas, type AnnotationCanvasProps, type AnnotationTool } from "./features/annotation-canvas.tsx";
+export {
+  AnnotationCanvas,
+  type AnnotationCanvasProps,
+  type AnnotationTool,
+} from "./features/annotation-canvas.tsx";
 export { AnnotationModeToggle } from "./features/annotation-mode-toggle.tsx";
 export { AnnotationToolSlider } from "./features/annotation-tool-slider.tsx";
 export { labelColorStyle } from "./features/label-color-style.ts";
 export { useCanvasResourceTransaction } from "./features/canvas-resource-transaction.ts";
 export { useCanvasTransientStatus } from "./features/canvas-transient-status.ts";
 export { CropProgressModal, type CropProgressModalProps } from "./features/crop-progress-modal.tsx";
-export { FolderSourceParseModal, type FolderSourceParseModalProps } from "./features/folder-source-parse-modal.tsx";
-export { HostFilePickerDialog, type HostFilePickerDialogProps } from "./features/host-file-picker-dialog.tsx";
+export {
+  FolderSourceParseModal,
+  type FolderSourceParseModalProps,
+} from "./features/folder-source-parse-modal.tsx";
+export {
+  HostFilePickerDialog,
+  type HostFilePickerDialogProps,
+} from "./features/host-file-picker-dialog.tsx";
 export type { HostFilePickerOperations } from "./features/host-operations.ts";
 export { SourcePickerModal, type SourcePickerModalProps } from "./features/source-picker-modal.tsx";
 export { AlignGrid, ReadonlyPathField } from "./features/align-controls.tsx";

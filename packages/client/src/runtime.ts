@@ -15,10 +15,7 @@ export function runClientEffect<A>(
   return Effect.runPromise(effect, options);
 }
 
-export function clientQueryFn<A>(
-  effect: ClientEffect<A>,
-  signal?: AbortSignal,
-): () => Promise<A> {
+export function clientQueryFn<A>(effect: ClientEffect<A>, signal?: AbortSignal): () => Promise<A> {
   return () => runClientEffect(effect, signal ? { signal } : undefined);
 }
 

@@ -8,11 +8,7 @@ import { useCanvasResourceTransaction } from "@lisca/ui/features";
 import { useShellWorkspace } from "@lisca/ui/shell";
 
 import { alignerClient, toErrorMessage } from "../api/aligner-port";
-import {
-  autoExcludePreviewAtom,
-  scanIdleAtom,
-  scanSourceAtom,
-} from "../atoms/aligner-query-atoms";
+import { autoExcludePreviewAtom, scanIdleAtom, scanSourceAtom } from "../atoms/aligner-query-atoms";
 import {
   alignerUiActions,
   alignerUiAtom,

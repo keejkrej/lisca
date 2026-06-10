@@ -5,13 +5,14 @@ import {
   useCanvasTransientStatus,
 } from "@lisca/ui/features";
 import { ViewportCard } from "@lisca/ui/shell";
-import { useMemo } from "react";
-
 import { StudioCropConfirmModal } from "./studio-crop-confirm-modal";
 import { StudioCropProgressModal } from "./studio-crop-progress-modal";
 import { StudioCropStartModal } from "./studio-crop-start-modal";
-import { useStudioAlignCanvas, useStudioAlignCrop, useStudioAlignNav } from "../state/studio-align-page-selectors";
-
+import {
+  useStudioAlignCanvas,
+  useStudioAlignCrop,
+  useStudioAlignNav,
+} from "../state/studio-align-page-selectors";
 export function StudioAlignMain() {
   const canvas = useStudioAlignCanvas();
   const crop = useStudioAlignCrop();
@@ -35,15 +36,30 @@ export function StudioAlignMain() {
   const positionCount = nav.alignPositions.length;
   const positionMessage =
     positionIndex >= 0 && positionCount > 0 ? `Pos ${positionIndex}/${positionCount}` : null;
-  const messages = useMemo(() => {
+  const messages = (() => {
     if (!positionMessage) return [];
-    return [{ text: positionMessage }];
-  }, [positionMessage]);
-  const toasts = useMemo(() => {
-    if (canvas.error) return [{ text: canvas.error, tone: "error" as const }];
-    if (activeToastStatus) return [{ text: activeToastStatus }];
+    return [
+      {
+        text: positionMessage,
+      },
+    ];
+  })();
+  const toasts = (() => {
+    if (canvas.error)
+      return [
+        {
+          text: canvas.error,
+          tone: "error" as const,
+        },
+      ];
+    if (activeToastStatus)
+      return [
+        {
+          text: activeToastStatus,
+        },
+      ];
     return [];
-  }, [activeToastStatus, canvas.error]);
+  })();
   return (
     <>
       <ViewportCard>

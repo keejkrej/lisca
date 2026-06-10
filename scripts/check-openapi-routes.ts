@@ -67,7 +67,9 @@ if (missingInRust.length > 0 || missingInOpenApi.length > 0) {
     }
     console.error("");
   }
-  console.error(`Checked ${routeFiles.length} route files against ${openapiPaths.size} OpenAPI paths.`);
+  console.error(
+    `Checked ${routeFiles.length} route files against ${openapiPaths.size} OpenAPI paths.`,
+  );
   process.exit(1);
 }
 

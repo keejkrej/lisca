@@ -56,7 +56,11 @@ function AlignNumberInput(props: {
       onSubmitEditing={commit}
       style={[
         styles.numberInput,
-        { color: colors.foreground, borderColor: colors.input, backgroundColor: colors.controlSurface },
+        {
+          color: colors.foreground,
+          borderColor: colors.input,
+          backgroundColor: colors.controlSurface,
+        },
       ]}
     />
   );
@@ -190,7 +194,10 @@ export function AlignGrid<TShape extends NavigationValue = string>(props: AlignG
       <Field label="Grid shape">
         <SegmentedToggle
           disabled={disabled}
-          options={shapeOptions.map((option) => ({ value: String(option.value), label: option.label }))}
+          options={shapeOptions.map((option) => ({
+            value: String(option.value),
+            label: option.label,
+          }))}
           value={String(shape)}
           onChange={(value) => {
             const match = shapeOptions.find((option) => String(option.value) === value);
@@ -222,12 +229,22 @@ export function AlignGrid<TShape extends NavigationValue = string>(props: AlignG
       <View style={styles.grid2}>
         <View style={styles.gridCell}>
           <Field label="Vector A">
-            <AlignNumberInput disabled={disabled} min={vectorMin} value={vectorA} onCommit={onVectorAChange} />
+            <AlignNumberInput
+              disabled={disabled}
+              min={vectorMin}
+              value={vectorA}
+              onCommit={onVectorAChange}
+            />
           </Field>
         </View>
         <View style={styles.gridCell}>
           <Field label="Vector B">
-            <AlignNumberInput disabled={disabled} min={vectorMin} value={vectorB} onCommit={onVectorBChange} />
+            <AlignNumberInput
+              disabled={disabled}
+              min={vectorMin}
+              value={vectorB}
+              onCommit={onVectorBChange}
+            />
           </Field>
         </View>
       </View>
@@ -258,12 +275,22 @@ export function AlignGrid<TShape extends NavigationValue = string>(props: AlignG
       <View style={styles.grid2}>
         <View style={styles.gridCell}>
           <Field label="Offset X">
-            <AlignNumberInput disabled={disabled} step="0.1" value={offsetX} onCommit={onOffsetXChange} />
+            <AlignNumberInput
+              disabled={disabled}
+              step="0.1"
+              value={offsetX}
+              onCommit={onOffsetXChange}
+            />
           </Field>
         </View>
         <View style={styles.gridCell}>
           <Field label="Offset Y">
-            <AlignNumberInput disabled={disabled} step="0.1" value={offsetY} onCommit={onOffsetYChange} />
+            <AlignNumberInput
+              disabled={disabled}
+              step="0.1"
+              value={offsetY}
+              onCommit={onOffsetYChange}
+            />
           </Field>
         </View>
       </View>

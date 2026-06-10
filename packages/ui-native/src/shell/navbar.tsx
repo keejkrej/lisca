@@ -42,7 +42,14 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
     >
       <View style={styles.leading}>
         <PathButton
-          icon={<Folder color={colors.foreground} opacity={0.8} size={shellChromeMetrics.iconSize} strokeWidth={2} />}
+          icon={
+            <Folder
+              color={colors.foreground}
+              opacity={0.8}
+              size={shellChromeMetrics.iconSize}
+              strokeWidth={2}
+            />
+          }
           label="Workspace"
           value={workspace.workspacePath}
           onPress={props.onPickWorkspace}
@@ -51,7 +58,14 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
         {props.showSourceButton === false ? null : (
           <PathButton
             disabled={!workspace.workspacePath}
-            icon={<HardDrive color={colors.foreground} opacity={0.8} size={shellChromeMetrics.iconSize} strokeWidth={2} />}
+            icon={
+              <HardDrive
+                color={colors.foreground}
+                opacity={0.8}
+                size={shellChromeMetrics.iconSize}
+                strokeWidth={2}
+              />
+            }
             label="Source"
             value={workspace.sourcePath}
             onPress={workspace.workspacePath ? props.onPickSource : undefined}
@@ -60,7 +74,11 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
       </View>
 
       <View style={styles.trailing}>
-        <ConnectionStatus state={server.state} wsUrl={server.wsUrl} onOpenSettings={server.openSettings} />
+        <ConnectionStatus
+          state={server.state}
+          wsUrl={server.wsUrl}
+          onOpenSettings={server.openSettings}
+        />
         {props.showToolsMenu !== false ? props.endLeading : null}
         <ShellThemeToggle />
       </View>

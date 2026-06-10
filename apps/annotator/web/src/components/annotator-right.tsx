@@ -1,4 +1,4 @@
-import { Button, cn } from "@lisca/ui/components";;
+import { Button, cn } from "@lisca/ui/components";
 import { AnnotationModeToggle, AnnotationToolSlider } from "@lisca/ui/features";
 import { Section } from "@lisca/ui/shell";
 import { useAnnotatePage } from "../state/annotate-page-context";

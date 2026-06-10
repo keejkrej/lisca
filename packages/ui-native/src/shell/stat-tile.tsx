@@ -18,7 +18,9 @@ export function StatTile(props: {
         props.style,
       ]}
     >
-      <Text style={[styles.label, { color: colors.mutedForeground, textAlign }]}>{props.label}</Text>
+      <Text style={[styles.label, { color: colors.mutedForeground, textAlign }]}>
+        {props.label}
+      </Text>
       <Text style={[styles.value, { color: colors.foreground, textAlign }]}>{props.value}</Text>
     </View>
   );

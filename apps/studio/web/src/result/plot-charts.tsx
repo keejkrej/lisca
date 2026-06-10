@@ -1,6 +1,5 @@
 import * as Plot from "@observablehq/plot";
-import { useEffect, useMemo, useRef, useState } from "react";
-
+import { useEffect, useRef, useState } from "react";
 import {
   type BoxPlotPanel,
   type HistogramPanel,
@@ -8,7 +7,6 @@ import {
   type ResultPlotSection,
   type TimeseriesPanel,
 } from "./plots";
-
 const TRACE_PALETTE = [
   "#60a5fa",
   "#22c55e",
@@ -19,31 +17,26 @@ const TRACE_PALETTE = [
   "#eab308",
   "#38bdf8",
 ];
-
 const PLOT_FONT =
   'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
 
 /** Default Observable Plot font size is 10px; bump for readability. */
 export const PLOT_FONT_SIZE_PX = 20;
-
 export const PLOT_MARGINS = {
   marginLeft: 128,
   marginBottom: 96,
   marginRight: 36,
   marginTop: 28,
 } as const;
-
 function boxPlotBottomMargin(groupCount: number) {
   return groupCount > 4 ? 176 : 128;
 }
-
 const PLOT_STYLE: Plot.PlotOptions["style"] = {
   background: "transparent",
   color: "currentColor",
   fontFamily: PLOT_FONT,
   fontSize: `${PLOT_FONT_SIZE_PX}px`,
 };
-
 export function applyPlotFontSize(root: Element, fontSizePx: number) {
   const size = String(fontSizePx);
   const svg = root instanceof SVGSVGElement ? root : root.querySelector("svg");
@@ -53,32 +46,39 @@ export function applyPlotFontSize(root: Element, fontSizePx: number) {
     node.setAttribute("font-size", size);
   }
 }
-
 function basePlotOptions(): Pick<Plot.PlotOptions, "style"> {
-  return { style: PLOT_STYLE };
+  return {
+    style: PLOT_STYLE,
+  };
 }
-
 const Y_AXIS = {
   grid: true,
   tickFormat: ".1e",
 } as const;
-
 function yAxis(label: string) {
-  return { label, ...Y_AXIS };
+  return {
+    label,
+    ...Y_AXIS,
+  };
 }
-
 function median(values: number[]): number {
   if (values.length === 0) return 0;
   const sorted = [...values].sort((left, right) => left - right);
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
 }
-
 function computeMedianTrace(
-  traces: Array<{ points: Array<{ x: number; y: number }> }>,
-): Array<{ x: number; y: number }> {
+  traces: Array<{
+    points: Array<{
+      x: number;
+      y: number;
+    }>;
+  }>,
+): Array<{
+  x: number;
+  y: number;
+}> {
   const valuesByX = new Map<number, number[]>();
-
   for (const trace of traces) {
     for (const point of trace.points) {
       const bucket = valuesByX.get(point.x) ?? [];
@@ -86,12 +86,13 @@ function computeMedianTrace(
       valuesByX.set(point.x, bucket);
     }
   }
-
   return Array.from(valuesByX.entries())
     .sort(([left], [right]) => left - right)
-    .map(([x, values]) => ({ x, y: median(values) }));
+    .map(([x, values]) => ({
+      x,
+      y: median(values),
+    }));
 }
-
 function buildTimeseriesPlotOptions(panel: TimeseriesPanel): Plot.PlotOptions {
   const traceData = panel.traces.flatMap((trace) =>
     trace.points.map((point) => ({
@@ -101,11 +102,13 @@ function buildTimeseriesPlotOptions(panel: TimeseriesPanel): Plot.PlotOptions {
     })),
   );
   const medianData = computeMedianTrace(panel.traces);
-
   return {
     ...basePlotOptions(),
     ...PLOT_MARGINS,
-    x: { label: panel.xAxisLabel, grid: true },
+    x: {
+      label: panel.xAxisLabel,
+      grid: true,
+    },
     y: yAxis(panel.yAxisLabel),
     marks: [
       Plot.lineY(traceData, {
@@ -124,13 +127,15 @@ function buildTimeseriesPlotOptions(panel: TimeseriesPanel): Plot.PlotOptions {
     ],
   };
 }
-
 function buildLinePlotOptions(props: {
   xAxisLabel: string;
   yAxisLabel: string;
   series: Array<{
     key: string;
-    points: Array<{ x: number; y: number }>;
+    points: Array<{
+      x: number;
+      y: number;
+    }>;
   }>;
 }): Plot.PlotOptions {
   const data = props.series.flatMap((entry) =>
@@ -140,12 +145,16 @@ function buildLinePlotOptions(props: {
       series: entry.key,
     })),
   );
-
   return {
     ...basePlotOptions(),
     ...PLOT_MARGINS,
-    color: { range: TRACE_PALETTE },
-    x: { label: props.xAxisLabel, grid: true },
+    color: {
+      range: TRACE_PALETTE,
+    },
+    x: {
+      label: props.xAxisLabel,
+      grid: true,
+    },
     y: yAxis(props.yAxisLabel),
     marks: [
       Plot.lineY(data, {
@@ -157,7 +166,6 @@ function buildLinePlotOptions(props: {
     ],
   };
 }
-
 function buildBoxPlotOptions(panel: BoxPlotPanel): Plot.PlotOptions {
   const data = panel.groups.flatMap((group) =>
     group.values.map((value) => ({
@@ -165,7 +173,6 @@ function buildBoxPlotOptions(panel: BoxPlotPanel): Plot.PlotOptions {
       value,
     })),
   );
-
   return {
     ...basePlotOptions(),
     ...PLOT_MARGINS,
@@ -186,37 +193,47 @@ function buildBoxPlotOptions(panel: BoxPlotPanel): Plot.PlotOptions {
     ],
   };
 }
-
 export function buildHistogramPlotOptions(panel: HistogramPanel): Plot.PlotOptions {
-  const data = panel.values.map((value) => ({ value }));
-
+  const data = panel.values.map((value) => ({
+    value,
+  }));
   return {
     ...basePlotOptions(),
     ...PLOT_MARGINS,
-    x: { label: panel.xAxisLabel, grid: true },
+    x: {
+      label: panel.xAxisLabel,
+      grid: true,
+    },
     y: yAxis(panel.yAxisLabel),
-    marks: [Plot.rectY(data, Plot.binX({ y: "count" }, { x: "value" }))],
+    marks: [
+      Plot.rectY(
+        data,
+        Plot.binX(
+          {
+            y: "count",
+          },
+          {
+            x: "value",
+          },
+        ),
+      ),
+    ],
   };
 }
-
 export function plotOptionsForPanel(panel: ResultPanel): Plot.PlotOptions | null {
   if (panel.kind === "timeseries") {
     if (panel.traces.length === 0) return null;
     return buildTimeseriesPlotOptions(panel);
   }
-
   if (panel.kind === "boxplot") {
     if (panel.groups.length === 0) return null;
     return buildBoxPlotOptions(panel);
   }
-
   if (panel.kind === "histogram") {
     if (panel.values.length === 0) return null;
     return buildHistogramPlotOptions(panel);
   }
-
   if (panel.series.length === 0) return null;
-
   return buildLinePlotOptions({
     xAxisLabel: panel.xAxisLabel,
     yAxisLabel: panel.yAxisLabel,
@@ -226,7 +243,6 @@ export function plotOptionsForPanel(panel: ResultPanel): Plot.PlotOptions | null
     })),
   });
 }
-
 function ObservablePlotView(props: {
   options: Plot.PlotOptions | null;
   title: string;
@@ -234,12 +250,13 @@ function ObservablePlotView(props: {
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const hostRef = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState({ width: 0, height: 0 });
-
+  const [size, setSize] = useState({
+    width: 0,
+    height: 0,
+  });
   useEffect(() => {
     const node = containerRef.current;
     if (!node) return;
-
     const update = () => {
       const rect = node.getBoundingClientRect();
       setSize({
@@ -247,17 +264,14 @@ function ObservablePlotView(props: {
         height: Math.max(Math.floor(rect.height), 240),
       });
     };
-
     update();
     const observer = new ResizeObserver(update);
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
-
   useEffect(() => {
     const host = hostRef.current;
     if (!host || !props.options || size.width <= 0 || size.height <= 0) return;
-
     const figure = Plot.plot({
       ...props.options,
       width: size.width,
@@ -267,9 +281,7 @@ function ObservablePlotView(props: {
     host.replaceChildren(figure);
     return () => host.replaceChildren();
   }, [props.options, size.height, size.width]);
-
   if (!props.options) return null;
-
   return (
     <div
       ref={containerRef}
@@ -286,20 +298,16 @@ function ObservablePlotView(props: {
     </div>
   );
 }
-
 export function ResultPanelView({ panel, className }: { panel: ResultPanel; className?: string }) {
-  const options = useMemo(() => plotOptionsForPanel(panel), [panel]);
-
+  const options = plotOptionsForPanel(panel);
   return <ObservablePlotView className={className} options={options} title={panel.title} />;
 }
-
 const EXPORT_PAGE_CLASS = "flex flex-col overflow-visible bg-white text-[#171717]";
 const EXPORT_TITLE_CLASS =
   "border-b border-[#e5e5e5] px-4 py-3 text-2xl font-semibold text-[#171717]";
 const EXPORT_PANEL_TITLE_CLASS = "truncate px-1 text-xl font-semibold text-[#737373]";
 const EXPORT_SUBPLOT_CLASS =
   "flex h-full min-h-[300px] pointer-events-none select-none text-[#171717]";
-
 export function ResultPanelsGridView({
   panels,
   exportMode = false,
@@ -312,7 +320,6 @@ export function ResultPanelsGridView({
   section?: ResultPlotSection;
 }) {
   if (panels.length === 0) return null;
-
   const isParameters = section === "parameters";
   const gridClass = isParameters
     ? "grid grid-cols-1 gap-8 p-4"
@@ -340,7 +347,6 @@ export function ResultPanelsGridView({
     : exportMode
       ? EXPORT_SUBPLOT_CLASS
       : "flex h-full min-h-[300px] pointer-events-none select-none text-foreground";
-
   return (
     <div
       className={exportMode ? EXPORT_PAGE_CLASS : "flex h-full min-h-0 flex-col overflow-y-auto"}

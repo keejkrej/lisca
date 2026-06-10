@@ -1,29 +1,24 @@
 import { AlignSelectionCounts } from "@lisca/ui/features";
-import { Button } from "@lisca/ui/components";;
+import { Button } from "@lisca/ui/components";
 import { Section } from "@lisca/ui/shell";
 import {
   collectAlignGridEdgeCells,
   enumerateVisibleAlignGridCells,
   mergeExcludedAlignGridCells,
 } from "@lisca/utils";
-import { useMemo } from "react";
-
 import { useAlignPage } from "../state/align-page-context";
 import { VariationExcludeDialog } from "./variation-exclude-dialog";
-
 export function AlignSelectionControls() {
   const { state } = useAlignPage();
-  const visibleCells = useMemo(
-    () =>
-      state.frame
-        ? enumerateVisibleAlignGridCells(state.frame, state.grid).map(({ i, j }) => ({ i, j }))
-        : [],
-    [state.frame, state.grid],
-  );
+  const visibleCells = state.frame
+    ? enumerateVisibleAlignGridCells(state.frame, state.grid).map(({ i, j }) => ({
+        i,
+        j,
+      }))
+    : [];
   const hasVisibleCells = visibleCells.length > 0;
   const hasExcludedCells = state.currentExcludedCells.length > 0;
   const disabled = state.cropping || !state.frame;
-
   return (
     <>
       <Section
