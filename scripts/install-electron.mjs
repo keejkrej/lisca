@@ -18,6 +18,10 @@ function installElectronPackage(packageJsonPath) {
   execSync(`node "${installScript}"`, { stdio: "inherit" });
 }
 
+if (process.env.CI || process.env.RENDER || process.env.LISCA_SKIP_ELECTRON) {
+  process.exit(0);
+}
+
 try {
   installElectronPackage(require.resolve("electron/package.json"));
 } catch {

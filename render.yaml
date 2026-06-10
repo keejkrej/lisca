@@ -2,7 +2,7 @@ services:
   - type: web
     name: lisca-landing
     runtime: static
-    buildCommand: bun install && bun lisca build landing
+    buildCommand: bun lisca install landing && bun lisca build landing
     staticPublishPath: apps/landing/web/dist
     routes:
       - type: rewrite

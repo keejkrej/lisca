@@ -10,6 +10,7 @@
  *   bun lisca dev aligner web
  *   bun lisca dev aligner mobile
  *   bun lisca dev landing
+ *   bun lisca install landing
  *   bun lisca build landing
  *   bun lisca build workspace webs
  *   bun lisca build workspace all
@@ -46,7 +47,7 @@ function usage() {
   console.error(`
 Usage: bun lisca <task> <scope> [target] [-- <turbo passthrough>]
 
-  task    dev | build | dist | typecheck | preview
+  task    dev | build | dist | typecheck | preview | install
   scope   aligner | annotator | studio | landing | workspace
 
 Product targets (aligner, annotator, studio):
@@ -74,6 +75,7 @@ Examples:
   bun lisca dev aligner mobile
   bun lisca dev aligner mobile-web
   bun lisca dev landing
+  bun lisca install landing
   bun lisca build landing
   bun lisca build workspace all
   bun lisca build workspace packages
@@ -174,6 +176,15 @@ function filtersFor(taskName, scopeName, target) {
   return productFilter(taskName, scopeName, target);
 }
 
+function runLandingInstall(extra = turboExtra) {
+  const result = spawnSync(
+    "bun",
+    ["install", "--filter", "@lisca/landing-web", "--ignore-scripts", ...extra],
+    { cwd: root, stdio: "inherit", shell: process.platform === "win32" },
+  );
+  process.exit(result.status ?? 1);
+}
+
 function runTurbo(taskName, { filters = [], extra = turboExtra } = {}) {
   const cmd = ["x", "turbo", "run", taskName];
   for (const filter of filters) cmd.push(`--filter=${filter}`);
@@ -217,9 +228,18 @@ function main() {
     process.exit(task ? 0 : 1);
   }
 
-  if (!["dev", "build", "dist", "typecheck", "preview"].includes(task)) {
-    console.error(`Unknown task "${task}". Use: dev | build | dist | typecheck | preview`);
+  if (!["dev", "build", "dist", "typecheck", "preview", "install"].includes(task)) {
+    console.error(`Unknown task "${task}". Use: dev | build | dist | typecheck | preview | install`);
     process.exit(1);
+  }
+
+  if (task === "install") {
+    if (!isLanding(scope)) {
+      console.error("install only supports scope landing (minimal deploy dependencies).");
+      process.exit(1);
+    }
+    runLandingInstall();
+    return;
   }
 
   if (!SCOPES.has(scope)) {
