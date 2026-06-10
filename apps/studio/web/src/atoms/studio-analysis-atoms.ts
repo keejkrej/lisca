@@ -2,12 +2,7 @@ import type { AnalysisProgress, StudioAnalysisCsvFile } from "@lisca/contracts";
 import { Atom, Result } from "@effect-atom/atom-react";
 import { Effect } from "effect";
 
-import {
-  analysisCsvInputKey,
-  createStudioAnalysisAtoms,
-  ReactivityKeys,
-  StudioPortService,
-} from "@lisca/client/atoms";
+import { createStudioAnalysisAtoms, ReactivityKeys, StudioPortService } from "@lisca/client/atoms";
 
 import {
   parseCsvFile,

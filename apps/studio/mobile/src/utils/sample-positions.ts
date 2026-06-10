@@ -143,7 +143,7 @@ export function collectAssayPositions(info3: StudioBasicInfoStep3): number[] {
       seen.add(pos);
     }
   }
-  return [...seen].sort((a, b) => a - b);
+  return [...seen].toSorted((a, b) => a - b);
 }
 
 /** Keep source scan order, retaining only positions declared in the assay. */

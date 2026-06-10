@@ -51,8 +51,6 @@ const U32Param = Schema.NumberFromString.annotations({
   jsonSchema: { type: "integer", format: "uint32", minimum: 0 },
 });
 
-const OkSchema = Schema.Struct({ ok: Schema.Boolean }).annotations({ identifier: "OkResponse" });
-
 /** POST /align/scan-source request body. */
 export const ScanSourceRequestSchema = Schema.Struct({
   source: AlignerSourceSchema,

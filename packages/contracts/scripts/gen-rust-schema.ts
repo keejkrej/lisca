@@ -74,9 +74,9 @@ function rewriteRefs(value: unknown): unknown {
   return value;
 }
 
-function resolveDefinition(ref: string, definitions: JsonObject): JsonObject {
+function resolveDefinition(ref: string, schemaDefinitions: JsonObject): JsonObject {
   const name = ref.replace("#/definitions/", "");
-  const schema = definitions[name];
+  const schema = schemaDefinitions[name];
   if (!schema) {
     throw new Error(`gen-rust-schema: unresolved $ref ${ref}`);
   }
@@ -84,9 +84,9 @@ function resolveDefinition(ref: string, definitions: JsonObject): JsonObject {
 }
 
 /** Expand `$ref` members so typify can detect a shared `kind` discriminant. */
-function inlineMember(member: JsonObject, definitions: JsonObject): JsonObject {
+function inlineMember(member: JsonObject, schemaDefinitions: JsonObject): JsonObject {
   if (typeof member.$ref === "string") {
-    return inlineMember(resolveDefinition(member.$ref, definitions), definitions);
+    return inlineMember(resolveDefinition(member.$ref, schemaDefinitions), schemaDefinitions);
   }
   return member;
 }
@@ -96,10 +96,10 @@ function inlineMember(member: JsonObject, definitions: JsonObject): JsonObject {
  * members are inline objects with a required singleton `kind` string. Effect
  * emits `anyOf` + `$ref` instead — same wire JSON, different encoding.
  */
-function normalizeUnionForTypify(schema: JsonObject, definitions: JsonObject): JsonObject {
+function normalizeUnionForTypify(schema: JsonObject, schemaDefinitions: JsonObject): JsonObject {
   const members = (schema.oneOf ?? schema.anyOf) as JsonObject[] | undefined;
   if (!members?.length) return schema;
-  return { oneOf: members.map((member) => inlineMember(member, definitions)) };
+  return { oneOf: members.map((member) => inlineMember(member, schemaDefinitions)) };
 }
 
 const normalized = rewriteRefs({ definitions }) as { definitions: JsonObject };

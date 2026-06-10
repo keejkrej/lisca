@@ -1,4 +1,4 @@
-import type { AnnotationLabel, ContrastWindow, FrameResult } from "@lisca/contracts";
+import type { ContrastWindow, FrameResult } from "@lisca/contracts";
 import type {
   AnnotatorUiActions,
   AnnotatorUiState,

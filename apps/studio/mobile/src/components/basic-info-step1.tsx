@@ -1,6 +1,5 @@
 import type { HostFilePickerMode, StudioDataSourceKind } from "@lisca/contracts";
 import {
-  Button,
   Field,
   FolderSourceParseModal,
   HostFilePickerDialog,
@@ -10,7 +9,7 @@ import {
   type HostFilePickerOperations,
 } from "@lisca/ui-native";
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, TextInput, View } from "react-native";
 
 import { useStudioStore } from "../state/studio-store";
 

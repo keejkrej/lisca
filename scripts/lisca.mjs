@@ -78,15 +78,15 @@ Examples:
 `);
 }
 
-function isLanding(product) {
-  return product === "landing";
+function isLanding(productName) {
+  return productName === "landing";
 }
 
-function landingTarget(task, target) {
-  const t = target ?? (task === "typecheck" ? "all" : "web");
-  if (!LANDING_TARGETS.has(t) && !(task === "typecheck" && t === "all")) {
+function landingTarget(taskName, target) {
+  const t = target ?? (taskName === "typecheck" ? "all" : "web");
+  if (!LANDING_TARGETS.has(t) && !(taskName === "typecheck" && t === "all")) {
     console.error(
-      `Landing only supports target web | site${task === "typecheck" ? " | all" : ""}.`,
+      `Landing only supports target web | site${taskName === "typecheck" ? " | all" : ""}.`,
     );
     process.exit(1);
   }
@@ -95,27 +95,27 @@ function landingTarget(task, target) {
   return "@lisca/landing-web";
 }
 
-function filterFor(task, product, target) {
-  if (isLanding(product)) {
-    return landingTarget(task, target);
+function filterFor(taskName, productName, target) {
+  if (isLanding(productName)) {
+    return landingTarget(taskName, target);
   }
 
-  if (task === "typecheck") {
+  if (taskName === "typecheck") {
     const t = target ?? "all";
-    if (t === "all") return `@lisca/${product}-*`;
-    if (t === "mobile-web") return `@lisca/${product}-mobile`;
+    if (t === "all") return `@lisca/${productName}-*`;
+    if (t === "mobile-web") return `@lisca/${productName}-mobile`;
     if (!TYPECHECK_TARGETS.has(t)) {
       console.error(
         `Invalid typecheck target "${t}". Use: web | demo | server | desktop | mobile | all`,
       );
       process.exit(1);
     }
-    return `@lisca/${product}-${t}`;
+    return `@lisca/${productName}-${t}`;
   }
 
   let t = target;
   if (!t) {
-    if (task === "preview") t = "web";
+    if (taskName === "preview") t = "web";
     else t = "desktop";
   }
 
@@ -126,20 +126,20 @@ function filterFor(task, product, target) {
     process.exit(1);
   }
 
-  if (task === "preview" && t !== "web" && t !== "demo") {
+  if (taskName === "preview" && t !== "web" && t !== "demo") {
     console.error(
       'preview only applies to "web" or "demo" (Vite). Example: bun lisca preview aligner demo',
     );
     process.exit(1);
   }
 
-  if (t === "mobile-web") return `@lisca/${product}-mobile`;
+  if (t === "mobile-web") return `@lisca/${productName}-mobile`;
 
-  return `@lisca/${product}-${t}`;
+  return `@lisca/${productName}-${t}`;
 }
 
-function runTurbo(task, { filters = [], extra = turboExtra } = {}) {
-  const cmd = ["x", "turbo", "run", task];
+function runTurbo(taskName, { filters = [], extra = turboExtra } = {}) {
+  const cmd = ["x", "turbo", "run", taskName];
   for (const filter of filters) cmd.push(`--filter=${filter}`);
   cmd.push(...extra);
 
@@ -151,17 +151,17 @@ function runTurbo(task, { filters = [], extra = turboExtra } = {}) {
   process.exit(result.status ?? 1);
 }
 
-function runMobileDev(product, { web = false } = {}) {
-  const mobileDir = path.join(root, "apps", product, "mobile");
-  const port = MOBILE_PORTS[product];
+function runMobileDev(productName, { web = false } = {}) {
+  const mobileDir = path.join(root, "apps", productName, "mobile");
+  const port = MOBILE_PORTS[productName];
   if (!port) {
-    console.error(`No mobile port configured for product "${product}".`);
+    console.error(`No mobile port configured for product "${productName}".`);
     process.exit(1);
   }
 
   const build = spawnSync(
     "bun",
-    ["x", "turbo", "run", "build", `--filter=@lisca/${product}-mobile^...`],
+    ["x", "turbo", "run", "build", `--filter=@lisca/${productName}-mobile^...`],
     { cwd: root, stdio: "inherit", shell: process.platform === "win32" },
   );
   if (build.status !== 0) process.exit(build.status ?? 1);

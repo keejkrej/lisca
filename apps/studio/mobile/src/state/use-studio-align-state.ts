@@ -11,7 +11,6 @@ import type {
 } from "@lisca/contracts";
 import { runCropRoi } from "@lisca/client/align-session";
 import { useAlignSessionCore } from "@lisca/client/align-session/react";
-import { resultLoading } from "@lisca/client/atoms";
 import { useCanvasResourceTransaction } from "@lisca/ui-native";
 import {
   alignStateFromCurrent,
@@ -110,7 +109,6 @@ export function useStudioAlignState(): StudioAlignState {
     workspacePath,
     scan,
     selection,
-    loadedFrameSelection,
     contrast,
     frame,
     grid,

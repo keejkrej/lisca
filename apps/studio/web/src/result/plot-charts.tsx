@@ -63,7 +63,7 @@ function yAxis(label: string) {
 }
 function median(values: number[]): number {
   if (values.length === 0) return 0;
-  const sorted = [...values].sort((left, right) => left - right);
+  const sorted = [...values].toSorted((left, right) => left - right);
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
 }
@@ -87,7 +87,7 @@ function computeMedianTrace(
     }
   }
   return Array.from(valuesByX.entries())
-    .sort(([left], [right]) => left - right)
+    .toSorted(([left], [right]) => left - right)
     .map(([x, values]) => ({
       x,
       y: median(values),

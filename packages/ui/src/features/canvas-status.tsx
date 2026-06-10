@@ -63,7 +63,7 @@ export function CanvasStatusMessageStack({
     >
       {messages.map((message, index) => (
         <div
-          key={`${message.tone ?? "default"}:${message.text}:${index}`}
+          key={`${message.tone ?? "default"}:${message.text}`}
           className={cn(
             "whitespace-pre-line rounded-md border bg-card/95 px-3 py-2 text-sm leading-snug shadow-lg backdrop-blur-sm",
             messageToneClassName(message.tone),
@@ -98,7 +98,7 @@ export function CanvasToastStack({
         const hideText = shouldHideToastText(message);
         return (
           <div
-            key={`${message.tone ?? "default"}:${message.text}:${index}`}
+            key={`${message.tone ?? "default"}:${message.text}`}
             className={cn(
               "flex max-w-full items-start rounded-lg text-sm leading-snug",
               hideText

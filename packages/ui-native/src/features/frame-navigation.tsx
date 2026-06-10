@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { Button } from "../shell/buttons.tsx";
-import { Field, FieldLabel } from "../shell/field.tsx";
+import { Field } from "../shell/field.tsx";
 import { shellOutlineElevation } from "../shell/shell-chrome.ts";
 import { Section } from "../shell/section.tsx";
 import { Slider } from "../shell/slider.tsx";

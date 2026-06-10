@@ -94,7 +94,7 @@ async function loadedAnnotationToValue(
     };
   } catch (cause) {
     const detail = cause instanceof Error ? cause.message : String(cause);
-    throw new Error(`Annotation mask decode failed: ${detail}`);
+    throw new Error(`Annotation mask decode failed: ${detail}`, { cause });
   }
 }
 

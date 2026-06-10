@@ -352,7 +352,7 @@ export function decodeFramePayload(payload: FramePayload): FrameResult {
     };
   } catch (cause) {
     const detail = cause instanceof Error ? cause.message : String(cause);
-    throw new Error(`Base64 decode failed: ${detail}`);
+    throw new Error(`Base64 decode failed: ${detail}`, { cause });
   }
 }
 
@@ -716,7 +716,7 @@ function toSortedUniqueAlignGridCells(cells: Iterable<AlignGridCellCoord>): Alig
   for (const cell of cells) {
     unique.set(alignGridCellCoordKey(cell), { i: cell.i, j: cell.j });
   }
-  return Array.from(unique.values()).sort(compareAlignGridCellCoords);
+  return Array.from(unique.values()).toSorted(compareAlignGridCellCoords);
 }
 
 export function enumerateVisibleAlignGridCells(
@@ -802,7 +802,7 @@ export function collectAlignGridStrokeToggleCells(
     }
   }
 
-  return Array.from(hitCells.values()).sort(compareAlignGridCellCoords);
+  return Array.from(hitCells.values()).toSorted(compareAlignGridCellCoords);
 }
 
 export function countVisibleAlignGridCells(
@@ -838,7 +838,7 @@ export function collectAlignGridEdgeCells(
         cell.w * cell.h < edgeAreaThreshold,
     )
     .map((cell) => ({ i: cell.i, j: cell.j }))
-    .sort(compareAlignGridCellCoords);
+    .toSorted(compareAlignGridCellCoords);
 }
 
 export function isAlignGridMousePointerInput(input: AlignGridMousePointerInput): boolean {
@@ -1031,7 +1031,7 @@ export function toggleExcludedAlignGridCells(
     }
   }
 
-  return Array.from(next.values()).sort(compareAlignGridCellCoords);
+  return Array.from(next.values()).toSorted(compareAlignGridCellCoords);
 }
 
 export function mergeExcludedAlignGridCells(

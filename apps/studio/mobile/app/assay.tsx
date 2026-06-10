@@ -8,7 +8,7 @@ import {
 import { runClientEffect } from "@lisca/client/runtime";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet } from "react-native";
 import { studioClient, studioHostOperations } from "../src/api/studio-port";
 import { ChooseAssay } from "../src/components/choose-assay";
 import { STUDIO_NAV_WIDTH } from "../src/components/studio-layout";

@@ -216,6 +216,8 @@ export function AlignCanvas({
                     width={cell.w * frameLayout.scale}
                     height={cell.h * frameLayout.scale}
                     color={cell.excluded ? "rgba(244, 63, 94, 0.45)" : "rgba(68, 151, 255, 0.45)"}
+                    // Skia painting style, not a React Native style object.
+                    // oxlint-disable-next-line react(style-prop-object)
                     style="fill"
                   />
                 ))}
@@ -258,7 +260,7 @@ export function AlignCanvas({
         <View style={styles.toastStack}>
           {toasts.map((toast, index) => (
             <View
-              key={`${toast.text}-${index}`}
+              key={toast.text}
               style={[
                 styles.toast,
                 {

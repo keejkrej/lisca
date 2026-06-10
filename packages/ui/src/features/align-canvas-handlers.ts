@@ -53,8 +53,8 @@ export function useAlignCanvasGridHandlers({
   const handlePointerEnd = (event: AlignCanvasPointerEvent) => {
     if (gestureRef.current?.pointerId !== event.pointerId) return;
     gestureRef.current = null;
-    const previewGrid = previewGridRef.current;
-    if (previewGrid) setGrid(previewGrid);
+    const committedPreviewGrid = previewGridRef.current;
+    if (committedPreviewGrid) setGrid(committedPreviewGrid);
     setPreviewGrid(null);
     event.releasePointer();
   };

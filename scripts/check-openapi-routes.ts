@@ -10,7 +10,7 @@ const openapi = JSON.parse(readFileSync(openapiPath, "utf8")) as {
   paths: Record<string, unknown>;
 };
 
-const openapiPaths = new Set(Object.keys(openapi.paths).sort());
+const openapiPaths = new Set(Object.keys(openapi.paths).toSorted());
 
 function findRouteFiles(root: string): string[] {
   const files: string[] = [];
@@ -25,7 +25,7 @@ function findRouteFiles(root: string): string[] {
   if (statSync(fsRoutesPath, { throwIfNoEntry: false })?.isFile()) {
     files.push(fsRoutesPath);
   }
-  return files.sort();
+  return files.toSorted();
 }
 
 const routeFiles = findRouteFiles(repoRoot);

@@ -54,7 +54,7 @@ export type UseAlignSessionCoreOptions = {
   effectiveSelection?: FrameRequest;
 };
 export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
-  const { ui, setUi, actions, workspace, scan, toErrorMessage, effectiveSelection } = options;
+  const { ui, setUi, actions, workspace, scan, effectiveSelection } = options;
   const selection = effectiveSelection ?? ui.selection;
   const scanLoading = ui.source != null && resultLoading(scan.scanResult);
   const currentExcludedCells = deriveCurrentExcludedCells(

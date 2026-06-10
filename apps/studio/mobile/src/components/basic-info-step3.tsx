@@ -1,4 +1,4 @@
-import { Button, Field, Section, useShellTheme } from "@lisca/ui-native";
+import { Button, Section, useShellTheme } from "@lisca/ui-native";
 import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { type BasicInfoSlideId, useStudioStore } from "../state/studio-store";
@@ -48,6 +48,8 @@ export function BasicInfoStep3() {
               ))}
             </View>
             {activeSamples.map((row, index) => (
+              // Rows are updated by index in store; stable row ids are not available.
+              // oxlint-disable-next-line react(no-array-index-key)
               <View key={index} style={styles.dataRow}>
                 <TextInput
                   keyboardType="numeric"

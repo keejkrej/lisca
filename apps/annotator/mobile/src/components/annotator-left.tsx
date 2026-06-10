@@ -118,7 +118,8 @@ export function AnnotatorLeft(props: {
           disabled: timeMax <= 0,
           previousDisabled: props.timeIndex <= 0,
           nextDisabled: props.timeIndex >= timeMax,
-          onCommit: (value) => props.onTimeIndexChange(clamp(Math.round(value), 0, timeMax)),
+          onCommit: (nextValue) =>
+            props.onTimeIndexChange(clamp(Math.round(nextValue), 0, timeMax)),
           onPrevious: () => props.onTimeIndexChange(Math.max(0, props.timeIndex - 1)),
           onNext: () => props.onTimeIndexChange(Math.min(timeMax, props.timeIndex + 1)),
         }}
@@ -130,7 +131,7 @@ export function AnnotatorLeft(props: {
           disabled: zMax <= 0,
           previousDisabled: props.zIndex <= 0,
           nextDisabled: props.zIndex >= zMax,
-          onCommit: (value) => props.onZIndexChange(clamp(Math.round(value), 0, zMax)),
+          onCommit: (nextValue) => props.onZIndexChange(clamp(Math.round(nextValue), 0, zMax)),
           onPrevious: () => props.onZIndexChange(Math.max(0, props.zIndex - 1)),
           onNext: () => props.onZIndexChange(Math.min(zMax, props.zIndex + 1)),
         }}

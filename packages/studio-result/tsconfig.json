@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "lib": ["ES2022"],
+    "lib": ["ES2023"],
     "noEmit": true
   },
   "include": ["src/**/*.ts"]

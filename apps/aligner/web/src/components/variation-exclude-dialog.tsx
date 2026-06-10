@@ -66,7 +66,7 @@ export function VariationExcludeDialog({
               const active = bin.end <= threshold;
               return (
                 <div
-                  key={`${bin.start}:${bin.end}:${index}`}
+                  key={`${bin.start}:${bin.end}`}
                   className={cn(
                     "min-w-0 flex-1 rounded-t-sm",
                     active ? "bg-primary" : "bg-muted-foreground/28",

@@ -30,7 +30,7 @@ export function VariationScoreHistogram(props: {
           const barHeight = Math.max(4, (bin.count / maxBinCount) * 100);
           return (
             <View
-              key={`${bin.start}:${bin.end}:${index}`}
+              key={`${bin.start}:${bin.end}`}
               style={[
                 styles.bar,
                 {

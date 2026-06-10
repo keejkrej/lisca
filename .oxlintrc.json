@@ -18,6 +18,8 @@
   },
   "rules": {
     "react-in-jsx-scope": "off",
+    "react/jsx-no-constructed-context-values": "off",
+    "react-hooks/exhaustive-deps": "off",
     "no-restricted-imports": [
       "error",
       {

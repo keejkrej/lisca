@@ -157,7 +157,7 @@ export const PLOTTED_FIT_PARAMETERS = [
 const MAX_TIMESERIES_TRACES = 64;
 const MAX_POINTS_PER_TRACE = 400;
 
-export function sortResultFiles(files: StudioAnalysisCsvFile[]) {
+export function sortResultFiles(files: StudioAnalysisCsvFile[]): StudioAnalysisCsvFile[] {
   const rank = (file: StudioAnalysisCsvFile) => {
     if (file.kind === "timeseries") return 0;
     if (file.fileName === "kill_curve.csv") return 0;
@@ -168,7 +168,7 @@ export function sortResultFiles(files: StudioAnalysisCsvFile[]) {
     return 5;
   };
 
-  return [...files].sort((left, right) => {
+  return [...files].toSorted((left, right) => {
     const leftRank = rank(left);
     const rightRank = rank(right);
     if (leftRank !== rightRank) return leftRank - rightRank;
@@ -253,7 +253,7 @@ function quantile(sorted: number[], percentile: number): number {
 }
 
 export function computeBoxStats(values: number[]): BoxPlotStats {
-  const sorted = [...values].sort((left, right) => left - right);
+  const sorted = [...values].toSorted((left, right) => left - right);
   return {
     min: sorted[0],
     q1: quantile(sorted, 0.25),
@@ -318,7 +318,7 @@ function buildBoxPlotGroups(
   }
 
   return Array.from(grouped.entries())
-    .sort(([left], [right]) => left - right)
+    .toSorted(([left], [right]) => left - right)
     .map(([slideChannel, values]) => ({
       slideChannel,
       label: formatSlideChannelTickLabel(slideChannel, values.length, slideChannelLabels),
@@ -410,7 +410,7 @@ export function parsePanelGroups(
       .map((trace) => ({
         ...trace,
         points: downsamplePoints(
-          trace.points.sort((left, right) => left.x - right.x),
+          trace.points.toSorted((left, right) => left.x - right.x),
           MAX_POINTS_PER_TRACE,
         ),
       }))
@@ -446,7 +446,7 @@ export function parsePanelGroups(
       grouped.set(slideChannel, bucket);
     }
 
-    for (const [slideChannel, points] of Array.from(grouped.entries()).sort(
+    for (const [slideChannel, points] of Array.from(grouped.entries()).toSorted(
       ([left], [right]) => left - right,
     )) {
       if (points.length === 0) continue;
@@ -463,7 +463,7 @@ export function parsePanelGroups(
             dataKey: `kill_curve_${slideChannel}`,
             label,
             points: downsamplePoints(
-              points.sort((left, right) => left.x - right.x),
+              points.toSorted((left, right) => left.x - right.x),
               MAX_POINTS_PER_TRACE,
             ),
           },
@@ -646,26 +646,37 @@ export async function resolvePanelByCursor(
   cursor: PanelCursor,
   loadPanels: (file: StudioAnalysisCsvFile) => Promise<ResultPanel[]>,
 ): Promise<{ panel: ResultPanel; nextCursor: PanelCursor | null } | null> {
-  for (let fileIndex = Math.max(cursor.fileIndex, 0); fileIndex < files.length; fileIndex++) {
-    const panels = await loadPanels(files[fileIndex]);
-    if (panels.length === 0) continue;
+  const fileIndex = Math.max(cursor.fileIndex, 0);
+  if (fileIndex >= files.length) return null;
 
-    const panelIndex = fileIndex === cursor.fileIndex ? Math.max(cursor.panelIndex, 0) : 0;
-    if (panelIndex >= panels.length) continue;
-
-    const panel = panels[panelIndex];
-    let nextCursor: PanelCursor | null = null;
-
-    if (panelIndex + 1 < panels.length) {
-      nextCursor = { fileIndex, panelIndex: panelIndex + 1 };
-    } else if (fileIndex + 1 < files.length) {
-      nextCursor = { fileIndex: fileIndex + 1, panelIndex: 0 };
-    }
-
-    return { panel, nextCursor };
+  const panels = await loadPanels(files[fileIndex]);
+  if (panels.length === 0) {
+    return resolvePanelByCursor(
+      files,
+      { fileIndex: fileIndex + 1, panelIndex: 0 },
+      loadPanels,
+    );
   }
 
-  return null;
+  const panelIndex = fileIndex === cursor.fileIndex ? Math.max(cursor.panelIndex, 0) : 0;
+  if (panelIndex >= panels.length) {
+    return resolvePanelByCursor(
+      files,
+      { fileIndex: fileIndex + 1, panelIndex: 0 },
+      loadPanels,
+    );
+  }
+
+  const panel = panels[panelIndex];
+  let nextCursor: PanelCursor | null = null;
+
+  if (panelIndex + 1 < panels.length) {
+    nextCursor = { fileIndex, panelIndex: panelIndex + 1 };
+  } else if (fileIndex + 1 < files.length) {
+    nextCursor = { fileIndex: fileIndex + 1, panelIndex: 0 };
+  }
+
+  return { panel, nextCursor };
 }
 
 export function intervalFromAssaySettings(

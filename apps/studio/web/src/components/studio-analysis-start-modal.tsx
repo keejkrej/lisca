@@ -8,7 +8,6 @@ import { validateAssayForAnalysis } from "../utils/studio-assay-validation";
 export function StudioAnalysisStartModal() {
   const { state } = useStudioAnnotatePage();
   const assayId = useStudioStore((store) => store.assayId);
-  const dataSourceKind = useStudioStore((store) => store.dataSourceKind);
   const info1 = useStudioStore((store) => store.info1);
   const info2 = useStudioStore((store) => store.info2);
   const info3 = useStudioStore((store) => store.info3);

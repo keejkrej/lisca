@@ -4,7 +4,6 @@ import {
   AssayJsonFileSchema,
   decodeJsonResult,
   formatSchemaError,
-  DEFAULT_FOLDER_SOURCE_TEMPLATE,
   type AssayName,
   type StudioAssayJson,
   type StudioBasicInfoFeatureId,

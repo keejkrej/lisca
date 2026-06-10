@@ -9,7 +9,7 @@ import type {
   SavedAlignState,
   WorkspaceScan,
 } from "@lisca/contracts";
-import { cropPositionsAfterSkip, runCropRoi } from "@lisca/client/align-session";
+import { runCropRoi } from "@lisca/client/align-session";
 import { useAlignSessionCore } from "@lisca/client/align-session/react";
 import { useCanvasResourceTransaction } from "@lisca/ui/features";
 import {
@@ -42,7 +42,6 @@ import {
   type ExcludedByPosition,
 } from "./studio-align-store";
 import { useStudioStore } from "./studio-store";
-const emptyExcludedCells: AlignGridCellCoord[] = [];
 const nextExclusionPreviewMs = 1000;
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -110,9 +109,7 @@ export function useStudioAlignState(): StudioAlignState {
     source,
     workspacePath,
     scan,
-    scanSourceKey,
     selection,
-    loadedFrameSelection,
     contrast,
     frame,
     grid,
@@ -144,8 +141,6 @@ export function useStudioAlignState(): StudioAlignState {
   const setSaving = (next: boolean) => studioAlignUiActions.setSaving(setUi, next);
   const setError = (next: string | null) => studioAlignUiActions.setError(setUi, next);
   const setStatus = (next: string | null) => studioAlignUiActions.setStatus(setUi, next);
-  const applySourceScan = (nextSourceKey: string, nextScan: WorkspaceScan) =>
-    studioAlignUiActions.applySourceScan(setUi, nextSourceKey, nextScan);
   const applyLoadedFrame = (
     loadedSelection: FrameRequest,
     nextFrame: FrameResult,

@@ -1,5 +1,3 @@
-import type { ReactNode } from "react";
-
 import { cn } from "../lib/utils";
 import { dockSectionClass } from "./dock-layout";
 import { DockGrid, type DockGridLayout, type DockGridProps } from "./dock-grid";

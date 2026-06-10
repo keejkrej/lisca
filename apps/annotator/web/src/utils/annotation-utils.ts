@@ -46,8 +46,8 @@ export async function decodeMaskBase64Png(
 ) {
   const image = await new Promise<HTMLImageElement>((resolve, reject) => {
     const target = new Image();
-    target.onload = () => resolve(target);
-    target.onerror = () => reject(new Error("Failed to decode annotation mask"));
+    target.addEventListener("load", () => resolve(target));
+    target.addEventListener("error", () => reject(new Error("Failed to decode annotation mask")));
     target.src = `data:image/png;base64,${maskBase64Png}`;
   });
   if (image.naturalWidth !== expectedWidth || image.naturalHeight !== expectedHeight) {

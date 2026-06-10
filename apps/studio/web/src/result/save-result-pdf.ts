@@ -62,7 +62,9 @@ export async function buildResultPdf(pages: HTMLElement[]): Promise<Uint8Array> 
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
 
-  for (const [index, page] of pages.entries()) {
+  await pages.reduce<Promise<void>>(async (previous, page, index) => {
+    await previous;
+
     const canvas = await html2canvas(page, {
       backgroundColor: "#ffffff",
       scale: 2,
@@ -87,7 +89,7 @@ export async function buildResultPdf(pages: HTMLElement[]): Promise<Uint8Array> 
     }
 
     pdf.addImage(imgData, "JPEG", x, y, drawWidth, drawHeight);
-  }
+  }, Promise.resolve());
 
   return new Uint8Array(pdf.output("arraybuffer"));
 }

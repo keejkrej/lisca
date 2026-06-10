@@ -213,7 +213,7 @@ export function createStudioUi(adapters: StudioSampleRowAdapters) {
     return parseStudioAssayJsonCore(contents, sampleRowFromDisk, sampleRowToDisk);
   }
 
-  type StudioWizardData = {
+  type StudioWizardState = {
     assayId: AssayId | null;
     infoStep: InfoStep;
     dataSourceKind: StudioDataSourceKind;
@@ -224,7 +224,7 @@ export function createStudioUi(adapters: StudioSampleRowAdapters) {
   };
 
   function serializeBasicInfoSnapshot(
-    state: Pick<StudioWizardData, "assayId" | "dataSourceKind" | "info1" | "info2" | "info3">,
+    state: Pick<StudioWizardState, "assayId" | "dataSourceKind" | "info1" | "info2" | "info3">,
   ): string {
     const assayId = state.assayId ?? DEFAULT_ASSAY_ID;
     return JSON.stringify(
@@ -238,7 +238,7 @@ export function createStudioUi(adapters: StudioSampleRowAdapters) {
     );
   }
 
-  function isBasicInfoDirty(state: StudioWizardData): boolean {
+  function isBasicInfoDirty(state: StudioWizardState): boolean {
     const current = serializeBasicInfoSnapshot(state);
     const baseline =
       state.basicInfoSavedSnapshot ?? serializeBasicInfoSnapshot(createInitialWizardData());
@@ -322,8 +322,8 @@ export function createStudioUi(adapters: StudioSampleRowAdapters) {
     };
   }
 
-  function mergeStudioState(persisted: unknown, current: StudioWizardData): StudioWizardData {
-    const persistedState = persisted as Partial<StudioWizardData>;
+  function mergeStudioState(persisted: unknown, current: StudioWizardState): StudioWizardState {
+    const persistedState = persisted as Partial<StudioWizardState>;
     const mergedInfo2 = persistedState.info2
       ? parsePersistedInfo2(persistedState.info2, persistedState.assayId ?? current.assayId)
       : current.info2;
@@ -343,7 +343,7 @@ export function createStudioUi(adapters: StudioSampleRowAdapters) {
 
   const STUDIO_SESSION_KEY = "lisca-studio-session";
 
-  function createInitialWizardData(): StudioWizardData {
+  function createInitialWizardData(): StudioWizardState {
     return {
       assayId: DEFAULT_ASSAY_ID,
       infoStep: 1,
@@ -358,21 +358,21 @@ export function createStudioUi(adapters: StudioSampleRowAdapters) {
     };
   }
 
-  function readStudioSession(): StudioWizardData | null {
-    const parsed = readStorageJson<{ state?: Partial<StudioWizardData> }>(
+  function readStudioSession(): StudioWizardState | null {
+    const parsed = readStorageJson<{ state?: Partial<StudioWizardState> }>(
       liscaSessionStorage(),
       STUDIO_SESSION_KEY,
     );
     if (!parsed) return null;
-    const persisted = parsed.state ?? (parsed as Partial<StudioWizardData>);
+    const persisted = parsed.state ?? (parsed as Partial<StudioWizardState>);
     return mergeStudioState(persisted, createInitialWizardData());
   }
 
-  function writeStudioSession(state: StudioWizardData): void {
+  function writeStudioSession(state: StudioWizardState): void {
     writeStorageJson(liscaSessionStorage(), STUDIO_SESSION_KEY, { state });
   }
 
-  function createInitialStudioWizardState(): StudioWizardData {
+  function createInitialStudioWizardState(): StudioWizardState {
     return createInitialWizardData();
   }
 
@@ -381,8 +381,8 @@ export function createStudioUi(adapters: StudioSampleRowAdapters) {
   type StateUpdater<T> = T | ((current: T) => T);
 
   function patchStudioWizard(
-    set: (update: StateUpdater<StudioWizardData>) => void,
-    patch: Partial<StudioWizardData> | ((state: StudioWizardData) => StudioWizardData),
+    set: (update: StateUpdater<StudioWizardState>) => void,
+    patch: Partial<StudioWizardState> | ((state: StudioWizardState) => StudioWizardState),
   ): void {
     set((state) => {
       const next = typeof patch === "function" ? patch(state) : { ...state, ...patch };
@@ -392,17 +392,17 @@ export function createStudioUi(adapters: StudioSampleRowAdapters) {
   }
 
   const studioWizardActions = {
-    setInfoStep(set: (update: StateUpdater<StudioWizardData>) => void, infoStep: InfoStep) {
+    setInfoStep(set: (update: StateUpdater<StudioWizardState>) => void, infoStep: InfoStep) {
       patchStudioWizard(set, { infoStep });
     },
     setDataSourceKind(
-      set: (update: StateUpdater<StudioWizardData>) => void,
+      set: (update: StateUpdater<StudioWizardState>) => void,
       dataSourceKind: StudioDataSourceKind,
     ) {
       patchStudioWizard(set, { dataSourceKind });
     },
     loadAssayJson(
-      set: (update: StateUpdater<StudioWizardData>) => void,
+      set: (update: StateUpdater<StudioWizardState>) => void,
       assayJson: StudioAssayJson,
     ) {
       const nextAssayId = enabledAssayId(assayJson.assayId) ?? DEFAULT_ASSAY_ID;
@@ -437,7 +437,7 @@ export function createStudioUi(adapters: StudioSampleRowAdapters) {
         ),
       });
     },
-    setAssayId(set: (update: StateUpdater<StudioWizardData>) => void, assayId: AssayId | null) {
+    setAssayId(set: (update: StateUpdater<StudioWizardState>) => void, assayId: AssayId | null) {
       const nextAssayId = enabledAssayId(assayId);
       patchStudioWizard(set, (current) => ({
         ...current,
@@ -452,13 +452,13 @@ export function createStudioUi(adapters: StudioSampleRowAdapters) {
       }));
     },
     setInfo1(
-      set: (update: StateUpdater<StudioWizardData>) => void,
+      set: (update: StateUpdater<StudioWizardState>) => void,
       patch: Partial<BasicInfoStep1>,
     ) {
       patchStudioWizard(set, (current) => ({ ...current, info1: { ...current.info1, ...patch } }));
     },
     setInfo2(
-      set: (update: StateUpdater<StudioWizardData>) => void,
+      set: (update: StateUpdater<StudioWizardState>) => void,
       patch: Partial<BasicInfoStep2>,
     ) {
       patchStudioWizard(set, (current) => ({
@@ -480,13 +480,13 @@ export function createStudioUi(adapters: StudioSampleRowAdapters) {
       }));
     },
     setInfo3(
-      set: (update: StateUpdater<StudioWizardData>) => void,
+      set: (update: StateUpdater<StudioWizardState>) => void,
       patch: Partial<BasicInfoStep3>,
     ) {
       patchStudioWizard(set, (current) => ({ ...current, info3: { ...current.info3, ...patch } }));
     },
     updateInfo3Sample(
-      set: (update: StateUpdater<StudioWizardData>) => void,
+      set: (update: StateUpdater<StudioWizardState>) => void,
       index: number,
       patch: Partial<BasicInfoSampleRow>,
     ) {
@@ -508,7 +508,7 @@ export function createStudioUi(adapters: StudioSampleRowAdapters) {
       });
     },
     setBasicInfoSavedSnapshot(
-      set: (update: StateUpdater<StudioWizardData>) => void,
+      set: (update: StateUpdater<StudioWizardState>) => void,
       basicInfoSavedSnapshot: string | null,
     ) {
       patchStudioWizard(set, { basicInfoSavedSnapshot });

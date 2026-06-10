@@ -123,7 +123,7 @@ export function LabelCreationDialog(props: {
         <DialogBody style={styles.body}>
           <ScrollView contentContainerStyle={styles.draftList}>
             {drafts.map((draft, index) => (
-              <View key={`${index}:${draft.id}`} style={styles.draftRow}>
+              <View key={draft.id} style={styles.draftRow}>
                 <Field label="Name" style={styles.field}>
                   <TextInput
                     accessibilityLabel={`Label ${index + 1} name`}

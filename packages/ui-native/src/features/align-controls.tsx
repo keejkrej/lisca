@@ -1,4 +1,3 @@
-import type { AlignGridShape } from "@lisca/contracts";
 import { clamp } from "@lisca/utils";
 import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";

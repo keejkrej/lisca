@@ -1,6 +1,6 @@
 import { ASSAY_FEATURE, ASSAY_NAME } from "@lisca/contracts";
 import { Button, Section, useShellTheme } from "@lisca/ui-native";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { StyleSheet, TextInput, View } from "react-native";
 
 import {
   type BasicInfo2FeatureId,

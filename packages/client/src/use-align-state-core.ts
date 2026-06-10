@@ -37,7 +37,6 @@ import { useEffect, useRef, useState } from "react";
 import type {
   AlignUiActions,
   AlignUiAtom,
-  AlignUiState,
   ExcludedByPosition,
   StateUpdater,
 } from "./atoms/align-ui.ts";

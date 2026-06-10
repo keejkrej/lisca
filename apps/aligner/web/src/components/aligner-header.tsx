@@ -4,7 +4,7 @@ import {
   SourcePickerModal,
 } from "@lisca/ui/features";
 import { ShellNavbar, useShellWorkspace } from "@lisca/ui/shell";
-import type { AlignerSource, HostFilePickerMode } from "@lisca/contracts";
+import type { HostFilePickerMode } from "@lisca/contracts";
 import { useRef, useState } from "react";
 
 import { alignerHostOperations } from "../api/aligner-port.ts";

@@ -12,7 +12,6 @@ import type { LucideIcon } from "lucide-react";
 import type { AlignGridToolMode } from "@lisca/utils";
 
 import { Button } from "../components/ui/button";
-import { cn } from "../lib/utils";
 import { DockGrid } from "../shell/dock-grid";
 import { DockSection } from "../shell/dock-section";
 import {

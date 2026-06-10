@@ -161,7 +161,7 @@ export function LabelCreationDialog({
           </div>
           {drafts.map((draft, index) => (
             <div
-              key={`${index}:${draft.id}`}
+              key={draft.id}
               className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_4rem_2rem] items-center gap-2"
             >
               <Input
