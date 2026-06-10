@@ -48,8 +48,6 @@ export function BasicInfoStep3() {
               ))}
             </View>
             {activeSamples.map((row, index) => (
-              // Rows are updated by index in store; stable row ids are not available.
-              // oxlint-disable-next-line react(no-array-index-key)
               <View key={index} style={styles.dataRow}>
                 <TextInput
                   keyboardType="numeric"

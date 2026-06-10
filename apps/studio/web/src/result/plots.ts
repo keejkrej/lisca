@@ -157,20 +157,26 @@ export const PLOTTED_FIT_PARAMETERS = [
 const MAX_TIMESERIES_TRACES = 64;
 const MAX_POINTS_PER_TRACE = 400;
 
-export function sortResultFiles(files: StudioAnalysisCsvFile[]): StudioAnalysisCsvFile[] {
-  const rank = (file: StudioAnalysisCsvFile) => {
-    if (file.kind === "timeseries") return 0;
-    if (file.fileName === "kill_curve.csv") return 0;
-    if (file.fileName === "auc.csv") return 1;
-    if (file.fileName === "fit.csv") return 2;
-    if (file.fileName === "death_times.csv") return 3;
-    if (file.fileName === "predictions_cleaned.csv") return 4;
-    return 5;
-  };
+function resultFileRank(file: StudioAnalysisCsvFile): number {
+  if (file.kind === "timeseries") return 0;
+  if (file.fileName === "kill_curve.csv") return 0;
+  if (file.fileName === "auc.csv") return 1;
+  if (file.fileName === "fit.csv") return 2;
+  if (file.fileName === "death_times.csv") return 3;
+  if (file.fileName === "predictions_cleaned.csv") return 4;
+  return 5;
+}
 
+function parseTimeseriesGroupKey(pos: number | null, roi: number | null): string {
+  const safePos = pos === null ? "pos:?" : `pos:${pos}`;
+  const safeRoi = roi === null ? "roi:?" : `roi:${roi}`;
+  return `${safePos}|${safeRoi}`;
+}
+
+export function sortResultFiles(files: StudioAnalysisCsvFile[]): StudioAnalysisCsvFile[] {
   return [...files].toSorted((left, right) => {
-    const leftRank = rank(left);
-    const rightRank = rank(right);
+    const leftRank = resultFileRank(left);
+    const rightRank = resultFileRank(right);
     if (leftRank !== rightRank) return leftRank - rightRank;
     return left.fileName.localeCompare(right.fileName);
   });
@@ -368,12 +374,6 @@ export function parsePanelGroups(
 
   const resultPanels: ResultPanel[] = [];
 
-  const parseGroupKey = (pos: number | null, roi: number | null) => {
-    const safePos = pos === null ? "pos:?" : `pos:${pos}`;
-    const safeRoi = roi === null ? "roi:?" : `roi:${roi}`;
-    return `${safePos}|${safeRoi}`;
-  };
-
   const makeTimeseriesPanel = (metricIndex: number, metric: "corrected" | "area") => {
     if (tIndex < 0 || metricIndex < 0) return;
     const traces = new Map<string, TimeseriesTrace>();
@@ -392,7 +392,7 @@ export function parsePanelGroups(
       if (pos !== null && !Number.isInteger(pos)) continue;
       if (roi !== null && !Number.isInteger(roi)) continue;
 
-      const key = parseGroupKey(pos, roi);
+      const key = parseTimeseriesGroupKey(pos, roi);
       const trace = traces.get(key);
       if (trace) {
         trace.points.push({ x: x * timeseriesXScale, y });
@@ -408,7 +408,8 @@ export function parsePanelGroups(
     const traceCount = traces.size;
     const grouped = Array.from(traces.values())
       .map((trace) => ({
-        ...trace,
+        key: trace.key,
+        label: trace.label,
         points: downsamplePoints(
           trace.points.toSorted((left, right) => left.x - right.x),
           MAX_POINTS_PER_TRACE,

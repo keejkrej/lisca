@@ -61,7 +61,7 @@ export function CanvasStatusMessageStack({
         className,
       )}
     >
-      {messages.map((message, index) => (
+      {messages.map((message) => (
         <div
           key={`${message.tone ?? "default"}:${message.text}`}
           className={cn(
@@ -93,7 +93,7 @@ export function CanvasToastStack({
         className,
       )}
     >
-      {messages.map((message, index) => {
+      {messages.map((message) => {
         const icon = toastIcon(message);
         const hideText = shouldHideToastText(message);
         return (

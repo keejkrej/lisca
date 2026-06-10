@@ -145,7 +145,12 @@ export function AlignCanvas({
   const gridCells = (() => {
     if (!frame || !activeGrid.enabled) return [];
     return enumerateVisibleAlignGridCells(frame, activeGrid).map((cell) => ({
-      ...cell,
+      i: cell.i,
+      j: cell.j,
+      x: cell.x,
+      y: cell.y,
+      w: cell.w,
+      h: cell.h,
       excluded: excludedKeys.has(`${cell.i}:${cell.j}`),
     }));
   })();
@@ -216,9 +221,6 @@ export function AlignCanvas({
                     width={cell.w * frameLayout.scale}
                     height={cell.h * frameLayout.scale}
                     color={cell.excluded ? "rgba(244, 63, 94, 0.45)" : "rgba(68, 151, 255, 0.45)"}
-                    // Skia painting style, not a React Native style object.
-                    // oxlint-disable-next-line react(style-prop-object)
-                    style="fill"
                   />
                 ))}
                 {gridOverlay ? (
@@ -258,7 +260,7 @@ export function AlignCanvas({
 
       {toasts && toasts.length > 0 ? (
         <View style={styles.toastStack}>
-          {toasts.map((toast, index) => (
+          {toasts.map((toast) => (
             <View
               key={toast.text}
               style={[

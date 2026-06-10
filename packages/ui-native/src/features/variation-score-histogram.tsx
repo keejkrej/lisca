@@ -25,7 +25,7 @@ export function VariationScoreHistogram(props: {
       ]}
     >
       <View style={styles.bars}>
-        {props.bins.map((bin, index) => {
+        {props.bins.map((bin) => {
           const active = bin.end <= props.threshold;
           const barHeight = Math.max(4, (bin.count / maxBinCount) * 100);
           return (

@@ -62,7 +62,7 @@ export function VariationExcludeDialog({
             aria-label="Variation score histogram"
             className="flex h-32 items-end gap-1 rounded-md border border-border bg-background/50 px-3 py-2"
           >
-            {preview.histogramBins.map((bin, index) => {
+            {preview.histogramBins.map((bin) => {
               const active = bin.end <= threshold;
               return (
                 <div

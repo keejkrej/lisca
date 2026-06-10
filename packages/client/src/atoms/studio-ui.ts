@@ -75,12 +75,63 @@ export type StudioSampleRowAdapters = {
 
 const BASIC_INFO_FEATURE_IDS: ReadonlyArray<BasicInfo2FeatureId> =
   CONTRACT_GENE_EXPRESSION_FEATURE_IDS;
-const TIMELAPSE_UNITS: TimelapseUnit[] = ["second", "minute", "hour"];
+const BASIC_INFO_FEATURE_ID_SET = new Set<string>(BASIC_INFO_FEATURE_IDS);
+const TIMELAPSE_UNIT_SET = new Set<TimelapseUnit>(["second", "minute", "hour"]);
 const ENABLED_ASSAY_IDS = new Set<EnabledStudioAssayId>(ENABLED_STUDIO_ASSAY_IDS);
 const DEFAULT_ASSAY_ID: AssayId = ASSAY_NAME.GENE_EXPRESSION;
 
 function isGeneExpressionAssay(assayId: AssayId | null): assayId is GeneExpressionAssayName {
   return assayId === ASSAY_NAME.GENE_EXPRESSION;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function requireRecord(value: unknown, label: string): Record<string, unknown> {
+  if (!isRecord(value)) throw new Error(`Invalid assay.json: ${label} must be an object.`);
+  return value;
+}
+
+function requireString(record: Record<string, unknown>, key: string, label = key): string {
+  const value = record[key];
+  if (typeof value !== "string") throw new Error(`Invalid assay.json: ${label} must be a string.`);
+  return value;
+}
+
+function optionalString(record: Record<string, unknown>, key: string): string {
+  const value = record[key];
+  return typeof value === "string" ? value : "";
+}
+
+function emptySampleRow(): BasicInfoSampleRow {
+  return {
+    channel: "",
+    name: "",
+    positionStart: "",
+    positionFinish: "",
+    maskChannel: "",
+    signalChannel: "",
+  };
+}
+
+function isBasicInfoFeatureId(value: unknown): value is BasicInfo2FeatureId {
+  return typeof value === "string" && BASIC_INFO_FEATURE_ID_SET.has(value);
+}
+
+function isBasicInfoFeatureList(value: unknown): value is BasicInfo2FeatureId[] {
+  return Array.isArray(value) && value.every((item) => isBasicInfoFeatureId(item));
+}
+
+function isTimelapseUnit(value: unknown): value is TimelapseUnit {
+  return typeof value === "string" && TIMELAPSE_UNIT_SET.has(value as TimelapseUnit);
+}
+
+function enabledAssayId(assayId: AssayId | null): AssayId | null {
+  if (assayId && ENABLED_ASSAY_IDS.has(assayId as EnabledStudioAssayId)) {
+    return assayId;
+  }
+  return DEFAULT_ASSAY_ID;
 }
 
 export function createStudioUi(adapters: StudioSampleRowAdapters) {
@@ -113,48 +164,6 @@ export function createStudioUi(adapters: StudioSampleRowAdapters) {
       info3,
       sampleRowToDisk,
     });
-  }
-
-  function isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === "object" && value !== null && !Array.isArray(value);
-  }
-
-  function requireRecord(value: unknown, label: string): Record<string, unknown> {
-    if (!isRecord(value)) throw new Error(`Invalid assay.json: ${label} must be an object.`);
-    return value;
-  }
-
-  function requireString(record: Record<string, unknown>, key: string, label = key): string {
-    const value = record[key];
-    if (typeof value !== "string")
-      throw new Error(`Invalid assay.json: ${label} must be a string.`);
-    return value;
-  }
-
-  function optionalString(record: Record<string, unknown>, key: string): string {
-    const value = record[key];
-    return typeof value === "string" ? value : "";
-  }
-
-  function enabledAssayId(assayId: AssayId | null): AssayId | null {
-    if (assayId && ENABLED_ASSAY_IDS.has(assayId as EnabledStudioAssayId)) {
-      return assayId;
-    }
-    return DEFAULT_ASSAY_ID;
-  }
-
-  function isBasicInfoFeatureId(value: unknown): value is BasicInfo2FeatureId {
-    return (
-      typeof value === "string" && BASIC_INFO_FEATURE_IDS.includes(value as BasicInfo2FeatureId)
-    );
-  }
-
-  function isBasicInfoFeatureList(value: unknown): value is BasicInfo2FeatureId[] {
-    return Array.isArray(value) && value.every((item) => isBasicInfoFeatureId(item));
-  }
-
-  function isTimelapseUnit(value: unknown): value is TimelapseUnit {
-    return typeof value === "string" && TIMELAPSE_UNITS.includes(value as TimelapseUnit);
   }
 
   function parseInfo2(value: unknown, assayId: AssayId | null): BasicInfoStep2 {
@@ -270,14 +279,6 @@ export function createStudioUi(adapters: StudioSampleRowAdapters) {
     timelapseUnit: "minute",
     selectedFeatures: [ASSAY_FEATURE.TOTAL_FLUOR],
   };
-  const emptySampleRow = (): BasicInfoSampleRow => ({
-    channel: "",
-    name: "",
-    positionStart: "",
-    positionFinish: "",
-    maskChannel: "",
-    signalChannel: "",
-  });
 
   const initialInfo3: BasicInfoStep3 = {
     selectedSlideId: "slide-vi",

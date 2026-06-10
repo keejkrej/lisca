@@ -12,8 +12,7 @@ export function PathButton(props: {
   const display = props.value
     ? props.value
         .split(/[\\/]/)
-        .filter(Boolean)
-        .pop()
+        .findLast((part) => part.length > 0)
         ?.replace(/\.[^./\\]+$/, "")
     : null;
 

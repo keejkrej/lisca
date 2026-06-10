@@ -126,13 +126,15 @@ export function frameLoadSelectionKey(selection: FrameRequest): string {
   return JSON.stringify(selection);
 }
 
+const noop = () => {};
+
 export async function runCropRoi(options: RunCropRoiOptions): Promise<void> {
   const { client, request, onProgress, onError, onCompleted, toErrorMessage } = options;
   const totalPositions = request.positions.length;
 
   onProgress(makeQueuedCropProgress(request.requestId, totalPositions));
 
-  let stop = () => {};
+  let stop: () => void = noop;
   try {
     await runClientEffect(client.cropRoi(request));
     stop = client.onCropRoiProgress(request.requestId, (progress) => {

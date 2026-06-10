@@ -9,12 +9,15 @@ export type ShellWorkspace = {
   clearSource: () => void;
 };
 const ShellWorkspaceContext = createContext<ShellWorkspace | null>(null);
+
+function pickWorkspaceStub() {
+  // Host file picker opens from header; this is a no-op stub for API parity.
+}
+
 export function ShellWorkspaceProvider({ children }: { children: ReactNode }) {
   const [workspacePath, setWorkspacePath] = useState<string | null>(null);
   const [sourcePath, setSourcePath] = useState<string | null>(null);
-  const pickWorkspace = () => {
-    // Host file picker opens from header; this is a no-op stub for API parity.
-  };
+  const pickWorkspace = pickWorkspaceStub;
   const pickSource = () => {
     if (!workspacePath) return;
   };

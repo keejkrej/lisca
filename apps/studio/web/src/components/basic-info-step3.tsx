@@ -76,8 +76,6 @@ export function BasicInfoStep3() {
               </thead>
               <tbody>
                 {activeSamples.map((row, index) => (
-                  // Rows are updated by index in store; stable row ids are not available.
-                  // oxlint-disable-next-line react(no-array-index-key)
                   <tr key={index}>
                     <td className="px-2 py-1.5">
                       <Input

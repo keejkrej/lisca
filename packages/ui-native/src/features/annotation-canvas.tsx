@@ -134,7 +134,7 @@ export function AnnotationCanvas({
           </Text>
         </View>
       ) : null}
-      {toasts?.map((toast, index) => (
+      {toasts?.map((toast) => (
         <View key={toast.text} style={styles.toast}>
           <Text style={styles.toastText}>{toast.text}</Text>
         </View>
