@@ -16,7 +16,7 @@ declare module "@tanstack/react-router" {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <ShellThemeProvider defaultMode="dark" storageKey="lisca-landing-theme">
+    <ShellThemeProvider storageKey="lisca-landing-theme">
       <RouterProvider router={router} />
     </ShellThemeProvider>
   </StrictMode>,
