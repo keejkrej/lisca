@@ -1,7 +1,7 @@
 import { Moon, Sun } from "lucide-react-native";
 import { Pressable } from "react-native";
 
-import { shellChromeMetrics, shellGhostIconButtonStyle } from "../shell/shell-chrome.ts";
+import { shellChromeMetrics, shellGhostIconButtonStyle } from "../shell/chrome/shell-chrome.ts";
 import { useShellTheme } from "./shell-theme.tsx";
 
 export function ShellThemeToggle() {

@@ -26,6 +26,10 @@
       "types": "./src/components/ui/index.ts",
       "import": "./src/components/ui/index.ts"
     },
+    "./hooks": {
+      "types": "./src/hooks/index.ts",
+      "import": "./src/hooks/index.ts"
+    },
     "./coss-theme.css": "./coss-theme.css"
   },
   "scripts": {

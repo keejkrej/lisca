@@ -1,4 +1,4 @@
-export { AppShell, type AppShellCompound, ShellDock, ShellSidebar } from "./shell";
+export { AppShell, type AppShellCompound, ShellDock, ShellSidebar } from "./layout/shell";
 export {
   ShellNavbar,
   type ShellNavbarAlignerProps,
@@ -6,21 +6,21 @@ export {
   type ShellNavbarCompound,
   type ShellNavbarProps,
   type ShellNavbarRouteItem,
-} from "./navbar";
-export { PathButton } from "./path-button";
-export { ConnectionStatus, type ConnectionState } from "./connection-status";
-export { ServerAddressDialog, type ServerAddressDialogProps } from "./server-address-dialog";
+} from "./chrome/navbar";
+export { PathButton } from "./chrome/path-button";
+export { ConnectionStatus, type ConnectionState } from "./chrome/connection-status";
+export { ServerAddressDialog, type ServerAddressDialogProps } from "./server/server-address-dialog";
 export {
   ShellThemeProvider,
   ShellThemeToggle,
   useShellTheme,
   type ShellThemeMode,
-} from "./shell-theme";
-export { DialogSurface, type DialogSurfaceMaxWidth } from "./dialog-surface";
-export { DockSection, type DockSectionFit, type DockSectionProps } from "./dock-section";
-export { DockStrip } from "./dock-strip";
-export { SidebarSection, type SidebarSectionProps } from "./sidebar-section";
-export { SidebarStack, type SidebarStackProps } from "./sidebar-stack";
+} from "./theme/shell-theme";
+export { DialogSurface, type DialogSurfaceMaxWidth } from "./modal/dialog-surface";
+export { DockSection, type DockSectionFit, type DockSectionProps } from "./regions/dock-section";
+export { DockStrip } from "./regions/dock-strip";
+export { SidebarSection, type SidebarSectionProps } from "./regions/sidebar-section";
+export { SidebarStack, type SidebarStackProps } from "./regions/sidebar-stack";
 export {
   dockToolLabel,
   dockToolShortcuts,
@@ -30,13 +30,14 @@ export {
   useKeyboardShortcuts,
   type KeyboardShortcut,
   type ShortcutModifiers,
-} from "./use-keyboard-shortcuts";
-export { ModalScrim } from "./modal-scrim";
-export { Panel, PanelContent, PanelDescription, PanelHeader, PanelTitle } from "./panel";
-export { StatTile } from "./stat-tile";
-export { ReadonlyPathField } from "./readonly-path-field";
-export { Section, type SectionProps } from "./section";
-export { ViewportCard } from "./viewport-card";
-export { RouteLoadingFallback } from "./route-loading-fallback";
-export { ShellServerProvider, useShellServer, type ShellServer } from "../state/shell-server";
-export { ShellWorkspaceProvider, useShellWorkspace, type ShellWorkspace } from "../state/workspace";
+} from "./shortcuts/use-keyboard-shortcuts";
+export { ModalScrim } from "./modal/modal-scrim";
+export { Panel, PanelContent, PanelDescription, PanelHeader, PanelTitle } from "./regions/panel";
+export { StatTile } from "./chrome/stat-tile";
+export { ReadonlyPathField } from "./chrome/readonly-path-field";
+export { Section, type SectionProps } from "./regions/section";
+export { ViewportCard } from "./layout/viewport-card";
+export { RouteLoadingFallback } from "./layout/route-loading-fallback";
+export { ShellServerProvider, useShellServer, type ShellServer } from "./server/shell-server";
+export { ShellWorkspaceProvider, useShellWorkspace, type ShellWorkspace } from "./workspace/workspace";
+export { useShellWsProbe, useWsProbeForUrl, type ShellWsProbe } from "./server/use-shell-ws-probe";

@@ -6,7 +6,7 @@ Mobile apps under `apps/*/mobile` are native clients for the external Rust serve
 
 - **Expo SDK 54** + **Expo Router** file routes
 - **@lisca/mobile-app** — provider stack + `createLiscaMobilePort`
-- **@lisca/ui-native** — shell, modals, Skia canvas (`AlignCanvas`, `AnnotationCanvas`)
+- **@lisca/ui-native** — shell, modals, Skia canvas (`AlignCanvas`, `AnnotationCanvas`); see [ui-package-layout.md](./ui-package-layout.md) for folder conventions
 - **@lisca/client** + Effect Atom — same ports/atoms as web
 - **@lisca/storage** — AsyncStorage on native, `localStorage`/`sessionStorage` on web
 
