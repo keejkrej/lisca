@@ -10,9 +10,10 @@ swapped for any other backend (Node, FastAPI, …) without touching the schema.
 
 ## Layout
 
-| File                     | Role                                                               |
+| File / directory         | Role                                                               |
 | ------------------------ | ------------------------------------------------------------------ |
-| `src/protocol.schema.ts` | Canonical Effect schemas for HTTP/WS wire types + derived TS types |
+| `src/schema/`            | Wire schemas by domain (`shared`, `host`, `align`, `annotate`, `studio`, `ws`) |
+| `src/protocol.schema.ts` | Barrel re-export of `src/schema/` (back-compat)                    |
 | `src/assay.schema.ts`    | Canonical schemas for the on-disk `assay.json` contract            |
 | `src/assay-ui.ts`        | Wizard / Studio UI assay types (not wire protocol)                 |
 | `src/assay.ts`           | Barrel for `@lisca/contracts/assay` subpath                        |

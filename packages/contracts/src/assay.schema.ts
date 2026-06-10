@@ -1,5 +1,7 @@
 import * as Schema from "effect/Schema";
 
+import { F64 } from "./schema/primitives.ts";
+
 /**
  * Effect Schema source of truth for the studio `assay.json` on-disk contract.
  * The studio web wizard authors this shape and the Rust analysis pipeline
@@ -7,8 +9,6 @@ import * as Schema from "effect/Schema";
  * string through `/studio/save-assay-json`), so it lives here rather than in
  * the HttpApi, and is emitted as JSON Schema for the Rust type generator.
  */
-
-const F64 = Schema.Number.annotations({ jsonSchema: { type: "number", format: "double" } });
 
 export const AssayTypeSchema = Schema.Literal(
   "gene-expression",
@@ -86,7 +86,14 @@ export const AssayJsonFileSchema = Schema.Struct({
 }).annotations({ identifier: "AssayJsonFile" });
 
 // Derived on-disk types (names that don't collide with the const-derived
-// `AssayType`/`AssayFeature` unions exported from `index.ts`).
+// `AssayType`/`AssayFeature` unions exported from `@lisca/contracts/assay`).
+export type AssayType = typeof AssayTypeSchema.Type;
+export type AssayFeature = typeof AssayFeatureSchema.Type;
+export type AssayTimelapseUnit = typeof AssayTimelapseUnitSchema.Type;
+export type AssaySlideId = typeof AssaySlideIdSchema.Type;
+export type AssayDataSourceKind = typeof AssayDataSourceKindSchema.Type;
+export type AssayBasicInfoStep1 = typeof AssayBasicInfoStep1Schema.Type;
+export type AssayBasicInfoStep2 = typeof AssayBasicInfoStep2Schema.Type;
 export type AssaySampleRow = typeof AssaySampleRowSchema.Type;
 export type AssayBasicInfoStep3 = typeof AssayBasicInfoStep3Schema.Type;
 export type AssayJsonFile = typeof AssayJsonFileSchema.Type;

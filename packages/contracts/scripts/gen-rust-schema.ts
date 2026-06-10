@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 import { AssayJsonFileSchema } from "../src/assay.schema.ts";
 import { liscaApi } from "../src/http-api.ts";
-import { RoiIndexFileSchema, ServerWsMessageSchema } from "../src/protocol.schema.ts";
+import { RoiIndexFileSchema, ServerWsMessageSchema } from "../src/schema/index.ts";
 
 /**
  * Build the single JSON Schema document consumed by `typify` to generate the

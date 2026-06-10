@@ -8,14 +8,12 @@ import { decodeJsonEither, formatSchemaError } from "../src/decode.ts";
 import {
   AlignerSourceSchema,
   FramePayloadSchema,
-  RoiIndexEntrySchema,
-  WorkspaceScanSchema,
-} from "../src/protocol.schema.ts";
-import {
   LoadFrameRequestSchema,
+  RoiIndexEntrySchema,
   SaveBboxRequestSchema,
   ScanSourceRequestSchema,
-} from "../src/http-api.ts";
+  WorkspaceScanSchema,
+} from "../src/schema/index.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixturesDir = join(here, "fixtures");

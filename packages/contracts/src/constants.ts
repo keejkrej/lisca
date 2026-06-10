@@ -9,5 +9,3 @@ export const PIXEL_TYPES = [
   "uint32",
   "int32",
 ] as const;
-
-export type PixelType = (typeof PIXEL_TYPES)[number];

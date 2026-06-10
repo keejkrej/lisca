@@ -2,7 +2,6 @@ import { HttpApi, HttpApiEndpoint, HttpApiGroup, HttpApiSchema } from "@effect/p
 import * as Schema from "effect/Schema";
 
 import {
-  AlignerSourceSchema,
   AlignOutputPathsSchema,
   AnalysisProgressSchema,
   AnalysisStartRequestSchema,
@@ -14,10 +13,10 @@ import {
   CropRoiRequestSchema,
   CropRoiResponseSchema,
   FramePayloadSchema,
-  FrameRequestSchema,
   HomeDirectoryResponseSchema,
   HostListDirectoryResultSchema,
   LoadedRoiFrameAnnotationSchema,
+  LoadFrameRequestSchema,
   NullableAnalysisProgressSchema,
   NullableSavedAlignStateSchema,
   ReadTextFileResponseSchema,
@@ -28,13 +27,14 @@ import {
   RoiWorkspaceScanSchema,
   SaveAssayJsonRequestSchema,
   SaveAssayJsonResponseSchema,
+  SaveBboxRequestSchema,
   SaveBboxResponseSchema,
   SaveResultPdfRequestSchema,
   SaveResultPdfResponseSchema,
-  SavedAlignStateSchema,
+  ScanSourceRequestSchema,
   UIntArraySchema,
   WorkspaceScanSchema,
-} from "./protocol.schema.ts";
+} from "./schema/index.ts";
 
 /**
  * Structured request error. Replaces the previous plain-text 400 so every
@@ -50,26 +50,6 @@ export class RequestError extends Schema.TaggedError<RequestError>()(
 const U32Param = Schema.NumberFromString.annotations({
   jsonSchema: { type: "integer", format: "uint32", minimum: 0 },
 });
-
-/** POST /align/scan-source request body. */
-export const ScanSourceRequestSchema = Schema.Struct({
-  source: AlignerSourceSchema,
-}).annotations({ identifier: "ScanSourceRequest" });
-
-/** POST /align/load-frame request body. */
-export const LoadFrameRequestSchema = Schema.Struct({
-  source: AlignerSourceSchema,
-  request: FrameRequestSchema,
-  contrast: Schema.NullOr(ContrastWindowSchema),
-}).annotations({ identifier: "LoadFrameRequest" });
-
-/** POST /align/save-bbox request body. */
-export const SaveBboxRequestSchema = Schema.Struct({
-  workspacePath: Schema.String,
-  pos: Schema.Number,
-  csv: Schema.String,
-  alignState: SavedAlignStateSchema,
-}).annotations({ identifier: "SaveBboxRequest" });
 
 // --- fs group (shared host filesystem) ---------------------------------------
 const fsGroup = HttpApiGroup.make("fs")

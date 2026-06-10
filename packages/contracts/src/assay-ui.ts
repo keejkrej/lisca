@@ -1,5 +1,13 @@
-import type { AlignerSource } from "./protocol.schema.ts";
-import type { AssayBasicInfoStep3, AssayJsonFile, AssaySampleRow } from "./assay.schema.ts";
+import type { AlignerSource } from "./schema/shared.ts";
+import type {
+  AssayBasicInfoStep1,
+  AssayBasicInfoStep2,
+  AssayBasicInfoStep3,
+  AssayJsonFile,
+  AssaySampleRow,
+  AssaySlideId,
+  AssayTimelapseUnit,
+} from "./assay.schema.ts";
 
 export type FolderSourceTemplatePreset = {
   label: string;
@@ -29,7 +37,8 @@ export const ASSAY_TYPE = {
   CUSTOM_ASSAY: "custom-assay",
 } as const;
 
-export type AssayType = (typeof ASSAY_TYPE)[keyof typeof ASSAY_TYPE];
+/** Wizard-facing assay id union (const object keys, not the on-disk schema type). */
+export type StudioAssayType = (typeof ASSAY_TYPE)[keyof typeof ASSAY_TYPE];
 export type GeneExpressionAssayType = typeof ASSAY_TYPE.GENE_EXPRESSION;
 export type ImmuneKillingAssayType = typeof ASSAY_TYPE.IMMUNE_KILLING;
 
@@ -48,7 +57,8 @@ export const ASSAY_FEATURE = {
   TOTAL_FLUOR: "totalfluor",
 } as const;
 
-export type AssayFeature = (typeof ASSAY_FEATURE)[keyof typeof ASSAY_FEATURE];
+/** Wizard-facing feature id union (const object keys). */
+export type StudioAssayFeature = (typeof ASSAY_FEATURE)[keyof typeof ASSAY_FEATURE];
 
 export const GENE_EXPRESSION_FEATURE_IDS = [
   ASSAY_FEATURE.MORPHOLOGY,
@@ -57,52 +67,47 @@ export const GENE_EXPRESSION_FEATURE_IDS = [
   ASSAY_FEATURE.TOTAL_FLUOR,
 ] as const;
 
-export type AssayFeatureList = readonly AssayFeature[];
+export type AssayFeatureList = readonly StudioAssayFeature[];
 
-export type NonEmptyAssayFeatureList = [AssayFeature, ...AssayFeature[]];
+export type NonEmptyAssayFeatureList = [StudioAssayFeature, ...StudioAssayFeature[]];
 
 export type Assay = {
-  assayType: AssayType;
+  assayType: StudioAssayType;
   features: AssayFeatureList;
 };
+
+export type GeneExpressionAssayFeature = (typeof GENE_EXPRESSION_FEATURE_IDS)[number];
 
 export type GeneExpressionFeatureList = [
   GeneExpressionAssayFeature,
   ...GeneExpressionAssayFeature[],
 ];
 
-export type GeneExpressionAssayFeature = (typeof GENE_EXPRESSION_FEATURE_IDS)[number];
-
 export type GeneExpressionAssay = {
   assayType: GeneExpressionAssayType;
   features: GeneExpressionFeatureList;
 };
 
-export type StudioAssayId = AssayType;
+/** @deprecated Use `StudioAssayType` — kept for existing imports. */
+export type AssayType = StudioAssayType;
+/** @deprecated Use `StudioAssayFeature` — kept for existing imports. */
+export type AssayFeature = StudioAssayFeature;
+
+export type StudioAssayId = StudioAssayType;
 
 export type StudioDataSourceKind = AlignerSource["kind"] | null;
 
-export type StudioTimelapseUnit = "second" | "minute" | "hour";
+export type StudioTimelapseUnit = AssayTimelapseUnit;
 
-export type StudioBasicInfoFeatureId = AssayFeature;
+export type StudioBasicInfoFeatureId = StudioAssayFeature;
 
-export type StudioBasicInfoSlideId = "slide-i" | "slide-vi";
+export type StudioBasicInfoSlideId = AssaySlideId;
 
-export type StudioBasicInfoStep1 = {
-  name: string;
-  date: string;
-  dataPath: string;
-  folderSubfolderTemplate: string;
-  folderFilenameTemplate: string;
-  saveTo: string;
-};
+/** On-disk step 1 fields; identical to `AssayBasicInfoStep1`. */
+export type StudioBasicInfoStep1 = AssayBasicInfoStep1;
 
-export type StudioBasicInfoStep2 = {
-  pattern: string;
-  timelapseAmount: number | null;
-  timelapseUnit: StudioTimelapseUnit;
-  selectedFeatures: readonly StudioBasicInfoFeatureId[];
-};
+/** On-disk step 2 fields; identical to `AssayBasicInfoStep2`. */
+export type StudioBasicInfoStep2 = AssayBasicInfoStep2;
 
 export type StudioBasicInfoSampleRow = {
   /** Stable UI row identity; not persisted to assay.json. */
@@ -118,6 +123,7 @@ export type StudioBasicInfoSampleRow = {
 /** Sample row fields loaded from assay.json before a UI row id is assigned. */
 export type StudioBasicInfoSampleRowFields = Omit<StudioBasicInfoSampleRow, "id">;
 
+/** Wizard step 3: UI rows carry a client-only `id` not written to assay.json. */
 export type StudioBasicInfoStep3 = {
   selectedSlideId: StudioBasicInfoSlideId;
   samplesBySlide: Record<StudioBasicInfoSlideId, StudioBasicInfoSampleRow[]>;
