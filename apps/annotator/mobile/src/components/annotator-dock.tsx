@@ -4,7 +4,8 @@ import {
   DockSection,
   ReadonlyPathField,
   dockToolLabel,
-  useDockToolShortcuts,
+  dockToolShortcuts,
+  useKeyboardShortcuts,
   type AnnotationTool,
   type DockToolAction,
   useShellTheme,
@@ -38,7 +39,7 @@ function AnnotatorToolToolbar(props: {
   canEditTools: boolean;
   toolActions: DockToolAction[];
 }) {
-  useDockToolShortcuts(props.toolActions, { enabled: props.canEditTools });
+  useKeyboardShortcuts(dockToolShortcuts(props.toolActions), { enabled: props.canEditTools });
 
   const buttons = props.toolActions.map((action, index) => (
     <View key={action.id} style={styles.gridCell}>

@@ -12,6 +12,10 @@
       "types": "./src/dock.ts",
       "import": "./src/dock.ts"
     },
+    "./shortcuts": {
+      "types": "./src/shortcuts.ts",
+      "import": "./src/shortcuts.ts"
+    },
     "./host": {
       "types": "./src/host.ts",
       "import": "./src/host.ts"

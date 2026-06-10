@@ -112,9 +112,14 @@ export { SidebarSection, type SidebarSectionProps } from "./shell/sidebar-sectio
 export { SidebarStack, type SidebarStackProps } from "./shell/sidebar-stack";
 export {
   dockToolLabel,
-  useDockToolShortcuts,
+  dockToolShortcuts,
   type DockToolAction,
-} from "./shell/dock-tool-shortcuts";
+} from "@lisca/ui-headless/dock";
+export {
+  useKeyboardShortcuts,
+  type KeyboardShortcut,
+  type ShortcutModifiers,
+} from "./shell/use-keyboard-shortcuts";
 export { ModalScrim } from "./shell/modal-scrim";
 export { Panel, PanelContent, PanelDescription, PanelHeader, PanelTitle } from "./shell/panel";
 export { StatTile } from "./shell/stat-tile";

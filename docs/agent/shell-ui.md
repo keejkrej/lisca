@@ -27,6 +27,7 @@ Compose apps from shell primitives, not exported class strings:
 | `DockSection` | Dock placement variant of `Section`; `fit="hug"` (default) or `fit="panel"` for instruction copy |
 | `DialogSurface` / `ModalScrim` | Modal chrome |
 | `StatTile` | Count/metric tile: `border border-border bg-background` |
+| `useKeyboardShortcuts` | Web keyboard bindings; pair with `dockToolShortcuts()` from `@lisca/ui-headless/dock` for digit tool keys |
 
 Placement styling lives inside `DockSection`, `SidebarSection`, and `SidebarStack` — not exported as class strings.
 

@@ -6,9 +6,14 @@ export { SidebarSection } from "./shell/sidebar-section.tsx";
 export { SidebarStack } from "./shell/sidebar-stack.tsx";
 export {
   dockToolLabel,
-  useDockToolShortcuts,
+  dockToolShortcuts,
   type DockToolAction,
-} from "./shell/dock-tool-shortcuts.ts";
+} from "@lisca/ui-headless/dock";
+export {
+  useKeyboardShortcuts,
+  type KeyboardShortcut,
+  type ShortcutModifiers,
+} from "./shell/use-keyboard-shortcuts.ts";
 export type { ConnectionState } from "./state/use-shell-ws-probe.ts";
 export { ConnectionStatus } from "./shell/connection-status.tsx";
 export {

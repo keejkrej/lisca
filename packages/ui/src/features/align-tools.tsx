@@ -15,9 +15,10 @@ import { Button } from "../components/ui/button";
 import { DockSection } from "../shell/dock-section";
 import {
   dockToolLabel,
-  useDockToolShortcuts,
+  dockToolShortcuts,
+  useKeyboardShortcuts,
   type DockToolAction,
-} from "../shell/dock-tool-shortcuts";
+} from "@lisca/ui/shell";
 
 export type AlignToolSectionProps = {
   mode: AlignGridToolMode;
@@ -154,7 +155,7 @@ export function AlignToolToolbar({
   shortcutsEnabled = true,
 }: AlignToolToolbarProps) {
   const toolActions = buildAlignToolActions(mode, onModeChange);
-  useDockToolShortcuts(toolActions, { enabled: shortcutsEnabled });
+  useKeyboardShortcuts(dockToolShortcuts(toolActions), { enabled: shortcutsEnabled });
 
   const cells = alignToolDefinitions.map((tool, index) =>
     renderAlignToolCell(

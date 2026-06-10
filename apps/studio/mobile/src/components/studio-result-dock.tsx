@@ -3,7 +3,8 @@ import {
   DockSection,
   DockStrip,
   dockToolLabel,
-  useDockToolShortcuts,
+  dockToolShortcuts,
+  useKeyboardShortcuts,
   useShellTheme,
   type DockToolAction,
 } from "@lisca/ui-native";
@@ -18,7 +19,9 @@ export function StudioResultDock(props: {
   onSave: () => void;
 }) {
   const { colors } = useShellTheme();
-  useDockToolShortcuts(props.toolActions, { enabled: props.shortcutsEnabled });
+  useKeyboardShortcuts(dockToolShortcuts(props.toolActions), {
+    enabled: props.shortcutsEnabled,
+  });
 
   return (
     <DockStrip>

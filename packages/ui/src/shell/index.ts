@@ -21,7 +21,16 @@ export { DockSection, type DockSectionFit, type DockSectionProps } from "./dock-
 export { DockStrip } from "./dock-strip";
 export { SidebarSection, type SidebarSectionProps } from "./sidebar-section";
 export { SidebarStack, type SidebarStackProps } from "./sidebar-stack";
-export { dockToolLabel, useDockToolShortcuts, type DockToolAction } from "./dock-tool-shortcuts";
+export {
+  dockToolLabel,
+  dockToolShortcuts,
+  type DockToolAction,
+} from "@lisca/ui-headless/dock";
+export {
+  useKeyboardShortcuts,
+  type KeyboardShortcut,
+  type ShortcutModifiers,
+} from "./use-keyboard-shortcuts";
 export { ModalScrim } from "./modal-scrim";
 export { Panel, PanelContent, PanelDescription, PanelHeader, PanelTitle } from "./panel";
 export { StatTile } from "./stat-tile";

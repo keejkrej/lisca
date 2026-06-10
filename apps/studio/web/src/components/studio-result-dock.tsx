@@ -3,7 +3,8 @@ import {
   DockSection,
   DockStrip,
   dockToolLabel,
-  useDockToolShortcuts,
+  dockToolShortcuts,
+  useKeyboardShortcuts,
   type DockToolAction,
 } from "@lisca/ui/shell";
 
@@ -15,7 +16,9 @@ export function StudioResultDock(props: {
   saveLabel: string;
   onSave: () => void;
 }) {
-  useDockToolShortcuts(props.toolActions, { enabled: props.shortcutsEnabled });
+  useKeyboardShortcuts(dockToolShortcuts(props.toolActions), {
+    enabled: props.shortcutsEnabled,
+  });
 
   return (
     <DockStrip>

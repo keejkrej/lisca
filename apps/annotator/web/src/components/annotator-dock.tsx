@@ -5,7 +5,8 @@ import {
   DockStrip,
   ReadonlyPathField,
   dockToolLabel,
-  useDockToolShortcuts,
+  dockToolShortcuts,
+  useKeyboardShortcuts,
   type DockToolAction,
 } from "@lisca/ui/shell";
 import { useAnnotatePage } from "../state/annotate-page-context";
@@ -42,7 +43,7 @@ export function AnnotatorDock() {
     !state.filePickerOpen;
   const canEditTools = state.mode === "segmentation" && shortcutsEnabled;
   const toolActions = buildAnnotationToolActions(state.tool, state.setTool, !canEditTools);
-  useDockToolShortcuts(toolActions, { enabled: canEditTools });
+  useKeyboardShortcuts(dockToolShortcuts(toolActions), { enabled: canEditTools });
 
   const toolButtons = toolActions.map((action, index) => {
     const label = dockToolLabel(action.label, index);

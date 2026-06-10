@@ -2,7 +2,16 @@ export { AppShell, ShellDock, ShellSidebar, type AppShellCompound } from "./app-
 export { Button, SegmentedToggle } from "./buttons.tsx";
 export { DockSection, type DockSectionFit } from "./dock-section.tsx";
 export { DockStrip } from "./dock-strip.tsx";
-export { dockToolLabel, useDockToolShortcuts, type DockToolAction } from "./dock-tool-shortcuts.ts";
+export {
+  dockToolLabel,
+  dockToolShortcuts,
+  type DockToolAction,
+} from "@lisca/ui-headless/dock";
+export {
+  useKeyboardShortcuts,
+  type KeyboardShortcut,
+  type ShortcutModifiers,
+} from "./use-keyboard-shortcuts.ts";
 export { ConnectionStatus } from "./connection-status.tsx";
 export { DialogBody, DialogFooter, DialogHeader, DialogSurface, ModalScrim } from "./modal.tsx";
 export { Field, FieldLabel } from "./field.tsx";

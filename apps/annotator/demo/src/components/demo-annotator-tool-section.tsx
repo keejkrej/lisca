@@ -3,7 +3,8 @@ import type { AnnotationTool } from "@lisca/ui/features";
 import {
   DockSection,
   dockToolLabel,
-  useDockToolShortcuts,
+  dockToolShortcuts,
+  useKeyboardShortcuts,
   type DockToolAction,
 } from "@lisca/ui/shell";
 
@@ -35,7 +36,7 @@ function DemoAnnotatorToolToolbar(props: {
   toolActions: DockToolAction[];
   className?: string;
 }) {
-  useDockToolShortcuts(props.toolActions, { enabled: props.canEditTools });
+  useKeyboardShortcuts(dockToolShortcuts(props.toolActions), { enabled: props.canEditTools });
 
   const buttons = props.toolActions.map((action, index) => {
     const label = dockToolLabel(action.label, index);
