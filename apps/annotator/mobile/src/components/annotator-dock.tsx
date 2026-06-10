@@ -1,9 +1,10 @@
 import type { AnnotationMode, RoiFrameRequest } from "@lisca/contracts";
 import {
   Button,
-  DockToolGrid,
+  DockSection,
   ReadonlyPathField,
-  Section,
+  dockToolLabel,
+  useDockToolShortcuts,
   type AnnotationTool,
   type DockToolAction,
   useShellTheme,
@@ -33,6 +34,39 @@ function buildAnnotationToolActions(
   }));
 }
 
+function AnnotatorToolToolbar(props: {
+  canEditTools: boolean;
+  toolActions: DockToolAction[];
+}) {
+  useDockToolShortcuts(props.toolActions, { enabled: props.canEditTools });
+
+  const buttons = props.toolActions.map((action, index) => (
+    <View key={action.id} style={styles.gridCell}>
+      <Button
+        disabled={action.disabled}
+        label={dockToolLabel(action.label, index)}
+        size="sm"
+        style={styles.button}
+        variant={action.active ? "default" : "outline"}
+        onPress={action.onSelect}
+      />
+    </View>
+  ));
+
+  return (
+    <View style={styles.toolbar}>
+      <View style={styles.row}>
+        {buttons[0]}
+        {buttons[1]}
+      </View>
+      <View style={styles.row}>
+        {buttons[2]}
+        {buttons[3]}
+      </View>
+    </View>
+  );
+}
+
 export function AnnotatorDock(props: {
   mode: AnnotationMode;
   tool: AnnotationTool;
@@ -50,32 +84,35 @@ export function AnnotatorDock(props: {
 
   return (
     <View style={styles.root}>
-      <Section contentStyle={styles.toolContent} style={styles.section} title="Tool">
+      <DockSection style={styles.section} title="Tool">
         {props.mode === "segmentation" ? (
-          <DockToolGrid actions={toolActions} enabled={canEditTools} style={styles.toolGrid} />
+          <AnnotatorToolToolbar canEditTools={canEditTools} toolActions={toolActions} />
         ) : (
           <View style={styles.classificationPlaceholder}>
             <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>Classification</Text>
           </View>
         )}
-      </Section>
-      <Section contentStyle={styles.saveContent} style={styles.section} title="Save">
-        <View style={[styles.paths, paths.length > 1 ? styles.pathsMulti : null]}>
-          {paths.map((path) => (
-            <View key={path} style={styles.pathCell}>
-              <ReadonlyPathField value={path} />
-            </View>
-          ))}
+      </DockSection>
+      <DockSection style={styles.section} title="Save">
+        <View style={styles.saveContent}>
+          <View style={[styles.paths, paths.length > 1 ? styles.pathsMulti : null]}>
+            {paths.map((path) => (
+              <View key={path} style={styles.pathCell}>
+                <ReadonlyPathField value={path} />
+              </View>
+            ))}
+          </View>
+          <Button
+            disabled={!props.canSave}
+            label={props.saving ? "Saving" : "Save"}
+            loading={props.saving}
+            size="sm"
+            style={styles.button}
+            variant="outline"
+            onPress={props.onSave}
+          />
         </View>
-        <Button
-          disabled={!props.canSave}
-          label={props.saving ? "Saving" : "Save"}
-          loading={props.saving}
-          size="sm"
-          variant="outline"
-          onPress={props.onSave}
-        />
-      </Section>
+      </DockSection>
     </View>
   );
 }
@@ -92,12 +129,18 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
-  toolContent: {
-    flex: 1,
-    minHeight: 0,
+  toolbar: {
+    gap: 8,
+    width: "100%",
   },
-  toolGrid: {
+  row: {
+    flexDirection: "row",
+    gap: 8,
+    width: "100%",
+  },
+  gridCell: {
     flex: 1,
+    minWidth: 0,
   },
   classificationPlaceholder: {
     alignItems: "center",
@@ -106,6 +149,7 @@ const styles = StyleSheet.create({
   },
   saveContent: {
     gap: 8,
+    width: "100%",
   },
   paths: {
     gap: 8,
@@ -116,5 +160,8 @@ const styles = StyleSheet.create({
   pathCell: {
     flex: 1,
     minWidth: 0,
+  },
+  button: {
+    width: "100%",
   },
 });

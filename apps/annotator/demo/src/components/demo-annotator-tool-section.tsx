@@ -1,7 +1,6 @@
 import { Button } from "@lisca/ui/components";
 import type { AnnotationTool } from "@lisca/ui/features";
 import {
-  DockGrid,
   DockSection,
   dockToolLabel,
   useDockToolShortcuts,
@@ -31,10 +30,14 @@ function buildAnnotationToolActions(
   }));
 }
 
-function SegmentationToolButtons(props: { canEditTools: boolean; toolActions: DockToolAction[] }) {
+function DemoAnnotatorToolToolbar(props: {
+  canEditTools: boolean;
+  toolActions: DockToolAction[];
+  className?: string;
+}) {
   useDockToolShortcuts(props.toolActions, { enabled: props.canEditTools });
 
-  return props.toolActions.map((action, index) => {
+  const buttons = props.toolActions.map((action, index) => {
     const label = dockToolLabel(action.label, index);
     return (
       <Button
@@ -50,45 +53,59 @@ function SegmentationToolButtons(props: { canEditTools: boolean; toolActions: Do
       </Button>
     );
   });
+
+  return (
+    <div
+      aria-label="Annotation tool"
+      className={props.className ?? "flex w-full flex-col gap-2"}
+      role="toolbar"
+    >
+      <div className="grid w-full grid-cols-2 gap-2">
+        <div className="min-w-0">{buttons[0]}</div>
+        <div className="min-w-0">{buttons[1]}</div>
+      </div>
+      <div className="grid w-full grid-cols-2 gap-2">
+        <div className="min-w-0">{buttons[2]}</div>
+        <div className="min-w-0">{buttons[3]}</div>
+      </div>
+    </div>
+  );
 }
 
-export function DemoAnnotatorToolSection({
-  state,
-  bare,
-}: {
-  state: DemoAnnotatorState;
-  bare?: boolean;
-}) {
+export function DemoAnnotatorToolSection({ state }: { state: DemoAnnotatorState }) {
   const canEditTools = state.mode === "segmentation";
   const toolActions = buildAnnotationToolActions(state.tool, state.setTool, !canEditTools);
 
-  const tools =
-    state.mode === "segmentation" ? (
-      <SegmentationToolButtons canEditTools={canEditTools} toolActions={toolActions} />
-    ) : (
-      <div className="col-span-2 row-span-2 flex items-center justify-center text-muted-foreground text-xs">
-        Classification
-      </div>
-    );
+  return (
+    <DockSection title="Tool">
+      {state.mode === "segmentation" ? (
+        <DemoAnnotatorToolToolbar canEditTools={canEditTools} toolActions={toolActions} />
+      ) : (
+        <div className="flex min-h-[4.5rem] items-center justify-center text-muted-foreground text-xs">
+          Classification
+        </div>
+      )}
+    </DockSection>
+  );
+}
 
-  if (bare) {
-    return (
-      <div className="shrink-0 border-t border-border px-3 py-2">
-        <DockGrid
-          aria-label="Annotation tool"
-          className="mx-auto max-w-md"
-          layout="2x2"
-          role="toolbar"
-        >
-          {tools}
-        </DockGrid>
-      </div>
-    );
-  }
+export function DemoInlineAnnotatorToolbar({ state }: { state: DemoAnnotatorState }) {
+  const canEditTools = state.mode === "segmentation";
+  const toolActions = buildAnnotationToolActions(state.tool, state.setTool, !canEditTools);
 
   return (
-    <DockSection layout="2x2" title="Tool">
-      {tools}
-    </DockSection>
+    <div className="shrink-0 border-t border-border px-3 py-2">
+      {state.mode === "segmentation" ? (
+        <DemoAnnotatorToolToolbar
+          canEditTools={canEditTools}
+          className="mx-auto flex w-full max-w-md flex-col gap-2"
+          toolActions={toolActions}
+        />
+      ) : (
+        <div className="flex min-h-[4.5rem] items-center justify-center text-muted-foreground text-xs">
+          Classification
+        </div>
+      )}
+    </div>
   );
 }

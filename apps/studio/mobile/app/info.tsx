@@ -1,14 +1,14 @@
-import { AppShell, DockButton, StudioDock } from "@lisca/ui-native";
+import { AppShell } from "@lisca/ui-native";
 import { useRouter } from "expo-router";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet } from "react-native";
 
 import { studioHostOperations } from "../src/api/studio-port";
 import { BasicInfoStep1 } from "../src/components/basic-info-step1";
 import { BasicInfoStep2 } from "../src/components/basic-info-step2";
 import { BasicInfoStep3 } from "../src/components/basic-info-step3";
 import { STUDIO_NAV_WIDTH } from "../src/components/studio-layout";
+import { StudioInfoDock } from "../src/components/studio-info-dock";
 import { StudioLeft } from "../src/components/studio-left";
-import { instructionForStep } from "../src/state/studio-routes";
 import { useStudioStore } from "../src/state/studio-store";
 
 export default function InfoRoute() {
@@ -44,15 +44,7 @@ export default function InfoRoute() {
             </ScrollView>
           </AppShell.Main>
           <AppShell.Dock>
-            <StudioDock
-              instruction={instructionForStep(step)}
-              action={
-                <View style={styles.actions}>
-                  <DockButton disabled={infoStep === 1} label="Back" onPress={back} />
-                  <DockButton label="Next" onPress={next} />
-                </View>
-              }
-            />
+            <StudioInfoDock infoStep={infoStep} step={step} onBack={back} onNext={next} />
           </AppShell.Dock>
         </AppShell.MainColumn>
         <AppShell.Right width={STUDIO_NAV_WIDTH} />
@@ -68,10 +60,6 @@ const styles = StyleSheet.create({
     maxWidth: 832,
     paddingHorizontal: 24,
     paddingVertical: 24,
-    width: "100%",
-  },
-  actions: {
-    gap: 8,
     width: "100%",
   },
 });

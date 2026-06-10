@@ -106,8 +106,15 @@ export {
 export { ShellWorkspaceProvider, useShellWorkspace, type ShellWorkspace } from "./state/workspace";
 
 export { DialogSurface, type DialogSurfaceMaxWidth } from "./shell/dialog-surface";
-export { DockButton } from "./shell/dock-button";
-export { DockToolGrid, type DockToolGridProps } from "./shell/dock-tool-grid";
+export { DockSection, dockSectionContentClass, type DockSectionProps } from "./shell/dock-section";
+export { DockStrip } from "./shell/dock-strip";
+export {
+  dockSectionClass,
+  sidebarSectionClass,
+  sidebarSectionContentClass,
+} from "./shell/section-placement";
+export { SidebarSection, type SidebarSectionProps } from "./shell/sidebar-section";
+export { SidebarStack, type SidebarStackProps } from "./shell/sidebar-stack";
 export {
   dockToolLabel,
   useDockToolShortcuts,
@@ -127,10 +134,12 @@ export { CropProgressModal, type CropProgressModalProps } from "./features/crop-
 
 export {
   AlignToolButton,
-  AlignTools,
+  AlignToolSection,
+  AlignToolToolbar,
   alignToolDefinitions,
   buildAlignToolActions,
-  type AlignToolsProps,
+  type AlignToolSectionProps,
+  type AlignToolToolbarProps,
 } from "./features/align-tools";
 
 export {

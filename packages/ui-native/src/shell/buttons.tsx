@@ -71,53 +71,6 @@ export function Button(props: {
   );
 }
 
-export function DockButton(props: {
-  label: string;
-  active?: boolean;
-  onPress?: () => void;
-  disabled?: boolean;
-  loading?: boolean;
-  size?: "sm" | "default";
-  style?: object;
-}) {
-  const { colors, mode } = useShellTheme();
-  const disabled = props.disabled || props.loading;
-  return (
-    <Pressable
-      disabled={disabled}
-      onPress={props.onPress}
-      style={[
-        styles.dock,
-        props.size === "sm" ? styles.dockSm : null,
-        !props.active ? shellOutlineElevation(mode) : null,
-        {
-          backgroundColor: props.active ? colors.primary : colors.outlineSurface,
-          borderColor: colors.input,
-          opacity: disabled ? 0.64 : 1,
-        },
-        props.style,
-      ]}
-    >
-      {props.loading ? (
-        <ActivityIndicator
-          color={props.active ? colors.primaryForeground : colors.foreground}
-          size="small"
-        />
-      ) : (
-        <Text
-          numberOfLines={1}
-          style={{
-            color: props.active ? colors.primaryForeground : colors.foreground,
-            fontSize: props.size === "sm" ? 11 : 12,
-          }}
-        >
-          {props.label}
-        </Text>
-      )}
-    </Pressable>
-  );
-}
-
 export function SegmentedToggle(props: {
   value: string;
   options: readonly { value: string; label: string }[];
@@ -182,20 +135,6 @@ const styles = StyleSheet.create({
   smLabel: {
     fontSize: shellChromeMetrics.fontSize,
     fontWeight: "500",
-  },
-  dock: {
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    minWidth: 72,
-    minHeight: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  dockSm: {
-    minHeight: 32,
-    paddingVertical: 6,
   },
   segmented: {
     flexDirection: "row",

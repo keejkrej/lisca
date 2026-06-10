@@ -2,13 +2,13 @@ import { StyleSheet, View } from "react-native";
 
 import type { AlignState } from "../state/use-align-state";
 import { AlignSaveSection } from "./align-save-section";
-import { AlignToolSection } from "./align-tool-section";
+import { AlignToolSectionPanel } from "./align-tool-section";
 
 export function AlignerDock(props: { alignState: AlignState }) {
   return (
     <View style={styles.root}>
       <View style={styles.section}>
-        <AlignToolSection state={props.alignState} />
+        <AlignToolSectionPanel state={props.alignState} />
       </View>
       <View style={styles.section}>
         <AlignSaveSection state={props.alignState} />

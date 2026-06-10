@@ -1,16 +1,9 @@
-import { Button, cn } from "@lisca/ui/components";
+import { Button } from "@lisca/ui/components";
 import type { AnnotationTool } from "@lisca/ui/features";
-import {
-  DockSection,
-  DockStrip,
-  dockToolLabel,
-  ReadonlyPathField,
-  useDockToolShortcuts,
-  type DockGridLayout,
-  type DockToolAction,
-} from "@lisca/ui/shell";
+import { DockSection, DockStrip, ReadonlyPathField, type DockToolAction } from "@lisca/ui/shell";
 import { useAnnotatePage } from "../state/annotate-page-context";
 import { annotationOutputPaths } from "../utils/annotation-output";
+import { AnnotatorToolToolbar } from "./annotator-tool-toolbar";
 
 const annotationToolDefinitions: { id: AnnotationTool; label: string }[] = [
   { id: "brush", label: "Brush" },
@@ -33,27 +26,6 @@ function buildAnnotationToolActions(
   }));
 }
 
-function SegmentationToolButtons(props: { canEditTools: boolean; toolActions: DockToolAction[] }) {
-  useDockToolShortcuts(props.toolActions, { enabled: props.canEditTools });
-
-  return props.toolActions.map((action, index) => {
-    const label = dockToolLabel(action.label, index);
-    return (
-      <Button
-        key={action.id}
-        className="w-full justify-center"
-        disabled={action.disabled}
-        size="sm"
-        type="button"
-        variant={action.active ? "default" : "outline"}
-        onClick={action.onSelect}
-      >
-        {label}
-      </Button>
-    );
-  });
-}
-
 export function AnnotatorDock() {
   const { state } = useAnnotatePage();
   const paths = annotationOutputPaths(state.request, state.mode);
@@ -64,33 +36,61 @@ export function AnnotatorDock() {
     !state.filePickerOpen;
   const canEditTools = state.mode === "segmentation" && shortcutsEnabled;
   const toolActions = buildAnnotationToolActions(state.tool, state.setTool, !canEditTools);
-  const saveLayout: DockGridLayout = paths.length > 1 ? "2x2" : "2x1";
 
   return (
     <DockStrip panels={2}>
-      <DockSection layout="2x2" title="Tool">
+      <DockSection title="Tool">
         {state.mode === "segmentation" ? (
-          <SegmentationToolButtons canEditTools={canEditTools} toolActions={toolActions} />
+          <AnnotatorToolToolbar canEditTools={canEditTools} toolActions={toolActions} />
         ) : (
-          <div className="col-span-2 row-span-2 flex items-center justify-center text-muted-foreground text-xs">
+          <div className="flex min-h-[4.5rem] items-center justify-center text-muted-foreground text-xs">
             Classification
           </div>
         )}
       </DockSection>
-      <DockSection layout={saveLayout} title="Save">
-        {paths.map((path) => (
-          <ReadonlyPathField key={path} aria-label={`Output path ${path}`} value={path} />
-        ))}
-        <Button
-          className={cn("w-full justify-center", paths.length > 1 && "col-span-2")}
-          disabled={!state.canSave}
-          size="sm"
-          type="button"
-          variant="outline"
-          onClick={() => void state.handleSave()}
-        >
-          {state.saving ? "Saving…" : "Save"}
-        </Button>
+      <DockSection title="Save">
+        <div className="flex w-full flex-col gap-2">
+          {paths.length > 1 ? (
+            <div className="grid w-full grid-cols-2 gap-2">
+              {paths.map((path) => (
+                <div key={path} className="min-w-0">
+                  <ReadonlyPathField aria-label={`Output path ${path}`} value={path} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            paths.map((path) => (
+              <ReadonlyPathField key={path} aria-label={`Output path ${path}`} value={path} />
+            ))
+          )}
+          {paths.length > 1 ? (
+            <div className="grid w-full grid-cols-2 gap-2">
+              <div className="col-span-2 min-w-0">
+                <Button
+                  className="w-full justify-center"
+                  disabled={!state.canSave}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                  onClick={() => void state.handleSave()}
+                >
+                  {state.saving ? "Saving…" : "Save"}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button
+              className="w-full justify-center"
+              disabled={!state.canSave}
+              size="sm"
+              type="button"
+              variant="outline"
+              onClick={() => void state.handleSave()}
+            >
+              {state.saving ? "Saving…" : "Save"}
+            </Button>
+          )}
+        </div>
       </DockSection>
     </DockStrip>
   );

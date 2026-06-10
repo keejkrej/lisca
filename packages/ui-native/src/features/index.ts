@@ -29,7 +29,12 @@ export {
 export type { HostFilePickerOperations } from "./host-operations.ts";
 export { SourcePickerModal, type SourcePickerModalProps } from "./source-picker-modal.tsx";
 export { AlignGrid, ReadonlyPathField } from "./align-controls.tsx";
-export { AlignTools, type AlignToolsProps } from "./align-tools.tsx";
+export {
+  AlignToolSection,
+  AlignToolToolbar,
+  type AlignToolSectionProps,
+  type AlignToolToolbarProps,
+} from "./align-tools.tsx";
 export { ContrastControl, type ContrastControlProps } from "./contrast-control.tsx";
 export {
   FrameNavigation,

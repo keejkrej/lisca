@@ -1,12 +1,4 @@
-import {
-  AppShell,
-  DockButton,
-  DockToolGrid,
-  Spinner,
-  StudioDock,
-  ViewportCard,
-  useShellTheme,
-} from "@lisca/ui-native";
+import { AppShell, Spinner, ViewportCard, useShellTheme } from "@lisca/ui-native";
 import { resultData } from "@lisca/client/atoms";
 import { runClientEffect } from "@lisca/client/runtime";
 import {
@@ -31,6 +23,7 @@ import {
 } from "../src/atoms/studio-analysis-atoms";
 import { STUDIO_NAV_WIDTH } from "../src/components/studio-layout";
 import { StudioLeft } from "../src/components/studio-left";
+import { StudioResultDock } from "../src/components/studio-result-dock";
 import {
   ResultPanelsGridView,
   buildResultPdfFromCaptures,
@@ -226,16 +219,13 @@ export default function ResultRoute() {
             </ViewportCard>
           </AppShell.Main>
           <AppShell.Dock>
-            <StudioDock
+            <StudioResultDock
               instruction={dockInstruction}
-              action={
-                <DockButton
-                  disabled={!workspacePath || !hasAnyResultFiles || isBusy}
-                  label={exporting ? "Saving…" : "Save"}
-                  onPress={() => void exportPdf()}
-                />
-              }
-              tool={<DockToolGrid actions={sectionToolActions} enabled={!isBusy} />}
+              saveDisabled={!workspacePath || !hasAnyResultFiles || isBusy}
+              saveLabel={exporting ? "Saving…" : "Save"}
+              shortcutsEnabled={!isBusy}
+              toolActions={sectionToolActions}
+              onSave={() => void exportPdf()}
             />
           </AppShell.Dock>
         </AppShell.MainColumn>

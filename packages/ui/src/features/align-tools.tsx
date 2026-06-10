@@ -12,7 +12,6 @@ import type { LucideIcon } from "lucide-react";
 import type { AlignGridToolMode } from "@lisca/utils";
 
 import { Button } from "../components/ui/button";
-import { DockGrid } from "../shell/dock-grid";
 import { DockSection } from "../shell/dock-section";
 import {
   dockToolLabel,
@@ -20,7 +19,7 @@ import {
   type DockToolAction,
 } from "../shell/dock-tool-shortcuts";
 
-export type AlignToolsProps = {
+export type AlignToolSectionProps = {
   mode: AlignGridToolMode;
   onModeChange: (mode: AlignGridToolMode) => void;
   patternZoomLocked?: boolean;
@@ -29,11 +28,6 @@ export type AlignToolsProps = {
   sectionDescription?: string;
   sectionClassName?: string;
   sectionContentClassName?: string;
-  /** When true, render only the toolbar (no surrounding {@link Section}). */
-  bare?: boolean;
-  /** When true, render only toolbar cells for a parent {@link DockSection} layout. */
-  embedded?: boolean;
-  /** When false, number-key shortcuts are disabled. */
   shortcutsEnabled?: boolean;
 };
 
@@ -98,65 +92,71 @@ function renderAlignToolCell(
   const shortcutLabel = dockToolLabel(tool.label, index);
   if (tool.mode === "zoom-pattern") {
     return (
-      <div key={tool.mode} className="grid min-w-0 grid-cols-[1fr_2rem] gap-1">
-        <AlignToolButton
-          active={mode === tool.mode}
-          className="w-full min-w-0 justify-center gap-2 px-2"
-          Icon={tool.Icon}
-          label={shortcutLabel}
-          mode={tool.mode}
-          onClick={() => onModeChange(tool.mode)}
-        />
-        <Button
-          aria-label={patternZoomLocked ? "Unlock pattern zoom" : "Lock pattern zoom"}
-          aria-pressed={patternZoomLocked}
-          className="w-full px-0"
-          disabled={!onPatternZoomLockedChange}
-          size="sm"
-          title={patternZoomLocked ? "Unlock pattern zoom" : "Lock pattern zoom"}
-          type="button"
-          variant={patternZoomLocked ? "default" : "outline"}
-          onClick={() => onPatternZoomLockedChange?.(!patternZoomLocked)}
-        >
-          {patternZoomLocked ? (
-            <Lock aria-hidden="true" className="size-4" />
-          ) : (
-            <Unlock aria-hidden="true" className="size-4" />
-          )}
-        </Button>
+      <div key={tool.mode} className="min-w-0">
+        <div className="grid min-w-0 grid-cols-[1fr_2rem] gap-1">
+          <AlignToolButton
+            active={mode === tool.mode}
+            className="w-full min-w-0 justify-center gap-2 px-2"
+            Icon={tool.Icon}
+            label={shortcutLabel}
+            mode={tool.mode}
+            onClick={() => onModeChange(tool.mode)}
+          />
+          <Button
+            aria-label={patternZoomLocked ? "Unlock pattern zoom" : "Lock pattern zoom"}
+            aria-pressed={patternZoomLocked}
+            className="w-full px-0"
+            disabled={!onPatternZoomLockedChange}
+            size="sm"
+            title={patternZoomLocked ? "Unlock pattern zoom" : "Lock pattern zoom"}
+            type="button"
+            variant={patternZoomLocked ? "default" : "outline"}
+            onClick={() => onPatternZoomLockedChange?.(!patternZoomLocked)}
+          >
+            {patternZoomLocked ? (
+              <Lock aria-hidden="true" className="size-4" />
+            ) : (
+              <Unlock aria-hidden="true" className="size-4" />
+            )}
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <AlignToolButton
-      key={tool.mode}
-      active={mode === tool.mode}
-      Icon={tool.Icon}
-      label={shortcutLabel}
-      mode={tool.mode}
-      onClick={() => onModeChange(tool.mode)}
-    />
+    <div key={tool.mode} className="min-w-0">
+      <AlignToolButton
+        active={mode === tool.mode}
+        Icon={tool.Icon}
+        label={shortcutLabel}
+        mode={tool.mode}
+        onClick={() => onModeChange(tool.mode)}
+      />
+    </div>
   );
 }
 
-export function AlignTools({
+export type AlignToolToolbarProps = Pick<
+  AlignToolSectionProps,
+  | "mode"
+  | "onModeChange"
+  | "patternZoomLocked"
+  | "onPatternZoomLockedChange"
+  | "shortcutsEnabled"
+>;
+
+export function AlignToolToolbar({
   mode,
   onModeChange,
   patternZoomLocked = false,
   onPatternZoomLockedChange,
-  sectionTitle = "Tool",
-  sectionDescription,
-  sectionClassName,
-  sectionContentClassName,
-  bare = false,
-  embedded = false,
   shortcutsEnabled = true,
-}: AlignToolsProps) {
+}: AlignToolToolbarProps) {
   const toolActions = buildAlignToolActions(mode, onModeChange);
   useDockToolShortcuts(toolActions, { enabled: shortcutsEnabled });
 
-  const toolbarCells = alignToolDefinitions.map((tool, index) =>
+  const cells = alignToolDefinitions.map((tool, index) =>
     renderAlignToolCell(
       tool,
       index,
@@ -167,30 +167,45 @@ export function AlignTools({
     ),
   );
 
-  const toolbar = (
-    <DockGrid aria-label="Align canvas tool" layout="2x2" role="toolbar">
-      {toolbarCells}
-    </DockGrid>
+  return (
+    <div aria-label="Align canvas tool" className="flex w-full flex-col gap-2" role="toolbar">
+      <div className="grid w-full grid-cols-2 gap-2">
+        {cells[0]}
+        {cells[1]}
+      </div>
+      <div className="grid w-full grid-cols-2 gap-2">
+        {cells[2]}
+        {cells[3]}
+      </div>
+    </div>
   );
+}
 
-  if (embedded) {
-    return toolbarCells;
-  }
-
-  if (bare) {
-    return <div className={sectionClassName}>{toolbar}</div>;
-  }
-
+export function AlignToolSection({
+  mode,
+  onModeChange,
+  patternZoomLocked = false,
+  onPatternZoomLockedChange,
+  sectionTitle = "Tool",
+  sectionDescription,
+  sectionClassName,
+  sectionContentClassName,
+  shortcutsEnabled = true,
+}: AlignToolSectionProps) {
   return (
     <DockSection
       className={sectionClassName}
       contentClassName={sectionContentClassName}
       description={sectionDescription}
-      layout="2x2"
-      gridProps={{ "aria-label": "Align canvas tool", role: "toolbar" }}
       title={sectionTitle}
     >
-      {toolbarCells}
+      <AlignToolToolbar
+        mode={mode}
+        patternZoomLocked={patternZoomLocked}
+        shortcutsEnabled={shortcutsEnabled}
+        onModeChange={onModeChange}
+        onPatternZoomLockedChange={onPatternZoomLockedChange}
+      />
     </DockSection>
   );
 }

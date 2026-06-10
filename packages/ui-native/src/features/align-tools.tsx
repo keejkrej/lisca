@@ -2,12 +2,12 @@ import type { AlignGridToolMode } from "@lisca/utils";
 import { Lock, Unlock } from "lucide-react-native";
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { DockButton } from "../shell/buttons.tsx";
+import { Button } from "../shell/buttons.tsx";
+import { DockSection } from "../shell/dock-section.tsx";
 import { shellOutlineElevation } from "../shell/shell-chrome.ts";
-import { Section } from "../shell/section.tsx";
 import { useShellTheme } from "../theme/shell-theme.tsx";
 
-export type AlignToolsProps = {
+export type AlignToolSectionProps = {
   mode: AlignGridToolMode;
   onModeChange: (mode: AlignGridToolMode) => void;
   patternZoomLocked?: boolean;
@@ -16,7 +16,6 @@ export type AlignToolsProps = {
   sectionDescription?: string;
   sectionStyle?: object;
   sectionContentStyle?: object;
-  bare?: boolean;
 };
 
 const alignToolDefinitions: { mode: AlignGridToolMode; label: string }[] = [
@@ -61,84 +60,132 @@ function PatternZoomLockButton(props: {
   );
 }
 
-export function AlignTools(props: AlignToolsProps) {
-  const {
-    mode,
-    onModeChange,
-    patternZoomLocked = false,
-    onPatternZoomLockedChange,
-    sectionTitle = "Tool",
-    sectionDescription,
-    sectionStyle,
-    sectionContentStyle,
-    bare = false,
-  } = props;
-
-  const toolbar = (
-    <View style={styles.toolbar}>
-      {alignToolDefinitions.map(({ mode: toolMode, label }) =>
-        toolMode === "zoom-pattern" ? (
-          <View key={toolMode} style={styles.patternRow}>
-            <DockButton
-              active={mode === toolMode}
-              label={label}
-              style={styles.patternButton}
-              onPress={() => onModeChange(toolMode)}
-            />
-            <PatternZoomLockButton
-              disabled={!onPatternZoomLockedChange}
-              locked={patternZoomLocked}
-              onPress={() => onPatternZoomLockedChange?.(!patternZoomLocked)}
-            />
-          </View>
-        ) : (
-          <DockButton
-            key={toolMode}
-            active={mode === toolMode}
+function renderAlignToolCell(
+  toolMode: AlignGridToolMode,
+  label: string,
+  mode: AlignGridToolMode,
+  onModeChange: (mode: AlignGridToolMode) => void,
+  patternZoomLocked: boolean,
+  onPatternZoomLockedChange?: (locked: boolean) => void,
+) {
+  if (toolMode === "zoom-pattern") {
+    return (
+      <View key={toolMode} style={styles.gridCell}>
+        <View style={styles.patternRow}>
+          <Button
             label={label}
-            style={styles.toolButton}
+            size="sm"
+            style={styles.patternButton}
+            variant={mode === toolMode ? "default" : "outline"}
             onPress={() => onModeChange(toolMode)}
           />
-        ),
-      )}
-    </View>
-  );
-
-  if (bare) {
-    return <View style={sectionStyle}>{toolbar}</View>;
+          <PatternZoomLockButton
+            disabled={!onPatternZoomLockedChange}
+            locked={patternZoomLocked}
+            onPress={() => onPatternZoomLockedChange?.(!patternZoomLocked)}
+          />
+        </View>
+      </View>
+    );
   }
 
   return (
-    <Section
-      contentStyle={[{ flex: 1, minHeight: 0 }, sectionContentStyle]}
+    <View key={toolMode} style={styles.gridCell}>
+      <Button
+        label={label}
+        size="sm"
+        style={styles.toolButton}
+        variant={mode === toolMode ? "default" : "outline"}
+        onPress={() => onModeChange(toolMode)}
+      />
+    </View>
+  );
+}
+
+export type AlignToolToolbarProps = Pick<
+  AlignToolSectionProps,
+  "mode" | "onModeChange" | "patternZoomLocked" | "onPatternZoomLockedChange"
+>;
+
+export function AlignToolToolbar({
+  mode,
+  onModeChange,
+  patternZoomLocked = false,
+  onPatternZoomLockedChange,
+}: AlignToolToolbarProps) {
+  const cells = alignToolDefinitions.map(({ mode: toolMode, label }) =>
+    renderAlignToolCell(
+      toolMode,
+      label,
+      mode,
+      onModeChange,
+      patternZoomLocked,
+      onPatternZoomLockedChange,
+    ),
+  );
+
+  return (
+    <View style={styles.toolbar}>
+      <View style={styles.row}>
+        {cells[0]}
+        {cells[1]}
+      </View>
+      <View style={styles.row}>
+        {cells[2]}
+        {cells[3]}
+      </View>
+    </View>
+  );
+}
+
+export function AlignToolSection({
+  mode,
+  onModeChange,
+  patternZoomLocked = false,
+  onPatternZoomLockedChange,
+  sectionTitle = "Tool",
+  sectionDescription,
+  sectionStyle,
+  sectionContentStyle,
+}: AlignToolSectionProps) {
+  return (
+    <DockSection
+      contentStyle={sectionContentStyle}
       description={sectionDescription}
-      style={[{ flex: 1, minWidth: 0 }, sectionStyle]}
+      style={sectionStyle}
       title={sectionTitle}
     >
-      {toolbar}
-    </Section>
+      <AlignToolToolbar
+        mode={mode}
+        patternZoomLocked={patternZoomLocked}
+        onModeChange={onModeChange}
+        onPatternZoomLockedChange={onPatternZoomLockedChange}
+      />
+    </DockSection>
   );
 }
 
 const styles = StyleSheet.create({
   toolbar: {
-    flex: 1,
-    flexDirection: "row",
-    flexWrap: "wrap",
     gap: 8,
-    minHeight: 0,
+    width: "100%",
+  },
+  row: {
+    flexDirection: "row",
+    gap: 8,
+    width: "100%",
+  },
+  gridCell: {
+    flex: 1,
+    minWidth: 0,
   },
   toolButton: {
-    flexBasis: "48%",
-    flexGrow: 1,
-    minWidth: 120,
+    width: "100%",
   },
   patternRow: {
-    flexBasis: "48%",
     flexDirection: "row",
-    flexGrow: 1,
     gap: 4,
-    minWidth: 120,
+    width: "100%",
   },
   patternButton: {
     flex: 1,

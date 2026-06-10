@@ -1,6 +1,8 @@
 export { AppShell, ShellDock, ShellSidebar, type AppShellCompound } from "./shell/app-shell.tsx";
-export { Button, DockButton, SegmentedToggle } from "./shell/buttons.tsx";
-export { DockToolGrid, type DockToolGridProps } from "./shell/dock-tool-grid.tsx";
+export { Button, SegmentedToggle } from "./shell/buttons.tsx";
+export { DockSection } from "./shell/dock-section.tsx";
+export { SidebarSection } from "./shell/sidebar-section.tsx";
+export { SidebarStack } from "./shell/sidebar-stack.tsx";
 export {
   dockToolLabel,
   useDockToolShortcuts,
@@ -72,7 +74,12 @@ export {
 export type { HostFilePickerOperations } from "./features/host-operations.ts";
 export { SourcePickerModal, type SourcePickerModalProps } from "./features/source-picker-modal.tsx";
 export { AlignGrid, ReadonlyPathField } from "./features/align-controls.tsx";
-export { AlignTools, type AlignToolsProps } from "./features/align-tools.tsx";
+export {
+  AlignToolSection,
+  AlignToolToolbar,
+  type AlignToolSectionProps,
+  type AlignToolToolbarProps,
+} from "./features/align-tools.tsx";
 export { ContrastControl, type ContrastControlProps } from "./features/contrast-control.tsx";
 export {
   FrameNavigation,
@@ -89,5 +96,4 @@ export {
   VariationScoreHistogram,
   type VariationHistogramBin,
 } from "./features/variation-score-histogram.tsx";
-export { StudioDock } from "./features/studio-dock.tsx";
 export { StudioNavButton } from "./features/studio-nav-button.tsx";

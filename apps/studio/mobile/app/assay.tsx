@@ -1,4 +1,4 @@
-import { AppShell, DockButton, HostFilePickerDialog, StudioDock } from "@lisca/ui-native";
+import { AppShell, HostFilePickerDialog } from "@lisca/ui-native";
 import { runClientEffect } from "@lisca/client/runtime";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -6,15 +6,16 @@ import { ScrollView, StyleSheet } from "react-native";
 import { studioClient, studioHostOperations } from "../src/api/studio-port";
 import { ChooseAssay } from "../src/components/choose-assay";
 import { STUDIO_NAV_WIDTH } from "../src/components/studio-layout";
+import { StudioAssayDock } from "../src/components/studio-assay-dock";
 import { StudioLeft } from "../src/components/studio-left";
-import { instructionForStep } from "../src/state/studio-routes";
 import { parseStudioAssayJson, useStudioStore } from "../src/state/studio-store";
+
 export default function AssayRoute() {
   const router = useRouter();
-  const setInfoStep = useStudioStore((state) => state.setInfoStep);
   const loadAssayJson = useStudioStore((state) => state.loadAssayJson);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [opening, setOpening] = useState(false);
+
   const openAssay = async (path: string) => {
     setPickerOpen(false);
     setOpening(true);
@@ -26,6 +27,7 @@ export default function AssayRoute() {
       setOpening(false);
     }
   };
+
   return (
     <AppShell>
       <AppShell.Body>
@@ -39,24 +41,10 @@ export default function AssayRoute() {
             </ScrollView>
           </AppShell.Main>
           <AppShell.Dock>
-            <StudioDock
-              instruction={instructionForStep("chooseAssay")}
-              action={
-                <>
-                  <DockButton
-                    disabled={opening || pickerOpen}
-                    label="Open assay"
-                    onPress={() => setPickerOpen(true)}
-                  />
-                  <DockButton
-                    label="Next"
-                    onPress={() => {
-                      setInfoStep(1);
-                      router.push("/info");
-                    }}
-                  />
-                </>
-              }
+            <StudioAssayDock
+              opening={opening}
+              pickerOpen={pickerOpen}
+              onOpenAssay={() => setPickerOpen(true)}
             />
           </AppShell.Dock>
         </AppShell.MainColumn>
@@ -74,6 +62,7 @@ export default function AssayRoute() {
     </AppShell>
   );
 }
+
 const styles = StyleSheet.create({
   mainContent: {
     flexGrow: 1,

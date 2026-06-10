@@ -11,20 +11,32 @@ export function DemoAnnotatorDock({ state }: { state: DemoAnnotatorState }) {
   return (
     <DockStrip panels={2}>
       <DemoAnnotatorToolSection state={state} />
-      <DockSection layout="2x2" title="Save">
-        <ReadonlyPathField aria-label="Output annotation JSON" value={`${stem}.annotation.json`} />
-        <ReadonlyPathField aria-label="Output mask PNG" value={`${stem}.mask.png`} />
-        <Button
-          className="col-span-2 w-full justify-center"
-          disabled={!state.canSave}
-          loading={state.saving}
-          size="sm"
-          type="button"
-          variant="outline"
-          onClick={() => void state.saveCurrent()}
-        >
-          Download
-        </Button>
+      <DockSection title="Save">
+        <div className="flex w-full flex-col gap-2">
+          <div className="grid w-full grid-cols-2 gap-2">
+            <div className="min-w-0">
+              <ReadonlyPathField aria-label="Output annotation JSON" value={`${stem}.annotation.json`} />
+            </div>
+            <div className="min-w-0">
+              <ReadonlyPathField aria-label="Output mask PNG" value={`${stem}.mask.png`} />
+            </div>
+          </div>
+          <div className="grid w-full grid-cols-2 gap-2">
+            <div className="col-span-2 min-w-0">
+              <Button
+                className="w-full justify-center"
+                disabled={!state.canSave}
+                loading={state.saving}
+                size="sm"
+                type="button"
+                variant="outline"
+                onClick={() => void state.saveCurrent()}
+              >
+                Download
+              </Button>
+            </div>
+          </div>
+        </div>
       </DockSection>
     </DockStrip>
   );

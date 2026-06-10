@@ -1,6 +1,6 @@
 import { Button, cn } from "@lisca/ui/components";
 import { AnnotationModeToggle, AnnotationToolSlider } from "@lisca/ui/features";
-import { Section } from "@lisca/ui/shell";
+import { SidebarSection, SidebarStack } from "@lisca/ui/shell";
 import { useAnnotatePage } from "../state/annotate-page-context";
 import { createEmptyMask, labelColorStyle } from "../utils/annotation-utils";
 
@@ -11,11 +11,11 @@ export function AnnotatorRight() {
   const loading = state.scanLoading || state.frameLoading || state.annotationLoading;
 
   return (
-    <div className="flex min-h-0 flex-col gap-2 overflow-auto p-3">
-      <Section title="Mode">
+    <SidebarStack>
+      <SidebarSection title="Mode">
         <AnnotationModeToggle className="w-full" mode={state.mode} onModeChange={state.setMode} />
-      </Section>
-      <Section title="Labels" contentClassName="grid grid-cols-2 gap-2">
+      </SidebarSection>
+      <SidebarSection contentClassName="grid grid-cols-2 gap-2" title="Labels">
         {state.labels.map((label) => {
           const selected =
             state.mode === "classification"
@@ -53,8 +53,8 @@ export function AnnotatorRight() {
         ) : null}
         {loading ? <p className="col-span-2 text-muted-foreground text-xs">Loading…</p> : null}
         {activeError ? <p className="col-span-2 text-destructive text-xs">{activeError}</p> : null}
-      </Section>
-      <Section title="Edit" contentClassName="grid grid-cols-2 gap-2">
+      </SidebarSection>
+      <SidebarSection contentClassName="grid grid-cols-2 gap-2" title="Edit">
         <Button
           disabled={!state.annotation.canUndo}
           size="sm"
@@ -97,9 +97,9 @@ export function AnnotatorRight() {
         >
           Discard
         </Button>
-      </Section>
+      </SidebarSection>
       {state.mode === "segmentation" ? (
-        <Section title="Brush" contentClassName="flex flex-col gap-3">
+        <SidebarSection contentClassName="flex flex-col gap-3" title="Brush">
           <AnnotationToolSlider
             label="Opacity"
             max={0.95}
@@ -118,8 +118,8 @@ export function AnnotatorRight() {
             valueLabel={String(Math.round(state.brushSize))}
             onChange={(value) => state.setBrushSize(Math.round(value))}
           />
-        </Section>
+        </SidebarSection>
       ) : null}
-    </div>
+    </SidebarStack>
   );
 }

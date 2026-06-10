@@ -1,10 +1,10 @@
-import { AlignTools } from "@lisca/ui-native";
+import { AlignToolSection } from "@lisca/ui-native";
 
 import type { AlignState } from "../state/use-align-state";
 
-export function AlignToolSection({ state }: { state: AlignState }) {
+export function AlignToolSectionPanel({ state }: { state: AlignState }) {
   return (
-    <AlignTools
+    <AlignToolSection
       mode={state.toolMode}
       patternZoomLocked={state.patternZoomLocked}
       sectionContentStyle={{ flex: 1, minHeight: 0 }}

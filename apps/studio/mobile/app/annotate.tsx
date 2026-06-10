@@ -1,19 +1,13 @@
-import { AppShell, DockButton, StudioDock } from "@lisca/ui-native";
-import { StyleSheet, View } from "react-native";
+import { AppShell } from "@lisca/ui-native";
 
 import { STUDIO_NAV_WIDTH } from "../src/components/studio-layout";
+import { StudioAnnotateDock } from "../src/components/studio-annotate-dock";
 import { StudioAnnotateMain } from "../src/components/studio-annotate-main";
 import { StudioLeft } from "../src/components/studio-left";
 import { useStudioAnnotateState } from "../src/state/use-studio-annotate-state";
 
 export default function AnnotateRoute() {
   const state = useStudioAnnotateState();
-  const analysisBusy = Boolean(
-    state.analysisProgress &&
-    (state.analysisProgress.status === "queued" || state.analysisProgress.status === "running"),
-  );
-  const disableShuffle = state.scanLoading || state.scan === null || Boolean(state.error);
-  const disableNext = state.frameLoading || !state.request || analysisBusy;
 
   return (
     <AppShell>
@@ -26,23 +20,7 @@ export default function AnnotateRoute() {
             <StudioAnnotateMain state={state} />
           </AppShell.Main>
           <AppShell.Dock>
-            <StudioDock
-              instruction="Review cropped ROI frames."
-              action={
-                <View style={styles.actions}>
-                  <DockButton
-                    disabled={disableShuffle}
-                    label="Shuffle"
-                    onPress={state.shuffleSelection}
-                  />
-                  <DockButton
-                    disabled={disableNext}
-                    label="Next"
-                    onPress={() => state.setAnalysisStartConfirm(true)}
-                  />
-                </View>
-              }
-            />
+            <StudioAnnotateDock state={state} />
           </AppShell.Dock>
         </AppShell.MainColumn>
         <AppShell.Right width={STUDIO_NAV_WIDTH} />
@@ -50,10 +28,3 @@ export default function AnnotateRoute() {
     </AppShell>
   );
 }
-
-const styles = StyleSheet.create({
-  actions: {
-    gap: 8,
-    width: "100%",
-  },
-});

@@ -18,10 +18,12 @@ export { AlignGridRail } from "./align-grid-rail";
 export { AlignSelectionCounts } from "./align-selection-counts";
 export {
   AlignToolButton,
-  AlignTools,
+  AlignToolSection,
+  AlignToolToolbar,
   alignToolDefinitions,
   buildAlignToolActions,
-  type AlignToolsProps,
+  type AlignToolSectionProps,
+  type AlignToolToolbarProps,
 } from "./align-tools";
 export {
   AnnotationCanvas,

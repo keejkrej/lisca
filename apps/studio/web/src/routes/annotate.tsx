@@ -1,12 +1,10 @@
-import { AppShell, DockButton, RouteLoadingFallback, StudioDock } from "@lisca/ui/shell";
+import { AppShell, RouteLoadingFallback } from "@lisca/ui/shell";
 import { createFileRoute } from "@tanstack/react-router";
 
+import { StudioAnnotateDock } from "../components/studio-annotate-dock";
 import { StudioAnnotateMain } from "../components/studio-annotate-main";
 import { StudioLeft } from "../components/studio-left";
-import {
-  StudioAnnotatePageProvider,
-  useStudioAnnotatePage,
-} from "../state/studio-annotate-page-context";
+import { StudioAnnotatePageProvider } from "../state/studio-annotate-page-context";
 
 export const Route = createFileRoute("/annotate")({
   component: AnnotatePage,
@@ -23,15 +21,6 @@ function AnnotatePage() {
 }
 
 function AnnotatePageContent() {
-  const { state } = useStudioAnnotatePage();
-  const analysisBusy = Boolean(
-    state.analysisProgress &&
-      (state.analysisProgress.status === "queued" || state.analysisProgress.status === "running"),
-  );
-
-  const disableShuffle = state.scanLoading || state.scan === null || Boolean(state.error);
-  const disableNext = state.frameLoading || !state.request || analysisBusy;
-
   return (
     <AppShell>
       <AppShell.Body>
@@ -43,25 +32,7 @@ function AnnotatePageContent() {
             <StudioAnnotateMain />
           </AppShell.Main>
           <AppShell.Dock>
-            <StudioDock
-              actionLayout="2x1"
-              instruction="Review cropped ROI frames."
-              action={
-                <>
-                  <DockButton disabled={disableShuffle} onClick={state.shuffleSelection}>
-                    Shuffle
-                  </DockButton>
-                  <DockButton
-                    disabled={disableNext}
-                    onClick={() => {
-                      state.setAnalysisStartConfirm(true);
-                    }}
-                  >
-                    Next
-                  </DockButton>
-                </>
-              }
-            />
+            <StudioAnnotateDock />
           </AppShell.Dock>
         </AppShell.MainColumn>
         <AppShell.Right widthClass="w-60" />

@@ -7,7 +7,7 @@ import { DemoAnnotatorDock } from "./components/demo-annotator-dock";
 import { DemoAnnotatorLeft } from "./components/demo-annotator-left";
 import { DemoAnnotatorMain } from "./components/demo-annotator-main";
 import { DemoAnnotatorRight } from "./components/demo-annotator-right";
-import { DemoAnnotatorToolSection } from "./components/demo-annotator-tool-section";
+import { DemoInlineAnnotatorToolbar } from "./components/demo-annotator-tool-section";
 import { useDemoAnnotatorState } from "./state/use-demo-annotator-state";
 import { createEmptyMask } from "./utils/annotation-utils";
 
@@ -95,7 +95,7 @@ export function AnnotatorDemo({ embedded = false }: AnnotatorDemoProps) {
             <AppShell.Main>
               <DemoAnnotatorMain state={state} />
             </AppShell.Main>
-            <DemoAnnotatorToolSection bare state={state} />
+            <DemoInlineAnnotatorToolbar state={state} />
           </AppShell.MainColumn>
         )}
       </AppShell.Body>

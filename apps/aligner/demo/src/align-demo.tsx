@@ -6,7 +6,7 @@ import { DemoAlignGridControls } from "./components/demo-align-grid-controls";
 import { DemoAlignMain } from "./components/demo-align-main";
 import { DemoAlignSaveSection } from "./components/demo-align-save-section";
 import { DemoAlignSelectionControls } from "./components/demo-align-selection-controls";
-import { DemoAlignToolSection } from "./components/demo-align-tool-section";
+import { DemoAlignToolSection, DemoInlineAlignToolbar } from "./components/demo-align-tool-section";
 import { useDemoAlignState } from "./state/use-demo-align-state";
 
 export type AlignDemoProps = {
@@ -57,7 +57,7 @@ export function AlignDemo({ embedded = false }: AlignDemoProps) {
             <AppShell.Main>
               <DemoAlignMain state={state} />
             </AppShell.Main>
-            <DemoAlignToolSection bare state={state} />
+            <DemoInlineAlignToolbar state={state} />
           </AppShell.MainColumn>
         )}
       </AppShell.Body>

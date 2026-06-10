@@ -9,20 +9,32 @@ export function DemoAlignSaveSection({ state }: { state: DemoAlignState }) {
   const canSave = Boolean(state.frame);
 
   return (
-    <DockSection layout="2x2" title="Save">
-      <ReadonlyPathField aria-label="Output bbox CSV" value={`${stem}.bbox.csv`} />
-      <ReadonlyPathField aria-label="Output align JSON" value={`${stem}.align.json`} />
-      <Button
-        className="col-span-2 w-full justify-center"
-        disabled={!canSave || state.saving}
-        loading={state.saving}
-        size="sm"
-        type="button"
-        variant="outline"
-        onClick={() => void state.saveCurrent()}
-      >
-        Download
-      </Button>
+    <DockSection title="Save">
+      <div className="flex w-full flex-col gap-2">
+        <div className="grid w-full grid-cols-2 gap-2">
+          <div className="min-w-0">
+            <ReadonlyPathField aria-label="Output bbox CSV" value={`${stem}.bbox.csv`} />
+          </div>
+          <div className="min-w-0">
+            <ReadonlyPathField aria-label="Output align JSON" value={`${stem}.align.json`} />
+          </div>
+        </div>
+        <div className="grid w-full grid-cols-2 gap-2">
+          <div className="col-span-2 min-w-0">
+            <Button
+              className="w-full justify-center"
+              disabled={!canSave || state.saving}
+              loading={state.saving}
+              size="sm"
+              type="button"
+              variant="outline"
+              onClick={() => void state.saveCurrent()}
+            >
+              Download
+            </Button>
+          </div>
+        </div>
+      </div>
     </DockSection>
   );
 }

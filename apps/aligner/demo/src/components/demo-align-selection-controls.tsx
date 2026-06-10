@@ -1,6 +1,6 @@
 import { AlignSelectionCounts } from "@lisca/ui/features";
 import { Button } from "@lisca/ui/components";
-import { Section } from "@lisca/ui/shell";
+import { SidebarSection } from "@lisca/ui/shell";
 
 import type { DemoAlignState } from "../state/use-demo-align-state";
 
@@ -9,11 +9,7 @@ export function DemoAlignSelectionControls({ state }: { state: DemoAlignState })
   const hasExcludedCells = state.excludedCells.length > 0;
 
   return (
-    <Section
-      className="min-h-0 shrink-0"
-      contentClassName="flex min-h-0 flex-col gap-2 overflow-auto"
-      title="Selection"
-    >
+    <SidebarSection title="Selection">
       <AlignSelectionCounts
         excluded={state.visibleCounts.excluded}
         included={state.visibleCounts.included}
@@ -48,6 +44,6 @@ export function DemoAlignSelectionControls({ state }: { state: DemoAlignState })
           Edge exclude
         </Button>
       </div>
-    </Section>
+    </SidebarSection>
   );
 }

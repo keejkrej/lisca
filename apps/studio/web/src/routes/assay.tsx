@@ -1,14 +1,14 @@
 import { runClientEffect } from "@lisca/client/runtime";
 import { HostFilePickerDialog } from "@lisca/ui/features";
-import { AppShell, DockButton, RouteLoadingFallback, StudioDock } from "@lisca/ui/shell";
+import { AppShell, RouteLoadingFallback } from "@lisca/ui/shell";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { studioClient, studioHostOperations } from "../api/studio-port";
 import { ChooseAssay } from "../components/choose-assay";
+import { StudioAssayDock } from "../components/studio-assay-dock";
 import { StudioLeft } from "../components/studio-left";
 import { useStudioNavigate } from "../navigation/use-studio-navigate";
-import { instructionForStep } from "../state/studio-routes";
 import { parseStudioAssayJson, useStudioStore } from "../state/studio-store";
 
 export const Route = createFileRoute("/assay")({
@@ -19,7 +19,6 @@ export const Route = createFileRoute("/assay")({
 
 function AssayPage() {
   const { navigateTo } = useStudioNavigate();
-  const setInfoStep = useStudioStore((state) => state.setInfoStep);
   const loadAssayJson = useStudioStore((state) => state.loadAssayJson);
   const [openingAssay, setOpeningAssay] = useState(false);
   const [assayPickerOpen, setAssayPickerOpen] = useState(false);
@@ -63,27 +62,10 @@ function AssayPage() {
             </div>
           </AppShell.Main>
           <AppShell.Dock>
-            <StudioDock
-              actionLayout="2x1"
-              instruction={instructionForStep("chooseAssay")}
-              action={
-                <>
-                  <DockButton
-                    disabled={openingAssay || assayPickerOpen}
-                    onClick={() => setAssayPickerOpen(true)}
-                  >
-                    Open assay
-                  </DockButton>
-                  <DockButton
-                    onClick={() => {
-                      navigateTo("/info");
-                      setInfoStep(1);
-                    }}
-                  >
-                    Next
-                  </DockButton>
-                </>
-              }
+            <StudioAssayDock
+              assayPickerOpen={assayPickerOpen}
+              openingAssay={openingAssay}
+              onOpenAssay={() => setAssayPickerOpen(true)}
             />
           </AppShell.Dock>
         </AppShell.MainColumn>

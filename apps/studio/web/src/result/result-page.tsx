@@ -2,15 +2,7 @@ import type { StudioAnalysisCsvFile } from "@lisca/contracts";
 import { resultData } from "@lisca/client/atoms";
 import { RegistryContext, useAtomSet } from "@effect-atom/atom-react";
 import { Spinner } from "@lisca/ui/components";
-import {
-  AppShell,
-  DockButton,
-  DockSection,
-  DockStrip,
-  dockToolLabel,
-  useDockToolShortcuts,
-  ViewportCard,
-} from "@lisca/ui/shell";
+import { AppShell, ViewportCard } from "@lisca/ui/shell";
 import { useLatest } from "@lisca/ui/features";
 import { useContext, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
@@ -23,6 +15,7 @@ import {
   slideChannelLabelsCacheKey,
 } from "../atoms/studio-analysis-atoms";
 import { StudioLeft } from "../components/studio-left";
+import { StudioResultDock } from "../components/studio-result-dock";
 import { ResultPanelsGridView, plotOptionsForPanel } from "./plot-charts";
 import {
   collectDisplayedParameterPanels,
@@ -236,7 +229,6 @@ export default function ResultPage() {
       onSelect: () => switchSection("parameters"),
     },
   ];
-  useDockToolShortcuts(sectionToolActions, { enabled: !isBusy });
   return (
     <AppShell>
       <AppShell.Body>
@@ -284,33 +276,16 @@ export default function ResultPage() {
             </ViewportCard>
           </AppShell.Main>
           <AppShell.Dock>
-            <DockStrip panels={3}>
-              <DockSection title="Instruction">
-                <p className="line-clamp-4 text-center text-sm leading-snug">{dockInstruction}</p>
-              </DockSection>
-              <DockSection layout="2x1" title="Tool">
-                {sectionToolActions.map((action, index) => (
-                  <DockButton
-                    key={action.id}
-                    active={action.active}
-                    disabled={action.disabled}
-                    onClick={action.onSelect}
-                  >
-                    {dockToolLabel(action.label, index)}
-                  </DockButton>
-                ))}
-              </DockSection>
-              <DockSection layout="2x1" title="Action">
-                <DockButton
-                  disabled={!activeWorkspacePath || !hasAnyResultFiles || isBusy}
-                  onClick={() => {
-                    void savePdf();
-                  }}
-                >
-                  {isSaving ? "Saving…" : "Save"}
-                </DockButton>
-              </DockSection>
-            </DockStrip>
+            <StudioResultDock
+              instruction={dockInstruction}
+              saveDisabled={!activeWorkspacePath || !hasAnyResultFiles || isBusy}
+              saveLabel={isSaving ? "Saving…" : "Save"}
+              shortcutsEnabled={!isBusy}
+              toolActions={sectionToolActions}
+              onSave={() => {
+                void savePdf();
+              }}
+            />
           </AppShell.Dock>
         </AppShell.MainColumn>
         <AppShell.Right widthClass="w-60" />

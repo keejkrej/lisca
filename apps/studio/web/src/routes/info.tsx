@@ -1,13 +1,13 @@
-import { AppShell, DockButton, RouteLoadingFallback, StudioDock } from "@lisca/ui/shell";
+import { AppShell, RouteLoadingFallback } from "@lisca/ui/shell";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { studioHostOperations } from "../api/studio-port";
 import { BasicInfoStep1 } from "../components/basic-info-step1";
 import { BasicInfoStep2 } from "../components/basic-info-step2";
 import { BasicInfoStep3 } from "../components/basic-info-step3";
+import { StudioInfoDock } from "../components/studio-info-dock";
 import { StudioLeft } from "../components/studio-left";
 import { useStudioNavigate } from "../navigation/use-studio-navigate";
-import { instructionForStep } from "../state/studio-routes";
 import { useStudioStore } from "../state/studio-store";
 
 export const Route = createFileRoute("/info")({
@@ -51,18 +51,7 @@ function InfoPage() {
             </div>
           </AppShell.Main>
           <AppShell.Dock>
-            <StudioDock
-              actionLayout="2x1"
-              instruction={instructionForStep(step)}
-              action={
-                <>
-                  <DockButton disabled={infoStep === 1} onClick={back}>
-                    Back
-                  </DockButton>
-                  <DockButton onClick={next}>Next</DockButton>
-                </>
-              }
-            />
+            <StudioInfoDock infoStep={infoStep} step={step} onBack={back} onNext={next} />
           </AppShell.Dock>
         </AppShell.MainColumn>
         <AppShell.Right widthClass="w-60" />
