@@ -1,11 +1,9 @@
-import { Button, DockSection } from "@lisca/ui-native";
-import { StyleSheet, View } from "react-native";
+import { Button, DockSection, DockStrip, useShellTheme } from "@lisca/ui-native";
+import { StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 
 import { instructionForStep } from "../state/studio-routes";
 import { useStudioStore } from "../state/studio-store";
-import { StudioDockStrip } from "./studio-dock-strip";
-import { StudioInstructionSection } from "./studio-instruction-section";
 
 export function StudioAssayDock(props: {
   opening: boolean;
@@ -14,10 +12,15 @@ export function StudioAssayDock(props: {
 }) {
   const router = useRouter();
   const setInfoStep = useStudioStore((state) => state.setInfoStep);
+  const { colors } = useShellTheme();
 
   return (
-    <StudioDockStrip panels={2}>
-      <StudioInstructionSection>{instructionForStep("chooseAssay")}</StudioInstructionSection>
+    <DockStrip>
+      <DockSection fit="panel" title="Instruction">
+        <Text style={[styles.instructionText, { color: colors.foreground }]}>
+          {instructionForStep("chooseAssay")}
+        </Text>
+      </DockSection>
       <DockSection style={styles.section} title="Action">
         <View style={styles.actions}>
           <Button
@@ -40,18 +43,21 @@ export function StudioAssayDock(props: {
           />
         </View>
       </DockSection>
-    </StudioDockStrip>
+    </DockStrip>
   );
 }
 
 const styles = StyleSheet.create({
+  instructionText: {
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: "center",
+  },
   section: {
-    flex: 1,
     minWidth: 0,
   },
   actions: {
     gap: 8,
-    width: "100%",
   },
   button: {
     width: "100%",

@@ -106,13 +106,8 @@ export {
 export { ShellWorkspaceProvider, useShellWorkspace, type ShellWorkspace } from "./state/workspace";
 
 export { DialogSurface, type DialogSurfaceMaxWidth } from "./shell/dialog-surface";
-export { DockSection, dockSectionContentClass, type DockSectionProps } from "./shell/dock-section";
+export { DockSection, type DockSectionFit, type DockSectionProps } from "./shell/dock-section";
 export { DockStrip } from "./shell/dock-strip";
-export {
-  dockSectionClass,
-  sidebarSectionClass,
-  sidebarSectionContentClass,
-} from "./shell/section-placement";
 export { SidebarSection, type SidebarSectionProps } from "./shell/sidebar-section";
 export { SidebarStack, type SidebarStackProps } from "./shell/sidebar-stack";
 export {

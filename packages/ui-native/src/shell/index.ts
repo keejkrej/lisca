@@ -1,6 +1,7 @@
 export { AppShell, ShellDock, ShellSidebar, type AppShellCompound } from "./app-shell.tsx";
 export { Button, SegmentedToggle } from "./buttons.tsx";
-export { DockSection } from "./dock-section.tsx";
+export { DockSection, type DockSectionFit } from "./dock-section.tsx";
+export { DockStrip } from "./dock-strip.tsx";
 export { dockToolLabel, useDockToolShortcuts, type DockToolAction } from "./dock-tool-shortcuts.ts";
 export { ConnectionStatus } from "./connection-status.tsx";
 export { DialogBody, DialogFooter, DialogHeader, DialogSurface, ModalScrim } from "./modal.tsx";

@@ -9,7 +9,7 @@ export function DemoAnnotatorDock({ state }: { state: DemoAnnotatorState }) {
   const stem = state.fileName ? stemName(state.fileName) : "image";
 
   return (
-    <DockStrip panels={2}>
+    <DockStrip>
       <DemoAnnotatorToolSection state={state} />
       <DockSection title="Save">
         <div className="flex w-full flex-col gap-2">

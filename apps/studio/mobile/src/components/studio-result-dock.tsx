@@ -1,14 +1,13 @@
 import {
   Button,
   DockSection,
+  DockStrip,
   dockToolLabel,
   useDockToolShortcuts,
   useShellTheme,
   type DockToolAction,
 } from "@lisca/ui-native";
 import { StyleSheet, Text, View } from "react-native";
-
-import { StudioDockStrip } from "./studio-dock-strip";
 
 export function StudioResultDock(props: {
   instruction: string;
@@ -22,9 +21,11 @@ export function StudioResultDock(props: {
   useDockToolShortcuts(props.toolActions, { enabled: props.shortcutsEnabled });
 
   return (
-    <StudioDockStrip panels={3}>
-      <DockSection style={styles.section} title="Instruction">
-        <Text style={[styles.text, { color: colors.foreground }]}>{props.instruction}</Text>
+    <DockStrip>
+      <DockSection fit="panel" title="Instruction">
+        <Text style={[styles.instructionText, { color: colors.foreground }]}>
+          {props.instruction}
+        </Text>
       </DockSection>
       <DockSection style={styles.section} title="Tool">
         <View style={styles.actions}>
@@ -53,23 +54,21 @@ export function StudioResultDock(props: {
           />
         </View>
       </DockSection>
-    </StudioDockStrip>
+    </DockStrip>
   );
 }
 
 const styles = StyleSheet.create({
-  section: {
-    flex: 1,
-    minWidth: 0,
-  },
-  text: {
+  instructionText: {
     fontSize: 14,
     lineHeight: 20,
     textAlign: "center",
   },
+  section: {
+    minWidth: 0,
+  },
   actions: {
     gap: 8,
-    width: "100%",
   },
   button: {
     width: "100%",

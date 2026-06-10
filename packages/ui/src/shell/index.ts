@@ -17,9 +17,8 @@ export {
   type ShellThemeMode,
 } from "./shell-theme";
 export { DialogSurface, type DialogSurfaceMaxWidth } from "./dialog-surface";
-export { DockSection, dockSectionContentClass, type DockSectionProps } from "./dock-section";
+export { DockSection, type DockSectionFit, type DockSectionProps } from "./dock-section";
 export { DockStrip } from "./dock-strip";
-export { dockSectionClass, sidebarSectionClass, sidebarSectionContentClass } from "./section-placement";
 export { SidebarSection, type SidebarSectionProps } from "./sidebar-section";
 export { SidebarStack, type SidebarStackProps } from "./sidebar-stack";
 export { dockToolLabel, useDockToolShortcuts, type DockToolAction } from "./dock-tool-shortcuts";

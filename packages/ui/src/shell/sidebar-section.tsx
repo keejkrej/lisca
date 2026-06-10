@@ -1,6 +1,5 @@
 import { cn } from "../lib/utils";
 import { Section, type SectionProps } from "./section";
-import { sidebarSectionClass, sidebarSectionContentClass } from "./section-placement";
 
 export type SidebarSectionProps = SectionProps;
 
@@ -12,8 +11,8 @@ export function SidebarSection({
 }: SidebarSectionProps) {
   return (
     <Section
-      className={cn(sidebarSectionClass, className)}
-      contentClassName={cn(sidebarSectionContentClass, contentClassName)}
+      className={cn("min-h-0 shrink-0", className)}
+      contentClassName={cn("flex min-h-0 flex-col gap-2 overflow-auto", contentClassName)}
       {...sectionProps}
     >
       {children}

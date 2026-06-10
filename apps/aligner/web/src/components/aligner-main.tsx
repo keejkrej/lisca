@@ -1,5 +1,6 @@
 import {
   AlignCanvas,
+  CropProgressModal as SharedCropProgressModal,
   cursorForAlignTool,
   useAlignCanvasGridHandlers,
   useCanvasTransientStatus,
@@ -7,7 +8,6 @@ import {
 import { ViewportCard } from "@lisca/ui/shell";
 import { useAlignCanvas, useAlignCrop } from "../state/align-page-selectors";
 import { CropConfirmModal } from "./crop-confirm-modal";
-import { CropProgressModal } from "./crop-progress-modal";
 export function AlignerMain() {
   const canvas = useAlignCanvas();
   const crop = useAlignCrop();
@@ -68,7 +68,10 @@ export function AlignerMain() {
         />
       </ViewportCard>
       <CropConfirmModal />
-      <CropProgressModal />
+      <SharedCropProgressModal
+        progress={crop.cropProgress}
+        onCancel={() => void crop.cancelCrop()}
+      />
     </>
   );
 }

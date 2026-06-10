@@ -1,12 +1,20 @@
+import { AlignGridRail } from "@lisca/ui/features";
 import { SidebarStack } from "@lisca/ui/shell";
 
-import { AlignGridControls } from "./align-grid-controls";
+import { useAlignCanvas, useAlignCrop } from "../state/align-page-selectors";
 import { AlignSelectionControls } from "./align-selection-controls";
 
 export function AlignerRight() {
+  const canvas = useAlignCanvas();
+  const crop = useAlignCrop();
+
   return (
     <SidebarStack>
-      <AlignGridControls />
+      <AlignGridRail
+        disabled={crop.cropping || !canvas.frame}
+        grid={canvas.grid}
+        onGridChange={canvas.setGrid}
+      />
       <AlignSelectionControls />
     </SidebarStack>
   );

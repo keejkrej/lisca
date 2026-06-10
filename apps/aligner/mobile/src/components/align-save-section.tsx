@@ -51,7 +51,6 @@ export function AlignSaveSection({ state }: { state: AlignState }) {
 
 const styles = StyleSheet.create({
   section: {
-    flex: 1,
     minWidth: 0,
   },
   content: {

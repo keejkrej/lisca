@@ -1,6 +1,7 @@
 export { AppShell, ShellDock, ShellSidebar, type AppShellCompound } from "./shell/app-shell.tsx";
 export { Button, SegmentedToggle } from "./shell/buttons.tsx";
-export { DockSection } from "./shell/dock-section.tsx";
+export { DockSection, type DockSectionFit } from "./shell/dock-section.tsx";
+export { DockStrip } from "./shell/dock-strip.tsx";
 export { SidebarSection } from "./shell/sidebar-section.tsx";
 export { SidebarStack } from "./shell/sidebar-stack.tsx";
 export {

@@ -119,14 +119,15 @@ export function AnnotatorDock(props: {
 
 const styles = StyleSheet.create({
   root: {
+    alignItems: "stretch",
     flex: 1,
     flexDirection: "row",
     gap: 12,
+    justifyContent: "center",
     minHeight: 0,
     padding: 12,
   },
   section: {
-    flex: 1,
     minWidth: 0,
   },
   toolbar: {

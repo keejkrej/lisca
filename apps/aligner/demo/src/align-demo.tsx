@@ -39,7 +39,7 @@ export function AlignDemo({ embedded = false }: AlignDemoProps) {
                 <DemoAlignMain state={state} />
               </AppShell.Main>
               <AppShell.Dock>
-                <DockStrip panels={2}>
+                <DockStrip>
                   <DemoAlignToolSection state={state} />
                   <DemoAlignSaveSection state={state} />
                 </DockStrip>

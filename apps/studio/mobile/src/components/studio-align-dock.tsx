@@ -1,18 +1,26 @@
-import { Button, DockSection } from "@lisca/ui-native";
-import { StyleSheet, View } from "react-native";
+import { AlignToolToolbar, Button, DockSection, DockStrip, useShellTheme } from "@lisca/ui-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import type { StudioAlignState } from "../state/use-studio-align-state";
 import { instructionForStep } from "../state/studio-routes";
-import { StudioAlignTools } from "./studio-align-tools";
-import { StudioDockStrip } from "./studio-dock-strip";
-import { StudioInstructionSection } from "./studio-instruction-section";
 
 export function StudioAlignDock({ state }: { state: StudioAlignState }) {
+  const { colors } = useShellTheme();
+
   return (
-    <StudioDockStrip panels={3}>
-      <StudioInstructionSection>{instructionForStep("alignPattern")}</StudioInstructionSection>
+    <DockStrip>
+      <DockSection fit="panel" title="Instruction">
+        <Text style={[styles.instructionText, { color: colors.foreground }]}>
+          {instructionForStep("alignPattern")}
+        </Text>
+      </DockSection>
       <DockSection style={styles.section} title="Tool">
-        <StudioAlignTools state={state} />
+        <AlignToolToolbar
+          mode={state.toolMode}
+          patternZoomLocked={state.patternZoomLocked}
+          onModeChange={state.setToolMode}
+          onPatternZoomLockedChange={state.setPatternZoomLocked}
+        />
       </DockSection>
       <DockSection style={styles.section} title="Action">
         <View style={styles.actions}>
@@ -68,13 +76,17 @@ export function StudioAlignDock({ state }: { state: StudioAlignState }) {
           </View>
         </View>
       </DockSection>
-    </StudioDockStrip>
+    </DockStrip>
   );
 }
 
 const styles = StyleSheet.create({
+  instructionText: {
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: "center",
+  },
   section: {
-    flex: 1,
     minWidth: 0,
   },
   actions: {

@@ -3,8 +3,6 @@ import { DockSection, DockStrip } from "@lisca/ui/shell";
 
 import { useStudioAnnotatePage } from "../state/studio-annotate-page-context";
 
-const actionButtonClass = "w-full max-w-48 justify-center";
-
 export function StudioAnnotateDock() {
   const { state } = useStudioAnnotatePage();
   const analysisBusy = Boolean(
@@ -15,14 +13,14 @@ export function StudioAnnotateDock() {
   const disableNext = state.frameLoading || !state.request || analysisBusy;
 
   return (
-    <DockStrip panels={2}>
-      <DockSection title="Instruction">
+    <DockStrip>
+      <DockSection fit="panel" title="Instruction">
         <p className="line-clamp-4 text-center text-sm leading-snug">Review cropped ROI frames.</p>
       </DockSection>
       <DockSection title="Action">
-        <div className="flex w-full flex-col gap-2">
+        <div className="flex flex-col gap-2">
           <Button
-            className={actionButtonClass}
+            className="w-full justify-center"
             disabled={disableShuffle}
             size="sm"
             type="button"
@@ -32,7 +30,7 @@ export function StudioAnnotateDock() {
             Shuffle
           </Button>
           <Button
-            className={actionButtonClass}
+            className="w-full justify-center"
             disabled={disableNext}
             size="sm"
             type="button"

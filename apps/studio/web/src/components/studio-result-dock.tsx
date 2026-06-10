@@ -7,8 +7,6 @@ import {
   type DockToolAction,
 } from "@lisca/ui/shell";
 
-const actionButtonClass = "w-full max-w-48 justify-center";
-
 export function StudioResultDock(props: {
   instruction: string;
   toolActions: DockToolAction[];
@@ -20,16 +18,16 @@ export function StudioResultDock(props: {
   useDockToolShortcuts(props.toolActions, { enabled: props.shortcutsEnabled });
 
   return (
-    <DockStrip panels={3}>
-      <DockSection title="Instruction">
+    <DockStrip>
+      <DockSection fit="panel" title="Instruction">
         <p className="line-clamp-4 text-center text-sm leading-snug">{props.instruction}</p>
       </DockSection>
       <DockSection title="Tool">
-        <div className="flex w-full flex-col gap-2">
+        <div className="flex flex-col gap-2">
           {props.toolActions.map((action, index) => (
             <Button
               key={action.id}
-              className={actionButtonClass}
+              className="w-full justify-center"
               disabled={action.disabled}
               size="sm"
               type="button"
@@ -42,9 +40,9 @@ export function StudioResultDock(props: {
         </div>
       </DockSection>
       <DockSection title="Action">
-        <div className="flex w-full flex-col gap-2">
+        <div className="flex flex-col gap-2">
           <Button
-            className={actionButtonClass}
+            className="w-full justify-center"
             disabled={props.saveDisabled}
             size="sm"
             type="button"

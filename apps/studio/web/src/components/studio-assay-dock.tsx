@@ -4,9 +4,6 @@ import { DockSection, DockStrip } from "@lisca/ui/shell";
 import { useStudioNavigate } from "../navigation/use-studio-navigate";
 import { instructionForStep } from "../state/studio-routes";
 import { useStudioStore } from "../state/studio-store";
-import { StudioInstructionSection } from "./studio-instruction-section";
-
-const actionButtonClass = "w-full max-w-48 justify-center";
 
 export function StudioAssayDock(props: {
   openingAssay: boolean;
@@ -17,12 +14,16 @@ export function StudioAssayDock(props: {
   const setInfoStep = useStudioStore((state) => state.setInfoStep);
 
   return (
-    <DockStrip panels={2}>
-      <StudioInstructionSection>{instructionForStep("chooseAssay")}</StudioInstructionSection>
+    <DockStrip>
+      <DockSection fit="panel" title="Instruction">
+        <p className="line-clamp-4 text-center text-sm leading-snug">
+          {instructionForStep("chooseAssay")}
+        </p>
+      </DockSection>
       <DockSection title="Action">
-        <div className="flex w-full flex-col gap-2">
+        <div className="flex flex-col gap-2">
           <Button
-            className={actionButtonClass}
+            className="w-full justify-center"
             disabled={props.openingAssay || props.assayPickerOpen}
             size="sm"
             type="button"
@@ -32,7 +33,7 @@ export function StudioAssayDock(props: {
             Open assay
           </Button>
           <Button
-            className={actionButtonClass}
+            className="w-full justify-center"
             size="sm"
             type="button"
             variant="outline"

@@ -1,9 +1,15 @@
 import { Button } from "@lisca/ui/components";
 import type { AnnotationTool } from "@lisca/ui/features";
-import { DockSection, DockStrip, ReadonlyPathField, type DockToolAction } from "@lisca/ui/shell";
+import {
+  DockSection,
+  DockStrip,
+  ReadonlyPathField,
+  dockToolLabel,
+  useDockToolShortcuts,
+  type DockToolAction,
+} from "@lisca/ui/shell";
 import { useAnnotatePage } from "../state/annotate-page-context";
 import { annotationOutputPaths } from "../utils/annotation-output";
-import { AnnotatorToolToolbar } from "./annotator-tool-toolbar";
 
 const annotationToolDefinitions: { id: AnnotationTool; label: string }[] = [
   { id: "brush", label: "Brush" },
@@ -36,12 +42,39 @@ export function AnnotatorDock() {
     !state.filePickerOpen;
   const canEditTools = state.mode === "segmentation" && shortcutsEnabled;
   const toolActions = buildAnnotationToolActions(state.tool, state.setTool, !canEditTools);
+  useDockToolShortcuts(toolActions, { enabled: canEditTools });
+
+  const toolButtons = toolActions.map((action, index) => {
+    const label = dockToolLabel(action.label, index);
+    return (
+      <Button
+        key={action.id}
+        className="w-full justify-center"
+        disabled={action.disabled}
+        size="sm"
+        type="button"
+        variant={action.active ? "default" : "outline"}
+        onClick={action.onSelect}
+      >
+        {label}
+      </Button>
+    );
+  });
 
   return (
-    <DockStrip panels={2}>
+    <DockStrip>
       <DockSection title="Tool">
         {state.mode === "segmentation" ? (
-          <AnnotatorToolToolbar canEditTools={canEditTools} toolActions={toolActions} />
+          <div className="flex w-full flex-col gap-2">
+            <div className="grid w-full grid-cols-2 gap-2">
+              <div className="min-w-0">{toolButtons[0]}</div>
+              <div className="min-w-0">{toolButtons[1]}</div>
+            </div>
+            <div className="grid w-full grid-cols-2 gap-2">
+              <div className="min-w-0">{toolButtons[2]}</div>
+              <div className="min-w-0">{toolButtons[3]}</div>
+            </div>
+          </div>
         ) : (
           <div className="flex min-h-[4.5rem] items-center justify-center text-muted-foreground text-xs">
             Classification
