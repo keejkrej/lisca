@@ -8,7 +8,8 @@ import {
 } from "@lisca/utils";
 import { strToU8, zipSync } from "fflate";
 
-import { encodeGray16Tiff } from "./encode-gray16-tiff";
+import { encodeRoiImage } from "./encode-roi-image";
+import { roiImageExtension, type SourceImageFormat } from "./source-image-format";
 
 const DEMO_POSITION = 0;
 const MAX_DEMO_ROI_EXPORT = 500;
@@ -16,6 +17,7 @@ const MAX_DEMO_ROI_EXPORT = 500;
 export type BuildRoiExportZipInput = {
   fileName: string;
   frame: FrameResult;
+  sourceFormat: SourceImageFormat;
   grid: AlignGridState;
   excludedCells: readonly AlignGridCellCoord[];
 };
@@ -51,7 +53,7 @@ function demoRoiIndexJson(
   };
 }
 
-export function buildRoiExportZip(input: BuildRoiExportZipInput): Uint8Array {
+export async function buildRoiExportZip(input: BuildRoiExportZipInput): Promise<Uint8Array> {
   const excluded = new Set(input.excludedCells.map(alignGridCellKey));
   const cells = enumerateVisibleAlignGridCells(input.frame, input.grid).filter(
     (cell) => !excluded.has(alignGridCellKey(cell)),
@@ -81,14 +83,22 @@ export function buildRoiExportZip(input: BuildRoiExportZipInput): Uint8Array {
     shape: [number, number, number, number, number];
   }> = [];
 
+  const roiExtension = roiImageExtension(input.sourceFormat);
+
   for (const [roi, cell] of cells.entries()) {
     const pixels = cropFrameRegion(input.frame, cell);
-    const tiffName = `Roi${roi}.tif`;
-    const tiffPath = `roi/Pos${DEMO_POSITION}/${tiffName}`;
-    files[tiffPath] = encodeGray16Tiff(cell.w, cell.h, pixels);
+    const roiName = `Roi${roi}.${roiExtension}`;
+    const roiPath = `roi/Pos${DEMO_POSITION}/${roiName}`;
+    files[roiPath] = await encodeRoiImage(
+      input.sourceFormat,
+      cell.w,
+      cell.h,
+      pixels,
+      input.frame.pixelType,
+    );
     indexEntries.push({
       roi,
-      fileName: tiffName,
+      fileName: roiName,
       bbox: {
         roi,
         x: cell.x,

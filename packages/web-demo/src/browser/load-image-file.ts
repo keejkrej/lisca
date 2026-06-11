@@ -3,6 +3,12 @@ import type { FrameResult } from "@lisca/utils";
 import { autoContrastForGrayPixels, normalizeFrameContrast } from "@lisca/utils";
 import UTIF from "utif";
 
+import {
+  sourceFormatFromFile,
+  tiffFormatFromIfd,
+  type LoadedImageFile,
+} from "./source-image-format";
+
 function luminance(r: number, g: number, b: number): number {
   return Math.round(0.299 * r + 0.587 * g + 0.114 * b);
 }
@@ -42,7 +48,9 @@ function frameFromGrayPixels(
   });
 }
 
-async function loadRasterImage(file: File): Promise<FrameResult> {
+async function loadRasterImage(file: File): Promise<LoadedImageFile> {
+  const format = sourceFormatFromFile(file);
+  if (!format) throw new Error("Unsupported image format");
   const bitmap = await createImageBitmap(file);
   try {
     const canvas = document.createElement("canvas");
@@ -61,7 +69,10 @@ async function loadRasterImage(file: File): Promise<FrameResult> {
         imageData.data[offset + 2] ?? 0,
       );
     }
-    return frameFromGrayPixels(bitmap.width, bitmap.height, pixels, "uint8");
+    return {
+      frame: frameFromGrayPixels(bitmap.width, bitmap.height, pixels, "uint8"),
+      format,
+    };
   } finally {
     bitmap.close();
   }
@@ -71,9 +82,9 @@ function unpackUtifGray16(data: Uint8Array): Uint16Array {
   const pixelCount = data.length / 2;
   const pixels = new Uint16Array(pixelCount);
   const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
-  // UTIF.decodeImage stores 16-bit samples as big-endian byte pairs in Uint8Array.
+  // UTIF.decodeImage normalizes 16-bit samples to little-endian byte pairs.
   for (let index = 0; index < pixelCount; index += 1) {
-    pixels[index] = view.getUint16(index * 2, false);
+    pixels[index] = view.getUint16(index * 2, true);
   }
   return pixels;
 }
@@ -136,7 +147,7 @@ function grayPixelsFromTiffData(
   );
 }
 
-async function loadTiffImage(file: File): Promise<FrameResult> {
+async function loadTiffImage(file: File): Promise<LoadedImageFile> {
   const buffer = await file.arrayBuffer();
   const ifds = UTIF.decode(buffer);
   if (ifds.length === 0) throw new Error("TIFF file contains no images");
@@ -149,7 +160,10 @@ async function loadTiffImage(file: File): Promise<FrameResult> {
   if (!data) throw new Error("TIFF image data is missing");
   const normalized = normalizeTiffImageData(width, height, data);
   const { pixels, pixelType } = grayPixelsFromTiffData(width, height, normalized);
-  return frameFromGrayPixels(width, height, pixels, pixelType);
+  return {
+    frame: frameFromGrayPixels(width, height, pixels, pixelType),
+    format: tiffFormatFromIfd(first),
+  };
 }
 
 function isTiffFile(file: File): boolean {
@@ -157,7 +171,9 @@ function isTiffFile(file: File): boolean {
   return lower.endsWith(".tif") || lower.endsWith(".tiff");
 }
 
-export async function loadImageFile(file: File): Promise<FrameResult> {
+export type { LoadedImageFile } from "./source-image-format";
+
+export async function loadImageFile(file: File): Promise<LoadedImageFile> {
   if (isTiffFile(file)) return loadTiffImage(file);
   return loadRasterImage(file);
 }

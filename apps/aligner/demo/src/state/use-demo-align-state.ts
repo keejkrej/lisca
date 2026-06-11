@@ -2,7 +2,13 @@ import type { AlignGridCellCoord, AlignGridState, ContrastWindow } from "@lisca/
 import type { AutoExcludePreviewResponse } from "@lisca/contracts";
 import type { VariationExcludePreviewState } from "@lisca/ui/features";
 import type { FrameResult } from "@lisca/utils";
-import { buildRoiExportZip, downloadBlob, loadImageFile, stemName } from "@lisca/web-demo/browser";
+import {
+  buildRoiExportZip,
+  downloadBlob,
+  loadImageFile,
+  stemName,
+  type SourceImageFormat,
+} from "@lisca/web-demo/browser";
 import { cellsBelowVariationThreshold } from "@lisca/client/align-session";
 import {
   collectAlignGridEdgeCells,
@@ -17,6 +23,7 @@ import { useState } from "react";
 
 export type DemoAlignState = {
   fileName: string | null;
+  sourceFormat: SourceImageFormat | null;
   frameLoading: boolean;
   saving: boolean;
   error: string | null;
@@ -52,6 +59,7 @@ export type DemoAlignState = {
 
 export function useDemoAlignState(): DemoAlignState {
   const [fileName, setFileName] = useState<string | null>(null);
+  const [sourceFormat, setSourceFormat] = useState<SourceImageFormat | null>(null);
   const [frameLoading, setFrameLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -178,8 +186,9 @@ export function useDemoAlignState(): DemoAlignState {
     setError(null);
     setStatus("Loading image");
     try {
-      const nextFrame = await loadImageFile(file);
+      const { frame: nextFrame, format } = await loadImageFile(file);
       setFileName(file.name);
+      setSourceFormat(format);
       setFrame(nextFrame);
       setContrast(null);
       setExcludedCellsState([]);
@@ -192,6 +201,7 @@ export function useDemoAlignState(): DemoAlignState {
     } catch (cause) {
       setFrame(null);
       setFileName(null);
+      setSourceFormat(null);
       setError(cause instanceof Error ? cause.message : String(cause));
       setStatus(null);
     } finally {
@@ -199,7 +209,7 @@ export function useDemoAlignState(): DemoAlignState {
     }
   };
   const saveCurrent = async () => {
-    if (!frame || !fileName) return false;
+    if (!frame || !fileName || !sourceFormat) return false;
     const { included } = countVisibleAlignGridCells(frame, grid, excludedCells);
     if (included === 0) {
       setError("All grid cells are excluded — adjust exclusions before saving.");
@@ -209,9 +219,10 @@ export function useDemoAlignState(): DemoAlignState {
     setError(null);
     try {
       const stem = stemName(fileName);
-      const zip = buildRoiExportZip({
+      const zip = await buildRoiExportZip({
         fileName,
         frame,
+        sourceFormat,
         grid,
         excludedCells,
       });
@@ -230,6 +241,7 @@ export function useDemoAlignState(): DemoAlignState {
   };
   return {
     fileName,
+    sourceFormat,
     frameLoading,
     saving,
     error,

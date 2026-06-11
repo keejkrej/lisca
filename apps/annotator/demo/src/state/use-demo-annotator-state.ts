@@ -80,7 +80,7 @@ export function useDemoAnnotatorState(): DemoAnnotatorState {
     setError(null);
     setStatus("Loading image");
     try {
-      const nextFrame = await loadImageFile(file);
+      const { frame: nextFrame } = await loadImageFile(file);
       setFileName(file.name);
       setFrame(nextFrame);
       setContrast(null);
