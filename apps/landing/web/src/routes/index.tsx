@@ -24,7 +24,7 @@ function LandingPage() {
   const studio = landingProducts.find((product) => product.id === "studio");
 
   return (
-    <div className="relative min-h-dvh overflow-x-hidden">
+    <div className="relative min-h-dvh overflow-x-hidden bg-background">
       <a
         href="#main"
         className="sr-only rounded-md bg-background px-4 py-2 font-mono text-sm outline-none focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus-visible:ring-2 focus-visible:ring-ring"
@@ -33,10 +33,10 @@ function LandingPage() {
       </a>
       <Header />
 
-      <main id="main">
+      <main id="main" className="bg-background">
         <Hero />
 
-        <section className="mx-auto max-w-6xl px-6 pb-20 sm:pb-28">
+        <section className="mx-auto max-w-6xl bg-background px-6 py-20 sm:py-28">
           <SectionIntro
             id="demos"
             eyebrow="Try it on your data"
@@ -50,16 +50,16 @@ function LandingPage() {
           </div>
         </section>
 
-        <section className="relative">
-          <div className="texture-grain relative mx-auto max-w-6xl px-6 pb-20 sm:pb-28">
-            <SectionIntro
-              id="platform"
-              eyebrow="From surface to readout"
-              title="From patterned surface to assay readout"
-              lead="Live-cell work on single-cell arrays begins with defined adhesion sites — on prepatterned ibidi labware or surfaces you pattern with a photomask and the Micro Illumination System. After seeding and timelapse imaging, LiSCA carries you from the first frame to summary tables and plots."
-            />
+        <section className="mx-auto max-w-6xl bg-background px-6 py-20 sm:py-28">
+          <SectionIntro
+            id="platform"
+            eyebrow="From surface to readout"
+            title="From patterned surface to assay readout"
+            lead="Live-cell work on single-cell arrays begins with defined adhesion sites — on prepatterned ibidi labware or surfaces you pattern with a photomask and the Micro Illumination System. After seeding and timelapse imaging, LiSCA carries you from the first frame to summary tables and plots."
+          />
 
-            <div className="mt-12 grid gap-5 md:grid-cols-2">
+          <div className="texture-grain relative mt-12">
+            <div className="grid gap-5 md:grid-cols-2">
               {aligner ? <ProductCard step="01" title={aligner.title} body={aligner.description} /> : null}
               {annotator ? (
                 <ProductCard step="02" title={annotator.title} body={annotator.description} />
