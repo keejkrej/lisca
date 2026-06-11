@@ -1105,6 +1105,334 @@
         }
       }
     },
+    "/profile/list": {
+      "get": {
+        "tags": [
+          "profile"
+        ],
+        "operationId": "profile.listProfiles",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "ProfileListResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/profile/create": {
+      "post": {
+        "tags": [
+          "profile"
+        ],
+        "operationId": "profile.createProfile",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "ProfileResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileCreateRequest"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/profile/sign-in": {
+      "post": {
+        "tags": [
+          "profile"
+        ],
+        "operationId": "profile.signInProfile",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "ProfileResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileSignInRequest"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/memory/recent": {
+      "get": {
+        "tags": [
+          "memory"
+        ],
+        "operationId": "memory.getRecentMemory",
+        "parameters": [
+          {
+            "name": "profileId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/MemoryKind"
+            },
+            "required": true
+          }
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "MemoryRecentResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoryRecentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/memory/touch": {
+      "post": {
+        "tags": [
+          "memory"
+        ],
+        "operationId": "memory.touchMemory",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "MemoryTouchResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoryTouchResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "required": [
+                          "profileId",
+                          "kind",
+                          "path"
+                        ],
+                        "properties": {
+                          "profileId": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "workspace"
+                            ]
+                          },
+                          "path": {
+                            "type": "string"
+                          },
+                          "label": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "profileId",
+                          "kind",
+                          "source"
+                        ],
+                        "properties": {
+                          "profileId": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "source"
+                            ]
+                          },
+                          "source": {
+                            "$ref": "#/components/schemas/AlignerSource"
+                          },
+                          "label": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "profileId",
+                      "kind",
+                      "path"
+                    ],
+                    "properties": {
+                      "profileId": {
+                        "type": "string"
+                      },
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "assay"
+                        ]
+                      },
+                      "path": {
+                        "type": "string"
+                      },
+                      "assayLabel": {
+                        "type": "string"
+                      },
+                      "workspacePath": {
+                        "type": "string"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
     "/studio/save-assay-json": {
       "post": {
         "tags": [
@@ -2677,6 +3005,186 @@
         },
         "additionalProperties": false
       },
+      "ProfileListResponse": {
+        "type": "object",
+        "required": [
+          "profiles"
+        ],
+        "properties": {
+          "profiles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileSummary"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProfileSummary": {
+        "type": "object",
+        "required": [
+          "id",
+          "displayName",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProfileCreateRequest": {
+        "type": "object",
+        "required": [
+          "displayName"
+        ],
+        "properties": {
+          "displayName": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProfileResponse": {
+        "type": "object",
+        "required": [
+          "profileId",
+          "displayName"
+        ],
+        "properties": {
+          "profileId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProfileSignInRequest": {
+        "type": "object",
+        "required": [
+          "displayName"
+        ],
+        "properties": {
+          "displayName": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MemoryKind": {
+        "type": "string",
+        "enum": [
+          "workspace",
+          "source",
+          "assay"
+        ]
+      },
+      "MemoryRecentResponse": {
+        "type": "object",
+        "required": [],
+        "properties": {
+          "workspaces": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemoryWorkspaceEntry"
+            }
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemorySourceEntry"
+            }
+          },
+          "assays": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemoryAssayEntry"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "MemoryWorkspaceEntry": {
+        "type": "object",
+        "required": [
+          "path",
+          "lastUsedAt"
+        ],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "lastUsedAt": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MemorySourceEntry": {
+        "type": "object",
+        "required": [
+          "source",
+          "lastUsedAt"
+        ],
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/AlignerSource"
+          },
+          "label": {
+            "type": "string"
+          },
+          "lastUsedAt": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MemoryAssayEntry": {
+        "type": "object",
+        "required": [
+          "path",
+          "lastUsedAt"
+        ],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "assayLabel": {
+            "type": "string"
+          },
+          "workspacePath": {
+            "type": "string"
+          },
+          "lastUsedAt": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MemoryTouchResponse": {
+        "type": "object",
+        "required": [
+          "ok"
+        ],
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
       "SaveAssayJsonRequest": {
         "type": "object",
         "required": [
@@ -2876,6 +3384,12 @@
     },
     {
       "name": "annotate"
+    },
+    {
+      "name": "profile"
+    },
+    {
+      "name": "memory"
     },
     {
       "name": "studio"

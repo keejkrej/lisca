@@ -28,6 +28,7 @@ fn build_router(state: StudioState) -> Router<()> {
     let analysis_events = state.analysis.events.clone();
     Router::new()
         .merge(http::fs::router())
+        .merge(http::profile::router())
         .merge(aligner_server::router())
         .merge(studio_server::router())
         .merge(annotator_server::router())

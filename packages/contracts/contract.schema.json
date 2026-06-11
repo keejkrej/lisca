@@ -1138,6 +1138,176 @@
         }
       }
     },
+    "ProfileListResponse": {
+      "type": "object",
+      "required": [
+        "profiles"
+      ],
+      "properties": {
+        "profiles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ProfileSummary"
+          }
+        }
+      }
+    },
+    "ProfileSummary": {
+      "type": "object",
+      "required": [
+        "id",
+        "displayName",
+        "createdAt"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        }
+      }
+    },
+    "ProfileCreateRequest": {
+      "type": "object",
+      "required": [
+        "displayName"
+      ],
+      "properties": {
+        "displayName": {
+          "type": "string"
+        }
+      }
+    },
+    "ProfileResponse": {
+      "type": "object",
+      "required": [
+        "profileId",
+        "displayName"
+      ],
+      "properties": {
+        "profileId": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        }
+      }
+    },
+    "ProfileSignInRequest": {
+      "type": "object",
+      "required": [
+        "displayName"
+      ],
+      "properties": {
+        "displayName": {
+          "type": "string"
+        }
+      }
+    },
+    "MemoryKind": {
+      "type": "string",
+      "enum": [
+        "workspace",
+        "source",
+        "assay"
+      ]
+    },
+    "MemoryRecentResponse": {
+      "type": "object",
+      "required": [],
+      "properties": {
+        "workspaces": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MemoryWorkspaceEntry"
+          }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MemorySourceEntry"
+          }
+        },
+        "assays": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MemoryAssayEntry"
+          }
+        }
+      }
+    },
+    "MemoryWorkspaceEntry": {
+      "type": "object",
+      "required": [
+        "path",
+        "lastUsedAt"
+      ],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "lastUsedAt": {
+          "type": "string"
+        }
+      }
+    },
+    "MemorySourceEntry": {
+      "type": "object",
+      "required": [
+        "source",
+        "lastUsedAt"
+      ],
+      "properties": {
+        "source": {
+          "$ref": "#/definitions/AlignerSource"
+        },
+        "label": {
+          "type": "string"
+        },
+        "lastUsedAt": {
+          "type": "string"
+        }
+      }
+    },
+    "MemoryAssayEntry": {
+      "type": "object",
+      "required": [
+        "path",
+        "lastUsedAt"
+      ],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "assayLabel": {
+          "type": "string"
+        },
+        "workspacePath": {
+          "type": "string"
+        },
+        "lastUsedAt": {
+          "type": "string"
+        }
+      }
+    },
+    "MemoryTouchResponse": {
+      "type": "object",
+      "required": [
+        "ok"
+      ],
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        }
+      }
+    },
     "SaveAssayJsonRequest": {
       "type": "object",
       "required": [

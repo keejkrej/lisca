@@ -6,7 +6,9 @@ import {
   useShellServer,
 } from "@lisca/ui-native";
 import { Link, usePathname } from "expo-router";
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+
+import { useStudioProfile } from "./studio-profile-provider";
 
 const ROUTES = [
   { href: "/assay", label: "Assay type" },
@@ -19,6 +21,7 @@ const ROUTES = [
 export function StudioNavRail() {
   const pathname = usePathname();
   const server = useShellServer();
+  const profile = useStudioProfile();
   return (
     <View style={styles.root}>
       <View style={styles.navCenter}>
@@ -41,6 +44,11 @@ export function StudioNavRail() {
           wsUrl={server.wsUrl}
           onOpenSettings={server.openSettings}
         />
+        <Pressable onPress={profile.switchProfile}>
+          <Text style={styles.profileLabel}>
+            {profile.session.mode === "guest" ? "Guest" : profile.session.displayName}
+          </Text>
+        </Pressable>
         <ShellThemeToggle />
       </View>
     </View>
@@ -73,5 +81,10 @@ const styles = StyleSheet.create({
   },
   footerSpacer: {
     flex: 1,
+  },
+  profileLabel: {
+    fontSize: 12,
+    maxWidth: 96,
+    opacity: 0.7,
   },
 });

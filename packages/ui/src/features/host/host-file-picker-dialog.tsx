@@ -11,6 +11,11 @@ import { ModalScrim } from "../../shell/modal/modal-scrim";
 import { HostFilePickerRow } from "./host-file-picker-row";
 import type { HostFilePickerOperations } from "./host-operations";
 
+export type HostFilePickerRecentItem = {
+  path: string;
+  label?: string;
+};
+
 export type HostFilePickerDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -18,6 +23,8 @@ export type HostFilePickerDialogProps = {
   mode: HostFilePickerMode;
   title: string;
   description?: string;
+  recentItems?: readonly HostFilePickerRecentItem[];
+  onPickRecent?: (path: string) => void;
   onPickDirectory: (path: string) => void;
   onPickFile: (path: string) => void;
 };
@@ -29,6 +36,8 @@ export function HostFilePickerDialog({
   mode,
   title,
   description,
+  recentItems,
+  onPickRecent,
   onPickDirectory,
   onPickFile,
 }: HostFilePickerDialogProps) {
@@ -90,6 +99,30 @@ export function HostFilePickerDialog({
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col gap-3 px-5 py-4">
+          {recentItems && recentItems.length > 0 && onPickRecent ? (
+            <div className="space-y-2">
+              <p className="font-medium text-foreground text-sm">Recent</p>
+              <ul className="max-h-32 overflow-auto rounded-md border border-border divide-y divide-border/60">
+                {recentItems.map((item) => (
+                  <li key={item.path}>
+                    <button
+                      className="flex w-full flex-col gap-0.5 px-3 py-2 text-left text-sm transition-colors hover:bg-muted/30"
+                      type="button"
+                      onClick={() => onPickRecent(item.path)}
+                    >
+                      {item.label ? (
+                        <span className="font-medium text-foreground">{item.label}</span>
+                      ) : null}
+                      <span className="truncate text-muted-foreground" title={item.path}>
+                        {item.path}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
           <div className="flex flex-wrap items-center gap-2">
             <Button
               disabled={!picker.canGoUp || picker.loading}

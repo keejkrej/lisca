@@ -38,7 +38,7 @@ fi
 
 getent group "${LISCA_GROUP}" >/dev/null 2>&1 || groupadd "${LISCA_GROUP}"
 
-mkdir -p "${LISCA_ROOT}/source" "${LISCA_ROOT}/workspace"
+mkdir -p "${LISCA_ROOT}/source" "${LISCA_ROOT}/workspace" "${LISCA_ROOT}/config"
 chgrp -R "${LISCA_GROUP}" "${LISCA_ROOT}"
 chmod -R g+rwX "${LISCA_ROOT}"
 chmod g+s "${LISCA_ROOT}/workspace"
@@ -55,6 +55,7 @@ echo ""
 echo "Host layout:"
 echo "  ${LISCA_ROOT}/source/     raw microscopy (ro in containers)"
 echo "  ${LISCA_ROOT}/workspace/  run folders (create per experiment)"
+echo "  ${LISCA_ROOT}/config/      Studio profiles and memory (studio service only)"
 echo ""
 echo "Example:"
 echo "  sudo -u ${FIRST_USER} mkdir -p ${LISCA_ROOT}/workspace/my-run"

@@ -100,3 +100,5 @@ export function validateAssayForAnalysis(input: {
   }
   return { ok: true };
 }
+
+export { isValidSamplePositionRange } from "./sample-positions";

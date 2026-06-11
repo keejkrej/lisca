@@ -2,6 +2,7 @@
 
 pub mod error;
 pub mod fs;
+pub mod profile;
 pub mod serve;
 pub mod ws;
 

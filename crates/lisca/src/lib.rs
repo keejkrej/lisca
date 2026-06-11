@@ -6,7 +6,9 @@ extern crate self as lisca;
 
 pub mod aligner;
 pub mod analysis;
+pub mod config;
 pub mod http;
+pub mod profile;
 pub mod image_source;
 pub mod protocol;
 pub mod roi;

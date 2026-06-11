@@ -67,7 +67,9 @@ services:
     environment:
       <<: *lisca-env
       PUBLIC_PORT: 8767
+      LISCA_CONFIG_DIR: /config
     volumes:
       - ${LISCA_ROOT:-/var/lisca}/workspace:/workspace
       - ${LISCA_ROOT:-/var/lisca}/source:/source:ro
+      - ${LISCA_ROOT:-/var/lisca}/config:/config
     restart: unless-stopped

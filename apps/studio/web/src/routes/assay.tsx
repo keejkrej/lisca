@@ -8,8 +8,11 @@ import { studioClient, studioHostOperations } from "../api/studio-port";
 import { ChooseAssay } from "../components/choose-assay";
 import { StudioAssayDock } from "../components/studio-assay-dock";
 import { StudioLeft } from "../components/studio-left";
+import { useStudioProfile } from "../components/studio-profile-provider";
+import { useStudioMemoryRecent } from "../hooks/use-studio-memory-recent";
 import { useStudioNavigate } from "../navigation/use-studio-navigate";
 import { parseStudioAssayJson, useStudioStore } from "../state/studio-store";
+import { recordStudioAssayMemory } from "../utils/studio-memory";
 
 export const Route = createFileRoute("/assay")({
   component: AssayPage,
@@ -19,10 +22,12 @@ export const Route = createFileRoute("/assay")({
 
 function AssayPage() {
   const { navigateTo } = useStudioNavigate();
+  const profile = useStudioProfile();
   const loadAssayJson = useStudioStore((state) => state.loadAssayJson);
   const [openingAssay, setOpeningAssay] = useState(false);
   const [assayPickerOpen, setAssayPickerOpen] = useState(false);
   const [openAssayError, setOpenAssayError] = useState<string | null>(null);
+  const assayRecent = useStudioMemoryRecent("assay", assayPickerOpen);
 
   const openAssayJson = async (path: string) => {
     setAssayPickerOpen(false);
@@ -30,7 +35,14 @@ function AssayPage() {
     setOpenAssayError(null);
     try {
       const contents = await runClientEffect(studioClient.readTextFile(path));
-      loadAssayJson(parseStudioAssayJson(contents));
+      const assayJson = parseStudioAssayJson(contents);
+      loadAssayJson(assayJson);
+      recordStudioAssayMemory(
+        profile.session,
+        path,
+        assayJson.assayLabel,
+        assayJson.info1.saveTo.trim() || undefined,
+      );
       navigateTo("/info");
     } catch (cause) {
       setOpenAssayError(
@@ -76,10 +88,15 @@ function AssayPage() {
         hostPort={studioHostOperations}
         mode="assay_json_file"
         open={assayPickerOpen}
+        recentItems={assayRecent.assays.map((entry) => ({
+          path: entry.path,
+          label: entry.assayLabel,
+        }))}
         title="Open assay.json"
         onOpenChange={setAssayPickerOpen}
         onPickDirectory={() => {}}
         onPickFile={(path) => void openAssayJson(path)}
+        onPickRecent={(path) => void openAssayJson(path)}
       />
     </AppShell>
   );

@@ -1,10 +1,20 @@
 "use client";
 
+import type { AlignerSource } from "@lisca/contracts";
 import { X } from "lucide-react";
 
 import { Button } from "../../components/ui/button";
 import { DialogSurface } from "../../shell/modal/dialog-surface";
 import { ModalScrim } from "../../shell/modal/modal-scrim";
+
+export type SourcePickerRecentItem = {
+  source: AlignerSource;
+  label?: string;
+};
+
+function formatSourcePath(source: AlignerSource): string {
+  return source.path;
+}
 
 export type SourcePickerModalProps = {
   open: boolean;
@@ -12,6 +22,8 @@ export type SourcePickerModalProps = {
   onOpenFolder: () => void | Promise<void>;
   onOpenNd2: () => void | Promise<void>;
   onOpenCzi: () => void | Promise<void>;
+  recentSources?: readonly SourcePickerRecentItem[];
+  onPickRecentSource?: (source: AlignerSource) => void;
 };
 
 export function SourcePickerModal({
@@ -20,6 +32,8 @@ export function SourcePickerModal({
   onOpenFolder,
   onOpenNd2,
   onOpenCzi,
+  recentSources,
+  onPickRecentSource,
 }: SourcePickerModalProps) {
   if (!open) return null;
 
@@ -60,7 +74,41 @@ export function SourcePickerModal({
           </div>
         </div>
 
-        <div className="px-5 pb-5">
+        <div className="space-y-4 px-5 pb-5">
+          {recentSources && recentSources.length > 0 && onPickRecentSource ? (
+            <div className="space-y-2">
+              <p className="font-medium text-foreground text-sm">Recent sources</p>
+              <ul className="max-h-32 overflow-auto rounded-md border border-border divide-y divide-border/60">
+                {recentSources.map((item) => (
+                  <li key={`${item.source.kind}:${item.source.path}`}>
+                    <button
+                      className="flex w-full flex-col gap-0.5 px-3 py-2 text-left text-sm transition-colors hover:bg-muted/30"
+                      type="button"
+                      onClick={() => {
+                        onPickRecentSource(item.source);
+                        onClose();
+                      }}
+                    >
+                      {item.label ? (
+                        <span className="font-medium text-foreground">{item.label}</span>
+                      ) : (
+                        <span className="font-medium text-foreground capitalize">
+                          {item.source.kind}
+                        </span>
+                      )}
+                      <span
+                        className="truncate text-muted-foreground"
+                        title={formatSourcePath(item.source)}
+                      >
+                        {formatSourcePath(item.source)}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <button
               className={optionClass}

@@ -2842,6 +2842,290 @@ impl LoadedRoiFrameAnnotation {
         Default::default()
     }
 }
+#[doc = "`MemoryAssayEntry`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"lastUsedAt\","]
+#[doc = "    \"path\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"assayLabel\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    },"]
+#[doc = "    \"lastUsedAt\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    },"]
+#[doc = "    \"path\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    },"]
+#[doc = "    \"workspacePath\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct MemoryAssayEntry {
+    #[serde(
+        rename = "assayLabel",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub assay_label: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "lastUsedAt")]
+    pub last_used_at: ::std::string::String,
+    pub path: ::std::string::String,
+    #[serde(
+        rename = "workspacePath",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub workspace_path: ::std::option::Option<::std::string::String>,
+}
+impl MemoryAssayEntry {
+    pub fn builder() -> builder::MemoryAssayEntry {
+        Default::default()
+    }
+}
+#[doc = "`MemoryKind`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"string\","]
+#[doc = "  \"enum\": ["]
+#[doc = "    \"workspace\","]
+#[doc = "    \"source\","]
+#[doc = "    \"assay\""]
+#[doc = "  ]"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(
+    :: serde :: Deserialize,
+    :: serde :: Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum MemoryKind {
+    #[serde(rename = "workspace")]
+    Workspace,
+    #[serde(rename = "source")]
+    Source,
+    #[serde(rename = "assay")]
+    Assay,
+}
+impl ::std::fmt::Display for MemoryKind {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Workspace => f.write_str("workspace"),
+            Self::Source => f.write_str("source"),
+            Self::Assay => f.write_str("assay"),
+        }
+    }
+}
+impl ::std::str::FromStr for MemoryKind {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "workspace" => Ok(Self::Workspace),
+            "source" => Ok(Self::Source),
+            "assay" => Ok(Self::Assay),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for MemoryKind {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for MemoryKind {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for MemoryKind {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[doc = "`MemoryRecentResponse`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"assays\": {"]
+#[doc = "      \"type\": \"array\","]
+#[doc = "      \"items\": {"]
+#[doc = "        \"$ref\": \"#/definitions/MemoryAssayEntry\""]
+#[doc = "      }"]
+#[doc = "    },"]
+#[doc = "    \"sources\": {"]
+#[doc = "      \"type\": \"array\","]
+#[doc = "      \"items\": {"]
+#[doc = "        \"$ref\": \"#/definitions/MemorySourceEntry\""]
+#[doc = "      }"]
+#[doc = "    },"]
+#[doc = "    \"workspaces\": {"]
+#[doc = "      \"type\": \"array\","]
+#[doc = "      \"items\": {"]
+#[doc = "        \"$ref\": \"#/definitions/MemoryWorkspaceEntry\""]
+#[doc = "      }"]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct MemoryRecentResponse {
+    #[serde(default, skip_serializing_if = "::std::vec::Vec::is_empty")]
+    pub assays: ::std::vec::Vec<MemoryAssayEntry>,
+    #[serde(default, skip_serializing_if = "::std::vec::Vec::is_empty")]
+    pub sources: ::std::vec::Vec<MemorySourceEntry>,
+    #[serde(default, skip_serializing_if = "::std::vec::Vec::is_empty")]
+    pub workspaces: ::std::vec::Vec<MemoryWorkspaceEntry>,
+}
+impl ::std::default::Default for MemoryRecentResponse {
+    fn default() -> Self {
+        Self {
+            assays: Default::default(),
+            sources: Default::default(),
+            workspaces: Default::default(),
+        }
+    }
+}
+impl MemoryRecentResponse {
+    pub fn builder() -> builder::MemoryRecentResponse {
+        Default::default()
+    }
+}
+#[doc = "`MemorySourceEntry`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"lastUsedAt\","]
+#[doc = "    \"source\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"label\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    },"]
+#[doc = "    \"lastUsedAt\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    },"]
+#[doc = "    \"source\": {"]
+#[doc = "      \"$ref\": \"#/definitions/AlignerSource\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct MemorySourceEntry {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub label: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "lastUsedAt")]
+    pub last_used_at: ::std::string::String,
+    pub source: AlignerSource,
+}
+impl MemorySourceEntry {
+    pub fn builder() -> builder::MemorySourceEntry {
+        Default::default()
+    }
+}
+#[doc = "`MemoryTouchResponse`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"ok\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"ok\": {"]
+#[doc = "      \"type\": \"boolean\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct MemoryTouchResponse {
+    pub ok: bool,
+}
+impl MemoryTouchResponse {
+    pub fn builder() -> builder::MemoryTouchResponse {
+        Default::default()
+    }
+}
+#[doc = "`MemoryWorkspaceEntry`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"lastUsedAt\","]
+#[doc = "    \"path\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"label\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    },"]
+#[doc = "    \"lastUsedAt\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    },"]
+#[doc = "    \"path\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct MemoryWorkspaceEntry {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub label: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "lastUsedAt")]
+    pub last_used_at: ::std::string::String,
+    pub path: ::std::string::String,
+}
+impl MemoryWorkspaceEntry {
+    pub fn builder() -> builder::MemoryWorkspaceEntry {
+        Default::default()
+    }
+}
 #[doc = "`PixelType`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
@@ -2937,6 +3221,165 @@ impl ::std::convert::TryFrom<::std::string::String> for PixelType {
         value: ::std::string::String,
     ) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
+    }
+}
+#[doc = "`ProfileCreateRequest`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"displayName\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"displayName\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct ProfileCreateRequest {
+    #[serde(rename = "displayName")]
+    pub display_name: ::std::string::String,
+}
+impl ProfileCreateRequest {
+    pub fn builder() -> builder::ProfileCreateRequest {
+        Default::default()
+    }
+}
+#[doc = "`ProfileListResponse`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"profiles\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"profiles\": {"]
+#[doc = "      \"type\": \"array\","]
+#[doc = "      \"items\": {"]
+#[doc = "        \"$ref\": \"#/definitions/ProfileSummary\""]
+#[doc = "      }"]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct ProfileListResponse {
+    pub profiles: ::std::vec::Vec<ProfileSummary>,
+}
+impl ProfileListResponse {
+    pub fn builder() -> builder::ProfileListResponse {
+        Default::default()
+    }
+}
+#[doc = "`ProfileResponse`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"displayName\","]
+#[doc = "    \"profileId\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"displayName\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    },"]
+#[doc = "    \"profileId\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct ProfileResponse {
+    #[serde(rename = "displayName")]
+    pub display_name: ::std::string::String,
+    #[serde(rename = "profileId")]
+    pub profile_id: ::std::string::String,
+}
+impl ProfileResponse {
+    pub fn builder() -> builder::ProfileResponse {
+        Default::default()
+    }
+}
+#[doc = "`ProfileSignInRequest`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"displayName\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"displayName\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct ProfileSignInRequest {
+    #[serde(rename = "displayName")]
+    pub display_name: ::std::string::String,
+}
+impl ProfileSignInRequest {
+    pub fn builder() -> builder::ProfileSignInRequest {
+        Default::default()
+    }
+}
+#[doc = "`ProfileSummary`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"createdAt\","]
+#[doc = "    \"displayName\","]
+#[doc = "    \"id\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"createdAt\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    },"]
+#[doc = "    \"displayName\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    },"]
+#[doc = "    \"id\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct ProfileSummary {
+    #[serde(rename = "createdAt")]
+    pub created_at: ::std::string::String,
+    #[serde(rename = "displayName")]
+    pub display_name: ::std::string::String,
+    pub id: ::std::string::String,
+}
+impl ProfileSummary {
+    pub fn builder() -> builder::ProfileSummary {
+        Default::default()
     }
 }
 #[doc = "`ReadTextFileResponse`"]
@@ -6643,6 +7086,588 @@ pub mod builder {
             Self {
                 annotation: Ok(value.annotation),
                 mask_base64_png: Ok(value.mask_base64_png),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct MemoryAssayEntry {
+        assay_label: ::std::result::Result<
+            ::std::option::Option<::std::string::String>,
+            ::std::string::String,
+        >,
+        last_used_at: ::std::result::Result<::std::string::String, ::std::string::String>,
+        path: ::std::result::Result<::std::string::String, ::std::string::String>,
+        workspace_path: ::std::result::Result<
+            ::std::option::Option<::std::string::String>,
+            ::std::string::String,
+        >,
+    }
+    impl ::std::default::Default for MemoryAssayEntry {
+        fn default() -> Self {
+            Self {
+                assay_label: Ok(Default::default()),
+                last_used_at: Err("no value supplied for last_used_at".to_string()),
+                path: Err("no value supplied for path".to_string()),
+                workspace_path: Ok(Default::default()),
+            }
+        }
+    }
+    impl MemoryAssayEntry {
+        pub fn assay_label<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<::std::string::String>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.assay_label = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for assay_label: {e}"));
+            self
+        }
+        pub fn last_used_at<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.last_used_at = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for last_used_at: {e}"));
+            self
+        }
+        pub fn path<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.path = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for path: {e}"));
+            self
+        }
+        pub fn workspace_path<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<::std::string::String>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.workspace_path = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for workspace_path: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<MemoryAssayEntry> for super::MemoryAssayEntry {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: MemoryAssayEntry,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                assay_label: value.assay_label?,
+                last_used_at: value.last_used_at?,
+                path: value.path?,
+                workspace_path: value.workspace_path?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::MemoryAssayEntry> for MemoryAssayEntry {
+        fn from(value: super::MemoryAssayEntry) -> Self {
+            Self {
+                assay_label: Ok(value.assay_label),
+                last_used_at: Ok(value.last_used_at),
+                path: Ok(value.path),
+                workspace_path: Ok(value.workspace_path),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct MemoryRecentResponse {
+        assays:
+            ::std::result::Result<::std::vec::Vec<super::MemoryAssayEntry>, ::std::string::String>,
+        sources:
+            ::std::result::Result<::std::vec::Vec<super::MemorySourceEntry>, ::std::string::String>,
+        workspaces: ::std::result::Result<
+            ::std::vec::Vec<super::MemoryWorkspaceEntry>,
+            ::std::string::String,
+        >,
+    }
+    impl ::std::default::Default for MemoryRecentResponse {
+        fn default() -> Self {
+            Self {
+                assays: Ok(Default::default()),
+                sources: Ok(Default::default()),
+                workspaces: Ok(Default::default()),
+            }
+        }
+    }
+    impl MemoryRecentResponse {
+        pub fn assays<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::vec::Vec<super::MemoryAssayEntry>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.assays = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for assays: {e}"));
+            self
+        }
+        pub fn sources<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::vec::Vec<super::MemorySourceEntry>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.sources = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for sources: {e}"));
+            self
+        }
+        pub fn workspaces<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::vec::Vec<super::MemoryWorkspaceEntry>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.workspaces = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for workspaces: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<MemoryRecentResponse> for super::MemoryRecentResponse {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: MemoryRecentResponse,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                assays: value.assays?,
+                sources: value.sources?,
+                workspaces: value.workspaces?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::MemoryRecentResponse> for MemoryRecentResponse {
+        fn from(value: super::MemoryRecentResponse) -> Self {
+            Self {
+                assays: Ok(value.assays),
+                sources: Ok(value.sources),
+                workspaces: Ok(value.workspaces),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct MemorySourceEntry {
+        label: ::std::result::Result<
+            ::std::option::Option<::std::string::String>,
+            ::std::string::String,
+        >,
+        last_used_at: ::std::result::Result<::std::string::String, ::std::string::String>,
+        source: ::std::result::Result<super::AlignerSource, ::std::string::String>,
+    }
+    impl ::std::default::Default for MemorySourceEntry {
+        fn default() -> Self {
+            Self {
+                label: Ok(Default::default()),
+                last_used_at: Err("no value supplied for last_used_at".to_string()),
+                source: Err("no value supplied for source".to_string()),
+            }
+        }
+    }
+    impl MemorySourceEntry {
+        pub fn label<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<::std::string::String>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.label = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for label: {e}"));
+            self
+        }
+        pub fn last_used_at<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.last_used_at = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for last_used_at: {e}"));
+            self
+        }
+        pub fn source<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::AlignerSource>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.source = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for source: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<MemorySourceEntry> for super::MemorySourceEntry {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: MemorySourceEntry,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                label: value.label?,
+                last_used_at: value.last_used_at?,
+                source: value.source?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::MemorySourceEntry> for MemorySourceEntry {
+        fn from(value: super::MemorySourceEntry) -> Self {
+            Self {
+                label: Ok(value.label),
+                last_used_at: Ok(value.last_used_at),
+                source: Ok(value.source),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct MemoryTouchResponse {
+        ok: ::std::result::Result<bool, ::std::string::String>,
+    }
+    impl ::std::default::Default for MemoryTouchResponse {
+        fn default() -> Self {
+            Self {
+                ok: Err("no value supplied for ok".to_string()),
+            }
+        }
+    }
+    impl MemoryTouchResponse {
+        pub fn ok<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<bool>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.ok = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for ok: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<MemoryTouchResponse> for super::MemoryTouchResponse {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: MemoryTouchResponse,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self { ok: value.ok? })
+        }
+    }
+    impl ::std::convert::From<super::MemoryTouchResponse> for MemoryTouchResponse {
+        fn from(value: super::MemoryTouchResponse) -> Self {
+            Self { ok: Ok(value.ok) }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct MemoryWorkspaceEntry {
+        label: ::std::result::Result<
+            ::std::option::Option<::std::string::String>,
+            ::std::string::String,
+        >,
+        last_used_at: ::std::result::Result<::std::string::String, ::std::string::String>,
+        path: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for MemoryWorkspaceEntry {
+        fn default() -> Self {
+            Self {
+                label: Ok(Default::default()),
+                last_used_at: Err("no value supplied for last_used_at".to_string()),
+                path: Err("no value supplied for path".to_string()),
+            }
+        }
+    }
+    impl MemoryWorkspaceEntry {
+        pub fn label<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<::std::string::String>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.label = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for label: {e}"));
+            self
+        }
+        pub fn last_used_at<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.last_used_at = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for last_used_at: {e}"));
+            self
+        }
+        pub fn path<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.path = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for path: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<MemoryWorkspaceEntry> for super::MemoryWorkspaceEntry {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: MemoryWorkspaceEntry,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                label: value.label?,
+                last_used_at: value.last_used_at?,
+                path: value.path?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::MemoryWorkspaceEntry> for MemoryWorkspaceEntry {
+        fn from(value: super::MemoryWorkspaceEntry) -> Self {
+            Self {
+                label: Ok(value.label),
+                last_used_at: Ok(value.last_used_at),
+                path: Ok(value.path),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct ProfileCreateRequest {
+        display_name: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for ProfileCreateRequest {
+        fn default() -> Self {
+            Self {
+                display_name: Err("no value supplied for display_name".to_string()),
+            }
+        }
+    }
+    impl ProfileCreateRequest {
+        pub fn display_name<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.display_name = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for display_name: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<ProfileCreateRequest> for super::ProfileCreateRequest {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: ProfileCreateRequest,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                display_name: value.display_name?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::ProfileCreateRequest> for ProfileCreateRequest {
+        fn from(value: super::ProfileCreateRequest) -> Self {
+            Self {
+                display_name: Ok(value.display_name),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct ProfileListResponse {
+        profiles:
+            ::std::result::Result<::std::vec::Vec<super::ProfileSummary>, ::std::string::String>,
+    }
+    impl ::std::default::Default for ProfileListResponse {
+        fn default() -> Self {
+            Self {
+                profiles: Err("no value supplied for profiles".to_string()),
+            }
+        }
+    }
+    impl ProfileListResponse {
+        pub fn profiles<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::vec::Vec<super::ProfileSummary>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.profiles = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for profiles: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<ProfileListResponse> for super::ProfileListResponse {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: ProfileListResponse,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                profiles: value.profiles?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::ProfileListResponse> for ProfileListResponse {
+        fn from(value: super::ProfileListResponse) -> Self {
+            Self {
+                profiles: Ok(value.profiles),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct ProfileResponse {
+        display_name: ::std::result::Result<::std::string::String, ::std::string::String>,
+        profile_id: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for ProfileResponse {
+        fn default() -> Self {
+            Self {
+                display_name: Err("no value supplied for display_name".to_string()),
+                profile_id: Err("no value supplied for profile_id".to_string()),
+            }
+        }
+    }
+    impl ProfileResponse {
+        pub fn display_name<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.display_name = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for display_name: {e}"));
+            self
+        }
+        pub fn profile_id<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.profile_id = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for profile_id: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<ProfileResponse> for super::ProfileResponse {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: ProfileResponse,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                display_name: value.display_name?,
+                profile_id: value.profile_id?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::ProfileResponse> for ProfileResponse {
+        fn from(value: super::ProfileResponse) -> Self {
+            Self {
+                display_name: Ok(value.display_name),
+                profile_id: Ok(value.profile_id),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct ProfileSignInRequest {
+        display_name: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for ProfileSignInRequest {
+        fn default() -> Self {
+            Self {
+                display_name: Err("no value supplied for display_name".to_string()),
+            }
+        }
+    }
+    impl ProfileSignInRequest {
+        pub fn display_name<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.display_name = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for display_name: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<ProfileSignInRequest> for super::ProfileSignInRequest {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: ProfileSignInRequest,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                display_name: value.display_name?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::ProfileSignInRequest> for ProfileSignInRequest {
+        fn from(value: super::ProfileSignInRequest) -> Self {
+            Self {
+                display_name: Ok(value.display_name),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct ProfileSummary {
+        created_at: ::std::result::Result<::std::string::String, ::std::string::String>,
+        display_name: ::std::result::Result<::std::string::String, ::std::string::String>,
+        id: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for ProfileSummary {
+        fn default() -> Self {
+            Self {
+                created_at: Err("no value supplied for created_at".to_string()),
+                display_name: Err("no value supplied for display_name".to_string()),
+                id: Err("no value supplied for id".to_string()),
+            }
+        }
+    }
+    impl ProfileSummary {
+        pub fn created_at<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.created_at = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for created_at: {e}"));
+            self
+        }
+        pub fn display_name<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.display_name = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for display_name: {e}"));
+            self
+        }
+        pub fn id<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.id = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for id: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<ProfileSummary> for super::ProfileSummary {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: ProfileSummary,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                created_at: value.created_at?,
+                display_name: value.display_name?,
+                id: value.id?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::ProfileSummary> for ProfileSummary {
+        fn from(value: super::ProfileSummary) -> Self {
+            Self {
+                created_at: Ok(value.created_at),
+                display_name: Ok(value.display_name),
+                id: Ok(value.id),
             }
         }
     }

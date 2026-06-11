@@ -4,6 +4,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
 import { studioNavigate, type StudioRouteTo } from "../navigation/use-studio-navigate";
+import { useStudioProfile } from "./studio-profile-provider";
 
 const navButtonClass =
   "h-auto w-auto min-w-0 max-w-full shrink-0 rounded-lg px-5 py-2.5 text-xl font-medium";
@@ -53,6 +54,7 @@ function NavButton({
 
 export function StudioNavRail() {
   const server = useShellServer();
+  const profile = useStudioProfile();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const routeId = pathname.slice(1) || "assay";
 
@@ -86,7 +88,17 @@ export function StudioNavRail() {
           wsUrl={server.wsUrl}
           onOpenSettings={server.openSettings}
         />
-        <div className="justify-self-end">
+        <div className="flex items-center justify-end gap-1">
+          <button
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "sm" }),
+              "max-w-[8rem] truncate text-muted-foreground text-xs",
+            )}
+            type="button"
+            onClick={profile.switchProfile}
+          >
+            {profile.session.mode === "guest" ? "Guest" : profile.session.displayName}
+          </button>
           <ShellThemeToggle />
         </div>
       </div>

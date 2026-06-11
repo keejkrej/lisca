@@ -32,6 +32,14 @@ import {
   SaveResultPdfRequestSchema,
   SaveResultPdfResponseSchema,
   ScanSourceRequestSchema,
+  MemoryKindSchema,
+  MemoryRecentResponseSchema,
+  MemoryTouchRequestSchema,
+  MemoryTouchResponseSchema,
+  ProfileCreateRequestSchema,
+  ProfileListResponseSchema,
+  ProfileResponseSchema,
+  ProfileSignInRequestSchema,
   UIntArraySchema,
   WorkspaceScanSchema,
 } from "./schema/index";
@@ -170,6 +178,38 @@ const annotateGroup = HttpApiGroup.make("annotate")
       .addSuccess(RoiFrameAnnotationSchema),
   );
 
+// --- profile group (studio server only) --------------------------------------
+const profileGroup = HttpApiGroup.make("profile")
+  .add(HttpApiEndpoint.get("listProfiles", "/profile/list").addSuccess(ProfileListResponseSchema))
+  .add(
+    HttpApiEndpoint.post("createProfile", "/profile/create")
+      .setPayload(ProfileCreateRequestSchema)
+      .addSuccess(ProfileResponseSchema),
+  )
+  .add(
+    HttpApiEndpoint.post("signInProfile", "/profile/sign-in")
+      .setPayload(ProfileSignInRequestSchema)
+      .addSuccess(ProfileResponseSchema),
+  );
+
+// --- memory group (studio server only) ---------------------------------------
+const memoryGroup = HttpApiGroup.make("memory")
+  .add(
+    HttpApiEndpoint.get("getRecentMemory", "/memory/recent")
+      .setUrlParams(
+        Schema.Struct({
+          profileId: Schema.String,
+          type: MemoryKindSchema,
+        }),
+      )
+      .addSuccess(MemoryRecentResponseSchema),
+  )
+  .add(
+    HttpApiEndpoint.post("touchMemory", "/memory/touch")
+      .setPayload(MemoryTouchRequestSchema)
+      .addSuccess(MemoryTouchResponseSchema),
+  );
+
 // --- studio group ------------------------------------------------------------
 const studioGroup = HttpApiGroup.make("studio")
   .add(
@@ -212,5 +252,7 @@ export const liscaApi = HttpApi.make("lisca")
   .add(fsGroup)
   .add(alignGroup)
   .add(annotateGroup)
+  .add(profileGroup)
+  .add(memoryGroup)
   .add(studioGroup)
   .addError(RequestError);

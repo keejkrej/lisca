@@ -9,9 +9,12 @@ import {
   useStudioStore,
 } from "../state/studio-store";
 import { assayJsonExists, writeStudioAssayJson } from "../utils/save-studio-assay";
+import { recordStudioAssayMemory } from "../utils/studio-memory";
 import { AssayOverwriteConfirmModal } from "./assay-overwrite-confirm-modal";
 import { AssaySaveConfirmModal } from "./assay-save-confirm-modal";
+import { useStudioProfile } from "./studio-profile-provider";
 export function StudioBasicInfoLeaveGuard() {
+  const profile = useStudioProfile();
   const wizard = useStudioStore((state) => state);
   const { assayId, dataSourceKind, info1, info2, info3, setBasicInfoSavedSnapshot } = wizard;
   const [saving, setSaving] = useState(false);
@@ -42,6 +45,12 @@ export function StudioBasicInfoLeaveGuard() {
         info3,
       });
       await writeStudioAssayJson(saveTo, assayJson);
+      recordStudioAssayMemory(
+        profile.session,
+        `${saveTo.replace(/\/$/, "")}/assay.json`,
+        assayJson.assayLabel,
+        saveTo,
+      );
       setBasicInfoSavedSnapshot(serializeBasicInfoSnapshot(wizard));
       return true;
     } catch (cause) {
