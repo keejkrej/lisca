@@ -67,3 +67,4 @@ export {
   type SelectNavigationControlProps,
   type SliderNavigationControlProps,
 } from "./navigation/frame-navigation";
+export { ResultPanelChart, ResultPanelsGridView } from "./analysis/result-charts";

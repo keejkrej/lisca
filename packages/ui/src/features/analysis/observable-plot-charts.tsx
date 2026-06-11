@@ -1,42 +1,36 @@
 import * as Plot from "@observablehq/plot";
-import { useEffect, useRef, useState } from "react";
 import {
-  type BoxPlotPanel,
-  type HistogramPanel,
-  type ResultPanel,
-  type ResultPlotSection,
-  type TimeseriesPanel,
-} from "@lisca/analysis";
-const TRACE_PALETTE = [
-  "#60a5fa",
-  "#22c55e",
-  "#f59e0b",
-  "#a855f7",
-  "#ef4444",
-  "#14b8a6",
-  "#eab308",
-  "#38bdf8",
-];
-const PLOT_FONT =
-  'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+  BOXPLOT_FILL,
+  BOXPLOT_STROKE,
+  boxPlotMarginBottom,
+  chartSpecForPanel,
+  CHART_MARGINS,
+  type ChartSpec,
+  PLOT_FONT,
+  PLOT_FONT_SIZE_PX,
+  TIMESERIES_MEDIAN_STROKE,
+  TIMESERIES_MEDIAN_WIDTH,
+  TRACE_PALETTE,
+} from "@lisca/analysis/charts";
+import type { ResultPanel, ResultPlotSection } from "@lisca/analysis";
+import { useEffect, useRef, useState } from "react";
 
-/** Default Observable Plot font size is 10px; bump for readability. */
-export const PLOT_FONT_SIZE_PX = 20;
+export { PLOT_FONT_SIZE_PX };
+
 export const PLOT_MARGINS = {
-  marginLeft: 128,
-  marginBottom: 96,
-  marginRight: 36,
-  marginTop: 28,
+  marginLeft: CHART_MARGINS.left,
+  marginBottom: CHART_MARGINS.bottom,
+  marginRight: CHART_MARGINS.right,
+  marginTop: CHART_MARGINS.top,
 } as const;
-function boxPlotBottomMargin(groupCount: number) {
-  return groupCount > 4 ? 176 : 128;
-}
+
 const PLOT_STYLE: Plot.PlotOptions["style"] = {
   background: "transparent",
   color: "currentColor",
   fontFamily: PLOT_FONT,
   fontSize: `${PLOT_FONT_SIZE_PX}px`,
 };
+
 export function applyPlotFontSize(root: Element, fontSizePx: number) {
   const size = String(fontSizePx);
   const svg = root instanceof SVGSVGElement ? root : root.querySelector("svg");
@@ -46,203 +40,127 @@ export function applyPlotFontSize(root: Element, fontSizePx: number) {
     node.setAttribute("font-size", size);
   }
 }
+
 function basePlotOptions(): Pick<Plot.PlotOptions, "style"> {
   return {
     style: PLOT_STYLE,
   };
 }
-const Y_AXIS = {
-  grid: true,
-  tickFormat: ".1e",
-} as const;
-function yAxis(label: string) {
+
+function axisFromSpec(axis: ChartSpec["x"] | ChartSpec["y"]): Plot.PlotOptions["x"] {
   return {
-    label,
-    ...Y_AXIS,
+    label: axis.label,
+    grid: axis.grid,
+    tickFormat: axis.tickFormat,
+    domain: "domain" in axis ? axis.domain : undefined,
+    tickRotate: "tickRotate" in axis ? axis.tickRotate : undefined,
   };
 }
-function median(values: number[]): number {
-  if (values.length === 0) return 0;
-  const sorted = [...values].toSorted((left, right) => left - right);
-  const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
-}
-function computeMedianTrace(
-  traces: Array<{
-    points: Array<{
-      x: number;
-      y: number;
-    }>;
-  }>,
-): Array<{
-  x: number;
-  y: number;
-}> {
-  const valuesByX = new Map<number, number[]>();
-  for (const trace of traces) {
-    for (const point of trace.points) {
-      const bucket = valuesByX.get(point.x) ?? [];
-      bucket.push(point.y);
-      valuesByX.set(point.x, bucket);
-    }
+
+export function plotOptionsFromChartSpec(spec: ChartSpec): Plot.PlotOptions {
+  if (spec.kind === "timeseries") {
+    const traceData = spec.traces.flatMap((trace) =>
+      trace.points.map((point) => ({
+        x: point.x,
+        y: point.y,
+        series: trace.key,
+      })),
+    );
+    return {
+      ...basePlotOptions(),
+      ...PLOT_MARGINS,
+      x: axisFromSpec(spec.x),
+      y: axisFromSpec(spec.y),
+      marks: [
+        Plot.lineY(traceData, {
+          x: "x",
+          y: "y",
+          z: "series",
+          stroke: spec.traces[0]?.stroke ?? "#9ca3af",
+          strokeOpacity: spec.traces[0]?.strokeOpacity ?? 0.3,
+        }),
+        Plot.lineY(spec.medianTrace, {
+          x: "x",
+          y: "y",
+          stroke: TIMESERIES_MEDIAN_STROKE,
+          strokeWidth: TIMESERIES_MEDIAN_WIDTH,
+        }),
+      ],
+    };
   }
-  return Array.from(valuesByX.entries())
-    .toSorted(([left], [right]) => left - right)
-    .map(([x, values]) => ({
-      x,
-      y: median(values),
-    }));
-}
-function buildTimeseriesPlotOptions(panel: TimeseriesPanel): Plot.PlotOptions {
-  const traceData = panel.traces.flatMap((trace) =>
-    trace.points.map((point) => ({
-      x: point.x,
-      y: point.y,
-      series: trace.key,
-    })),
-  );
-  const medianData = computeMedianTrace(panel.traces);
+
+  if (spec.kind === "line") {
+    const data = spec.series.flatMap((entry) =>
+      entry.points.map((point) => ({
+        x: point.x,
+        y: point.y,
+        series: entry.key,
+      })),
+    );
+    return {
+      ...basePlotOptions(),
+      ...PLOT_MARGINS,
+      color: {
+        range: [...TRACE_PALETTE],
+      },
+      x: axisFromSpec(spec.x),
+      y: axisFromSpec(spec.y),
+      marks: [
+        Plot.lineY(data, {
+          x: "x",
+          y: "y",
+          stroke: "series",
+          strokeOpacity: spec.series[0]?.strokeOpacity ?? 0.55,
+        }),
+      ],
+    };
+  }
+
+  if (spec.kind === "boxplot") {
+    const data = spec.groups.flatMap((group) =>
+      group.values.map((value) => ({
+        group: group.label,
+        value,
+      })),
+    );
+    return {
+      ...basePlotOptions(),
+      ...PLOT_MARGINS,
+      marginBottom: boxPlotMarginBottom(spec),
+      x: axisFromSpec(spec.x),
+      y: axisFromSpec(spec.y),
+      marks: [
+        Plot.boxY(data, {
+          x: "group",
+          y: "value",
+          fill: BOXPLOT_FILL,
+          stroke: BOXPLOT_STROKE,
+        }),
+      ],
+    };
+  }
+
   return {
     ...basePlotOptions(),
     ...PLOT_MARGINS,
-    x: {
-      label: panel.xAxisLabel,
-      grid: true,
-    },
-    y: yAxis(panel.yAxisLabel),
+    x: axisFromSpec(spec.x),
+    y: axisFromSpec(spec.y),
     marks: [
-      Plot.lineY(traceData, {
-        x: "x",
-        y: "y",
-        z: "series",
-        stroke: "#9ca3af",
-        strokeOpacity: 0.3,
-      }),
-      Plot.lineY(medianData, {
-        x: "x",
-        y: "y",
-        stroke: "#ef4444",
-        strokeWidth: 3,
-      }),
-    ],
-  };
-}
-function buildLinePlotOptions(props: {
-  xAxisLabel: string;
-  yAxisLabel: string;
-  series: Array<{
-    key: string;
-    points: Array<{
-      x: number;
-      y: number;
-    }>;
-  }>;
-}): Plot.PlotOptions {
-  const data = props.series.flatMap((entry) =>
-    entry.points.map((point) => ({
-      x: point.x,
-      y: point.y,
-      series: entry.key,
-    })),
-  );
-  return {
-    ...basePlotOptions(),
-    ...PLOT_MARGINS,
-    color: {
-      range: TRACE_PALETTE,
-    },
-    x: {
-      label: props.xAxisLabel,
-      grid: true,
-    },
-    y: yAxis(props.yAxisLabel),
-    marks: [
-      Plot.lineY(data, {
-        x: "x",
-        y: "y",
-        stroke: "series",
-        strokeOpacity: 0.55,
+      Plot.rectY(spec.bins, {
+        x: "x0",
+        x1: "x1",
+        y: "count",
       }),
     ],
   };
 }
-function buildBoxPlotOptions(panel: BoxPlotPanel): Plot.PlotOptions {
-  const data = panel.groups.flatMap((group) =>
-    group.values.map((value) => ({
-      group: group.label,
-      value,
-    })),
-  );
-  return {
-    ...basePlotOptions(),
-    ...PLOT_MARGINS,
-    marginBottom: boxPlotBottomMargin(panel.groups.length),
-    x: {
-      label: panel.xAxisLabel,
-      domain: panel.groups.map((group) => group.label),
-      tickRotate: panel.groups.length > 4 ? -30 : 0,
-    },
-    y: yAxis(panel.yAxisLabel),
-    marks: [
-      Plot.boxY(data, {
-        x: "group",
-        y: "value",
-        fill: "#60a5fa33",
-        stroke: "#60a5fa",
-      }),
-    ],
-  };
-}
-export function buildHistogramPlotOptions(panel: HistogramPanel): Plot.PlotOptions {
-  const data = panel.values.map((value) => ({
-    value,
-  }));
-  return {
-    ...basePlotOptions(),
-    ...PLOT_MARGINS,
-    x: {
-      label: panel.xAxisLabel,
-      grid: true,
-    },
-    y: yAxis(panel.yAxisLabel),
-    marks: [
-      Plot.rectY(
-        data,
-        Plot.binX(
-          {
-            y: "count",
-          },
-          {
-            x: "value",
-          },
-        ),
-      ),
-    ],
-  };
-}
+
 export function plotOptionsForPanel(panel: ResultPanel): Plot.PlotOptions | null {
-  if (panel.kind === "timeseries") {
-    if (panel.traces.length === 0) return null;
-    return buildTimeseriesPlotOptions(panel);
-  }
-  if (panel.kind === "boxplot") {
-    if (panel.groups.length === 0) return null;
-    return buildBoxPlotOptions(panel);
-  }
-  if (panel.kind === "histogram") {
-    if (panel.values.length === 0) return null;
-    return buildHistogramPlotOptions(panel);
-  }
-  if (panel.series.length === 0) return null;
-  return buildLinePlotOptions({
-    xAxisLabel: panel.xAxisLabel,
-    yAxisLabel: panel.yAxisLabel,
-    series: panel.series.map((entry) => ({
-      key: entry.dataKey,
-      points: entry.points,
-    })),
-  });
+  const spec = chartSpecForPanel(panel);
+  if (!spec) return null;
+  return plotOptionsFromChartSpec(spec);
 }
+
 function ObservablePlotView(props: {
   options: Plot.PlotOptions | null;
   title: string;
@@ -298,16 +216,19 @@ function ObservablePlotView(props: {
     </div>
   );
 }
+
 export function ResultPanelView({ panel, className }: { panel: ResultPanel; className?: string }) {
   const options = plotOptionsForPanel(panel);
   return <ObservablePlotView className={className} options={options} title={panel.title} />;
 }
+
 const EXPORT_PAGE_CLASS = "flex flex-col overflow-visible bg-white text-[#171717]";
 const EXPORT_TITLE_CLASS =
   "border-b border-[#e5e5e5] px-4 py-3 text-2xl font-semibold text-[#171717]";
 const EXPORT_PANEL_TITLE_CLASS = "truncate px-1 text-xl font-semibold text-[#737373]";
 const EXPORT_SUBPLOT_CLASS =
   "flex h-full min-h-[300px] pointer-events-none select-none text-[#171717]";
+
 export function ResultPanelsGridView({
   panels,
   exportMode = false,
@@ -382,4 +303,10 @@ export function ResultPanelsGridView({
       </div>
     </div>
   );
+}
+
+export function buildHistogramPlotOptions(panel: Extract<ResultPanel, { kind: "histogram" }>) {
+  const spec = chartSpecForPanel(panel);
+  if (!spec || spec.kind !== "histogram") return null;
+  return plotOptionsFromChartSpec(spec);
 }

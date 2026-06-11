@@ -9,18 +9,26 @@
     ".": {
       "types": "./src/index.ts",
       "import": "./src/index.ts"
+    },
+    "./charts": {
+      "types": "./src/charts/index.ts",
+      "import": "./src/charts/index.ts"
     }
   },
   "scripts": {
+    "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@lisca/client": "workspace:*",
     "@lisca/contracts": "workspace:*",
     "@effect-atom/atom-react": "catalog:",
+    "d3-array": "^3.2.4",
     "effect": "catalog:"
   },
   "devDependencies": {
-    "typescript": "catalog:"
+    "@types/d3-array": "^3.2.2",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

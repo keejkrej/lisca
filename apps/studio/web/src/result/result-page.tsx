@@ -4,6 +4,8 @@ import { RegistryContext, useAtomSet } from "@effect-atom/atom-react";
 import { Spinner } from "@lisca/ui/components";
 import { AppShell, ViewportCard } from "@lisca/ui/shell";
 import { useLatest } from "@lisca/ui/hooks";
+import { ResultPanelsGridView } from "@lisca/ui/features";
+import { countChartSpecs } from "@lisca/analysis/charts";
 import { useContext, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { runClientEffect } from "@lisca/client/runtime";
@@ -16,7 +18,6 @@ import {
 } from "../atoms/studio-analysis-atoms";
 import { StudioLeft } from "../components/studio-left";
 import { StudioResultDock } from "../components/studio-result-dock";
-import { ResultPanelsGridView, plotOptionsForPanel } from "./plot-charts";
 import {
   collectDisplayedParameterPanels,
   collectTimeseriesPanels,
@@ -88,8 +89,7 @@ export default function ResultPage() {
   const loadPanelsForFileLatest = useLatest(loadPanelsForFile);
   const getCachedAnalysisPanelsLatest = useLatest(getCachedAnalysisPanels);
   const hasAnyResultFiles = analysisResultFiles.length > 0;
-  const countRenderablePanels = (panels: ResultPanel[]) =>
-    panels.filter((panel) => plotOptionsForPanel(panel) !== null).length;
+  const countRenderablePanels = (panels: ResultPanel[]) => countChartSpecs(panels);
   const savePdf = async () => {
     if (!activeWorkspacePath || isSaving || isSectionLoading || !hasAnyResultFiles) return;
     setIsSaving(true);

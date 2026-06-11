@@ -37,6 +37,7 @@ Each domain is a subfolder under `features/` with a single responsibility:
 | `contrast/` | Platform contrast control wrapping headless `ContrastControl` |
 | `host/` | Host file picker, folder parse modal, source picker |
 | `navigation/` | Frame/position/ROI steppers |
+| `analysis/` | Result panel charts (web: Observable Plot; native: Victory Native on Skia in `victory/`) |
 | `studio/` | Native-only studio widgets (histogram, nav button) |
 
 ### Dependency rules

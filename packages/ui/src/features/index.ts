@@ -90,3 +90,13 @@ export { HostFilePickerDialog, type HostFilePickerDialogProps } from "./host/hos
 export type { HostFilePickerMode, HostFilePickerOperations } from "./host/host-operations";
 export { LabelCreationDialog, type LabelCreationDialogProps } from "./annotate/label-creation-dialog";
 export { SourcePickerModal, type SourcePickerModalProps } from "./host/source-picker-modal";
+export {
+  ResultPanelView,
+  ResultPanelsGridView,
+  applyPlotFontSize,
+  buildHistogramPlotOptions,
+  plotOptionsForPanel,
+  plotOptionsFromChartSpec,
+  PLOT_FONT_SIZE_PX,
+  PLOT_MARGINS,
+} from "./analysis/observable-plot-charts";

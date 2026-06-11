@@ -24,11 +24,8 @@ import {
 import { STUDIO_NAV_WIDTH } from "../src/components/studio-layout";
 import { StudioLeft } from "../src/components/studio-left";
 import { StudioResultDock } from "../src/components/studio-result-dock";
-import {
-  ResultPanelsGridView,
-  buildResultPdfFromCaptures,
-  pdfBytesToBase64,
-} from "../src/result/native-charts";
+import { ResultPanelsGridView } from "@lisca/ui-native/features";
+import { buildResultPdfFromCaptures, pdfBytesToBase64 } from "../src/result/result-pdf";
 import { useStudioAnnotateState } from "../src/state/use-studio-annotate-state";
 import { useStudioStore } from "../src/state/studio-store";
 export default function ResultRoute() {
@@ -194,7 +191,16 @@ export default function ResultRoute() {
                   </View>
                 ) : null}
                 {sectionPanels.length > 0 ? (
-                  <ResultPanelsGridView panels={sectionPanels} width={chartWidth} />
+                  <ResultPanelsGridView
+                    colors={{
+                      grid: colors.border,
+                      mutedText: colors.mutedForeground,
+                      primary: "#60a5fa",
+                      text: colors.foreground,
+                    }}
+                    panels={sectionPanels}
+                    width={chartWidth}
+                  />
                 ) : (
                   <View style={styles.emptyState}>
                     <Text
