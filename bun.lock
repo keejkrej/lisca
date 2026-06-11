@@ -576,6 +576,8 @@
       "name": "@lisca/web-demo",
       "version": "0.1.0",
       "dependencies": {
+        "@effect-atom/atom-react": "catalog:",
+        "@lisca/client": "workspace:*",
         "@lisca/contracts": "workspace:*",
         "@lisca/ui": "workspace:*",
         "@lisca/utils": "workspace:*",

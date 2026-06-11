@@ -2,7 +2,7 @@ import { AlignSelectionCounts, VariationExcludeDialog } from "@lisca/ui/features
 import { Button } from "@lisca/ui/components";
 import { SidebarSection } from "@lisca/ui/shell";
 
-import type { DemoAlignState } from "../state/use-demo-align-state";
+import type { DemoAlignState } from "@lisca/web-demo";
 
 export function DemoAlignSelectionControls({ state }: { state: DemoAlignState }) {
   const disabled = !state.frame;

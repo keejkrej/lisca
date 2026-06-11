@@ -1,6 +1,6 @@
 import { Button } from "@lisca/ui/components";
 
-import type { DemoAlignState } from "../state/use-demo-align-state";
+import type { DemoAlignState } from "@lisca/web-demo";
 
 export function DemoAlignDownloadButton({
   state,

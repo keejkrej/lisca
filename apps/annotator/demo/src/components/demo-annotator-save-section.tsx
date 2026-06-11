@@ -1,7 +1,7 @@
 import { DockSection, ReadonlyPathField } from "@lisca/ui/shell";
 import { stemName } from "@lisca/web-demo/browser";
 
-import type { DemoAnnotatorState } from "../state/use-demo-annotator-state";
+import type { DemoAnnotatorState } from "@lisca/web-demo";
 import { DemoAnnotatorDownloadButton } from "./demo-annotator-download-button";
 
 export function DemoAnnotatorSaveSection({ state }: { state: DemoAnnotatorState }) {

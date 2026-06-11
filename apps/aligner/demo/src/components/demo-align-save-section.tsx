@@ -2,7 +2,7 @@ import { DockSection, ReadonlyPathField } from "@lisca/ui/shell";
 import { stemName } from "@lisca/web-demo/browser";
 
 import { DemoAlignDownloadButton } from "./demo-align-download-button";
-import type { DemoAlignState } from "../state/use-demo-align-state";
+import type { DemoAlignState } from "@lisca/web-demo";
 
 export function DemoAlignSaveSection({ state }: { state: DemoAlignState }) {
   const stem = state.fileName ? stemName(state.fileName) : "image";

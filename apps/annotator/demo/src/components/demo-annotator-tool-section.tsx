@@ -5,7 +5,7 @@ import {
 import { DockSection } from "@lisca/ui/shell";
 import type { DockToolAction } from "@lisca/ui/shell";
 
-import type { DemoAnnotatorState } from "../state/use-demo-annotator-state";
+import type { DemoAnnotatorState } from "@lisca/web-demo";
 
 function DemoAnnotatorToolToolbar(props: {
   canEditTools: boolean;

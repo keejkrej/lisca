@@ -7,7 +7,7 @@ import { DockStrip } from "@lisca/ui/shell";
 
 import { DemoAlignDownloadButton } from "./demo-align-download-button";
 import { DemoAlignSaveSection } from "./demo-align-save-section";
-import type { DemoAlignState } from "../state/use-demo-align-state";
+import type { DemoAlignState } from "@lisca/web-demo";
 
 export function DemoAlignToolSection({ state }: { state: DemoAlignState }) {
   return (

@@ -1,6 +1,6 @@
 import { ContrastControl } from "@lisca/ui/features";
 
-import type { DemoAnnotatorState } from "../state/use-demo-annotator-state";
+import type { DemoAnnotatorState } from "@lisca/web-demo";
 
 export function DemoAnnotatorLeft({ state }: { state: DemoAnnotatorState }) {
   return (

@@ -1,6 +1,6 @@
 import { AlignGridShapeToggle } from "@lisca/ui/features";
 import { AppShell } from "@lisca/ui/shell";
-import { DemoNavbar } from "@lisca/web-demo";
+import { DemoAlignRoot, DemoNavbar, useDemoAlignState } from "@lisca/web-demo";
 
 import { DemoAlignContrastControls } from "./components/demo-align-contrast-controls";
 import { DemoAlignGridControls } from "./components/demo-align-grid-controls";
@@ -8,13 +8,20 @@ import { DemoAlignMain } from "./components/demo-align-main";
 import { DemoAlignSelectionControls } from "./components/demo-align-selection-controls";
 import { DemoAlignDownloadButton } from "./components/demo-align-download-button";
 import { DemoAlignDock, DemoInlineAlignToolbar } from "./components/demo-align-tool-section";
-import { useDemoAlignState } from "./state/use-demo-align-state";
 
 export type AlignDemoProps = {
   embedded?: boolean;
 };
 
 export function AlignDemo({ embedded = false }: AlignDemoProps) {
+  return (
+    <DemoAlignRoot persist={!embedded}>
+      <AlignDemoView embedded={embedded} />
+    </DemoAlignRoot>
+  );
+}
+
+function AlignDemoView({ embedded }: { embedded: boolean }) {
   const state = useDemoAlignState();
 
   const shell = (

@@ -1,6 +1,11 @@
 import { LabelCreationDialog } from "@lisca/ui/features";
 import { AppShell } from "@lisca/ui/shell";
-import { DemoNavbar, DemoNavbarActionButton } from "@lisca/web-demo";
+import {
+  DemoAnnotatorRoot,
+  DemoNavbar,
+  DemoNavbarActionButton,
+  useDemoAnnotatorState,
+} from "@lisca/web-demo";
 import { Tags } from "lucide-react";
 
 import { DemoAnnotatorDock } from "./components/demo-annotator-dock";
@@ -9,7 +14,6 @@ import { DemoAnnotatorLeft } from "./components/demo-annotator-left";
 import { DemoAnnotatorMain } from "./components/demo-annotator-main";
 import { DemoAnnotatorRight } from "./components/demo-annotator-right";
 import { DemoInlineAnnotatorToolbar } from "./components/demo-annotator-tool-section";
-import { useDemoAnnotatorState } from "./state/use-demo-annotator-state";
 import { createEmptyMask } from "./utils/annotation-utils";
 
 export type AnnotatorDemoProps = {
@@ -17,6 +21,14 @@ export type AnnotatorDemoProps = {
 };
 
 export function AnnotatorDemo({ embedded = false }: AnnotatorDemoProps) {
+  return (
+    <DemoAnnotatorRoot persist={!embedded}>
+      <AnnotatorDemoView embedded={embedded} />
+    </DemoAnnotatorRoot>
+  );
+}
+
+function AnnotatorDemoView({ embedded }: { embedded: boolean }) {
   const state = useDemoAnnotatorState();
 
   const shell = (
@@ -110,7 +122,7 @@ export function AnnotatorDemo({ embedded = false }: AnnotatorDemoProps) {
         labels={state.labels}
         open={state.labelDialogOpen}
         saveLabel="Apply labels"
-        subtitle="Labels are kept in memory for this session."
+        subtitle="Labels are restored when you refresh this demo page."
         title="Edit labels"
         onOpenChange={state.setLabelDialogOpen}
         onSave={state.saveLabels}

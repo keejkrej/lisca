@@ -1,6 +1,6 @@
 import { ContrastControl } from "@lisca/ui/features";
 
-import type { DemoAlignState } from "../state/use-demo-align-state";
+import type { DemoAlignState } from "@lisca/web-demo";
 
 export function DemoAlignContrastControls({ state }: { state: DemoAlignState }) {
   return (

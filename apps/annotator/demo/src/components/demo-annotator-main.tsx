@@ -3,7 +3,7 @@ import { AnnotationCanvas, SmartSegmentModelDialog, useCanvasTransientStatus } f
 import { useSmartSegment } from "@lisca/segmentation/browser";
 import { toDisplayFrame } from "@lisca/web-demo/browser";
 import { useMemo, useState } from "react";
-import type { DemoAnnotatorState } from "../state/use-demo-annotator-state";
+import type { DemoAnnotatorState } from "@lisca/web-demo";
 
 export function DemoAnnotatorMain({
   state,

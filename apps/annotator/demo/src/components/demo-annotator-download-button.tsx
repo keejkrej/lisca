@@ -1,6 +1,6 @@
 import { Button } from "@lisca/ui/components";
 
-import type { DemoAnnotatorState } from "../state/use-demo-annotator-state";
+import type { DemoAnnotatorState } from "@lisca/web-demo";
 
 export function DemoAnnotatorDownloadButton({
   state,
