@@ -2,7 +2,13 @@ import { ViewportCard } from "@lisca/ui/shell";
 import { AnnotationCanvas, useCanvasTransientStatus } from "@lisca/ui/features";
 import { toDisplayFrame } from "@lisca/web-demo/browser";
 import type { DemoAnnotatorState } from "../state/use-demo-annotator-state";
-export function DemoAnnotatorMain({ state }: { state: DemoAnnotatorState }) {
+export function DemoAnnotatorMain({
+  state,
+  embedded = false,
+}: {
+  state: DemoAnnotatorState;
+  embedded?: boolean;
+}) {
   const displayFrame = state.frame ? toDisplayFrame(state.frame, state.contrast) : null;
   const visibleStatus = useCanvasTransientStatus(state.status);
   const activeToastStatus = state.frameLoading ? "Loading image" : visibleStatus;
@@ -33,7 +39,7 @@ export function DemoAnnotatorMain({ state }: { state: DemoAnnotatorState }) {
         labels={state.labels}
         mask={state.annotation.current.mask}
         overlayOpacity={state.overlayOpacity}
-        toasts={toasts}
+        toasts={embedded ? [] : toasts}
         tool={state.tool}
         onMaskCommit={(mask) =>
           state.annotation.commit({

@@ -7,7 +7,7 @@ import {
 } from "@lisca/ui/features";
 import { frameWithContrast } from "@lisca/web-demo/browser";
 import type { DemoAlignState } from "../state/use-demo-align-state";
-export function DemoAlignMain({ state }: { state: DemoAlignState }) {
+export function DemoAlignMain({ state, embedded = false }: { state: DemoAlignState; embedded?: boolean }) {
   const { handlePointerDown, handlePointerMove, handlePointerEnd, previewGrid } =
     useAlignCanvasGridHandlers({
       disabled: false,
@@ -45,7 +45,7 @@ export function DemoAlignMain({ state }: { state: DemoAlignState }) {
         grid={state.grid}
         loading={state.frameLoading}
         previewGrid={previewGrid}
-        toasts={toasts}
+        toasts={embedded ? [] : toasts}
         onVirtualPointerCancel={handlePointerEnd}
         onVirtualPointerDown={handlePointerDown}
         onVirtualPointerMove={handlePointerMove}

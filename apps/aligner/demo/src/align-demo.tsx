@@ -73,7 +73,7 @@ export function AlignDemo({ embedded = false }: AlignDemoProps) {
         ) : (
           <AppShell.MainColumn>
             <AppShell.Main>
-              <DemoAlignMain state={state} />
+              <DemoAlignMain embedded state={state} />
             </AppShell.Main>
             <DemoInlineAlignToolbar showDownload={false} showShapeToggle={false} state={state} />
           </AppShell.MainColumn>

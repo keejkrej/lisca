@@ -99,7 +99,7 @@ export function AnnotatorDemo({ embedded = false }: AnnotatorDemoProps) {
         ) : (
           <AppShell.MainColumn>
             <AppShell.Main>
-              <DemoAnnotatorMain state={state} />
+              <DemoAnnotatorMain embedded state={state} />
             </AppShell.Main>
             <DemoInlineAnnotatorToolbar state={state} />
           </AppShell.MainColumn>
