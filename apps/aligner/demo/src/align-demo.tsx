@@ -6,7 +6,8 @@ import { DemoAlignContrastControls } from "./components/demo-align-contrast-cont
 import { DemoAlignGridControls } from "./components/demo-align-grid-controls";
 import { DemoAlignMain } from "./components/demo-align-main";
 import { DemoAlignSelectionControls } from "./components/demo-align-selection-controls";
-import { DemoAlignDock, DemoInlineAlignDock } from "./components/demo-align-tool-section";
+import { DemoAlignDownloadButton } from "./components/demo-align-download-button";
+import { DemoAlignDock, DemoInlineAlignToolbar } from "./components/demo-align-tool-section";
 import { useDemoAlignState } from "./state/use-demo-align-state";
 
 export type AlignDemoProps = {
@@ -23,6 +24,11 @@ export function AlignDemo({ embedded = false }: AlignDemoProps) {
           fileName={state.fileName}
           loading={state.frameLoading}
           showThemeToggle={!embedded}
+          startTrailing={
+            embedded ? (
+              <DemoAlignDownloadButton className="gap-2 font-normal" state={state} />
+            ) : undefined
+          }
           endLeading={
             embedded ? (
               <AlignGridShapeToggle
@@ -69,9 +75,7 @@ export function AlignDemo({ embedded = false }: AlignDemoProps) {
             <AppShell.Main>
               <DemoAlignMain state={state} />
             </AppShell.Main>
-            <AppShell.Dock className="h-[9.5rem]">
-              <DemoInlineAlignDock state={state} />
-            </AppShell.Dock>
+            <DemoInlineAlignToolbar showDownload={false} showShapeToggle={false} state={state} />
           </AppShell.MainColumn>
         )}
       </AppShell.Body>

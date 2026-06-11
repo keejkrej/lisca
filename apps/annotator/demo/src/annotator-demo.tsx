@@ -4,6 +4,7 @@ import { DemoNavbar, DemoNavbarActionButton } from "@lisca/web-demo";
 import { Tags } from "lucide-react";
 
 import { DemoAnnotatorDock } from "./components/demo-annotator-dock";
+import { DemoAnnotatorDownloadButton } from "./components/demo-annotator-download-button";
 import { DemoAnnotatorLeft } from "./components/demo-annotator-left";
 import { DemoAnnotatorMain } from "./components/demo-annotator-main";
 import { DemoAnnotatorRight } from "./components/demo-annotator-right";
@@ -36,6 +37,11 @@ export function AnnotatorDemo({ embedded = false }: AnnotatorDemoProps) {
           fileName={state.fileName}
           loading={state.frameLoading}
           showThemeToggle={!embedded}
+          startTrailing={
+            embedded ? (
+              <DemoAnnotatorDownloadButton className="gap-2 font-normal" state={state} />
+            ) : undefined
+          }
           onOpenFile={(file) => void state.openImage(file)}
         />
       </AppShell.Header>

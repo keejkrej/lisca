@@ -35,11 +35,16 @@ function DemoAnnotatorToolToolbar(props: {
   canEditTools: boolean;
   toolActions: DockToolAction[];
   className?: string;
+  shortcutsEnabled?: boolean;
 }) {
-  useKeyboardShortcuts(dockToolShortcuts(props.toolActions), { enabled: props.canEditTools });
+  useKeyboardShortcuts(dockToolShortcuts(props.toolActions), {
+    enabled: props.canEditTools && (props.shortcutsEnabled ?? true),
+  });
+
+  const showShortcutLabels = props.shortcutsEnabled ?? true;
 
   const buttons = props.toolActions.map((action, index) => {
-    const label = dockToolLabel(action.label, index);
+    const label = showShortcutLabels ? dockToolLabel(action.label, index) : action.label;
     return (
       <Button
         key={action.id}
@@ -100,6 +105,7 @@ export function DemoInlineAnnotatorToolbar({ state }: { state: DemoAnnotatorStat
         <DemoAnnotatorToolToolbar
           canEditTools={canEditTools}
           className="mx-auto flex w-full max-w-md flex-col gap-2"
+          shortcutsEnabled={false}
           toolActions={toolActions}
         />
       ) : (

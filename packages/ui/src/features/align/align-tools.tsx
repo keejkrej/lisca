@@ -84,9 +84,10 @@ function renderAlignToolCell(
   mode: AlignGridToolMode,
   onModeChange: (mode: AlignGridToolMode) => void,
   patternZoomLocked: boolean,
-  onPatternZoomLockedChange?: (locked: boolean) => void,
+  onPatternZoomLockedChange: ((locked: boolean) => void) | undefined,
+  shortcutsEnabled: boolean,
 ) {
-  const shortcutLabel = dockToolLabel(tool.label, index);
+  const label = shortcutsEnabled ? dockToolLabel(tool.label, index) : tool.label;
   if (tool.mode === "zoom-pattern") {
     return (
       <div key={tool.mode} className="min-w-0">
@@ -95,7 +96,7 @@ function renderAlignToolCell(
             active={mode === tool.mode}
             className="w-full min-w-0 justify-center gap-2 px-2"
             Icon={tool.Icon}
-            label={shortcutLabel}
+            label={label}
             mode={tool.mode}
             onClick={() => onModeChange(tool.mode)}
           />
@@ -126,7 +127,7 @@ function renderAlignToolCell(
       <AlignToolButton
         active={mode === tool.mode}
         Icon={tool.Icon}
-        label={shortcutLabel}
+        label={label}
         mode={tool.mode}
         onClick={() => onModeChange(tool.mode)}
       />
@@ -161,6 +162,7 @@ export function AlignToolToolbar({
       onModeChange,
       patternZoomLocked,
       onPatternZoomLockedChange,
+      shortcutsEnabled,
     ),
   );
 

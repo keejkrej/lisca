@@ -38,6 +38,20 @@ export function labelColorStyle(label: AnnotationLabel, selected: boolean) {
   };
 }
 
+export async function encodeMaskToPngBytes(
+  mask: Uint8Array,
+  width: number,
+  height: number,
+): Promise<Uint8Array> {
+  const base64 = await encodeMaskToBase64Png(mask, width, height);
+  const binary = window.atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return bytes;
+}
+
 export async function encodeMaskToBase64Png(mask: Uint8Array, width: number, height: number) {
   const canvas = document.createElement("canvas");
   canvas.width = width;

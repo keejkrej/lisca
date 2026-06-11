@@ -10,10 +10,7 @@ export function DemoAlignSaveSection({ state }: { state: DemoAlignState }) {
   return (
     <DockSection title="Save">
       <div className="flex w-full flex-col gap-2">
-        <ReadonlyPathField
-          aria-label="Output ROI archive"
-          value={`${stem}-rois.zip (Roi0.tif, Roi1.tif, …)`}
-        />
+        <ReadonlyPathField aria-label="Output ROI archive" value={`${stem}-rois.zip`} />
         <DemoAlignDownloadButton state={state} />
       </div>
     </DockSection>

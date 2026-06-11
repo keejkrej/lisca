@@ -40,7 +40,6 @@ export function DemoAlignMain({ state }: { state: DemoAlignState }) {
       <AlignCanvas
         className="min-h-0 flex-1"
         cursor={cursorForAlignTool(state.toolMode, state.grid.enabled, previewGrid != null)}
-        emptyText={state.frame ? "No frame loaded." : "Open an image to begin."}
         excludedCells={state.excludedCells}
         frame={displayFrame}
         grid={state.grid}

@@ -29,7 +29,6 @@ export function DemoAnnotatorMain({ state }: { state: DemoAnnotatorState }) {
         brushSize={state.brushSize}
         className="min-h-0 flex-1"
         disabled={!state.canEditSegmentation}
-        emptyText={state.frame ? "No frame loaded." : "Open an image to begin."}
         frame={displayFrame}
         labels={state.labels}
         mask={state.annotation.current.mask}

@@ -8,6 +8,8 @@ const imageAccept = ".png,.jpg,.jpeg,.tif,.tiff,image/png,image/jpeg,image/tiff"
 export type DemoNavbarProps = {
   fileName: string | null;
   loading?: boolean;
+  /** Actions placed after the Image button on the left. */
+  startTrailing?: ReactNode;
   endLeading?: ReactNode;
   /** When false, the navbar omits its theme toggle (e.g. embedded landing previews). */
   showThemeToggle?: boolean;
@@ -26,7 +28,7 @@ export function DemoNavbar(props: DemoNavbarProps) {
   return (
     <header className="h-full px-6">
       <div className="grid h-full grid-cols-[1fr_auto_1fr] items-center gap-4">
-        <div className="flex min-w-0 items-center justify-start">
+        <div className="flex min-w-0 items-center justify-start gap-2">
           <input
             ref={inputRef}
             accept={imageAccept}
@@ -48,6 +50,7 @@ export function DemoNavbar(props: DemoNavbarProps) {
             <ImageIcon className="size-4 shrink-0 opacity-80" aria-hidden />
             Image
           </Button>
+          {props.startTrailing}
         </div>
 
         <div />

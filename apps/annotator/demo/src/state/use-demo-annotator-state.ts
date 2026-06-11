@@ -1,11 +1,11 @@
-import type { AnnotationLabel, ContrastWindow, RoiFrameAnnotation } from "@lisca/contracts";
+import type { AnnotationLabel, ContrastWindow } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 import type { AnnotationMode } from "@lisca/ui/features";
-import { downloadBase64Png, downloadJson, loadImageFile, stemName } from "@lisca/web-demo/browser";
+import { buildAnnotationExportZip, downloadBlob, loadImageFile, stemName } from "@lisca/web-demo/browser";
 import type { AnnotationTool } from "@lisca/ui/features";
 import { useState } from "react";
 import { useAnnotationHistory } from "./use-annotation-history";
-import { encodeMaskToBase64Png, maskHasPixels } from "../utils/annotation-utils";
+import { encodeMaskToPngBytes, maskHasPixels } from "../utils/annotation-utils";
 const defaultLabels: AnnotationLabel[] = [
   {
     id: "class-1",
@@ -118,24 +118,19 @@ export function useDemoAnnotatorState(): DemoAnnotatorState {
     setError(null);
     try {
       const stem = stemName(fileName);
-      const maskPath = `${stem}.mask.png`;
       const hasMask = maskHasPixels(annotation.current.mask);
-      const annotationJson: RoiFrameAnnotation = {
+      const maskPng = hasMask
+        ? await encodeMaskToPngBytes(annotation.current.mask, frame.width, frame.height)
+        : null;
+      const zip = buildAnnotationExportZip({
+        stem,
         classificationLabelId: annotation.current.classificationLabelId,
-        maskPath: hasMask ? maskPath : null,
-        updatedAt: new Date().toISOString(),
-      };
-      if (hasMask) {
-        const base64 = await encodeMaskToBase64Png(
-          annotation.current.mask,
-          frame.width,
-          frame.height,
-        );
-        downloadBase64Png(maskPath, base64);
-      }
-      downloadJson(`${stem}.annotation.json`, annotationJson);
+        maskPng,
+      });
+      const zipName = `${stem}-annotation.zip`;
+      downloadBlob(zipName, new Blob([new Uint8Array(zip)], { type: "application/zip" }));
       annotation.markSaved();
-      setStatus(`Downloaded ${stem}.annotation.json${hasMask ? ` and ${maskPath}` : ""}`);
+      setStatus(`Downloaded ${zipName}`);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally {

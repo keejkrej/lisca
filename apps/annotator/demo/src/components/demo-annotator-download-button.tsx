@@ -1,20 +1,18 @@
 import { Button } from "@lisca/ui/components";
 
-import type { DemoAlignState } from "../state/use-demo-align-state";
+import type { DemoAnnotatorState } from "../state/use-demo-annotator-state";
 
-export function DemoAlignDownloadButton({
+export function DemoAnnotatorDownloadButton({
   state,
   className,
 }: {
-  state: DemoAlignState;
+  state: DemoAnnotatorState;
   className?: string;
 }) {
-  const canSave = Boolean(state.frame);
-
   return (
     <Button
       className={className ?? "w-full justify-center"}
-      disabled={!canSave || state.saving}
+      disabled={!state.canSave}
       loading={state.saving}
       size="sm"
       type="button"
