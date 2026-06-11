@@ -19,6 +19,11 @@ export function encodeGray16Tiff(width: number, height: number, pixels: Uint16Ar
   const header = new Uint8Array(UTIF.encode([ifd as never]));
   const file = new Uint8Array(TIFF_HEADER_SIZE + byteLength);
   file.set(header, 0);
-  file.set(new Uint8Array(pixels.buffer, pixels.byteOffset, pixels.byteLength), TIFF_HEADER_SIZE);
+  let offset = TIFF_HEADER_SIZE;
+  for (const value of pixels) {
+    file[offset] = value & 0xff;
+    file[offset + 1] = value >> 8;
+    offset += 2;
+  }
   return file;
 }

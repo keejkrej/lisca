@@ -67,6 +67,17 @@ async function loadRasterImage(file: File): Promise<FrameResult> {
   }
 }
 
+function unpackUtifGray16(data: Uint8Array): Uint16Array {
+  const pixelCount = data.length / 2;
+  const pixels = new Uint16Array(pixelCount);
+  const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+  // UTIF.decodeImage stores 16-bit samples as big-endian byte pairs in Uint8Array.
+  for (let index = 0; index < pixelCount; index += 1) {
+    pixels[index] = view.getUint16(index * 2, false);
+  }
+  return pixels;
+}
+
 function normalizeTiffImageData(
   width: number,
   height: number,
@@ -74,12 +85,7 @@ function normalizeTiffImageData(
 ): Uint8Array | Uint16Array | Int16Array | Float32Array {
   const pixelCount = width * height;
   if (data instanceof Uint8Array && data.length === pixelCount * 2) {
-    const pixels = new Uint16Array(pixelCount);
-    const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
-    for (let index = 0; index < pixelCount; index += 1) {
-      pixels[index] = view.getUint16(index * 2, true);
-    }
-    return pixels;
+    return unpackUtifGray16(data);
   }
   return data;
 }

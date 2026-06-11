@@ -594,6 +594,7 @@
         "react": "catalog:",
         "react-dom": "catalog:",
         "typescript": "catalog:",
+        "vitest": "catalog:",
       },
       "peerDependencies": {
         "react": "^19.0.0",
