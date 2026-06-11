@@ -5,48 +5,25 @@
 @source "../../../../apps/aligner/demo/src";
 @source "../../../../apps/annotator/demo/src";
 
-html {
-  scroll-behavior: smooth;
-}
-
 body {
-  @apply bg-background text-foreground antialiased;
+  @apply bg-background text-foreground;
+  margin: 1rem;
+  max-width: 40rem;
 }
 
-.landing-grid-bg {
-  background-image:
-    linear-gradient(
-      to right,
-      color-mix(in oklab, var(--foreground) 6%, transparent) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      to bottom,
-      color-mix(in oklab, var(--foreground) 6%, transparent) 1px,
-      transparent 1px
-    );
-  background-size: 48px 48px;
-  mask-image: radial-gradient(ellipse 80% 70% at 50% 0%, black 20%, transparent 75%);
+header,
+footer,
+section,
+article {
+  margin-block: 2rem;
 }
 
-.landing-hero-glow {
-  background:
-    radial-gradient(
-      ellipse 60% 50% at 50% -10%,
-      color-mix(in oklab, var(--foreground) 12%, transparent),
-      transparent
-    ),
-    radial-gradient(
-      ellipse 40% 30% at 80% 20%,
-      color-mix(in oklab, var(--foreground) 8%, transparent),
-      transparent
-    );
+h1,
+h2,
+h3 {
+  font-weight: 600;
 }
 
-.landing-demo-frame {
-  @apply overflow-auto rounded-2xl border border-border bg-background shadow-xs/5;
-}
-
-.landing-demo-frame > * {
-  @apply h-full min-h-0;
+a {
+  color: inherit;
 }
