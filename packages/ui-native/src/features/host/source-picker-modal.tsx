@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { Button } from "../../shell/chrome/buttons";
 import { DialogSurface, ModalScrim } from "../../shell/modal/modal";
 import { useShellTheme } from "../../theme/shell-theme";
+import { liscaType } from "../../theme/typography";
 
 export type SourcePickerModalProps = {
   open: boolean;
@@ -37,8 +38,7 @@ export function SourcePickerModal(props: SourcePickerModalProps) {
 
 const styles = StyleSheet.create({
   title: {
-    fontSize: 18,
-    fontWeight: "600",
+    ...liscaType.dialogTitle,
   },
   grid: {
     gap: 8,

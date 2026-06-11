@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
 import { useShellTheme } from "../../theme/shell-theme";
+import { liscaType } from "../../theme/typography";
 
 export function Spinner(props: { size?: "small" | "large" }) {
   const { colors } = useShellTheme();
@@ -42,7 +43,6 @@ const panelStyles = StyleSheet.create({
     gap: 8,
   },
   title: {
-    fontSize: 13,
-    fontWeight: "600",
+    ...liscaType.panelTitle,
   },
 });

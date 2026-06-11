@@ -23,7 +23,7 @@ export function PanelHeader({ className, ...props }: ComponentProps<"div">) {
 export function PanelTitle({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
-      className={cn("font-semibold leading-none", className)}
+      className={cn("font-display font-semibold leading-none", className)}
       data-slot="panel-title"
       {...props}
     />

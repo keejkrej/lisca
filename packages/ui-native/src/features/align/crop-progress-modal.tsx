@@ -6,6 +6,7 @@ import { Button } from "../../shell/chrome/buttons";
 import { DialogSurface, ModalScrim } from "../../shell/modal/modal";
 import { Spinner } from "../../shell/regions/panel";
 import { useShellTheme } from "../../theme/shell-theme";
+import { liscaType } from "../../theme/typography";
 
 export type CropProgressModalProps = {
   progress: CropRoiProgress | null;
@@ -39,8 +40,7 @@ export function CropProgressModal({ progress, onCancel }: CropProgressModalProps
 
 const styles = StyleSheet.create({
   title: {
-    fontSize: 18,
-    fontWeight: "600",
+    ...liscaType.dialogTitle,
   },
   progressTrack: {
     height: 8,

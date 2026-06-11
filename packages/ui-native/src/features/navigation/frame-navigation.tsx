@@ -13,6 +13,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-nati
 import { Button } from "../../shell/chrome/buttons";
 import { Field } from "../../shell/chrome/field";
 import { shellOutlineElevation } from "../../shell/chrome/shell-chrome";
+import { liscaType } from "../../theme/typography";
 import { Section } from "../../shell/regions/section";
 import { Slider } from "../../shell/chrome/slider";
 import { useShellTheme } from "../../theme/shell-theme";
@@ -82,7 +83,7 @@ function SelectPicker<T extends NavigationValue>(props: {
           },
         ]}
       >
-        <Text numberOfLines={1} style={{ color: colors.foreground, fontSize: 14 }}>
+        <Text numberOfLines={1} style={{ color: colors.foreground, ...liscaType.body }}>
           {selected
             ? formatNavigationOptionDisplayLabel(selected.label)
             : String(props.value)}

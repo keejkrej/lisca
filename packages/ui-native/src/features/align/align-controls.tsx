@@ -7,6 +7,7 @@ import { Field } from "../../shell/chrome/field";
 import { Section } from "../../shell/regions/section";
 import { Slider } from "../../shell/chrome/slider";
 import { useShellTheme } from "../../theme/shell-theme";
+import { liscaFontFamily, liscaType } from "../../theme/typography";
 import { AlignGridShapeToggle, type AlignGridShapeToggleProps } from "./align-grid-shape-toggle";
 
 type AlignGridShape = AlignGridShapeToggleProps["shape"];
@@ -322,6 +323,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 6,
     fontSize: 14,
+    fontFamily: liscaFontFamily.sansRegular,
     minWidth: 0,
     flex: 1,
   },
@@ -338,8 +340,7 @@ const pathStyles = StyleSheet.create({
     width: "100%",
   },
   text: {
-    fontSize: 12,
-    fontFamily: "monospace",
+    ...liscaType.mono,
     padding: 0,
   },
 });

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { useShellTheme } from "../../theme/shell-theme";
+import { liscaType } from "../../theme/typography";
 
 export function Field(props: { label: string; valueLabel?: string; children: ReactNode; style?: object }) {
   return (
@@ -39,11 +40,9 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   label: {
-    fontSize: 12,
-    fontWeight: "500",
+    ...liscaType.bodySmallMedium,
   },
   value: {
-    fontSize: 12,
-    fontWeight: "400",
+    ...liscaType.bodySmall,
   },
 });

@@ -1,15 +1,11 @@
 import { matchFont, type SkFont } from "@shopify/react-native-skia";
-import { Platform } from "react-native";
+
+import { liscaFontFamily } from "../../../theme/typography";
 
 export function useChartFont(): SkFont | null {
   return matchFont({
-    fontFamily: Platform.select({
-      ios: "Helvetica",
-      android: "sans-serif",
-      default: "system-ui",
-    }),
+    fontFamily: liscaFontFamily.sansMedium,
     fontSize: 12,
-    fontWeight: "500",
   });
 }
 

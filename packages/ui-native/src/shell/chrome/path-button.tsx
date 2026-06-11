@@ -7,6 +7,7 @@ import {
   shellOutlineSurface,
 } from "./shell-chrome";
 import { useShellTheme } from "../../theme/shell-theme";
+import { liscaType } from "../../theme/typography";
 
 function basename(value: string | null): string | null {
   if (!value) return null;
@@ -55,7 +56,6 @@ const styles = StyleSheet.create({
   },
   label: {
     flexShrink: 1,
-    fontSize: shellChromeMetrics.fontSize,
-    fontWeight: "400",
+    ...liscaType.body,
   },
 });

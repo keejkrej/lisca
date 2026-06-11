@@ -6,6 +6,7 @@ import {
   shellOutlineSurface,
 } from "./shell-chrome";
 import { useShellTheme } from "../../theme/shell-theme";
+import { liscaType } from "../../theme/typography";
 import type { ConnectionState } from "../server/use-shell-ws-probe";
 
 const STATUS_LABELS: Record<ConnectionState, string> = {
@@ -80,13 +81,11 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   title: {
-    fontSize: shellChromeMetrics.fontSize,
-    fontWeight: "500",
+    ...liscaType.bodyMedium,
     flexShrink: 0,
   },
   status: {
-    fontSize: shellChromeMetrics.fontSize,
-    fontWeight: "400",
+    ...liscaType.body,
     opacity: 0.7,
     flexShrink: 0,
   },

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Text } from "react-native";
 
 import { useShellTheme } from "../../theme/shell-theme";
+import { liscaType } from "../../theme/typography";
 
 export function StudioNavButton(props: {
   active: boolean;
@@ -36,8 +37,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   label: {
-    fontSize: 18,
-    fontWeight: "500",
+    ...liscaType.navTitle,
     textAlign: "center",
   },
 });

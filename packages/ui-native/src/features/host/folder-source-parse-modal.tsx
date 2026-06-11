@@ -5,6 +5,7 @@ import { ActivityIndicator, StyleSheet, Text, TextInput, View } from "react-nati
 import { Button } from "../../shell/chrome/buttons";
 import { DialogSurface, ModalScrim } from "../../shell/modal/modal";
 import { useShellTheme } from "../../theme/shell-theme";
+import { liscaFontFamily, liscaType } from "../../theme/typography";
 import type { HostFilePickerOperations } from "./host-operations";
 
 export type FolderSourceParseModalProps = {
@@ -85,8 +86,7 @@ export function FolderSourceParseModal({
 
 const styles = StyleSheet.create({
   title: {
-    fontSize: 18,
-    fontWeight: "600",
+    ...liscaType.dialogTitle,
   },
   field: {
     gap: 6,
@@ -97,6 +97,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
     fontSize: 14,
+    fontFamily: liscaFontFamily.sansRegular,
   },
   actions: {
     flexDirection: "row",

@@ -11,6 +11,7 @@ import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { useShellTheme } from "../../theme/shell-theme";
+import { liscaFontFamily } from "../../theme/typography";
 import { clientToFramePoint, computeFrameLayout, prepareFrameRgba } from "../canvas/frame-pixels";
 export type {
   AlignCanvasFramePoint,
@@ -294,6 +295,7 @@ const styles = StyleSheet.create({
   },
   toastText: {
     color: "#fff",
+    fontFamily: liscaFontFamily.sansRegular,
     fontSize: 13,
   },
 });

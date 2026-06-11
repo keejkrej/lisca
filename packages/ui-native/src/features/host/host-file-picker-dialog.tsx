@@ -5,6 +5,7 @@ import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-nativ
 import { Button } from "../../shell/chrome/buttons";
 import { DialogSurface, ModalScrim } from "../../shell/modal/modal";
 import { useShellTheme } from "../../theme/shell-theme";
+import { liscaType } from "../../theme/typography";
 import { FILE_PICKER_ROW_HEIGHT, FilePickerRow } from "./host-file-picker-row";
 import type { HostFilePickerOperations } from "./host-operations";
 
@@ -109,8 +110,7 @@ export function HostFilePickerDialog({
 
 const styles = StyleSheet.create({
   title: {
-    fontSize: 18,
-    fontWeight: "600",
+    ...liscaType.dialogTitle,
   },
   list: {
     maxHeight: 320,

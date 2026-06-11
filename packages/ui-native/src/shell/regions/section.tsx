@@ -4,6 +4,7 @@ import { ChevronDown, ChevronRight } from "lucide-react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { useShellTheme } from "../../theme/shell-theme";
+import { liscaType } from "../../theme/typography";
 
 export function Section(props: {
   title: string;
@@ -76,11 +77,10 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   title: {
-    fontSize: 14,
-    fontWeight: "600",
+    ...liscaType.sectionTitle,
   },
   description: {
-    fontSize: 12,
+    ...liscaType.bodySmall,
   },
   headerActions: {
     flexDirection: "row",

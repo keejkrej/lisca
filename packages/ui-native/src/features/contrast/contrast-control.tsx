@@ -8,6 +8,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { Button } from "../../shell/chrome/buttons";
 import { Section } from "../../shell/regions/section";
 import { Slider } from "../../shell/chrome/slider";
+import { liscaType } from "../../theme/typography";
 import { useShellTheme } from "../../theme/shell-theme";
 
 export type ContrastControlProps = {
@@ -125,7 +126,7 @@ function ContrastControlBody(props: {
         style={sectionStyle}
         title={sectionTitle}
       >
-        <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>
+        <Text style={{ color: colors.mutedForeground, ...liscaType.bodySmall }}>
           Invalid intensity domain.
         </Text>
       </Section>
@@ -140,7 +141,7 @@ function ContrastControlBody(props: {
       title={sectionTitle}
     >
       {title?.trim() ? (
-        <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: "500" }}>
+        <Text style={{ color: colors.foreground, ...liscaType.bodyMedium }}>
           {title.trim()}
         </Text>
       ) : null}
@@ -199,11 +200,11 @@ function ContrastSliderRow(props: {
   return (
     <View style={styles.sliderRow}>
       <View style={styles.sliderHeader}>
-        <Text style={{ color: colors.mutedForeground, fontSize: 12, fontWeight: "500" }}>
+        <Text style={{ color: colors.mutedForeground, ...liscaType.bodySmallMedium }}>
           {props.label}
         </Text>
         <Text
-          style={{ color: colors.mutedForeground, fontSize: 12, fontVariant: ["tabular-nums"] }}
+          style={{ color: colors.mutedForeground, ...liscaType.bodySmall, fontVariant: ["tabular-nums"] }}
         >
           {String(Math.round(props.value))}
         </Text>

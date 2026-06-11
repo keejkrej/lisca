@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { liscaType } from "../../../theme/typography";
 import type { ResultChartColors } from "./types";
 
 export function ChartShell(props: {
@@ -36,7 +37,7 @@ export function UnsupportedChart(props: {
           },
         ]}
       >
-        <Text style={{ color: props.colors.mutedText, fontSize: 13 }}>{props.message}</Text>
+        <Text style={{ color: props.colors.mutedText, ...liscaType.caption }}>{props.message}</Text>
       </View>
     </View>
   );
@@ -47,8 +48,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   panelTitle: {
-    fontSize: 12,
-    fontWeight: "600",
+    ...liscaType.bodySmallMedium,
   },
   unsupported: {
     alignItems: "center",

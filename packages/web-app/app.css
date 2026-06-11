@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "@lisca/ui/coss-theme.css";
+@import "./fonts.css";
 @custom-variant dark (&:where(.dark, .dark *));
 @source "../ui/src";
 
@@ -10,7 +11,17 @@ body,
 }
 
 body {
-  @apply bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100;
+  @apply bg-white text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100;
+  font-family: var(--font-sans);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
 }
 
 @media (prefers-reduced-motion: reduce) {

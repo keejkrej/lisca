@@ -10,3 +10,4 @@ export { ShellThemeProvider, useShellTheme } from "./theme/shell-theme";
 export { ShellThemeToggle } from "./theme/shell-theme-toggle";
 export type { ShellThemeMode } from "./theme/tokens";
 export { shellThemeColors } from "./theme/tokens";
+export { liscaFontFamily, liscaType } from "./theme/typography";

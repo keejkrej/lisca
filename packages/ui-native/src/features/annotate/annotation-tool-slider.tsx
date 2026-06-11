@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { Slider } from "../../shell/chrome/slider";
 import { useShellTheme } from "../../theme/shell-theme";
+import { liscaType } from "../../theme/typography";
 
 export function AnnotationToolSlider(props: {
   label: string;
@@ -50,11 +51,10 @@ const styles = StyleSheet.create({
   },
   label: {
     flex: 1,
-    fontSize: 12,
-    fontWeight: "500",
+    ...liscaType.bodySmallMedium,
   },
   value: {
-    fontSize: 12,
+    ...liscaType.bodySmall,
     fontVariant: ["tabular-nums"],
   },
   slider: {

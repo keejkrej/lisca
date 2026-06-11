@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { useShellTheme } from "../../theme/shell-theme";
+import { liscaFontFamily, liscaType } from "../../theme/typography";
 
 export type ServerAddressDialogProps = {
   open: boolean;
@@ -132,11 +133,10 @@ const styles = StyleSheet.create({
     maxHeight: "80%",
   },
   title: {
-    fontSize: 18,
-    fontWeight: "600",
+    ...liscaType.dialogTitle,
   },
   subtitle: {
-    fontSize: 12,
+    ...liscaType.bodySmall,
   },
   rowButton: {
     borderWidth: 1,
@@ -162,6 +162,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 14,
+    fontFamily: liscaFontFamily.sansRegular,
   },
   actions: {
     flexDirection: "row",

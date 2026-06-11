@@ -7,14 +7,15 @@ import { DemoEmbed } from "../components/demo-embed";
 import { GITHUB_REPO, GITHUB_URL } from "../lib/constants";
 import { landingDemos } from "../lib/demos";
 import { landingProducts } from "../lib/landing-content";
+import { scrollToSection } from "../lib/scroll-to-section";
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
 });
 
 const NAV = [
-  { href: "#demos", label: "Demos" },
-  { href: "#platform", label: "Platform" },
+  { id: "demos", label: "Demos" },
+  { id: "platform", label: "Platform" },
 ] as const;
 
 function LandingPage() {
@@ -35,8 +36,9 @@ function LandingPage() {
       <main id="main">
         <Hero />
 
-        <section id="demos" className="mx-auto max-w-6xl scroll-mt-24 px-6 py-20 sm:py-28">
+        <section className="mx-auto max-w-6xl px-6 pb-20 sm:pb-28">
           <SectionIntro
+            id="demos"
             eyebrow="Try it on your data"
             title="The workflow, running in your browser"
             lead="Load a fixed snapshot or a timelapse frame from patterned cultures. These previews use the same alignment and annotation steps you would run after an imaging session — nothing installs, nothing uploads."
@@ -48,9 +50,10 @@ function LandingPage() {
           </div>
         </section>
 
-        <section id="platform" className="relative scroll-mt-24 border-t border-border">
-          <div className="texture-grain relative mx-auto max-w-6xl px-6 py-20 sm:py-28">
+        <section className="relative">
+          <div className="texture-grain relative mx-auto max-w-6xl px-6 pb-20 sm:pb-28">
             <SectionIntro
+              id="platform"
               eyebrow="From surface to readout"
               title="From patterned surface to assay readout"
               lead="Live-cell work on single-cell arrays begins with defined adhesion sites — on prepatterned ibidi labware or surfaces you pattern with a photomask and the Micro Illumination System. After seeding and timelapse imaging, LiSCA carries you from the first frame to summary tables and plots."
@@ -110,13 +113,14 @@ function Header() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-6">
         <nav className="hidden items-center gap-1 sm:flex" aria-label="Primary">
           {NAV.map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              className="rounded-md px-3 py-2 font-mono text-xs font-bold uppercase tracking-wider text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => scrollToSection(item.id)}
+              className="rounded-md px-3 py-2 font-mono text-sm font-bold uppercase tracking-wider text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring sm:text-base"
             >
               {item.label}
-            </a>
+            </button>
           ))}
         </nav>
 
@@ -139,28 +143,28 @@ function Header() {
 
 function Hero() {
   return (
-    <section className="border-b border-border">
-      <div className="mx-auto max-w-6xl px-6 py-24 sm:py-36">
-        <p className="animate-rise font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground">
+    <section className="flex min-h-[calc(100dvh-4rem)] items-center">
+      <div className="mx-auto w-full max-w-6xl px-6 py-16 sm:py-20">
+        <p className="font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground">
           micropatterned slides · live-cell imaging · single-cell arrays
         </p>
-        <h1 className="animate-rise mt-6 max-w-4xl text-balance font-display text-5xl font-bold leading-[1.02] tracking-tight sm:text-7xl" style={{ animationDelay: "0.08s" }}>
+        <h1 className="mt-6 max-w-4xl text-balance font-display text-5xl font-bold leading-[1.02] tracking-tight sm:text-7xl">
           Live-cell imaging on{" "}
           <span className="text-glow">single-cell arrays.</span>
         </h1>
-        <p className="animate-rise mt-7 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg" style={{ animationDelay: "0.16s" }}>
+        <p className="mt-7 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
           LiSCA helps cell biologists and pharmacologists analyse micropatterned ibidi µ-Slides and
           custom photopatterns — whether you start from prepatterned labware or define adhesion sites
           with the Micro Illumination System. Align timelapse images to the grid, mark regions of
           interest on individual cells, and turn patterned-array experiments into quantitative assay
           readouts.
         </p>
-        <div className="animate-rise mt-9 flex flex-wrap items-center gap-3" style={{ animationDelay: "0.24s" }}>
-          <Button render={<a href="#demos" />} size="lg">
+        <div className="mt-9 flex flex-wrap items-center gap-3">
+          <Button type="button" size="lg" onClick={() => scrollToSection("demos")}>
             Explore the tools
             <ArrowRight aria-hidden />
           </Button>
-          <Button render={<a href="#platform" />} variant="outline" size="lg">
+          <Button type="button" variant="outline" size="lg" onClick={() => scrollToSection("platform")}>
             How it works
           </Button>
         </div>
@@ -169,11 +173,28 @@ function Hero() {
   );
 }
 
-function SectionIntro({ eyebrow, title, lead }: { eyebrow: string; title: string; lead: string }) {
+function SectionIntro({
+  id,
+  eyebrow,
+  title,
+  lead,
+}: {
+  id?: string;
+  eyebrow: string;
+  title: string;
+  lead: string;
+}) {
   return (
     <div className="max-w-3xl">
-      <p className="font-mono text-sm uppercase tracking-[0.14em] text-glow sm:text-base">{eyebrow}</p>
-      <h2 className="mt-4 text-balance font-display text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h2>
+      <p
+        id={id}
+        className="font-mono text-sm uppercase tracking-[0.14em] text-glow sm:text-base"
+      >
+        {eyebrow}
+      </p>
+      <h2 className="mt-4 text-balance font-display text-3xl font-semibold tracking-tight sm:text-4xl">
+        {title}
+      </h2>
       <p className="mt-5 text-base leading-relaxed text-muted-foreground">{lead}</p>
     </div>
   );

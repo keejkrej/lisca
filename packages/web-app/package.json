@@ -5,7 +5,8 @@
   "files": [
     "src",
     "vite.ts",
-    "app.css"
+    "app.css",
+    "fonts.css"
   ],
   "type": "module",
   "main": "./src/index.ts",
@@ -19,7 +20,8 @@
       "types": "./vite.ts",
       "import": "./vite.ts"
     },
-    "./app.css": "./app.css"
+    "./app.css": "./app.css",
+    "./fonts.css": "./fonts.css"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit"

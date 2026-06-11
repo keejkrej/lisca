@@ -1,15 +1,10 @@
 @import "tailwindcss";
 @import "@lisca/ui/coss-theme.css";
+@import "@lisca/web-app/fonts.css";
 @custom-variant dark (&:where(.dark, .dark *));
 @source "../../../../packages/ui/src";
 @source "../../../../apps/aligner/demo/src";
 @source "../../../../apps/annotator/demo/src";
-
-@theme {
-  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
-}
 
 /*
  * Landing-only fluorescence accents — channel metaphor:
@@ -33,6 +28,15 @@ body {
   font-family: var(--font-sans);
 }
 
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
+}
+
 ::selection {
   background: color-mix(in oklab, var(--accent-glow) 32%, transparent);
 }
@@ -49,28 +53,4 @@ body {
 
 .text-glow {
   color: var(--accent-text);
-}
-
-@keyframes rise-in {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-rise {
-  opacity: 0;
-  animation: rise-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-rise {
-    animation: none;
-    opacity: 1;
-    transform: none;
-  }
 }

@@ -19,11 +19,15 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@expo-google-fonts/bricolage-grotesque": "^0.4.1",
+    "@expo-google-fonts/ibm-plex-mono": "^0.4.1",
+    "@expo-google-fonts/ibm-plex-sans": "^0.4.1",
     "@lisca/client": "workspace:*",
     "@lisca/contracts": "workspace:*",
     "@lisca/storage": "workspace:*",
     "@lisca/ui-native": "workspace:*",
-    "canvaskit-wasm": "0.41.0"
+    "canvaskit-wasm": "0.41.0",
+    "expo-font": "^56.0.5"
   },
   "devDependencies": {
     "@expo/metro-runtime": "~6.1.2",

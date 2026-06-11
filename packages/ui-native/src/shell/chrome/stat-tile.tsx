@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { useShellTheme } from "../../theme/shell-theme";
+import { liscaType } from "../../theme/typography";
 
 export function StatTile(props: {
   label: string;
@@ -36,11 +37,10 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   label: {
-    fontSize: 12,
+    ...liscaType.statLabel,
   },
   value: {
-    fontSize: 16,
-    fontWeight: "600",
+    ...liscaType.statValue,
     marginTop: 4,
     fontVariant: ["tabular-nums"],
   },

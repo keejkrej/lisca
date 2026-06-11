@@ -1,3 +1,4 @@
+import { liscaFontFamily } from "../../theme/typography";
 import type { ShellThemeColors, ShellThemeMode } from "../../theme/tokens";
 
 /** Matches web `buttonVariants` size `sm` / `icon-sm` in shell navbar. */
@@ -7,6 +8,7 @@ export const shellChromeMetrics = {
   paddingHorizontal: 10,
   gap: 6,
   fontSize: 14,
+  fontFamily: liscaFontFamily.sansRegular,
   iconSize: 16,
   iconButtonSize: 32,
 } as const;

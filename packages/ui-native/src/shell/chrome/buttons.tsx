@@ -7,6 +7,7 @@ import {
   shellOutlineSurface,
 } from "./shell-chrome";
 import { useShellTheme } from "../../theme/shell-theme";
+import { liscaType } from "../../theme/typography";
 
 export function Button(props: {
   label: string;
@@ -103,7 +104,7 @@ export function SegmentedToggle(props: {
             <Text
               style={{
                 color: active ? colors.primaryForeground : colors.foreground,
-                fontSize: 12,
+                ...liscaType.bodySmall,
               }}
             >
               {option.label}
@@ -129,12 +130,10 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   label: {
-    fontSize: 14,
-    fontWeight: "500",
+    ...liscaType.bodyMedium,
   },
   smLabel: {
-    fontSize: shellChromeMetrics.fontSize,
-    fontWeight: "500",
+    ...liscaType.bodyMedium,
   },
   segmented: {
     flexDirection: "row",
