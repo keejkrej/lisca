@@ -25,16 +25,18 @@ export function DemoEmbed({ demo, index }: { demo: LandingDemo; index: number })
         </div>
         <Link
           to={demo.href}
-          className="inline-flex shrink-0 items-center gap-1 rounded-md font-mono text-xs text-muted-foreground underline-offset-4 outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          className="landing-control inline-flex shrink-0 items-center gap-1 px-2 py-1 font-mono text-xs"
         >
           Full screen
           <ArrowUpRight className="size-3.5" aria-hidden />
         </Link>
       </header>
 
-      <p className="px-5 py-4 text-sm leading-relaxed text-muted-foreground">{demo.description}</p>
+      <div className="px-5 py-4">
+        <p className="min-h-[5lh] text-sm leading-relaxed text-muted-foreground">{demo.description}</p>
+      </div>
 
-      <div className="relative mx-5 mb-5 h-[32rem] overflow-hidden rounded-xl border border-border">
+      <div className="relative mx-5 mb-5 h-[32rem] shrink-0 overflow-hidden rounded-xl border border-border">
         {active ? (
           <Demo embedded />
         ) : (

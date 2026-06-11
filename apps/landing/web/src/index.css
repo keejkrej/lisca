@@ -12,8 +12,8 @@
  *   dark mode  → GFP (green, hue ~162)
  */
 :root {
-  --accent-text: oklch(0.52 0.21 18);
-  --accent-glow: oklch(0.62 0.18 18);
+  --accent-text: oklch(0.48 0.31 16);
+  --accent-glow: oklch(0.55 0.29 16);
   --accent-glow-strong: var(--accent-text);
 }
 
@@ -53,4 +53,16 @@ h6 {
 
 .text-glow {
   color: var(--accent-text);
+}
+
+@layer components {
+  /* Text controls — matches ghost icon buttons in the header. */
+  .landing-control {
+    @apply rounded-md text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring;
+  }
+
+  /* Bordered cards — subtle lift on hover. */
+  .landing-surface {
+    @apply transition-colors hover:border-foreground/25 hover:bg-accent/30;
+  }
 }

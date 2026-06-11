@@ -43,7 +43,7 @@ function LandingPage() {
             title="The workflow, running in your browser"
             lead="Load a fixed snapshot or a timelapse frame from patterned cultures. These previews use the same alignment and annotation steps you would run after an imaging session — nothing installs, nothing uploads."
           />
-          <div className="mt-12 grid gap-6 lg:grid-cols-2">
+          <div className="mt-12 grid items-start gap-6 lg:grid-cols-2">
             {landingDemos.map((demo, index) => (
               <DemoEmbed key={demo.id} demo={demo} index={index} />
             ))}
@@ -117,7 +117,7 @@ function Header() {
               key={item.id}
               type="button"
               onClick={() => scrollToSection(item.id)}
-              className="rounded-md px-3 py-2 font-mono text-sm font-bold uppercase tracking-wider text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring sm:text-base"
+              className="landing-control px-3 py-2 font-mono text-sm uppercase tracking-wider sm:text-base"
             >
               {item.label}
             </button>
@@ -143,23 +143,23 @@ function Header() {
 
 function Hero() {
   return (
-    <section className="flex min-h-[calc(100dvh-4rem)] items-center">
-      <div className="mx-auto w-full max-w-6xl px-6 py-16 sm:py-20">
+    <section className="flex min-h-[calc(100dvh-4rem)] items-center justify-center">
+      <div className="w-full max-w-4xl px-6 py-16 text-center sm:py-20">
         <p className="font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground">
           micropatterned slides · live-cell imaging · single-cell arrays
         </p>
-        <h1 className="mt-6 max-w-4xl text-balance font-display text-5xl font-bold leading-[1.02] tracking-tight sm:text-7xl">
+        <h1 className="mt-6 text-balance font-display text-5xl font-bold leading-[1.02] tracking-tight sm:text-7xl">
           Live-cell imaging on{" "}
-          <span className="text-glow">single-cell arrays.</span>
+          <span className="text-glow">single-cell arrays</span>
         </h1>
-        <p className="mt-7 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+        <p className="mx-auto mt-7 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
           LiSCA helps cell biologists and pharmacologists analyse micropatterned ibidi µ-Slides and
           custom photopatterns — whether you start from prepatterned labware or define adhesion sites
           with the Micro Illumination System. Align timelapse images to the grid, mark regions of
           interest on individual cells, and turn patterned-array experiments into quantitative assay
           readouts.
         </p>
-        <div className="mt-9 flex flex-wrap items-center gap-3">
+        <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
           <Button type="button" size="lg" onClick={() => scrollToSection("demos")}>
             Explore the tools
             <ArrowRight aria-hidden />
@@ -202,7 +202,7 @@ function SectionIntro({
 
 function ProductCard({ step, title, body }: { step: string; title: string; body: string }) {
   return (
-    <article className="relative rounded-2xl border border-border bg-card/60 p-6 transition-colors hover:border-foreground/20 sm:p-8">
+    <article className="landing-surface relative rounded-2xl border border-border bg-card/60 p-6 sm:p-8">
       <p className="font-mono text-sm uppercase tracking-[0.14em] text-glow sm:text-base">Step {step}</p>
       <h3 className="mt-3 font-display text-2xl font-semibold">{title}</h3>
       <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{body}</p>
@@ -224,7 +224,7 @@ function Footer() {
           href={GITHUB_URL}
           rel="noopener noreferrer"
           target="_blank"
-          className="inline-flex items-center gap-2 rounded-md font-mono text-sm text-muted-foreground underline-offset-4 outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          className="landing-control inline-flex items-center gap-2 px-2 py-1 font-mono text-sm"
         >
           <Github className="size-4" aria-hidden />
           github.com/{GITHUB_REPO}
