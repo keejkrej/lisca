@@ -1,10 +1,9 @@
 import { Button } from "@lisca/ui/components";
 import { ShellThemeToggle } from "@lisca/ui/shell";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { ArrowRight, Github } from "lucide-react";
 
 import { DemoEmbed } from "../components/demo-embed";
-import { MicropatternBackdrop } from "../components/micropattern-backdrop";
 import { GITHUB_REPO, GITHUB_URL } from "../lib/constants";
 import { landingDemos } from "../lib/demos";
 import { landingProducts } from "../lib/landing-content";
@@ -67,7 +66,7 @@ function LandingPage() {
             {studio ? (
               <article className="mt-5 overflow-hidden rounded-2xl border border-border bg-card/60">
                 <div className="flex flex-col gap-3 border-b border-border p-6 sm:p-8">
-                  <p className="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-glow">
+                  <p className="font-mono text-sm uppercase tracking-[0.14em] text-glow sm:text-base">
                     Step 03
                   </p>
                   <h3 className="font-display text-2xl font-semibold">{studio.title}</h3>
@@ -109,17 +108,12 @@ function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/70 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-6">
-        <Link to="/" className="flex items-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-ring rounded">
-          <span className="size-2.5 rounded-full" style={{ backgroundColor: "var(--accent-glow-strong)", boxShadow: "0 0 10px var(--accent-glow)" }} aria-hidden />
-          <span className="font-display text-lg font-bold tracking-tight">LiSCA</span>
-        </Link>
-
         <nav className="hidden items-center gap-1 sm:flex" aria-label="Primary">
           {NAV.map((item) => (
             <a
               key={item.href}
               href={item.href}
-              className="rounded-md px-3 py-2 font-mono text-xs uppercase tracking-wider text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              className="rounded-md px-3 py-2 font-mono text-xs font-bold uppercase tracking-wider text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
             >
               {item.label}
             </a>
@@ -145,14 +139,14 @@ function Header() {
 
 function Hero() {
   return (
-    <section className="relative isolate overflow-hidden border-b border-border">
-      <MicropatternBackdrop />
-      <div className="relative mx-auto max-w-6xl px-6 py-24 sm:py-36">
+    <section className="border-b border-border">
+      <div className="mx-auto max-w-6xl px-6 py-24 sm:py-36">
         <p className="animate-rise font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground">
           micropatterned slides · live-cell imaging · single-cell arrays
         </p>
         <h1 className="animate-rise mt-6 max-w-4xl text-balance font-display text-5xl font-bold leading-[1.02] tracking-tight sm:text-7xl" style={{ animationDelay: "0.08s" }}>
-          Live-cell imaging on <span className="text-glow">single-cell arrays.</span>
+          Live-cell imaging on{" "}
+          <span className="text-glow">single-cell arrays.</span>
         </h1>
         <p className="animate-rise mt-7 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg" style={{ animationDelay: "0.16s" }}>
           LiSCA helps cell biologists and pharmacologists analyse micropatterned ibidi µ-Slides and
@@ -178,7 +172,7 @@ function Hero() {
 function SectionIntro({ eyebrow, title, lead }: { eyebrow: string; title: string; lead: string }) {
   return (
     <div className="max-w-3xl">
-      <p className="font-mono text-xs uppercase tracking-[0.22em] text-glow">{eyebrow}</p>
+      <p className="font-mono text-sm uppercase tracking-[0.14em] text-glow sm:text-base">{eyebrow}</p>
       <h2 className="mt-4 text-balance font-display text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h2>
       <p className="mt-5 text-base leading-relaxed text-muted-foreground">{lead}</p>
     </div>
@@ -188,7 +182,7 @@ function SectionIntro({ eyebrow, title, lead }: { eyebrow: string; title: string
 function ProductCard({ step, title, body }: { step: string; title: string; body: string }) {
   return (
     <article className="relative rounded-2xl border border-border bg-card/60 p-6 transition-colors hover:border-foreground/20 sm:p-8">
-      <p className="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-glow">Step {step}</p>
+      <p className="font-mono text-sm uppercase tracking-[0.14em] text-glow sm:text-base">Step {step}</p>
       <h3 className="mt-3 font-display text-2xl font-semibold">{title}</h3>
       <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{body}</p>
     </article>
