@@ -5,26 +5,111 @@
 @source "../../../../apps/aligner/demo/src";
 @source "../../../../apps/annotator/demo/src";
 
+@theme {
+  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+}
+
+/*
+ * Landing-only design tokens. Scoped here (not in the shared coss theme) so the
+ * fluorescence accent and illumination glow stay out of the app shells.
+ */
+:root {
+  --accent-glow: oklch(0.78 0.17 168);
+  --accent-glow-strong: oklch(0.82 0.2 165);
+  --grid-line: color-mix(in oklab, var(--foreground) 8%, transparent);
+  --grid-dot: color-mix(in oklab, var(--foreground) 14%, transparent);
+  --illumination: color-mix(in oklab, var(--accent-glow) 18%, transparent);
+}
+
+.dark {
+  --accent-glow: oklch(0.84 0.18 162);
+  --accent-glow-strong: oklch(0.9 0.2 160);
+  --grid-line: color-mix(in oklab, var(--color-white) 7%, transparent);
+  --grid-dot: color-mix(in oklab, var(--color-white) 12%, transparent);
+  --illumination: color-mix(in oklab, var(--accent-glow) 26%, transparent);
+}
+
 body {
-  @apply bg-background text-foreground;
-  margin: 1rem;
-  max-width: 40rem;
+  @apply bg-background text-foreground antialiased;
+  font-family: var(--font-sans);
 }
 
-header,
-footer,
-section,
-article {
-  margin-block: 2rem;
+::selection {
+  background: color-mix(in oklab, var(--accent-glow) 32%, transparent);
 }
 
-h1,
-h2,
-h3,
-h4 {
-  font-weight: 600;
+/* Layered micropattern backdrop: blueprint lines + adhesion-site dots + radial glow. */
+.backdrop-micropattern {
+  background-image:
+    radial-gradient(circle at 50% 0%, var(--illumination), transparent 60%),
+    radial-gradient(var(--grid-dot) 1.5px, transparent 1.6px),
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size:
+    100% 100%,
+    44px 44px,
+    44px 44px,
+    44px 44px;
+  background-position:
+    center top,
+    0 0,
+    0 0,
+    0 0;
 }
 
-a {
-  color: inherit;
+/* Subtle film grain to add texture/atmosphere over flat surfaces. */
+.texture-grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.text-glow {
+  color: var(--accent-glow-strong);
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-site {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-rise {
+  opacity: 0;
+  animation: rise-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-site {
+  animation: pulse-site 3s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise,
+  .animate-site {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
 }
