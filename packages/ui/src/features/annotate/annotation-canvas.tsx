@@ -3,6 +3,7 @@
 import type { AnnotationLabel } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 import type { CanvasStatusMessage } from "@lisca/ui-headless";
+import type { AnnotationTool } from "@lisca/ui-headless/annotation-tools";
 import { clamp, fillPolygon, hexToRgb, strokeMask } from "@lisca/utils";
 import {
   useEffect,
@@ -30,7 +31,12 @@ type PreparedFrame = {
   frame: FrameResult;
   prepared: HTMLCanvasElement;
 };
-export type AnnotationTool = "brush" | "brush-erase" | "lasso" | "lasso-erase";
+export type { AnnotationTool } from "@lisca/ui-headless/annotation-tools";
+export type SmartSegmentPrompt = {
+  x: number;
+  y: number;
+  label: 0 | 1;
+};
 export type AnnotationCanvasProps = {
   frame: FrameResult | null;
   labels: AnnotationLabel[];
@@ -44,7 +50,9 @@ export type AnnotationCanvasProps = {
   disabled?: boolean;
   className?: string;
   emptyText?: string;
+  smartSegmentPrompts?: SmartSegmentPrompt[];
   onMaskCommit: (mask: Uint8Array) => void;
+  onSmartSegmentClick?: (click: { x: number; y: number; negative: boolean }) => void;
 };
 function drawRectFor(width: number, height: number, frame: FrameResult): DrawRect {
   const scale = Math.min(width / frame.width, height / frame.height);
@@ -118,7 +126,9 @@ export function AnnotationCanvas({
   disabled = false,
   className,
   emptyText,
+  smartSegmentPrompts = [],
   onMaskCommit,
+  onSmartSegmentClick,
 }: AnnotationCanvasProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -139,6 +149,7 @@ export function AnnotationCanvas({
   })();
   const eraseMode = tool === "brush-erase" || tool === "lasso-erase";
   const brushMode = tool === "brush" || tool === "brush-erase";
+  const smartSegmentMode = tool === "smart-segment";
   const renderNow = () => {
     renderRafRef.current = null;
     const canvas = canvasRef.current;
@@ -175,6 +186,21 @@ export function AnnotationCanvas({
         }
         ctx.stroke();
       }
+      if (smartSegmentMode && smartSegmentPrompts.length > 0) {
+        for (const prompt of smartSegmentPrompts) {
+          const centerX = rect.x + prompt.x * rect.scale;
+          const centerY = rect.y + prompt.y * rect.scale;
+          const radius = Math.max(4, 5 * rect.scale);
+          ctx.beginPath();
+          ctx.fillStyle =
+            prompt.label === 1 ? "rgba(34,197,94,0.95)" : "rgba(248,113,113,0.95)";
+          ctx.strokeStyle = "rgba(255,255,255,0.95)";
+          ctx.lineWidth = 1.5;
+          ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        }
+      }
     }
     ctx.restore();
   };
@@ -193,7 +219,7 @@ export function AnnotationCanvas({
   }, [frame, preparedFrame, renderNowLatest]);
   useEffect(() => {
     renderNowLatest.current();
-  }, [labels, lassoPoints, mask, overlayOpacity, renderNowLatest]);
+  }, [labels, lassoPoints, mask, overlayOpacity, renderNowLatest, smartSegmentMode, smartSegmentPrompts]);
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
     const viewport = viewportRef.current;
@@ -286,9 +312,21 @@ export function AnnotationCanvas({
           cursor: disabled || !frame ? "default" : "crosshair",
         }}
         onPointerDown={(event) => {
-          if (disabled || !frame || event.pointerType !== "mouse" || event.button !== 0) return;
+          if (disabled || !frame || event.pointerType !== "mouse") return;
           const point = framePointFromEvent(event);
           if (!point) return;
+          if (smartSegmentMode) {
+            if (event.button !== 0 && event.button !== 2) return;
+            if (activeLabelValue <= 0) return;
+            event.preventDefault();
+            onSmartSegmentClick?.({
+              x: point.x,
+              y: point.y,
+              negative: event.button === 2,
+            });
+            return;
+          }
+          if (event.button !== 0) return;
           if (!eraseMode && activeLabelValue <= 0) return;
           event.preventDefault();
           event.currentTarget.setPointerCapture(event.pointerId);
@@ -299,6 +337,7 @@ export function AnnotationCanvas({
           setLassoPoints([point]);
         }}
         onPointerMove={(event) => {
+          if (smartSegmentMode) return;
           const active = lassoRef.current;
           if (!active || active.pointerId !== event.pointerId) return;
           const point = framePointFromEvent(event);

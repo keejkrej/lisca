@@ -1,7 +1,10 @@
 import { ViewportCard } from "@lisca/ui/shell";
 import { AnnotationCanvas, useCanvasTransientStatus } from "@lisca/ui/features";
+import { useSmartSegment } from "@lisca/segmentation/browser";
 import { toDisplayFrame } from "@lisca/web-demo/browser";
+import { useMemo, useState } from "react";
 import type { DemoAnnotatorState } from "../state/use-demo-annotator-state";
+
 export function DemoAnnotatorMain({
   state,
   embedded = false,
@@ -11,35 +14,53 @@ export function DemoAnnotatorMain({
 }) {
   const displayFrame = state.frame ? toDisplayFrame(state.frame, state.contrast) : null;
   const visibleStatus = useCanvasTransientStatus(state.status);
+  const [smartSegmentStatus, setSmartSegmentStatus] = useState<string | null>(null);
+  const [smartSegmentError, setSmartSegmentError] = useState<string | null>(null);
+  const activeLabelValue = state.labels.findIndex((label) => label.id === state.activeLabelId) + 1;
+  const smartSegment = useSmartSegment({
+    frame: displayFrame,
+    tool: state.tool,
+    activeLabelValue,
+    mask: state.annotation.current.mask,
+    enabled: state.canEditSegmentation,
+    onCommit: (mask) =>
+      state.annotation.commit({
+        classificationLabelId: state.annotation.current.classificationLabelId,
+        mask,
+      }),
+    onStatus: setSmartSegmentStatus,
+    onError: setSmartSegmentError,
+  });
   const activeToastStatus = state.frameLoading ? "Loading image" : visibleStatus;
-  const toasts = (() => {
-    if (state.error)
-      return [
-        {
-          text: state.error,
-          tone: "error" as const,
-        },
-      ];
-    if (activeToastStatus)
-      return [
-        {
-          text: activeToastStatus,
-        },
-      ];
+  const toasts = useMemo(() => {
+    if (embedded) return [];
+    if (smartSegmentError) {
+      return [{ text: smartSegmentError, tone: "error" as const }];
+    }
+    if (state.error) {
+      return [{ text: state.error, tone: "error" as const }];
+    }
+    if (smartSegmentStatus) {
+      return [{ text: smartSegmentStatus }];
+    }
+    if (activeToastStatus) {
+      return [{ text: activeToastStatus }];
+    }
     return [];
-  })();
+  }, [activeToastStatus, embedded, smartSegmentError, smartSegmentStatus, state.error]);
   return (
     <ViewportCard>
       <AnnotationCanvas
         activeLabelId={state.activeLabelId}
         brushSize={state.brushSize}
         className="min-h-0 flex-1"
-        disabled={!state.canEditSegmentation}
+        disabled={!state.canEditSegmentation || smartSegment.busy}
         frame={displayFrame}
         labels={state.labels}
         mask={state.annotation.current.mask}
         overlayOpacity={state.overlayOpacity}
-        toasts={embedded ? [] : toasts}
+        smartSegmentPrompts={smartSegment.prompts}
+        toasts={toasts}
         tool={state.tool}
         onMaskCommit={(mask) =>
           state.annotation.commit({
@@ -47,6 +68,7 @@ export function DemoAnnotatorMain({
             mask,
           })
         }
+        onSmartSegmentClick={(click) => void smartSegment.handleClick(click)}
       />
     </ViewportCard>
   );

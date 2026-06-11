@@ -157,6 +157,7 @@
     "@effect/platform-browser": "catalog:",
     "@lisca/contracts": "workspace:*",
     "@lisca/storage": "workspace:*",
+    "@lisca/ui-headless": "workspace:*",
     "@lisca/utils": "workspace:*",
     "effect": "catalog:"
   },

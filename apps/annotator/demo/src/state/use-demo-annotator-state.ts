@@ -2,7 +2,7 @@ import type { AnnotationLabel, ContrastWindow } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 import type { AnnotationMode } from "@lisca/ui/features";
 import { buildAnnotationExportZip, downloadBlob, loadImageFile, stemName } from "@lisca/web-demo/browser";
-import type { AnnotationTool } from "@lisca/ui/features";
+import { toolCanRunWithoutLabel, type AnnotationTool } from "@lisca/ui/features";
 import { useState } from "react";
 import { useAnnotationHistory } from "./use-annotation-history";
 import { encodeMaskToPngBytes, maskHasPixels } from "../utils/annotation-utils";
@@ -107,10 +107,9 @@ export function useDemoAnnotatorState(): DemoAnnotatorState {
     setLabelError(null);
   };
   const activeLabelValue = labels.findIndex((label) => label.id === activeLabelId) + 1;
-  const toolCanRunWithoutLabel = tool === "brush-erase" || tool === "lasso-erase";
   const canEdit = Boolean(frame && labels.length > 0) && !frameLoading;
   const canEditSegmentation =
-    canEdit && mode === "segmentation" && (activeLabelValue > 0 || toolCanRunWithoutLabel);
+    canEdit && mode === "segmentation" && (activeLabelValue > 0 || toolCanRunWithoutLabel(tool));
   const canSave = canEdit && annotation.dirty && !saving;
   const saveCurrent = async () => {
     if (!frame || !fileName || !canSave) return;

@@ -1,6 +1,7 @@
 import type { RoiFrameRequest } from "@lisca/contracts";
 import type { AnnotationMode } from "@lisca/ui-native/features";
 import {
+  ANNOTATION_TOOL_DEFINITIONS,
   Button,
   DockSection,
   ReadonlyPathField,
@@ -15,22 +16,15 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { annotationOutputPaths } from "../utils/annotation-output";
 
-const annotationToolDefinitions: { id: AnnotationTool; label: string }[] = [
-  { id: "brush", label: "Brush" },
-  { id: "brush-erase", label: "Brush Erase" },
-  { id: "lasso", label: "Lasso" },
-  { id: "lasso-erase", label: "Lasso Erase" },
-];
-
 function buildAnnotationToolActions(
   tool: AnnotationTool,
   onToolChange: (tool: AnnotationTool) => void,
   disabled: boolean,
 ): DockToolAction[] {
-  return annotationToolDefinitions.map(({ id, label }) => ({
+  return ANNOTATION_TOOL_DEFINITIONS.map(({ id, label }) => ({
     id,
     label,
-    disabled,
+    disabled: disabled || id === "smart-segment",
     active: tool === id,
     onSelect: () => onToolChange(id),
   }));
@@ -65,6 +59,7 @@ function AnnotatorToolToolbar(props: {
         {buttons[2]}
         {buttons[3]}
       </View>
+      <View style={styles.gridCell}>{buttons[4]}</View>
     </View>
   );
 }

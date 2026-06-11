@@ -11,6 +11,7 @@ import type {
   RoiSelection,
   StateUpdater,
 } from "../atoms/annotator-ui";
+import { toolCanRunWithoutLabel } from "@lisca/ui-headless/annotation-tools";
 import { toClientError } from "../infra/client-error";
 import {
   frameLoadRequest,
@@ -210,9 +211,9 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
     !frameLoading &&
     !annotationLoading &&
     !scanLoading;
-  const toolCanRunWithoutLabel = tool === "brush-erase" || tool === "lasso-erase";
+  const toolCanRunWithoutLabelValue = toolCanRunWithoutLabel(tool);
   const canEditSegmentation =
-    canEdit && mode === "segmentation" && (activeLabelValue > 0 || toolCanRunWithoutLabel);
+    canEdit && mode === "segmentation" && (activeLabelValue > 0 || toolCanRunWithoutLabelValue);
   const canSave = canEdit && annotation.dirty && !saving;
   const activeError = scanError ?? frameError ?? annotationError ?? saveError;
   const visibleStatus = deps.useCanvasTransientStatus(status);

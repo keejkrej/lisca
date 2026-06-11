@@ -34,7 +34,13 @@ export {
   AnnotationCanvas,
   type AnnotationCanvasProps,
   type AnnotationTool,
+  type SmartSegmentPrompt,
 } from "./annotate/annotation-canvas";
+export {
+  AnnotationToolGrid,
+  buildAnnotationToolActions,
+} from "./annotate/annotation-tool-grid";
+export { ANNOTATION_TOOL_DEFINITIONS, toolCanRunWithoutLabel } from "@lisca/ui-headless/annotation-tools";
 export { AnnotationModeToggle } from "./annotate/annotation-mode-toggle";
 export type { AnnotationMode } from "@lisca/ui-headless/types";
 export { AnnotationToolSlider } from "./annotate/annotation-tool-slider";

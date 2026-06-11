@@ -8,6 +8,10 @@
       "types": "./src/index.ts",
       "import": "./src/index.ts"
     },
+    "./annotation-tools": {
+      "types": "./src/annotation-tools.ts",
+      "import": "./src/annotation-tools.ts"
+    },
     "./align-canvas-handlers": {
       "types": "./src/align-canvas-handlers.ts",
       "import": "./src/align-canvas-handlers.ts"

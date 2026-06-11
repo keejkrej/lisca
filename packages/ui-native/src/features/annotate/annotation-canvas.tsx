@@ -6,7 +6,9 @@ import { useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { useShellTheme } from "../../theme/shell-theme";
 import { computeFrameLayout, prepareFrameRgba } from "../canvas/frame-pixels";
-export type AnnotationTool = "brush" | "brush-erase" | "lasso" | "lasso-erase";
+import type { AnnotationTool } from "@lisca/ui-headless/annotation-tools";
+export type { AnnotationTool } from "@lisca/ui-headless/annotation-tools";
+export { ANNOTATION_TOOL_DEFINITIONS, toolCanRunWithoutLabel } from "@lisca/ui-headless/annotation-tools";
 export type AnnotationCanvasProps = {
   frame: FrameResult | null;
   labels: AnnotationLabel[];

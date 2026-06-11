@@ -1,11 +1,12 @@
 import type { ContrastWindow, RoiIndexEntry, RoiPositionScan, RoiWorkspaceScan } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 import { deriveContrastUiState } from "@lisca/utils";
-export type AnnotationMode = "classification" | "segmentation";
+export type { AnnotationTool } from "@lisca/ui-headless/annotation-tools";
+export { ANNOTATION_TOOL_DEFINITIONS, toolCanRunWithoutLabel } from "@lisca/ui-headless/annotation-tools";
+import type { AnnotationTool } from "@lisca/ui-headless/annotation-tools";
 import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/storage";
 import { Atom } from "@effect-atom/atom-react";
-
-export type AnnotationTool = "brush" | "brush-erase" | "lasso" | "lasso-erase";
+export type AnnotationMode = "classification" | "segmentation";
 
 export type RoiSelection = {
   pos: number | null;

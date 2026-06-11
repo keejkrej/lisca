@@ -12,6 +12,8 @@ export {
   AnnotationCanvas,
   type AnnotationCanvasProps,
   type AnnotationTool,
+  ANNOTATION_TOOL_DEFINITIONS,
+  toolCanRunWithoutLabel,
 } from "./annotate/annotation-canvas";
 export { AnnotationModeToggle } from "./annotate/annotation-mode-toggle";
 export type { AnnotationMode } from "@lisca/ui-headless";
