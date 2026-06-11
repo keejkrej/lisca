@@ -4,6 +4,7 @@ import type { AnnotationLabel } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 import type { CanvasStatusMessage } from "@lisca/ui-headless";
 import type { AnnotationTool } from "@lisca/ui-headless/annotation-tools";
+import { isSmartAnnotationTool } from "@lisca/ui-headless/annotation-tools";
 import { clamp, fillPolygon, hexToRgb, strokeMask } from "@lisca/utils";
 import {
   useEffect,
@@ -53,6 +54,7 @@ export type AnnotationCanvasProps = {
   smartSegmentPrompts?: SmartSegmentPrompt[];
   onMaskCommit: (mask: Uint8Array) => void;
   onSmartSegmentClick?: (click: { x: number; y: number; negative: boolean }) => void;
+  onSmartEraseClick?: (click: { x: number; y: number }) => void;
 };
 function drawRectFor(width: number, height: number, frame: FrameResult): DrawRect {
   const scale = Math.min(width / frame.width, height / frame.height);
@@ -129,6 +131,7 @@ export function AnnotationCanvas({
   smartSegmentPrompts = [],
   onMaskCommit,
   onSmartSegmentClick,
+  onSmartEraseClick,
 }: AnnotationCanvasProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -149,7 +152,8 @@ export function AnnotationCanvas({
   })();
   const eraseMode = tool === "brush-erase" || tool === "lasso-erase";
   const brushMode = tool === "brush" || tool === "brush-erase";
-  const smartSegmentMode = tool === "smart-segment";
+  const smartToolMode = isSmartAnnotationTool(tool);
+  const smartEraseMode = tool === "smart-erase";
   const renderNow = () => {
     renderRafRef.current = null;
     const canvas = canvasRef.current;
@@ -186,12 +190,14 @@ export function AnnotationCanvas({
         }
         ctx.stroke();
       }
-      if (smartSegmentMode && smartSegmentPrompts.length > 0) {
+      if (smartSegmentPrompts.length > 0) {
+        const promptAlpha = smartToolMode ? 1 : 0.65;
         for (const prompt of smartSegmentPrompts) {
           const centerX = rect.x + prompt.x * rect.scale;
           const centerY = rect.y + prompt.y * rect.scale;
           const radius = Math.max(4, 5 * rect.scale);
           ctx.beginPath();
+          ctx.globalAlpha = promptAlpha;
           ctx.fillStyle =
             prompt.label === 1 ? "rgba(34,197,94,0.95)" : "rgba(248,113,113,0.95)";
           ctx.strokeStyle = "rgba(255,255,255,0.95)";
@@ -199,6 +205,7 @@ export function AnnotationCanvas({
           ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
           ctx.fill();
           ctx.stroke();
+          ctx.globalAlpha = 1;
         }
       }
     }
@@ -219,7 +226,7 @@ export function AnnotationCanvas({
   }, [frame, preparedFrame, renderNowLatest]);
   useEffect(() => {
     renderNowLatest.current();
-  }, [labels, lassoPoints, mask, overlayOpacity, renderNowLatest, smartSegmentMode, smartSegmentPrompts]);
+  }, [labels, lassoPoints, mask, overlayOpacity, renderNowLatest, smartSegmentPrompts, smartToolMode]);
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
     const viewport = viewportRef.current;
@@ -315,10 +322,15 @@ export function AnnotationCanvas({
           if (disabled || !frame || event.pointerType !== "mouse") return;
           const point = framePointFromEvent(event);
           if (!point) return;
-          if (smartSegmentMode) {
+          if (smartToolMode) {
             if (event.button !== 0 && event.button !== 2) return;
             if (activeLabelValue <= 0) return;
             event.preventDefault();
+            if (smartEraseMode) {
+              if (event.button !== 0) return;
+              onSmartEraseClick?.({ x: point.x, y: point.y });
+              return;
+            }
             onSmartSegmentClick?.({
               x: point.x,
               y: point.y,
@@ -337,7 +349,7 @@ export function AnnotationCanvas({
           setLassoPoints([point]);
         }}
         onPointerMove={(event) => {
-          if (smartSegmentMode) return;
+          if (smartToolMode) return;
           const active = lassoRef.current;
           if (!active || active.pointerId !== event.pointerId) return;
           const point = framePointFromEvent(event);

@@ -68,7 +68,10 @@ export function AnnotationToolGrid(props: {
         <div className="min-w-0">{buttons[2]}</div>
         <div className="min-w-0">{buttons[3]}</div>
       </div>
-      <div className="min-w-0">{buttons[4]}</div>
+      <div className="grid w-full grid-cols-2 gap-2">
+        <div className="min-w-0">{buttons[4]}</div>
+        <div className="min-w-0">{buttons[5]}</div>
+      </div>
     </div>
   );
 }

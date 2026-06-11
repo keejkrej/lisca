@@ -1,5 +1,5 @@
 import { ViewportCard } from "@lisca/ui/shell";
-import { AnnotationCanvas, useCanvasTransientStatus } from "@lisca/ui/features";
+import { AnnotationCanvas, SmartSegmentModelDialog, useCanvasTransientStatus } from "@lisca/ui/features";
 import { useSmartSegment } from "@lisca/segmentation/browser";
 import { toDisplayFrame } from "@lisca/web-demo/browser";
 import { useMemo, useState } from "react";
@@ -50,6 +50,12 @@ export function DemoAnnotatorMain({
   }, [activeToastStatus, embedded, smartSegmentError, smartSegmentStatus, state.error]);
   return (
     <ViewportCard>
+      <SmartSegmentModelDialog
+        busy={smartSegment.busy}
+        state={smartSegment.downloadState}
+        onCancel={smartSegment.cancelDownload}
+        onConfirm={() => void smartSegment.confirmDownload()}
+      />
       <AnnotationCanvas
         activeLabelId={state.activeLabelId}
         brushSize={state.brushSize}
@@ -69,6 +75,7 @@ export function DemoAnnotatorMain({
           })
         }
         onSmartSegmentClick={(click) => void smartSegment.handleClick(click)}
+        onSmartEraseClick={(click) => void smartSegment.handleEraseClick(click)}
       />
     </ViewportCard>
   );

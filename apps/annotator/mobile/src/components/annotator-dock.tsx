@@ -24,7 +24,7 @@ function buildAnnotationToolActions(
   return ANNOTATION_TOOL_DEFINITIONS.map(({ id, label }) => ({
     id,
     label,
-    disabled: disabled || id === "smart-segment",
+    disabled: disabled || id === "smart" || id === "smart-erase",
     active: tool === id,
     onSelect: () => onToolChange(id),
   }));
@@ -59,7 +59,10 @@ function AnnotatorToolToolbar(props: {
         {buttons[2]}
         {buttons[3]}
       </View>
-      <View style={styles.gridCell}>{buttons[4]}</View>
+      <View style={styles.row}>
+        {buttons[4]}
+        {buttons[5]}
+      </View>
     </View>
   );
 }

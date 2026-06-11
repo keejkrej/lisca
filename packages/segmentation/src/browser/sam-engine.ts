@@ -1,9 +1,11 @@
 import type { FrameResult } from "@lisca/utils";
 
 import type { SmartSegmentEngine, SmartSegmentPoint } from "../types";
+import { extractBestMask } from "./extract-best-mask";
 import { frameToCanvas } from "./frame-to-canvas";
+import { SAM_MODEL_ID } from "./sam-model-cache";
 
-const MODEL_ID = "Xenova/slimsam-77-uniform";
+const MODEL_ID = SAM_MODEL_ID;
 
 type ProcessedImage = {
   original_sizes: number[][];
@@ -14,6 +16,18 @@ type ImageEmbeddings = Record<string, unknown>;
 
 type TransformersModule = typeof import("@huggingface/transformers");
 
+type ProgressInfo =
+  | { status: "initiate" | "download"; name: string; file: string }
+  | { status: "progress"; name: string; file: string; progress: number; loaded: number; total: number }
+  | { status: "done"; name: string; file: string }
+  | { status: "ready"; task: string; model: string };
+
+export type SmartSegmentDownloadProgress = {
+  progress: number;
+  message: string;
+  file?: string;
+};
+
 let transformersModule: TransformersModule | null = null;
 
 async function loadTransformers(): Promise<TransformersModule> {
@@ -21,39 +35,6 @@ async function loadTransformers(): Promise<TransformersModule> {
     transformersModule = await import("@huggingface/transformers");
   }
   return transformersModule;
-}
-
-function pickBestMaskIndex(scores: ArrayLike<number>): number {
-  let bestIndex = 0;
-  for (let index = 1; index < scores.length; index += 1) {
-    if (scores[index]! > scores[bestIndex]!) bestIndex = index;
-  }
-  return bestIndex;
-}
-
-function extractBestMask(
-  maskTensor: { data: ArrayLike<number | boolean>; dims: number[] },
-  scores: ArrayLike<number>,
-  width: number,
-  height: number,
-): Uint8Array {
-  const pixelCount = width * height;
-  const out = new Uint8Array(pixelCount);
-  const numMasks = scores.length;
-  const bestIndex = pickBestMaskIndex(scores);
-  const data = maskTensor.data;
-
-  if (maskTensor.dims.length === 4 && maskTensor.dims[1] === numMasks) {
-    for (let index = 0; index < pixelCount; index += 1) {
-      if (data[index * numMasks + bestIndex]) out[index] = 1;
-    }
-    return out;
-  }
-
-  for (let index = 0; index < pixelCount; index += 1) {
-    if (data[numMasks * index + bestIndex]) out[index] = 1;
-  }
-  return out;
 }
 
 export type BrowserSamEngineOptions = {
@@ -78,8 +59,51 @@ type SamProcessorInstance = {
     pred_masks: unknown,
     original_sizes: number[][],
     reshaped_input_sizes: number[][],
-  ): Promise<Array<Array<{ data: ArrayLike<number | boolean>; dims: number[] }>>>;
+  ): Promise<Array<{ data: ArrayLike<number | boolean>; dims: number[] }>>;
 };
+
+type MaskTensor = { data: ArrayLike<number | boolean>; dims: number[] };
+
+function squeezeBatchMask(batchMask: MaskTensor): MaskTensor {
+  if (batchMask.dims.length === 4 && batchMask.dims[0] === 1) {
+    const [, numMasks, height, width] = batchMask.dims;
+    const planeSize = height * width;
+    return {
+      data: batchMask.data,
+      dims: [numMasks, height, width],
+    };
+  }
+  return batchMask;
+}
+
+function createProgressCallback(onProgress?: (progress: SmartSegmentDownloadProgress) => void) {
+  if (!onProgress) return undefined;
+  return (info: ProgressInfo) => {
+    if (info.status === "progress") {
+      onProgress({
+        progress: info.progress,
+        message: `Downloading ${info.file}`,
+        file: info.file,
+      });
+      return;
+    }
+    if (info.status === "initiate" || info.status === "download") {
+      onProgress({
+        progress: 0,
+        message: `Fetching ${info.file}`,
+        file: info.file,
+      });
+      return;
+    }
+    if (info.status === "done") {
+      onProgress({
+        progress: 100,
+        message: `Downloaded ${info.file}`,
+        file: info.file,
+      });
+    }
+  };
+}
 
 export class BrowserSamEngine implements SmartSegmentEngine {
   private readonly modelId: string;
@@ -97,34 +121,53 @@ export class BrowserSamEngine implements SmartSegmentEngine {
     this.device = options.device ?? "webgpu";
   }
 
-  private async ensureLoaded(): Promise<void> {
+  isModelLoaded(): boolean {
+    return Boolean(this.model && this.processor);
+  }
+
+  private async ensureLoaded(onProgress?: (progress: SmartSegmentDownloadProgress) => void): Promise<void> {
     if (this.model && this.processor) return;
     if (this.loadPromise) return this.loadPromise;
 
     this.loadPromise = (async () => {
       const { SamModel, AutoProcessor } = await loadTransformers();
+      const progress_callback = createProgressCallback(onProgress);
       const loadOptions = {
         dtype: this.device === "webgpu" ? ("fp16" as const) : ("q8" as const),
         device: this.device,
+        progress_callback,
       };
       try {
         this.model = (await SamModel.from_pretrained(this.modelId, loadOptions)) as unknown as SamModelInstance;
-        this.processor = (await AutoProcessor.from_pretrained(this.modelId)) as unknown as SamProcessorInstance;
+        this.processor = (await AutoProcessor.from_pretrained(this.modelId, {
+          progress_callback,
+        })) as unknown as SamProcessorInstance;
       } catch (cause) {
         if (this.device !== "webgpu") throw cause;
         this.model = (await SamModel.from_pretrained(this.modelId, {
           dtype: "q8",
           device: "wasm",
+          progress_callback,
         })) as unknown as SamModelInstance;
-        this.processor = (await AutoProcessor.from_pretrained(this.modelId)) as unknown as SamProcessorInstance;
+        this.processor = (await AutoProcessor.from_pretrained(this.modelId, {
+          progress_callback,
+        })) as unknown as SamProcessorInstance;
       }
     })();
 
-    return this.loadPromise;
+    try {
+      await this.loadPromise;
+    } catch (cause) {
+      this.loadPromise = null;
+      throw cause;
+    }
   }
 
-  async prepareFrame(frame: FrameResult): Promise<void> {
-    await this.ensureLoaded();
+  async prepareFrame(
+    frame: FrameResult,
+    onProgress?: (progress: SmartSegmentDownloadProgress) => void,
+  ): Promise<void> {
+    await this.ensureLoaded(onProgress);
     if (
       this.frame &&
       this.frame.width === frame.width &&
@@ -140,6 +183,11 @@ export class BrowserSamEngine implements SmartSegmentEngine {
       if (!this.model || !this.processor) {
         throw new Error("Smart segment model failed to load");
       }
+
+      onProgress?.({
+        progress: 100,
+        message: "Preparing image embeddings…",
+      });
 
       const canvas = frameToCanvas(frame);
       const imageInput = RawImage.fromCanvas(canvas);
@@ -191,7 +239,7 @@ export class BrowserSamEngine implements SmartSegmentEngine {
       processed.reshaped_input_sizes,
     );
 
-    const maskTensor = masks[0]![0]!;
+    const maskTensor = squeezeBatchMask(masks[0]!);
     return extractBestMask(maskTensor, iou_scores.data, frame.width, frame.height);
   }
 
