@@ -2,22 +2,22 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { GITHUB_REPO, GITHUB_URL } from "../lib/constants";
 import { landingDemos } from "../lib/demos";
+import { landingProducts } from "../lib/landing-content";
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
 });
 
 function LandingPage() {
+  const aligner = landingProducts.find((product) => product.id === "aligner");
+  const annotator = landingProducts.find((product) => product.id === "annotator");
+  const studio = landingProducts.find((product) => product.id === "studio");
+
   return (
     <>
       <header>
         <p>
           <Link to="/">LiSCA</Link>
-        </p>
-        <p>
-          <a href={GITHUB_URL} rel="noopener noreferrer" target="_blank">
-            GitHub
-          </a>
         </p>
       </header>
 
@@ -28,73 +28,78 @@ function LandingPage() {
             Live-cell imaging on <span>single-cell arrays.</span>
           </h1>
           <p>
-            LiSCA is analysis software for micropatterned ibidi µ-Slides and custom
-            photopatterns — whether you start from prepatterned labware or pattern surfaces with
-            the Micro Illumination System. Align images to the grid, annotate regions of interest,
-            and read out assays from timelapse data on your array.
+            LiSCA helps cell biologists and pharmacologists analyse micropatterned ibidi µ-Slides
+            and custom photopatterns — whether you start from prepatterned labware or define
+            adhesion sites with the Micro Illumination System. Align timelapse images to the grid,
+            mark regions of interest on individual cells, and turn patterned-array experiments into
+            quantitative assay readouts.
           </p>
           <p>
-            <a href="#demos">Try with your images</a>
+            <a href="#tools">Explore the tools</a>
           </p>
         </section>
 
-        <section id="demos">
-          <h2>Try it with your microscopy files</h2>
+        <section id="tools">
+          <h2>Try the workflow on your microscopy data</h2>
           <p>
-            Open a PNG or TIFF from a fixed endpoint or timelapse on patterned cultures. These
-            interactive previews show the alignment and annotation steps you would run after
-            imaging — no account or lab server required.
+            Load an image from a fixed time point or a timelapse on patterned cultures. These
+            browser-based previews use the same alignment and annotation steps you would run after
+            an imaging session — no local installation required.
           </p>
           {landingDemos.map((demo) => (
             <article key={demo.id}>
               <h3>{demo.title}</h3>
               <p>{demo.description}</p>
               <p>
-                <Link to={demo.href}>Open full workspace</Link>
+                <Link to={demo.href}>{demo.linkLabel}</Link>
               </p>
             </article>
           ))}
         </section>
 
         <section id="platform">
-          <h2>From patterned surface to readout</h2>
+          <h2>From patterned surface to assay readout</h2>
           <p>
-            Live-cell imaging on single-cell arrays starts with patterned adhesion sites — on
-            prepatterned ibidi labware or surfaces you define with a photomask and the Micro
-            Illumination System. Seed cells, image over time, then quantify in LiSCA from the
-            first frame to the final assay table.
+            Live-cell work on single-cell arrays begins with defined adhesion sites — on prepatterned
+            ibidi labware or surfaces you pattern with a photomask and the Micro Illumination
+            System. After seeding and timelapse imaging, LiSCA carries you from the first frame to
+            summary tables and plots.
           </p>
 
-          <article>
-            <h3>Aligner</h3>
-            <p>
-              Map each imaging field to the adhesive-site grid on your slide. Score occupancy,
-              exclude empty patterns, and keep site identities consistent across wells and time
-              points.
-            </p>
-          </article>
+          {aligner ? (
+            <article>
+              <h3>{aligner.title}</h3>
+              <p>{aligner.description}</p>
+            </article>
+          ) : null}
+
+          {annotator ? (
+            <article>
+              <h3>{annotator.title}</h3>
+              <p>{annotator.description}</p>
+            </article>
+          ) : null}
+
+          {studio ? (
+            <article>
+              <h3>{studio.title}</h3>
+              <p>{studio.description}</p>
+              {studio.assays.map((assay) => (
+                <div key={assay.name}>
+                  <h4>{assay.name}</h4>
+                  <p>{assay.detail}</p>
+                </div>
+              ))}
+            </article>
+          ) : null}
 
           <article>
-            <h3>Annotator</h3>
+            <h3>Built for micropattern geometry</h3>
             <p>
-              Draw masks and labels on cells within patterned regions — for segmentation models,
-              phenotype classes, or spot-checking automated calls on live-cell data.
-            </p>
-          </article>
-
-          <article>
-            <h3>Studio</h3>
-            <p>
-              Carry a full experiment from well selection through alignment, annotation, and assay
-              analysis — built around multi-site arrays rather than one field of view.
-            </p>
-          </article>
-
-          <article>
-            <h3>Pattern-first by design</h3>
-            <p>
-              Every step assumes the regular geometry you get from micropatterned µ-Slides and UV
-              photopatterning — not unconstrained monolayers on plain plastic.
+              Every step assumes the regular layout of adhesive sites on µ-Slides and
+              photopatterned surfaces — not unconstrained monolayers on plain plastic. That keeps
+              site identity, occupancy, and timelapse quantification consistent across an entire
+              array experiment.
             </p>
           </article>
         </section>
@@ -105,7 +110,7 @@ function LandingPage() {
         <p>Live-cell imaging on single-cell arrays</p>
         <p>
           <a href={GITHUB_URL} rel="noopener noreferrer" target="_blank">
-            github.com/{GITHUB_REPO}
+            Project repository (github.com/{GITHUB_REPO})
           </a>
         </p>
       </footer>
