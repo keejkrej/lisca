@@ -22,9 +22,11 @@
   },
   "dependencies": {
     "@lisca/contracts": "workspace:*",
-    "@lisca/storage": "workspace:*"
+    "@lisca/storage": "workspace:*",
+    "d3-array": "^3.2.4"
   },
   "devDependencies": {
+    "@types/d3-array": "^3.2.2",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

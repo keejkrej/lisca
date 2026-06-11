@@ -7,6 +7,7 @@ import {
   alignStateFromCurrent,
   buildBboxCsv,
   collectAlignGridEdgeCells,
+  computeAutoExcludePreview,
   countVisibleAlignGridCells,
   createDefaultAlignGrid,
   enumerateVisibleAlignGridCells,
@@ -18,7 +19,7 @@ import { useRouter } from "expo-router";
 import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { useEffect, useRef, useState } from "react";
 import { studioClient, toErrorMessage } from "../api/studio-port";
-import { autoExcludePreviewAtom, scanIdleAtom, scanSourceAtom } from "../atoms/studio-query-atoms";
+import { scanIdleAtom, scanSourceAtom } from "../atoms/studio-query-atoms";
 import { effectErrorMessage, loadFrameEffect } from "../effects/frame-loader";
 import { isDoneCropStatus } from "@lisca/client/crop-status";
 import { runClientEffect } from "@lisca/client/runtime";
@@ -144,9 +145,6 @@ export function useStudioAlignState(): StudioAlignState {
     ? lockedStudioSelection(scan, selection, maskChannel, alignPositions)
     : selection;
   const scanResult = useAtomValue(activeSourceKey ? scanSourceAtom(activeSourceKey) : scanIdleAtom);
-  const runAutoExcludePreview = useAtomSet(autoExcludePreviewAtom, {
-    mode: "promise",
-  });
   const router = useRouter();
   const {
     meta: { scanLoading },
@@ -262,11 +260,7 @@ export function useStudioAlignState(): StudioAlignState {
     if (!source || !frame) return [];
     const cells = enumerateVisibleAlignGridCells(frame, grid);
     if (cells.length === 0) return [];
-    const preview = await runAutoExcludePreview({
-      source,
-      selection: lockedSelection,
-      cells,
-    });
+    const preview = computeAutoExcludePreview(frame, cells);
     return preview.cellScores
       .filter((cell) => cell.score <= preview.threshold)
       .map(({ i, j }) => ({

@@ -1,4 +1,4 @@
-import type { AlignGridCellCoord, AlignGridState, AlignerSource, AutoExcludePreviewRequest, AutoExcludePreviewResponse, ContrastWindow, CropRoiProgress, FrameRequest, SavedAlignState, WorkspaceScan } from "@lisca/contracts";
+import type { AlignGridCellCoord, AlignGridState, AlignerSource, AutoExcludePreviewResponse, ContrastWindow, CropRoiProgress, FrameRequest, SavedAlignState, WorkspaceScan } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 import {
   cellsBelowVariationThreshold,
@@ -15,6 +15,7 @@ import {
   buildBboxCsv,
   collectAlignGridEdgeCells,
   countVisibleAlignGridCells,
+  computeAutoExcludePreview,
   enumerateVisibleAlignGridCells,
   mergeExcludedAlignGridCells,
   type AlignGridToolMode,
@@ -101,11 +102,6 @@ export type UseAlignStateCoreDeps = {
   alignerUiActions: AlignUiActions;
   scanSourceAtom: (sourceKey: string) => Atom.Atom<Result.Result<WorkspaceScan, unknown>>;
   scanIdleAtom: Atom.Atom<Result.Result<WorkspaceScan, unknown>>;
-  autoExcludePreviewAtom: Atom.AtomResultFn<
-    AutoExcludePreviewRequest,
-    AutoExcludePreviewResponse,
-    unknown
-  >;
   savedAlignStateKey: (workspacePath: string, pos: number) => string;
   sourceKey: (source: AlignerSource | null) => string | null;
   useShellWorkspace: () => AlignWorkspaceSync;
@@ -143,9 +139,6 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
   const scanResult = useAtomValue(
     activeSourceKey ? deps.scanSourceAtom(activeSourceKey) : deps.scanIdleAtom,
   );
-  const runAutoExcludePreview = useAtomSet(deps.autoExcludePreviewAtom, {
-    mode: "promise",
-  });
   const {
     actions: {
       setSource,
@@ -430,16 +423,12 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
     );
   };
   const previewVariationExclude = async () => {
-    if (!source || !frame) return null;
+    if (!frame) return null;
     const cells = enumerateVisibleAlignGridCells(frame, grid);
     if (cells.length === 0) return null;
     setVariationExcludeLoading(true);
     try {
-      return await runAutoExcludePreview({
-        source,
-        selection,
-        cells,
-      });
+      return computeAutoExcludePreview(frame, cells);
     } finally {
       setVariationExcludeLoading(false);
     }

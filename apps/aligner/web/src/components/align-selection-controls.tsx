@@ -1,4 +1,4 @@
-import { AlignSelectionCounts } from "@lisca/ui/features";
+import { AlignSelectionCounts, VariationExcludeDialog } from "@lisca/ui/features";
 import { Button } from "@lisca/ui/components";
 import { SidebarSection } from "@lisca/ui/shell";
 import {
@@ -7,7 +7,7 @@ import {
   mergeExcludedAlignGridCells,
 } from "@lisca/utils";
 import { useAlignPage } from "../state/align-page-context";
-import { VariationExcludeDialog } from "./variation-exclude-dialog";
+
 export function AlignSelectionControls() {
   const { state } = useAlignPage();
   const visibleCells = state.frame

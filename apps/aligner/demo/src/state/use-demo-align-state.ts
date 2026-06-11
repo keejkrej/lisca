@@ -1,8 +1,12 @@
 import type { AlignGridCellCoord, AlignGridState, ContrastWindow } from "@lisca/contracts";
+import type { AutoExcludePreviewResponse } from "@lisca/contracts";
+import type { VariationExcludePreviewState } from "@lisca/ui/features";
 import type { FrameResult } from "@lisca/utils";
 import { buildRoiExportZip, downloadBlob, loadImageFile, stemName } from "@lisca/web-demo/browser";
+import { cellsBelowVariationThreshold } from "@lisca/client/align-session";
 import {
   collectAlignGridEdgeCells,
+  computeAutoExcludePreview,
   countVisibleAlignGridCells,
   createDefaultAlignGrid,
   enumerateVisibleAlignGridCells,
@@ -10,6 +14,7 @@ import {
   type AlignGridToolMode,
 } from "@lisca/utils";
 import { useState } from "react";
+
 export type DemoAlignState = {
   fileName: string | null;
   frameLoading: boolean;
@@ -30,6 +35,13 @@ export type DemoAlignState = {
   excludeAllCells: () => void;
   excludeEdgeCells: () => void;
   resetExcludedCells: () => void;
+  variationExcludePreview: VariationExcludePreviewState;
+  variationExcludeLoading: boolean;
+  variationExclude: () => Promise<void>;
+  setVariationExcludeThreshold: (threshold: number) => void;
+  cancelVariationExclude: () => void;
+  applyVariationExclude: () => void;
+  autoExclude: () => Promise<void>;
   visibleCounts: {
     included: number;
     excluded: number;
@@ -37,6 +49,7 @@ export type DemoAlignState = {
   openImage: (file: File) => Promise<void>;
   saveCurrent: () => Promise<boolean>;
 };
+
 export function useDemoAlignState(): DemoAlignState {
   const [fileName, setFileName] = useState<string | null>(null);
   const [frameLoading, setFrameLoading] = useState(false);
@@ -52,6 +65,10 @@ export function useDemoAlignState(): DemoAlignState {
   const [toolMode, setToolMode] = useState<AlignGridToolMode>("pan");
   const [patternZoomLocked, setPatternZoomLocked] = useState(false);
   const [excludedCells, setExcludedCellsState] = useState<AlignGridCellCoord[]>([]);
+  const [variationExcludePreview, setVariationExcludePreview] =
+    useState<VariationExcludePreviewState>(null);
+  const [variationExcludeLoading, setVariationExcludeLoading] = useState(false);
+
   const setExcludedCells = (cells: Iterable<AlignGridCellCoord>) => {
     setExcludedCellsState(Array.from(cells));
   };
@@ -73,6 +90,83 @@ export function useDemoAlignState(): DemoAlignState {
       mergeExcludedAlignGridCells(current, collectAlignGridEdgeCells(frame, grid)),
     );
   };
+  const previewVariationExclude = (): AutoExcludePreviewResponse | null => {
+    if (!frame) return null;
+    const cells = enumerateVisibleAlignGridCells(frame, grid);
+    if (cells.length === 0) return null;
+    return computeAutoExcludePreview(frame, cells);
+  };
+  const variationExclude = async () => {
+    if (!frame) return;
+    setStatus("Var exclude preview");
+    setVariationExcludeLoading(true);
+    try {
+      const preview = previewVariationExclude();
+      if (!preview) {
+        setStatus("No visible cells for var exclude");
+        return;
+      }
+      setVariationExcludePreview({
+        preview,
+        threshold: preview.threshold,
+      });
+      setStatus(null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setVariationExcludeLoading(false);
+    }
+  };
+  const setVariationExcludeThreshold = (threshold: number) => {
+    setVariationExcludePreview((current) =>
+      current
+        ? {
+            ...current,
+            threshold,
+          }
+        : current,
+    );
+  };
+  const cancelVariationExclude = () => {
+    setVariationExcludePreview(null);
+    setStatus("Var exclude cancelled");
+  };
+  const applyVariationExclude = () => {
+    if (!variationExcludePreview) return;
+    const variationCells = cellsBelowVariationThreshold(
+      variationExcludePreview.preview,
+      variationExcludePreview.threshold,
+    );
+    setExcludedCellsState((current) =>
+      mergeExcludedAlignGridCells(current, variationCells),
+    );
+    setVariationExcludePreview(null);
+    setStatus(
+      `Var excluded ${variationCells.length} of ${variationExcludePreview.preview.eligibleCellCount} cells`,
+    );
+  };
+  const autoExclude = async () => {
+    if (!frame) return;
+    setStatus("Auto exclude");
+    setVariationExcludeLoading(true);
+    try {
+      const edgeCells = collectAlignGridEdgeCells(frame, grid);
+      const preview = previewVariationExclude();
+      const variationCells = preview
+        ? cellsBelowVariationThreshold(preview, preview.threshold)
+        : [];
+      const nextExcluded = mergeExcludedAlignGridCells(excludedCells, [
+        ...edgeCells,
+        ...variationCells,
+      ]);
+      setExcludedCellsState(nextExcluded);
+      setStatus(`Auto excluded ${nextExcluded.length - excludedCells.length} cells`);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setVariationExcludeLoading(false);
+    }
+  };
   const visibleCounts = frame
     ? countVisibleAlignGridCells(frame, grid, excludedCells)
     : {
@@ -89,6 +183,7 @@ export function useDemoAlignState(): DemoAlignState {
       setFrame(nextFrame);
       setContrast(null);
       setExcludedCellsState([]);
+      setVariationExcludePreview(null);
       setGrid({
         ...createDefaultAlignGrid(),
         enabled: true,
@@ -153,6 +248,13 @@ export function useDemoAlignState(): DemoAlignState {
     excludeAllCells,
     excludeEdgeCells,
     resetExcludedCells,
+    variationExcludePreview,
+    variationExcludeLoading,
+    variationExclude,
+    setVariationExcludeThreshold,
+    cancelVariationExclude,
+    applyVariationExclude,
+    autoExclude,
     visibleCounts,
     openImage,
     saveCurrent,

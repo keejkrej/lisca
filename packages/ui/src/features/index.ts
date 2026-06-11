@@ -31,6 +31,10 @@ export {
   type AlignToolToolbarProps,
 } from "./align/align-tools";
 export {
+  VariationExcludeDialog,
+  type VariationExcludePreviewState,
+} from "./align/variation-exclude-dialog";
+export {
   AnnotationCanvas,
   type AnnotationCanvasProps,
   type AnnotationTool,
