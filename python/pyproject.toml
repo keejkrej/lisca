@@ -10,10 +10,43 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "Lisca contributors" }]
-dependencies = []
+dependencies = [
+    "numpy>=2.2,<3",
+    "pillow>=11.1,<12",
+    "pydantic>=2.10,<3",
+    "tifffile>=2025.1.10,<2026",
+    "typer>=0.15,<1",
+]
+
+[project.scripts]
+lisca = "lisca.main:app"
 
 [dependency-groups]
-dev = ["pytest>=8.3.5,<9"]
+dev = ["pytest>=8.3.5,<9", "ruff>=0.9", "ty>=0.0.1"]
+train = [
+    "lightning>=2.5,<3",
+    "onnx>=1.17,<2",
+    "onnxscript>=0.2,<1",
+    "torch>=2.6,<3",
+    "torchmetrics>=1.0,<2",
+    "torchvision>=0.21,<1",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/lisca"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ty.environment]
+python-version = "3.12"
+
+[tool.ty.rules]
+all = "error"
 
 [tool.uv]
 constraint-dependencies = ["pytest>=8.3.5,<9"]
