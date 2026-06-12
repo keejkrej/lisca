@@ -21,11 +21,14 @@ Humans review this file only. Agents maintain **Tech stack** via the memory skil
 ## Tech stack
 
 <!-- memory:techstack-start -->
+- **Monorepo:** Bun workspaces + Turborepo — React 19, Vite, Tailwind v4, coss-ui, Effect Atom, TanStack Router; Electron desktop and Expo mobile; Rust HTTP/WS servers per product (`apps/*/server`).
+- **Client IO:** Effect programs and shared atoms in `@lisca/client` — not raw `fetch` in components.
 - **CLI:** Prefer `bun lisca <dev|build|dist|typecheck|preview|install> <aligner|annotator|studio|landing|workspace> [target]` over raw `turbo` — `scripts/lisca.mjs`.
-- **React Compiler:** Do not use `useMemo`, `useCallback`, or `memo` — enabled in web apps via `liscaReactPlugin()` (`@lisca/web-app/vite`); enforced by `.oxlintrc.json`.
+- **Tooling:** oxfmt + oxlint; React Compiler enabled in web apps via `liscaReactPlugin()` — no `useMemo`, `useCallback`, or `memo`.
 - **Imports:** Extensionless TypeScript imports (no `.ts`/`.tsx` suffixes) — `.oxlintrc.json` `import/extensions`.
 - **Web UI:** coss (Base UI) primitives in `@lisca/ui/components/ui/` — do not edit vendor files; add via `packages/ui/components.json` (`@coss` registry). Shell/feature boundaries — `docs/agent/ui-package-layout.md`.
-- **Contracts:** Never hand-write wire types — derive from Effect Schema in `@lisca/contracts`. Wizard/UI assay types from `@lisca/contracts/assay`, not the root entry. After schema changes: `bun run contracts:generate`; after Rust type changes: `bun --filter @lisca/contracts rust-types`.
+- **Contracts:** Never hand-write wire types — derive from Effect Schema + HttpApi in `@lisca/contracts`. Wizard/UI assay types from `@lisca/contracts/assay`, not the root entry. After schema changes: `bun run contracts:generate`; after Rust type changes: `bun --filter @lisca/contracts rust-types`.
+- **Backends:** Rust (Axum; serde types from `typify` on generated JSON Schema) for product APIs; Python (uv, Ruff, ty, Typer) in `python/` for utilities and training.
 - **Tests:** Put logic in `@lisca/utils`, `@lisca/ui-headless`, `@lisca/client` — not DOM or React Native component mounts — `docs/agent/ui-package-layout.md`.
 - **Install policy:** Bun (`bunfig.toml` `minimumReleaseAge`) and Python uv (`exclude-newer = "7 days"`) both reject packages newer than 7 days.
 <!-- memory:techstack-end -->
