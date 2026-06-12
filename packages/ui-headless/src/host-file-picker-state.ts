@@ -86,8 +86,14 @@ export function useHostFilePickerState(options: UseHostFilePickerStateOptions) {
     if (parent == null) return;
     void loadPath(parent === "" ? null : parent);
   };
-  const goHome = () => {
-    void loadPath(null);
+  const goHome = async () => {
+    try {
+      const home = await hostPort.userHomeDirectory();
+      await loadPath(home);
+    } catch (cause) {
+      setList(null);
+      setError(cause instanceof Error ? cause.message : String(cause));
+    }
   };
   const navigateToEntry = (entry: HostFsEntry) => {
     if (entry.isDirectory) void loadPath(entry.path);

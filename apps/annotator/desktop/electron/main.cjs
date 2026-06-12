@@ -9,12 +9,10 @@ function loadDesktopMain() {
   return require(path.join(__dirname, "../../../../scripts/electron/desktop-main.cjs"));
 }
 
+const { DESKTOP_PRODUCTS } = require("../../../../scripts/electron/products.cjs");
 const { runDesktopMain } = loadDesktopMain();
 
 runDesktopMain({
   desktopDir: path.join(__dirname, ".."),
-  wsPort: 8766,
-  webPort: 5174,
-  serverBinary: "annotator-server",
-  cargoPackage: "annotator-server",
+  ...DESKTOP_PRODUCTS.annotator,
 });

@@ -134,7 +134,7 @@ export function HostFilePickerDialog({
               Up
             </Button>
             <Button
-              aria-label="Go to browse roots"
+              aria-label="Go to home directory"
               disabled={picker.loading}
               size="sm"
               type="button"

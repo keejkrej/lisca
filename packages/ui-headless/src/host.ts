@@ -8,4 +8,5 @@ export type HostFilePickerMode =
 
 export type HostFilePickerOperations = {
   listDirectory(path: string | null): Promise<HostListDirectoryResult>;
+  userHomeDirectory(): Promise<string>;
 };

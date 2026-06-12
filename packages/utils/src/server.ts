@@ -167,6 +167,9 @@ function hasExplicitViteEndpoint(options: {
 
 function endpointsFromBrowserLocation(wsPath: string): LiscaServerEndpoints | null {
   if (typeof window === "undefined") return null;
+  if (window.location.protocol !== "http:" && window.location.protocol !== "https:") {
+    return null;
+  }
   const path = wsPath.startsWith("/") ? wsPath : `/${wsPath}`;
   const proto = window.location.protocol === "https:" ? "wss" : "ws";
   const host = window.location.host;

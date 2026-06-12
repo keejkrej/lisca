@@ -18,24 +18,26 @@
  *   bun lisca typecheck annotator server
  *   bun lisca preview studio
  */
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
+import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+
+const require = createRequire(import.meta.url);
+const {
+  LISCA_APP_PORTS,
+  LISCA_MOBILE_PORTS,
+  liscaMobileExpoPort,
+} = require("./lisca-dev-ports.cjs");
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 const PRODUCTS = new Set(["aligner", "annotator", "studio", "landing"]);
 const SCOPES = new Set([...PRODUCTS, "workspace"]);
 const TYPECHECK_TARGETS = new Set(["desktop", "web", "demo", "server", "mobile", "all"]);
-const APP_TARGETS = new Set(["desktop", "web", "demo", "server", "mobile", "mobile-web"]);
+const APP_TARGETS = new Set(["desktop", "web", "demo", "server", "mobile"]);
 const LANDING_TARGETS = new Set(["web", "site"]);
 const WORKSPACE_BUILD_TARGETS = new Set(["all", "packages", "webs"]);
-
-const MOBILE_PORTS = {
-  aligner: 8081,
-  annotator: 8082,
-  studio: 8083,
-};
 
 const dash = process.argv.indexOf("--");
 const argv = dash === -1 ? process.argv.slice(2) : process.argv.slice(2, dash);
@@ -51,7 +53,7 @@ Usage: bun lisca <task> <scope> [target] [-- <turbo passthrough>]
   scope   aligner | annotator | studio | landing | workspace
 
 Product targets (aligner, annotator, studio):
-  desktop | web | demo | server | mobile | mobile-web | all
+  desktop | web | demo | server | mobile | all
 
 Landing targets:
   web | site   (aliases — both build the marketing site bundle)
@@ -62,18 +64,19 @@ Workspace targets:
 
 Defaults:
   dev, build (product)   → desktop (Electron stack; desktop scripts pull web + Rust)
+  dev web (product)    → web + server (Vite on 876x, Rust on 976x)
+  dev mobile (product) → Expo web + server (http://localhost:808x, API proxied to Rust on 876x)
+  dev server (product) → Rust backend only
   dev, build (landing) → web
   typecheck (product)  → all packages matching @lisca/<product>-*
   preview              → web (Vite preview)
 
-Mobile dev runs Expo directly (not via turbo) so the CLI accepts i/a/w keys.
-Use mobile-web to open the RN app in a browser for quick UI iteration.
+Mobile dev runs Expo in the browser (not via turbo). Open the 808x URL; API traffic is proxied to Rust on 876x.
 
 Examples:
   bun lisca dev aligner
   bun lisca dev annotator web
   bun lisca dev aligner mobile
-  bun lisca dev aligner mobile-web
   bun lisca dev landing
   bun lisca install landing
   bun lisca build landing
@@ -110,7 +113,6 @@ function productFilter(taskName, scopeName, target) {
   if (taskName === "typecheck") {
     const t = target ?? "all";
     if (t === "all") return [`@lisca/${scopeName}-*`];
-    if (t === "mobile-web") return [`@lisca/${scopeName}-mobile`];
     if (!TYPECHECK_TARGETS.has(t)) {
       console.error(
         `Invalid typecheck target "${t}". Use: web | demo | server | desktop | mobile | all`,
@@ -126,9 +128,14 @@ function productFilter(taskName, scopeName, target) {
     else t = "desktop";
   }
 
+  if (t === "mobile-web") {
+    console.error('Target "mobile-web" was removed. Use: bun lisca dev <scope> mobile');
+    process.exit(1);
+  }
+
   if (!APP_TARGETS.has(t)) {
     console.error(
-      `Invalid target "${t}". Use: desktop | web | demo | server | mobile | mobile-web`,
+      `Invalid target "${t}". Use: desktop | web | demo | server | mobile | all`,
     );
     process.exit(1);
   }
@@ -139,8 +146,6 @@ function productFilter(taskName, scopeName, target) {
     );
     process.exit(1);
   }
-
-  if (t === "mobile-web") return [`@lisca/${scopeName}-mobile`];
 
   return [`@lisca/${scopeName}-${t}`];
 }
@@ -198,13 +203,107 @@ function runTurbo(taskName, { filters = [], extra = turboExtra } = {}) {
   process.exit(result.status ?? 1);
 }
 
-function runMobileDev(scopeName, { web = false } = {}) {
+function spawnDevServer(scopeName, { backend = false } = {}) {
+  const ports = LISCA_APP_PORTS[scopeName];
+  if (!ports) {
+    console.error(`No dev ports configured for scope "${scopeName}".`);
+    process.exit(1);
+  }
+  const port = backend ? ports.backendPort : ports.publicPort;
+  return spawn("bun", ["x", "turbo", "run", "dev", `--filter=@lisca/${scopeName}-server`], {
+    cwd: root,
+    env: { ...process.env, PORT: String(port) },
+    stdio: "inherit",
+    shell: process.platform === "win32",
+  });
+}
+
+function waitForTcpPort(port, { timeoutMs = 120_000, label = "server" } = {}) {
+  const target = `tcp:127.0.0.1:${port}`;
+  console.log(`[lisca] waiting for ${label} (${target})…`);
+  const result = spawnSync("bun", ["x", "wait-on", "-t", String(timeoutMs), target], {
+    cwd: root,
+    stdio: "inherit",
+    shell: process.platform === "win32",
+  });
+  if (result.status !== 0) {
+    console.error(`[lisca] ${label} did not become ready on ${target}`);
+    return false;
+  }
+  return true;
+}
+
+function runDevWithServer(scopeName, { backend = false, run }) {
+  const ports = LISCA_APP_PORTS[scopeName];
+  const server = spawnDevServer(scopeName, { backend });
+  const stopServer = () => {
+    if (!server.killed) server.kill("SIGTERM");
+  };
+  const onSignal = () => {
+    stopServer();
+    process.exit(130);
+  };
+  process.on("SIGINT", onSignal);
+  process.on("SIGTERM", onSignal);
+
+  const waitPort = backend ? ports.backendPort : ports.publicPort;
+  if (!waitForTcpPort(waitPort, { label: `@lisca/${scopeName}-server` })) {
+    stopServer();
+    process.removeListener("SIGINT", onSignal);
+    process.removeListener("SIGTERM", onSignal);
+    process.exit(1);
+  }
+
+  const status = run();
+  stopServer();
+  process.removeListener("SIGINT", onSignal);
+  process.removeListener("SIGTERM", onSignal);
+  process.exit(status ?? 1);
+}
+
+function runWebDev(scopeName) {
+  runDevWithServer(scopeName, {
+    backend: true,
+    run: () =>
+      spawnSync("bun", ["x", "turbo", "run", "dev", `--filter=@lisca/${scopeName}-web`, ...turboExtra], {
+        cwd: root,
+        stdio: "inherit",
+        shell: process.platform === "win32",
+      }).status,
+  });
+}
+
+function spawnMobileDevProxy(scopeName) {
+  const mobilePort = LISCA_MOBILE_PORTS[scopeName];
+  const rustPort = LISCA_APP_PORTS[scopeName]?.publicPort;
+  if (!mobilePort || !rustPort) {
+    console.error(`No mobile dev ports configured for scope "${scopeName}".`);
+    process.exit(1);
+  }
+  const expoPort = liscaMobileExpoPort(mobilePort);
+  return spawn(
+    process.execPath,
+    [
+      path.join(root, "scripts/lisca-mobile-dev-proxy.cjs"),
+      "--listen",
+      String(mobilePort),
+      "--expo",
+      String(expoPort),
+      "--rust",
+      String(rustPort),
+    ],
+    { cwd: root, stdio: "inherit", shell: process.platform === "win32" },
+  );
+}
+
+function runMobileDev(scopeName) {
   const mobileDir = path.join(root, "apps", scopeName, "mobile");
-  const port = MOBILE_PORTS[scopeName];
-  if (!port) {
+  const mobilePort = LISCA_MOBILE_PORTS[scopeName];
+  if (!mobilePort) {
     console.error(`No mobile port configured for scope "${scopeName}".`);
     process.exit(1);
   }
+  const expoPort = liscaMobileExpoPort(mobilePort);
 
   const build = spawnSync(
     "bun",
@@ -213,13 +312,43 @@ function runMobileDev(scopeName, { web = false } = {}) {
   );
   if (build.status !== 0) process.exit(build.status ?? 1);
 
-  const script = web ? "dev:web" : "dev";
-  const result = spawnSync("bun", ["run", script, ...turboExtra], {
+  const server = spawnDevServer(scopeName, { backend: false });
+  const rustPort = LISCA_APP_PORTS[scopeName].publicPort;
+  /** @type {import("node:child_process").ChildProcess | undefined} */
+  let proxy;
+  const stopChildren = () => {
+    if (!server.killed) server.kill("SIGTERM");
+    if (proxy && !proxy.killed) proxy.kill("SIGTERM");
+  };
+  const onSignal = () => {
+    stopChildren();
+    process.exit(130);
+  };
+  process.on("SIGINT", onSignal);
+  process.on("SIGTERM", onSignal);
+
+  if (!waitForTcpPort(rustPort, { label: `@lisca/${scopeName}-server` })) {
+    stopChildren();
+    process.removeListener("SIGINT", onSignal);
+    process.removeListener("SIGTERM", onSignal);
+    process.exit(1);
+  }
+
+  proxy = spawnMobileDevProxy(scopeName);
+
+  console.log(`\n[lisca] mobile web UI: http://localhost:${mobilePort}\n`);
+
+  const status = spawnSync("bun", ["run", "dev", ...turboExtra], {
     cwd: mobileDir,
+    env: { ...process.env, EXPO_DEV_SERVER_PORT: String(expoPort) },
     stdio: "inherit",
     shell: process.platform === "win32",
-  });
-  process.exit(result.status ?? 1);
+  }).status;
+
+  stopChildren();
+  process.removeListener("SIGINT", onSignal);
+  process.removeListener("SIGTERM", onSignal);
+  process.exit(status ?? 1);
 }
 
 function main() {
@@ -259,8 +388,13 @@ function main() {
     process.exit(1);
   }
 
-  if (task === "dev" && !isWorkspace(scope) && (targetArg === "mobile" || targetArg === "mobile-web")) {
-    runMobileDev(scope, { web: targetArg === "mobile-web" });
+  if (task === "dev" && !isWorkspace(scope) && !isLanding(scope) && targetArg === "web") {
+    runWebDev(scope);
+    return;
+  }
+
+  if (task === "dev" && !isWorkspace(scope) && targetArg === "mobile") {
+    runMobileDev(scope);
     return;
   }
 

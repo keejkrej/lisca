@@ -52,6 +52,11 @@ else
 fi
 
 echo ""
+echo "Container paths (Docker):"
+echo "  /root/workspace/  ← ${LISCA_ROOT}/workspace"
+echo "  /root/source/     ← ${LISCA_ROOT}/source (ro)"
+echo "  /root/.lisca/     ← ${LISCA_ROOT}/config (studio only)"
+echo ""
 echo "Host layout:"
 echo "  ${LISCA_ROOT}/source/     raw microscopy (ro in containers)"
 echo "  ${LISCA_ROOT}/workspace/  run folders (create per experiment)"

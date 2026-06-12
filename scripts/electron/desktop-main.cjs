@@ -8,16 +8,17 @@ const { runtimeIconPath } = require("./brand.cjs");
 /**
  * @param {{
  *   desktopDir: string;
- *   wsPort: number;
- *   webPort: number;
+ *   port: number;
+ *   backendPort: number;
  *   serverBinary: string;
  *   cargoPackage: string;
  * }} config
  */
 function runDesktopMain(config) {
-  const { desktopDir, wsPort, webPort, serverBinary, cargoPackage } = config;
+  const { desktopDir, port, backendPort, serverBinary, cargoPackage } = config;
   const repoRoot = path.resolve(desktopDir, "../../..");
   const devServerUrl = process.env.VITE_DEV_SERVER_URL?.trim();
+  const rustPort = devServerUrl ? backendPort : port;
 
   /** @type {import("node:child_process").ChildProcess | undefined} */
   let serverChild;
@@ -29,7 +30,7 @@ function runDesktopMain(config) {
   function startServer() {
     const isWin = process.platform === "win32";
     const exeName = serverExeName();
-    const env = { ...process.env, PORT: String(wsPort) };
+    const env = { ...process.env, PORT: String(rustPort) };
     const spawnOpts = {
       env,
       stdio: "inherit",
@@ -77,7 +78,7 @@ function runDesktopMain(config) {
 
   async function createWindow() {
     await waitOn({
-      resources: [`tcp:127.0.0.1:${wsPort}`],
+      resources: [`tcp:127.0.0.1:${rustPort}`],
       timeout: 120_000,
       interval: 250,
     });
@@ -105,7 +106,7 @@ function runDesktopMain(config) {
       return;
     }
 
-    await mainWindow.loadURL(`http://127.0.0.1:${webPort}`);
+    await mainWindow.loadURL(`http://127.0.0.1:${port}`);
   }
 
   app.whenReady().then(async () => {

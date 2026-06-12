@@ -1,11 +1,13 @@
 /** @typedef {typeof DESKTOP_PRODUCTS[keyof typeof DESKTOP_PRODUCTS]} DesktopProductConfig */
 
+const { LISCA_APP_PORTS } = require("../lisca-dev-ports.cjs");
+
 const DESKTOP_PRODUCTS = {
   aligner: {
     webPkg: "@lisca/aligner-web",
     serverPkg: "@lisca/aligner-server",
-    webPort: 5173,
-    wsPort: 8765,
+    port: LISCA_APP_PORTS.aligner.publicPort,
+    backendPort: LISCA_APP_PORTS.aligner.backendPort,
     serverBinary: "aligner-server",
     cargoPackage: "aligner-server",
     appId: "com.lisca.aligner",
@@ -15,8 +17,8 @@ const DESKTOP_PRODUCTS = {
   annotator: {
     webPkg: "@lisca/annotator-web",
     serverPkg: "@lisca/annotator-server",
-    webPort: 5174,
-    wsPort: 8766,
+    port: LISCA_APP_PORTS.annotator.publicPort,
+    backendPort: LISCA_APP_PORTS.annotator.backendPort,
     serverBinary: "annotator-server",
     cargoPackage: "annotator-server",
     appId: "com.lisca.annotator",
@@ -26,8 +28,8 @@ const DESKTOP_PRODUCTS = {
   studio: {
     webPkg: "@lisca/studio-web",
     serverPkg: "@lisca/studio-server",
-    webPort: 5175,
-    wsPort: 8767,
+    port: LISCA_APP_PORTS.studio.publicPort,
+    backendPort: LISCA_APP_PORTS.studio.backendPort,
     serverBinary: "studio-server",
     cargoPackage: "studio-server",
     appId: "com.lisca.studio",

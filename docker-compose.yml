@@ -1,4 +1,4 @@
-# Host data (default): /var/lisca/workspace and /var/lisca/source
+# Host data: /var/lisca/{workspace,source,config} bind-mounted under /root/.
 # Bootstrap: sudo ./scripts/setup-lisca-host.sh
 #
 # Profiles: `.env` sets COMPOSE_PROFILES=all so `docker compose up --build` starts every app.
@@ -8,14 +8,17 @@
 # cargo-chef dependency layers. Requires BuildKit (default in Docker 23+). Rebuilds after
 # source edits reuse registry/target/vite caches; avoid `--no-cache` unless debugging images.
 #
-# In the UI, pick workspace paths like /workspace/<your-run-folder> and sources under /source/.
+# In the UI, pick workspace paths like /root/workspace/<your-run-folder> and sources under /root/source/.
+# Studio profiles/memory use /root/.lisca (same layout as desktop ~/.lisca).
 
-x-lisca-env: &lisca-env
-  HOST: 0.0.0.0
-  PORT: 3000
-  HOME: /workspace
-  RUST_LOG: info
-  LISCA_FS_ROOTS: /workspace:/source
+x-lisca-volumes: &lisca-volumes
+  - ${LISCA_ROOT:-/var/lisca}/workspace:/root/workspace
+  - ${LISCA_ROOT:-/var/lisca}/source:/root/source:ro
+
+x-lisca-studio-volumes: &lisca-studio-volumes
+  - ${LISCA_ROOT:-/var/lisca}/workspace:/root/workspace
+  - ${LISCA_ROOT:-/var/lisca}/source:/root/source:ro
+  - ${LISCA_ROOT:-/var/lisca}/config:/root/.lisca
 
 services:
   aligner:
@@ -29,11 +32,8 @@ services:
     ports:
       - "8765:8765"
     environment:
-      <<: *lisca-env
       PUBLIC_PORT: 8765
-    volumes:
-      - ${LISCA_ROOT:-/var/lisca}/workspace:/workspace
-      - ${LISCA_ROOT:-/var/lisca}/source:/source:ro
+    volumes: *lisca-volumes
     restart: unless-stopped
 
   annotator:
@@ -47,11 +47,8 @@ services:
     ports:
       - "8766:8766"
     environment:
-      <<: *lisca-env
       PUBLIC_PORT: 8766
-    volumes:
-      - ${LISCA_ROOT:-/var/lisca}/workspace:/workspace
-      - ${LISCA_ROOT:-/var/lisca}/source:/source:ro
+    volumes: *lisca-volumes
     restart: unless-stopped
 
   studio:
@@ -65,11 +62,6 @@ services:
     ports:
       - "8767:8767"
     environment:
-      <<: *lisca-env
       PUBLIC_PORT: 8767
-      LISCA_CONFIG_DIR: /config
-    volumes:
-      - ${LISCA_ROOT:-/var/lisca}/workspace:/workspace
-      - ${LISCA_ROOT:-/var/lisca}/source:/source:ro
-      - ${LISCA_ROOT:-/var/lisca}/config:/config
+    volumes: *lisca-studio-volumes
     restart: unless-stopped

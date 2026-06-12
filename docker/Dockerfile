@@ -86,11 +86,9 @@ COPY --from=web-build /app/apps/${PRODUCT}/web/dist /srv/web
 
 ENV PRODUCT=${PRODUCT} \
     PUBLIC_PORT=${PUBLIC_PORT} \
-    HOST=0.0.0.0 \
-    PORT=3000 \
-    HOME=/workspace
+    PORT=3000
 
-VOLUME ["/workspace", "/source"]
+VOLUME ["/root/workspace", "/root/source"]
 EXPOSE ${PUBLIC_PORT}
 
 ENTRYPOINT ["/entrypoint.sh"]

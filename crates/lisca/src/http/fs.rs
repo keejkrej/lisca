@@ -51,10 +51,36 @@ async fn read_text_file_handler(
 }
 
 fn user_home_directory() -> Option<String> {
-    std::env::var("USERPROFILE")
-        .ok()
-        .filter(|value| !value.trim().is_empty())
-        .or_else(|| std::env::var("HOME").ok())
+    platform_user_home()
+}
+
+#[cfg(windows)]
+fn platform_user_home() -> Option<String> {
+    if let Some(home) = home_from_env("USERPROFILE") {
+        return Some(home);
+    }
+    let drive = std::env::var("HOMEDRIVE").unwrap_or_default();
+    let path = std::env::var("HOMEPATH").unwrap_or_default();
+    home_from_env(&format!("{drive}{path}"))
+}
+
+#[cfg(not(windows))]
+fn platform_user_home() -> Option<String> {
+    home_from_env("HOME")
+}
+
+fn home_from_env(var: &str) -> Option<String> {
+    let value = std::env::var(var).ok()?;
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    let path = Path::new(trimmed);
+    if path.is_dir() {
+        Some(path.to_string_lossy().to_string())
+    } else {
+        None
+    }
 }
 
 fn list_directory(path: Option<String>) -> Result<HostListDirectoryResult, FsError> {
@@ -227,7 +253,7 @@ fn list_roots() -> HostListDirectoryResult {
     }
 
     let mut entries = Vec::new();
-    for (name, path) in [("workspace", "/workspace"), ("source", "/source")] {
+    for (name, path) in [("workspace", "/root/workspace"), ("source", "/root/source")] {
         if std::path::Path::new(path).is_dir() {
             entries.push(HostFsEntry {
                 name: name.to_string(),
@@ -256,34 +282,37 @@ mod tests {
 
     #[test]
     fn normalize_local_path_resolves_parent_segments() {
-        let path = normalize_local_path(Path::new("/workspace/../workspace/run-1")).unwrap();
-        assert_eq!(path, Path::new("/workspace/run-1"));
+        let path = normalize_local_path(Path::new("/root/workspace/foo/../run-1")).unwrap();
+        assert_eq!(path, Path::new("/root/workspace/run-1"));
     }
 
     #[test]
     fn path_is_under_root_matches_descendants() {
         assert!(path_is_under_root(
-            Path::new("/workspace/run-1"),
-            Path::new("/workspace")
+            Path::new("/root/workspace/run-1"),
+            Path::new("/root/workspace")
         ));
-        assert!(!path_is_under_root(Path::new("/etc"), Path::new("/workspace")));
+        assert!(!path_is_under_root(Path::new("/etc"), Path::new("/root/workspace")));
     }
 
     #[test]
     fn list_parent_path_hides_parent_outside_allowed_roots() {
-        let parent = list_parent_path(Path::new("/workspace/run-1"));
-        assert_eq!(parent.as_deref(), Some("/workspace"));
+        let parent = list_parent_path(Path::new("/root/workspace/run-1"));
+        assert_eq!(parent.as_deref(), Some("/root/workspace"));
 
-        std::env::set_var("LISCA_FS_ROOTS", "/workspace:/source");
-        let parent = list_parent_path(Path::new("/workspace"));
+        std::env::set_var("LISCA_FS_ROOTS", "/root");
+        let parent = list_parent_path(Path::new("/root/workspace"));
+        assert_eq!(parent.as_deref(), Some("/root"));
+
+        let parent = list_parent_path(Path::new("/root"));
         assert_eq!(parent.as_deref(), Some(""));
         std::env::remove_var("LISCA_FS_ROOTS");
     }
 
     #[test]
     fn ensure_local_path_allowed_rejects_paths_outside_roots() {
-        std::env::set_var("LISCA_FS_ROOTS", "/workspace:/source");
-        assert!(ensure_local_path_allowed(Path::new("/workspace/run-1")).is_ok());
+        std::env::set_var("LISCA_FS_ROOTS", "/root");
+        assert!(ensure_local_path_allowed(Path::new("/root/workspace/run-1")).is_ok());
         assert!(ensure_local_path_allowed(Path::new("/etc")).is_err());
         std::env::remove_var("LISCA_FS_ROOTS");
     }
