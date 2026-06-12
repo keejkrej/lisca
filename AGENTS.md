@@ -12,10 +12,6 @@ Humans review this file only. Agents maintain **Tech stack** via the memory skil
   - **Annotator** — outline cells/regions per site; assign phenotype labels for classification, assisted segmentation, or QC.
   - **Studio** — end-to-end assay workflow (wizard → align → annotate → analyse → charts); built for multi-site arrays, not one FOV.
 - **Assays (today):** gene-expression (fluorescence traces, AUC, dose–response plots) and immune-killing (survival scoring, kill-curve kinetics). More assay types follow the same `assay.json` + Rust pipeline pattern.
-- **Surfaces:** web + Electron desktop for lab workflows; Expo mobile for review/iteration; Rust servers for imaging I/O and analysis; shared contracts wire every client to the same API.
-- **Non-goals:** general LIMS/ELN, instrument control, public human docs in `README.md`, hand-written wire types, or line-by-line ports of legacy Python (transfection, mupattern) — sibling repos define *what* to compute, not Rust structure.
-- **Tradeoffs:** scientific output parity and workspace contracts over matching reference Python code; shared packages (`@lisca/contracts`, `@lisca/ui-headless`, `@lisca/analysis`) over app-local duplicates; correctness and array-scale workflows over feature breadth.
-- **When unsure:** prefer extending an existing assay pipeline and `@lisca/analysis` catalog over one-off scripts; prefer contracts-first changes over ad-hoc API shapes.
 
 ## Rules
 
