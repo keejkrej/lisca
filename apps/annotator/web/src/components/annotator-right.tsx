@@ -10,6 +10,11 @@ export function AnnotatorRight() {
     state.scanError ?? state.frameError ?? state.annotationError ?? state.saveError;
   const loading = state.scanLoading || state.frameLoading || state.annotationLoading;
 
+  const openCreateLabels = () => {
+    state.setLabelError(null);
+    state.setLabelDialogOpen(true);
+  };
+
   return (
     <SidebarStack>
       <SidebarSection title="Mode">
@@ -47,9 +52,16 @@ export function AnnotatorRight() {
           );
         })}
         {state.labels.length === 0 ? (
-          <div className="col-span-2 rounded-md border border-dashed border-border px-2 py-8 text-center text-muted-foreground text-xs">
-            No labels loaded.
-          </div>
+          <Button
+            className="col-span-2 w-full"
+            disabled={!state.workspacePath}
+            size="sm"
+            type="button"
+            variant="outline"
+            onClick={openCreateLabels}
+          >
+            Add
+          </Button>
         ) : null}
         {loading ? <p className="col-span-2 text-muted-foreground text-xs">Loading…</p> : null}
         {activeError ? <p className="col-span-2 text-destructive text-xs">{activeError}</p> : null}
