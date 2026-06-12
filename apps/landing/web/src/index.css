@@ -1,6 +1,6 @@
+@import "@lisca/web-app/fonts.css";
 @import "tailwindcss";
 @import "@lisca/ui/coss-theme.css";
-@import "@lisca/web-app/fonts.css";
 @custom-variant dark (&:where(.dark, .dark *));
 @source "../../../../packages/ui/src";
 @source "../../../../apps/aligner/demo/src";

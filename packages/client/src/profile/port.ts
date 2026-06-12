@@ -63,7 +63,16 @@ export function createProfilePort(deps: ProfilePortDeps): ProfilePort {
       );
     },
     touchMemory(payload, signal) {
-      return withClientEffect(client, signal, (c) => c.memory.touchMemory({ payload }));
+      return withClientEffect(client, signal, (c) => {
+        switch (payload.kind) {
+          case "workspace":
+            return c.memory.touchMemory({ payload });
+          case "source":
+            return c.memory.touchMemory({ payload });
+          case "assay":
+            return c.memory.touchMemory({ payload });
+        }
+      });
     },
   };
 }
