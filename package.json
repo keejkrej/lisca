@@ -53,7 +53,7 @@
     "oxlint": "^1.63.0",
     "oxlint-plugin-eslint": "1.68.0",
     "rcedit": "^4.0.1",
-    "turbo": "^2.5.4",
+    "turbo": "^2.9.16",
     "typescript": "catalog:",
     "vitest": "catalog:",
     "wait-on": "^8.0.3"
