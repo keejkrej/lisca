@@ -17,7 +17,7 @@ export type {
   AlignCanvasFramePoint,
   AlignCanvasPointerEvent,
 } from "./align-canvas-handlers";
-import type { AlignCanvasFramePoint, AlignCanvasPointerEvent } from "./align-canvas-handlers";
+import type { AlignCanvasPointerEvent } from "./align-canvas-handlers";
 export type AlignCanvasProps = {
   frame: FrameResult | null;
   grid: AlignGridState;

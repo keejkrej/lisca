@@ -27,19 +27,16 @@ export const MemoryAssayEntrySchema = Schema.Struct({
 
 export const MemoryTouchRequestSchema = Schema.Union(
   Schema.Struct({
-    profileId: Schema.String,
     kind: Schema.Literal("workspace"),
     path: Schema.String,
     label: Schema.optional(Schema.String),
   }),
   Schema.Struct({
-    profileId: Schema.String,
     kind: Schema.Literal("source"),
     source: AlignerSourceSchema,
     label: Schema.optional(Schema.String),
   }),
   Schema.Struct({
-    profileId: Schema.String,
     kind: Schema.Literal("assay"),
     path: Schema.String,
     assayLabel: Schema.optional(Schema.String),

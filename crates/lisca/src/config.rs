@@ -41,6 +41,10 @@ pub fn profile_memory_path(config: &Path, profile_id: &str) -> PathBuf {
     profile_dir(config, profile_id).join("memory.json")
 }
 
+pub fn sessions_path(config: &Path) -> PathBuf {
+    config.join("sessions.json")
+}
+
 #[cfg(test)]
 pub(crate) mod test_lock {
     use std::sync::Mutex;

@@ -1195,6 +1195,7 @@ dependencies = [
  "serde_json",
  "tiff",
  "tokio",
+ "tower",
  "tower-http",
  "tracing",
  "tracing-subscriber",

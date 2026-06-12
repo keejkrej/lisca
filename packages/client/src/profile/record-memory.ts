@@ -11,12 +11,11 @@ export function touchWorkspaceMemory(
   path: string,
   label?: string,
 ): void {
-  if (!studioProfileCanUseMemory(session) || session?.mode !== "profile") return;
+  if (!studioProfileCanUseMemory(session)) return;
   const trimmed = path.trim();
   if (!trimmed) return;
   void Effect.runPromise(
     port.touchMemory({
-      profileId: session.profileId,
       kind: "workspace",
       path: trimmed,
       label,
@@ -30,10 +29,9 @@ export function touchSourceMemory(
   source: AlignerSource,
   label?: string,
 ): void {
-  if (!studioProfileCanUseMemory(session) || session?.mode !== "profile") return;
+  if (!studioProfileCanUseMemory(session)) return;
   void Effect.runPromise(
     port.touchMemory({
-      profileId: session.profileId,
       kind: "source",
       source,
       label,
@@ -48,11 +46,10 @@ export function touchAssayMemory(
   assayLabel?: string,
   workspacePath?: string,
 ): void {
-  if (!studioProfileCanUseMemory(session) || session?.mode !== "profile") return;
+  if (!studioProfileCanUseMemory(session)) return;
   const trimmed = path.trim();
   if (!trimmed) return;
   const payload: MemoryTouchRequest = {
-    profileId: session.profileId,
     kind: "assay",
     path: trimmed,
     assayLabel,

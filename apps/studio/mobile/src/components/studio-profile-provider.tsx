@@ -1,20 +1,16 @@
 import type { StudioProfileSession } from "@lisca/client/profile/session";
+import { revokeStudioProfileSession } from "@lisca/client/profile/port";
 import {
   clearStudioProfileSession,
+  readStudioProfileAccessToken,
   readStudioProfileSession,
   studioProfileCanUseMemory,
   writeStudioProfileSession,
 } from "@lisca/client/profile/session";
 import { useShellServer } from "@lisca/ui-native";
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useRef, useState, type ReactNode } from "react";
 
+import { studioProfileClient } from "../api/studio-profile-port";
 import { ProfileGateDialog } from "./profile-gate-dialog";
 
 export type StudioProfileContextValue = {
@@ -23,7 +19,8 @@ export type StudioProfileContextValue = {
   switchProfile: () => void;
 };
 
-const StudioProfileContext = createContext<StudioProfileContextValue | null>(null);
+const StudioProfileSessionContext = createContext<StudioProfileSession | null>(null);
+const StudioProfileSwitchContext = createContext<(() => void) | null>(null);
 
 export function StudioProfileProvider({ children }: { children: ReactNode }) {
   const server = useShellServer();
@@ -33,39 +30,35 @@ export function StudioProfileProvider({ children }: { children: ReactNode }) {
 
   const serverConnected = server.state === "open";
 
-  const completeSelection = useCallback((next: StudioProfileSession) => {
-    writeStudioProfileSession(next);
-    setSession(next);
-  }, []);
-
-  const switchProfile = useCallback(() => {
+  const switchProfile = useRef(() => {
+    if (readStudioProfileAccessToken()) {
+      revokeStudioProfileSession(studioProfileClient);
+    }
     clearStudioProfileSession();
     setSession(null);
-  }, []);
+  }).current;
 
-  const selectGuest = useCallback(() => {
+  const completeSelection = (next: StudioProfileSession) => {
+    writeStudioProfileSession(next);
+    setSession(next);
+  };
+
+  const selectGuest = () => {
     completeSelection({ mode: "guest" });
-  }, [completeSelection]);
+  };
 
-  const selectProfile = useCallback(
-    (profile: { profileId: string; displayName: string }) => {
-      completeSelection({
-        mode: "profile",
-        profileId: profile.profileId,
-        displayName: profile.displayName,
-      });
-    },
-    [completeSelection],
-  );
-
-  const contextValue = useMemo((): StudioProfileContextValue | null => {
-    if (!session) return null;
-    return {
-      session,
-      canUseMemory: studioProfileCanUseMemory(session),
-      switchProfile,
-    };
-  }, [session, switchProfile]);
+  const selectProfile = (profile: {
+    profileId: string;
+    displayName: string;
+    accessToken: string;
+  }) => {
+    completeSelection({
+      mode: "profile",
+      profileId: profile.profileId,
+      displayName: profile.displayName,
+      accessToken: profile.accessToken,
+    });
+  };
 
   if (!session) {
     return (
@@ -79,18 +72,25 @@ export function StudioProfileProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <StudioProfileContext.Provider value={contextValue!}>
-      {children}
-    </StudioProfileContext.Provider>
+    <StudioProfileSessionContext.Provider value={session}>
+      <StudioProfileSwitchContext.Provider value={switchProfile}>
+        {children}
+      </StudioProfileSwitchContext.Provider>
+    </StudioProfileSessionContext.Provider>
   );
 }
 
 export function useStudioProfile(): StudioProfileContextValue {
-  const value = useContext(StudioProfileContext);
-  if (!value) {
+  const session = useContext(StudioProfileSessionContext);
+  const switchProfile = useContext(StudioProfileSwitchContext);
+  if (!session || !switchProfile) {
     throw new Error(
       "useStudioProfile must be used within StudioProfileProvider after profile selection",
     );
   }
-  return value;
+  return {
+    session,
+    canUseMemory: studioProfileCanUseMemory(session),
+    switchProfile,
+  };
 }

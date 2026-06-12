@@ -38,8 +38,9 @@ import {
   MemoryTouchResponseSchema,
   ProfileCreateRequestSchema,
   ProfileListResponseSchema,
-  ProfileResponseSchema,
+  ProfileSessionResponseSchema,
   ProfileSignInRequestSchema,
+  ProfileSignOutResponseSchema,
   UIntArraySchema,
   WorkspaceScanSchema,
 } from "./schema/index";
@@ -53,6 +54,12 @@ export class RequestError extends Schema.TaggedError<RequestError>()(
   "RequestError",
   { message: Schema.String },
   HttpApiSchema.annotations({ status: 400 }),
+) {}
+
+export class Unauthorized extends Schema.TaggedError<Unauthorized>()(
+  "Unauthorized",
+  { message: Schema.String },
+  HttpApiSchema.annotations({ status: 401 }),
 ) {}
 
 const U32Param = Schema.NumberFromString.annotations({
@@ -184,12 +191,17 @@ const profileGroup = HttpApiGroup.make("profile")
   .add(
     HttpApiEndpoint.post("createProfile", "/profile/create")
       .setPayload(ProfileCreateRequestSchema)
-      .addSuccess(ProfileResponseSchema),
+      .addSuccess(ProfileSessionResponseSchema),
   )
   .add(
     HttpApiEndpoint.post("signInProfile", "/profile/sign-in")
       .setPayload(ProfileSignInRequestSchema)
-      .addSuccess(ProfileResponseSchema),
+      .addSuccess(ProfileSessionResponseSchema),
+  )
+  .add(
+    HttpApiEndpoint.post("signOutProfile", "/profile/sign-out")
+      .addSuccess(ProfileSignOutResponseSchema)
+      .addError(Unauthorized),
   );
 
 // --- memory group (studio server only) ---------------------------------------
@@ -198,16 +210,17 @@ const memoryGroup = HttpApiGroup.make("memory")
     HttpApiEndpoint.get("getRecentMemory", "/memory/recent")
       .setUrlParams(
         Schema.Struct({
-          profileId: Schema.String,
           type: MemoryKindSchema,
         }),
       )
-      .addSuccess(MemoryRecentResponseSchema),
+      .addSuccess(MemoryRecentResponseSchema)
+      .addError(Unauthorized),
   )
   .add(
     HttpApiEndpoint.post("touchMemory", "/memory/touch")
       .setPayload(MemoryTouchRequestSchema)
-      .addSuccess(MemoryTouchResponseSchema),
+      .addSuccess(MemoryTouchResponseSchema)
+      .addError(Unauthorized),
   );
 
 // --- studio group ------------------------------------------------------------
@@ -255,4 +268,5 @@ export const liscaApi = HttpApi.make("lisca")
   .add(profileGroup)
   .add(memoryGroup)
   .add(studioGroup)
-  .addError(RequestError);
+  .addError(RequestError)
+  .addError(Unauthorized);

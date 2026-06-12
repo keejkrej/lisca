@@ -56,6 +56,24 @@
         }
       }
     },
+    "Unauthorized": {
+      "type": "object",
+      "required": [
+        "message",
+        "_tag"
+      ],
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "_tag": {
+          "type": "string",
+          "enum": [
+            "Unauthorized"
+          ]
+        }
+      }
+    },
     "HomeDirectoryResponse": {
       "type": "object",
       "required": [
@@ -1182,17 +1200,21 @@
         }
       }
     },
-    "ProfileResponse": {
+    "ProfileSessionResponse": {
       "type": "object",
       "required": [
         "profileId",
-        "displayName"
+        "displayName",
+        "accessToken"
       ],
       "properties": {
         "profileId": {
           "type": "string"
         },
         "displayName": {
+          "type": "string"
+        },
+        "accessToken": {
           "type": "string"
         }
       }
@@ -1205,6 +1227,20 @@
       "properties": {
         "displayName": {
           "type": "string"
+        }
+      }
+    },
+    "ProfileSignOutResponse": {
+      "type": "object",
+      "required": [
+        "ok"
+      ],
+      "properties": {
+        "ok": {
+          "type": "boolean",
+          "enum": [
+            true
+          ]
         }
       }
     },

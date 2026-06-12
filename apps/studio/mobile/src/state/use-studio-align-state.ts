@@ -16,7 +16,7 @@ import {
 } from "@lisca/utils";
 import { Effect } from "effect";
 import { useRouter } from "expo-router";
-import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
+import { useAtom, useAtomValue } from "@effect-atom/atom-react";
 import { useEffect, useRef, useState } from "react";
 import { studioClient, toErrorMessage } from "../api/studio-port";
 import { scanIdleAtom, scanSourceAtom } from "../atoms/studio-query-atoms";

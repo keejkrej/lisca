@@ -1,4 +1,4 @@
-import { renderHook, act } from "@testing-library/react";
+import { renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { useSliderStepperField } from "../src/slider-stepper-field";

@@ -7,7 +7,6 @@ import {
   canvasToastPresentation,
   shouldHideToastText,
 } from "@lisca/ui-headless/canvas-status";
-import { useCanvasTransientStatus } from "@lisca/ui-headless/canvas-transient-status";
 import { cn } from "../../lib/utils";
 
 function messageToneClassName(tone: CanvasStatusTone | undefined) {

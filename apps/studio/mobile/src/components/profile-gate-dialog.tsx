@@ -10,7 +10,11 @@ export type ProfileGateDialogProps = {
   open: boolean;
   serverConnected: boolean;
   onSelectGuest: () => void;
-  onSelectProfile: (profile: { profileId: string; displayName: string }) => void;
+  onSelectProfile: (profile: {
+    profileId: string;
+    displayName: string;
+    accessToken: string;
+  }) => void;
 };
 
 export function ProfileGateDialog({
@@ -24,6 +28,7 @@ export function ProfileGateDialog({
   const [error, setError] = useState<string | null>(null);
   const [createName, setCreateName] = useState("");
   const [creating, setCreating] = useState(false);
+  const [signingIn, setSigningIn] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open || !serverConnected) return;
@@ -58,11 +63,29 @@ export function ProfileGateDialog({
       onSelectProfile({
         profileId: created.profileId,
         displayName: created.displayName,
+        accessToken: created.accessToken,
       });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not create profile.");
     } finally {
       setCreating(false);
+    }
+  };
+
+  const signInExistingProfile = async (displayName: string) => {
+    setSigningIn(displayName);
+    setError(null);
+    try {
+      const session = await runClientEffect(studioProfileClient.signInProfile(displayName));
+      onSelectProfile({
+        profileId: session.profileId,
+        displayName: session.displayName,
+        accessToken: session.accessToken,
+      });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not sign in to profile.");
+    } finally {
+      setSigningIn(null);
     }
   };
 
@@ -91,13 +114,9 @@ export function ProfileGateDialog({
             profiles.map((profile) => (
               <Button
                 key={profile.id}
-                label={profile.displayName}
-                onPress={() =>
-                  onSelectProfile({
-                    profileId: profile.id,
-                    displayName: profile.displayName,
-                  })
-                }
+                disabled={signingIn !== null}
+                label={signingIn === profile.displayName ? "Signing in…" : profile.displayName}
+                onPress={() => void signInExistingProfile(profile.displayName)}
               />
             ))
           )}

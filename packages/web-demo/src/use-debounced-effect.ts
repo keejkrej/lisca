@@ -10,5 +10,6 @@ export function useDebouncedEffect(effect: () => void, deps: readonly unknown[],
       effectRef.current();
     }, delayMs);
     return () => window.clearTimeout(handle);
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- caller-owned dependency list
   }, deps);
 }

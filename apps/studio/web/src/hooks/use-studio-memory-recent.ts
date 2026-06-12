@@ -30,7 +30,7 @@ export function useStudioMemoryRecent(kind: MemoryKind, enabled: boolean) {
     let cancelled = false;
     setLoading(true);
     void runClientEffect(
-      studioProfileClient.getRecentMemory(session.profileId, kind),
+      studioProfileClient.getRecentMemory(kind),
     )
       .then((response) => {
         if (cancelled) return;

@@ -4,7 +4,8 @@ import type {
   MemoryTouchRequest,
   MemoryTouchResponse,
   ProfileListResponse,
-  ProfileResponse,
+  ProfileSessionResponse,
+  ProfileSignOutResponse,
 } from "@lisca/contracts";
 import { Effect } from "effect";
 
@@ -21,13 +22,10 @@ export type ProfilePortDeps = ApiClientDeps;
 
 export type ProfilePort = {
   listProfiles(signal?: AbortSignal): ClientEffect<ProfileListResponse>;
-  createProfile(displayName: string, signal?: AbortSignal): ClientEffect<ProfileResponse>;
-  signInProfile(displayName: string, signal?: AbortSignal): ClientEffect<ProfileResponse>;
-  getRecentMemory(
-    profileId: string,
-    type: MemoryKind,
-    signal?: AbortSignal,
-  ): ClientEffect<MemoryRecentResponse>;
+  createProfile(displayName: string, signal?: AbortSignal): ClientEffect<ProfileSessionResponse>;
+  signInProfile(displayName: string, signal?: AbortSignal): ClientEffect<ProfileSessionResponse>;
+  signOutProfile(signal?: AbortSignal): ClientEffect<ProfileSignOutResponse>;
+  getRecentMemory(type: MemoryKind, signal?: AbortSignal): ClientEffect<MemoryRecentResponse>;
   touchMemory(payload: MemoryTouchRequest, signal?: AbortSignal): ClientEffect<MemoryTouchResponse>;
 };
 
@@ -56,44 +54,20 @@ export function createProfilePort(deps: ProfilePortDeps): ProfilePort {
         c.profile.signInProfile({ payload: { displayName } }),
       );
     },
-    getRecentMemory(profileId, type, signal) {
+    signOutProfile(signal) {
+      return withClientEffect(client, signal, (c) => c.profile.signOutProfile());
+    },
+    getRecentMemory(type, signal) {
       return withClientEffect(client, signal, (c) =>
-        c.memory.getRecentMemory({ urlParams: { profileId, type } }),
+        c.memory.getRecentMemory({ urlParams: { type } }),
       );
     },
     touchMemory(payload, signal) {
-      return withClientEffect(client, signal, (c) => {
-        switch (payload.kind) {
-          case "workspace":
-            return c.memory.touchMemory({
-              payload: {
-                profileId: payload.profileId,
-                kind: "workspace",
-                path: payload.path,
-                label: payload.label,
-              },
-            });
-          case "source":
-            return c.memory.touchMemory({
-              payload: {
-                profileId: payload.profileId,
-                kind: "source",
-                source: payload.source,
-                label: payload.label,
-              },
-            });
-          case "assay":
-            return c.memory.touchMemory({
-              payload: {
-                profileId: payload.profileId,
-                kind: "assay",
-                path: payload.path,
-                assayLabel: payload.assayLabel,
-                workspacePath: payload.workspacePath,
-              },
-            });
-        }
-      });
+      return withClientEffect(client, signal, (c) => c.memory.touchMemory({ payload }));
     },
   };
+}
+
+export function revokeStudioProfileSession(port: ProfilePort): void {
+  void Effect.runPromise(port.signOutProfile()).catch(() => undefined);
 }

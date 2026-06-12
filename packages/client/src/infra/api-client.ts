@@ -8,6 +8,7 @@ import type { ClientEffect } from "./runtime";
 export type ApiClientDeps = {
   baseUrl: () => string;
   fetch?: typeof fetch;
+  accessToken?: () => string | undefined;
 };
 
 function fetchLayerFor(deps: ApiClientDeps) {
@@ -20,9 +21,14 @@ function makeApiClientEffect(deps: ApiClientDeps) {
   return HttpApiClient.make(liscaApi, {
     baseUrl: "",
     transformClient: (client) =>
-      HttpClient.mapRequest(client, (request) =>
-        HttpClientRequest.prependUrl(request, deps.baseUrl()),
-      ),
+      HttpClient.mapRequest(client, (request) => {
+        let next = HttpClientRequest.prependUrl(request, deps.baseUrl());
+        const token = deps.accessToken?.();
+        if (token) {
+          next = HttpClientRequest.setHeader(next, "Authorization", `Bearer ${token}`);
+        }
+        return next;
+      }),
   }).pipe(Effect.provide(fetchLayerFor(deps)));
 }
 

@@ -21,7 +21,6 @@ import {
   dockToolLabel,
   dockToolShortcuts,
   useKeyboardShortcuts,
-  type DockToolAction,
 } from "@lisca/ui/shell";
 
 export type AlignToolSectionProps = {

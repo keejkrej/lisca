@@ -16,7 +16,7 @@ import {
 } from "@lisca/utils";
 import { Effect } from "effect";
 import { useNavigate } from "@tanstack/react-router";
-import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
+import { useAtom, useAtomValue } from "@effect-atom/atom-react";
 import { useEffect, useRef, useState } from "react";
 import { studioClient, toErrorMessage } from "../api/studio-port";
 import { studioNavigate } from "../navigation/use-studio-navigate";

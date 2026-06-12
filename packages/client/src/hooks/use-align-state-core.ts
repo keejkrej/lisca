@@ -21,7 +21,7 @@ import {
   type AlignGridToolMode,
 } from "@lisca/utils";
 import type { Atom, Result } from "@effect-atom/atom-react";
-import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
+import { useAtom, useAtomValue } from "@effect-atom/atom-react";
 import { Effect } from "effect";
 import { useEffect, useRef, useState } from "react";
 import type {

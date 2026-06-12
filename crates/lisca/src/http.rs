@@ -1,5 +1,6 @@
 //! Shared HTTP and WebSocket infrastructure for Lisca servers.
 
+pub mod auth;
 pub mod error;
 pub mod fs;
 pub mod profile;

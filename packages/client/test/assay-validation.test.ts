@@ -29,14 +29,15 @@ describe("assay validation", () => {
         ...initial.info3.samplesBySlide,
         [initial.info3.selectedSlideId]: initial.info3.samplesBySlide[
           initial.info3.selectedSlideId
-        ].map((row, index) => ({
-          ...row,
-          name: row.name || `sample-${index}`,
-          positionStart: "1",
-          positionFinish: "4",
-          maskChannel: row.maskChannel || "0",
-          signalChannel: row.signalChannel || "1",
-        })),
+        ].map((row, index) =>
+          Object.assign({}, row, {
+            name: row.name || `sample-${index}`,
+            positionStart: "1",
+            positionFinish: "4",
+            maskChannel: row.maskChannel || "0",
+            signalChannel: row.signalChannel || "1",
+          }),
+        ),
       },
     };
     expect(validInfo3(info3)).toBe(true);
@@ -64,14 +65,15 @@ describe("assay validation", () => {
         ...initial.info3.samplesBySlide,
         [initial.info3.selectedSlideId]: initial.info3.samplesBySlide[
           initial.info3.selectedSlideId
-        ].map((row, index) => ({
-          ...row,
-          name: row.name || `sample-${index}`,
-          positionStart: "1",
-          positionFinish: "4",
-          maskChannel: row.maskChannel || "0",
-          signalChannel: row.signalChannel || "1",
-        })),
+        ].map((row, index) =>
+          Object.assign({}, row, {
+            name: row.name || `sample-${index}`,
+            positionStart: "1",
+            positionFinish: "4",
+            maskChannel: row.maskChannel || "0",
+            signalChannel: row.signalChannel || "1",
+          }),
+        ),
       },
     };
     const result = validateAssayForAnalysis({

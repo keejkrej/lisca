@@ -67,7 +67,6 @@ type MaskTensor = { data: ArrayLike<number | boolean>; dims: number[] };
 function squeezeBatchMask(batchMask: MaskTensor): MaskTensor {
   if (batchMask.dims.length === 4 && batchMask.dims[0] === 1) {
     const [, numMasks, height, width] = batchMask.dims;
-    const planeSize = height * width;
     return {
       data: batchMask.data,
       dims: [numMasks, height, width],

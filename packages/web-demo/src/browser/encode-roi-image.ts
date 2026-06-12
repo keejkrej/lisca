@@ -2,7 +2,7 @@ import type { PixelType } from "@lisca/contracts";
 
 import { encodeRasterGrayImage } from "./encode-raster-image";
 import { encodeGrayTiff } from "./encode-gray-tiff";
-import { pixelTypeForTiffFormat, type SourceImageFormat } from "./source-image-format";
+import { type SourceImageFormat } from "./source-image-format";
 
 function cropToNativePixels(
   pixels: Uint16Array,

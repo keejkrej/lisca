@@ -1,21 +1,22 @@
 use axum::{
-    extract::Query,
+    extract::{Extension, Query},
+    middleware::from_fn,
     routing::{get, post},
     Json, Router,
 };
 use serde::Deserialize;
 
+use crate::http::auth::{require_bearer_profile, AuthenticatedProfile, AuthError};
 use crate::profile::store;
 use crate::protocol::{
     MemoryKind, MemoryRecentResponse, MemoryTouchResponse, ProfileCreateRequest,
-    ProfileListResponse, ProfileResponse, ProfileSignInRequest,
+    ProfileListResponse, ProfileSessionResponse, ProfileSignInRequest, ProfileSignOutResponse,
 };
 
 use super::error::FsError;
 
 #[derive(Debug, Deserialize)]
 struct RecentMemoryQuery {
-    profile_id: String,
     #[serde(rename = "type")]
     kind: MemoryKind,
 }
@@ -24,12 +25,17 @@ pub fn router<S>() -> Router<S>
 where
     S: Clone + Send + Sync + 'static,
 {
+    let protected = Router::new()
+        .route("/memory/recent", get(get_recent_memory_handler))
+        .route("/memory/touch", post(touch_memory_handler))
+        .route("/profile/sign-out", post(sign_out_profile_handler))
+        .layer(from_fn(require_bearer_profile));
+
     Router::new()
         .route("/profile/list", get(list_profiles_handler))
         .route("/profile/create", post(create_profile_handler))
         .route("/profile/sign-in", post(sign_in_profile_handler))
-        .route("/memory/recent", get(get_recent_memory_handler))
-        .route("/memory/touch", post(touch_memory_handler))
+        .merge(protected)
 }
 
 async fn list_profiles_handler() -> Result<Json<ProfileListResponse>, FsError> {
@@ -38,24 +44,94 @@ async fn list_profiles_handler() -> Result<Json<ProfileListResponse>, FsError> {
 
 async fn create_profile_handler(
     Json(body): Json<ProfileCreateRequest>,
-) -> Result<Json<ProfileResponse>, FsError> {
+) -> Result<Json<ProfileSessionResponse>, FsError> {
     store::create_profile(&body.display_name).map(Json)
 }
 
 async fn sign_in_profile_handler(
     Json(body): Json<ProfileSignInRequest>,
-) -> Result<Json<ProfileResponse>, FsError> {
+) -> Result<Json<ProfileSessionResponse>, FsError> {
     store::sign_in_profile(&body.display_name).map(Json)
 }
 
+async fn sign_out_profile_handler(
+    Extension(AuthenticatedProfile { profile_id: _ }): Extension<AuthenticatedProfile>,
+    req: axum::extract::Request,
+) -> Result<Json<ProfileSignOutResponse>, AuthError> {
+    let token = crate::http::auth::bearer_token(req.headers())?;
+    store::sign_out_profile(&token).map_err(|err| AuthError::new(err.message()))?;
+    Ok(Json(ProfileSignOutResponse { ok: true }))
+}
+
 async fn get_recent_memory_handler(
+    Extension(AuthenticatedProfile { profile_id }): Extension<AuthenticatedProfile>,
     Query(query): Query<RecentMemoryQuery>,
 ) -> Result<Json<MemoryRecentResponse>, FsError> {
-    store::get_recent(&query.profile_id, query.kind).map(Json)
+    store::get_recent(&profile_id, query.kind).map(Json)
 }
 
 async fn touch_memory_handler(
+    Extension(AuthenticatedProfile { profile_id }): Extension<AuthenticatedProfile>,
     Json(body): Json<store::MemoryTouchBody>,
 ) -> Result<Json<MemoryTouchResponse>, FsError> {
-    store::touch_memory(body).map(Json)
+    store::touch_memory(&profile_id, body).map(Json)
+}
+
+#[cfg(test)]
+mod tests {
+    use axum::body::Body;
+    use axum::http::{Request, StatusCode};
+    use tower::ServiceExt;
+
+    use crate::config::test_lock::TEST_CONFIG_LOCK;
+    use crate::profile::store;
+
+    fn set_temp_config_dir() -> std::path::PathBuf {
+        let dir = std::env::temp_dir().join(format!("lisca-auth-http-test-{}", uuid::Uuid::new_v4()));
+        std::env::set_var("LISCA_CONFIG_DIR", dir.to_string_lossy().to_string());
+        dir
+    }
+
+    #[tokio::test]
+    async fn memory_recent_requires_bearer_token() {
+        let _guard = TEST_CONFIG_LOCK.lock().unwrap();
+        let _dir = set_temp_config_dir();
+
+        let app = super::router::<()>();
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/memory/recent?type=workspace")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn memory_recent_accepts_bearer_token() {
+        let _guard = TEST_CONFIG_LOCK.lock().unwrap();
+        let _dir = set_temp_config_dir();
+
+        let created = store::create_profile("http-user").unwrap();
+        let app = super::router::<()>();
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/memory/recent?type=workspace")
+                    .header(
+                        axum::http::header::AUTHORIZATION,
+                        format!("Bearer {}", created.access_token),
+                    )
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+    }
 }

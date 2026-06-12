@@ -9,10 +9,11 @@ use uuid::Uuid;
 
 use crate::config;
 use crate::http::FsError;
+use crate::profile::session;
 use crate::protocol::{
     AlignerSource, MemoryAssayEntry, MemoryKind, MemoryRecentResponse, MemorySourceEntry,
-    MemoryTouchResponse, MemoryWorkspaceEntry, ProfileListResponse, ProfileResponse,
-    ProfileSummary,
+    MemoryTouchResponse, MemoryWorkspaceEntry, ProfileListResponse, ProfileSessionResponse,
+    ProfileSignOutResponse, ProfileSummary,
 };
 
 const MEMORY_CAP: usize = 20;
@@ -118,7 +119,7 @@ pub fn list_profiles() -> Result<ProfileListResponse, FsError> {
     })
 }
 
-pub fn create_profile(display_name: &str) -> Result<ProfileResponse, FsError> {
+pub fn create_profile(display_name: &str) -> Result<ProfileSessionResponse, FsError> {
     let name = display_name.trim();
     if name.is_empty() {
         return Err(FsError::new("display name is required"));
@@ -153,13 +154,16 @@ pub fn create_profile(display_name: &str) -> Result<ProfileResponse, FsError> {
     index.profiles.push(summary);
     write_profiles_index(&config, &index)?;
 
-    Ok(ProfileResponse {
+    let access_token = session::issue(&profile_id)?;
+
+    Ok(ProfileSessionResponse {
         profile_id,
         display_name: name.to_string(),
+        access_token,
     })
 }
 
-pub fn sign_in_profile(display_name: &str) -> Result<ProfileResponse, FsError> {
+pub fn sign_in_profile(display_name: &str) -> Result<ProfileSessionResponse, FsError> {
     let name = display_name.trim();
     if name.is_empty() {
         return Err(FsError::new("display name is required"));
@@ -171,12 +175,21 @@ pub fn sign_in_profile(display_name: &str) -> Result<ProfileResponse, FsError> {
         .profiles
         .iter()
         .find(|p| p.display_name == name)
-        .map(|p| ProfileResponse {
-            profile_id: p.id.clone(),
-            display_name: p.display_name.clone(),
-        });
+        .map(|p| p.id.clone());
 
-    found.ok_or_else(|| FsError::new("profile not found"))
+    let profile_id = found.ok_or_else(|| FsError::new("profile not found"))?;
+    let access_token = session::issue(&profile_id)?;
+
+    Ok(ProfileSessionResponse {
+        profile_id,
+        display_name: name.to_string(),
+        access_token,
+    })
+}
+
+pub fn sign_out_profile(token: &str) -> Result<ProfileSignOutResponse, FsError> {
+    session::revoke(token)?;
+    Ok(ProfileSignOutResponse { ok: true })
 }
 
 fn read_memory(config: &Path, profile_id: &str) -> Result<MemoryFile, FsError> {
@@ -231,38 +244,31 @@ pub fn get_recent(profile_id: &str, kind: MemoryKind) -> Result<MemoryRecentResp
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub enum MemoryTouchBody {
     Workspace {
-        profile_id: String,
         path: String,
         label: Option<String>,
     },
     Source {
-        profile_id: String,
         source: AlignerSource,
         label: Option<String>,
     },
     Assay {
-        profile_id: String,
         path: String,
         assay_label: Option<String>,
         workspace_path: Option<String>,
     },
 }
 
-pub fn touch_memory(body: MemoryTouchBody) -> Result<MemoryTouchResponse, FsError> {
+pub fn touch_memory(profile_id: &str, body: MemoryTouchBody) -> Result<MemoryTouchResponse, FsError> {
     let config = ensure_config_dir()?;
     let now = now_iso8601();
 
     match body {
-        MemoryTouchBody::Workspace {
-            profile_id,
-            path,
-            label,
-        } => {
+        MemoryTouchBody::Workspace { path, label } => {
             let path = path.trim();
             if path.is_empty() {
                 return Err(FsError::new("path is required"));
             }
-            let mut memory = read_memory(&config, &profile_id)?;
+            let mut memory = read_memory(&config, profile_id)?;
             memory.workspaces.retain(|e| e.path != path);
             memory.workspaces.insert(
                 0,
@@ -276,14 +282,10 @@ pub fn touch_memory(body: MemoryTouchBody) -> Result<MemoryTouchResponse, FsErro
                 .workspaces
                 .sort_by(|a, b| b.last_used_at.cmp(&a.last_used_at));
             trim_cap(&mut memory.workspaces);
-            write_memory(&config, &profile_id, &memory)?;
+            write_memory(&config, profile_id, &memory)?;
         }
-        MemoryTouchBody::Source {
-            profile_id,
-            source,
-            label,
-        } => {
-            let mut memory = read_memory(&config, &profile_id)?;
+        MemoryTouchBody::Source { source, label } => {
+            let mut memory = read_memory(&config, profile_id)?;
             memory
                 .sources
                 .retain(|e| !sources_equal(&e.source, &source));
@@ -299,10 +301,9 @@ pub fn touch_memory(body: MemoryTouchBody) -> Result<MemoryTouchResponse, FsErro
                 .sources
                 .sort_by(|a, b| b.last_used_at.cmp(&a.last_used_at));
             trim_cap(&mut memory.sources);
-            write_memory(&config, &profile_id, &memory)?;
+            write_memory(&config, profile_id, &memory)?;
         }
         MemoryTouchBody::Assay {
-            profile_id,
             path,
             assay_label,
             workspace_path,
@@ -311,7 +312,7 @@ pub fn touch_memory(body: MemoryTouchBody) -> Result<MemoryTouchResponse, FsErro
             if path.is_empty() {
                 return Err(FsError::new("path is required"));
             }
-            let mut memory = read_memory(&config, &profile_id)?;
+            let mut memory = read_memory(&config, profile_id)?;
             memory.assays.retain(|e| e.path != path);
             memory.assays.insert(
                 0,
@@ -326,7 +327,7 @@ pub fn touch_memory(body: MemoryTouchBody) -> Result<MemoryTouchResponse, FsErro
                 .assays
                 .sort_by(|a, b| b.last_used_at.cmp(&a.last_used_at));
             trim_cap(&mut memory.assays);
-            write_memory(&config, &profile_id, &memory)?;
+            write_memory(&config, profile_id, &memory)?;
         }
     }
 
@@ -351,10 +352,21 @@ mod tests {
         let _dir = set_temp_config_dir();
         let created = create_profile("alice").unwrap();
         assert_eq!(created.display_name, "alice");
+        assert!(!created.access_token.is_empty());
         let signed = sign_in_profile("alice").unwrap();
         assert_eq!(signed.profile_id, created.profile_id);
+        assert!(!signed.access_token.is_empty());
         assert!(create_profile("alice").is_err());
         assert!(sign_in_profile("bob").is_err());
+    }
+
+    #[test]
+    fn sign_out_revokes_access_token() {
+        let _guard = TEST_CONFIG_LOCK.lock().unwrap();
+        let _dir = set_temp_config_dir();
+        let created = create_profile("bob").unwrap();
+        sign_out_profile(&created.access_token).unwrap();
+        assert!(session::resolve(&created.access_token).is_err());
     }
 
     #[test]
@@ -363,32 +375,38 @@ mod tests {
         let _dir = set_temp_config_dir();
         let profile = create_profile("mem-user").unwrap();
         for i in 0..25 {
-            touch_memory(MemoryTouchBody::Workspace {
-                profile_id: profile.profile_id.clone(),
-                path: format!("/workspace/run-{i}"),
-                label: None,
-            })
+            touch_memory(
+                &profile.profile_id,
+                MemoryTouchBody::Workspace {
+                    path: format!("/workspace/run-{i}"),
+                    label: None,
+                },
+            )
             .unwrap();
         }
         let recent = get_recent(&profile.profile_id, MemoryKind::Workspace).unwrap();
         assert_eq!(recent.workspaces.len(), MEMORY_CAP);
-        touch_memory(MemoryTouchBody::Workspace {
-            profile_id: profile.profile_id.clone(),
-            path: "/workspace/run-0".to_string(),
-            label: Some("again".to_string()),
-        })
+        touch_memory(
+            &profile.profile_id,
+            MemoryTouchBody::Workspace {
+                path: "/workspace/run-0".to_string(),
+                label: Some("again".to_string()),
+            },
+        )
         .unwrap();
         let again = get_recent(&profile.profile_id, MemoryKind::Workspace).unwrap();
         assert_eq!(again.workspaces[0].path, "/workspace/run-0");
         assert_eq!(again.workspaces[0].label.as_deref(), Some("again"));
 
-        touch_memory(MemoryTouchBody::Source {
-            profile_id: profile.profile_id.clone(),
-            source: AlignerSource::Nd2 {
-                path: "/source/data.nd2".into(),
+        touch_memory(
+            &profile.profile_id,
+            MemoryTouchBody::Source {
+                source: AlignerSource::Nd2 {
+                    path: "/source/data.nd2".into(),
+                },
+                label: None,
             },
-            label: None,
-        })
+        )
         .unwrap();
         let sources = get_recent(&profile.profile_id, MemoryKind::Source).unwrap();
         assert_eq!(sources.sources.len(), 1);

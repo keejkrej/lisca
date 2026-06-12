@@ -142,7 +142,7 @@ function enabledAssayId(assayId: AssayId | null): AssayId | null {
 export function createStudioUi(
   adapters: StudioSampleRowAdapters = { sampleRowFromDisk, sampleRowToDisk },
 ) {
-  const { sampleRowFromDisk, sampleRowToDisk } = adapters;
+  const { sampleRowFromDisk: readSampleRow, sampleRowToDisk: writeSampleRow } = adapters;
 
   function basicInfoAssayTitle(assayId: AssayId | null): string {
     if (!assayId) return "Assay";
@@ -169,7 +169,7 @@ export function createStudioUi(
       info1,
       info2,
       info3,
-      sampleRowToDisk,
+      sampleRowToDisk: writeSampleRow,
     });
   }
 
@@ -226,7 +226,7 @@ export function createStudioUi(
   }
 
   function parseStudioAssayJson(contents: string): StudioAssayJson {
-    return parseStudioAssayJsonCore(contents, sampleRowFromDisk, sampleRowToDisk);
+    return parseStudioAssayJsonCore(contents, readSampleRow, writeSampleRow);
   }
 
   type StudioWizardState = {
@@ -296,7 +296,7 @@ export function createStudioUi(
   ): BasicInfoSampleRow {
     return {
       id,
-      ...sampleRowFromDisk(row),
+      ...readSampleRow(row),
     };
   }
 

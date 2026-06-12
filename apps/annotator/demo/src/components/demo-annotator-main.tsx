@@ -2,7 +2,7 @@ import { ViewportCard } from "@lisca/ui/shell";
 import { AnnotationCanvas, SmartSegmentModelDialog, useCanvasTransientStatus } from "@lisca/ui/features";
 import { useSmartSegment } from "@lisca/segmentation/browser";
 import { toDisplayFrame } from "@lisca/web-demo/browser";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type { DemoAnnotatorState } from "@lisca/web-demo";
 
 export function DemoAnnotatorMain({
@@ -32,22 +32,17 @@ export function DemoAnnotatorMain({
     onError: setSmartSegmentError,
   });
   const activeToastStatus = state.frameLoading ? "Loading image" : visibleStatus;
-  const toasts = useMemo(() => {
-    if (embedded) return [];
-    if (smartSegmentError) {
-      return [{ text: smartSegmentError, tone: "error" as const }];
-    }
-    if (state.error) {
-      return [{ text: state.error, tone: "error" as const }];
-    }
-    if (smartSegmentStatus) {
-      return [{ text: smartSegmentStatus }];
-    }
-    if (activeToastStatus) {
-      return [{ text: activeToastStatus }];
-    }
-    return [];
-  }, [activeToastStatus, embedded, smartSegmentError, smartSegmentStatus, state.error]);
+  const toasts = embedded
+    ? []
+    : smartSegmentError
+      ? [{ text: smartSegmentError, tone: "error" as const }]
+      : state.error
+        ? [{ text: state.error, tone: "error" as const }]
+        : smartSegmentStatus
+          ? [{ text: smartSegmentStatus }]
+          : activeToastStatus
+            ? [{ text: activeToastStatus }]
+            : [];
   return (
     <ViewportCard>
       <SmartSegmentModelDialog

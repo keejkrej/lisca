@@ -43,8 +43,11 @@ export async function listCachedSamModelFiles(modelId = SAM_MODEL_ID): Promise<s
   if (typeof caches === "undefined") return [];
   const cache = await caches.open("transformers-cache");
   const hits: string[] = [];
-  for (const file of REQUIRED_CACHE_FILES) {
-    if (await cache.match(remoteModelUrl(modelId, file))) hits.push(file);
+  const matches = await Promise.all(
+    REQUIRED_CACHE_FILES.map((file) => cache.match(remoteModelUrl(modelId, file))),
+  );
+  for (let index = 0; index < REQUIRED_CACHE_FILES.length; index += 1) {
+    if (matches[index]) hits.push(REQUIRED_CACHE_FILES[index]!);
   }
   return hits;
 }

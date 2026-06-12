@@ -1,7 +1,7 @@
 import { AnnotationCanvas, SmartSegmentModelDialog } from "@lisca/ui/features";
 import { ViewportCard } from "@lisca/ui/shell";
 import { useSmartSegment } from "@lisca/segmentation/browser";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useAnnotatePage } from "../state/annotate-page-context";
 
 export function AnnotatorMain() {
@@ -26,16 +26,11 @@ export function AnnotatorMain() {
     onStatus: setSmartSegmentStatus,
     onError: setSmartSegmentError,
   });
-  const toasts = useMemo(() => {
-    if (smartSegmentError) {
-      return [{ text: smartSegmentError, tone: "error" as const }];
-    }
-    const base = state.canvasToasts;
-    if (smartSegmentStatus) {
-      return [...base, { text: smartSegmentStatus }];
-    }
-    return base;
-  }, [smartSegmentError, smartSegmentStatus, state.canvasToasts]);
+  const toasts = smartSegmentError
+    ? [{ text: smartSegmentError, tone: "error" as const }]
+    : smartSegmentStatus
+      ? [...state.canvasToasts, { text: smartSegmentStatus }]
+      : state.canvasToasts;
   return (
     <ViewportCard>
       <SmartSegmentModelDialog

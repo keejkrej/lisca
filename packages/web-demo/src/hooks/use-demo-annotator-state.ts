@@ -4,7 +4,6 @@ import type { AnnotationMode, AnnotationTool } from "@lisca/ui/features";
 import { toolCanRunWithoutLabel } from "@lisca/ui/features";
 import { maskHasPixels } from "@lisca/utils";
 import { useAtom } from "@effect-atom/atom-react";
-import { useMemo } from "react";
 
 import type { AnnotationValue } from "../annotation-value";
 import { buildAnnotationExportZip, downloadBlob, loadImageFile, stemName } from "../browser";
@@ -83,20 +82,17 @@ export function useDemoAnnotatorState(): DemoAnnotatorState {
     annotationIndex,
   } = state;
 
-  const annotation = useMemo<DemoAnnotationHandle>(
-    () => ({
-      current: currentDemoAnnotation(state),
-      dirty: demoAnnotationDirty(state),
-      canUndo: annotationIndex > 0,
-      canRedo: annotationIndex < annotationHistory.length - 1,
-      commit: (value) => demoAnnotatorUiActions.commitAnnotation(setState, value),
-      undo: () => demoAnnotatorUiActions.undoAnnotation(setState),
-      redo: () => demoAnnotatorUiActions.redoAnnotation(setState),
-      discard: () => demoAnnotatorUiActions.discardAnnotation(setState),
-      markSaved: () => demoAnnotatorUiActions.markAnnotationSaved(setState),
-    }),
-    [annotationHistory, annotationIndex, setState, state],
-  );
+  const annotation: DemoAnnotationHandle = {
+    current: currentDemoAnnotation(state),
+    dirty: demoAnnotationDirty(state),
+    canUndo: annotationIndex > 0,
+    canRedo: annotationIndex < annotationHistory.length - 1,
+    commit: (value) => demoAnnotatorUiActions.commitAnnotation(setState, value),
+    undo: () => demoAnnotatorUiActions.undoAnnotation(setState),
+    redo: () => demoAnnotatorUiActions.redoAnnotation(setState),
+    discard: () => demoAnnotatorUiActions.discardAnnotation(setState),
+    markSaved: () => demoAnnotatorUiActions.markAnnotationSaved(setState),
+  };
 
   const activeLabelValue = labels.findIndex((label) => label.id === activeLabelId) + 1;
   const canEdit = Boolean(frame && labels.length > 0) && !frameLoading;

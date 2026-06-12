@@ -1,7 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import {
-  shellChromeMetrics,
   shellOutlineButtonStyle,
   shellOutlineSurface,
 } from "./shell-chrome";

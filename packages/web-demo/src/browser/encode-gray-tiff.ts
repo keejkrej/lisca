@@ -36,7 +36,7 @@ const binLE: TiffBinary = {
   },
 };
 
-const binBE: TiffBinary = utif._binBE;
+const { _binBE: binBE, _writeIFD: writeIfd } = utif;
 
 function tiffBinary(endian: TiffImageFormat["endian"]): TiffBinary {
   return endian === "II" ? binLE : binBE;
@@ -146,7 +146,7 @@ export function encodeGrayTiff(
   const file = new Uint8Array(TIFF_HEADER_SIZE + strip.length);
   writeTiffHeader(file, profile.endian, 8);
   const ifd = buildIfd(width, height, profile, TIFF_HEADER_SIZE, strip.length);
-  utif._writeIFD(tiffBinary(profile.endian), file, 8, ifd);
+  writeIfd(tiffBinary(profile.endian), file, 8, ifd);
   file.set(strip, TIFF_HEADER_SIZE);
   return file;
 }

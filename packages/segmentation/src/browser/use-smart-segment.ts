@@ -1,5 +1,5 @@
 import type { FrameResult } from "@lisca/utils";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
 
 import { applyBinaryMask } from "../mask";
 import type { SmartSegmentPoint } from "../types";
@@ -61,6 +61,25 @@ function clearActiveLabel(mask: Uint8Array, labelValue: number): Uint8Array {
   return next;
 }
 
+function resetSmartSegmentSession(
+  setPromptsByLabel: Dispatch<SetStateAction<Record<number, SmartSegmentPoint[]>>>,
+  setDownloadState: Dispatch<SetStateAction<SmartSegmentDownloadState>>,
+  refs: {
+    frameKeyRef: MutableRefObject<string | null>;
+    pendingClickRef: MutableRefObject<SmartSegmentClick | null>;
+    pendingPromptsRef: MutableRefObject<SmartSegmentPoint[] | null>;
+    pendingLabelRef: MutableRefObject<number>;
+  },
+) {
+  setPromptsByLabel({});
+  getBrowserSamEngine().dispose();
+  refs.frameKeyRef.current = null;
+  refs.pendingClickRef.current = null;
+  refs.pendingPromptsRef.current = null;
+  refs.pendingLabelRef.current = 0;
+  setDownloadState({ open: false, requiresDownload: false, progress: 0, message: "" });
+}
+
 export function useSmartSegment(options: {
   frame: FrameResult | null;
   tool: string;
@@ -84,46 +103,59 @@ export function useSmartSegment(options: {
   const pendingClickRef = useRef<SmartSegmentClick | null>(null);
   const pendingPromptsRef = useRef<SmartSegmentPoint[] | null>(null);
   const pendingLabelRef = useRef(0);
+  const onCommitRef = useRef(options.onCommit);
+  const onStatusRef = useRef(options.onStatus);
+  const onErrorRef = useRef(options.onError);
+  onCommitRef.current = options.onCommit;
+  onStatusRef.current = options.onStatus;
+  onErrorRef.current = options.onError;
 
-  const prompts =
-    options.activeLabelValue > 0 ? (promptsByLabel[options.activeLabelValue] ?? []) : [];
+  const { frame, tool, activeLabelValue, mask, enabled } = options;
+  const prompts = activeLabelValue > 0 ? (promptsByLabel[activeLabelValue] ?? []) : [];
 
-  const setPromptsForLabel = useCallback((labelValue: number, nextPrompts: SmartSegmentPoint[]) => {
+  const setPromptsForLabel = (labelValue: number, nextPrompts: SmartSegmentPoint[]) => {
     setPromptsByLabel((current) => ({
       ...current,
       [labelValue]: nextPrompts,
     }));
-  }, []);
+  };
 
-  const resetForFrame = useCallback(() => {
-    setPromptsByLabel({});
-    getBrowserSamEngine().dispose();
-    frameKeyRef.current = null;
-    pendingClickRef.current = null;
-    pendingPromptsRef.current = null;
-    pendingLabelRef.current = 0;
-    setDownloadState({ open: false, requiresDownload: false, progress: 0, message: "" });
-  }, []);
+  const resetForFrame = () => {
+    resetSmartSegmentSession(setPromptsByLabel, setDownloadState, {
+      frameKeyRef,
+      pendingClickRef,
+      pendingPromptsRef,
+      pendingLabelRef,
+    });
+  };
 
   useEffect(() => {
-    if (!isSmartTool(options.tool)) {
-      options.onStatus?.(null);
-      options.onError?.(null);
+    if (!isSmartTool(tool)) {
+      onStatusRef.current?.(null);
+      onErrorRef.current?.(null);
     }
-  }, [options.onError, options.onStatus, options.tool]);
+  }, [tool]);
 
   useEffect(() => {
-    if (!options.frame) {
-      resetForFrame();
+    const resetSession = () =>
+      resetSmartSegmentSession(setPromptsByLabel, setDownloadState, {
+        frameKeyRef,
+        pendingClickRef,
+        pendingPromptsRef,
+        pendingLabelRef,
+      });
+
+    if (!frame) {
+      resetSession();
       return;
     }
-    const frameKey = `${options.frame.width}x${options.frame.height}:${options.frame.pixels.byteLength}`;
+    const frameKey = `${frame.width}x${frame.height}:${frame.pixels.byteLength}`;
     if (frameKeyRef.current === frameKey) return;
     frameKeyRef.current = frameKey;
-    resetForFrame();
-  }, [options.frame, resetForFrame]);
+    resetSession();
+  }, [frame]);
 
-  const updateDownloadProgress = useCallback((progress: SmartSegmentDownloadProgress) => {
+  const updateDownloadProgress = (progress: SmartSegmentDownloadProgress) => {
     setDownloadState((current) => ({
       ...current,
       open: true,
@@ -131,100 +163,87 @@ export function useSmartSegment(options: {
       message: progress.message,
       file: progress.file,
     }));
-  }, []);
+  };
 
-  const runSegment = useCallback(
-    async (labelValue: number, nextPrompts: SmartSegmentPoint[]) => {
-      if (!options.frame || labelValue <= 0) return;
+  const runSegment = async (labelValue: number, nextPrompts: SmartSegmentPoint[]) => {
+    if (!frame || labelValue <= 0) return;
 
-      const generation = segmentGenerationRef.current + 1;
-      segmentGenerationRef.current = generation;
-      options.onError?.(null);
-      options.onStatus?.("Segmenting…");
-      setBusy(true);
+    const generation = segmentGenerationRef.current + 1;
+    segmentGenerationRef.current = generation;
+    onErrorRef.current?.(null);
+    onStatusRef.current?.("Segmenting…");
+    setBusy(true);
 
-      try {
-        const engine = getBrowserSamEngine();
-        await engine.prepareFrame(options.frame, updateDownloadProgress);
-        if (segmentGenerationRef.current !== generation) return;
-        setDownloadState({ open: false, requiresDownload: false, progress: 100, message: "" });
-
-        if (nextPrompts.length === 0) {
-          options.onCommit(clearActiveLabel(options.mask, labelValue));
-          options.onStatus?.("Smart ready");
-          return;
-        }
-
-        const binary = await engine.segment(nextPrompts);
-        if (segmentGenerationRef.current !== generation) return;
-        options.onCommit(
-          applyBinaryMask(clearActiveLabel(options.mask, labelValue), binary, labelValue),
-        );
-        options.onStatus?.("Smart ready");
-      } catch (cause) {
-        if (segmentGenerationRef.current !== generation) return;
-        options.onError?.(cause instanceof Error ? cause.message : String(cause));
-        options.onStatus?.(null);
-        setDownloadState({ open: false, requiresDownload: false, progress: 0, message: "" });
-      } finally {
-        if (segmentGenerationRef.current === generation) setBusy(false);
-      }
-    },
-    [
-      options.frame,
-      options.mask,
-      options.onCommit,
-      options.onError,
-      options.onStatus,
-      updateDownloadProgress,
-    ],
-  );
-
-  const ensureModelForClick = useCallback(
-    async (
-      click: SmartSegmentClick,
-      labelValue: number,
-      nextPrompts: SmartSegmentPoint[],
-    ) => {
-      pendingPromptsRef.current = nextPrompts;
-      pendingLabelRef.current = labelValue;
+    try {
       const engine = getBrowserSamEngine();
-      if (engine.isModelLoaded()) {
-        setPromptsForLabel(labelValue, nextPrompts);
-        await runSegment(labelValue, nextPrompts);
+      await engine.prepareFrame(frame, updateDownloadProgress);
+      if (segmentGenerationRef.current !== generation) return;
+      setDownloadState({ open: false, requiresDownload: false, progress: 100, message: "" });
+
+      if (nextPrompts.length === 0) {
+        onCommitRef.current(clearActiveLabel(mask, labelValue));
+        onStatusRef.current?.("Smart ready");
         return;
       }
 
-      const cached = await isSamModelCached();
-      if (cached) {
-        setPromptsForLabel(labelValue, nextPrompts);
-        setDownloadState({
-          open: true,
-          requiresDownload: false,
-          progress: 0,
-          message: "Loading cached smart model…",
-        });
-        options.onStatus?.("Loading cached smart model…");
-        await runSegment(labelValue, nextPrompts);
-        return;
-      }
+      const binary = await engine.segment(nextPrompts);
+      if (segmentGenerationRef.current !== generation) return;
+      onCommitRef.current(
+        applyBinaryMask(clearActiveLabel(mask, labelValue), binary, labelValue),
+      );
+      onStatusRef.current?.("Smart ready");
+    } catch (cause) {
+      if (segmentGenerationRef.current !== generation) return;
+      onErrorRef.current?.(cause instanceof Error ? cause.message : String(cause));
+      onStatusRef.current?.(null);
+      setDownloadState({ open: false, requiresDownload: false, progress: 0, message: "" });
+    } finally {
+      if (segmentGenerationRef.current === generation) setBusy(false);
+    }
+  };
 
-      pendingClickRef.current = click;
+  const ensureModelForClick = async (
+    click: SmartSegmentClick,
+    labelValue: number,
+    nextPrompts: SmartSegmentPoint[],
+  ) => {
+    pendingPromptsRef.current = nextPrompts;
+    pendingLabelRef.current = labelValue;
+    const engine = getBrowserSamEngine();
+    if (engine.isModelLoaded()) {
+      setPromptsForLabel(labelValue, nextPrompts);
+      await runSegment(labelValue, nextPrompts);
+      return;
+    }
+
+    const cached = await isSamModelCached();
+    if (cached) {
+      setPromptsForLabel(labelValue, nextPrompts);
       setDownloadState({
         open: true,
-        requiresDownload: true,
+        requiresDownload: false,
         progress: 0,
-        message: "Confirm to download the smart model",
+        message: "Loading cached smart model…",
       });
-      options.onStatus?.("Smart requires a one-time model download");
-    },
-    [options.onStatus, runSegment, setPromptsForLabel],
-  );
+      onStatusRef.current?.("Loading cached smart model…");
+      await runSegment(labelValue, nextPrompts);
+      return;
+    }
 
-  const confirmDownload = useCallback(async () => {
+    pendingClickRef.current = click;
+    setDownloadState({
+      open: true,
+      requiresDownload: true,
+      progress: 0,
+      message: "Confirm to download the smart model",
+    });
+    onStatusRef.current?.("Smart requires a one-time model download");
+  };
+
+  const confirmDownload = async () => {
     const nextPrompts = pendingPromptsRef.current;
     const labelValue = pendingLabelRef.current;
-    if (!nextPrompts || !options.frame || labelValue <= 0) return;
+    if (!nextPrompts || !frame || labelValue <= 0) return;
 
     pendingClickRef.current = null;
     pendingPromptsRef.current = null;
@@ -237,86 +256,52 @@ export function useSmartSegment(options: {
     });
     setPromptsForLabel(labelValue, nextPrompts);
     await runSegment(labelValue, nextPrompts);
-  }, [options.frame, runSegment, setPromptsForLabel]);
+  };
 
-  const cancelDownload = useCallback(() => {
+  const cancelDownload = () => {
     pendingClickRef.current = null;
     pendingPromptsRef.current = null;
     setDownloadState({ open: false, requiresDownload: false, progress: 0, message: "" });
-    options.onStatus?.(null);
-  }, [options.onStatus]);
+    onStatusRef.current?.(null);
+  };
 
-  const handleClick = useCallback(
-    async (click: SmartSegmentClick) => {
-      if (
-        !options.enabled ||
-        !options.frame ||
-        options.tool !== "smart" ||
-        options.activeLabelValue <= 0 ||
-        busy
-      ) {
-        return;
-      }
+  const handleClick = async (click: SmartSegmentClick) => {
+    if (!enabled || !frame || tool !== "smart" || activeLabelValue <= 0 || busy) {
+      return;
+    }
 
-      const labelValue = options.activeLabelValue;
-      const nextPrompt: SmartSegmentPoint = {
-        x: click.x,
-        y: click.y,
-        label: click.negative ? 0 : 1,
-      };
-      const nextPrompts = [...prompts, nextPrompt];
-      await ensureModelForClick(click, labelValue, nextPrompts);
-    },
-    [
-      busy,
-      ensureModelForClick,
-      options.activeLabelValue,
-      options.enabled,
-      options.frame,
-      options.tool,
-      prompts,
-    ],
-  );
+    const labelValue = activeLabelValue;
+    const currentPrompts = labelValue > 0 ? (promptsByLabel[labelValue] ?? []) : [];
+    const nextPrompt: SmartSegmentPoint = {
+      x: click.x,
+      y: click.y,
+      label: click.negative ? 0 : 1,
+    };
+    const nextPrompts = [...currentPrompts, nextPrompt];
+    await ensureModelForClick(click, labelValue, nextPrompts);
+  };
 
-  const handleEraseClick = useCallback(
-    async (click: SmartEraseClick) => {
-      if (
-        !options.enabled ||
-        !options.frame ||
-        options.tool !== "smart-erase" ||
-        options.activeLabelValue <= 0 ||
-        busy
-      ) {
-        return;
-      }
+  const handleEraseClick = async (click: SmartEraseClick) => {
+    if (!enabled || !frame || tool !== "smart-erase" || activeLabelValue <= 0 || busy) {
+      return;
+    }
 
-      const labelValue = options.activeLabelValue;
-      const promptIndex = findPromptIndexAt(prompts, click.x, click.y);
-      if (promptIndex < 0) {
-        options.onStatus?.("No point prompt near click");
-        return;
-      }
+    const labelValue = activeLabelValue;
+    const currentPrompts = labelValue > 0 ? (promptsByLabel[labelValue] ?? []) : [];
+    const promptIndex = findPromptIndexAt(currentPrompts, click.x, click.y);
+    if (promptIndex < 0) {
+      onStatusRef.current?.("No point prompt near click");
+      return;
+    }
 
-      const nextPrompts = prompts.filter((_, index) => index !== promptIndex);
-      setPromptsForLabel(labelValue, nextPrompts);
-      await ensureModelForClick(
-        { x: click.x, y: click.y, negative: false },
-        labelValue,
-        nextPrompts,
-      );
-    },
-    [
-      busy,
-      ensureModelForClick,
-      options.activeLabelValue,
-      options.enabled,
-      options.frame,
-      options.onStatus,
-      options.tool,
-      prompts,
-      setPromptsForLabel,
-    ],
-  );
+    const nextPrompts = currentPrompts.filter((_, index) => index !== promptIndex);
+    setPromptsForLabel(labelValue, nextPrompts);
+    await ensureModelForClick(
+      { x: click.x, y: click.y, negative: false },
+      labelValue,
+      nextPrompts,
+    );
+  };
 
   return {
     prompts,

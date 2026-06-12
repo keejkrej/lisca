@@ -1,5 +1,13 @@
 import { createProfilePort } from "@lisca/client/profile/port";
-import { createLiscaPort } from "@lisca/web-app";
+import { readStudioProfileAccessToken } from "@lisca/client/profile/session";
+import { createLiscaPort, type LiscaPortDeps } from "@lisca/web-app";
+
+function createStudioProfilePort(deps: LiscaPortDeps) {
+  return createProfilePort({
+    baseUrl: deps.baseUrl,
+    accessToken: readStudioProfileAccessToken,
+  });
+}
 
 const port = createLiscaPort({
   defaultPort: 8767,
@@ -10,7 +18,7 @@ const port = createLiscaPort({
     wsPort: import.meta.env.VITE_WS_PORT,
     dev: import.meta.env.DEV,
   },
-  createPort: createProfilePort,
+  createPort: createStudioProfilePort,
 });
 
 export const studioProfileClient = port.ensure();

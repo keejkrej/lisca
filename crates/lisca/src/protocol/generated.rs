@@ -3281,7 +3281,7 @@ impl ProfileListResponse {
         Default::default()
     }
 }
-#[doc = "`ProfileResponse`"]
+#[doc = "`ProfileSessionResponse`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
 #[doc = r""]
@@ -3289,10 +3289,14 @@ impl ProfileListResponse {
 #[doc = "{"]
 #[doc = "  \"type\": \"object\","]
 #[doc = "  \"required\": ["]
+#[doc = "    \"accessToken\","]
 #[doc = "    \"displayName\","]
 #[doc = "    \"profileId\""]
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
+#[doc = "    \"accessToken\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    },"]
 #[doc = "    \"displayName\": {"]
 #[doc = "      \"type\": \"string\""]
 #[doc = "    },"]
@@ -3304,14 +3308,16 @@ impl ProfileListResponse {
 #[doc = r" ```"]
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
-pub struct ProfileResponse {
+pub struct ProfileSessionResponse {
+    #[serde(rename = "accessToken")]
+    pub access_token: ::std::string::String,
     #[serde(rename = "displayName")]
     pub display_name: ::std::string::String,
     #[serde(rename = "profileId")]
     pub profile_id: ::std::string::String,
 }
-impl ProfileResponse {
-    pub fn builder() -> builder::ProfileResponse {
+impl ProfileSessionResponse {
+    pub fn builder() -> builder::ProfileSessionResponse {
         Default::default()
     }
 }
@@ -3340,6 +3346,36 @@ pub struct ProfileSignInRequest {
 }
 impl ProfileSignInRequest {
     pub fn builder() -> builder::ProfileSignInRequest {
+        Default::default()
+    }
+}
+#[doc = "`ProfileSignOutResponse`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"ok\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"ok\": {"]
+#[doc = "      \"type\": \"boolean\","]
+#[doc = "      \"enum\": ["]
+#[doc = "        true"]
+#[doc = "      ]"]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct ProfileSignOutResponse {
+    pub ok: bool,
+}
+impl ProfileSignOutResponse {
+    pub fn builder() -> builder::ProfileSignOutResponse {
         Default::default()
     }
 }
@@ -4223,6 +4259,108 @@ impl ::std::convert::From<CropRoiProgressMessage> for ServerWsMessage {
 impl ::std::convert::From<AnalysisProgressMessage> for ServerWsMessage {
     fn from(value: AnalysisProgressMessage) -> Self {
         Self::AnalysisProgressMessage(value)
+    }
+}
+#[doc = "`Unauthorized`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"_tag\","]
+#[doc = "    \"message\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"_tag\": {"]
+#[doc = "      \"type\": \"string\","]
+#[doc = "      \"enum\": ["]
+#[doc = "        \"Unauthorized\""]
+#[doc = "      ]"]
+#[doc = "    },"]
+#[doc = "    \"message\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct Unauthorized {
+    pub message: ::std::string::String,
+    #[serde(rename = "_tag")]
+    pub tag: UnauthorizedTag,
+}
+impl Unauthorized {
+    pub fn builder() -> builder::Unauthorized {
+        Default::default()
+    }
+}
+#[doc = "`UnauthorizedTag`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"string\","]
+#[doc = "  \"enum\": ["]
+#[doc = "    \"Unauthorized\""]
+#[doc = "  ]"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(
+    :: serde :: Deserialize,
+    :: serde :: Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum UnauthorizedTag {
+    Unauthorized,
+}
+impl ::std::fmt::Display for UnauthorizedTag {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Unauthorized => f.write_str("Unauthorized"),
+        }
+    }
+}
+impl ::std::str::FromStr for UnauthorizedTag {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "Unauthorized" => Ok(Self::Unauthorized),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for UnauthorizedTag {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for UnauthorizedTag {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for UnauthorizedTag {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
     }
 }
 #[doc = "`WorkspaceScan`"]
@@ -7510,19 +7648,31 @@ pub mod builder {
         }
     }
     #[derive(Clone, Debug)]
-    pub struct ProfileResponse {
+    pub struct ProfileSessionResponse {
+        access_token: ::std::result::Result<::std::string::String, ::std::string::String>,
         display_name: ::std::result::Result<::std::string::String, ::std::string::String>,
         profile_id: ::std::result::Result<::std::string::String, ::std::string::String>,
     }
-    impl ::std::default::Default for ProfileResponse {
+    impl ::std::default::Default for ProfileSessionResponse {
         fn default() -> Self {
             Self {
+                access_token: Err("no value supplied for access_token".to_string()),
                 display_name: Err("no value supplied for display_name".to_string()),
                 profile_id: Err("no value supplied for profile_id".to_string()),
             }
         }
     }
-    impl ProfileResponse {
+    impl ProfileSessionResponse {
+        pub fn access_token<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.access_token = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for access_token: {e}"));
+            self
+        }
         pub fn display_name<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<::std::string::String>,
@@ -7544,20 +7694,22 @@ pub mod builder {
             self
         }
     }
-    impl ::std::convert::TryFrom<ProfileResponse> for super::ProfileResponse {
+    impl ::std::convert::TryFrom<ProfileSessionResponse> for super::ProfileSessionResponse {
         type Error = super::error::ConversionError;
         fn try_from(
-            value: ProfileResponse,
+            value: ProfileSessionResponse,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
+                access_token: value.access_token?,
                 display_name: value.display_name?,
                 profile_id: value.profile_id?,
             })
         }
     }
-    impl ::std::convert::From<super::ProfileResponse> for ProfileResponse {
-        fn from(value: super::ProfileResponse) -> Self {
+    impl ::std::convert::From<super::ProfileSessionResponse> for ProfileSessionResponse {
+        fn from(value: super::ProfileSessionResponse) -> Self {
             Self {
+                access_token: Ok(value.access_token),
                 display_name: Ok(value.display_name),
                 profile_id: Ok(value.profile_id),
             }
@@ -7601,6 +7753,42 @@ pub mod builder {
             Self {
                 display_name: Ok(value.display_name),
             }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct ProfileSignOutResponse {
+        ok: ::std::result::Result<bool, ::std::string::String>,
+    }
+    impl ::std::default::Default for ProfileSignOutResponse {
+        fn default() -> Self {
+            Self {
+                ok: Err("no value supplied for ok".to_string()),
+            }
+        }
+    }
+    impl ProfileSignOutResponse {
+        pub fn ok<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<bool>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.ok = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for ok: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<ProfileSignOutResponse> for super::ProfileSignOutResponse {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: ProfileSignOutResponse,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self { ok: value.ok? })
+        }
+    }
+    impl ::std::convert::From<super::ProfileSignOutResponse> for ProfileSignOutResponse {
+        fn from(value: super::ProfileSignOutResponse) -> Self {
+            Self { ok: Ok(value.ok) }
         }
     }
     #[derive(Clone, Debug)]
@@ -8931,6 +9119,60 @@ pub mod builder {
         fn from(value: super::ScanSourceRequest) -> Self {
             Self {
                 source: Ok(value.source),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct Unauthorized {
+        message: ::std::result::Result<::std::string::String, ::std::string::String>,
+        tag: ::std::result::Result<super::UnauthorizedTag, ::std::string::String>,
+    }
+    impl ::std::default::Default for Unauthorized {
+        fn default() -> Self {
+            Self {
+                message: Err("no value supplied for message".to_string()),
+                tag: Err("no value supplied for tag".to_string()),
+            }
+        }
+    }
+    impl Unauthorized {
+        pub fn message<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.message = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for message: {e}"));
+            self
+        }
+        pub fn tag<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::UnauthorizedTag>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.tag = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for tag: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<Unauthorized> for super::Unauthorized {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: Unauthorized,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                message: value.message?,
+                tag: value.tag?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::Unauthorized> for Unauthorized {
+        fn from(value: super::Unauthorized) -> Self {
+            Self {
+                message: Ok(value.message),
+                tag: Ok(value.tag),
             }
         }
     }

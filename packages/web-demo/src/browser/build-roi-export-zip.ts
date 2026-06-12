@@ -85,29 +85,40 @@ export async function buildRoiExportZip(input: BuildRoiExportZipInput): Promise<
 
   const roiExtension = roiImageExtension(input.sourceFormat);
 
-  for (const [roi, cell] of cells.entries()) {
-    const pixels = cropFrameRegion(input.frame, cell);
-    const roiName = `Roi${roi}.${roiExtension}`;
-    const roiPath = `roi/Pos${DEMO_POSITION}/${roiName}`;
-    files[roiPath] = await encodeRoiImage(
-      input.sourceFormat,
-      cell.w,
-      cell.h,
-      pixels,
-      input.frame.pixelType,
-    );
-    indexEntries.push({
-      roi,
-      fileName: roiName,
-      bbox: {
-        roi,
-        x: cell.x,
-        y: cell.y,
-        w: cell.w,
-        h: cell.h,
-      },
-      shape: [1, 1, 1, cell.h, cell.w],
-    });
+  const encodedRois = await Promise.all(
+    cells.map(async (cell, roi) => {
+      const pixels = cropFrameRegion(input.frame, cell);
+      const roiName = `Roi${roi}.${roiExtension}`;
+      const roiPath = `roi/Pos${DEMO_POSITION}/${roiName}`;
+      const bytes = await encodeRoiImage(
+        input.sourceFormat,
+        cell.w,
+        cell.h,
+        pixels,
+        input.frame.pixelType,
+      );
+      return {
+        roiPath,
+        bytes,
+        entry: {
+          roi,
+          fileName: roiName,
+          bbox: {
+            roi,
+            x: cell.x,
+            y: cell.y,
+            w: cell.w,
+            h: cell.h,
+          },
+          shape: [1, 1, 1, cell.h, cell.w] as [number, number, number, number, number],
+        },
+      };
+    }),
+  );
+
+  for (const encoded of encodedRois) {
+    files[encoded.roiPath] = encoded.bytes;
+    indexEntries.push(encoded.entry);
   }
 
   files[`roi/Pos${DEMO_POSITION}/index.json`] = strToU8(
