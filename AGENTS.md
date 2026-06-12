@@ -21,7 +21,6 @@ Humans review this file only. Agents maintain **Tech stack** via the memory skil
 
 - **`README.md`** — leave blank (title only). Do not put docs here; humans should not rely on them.
 - **`docs/agent/`** — on-demand reference for agents (module conventions, pipelines, patterns). Read when working in that area; do not duplicate long content into `AGENTS.md`.
-- **UI / design reference:** https://github.com/pingdotgg/t3code or `../t3code` local clone.
 
 ## Tech stack
 
