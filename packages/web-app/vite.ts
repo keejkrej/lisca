@@ -4,11 +4,12 @@ import react from "@vitejs/plugin-react";
 import { createRequire } from "node:module";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { defineConfig, type PluginOption, type ProxyOptions, type UserConfig } from "vite";
+import { defineConfig, createLogger, type Logger, type PluginOption, type ProxyOptions, type UserConfig } from "vite";
 
 const require = createRequire(fileURLToPath(new URL(".", import.meta.url)));
 const reactCompilerPlugin = require("babel-plugin-react-compiler");
 const { LISCA_API_PROXY_PREFIXES, liscaDevBackendPort } = require("../../scripts/lisca-dev-ports.cjs");
+const { isBenignDevWsProxyError } = require("../../scripts/lisca-dev-proxy-shared.cjs");
 
 /** @deprecated Import from `scripts/lisca-dev-ports.cjs`. */
 export const LISCA_DEV_BACKEND_PORT_OFFSET = 1000;
@@ -25,6 +26,16 @@ export function liscaReactPlugin(): PluginOption {
 }
 
 const brandPublicDir = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../assets/brand");
+
+function createLiscaDevLogger(): Logger {
+  const logger = createLogger();
+  const logError = logger.error.bind(logger);
+  logger.error = (message, options) => {
+    if (typeof message === "string" && isBenignDevWsProxyError(message)) return;
+    logError(message, options);
+  };
+  return logger;
+}
 
 function liscaDevProxy(backendPort: number): Record<string, ProxyOptions> {
   const target = `http://127.0.0.1:${backendPort}`;
@@ -52,6 +63,7 @@ export function createLiscaViteConfig(options: {
   return defineConfig({
     base: options.base ?? (process.env.VITE_DESKTOP === "1" ? "./" : "/"),
     publicDir: brandPublicDir,
+    customLogger: createLiscaDevLogger(),
     plugins: [
       tanstackRouter({ target: "react", autoCodeSplitting: true }),
       liscaReactPlugin(),

@@ -7,7 +7,7 @@
  */
 const http = require("node:http");
 const net = require("node:net");
-const { LISCA_API_PROXY_PREFIXES } = require("./lisca-dev-ports.cjs");
+const { isLiscaApiProxyPath } = require("./lisca-dev-proxy-shared.cjs");
 
 function parseArgs() {
   const args = process.argv.slice(2);
@@ -26,21 +26,6 @@ function parseArgs() {
     process.exit(1);
   }
   return { listen, expo, rust };
-}
-
-function pathname(url) {
-  try {
-    return new URL(url, "http://127.0.0.1").pathname;
-  } catch {
-    return (url ?? "/").split("?")[0] ?? "/";
-  }
-}
-
-function isLiscaApiPath(url) {
-  const path = pathname(url);
-  return LISCA_API_PROXY_PREFIXES.some(
-    (prefix) => path === prefix || path.startsWith(`${prefix}/`),
-  );
 }
 
 function pipeHttp(req, res, port) {
@@ -95,11 +80,11 @@ function relayUpgrade(req, socket, head, port) {
 const { listen, expo, rust } = parseArgs();
 
 const server = http.createServer((req, res) => {
-  pipeHttp(req, res, isLiscaApiPath(req.url ?? "/") ? rust : expo);
+  pipeHttp(req, res, isLiscaApiProxyPath(req.url ?? "/") ? rust : expo);
 });
 
 server.on("upgrade", (req, socket, head) => {
-  relayUpgrade(req, socket, head, isLiscaApiPath(req.url ?? "/") ? rust : expo);
+  relayUpgrade(req, socket, head, isLiscaApiProxyPath(req.url ?? "/") ? rust : expo);
 });
 
 server.listen(listen, "127.0.0.1", () => {
