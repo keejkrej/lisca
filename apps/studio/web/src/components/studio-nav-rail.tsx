@@ -81,18 +81,19 @@ export function StudioNavRail() {
           </div>
         </Panel>
       </div>
-      <div className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center">
-        <div />
-        <ConnectionStatus
-          state={server.state}
-          wsUrl={server.wsUrl}
-          onOpenSettings={server.openSettings}
-        />
-        <div className="flex items-center justify-end gap-1">
+      <div className="flex shrink-0 flex-col items-stretch gap-2">
+        <div className="flex justify-center">
+          <ConnectionStatus
+            state={server.state}
+            wsUrl={server.wsUrl}
+            onOpenSettings={server.openSettings}
+          />
+        </div>
+        <div className="flex items-center justify-center gap-1">
           <button
             className={cn(
               buttonVariants({ variant: "ghost", size: "sm" }),
-              "max-w-[8rem] truncate text-muted-foreground text-xs",
+              "min-w-0 max-w-[8rem] truncate text-muted-foreground text-xs",
             )}
             type="button"
             onClick={profile.switchProfile}

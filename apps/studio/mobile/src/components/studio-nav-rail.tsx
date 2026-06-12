@@ -38,18 +38,21 @@ export function StudioNavRail() {
         </Panel>
       </View>
       <View style={styles.footer}>
-        <View style={styles.footerSpacer} />
-        <ConnectionStatus
-          state={server.state}
-          wsUrl={server.wsUrl}
-          onOpenSettings={server.openSettings}
-        />
-        <Pressable onPress={profile.switchProfile}>
-          <Text style={styles.profileLabel}>
-            {profile.session.mode === "guest" ? "Guest" : profile.session.displayName}
-          </Text>
-        </Pressable>
-        <ShellThemeToggle />
+        <View style={styles.footerConnection}>
+          <ConnectionStatus
+            state={server.state}
+            wsUrl={server.wsUrl}
+            onOpenSettings={server.openSettings}
+          />
+        </View>
+        <View style={styles.footerActions}>
+          <Pressable onPress={profile.switchProfile}>
+            <Text style={styles.profileLabel}>
+              {profile.session.mode === "guest" ? "Guest" : profile.session.displayName}
+            </Text>
+          </Pressable>
+          <ShellThemeToggle />
+        </View>
       </View>
     </View>
   );
@@ -74,13 +77,16 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   footer: {
+    gap: 8,
+  },
+  footerConnection: {
+    alignItems: "center",
+  },
+  footerActions: {
     alignItems: "center",
     flexDirection: "row",
-    gap: 8,
-    justifyContent: "space-between",
-  },
-  footerSpacer: {
-    flex: 1,
+    gap: 4,
+    justifyContent: "center",
   },
   profileLabel: {
     fontSize: 12,

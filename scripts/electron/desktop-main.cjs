@@ -42,6 +42,15 @@ function runDesktopMain(config) {
       return;
     }
 
+    // Dev loads the Vite server; always compile fresh so API routes match the UI.
+    if (devServerUrl) {
+      serverChild = spawn("cargo", ["run", "-p", cargoPackage, "--quiet"], {
+        ...spawnOpts,
+        shell: isWin,
+      });
+      return;
+    }
+
     const debugBin = path.join(repoRoot, "target", "debug", exeName);
     if (fs.existsSync(debugBin)) {
       serverChild = spawn(debugBin, [], spawnOpts);
