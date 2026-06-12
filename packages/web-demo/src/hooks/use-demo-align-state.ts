@@ -51,7 +51,8 @@ export type DemoAlignState = {
   setVariationExcludeThreshold: (threshold: number) => void;
   cancelVariationExclude: () => void;
   applyVariationExclude: () => void;
-  autoExclude: () => Promise<void>;
+  applySmartExclusion: (modelCells: AlignGridCellCoord[]) => void;
+  reportError: (message: string | null) => void;
   visibleCounts: {
     included: number;
     excluded: number;
@@ -177,34 +178,17 @@ export function useDemoAlignState(): DemoAlignState {
         `Var excluded ${variationCells.length} of ${variationExcludePreview.preview.eligibleCellCount} cells`,
       );
     },
-    autoExclude: async () => {
+    applySmartExclusion: (modelCells) => {
       if (!frame) return;
-      demoAlignUiActions.setStatus(setState, "Auto exclude");
-      demoAlignUiActions.setVariationExcludeLoading(setState, true);
-      try {
-        const edgeCells = collectAlignGridEdgeCells(frame, grid);
-        const preview = previewVariationExclude();
-        const variationCells = preview
-          ? cellsBelowVariationThreshold(preview, preview.threshold)
-          : [];
-        const nextExcluded = mergeExcludedAlignGridCells(excludedCells, [
-          ...edgeCells,
-          ...variationCells,
-        ]);
-        demoAlignUiActions.setExcludedCells(setState, nextExcluded);
-        demoAlignUiActions.setStatus(
-          setState,
-          `Auto excluded ${nextExcluded.length - excludedCells.length} cells`,
-        );
-      } catch (cause) {
-        demoAlignUiActions.setError(
-          setState,
-          cause instanceof Error ? cause.message : String(cause),
-        );
-      } finally {
-        demoAlignUiActions.setVariationExcludeLoading(setState, false);
-      }
+      const edgeCells = collectAlignGridEdgeCells(frame, grid);
+      const nextExcluded = mergeExcludedAlignGridCells(excludedCells, [...edgeCells, ...modelCells]);
+      demoAlignUiActions.setExcludedCells(setState, nextExcluded);
+      demoAlignUiActions.setStatus(
+        setState,
+        `Smart excluded ${nextExcluded.length - excludedCells.length} cells`,
+      );
     },
+    reportError: (message) => demoAlignUiActions.setError(setState, message),
     visibleCounts: frame
       ? countVisibleAlignGridCells(frame, grid, excludedCells)
       : { included: 0, excluded: 0 },

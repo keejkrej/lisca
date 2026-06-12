@@ -1,0 +1,42 @@
+{
+  "name": "@lisca/smart",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    },
+    "./segment": {
+      "types": "./src/segment/index.ts",
+      "import": "./src/segment/index.ts"
+    },
+    "./segment/browser": {
+      "types": "./src/segment/browser/index.ts",
+      "import": "./src/segment/browser/index.ts"
+    },
+    "./exclude/browser": {
+      "types": "./src/exclude/browser/index.ts",
+      "import": "./src/exclude/browser/index.ts"
+    }
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^3.5.0",
+    "@lisca/contracts": "workspace:*",
+    "@lisca/utils": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "react": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  }
+}

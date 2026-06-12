@@ -1,0 +1,25 @@
+{
+  "labels": {
+    "0": "exclude",
+    "1": "include"
+  },
+  "image_size": 224,
+  "input_name": "pixel_values",
+  "output_name": "logits",
+  "preprocess": {
+    "resize": 224,
+    "grayscale_to_rgb": true,
+    "normalize": {
+      "mean": [
+        0.485,
+        0.456,
+        0.406
+      ],
+      "std": [
+        0.229,
+        0.224,
+        0.225
+      ]
+    }
+  }
+}

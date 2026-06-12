@@ -17,6 +17,7 @@ Shared libraries under `packages/*`. Apps import these via workspace protocol (`
 | `@lisca/mobile-app` | Expo shell: `createLiscaMobilePort`, storage bootstrap, host operations. |
 | `@lisca/web-demo` | Browser-only demo helpers (`@lisca/web-demo/browser` — image load, contrast). Former `browser-frame` package. |
 | `@lisca/storage` | Sync storage abstraction (localStorage / sessionStorage / AsyncStorage). |
+| `@lisca/smart` | Browser ML via transformers.js: `./segment` (SAM masks), `./segment/browser` (hook), `./exclude/browser` (ResNet smart exclusion). |
 
 Desktop Electron wrappers live under `apps/*/desktop`, not in `packages/*`.
 
@@ -78,6 +79,7 @@ Examples: `AnnotationMode`, `HostFilePickerMode`, `cropConfirmCopy`.
 
 - **`browser-frame`** — merged into `@lisca/web-demo/browser`.
 - **`studio-result`** — renamed to `@lisca/analysis`.
+- **`segmentation`** — renamed to `@lisca/smart` (`segment` + `exclude` subpaths).
 
 ## Verification
 

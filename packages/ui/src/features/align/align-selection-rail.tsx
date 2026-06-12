@@ -30,7 +30,8 @@ export type AlignSelectionRailProps = {
   variationExcludePreview: VariationExcludePreviewState;
   variationExcludeLoading?: boolean;
   onVariationExclude: () => void | Promise<void>;
-  onAutoExclude: () => void | Promise<void>;
+  onSmartExclude: () => void | Promise<void>;
+  smartExcludeLoading?: boolean;
   onApplyVariationExclude: () => void;
   onCancelVariationExclude: () => void;
   onVariationExcludeThresholdChange: (threshold: number) => void;
@@ -45,7 +46,8 @@ export function AlignSelectionRail({
   grid,
   manualExclusionEnabled,
   onApplyVariationExclude,
-  onAutoExclude,
+  onSmartExclude,
+  smartExcludeLoading = false,
   onCancelVariationExclude,
   onExcludedCellsChange,
   onManualExclusionEnabledChange,
@@ -128,14 +130,14 @@ export function AlignSelectionRail({
             Var exclude
           </Button>
           <Button
-            disabled={disabled || !hasVisibleCells || variationExcludeLoading}
-            loading={variationExcludeLoading}
+            disabled={disabled || !hasVisibleCells || variationExcludeLoading || smartExcludeLoading}
+            loading={smartExcludeLoading}
             size="sm"
             type="button"
             variant="outline"
-            onClick={() => void onAutoExclude()}
+            onClick={() => void onSmartExclude()}
           >
-            Auto exclude
+            Smart exclude
           </Button>
         </div>
       </SidebarSection>

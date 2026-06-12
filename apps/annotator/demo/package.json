@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@lisca/contracts": "workspace:*",
-    "@lisca/segmentation": "workspace:*",
+    "@lisca/smart": "workspace:*",
     "@lisca/ui": "workspace:*",
     "@lisca/utils": "workspace:*",
     "@lisca/web-demo": "workspace:*",

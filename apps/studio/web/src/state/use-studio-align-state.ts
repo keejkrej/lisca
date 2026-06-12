@@ -7,10 +7,8 @@ import {
   alignStateFromCurrent,
   buildBboxCsv,
   collectAlignGridEdgeCells,
-  computeAutoExcludePreview,
   countVisibleAlignGridCells,
   createDefaultAlignGrid,
-  enumerateVisibleAlignGridCells,
   mergeExcludedAlignGridCells,
   type AlignGridToolMode,
 } from "@lisca/utils";
@@ -82,8 +80,9 @@ export type StudioAlignState = {
   skipExistingCrop: () => void;
   cancelCropConfirm: () => void;
   cancelCrop: () => Promise<void>;
-  saveAndAdvance: () => Promise<boolean>;
-  autoExclude: () => Promise<void>;
+  applySmartExclusion: (modelCells: AlignGridCellCoord[]) => void;
+  saveAndAdvanceWithModelCells: (modelCells: AlignGridCellCoord[]) => Promise<boolean>;
+  reportError: (message: string | null) => void;
 };
 export type CropStartConfirmState = {
   positions: number[];
@@ -294,17 +293,15 @@ export function useStudioAlignState(): StudioAlignState {
     setUi,
     source,
   ]);
-  const variationExcludeCells = async (): Promise<AlignGridCellCoord[]> => {
-    if (!source || !frame) return [];
-    const cells = enumerateVisibleAlignGridCells(frame, grid);
-    if (cells.length === 0) return [];
-    const preview = computeAutoExcludePreview(frame, cells);
-    return preview.cellScores
-      .filter((cell) => cell.score <= preview.threshold)
-      .map(({ i, j }) => ({
-        i,
-        j,
-      }));
+  const applySmartExclusion = (modelCells: AlignGridCellCoord[]) => {
+    if (!frame) return;
+    const edgeCells = collectAlignGridEdgeCells(frame, grid);
+    const finalExcludedCells = mergeExcludedAlignGridCells(currentExcludedCells, [
+      ...edgeCells,
+      ...modelCells,
+    ]);
+    setExcludedCellsForCurrentPosition(finalExcludedCells);
+    setStatus(`Smart excluded ${finalExcludedCells.length - currentExcludedCells.length} cells`);
   };
   const positionIndex = alignPositions.indexOf(lockedSelection.pos);
   const canGoBack = positionIndex > 0;
@@ -460,13 +457,12 @@ export function useStudioAlignState(): StudioAlignState {
     if (!requestId) return;
     setCropProgress(await runClientEffect(studioClient.cancelCropRoi(requestId)));
   };
-  const saveAndAdvance = async () => {
+  const saveAndAdvanceWithModelCells = async (modelCells: AlignGridCellCoord[]) => {
     if (!workspacePath || !frame) return false;
     const edgeCells = collectAlignGridEdgeCells(frame, grid);
-    const thresholdCells = await variationExcludeCells();
     const finalExcludedCells = mergeExcludedAlignGridCells(currentExcludedCells, [
       ...edgeCells,
-      ...thresholdCells,
+      ...modelCells,
     ]);
     const { included } = countVisibleAlignGridCells(frame, grid, finalExcludedCells);
     if (included === 0) {
@@ -498,22 +494,6 @@ export function useStudioAlignState(): StudioAlignState {
     }
     await delay(nextExclusionPreviewMs);
     return true;
-  };
-  const autoExclude = async () => {
-    if (!frame) return;
-    try {
-      setStatus("Auto exclude preview");
-      const edgeCells = collectAlignGridEdgeCells(frame, grid);
-      const variationCells = await variationExcludeCells();
-      const finalExcludedCells = mergeExcludedAlignGridCells(currentExcludedCells, [
-        ...edgeCells,
-        ...variationCells,
-      ]);
-      setExcludedCellsForCurrentPosition(finalExcludedCells);
-      setStatus(`Auto excluded ${finalExcludedCells.length - currentExcludedCells.length} cells`);
-    } catch (cause) {
-      setError(toErrorMessage(cause, "Auto exclude preview failed"));
-    }
   };
   return {
     workspacePath,
@@ -556,7 +536,8 @@ export function useStudioAlignState(): StudioAlignState {
     skipExistingCrop,
     cancelCropConfirm,
     cancelCrop,
-    saveAndAdvance,
-    autoExclude,
+    applySmartExclusion,
+    saveAndAdvanceWithModelCells,
+    reportError: setError,
   };
 }

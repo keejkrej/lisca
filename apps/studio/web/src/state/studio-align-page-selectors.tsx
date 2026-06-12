@@ -41,7 +41,7 @@ export function useStudioAlignNav() {
     goBack: state.goBack,
     resetCurrent: state.resetCurrent,
     goToFirstUnaligned: state.goToFirstUnaligned,
-    saveAndAdvance: state.saveAndAdvance,
+    saveAndAdvanceWithModelCells: state.saveAndAdvanceWithModelCells,
     saving: state.saving,
   };
 }

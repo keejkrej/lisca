@@ -32,6 +32,7 @@
   "dependencies": {
     "@effect-atom/atom-react": "catalog:",
     "@lisca/client": "workspace:*",
+    "@lisca/smart": "workspace:*",
     "@lisca/contracts": "workspace:*",
     "@lisca/ui": "workspace:*",
     "@lisca/utils": "workspace:*",

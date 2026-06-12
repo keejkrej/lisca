@@ -1,4 +1,15 @@
-import type { AlignGridCellCoord, AlignGridState, AlignerSource, AutoExcludePreviewResponse, ContrastWindow, CropRoiProgress, FrameRequest, SavedAlignState, WorkspaceScan } from "@lisca/contracts";
+import type {
+  AlignGridCellCoord,
+  AlignGridState,
+  AlignerSource,
+  AutoExcludePreviewCell,
+  AutoExcludePreviewResponse,
+  ContrastWindow,
+  CropRoiProgress,
+  FrameRequest,
+  SavedAlignState,
+  WorkspaceScan,
+} from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 import {
   cellsBelowVariationThreshold,
@@ -89,6 +100,8 @@ export type AlignState = {
   cancelVariationExclude: () => void;
   applyVariationExclude: () => void;
   autoExclude: () => Promise<void>;
+  applySmartExclusion: (modelCells: AlignGridCellCoord[]) => void;
+  reportError: (message: string | null) => void;
 };
 export type UseAlignStateCoreDeps = {
   alignerClient: AlignerDataPort;
@@ -508,6 +521,19 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
       deps.alignerUiActions.setError(setUi, deps.toErrorMessage(cause, "Auto exclude failed"));
     }
   };
+  const applySmartExclusion = (modelCells: AlignGridCellCoord[]) => {
+    if (!frame) return;
+    const edgeCells = collectAlignGridEdgeCells(frame, grid);
+    const finalExcludedCells = mergeExcludedAlignGridCells(currentExcludedCells, [
+      ...edgeCells,
+      ...modelCells,
+    ]);
+    setExcludedCellsForCurrentPosition(finalExcludedCells);
+    deps.alignerUiActions.setStatus(
+      setUi,
+      `Smart excluded ${finalExcludedCells.length - currentExcludedCells.length} cells`,
+    );
+  };
   return {
     workspacePath,
     source,
@@ -553,6 +579,8 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
     cancelVariationExclude,
     applyVariationExclude,
     autoExclude,
+    applySmartExclusion,
+    reportError: (message) => deps.alignerUiActions.setError(setUi, message),
   };
 }
 export type { ExcludedByPosition, StateUpdater };

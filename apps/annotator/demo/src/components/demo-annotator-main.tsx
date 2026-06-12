@@ -1,6 +1,6 @@
 import { ViewportCard } from "@lisca/ui/shell";
 import { AnnotationCanvas, SmartSegmentModelDialog, useCanvasTransientStatus } from "@lisca/ui/features";
-import { useSmartSegment } from "@lisca/segmentation/browser";
+import { useSmartSegment } from "@lisca/smart/segment/browser";
 import { toDisplayFrame } from "@lisca/web-demo/browser";
 import { useState } from "react";
 import type { DemoAnnotatorState } from "@lisca/web-demo";

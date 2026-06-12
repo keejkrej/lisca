@@ -33,7 +33,7 @@
     "build": "bun lisca build workspace all",
     "dev": "bun lisca dev workspace all",
     "check": "bun run lint && bun run typecheck && bun run check:contracts && bun run check:rust && bun run test:packages",
-    "test:packages": "bun --filter @lisca/utils test && bun --filter @lisca/analysis test && bun --filter @lisca/ui-headless test && bun --filter @lisca/client test && bun run test:scripts",
+    "test:packages": "bun --filter @lisca/utils test && bun --filter @lisca/analysis test && bun --filter @lisca/ui-headless test && bun --filter @lisca/client test && bun --filter @lisca/smart test && bun run test:scripts",
     "test:scripts": "vitest run scripts/lisca-dev.test.ts",
     "check:contracts": "bun run contracts:generate && bun scripts/check-openapi-routes.ts && bun --filter @lisca/contracts test",
     "check:rust": "cargo check --workspace && cargo clippy --workspace -- -D warnings",

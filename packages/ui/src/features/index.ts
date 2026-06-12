@@ -19,6 +19,10 @@ export {
   type AlignSelectionRailProps,
 } from "./align/align-selection-rail";
 export {
+  SmartExcludeModelDialog,
+  type SmartExcludeModelDialogProps,
+} from "./align/smart-exclude-model-dialog";
+export {
   AlignGridShapeDockSection,
   type AlignGridShapeDockSectionProps,
 } from "./align/align-grid-shape-dock-section";

@@ -1,0 +1,14 @@
+{
+  "architectures": ["ResNetForImageClassification"],
+  "model_type": "resnet",
+  "num_channels": 3,
+  "num_labels": 2,
+  "id2label": {
+    "0": "exclude",
+    "1": "include"
+  },
+  "label2id": {
+    "exclude": 0,
+    "include": 1
+  }
+}

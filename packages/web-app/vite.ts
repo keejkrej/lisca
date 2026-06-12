@@ -1,8 +1,9 @@
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
+import { createReadStream, existsSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
-import { resolve } from "node:path";
+import { join, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig, createLogger, type Logger, type PluginOption, type ProxyOptions, type UserConfig } from "vite";
 
@@ -26,6 +27,45 @@ export function liscaReactPlugin(): PluginOption {
 }
 
 const brandPublicDir = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../assets/brand");
+const modelsDir = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../models");
+
+function contentTypeForPath(path: string): string {
+  if (path.endsWith(".json")) return "application/json";
+  if (path.endsWith(".onnx")) return "application/octet-stream";
+  return "application/octet-stream";
+}
+
+function liscaModelsPlugin(): PluginOption {
+  return {
+    name: "lisca-models",
+    configureServer(server) {
+      server.middlewares.use("/models", (req, res, next) => {
+        const requestPath = req.url?.split("?")[0] ?? "";
+        if (!requestPath || requestPath.includes("..")) {
+          next();
+          return;
+        }
+
+        const filePath = normalize(join(modelsDir, requestPath));
+        if (!filePath.startsWith(modelsDir) || !existsSync(filePath)) {
+          next();
+          return;
+        }
+
+        const stats = statSync(filePath);
+        if (!stats.isFile()) {
+          next();
+          return;
+        }
+
+        res.statusCode = 200;
+        res.setHeader("Content-Type", contentTypeForPath(filePath));
+        res.setHeader("Content-Length", String(stats.size));
+        createReadStream(filePath).pipe(res);
+      });
+    },
+  };
+}
 
 function createLiscaDevLogger(): Logger {
   const logger = createLogger();
@@ -68,6 +108,7 @@ export function createLiscaViteConfig(options: {
       tanstackRouter({ target: "react", autoCodeSplitting: true }),
       liscaReactPlugin(),
       tailwindcss(),
+      liscaModelsPlugin(),
     ],
     server: {
       host: true,

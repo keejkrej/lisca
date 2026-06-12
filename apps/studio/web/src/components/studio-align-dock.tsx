@@ -6,7 +6,7 @@ import { instructionForStep } from "../state/studio-routes";
 import { useStudioAlignPage } from "../state/studio-align-page-context";
 
 export function StudioAlignDock() {
-  const { state } = useStudioAlignPage();
+  const { state, smartExclude } = useStudioAlignPage();
   const gridDisabled = state.cropping || !state.frame;
 
   return (
@@ -78,11 +78,26 @@ export function StudioAlignDock() {
             </Button>
             <Button
               className="w-full justify-center"
-              disabled={!state.frame || state.saving || state.cropping}
+              disabled={!state.frame || state.saving || state.cropping || smartExclude.busy}
               size="sm"
               type="button"
               variant="outline"
-              onClick={() => void state.saveAndAdvance()}
+              onClick={() =>
+                void (async () => {
+                  try {
+                    const modelCells = await smartExclude.ensureAndClassify();
+                    await state.saveAndAdvanceWithModelCells(modelCells);
+                  } catch (cause) {
+                    if (cause instanceof Error && cause.message === "Smart exclude cancelled") {
+                      state.reportError(null);
+                      return;
+                    }
+                    state.reportError(
+                      cause instanceof Error ? cause.message : "Smart exclude failed",
+                    );
+                  }
+                })()
+              }
             >
               Next
             </Button>

@@ -22,6 +22,7 @@
       "dependencies": {
         "@lisca/client": "workspace:*",
         "@lisca/contracts": "workspace:*",
+        "@lisca/smart": "workspace:*",
         "@lisca/ui": "workspace:*",
         "@lisca/utils": "workspace:*",
         "@lisca/web-demo": "workspace:*",
@@ -103,6 +104,7 @@
         "@effect-atom/atom-react": "catalog:",
         "@lisca/client": "workspace:*",
         "@lisca/contracts": "workspace:*",
+        "@lisca/smart": "workspace:*",
         "@lisca/storage": "workspace:*",
         "@lisca/ui": "workspace:*",
         "@lisca/ui-headless": "workspace:*",
@@ -129,7 +131,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@lisca/contracts": "workspace:*",
-        "@lisca/segmentation": "workspace:*",
+        "@lisca/smart": "workspace:*",
         "@lisca/ui": "workspace:*",
         "@lisca/utils": "workspace:*",
         "@lisca/web-demo": "workspace:*",
@@ -212,7 +214,7 @@
         "@effect-atom/atom-react": "catalog:",
         "@lisca/client": "workspace:*",
         "@lisca/contracts": "workspace:*",
-        "@lisca/segmentation": "workspace:*",
+        "@lisca/smart": "workspace:*",
         "@lisca/storage": "workspace:*",
         "@lisca/ui": "workspace:*",
         "@lisca/utils": "workspace:*",
@@ -325,7 +327,7 @@
         "@lisca/analysis": "workspace:*",
         "@lisca/client": "workspace:*",
         "@lisca/contracts": "workspace:*",
-        "@lisca/segmentation": "workspace:*",
+        "@lisca/smart": "workspace:*",
         "@lisca/storage": "workspace:*",
         "@lisca/ui": "workspace:*",
         "@lisca/ui-headless": "workspace:*",
@@ -432,11 +434,12 @@
         "react-native": "*",
       },
     },
-    "packages/segmentation": {
-      "name": "@lisca/segmentation",
+    "packages/smart": {
+      "name": "@lisca/smart",
       "version": "0.1.0",
       "dependencies": {
         "@huggingface/transformers": "^3.5.0",
+        "@lisca/contracts": "workspace:*",
         "@lisca/utils": "workspace:*",
       },
       "devDependencies": {
@@ -581,6 +584,7 @@
         "@effect-atom/atom-react": "catalog:",
         "@lisca/client": "workspace:*",
         "@lisca/contracts": "workspace:*",
+        "@lisca/smart": "workspace:*",
         "@lisca/ui": "workspace:*",
         "@lisca/utils": "workspace:*",
         "@lisca/web-app": "workspace:*",
@@ -1131,7 +1135,7 @@
 
     "@lisca/mobile-app": ["@lisca/mobile-app@workspace:packages/mobile-app"],
 
-    "@lisca/segmentation": ["@lisca/segmentation@workspace:packages/segmentation"],
+    "@lisca/smart": ["@lisca/smart@workspace:packages/smart"],
 
     "@lisca/storage": ["@lisca/storage@workspace:packages/storage"],
 
