@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "../../components/ui/button";
 import { Field, FieldLabel } from "../../components/ui/field";
 import { Input } from "../../components/ui/input";
-import { ToggleGroup, ToggleGroupItem } from "../../components/ui/toggle-group";
+import { Toggle } from "../../components/ui/toggle";
 
 import { Slider } from "../../components/ui/slider";
 import { Section } from "../../shell/regions/section";
@@ -113,7 +113,7 @@ export type AlignGridProps = {
 };
 
 /**
- * Grid controls in a {@link Section} card: overlay row (**Hide** / **Show** / **Reset**), **Opacity**, then
+ * Grid controls in a {@link Section} card: overlay row (**Show** / **Reset**), **Opacity**, then
  * shape toggle, rotation, vectors A/B, pattern width/height, offsets.
  */
 export function AlignGrid(props: AlignGridProps) {
@@ -168,10 +168,21 @@ export function AlignGrid(props: AlignGridProps) {
       className={sectionClassName}
     >
       <div className="min-w-0 space-y-3">
-        <Field className="min-w-0 w-full">
-          <FieldLabel>Overlay</FieldLabel>
+        <div className="grid w-full grid-cols-2 gap-2">
+          <Toggle
+            aria-label="Show grid overlay"
+            aria-pressed={overlayVisible}
+            className="w-full justify-center text-xs"
+            disabled={disabled}
+            pressed={overlayVisible}
+            size="sm"
+            variant="outline"
+            onPressedChange={onOverlayVisibleChange}
+          >
+            Show
+          </Toggle>
           <Button
-            className="h-8 w-full justify-center px-3 text-xs"
+            className="w-full justify-center text-xs"
             disabled={disabled || resetDisabled || !onReset}
             size="sm"
             type="button"
@@ -180,27 +191,7 @@ export function AlignGrid(props: AlignGridProps) {
           >
             Reset
           </Button>
-          <ToggleGroup
-            className="w-full min-w-0"
-            disabled={disabled}
-            multiple={false}
-            size="sm"
-            value={[overlayVisible ? "show" : "hide"]}
-            variant="outline"
-            onValueChange={(next) => {
-              const value = next[0];
-              if (value === "hide") onOverlayVisibleChange(false);
-              if (value === "show") onOverlayVisibleChange(true);
-            }}
-          >
-            <ToggleGroupItem className="min-w-0 flex-1 px-2 text-xs" value="hide">
-              Hide
-            </ToggleGroupItem>
-            <ToggleGroupItem className="min-w-0 flex-1 px-2 text-xs" value="show">
-              Show
-            </ToggleGroupItem>
-          </ToggleGroup>
-        </Field>
+        </div>
 
         <Field className="min-w-0 w-full">
           <FieldLabel>Opacity</FieldLabel>

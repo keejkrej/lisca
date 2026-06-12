@@ -24,6 +24,7 @@ export type AlignSessionActions = {
   setGrid: (next: AlignGridState | ((current: AlignGridState) => AlignGridState)) => void;
   setToolMode: (mode: AlignGridToolMode) => void;
   setPatternZoomLocked: (locked: boolean) => void;
+  setManualExclusionEnabled: (enabled: boolean) => void;
   setExcludedCellsForCurrentPosition: (cells: Iterable<AlignGridCellCoord>) => void;
 };
 export type AlignWorkspaceSync = {
@@ -74,6 +75,7 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
     setGrid: (next) => actions.setGrid(setUi, next),
     setToolMode: (mode) => actions.setToolMode(setUi, mode),
     setPatternZoomLocked: (locked) => actions.setPatternZoomLocked(setUi, locked),
+    setManualExclusionEnabled: (enabled) => actions.setManualExclusionEnabled(setUi, enabled),
     setExcludedCellsForCurrentPosition: (cells) =>
       actions.setExcludedCellsForCurrentPosition(setUi, cells),
   };

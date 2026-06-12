@@ -33,6 +33,7 @@ export type AlignUiState = {
   grid: AlignGridState;
   toolMode: AlignGridToolMode;
   patternZoomLocked: boolean;
+  manualExclusionEnabled: boolean;
   excludedCellsByPosition: ExcludedByPosition;
   frameLoading: boolean;
   saving: boolean;
@@ -77,6 +78,7 @@ export function createInitialAlignUiState(): AlignUiState {
     grid: normalizeAlignGridState(createDefaultAlignGrid()),
     toolMode: "pan",
     patternZoomLocked: true,
+    manualExclusionEnabled: false,
     excludedCellsByPosition: {},
     frameLoading: false,
     saving: false,
@@ -279,6 +281,12 @@ export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiB
       patternZoomLocked: boolean,
     ) {
       patchAlignUi(set, persist, (state) => ({ ...state, patternZoomLocked }));
+    },
+    setManualExclusionEnabled(
+      set: (update: StateUpdater<AlignUiState>) => void,
+      manualExclusionEnabled: boolean,
+    ) {
+      patchAlignUi(set, persist, (state) => ({ ...state, manualExclusionEnabled }));
     },
     setExcludedCellsForCurrentPosition(
       set: (update: StateUpdater<AlignUiState>) => void,

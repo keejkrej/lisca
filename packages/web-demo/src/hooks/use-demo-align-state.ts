@@ -38,6 +38,8 @@ export type DemoAlignState = {
   setToolMode: (mode: AlignGridToolMode) => void;
   patternZoomLocked: boolean;
   setPatternZoomLocked: (locked: boolean) => void;
+  manualExclusionEnabled: boolean;
+  setManualExclusionEnabled: (enabled: boolean) => void;
   excludedCells: AlignGridCellCoord[];
   setExcludedCells: (cells: Iterable<AlignGridCellCoord>) => void;
   excludeAllCells: () => void;
@@ -72,6 +74,7 @@ export function useDemoAlignState(): DemoAlignState {
     grid,
     toolMode,
     patternZoomLocked,
+    manualExclusionEnabled,
     excludedCells,
     variationExcludePreview,
     variationExcludeLoading,
@@ -100,6 +103,9 @@ export function useDemoAlignState(): DemoAlignState {
     setToolMode: (mode) => demoAlignUiActions.setToolMode(setState, mode),
     patternZoomLocked,
     setPatternZoomLocked: (locked) => demoAlignUiActions.setPatternZoomLocked(setState, locked),
+    manualExclusionEnabled,
+    setManualExclusionEnabled: (enabled) =>
+      demoAlignUiActions.setManualExclusionEnabled(setState, enabled),
     excludedCells,
     setExcludedCells: (cells) =>
       demoAlignUiActions.setExcludedCells(setState, Array.from(cells)),

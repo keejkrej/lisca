@@ -1,17 +1,23 @@
 export {
   AlignCanvas,
-  type AlignCanvasFramePoint,
-  type AlignCanvasPointerEvent,
   type AlignCanvasProps,
   type AlignCanvasWheelEvent,
 } from "./align/align-canvas";
 export {
   cursorForAlignTool,
   useAlignCanvasGridHandlers,
+  useAlignCanvasSelectionHandlers,
+  type AlignCanvasFramePoint,
+  type AlignCanvasPointerEvent,
   type UseAlignCanvasGridHandlersOptions,
+  type UseAlignCanvasSelectionHandlersOptions,
 } from "./align/align-canvas-handlers";
 export { AlignGrid, type AlignGridProps } from "./align/align-grid";
 export { AlignGridRail } from "./align/align-grid-rail";
+export {
+  AlignSelectionRail,
+  type AlignSelectionRailProps,
+} from "./align/align-selection-rail";
 export {
   AlignGridShapeDockSection,
   type AlignGridShapeDockSectionProps,
@@ -21,6 +27,10 @@ export {
   type AlignGridShapeToggleProps,
 } from "./align/align-grid-shape-toggle";
 export { AlignSelectionCounts } from "./align/align-selection-counts";
+export {
+  AlignEditToggle,
+  type AlignEditToggleProps,
+} from "./align/align-edit-toggle";
 export {
   AlignToolButton,
   AlignToolSection,

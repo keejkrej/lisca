@@ -6,6 +6,7 @@ export function useAlignCanvas() {
     grid: state.grid,
     toolMode: state.toolMode,
     patternZoomLocked: state.patternZoomLocked,
+    manualExclusionEnabled: state.manualExclusionEnabled,
     displayedExcludedCells: state.displayedExcludedCells,
     currentExcludedCells: state.currentExcludedCells,
     visibleCounts: state.visibleCounts,
@@ -19,6 +20,7 @@ export function useAlignCanvas() {
     setGrid: state.setGrid,
     setToolMode: state.setToolMode,
     setPatternZoomLocked: state.setPatternZoomLocked,
+    setManualExclusionEnabled: state.setManualExclusionEnabled,
     setContrast: state.setContrast,
     setExcludedCellsForCurrentPosition: state.setExcludedCellsForCurrentPosition,
   };

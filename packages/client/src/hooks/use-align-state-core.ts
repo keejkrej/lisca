@@ -60,6 +60,8 @@ export type AlignState = {
   setToolMode: (mode: AlignGridToolMode) => void;
   patternZoomLocked: boolean;
   setPatternZoomLocked: (locked: boolean) => void;
+  manualExclusionEnabled: boolean;
+  setManualExclusionEnabled: (enabled: boolean) => void;
   excludedCellsByPosition: ExcludedByPosition;
   setExcludedCellsForCurrentPosition: (cells: Iterable<AlignGridCellCoord>) => void;
   currentExcludedCells: AlignGridCellCoord[];
@@ -122,6 +124,7 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
     grid,
     toolMode,
     patternZoomLocked,
+    manualExclusionEnabled,
     excludedCellsByPosition,
     frameLoading,
     saving,
@@ -147,6 +150,7 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
       setGrid,
       setToolMode,
       setPatternZoomLocked,
+      setManualExclusionEnabled,
       setExcludedCellsForCurrentPosition,
     },
     meta: { scanLoading, cropping },
@@ -523,6 +527,8 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
     setToolMode,
     patternZoomLocked,
     setPatternZoomLocked,
+    manualExclusionEnabled,
+    setManualExclusionEnabled,
     excludedCellsByPosition,
     setExcludedCellsForCurrentPosition,
     currentExcludedCells,

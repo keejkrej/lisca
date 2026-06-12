@@ -19,6 +19,7 @@ export type DemoAlignUiState = {
   grid: AlignGridState;
   toolMode: AlignGridToolMode;
   patternZoomLocked: boolean;
+  manualExclusionEnabled: boolean;
   excludedCells: AlignGridCellCoord[];
   variationExcludePreview: VariationExcludePreviewState;
   variationExcludeLoading: boolean;
@@ -52,6 +53,7 @@ export function createInitialDemoAlignUiState(): DemoAlignUiState {
     },
     toolMode: "pan",
     patternZoomLocked: false,
+    manualExclusionEnabled: false,
     excludedCells: [],
     variationExcludePreview: null,
     variationExcludeLoading: false,
@@ -113,6 +115,12 @@ export const demoAlignUiActions = {
   },
   setPatternZoomLocked(set: (update: StateUpdater<DemoAlignUiState>) => void, locked: boolean) {
     patchDemoAlignUi(set, { patternZoomLocked: locked });
+  },
+  setManualExclusionEnabled(
+    set: (update: StateUpdater<DemoAlignUiState>) => void,
+    manualExclusionEnabled: boolean,
+  ) {
+    patchDemoAlignUi(set, { manualExclusionEnabled });
   },
   setExcludedCells(set: (update: StateUpdater<DemoAlignUiState>) => void, cells: AlignGridCellCoord[]) {
     patchDemoAlignUi(set, { excludedCells: cells });
