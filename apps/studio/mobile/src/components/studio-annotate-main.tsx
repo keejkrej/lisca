@@ -1,40 +1,65 @@
-import { AnnotationCanvas, ViewportCard } from "@lisca/ui-native";
+import { AnnotationCanvas, ViewportCard, useShellTheme } from "@lisca/ui-native";
+import { StyleSheet, Text, View } from "react-native";
+
 import type { StudioAnnotateState } from "../state/use-studio-annotate-state";
 import { StudioAnalysisProgressModal, StudioAnalysisStartModal } from "./studio-analysis-modals";
+
 export function StudioAnnotateMain({ state }: { state: StudioAnnotateState }) {
-  const emptyMask = state.frame
-    ? new Uint8Array(state.frame.width * state.frame.height)
-    : new Uint8Array();
-  const messages = (() => {
-    if (!state.request) return [];
-    const positionIndex =
-      state.scan?.positions.findIndex((entry) => entry.pos === state.request?.pos) ?? -1;
-    const positionCount = state.scan?.positions.length ?? 0;
-    const roiIndex =
-      state.position?.rois.findIndex((entry) => entry.roi === state.request?.roi) ?? -1;
-    const roiCount = state.position?.rois.length ?? 0;
-    if (positionIndex < 0 || positionCount === 0 || roiIndex < 0 || roiCount === 0) return [];
-    return [
-      {
-        text: `Pos ${positionIndex}/${positionCount}\nRoi ${roiIndex}/${roiCount}`,
-      },
-    ];
-  })();
+  const { colors } = useShellTheme();
+
+  if (state.workspaceMissing) {
+    return (
+      <>
+        <ViewportCard>
+          <View style={styles.message}>
+            <Text style={{ color: colors.mutedForeground, fontSize: 14, textAlign: "center" }}>
+              Set a save location in Basic info, then align and crop ROIs before annotating.
+            </Text>
+          </View>
+        </ViewportCard>
+        <StudioAnalysisStartModal state={state} />
+        <StudioAnalysisProgressModal state={state} />
+      </>
+    );
+  }
+
+  if (!state.scanLoading && state.scan && state.scan.positions.length === 0) {
+    return (
+      <>
+        <ViewportCard>
+          <View style={styles.message}>
+            <Text style={{ color: colors.mutedForeground, fontSize: 14, textAlign: "center" }}>
+              No cropped ROI stacks found. Complete Align pattern and crop ROIs first.
+            </Text>
+          </View>
+        </ViewportCard>
+        <StudioAnalysisStartModal state={state} />
+        <StudioAnalysisProgressModal state={state} />
+      </>
+    );
+  }
+
+  const onMaskCommit = (mask: Uint8Array) => {
+    state.annotation.commit({
+      classificationLabelId: state.annotation.current.classificationLabelId,
+      mask,
+    });
+  };
+
   return (
     <>
       <ViewportCard>
         <AnnotationCanvas
-          activeLabelId={null}
-          brushSize={1}
-          disabled
+          activeLabelId={state.activeLabelId}
+          brushSize={state.brushSize}
+          disabled={!state.canEditSegmentation}
           frame={state.frame}
-          labels={[]}
-          mask={emptyMask}
-          messages={messages.length ? messages : undefined}
-          overlayOpacity={0}
-          toasts={state.toasts}
-          tool="brush"
-          onMaskCommit={() => undefined}
+          labels={state.labels}
+          mask={state.annotation.current.mask}
+          overlayOpacity={state.overlayOpacity}
+          toasts={state.canvasToasts}
+          tool={state.tool}
+          onMaskCommit={onMaskCommit}
         />
       </ViewportCard>
       <StudioAnalysisStartModal state={state} />
@@ -42,3 +67,12 @@ export function StudioAnnotateMain({ state }: { state: StudioAnnotateState }) {
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  message: {
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 192,
+    padding: 24,
+  },
+});

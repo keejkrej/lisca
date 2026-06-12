@@ -7,83 +7,55 @@ import type {
   StateUpdater,
 } from "../atoms/annotator-ui";
 
-export type StudioAnnotateRoiViewState = {
-  workspacePath: string | null;
-  selection: RoiSelection;
-  frame: FrameResult | null;
-  contrast: ContrastWindow | null;
-  contrastDomain: ContrastWindow;
-  contrastMin: number;
-  contrastMax: number;
-  frameLoading: boolean;
-  scanError: string | null;
-  frameError: string | null;
-  status: string | null;
-};
+export type StudioAnnotateUiState = AnnotatorUiState;
 
-/** Store state that includes ROI view fields plus studio-only analysis fields. */
-export type StudioAnnotateStoreLike = StudioAnnotateRoiViewState & Record<string, unknown>;
+export type StudioAnnotateStoreLike = StudioAnnotateUiState & Record<string, unknown>;
 
 export type StudioAnnotateSetUi = (update: StateUpdater<unknown>) => void;
 
-export type StudioAnnotateSessionActions = {
-  setWorkspacePath: (set: StudioAnnotateSetUi, workspacePath: string | null) => void;
-  setSelection: (set: StudioAnnotateSetUi, patch: Partial<RoiSelection>) => void;
-  setFrame: (set: StudioAnnotateSetUi, frame: FrameResult | null) => void;
-  setScanError: (set: StudioAnnotateSetUi, scanError: string | null) => void;
-  setStatus: (set: StudioAnnotateSetUi, status: string | null) => void;
-};
+export type StudioAnnotateSessionActions = Pick<
+  AnnotatorUiActions,
+  | "setWorkspacePath"
+  | "setSelection"
+  | "setActiveLabelId"
+  | "syncActiveLabelFromLabels"
+  | "applySavedLabels"
+  | "setMode"
+  | "setTool"
+  | "setBrushSize"
+  | "setOverlayOpacity"
+  | "setFrame"
+  | "setContrast"
+  | "setContrastState"
+  | "setFrameLoading"
+  | "setAnnotationLoading"
+  | "setSaving"
+  | "setScanError"
+  | "setFrameError"
+  | "setAnnotationError"
+  | "setSaveError"
+  | "setLabelError"
+  | "setStatus"
+  | "setLabelDialogOpen"
+>;
 
-export function studioAnnotateToAnnotatorUi(state: StudioAnnotateRoiViewState): AnnotatorUiState {
-  return {
-    workspacePath: state.workspacePath,
-    selection: state.selection,
-    activeLabelId: null,
-    mode: "classification",
-    tool: "brush",
-    brushSize: 4,
-    overlayOpacity: 0.35,
-    frame: state.frame,
-    contrast: state.contrast,
-    contrastDomain: state.contrastDomain,
-    contrastMin: state.contrastMin,
-    contrastMax: state.contrastMax,
-    frameLoading: state.frameLoading,
-    annotationLoading: false,
-    saving: false,
-    scanError: state.scanError,
-    frameError: state.frameError,
-    annotationError: null,
-    saveError: null,
-    labelError: null,
-    status: state.status,
-    labelDialogOpen: false,
-  };
+export function studioAnnotateToAnnotatorUi(state: StudioAnnotateUiState): AnnotatorUiState {
+  return state;
 }
 
-export function applyAnnotatorUiPatch<T extends StudioAnnotateRoiViewState>(
+export function applyAnnotatorUiPatch<T extends StudioAnnotateUiState>(
   current: T,
   update: StateUpdater<AnnotatorUiState>,
 ): T {
-  const annotatorCurrent = studioAnnotateToAnnotatorUi(current);
-  const nextAnnotator = typeof update === "function" ? update(annotatorCurrent) : update;
+  const nextAnnotator =
+    typeof update === "function" ? update(studioAnnotateToAnnotatorUi(current)) : update;
   return {
     ...current,
-    workspacePath: nextAnnotator.workspacePath,
-    selection: nextAnnotator.selection,
-    frame: nextAnnotator.frame,
-    contrast: nextAnnotator.contrast,
-    contrastDomain: nextAnnotator.contrastDomain,
-    contrastMin: nextAnnotator.contrastMin,
-    contrastMax: nextAnnotator.contrastMax,
-    frameLoading: nextAnnotator.frameLoading,
-    scanError: nextAnnotator.scanError,
-    frameError: nextAnnotator.frameError,
-    status: nextAnnotator.status,
+    ...nextAnnotator,
   };
 }
 
-export function createStudioAnnotateSetUi<T extends StudioAnnotateRoiViewState>(
+export function createStudioAnnotateSetUi<T extends StudioAnnotateUiState>(
   setUi: (update: StateUpdater<T>) => void,
 ): (update: StateUpdater<AnnotatorUiState>) => void {
   return (update) => {
@@ -101,32 +73,66 @@ export function createStudioAnnotateSessionActions(
     setSelection(set, patch) {
       studioActions.setSelection(set as StudioAnnotateSetUi, patch);
     },
-    setActiveLabelId() {},
-    syncActiveLabelFromLabels() {},
-    applySavedLabels() {},
-    setMode() {},
-    setTool() {},
-    setBrushSize() {},
-    setOverlayOpacity() {},
+    setActiveLabelId(set, activeLabelId) {
+      studioActions.setActiveLabelId(set as StudioAnnotateSetUi, activeLabelId);
+    },
+    syncActiveLabelFromLabels(set, labelIds) {
+      studioActions.syncActiveLabelFromLabels(set as StudioAnnotateSetUi, labelIds);
+    },
+    applySavedLabels(set, labels) {
+      studioActions.applySavedLabels(set as StudioAnnotateSetUi, labels);
+    },
+    setMode(set, mode) {
+      studioActions.setMode(set as StudioAnnotateSetUi, mode);
+    },
+    setTool(set, tool) {
+      studioActions.setTool(set as StudioAnnotateSetUi, tool);
+    },
+    setBrushSize(set, brushSize) {
+      studioActions.setBrushSize(set as StudioAnnotateSetUi, brushSize);
+    },
+    setOverlayOpacity(set, overlayOpacity) {
+      studioActions.setOverlayOpacity(set as StudioAnnotateSetUi, overlayOpacity);
+    },
     setFrame(set, frame) {
       studioActions.setFrame(set as StudioAnnotateSetUi, frame);
     },
-    setContrast() {},
-    setContrastState() {},
-    setFrameLoading() {},
-    setAnnotationLoading() {},
-    setSaving() {},
+    setContrast(set, contrast) {
+      studioActions.setContrast(set as StudioAnnotateSetUi, contrast);
+    },
+    setContrastState(set, frame) {
+      studioActions.setContrastState(set as StudioAnnotateSetUi, frame);
+    },
+    setFrameLoading(set, frameLoading) {
+      studioActions.setFrameLoading(set as StudioAnnotateSetUi, frameLoading);
+    },
+    setAnnotationLoading(set, annotationLoading) {
+      studioActions.setAnnotationLoading(set as StudioAnnotateSetUi, annotationLoading);
+    },
+    setSaving(set, saving) {
+      studioActions.setSaving(set as StudioAnnotateSetUi, saving);
+    },
     setScanError(set, scanError) {
       studioActions.setScanError(set as StudioAnnotateSetUi, scanError);
     },
-    setFrameError() {},
-    setAnnotationError() {},
-    setSaveError() {},
-    setLabelError() {},
+    setFrameError(set, frameError) {
+      studioActions.setFrameError(set as StudioAnnotateSetUi, frameError);
+    },
+    setAnnotationError(set, annotationError) {
+      studioActions.setAnnotationError(set as StudioAnnotateSetUi, annotationError);
+    },
+    setSaveError(set, saveError) {
+      studioActions.setSaveError(set as StudioAnnotateSetUi, saveError);
+    },
+    setLabelError(set, labelError) {
+      studioActions.setLabelError(set as StudioAnnotateSetUi, labelError);
+    },
     setStatus(set, status) {
       studioActions.setStatus(set as StudioAnnotateSetUi, status);
     },
-    setLabelDialogOpen() {},
+    setLabelDialogOpen(set, labelDialogOpen) {
+      studioActions.setLabelDialogOpen(set as StudioAnnotateSetUi, labelDialogOpen);
+    },
   };
 }
 

@@ -18,6 +18,7 @@
     "@lisca/mobile-app": "workspace:*",
     "@lisca/storage": "workspace:*",
     "@lisca/analysis": "workspace:*",
+    "@lisca/ui-headless": "workspace:*",
     "@lisca/ui-native": "workspace:*",
     "@lisca/utils": "workspace:*",
     "@react-native-async-storage/async-storage": "^2.2.0",

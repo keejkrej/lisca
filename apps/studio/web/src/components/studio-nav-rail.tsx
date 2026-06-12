@@ -4,6 +4,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
 import { studioNavigate, type StudioRouteTo } from "../navigation/use-studio-navigate";
+import { confirmStudioAnnotateLeave } from "../state/studio-annotate-guard";
 import { useStudioProfile } from "./studio-profile-provider";
 
 const navButtonClass =
@@ -14,11 +15,13 @@ function NavButton({
   children,
   to,
   onClick,
+  leaveAnnotateGuard,
 }: {
   active: boolean;
   children: ReactNode;
   to: StudioRouteTo;
   onClick?: () => void;
+  leaveAnnotateGuard?: boolean;
 }) {
   const navigate = useNavigate();
 
@@ -44,6 +47,9 @@ function NavButton({
           return;
         }
         event.preventDefault();
+        if (leaveAnnotateGuard && to !== "/annotate" && !confirmStudioAnnotateLeave()) {
+          return;
+        }
         studioNavigate(navigate, to);
       }}
     >
@@ -63,19 +69,19 @@ export function StudioNavRail() {
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
         <Panel className="w-full shrink-0">
           <div className="flex flex-col items-center gap-6 p-3">
-            <NavButton active={routeId === "assay"} to="/assay">
+            <NavButton active={routeId === "assay"} leaveAnnotateGuard={routeId === "annotate"} to="/assay">
               Assay type
             </NavButton>
-            <NavButton active={routeId === "info"} to="/info">
+            <NavButton active={routeId === "info"} leaveAnnotateGuard={routeId === "annotate"} to="/info">
               Basic info
             </NavButton>
-            <NavButton active={routeId === "align"} to="/align">
+            <NavButton active={routeId === "align"} leaveAnnotateGuard={routeId === "annotate"} to="/align">
               Align pattern
             </NavButton>
             <NavButton active={routeId === "annotate"} to="/annotate">
               Annotate ROI
             </NavButton>
-            <NavButton active={routeId === "result"} to="/result">
+            <NavButton active={routeId === "result"} leaveAnnotateGuard={routeId === "annotate"} to="/result">
               View results
             </NavButton>
           </div>

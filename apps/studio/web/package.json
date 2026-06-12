@@ -15,6 +15,7 @@
     "@lisca/contracts": "workspace:*",
     "@lisca/storage": "workspace:*",
     "@lisca/analysis": "workspace:*",
+    "@lisca/segmentation": "workspace:*",
     "@lisca/ui": "workspace:*",
     "@lisca/ui-headless": "workspace:*",
     "@lisca/utils": "workspace:*",

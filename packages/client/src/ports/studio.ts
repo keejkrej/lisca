@@ -58,11 +58,33 @@ export function createStudioPort(deps: StudioPortDeps): StudioDataPort {
         c.annotate.scanRoiWorkspace({ payload: { workspacePath } }),
       );
     },
+    loadLabels(workspacePath, signal) {
+      return withClientEffect(client, signal, (c) =>
+        c.annotate.loadLabels({ payload: { workspacePath } }),
+      );
+    },
+    saveLabels(workspacePath, labels, signal) {
+      return withClientEffect(client, signal, (c) =>
+        c.annotate.saveLabels({ payload: { workspacePath, labels } }),
+      );
+    },
     loadRoiFrame(workspacePath, request, contrast, signal) {
       return withClientEffect(client, signal, (c) =>
         c.annotate
           .loadRoiFrame({ payload: { workspacePath, request, contrast: contrast ?? null } })
           .pipe(Effect.map(decodeFramePayload)),
+      );
+    },
+    loadRoiFrameAnnotation(workspacePath, request, signal) {
+      return withClientEffect(client, signal, (c) =>
+        c.annotate.loadRoiFrameAnnotation({ payload: { workspacePath, request } }),
+      );
+    },
+    saveRoiFrameAnnotation(workspacePath, request, annotation, signal) {
+      return withClientEffect(client, signal, (c) =>
+        c.annotate.saveRoiFrameAnnotation({
+          payload: { workspacePath, request, annotation },
+        }),
       );
     },
   };

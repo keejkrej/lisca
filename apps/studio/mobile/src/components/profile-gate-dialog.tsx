@@ -37,7 +37,7 @@ export function ProfileGateDialog({
     setError(null);
     void runClientEffect(studioProfileClient.listProfiles())
       .then((response) => {
-        if (!cancelled) setProfiles(response.profiles);
+        if (!cancelled) setProfiles([...response.profiles]);
       })
       .catch((cause) => {
         if (!cancelled) {

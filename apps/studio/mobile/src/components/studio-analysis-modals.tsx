@@ -11,10 +11,11 @@ export function StudioAnalysisStartModal({ state }: { state: StudioAnnotateState
       <DialogSurface maxWidth={420}>
         <Text style={styles.title}>Start analysis</Text>
         <Text style={styles.body}>
-          Run the transfection analysis pipeline now and open results when finished?
+          Run the analysis pipeline now and open results when finished?
         </Text>
         <Text style={styles.body}>
-          assay.json will be saved to the workspace before analysis starts.
+          assay.json will be saved to the workspace before analysis starts. Annotations already
+          saved under annotations/ will remain in the workspace.
         </Text>
         <View style={styles.actions}>
           <Button

@@ -1,32 +1,33 @@
-import type { AnalysisProgress, ContrastWindow, RoiIndexEntry, RoiPositionScan, RoiWorkspaceScan, StudioAnalysisCsvFile } from "@lisca/contracts";
+import type {
+  AnalysisProgress,
+  ContrastWindow,
+  RoiIndexEntry,
+  RoiPositionScan,
+  RoiWorkspaceScan,
+  StudioAnalysisCsvFile,
+} from "@lisca/contracts";
+import type {
+  AnnotationMode,
+  AnnotationTool,
+  AnnotatorUiState,
+  RoiSelection,
+} from "@lisca/client/atoms/annotator-ui";
 import type { FrameResult } from "@lisca/utils";
+import { deriveContrastUiState } from "@lisca/utils";
 import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/storage";
 import { Atom, useAtom } from "@effect-atom/atom-react";
-export type StudioAnnotateSelection = {
-  pos: number | null;
-  roi: number | null;
-  channel: number | null;
-  timeIndex: number;
-  zIndex: number;
-};
+
+export type StudioAnnotateSelection = RoiSelection;
+
 type StateUpdater<T> = T | ((current: T) => T);
-type StudioAnnotateStoreState = {
+
+type StudioAnnotateStoreState = AnnotatorUiState & {
   analysisStartConfirm: boolean;
   analysisRequestId: string | null;
   analysisProgress: AnalysisProgress | null;
   analysisResultFiles: StudioAnalysisCsvFile[];
-  workspacePath: string | null;
-  selection: StudioAnnotateSelection;
-  frame: FrameResult | null;
-  contrast: ContrastWindow | null;
-  contrastDomain: ContrastWindow;
-  contrastMin: number;
-  contrastMax: number;
-  frameLoading: boolean;
-  scanError: string | null;
-  frameError: string | null;
-  status: string | null;
 };
+
 type StudioAnnotateStoreActions = {
   setWorkspacePath: (workspacePath: string | null) => void;
   setAnalysisStartConfirm: (value: boolean) => void;
@@ -34,15 +35,28 @@ type StudioAnnotateStoreActions = {
   setAnalysisProgress: (progress: AnalysisProgress | null) => void;
   setAnalysisResultFiles: (files: StudioAnalysisCsvFile[]) => void;
   setSelection: (patch: Partial<StudioAnnotateSelection>) => void;
+  setActiveLabelId: (activeLabelId: string | null) => void;
+  setMode: (mode: AnnotationMode) => void;
+  setTool: (tool: AnnotationTool) => void;
+  setBrushSize: (brushSize: number) => void;
+  setOverlayOpacity: (overlayOpacity: number) => void;
   setFrame: (frame: FrameResult | null) => void;
   setContrast: (contrast: ContrastWindow | null) => void;
   setContrastState: (frame: FrameResult) => void;
   setFrameLoading: (frameLoading: boolean) => void;
+  setAnnotationLoading: (annotationLoading: boolean) => void;
+  setSaving: (saving: boolean) => void;
   setScanError: (scanError: string | null) => void;
   setFrameError: (frameError: string | null) => void;
+  setAnnotationError: (annotationError: string | null) => void;
+  setSaveError: (saveError: string | null) => void;
+  setLabelError: (labelError: string | null) => void;
   setStatus: (status: string | null) => void;
+  setLabelDialogOpen: (labelDialogOpen: boolean) => void;
 };
+
 export type StudioAnnotateStore = StudioAnnotateStoreState & StudioAnnotateStoreActions;
+
 const defaultSelection: StudioAnnotateSelection = {
   pos: null,
   roi: null,
@@ -50,10 +64,12 @@ const defaultSelection: StudioAnnotateSelection = {
   timeIndex: 0,
   zIndex: 0,
 };
+
 const defaultContrastDomain: ContrastWindow = {
   min: 0,
   max: 255,
 };
+
 function createInitialState(): StudioAnnotateStoreState {
   return {
     analysisStartConfirm: false,
@@ -62,25 +78,39 @@ function createInitialState(): StudioAnnotateStoreState {
     analysisResultFiles: [],
     workspacePath: null,
     selection: defaultSelection,
+    activeLabelId: null,
+    mode: "classification",
+    tool: "brush",
+    brushSize: 4,
+    overlayOpacity: 0.35,
     frame: null,
     contrast: null,
     contrastDomain: defaultContrastDomain,
     contrastMin: 0,
     contrastMax: 255,
     frameLoading: false,
+    annotationLoading: false,
+    saving: false,
     scanError: null,
     frameError: null,
+    annotationError: null,
+    saveError: null,
+    labelError: null,
     status: null,
+    labelDialogOpen: false,
   };
 }
+
 export function currentAnnotatePosition(scan: RoiWorkspaceScan | null, pos: number | null) {
   if (!scan || pos == null) return null;
   return scan.positions.find((entry) => entry.pos === pos) ?? null;
 }
+
 export function currentAnnotateRoi(position: RoiPositionScan | null, roi: number | null) {
   if (!position || roi == null) return null;
   return position.rois.find((entry) => entry.roi === roi) ?? null;
 }
+
 export function annotateRequestKey(
   position: RoiPositionScan | null,
   roi: RoiIndexEntry | null,
@@ -91,11 +121,20 @@ export function annotateRequestKey(
   if (!position || !roi || selection.channel == null || time == null || z == null) return "none";
   return `${position.pos}:${roi.roi}:${selection.channel}:${time}:${z}`;
 }
+
 export const STUDIO_ANNOTATE_SESSION_KEY = "lisca-studio-annotate-session";
+
 export type StudioAnnotateSessionPersist = Pick<
   StudioAnnotateStoreState,
-  "workspacePath" | "selection"
+  | "workspacePath"
+  | "selection"
+  | "activeLabelId"
+  | "mode"
+  | "tool"
+  | "brushSize"
+  | "overlayOpacity"
 >;
+
 export function readStudioAnnotateSession(): StudioAnnotateSessionPersist | null {
   const parsed = readStorageJson<{
     state?: StudioAnnotateSessionPersist;
@@ -103,18 +142,27 @@ export function readStudioAnnotateSession(): StudioAnnotateSessionPersist | null
   if (!parsed) return null;
   return parsed.state ?? (parsed as StudioAnnotateSessionPersist);
 }
+
 function writeStudioAnnotateSession(state: StudioAnnotateStoreState): void {
   writeStorageJson(liscaSessionStorage(), STUDIO_ANNOTATE_SESSION_KEY, {
     state: {
       workspacePath: state.workspacePath,
       selection: state.selection,
+      activeLabelId: state.activeLabelId,
+      mode: state.mode,
+      tool: state.tool,
+      brushSize: state.brushSize,
+      overlayOpacity: state.overlayOpacity,
     } satisfies StudioAnnotateSessionPersist,
   });
 }
+
 export function createInitialStudioAnnotateUiState(): StudioAnnotateStoreState {
   return createInitialState();
 }
+
 export const studioAnnotateUiAtom = Atom.make(createInitialState()).pipe(Atom.keepAlive);
+
 function patchStudioAnnotateUi(
   set: (update: StateUpdater<StudioAnnotateStoreState>) => void,
   patch:
@@ -133,6 +181,7 @@ function patchStudioAnnotateUi(
     return next;
   });
 }
+
 export const studioAnnotateUiActions = {
   setWorkspacePath(
     set: (update: StateUpdater<StudioAnnotateStoreState>) => void,
@@ -148,6 +197,7 @@ export const studioAnnotateUiActions = {
         analysisProgress: null,
         analysisResultFiles: [],
         selection: defaultSelection,
+        activeLabelId: null,
         frame: null,
         contrast: null,
         contrastDomain: defaultContrastDomain,
@@ -155,6 +205,9 @@ export const studioAnnotateUiActions = {
         contrastMax: 255,
         scanError: null,
         frameError: null,
+        annotationError: null,
+        saveError: null,
+        labelError: null,
         status: null,
       };
     });
@@ -199,34 +252,57 @@ export const studioAnnotateUiActions = {
     set: (update: StateUpdater<StudioAnnotateStoreState>) => void,
     patch: Partial<StudioAnnotateSelection>,
   ) {
+    patchStudioAnnotateUi(set, (state) => ({
+      ...state,
+      selection: { ...state.selection, ...patch },
+    }));
+  },
+  setActiveLabelId(
+    set: (update: StateUpdater<StudioAnnotateStoreState>) => void,
+    activeLabelId: string | null,
+  ) {
+    patchStudioAnnotateUi(set, (state) => ({ ...state, activeLabelId }));
+  },
+  syncActiveLabelFromLabels(
+    set: (update: StateUpdater<StudioAnnotateStoreState>) => void,
+    labelIds: readonly string[],
+  ) {
     patchStudioAnnotateUi(set, (state) => {
-      const nextSelection = {
-        ...state.selection,
-        ...patch,
-      };
-      if (
-        nextSelection.pos === state.selection.pos &&
-        nextSelection.roi === state.selection.roi &&
-        nextSelection.channel === state.selection.channel &&
-        nextSelection.timeIndex === state.selection.timeIndex &&
-        nextSelection.zIndex === state.selection.zIndex
-      ) {
-        return state;
-      }
-      return {
-        ...state,
-        selection: nextSelection,
-      };
+      if (state.activeLabelId && labelIds.includes(state.activeLabelId)) return state;
+      return { ...state, activeLabelId: labelIds[0] ?? null };
     });
+  },
+  applySavedLabels(
+    set: (update: StateUpdater<StudioAnnotateStoreState>) => void,
+    labels: readonly { id: string }[],
+  ) {
+    patchStudioAnnotateUi(set, (state) => ({
+      ...state,
+      activeLabelId: labels[0]?.id ?? null,
+      labelDialogOpen: false,
+      labelError: null,
+    }));
+  },
+  setMode(set: (update: StateUpdater<StudioAnnotateStoreState>) => void, mode: AnnotationMode) {
+    patchStudioAnnotateUi(set, (state) => ({ ...state, mode }));
+  },
+  setTool(set: (update: StateUpdater<StudioAnnotateStoreState>) => void, tool: AnnotationTool) {
+    patchStudioAnnotateUi(set, (state) => ({ ...state, tool }));
+  },
+  setBrushSize(set: (update: StateUpdater<StudioAnnotateStoreState>) => void, brushSize: number) {
+    patchStudioAnnotateUi(set, (state) => ({ ...state, brushSize }));
+  },
+  setOverlayOpacity(
+    set: (update: StateUpdater<StudioAnnotateStoreState>) => void,
+    overlayOpacity: number,
+  ) {
+    patchStudioAnnotateUi(set, (state) => ({ ...state, overlayOpacity }));
   },
   setFrame(
     set: (update: StateUpdater<StudioAnnotateStoreState>) => void,
     frame: FrameResult | null,
   ) {
-    patchStudioAnnotateUi(set, (state) => ({
-      ...state,
-      frame,
-    }));
+    patchStudioAnnotateUi(set, (state) => ({ ...state, frame }));
   },
   setContrast(
     set: (update: StateUpdater<StudioAnnotateStoreState>) => void,
@@ -235,8 +311,8 @@ export const studioAnnotateUiActions = {
     patchStudioAnnotateUi(set, (state) => ({
       ...state,
       contrast,
-      contrastMin: contrast?.min ?? state.contrastMin,
-      contrastMax: contrast?.max ?? state.contrastMax,
+      contrastMin: contrast?.min ?? state.contrastDomain.min,
+      contrastMax: contrast?.max ?? state.contrastDomain.max,
     }));
   },
   setContrastState(
@@ -245,85 +321,103 @@ export const studioAnnotateUiActions = {
   ) {
     patchStudioAnnotateUi(set, (state) => ({
       ...state,
-      contrastDomain: frame.contrastDomain ?? defaultContrastDomain,
-      contrastMin: frame.appliedContrast?.min ?? state.contrastMin,
-      contrastMax: frame.appliedContrast?.max ?? state.contrastMax,
+      ...deriveContrastUiState(frame, state.contrast),
     }));
   },
   setFrameLoading(
     set: (update: StateUpdater<StudioAnnotateStoreState>) => void,
     frameLoading: boolean,
   ) {
-    patchStudioAnnotateUi(set, (state) => ({
-      ...state,
-      frameLoading,
-    }));
+    patchStudioAnnotateUi(set, (state) => ({ ...state, frameLoading }));
+  },
+  setAnnotationLoading(
+    set: (update: StateUpdater<StudioAnnotateStoreState>) => void,
+    annotationLoading: boolean,
+  ) {
+    patchStudioAnnotateUi(set, (state) => ({ ...state, annotationLoading }));
+  },
+  setSaving(set: (update: StateUpdater<StudioAnnotateStoreState>) => void, saving: boolean) {
+    patchStudioAnnotateUi(set, (state) => ({ ...state, saving }));
   },
   setScanError(
     set: (update: StateUpdater<StudioAnnotateStoreState>) => void,
     scanError: string | null,
   ) {
-    patchStudioAnnotateUi(set, (state) => ({
-      ...state,
-      scanError,
-    }));
+    patchStudioAnnotateUi(set, (state) => ({ ...state, scanError }));
   },
   setFrameError(
     set: (update: StateUpdater<StudioAnnotateStoreState>) => void,
     frameError: string | null,
   ) {
-    patchStudioAnnotateUi(set, (state) => ({
-      ...state,
-      frameError,
-    }));
+    patchStudioAnnotateUi(set, (state) => ({ ...state, frameError }));
+  },
+  setAnnotationError(
+    set: (update: StateUpdater<StudioAnnotateStoreState>) => void,
+    annotationError: string | null,
+  ) {
+    patchStudioAnnotateUi(set, (state) => ({ ...state, annotationError }));
+  },
+  setSaveError(
+    set: (update: StateUpdater<StudioAnnotateStoreState>) => void,
+    saveError: string | null,
+  ) {
+    patchStudioAnnotateUi(set, (state) => ({ ...state, saveError }));
+  },
+  setLabelError(
+    set: (update: StateUpdater<StudioAnnotateStoreState>) => void,
+    labelError: string | null,
+  ) {
+    patchStudioAnnotateUi(set, (state) => ({ ...state, labelError }));
   },
   setStatus(set: (update: StateUpdater<StudioAnnotateStoreState>) => void, status: string | null) {
-    patchStudioAnnotateUi(set, (state) => ({
-      ...state,
-      status,
-    }));
+    patchStudioAnnotateUi(set, (state) => ({ ...state, status }));
+  },
+  setLabelDialogOpen(
+    set: (update: StateUpdater<StudioAnnotateStoreState>) => void,
+    labelDialogOpen: boolean,
+  ) {
+    patchStudioAnnotateUi(set, (state) => ({ ...state, labelDialogOpen }));
   },
 };
+
 export function useStudioAnnotateStore(): StudioAnnotateStore {
   const [state, setState] = useAtom(studioAnnotateUiAtom);
-  const setWorkspacePath = (workspacePath: string | null) =>
-    studioAnnotateUiActions.setWorkspacePath(setState, workspacePath);
-  const setAnalysisStartConfirm = (value: boolean) =>
-    studioAnnotateUiActions.setAnalysisStartConfirm(setState, value);
-  const setAnalysisRequestId = (requestId: string | null) =>
-    studioAnnotateUiActions.setAnalysisRequestId(setState, requestId);
-  const setAnalysisProgress = (progress: AnalysisProgress | null) =>
-    studioAnnotateUiActions.setAnalysisProgress(setState, progress);
-  const setAnalysisResultFiles = (files: StudioAnalysisCsvFile[]) =>
-    studioAnnotateUiActions.setAnalysisResultFiles(setState, files);
-  const setSelection = (patch: Partial<StudioAnnotateSelection>) =>
-    studioAnnotateUiActions.setSelection(setState, patch);
-  const setFrame = (frame: FrameResult | null) => studioAnnotateUiActions.setFrame(setState, frame);
-  const setContrast = (contrast: ContrastWindow | null) =>
-    studioAnnotateUiActions.setContrast(setState, contrast);
-  const setContrastState = (frame: FrameResult) =>
-    studioAnnotateUiActions.setContrastState(setState, frame);
-  const setFrameLoading = (frameLoading: boolean) =>
-    studioAnnotateUiActions.setFrameLoading(setState, frameLoading);
-  const setScanError = (scanError: string | null) =>
-    studioAnnotateUiActions.setScanError(setState, scanError);
-  const setFrameError = (frameError: string | null) =>
-    studioAnnotateUiActions.setFrameError(setState, frameError);
-  const setStatus = (status: string | null) => studioAnnotateUiActions.setStatus(setState, status);
   return {
     ...state,
-    setWorkspacePath,
-    setAnalysisStartConfirm,
-    setAnalysisRequestId,
-    setAnalysisProgress,
-    setAnalysisResultFiles,
-    setSelection,
-    setFrame,
-    setContrast,
-    setContrastState,
-    setFrameLoading,
-    setScanError,
-    setFrameError,
-    setStatus,
+    setWorkspacePath: (workspacePath) =>
+      studioAnnotateUiActions.setWorkspacePath(setState, workspacePath),
+    setAnalysisStartConfirm: (value) =>
+      studioAnnotateUiActions.setAnalysisStartConfirm(setState, value),
+    setAnalysisRequestId: (requestId) =>
+      studioAnnotateUiActions.setAnalysisRequestId(setState, requestId),
+    setAnalysisProgress: (progress) =>
+      studioAnnotateUiActions.setAnalysisProgress(setState, progress),
+    setAnalysisResultFiles: (files) =>
+      studioAnnotateUiActions.setAnalysisResultFiles(setState, files),
+    setSelection: (patch) => studioAnnotateUiActions.setSelection(setState, patch),
+    setActiveLabelId: (activeLabelId) =>
+      studioAnnotateUiActions.setActiveLabelId(setState, activeLabelId),
+    setMode: (mode) => studioAnnotateUiActions.setMode(setState, mode),
+    setTool: (tool) => studioAnnotateUiActions.setTool(setState, tool),
+    setBrushSize: (brushSize) => studioAnnotateUiActions.setBrushSize(setState, brushSize),
+    setOverlayOpacity: (overlayOpacity) =>
+      studioAnnotateUiActions.setOverlayOpacity(setState, overlayOpacity),
+    setFrame: (frame) => studioAnnotateUiActions.setFrame(setState, frame),
+    setContrast: (contrast) => studioAnnotateUiActions.setContrast(setState, contrast),
+    setContrastState: (frame) => studioAnnotateUiActions.setContrastState(setState, frame),
+    setFrameLoading: (frameLoading) =>
+      studioAnnotateUiActions.setFrameLoading(setState, frameLoading),
+    setAnnotationLoading: (annotationLoading) =>
+      studioAnnotateUiActions.setAnnotationLoading(setState, annotationLoading),
+    setSaving: (saving) => studioAnnotateUiActions.setSaving(setState, saving),
+    setScanError: (scanError) => studioAnnotateUiActions.setScanError(setState, scanError),
+    setFrameError: (frameError) => studioAnnotateUiActions.setFrameError(setState, frameError),
+    setAnnotationError: (annotationError) =>
+      studioAnnotateUiActions.setAnnotationError(setState, annotationError),
+    setSaveError: (saveError) => studioAnnotateUiActions.setSaveError(setState, saveError),
+    setLabelError: (labelError) => studioAnnotateUiActions.setLabelError(setState, labelError),
+    setStatus: (status) => studioAnnotateUiActions.setStatus(setState, status),
+    setLabelDialogOpen: (labelDialogOpen) =>
+      studioAnnotateUiActions.setLabelDialogOpen(setState, labelDialogOpen),
   };
 }

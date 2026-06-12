@@ -17,10 +17,11 @@ export function StudioAnalysisStartModal() {
               Start analysis
             </h2>
             <p className="text-muted-foreground text-sm">
-              Run the transfection analysis pipeline now and open results when finished?
+              Run the analysis pipeline now and open results when finished?
             </p>
             <p className="text-muted-foreground text-sm">
-              assay.json will be saved to the workspace before analysis starts.
+              assay.json will be saved to the workspace before analysis starts. Annotations already
+              saved under annotations/ will remain in the workspace.
             </p>
           </div>
           <div className="flex justify-end gap-2">

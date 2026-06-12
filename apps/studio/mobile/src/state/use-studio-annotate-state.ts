@@ -1,87 +1,68 @@
-import type { AnalysisProgress, ContrastWindow, StudioAnalysisCsvFile, RoiFrameRequest, RoiPositionScan, RoiWorkspaceScan, AnnotationLabel } from "@lisca/contracts";
-import type { FrameResult } from "@lisca/utils";
+import type { AnalysisProgress, StudioAnalysisCsvFile } from "@lisca/contracts";
 import { ASSAY_TYPE } from "@lisca/contracts/assay";
-import { useAnnotateSessionCore } from "@lisca/client/annotate-session/react";
-import { requestKey } from "@lisca/client/atoms/annotator-ui";
+import { useAnnotateStateCore } from "@lisca/client/use-annotate-state-core";
 import {
-  createStudioAnnotateSessionActions,
-  createStudioAnnotateSetUi,
-  studioAnnotateToAnnotatorUi,
-  type StudioAnnotateSessionActions,
-} from "@lisca/client/studio-annotate-session-bridge";
+  currentRoi,
+  requestKey,
+  roiRequestSelectionKey,
+  type AnnotatorUiActions,
+  type AnnotatorUiAtom,
+} from "@lisca/client/atoms/annotator-ui";
 import { useCanvasResourceTransaction, useCanvasTransientStatus } from "@lisca/ui-native";
-import { Atom, Result, useAtom, useAtomValue } from "@effect-atom/atom-react";
+import { useAtom } from "@effect-atom/atom-react";
 import { useEffect } from "react";
 import { useRouter } from "expo-router";
+import { Alert } from "react-native";
 import { runClientEffect } from "@lisca/client/runtime";
+
 import { studioClient, toErrorMessage } from "../api/studio-port";
-import { roiScanIdleAtom, roiWorkspaceScanAtom } from "../atoms/studio-query-atoms";
 import {
-  currentAnnotateRoi,
-  studioAnnotateUiActions,
-  studioAnnotateUiAtom,
-  useStudioAnnotateStore,
-} from "./studio-annotate-store";
+  annotationLabelsAtom,
+  labelsIdleAtom,
+  roiScanIdleAtom,
+  roiWorkspaceScanAtom,
+  saveAnnotationLabelsAtom,
+  saveRoiFrameAnnotationAtom,
+} from "../atoms/studio-query-atoms";
+import {
+  effectErrorMessage,
+  loadRoiFrameEffect,
+  loadRoiFrameWithAnnotationEffect,
+} from "../effects/roi-loader";
+import { studioAnnotateUiActions, studioAnnotateUiAtom } from "./studio-annotate-store";
 import { buildStudioAssayJson, serializeBasicInfoSnapshot, useStudioStore } from "./studio-store";
-const labelsIdleAtom = Atom.make(Result.initial<AnnotationLabel[]>());
-function isAbortError(cause: unknown): boolean {
-  return cause instanceof DOMException && cause.name === "AbortError";
-}
-function makeRoiFrameRequest(
-  position: RoiPositionScan | null,
-  roi: number | null,
-  channel: number | null,
-  timeIndex: number,
-  zIndex: number,
-): RoiFrameRequest | null {
-  const roiEntry = currentAnnotateRoi(position, roi);
-  if (!position || !roiEntry || channel == null) return null;
-  const time = position.times[timeIndex];
-  const z = position.zSlices[zIndex];
-  if (time == null || z == null) return null;
+import { emptyValueFor, useAnnotationHistory } from "./use-annotation-history";
+import { encodeMaskToBase64Png, maskHasPixels } from "../utils/annotation-utils";
+import { makeRequest } from "../utils/roi-request";
+
+function useStudioWorkspaceSync(activeWorkspacePath: string | null) {
+  const [ui, setUi] = useAtom(studioAnnotateUiAtom);
+  useEffect(() => {
+    if (ui.workspacePath !== activeWorkspacePath) {
+      studioAnnotateUiActions.setWorkspacePath(setUi, activeWorkspacePath);
+    }
+  }, [activeWorkspacePath, setUi, ui.workspacePath]);
   return {
-    pos: position.pos,
-    roi: roiEntry.roi,
-    channel,
-    time,
-    z,
+    workspacePath: activeWorkspacePath,
+    setWorkspacePath: (path: string | null) =>
+      studioAnnotateUiActions.setWorkspacePath(setUi, path),
   };
 }
-export type StudioAnnotateState = {
-  workspacePath: string | null;
-  scan: RoiWorkspaceScan | null;
-  position: RoiPositionScan | null;
+
+export type StudioAnnotateState = ReturnType<typeof useAnnotateStateCore> & {
   analysisStartConfirm: boolean;
   analysisRequestId: string | null;
   analysisProgress: AnalysisProgress | null;
   analysisResultFiles: StudioAnalysisCsvFile[];
-  request: RoiFrameRequest | null;
-  frame: FrameResult | null;
-  contrastDomain: ContrastWindow;
-  contrastMin: number;
-  contrastMax: number;
-  scanLoading: boolean;
-  frameLoading: boolean;
-  error: string | null;
-  toasts: {
-    text: string;
-    tone?: "error" | "success" | "default";
-  }[];
-  selection: {
-    pos: number | null;
-    roi: number | null;
-    channel: number | null;
-    timeIndex: number;
-    zIndex: number;
-  };
   setAnalysisProgress: (progress: AnalysisProgress | null) => void;
   setAnalysisResultFiles: (files: StudioAnalysisCsvFile[]) => void;
-  setSelection: (patch: Partial<StudioAnnotateState["selection"]>) => void;
-  setContrast: (contrast: ContrastWindow) => void;
-  startAnalysis: () => void;
   setAnalysisStartConfirm: (value: boolean) => void;
+  startAnalysis: () => void;
   shuffleSelection: () => void;
+  requestContinueToAnalysis: () => void;
+  workspaceMissing: boolean;
 };
+
 export function useStudioAnnotateState(): StudioAnnotateState {
   const saveTo = useStudioStore((state) => state.info1.saveTo);
   const assayId = useStudioStore((state) => state.assayId);
@@ -92,136 +73,53 @@ export function useStudioAnnotateState(): StudioAnnotateState {
   const setBasicInfoSavedSnapshot = useStudioStore((state) => state.setBasicInfoSavedSnapshot);
   const activeWorkspacePath = saveTo.trim() || null;
   const router = useRouter();
+  const [ui, setUi] = useAtom(studioAnnotateUiAtom);
   const {
-    workspacePath,
-    selection,
-    frame,
-    contrastDomain,
-    contrastMin,
-    contrastMax,
-    frameLoading,
-    scanError,
-    frameError,
-    status,
     analysisStartConfirm,
     analysisRequestId,
     analysisProgress,
     analysisResultFiles,
-    setContrast,
-    setContrastState,
-    setFrameLoading,
-    setFrameError,
-    setStatus,
-    setAnalysisStartConfirm,
-    setAnalysisRequestId,
-    setAnalysisProgress,
-    setAnalysisResultFiles,
-  } = useStudioAnnotateStore();
-  const [ui, setUi] = useAtom(studioAnnotateUiAtom);
-  const annotatorUi = studioAnnotateToAnnotatorUi(ui);
-  const setAnnotatorUi = createStudioAnnotateSetUi(setUi);
-  const sessionActions = createStudioAnnotateSessionActions(
-    studioAnnotateUiActions as StudioAnnotateSessionActions,
-  );
-  const workspaceSync = {
-    workspacePath: activeWorkspacePath,
-    setWorkspacePath: (path: string | null) =>
-      studioAnnotateUiActions.setWorkspacePath(setUi, path),
-  };
-  const scanResult = useAtomValue(
-    activeWorkspacePath ? roiWorkspaceScanAtom(activeWorkspacePath) : roiScanIdleAtom,
-  );
-  const labelsIdleResult = useAtomValue(labelsIdleAtom);
-  const session = useAnnotateSessionCore({
-    ui: annotatorUi,
-    setUi: setAnnotatorUi,
-    actions: sessionActions,
-    workspace: workspaceSync,
-    scan: {
-      scanResult,
-      labelsResult: labelsIdleResult,
-      shellWorkspacePath: activeWorkspacePath,
-    },
+  } = ui;
+  const workspace = useStudioWorkspaceSync(activeWorkspacePath);
+  const annotate = useAnnotateStateCore({
+    annotatorClient: studioClient,
     toErrorMessage,
+    effectErrorMessage,
+    loadRoiFrameWithAnnotationEffect,
+    loadRoiFrameEffect,
+    annotatorUiAtom: studioAnnotateUiAtom as unknown as AnnotatorUiAtom,
+    annotatorUiActions: studioAnnotateUiActions as unknown as AnnotatorUiActions,
+    roiWorkspaceScanAtom,
+    roiScanIdleAtom,
+    annotationLabelsAtom,
+    labelsIdleAtom,
+    saveAnnotationLabelsAtom,
+    saveRoiFrameAnnotationAtom,
+    useShellWorkspace: () => workspace,
+    useCanvasResourceTransaction,
+    useCanvasTransientStatus,
+    guardDirtySelection: () => true,
+    useAnnotationHistory,
+    emptyValueFor,
+    makeRequest,
+    currentRoi,
+    requestKey,
+    roiRequestSelectionKey,
+    encodeMaskToBase64Png,
+    maskHasPixels,
   });
-  const { scan, position } = session.derived;
-  const { scanLoading } = session.meta;
-  const selectedRoi = currentAnnotateRoi(position, selection.roi);
-  const request = makeRoiFrameRequest(
-    position,
-    selectedRoi?.roi ?? null,
-    selection.channel,
-    selection.timeIndex,
-    selection.zIndex,
-  );
-  const activeRequestKey = requestKey(position, selectedRoi, selection);
-  const loadCanvasResources = useCanvasResourceTransaction();
-  const visibleStatus = useCanvasTransientStatus(status);
-  const activeStatus = frameLoading
-    ? "Loading ROI frame"
-    : scanLoading
-      ? "Scanning ROI workspace"
-      : visibleStatus;
-  const error = scanError ?? frameError;
-  const toasts = (() => {
-    if (error)
-      return [
-        {
-          text: error,
-          tone: "error" as const,
-        },
-      ];
-    if (activeStatus)
-      return [
-        {
-          text: activeStatus,
-        },
-      ];
-    return [];
-  })();
-  useEffect(() => {
-    if (!workspacePath || workspacePath !== activeWorkspacePath || !request) {
-      setFrameLoading(false);
-      return;
-    }
-    return loadCanvasResources({
-      start: () => {
-        setFrameLoading(true);
-        setFrameError(null);
-        setStatus("Loading ROI frame");
-      },
-      load: (signal) =>
-        runClientEffect(studioClient.loadRoiFrame(workspacePath, request, null, signal), {
-          signal,
-        }),
-      commit: (nextFrame) => {
-        studioAnnotateUiActions.setFrame(setUi, nextFrame);
-        setContrastState(nextFrame);
-      },
-      reject: (cause) => {
-        if (isAbortError(cause)) return;
-        studioAnnotateUiActions.setFrame(setUi, null);
-        setFrameError(toErrorMessage(cause, "ROI frame load failed"));
-      },
-      settle: () => setFrameLoading(false),
-    });
-  }, [
-    activeRequestKey,
-    activeWorkspacePath,
-    loadCanvasResources,
-    request,
-    setContrastState,
-    setFrameError,
-    setFrameLoading,
-    setStatus,
-    setUi,
-    workspacePath,
-  ]);
-  const changeSelection = (patch: Partial<StudioAnnotateState["selection"]>) =>
-    studioAnnotateUiActions.setSelection(setUi, patch);
+  const setAnalysisStartConfirm = (value: boolean) =>
+    studioAnnotateUiActions.setAnalysisStartConfirm(setUi, value);
+  const setAnalysisRequestId = (requestId: string | null) =>
+    studioAnnotateUiActions.setAnalysisRequestId(setUi, requestId);
+  const setAnalysisProgress = (progress: AnalysisProgress | null) =>
+    studioAnnotateUiActions.setAnalysisProgress(setUi, progress);
+  const setAnalysisResultFiles = (files: StudioAnalysisCsvFile[]) =>
+    studioAnnotateUiActions.setAnalysisResultFiles(setUi, files);
+  const setStatus = (status: string | null) => studioAnnotateUiActions.setStatus(setUi, status);
   const shuffleSelection = () => {
-    if (!scan?.positions.length) return;
-    const randomPosition = scan.positions[Math.floor(Math.random() * scan.positions.length)];
+    if (!annotate.scan?.positions.length) return;
+    const randomPosition = annotate.scan.positions[Math.floor(Math.random() * annotate.scan.positions.length)];
     const randomRoi =
       randomPosition?.rois[Math.floor(Math.random() * randomPosition.rois.length)] ?? null;
     const channel = randomPosition ? (randomPosition.channels[0] ?? null) : null;
@@ -235,15 +133,18 @@ export function useStudioAnnotateState(): StudioAnnotateState {
         ? Math.floor(Math.random() * randomPosition.zSlices.length)
         : 0;
     if (!randomPosition) return;
-    studioAnnotateUiActions.setSelection(setUi, {
-      pos: randomPosition.pos,
-      roi,
-      channel,
-      timeIndex,
-      zIndex,
-    });
+    annotate.changeSelection(() =>
+      annotate.setSelection({
+        pos: randomPosition.pos,
+        roi,
+        channel,
+        timeIndex,
+        zIndex,
+      }),
+    );
   };
   const startAnalysis = () => {
+    const workspacePath = annotate.workspacePath;
     if (!workspacePath) return;
     setAnalysisStartConfirm(false);
     setStatus("Saving assay.json");
@@ -269,7 +170,7 @@ export function useStudioAnnotateState(): StudioAnnotateState {
         stop?.();
         stop = null;
         setStatus("Analysis completed");
-        void router.push("/result");
+        router.push("/result");
       }
       if (progress.status === "error") {
         stop?.();
@@ -332,30 +233,32 @@ export function useStudioAnnotateState(): StudioAnnotateState {
       }
     })();
   };
+  const requestContinueToAnalysis = () => {
+    if (annotate.annotation.dirty) {
+      Alert.alert(
+        "Unsaved changes",
+        "You have unsaved annotation changes. Continue to analysis anyway?",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Continue", onPress: () => setAnalysisStartConfirm(true) },
+        ],
+      );
+      return;
+    }
+    setAnalysisStartConfirm(true);
+  };
   return {
-    workspacePath,
-    scan,
+    ...annotate,
     analysisStartConfirm,
     analysisRequestId,
     analysisProgress,
     analysisResultFiles,
-    position,
-    request,
-    frame,
-    contrastDomain,
-    contrastMin,
-    contrastMax,
-    scanLoading,
-    frameLoading,
-    error,
-    toasts,
-    selection,
     setAnalysisProgress,
     setAnalysisResultFiles,
-    setSelection: changeSelection,
     setAnalysisStartConfirm,
     startAnalysis,
-    setContrast,
     shuffleSelection,
+    requestContinueToAnalysis,
+    workspaceMissing: !activeWorkspacePath,
   };
 }
