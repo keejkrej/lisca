@@ -6,7 +6,7 @@ import { cn } from "../../../lib/utils";
 
 export function DialogTitleText(props: { children: ReactNode; className?: string }) {
   return (
-    <Text className={cn("text-lg font-semibold text-foreground", props.className)}>
+    <Text className={cn("font-display text-lg font-semibold text-foreground", props.className)}>
       {props.children}
     </Text>
   );
@@ -37,7 +37,7 @@ export function DialogActions(props: { children: ReactNode; className?: string }
 
 export function DialogSectionLabel(props: { children: ReactNode; className?: string }) {
   return (
-    <Text className={cn("text-sm font-semibold text-foreground", props.className)}>
+    <Text className={cn("font-display text-sm font-semibold text-foreground", props.className)}>
       {props.children}
     </Text>
   );

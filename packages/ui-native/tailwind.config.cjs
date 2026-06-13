@@ -1,6 +1,9 @@
 const path = require("node:path");
 const { hairlineWidth } = require("nativewind/theme");
 
+const { liscaFontFamily } = require("./tailwind/lisca-fonts.cjs");
+const liscaFontsPlugin = require("./tailwind/lisca-fonts-plugin.cjs");
+
 const root = __dirname;
 const appsRoot = path.join(root, "../../apps");
 
@@ -23,6 +26,11 @@ module.exports = {
   presets: [require("nativewind/preset")],
   theme: {
     extend: {
+      fontFamily: {
+        sans: [liscaFontFamily.sansRegular],
+        display: [liscaFontFamily.displaySemibold],
+        mono: [liscaFontFamily.monoRegular],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -87,5 +95,5 @@ module.exports = {
   future: {
     hoverOnlyWhenSupported: true,
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [liscaFontsPlugin, require("tailwindcss-animate")],
 };

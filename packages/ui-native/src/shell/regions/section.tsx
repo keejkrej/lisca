@@ -39,7 +39,7 @@ export function Section(props: {
     >
       <View className="gap-1.5 px-3 py-3">
         <View className="flex-row items-start justify-between gap-2">
-          <Text className="min-w-0 flex-1 text-sm font-medium leading-[14px] text-foreground">
+          <Text className="min-w-0 flex-1 font-display text-sm font-semibold leading-none text-foreground">
             {props.title}
           </Text>
           <View className="shrink-0 flex-row items-center gap-1">

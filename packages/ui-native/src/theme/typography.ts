@@ -1,6 +1,6 @@
 import type { TextStyle } from "react-native";
 
-/** PostScript names from @expo-google-fonts — must match LiscaFontsProvider load map. */
+/** PostScript names from @expo-google-fonts — must match LiscaFontsProvider and tailwind/lisca-fonts.cjs. */
 export const liscaFontFamily = {
   sansRegular: "IBMPlexSans_400Regular",
   sansMedium: "IBMPlexSans_500Medium",
