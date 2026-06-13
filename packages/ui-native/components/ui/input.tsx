@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { Platform, TextInput, type StyleProp, type TextStyle } from "react-native";
 
 const inputHeightStyle: StyleProp<TextStyle> = Platform.select({
-  web: { minHeight: 28 },
+  web: { minHeight: 30 },
   default: { minHeight: 34 },
 });
 

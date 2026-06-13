@@ -40,7 +40,7 @@ export default function InfoRoute() {
         </AppShell.Left>
         <AppShell.MainColumn>
           <AppShell.Main>
-            <ScrollView contentContainerClassName="w-full max-w-[832px] flex-grow justify-center px-6 py-6">
+            <ScrollView contentContainerClassName="mx-auto w-full max-w-[832px] flex-grow justify-center px-4 py-6 md:px-[100px] md:py-10">
               {infoStep === 1 ? <BasicInfoStep1 hostPort={studioHostOperations} /> : null}
               {infoStep === 2 ? <BasicInfoStep2 /> : null}
               {infoStep === 3 ? <BasicInfoStep3 /> : null}

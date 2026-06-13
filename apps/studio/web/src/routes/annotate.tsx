@@ -7,7 +7,8 @@ import { StudioAnnotateMain } from "../components/studio-annotate-main";
 import { StudioAnnotateNav } from "../components/studio-annotate-nav";
 import { StudioAnnotateRight } from "../components/studio-annotate-right";
 import { StudioLeft } from "../components/studio-left";
-import { StudioAnnotatePageProvider, useStudioAnnotatePage } from "../state/studio-annotate-page-context";
+import { useStudioAnnotateShell } from "../state/studio-annotate-page-selectors";
+import { StudioAnnotatePageProvider } from "../state/studio-annotate-page-context";
 
 export const Route = createFileRoute("/annotate")({
   component: AnnotatePage,
@@ -53,16 +54,16 @@ function AnnotatePageContent() {
 }
 
 function AnnotateDialogs() {
-  const { state } = useStudioAnnotatePage();
+  const shell = useStudioAnnotateShell();
   return (
     <LabelCreationDialog
-      error={state.labelError}
-      labels={state.labels}
-      open={state.labelDialogOpen}
-      saving={state.saveLabelsPending}
-      workspacePath={state.workspacePath}
-      onOpenChange={state.setLabelDialogOpen}
-      onSave={(nextLabels) => void state.handleSaveLabels(nextLabels)}
+      error={shell.labelError}
+      labels={shell.labels}
+      open={shell.labelDialogOpen}
+      saving={shell.saveLabelsPending}
+      workspacePath={shell.workspacePath}
+      onOpenChange={shell.setLabelDialogOpen}
+      onSave={(nextLabels) => void shell.handleSaveLabels(nextLabels)}
     />
   );
 }

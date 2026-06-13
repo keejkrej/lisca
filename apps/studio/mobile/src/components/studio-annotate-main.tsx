@@ -52,8 +52,8 @@ export function StudioAnnotateMain() {
             </Text>
           </View>
         </ViewportCard>
-        <StudioAnalysisStartModal state={state} />
-        <StudioAnalysisProgressModal state={state} />
+        <StudioAnalysisStartModal />
+        <StudioAnalysisProgressModal />
       </>
     );
   }
@@ -69,8 +69,8 @@ export function StudioAnnotateMain() {
             </Text>
           </View>
         </ViewportCard>
-        <StudioAnalysisStartModal state={state} />
-        <StudioAnalysisProgressModal state={state} />
+        <StudioAnalysisStartModal />
+        <StudioAnalysisProgressModal />
       </>
     );
   }
@@ -100,8 +100,8 @@ export function StudioAnnotateMain() {
           onSmartEraseClick={(click) => void smartSegment.handleEraseClick(click)}
         />
       </ViewportCard>
-      <StudioAnalysisStartModal state={state} />
-      <StudioAnalysisProgressModal state={state} />
+      <StudioAnalysisStartModal />
+      <StudioAnalysisProgressModal />
     </>
   );
 }

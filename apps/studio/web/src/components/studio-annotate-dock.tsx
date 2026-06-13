@@ -9,30 +9,27 @@ import {
   ReadonlyPathField,
 } from "@lisca/ui/shell";
 
-import { useStudioAnnotatePage } from "../state/studio-annotate-page-context";
+import { useStudioAnnotateDock } from "../state/studio-annotate-page-selectors";
 import { annotationOutputPaths } from "../utils/annotation-output";
 
 export function StudioAnnotateDock() {
-  const { state } = useStudioAnnotatePage();
-  const paths = annotationOutputPaths(state.request, state.mode);
-  const shortcutsEnabled =
-    state.mode === "segmentation" &&
-    state.canEditSegmentation &&
-    !state.labelDialogOpen;
-  const canEditTools = state.mode === "segmentation" && shortcutsEnabled;
-  const toolActions = buildAnnotationToolActions(state.tool, state.setTool, !canEditTools);
-  const analysisBusy = Boolean(
-    state.analysisProgress &&
-      (state.analysisProgress.status === "queued" || state.analysisProgress.status === "running"),
-  );
-  const disableShuffle = state.scanLoading || state.scan === null || state.workspaceMissing;
-  const disableContinue = state.frameLoading || !state.request || analysisBusy || state.workspaceMissing;
+  const dock = useStudioAnnotateDock();
+  const paths = annotationOutputPaths(dock.request, dock.mode);
+  const canEditTools = dock.mode === "segmentation" && dock.shortcutsEnabled;
+  const toolActions = buildAnnotationToolActions(dock.tool, dock.setTool, !canEditTools);
+  const disableShuffle = dock.scanLoading || dock.scan === null || dock.workspaceMissing;
+  const disableContinue =
+    dock.frameLoading || !dock.request || dock.analysisBusy || dock.workspaceMissing;
 
   return (
     <DockStrip>
       <DockSection title="Tool">
-        {state.mode === "segmentation" ? (
-          <AnnotationToolGrid canEditTools={canEditTools} toolActions={toolActions} />
+        {dock.mode === "segmentation" ? (
+          <AnnotationToolGrid
+            canEditTools={canEditTools}
+            shortcutsEnabled={dock.shortcutsEnabled}
+            toolActions={toolActions}
+          />
         ) : (
           <div className="flex min-h-[4.5rem] items-center justify-center text-muted-foreground text-xs">
             Classification
@@ -56,13 +53,13 @@ export function StudioAnnotateDock() {
           )}
           <Button
             className="w-full justify-center"
-            disabled={!state.canSave}
+            disabled={!dock.canSave}
             size="sm"
             type="button"
             variant="outline"
-            onClick={() => void state.handleSave()}
+            onClick={() => void dock.handleSave()}
           >
-            {state.saving ? "Saving…" : "Save"}
+            {dock.saving ? "Saving…" : "Save"}
           </Button>
         </div>
       </DockSection>
@@ -74,7 +71,7 @@ export function StudioAnnotateDock() {
             size="sm"
             type="button"
             variant="outline"
-            onClick={state.shuffleSelection}
+            onClick={dock.shuffleSelection}
           >
             Shuffle
           </Button>
@@ -84,7 +81,7 @@ export function StudioAnnotateDock() {
             size="sm"
             type="button"
             variant="outline"
-            onClick={state.requestContinueToAnalysis}
+            onClick={dock.requestContinueToAnalysis}
           >
             Continue to analysis
           </Button>

@@ -33,7 +33,7 @@ export function PathButton(props: {
       onPress={disabled ? undefined : props.onPress}
     >
       {props.icon ? <View className="shrink-0">{props.icon}</View> : null}
-      <Text className="min-w-0 shrink truncate font-normal" numberOfLines={1}>
+      <Text className="min-w-0 shrink truncate text-sm font-normal" numberOfLines={1}>
         {display}
       </Text>
     </UiButton>

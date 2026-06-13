@@ -27,8 +27,8 @@ function ConnectionStatusContent(props: {
   return (
     <>
       <View className={cn("h-2 w-2 shrink-0 rounded-full", DOT_CLASS[props.state])} />
-      <Text className="shrink-0 font-medium text-foreground">{props.title}</Text>
-      <Text className="shrink-0 text-foreground/70">{props.statusLabel}</Text>
+      <Text className="shrink-0 text-sm font-medium text-foreground">{props.title}</Text>
+      <Text className="shrink-0 text-sm text-foreground/70">{props.statusLabel}</Text>
     </>
   );
 }

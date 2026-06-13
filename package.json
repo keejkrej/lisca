@@ -49,6 +49,7 @@
     "typecheck": "turbo run typecheck"
   },
   "devDependencies": {
+    "@babel/plugin-transform-react-jsx": "7.28.6",
     "@types/node": "catalog:",
     "oxfmt": "^0.48.0",
     "oxlint": "^1.63.0",

@@ -1,13 +1,7 @@
-import {
-  Button,
-  DialogActions,
-  DialogDescriptionText,
-  DialogSurface,
-  DialogTitleText,
-  ModalScrim,
-  Text,
-} from "@lisca/ui-native";
+import { cropConfirmCopy } from "@lisca/ui-native/features";
+import { Button, DialogActions, DialogDescriptionText, DialogSurface, DialogTitleText, ModalScrim, Text } from "@lisca/ui-native";
 
+import { useStudioAlignCrop } from "../state/studio-align-page-selectors";
 import type { StudioAlignState } from "../state/use-studio-align-state";
 
 export function StudioCropStartModal({ state }: { state: StudioAlignState }) {
@@ -23,10 +17,10 @@ export function StudioCropStartModal({ state }: { state: StudioAlignState }) {
         </DialogDescriptionText>
         <DialogActions>
           <Button size="sm" variant="outline" onPress={state.cancelCropStartConfirm}>
-            <Text className="text-xs">Cancel</Text>
+            <Text>Cancel</Text>
           </Button>
           <Button size="sm" onPress={state.startConfirmedCrop}>
-            <Text className="text-xs">Start</Text>
+            <Text>Start</Text>
           </Button>
         </DialogActions>
       </DialogSurface>
@@ -34,31 +28,34 @@ export function StudioCropStartModal({ state }: { state: StudioAlignState }) {
   );
 }
 
-export function StudioCropConfirmModal({ state }: { state: StudioAlignState }) {
-  const confirm = state.cropConfirm;
+export function StudioCropConfirmModal() {
+  const crop = useStudioAlignCrop();
+  const confirm = crop.cropConfirm;
   if (!confirm) return null;
 
+  const copy = cropConfirmCopy({
+    existingCount: confirm.existingPositions.length,
+    totalCount: confirm.positions.length,
+  });
   const existingList = confirm.existingPositions.map((pos) => `Pos${pos}`).join(", ");
 
   return (
-    <ModalScrim open onClose={state.cancelCropConfirm}>
+    <ModalScrim open onClose={crop.cancelCropConfirm}>
       <DialogSurface>
-        <DialogTitleText>ROI output already exists</DialogTitleText>
-        <DialogDescriptionText>
-          {`${confirm.existingPositions.length} of ${confirm.positions.length} saved positions already have ROI output. Overwrite those folders or skip them and crop only the remaining positions.`}
-        </DialogDescriptionText>
-        <DialogDescriptionText className="mt-2" numberOfLines={4}>
+        <DialogTitleText>{copy.title}</DialogTitleText>
+        <DialogDescriptionText>{copy.description}</DialogDescriptionText>
+        <DialogDescriptionText className="max-h-20 text-xs text-muted-foreground">
           {existingList}
         </DialogDescriptionText>
         <DialogActions className="mt-4">
-          <Button size="sm" variant="outline" onPress={state.cancelCropConfirm}>
-            <Text className="text-xs">Cancel</Text>
+          <Button size="sm" variant="outline" onPress={crop.cancelCropConfirm}>
+            <Text>Cancel</Text>
           </Button>
-          <Button size="sm" variant="outline" onPress={state.skipExistingCrop}>
-            <Text className="text-xs">Skip Existing</Text>
+          <Button size="sm" variant="outline" onPress={crop.skipExistingCrop}>
+            <Text>Skip Existing</Text>
           </Button>
-          <Button size="sm" onPress={state.confirmCropOverwrite}>
-            <Text className="text-xs">Overwrite</Text>
+          <Button size="sm" onPress={crop.confirmCropOverwrite}>
+            <Text>Overwrite</Text>
           </Button>
         </DialogActions>
       </DialogSurface>

@@ -7,24 +7,24 @@ import {
   toAxisNavigationOptions,
 } from "@lisca/ui/features";
 
-import { useStudioAnnotatePage } from "../state/studio-annotate-page-context";
+import { useStudioAnnotateNav } from "../state/studio-annotate-page-selectors";
 
 export function StudioAnnotateNav() {
-  const { state } = useStudioAnnotatePage();
+  const nav = useStudioAnnotateNav();
   const positionOptions = toAxisNavigationOptions(
-    state.scan?.positions.map((entry) => entry.pos) ?? [],
+    nav.scan?.positions.map((entry) => entry.pos) ?? [],
   );
   const roiOptions =
-    state.position?.rois.map((entry) => ({
+    nav.position?.rois.map((entry) => ({
       value: entry.roi,
       label: String(entry.roi),
     })) ?? [];
-  const channelOptions = toAxisNavigationOptions(state.position?.channels ?? []);
-  const posValue = state.selection.pos ?? positionOptions[0]?.value ?? 0;
-  const roiValue = state.selection.roi ?? roiOptions[0]?.value ?? 0;
-  const channelValue = state.selection.channel ?? channelOptions[0]?.value ?? 0;
+  const channelOptions = toAxisNavigationOptions(nav.position?.channels ?? []);
+  const posValue = nav.selection.pos ?? positionOptions[0]?.value ?? 0;
+  const roiValue = nav.selection.roi ?? roiOptions[0]?.value ?? 0;
+  const channelValue = nav.selection.channel ?? channelOptions[0]?.value ?? 0;
 
-  if (state.workspaceMissing) {
+  if (nav.workspaceMissing) {
     return (
       <div className="flex w-72 shrink-0 flex-col gap-2 p-3">
         <p className="text-destructive text-sm">Set a save location in Basic info first.</p>
@@ -43,8 +43,8 @@ export function StudioAnnotateNav() {
           nextDisabled:
             findNavigationOptionIndex(positionOptions, posValue) >= positionOptions.length - 1,
           onChange: (value) =>
-            state.changeSelection(() =>
-              state.setSelection({
+            nav.changeSelection(() =>
+              nav.setSelection({
                 pos: value,
                 roi: null,
               }),
@@ -52,8 +52,8 @@ export function StudioAnnotateNav() {
           onPrevious: () => {
             const next = stepNavigationValue(positionOptions, posValue, -1);
             if (next != null)
-              state.changeSelection(() =>
-                state.setSelection({
+              nav.changeSelection(() =>
+                nav.setSelection({
                   pos: next,
                   roi: null,
                 }),
@@ -62,8 +62,8 @@ export function StudioAnnotateNav() {
           onNext: () => {
             const next = stepNavigationValue(positionOptions, posValue, 1);
             if (next != null)
-              state.changeSelection(() =>
-                state.setSelection({
+              nav.changeSelection(() =>
+                nav.setSelection({
                   pos: next,
                   roi: null,
                 }),
@@ -77,16 +77,16 @@ export function StudioAnnotateNav() {
           previousDisabled: findNavigationOptionIndex(roiOptions, roiValue) <= 0,
           nextDisabled: findNavigationOptionIndex(roiOptions, roiValue) >= roiOptions.length - 1,
           onChange: (value) =>
-            state.changeSelection(() =>
-              state.setSelection({
+            nav.changeSelection(() =>
+              nav.setSelection({
                 roi: value,
               }),
             ),
           onPrevious: () => {
             const next = stepNavigationValue(roiOptions, roiValue, -1);
             if (next != null)
-              state.changeSelection(() =>
-                state.setSelection({
+              nav.changeSelection(() =>
+                nav.setSelection({
                   roi: next,
                 }),
               );
@@ -94,8 +94,8 @@ export function StudioAnnotateNav() {
           onNext: () => {
             const next = stepNavigationValue(roiOptions, roiValue, 1);
             if (next != null)
-              state.changeSelection(() =>
-                state.setSelection({
+              nav.changeSelection(() =>
+                nav.setSelection({
                   roi: next,
                 }),
               );
@@ -109,16 +109,16 @@ export function StudioAnnotateNav() {
           nextDisabled:
             findNavigationOptionIndex(channelOptions, channelValue) >= channelOptions.length - 1,
           onChange: (value) =>
-            state.changeSelection(() =>
-              state.setSelection({
+            nav.changeSelection(() =>
+              nav.setSelection({
                 channel: value,
               }),
             ),
           onPrevious: () => {
             const next = stepNavigationValue(channelOptions, channelValue, -1);
             if (next != null)
-              state.changeSelection(() =>
-                state.setSelection({
+              nav.changeSelection(() =>
+                nav.setSelection({
                   channel: next,
                 }),
               );
@@ -126,29 +126,29 @@ export function StudioAnnotateNav() {
           onNext: () => {
             const next = stepNavigationValue(channelOptions, channelValue, 1);
             if (next != null)
-              state.changeSelection(() =>
-                state.setSelection({
+              nav.changeSelection(() =>
+                nav.setSelection({
                   channel: next,
                 }),
               );
           },
         }}
         timepoint={createAxisIndexSliderControl({
-          axisValues: state.position?.times,
-          index: state.selection.timeIndex,
+          axisValues: nav.position?.times,
+          index: nav.selection.timeIndex,
           onIndexChange: (timeIndex) =>
-            state.changeSelection(() =>
-              state.setSelection({
+            nav.changeSelection(() =>
+              nav.setSelection({
                 timeIndex,
               }),
             ),
         })}
         zPlane={createAxisIndexSliderControl({
-          axisValues: state.position?.zSlices,
-          index: state.selection.zIndex,
+          axisValues: nav.position?.zSlices,
+          index: nav.selection.zIndex,
           onIndexChange: (zIndex) =>
-            state.changeSelection(() =>
-              state.setSelection({
+            nav.changeSelection(() =>
+              nav.setSelection({
                 zIndex,
               }),
             ),
@@ -156,11 +156,11 @@ export function StudioAnnotateNav() {
       />
       <ContrastControl
         aria-label="Contrast"
-        contrast={state.contrast}
-        disabled={!state.frame}
-        frame={state.frame}
+        contrast={nav.contrast}
+        disabled={!nav.frame}
+        frame={nav.frame}
         role="region"
-        onContrastChange={state.setContrast}
+        onContrastChange={nav.setContrast}
       />
     </div>
   );

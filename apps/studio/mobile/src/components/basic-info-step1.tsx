@@ -7,16 +7,20 @@ import {
   FolderSourceParseModal,
   HostFilePickerDialog,
   Input,
-  Section,
   SourcePickerModal,
   type HostFilePickerOperations,
 } from "@lisca/ui-native";
 import { useState } from "react";
-import { Pressable, View } from "react-native";
+import { Platform, Pressable, View } from "react-native";
 
 import { useStudioMemoryRecent } from "../hooks/use-studio-memory-recent";
 import { useStudioStore } from "../state/studio-store";
 import { recordStudioSourceMemory, recordStudioWorkspaceMemory } from "../utils/studio-memory";
+import {
+  basicInfoContainerClassName,
+  basicInfoFieldLabelClassName,
+  basicInfoRowClassName,
+} from "./basic-info-layout";
 import { useStudioProfile } from "./studio-profile-provider";
 
 type StudioPathPickerState = null | { kind: "save" } | { kind: "source"; mode: HostFilePickerMode };
@@ -89,10 +93,10 @@ export function BasicInfoStep1({ hostPort }: { hostPort: HostFilePickerOperation
 
   return (
     <>
-      <View className="w-full gap-2">
-        <Section contentClassName="gap-2" title="Name">
-          <Field className="w-full">
-            <FieldLabel>Name</FieldLabel>
+      <View className={basicInfoContainerClassName}>
+        <View className={basicInfoRowClassName}>
+          <Field className="gap-2.5">
+            <FieldLabel className={basicInfoFieldLabelClassName}>Name</FieldLabel>
             <Input
               autoComplete="off"
               placeholder="My assay"
@@ -100,37 +104,44 @@ export function BasicInfoStep1({ hostPort }: { hostPort: HostFilePickerOperation
               onChangeText={(name) => setInfo1({ name })}
             />
           </Field>
-        </Section>
-        <Section contentClassName="gap-2" title="Date">
-          <Field className="w-full">
-            <FieldLabel>Date</FieldLabel>
+        </View>
+        <View className={basicInfoRowClassName}>
+          <Field className="gap-2.5">
+            <FieldLabel className={basicInfoFieldLabelClassName}>Date</FieldLabel>
             <Input
-              placeholder="YYYY-MM-DD"
+              placeholder={Platform.OS === "web" ? undefined : "YYYY-MM-DD"}
+              {...(Platform.OS === "web" ? ({ type: "date" } as object) : {})}
               value={info1.date}
               onChangeText={(date) => setInfo1({ date })}
             />
           </Field>
-        </Section>
-        <Section contentClassName="gap-2" title="Data path">
-          <Pressable onPress={() => setOpenDataModalOpen(true)}>
-            <Input
-              editable={false}
-              pointerEvents="none"
-              placeholder="Click to choose source…"
-              value={info1.dataPath}
-            />
-          </Pressable>
-        </Section>
-        <Section contentClassName="gap-2" title="Save to">
-          <Pressable onPress={() => setPathPicker({ kind: "save" })}>
-            <Input
-              editable={false}
-              pointerEvents="none"
-              placeholder="Click to choose folder…"
-              value={info1.saveTo}
-            />
-          </Pressable>
-        </Section>
+        </View>
+        <View className={basicInfoRowClassName}>
+          <Field className="gap-2.5">
+            <FieldLabel className={basicInfoFieldLabelClassName}>Data path</FieldLabel>
+            <Pressable onPress={() => setOpenDataModalOpen(true)}>
+              <Input
+                editable={false}
+                pointerEvents="none"
+                placeholder="Click to choose source…"
+                value={info1.dataPath}
+              />
+            </Pressable>
+          </Field>
+        </View>
+        <View className={basicInfoRowClassName}>
+          <Field className="gap-2.5">
+            <FieldLabel className={basicInfoFieldLabelClassName}>Save to</FieldLabel>
+            <Pressable onPress={() => setPathPicker({ kind: "save" })}>
+              <Input
+                editable={false}
+                pointerEvents="none"
+                placeholder="Click to choose folder…"
+                value={info1.saveTo}
+              />
+            </Pressable>
+          </Field>
+        </View>
       </View>
 
       <SourcePickerModal

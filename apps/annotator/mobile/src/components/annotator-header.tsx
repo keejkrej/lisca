@@ -16,7 +16,7 @@ export function AnnotatorHeader() {
             variant="outline"
             onPress={shell.openLabelDialog}
           >
-            <Text className="text-xs">Create labels</Text>
+            <Text className="text-sm">Create labels</Text>
           </Button>
         }
         onPickWorkspace={() => shell.setFilePickerOpen(true)}

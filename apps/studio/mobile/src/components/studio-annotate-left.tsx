@@ -39,25 +39,6 @@ export function StudioAnnotateLeft() {
   return (
     <SidebarStack>
       <FrameNavigation
-        channel={{
-          value: channelValue,
-          options: channelOptions,
-          disabled: channelOptions.length === 0,
-          previousDisabled: findNavigationOptionIndex(channelOptions, channelValue) <= 0,
-          nextDisabled:
-            findNavigationOptionIndex(channelOptions, channelValue) >= channelOptions.length - 1,
-          onChange: (value) => nav.changeSelection(() => nav.setSelection({ channel: value })),
-          onPrevious: () => {
-            const next = stepNavigationValue(channelOptions, channelValue, -1);
-            if (next != null)
-              nav.changeSelection(() => nav.setSelection({ channel: next }));
-          },
-          onNext: () => {
-            const next = stepNavigationValue(channelOptions, channelValue, 1);
-            if (next != null)
-              nav.changeSelection(() => nav.setSelection({ channel: next }));
-          },
-        }}
         position={{
           value: posValue,
           options: positionOptions,
@@ -92,6 +73,25 @@ export function StudioAnnotateLeft() {
           onNext: () => {
             const next = stepNavigationValue(roiOptions, roiValue, 1);
             if (next != null) nav.changeSelection(() => nav.setSelection({ roi: next }));
+          },
+        }}
+        channel={{
+          value: channelValue,
+          options: channelOptions,
+          disabled: channelOptions.length === 0,
+          previousDisabled: findNavigationOptionIndex(channelOptions, channelValue) <= 0,
+          nextDisabled:
+            findNavigationOptionIndex(channelOptions, channelValue) >= channelOptions.length - 1,
+          onChange: (value) => nav.changeSelection(() => nav.setSelection({ channel: value })),
+          onPrevious: () => {
+            const next = stepNavigationValue(channelOptions, channelValue, -1);
+            if (next != null)
+              nav.changeSelection(() => nav.setSelection({ channel: next }));
+          },
+          onNext: () => {
+            const next = stepNavigationValue(channelOptions, channelValue, 1);
+            if (next != null)
+              nav.changeSelection(() => nav.setSelection({ channel: next }));
           },
         }}
         timepoint={createAxisIndexSliderControl({

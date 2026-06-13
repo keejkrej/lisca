@@ -1,3 +1,5 @@
+import type { AnalysisProgress } from "@lisca/contracts";
+import { clamp } from "@lisca/utils";
 import {
   Button,
   DialogActions,
@@ -11,9 +13,14 @@ import {
 } from "@lisca/ui-native";
 import { View } from "react-native";
 
-import type { StudioAnnotateState } from "../state/use-studio-annotate-state";
+import { useStudioAnnotatePage } from "../state/studio-annotate-page-context";
 
-export function StudioAnalysisStartModal({ state }: { state: StudioAnnotateState }) {
+function isDoneStatus(status: AnalysisProgress["status"]) {
+  return status === "completed" || status === "error";
+}
+
+export function StudioAnalysisStartModal() {
+  const { state } = useStudioAnnotatePage();
   if (!state.analysisStartConfirm) return null;
 
   return (
@@ -28,10 +35,10 @@ export function StudioAnalysisStartModal({ state }: { state: StudioAnnotateState
           saved under annotations/ will remain in the workspace.
         </DialogDescriptionText>
         <DialogActions>
-          <Button variant="outline" onPress={() => state.setAnalysisStartConfirm(false)}>
+          <Button size="sm" variant="outline" onPress={() => state.setAnalysisStartConfirm(false)}>
             <Text>Cancel</Text>
           </Button>
-          <Button onPress={state.startAnalysis}>
+          <Button size="sm" onPress={state.startAnalysis}>
             <Text>Start</Text>
           </Button>
         </DialogActions>
@@ -40,23 +47,25 @@ export function StudioAnalysisStartModal({ state }: { state: StudioAnnotateState
   );
 }
 
-export function StudioAnalysisProgressModal({ state }: { state: StudioAnnotateState }) {
+export function StudioAnalysisProgressModal() {
+  const { state } = useStudioAnnotatePage();
   const progress = state.analysisProgress;
-  if (!progress) return null;
-  if (progress.status !== "queued" && progress.status !== "running") return null;
+  if (!progress || isDoneStatus(progress.status)) return null;
+
+  const pct = clamp(progress.progress, 0, 100);
 
   return (
     <ModalScrim open onClose={() => undefined}>
       <DialogSurface maxWidth={360}>
-        <DialogTitleText>Analysis in progress</DialogTitleText>
+        <DialogTitleText>Running analysis</DialogTitleText>
         <View className="flex-row items-center gap-3">
           <Spinner />
-          <DialogDescriptionText className="mb-0 flex-1">
-            {progress.message ?? progress.stage}
+          <DialogDescriptionText className="mb-0 min-w-0 flex-1" numberOfLines={1}>
+            {progress.message ?? "Working"}
           </DialogDescriptionText>
         </View>
-        <ShellProgress value={Math.round(progress.progress * 100)} />
-        <DialogDescriptionText>{Math.round(progress.progress * 100)}%</DialogDescriptionText>
+        <ShellProgress value={Math.round(pct)} />
+        <Text className="mt-2 text-xs tabular-nums text-muted-foreground">{Math.round(pct)}%</Text>
       </DialogSurface>
     </ModalScrim>
   );

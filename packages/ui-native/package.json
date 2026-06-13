@@ -20,6 +20,10 @@
     "./features": {
       "types": "./src/features/index.ts",
       "import": "./src/features/index.ts"
+    },
+    "./lib/utils": {
+      "types": "./lib/utils.ts",
+      "import": "./lib/utils.ts"
     }
   },
   "scripts": {

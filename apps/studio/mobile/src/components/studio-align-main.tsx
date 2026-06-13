@@ -1,6 +1,5 @@
 import {
   AlignCanvas,
-  CropProgressModal,
   cursorForAlignTool,
   useAlignCanvasGridHandlers,
   useCanvasTransientStatus,
@@ -8,13 +7,13 @@ import {
 } from "@lisca/ui-native";
 
 import { useStudioAlignPage } from "../state/studio-align-page-context";
-import { useStudioAlignCanvas, useStudioAlignCrop } from "../state/studio-align-page-selectors";
+import { useStudioAlignCanvas } from "../state/studio-align-page-selectors";
 import { StudioCropConfirmModal, StudioCropStartModal } from "./studio-crop-modals";
+import { StudioCropProgressModal } from "./studio-crop-progress-modal";
 
 export function StudioAlignMain() {
   const { state } = useStudioAlignPage();
   const canvas = useStudioAlignCanvas();
-  const crop = useStudioAlignCrop();
   const { handlePointerDown, handlePointerMove, handlePointerEnd, previewGrid } =
     useAlignCanvasGridHandlers({
       disabled: canvas.cropping,
@@ -63,8 +62,8 @@ export function StudioAlignMain() {
         />
       </ViewportCard>
       <StudioCropStartModal state={state} />
-      <StudioCropConfirmModal state={state} />
-      <CropProgressModal progress={crop.cropProgress} onCancel={() => void state.cancelCrop()} />
+      <StudioCropConfirmModal />
+      <StudioCropProgressModal />
     </>
   );
 }

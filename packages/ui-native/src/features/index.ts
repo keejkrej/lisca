@@ -105,4 +105,5 @@ export {
   type SelectNavigationControlProps,
   type SliderNavigationControlProps,
 } from "./navigation/frame-navigation";
+export { SelectPicker } from "./navigation/select-picker";
 export { ResultPanelChart, ResultPanelsGridView } from "./analysis/result-charts";

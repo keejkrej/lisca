@@ -210,10 +210,10 @@ export function FrameNavigation<T extends NavigationValue>(props: FrameNavigatio
     >
       <div className={className ?? "min-w-0 space-y-3"}>
         {position ? <SelectStepperField label="Position" {...position} /> : null}
+        {roi ? <SelectStepperField label="ROI" {...roi} /> : null}
         {channel ? <SelectStepperField label="Channel" {...channel} /> : null}
         {timepoint ? <SliderStepperField label="Timepoint" {...timepoint} /> : null}
         {zPlane ? <SliderStepperField label="Z plane" {...zPlane} /> : null}
-        {roi ? <SelectStepperField label="ROI" {...roi} /> : null}
       </div>
     </Section>
   );

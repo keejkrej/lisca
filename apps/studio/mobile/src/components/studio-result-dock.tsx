@@ -26,7 +26,7 @@ export function StudioResultDock(props: {
   return (
     <DockStrip>
       <DockSection fit="panel" title="Instruction">
-        <Text className="text-center text-sm leading-5 text-foreground">
+        <Text className="text-center text-sm leading-snug text-foreground" numberOfLines={4}>
           {props.instruction}
         </Text>
       </DockSection>
@@ -45,7 +45,7 @@ export function StudioResultDock(props: {
               variant={action.active ? "default" : "outline"}
               onPress={action.onSelect}
             >
-              <Text className="text-xs">{dockToolLabel(action.label, index)}</Text>
+              <Text>{dockToolLabel(action.label, index)}</Text>
             </Button>
           ))}
         </View>
@@ -63,7 +63,7 @@ export function StudioResultDock(props: {
             variant="outline"
             onPress={props.onSave}
           >
-            <Text className="text-xs">{props.saveLabel}</Text>
+            <Text>{props.saveLabel}</Text>
           </Button>
         </View>
       </DockSection>
