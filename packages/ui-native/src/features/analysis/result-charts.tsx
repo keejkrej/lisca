@@ -14,7 +14,8 @@ import { VictoryChartFromSpec } from "./victory/chart-from-spec";
 import { DEFAULT_RESULT_CHART_COLORS, type ResultChartColors } from "./victory/types";
 
 const EXPORT_WIDTH = 1200;
-const XL_GRID_MIN_WIDTH = 1280;
+/** Min container width for a two-column result chart grid on tablet landscape. */
+const TABLET_LANDSCAPE_MIN_WIDTH = 1024;
 
 export function ResultPanelChart(props: {
   panel: ResultPanel;
@@ -61,7 +62,7 @@ function panelLayout(section: ResultPlotSection, exportMode: boolean, containerW
       panelWidth: exportMode ? EXPORT_WIDTH - 32 : containerWidth,
     };
   }
-  const columns = exportMode ? 2 : containerWidth >= XL_GRID_MIN_WIDTH ? 2 : 1;
+  const columns = exportMode ? 2 : containerWidth >= TABLET_LANDSCAPE_MIN_WIDTH ? 2 : 1;
   const gap = 24;
   return {
     columns,

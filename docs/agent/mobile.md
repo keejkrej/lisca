@@ -56,3 +56,5 @@ Imaging uses `@shopify/react-native-skia`. Grid math and contrast live in `@lisc
 ## Studio results
 
 Plot parsing lives in `@lisca/analysis`. Native charts use `react-native-svg`; PDF export uses `buildResultPdfFromCaptures` + `studioClient.saveResultPdf`.
+
+Result chart grids switch to two columns when the plot container is at least **1024px** wide (`TABLET_LANDSCAPE_MIN_WIDTH` in `@lisca/ui-native/features/analysis/result-charts.tsx`) — tuned for tablet landscape, not desktop web breakpoints.

@@ -1,7 +1,7 @@
 import { liscaFontFamily } from "../../theme/typography";
 import type { ShellThemeColors, ShellThemeMode } from "../../theme/tokens";
 
-/** Matches web `buttonVariants` size `sm` / `icon-sm` in shell navbar. */
+/** Shell chrome control metrics (navbar buttons, dock toolbar row height). */
 export const shellChromeMetrics = {
   height: 32,
   radius: 10,
@@ -13,7 +13,7 @@ export const shellChromeMetrics = {
   iconButtonSize: 32,
 } as const;
 
-/** Web `shadow-xs/5` + `before:shadow-[0_1px_black/4%]` on outline controls in light mode. */
+/** Subtle elevation for outline controls in light mode. */
 export function shellOutlineElevation(mode: ShellThemeMode) {
   if (mode === "dark") return {};
   return {

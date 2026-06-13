@@ -7,6 +7,8 @@ import { Platform } from "react-native";
 
 export type { KeyboardShortcut, ShortcutModifiers } from "@lisca/ui-headless/shortcuts";
 
+export const keyboardShortcutsSupported = Platform.OS === "web";
+
 function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   return Boolean(target.closest("input, textarea, select, [contenteditable='true']"));

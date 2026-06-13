@@ -6,6 +6,7 @@ export {
   type VariationHistogramBin,
 } from "./features/studio/variation-score-histogram";
 export { StudioNavButton } from "./features/studio/studio-nav-button";
+export { DateInput } from "./features/studio/date-input";
 export { ShellThemeProvider, useShellTheme } from "./theme/shell-theme";
 export { NativeWindThemeSync } from "./theme/nativewind-theme-sync";
 export { ShellThemeToggle } from "./theme/shell-theme-toggle";

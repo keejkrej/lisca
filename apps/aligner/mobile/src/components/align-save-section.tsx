@@ -1,7 +1,7 @@
 import { ActivityIndicator, View } from "react-native";
 
 import { Text } from "@lisca/ui-native";
-import { Button, DockSection, dockSectionWidths, ReadonlyPathField } from "@lisca/ui-native/shell";
+import { Button, DockSection, ReadonlyPathField } from "@lisca/ui-native/shell";
 
 import { useAlignCrop, useAlignNav } from "../state/align-page-selectors";
 
@@ -13,7 +13,7 @@ export function AlignSaveSection() {
   const canCrop = Boolean(nav.workspacePath && nav.source && nav.frame && !crop.cropping);
 
   return (
-    <DockSection className={dockSectionWidths.save} title="Save">
+    <DockSection title="Save">
       <View className="w-full flex-col gap-2">
         <View className="grid w-full grid-cols-3 gap-2">
           <View className="min-w-0">

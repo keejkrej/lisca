@@ -18,9 +18,9 @@ import { Button } from "../../../components/ui/button";
 import { Icon } from "../../../components/ui/icon";
 import { Text } from "../../../components/ui/text";
 import { cn } from "../../../lib/utils";
-import { dockToolLabel, dockToolShortcuts, useKeyboardShortcuts } from "../../shell";
+import { dockToolLabel, dockToolShortcuts, keyboardShortcutsSupported, useKeyboardShortcuts } from "../../shell";
 import { DockSection } from "../../shell/regions/dock-section";
-import { dockLayoutClasses, dockSectionWidths } from "../../shell/regions/dock-layout";
+import { dockLayoutClasses } from "../../shell/regions/dock-layout";
 
 export type AlignToolSectionProps = {
   mode: AlignGridToolMode;
@@ -93,9 +93,9 @@ function renderAlignToolCell(
   onModeChange: (mode: AlignGridToolMode) => void,
   patternZoomLocked: boolean,
   onPatternZoomLockedChange: ((locked: boolean) => void) | undefined,
-  shortcutsEnabled: boolean,
+  showShortcutLabels: boolean,
 ) {
-  const label = shortcutsEnabled ? dockToolLabel(tool.label, index) : tool.label;
+  const label = showShortcutLabels ? dockToolLabel(tool.label, index) : tool.label;
 
   if (tool.mode === "zoom-pattern") {
     return (
@@ -157,7 +157,8 @@ export function AlignToolToolbar({
   shortcutsEnabled = true,
 }: AlignToolToolbarProps) {
   const toolActions = buildAlignToolActions(mode, onModeChange);
-  useKeyboardShortcuts(dockToolShortcuts(toolActions), { enabled: shortcutsEnabled });
+  const showShortcutLabels = keyboardShortcutsSupported && shortcutsEnabled;
+  useKeyboardShortcuts(dockToolShortcuts(toolActions), { enabled: showShortcutLabels });
 
   const cells = alignToolDefinitions.map((tool, index) =>
     renderAlignToolCell(
@@ -167,7 +168,7 @@ export function AlignToolToolbar({
       onModeChange,
       patternZoomLocked,
       onPatternZoomLockedChange,
-      shortcutsEnabled,
+      showShortcutLabels,
     ),
   );
 
@@ -200,7 +201,7 @@ export function AlignToolSection({
 }: AlignToolSectionProps) {
   return (
     <DockSection
-      className={cn(sectionClassName ?? dockLayoutClasses.section, dockSectionWidths.tool)}
+      className={cn(sectionClassName ?? dockLayoutClasses.section)}
       contentClassName={sectionContentClassName ?? dockLayoutClasses.content}
       contentStyle={sectionContentStyle}
       description={sectionDescription}

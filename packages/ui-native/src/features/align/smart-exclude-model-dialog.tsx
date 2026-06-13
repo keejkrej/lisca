@@ -40,8 +40,8 @@ export function SmartExcludeModelDialog({
             ? "Smart exclude needs a one-time download of the ResNet classifier (~45 MB) before it can score cells."
             : loading
               ? state.requiresDownload
-                ? "Downloading the smart exclusion model to your browser."
-                : "Loading the cached smart exclusion model from your browser."
+                ? "Downloading the smart exclusion model."
+                : "Loading the cached smart exclusion model."
               : "Preparing smart exclude…"}
         </Text>
         {loading ? (

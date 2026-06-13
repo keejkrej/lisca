@@ -6,6 +6,7 @@ import {
   dockLayoutClasses,
   dockToolLabel,
   dockToolShortcuts,
+  keyboardShortcutsSupported,
   useKeyboardShortcuts,
   type DockToolAction,
 } from "@lisca/ui-native";
@@ -19,8 +20,9 @@ export function StudioResultDock(props: {
   saveLabel: string;
   onSave: () => void;
 }) {
+  const showShortcutLabels = keyboardShortcutsSupported && props.shortcutsEnabled;
   useKeyboardShortcuts(dockToolShortcuts(props.toolActions), {
-    enabled: props.shortcutsEnabled,
+    enabled: showShortcutLabels,
   });
 
   return (
@@ -45,7 +47,9 @@ export function StudioResultDock(props: {
               variant={action.active ? "default" : "outline"}
               onPress={action.onSelect}
             >
-              <Text>{dockToolLabel(action.label, index)}</Text>
+              <Text>
+                {showShortcutLabels ? dockToolLabel(action.label, index) : action.label}
+              </Text>
             </Button>
           ))}
         </View>

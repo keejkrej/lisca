@@ -4,7 +4,6 @@ import {
   Button,
   DockSection,
   dockLayoutClasses,
-  dockSectionWidths,
   ReadonlyPathField,
   Text,
 } from "@lisca/ui-native";
@@ -17,11 +16,7 @@ export function AnnotatorSaveSection() {
   const paths = annotationOutputPaths(dock.request, dock.mode);
 
   return (
-    <DockSection
-      className={dockSectionWidths.save}
-      contentClassName={dockLayoutClasses.content}
-      title="Save"
-    >
+    <DockSection contentClassName={dockLayoutClasses.content} title="Save">
       <View className={dockLayoutClasses.stack}>
         {paths.length > 1 ? (
           <View className={dockLayoutClasses.cols2}>

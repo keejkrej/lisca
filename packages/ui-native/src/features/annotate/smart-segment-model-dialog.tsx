@@ -39,8 +39,8 @@ export function SmartSegmentModelDialog({
             ? "Smart needs a one-time download of the SlimSAM model (~40 MB) before your first click can run."
             : loading
               ? state.requiresDownload
-                ? "Downloading the SlimSAM model to your browser for local segmentation."
-                : "Loading the cached SlimSAM model from your browser."
+                ? "Downloading the SlimSAM model for local segmentation."
+                : "Loading the cached SlimSAM model."
               : "Preparing smart…"}
         </Text>
         {loading ? (

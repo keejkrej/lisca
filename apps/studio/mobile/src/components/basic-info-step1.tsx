@@ -6,12 +6,13 @@ import {
   FieldLabel,
   FolderSourceParseModal,
   HostFilePickerDialog,
+  DateInput,
   Input,
   SourcePickerModal,
   type HostFilePickerOperations,
 } from "@lisca/ui-native";
 import { useState } from "react";
-import { Platform, Pressable, View } from "react-native";
+import { Pressable, View } from "react-native";
 
 import { useStudioMemoryRecent } from "../hooks/use-studio-memory-recent";
 import { useStudioStore } from "../state/studio-store";
@@ -108,12 +109,7 @@ export function BasicInfoStep1({ hostPort }: { hostPort: HostFilePickerOperation
         <View className={basicInfoRowClassName}>
           <Field className="gap-2.5">
             <FieldLabel className={basicInfoFieldLabelClassName}>Date</FieldLabel>
-            <Input
-              placeholder={Platform.OS === "web" ? undefined : "YYYY-MM-DD"}
-              {...(Platform.OS === "web" ? ({ type: "date" } as object) : {})}
-              value={info1.date}
-              onChangeText={(date) => setInfo1({ date })}
-            />
+            <DateInput value={info1.date} onChangeText={(date) => setInfo1({ date })} />
           </Field>
         </View>
         <View className={basicInfoRowClassName}>

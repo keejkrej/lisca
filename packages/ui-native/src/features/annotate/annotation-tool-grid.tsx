@@ -2,7 +2,7 @@ import { View } from "react-native";
 
 import { Button } from "../../../components/ui/button";
 import { Text } from "../../../components/ui/text";
-import { useKeyboardShortcuts } from "../../shell";
+import { keyboardShortcutsSupported, useKeyboardShortcuts } from "../../shell";
 import { dockToolLabel, dockToolShortcuts, type DockToolAction } from "@lisca/ui-headless/dock";
 import {
   ANNOTATION_TOOL_DEFINITIONS,
@@ -30,11 +30,11 @@ export function AnnotationToolGrid(props: {
   className?: string;
   shortcutsEnabled?: boolean;
 }) {
+  const shortcutsActive = props.canEditTools && (props.shortcutsEnabled ?? true);
+  const showShortcutLabels = keyboardShortcutsSupported && shortcutsActive;
   useKeyboardShortcuts(dockToolShortcuts(props.toolActions), {
-    enabled: props.canEditTools && (props.shortcutsEnabled ?? true),
+    enabled: showShortcutLabels,
   });
-
-  const showShortcutLabels = props.shortcutsEnabled ?? true;
 
   const buttons = props.toolActions.map((action, index) => {
     const label = showShortcutLabels ? dockToolLabel(action.label, index) : action.label;

@@ -1,6 +1,6 @@
 /**
- * Semantic shell colors mapped from `@lisca/ui/coss-theme.css` (neutral palette).
- * Keep in sync with web `--background`, `--card`, `--popover`, `--primary`, etc.
+ * Semantic shell colors (neutral palette).
+ * Web clients use equivalent CSS custom properties in `@lisca/ui/coss-theme.css`.
  */
 export type ShellThemeMode = "light" | "dark";
 
@@ -25,9 +25,9 @@ export const shellThemeColors = {
     border: "#e5e5e5",
     input: "#e0e0e0",
     ring: "#a3a3a3",
-    /** Outline buttons — web `bg-popover` light / `dark:bg-input/32` */
+    /** Outline button fill in light mode. */
     outlineSurface: "#ffffff",
-    /** Text inputs, inactive toggles on card — web `bg-background` light / `dark:bg-input/32` */
+    /** Input and inactive control fill in light mode. */
     controlSurface: "#ffffff",
     success: "#22c55e",
   },
@@ -51,7 +51,7 @@ export const shellThemeColors = {
     border: "#262626",
     input: "#2e2e2e",
     ring: "#737373",
-    /** Outline buttons — web `dark:bg-input/32` (lighter than canvas background) */
+    /** Outline button fill in dark mode (slightly above canvas background). */
     outlineSurface: "#151515",
     controlSurface: "#151515",
     success: "#22c55e",

@@ -9,13 +9,7 @@ export function dockToolbarMinHeight(rows: number): number {
   return rows * dockToolbarRowHeight + (rows - 1) * dockToolbarGap;
 }
 
-/** Measured dock section widths at 1440px — keeps centered dock strip aligned with web. */
-export const dockSectionWidths = {
-  tool: "w-[375px] max-w-[375px] shrink-0",
-  save: "w-[420px] max-w-[420px] shrink-0",
-} as const;
-
-/** Tailwind class sets for dock toolbars — mirrors web dock grids. */
+/** Tailwind class sets for dock toolbars. */
 export const dockLayoutClasses = {
   section: "min-w-0",
   content: "min-h-0 w-full flex-1 justify-center gap-2",
