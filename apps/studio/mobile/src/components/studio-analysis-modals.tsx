@@ -15,6 +15,8 @@ import { View } from "react-native";
 
 import { useStudioAnnotatePage } from "../state/studio-annotate-page-context";
 
+const DIALOG_MAX_WIDTH = 448;
+
 function isDoneStatus(status: AnalysisProgress["status"]) {
   return status === "completed" || status === "error";
 }
@@ -25,23 +27,29 @@ export function StudioAnalysisStartModal() {
 
   return (
     <ModalScrim open onClose={() => state.setAnalysisStartConfirm(false)}>
-      <DialogSurface maxWidth={420}>
-        <DialogTitleText>Start analysis</DialogTitleText>
-        <DialogDescriptionText>
-          Run the analysis pipeline now and open results when finished?
-        </DialogDescriptionText>
-        <DialogDescriptionText>
-          assay.json will be saved to the workspace before analysis starts. Annotations already
-          saved under annotations/ will remain in the workspace.
-        </DialogDescriptionText>
-        <DialogActions>
-          <Button size="sm" variant="outline" onPress={() => state.setAnalysisStartConfirm(false)}>
-            <Text>Cancel</Text>
-          </Button>
-          <Button size="sm" onPress={state.startAnalysis}>
-            <Text>Start</Text>
-          </Button>
-        </DialogActions>
+      <DialogSurface maxWidth={DIALOG_MAX_WIDTH}>
+        <View className="gap-4">
+          <View className="gap-1">
+            <DialogTitleText className="text-base" tone="sans">
+              Start analysis
+            </DialogTitleText>
+            <DialogDescriptionText>
+              Run the analysis pipeline now and open results when finished?
+            </DialogDescriptionText>
+            <DialogDescriptionText>
+              assay.json will be saved to the workspace before analysis starts. Annotations already
+              saved under annotations/ will remain in the workspace.
+            </DialogDescriptionText>
+          </View>
+          <DialogActions>
+            <Button size="sm" variant="outline" onPress={() => state.setAnalysisStartConfirm(false)}>
+              <Text>Cancel</Text>
+            </Button>
+            <Button size="sm" onPress={state.startAnalysis}>
+              <Text>Start</Text>
+            </Button>
+          </DialogActions>
+        </View>
       </DialogSurface>
     </ModalScrim>
   );
@@ -56,15 +64,21 @@ export function StudioAnalysisProgressModal() {
 
   return (
     <ModalScrim open onClose={() => undefined}>
-      <DialogSurface maxWidth={360}>
-        <DialogTitleText>Running analysis</DialogTitleText>
+      <DialogSurface maxWidth={DIALOG_MAX_WIDTH}>
         <View className="flex-row items-center gap-3">
-          <Spinner />
-          <DialogDescriptionText className="mb-0 min-w-0 flex-1" numberOfLines={1}>
-            {progress.message ?? "Working"}
-          </DialogDescriptionText>
+          <Spinner size="small" />
+          <View className="min-w-0 flex-1">
+            <DialogTitleText className="text-base" tone="sans">
+              Running analysis
+            </DialogTitleText>
+            <DialogDescriptionText className="mb-0" numberOfLines={1}>
+              {progress.message ?? "Working"}
+            </DialogDescriptionText>
+          </View>
         </View>
-        <ShellProgress value={Math.round(pct)} />
+        <View className="mt-4">
+          <ShellProgress value={Math.round(pct)} />
+        </View>
         <Text className="mt-2 text-xs tabular-nums text-muted-foreground">{Math.round(pct)}%</Text>
       </DialogSurface>
     </ModalScrim>

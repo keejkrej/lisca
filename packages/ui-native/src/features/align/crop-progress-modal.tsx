@@ -9,6 +9,8 @@ import { DialogTitleText } from "../../shell/modal/dialog-copy";
 import { DialogSurface, ModalScrim } from "../../shell/modal/modal";
 import { Spinner } from "../../shell/regions/panel";
 
+const DIALOG_MAX_WIDTH = 448;
+
 export type CropProgressModalProps = {
   progress: CropRoiProgress | null;
   onCancel?: () => void;
@@ -20,22 +22,26 @@ export function CropProgressModal({ progress, onCancel }: CropProgressModalProps
 
   return (
     <ModalScrim open onClose={() => undefined}>
-      <DialogSurface accessibilityLabel="Cropping ROI output">
+      <DialogSurface accessibilityLabel="Cropping ROI output" maxWidth={DIALOG_MAX_WIDTH}>
         <View className="flex-row items-center gap-3">
           <Spinner size="small" />
           <View className="min-w-0 flex-1">
-            <DialogTitleText tone="sans">Cropping ROI output</DialogTitleText>
+            <DialogTitleText className="text-base" tone="sans">
+              Cropping ROI output
+            </DialogTitleText>
             <Text className="text-sm text-muted-foreground" numberOfLines={1}>
               {state.message}
             </Text>
           </View>
         </View>
-        <ShellProgress value={state.pct} />
-        <Text className="text-xs tabular-nums text-muted-foreground">
+        <View className="mt-4">
+          <ShellProgress value={state.pct} />
+        </View>
+        <Text className="mt-2 text-xs tabular-nums text-muted-foreground">
           {state.done} / {state.total}
         </Text>
         {onCancel ? (
-          <Button size="sm" variant="outline" onPress={onCancel}>
+          <Button className="mt-4 w-full" size="sm" variant="outline" onPress={onCancel}>
             <Text>Cancel</Text>
           </Button>
         ) : null}
