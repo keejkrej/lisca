@@ -2,7 +2,7 @@ import { HostFilePickerDialog, LabelCreationDialog } from "@lisca/ui/features";
 import { AppShell } from "@lisca/ui/shell";
 
 import { annotatorHostOperations } from "../api/annotator-port";
-import { useAnnotatePage } from "../state/annotate-page-context";
+import { useAnnotateShell } from "../state/annotate-page-selectors";
 import { AnnotatorDock } from "./annotator-dock";
 import { AnnotatorHeader } from "./annotator-header";
 import { AnnotatorLeft } from "./annotator-left";
@@ -10,7 +10,7 @@ import { AnnotatorMain } from "./annotator-main";
 import { AnnotatorRight } from "./annotator-right";
 
 export function AnnotatePage() {
-  const { state } = useAnnotatePage();
+  const shell = useAnnotateShell();
 
   return (
     <AppShell>
@@ -36,20 +36,20 @@ export function AnnotatePage() {
       <HostFilePickerDialog
         hostPort={annotatorHostOperations}
         mode="workspace"
-        open={state.filePickerOpen}
+        open={shell.filePickerOpen}
         title="Workspace folder"
-        onOpenChange={state.setFilePickerOpen}
-        onPickDirectory={state.pickWorkspace}
+        onOpenChange={shell.setFilePickerOpen}
+        onPickDirectory={shell.pickWorkspace}
         onPickFile={() => undefined}
       />
       <LabelCreationDialog
-        error={state.labelError}
-        labels={state.labels}
-        open={state.labelDialogOpen}
-        saving={state.saveLabelsPending}
-        workspacePath={state.workspacePath}
-        onOpenChange={state.setLabelDialogOpen}
-        onSave={(nextLabels) => void state.handleSaveLabels(nextLabels)}
+        error={shell.labelError}
+        labels={shell.labels}
+        open={shell.labelDialogOpen}
+        saving={shell.saveLabelsPending}
+        workspacePath={shell.workspacePath}
+        onOpenChange={shell.setLabelDialogOpen}
+        onSave={(nextLabels) => void shell.handleSaveLabels(nextLabels)}
       />
     </AppShell>
   );

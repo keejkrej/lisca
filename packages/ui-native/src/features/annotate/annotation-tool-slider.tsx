@@ -24,7 +24,7 @@ export function AnnotationToolSlider(props: {
         maximumValue={props.max}
         minimumValue={props.min}
         step={props.step}
-        style={{ width: "100%" }}
+        style={{ height: 4, width: "100%" }}
         value={props.value}
         onValueChange={props.onChange}
       />

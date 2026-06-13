@@ -1,11 +1,25 @@
+import { Button } from "@lisca/ui/components";
 import { ShellNavbar } from "@lisca/ui/shell";
 
-import { useAnnotatePage } from "../state/annotate-page-context";
+import { useAnnotateShell } from "../state/annotate-page-selectors";
 
 export function AnnotatorHeader() {
-  const { state } = useAnnotatePage();
+  const shell = useAnnotateShell();
 
   return (
-    <ShellNavbar.Annotator onPickWorkspace={() => state.setFilePickerOpen(true)} />
+    <ShellNavbar.Annotator
+      endLeading={
+        <Button
+          disabled={!shell.workspacePath}
+          size="sm"
+          type="button"
+          variant="outline"
+          onClick={shell.openLabelDialog}
+        >
+          Create labels
+        </Button>
+      }
+      onPickWorkspace={() => shell.setFilePickerOpen(true)}
+    />
   );
 }

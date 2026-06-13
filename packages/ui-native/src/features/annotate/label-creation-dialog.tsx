@@ -1,54 +1,71 @@
 import type { AnnotationLabel } from "@lisca/contracts";
 import { normalizeLabelId, useLabelCreationForm } from "@lisca/ui-headless/label-creation-form";
+import { ActivityIndicator, ScrollView, View } from "react-native";
+
+import { Button } from "../../../components/ui/button";
+import { Field, FieldLabel } from "../../../components/ui/field";
+import { Input } from "../../../components/ui/input";
+import { Text } from "../../../components/ui/text";
 import {
-  Button,
-  DialogBody,
   DialogDescriptionText,
   DialogErrorText,
+  DialogTitleText,
+} from "../../shell/modal/dialog-copy";
+import {
+  DialogBody,
   DialogFooter,
   DialogHeader,
   DialogSurface,
-  DialogTitleText,
-  Field,
-  FieldLabel,
-  Input,
   ModalScrim,
-  Text,
-} from "@lisca/ui-native";
-import { ActivityIndicator, ScrollView, View } from "react-native";
+} from "../../shell/modal/modal";
 
-export function LabelCreationDialog(props: {
+export type LabelCreationDialogProps = {
   open: boolean;
-  workspacePath: string | null;
   labels: AnnotationLabel[];
-  saving: boolean;
   error: string | null;
   onOpenChange: (open: boolean) => void;
   onSave: (labels: AnnotationLabel[]) => void;
-}) {
-  const form = useLabelCreationForm({
-    open: props.open,
-    labels: props.labels,
-    error: props.error,
-  });
+  title?: string;
+  subtitle?: string;
+  workspacePath?: string | null;
+  saving?: boolean;
+  saveLabel?: string;
+};
+
+export function LabelCreationDialog({
+  open,
+  labels,
+  error,
+  onOpenChange,
+  onSave,
+  title = "Create labels",
+  subtitle,
+  workspacePath = null,
+  saving = false,
+  saveLabel = "Save labels",
+}: LabelCreationDialogProps) {
+  const form = useLabelCreationForm({ open, labels, error });
+
+  const resolvedSubtitle =
+    subtitle ?? (workspacePath != null ? workspacePath : "Select a workspace first");
 
   const submit = () => {
-    const labels = form.submit();
-    if (labels) props.onSave(labels);
+    const nextLabels = form.submit();
+    if (nextLabels) onSave(nextLabels);
   };
 
   return (
-    <ModalScrim open={props.open} onClose={() => props.onOpenChange(false)}>
+    <ModalScrim open={open} onClose={() => onOpenChange(false)}>
       <DialogSurface maxWidth={640} padded={false}>
         <DialogHeader>
           <View className="w-full flex-row items-start justify-between gap-3">
             <View className="min-w-0 flex-1">
-              <DialogTitleText>Create labels</DialogTitleText>
+              <DialogTitleText>{title}</DialogTitleText>
               <DialogDescriptionText className="mt-0.5" numberOfLines={1}>
-                {props.workspacePath ?? "Select a workspace first"}
+                {resolvedSubtitle}
               </DialogDescriptionText>
             </View>
-            <Button size="sm" variant="ghost" onPress={() => props.onOpenChange(false)}>
+            <Button size="sm" variant="ghost" onPress={() => onOpenChange(false)}>
               <Text className="text-xs">Close</Text>
             </Button>
           </View>
@@ -107,15 +124,11 @@ export function LabelCreationDialog(props: {
 
         <DialogFooter>
           <View className="w-full flex-row justify-end gap-2">
-            <Button variant="outline" onPress={() => props.onOpenChange(false)}>
+            <Button variant="outline" onPress={() => onOpenChange(false)}>
               <Text>Cancel</Text>
             </Button>
-            <Button disabled={!props.workspacePath} onPress={submit}>
-              {props.saving ? (
-                <ActivityIndicator size="small" />
-              ) : (
-                <Text>Save labels</Text>
-              )}
+            <Button disabled={workspacePath != null ? !workspacePath : false} onPress={submit}>
+              {saving ? <ActivityIndicator size="small" /> : <Text>{saveLabel}</Text>}
             </Button>
           </View>
         </DialogFooter>

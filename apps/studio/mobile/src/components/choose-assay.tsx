@@ -26,11 +26,13 @@ export function ChooseAssay() {
           return (
             <View key={id} className="min-w-[140px] flex-grow basis-[45%]">
               <Button
+                className={selected ? "border-primary bg-primary/5 ring-2 ring-ring/20" : undefined}
                 disabled={disabled}
-                variant={selected ? "default" : "outline"}
+                size="lg"
+                variant="outline"
                 onPress={() => setAssayId(id)}
               >
-                <Text>{ASSAY_CHOICE_LABEL[id]}</Text>
+                <Text className="text-center text-sm font-medium">{ASSAY_CHOICE_LABEL[id]}</Text>
               </Button>
             </View>
           );

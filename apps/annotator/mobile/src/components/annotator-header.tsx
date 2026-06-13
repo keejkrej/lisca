@@ -1,25 +1,25 @@
 import { Button, ShellNavbar, Text } from "@lisca/ui-native";
 import { View } from "react-native";
 
-export function AnnotatorHeader(props: {
-  workspacePath: string | null;
-  onCreateLabels: () => void;
-  onPickWorkspace: () => void;
-}) {
+import { useAnnotateShell } from "../state/annotate-page-selectors";
+
+export function AnnotatorHeader() {
+  const shell = useAnnotateShell();
+
   return (
     <View className="flex-1 justify-center">
       <ShellNavbar.Annotator
         endLeading={
           <Button
-            disabled={!props.workspacePath}
+            disabled={!shell.workspacePath}
             size="sm"
             variant="outline"
-            onPress={props.onCreateLabels}
+            onPress={shell.openLabelDialog}
           >
             <Text className="text-xs">Create labels</Text>
           </Button>
         }
-        onPickWorkspace={props.onPickWorkspace}
+        onPickWorkspace={() => shell.setFilePickerOpen(true)}
       />
     </View>
   );

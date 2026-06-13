@@ -2,26 +2,28 @@ import { AnnotationCanvas, SmartSegmentModelDialog } from "@lisca/ui/features";
 import { ViewportCard } from "@lisca/ui/shell";
 import { useSmartSegment } from "@lisca/smart/segment/browser";
 import { useState } from "react";
-import { useAnnotatePage } from "../state/annotate-page-context";
+
+import { useAnnotateCanvas } from "../state/annotate-page-selectors";
 
 export function AnnotatorMain() {
-  const { state } = useAnnotatePage();
-  const classificationLabelId = state.annotation.current.classificationLabelId;
+  const canvas = useAnnotateCanvas();
+  const classificationLabelId = canvas.annotation.current.classificationLabelId;
   const [smartSegmentStatus, setSmartSegmentStatus] = useState<string | null>(null);
   const [smartSegmentError, setSmartSegmentError] = useState<string | null>(null);
-  const activeLabelValue = state.labels.findIndex((label) => label.id === state.activeLabelId) + 1;
+  const activeLabelValue =
+    canvas.labels.findIndex((label) => label.id === canvas.activeLabelId) + 1;
   const onMaskCommit = (mask: Uint8Array) => {
-    state.annotation.commit({
+    canvas.annotation.commit({
       classificationLabelId,
       mask,
     });
   };
   const smartSegment = useSmartSegment({
-    frame: state.frame,
-    tool: state.tool,
+    frame: canvas.frame,
+    tool: canvas.tool,
     activeLabelValue,
-    mask: state.annotation.current.mask,
-    enabled: state.canEditSegmentation,
+    mask: canvas.annotation.current.mask,
+    enabled: canvas.canEditSegmentation,
     onCommit: onMaskCommit,
     onStatus: setSmartSegmentStatus,
     onError: setSmartSegmentError,
@@ -29,8 +31,9 @@ export function AnnotatorMain() {
   const toasts = smartSegmentError
     ? [{ text: smartSegmentError, tone: "error" as const }]
     : smartSegmentStatus
-      ? [...state.canvasToasts, { text: smartSegmentStatus }]
-      : state.canvasToasts;
+      ? [...canvas.canvasToasts, { text: smartSegmentStatus }]
+      : canvas.canvasToasts;
+
   return (
     <ViewportCard>
       <SmartSegmentModelDialog
@@ -40,17 +43,17 @@ export function AnnotatorMain() {
         onConfirm={() => void smartSegment.confirmDownload()}
       />
       <AnnotationCanvas
-        activeLabelId={state.activeLabelId}
-        brushSize={state.brushSize}
+        activeLabelId={canvas.activeLabelId}
+        brushSize={canvas.brushSize}
         className="min-h-0 flex-1"
-        disabled={!state.canEditSegmentation || smartSegment.busy}
-        frame={state.frame}
-        labels={state.labels}
-        mask={state.annotation.current.mask}
-        overlayOpacity={state.overlayOpacity}
+        disabled={!canvas.canEditSegmentation || smartSegment.busy}
+        frame={canvas.frame}
+        labels={canvas.labels}
+        mask={canvas.annotation.current.mask}
+        overlayOpacity={canvas.overlayOpacity}
         smartSegmentPrompts={smartSegment.prompts}
         toasts={toasts}
-        tool={state.tool}
+        tool={canvas.tool}
         onMaskCommit={onMaskCommit}
         onSmartSegmentClick={(click) => void smartSegment.handleClick(click)}
         onSmartEraseClick={(click) => void smartSegment.handleEraseClick(click)}

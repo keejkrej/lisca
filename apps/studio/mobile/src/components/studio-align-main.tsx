@@ -6,62 +6,53 @@ import {
   useCanvasTransientStatus,
   ViewportCard,
 } from "@lisca/ui-native";
-import type { StudioAlignState } from "../state/use-studio-align-state";
+
+import { useStudioAlignPage } from "../state/studio-align-page-context";
+import { useStudioAlignCanvas, useStudioAlignCrop } from "../state/studio-align-page-selectors";
 import { StudioCropConfirmModal, StudioCropStartModal } from "./studio-crop-modals";
-export function StudioAlignMain({ state }: { state: StudioAlignState }) {
+
+export function StudioAlignMain() {
+  const { state } = useStudioAlignPage();
+  const canvas = useStudioAlignCanvas();
+  const crop = useStudioAlignCrop();
   const { handlePointerDown, handlePointerMove, handlePointerEnd, previewGrid } =
     useAlignCanvasGridHandlers({
-      disabled: state.cropping,
-      grid: state.grid,
-      patternZoomLocked: state.patternZoomLocked,
-      setGrid: state.setGrid,
-      toolMode: state.toolMode,
+      disabled: canvas.cropping,
+      grid: canvas.grid,
+      patternZoomLocked: canvas.patternZoomLocked,
+      setGrid: canvas.setGrid,
+      toolMode: canvas.toolMode,
     });
-  const visibleStatus = useCanvasTransientStatus(state.status);
-  const activeToastStatus = state.cropping
+  const visibleStatus = useCanvasTransientStatus(canvas.status);
+  const activeToastStatus = canvas.cropping
     ? "Cropping ROI output"
-    : state.saving || state.frameLoading
+    : canvas.saving || canvas.frameLoading
       ? "Loading frame"
-      : state.scanLoading
+      : canvas.scanLoading
         ? "Scanning source"
         : visibleStatus;
-  const positionIndex = state.alignPositions.indexOf(state.selection.pos);
-  const positionCount = state.alignPositions.length;
+  const positionIndex = canvas.alignPositions.indexOf(canvas.selection.pos);
+  const positionCount = canvas.alignPositions.length;
   const positionMessage =
     positionIndex >= 0 && positionCount > 0 ? `Pos ${positionIndex}/${positionCount}` : null;
-  const messages = (() => {
-    if (!positionMessage) return [];
-    return [
-      {
-        text: positionMessage,
-      },
-    ];
-  })();
-  const toasts = (() => {
-    if (state.error)
-      return [
-        {
-          text: state.error,
-          tone: "error" as const,
-        },
-      ];
-    if (activeToastStatus)
-      return [
-        {
-          text: activeToastStatus,
-        },
-      ];
-    return [];
-  })();
+  const messages = positionMessage ? [{ text: positionMessage }] : [];
+  const toasts = canvas.error
+    ? [{ text: canvas.error, tone: "error" as const }]
+    : activeToastStatus
+      ? [{ text: activeToastStatus }]
+      : [];
+
   return (
     <>
       <ViewportCard>
         <AlignCanvas
-          cursor={cursorForAlignTool(state.toolMode, state.grid.enabled, previewGrid != null)}
-          excludedCells={state.displayedExcludedCells}
-          frame={state.frame}
-          grid={state.grid}
-          loading={state.scanLoading || state.saving || state.frameLoading || state.cropping}
+          cursor={cursorForAlignTool(canvas.toolMode, canvas.grid.enabled, previewGrid != null)}
+          excludedCells={canvas.displayedExcludedCells}
+          frame={canvas.frame}
+          grid={canvas.grid}
+          loading={
+            canvas.scanLoading || canvas.saving || canvas.frameLoading || canvas.cropping
+          }
           messages={messages}
           previewGrid={previewGrid}
           toasts={toasts}
@@ -73,7 +64,7 @@ export function StudioAlignMain({ state }: { state: StudioAlignState }) {
       </ViewportCard>
       <StudioCropStartModal state={state} />
       <StudioCropConfirmModal state={state} />
-      <CropProgressModal progress={state.cropProgress} onCancel={() => void state.cancelCrop()} />
+      <CropProgressModal progress={crop.cropProgress} onCancel={() => void state.cancelCrop()} />
     </>
   );
 }

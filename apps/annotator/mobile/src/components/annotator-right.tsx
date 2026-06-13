@@ -1,81 +1,55 @@
-import type { AnnotationLabel } from "@lisca/contracts";
-import type { AnnotationMode } from "@lisca/ui-native/features";
 import {
   AnnotationModeToggle,
   AnnotationToolSlider,
   Button,
+  labelColorStyle,
   SidebarSection,
   SidebarStack,
-  labelColorStyle,
   Text,
 } from "@lisca/ui-native";
+import { createEmptyMask } from "@lisca/utils";
 import { Pressable, View } from "react-native";
 
-import type { AnnotationValue } from "../utils/annotation-utils";
+import { useAnnotateLabels } from "../state/annotate-page-selectors";
 
-export function AnnotatorRight(props: {
-  labels: AnnotationLabel[];
-  mode: AnnotationMode;
-  overlayOpacity: number;
-  brushSize: number;
-  activeLabelId: string | null;
-  annotation: AnnotationValue;
-  canEdit: boolean;
-  canUndo: boolean;
-  canRedo: boolean;
-  dirty: boolean;
-  scanLoading: boolean;
-  frameLoading: boolean;
-  annotationLoading: boolean;
-  scanError: string | null;
-  frameError: string | null;
-  annotationError: string | null;
-  saveError: string | null;
-  workspacePath: string | null;
-  onModeChange: (mode: AnnotationMode) => void;
-  onOverlayOpacityChange: (value: number) => void;
-  onBrushSizeChange: (value: number) => void;
-  onClassificationChange: (labelId: string | null) => void;
-  onPaintLabelChange: (labelId: string) => void;
-  onClear: () => void;
-  onUndo: () => void;
-  onRedo: () => void;
-  onDiscard: () => void;
-  onOpenLabelDialog: () => void;
-}) {
+export function AnnotatorRight() {
+  const labels = useAnnotateLabels();
   const activeError =
-    props.scanError ?? props.frameError ?? props.annotationError ?? props.saveError;
-  const loading = props.scanLoading || props.frameLoading || props.annotationLoading;
+    labels.scanError ?? labels.frameError ?? labels.annotationError ?? labels.saveError;
+  const loading = labels.scanLoading || labels.frameLoading || labels.annotationLoading;
 
   return (
     <SidebarStack>
       <SidebarSection title="Mode">
-        <AnnotationModeToggle mode={props.mode} onModeChange={props.onModeChange} />
+        <AnnotationModeToggle mode={labels.mode} onModeChange={labels.setMode} />
       </SidebarSection>
       <SidebarSection contentClassName="flex-row flex-wrap gap-2" title="Labels">
-        {props.labels.map((label) => {
+        {labels.labels.map((label) => {
           const selected =
-            props.mode === "classification"
-              ? props.annotation.classificationLabelId === label.id
-              : props.activeLabelId === label.id;
+            labels.mode === "classification"
+              ? labels.annotation.current.classificationLabelId === label.id
+              : labels.activeLabelId === label.id;
           const chipStyle = labelColorStyle(label, selected);
           return (
             <Pressable
               key={label.id}
               accessibilityRole="button"
-              accessibilityState={{ selected, disabled: !props.canEdit }}
+              accessibilityState={{ selected, disabled: !labels.canEdit }}
               className={
-                props.canEdit
+                labels.canEdit
                   ? "min-w-0 flex-grow basis-[47%] items-center justify-center rounded-lg border border-border px-2 py-2"
                   : "min-w-0 flex-grow basis-[47%] items-center justify-center rounded-lg border border-border px-2 py-2 opacity-50"
               }
-              disabled={!props.canEdit}
+              disabled={!labels.canEdit}
               style={chipStyle}
               onPress={() => {
-                if (props.mode === "classification") {
-                  props.onClassificationChange(selected ? null : label.id);
+                if (labels.mode === "classification") {
+                  labels.annotation.commit({
+                    classificationLabelId: selected ? null : label.id,
+                    mask: labels.annotation.current.mask,
+                  });
                 } else {
-                  props.onPaintLabelChange(label.id);
+                  labels.setActiveLabelId(label.id);
                 }
               }}
             >
@@ -89,13 +63,13 @@ export function AnnotatorRight(props: {
             </Pressable>
           );
         })}
-        {props.labels.length === 0 ? (
+        {labels.labels.length === 0 ? (
           <Button
             className="w-full"
-            disabled={!props.workspacePath}
+            disabled={!labels.workspacePath}
             size="sm"
             variant="outline"
-            onPress={props.onOpenLabelDialog}
+            onPress={labels.openLabelDialog}
           >
             <Text className="text-xs">Add</Text>
           </Button>
@@ -106,64 +80,70 @@ export function AnnotatorRight(props: {
       <SidebarSection contentClassName="flex-row flex-wrap gap-2" title="Edit">
         <View className="min-w-0 flex-grow basis-[47%]">
           <Button
-            disabled={!props.canUndo}
+            disabled={!labels.annotation.canUndo}
             size="sm"
             variant="outline"
-            onPress={props.onUndo}
+            onPress={labels.annotation.undo}
           >
             <Text className="text-xs">Undo</Text>
           </Button>
         </View>
         <View className="min-w-0 flex-grow basis-[47%]">
           <Button
-            disabled={!props.canRedo}
+            disabled={!labels.annotation.canRedo}
             size="sm"
             variant="outline"
-            onPress={props.onRedo}
+            onPress={labels.annotation.redo}
           >
             <Text className="text-xs">Redo</Text>
           </Button>
         </View>
         <View className="min-w-0 flex-grow basis-[47%]">
           <Button
-            disabled={props.mode !== "segmentation" || !props.canEdit}
+            disabled={labels.mode !== "segmentation" || !labels.canEdit}
             size="sm"
             variant="outline"
-            onPress={props.onClear}
+            onPress={() =>
+              labels.frame &&
+              labels.annotation.commit({
+                classificationLabelId: labels.annotation.current.classificationLabelId,
+                mask: createEmptyMask(labels.frame.width, labels.frame.height),
+              })
+            }
           >
             <Text className="text-xs">Clear</Text>
           </Button>
         </View>
         <View className="min-w-0 flex-grow basis-[47%]">
           <Button
-            disabled={!props.dirty}
+            disabled={!labels.annotation.dirty}
             size="sm"
             variant="outline"
-            onPress={props.onDiscard}
+            onPress={labels.annotation.discard}
           >
             <Text className="text-xs">Discard</Text>
           </Button>
         </View>
       </SidebarSection>
-      {props.mode === "segmentation" ? (
+      {labels.mode === "segmentation" ? (
         <SidebarSection contentClassName="gap-3" title="Brush">
           <AnnotationToolSlider
             label="Opacity"
             max={0.95}
             min={0.05}
             step={0.01}
-            value={props.overlayOpacity}
-            valueLabel={`${Math.round(props.overlayOpacity * 100)}%`}
-            onChange={props.onOverlayOpacityChange}
+            value={labels.overlayOpacity}
+            valueLabel={`${Math.round(labels.overlayOpacity * 100)}%`}
+            onChange={labels.setOverlayOpacity}
           />
           <AnnotationToolSlider
             label="Brush Size"
             max={32}
             min={1}
             step={1}
-            value={props.brushSize}
-            valueLabel={String(Math.round(props.brushSize))}
-            onChange={(value) => props.onBrushSizeChange(Math.round(value))}
+            value={labels.brushSize}
+            valueLabel={String(Math.round(labels.brushSize))}
+            onChange={(value) => labels.setBrushSize(Math.round(value))}
           />
         </SidebarSection>
       ) : null}

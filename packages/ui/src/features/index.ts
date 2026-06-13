@@ -103,6 +103,7 @@ export {
 export { HostFilePickerDialog, type HostFilePickerDialogProps } from "./host/host-file-picker-dialog";
 export type { HostFilePickerMode, HostFilePickerOperations } from "./host/host-operations";
 export { LabelCreationDialog, type LabelCreationDialogProps } from "./annotate/label-creation-dialog";
+export { labelColorStyle } from "@lisca/utils";
 export {
   SmartSegmentModelDialog,
   type SmartSegmentModelDialogProps,

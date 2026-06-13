@@ -6,12 +6,9 @@ import { StudioAlignMain } from "../src/components/studio-align-main";
 import { StudioLeft } from "../src/components/studio-left";
 import {
   StudioAlignPageProvider,
-  useStudioAlignPage,
 } from "../src/state/studio-align-page-context";
 
 function AlignRouteContent() {
-  const { state } = useStudioAlignPage();
-
   return (
     <AppShell>
       <AppShell.Body>
@@ -20,7 +17,7 @@ function AlignRouteContent() {
         </AppShell.Left>
         <AppShell.MainColumn>
           <AppShell.Main>
-            <StudioAlignMain state={state} />
+            <StudioAlignMain />
           </AppShell.Main>
           <AppShell.Dock>
             <StudioAlignDock />

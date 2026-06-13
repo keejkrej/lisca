@@ -6,39 +6,35 @@ import {
   DockStrip,
   ReadonlyPathField,
   dockLayoutClasses,
+  dockSectionWidths,
   dockToolbarMinHeight,
   Text,
 } from "@lisca/ui-native";
 import { ActivityIndicator, View } from "react-native";
 
-import type { StudioAnnotateState } from "../state/use-studio-annotate-state";
+import { useStudioAnnotateDock } from "../state/studio-annotate-page-selectors";
 import { annotationOutputPaths } from "../utils/annotation-output";
 
-export function StudioAnnotateDock({ state }: { state: StudioAnnotateState }) {
-  const paths = annotationOutputPaths(state.request, state.mode);
-  const shortcutsEnabled =
-    state.mode === "segmentation" && state.canEditSegmentation && !state.labelDialogOpen;
-  const canEditTools = state.mode === "segmentation" && shortcutsEnabled;
-  const toolActions = buildAnnotationToolActions(state.tool, state.setTool, !canEditTools);
-  const analysisBusy = Boolean(
-    state.analysisProgress &&
-      (state.analysisProgress.status === "queued" || state.analysisProgress.status === "running"),
-  );
-  const disableShuffle = state.scanLoading || state.scan === null || state.workspaceMissing;
+export function StudioAnnotateDock() {
+  const dock = useStudioAnnotateDock();
+  const paths = annotationOutputPaths(dock.request, dock.mode);
+  const canEditTools = dock.mode === "segmentation" && dock.shortcutsEnabled;
+  const toolActions = buildAnnotationToolActions(dock.tool, dock.setTool, !canEditTools);
+  const disableShuffle = dock.scanLoading || dock.scan === null || dock.workspaceMissing;
   const disableContinue =
-    state.frameLoading || !state.request || analysisBusy || state.workspaceMissing;
+    dock.frameLoading || !dock.request || dock.analysisBusy || dock.workspaceMissing;
 
   return (
     <DockStrip className="flex-wrap">
       <DockSection
+        className={dockSectionWidths.tool}
         contentClassName={dockLayoutClasses.content}
-        className={dockLayoutClasses.section}
         title="Tool"
       >
-        {state.mode === "segmentation" ? (
+        {dock.mode === "segmentation" ? (
           <AnnotationToolGrid
             canEditTools={canEditTools}
-            shortcutsEnabled={shortcutsEnabled}
+            shortcutsEnabled={dock.shortcutsEnabled}
             toolActions={toolActions}
           />
         ) : (
@@ -51,8 +47,8 @@ export function StudioAnnotateDock({ state }: { state: StudioAnnotateState }) {
         )}
       </DockSection>
       <DockSection
+        className={dockSectionWidths.save}
         contentClassName={dockLayoutClasses.content}
-        className={dockLayoutClasses.section}
         title="Save"
       >
         <View className={dockLayoutClasses.stack}>
@@ -69,12 +65,12 @@ export function StudioAnnotateDock({ state }: { state: StudioAnnotateState }) {
           )}
           <Button
             className={dockLayoutClasses.button}
-            disabled={!state.canSave}
+            disabled={!dock.canSave}
             size="sm"
             variant="outline"
-            onPress={() => void state.handleSave()}
+            onPress={() => void dock.handleSave()}
           >
-            {state.saving ? (
+            {dock.saving ? (
               <ActivityIndicator size="small" />
             ) : (
               <Text className="text-xs">Save</Text>
@@ -93,7 +89,7 @@ export function StudioAnnotateDock({ state }: { state: StudioAnnotateState }) {
             disabled={disableShuffle}
             size="sm"
             variant="outline"
-            onPress={state.shuffleSelection}
+            onPress={dock.shuffleSelection}
           >
             <Text className="text-xs">Shuffle</Text>
           </Button>
@@ -102,7 +98,7 @@ export function StudioAnnotateDock({ state }: { state: StudioAnnotateState }) {
             disabled={disableContinue}
             size="sm"
             variant="outline"
-            onPress={state.requestContinueToAnalysis}
+            onPress={dock.requestContinueToAnalysis}
           >
             <Text className="text-xs">Continue to analysis</Text>
           </Button>

@@ -29,6 +29,16 @@ export function maskHasPixels(mask: Uint8Array) {
   return mask.some((value) => value !== 0);
 }
 
+export function labelColorStyle(label: { color: string }, selected: boolean) {
+  const rgb = hexToRgb(label.color);
+  if (!rgb) return undefined;
+  return {
+    borderColor: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${selected ? 0.95 : 0.35})`,
+    backgroundColor: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${selected ? 0.18 : 0.1})`,
+    color: `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`,
+  };
+}
+
 export function hexToRgb(color: string): RgbColor | null {
   const value = color.trim();
   if (!value.startsWith("#")) return null;

@@ -18,7 +18,7 @@ export function StudioNavButton(props: {
     >
       <Text
         className={cn(
-          "text-center text-sm font-semibold leading-tight",
+          "text-center text-xl font-medium leading-tight",
           props.active ? "text-foreground" : "text-muted-foreground",
         )}
         numberOfLines={2}

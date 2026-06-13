@@ -1,20 +1,21 @@
-import type { ContrastWindow } from "@lisca/contracts";
-import type { FrameResult } from "@lisca/utils";
 import {
   ContrastControl,
   createAxisIndexSliderControl,
   findNavigationOptionIndex,
   FrameNavigation,
+  SidebarStack,
   stepNavigationValue,
   Text,
   toAxisNavigationOptions,
 } from "@lisca/ui-native";
 import { View } from "react-native";
 
-import type { StudioAnnotateState } from "../state/use-studio-annotate-state";
+import { useStudioAnnotateNav } from "../state/studio-annotate-page-selectors";
 
-export function StudioAnnotateLeft({ state }: { state: StudioAnnotateState }) {
-  if (state.workspaceMissing) {
+export function StudioAnnotateLeft() {
+  const nav = useStudioAnnotateNav();
+
+  if (nav.workspaceMissing) {
     return (
       <View className="min-h-0 flex-1 gap-2 p-3">
         <Text className="text-sm text-destructive">Set a save location in Basic info first.</Text>
@@ -23,20 +24,20 @@ export function StudioAnnotateLeft({ state }: { state: StudioAnnotateState }) {
   }
 
   const positionOptions = toAxisNavigationOptions(
-    state.scan?.positions.map((entry) => entry.pos) ?? [],
+    nav.scan?.positions.map((entry) => entry.pos) ?? [],
   );
   const roiOptions =
-    state.position?.rois.map((entry) => ({
+    nav.position?.rois.map((entry) => ({
       value: entry.roi,
       label: String(entry.roi),
     })) ?? [];
-  const channelOptions = toAxisNavigationOptions(state.position?.channels ?? []);
-  const posValue = state.selection.pos ?? positionOptions[0]?.value ?? 0;
-  const roiValue = state.selection.roi ?? roiOptions[0]?.value ?? 0;
-  const channelValue = state.selection.channel ?? channelOptions[0]?.value ?? 0;
+  const channelOptions = toAxisNavigationOptions(nav.position?.channels ?? []);
+  const posValue = nav.selection.pos ?? positionOptions[0]?.value ?? 0;
+  const roiValue = nav.selection.roi ?? roiOptions[0]?.value ?? 0;
+  const channelValue = nav.selection.channel ?? channelOptions[0]?.value ?? 0;
 
   return (
-    <View className="min-h-0 flex-1 gap-2 p-3">
+    <SidebarStack>
       <FrameNavigation
         channel={{
           value: channelValue,
@@ -45,16 +46,16 @@ export function StudioAnnotateLeft({ state }: { state: StudioAnnotateState }) {
           previousDisabled: findNavigationOptionIndex(channelOptions, channelValue) <= 0,
           nextDisabled:
             findNavigationOptionIndex(channelOptions, channelValue) >= channelOptions.length - 1,
-          onChange: (value) => state.changeSelection(() => state.setSelection({ channel: value })),
+          onChange: (value) => nav.changeSelection(() => nav.setSelection({ channel: value })),
           onPrevious: () => {
             const next = stepNavigationValue(channelOptions, channelValue, -1);
             if (next != null)
-              state.changeSelection(() => state.setSelection({ channel: next }));
+              nav.changeSelection(() => nav.setSelection({ channel: next }));
           },
           onNext: () => {
             const next = stepNavigationValue(channelOptions, channelValue, 1);
             if (next != null)
-              state.changeSelection(() => state.setSelection({ channel: next }));
+              nav.changeSelection(() => nav.setSelection({ channel: next }));
           },
         }}
         position={{
@@ -65,16 +66,16 @@ export function StudioAnnotateLeft({ state }: { state: StudioAnnotateState }) {
           nextDisabled:
             findNavigationOptionIndex(positionOptions, posValue) >= positionOptions.length - 1,
           onChange: (value) =>
-            state.changeSelection(() => state.setSelection({ pos: value, roi: null })),
+            nav.changeSelection(() => nav.setSelection({ pos: value, roi: null })),
           onPrevious: () => {
             const next = stepNavigationValue(positionOptions, posValue, -1);
             if (next != null)
-              state.changeSelection(() => state.setSelection({ pos: next, roi: null }));
+              nav.changeSelection(() => nav.setSelection({ pos: next, roi: null }));
           },
           onNext: () => {
             const next = stepNavigationValue(positionOptions, posValue, 1);
             if (next != null)
-              state.changeSelection(() => state.setSelection({ pos: next, roi: null }));
+              nav.changeSelection(() => nav.setSelection({ pos: next, roi: null }));
           },
         }}
         roi={{
@@ -83,34 +84,36 @@ export function StudioAnnotateLeft({ state }: { state: StudioAnnotateState }) {
           disabled: roiOptions.length === 0,
           previousDisabled: findNavigationOptionIndex(roiOptions, roiValue) <= 0,
           nextDisabled: findNavigationOptionIndex(roiOptions, roiValue) >= roiOptions.length - 1,
-          onChange: (value) => state.changeSelection(() => state.setSelection({ roi: value })),
+          onChange: (value) => nav.changeSelection(() => nav.setSelection({ roi: value })),
           onPrevious: () => {
             const next = stepNavigationValue(roiOptions, roiValue, -1);
-            if (next != null) state.changeSelection(() => state.setSelection({ roi: next }));
+            if (next != null) nav.changeSelection(() => nav.setSelection({ roi: next }));
           },
           onNext: () => {
             const next = stepNavigationValue(roiOptions, roiValue, 1);
-            if (next != null) state.changeSelection(() => state.setSelection({ roi: next }));
+            if (next != null) nav.changeSelection(() => nav.setSelection({ roi: next }));
           },
         }}
         timepoint={createAxisIndexSliderControl({
-          axisValues: state.position?.times,
-          index: state.selection.timeIndex,
+          axisValues: nav.position?.times,
+          index: nav.selection.timeIndex,
           onIndexChange: (timeIndex) =>
-            state.changeSelection(() => state.setSelection({ timeIndex })),
+            nav.changeSelection(() => nav.setSelection({ timeIndex })),
         })}
         zPlane={createAxisIndexSliderControl({
-          axisValues: state.position?.zSlices,
-          index: state.selection.zIndex,
-          onIndexChange: (zIndex) => state.changeSelection(() => state.setSelection({ zIndex })),
+          axisValues: nav.position?.zSlices,
+          index: nav.selection.zIndex,
+          onIndexChange: (zIndex) => nav.changeSelection(() => nav.setSelection({ zIndex })),
         })}
       />
       <ContrastControl
-        contrast={state.contrast}
-        disabled={!state.frame}
-        frame={state.frame}
-        onContrastChange={state.setContrast}
+        contrast={nav.contrast}
+        disabled={!nav.frame}
+        frame={nav.frame}
+        sectionClassName="min-h-0 shrink-0"
+        sectionContentClassName="flex min-h-0 flex-col overflow-auto"
+        onContrastChange={nav.setContrast}
       />
-    </View>
+    </SidebarStack>
   );
 }

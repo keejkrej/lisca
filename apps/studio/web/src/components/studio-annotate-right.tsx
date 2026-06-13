@@ -3,7 +3,7 @@ import { AnnotationModeToggle, AnnotationToolSlider } from "@lisca/ui/features";
 import { SidebarSection, SidebarStack } from "@lisca/ui/shell";
 
 import { useStudioAnnotatePage } from "../state/studio-annotate-page-context";
-import { createEmptyMask, labelColorStyle } from "../utils/annotation-utils";
+import { createEmptyMask, labelColorStyle } from "@lisca/utils";
 
 export function StudioAnnotateRight() {
   const { state } = useStudioAnnotatePage();

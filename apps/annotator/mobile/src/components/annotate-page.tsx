@@ -1,147 +1,120 @@
-import { AppShell, HostFilePickerDialog } from "@lisca/ui-native";
+import {
+  AnnotationCanvas,
+  AppShell,
+  HostFilePickerDialog,
+  LabelCreationDialog,
+  SmartSegmentModelDialog,
+  ViewportCard,
+} from "@lisca/ui-native";
+import { useSmartSegment } from "@lisca/smart/segment/browser";
+import { useState } from "react";
 
 import { annotatorHostOperations } from "../api/annotator-port";
-import { useAnnotateState } from "../state/use-annotate-state";
-import { createEmptyMask } from "../utils/annotation-utils";
+import { useAnnotateCanvas } from "../state/annotate-page-selectors";
+import { useAnnotateShell } from "../state/annotate-page-selectors";
 import { AnnotatorDock } from "./annotator-dock";
 import { AnnotatorHeader } from "./annotator-header";
 import { AnnotatorLeft } from "./annotator-left";
-import { AnnotatorMain } from "./annotator-main";
 import { AnnotatorRight } from "./annotator-right";
-import { LabelCreationDialog } from "./label-creation-dialog";
 
 export function AnnotatePage() {
-  const state = useAnnotateState();
+  const shell = useAnnotateShell();
 
   return (
     <AppShell>
       <AppShell.Header>
-        <AnnotatorHeader
-          workspacePath={state.workspacePath}
-          onCreateLabels={() => {
-            state.setLabelError(null);
-            state.setLabelDialogOpen(true);
-          }}
-          onPickWorkspace={() => state.setFilePickerOpen(true)}
-        />
+        <AnnotatorHeader />
       </AppShell.Header>
       <AppShell.Body>
         <AppShell.Left width={288}>
-          <AnnotatorLeft
-            channel={state.selection.channel}
-            contrast={state.contrast}
-            frame={state.frame}
-            position={state.position}
-            pos={state.selection.pos}
-            roi={state.selection.roi}
-            scan={state.scan}
-            timeIndex={state.selection.timeIndex}
-            zIndex={state.selection.zIndex}
-            onChannelChange={(value) =>
-              state.changeSelection(() => state.setSelection({ channel: value }))
-            }
-            onContrastChange={state.setContrast}
-            onPosChange={(value) =>
-              state.changeSelection(() => {
-                state.setSelection({ pos: value, roi: null });
-              })
-            }
-            onRoiChange={(value) => state.changeSelection(() => state.setSelection({ roi: value }))}
-            onTimeIndexChange={(value) =>
-              state.changeSelection(() => state.setSelection({ timeIndex: value }))
-            }
-            onZIndexChange={(value) =>
-              state.changeSelection(() => state.setSelection({ zIndex: value }))
-            }
-          />
+          <AnnotatorLeft />
         </AppShell.Left>
         <AppShell.MainColumn>
           <AppShell.Main>
-            <AnnotatorMain state={state} />
+            <AnnotatorMain />
           </AppShell.Main>
           <AppShell.Dock>
-            <AnnotatorDock
-              canSave={state.canSave}
-              mode={state.mode}
-              request={state.request}
-              saving={state.saving}
-              shortcutsEnabled={
-                state.mode === "segmentation" &&
-                state.canEditSegmentation &&
-                !state.labelDialogOpen &&
-                !state.filePickerOpen
-              }
-              tool={state.tool}
-              onSave={() => void state.handleSave()}
-              onToolChange={state.setTool}
-            />
+            <AnnotatorDock />
           </AppShell.Dock>
         </AppShell.MainColumn>
         <AppShell.Right width={288}>
-          <AnnotatorRight
-            activeLabelId={state.activeLabelId}
-            annotation={state.annotation.current}
-            annotationError={state.annotationError}
-            annotationLoading={state.annotationLoading}
-            brushSize={state.brushSize}
-            canRedo={state.annotation.canRedo}
-            canEdit={state.canEdit}
-            canUndo={state.annotation.canUndo}
-            dirty={state.annotation.dirty}
-            frameError={state.frameError}
-            frameLoading={state.frameLoading}
-            labels={state.labels}
-            mode={state.mode}
-            overlayOpacity={state.overlayOpacity}
-            saveError={state.saveError}
-            scanError={state.scanError}
-            scanLoading={state.scanLoading}
-            workspacePath={state.workspacePath}
-            onOpenLabelDialog={() => {
-              state.setLabelError(null);
-              state.setLabelDialogOpen(true);
-            }}
-            onClassificationChange={(labelId) =>
-              state.annotation.commit({
-                classificationLabelId: labelId,
-                mask: state.annotation.current.mask,
-              })
-            }
-            onClear={() =>
-              state.frame &&
-              state.annotation.commit({
-                classificationLabelId: state.annotation.current.classificationLabelId,
-                mask: createEmptyMask(state.frame.width, state.frame.height),
-              })
-            }
-            onDiscard={state.annotation.discard}
-            onBrushSizeChange={state.setBrushSize}
-            onModeChange={state.setMode}
-            onOverlayOpacityChange={state.setOverlayOpacity}
-            onPaintLabelChange={state.setActiveLabelId}
-            onRedo={state.annotation.redo}
-            onUndo={state.annotation.undo}
-          />
+          <AnnotatorRight />
         </AppShell.Right>
       </AppShell.Body>
       <HostFilePickerDialog
         hostPort={annotatorHostOperations}
         mode="workspace"
-        open={state.filePickerOpen}
+        open={shell.filePickerOpen}
         title="Workspace folder"
-        onOpenChange={state.setFilePickerOpen}
-        onPickDirectory={state.pickWorkspace}
+        onOpenChange={shell.setFilePickerOpen}
+        onPickDirectory={shell.pickWorkspace}
         onPickFile={() => undefined}
       />
       <LabelCreationDialog
-        error={state.labelError}
-        labels={state.labels}
-        open={state.labelDialogOpen}
-        saving={state.saveLabelsPending}
-        workspacePath={state.workspacePath}
-        onOpenChange={state.setLabelDialogOpen}
-        onSave={(nextLabels) => void state.handleSaveLabels(nextLabels)}
+        error={shell.labelError}
+        labels={shell.labels}
+        open={shell.labelDialogOpen}
+        saving={shell.saveLabelsPending}
+        workspacePath={shell.workspacePath}
+        onOpenChange={shell.setLabelDialogOpen}
+        onSave={(nextLabels) => void shell.handleSaveLabels(nextLabels)}
       />
     </AppShell>
+  );
+}
+
+function AnnotatorMain() {
+  const canvas = useAnnotateCanvas();
+  const classificationLabelId = canvas.annotation.current.classificationLabelId;
+  const [smartSegmentStatus, setSmartSegmentStatus] = useState<string | null>(null);
+  const [smartSegmentError, setSmartSegmentError] = useState<string | null>(null);
+  const activeLabelValue =
+    canvas.labels.findIndex((label) => label.id === canvas.activeLabelId) + 1;
+  const onMaskCommit = (mask: Uint8Array) => {
+    canvas.annotation.commit({
+      classificationLabelId,
+      mask,
+    });
+  };
+  const smartSegment = useSmartSegment({
+    frame: canvas.frame,
+    tool: canvas.tool,
+    activeLabelValue,
+    mask: canvas.annotation.current.mask,
+    enabled: canvas.canEditSegmentation,
+    onCommit: onMaskCommit,
+    onStatus: setSmartSegmentStatus,
+    onError: setSmartSegmentError,
+  });
+  const toasts = smartSegmentError
+    ? [{ text: smartSegmentError, tone: "error" as const }]
+    : smartSegmentStatus
+      ? [...canvas.canvasToasts, { text: smartSegmentStatus }]
+      : canvas.canvasToasts;
+
+  return (
+    <ViewportCard>
+      <SmartSegmentModelDialog
+        busy={smartSegment.busy}
+        state={smartSegment.downloadState}
+        onCancel={smartSegment.cancelDownload}
+        onConfirm={() => void smartSegment.confirmDownload()}
+      />
+      <AnnotationCanvas
+        activeLabelId={canvas.activeLabelId}
+        brushSize={canvas.brushSize}
+        disabled={!canvas.canEditSegmentation || smartSegment.busy}
+        frame={canvas.frame}
+        labels={canvas.labels}
+        mask={canvas.annotation.current.mask}
+        overlayOpacity={canvas.overlayOpacity}
+        smartSegmentPrompts={smartSegment.prompts}
+        toasts={toasts}
+        tool={canvas.tool}
+        onMaskCommit={onMaskCommit}
+        onSmartSegmentClick={(click) => void smartSegment.handleClick(click)}
+        onSmartEraseClick={(click) => void smartSegment.handleEraseClick(click)}
+      />
+    </ViewportCard>
   );
 }

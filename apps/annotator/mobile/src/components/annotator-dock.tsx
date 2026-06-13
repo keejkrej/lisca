@@ -1,47 +1,34 @@
-import { ActivityIndicator } from "react-native";
-import type { RoiFrameRequest } from "@lisca/contracts";
-import type { AnnotationMode } from "@lisca/ui-native/features";
 import {
   AnnotationToolGrid,
   buildAnnotationToolActions,
-  Button,
   DockSection,
   DockStrip,
-  ReadonlyPathField,
   dockLayoutClasses,
+  dockSectionWidths,
   dockToolbarMinHeight,
   Text,
-  type AnnotationTool,
 } from "@lisca/ui-native";
 import { View } from "react-native";
 
-import { annotationOutputPaths } from "../utils/annotation-output";
+import { useAnnotateDock } from "../state/annotate-page-selectors";
+import { AnnotatorSaveSection } from "./annotator-save-section";
 
-export function AnnotatorDock(props: {
-  mode: AnnotationMode;
-  tool: AnnotationTool;
-  request: RoiFrameRequest | null;
-  canSave: boolean;
-  saving: boolean;
-  shortcutsEnabled?: boolean;
-  onToolChange: (tool: AnnotationTool) => void;
-  onSave: () => void;
-}) {
-  const paths = annotationOutputPaths(props.request, props.mode);
-  const canEditTools = props.mode === "segmentation" && props.shortcutsEnabled !== false;
-  const toolActions = buildAnnotationToolActions(props.tool, props.onToolChange, !canEditTools);
+export function AnnotatorDock() {
+  const dock = useAnnotateDock();
+  const canEditTools = dock.mode === "segmentation" && dock.shortcutsEnabled;
+  const toolActions = buildAnnotationToolActions(dock.tool, dock.setTool, !canEditTools);
 
   return (
     <DockStrip>
       <DockSection
+        className={dockSectionWidths.tool}
         contentClassName={dockLayoutClasses.content}
-        className={dockLayoutClasses.section}
         title="Tool"
       >
-        {props.mode === "segmentation" ? (
+        {dock.mode === "segmentation" ? (
           <AnnotationToolGrid
             canEditTools={canEditTools}
-            shortcutsEnabled={props.shortcutsEnabled}
+            shortcutsEnabled={dock.shortcutsEnabled}
             toolActions={toolActions}
           />
         ) : (
@@ -53,38 +40,7 @@ export function AnnotatorDock(props: {
           </View>
         )}
       </DockSection>
-      <DockSection
-        contentClassName={dockLayoutClasses.content}
-        className={dockLayoutClasses.section}
-        title="Save"
-      >
-        <View className={dockLayoutClasses.stack}>
-          {paths.length > 1 ? (
-            <View className={dockLayoutClasses.cols2}>
-              {paths.map((path) => (
-                <View key={path} className={dockLayoutClasses.cell}>
-                  <ReadonlyPathField value={path} />
-                </View>
-              ))}
-            </View>
-          ) : (
-            paths.map((path) => <ReadonlyPathField key={path} value={path} />)
-          )}
-          <Button
-            className={dockLayoutClasses.button}
-            disabled={!props.canSave}
-            size="sm"
-            variant="outline"
-            onPress={props.onSave}
-          >
-            {props.saving ? (
-              <ActivityIndicator size="small" />
-            ) : (
-              <Text className="text-xs">Save</Text>
-            )}
-          </Button>
-        </View>
-      </DockSection>
+      <AnnotatorSaveSection />
     </DockStrip>
   );
 }

@@ -15,7 +15,7 @@ export function StudioAssayDock(props: {
   return (
     <DockStrip>
       <DockSection fit="panel" title="Instruction">
-        <Text className="text-center text-sm leading-5 text-foreground">
+        <Text className="text-center text-sm leading-snug text-foreground">
           {instructionForStep("chooseAssay")}
         </Text>
       </DockSection>

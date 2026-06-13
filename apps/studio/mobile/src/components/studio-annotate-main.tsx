@@ -8,26 +8,30 @@ import { useSmartSegment } from "@lisca/smart/segment/browser";
 import { useState } from "react";
 import { View } from "react-native";
 
-import type { StudioAnnotateState } from "../state/use-studio-annotate-state";
+import { useStudioAnnotatePage } from "../state/studio-annotate-page-context";
+import { useStudioAnnotateCanvas } from "../state/studio-annotate-page-selectors";
 import { StudioAnalysisProgressModal, StudioAnalysisStartModal } from "./studio-analysis-modals";
 
-export function StudioAnnotateMain({ state }: { state: StudioAnnotateState }) {
-  const classificationLabelId = state.annotation.current.classificationLabelId;
+export function StudioAnnotateMain() {
+  const { state } = useStudioAnnotatePage();
+  const canvas = useStudioAnnotateCanvas();
+  const classificationLabelId = canvas.annotation.current.classificationLabelId;
   const [smartSegmentStatus, setSmartSegmentStatus] = useState<string | null>(null);
   const [smartSegmentError, setSmartSegmentError] = useState<string | null>(null);
-  const activeLabelValue = state.labels.findIndex((label) => label.id === state.activeLabelId) + 1;
+  const activeLabelValue =
+    canvas.labels.findIndex((label) => label.id === canvas.activeLabelId) + 1;
   const onMaskCommit = (mask: Uint8Array) => {
-    state.annotation.commit({
+    canvas.annotation.commit({
       classificationLabelId,
       mask,
     });
   };
   const smartSegment = useSmartSegment({
-    frame: state.frame,
-    tool: state.tool,
+    frame: canvas.frame,
+    tool: canvas.tool,
     activeLabelValue,
-    mask: state.annotation.current.mask,
-    enabled: state.canEditSegmentation,
+    mask: canvas.annotation.current.mask,
+    enabled: canvas.canEditSegmentation,
     onCommit: onMaskCommit,
     onStatus: setSmartSegmentStatus,
     onError: setSmartSegmentError,
@@ -35,8 +39,8 @@ export function StudioAnnotateMain({ state }: { state: StudioAnnotateState }) {
   const toasts = smartSegmentError
     ? [{ text: smartSegmentError, tone: "error" as const }]
     : smartSegmentStatus
-      ? [...state.canvasToasts, { text: smartSegmentStatus }]
-      : state.canvasToasts;
+      ? [...canvas.canvasToasts, { text: smartSegmentStatus }]
+      : canvas.canvasToasts;
 
   if (state.workspaceMissing) {
     return (
@@ -81,16 +85,16 @@ export function StudioAnnotateMain({ state }: { state: StudioAnnotateState }) {
           onConfirm={() => void smartSegment.confirmDownload()}
         />
         <AnnotationCanvas
-          activeLabelId={state.activeLabelId}
-          brushSize={state.brushSize}
-          disabled={!state.canEditSegmentation || smartSegment.busy}
-          frame={state.frame}
-          labels={state.labels}
-          mask={state.annotation.current.mask}
-          overlayOpacity={state.overlayOpacity}
+          activeLabelId={canvas.activeLabelId}
+          brushSize={canvas.brushSize}
+          disabled={!canvas.canEditSegmentation || smartSegment.busy}
+          frame={canvas.frame}
+          labels={canvas.labels}
+          mask={canvas.annotation.current.mask}
+          overlayOpacity={canvas.overlayOpacity}
           smartSegmentPrompts={smartSegment.prompts}
           toasts={toasts}
-          tool={state.tool}
+          tool={canvas.tool}
           onMaskCommit={onMaskCommit}
           onSmartSegmentClick={(click) => void smartSegment.handleClick(click)}
           onSmartEraseClick={(click) => void smartSegment.handleEraseClick(click)}

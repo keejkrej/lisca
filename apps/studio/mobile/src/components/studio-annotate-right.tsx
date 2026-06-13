@@ -1,4 +1,3 @@
-import type { AnnotationMode } from "@lisca/ui-native/features";
 import {
   AnnotationModeToggle,
   AnnotationToolSlider,
@@ -8,15 +7,18 @@ import {
   labelColorStyle,
   Text,
 } from "@lisca/ui-native";
+import { createEmptyMask } from "@lisca/utils";
 import { Pressable, View } from "react-native";
 
-import type { StudioAnnotateState } from "../state/use-studio-annotate-state";
-import { createEmptyMask } from "../utils/annotation-utils";
+import { useStudioAnnotateLabels } from "../state/studio-annotate-page-selectors";
+import { useStudioAnnotatePage } from "../state/studio-annotate-page-context";
 
-export function StudioAnnotateRight({ state }: { state: StudioAnnotateState }) {
+export function StudioAnnotateRight() {
+  const { state } = useStudioAnnotatePage();
+  const labels = useStudioAnnotateLabels();
   const activeError =
-    state.scanError ?? state.frameError ?? state.annotationError ?? state.saveError;
-  const loading = state.scanLoading || state.frameLoading || state.annotationLoading;
+    labels.scanError ?? labels.frameError ?? labels.annotationError ?? labels.saveError;
+  const loading = labels.scanLoading || labels.frameLoading || labels.annotationLoading;
 
   if (state.workspaceMissing) {
     return (
@@ -31,35 +33,35 @@ export function StudioAnnotateRight({ state }: { state: StudioAnnotateState }) {
   return (
     <SidebarStack>
       <SidebarSection title="Mode">
-        <AnnotationModeToggle mode={state.mode} onModeChange={state.setMode} />
+        <AnnotationModeToggle mode={labels.mode} onModeChange={labels.setMode} />
       </SidebarSection>
       <SidebarSection contentClassName="flex-row flex-wrap gap-2" title="Labels">
-        {state.labels.map((label) => {
+        {labels.labels.map((label) => {
           const selected =
-            state.mode === "classification"
-              ? state.annotation.current.classificationLabelId === label.id
-              : state.activeLabelId === label.id;
+            labels.mode === "classification"
+              ? labels.annotation.current.classificationLabelId === label.id
+              : labels.activeLabelId === label.id;
           const chipStyle = labelColorStyle(label, selected);
           return (
             <Pressable
               key={label.id}
               accessibilityRole="button"
-              accessibilityState={{ selected, disabled: !state.canEdit }}
+              accessibilityState={{ selected, disabled: !labels.canEdit }}
               className={
-                state.canEdit
+                labels.canEdit
                   ? "min-w-[47%] flex-grow rounded-lg border border-border px-2 py-2.5"
                   : "min-w-[47%] flex-grow rounded-lg border border-border px-2 py-2.5 opacity-50"
               }
-              disabled={!state.canEdit}
+              disabled={!labels.canEdit}
               style={chipStyle}
               onPress={() => {
-                if (state.mode === "classification") {
-                  state.annotation.commit({
+                if (labels.mode === "classification") {
+                  labels.annotation.commit({
                     classificationLabelId: selected ? null : label.id,
-                    mask: state.annotation.current.mask,
+                    mask: labels.annotation.current.mask,
                   });
                 } else {
-                  state.setActiveLabelId(label.id);
+                  labels.setActiveLabelId(label.id);
                 }
               }}
             >
@@ -73,16 +75,13 @@ export function StudioAnnotateRight({ state }: { state: StudioAnnotateState }) {
             </Pressable>
           );
         })}
-        {state.labels.length === 0 ? (
+        {labels.labels.length === 0 ? (
           <Button
             className="w-full"
-            disabled={!state.workspacePath}
+            disabled={!labels.workspacePath}
             size="sm"
             variant="outline"
-            onPress={() => {
-              state.setLabelError(null);
-              state.setLabelDialogOpen(true);
-            }}
+            onPress={labels.openLabelDialog}
           >
             <Text className="text-xs">Add</Text>
           </Button>
@@ -93,34 +92,34 @@ export function StudioAnnotateRight({ state }: { state: StudioAnnotateState }) {
       <SidebarSection contentClassName="flex-row flex-wrap gap-2" title="Edit">
         <View className="min-w-0 flex-grow basis-[47%]">
           <Button
-            disabled={!state.annotation.canUndo}
+            disabled={!labels.annotation.canUndo}
             size="sm"
             variant="outline"
-            onPress={state.annotation.undo}
+            onPress={labels.annotation.undo}
           >
             <Text className="text-xs">Undo</Text>
           </Button>
         </View>
         <View className="min-w-0 flex-grow basis-[47%]">
           <Button
-            disabled={!state.annotation.canRedo}
+            disabled={!labels.annotation.canRedo}
             size="sm"
             variant="outline"
-            onPress={state.annotation.redo}
+            onPress={labels.annotation.redo}
           >
             <Text className="text-xs">Redo</Text>
           </Button>
         </View>
         <View className="min-w-0 flex-grow basis-[47%]">
           <Button
-            disabled={state.mode !== "segmentation" || !state.canEdit}
+            disabled={labels.mode !== "segmentation" || !labels.canEdit}
             size="sm"
             variant="outline"
             onPress={() =>
-              state.frame &&
-              state.annotation.commit({
-                classificationLabelId: state.annotation.current.classificationLabelId,
-                mask: createEmptyMask(state.frame.width, state.frame.height),
+              labels.frame &&
+              labels.annotation.commit({
+                classificationLabelId: labels.annotation.current.classificationLabelId,
+                mask: createEmptyMask(labels.frame.width, labels.frame.height),
               })
             }
           >
@@ -129,34 +128,34 @@ export function StudioAnnotateRight({ state }: { state: StudioAnnotateState }) {
         </View>
         <View className="min-w-0 flex-grow basis-[47%]">
           <Button
-            disabled={!state.annotation.dirty}
+            disabled={!labels.annotation.dirty}
             size="sm"
             variant="outline"
-            onPress={state.annotation.discard}
+            onPress={labels.annotation.discard}
           >
             <Text className="text-xs">Discard</Text>
           </Button>
         </View>
       </SidebarSection>
-      {state.mode === "segmentation" ? (
+      {labels.mode === "segmentation" ? (
         <SidebarSection contentClassName="gap-3" title="Brush">
           <AnnotationToolSlider
             label="Opacity"
             max={0.95}
             min={0.05}
             step={0.01}
-            value={state.overlayOpacity}
-            valueLabel={`${Math.round(state.overlayOpacity * 100)}%`}
-            onChange={state.setOverlayOpacity}
+            value={labels.overlayOpacity}
+            valueLabel={`${Math.round(labels.overlayOpacity * 100)}%`}
+            onChange={labels.setOverlayOpacity}
           />
           <AnnotationToolSlider
             label="Brush Size"
             max={32}
             min={1}
             step={1}
-            value={state.brushSize}
-            valueLabel={String(Math.round(state.brushSize))}
-            onChange={(value) => state.setBrushSize(Math.round(value))}
+            value={labels.brushSize}
+            valueLabel={String(Math.round(labels.brushSize))}
+            onChange={(value) => labels.setBrushSize(Math.round(value))}
           />
         </SidebarSection>
       ) : null}
