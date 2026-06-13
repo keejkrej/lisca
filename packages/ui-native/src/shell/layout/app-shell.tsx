@@ -60,7 +60,7 @@ function Left(props: { children?: ReactNode; width?: number }) {
   const width = props.width ?? DEFAULT_RAIL_WIDTH;
   return (
     <View className="min-h-0 border-r border-border bg-background" style={{ width }}>
-      <ShellScrollRegion contentClassName="gap-2 p-3">{props.children}</ShellScrollRegion>
+      <ShellScrollRegion contentClassName="flex-grow">{props.children}</ShellScrollRegion>
     </View>
   );
 }
@@ -69,7 +69,7 @@ function Right(props: { children?: ReactNode; width?: number }) {
   const width = props.width ?? DEFAULT_RAIL_WIDTH;
   return (
     <View className="min-h-0 border-l border-border bg-background" style={{ width }}>
-      <ShellScrollRegion contentClassName="gap-2 p-3">{props.children}</ShellScrollRegion>
+      <ShellScrollRegion contentClassName="flex-grow">{props.children}</ShellScrollRegion>
     </View>
   );
 }

@@ -54,15 +54,15 @@ export function AnnotationToolGrid(props: {
 
   return (
     <View accessibilityLabel="Annotation tool" accessibilityRole="toolbar" className="w-full gap-2">
-      <View className="grid w-full grid-cols-2 gap-2">
+      <View className="w-full flex-row gap-2">
         {buttons[0]}
         {buttons[1]}
       </View>
-      <View className="grid w-full grid-cols-2 gap-2">
+      <View className="w-full flex-row gap-2">
         {buttons[2]}
         {buttons[3]}
       </View>
-      <View className="grid w-full grid-cols-2 gap-2">
+      <View className="w-full flex-row gap-2">
         {buttons[4]}
         {buttons[5]}
       </View>

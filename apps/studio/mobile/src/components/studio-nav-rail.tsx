@@ -44,7 +44,7 @@ export function StudioNavRail() {
   };
 
   return (
-    <View className="-m-3 min-h-0 flex-1 gap-2.5 p-2.5">
+    <View className="min-h-0 flex-1 gap-2.5 p-2.5">
       <View className="min-h-0 flex-1 justify-center">
         <Panel>
           <View className="items-center gap-6 py-3">

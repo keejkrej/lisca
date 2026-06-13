@@ -46,11 +46,10 @@ function Toggle({
   return (
     <TextClassContext.Provider
       value={cn(
-        'text-sm text-foreground font-medium',
+        'text-center text-sm font-medium text-foreground',
         props.pressed
           ? 'text-accent-foreground'
           : Platform.select({ web: 'group-hover:text-muted-foreground' }),
-        className
       )}>
       <TogglePrimitive.Root
         className={cn(

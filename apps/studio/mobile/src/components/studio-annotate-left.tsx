@@ -16,7 +16,7 @@ import type { StudioAnnotateState } from "../state/use-studio-annotate-state";
 export function StudioAnnotateLeft({ state }: { state: StudioAnnotateState }) {
   if (state.workspaceMissing) {
     return (
-      <View className="-m-3 min-h-0 flex-1 gap-2 p-3">
+      <View className="min-h-0 flex-1 gap-2 p-3">
         <Text className="text-sm text-destructive">Set a save location in Basic info first.</Text>
       </View>
     );
@@ -36,7 +36,7 @@ export function StudioAnnotateLeft({ state }: { state: StudioAnnotateState }) {
   const channelValue = state.selection.channel ?? channelOptions[0]?.value ?? 0;
 
   return (
-    <View className="-m-3 min-h-0 flex-1 gap-2 p-3">
+    <View className="min-h-0 flex-1 gap-2 p-3">
       <FrameNavigation
         channel={{
           value: channelValue,
