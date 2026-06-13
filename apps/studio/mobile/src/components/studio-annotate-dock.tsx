@@ -126,16 +126,6 @@ export function StudioAnnotateDock({ state }: { state: StudioAnnotateState }) {
       </DockSection>
       <DockSection
         contentStyle={dockLayoutStyles.content}
-        fit="panel"
-        style={dockLayoutStyles.section}
-        title="Workflow"
-      >
-        <Text style={[styles.instructionText, { color: colors.foreground }]}>
-          Annotate ROIs before running analysis.
-        </Text>
-      </DockSection>
-      <DockSection
-        contentStyle={dockLayoutStyles.content}
         style={dockLayoutStyles.section}
         title="Action"
       >
@@ -165,10 +155,5 @@ export function StudioAnnotateDock({ state }: { state: StudioAnnotateState }) {
 const styles = StyleSheet.create({
   strip: {
     flexWrap: "wrap",
-  },
-  instructionText: {
-    fontSize: 14,
-    lineHeight: 20,
-    textAlign: "center",
   },
 });

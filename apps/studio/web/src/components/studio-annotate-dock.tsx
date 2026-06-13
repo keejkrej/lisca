@@ -66,11 +66,6 @@ export function StudioAnnotateDock() {
           </Button>
         </div>
       </DockSection>
-      <DockSection fit="panel" title="Workflow">
-        <p className="line-clamp-4 text-center text-sm leading-snug">
-          Annotate ROIs before running analysis. Saved annotations are stored under annotations/.
-        </p>
-      </DockSection>
       <DockSection title="Action">
         <div className="flex flex-col gap-2">
           <Button
