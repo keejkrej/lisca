@@ -2,7 +2,7 @@ import { AppShell, HostFilePickerDialog } from "@lisca/ui-native";
 import { runClientEffect } from "@lisca/client/runtime";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { ScrollView, StyleSheet } from "react-native";
+import { ScrollView } from "react-native";
 import { studioClient, studioHostOperations } from "../src/api/studio-port";
 import { ChooseAssay } from "../src/components/choose-assay";
 import { STUDIO_NAV_WIDTH } from "../src/components/studio-layout";
@@ -36,7 +36,7 @@ export default function AssayRoute() {
         </AppShell.Left>
         <AppShell.MainColumn>
           <AppShell.Main>
-            <ScrollView contentContainerStyle={styles.mainContent}>
+            <ScrollView contentContainerClassName="min-h-full flex-grow justify-center px-6 py-6">
               <ChooseAssay />
             </ScrollView>
           </AppShell.Main>
@@ -63,12 +63,3 @@ export default function AssayRoute() {
   );
 }
 
-const styles = StyleSheet.create({
-  mainContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-    minHeight: "100%",
-    paddingHorizontal: 24,
-    paddingVertical: 24,
-  },
-});

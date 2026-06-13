@@ -1,6 +1,7 @@
 const http = require("node:http");
 const path = require("node:path");
 const { createRequire } = require("node:module");
+const { withNativeWind } = require("nativewind/metro");
 const { isLiscaApiProxyPath } = require("./lisca-dev-proxy-shared.cjs");
 
 function pipeHttp(req, res, port) {
@@ -64,5 +65,8 @@ module.exports = function createMonorepoMetroConfig(projectRoot, options = {}) {
     };
   }
 
-  return config;
+  const nativeWindCss =
+    options.nativeWindCss ?? path.resolve(workspaceRoot, "packages/ui-native/global.css");
+
+  return withNativeWind(config, { input: nativeWindCss, inlineRem: 16 });
 };

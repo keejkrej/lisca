@@ -1,5 +1,5 @@
 import { Button, ShellNavbar } from "@lisca/ui-native";
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 
 export function AnnotatorHeader(props: {
   workspacePath: string | null;
@@ -7,7 +7,7 @@ export function AnnotatorHeader(props: {
   onPickWorkspace: () => void;
 }) {
   return (
-    <View style={styles.root}>
+    <View className="flex-1 justify-center">
       <ShellNavbar.Annotator
         endLeading={
           <Button
@@ -23,10 +23,3 @@ export function AnnotatorHeader(props: {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    justifyContent: "center",
-  },
-});

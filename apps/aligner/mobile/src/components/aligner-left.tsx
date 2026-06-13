@@ -1,12 +1,12 @@
 import { ContrastControl } from "@lisca/ui-native";
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 
 import type { AlignState } from "../state/use-align-state";
 import { AlignFrameNavigation } from "./align-frame-navigation";
 
 export function AlignerLeft(props: { alignState: AlignState }) {
   return (
-    <View style={styles.root}>
+    <View className="gap-2">
       <AlignFrameNavigation state={props.alignState} />
       <ContrastControl
         contrast={props.alignState.contrast}
@@ -17,9 +17,3 @@ export function AlignerLeft(props: { alignState: AlignState }) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    gap: 8,
-  },
-});

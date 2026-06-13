@@ -1,23 +1,56 @@
-import type { ReactNode } from "react";
-import { Modal, Pressable, StyleSheet, View } from "react-native";
+import * as DialogPrimitive from "@rn-primitives/dialog";
+import { createContext, useContext, type ReactNode } from "react";
+import { Platform, View, type ViewProps } from "react-native";
 
-import { useShellTheme } from "../../theme/shell-theme";
+import { Dialog, DialogOverlay, DialogPortal } from "../../../components/ui/dialog";
+import { cn } from "../../../lib/utils";
+
+const ShellDialogContext = createContext(false);
+
+function ShellDialogContent({
+  accessibilityLabel,
+  children,
+  maxWidth = 480,
+  padded = true,
+}: {
+  accessibilityLabel?: string;
+  children: ReactNode;
+  maxWidth?: number;
+  padded?: boolean;
+}) {
+  return (
+    <DialogPortal>
+      <DialogOverlay>
+        <DialogPrimitive.Content
+          accessibilityLabel={accessibilityLabel}
+          className={cn(
+            "bg-background border-border z-50 mx-auto w-full flex-col rounded-2xl border shadow-lg shadow-black/5",
+            padded ? "gap-4 p-5" : "gap-0 p-0",
+            Platform.select({
+              web: "animate-in fade-in-0 zoom-in-95 duration-200",
+            }),
+          )}
+          style={{ maxWidth }}
+        >
+          {children}
+        </DialogPrimitive.Content>
+      </DialogOverlay>
+    </DialogPortal>
+  );
+}
 
 export function ModalScrim(props: { open: boolean; onClose: () => void; children: ReactNode }) {
+  if (!props.open) return null;
+
   return (
-    <Modal
-      accessibilityViewIsModal
-      animationType="fade"
-      transparent
-      visible={props.open}
-      onRequestClose={props.onClose}
+    <Dialog
+      open={props.open}
+      onOpenChange={(open: boolean) => {
+        if (!open) props.onClose();
+      }}
     >
-      <Pressable style={styles.scrim} onPress={props.onClose}>
-        <Pressable style={styles.content} onPress={(event) => event.stopPropagation()}>
-          {props.children}
-        </Pressable>
-      </Pressable>
-    </Modal>
+      <ShellDialogContext.Provider value={true}>{props.children}</ShellDialogContext.Provider>
+    </Dialog>
   );
 }
 
@@ -27,78 +60,40 @@ export function DialogSurface(props: {
   padded?: boolean;
   accessibilityLabel?: string;
 }) {
-  const { colors } = useShellTheme();
+  const inShellDialog = useContext(ShellDialogContext);
+  if (!inShellDialog) {
+    throw new Error("DialogSurface must be rendered inside ModalScrim");
+  }
+
   return (
-    <View
+    <ShellDialogContent
       accessibilityLabel={props.accessibilityLabel}
-      style={[
-        styles.surface,
-        props.padded === false ? styles.surfaceFlush : null,
-        {
-          backgroundColor: colors.background,
-          borderColor: colors.border,
-          maxWidth: props.maxWidth ?? 480,
-        },
-      ]}
+      maxWidth={props.maxWidth}
+      padded={props.padded}
     >
+      {props.children}
+    </ShellDialogContent>
+  );
+}
+
+export function DialogHeader(props: { children: ReactNode }) {
+  return (
+    <View className="border-border border-b px-5 py-4">{props.children}</View>
+  );
+}
+
+export function DialogBody(props: { children: ReactNode; style?: ViewProps["style"]; className?: string }) {
+  return (
+    <View className={cn("gap-4 px-5 py-4", props.className)} style={props.style}>
       {props.children}
     </View>
   );
 }
 
-export function DialogHeader(props: { children: ReactNode }) {
-  const { colors } = useShellTheme();
+export function DialogFooter(props: { children: ReactNode }) {
   return (
-    <View style={[styles.header, { borderBottomColor: colors.border }]}>{props.children}</View>
+    <View className="border-border flex-row justify-end gap-2 border-t px-5 py-4">
+      {props.children}
+    </View>
   );
 }
-
-export function DialogBody(props: { children: ReactNode; style?: object }) {
-  return <View style={[styles.body, props.style]}>{props.children}</View>;
-}
-
-export function DialogFooter(props: { children: ReactNode }) {
-  const { colors } = useShellTheme();
-  return <View style={[styles.footer, { borderTopColor: colors.border }]}>{props.children}</View>;
-}
-
-const styles = StyleSheet.create({
-  scrim: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
-  },
-  content: {
-    width: "100%",
-    maxWidth: 520,
-  },
-  surface: {
-    width: "100%",
-    borderRadius: 16,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
-  surfaceFlush: {
-    padding: 0,
-  },
-  header: {
-    borderBottomWidth: 1,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  body: {
-    gap: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  footer: {
-    borderTopWidth: 1,
-    flexDirection: "row",
-    gap: 8,
-    justifyContent: "flex-end",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-});

@@ -1,5 +1,8 @@
 import type { AlignGridToolMode } from "@lisca/utils";
-import { alignToolDefinitions } from "@lisca/ui-headless/align-tools";
+import {
+  alignToolDefinitions as headlessAlignToolDefinitions,
+  buildAlignToolActions,
+} from "@lisca/ui-headless/align-tools";
 import {
   ArrowLeftRight,
   Lock,
@@ -8,17 +11,15 @@ import {
   SquareDashedMousePointer,
   Unlock,
 } from "lucide-react-native";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import type { LucideIcon } from "lucide-react-native";
+import { View } from "react-native";
 
+import { Button } from "../../../components/ui/button";
+import { Icon } from "../../../components/ui/icon";
+import { Text } from "../../../components/ui/text";
+import { dockToolLabel, dockToolShortcuts, useKeyboardShortcuts } from "../../shell";
 import { DockSection } from "../../shell/regions/dock-section";
-import { dockLayoutStyles } from "../../shell/regions/dock-layout";
-import {
-  shellOutlineButtonStyle,
-  shellOutlineElevation,
-  shellChromeMetrics,
-} from "../../shell/chrome/shell-chrome";
-import { useShellTheme } from "../../theme/shell-theme";
-import { liscaType } from "../../theme/typography";
+import { dockLayoutClasses } from "../../shell/regions/dock-layout";
 
 export type AlignToolSectionProps = {
   mode: AlignGridToolMode;
@@ -29,132 +30,100 @@ export type AlignToolSectionProps = {
   sectionDescription?: string;
   sectionStyle?: object;
   sectionContentStyle?: object;
+  sectionClassName?: string;
+  sectionContentClassName?: string;
+  shortcutsEnabled?: boolean;
 };
 
-const alignToolIcons: Partial<Record<AlignGridToolMode, typeof Move>> = {
+const alignToolIcons: Partial<Record<AlignGridToolMode, LucideIcon>> = {
   pan: Move,
   rotate: RotateCw,
   "zoom-vector": ArrowLeftRight,
   "zoom-pattern": SquareDashedMousePointer,
 };
 
-function AlignToolButton(props: {
+export const alignToolDefinitions = headlessAlignToolDefinitions.map(({ mode, label }) => ({
+  mode,
+  label,
+  Icon: alignToolIcons[mode] ?? SquareDashedMousePointer,
+}));
+
+export { buildAlignToolActions };
+
+export function AlignToolButton(props: {
   mode: AlignGridToolMode;
   active: boolean;
   label: string;
+  Icon: LucideIcon;
   onPress: () => void;
-  style?: object;
+  className?: string;
 }) {
-  const { colors, mode: themeMode } = useShellTheme();
-  const Icon = alignToolIcons[props.mode] ?? SquareDashedMousePointer;
-  const active = props.active;
+  const { active, label, Icon: ToolIcon, onPress, className } = props;
 
   return (
-    <Pressable
-      accessibilityLabel={props.label}
-      accessibilityRole="button"
+    <Button
+      accessibilityLabel={label}
       accessibilityState={{ selected: active }}
-      onPress={props.onPress}
-      style={[
-        shellOutlineButtonStyle,
-        styles.toolButton,
-        !active ? shellOutlineElevation(themeMode) : null,
-        {
-          backgroundColor: active ? colors.primary : colors.outlineSurface,
-          borderColor: colors.input,
-        },
-        props.style,
-      ]}
+      className={className ?? "w-full min-w-0 justify-center gap-2 px-3"}
+      size="sm"
+      variant={active ? "default" : "outline"}
+      onPress={onPress}
     >
-      <Icon
-        color={active ? colors.primaryForeground : colors.foreground}
-        size={shellChromeMetrics.iconSize}
-        strokeWidth={2}
-      />
-      <Text
-        numberOfLines={1}
-        style={[
-          styles.toolLabel,
-          { color: active ? colors.primaryForeground : colors.foreground },
-        ]}
-      >
-        {props.label}
+      <Icon as={ToolIcon} className="size-4" size={16} strokeWidth={2} />
+      <Text className="max-w-full shrink truncate text-xs" numberOfLines={1}>
+        {label}
       </Text>
-    </Pressable>
-  );
-}
-
-function PatternZoomLockButton(props: {
-  locked: boolean;
-  disabled?: boolean;
-  onPress: () => void;
-}) {
-  const { colors, mode } = useShellTheme();
-  const Icon = props.locked ? Lock : Unlock;
-  const active = props.locked;
-
-  return (
-    <Pressable
-      accessibilityLabel={props.locked ? "Unlock pattern zoom" : "Lock pattern zoom"}
-      accessibilityRole="button"
-      accessibilityState={{ selected: active }}
-      disabled={props.disabled}
-      onPress={props.onPress}
-      style={[
-        styles.lockButton,
-        !active ? shellOutlineElevation(mode) : null,
-        {
-          backgroundColor: active ? colors.primary : colors.outlineSurface,
-          borderColor: colors.input,
-          opacity: props.disabled ? 0.64 : 1,
-        },
-      ]}
-    >
-      <Icon
-        color={active ? colors.primaryForeground : colors.foreground}
-        size={16}
-        strokeWidth={2}
-      />
-    </Pressable>
+    </Button>
   );
 }
 
 function renderAlignToolCell(
-  toolMode: AlignGridToolMode,
-  label: string,
+  tool: (typeof alignToolDefinitions)[number],
+  index: number,
   mode: AlignGridToolMode,
   onModeChange: (mode: AlignGridToolMode) => void,
   patternZoomLocked: boolean,
-  onPatternZoomLockedChange?: (locked: boolean) => void,
+  onPatternZoomLockedChange: ((locked: boolean) => void) | undefined,
+  shortcutsEnabled: boolean,
 ) {
-  if (toolMode === "zoom-pattern") {
+  const label = shortcutsEnabled ? dockToolLabel(tool.label, index) : tool.label;
+
+  if (tool.mode === "zoom-pattern") {
     return (
-      <View key={toolMode} style={dockLayoutStyles.cell}>
-        <View style={styles.patternRow}>
+      <View key={tool.mode} className={dockLayoutClasses.cell}>
+        <View className="w-full flex-row items-center gap-1">
           <AlignToolButton
-            active={mode === toolMode}
+            active={mode === tool.mode}
+            className="min-w-0 flex-1 justify-center gap-2 px-2"
+            Icon={tool.Icon}
             label={label}
-            mode={toolMode}
-            style={styles.patternButton}
-            onPress={() => onModeChange(toolMode)}
+            mode={tool.mode}
+            onPress={() => onModeChange(tool.mode)}
           />
-          <PatternZoomLockButton
+          <Button
+            accessibilityLabel={patternZoomLocked ? "Unlock pattern zoom" : "Lock pattern zoom"}
+            accessibilityState={{ selected: patternZoomLocked }}
+            className="h-8 w-8 px-0"
             disabled={!onPatternZoomLockedChange}
-            locked={patternZoomLocked}
+            size="sm"
+            variant={patternZoomLocked ? "default" : "outline"}
             onPress={() => onPatternZoomLockedChange?.(!patternZoomLocked)}
-          />
+          >
+            <Icon as={patternZoomLocked ? Lock : Unlock} className="size-4" size={16} strokeWidth={2} />
+          </Button>
         </View>
       </View>
     );
   }
 
   return (
-    <View key={toolMode} style={dockLayoutStyles.cell}>
+    <View key={tool.mode} className={dockLayoutClasses.cell}>
       <AlignToolButton
-        active={mode === toolMode}
+        active={mode === tool.mode}
+        Icon={tool.Icon}
         label={label}
-        mode={toolMode}
-        onPress={() => onModeChange(toolMode)}
+        mode={tool.mode}
+        onPress={() => onModeChange(tool.mode)}
       />
     </View>
   );
@@ -162,7 +131,11 @@ function renderAlignToolCell(
 
 export type AlignToolToolbarProps = Pick<
   AlignToolSectionProps,
-  "mode" | "onModeChange" | "patternZoomLocked" | "onPatternZoomLockedChange"
+  | "mode"
+  | "onModeChange"
+  | "patternZoomLocked"
+  | "onPatternZoomLockedChange"
+  | "shortcutsEnabled"
 >;
 
 export function AlignToolToolbar({
@@ -170,25 +143,30 @@ export function AlignToolToolbar({
   onModeChange,
   patternZoomLocked = false,
   onPatternZoomLockedChange,
+  shortcutsEnabled = true,
 }: AlignToolToolbarProps) {
-  const cells = alignToolDefinitions.map(({ mode: toolMode, label }) =>
+  const toolActions = buildAlignToolActions(mode, onModeChange);
+  useKeyboardShortcuts(dockToolShortcuts(toolActions), { enabled: shortcutsEnabled });
+
+  const cells = alignToolDefinitions.map((tool, index) =>
     renderAlignToolCell(
-      toolMode,
-      label,
+      tool,
+      index,
       mode,
       onModeChange,
       patternZoomLocked,
       onPatternZoomLockedChange,
+      shortcutsEnabled,
     ),
   );
 
   return (
-    <View style={dockLayoutStyles.toolbar}>
-      <View style={dockLayoutStyles.cols2}>
+    <View accessibilityLabel="Align canvas tool" accessibilityRole="toolbar" className={dockLayoutClasses.toolbar}>
+      <View className={dockLayoutClasses.cols2}>
         {cells[0]}
         {cells[1]}
       </View>
-      <View style={dockLayoutStyles.cols2}>
+      <View className={dockLayoutClasses.cols2}>
         {cells[2]}
         {cells[3]}
       </View>
@@ -205,49 +183,26 @@ export function AlignToolSection({
   sectionDescription,
   sectionStyle,
   sectionContentStyle,
+  sectionClassName,
+  sectionContentClassName,
+  shortcutsEnabled = true,
 }: AlignToolSectionProps) {
   return (
     <DockSection
-      contentStyle={[dockLayoutStyles.content, sectionContentStyle]}
+      className={sectionClassName ?? dockLayoutClasses.section}
+      contentClassName={sectionContentClassName ?? dockLayoutClasses.content}
+      contentStyle={sectionContentStyle}
       description={sectionDescription}
-      style={[dockLayoutStyles.section, sectionStyle]}
+      style={sectionStyle}
       title={sectionTitle}
     >
       <AlignToolToolbar
         mode={mode}
         patternZoomLocked={patternZoomLocked}
+        shortcutsEnabled={shortcutsEnabled}
         onModeChange={onModeChange}
         onPatternZoomLockedChange={onPatternZoomLockedChange}
       />
     </DockSection>
   );
 }
-
-const styles = StyleSheet.create({
-  toolButton: {
-    width: "100%",
-  },
-  toolLabel: {
-    ...liscaType.bodySmall,
-    flexShrink: 1,
-  },
-  patternRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    width: "100%",
-  },
-  patternButton: {
-    flex: 1,
-    minWidth: 0,
-  },
-  lockButton: {
-    width: shellChromeMetrics.iconButtonSize,
-    height: shellChromeMetrics.height,
-    minWidth: shellChromeMetrics.iconButtonSize,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderRadius: shellChromeMetrics.radius,
-  },
-});

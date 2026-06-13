@@ -3,10 +3,11 @@ import {
   Panel,
   ShellThemeToggle,
   StudioNavButton,
+  Text,
   useShellServer,
 } from "@lisca/ui-native";
 import { Link, usePathname } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, View } from "react-native";
 
 import { useStudioProfile } from "./studio-profile-provider";
 
@@ -22,11 +23,12 @@ export function StudioNavRail() {
   const pathname = usePathname();
   const server = useShellServer();
   const profile = useStudioProfile();
+
   return (
-    <View style={styles.root}>
-      <View style={styles.navCenter}>
+    <View className="-m-3 min-h-0 flex-1 gap-2.5 p-2.5">
+      <View className="min-h-0 flex-1 justify-center">
         <Panel>
-          <View style={styles.navStack}>
+          <View className="items-center gap-6 py-3">
             {ROUTES.map((route) => (
               <Link key={route.href} href={route.href} asChild>
                 <StudioNavButton active={pathname === route.href} onPress={() => undefined}>
@@ -37,17 +39,17 @@ export function StudioNavRail() {
           </View>
         </Panel>
       </View>
-      <View style={styles.footer}>
-        <View style={styles.footerConnection}>
+      <View className="gap-2">
+        <View className="items-center">
           <ConnectionStatus
             state={server.state}
             wsUrl={server.wsUrl}
             onOpenSettings={server.openSettings}
           />
         </View>
-        <View style={styles.footerActions}>
+        <View className="flex-row items-center justify-center gap-1">
           <Pressable onPress={profile.switchProfile}>
-            <Text style={styles.profileLabel}>
+            <Text className="max-w-24 text-xs opacity-70">
               {profile.session.mode === "guest" ? "Guest" : profile.session.displayName}
             </Text>
           </Pressable>
@@ -57,40 +59,3 @@ export function StudioNavRail() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    gap: 10,
-    margin: -12,
-    minHeight: 0,
-    padding: 10,
-  },
-  navCenter: {
-    flex: 1,
-    justifyContent: "center",
-    minHeight: 0,
-  },
-  navStack: {
-    alignItems: "center",
-    gap: 24,
-    paddingVertical: 12,
-  },
-  footer: {
-    gap: 8,
-  },
-  footerConnection: {
-    alignItems: "center",
-  },
-  footerActions: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 4,
-    justifyContent: "center",
-  },
-  profileLabel: {
-    fontSize: 12,
-    maxWidth: 96,
-    opacity: 0.7,
-  },
-});

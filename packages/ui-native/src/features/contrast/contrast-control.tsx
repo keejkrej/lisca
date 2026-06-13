@@ -3,13 +3,12 @@ import { ContrastControl as HeadlessContrastControl } from "@lisca/ui-headless/c
 import type { FrameResult } from "@lisca/utils";
 import { clamp } from "@lisca/utils";
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { View } from "react-native";
 
+import { Text } from "../../../components/ui/text";
 import { Button } from "../../shell/chrome/buttons";
 import { Section } from "../../shell/regions/section";
 import { Slider } from "../../shell/chrome/slider";
-import { liscaType } from "../../theme/typography";
-import { useShellTheme } from "../../theme/shell-theme";
 
 export type ContrastControlProps = {
   frame: FrameResult | null;
@@ -91,7 +90,6 @@ function ContrastControlBody(props: {
   sectionStyle?: object;
   sectionContentStyle?: object;
 }) {
-  const { colors } = useShellTheme();
   const {
     domainMin,
     domainMax,
@@ -126,9 +124,7 @@ function ContrastControlBody(props: {
         style={sectionStyle}
         title={sectionTitle}
       >
-        <Text style={{ color: colors.mutedForeground, ...liscaType.bodySmall }}>
-          Invalid intensity domain.
-        </Text>
+        <Text className="text-sm text-muted-foreground">Invalid intensity domain.</Text>
       </Section>
     );
   }
@@ -141,9 +137,7 @@ function ContrastControlBody(props: {
       title={sectionTitle}
     >
       {title?.trim() ? (
-        <Text style={{ color: colors.foreground, ...liscaType.bodyMedium }}>
-          {title.trim()}
-        </Text>
+        <Text className="text-sm font-medium text-foreground">{title.trim()}</Text>
       ) : null}
 
       <Button
@@ -196,16 +190,11 @@ function ContrastSliderRow(props: {
   onDraftChange: (value: number) => void;
   onCommit: (value: number) => void;
 }) {
-  const { colors } = useShellTheme();
   return (
-    <View style={styles.sliderRow}>
-      <View style={styles.sliderHeader}>
-        <Text style={{ color: colors.mutedForeground, ...liscaType.bodySmallMedium }}>
-          {props.label}
-        </Text>
-        <Text
-          style={{ color: colors.mutedForeground, ...liscaType.bodySmall, fontVariant: ["tabular-nums"] }}
-        >
+    <View className="gap-1">
+      <View className="flex-row items-center justify-between">
+        <Text className="text-xs font-medium text-muted-foreground">{props.label}</Text>
+        <Text className="text-xs tabular-nums text-muted-foreground">
           {String(Math.round(props.value))}
         </Text>
       </View>
@@ -214,10 +203,7 @@ function ContrastSliderRow(props: {
         maximumValue={props.domainMax}
         minimumValue={props.domainMin}
         step={1}
-        style={styles.slider}
-        thumbTintColor={colors.primary}
-        minimumTrackTintColor={colors.primary}
-        maximumTrackTintColor={colors.border}
+        style={{ width: "100%", height: 32 }}
         value={props.value}
         onSlidingComplete={props.onCommit}
         onValueChange={props.onDraftChange}
@@ -225,18 +211,3 @@ function ContrastSliderRow(props: {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  sliderRow: {
-    gap: 4,
-  },
-  sliderHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  slider: {
-    width: "100%",
-    height: 32,
-  },
-});

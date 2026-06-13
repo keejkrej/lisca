@@ -1,48 +1,27 @@
 import type { ReactNode } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, View } from "react-native";
 
-import { useShellTheme } from "../../theme/shell-theme";
-import { liscaType } from "../../theme/typography";
+import { Text } from "../../../components/ui/text";
+import { cn } from "../../../lib/utils";
+import { useThemeColors } from "../../theme/use-theme-colors";
 
-export function Spinner(props: { size?: "small" | "large" }) {
-  const { colors } = useShellTheme();
+export function Spinner(props: { size?: "small" | "large"; className?: string }) {
+  const colors = useThemeColors();
+
   return (
-    <View style={styles.root}>
-      <ActivityIndicator size={props.size ?? "large"} color={colors.primary} />
+    <View className={cn("items-center justify-center p-4", props.className)}>
+      <ActivityIndicator color={colors.primary} size={props.size ?? "large"} />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  root: {
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 16,
-  },
-});
-
-export function Panel(props: { title?: string; children: ReactNode }) {
-  const { colors } = useShellTheme();
+export function Panel(props: { title?: string; children: ReactNode; className?: string }) {
   return (
-    <View
-      style={[panelStyles.root, { backgroundColor: colors.background, borderColor: colors.border }]}
-    >
+    <View className={cn("gap-2 rounded-xl border border-border bg-background p-3", props.className)}>
       {props.title ? (
-        <Text style={[panelStyles.title, { color: colors.foreground }]}>{props.title}</Text>
+        <Text className="text-sm font-semibold text-foreground">{props.title}</Text>
       ) : null}
       {props.children}
     </View>
   );
 }
-
-const panelStyles = StyleSheet.create({
-  root: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    gap: 8,
-  },
-  title: {
-    ...liscaType.panelTitle,
-  },
-});

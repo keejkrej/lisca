@@ -6,15 +6,16 @@ import {
   DockSection,
   DockStrip,
   ReadonlyPathField,
-  dockLayoutStyles,
+  dockLayoutClasses,
+  dockToolbarMinHeight,
   dockToolLabel,
   dockToolShortcuts,
+  Text,
   useKeyboardShortcuts,
   type AnnotationTool,
   type DockToolAction,
-  useShellTheme,
 } from "@lisca/ui-native";
-import { StyleSheet, Text, View } from "react-native";
+import { View } from "react-native";
 
 import { annotationOutputPaths } from "../utils/annotation-output";
 
@@ -39,12 +40,12 @@ function AnnotatorToolToolbar(props: {
   useKeyboardShortcuts(dockToolShortcuts(props.toolActions), { enabled: props.canEditTools });
 
   const buttons = props.toolActions.map((action, index) => (
-    <View key={action.id} style={dockLayoutStyles.gridCell}>
+    <View key={action.id} className={dockLayoutClasses.gridCell}>
       <Button
         disabled={action.disabled}
         label={dockToolLabel(action.label, index)}
         size="sm"
-        style={dockLayoutStyles.button}
+        className={dockLayoutClasses.button}
         variant={action.active ? "default" : "outline"}
         onPress={action.onSelect}
       />
@@ -52,16 +53,16 @@ function AnnotatorToolToolbar(props: {
   ));
 
   return (
-    <View style={dockLayoutStyles.toolbar}>
-      <View style={dockLayoutStyles.cols2}>
+    <View className={dockLayoutClasses.toolbar}>
+      <View className={dockLayoutClasses.cols2}>
         {buttons[0]}
         {buttons[1]}
       </View>
-      <View style={dockLayoutStyles.cols2}>
+      <View className={dockLayoutClasses.cols2}>
         {buttons[2]}
         {buttons[3]}
       </View>
-      <View style={dockLayoutStyles.cols2}>
+      <View className={dockLayoutClasses.cols2}>
         {buttons[4]}
         {buttons[5]}
       </View>
@@ -79,7 +80,6 @@ export function AnnotatorDock(props: {
   onToolChange: (tool: AnnotationTool) => void;
   onSave: () => void;
 }) {
-  const { colors } = useShellTheme();
   const paths = annotationOutputPaths(props.request, props.mode);
   const canEditTools = props.mode === "segmentation" && props.shortcutsEnabled !== false;
   const toolActions = buildAnnotationToolActions(props.tool, props.onToolChange, !canEditTools);
@@ -87,28 +87,31 @@ export function AnnotatorDock(props: {
   return (
     <DockStrip>
       <DockSection
-        contentStyle={dockLayoutStyles.content}
-        style={dockLayoutStyles.section}
+        contentClassName={dockLayoutClasses.content}
+        className={dockLayoutClasses.section}
         title="Tool"
       >
         {props.mode === "segmentation" ? (
           <AnnotatorToolToolbar canEditTools={canEditTools} toolActions={toolActions} />
         ) : (
-          <View style={dockLayoutStyles.classificationPlaceholder}>
-            <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>Classification</Text>
+          <View
+            className={dockLayoutClasses.classificationPlaceholder}
+            style={{ minHeight: dockToolbarMinHeight(3) }}
+          >
+            <Text className="text-xs text-muted-foreground">Classification</Text>
           </View>
         )}
       </DockSection>
       <DockSection
-        contentStyle={dockLayoutStyles.content}
-        style={dockLayoutStyles.section}
+        contentClassName={dockLayoutClasses.content}
+        className={dockLayoutClasses.section}
         title="Save"
       >
-        <View style={dockLayoutStyles.stack}>
+        <View className={dockLayoutClasses.stack}>
           {paths.length > 1 ? (
-            <View style={dockLayoutStyles.cols2}>
+            <View className={dockLayoutClasses.cols2}>
               {paths.map((path) => (
-                <View key={path} style={dockLayoutStyles.cell}>
+                <View key={path} className={dockLayoutClasses.cell}>
                   <ReadonlyPathField value={path} />
                 </View>
               ))}
@@ -121,7 +124,7 @@ export function AnnotatorDock(props: {
             label={props.saving ? "Saving" : "Save"}
             loading={props.saving}
             size="sm"
-            style={dockLayoutStyles.button}
+            className={dockLayoutClasses.button}
             variant="outline"
             onPress={props.onSave}
           />

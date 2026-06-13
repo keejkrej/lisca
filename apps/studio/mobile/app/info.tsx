@@ -1,6 +1,6 @@
 import { AppShell } from "@lisca/ui-native";
 import { useRouter } from "expo-router";
-import { ScrollView, StyleSheet } from "react-native";
+import { ScrollView } from "react-native";
 
 import { studioHostOperations } from "../src/api/studio-port";
 import { BasicInfoStep1 } from "../src/components/basic-info-step1";
@@ -37,7 +37,7 @@ export default function InfoRoute() {
         </AppShell.Left>
         <AppShell.MainColumn>
           <AppShell.Main>
-            <ScrollView contentContainerStyle={styles.mainContent}>
+            <ScrollView contentContainerClassName="w-full max-w-[832px] flex-grow justify-center px-6 py-6">
               {infoStep === 1 ? <BasicInfoStep1 hostPort={studioHostOperations} /> : null}
               {infoStep === 2 ? <BasicInfoStep2 /> : null}
               {infoStep === 3 ? <BasicInfoStep3 /> : null}
@@ -53,13 +53,3 @@ export default function InfoRoute() {
   );
 }
 
-const styles = StyleSheet.create({
-  mainContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-    maxWidth: 832,
-    paddingHorizontal: 24,
-    paddingVertical: 24,
-    width: "100%",
-  },
-});

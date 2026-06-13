@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Folder, HardDrive } from "lucide-react-native";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { useColorScheme } from "nativewind";
+import { ScrollView, View } from "react-native";
 
 import { ConnectionStatus } from "./connection-status";
 import { PathButton } from "./path-button";
@@ -8,7 +9,7 @@ import { shellChromeMetrics } from "./shell-chrome";
 import { useShellServer } from "../server/shell-server";
 import { useShellWorkspace } from "../workspace/workspace";
 import { ShellThemeToggle } from "../../theme/shell-theme-toggle";
-import { useShellTheme } from "../../theme/shell-theme";
+import { shellThemeColors, type ShellThemeMode } from "../../theme/tokens";
 
 export type ShellNavbarRouteItem = {
   value: string;
@@ -31,20 +32,22 @@ export type ShellNavbarProps = {
 function ShellNavbarRoot(props: ShellNavbarProps) {
   const server = useShellServer();
   const workspace = useShellWorkspace();
-  const { colors } = useShellTheme();
+  const { colorScheme } = useColorScheme();
+  const mode: ShellThemeMode = colorScheme === "dark" ? "dark" : "light";
+  const iconColor = shellThemeColors[mode].foreground;
 
   return (
     <ScrollView
       horizontal
-      contentContainerStyle={styles.scrollContent}
+      contentContainerClassName="min-h-8 flex-grow flex-row items-center justify-between gap-4"
       keyboardShouldPersistTaps="handled"
       showsHorizontalScrollIndicator={false}
     >
-      <View style={styles.leading}>
+      <View className="min-w-0 shrink flex-row flex-wrap items-center gap-3">
         <PathButton
           icon={
             <Folder
-              color={colors.foreground}
+              color={iconColor}
               opacity={0.8}
               size={shellChromeMetrics.iconSize}
               strokeWidth={2}
@@ -60,7 +63,7 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
             disabled={!workspace.workspacePath}
             icon={
               <HardDrive
-                color={colors.foreground}
+                color={iconColor}
                 opacity={0.8}
                 size={shellChromeMetrics.iconSize}
                 strokeWidth={2}
@@ -73,7 +76,7 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
         )}
       </View>
 
-      <View style={styles.trailing}>
+      <View className="shrink-0 flex-row items-center gap-2">
         <ConnectionStatus
           state={server.state}
           wsUrl={server.wsUrl}
@@ -134,28 +137,4 @@ export type ShellNavbarCompound = typeof ShellNavbarRoot & {
 export const ShellNavbar: ShellNavbarCompound = Object.assign(ShellNavbarRoot, {
   Annotator: ShellNavbarAnnotator,
   Aligner: ShellNavbarAligner,
-});
-
-const styles = StyleSheet.create({
-  scrollContent: {
-    flexGrow: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 16,
-    minHeight: shellChromeMetrics.height,
-  },
-  leading: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: 12,
-    flexShrink: 1,
-  },
-  trailing: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    flexShrink: 0,
-  },
 });

@@ -1,8 +1,14 @@
 import { useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ScrollView, View } from "react-native";
 
-import { useShellTheme } from "../../theme/shell-theme";
-import { liscaFontFamily, liscaType } from "../../theme/typography";
+import { Button } from "../chrome/buttons";
+import { Input } from "../chrome/input";
+import {
+  DialogActions,
+  DialogDescriptionText,
+  DialogTitleText,
+} from "../modal/dialog-copy";
+import { DialogSurface, ModalScrim } from "../modal/modal";
 
 export type ServerAddressDialogProps = {
   open: boolean;
@@ -18,154 +24,70 @@ export type ServerAddressDialogProps = {
 };
 
 export function ServerAddressDialog(props: ServerAddressDialogProps) {
-  const { colors } = useShellTheme();
   const [draft, setDraft] = useState("");
 
   return (
-    <Modal
-      visible={props.open}
-      animationType="slide"
-      transparent
-      onRequestClose={() => props.onOpenChange(false)}
-    >
-      <View style={styles.scrim}>
-        <View
-          style={[
-            styles.surface,
-            { backgroundColor: colors.background, borderColor: colors.border },
-          ]}
-        >
-          <Text style={[styles.title, { color: colors.foreground }]}>Server address</Text>
-          <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-            {props.currentWsUrl}
-          </Text>
+    <ModalScrim open={props.open} onClose={() => props.onOpenChange(false)}>
+      <DialogSurface maxWidth={520}>
+        <DialogTitleText>Server address</DialogTitleText>
+        <DialogDescriptionText>{props.currentWsUrl}</DialogDescriptionText>
 
-          <Pressable
-            style={[
-              styles.rowButton,
-              { borderColor: colors.border, backgroundColor: colors.controlSurface },
-            ]}
+        <Button
+          label={`Local (${props.localLabel})`}
+          variant="outline"
+          onPress={() => {
+            props.onConnect(null);
+            props.onOpenChange(false);
+          }}
+        />
+
+        <ScrollView className="max-h-44">
+          {props.savedServers.map((server) => (
+            <View
+              key={server}
+              className="flex-row items-center justify-between border-b border-border py-2.5"
+            >
+              <Button
+                className="min-w-0 flex-1"
+                label={server}
+                variant="ghost"
+                onPress={() => {
+                  props.onConnect(server);
+                  props.onOpenChange(false);
+                }}
+              />
+              <Button
+                label="Remove"
+                variant="destructive"
+                onPress={() => props.onRemoveServer(server)}
+              />
+            </View>
+          ))}
+        </ScrollView>
+
+        <Input
+          autoCapitalize="none"
+          autoCorrect={false}
+          placeholder={`host:${props.defaultPort}`}
+          value={draft}
+          onChangeText={setDraft}
+        />
+
+        <DialogActions className="justify-between">
+          <Button label="Close" variant="ghost" onPress={() => props.onOpenChange(false)} />
+          <Button
+            label="Add & connect"
             onPress={() => {
-              props.onConnect(null);
+              const trimmed = draft.trim();
+              if (!trimmed) return;
+              props.onAddServer(trimmed);
+              props.onConnect(trimmed);
+              setDraft("");
               props.onOpenChange(false);
             }}
-          >
-            <Text style={{ color: colors.foreground }}>Local ({props.localLabel})</Text>
-          </Pressable>
-
-          <ScrollView style={styles.list}>
-            {props.savedServers.map((server) => (
-              <View
-                key={server}
-                style={[
-                  styles.savedRow,
-                  { borderColor: colors.border, backgroundColor: colors.controlSurface },
-                ]}
-              >
-                <Pressable
-                  style={styles.savedConnect}
-                  onPress={() => {
-                    props.onConnect(server);
-                    props.onOpenChange(false);
-                  }}
-                >
-                  <Text style={{ color: colors.foreground }}>{server}</Text>
-                </Pressable>
-                <Pressable onPress={() => props.onRemoveServer(server)}>
-                  <Text style={{ color: colors.destructive }}>Remove</Text>
-                </Pressable>
-              </View>
-            ))}
-          </ScrollView>
-
-          <TextInput
-            value={draft}
-            onChangeText={setDraft}
-            placeholder={`host:${props.defaultPort}`}
-            placeholderTextColor={colors.mutedForeground}
-            autoCapitalize="none"
-            autoCorrect={false}
-            style={[
-              styles.input,
-              {
-                color: colors.foreground,
-                borderColor: colors.input,
-                backgroundColor: colors.controlSurface,
-              },
-            ]}
           />
-
-          <View style={styles.actions}>
-            <Pressable onPress={() => props.onOpenChange(false)}>
-              <Text style={{ color: colors.mutedForeground }}>Close</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => {
-                const trimmed = draft.trim();
-                if (!trimmed) return;
-                props.onAddServer(trimmed);
-                props.onConnect(trimmed);
-                setDraft("");
-                props.onOpenChange(false);
-              }}
-            >
-              <Text style={{ color: colors.primary }}>Add & connect</Text>
-            </Pressable>
-          </View>
-        </View>
-      </View>
-    </Modal>
+        </DialogActions>
+      </DialogSurface>
+    </ModalScrim>
   );
 }
-
-const styles = StyleSheet.create({
-  scrim: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    justifyContent: "center",
-    padding: 24,
-  },
-  surface: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 16,
-    gap: 12,
-    maxHeight: "80%",
-  },
-  title: {
-    ...liscaType.dialogTitle,
-  },
-  subtitle: {
-    ...liscaType.bodySmall,
-  },
-  rowButton: {
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 12,
-  },
-  list: {
-    maxHeight: 180,
-  },
-  savedRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderBottomWidth: 1,
-    paddingVertical: 10,
-  },
-  savedConnect: {
-    flex: 1,
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    fontFamily: liscaFontFamily.sansRegular,
-  },
-  actions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-});

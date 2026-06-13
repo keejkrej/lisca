@@ -8,15 +8,15 @@ import {
 } from "@lisca/utils";
 import { useSliderStepperField } from "@lisca/ui-headless/slider-stepper-field";
 import { useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Modal, Pressable, ScrollView, View } from "react-native";
 
+import { Text } from "../../../components/ui/text";
+import { cn } from "../../../lib/utils";
 import { Button } from "../../shell/chrome/buttons";
 import { Field } from "../../shell/chrome/field";
-import { shellOutlineElevation } from "../../shell/chrome/shell-chrome";
-import { liscaType } from "../../theme/typography";
 import { Section } from "../../shell/regions/section";
 import { Slider } from "../../shell/chrome/slider";
-import { useShellTheme } from "../../theme/shell-theme";
+import { useThemeColors } from "../../theme/use-theme-colors";
 
 export type { NavigationOption, NavigationValue };
 export { findNavigationOptionIndex, stepNavigationValue, toNavigationOptions };
@@ -64,55 +64,40 @@ function SelectPicker<T extends NavigationValue>(props: {
   disabled?: boolean;
   onChange: (value: T) => void;
 }) {
-  const { colors, mode } = useShellTheme();
   const [open, setOpen] = useState(false);
   const selected = props.options.find((option) => option.value === props.value);
 
   return (
     <>
       <Pressable
+        className={cn(
+          "min-h-8 justify-center rounded-lg border border-input bg-background px-2.5 py-2",
+          props.disabled && "opacity-60",
+        )}
         disabled={props.disabled}
         onPress={() => setOpen(true)}
-        style={[
-          styles.selectTrigger,
-          shellOutlineElevation(mode),
-          {
-            borderColor: colors.input,
-            backgroundColor: colors.outlineSurface,
-            opacity: props.disabled ? 0.64 : 1,
-          },
-        ]}
       >
-        <Text numberOfLines={1} style={{ color: colors.foreground, ...liscaType.body }}>
-          {selected
-            ? formatNavigationOptionDisplayLabel(selected.label)
-            : String(props.value)}
+        <Text className="text-sm" numberOfLines={1}>
+          {selected ? formatNavigationOptionDisplayLabel(selected.label) : String(props.value)}
         </Text>
       </Pressable>
       <Modal transparent visible={open} animationType="fade" onRequestClose={() => setOpen(false)}>
-        <Pressable style={styles.pickerScrim} onPress={() => setOpen(false)}>
-          <Pressable
-            style={[
-              styles.pickerSheet,
-              { backgroundColor: colors.popover, borderColor: colors.border },
-            ]}
-          >
+        <Pressable className="flex-1 justify-center bg-black/35 p-6" onPress={() => setOpen(false)}>
+          <Pressable className="max-h-80 overflow-hidden rounded-xl border border-border bg-popover">
             <ScrollView>
               {props.options.map((option) => (
                 <Pressable
                   key={String(option.value)}
+                  className={cn(
+                    "px-4 py-3",
+                    option.value === props.value && "bg-accent",
+                  )}
                   onPress={() => {
                     props.onChange(option.value);
                     setOpen(false);
                   }}
-                  style={[
-                    styles.pickerItem,
-                    option.value === props.value ? { backgroundColor: colors.accent } : null,
-                  ]}
                 >
-                  <Text style={{ color: colors.foreground }}>
-                    {formatNavigationOptionDisplayLabel(option.label)}
-                  </Text>
+                  <Text>{formatNavigationOptionDisplayLabel(option.label)}</Text>
                 </Pressable>
               ))}
             </ScrollView>
@@ -126,17 +111,17 @@ function SelectPicker<T extends NavigationValue>(props: {
 function SelectStepperField<T extends NavigationValue>(props: SelectNavigationFieldProps<T>) {
   return (
     <Field label={props.label}>
-      <View style={styles.stepperRow}>
+      <View className="flex-row items-center gap-2">
         <Button
+          className="h-8 w-8 min-w-8 px-0"
           compact
           disabled={props.previousDisabled || props.disabled}
           label="‹"
           size="sm"
-          style={styles.stepperButton}
           variant="outline"
           onPress={props.onPrevious}
         />
-        <View style={styles.stepperCenter}>
+        <View className="min-w-0 flex-1">
           <SelectPicker
             disabled={props.disabled}
             options={props.options}
@@ -145,11 +130,11 @@ function SelectStepperField<T extends NavigationValue>(props: SelectNavigationFi
           />
         </View>
         <Button
+          className="h-8 w-8 min-w-8 px-0"
           compact
           disabled={props.nextDisabled || props.disabled}
           label="›"
           size="sm"
-          style={styles.stepperButton}
           variant="outline"
           onPress={props.onNext}
         />
@@ -159,7 +144,7 @@ function SelectStepperField<T extends NavigationValue>(props: SelectNavigationFi
 }
 
 function SliderStepperField(props: SliderNavigationFieldProps) {
-  const { colors } = useShellTheme();
+  const colors = useThemeColors();
   const { draftValue, setDraftValue, displayLabel, ariaValueText } = useSliderStepperField({
     value: props.value,
     axisValues: props.axisValues,
@@ -170,30 +155,30 @@ function SliderStepperField(props: SliderNavigationFieldProps) {
 
   return (
     <Field label={props.label} valueLabel={displayLabel}>
-      <View style={styles.stepperRow}>
+      <View className="flex-row items-center gap-2">
         <Button
+          className="h-8 w-8 min-w-8 px-0"
           compact
           disabled={props.previousDisabled || props.disabled}
           label="‹"
           size="sm"
-          style={styles.stepperButton}
           variant="outline"
           onPress={props.onPrevious}
         />
         <View
           accessibilityLabel={ariaValueText}
           accessibilityRole="adjustable"
-          style={styles.stepperCenter}
+          className="min-w-0 flex-1"
         >
           <Slider
             disabled={props.disabled}
+            maximumTrackTintColor={colors.border}
             maximumValue={props.max}
+            minimumTrackTintColor={colors.primary}
             minimumValue={props.min}
             step={props.step ?? 1}
-            style={styles.slider}
+            style={{ width: "100%", height: 32 }}
             thumbTintColor={colors.primary}
-            minimumTrackTintColor={colors.primary}
-            maximumTrackTintColor={colors.border}
             value={draftValue}
             onSlidingComplete={(value) => {
               setDraftValue(value);
@@ -203,11 +188,11 @@ function SliderStepperField(props: SliderNavigationFieldProps) {
           />
         </View>
         <Button
+          className="h-8 w-8 min-w-8 px-0"
           compact
           disabled={props.nextDisabled || props.disabled}
           label="›"
           size="sm"
-          style={styles.stepperButton}
           variant="outline"
           onPress={props.onNext}
         />
@@ -226,6 +211,8 @@ export type FrameNavigationProps<T extends NavigationValue = number> = {
   sectionDescription?: string;
   sectionStyle?: object;
   sectionContentStyle?: object;
+  sectionClassName?: string;
+  sectionContentClassName?: string;
 };
 
 export function FrameNavigation<T extends NavigationValue = number>(
@@ -241,11 +228,15 @@ export function FrameNavigation<T extends NavigationValue = number>(
     sectionDescription,
     sectionStyle,
     sectionContentStyle,
+    sectionClassName,
+    sectionContentClassName,
   } = props;
 
   return (
     <Section
-      contentStyle={[{ gap: 12 }, sectionContentStyle]}
+      className={sectionClassName}
+      contentClassName={cn("gap-3", sectionContentClassName)}
+      contentStyle={sectionContentStyle}
       description={sectionDescription}
       style={sectionStyle}
       title={sectionTitle}
@@ -258,48 +249,3 @@ export function FrameNavigation<T extends NavigationValue = number>(
     </Section>
   );
 }
-
-const styles = StyleSheet.create({
-  stepperRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  stepperButton: {
-    width: 32,
-    minWidth: 32,
-    paddingHorizontal: 0,
-  },
-  stepperCenter: {
-    flex: 1,
-    minWidth: 0,
-  },
-  slider: {
-    width: "100%",
-    height: 32,
-  },
-  selectTrigger: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    minHeight: 32,
-    justifyContent: "center",
-  },
-  pickerScrim: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.35)",
-    justifyContent: "center",
-    padding: 24,
-  },
-  pickerSheet: {
-    borderWidth: 1,
-    borderRadius: 12,
-    maxHeight: 320,
-    overflow: "hidden",
-  },
-  pickerItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-});

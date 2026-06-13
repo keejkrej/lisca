@@ -6,9 +6,9 @@ import {
   Button,
   labelColorStyle,
   Section,
-  useShellTheme,
+  Text,
 } from "@lisca/ui-native";
-import { ScrollView, StyleSheet, Text, Pressable, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 
 import type { AnnotationValue } from "../utils/annotation-utils";
 
@@ -40,18 +40,17 @@ export function AnnotatorRight(props: {
   onRedo: () => void;
   onDiscard: () => void;
 }) {
-  const { colors } = useShellTheme();
   const activeError =
     props.scanError ?? props.frameError ?? props.annotationError ?? props.saveError;
   const loading = props.scanLoading || props.frameLoading || props.annotationLoading;
 
   return (
-    <ScrollView contentContainerStyle={styles.root} style={styles.scroll}>
+    <ScrollView className="min-h-0 flex-1" contentContainerClassName="gap-2 p-3">
       <Section title="Mode">
         <AnnotationModeToggle mode={props.mode} onModeChange={props.onModeChange} />
       </Section>
-      <Section contentStyle={styles.labelsContent} title="Labels">
-        <View style={styles.labelsGrid}>
+      <Section contentClassName="gap-2" title="Labels">
+        <View className="flex-row flex-wrap gap-2">
           {props.labels.map((label) => {
             const selected =
               props.mode === "classification"
@@ -63,12 +62,13 @@ export function AnnotatorRight(props: {
                 key={label.id}
                 accessibilityRole="button"
                 accessibilityState={{ selected, disabled: !props.canEdit }}
+                className={
+                  props.canEdit
+                    ? "min-w-0 flex-grow basis-[47%] items-center justify-center rounded-lg border border-border px-2 py-2"
+                    : "min-w-0 flex-grow basis-[47%] items-center justify-center rounded-lg border border-border px-2 py-2 opacity-50"
+                }
                 disabled={!props.canEdit}
-                style={[
-                  styles.labelChip,
-                  { borderColor: colors.border, opacity: props.canEdit ? 1 : 0.5 },
-                  chipStyle,
-                ]}
+                style={chipStyle}
                 onPress={() => {
                   if (props.mode === "classification") {
                     props.onClassificationChange(selected ? null : label.id);
@@ -78,11 +78,9 @@ export function AnnotatorRight(props: {
                 }}
               >
                 <Text
+                  className="text-center text-xs font-medium"
                   numberOfLines={1}
-                  style={[
-                    styles.labelText,
-                    chipStyle ? { color: chipStyle.color } : { color: colors.foreground },
-                  ]}
+                  style={chipStyle ? { color: chipStyle.color } : undefined}
                 >
                   {label.name}
                 </Text>
@@ -91,21 +89,15 @@ export function AnnotatorRight(props: {
           })}
         </View>
         {props.labels.length === 0 ? (
-          <View style={[styles.emptyLabels, { borderColor: colors.border }]}>
-            <Text style={{ color: colors.mutedForeground, fontSize: 12, textAlign: "center" }}>
-              No labels loaded.
-            </Text>
+          <View className="w-full rounded-lg border border-dashed border-border px-2 py-6">
+            <Text className="text-center text-xs text-muted-foreground">No labels loaded.</Text>
           </View>
         ) : null}
-        {loading ? (
-          <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>Loading…</Text>
-        ) : null}
-        {activeError ? (
-          <Text style={{ color: colors.destructive, fontSize: 12 }}>{activeError}</Text>
-        ) : null}
+        {loading ? <Text className="text-xs text-muted-foreground">Loading…</Text> : null}
+        {activeError ? <Text className="text-xs text-destructive">{activeError}</Text> : null}
       </Section>
-      <Section contentStyle={styles.editGrid} title="Edit">
-        <View style={styles.gridCell}>
+      <Section contentClassName="flex-row flex-wrap gap-2" title="Edit">
+        <View className="min-w-0 flex-grow basis-[47%]">
           <Button
             disabled={!props.canUndo}
             label="Undo"
@@ -114,7 +106,7 @@ export function AnnotatorRight(props: {
             onPress={props.onUndo}
           />
         </View>
-        <View style={styles.gridCell}>
+        <View className="min-w-0 flex-grow basis-[47%]">
           <Button
             disabled={!props.canRedo}
             label="Redo"
@@ -123,7 +115,7 @@ export function AnnotatorRight(props: {
             onPress={props.onRedo}
           />
         </View>
-        <View style={styles.gridCell}>
+        <View className="min-w-0 flex-grow basis-[47%]">
           <Button
             disabled={props.mode !== "segmentation" || !props.canEdit}
             label="Clear"
@@ -132,7 +124,7 @@ export function AnnotatorRight(props: {
             onPress={props.onClear}
           />
         </View>
-        <View style={styles.gridCell}>
+        <View className="min-w-0 flex-grow basis-[47%]">
           <Button
             disabled={!props.dirty}
             label="Discard"
@@ -143,7 +135,7 @@ export function AnnotatorRight(props: {
         </View>
       </Section>
       {props.mode === "segmentation" ? (
-        <Section contentStyle={styles.brushContent} title="Brush">
+        <Section contentClassName="gap-3" title="Brush">
           <AnnotationToolSlider
             label="Opacity"
             max={0.95}
@@ -167,59 +159,3 @@ export function AnnotatorRight(props: {
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-    minHeight: 0,
-  },
-  root: {
-    gap: 8,
-    padding: 12,
-  },
-  labelsContent: {
-    gap: 8,
-  },
-  labelsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  labelChip: {
-    alignItems: "center",
-    borderRadius: 8,
-    borderWidth: 1,
-    flexBasis: "47%",
-    flexGrow: 1,
-    justifyContent: "center",
-    minWidth: 0,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-  },
-  labelText: {
-    fontSize: 12,
-    fontWeight: "500",
-    textAlign: "center",
-  },
-  emptyLabels: {
-    borderRadius: 8,
-    borderStyle: "dashed",
-    borderWidth: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 24,
-    width: "100%",
-  },
-  editGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  gridCell: {
-    flexBasis: "47%",
-    flexGrow: 1,
-    minWidth: 0,
-  },
-  brushContent: {
-    gap: 12,
-  },
-});

@@ -1,18 +1,16 @@
-import { AnnotationCanvas, ViewportCard, useShellTheme } from "@lisca/ui-native";
-import { StyleSheet, Text, View } from "react-native";
+import { AnnotationCanvas, Text, ViewportCard } from "@lisca/ui-native";
+import { View } from "react-native";
 
 import type { StudioAnnotateState } from "../state/use-studio-annotate-state";
 import { StudioAnalysisProgressModal, StudioAnalysisStartModal } from "./studio-analysis-modals";
 
 export function StudioAnnotateMain({ state }: { state: StudioAnnotateState }) {
-  const { colors } = useShellTheme();
-
   if (state.workspaceMissing) {
     return (
       <>
         <ViewportCard>
-          <View style={styles.message}>
-            <Text style={{ color: colors.mutedForeground, fontSize: 14, textAlign: "center" }}>
+          <View className="min-h-48 items-center justify-center p-6">
+            <Text className="text-center text-sm text-muted-foreground">
               Set a save location in Basic info, then align and crop ROIs before annotating.
             </Text>
           </View>
@@ -27,8 +25,8 @@ export function StudioAnnotateMain({ state }: { state: StudioAnnotateState }) {
     return (
       <>
         <ViewportCard>
-          <View style={styles.message}>
-            <Text style={{ color: colors.mutedForeground, fontSize: 14, textAlign: "center" }}>
+          <View className="min-h-48 items-center justify-center p-6">
+            <Text className="text-center text-sm text-muted-foreground">
               No cropped ROI stacks found. Complete Align pattern and crop ROIs first.
             </Text>
           </View>
@@ -67,12 +65,3 @@ export function StudioAnnotateMain({ state }: { state: StudioAnnotateState }) {
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  message: {
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 192,
-    padding: 24,
-  },
-});

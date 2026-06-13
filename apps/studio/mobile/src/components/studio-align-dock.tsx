@@ -4,22 +4,21 @@ import {
   Button,
   DockSection,
   DockStrip,
-  dockLayoutStyles,
-  useShellTheme,
+  Text,
+  dockLayoutClasses,
 } from "@lisca/ui-native";
-import { StyleSheet, Text, View } from "react-native";
+import { View } from "react-native";
 
 import type { StudioAlignState } from "../state/use-studio-align-state";
 import { instructionForStep } from "../state/studio-routes";
 
 export function StudioAlignDock({ state }: { state: StudioAlignState }) {
-  const { colors } = useShellTheme();
   const gridDisabled = state.cropping || !state.frame;
 
   return (
     <DockStrip>
       <DockSection fit="panel" title="Instruction">
-        <Text style={[styles.instructionText, { color: colors.foreground }]}>
+        <Text className="text-center text-sm leading-5 text-foreground">
           {instructionForStep("alignPattern")}
         </Text>
       </DockSection>
@@ -34,8 +33,8 @@ export function StudioAlignDock({ state }: { state: StudioAlignState }) {
         }
       />
       <DockSection
-        contentStyle={dockLayoutStyles.content}
-        style={dockLayoutStyles.section}
+        contentClassName={dockLayoutClasses.content}
+        className={dockLayoutClasses.section}
         title="Tool"
       >
         <AlignToolToolbar
@@ -46,13 +45,13 @@ export function StudioAlignDock({ state }: { state: StudioAlignState }) {
         />
       </DockSection>
       <DockSection
-        contentStyle={dockLayoutStyles.content}
-        style={dockLayoutStyles.section}
+        contentClassName={dockLayoutClasses.content}
+        className={dockLayoutClasses.section}
         title="Action"
       >
-        <View style={dockLayoutStyles.stack}>
-          <View style={dockLayoutStyles.cols2}>
-            <View style={dockLayoutStyles.cell}>
+        <View className={dockLayoutClasses.stack}>
+          <View className={dockLayoutClasses.cols2}>
+            <View className={dockLayoutClasses.cell}>
               <Button
                 disabled={!state.frame || state.saving || state.cropping}
                 label="Reset"
@@ -61,7 +60,7 @@ export function StudioAlignDock({ state }: { state: StudioAlignState }) {
                 onPress={state.resetCurrent}
               />
             </View>
-            <View style={dockLayoutStyles.cell}>
+            <View className={dockLayoutClasses.cell}>
               <Button
                 disabled={
                   !state.workspacePath ||
@@ -77,8 +76,8 @@ export function StudioAlignDock({ state }: { state: StudioAlignState }) {
               />
             </View>
           </View>
-          <View style={dockLayoutStyles.cols2}>
-            <View style={dockLayoutStyles.cell}>
+          <View className={dockLayoutClasses.cols2}>
+            <View className={dockLayoutClasses.cell}>
               <Button
                 disabled={!state.canGoBack || state.saving || state.cropping}
                 label="Back"
@@ -87,7 +86,7 @@ export function StudioAlignDock({ state }: { state: StudioAlignState }) {
                 onPress={state.goBack}
               />
             </View>
-            <View style={dockLayoutStyles.cell}>
+            <View className={dockLayoutClasses.cell}>
               <Button
                 disabled={!state.frame || state.saving || state.cropping}
                 label="Next"
@@ -103,10 +102,3 @@ export function StudioAlignDock({ state }: { state: StudioAlignState }) {
   );
 }
 
-const styles = StyleSheet.create({
-  instructionText: {
-    fontSize: 14,
-    lineHeight: 20,
-    textAlign: "center",
-  },
-});

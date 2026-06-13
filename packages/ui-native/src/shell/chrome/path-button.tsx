@@ -1,12 +1,7 @@
 import type { ReactNode } from "react";
-import { Pressable, StyleSheet, Text } from "react-native";
 
-import {
-  shellOutlineButtonStyle,
-  shellOutlineSurface,
-} from "./shell-chrome";
-import { useShellTheme } from "../../theme/shell-theme";
-import { liscaType } from "../../theme/typography";
+import { Button as UiButton } from "../../../components/ui/button";
+import { Text } from "../../../components/ui/text";
 
 function basename(value: string | null): string | null {
   if (!value) return null;
@@ -23,38 +18,21 @@ export function PathButton(props: {
   disabled?: boolean;
   onPress?: () => void;
 }) {
-  const { colors, mode } = useShellTheme();
   const display = basename(props.value) ?? props.label;
   const disabled = props.disabled ?? !props.onPress;
 
   return (
-    <Pressable
+    <UiButton
       accessibilityLabel={props.value ?? props.label}
+      className="max-w-72 min-w-0 shrink"
       disabled={disabled}
+      variant="outline"
       onPress={props.onPress}
-      style={[
-        shellOutlineButtonStyle,
-        shellOutlineSurface(colors, mode),
-        styles.root,
-        { opacity: disabled ? 0.64 : 1 },
-      ]}
     >
       {props.icon}
-      <Text numberOfLines={1} style={[styles.label, { color: colors.foreground }]}>
+      <Text className="min-w-0 shrink" numberOfLines={1}>
         {display}
       </Text>
-    </Pressable>
+    </UiButton>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    maxWidth: 288,
-    minWidth: 0,
-    flexShrink: 1,
-  },
-  label: {
-    flexShrink: 1,
-    ...liscaType.body,
-  },
-});

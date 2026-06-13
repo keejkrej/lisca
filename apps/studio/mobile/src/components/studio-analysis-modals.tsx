@@ -1,5 +1,14 @@
-import { Button, DialogSurface, ModalScrim, Spinner } from "@lisca/ui-native";
-import { StyleSheet, Text, View } from "react-native";
+import {
+  Button,
+  DialogActions,
+  DialogDescriptionText,
+  DialogSurface,
+  DialogTitleText,
+  ModalScrim,
+  ShellProgress,
+  Spinner,
+} from "@lisca/ui-native";
+import { View } from "react-native";
 
 import type { StudioAnnotateState } from "../state/use-studio-annotate-state";
 
@@ -9,22 +18,22 @@ export function StudioAnalysisStartModal({ state }: { state: StudioAnnotateState
   return (
     <ModalScrim open onClose={() => state.setAnalysisStartConfirm(false)}>
       <DialogSurface maxWidth={420}>
-        <Text style={styles.title}>Start analysis</Text>
-        <Text style={styles.body}>
+        <DialogTitleText>Start analysis</DialogTitleText>
+        <DialogDescriptionText>
           Run the analysis pipeline now and open results when finished?
-        </Text>
-        <Text style={styles.body}>
+        </DialogDescriptionText>
+        <DialogDescriptionText>
           assay.json will be saved to the workspace before analysis starts. Annotations already
           saved under annotations/ will remain in the workspace.
-        </Text>
-        <View style={styles.actions}>
+        </DialogDescriptionText>
+        <DialogActions>
           <Button
             label="Cancel"
             variant="outline"
             onPress={() => state.setAnalysisStartConfirm(false)}
           />
           <Button label="Start" onPress={state.startAnalysis} />
-        </View>
+        </DialogActions>
       </DialogSurface>
     </ModalScrim>
   );
@@ -38,22 +47,16 @@ export function StudioAnalysisProgressModal({ state }: { state: StudioAnnotateSt
   return (
     <ModalScrim open onClose={() => undefined}>
       <DialogSurface maxWidth={360}>
-        <Text style={styles.title}>Analysis in progress</Text>
-        <View style={styles.progressRow}>
+        <DialogTitleText>Analysis in progress</DialogTitleText>
+        <View className="flex-row items-center gap-3">
           <Spinner />
-          <Text style={styles.body}>{progress.message ?? progress.stage}</Text>
+          <DialogDescriptionText className="mb-0 flex-1">
+            {progress.message ?? progress.stage}
+          </DialogDescriptionText>
         </View>
-        <Text style={styles.body}>{Math.round(progress.progress * 100)}%</Text>
+        <ShellProgress value={Math.round(progress.progress * 100)} />
+        <DialogDescriptionText>{Math.round(progress.progress * 100)}%</DialogDescriptionText>
       </DialogSurface>
     </ModalScrim>
   );
 }
-
-const styles = StyleSheet.create({
-  title: { fontSize: 16, fontWeight: "600", marginBottom: 8 },
-  body: { fontSize: 14, marginBottom: 8 },
-  errors: { gap: 4, marginBottom: 8 },
-  error: { color: "#ef4444", fontSize: 13 },
-  actions: { flexDirection: "row", justifyContent: "flex-end", gap: 8, marginTop: 12 },
-  progressRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-});

@@ -1,4 +1,4 @@
-import { AppShell, Spinner, ViewportCard, useShellTheme } from "@lisca/ui-native";
+import { AppShell, Spinner, Text, useThemeColors, ViewportCard } from "@lisca/ui-native";
 import { resultData } from "@lisca/client/atoms";
 import { runClientEffect } from "@lisca/client/runtime";
 import {
@@ -13,7 +13,7 @@ import {
 } from "@lisca/analysis";
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { useWindowDimensions, View } from "react-native";
 import { studioClient } from "../src/api/studio-port";
 import {
   analysisResultsAtom,
@@ -30,7 +30,7 @@ import { useStudioAnnotateState } from "../src/state/use-studio-annotate-state";
 import { useStudioStore } from "../src/state/studio-store";
 export default function ResultRoute() {
   const { width } = useWindowDimensions();
-  const { colors } = useShellTheme();
+  const colors = useThemeColors();
   const { workspacePath, analysisResultFiles } = useStudioAnnotateState();
   const info2 = useStudioStore((state) => state.info2);
   const info3 = useStudioStore((state) => state.info3);
@@ -177,15 +177,11 @@ export default function ResultRoute() {
         <AppShell.MainColumn>
           <AppShell.Main>
             <ViewportCard>
-              <View style={styles.viewportContent}>
+              <View className="min-h-0 flex-1 p-4">
                 {isSectionLoading ? (
                   <View
-                    style={[
-                      styles.loadingOverlay,
-                      {
-                        backgroundColor: `${colors.background}B3`,
-                      },
-                    ]}
+                    className="absolute inset-0 z-[1] items-center justify-center"
+                    style={{ backgroundColor: `${colors.background}B3` }}
                   >
                     <Spinner size="small" />
                   </View>
@@ -202,21 +198,11 @@ export default function ResultRoute() {
                     width={chartWidth}
                   />
                 ) : (
-                  <View style={styles.emptyState}>
-                    <Text
-                      style={{
-                        color: colors.mutedForeground,
-                        fontSize: 14,
-                      }}
-                    >
+                  <View className="flex-1 justify-center gap-2 p-4">
+                    <Text className="text-sm text-muted-foreground">
                       Status: {progress?.status ?? "idle"}
                     </Text>
-                    <Text
-                      style={{
-                        color: colors.mutedForeground,
-                        fontSize: 14,
-                      }}
-                    >
+                    <Text className="text-sm text-muted-foreground">
                       CSV files: {analysisResultFiles.length}
                     </Text>
                   </View>
@@ -240,22 +226,4 @@ export default function ResultRoute() {
     </AppShell>
   );
 }
-const styles = StyleSheet.create({
-  viewportContent: {
-    flex: 1,
-    minHeight: 0,
-    padding: 16,
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 1,
-  },
-  emptyState: {
-    flex: 1,
-    gap: 8,
-    justifyContent: "center",
-    padding: 16,
-  },
-});
+

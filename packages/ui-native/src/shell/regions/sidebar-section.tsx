@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
-import { StyleSheet } from "react-native";
+import type { ViewProps } from "react-native";
 
+import { cn } from "../../../lib/utils";
 import { Section } from "./section";
 
 export function SidebarSection(props: {
@@ -9,31 +10,23 @@ export function SidebarSection(props: {
   headerAction?: ReactNode;
   children?: ReactNode;
   defaultCollapsed?: boolean;
-  contentStyle?: object;
-  style?: object;
+  contentStyle?: ViewProps["style"];
+  contentClassName?: string;
+  style?: ViewProps["style"];
+  className?: string;
 }) {
   return (
     <Section
-      contentStyle={[styles.content, props.contentStyle]}
+      className={cn("min-h-0 shrink-0", props.className)}
+      contentClassName={cn("min-h-0 flex-col gap-2", props.contentClassName)}
+      contentStyle={props.contentStyle}
       defaultCollapsed={props.defaultCollapsed}
       description={props.description}
       headerAction={props.headerAction}
-      style={[styles.section, props.style]}
+      style={props.style}
       title={props.title}
     >
       {props.children}
     </Section>
   );
 }
-
-const styles = StyleSheet.create({
-  section: {
-    flexShrink: 0,
-    minHeight: 0,
-  },
-  content: {
-    flexDirection: "column",
-    gap: 8,
-    minHeight: 0,
-  },
-});

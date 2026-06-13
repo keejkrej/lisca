@@ -1,6 +1,5 @@
 import { LiscaMobileProviders, StorageBootstrap } from "@lisca/mobile-app";
 import { Stack } from "expo-router";
-import { StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
@@ -9,7 +8,7 @@ import { StudioProfileProvider } from "../src/components/studio-profile-provider
 
 export default function RootLayout() {
   return (
-    <GestureHandlerRootView style={styles.root}>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <StorageBootstrap>
           <LiscaMobileProviders defaultPort={8767} AtomsProvider={StudioAtomsProvider}>
@@ -22,7 +21,3 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1 },
-});

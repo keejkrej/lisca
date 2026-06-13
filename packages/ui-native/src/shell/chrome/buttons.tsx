@@ -1,13 +1,9 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, type ViewStyle } from "react-native";
 
-import {
-  shellChromeMetrics,
-  shellOutlineButtonStyle,
-  shellOutlineElevation,
-  shellOutlineSurface,
-} from "./shell-chrome";
-import { useShellTheme } from "../../theme/shell-theme";
-import { liscaType } from "../../theme/typography";
+import { Button as UiButton } from "../../../components/ui/button";
+import { Text } from "../../../components/ui/text";
+import { ToggleGroup, ToggleGroupItem } from "../../../components/ui/toggle-group";
+import { cn } from "../../../lib/utils";
 
 export function Button(props: {
   label: string;
@@ -17,58 +13,30 @@ export function Button(props: {
   compact?: boolean;
   size?: "sm" | "default";
   loading?: boolean;
-  style?: object;
+  style?: ViewStyle;
+  className?: string;
 }) {
-  const { colors, mode } = useShellTheme();
   const variant = props.variant ?? "default";
   const size = props.size ?? (props.compact ? "sm" : "default");
-  const isSm = size === "sm";
-  const textColor =
-    variant === "default" || variant === "destructive"
-      ? colors.primaryForeground
-      : colors.foreground;
-  const borderColor = variant === "outline" ? colors.input : "transparent";
   const disabled = props.disabled || props.loading;
-  const backgroundColor =
-    variant === "default"
-      ? colors.primary
-      : variant === "destructive"
-        ? colors.destructive
-        : variant === "outline"
-          ? colors.outlineSurface
-          : "transparent";
 
   return (
-    <Pressable
+    <UiButton
+      className={cn(props.compact && "shrink-0", props.className)}
       disabled={disabled}
+      size={size}
+      style={props.style}
+      variant={variant}
       onPress={props.onPress}
-      style={[
-        isSm ? shellOutlineButtonStyle : styles.button,
-        isSm && variant === "outline" ? shellOutlineSurface(colors, mode) : null,
-        isSm ? styles.sm : null,
-        variant === "outline" && !isSm ? shellOutlineElevation(mode) : null,
-        {
-          backgroundColor: isSm && variant === "outline" ? colors.outlineSurface : backgroundColor,
-          borderColor: variant === "outline" ? colors.input : borderColor,
-          opacity: disabled ? 0.64 : 1,
-        },
-        props.style,
-      ]}
     >
       {props.loading ? (
-        <ActivityIndicator color={textColor} size="small" />
+        <ActivityIndicator size="small" />
       ) : (
-        <Text
-          numberOfLines={isSm ? 1 : 2}
-          style={[
-            isSm ? styles.smLabel : styles.label,
-            { color: textColor, textAlign: "center", width: isSm ? undefined : "100%" },
-          ]}
-        >
+        <Text className="text-center" numberOfLines={size === "sm" ? 1 : 2}>
           {props.label}
         </Text>
       )}
-    </Pressable>
+    </UiButton>
   );
 }
 
@@ -78,73 +46,30 @@ export function SegmentedToggle(props: {
   disabled?: boolean;
   onChange: (value: string) => void;
 }) {
-  const { colors, mode } = useShellTheme();
   return (
-    <View style={[styles.segmented, { borderColor: colors.input }]}>
-      {props.options.map((option, index) => {
-        const active = props.value === option.value;
-        const isLast = index === props.options.length - 1;
-        return (
-          <Pressable
-            key={option.value}
-            disabled={props.disabled}
-            onPress={() => props.onChange(option.value)}
-            style={[
-              styles.segment,
-              !isLast
-                ? { borderRightWidth: 1, borderRightColor: colors.border }
-                : { borderRightWidth: 0 },
-              !active ? shellOutlineElevation(mode) : null,
-              {
-                backgroundColor: active ? colors.primary : colors.outlineSurface,
-                opacity: props.disabled ? 0.64 : 1,
-              },
-            ]}
-          >
-            <Text
-              style={{
-                color: active ? colors.primaryForeground : colors.foreground,
-                ...liscaType.bodySmall,
-              }}
-            >
-              {option.label}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
+    <ToggleGroup
+      className="w-full"
+      disabled={props.disabled}
+      type="single"
+      value={props.value}
+      variant="outline"
+      onValueChange={(value: string | undefined) => {
+        if (value) props.onChange(value);
+      }}
+    >
+      {props.options.map((option, index) => (
+        <ToggleGroupItem
+          key={option.value}
+          className="min-h-9 flex-1 py-2"
+          isFirst={index === 0}
+          isLast={index === props.options.length - 1}
+          value={option.value}
+        >
+          <Text className="text-center" variant="small">
+            {option.label}
+          </Text>
+        </ToggleGroupItem>
+      ))}
+    </ToggleGroup>
   );
 }
-
-const styles = StyleSheet.create({
-  button: {
-    borderWidth: 1,
-    borderRadius: shellChromeMetrics.radius,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 40,
-  },
-  sm: {
-    flexShrink: 0,
-  },
-  label: {
-    ...liscaType.bodyMedium,
-  },
-  smLabel: {
-    ...liscaType.bodyMedium,
-  },
-  segmented: {
-    flexDirection: "row",
-    borderWidth: 1,
-    borderRadius: 10,
-    overflow: "hidden",
-  },
-  segment: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 8,
-  },
-});

@@ -26,6 +26,7 @@
     "@lisca/contracts": "workspace:*",
     "@lisca/storage": "workspace:*",
     "@lisca/ui-native": "workspace:*",
+    "@rn-primitives/portal": "~1.4.0",
     "canvaskit-wasm": "0.41.0",
     "expo-font": "^56.0.5"
   },

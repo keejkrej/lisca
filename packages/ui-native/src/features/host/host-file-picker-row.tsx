@@ -1,5 +1,8 @@
 import type { HostFsEntry } from "@lisca/contracts";
-import { Pressable, StyleSheet, Text } from "react-native";
+import { Pressable } from "react-native";
+
+import { Text } from "../../../components/ui/text";
+import { cn } from "../../../lib/utils";
 
 export const FILE_PICKER_ROW_HEIGHT = 44;
 
@@ -25,14 +28,12 @@ export const FilePickerRow = function FilePickerRow({
       accessibilityLabel={entry.isDirectory ? `Folder ${entry.name}` : `File ${entry.name}`}
       accessibilityRole="button"
       accessibilityState={{ selected }}
-      style={[
-        styles.row,
-        selected ? styles.selected : null,
-        {
-          borderColor,
-          opacity: muted ? 0.6 : 1,
-        },
-      ]}
+      className={cn(
+        "min-h-11 border-b px-3 py-2.5",
+        selected && "bg-accent/50",
+        muted && "opacity-60",
+      )}
+      style={{ borderColor }}
       onPress={() => onPress(entry)}
     >
       <Text style={{ color: foregroundColor }}>
@@ -41,15 +42,3 @@ export const FilePickerRow = function FilePickerRow({
     </Pressable>
   );
 };
-
-const styles = StyleSheet.create({
-  row: {
-    borderBottomWidth: 1,
-    minHeight: FILE_PICKER_ROW_HEIGHT,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  selected: {
-    backgroundColor: "rgba(127,127,127,0.12)",
-  },
-});

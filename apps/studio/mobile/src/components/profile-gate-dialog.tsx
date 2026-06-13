@@ -1,8 +1,17 @@
 import { runClientEffect } from "@lisca/client/runtime";
 import type { ProfileSummary } from "@lisca/contracts";
-import { Button, DialogSurface, ModalScrim } from "@lisca/ui-native";
+import {
+  Button,
+  DialogDescriptionText,
+  DialogErrorText,
+  DialogSectionLabel,
+  DialogStack,
+  DialogSurface,
+  DialogTitleText,
+  Input,
+  ModalScrim,
+} from "@lisca/ui-native";
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
 
 import { studioProfileClient } from "../api/studio-profile-port";
 
@@ -92,24 +101,24 @@ export function ProfileGateDialog({
   return (
     <ModalScrim open={open} onClose={() => undefined}>
       <DialogSurface accessibilityLabel="Choose a profile" maxWidth={400}>
-        <View style={styles.body}>
-          <Text style={styles.title}>Choose a profile</Text>
-          <Text style={styles.subtitle}>
+        <DialogStack className="p-4">
+          <DialogTitleText>Choose a profile</DialogTitleText>
+          <DialogDescriptionText>
             Profiles remember recent workspaces, sources, and assays. Guest mode does not save
             history.
-          </Text>
+          </DialogDescriptionText>
 
           {!serverConnected ? (
-            <Text style={styles.muted}>Connecting to Studio server…</Text>
+            <DialogDescriptionText>Connecting to Studio server…</DialogDescriptionText>
           ) : null}
 
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+          {error ? <DialogErrorText>{error}</DialogErrorText> : null}
 
-          <Text style={styles.sectionLabel}>Existing profiles</Text>
+          <DialogSectionLabel className="mt-2">Existing profiles</DialogSectionLabel>
           {loading ? (
-            <Text style={styles.muted}>Loading…</Text>
+            <DialogDescriptionText>Loading…</DialogDescriptionText>
           ) : profiles.length === 0 ? (
-            <Text style={styles.muted}>No profiles yet.</Text>
+            <DialogDescriptionText>No profiles yet.</DialogDescriptionText>
           ) : (
             profiles.map((profile) => (
               <Button
@@ -121,12 +130,11 @@ export function ProfileGateDialog({
             ))
           )}
 
-          <Text style={styles.sectionLabel}>Create profile</Text>
-          <TextInput
+          <DialogSectionLabel className="mt-2">Create profile</DialogSectionLabel>
+          <Input
             autoCapitalize="none"
             autoCorrect={false}
             placeholder="Display name"
-            style={styles.input}
             value={createName}
             onChangeText={setCreateName}
           />
@@ -141,25 +149,8 @@ export function ProfileGateDialog({
             label="Continue as guest"
             onPress={onSelectGuest}
           />
-        </View>
+        </DialogStack>
       </DialogSurface>
     </ModalScrim>
   );
 }
-
-const styles = StyleSheet.create({
-  body: { gap: 12, padding: 16 },
-  title: { fontSize: 18, fontWeight: "600" },
-  subtitle: { fontSize: 14, opacity: 0.7 },
-  sectionLabel: { fontSize: 14, fontWeight: "600", marginTop: 8 },
-  muted: { fontSize: 14, opacity: 0.7 },
-  error: { fontSize: 14, color: "#b91c1c" },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 16,
-  },
-});

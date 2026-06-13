@@ -5,8 +5,8 @@
     "lib": ["ES2023", "DOM"],
     "noEmit": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*", "../../../packages/ui-native/*"]
     }
   },
-  "include": ["app/**/*.ts", "app/**/*.tsx", "src/**/*.ts", "src/**/*.tsx"]
+  "include": ["app/**/*.ts", "app/**/*.tsx", "src/**/*.ts", "src/**/*.tsx", "nativewind-env.d.ts"]
 }

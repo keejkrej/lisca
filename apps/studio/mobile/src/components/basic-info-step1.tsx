@@ -4,13 +4,13 @@ import {
   Field,
   FolderSourceParseModal,
   HostFilePickerDialog,
+  Input,
   Section,
   SourcePickerModal,
-  useShellTheme,
   type HostFilePickerOperations,
 } from "@lisca/ui-native";
 import { useState } from "react";
-import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import { Pressable, View } from "react-native";
 
 import { useStudioStore } from "../state/studio-store";
 
@@ -39,17 +39,12 @@ function kindFromMode(mode: HostFilePickerMode): StudioDataSourceKind {
 }
 
 export function BasicInfoStep1({ hostPort }: { hostPort: HostFilePickerOperations }) {
-  const { colors } = useShellTheme();
   const info1 = useStudioStore((state) => state.info1);
   const setInfo1 = useStudioStore((state) => state.setInfo1);
   const setDataSourceKind = useStudioStore((state) => state.setDataSourceKind);
   const [openDataModalOpen, setOpenDataModalOpen] = useState(false);
   const [pathPicker, setPathPicker] = useState<StudioPathPickerState>(null);
   const [folderSourcePath, setFolderSourcePath] = useState<string | null>(null);
-  const inputStyle = [
-    styles.input,
-    { borderColor: colors.input, color: colors.foreground, backgroundColor: colors.controlSurface },
-  ];
 
   const openSourceBrowser = (mode: HostFilePickerMode) => {
     setOpenDataModalOpen(false);
@@ -63,46 +58,42 @@ export function BasicInfoStep1({ hostPort }: { hostPort: HostFilePickerOperation
 
   return (
     <>
-      <View style={styles.root}>
-        <Section contentStyle={styles.sectionContent} title="Name">
+      <View className="w-full gap-2">
+        <Section contentClassName="gap-2" title="Name">
           <Field label="Name">
-            <TextInput
+            <Input
               autoComplete="off"
               placeholder="My assay"
-              style={inputStyle}
               value={info1.name}
               onChangeText={(name) => setInfo1({ name })}
             />
           </Field>
         </Section>
-        <Section contentStyle={styles.sectionContent} title="Date">
+        <Section contentClassName="gap-2" title="Date">
           <Field label="Date">
-            <TextInput
+            <Input
               placeholder="YYYY-MM-DD"
-              style={inputStyle}
               value={info1.date}
               onChangeText={(date) => setInfo1({ date })}
             />
           </Field>
         </Section>
-        <Section contentStyle={styles.sectionContent} title="Data path">
+        <Section contentClassName="gap-2" title="Data path">
           <Pressable onPress={() => setOpenDataModalOpen(true)}>
-            <TextInput
+            <Input
               editable={false}
               pointerEvents="none"
               placeholder="Click to choose source..."
-              style={inputStyle}
               value={info1.dataPath}
             />
           </Pressable>
         </Section>
-        <Section contentStyle={styles.sectionContent} title="Save to">
+        <Section contentClassName="gap-2" title="Save to">
           <Pressable onPress={() => setPathPicker({ kind: "save" })}>
-            <TextInput
+            <Input
               editable={false}
               pointerEvents="none"
               placeholder="Click to choose folder..."
-              style={inputStyle}
               value={info1.saveTo}
             />
           </Pressable>
@@ -152,21 +143,3 @@ export function BasicInfoStep1({ hostPort }: { hostPort: HostFilePickerOperation
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    gap: 8,
-    width: "100%",
-  },
-  sectionContent: {
-    gap: 8,
-  },
-  input: {
-    borderRadius: 8,
-    borderWidth: 1,
-    fontSize: 14,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    width: "100%",
-  },
-});

@@ -1,14 +1,14 @@
 import { clamp } from "@lisca/utils";
 import { useEffect, useRef, useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { View } from "react-native";
 
 import { Button, SegmentedToggle } from "../../shell/chrome/buttons";
 import { Field } from "../../shell/chrome/field";
+import { Input } from "../../shell/chrome/input";
 import { Section } from "../../shell/regions/section";
 import { Slider } from "../../shell/chrome/slider";
-import { shellChromeMetrics } from "../../shell/chrome/shell-chrome";
-import { useShellTheme } from "../../theme/shell-theme";
-import { liscaFontFamily, liscaType } from "../../theme/typography";
+import { Text as UiText } from "../../../components/ui/text";
+import { cn } from "../../../lib/utils";
 import { AlignGridShapeToggle, type AlignGridShapeToggleProps } from "./align-grid-shape-toggle";
 
 type AlignGridShape = AlignGridShapeToggleProps["shape"];
@@ -24,7 +24,6 @@ function AlignNumberInput(props: {
   min?: number;
   step?: string;
 }) {
-  const { colors } = useShellTheme();
   const [draft, setDraft] = useState(formatNumber(props.value));
   const skipBlurCommitRef = useRef(false);
 
@@ -50,21 +49,14 @@ function AlignNumberInput(props: {
   };
 
   return (
-    <TextInput
+    <Input
+      className="min-w-0 flex-1"
       editable={!props.disabled}
       keyboardType="numeric"
       value={draft}
       onBlur={commit}
       onChangeText={setDraft}
       onSubmitEditing={commit}
-      style={[
-        styles.numberInput,
-        {
-          color: colors.foreground,
-          borderColor: colors.input,
-          backgroundColor: colors.controlSurface,
-        },
-      ]}
     />
   );
 }
@@ -102,7 +94,6 @@ export type AlignGridProps = {
 };
 
 export function AlignGrid(props: AlignGridProps) {
-  const { colors } = useShellTheme();
   const {
     overlayVisible,
     onOverlayVisibleChange,
@@ -178,10 +169,7 @@ export function AlignGrid(props: AlignGridProps) {
           maximumValue={1}
           minimumValue={0}
           step={0.01}
-          style={styles.slider}
-          thumbTintColor={colors.primary}
-          minimumTrackTintColor={colors.primary}
-          maximumTrackTintColor={colors.border}
+          style={{ width: "100%", height: 32 }}
           value={overlayOpacityDraft}
           onSlidingComplete={(value) => {
             const opacity = clamp(value, 0, 1);
@@ -202,10 +190,7 @@ export function AlignGrid(props: AlignGridProps) {
           maximumValue={180}
           minimumValue={-180}
           step={0.1}
-          style={styles.slider}
-          thumbTintColor={colors.primary}
-          minimumTrackTintColor={colors.primary}
-          maximumTrackTintColor={colors.border}
+          style={{ width: "100%", height: 32 }}
           value={rotationDraft}
           onSlidingComplete={(value) => {
             const degrees = clamp(value, -180, 180);
@@ -216,8 +201,8 @@ export function AlignGrid(props: AlignGridProps) {
         />
       </Field>
 
-      <View style={styles.grid2}>
-        <View style={styles.gridCell}>
+      <View className="flex-row gap-2">
+        <View className="min-w-0 flex-1">
           <Field label="Vector A">
             <AlignNumberInput
               disabled={disabled}
@@ -227,7 +212,7 @@ export function AlignGrid(props: AlignGridProps) {
             />
           </Field>
         </View>
-        <View style={styles.gridCell}>
+        <View className="min-w-0 flex-1">
           <Field label="Vector B">
             <AlignNumberInput
               disabled={disabled}
@@ -239,8 +224,8 @@ export function AlignGrid(props: AlignGridProps) {
         </View>
       </View>
 
-      <View style={styles.grid2}>
-        <View style={styles.gridCell}>
+      <View className="flex-row gap-2">
+        <View className="min-w-0 flex-1">
           <Field label="Pattern Width">
             <AlignNumberInput
               disabled={disabled}
@@ -250,7 +235,7 @@ export function AlignGrid(props: AlignGridProps) {
             />
           </Field>
         </View>
-        <View style={styles.gridCell}>
+        <View className="min-w-0 flex-1">
           <Field label="Pattern Height">
             <AlignNumberInput
               disabled={disabled}
@@ -262,8 +247,8 @@ export function AlignGrid(props: AlignGridProps) {
         </View>
       </View>
 
-      <View style={styles.grid2}>
-        <View style={styles.gridCell}>
+      <View className="flex-row gap-2">
+        <View className="min-w-0 flex-1">
           <Field label="Offset X">
             <AlignNumberInput
               disabled={disabled}
@@ -273,7 +258,7 @@ export function AlignGrid(props: AlignGridProps) {
             />
           </Field>
         </View>
-        <View style={styles.gridCell}>
+        <View className="min-w-0 flex-1">
           <Field label="Offset Y">
             <AlignNumberInput
               disabled={disabled}
@@ -288,62 +273,17 @@ export function AlignGrid(props: AlignGridProps) {
   );
 }
 
-export function ReadonlyPathField(props: { value: string; style?: object }) {
-  const { colors } = useShellTheme();
+export function ReadonlyPathField(props: { value: string; className?: string }) {
   return (
     <View
-      style={[
-        pathStyles.root,
-        { borderColor: colors.border, backgroundColor: colors.muted },
-        props.style,
-      ]}
+      className={cn(
+        "h-10 min-w-0 w-full items-center justify-center self-stretch rounded-lg border border-border bg-muted px-2",
+        props.className,
+      )}
     >
-      <Text numberOfLines={1} style={[pathStyles.text, { color: colors.foreground }]}>
+      <UiText className="w-full font-mono text-sm text-foreground" numberOfLines={1}>
         {props.value}
-      </Text>
+      </UiText>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  slider: {
-    width: "100%",
-    height: 32,
-  },
-  grid2: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  gridCell: {
-    flex: 1,
-    minWidth: 0,
-  },
-  numberInput: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    fontSize: 14,
-    fontFamily: liscaFontFamily.sansRegular,
-    minWidth: 0,
-    flex: 1,
-  },
-});
-
-const pathStyles = StyleSheet.create({
-  root: {
-    alignItems: "center",
-    alignSelf: "stretch",
-    borderWidth: 1,
-    borderRadius: 8,
-    height: shellChromeMetrics.height,
-    justifyContent: "center",
-    minWidth: 0,
-    paddingHorizontal: 8,
-    width: "100%",
-  },
-  text: {
-    ...liscaType.mono,
-    padding: 0,
-  },
-});

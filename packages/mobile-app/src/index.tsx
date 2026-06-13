@@ -1,4 +1,6 @@
-import { ShellServerProvider, ShellThemeProvider, ShellWorkspaceProvider } from "@lisca/ui-native";
+import { NativeWindThemeSync, ShellServerProvider, ShellThemeProvider, ShellWorkspaceProvider } from "@lisca/ui-native";
+import "@lisca/ui-native/global.css";
+import { PortalHost } from "@rn-primitives/portal";
 import { StrictMode, type ComponentType, type ReactNode } from "react";
 
 import { LiscaFontsProvider } from "./lisca-fonts-provider";
@@ -19,9 +21,14 @@ export function LiscaMobileProviders({
       <LiscaFontsProvider>
         <AtomsProvider>
           <ShellThemeProvider>
-            <ShellServerProvider defaultPort={defaultPort}>
-              <ShellWorkspaceProvider>{children}</ShellWorkspaceProvider>
-            </ShellServerProvider>
+            <NativeWindThemeSync>
+              <ShellServerProvider defaultPort={defaultPort}>
+                <ShellWorkspaceProvider>
+                  {children}
+                  <PortalHost />
+                </ShellWorkspaceProvider>
+              </ShellServerProvider>
+            </NativeWindThemeSync>
           </ShellThemeProvider>
         </AtomsProvider>
       </LiscaFontsProvider>

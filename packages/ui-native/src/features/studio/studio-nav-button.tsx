@@ -1,43 +1,30 @@
 import type { ReactNode } from "react";
-import { Pressable, StyleSheet, Text } from "react-native";
+import { Pressable } from "react-native";
 
-import { useShellTheme } from "../../theme/shell-theme";
-import { liscaType } from "../../theme/typography";
+import { Text } from "../../../components/ui/text";
+import { cn } from "../../../lib/utils";
 
 export function StudioNavButton(props: {
   active: boolean;
   children: ReactNode;
   onPress?: () => void;
 }) {
-  const { colors } = useShellTheme();
-
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ selected: props.active }}
+      className="w-full items-center rounded-lg px-5 py-2.5 active:opacity-70"
       onPress={props.onPress}
-      style={({ pressed }) => [styles.root, pressed ? { opacity: 0.7 } : null]}
     >
       <Text
+        className={cn(
+          "text-center text-sm font-semibold leading-tight",
+          props.active ? "text-foreground" : "text-muted-foreground",
+        )}
         numberOfLines={2}
-        style={[styles.label, { color: props.active ? colors.foreground : colors.mutedForeground }]}
       >
         {props.children}
       </Text>
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    alignItems: "center",
-    borderRadius: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    width: "100%",
-  },
-  label: {
-    ...liscaType.navTitle,
-    textAlign: "center",
-  },
-});

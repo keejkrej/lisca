@@ -3,7 +3,10 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "lib": ["ES2023", "DOM"],
-    "noEmit": true
+    "noEmit": true,
+    "paths": {
+      "@/*": ["./src/*", "../../../packages/ui-native/*"]
+    }
   },
-  "include": ["app/**/*.ts", "app/**/*.tsx", "src/**/*.ts", "src/**/*.tsx"]
+  "include": ["app/**/*.ts", "app/**/*.tsx", "src/**/*.ts", "src/**/*.tsx", "nativewind-env.d.ts"]
 }

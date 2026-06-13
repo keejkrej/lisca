@@ -1,33 +1,13 @@
 import type { ReactNode } from "react";
-import { StyleSheet, View } from "react-native";
-
-import { useShellTheme } from "../../theme/shell-theme";
+import { View } from "react-native";
 
 /** Padded main-column frame for canvas, plots, and other primary viewport content. */
 export function ViewportCard({ children }: { children: ReactNode }) {
-  const { colors } = useShellTheme();
   return (
-    <View style={[styles.outer, { backgroundColor: colors.background }]}>
-      <View
-        style={[styles.inner, { backgroundColor: colors.background, borderColor: colors.border }]}
-      >
+    <View className="min-h-0 flex-1 bg-background p-3">
+      <View className="min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-background">
         {children}
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  outer: {
-    flex: 1,
-    minHeight: 0,
-    padding: 12,
-  },
-  inner: {
-    flex: 1,
-    minHeight: 0,
-    borderRadius: 12,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
-});

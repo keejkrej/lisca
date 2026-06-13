@@ -5,38 +5,35 @@ import {
   Button,
   labelColorStyle,
   Section,
-  useShellTheme,
+  Text,
 } from "@lisca/ui-native";
-import { ScrollView, StyleSheet, Text, Pressable, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 
 import type { StudioAnnotateState } from "../state/use-studio-annotate-state";
 import { createEmptyMask } from "../utils/annotation-utils";
 
 export function StudioAnnotateRight({ state }: { state: StudioAnnotateState }) {
-  const { colors } = useShellTheme();
   const activeError =
     state.scanError ?? state.frameError ?? state.annotationError ?? state.saveError;
   const loading = state.scanLoading || state.frameLoading || state.annotationLoading;
 
   if (state.workspaceMissing) {
     return (
-      <ScrollView contentContainerStyle={styles.root} style={styles.scroll}>
+      <ScrollView className="-m-3 min-h-0 flex-1" contentContainerClassName="gap-3 p-3">
         <Section title="Annotate">
-          <Text style={{ color: colors.mutedForeground, fontSize: 14 }}>
-            Complete Basic info to annotate ROIs.
-          </Text>
+          <Text className="text-sm text-muted-foreground">Complete Basic info to annotate ROIs.</Text>
         </Section>
       </ScrollView>
     );
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.root} style={styles.scroll}>
+    <ScrollView className="-m-3 min-h-0 flex-1" contentContainerClassName="gap-3 p-3">
       <Section title="Mode">
         <AnnotationModeToggle mode={state.mode} onModeChange={state.setMode} />
       </Section>
-      <Section contentStyle={styles.labelsContent} title="Labels">
-        <View style={styles.labelsGrid}>
+      <Section contentClassName="gap-2" title="Labels">
+        <View className="flex-row flex-wrap gap-2">
           {state.labels.map((label) => {
             const selected =
               state.mode === "classification"
@@ -48,12 +45,13 @@ export function StudioAnnotateRight({ state }: { state: StudioAnnotateState }) {
                 key={label.id}
                 accessibilityRole="button"
                 accessibilityState={{ selected, disabled: !state.canEdit }}
+                className={
+                  state.canEdit
+                    ? "min-w-[47%] flex-grow rounded-lg border border-border px-2 py-2.5"
+                    : "min-w-[47%] flex-grow rounded-lg border border-border px-2 py-2.5 opacity-50"
+                }
                 disabled={!state.canEdit}
-                style={[
-                  styles.labelChip,
-                  { borderColor: colors.border, opacity: state.canEdit ? 1 : 0.5 },
-                  chipStyle,
-                ]}
+                style={chipStyle}
                 onPress={() => {
                   if (state.mode === "classification") {
                     state.annotation.commit({
@@ -66,11 +64,9 @@ export function StudioAnnotateRight({ state }: { state: StudioAnnotateState }) {
                 }}
               >
                 <Text
+                  className="text-center text-xs font-medium"
                   numberOfLines={1}
-                  style={[
-                    styles.labelText,
-                    chipStyle ? { color: chipStyle.color } : { color: colors.foreground },
-                  ]}
+                  style={chipStyle ? { color: chipStyle.color } : undefined}
                 >
                   {label.name}
                 </Text>
@@ -89,15 +85,11 @@ export function StudioAnnotateRight({ state }: { state: StudioAnnotateState }) {
             }}
           />
         ) : null}
-        {loading ? (
-          <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>Loading…</Text>
-        ) : null}
-        {activeError ? (
-          <Text style={{ color: colors.destructive, fontSize: 12 }}>{activeError}</Text>
-        ) : null}
+        {loading ? <Text className="text-xs text-muted-foreground">Loading…</Text> : null}
+        {activeError ? <Text className="text-xs text-destructive">{activeError}</Text> : null}
       </Section>
-      <Section contentStyle={styles.editGrid} title="Edit">
-        <View style={styles.gridCell}>
+      <Section contentClassName="flex-row flex-wrap gap-2" title="Edit">
+        <View className="min-w-0 flex-grow basis-[47%]">
           <Button
             disabled={!state.annotation.canUndo}
             label="Undo"
@@ -106,7 +98,7 @@ export function StudioAnnotateRight({ state }: { state: StudioAnnotateState }) {
             onPress={state.annotation.undo}
           />
         </View>
-        <View style={styles.gridCell}>
+        <View className="min-w-0 flex-grow basis-[47%]">
           <Button
             disabled={!state.annotation.canRedo}
             label="Redo"
@@ -115,7 +107,7 @@ export function StudioAnnotateRight({ state }: { state: StudioAnnotateState }) {
             onPress={state.annotation.redo}
           />
         </View>
-        <View style={styles.gridCell}>
+        <View className="min-w-0 flex-grow basis-[47%]">
           <Button
             disabled={state.mode !== "segmentation" || !state.canEdit}
             label="Clear"
@@ -130,7 +122,7 @@ export function StudioAnnotateRight({ state }: { state: StudioAnnotateState }) {
             }
           />
         </View>
-        <View style={styles.gridCell}>
+        <View className="min-w-0 flex-grow basis-[47%]">
           <Button
             disabled={!state.annotation.dirty}
             label="Discard"
@@ -141,7 +133,7 @@ export function StudioAnnotateRight({ state }: { state: StudioAnnotateState }) {
         </View>
       </Section>
       {state.mode === "segmentation" ? (
-        <Section contentStyle={styles.brushContent} title="Brush">
+        <Section contentClassName="gap-3" title="Brush">
           <AnnotationToolSlider
             label="Opacity"
             max={0.95}
@@ -165,48 +157,3 @@ export function StudioAnnotateRight({ state }: { state: StudioAnnotateState }) {
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-    margin: -12,
-    minHeight: 0,
-  },
-  root: {
-    gap: 12,
-    padding: 12,
-  },
-  labelsContent: {
-    gap: 8,
-  },
-  labelsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  labelChip: {
-    borderRadius: 8,
-    borderWidth: 1,
-    minWidth: "47%",
-    paddingHorizontal: 8,
-    paddingVertical: 10,
-  },
-  labelText: {
-    fontSize: 12,
-    fontWeight: "500",
-    textAlign: "center",
-  },
-  editGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  gridCell: {
-    flexBasis: "47%",
-    flexGrow: 1,
-    minWidth: 0,
-  },
-  brushContent: {
-    gap: 12,
-  },
-});

@@ -1,19 +1,18 @@
 import type { ReactNode } from "react";
-import { StyleSheet, View, type ViewStyle } from "react-native";
+import { View, type ViewProps } from "react-native";
 
-export function DockStrip(props: { children?: ReactNode; style?: ViewStyle }) {
-  return <View style={[styles.root, props.style]}>{props.children}</View>;
+import { cn } from "../../../lib/utils";
+
+export function DockStrip(props: { children?: ReactNode; style?: ViewProps["style"]; className?: string }) {
+  return (
+    <View
+      className={cn(
+        "min-h-0 w-full flex-1 flex-row items-stretch justify-center gap-3 p-3",
+        props.className,
+      )}
+      style={props.style}
+    >
+      {props.children}
+    </View>
+  );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    alignItems: "stretch",
-    flex: 1,
-    flexDirection: "row",
-    gap: 12,
-    justifyContent: "center",
-    minHeight: 0,
-    padding: 12,
-    width: "100%",
-  },
-});

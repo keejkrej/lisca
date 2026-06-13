@@ -1,16 +1,15 @@
 import type { ReactNode } from "react";
-import { StyleSheet, View } from "react-native";
+import { View, type ViewProps } from "react-native";
 
-export function SidebarStack(props: { children?: ReactNode; style?: object }) {
-  return <View style={[styles.root, props.style]}>{props.children}</View>;
+import { cn } from "../../../lib/utils";
+
+export function SidebarStack(props: { children?: ReactNode; style?: ViewProps["style"]; className?: string }) {
+  return (
+    <View
+      className={cn("min-h-0 flex-col gap-2 overflow-hidden p-3", props.className)}
+      style={props.style}
+    >
+      {props.children}
+    </View>
+  );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flexDirection: "column",
-    gap: 8,
-    minHeight: 0,
-    overflow: "hidden",
-    padding: 12,
-  },
-});

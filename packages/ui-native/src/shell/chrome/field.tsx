@@ -1,48 +1,36 @@
 import type { ReactNode } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { View, type ViewProps } from "react-native";
 
-import { useShellTheme } from "../../theme/shell-theme";
-import { liscaType } from "../../theme/typography";
+import { Label } from "../../../components/ui/label";
+import { Text } from "../../../components/ui/text";
+import { cn } from "../../../lib/utils";
 
-export function Field(props: { label: string; valueLabel?: string; children: ReactNode; style?: object }) {
+export function Field(props: {
+  label: string;
+  valueLabel?: string;
+  children: ReactNode;
+  style?: ViewProps["style"];
+  className?: string;
+}) {
   return (
-    <View style={[styles.root, props.style]}>
-      <View style={styles.labelRow}>
+    <View className={cn("w-full min-w-0 gap-1.5", props.className)} style={props.style}>
+      <View className="w-full flex-row items-center justify-between gap-2">
         <FieldLabel>{props.label}</FieldLabel>
-        {props.valueLabel ? <FieldValue>{props.valueLabel}</FieldValue> : null}
+        {props.valueLabel ? (
+          <Text className="text-xs text-muted-foreground" variant="muted">
+            {props.valueLabel}
+          </Text>
+        ) : null}
       </View>
       {props.children}
     </View>
   );
 }
 
-export function FieldLabel(props: { children: ReactNode }) {
-  const { colors } = useShellTheme();
-  return <Text style={[styles.label, { color: colors.mutedForeground }]}>{props.children}</Text>;
+export function FieldLabel(props: { children: ReactNode; className?: string }) {
+  return (
+    <Label className={cn("text-xs font-medium text-muted-foreground", props.className)}>
+      {props.children}
+    </Label>
+  );
 }
-
-function FieldValue(props: { children: ReactNode }) {
-  const { colors } = useShellTheme();
-  return <Text style={[styles.value, { color: colors.mutedForeground }]}>{props.children}</Text>;
-}
-
-const styles = StyleSheet.create({
-  root: {
-    gap: 6,
-    minWidth: 0,
-    width: "100%",
-  },
-  labelRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-    width: "100%",
-  },
-  label: {
-    ...liscaType.bodySmallMedium,
-  },
-  value: {
-    ...liscaType.bodySmall,
-  },
-});

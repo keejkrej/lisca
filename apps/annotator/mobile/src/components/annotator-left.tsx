@@ -8,7 +8,8 @@ import {
   stepNavigationValue,
   toAxisNavigationOptions,
 } from "@lisca/ui-native";
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
+
 export function AnnotatorLeft(props: {
   scan: RoiWorkspaceScan | null;
   position: RoiPositionScan | null;
@@ -38,8 +39,9 @@ export function AnnotatorLeft(props: {
   const posValue = props.pos ?? positionOptions[0]?.value ?? 0;
   const roiValue = props.roi ?? roiOptions[0]?.value ?? 0;
   const channelValue = props.channel ?? channelOptions[0]?.value ?? 0;
+
   return (
-    <View style={styles.root}>
+    <View className="-m-3 min-h-0 flex-1 gap-2 p-3">
       <FrameNavigation
         channel={{
           value: channelValue,
@@ -111,12 +113,3 @@ export function AnnotatorLeft(props: {
     </View>
   );
 }
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    gap: 8,
-    margin: -12,
-    minHeight: 0,
-    padding: 12,
-  },
-});

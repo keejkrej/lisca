@@ -3,14 +3,17 @@ import { normalizeLabelId, useLabelCreationForm } from "@lisca/ui-headless/label
 import {
   Button,
   DialogBody,
+  DialogDescriptionText,
+  DialogErrorText,
   DialogFooter,
   DialogHeader,
   DialogSurface,
+  DialogTitleText,
   Field,
+  Input,
   ModalScrim,
-  useShellTheme,
 } from "@lisca/ui-native";
-import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ScrollView, View } from "react-native";
 
 export function LabelCreationDialog(props: {
   open: boolean;
@@ -21,7 +24,6 @@ export function LabelCreationDialog(props: {
   onOpenChange: (open: boolean) => void;
   onSave: (labels: AnnotationLabel[]) => void;
 }) {
-  const { colors } = useShellTheme();
   const form = useLabelCreationForm({
     open: props.open,
     labels: props.labels,
@@ -37,12 +39,12 @@ export function LabelCreationDialog(props: {
     <ModalScrim open={props.open} onClose={() => props.onOpenChange(false)}>
       <DialogSurface maxWidth={640} padded={false}>
         <DialogHeader>
-          <View style={styles.headerContent}>
-            <View style={styles.headerText}>
-              <Text style={[styles.title, { color: colors.foreground }]}>Create labels</Text>
-              <Text numberOfLines={1} style={[styles.subtitle, { color: colors.mutedForeground }]}>
+          <View className="w-full flex-row items-start justify-between gap-3">
+            <View className="min-w-0 flex-1">
+              <DialogTitleText>Create labels</DialogTitleText>
+              <DialogDescriptionText className="mt-0.5" numberOfLines={1}>
                 {props.workspacePath ?? "Select a workspace first"}
-              </Text>
+              </DialogDescriptionText>
             </View>
             <Button
               label="Close"
@@ -53,60 +55,36 @@ export function LabelCreationDialog(props: {
           </View>
         </DialogHeader>
 
-        <DialogBody style={styles.body}>
-          <ScrollView contentContainerStyle={styles.draftList}>
+        <DialogBody className="max-h-[420px]">
+          <ScrollView contentContainerClassName="gap-3">
             {form.drafts.map((draft, index) => (
-              <View key={draft.id} style={styles.draftRow}>
-                <Field label="Name" style={styles.field}>
-                  <TextInput
+              <View key={draft.id} className="flex-row flex-wrap gap-2">
+                <Field className="min-w-[120px] flex-1" label="Name">
+                  <Input
                     accessibilityLabel={`Label ${index + 1} name`}
-                    style={[
-                      styles.input,
-                      {
-                        borderColor: colors.input,
-                        color: colors.foreground,
-                        backgroundColor: colors.controlSurface,
-                      },
-                    ]}
                     value={draft.name}
                     onChangeText={(name) => {
                       form.updateDraft(index, { name, id: normalizeLabelId(name) || draft.id });
                     }}
                   />
                 </Field>
-                <Field label="ID" style={styles.field}>
-                  <TextInput
+                <Field className="min-w-[120px] flex-1" label="ID">
+                  <Input
                     accessibilityLabel={`Label ${index + 1} id`}
                     autoCapitalize="none"
-                    style={[
-                      styles.input,
-                      {
-                        borderColor: colors.input,
-                        color: colors.foreground,
-                        backgroundColor: colors.controlSurface,
-                      },
-                    ]}
                     value={draft.id}
                     onChangeText={(id) => form.updateDraft(index, { id })}
                   />
                 </Field>
-                <Field label="Color" style={styles.colorField}>
-                  <TextInput
+                <Field className="w-24 min-w-[96px]" label="Color">
+                  <Input
                     accessibilityLabel={`Label ${index + 1} color`}
                     autoCapitalize="none"
-                    style={[
-                      styles.input,
-                      {
-                        borderColor: colors.input,
-                        color: colors.foreground,
-                        backgroundColor: colors.controlSurface,
-                      },
-                    ]}
                     value={draft.color}
                     onChangeText={(color) => form.updateDraft(index, { color })}
                   />
                 </Field>
-                <View style={styles.removeCell}>
+                <View className="justify-end pb-0.5">
                   <Button
                     disabled={form.drafts.length <= 1}
                     label="Remove"
@@ -118,14 +96,12 @@ export function LabelCreationDialog(props: {
               </View>
             ))}
             <Button label="Add label" size="sm" variant="outline" onPress={form.addDraft} />
-            {form.activeError ? (
-              <Text style={{ color: colors.destructive, fontSize: 14 }}>{form.activeError}</Text>
-            ) : null}
+            {form.activeError ? <DialogErrorText>{form.activeError}</DialogErrorText> : null}
           </ScrollView>
         </DialogBody>
 
         <DialogFooter>
-          <View style={styles.footer}>
+          <View className="w-full flex-row justify-end gap-2">
             <Button label="Cancel" variant="outline" onPress={() => props.onOpenChange(false)} />
             <Button
               disabled={!props.workspacePath}
@@ -139,61 +115,3 @@ export function LabelCreationDialog(props: {
     </ModalScrim>
   );
 }
-
-const styles = StyleSheet.create({
-  headerContent: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-    gap: 12,
-    justifyContent: "space-between",
-    width: "100%",
-  },
-  headerText: {
-    flex: 1,
-    minWidth: 0,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  subtitle: {
-    fontSize: 14,
-    marginTop: 2,
-  },
-  body: {
-    maxHeight: 420,
-  },
-  draftList: {
-    gap: 12,
-  },
-  draftRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  field: {
-    flex: 1,
-    minWidth: 120,
-  },
-  colorField: {
-    minWidth: 96,
-    width: 96,
-  },
-  input: {
-    borderRadius: 8,
-    borderWidth: 1,
-    fontSize: 14,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  removeCell: {
-    justifyContent: "flex-end",
-    paddingBottom: 2,
-  },
-  footer: {
-    flexDirection: "row",
-    gap: 8,
-    justifyContent: "flex-end",
-    width: "100%",
-  },
-});

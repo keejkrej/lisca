@@ -1,6 +1,6 @@
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 
-import { useShellTheme } from "../../theme/shell-theme";
+import { useThemeColors } from "../../theme/use-theme-colors";
 
 export type VariationHistogramBin = {
   start: number;
@@ -13,32 +13,28 @@ export function VariationScoreHistogram(props: {
   threshold: number;
   height?: number;
 }) {
-  const { colors } = useShellTheme();
+  const colors = useThemeColors();
   const height = props.height ?? 128;
   const maxBinCount = Math.max(1, ...props.bins.map((bin) => bin.count));
 
   return (
     <View
-      style={[
-        styles.root,
-        { height, borderColor: colors.border, backgroundColor: colors.background },
-      ]}
+      className="overflow-hidden rounded-lg border border-border bg-background px-3 py-2"
+      style={{ height, borderColor: colors.border, backgroundColor: colors.background }}
     >
-      <View style={styles.bars}>
+      <View className="flex-1 flex-row items-end gap-0.5">
         {props.bins.map((bin) => {
           const active = bin.end <= props.threshold;
           const barHeight = Math.max(4, (bin.count / maxBinCount) * 100);
           return (
             <View
               key={`${bin.start}:${bin.end}`}
-              style={[
-                styles.bar,
-                {
-                  height: `${barHeight}%`,
-                  backgroundColor: active ? colors.primary : colors.mutedForeground,
-                  opacity: active ? 1 : 0.28,
-                },
-              ]}
+              className="min-w-0.5 flex-1 rounded-t-sm"
+              style={{
+                height: `${barHeight}%`,
+                backgroundColor: active ? colors.primary : colors.mutedForeground,
+                opacity: active ? 1 : 0.28,
+              }}
             />
           );
         })}
@@ -46,25 +42,3 @@ export function VariationScoreHistogram(props: {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    overflow: "hidden",
-  },
-  bars: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 2,
-  },
-  bar: {
-    flex: 1,
-    borderTopLeftRadius: 2,
-    borderTopRightRadius: 2,
-    minWidth: 2,
-  },
-});

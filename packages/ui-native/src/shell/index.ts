@@ -1,7 +1,7 @@
 export { AppShell, ShellDock, ShellSidebar, type AppShellCompound } from "./layout/app-shell";
 export { Button, SegmentedToggle } from "./chrome/buttons";
 export { DockSection, type DockSectionFit } from "./regions/dock-section";
-export { dockLayoutStyles, dockToolbarMinHeight } from "./regions/dock-layout";
+export { dockLayoutClasses, dockLayoutStyles, dockToolbarMinHeight } from "./regions/dock-layout";
 export { DockStrip } from "./regions/dock-strip";
 export {
   dockToolLabel,
@@ -15,8 +15,18 @@ export {
 } from "./shortcuts/use-keyboard-shortcuts";
 export { ConnectionStatus } from "./chrome/connection-status";
 export { DialogBody, DialogFooter, DialogHeader, DialogSurface, ModalScrim } from "./modal/modal";
+export {
+  DialogActions,
+  DialogDescriptionText,
+  DialogErrorText,
+  DialogSectionLabel,
+  DialogStack,
+  DialogTitleText,
+} from "./modal/dialog-copy";
 export { Field, FieldLabel } from "./chrome/field";
+export { Input } from "./chrome/input";
 export { Slider } from "./chrome/slider";
+export { ShellProgress } from "./chrome/progress-bar";
 export { PathButton } from "./chrome/path-button";
 export { ShellNavbar, type ShellNavbarProps, type ShellNavbarRouteItem } from "./chrome/navbar";
 export { Panel, Spinner } from "./regions/panel";

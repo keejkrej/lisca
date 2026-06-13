@@ -1,5 +1,5 @@
-import { Button, DockSection, DockStrip, dockLayoutStyles, useShellTheme } from "@lisca/ui-native";
-import { StyleSheet, Text, View } from "react-native";
+import { Button, DockSection, DockStrip, Text, dockLayoutClasses } from "@lisca/ui-native";
+import { View } from "react-native";
 
 import { instructionForStep } from "../state/studio-routes";
 import type { StudioStep } from "../state/studio-store";
@@ -10,33 +10,31 @@ export function StudioInfoDock(props: {
   onBack: () => void;
   onNext: () => void;
 }) {
-  const { colors } = useShellTheme();
-
   return (
     <DockStrip>
       <DockSection fit="panel" title="Instruction">
-        <Text style={[styles.instructionText, { color: colors.foreground }]}>
+        <Text className="text-center text-sm leading-5 text-foreground">
           {instructionForStep(props.step)}
         </Text>
       </DockSection>
       <DockSection
-        contentStyle={dockLayoutStyles.content}
-        style={dockLayoutStyles.section}
+        contentClassName={dockLayoutClasses.content}
+        className={dockLayoutClasses.section}
         title="Action"
       >
-        <View style={dockLayoutStyles.stack}>
+        <View className={dockLayoutClasses.stack}>
           <Button
             disabled={props.infoStep === 1}
             label="Back"
             size="sm"
-            style={dockLayoutStyles.button}
+            className={dockLayoutClasses.button}
             variant="outline"
             onPress={props.onBack}
           />
           <Button
             label="Next"
             size="sm"
-            style={dockLayoutStyles.button}
+            className={dockLayoutClasses.button}
             variant="outline"
             onPress={props.onNext}
           />
@@ -46,10 +44,3 @@ export function StudioInfoDock(props: {
   );
 }
 
-const styles = StyleSheet.create({
-  instructionText: {
-    fontSize: 14,
-    lineHeight: 20,
-    textAlign: "center",
-  },
-});

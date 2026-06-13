@@ -1,20 +1,28 @@
 import type { ReactNode } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, View, type ViewProps } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { useShellTheme } from "../../theme/shell-theme";
+import { cn } from "../../../lib/utils";
 
 const DEFAULT_RAIL_WIDTH = 288;
 const HEADER_HEIGHT = 64;
 const DOCK_HEIGHT = 176;
 
-function ShellScrollRegion(props: { children?: ReactNode; style?: object; contentStyle?: object }) {
+function ShellScrollRegion(props: {
+  children?: ReactNode;
+  className?: string;
+  contentClassName?: string;
+  style?: ViewProps["style"];
+  contentStyle?: ViewProps["style"];
+}) {
   return (
     <ScrollView
-      style={[{ flex: 1 }, props.style]}
-      contentContainerStyle={[{ flexGrow: 1 }, props.contentStyle]}
+      className={cn("flex-1", props.className)}
+      contentContainerClassName={cn("flex-grow", props.contentClassName)}
+      contentContainerStyle={props.contentStyle}
       keyboardShouldPersistTaps="handled"
       nestedScrollEnabled
+      style={props.style}
     >
       {props.children}
     </ScrollView>
@@ -22,10 +30,9 @@ function ShellScrollRegion(props: { children?: ReactNode; style?: object; conten
 }
 
 function AppShellRoot(props: { children: ReactNode }) {
-  const { colors } = useShellTheme();
   return (
-    <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <SafeAreaView edges={["top", "left", "right"]} style={styles.safeArea}>
+    <View className="flex-1 bg-background">
+      <SafeAreaView className="flex-1" edges={["top", "left", "right"]}>
         {props.children}
       </SafeAreaView>
     </View>
@@ -33,96 +40,62 @@ function AppShellRoot(props: { children: ReactNode }) {
 }
 
 function Header(props: { children?: ReactNode }) {
-  const { colors } = useShellTheme();
   return (
     <View
-      style={[
-        styles.header,
-        {
-          borderBottomColor: colors.border,
-          backgroundColor: colors.background,
-          maxHeight: HEADER_HEIGHT,
-        },
-      ]}
+      className="h-16 min-h-16 max-h-16 border-b border-border bg-background px-3"
+      style={{ maxHeight: HEADER_HEIGHT }}
     >
-      <ShellScrollRegion contentStyle={styles.headerContent}>{props.children}</ShellScrollRegion>
+      <ShellScrollRegion contentClassName="min-h-[62px] flex-grow justify-center">
+        {props.children}
+      </ShellScrollRegion>
     </View>
   );
 }
 
 function Body(props: { children?: ReactNode }) {
-  const { colors } = useShellTheme();
-  return (
-    <View style={[styles.body, { backgroundColor: colors.background }]}>{props.children}</View>
-  );
+  return <View className="min-h-0 flex-1 flex-row bg-background">{props.children}</View>;
 }
 
 function Left(props: { children?: ReactNode; width?: number }) {
-  const { colors } = useShellTheme();
   const width = props.width ?? DEFAULT_RAIL_WIDTH;
   return (
-    <View
-      style={[
-        styles.rail,
-        styles.railLeft,
-        {
-          width,
-          borderRightColor: colors.border,
-          backgroundColor: colors.background,
-        },
-      ]}
-    >
-      <ShellScrollRegion contentStyle={styles.railContent}>{props.children}</ShellScrollRegion>
+    <View className="min-h-0 border-r border-border bg-background" style={{ width }}>
+      <ShellScrollRegion contentClassName="gap-2 p-3">{props.children}</ShellScrollRegion>
     </View>
   );
 }
 
 function Right(props: { children?: ReactNode; width?: number }) {
-  const { colors } = useShellTheme();
   const width = props.width ?? DEFAULT_RAIL_WIDTH;
   return (
-    <View
-      style={[
-        styles.rail,
-        styles.railRight,
-        {
-          width,
-          borderLeftColor: colors.border,
-          backgroundColor: colors.background,
-        },
-      ]}
-    >
-      <ShellScrollRegion contentStyle={styles.railContent}>{props.children}</ShellScrollRegion>
+    <View className="min-h-0 border-l border-border bg-background" style={{ width }}>
+      <ShellScrollRegion contentClassName="gap-2 p-3">{props.children}</ShellScrollRegion>
     </View>
   );
 }
 
 function MainColumn(props: { children?: ReactNode }) {
-  const { colors } = useShellTheme();
-  return (
-    <View style={[styles.mainColumn, { backgroundColor: colors.background }]}>
-      {props.children}
-    </View>
-  );
+  return <View className="min-h-0 min-w-0 flex-1 bg-background">{props.children}</View>;
 }
 
 function Main(props: { children?: ReactNode }) {
-  const { colors } = useShellTheme();
   return (
-    <View nativeID="main-content" style={[styles.main, { backgroundColor: colors.background }]}>
-      <ShellScrollRegion contentStyle={styles.mainContent}>{props.children}</ShellScrollRegion>
+    <View nativeID="main-content" className="min-h-0 flex-1 bg-background">
+      <ShellScrollRegion contentClassName="flex-grow">{props.children}</ShellScrollRegion>
     </View>
   );
 }
 
 function Dock(props: { children?: ReactNode }) {
-  const { colors } = useShellTheme();
   return (
     <View
-      style={[styles.dock, { borderTopColor: colors.border, backgroundColor: colors.background }]}
+      className="h-44 min-h-44 max-h-44 border-t border-border bg-background"
+      style={{ height: DOCK_HEIGHT, minHeight: DOCK_HEIGHT, maxHeight: DOCK_HEIGHT }}
     >
-      <SafeAreaView edges={["bottom"]} style={styles.dockSafeArea}>
-        <ShellScrollRegion contentStyle={styles.dockContent}>{props.children}</ShellScrollRegion>
+      <SafeAreaView className="flex-1" edges={["bottom"]}>
+        <ShellScrollRegion contentClassName="min-h-[174px] flex-grow">
+          {props.children}
+        </ShellScrollRegion>
       </SafeAreaView>
     </View>
   );
@@ -163,66 +136,3 @@ export function ShellSidebar(props: {
     <Left width={props.width}>{props.children}</Left>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-  },
-  header: {
-    borderBottomWidth: 1,
-    height: HEADER_HEIGHT,
-    minHeight: HEADER_HEIGHT,
-    paddingHorizontal: 12,
-  },
-  headerContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-    minHeight: HEADER_HEIGHT - 2,
-  },
-  body: {
-    flex: 1,
-    flexDirection: "row",
-    minHeight: 0,
-  },
-  rail: {
-    minHeight: 0,
-  },
-  railLeft: {
-    borderRightWidth: 1,
-  },
-  railRight: {
-    borderLeftWidth: 1,
-  },
-  railContent: {
-    gap: 8,
-    padding: 12,
-  },
-  mainColumn: {
-    flex: 1,
-    minWidth: 0,
-    minHeight: 0,
-  },
-  main: {
-    flex: 1,
-    minHeight: 0,
-  },
-  mainContent: {
-    flexGrow: 1,
-  },
-  dock: {
-    borderTopWidth: 1,
-    height: DOCK_HEIGHT,
-    minHeight: DOCK_HEIGHT,
-    maxHeight: DOCK_HEIGHT,
-  },
-  dockSafeArea: {
-    flex: 1,
-  },
-  dockContent: {
-    flexGrow: 1,
-    minHeight: DOCK_HEIGHT - 2,
-  },
-});

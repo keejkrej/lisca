@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
-import { StyleSheet } from "react-native";
+import type { ViewProps } from "react-native";
 
+import { cn } from "../../../lib/utils";
 import { Section } from "./section";
 
 export type DockSectionFit = "hug" | "panel";
@@ -11,46 +12,28 @@ export function DockSection(props: {
   headerAction?: ReactNode;
   children?: ReactNode;
   defaultCollapsed?: boolean;
-  contentStyle?: object;
-  style?: object;
+  contentStyle?: ViewProps["style"];
+  contentClassName?: string;
+  style?: ViewProps["style"];
+  className?: string;
   /** `hug` (default) shrinks to content; `panel` uses a stable instruction band. */
   fit?: DockSectionFit;
 }) {
-  const sectionStyle = props.fit === "panel" ? styles.panel : styles.hug;
+  const fitClassName =
+    props.fit === "panel" ? "max-w-80 min-w-56 self-stretch shrink-0" : "max-w-full min-w-0 self-stretch shrink-0";
 
   return (
     <Section
-      contentStyle={[styles.content, props.contentStyle]}
+      className={cn(fitClassName, props.className)}
+      contentClassName={cn("min-h-0 flex-1 justify-start gap-2", props.contentClassName)}
+      contentStyle={props.contentStyle}
       defaultCollapsed={props.defaultCollapsed}
       description={props.description}
       headerAction={props.headerAction}
-      style={[sectionStyle, props.style]}
+      style={props.style}
       title={props.title}
     >
       {props.children}
     </Section>
   );
 }
-
-const styles = StyleSheet.create({
-  hug: {
-    alignSelf: "stretch",
-    flexDirection: "column",
-    flexShrink: 0,
-    maxWidth: "100%",
-    minWidth: 0,
-  },
-  panel: {
-    alignSelf: "stretch",
-    flexDirection: "column",
-    flexShrink: 0,
-    maxWidth: 320,
-    minWidth: 224,
-  },
-  content: {
-    flex: 1,
-    gap: 8,
-    justifyContent: "flex-start",
-    minHeight: 0,
-  },
-});

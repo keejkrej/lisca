@@ -9,7 +9,7 @@ import {
 import type { AlignerSource } from "@lisca/contracts";
 import type { HostFilePickerMode } from "@lisca/ui-native/features";
 import { useRef, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 
 import { alignerHostOperations } from "../api/aligner-port";
 
@@ -65,7 +65,7 @@ export function AlignerHeader(props: { onSourcePicked: (source: AlignerSource | 
 
   return (
     <>
-      <View style={styles.root}>
+      <View className="flex-1 justify-center">
         <ShellNavbar.Aligner
           endLeading={<ToolsMenuPlaceholder />}
           onPickSource={() => setSourcePickerOpen(true)}
@@ -104,10 +104,3 @@ export function AlignerHeader(props: { onSourcePicked: (source: AlignerSource | 
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    justifyContent: "center",
-  },
-});

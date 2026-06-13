@@ -7,7 +7,10 @@ export {
 } from "./features/studio/variation-score-histogram";
 export { StudioNavButton } from "./features/studio/studio-nav-button";
 export { ShellThemeProvider, useShellTheme } from "./theme/shell-theme";
+export { NativeWindThemeSync } from "./theme/nativewind-theme-sync";
 export { ShellThemeToggle } from "./theme/shell-theme-toggle";
 export type { ShellThemeMode } from "./theme/tokens";
 export { shellThemeColors } from "./theme/tokens";
 export { liscaFontFamily, liscaType } from "./theme/typography";
+export { Text } from "../components/ui/text";
+export { useThemeColors } from "./theme/use-theme-colors";

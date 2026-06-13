@@ -1,21 +1,26 @@
-import { Button, DialogSurface, ModalScrim, useShellTheme } from "@lisca/ui-native";
-import { StyleSheet, Text, View } from "react-native";
+import {
+  Button,
+  DialogActions,
+  DialogDescriptionText,
+  DialogSurface,
+  DialogTitleText,
+  ModalScrim,
+} from "@lisca/ui-native";
 
 import type { StudioAlignState } from "../state/use-studio-align-state";
 
 export function StudioCropStartModal({ state }: { state: StudioAlignState }) {
-  const { colors } = useShellTheme();
   const confirm = state.cropStartConfirm;
   if (!confirm) return null;
 
   return (
     <ModalScrim open onClose={state.cancelCropStartConfirm}>
       <DialogSurface>
-        <Text style={[styles.title, { color: colors.foreground }]}>All positions aligned</Text>
-        <Text style={[styles.body, { color: colors.mutedForeground }]}>
+        <DialogTitleText>All positions aligned</DialogTitleText>
+        <DialogDescriptionText>
           {`${confirm.positions.length} positions have saved alignment output. Start cropping ROI output now?`}
-        </Text>
-        <View style={styles.actions}>
+        </DialogDescriptionText>
+        <DialogActions>
           <Button
             label="Cancel"
             size="sm"
@@ -23,14 +28,13 @@ export function StudioCropStartModal({ state }: { state: StudioAlignState }) {
             onPress={state.cancelCropStartConfirm}
           />
           <Button label="Start" size="sm" onPress={state.startConfirmedCrop} />
-        </View>
+        </DialogActions>
       </DialogSurface>
     </ModalScrim>
   );
 }
 
 export function StudioCropConfirmModal({ state }: { state: StudioAlignState }) {
-  const { colors } = useShellTheme();
   const confirm = state.cropConfirm;
   if (!confirm) return null;
 
@@ -39,14 +43,14 @@ export function StudioCropConfirmModal({ state }: { state: StudioAlignState }) {
   return (
     <ModalScrim open onClose={state.cancelCropConfirm}>
       <DialogSurface>
-        <Text style={[styles.title, { color: colors.foreground }]}>ROI output already exists</Text>
-        <Text style={[styles.body, { color: colors.mutedForeground }]}>
+        <DialogTitleText>ROI output already exists</DialogTitleText>
+        <DialogDescriptionText>
           {`${confirm.existingPositions.length} of ${confirm.positions.length} saved positions already have ROI output. Overwrite those folders or skip them and crop only the remaining positions.`}
-        </Text>
-        <Text numberOfLines={4} style={[styles.list, { color: colors.mutedForeground }]}>
+        </DialogDescriptionText>
+        <DialogDescriptionText className="mt-2" numberOfLines={4}>
           {existingList}
-        </Text>
-        <View style={styles.actions}>
+        </DialogDescriptionText>
+        <DialogActions className="mt-4">
           <Button label="Cancel" size="sm" variant="outline" onPress={state.cancelCropConfirm} />
           <Button
             label="Skip Existing"
@@ -55,21 +59,8 @@ export function StudioCropConfirmModal({ state }: { state: StudioAlignState }) {
             onPress={state.skipExistingCrop}
           />
           <Button label="Overwrite" size="sm" onPress={state.confirmCropOverwrite} />
-        </View>
+        </DialogActions>
       </DialogSurface>
     </ModalScrim>
   );
 }
-
-const styles = StyleSheet.create({
-  title: { fontSize: 16, fontWeight: "600", marginBottom: 4 },
-  body: { fontSize: 14, lineHeight: 20 },
-  list: { fontSize: 12, marginTop: 8 },
-  actions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    justifyContent: "flex-end",
-    marginTop: 16,
-  },
-});

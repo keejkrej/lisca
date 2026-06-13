@@ -6,22 +6,18 @@ import {
   findNavigationOptionIndex,
   FrameNavigation,
   stepNavigationValue,
+  Text,
   toAxisNavigationOptions,
-  useShellTheme,
 } from "@lisca/ui-native";
-import { StyleSheet, Text, View } from "react-native";
+import { View } from "react-native";
 
 import type { StudioAnnotateState } from "../state/use-studio-annotate-state";
 
 export function StudioAnnotateLeft({ state }: { state: StudioAnnotateState }) {
-  const { colors } = useShellTheme();
-
   if (state.workspaceMissing) {
     return (
-      <View style={styles.root}>
-        <Text style={{ color: colors.destructive, fontSize: 14 }}>
-          Set a save location in Basic info first.
-        </Text>
+      <View className="-m-3 min-h-0 flex-1 gap-2 p-3">
+        <Text className="text-sm text-destructive">Set a save location in Basic info first.</Text>
       </View>
     );
   }
@@ -40,7 +36,7 @@ export function StudioAnnotateLeft({ state }: { state: StudioAnnotateState }) {
   const channelValue = state.selection.channel ?? channelOptions[0]?.value ?? 0;
 
   return (
-    <View style={styles.root}>
+    <View className="-m-3 min-h-0 flex-1 gap-2 p-3">
       <FrameNavigation
         channel={{
           value: channelValue,
@@ -118,13 +114,3 @@ export function StudioAnnotateLeft({ state }: { state: StudioAnnotateState }) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    gap: 8,
-    margin: -12,
-    minHeight: 0,
-    padding: 12,
-  },
-});

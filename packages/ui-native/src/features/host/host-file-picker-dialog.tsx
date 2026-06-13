@@ -1,11 +1,16 @@
 import type { HostFilePickerMode } from "@lisca/ui-headless/host";
 import { useHostFilePickerState } from "@lisca/ui-headless/host-file-picker-state";
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, View } from "react-native";
 
 import { Button } from "../../shell/chrome/buttons";
+import {
+  DialogActions,
+  DialogDescriptionText,
+  DialogErrorText,
+  DialogTitleText,
+} from "../../shell/modal/dialog-copy";
 import { DialogSurface, ModalScrim } from "../../shell/modal/modal";
-import { useShellTheme } from "../../theme/shell-theme";
-import { liscaType } from "../../theme/typography";
+import { useThemeColors } from "../../theme/use-theme-colors";
 import { FILE_PICKER_ROW_HEIGHT, FilePickerRow } from "./host-file-picker-row";
 import type { HostFilePickerOperations } from "./host-operations";
 
@@ -28,7 +33,7 @@ export function HostFilePickerDialog({
   onPickDirectory,
   onPickFile,
 }: HostFilePickerDialogProps) {
-  const { colors } = useShellTheme();
+  const colors = useThemeColors();
   const picker = useHostFilePickerState({
     open,
     mode,
@@ -45,18 +50,14 @@ export function HostFilePickerDialog({
   return (
     <ModalScrim open={open} onClose={() => onOpenChange(false)}>
       <DialogSurface accessibilityLabel={title}>
-        <Text style={[styles.title, { color: colors.foreground }]}>{title}</Text>
+        <DialogTitleText>{title}</DialogTitleText>
         {picker.locationLabel ? (
-          <Text numberOfLines={2} style={{ color: colors.mutedForeground, fontSize: 12 }}>
-            {picker.locationLabel}
-          </Text>
+          <DialogDescriptionText numberOfLines={2}>{picker.locationLabel}</DialogDescriptionText>
         ) : null}
         {picker.loading ? (
           <ActivityIndicator accessibilityLabel="Loading directory" color={colors.primary} />
         ) : null}
-        {picker.error ? (
-          <Text style={{ color: colors.destructive }}>{picker.error}</Text>
-        ) : null}
+        {picker.error ? <DialogErrorText>{picker.error}</DialogErrorText> : null}
         <FlatList
           data={entries}
           getItemLayout={(_, index) => ({
@@ -67,7 +68,7 @@ export function HostFilePickerDialog({
           initialNumToRender={16}
           keyExtractor={(item) => item.path}
           removeClippedSubviews
-          style={styles.list}
+          style={{ maxHeight: 320 }}
           windowSize={8}
           renderItem={({ item }) => (
             <FilePickerRow
@@ -80,15 +81,12 @@ export function HostFilePickerDialog({
             />
           )}
         />
-        <View style={styles.actions}>
+        <DialogActions>
           {picker.canGoUp ? (
             <Button compact label="Up" variant="outline" onPress={picker.goUp} />
           ) : null}
           {picker.dirMode && picker.list?.path ? (
-            <Button
-              label="Select folder"
-              onPress={picker.confirmDirectory}
-            />
+            <Button label="Select folder" onPress={picker.confirmDirectory} />
           ) : (
             <Button
               disabled={
@@ -102,22 +100,8 @@ export function HostFilePickerDialog({
             />
           )}
           <Button label="Close" variant="ghost" onPress={() => onOpenChange(false)} />
-        </View>
+        </DialogActions>
       </DialogSurface>
     </ModalScrim>
   );
 }
-
-const styles = StyleSheet.create({
-  title: {
-    ...liscaType.dialogTitle,
-  },
-  list: {
-    maxHeight: 320,
-  },
-  actions: {
-    flexDirection: "row",
-    gap: 8,
-    flexWrap: "wrap",
-  },
-});

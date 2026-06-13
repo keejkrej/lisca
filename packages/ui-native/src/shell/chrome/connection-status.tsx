@@ -1,11 +1,8 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, View } from "react-native";
 
-import {
-  shellOutlineButtonStyle,
-  shellOutlineSurface,
-} from "./shell-chrome";
-import { useShellTheme } from "../../theme/shell-theme";
-import { liscaType } from "../../theme/typography";
+import { Button as UiButton } from "../../../components/ui/button";
+import { Text } from "../../../components/ui/text";
+import { cn } from "../../../lib/utils";
 import type { ConnectionState } from "../server/use-shell-ws-probe";
 
 const STATUS_LABELS: Record<ConnectionState, string> = {
@@ -15,19 +12,26 @@ const STATUS_LABELS: Record<ConnectionState, string> = {
   closed: "Disconnected",
 };
 
-const DOT_COLORS: Record<ConnectionState, string> = {
-  idle: "#d4d4d4",
-  connecting: "#fbbf24",
-  open: "#10b981",
-  closed: "#d4d4d4",
+const DOT_CLASS: Record<ConnectionState, string> = {
+  idle: "bg-muted-foreground/40",
+  connecting: "bg-amber-400",
+  open: "bg-emerald-500",
+  closed: "bg-muted-foreground/40",
 };
 
-const DOT_COLORS_DARK: Record<ConnectionState, string> = {
-  idle: "#525252",
-  connecting: "#fbbf24",
-  open: "#10b981",
-  closed: "#525252",
-};
+function ConnectionStatusContent(props: {
+  state: ConnectionState;
+  title: string;
+  statusLabel: string;
+}) {
+  return (
+    <>
+      <View className={cn("h-2 w-2 shrink-0 rounded-full", DOT_CLASS[props.state])} />
+      <Text className="shrink-0 text-sm font-medium text-foreground">{props.title}</Text>
+      <Text className="shrink-0 text-sm text-foreground/70">{props.statusLabel}</Text>
+    </>
+  );
+}
 
 export function ConnectionStatus(props: {
   state: ConnectionState;
@@ -35,57 +39,28 @@ export function ConnectionStatus(props: {
   label?: string;
   onOpenSettings?: () => void;
 }) {
-  const { colors, mode } = useShellTheme();
   const title = props.label ?? "Server";
   const statusLabel = STATUS_LABELS[props.state];
-  const dotColors = mode === "dark" ? DOT_COLORS_DARK : DOT_COLORS;
-  const surface = shellOutlineSurface(colors, mode);
-
-  const content = (
-    <>
-      <View style={[styles.dot, { backgroundColor: dotColors[props.state] }]} />
-      <Text style={[styles.title, { color: colors.foreground }]}>{title}</Text>
-      <Text style={[styles.status, { color: colors.foreground }]}>{statusLabel}</Text>
-    </>
-  );
 
   if (props.onOpenSettings) {
     return (
-      <Pressable
+      <UiButton
         accessibilityLabel={`${title}, ${statusLabel}`}
-        accessibilityRole="button"
+        className="h-8 shrink-0 gap-1.5 px-2.5"
+        variant="outline"
         onPress={props.onOpenSettings}
-        style={[shellOutlineButtonStyle, surface, styles.root]}
       >
-        {content}
-      </Pressable>
+        <ConnectionStatusContent state={props.state} statusLabel={statusLabel} title={title} />
+      </UiButton>
     );
   }
 
   return (
-    <View style={[shellOutlineButtonStyle, surface, styles.root]} accessibilityRole="text">
-      {content}
+    <View
+      accessibilityRole="text"
+      className="h-8 shrink-0 flex-row items-center justify-center gap-1.5 rounded-[10px] border border-input bg-background px-2.5 shadow-sm shadow-black/5"
+    >
+      <ConnectionStatusContent state={props.state} statusLabel={statusLabel} title={title} />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flexShrink: 0,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    flexShrink: 0,
-  },
-  title: {
-    ...liscaType.bodyMedium,
-    flexShrink: 0,
-  },
-  status: {
-    ...liscaType.body,
-    opacity: 0.7,
-    flexShrink: 0,
-  },
-});

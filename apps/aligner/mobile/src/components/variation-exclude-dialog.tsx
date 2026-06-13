@@ -6,16 +6,20 @@ import {
 import {
   Button,
   DialogBody,
+  DialogDescriptionText,
   DialogFooter,
   DialogHeader,
   DialogSurface,
+  DialogTitleText,
+  Field,
+  Input,
   ModalScrim,
   Slider,
   StatTile,
-  useShellTheme,
+  Text,
   VariationScoreHistogram,
 } from "@lisca/ui-native";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { View } from "react-native";
 import type { VariationExcludePreview } from "../state/use-align-state";
 
 type VariationExcludeDialogProps = {
@@ -31,7 +35,6 @@ export function VariationExcludeDialog({
   onCancel,
   onThresholdChange,
 }: VariationExcludeDialogProps) {
-  const { colors } = useShellTheme();
   const derived = deriveVariationExcludePreview(state);
   if (!derived) return null;
   const { preview, threshold, selectedCount, metrics } = derived;
@@ -44,20 +47,11 @@ export function VariationExcludeDialog({
     <ModalScrim open={true} onClose={onCancel}>
       <DialogSurface maxWidth={640} padded={false}>
         <DialogHeader>
-          <Text
-            style={[
-              styles.title,
-              {
-                color: colors.foreground,
-              },
-            ]}
-          >
-            Var exclude
-          </Text>
+          <DialogTitleText>Var exclude</DialogTitleText>
         </DialogHeader>
 
         <DialogBody>
-          <View style={styles.statsRow}>
+          <View className="flex-row gap-2">
             <StatTile label="Eligible cells" value={preview.eligibleCellCount} />
             <StatTile label="Selected cells" value={selectedCount} />
             <StatTile
@@ -68,55 +62,29 @@ export function VariationExcludeDialog({
 
           <VariationScoreHistogram bins={preview.histogramBins} threshold={threshold} />
 
-          <View style={styles.thresholdRow}>
-            <View style={styles.thresholdSlider}>
-              <View style={styles.thresholdHeader}>
-                <Text
-                  style={[
-                    styles.thresholdLabel,
-                    {
-                      color: colors.foreground,
-                    },
-                  ]}
-                >
-                  Threshold
-                </Text>
-                <Text
-                  style={[
-                    styles.thresholdValue,
-                    {
-                      color: colors.mutedForeground,
-                    },
-                  ]}
-                >
+          <View className="flex-row items-end gap-3">
+            <View className="min-w-0 flex-1 gap-2">
+              <View className="flex-row items-center justify-between">
+                <Text className="text-sm font-medium text-foreground">Threshold</Text>
+                <DialogDescriptionText className="mb-0">
                   {formatVariationScore(threshold)}
-                </Text>
+                </DialogDescriptionText>
               </View>
               <Slider
                 maximumValue={metrics.max}
                 minimumValue={metrics.min}
                 step={metrics.step}
-                style={styles.slider}
-                thumbTintColor={colors.primary}
-                minimumTrackTintColor={colors.primary}
-                maximumTrackTintColor={colors.border}
+                style={{ width: "100%", height: 32 }}
                 value={threshold}
                 onSlidingComplete={setThreshold}
                 onValueChange={setThreshold}
               />
             </View>
-            <TextInput
+            <Input
+              className="w-24"
               keyboardType="decimal-pad"
               value={String(threshold)}
               onChangeText={(text) => setThreshold(Number(text))}
-              style={[
-                styles.input,
-                {
-                  borderColor: colors.input,
-                  color: colors.foreground,
-                  backgroundColor: colors.controlSurface,
-                },
-              ]}
             />
           </View>
         </DialogBody>
@@ -129,49 +97,3 @@ export function VariationExcludeDialog({
     </ModalScrim>
   );
 }
-
-const styles = StyleSheet.create({
-  title: {
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  statsRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  thresholdRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 12,
-  },
-  thresholdSlider: {
-    flex: 1,
-    gap: 8,
-    minWidth: 0,
-  },
-  thresholdHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  thresholdLabel: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  thresholdValue: {
-    fontSize: 12,
-    fontVariant: ["tabular-nums"],
-  },
-  slider: {
-    width: "100%",
-    height: 32,
-  },
-  input: {
-    width: 112,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    fontSize: 14,
-  },
-});

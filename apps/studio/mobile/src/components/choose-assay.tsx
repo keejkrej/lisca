@@ -1,6 +1,6 @@
 import { ASSAY_TYPE, ENABLED_STUDIO_ASSAY_IDS } from "@lisca/contracts/assay";
-import { Button, useShellTheme } from "@lisca/ui-native";
-import { StyleSheet, Text, View } from "react-native";
+import { Button, Text } from "@lisca/ui-native";
+import { View } from "react-native";
 
 import { ASSAY_CHOICE_LABEL, type AssayId, useStudioStore } from "../state/studio-store";
 
@@ -13,19 +13,18 @@ const ASSAY_ORDER: AssayId[] = [
 const ENABLED_ASSAY_IDS = new Set<AssayId>(ENABLED_STUDIO_ASSAY_IDS);
 
 export function ChooseAssay() {
-  const { colors } = useShellTheme();
   const assayId = useStudioStore((state) => state.assayId);
   const setAssayId = useStudioStore((state) => state.setAssayId);
 
   return (
-    <View style={styles.root}>
-      <Text style={[styles.title, { color: colors.foreground }]}>LiSCA</Text>
-      <View accessibilityRole="radiogroup" style={styles.grid}>
+    <View className="w-full flex-1 items-center justify-center px-6">
+      <Text className="text-center text-4xl font-semibold">LiSCA</Text>
+      <View accessibilityRole="radiogroup" className="mt-8 w-full max-w-md flex-row flex-wrap justify-center gap-3">
         {ASSAY_ORDER.map((id) => {
           const selected = assayId === id;
           const disabled = !ENABLED_ASSAY_IDS.has(id);
           return (
-            <View key={id} style={styles.cell}>
+            <View key={id} className="min-w-[140px] flex-grow basis-[45%]">
               <Button
                 disabled={disabled}
                 label={ASSAY_CHOICE_LABEL[id]}
@@ -39,32 +38,3 @@ export function ChooseAssay() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    alignItems: "center",
-    flex: 1,
-    justifyContent: "center",
-    paddingHorizontal: 24,
-    width: "100%",
-  },
-  title: {
-    fontSize: 36,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-    justifyContent: "center",
-    marginTop: 32,
-    maxWidth: 448,
-    width: "100%",
-  },
-  cell: {
-    flexBasis: "45%",
-    flexGrow: 1,
-    minWidth: 140,
-  },
-});

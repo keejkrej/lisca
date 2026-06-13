@@ -1,4 +1,4 @@
-import { Button, DockSection, ReadonlyPathField, dockLayoutStyles } from "@lisca/ui-native";
+import { Button, DockSection, ReadonlyPathField, dockLayoutClasses } from "@lisca/ui-native";
 import { View } from "react-native";
 
 import type { AlignState } from "../state/use-align-state";
@@ -9,25 +9,21 @@ export function AlignSaveSection({ state }: { state: AlignState }) {
   const canCrop = Boolean(state.workspacePath && state.source && state.frame && !state.cropping);
 
   return (
-    <DockSection
-      contentStyle={dockLayoutStyles.content}
-      style={dockLayoutStyles.section}
-      title="Save"
-    >
-      <View style={dockLayoutStyles.stack}>
-        <View style={dockLayoutStyles.cols3}>
-          <View style={dockLayoutStyles.cell}>
+    <DockSection className={dockLayoutClasses.section} contentClassName={dockLayoutClasses.content} title="Save">
+      <View className={dockLayoutClasses.stack}>
+        <View className={dockLayoutClasses.cols3}>
+          <View className={dockLayoutClasses.cell}>
             <ReadonlyPathField value={`bbox/Pos${pos}.csv`} />
           </View>
-          <View style={dockLayoutStyles.cell}>
+          <View className={dockLayoutClasses.cell}>
             <ReadonlyPathField value={`align/Pos${pos}.json`} />
           </View>
-          <View style={dockLayoutStyles.cell}>
+          <View className={dockLayoutClasses.cell}>
             <ReadonlyPathField value={`roi/Pos${pos}`} />
           </View>
         </View>
-        <View style={dockLayoutStyles.cols3}>
-          <View style={dockLayoutStyles.cell}>
+        <View className={dockLayoutClasses.cols3}>
+          <View className={dockLayoutClasses.cell}>
             <Button
               disabled={!canSave || state.saving}
               label="Save"
@@ -37,7 +33,7 @@ export function AlignSaveSection({ state }: { state: AlignState }) {
               onPress={() => void state.saveCurrent()}
             />
           </View>
-          <View style={dockLayoutStyles.cell}>
+          <View className={dockLayoutClasses.cell}>
             <Button
               disabled={!canCrop}
               label="Crop"
@@ -46,7 +42,7 @@ export function AlignSaveSection({ state }: { state: AlignState }) {
               onPress={() => void state.cropCurrent()}
             />
           </View>
-          <View style={dockLayoutStyles.cell}>
+          <View className={dockLayoutClasses.cell}>
             <Button
               disabled={!state.workspacePath || !state.source || state.cropping}
               label="Batch"
