@@ -83,7 +83,7 @@ export function SelectPicker<T extends NavigationValue>(props: {
         accessibilityRole="combobox"
         accessibilityState={{ disabled: Boolean(props.disabled), expanded: open }}
         className={cn(
-          "h-7 min-h-7 min-w-0 w-full flex-row items-center justify-between gap-1.5 rounded-lg border border-input bg-background px-[9px] shadow-sm shadow-black/5",
+          "h-7.5 min-h-7.5 min-w-0 w-full flex-row items-center justify-between gap-1.5 rounded-lg border border-input bg-background px-[9px] text-sm shadow-sm shadow-black/5",
           props.disabled && Platform.OS !== "web" && "opacity-64",
         )}
         disabled={props.disabled}

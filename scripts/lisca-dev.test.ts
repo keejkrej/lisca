@@ -62,6 +62,17 @@ async function fetchText(url: string): Promise<string> {
   return response.text();
 }
 
+async function reservePort(): Promise<number> {
+  const probe = net.createServer();
+  await new Promise<void>((resolve, reject) => {
+    probe.once("error", reject);
+    probe.listen(0, "127.0.0.1", () => resolve());
+  });
+  const reserved = (probe.address() as net.AddressInfo).port;
+  await new Promise<void>((resolve) => probe.close(() => resolve()));
+  return reserved;
+}
+
 describe("lisca dev ports", () => {
   it("assigns unique public, backend, and mobile ports per product", () => {
     const publicPorts = Object.values(LISCA_APP_PORTS).map((entry) => entry.publicPort);
@@ -191,6 +202,71 @@ describe("mobile dev proxy routing", () => {
     expect(await fetchText(`http://127.0.0.1:${publicPort}/`)).toBe("expo");
     expect(await fetchText(`http://127.0.0.1:${publicPort}/index.bundle`)).toBe("expo");
   });
+
+  it("proxies websocket upgrades to rust", async () => {
+    const { server: rustWs, port: rustWsPort } = await new Promise<{
+      server: Server;
+      port: number;
+    }>((resolve, reject) => {
+      const server = createServer((_req, res) => {
+        res.writeHead(426);
+        res.end();
+      });
+      server.on("upgrade", (req, socket) => {
+        if (req.url !== "/ws") {
+          socket.destroy();
+          return;
+        }
+        socket.write(
+          "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: test\r\n\r\n",
+        );
+      });
+      server.once("error", reject);
+      server.listen(0, "127.0.0.1", () => {
+        const address = server.address();
+        if (!address || typeof address === "string") {
+          reject(new Error("expected TCP address"));
+          return;
+        }
+        resolve({ server, port: address.port });
+      });
+    });
+
+    const wsPublicPort = await reservePort();
+    const wsProxy = spawn(
+      process.execPath,
+      [
+        path.join(root, "scripts/lisca-mobile-dev-proxy.cjs"),
+        "--listen",
+        String(wsPublicPort),
+        "--expo",
+        String(expoPort),
+        "--rust",
+        String(rustWsPort),
+      ],
+      { cwd: root, stdio: "ignore" },
+    );
+    await waitForTcpPort(wsPublicPort);
+
+    await new Promise<void>((resolve, reject) => {
+      const socket = net.connect({ host: "127.0.0.1", port: wsPublicPort }, () => {
+        socket.write(
+          "GET /ws HTTP/1.1\r\nHost: 127.0.0.1\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\n\r\n",
+        );
+      });
+      socket.once("data", (chunk) => {
+        const text = chunk.toString("utf8");
+        if (text.includes("101 Switching Protocols")) resolve();
+        else reject(new Error(`expected 101, got: ${text.slice(0, 80)}`));
+        socket.end();
+      });
+      socket.once("error", reject);
+      setTimeout(() => reject(new Error("websocket timeout")), 5_000);
+    }).finally(() => {
+      if (!wsProxy.killed) wsProxy.kill("SIGTERM");
+      rustWs.close();
+    });
+  });
 });
 
 describe("live rust server smoke", () => {
@@ -207,7 +283,7 @@ describe("live rust server smoke", () => {
     }
   });
 
-  async function reservePort(): Promise<number> {
+  async function reserveLivePort(): Promise<number> {
     const probe = net.createServer();
     await new Promise<void>((resolve, reject) => {
       probe.once("error", reject);
@@ -226,7 +302,7 @@ describe("live rust server smoke", () => {
       return;
     }
 
-    port = await reservePort();
+    port = await reserveLivePort();
     child = spawn(serverBinary, [], {
       cwd: repoRoot,
       env: { ...process.env, PORT: String(port) },
@@ -248,7 +324,7 @@ describe("live rust server smoke", () => {
       return;
     }
 
-    rustPort = await reservePort();
+    rustPort = await reserveLivePort();
     child = spawn(serverBinary, [], {
       cwd: repoRoot,
       env: { ...process.env, PORT: String(rustPort) },
@@ -260,7 +336,7 @@ describe("live rust server smoke", () => {
       res.writeHead(200, { "Content-Type": "text/plain" });
       res.end("expo");
     });
-    const publicPort = await reservePort();
+    const publicPort = await reserveLivePort();
     const proxy = spawn(
       process.execPath,
       [

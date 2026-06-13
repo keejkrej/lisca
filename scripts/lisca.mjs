@@ -282,7 +282,7 @@ function spawnMobileDevProxy(scopeName) {
   }
   const expoPort = liscaMobileExpoPort(mobilePort);
   return spawn(
-    process.execPath,
+    "node",
     [
       path.join(root, "scripts/lisca-mobile-dev-proxy.cjs"),
       "--listen",

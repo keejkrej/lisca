@@ -53,9 +53,16 @@ function pipeHttp(req, res, port) {
 }
 
 function relayUpgrade(req, socket, head, port) {
-  const upstream = net.connect({ host: "127.0.0.1", port }, () => {
-    let raw = `${req.method} ${req.url} HTTP/${req.httpVersion}\r\n`;
-    for (const [key, value] of Object.entries(req.headers)) {
+  const upstream = net.connect({ host: "127.0.0.1", port });
+  // Pipe before forwarding the handshake so the 101 Switching Protocols response
+  // is not lost when the upstream answers immediately.
+  upstream.pipe(socket);
+  socket.pipe(upstream);
+
+  upstream.on("connect", () => {
+    const headers = { ...req.headers, host: `127.0.0.1:${port}` };
+    let raw = `${req.method} ${req.url} HTTP/1.1\r\n`;
+    for (const [key, value] of Object.entries(headers)) {
       if (value === undefined) continue;
       if (Array.isArray(value)) {
         for (const entry of value) raw += `${key}: ${entry}\r\n`;
@@ -66,9 +73,8 @@ function relayUpgrade(req, socket, head, port) {
     raw += "\r\n";
     upstream.write(raw);
     if (head?.length) upstream.write(head);
-    upstream.pipe(socket);
-    socket.pipe(upstream);
   });
+
   const destroy = () => {
     socket.destroy();
     upstream.destroy();
