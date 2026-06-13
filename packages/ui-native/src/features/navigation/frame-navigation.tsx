@@ -7,9 +7,11 @@ import {
   type NavigationValue,
 } from "@lisca/utils";
 import { useSliderStepperField } from "@lisca/ui-headless/slider-stepper-field";
+import { ChevronLeft, ChevronRight } from "lucide-react-native";
 import { useState } from "react";
 import { Modal, Pressable, ScrollView, View } from "react-native";
 
+import { Icon } from "../../../components/ui/icon";
 import { Text } from "../../../components/ui/text";
 import { Button } from "../../../components/ui/button";
 import { Field, FieldLabel } from "../../../components/ui/field";
@@ -70,8 +72,8 @@ function SelectPicker<T extends NavigationValue>(props: {
     <>
       <Pressable
         className={cn(
-          "min-h-8 justify-center rounded-lg border border-input bg-background px-2.5 py-2",
-          props.disabled && "opacity-60",
+          "h-8 min-h-8 justify-center rounded-lg border border-input bg-background px-2.5",
+          props.disabled && "opacity-64",
         )}
         disabled={props.disabled}
         onPress={() => setOpen(true)}
@@ -87,10 +89,7 @@ function SelectPicker<T extends NavigationValue>(props: {
               {props.options.map((option) => (
                 <Pressable
                   key={String(option.value)}
-                  className={cn(
-                    "px-4 py-3",
-                    option.value === props.value && "bg-accent",
-                  )}
+                  className={cn("px-4 py-3", option.value === props.value && "bg-accent")}
                   onPress={() => {
                     props.onChange(option.value);
                     setOpen(false);
@@ -120,7 +119,7 @@ function SelectStepperField<T extends NavigationValue>(props: SelectNavigationFi
           variant="outline"
           onPress={props.onPrevious}
         >
-          <Text className="text-xs">‹</Text>
+          <Icon as={ChevronLeft} className="size-4" size={16} strokeWidth={2} />
         </Button>
         <View className="min-w-0 flex-1">
           <SelectPicker
@@ -138,7 +137,7 @@ function SelectStepperField<T extends NavigationValue>(props: SelectNavigationFi
           variant="outline"
           onPress={props.onNext}
         >
-          <Text className="text-xs">›</Text>
+          <Icon as={ChevronRight} className="size-4" size={16} strokeWidth={2} />
         </Button>
       </View>
     </Field>
@@ -171,7 +170,7 @@ function SliderStepperField(props: SliderNavigationFieldProps) {
           variant="outline"
           onPress={props.onPrevious}
         >
-          <Text className="text-xs">‹</Text>
+          <Icon as={ChevronLeft} className="size-4" size={16} strokeWidth={2} />
         </Button>
         <View
           accessibilityLabel={ariaValueText}
@@ -200,7 +199,7 @@ function SliderStepperField(props: SliderNavigationFieldProps) {
           variant="outline"
           onPress={props.onNext}
         >
-          <Text className="text-xs">›</Text>
+          <Icon as={ChevronRight} className="size-4" size={16} strokeWidth={2} />
         </Button>
       </View>
     </Field>

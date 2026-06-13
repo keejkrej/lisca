@@ -1,16 +1,20 @@
 import { AlignGridRail, SidebarStack } from "@lisca/ui-native";
 
-import type { AlignState } from "../state/use-align-state";
+import { useAlignCanvas, useAlignCrop } from "../state/align-page-selectors";
 import { AlignSelectionControls } from "./align-selection-controls";
 
-export function AlignerRight(props: { alignState: AlignState }) {
-  const { alignState: state } = props;
-  const disabled = state.cropping || !state.frame;
+export function AlignerRight() {
+  const canvas = useAlignCanvas();
+  const crop = useAlignCrop();
 
   return (
     <SidebarStack>
-      <AlignGridRail disabled={disabled} grid={state.grid} onGridChange={state.setGrid} />
-      <AlignSelectionControls state={state} />
+      <AlignGridRail
+        disabled={crop.cropping || !canvas.frame}
+        grid={canvas.grid}
+        onGridChange={canvas.setGrid}
+      />
+      <AlignSelectionControls />
     </SidebarStack>
   );
 }

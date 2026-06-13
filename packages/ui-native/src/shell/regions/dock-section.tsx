@@ -20,7 +20,7 @@ export function DockSection(props: {
   fit?: DockSectionFit;
 }) {
   const fitClassName =
-    props.fit === "panel" ? "max-w-80 min-w-56 self-stretch shrink-0" : "max-w-full min-w-0 self-stretch shrink-0";
+    props.fit === "panel" ? "min-w-56 max-w-xs self-stretch shrink-0" : "max-w-full min-w-0 self-stretch shrink-0";
 
   return (
     <Section

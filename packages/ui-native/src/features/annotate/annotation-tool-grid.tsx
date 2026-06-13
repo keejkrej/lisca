@@ -2,7 +2,7 @@ import { View } from "react-native";
 
 import { Button } from "../../../components/ui/button";
 import { Text } from "../../../components/ui/text";
-import { dockLayoutClasses, useKeyboardShortcuts } from "../../shell";
+import { useKeyboardShortcuts } from "../../shell";
 import { dockToolLabel, dockToolShortcuts, type DockToolAction } from "@lisca/ui-headless/dock";
 import {
   ANNOTATION_TOOL_DEFINITIONS,
@@ -27,6 +27,7 @@ export function buildAnnotationToolActions(
 export function AnnotationToolGrid(props: {
   canEditTools: boolean;
   toolActions: DockToolAction[];
+  className?: string;
   shortcutsEnabled?: boolean;
 }) {
   useKeyboardShortcuts(dockToolShortcuts(props.toolActions), {
@@ -53,7 +54,11 @@ export function AnnotationToolGrid(props: {
   });
 
   return (
-    <View accessibilityLabel="Annotation tool" accessibilityRole="toolbar" className="w-full gap-2">
+    <View
+      accessibilityLabel="Annotation tool"
+      accessibilityRole="toolbar"
+      className={props.className ?? "flex w-full flex-col gap-2"}
+    >
       <View className="w-full flex-row gap-2">
         {buttons[0]}
         {buttons[1]}

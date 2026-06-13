@@ -69,7 +69,7 @@ export function AlignToolButton(props: {
       variant={active ? "default" : "outline"}
       onPress={onPress}
     >
-      <Icon as={ToolIcon} className="size-4" size={16} strokeWidth={2} />
+      <Icon as={ToolIcon} className="size-5" size={20} strokeWidth={2} />
       <Text className="max-w-full shrink truncate text-xs" numberOfLines={1}>
         {label}
       </Text>

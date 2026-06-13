@@ -1,25 +1,26 @@
 import { AlignToolSection, DockStrip } from "@lisca/ui-native";
 
-import type { AlignState } from "../state/use-align-state";
+import { useAlignCanvas, useAlignCrop } from "../state/align-page-selectors";
 import { AlignSaveSection } from "./align-save-section";
 
-export function AlignerDock(props: { alignState: AlignState }) {
-  const { alignState: state } = props;
+export function AlignerDock() {
+  const canvas = useAlignCanvas();
+  const crop = useAlignCrop();
 
   return (
     <DockStrip>
       <AlignToolSection
-        mode={state.toolMode}
-        patternZoomLocked={state.patternZoomLocked}
-        shortcutsEnabled={!state.cropping}
+        mode={canvas.toolMode}
+        patternZoomLocked={canvas.patternZoomLocked}
+        shortcutsEnabled={!crop.cropping}
         onModeChange={(mode) => {
-          if (!state.cropping) state.setToolMode(mode);
+          if (!crop.cropping) canvas.setToolMode(mode);
         }}
         onPatternZoomLockedChange={(locked) => {
-          if (!state.cropping) state.setPatternZoomLocked(locked);
+          if (!crop.cropping) canvas.setPatternZoomLocked(locked);
         }}
       />
-      <AlignSaveSection state={state} />
+      <AlignSaveSection />
     </DockStrip>
   );
 }

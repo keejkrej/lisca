@@ -1,12 +1,10 @@
-import {
-  AlignSelectionRail,
-  SmartExcludeModelDialog,
-} from "@lisca/ui-native";
+import { AlignSelectionRail, SmartExcludeModelDialog } from "@lisca/ui-native";
 import { useSmartExclude } from "@lisca/smart/exclude/browser";
 
-import type { AlignState } from "../state/use-align-state";
+import { useAlignPage } from "../state/align-page-context";
 
-export function AlignSelectionControls({ state }: { state: AlignState }) {
+export function AlignSelectionControls() {
+  const { state } = useAlignPage();
   const disabled = state.cropping || !state.frame;
   const smartExclude = useSmartExclude({
     frame: state.frame,

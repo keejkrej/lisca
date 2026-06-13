@@ -29,6 +29,7 @@ export { Input } from "../../components/ui/input";
 export { Slider } from "../../components/ui/slider";
 export { ShellProgress } from "./chrome/progress-bar";
 export { PathButton } from "./chrome/path-button";
+export { ReadonlyPathField } from "./chrome/readonly-path-field";
 export { ShellNavbar, type ShellNavbarProps, type ShellNavbarRouteItem } from "./chrome/navbar";
 export { Panel, Spinner } from "./regions/panel";
 export { Section } from "./regions/section";

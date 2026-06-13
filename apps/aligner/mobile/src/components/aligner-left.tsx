@@ -1,22 +1,24 @@
 import { ContrastControl, SidebarStack } from "@lisca/ui-native";
-import { View } from "react-native";
 
-import type { AlignState } from "../state/use-align-state";
+import { useAlignCanvas, useAlignCrop } from "../state/align-page-selectors";
 import { AlignFrameNavigation } from "./align-frame-navigation";
 
-export function AlignerLeft(props: { alignState: AlignState }) {
+export function AlignerLeft() {
+  const canvas = useAlignCanvas();
+  const crop = useAlignCrop();
+
   return (
     <SidebarStack>
-      <AlignFrameNavigation state={props.alignState} />
-      <View accessibilityLabel="Contrast" accessibilityRole="summary">
-        <ContrastControl
-          contrast={props.alignState.contrast}
-          disabled={!props.alignState.frame || props.alignState.cropping}
-          frame={props.alignState.frame}
-          sectionStyle={{ flexShrink: 0 }}
-          onContrastChange={props.alignState.setContrast}
-        />
-      </View>
+      <AlignFrameNavigation />
+      <ContrastControl
+        accessibilityLabel="Contrast"
+        contrast={canvas.contrast}
+        disabled={!canvas.frame || crop.cropping}
+        frame={canvas.frame}
+        sectionClassName="min-h-0 shrink-0"
+        sectionContentClassName="flex min-h-0 flex-col overflow-auto"
+        onContrastChange={canvas.setContrast}
+      />
     </SidebarStack>
   );
 }

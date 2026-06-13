@@ -1,73 +1,75 @@
-import { ActivityIndicator } from "react-native";
-import { View } from "react-native";
+import { ActivityIndicator, View } from "react-native";
 
-import { Button, DockSection, ReadonlyPathField, Text, dockLayoutClasses } from "@lisca/ui-native";
+import { Text } from "@lisca/ui-native";
+import { Button, DockSection, ReadonlyPathField } from "@lisca/ui-native/shell";
 
-import type { AlignState } from "../state/use-align-state";
+import { useAlignCrop, useAlignNav } from "../state/align-page-selectors";
 
-export function AlignSaveSection({ state }: { state: AlignState }) {
-  const pos = state.selection.pos;
-  const canSave = Boolean(state.workspacePath && state.frame && !state.cropping);
-  const canCrop = Boolean(state.workspacePath && state.source && state.frame && !state.cropping);
+export function AlignSaveSection() {
+  const nav = useAlignNav();
+  const crop = useAlignCrop();
+  const pos = nav.selection.pos;
+  const canSave = Boolean(nav.workspacePath && nav.frame && !crop.cropping);
+  const canCrop = Boolean(nav.workspacePath && nav.source && nav.frame && !crop.cropping);
 
   return (
-    <DockSection
-      className={dockLayoutClasses.section}
-      contentClassName={dockLayoutClasses.content}
-      title="Save"
-    >
-      <View className={dockLayoutClasses.stack}>
-        <View className={dockLayoutClasses.cols3}>
-          <View className={dockLayoutClasses.cell}>
+    <DockSection title="Save">
+      <View className="flex w-full flex-col gap-2">
+        <View className="w-full flex-row gap-2">
+          <View className="min-w-0 flex-1">
             <ReadonlyPathField
               accessibilityLabel={`Output path bbox/Pos${pos}.csv`}
               value={`bbox/Pos${pos}.csv`}
             />
           </View>
-          <View className={dockLayoutClasses.cell}>
+          <View className="min-w-0 flex-1">
             <ReadonlyPathField
               accessibilityLabel={`Output path align/Pos${pos}.json`}
               value={`align/Pos${pos}.json`}
             />
           </View>
-          <View className={dockLayoutClasses.cell}>
+          <View className="min-w-0 flex-1">
             <ReadonlyPathField
               accessibilityLabel={`Output path roi/Pos${pos}`}
+              className="text-center"
               value={`roi/Pos${pos}`}
             />
           </View>
         </View>
-        <View className={dockLayoutClasses.cols3}>
-          <View className={dockLayoutClasses.cell}>
+        <View className="w-full flex-row gap-2">
+          <View className="min-w-0 flex-1">
             <Button
-              disabled={!canSave || state.saving}
+              className="h-8 w-full justify-center"
+              disabled={!canSave || nav.saving}
               size="sm"
               variant="outline"
-              onPress={() => void state.saveCurrent()}
+              onPress={() => void nav.saveCurrent()}
             >
-              {state.saving ? (
+              {nav.saving ? (
                 <ActivityIndicator size="small" />
               ) : (
                 <Text className="text-xs">Save</Text>
               )}
             </Button>
           </View>
-          <View className={dockLayoutClasses.cell}>
+          <View className="min-w-0 flex-1">
             <Button
+              className="w-full justify-center"
               disabled={!canCrop}
               size="sm"
               variant="outline"
-              onPress={() => void state.cropCurrent()}
+              onPress={() => void nav.cropCurrent()}
             >
               <Text className="text-xs">Crop</Text>
             </Button>
           </View>
-          <View className={dockLayoutClasses.cell}>
+          <View className="min-w-0 flex-1">
             <Button
-              disabled={!state.workspacePath || !state.source || state.cropping}
+              className="w-full justify-center"
+              disabled={!nav.workspacePath || !nav.source || crop.cropping}
               size="sm"
               variant="outline"
-              onPress={() => void state.cropBatch()}
+              onPress={() => void nav.cropBatch()}
             >
               <Text className="text-xs">Batch</Text>
             </Button>

@@ -5,12 +5,11 @@ import {
   SourcePickerModal,
   useShellWorkspace,
 } from "@lisca/ui-native";
-import type { AlignerSource } from "@lisca/contracts";
 import type { HostFilePickerMode } from "@lisca/ui-native/features";
 import { useRef, useState } from "react";
-import { View } from "react-native";
 
 import { alignerHostOperations } from "../api/aligner-port";
+import { useAlignSource } from "../state/align-page-selectors";
 
 function filePickerTitle(mode: HostFilePickerMode): string {
   if (mode === "workspace") return "Workspace folder";
@@ -20,7 +19,8 @@ function filePickerTitle(mode: HostFilePickerMode): string {
   return "File";
 }
 
-export function AlignerHeader(props: { onSourcePicked: (source: AlignerSource | null) => void }) {
+export function AlignerHeader() {
+  const alignSource = useAlignSource();
   const workspace = useShellWorkspace();
   const pickerModeRef = useRef<HostFilePickerMode | null>(null);
   const [sourcePickerOpen, setSourcePickerOpen] = useState(false);
@@ -40,7 +40,7 @@ export function AlignerHeader(props: { onSourcePicked: (source: AlignerSource | 
     const mode = pickerModeRef.current;
     if (mode === "workspace") {
       workspace.setWorkspacePath(path);
-      props.onSourcePicked(null);
+      alignSource.setSource(null);
       return;
     }
     if (mode === "folder") setFolderSourcePath(path);
@@ -50,22 +50,20 @@ export function AlignerHeader(props: { onSourcePicked: (source: AlignerSource | 
     const mode = pickerModeRef.current;
     if (mode === "nd2_file") {
       workspace.setSourcePath(path);
-      props.onSourcePicked({ kind: "nd2", path });
+      alignSource.setSource({ kind: "nd2", path });
     }
     if (mode === "czi_file") {
       workspace.setSourcePath(path);
-      props.onSourcePicked({ kind: "czi", path });
+      alignSource.setSource({ kind: "czi", path });
     }
   };
 
   return (
     <>
-      <View className="flex-1 justify-center">
-        <ShellNavbar.Aligner
-          onPickSource={() => setSourcePickerOpen(true)}
-          onPickWorkspace={() => openFilePicker("workspace")}
-        />
-      </View>
+      <ShellNavbar.Aligner
+        onPickSource={() => setSourcePickerOpen(true)}
+        onPickWorkspace={() => openFilePicker("workspace")}
+      />
       <SourcePickerModal
         open={sourcePickerOpen}
         onClose={() => setSourcePickerOpen(false)}
@@ -79,7 +77,7 @@ export function AlignerHeader(props: { onSourcePicked: (source: AlignerSource | 
         onClose={() => setFolderSourcePath(null)}
         onConfirm={(source) => {
           workspace.setSourcePath(source.path);
-          props.onSourcePicked(source);
+          alignSource.setSource(source);
           setFolderSourcePath(null);
         }}
       />

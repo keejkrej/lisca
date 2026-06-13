@@ -18,8 +18,11 @@ export type ContrastControlProps = {
   title?: string;
   sectionTitle?: string;
   sectionDescription?: string;
+  sectionClassName?: string;
+  sectionContentClassName?: string;
   sectionStyle?: object;
   sectionContentStyle?: object;
+  accessibilityLabel?: string;
 };
 
 export function ContrastControl(props: ContrastControlProps) {
@@ -31,8 +34,11 @@ export function ContrastControl(props: ContrastControlProps) {
     title,
     sectionTitle = "Contrast",
     sectionDescription,
+    sectionClassName,
+    sectionContentClassName,
     sectionStyle,
     sectionContentStyle,
+    accessibilityLabel,
   } = props;
 
   return (
@@ -54,12 +60,15 @@ export function ContrastControl(props: ContrastControlProps) {
         onMaxCommit,
       }) => (
         <ContrastControlBody
-          disabled={disabled}
+          accessibilityLabel={accessibilityLabel}
           autoRangeDisabled={autoRangeDisabled}
+          disabled={disabled}
           domainMax={domainMax}
           domainMin={domainMin}
           maxValue={maxValue}
           minValue={minValue}
+          sectionClassName={sectionClassName}
+          sectionContentClassName={sectionContentClassName}
           sectionContentStyle={sectionContentStyle}
           sectionDescription={sectionDescription}
           sectionStyle={sectionStyle}
@@ -87,8 +96,11 @@ function ContrastControlBody(props: {
   title?: string;
   sectionTitle?: string;
   sectionDescription?: string;
+  sectionClassName?: string;
+  sectionContentClassName?: string;
   sectionStyle?: object;
   sectionContentStyle?: object;
+  accessibilityLabel?: string;
 }) {
   const {
     domainMin,
@@ -103,8 +115,11 @@ function ContrastControlBody(props: {
     title,
     sectionTitle = "Contrast",
     sectionDescription,
+    sectionClassName,
+    sectionContentClassName,
     sectionStyle,
     sectionContentStyle,
+    accessibilityLabel,
   } = props;
 
   const domainOk = domainMax > domainMin;
@@ -119,18 +134,26 @@ function ContrastControlBody(props: {
   if (!domainOk) {
     return (
       <Section
+        accessibilityLabel={accessibilityLabel}
+        accessibilityRole="summary"
+        className={sectionClassName}
+        contentClassName={sectionContentClassName}
         contentStyle={sectionContentStyle}
         description={sectionDescription}
         style={sectionStyle}
         title={sectionTitle}
       >
-        <Text className="text-sm text-muted-foreground">Invalid intensity domain.</Text>
+        <Text className="text-xs text-muted-foreground">Invalid intensity domain.</Text>
       </Section>
     );
   }
 
   return (
     <Section
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole="summary"
+      className={sectionClassName}
+      contentClassName={sectionContentClassName}
       contentStyle={[{ gap: 12 }, sectionContentStyle]}
       description={sectionDescription}
       style={sectionStyle}
@@ -141,6 +164,7 @@ function ContrastControlBody(props: {
       ) : null}
 
       <Button
+        className="h-8 w-full justify-center"
         disabled={disabled || autoRangeDisabled}
         size="sm"
         variant="outline"
@@ -199,16 +223,18 @@ function ContrastSliderRow(props: {
           {String(Math.round(props.value))}
         </Text>
       </View>
-      <Slider
-        disabled={props.disabled}
-        maximumValue={props.domainMax}
-        minimumValue={props.domainMin}
-        step={1}
-        style={{ width: "100%", height: 32 }}
-        value={props.value}
-        onSlidingComplete={props.onCommit}
-        onValueChange={props.onDraftChange}
-      />
+      <View className="w-full pt-0.5">
+        <Slider
+          disabled={props.disabled}
+          maximumValue={props.domainMax}
+          minimumValue={props.domainMin}
+          step={1}
+          style={{ width: "100%", height: 32 }}
+          value={props.value}
+          onSlidingComplete={props.onCommit}
+          onValueChange={props.onDraftChange}
+        />
+      </View>
     </View>
   );
 }

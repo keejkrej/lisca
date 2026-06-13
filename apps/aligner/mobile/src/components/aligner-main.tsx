@@ -1,33 +1,36 @@
 import {
   AlignCanvas,
+  CropProgressModal,
   cursorForAlignTool,
   useAlignCanvasGridHandlers,
   useAlignCanvasSelectionHandlers,
   useCanvasTransientStatus,
   ViewportCard,
-  CropProgressModal,
 } from "@lisca/ui-native";
-import type { AlignState } from "../state/use-align-state";
+
+import { useAlignCanvas, useAlignCrop } from "../state/align-page-selectors";
 import { CropConfirmModal } from "./crop-confirm-modal";
 
-export function AlignerMain({ state }: { state: AlignState }) {
+export function AlignerMain() {
+  const canvas = useAlignCanvas();
+  const crop = useAlignCrop();
   const gridHandlers = useAlignCanvasGridHandlers({
-    disabled: state.cropping,
-    grid: state.grid,
-    patternZoomLocked: state.patternZoomLocked,
-    setGrid: state.setGrid,
-    toolMode: state.toolMode,
+    disabled: crop.cropping,
+    grid: canvas.grid,
+    patternZoomLocked: canvas.patternZoomLocked,
+    setGrid: canvas.setGrid,
+    toolMode: canvas.toolMode,
   });
   const selectionHandlers = useAlignCanvasSelectionHandlers({
-    disabled: state.cropping,
-    enabled: state.manualExclusionEnabled,
-    excludedCells: state.currentExcludedCells,
-    frame: state.frame,
-    grid: state.grid,
-    onExcludedCellsChange: (cells) => state.setExcludedCellsForCurrentPosition(cells),
+    disabled: crop.cropping,
+    enabled: canvas.manualExclusionEnabled,
+    excludedCells: canvas.currentExcludedCells,
+    frame: canvas.frame,
+    grid: canvas.grid,
+    onExcludedCellsChange: (cells) => canvas.setExcludedCellsForCurrentPosition(cells),
   });
   const handlePointerDown: typeof gridHandlers.handlePointerDown = (event) => {
-    if (state.manualExclusionEnabled) {
+    if (canvas.manualExclusionEnabled) {
       selectionHandlers.handlePointerDown(event);
       return;
     }
@@ -46,17 +49,17 @@ export function AlignerMain({ state }: { state: AlignState }) {
     if (selectionHandlers.handlePointerCancel(event)) return;
     gridHandlers.handlePointerEnd(event);
   };
-  const visibleStatus = useCanvasTransientStatus(state.status);
-  const activeToastStatus = state.frameLoading
+  const visibleStatus = useCanvasTransientStatus(canvas.status);
+  const activeToastStatus = canvas.frameLoading
     ? "Loading frame"
-    : state.scanLoading
+    : canvas.scanLoading
       ? "Scanning source"
       : visibleStatus;
   const toasts = (() => {
-    if (state.error)
+    if (canvas.error)
       return [
         {
-          text: state.error,
+          text: canvas.error,
           tone: "error" as const,
         },
       ];
@@ -68,17 +71,17 @@ export function AlignerMain({ state }: { state: AlignState }) {
       ];
     return [];
   })();
-  const emptyText = !state.workspacePath
+  const emptyText = !canvas.workspacePath
     ? "Pick a workspace."
-    : !state.source
+    : !canvas.source
       ? "Pick a source."
-      : state.scanLoading
+      : canvas.scanLoading
         ? "Scanning source…"
         : "No frame loaded.";
   const cursor =
-    state.manualExclusionEnabled || selectionHandlers.selecting
+    canvas.manualExclusionEnabled || selectionHandlers.selecting
       ? "crosshair"
-      : cursorForAlignTool(state.toolMode, state.grid.enabled, gridHandlers.previewGrid != null);
+      : cursorForAlignTool(canvas.toolMode, canvas.grid.enabled, gridHandlers.previewGrid != null);
 
   return (
     <>
@@ -86,10 +89,10 @@ export function AlignerMain({ state }: { state: AlignState }) {
         <AlignCanvas
           cursor={cursor}
           emptyText={emptyText}
-          excludedCells={state.displayedExcludedCells}
-          frame={state.frame}
-          grid={state.grid}
-          loading={state.scanLoading || state.frameLoading}
+          excludedCells={canvas.displayedExcludedCells}
+          frame={canvas.frame}
+          grid={canvas.grid}
+          loading={canvas.scanLoading || canvas.frameLoading}
           previewGrid={gridHandlers.previewGrid}
           toasts={toasts}
           onVirtualPointerCancel={handlePointerCancel}
@@ -98,8 +101,8 @@ export function AlignerMain({ state }: { state: AlignState }) {
           onVirtualPointerUp={handlePointerEnd}
         />
       </ViewportCard>
-      <CropConfirmModal state={state} />
-      <CropProgressModal progress={state.cropProgress} onCancel={() => void state.cancelCrop()} />
+      <CropConfirmModal />
+      <CropProgressModal progress={crop.cropProgress} onCancel={() => void crop.cancelCrop()} />
     </>
   );
 }

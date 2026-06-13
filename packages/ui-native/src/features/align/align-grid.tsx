@@ -168,7 +168,7 @@ export function AlignGrid(props: AlignGridProps) {
           <Toggle
             accessibilityLabel="Show grid overlay"
             accessibilityState={{ selected: overlayVisible }}
-            className="min-w-0 w-full flex-1 justify-center"
+            className="min-w-0 w-full flex-1 justify-center text-xs"
             disabled={disabled}
             pressed={overlayVisible}
             size="sm"
@@ -190,20 +190,22 @@ export function AlignGrid(props: AlignGridProps) {
 
         <Field className="min-w-0 w-full">
           <FieldLabel>Opacity</FieldLabel>
-          <Slider
-            disabled={disabled}
-            maximumValue={1}
-            minimumValue={0}
-            step={0.01}
-            style={{ width: "100%", height: 32 }}
-            value={overlayOpacityDraft}
-            onSlidingComplete={(value) => {
-              const opacity = clamp(value, 0, 1);
-              setOverlayOpacityDraft(opacity);
-              onOverlayOpacityChange(opacity);
-            }}
-            onValueChange={(value) => setOverlayOpacityDraft(clamp(value, 0, 1))}
-          />
+          <View className="w-full pt-0.5">
+            <Slider
+              disabled={disabled}
+              maximumValue={1}
+              minimumValue={0}
+              step={0.01}
+              style={{ width: "100%", height: 32 }}
+              value={overlayOpacityDraft}
+              onSlidingComplete={(value) => {
+                const opacity = clamp(value, 0, 1);
+                setOverlayOpacityDraft(opacity);
+                onOverlayOpacityChange(opacity);
+              }}
+              onValueChange={(value) => setOverlayOpacityDraft(clamp(value, 0, 1))}
+            />
+          </View>
         </Field>
 
         <Field className="min-w-0 w-full">
@@ -293,25 +295,5 @@ export function AlignGrid(props: AlignGridProps) {
         </View>
       </View>
     </Section>
-  );
-}
-
-export function ReadonlyPathField(props: {
-  value: string;
-  className?: string;
-  accessibilityLabel?: string;
-}) {
-  return (
-    <View
-      accessibilityLabel={props.accessibilityLabel}
-      className={cn(
-        "h-10 min-w-0 w-full items-center justify-center self-stretch rounded-lg border border-border bg-muted px-2",
-        props.className,
-      )}
-    >
-      <Text className="w-full font-mono text-sm text-foreground" numberOfLines={1}>
-        {props.value}
-      </Text>
-    </View>
   );
 }
