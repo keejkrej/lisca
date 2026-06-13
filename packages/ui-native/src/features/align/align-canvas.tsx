@@ -14,6 +14,7 @@ import { ActivityIndicator, View } from "react-native";
 import { Text } from "../../../components/ui/text";
 import { liscaFontFamily } from "../../theme/typography";
 import { useThemeColors } from "../../theme/use-theme-colors";
+import { useCanvasBackground } from "../canvas/canvas-theme";
 import { clientToFramePoint, computeFrameLayout, prepareFrameRgba } from "../canvas/frame-pixels";
 
 export type {
@@ -52,6 +53,7 @@ export function AlignCanvas({
   onVirtualPointerCancel,
 }: AlignCanvasProps) {
   const colors = useThemeColors();
+  const canvasBackground = useCanvasBackground();
   const canvasRef = useCanvasRef();
   const [layout, setLayout] = useState({
     width: 1,
@@ -188,7 +190,7 @@ export function AlignCanvas({
               y={0}
               width={layout.width}
               height={layout.height}
-              color={colors.background}
+              color={canvasBackground}
             />
             {skImage && frameLayout ? (
               <Group>

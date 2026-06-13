@@ -13,6 +13,7 @@ import { ActivityIndicator, View } from "react-native";
 import { Text } from "../../../components/ui/text";
 import { liscaFontFamily } from "../../theme/typography";
 import { useThemeColors } from "../../theme/use-theme-colors";
+import { useCanvasBackground } from "../canvas/canvas-theme";
 import { computeFrameLayout, prepareFrameRgba } from "../canvas/frame-pixels";
 import type { AnnotationTool } from "@lisca/ui-headless/annotation-tools";
 
@@ -95,6 +96,7 @@ export function AnnotationCanvas({
   loading?: boolean;
 }) {
   const colors = useThemeColors();
+  const canvasBackground = useCanvasBackground();
   const [layout, setLayout] = useState({
     width: 1,
     height: 1,
@@ -222,7 +224,7 @@ export function AnnotationCanvas({
       <GestureDetector gesture={pan}>
         <View className="flex-1">
           <Canvas style={{ flex: 1 }}>
-            <Rect x={0} y={0} width={layout.width} height={layout.height} color={colors.background} />
+            <Rect x={0} y={0} width={layout.width} height={layout.height} color={canvasBackground} />
             {skImage && frameLayout ? (
               <Group>
                 <Image
