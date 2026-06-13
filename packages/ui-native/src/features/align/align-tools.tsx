@@ -21,6 +21,34 @@ import { cn } from "../../../lib/utils";
 import { dockToolLabel, dockToolShortcuts, keyboardShortcutsSupported, useKeyboardShortcuts } from "../../shell";
 import { DockSection } from "../../shell/regions/dock-section";
 import { dockLayoutClasses } from "../../shell/regions/dock-layout";
+import { useThemeColors } from "../../theme/use-theme-colors";
+
+function PatternZoomLockButton(props: {
+  locked: boolean;
+  onToggle?: () => void;
+}) {
+  const colors = useThemeColors();
+  const LockIcon = props.locked ? Lock : Unlock;
+
+  return (
+    <Button
+      key={props.locked ? "locked" : "unlocked"}
+      accessibilityLabel={props.locked ? "Unlock pattern zoom" : "Lock pattern zoom"}
+      accessibilityState={{ selected: props.locked }}
+      className="size-8 shrink-0 px-0 sm:size-8"
+      disabled={!props.onToggle}
+      size="icon"
+      variant={props.locked ? "default" : "outline"}
+      onPress={props.onToggle}
+    >
+      <LockIcon
+        color={props.locked ? colors.primaryForeground : colors.foreground}
+        size={16}
+        strokeWidth={2}
+      />
+    </Button>
+  );
+}
 
 export type AlignToolSectionProps = {
   mode: AlignGridToolMode;
@@ -70,12 +98,7 @@ export function AlignToolButton(props: {
       variant={active ? "default" : "outline"}
       onPress={onPress}
     >
-      <Icon
-        as={ToolIcon}
-        className={cn("size-5", active && "text-primary-foreground")}
-        size={20}
-        strokeWidth={2}
-      />
+      <Icon as={ToolIcon} size={20} strokeWidth={2} />
       <Text
         className={cn("max-w-full shrink truncate text-xs", active && "text-primary-foreground")}
         numberOfLines={1}
@@ -111,17 +134,14 @@ function renderAlignToolCell(
               onPress={() => onModeChange(tool.mode)}
             />
           </View>
-          <Button
-            accessibilityLabel={patternZoomLocked ? "Unlock pattern zoom" : "Lock pattern zoom"}
-            accessibilityState={{ selected: patternZoomLocked }}
-            className="h-8 w-8 px-0"
-            disabled={!onPatternZoomLockedChange}
-            size="sm"
-            variant={patternZoomLocked ? "default" : "outline"}
-            onPress={() => onPatternZoomLockedChange?.(!patternZoomLocked)}
-          >
-            <Icon as={patternZoomLocked ? Lock : Unlock} className="size-4" size={16} strokeWidth={2} />
-          </Button>
+          <PatternZoomLockButton
+            locked={patternZoomLocked}
+            onToggle={
+              onPatternZoomLockedChange
+                ? () => onPatternZoomLockedChange(!patternZoomLocked)
+                : undefined
+            }
+          />
         </View>
       </View>
     );

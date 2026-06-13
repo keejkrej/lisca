@@ -11,12 +11,15 @@ export function ReadonlyPathField(props: {
   return (
     <View
       accessibilityLabel={props.accessibilityLabel ?? `Path ${props.value}`}
-      className={cn(
-        "h-8 min-w-0 w-full items-center self-stretch rounded-md border border-border bg-muted/20 px-2",
-        props.className,
-      )}
+      className="flex-row h-8 min-w-0 w-full items-center self-stretch rounded-md border border-border bg-muted/20 px-2"
     >
-      <Text className="w-full font-mono text-xs text-foreground" numberOfLines={1}>
+      <Text
+        className={cn(
+          "min-w-0 flex-1 font-mono text-xs leading-none text-foreground",
+          props.className,
+        )}
+        numberOfLines={1}
+      >
         {props.value}
       </Text>
     </View>
