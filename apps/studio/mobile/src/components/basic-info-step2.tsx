@@ -88,7 +88,7 @@ export function BasicInfoStep2() {
                 });
               }}
             />
-            <View className="w-44 shrink-0">
+            <View className="w-[10.5rem] shrink-0">
               <BasicInfoSelect
                 options={TIMELAPSE_UNITS}
                 value={info2.timelapseUnit}
