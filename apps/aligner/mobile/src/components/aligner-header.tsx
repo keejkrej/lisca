@@ -1,5 +1,4 @@
 import {
-  Button,
   FolderSourceParseModal,
   HostFilePickerDialog,
   ShellNavbar,
@@ -19,10 +18,6 @@ function filePickerTitle(mode: HostFilePickerMode): string {
   if (mode === "nd2_file") return "ND2 file";
   if (mode === "czi_file") return "CZI file";
   return "File";
-}
-
-function ToolsMenuPlaceholder() {
-  return <Button disabled label="Tools" size="sm" variant="outline" />;
 }
 
 export function AlignerHeader(props: { onSourcePicked: (source: AlignerSource | null) => void }) {
@@ -67,7 +62,6 @@ export function AlignerHeader(props: { onSourcePicked: (source: AlignerSource | 
     <>
       <View className="flex-1 justify-center">
         <ShellNavbar.Aligner
-          endLeading={<ToolsMenuPlaceholder />}
           onPickSource={() => setSourcePickerOpen(true)}
           onPickWorkspace={() => openFilePicker("workspace")}
         />

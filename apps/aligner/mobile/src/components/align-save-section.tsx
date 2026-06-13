@@ -13,13 +13,22 @@ export function AlignSaveSection({ state }: { state: AlignState }) {
       <View className={dockLayoutClasses.stack}>
         <View className={dockLayoutClasses.cols3}>
           <View className={dockLayoutClasses.cell}>
-            <ReadonlyPathField value={`bbox/Pos${pos}.csv`} />
+            <ReadonlyPathField
+              accessibilityLabel={`Output path bbox/Pos${pos}.csv`}
+              value={`bbox/Pos${pos}.csv`}
+            />
           </View>
           <View className={dockLayoutClasses.cell}>
-            <ReadonlyPathField value={`align/Pos${pos}.json`} />
+            <ReadonlyPathField
+              accessibilityLabel={`Output path align/Pos${pos}.json`}
+              value={`align/Pos${pos}.json`}
+            />
           </View>
           <View className={dockLayoutClasses.cell}>
-            <ReadonlyPathField value={`roi/Pos${pos}`} />
+            <ReadonlyPathField
+              accessibilityLabel={`Output path roi/Pos${pos}`}
+              value={`roi/Pos${pos}`}
+            />
           </View>
         </View>
         <View className={dockLayoutClasses.cols3}>

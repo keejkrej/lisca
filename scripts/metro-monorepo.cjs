@@ -1,7 +1,6 @@
 const http = require("node:http");
 const path = require("node:path");
 const { createRequire } = require("node:module");
-const { withNativeWind } = require("nativewind/metro");
 const { isLiscaApiProxyPath } = require("./lisca-dev-proxy-shared.cjs");
 
 function pipeHttp(req, res, port) {
@@ -41,6 +40,7 @@ function createRustApiProxyMiddleware(rustPort) {
 module.exports = function createMonorepoMetroConfig(projectRoot, options = {}) {
   const requireFromProject = createRequire(path.join(projectRoot, "package.json"));
   const { getDefaultConfig } = requireFromProject("expo/metro-config");
+  const { withNativeWind } = requireFromProject("nativewind/metro");
   const config = getDefaultConfig(projectRoot);
   const workspaceRoot = path.resolve(projectRoot, "../../..");
 
@@ -67,6 +67,12 @@ module.exports = function createMonorepoMetroConfig(projectRoot, options = {}) {
 
   const nativeWindCss =
     options.nativeWindCss ?? path.resolve(workspaceRoot, "packages/ui-native/global.css");
+  const tailwindConfig =
+    options.tailwindConfig ?? path.resolve(workspaceRoot, "packages/ui-native/tailwind.config.cjs");
 
-  return withNativeWind(config, { input: nativeWindCss, inlineRem: 16 });
+  return withNativeWind(config, {
+    input: nativeWindCss,
+    inlineRem: 16,
+    configPath: tailwindConfig,
+  });
 };

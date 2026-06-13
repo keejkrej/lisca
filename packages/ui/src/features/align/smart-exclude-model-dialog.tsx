@@ -28,7 +28,12 @@ export function SmartExcludeModelDialog({
   const consent = state.requiresDownload && !loading;
 
   return (
-    <ModalScrim zIndex="z-40">
+    <ModalScrim
+      zIndex="z-40"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onCancel();
+      }}
+    >
       <DialogSurface aria-label="Smart exclude model download" className="p-5" maxWidth="sm">
         <div className="font-medium text-foreground">Smart exclude model</div>
         <p className="mt-2 text-muted-foreground text-sm">

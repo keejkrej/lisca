@@ -1,5 +1,6 @@
 import { useAnnotateStateCore } from "@lisca/client/use-annotate-state-core";
 import {
+  confirmDiscardAnnotationChanges,
   useCanvasResourceTransaction,
   useCanvasTransientStatus,
   useShellWorkspace,
@@ -44,7 +45,10 @@ export function useAnnotateState() {
     useShellWorkspace,
     useCanvasResourceTransaction,
     useCanvasTransientStatus,
-    guardDirtySelection: () => true,
+    guardDirtySelection: async (dirty, selectionChanging) => {
+      if (!dirty || selectionChanging) return true;
+      return confirmDiscardAnnotationChanges();
+    },
     useAnnotationHistory,
     emptyValueFor,
     makeRequest,

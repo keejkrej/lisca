@@ -26,6 +26,7 @@ export type HostFilePickerDialogProps = {
   hostPort: HostFilePickerOperations;
   mode: HostFilePickerMode;
   title: string;
+  description?: string;
   onPickDirectory: (path: string) => void;
   onPickFile: (path: string) => void;
   recentItems?: readonly HostFilePickerRecentItem[];
@@ -38,6 +39,7 @@ export function HostFilePickerDialog({
   hostPort,
   mode,
   title,
+  description,
   onPickDirectory,
   onPickFile,
   recentItems,
@@ -61,6 +63,7 @@ export function HostFilePickerDialog({
     <ModalScrim open={open} onClose={() => onOpenChange(false)}>
       <DialogSurface accessibilityLabel={title}>
         <DialogTitleText>{title}</DialogTitleText>
+        {description ? <DialogDescriptionText>{description}</DialogDescriptionText> : null}
         {picker.locationLabel ? (
           <DialogDescriptionText numberOfLines={2}>{picker.locationLabel}</DialogDescriptionText>
         ) : null}

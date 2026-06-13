@@ -7,14 +7,18 @@ import {
   defaultResultPlotSection,
   filterResultFilesBySection,
   intervalFromAssaySettings,
+  loadAllResultPlotPanels,
   type ResultPanel,
   type ResultPlotSection,
   type SlideChannelLabels,
+  type TimeseriesPanel,
 } from "@lisca/analysis";
+import { countChartSpecs } from "@lisca/analysis/charts";
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { useWindowDimensions, View } from "react-native";
-import { studioClient } from "../src/api/studio-port";
+import { captureRef } from "react-native-view-shot";
+import { studioClient, toErrorMessage } from "../src/api/studio-port";
 import {
   analysisResultsAtom,
   analysisResultsIdleAtom,
@@ -25,13 +29,27 @@ import { STUDIO_NAV_WIDTH } from "../src/components/studio-layout";
 import { StudioLeft } from "../src/components/studio-left";
 import { StudioResultDock } from "../src/components/studio-result-dock";
 import { ResultPanelsGridView } from "@lisca/ui-native/features";
-import { buildResultPdfFromCaptures, pdfBytesToBase64 } from "../src/result/result-pdf";
-import { useStudioAnnotateState } from "../src/state/use-studio-annotate-state";
+import {
+  buildResultPdfFromCaptures,
+  pdfBytesToBase64,
+  RESULT_PDF_FILE_NAME,
+  waitForNativeExportRender,
+  type ResultPdfCapturePage,
+} from "../src/result/result-pdf";
+import { useStudioResultState } from "../src/state/use-studio-result-state";
 import { useStudioStore } from "../src/state/studio-store";
+
+const chartColors = (colors: ReturnType<typeof useThemeColors>) => ({
+  grid: colors.border,
+  mutedText: colors.mutedForeground,
+  primary: "#60a5fa",
+  text: colors.foreground,
+});
+
 export default function ResultRoute() {
   const { width } = useWindowDimensions();
   const colors = useThemeColors();
-  const { workspacePath, analysisResultFiles } = useStudioAnnotateState();
+  const { workspacePath, analysisResultFiles } = useStudioResultState();
   const info2 = useStudioStore((state) => state.info2);
   const info3 = useStudioStore((state) => state.info3);
   const resultsAtom = workspacePath ? analysisResultsAtom(workspacePath) : analysisResultsIdleAtom;
@@ -43,6 +61,12 @@ export default function ResultRoute() {
   const [isSectionLoading, setIsSectionLoading] = useState(false);
   const [panelError, setPanelError] = useState<string | null>(null);
   const [sectionPanels, setSectionPanels] = useState<ResultPanel[]>([]);
+  const [exportCapture, setExportCapture] = useState<{
+    timeseriesPanels: TimeseriesPanel[];
+    parameterPanels: ResultPanel[];
+  } | null>(null);
+  const exportTimeseriesRef = useRef<View>(null);
+  const exportParametersRef = useRef<View>(null);
   const timeseriesXScale = intervalFromAssaySettings(info2.timelapseAmount, info2.timelapseUnit);
   const slideChannelLabels = (() => {
     const labels: SlideChannelLabels = {};
@@ -66,6 +90,16 @@ export default function ResultRoute() {
   const runLoadPanels = useAtomSet(loadAnalysisPanelsAtom, {
     mode: "promise",
   });
+  const loadPanelsForFile = async (file: (typeof analysisResultFiles)[number]) => {
+    if (!workspacePath) throw new Error("No workspace selected");
+    return runLoadPanels({
+      workspacePath,
+      file,
+      timeseriesXScale,
+      slideChannelLabels,
+      slideChannelLabelsKey,
+    }) as Promise<ResultPanel[]>;
+  };
   const switchSection = (section: ResultPlotSection) => {
     if (section === activeSection || isBusy) return;
     setActiveSection(section);
@@ -147,24 +181,65 @@ export default function ResultRoute() {
       onSelect: () => switchSection("parameters"),
     },
   ];
+  const captureExportPage = async (
+    ref: RefObject<View | null>,
+    title: string,
+  ): Promise<ResultPdfCapturePage | null> => {
+    if (!ref.current) return null;
+    const imageBase64 = await captureRef(ref, {
+      format: "jpg",
+      quality: 0.92,
+      result: "base64",
+    });
+    return {
+      title,
+      imageBase64,
+      width: 1200,
+      height: 800,
+    };
+  };
   const exportPdf = async () => {
     if (!workspacePath || exporting || isSectionLoading || !hasAnyResultFiles) return;
     setExporting(true);
     setSaveMessage(null);
     setPanelError(null);
     try {
-      const bytes = buildResultPdfFromCaptures([]);
-      await runClientEffect(
+      const { timeseriesPanels, parameterPanels } = await loadAllResultPlotPanels(
+        analysisResultFiles,
+        loadPanelsForFile,
+      );
+      const expectedPlots =
+        countChartSpecs(timeseriesPanels) + countChartSpecs(parameterPanels);
+      if (expectedPlots === 0) {
+        throw new Error("No plots to export");
+      }
+      setExportCapture({ timeseriesPanels, parameterPanels });
+      await waitForNativeExportRender();
+      const pages: ResultPdfCapturePage[] = [];
+      if (timeseriesPanels.length > 0) {
+        const page = await captureExportPage(exportTimeseriesRef, "Timeseries");
+        if (page) pages.push(page);
+      }
+      if (parameterPanels.length > 0) {
+        const page = await captureExportPage(exportParametersRef, "Parameters");
+        if (page) pages.push(page);
+      }
+      if (pages.length === 0) {
+        throw new Error("Nothing to export");
+      }
+      const bytes = buildResultPdfFromCaptures(pages);
+      const response = await runClientEffect(
         studioClient.saveResultPdf({
           workspacePath,
-          fileName: "result.pdf",
+          fileName: RESULT_PDF_FILE_NAME,
           contentsBase64: pdfBytesToBase64(bytes),
         }),
       );
-      setSaveMessage("Saved PDF to result.pdf");
+      setSaveMessage(`Saved PDF (${expectedPlots} plot(s)) to ${response.path}`);
     } catch (cause) {
-      setSaveMessage(cause instanceof Error ? cause.message : "Failed to save PDF");
+      setSaveMessage(toErrorMessage(cause, "Failed to save PDF"));
     } finally {
+      setExportCapture(null);
       setExporting(false);
     }
   };
@@ -188,12 +263,7 @@ export default function ResultRoute() {
                 ) : null}
                 {sectionPanels.length > 0 ? (
                   <ResultPanelsGridView
-                    colors={{
-                      grid: colors.border,
-                      mutedText: colors.mutedForeground,
-                      primary: "#60a5fa",
-                      text: colors.foreground,
-                    }}
+                    colors={chartColors(colors)}
                     panels={sectionPanels}
                     width={chartWidth}
                   />
@@ -207,6 +277,35 @@ export default function ResultRoute() {
                     </Text>
                   </View>
                 )}
+                {exportCapture ? (
+                  <View
+                    pointerEvents="none"
+                    style={{ position: "absolute", left: -10000, top: 0, width: 1200 }}
+                  >
+                    {exportCapture.timeseriesPanels.length > 0 ? (
+                      <ResultPanelsGridView
+                        ref={exportTimeseriesRef}
+                        colors={chartColors(colors)}
+                        exportMode
+                        pageTitle="Timeseries"
+                        panels={exportCapture.timeseriesPanels}
+                        section="timeseries"
+                        width={1200}
+                      />
+                    ) : null}
+                    {exportCapture.parameterPanels.length > 0 ? (
+                      <ResultPanelsGridView
+                        ref={exportParametersRef}
+                        colors={chartColors(colors)}
+                        exportMode
+                        pageTitle="Parameters"
+                        panels={exportCapture.parameterPanels}
+                        section="parameters"
+                        width={1200}
+                      />
+                    ) : null}
+                  </View>
+                ) : null}
               </View>
             </ViewportCard>
           </AppShell.Main>
@@ -226,4 +325,3 @@ export default function ResultRoute() {
     </AppShell>
   );
 }
-

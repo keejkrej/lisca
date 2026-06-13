@@ -7,3 +7,4 @@ export {
   type AnalysisPanelsParams,
   type SlideChannelLabels,
 } from "./atoms/analysis-panels";
+export { loadAllResultPlotPanels } from "./result/load-all-result-plot-panels";

@@ -1,16 +1,19 @@
+const path = require("node:path");
 const { hairlineWidth } = require("nativewind/theme");
+
+const root = __dirname;
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: "class",
   content: [
-    "./src/**/*.{ts,tsx}",
-    "./components/**/*.{ts,tsx}",
-    "./lib/**/*.{ts,tsx}",
-    "../mobile-app/src/**/*.{ts,tsx}",
-    "../../apps/aligner/mobile/**/*.{ts,tsx}",
-    "../../apps/annotator/mobile/**/*.{ts,tsx}",
-    "../../apps/studio/mobile/**/*.{ts,tsx}",
+    path.join(root, "src/**/*.{ts,tsx}"),
+    path.join(root, "components/**/*.{ts,tsx}"),
+    path.join(root, "lib/**/*.{ts,tsx}"),
+    path.join(root, "../mobile-app/src/**/*.{ts,tsx}"),
+    path.join(root, "../../apps/aligner/mobile/**/*.{ts,tsx}"),
+    path.join(root, "../../apps/annotator/mobile/**/*.{ts,tsx}"),
+    path.join(root, "../../apps/studio/mobile/**/*.{ts,tsx}"),
   ],
   presets: [require("nativewind/preset")],
   theme: {

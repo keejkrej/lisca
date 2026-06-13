@@ -17,7 +17,11 @@ export function CropConfirmModal() {
   const existingList = confirm.existingPositions.map((pos) => `Pos${pos}`).join(", ");
 
   return (
-    <ModalScrim>
+    <ModalScrim
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) crop.cancelCropConfirm();
+      }}
+    >
       <DialogSurface aria-labelledby="crop-confirm-title" className="p-5" maxWidth="sm">
         <div className="space-y-4">
           <div className="space-y-1">

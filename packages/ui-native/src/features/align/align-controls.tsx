@@ -1,6 +1,6 @@
 import { clamp } from "@lisca/utils";
 import { useEffect, useRef, useState } from "react";
-import { View } from "react-native";
+import { Platform, View } from "react-native";
 
 import { Toggle } from "../../../components/ui/toggle";
 import { Button } from "../../shell/chrome/buttons";
@@ -58,6 +58,19 @@ function AlignNumberInput(props: {
       onBlur={commit}
       onChangeText={setDraft}
       onSubmitEditing={commit}
+      {...(Platform.OS === "web"
+        ? {
+            onKeyDown: (event: { key: string; currentTarget: { blur: () => void } }) => {
+              if (event.key === "Enter") {
+                event.currentTarget.blur();
+              } else if (event.key === "Escape") {
+                skipBlurCommitRef.current = true;
+                revert();
+                event.currentTarget.blur();
+              }
+            },
+          }
+        : {})}
     />
   );
 }
@@ -283,9 +296,14 @@ export function AlignGrid(props: AlignGridProps) {
   );
 }
 
-export function ReadonlyPathField(props: { value: string; className?: string }) {
+export function ReadonlyPathField(props: {
+  value: string;
+  className?: string;
+  accessibilityLabel?: string;
+}) {
   return (
     <View
+      accessibilityLabel={props.accessibilityLabel}
       className={cn(
         "h-10 min-w-0 w-full items-center justify-center self-stretch rounded-lg border border-border bg-muted px-2",
         props.className,

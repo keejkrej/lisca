@@ -8,7 +8,7 @@ import {
   type AnnotatorUiActions,
   type AnnotatorUiAtom,
 } from "@lisca/client/atoms/annotator-ui";
-import { useCanvasResourceTransaction, useCanvasTransientStatus } from "@lisca/ui-native";
+import { useCanvasResourceTransaction, useCanvasTransientStatus, confirmDiscardAnnotationChanges } from "@lisca/ui-native";
 import { useAtom } from "@effect-atom/atom-react";
 import { useEffect } from "react";
 import { useRouter } from "expo-router";
@@ -99,7 +99,10 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     useShellWorkspace: () => workspace,
     useCanvasResourceTransaction,
     useCanvasTransientStatus,
-    guardDirtySelection: () => true,
+    guardDirtySelection: async (dirty, selectionChanging) => {
+      if (!dirty || selectionChanging) return true;
+      return confirmDiscardAnnotationChanges();
+    },
     useAnnotationHistory,
     emptyValueFor,
     makeRequest,

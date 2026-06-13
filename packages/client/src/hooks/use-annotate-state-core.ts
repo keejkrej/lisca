@@ -23,6 +23,7 @@ import type { Atom, Result } from "@effect-atom/atom-react";
 import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
 import { Effect } from "effect";
 import { useEffect, useRef, useState } from "react";
+import type { DirtySelectionGuard } from "./annotate-selection-guard";
 export type AnnotationHistoryHandle = {
   current: {
     classificationLabelId: string | null;
@@ -101,7 +102,7 @@ export type UseAnnotateStateCoreDeps = {
     options: CanvasResourceTransactionOptions<T>,
   ) => () => void;
   useCanvasTransientStatus: (status: string | null) => string | null;
-  guardDirtySelection: (dirty: boolean, selectionChanging: boolean) => boolean;
+  guardDirtySelection: DirtySelectionGuard;
   useAnnotationHistory: (frame: FrameResult | null) => AnnotationHistoryHandle;
   emptyValueFor: (frame: FrameResult | null) => {
     classificationLabelId: string | null;
@@ -241,16 +242,18 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
       ];
     return [];
   })();
-  const guardDirty = () => {
-    return deps.guardDirtySelection(annotation.dirty, selectionChangingRef.current);
-  };
   const changeSelection = (fn: () => void) => {
-    if (!guardDirty()) return;
-    selectionChangingRef.current = true;
-    fn();
-    globalThis.setTimeout(() => {
-      selectionChangingRef.current = false;
-    }, 0);
+    void (async () => {
+      const allowed = await Promise.resolve(
+        deps.guardDirtySelection(annotation.dirty, selectionChangingRef.current),
+      );
+      if (!allowed) return;
+      selectionChangingRef.current = true;
+      fn();
+      globalThis.setTimeout(() => {
+        selectionChangingRef.current = false;
+      }, 0);
+    })();
   };
   useEffect(() => {
     if (!workspacePath || workspacePath !== shellWorkspacePath || !request) {

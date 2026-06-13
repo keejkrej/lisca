@@ -1,4 +1,6 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { useNavigation } from "expo-router";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { BackHandler } from "react-native";
 
 import { useStudioProfile } from "./studio-profile-provider";
 import {
@@ -17,6 +19,7 @@ type BasicInfoLeaveContextValue = {
 };
 
 const BasicInfoLeaveContext = createContext<BasicInfoLeaveContextValue | null>(null);
+const allowBasicInfoNavigationRef = { current: false };
 
 export function StudioBasicInfoLeaveProvider({ children }: { children: ReactNode }) {
   const profile = useStudioProfile();
@@ -86,7 +89,10 @@ export function StudioBasicInfoLeaveProvider({ children }: { children: ReactNode
       onProceed();
       return;
     }
-    setPendingProceed(() => onProceed);
+    setPendingProceed(() => () => {
+      allowBasicInfoNavigationRef.current = true;
+      onProceed();
+    });
     setSaveOpen(true);
   };
 
@@ -122,4 +128,38 @@ export function useStudioBasicInfoLeave() {
     throw new Error("useStudioBasicInfoLeave must be used within StudioBasicInfoLeaveProvider");
   }
   return value;
+}
+
+export function useStudioBasicInfoRouteGuard() {
+  const navigation = useNavigation();
+  const { requestLeave } = useStudioBasicInfoLeave();
+  const wizard = useStudioStore((state) => state);
+  const dirty = isBasicInfoDirty(wizard);
+
+  useEffect(() => {
+    if (!dirty) return;
+    const unsubscribe = navigation.addListener("beforeRemove", (event) => {
+      if (allowBasicInfoNavigationRef.current) {
+        allowBasicInfoNavigationRef.current = false;
+        return;
+      }
+      event.preventDefault();
+      requestLeave(() => navigation.dispatch(event.data.action));
+    });
+    return unsubscribe;
+  }, [dirty, navigation, requestLeave]);
+
+  useEffect(() => {
+    if (!dirty) return;
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      requestLeave(() => {
+        allowBasicInfoNavigationRef.current = true;
+        if (navigation.canGoBack()) {
+          navigation.goBack();
+        }
+      });
+      return true;
+    });
+    return () => subscription.remove();
+  }, [dirty, navigation, requestLeave]);
 }

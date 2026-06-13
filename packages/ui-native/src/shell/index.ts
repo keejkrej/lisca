@@ -13,6 +13,7 @@ export {
   type KeyboardShortcut,
   type ShortcutModifiers,
 } from "./shortcuts/use-keyboard-shortcuts";
+export { confirmDiscardAnnotationChanges } from "./confirm-discard-changes";
 export { ConnectionStatus } from "./chrome/connection-status";
 export { DialogBody, DialogFooter, DialogHeader, DialogSurface, ModalScrim } from "./modal/modal";
 export {
