@@ -9,15 +9,19 @@ import {
 import { Canvas, Group, Image, Rect, Skia, useCanvasRef } from "@shopify/react-native-skia";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
-import { useShellTheme } from "../../theme/shell-theme";
+import { ActivityIndicator, View } from "react-native";
+
+import { Text } from "../../../components/ui/text";
 import { liscaFontFamily } from "../../theme/typography";
+import { useThemeColors } from "../../theme/use-theme-colors";
 import { clientToFramePoint, computeFrameLayout, prepareFrameRgba } from "../canvas/frame-pixels";
+
 export type {
   AlignCanvasFramePoint,
   AlignCanvasPointerEvent,
 } from "./align-canvas-handlers";
 import type { AlignCanvasPointerEvent } from "./align-canvas-handlers";
+
 export type AlignCanvasProps = {
   frame: FrameResult | null;
   grid: AlignGridState;
@@ -33,6 +37,7 @@ export type AlignCanvasProps = {
   onVirtualPointerUp?: (event: AlignCanvasPointerEvent) => void;
   onVirtualPointerCancel?: (event: AlignCanvasPointerEvent) => void;
 };
+
 export function AlignCanvas({
   frame,
   grid,
@@ -46,7 +51,7 @@ export function AlignCanvas({
   onVirtualPointerUp,
   onVirtualPointerCancel,
 }: AlignCanvasProps) {
-  const { colors } = useShellTheme();
+  const colors = useThemeColors();
   const canvasRef = useCanvasRef();
   const [layout, setLayout] = useState({
     width: 1,
@@ -159,14 +164,10 @@ export function AlignCanvas({
       drawY: frameLayout.drawY,
     };
   })();
+
   return (
     <View
-      style={[
-        styles.root,
-        {
-          backgroundColor: colors.background,
-        },
-      ]}
+      className="min-h-0 flex-1 bg-background"
       onLayout={(event) => {
         const { width, height, x, y } = event.nativeEvent.layout;
         setLayout({
@@ -180,8 +181,8 @@ export function AlignCanvas({
       }}
     >
       <GestureDetector gesture={pan}>
-        <View style={styles.canvasWrap}>
-          <Canvas ref={canvasRef} style={styles.canvas}>
+        <View className="flex-1">
+          <Canvas ref={canvasRef} style={{ flex: 1 }}>
             <Rect
               x={0}
               y={0}
@@ -227,37 +228,34 @@ export function AlignCanvas({
       </GestureDetector>
 
       {loading ? (
-        <View style={styles.overlay}>
+        <View className="absolute inset-0 items-center justify-center">
           <ActivityIndicator color={colors.primary} size="large" />
         </View>
       ) : null}
 
       {!frame && !loading && emptyText ? (
-        <View style={styles.overlay}>
-          <Text
-            style={{
-              color: colors.mutedForeground,
-            }}
-          >
-            {emptyText}
-          </Text>
+        <View className="absolute inset-0 items-center justify-center">
+          <Text className="text-muted-foreground">{emptyText}</Text>
         </View>
       ) : null}
 
       {toasts && toasts.length > 0 ? (
-        <View style={styles.toastStack}>
+        <View className="absolute bottom-3 left-3 right-3 gap-2">
           {toasts.map((toast) => (
             <View
               key={toast.text}
-              style={[
-                styles.toast,
-                {
-                  backgroundColor:
-                    toast.tone === "error" ? "rgba(220,38,38,0.92)" : "rgba(24,24,27,0.88)",
-                },
-              ]}
+              className="rounded-[10px] px-3 py-2"
+              style={{
+                backgroundColor:
+                  toast.tone === "error" ? "rgba(220,38,38,0.92)" : "rgba(24,24,27,0.88)",
+              }}
             >
-              <Text style={styles.toastText}>{toast.text}</Text>
+              <Text
+                className="text-[13px] text-white"
+                style={{ fontFamily: liscaFontFamily.sansRegular }}
+              >
+                {toast.text}
+              </Text>
             </View>
           ))}
         </View>
@@ -265,37 +263,3 @@ export function AlignCanvas({
     </View>
   );
 }
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    minHeight: 0,
-  },
-  canvasWrap: {
-    flex: 1,
-  },
-  canvas: {
-    flex: 1,
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  toastStack: {
-    position: "absolute",
-    left: 12,
-    right: 12,
-    bottom: 12,
-    gap: 8,
-  },
-  toast: {
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  toastText: {
-    color: "#fff",
-    fontFamily: liscaFontFamily.sansRegular,
-    fontSize: 13,
-  },
-});

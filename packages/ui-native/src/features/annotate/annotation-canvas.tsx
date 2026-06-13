@@ -3,12 +3,16 @@ import type { FrameResult } from "@lisca/utils";
 import type { CanvasStatusMessage } from "@lisca/ui-headless";
 import { Canvas, Group, Image, Rect, Skia } from "@shopify/react-native-skia";
 import { useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
-import { useShellTheme } from "../../theme/shell-theme";
+import { ActivityIndicator, View } from "react-native";
+
+import { Text } from "../../../components/ui/text";
+import { useThemeColors } from "../../theme/use-theme-colors";
 import { computeFrameLayout, prepareFrameRgba } from "../canvas/frame-pixels";
 import type { AnnotationTool } from "@lisca/ui-headless/annotation-tools";
+
 export type { AnnotationTool } from "@lisca/ui-headless/annotation-tools";
 export { ANNOTATION_TOOL_DEFINITIONS, toolCanRunWithoutLabel } from "@lisca/ui-headless/annotation-tools";
+
 export type AnnotationCanvasProps = {
   frame: FrameResult | null;
   labels: AnnotationLabel[];
@@ -23,6 +27,7 @@ export type AnnotationCanvasProps = {
   emptyText?: string;
   onMaskCommit: (mask: Uint8Array) => void;
 };
+
 export function AnnotationCanvas({
   frame,
   mask,
@@ -33,7 +38,7 @@ export function AnnotationCanvas({
 }: AnnotationCanvasProps & {
   loading?: boolean;
 }) {
-  const { colors } = useShellTheme();
+  const colors = useThemeColors();
   const [layout, setLayout] = useState({
     width: 1,
     height: 1,
@@ -81,14 +86,10 @@ export function AnnotationCanvas({
     if (!frame) return null;
     return computeFrameLayout(layout.width, layout.height, frame.width, frame.height);
   })();
+
   return (
     <View
-      style={[
-        styles.root,
-        {
-          backgroundColor: colors.background,
-        },
-      ]}
+      className="min-h-0 flex-1 bg-background"
       onLayout={(event) => {
         const { width, height } = event.nativeEvent.layout;
         setLayout({
@@ -97,7 +98,7 @@ export function AnnotationCanvas({
         });
       }}
     >
-      <Canvas style={styles.canvas}>
+      <Canvas style={{ flex: 1 }}>
         <Rect x={0} y={0} width={layout.width} height={layout.height} color={colors.background} />
         {skImage && frameLayout ? (
           <Group>
@@ -123,52 +124,23 @@ export function AnnotationCanvas({
         ) : null}
       </Canvas>
       {loading ? (
-        <View style={styles.overlay}>
+        <View className="absolute inset-0 items-center justify-center">
           <ActivityIndicator color={colors.primary} size="large" />
         </View>
       ) : null}
       {!frame && !loading && emptyText ? (
-        <View style={styles.overlay}>
-          <Text
-            style={{
-              color: colors.mutedForeground,
-            }}
-          >
-            {emptyText}
-          </Text>
+        <View className="absolute inset-0 items-center justify-center">
+          <Text className="text-muted-foreground">{emptyText}</Text>
         </View>
       ) : null}
       {toasts?.map((toast) => (
-        <View key={toast.text} style={styles.toast}>
-          <Text style={styles.toastText}>{toast.text}</Text>
+        <View
+          key={toast.text}
+          className="absolute bottom-3 left-3 right-3 rounded-[10px] bg-zinc-900/90 p-2.5"
+        >
+          <Text className="text-white">{toast.text}</Text>
         </View>
       ))}
     </View>
   );
 }
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    minHeight: 0,
-  },
-  canvas: {
-    flex: 1,
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  toast: {
-    position: "absolute",
-    left: 12,
-    right: 12,
-    bottom: 12,
-    backgroundColor: "rgba(24,24,27,0.88)",
-    borderRadius: 10,
-    padding: 10,
-  },
-  toastText: {
-    color: "#fff",
-  },
-});

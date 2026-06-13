@@ -5,7 +5,8 @@ import {
   isChartSpecKindSupportedOn,
   unsupportedPanelLabel,
 } from "@lisca/analysis/charts";
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
+
 import { UnsupportedChart } from "./victory/chart-shell";
 import { VictoryChartFromSpec } from "./victory/chart-from-spec";
 import { DEFAULT_RESULT_CHART_COLORS, type ResultChartColors } from "./victory/types";
@@ -51,7 +52,7 @@ export function ResultPanelsGridView(props: {
   const renderablePanels = filterRenderablePanels("native", props.panels);
 
   return (
-    <View style={styles.grid}>
+    <View className="gap-4">
       {renderablePanels.map((panel) => (
         <ResultPanelChart
           key={`${panel.kind}:${panel.path}:${panel.title}`}
@@ -64,9 +65,3 @@ export function ResultPanelsGridView(props: {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  grid: {
-    gap: 16,
-  },
-});

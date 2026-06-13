@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
-import { StyleSheet, Text, View } from "react-native";
-import { liscaType } from "../../../theme/typography";
+import { View } from "react-native";
+
+import { Text } from "../../../../components/ui/text";
 import type { ResultChartColors } from "./types";
 
 export function ChartShell(props: {
@@ -11,8 +12,10 @@ export function ChartShell(props: {
   children: ReactNode;
 }) {
   return (
-    <View style={[styles.panel, { width: props.width, minHeight: props.height }]}>
-      <Text style={[styles.panelTitle, { color: props.colors.mutedText }]}>{props.title}</Text>
+    <View className="gap-2" style={{ width: props.width, minHeight: props.height }}>
+      <Text className="text-sm font-medium" style={{ color: props.colors.mutedText }}>
+        {props.title}
+      </Text>
       <View style={{ width: props.width, height: props.height - 24 }}>{props.children}</View>
     </View>
   );
@@ -26,35 +29,21 @@ export function UnsupportedChart(props: {
   colors: ResultChartColors;
 }) {
   return (
-    <View style={[styles.panel, { width: props.width, minHeight: props.height }]}>
-      <Text style={[styles.panelTitle, { color: props.colors.mutedText }]}>{props.title}</Text>
+    <View className="gap-2" style={{ width: props.width, minHeight: props.height }}>
+      <Text className="text-sm font-medium" style={{ color: props.colors.mutedText }}>
+        {props.title}
+      </Text>
       <View
-        style={[
-          styles.unsupported,
-          {
-            borderColor: props.colors.grid,
-            height: props.height - 24,
-          },
-        ]}
+        className="items-center justify-center rounded-lg border px-4"
+        style={{
+          borderColor: props.colors.grid,
+          height: props.height - 24,
+        }}
       >
-        <Text style={{ color: props.colors.mutedText, ...liscaType.caption }}>{props.message}</Text>
+        <Text className="text-xs" style={{ color: props.colors.mutedText }}>
+          {props.message}
+        </Text>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  panel: {
-    gap: 8,
-  },
-  panelTitle: {
-    ...liscaType.bodySmallMedium,
-  },
-  unsupported: {
-    alignItems: "center",
-    borderRadius: 8,
-    borderWidth: 1,
-    justifyContent: "center",
-    paddingHorizontal: 16,
-  },
-});
