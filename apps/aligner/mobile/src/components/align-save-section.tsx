@@ -1,5 +1,5 @@
-import { Button, ReadonlyPathField, Section } from "@lisca/ui-native";
-import { StyleSheet, View } from "react-native";
+import { Button, DockSection, ReadonlyPathField, dockLayoutStyles } from "@lisca/ui-native";
+import { View } from "react-native";
 
 import type { AlignState } from "../state/use-align-state";
 
@@ -9,63 +9,54 @@ export function AlignSaveSection({ state }: { state: AlignState }) {
   const canCrop = Boolean(state.workspacePath && state.source && state.frame && !state.cropping);
 
   return (
-    <Section contentStyle={styles.content} style={styles.section} title="Save">
-      <View style={styles.paths}>
-        <ReadonlyPathField value={`bbox/Pos${pos}.csv`} />
-        <ReadonlyPathField value={`align/Pos${pos}.json`} />
-        <ReadonlyPathField value={`roi/Pos${pos}`} />
+    <DockSection
+      contentStyle={dockLayoutStyles.content}
+      style={dockLayoutStyles.section}
+      title="Save"
+    >
+      <View style={dockLayoutStyles.stack}>
+        <View style={dockLayoutStyles.cols3}>
+          <View style={dockLayoutStyles.cell}>
+            <ReadonlyPathField value={`bbox/Pos${pos}.csv`} />
+          </View>
+          <View style={dockLayoutStyles.cell}>
+            <ReadonlyPathField value={`align/Pos${pos}.json`} />
+          </View>
+          <View style={dockLayoutStyles.cell}>
+            <ReadonlyPathField value={`roi/Pos${pos}`} />
+          </View>
+        </View>
+        <View style={dockLayoutStyles.cols3}>
+          <View style={dockLayoutStyles.cell}>
+            <Button
+              disabled={!canSave || state.saving}
+              label="Save"
+              loading={state.saving}
+              size="sm"
+              variant="outline"
+              onPress={() => void state.saveCurrent()}
+            />
+          </View>
+          <View style={dockLayoutStyles.cell}>
+            <Button
+              disabled={!canCrop}
+              label="Crop"
+              size="sm"
+              variant="outline"
+              onPress={() => void state.cropCurrent()}
+            />
+          </View>
+          <View style={dockLayoutStyles.cell}>
+            <Button
+              disabled={!state.workspacePath || !state.source || state.cropping}
+              label="Batch"
+              size="sm"
+              variant="outline"
+              onPress={() => void state.cropBatch()}
+            />
+          </View>
+        </View>
       </View>
-      <View style={styles.actions}>
-        <View style={styles.gridCell}>
-          <Button
-            disabled={!canSave || state.saving}
-            label="Save"
-            loading={state.saving}
-            size="sm"
-            variant="outline"
-            onPress={() => void state.saveCurrent()}
-          />
-        </View>
-        <View style={styles.gridCell}>
-          <Button
-            disabled={!canCrop}
-            label="Crop"
-            size="sm"
-            variant="outline"
-            onPress={() => void state.cropCurrent()}
-          />
-        </View>
-        <View style={styles.gridCell}>
-          <Button
-            disabled={!state.workspacePath || !state.source || state.cropping}
-            label="Batch"
-            size="sm"
-            variant="outline"
-            onPress={() => void state.cropBatch()}
-          />
-        </View>
-      </View>
-    </Section>
+    </DockSection>
   );
 }
-
-const styles = StyleSheet.create({
-  section: {
-    minWidth: 0,
-  },
-  content: {
-    gap: 8,
-  },
-  paths: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  actions: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  gridCell: {
-    flex: 1,
-    minWidth: 0,
-  },
-});

@@ -2,7 +2,9 @@ import {
   ANNOTATION_TOOL_DEFINITIONS,
   Button,
   DockSection,
+  DockStrip,
   ReadonlyPathField,
+  dockLayoutStyles,
   dockToolLabel,
   dockToolShortcuts,
   useKeyboardShortcuts,
@@ -34,12 +36,12 @@ function AnnotatorToolToolbar(props: {
   useKeyboardShortcuts(dockToolShortcuts(props.toolActions), { enabled: props.canEditTools });
 
   const buttons = props.toolActions.map((action, index) => (
-    <View key={action.id} style={styles.gridCell}>
+    <View key={action.id} style={dockLayoutStyles.gridCell}>
       <Button
         disabled={action.disabled}
         label={dockToolLabel(action.label, index)}
         size="sm"
-        style={styles.button}
+        style={dockLayoutStyles.button}
         variant={action.active ? "default" : "outline"}
         onPress={action.onSelect}
       />
@@ -47,16 +49,16 @@ function AnnotatorToolToolbar(props: {
   ));
 
   return (
-    <View style={styles.toolbar}>
-      <View style={styles.row}>
+    <View style={dockLayoutStyles.toolbar}>
+      <View style={dockLayoutStyles.cols2}>
         {buttons[0]}
         {buttons[1]}
       </View>
-      <View style={styles.row}>
+      <View style={dockLayoutStyles.cols2}>
         {buttons[2]}
         {buttons[3]}
       </View>
-      <View style={styles.row}>
+      <View style={dockLayoutStyles.cols2}>
         {buttons[4]}
         {buttons[5]}
       </View>
@@ -80,48 +82,69 @@ export function StudioAnnotateDock({ state }: { state: StudioAnnotateState }) {
     state.frameLoading || !state.request || analysisBusy || state.workspaceMissing;
 
   return (
-    <View style={styles.root}>
-      <DockSection style={styles.section} title="Tool">
+    <DockStrip style={styles.strip}>
+      <DockSection
+        contentStyle={dockLayoutStyles.content}
+        style={dockLayoutStyles.section}
+        title="Tool"
+      >
         {state.mode === "segmentation" ? (
           <AnnotatorToolToolbar canEditTools={canEditTools} toolActions={toolActions} />
         ) : (
-          <View style={styles.classificationPlaceholder}>
+          <View style={dockLayoutStyles.classificationPlaceholder}>
             <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>Classification</Text>
           </View>
         )}
       </DockSection>
-      <DockSection style={styles.section} title="Save">
-        <View style={styles.saveContent}>
-          <View style={[styles.paths, paths.length > 1 ? styles.pathsMulti : null]}>
-            {paths.map((path) => (
-              <View key={path} style={styles.pathCell}>
-                <ReadonlyPathField value={path} />
-              </View>
-            ))}
-          </View>
+      <DockSection
+        contentStyle={dockLayoutStyles.content}
+        style={dockLayoutStyles.section}
+        title="Save"
+      >
+        <View style={dockLayoutStyles.stack}>
+          {paths.length > 1 ? (
+            <View style={dockLayoutStyles.cols2}>
+              {paths.map((path) => (
+                <View key={path} style={dockLayoutStyles.cell}>
+                  <ReadonlyPathField value={path} />
+                </View>
+              ))}
+            </View>
+          ) : (
+            paths.map((path) => <ReadonlyPathField key={path} value={path} />)
+          )}
           <Button
             disabled={!state.canSave}
             label={state.saving ? "Saving" : "Save"}
             loading={state.saving}
             size="sm"
-            style={styles.button}
+            style={dockLayoutStyles.button}
             variant="outline"
             onPress={() => void state.handleSave()}
           />
         </View>
       </DockSection>
-      <DockSection fit="panel" style={styles.section} title="Workflow">
+      <DockSection
+        contentStyle={dockLayoutStyles.content}
+        fit="panel"
+        style={dockLayoutStyles.section}
+        title="Workflow"
+      >
         <Text style={[styles.instructionText, { color: colors.foreground }]}>
           Annotate ROIs before running analysis.
         </Text>
       </DockSection>
-      <DockSection style={styles.section} title="Action">
-        <View style={styles.actions}>
+      <DockSection
+        contentStyle={dockLayoutStyles.content}
+        style={dockLayoutStyles.section}
+        title="Action"
+      >
+        <View style={dockLayoutStyles.stack}>
           <Button
             disabled={disableShuffle}
             label="Shuffle"
             size="sm"
-            style={styles.button}
+            style={dockLayoutStyles.button}
             variant="outline"
             onPress={state.shuffleSelection}
           />
@@ -129,72 +152,23 @@ export function StudioAnnotateDock({ state }: { state: StudioAnnotateState }) {
             disabled={disableContinue}
             label="Continue"
             size="sm"
-            style={styles.button}
+            style={dockLayoutStyles.button}
             variant="outline"
             onPress={state.requestContinueToAnalysis}
           />
         </View>
       </DockSection>
-    </View>
+    </DockStrip>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    alignItems: "stretch",
-    flex: 1,
-    flexDirection: "row",
+  strip: {
     flexWrap: "wrap",
-    gap: 12,
-    justifyContent: "center",
-    minHeight: 0,
-    padding: 12,
-  },
-  section: {
-    minWidth: 0,
-  },
-  toolbar: {
-    gap: 8,
-    width: "100%",
-  },
-  row: {
-    flexDirection: "row",
-    gap: 8,
-    width: "100%",
-  },
-  gridCell: {
-    flex: 1,
-    minWidth: 0,
-  },
-  classificationPlaceholder: {
-    alignItems: "center",
-    flex: 1,
-    justifyContent: "center",
-  },
-  saveContent: {
-    gap: 8,
-    width: "100%",
-  },
-  paths: {
-    gap: 8,
-  },
-  pathsMulti: {
-    flexDirection: "row",
-  },
-  pathCell: {
-    flex: 1,
-    minWidth: 0,
-  },
-  button: {
-    width: "100%",
   },
   instructionText: {
     fontSize: 14,
     lineHeight: 20,
     textAlign: "center",
-  },
-  actions: {
-    gap: 8,
-    width: "100%",
   },
 });

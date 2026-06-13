@@ -14,7 +14,7 @@ export function ReadonlyPathField({
     <div
       aria-label={ariaLabel ?? `Path ${value}`}
       className={cn(
-        "h-fit min-w-0 self-start truncate px-2 py-1.5 font-mono text-xs",
+        "flex h-8 w-full min-w-0 items-center self-stretch truncate px-2 font-mono text-xs",
         pathChipClass,
         className,
       )}

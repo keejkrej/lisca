@@ -1,4 +1,4 @@
-import { Button, DockSection, DockStrip, useShellTheme } from "@lisca/ui-native";
+import { Button, DockSection, DockStrip, dockLayoutStyles, useShellTheme } from "@lisca/ui-native";
 import { StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 
@@ -21,20 +21,24 @@ export function StudioAssayDock(props: {
           {instructionForStep("chooseAssay")}
         </Text>
       </DockSection>
-      <DockSection style={styles.section} title="Action">
-        <View style={styles.actions}>
+      <DockSection
+        contentStyle={dockLayoutStyles.content}
+        style={dockLayoutStyles.section}
+        title="Action"
+      >
+        <View style={dockLayoutStyles.stack}>
           <Button
             disabled={props.opening || props.pickerOpen}
             label="Open assay"
             size="sm"
-            style={styles.button}
+            style={dockLayoutStyles.button}
             variant="outline"
             onPress={props.onOpenAssay}
           />
           <Button
             label="Next"
             size="sm"
-            style={styles.button}
+            style={dockLayoutStyles.button}
             variant="outline"
             onPress={() => {
               setInfoStep(1);
@@ -52,14 +56,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     textAlign: "center",
-  },
-  section: {
-    minWidth: 0,
-  },
-  actions: {
-    gap: 8,
-  },
-  button: {
-    width: "100%",
   },
 });

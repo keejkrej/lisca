@@ -4,6 +4,7 @@ import {
   Button,
   DockSection,
   DockStrip,
+  dockLayoutStyles,
   useShellTheme,
 } from "@lisca/ui-native";
 import { StyleSheet, Text, View } from "react-native";
@@ -32,7 +33,11 @@ export function StudioAlignDock({ state }: { state: StudioAlignState }) {
           }))
         }
       />
-      <DockSection style={styles.section} title="Tool">
+      <DockSection
+        contentStyle={dockLayoutStyles.content}
+        style={dockLayoutStyles.section}
+        title="Tool"
+      >
         <AlignToolToolbar
           mode={state.toolMode}
           patternZoomLocked={state.patternZoomLocked}
@@ -40,20 +45,23 @@ export function StudioAlignDock({ state }: { state: StudioAlignState }) {
           onPatternZoomLockedChange={state.setPatternZoomLocked}
         />
       </DockSection>
-      <DockSection style={styles.section} title="Action">
-        <View style={styles.actions}>
-          <View style={styles.row}>
-            <View style={styles.cell}>
+      <DockSection
+        contentStyle={dockLayoutStyles.content}
+        style={dockLayoutStyles.section}
+        title="Action"
+      >
+        <View style={dockLayoutStyles.stack}>
+          <View style={dockLayoutStyles.cols2}>
+            <View style={dockLayoutStyles.cell}>
               <Button
                 disabled={!state.frame || state.saving || state.cropping}
                 label="Reset"
                 size="sm"
-                style={styles.button}
                 variant="outline"
                 onPress={state.resetCurrent}
               />
             </View>
-            <View style={styles.cell}>
+            <View style={dockLayoutStyles.cell}>
               <Button
                 disabled={
                   !state.workspacePath ||
@@ -64,29 +72,26 @@ export function StudioAlignDock({ state }: { state: StudioAlignState }) {
                 }
                 label="Jump"
                 size="sm"
-                style={styles.button}
                 variant="outline"
                 onPress={() => void state.goToFirstUnaligned()}
               />
             </View>
           </View>
-          <View style={styles.row}>
-            <View style={styles.cell}>
+          <View style={dockLayoutStyles.cols2}>
+            <View style={dockLayoutStyles.cell}>
               <Button
                 disabled={!state.canGoBack || state.saving || state.cropping}
                 label="Back"
                 size="sm"
-                style={styles.button}
                 variant="outline"
                 onPress={state.goBack}
               />
             </View>
-            <View style={styles.cell}>
+            <View style={dockLayoutStyles.cell}>
               <Button
                 disabled={!state.frame || state.saving || state.cropping}
                 label="Next"
                 size="sm"
-                style={styles.button}
                 variant="outline"
                 onPress={() => void state.saveAndAdvance()}
               />
@@ -103,24 +108,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     textAlign: "center",
-  },
-  section: {
-    minWidth: 0,
-  },
-  actions: {
-    gap: 8,
-    width: "100%",
-  },
-  row: {
-    flexDirection: "row",
-    gap: 8,
-    width: "100%",
-  },
-  cell: {
-    flex: 1,
-    minWidth: 0,
-  },
-  button: {
-    width: "100%",
   },
 });

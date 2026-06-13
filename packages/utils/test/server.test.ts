@@ -2,11 +2,18 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { resolveLiscaHttpBaseUrl, resolveLiscaWsUrl } from "../src/server";
 
-function stubBrowserLocation(location: { protocol: string; host: string; search?: string }) {
+function stubBrowserLocation(location: {
+  protocol: string;
+  host: string;
+  port?: string;
+  search?: string;
+}) {
   vi.stubGlobal("window", {
     location: {
       protocol: location.protocol,
       host: location.host,
+      hostname: location.host.split(":")[0] ?? location.host,
+      port: location.port ?? location.host.split(":")[1] ?? "",
       search: location.search ?? "",
     },
   });
@@ -26,6 +33,12 @@ describe("resolveLiscaWsUrl", () => {
     stubBrowserLocation({ protocol: "http:", host: "localhost:8083" });
     expect(resolveLiscaWsUrl({ defaultPort: 8767 })).toBe("ws://localhost:8083/ws");
     expect(resolveLiscaHttpBaseUrl({ defaultPort: 8767 })).toBe("http://localhost:8083");
+  });
+
+  it("routes websocket traffic to rust when on the expo dev server port", () => {
+    stubBrowserLocation({ protocol: "http:", host: "localhost:9081" });
+    expect(resolveLiscaWsUrl({ defaultPort: 8765 })).toBe("ws://localhost:8765/ws");
+    expect(resolveLiscaHttpBaseUrl({ defaultPort: 8765 })).toBe("http://localhost:9081");
   });
 
   it("ignores non-http browser protocols", () => {

@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     gap: 8,
-    justifyContent: "center",
+    justifyContent: "flex-start",
     minHeight: 0,
   },
 });

@@ -6,6 +6,7 @@ import { Button, SegmentedToggle } from "../../shell/chrome/buttons";
 import { Field } from "../../shell/chrome/field";
 import { Section } from "../../shell/regions/section";
 import { Slider } from "../../shell/chrome/slider";
+import { shellChromeMetrics } from "../../shell/chrome/shell-chrome";
 import { useShellTheme } from "../../theme/shell-theme";
 import { liscaFontFamily, liscaType } from "../../theme/typography";
 import { AlignGridShapeToggle, type AlignGridShapeToggleProps } from "./align-grid-shape-toggle";
@@ -331,12 +332,14 @@ const styles = StyleSheet.create({
 
 const pathStyles = StyleSheet.create({
   root: {
-    alignSelf: "flex-start",
+    alignItems: "center",
+    alignSelf: "stretch",
     borderWidth: 1,
     borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
+    height: shellChromeMetrics.height,
+    justifyContent: "center",
     minWidth: 0,
+    paddingHorizontal: 8,
     width: "100%",
   },
   text: {

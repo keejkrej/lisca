@@ -28,27 +28,27 @@ export function Section(props: {
       ]}
     >
       <View style={styles.header}>
-        <View style={styles.headerText}>
+        <View style={styles.titleRow}>
           <Text style={[styles.title, { color: colors.foreground }]}>{props.title}</Text>
-          {props.description ? (
-            <Text style={[styles.description, { color: colors.mutedForeground }]}>
-              {props.description}
-            </Text>
-          ) : null}
+          <View style={styles.headerActions}>
+            {props.headerAction}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={collapsed ? `Expand ${props.title}` : `Collapse ${props.title}`}
+              accessibilityState={{ expanded: !collapsed }}
+              hitSlop={8}
+              onPress={() => setCollapsed((current) => !current)}
+              style={styles.collapseButton}
+            >
+              <CollapseIcon color={colors.mutedForeground} size={16} strokeWidth={2} />
+            </Pressable>
+          </View>
         </View>
-        <View style={styles.headerActions}>
-          {props.headerAction}
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={collapsed ? `Expand ${props.title}` : `Collapse ${props.title}`}
-            accessibilityState={{ expanded: !collapsed }}
-            hitSlop={8}
-            onPress={() => setCollapsed((current) => !current)}
-            style={styles.collapseButton}
-          >
-            <CollapseIcon color={colors.mutedForeground} size={16} strokeWidth={2} />
-          </Pressable>
-        </View>
+        {props.description ? (
+          <Text style={[styles.description, { color: colors.mutedForeground }]}>
+            {props.description}
+          </Text>
+        ) : null}
       </View>
       {!collapsed ? (
         <View style={[styles.content, props.contentStyle]}>{props.children}</View>
@@ -64,35 +64,39 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   header: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: 8,
+    gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 12,
   },
-  headerText: {
-    flex: 1,
-    minWidth: 0,
-    gap: 4,
+  titleRow: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "space-between",
   },
   title: {
     ...liscaType.sectionTitle,
+    flex: 1,
+    lineHeight: 14,
+    minWidth: 0,
   },
   description: {
     ...liscaType.bodySmall,
   },
   headerActions: {
-    flexDirection: "row",
     alignItems: "center",
+    flexDirection: "row",
+    flexShrink: 0,
     gap: 4,
   },
   collapseButton: {
     alignItems: "center",
-    justifyContent: "center",
-    width: 28,
-    height: 28,
     borderRadius: 8,
+    height: 24,
+    justifyContent: "center",
+    marginRight: -4,
+    marginTop: -4,
+    width: 24,
   },
   content: {
     gap: 8,

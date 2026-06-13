@@ -165,6 +165,35 @@ function hasExplicitViteEndpoint(options: {
   );
 }
 
+/**
+ * Expo dev server ports (`bun lisca dev * mobile`). Metro proxies HTTP API routes
+ * to Rust, but WebSocket upgrades still need the backend port. Keep in sync with
+ * `scripts/lisca-dev-ports.cjs` (`liscaMobileExpoPort` + `LISCA_APP_PORTS`).
+ */
+const LISCA_MOBILE_EXPO_RUST_PORTS: Record<number, number> = {
+  9081: 8765,
+  9082: 8766,
+  9083: 8767,
+};
+
+function rustPortFromMobileExpoPort(port: number): number | undefined {
+  return LISCA_MOBILE_EXPO_RUST_PORTS[port];
+}
+
+function browserLocationPort(): number {
+  if (typeof window === "undefined") return 80;
+  if (window.location.port) {
+    return Number(window.location.port);
+  }
+  const host = window.location.host;
+  const colon = host.lastIndexOf(":");
+  if (colon > 0) {
+    const parsed = Number(host.slice(colon + 1));
+    if (Number.isFinite(parsed) && parsed > 0) return parsed;
+  }
+  return window.location.protocol === "https:" ? 443 : 80;
+}
+
 function endpointsFromBrowserLocation(wsPath: string): LiscaServerEndpoints | null {
   if (typeof window === "undefined") return null;
   if (window.location.protocol !== "http:" && window.location.protocol !== "https:") {
@@ -172,10 +201,19 @@ function endpointsFromBrowserLocation(wsPath: string): LiscaServerEndpoints | nu
   }
   const path = wsPath.startsWith("/") ? wsPath : `/${wsPath}`;
   const proto = window.location.protocol === "https:" ? "wss" : "ws";
-  const host = window.location.host;
+  const hostname = window.location.hostname;
+  const port = browserLocationPort();
+  const httpBaseUrl = `${window.location.protocol}//${window.location.host}`;
+  const rustPort = rustPortFromMobileExpoPort(port);
+  if (rustPort != null) {
+    return {
+      httpBaseUrl,
+      wsUrl: formatWsUrl(hostname, rustPort, path),
+    };
+  }
   return {
-    httpBaseUrl: `${window.location.protocol}//${host}`,
-    wsUrl: `${proto}://${host}${path}`,
+    httpBaseUrl,
+    wsUrl: `${proto}://${window.location.host}${path}`,
   };
 }
 

@@ -1,6 +1,7 @@
 export { AppShell, ShellDock, ShellSidebar, type AppShellCompound } from "./layout/app-shell";
 export { Button, SegmentedToggle } from "./chrome/buttons";
 export { DockSection, type DockSectionFit } from "./regions/dock-section";
+export { dockLayoutStyles, dockToolbarMinHeight } from "./regions/dock-layout";
 export { DockStrip } from "./regions/dock-strip";
 export {
   dockToolLabel,

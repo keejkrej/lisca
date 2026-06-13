@@ -35,11 +35,20 @@ function liscaDevBackendPort(publicPort) {
   return publicPort + LISCA_DEV_BACKEND_PORT_OFFSET;
 }
 
+/** Expo dev port → Rust API port (Metro proxies HTTP only). */
+const LISCA_MOBILE_EXPO_TO_RUST = Object.fromEntries(
+  Object.entries(LISCA_MOBILE_PORTS).map(([app, mobilePort]) => [
+    liscaMobileExpoPort(mobilePort),
+    LISCA_APP_PORTS[app].publicPort,
+  ]),
+);
+
 module.exports = {
   LISCA_DEV_BACKEND_PORT_OFFSET,
   LISCA_API_PROXY_PREFIXES,
   LISCA_APP_PORTS,
   LISCA_MOBILE_PORTS,
+  LISCA_MOBILE_EXPO_TO_RUST,
   liscaDevBackendPort,
   liscaMobileExpoPort,
 };

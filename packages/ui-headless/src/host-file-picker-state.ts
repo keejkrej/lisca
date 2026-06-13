@@ -48,7 +48,13 @@ export function useHostFilePickerState(options: UseHostFilePickerStateOptions) {
       setSelectedFile(null);
     } catch (cause) {
       setList(null);
-      setError(cause instanceof Error ? cause.message : String(cause));
+      setError(
+        cause instanceof Error && cause.message.includes("Could not parse JSON")
+          ? "Could not reach the API server. Ensure the Rust backend is running."
+          : cause instanceof Error
+            ? cause.message
+            : String(cause),
+      );
     } finally {
       setLoading(false);
     }
@@ -68,7 +74,13 @@ export function useHostFilePickerState(options: UseHostFilePickerStateOptions) {
       } catch (cause) {
         if (!cancelled) {
           setList(null);
-          setError(cause instanceof Error ? cause.message : String(cause));
+          setError(
+            cause instanceof Error && cause.message.includes("Could not parse JSON")
+              ? "Could not reach the API server. Ensure the Rust backend is running."
+              : cause instanceof Error
+                ? cause.message
+                : String(cause),
+          );
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -92,7 +104,13 @@ export function useHostFilePickerState(options: UseHostFilePickerStateOptions) {
       await loadPath(home);
     } catch (cause) {
       setList(null);
-      setError(cause instanceof Error ? cause.message : String(cause));
+      setError(
+        cause instanceof Error && cause.message.includes("Could not parse JSON")
+          ? "Could not reach the API server. Ensure the Rust backend is running."
+          : cause instanceof Error
+            ? cause.message
+            : String(cause),
+      );
     }
   };
   const navigateToEntry = (entry: HostFsEntry) => {

@@ -12,6 +12,7 @@ const {
   LISCA_API_PROXY_PREFIXES,
   LISCA_APP_PORTS,
   LISCA_DEV_BACKEND_PORT_OFFSET,
+  LISCA_MOBILE_EXPO_TO_RUST,
   LISCA_MOBILE_PORTS,
   liscaDevBackendPort,
   liscaMobileExpoPort,
@@ -80,6 +81,14 @@ describe("lisca dev ports", () => {
         LISCA_MOBILE_PORTS[scope as keyof typeof LISCA_MOBILE_PORTS] + LISCA_DEV_BACKEND_PORT_OFFSET,
       );
     }
+  });
+
+  it("maps expo dev ports to rust API ports for websocket routing", () => {
+    expect(LISCA_MOBILE_EXPO_TO_RUST).toEqual({
+      9081: 8765,
+      9082: 8766,
+      9083: 8767,
+    });
   });
 
   it("keeps desktop products aligned with shared port map", () => {

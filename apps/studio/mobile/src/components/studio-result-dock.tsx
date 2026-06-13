@@ -2,6 +2,7 @@ import {
   Button,
   DockSection,
   DockStrip,
+  dockLayoutStyles,
   dockToolLabel,
   dockToolShortcuts,
   useKeyboardShortcuts,
@@ -30,28 +31,36 @@ export function StudioResultDock(props: {
           {props.instruction}
         </Text>
       </DockSection>
-      <DockSection style={styles.section} title="Tool">
-        <View style={styles.actions}>
+      <DockSection
+        contentStyle={dockLayoutStyles.content}
+        style={dockLayoutStyles.section}
+        title="Tool"
+      >
+        <View style={dockLayoutStyles.stack}>
           {props.toolActions.map((action, index) => (
             <Button
               key={action.id}
               disabled={action.disabled}
               label={dockToolLabel(action.label, index)}
               size="sm"
-              style={styles.button}
+              style={dockLayoutStyles.button}
               variant={action.active ? "default" : "outline"}
               onPress={action.onSelect}
             />
           ))}
         </View>
       </DockSection>
-      <DockSection style={styles.section} title="Action">
-        <View style={styles.actions}>
+      <DockSection
+        contentStyle={dockLayoutStyles.content}
+        style={dockLayoutStyles.section}
+        title="Action"
+      >
+        <View style={dockLayoutStyles.stack}>
           <Button
             disabled={props.saveDisabled}
             label={props.saveLabel}
             size="sm"
-            style={styles.button}
+            style={dockLayoutStyles.button}
             variant="outline"
             onPress={props.onSave}
           />
@@ -66,14 +75,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     textAlign: "center",
-  },
-  section: {
-    minWidth: 0,
-  },
-  actions: {
-    gap: 8,
-  },
-  button: {
-    width: "100%",
   },
 });

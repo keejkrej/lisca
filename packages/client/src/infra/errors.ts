@@ -1,5 +1,16 @@
 import { ClientError } from "./client-error";
 
+function isInvalidApiJsonResponse(message: string): boolean {
+  return (
+    message.includes("Could not parse JSON") ||
+    (message.includes("Encoded side transformation failure") && message.includes("Could not parse"))
+  );
+}
+
+function formatInvalidApiJsonResponse(fallback: string, serverAddress: string): string {
+  return `${fallback}: API returned a non-JSON response from ${serverAddress}. Ensure the Rust backend is running (e.g. \`bun lisca dev aligner mobile\` or \`bun lisca dev aligner server\`).`;
+}
+
 export function toFetchErrorMessage(
   cause: unknown,
   fallback: string,
@@ -11,6 +22,9 @@ export function toFetchErrorMessage(
     }
     const clientMessage = cause.message.trim();
     if (clientMessage) {
+      if (isInvalidApiJsonResponse(clientMessage)) {
+        return formatInvalidApiJsonResponse(fallback, serverAddress);
+      }
       return `${fallback}: ${clientMessage}`;
     }
   }
@@ -22,6 +36,9 @@ export function toFetchErrorMessage(
     message.includes("fetch failed")
   ) {
     return `${fallback}: server unreachable at ${serverAddress}`;
+  }
+  if (message && isInvalidApiJsonResponse(message)) {
+    return formatInvalidApiJsonResponse(fallback, serverAddress);
   }
   return message ? `${fallback}: ${message}` : fallback;
 }

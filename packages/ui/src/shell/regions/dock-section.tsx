@@ -24,7 +24,7 @@ export function DockSection({
         fit === "panel" ? "min-w-56 max-w-xs" : "w-max max-w-full",
         className,
       )}
-      contentClassName={cn("flex min-h-0 flex-1 flex-col justify-center gap-2", contentClassName)}
+      contentClassName={cn("flex min-h-0 flex-1 flex-col justify-start gap-2", contentClassName)}
       {...sectionProps}
     >
       {children}
