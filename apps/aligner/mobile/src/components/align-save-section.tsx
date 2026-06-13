@@ -48,7 +48,7 @@ export function AlignSaveSection() {
               {nav.saving ? (
                 <ActivityIndicator size="small" />
               ) : (
-                <Text className="text-xs">Save</Text>
+                <Text>Save</Text>
               )}
             </Button>
           </View>
@@ -60,7 +60,7 @@ export function AlignSaveSection() {
               variant="outline"
               onPress={() => void nav.cropCurrent()}
             >
-              <Text className="text-xs">Crop</Text>
+              <Text>Crop</Text>
             </Button>
           </View>
           <View className="min-w-0 flex-1">
@@ -71,7 +71,7 @@ export function AlignSaveSection() {
               variant="outline"
               onPress={() => void nav.cropBatch()}
             >
-              <Text className="text-xs">Batch</Text>
+              <Text>Batch</Text>
             </Button>
           </View>
         </View>

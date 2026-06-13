@@ -4,6 +4,7 @@ import { Button } from "../../../components/ui/button";
 import { Text } from "../../../components/ui/text";
 import { ShellProgress } from "../../shell/chrome/progress-bar";
 import { DialogSurface, ModalScrim } from "../../shell/modal/modal";
+import { DialogTitleText } from "../../shell/modal/dialog-copy";
 import { Spinner } from "../../shell/regions/panel";
 
 export type SmartExcludeModelDialogProps = {
@@ -33,7 +34,7 @@ export function SmartExcludeModelDialog({
   return (
     <ModalScrim open={true} onClose={onCancel}>
       <DialogSurface accessibilityLabel="Smart exclude model download" maxWidth={384}>
-        <Text className="font-medium text-foreground">Smart exclude model</Text>
+        <DialogTitleText tone="sans">Smart exclude model</DialogTitleText>
         <Text className="mt-2 text-sm text-muted-foreground">
           {consent
             ? "Smart exclude needs a one-time download of the ResNet classifier (~45 MB) before it can score cells."

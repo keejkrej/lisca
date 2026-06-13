@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { View } from "react-native";
 
 import { Button as UiButton } from "../../../components/ui/button";
 import { Text } from "../../../components/ui/text";
@@ -19,18 +20,23 @@ export function PathButton(props: {
   onPress?: () => void;
 }) {
   const display = basename(props.value) ?? props.label;
-  const disabled = props.disabled ?? !props.onPress;
+  const disabled = Boolean(props.disabled) || props.onPress == null;
 
   return (
     <UiButton
       accessibilityLabel={props.value ?? props.label}
-      className="max-w-72 min-w-0 shrink"
+      accessibilityState={{ disabled }}
+      className="max-w-72 min-w-0 shrink justify-start gap-2 font-normal"
       disabled={disabled}
+      size="sm"
       variant="outline"
-      onPress={props.onPress}
+      onPress={disabled ? undefined : props.onPress}
     >
-      {props.icon}
-      <Text className="min-w-0 shrink" numberOfLines={1}>
+      {props.icon ? <View className="shrink-0">{props.icon}</View> : null}
+      <Text
+        className="min-w-0 shrink font-normal text-sm text-foreground group-active:text-accent-foreground"
+        numberOfLines={1}
+      >
         {display}
       </Text>
     </UiButton>

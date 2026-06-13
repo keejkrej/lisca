@@ -156,9 +156,9 @@ function SliderStepperField(props: SliderNavigationFieldProps) {
   return (
     <Field className="min-w-0 w-full">
       <FieldLabel className="w-full flex-row items-center justify-between">
-        <Text>{props.label}</Text>
+        {props.label}
         {displayLabel ? (
-          <Text className="font-normal text-muted-foreground">{displayLabel}</Text>
+          <Text className="font-normal text-muted-foreground text-sm">{displayLabel}</Text>
         ) : null}
       </FieldLabel>
       <View className="w-full flex-row items-center gap-2">

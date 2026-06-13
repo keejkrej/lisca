@@ -1,5 +1,5 @@
 import type { AlignerSource } from "@lisca/contracts";
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 
 import { Button } from "../../../components/ui/button";
 import { Text } from "../../../components/ui/text";
@@ -44,31 +44,35 @@ export function SourcePickerModal(props: SourcePickerModalProps) {
           <View className="gap-2">
             <Text className="text-sm font-medium text-foreground">Recent sources</Text>
             {props.recentSources.map((item) => (
-              <Button
+              <Pressable
                 key={`${item.source.kind}:${item.source.path}`}
-                size="sm"
-                variant="outline"
+                className="gap-0.5 rounded-md border border-border px-3 py-2 active:bg-muted/30"
                 onPress={() => {
                   props.onClose();
                   props.onPickRecentSource?.(item.source);
                 }}
               >
-                <Text className="text-xs" numberOfLines={1}>
-                  {item.label?.trim() || formatSourcePath(item.source)}
+                {item.label ? (
+                  <Text className="font-medium text-foreground">{item.label}</Text>
+                ) : (
+                  <Text className="font-medium capitalize text-foreground">{item.source.kind}</Text>
+                )}
+                <Text className="text-sm text-muted-foreground" numberOfLines={1}>
+                  {formatSourcePath(item.source)}
                 </Text>
-              </Button>
+              </Pressable>
             ))}
           </View>
         ) : null}
         <View className="gap-2">
           <Button onPress={() => void handleSelect(props.onOpenFolder)}>
-            <Text>Folder</Text>
+            <Text className="text-lg font-medium text-foreground">Folder</Text>
           </Button>
           <Button onPress={() => void handleSelect(props.onOpenNd2)}>
-            <Text>ND2</Text>
+            <Text className="text-lg font-medium text-foreground">ND2</Text>
           </Button>
           <Button onPress={() => void handleSelect(props.onOpenCzi)}>
-            <Text>CZI</Text>
+            <Text className="text-lg font-medium text-foreground">CZI</Text>
           </Button>
         </View>
         <DialogActions>

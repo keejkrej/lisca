@@ -1,6 +1,6 @@
 import type { HostFilePickerMode } from "@lisca/ui-headless/host";
 import { useHostFilePickerState } from "@lisca/ui-headless/host-file-picker-state";
-import { ActivityIndicator, FlatList, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, View } from "react-native";
 
 import { Button } from "../../../components/ui/button";
 import { Text } from "../../../components/ui/text";
@@ -75,16 +75,18 @@ export function HostFilePickerDialog({
           <View className="gap-2">
             <Text className="text-sm font-medium text-foreground">Recent</Text>
             {recentItems.map((item) => (
-              <Button
+              <Pressable
                 key={item.path}
-                size="sm"
-                variant="outline"
+                className="gap-0.5 rounded-md border border-border px-3 py-2 active:bg-muted/30"
                 onPress={() => onPickRecent(item.path)}
               >
-                <Text className="text-xs" numberOfLines={1}>
-                  {item.label?.trim() || item.path}
+                {item.label ? (
+                  <Text className="font-medium text-foreground">{item.label}</Text>
+                ) : null}
+                <Text className="text-sm text-muted-foreground" numberOfLines={1}>
+                  {item.path}
                 </Text>
-              </Button>
+              </Pressable>
             ))}
           </View>
         ) : null}

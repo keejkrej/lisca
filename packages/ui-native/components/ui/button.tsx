@@ -1,7 +1,7 @@
 import { TextClassContext } from "@/components/ui/text";
 import { cn } from "@/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
-import { Platform, Pressable } from "react-native";
+import { Platform, Pressable, type ViewStyle } from "react-native";
 
 const buttonVariants = cva(
   cn(
@@ -77,7 +77,7 @@ const buttonTextVariants = cva(
       },
       size: {
         default: "",
-        sm: "text-xs",
+        sm: "",
         lg: "",
         xs: "text-xs",
         icon: "",
@@ -94,16 +94,36 @@ type ButtonProps = React.ComponentProps<typeof Pressable> &
   React.RefAttributes<typeof Pressable> &
   VariantProps<typeof buttonVariants>;
 
-function Button({ className, variant, size, ...props }: ButtonProps) {
+function Button({
+  className,
+  variant,
+  size,
+  disabled,
+  accessibilityState,
+  style,
+  ...props
+}: ButtonProps) {
+  const disabledStyle: ViewStyle | undefined = disabled
+    ? { opacity: 0.64, ...(Platform.OS === "web" ? { pointerEvents: "none" as const } : null) }
+    : undefined;
+
+  const mergedStyle =
+    typeof style === "function"
+      ? (state: Parameters<NonNullable<typeof style>>[0]) => [disabledStyle, style(state)]
+      : [disabledStyle, style];
+
   return (
     <TextClassContext.Provider value={buttonTextVariants({ variant, size })}>
       <Pressable
+        accessibilityState={{ ...accessibilityState, disabled: Boolean(disabled) }}
         className={cn(
-          props.disabled && "pointer-events-none opacity-64",
+          disabled && Platform.OS !== "web" && "pointer-events-none opacity-64",
           buttonVariants({ variant, size }),
           className,
         )}
+        disabled={disabled}
         role="button"
+        style={mergedStyle}
         {...props}
       />
     </TextClassContext.Provider>

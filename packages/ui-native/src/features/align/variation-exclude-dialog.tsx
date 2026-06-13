@@ -12,7 +12,6 @@ import { Slider } from "../../../components/ui/slider";
 import { Text } from "../../../components/ui/text";
 import {
   DialogBody,
-  DialogDescriptionText,
   DialogFooter,
   DialogHeader,
   DialogSurface,
@@ -59,7 +58,11 @@ export function VariationExcludeDialog(props: {
             <StatTile label="Selected cells" value={selectedCount} />
             <StatTile
               label="Score range"
-              value={`${formatVariationScore(preview.scoreMin)} - ${formatVariationScore(preview.scoreMax)}`}
+              value={
+                <Text className="text-xs">
+                  {formatVariationScore(preview.scoreMin)} - {formatVariationScore(preview.scoreMax)}
+                </Text>
+              }
             />
           </View>
 
@@ -69,9 +72,9 @@ export function VariationExcludeDialog(props: {
             <View className="min-w-0 flex-1 gap-2">
               <View className="flex-row items-center justify-between">
                 <Text className="text-sm font-medium text-foreground">Threshold</Text>
-                <DialogDescriptionText className="mb-0">
+                <Text className="text-xs tabular-nums text-muted-foreground">
                   {formatVariationScore(threshold)}
-                </DialogDescriptionText>
+                </Text>
               </View>
               <Slider
                 maximumValue={metrics.max}

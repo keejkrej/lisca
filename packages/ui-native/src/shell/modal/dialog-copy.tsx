@@ -4,11 +4,20 @@ import { View, type ViewProps } from "react-native";
 import { Text } from "../../../components/ui/text";
 import { cn } from "../../../lib/utils";
 
-export function DialogTitleText(props: { children: ReactNode; className?: string }) {
+const dialogTitleToneClass = {
+  h2: "font-display text-lg font-semibold leading-none text-foreground",
+  h2Medium: "font-display font-medium text-foreground",
+  sans: "font-sans font-medium text-foreground",
+} as const;
+
+export function DialogTitleText(props: {
+  children: ReactNode;
+  className?: string;
+  tone?: keyof typeof dialogTitleToneClass;
+}) {
+  const tone = props.tone ?? "h2";
   return (
-    <Text className={cn("font-display text-lg font-semibold text-foreground", props.className)}>
-      {props.children}
-    </Text>
+    <Text className={cn(dialogTitleToneClass[tone], props.className)}>{props.children}</Text>
   );
 }
 

@@ -26,7 +26,7 @@ export function CropConfirmModal() {
   return (
     <ModalScrim open onClose={crop.cancelCropConfirm}>
       <DialogSurface maxWidth={448}>
-        <DialogTitleText>{copy.title}</DialogTitleText>
+        <DialogTitleText tone="h2Medium">{copy.title}</DialogTitleText>
         <DialogDescriptionText>{copy.description}</DialogDescriptionText>
         {copy.showSkipExisting ? (
           <DialogDescriptionText className="max-h-20 text-xs text-muted-foreground">
@@ -35,15 +35,15 @@ export function CropConfirmModal() {
         ) : null}
         <DialogActions>
           <Button size="sm" variant="outline" onPress={crop.cancelCropConfirm}>
-            <Text className="text-xs">Cancel</Text>
+            <Text>Cancel</Text>
           </Button>
           {copy.showSkipExisting ? (
             <Button size="sm" variant="outline" onPress={crop.skipExistingCrop}>
-              <Text className="text-xs">Skip Existing</Text>
+              <Text>Skip Existing</Text>
             </Button>
           ) : null}
           <Button size="sm" onPress={crop.confirmCropOverwrite}>
-            <Text className="text-xs">Overwrite</Text>
+            <Text>Overwrite</Text>
           </Button>
         </DialogActions>
       </DialogSurface>

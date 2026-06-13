@@ -12,7 +12,6 @@ import { useRef, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 
 import { Text } from "../../../components/ui/text";
-import { liscaFontFamily } from "../../theme/typography";
 import { useThemeColors } from "../../theme/use-theme-colors";
 import { useCanvasBackground } from "../canvas/canvas-theme";
 import { clientToFramePoint, computeFrameLayout, prepareFrameRgba } from "../canvas/frame-pixels";
@@ -45,7 +44,6 @@ export function AlignCanvas({
   previewGrid,
   excludedCells,
   loading,
-  emptyText,
   toasts,
   onVirtualPointerDown,
   onVirtualPointerMove,
@@ -235,12 +233,6 @@ export function AlignCanvas({
         </View>
       ) : null}
 
-      {!frame && !loading && emptyText ? (
-        <View className="absolute inset-0 items-center justify-center">
-          <Text className="text-muted-foreground">{emptyText}</Text>
-        </View>
-      ) : null}
-
       {toasts && toasts.length > 0 ? (
         <View className="absolute bottom-3 left-3 right-3 gap-2">
           {toasts.map((toast) => (
@@ -252,12 +244,7 @@ export function AlignCanvas({
                   toast.tone === "error" ? "rgba(220,38,38,0.92)" : "rgba(24,24,27,0.88)",
               }}
             >
-              <Text
-                className="text-[13px] text-white"
-                style={{ fontFamily: liscaFontFamily.sansRegular }}
-              >
-                {toast.text}
-              </Text>
+              <Text className="font-sans text-sm leading-snug text-white">{toast.text}</Text>
             </View>
           ))}
         </View>

@@ -1,11 +1,12 @@
+import type { ReactNode } from "react";
 import { View, type ViewProps } from "react-native";
 
 import { Text } from "../../../components/ui/text";
 import { cn } from "../../../lib/utils";
 
 export function StatTile(props: {
-  label: string;
-  value: string | number;
+  label: ReactNode;
+  value: ReactNode;
   centered?: boolean;
   style?: ViewProps["style"];
   className?: string;

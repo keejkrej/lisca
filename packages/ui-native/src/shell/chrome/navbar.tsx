@@ -43,7 +43,7 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
       keyboardShouldPersistTaps="handled"
       showsHorizontalScrollIndicator={false}
     >
-      <View className="min-w-0 shrink flex-row flex-wrap items-center gap-3">
+      <View className="min-w-0 shrink flex-row flex-nowrap items-center gap-3">
         <PathButton
           icon={
             <Folder

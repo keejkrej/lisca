@@ -27,8 +27,8 @@ function ConnectionStatusContent(props: {
   return (
     <>
       <View className={cn("h-2 w-2 shrink-0 rounded-full", DOT_CLASS[props.state])} />
-      <Text className="shrink-0 text-sm font-medium text-foreground">{props.title}</Text>
-      <Text className="shrink-0 text-sm text-foreground/70">{props.statusLabel}</Text>
+      <Text className="shrink-0 font-medium text-foreground">{props.title}</Text>
+      <Text className="shrink-0 text-foreground/70">{props.statusLabel}</Text>
     </>
   );
 }
@@ -46,7 +46,8 @@ export function ConnectionStatus(props: {
     return (
       <UiButton
         accessibilityLabel={`${title}, ${statusLabel}`}
-        className="h-8 shrink-0 gap-1.5 px-2.5"
+        className="h-auto min-h-0 shrink-0 gap-1.5 whitespace-normal py-1.5 shadow-none"
+        size="sm"
         variant="outline"
         onPress={props.onOpenSettings}
       >

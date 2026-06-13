@@ -17,6 +17,7 @@ import { View } from "react-native";
 import { Button } from "../../../components/ui/button";
 import { Icon } from "../../../components/ui/icon";
 import { Text } from "../../../components/ui/text";
+import { cn } from "../../../lib/utils";
 import { dockToolLabel, dockToolShortcuts, useKeyboardShortcuts } from "../../shell";
 import { DockSection } from "../../shell/regions/dock-section";
 import { dockLayoutClasses } from "../../shell/regions/dock-layout";
@@ -69,8 +70,16 @@ export function AlignToolButton(props: {
       variant={active ? "default" : "outline"}
       onPress={onPress}
     >
-      <Icon as={ToolIcon} className="size-5" size={20} strokeWidth={2} />
-      <Text className="max-w-full shrink truncate text-xs" numberOfLines={1}>
+      <Icon
+        as={ToolIcon}
+        className={cn("size-5", active && "text-primary-foreground")}
+        size={20}
+        strokeWidth={2}
+      />
+      <Text
+        className={cn("max-w-full shrink truncate text-xs", active && "text-primary-foreground")}
+        numberOfLines={1}
+      >
         {label}
       </Text>
     </Button>
@@ -92,14 +101,16 @@ function renderAlignToolCell(
     return (
       <View key={tool.mode} className={dockLayoutClasses.cell}>
         <View className="w-full flex-row items-center gap-1">
-          <AlignToolButton
-            active={mode === tool.mode}
-            className="min-w-0 flex-1 justify-center gap-2 px-2"
-            Icon={tool.Icon}
-            label={label}
-            mode={tool.mode}
-            onPress={() => onModeChange(tool.mode)}
-          />
+          <View className="min-w-0 flex-1">
+            <AlignToolButton
+              active={mode === tool.mode}
+              className="min-w-0 w-full justify-center gap-2 px-2"
+              Icon={tool.Icon}
+              label={label}
+              mode={tool.mode}
+              onPress={() => onModeChange(tool.mode)}
+            />
+          </View>
           <Button
             accessibilityLabel={patternZoomLocked ? "Unlock pattern zoom" : "Lock pattern zoom"}
             accessibilityState={{ selected: patternZoomLocked }}

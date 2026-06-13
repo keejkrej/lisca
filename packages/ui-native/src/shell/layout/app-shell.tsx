@@ -42,7 +42,7 @@ function AppShellRoot(props: { children: ReactNode }) {
 function Header(props: { children?: ReactNode }) {
   return (
     <View
-      className="h-16 min-h-16 max-h-16 border-b border-border bg-background px-3"
+      className="h-16 min-h-16 max-h-16 border-b border-border bg-background px-6"
       style={{ maxHeight: HEADER_HEIGHT }}
     >
       <ShellScrollRegion contentClassName="min-h-[62px] flex-grow justify-center">
