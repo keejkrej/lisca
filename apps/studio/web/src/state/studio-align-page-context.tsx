@@ -9,6 +9,7 @@ type StudioSmartExclude = ReturnType<typeof useSmartExclude>;
 type StudioAlignPageContextValue = {
   state: StudioAlignState;
   smartExclude: StudioSmartExclude;
+  saveAndAdvance: () => Promise<boolean>;
 };
 
 const StudioAlignPageContext = createContext<StudioAlignPageContextValue | null>(null);
@@ -24,8 +25,22 @@ export function StudioAlignPageProvider({ children }: { children: ReactNode }) {
     onError: state.reportError,
   });
 
+  const saveAndAdvance = async (): Promise<boolean> => {
+    try {
+      const modelCells = await smartExclude.ensureAndClassify();
+      return await state.saveAndAdvanceWithModelCells(modelCells);
+    } catch (cause) {
+      if (cause instanceof Error && cause.message === "Smart exclude cancelled") {
+        state.reportError(null);
+        return false;
+      }
+      state.reportError(cause instanceof Error ? cause.message : "Smart exclude failed");
+      return false;
+    }
+  };
+
   return (
-    <StudioAlignPageContext.Provider value={{ state, smartExclude }}>
+    <StudioAlignPageContext.Provider value={{ state, smartExclude, saveAndAdvance }}>
       <SmartExcludeModelDialog
         busy={smartExclude.busy}
         state={smartExclude.downloadState}
