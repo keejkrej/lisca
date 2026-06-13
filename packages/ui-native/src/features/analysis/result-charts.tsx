@@ -14,6 +14,7 @@ import { VictoryChartFromSpec } from "./victory/chart-from-spec";
 import { DEFAULT_RESULT_CHART_COLORS, type ResultChartColors } from "./victory/types";
 
 const EXPORT_WIDTH = 1200;
+const XL_GRID_MIN_WIDTH = 1280;
 
 export function ResultPanelChart(props: {
   panel: ResultPanel;
@@ -21,9 +22,11 @@ export function ResultPanelChart(props: {
   height: number;
   colors?: Partial<ResultChartColors>;
   exportMode?: boolean;
+  showTitle?: boolean;
 }) {
   const colors = { ...DEFAULT_RESULT_CHART_COLORS, ...props.colors };
   const spec = chartSpecForPanel(props.panel);
+  const showTitle = props.showTitle ?? false;
   if (!spec) return null;
   if (!isChartSpecKindSupportedOn("native", spec.kind)) {
     return (
@@ -31,7 +34,7 @@ export function ResultPanelChart(props: {
         colors={colors}
         height={props.height}
         message={unsupportedPanelLabel(props.panel.kind)}
-        title={props.panel.title}
+        title={showTitle ? props.panel.title : ""}
         width={props.width}
       />
     );
@@ -41,25 +44,35 @@ export function ResultPanelChart(props: {
       colors={colors}
       height={props.height}
       spec={spec}
-      title={props.exportMode ? "" : props.panel.title}
+      title={showTitle ? props.panel.title : ""}
       width={props.width}
     />
   );
 }
 
-function panelLayout(section: ResultPlotSection, exportMode: boolean) {
+function panelLayout(section: ResultPlotSection, exportMode: boolean, containerWidth: number) {
   const isParameters = section === "parameters";
   if (isParameters) {
     return {
       columns: 1,
-      panelHeight: exportMode ? 500 : 560,
-      panelWidth: exportMode ? EXPORT_WIDTH - 32 : undefined,
+      panelHeight: exportMode ? 500 : 540,
+      cellMinHeight: exportMode ? 520 : 560,
+      gap: 32,
+      panelWidth: exportMode ? EXPORT_WIDTH - 32 : containerWidth,
     };
   }
+  const columns = exportMode ? 2 : containerWidth >= XL_GRID_MIN_WIDTH ? 2 : 1;
+  const gap = 24;
   return {
-    columns: exportMode ? 2 : 1,
-    panelHeight: exportMode ? 340 : 280,
-    panelWidth: exportMode ? (EXPORT_WIDTH - 48) / 2 : undefined,
+    columns,
+    panelHeight: exportMode ? 340 : 300,
+    cellMinHeight: exportMode ? 360 : 320,
+    gap,
+    panelWidth: exportMode
+      ? (EXPORT_WIDTH - 48) / 2
+      : columns === 2
+        ? (containerWidth - gap) / 2
+        : containerWidth,
   };
 }
 
@@ -77,10 +90,9 @@ export const ResultPanelsGridView = forwardRef(function ResultPanelsGridView(
 ) {
   const exportMode = props.exportMode ?? false;
   const section = props.section ?? "timeseries";
-  const layout = panelLayout(section, exportMode);
-  const panelHeight = props.panelHeight ?? layout.panelHeight;
   const containerWidth = exportMode ? EXPORT_WIDTH : props.width;
-  const panelWidth = layout.panelWidth ?? props.width;
+  const layout = panelLayout(section, exportMode, containerWidth);
+  const panelHeight = props.panelHeight ?? layout.panelHeight;
   const renderablePanels = filterRenderablePanels("native", props.panels);
 
   if (renderablePanels.length === 0) return null;
@@ -89,7 +101,7 @@ export const ResultPanelsGridView = forwardRef(function ResultPanelsGridView(
     <View
       ref={ref}
       collapsable={false}
-      className={exportMode ? "overflow-visible bg-white" : "gap-4"}
+      className={exportMode ? "overflow-visible bg-white" : "min-h-0 flex-1"}
       style={exportMode ? { width: EXPORT_WIDTH, backgroundColor: "#ffffff" } : undefined}
     >
       {props.pageTitle ? (
@@ -104,34 +116,38 @@ export const ResultPanelsGridView = forwardRef(function ResultPanelsGridView(
         </View>
       ) : null}
       <View
-        className={exportMode ? "flex-row flex-wrap gap-6 p-4" : "gap-4"}
+        className={exportMode ? "flex-row flex-wrap gap-6 p-4" : "flex-row flex-wrap gap-6 p-4"}
         style={exportMode ? { width: containerWidth } : undefined}
       >
         {renderablePanels.map((panel) => (
           <View
             key={`${panel.kind}:${panel.path}:${panel.title}`}
-            className={exportMode ? "gap-1" : undefined}
-            style={
-              exportMode
-                ? {
-                    width: layout.columns === 2 ? panelWidth : containerWidth - 32,
-                    minHeight: panelHeight + 32,
-                  }
-                : undefined
-            }
+            className="min-w-0 gap-1"
+            style={{
+              width: layout.panelWidth,
+              minHeight: layout.cellMinHeight,
+            }}
           >
-            {exportMode ? (
-              <Text className="truncate px-1 text-xl font-semibold text-[#737373]" numberOfLines={1}>
-                {panel.title}
-              </Text>
-            ) : null}
-            <ResultPanelChart
-              colors={props.colors}
-              exportMode={exportMode}
-              height={panelHeight}
-              panel={panel}
-              width={exportMode ? panelWidth : props.width}
-            />
+            <Text
+              className={
+                exportMode
+                  ? "truncate px-1 text-xl font-semibold text-[#737373]"
+                  : "truncate px-1 text-xl font-semibold text-muted-foreground"
+              }
+              numberOfLines={1}
+            >
+              {panel.title}
+            </Text>
+            <View className="min-h-0 flex-1">
+              <ResultPanelChart
+                colors={props.colors}
+                exportMode={exportMode}
+                height={panelHeight}
+                panel={panel}
+                showTitle={false}
+                width={layout.panelWidth}
+              />
+            </View>
           </View>
         ))}
       </View>
