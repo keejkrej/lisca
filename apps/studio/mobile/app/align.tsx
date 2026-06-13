@@ -4,10 +4,13 @@ import { STUDIO_NAV_WIDTH } from "../src/components/studio-layout";
 import { StudioAlignDock } from "../src/components/studio-align-dock";
 import { StudioAlignMain } from "../src/components/studio-align-main";
 import { StudioLeft } from "../src/components/studio-left";
-import { useStudioAlignState } from "../src/state/use-studio-align-state";
+import {
+  StudioAlignPageProvider,
+  useStudioAlignPage,
+} from "../src/state/studio-align-page-context";
 
-export default function AlignRoute() {
-  const alignState = useStudioAlignState();
+function AlignRouteContent() {
+  const { state } = useStudioAlignPage();
 
   return (
     <AppShell>
@@ -17,14 +20,22 @@ export default function AlignRoute() {
         </AppShell.Left>
         <AppShell.MainColumn>
           <AppShell.Main>
-            <StudioAlignMain state={alignState} />
+            <StudioAlignMain state={state} />
           </AppShell.Main>
           <AppShell.Dock>
-            <StudioAlignDock state={alignState} />
+            <StudioAlignDock />
           </AppShell.Dock>
         </AppShell.MainColumn>
         <AppShell.Right width={STUDIO_NAV_WIDTH} />
       </AppShell.Body>
     </AppShell>
+  );
+}
+
+export default function AlignRoute() {
+  return (
+    <StudioAlignPageProvider>
+      <AlignRouteContent />
+    </StudioAlignPageProvider>
   );
 }

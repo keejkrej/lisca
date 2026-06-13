@@ -57,19 +57,7 @@ export function AnnotatePage() {
         </AppShell.Left>
         <AppShell.MainColumn>
           <AppShell.Main>
-            <AnnotatorMain
-              activeLabelId={state.activeLabelId}
-              brushSize={state.brushSize}
-              classificationLabelId={state.annotation.current.classificationLabelId}
-              commitAnnotation={state.annotation.commit}
-              disabled={!state.canEditSegmentation}
-              frame={state.frame}
-              labels={state.labels}
-              mask={state.annotation.current.mask}
-              overlayOpacity={state.overlayOpacity}
-              toasts={state.canvasToasts}
-              tool={state.tool}
-            />
+            <AnnotatorMain state={state} />
           </AppShell.Main>
           <AppShell.Dock>
             <AnnotatorDock
@@ -108,6 +96,11 @@ export function AnnotatePage() {
             saveError={state.saveError}
             scanError={state.scanError}
             scanLoading={state.scanLoading}
+            workspacePath={state.workspacePath}
+            onOpenLabelDialog={() => {
+              state.setLabelError(null);
+              state.setLabelDialogOpen(true);
+            }}
             onClassificationChange={(labelId) =>
               state.annotation.commit({
                 classificationLabelId: labelId,

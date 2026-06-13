@@ -11,6 +11,7 @@ export function AlignerDock(props: { alignState: AlignState }) {
       <AlignToolSection
         mode={state.toolMode}
         patternZoomLocked={state.patternZoomLocked}
+        shortcutsEnabled={!state.cropping}
         onModeChange={(mode) => {
           if (!state.cropping) state.setToolMode(mode);
         }}

@@ -1,17 +1,36 @@
 import type { AnnotationLabel } from "@lisca/contracts";
-import type { FrameResult } from "@lisca/utils";
+import { clamp, hexToRgb, type FrameResult } from "@lisca/utils";
 import type { CanvasStatusMessage } from "@lisca/ui-headless";
-import { Canvas, Group, Image, Rect, Skia } from "@shopify/react-native-skia";
-import { useState } from "react";
+import {
+  useAnnotationCanvasHandlers,
+  type AnnotationCanvasPointerEvent,
+} from "@lisca/ui-headless/annotation-canvas-handlers";
+import { Canvas, Circle, Group, Image, Path, Rect, Skia } from "@shopify/react-native-skia";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { useRef, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 
 import { Text } from "../../../components/ui/text";
+import { liscaFontFamily } from "../../theme/typography";
 import { useThemeColors } from "../../theme/use-theme-colors";
 import { computeFrameLayout, prepareFrameRgba } from "../canvas/frame-pixels";
 import type { AnnotationTool } from "@lisca/ui-headless/annotation-tools";
 
 export type { AnnotationTool } from "@lisca/ui-headless/annotation-tools";
-export { ANNOTATION_TOOL_DEFINITIONS, toolCanRunWithoutLabel } from "@lisca/ui-headless/annotation-tools";
+export {
+  ANNOTATION_TOOL_DEFINITIONS,
+  toolCanRunWithoutLabel,
+} from "@lisca/ui-headless/annotation-tools";
+export {
+  useAnnotationCanvasHandlers,
+  type AnnotationCanvasPointerEvent,
+} from "@lisca/ui-headless/annotation-canvas-handlers";
+
+export type SmartSegmentPrompt = {
+  x: number;
+  y: number;
+  label: 0 | 1;
+};
 
 export type AnnotationCanvasProps = {
   frame: FrameResult | null;
@@ -25,16 +44,53 @@ export type AnnotationCanvasProps = {
   toasts?: CanvasStatusMessage[];
   disabled?: boolean;
   emptyText?: string;
+  smartSegmentPrompts?: SmartSegmentPrompt[];
   onMaskCommit: (mask: Uint8Array) => void;
+  onSmartSegmentClick?: (click: { x: number; y: number; negative: boolean }) => void;
+  onSmartEraseClick?: (click: { x: number; y: number }) => void;
 };
+
+function prepareMaskRgba(
+  frame: FrameResult,
+  labels: AnnotationLabel[],
+  mask: Uint8Array,
+  overlayOpacity: number,
+) {
+  const rgba = new Uint8Array(frame.width * frame.height * 4);
+  for (let index = 0; index < mask.length; index += 1) {
+    const value = mask[index] ?? 0;
+    if (value <= 0) continue;
+    const rgb = hexToRgb(labels[value - 1]?.color ?? "") ?? {
+      r: 59,
+      g: 130,
+      b: 246,
+    };
+    const offset = index * 4;
+    rgba[offset] = rgb.r;
+    rgba[offset + 1] = rgb.g;
+    rgba[offset + 2] = rgb.b;
+    rgba[offset + 3] = Math.round(255 * clamp(overlayOpacity, 0, 1));
+  }
+  return rgba;
+}
 
 export function AnnotationCanvas({
   frame,
+  labels,
   mask,
+  activeLabelId,
+  tool,
+  brushSize,
   overlayOpacity,
-  loading,
-  emptyText,
+  messages: _messages,
   toasts,
+  disabled = false,
+  emptyText,
+  smartSegmentPrompts = [],
+  loading,
+  onMaskCommit,
+  onSmartSegmentClick,
+  onSmartEraseClick,
 }: AnnotationCanvasProps & {
   loading?: boolean;
 }) {
@@ -43,6 +99,29 @@ export function AnnotationCanvas({
     width: 1,
     height: 1,
   });
+  const [bounds, setBounds] = useState({
+    x: 0,
+    y: 0,
+  });
+  const capturedRef = useRef<number | null>(null);
+
+  const handlers = useAnnotationCanvasHandlers({
+    frame,
+    viewportWidth: layout.width,
+    viewportHeight: layout.height,
+    viewportX: bounds.x,
+    viewportY: bounds.y,
+    mask,
+    labels,
+    activeLabelId,
+    tool,
+    brushSize,
+    disabled,
+    onMaskCommit,
+    onSmartSegmentClick,
+    onSmartEraseClick,
+  });
+
   const skImage = (() => {
     if (!frame) return null;
     const rgba = prepareFrameRgba(frame);
@@ -58,18 +137,10 @@ export function AnnotationCanvas({
       frame.width * 4,
     );
   })();
+
   const overlayImage = (() => {
     if (!frame || mask.length === 0) return null;
-    const rgba = new Uint8Array(frame.width * frame.height * 4);
-    for (let index = 0; index < mask.length; index += 1) {
-      const value = mask[index] ?? 0;
-      if (value === 0) continue;
-      const offset = index * 4;
-      rgba[offset] = 244;
-      rgba[offset + 1] = 63;
-      rgba[offset + 2] = 94;
-      rgba[offset + 3] = Math.round(255 * overlayOpacity);
-    }
+    const rgba = prepareMaskRgba(frame, labels, mask, overlayOpacity);
     const data = Skia.Data.fromBytes(rgba);
     return Skia.Image.MakeImage(
       {
@@ -82,65 +153,161 @@ export function AnnotationCanvas({
       frame.width * 4,
     );
   })();
-  const frameLayout = (() => {
-    if (!frame) return null;
-    return computeFrameLayout(layout.width, layout.height, frame.width, frame.height);
+
+  const frameLayout = frame
+    ? computeFrameLayout(layout.width, layout.height, frame.width, frame.height)
+    : null;
+
+  const makeEvent = (
+    pointerId: number,
+    pointerType: string,
+    x: number,
+    y: number,
+    button = 0,
+  ): AnnotationCanvasPointerEvent => ({
+    pointerId,
+    pointerType,
+    button,
+    clientX: x,
+    clientY: y,
+    preventDefault: () => undefined,
+    capturePointer: () => {
+      capturedRef.current = pointerId;
+    },
+    releasePointer: () => {
+      if (capturedRef.current === pointerId) capturedRef.current = null;
+    },
+  });
+
+  const pan = Gesture.Pan()
+    .runOnJS(true)
+    .onBegin((event) => handlers.handlePointerDown(makeEvent(1, "touch", event.absoluteX, event.absoluteY)))
+    .onUpdate((event) => handlers.handlePointerMove(makeEvent(1, "touch", event.absoluteX, event.absoluteY)))
+    .onEnd((event) => handlers.handlePointerEnd(makeEvent(1, "touch", event.absoluteX, event.absoluteY)))
+    .onFinalize((event) =>
+      handlers.handlePointerCancel(makeEvent(1, "touch", event.absoluteX, event.absoluteY)),
+    );
+
+  const lassoPath = (() => {
+    if (!frameLayout || handlers.lassoPoints.length < 2) return null;
+    const path = Skia.Path.Make();
+    const first = handlers.lassoPoints[0]!;
+    path.moveTo(
+      frameLayout.drawX + first.x * frameLayout.scale,
+      frameLayout.drawY + first.y * frameLayout.scale,
+    );
+    for (const point of handlers.lassoPoints.slice(1)) {
+      path.lineTo(
+        frameLayout.drawX + point.x * frameLayout.scale,
+        frameLayout.drawY + point.y * frameLayout.scale,
+      );
+    }
+    return path;
   })();
+
+  const lassoStrokeWidth = handlers.brushMode ? brushSize * (frameLayout?.scale ?? 1) : 2;
 
   return (
     <View
       className="min-h-0 flex-1 bg-background"
       onLayout={(event) => {
-        const { width, height } = event.nativeEvent.layout;
+        const { width, height, x, y } = event.nativeEvent.layout;
         setLayout({
           width: Math.max(1, width),
           height: Math.max(1, height),
         });
+        setBounds({ x, y });
       }}
     >
-      <Canvas style={{ flex: 1 }}>
-        <Rect x={0} y={0} width={layout.width} height={layout.height} color={colors.background} />
-        {skImage && frameLayout ? (
-          <Group>
-            <Image
-              image={skImage}
-              x={frameLayout.drawX}
-              y={frameLayout.drawY}
-              width={frameLayout.drawWidth}
-              height={frameLayout.drawHeight}
-              fit="fill"
-            />
-            {overlayImage ? (
-              <Image
-                image={overlayImage}
-                x={frameLayout.drawX}
-                y={frameLayout.drawY}
-                width={frameLayout.drawWidth}
-                height={frameLayout.drawHeight}
-                fit="fill"
-              />
+      <GestureDetector gesture={pan}>
+        <View className="flex-1">
+          <Canvas style={{ flex: 1 }}>
+            <Rect x={0} y={0} width={layout.width} height={layout.height} color={colors.background} />
+            {skImage && frameLayout ? (
+              <Group>
+                <Image
+                  image={skImage}
+                  x={frameLayout.drawX}
+                  y={frameLayout.drawY}
+                  width={frameLayout.drawWidth}
+                  height={frameLayout.drawHeight}
+                  fit="fill"
+                />
+                {overlayImage ? (
+                  <Image
+                    image={overlayImage}
+                    x={frameLayout.drawX}
+                    y={frameLayout.drawY}
+                    width={frameLayout.drawWidth}
+                    height={frameLayout.drawHeight}
+                    fit="fill"
+                  />
+                ) : null}
+                {lassoPath ? (
+                  <Path
+                    color={handlers.eraseMode ? "rgba(248,113,113,0.95)" : "rgba(250,204,21,0.95)"}
+                    path={lassoPath}
+                    strokeCap="round"
+                    strokeJoin="round"
+                    strokeWidth={lassoStrokeWidth}
+                    style="stroke"
+                  />
+                ) : null}
+                {smartSegmentPrompts.map((prompt, index) => {
+                  if (!frameLayout) return null;
+                  const centerX = frameLayout.drawX + prompt.x * frameLayout.scale;
+                  const centerY = frameLayout.drawY + prompt.y * frameLayout.scale;
+                  const radius = Math.max(4, 5 * frameLayout.scale);
+                  return (
+                    <Circle
+                      key={`${prompt.x}:${prompt.y}:${index}`}
+                      cx={centerX}
+                      cy={centerY}
+                      opacity={handlers.smartToolMode ? 1 : 0.65}
+                      r={radius}
+                      color={prompt.label === 1 ? "rgba(34,197,94,0.95)" : "rgba(248,113,113,0.95)"}
+                    />
+                  );
+                })}
+              </Group>
             ) : null}
-          </Group>
-        ) : null}
-      </Canvas>
+          </Canvas>
+        </View>
+      </GestureDetector>
+
       {loading ? (
         <View className="absolute inset-0 items-center justify-center">
           <ActivityIndicator color={colors.primary} size="large" />
         </View>
       ) : null}
+
       {!frame && !loading && emptyText ? (
         <View className="absolute inset-0 items-center justify-center">
           <Text className="text-muted-foreground">{emptyText}</Text>
         </View>
       ) : null}
-      {toasts?.map((toast) => (
-        <View
-          key={toast.text}
-          className="absolute bottom-3 left-3 right-3 rounded-[10px] bg-zinc-900/90 p-2.5"
-        >
-          <Text className="text-white">{toast.text}</Text>
+
+      {toasts && toasts.length > 0 ? (
+        <View className="absolute bottom-3 left-3 right-3 gap-2">
+          {toasts.map((toast) => (
+            <View
+              key={toast.text}
+              className="rounded-[10px] px-3 py-2"
+              style={{
+                backgroundColor:
+                  toast.tone === "error" ? "rgba(220,38,38,0.92)" : "rgba(24,24,27,0.88)",
+              }}
+            >
+              <Text
+                className="text-[13px] text-white"
+                style={{ fontFamily: liscaFontFamily.sansRegular }}
+              >
+                {toast.text}
+              </Text>
+            </View>
+          ))}
         </View>
-      ))}
+      ) : null}
     </View>
   );
 }

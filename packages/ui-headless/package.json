@@ -12,6 +12,10 @@
       "types": "./src/annotation-tools.ts",
       "import": "./src/annotation-tools.ts"
     },
+    "./annotation-canvas-handlers": {
+      "types": "./src/annotation-canvas-handlers.ts",
+      "import": "./src/annotation-canvas-handlers.ts"
+    },
     "./align-canvas-handlers": {
       "types": "./src/align-canvas-handlers.ts",
       "import": "./src/align-canvas-handlers.ts"

@@ -2,7 +2,8 @@ import { clamp } from "@lisca/utils";
 import { useEffect, useRef, useState } from "react";
 import { View } from "react-native";
 
-import { Button, SegmentedToggle } from "../../shell/chrome/buttons";
+import { Toggle } from "../../../components/ui/toggle";
+import { Button } from "../../shell/chrome/buttons";
 import { Field } from "../../shell/chrome/field";
 import { Input } from "../../shell/chrome/input";
 import { Section } from "../../shell/regions/section";
@@ -89,6 +90,8 @@ export type AlignGridProps = {
   disabled?: boolean;
   sectionTitle?: string;
   sectionDescription?: string;
+  sectionClassName?: string;
+  sectionContentClassName?: string;
   sectionStyle?: object;
   sectionContentStyle?: object;
 };
@@ -122,6 +125,8 @@ export function AlignGrid(props: AlignGridProps) {
     disabled,
     sectionTitle = "Grid",
     sectionDescription,
+    sectionClassName,
+    sectionContentClassName,
     sectionStyle,
     sectionContentStyle,
   } = props;
@@ -139,29 +144,34 @@ export function AlignGrid(props: AlignGridProps) {
 
   return (
     <Section
-      contentStyle={[{ gap: 12 }, sectionContentStyle]}
+      className={sectionClassName}
+      contentClassName={cn("gap-3", sectionContentClassName)}
+      contentStyle={sectionContentStyle}
       description={sectionDescription}
       style={sectionStyle}
       title={sectionTitle}
     >
-      <Field label="Overlay">
+      <View className="flex-row gap-2">
+        <Toggle
+          accessibilityLabel="Show grid overlay"
+          className="min-w-0 flex-1"
+          disabled={disabled}
+          pressed={overlayVisible}
+          size="sm"
+          variant="outline"
+          onPressedChange={onOverlayVisibleChange}
+        >
+          <UiText className="text-xs">Show</UiText>
+        </Toggle>
         <Button
+          className="min-w-0 flex-1"
           disabled={disabled || resetDisabled || !onReset}
           label="Reset"
           size="sm"
           variant="outline"
           onPress={() => onReset?.()}
         />
-        <SegmentedToggle
-          disabled={disabled}
-          options={[
-            { value: "hide", label: "Hide" },
-            { value: "show", label: "Show" },
-          ]}
-          value={overlayVisible ? "show" : "hide"}
-          onChange={(value) => onOverlayVisibleChange(value === "show")}
-        />
-      </Field>
+      </View>
 
       <Field label="Opacity">
         <Slider

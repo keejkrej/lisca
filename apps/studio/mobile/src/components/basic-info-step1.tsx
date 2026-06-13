@@ -1,3 +1,4 @@
+import type { AlignerSource } from "@lisca/contracts";
 import type { StudioDataSourceKind } from "@lisca/contracts/assay";
 import type { HostFilePickerMode } from "@lisca/ui-native/features";
 import {
@@ -12,7 +13,10 @@ import {
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 
+import { useStudioMemoryRecent } from "../hooks/use-studio-memory-recent";
 import { useStudioStore } from "../state/studio-store";
+import { recordStudioSourceMemory, recordStudioWorkspaceMemory } from "../utils/studio-memory";
+import { useStudioProfile } from "./studio-profile-provider";
 
 type StudioPathPickerState = null | { kind: "save" } | { kind: "source"; mode: HostFilePickerMode };
 
@@ -39,12 +43,16 @@ function kindFromMode(mode: HostFilePickerMode): StudioDataSourceKind {
 }
 
 export function BasicInfoStep1({ hostPort }: { hostPort: HostFilePickerOperations }) {
+  const profile = useStudioProfile();
   const info1 = useStudioStore((state) => state.info1);
   const setInfo1 = useStudioStore((state) => state.setInfo1);
   const setDataSourceKind = useStudioStore((state) => state.setDataSourceKind);
   const [openDataModalOpen, setOpenDataModalOpen] = useState(false);
   const [pathPicker, setPathPicker] = useState<StudioPathPickerState>(null);
   const [folderSourcePath, setFolderSourcePath] = useState<string | null>(null);
+
+  const sourceRecent = useStudioMemoryRecent("source", openDataModalOpen);
+  const workspaceRecent = useStudioMemoryRecent("workspace", pathPicker?.kind === "save");
 
   const openSourceBrowser = (mode: HostFilePickerMode) => {
     setOpenDataModalOpen(false);
@@ -53,7 +61,29 @@ export function BasicInfoStep1({ hostPort }: { hostPort: HostFilePickerOperation
 
   const applySourcePath = (path: string, mode: HostFilePickerMode) => {
     setInfo1({ dataPath: path });
-    setDataSourceKind(kindFromMode(mode));
+    const kind = kindFromMode(mode);
+    setDataSourceKind(kind);
+    if (kind === "nd2" || kind === "czi") {
+      recordStudioSourceMemory(profile.session, { kind, path } as AlignerSource);
+    }
+  };
+
+  const applyRecentSource = (source: AlignerSource) => {
+    if (source.kind === "folder") {
+      setInfo1({
+        dataPath: source.path,
+        folderSubfolderTemplate: source.subfolderTemplate,
+        folderFilenameTemplate: source.filenameTemplate,
+      });
+      setDataSourceKind("folder");
+    } else if (source.kind === "nd2") {
+      setInfo1({ dataPath: source.path });
+      setDataSourceKind("nd2");
+    } else {
+      setInfo1({ dataPath: source.path });
+      setDataSourceKind("czi");
+    }
+    recordStudioSourceMemory(profile.session, source);
   };
 
   return (
@@ -83,7 +113,7 @@ export function BasicInfoStep1({ hostPort }: { hostPort: HostFilePickerOperation
             <Input
               editable={false}
               pointerEvents="none"
-              placeholder="Click to choose source..."
+              placeholder="Click to choose source…"
               value={info1.dataPath}
             />
           </Pressable>
@@ -93,7 +123,7 @@ export function BasicInfoStep1({ hostPort }: { hostPort: HostFilePickerOperation
             <Input
               editable={false}
               pointerEvents="none"
-              placeholder="Click to choose folder..."
+              placeholder="Click to choose folder…"
               value={info1.saveTo}
             />
           </Pressable>
@@ -102,28 +132,42 @@ export function BasicInfoStep1({ hostPort }: { hostPort: HostFilePickerOperation
 
       <SourcePickerModal
         open={openDataModalOpen}
+        recentSources={sourceRecent.sources}
         onClose={() => setOpenDataModalOpen(false)}
         onOpenCzi={() => openSourceBrowser("czi_file")}
         onOpenFolder={() => openSourceBrowser("folder")}
         onOpenNd2={() => openSourceBrowser("nd2_file")}
+        onPickRecentSource={applyRecentSource}
       />
       <HostFilePickerDialog
         hostPort={hostPort}
         mode={pickerMode(pathPicker)}
         open={pathPicker !== null}
+        recentItems={pathPicker?.kind === "save" ? workspaceRecent.workspaces : undefined}
         title={pickerTitle(pathPicker)}
         onOpenChange={(open) => {
           if (!open) setPathPicker(null);
         }}
         onPickDirectory={(path) => {
           if (!pathPicker) return;
-          if (pathPicker.kind === "save") setInfo1({ saveTo: path });
-          else if (pathPicker.mode === "folder") setFolderSourcePath(path);
+          if (pathPicker.kind === "save") {
+            setInfo1({ saveTo: path });
+            recordStudioWorkspaceMemory(profile.session, path, info1.name.trim() || undefined);
+          } else if (pathPicker.mode === "folder") {
+            setFolderSourcePath(path);
+          }
           setPathPicker(null);
         }}
         onPickFile={(path) => {
           if (pathPicker?.kind === "source") applySourcePath(path, pathPicker.mode);
           setPathPicker(null);
+        }}
+        onPickRecent={(path) => {
+          if (pathPicker?.kind === "save") {
+            setInfo1({ saveTo: path });
+            recordStudioWorkspaceMemory(profile.session, path, info1.name.trim() || undefined);
+            setPathPicker(null);
+          }
         }}
       />
       <FolderSourceParseModal
@@ -137,6 +181,7 @@ export function BasicInfoStep1({ hostPort }: { hostPort: HostFilePickerOperation
             folderFilenameTemplate: source.filenameTemplate,
           });
           setDataSourceKind("folder");
+          recordStudioSourceMemory(profile.session, source);
           setFolderSourcePath(null);
         }}
       />

@@ -9,10 +9,12 @@ import { BasicInfoStep3 } from "../src/components/basic-info-step3";
 import { STUDIO_NAV_WIDTH } from "../src/components/studio-layout";
 import { StudioInfoDock } from "../src/components/studio-info-dock";
 import { StudioLeft } from "../src/components/studio-left";
+import { useStudioBasicInfoLeave } from "../src/components/studio-basic-info-leave-guard";
 import { useStudioStore } from "../src/state/studio-store";
 
 export default function InfoRoute() {
   const router = useRouter();
+  const { requestLeave } = useStudioBasicInfoLeave();
   const infoStep = useStudioStore((state) => state.infoStep);
   const setInfoStep = useStudioStore((state) => state.setInfoStep);
   const step = infoStep === 1 ? "info1" : infoStep === 2 ? "info2" : "info3";
@@ -22,7 +24,7 @@ export default function InfoRoute() {
       setInfoStep((infoStep + 1) as 1 | 2 | 3);
       return;
     }
-    router.push("/align");
+    requestLeave(() => router.push("/align"));
   };
 
   const back = () => {
@@ -52,4 +54,3 @@ export default function InfoRoute() {
     </AppShell>
   );
 }
-

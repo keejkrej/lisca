@@ -9,10 +9,11 @@ import {
 } from "@lisca/ui-native";
 import { View } from "react-native";
 
-import type { StudioAlignState } from "../state/use-studio-align-state";
+import { useStudioAlignPage } from "../state/studio-align-page-context";
 import { instructionForStep } from "../state/studio-routes";
 
-export function StudioAlignDock({ state }: { state: StudioAlignState }) {
+export function StudioAlignDock() {
+  const { state, smartExclude, saveAndAdvance } = useStudioAlignPage();
   const gridDisabled = state.cropping || !state.frame;
 
   return (
@@ -40,6 +41,7 @@ export function StudioAlignDock({ state }: { state: StudioAlignState }) {
         <AlignToolToolbar
           mode={state.toolMode}
           patternZoomLocked={state.patternZoomLocked}
+          shortcutsEnabled={!state.cropping && !state.saving}
           onModeChange={state.setToolMode}
           onPatternZoomLockedChange={state.setPatternZoomLocked}
         />
@@ -88,11 +90,11 @@ export function StudioAlignDock({ state }: { state: StudioAlignState }) {
             </View>
             <View className={dockLayoutClasses.cell}>
               <Button
-                disabled={!state.frame || state.saving || state.cropping}
+                disabled={!state.frame || state.saving || state.cropping || smartExclude.busy}
                 label="Next"
                 size="sm"
                 variant="outline"
-                onPress={() => void state.saveAndAdvance()}
+                onPress={() => void saveAndAdvance()}
               />
             </View>
           </View>
@@ -101,4 +103,3 @@ export function StudioAlignDock({ state }: { state: StudioAlignState }) {
     </DockStrip>
   );
 }
-

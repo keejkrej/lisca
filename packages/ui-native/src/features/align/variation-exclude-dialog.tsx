@@ -1,8 +1,12 @@
+import type { AutoExcludePreviewResponse } from "@lisca/contracts";
 import {
   deriveVariationExcludePreview,
   formatVariationScore,
   nextVariationExcludeThreshold,
 } from "@lisca/ui-headless/variation-exclude-preview";
+import { View } from "react-native";
+
+import { Text } from "../../../components/ui/text";
 import {
   Button,
   DialogBody,
@@ -11,40 +15,39 @@ import {
   DialogHeader,
   DialogSurface,
   DialogTitleText,
-  Field,
   Input,
   ModalScrim,
   Slider,
   StatTile,
-  Text,
-  VariationScoreHistogram,
-} from "@lisca/ui-native";
-import { View } from "react-native";
-import type { VariationExcludePreview } from "../state/use-align-state";
+} from "../../shell";
+import { VariationScoreHistogram } from "../studio/variation-score-histogram";
 
-type VariationExcludeDialogProps = {
-  state: VariationExcludePreview | null;
+export type VariationExcludePreviewState = {
+  preview: AutoExcludePreviewResponse;
+  threshold: number;
+} | null;
+
+export function VariationExcludeDialog(props: {
+  state: VariationExcludePreviewState;
   onApply: () => void;
   onCancel: () => void;
   onThresholdChange: (threshold: number) => void;
-};
-
-export function VariationExcludeDialog({
-  state,
-  onApply,
-  onCancel,
-  onThresholdChange,
-}: VariationExcludeDialogProps) {
-  const derived = deriveVariationExcludePreview(state);
+}) {
+  const derived = deriveVariationExcludePreview(
+    props.state ? { preview: props.state.preview, threshold: props.state.threshold } : null,
+  );
   if (!derived) return null;
   const { preview, threshold, selectedCount, metrics } = derived;
   const setThreshold = (value: number) => {
-    const next = nextVariationExcludeThreshold(state, value);
-    if (next != null) onThresholdChange(next);
+    const next = nextVariationExcludeThreshold(
+      props.state ? { preview: props.state.preview, threshold: props.state.threshold } : null,
+      value,
+    );
+    if (next != null) props.onThresholdChange(next);
   };
 
   return (
-    <ModalScrim open={true} onClose={onCancel}>
+    <ModalScrim open={true} onClose={props.onCancel}>
       <DialogSurface maxWidth={640} padded={false}>
         <DialogHeader>
           <DialogTitleText>Var exclude</DialogTitleText>
@@ -90,8 +93,8 @@ export function VariationExcludeDialog({
         </DialogBody>
 
         <DialogFooter>
-          <Button label="Cancel" variant="outline" onPress={onCancel} />
-          <Button label="Apply" onPress={onApply} />
+          <Button label="Cancel" variant="outline" onPress={props.onCancel} />
+          <Button label="Apply" onPress={props.onApply} />
         </DialogFooter>
       </DialogSurface>
     </ModalScrim>

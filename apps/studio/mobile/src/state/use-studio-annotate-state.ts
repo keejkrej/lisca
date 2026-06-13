@@ -30,6 +30,7 @@ import {
   loadRoiFrameWithAnnotationEffect,
 } from "../effects/roi-loader";
 import { studioAnnotateUiActions, studioAnnotateUiAtom } from "./studio-annotate-store";
+import { setStudioAnnotateDirty } from "./studio-annotate-guard";
 import { buildStudioAssayJson, serializeBasicInfoSnapshot, useStudioStore } from "./studio-store";
 import { emptyValueFor, useAnnotationHistory } from "./use-annotation-history";
 import { encodeMaskToBase64Png, maskHasPixels } from "../utils/annotation-utils";
@@ -108,6 +109,9 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     encodeMaskToBase64Png,
     maskHasPixels,
   });
+  useEffect(() => {
+    setStudioAnnotateDirty(annotate.annotation.dirty);
+  }, [annotate.annotation.dirty]);
   const setAnalysisStartConfirm = (value: boolean) =>
     studioAnnotateUiActions.setAnalysisStartConfirm(setUi, value);
   const setAnalysisRequestId = (requestId: string | null) =>

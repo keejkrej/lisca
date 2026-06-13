@@ -1,4 +1,5 @@
 export * from "./annotation-tools";
+export * from "./annotation-canvas-handlers";
 export * from "./align-canvas-handlers";
 export * from "./align-tools";
 export * from "./canvas-resource-transaction";

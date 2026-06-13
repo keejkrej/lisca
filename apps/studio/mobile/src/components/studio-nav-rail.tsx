@@ -6,10 +6,13 @@ import {
   Text,
   useShellServer,
 } from "@lisca/ui-native";
-import { Link, usePathname } from "expo-router";
+import { usePathname, useRouter } from "expo-router";
 import { Pressable, View } from "react-native";
 
+import { confirmStudioAnnotateLeave } from "../state/studio-annotate-guard";
+import { isBasicInfoDirty, useStudioStore } from "../state/studio-store";
 import { useStudioProfile } from "./studio-profile-provider";
+import { useStudioBasicInfoLeave } from "./studio-basic-info-leave-guard";
 
 const ROUTES = [
   { href: "/assay", label: "Assay type" },
@@ -21,8 +24,24 @@ const ROUTES = [
 
 export function StudioNavRail() {
   const pathname = usePathname();
+  const router = useRouter();
   const server = useShellServer();
   const profile = useStudioProfile();
+  const wizard = useStudioStore((state) => state);
+  const basicInfoDirty = isBasicInfoDirty(wizard);
+  const { requestLeave } = useStudioBasicInfoLeave();
+
+  const navigate = async (href: (typeof ROUTES)[number]["href"]) => {
+    if (pathname === "/annotate" && href !== "/annotate") {
+      const ok = await confirmStudioAnnotateLeave();
+      if (!ok) return;
+    }
+    if (pathname === "/info" && href !== "/info" && basicInfoDirty) {
+      requestLeave(() => router.push(href));
+      return;
+    }
+    router.push(href);
+  };
 
   return (
     <View className="-m-3 min-h-0 flex-1 gap-2.5 p-2.5">
@@ -30,11 +49,11 @@ export function StudioNavRail() {
         <Panel>
           <View className="items-center gap-6 py-3">
             {ROUTES.map((route) => (
-              <Link key={route.href} href={route.href} asChild>
+              <Pressable key={route.href} onPress={() => void navigate(route.href)}>
                 <StudioNavButton active={pathname === route.href} onPress={() => undefined}>
                   {route.label}
                 </StudioNavButton>
-              </Link>
+              </Pressable>
             ))}
           </View>
         </Panel>

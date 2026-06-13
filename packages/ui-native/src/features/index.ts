@@ -6,17 +6,31 @@ export {
 export {
   cursorForAlignTool,
   useAlignCanvasGridHandlers,
+  useAlignCanvasSelectionHandlers,
+  type AlignCanvasFramePoint,
   type UseAlignCanvasGridHandlersOptions,
+  type UseAlignCanvasSelectionHandlersOptions,
 } from "./align/align-canvas-handlers";
 export {
   AnnotationCanvas,
   type AnnotationCanvasProps,
   type AnnotationTool,
+  type SmartSegmentPrompt,
   ANNOTATION_TOOL_DEFINITIONS,
   toolCanRunWithoutLabel,
+  useAnnotationCanvasHandlers,
+  type AnnotationCanvasPointerEvent,
 } from "./annotate/annotation-canvas";
-export { AnnotationModeToggle } from "./annotate/annotation-mode-toggle";
+export {
+  AnnotationToolGrid,
+  buildAnnotationToolActions,
+} from "./annotate/annotation-tool-grid";
+export {
+  SmartSegmentModelDialog,
+  type SmartSegmentModelDialogProps,
+} from "./annotate/smart-segment-model-dialog";
 export type { AnnotationMode } from "@lisca/ui-headless";
+export { AnnotationModeToggle } from "./annotate/annotation-mode-toggle";
 export { AnnotationToolSlider } from "./annotate/annotation-tool-slider";
 export { useCanvasResourceTransaction } from "./canvas/canvas-resource-transaction";
 export { useCanvasTransientStatus } from "./canvas/canvas-transient-status";
@@ -32,6 +46,25 @@ export {
 export type { HostFilePickerMode, HostFilePickerOperations } from "./host/host-operations";
 export { SourcePickerModal, type SourcePickerModalProps } from "./host/source-picker-modal";
 export { AlignGrid, ReadonlyPathField, type AlignGridProps } from "./align/align-controls";
+export { AlignGridRail } from "./align/align-grid-rail";
+export {
+  AlignSelectionRail,
+  type AlignSelectionRailProps,
+} from "./align/align-selection-rail";
+export {
+  SmartExcludeModelDialog,
+  type SmartExcludeModelDialogProps,
+} from "./align/smart-exclude-model-dialog";
+export { AlignSelectionCounts } from "./align/align-selection-counts";
+export {
+  AlignEditToggle,
+  type AlignEditToggleProps,
+} from "./align/align-edit-toggle";
+export {
+  VariationExcludeDialog,
+  type VariationExcludePreviewState,
+} from "./align/variation-exclude-dialog";
+export { cropConfirmCopy } from "@lisca/ui-headless/crop";
 export {
   AlignGridShapeDockSection,
   type AlignGridShapeDockSectionProps,

@@ -1,28 +1,36 @@
-import { AlignGrid } from "@lisca/ui-native";
+import type { AlignGridState } from "@lisca/contracts";
 import { createDefaultAlignGrid, degreesToRadians, radiansToDegrees } from "@lisca/utils";
-import type { AlignState } from "../state/use-align-state";
-export function AlignGridControls({ state }: { state: AlignState }) {
-  const disabled = state.cropping || !state.frame;
-  const updateGrid = (patch: Partial<typeof state.grid>) => {
+
+import { AlignGrid } from "./align-controls";
+
+export function AlignGridRail(props: {
+  grid: AlignGridState;
+  disabled?: boolean;
+  onGridChange: (next: AlignGridState | ((current: AlignGridState) => AlignGridState)) => void;
+}) {
+  const disabled = props.disabled ?? false;
+  const updateGrid = (patch: Partial<AlignGridState>) => {
     if (disabled) return;
-    state.setGrid((grid) => ({
+    props.onGridChange((grid) => ({
       ...grid,
       ...patch,
     }));
   };
+
   return (
     <AlignGrid
-      offsetX={state.grid.tx}
-      offsetY={state.grid.ty}
-      overlayOpacity={state.grid.opacity}
-      overlayVisible={state.grid.enabled}
-      patternHeight={state.grid.cellHeight}
+      offsetX={props.grid.tx}
+      offsetY={props.grid.ty}
+      overlayOpacity={props.grid.opacity}
+      overlayVisible={props.grid.enabled}
+      patternHeight={props.grid.cellHeight}
       patternMin={1}
-      patternWidth={state.grid.cellWidth}
-      rotationDegrees={radiansToDegrees(state.grid.rotation)}
-      shape={state.grid.shape}
-      vectorA={state.grid.spacingA}
-      vectorB={state.grid.spacingB}
+      patternWidth={props.grid.cellWidth}
+      rotationDegrees={radiansToDegrees(props.grid.rotation)}
+      sectionClassName="min-h-0 shrink-0"
+      shape={props.grid.shape}
+      vectorA={props.grid.spacingA}
+      vectorB={props.grid.spacingB}
       vectorMin={1}
       onOffsetXChange={(tx) =>
         updateGrid({
@@ -56,7 +64,7 @@ export function AlignGridControls({ state }: { state: AlignState }) {
       }
       onReset={() =>
         !disabled &&
-        state.setGrid({
+        props.onGridChange({
           ...createDefaultAlignGrid(),
           enabled: true,
         })
@@ -81,9 +89,6 @@ export function AlignGridControls({ state }: { state: AlignState }) {
           spacingB,
         })
       }
-      sectionStyle={{
-        flexShrink: 0,
-      }}
     />
   );
 }

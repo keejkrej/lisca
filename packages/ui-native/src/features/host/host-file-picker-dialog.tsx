@@ -2,6 +2,7 @@ import type { HostFilePickerMode } from "@lisca/ui-headless/host";
 import { useHostFilePickerState } from "@lisca/ui-headless/host-file-picker-state";
 import { ActivityIndicator, FlatList, View } from "react-native";
 
+import { Text } from "../../../components/ui/text";
 import { Button } from "../../shell/chrome/buttons";
 import {
   DialogActions,
@@ -14,6 +15,11 @@ import { useThemeColors } from "../../theme/use-theme-colors";
 import { FILE_PICKER_ROW_HEIGHT, FilePickerRow } from "./host-file-picker-row";
 import type { HostFilePickerOperations } from "./host-operations";
 
+export type HostFilePickerRecentItem = {
+  path: string;
+  label?: string;
+};
+
 export type HostFilePickerDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -22,6 +28,8 @@ export type HostFilePickerDialogProps = {
   title: string;
   onPickDirectory: (path: string) => void;
   onPickFile: (path: string) => void;
+  recentItems?: readonly HostFilePickerRecentItem[];
+  onPickRecent?: (path: string) => void;
 };
 
 export function HostFilePickerDialog({
@@ -32,6 +40,8 @@ export function HostFilePickerDialog({
   title,
   onPickDirectory,
   onPickFile,
+  recentItems,
+  onPickRecent,
 }: HostFilePickerDialogProps) {
   const colors = useThemeColors();
   const picker = useHostFilePickerState({
@@ -58,6 +68,20 @@ export function HostFilePickerDialog({
           <ActivityIndicator accessibilityLabel="Loading directory" color={colors.primary} />
         ) : null}
         {picker.error ? <DialogErrorText>{picker.error}</DialogErrorText> : null}
+        {recentItems && recentItems.length > 0 && onPickRecent ? (
+          <View className="gap-2">
+            <Text className="text-sm font-medium text-foreground">Recent</Text>
+            {recentItems.map((item) => (
+              <Button
+                key={item.path}
+                label={item.label?.trim() || item.path}
+                size="sm"
+                variant="outline"
+                onPress={() => onPickRecent(item.path)}
+              />
+            ))}
+          </View>
+        ) : null}
         <FlatList
           data={entries}
           getItemLayout={(_, index) => ({

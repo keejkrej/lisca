@@ -1,14 +1,16 @@
-import { View } from "react-native";
+import { AlignGridRail, SidebarStack } from "@lisca/ui-native";
 
 import type { AlignState } from "../state/use-align-state";
-import { AlignGridControls } from "./align-grid-controls";
 import { AlignSelectionControls } from "./align-selection-controls";
 
 export function AlignerRight(props: { alignState: AlignState }) {
+  const { alignState: state } = props;
+  const disabled = state.cropping || !state.frame;
+
   return (
-    <View className="gap-2">
-      <AlignGridControls state={props.alignState} />
-      <AlignSelectionControls state={props.alignState} />
-    </View>
+    <SidebarStack>
+      <AlignGridRail disabled={disabled} grid={state.grid} onGridChange={state.setGrid} />
+      <AlignSelectionControls state={state} />
+    </SidebarStack>
   );
 }
