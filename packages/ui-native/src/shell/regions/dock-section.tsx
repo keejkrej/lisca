@@ -24,8 +24,8 @@ export function DockSection(props: {
 
   return (
     <Section
-      className={cn(fitClassName, props.className)}
-      contentClassName={cn("min-h-0 flex-1 justify-start gap-2", props.contentClassName)}
+      className={cn(fitClassName, "flex min-h-0 h-full flex-col", props.className)}
+      contentClassName={cn("flex min-h-0 flex-1 flex-col justify-center gap-2", props.contentClassName)}
       contentStyle={props.contentStyle}
       defaultCollapsed={props.defaultCollapsed}
       description={props.description}

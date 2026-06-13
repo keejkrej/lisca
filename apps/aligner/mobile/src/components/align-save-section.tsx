@@ -9,7 +9,11 @@ export function AlignSaveSection({ state }: { state: AlignState }) {
   const canCrop = Boolean(state.workspacePath && state.source && state.frame && !state.cropping);
 
   return (
-    <DockSection className={dockLayoutClasses.section} contentClassName={dockLayoutClasses.content} title="Save">
+    <DockSection
+      className={dockLayoutClasses.section}
+      contentClassName={dockLayoutClasses.content}
+      title="Save"
+    >
       <View className={dockLayoutClasses.stack}>
         <View className={dockLayoutClasses.cols3}>
           <View className={dockLayoutClasses.cell}>

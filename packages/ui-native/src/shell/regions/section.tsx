@@ -54,7 +54,7 @@ export function Section(props: {
         ) : null}
       </View>
       {!collapsed ? (
-        <View className={cn("gap-2 px-3 pb-3", props.contentClassName)} style={props.contentStyle}>
+        <View className={cn("flex flex-col gap-2 px-3 pb-3", props.contentClassName)} style={props.contentStyle}>
           {props.children}
         </View>
       ) : null}

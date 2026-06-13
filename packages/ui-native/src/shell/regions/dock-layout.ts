@@ -12,7 +12,7 @@ export function dockToolbarMinHeight(rows: number): number {
 /** Tailwind class sets for dock toolbars — mirrors web dock grids. */
 export const dockLayoutClasses = {
   section: "min-w-0",
-  content: "min-h-0 w-full flex-1 justify-start gap-2",
+  content: "min-h-0 w-full flex-1 justify-center gap-2",
   stack: "w-full flex-col gap-2",
   cols2: "w-full flex-row gap-2",
   cols3: "w-full flex-row gap-2",
@@ -21,8 +21,9 @@ export const dockLayoutClasses = {
   cell: "min-w-0 flex-1",
   gridCell: "min-w-0 flex-1",
   button: "w-full",
-  saveContent: "w-full flex-col gap-2",
-  classificationPlaceholder: "w-full justify-start",
+  /** @deprecated Use {@link dockLayoutClasses.content} — dock sections center content by default. */
+  saveContent: "min-h-0 w-full flex-1 justify-center gap-2",
+  classificationPlaceholder: "w-full justify-center",
 } as const;
 
 /** @deprecated Use {@link dockLayoutClasses} with `className`. */
