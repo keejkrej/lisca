@@ -6,9 +6,9 @@ import { useEffect, useState } from "react";
 import { View } from "react-native";
 
 import { Text } from "../../../components/ui/text";
-import { Button } from "../../shell/chrome/buttons";
+import { Button } from "../../../components/ui/button";
 import { Section } from "../../shell/regions/section";
-import { Slider } from "../../shell/chrome/slider";
+import { Slider } from "../../../components/ui/slider";
 
 export type ContrastControlProps = {
   frame: FrameResult | null;
@@ -142,11 +142,12 @@ function ContrastControlBody(props: {
 
       <Button
         disabled={disabled || autoRangeDisabled}
-        label="Auto Range"
         size="sm"
         variant="outline"
         onPress={onAutoRange}
-      />
+      >
+        <Text className="text-xs">Auto Range</Text>
+      </Button>
 
       <ContrastSliderRow
         disabled={disabled}

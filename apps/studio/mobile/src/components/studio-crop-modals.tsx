@@ -5,6 +5,7 @@ import {
   DialogSurface,
   DialogTitleText,
   ModalScrim,
+  Text,
 } from "@lisca/ui-native";
 
 import type { StudioAlignState } from "../state/use-studio-align-state";
@@ -21,13 +22,12 @@ export function StudioCropStartModal({ state }: { state: StudioAlignState }) {
           {`${confirm.positions.length} positions have saved alignment output. Start cropping ROI output now?`}
         </DialogDescriptionText>
         <DialogActions>
-          <Button
-            label="Cancel"
-            size="sm"
-            variant="outline"
-            onPress={state.cancelCropStartConfirm}
-          />
-          <Button label="Start" size="sm" onPress={state.startConfirmedCrop} />
+          <Button size="sm" variant="outline" onPress={state.cancelCropStartConfirm}>
+            <Text className="text-xs">Cancel</Text>
+          </Button>
+          <Button size="sm" onPress={state.startConfirmedCrop}>
+            <Text className="text-xs">Start</Text>
+          </Button>
         </DialogActions>
       </DialogSurface>
     </ModalScrim>
@@ -51,14 +51,15 @@ export function StudioCropConfirmModal({ state }: { state: StudioAlignState }) {
           {existingList}
         </DialogDescriptionText>
         <DialogActions className="mt-4">
-          <Button label="Cancel" size="sm" variant="outline" onPress={state.cancelCropConfirm} />
-          <Button
-            label="Skip Existing"
-            size="sm"
-            variant="outline"
-            onPress={state.skipExistingCrop}
-          />
-          <Button label="Overwrite" size="sm" onPress={state.confirmCropOverwrite} />
+          <Button size="sm" variant="outline" onPress={state.cancelCropConfirm}>
+            <Text className="text-xs">Cancel</Text>
+          </Button>
+          <Button size="sm" variant="outline" onPress={state.skipExistingCrop}>
+            <Text className="text-xs">Skip Existing</Text>
+          </Button>
+          <Button size="sm" onPress={state.confirmCropOverwrite}>
+            <Text className="text-xs">Overwrite</Text>
+          </Button>
         </DialogActions>
       </DialogSurface>
     </ModalScrim>

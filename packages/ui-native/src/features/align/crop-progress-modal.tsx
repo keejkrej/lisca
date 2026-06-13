@@ -1,7 +1,8 @@
 import type { CropRoiProgress } from "@lisca/contracts";
 import { useCropProgressModal } from "@lisca/ui-headless/crop-progress-modal";
 
-import { Button } from "../../shell/chrome/buttons";
+import { Button } from "../../../components/ui/button";
+import { Text } from "../../../components/ui/text";
 import { ShellProgress } from "../../shell/chrome/progress-bar";
 import {
   DialogDescriptionText,
@@ -9,7 +10,6 @@ import {
 } from "../../shell/modal/dialog-copy";
 import { DialogSurface, ModalScrim } from "../../shell/modal/modal";
 import { Spinner } from "../../shell/regions/panel";
-import { Text } from "../../../components/ui/text";
 
 export type CropProgressModalProps = {
   progress: CropRoiProgress | null;
@@ -30,7 +30,11 @@ export function CropProgressModal({ progress, onCancel }: CropProgressModalProps
         <DialogDescriptionText>
           {state.done} / {state.total}
         </DialogDescriptionText>
-        {onCancel ? <Button label="Cancel" variant="destructive" onPress={onCancel} /> : null}
+        {onCancel ? (
+          <Button variant="destructive" onPress={onCancel}>
+            <Text>Cancel</Text>
+          </Button>
+        ) : null}
       </DialogSurface>
     </ModalScrim>
   );

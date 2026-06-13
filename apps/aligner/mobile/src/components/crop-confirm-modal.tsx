@@ -1,11 +1,12 @@
 import { cropConfirmCopy } from "@lisca/ui-native";
 import {
   Button,
+  DialogActions,
   DialogDescriptionText,
   DialogSurface,
   DialogTitleText,
-  DialogActions,
   ModalScrim,
+  Text,
 } from "@lisca/ui-native";
 
 import type { AlignState } from "../state/use-align-state";
@@ -30,11 +31,17 @@ export function CropConfirmModal({ state }: { state: AlignState }) {
           <DialogDescriptionText className="max-h-20">{existingList}</DialogDescriptionText>
         ) : null}
         <DialogActions>
-          <Button label="Cancel" variant="outline" onPress={state.cancelCropConfirm} />
+          <Button variant="outline" onPress={state.cancelCropConfirm}>
+            <Text>Cancel</Text>
+          </Button>
           {copy.showSkipExisting ? (
-            <Button label="Skip Existing" variant="outline" onPress={state.skipExistingCrop} />
+            <Button variant="outline" onPress={state.skipExistingCrop}>
+              <Text>Skip Existing</Text>
+            </Button>
           ) : null}
-          <Button label="Overwrite" onPress={state.confirmCropOverwrite} />
+          <Button onPress={state.confirmCropOverwrite}>
+            <Text>Overwrite</Text>
+          </Button>
         </DialogActions>
       </DialogSurface>
     </ModalScrim>

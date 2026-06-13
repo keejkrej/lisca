@@ -45,7 +45,7 @@ export {
 } from "./host/host-file-picker-dialog";
 export type { HostFilePickerMode, HostFilePickerOperations } from "./host/host-operations";
 export { SourcePickerModal, type SourcePickerModalProps } from "./host/source-picker-modal";
-export { AlignGrid, ReadonlyPathField, type AlignGridProps } from "./align/align-controls";
+export { AlignGrid, ReadonlyPathField, type AlignGridProps } from "./align/align-grid";
 export { AlignGridRail } from "./align/align-grid-rail";
 export {
   AlignSelectionRail,

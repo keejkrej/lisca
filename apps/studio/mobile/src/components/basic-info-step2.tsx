@@ -1,5 +1,5 @@
 import { ASSAY_FEATURE, ASSAY_TYPE } from "@lisca/contracts/assay";
-import { Button, Input, Section } from "@lisca/ui-native";
+import { Button, Input, Section, Text } from "@lisca/ui-native";
 import { View } from "react-native";
 
 import {
@@ -52,10 +52,11 @@ export function BasicInfoStep2() {
           {PATTERN_OPTIONS.map((pattern) => (
             <View key={pattern} className="min-w-[120px] flex-1">
               <Button
-                label={pattern}
                 variant={info2.pattern === pattern ? "default" : "outline"}
                 onPress={() => setInfo2({ pattern })}
-              />
+              >
+                <Text>{pattern}</Text>
+              </Button>
             </View>
           ))}
         </View>
@@ -76,11 +77,12 @@ export function BasicInfoStep2() {
             {TIMELAPSE_UNITS.map(({ value, label }) => (
               <View key={value} className="min-w-[72px]">
                 <Button
-                  compact
-                  label={label}
+                  size="sm"
                   variant={info2.timelapseUnit === value ? "default" : "outline"}
                   onPress={() => setInfo2({ timelapseUnit: value })}
-                />
+                >
+                  <Text className="text-xs">{label}</Text>
+                </Button>
               </View>
             ))}
           </View>
@@ -95,10 +97,11 @@ export function BasicInfoStep2() {
               <View key={id} className="min-w-[120px] flex-grow basis-[47%]">
                 <Button
                   disabled={disabled}
-                  label={title}
                   variant={selected ? "default" : "outline"}
                   onPress={() => toggleFeature(id)}
-                />
+                >
+                  <Text>{title}</Text>
+                </Button>
               </View>
             );
           })}

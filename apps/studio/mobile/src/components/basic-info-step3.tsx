@@ -21,10 +21,11 @@ export function BasicInfoStep3() {
           {SLIDE_OPTIONS.map(({ id, label }) => (
             <View key={id} className="flex-1">
               <Button
-                label={label}
                 variant={info3.selectedSlideId === id ? "default" : "outline"}
                 onPress={() => setInfo3({ selectedSlideId: id })}
-              />
+              >
+                <Text>{label}</Text>
+              </Button>
             </View>
           ))}
         </View>

@@ -1,3 +1,4 @@
+import { ActivityIndicator } from "react-native";
 import type { RoiFrameRequest } from "@lisca/contracts";
 import type { AnnotationMode } from "@lisca/ui-native/features";
 import {
@@ -70,14 +71,18 @@ export function AnnotatorDock(props: {
             paths.map((path) => <ReadonlyPathField key={path} value={path} />)
           )}
           <Button
-            disabled={!props.canSave}
-            label={props.saving ? "Saving…" : "Save"}
-            loading={props.saving}
-            size="sm"
             className={dockLayoutClasses.button}
+            disabled={!props.canSave}
+            size="sm"
             variant="outline"
             onPress={props.onSave}
-          />
+          >
+            {props.saving ? (
+              <ActivityIndicator size="small" />
+            ) : (
+              <Text className="text-xs">Save</Text>
+            )}
+          </Button>
         </View>
       </DockSection>
     </DockStrip>

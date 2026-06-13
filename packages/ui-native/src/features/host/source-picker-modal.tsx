@@ -1,8 +1,8 @@
 import type { AlignerSource } from "@lisca/contracts";
 import { View } from "react-native";
 
+import { Button } from "../../../components/ui/button";
 import { Text } from "../../../components/ui/text";
-import { Button } from "../../shell/chrome/buttons";
 import {
   DialogActions,
   DialogDescriptionText,
@@ -46,24 +46,35 @@ export function SourcePickerModal(props: SourcePickerModalProps) {
             {props.recentSources.map((item) => (
               <Button
                 key={`${item.source.kind}:${item.source.path}`}
-                label={item.label?.trim() || formatSourcePath(item.source)}
                 size="sm"
                 variant="outline"
                 onPress={() => {
                   props.onClose();
                   props.onPickRecentSource?.(item.source);
                 }}
-              />
+              >
+                <Text className="text-xs" numberOfLines={1}>
+                  {item.label?.trim() || formatSourcePath(item.source)}
+                </Text>
+              </Button>
             ))}
           </View>
         ) : null}
         <View className="gap-2">
-          <Button label="Folder" onPress={() => void handleSelect(props.onOpenFolder)} />
-          <Button label="ND2" onPress={() => void handleSelect(props.onOpenNd2)} />
-          <Button label="CZI" onPress={() => void handleSelect(props.onOpenCzi)} />
+          <Button onPress={() => void handleSelect(props.onOpenFolder)}>
+            <Text>Folder</Text>
+          </Button>
+          <Button onPress={() => void handleSelect(props.onOpenNd2)}>
+            <Text>ND2</Text>
+          </Button>
+          <Button onPress={() => void handleSelect(props.onOpenCzi)}>
+            <Text>CZI</Text>
+          </Button>
         </View>
         <DialogActions>
-          <Button label="Close" variant="ghost" onPress={props.onClose} />
+          <Button variant="ghost" onPress={props.onClose}>
+            <Text>Close</Text>
+          </Button>
         </DialogActions>
       </DialogSurface>
     </ModalScrim>

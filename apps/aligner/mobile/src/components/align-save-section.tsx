@@ -1,5 +1,7 @@
-import { Button, DockSection, ReadonlyPathField, dockLayoutClasses } from "@lisca/ui-native";
+import { ActivityIndicator } from "react-native";
 import { View } from "react-native";
+
+import { Button, DockSection, ReadonlyPathField, Text, dockLayoutClasses } from "@lisca/ui-native";
 
 import type { AlignState } from "../state/use-align-state";
 
@@ -39,30 +41,36 @@ export function AlignSaveSection({ state }: { state: AlignState }) {
           <View className={dockLayoutClasses.cell}>
             <Button
               disabled={!canSave || state.saving}
-              label="Save"
-              loading={state.saving}
               size="sm"
               variant="outline"
               onPress={() => void state.saveCurrent()}
-            />
+            >
+              {state.saving ? (
+                <ActivityIndicator size="small" />
+              ) : (
+                <Text className="text-xs">Save</Text>
+              )}
+            </Button>
           </View>
           <View className={dockLayoutClasses.cell}>
             <Button
               disabled={!canCrop}
-              label="Crop"
               size="sm"
               variant="outline"
               onPress={() => void state.cropCurrent()}
-            />
+            >
+              <Text className="text-xs">Crop</Text>
+            </Button>
           </View>
           <View className={dockLayoutClasses.cell}>
             <Button
               disabled={!state.workspacePath || !state.source || state.cropping}
-              label="Batch"
               size="sm"
               variant="outline"
               onPress={() => void state.cropBatch()}
-            />
+            >
+              <Text className="text-xs">Batch</Text>
+            </Button>
           </View>
         </View>
       </View>

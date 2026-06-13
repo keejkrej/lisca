@@ -27,10 +27,11 @@ export function ChooseAssay() {
             <View key={id} className="min-w-[140px] flex-grow basis-[45%]">
               <Button
                 disabled={disabled}
-                label={ASSAY_CHOICE_LABEL[id]}
                 variant={selected ? "default" : "outline"}
                 onPress={() => setAssayId(id)}
-              />
+              >
+                <Text>{ASSAY_CHOICE_LABEL[id]}</Text>
+              </Button>
             </View>
           );
         })}

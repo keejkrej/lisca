@@ -2,9 +2,10 @@ import type { FolderSource } from "@lisca/contracts";
 import { useFolderSourceParseModal } from "@lisca/ui-headless/folder-source-parse-modal";
 import { ActivityIndicator } from "react-native";
 
-import { Button } from "../../shell/chrome/buttons";
-import { Field } from "../../shell/chrome/field";
-import { Input } from "../../shell/chrome/input";
+import { Button } from "../../../components/ui/button";
+import { Field, FieldLabel } from "../../../components/ui/field";
+import { Input } from "../../../components/ui/input";
+import { Text } from "../../../components/ui/text";
 import {
   DialogActions,
   DialogDescriptionText,
@@ -43,7 +44,8 @@ export function FolderSourceParseModal({
         ) : (
           <DialogDescriptionText>{modal.statusMessage}</DialogDescriptionText>
         )}
-        <Field label="Subfolder template">
+        <Field className="w-full">
+          <FieldLabel>Subfolder template</FieldLabel>
           <Input
             autoCapitalize="none"
             autoCorrect={false}
@@ -55,7 +57,8 @@ export function FolderSourceParseModal({
             }}
           />
         </Field>
-        <Field label="Filename template">
+        <Field className="w-full">
+          <FieldLabel>Filename template</FieldLabel>
           <Input
             autoCapitalize="none"
             autoCorrect={false}
@@ -69,8 +72,12 @@ export function FolderSourceParseModal({
           {modal.error ? <DialogErrorText>{modal.error}</DialogErrorText> : null}
         </Field>
         <DialogActions>
-          <Button label="Cancel" variant="outline" onPress={onClose} />
-          <Button label="Open" onPress={modal.confirm} />
+          <Button variant="outline" onPress={onClose}>
+            <Text>Cancel</Text>
+          </Button>
+          <Button onPress={modal.confirm}>
+            <Text>Open</Text>
+          </Button>
         </DialogActions>
       </DialogSurface>
     </ModalScrim>

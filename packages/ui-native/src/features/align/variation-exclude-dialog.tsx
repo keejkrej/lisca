@@ -6,18 +6,18 @@ import {
 } from "@lisca/ui-headless/variation-exclude-preview";
 import { View } from "react-native";
 
+import { Button } from "../../../components/ui/button";
+import { Input } from "../../../components/ui/input";
+import { Slider } from "../../../components/ui/slider";
 import { Text } from "../../../components/ui/text";
 import {
-  Button,
   DialogBody,
   DialogDescriptionText,
   DialogFooter,
   DialogHeader,
   DialogSurface,
   DialogTitleText,
-  Input,
   ModalScrim,
-  Slider,
   StatTile,
 } from "../../shell";
 import { VariationScoreHistogram } from "../studio/variation-score-histogram";
@@ -93,8 +93,12 @@ export function VariationExcludeDialog(props: {
         </DialogBody>
 
         <DialogFooter>
-          <Button label="Cancel" variant="outline" onPress={props.onCancel} />
-          <Button label="Apply" onPress={props.onApply} />
+          <Button variant="outline" onPress={props.onCancel}>
+            <Text>Cancel</Text>
+          </Button>
+          <Button onPress={props.onApply}>
+            <Text>Apply</Text>
+          </Button>
         </DialogFooter>
       </DialogSurface>
     </ModalScrim>

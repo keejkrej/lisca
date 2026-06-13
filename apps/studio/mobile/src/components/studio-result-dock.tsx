@@ -39,13 +39,14 @@ export function StudioResultDock(props: {
           {props.toolActions.map((action, index) => (
             <Button
               key={action.id}
-              disabled={action.disabled}
-              label={dockToolLabel(action.label, index)}
-              size="sm"
               className={dockLayoutClasses.button}
+              disabled={action.disabled}
+              size="sm"
               variant={action.active ? "default" : "outline"}
               onPress={action.onSelect}
-            />
+            >
+              <Text className="text-xs">{dockToolLabel(action.label, index)}</Text>
+            </Button>
           ))}
         </View>
       </DockSection>
@@ -56,13 +57,14 @@ export function StudioResultDock(props: {
       >
         <View className={dockLayoutClasses.stack}>
           <Button
-            disabled={props.saveDisabled}
-            label={props.saveLabel}
-            size="sm"
             className={dockLayoutClasses.button}
+            disabled={props.saveDisabled}
+            size="sm"
             variant="outline"
             onPress={props.onSave}
-          />
+          >
+            <Text className="text-xs">{props.saveLabel}</Text>
+          </Button>
         </View>
       </DockSection>
     </DockStrip>

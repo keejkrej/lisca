@@ -6,7 +6,7 @@ Source layout for `@lisca/ui` (web) and `@lisca/ui-native` (mobile). Both packag
 
 | Path | Role |
 | ---- | ---- |
-| `components/ui/` | Vendor coss primitives — **do not edit** (web only) |
+| `components/ui/` | Vendor coss primitives — **do not edit** (web); React Native Reusables primitives — **do not edit** (native) |
 | `hooks/` | Generic React hooks (`useLatest`) — web only |
 | `lib/` | Shared utilities (`cn`) — web only |
 | `shell/` | Layout scaffold, regions, chrome, modals, server connectivity, workspace |
@@ -61,7 +61,7 @@ Treat these as implementation details; do not import them from apps.
 | --------- | -------- |
 | `layout/` | `AppShell`, viewport card, route loading fallback |
 | `regions/` | Panel, section, sidebar/dock containers |
-| `chrome/` | Navbar, path button, connection status, stat tile, readonly path (native: buttons, field, slider) |
+| `chrome/` | Navbar, path button, connection status, stat tile, progress bar (native: no form-control wrappers) |
 | `modal/` | Dialog surface and scrim |
 | `server/` | Server address dialog, shell server provider, WS probe |
 | `workspace/` | Workspace/source path provider |
@@ -81,7 +81,7 @@ import { Button } from "@lisca/ui/components";
 import { useLatest } from "@lisca/ui/hooks";
 ```
 
-**Mobile** — import from `@lisca/ui-native` root or `/shell` / `/features` subpaths.
+**Mobile** — import from `@lisca/ui-native` root or `/shell` / `/features` subpaths. Form controls (`Button`, `Field`, `FieldLabel`, `Input`, `Slider`) are RNR primitives from `components/ui/*` — compose with children (`<Button><Text>…</Text></Button>`, `<Field><FieldLabel>…</FieldLabel>…</Field>`), same as web coss. Shell `chrome/` is layout-only (navbar, path button, stat tile, progress); features must not use label-based wrapper APIs.
 
 Do not import feature files by deep path (e.g. `@lisca/ui/src/features/align/...`).
 

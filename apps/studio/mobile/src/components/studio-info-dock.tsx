@@ -24,23 +24,24 @@ export function StudioInfoDock(props: {
       >
         <View className={dockLayoutClasses.stack}>
           <Button
-            disabled={props.infoStep === 1}
-            label="Back"
-            size="sm"
             className={dockLayoutClasses.button}
+            disabled={props.infoStep === 1}
+            size="sm"
             variant="outline"
             onPress={props.onBack}
-          />
+          >
+            <Text className="text-xs">Back</Text>
+          </Button>
           <Button
-            label="Next"
-            size="sm"
             className={dockLayoutClasses.button}
+            size="sm"
             variant="outline"
             onPress={props.onNext}
-          />
+          >
+            <Text className="text-xs">Next</Text>
+          </Button>
         </View>
       </DockSection>
     </DockStrip>
   );
 }
-

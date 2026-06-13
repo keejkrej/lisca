@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
 
-import { Button } from "../chrome/buttons";
-import { Input } from "../chrome/input";
+import { Button } from "../../../components/ui/button";
+import { Input } from "../../../components/ui/input";
+import { Text } from "../../../components/ui/text";
 import {
   DialogActions,
   DialogDescriptionText,
@@ -33,13 +34,14 @@ export function ServerAddressDialog(props: ServerAddressDialogProps) {
         <DialogDescriptionText>{props.currentWsUrl}</DialogDescriptionText>
 
         <Button
-          label={`Local (${props.localLabel})`}
           variant="outline"
           onPress={() => {
             props.onConnect(null);
             props.onOpenChange(false);
           }}
-        />
+        >
+          <Text>{`Local (${props.localLabel})`}</Text>
+        </Button>
 
         <ScrollView className="max-h-44">
           {props.savedServers.map((server) => (
@@ -49,18 +51,17 @@ export function ServerAddressDialog(props: ServerAddressDialogProps) {
             >
               <Button
                 className="min-w-0 flex-1"
-                label={server}
                 variant="ghost"
                 onPress={() => {
                   props.onConnect(server);
                   props.onOpenChange(false);
                 }}
-              />
-              <Button
-                label="Remove"
-                variant="destructive"
-                onPress={() => props.onRemoveServer(server)}
-              />
+              >
+                <Text numberOfLines={1}>{server}</Text>
+              </Button>
+              <Button variant="destructive" onPress={() => props.onRemoveServer(server)}>
+                <Text>Remove</Text>
+              </Button>
             </View>
           ))}
         </ScrollView>
@@ -74,9 +75,10 @@ export function ServerAddressDialog(props: ServerAddressDialogProps) {
         />
 
         <DialogActions className="justify-between">
-          <Button label="Close" variant="ghost" onPress={() => props.onOpenChange(false)} />
+          <Button variant="ghost" onPress={() => props.onOpenChange(false)}>
+            <Text>Close</Text>
+          </Button>
           <Button
-            label="Add & connect"
             onPress={() => {
               const trimmed = draft.trim();
               if (!trimmed) return;
@@ -85,7 +87,9 @@ export function ServerAddressDialog(props: ServerAddressDialogProps) {
               setDraft("");
               props.onOpenChange(false);
             }}
-          />
+          >
+            <Text>Add & connect</Text>
+          </Button>
         </DialogActions>
       </DialogSurface>
     </ModalScrim>

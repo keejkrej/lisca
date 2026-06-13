@@ -1,7 +1,7 @@
 import { View } from "react-native";
 
 import { Text } from "../../../components/ui/text";
-import { Slider } from "../../shell/chrome/slider";
+import { Slider } from "../../../components/ui/slider";
 
 export function AnnotationToolSlider(props: {
   label: string;

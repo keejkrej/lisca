@@ -1,7 +1,7 @@
 import type { AlignGridState } from "@lisca/contracts";
 import { createDefaultAlignGrid, degreesToRadians, radiansToDegrees } from "@lisca/utils";
 
-import { AlignGrid } from "./align-controls";
+import { AlignGrid } from "./align-grid";
 
 export function AlignGridRail(props: {
   grid: AlignGridState;

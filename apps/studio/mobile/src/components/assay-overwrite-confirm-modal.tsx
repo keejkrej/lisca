@@ -32,8 +32,12 @@ export function AssayOverwriteConfirmModal({
           {saveTo}
         </Text>
         <View className="flex-row justify-end gap-2">
-          <Button label="Cancel" size="sm" variant="outline" onPress={onCancel} />
-          <Button label="Overwrite" size="sm" onPress={onOverwrite} />
+          <Button size="sm" variant="outline" onPress={onCancel}>
+            <Text className="text-xs">Cancel</Text>
+          </Button>
+          <Button size="sm" onPress={onOverwrite}>
+            <Text className="text-xs">Overwrite</Text>
+          </Button>
         </View>
       </DialogSurface>
     </ModalScrim>

@@ -10,6 +10,7 @@ import {
   DialogTitleText,
   Input,
   ModalScrim,
+  Text,
 } from "@lisca/ui-native";
 import { useEffect, useState } from "react";
 
@@ -124,9 +125,12 @@ export function ProfileGateDialog({
               <Button
                 key={profile.id}
                 disabled={signingIn !== null}
-                label={signingIn === profile.displayName ? "Signing in…" : profile.displayName}
                 onPress={() => void signInExistingProfile(profile.displayName)}
-              />
+              >
+                <Text>
+                  {signingIn === profile.displayName ? "Signing in…" : profile.displayName}
+                </Text>
+              </Button>
             ))
           )}
 
@@ -140,15 +144,14 @@ export function ProfileGateDialog({
           />
           <Button
             disabled={!serverConnected || creating || !createName.trim()}
-            label="Create"
             onPress={() => void createProfile()}
-          />
+          >
+            <Text>Create</Text>
+          </Button>
 
-          <Button
-            disabled={!serverConnected}
-            label="Continue as guest"
-            onPress={onSelectGuest}
-          />
+          <Button disabled={!serverConnected} onPress={onSelectGuest}>
+            <Text>Continue as guest</Text>
+          </Button>
         </DialogStack>
       </DialogSurface>
     </ModalScrim>

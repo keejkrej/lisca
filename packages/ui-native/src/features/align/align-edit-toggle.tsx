@@ -18,7 +18,8 @@ export function AlignEditToggle({
   return (
     <Toggle
       accessibilityLabel="Edit site exclusions"
-      className={cn("min-w-0 flex-1", className)}
+      accessibilityState={{ selected: enabled }}
+      className={cn("w-full justify-center text-xs", className)}
       disabled={disabled}
       pressed={enabled}
       size="sm"

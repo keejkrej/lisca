@@ -1,5 +1,8 @@
 import type { AnnotationMode } from "@lisca/ui-headless";
-import { SegmentedToggle } from "../../shell/chrome/buttons";
+
+import { Text } from "../../../components/ui/text";
+import { ToggleGroup, ToggleGroupItem } from "../../../components/ui/toggle-group";
+import { cn } from "../../../lib/utils";
 
 const MODE_OPTIONS = [
   { value: "classification", label: "Classification" },
@@ -10,17 +13,33 @@ export function AnnotationModeToggle(props: {
   mode: AnnotationMode;
   onModeChange: (mode: AnnotationMode) => void;
   disabled?: boolean;
+  className?: string;
 }) {
   return (
-    <SegmentedToggle
+    <ToggleGroup
+      className={cn("w-full min-w-0", props.className)}
       disabled={props.disabled}
-      options={MODE_OPTIONS}
+      type="single"
+      size="sm"
       value={props.mode}
-      onChange={(value) => {
+      variant="outline"
+      onValueChange={(value) => {
         if (value === "classification" || value === "segmentation") {
           props.onModeChange(value);
         }
       }}
-    />
+    >
+      {MODE_OPTIONS.map((option, index) => (
+        <ToggleGroupItem
+          key={option.value}
+          className="min-w-0 flex-1 px-2 text-xs"
+          isFirst={index === 0}
+          isLast={index === MODE_OPTIONS.length - 1}
+          value={option.value}
+        >
+          <Text className="text-xs">{option.label}</Text>
+        </ToggleGroupItem>
+      ))}
+    </ToggleGroup>
   );
 }

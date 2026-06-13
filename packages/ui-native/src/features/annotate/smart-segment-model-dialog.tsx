@@ -1,7 +1,7 @@
 import { View } from "react-native";
 
+import { Button } from "../../../components/ui/button";
 import { Text } from "../../../components/ui/text";
-import { Button } from "../../shell/chrome/buttons";
 import { ShellProgress } from "../../shell/chrome/progress-bar";
 import { DialogSurface, ModalScrim } from "../../shell/modal/modal";
 import { Spinner } from "../../shell/regions/panel";
@@ -61,19 +61,16 @@ export function SmartSegmentModelDialog({
           <Button
             className="min-w-0 flex-1"
             disabled={busy}
-            label="Cancel"
             size="sm"
             variant="outline"
             onPress={onCancel}
-          />
+          >
+            <Text className="text-xs">Cancel</Text>
+          </Button>
           {consent ? (
-            <Button
-              className="min-w-0 flex-1"
-              disabled={busy}
-              label="Download model"
-              size="sm"
-              onPress={onConfirm}
-            />
+            <Button className="min-w-0 flex-1" disabled={busy} size="sm" onPress={onConfirm}>
+              <Text className="text-xs">Download model</Text>
+            </Button>
           ) : null}
         </View>
       </DialogSurface>

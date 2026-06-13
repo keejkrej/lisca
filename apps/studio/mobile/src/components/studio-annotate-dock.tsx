@@ -9,7 +9,7 @@ import {
   dockToolbarMinHeight,
   Text,
 } from "@lisca/ui-native";
-import { View } from "react-native";
+import { ActivityIndicator, View } from "react-native";
 
 import type { StudioAnnotateState } from "../state/use-studio-annotate-state";
 import { annotationOutputPaths } from "../utils/annotation-output";
@@ -68,14 +68,18 @@ export function StudioAnnotateDock({ state }: { state: StudioAnnotateState }) {
             paths.map((path) => <ReadonlyPathField key={path} value={path} />)
           )}
           <Button
-            disabled={!state.canSave}
-            label={state.saving ? "Saving…" : "Save"}
-            loading={state.saving}
-            size="sm"
             className={dockLayoutClasses.button}
+            disabled={!state.canSave}
+            size="sm"
             variant="outline"
             onPress={() => void state.handleSave()}
-          />
+          >
+            {state.saving ? (
+              <ActivityIndicator size="small" />
+            ) : (
+              <Text className="text-xs">Save</Text>
+            )}
+          </Button>
         </View>
       </DockSection>
       <DockSection
@@ -85,21 +89,23 @@ export function StudioAnnotateDock({ state }: { state: StudioAnnotateState }) {
       >
         <View className={dockLayoutClasses.stack}>
           <Button
-            disabled={disableShuffle}
-            label="Shuffle"
-            size="sm"
             className={dockLayoutClasses.button}
+            disabled={disableShuffle}
+            size="sm"
             variant="outline"
             onPress={state.shuffleSelection}
-          />
+          >
+            <Text className="text-xs">Shuffle</Text>
+          </Button>
           <Button
-            disabled={disableContinue}
-            label="Continue to analysis"
-            size="sm"
             className={dockLayoutClasses.button}
+            disabled={disableContinue}
+            size="sm"
             variant="outline"
             onPress={state.requestContinueToAnalysis}
-          />
+          >
+            <Text className="text-xs">Continue to analysis</Text>
+          </Button>
         </View>
       </DockSection>
     </DockStrip>

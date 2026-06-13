@@ -1,4 +1,4 @@
-import { Button, ShellNavbar } from "@lisca/ui-native";
+import { Button, ShellNavbar, Text } from "@lisca/ui-native";
 import { View } from "react-native";
 
 export function AnnotatorHeader(props: {
@@ -12,11 +12,12 @@ export function AnnotatorHeader(props: {
         endLeading={
           <Button
             disabled={!props.workspacePath}
-            label="Create labels"
             size="sm"
             variant="outline"
             onPress={props.onCreateLabels}
-          />
+          >
+            <Text className="text-xs">Create labels</Text>
+          </Button>
         }
         onPickWorkspace={props.onPickWorkspace}
       />

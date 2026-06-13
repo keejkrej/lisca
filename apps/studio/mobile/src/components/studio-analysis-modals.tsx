@@ -7,6 +7,7 @@ import {
   ModalScrim,
   ShellProgress,
   Spinner,
+  Text,
 } from "@lisca/ui-native";
 import { View } from "react-native";
 
@@ -27,12 +28,12 @@ export function StudioAnalysisStartModal({ state }: { state: StudioAnnotateState
           saved under annotations/ will remain in the workspace.
         </DialogDescriptionText>
         <DialogActions>
-          <Button
-            label="Cancel"
-            variant="outline"
-            onPress={() => state.setAnalysisStartConfirm(false)}
-          />
-          <Button label="Start" onPress={state.startAnalysis} />
+          <Button variant="outline" onPress={() => state.setAnalysisStartConfirm(false)}>
+            <Text>Cancel</Text>
+          </Button>
+          <Button onPress={state.startAnalysis}>
+            <Text>Start</Text>
+          </Button>
         </DialogActions>
       </DialogSurface>
     </ModalScrim>

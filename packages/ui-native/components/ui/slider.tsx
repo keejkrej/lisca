@@ -1,7 +1,7 @@
 import SliderImport from "@react-native-community/slider";
 import type { SliderProps } from "@react-native-community/slider";
 
-import { useThemeColors } from "../../theme/use-theme-colors";
+import { useThemeColors } from "../../src/theme/use-theme-colors";
 
 export function Slider(props: SliderProps) {
   const colors = useThemeColors();

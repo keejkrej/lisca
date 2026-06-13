@@ -3,6 +3,7 @@ import type { StudioDataSourceKind } from "@lisca/contracts/assay";
 import type { HostFilePickerMode } from "@lisca/ui-native/features";
 import {
   Field,
+  FieldLabel,
   FolderSourceParseModal,
   HostFilePickerDialog,
   Input,
@@ -90,7 +91,8 @@ export function BasicInfoStep1({ hostPort }: { hostPort: HostFilePickerOperation
     <>
       <View className="w-full gap-2">
         <Section contentClassName="gap-2" title="Name">
-          <Field label="Name">
+          <Field className="w-full">
+            <FieldLabel>Name</FieldLabel>
             <Input
               autoComplete="off"
               placeholder="My assay"
@@ -100,7 +102,8 @@ export function BasicInfoStep1({ hostPort }: { hostPort: HostFilePickerOperation
           </Field>
         </Section>
         <Section contentClassName="gap-2" title="Date">
-          <Field label="Date">
+          <Field className="w-full">
+            <FieldLabel>Date</FieldLabel>
             <Input
               placeholder="YYYY-MM-DD"
               value={info1.date}

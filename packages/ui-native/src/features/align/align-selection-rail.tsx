@@ -5,9 +5,10 @@ import {
   mergeExcludedAlignGridCells,
   type AlignGridFrameBounds,
 } from "@lisca/utils";
-import { View } from "react-native";
+import { ActivityIndicator, View } from "react-native";
 
-import { Button } from "../../shell/chrome/buttons";
+import { Button } from "../../../components/ui/button";
+import { Text } from "../../../components/ui/text";
 import { SidebarSection } from "../../shell/regions/sidebar-section";
 
 import { AlignEditToggle } from "./align-edit-toggle";
@@ -37,6 +38,30 @@ export type AlignSelectionRailProps = {
   sectionClassName?: string;
   sectionContentClassName?: string;
 };
+
+function LoadingButton(props: {
+  children: string;
+  disabled?: boolean;
+  loading?: boolean;
+  className?: string;
+  onPress?: () => void;
+}) {
+  return (
+    <Button
+      className={props.className ?? "w-full justify-center text-xs"}
+      disabled={props.disabled || props.loading}
+      size="sm"
+      variant="outline"
+      onPress={props.onPress}
+    >
+      {props.loading ? (
+        <ActivityIndicator size="small" />
+      ) : (
+        <Text className="text-xs">{props.children}</Text>
+      )}
+    </Button>
+  );
+}
 
 export function AlignSelectionRail({
   disabled = false,
@@ -75,34 +100,35 @@ export function AlignSelectionRail({
         title="Selection"
       >
         <AlignSelectionCounts excluded={visibleCounts.excluded} included={visibleCounts.included} />
-        <View className="flex-row gap-2">
+        <View className="grid w-full grid-cols-2 gap-2">
           <AlignEditToggle
             disabled={disabled}
             enabled={manualExclusionEnabled}
             onEnabledChange={onManualExclusionEnabledChange}
           />
           <Button
-            className="min-w-0 flex-1"
+            className="w-full justify-center text-xs"
             disabled={disabled || !hasExcludedCells}
-            label="Reset"
             size="sm"
             variant="outline"
             onPress={() => onExcludedCellsChange([])}
-          />
+          >
+            <Text className="text-xs">Reset</Text>
+          </Button>
         </View>
-        <View className="flex-row gap-2">
+        <View className="grid grid-cols-2 gap-2">
           <Button
-            className="min-w-0 flex-1"
+            className="w-full justify-center text-xs"
             disabled={disabled || !hasVisibleCells}
-            label="Exclude all"
             size="sm"
             variant="outline"
             onPress={() => onExcludedCellsChange(visibleCells)}
-          />
+          >
+            <Text className="text-xs">Exclude all</Text>
+          </Button>
           <Button
-            className="min-w-0 flex-1"
+            className="w-full justify-center text-xs"
             disabled={disabled || !hasVisibleCells}
-            label="Edge exclude"
             size="sm"
             variant="outline"
             onPress={() => {
@@ -111,27 +137,25 @@ export function AlignSelectionRail({
                 mergeExcludedAlignGridCells(excludedCells, collectAlignGridEdgeCells(frame, grid)),
               );
             }}
-          />
+          >
+            <Text className="text-xs">Edge exclude</Text>
+          </Button>
         </View>
-        <View className="flex-row gap-2">
-          <Button
-            className="min-w-0 flex-1"
-            disabled={disabled || !hasVisibleCells || variationExcludeLoading}
-            label="Var exclude"
+        <View className="grid grid-cols-2 gap-2">
+          <LoadingButton
+            disabled={disabled || !hasVisibleCells}
             loading={variationExcludeLoading}
-            size="sm"
-            variant="outline"
             onPress={() => void onVariationExclude()}
-          />
-          <Button
-            className="min-w-0 flex-1"
-            disabled={disabled || !hasVisibleCells || variationExcludeLoading || smartExcludeLoading}
-            label="Smart exclude"
+          >
+            Var exclude
+          </LoadingButton>
+          <LoadingButton
+            disabled={disabled || !hasVisibleCells || variationExcludeLoading}
             loading={smartExcludeLoading}
-            size="sm"
-            variant="outline"
             onPress={() => void onSmartExclude()}
-          />
+          >
+            Smart exclude
+          </LoadingButton>
         </View>
       </SidebarSection>
       <VariationExcludeDialog

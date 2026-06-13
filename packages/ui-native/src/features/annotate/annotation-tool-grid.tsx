@@ -1,6 +1,8 @@
 import { View } from "react-native";
 
-import { Button, dockLayoutClasses, useKeyboardShortcuts } from "../../shell";
+import { Button } from "../../../components/ui/button";
+import { Text } from "../../../components/ui/text";
+import { dockLayoutClasses, useKeyboardShortcuts } from "../../shell";
 import { dockToolLabel, dockToolShortcuts, type DockToolAction } from "@lisca/ui-headless/dock";
 import {
   ANNOTATION_TOOL_DEFINITIONS,
@@ -36,30 +38,31 @@ export function AnnotationToolGrid(props: {
   const buttons = props.toolActions.map((action, index) => {
     const label = showShortcutLabels ? dockToolLabel(action.label, index) : action.label;
     return (
-      <View key={action.id} className={dockLayoutClasses.gridCell}>
+      <View key={action.id} className="min-w-0">
         <Button
-          className={dockLayoutClasses.button}
+          className="w-full justify-center"
           disabled={action.disabled}
-          label={label}
           size="sm"
           variant={action.active ? "default" : "outline"}
           onPress={action.onSelect}
-        />
+        >
+          <Text className="text-xs">{label}</Text>
+        </Button>
       </View>
     );
   });
 
   return (
-    <View className={dockLayoutClasses.toolbar}>
-      <View className={dockLayoutClasses.cols2}>
+    <View accessibilityLabel="Annotation tool" accessibilityRole="toolbar" className="w-full gap-2">
+      <View className="grid w-full grid-cols-2 gap-2">
         {buttons[0]}
         {buttons[1]}
       </View>
-      <View className={dockLayoutClasses.cols2}>
+      <View className="grid w-full grid-cols-2 gap-2">
         {buttons[2]}
         {buttons[3]}
       </View>
-      <View className={dockLayoutClasses.cols2}>
+      <View className="grid w-full grid-cols-2 gap-2">
         {buttons[4]}
         {buttons[5]}
       </View>

@@ -1,5 +1,5 @@
 export { AppShell, ShellDock, ShellSidebar, type AppShellCompound } from "./layout/app-shell";
-export { Button, SegmentedToggle } from "./chrome/buttons";
+export { Button } from "../../components/ui/button";
 export { DockSection, type DockSectionFit } from "./regions/dock-section";
 export { dockLayoutClasses, dockLayoutStyles, dockToolbarMinHeight } from "./regions/dock-layout";
 export { DockStrip } from "./regions/dock-strip";
@@ -24,9 +24,9 @@ export {
   DialogStack,
   DialogTitleText,
 } from "./modal/dialog-copy";
-export { Field, FieldLabel } from "./chrome/field";
-export { Input } from "./chrome/input";
-export { Slider } from "./chrome/slider";
+export { Field, FieldLabel } from "../../components/ui/field";
+export { Input } from "../../components/ui/input";
+export { Slider } from "../../components/ui/slider";
 export { ShellProgress } from "./chrome/progress-bar";
 export { PathButton } from "./chrome/path-button";
 export { ShellNavbar, type ShellNavbarProps, type ShellNavbarRouteItem } from "./chrome/navbar";

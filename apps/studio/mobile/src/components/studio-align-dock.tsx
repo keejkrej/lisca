@@ -56,11 +56,12 @@ export function StudioAlignDock() {
             <View className={dockLayoutClasses.cell}>
               <Button
                 disabled={!state.frame || state.saving || state.cropping}
-                label="Reset"
                 size="sm"
                 variant="outline"
                 onPress={state.resetCurrent}
-              />
+              >
+                <Text className="text-xs">Reset</Text>
+              </Button>
             </View>
             <View className={dockLayoutClasses.cell}>
               <Button
@@ -71,31 +72,34 @@ export function StudioAlignDock() {
                   state.cropping ||
                   state.findingFirstUnaligned
                 }
-                label="Jump"
                 size="sm"
                 variant="outline"
                 onPress={() => void state.goToFirstUnaligned()}
-              />
+              >
+                <Text className="text-xs">Jump</Text>
+              </Button>
             </View>
           </View>
           <View className={dockLayoutClasses.cols2}>
             <View className={dockLayoutClasses.cell}>
               <Button
                 disabled={!state.canGoBack || state.saving || state.cropping}
-                label="Back"
                 size="sm"
                 variant="outline"
                 onPress={state.goBack}
-              />
+              >
+                <Text className="text-xs">Back</Text>
+              </Button>
             </View>
             <View className={dockLayoutClasses.cell}>
               <Button
                 disabled={!state.frame || state.saving || state.cropping || smartExclude.busy}
-                label="Next"
                 size="sm"
                 variant="outline"
                 onPress={() => void saveAndAdvance()}
-              />
+              >
+                <Text className="text-xs">Next</Text>
+              </Button>
             </View>
           </View>
         </View>

@@ -2,6 +2,13 @@ const path = require("node:path");
 const { hairlineWidth } = require("nativewind/theme");
 
 const root = __dirname;
+const appsRoot = path.join(root, "../../apps");
+
+/** Scoped globs — avoid broad mobile globs that scan node_modules and stall Metro. */
+const mobileAppContent = ["aligner", "annotator", "studio"].flatMap((app) => [
+  path.join(appsRoot, `${app}/mobile/app/**/*.{ts,tsx}`),
+  path.join(appsRoot, `${app}/mobile/src/**/*.{ts,tsx}`),
+]);
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
@@ -11,9 +18,7 @@ module.exports = {
     path.join(root, "components/**/*.{ts,tsx}"),
     path.join(root, "lib/**/*.{ts,tsx}"),
     path.join(root, "../mobile-app/src/**/*.{ts,tsx}"),
-    path.join(root, "../../apps/aligner/mobile/**/*.{ts,tsx}"),
-    path.join(root, "../../apps/annotator/mobile/**/*.{ts,tsx}"),
-    path.join(root, "../../apps/studio/mobile/**/*.{ts,tsx}"),
+    ...mobileAppContent,
   ],
   presets: [require("nativewind/preset")],
   theme: {

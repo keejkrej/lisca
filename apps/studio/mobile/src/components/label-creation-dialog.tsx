@@ -10,10 +10,12 @@ import {
   DialogSurface,
   DialogTitleText,
   Field,
+  FieldLabel,
   Input,
   ModalScrim,
+  Text,
 } from "@lisca/ui-native";
-import { ScrollView, View } from "react-native";
+import { ActivityIndicator, ScrollView, View } from "react-native";
 
 export function LabelCreationDialog(props: {
   open: boolean;
@@ -46,12 +48,9 @@ export function LabelCreationDialog(props: {
                 {props.workspacePath ?? "Select a workspace first"}
               </DialogDescriptionText>
             </View>
-            <Button
-              label="Close"
-              size="sm"
-              variant="ghost"
-              onPress={() => props.onOpenChange(false)}
-            />
+            <Button size="sm" variant="ghost" onPress={() => props.onOpenChange(false)}>
+              <Text className="text-xs">Close</Text>
+            </Button>
           </View>
         </DialogHeader>
 
@@ -59,7 +58,8 @@ export function LabelCreationDialog(props: {
           <ScrollView contentContainerClassName="gap-3">
             {form.drafts.map((draft, index) => (
               <View key={draft.id} className="flex-row flex-wrap gap-2">
-                <Field className="min-w-[120px] flex-1" label="Name">
+                <Field className="min-w-[120px] flex-1">
+                  <FieldLabel>Name</FieldLabel>
                   <Input
                     accessibilityLabel={`Label ${index + 1} name`}
                     value={draft.name}
@@ -68,7 +68,8 @@ export function LabelCreationDialog(props: {
                     }}
                   />
                 </Field>
-                <Field className="min-w-[120px] flex-1" label="ID">
+                <Field className="min-w-[120px] flex-1">
+                  <FieldLabel>ID</FieldLabel>
                   <Input
                     accessibilityLabel={`Label ${index + 1} id`}
                     autoCapitalize="none"
@@ -76,7 +77,8 @@ export function LabelCreationDialog(props: {
                     onChangeText={(id) => form.updateDraft(index, { id })}
                   />
                 </Field>
-                <Field className="w-24 min-w-[96px]" label="Color">
+                <Field className="w-24 min-w-[96px]">
+                  <FieldLabel>Color</FieldLabel>
                   <Input
                     accessibilityLabel={`Label ${index + 1} color`}
                     autoCapitalize="none"
@@ -87,28 +89,34 @@ export function LabelCreationDialog(props: {
                 <View className="justify-end pb-0.5">
                   <Button
                     disabled={form.drafts.length <= 1}
-                    label="Remove"
                     size="sm"
                     variant="ghost"
                     onPress={() => form.removeDraft(index)}
-                  />
+                  >
+                    <Text className="text-xs">Remove</Text>
+                  </Button>
                 </View>
               </View>
             ))}
-            <Button label="Add label" size="sm" variant="outline" onPress={form.addDraft} />
+            <Button size="sm" variant="outline" onPress={form.addDraft}>
+              <Text className="text-xs">Add label</Text>
+            </Button>
             {form.activeError ? <DialogErrorText>{form.activeError}</DialogErrorText> : null}
           </ScrollView>
         </DialogBody>
 
         <DialogFooter>
           <View className="w-full flex-row justify-end gap-2">
-            <Button label="Cancel" variant="outline" onPress={() => props.onOpenChange(false)} />
-            <Button
-              disabled={!props.workspacePath}
-              label="Save labels"
-              loading={props.saving}
-              onPress={submit}
-            />
+            <Button variant="outline" onPress={() => props.onOpenChange(false)}>
+              <Text>Cancel</Text>
+            </Button>
+            <Button disabled={!props.workspacePath} onPress={submit}>
+              {props.saving ? (
+                <ActivityIndicator size="small" />
+              ) : (
+                <Text>Save labels</Text>
+              )}
+            </Button>
           </View>
         </DialogFooter>
       </DialogSurface>

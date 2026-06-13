@@ -11,12 +11,11 @@ import { useState } from "react";
 import { Modal, Pressable, ScrollView, View } from "react-native";
 
 import { Text } from "../../../components/ui/text";
+import { Button } from "../../../components/ui/button";
+import { Field, FieldLabel } from "../../../components/ui/field";
+import { Slider } from "../../../components/ui/slider";
 import { cn } from "../../../lib/utils";
-import { Button } from "../../shell/chrome/buttons";
-import { Field } from "../../shell/chrome/field";
 import { Section } from "../../shell/regions/section";
-import { Slider } from "../../shell/chrome/slider";
-import { useThemeColors } from "../../theme/use-theme-colors";
 
 export type { NavigationOption, NavigationValue };
 export { findNavigationOptionIndex, stepNavigationValue, toNavigationOptions };
@@ -110,18 +109,20 @@ function SelectPicker<T extends NavigationValue>(props: {
 
 function SelectStepperField<T extends NavigationValue>(props: SelectNavigationFieldProps<T>) {
   return (
-    <Field label={props.label}>
-      <View className="flex-row items-center gap-2">
+    <Field className="min-w-0 w-full">
+      <FieldLabel>{props.label}</FieldLabel>
+      <View className="grid w-full grid-cols-[2rem_minmax(0,1fr)_2rem] gap-2">
         <Button
-          className="h-8 w-8 min-w-8 px-0"
-          compact
+          accessibilityLabel={`Previous ${props.label}`}
+          className="h-8 w-full px-0"
           disabled={props.previousDisabled || props.disabled}
-          label="‹"
           size="sm"
           variant="outline"
           onPress={props.onPrevious}
-        />
-        <View className="min-w-0 flex-1">
+        >
+          <Text className="text-xs">‹</Text>
+        </Button>
+        <View className="min-w-0">
           <SelectPicker
             disabled={props.disabled}
             options={props.options}
@@ -130,21 +131,21 @@ function SelectStepperField<T extends NavigationValue>(props: SelectNavigationFi
           />
         </View>
         <Button
-          className="h-8 w-8 min-w-8 px-0"
-          compact
+          accessibilityLabel={`Next ${props.label}`}
+          className="h-8 w-full px-0"
           disabled={props.nextDisabled || props.disabled}
-          label="›"
           size="sm"
           variant="outline"
           onPress={props.onNext}
-        />
+        >
+          <Text className="text-xs">›</Text>
+        </Button>
       </View>
     </Field>
   );
 }
 
 function SliderStepperField(props: SliderNavigationFieldProps) {
-  const colors = useThemeColors();
   const { draftValue, setDraftValue, displayLabel, ariaValueText } = useSliderStepperField({
     value: props.value,
     axisValues: props.axisValues,
@@ -154,31 +155,33 @@ function SliderStepperField(props: SliderNavigationFieldProps) {
   const commitValue = props.onCommit ?? props.onChange;
 
   return (
-    <Field label={props.label} valueLabel={displayLabel}>
-      <View className="flex-row items-center gap-2">
+    <Field className="min-w-0 w-full">
+      <FieldLabel className="w-full">{props.label}</FieldLabel>
+      {displayLabel ? (
+        <Text className="-mt-1 self-end text-xs text-muted-foreground">{displayLabel}</Text>
+      ) : null}
+      <View className="grid w-full grid-cols-[2rem_minmax(0,1fr)_2rem] items-center gap-2">
         <Button
-          className="h-8 w-8 min-w-8 px-0"
-          compact
+          accessibilityLabel={`Previous ${props.label}`}
+          className="h-8 w-full px-0"
           disabled={props.previousDisabled || props.disabled}
-          label="‹"
           size="sm"
           variant="outline"
           onPress={props.onPrevious}
-        />
+        >
+          <Text className="text-xs">‹</Text>
+        </Button>
         <View
           accessibilityLabel={ariaValueText}
           accessibilityRole="adjustable"
-          className="min-w-0 flex-1"
+          className="min-w-0"
         >
           <Slider
             disabled={props.disabled}
-            maximumTrackTintColor={colors.border}
             maximumValue={props.max}
-            minimumTrackTintColor={colors.primary}
             minimumValue={props.min}
             step={props.step ?? 1}
             style={{ width: "100%", height: 32 }}
-            thumbTintColor={colors.primary}
             value={draftValue}
             onSlidingComplete={(value) => {
               setDraftValue(value);
@@ -188,14 +191,15 @@ function SliderStepperField(props: SliderNavigationFieldProps) {
           />
         </View>
         <Button
-          className="h-8 w-8 min-w-8 px-0"
-          compact
+          accessibilityLabel={`Next ${props.label}`}
+          className="h-8 w-full px-0"
           disabled={props.nextDisabled || props.disabled}
-          label="›"
           size="sm"
           variant="outline"
           onPress={props.onNext}
-        />
+        >
+          <Text className="text-xs">›</Text>
+        </Button>
       </View>
     </Field>
   );

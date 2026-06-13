@@ -93,11 +93,12 @@ export function AnnotatorRight(props: {
           <Button
             className="w-full"
             disabled={!props.workspacePath}
-            label="Add"
             size="sm"
             variant="outline"
             onPress={props.onOpenLabelDialog}
-          />
+          >
+            <Text className="text-xs">Add</Text>
+          </Button>
         ) : null}
         {loading ? <Text className="w-full text-xs text-muted-foreground">Loading…</Text> : null}
         {activeError ? <Text className="w-full text-xs text-destructive">{activeError}</Text> : null}
@@ -106,38 +107,42 @@ export function AnnotatorRight(props: {
         <View className="min-w-0 flex-grow basis-[47%]">
           <Button
             disabled={!props.canUndo}
-            label="Undo"
             size="sm"
             variant="outline"
             onPress={props.onUndo}
-          />
+          >
+            <Text className="text-xs">Undo</Text>
+          </Button>
         </View>
         <View className="min-w-0 flex-grow basis-[47%]">
           <Button
             disabled={!props.canRedo}
-            label="Redo"
             size="sm"
             variant="outline"
             onPress={props.onRedo}
-          />
+          >
+            <Text className="text-xs">Redo</Text>
+          </Button>
         </View>
         <View className="min-w-0 flex-grow basis-[47%]">
           <Button
             disabled={props.mode !== "segmentation" || !props.canEdit}
-            label="Clear"
             size="sm"
             variant="outline"
             onPress={props.onClear}
-          />
+          >
+            <Text className="text-xs">Clear</Text>
+          </Button>
         </View>
         <View className="min-w-0 flex-grow basis-[47%]">
           <Button
             disabled={!props.dirty}
-            label="Discard"
             size="sm"
             variant="outline"
             onPress={props.onDiscard}
-          />
+          >
+            <Text className="text-xs">Discard</Text>
+          </Button>
         </View>
       </SidebarSection>
       {props.mode === "segmentation" ? (

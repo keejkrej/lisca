@@ -26,26 +26,27 @@ export function StudioAssayDock(props: {
       >
         <View className={dockLayoutClasses.stack}>
           <Button
-            disabled={props.opening || props.pickerOpen}
-            label="Open assay"
-            size="sm"
             className={dockLayoutClasses.button}
+            disabled={props.opening || props.pickerOpen}
+            size="sm"
             variant="outline"
             onPress={props.onOpenAssay}
-          />
+          >
+            <Text className="text-xs">Open assay</Text>
+          </Button>
           <Button
-            label="Next"
-            size="sm"
             className={dockLayoutClasses.button}
+            size="sm"
             variant="outline"
             onPress={() => {
               setInfoStep(1);
               router.push("/info");
             }}
-          />
+          >
+            <Text className="text-xs">Next</Text>
+          </Button>
         </View>
       </DockSection>
     </DockStrip>
   );
 }
-

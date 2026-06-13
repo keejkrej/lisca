@@ -77,7 +77,7 @@ Do not add app-level instruction wrapper components; use `fit="panel"` inline in
 <div className="col-span-2 min-w-0">…</div>
 ```
 
-Native: `DockStrip` centers sections; dock sections hug width (`flexShrink: 0`). Button rows inside sections use `flexDirection: "row"`, `gap: 8`.
+Native: `DockStrip` centers sections; dock sections hug width (`flexShrink: 0`). Button rows inside sections use `flexDirection: "row"`, `gap: 8`. Feature and app code compose RNR `Button` / `ToggleGroup` / `Field` from `@lisca/ui-native` (re-exported from `components/ui/*`) — not shell wrapper components with `label=` props.
 
 ## Rules
 

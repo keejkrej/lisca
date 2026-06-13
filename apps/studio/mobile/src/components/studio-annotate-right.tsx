@@ -77,14 +77,15 @@ export function StudioAnnotateRight({ state }: { state: StudioAnnotateState }) {
           <Button
             className="w-full"
             disabled={!state.workspacePath}
-            label="Add"
             size="sm"
             variant="outline"
             onPress={() => {
               state.setLabelError(null);
               state.setLabelDialogOpen(true);
             }}
-          />
+          >
+            <Text className="text-xs">Add</Text>
+          </Button>
         ) : null}
         {loading ? <Text className="w-full text-xs text-muted-foreground">Loading…</Text> : null}
         {activeError ? <Text className="w-full text-xs text-destructive">{activeError}</Text> : null}
@@ -93,25 +94,26 @@ export function StudioAnnotateRight({ state }: { state: StudioAnnotateState }) {
         <View className="min-w-0 flex-grow basis-[47%]">
           <Button
             disabled={!state.annotation.canUndo}
-            label="Undo"
             size="sm"
             variant="outline"
             onPress={state.annotation.undo}
-          />
+          >
+            <Text className="text-xs">Undo</Text>
+          </Button>
         </View>
         <View className="min-w-0 flex-grow basis-[47%]">
           <Button
             disabled={!state.annotation.canRedo}
-            label="Redo"
             size="sm"
             variant="outline"
             onPress={state.annotation.redo}
-          />
+          >
+            <Text className="text-xs">Redo</Text>
+          </Button>
         </View>
         <View className="min-w-0 flex-grow basis-[47%]">
           <Button
             disabled={state.mode !== "segmentation" || !state.canEdit}
-            label="Clear"
             size="sm"
             variant="outline"
             onPress={() =>
@@ -121,16 +123,19 @@ export function StudioAnnotateRight({ state }: { state: StudioAnnotateState }) {
                 mask: createEmptyMask(state.frame.width, state.frame.height),
               })
             }
-          />
+          >
+            <Text className="text-xs">Clear</Text>
+          </Button>
         </View>
         <View className="min-w-0 flex-grow basis-[47%]">
           <Button
             disabled={!state.annotation.dirty}
-            label="Discard"
             size="sm"
             variant="outline"
             onPress={state.annotation.discard}
-          />
+          >
+            <Text className="text-xs">Discard</Text>
+          </Button>
         </View>
       </SidebarSection>
       {state.mode === "segmentation" ? (

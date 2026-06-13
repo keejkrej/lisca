@@ -2,8 +2,8 @@ import type { HostFilePickerMode } from "@lisca/ui-headless/host";
 import { useHostFilePickerState } from "@lisca/ui-headless/host-file-picker-state";
 import { ActivityIndicator, FlatList, View } from "react-native";
 
+import { Button } from "../../../components/ui/button";
 import { Text } from "../../../components/ui/text";
-import { Button } from "../../shell/chrome/buttons";
 import {
   DialogActions,
   DialogDescriptionText,
@@ -50,9 +50,9 @@ export function HostFilePickerDialog({
     open,
     mode,
     hostPort,
-    onOpenChange,
     onPickDirectory,
     onPickFile,
+    onOpenChange,
   });
 
   if (!open) return null;
@@ -77,11 +77,14 @@ export function HostFilePickerDialog({
             {recentItems.map((item) => (
               <Button
                 key={item.path}
-                label={item.label?.trim() || item.path}
                 size="sm"
                 variant="outline"
                 onPress={() => onPickRecent(item.path)}
-              />
+              >
+                <Text className="text-xs" numberOfLines={1}>
+                  {item.label?.trim() || item.path}
+                </Text>
+              </Button>
             ))}
           </View>
         ) : null}
@@ -110,10 +113,14 @@ export function HostFilePickerDialog({
         />
         <DialogActions>
           {picker.canGoUp ? (
-            <Button compact label="Up" variant="outline" onPress={picker.goUp} />
+            <Button size="sm" variant="outline" onPress={picker.goUp}>
+              <Text className="text-xs">Up</Text>
+            </Button>
           ) : null}
           {picker.dirMode && picker.list?.path ? (
-            <Button label="Select folder" onPress={picker.confirmDirectory} />
+            <Button onPress={picker.confirmDirectory}>
+              <Text>Select folder</Text>
+            </Button>
           ) : (
             <Button
               disabled={
@@ -122,11 +129,14 @@ export function HostFilePickerDialog({
                 !picker.fileMatchesMode(picker.selectedFile) ||
                 picker.loading
               }
-              label="Select file"
               onPress={picker.confirmFile}
-            />
+            >
+              <Text>Select file</Text>
+            </Button>
           )}
-          <Button label="Close" variant="ghost" onPress={() => onOpenChange(false)} />
+          <Button variant="ghost" onPress={() => onOpenChange(false)}>
+            <Text>Close</Text>
+          </Button>
         </DialogActions>
       </DialogSurface>
     </ModalScrim>
