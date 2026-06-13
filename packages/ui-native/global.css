@@ -9,6 +9,12 @@
  * HSL components only — consumed as hsl(var(--token)) in tailwind.config.cjs.
  */
 @layer base {
+  html,
+  body,
+  #root {
+    @apply font-sans antialiased;
+  }
+
   :root {
     --radius: 0.625rem;
     --font-display: BricolageGrotesque_600SemiBold;

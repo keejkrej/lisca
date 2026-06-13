@@ -76,6 +76,16 @@ module.exports = {
       borderWidth: {
         hairline: hairlineWidth(),
       },
+      height: {
+        6.5: "1.625rem",
+        7.5: "1.875rem",
+        8.5: "2.125rem",
+      },
+      lineHeight: {
+        6.5: "1.625rem",
+        7.5: "1.875rem",
+        8.5: "2.125rem",
+      },
       keyframes: {
         "accordion-down": {
           from: { height: "0" },

@@ -41,7 +41,10 @@ const buttonVariants = cva(
       },
       size: {
         default: cn("h-9 px-3 sm:h-8", Platform.select({ web: "has-[>svg]:px-3" })),
-        sm: cn("h-8 gap-1.5 px-2.5 sm:h-7", Platform.select({ web: "has-[>svg]:px-2" })),
+        sm: cn(
+          "h-8 gap-1.5 px-2.5 sm:h-7",
+          Platform.select({ web: "px-[9px]" }),
+        ),
         lg: cn("h-10 px-3.5 sm:h-9", Platform.select({ web: "has-[>svg]:px-4" })),
         xs: cn("h-7 gap-1 rounded-md px-2 sm:h-6", Platform.select({ web: "has-[>svg]:px-1.5" })),
         icon: "h-9 w-9 sm:h-8 sm:w-8",

@@ -1,6 +1,5 @@
 import {
   findNavigationOptionIndex,
-  formatNavigationOptionDisplayLabel,
   stepNavigationValue,
   toNavigationOptions,
   type NavigationOption,
@@ -8,16 +7,16 @@ import {
 } from "@lisca/utils";
 import { useSliderStepperField } from "@lisca/ui-headless/slider-stepper-field";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
-import { useState } from "react";
-import { Modal, Pressable, ScrollView, View } from "react-native";
+import { View } from "react-native";
 
 import { Icon } from "../../../components/ui/icon";
-import { Text } from "../../../components/ui/text";
 import { Button } from "../../../components/ui/button";
+import { Text } from "../../../components/ui/text";
 import { Field, FieldLabel } from "../../../components/ui/field";
 import { Slider } from "../../../components/ui/slider";
 import { cn } from "../../../lib/utils";
 import { Section } from "../../shell/regions/section";
+import { SelectPicker } from "./select-picker";
 
 export type { NavigationOption, NavigationValue };
 export { findNavigationOptionIndex, stepNavigationValue, toNavigationOptions };
@@ -59,61 +58,14 @@ export type SelectNavigationControlProps<T extends NavigationValue> = Omit<
 
 export type SliderNavigationControlProps = Omit<SliderNavigationFieldProps, "label">;
 
-function SelectPicker<T extends NavigationValue>(props: {
-  value: T;
-  options: NavigationOption<T>[];
-  disabled?: boolean;
-  onChange: (value: T) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const selected = props.options.find((option) => option.value === props.value);
-
-  return (
-    <>
-      <Pressable
-        className={cn(
-          "h-8 min-h-8 justify-center rounded-lg border border-input bg-background px-2.5",
-          props.disabled && "opacity-64",
-        )}
-        disabled={props.disabled}
-        onPress={() => setOpen(true)}
-      >
-        <Text className="text-sm" numberOfLines={1}>
-          {selected ? formatNavigationOptionDisplayLabel(selected.label) : String(props.value)}
-        </Text>
-      </Pressable>
-      <Modal transparent visible={open} animationType="fade" onRequestClose={() => setOpen(false)}>
-        <Pressable className="flex-1 justify-center bg-black/35 p-6" onPress={() => setOpen(false)}>
-          <Pressable className="max-h-80 overflow-hidden rounded-xl border border-border bg-popover">
-            <ScrollView>
-              {props.options.map((option) => (
-                <Pressable
-                  key={String(option.value)}
-                  className={cn("px-4 py-3", option.value === props.value && "bg-accent")}
-                  onPress={() => {
-                    props.onChange(option.value);
-                    setOpen(false);
-                  }}
-                >
-                  <Text>{formatNavigationOptionDisplayLabel(option.label)}</Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-          </Pressable>
-        </Pressable>
-      </Modal>
-    </>
-  );
-}
-
 function SelectStepperField<T extends NavigationValue>(props: SelectNavigationFieldProps<T>) {
   return (
     <Field className="min-w-0 w-full">
       <FieldLabel>{props.label}</FieldLabel>
-      <View className="w-full flex-row items-center gap-2">
+      <View className="grid w-full grid-cols-[2rem_minmax(0,1fr)_2rem] items-center gap-2">
         <Button
           accessibilityLabel={`Previous ${props.label}`}
-          className="h-8 w-8 shrink-0 px-0"
+          className="h-8 w-full px-0"
           disabled={props.previousDisabled || props.disabled}
           size="sm"
           variant="outline"
@@ -121,17 +73,15 @@ function SelectStepperField<T extends NavigationValue>(props: SelectNavigationFi
         >
           <Icon as={ChevronLeft} className="size-4" size={16} strokeWidth={2} />
         </Button>
-        <View className="min-w-0 flex-1">
-          <SelectPicker
-            disabled={props.disabled}
-            options={props.options}
-            value={props.value}
-            onChange={props.onChange}
-          />
-        </View>
+        <SelectPicker
+          disabled={props.disabled}
+          options={props.options}
+          value={props.value}
+          onChange={props.onChange}
+        />
         <Button
           accessibilityLabel={`Next ${props.label}`}
-          className="h-8 w-8 shrink-0 px-0"
+          className="h-8 w-full px-0"
           disabled={props.nextDisabled || props.disabled}
           size="sm"
           variant="outline"
@@ -161,10 +111,10 @@ function SliderStepperField(props: SliderNavigationFieldProps) {
           <Text className="font-normal text-muted-foreground text-sm">{displayLabel}</Text>
         ) : null}
       </FieldLabel>
-      <View className="w-full flex-row items-center gap-2">
+      <View className="grid w-full grid-cols-[2rem_minmax(0,1fr)_2rem] items-center gap-2">
         <Button
           accessibilityLabel={`Previous ${props.label}`}
-          className="h-8 w-8 shrink-0 px-0"
+          className="h-8 w-full px-0"
           disabled={props.previousDisabled || props.disabled}
           size="sm"
           variant="outline"
@@ -175,14 +125,14 @@ function SliderStepperField(props: SliderNavigationFieldProps) {
         <View
           accessibilityLabel={ariaValueText}
           accessibilityRole="adjustable"
-          className="min-w-0 flex-1"
+          className="min-w-0 w-full"
         >
           <Slider
             disabled={props.disabled}
             maximumValue={props.max}
             minimumValue={props.min}
             step={props.step ?? 1}
-            style={{ width: "100%", height: 32 }}
+            style={{ width: "100%" }}
             value={draftValue}
             onSlidingComplete={(value) => {
               setDraftValue(value);
@@ -193,7 +143,7 @@ function SliderStepperField(props: SliderNavigationFieldProps) {
         </View>
         <Button
           accessibilityLabel={`Next ${props.label}`}
-          className="h-8 w-8 shrink-0 px-0"
+          className="h-8 w-full px-0"
           disabled={props.nextDisabled || props.disabled}
           size="sm"
           variant="outline"

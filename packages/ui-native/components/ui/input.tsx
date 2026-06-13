@@ -1,14 +1,20 @@
 import { cn } from "@/lib/utils";
-import { Platform, TextInput } from "react-native";
+import { Platform, TextInput, type StyleProp, type TextStyle } from "react-native";
+
+const inputHeightStyle: StyleProp<TextStyle> = Platform.select({
+  web: { minHeight: 28 },
+  default: { minHeight: 34 },
+});
 
 function Input({
   className,
+  style,
   ...props
 }: React.ComponentProps<typeof TextInput> & React.RefAttributes<TextInput>) {
   return (
     <TextInput
       className={cn(
-        "font-sans border-input bg-background text-foreground flex h-8.5 w-full min-w-0 flex-row items-center rounded-lg border px-3 text-sm leading-5 shadow-sm shadow-black/5 dark:bg-input/30 sm:h-7.5",
+        "font-sans border-input bg-background text-foreground flex h-8.5 w-full min-w-0 flex-row items-center rounded-lg border px-3 text-sm leading-8.5 shadow-sm shadow-black/5 dark:bg-input/30 sm:h-7.5 sm:leading-7.5",
         props.editable === false &&
           cn(
             "pointer-events-none opacity-64",
@@ -24,6 +30,7 @@ function Input({
         }),
         className,
       )}
+      style={[inputHeightStyle, style]}
       {...props}
     />
   );

@@ -36,11 +36,11 @@ export function AlignGridShapeToggle({
         }
       }}
     >
-      <ToggleGroupItem className="min-w-[4.5rem] flex-1 px-2 text-xs" isFirst value="rect">
-        <Text className="text-xs">Square</Text>
+      <ToggleGroupItem className="min-w-[4.5rem] flex-1 px-2" isFirst value="rect">
+        <Text>Square</Text>
       </ToggleGroupItem>
-      <ToggleGroupItem className="min-w-[4.5rem] flex-1 px-2 text-xs" isLast value="hex">
-        <Text className="text-xs">Hex</Text>
+      <ToggleGroupItem className="min-w-[4.5rem] flex-1 px-2" isLast value="hex">
+        <Text>Hex</Text>
       </ToggleGroupItem>
     </ToggleGroup>
   );

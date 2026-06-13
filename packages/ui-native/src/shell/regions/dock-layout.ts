@@ -9,17 +9,23 @@ export function dockToolbarMinHeight(rows: number): number {
   return rows * dockToolbarRowHeight + (rows - 1) * dockToolbarGap;
 }
 
+/** Measured dock section widths at 1440px — keeps centered dock strip aligned with web. */
+export const dockSectionWidths = {
+  tool: "w-[375px] max-w-[375px] shrink-0",
+  save: "w-[420px] max-w-[420px] shrink-0",
+} as const;
+
 /** Tailwind class sets for dock toolbars — mirrors web dock grids. */
 export const dockLayoutClasses = {
   section: "min-w-0",
   content: "min-h-0 w-full flex-1 justify-center gap-2",
   stack: "w-full flex-col gap-2",
-  cols2: "w-full flex-row gap-2",
-  cols3: "w-full flex-row gap-2",
+  cols2: "grid w-full grid-cols-2 gap-2",
+  cols3: "grid w-full grid-cols-3 gap-2",
   toolbar: "w-full flex-col gap-2",
   row: "w-full flex-row gap-2",
-  cell: "min-w-0 flex-1",
-  gridCell: "min-w-0 flex-1",
+  cell: "min-w-0",
+  gridCell: "min-w-0",
   button: "w-full",
   /** @deprecated Use {@link dockLayoutClasses.content} — dock sections center content by default. */
   saveContent: "min-h-0 w-full flex-1 justify-center gap-2",

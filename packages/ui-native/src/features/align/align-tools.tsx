@@ -20,7 +20,7 @@ import { Text } from "../../../components/ui/text";
 import { cn } from "../../../lib/utils";
 import { dockToolLabel, dockToolShortcuts, useKeyboardShortcuts } from "../../shell";
 import { DockSection } from "../../shell/regions/dock-section";
-import { dockLayoutClasses } from "../../shell/regions/dock-layout";
+import { dockLayoutClasses, dockSectionWidths } from "../../shell/regions/dock-layout";
 
 export type AlignToolSectionProps = {
   mode: AlignGridToolMode;
@@ -100,8 +100,8 @@ function renderAlignToolCell(
   if (tool.mode === "zoom-pattern") {
     return (
       <View key={tool.mode} className={dockLayoutClasses.cell}>
-        <View className="w-full flex-row items-center gap-1">
-          <View className="min-w-0 flex-1">
+        <View className="grid min-w-0 w-full grid-cols-[1fr_2rem] items-center gap-1">
+          <View className="min-w-0">
             <AlignToolButton
               active={mode === tool.mode}
               className="min-w-0 w-full justify-center gap-2 px-2"
@@ -200,7 +200,7 @@ export function AlignToolSection({
 }: AlignToolSectionProps) {
   return (
     <DockSection
-      className={sectionClassName ?? dockLayoutClasses.section}
+      className={cn(sectionClassName ?? dockLayoutClasses.section, dockSectionWidths.tool)}
       contentClassName={sectionContentClassName ?? dockLayoutClasses.content}
       contentStyle={sectionContentStyle}
       description={sectionDescription}

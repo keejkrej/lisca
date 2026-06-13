@@ -48,7 +48,7 @@ function LoadingButton(props: {
 }) {
   return (
     <Button
-      className={props.className ?? "w-full justify-center text-xs"}
+      className={props.className ?? "w-full justify-center"}
       disabled={props.disabled || props.loading}
       size="sm"
       variant="outline"
@@ -57,7 +57,7 @@ function LoadingButton(props: {
       {props.loading ? (
         <ActivityIndicator size="small" />
       ) : (
-        <Text className="text-xs">{props.children}</Text>
+        <Text>{props.children}</Text>
       )}
     </Button>
   );
@@ -100,41 +100,41 @@ export function AlignSelectionRail({
         title="Selection"
       >
         <AlignSelectionCounts excluded={visibleCounts.excluded} included={visibleCounts.included} />
-        <View className="w-full flex-row gap-2">
-          <View className="min-w-0 flex-1">
+        <View className="grid w-full grid-cols-2 gap-2">
+          <View className="min-w-0">
             <AlignEditToggle
               disabled={disabled}
               enabled={manualExclusionEnabled}
               onEnabledChange={onManualExclusionEnabledChange}
             />
           </View>
-          <View className="min-w-0 flex-1">
+          <View className="min-w-0">
             <Button
-              className="w-full justify-center text-xs"
+              className="w-full justify-center"
               disabled={disabled || !hasExcludedCells}
               size="sm"
               variant="outline"
               onPress={() => onExcludedCellsChange([])}
             >
-              <Text className="text-xs">Reset</Text>
+              <Text>Reset</Text>
             </Button>
           </View>
         </View>
-        <View className="w-full flex-row gap-2">
-          <View className="min-w-0 flex-1">
+        <View className="grid w-full grid-cols-2 gap-2">
+          <View className="min-w-0">
             <Button
-              className="w-full justify-center text-xs"
+              className="w-full justify-center"
               disabled={disabled || !hasVisibleCells}
               size="sm"
               variant="outline"
               onPress={() => onExcludedCellsChange(visibleCells)}
             >
-              <Text className="text-xs">Exclude all</Text>
+              <Text>Exclude all</Text>
             </Button>
           </View>
-          <View className="min-w-0 flex-1">
+          <View className="min-w-0">
             <Button
-              className="w-full justify-center text-xs"
+              className="w-full justify-center"
               disabled={disabled || !hasVisibleCells}
               size="sm"
               variant="outline"
@@ -145,12 +145,12 @@ export function AlignSelectionRail({
                 );
               }}
             >
-              <Text className="text-xs">Edge exclude</Text>
+              <Text>Edge exclude</Text>
             </Button>
           </View>
         </View>
-        <View className="w-full flex-row gap-2">
-          <View className="min-w-0 flex-1">
+        <View className="grid w-full grid-cols-2 gap-2">
+          <View className="min-w-0">
             <LoadingButton
               disabled={disabled || !hasVisibleCells}
               loading={variationExcludeLoading}
@@ -159,7 +159,7 @@ export function AlignSelectionRail({
               Var exclude
             </LoadingButton>
           </View>
-          <View className="min-w-0 flex-1">
+          <View className="min-w-0">
             <LoadingButton
               disabled={disabled || !hasVisibleCells || variationExcludeLoading}
               loading={smartExcludeLoading}

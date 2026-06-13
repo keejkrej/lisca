@@ -20,7 +20,7 @@ export function FieldLabel({
   return (
     <Label
       className={cn(
-        "inline-flex w-full items-center gap-2 font-medium text-foreground text-sm",
+        "inline-flex w-full items-center gap-2 font-medium text-foreground text-sm leading-4",
         className,
       )}
       {...props}

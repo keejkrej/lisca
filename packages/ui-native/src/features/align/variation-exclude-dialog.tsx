@@ -80,7 +80,7 @@ export function VariationExcludeDialog(props: {
                 maximumValue={metrics.max}
                 minimumValue={metrics.min}
                 step={metrics.step}
-                style={{ width: "100%", height: 32 }}
+                style={{ width: "100%" }}
                 value={threshold}
                 onSlidingComplete={setThreshold}
                 onValueChange={setThreshold}

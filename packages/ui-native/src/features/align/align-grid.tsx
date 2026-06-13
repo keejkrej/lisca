@@ -164,31 +164,31 @@ export function AlignGrid(props: AlignGridProps) {
       title={sectionTitle}
     >
       <View className="min-w-0 gap-3">
-        <View className="w-full flex-row gap-2">
+        <View className="grid w-full grid-cols-2 gap-2">
           <Toggle
             accessibilityLabel="Show grid overlay"
             accessibilityState={{ selected: overlayVisible }}
-            className="min-w-0 w-full flex-1 justify-center text-xs"
+            className="w-full justify-center"
             disabled={disabled}
             pressed={overlayVisible}
             size="sm"
             variant="outline"
             onPressedChange={onOverlayVisibleChange}
           >
-            <Text className="text-xs">Show</Text>
+            <Text>Show</Text>
           </Toggle>
           <Button
-            className="min-w-0 flex-1 justify-center text-xs"
+            className="w-full justify-center"
             disabled={disabled || resetDisabled || !onReset}
             size="sm"
             variant="outline"
             onPress={() => onReset?.()}
           >
-            <Text className="text-xs">Reset</Text>
+            <Text>Reset</Text>
           </Button>
         </View>
 
-        <Field className="min-w-0 w-full">
+        <Field className="min-w-0 w-full gap-0.5">
           <FieldLabel>Opacity</FieldLabel>
           <View className="w-full pt-0.5">
             <Slider
@@ -196,7 +196,6 @@ export function AlignGrid(props: AlignGridProps) {
               maximumValue={1}
               minimumValue={0}
               step={0.01}
-              style={{ width: "100%", height: 32 }}
               value={overlayOpacityDraft}
               onSlidingComplete={(value) => {
                 const opacity = clamp(value, 0, 1);
@@ -213,26 +212,27 @@ export function AlignGrid(props: AlignGridProps) {
           <AlignGridShapeToggle disabled={disabled} shape={shape} onShapeChange={onShapeChange} />
         </Field>
 
-        <Field className="min-w-0 w-full">
+        <Field className="min-w-0 w-full gap-0.5">
           <FieldLabel>Rotation</FieldLabel>
-          <Slider
-            disabled={disabled}
-            maximumValue={180}
-            minimumValue={-180}
-            step={0.1}
-            style={{ width: "100%", height: 32 }}
-            value={rotationDraft}
-            onSlidingComplete={(value) => {
-              const degrees = clamp(value, -180, 180);
-              setRotationDraft(degrees);
-              onRotationDegreesChange(degrees);
-            }}
-            onValueChange={(value) => setRotationDraft(clamp(value, -180, 180))}
-          />
+          <View className="w-full pt-0.5">
+            <Slider
+              disabled={disabled}
+              maximumValue={180}
+              minimumValue={-180}
+              step={0.1}
+              value={rotationDraft}
+              onSlidingComplete={(value) => {
+                const degrees = clamp(value, -180, 180);
+                setRotationDraft(degrees);
+                onRotationDegreesChange(degrees);
+              }}
+              onValueChange={(value) => setRotationDraft(clamp(value, -180, 180))}
+            />
+          </View>
         </Field>
 
-        <View className="w-full flex-row gap-2">
-          <Field className="min-w-0 flex-1">
+        <View className="grid grid-cols-2 gap-2">
+          <Field className="min-w-0 w-full">
             <FieldLabel>Vector A</FieldLabel>
             <AlignNumberInput
               disabled={disabled}
@@ -241,7 +241,7 @@ export function AlignGrid(props: AlignGridProps) {
               onCommit={onVectorAChange}
             />
           </Field>
-          <Field className="min-w-0 flex-1">
+          <Field className="min-w-0 w-full">
             <FieldLabel>Vector B</FieldLabel>
             <AlignNumberInput
               disabled={disabled}
@@ -252,8 +252,8 @@ export function AlignGrid(props: AlignGridProps) {
           </Field>
         </View>
 
-        <View className="w-full flex-row gap-2">
-          <Field className="min-w-0 flex-1">
+        <View className="grid grid-cols-2 gap-2">
+          <Field className="min-w-0 w-full">
             <FieldLabel>Pattern Width</FieldLabel>
             <AlignNumberInput
               disabled={disabled}
@@ -262,7 +262,7 @@ export function AlignGrid(props: AlignGridProps) {
               onCommit={onPatternWidthChange}
             />
           </Field>
-          <Field className="min-w-0 flex-1">
+          <Field className="min-w-0 w-full">
             <FieldLabel>Pattern Height</FieldLabel>
             <AlignNumberInput
               disabled={disabled}
@@ -273,8 +273,8 @@ export function AlignGrid(props: AlignGridProps) {
           </Field>
         </View>
 
-        <View className="w-full flex-row gap-2">
-          <Field className="min-w-0 flex-1">
+        <View className="grid grid-cols-2 gap-2">
+          <Field className="min-w-0 w-full">
             <FieldLabel>Offset X</FieldLabel>
             <AlignNumberInput
               disabled={disabled}
@@ -283,7 +283,7 @@ export function AlignGrid(props: AlignGridProps) {
               onCommit={onOffsetXChange}
             />
           </Field>
-          <Field className="min-w-0 flex-1">
+          <Field className="min-w-0 w-full">
             <FieldLabel>Offset Y</FieldLabel>
             <AlignNumberInput
               disabled={disabled}

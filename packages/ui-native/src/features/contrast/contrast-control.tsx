@@ -154,54 +154,60 @@ function ContrastControlBody(props: {
       accessibilityRole="summary"
       className={sectionClassName}
       contentClassName={sectionContentClassName}
-      contentStyle={[{ gap: 12 }, sectionContentStyle]}
+      contentStyle={sectionContentStyle}
       description={sectionDescription}
       style={sectionStyle}
       title={sectionTitle}
     >
-      {title?.trim() ? (
-        <Text className="text-sm font-medium text-foreground">{title.trim()}</Text>
-      ) : null}
+      <View className="min-w-0 flex-col gap-3">
+        {title?.trim() ? (
+          <Text className="text-sm font-medium text-foreground">{title.trim()}</Text>
+        ) : null}
 
-      <Button
-        className="h-8 w-full justify-center"
-        disabled={disabled || autoRangeDisabled}
-        size="sm"
-        variant="outline"
-        onPress={onAutoRange}
-      >
-        <Text className="text-xs">Auto Range</Text>
-      </Button>
+        <View className="min-w-0 flex-col gap-3">
+          <Button
+            className="h-8 w-full justify-center px-2.5"
+            disabled={disabled || autoRangeDisabled}
+            size="sm"
+            variant="outline"
+            onPress={onAutoRange}
+          >
+            <Text className="text-xs">Auto Range</Text>
+          </Button>
 
-      <ContrastSliderRow
-        disabled={disabled}
-        domainMax={domainMax}
-        domainMin={domainMin}
-        label="Min"
-        value={displayed.min}
-        onCommit={(value) => onMinCommit(clamp(Math.round(value), domainMin, domainMax))}
-        onDraftChange={(value) =>
-          setDraft((current) => {
-            const base = current ?? { min: minValue, max: maxValue };
-            return { ...base, min: clamp(Math.round(value), domainMin, domainMax) };
-          })
-        }
-      />
+          <View className="min-h-0 min-w-0 flex-col gap-3">
+            <ContrastSliderRow
+              disabled={disabled}
+              domainMax={domainMax}
+              domainMin={domainMin}
+              label="Min"
+              value={displayed.min}
+              onCommit={(value) => onMinCommit(clamp(Math.round(value), domainMin, domainMax))}
+              onDraftChange={(value) =>
+                setDraft((current) => {
+                  const base = current ?? { min: minValue, max: maxValue };
+                  return { ...base, min: clamp(Math.round(value), domainMin, domainMax) };
+                })
+              }
+            />
 
-      <ContrastSliderRow
-        disabled={disabled}
-        domainMax={domainMax}
-        domainMin={domainMin}
-        label="Max"
-        value={displayed.max}
-        onCommit={(value) => onMaxCommit(clamp(Math.round(value), domainMin, domainMax))}
-        onDraftChange={(value) =>
-          setDraft((current) => {
-            const base = current ?? { min: minValue, max: maxValue };
-            return { ...base, max: clamp(Math.round(value), domainMin, domainMax) };
-          })
-        }
-      />
+            <ContrastSliderRow
+              disabled={disabled}
+              domainMax={domainMax}
+              domainMin={domainMin}
+              label="Max"
+              value={displayed.max}
+              onCommit={(value) => onMaxCommit(clamp(Math.round(value), domainMin, domainMax))}
+              onDraftChange={(value) =>
+                setDraft((current) => {
+                  const base = current ?? { min: minValue, max: maxValue };
+                  return { ...base, max: clamp(Math.round(value), domainMin, domainMax) };
+                })
+              }
+            />
+          </View>
+        </View>
+      </View>
     </Section>
   );
 }
@@ -216,25 +222,23 @@ function ContrastSliderRow(props: {
   onCommit: (value: number) => void;
 }) {
   return (
-    <View className="gap-1">
-      <View className="flex-row items-center justify-between">
+    <View className="min-h-0 w-full min-w-0 gap-1">
+      <View className="flex-row items-center justify-between gap-2">
         <Text className="text-xs font-medium text-muted-foreground">{props.label}</Text>
-        <Text className="text-xs tabular-nums text-muted-foreground">
+        <Text className="text-xs tabular-nums text-muted-foreground/80">
           {String(Math.round(props.value))}
         </Text>
       </View>
-      <View className="w-full pt-0.5">
-        <Slider
-          disabled={props.disabled}
-          maximumValue={props.domainMax}
-          minimumValue={props.domainMin}
-          step={1}
-          style={{ width: "100%", height: 32 }}
-          value={props.value}
-          onSlidingComplete={props.onCommit}
-          onValueChange={props.onDraftChange}
-        />
-      </View>
+      <Slider
+        disabled={props.disabled}
+        maximumValue={props.domainMax}
+        minimumValue={props.domainMin}
+        step={1}
+        style={{ width: "100%", height: 4 }}
+        value={props.value}
+        onSlidingComplete={props.onCommit}
+        onValueChange={props.onDraftChange}
+      />
     </View>
   );
 }
