@@ -12,14 +12,12 @@
   html,
   body,
   #root {
-    @apply font-sans antialiased;
+    @apply antialiased;
+    font-family: IBMPlexSans_400Regular;
   }
 
   :root {
     --radius: 0.625rem;
-    --font-display: BricolageGrotesque_600SemiBold;
-    --font-sans: IBMPlexSans_400Regular;
-    --font-mono: IBMPlexMono_400Regular;
     --background: 0 0% 100%;
     --foreground: 0 0% 9%;
     --card: 0 0% 100%;

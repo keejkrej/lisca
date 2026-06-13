@@ -1,29 +1,42 @@
 /**
- * Expo web only — match `@lisca/web-app/fonts.css` so weight/smoothing render like desktop.
- * Imported from `@lisca/mobile-app/skia-web-entry`, not on iOS/Android.
+ * Expo web only — use the same self-hosted stacks as `@lisca/web-app/fonts.css`.
+ * Imported from `@lisca/mobile-app/skia-web-entry` after fonts.css, not on iOS/Android.
  */
-@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap");
+
+@layer base {
+  :root {
+    --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+    --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+  }
+
+  html,
+  body,
+  #root {
+    font-family: var(--font-sans) !important;
+  }
+}
 
 @layer utilities {
   .font-sans,
   .font-normal {
-    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif !important;
+    font-family: var(--font-sans) !important;
     font-weight: 400 !important;
   }
 
   .font-medium {
-    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif !important;
+    font-family: var(--font-sans) !important;
     font-weight: 500 !important;
   }
 
   .font-semibold {
-    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif !important;
+    font-family: var(--font-sans) !important;
     font-weight: 600 !important;
   }
 
   .font-bold,
   .font-extrabold {
-    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif !important;
+    font-family: var(--font-sans) !important;
     font-weight: 700 !important;
   }
 
@@ -31,19 +44,19 @@
   .font-display.font-normal,
   .font-display.font-medium,
   .font-display.font-semibold {
-    font-family: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif !important;
+    font-family: var(--font-display) !important;
     font-weight: 600 !important;
   }
 
   .font-display.font-bold,
   .font-display.font-extrabold {
-    font-family: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif !important;
+    font-family: var(--font-display) !important;
     font-weight: 700 !important;
   }
 
   .font-mono,
   .font-mono.font-normal {
-    font-family: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace !important;
+    font-family: var(--font-mono) !important;
     font-weight: 400 !important;
   }
 
@@ -51,7 +64,7 @@
   .font-mono.font-semibold,
   .font-mono.font-bold,
   .font-mono.font-extrabold {
-    font-family: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace !important;
+    font-family: var(--font-mono) !important;
     font-weight: 500 !important;
   }
 }

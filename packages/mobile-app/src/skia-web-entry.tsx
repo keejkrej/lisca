@@ -1,4 +1,6 @@
 import "@expo/metro-runtime";
+import "@lisca/ui-native/global.css";
+import "@lisca/web-app/fonts.css";
 import "@lisca/ui-native/global.web.css";
 import { App } from "expo-router/build/qualified-entry";
 import { renderRootComponent } from "expo-router/build/renderRootComponent";
