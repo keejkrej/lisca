@@ -25,7 +25,7 @@ export function StudioAnnotateDock() {
     dock.frameLoading || !dock.request || dock.analysisBusy || dock.workspaceMissing;
 
   return (
-    <DockStrip className="flex-wrap">
+    <DockStrip>
       <DockSection
         className={dockSectionWidths.tool}
         contentClassName={dockLayoutClasses.content}
@@ -70,17 +70,13 @@ export function StudioAnnotateDock() {
             variant="outline"
             onPress={() => void dock.handleSave()}
           >
-            {dock.saving ? (
-              <ActivityIndicator size="small" />
-            ) : (
-              <Text className="text-xs">Save</Text>
-            )}
+            {dock.saving ? <ActivityIndicator size="small" /> : <Text>Save</Text>}
           </Button>
         </View>
       </DockSection>
       <DockSection
-        contentClassName={dockLayoutClasses.content}
         className={dockLayoutClasses.section}
+        contentClassName={dockLayoutClasses.content}
         title="Action"
       >
         <View className={dockLayoutClasses.stack}>
@@ -91,7 +87,7 @@ export function StudioAnnotateDock() {
             variant="outline"
             onPress={dock.shuffleSelection}
           >
-            <Text className="text-xs">Shuffle</Text>
+            <Text>Shuffle</Text>
           </Button>
           <Button
             className={dockLayoutClasses.button}
@@ -100,7 +96,7 @@ export function StudioAnnotateDock() {
             variant="outline"
             onPress={dock.requestContinueToAnalysis}
           >
-            <Text className="text-xs">Continue to analysis</Text>
+            <Text>Continue to analysis</Text>
           </Button>
         </View>
       </DockSection>

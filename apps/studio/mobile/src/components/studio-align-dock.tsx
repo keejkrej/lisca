@@ -60,7 +60,7 @@ export function StudioAlignDock() {
                 variant="outline"
                 onPress={state.resetCurrent}
               >
-                <Text className="text-xs">Reset</Text>
+                <Text>Reset</Text>
               </Button>
             </View>
             <View className={dockLayoutClasses.cell}>
@@ -76,7 +76,7 @@ export function StudioAlignDock() {
                 variant="outline"
                 onPress={() => void state.goToFirstUnaligned()}
               >
-                <Text className="text-xs">Jump</Text>
+                <Text>Jump</Text>
               </Button>
             </View>
           </View>
@@ -88,7 +88,7 @@ export function StudioAlignDock() {
                 variant="outline"
                 onPress={state.goBack}
               >
-                <Text className="text-xs">Back</Text>
+                <Text>Back</Text>
               </Button>
             </View>
             <View className={dockLayoutClasses.cell}>
@@ -98,7 +98,7 @@ export function StudioAlignDock() {
                 variant="outline"
                 onPress={() => void saveAndAdvance()}
               >
-                <Text className="text-xs">Next</Text>
+                <Text>Next</Text>
               </Button>
             </View>
           </View>
