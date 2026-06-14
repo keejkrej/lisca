@@ -13,6 +13,7 @@
  *   bun lisca dev landing
  *   bun lisca install landing
  *   bun lisca build landing
+ *   bun lisca deploy landing
  *   bun lisca build workspace webs
  *   bun lisca build workspace all
  *   bun lisca dist aligner
@@ -53,7 +54,7 @@ function usage() {
   console.error(`
 Usage: bun lisca <task> <scope> [target] [-- <turbo passthrough>]
 
-  task    dev | build | dist | typecheck | preview | install
+  task    dev | build | dist | deploy | typecheck | preview | install
   scope   aligner | annotator | studio | landing | workspace
 
 Product targets (aligner, annotator, studio):
@@ -539,9 +540,24 @@ function main() {
     process.exit(task ? 0 : 1);
   }
 
-  if (!["dev", "build", "dist", "typecheck", "preview", "install"].includes(task)) {
-    console.error(`Unknown task "${task}". Use: dev | build | dist | typecheck | preview | install`);
+  if (!["dev", "build", "dist", "deploy", "typecheck", "preview", "install"].includes(task)) {
+    console.error(
+      `Unknown task "${task}". Use: dev | build | dist | deploy | typecheck | preview | install`,
+    );
     process.exit(1);
+  }
+
+  if (task === "deploy") {
+    if (!isLanding(scope)) {
+      console.error("deploy only supports scope landing.");
+      process.exit(1);
+    }
+    const status = spawnSync("bun", [path.join(root, "scripts/deploy-landing.mjs"), ...turboExtra], {
+      cwd: root,
+      stdio: "inherit",
+      shell: process.platform === "win32",
+    }).status;
+    process.exit(status ?? 1);
   }
 
   if (task === "install") {
