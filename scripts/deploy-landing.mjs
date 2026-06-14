@@ -3,14 +3,11 @@
  * Build landing locally and push prebuilt assets to deploy/landing for Render.
  *
  * Render serves the committed dist/ tree only (no install or build on their side).
- * Auto-deploy is disabled in render.yaml — trigger deploy manually after push.
+ * Pushes to deploy/landing trigger a Render deploy automatically.
  *
  * Usage:
  *   bun lisca deploy landing
  *   bun scripts/deploy-landing.mjs [--skip-build]
- *
- * Optional env:
- *   RENDER_DEPLOY_HOOK_URL — GET/POST after a successful push to start a deploy
  */
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -65,25 +62,6 @@ function ensureWorktree() {
   run("git", ["worktree", "add", "-B", DEPLOY_BRANCH, WORKTREE, source]);
 }
 
-function triggerDeployHook() {
-  const hook = process.env.RENDER_DEPLOY_HOOK_URL?.trim();
-  if (!hook) {
-    return;
-  }
-
-  console.log("[deploy-landing] triggering Render deploy hook…");
-  const result = spawnSync("curl", ["-fsS", "-X", "POST", hook], {
-    cwd: root,
-    stdio: "inherit",
-    shell: process.platform === "win32",
-  });
-  if (result.status !== 0) {
-    console.error("[deploy-landing] deploy hook request failed");
-    process.exit(result.status ?? 1);
-  }
-  console.log("[deploy-landing] deploy hook accepted");
-}
-
 function main() {
   if (!skipBuild) {
     run("bun", ["lisca", "build", "landing"]);
@@ -121,12 +99,8 @@ function main() {
   console.log(`
 [deploy-landing] pushed ${DEPLOY_BRANCH} (${sourceSha.slice(0, 7)})
 
-Render auto-deploy is off. Either:
-  • Dashboard → lisca-landing → Manual Deploy → Deploy latest commit
-  • set RENDER_DEPLOY_HOOK_URL and re-run to trigger via hook
+Render will deploy automatically from the push.
 `);
-
-  triggerDeployHook();
 }
 
 main();

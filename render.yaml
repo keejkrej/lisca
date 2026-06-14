@@ -4,7 +4,7 @@ services:
     runtime: static
     branch: deploy/landing
     buildCommand: "true"
-    autoDeployTrigger: "off"
+    autoDeployTrigger: "commit"
     envVars:
       - key: SKIP_INSTALL_DEPS
         value: "true"
