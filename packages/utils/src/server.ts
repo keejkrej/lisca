@@ -166,7 +166,7 @@ function hasExplicitViteEndpoint(options: {
 }
 
 /**
- * Expo dev server ports (`bun lisca dev * mobile`). Metro proxies HTTP API routes
+ * Expo dev server ports (`bun lisca dev * web-native`). Metro proxies HTTP API routes
  * to Rust, but WebSocket upgrades still need the backend port. Keep in sync with
  * `scripts/lisca-dev-ports.cjs` (`liscaMobileExpoPort` + `LISCA_APP_PORTS`).
  */

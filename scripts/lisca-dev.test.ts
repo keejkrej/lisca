@@ -73,6 +73,22 @@ async function reservePort(): Promise<number> {
   return reserved;
 }
 
+describe("lisca dev LAN host", () => {
+  const { resolveDevLanHost } = require("./lisca-dev-lan-host.cjs");
+
+  it("prefers explicit LISCA_DEV_HOST", () => {
+    expect(resolveDevLanHost({ LISCA_DEV_HOST: "10.0.0.5" })).toBe("10.0.0.5");
+  });
+
+  it("falls back to EXPO_PUBLIC_LISCA_WS_HOST", () => {
+    expect(resolveDevLanHost({ EXPO_PUBLIC_LISCA_WS_HOST: "192.168.2.1" })).toBe("192.168.2.1");
+  });
+
+  it("returns a non-empty address when interfaces exist", () => {
+    expect(resolveDevLanHost({})).toMatch(/\d+\.\d+\.\d+\.\d+/);
+  });
+});
+
 describe("lisca dev ports", () => {
   it("assigns unique public, backend, and mobile ports per product", () => {
     const publicPorts = Object.values(LISCA_APP_PORTS).map((entry) => entry.publicPort);

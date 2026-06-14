@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Dev proxy for `bun lisca dev * mobile`.
+ * Dev proxy for `bun lisca dev * web-native`.
  *
  * Browser opens the public mobile port (808x). API routes are forwarded to Rust
  * (876x); everything else (bundler, HMR, Expo devtools) goes to Expo (908x).

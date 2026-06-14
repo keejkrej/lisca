@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "expo start --web --port ${EXPO_DEV_SERVER_PORT:-9082}",
     "start": "expo start --port 9082",
+    "build": "expo export --platform web --output-dir dist/web",
+    "build:web-native": "expo export --platform web --output-dir dist/web",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "typecheck": "tsc -p tsconfig.json --noEmit"

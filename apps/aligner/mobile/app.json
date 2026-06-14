@@ -18,7 +18,7 @@
       "package": "com.lisca.aligner.mobile",
       "usesCleartextTraffic": true
     },
-    "plugins": ["expo-router"],
+    "plugins": ["expo-router", "expo-dev-client"],
     "web": {
       "bundler": "metro",
       "output": "single"

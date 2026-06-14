@@ -20,7 +20,7 @@ const LISCA_APP_PORTS = {
   studio: { publicPort: 8767, backendPort: 8767 + LISCA_DEV_BACKEND_PORT_OFFSET },
 };
 
-/** Public browser port for `bun lisca dev * mobile` (API proxied to Rust on 876x). */
+/** Public browser port for `bun lisca dev * web-native` (API proxied to Rust on 876x). */
 const LISCA_MOBILE_PORTS = {
   aligner: 8081,
   annotator: 8082,
