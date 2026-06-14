@@ -12,6 +12,7 @@ import { canvasPanResponderProps } from "../canvas/canvas-pan-responder";
 import { useCanvasBackground } from "../canvas/canvas-theme";
 import { clientToFramePoint } from "../canvas/frame-pixels";
 import { usePreparedFrameSkImage } from "../canvas/prepared-frame-sk-image";
+import { AlignFrameChrome } from "./align-frame-chrome";
 import { AlignGridSkiaOverlay } from "./align-grid-skia-overlay";
 
 export type { AlignCanvasFramePoint, AlignCanvasPointerEvent } from "./align-canvas-handlers";
@@ -52,7 +53,8 @@ function AlignCanvasFrameImage(props: {
 
 function AlignCanvasGridLayer(props: {
   frame: FrameResult;
-  frameLayout: FrameLayout;
+  viewportWidth: number;
+  viewportHeight: number;
   grid: AlignGridState;
   excludedCells?: Iterable<AlignGridCellCoord>;
 }) {
@@ -60,8 +62,9 @@ function AlignCanvasGridLayer(props: {
     <AlignGridSkiaOverlay
       excludedCells={props.excludedCells}
       frame={props.frame}
-      frameLayout={props.frameLayout}
       grid={props.grid}
+      viewportHeight={props.viewportHeight}
+      viewportWidth={props.viewportWidth}
     />
   );
 }
@@ -212,12 +215,14 @@ export function AlignCanvas({
           <Rect color={canvasBackground} height={layout.height} width={layout.width} x={0} y={0} />
           {skImage && frame && frameLayout ? (
             <Group>
+              <AlignFrameChrome frameLayout={frameLayout} />
               <AlignCanvasFrameImage frameLayout={frameLayout} skImage={skImage} />
               <AlignCanvasGridLayer
                 excludedCells={excludedCells}
                 frame={frame}
-                frameLayout={frameLayout}
                 grid={activeGrid}
+                viewportHeight={layout.height}
+                viewportWidth={layout.width}
               />
             </Group>
           ) : null}

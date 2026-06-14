@@ -1,56 +1,102 @@
 import type { AlignGridCellCoord, AlignGridState } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
-import { enumerateVisibleAlignGridCells } from "@lisca/utils";
-import type { FrameLayout } from "@lisca/utils";
-import { Group, Path, Rect, Skia } from "@shopify/react-native-skia";
+import {
+  alignGridOverlayCellRgba,
+  alignGridOverlayColors,
+  buildAlignGridOverlayScene,
+  type AlignGridOverlayCell,
+} from "@lisca/utils";
+import { Circle, Group, Line, Path, Skia } from "@shopify/react-native-skia";
 
-function buildAlignGridPaths(
-  frame: FrameResult,
-  grid: AlignGridState,
-  frameLayout: FrameLayout,
-  excludedKeys: ReadonlySet<string>,
-) {
-  const included = Skia.Path.Make();
-  const excluded = Skia.Path.Make();
-  for (const cell of enumerateVisibleAlignGridCells(frame, grid)) {
-    const x = frameLayout.drawX + cell.x * frameLayout.scale;
-    const y = frameLayout.drawY + cell.y * frameLayout.scale;
-    const w = cell.w * frameLayout.scale;
-    const h = cell.h * frameLayout.scale;
-    const rect = Skia.XYWHRect(x, y, w, h);
-    if (excludedKeys.has(`${cell.i}:${cell.j}`)) {
-      excluded.addRect(rect);
+function buildCellPaths(cells: AlignGridOverlayCell[]) {
+  const includedFill = Skia.Path.Make();
+  const excludedFill = Skia.Path.Make();
+  const includedStroke = Skia.Path.Make();
+  const excludedStroke = Skia.Path.Make();
+  for (const cell of cells) {
+    const rect = Skia.XYWHRect(cell.x, cell.y, cell.w, cell.h);
+    if (cell.excluded) {
+      excludedFill.addRect(rect);
+      excludedStroke.addRect(rect);
     } else {
-      included.addRect(rect);
+      includedFill.addRect(rect);
+      includedStroke.addRect(rect);
     }
   }
-  return { included, excluded };
+  return { includedFill, excludedFill, includedStroke, excludedStroke };
 }
 
 export function AlignGridSkiaOverlay(props: {
   frame: FrameResult;
   grid: AlignGridState;
-  frameLayout: FrameLayout;
+  viewportWidth: number;
+  viewportHeight: number;
   excludedCells?: Iterable<AlignGridCellCoord>;
 }) {
-  const { frame, grid, frameLayout } = props;
-  if (!grid.enabled) {
-    return null;
-  }
-
+  const { frame, grid, viewportWidth, viewportHeight } = props;
   const excludedKeys = new Set(
     Array.from(props.excludedCells ?? [], (cell) => `${cell.i}:${cell.j}`),
   );
-  const { included, excluded } = buildAlignGridPaths(frame, grid, frameLayout, excludedKeys);
-  const originX = frameLayout.drawX + (frame.width / 2 + grid.tx) * frameLayout.scale;
-  const originY = frameLayout.drawY + (frame.height / 2 + grid.ty) * frameLayout.scale;
-  const opacity = grid.opacity * 0.55;
+  const scene = buildAlignGridOverlayScene(
+    frame,
+    grid,
+    viewportWidth,
+    viewportHeight,
+    excludedKeys,
+  );
+  if (!scene) {
+    return null;
+  }
+
+  const { includedFill, excludedFill, includedStroke, excludedStroke } = buildCellPaths(scene.cells);
+  const clip = Skia.XYWHRect(scene.clipRect.x, scene.clipRect.y, scene.clipRect.w, scene.clipRect.h);
 
   return (
     <Group>
-      <Path color={`rgba(68, 151, 255, ${opacity})`} path={included} style="fill" />
-      <Path color={`rgba(244, 63, 94, ${opacity})`} path={excluded} style="fill" />
-      <Rect color="white" height={8} width={8} x={originX - 4} y={originY - 4} />
+      <Group clip={clip}>
+        <Path
+          color={alignGridOverlayCellRgba(false, scene.fillOpacity)}
+          path={includedFill}
+          style="fill"
+        />
+        <Path
+          color={alignGridOverlayCellRgba(true, scene.fillOpacity)}
+          path={excludedFill}
+          style="fill"
+        />
+        <Path
+          color={alignGridOverlayCellRgba(false, scene.strokeOpacity)}
+          path={includedStroke}
+          strokeWidth={1}
+          style="stroke"
+        />
+        <Path
+          color={alignGridOverlayCellRgba(true, scene.strokeOpacity)}
+          path={excludedStroke}
+          strokeWidth={1}
+          style="stroke"
+        />
+      </Group>
+      <Circle
+        color={alignGridOverlayColors.origin}
+        cx={scene.origin.x}
+        cy={scene.origin.y}
+        r={4}
+        strokeWidth={2}
+        style="stroke"
+      />
+      <Line
+        color={alignGridOverlayColors.vectorA}
+        p1={scene.vectorA.start}
+        p2={scene.vectorA.end}
+        strokeWidth={2}
+      />
+      <Line
+        color={alignGridOverlayColors.vectorB}
+        p1={scene.vectorB.start}
+        p2={scene.vectorB.end}
+        strokeWidth={2}
+      />
     </Group>
   );
 }

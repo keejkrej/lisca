@@ -12,15 +12,17 @@ import type { AlignGridCellCoord, AlignGridState } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 import type { CanvasStatusMessage } from "@lisca/ui-headless";
 import {
-  alignGridBasis,
-  clamp,
-  enumerateVisibleAlignGridCells,
+  alignGridOverlayColors,
+  buildAlignFrameHaloRect,
+  buildAlignGridOverlayScene,
+  computeFrameLayout,
   type AlignGridWheelViewport,
 } from "@lisca/utils";
 import { cn } from "../../lib/utils";
 import { useLatest } from "../../hooks/use-latest";
 import { CanvasStatusMessageStack, CanvasToastStack } from "../canvas/canvas-status";
 import { resolvedCanvasBackground, useCanvasThemeRerender } from "../canvas/canvas-theme";
+import { usePreparedFrameBitmap } from "../canvas/prepared-frame-bitmap";
 export type {
   AlignCanvasFramePoint,
   AlignCanvasPointerEvent,
@@ -56,100 +58,59 @@ export type AlignCanvasProps = {
   onVirtualPointerCancel?: (event: AlignCanvasPointerEvent) => void;
   onVirtualWheel?: (event: AlignCanvasWheelEvent) => void;
 };
-type PreparedFrame = {
-  frame: FrameResult;
-  prepared: HTMLCanvasElement;
-};
-function pixelToDisplayValue(frame: FrameResult, index: number) {
-  const raw = Number(frame.pixels[index] ?? 0);
-  const contrast = frame.appliedContrast ?? frame.suggestedContrast ?? frame.contrastDomain;
-  if (!contrast || frame.pixelType === "uint8" || frame.pixelType === "uint8clamped") {
-    return clamp(Math.round(raw), 0, 255);
-  }
-  const span = Math.max(1, contrast.max - contrast.min);
-  return clamp(Math.round(((raw - contrast.min) / span) * 255), 0, 255);
-}
-function prepareFrameCanvas(frame: FrameResult): HTMLCanvasElement {
-  const canvas = document.createElement("canvas");
-  canvas.width = frame.width;
-  canvas.height = frame.height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return canvas;
-  const rgba = new Uint8ClampedArray(frame.width * frame.height * 4);
-  for (let index = 0; index < frame.width * frame.height; index += 1) {
-    const value = pixelToDisplayValue(frame, index);
-    const offset = index * 4;
-    rgba[offset] = value;
-    rgba[offset + 1] = value;
-    rgba[offset + 2] = value;
-    rgba[offset + 3] = 255;
-  }
-  ctx.putImageData(new ImageData(rgba, frame.width, frame.height), 0, 0);
-  return canvas;
-}
-function drawGridOverlay(
+
+function drawFrameHalo(
   ctx: CanvasRenderingContext2D,
-  viewportWidth: number,
-  viewportHeight: number,
-  frame: FrameResult,
-  grid: AlignGridState,
-  excludedCellKeys: ReadonlySet<string>,
+  frameLayout: ReturnType<typeof computeFrameLayout>,
 ) {
-  if (!grid.enabled) return;
-  const scale = Math.min(viewportWidth / frame.width, viewportHeight / frame.height);
-  const drawWidth = frame.width * scale;
-  const drawHeight = frame.height * scale;
-  const drawX = (viewportWidth - drawWidth) / 2;
-  const drawY = (viewportHeight - drawHeight) / 2;
-  const originX = drawX + (frame.width / 2 + grid.tx) * scale;
-  const originY = drawY + (frame.height / 2 + grid.ty) * scale;
-  const basis = alignGridBasis(grid.shape, grid.rotation, grid.spacingA, grid.spacingB);
-  const scaledA = {
-    x: basis.a.x * scale,
-    y: basis.a.y * scale,
-  };
-  const scaledB = {
-    x: basis.b.x * scale,
-    y: basis.b.y * scale,
-  };
+  const haloRect = buildAlignFrameHaloRect(frameLayout);
+  ctx.fillStyle = alignGridOverlayColors.frameHaloFill;
+  ctx.fillRect(haloRect.x, haloRect.y, haloRect.w, haloRect.h);
+  ctx.strokeStyle = alignGridOverlayColors.frameHaloStroke;
+  ctx.strokeRect(haloRect.x - 0.5, haloRect.y - 0.5, haloRect.w + 1, haloRect.h + 1);
+}
+
+function drawGridOverlayFromScene(
+  ctx: CanvasRenderingContext2D,
+  scene: NonNullable<ReturnType<typeof buildAlignGridOverlayScene>>,
+) {
   ctx.save();
   ctx.beginPath();
-  ctx.rect(drawX, drawY, drawWidth, drawHeight);
+  ctx.rect(scene.clipRect.x, scene.clipRect.y, scene.clipRect.w, scene.clipRect.h);
   ctx.clip();
-  for (const cell of enumerateVisibleAlignGridCells(frame, grid)) {
-    const color = excludedCellKeys.has(`${cell.i}:${cell.j}`) ? "244, 63, 94" : "68, 151, 255";
-    ctx.fillStyle = `rgba(${color}, ${grid.opacity * 0.55})`;
-    ctx.strokeStyle = `rgba(${color}, ${Math.max(0.45, grid.opacity * 0.9)})`;
+  for (const cell of scene.cells) {
+    const rgb = cell.excluded
+      ? alignGridOverlayColors.excludedRgb
+      : alignGridOverlayColors.includedRgb;
+    ctx.fillStyle = `rgba(${rgb}, ${scene.fillOpacity})`;
+    ctx.strokeStyle = `rgba(${rgb}, ${scene.strokeOpacity})`;
     ctx.lineWidth = 1;
-    const scaledX = drawX + cell.x * scale;
-    const scaledY = drawY + cell.y * scale;
-    const scaledWidth = cell.w * scale;
-    const scaledHeight = cell.h * scale;
-    ctx.fillRect(scaledX, scaledY, scaledWidth, scaledHeight);
+    ctx.fillRect(cell.x, cell.y, cell.w, cell.h);
     ctx.strokeRect(
-      scaledX + 0.5,
-      scaledY + 0.5,
-      Math.max(0, scaledWidth - 1),
-      Math.max(0, scaledHeight - 1),
+      cell.x + 0.5,
+      cell.y + 0.5,
+      Math.max(0, cell.w - 1),
+      Math.max(0, cell.h - 1),
     );
   }
-  ctx.strokeStyle = "rgba(255,255,255,0.9)";
+  ctx.restore();
+  ctx.strokeStyle = alignGridOverlayColors.origin;
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.arc(originX, originY, 4, 0, Math.PI * 2);
+  ctx.arc(scene.origin.x, scene.origin.y, 4, 0, Math.PI * 2);
   ctx.stroke();
-  ctx.strokeStyle = "rgba(249,115,22,0.95)";
+  ctx.strokeStyle = alignGridOverlayColors.vectorA;
   ctx.beginPath();
-  ctx.moveTo(originX, originY);
-  ctx.lineTo(originX + scaledA.x, originY + scaledA.y);
+  ctx.moveTo(scene.vectorA.start.x, scene.vectorA.start.y);
+  ctx.lineTo(scene.vectorA.end.x, scene.vectorA.end.y);
   ctx.stroke();
-  ctx.strokeStyle = "rgba(34,197,94,0.95)";
+  ctx.strokeStyle = alignGridOverlayColors.vectorB;
   ctx.beginPath();
-  ctx.moveTo(originX, originY);
-  ctx.lineTo(originX + scaledB.x, originY + scaledB.y);
+  ctx.moveTo(scene.vectorB.start.x, scene.vectorB.start.y);
+  ctx.lineTo(scene.vectorB.end.x, scene.vectorB.end.y);
   ctx.stroke();
-  ctx.restore();
 }
+
 export function AlignCanvas({
   frame,
   grid,
@@ -166,23 +127,64 @@ export function AlignCanvas({
   onVirtualPointerCancel,
   onVirtualWheel,
 }: AlignCanvasProps) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const frameCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
-  const renderRafRef = useRef<number | null>(null);
+  const frameRafRef = useRef<number | null>(null);
+  const overlayRafRef = useRef<number | null>(null);
   const resizeRafRef = useRef<number | null>(null);
-  const latestFrameRef = useRef<PreparedFrame | null>(null);
   const gridRef = useRef(grid);
   gridRef.current = grid;
+  const frameRef = useRef(frame);
+  frameRef.current = frame;
   const dprRef = useRef(1);
-  const preparedFrame = frame ? prepareFrameCanvas(frame) : null;
-  const activeExcludedCellKeys = new Set(
+  const preparedBitmap = usePreparedFrameBitmap(frame);
+  const excludedCellKeysRef = useRef(new Set<string>());
+  excludedCellKeysRef.current = new Set(
     Array.from(excludedCells ?? [], (cell: AlignGridCellCoord) => `${cell.i}:${cell.j}`),
   );
-  const renderNow = () => {
-    renderRafRef.current = null;
-    const canvas = canvasRef.current;
+
+  const renderFrameLayer = () => {
+    frameRafRef.current = null;
+    const canvas = frameCanvasRef.current;
     const view = viewportRef.current;
-    const cached = latestFrameRef.current;
+    const currentFrame = frameRef.current;
+    const bitmap = preparedBitmap;
+    if (!canvas || !view) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const cssWidth = view.clientWidth;
+    const cssHeight = view.clientHeight;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.scale(dprRef.current, dprRef.current);
+    ctx.fillStyle = resolvedCanvasBackground(view);
+    ctx.fillRect(0, 0, cssWidth, cssHeight);
+    if (currentFrame && bitmap) {
+      const frameLayout = computeFrameLayout(
+        cssWidth,
+        cssHeight,
+        currentFrame.width,
+        currentFrame.height,
+      );
+      drawFrameHalo(ctx, frameLayout);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(
+        bitmap,
+        frameLayout.drawX,
+        frameLayout.drawY,
+        frameLayout.drawWidth,
+        frameLayout.drawHeight,
+      );
+    }
+    ctx.restore();
+  };
+
+  const renderOverlayLayer = () => {
+    overlayRafRef.current = null;
+    const canvas = overlayCanvasRef.current;
+    const view = viewportRef.current;
+    const currentFrame = frameRef.current;
     if (!canvas || !view) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -190,71 +192,92 @@ export function AlignCanvas({
     const cssHeight = view.clientHeight;
     const activeGrid = previewGridRef?.current ?? gridRef.current;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!currentFrame) return;
     ctx.save();
     ctx.scale(dprRef.current, dprRef.current);
-    ctx.fillStyle = resolvedCanvasBackground(view);
-    ctx.fillRect(0, 0, cssWidth, cssHeight);
-    if (cached) {
-      const scale = Math.min(cssWidth / cached.frame.width, cssHeight / cached.frame.height);
-      const drawWidth = cached.frame.width * scale;
-      const drawHeight = cached.frame.height * scale;
-      const drawX = (cssWidth - drawWidth) / 2;
-      const drawY = (cssHeight - drawHeight) / 2;
-      ctx.fillStyle = "rgba(255,255,255,0.03)";
-      ctx.fillRect(drawX - 8, drawY - 8, drawWidth + 16, drawHeight + 16);
-      ctx.strokeStyle = "rgba(255,255,255,0.08)";
-      ctx.strokeRect(drawX - 8.5, drawY - 8.5, drawWidth + 17, drawHeight + 17);
-      ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(cached.prepared, drawX, drawY, drawWidth, drawHeight);
-      drawGridOverlay(ctx, cssWidth, cssHeight, cached.frame, activeGrid, activeExcludedCellKeys);
+    const scene = buildAlignGridOverlayScene(
+      currentFrame,
+      activeGrid,
+      cssWidth,
+      cssHeight,
+      excludedCellKeysRef.current,
+    );
+    if (scene) {
+      drawGridOverlayFromScene(ctx, scene);
     }
     ctx.restore();
   };
-  const renderNowLatest = useLatest(renderNow);
+
+  const scheduleFrameRender = () => {
+    if (frameRafRef.current != null) return;
+    frameRafRef.current = window.requestAnimationFrame(renderFrameLayer);
+  };
+
+  const scheduleOverlayRender = () => {
+    if (overlayRafRef.current != null) return;
+    overlayRafRef.current = window.requestAnimationFrame(renderOverlayLayer);
+  };
+
+  const scheduleAllRender = () => {
+    scheduleFrameRender();
+    scheduleOverlayRender();
+  };
+
+  const scheduleFrameRenderLatest = useLatest(scheduleFrameRender);
+  const scheduleOverlayRenderLatest = useLatest(scheduleOverlayRender);
+  const scheduleAllRenderLatest = useLatest(scheduleAllRender);
+
   useEffect(() => {
-    latestFrameRef.current =
-      frame && preparedFrame
-        ? {
-            frame,
-            prepared: preparedFrame,
-          }
-        : null;
-    renderNowLatest.current();
-  }, [frame, preparedFrame, renderNowLatest]);
+    scheduleFrameRenderLatest.current();
+    scheduleOverlayRenderLatest.current();
+  }, [frame, preparedBitmap, scheduleFrameRenderLatest, scheduleOverlayRenderLatest]);
+
   useEffect(() => {
-    renderNowLatest.current();
-  }, [grid, excludedCells, renderNowLatest]);
+    scheduleOverlayRenderLatest.current();
+  }, [grid, excludedCells, scheduleOverlayRenderLatest]);
+
   useEffect(() => {
     if (!previewRedrawRef) return;
-    previewRedrawRef.current = () => renderNowLatest.current();
+    previewRedrawRef.current = () => scheduleOverlayRenderLatest.current();
     return () => {
       previewRedrawRef.current = null;
     };
-  }, [previewRedrawRef, renderNowLatest]);
-  useCanvasThemeRerender(renderNow);
+  }, [previewRedrawRef, scheduleOverlayRenderLatest]);
+
+  useCanvasThemeRerender(() => scheduleFrameRenderLatest.current());
+
   useLayoutEffect(() => {
     const view = viewportRef.current;
-    const canvas = canvasRef.current;
-    if (!view || !canvas) return;
-    const resize = () => {
-      if (resizeRafRef.current != null) {
-        window.cancelAnimationFrame(resizeRafRef.current);
-      }
-      resizeRafRef.current = window.requestAnimationFrame(() => {
-        resizeRafRef.current = null;
-        const dpr = window.devicePixelRatio || 1;
-        const width = Math.max(1, Math.floor(view.clientWidth * dpr));
-        const height = Math.max(1, Math.floor(view.clientHeight * dpr));
-        dprRef.current = dpr;
+    const frameCanvas = frameCanvasRef.current;
+    const overlayCanvas = overlayCanvasRef.current;
+    if (!view || !frameCanvas || !overlayCanvas) return;
+
+    const resizeCanvases = () => {
+      const dpr = window.devicePixelRatio || 1;
+      const width = Math.max(1, Math.floor(view.clientWidth * dpr));
+      const height = Math.max(1, Math.floor(view.clientHeight * dpr));
+      dprRef.current = dpr;
+      for (const canvas of [frameCanvas, overlayCanvas]) {
         if (canvas.width !== width) canvas.width = width;
         if (canvas.height !== height) canvas.height = height;
         const cssWidth = `${view.clientWidth}px`;
         const cssHeight = `${view.clientHeight}px`;
         if (canvas.style.width !== cssWidth) canvas.style.width = cssWidth;
         if (canvas.style.height !== cssHeight) canvas.style.height = cssHeight;
-        renderNowLatest.current();
+      }
+      scheduleAllRenderLatest.current();
+    };
+
+    const resize = () => {
+      if (resizeRafRef.current != null) {
+        window.cancelAnimationFrame(resizeRafRef.current);
+      }
+      resizeRafRef.current = window.requestAnimationFrame(() => {
+        resizeRafRef.current = null;
+        resizeCanvases();
       });
     };
+
     const observer = new ResizeObserver(() => resize());
     observer.observe(view);
     resize();
@@ -263,53 +286,62 @@ export function AlignCanvas({
         window.cancelAnimationFrame(resizeRafRef.current);
         resizeRafRef.current = null;
       }
-      if (renderRafRef.current != null) {
-        window.cancelAnimationFrame(renderRafRef.current);
-        renderRafRef.current = null;
+      if (frameRafRef.current != null) {
+        window.cancelAnimationFrame(frameRafRef.current);
+        frameRafRef.current = null;
+      }
+      if (overlayRafRef.current != null) {
+        window.cancelAnimationFrame(overlayRafRef.current);
+        overlayRafRef.current = null;
       }
       observer.disconnect();
     };
-  }, [renderNowLatest]);
+  }, [scheduleAllRenderLatest]);
+
   const getFramePointFromClient = (
     clientX: number,
     clientY: number,
   ): AlignCanvasFramePoint | null => {
-    const cached = latestFrameRef.current;
+    const currentFrame = frameRef.current;
     const view = viewportRef.current;
-    if (!cached || !view) return null;
+    if (!currentFrame || !view) return null;
     const bounds = view.getBoundingClientRect();
-    const scale = Math.min(bounds.width / cached.frame.width, bounds.height / cached.frame.height);
-    const drawWidth = cached.frame.width * scale;
-    const drawHeight = cached.frame.height * scale;
-    const drawX = (bounds.width - drawWidth) / 2;
-    const drawY = (bounds.height - drawHeight) / 2;
+    const frameLayout = computeFrameLayout(
+      bounds.width,
+      bounds.height,
+      currentFrame.width,
+      currentFrame.height,
+    );
     const pointerX = clientX - bounds.left;
     const pointerY = clientY - bounds.top;
     if (
-      pointerX < drawX ||
-      pointerX > drawX + drawWidth ||
-      pointerY < drawY ||
-      pointerY > drawY + drawHeight
+      pointerX < frameLayout.drawX ||
+      pointerX > frameLayout.drawX + frameLayout.drawWidth ||
+      pointerY < frameLayout.drawY ||
+      pointerY > frameLayout.drawY + frameLayout.drawHeight
     ) {
       return null;
     }
     return {
-      x: (pointerX - drawX) / scale,
-      y: (pointerY - drawY) / scale,
+      x: (pointerX - frameLayout.drawX) / frameLayout.scale,
+      y: (pointerY - frameLayout.drawY) / frameLayout.scale,
     };
   };
+
   const getViewport = (): AlignGridWheelViewport | null => {
     const view = viewportRef.current;
-    if (!view || !frame) return null;
+    const currentFrame = frameRef.current;
+    if (!view || !currentFrame) return null;
     return {
       displayWidth: view.clientWidth,
       displayHeight: view.clientHeight,
-      modelWidth: frame.width,
-      modelHeight: frame.height,
+      modelWidth: currentFrame.width,
+      modelHeight: currentFrame.height,
     };
   };
+
   const toVirtualPointerEvent = (
-    event: ReactPointerEvent<HTMLCanvasElement>,
+    event: ReactPointerEvent<HTMLDivElement>,
   ): AlignCanvasPointerEvent => ({
     pointerId: event.pointerId,
     pointerType: event.pointerType,
@@ -327,9 +359,8 @@ export function AlignCanvas({
       }
     },
   });
-  const toVirtualWheelEvent = (
-    event: ReactWheelEvent<HTMLCanvasElement>,
-  ): AlignCanvasWheelEvent => ({
+
+  const toVirtualWheelEvent = (event: ReactWheelEvent<HTMLDivElement>): AlignCanvasWheelEvent => ({
     deltaMode: event.deltaMode,
     deltaX: event.deltaX,
     deltaY: event.deltaY,
@@ -341,6 +372,7 @@ export function AlignCanvas({
     viewport: getViewport(),
     preventDefault: () => event.preventDefault(),
   });
+
   return (
     <div
       ref={viewportRef}
@@ -349,9 +381,8 @@ export function AlignCanvas({
         className,
       )}
     >
-      <canvas
-        ref={canvasRef}
-        className="block h-full w-full select-none"
+      <div
+        className="absolute inset-0"
         style={{
           cursor: cursor ?? "default",
           touchAction: "none",
@@ -362,7 +393,13 @@ export function AlignCanvas({
         onPointerMove={(event) => onVirtualPointerMove?.(toVirtualPointerEvent(event))}
         onPointerUp={(event) => onVirtualPointerUp?.(toVirtualPointerEvent(event))}
         onWheel={(event) => onVirtualWheel?.(toVirtualWheelEvent(event))}
-      />
+      >
+        <canvas ref={frameCanvasRef} className="absolute inset-0 block h-full w-full select-none" />
+        <canvas
+          ref={overlayCanvasRef}
+          className="pointer-events-none absolute inset-0 block h-full w-full select-none"
+        />
+      </div>
 
       <CanvasStatusMessageStack messages={messages} />
       <CanvasToastStack messages={toasts} />

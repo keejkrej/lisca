@@ -4,6 +4,7 @@ export * from "./server";
 export * from "./frame";
 export * from "./annotate";
 export * from "./align-grid";
+export * from "./align-grid-overlay";
 export * from "./crop-frame";
 export * from "./navigation";
 export * from "./folder-source-parse";

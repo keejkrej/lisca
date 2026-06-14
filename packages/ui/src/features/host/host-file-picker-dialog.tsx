@@ -67,11 +67,7 @@ export function HostFilePickerDialog({
         if (event.target === event.currentTarget) onOpenChange(false);
       }}
     >
-      <DialogSurface
-        aria-labelledby="host-file-picker-title"
-        className="max-h-[86vh]"
-        maxWidth="2xl"
-      >
+      <DialogSurface aria-labelledby="host-file-picker-title" maxWidth="2xl">
         <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
           <div className="min-w-0">
             <h2 className="font-semibold text-foreground text-lg leading-none" id="host-file-picker-title">
@@ -98,7 +94,7 @@ export function HostFilePickerDialog({
           </Button>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-3 px-5 py-4">
+        <div className="flex flex-col gap-3 px-5 py-4">
           {recentItems && recentItems.length > 0 && onPickRecent ? (
             <div className="space-y-2">
               <p className="font-medium text-foreground text-sm">Recent</p>
@@ -146,7 +142,7 @@ export function HostFilePickerDialog({
             </Button>
           </div>
 
-          <div className="min-h-[220px] overflow-auto rounded-md border border-border bg-background/50">
+          <div className="max-h-[min(360px,42vh)] min-h-[220px] overflow-auto rounded-md border border-border bg-background/50">
             {picker.loading ? (
               <div className="flex h-[220px] items-center justify-center text-muted-foreground text-sm">
                 Loading…
