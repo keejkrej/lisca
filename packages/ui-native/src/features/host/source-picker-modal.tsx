@@ -8,6 +8,7 @@ import { Text } from "../../../components/ui/text";
 import { cn } from "../../../lib/utils";
 import { DialogDescriptionText, DialogTitleText } from "../../shell/modal/dialog-copy";
 import {
+  DIALOG_MAX_WIDTH,
   DialogBody,
   DialogHeader,
   DialogSurface,
@@ -46,7 +47,7 @@ export function SourcePickerModal(props: SourcePickerModalProps) {
 
   return (
     <ModalScrim open={props.open} onClose={props.onClose}>
-      <DialogSurface maxWidth={512} padded={false}>
+      <DialogSurface maxWidth={DIALOG_MAX_WIDTH.lg} padded={false}>
         <DialogHeader>
           <View className="w-full flex-row items-start justify-between gap-4">
             <View className="min-w-0 flex-1 gap-1">

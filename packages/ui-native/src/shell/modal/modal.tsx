@@ -1,16 +1,26 @@
 import * as DialogPrimitive from "@rn-primitives/dialog";
 import { createContext, useContext, type ReactNode } from "react";
-import { Platform, View, type ViewProps } from "react-native";
+import { Platform, View, useWindowDimensions, type ViewProps } from "react-native";
 
 import { Dialog, DialogOverlay, DialogPortal } from "../../../components/ui/dialog";
 import { cn } from "../../../lib/utils";
 
 const ShellDialogContext = createContext(false);
 
+/** Pixel widths aligned with web `DialogSurface` Tailwind tokens. */
+export const DIALOG_MAX_WIDTH = {
+  sm: 448,
+  lg: 512,
+  xl: 576,
+  "2xl": 672,
+} as const;
+
+const DIALOG_HORIZONTAL_INSET = Platform.select({ web: 48, default: 16 }) ?? 16;
+
 function ShellDialogContent({
   accessibilityLabel,
   children,
-  maxWidth = 480,
+  maxWidth = DIALOG_MAX_WIDTH.sm,
   padded = true,
 }: {
   accessibilityLabel?: string;
@@ -18,19 +28,26 @@ function ShellDialogContent({
   maxWidth?: number;
   padded?: boolean;
 }) {
+  const { width: windowWidth } = useWindowDimensions();
+  const dialogWidth = Math.min(maxWidth, Math.max(0, windowWidth - DIALOG_HORIZONTAL_INSET));
+
   return (
     <DialogPortal>
-      <DialogOverlay>
+      <DialogOverlay
+        className={Platform.select({
+          web: "bg-black/55 px-6 py-4 backdrop-blur-sm",
+        })}
+      >
         <DialogPrimitive.Content
           accessibilityLabel={accessibilityLabel}
           className={cn(
-            "bg-background border-border z-50 mx-auto w-full flex-col rounded-2xl border shadow-lg shadow-black/5",
+            "bg-background border-border z-50 mx-auto flex max-w-full flex-col rounded-2xl border shadow-lg shadow-black/5",
             padded ? "gap-4 p-5" : "gap-0 p-0",
             Platform.select({
               web: "animate-in fade-in-0 zoom-in-95 duration-200",
             }),
           )}
-          style={{ maxWidth }}
+          style={{ maxWidth: dialogWidth, width: dialogWidth }}
         >
           {children}
         </DialogPrimitive.Content>

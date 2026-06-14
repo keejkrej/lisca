@@ -12,6 +12,7 @@ import {
   DialogTitleText,
 } from "../../shell/modal/dialog-copy";
 import {
+  DIALOG_MAX_WIDTH,
   DialogBody,
   DialogFooter,
   DialogHeader,
@@ -40,7 +41,6 @@ export type HostFilePickerDialogProps = {
   onPickRecent?: (path: string) => void;
 };
 
-const DIALOG_MAX_WIDTH = 672;
 const LIST_MIN_HEIGHT = 220;
 
 export function HostFilePickerDialog({
@@ -56,8 +56,7 @@ export function HostFilePickerDialog({
   onPickRecent,
 }: HostFilePickerDialogProps) {
   const colors = useThemeColors();
-  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-  const dialogMaxWidth = Math.min(DIALOG_MAX_WIDTH, Math.round(windowWidth * 0.88));
+  const { height: windowHeight } = useWindowDimensions();
   const listMaxHeight = Math.min(360, Math.round(windowHeight * 0.42));
 
   const picker = useHostFilePickerState({
@@ -75,7 +74,7 @@ export function HostFilePickerDialog({
 
   return (
     <ModalScrim open={open} onClose={() => onOpenChange(false)}>
-      <DialogSurface accessibilityLabel={title} maxWidth={dialogMaxWidth} padded={false}>
+      <DialogSurface accessibilityLabel={title} maxWidth={DIALOG_MAX_WIDTH["2xl"]} padded={false}>
         <DialogHeader>
           <View className="w-full flex-row items-start justify-between gap-4">
             <View className="min-w-0 flex-1">

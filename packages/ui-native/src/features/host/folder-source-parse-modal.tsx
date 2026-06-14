@@ -12,7 +12,7 @@ import {
   DialogErrorText,
   DialogTitleText,
 } from "../../shell/modal/dialog-copy";
-import { DialogSurface, ModalScrim } from "../../shell/modal/modal";
+import { DIALOG_MAX_WIDTH, DialogSurface, ModalScrim } from "../../shell/modal/modal";
 import { useThemeColors } from "../../theme/use-theme-colors";
 import type { HostFilePickerOperations } from "./host-operations";
 
@@ -36,7 +36,7 @@ export function FolderSourceParseModal({
 
   return (
     <ModalScrim open onClose={onClose}>
-      <DialogSurface accessibilityLabel="Parse image folder">
+      <DialogSurface accessibilityLabel="Parse image folder" maxWidth={DIALOG_MAX_WIDTH.xl}>
         <DialogTitleText>Parse image folder</DialogTitleText>
         <DialogDescriptionText numberOfLines={2}>{modal.path}</DialogDescriptionText>
         {modal.detecting ? (
