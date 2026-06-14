@@ -74,7 +74,10 @@ async function reservePort(): Promise<number> {
 }
 
 describe("lisca dev LAN host", () => {
-  const { resolveDevLanHost } = require("./lisca-dev-lan-host.cjs");
+  const {
+    isUsableDevHost,
+    resolveDevLanHost,
+  } = require("./lisca-dev-lan-host.cjs");
 
   it("prefers explicit LISCA_DEV_HOST", () => {
     expect(resolveDevLanHost({ LISCA_DEV_HOST: "10.0.0.5" })).toBe("10.0.0.5");
@@ -86,6 +89,39 @@ describe("lisca dev LAN host", () => {
 
   it("returns a non-empty address when interfaces exist", () => {
     expect(resolveDevLanHost({})).toMatch(/\d+\.\d+\.\d+\.\d+/);
+  });
+
+  it("skips VM bridge and link-local addresses", () => {
+    expect(isUsableDevHost("192.168.64.1")).toBe(false);
+    expect(isUsableDevHost("169.254.110.149")).toBe(false);
+    expect(isUsableDevHost("10.181.67.18")).toBe(true);
+  });
+
+  it("prefers Wi-Fi over a Parallels bridge100 address", () => {
+    const os = require("node:os");
+    const original = os.networkInterfaces;
+    os.networkInterfaces = () => ({
+      bridge100: [{ family: "IPv4", internal: false, address: "192.168.64.1" }],
+      en1: [{ family: "IPv4", internal: false, address: "10.181.67.18" }],
+    });
+    try {
+      expect(resolveDevLanHost({})).toBe("10.181.67.18");
+    } finally {
+      os.networkInterfaces = original;
+    }
+  });
+
+  it("uses iPhone hotspot bridge addresses when present", () => {
+    const os = require("node:os");
+    const original = os.networkInterfaces;
+    os.networkInterfaces = () => ({
+      bridge100: [{ family: "IPv4", internal: false, address: "172.20.10.1" }],
+    });
+    try {
+      expect(resolveDevLanHost({})).toBe("172.20.10.1");
+    } finally {
+      os.networkInterfaces = original;
+    }
   });
 });
 
