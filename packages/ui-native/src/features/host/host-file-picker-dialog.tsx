@@ -80,10 +80,14 @@ export function HostFilePickerDialog({
             <View className="min-w-0 flex-1">
               <DialogTitleText>{title}</DialogTitleText>
               {picker.locationLabel ? (
-                <DialogDescriptionText numberOfLines={1}>{picker.locationLabel}</DialogDescriptionText>
+                <DialogDescriptionText className="mt-1" numberOfLines={1}>
+                  {picker.locationLabel}
+                </DialogDescriptionText>
               ) : null}
               {description ? (
-                <DialogDescriptionText className="mt-0.5">{description}</DialogDescriptionText>
+                <DialogDescriptionText className={picker.locationLabel ? "mt-1" : "mt-0.5"}>
+                  {description}
+                </DialogDescriptionText>
               ) : null}
             </View>
             <Button

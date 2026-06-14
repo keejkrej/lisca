@@ -83,6 +83,18 @@ fn home_from_env(var: &str) -> Option<String> {
     }
 }
 
+fn entry_is_directory(entry_path: &Path, file_type: std::fs::FileType) -> bool {
+    if file_type.is_dir() {
+        return true;
+    }
+    if !file_type.is_symlink() {
+        return false;
+    }
+    std::fs::metadata(entry_path)
+        .map(|metadata| metadata.is_dir())
+        .unwrap_or(false)
+}
+
 fn list_directory(path: Option<String>) -> Result<HostListDirectoryResult, FsError> {
     if path.as_deref().map(str::is_empty).unwrap_or(true) {
         return Ok(list_roots());
@@ -109,7 +121,7 @@ fn list_directory(path: Option<String>) -> Result<HostListDirectoryResult, FsErr
         entries.push(HostFsEntry {
             name,
             path: entry_path.to_string_lossy().to_string(),
-            is_directory: entry_type.is_dir(),
+            is_directory: entry_is_directory(&entry_path, entry_type),
         });
     }
 
@@ -315,5 +327,41 @@ mod tests {
         assert!(ensure_local_path_allowed(Path::new("/root/workspace/run-1")).is_ok());
         assert!(ensure_local_path_allowed(Path::new("/etc")).is_err());
         std::env::remove_var("LISCA_FS_ROOTS");
+    }
+
+    #[test]
+    fn entry_is_directory_follows_symlinks_to_directories() {
+        let base = std::env::temp_dir().join(format!("lisca-fs-test-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&base).unwrap();
+        let target = base.join("target");
+        std::fs::create_dir(&target).unwrap();
+        let link = base.join("link");
+        std::fs::write(base.join("file.txt"), b"data").unwrap();
+
+        #[cfg(unix)]
+        std::os::unix::fs::symlink(&target, &link).unwrap();
+
+        #[cfg(windows)]
+        {
+            use std::os::windows::fs::symlink_dir;
+            symlink_dir(&target, &link).unwrap();
+        }
+
+        let result = list_directory(Some(base.to_string_lossy().to_string())).unwrap();
+        let link_entry = result
+            .entries
+            .iter()
+            .find(|entry| entry.name == "link")
+            .expect("symlink entry");
+        let file_entry = result
+            .entries
+            .iter()
+            .find(|entry| entry.name == "file.txt")
+            .expect("file entry");
+
+        assert!(link_entry.is_directory);
+        assert!(!file_entry.is_directory);
+
+        let _ = std::fs::remove_dir_all(&base);
     }
 }

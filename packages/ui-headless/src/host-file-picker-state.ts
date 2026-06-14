@@ -25,6 +25,11 @@ export function parentPathForGoUp(parent: string | null | undefined): string | n
 export function canGoUpFromList(list: HostListDirectoryResult | null): boolean {
   return Boolean(list?.path && list.parent != null);
 }
+
+export function hostFilePickerLocationLabel(list: HostListDirectoryResult | null): string | null {
+  const path = list?.path?.trim();
+  return path ? path : null;
+}
 export type UseHostFilePickerStateOptions = {
   open: boolean;
   mode: HostFilePickerMode;
@@ -62,11 +67,14 @@ export function useHostFilePickerState(options: UseHostFilePickerStateOptions) {
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
+    setList(null);
+    setSelectedFile(null);
+    setError(null);
+    setLoading(true);
     void (async () => {
-      setLoading(true);
-      setError(null);
       try {
-        const result = await hostPort.listDirectory(null);
+        const home = await hostPort.userHomeDirectory();
+        const result = await hostPort.listDirectory(home);
         if (!cancelled) {
           setList(result);
           setSelectedFile(null);
@@ -92,7 +100,7 @@ export function useHostFilePickerState(options: UseHostFilePickerStateOptions) {
   }, [hostPort, open]);
   const dirMode = isDirectoryMode(mode);
   const canGoUp = canGoUpFromList(list);
-  const locationLabel = list?.path ?? null;
+  const locationLabel = hostFilePickerLocationLabel(list);
   const goUp = () => {
     const parent = list?.parent;
     if (parent == null) return;

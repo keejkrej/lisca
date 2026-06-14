@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   canGoUpFromList,
   fileMatchesMode,
+  hostFilePickerLocationLabel,
   isDirectoryMode,
   parentPathForGoUp,
 } from "../src/host-file-picker-state";
@@ -36,5 +37,15 @@ describe("host-file-picker-state", () => {
     expect(fileMatchesMode("nd2_file", nd2)).toBe(true);
     expect(fileMatchesMode("nd2_file", txt)).toBe(false);
     expect(fileMatchesMode("nd2_file", { ...nd2, isDirectory: true })).toBe(false);
+  });
+
+  it("hostFilePickerLocationLabel hides empty and root-list paths", () => {
+    expect(hostFilePickerLocationLabel(null)).toBe(null);
+    expect(hostFilePickerLocationLabel({ path: null, parent: null, entries: [] })).toBe(null);
+    expect(hostFilePickerLocationLabel({ path: "", parent: null, entries: [] })).toBe(null);
+    expect(hostFilePickerLocationLabel({ path: "  ", parent: null, entries: [] })).toBe(null);
+    expect(
+      hostFilePickerLocationLabel({ path: "/Users/jack", parent: "/Users", entries: [] }),
+    ).toBe("/Users/jack");
   });
 });

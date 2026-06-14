@@ -74,11 +74,11 @@ export function HostFilePickerDialog({
       >
         <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
           <div className="min-w-0">
-            <h2 className="font-semibold text-foreground text-lg" id="host-file-picker-title">
+            <h2 className="font-semibold text-foreground text-lg leading-none" id="host-file-picker-title">
               {title}
             </h2>
             {picker.locationLabel ? (
-              <p className="truncate text-muted-foreground text-sm" title={picker.locationLabel}>
+              <p className="mt-1 truncate text-muted-foreground text-sm" title={picker.locationLabel}>
                 {picker.locationLabel}
               </p>
             ) : null}
