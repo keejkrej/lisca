@@ -208,6 +208,9 @@ describe("align grid utils", () => {
     expect(beginAlignGridPointerGesture(grid, input, "zoom-vector")?.intent).toBe("spacing");
     expect(beginAlignGridPointerGesture(grid, input, "zoom-pattern")?.intent).toBe("size");
     expect(beginAlignGridPointerGesture(grid, { ...input, button: 2 }, "pan")).toBeNull();
+    expect(beginAlignGridPointerGesture(grid, { ...input, pointerType: "touch" }, "pan")?.intent).toBe(
+      "offset",
+    );
   });
 
   test("uses horizontal pointer motion for split zoom tools", () => {

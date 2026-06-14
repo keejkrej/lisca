@@ -2,6 +2,7 @@
 
 import {
   type PointerEvent as ReactPointerEvent,
+  type RefObject,
   type WheelEvent as ReactWheelEvent,
   useEffect,
   useLayoutEffect,
@@ -40,7 +41,8 @@ export type AlignCanvasWheelEvent = {
 export type AlignCanvasProps = {
   frame: FrameResult | null;
   grid: AlignGridState;
-  previewGrid?: AlignGridState | null;
+  previewGridRef?: RefObject<AlignGridState | null>;
+  previewRedrawRef?: RefObject<(() => void) | null>;
   excludedCells?: Iterable<AlignGridCellCoord>;
   loading?: boolean;
   emptyText?: string;
@@ -151,7 +153,8 @@ function drawGridOverlay(
 export function AlignCanvas({
   frame,
   grid,
-  previewGrid,
+  previewGridRef,
+  previewRedrawRef,
   excludedCells,
   messages,
   toasts,
@@ -168,6 +171,8 @@ export function AlignCanvas({
   const renderRafRef = useRef<number | null>(null);
   const resizeRafRef = useRef<number | null>(null);
   const latestFrameRef = useRef<PreparedFrame | null>(null);
+  const gridRef = useRef(grid);
+  gridRef.current = grid;
   const dprRef = useRef(1);
   const preparedFrame = frame ? prepareFrameCanvas(frame) : null;
   const activeExcludedCellKeys = new Set(
@@ -183,7 +188,7 @@ export function AlignCanvas({
     if (!ctx) return;
     const cssWidth = view.clientWidth;
     const cssHeight = view.clientHeight;
-    const activeGrid = previewGrid ?? grid;
+    const activeGrid = previewGridRef?.current ?? gridRef.current;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.save();
     ctx.scale(dprRef.current, dprRef.current);
@@ -218,10 +223,14 @@ export function AlignCanvas({
   }, [frame, preparedFrame, renderNowLatest]);
   useEffect(() => {
     renderNowLatest.current();
-  }, [grid, previewGrid, renderNowLatest]);
+  }, [grid, excludedCells, renderNowLatest]);
   useEffect(() => {
-    renderNowLatest.current();
-  }, [excludedCells, renderNowLatest]);
+    if (!previewRedrawRef) return;
+    previewRedrawRef.current = () => renderNowLatest.current();
+    return () => {
+      previewRedrawRef.current = null;
+    };
+  }, [previewRedrawRef, renderNowLatest]);
   useCanvasThemeRerender(renderNow);
   useLayoutEffect(() => {
     const view = viewportRef.current;

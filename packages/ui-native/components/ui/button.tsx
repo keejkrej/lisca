@@ -116,9 +116,12 @@ function Button({
       ? (state: Parameters<NonNullable<typeof style>>[0]) => [disabledStyle, style(state)]
       : [disabledStyle, style];
 
+  const variantKey = `${variant ?? "default"}-${size ?? "default"}`;
+
   return (
     <TextClassContext.Provider value={buttonTextVariants({ variant, size })}>
       <Pressable
+        key={variantKey}
         accessibilityState={{ ...accessibilityState, disabled: Boolean(disabled) }}
         className={cn(
           disabled && Platform.OS !== "web" && "pointer-events-none opacity-64",

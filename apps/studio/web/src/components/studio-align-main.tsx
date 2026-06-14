@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import {
   AlignCanvas,
   cursorForAlignTool,
@@ -17,13 +18,15 @@ export function StudioAlignMain() {
   const canvas = useStudioAlignCanvas();
   const crop = useStudioAlignCrop();
   const nav = useStudioAlignNav();
-  const { handlePointerDown, handlePointerMove, handlePointerEnd, previewGrid } =
-    useAlignCanvasGridHandlers({
-      grid: canvas.grid,
-      patternZoomLocked: canvas.patternZoomLocked,
-      setGrid: canvas.setGrid,
-      toolMode: canvas.toolMode,
-    });
+  const previewRedrawRef = useRef<(() => void) | null>(null);
+  const gridHandlers = useAlignCanvasGridHandlers({
+    grid: canvas.grid,
+    patternZoomLocked: canvas.patternZoomLocked,
+    setGrid: canvas.setGrid,
+    toolMode: canvas.toolMode,
+    onPreviewGridChange: () => previewRedrawRef.current?.(),
+  });
+  const { handlePointerDown, handlePointerMove, handlePointerEnd } = gridHandlers;
   const visibleStatus = useCanvasTransientStatus(canvas.status);
   const activeToastStatus = crop.cropping
     ? "Cropping ROI output"
@@ -65,13 +68,14 @@ export function StudioAlignMain() {
       <ViewportCard>
         <AlignCanvas
           className="min-h-0 flex-1"
-          cursor={cursorForAlignTool(canvas.toolMode, canvas.grid.enabled, previewGrid != null)}
+          cursor={cursorForAlignTool(canvas.toolMode, canvas.grid.enabled, gridHandlers.dragging)}
           excludedCells={canvas.displayedExcludedCells}
           frame={canvas.frame}
           grid={canvas.grid}
           loading={canvas.scanLoading || nav.saving || canvas.frameLoading || crop.cropping}
           messages={messages}
-          previewGrid={previewGrid}
+          previewGridRef={gridHandlers.previewGridRef}
+          previewRedrawRef={previewRedrawRef}
           toasts={toasts}
           onVirtualPointerCancel={handlePointerEnd}
           onVirtualPointerDown={handlePointerDown}

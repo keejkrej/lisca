@@ -6,7 +6,7 @@ import {
   type AlignGridToolMode,
   type AlignGridWheelViewport,
 } from "@lisca/utils";
-import { useRef, useState } from "react";
+import { useRef, useState, type RefObject } from "react";
 
 export type AlignCanvasFramePoint = {
   x: number;
@@ -33,6 +33,16 @@ export type UseAlignCanvasGridHandlersOptions = {
   toolMode: AlignGridToolMode;
   patternZoomLocked?: boolean;
   disabled?: boolean;
+  /** Called when the in-flight preview grid changes; canvas should redraw locally. */
+  onPreviewGridChange?: () => void;
+};
+
+export type AlignCanvasGridHandlers = {
+  previewGridRef: RefObject<AlignGridState | null>;
+  dragging: boolean;
+  handlePointerDown: (event: AlignCanvasPointerEvent) => void;
+  handlePointerMove: (event: AlignCanvasPointerEvent) => void;
+  handlePointerEnd: (event: AlignCanvasPointerEvent) => void;
 };
 
 export function useAlignCanvasGridHandlers({
@@ -41,13 +51,13 @@ export function useAlignCanvasGridHandlers({
   patternZoomLocked = false,
   setGrid,
   toolMode,
-}: UseAlignCanvasGridHandlersOptions) {
+  onPreviewGridChange,
+}: UseAlignCanvasGridHandlersOptions): AlignCanvasGridHandlers {
   const gestureRef = useRef<AlignGridPointerGestureSession | null>(null);
   const previewGridRef = useRef<AlignGridState | null>(null);
-  const [previewGrid, setPreviewGridState] = useState<AlignGridState | null>(null);
-  const setPreviewGrid = (next: AlignGridState | null) => {
-    previewGridRef.current = next;
-    setPreviewGridState(next);
+  const [dragging, setDragging] = useState(false);
+  const notifyPreviewChange = () => {
+    onPreviewGridChange?.();
   };
   const handlePointerDown = (event: AlignCanvasPointerEvent) => {
     if (disabled || !event.viewport || !grid.enabled) return;
@@ -61,27 +71,32 @@ export function useAlignCanvasGridHandlers({
     event.preventDefault();
     event.capturePointer();
     gestureRef.current = session;
-    setPreviewGrid(null);
+    previewGridRef.current = null;
+    setDragging(true);
   };
   const handlePointerMove = (event: AlignCanvasPointerEvent) => {
     const gesture = gestureRef.current;
     if (!gesture || !event.viewport || gesture.pointerId !== event.pointerId) return;
     event.preventDefault();
-    setPreviewGrid(applyAlignGridPointerGesture(gesture, event, event.viewport));
+    previewGridRef.current = applyAlignGridPointerGesture(gesture, event, event.viewport);
+    notifyPreviewChange();
   };
   const handlePointerEnd = (event: AlignCanvasPointerEvent) => {
     if (gestureRef.current?.pointerId !== event.pointerId) return;
     gestureRef.current = null;
     const committedPreviewGrid = previewGridRef.current;
     if (committedPreviewGrid) setGrid(committedPreviewGrid);
-    setPreviewGrid(null);
+    previewGridRef.current = null;
+    setDragging(false);
+    notifyPreviewChange();
     event.releasePointer();
   };
   return {
+    previewGridRef,
+    dragging,
     handlePointerDown,
     handlePointerMove,
     handlePointerEnd,
-    previewGrid,
   };
 }
 

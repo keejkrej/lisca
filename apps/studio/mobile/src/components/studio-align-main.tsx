@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import {
   AlignCanvas,
   cursorForAlignTool,
@@ -14,14 +15,16 @@ import { StudioCropProgressModal } from "./studio-crop-progress-modal";
 export function StudioAlignMain() {
   const { state } = useStudioAlignPage();
   const canvas = useStudioAlignCanvas();
-  const { handlePointerDown, handlePointerMove, handlePointerEnd, previewGrid } =
-    useAlignCanvasGridHandlers({
-      disabled: canvas.cropping,
-      grid: canvas.grid,
-      patternZoomLocked: canvas.patternZoomLocked,
-      setGrid: canvas.setGrid,
-      toolMode: canvas.toolMode,
-    });
+  const previewRedrawRef = useRef<(() => void) | null>(null);
+  const gridHandlers = useAlignCanvasGridHandlers({
+    disabled: canvas.cropping,
+    grid: canvas.grid,
+    patternZoomLocked: canvas.patternZoomLocked,
+    setGrid: canvas.setGrid,
+    toolMode: canvas.toolMode,
+    onPreviewGridChange: () => previewRedrawRef.current?.(),
+  });
+  const { handlePointerDown, handlePointerMove, handlePointerEnd } = gridHandlers;
   const visibleStatus = useCanvasTransientStatus(canvas.status);
   const activeToastStatus = canvas.cropping
     ? "Cropping ROI output"
@@ -45,7 +48,7 @@ export function StudioAlignMain() {
     <>
       <ViewportCard>
         <AlignCanvas
-          cursor={cursorForAlignTool(canvas.toolMode, canvas.grid.enabled, previewGrid != null)}
+          cursor={cursorForAlignTool(canvas.toolMode, canvas.grid.enabled, gridHandlers.dragging)}
           excludedCells={canvas.displayedExcludedCells}
           frame={canvas.frame}
           grid={canvas.grid}
@@ -53,7 +56,8 @@ export function StudioAlignMain() {
             canvas.scanLoading || canvas.saving || canvas.frameLoading || canvas.cropping
           }
           messages={messages}
-          previewGrid={previewGrid}
+          previewGridRef={gridHandlers.previewGridRef}
+          previewRedrawRef={previewRedrawRef}
           toasts={toasts}
           onVirtualPointerCancel={handlePointerEnd}
           onVirtualPointerDown={handlePointerDown}

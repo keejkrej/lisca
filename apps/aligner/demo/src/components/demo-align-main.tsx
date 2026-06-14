@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { ViewportCard } from "@lisca/ui/shell";
 import {
   AlignCanvas,
@@ -10,12 +11,14 @@ import { frameWithContrast } from "@lisca/web-demo/browser";
 import type { DemoAlignState } from "@lisca/web-demo";
 
 export function DemoAlignMain({ state, embedded = false }: { state: DemoAlignState; embedded?: boolean }) {
+  const previewRedrawRef = useRef<(() => void) | null>(null);
   const gridHandlers = useAlignCanvasGridHandlers({
     disabled: false,
     grid: state.grid,
     patternZoomLocked: state.patternZoomLocked,
     setGrid: state.setGrid,
     toolMode: state.toolMode,
+    onPreviewGridChange: () => previewRedrawRef.current?.(),
   });
   const selectionHandlers = useAlignCanvasSelectionHandlers({
     enabled: state.manualExclusionEnabled,
@@ -66,7 +69,7 @@ export function DemoAlignMain({ state, embedded = false }: { state: DemoAlignSta
   const cursor =
     state.manualExclusionEnabled || selectionHandlers.selecting
       ? "crosshair"
-      : cursorForAlignTool(state.toolMode, state.grid.enabled, gridHandlers.previewGrid != null);
+      : cursorForAlignTool(state.toolMode, state.grid.enabled, gridHandlers.dragging);
   return (
     <ViewportCard>
       <AlignCanvas
@@ -76,7 +79,8 @@ export function DemoAlignMain({ state, embedded = false }: { state: DemoAlignSta
         frame={displayFrame}
         grid={state.grid}
         loading={state.frameLoading}
-        previewGrid={gridHandlers.previewGrid}
+        previewGridRef={gridHandlers.previewGridRef}
+        previewRedrawRef={previewRedrawRef}
         toasts={embedded ? [] : toasts}
         onVirtualPointerCancel={handlePointerCancel}
         onVirtualPointerDown={handlePointerDown}

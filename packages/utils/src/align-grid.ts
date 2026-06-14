@@ -380,6 +380,10 @@ export function isPrimaryAlignGridMouseButton(input: AlignGridMousePointerInput)
   return isAlignGridMousePointerInput(input) && input.button === 0;
 }
 
+export function isPrimaryAlignGridPointerButton(input: AlignGridMousePointerInput): boolean {
+  return input.button === 0;
+}
+
 export function classifyAlignGridPointerGesture(
   input: AlignGridMousePointerInput,
 ): AlignGridPointerIntent | null {
@@ -396,7 +400,7 @@ export function beginAlignGridPointerGesture(
   toolMode?: AlignGridToolMode,
 ): AlignGridPointerGestureSession | null {
   if (toolMode !== undefined) {
-    if (!isPrimaryAlignGridMouseButton(input)) return null;
+    if (!isPrimaryAlignGridPointerButton(input)) return null;
     const intent: AlignGridPointerIntent =
       toolMode === "pan"
         ? "offset"

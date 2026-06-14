@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import {
   AlignCanvas,
   CropProgressModal,
@@ -14,12 +15,14 @@ import { CropConfirmModal } from "./crop-confirm-modal";
 export function AlignerMain() {
   const canvas = useAlignCanvas();
   const crop = useAlignCrop();
+  const previewRedrawRef = useRef<(() => void) | null>(null);
   const gridHandlers = useAlignCanvasGridHandlers({
     disabled: crop.cropping,
     grid: canvas.grid,
     patternZoomLocked: canvas.patternZoomLocked,
     setGrid: canvas.setGrid,
     toolMode: canvas.toolMode,
+    onPreviewGridChange: () => previewRedrawRef.current?.(),
   });
   const selectionHandlers = useAlignCanvasSelectionHandlers({
     disabled: crop.cropping,
@@ -81,7 +84,7 @@ export function AlignerMain() {
   const cursor =
     canvas.manualExclusionEnabled || selectionHandlers.selecting
       ? "crosshair"
-      : cursorForAlignTool(canvas.toolMode, canvas.grid.enabled, gridHandlers.previewGrid != null);
+      : cursorForAlignTool(canvas.toolMode, canvas.grid.enabled, gridHandlers.dragging);
 
   return (
     <>
@@ -93,7 +96,8 @@ export function AlignerMain() {
           frame={canvas.frame}
           grid={canvas.grid}
           loading={canvas.scanLoading || canvas.frameLoading}
-          previewGrid={gridHandlers.previewGrid}
+          previewGridRef={gridHandlers.previewGridRef}
+          previewRedrawRef={previewRedrawRef}
           toasts={toasts}
           onVirtualPointerCancel={handlePointerCancel}
           onVirtualPointerDown={handlePointerDown}

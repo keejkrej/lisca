@@ -88,9 +88,11 @@ export function AlignToolButton(props: {
   className?: string;
 }) {
   const { active, label, Icon: ToolIcon, onPress, className } = props;
+  const colors = useThemeColors();
 
   return (
     <Button
+      key={active ? "active" : "inactive"}
       accessibilityLabel={label}
       accessibilityState={{ selected: active }}
       className={className ?? "w-full min-w-0 justify-center gap-2 px-3"}
@@ -98,7 +100,7 @@ export function AlignToolButton(props: {
       variant={active ? "default" : "outline"}
       onPress={onPress}
     >
-      <Icon as={ToolIcon} size={20} strokeWidth={2} />
+      <Icon as={ToolIcon} color={active ? colors.primaryForeground : colors.foreground} size={20} strokeWidth={2} />
       <Text
         className={cn("max-w-full shrink truncate text-xs", active && "text-primary-foreground")}
         numberOfLines={1}

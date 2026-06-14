@@ -1,20 +1,18 @@
 import type { AlignGridCellCoord, AlignGridState } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 import type { CanvasStatusMessage } from "@lisca/ui-headless";
-import {
-  alignGridBasis,
-  enumerateVisibleAlignGridCells,
-  type AlignGridWheelViewport,
-} from "@lisca/utils";
-import { Canvas, Group, Image, Rect, Skia, useCanvasRef } from "@shopify/react-native-skia";
-import { useRef, useState } from "react";
+import { computeFrameLayout, type FrameLayout } from "@lisca/utils";
+import { Canvas, Group, Image, Rect, type SkImage } from "@shopify/react-native-skia";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { ActivityIndicator, View } from "react-native";
 
 import { Text } from "../../../components/ui/text";
 import { useThemeColors } from "../../theme/use-theme-colors";
 import { canvasPanResponderProps } from "../canvas/canvas-pan-responder";
 import { useCanvasBackground } from "../canvas/canvas-theme";
-import { clientToFramePoint, computeFrameLayout, prepareFrameRgba } from "../canvas/frame-pixels";
+import { clientToFramePoint } from "../canvas/frame-pixels";
+import { usePreparedFrameSkImage } from "../canvas/prepared-frame-sk-image";
+import { AlignGridSkiaOverlay } from "./align-grid-skia-overlay";
 
 export type { AlignCanvasFramePoint, AlignCanvasPointerEvent } from "./align-canvas-handlers";
 import type { AlignCanvasPointerEvent } from "./align-canvas-handlers";
@@ -22,7 +20,8 @@ import type { AlignCanvasPointerEvent } from "./align-canvas-handlers";
 export type AlignCanvasProps = {
   frame: FrameResult | null;
   grid: AlignGridState;
-  previewGrid?: AlignGridState | null;
+  previewGridRef?: RefObject<AlignGridState | null>;
+  previewRedrawRef?: RefObject<(() => void) | null>;
   excludedCells?: Iterable<AlignGridCellCoord>;
   loading?: boolean;
   emptyText?: string;
@@ -35,10 +34,43 @@ export type AlignCanvasProps = {
   onVirtualPointerCancel?: (event: AlignCanvasPointerEvent) => void;
 };
 
+function AlignCanvasFrameImage(props: {
+  frameLayout: FrameLayout;
+  skImage: SkImage;
+}) {
+  return (
+    <Image
+      fit="fill"
+      height={props.frameLayout.drawHeight}
+      image={props.skImage}
+      width={props.frameLayout.drawWidth}
+      x={props.frameLayout.drawX}
+      y={props.frameLayout.drawY}
+    />
+  );
+}
+
+function AlignCanvasGridLayer(props: {
+  frame: FrameResult;
+  frameLayout: FrameLayout;
+  grid: AlignGridState;
+  excludedCells?: Iterable<AlignGridCellCoord>;
+}) {
+  return (
+    <AlignGridSkiaOverlay
+      excludedCells={props.excludedCells}
+      frame={props.frame}
+      frameLayout={props.frameLayout}
+      grid={props.grid}
+    />
+  );
+}
+
 export function AlignCanvas({
   frame,
   grid,
-  previewGrid,
+  previewGridRef,
+  previewRedrawRef,
   excludedCells,
   loading,
   toasts,
@@ -49,113 +81,116 @@ export function AlignCanvas({
 }: AlignCanvasProps) {
   const colors = useThemeColors();
   const canvasBackground = useCanvasBackground();
-  const canvasRef = useCanvasRef();
+  const skImage = usePreparedFrameSkImage(frame);
+  const gridRef = useRef(grid);
+  gridRef.current = grid;
   const [layout, setLayout] = useState({
     width: 1,
     height: 1,
   });
+  const [overlayTick, setOverlayTick] = useState(0);
   const boundsRef = useRef({
     x: 0,
     y: 0,
   });
+  const layoutRef = useRef(layout);
+  layoutRef.current = layout;
+  const frameRef = useRef(frame);
+  frameRef.current = frame;
   const capturedRef = useRef<number | null>(null);
-  const activeGrid = previewGrid ?? grid;
-  const excludedKeys = new Set(Array.from(excludedCells ?? [], (cell) => `${cell.i}:${cell.j}`));
-  const skImage = (() => {
-    if (!frame) return null;
-    const rgba = prepareFrameRgba(frame);
-    const data = Skia.Data.fromBytes(rgba);
-    return Skia.Image.MakeImage(
-      {
-        width: frame.width,
-        height: frame.height,
-        alphaType: 1,
-        colorType: 4,
-      },
-      data,
-      frame.width * 4,
-    );
-  })();
-  const frameLayout = (() => {
-    if (!frame) return null;
-    return computeFrameLayout(layout.width, layout.height, frame.width, frame.height);
-  })();
-  const viewport = ((): AlignGridWheelViewport | null => {
-    if (!frame) return null;
-    return {
-      displayWidth: layout.width,
-      displayHeight: layout.height,
-      modelWidth: frame.width,
-      modelHeight: frame.height,
+  const pointerHandlersRef = useRef({
+    onVirtualPointerDown,
+    onVirtualPointerMove,
+    onVirtualPointerUp,
+    onVirtualPointerCancel,
+  });
+  pointerHandlersRef.current = {
+    onVirtualPointerDown,
+    onVirtualPointerMove,
+    onVirtualPointerUp,
+    onVirtualPointerCancel,
+  };
+  const frameLayout = frame ? computeFrameLayout(layout.width, layout.height, frame.width, frame.height) : null;
+  const requestOverlayRedraw = () => {
+    setOverlayTick((tick) => tick + 1);
+  };
+  useEffect(() => {
+    requestOverlayRedraw();
+  }, [grid]);
+  useEffect(() => {
+    if (!previewRedrawRef) return;
+    previewRedrawRef.current = requestOverlayRedraw;
+    return () => {
+      previewRedrawRef.current = null;
     };
-  })();
-  const makeEvent = (
-    pointerId: number,
-    pointerType: string,
-    x: number,
-    y: number,
-    button = 0,
-  ): AlignCanvasPointerEvent => {
-    const framePoint =
-      frameLayout != null
-        ? clientToFramePoint(x, y, frameLayout, boundsRef.current.x, boundsRef.current.y)
+  }, [previewRedrawRef]);
+  void overlayTick;
+  const activeGrid = previewGridRef?.current ?? gridRef.current;
+  const emitPointerEvent = (
+    phase: "down" | "move" | "up" | "cancel",
+    clientX: number,
+    clientY: number,
+  ) => {
+    const currentFrame = frameRef.current;
+    const currentLayout = layoutRef.current;
+    const currentFrameLayout =
+      currentFrame != null
+        ? computeFrameLayout(
+            currentLayout.width,
+            currentLayout.height,
+            currentFrame.width,
+            currentFrame.height,
+          )
         : null;
-    return {
-      pointerId,
-      pointerType,
-      button,
-      buttons: button,
-      clientX: x,
-      clientY: y,
-      framePoint,
-      viewport,
+    const currentViewport =
+      currentFrame != null
+        ? {
+            displayWidth: currentLayout.width,
+            displayHeight: currentLayout.height,
+            modelWidth: currentFrame.width,
+            modelHeight: currentFrame.height,
+          }
+        : null;
+    const event: AlignCanvasPointerEvent = {
+      pointerId: 1,
+      pointerType: "touch",
+      button: 0,
+      buttons: 0,
+      clientX,
+      clientY,
+      framePoint:
+        currentFrameLayout != null
+          ? clientToFramePoint(
+              clientX,
+              clientY,
+              currentFrameLayout,
+              boundsRef.current.x,
+              boundsRef.current.y,
+            )
+          : null,
+      viewport: currentViewport,
       preventDefault: () => undefined,
       capturePointer: () => {
-        capturedRef.current = pointerId;
+        capturedRef.current = 1;
       },
       releasePointer: () => {
-        if (capturedRef.current === pointerId) capturedRef.current = null;
+        if (capturedRef.current === 1) capturedRef.current = null;
       },
     };
+    const handlers = pointerHandlersRef.current;
+    if (phase === "down") handlers.onVirtualPointerDown?.(event);
+    if (phase === "move") handlers.onVirtualPointerMove?.(event);
+    if (phase === "up") handlers.onVirtualPointerUp?.(event);
+    if (phase === "cancel") handlers.onVirtualPointerCancel?.(event);
   };
-  const panResponder = canvasPanResponderProps({
-    onBegin: (clientX, clientY) => onVirtualPointerDown?.(makeEvent(1, "touch", clientX, clientY)),
-    onMove: (clientX, clientY) => onVirtualPointerMove?.(makeEvent(1, "touch", clientX, clientY)),
-    onEnd: (clientX, clientY) => onVirtualPointerUp?.(makeEvent(1, "touch", clientX, clientY)),
-    onCancel: (clientX, clientY) =>
-      onVirtualPointerCancel?.(makeEvent(1, "touch", clientX, clientY)),
-  });
-  const gridCells = (() => {
-    if (!frame || !activeGrid.enabled) return [];
-    return enumerateVisibleAlignGridCells(frame, activeGrid).map((cell) => ({
-      i: cell.i,
-      j: cell.j,
-      x: cell.x,
-      y: cell.y,
-      w: cell.w,
-      h: cell.h,
-      excluded: excludedKeys.has(`${cell.i}:${cell.j}`),
-    }));
-  })();
-  const gridOverlay = (() => {
-    if (!frame || !frameLayout || !activeGrid.enabled) return null;
-    const basis = alignGridBasis(
-      activeGrid.shape,
-      activeGrid.rotation,
-      activeGrid.spacingA,
-      activeGrid.spacingB,
-    );
-    const originX = frameLayout.drawX + (frame.width / 2 + activeGrid.tx) * frameLayout.scale;
-    const originY = frameLayout.drawY + (frame.height / 2 + activeGrid.ty) * frameLayout.scale;
-    return {
-      basis,
-      originX,
-      originY,
-      scale: frameLayout.scale,
-      drawX: frameLayout.drawX,
-      drawY: frameLayout.drawY,
-    };
-  })();
+  const panResponderRef = useRef(
+    canvasPanResponderProps({
+      onBegin: (clientX, clientY) => emitPointerEvent("down", clientX, clientY),
+      onMove: (clientX, clientY) => emitPointerEvent("move", clientX, clientY),
+      onEnd: (clientX, clientY) => emitPointerEvent("up", clientX, clientY),
+      onCancel: (clientX, clientY) => emitPointerEvent("cancel", clientX, clientY),
+    }),
+  );
 
   return (
     <View
@@ -172,40 +207,18 @@ export function AlignCanvas({
         };
       }}
     >
-      <View className="flex-1" {...panResponder}>
-        <Canvas ref={canvasRef} style={{ flex: 1 }}>
-          <Rect x={0} y={0} width={layout.width} height={layout.height} color={canvasBackground} />
-          {skImage && frameLayout ? (
+      <View className="flex-1" {...panResponderRef.current}>
+        <Canvas style={{ flex: 1 }}>
+          <Rect color={canvasBackground} height={layout.height} width={layout.width} x={0} y={0} />
+          {skImage && frame && frameLayout ? (
             <Group>
-              <Image
-                image={skImage}
-                x={frameLayout.drawX}
-                y={frameLayout.drawY}
-                width={frameLayout.drawWidth}
-                height={frameLayout.drawHeight}
-                fit="fill"
+              <AlignCanvasFrameImage frameLayout={frameLayout} skImage={skImage} />
+              <AlignCanvasGridLayer
+                excludedCells={excludedCells}
+                frame={frame}
+                frameLayout={frameLayout}
+                grid={activeGrid}
               />
-              {gridCells.map((cell) => (
-                <Rect
-                  key={`${cell.i}:${cell.j}`}
-                  x={frameLayout.drawX + cell.x * frameLayout.scale}
-                  y={frameLayout.drawY + cell.y * frameLayout.scale}
-                  width={cell.w * frameLayout.scale}
-                  height={cell.h * frameLayout.scale}
-                  color={cell.excluded ? "rgba(244, 63, 94, 0.45)" : "rgba(68, 151, 255, 0.45)"}
-                />
-              ))}
-              {gridOverlay ? (
-                <Group>
-                  <Rect
-                    x={gridOverlay.originX - 4}
-                    y={gridOverlay.originY - 4}
-                    width={8}
-                    height={8}
-                    color="white"
-                  />
-                </Group>
-              ) : null}
             </Group>
           ) : null}
         </Canvas>
