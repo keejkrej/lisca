@@ -30,6 +30,7 @@ Humans review this file only. Agents maintain **Tech stack** via the memory skil
 - **Contracts:** Never hand-write wire types — derive from Effect Schema + HttpApi in `@lisca/contracts`. Wizard/UI assay types from `@lisca/contracts/assay`, not the root entry. After schema changes: `bun run contracts:generate`; after Rust type changes: `bun --filter @lisca/contracts rust-types`.
 - **Backends:** Rust (Axum; serde types from `typify` on generated JSON Schema) for product APIs; Python (uv, Ruff, ty, Typer) in `python/` for utilities and training.
 - **Tests:** Put logic in `@lisca/utils`, `@lisca/ui-headless`, `@lisca/client` — not DOM or React Native component mounts — `docs/agent/ui-package-layout.md`.
+- **Agent verification:** Playwright for web (Vite apps, Expo web-native, Electron); pymobiledevice3 for physical iOS (`bun lisca dev * ios`) — start dev servers, reproduce, and verify yourself; `docs/agent/mobile.md` for ports.
 - **Install policy:** Bun (`bunfig.toml` `minimumReleaseAge`) and Python uv (`exclude-newer = "7 days"`) both reject packages newer than 7 days.
 <!-- memory:techstack-end -->
 
