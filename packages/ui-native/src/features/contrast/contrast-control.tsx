@@ -7,6 +7,7 @@ import { View } from "react-native";
 
 import { Text } from "../../../components/ui/text";
 import { Button } from "../../../components/ui/button";
+import { Field, FieldLabel } from "../../../components/ui/field";
 import { Section } from "../../shell/regions/section";
 import { Slider } from "../../../components/ui/slider";
 
@@ -172,7 +173,7 @@ function ContrastControlBody(props: {
             variant="outline"
             onPress={onAutoRange}
           >
-            <Text className="text-xs">Auto Range</Text>
+            <Text>Auto Range</Text>
           </Button>
 
           <View className="min-h-0 min-w-0 flex-col gap-3">
@@ -222,23 +223,25 @@ function ContrastSliderRow(props: {
   onCommit: (value: number) => void;
 }) {
   return (
-    <View className="min-h-0 w-full min-w-0 gap-1">
-      <View className="flex-row items-center justify-between gap-2">
-        <Text className="text-xs font-medium text-muted-foreground">{props.label}</Text>
-        <Text className="text-xs tabular-nums text-muted-foreground/80">
+    <Field className="min-w-0 w-full gap-0.5">
+      <View className="w-full flex-row items-center justify-between gap-2">
+        <FieldLabel className="w-auto shrink">{props.label}</FieldLabel>
+        <Text className="shrink-0 font-normal text-sm tabular-nums text-muted-foreground/80">
           {String(Math.round(props.value))}
         </Text>
       </View>
-      <Slider
-        disabled={props.disabled}
-        maximumValue={props.domainMax}
-        minimumValue={props.domainMin}
-        step={1}
-        style={{ width: "100%", height: 4 }}
-        value={props.value}
-        onSlidingComplete={props.onCommit}
-        onValueChange={props.onDraftChange}
-      />
-    </View>
+      <View className="w-full pt-0.5">
+        <Slider
+          disabled={props.disabled}
+          maximumValue={props.domainMax}
+          minimumValue={props.domainMin}
+          step={1}
+          style={{ width: "100%" }}
+          value={props.value}
+          onSlidingComplete={props.onCommit}
+          onValueChange={props.onDraftChange}
+        />
+      </View>
+    </Field>
   );
 }

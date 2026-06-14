@@ -7,6 +7,7 @@ import { clamp } from "@lisca/utils";
 import { type AriaRole, useEffect, useState } from "react";
 
 import { Button } from "../../components/ui/button";
+import { Field, FieldLabel } from "../../components/ui/field";
 import { Slider } from "../../components/ui/slider";
 import { cn } from "../../lib/utils";
 import { Section } from "../../shell/regions/section";
@@ -155,8 +156,6 @@ function ContrastControlBody(props: {
     );
   }
 
-  const sliderCol = "flex min-h-0 w-full min-w-0 flex-col gap-1";
-
   return (
     <Section
       aria-label={ariaLabel}
@@ -177,17 +176,17 @@ function ContrastControlBody(props: {
             size="sm"
             variant="outline"
             disabled={disabled || autoRangeDisabled}
-            className="h-8 w-full px-2.5 text-xs"
+            className="h-8 w-full justify-center px-2.5 text-xs"
             onClick={onAutoRange}
           >
             Auto Range
           </Button>
 
           <div className="flex min-h-0 min-w-0 flex-col gap-3">
-            <div className={sliderCol}>
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-medium text-muted-foreground">Min</span>
-                <span className="text-xs text-muted-foreground/80 tabular-nums">
+            <Field className="min-w-0 w-full">
+              <div className="flex w-full items-center justify-between gap-2">
+                <FieldLabel className="w-auto">Min</FieldLabel>
+                <span className="shrink-0 font-normal text-muted-foreground/80 tabular-nums text-sm">
                   {String(Math.round(displayed.min))}
                 </span>
               </div>
@@ -211,12 +210,12 @@ function ContrastControlBody(props: {
                   onMinCommit(clamp(Math.round(value), domainMin, domainMax));
                 }}
               />
-            </div>
+            </Field>
 
-            <div className={sliderCol}>
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-medium text-muted-foreground">Max</span>
-                <span className="text-xs text-muted-foreground/80 tabular-nums">
+            <Field className="min-w-0 w-full">
+              <div className="flex w-full items-center justify-between gap-2">
+                <FieldLabel className="w-auto">Max</FieldLabel>
+                <span className="shrink-0 font-normal text-muted-foreground/80 tabular-nums text-sm">
                   {String(Math.round(displayed.max))}
                 </span>
               </div>
@@ -240,7 +239,7 @@ function ContrastControlBody(props: {
                   onMaxCommit(clamp(Math.round(value), domainMin, domainMax));
                 }}
               />
-            </div>
+            </Field>
           </div>
         </div>
       </div>
