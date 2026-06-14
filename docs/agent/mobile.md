@@ -76,7 +76,7 @@ Use `bun lisca dev aligner server` for Rust only. Override the API target in the
 
 Each app uses a fixed Metro port so all three can run in parallel.
 
-Monorepo Metro config: `scripts/metro-monorepo.cjs` (resolved from each app's `metro.config.js`). Requires `babel-preset-expo` and expo-router peers (`@expo/metro-runtime`, `expo-constants`, `expo-linking`) in the mobile app package.
+Monorepo Metro config: `scripts/metro-monorepo.cjs` (resolved from each app's `metro.config.js`). Requires `babel-preset-expo` and expo-router peers (`@expo/metro-runtime`, `expo-constants`, `expo-font`, `expo-linking`) in the mobile app package.
 
 ## Storage bootstrap
 

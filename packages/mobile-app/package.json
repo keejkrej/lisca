@@ -29,7 +29,7 @@
     "@lisca/web-app": "workspace:*",
     "@rn-primitives/portal": "~1.4.0",
     "canvaskit-wasm": "0.41.0",
-    "expo-font": "^56.0.5"
+    "expo-font": "~14.0.11"
   },
   "devDependencies": {
     "@expo/metro-runtime": "~6.1.2",
