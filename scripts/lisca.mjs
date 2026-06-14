@@ -261,7 +261,7 @@ function runLandingInstall(extra = turboExtra) {
   process.exit(result.status ?? 1);
 }
 
-function runTurbo(taskName, { filters = [], extra = turboExtra } = {}) {
+function runTurbo(taskName, { filters = [], extra = turboExtra, env = {} } = {}) {
   const cmd = ["x", "turbo", "run", taskName];
   for (const filter of filters) cmd.push(`--filter=${filter}`);
   cmd.push(...extra);
@@ -270,8 +270,25 @@ function runTurbo(taskName, { filters = [], extra = turboExtra } = {}) {
     cwd: root,
     stdio: "inherit",
     shell: process.platform === "win32",
+    env: { ...process.env, ...env },
   });
   process.exit(result.status ?? 1);
+}
+
+function turboEnvFor(taskName, scopeName, target) {
+  if (taskName !== "build") return {};
+
+  // Demo packages export TypeScript source; skip their standalone Vite builds on
+  // landing deploy (saves two heavy React Compiler passes that OOM on Render).
+  if (isLanding(scopeName)) {
+    return { LISCA_BUILD_DEMO_SITE: "0" };
+  }
+
+  if (target === "demo" || (isWorkspace(scopeName) && target === "webs")) {
+    return { LISCA_BUILD_DEMO_SITE: "1" };
+  }
+
+  return {};
 }
 
 function spawnDevServer(scopeName, { backend = false, host } = {}) {
@@ -589,7 +606,7 @@ function main() {
   }
 
   const filters = filtersFor(task, scope, targetArg);
-  runTurbo(task, { filters });
+  runTurbo(task, { filters, env: turboEnvFor(task, scope, targetArg) });
 }
 
 main();

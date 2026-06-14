@@ -11,7 +11,7 @@
     "EXPO_PUBLIC_LISCA_WS_HOST",
     "EXPO_PUBLIC_LISCA_WS_PORT"
   ],
-  "globalPassThroughEnv": ["PATHEXT", "RUSTUP_HOME", "CARGO_HOME"],
+  "globalPassThroughEnv": ["LISCA_BUILD_DEMO_SITE", "PATHEXT", "RUSTUP_HOME", "CARGO_HOME"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
