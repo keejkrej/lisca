@@ -6,13 +6,13 @@ import {
   type AnnotationCanvasPointerEvent,
 } from "@lisca/ui-headless/annotation-canvas-handlers";
 import { Canvas, Circle, Group, Image, Path, Rect, Skia } from "@shopify/react-native-skia";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { useRef, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 
 import { Text } from "../../../components/ui/text";
 import { liscaFontFamily } from "../../theme/typography";
 import { useThemeColors } from "../../theme/use-theme-colors";
+import { canvasPanResponderProps } from "../canvas/canvas-pan-responder";
 import { useCanvasBackground } from "../canvas/canvas-theme";
 import { computeFrameLayout, prepareFrameRgba } from "../canvas/frame-pixels";
 import type { AnnotationTool } from "@lisca/ui-headless/annotation-tools";
@@ -181,14 +181,15 @@ export function AnnotationCanvas({
     },
   });
 
-  const pan = Gesture.Pan()
-    .runOnJS(true)
-    .onBegin((event) => handlers.handlePointerDown(makeEvent(1, "touch", event.absoluteX, event.absoluteY)))
-    .onUpdate((event) => handlers.handlePointerMove(makeEvent(1, "touch", event.absoluteX, event.absoluteY)))
-    .onEnd((event) => handlers.handlePointerEnd(makeEvent(1, "touch", event.absoluteX, event.absoluteY)))
-    .onFinalize((event) =>
-      handlers.handlePointerCancel(makeEvent(1, "touch", event.absoluteX, event.absoluteY)),
-    );
+  const panResponder = canvasPanResponderProps({
+    onBegin: (clientX, clientY) =>
+      handlers.handlePointerDown(makeEvent(1, "touch", clientX, clientY)),
+    onMove: (clientX, clientY) =>
+      handlers.handlePointerMove(makeEvent(1, "touch", clientX, clientY)),
+    onEnd: (clientX, clientY) => handlers.handlePointerEnd(makeEvent(1, "touch", clientX, clientY)),
+    onCancel: (clientX, clientY) =>
+      handlers.handlePointerCancel(makeEvent(1, "touch", clientX, clientY)),
+  });
 
   const lassoPath = (() => {
     if (!frameLayout || handlers.lassoPoints.length < 2) return null;
@@ -221,61 +222,59 @@ export function AnnotationCanvas({
         setBounds({ x, y });
       }}
     >
-      <GestureDetector gesture={pan}>
-        <View className="flex-1">
-          <Canvas style={{ flex: 1 }}>
-            <Rect x={0} y={0} width={layout.width} height={layout.height} color={canvasBackground} />
-            {skImage && frameLayout ? (
-              <Group>
+      <View className="flex-1" {...panResponder}>
+        <Canvas style={{ flex: 1 }}>
+          <Rect x={0} y={0} width={layout.width} height={layout.height} color={canvasBackground} />
+          {skImage && frameLayout ? (
+            <Group>
+              <Image
+                image={skImage}
+                x={frameLayout.drawX}
+                y={frameLayout.drawY}
+                width={frameLayout.drawWidth}
+                height={frameLayout.drawHeight}
+                fit="fill"
+              />
+              {overlayImage ? (
                 <Image
-                  image={skImage}
+                  image={overlayImage}
                   x={frameLayout.drawX}
                   y={frameLayout.drawY}
                   width={frameLayout.drawWidth}
                   height={frameLayout.drawHeight}
                   fit="fill"
                 />
-                {overlayImage ? (
-                  <Image
-                    image={overlayImage}
-                    x={frameLayout.drawX}
-                    y={frameLayout.drawY}
-                    width={frameLayout.drawWidth}
-                    height={frameLayout.drawHeight}
-                    fit="fill"
+              ) : null}
+              {lassoPath ? (
+                <Path
+                  color={handlers.eraseMode ? "rgba(248,113,113,0.95)" : "rgba(250,204,21,0.95)"}
+                  path={lassoPath}
+                  strokeCap="round"
+                  strokeJoin="round"
+                  strokeWidth={lassoStrokeWidth}
+                  style="stroke"
+                />
+              ) : null}
+              {smartSegmentPrompts.map((prompt, index) => {
+                if (!frameLayout) return null;
+                const centerX = frameLayout.drawX + prompt.x * frameLayout.scale;
+                const centerY = frameLayout.drawY + prompt.y * frameLayout.scale;
+                const radius = Math.max(4, 5 * frameLayout.scale);
+                return (
+                  <Circle
+                    key={`${prompt.x}:${prompt.y}:${index}`}
+                    cx={centerX}
+                    cy={centerY}
+                    opacity={handlers.smartToolMode ? 1 : 0.65}
+                    r={radius}
+                    color={prompt.label === 1 ? "rgba(34,197,94,0.95)" : "rgba(248,113,113,0.95)"}
                   />
-                ) : null}
-                {lassoPath ? (
-                  <Path
-                    color={handlers.eraseMode ? "rgba(248,113,113,0.95)" : "rgba(250,204,21,0.95)"}
-                    path={lassoPath}
-                    strokeCap="round"
-                    strokeJoin="round"
-                    strokeWidth={lassoStrokeWidth}
-                    style="stroke"
-                  />
-                ) : null}
-                {smartSegmentPrompts.map((prompt, index) => {
-                  if (!frameLayout) return null;
-                  const centerX = frameLayout.drawX + prompt.x * frameLayout.scale;
-                  const centerY = frameLayout.drawY + prompt.y * frameLayout.scale;
-                  const radius = Math.max(4, 5 * frameLayout.scale);
-                  return (
-                    <Circle
-                      key={`${prompt.x}:${prompt.y}:${index}`}
-                      cx={centerX}
-                      cy={centerY}
-                      opacity={handlers.smartToolMode ? 1 : 0.65}
-                      r={radius}
-                      color={prompt.label === 1 ? "rgba(34,197,94,0.95)" : "rgba(248,113,113,0.95)"}
-                    />
-                  );
-                })}
-              </Group>
-            ) : null}
-          </Canvas>
-        </View>
-      </GestureDetector>
+                );
+              })}
+            </Group>
+          ) : null}
+        </Canvas>
+      </View>
 
       {loading ? (
         <View className="absolute inset-0 items-center justify-center">

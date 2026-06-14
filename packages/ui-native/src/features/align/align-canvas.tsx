@@ -7,19 +7,16 @@ import {
   type AlignGridWheelViewport,
 } from "@lisca/utils";
 import { Canvas, Group, Image, Rect, Skia, useCanvasRef } from "@shopify/react-native-skia";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { useRef, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 
 import { Text } from "../../../components/ui/text";
 import { useThemeColors } from "../../theme/use-theme-colors";
+import { canvasPanResponderProps } from "../canvas/canvas-pan-responder";
 import { useCanvasBackground } from "../canvas/canvas-theme";
 import { clientToFramePoint, computeFrameLayout, prepareFrameRgba } from "../canvas/frame-pixels";
 
-export type {
-  AlignCanvasFramePoint,
-  AlignCanvasPointerEvent,
-} from "./align-canvas-handlers";
+export type { AlignCanvasFramePoint, AlignCanvasPointerEvent } from "./align-canvas-handlers";
 import type { AlignCanvasPointerEvent } from "./align-canvas-handlers";
 
 export type AlignCanvasProps = {
@@ -121,18 +118,13 @@ export function AlignCanvas({
       },
     };
   };
-  const pan = Gesture.Pan()
-    .runOnJS(true)
-    .onBegin((event) =>
-      onVirtualPointerDown?.(makeEvent(1, "touch", event.absoluteX, event.absoluteY)),
-    )
-    .onUpdate((event) =>
-      onVirtualPointerMove?.(makeEvent(1, "touch", event.absoluteX, event.absoluteY)),
-    )
-    .onEnd((event) => onVirtualPointerUp?.(makeEvent(1, "touch", event.absoluteX, event.absoluteY)))
-    .onFinalize((event) =>
-      onVirtualPointerCancel?.(makeEvent(1, "touch", event.absoluteX, event.absoluteY)),
-    );
+  const panResponder = canvasPanResponderProps({
+    onBegin: (clientX, clientY) => onVirtualPointerDown?.(makeEvent(1, "touch", clientX, clientY)),
+    onMove: (clientX, clientY) => onVirtualPointerMove?.(makeEvent(1, "touch", clientX, clientY)),
+    onEnd: (clientX, clientY) => onVirtualPointerUp?.(makeEvent(1, "touch", clientX, clientY)),
+    onCancel: (clientX, clientY) =>
+      onVirtualPointerCancel?.(makeEvent(1, "touch", clientX, clientY)),
+  });
   const gridCells = (() => {
     if (!frame || !activeGrid.enabled) return [];
     return enumerateVisibleAlignGridCells(frame, activeGrid).map((cell) => ({
@@ -180,52 +172,44 @@ export function AlignCanvas({
         };
       }}
     >
-      <GestureDetector gesture={pan}>
-        <View className="flex-1">
-          <Canvas ref={canvasRef} style={{ flex: 1 }}>
-            <Rect
-              x={0}
-              y={0}
-              width={layout.width}
-              height={layout.height}
-              color={canvasBackground}
-            />
-            {skImage && frameLayout ? (
-              <Group>
-                <Image
-                  image={skImage}
-                  x={frameLayout.drawX}
-                  y={frameLayout.drawY}
-                  width={frameLayout.drawWidth}
-                  height={frameLayout.drawHeight}
-                  fit="fill"
+      <View className="flex-1" {...panResponder}>
+        <Canvas ref={canvasRef} style={{ flex: 1 }}>
+          <Rect x={0} y={0} width={layout.width} height={layout.height} color={canvasBackground} />
+          {skImage && frameLayout ? (
+            <Group>
+              <Image
+                image={skImage}
+                x={frameLayout.drawX}
+                y={frameLayout.drawY}
+                width={frameLayout.drawWidth}
+                height={frameLayout.drawHeight}
+                fit="fill"
+              />
+              {gridCells.map((cell) => (
+                <Rect
+                  key={`${cell.i}:${cell.j}`}
+                  x={frameLayout.drawX + cell.x * frameLayout.scale}
+                  y={frameLayout.drawY + cell.y * frameLayout.scale}
+                  width={cell.w * frameLayout.scale}
+                  height={cell.h * frameLayout.scale}
+                  color={cell.excluded ? "rgba(244, 63, 94, 0.45)" : "rgba(68, 151, 255, 0.45)"}
                 />
-                {gridCells.map((cell) => (
+              ))}
+              {gridOverlay ? (
+                <Group>
                   <Rect
-                    key={`${cell.i}:${cell.j}`}
-                    x={frameLayout.drawX + cell.x * frameLayout.scale}
-                    y={frameLayout.drawY + cell.y * frameLayout.scale}
-                    width={cell.w * frameLayout.scale}
-                    height={cell.h * frameLayout.scale}
-                    color={cell.excluded ? "rgba(244, 63, 94, 0.45)" : "rgba(68, 151, 255, 0.45)"}
+                    x={gridOverlay.originX - 4}
+                    y={gridOverlay.originY - 4}
+                    width={8}
+                    height={8}
+                    color="white"
                   />
-                ))}
-                {gridOverlay ? (
-                  <Group>
-                    <Rect
-                      x={gridOverlay.originX - 4}
-                      y={gridOverlay.originY - 4}
-                      width={8}
-                      height={8}
-                      color="white"
-                    />
-                  </Group>
-                ) : null}
-              </Group>
-            ) : null}
-          </Canvas>
-        </View>
-      </GestureDetector>
+                </Group>
+              ) : null}
+            </Group>
+          ) : null}
+        </Canvas>
+      </View>
 
       {loading ? (
         <View className="absolute inset-0 items-center justify-center">
