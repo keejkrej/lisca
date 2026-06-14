@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { Folder, HardDrive } from "lucide-react-native";
-import { useColorScheme } from "nativewind";
 import { View } from "react-native";
 
 import { ConnectionStatus } from "./connection-status";
@@ -8,8 +7,8 @@ import { PathButton } from "./path-button";
 import { shellChromeMetrics } from "./shell-chrome";
 import { useShellServer } from "../server/shell-server";
 import { useShellWorkspace } from "../workspace/workspace";
+import { useShellTheme } from "../../theme/shell-theme";
 import { ShellThemeToggle } from "../../theme/shell-theme-toggle";
-import { shellThemeColors, type ShellThemeMode } from "../../theme/tokens";
 
 export type ShellNavbarRouteItem = {
   value: string;
@@ -32,9 +31,8 @@ export type ShellNavbarProps = {
 function ShellNavbarRoot(props: ShellNavbarProps) {
   const server = useShellServer();
   const workspace = useShellWorkspace();
-  const { colorScheme } = useColorScheme();
-  const mode: ShellThemeMode = colorScheme === "dark" ? "dark" : "light";
-  const iconColor = shellThemeColors[mode].foreground;
+  const { colors } = useShellTheme();
+  const iconColor = colors.foreground;
 
   return (
     <View className="min-h-8 w-full flex-row items-center gap-4">

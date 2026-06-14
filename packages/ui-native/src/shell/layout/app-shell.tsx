@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ScrollView, View, type ViewProps } from "react-native";
+import { Platform, ScrollView, View, type ViewProps } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { cn } from "../../../lib/utils";
@@ -81,7 +81,11 @@ function MainColumn(props: { children?: ReactNode }) {
 function Main(props: { children?: ReactNode }) {
   return (
     <View nativeID="main-content" className="min-h-0 flex-1 bg-background">
-      <ShellScrollRegion contentClassName="flex-grow">{props.children}</ShellScrollRegion>
+      {Platform.OS === "web" ? (
+        props.children
+      ) : (
+        <ShellScrollRegion contentClassName="flex-grow">{props.children}</ShellScrollRegion>
+      )}
     </View>
   );
 }

@@ -1,12 +1,11 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react-native";
-import { useColorScheme } from "nativewind";
 import { Pressable, View, type ViewProps } from "react-native";
 
 import { Text } from "../../../components/ui/text";
 import { cn } from "../../../lib/utils";
-import { shellThemeColors, type ShellThemeMode } from "../../theme/tokens";
+import { useShellTheme } from "../../theme/shell-theme";
 
 export function Section(props: {
   title: string;
@@ -23,9 +22,8 @@ export function Section(props: {
 }) {
   const [collapsed, setCollapsed] = useState(props.defaultCollapsed ?? false);
   const CollapseIcon = collapsed ? ChevronRight : ChevronDown;
-  const { colorScheme } = useColorScheme();
-  const mode: ShellThemeMode = colorScheme === "dark" ? "dark" : "light";
-  const iconColor = shellThemeColors[mode].mutedForeground;
+  const { colors } = useShellTheme();
+  const iconColor = colors.mutedForeground;
 
   return (
     <View

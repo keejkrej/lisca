@@ -1,5 +1,7 @@
 import { TextClassContext } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
+import { resolveIconColorFromClasses } from '@/src/theme/resolve-icon-color';
+import { useShellTheme } from '@/src/theme/shell-theme';
 import type { LucideIcon, LucideProps } from 'lucide-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
@@ -12,11 +14,13 @@ function iconColorClass(textClass?: string, className?: string): string {
   if (!merged) return "text-foreground";
   const tokens = merged.split(/\s+/).filter(Boolean);
   const hasSemantic = tokens.some((token) =>
-    /^(text-(primary|secondary|destructive|accent)-foreground|group-(hover|active):text-)/.test(token),
+    /^(text-(?:primary|secondary|destructive|accent)-foreground|group-(?:hover|active):text-)/.test(token),
   );
   if (hasSemantic) {
-    const filtered = tokens.filter((token) => token !== "text-foreground");
-    return filtered.length > 0 ? filtered.join(" ") : "text-foreground";
+    const filtered = tokens.filter(
+      (token) => token !== "text-foreground" && !token.startsWith("group-"),
+    );
+    return cn("text-foreground", filtered.join(" "));
   }
   return merged;
 }
@@ -48,21 +52,20 @@ type IconProps = LucideProps & {
 } & React.RefAttributes<LucideIcon>;
 
 /**
- * Lucide icon wrapper. Color utilities live on a surrounding `View` so Expo web
- * does not apply `className` to SVG child paths (which skews the glyph).
+ * Lucide icon wrapper. Color is passed as a literal so icons stay theme-aware on
+ * native and Expo web (`currentColor` does not track NativeWind / shell theme).
  */
-function Icon({ as: IconComponent, className, size, ...props }: IconProps) {
+function Icon({ as: IconComponent, className, size, color, ...props }: IconProps) {
   const textClass = React.useContext(TextClassContext);
+  const { colors } = useShellTheme();
   const resolvedSize = size ?? sizeFromClassName(className, 14);
+  const colorClasses = iconColorClass(textClass, className);
+  const resolvedColor =
+    color ?? resolveIconColorFromClasses(colorClasses, colors, textClass, className);
 
   return (
-    <View
-      className={cn(
-        "shrink-0 items-center justify-center overflow-visible leading-none",
-        iconColorClass(textClass, className),
-      )}
-    >
-      <IconComponent color="currentColor" size={resolvedSize} {...props} />
+    <View className="shrink-0 items-center justify-center overflow-visible leading-none">
+      <IconComponent color={resolvedColor} size={resolvedSize} {...props} />
     </View>
   );
 }

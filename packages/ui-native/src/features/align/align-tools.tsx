@@ -35,9 +35,9 @@ function PatternZoomLockButton(props: {
       key={props.locked ? "locked" : "unlocked"}
       accessibilityLabel={props.locked ? "Unlock pattern zoom" : "Lock pattern zoom"}
       accessibilityState={{ selected: props.locked }}
-      className="size-8 shrink-0 px-0 sm:size-8"
+      className="w-8 shrink-0 px-0 sm:w-7"
       disabled={!props.onToggle}
-      size="icon"
+      size="sm"
       variant={props.locked ? "default" : "outline"}
       onPress={props.onToggle}
     >
@@ -123,7 +123,7 @@ function renderAlignToolCell(
   if (tool.mode === "zoom-pattern") {
     return (
       <View key={tool.mode} className={dockLayoutClasses.cell}>
-        <View className="min-w-0 w-full flex-row items-center gap-1">
+        <View className="min-w-0 w-full flex-row items-stretch gap-1">
           <View className="min-w-0 flex-1">
             <AlignToolButton
               active={mode === tool.mode}

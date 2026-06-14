@@ -1,5 +1,5 @@
 import { useColorScheme } from "nativewind";
-import { useEffect, type ReactNode } from "react";
+import { useLayoutEffect, type ReactNode } from "react";
 
 import { useShellTheme } from "./shell-theme";
 
@@ -8,7 +8,8 @@ export function NativeWindThemeSync({ children }: { children: ReactNode }) {
   const { mode } = useShellTheme();
   const { setColorScheme } = useColorScheme();
 
-  useEffect(() => {
+  // useLayoutEffect (not useEffect) so Tailwind `dark:` / semantic tokens update before paint.
+  useLayoutEffect(() => {
     setColorScheme(mode);
   }, [mode, setColorScheme]);
 
