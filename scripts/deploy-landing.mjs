@@ -114,7 +114,9 @@ function main() {
     console.log("[deploy-landing] dist unchanged since last deploy commit");
   }
 
-  run("git", ["push", "-u", "origin", DEPLOY_BRANCH], { cwd: WORKTREE });
+  // deploy/landing is rewritten each run (reset to source + dist commit), not fast-forward.
+  run("git", ["fetch", "origin", DEPLOY_BRANCH], { ok: true });
+  run("git", ["push", "--force-with-lease", "-u", "origin", DEPLOY_BRANCH], { cwd: WORKTREE });
 
   console.log(`
 [deploy-landing] pushed ${DEPLOY_BRANCH} (${sourceSha.slice(0, 7)})
