@@ -1,21 +1,67 @@
 import { cn } from "@/lib/utils";
 import { Platform, TextInput, type StyleProp, type TextStyle } from "react-native";
 
+const inputChromeClassName =
+  "font-sans w-full min-w-0 rounded-lg border border-input bg-background px-3 text-sm shadow-sm shadow-black/5 dark:bg-input/30";
+
+const defaultInputChromeClassName = cn(inputChromeClassName, "h-8.5");
+
+/** iOS TextInput ignores parent flex centering — size the field and pad the text directly. */
+const iosInputTextStyle: TextStyle = {
+  height: 32,
+  fontSize: 14,
+  lineHeight: 14,
+  paddingTop: 13,
+  paddingBottom: 5,
+  paddingHorizontal: 0,
+  margin: 0,
+};
+
 const inputHeightStyle: StyleProp<TextStyle> = Platform.select({
   web: { minHeight: 30 },
+  android: {
+    height: 34,
+    fontSize: 14,
+    paddingVertical: 0,
+    textAlignVertical: "center",
+  },
   default: { minHeight: 34 },
 });
 
 function Input({
   className,
   style,
+  editable,
   ...props
 }: React.ComponentProps<typeof TextInput> & React.RefAttributes<TextInput>) {
+  const disabled = editable === false;
+
+  if (Platform.OS === "ios") {
+    return (
+      <TextInput
+        className={cn(
+          inputChromeClassName,
+          "h-8 text-foreground leading-none placeholder:text-muted-foreground/50",
+          disabled && "pointer-events-none opacity-64",
+          className,
+        )}
+        editable={editable}
+        style={[iosInputTextStyle, style]}
+        {...props}
+      />
+    );
+  }
+
   return (
     <TextInput
       className={cn(
-        "font-sans border-input bg-background text-foreground flex h-8.5 w-full min-w-0 flex-row items-center rounded-lg border px-3 text-sm leading-8.5 shadow-sm shadow-black/5 dark:bg-input/30 sm:h-7.5 sm:leading-7.5",
-        props.editable === false &&
+        defaultInputChromeClassName,
+        "text-foreground",
+        Platform.select({
+          web: "flex flex-row items-center leading-8.5 sm:h-7.5 sm:leading-7.5",
+          default: "h-8.5",
+        }),
+        disabled &&
           cn(
             "pointer-events-none opacity-64",
             Platform.select({ web: "disabled:cursor-not-allowed" }),
@@ -30,6 +76,7 @@ function Input({
         }),
         className,
       )}
+      editable={editable}
       style={[inputHeightStyle, style]}
       {...props}
     />

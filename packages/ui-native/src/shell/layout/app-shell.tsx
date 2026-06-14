@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { ScrollView, View, type ViewProps } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { cn } from "../../../lib/utils";
 
@@ -45,9 +45,9 @@ function Header(props: { children?: ReactNode }) {
       className="h-16 min-h-16 max-h-16 border-b border-border bg-background px-6"
       style={{ maxHeight: HEADER_HEIGHT }}
     >
-      <ShellScrollRegion contentClassName="min-h-[62px] flex-grow justify-center">
+      <View className="min-h-[62px] min-w-0 w-full flex-1 justify-center">
         {props.children}
-      </ShellScrollRegion>
+      </View>
     </View>
   );
 }
@@ -87,16 +87,13 @@ function Main(props: { children?: ReactNode }) {
 }
 
 function Dock(props: { children?: ReactNode }) {
+  const insets = useSafeAreaInsets();
+
   return (
-    <View
-      className="h-44 min-h-44 max-h-44 border-t border-border bg-background"
-      style={{ height: DOCK_HEIGHT, minHeight: DOCK_HEIGHT, maxHeight: DOCK_HEIGHT }}
-    >
-      <SafeAreaView className="flex-1" edges={["bottom"]}>
-        <ShellScrollRegion contentClassName="min-h-[174px] flex-grow">
-          {props.children}
-        </ShellScrollRegion>
-      </SafeAreaView>
+    <View className="border-t border-border bg-background" style={{ paddingBottom: insets.bottom }}>
+      <View className="min-h-0 w-full" style={{ height: DOCK_HEIGHT }}>
+        {props.children}
+      </View>
     </View>
   );
 }

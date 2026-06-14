@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Folder, HardDrive } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
-import { ScrollView, View } from "react-native";
+import { View } from "react-native";
 
 import { ConnectionStatus } from "./connection-status";
 import { PathButton } from "./path-button";
@@ -37,13 +37,8 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
   const iconColor = shellThemeColors[mode].foreground;
 
   return (
-    <ScrollView
-      horizontal
-      contentContainerClassName="min-h-8 flex-grow flex-row items-center justify-between gap-4"
-      keyboardShouldPersistTaps="handled"
-      showsHorizontalScrollIndicator={false}
-    >
-      <View className="min-w-0 shrink flex-row flex-nowrap items-center gap-3">
+    <View className="min-h-8 w-full flex-row items-center gap-4">
+      <View className="min-w-0 flex-1 flex-row flex-nowrap items-center gap-3">
         <PathButton
           icon={
             <Folder
@@ -85,7 +80,7 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
         {props.showToolsMenu !== false ? props.endLeading : null}
         <ShellThemeToggle />
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
