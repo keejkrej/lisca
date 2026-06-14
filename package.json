@@ -43,7 +43,7 @@
     "format": "bun run fmt",
     "format:check": "bun run fmt:check",
     "lisca": "bun ./scripts/lisca.mjs",
-    "postinstall": "node ./scripts/install-electron.mjs",
+    "postinstall": "node ./scripts/install-electron.mjs && node ./scripts/install-skia.mjs",
     "lint": "oxlint . --report-unused-disable-directives",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck"
