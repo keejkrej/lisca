@@ -52,9 +52,6 @@ export function StudioAlignMain() {
           excludedCells={canvas.displayedExcludedCells}
           frame={canvas.frame}
           grid={canvas.grid}
-          loading={
-            canvas.scanLoading || canvas.saving || canvas.frameLoading || canvas.cropping
-          }
           messages={messages}
           previewGridRef={gridHandlers.previewGridRef}
           previewRedrawRef={previewRedrawRef}

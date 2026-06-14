@@ -1,6 +1,6 @@
 import { runClientEffect } from "@lisca/client/runtime";
 import { HostFilePickerDialog } from "@lisca/ui/features";
-import { AppShell, RouteLoadingFallback } from "@lisca/ui/shell";
+import { AppShell } from "@lisca/ui/shell";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -16,8 +16,6 @@ import { recordStudioAssayMemory } from "../utils/studio-memory";
 
 export const Route = createFileRoute("/assay")({
   component: AssayPage,
-  pendingComponent: RouteLoadingFallback,
-  pendingMs: 0,
 });
 
 function AssayPage() {

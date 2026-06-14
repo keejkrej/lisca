@@ -95,7 +95,6 @@ export function AlignerMain() {
           excludedCells={canvas.displayedExcludedCells}
           frame={canvas.frame}
           grid={canvas.grid}
-          loading={canvas.scanLoading || canvas.frameLoading}
           previewGridRef={gridHandlers.previewGridRef}
           previewRedrawRef={previewRedrawRef}
           toasts={toasts}

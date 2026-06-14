@@ -37,7 +37,6 @@ export { StatTile } from "./chrome/stat-tile";
 export { ReadonlyPathField } from "./chrome/readonly-path-field";
 export { Section, type SectionProps } from "./regions/section";
 export { ViewportCard } from "./layout/viewport-card";
-export { RouteLoadingFallback } from "./layout/route-loading-fallback";
 export { ShellServerProvider, useShellServer, type ShellServer } from "./server/shell-server";
 export { ShellWorkspaceProvider, useShellWorkspace, type ShellWorkspace } from "./workspace/workspace";
 export { useShellWsProbe, useWsProbeForUrl, type ShellWsProbe } from "./server/use-shell-ws-probe";

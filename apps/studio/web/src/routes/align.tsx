@@ -1,4 +1,4 @@
-import { AppShell, RouteLoadingFallback } from "@lisca/ui/shell";
+import { AppShell } from "@lisca/ui/shell";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { StudioAlignDock } from "../components/studio-align-dock";
@@ -8,8 +8,6 @@ import { StudioAlignPageProvider } from "../state/studio-align-page-context";
 
 export const Route = createFileRoute("/align")({
   component: AlignPage,
-  pendingComponent: RouteLoadingFallback,
-  pendingMs: 0,
 });
 
 function AlignPage() {

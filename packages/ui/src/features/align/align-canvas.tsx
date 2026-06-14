@@ -46,7 +46,6 @@ export type AlignCanvasProps = {
   previewGridRef?: RefObject<AlignGridState | null>;
   previewRedrawRef?: RefObject<(() => void) | null>;
   excludedCells?: Iterable<AlignGridCellCoord>;
-  loading?: boolean;
   emptyText?: string;
   messages?: CanvasStatusMessage[];
   toasts?: CanvasStatusMessage[];

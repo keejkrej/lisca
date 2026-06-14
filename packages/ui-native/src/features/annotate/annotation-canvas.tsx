@@ -7,12 +7,11 @@ import {
 } from "@lisca/ui-headless/annotation-canvas-handlers";
 import { Canvas, Circle, Group, Image, Path, Rect, Skia } from "@shopify/react-native-skia";
 import { useRef, useState } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { View } from "react-native";
 
 import { Text } from "../../../components/ui/text";
-import { liscaFontFamily } from "../../theme/typography";
-import { useThemeColors } from "../../theme/use-theme-colors";
 import { canvasPanResponderProps } from "../canvas/canvas-pan-responder";
+import { CanvasToastStack } from "../canvas/canvas-status";
 import { useCanvasBackground } from "../canvas/canvas-theme";
 import { computeFrameLayout, prepareFrameRgba } from "../canvas/frame-pixels";
 import type { AnnotationTool } from "@lisca/ui-headless/annotation-tools";
@@ -95,7 +94,6 @@ export function AnnotationCanvas({
 }: AnnotationCanvasProps & {
   loading?: boolean;
 }) {
-  const colors = useThemeColors();
   const canvasBackground = useCanvasBackground();
   const [layout, setLayout] = useState({
     width: 1,
@@ -212,7 +210,7 @@ export function AnnotationCanvas({
 
   return (
     <View
-      className="min-h-0 flex-1 bg-background"
+      className="relative min-h-0 flex-1 bg-background"
       onLayout={(event) => {
         const { width, height, x, y } = event.nativeEvent.layout;
         setLayout({
@@ -276,39 +274,13 @@ export function AnnotationCanvas({
         </Canvas>
       </View>
 
-      {loading ? (
-        <View className="absolute inset-0 items-center justify-center">
-          <ActivityIndicator color={colors.primary} size="large" />
-        </View>
-      ) : null}
-
       {!frame && !loading && emptyText ? (
         <View className="absolute inset-0 items-center justify-center">
           <Text className="text-muted-foreground">{emptyText}</Text>
         </View>
       ) : null}
 
-      {toasts && toasts.length > 0 ? (
-        <View className="absolute bottom-3 left-3 right-3 gap-2">
-          {toasts.map((toast) => (
-            <View
-              key={toast.text}
-              className="rounded-[10px] px-3 py-2"
-              style={{
-                backgroundColor:
-                  toast.tone === "error" ? "rgba(220,38,38,0.92)" : "rgba(24,24,27,0.88)",
-              }}
-            >
-              <Text
-                className="text-[13px] text-white"
-                style={{ fontFamily: liscaFontFamily.sansRegular }}
-              >
-                {toast.text}
-              </Text>
-            </View>
-          ))}
-        </View>
-      ) : null}
+      <CanvasToastStack messages={toasts} />
     </View>
   );
 }

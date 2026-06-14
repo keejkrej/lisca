@@ -1,5 +1,5 @@
 import { LabelCreationDialog } from "@lisca/ui/features";
-import { AppShell, RouteLoadingFallback } from "@lisca/ui/shell";
+import { AppShell } from "@lisca/ui/shell";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { StudioAnnotateDock } from "../components/studio-annotate-dock";
@@ -12,8 +12,6 @@ import { StudioAnnotatePageProvider } from "../state/studio-annotate-page-contex
 
 export const Route = createFileRoute("/annotate")({
   component: AnnotatePage,
-  pendingComponent: RouteLoadingFallback,
-  pendingMs: 0,
 });
 
 function AnnotatePage() {

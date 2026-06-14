@@ -38,6 +38,7 @@ export {
 } from "./annotate/label-creation-dialog";
 export { labelColorStyle } from "./annotate/label-color-style";
 export { useCanvasResourceTransaction } from "./canvas/canvas-resource-transaction";
+export { CanvasToastStack } from "./canvas/canvas-status";
 export { useCanvasTransientStatus } from "./canvas/canvas-transient-status";
 export { CropProgressModal, type CropProgressModalProps } from "./align/crop-progress-modal";
 export {

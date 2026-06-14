@@ -4,11 +4,10 @@ import type { CanvasStatusMessage } from "@lisca/ui-headless";
 import { computeFrameLayout, type FrameLayout } from "@lisca/utils";
 import { Canvas, Group, Image, Rect, type SkImage } from "@shopify/react-native-skia";
 import { useEffect, useRef, useState, type RefObject } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { View } from "react-native";
 
-import { Text } from "../../../components/ui/text";
-import { useThemeColors } from "../../theme/use-theme-colors";
 import { canvasPanResponderProps } from "../canvas/canvas-pan-responder";
+import { CanvasToastStack } from "../canvas/canvas-status";
 import { useCanvasBackground } from "../canvas/canvas-theme";
 import { clientToFramePoint } from "../canvas/frame-pixels";
 import { usePreparedFrameSkImage } from "../canvas/prepared-frame-sk-image";
@@ -24,7 +23,6 @@ export type AlignCanvasProps = {
   previewGridRef?: RefObject<AlignGridState | null>;
   previewRedrawRef?: RefObject<(() => void) | null>;
   excludedCells?: Iterable<AlignGridCellCoord>;
-  loading?: boolean;
   emptyText?: string;
   messages?: CanvasStatusMessage[];
   toasts?: CanvasStatusMessage[];
@@ -75,14 +73,12 @@ export function AlignCanvas({
   previewGridRef,
   previewRedrawRef,
   excludedCells,
-  loading,
   toasts,
   onVirtualPointerDown,
   onVirtualPointerMove,
   onVirtualPointerUp,
   onVirtualPointerCancel,
 }: AlignCanvasProps) {
-  const colors = useThemeColors();
   const canvasBackground = useCanvasBackground();
   const skImage = usePreparedFrameSkImage(frame);
   const gridRef = useRef(grid);
@@ -197,7 +193,7 @@ export function AlignCanvas({
 
   return (
     <View
-      className="min-h-0 flex-1 bg-background"
+      className="relative min-h-0 flex-1 bg-background"
       onLayout={(event) => {
         const { width, height, x, y } = event.nativeEvent.layout;
         setLayout({
@@ -229,28 +225,7 @@ export function AlignCanvas({
         </Canvas>
       </View>
 
-      {loading ? (
-        <View className="absolute inset-0 items-center justify-center">
-          <ActivityIndicator color={colors.primary} size="large" />
-        </View>
-      ) : null}
-
-      {toasts && toasts.length > 0 ? (
-        <View className="absolute bottom-3 left-3 right-3 gap-2">
-          {toasts.map((toast) => (
-            <View
-              key={toast.text}
-              className="rounded-[10px] px-3 py-2"
-              style={{
-                backgroundColor:
-                  toast.tone === "error" ? "rgba(220,38,38,0.92)" : "rgba(24,24,27,0.88)",
-              }}
-            >
-              <Text className="font-sans text-sm leading-snug text-white">{toast.text}</Text>
-            </View>
-          ))}
-        </View>
-      ) : null}
+      <CanvasToastStack messages={toasts} />
     </View>
   );
 }

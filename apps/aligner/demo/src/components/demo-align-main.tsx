@@ -78,7 +78,6 @@ export function DemoAlignMain({ state, embedded = false }: { state: DemoAlignSta
         excludedCells={state.excludedCells}
         frame={displayFrame}
         grid={state.grid}
-        loading={state.frameLoading}
         previewGridRef={gridHandlers.previewGridRef}
         previewRedrawRef={previewRedrawRef}
         toasts={embedded ? [] : toasts}

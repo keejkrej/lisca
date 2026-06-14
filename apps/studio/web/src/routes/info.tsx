@@ -1,4 +1,4 @@
-import { AppShell, RouteLoadingFallback } from "@lisca/ui/shell";
+import { AppShell } from "@lisca/ui/shell";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { studioHostOperations } from "../api/studio-port";
@@ -12,8 +12,6 @@ import { useStudioStore } from "../state/studio-store";
 
 export const Route = createFileRoute("/info")({
   component: InfoPage,
-  pendingComponent: RouteLoadingFallback,
-  pendingMs: 0,
 });
 
 function InfoPage() {
