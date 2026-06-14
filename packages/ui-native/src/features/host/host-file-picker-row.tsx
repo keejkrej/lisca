@@ -1,44 +1,49 @@
 import type { HostFsEntry } from "@lisca/contracts";
+import { FileIcon, FolderIcon } from "lucide-react-native";
 import { Pressable } from "react-native";
 
+import { Icon } from "../../../components/ui/icon";
 import { Text } from "../../../components/ui/text";
 import { cn } from "../../../lib/utils";
 
-export const FILE_PICKER_ROW_HEIGHT = 44;
+export const FILE_PICKER_ROW_HEIGHT = 40;
 
-export type FilePickerRowProps = {
+export type HostFilePickerRowProps = {
   entry: HostFsEntry;
-  borderColor: string;
-  foregroundColor: string;
   muted?: boolean;
   selected?: boolean;
   onPress: (entry: HostFsEntry) => void;
 };
 
-export const FilePickerRow = function FilePickerRow({
+export function HostFilePickerRow({
   entry,
-  borderColor,
-  foregroundColor,
   muted = false,
   selected = false,
   onPress,
-}: FilePickerRowProps) {
+}: HostFilePickerRowProps) {
+  const EntryIcon = entry.isDirectory ? FolderIcon : FileIcon;
+
   return (
     <Pressable
-      accessibilityLabel={entry.isDirectory ? `Folder ${entry.name}` : `File ${entry.name}`}
+      accessibilityLabel={entry.name}
       accessibilityRole="button"
       accessibilityState={{ selected }}
       className={cn(
-        "min-h-11 border-b px-3 py-2.5",
-        selected && "bg-accent/50",
+        "min-h-10 flex-row items-center gap-2 border-b border-border px-3 py-2",
+        selected && "bg-primary/15",
         muted && "opacity-60",
       )}
-      style={{ borderColor }}
       onPress={() => onPress(entry)}
     >
-      <Text style={{ color: foregroundColor }}>
-        {entry.isDirectory ? "Folder" : "File"} {entry.name}
+      <Icon as={EntryIcon} className="size-4 shrink-0 text-muted-foreground" size={16} strokeWidth={2} />
+      <Text className="min-w-0 flex-1 text-sm text-foreground" numberOfLines={1}>
+        {entry.name}
       </Text>
     </Pressable>
   );
-};
+}
+
+/** @deprecated Use {@link HostFilePickerRow}. */
+export const FilePickerRow = HostFilePickerRow;
+/** @deprecated Use {@link HostFilePickerRowProps}. */
+export type FilePickerRowProps = HostFilePickerRowProps;

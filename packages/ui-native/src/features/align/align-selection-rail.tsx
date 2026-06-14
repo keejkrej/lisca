@@ -100,15 +100,15 @@ export function AlignSelectionRail({
         title="Selection"
       >
         <AlignSelectionCounts excluded={visibleCounts.excluded} included={visibleCounts.included} />
-        <View className="grid w-full grid-cols-2 gap-2">
-          <View className="min-w-0">
+        <View className="w-full flex-row gap-2">
+          <View className="min-w-0 flex-1">
             <AlignEditToggle
               disabled={disabled}
               enabled={manualExclusionEnabled}
               onEnabledChange={onManualExclusionEnabledChange}
             />
           </View>
-          <View className="min-w-0">
+          <View className="min-w-0 flex-1">
             <Button
               className="w-full justify-center"
               disabled={disabled || !hasExcludedCells}
@@ -120,8 +120,8 @@ export function AlignSelectionRail({
             </Button>
           </View>
         </View>
-        <View className="grid w-full grid-cols-2 gap-2">
-          <View className="min-w-0">
+        <View className="w-full flex-row gap-2">
+          <View className="min-w-0 flex-1">
             <Button
               className="w-full justify-center"
               disabled={disabled || !hasVisibleCells}
@@ -132,7 +132,7 @@ export function AlignSelectionRail({
               <Text>Exclude all</Text>
             </Button>
           </View>
-          <View className="min-w-0">
+          <View className="min-w-0 flex-1">
             <Button
               className="w-full justify-center"
               disabled={disabled || !hasVisibleCells}
@@ -149,8 +149,8 @@ export function AlignSelectionRail({
             </Button>
           </View>
         </View>
-        <View className="grid w-full grid-cols-2 gap-2">
-          <View className="min-w-0">
+        <View className="w-full flex-row gap-2">
+          <View className="min-w-0 flex-1">
             <LoadingButton
               disabled={disabled || !hasVisibleCells}
               loading={variationExcludeLoading}
@@ -159,7 +159,7 @@ export function AlignSelectionRail({
               Var exclude
             </LoadingButton>
           </View>
-          <View className="min-w-0">
+          <View className="min-w-0 flex-1">
             <LoadingButton
               disabled={disabled || !hasVisibleCells || variationExcludeLoading}
               loading={smartExcludeLoading}

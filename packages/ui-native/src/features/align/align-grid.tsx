@@ -164,28 +164,32 @@ export function AlignGrid(props: AlignGridProps) {
       title={sectionTitle}
     >
       <View className="min-w-0 gap-3">
-        <View className="grid w-full grid-cols-2 gap-2">
-          <Toggle
-            accessibilityLabel="Show grid overlay"
-            accessibilityState={{ selected: overlayVisible }}
-            className="w-full justify-center"
-            disabled={disabled}
-            pressed={overlayVisible}
-            size="sm"
-            variant="outline"
-            onPressedChange={onOverlayVisibleChange}
-          >
-            <Text>Show</Text>
-          </Toggle>
-          <Button
-            className="w-full justify-center"
-            disabled={disabled || resetDisabled || !onReset}
-            size="sm"
-            variant="outline"
-            onPress={() => onReset?.()}
-          >
-            <Text>Reset</Text>
-          </Button>
+        <View className="w-full flex-row gap-2">
+          <View className="min-w-0 flex-1">
+            <Toggle
+              accessibilityLabel="Show grid overlay"
+              accessibilityState={{ selected: overlayVisible }}
+              className="w-full justify-center"
+              disabled={disabled}
+              pressed={overlayVisible}
+              size="sm"
+              variant="outline"
+              onPressedChange={onOverlayVisibleChange}
+            >
+              <Text>Show</Text>
+            </Toggle>
+          </View>
+          <View className="min-w-0 flex-1">
+            <Button
+              className="w-full justify-center"
+              disabled={disabled || resetDisabled || !onReset}
+              size="sm"
+              variant="outline"
+              onPress={() => onReset?.()}
+            >
+              <Text>Reset</Text>
+            </Button>
+          </View>
         </View>
 
         <Field className="min-w-0 w-full gap-0.5">
@@ -231,8 +235,8 @@ export function AlignGrid(props: AlignGridProps) {
           </View>
         </Field>
 
-        <View className="grid grid-cols-2 gap-2">
-          <Field className="min-w-0 w-full">
+        <View className="flex-row gap-2">
+          <Field className="min-w-0 flex-1">
             <FieldLabel>Vector A</FieldLabel>
             <AlignNumberInput
               disabled={disabled}
@@ -241,7 +245,7 @@ export function AlignGrid(props: AlignGridProps) {
               onCommit={onVectorAChange}
             />
           </Field>
-          <Field className="min-w-0 w-full">
+          <Field className="min-w-0 flex-1">
             <FieldLabel>Vector B</FieldLabel>
             <AlignNumberInput
               disabled={disabled}
@@ -252,8 +256,8 @@ export function AlignGrid(props: AlignGridProps) {
           </Field>
         </View>
 
-        <View className="grid grid-cols-2 gap-2">
-          <Field className="min-w-0 w-full">
+        <View className="flex-row gap-2">
+          <Field className="min-w-0 flex-1">
             <FieldLabel>Pattern Width</FieldLabel>
             <AlignNumberInput
               disabled={disabled}
@@ -262,7 +266,7 @@ export function AlignGrid(props: AlignGridProps) {
               onCommit={onPatternWidthChange}
             />
           </Field>
-          <Field className="min-w-0 w-full">
+          <Field className="min-w-0 flex-1">
             <FieldLabel>Pattern Height</FieldLabel>
             <AlignNumberInput
               disabled={disabled}
@@ -273,8 +277,8 @@ export function AlignGrid(props: AlignGridProps) {
           </Field>
         </View>
 
-        <View className="grid grid-cols-2 gap-2">
-          <Field className="min-w-0 w-full">
+        <View className="flex-row gap-2">
+          <Field className="min-w-0 flex-1">
             <FieldLabel>Offset X</FieldLabel>
             <AlignNumberInput
               disabled={disabled}
@@ -283,7 +287,7 @@ export function AlignGrid(props: AlignGridProps) {
               onCommit={onOffsetXChange}
             />
           </Field>
-          <Field className="min-w-0 w-full">
+          <Field className="min-w-0 flex-1">
             <FieldLabel>Offset Y</FieldLabel>
             <AlignNumberInput
               disabled={disabled}

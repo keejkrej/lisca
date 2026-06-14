@@ -62,10 +62,10 @@ function SelectStepperField<T extends NavigationValue>(props: SelectNavigationFi
   return (
     <Field className="min-w-0 w-full">
       <FieldLabel>{props.label}</FieldLabel>
-      <View className="grid w-full grid-cols-[2rem_minmax(0,1fr)_2rem] items-center gap-2">
+      <View className="w-full flex-row items-center gap-2">
         <Button
           accessibilityLabel={`Previous ${props.label}`}
-          className="h-8 w-full px-0"
+          className="h-8 w-8 shrink-0 px-0"
           disabled={props.previousDisabled || props.disabled}
           size="sm"
           variant="outline"
@@ -73,15 +73,17 @@ function SelectStepperField<T extends NavigationValue>(props: SelectNavigationFi
         >
           <Icon as={ChevronLeft} className="size-4" size={16} strokeWidth={2} />
         </Button>
-        <SelectPicker
-          disabled={props.disabled}
-          options={props.options}
-          value={props.value}
-          onChange={props.onChange}
-        />
+        <View className="min-w-0 flex-1">
+          <SelectPicker
+            disabled={props.disabled}
+            options={props.options}
+            value={props.value}
+            onChange={props.onChange}
+          />
+        </View>
         <Button
           accessibilityLabel={`Next ${props.label}`}
-          className="h-8 w-full px-0"
+          className="h-8 w-8 shrink-0 px-0"
           disabled={props.nextDisabled || props.disabled}
           size="sm"
           variant="outline"
@@ -111,10 +113,10 @@ function SliderStepperField(props: SliderNavigationFieldProps) {
           <Text className="font-normal text-muted-foreground text-sm">{displayLabel}</Text>
         ) : null}
       </FieldLabel>
-      <View className="grid w-full grid-cols-[2rem_minmax(0,1fr)_2rem] items-center gap-2">
+      <View className="w-full flex-row items-center gap-2">
         <Button
           accessibilityLabel={`Previous ${props.label}`}
-          className="h-8 w-full px-0"
+          className="h-8 w-8 shrink-0 px-0"
           disabled={props.previousDisabled || props.disabled}
           size="sm"
           variant="outline"
@@ -125,7 +127,7 @@ function SliderStepperField(props: SliderNavigationFieldProps) {
         <View
           accessibilityLabel={ariaValueText}
           accessibilityRole="adjustable"
-          className="min-w-0 w-full"
+          className="min-w-0 flex-1"
         >
           <Slider
             disabled={props.disabled}
@@ -143,7 +145,7 @@ function SliderStepperField(props: SliderNavigationFieldProps) {
         </View>
         <Button
           accessibilityLabel={`Next ${props.label}`}
-          className="h-8 w-full px-0"
+          className="h-8 w-8 shrink-0 px-0"
           disabled={props.nextDisabled || props.disabled}
           size="sm"
           variant="outline"

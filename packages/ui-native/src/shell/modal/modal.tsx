@@ -92,7 +92,7 @@ export function DialogBody(props: { children: ReactNode; style?: ViewProps["styl
 
 export function DialogFooter(props: { children: ReactNode }) {
   return (
-    <View className="border-border flex-row justify-end gap-2 border-t px-5 py-4">
+    <View className="border-border flex-row flex-wrap items-center justify-end gap-2 border-t px-5 py-4">
       {props.children}
     </View>
   );

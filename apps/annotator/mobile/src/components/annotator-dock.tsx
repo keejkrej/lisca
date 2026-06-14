@@ -4,6 +4,7 @@ import {
   DockSection,
   DockStrip,
   dockLayoutClasses,
+  dockSectionWidths,
   dockToolbarMinHeight,
   Text,
 } from "@lisca/ui-native";
@@ -19,7 +20,7 @@ export function AnnotatorDock() {
 
   return (
     <DockStrip>
-      <DockSection contentClassName={dockLayoutClasses.content} title="Tool">
+      <DockSection className={dockSectionWidths.tool} contentClassName={dockLayoutClasses.content} title="Tool">
         {dock.mode === "segmentation" ? (
           <AnnotationToolGrid
             canEditTools={canEditTools}

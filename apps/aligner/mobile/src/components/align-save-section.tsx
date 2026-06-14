@@ -1,7 +1,7 @@
 import { ActivityIndicator, View } from "react-native";
 
 import { Text } from "@lisca/ui-native";
-import { Button, DockSection, ReadonlyPathField } from "@lisca/ui-native/shell";
+import { Button, DockSection, dockSectionWidths, ReadonlyPathField } from "@lisca/ui-native/shell";
 
 import { useAlignCrop, useAlignNav } from "../state/align-page-selectors";
 
@@ -13,22 +13,22 @@ export function AlignSaveSection() {
   const canCrop = Boolean(nav.workspacePath && nav.source && nav.frame && !crop.cropping);
 
   return (
-    <DockSection title="Save">
+    <DockSection className={dockSectionWidths.save} title="Save">
       <View className="w-full flex-col gap-2">
-        <View className="grid w-full grid-cols-3 gap-2">
-          <View className="min-w-0">
+        <View className="w-full flex-row gap-2">
+          <View className="min-w-0 flex-1">
             <ReadonlyPathField
               accessibilityLabel={`Output path bbox/Pos${pos}.csv`}
               value={`bbox/Pos${pos}.csv`}
             />
           </View>
-          <View className="min-w-0">
+          <View className="min-w-0 flex-1">
             <ReadonlyPathField
               accessibilityLabel={`Output path align/Pos${pos}.json`}
               value={`align/Pos${pos}.json`}
             />
           </View>
-          <View className="min-w-0">
+          <View className="min-w-0 flex-1">
             <ReadonlyPathField
               accessibilityLabel={`Output path roi/Pos${pos}`}
               className="text-center"
@@ -36,8 +36,8 @@ export function AlignSaveSection() {
             />
           </View>
         </View>
-        <View className="grid w-full grid-cols-3 gap-2">
-          <View className="min-w-0">
+        <View className="w-full flex-row gap-2">
+          <View className="min-w-0 flex-1">
             <Button
               className="h-8 w-full justify-center"
               disabled={!canSave || nav.saving}
@@ -52,7 +52,7 @@ export function AlignSaveSection() {
               )}
             </Button>
           </View>
-          <View className="min-w-0">
+          <View className="min-w-0 flex-1">
             <Button
               className="w-full justify-center"
               disabled={!canCrop}
@@ -63,7 +63,7 @@ export function AlignSaveSection() {
               <Text>Crop</Text>
             </Button>
           </View>
-          <View className="min-w-0">
+          <View className="min-w-0 flex-1">
             <Button
               className="w-full justify-center"
               disabled={!nav.workspacePath || !nav.source || crop.cropping}

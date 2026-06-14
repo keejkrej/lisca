@@ -102,7 +102,7 @@ export function BasicInfoStep2() {
         <View className="min-h-[200px] w-full p-2.5">
           <Field className="min-h-[200px] gap-2.5">
             <FieldLabel className={basicInfoFieldLabelClassName}>Features</FieldLabel>
-            <View className="grid w-full grid-cols-2 gap-2.5 p-2.5 sm:grid-cols-4">
+            <View className="w-full flex-row flex-wrap gap-2.5 p-2.5">
               {FEATURES.map(({ id, title }) => {
                 const selected = isSelected(id);
                 const disabled = isFeatureDisabled(id);
@@ -112,7 +112,7 @@ export function BasicInfoStep2() {
                     accessibilityRole="checkbox"
                     accessibilityState={{ checked: selected, disabled }}
                     className={cn(
-                      "min-h-[120px] items-center justify-center rounded-lg border-2 p-2.5",
+                      "min-h-[120px] min-w-0 flex-1 basis-[22%] items-center justify-center rounded-lg border-2 p-2.5",
                       selected
                         ? "border-foreground/80 opacity-100 ring-1 ring-foreground/20"
                         : "border-border opacity-60",

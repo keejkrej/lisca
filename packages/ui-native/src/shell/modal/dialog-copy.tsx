@@ -38,7 +38,7 @@ export function DialogDescriptionText(props: {
 
 export function DialogActions(props: { children: ReactNode; className?: string }) {
   return (
-    <View className={cn("flex-row flex-wrap justify-end gap-2", props.className)}>
+    <View className={cn("flex-row flex-wrap items-center justify-end gap-2", props.className)}>
       {props.children}
     </View>
   );

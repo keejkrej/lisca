@@ -6,6 +6,7 @@ import {
   DockStrip,
   ReadonlyPathField,
   dockLayoutClasses,
+  dockSectionWidths,
   dockToolbarMinHeight,
   Text,
 } from "@lisca/ui-native";
@@ -25,7 +26,7 @@ export function StudioAnnotateDock() {
 
   return (
     <DockStrip>
-      <DockSection contentClassName={dockLayoutClasses.content} title="Tool">
+      <DockSection className={dockSectionWidths.tool} contentClassName={dockLayoutClasses.content} title="Tool">
         {dock.mode === "segmentation" ? (
           <AnnotationToolGrid
             canEditTools={canEditTools}
@@ -41,7 +42,7 @@ export function StudioAnnotateDock() {
           </View>
         )}
       </DockSection>
-      <DockSection contentClassName={dockLayoutClasses.content} title="Save">
+      <DockSection className={dockSectionWidths.save} contentClassName={dockLayoutClasses.content} title="Save">
         <View className={dockLayoutClasses.stack}>
           {paths.length > 1 ? (
             <View className={dockLayoutClasses.cols2}>
