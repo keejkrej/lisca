@@ -23,13 +23,17 @@ RUN --mount=type=cache,target=/root/.bun/install/cache,id=lisca-bun-cache \
 
 COPY --from=web-prune /app/out/full/ .
 COPY --from=web-prune /app/tsconfig.base.json ./tsconfig.base.json
+# turbo prune omits root paths that @lisca/web-app/vite.ts resolves at config load time.
+COPY --from=web-prune /app/scripts/lisca-dev-ports.cjs /app/scripts/lisca-dev-proxy-shared.cjs ./scripts/
+COPY --from=web-prune /app/assets/brand ./assets/brand
 RUN --mount=type=cache,target=/root/.bun/install/cache,id=lisca-bun-cache \
     --mount=type=cache,target=/app/.turbo,id=lisca-turbo-cache,sharing=locked \
     --mount=type=cache,target=/app/node_modules/.cache,id=lisca-node-cache,sharing=locked \
     bun x turbo run build --filter=@lisca/${PRODUCT}-web...
 
 # --- Rust: cargo-chef dep layer + cached target ---
-FROM rust:1-bookworm AS chef
+# Trixie (glibc ≥ 2.38) is required: ort prebuilt ONNX Runtime references __isoc23_* symbols.
+FROM rust:1-trixie AS chef
 RUN cargo install cargo-chef --locked
 WORKDIR /app
 
@@ -61,7 +65,7 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry,id=lisca-cargo-registry 
     cargo build --release -p ${PRODUCT}-server \
  && cp /app/target/release/${PRODUCT}-server /app/lisca-server
 
-FROM debian:bookworm-slim AS runtime
+FROM debian:trixie-slim AS runtime
 ARG PRODUCT
 
 # aligner=8765, annotator=8766, studio=8767
