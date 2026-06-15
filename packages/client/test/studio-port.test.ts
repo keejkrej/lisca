@@ -5,8 +5,8 @@ import { createStudioPort } from "../src/ports/studio";
 describe("createStudioPort", () => {
   it("exposes annotate label and annotation CRUD methods", () => {
     const port = createStudioPort({
-      resolveHttpBaseUrl: () => "http://127.0.0.1:8767",
-      resolveWsUrl: () => "ws://127.0.0.1:8767/ws",
+      baseUrl: () => "http://127.0.0.1:8767",
+      isDev: false,
     });
 
     expect(typeof port.loadLabels).toBe("function");

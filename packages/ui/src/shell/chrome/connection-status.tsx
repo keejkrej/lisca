@@ -4,7 +4,7 @@ import { cn } from "../../lib/utils";
 export type ConnectionState = "idle" | "connecting" | "open" | "closed";
 
 export function ConnectionStatus(props: {
-  wsUrl: string;
+  httpBaseUrl: string;
   state: ConnectionState;
   /** Defaults to `"Server"`. */
   label?: string;
@@ -33,8 +33,8 @@ export function ConnectionStatus(props: {
     props.onOpenSettings ? "cursor-pointer" : "cursor-default",
   );
   const titleAttr = props.onOpenSettings
-    ? `${props.wsUrl}\nClick to change server address`
-    : props.wsUrl;
+    ? `${props.httpBaseUrl}\nClick to change server address`
+    : props.httpBaseUrl;
 
   const ariaLabel = props.onOpenSettings
     ? `${title}: ${statusLabel}. Click to change server address.`

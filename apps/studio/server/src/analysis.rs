@@ -5,13 +5,11 @@ use std::{
 };
 
 use lisca::protocol::AnalysisProgress;
-use tokio::sync::broadcast;
 
 #[derive(Clone)]
 pub struct AnalysisJobState {
     pub jobs: Arc<Mutex<HashMap<String, AnalysisProgress>>>,
     pub workspace_requests: Arc<Mutex<HashMap<String, String>>>,
-    pub events: broadcast::Sender<AnalysisProgress>,
 }
 
 impl AnalysisJobState {
@@ -19,7 +17,6 @@ impl AnalysisJobState {
         Self {
             jobs: Arc::new(Mutex::new(HashMap::new())),
             workspace_requests: Arc::new(Mutex::new(HashMap::new())),
-            events: broadcast::channel(256).0,
         }
     }
 }

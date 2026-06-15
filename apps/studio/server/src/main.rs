@@ -24,22 +24,12 @@ impl HasAnalysisJobs for StudioState {
 }
 
 fn build_router(state: StudioState) -> Router<()> {
-    let crop_events = state.crop.events.clone();
-    let analysis_events = state.analysis.events.clone();
     Router::new()
         .merge(http::fs::router())
         .merge(http::profile::router())
         .merge(aligner_server::router())
         .merge(studio_server::router())
         .merge(annotator_server::router())
-        .merge(http::ws::router(
-            AppId::Studio,
-            env!("CARGO_PKG_VERSION"),
-            http::ws::WsEvents {
-                crop: Some(crop_events),
-                analysis: Some(analysis_events),
-            },
-        ))
         .with_state(state)
 }
 

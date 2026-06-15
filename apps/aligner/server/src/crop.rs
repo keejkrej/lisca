@@ -5,7 +5,6 @@ use std::{
 };
 
 use lisca::protocol::CropRoiProgress;
-use tokio::sync::broadcast;
 
 #[derive(Clone)]
 pub struct CropJob {
@@ -17,7 +16,6 @@ pub struct CropJob {
 pub struct CropJobState {
     pub jobs: Arc<Mutex<HashMap<String, CropJob>>>,
     pub workspace_requests: Arc<Mutex<HashMap<String, String>>>,
-    pub events: broadcast::Sender<CropRoiProgress>,
 }
 
 impl CropJobState {
@@ -25,7 +23,6 @@ impl CropJobState {
         Self {
             jobs: Arc::new(Mutex::new(HashMap::new())),
             workspace_requests: Arc::new(Mutex::new(HashMap::new())),
-            events: broadcast::channel(128).0,
         }
     }
 }

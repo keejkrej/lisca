@@ -151,21 +151,16 @@ async fn start_analysis_handler<S: HasAnalysisJobs>(
             .map_err(|_| FsError::new("analysis workspace request map is poisoned"))?;
         requests.insert(workspace_path.clone(), request_id.clone());
     }
-    let _ = analysis.events.send(initial.clone());
-
     let jobs = analysis.jobs.clone();
-    let events = analysis.events.clone();
     let path = PathBuf::from(workspace_path.clone());
     let run_request_id = request_id.clone();
     tokio::spawn(async move {
         let update_progress = {
             let jobs = jobs.clone();
-            let events = events.clone();
             move |progress: AnalysisProgress| {
                 if let Ok(mut jobs) = jobs.lock() {
                     jobs.insert(progress.request_id.clone(), progress.clone());
                 }
-                let _ = events.send(progress);
             }
         };
 
@@ -186,7 +181,6 @@ async fn start_analysis_handler<S: HasAnalysisJobs>(
                 if let Ok(mut jobs) = jobs.lock() {
                     jobs.insert(final_progress.request_id.clone(), final_progress.clone());
                 }
-                let _ = events.send(final_progress);
             }
             Err(error) => {
                 let final_progress = AnalysisProgress {
@@ -201,7 +195,6 @@ async fn start_analysis_handler<S: HasAnalysisJobs>(
                 if let Ok(mut jobs) = jobs.lock() {
                     jobs.insert(final_progress.request_id.clone(), final_progress.clone());
                 }
-                let _ = events.send(final_progress);
             }
         }
     });

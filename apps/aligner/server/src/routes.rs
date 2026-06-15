@@ -224,11 +224,8 @@ async fn crop_roi_handler<S: HasCropJobs>(
             .map_err(|_| FsError::new("crop workspace request map is poisoned"))?;
         requests.insert(workspace_path, request.request_id.clone());
     }
-    let _ = crop.events.send(progress.clone());
-
     let request_id = request.request_id.clone();
     let jobs = crop.jobs.clone();
-    let crop_events = crop.events.clone();
     tokio::task::spawn_blocking(move || {
         let update_jobs = jobs.clone();
         let result = aligner::crop_roi(request, &cancel, |progress| {
@@ -237,7 +234,6 @@ async fn crop_roi_handler<S: HasCropJobs>(
                     job.progress = progress.clone();
                 }
             }
-            let _ = crop_events.send(progress);
         });
 
         if let Err(error) = result {
@@ -246,7 +242,6 @@ async fn crop_roi_handler<S: HasCropJobs>(
                     job.progress.status = CropRoiStatus::Error;
                     job.progress.error = Some(error);
                     job.progress.message = Some("Crop failed".to_string());
-                    let _ = crop_events.send(job.progress.clone());
                 }
             }
         }
@@ -278,7 +273,6 @@ async fn cancel_crop_roi_handler<S: HasCropJobs>(
         job.progress.status = CropRoiStatus::Cancelled;
         job.progress.message = Some("Crop cancellation requested".to_string());
     }
-    let _ = crop.events.send(job.progress.clone());
     Ok(Json(job.progress.clone()))
 }
 

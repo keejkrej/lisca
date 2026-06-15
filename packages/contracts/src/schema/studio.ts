@@ -60,11 +60,6 @@ export const AnalysisProgressSchema = Schema.Struct({
 
 export const NullableAnalysisProgressSchema = Schema.NullOr(AnalysisProgressSchema);
 
-export const AnalysisProgressMessageSchema = Schema.Struct({
-  type: Schema.Literal("analysisProgress"),
-  progress: AnalysisProgressSchema,
-}).annotations({ identifier: "AnalysisProgressMessage" });
-
 export const AnalysisStartRequestSchema = Schema.Struct({
   workspacePath: Schema.String,
   requestId: Schema.String,
@@ -78,5 +73,4 @@ export type AnalysisStatus = typeof AnalysisStatusSchema.Type;
 export type AnalysisStage = typeof AnalysisStageSchema.Type;
 export type StudioAnalysisCsvFile = typeof StudioAnalysisCsvFileSchema.Type;
 export type AnalysisProgress = typeof AnalysisProgressSchema.Type;
-export type AnalysisProgressMessage = typeof AnalysisProgressMessageSchema.Type;
 export type AnalysisStartRequest = typeof AnalysisStartRequestSchema.Type;

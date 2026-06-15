@@ -1,23 +1,18 @@
-import { CropRoiProgressMessageSchema, schemaDecoderEither, type CropRoiProgress } from "@lisca/contracts";
+import type { CropRoiProgress } from "@lisca/contracts";
 import { decodeFramePayload } from "@lisca/utils";
 import { Effect } from "effect";
 
 import { createApiClient, toClientEffect, type LiscaApiClient } from "../infra/api-client";
 import { withOptionalAbortSignal } from "../infra/with-abort-signal";
-import { pollProgressLoop, subscribeProgress } from "../session/progress-subscribe";
+import { pollProgressLoop } from "../session/progress-poll";
 import { createHostPort, type HostPortDeps } from "./host";
 import type { AlignerDataPort } from "./types";
 
 export type { AlignerDataPort } from "./types";
 
-const decodeCropRoiProgressMessage = schemaDecoderEither(CropRoiProgressMessageSchema);
-
 const CROP_ROI_TERMINAL_STATUSES = new Set(["completed", "cancelled", "error"]);
 
-export type AlignerPortDeps = HostPortDeps & {
-  wsUrl: () => string;
-  isDev?: boolean;
-};
+export type AlignerPortDeps = HostPortDeps;
 
 function withClientEffect<A, E>(
   client: LiscaApiClient,
@@ -81,7 +76,7 @@ export function createAlignerPort(
       );
     },
     onCropRoiProgress(requestId, onProgress) {
-      return createCropRoiProgressSubscription(client, deps, requestId, onProgress);
+      return createCropRoiProgressSubscription(client, requestId, onProgress);
     },
     roiPosExists(workspacePath, pos) {
       return withClientEffect(client, undefined, (c) =>
@@ -95,18 +90,12 @@ export function createAlignerPort(
 
 export function createCropRoiProgressSubscription(
   client: LiscaApiClient,
-  deps: Pick<AlignerPortDeps, "wsUrl" | "isDev">,
   requestId: string,
   onProgress: (progress: CropRoiProgress) => void,
 ) {
-  return subscribeProgress({
-    wsUrl: deps.wsUrl(),
-    requestId,
+  return pollProgressLoop({
     onProgress,
     pollProgress: () => toClientEffect(client.align.cropRoiProgress({ urlParams: { requestId } })),
-    decodeMessage: decodeCropRoiProgressMessage,
-    extractProgress: (message) => message.progress,
-    matchRequestId: (message, id) => message.progress.requestId === id,
     isTerminal: (progress) => CROP_ROI_TERMINAL_STATUSES.has(progress.status),
     createErrorProgress: (cause) => ({
       requestId,
@@ -119,8 +108,6 @@ export function createCropRoiProgressSubscription(
       message: null,
       error: cause instanceof Error ? cause.message : String(cause),
     }),
-    debugLabel: "aligner-ws",
-    isDev: deps.isDev,
   });
 }
 

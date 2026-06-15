@@ -13,7 +13,7 @@ export type ServerAddressDialogProps = {
   open: boolean;
   defaultPort: number;
   localLabel: string;
-  currentWsUrl: string;
+  currentHttpBaseUrl: string;
   activeAddress: string | null;
   savedServers: string[];
   onOpenChange: (open: boolean) => void;
@@ -26,7 +26,7 @@ export function ServerAddressDialog({
   open,
   defaultPort,
   localLabel,
-  currentWsUrl,
+  currentHttpBaseUrl,
   activeAddress,
   savedServers,
   onOpenChange,
@@ -87,7 +87,7 @@ export function ServerAddressDialog({
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
           <div className="space-y-2">
             <p className="font-medium text-foreground text-sm">Connected</p>
-            <p className="font-mono text-muted-foreground text-xs break-all">{currentWsUrl}</p>
+            <p className="font-mono text-muted-foreground text-xs break-all">{currentHttpBaseUrl}</p>
           </div>
 
           <div className="space-y-2">

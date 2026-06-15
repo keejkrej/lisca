@@ -16,18 +16,9 @@ impl HasCropJobs for AlignerState {
 }
 
 fn build_router(state: AlignerState) -> Router<()> {
-    let crop_events = state.crop.events.clone();
     Router::new()
         .merge(http::fs::router())
         .merge(aligner_server::router())
-        .merge(http::ws::router(
-            AppId::Aligner,
-            env!("CARGO_PKG_VERSION"),
-            http::ws::WsEvents {
-                crop: Some(crop_events),
-                analysis: None,
-            },
-        ))
         .with_state(state)
 }
 

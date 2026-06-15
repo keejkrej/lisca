@@ -12,15 +12,14 @@ Mobile apps under `apps/*/mobile` are native clients for the external Rust serve
 
 ## Environment
 
-| Variable                     | Purpose                            |
-| ---------------------------- | ---------------------------------- |
-| `EXPO_PUBLIC_LISCA_HTTP_URL` | Full HTTP base override            |
-| `EXPO_PUBLIC_LISCA_WS_URL`   | Full WebSocket URL override        |
-| `EXPO_PUBLIC_LISCA_WS_HOST`  | LAN host for dev (e.g. machine IP) |
-| `EXPO_PUBLIC_LISCA_WS_PORT`  | Server port when using host/port   |
-| `LISCA_DEV_HOST`             | Override LAN IP detected by `bun lisca dev * ios` |
+| Variable                      | Purpose                            |
+| ----------------------------- | ---------------------------------- |
+| `EXPO_PUBLIC_LISCA_HTTP_URL`  | Full HTTP base override            |
+| `EXPO_PUBLIC_LISCA_HTTP_HOST` | LAN host for dev (e.g. machine IP) |
+| `EXPO_PUBLIC_LISCA_HTTP_PORT` | Server port when using host/port   |
+| `LISCA_DEV_HOST`              | Override LAN IP detected by `bun lisca dev * ios` |
 
-On a physical device, point at your machine with `ws://` / `http://` URLs (not host-only — non-localhost hosts default to `wss://`).
+On a physical device, point at your machine with `http://` URLs (not host-only).
 
 ## CLI targets
 
@@ -46,7 +45,7 @@ bun lisca dev annotator web-native   # http://localhost:8082
 bun lisca dev studio web-native      # http://localhost:8083
 ```
 
-Web-native dev runs **Expo in the browser** (not via turbo). Open the **808x** URL — the CLI starts a dev proxy there that forwards API routes (`/ws`, `/fs`, `/align`, …) to Rust on **876x** and everything else to Expo on **908x** (808x + 1000). Same-origin resolution works like the Vite web apps.
+Web-native dev runs **Expo in the browser** (not via turbo). Open the **808x** URL — the CLI starts a dev proxy there that forwards API routes (`/fs`, `/align`, …) to Rust on **876x** and everything else to Expo on **908x** (808x + 1000). Same-origin resolution works like the Vite web apps.
 
 ### Native iOS (iPad / iPhone)
 

@@ -49,4 +49,4 @@ export {
   WorkSessionPickerDialog,
   type WorkSessionPickerDialogProps,
 } from "./workspace/work-session-picker-dialog";
-export { useWsProbeForUrl, type ConnectionState } from "./server/use-shell-ws-probe";
+export { useHttpProbeForUrl, type ConnectionState } from "./server/use-shell-http-probe";

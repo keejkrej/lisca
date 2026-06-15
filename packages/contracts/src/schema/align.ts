@@ -124,11 +124,6 @@ export const NullableCropRoiProgressSchema = Schema.NullOr(CropRoiProgressSchema
   identifier: "NullableCropRoiProgress",
 });
 
-export const CropRoiProgressMessageSchema = Schema.Struct({
-  type: Schema.Literal("cropRoiProgress"),
-  progress: CropRoiProgressSchema,
-}).annotations({ identifier: "CropRoiProgressMessage" });
-
 export const RoiPosExistsResponseSchema = Schema.Struct({
   exists: Schema.Boolean,
 }).annotations({ identifier: "RoiPosExistsResponse" });
@@ -169,7 +164,6 @@ export type CropRoiStatus = typeof CropRoiStatusSchema.Type;
 export type CropRoiRequest = typeof CropRoiRequestSchema.Type;
 export type CropRoiResponse = typeof CropRoiResponseSchema.Type;
 export type CropRoiProgress = typeof CropRoiProgressSchema.Type;
-export type CropRoiProgressMessage = typeof CropRoiProgressMessageSchema.Type;
 export type RoiPosExistsResponse = typeof RoiPosExistsResponseSchema.Type;
 export type ScanSourceRequest = typeof ScanSourceRequestSchema.Type;
 export type LoadFrameRequest = typeof LoadFrameRequestSchema.Type;

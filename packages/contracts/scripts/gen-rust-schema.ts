@@ -6,14 +6,13 @@ import { fileURLToPath } from "node:url";
 
 import { AssayJsonFileSchema } from "../src/assay.schema";
 import { liscaApi } from "../src/http-api";
-import { RoiIndexFileSchema, ServerWsMessageSchema } from "../src/schema/index";
+import { RoiIndexFileSchema } from "../src/schema/index";
 
 /**
  * Build the single JSON Schema document consumed by `typify` to generate the
  * Rust serde types. It bundles:
  *   - every HTTP wire type (from the OpenAPI components emitted by the HttpApi)
  *   - the on-disk assay.json contract (not an HTTP payload)
- *   - the WebSocket server-push message union
  *
  * Typify needs `oneOf` with inline object variants (not `anyOf` + `$ref`) to
  * emit `#[serde(tag = "kind")]` internally-tagged enums. Effect/OpenAPI emit
@@ -46,7 +45,6 @@ function foldDefs(schema: Parameters<typeof JSONSchema.make>[0]): void {
 }
 
 foldDefs(AssayJsonFileSchema);
-foldDefs(ServerWsMessageSchema);
 // On-disk ROI index container (not an HTTP payload).
 foldDefs(RoiIndexFileSchema);
 

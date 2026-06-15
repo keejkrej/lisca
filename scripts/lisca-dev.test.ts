@@ -83,8 +83,8 @@ describe("lisca dev LAN host", () => {
     expect(resolveDevLanHost({ LISCA_DEV_HOST: "10.0.0.5" })).toBe("10.0.0.5");
   });
 
-  it("falls back to EXPO_PUBLIC_LISCA_WS_HOST", () => {
-    expect(resolveDevLanHost({ EXPO_PUBLIC_LISCA_WS_HOST: "192.168.2.1" })).toBe("192.168.2.1");
+  it("falls back to EXPO_PUBLIC_LISCA_HTTP_HOST", () => {
+    expect(resolveDevLanHost({ EXPO_PUBLIC_LISCA_HTTP_HOST: "192.168.2.1" })).toBe("192.168.2.1");
   });
 
   it("returns a non-empty address when interfaces exist", () => {
@@ -146,7 +146,7 @@ describe("lisca dev ports", () => {
     }
   });
 
-  it("maps expo dev ports to rust API ports for websocket routing", () => {
+  it("maps expo dev ports to rust API ports", () => {
     expect(LISCA_MOBILE_EXPO_TO_RUST).toEqual({
       9081: 8765,
       9082: 8766,
@@ -253,71 +253,6 @@ describe("mobile dev proxy routing", () => {
   it("routes UI traffic to expo", async () => {
     expect(await fetchText(`http://127.0.0.1:${publicPort}/`)).toBe("expo");
     expect(await fetchText(`http://127.0.0.1:${publicPort}/index.bundle`)).toBe("expo");
-  });
-
-  it("proxies websocket upgrades to rust", async () => {
-    const { server: rustWs, port: rustWsPort } = await new Promise<{
-      server: Server;
-      port: number;
-    }>((resolve, reject) => {
-      const server = createServer((_req, res) => {
-        res.writeHead(426);
-        res.end();
-      });
-      server.on("upgrade", (req, socket) => {
-        if (req.url !== "/ws") {
-          socket.destroy();
-          return;
-        }
-        socket.write(
-          "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: test\r\n\r\n",
-        );
-      });
-      server.once("error", reject);
-      server.listen(0, "127.0.0.1", () => {
-        const address = server.address();
-        if (!address || typeof address === "string") {
-          reject(new Error("expected TCP address"));
-          return;
-        }
-        resolve({ server, port: address.port });
-      });
-    });
-
-    const wsPublicPort = await reservePort();
-    const wsProxy = spawn(
-      process.execPath,
-      [
-        path.join(root, "scripts/lisca-mobile-dev-proxy.cjs"),
-        "--listen",
-        String(wsPublicPort),
-        "--expo",
-        String(expoPort),
-        "--rust",
-        String(rustWsPort),
-      ],
-      { cwd: root, stdio: "ignore" },
-    );
-    await waitForTcpPort(wsPublicPort);
-
-    await new Promise<void>((resolve, reject) => {
-      const socket = net.connect({ host: "127.0.0.1", port: wsPublicPort }, () => {
-        socket.write(
-          "GET /ws HTTP/1.1\r\nHost: 127.0.0.1\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\n\r\n",
-        );
-      });
-      socket.once("data", (chunk) => {
-        const text = chunk.toString("utf8");
-        if (text.includes("101 Switching Protocols")) resolve();
-        else reject(new Error(`expected 101, got: ${text.slice(0, 80)}`));
-        socket.end();
-      });
-      socket.once("error", reject);
-      setTimeout(() => reject(new Error("websocket timeout")), 5_000);
-    }).finally(() => {
-      if (!wsProxy.killed) wsProxy.kill("SIGTERM");
-      rustWs.close();
-    });
   });
 });
 
@@ -427,9 +362,6 @@ describe("vite dev config", () => {
         const entry = proxy?.[prefix];
         expect(entry, `${scope} missing proxy for ${prefix}`).toBeDefined();
         expect(entry?.target).toBe(`http://127.0.0.1:${ports.backendPort}`);
-        if (prefix === "/ws") {
-          expect(entry?.ws).toBe(true);
-        }
       }
     }
   });

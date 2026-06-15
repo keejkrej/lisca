@@ -12,7 +12,7 @@ swapped for any other backend (Node, FastAPI, …) without touching the schema.
 
 | File / directory         | Role                                                               |
 | ------------------------ | ------------------------------------------------------------------ |
-| `src/schema/`            | Wire schemas by domain (`shared`, `host`, `align`, `annotate`, `studio`, `ws`) |
+| `src/schema/`            | Wire schemas by domain (`shared`, `host`, `align`, `annotate`, `studio`, …) |
 | `src/assay.schema.ts`    | Canonical schemas for the on-disk `assay.json` contract            |
 | `src/assay-ui.ts`        | Wizard / Studio UI assay types (not wire protocol)                 |
 | `src/assay.ts`           | Barrel for `@lisca/contracts/assay` subpath                        |
@@ -23,7 +23,7 @@ swapped for any other backend (Node, FastAPI, …) without touching the schema.
 
 ## Import paths
 
-- **`@lisca/contracts`** — wire types, decode, `WS_PATH`, on-disk assay schema symbols re-exported from `assay.schema.ts`.
+- **`@lisca/contracts`** — wire types, decode, on-disk assay schema symbols re-exported from `assay.schema.ts`.
 - **`@lisca/contracts/assay`** — wizard constants and UI types (`ASSAY_TYPE`, `StudioBasicInfoStep*`, `StudioAssayJson`, etc.).
 
 Client-side frame decoding types (`FrameResult`, `PixelArray`) live in **`@lisca/utils`**, not contracts.
@@ -67,3 +67,10 @@ bun run --cwd packages/contracts rust-types
 
 After changing a schema, run `generate` + `rust-types`, then `cargo test -p
 lisca` (the `protocol::contract_tests` lock the key wire shapes).
+
+## Transport and style
+
+- **Single transport:** Effect `HttpApi` over HTTP for all client↔server calls.
+- **Long-running jobs** (crop ROI, analysis): clients poll the existing progress GET endpoints (`/align/crop-roi-progress`, `/studio/analysis-progress`).
+- **Connection health:** shell UI probes `GET /fs/home` on the resolved HTTP base URL.
+- **API style:** typed action-oriented HTTP RPC (named endpoints like `/align/load-frame`), not REST resources and not a separate RPC framework.

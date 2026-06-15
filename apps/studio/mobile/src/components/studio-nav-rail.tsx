@@ -62,7 +62,7 @@ export function StudioNavRail() {
         <View className="items-center">
           <ConnectionStatus
             state={server.state}
-            wsUrl={server.wsUrl}
+            httpBaseUrl={server.httpBaseUrl}
             onOpenSettings={server.openSettings}
           />
         </View>

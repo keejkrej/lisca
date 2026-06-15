@@ -91,7 +91,7 @@ export function StudioNavRail() {
         <div className="flex justify-center">
           <ConnectionStatus
             state={server.state}
-            wsUrl={server.wsUrl}
+            httpBaseUrl={server.httpBaseUrl}
             onOpenSettings={server.openSettings}
           />
         </div>

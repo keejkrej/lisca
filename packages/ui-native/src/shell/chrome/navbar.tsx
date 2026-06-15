@@ -72,7 +72,7 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
       <View className="shrink-0 flex-row items-center gap-2">
         <ConnectionStatus
           state={server.state}
-          wsUrl={server.wsUrl}
+          httpBaseUrl={server.httpBaseUrl}
           onOpenSettings={server.openSettings}
         />
         {props.showToolsMenu !== false ? props.endLeading : null}

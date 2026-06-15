@@ -34,7 +34,7 @@ export type ShellNavbarProps = {
 };
 
 /**
- * Shared shell chrome: route toggle, workspace/source paths, WS status, theme.
+ * Shared shell chrome: route toggle, workspace/source paths, server status, theme.
  * Requires `ShellServerProvider` and `ShellWorkspaceProvider` above in the tree.
  */
 function ShellNavbarRoot(props: ShellNavbarProps) {
@@ -94,7 +94,7 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
         <div className="flex min-w-0 items-center justify-end justify-self-end gap-1 sm:gap-2">
           <ConnectionStatus
             state={server.state}
-            wsUrl={server.wsUrl}
+            httpBaseUrl={server.httpBaseUrl}
             onOpenSettings={server.openSettings}
           />
           {props.showToolsMenu !== false && props.endLeading}

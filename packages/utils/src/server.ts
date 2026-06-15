@@ -1,10 +1,5 @@
 import { liscaLocalStorage } from "@lisca/storage";
 
-export function formatWsUrl(host: string, port: number, path: string): string {
-  const proto = host === "localhost" || host === "127.0.0.1" ? "ws" : "wss";
-  return `${proto}://${host}:${port}${path.startsWith("/") ? path : `/${path}`}`;
-}
-
 /** @deprecated Migrated into {@link LISCA_SAVED_SERVERS_STORAGE_KEY}. */
 export const LISCA_SERVER_ADDRESS_STORAGE_KEY = "lisca.serverAddress";
 
@@ -89,10 +84,7 @@ export function writeLiscaSavedServers(servers: string[]): void {
   storage.setItem(LISCA_SAVED_SERVERS_STORAGE_KEY, JSON.stringify(unique));
 }
 
-export function addLiscaSavedServer(
-  input: string,
-  options: { defaultPort: number; wsPath?: string },
-): string[] {
+export function addLiscaSavedServer(input: string, options: { defaultPort: number }): string[] {
   const trimmed = input.trim();
   if (!trimmed) throw new Error("Server address is required");
   parseLiscaServerAddress(trimmed, options);
@@ -111,41 +103,31 @@ export function removeLiscaSavedServer(address: string): string[] {
 }
 
 export type LiscaServerEndpoints = {
-  wsUrl: string;
   httpBaseUrl: string;
 };
 
 /**
- * Parse a user-entered server address into HTTP and WebSocket endpoints.
+ * Parse a user-entered server address into an HTTP API base URL.
  *
- * Accepts a WebSocket URL, HTTP(S) origin, or `host:port` (uses {@link defaultPort} when port omitted).
+ * Accepts an HTTP(S) origin or `host:port` (uses {@link defaultPort} when port omitted).
  */
 export function parseLiscaServerAddress(
   input: string,
-  options: { defaultPort: number; wsPath?: string },
+  options: { defaultPort: number },
 ): LiscaServerEndpoints {
   const trimmed = input.trim();
   if (!trimmed) {
     throw new Error("Server address is required");
   }
 
-  const wsPath = options.wsPath ?? "/ws";
-
   if (trimmed.startsWith("ws://") || trimmed.startsWith("wss://")) {
-    const url = new URL(trimmed);
-    const httpProto = url.protocol === "wss:" ? "https:" : "http:";
-    return {
-      wsUrl: trimmed,
-      httpBaseUrl: `${httpProto}//${url.host}`,
-    };
+    throw new Error("Use an http:// or https:// server address");
   }
 
   if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
     const url = new URL(trimmed);
-    const port = Number(url.port || (url.protocol === "https:" ? 443 : 80));
     return {
       httpBaseUrl: url.origin,
-      wsUrl: formatWsUrl(url.hostname, port, wsPath),
     };
   }
 
@@ -159,164 +141,69 @@ export function parseLiscaServerAddress(
 
   return {
     httpBaseUrl: `http://${host}:${port}`,
-    wsUrl: formatWsUrl(host, port, wsPath),
   };
 }
 
 function endpointsFromStoredOverride(
   stored: string,
   defaultPort: number,
-  wsPath: string,
 ): LiscaServerEndpoints {
-  return parseLiscaServerAddress(stored, { defaultPort, wsPath });
-}
-
-function httpBaseUrlFromWsUrl(wsUrl: string): string | null {
-  try {
-    const url = new URL(wsUrl);
-    const httpProto = url.protocol === "wss:" ? "https:" : "http:";
-    return `${httpProto}//${url.host}`;
-  } catch {
-    return null;
-  }
+  return parseLiscaServerAddress(stored, { defaultPort });
 }
 
 function hasExplicitViteEndpoint(options: {
-  viteWsUrl?: string | undefined;
   viteHttpUrl?: string | undefined;
-  viteWsHost?: string | undefined;
-  viteWsPort?: string | number | undefined;
+  viteHttpHost?: string | undefined;
+  viteHttpPort?: string | number | undefined;
 }): boolean {
   return Boolean(
-    options.viteWsUrl?.trim() ||
     options.viteHttpUrl?.trim() ||
-    options.viteWsHost?.trim() ||
-    (options.viteWsPort !== undefined &&
-      options.viteWsPort !== null &&
-      String(options.viteWsPort).trim() !== ""),
+    options.viteHttpHost?.trim() ||
+    (options.viteHttpPort !== undefined &&
+      options.viteHttpPort !== null &&
+      String(options.viteHttpPort).trim() !== ""),
   );
 }
 
-/**
- * Expo dev server ports (`bun lisca dev * web-native`). Metro proxies HTTP API routes
- * to Rust, but WebSocket upgrades still need the backend port. Keep in sync with
- * `scripts/lisca-dev-ports.cjs` (`liscaMobileExpoPort` + `LISCA_APP_PORTS`).
- */
-const LISCA_MOBILE_EXPO_RUST_PORTS: Record<number, number> = {
-  9081: 8765,
-  9082: 8766,
-  9083: 8767,
-};
-
-function rustPortFromMobileExpoPort(port: number): number | undefined {
-  return LISCA_MOBILE_EXPO_RUST_PORTS[port];
-}
-
-function browserLocationPort(): number {
-  if (typeof window === "undefined") return 80;
-  if (window.location.port) {
-    return Number(window.location.port);
-  }
-  const host = window.location.host;
-  const colon = host.lastIndexOf(":");
-  if (colon > 0) {
-    const parsed = Number(host.slice(colon + 1));
-    if (Number.isFinite(parsed) && parsed > 0) return parsed;
-  }
-  return window.location.protocol === "https:" ? 443 : 80;
-}
-
-function endpointsFromBrowserLocation(wsPath: string): LiscaServerEndpoints | null {
+function httpBaseUrlFromBrowserLocation(): string | null {
   if (typeof window === "undefined") return null;
   if (window.location.protocol !== "http:" && window.location.protocol !== "https:") {
     return null;
   }
-  const path = wsPath.startsWith("/") ? wsPath : `/${wsPath}`;
-  const proto = window.location.protocol === "https:" ? "wss" : "ws";
-  const hostname = window.location.hostname;
-  const port = browserLocationPort();
-  const httpBaseUrl = `${window.location.protocol}//${window.location.host}`;
-  const rustPort = rustPortFromMobileExpoPort(port);
-  if (rustPort != null) {
-    return {
-      httpBaseUrl,
-      wsUrl: formatWsUrl(hostname, rustPort, path),
-    };
-  }
-  return {
-    httpBaseUrl,
-    wsUrl: `${proto}://${window.location.host}${path}`,
-  };
+  return `${window.location.protocol}//${window.location.host}`;
 }
 
 /**
- * Resolve the WebSocket URL for Lisca web UIs.
+ * Resolve the HTTP API base URL for Lisca web UIs.
  *
- * Precedence: URL query `liscaWs` → session active server → `VITE_WS_URL` → host/port env.
- */
-export function resolveLiscaWsUrl(options: {
-  searchParams?: URLSearchParams | null;
-  viteWsUrl?: string | undefined;
-  viteWsHost?: string | undefined;
-  viteWsPort?: string | number | undefined;
-  /** Used when building from host/port and `VITE_WS_PORT` is unset */
-  defaultPort: number;
-  wsPath?: string;
-  /** Session target; defaults to {@link getLiscaActiveServerAddress}. */
-  activeAddress?: string | null;
-}): string {
-  const fromQuery = options.searchParams?.get("liscaWs");
-  if (fromQuery?.trim()) {
-    return decodeURIComponent(fromQuery.trim());
-  }
-  const active = options.activeAddress ?? getLiscaActiveServerAddress();
-  if (active) {
-    return endpointsFromStoredOverride(active, options.defaultPort, options.wsPath ?? "/ws").wsUrl;
-  }
-  if (options.viteWsUrl?.trim()) {
-    return options.viteWsUrl.trim();
-  }
-  const path = options.wsPath ?? "/ws";
-  if (!hasExplicitViteEndpoint(options)) {
-    const fromBrowser = endpointsFromBrowserLocation(path);
-    if (fromBrowser) return fromBrowser.wsUrl;
-  }
-  const port = Number(options.viteWsPort ?? options.defaultPort);
-  const host = options.viteWsHost?.trim() || "127.0.0.1";
-  return formatWsUrl(host, port, path);
-}
-
-/**
- * Resolve the HTTP API base URL for Lisca web UIs (same precedence as {@link resolveLiscaWsUrl}).
+ * Precedence: URL query `liscaHttp` → session active server → `VITE_HTTP_URL` →
+ * `VITE_HTTP_HOST`/`VITE_HTTP_PORT` → browser origin.
  */
 export function resolveLiscaHttpBaseUrl(options: {
   searchParams?: URLSearchParams | null;
   viteHttpUrl?: string | undefined;
-  viteWsHost?: string | undefined;
-  viteWsPort?: string | number | undefined;
+  viteHttpHost?: string | undefined;
+  viteHttpPort?: string | number | undefined;
   defaultPort: number;
-  wsPath?: string;
+  /** Session target; defaults to {@link getLiscaActiveServerAddress}. */
   activeAddress?: string | null;
 }): string {
-  const fromQuery = options.searchParams?.get("liscaWs");
-  if (fromQuery?.trim()) {
-    const httpFromWs = httpBaseUrlFromWsUrl(decodeURIComponent(fromQuery.trim()));
-    if (httpFromWs) return httpFromWs;
+  const fromHttpQuery = options.searchParams?.get("liscaHttp");
+  if (fromHttpQuery?.trim()) {
+    return decodeURIComponent(fromHttpQuery.trim());
   }
   const active = options.activeAddress ?? getLiscaActiveServerAddress();
   if (active) {
-    return endpointsFromStoredOverride(active, options.defaultPort, options.wsPath ?? "/ws")
-      .httpBaseUrl;
+    return endpointsFromStoredOverride(active, options.defaultPort).httpBaseUrl;
   }
   if (options.viteHttpUrl?.trim()) {
     return options.viteHttpUrl.trim();
   }
   if (!hasExplicitViteEndpoint(options)) {
-    const fromBrowser = endpointsFromBrowserLocation(options.wsPath ?? "/ws");
-    if (fromBrowser) return fromBrowser.httpBaseUrl;
+    const fromBrowser = httpBaseUrlFromBrowserLocation();
+    if (fromBrowser) return fromBrowser;
   }
-  const port = Number(options.viteWsPort ?? options.defaultPort);
-  const host = options.viteWsHost?.trim() || "127.0.0.1";
+  const port = Number(options.viteHttpPort ?? options.defaultPort);
+  const host = options.viteHttpHost?.trim() || "127.0.0.1";
   return `http://${host}:${port}`;
 }
-

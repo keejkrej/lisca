@@ -5,9 +5,8 @@ import {
 
 export type LiscaMobilePortEnv = {
   httpUrl?: string | undefined;
-  wsUrl?: string | undefined;
-  wsHost?: string | undefined;
-  wsPort?: string | number | undefined;
+  httpHost?: string | undefined;
+  httpPort?: string | number | undefined;
   dev?: boolean;
   searchParams?: URLSearchParams | null;
 };
@@ -18,9 +17,8 @@ function readExpoEnv(): LiscaMobilePortEnv {
   const env = process.env;
   return {
     httpUrl: env.EXPO_PUBLIC_LISCA_HTTP_URL,
-    wsUrl: env.EXPO_PUBLIC_LISCA_WS_URL,
-    wsHost: env.EXPO_PUBLIC_LISCA_WS_HOST,
-    wsPort: env.EXPO_PUBLIC_LISCA_WS_PORT,
+    httpHost: env.EXPO_PUBLIC_LISCA_HTTP_HOST,
+    httpPort: env.EXPO_PUBLIC_LISCA_HTTP_PORT,
     dev: env.NODE_ENV !== "production",
   };
 }
@@ -35,9 +33,8 @@ export function createLiscaMobilePort<T>(config: {
     defaultPort: config.defaultPort,
     searchParams: env.searchParams ?? null,
     httpUrl: env.httpUrl,
-    wsUrl: env.wsUrl,
-    wsHost: env.wsHost,
-    wsPort: env.wsPort,
+    httpHost: env.httpHost,
+    httpPort: env.httpPort,
     dev: env.dev,
     createPort: config.createPort,
   });

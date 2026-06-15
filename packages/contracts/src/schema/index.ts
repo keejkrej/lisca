@@ -6,6 +6,5 @@ export * from "./studio";
 export * from "./align";
 export * from "./roi-bbox";
 export * from "./annotate";
-export * from "./ws";
 export * from "./profile";
 export * from "./memory";

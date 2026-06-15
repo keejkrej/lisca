@@ -6,9 +6,8 @@ const port = createLiscaPort<StudioDataPort>({
   defaultPort: 8767,
   env: {
     httpUrl: import.meta.env.VITE_HTTP_URL,
-    wsUrl: import.meta.env.VITE_WS_URL,
-    wsHost: import.meta.env.VITE_WS_HOST,
-    wsPort: import.meta.env.VITE_WS_PORT,
+    httpHost: import.meta.env.VITE_HTTP_HOST,
+    httpPort: import.meta.env.VITE_HTTP_PORT,
     dev: import.meta.env.DEV,
   },
   createPort: createStudioPort,
@@ -22,7 +21,6 @@ export const setStudioPortForTests = port.setForTests;
 export const resetStudioPortForTests = port.resetForTests;
 
 export const resolveStudioHttpBaseUrl = port.httpBaseUrl;
-export const resolveStudioWsUrl = port.wsUrl;
 export const toErrorMessage = port.toErrorMessage;
 
 /** Primary studio API for app code. */

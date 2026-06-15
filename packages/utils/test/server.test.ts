@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { resolveLiscaHttpBaseUrl, resolveLiscaWsUrl } from "../src/server";
+import { parseLiscaServerAddress, resolveLiscaHttpBaseUrl } from "../src/server";
 
 function stubBrowserLocation(location: {
   protocol: string;
@@ -19,40 +19,46 @@ function stubBrowserLocation(location: {
   });
 }
 
-describe("resolveLiscaWsUrl", () => {
+describe("resolveLiscaHttpBaseUrl", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
   it("uses the browser origin on vite public ports", () => {
     stubBrowserLocation({ protocol: "http:", host: "localhost:8765" });
-    expect(resolveLiscaWsUrl({ defaultPort: 8765 })).toBe("ws://localhost:8765/ws");
+    expect(resolveLiscaHttpBaseUrl({ defaultPort: 8765 })).toBe("http://localhost:8765");
   });
 
   it("uses the browser origin on mobile public ports", () => {
     stubBrowserLocation({ protocol: "http:", host: "localhost:8083" });
-    expect(resolveLiscaWsUrl({ defaultPort: 8767 })).toBe("ws://localhost:8083/ws");
     expect(resolveLiscaHttpBaseUrl({ defaultPort: 8767 })).toBe("http://localhost:8083");
   });
 
-  it("routes websocket traffic to rust when on the expo dev server port", () => {
+  it("uses the expo dev server origin when on the expo port", () => {
     stubBrowserLocation({ protocol: "http:", host: "localhost:9081" });
-    expect(resolveLiscaWsUrl({ defaultPort: 8765 })).toBe("ws://localhost:8765/ws");
     expect(resolveLiscaHttpBaseUrl({ defaultPort: 8765 })).toBe("http://localhost:9081");
   });
 
   it("ignores non-http browser protocols", () => {
     stubBrowserLocation({ protocol: "file:", host: "" });
-    expect(resolveLiscaWsUrl({ defaultPort: 8765 })).toBe("ws://127.0.0.1:8765/ws");
+    expect(resolveLiscaHttpBaseUrl({ defaultPort: 8765 })).toBe("http://127.0.0.1:8765");
   });
 
   it("prefers explicit env overrides over browser origin", () => {
     stubBrowserLocation({ protocol: "http:", host: "localhost:8765" });
     expect(
-      resolveLiscaWsUrl({
+      resolveLiscaHttpBaseUrl({
         defaultPort: 8765,
-        viteWsUrl: "ws://192.168.1.10:8765/ws",
+        viteHttpUrl: "http://192.168.1.10:8765",
       }),
-    ).toBe("ws://192.168.1.10:8765/ws");
+    ).toBe("http://192.168.1.10:8765");
+  });
+});
+
+describe("parseLiscaServerAddress", () => {
+  it("rejects websocket URLs", () => {
+    expect(() => parseLiscaServerAddress("ws://192.168.1.10:8765", { defaultPort: 8765 })).toThrow(
+      "http:// or https://",
+    );
   });
 });

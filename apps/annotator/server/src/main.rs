@@ -7,11 +7,6 @@ fn build_router() -> Router<()> {
     Router::new()
         .merge(http::fs::router())
         .merge(annotator_server::router())
-        .merge(http::ws::router(
-            AppId::Annotator,
-            env!("CARGO_PKG_VERSION"),
-            http::ws::WsEvents::default(),
-        ))
 }
 
 #[tokio::main]

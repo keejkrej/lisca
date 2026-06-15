@@ -16,7 +16,7 @@ export type ServerAddressDialogProps = {
   onOpenChange: (open: boolean) => void;
   defaultPort: number;
   localLabel: string;
-  currentWsUrl: string;
+  currentHttpBaseUrl: string;
   activeAddress: string | null;
   savedServers: string[];
   onConnect: (address: string | null) => void;
@@ -31,7 +31,7 @@ export function ServerAddressDialog(props: ServerAddressDialogProps) {
     <ModalScrim open={props.open} onClose={() => props.onOpenChange(false)}>
       <DialogSurface maxWidth={520}>
         <DialogTitleText>Server address</DialogTitleText>
-        <DialogDescriptionText>{props.currentWsUrl}</DialogDescriptionText>
+        <DialogDescriptionText>{props.currentHttpBaseUrl}</DialogDescriptionText>
 
         <Button
           variant="outline"

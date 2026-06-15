@@ -6,9 +6,8 @@ const port = createLiscaPort<AlignerDataPort>({
   defaultPort: 8765,
   env: {
     httpUrl: import.meta.env.VITE_HTTP_URL,
-    wsUrl: import.meta.env.VITE_WS_URL,
-    wsHost: import.meta.env.VITE_WS_HOST,
-    wsPort: import.meta.env.VITE_WS_PORT,
+    httpHost: import.meta.env.VITE_HTTP_HOST,
+    httpPort: import.meta.env.VITE_HTTP_PORT,
     dev: import.meta.env.DEV,
   },
   createPort: createAlignerPort,
@@ -22,7 +21,6 @@ export const setAlignerPortForTests = port.setForTests;
 export const resetAlignerPortForTests = port.resetForTests;
 
 export const resolveAlignerHttpBaseUrl = port.httpBaseUrl;
-export const resolveAlignerWsUrl = port.wsUrl;
 export const toErrorMessage = port.toErrorMessage;
 
 /** Primary aligner API for app code. */

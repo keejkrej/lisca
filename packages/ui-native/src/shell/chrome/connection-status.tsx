@@ -2,7 +2,7 @@ import { Pressable, View } from "react-native";
 
 import { Text } from "../../../components/ui/text";
 import { cn } from "../../../lib/utils";
-import type { ConnectionState } from "../server/use-shell-ws-probe";
+import type { ConnectionState } from "../server/use-shell-http-probe";
 
 const STATUS_LABELS: Record<ConnectionState, string> = {
   idle: "Idle",
@@ -41,7 +41,6 @@ function ConnectionStatusContent(props: {
 
 export function ConnectionStatus(props: {
   state: ConnectionState;
-  wsUrl?: string;
   label?: string;
   onOpenSettings?: () => void;
 }) {

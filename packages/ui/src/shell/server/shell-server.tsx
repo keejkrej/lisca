@@ -1,6 +1,5 @@
 "use client";
 
-import { WS_PATH } from "@lisca/contracts";
 import {
   addLiscaSavedServer,
   persistLiscaActiveServer,
@@ -8,7 +7,6 @@ import {
   readLiscaSavedServers,
   removeLiscaSavedServer,
   resolveLiscaHttpBaseUrl,
-  resolveLiscaWsUrl,
   setLiscaActiveServerAddress,
   type LiscaAppId,
 } from "@lisca/utils";
@@ -23,10 +21,9 @@ import {
 } from "react";
 import { ServerAddressDialog } from "./server-address-dialog";
 import type { ConnectionState } from "../chrome/connection-status";
-import { useWsProbeForUrl } from "./use-shell-ws-probe";
+import { useHttpProbeForUrl } from "./use-shell-http-probe";
 
 export type ShellServer = {
-  wsUrl: string;
   httpBaseUrl: string;
   state: ConnectionState;
   defaultPort: number;
@@ -48,7 +45,6 @@ type ShellServerAction =
   | { type: "setActiveAddress"; activeAddress: string | null }
   | {
       type: "syncRuntime";
-      wsUrl: string;
       httpBaseUrl: string;
       localLabel: string;
       connectionState: ConnectionState;
@@ -75,7 +71,6 @@ function shellServerReducer(state: ShellServerData, action: ShellServerAction): 
     case "syncRuntime":
       return {
         ...state,
-        wsUrl: action.wsUrl,
         httpBaseUrl: action.httpBaseUrl,
         localLabel: action.localLabel,
         state: action.connectionState,
@@ -94,26 +89,9 @@ function readWebEnv() {
   return {
     searchParams:
       typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null,
-    viteWsUrl: import.meta.env.VITE_WS_URL,
     viteHttpUrl: import.meta.env.VITE_HTTP_URL,
-    viteWsHost: import.meta.env.VITE_WS_HOST,
-    viteWsPort: import.meta.env.VITE_WS_PORT,
-  };
-}
-
-function wsResolveOptions(
-  env: ReturnType<typeof readWebEnv>,
-  defaultPort: number,
-  activeAddress: string | null,
-) {
-  return {
-    searchParams: env.searchParams,
-    viteWsUrl: env.viteWsUrl,
-    viteWsHost: env.viteWsHost,
-    viteWsPort: env.viteWsPort,
-    defaultPort,
-    wsPath: WS_PATH,
-    activeAddress,
+    viteHttpHost: import.meta.env.VITE_HTTP_HOST,
+    viteHttpPort: import.meta.env.VITE_HTTP_PORT,
   };
 }
 
@@ -125,17 +103,16 @@ function httpResolveOptions(
   return {
     searchParams: env.searchParams,
     viteHttpUrl: env.viteHttpUrl,
-    viteWsHost: env.viteWsHost,
-    viteWsPort: env.viteWsPort,
+    viteHttpHost: env.viteHttpHost,
+    viteHttpPort: env.viteHttpPort,
     defaultPort,
-    wsPath: WS_PATH,
     activeAddress,
   };
 }
 
 function resolveLocalLabel(defaultPort: number): string {
   const env = readWebEnv();
-  const url = resolveLiscaWsUrl(wsResolveOptions(env, defaultPort, null));
+  const url = resolveLiscaHttpBaseUrl(httpResolveOptions(env, defaultPort, null));
   try {
     return new URL(url).host;
   } catch {
@@ -159,15 +136,16 @@ export function ShellServerProvider({
     if (persistedAddress) {
       setLiscaActiveServerAddress(persistedAddress);
     }
-    const wsUrl = resolveLiscaWsUrl(wsResolveOptions(env, defaultPort, persistedAddress));
+    const httpBaseUrl = resolveLiscaHttpBaseUrl(
+      httpResolveOptions(env, defaultPort, persistedAddress),
+    );
     return {
       settingsOpen: false,
       savedServers: readLiscaSavedServers(),
       activeAddress: persistedAddress,
       defaultPort,
       localLabel,
-      wsUrl,
-      httpBaseUrl: resolveLiscaHttpBaseUrl(httpResolveOptions(env, defaultPort, null)),
+      httpBaseUrl,
       state: "idle" as ConnectionState,
     };
   });
@@ -176,22 +154,20 @@ export function ShellServerProvider({
     controlsRef.current = createShellServerControls(dispatch);
   }
   const env = readWebEnv();
-  const wsUrl = resolveLiscaWsUrl(wsResolveOptions(env, defaultPort, data.activeAddress));
   const httpBaseUrl = resolveLiscaHttpBaseUrl(
     httpResolveOptions(env, defaultPort, data.activeAddress),
   );
   const localLabel = resolveLocalLabel(defaultPort);
-  const probe = useWsProbeForUrl(wsUrl);
+  const probe = useHttpProbeForUrl(httpBaseUrl);
 
   useEffect(() => {
     dispatch({
       type: "syncRuntime",
-      wsUrl,
       httpBaseUrl,
       localLabel,
       connectionState: probe.state,
     });
-  }, [httpBaseUrl, localLabel, probe.state, wsUrl]);
+  }, [httpBaseUrl, localLabel, probe.state]);
 
   const connectTo = (address: string | null) => {
     const next = address?.trim() ? address.trim() : null;
@@ -205,10 +181,7 @@ export function ShellServerProvider({
   const handleAddServer = (address: string) => {
     dispatch({
       type: "setSavedServers",
-      savedServers: addLiscaSavedServer(address, {
-        defaultPort,
-        wsPath: WS_PATH,
-      }),
+      savedServers: addLiscaSavedServer(address, { defaultPort }),
     });
   };
   const handleRemoveServer = (address: string) => {
@@ -229,7 +202,7 @@ export function ShellServerProvider({
         {children}
         <ServerAddressDialog
           activeAddress={data.activeAddress}
-          currentWsUrl={data.wsUrl}
+          currentHttpBaseUrl={data.httpBaseUrl}
           defaultPort={defaultPort}
           localLabel={data.localLabel}
           open={data.settingsOpen}

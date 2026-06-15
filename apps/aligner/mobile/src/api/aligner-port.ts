@@ -10,7 +10,6 @@ const port = createLiscaMobilePort<AlignerDataPort>({
 export const alignerPortRegistry = port.registry;
 export const ensureAlignerPort = port.ensure;
 export const resolveAlignerHttpBaseUrl = port.httpBaseUrl;
-export const resolveAlignerWsUrl = port.wsUrl;
 export const toErrorMessage = port.toErrorMessage;
 export const alignerClient = port.ensure();
 export const alignerHostOperations = toHostFilePickerOperations(alignerClient);

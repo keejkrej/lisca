@@ -1,5 +1,3 @@
-export const WS_PATH = "/ws" as const;
-
 export const PIXEL_TYPES = [
   "uint8",
   "uint8clamped",

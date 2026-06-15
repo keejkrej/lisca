@@ -1,20 +1,19 @@
+/** Vite-provided URL overrides, read once at app bootstrap. */
+export type LiscaPortEnv = {
+  httpUrl?: string | undefined;
+  httpHost?: string | undefined;
+  httpPort?: string | number | undefined;
+  dev?: boolean;
+};
+
+export type { LiscaPortDeps, LiscaPort } from "@lisca/client/port-core";
+
+import type { LiscaPortDeps } from "@lisca/client/port-core";
 import { readBrowserSearchParams } from "@lisca/client/urls";
 import {
   createLiscaPortCore,
   type LiscaPort,
-  type LiscaPortDeps,
 } from "@lisca/client/port-core";
-
-/** Vite-provided URL overrides, read once at app bootstrap. */
-export type LiscaPortEnv = {
-  httpUrl?: string | undefined;
-  wsUrl?: string | undefined;
-  wsHost?: string | undefined;
-  wsPort?: string | number | undefined;
-  dev?: boolean;
-};
-
-export type { LiscaPortDeps, LiscaPort };
 
 /**
  * Fold the per-app port registry, URL resolver, and error formatter into one
@@ -30,9 +29,8 @@ export function createLiscaPort<T>(config: {
     defaultPort: config.defaultPort,
     searchParams: readBrowserSearchParams(),
     httpUrl: env.httpUrl,
-    wsUrl: env.wsUrl,
-    wsHost: env.wsHost,
-    wsPort: env.wsPort,
+    httpHost: env.httpHost,
+    httpPort: env.httpPort,
     dev: env.dev,
     createPort: config.createPort,
   });

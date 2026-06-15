@@ -12,8 +12,8 @@
       "import": "./src/infra/urls.ts"
     },
     "./progress": {
-      "types": "./src/session/progress-subscribe.ts",
-      "import": "./src/session/progress-subscribe.ts"
+      "types": "./src/session/progress-poll.ts",
+      "import": "./src/session/progress-poll.ts"
     },
     "./port-registry": {
       "types": "./src/infra/port-registry.ts",

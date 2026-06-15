@@ -81,10 +81,7 @@ function liscaDevProxy(backendPort: number): Record<string, ProxyOptions> {
   const target = `http://127.0.0.1:${backendPort}`;
   const proxy: Record<string, ProxyOptions> = {};
   for (const prefix of LISCA_API_PROXY_PREFIXES) {
-    proxy[prefix] =
-      prefix === "/ws"
-        ? { target, ws: true, changeOrigin: true }
-        : { target, changeOrigin: true };
+    proxy[prefix] = { target, changeOrigin: true };
   }
   return proxy;
 }

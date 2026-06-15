@@ -6,9 +6,8 @@ const port = createLiscaPort<AnnotatorDataPort>({
   defaultPort: 8766,
   env: {
     httpUrl: import.meta.env.VITE_HTTP_URL,
-    wsUrl: import.meta.env.VITE_WS_URL,
-    wsHost: import.meta.env.VITE_WS_HOST,
-    wsPort: import.meta.env.VITE_WS_PORT,
+    httpHost: import.meta.env.VITE_HTTP_HOST,
+    httpPort: import.meta.env.VITE_HTTP_PORT,
     dev: import.meta.env.DEV,
   },
   createPort: createAnnotatorPort,
@@ -22,7 +21,6 @@ export const setAnnotatorPortForTests = port.setForTests;
 export const resetAnnotatorPortForTests = port.resetForTests;
 
 export const resolveAnnotatorHttpBaseUrl = port.httpBaseUrl;
-export const resolveAnnotatorWsUrl = port.wsUrl;
 export const toErrorMessage = port.toErrorMessage;
 
 /** Primary annotator API for app code. */
