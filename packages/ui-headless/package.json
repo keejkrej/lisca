@@ -87,6 +87,10 @@
     "./variation-exclude-preview": {
       "types": "./src/variation-exclude-preview.ts",
       "import": "./src/variation-exclude-preview.ts"
+    },
+    "./work-session-picker": {
+      "types": "./src/work-session-picker.ts",
+      "import": "./src/work-session-picker.ts"
     }
   },
   "scripts": {

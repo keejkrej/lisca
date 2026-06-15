@@ -21,7 +21,7 @@ export type StudioAnnotateSelection = RoiSelection;
 
 type StateUpdater<T> = T | ((current: T) => T);
 
-type StudioAnnotateStoreState = AnnotatorUiState & {
+export type StudioAnnotateStoreState = AnnotatorUiState & {
   analysisStartConfirm: boolean;
   analysisRequestId: string | null;
   analysisProgress: AnalysisProgress | null;

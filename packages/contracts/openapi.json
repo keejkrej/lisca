@@ -49,6 +49,16 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
           }
         }
       }
@@ -85,6 +95,16 @@
                       "$ref": "#/components/schemas/RequestError"
                     }
                   ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
                 }
               }
             }
@@ -136,6 +156,16 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
           }
         }
       }
@@ -172,6 +202,16 @@
                       "$ref": "#/components/schemas/RequestError"
                     }
                   ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
                 }
               }
             }
@@ -224,6 +264,16 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
           }
         },
         "requestBody": {
@@ -273,6 +323,16 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
           }
         },
         "requestBody": {
@@ -319,6 +379,16 @@
                       "$ref": "#/components/schemas/RequestError"
                     }
                   ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
                 }
               }
             }
@@ -397,6 +467,16 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
           }
         }
       }
@@ -444,6 +524,16 @@
                       "$ref": "#/components/schemas/RequestError"
                     }
                   ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
                 }
               }
             }
@@ -497,6 +587,16 @@
                       "$ref": "#/components/schemas/RequestError"
                     }
                   ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
                 }
               }
             }
@@ -558,6 +658,16 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
           }
         }
       }
@@ -594,6 +704,16 @@
                       "$ref": "#/components/schemas/RequestError"
                     }
                   ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
                 }
               }
             }
@@ -643,6 +763,16 @@
                       "$ref": "#/components/schemas/RequestError"
                     }
                   ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
                 }
               }
             }
@@ -713,6 +843,81 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/align/crop-latest": {
+      "get": {
+        "tags": [
+          "align"
+        ],
+        "operationId": "align.getLatestCropProgress",
+        "parameters": [
+          {
+            "name": "workspacePath",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "CropRoiProgress",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/CropRoiProgress"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
           }
         }
       }
@@ -749,6 +954,16 @@
                       "$ref": "#/components/schemas/RequestError"
                     }
                   ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
                 }
               }
             }
@@ -813,6 +1028,16 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
           }
         },
         "requestBody": {
@@ -871,6 +1096,16 @@
                       "$ref": "#/components/schemas/RequestError"
                     }
                   ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
                 }
               }
             }
@@ -936,6 +1171,16 @@
                       "$ref": "#/components/schemas/RequestError"
                     }
                   ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
                 }
               }
             }
@@ -1012,6 +1257,16 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
           }
         },
         "requestBody": {
@@ -1071,6 +1326,16 @@
                       "$ref": "#/components/schemas/RequestError"
                     }
                   ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
                 }
               }
             }
@@ -1140,6 +1405,16 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
           }
         }
       }
@@ -1154,11 +1429,11 @@
         "security": [],
         "responses": {
           "200": {
-            "description": "ProfileResponse",
+            "description": "ProfileSessionResponse",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProfileResponse"
+                  "$ref": "#/components/schemas/ProfileSessionResponse"
                 }
               }
             }
@@ -1176,6 +1451,16 @@
                       "$ref": "#/components/schemas/RequestError"
                     }
                   ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
                 }
               }
             }
@@ -1203,11 +1488,11 @@
         "security": [],
         "responses": {
           "200": {
-            "description": "ProfileResponse",
+            "description": "ProfileSessionResponse",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProfileResponse"
+                  "$ref": "#/components/schemas/ProfileSessionResponse"
                 }
               }
             }
@@ -1228,6 +1513,16 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
           }
         },
         "requestBody": {
@@ -1242,6 +1537,55 @@
         }
       }
     },
+    "/profile/sign-out": {
+      "post": {
+        "tags": [
+          "profile"
+        ],
+        "operationId": "profile.signOutProfile",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "ProfileSignOutResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileSignOutResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/memory/recent": {
       "get": {
         "tags": [
@@ -1249,14 +1593,6 @@
         ],
         "operationId": "memory.getRecentMemory",
         "parameters": [
-          {
-            "name": "profileId",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          },
           {
             "name": "type",
             "in": "query",
@@ -1291,6 +1627,16 @@
                       "$ref": "#/components/schemas/RequestError"
                     }
                   ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
                 }
               }
             }
@@ -1333,6 +1679,16 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
           }
         },
         "requestBody": {
@@ -1345,14 +1701,10 @@
                       {
                         "type": "object",
                         "required": [
-                          "profileId",
                           "kind",
                           "path"
                         ],
                         "properties": {
-                          "profileId": {
-                            "type": "string"
-                          },
                           "kind": {
                             "type": "string",
                             "enum": [
@@ -1371,14 +1723,10 @@
                       {
                         "type": "object",
                         "required": [
-                          "profileId",
                           "kind",
                           "source"
                         ],
                         "properties": {
-                          "profileId": {
-                            "type": "string"
-                          },
                           "kind": {
                             "type": "string",
                             "enum": [
@@ -1399,14 +1747,10 @@
                   {
                     "type": "object",
                     "required": [
-                      "profileId",
                       "kind",
                       "path"
                     ],
                     "properties": {
-                      "profileId": {
-                        "type": "string"
-                      },
                       "kind": {
                         "type": "string",
                         "enum": [
@@ -1468,6 +1812,16 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
           }
         },
         "requestBody": {
@@ -1517,6 +1871,16 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
           }
         },
         "requestBody": {
@@ -1563,6 +1927,16 @@
                       "$ref": "#/components/schemas/RequestError"
                     }
                   ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
                 }
               }
             }
@@ -1624,6 +1998,16 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
           }
         }
       }
@@ -1679,6 +2063,16 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
           }
         }
       }
@@ -1731,6 +2125,16 @@
                       "$ref": "#/components/schemas/RequestError"
                     }
                   ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
                 }
               }
             }
@@ -1906,6 +2310,25 @@
             "type": "string",
             "enum": [
               "RequestError"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "Unauthorized": {
+        "type": "object",
+        "required": [
+          "message",
+          "_tag"
+        ],
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "_tag": {
+            "type": "string",
+            "enum": [
+              "Unauthorized"
             ]
           }
         },
@@ -3052,17 +3475,21 @@
         },
         "additionalProperties": false
       },
-      "ProfileResponse": {
+      "ProfileSessionResponse": {
         "type": "object",
         "required": [
           "profileId",
-          "displayName"
+          "displayName",
+          "accessToken"
         ],
         "properties": {
           "profileId": {
             "type": "string"
           },
           "displayName": {
+            "type": "string"
+          },
+          "accessToken": {
             "type": "string"
           }
         },
@@ -3076,6 +3503,21 @@
         "properties": {
           "displayName": {
             "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProfileSignOutResponse": {
+        "type": "object",
+        "required": [
+          "ok"
+        ],
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
           }
         },
         "additionalProperties": false

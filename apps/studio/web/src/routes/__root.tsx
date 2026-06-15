@@ -2,6 +2,7 @@ import { Navigate, Outlet, createRootRoute } from "@tanstack/react-router";
 
 import { StudioBasicInfoLeaveGuard } from "../components/studio-basic-info-leave-guard";
 import { StudioProfileProvider } from "../components/studio-profile-provider";
+import { StudioWorkSessionGate } from "../components/studio-work-session-gate";
 
 export const Route = createRootRoute({
   component: RootLayout,
@@ -11,8 +12,10 @@ export const Route = createRootRoute({
 function RootLayout() {
   return (
     <StudioProfileProvider>
-      <StudioBasicInfoLeaveGuard />
-      <Outlet />
+      <StudioWorkSessionGate>
+        <StudioBasicInfoLeaveGuard />
+        <Outlet />
+      </StudioWorkSessionGate>
     </StudioProfileProvider>
   );
 }

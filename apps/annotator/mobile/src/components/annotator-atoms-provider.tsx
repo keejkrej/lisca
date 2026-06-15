@@ -1,28 +1,12 @@
 import { RegistryProvider, useAtomInitialValues } from "@effect-atom/atom-react";
 import { type ReactNode } from "react";
-import {
-  annotatorUiAtom,
-  createInitialAnnotatorUiState,
-  readAnnotatorSession,
-} from "../atoms/annotator-ui-atoms";
+import { annotatorUiAtom, createInitialAnnotatorUiState } from "../atoms/annotator-ui-atoms";
+
 function AnnotatorAtomInitialValues({ children }: { children: ReactNode }) {
-  useAtomInitialValues(
-    (() => {
-      const session = readAnnotatorSession();
-      if (!session) return [];
-      return [
-        [
-          annotatorUiAtom,
-          {
-            ...createInitialAnnotatorUiState(),
-            workspacePath: session.workspacePath,
-          },
-        ],
-      ] as const;
-    })(),
-  );
+  useAtomInitialValues([[annotatorUiAtom, createInitialAnnotatorUiState()] as const]);
   return children;
 }
+
 export function AnnotatorAtomsProvider({ children }: { children: ReactNode }) {
   return (
     <RegistryProvider>

@@ -6,6 +6,7 @@ import { AlignerHeader } from "../components/aligner-header";
 import { AlignerLeft } from "../components/aligner-left";
 import { AlignerMain } from "../components/aligner-main";
 import { AlignerRight } from "../components/aligner-right";
+import { AlignerWorkSessionGate } from "../components/aligner-work-session-gate";
 import { AlignPageProvider } from "../state/align-page-context";
 
 export const Route = createFileRoute("/")({
@@ -14,7 +15,8 @@ export const Route = createFileRoute("/")({
 
 function AlignPage() {
   return (
-    <AlignPageProvider>
+    <AlignerWorkSessionGate>
+      <AlignPageProvider>
       <AppShell>
         <AppShell.Header>
           <AlignerHeader />
@@ -36,6 +38,7 @@ function AlignPage() {
           </AppShell.Right>
         </AppShell.Body>
       </AppShell>
-    </AlignPageProvider>
+      </AlignPageProvider>
+    </AlignerWorkSessionGate>
   );
 }

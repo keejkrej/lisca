@@ -12,6 +12,7 @@ import {
   CropRoiProgressSchema,
   CropRoiRequestSchema,
   CropRoiResponseSchema,
+  NullableCropRoiProgressSchema,
   FramePayloadSchema,
   HomeDirectoryResponseSchema,
   HostListDirectoryResultSchema,
@@ -136,6 +137,11 @@ const alignGroup = HttpApiGroup.make("align")
     HttpApiEndpoint.get("cropRoiProgress", "/align/crop-roi-progress")
       .setUrlParams(Schema.Struct({ requestId: Schema.String }))
       .addSuccess(CropRoiProgressSchema),
+  )
+  .add(
+    HttpApiEndpoint.get("getLatestCropProgress", "/align/crop-latest")
+      .setUrlParams(Schema.Struct({ workspacePath: Schema.String }))
+      .addSuccess(NullableCropRoiProgressSchema),
   );
 
 // --- annotate group ----------------------------------------------------------

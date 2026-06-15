@@ -70,6 +70,11 @@ export function createAlignerPort(
     cropRoi(request) {
       return withClientEffect(client, undefined, (c) => c.align.cropRoi({ payload: request }));
     },
+    getLatestCropProgress(workspacePath) {
+      return withClientEffect(client, undefined, (c) =>
+        c.align.getLatestCropProgress({ urlParams: { workspacePath } }),
+      );
+    },
     cancelCropRoi(requestId) {
       return withClientEffect(client, undefined, (c) =>
         c.align.cancelCropRoi({ payload: { requestId } }),

@@ -1,11 +1,14 @@
 import { WS_PATH } from "@lisca/contracts";
 import {
   addLiscaSavedServer,
+  persistLiscaActiveServer,
+  readLiscaActiveServerForApp,
   readLiscaSavedServers,
   removeLiscaSavedServer,
   resolveLiscaHttpBaseUrl,
   resolveLiscaWsUrl,
   setLiscaActiveServerAddress,
+  type LiscaAppId,
 } from "@lisca/utils";
 import {
   createContext,
@@ -137,19 +140,25 @@ function resolveLocalLabel(defaultPort: number, expoEnv: ReturnType<typeof readE
 
 export function ShellServerProvider({
   defaultPort,
+  appId,
   children,
 }: {
   defaultPort: number;
+  appId?: LiscaAppId;
   children: ReactNode;
 }) {
   const expoEnv = readExpoEnv();
   const [data, dispatch] = useReducer(shellServerReducer, null, () => {
     const localLabel = resolveLocalLabel(defaultPort, expoEnv);
-    const wsUrl = resolveLiscaWsUrl(wsResolveOptions(expoEnv, defaultPort, null));
+    const persistedAddress = appId ? readLiscaActiveServerForApp(appId) : null;
+    if (persistedAddress) {
+      setLiscaActiveServerAddress(persistedAddress);
+    }
+    const wsUrl = resolveLiscaWsUrl(wsResolveOptions(expoEnv, defaultPort, persistedAddress));
     return {
       settingsOpen: false,
       savedServers: readLiscaSavedServers(),
-      activeAddress: null,
+      activeAddress: persistedAddress,
       defaultPort,
       localLabel,
       wsUrl,
@@ -180,7 +189,11 @@ export function ShellServerProvider({
 
   const connectTo = (address: string | null) => {
     const next = address?.trim() ? address.trim() : null;
-    setLiscaActiveServerAddress(next);
+    if (appId) {
+      persistLiscaActiveServer(appId, next);
+    } else {
+      setLiscaActiveServerAddress(next);
+    }
     dispatch({ type: "setActiveAddress", activeAddress: next });
   };
   const handleAddServer = (address: string) => {
@@ -198,7 +211,8 @@ export function ShellServerProvider({
       savedServers: removeLiscaSavedServer(address),
     });
     if (data.activeAddress === address.trim()) {
-      setLiscaActiveServerAddress(null);
+      if (appId) persistLiscaActiveServer(appId, null);
+      else setLiscaActiveServerAddress(null);
       dispatch({ type: "setActiveAddress", activeAddress: null });
     }
   };

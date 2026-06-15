@@ -4,7 +4,7 @@ import { deriveContrastUiState } from "@lisca/utils";
 export type { AnnotationTool } from "@lisca/ui-headless/annotation-tools";
 export { ANNOTATION_TOOL_DEFINITIONS, toolCanRunWithoutLabel } from "@lisca/ui-headless/annotation-tools";
 import type { AnnotationTool } from "@lisca/ui-headless/annotation-tools";
-import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/storage";
+import { touchAnnotatorWorkSessionFromState } from "../session/work-session";
 import { Atom } from "@effect-atom/atom-react";
 export type AnnotationMode = "classification" | "segmentation";
 
@@ -126,14 +126,10 @@ export type AnnotatorSessionPersist = {
 export function createAnnotatorPersist(sessionKey: string) {
   return {
     write(state: AnnotatorUiState) {
-      writeStorageJson(liscaSessionStorage(), sessionKey, {
-        workspacePath: state.workspacePath,
-      } satisfies AnnotatorSessionPersist);
+      touchAnnotatorWorkSessionFromState(state);
     },
     read(): Partial<AnnotatorUiState> | null {
-      const session = readStorageJson<AnnotatorSessionPersist>(liscaSessionStorage(), sessionKey);
-      if (!session) return null;
-      return { workspacePath: session.workspacePath };
+      return null;
     },
   };
 }

@@ -45,4 +45,8 @@ export {
   useShellWorkspace,
   type ShellWorkspace,
 } from "./workspace/workspace";
+export {
+  WorkSessionPickerDialog,
+  type WorkSessionPickerDialogProps,
+} from "./workspace/work-session-picker-dialog";
 export { useWsProbeForUrl, type ConnectionState } from "./server/use-shell-ws-probe";

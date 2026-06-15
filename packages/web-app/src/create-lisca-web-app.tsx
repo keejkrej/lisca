@@ -8,6 +8,8 @@ export type LiscaWebAppConfig = {
   router: AnyRouter;
   /** Default server port, surfaced through the server settings UI. */
   defaultPort: number;
+  /** App id used for session history and active-server persistence. */
+  appId: import("@lisca/utils").LiscaAppId;
   /** App-owned atoms provider (port runtime + session hydration). */
   AtomsProvider: ComponentType<{ children: ReactNode }>;
   /** DOM id of the mount node (defaults to `root`). */
@@ -20,7 +22,7 @@ export type LiscaWebAppConfig = {
  * the provider nesting lives in one place.
  */
 export function createLiscaWebApp(config: LiscaWebAppConfig): void {
-  const { router, defaultPort, AtomsProvider, rootElementId = "root" } = config;
+  const { router, defaultPort, appId, AtomsProvider, rootElementId = "root" } = config;
 
   const mount = document.getElementById(rootElementId);
   if (!mount) {
@@ -31,7 +33,7 @@ export function createLiscaWebApp(config: LiscaWebAppConfig): void {
     <StrictMode>
       <AtomsProvider>
         <ShellThemeProvider>
-          <ShellServerProvider defaultPort={defaultPort}>
+          <ShellServerProvider appId={appId} defaultPort={defaultPort}>
             <ShellWorkspaceProvider>
               <RouterProvider router={router} />
             </ShellWorkspaceProvider>

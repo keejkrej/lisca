@@ -6,10 +6,12 @@ import { AlignerHeader } from "./aligner-header";
 import { AlignerLeft } from "./aligner-left";
 import { AlignerMain } from "./aligner-main";
 import { AlignerRight } from "./aligner-right";
+import { AlignerWorkSessionGate } from "./aligner-work-session-gate";
 
 export function AlignPage() {
   return (
-    <AlignPageProvider>
+    <AlignerWorkSessionGate>
+      <AlignPageProvider>
       <AppShell>
         <AppShell.Header>
           <AlignerHeader />
@@ -32,5 +34,6 @@ export function AlignPage() {
         </AppShell.Body>
       </AppShell>
     </AlignPageProvider>
+    </AlignerWorkSessionGate>
   );
 }

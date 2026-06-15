@@ -67,6 +67,7 @@ export type AlignerDataPort = HostPort & {
   autoExcludePreview(request: AutoExcludePreviewRequest): ClientEffect<AutoExcludePreviewResponse>;
   listSavedBboxPositions(workspacePath: string): ClientEffect<number[]>;
   cropRoi(request: CropRoiRequest): ClientEffect<CropRoiResponse>;
+  getLatestCropProgress(workspacePath: string): ClientEffect<CropRoiProgress | null>;
   cancelCropRoi(requestId: string): ClientEffect<CropRoiProgress>;
   onCropRoiProgress(requestId: string, onProgress: (progress: CropRoiProgress) => void): () => void;
   roiPosExists(workspacePath: string, pos: number): ClientEffect<boolean>;

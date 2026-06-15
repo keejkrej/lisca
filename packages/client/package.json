@@ -107,6 +107,18 @@
       "types": "./src/session/use-annotate-session.ts",
       "import": "./src/session/use-annotate-session.ts"
     },
+    "./session/work-session": {
+      "types": "./src/session/work-session.ts",
+      "import": "./src/session/work-session.ts"
+    },
+    "./session/work-session-gate": {
+      "types": "./src/session/work-session-gate.ts",
+      "import": "./src/session/work-session-gate.ts"
+    },
+    "./session/resume-pending-runs": {
+      "types": "./src/session/resume-pending-runs.ts",
+      "import": "./src/session/resume-pending-runs.ts"
+    },
     "./use-align-state-core": {
       "types": "./src/hooks/use-align-state-core.ts",
       "import": "./src/hooks/use-align-state-core.ts"

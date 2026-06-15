@@ -6,17 +6,20 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StudioAtomsProvider } from "../src/components/studio-atoms-provider";
 import { StudioProfileProvider } from "../src/components/studio-profile-provider";
 import { StudioBasicInfoLeaveProvider } from "../src/components/studio-basic-info-leave-guard";
+import { StudioWorkSessionGate } from "../src/components/studio-work-session-gate";
 
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <StorageBootstrap>
-          <LiscaMobileProviders defaultPort={8767} AtomsProvider={StudioAtomsProvider}>
+          <LiscaMobileProviders appId="studio" defaultPort={8767} AtomsProvider={StudioAtomsProvider}>
             <StudioProfileProvider>
-              <StudioBasicInfoLeaveProvider>
-                <Stack screenOptions={{ headerShown: false }} />
-              </StudioBasicInfoLeaveProvider>
+              <StudioWorkSessionGate>
+                <StudioBasicInfoLeaveProvider>
+                  <Stack screenOptions={{ headerShown: false }} />
+                </StudioBasicInfoLeaveProvider>
+              </StudioWorkSessionGate>
             </StudioProfileProvider>
           </LiscaMobileProviders>
         </StorageBootstrap>

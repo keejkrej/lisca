@@ -120,6 +120,10 @@ export const CropRoiProgressSchema = Schema.Struct({
   skippedPositions: Schema.optional(Schema.mutable(Schema.Array(U32))),
 }).annotations({ identifier: "CropRoiProgress" });
 
+export const NullableCropRoiProgressSchema = Schema.NullOr(CropRoiProgressSchema).annotations({
+  identifier: "NullableCropRoiProgress",
+});
+
 export const CropRoiProgressMessageSchema = Schema.Struct({
   type: Schema.Literal("cropRoiProgress"),
   progress: CropRoiProgressSchema,

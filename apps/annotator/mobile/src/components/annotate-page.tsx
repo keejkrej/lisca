@@ -16,12 +16,14 @@ import { AnnotatorDock } from "./annotator-dock";
 import { AnnotatorHeader } from "./annotator-header";
 import { AnnotatorLeft } from "./annotator-left";
 import { AnnotatorRight } from "./annotator-right";
+import { AnnotatorWorkSessionGate } from "./annotator-work-session-gate";
 
 export function AnnotatePage() {
   const shell = useAnnotateShell();
 
   return (
-    <AppShell>
+    <AnnotatorWorkSessionGate>
+      <AppShell>
       <AppShell.Header>
         <AnnotatorHeader />
       </AppShell.Header>
@@ -60,6 +62,7 @@ export function AnnotatePage() {
         onSave={(nextLabels) => void shell.handleSaveLabels(nextLabels)}
       />
     </AppShell>
+    </AnnotatorWorkSessionGate>
   );
 }
 

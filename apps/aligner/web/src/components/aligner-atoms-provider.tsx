@@ -1,29 +1,15 @@
-import { RegistryProvider, useAtomInitialValues } from "@effect-atom/atom-react";
+import { RegistryProvider } from "@effect-atom/atom-react";
 import { type ReactNode } from "react";
-import {
-  alignerUiAtom,
-  createInitialAlignerUiState,
-  readAlignerSession,
-} from "../atoms/aligner-ui-atoms";
+import { createInitialAlignerUiState, alignerUiAtom } from "../atoms/aligner-ui-atoms";
+import { useAtomInitialValues } from "@effect-atom/atom-react";
+
 function AlignerAtomInitialValues({ children }: { children: ReactNode }) {
-  useAtomInitialValues(
-    (() => {
-      const session = readAlignerSession();
-      if (!session) return [];
-      return [
-        [
-          alignerUiAtom,
-          {
-            ...createInitialAlignerUiState(),
-            workspacePath: session.workspacePath,
-            source: session.source,
-          },
-        ],
-      ] as const;
-    })(),
-  );
+  useAtomInitialValues([
+    [alignerUiAtom, createInitialAlignerUiState()] as const,
+  ]);
   return children;
 }
+
 export function AlignerAtomsProvider({ children }: { children: ReactNode }) {
   return (
     <RegistryProvider>

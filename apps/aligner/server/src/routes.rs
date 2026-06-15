@@ -18,7 +18,7 @@ use lisca::{
 use lisca::http::FsError;
 use serde::Deserialize;
 
-use crate::crop::{CropJob, HasCropJobs};
+use crate::crop::{normalize_workspace_path, CropJob, HasCropJobs};
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -80,6 +80,12 @@ struct WorkspacePathPayload {
     workspace_path: String,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LatestCropQuery {
+    workspace_path: String,
+}
+
 pub fn router<S>() -> Router<S>
 where
     S: HasCropJobs + Clone + Send + Sync + 'static,
@@ -102,6 +108,7 @@ where
         .route("/align/crop-roi", post(crop_roi_handler::<S>))
         .route("/align/cancel-crop-roi", post(cancel_crop_roi_handler::<S>))
         .route("/align/crop-roi-progress", get(crop_roi_progress_handler::<S>))
+        .route("/align/crop-latest", get(crop_latest_progress_handler::<S>))
 }
 
 async fn scan_source_handler(
@@ -193,6 +200,7 @@ async fn crop_roi_handler<S: HasCropJobs>(
         skipped_positions: Vec::new(),
     };
     let cancel = Arc::new(AtomicBool::new(false));
+    let workspace_path = normalize_workspace_path(&request.workspace_path);
     {
         let mut jobs = crop
             .jobs
@@ -208,6 +216,13 @@ async fn crop_roi_handler<S: HasCropJobs>(
                 cancel: cancel.clone(),
             },
         );
+    }
+    if !workspace_path.is_empty() {
+        let mut requests = crop
+            .workspace_requests
+            .lock()
+            .map_err(|_| FsError::new("crop workspace request map is poisoned"))?;
+        requests.insert(workspace_path, request.request_id.clone());
     }
     let _ = crop.events.send(progress.clone());
 
@@ -279,4 +294,44 @@ async fn crop_roi_progress_handler<S: HasCropJobs>(
     jobs.get(&query.request_id)
         .map(|job| Json(job.progress.clone()))
         .ok_or_else(|| FsError::new("crop job not found"))
+}
+
+fn crop_progress_is_active(status: CropRoiStatus) -> bool {
+    matches!(status, CropRoiStatus::Queued | CropRoiStatus::Running)
+}
+
+async fn crop_latest_progress_handler<S: HasCropJobs>(
+    State(state): State<S>,
+    Query(query): Query<LatestCropQuery>,
+) -> Result<Json<Option<CropRoiProgress>>, FsError> {
+    let crop = state.crop_jobs();
+    let workspace_path = normalize_workspace_path(&query.workspace_path);
+    if workspace_path.is_empty() {
+        return Err(FsError::new("crop workspace path is required"));
+    }
+
+    let request_id = {
+        let requests = crop
+            .workspace_requests
+            .lock()
+            .map_err(|_| FsError::new("crop workspace request map is poisoned"))?;
+        requests.get(&workspace_path).cloned()
+    };
+
+    let Some(request_id) = request_id else {
+        return Ok(Json(None));
+    };
+
+    let jobs = crop
+        .jobs
+        .lock()
+        .map_err(|_| FsError::new("crop job state is poisoned"))?;
+    let Some(job) = jobs.get(&request_id) else {
+        return Ok(Json(None));
+    };
+    if crop_progress_is_active(job.progress.status) {
+        Ok(Json(Some(job.progress.clone())))
+    } else {
+        Ok(Json(None))
+    }
 }

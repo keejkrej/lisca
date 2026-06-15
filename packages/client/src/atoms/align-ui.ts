@@ -9,6 +9,7 @@ import {
 } from "@lisca/utils";
 import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/storage";
 import { Atom } from "@effect-atom/atom-react";
+import { touchAlignerWorkSessionFromState, touchStudioWorkSessionFromState } from "../session/work-session";
 
 export type ExcludedByPosition = Record<number, AlignGridCellCoord[]>;
 
@@ -358,18 +359,10 @@ export type AlignUiActions = ReturnType<typeof createAlignUiActions>;
 export function createAlignerPersist(sessionKey: string): AlignUiPersist {
   return {
     write(state) {
-      writeStorageJson(liscaSessionStorage(), sessionKey, {
-        workspacePath: state.workspacePath,
-        source: state.source,
-      });
+      touchAlignerWorkSessionFromState(state);
     },
     read() {
-      const session = readStorageJson<{
-        workspacePath: string | null;
-        source: AlignerSource | null;
-      }>(liscaSessionStorage(), sessionKey);
-      if (!session) return null;
-      return { workspacePath: session.workspacePath, source: session.source };
+      return null;
     },
   };
 }
@@ -377,6 +370,7 @@ export function createAlignerPersist(sessionKey: string): AlignUiPersist {
 export function createStudioPersist(sessionKey: string): AlignUiPersist {
   return {
     write(state) {
+      touchStudioWorkSessionFromState(state);
       writeStorageJson(liscaSessionStorage(), sessionKey, {
         state: {
           workspacePath: state.workspacePath,

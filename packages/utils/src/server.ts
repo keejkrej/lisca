@@ -10,6 +10,38 @@ export const LISCA_SERVER_ADDRESS_STORAGE_KEY = "lisca.serverAddress";
 
 export const LISCA_SAVED_SERVERS_STORAGE_KEY = "lisca.savedServers";
 
+export type LiscaAppId = "aligner" | "annotator" | "studio";
+
+export const LISCA_APP_DEFAULT_PORTS: Record<LiscaAppId, number> = {
+  aligner: 8765,
+  annotator: 8766,
+  studio: 8767,
+};
+
+function activeServerStorageKey(appId: LiscaAppId): string {
+  return `lisca.activeServer.${appId}`;
+}
+
+export function readLiscaActiveServerForApp(appId: LiscaAppId): string | null {
+  const raw = liscaLocalStorage().getItem(activeServerStorageKey(appId))?.trim();
+  return raw ? raw : null;
+}
+
+export function writeLiscaActiveServerForApp(appId: LiscaAppId, address: string | null): void {
+  const storage = liscaLocalStorage();
+  const trimmed = address?.trim();
+  if (!trimmed) {
+    storage.removeItem(activeServerStorageKey(appId));
+    return;
+  }
+  storage.setItem(activeServerStorageKey(appId), trimmed);
+}
+
+export function persistLiscaActiveServer(appId: LiscaAppId, address: string | null): void {
+  writeLiscaActiveServerForApp(appId, address);
+  setLiscaActiveServerAddress(address?.trim() ? address.trim() : null);
+}
+
 let activeServerAddress: string | null = null;
 
 /** Session-only target; `null` means the local default server. Not persisted across reloads. */
