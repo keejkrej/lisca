@@ -24,6 +24,7 @@ export function CanvasToastStack({
   return (
     <View
       pointerEvents="none"
+      accessibilityLiveRegion="polite"
       className={cn(
         "absolute right-3 top-3 z-20 w-[min(384px,calc(100%-24px))] items-end gap-2",
         className,
@@ -46,7 +47,7 @@ export function CanvasToastStack({
         return (
           <View
             key={key}
-            accessibilityRole={isError ? "alert" : "status"}
+            accessibilityRole={isError ? "alert" : undefined}
             className={cn(
               "max-w-full flex-row items-start gap-2 rounded-lg border px-3 py-2",
               isError
