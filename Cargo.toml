@@ -42,4 +42,4 @@ csv = "1.3"
 rayon = "1.10"
 mplot = { git = "https://github.com/keejkrej/mplot-rs" }
 rust_xlsxwriter = "0.90"
-lisca = { path = "crates/lisca" }
+lisca = { path = "crates/lisca", default-features = false }

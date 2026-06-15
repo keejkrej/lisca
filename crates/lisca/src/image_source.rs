@@ -116,34 +116,91 @@ impl SourceMetadata {
 }
 
 enum SourceReader {
-    Nd2(Box<Nd2File>),
-    Czi(Box<CziFile>),
+    Nd2 {
+        reader: Nd2File,
+        metadata: SourceMetadata,
+        frame_width: u32,
+        frame_height: u32,
+    },
+    Czi {
+        reader: CziFile,
+        metadata: SourceMetadata,
+        frame_width: u32,
+        frame_height: u32,
+    },
+    Folder {
+        root: String,
+        subfolder_template: String,
+        filename_template: String,
+        dataset: SeriesDataset,
+    },
 }
 
-impl SourceReader {
-    fn open_nd2(path: &Path) -> Result<Self, String> {
-        Ok(Self::Nd2(Box::new(open_nd2(path)?)))
-    }
+/// Reusable reader for sequential frame loads (avoids reopening ND2/CZI or rescanning folders).
+pub struct CachedSourceReader(SourceReader);
 
-    fn open_czi(path: &Path) -> Result<Self, String> {
-        Ok(Self::Czi(Box::new(open_czi(path)?)))
-    }
-
-    fn metadata(&mut self) -> Result<SourceMetadata, String> {
-        match self {
-            Self::Nd2(reader) => {
-                let summary = reader.summary().map_err(|error| error.to_string())?;
-                let sizes: HashMap<String, usize> = summary.sizes.into_iter().collect();
-                metadata_from_sizes(&sizes, "P")
+impl CachedSourceReader {
+    pub fn open(source: ImageSource) -> Result<Self, String> {
+        match source {
+            AlignerSource::Folder {
+                path,
+                subfolder_template,
+                filename_template,
+            } => {
+                let dataset =
+                    build_series_dataset(&path, &subfolder_template, &filename_template)?;
+                Ok(Self(SourceReader::Folder {
+                    root: path,
+                    subfolder_template,
+                    filename_template,
+                    dataset,
+                }))
             }
-            Self::Czi(reader) => {
-                let summary = reader.summary().map_err(|error| error.to_string())?;
-                let sizes: HashMap<String, usize> = summary.sizes.into_iter().collect();
-                metadata_from_sizes(&sizes, "S")
-            }
+            AlignerSource::Nd2 { path } => Ok(Self(open_nd2_source(Path::new(&path))?)),
+            AlignerSource::Czi { path } => Ok(Self(open_czi_source(Path::new(&path))?)),
         }
     }
 
+    pub fn load_frame(&mut self, request: FrameRequest) -> Result<RawFrame, String> {
+        match &mut self.0 {
+            SourceReader::Nd2 { metadata, .. } | SourceReader::Czi { metadata, .. } => {
+                let (pos, time, channel, z) = metadata.indices_for_request(&request)?;
+                self.0.read_frame_2d(pos, time, channel, z)
+            }
+            SourceReader::Folder { dataset, .. } => {
+                load_image_folder_frame_from_dataset(dataset, request)
+            }
+        }
+    }
+}
+
+fn open_nd2_source(path: &Path) -> Result<SourceReader, String> {
+    let mut reader = open_nd2(path)?;
+    let summary = reader.summary().map_err(|error| error.to_string())?;
+    let sizes: HashMap<String, usize> = summary.sizes.into_iter().collect();
+    let metadata = metadata_from_sizes(&sizes, "P")?;
+    Ok(SourceReader::Nd2 {
+        reader,
+        metadata,
+        frame_width: u32::try_from(dimension_size(&sizes, "X")).map_err(|error| error.to_string())?,
+        frame_height: u32::try_from(dimension_size(&sizes, "Y")).map_err(|error| error.to_string())?,
+    })
+}
+
+fn open_czi_source(path: &Path) -> Result<SourceReader, String> {
+    let mut reader = open_czi(path)?;
+    let summary = reader.summary().map_err(|error| error.to_string())?;
+    let sizes: HashMap<String, usize> = summary.sizes.into_iter().collect();
+    let metadata = metadata_from_sizes(&sizes, "S")?;
+    Ok(SourceReader::Czi {
+        reader,
+        metadata,
+        frame_width: u32::try_from(dimension_size(&sizes, "X")).map_err(|error| error.to_string())?,
+        frame_height: u32::try_from(dimension_size(&sizes, "Y")).map_err(|error| error.to_string())?,
+    })
+}
+
+impl SourceReader {
     fn read_frame_2d(
         &mut self,
         pos: usize,
@@ -152,22 +209,45 @@ impl SourceReader {
         z: usize,
     ) -> Result<RawFrame, String> {
         match self {
-            Self::Nd2(reader) => {
+            Self::Nd2 {
+                reader,
+                frame_width,
+                frame_height,
+                ..
+            } => {
                 let data = reader
                     .read_frame_2d(pos, time, channel, z)
                     .map_err(|error| error.to_string())?;
-                let summary = reader.summary().map_err(|error| error.to_string())?;
-                let sizes: HashMap<String, usize> = summary.sizes.into_iter().collect();
-                raw_frame_from_plane(data, &sizes)
+                Ok(RawFrame {
+                    width: *frame_width,
+                    height: *frame_height,
+                    data,
+                    contrast_domain: ContrastWindow {
+                        min: 0,
+                        max: u16::MAX as u32,
+                    },
+                })
             }
-            Self::Czi(reader) => {
+            Self::Czi {
+                reader,
+                frame_width,
+                frame_height,
+                ..
+            } => {
                 let data = reader
                     .read_frame_2d(pos, time, channel, z)
                     .map_err(|error| error.to_string())?;
-                let summary = reader.summary().map_err(|error| error.to_string())?;
-                let sizes: HashMap<String, usize> = summary.sizes.into_iter().collect();
-                raw_frame_from_plane(data, &sizes)
+                Ok(RawFrame {
+                    width: *frame_width,
+                    height: *frame_height,
+                    data,
+                    contrast_domain: ContrastWindow {
+                        min: 0,
+                        max: u16::MAX as u32,
+                    },
+                })
             }
+            Self::Folder { .. } => Err("folder source frames are loaded from dataset".to_string()),
         }
     }
 }
@@ -233,27 +313,31 @@ fn open_czi(path: &Path) -> Result<CziFile, String> {
 }
 
 fn scan_nd2(path: &Path) -> Result<WorkspaceScan, String> {
-    let mut reader = SourceReader::open_nd2(path)?;
-    Ok(reader.metadata()?.workspace_scan())
+    let mut reader = open_nd2(path)?;
+    let summary = reader.summary().map_err(|error| error.to_string())?;
+    let sizes: HashMap<String, usize> = summary.sizes.into_iter().collect();
+    Ok(metadata_from_sizes(&sizes, "P")?.workspace_scan())
 }
 
 fn scan_czi(path: &Path) -> Result<WorkspaceScan, String> {
-    let mut reader = SourceReader::open_czi(path)?;
-    Ok(reader.metadata()?.workspace_scan())
+    let mut reader = open_czi(path)?;
+    let summary = reader.summary().map_err(|error| error.to_string())?;
+    let sizes: HashMap<String, usize> = summary.sizes.into_iter().collect();
+    Ok(metadata_from_sizes(&sizes, "S")?.workspace_scan())
 }
 
 fn load_nd2_frame(path: &Path, request: FrameRequest) -> Result<RawFrame, String> {
-    let mut reader = SourceReader::open_nd2(path)?;
-    let metadata = reader.metadata()?;
-    let (pos, time, channel, z) = metadata.indices_for_request(&request)?;
-    reader.read_frame_2d(pos, time, channel, z)
+    let mut reader = CachedSourceReader::open(AlignerSource::Nd2 {
+        path: path.to_string_lossy().into_owned(),
+    })?;
+    reader.load_frame(request)
 }
 
 fn load_czi_frame(path: &Path, request: FrameRequest) -> Result<RawFrame, String> {
-    let mut reader = SourceReader::open_czi(path)?;
-    let metadata = reader.metadata()?;
-    let (pos, time, channel, z) = metadata.indices_for_request(&request)?;
-    reader.read_frame_2d(pos, time, channel, z)
+    let mut reader = CachedSourceReader::open(AlignerSource::Czi {
+        path: path.to_string_lossy().into_owned(),
+    })?;
+    reader.load_frame(request)
 }
 
 fn raw_frame_from_plane(
@@ -327,6 +411,13 @@ fn load_image_folder_frame(
     request: FrameRequest,
 ) -> Result<RawFrame, String> {
     let dataset = build_series_dataset(root, subfolder_template, filename_template)?;
+    load_image_folder_frame_from_dataset(&dataset, request)
+}
+
+fn load_image_folder_frame_from_dataset(
+    dataset: &SeriesDataset,
+    request: FrameRequest,
+) -> Result<RawFrame, String> {
     let position = axis_value(
         "Position",
         &dataset.positions,
@@ -350,14 +441,14 @@ fn load_image_folder_frame(
 
     let matching = dataset
         .records
-        .into_iter()
+        .iter()
         .find(|record| {
             record.position == position
                 && record.time == time
                 && record.channel == channel
                 && record.z == z
         })
-        .map(|record| record.path)
+        .map(|record| record.path.clone())
         .ok_or_else(|| "requested image frame not found".to_string())?;
 
     load_image_frame(&matching)

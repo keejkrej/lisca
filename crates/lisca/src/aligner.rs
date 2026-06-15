@@ -23,11 +23,10 @@ use crate::{
     },
 };
 
-pub use crate::image_source::{load_frame_payload, scan_source};
+pub use crate::image_source::{load_frame_payload, scan_source, CachedSourceReader};
 
 const AUTO_EXCLUDE_BIN_COUNT: usize = 40;
 const AUTO_EXCLUDE_EPSILON: f64 = 1.0;
-const CROP_MAX_POSITION_WORKERS: usize = 4;
 const CROP_ROI_CHUNK_SIZE: usize = 32;
 
 #[derive(Clone, Debug)]
@@ -552,6 +551,15 @@ fn crop_position_worker(
     cancel: &AtomicBool,
     event_sender: mpsc::Sender<CropPositionEvent>,
 ) {
+    let mut source_reader = match CachedSourceReader::open(request.source.clone()) {
+        Ok(reader) => reader,
+        Err(message) => {
+            cancel.store(true, AtomicOrdering::SeqCst);
+            let _ = event_sender.send(CropPositionEvent::Error { message });
+            return;
+        }
+    };
+
     loop {
         if cancel.load(AtomicOrdering::SeqCst) {
             return;
@@ -568,7 +576,15 @@ fn crop_position_worker(
         let Some((pos, bboxes)) = next else {
             return;
         };
-        match crop_position_frame_major(&request, &scan, pos, bboxes, cancel, &event_sender) {
+        match crop_position_frame_major(
+            &request,
+            &scan,
+            pos,
+            bboxes,
+            cancel,
+            &event_sender,
+            &mut source_reader,
+        ) {
             Ok(()) => {}
             Err(CropPositionStop::Cancelled) => {
                 let _ = event_sender.send(CropPositionEvent::Cancelled { pos });
@@ -601,6 +617,7 @@ fn crop_position_frame_major(
     bboxes: Vec<RoiBbox>,
     cancel: &AtomicBool,
     event_sender: &mpsc::Sender<CropPositionEvent>,
+    source_reader: &mut CachedSourceReader,
 ) -> Result<(), CropPositionStop> {
     if cancel.load(AtomicOrdering::SeqCst) {
         return Err(CropPositionStop::Cancelled);
@@ -623,7 +640,7 @@ fn crop_position_frame_major(
         if cancel.load(AtomicOrdering::SeqCst) {
             return Err(CropPositionStop::Cancelled);
         }
-        write_roi_tiff_chunk_frame_major(request, scan, pos, chunk, cancel)?;
+        write_roi_tiff_chunk_frame_major(request, scan, pos, chunk, cancel, source_reader)?;
         for bbox in chunk {
             let _ = event_sender.send(CropPositionEvent::RoiWritten { pos, roi: bbox.roi });
         }
@@ -640,6 +657,7 @@ fn write_roi_tiff_chunk_frame_major(
     pos: u32,
     bboxes: &[RoiBbox],
     cancel: &AtomicBool,
+    source_reader: &mut CachedSourceReader,
 ) -> Result<(), CropPositionStop> {
     let mut writers = bboxes
         .iter()
@@ -652,15 +670,13 @@ fn write_roi_tiff_chunk_frame_major(
                 if cancel.load(AtomicOrdering::SeqCst) {
                     return Err(CropPositionStop::Cancelled);
                 }
-                let raw = load_frame(
-                    request.source.clone(),
-                    FrameRequest {
+                let raw = source_reader
+                    .load_frame(FrameRequest {
                         pos,
                         channel,
                         time,
                         z,
-                    },
-                )
+                    })
                 .map_err(|error| {
                     format!(
                         "Pos{pos} channel={channel} time={time} z={z}: {error}",
@@ -696,7 +712,12 @@ fn crop_position_worker_count(position_count: usize) -> usize {
     let available = std::thread::available_parallelism()
         .map(usize::from)
         .unwrap_or(1);
-    position_count.min(available).clamp(1, CROP_MAX_POSITION_WORKERS)
+    let max_workers = std::env::var("LISCA_CROP_MAX_WORKERS")
+        .ok()
+        .and_then(|value| value.parse::<usize>().ok())
+        .filter(|value| *value > 0)
+        .unwrap_or(available);
+    position_count.min(max_workers).max(1)
 }
 
 fn scan_page_count(scan: &WorkspaceScan) -> u32 {

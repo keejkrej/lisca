@@ -9,6 +9,10 @@ description = "Shared Rust contracts, domain logic, and HTTP infrastructure for 
 [lints]
 workspace = true
 
+[features]
+default = ["studio"]
+studio = ["dep:mplot", "dep:ort", "dep:imageproc", "dep:rust_xlsxwriter"]
+
 [dependencies]
 axum.workspace = true
 base64.workspace = true
@@ -25,14 +29,19 @@ tracing-subscriber.workspace = true
 uuid.workspace = true
 csv.workspace = true
 rayon.workspace = true
-mplot.workspace = true
-rust_xlsxwriter.workspace = true
+mplot = { workspace = true, optional = true }
+rust_xlsxwriter = { workspace = true, optional = true }
 ndarray.workspace = true
 ndarray-ndimage.workspace = true
 ndarray-stats.workspace = true
 noisy_float.workspace = true
-imageproc.workspace = true
-ort.workspace = true
+imageproc = { workspace = true, optional = true }
+ort = { workspace = true, optional = true }
 
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }
+
+[[bin]]
+name = "lisca-crop"
+path = "src/bin/lisca-crop.rs"
+required-features = []
