@@ -129,9 +129,6 @@ enum SourceReader {
         frame_height: u32,
     },
     Folder {
-        root: String,
-        subfolder_template: String,
-        filename_template: String,
         dataset: SeriesDataset,
     },
 }
@@ -149,12 +146,7 @@ impl CachedSourceReader {
             } => {
                 let dataset =
                     build_series_dataset(&path, &subfolder_template, &filename_template)?;
-                Ok(Self(SourceReader::Folder {
-                    root: path,
-                    subfolder_template,
-                    filename_template,
-                    dataset,
-                }))
+                Ok(Self(SourceReader::Folder { dataset }))
             }
             AlignerSource::Nd2 { path } => Ok(Self(open_nd2_source(Path::new(&path))?)),
             AlignerSource::Czi { path } => Ok(Self(open_czi_source(Path::new(&path))?)),
@@ -338,21 +330,6 @@ fn load_czi_frame(path: &Path, request: FrameRequest) -> Result<RawFrame, String
         path: path.to_string_lossy().into_owned(),
     })?;
     reader.load_frame(request)
-}
-
-fn raw_frame_from_plane(
-    data: Vec<u16>,
-    sizes: &HashMap<String, usize>,
-) -> Result<RawFrame, String> {
-    Ok(RawFrame {
-        width: u32::try_from(dimension_size(sizes, "X")).map_err(|error| error.to_string())?,
-        height: u32::try_from(dimension_size(sizes, "Y")).map_err(|error| error.to_string())?,
-        data,
-        contrast_domain: ContrastWindow {
-            min: 0,
-            max: u16::MAX as u32,
-        },
-    })
 }
 
 fn metadata_from_sizes(

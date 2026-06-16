@@ -1738,6 +1738,14 @@
         }
       }
     },
+    "AppId": {
+      "type": "string",
+      "enum": [
+        "aligner",
+        "annotator",
+        "studio"
+      ]
+    },
     "RoiIndexFile": {
       "type": "object",
       "required": [

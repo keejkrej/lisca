@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 import { AssayJsonFileSchema } from "../src/assay.schema";
 import { liscaApi } from "../src/http-api";
-import { RoiIndexFileSchema } from "../src/schema/index";
+import { AppIdSchema, RoiIndexFileSchema } from "../src/schema/index";
 
 /**
  * Build the single JSON Schema document consumed by `typify` to generate the
@@ -45,6 +45,8 @@ function foldDefs(schema: Parameters<typeof JSONSchema.make>[0]): void {
 }
 
 foldDefs(AssayJsonFileSchema);
+// Server identity (not an HTTP payload; used by Rust `run_server`).
+foldDefs(AppIdSchema);
 // On-disk ROI index container (not an HTTP payload).
 foldDefs(RoiIndexFileSchema);
 

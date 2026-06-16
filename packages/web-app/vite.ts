@@ -101,6 +101,13 @@ export function createLiscaViteConfig(options: {
     base: options.base ?? (process.env.VITE_DESKTOP === "1" ? "./" : "/"),
     publicDir: brandPublicDir,
     customLogger: createLiscaDevLogger(),
+    resolve: {
+      // React Compiler runtime must share the same React instance as react-dom.
+      dedupe: ["react", "react-dom"],
+    },
+    optimizeDeps: {
+      include: ["react/compiler-runtime"],
+    },
     plugins: [
       tanstackRouter({ target: "react", autoCodeSplitting: true }),
       liscaReactPlugin(),

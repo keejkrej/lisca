@@ -729,6 +729,83 @@ impl AnnotationLabel {
         Default::default()
     }
 }
+#[doc = "`AppId`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"string\","]
+#[doc = "  \"enum\": ["]
+#[doc = "    \"aligner\","]
+#[doc = "    \"annotator\","]
+#[doc = "    \"studio\""]
+#[doc = "  ]"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(
+    :: serde :: Deserialize,
+    :: serde :: Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum AppId {
+    #[serde(rename = "aligner")]
+    Aligner,
+    #[serde(rename = "annotator")]
+    Annotator,
+    #[serde(rename = "studio")]
+    Studio,
+}
+impl ::std::fmt::Display for AppId {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Aligner => f.write_str("aligner"),
+            Self::Annotator => f.write_str("annotator"),
+            Self::Studio => f.write_str("studio"),
+        }
+    }
+}
+impl ::std::str::FromStr for AppId {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "aligner" => Ok(Self::Aligner),
+            "annotator" => Ok(Self::Annotator),
+            "studio" => Ok(Self::Studio),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for AppId {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for AppId {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for AppId {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
 #[doc = "`AssayBasicInfoStep1`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
