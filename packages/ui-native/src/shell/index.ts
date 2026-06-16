@@ -1,4 +1,11 @@
-export { AppShell, ShellDock, ShellSidebar, type AppShellCompound } from "./layout/app-shell";
+export {
+  AppShell,
+  ShellDock,
+  ShellPanelToggle,
+  ShellSidebar,
+  useShellLayout,
+  type AppShellCompound,
+} from "./layout/app-shell";
 export { Button } from "../../components/ui/button";
 export { DockSection, type DockSectionFit } from "./regions/dock-section";
 export { dockLayoutClasses, dockLayoutStyles, dockSectionWidths, dockToolbarMinHeight } from "./regions/dock-layout";

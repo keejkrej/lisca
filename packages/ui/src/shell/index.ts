@@ -1,4 +1,11 @@
-export { AppShell, type AppShellCompound, ShellDock, ShellSidebar } from "./layout/shell";
+export {
+  AppShell,
+  type AppShellCompound,
+  ShellDock,
+  ShellPanelToggle,
+  ShellSidebar,
+  useShellLayout,
+} from "./layout/shell";
 export {
   ShellNavbar,
   type ShellNavbarAlignerProps,

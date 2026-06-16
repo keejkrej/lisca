@@ -3,15 +3,12 @@ import { AppShell } from "@lisca/ui/shell";
 import {
   DemoAnnotatorRoot,
   DemoNavbar,
-  DemoNavbarActionButton,
   DEMO_SAMPLE_IMAGES,
   resolveSelectedSampleId,
   useDemoAnnotatorState,
   useEmbeddedDemoPreset,
   type DemoSampleImageId,
 } from "@lisca/web-demo";
-import { Tags } from "lucide-react";
-
 import { DemoAnnotatorDock } from "./components/demo-annotator-dock";
 import { DemoAnnotatorLeft } from "./components/demo-annotator-left";
 import { DemoAnnotatorMain } from "./components/demo-annotator-main";
@@ -54,22 +51,11 @@ function AnnotatorDemoView({ embedded }: { embedded: boolean }) {
                 mode={state.mode}
                 onModeChange={state.setMode}
               />
-            ) : (
-              <DemoNavbarActionButton
-                onClick={() => {
-                  state.setLabelError(null);
-                  state.setLabelDialogOpen(true);
-                }}
-              >
-                <Tags className="size-4" aria-hidden />
-                Labels
-              </DemoNavbarActionButton>
-            )
+            ) : undefined
           }
           fileName={state.fileName}
           loading={state.frameLoading}
           showThemeToggle={!embedded}
-          startTrailing={undefined}
           onOpenFile={(file) => void state.openImage(file)}
         />
       </AppShell.Header>
@@ -121,6 +107,10 @@ function AnnotatorDemoView({ embedded }: { embedded: boolean }) {
                 onPaintLabelChange={state.setActiveLabelId}
                 onRedo={state.annotation.redo}
                 onUndo={state.annotation.undo}
+                onOpenLabelDialog={() => {
+                  state.setLabelError(null);
+                  state.setLabelDialogOpen(true);
+                }}
               />
             </AppShell.Right>
           </>

@@ -9,6 +9,7 @@ export * from "./crop-progress-modal";
 export * from "./types";
 export * from "./dock";
 export * from "./folder-source-parse-modal";
+export * from "./shell-layout";
 export * from "./shortcuts";
 export * from "./host";
 export * from "./crop";

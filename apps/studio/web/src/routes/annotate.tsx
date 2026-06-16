@@ -29,14 +29,12 @@ function AnnotatePageContent() {
         <AppShell.Left widthClass="w-60">
           <StudioLeft />
         </AppShell.Left>
+        <AppShell.Left widthClass="w-72">
+          <StudioAnnotateNav />
+        </AppShell.Left>
         <AppShell.MainColumn>
           <AppShell.Main>
-            <div className="flex min-h-0 flex-1">
-              <StudioAnnotateNav />
-              <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-                <StudioAnnotateMain />
-              </div>
-            </div>
+            <StudioAnnotateMain />
           </AppShell.Main>
           <AppShell.Dock>
             <StudioAnnotateDock />

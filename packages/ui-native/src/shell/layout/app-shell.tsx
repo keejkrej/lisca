@@ -1,8 +1,14 @@
 import type { ReactNode } from "react";
+import { useEffect, useId } from "react";
 import { Platform, ScrollView, View, type ViewProps } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { cn } from "../../../lib/utils";
+import { ShellLayoutProvider, useShellLayout } from "./shell-layout-context";
+import {
+  ShellPortraitPanelControls,
+  ShellPortraitPanelOverlays,
+} from "./shell-portrait-panels";
 
 const DEFAULT_RAIL_WIDTH = 288;
 const HEADER_HEIGHT = 64;
@@ -29,13 +35,46 @@ function ShellScrollRegion(props: {
   );
 }
 
+function useRegisterShellPanel(props: {
+  side: "left" | "right";
+  children?: ReactNode;
+  width?: number;
+}) {
+  const layout = useShellLayout();
+  const id = useId();
+  const width = props.width ?? DEFAULT_RAIL_WIDTH;
+
+  useEffect(() => {
+    if (!layout.isPortrait) {
+      return undefined;
+    }
+    const register =
+      props.side === "left" ? layout.registerLeftPanel : layout.registerRightPanel;
+    return register({
+      id,
+      width,
+      content: props.children,
+    });
+  }, [
+    id,
+    layout.isPortrait,
+    layout.registerLeftPanel,
+    layout.registerRightPanel,
+    props.children,
+    props.side,
+    width,
+  ]);
+}
+
 function AppShellRoot(props: { children: ReactNode }) {
   return (
-    <View className="flex-1 bg-background">
-      <SafeAreaView className="flex-1" edges={["top", "left", "right"]}>
-        {props.children}
-      </SafeAreaView>
-    </View>
+    <ShellLayoutProvider>
+      <View className="flex-1 bg-background">
+        <SafeAreaView className="flex-1" edges={["top", "left", "right"]}>
+          {props.children}
+        </SafeAreaView>
+      </View>
+    </ShellLayoutProvider>
   );
 }
 
@@ -53,11 +92,23 @@ function Header(props: { children?: ReactNode }) {
 }
 
 function Body(props: { children?: ReactNode }) {
-  return <View className="min-h-0 flex-1 flex-row bg-background">{props.children}</View>;
+  return (
+    <View className="relative min-h-0 flex-1 flex-row bg-background">
+      {props.children}
+      <ShellPortraitPanelOverlays />
+    </View>
+  );
 }
 
 function Left(props: { children?: ReactNode; width?: number }) {
+  useRegisterShellPanel({ side: "left", children: props.children, width: props.width });
+  const layout = useShellLayout();
   const width = props.width ?? DEFAULT_RAIL_WIDTH;
+
+  if (layout.isPortrait) {
+    return null;
+  }
+
   return (
     <View className="min-h-0 border-r border-border bg-background" style={{ width }}>
       <ShellScrollRegion contentClassName="flex-grow">{props.children}</ShellScrollRegion>
@@ -66,7 +117,14 @@ function Left(props: { children?: ReactNode; width?: number }) {
 }
 
 function Right(props: { children?: ReactNode; width?: number }) {
+  useRegisterShellPanel({ side: "right", children: props.children, width: props.width });
+  const layout = useShellLayout();
   const width = props.width ?? DEFAULT_RAIL_WIDTH;
+
+  if (layout.isPortrait) {
+    return null;
+  }
+
   return (
     <View className="min-h-0 border-l border-border bg-background" style={{ width }}>
       <ShellScrollRegion contentClassName="flex-grow">{props.children}</ShellScrollRegion>
@@ -80,12 +138,13 @@ function MainColumn(props: { children?: ReactNode }) {
 
 function Main(props: { children?: ReactNode }) {
   return (
-    <View nativeID="main-content" className="min-h-0 flex-1 bg-background">
+    <View nativeID="main-content" className="relative min-h-0 flex-1 bg-background">
       {Platform.OS === "web" ? (
         props.children
       ) : (
         <ShellScrollRegion contentClassName="flex-grow">{props.children}</ShellScrollRegion>
       )}
+      <ShellPortraitPanelControls />
     </View>
   );
 }
@@ -137,3 +196,6 @@ export function ShellSidebar(props: {
     <Left width={props.width}>{props.children}</Left>
   );
 }
+
+export { useShellLayout } from "./shell-layout-context";
+export { ShellPanelToggle } from "./shell-portrait-panels";

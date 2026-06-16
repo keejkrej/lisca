@@ -64,6 +64,10 @@
       "types": "./src/host-file-picker-state.ts",
       "import": "./src/host-file-picker-state.ts"
     },
+    "./shell-layout": {
+      "types": "./src/shell-layout.ts",
+      "import": "./src/shell-layout.ts"
+    },
     "./shortcuts": {
       "types": "./src/shortcuts.ts",
       "import": "./src/shortcuts.ts"

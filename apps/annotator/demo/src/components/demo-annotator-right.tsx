@@ -27,6 +27,7 @@ export function DemoAnnotatorRight(props: {
   onUndo: () => void;
   onRedo: () => void;
   onDiscard: () => void;
+  onOpenLabelDialog: () => void;
 }) {
   return (
     <div className="flex min-h-0 flex-col gap-2 overflow-auto p-3">
@@ -65,6 +66,15 @@ export function DemoAnnotatorRight(props: {
             </button>
           );
         })}
+        <Button
+          className="col-span-2 w-full"
+          size="sm"
+          type="button"
+          variant="outline"
+          onClick={props.onOpenLabelDialog}
+        >
+          Edit labels
+        </Button>
         {props.frameLoading ? (
           <p className="col-span-2 text-muted-foreground text-xs">Loading…</p>
         ) : null}

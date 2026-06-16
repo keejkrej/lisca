@@ -26,14 +26,14 @@ export function StudioAnnotateNav() {
 
   if (nav.workspaceMissing) {
     return (
-      <div className="flex w-72 shrink-0 flex-col gap-2 p-3">
+      <div className="flex min-h-0 flex-col gap-2 p-3">
         <p className="text-destructive text-sm">Set a save location in Basic info first.</p>
       </div>
     );
   }
 
   return (
-    <div className="flex w-72 shrink-0 flex-col gap-2 border-border border-r p-3">
+    <div className="flex min-h-0 flex-col gap-2 p-3">
       <FrameNavigation
         position={{
           value: posValue,

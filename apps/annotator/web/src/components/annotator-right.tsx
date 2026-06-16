@@ -58,7 +58,18 @@ export function AnnotatorRight() {
           >
             Add
           </Button>
-        ) : null}
+        ) : (
+          <Button
+            className="col-span-2 w-full"
+            disabled={!labels.workspacePath}
+            size="sm"
+            type="button"
+            variant="outline"
+            onClick={labels.openLabelDialog}
+          >
+            Edit labels
+          </Button>
+        )}
         {loading ? <p className="col-span-2 text-muted-foreground text-xs">Loading…</p> : null}
         {activeError ? <p className="col-span-2 text-destructive text-xs">{activeError}</p> : null}
       </SidebarSection>

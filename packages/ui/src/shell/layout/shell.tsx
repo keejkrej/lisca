@@ -1,6 +1,12 @@
 import type { ReactNode } from "react";
+import { useEffect, useId } from "react";
 
 import { cn } from "../../lib/utils";
+import { ShellLayoutProvider, useShellLayout } from "./shell-layout-context";
+import {
+  ShellPortraitPanelControls,
+  ShellPortraitPanelOverlays,
+} from "./shell-portrait-panels";
 
 const shellDivider = "border-border";
 const shellSurface = "bg-background";
@@ -39,6 +45,37 @@ function ShellSidebarInner(props: {
   );
 }
 
+function useRegisterShellPanel(props: {
+  side: "left" | "right";
+  children?: ReactNode;
+  widthClass?: string;
+}) {
+  const layout = useShellLayout();
+  const id = useId();
+  const widthClass = props.widthClass ?? "w-56";
+
+  useEffect(() => {
+    if (!layout.isPortrait) {
+      return undefined;
+    }
+    const register =
+      props.side === "left" ? layout.registerLeftPanel : layout.registerRightPanel;
+    return register({
+      id,
+      widthClass,
+      content: props.children,
+    });
+  }, [
+    id,
+    layout.isPortrait,
+    layout.registerLeftPanel,
+    layout.registerRightPanel,
+    props.children,
+    props.side,
+    widthClass,
+  ]);
+}
+
 function SkipToMainLink() {
   return (
     <a
@@ -52,10 +89,12 @@ function SkipToMainLink() {
 
 function AppShellRoot(props: { children?: ReactNode }) {
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background text-foreground">
-      <SkipToMainLink />
-      {props.children}
-    </div>
+    <ShellLayoutProvider>
+      <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background text-foreground">
+        <SkipToMainLink />
+        {props.children}
+      </div>
+    </ShellLayoutProvider>
   );
 }
 AppShellRoot.displayName = "AppShell";
@@ -79,7 +118,10 @@ AppShellHeader.displayName = "AppShell.Header";
  */
 function AppShellBody(props: { children?: ReactNode }) {
   return (
-    <div className={`flex min-h-0 flex-1 overflow-hidden ${shellSurface}`}>{props.children}</div>
+    <div className={`relative flex min-h-0 flex-1 overflow-hidden ${shellSurface}`}>
+      {props.children}
+      <ShellPortraitPanelOverlays />
+    </div>
   );
 }
 AppShellBody.displayName = "AppShell.Body";
@@ -99,6 +141,13 @@ function AppShellLeft(props: {
   /** Tailwind width utility; default `w-56`. */
   widthClass?: string;
 }) {
+  useRegisterShellPanel({ side: "left", children: props.children, widthClass: props.widthClass });
+  const layout = useShellLayout();
+
+  if (layout.isPortrait) {
+    return null;
+  }
+
   return (
     <ShellSidebarInner side="left" widthClass={props.widthClass}>
       {props.children}
@@ -112,6 +161,13 @@ function AppShellRight(props: {
   /** Tailwind width utility; default `w-56`. */
   widthClass?: string;
 }) {
+  useRegisterShellPanel({ side: "right", children: props.children, widthClass: props.widthClass });
+  const layout = useShellLayout();
+
+  if (layout.isPortrait) {
+    return null;
+  }
+
   return (
     <ShellSidebarInner side="right" widthClass={props.widthClass}>
       {props.children}
@@ -122,8 +178,9 @@ AppShellRight.displayName = "AppShell.Right";
 
 function AppShellMain(props: { children?: ReactNode }) {
   return (
-    <main className={`min-h-0 flex-1 overflow-auto ${shellSurface}`} id="main-content">
+    <main className={`relative min-h-0 flex-1 overflow-auto ${shellSurface}`} id="main-content">
       {props.children}
+      <ShellPortraitPanelControls />
     </main>
   );
 }
@@ -151,6 +208,8 @@ export type AppShellCompound = typeof AppShellRoot & {
  * - `Header` — fixed-height header strip
  * - `Body` — `flex-1` row containing optional `Left`, `MainColumn`, optional `Right`
  * - `MainColumn` — `Main` (grows, scrolls) and optional `Dock` (fixed-height strip)
+ *
+ * In portrait (taller than wide), left/right panels collapse and open as overlays above main.
  *
  * Wrap the app in `ShellThemeProvider` so `dark:` Tailwind utilities work.
  *
@@ -197,3 +256,6 @@ export function ShellSidebar(props: {
     </ShellSidebarInner>
   );
 }
+
+export { useShellLayout } from "./shell-layout-context";
+export { ShellPanelToggle } from "./shell-portrait-panels";
