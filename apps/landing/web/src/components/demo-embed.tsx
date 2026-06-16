@@ -1,17 +1,12 @@
-import { Button } from "@lisca/ui/components";
-import { Link } from "@tanstack/react-router";
-import { ArrowUpRight, Play } from "lucide-react";
-import { useState } from "react";
-
 import type { LandingDemo } from "../lib/demos";
+import { Link } from "@tanstack/react-router";
+import { ArrowUpRight } from "lucide-react";
 
 /**
- * Frames a live demo inline. The demo bundles pull heavy onnx/transformers wasm,
- * so we mount the component only after an explicit launch click to keep the
- * landing page's first paint light.
+ * Inline demo frame — mounts immediately with a preloaded sample frame. File upload
+ * and export are disabled here; the link opens the full demo route for your own data.
  */
 export function DemoEmbed({ demo, index }: { demo: LandingDemo; index: number }) {
-  const [active, setActive] = useState(false);
   const Demo = demo.Demo;
 
   return (
@@ -27,7 +22,7 @@ export function DemoEmbed({ demo, index }: { demo: LandingDemo; index: number })
           to={demo.href}
           className="landing-control inline-flex shrink-0 items-center gap-1 px-2 py-1 font-mono text-xs"
         >
-          Full screen
+          Use your own file
           <ArrowUpRight className="size-3.5" aria-hidden />
         </Link>
       </header>
@@ -37,21 +32,7 @@ export function DemoEmbed({ demo, index }: { demo: LandingDemo; index: number })
       </div>
 
       <div className="relative mx-5 mb-5 h-[32rem] shrink-0 overflow-hidden rounded-xl border border-border">
-        {active ? (
-          <Demo embedded />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Button
-              type="button"
-              variant="outline"
-              size="icon-lg"
-              aria-label={demo.linkLabel}
-              onClick={() => setActive(true)}
-            >
-              <Play aria-hidden />
-            </Button>
-          </div>
-        )}
+        <Demo embedded />
       </div>
     </article>
   );

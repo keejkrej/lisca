@@ -13,13 +13,12 @@ export type LandingDemo = {
   Demo: ComponentType<{ embedded?: boolean }>;
 };
 
-/** Demo components for /aligner-demo and /annotator-demo — not embedded on the landing page. */
 export const landingDemos = [
   {
     id: "aligner",
     title: "Aligner",
     description:
-      "Load a snapshot or timelapse frame from patterned cells and register it to the micropattern grid. Mark occupied and empty adhesive sites, adjust for slight rotation or drift, and export site positions for counting and assay readouts.",
+      "ibidi micropattern example (brightfield) with a starter grid fit — pan and zoom the grid, switch square or hex layout, and explore alignment on a sample frame.",
     href: ALIGNER_DEMO_PATH,
     linkLabel: "Try Aligner in your browser",
     Demo: AlignDemo,
@@ -28,7 +27,7 @@ export const landingDemos = [
     id: "annotator",
     title: "Annotator",
     description:
-      "Open a live-cell frame and outline cells within each patterned site. Assign labels for phenotyping, assisted cell outlining, or spot-checking automated calls across your timelapse.",
+      "ibidi fluorescence composite example — use the label chips below the canvas to switch colours. Segmentation draws outlines; Classification assigns one label to the whole site.",
     href: ANNOTATOR_DEMO_PATH,
     linkLabel: "Try Annotator in your browser",
     Demo: AnnotatorDemo,

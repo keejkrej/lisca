@@ -36,6 +36,7 @@ export {
   DemoRegistryProvider,
 } from "./atoms/demo-session-sync";
 export { useDemoAlignState, type DemoAlignState } from "./hooks/use-demo-align-state";
+export { useEmbeddedDemoPreset } from "./hooks/use-embedded-demo-preset";
 export {
   useDemoAnnotatorState,
   type DemoAnnotatorState,

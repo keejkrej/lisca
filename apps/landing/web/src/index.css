@@ -28,6 +28,11 @@ body {
   @apply bg-background text-foreground antialiased;
 }
 
+html {
+  overflow-x: clip;
+  scroll-padding-top: 4rem;
+}
+
 body {
   font-family: var(--font-sans);
 }

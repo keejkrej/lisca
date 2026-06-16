@@ -209,6 +209,24 @@ export const demoAnnotatorUiActions = {
       ...resetAnnotationState(emptyAnnotationValue(frame)),
     }));
   },
+  applyDemoPreset(
+    set: (update: StateUpdater<DemoAnnotatorUiState>) => void,
+    input: {
+      fileName: string;
+      frame: FrameResult;
+      annotation: AnnotationValue;
+    },
+  ) {
+    patchDemoAnnotatorUi(set, (state) => ({
+      ...state,
+      fileName: input.fileName,
+      frame: input.frame,
+      contrast: null,
+      error: null,
+      status: "Sample image loaded — try the tools below",
+      ...resetAnnotationState(input.annotation),
+    }));
+  },
   clearLoadedImage(set: (update: StateUpdater<DemoAnnotatorUiState>) => void) {
     patchDemoAnnotatorUi(set, (state) => ({
       ...state,

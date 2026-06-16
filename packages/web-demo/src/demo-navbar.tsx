@@ -13,6 +13,8 @@ export type DemoNavbarProps = {
   endLeading?: ReactNode;
   /** When false, the navbar omits its theme toggle (e.g. embedded landing previews). */
   showThemeToggle?: boolean;
+  /** When false, hides the file picker — embedded previews use a fixed sample frame. */
+  allowOpenFile?: boolean;
   onOpenFile: (file: File) => void;
 };
 
@@ -29,27 +31,38 @@ export function DemoNavbar(props: DemoNavbarProps) {
     <header className="h-full px-6">
       <div className="grid h-full grid-cols-[1fr_auto_1fr] items-center gap-4">
         <div className="flex min-w-0 items-center justify-start gap-2">
-          <input
-            ref={inputRef}
-            accept={imageAccept}
-            style={{ display: "none" }}
-            tabIndex={-1}
-            type="file"
-            onChange={handleChange}
-          />
-          <Button
-            className="gap-2 font-normal"
-            disabled={props.loading}
-            loading={props.loading}
-            size="sm"
-            title={props.fileName ?? "Open image"}
-            type="button"
-            variant="outline"
-            onClick={() => inputRef.current?.click()}
-          >
-            <ImageIcon className="size-4 shrink-0 opacity-80" aria-hidden />
-            Image
-          </Button>
+          {props.allowOpenFile !== false ? (
+            <>
+              <input
+                ref={inputRef}
+                accept={imageAccept}
+                style={{ display: "none" }}
+                tabIndex={-1}
+                type="file"
+                onChange={handleChange}
+              />
+              <Button
+                className="gap-2 font-normal"
+                disabled={props.loading}
+                loading={props.loading}
+                size="sm"
+                title={props.fileName ?? "Open image"}
+                type="button"
+                variant="outline"
+                onClick={() => inputRef.current?.click()}
+              >
+                <ImageIcon className="size-4 shrink-0 opacity-80" aria-hidden />
+                Image
+              </Button>
+            </>
+          ) : (
+            <span
+              className="max-w-[12rem] truncate px-1 font-mono text-xs text-muted-foreground sm:max-w-[16rem] sm:text-sm"
+              title={props.fileName ?? "Sample image"}
+            >
+              {props.fileName ?? "Sample image"}
+            </span>
+          )}
           {props.startTrailing}
         </div>
 

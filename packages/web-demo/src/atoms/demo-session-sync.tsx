@@ -6,12 +6,14 @@ import { ALIGNER_DEMO_SESSION_KEY, ANNOTATOR_DEMO_SESSION_KEY } from "../demo-se
 import { useDebouncedEffect } from "../use-debounced-effect";
 import {
   demoAlignUiAtom,
+  createInitialDemoAlignUiState,
   mergeDemoAlignSession,
   selectDemoAlignSession,
   type DemoAlignSession,
 } from "./demo-align-ui";
 import {
   demoAnnotatorUiAtom,
+  createInitialDemoAnnotatorUiState,
   mergeDemoAnnotatorSession,
   selectDemoAnnotatorSession,
   type DemoAnnotatorSession,
@@ -83,15 +85,40 @@ function DemoAnnotatorSessionSync({ persist }: { persist: boolean }) {
   return null;
 }
 
+function DemoAlignWorkspaceInit({ embedded }: { embedded: boolean }) {
+  const setState = useAtomSet(demoAlignUiAtom);
+
+  useEffect(() => {
+    if (embedded) return;
+    setState(createInitialDemoAlignUiState());
+  }, [embedded, setState]);
+
+  return null;
+}
+
+function DemoAnnotatorWorkspaceInit({ embedded }: { embedded: boolean }) {
+  const setState = useAtomSet(demoAnnotatorUiAtom);
+
+  useEffect(() => {
+    if (embedded) return;
+    setState(createInitialDemoAnnotatorUiState());
+  }, [embedded, setState]);
+
+  return null;
+}
+
 export function DemoAlignRoot({
   persist = false,
+  embedded = false,
   children,
 }: {
   persist?: boolean;
+  embedded?: boolean;
   children: ReactNode;
 }) {
   return (
     <DemoRegistryProvider>
+      <DemoAlignWorkspaceInit embedded={embedded} />
       <DemoAlignSessionSync persist={persist} />
       {children}
     </DemoRegistryProvider>
@@ -100,13 +127,16 @@ export function DemoAlignRoot({
 
 export function DemoAnnotatorRoot({
   persist = false,
+  embedded = false,
   children,
 }: {
   persist?: boolean;
+  embedded?: boolean;
   children: ReactNode;
 }) {
   return (
     <DemoRegistryProvider>
+      <DemoAnnotatorWorkspaceInit embedded={embedded} />
       <DemoAnnotatorSessionSync persist={persist} />
       {children}
     </DemoRegistryProvider>

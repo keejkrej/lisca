@@ -10,6 +10,14 @@ const brandPublicDir = resolve(
   "../../../assets/brand",
 );
 
+const ibidiDemoImageProxy = {
+  "/demo-images/ibidi": {
+    target: "https://ibidi.com/img/cms/applications/micropatterning",
+    changeOrigin: true,
+    rewrite: (path: string) => path.replace(/^\/demo-images\/ibidi/, ""),
+  },
+} as const;
+
 export default defineConfig({
   base: "/",
   publicDir: brandPublicDir,
@@ -22,5 +30,11 @@ export default defineConfig({
     host: true,
     port: 5180,
     strictPort: true,
+    proxy: ibidiDemoImageProxy,
+  },
+  preview: {
+    port: 5180,
+    strictPort: true,
+    proxy: ibidiDemoImageProxy,
   },
 });

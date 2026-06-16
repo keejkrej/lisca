@@ -6,7 +6,12 @@ import { maskHasPixels } from "@lisca/utils";
 import { useAtom } from "@effect-atom/atom-react";
 
 import type { AnnotationValue } from "../annotation-value";
-import { buildAnnotationExportZip, downloadBlob, loadImageFile, stemName } from "../browser";
+import {
+  buildAnnotationExportZip,
+  downloadBlob,
+  loadImageFile,
+  stemName,
+} from "../browser";
 import { encodeMaskToPngBytes } from "../browser/encode-annotation-mask";
 import {
   currentDemoAnnotation,
@@ -158,7 +163,15 @@ export function useDemoAnnotatorState(): DemoAnnotatorState {
         const stem = stemName(fileName);
         const hasMask = maskHasPixels(annotation.current.mask);
         const maskPng = hasMask
-          ? await encodeMaskToPngBytes(annotation.current.mask, frame.width, frame.height)
+          ? await encodeMaskToPngBytes(
+              annotation.current.mask,
+              frame.width,
+              frame.height,
+              labels.map((label, index) => ({
+                value: index + 1,
+                color: label.color,
+              })),
+            )
           : null;
         const zip = buildAnnotationExportZip({
           stem,

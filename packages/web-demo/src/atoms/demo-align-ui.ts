@@ -167,6 +167,27 @@ export const demoAlignUiActions = {
       status: null,
     });
   },
+  applyDemoPreset(
+    set: (update: StateUpdater<DemoAlignUiState>) => void,
+    input: {
+      fileName: string;
+      frame: FrameResult;
+      grid: AlignGridState;
+      excludedCells?: AlignGridCellCoord[];
+    },
+  ) {
+    patchDemoAlignUi(set, {
+      fileName: input.fileName,
+      sourceFormat: { kind: "png" },
+      frame: input.frame,
+      contrast: null,
+      excludedCells: input.excludedCells ?? [],
+      variationExcludePreview: null,
+      grid: input.grid,
+      error: null,
+      status: "Sample image loaded — adjust the grid if needed",
+    });
+  },
   clearLoadedImage(set: (update: StateUpdater<DemoAlignUiState>) => void) {
     patchDemoAlignUi(set, {
       fileName: null,

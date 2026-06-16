@@ -1,12 +1,11 @@
 import { AlignGridShapeToggle } from "@lisca/ui/features";
 import { AppShell } from "@lisca/ui/shell";
-import { DemoAlignRoot, DemoNavbar, useDemoAlignState } from "@lisca/web-demo";
+import { DemoAlignRoot, DemoNavbar, useDemoAlignState, useEmbeddedDemoPreset } from "@lisca/web-demo";
 
 import { DemoAlignContrastControls } from "./components/demo-align-contrast-controls";
 import { DemoAlignGridControls } from "./components/demo-align-grid-controls";
 import { DemoAlignMain } from "./components/demo-align-main";
 import { DemoAlignSelectionControls } from "./components/demo-align-selection-controls";
-import { DemoAlignDownloadButton } from "./components/demo-align-download-button";
 import { DemoAlignDock, DemoInlineAlignToolbar } from "./components/demo-align-tool-section";
 
 export type AlignDemoProps = {
@@ -15,7 +14,7 @@ export type AlignDemoProps = {
 
 export function AlignDemo({ embedded = false }: AlignDemoProps) {
   return (
-    <DemoAlignRoot persist={!embedded}>
+    <DemoAlignRoot embedded={embedded} persist={!embedded}>
       <AlignDemoView embedded={embedded} />
     </DemoAlignRoot>
   );
@@ -23,6 +22,7 @@ export function AlignDemo({ embedded = false }: AlignDemoProps) {
 
 function AlignDemoView({ embedded }: { embedded: boolean }) {
   const state = useDemoAlignState();
+  useEmbeddedDemoPreset(embedded, embedded ? "aligner" : null, Boolean(state.frame));
 
   const shell = (
     <AppShell>
@@ -30,12 +30,9 @@ function AlignDemoView({ embedded }: { embedded: boolean }) {
         <DemoNavbar
           fileName={state.fileName}
           loading={state.frameLoading}
+          allowOpenFile={!embedded}
           showThemeToggle={!embedded}
-          startTrailing={
-            embedded ? (
-              <DemoAlignDownloadButton className="gap-2 font-normal" state={state} />
-            ) : undefined
-          }
+          startTrailing={undefined}
           endLeading={
             embedded ? (
               <AlignGridShapeToggle

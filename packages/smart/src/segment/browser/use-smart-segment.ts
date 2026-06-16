@@ -289,15 +289,19 @@ export function useSmartSegment(options: {
     const labelValue = activeLabelValue;
     const currentPrompts = labelValue > 0 ? (promptsByLabel[labelValue] ?? []) : [];
     const promptIndex = findPromptIndexAt(currentPrompts, click.x, click.y);
-    if (promptIndex < 0) {
-      onStatusRef.current?.("No point prompt near click");
-      return;
-    }
-
-    const nextPrompts = currentPrompts.filter((_, index) => index !== promptIndex);
-    setPromptsForLabel(labelValue, nextPrompts);
+    const nextPrompts: SmartSegmentPoint[] =
+      promptIndex >= 0
+        ? currentPrompts.filter((_, index) => index !== promptIndex)
+        : [
+            ...currentPrompts,
+            {
+              x: click.x,
+              y: click.y,
+              label: 0,
+            },
+          ];
     await ensureModelForClick(
-      { x: click.x, y: click.y, negative: false },
+      { x: click.x, y: click.y, negative: promptIndex < 0 },
       labelValue,
       nextPrompts,
     );

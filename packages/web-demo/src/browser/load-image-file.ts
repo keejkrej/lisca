@@ -7,7 +7,26 @@ import {
   sourceFormatFromFile,
   tiffFormatFromIfd,
   type LoadedImageFile,
+  type SourceImageFormat,
 } from "./source-image-format";
+
+export const IBIDI_MICROPATTERNING_IMAGE_BASE =
+  "https://ibidi.com/img/cms/applications/micropatterning";
+
+/** ibidi micropatterning example images — fetched at runtime, not bundled. */
+export const IBIDI_DEMO_SAMPLE_IMAGES = {
+  singleCell: `${IBIDI_MICROPATTERNING_IMAGE_BASE}/mp_example_singlecell.jpg`,
+  multiCell: `${IBIDI_MICROPATTERNING_IMAGE_BASE}/mp_example_multicell.jpg`,
+  rccComposite: `${IBIDI_MICROPATTERNING_IMAGE_BASE}/mp_RCC_4x_composite.jpg`,
+  ratComposite: `${IBIDI_MICROPATTERNING_IMAGE_BASE}/Rat1_10x_composite.jpg`,
+} as const;
+
+/** Same-origin path used when ibidi blocks cross-origin fetch (see landing vite proxy). */
+export function resolveRemoteDemoImageUrl(url: string): string {
+  if (!url.startsWith(`${IBIDI_MICROPATTERNING_IMAGE_BASE}/`)) return url;
+  const fileName = url.slice(IBIDI_MICROPATTERNING_IMAGE_BASE.length + 1);
+  return `/demo-images/ibidi/${fileName}`;
+}
 
 function luminance(r: number, g: number, b: number): number {
   return Math.round(0.299 * r + 0.587 * g + 0.114 * b);
@@ -48,10 +67,15 @@ function frameFromGrayPixels(
   });
 }
 
-async function loadRasterImage(file: File): Promise<LoadedImageFile> {
-  const format = sourceFormatFromFile(file);
-  if (!format) throw new Error("Unsupported image format");
-  const bitmap = await createImageBitmap(file);
+function formatFromFileName(fileName: string): SourceImageFormat {
+  const lower = fileName.toLowerCase();
+  if (lower.endsWith(".png")) return { kind: "png" };
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return { kind: "jpeg" };
+  return { kind: "jpeg" };
+}
+
+async function loadRasterBlob(blob: Blob, format: SourceImageFormat): Promise<LoadedImageFile> {
+  const bitmap = await createImageBitmap(blob);
   try {
     const canvas = document.createElement("canvas");
     canvas.width = bitmap.width;
@@ -78,11 +102,16 @@ async function loadRasterImage(file: File): Promise<LoadedImageFile> {
   }
 }
 
+async function loadRasterImage(file: File): Promise<LoadedImageFile> {
+  const format = sourceFormatFromFile(file);
+  if (!format) throw new Error("Unsupported image format");
+  return loadRasterBlob(file, format);
+}
+
 function unpackUtifGray16(data: Uint8Array): Uint16Array {
   const pixelCount = data.length / 2;
   const pixels = new Uint16Array(pixelCount);
   const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
-  // UTIF.decodeImage normalizes 16-bit samples to little-endian byte pairs.
   for (let index = 0; index < pixelCount; index += 1) {
     pixels[index] = view.getUint16(index * 2, true);
   }
@@ -176,4 +205,33 @@ export type { LoadedImageFile } from "./source-image-format";
 export async function loadImageFile(file: File): Promise<LoadedImageFile> {
   if (isTiffFile(file)) return loadTiffImage(file);
   return loadRasterImage(file);
+}
+
+async function fetchImageBlob(url: string): Promise<Blob> {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch image (${response.status})`);
+  }
+  return response.blob();
+}
+
+/** Load a remote JPEG/PNG into a grayscale frame. Tries the canonical URL, then a same-origin proxy path. */
+export async function loadImageFromUrl(url: string): Promise<LoadedImageFile> {
+  const fileName = url.split("/").pop() ?? "sample.jpg";
+  const format = formatFromFileName(fileName);
+  const candidates = [url, resolveRemoteDemoImageUrl(url)].filter(
+    (candidate, index, all) => all.indexOf(candidate) === index,
+  );
+
+  let lastError: unknown;
+  for (const candidate of candidates) {
+    try {
+      const blob = await fetchImageBlob(candidate);
+      return loadRasterBlob(blob, format);
+    } catch (cause) {
+      lastError = cause;
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error(String(lastError));
 }

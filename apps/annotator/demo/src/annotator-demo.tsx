@@ -5,11 +5,11 @@ import {
   DemoNavbar,
   DemoNavbarActionButton,
   useDemoAnnotatorState,
+  useEmbeddedDemoPreset,
 } from "@lisca/web-demo";
 import { Tags } from "lucide-react";
 
 import { DemoAnnotatorDock } from "./components/demo-annotator-dock";
-import { DemoAnnotatorDownloadButton } from "./components/demo-annotator-download-button";
 import { DemoAnnotatorLeft } from "./components/demo-annotator-left";
 import { DemoAnnotatorMain } from "./components/demo-annotator-main";
 import { DemoAnnotatorRight } from "./components/demo-annotator-right";
@@ -22,7 +22,7 @@ export type AnnotatorDemoProps = {
 
 export function AnnotatorDemo({ embedded = false }: AnnotatorDemoProps) {
   return (
-    <DemoAnnotatorRoot persist={!embedded}>
+    <DemoAnnotatorRoot embedded={embedded} persist={!embedded}>
       <AnnotatorDemoView embedded={embedded} />
     </DemoAnnotatorRoot>
   );
@@ -30,11 +30,13 @@ export function AnnotatorDemo({ embedded = false }: AnnotatorDemoProps) {
 
 function AnnotatorDemoView({ embedded }: { embedded: boolean }) {
   const state = useDemoAnnotatorState();
+  useEmbeddedDemoPreset(embedded, embedded ? "annotator" : null, Boolean(state.frame));
 
   const shell = (
     <AppShell>
       <AppShell.Header>
         <DemoNavbar
+          allowOpenFile={!embedded}
           endLeading={
             <DemoNavbarActionButton
               onClick={() => {
@@ -49,11 +51,7 @@ function AnnotatorDemoView({ embedded }: { embedded: boolean }) {
           fileName={state.fileName}
           loading={state.frameLoading}
           showThemeToggle={!embedded}
-          startTrailing={
-            embedded ? (
-              <DemoAnnotatorDownloadButton className="gap-2 font-normal" state={state} />
-            ) : undefined
-          }
+          startTrailing={undefined}
           onOpenFile={(file) => void state.openImage(file)}
         />
       </AppShell.Header>
@@ -113,7 +111,7 @@ function AnnotatorDemoView({ embedded }: { embedded: boolean }) {
             <AppShell.Main>
               <DemoAnnotatorMain embedded state={state} />
             </AppShell.Main>
-            <DemoInlineAnnotatorToolbar state={state} />
+            <DemoInlineAnnotatorToolbar embedded state={state} />
           </AppShell.MainColumn>
         )}
       </AppShell.Body>
