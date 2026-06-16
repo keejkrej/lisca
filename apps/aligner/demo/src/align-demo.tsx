@@ -1,6 +1,6 @@
 import { AlignGridShapeToggle } from "@lisca/ui/features";
 import { AppShell } from "@lisca/ui/shell";
-import { DemoAlignRoot, DemoNavbar, useDemoAlignState, useEmbeddedDemoPreset } from "@lisca/web-demo";
+import { DemoAlignRoot, DemoNavbar, DEMO_SAMPLE_IMAGES, resolveSelectedSampleId, useDemoAlignState, useEmbeddedDemoPreset, type DemoSampleImageId } from "@lisca/web-demo";
 
 import { DemoAlignContrastControls } from "./components/demo-align-contrast-controls";
 import { DemoAlignGridControls } from "./components/demo-align-grid-controls";
@@ -32,6 +32,13 @@ function AlignDemoView({ embedded }: { embedded: boolean }) {
           loading={state.frameLoading}
           allowOpenFile={!embedded}
           showThemeToggle={!embedded}
+          sampleImages={embedded ? DEMO_SAMPLE_IMAGES : undefined}
+          selectedSampleId={embedded ? resolveSelectedSampleId(state.fileName) : null}
+          onSampleChange={
+            embedded
+              ? (sampleId) => void state.openSampleImage(sampleId as DemoSampleImageId)
+              : undefined
+          }
           startTrailing={undefined}
           endLeading={
             embedded ? (

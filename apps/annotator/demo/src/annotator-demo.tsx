@@ -1,11 +1,14 @@
-import { LabelCreationDialog } from "@lisca/ui/features";
+import { AnnotationModeToggle, LabelCreationDialog } from "@lisca/ui/features";
 import { AppShell } from "@lisca/ui/shell";
 import {
   DemoAnnotatorRoot,
   DemoNavbar,
   DemoNavbarActionButton,
+  DEMO_SAMPLE_IMAGES,
+  resolveSelectedSampleId,
   useDemoAnnotatorState,
   useEmbeddedDemoPreset,
+  type DemoSampleImageId,
 } from "@lisca/web-demo";
 import { Tags } from "lucide-react";
 
@@ -37,16 +40,31 @@ function AnnotatorDemoView({ embedded }: { embedded: boolean }) {
       <AppShell.Header>
         <DemoNavbar
           allowOpenFile={!embedded}
+          sampleImages={embedded ? DEMO_SAMPLE_IMAGES : undefined}
+          selectedSampleId={embedded ? resolveSelectedSampleId(state.fileName) : null}
+          onSampleChange={
+            embedded
+              ? (sampleId) => void state.openSampleImage(sampleId as DemoSampleImageId)
+              : undefined
+          }
           endLeading={
-            <DemoNavbarActionButton
-              onClick={() => {
-                state.setLabelError(null);
-                state.setLabelDialogOpen(true);
-              }}
-            >
-              <Tags className="size-4" aria-hidden />
-              Labels
-            </DemoNavbarActionButton>
+            embedded ? (
+              <AnnotationModeToggle
+                className="w-[14rem]"
+                mode={state.mode}
+                onModeChange={state.setMode}
+              />
+            ) : (
+              <DemoNavbarActionButton
+                onClick={() => {
+                  state.setLabelError(null);
+                  state.setLabelDialogOpen(true);
+                }}
+              >
+                <Tags className="size-4" aria-hidden />
+                Labels
+              </DemoNavbarActionButton>
+            )
           }
           fileName={state.fileName}
           loading={state.frameLoading}
@@ -115,16 +133,18 @@ function AnnotatorDemoView({ embedded }: { embedded: boolean }) {
           </AppShell.MainColumn>
         )}
       </AppShell.Body>
-      <LabelCreationDialog
-        error={state.labelError}
-        labels={state.labels}
-        open={state.labelDialogOpen}
-        saveLabel="Apply labels"
-        subtitle="Labels are restored when you refresh this demo page."
-        title="Edit labels"
-        onOpenChange={state.setLabelDialogOpen}
-        onSave={state.saveLabels}
-      />
+      {!embedded ? (
+        <LabelCreationDialog
+          error={state.labelError}
+          labels={state.labels}
+          open={state.labelDialogOpen}
+          saveLabel="Apply labels"
+          subtitle="Labels are restored when you refresh this demo page."
+          title="Edit labels"
+          onOpenChange={state.setLabelDialogOpen}
+          onSave={state.saveLabels}
+        />
+      ) : null}
     </AppShell>
   );
 

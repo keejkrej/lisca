@@ -5,10 +5,7 @@ import {
   DockStrip,
   dockLayoutClasses,
   dockSectionWidths,
-  dockToolbarMinHeight,
-  Text,
 } from "@lisca/ui-native";
-import { View } from "react-native";
 
 import { useAnnotateDock } from "../state/annotate-page-selectors";
 import { AnnotatorSaveSection } from "./annotator-save-section";
@@ -20,22 +17,15 @@ export function AnnotatorDock() {
 
   return (
     <DockStrip>
-      <DockSection className={dockSectionWidths.tool} contentClassName={dockLayoutClasses.content} title="Tool">
-        {dock.mode === "segmentation" ? (
+      {dock.mode === "segmentation" ? (
+        <DockSection className={dockSectionWidths.tool} contentClassName={dockLayoutClasses.content} title="Tool">
           <AnnotationToolGrid
             canEditTools={canEditTools}
             shortcutsEnabled={dock.shortcutsEnabled}
             toolActions={toolActions}
           />
-        ) : (
-          <View
-            className={dockLayoutClasses.classificationPlaceholder}
-            style={{ minHeight: dockToolbarMinHeight(3) }}
-          >
-            <Text className="text-xs text-muted-foreground">Classification</Text>
-          </View>
-        )}
-      </DockSection>
+        </DockSection>
+      ) : null}
       <AnnotatorSaveSection />
     </DockStrip>
   );

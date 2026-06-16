@@ -5,10 +5,18 @@ export {
   createAlignerDemoPreset,
   createAnnotatorDemoPreset,
   alignGridForFrame,
+  annotatorCropFromSampleId,
+  DEFAULT_DEMO_SAMPLE_ID,
+  DEMO_SAMPLE_IMAGES,
+  fileNameFromSampleId,
   loadAlignerDemoPreset,
   loadAnnotatorDemoPreset,
+  resolveSelectedSampleId,
+  sampleIdFromFileName,
   type AlignerDemoPreset,
   type AnnotatorDemoPreset,
+  type DemoSampleImage,
+  type DemoSampleImageId,
 } from "./demo-presets";
 export {
   encodeMaskToBase64Png,
@@ -20,7 +28,6 @@ export { encodeGrayTiff, encodeGray16Tiff } from "./encode-gray-tiff";
 export { encodeRoiImage } from "./encode-roi-image";
 export {
   IBIDI_DEMO_SAMPLE_IMAGES,
-  IBIDI_DEMO_SAMPLE_IMAGES as DEMO_SAMPLE_IMAGES,
   IBIDI_MICROPATTERNING_IMAGE_BASE,
   loadImageFile,
   loadImageFromUrl,

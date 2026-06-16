@@ -9,8 +9,10 @@ import type { AnnotationValue } from "../annotation-value";
 import {
   buildAnnotationExportZip,
   downloadBlob,
+  loadAnnotatorDemoPreset,
   loadImageFile,
   stemName,
+  type DemoSampleImageId,
 } from "../browser";
 import { encodeMaskToPngBytes } from "../browser/encode-annotation-mask";
 import {
@@ -61,6 +63,7 @@ export type DemoAnnotatorState = {
   setLabelDialogOpen: (open: boolean) => void;
   setLabelError: (error: string | null) => void;
   openImage: (file: File) => Promise<void>;
+  openSampleImage: (sampleId: DemoSampleImageId) => Promise<void>;
   saveCurrent: () => Promise<void>;
   saveLabels: (labels: AnnotationLabel[]) => void;
 };
@@ -145,6 +148,26 @@ export function useDemoAnnotatorState(): DemoAnnotatorState {
         demoAnnotatorUiActions.applyLoadedImage(setState, file.name, nextFrame);
       } catch (cause) {
         demoAnnotatorUiActions.clearLoadedImage(setState);
+        demoAnnotatorUiActions.setError(
+          setState,
+          cause instanceof Error ? cause.message : String(cause),
+        );
+        demoAnnotatorUiActions.setStatus(setState, null);
+      } finally {
+        demoAnnotatorUiActions.setFrameLoading(setState, false);
+      }
+    },
+    openSampleImage: async (sampleId) => {
+      if (annotation.dirty && !window.confirm("Discard unsaved annotation changes?")) {
+        return;
+      }
+      demoAnnotatorUiActions.setFrameLoading(setState, true);
+      demoAnnotatorUiActions.setError(setState, null);
+      demoAnnotatorUiActions.setStatus(setState, "Loading sample image");
+      try {
+        const sample = await loadAnnotatorDemoPreset(sampleId);
+        demoAnnotatorUiActions.applyDemoPreset(setState, sample);
+      } catch (cause) {
         demoAnnotatorUiActions.setError(
           setState,
           cause instanceof Error ? cause.message : String(cause),

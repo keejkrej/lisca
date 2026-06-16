@@ -21,8 +21,8 @@ describe("label creation form", () => {
   it("validates unique ids and required fields", () => {
     expect(
       validateLabelDrafts([
-        { id: "a", name: "A", color: "#fff" },
-        { id: "a", name: "B", color: "#000" },
+        { draftKey: "a", id: "a", name: "A", color: "#fff" },
+        { draftKey: "b", id: "a", name: "B", color: "#000" },
       ]),
     ).toBe("Label ids must be unique.");
   });

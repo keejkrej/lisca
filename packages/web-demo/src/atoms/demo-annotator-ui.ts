@@ -63,7 +63,7 @@ export function createInitialDemoAnnotatorUiState(): DemoAnnotatorUiState {
     contrast: null,
     labels: DEFAULT_ANNOTATOR_DEMO_LABELS,
     activeLabelId: DEFAULT_ANNOTATOR_DEMO_LABELS[0]?.id ?? null,
-    mode: "segmentation",
+    mode: "classification",
     tool: "brush",
     brushSize: 8,
     overlayOpacity: 0.45,

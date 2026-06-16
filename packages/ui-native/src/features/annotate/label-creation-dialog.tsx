@@ -74,7 +74,7 @@ export function LabelCreationDialog({
         <DialogBody className="max-h-[420px]">
           <ScrollView contentContainerClassName="gap-3">
             {form.drafts.map((draft, index) => (
-              <View key={draft.id} className="flex-row flex-wrap gap-2">
+              <View key={draft.draftKey} className="flex-row flex-wrap gap-2">
                 <Field className="min-w-[120px] flex-1">
                   <FieldLabel>Name</FieldLabel>
                   <Input

@@ -2,15 +2,17 @@ import type { AnnotationLabel } from "@lisca/contracts";
 import { useEffect, useState } from "react";
 
 export type LabelDraft = {
+  /** Stable React list key — does not change when id/name are edited. */
+  draftKey: string;
   id: string;
   name: string;
   color: string;
 };
 
 const defaultLabelDrafts: LabelDraft[] = [
-  { id: "class-1", name: "Class 1", color: "#22c55e" },
-  { id: "class-2", name: "Class 2", color: "#3b82f6" },
-  { id: "class-3", name: "Class 3", color: "#f59e0b" },
+  { draftKey: "class-1", id: "class-1", name: "Class 1", color: "#22c55e" },
+  { draftKey: "class-2", id: "class-2", name: "Class 2", color: "#3b82f6" },
+  { draftKey: "class-3", id: "class-3", name: "Class 3", color: "#f59e0b" },
 ];
 
 export function normalizeLabelId(value: string): string {
@@ -21,8 +23,12 @@ export function normalizeLabelId(value: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+function labelDraftFrom(label: AnnotationLabel): LabelDraft {
+  return { draftKey: label.id, ...label };
+}
+
 export function labelDraftsFrom(labels: AnnotationLabel[]): LabelDraft[] {
-  return labels.length > 0 ? labels.map((label) => ({ ...label })) : defaultLabelDrafts;
+  return labels.length > 0 ? labels.map(labelDraftFrom) : defaultLabelDrafts.map((draft) => ({ ...draft }));
 }
 
 export function validateLabelDrafts(drafts: LabelDraft[]): string | null {
@@ -55,7 +61,7 @@ export type LabelCreationFormState = {
   drafts: LabelDraft[];
   localError: string | null;
   activeError: string | null;
-  updateDraft: (index: number, patch: Partial<LabelDraft>) => void;
+  updateDraft: (index: number, patch: Partial<Omit<LabelDraft, "draftKey">>) => void;
   addDraft: () => void;
   removeDraft: (index: number) => void;
   submit: () => AnnotationLabel[] | null;
@@ -77,7 +83,7 @@ export function useLabelCreationForm(args: {
     }
   }, [args.labels, args.open]);
 
-  const updateDraft = (index: number, patch: Partial<LabelDraft>) => {
+  const updateDraft = (index: number, patch: Partial<Omit<LabelDraft, "draftKey">>) => {
     setDrafts((current) =>
       current.map((draft, draftIndex) => (draftIndex === index ? { ...draft, ...patch } : draft)),
     );
@@ -87,6 +93,7 @@ export function useLabelCreationForm(args: {
     setDrafts((current) => [
       ...current,
       {
+        draftKey: crypto.randomUUID(),
         id: `class-${current.length + 1}`,
         name: `Class ${current.length + 1}`,
         color: "#a855f7",

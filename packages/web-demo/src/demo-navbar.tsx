@@ -1,9 +1,14 @@
-import { Button } from "@lisca/ui/components";
+import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@lisca/ui/components";
 import { ShellThemeToggle } from "@lisca/ui/shell";
 import { ImageIcon } from "lucide-react";
 import { useRef, type ChangeEvent, type ReactNode } from "react";
 
 const imageAccept = ".png,.jpg,.jpeg,.tif,.tiff,image/png,image/jpeg,image/tiff";
+
+export type DemoSampleImageOption = {
+  id: string;
+  fileName: string;
+};
 
 export type DemoNavbarProps = {
   fileName: string | null;
@@ -15,11 +20,17 @@ export type DemoNavbarProps = {
   showThemeToggle?: boolean;
   /** When false, hides the file picker — embedded previews use a fixed sample frame. */
   allowOpenFile?: boolean;
+  /** Sample images for embedded previews; shows a dropdown instead of static filename text. */
+  sampleImages?: readonly DemoSampleImageOption[];
+  selectedSampleId?: string | null;
+  onSampleChange?: (sampleId: string) => void;
   onOpenFile: (file: File) => void;
 };
 
 export function DemoNavbar(props: DemoNavbarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const sampleImages = props.sampleImages ?? [];
+  const selectedSampleId = props.selectedSampleId ?? sampleImages[0]?.id ?? null;
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -29,7 +40,7 @@ export function DemoNavbar(props: DemoNavbarProps) {
 
   return (
     <header className="h-full px-6">
-      <div className="grid h-full grid-cols-[1fr_auto_1fr] items-center gap-4">
+      <div className="grid h-full grid-cols-[1fr_auto] items-center gap-4">
         <div className="flex min-w-0 items-center justify-start gap-2">
           {props.allowOpenFile !== false ? (
             <>
@@ -55,6 +66,39 @@ export function DemoNavbar(props: DemoNavbarProps) {
                 Image
               </Button>
             </>
+          ) : props.onSampleChange && sampleImages.length > 0 ? (
+            <div className="w-fit max-w-full shrink-0">
+              <Select
+                disabled={props.loading}
+                items={sampleImages.map((sample) => ({
+                  value: sample.id,
+                  label: sample.fileName,
+                }))}
+                value={selectedSampleId ?? undefined}
+                onValueChange={(value) => {
+                  if (value != null) props.onSampleChange?.(value);
+                }}
+              >
+                <SelectTrigger
+                  aria-label="Sample image"
+                  className="w-auto max-w-[12rem] shrink-0 font-mono text-xs text-muted-foreground sm:max-w-[16rem] sm:text-sm"
+                  size="sm"
+                >
+                  <SelectValue placeholder="Sample image" />
+                </SelectTrigger>
+                <SelectContent align="start">
+                  {sampleImages.map((sample) => (
+                    <SelectItem
+                      key={sample.id}
+                      className="font-mono text-xs sm:text-sm"
+                      value={sample.id}
+                    >
+                      {sample.fileName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           ) : (
             <span
               className="max-w-[12rem] truncate px-1 font-mono text-xs text-muted-foreground sm:max-w-[16rem] sm:text-sm"
@@ -65,8 +109,6 @@ export function DemoNavbar(props: DemoNavbarProps) {
           )}
           {props.startTrailing}
         </div>
-
-        <div />
 
         <div className="flex min-w-0 items-center justify-end justify-self-end gap-1 sm:gap-2">
           {props.endLeading}

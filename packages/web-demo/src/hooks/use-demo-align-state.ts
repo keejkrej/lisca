@@ -16,8 +16,10 @@ import { useAtom } from "@effect-atom/atom-react";
 import {
   buildRoiExportZip,
   downloadBlob,
+  loadAlignerDemoPreset,
   loadImageFile,
   stemName,
+  type DemoSampleImageId,
   type SourceImageFormat,
 } from "../browser";
 import { demoAlignUiActions, demoAlignUiAtom } from "../atoms/demo-align-ui";
@@ -58,6 +60,7 @@ export type DemoAlignState = {
     excluded: number;
   };
   openImage: (file: File) => Promise<void>;
+  openSampleImage: (sampleId: DemoSampleImageId) => Promise<void>;
   saveCurrent: () => Promise<boolean>;
 };
 
@@ -201,6 +204,23 @@ export function useDemoAlignState(): DemoAlignState {
         demoAlignUiActions.applyLoadedImage(setState, file.name, format, nextFrame);
       } catch (cause) {
         demoAlignUiActions.clearLoadedImage(setState);
+        demoAlignUiActions.setError(
+          setState,
+          cause instanceof Error ? cause.message : String(cause),
+        );
+        demoAlignUiActions.setStatus(setState, null);
+      } finally {
+        demoAlignUiActions.setFrameLoading(setState, false);
+      }
+    },
+    openSampleImage: async (sampleId) => {
+      demoAlignUiActions.setFrameLoading(setState, true);
+      demoAlignUiActions.setError(setState, null);
+      demoAlignUiActions.setStatus(setState, "Loading sample image");
+      try {
+        const sample = await loadAlignerDemoPreset(sampleId);
+        demoAlignUiActions.applyDemoPreset(setState, sample);
+      } catch (cause) {
         demoAlignUiActions.setError(
           setState,
           cause instanceof Error ? cause.message : String(cause),

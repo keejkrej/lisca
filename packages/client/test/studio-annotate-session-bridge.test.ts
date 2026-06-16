@@ -11,7 +11,7 @@ function studioState(overrides: Partial<AnnotatorUiState> = {}): AnnotatorUiStat
     workspacePath: "/tmp/ws",
     selection: { pos: 1, roi: 2, channel: 0, timeIndex: 0, zIndex: 0 },
     activeLabelId: "alive",
-    mode: "segmentation",
+    mode: "classification",
     tool: "brush",
     brushSize: 8,
     overlayOpacity: 0.5,

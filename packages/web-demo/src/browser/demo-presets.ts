@@ -3,6 +3,13 @@ import type { FrameResult } from "@lisca/utils";
 
 import type { AnnotationValue } from "../annotation-value";
 import { emptyAnnotationValue } from "../annotation-value";
+import { cropDemoFrame } from "./crop-demo-frame";
+import {
+  annotatorCropFromSampleId,
+  DEFAULT_DEMO_SAMPLE_ID,
+  fileNameFromSampleId,
+  type DemoSampleImageId,
+} from "./demo-sample-images";
 import {
   IBIDI_DEMO_SAMPLE_IMAGES,
   loadImageFromUrl,
@@ -21,6 +28,17 @@ export type AnnotatorDemoPreset = {
   annotation: AnnotationValue;
 };
 
+export {
+  annotatorCropFromSampleId,
+  DEFAULT_DEMO_SAMPLE_ID,
+  DEMO_SAMPLE_IMAGES,
+  fileNameFromSampleId,
+  sampleIdFromFileName,
+  resolveSelectedSampleId,
+  type DemoSampleImage,
+  type DemoSampleImageId,
+} from "./demo-sample-images";
+export type { DemoFrameCrop } from "./crop-demo-frame";
 export { IBIDI_DEMO_SAMPLE_IMAGES, IBIDI_MICROPATTERNING_IMAGE_BASE } from "./load-image-file";
 
 /** Scale a starter grid from frame size — users can fine-tune in the demo. */
@@ -42,26 +60,27 @@ export function alignGridForFrame(frame: FrameResult): AlignGridState {
   };
 }
 
-function fileNameFromUrl(url: string): string {
-  return url.split("/").pop() ?? "sample.jpg";
-}
-
-export async function loadAlignerDemoPreset(): Promise<AlignerDemoPreset> {
-  const imageUrl = IBIDI_DEMO_SAMPLE_IMAGES.multiCell;
+export async function loadAlignerDemoPreset(
+  sampleId: DemoSampleImageId = DEFAULT_DEMO_SAMPLE_ID,
+): Promise<AlignerDemoPreset> {
+  const imageUrl = IBIDI_DEMO_SAMPLE_IMAGES[sampleId];
   const { frame } = await loadImageFromUrl(imageUrl);
   return {
-    fileName: fileNameFromUrl(imageUrl),
+    fileName: fileNameFromSampleId(sampleId),
     frame,
     grid: alignGridForFrame(frame),
     excludedCells: [],
   };
 }
 
-export async function loadAnnotatorDemoPreset(): Promise<AnnotatorDemoPreset> {
-  const imageUrl = IBIDI_DEMO_SAMPLE_IMAGES.rccComposite;
-  const { frame } = await loadImageFromUrl(imageUrl);
+export async function loadAnnotatorDemoPreset(
+  sampleId: DemoSampleImageId = DEFAULT_DEMO_SAMPLE_ID,
+): Promise<AnnotatorDemoPreset> {
+  const imageUrl = IBIDI_DEMO_SAMPLE_IMAGES[sampleId];
+  const { frame: fullFrame } = await loadImageFromUrl(imageUrl);
+  const frame = cropDemoFrame(fullFrame, annotatorCropFromSampleId(sampleId));
   return {
-    fileName: fileNameFromUrl(imageUrl),
+    fileName: fileNameFromSampleId(sampleId),
     frame,
     annotation: emptyAnnotationValue(frame),
   };

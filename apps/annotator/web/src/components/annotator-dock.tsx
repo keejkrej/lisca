@@ -14,19 +14,15 @@ export function AnnotatorDock() {
 
   return (
     <DockStrip>
-      <DockSection title="Tool">
-        {dock.mode === "segmentation" ? (
+      {dock.mode === "segmentation" ? (
+        <DockSection title="Tool">
           <AnnotationToolGrid
             canEditTools={canEditTools}
             shortcutsEnabled={dock.shortcutsEnabled}
             toolActions={toolActions}
           />
-        ) : (
-          <div className="flex min-h-[4.5rem] w-full items-center justify-center text-muted-foreground text-xs">
-            Classification
-          </div>
-        )}
-      </DockSection>
+        </DockSection>
+      ) : null}
       <AnnotatorSaveSection />
     </DockStrip>
   );

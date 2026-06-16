@@ -23,19 +23,15 @@ export function StudioAnnotateDock() {
 
   return (
     <DockStrip>
-      <DockSection title="Tool">
-        {dock.mode === "segmentation" ? (
+      {dock.mode === "segmentation" ? (
+        <DockSection title="Tool">
           <AnnotationToolGrid
             canEditTools={canEditTools}
             shortcutsEnabled={dock.shortcutsEnabled}
             toolActions={toolActions}
           />
-        ) : (
-          <div className="flex min-h-[4.5rem] items-center justify-center text-muted-foreground text-xs">
-            Classification
-          </div>
-        )}
-      </DockSection>
+        </DockSection>
+      ) : null}
       <DockSection title="Save">
         <div className="flex w-full flex-col gap-2">
           {paths.length > 1 ? (

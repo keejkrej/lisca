@@ -8,7 +8,16 @@ export {
   ALIGNER_DEMO_SESSION_KEY,
   ANNOTATOR_DEMO_SESSION_KEY,
 } from "./demo-session-keys";
-export { DemoNavbar, DemoNavbarActionButton, type DemoNavbarProps } from "./demo-navbar";
+export { DemoNavbar, DemoNavbarActionButton, type DemoNavbarProps, type DemoSampleImageOption } from "./demo-navbar";
+export {
+  annotatorCropFromSampleId,
+  DEFAULT_DEMO_SAMPLE_ID,
+  DEMO_SAMPLE_IMAGES,
+  resolveSelectedSampleId,
+  sampleIdFromFileName,
+  type DemoSampleImageId,
+} from "./browser/demo-presets";
+export type { DemoFrameCrop } from "./browser/crop-demo-frame";
 export { useDebouncedEffect } from "./use-debounced-effect";
 export type { AnnotationValue } from "./annotation-value";
 export {
