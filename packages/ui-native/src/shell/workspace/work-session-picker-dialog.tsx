@@ -1,8 +1,10 @@
 import {
   formatWorkSessionWhen,
   useWorkSessionPickerState,
+  workSessionPickerDescription,
   type WorkSessionPickerItem,
 } from "@lisca/ui-headless/work-session-picker";
+import type { LiscaAppId } from "@lisca/utils";
 import { Pressable, ScrollView, View } from "react-native";
 
 import { Button } from "../../../components/ui/button";
@@ -15,6 +17,7 @@ import {
 import { DialogSurface, ModalScrim } from "../modal/modal";
 
 export type WorkSessionPickerDialogProps = {
+  appId: LiscaAppId;
   open: boolean;
   sessions: WorkSessionPickerItem[];
   onRestore: (sessionId: string) => void;
@@ -22,6 +25,7 @@ export type WorkSessionPickerDialogProps = {
 };
 
 export function WorkSessionPickerDialog({
+  appId,
   open,
   sessions,
   onRestore,
@@ -36,9 +40,7 @@ export function WorkSessionPickerDialog({
         <DialogStack className="gap-4 p-5">
           <View className="gap-1">
             <DialogTitleText>Resume a session</DialogTitleText>
-            <DialogDescriptionText>
-              Pick a recent workspace for this server, or start fresh.
-            </DialogDescriptionText>
+            <DialogDescriptionText>{workSessionPickerDescription(appId)}</DialogDescriptionText>
           </View>
           <ScrollView className="max-h-72" keyboardShouldPersistTaps="handled">
             <View className="gap-2">
@@ -51,7 +53,7 @@ export function WorkSessionPickerDialog({
                 >
                   <Text className="font-medium text-foreground text-sm">{item.label}</Text>
                   <Text className="text-muted-foreground text-xs" numberOfLines={1}>
-                    {item.workspacePath}
+                    {item.path}
                   </Text>
                   <Text className="text-muted-foreground text-xs">
                     {formatWorkSessionWhen(item.lastOpenedAt)}

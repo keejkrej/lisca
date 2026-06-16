@@ -1,10 +1,11 @@
 import type { StateUpdater } from "@lisca/client/atoms/align-ui";
 import type { AnalysisProgress } from "@lisca/contracts";
 import { useAtom } from "@effect-atom/atom-react";
+import { runClientEffect } from "@lisca/client/runtime";
 import { resumeStudioPendingRuns } from "@lisca/client/session/resume-pending-runs";
-import { touchWorkSession } from "@lisca/client/session/work-session";
-import { WorkSessionBootstrap, type WorkSession } from "@lisca/client/session/work-session-gate";
-import { toWorkSessionPickerItems } from "@lisca/ui-headless/work-session-picker";
+import { restoreStudioWorkSession } from "@lisca/client/session/studio-work-session-restore";
+import { WorkSessionAppGate } from "@lisca/client/session/work-session-app-gate";
+import type { WorkSession } from "@lisca/client/session/work-session-gate";
 import { useShellWorkspace, WorkSessionPickerDialog } from "@lisca/ui/shell";
 import type { ReactNode } from "react";
 
@@ -15,6 +16,7 @@ import {
   studioAnnotateUiAtom,
   type StudioAnnotateStoreState,
 } from "../state/studio-annotate-store";
+import { parseStudioAssayJson, studioWizardActions, studioWizardAtom } from "../state/studio-store";
 
 type StudioWorkSessionGateProps = {
   children: ReactNode;
@@ -24,55 +26,50 @@ export function StudioWorkSessionGate({ children }: StudioWorkSessionGateProps) 
   const workspace = useShellWorkspace();
   const [, setAlignUi] = useAtom(studioAlignUiAtom);
   const [, setAnnotateUi] = useAtom(studioAnnotateUiAtom);
+  const [, setWizard] = useAtom(studioWizardAtom);
 
   return (
-    <WorkSessionBootstrap
+    <WorkSessionAppGate
       appId="studio"
-      onRestore={async (session) => {
-        await restoreStudioSession(session, setAlignUi, setAnnotateUi, workspace.setWorkspacePath);
-      }}
+      PickerDialog={WorkSessionPickerDialog}
+      onRestore={(session) =>
+        restoreStudioSession(session, setWizard, setAlignUi, setAnnotateUi, workspace.setWorkspacePath)
+      }
     >
-      {(gate) => (
-        <>
-          {gate.ready ? children : null}
-          <WorkSessionPickerDialog
-            open={gate.open}
-            sessions={toWorkSessionPickerItems(gate.sessions)}
-            onRestore={(sessionId) => {
-              const session = gate.sessions.find((entry) => entry.id === sessionId);
-              if (session) gate.restoreSession(session);
-            }}
-            onStartNew={gate.startNewSession}
-          />
-        </>
-      )}
-    </WorkSessionBootstrap>
+      {children}
+    </WorkSessionAppGate>
   );
 }
 
 async function restoreStudioSession(
   session: WorkSession,
+  setWizard: (update: StateUpdater<unknown>) => void,
   setAlignUi: (update: StateUpdater<import("@lisca/client/atoms/align-ui").AlignUiState>) => void,
   setAnnotateUi: (update: StateUpdater<StudioAnnotateStoreState>) => void,
   setShellWorkspacePath: (path: string | null) => void,
 ) {
-  setShellWorkspacePath(session.workspacePath);
-  studioAlignUiActions.setWorkspacePath(setAlignUi, session.workspacePath);
-  studioAnnotateUiActions.setWorkspacePath(setAnnotateUi, session.workspacePath);
-  if (session.source) {
-    studioAlignUiActions.setSource(setAlignUi, session.source);
-  }
-  touchWorkSession("studio", {
-    server: session.server,
-    workspacePath: session.workspacePath,
-    source: session.source ?? null,
-    snapshot: session.snapshot,
-  });
-  await resumeStudioPendingRuns({
-    client: studioClient,
-    workspacePath: session.workspacePath,
-    onCropProgress: (progress) => studioAlignUiActions.setCropProgress(setAlignUi, progress),
-    onAnalysisProgress: (progress: AnalysisProgress) =>
-      studioAnnotateUiActions.setAnalysisProgress(setAnnotateUi, progress),
+  const assayJsonPath = session.assayJsonPath?.trim();
+  if (!assayJsonPath) return;
+
+  await restoreStudioWorkSession({
+    assayJsonPath,
+    readAssayJson: async (path) => {
+      const contents = await runClientEffect(studioClient.readTextFile(path));
+      return parseStudioAssayJson(contents);
+    },
+    loadAssayJson: (assayJson) => studioWizardActions.loadAssayJson(setWizard, assayJson),
+    setShellWorkspacePath,
+    setAlignWorkspacePath: (path) => studioAlignUiActions.setWorkspacePath(setAlignUi, path),
+    setAnnotateWorkspacePath: (path) => studioAnnotateUiActions.setWorkspacePath(setAnnotateUi, path),
+    setAlignSource: (source) => studioAlignUiActions.setSource(setAlignUi, source),
+    resumePendingRuns: async (workspacePath) => {
+      await resumeStudioPendingRuns({
+        client: studioClient,
+        workspacePath,
+        onCropProgress: (progress) => studioAlignUiActions.setCropProgress(setAlignUi, progress),
+        onAnalysisProgress: (progress: AnalysisProgress) =>
+          studioAnnotateUiActions.setAnalysisProgress(setAnnotateUi, progress),
+      });
+    },
   });
 }

@@ -1,4 +1,5 @@
 import { runClientEffect } from "@lisca/client/runtime";
+import { touchStudioWorkSessionFromAssayPath } from "@lisca/client/session/work-session";
 import { HostFilePickerDialog } from "@lisca/ui/features";
 import { AppShell } from "@lisca/ui/shell";
 import { createFileRoute } from "@tanstack/react-router";
@@ -8,7 +9,6 @@ import { studioClient, studioHostOperations } from "../api/studio-port";
 import { ChooseAssay } from "../components/choose-assay";
 import { StudioAssayDock } from "../components/studio-assay-dock";
 import { StudioLeft } from "../components/studio-left";
-import { useStudioProfile } from "../components/studio-profile-provider";
 import { useStudioMemoryRecent } from "../hooks/use-studio-memory-recent";
 import { useStudioNavigate } from "../navigation/use-studio-navigate";
 import { parseStudioAssayJson, useStudioStore } from "../state/studio-store";
@@ -20,7 +20,6 @@ export const Route = createFileRoute("/assay")({
 
 function AssayPage() {
   const { navigateTo } = useStudioNavigate();
-  const profile = useStudioProfile();
   const loadAssayJson = useStudioStore((state) => state.loadAssayJson);
   const [openingAssay, setOpeningAssay] = useState(false);
   const [assayPickerOpen, setAssayPickerOpen] = useState(false);
@@ -35,8 +34,8 @@ function AssayPage() {
       const contents = await runClientEffect(studioClient.readTextFile(path));
       const assayJson = parseStudioAssayJson(contents);
       loadAssayJson(assayJson);
+      touchStudioWorkSessionFromAssayPath(path, assayJson.assayLabel);
       recordStudioAssayMemory(
-        profile.session,
         path,
         assayJson.assayLabel,
         assayJson.info1.saveTo.trim() || undefined,

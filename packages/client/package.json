@@ -115,6 +115,22 @@
       "types": "./src/session/work-session-gate.ts",
       "import": "./src/session/work-session-gate.ts"
     },
+    "./session/work-session-app-gate": {
+      "types": "./src/session/work-session-app-gate.tsx",
+      "import": "./src/session/work-session-app-gate.tsx"
+    },
+    "./session/aligner-work-session-restore": {
+      "types": "./src/session/aligner-work-session-restore.ts",
+      "import": "./src/session/aligner-work-session-restore.ts"
+    },
+    "./session/annotator-work-session-restore": {
+      "types": "./src/session/annotator-work-session-restore.ts",
+      "import": "./src/session/annotator-work-session-restore.ts"
+    },
+    "./session/studio-work-session-restore": {
+      "types": "./src/session/studio-work-session-restore.ts",
+      "import": "./src/session/studio-work-session-restore.ts"
+    },
     "./session/resume-pending-runs": {
       "types": "./src/session/resume-pending-runs.ts",
       "import": "./src/session/resume-pending-runs.ts"
@@ -155,17 +171,9 @@
       "types": "./src/studio/wizard-state.ts",
       "import": "./src/studio/wizard-state.ts"
     },
-    "./profile/session": {
-      "types": "./src/profile/session.ts",
-      "import": "./src/profile/session.ts"
-    },
-    "./profile/port": {
-      "types": "./src/profile/port.ts",
-      "import": "./src/profile/port.ts"
-    },
-    "./profile/record-memory": {
-      "types": "./src/profile/record-memory.ts",
-      "import": "./src/profile/record-memory.ts"
+    "./studio/wizard-memory": {
+      "types": "./src/studio/wizard-memory.ts",
+      "import": "./src/studio/wizard-memory.ts"
     }
   },
   "scripts": {

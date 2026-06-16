@@ -1,9 +1,7 @@
-import type { AlignUiState, StateUpdater } from "@lisca/client/atoms/align-ui";
 import { useAtom } from "@effect-atom/atom-react";
+import { restoreAlignerWorkSession } from "@lisca/client/session/aligner-work-session-restore";
 import { resumeCropPendingRun } from "@lisca/client/session/resume-pending-runs";
-import { touchWorkSession } from "@lisca/client/session/work-session";
-import { WorkSessionBootstrap, type WorkSession } from "@lisca/client/session/work-session-gate";
-import { toWorkSessionPickerItems } from "@lisca/ui-headless/work-session-picker";
+import { WorkSessionAppGate } from "@lisca/client/session/work-session-app-gate";
 import { useShellWorkspace, WorkSessionPickerDialog } from "@lisca/ui-native";
 import type { ReactNode } from "react";
 
@@ -19,50 +17,27 @@ export function AlignerWorkSessionGate({ children }: AlignerWorkSessionGateProps
   const [, setUi] = useAtom(alignerUiAtom);
 
   return (
-    <WorkSessionBootstrap
+    <WorkSessionAppGate
       appId="aligner"
-      onRestore={async (session) => {
-        await restoreAlignerSession(session, setUi, workspace.setWorkspacePath);
-      }}
+      PickerDialog={WorkSessionPickerDialog}
+      onRestore={(session) =>
+        restoreAlignerWorkSession({
+          session,
+          setShellWorkspacePath: workspace.setWorkspacePath,
+          setWorkspacePath: alignerUiActions.setWorkspacePath,
+          setSource: alignerUiActions.setSource,
+          setUi,
+          resumePendingRuns: async (workspacePath) => {
+            await resumeCropPendingRun({
+              client: alignerClient,
+              workspacePath,
+              onProgress: (progress) => alignerUiActions.setCropProgress(setUi, progress),
+            });
+          },
+        })
+      }
     >
-      {(gate) => (
-        <>
-          {gate.ready ? children : null}
-          <WorkSessionPickerDialog
-            open={gate.open}
-            sessions={toWorkSessionPickerItems(gate.sessions)}
-            onRestore={(sessionId) => {
-              const session = gate.sessions.find((entry) => entry.id === sessionId);
-              if (session) gate.restoreSession(session);
-            }}
-            onStartNew={gate.startNewSession}
-          />
-        </>
-      )}
-    </WorkSessionBootstrap>
+      {children}
+    </WorkSessionAppGate>
   );
-}
-
-async function restoreAlignerSession(
-  session: WorkSession,
-  setUi: (update: StateUpdater<AlignUiState>) => void,
-  setShellWorkspacePath: (path: string | null) => void,
-) {
-  const source = session.source ?? null;
-  setShellWorkspacePath(session.workspacePath);
-  alignerUiActions.setWorkspacePath(setUi, session.workspacePath);
-  if (source) {
-    alignerUiActions.setSource(setUi, source);
-  }
-  touchWorkSession("aligner", {
-    server: session.server,
-    workspacePath: session.workspacePath,
-    source,
-    snapshot: session.snapshot,
-  });
-  await resumeCropPendingRun({
-    client: alignerClient,
-    workspacePath: session.workspacePath,
-    onProgress: (progress) => alignerUiActions.setCropProgress(setUi, progress),
-  });
 }

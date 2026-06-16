@@ -1,8 +1,6 @@
-import type { AnnotatorUiState, StateUpdater } from "@lisca/client/atoms/annotator-ui";
 import { useAtom } from "@effect-atom/atom-react";
-import { touchWorkSession } from "@lisca/client/session/work-session";
-import { WorkSessionBootstrap, type WorkSession } from "@lisca/client/session/work-session-gate";
-import { toWorkSessionPickerItems } from "@lisca/ui-headless/work-session-picker";
+import { restoreAnnotatorWorkSession } from "@lisca/client/session/annotator-work-session-restore";
+import { WorkSessionAppGate } from "@lisca/client/session/work-session-app-gate";
 import { useShellWorkspace, WorkSessionPickerDialog } from "@lisca/ui/shell";
 import type { ReactNode } from "react";
 
@@ -17,40 +15,19 @@ export function AnnotatorWorkSessionGate({ children }: AnnotatorWorkSessionGateP
   const [, setUi] = useAtom(annotatorUiAtom);
 
   return (
-    <WorkSessionBootstrap
+    <WorkSessionAppGate
       appId="annotator"
-      onRestore={async (session) => {
-        restoreAnnotatorSession(session, setUi, workspace.setWorkspacePath);
-      }}
+      PickerDialog={WorkSessionPickerDialog}
+      onRestore={(session) =>
+        restoreAnnotatorWorkSession({
+          session,
+          setShellWorkspacePath: workspace.setWorkspacePath,
+          setWorkspacePath: annotatorUiActions.setWorkspacePath,
+          setUi,
+        })
+      }
     >
-      {(gate) => (
-        <>
-          {gate.ready ? children : null}
-          <WorkSessionPickerDialog
-            open={gate.open}
-            sessions={toWorkSessionPickerItems(gate.sessions)}
-            onRestore={(sessionId) => {
-              const session = gate.sessions.find((entry) => entry.id === sessionId);
-              if (session) gate.restoreSession(session);
-            }}
-            onStartNew={gate.startNewSession}
-          />
-        </>
-      )}
-    </WorkSessionBootstrap>
+      {children}
+    </WorkSessionAppGate>
   );
-}
-
-function restoreAnnotatorSession(
-  session: WorkSession,
-  setUi: (update: StateUpdater<AnnotatorUiState>) => void,
-  setShellWorkspacePath: (path: string | null) => void,
-) {
-  setShellWorkspacePath(session.workspacePath);
-  annotatorUiActions.setWorkspacePath(setUi, session.workspacePath);
-  touchWorkSession("annotator", {
-    server: session.server,
-    workspacePath: session.workspacePath,
-    snapshot: session.snapshot,
-  });
 }

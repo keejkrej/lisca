@@ -4,10 +4,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   currentServerKey,
+  isValidWorkSession,
   readWorkSessions,
   removeWorkSession,
   resolveServerKey,
   sessionsForServer,
+  studioAssayJsonPathForSaveTo,
+  touchAlignerWorkSessionFromState,
+  touchStudioWorkSessionFromAssayPath,
   touchWorkSession,
   writeWorkSessions,
 } from "../src/session/work-session";
@@ -42,29 +46,56 @@ describe("work-session registry", () => {
     expect(resolveServerKey("192.168.1.10:8765", 8765)).toBe("http://192.168.1.10:8765");
   });
 
-  it("touchWorkSession upserts by server, workspace, and source", () => {
+  it("aligner requires workspace and source", () => {
+    expect(
+      touchWorkSession("aligner", {
+        server: "local",
+        workspacePath: "/data/ws-a",
+      }),
+    ).toBeNull();
+    expect(readWorkSessions("aligner")).toHaveLength(0);
+
     touchWorkSession("aligner", {
       server: "local",
       workspacePath: "/data/ws-a",
       source: { kind: "folder", path: "/data/src" },
     });
-    touchWorkSession("aligner", {
-      server: "local",
-      workspacePath: "/data/ws-b",
-    });
-    const sessions = readWorkSessions("aligner");
-    expect(sessions).toHaveLength(2);
-    expect(sessions[0]?.workspacePath).toBe("/data/ws-b");
-    expect(sessions[1]?.workspacePath).toBe("/data/ws-a");
+    expect(readWorkSessions("aligner")).toHaveLength(1);
   });
 
-  it("touchWorkSession moves an existing session to the front", () => {
+  it("annotator requires only workspace", () => {
     touchWorkSession("annotator", { server: "local", workspacePath: "/data/ws-a" });
     touchWorkSession("annotator", { server: "local", workspacePath: "/data/ws-b" });
-    touchWorkSession("annotator", { server: "local", workspacePath: "/data/ws-a" });
     const sessions = readWorkSessions("annotator");
     expect(sessions).toHaveLength(2);
-    expect(sessions[0]?.workspacePath).toBe("/data/ws-a");
+    expect(sessions[0]?.workspacePath).toBe("/data/ws-b");
+  });
+
+  it("studio requires assay.json path", () => {
+    expect(
+      touchWorkSession("studio", {
+        server: "local",
+        workspacePath: "/data/ws-a",
+      }),
+    ).toBeNull();
+
+    touchStudioWorkSessionFromAssayPath("/data/run/assay.json", "Gene expr");
+    const sessions = readWorkSessions("studio");
+    expect(sessions).toHaveLength(1);
+    expect(sessions[0]?.assayJsonPath).toBe("/data/run/assay.json");
+    expect(sessions[0]?.label).toBe("Gene expr");
+  });
+
+  it("touchAlignerWorkSessionFromState ignores incomplete state", () => {
+    touchAlignerWorkSessionFromState({
+      workspacePath: "/data/ws-a",
+      source: null,
+    });
+    expect(readWorkSessions("aligner")).toHaveLength(0);
+  });
+
+  it("studioAssayJsonPathForSaveTo appends assay.json", () => {
+    expect(studioAssayJsonPathForSaveTo("/data/run/")).toBe("/data/run/assay.json");
   });
 
   it("sessionsForServer filters by normalized server key", () => {
@@ -72,13 +103,13 @@ describe("work-session registry", () => {
       {
         id: "a",
         server: "http://remote:8767",
-        workspacePath: "/remote/ws",
+        assayJsonPath: "/remote/run/assay.json",
         lastOpenedAt: "2026-06-15T10:00:00.000Z",
       },
       {
         id: "b",
         server: "local",
-        workspacePath: "/local/ws",
+        assayJsonPath: "/local/run/assay.json",
         lastOpenedAt: "2026-06-15T09:00:00.000Z",
       },
     ]);
@@ -87,15 +118,16 @@ describe("work-session registry", () => {
   });
 
   it("removeWorkSession deletes by id", () => {
-    const session = touchWorkSession("aligner", {
+    const session = touchWorkSession("annotator", {
       server: "local",
       workspacePath: "/data/ws-a",
     });
-    removeWorkSession("aligner", session.id);
-    expect(readWorkSessions("aligner")).toEqual([]);
+    expect(session).not.toBeNull();
+    removeWorkSession("annotator", session!.id);
+    expect(readWorkSessions("annotator")).toEqual([]);
   });
 
-  it("migrates legacy aligner session storage into local history", () => {
+  it("migrates legacy aligner session storage only when source is present", () => {
     configureLiscaStorage({
       local: createMemoryStorage(),
       session: (() => {
@@ -113,5 +145,6 @@ describe("work-session registry", () => {
     const sessions = readWorkSessions("aligner");
     expect(sessions).toHaveLength(1);
     expect(sessions[0]?.workspacePath).toBe("/legacy/ws");
+    expect(isValidWorkSession("aligner", sessions[0]!)).toBe(true);
   });
 });

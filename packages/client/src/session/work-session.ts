@@ -15,7 +15,8 @@ export { LISCA_APP_DEFAULT_PORTS };
 export type WorkSession = {
   id: string;
   server: string;
-  workspacePath: string;
+  workspacePath?: string;
+  assayJsonPath?: string;
   source?: AlignerSource | null;
   label?: string;
   lastOpenedAt: string;
@@ -52,9 +53,53 @@ export function writePersistedActiveServerAddress(
   writeLiscaActiveServerForApp(appId, address);
 }
 
+function pathLabel(path: string): string {
+  const parts = path.split(/[/\\]/).filter(Boolean);
+  return parts.at(-1) ?? path;
+}
+
+export function studioAssayJsonPathForSaveTo(saveTo: string): string {
+  return `${saveTo.replace(/\/$/, "")}/assay.json`;
+}
+
+export function isValidWorkSession(appId: LiscaAppId, session: WorkSession): boolean {
+  if (appId === "aligner") {
+    return Boolean(session.workspacePath?.trim() && session.source);
+  }
+  if (appId === "annotator") {
+    return Boolean(session.workspacePath?.trim());
+  }
+  if (appId === "studio") {
+    return Boolean(session.assayJsonPath?.trim());
+  }
+  return false;
+}
+
+function sessionIdentity(appId: LiscaAppId, session: WorkSession): string {
+  if (appId === "studio") {
+    return JSON.stringify({
+      server: session.server,
+      assayJsonPath: session.assayJsonPath ?? null,
+    });
+  }
+  if (appId === "aligner") {
+    return JSON.stringify({
+      server: session.server,
+      workspacePath: session.workspacePath ?? null,
+      source: session.source ?? null,
+    });
+  }
+  return JSON.stringify({
+    server: session.server,
+    workspacePath: session.workspacePath ?? null,
+  });
+}
+
 export function readWorkSessions(appId: LiscaAppId): WorkSession[] {
   migrateLegacySession(appId);
-  return readStorageJson<WorkSession[]>(liscaLocalStorage(), workSessionsKey(appId)) ?? [];
+  const sessions =
+    readStorageJson<WorkSession[]>(liscaLocalStorage(), workSessionsKey(appId)) ?? [];
+  return sessions.filter((session) => isValidWorkSession(appId, session));
 }
 
 export function writeWorkSessions(appId: LiscaAppId, sessions: WorkSession[]): void {
@@ -65,54 +110,52 @@ export function sessionsForServer(sessions: WorkSession[], serverKey: string): W
   return sessions.filter((session) => session.server === serverKey);
 }
 
-function sessionIdentity(session: Pick<WorkSession, "server" | "workspacePath" | "source">): string {
-  return JSON.stringify({
-    server: session.server,
-    workspacePath: session.workspacePath,
-    source: session.source ?? null,
-  });
-}
-
-function workspaceLabel(workspacePath: string): string {
-  const parts = workspacePath.split(/[/\\]/).filter(Boolean);
-  return parts.at(-1) ?? workspacePath;
-}
-
 export function touchWorkSession(
   appId: LiscaAppId,
   entry: {
     server: string;
-    workspacePath: string;
+    workspacePath?: string;
+    assayJsonPath?: string;
     source?: AlignerSource | null;
     label?: string;
     snapshot?: unknown;
   },
-): WorkSession {
-  const trimmedPath = entry.workspacePath.trim();
-  if (!trimmedPath) {
-    throw new Error("workspacePath is required to touch a work session");
+): WorkSession | null {
+  const workspacePath = entry.workspacePath?.trim() || undefined;
+  const assayJsonPath = entry.assayJsonPath?.trim() || undefined;
+
+  if (appId === "aligner") {
+    if (!workspacePath || !entry.source) return null;
+  } else if (appId === "annotator") {
+    if (!workspacePath) return null;
+  } else if (appId === "studio") {
+    if (!assayJsonPath) return null;
   }
+
   const now = new Date().toISOString();
-  const identity = sessionIdentity({
-    server: entry.server,
-    workspacePath: trimmedPath,
-    source: entry.source ?? null,
-  });
-  const sessions = readWorkSessions(appId).filter(
-    (session) => sessionIdentity(session) !== identity,
-  );
-  const next: WorkSession = {
+  const draft: WorkSession = {
     id: crypto.randomUUID(),
     server: entry.server,
-    workspacePath: trimmedPath,
-    source: entry.source ?? null,
-    label: entry.label ?? workspaceLabel(trimmedPath),
+    workspacePath,
+    assayJsonPath,
+    source: appId === "aligner" ? entry.source ?? null : entry.source ?? null,
+    label:
+      entry.label ??
+      (appId === "studio" && assayJsonPath
+        ? pathLabel(assayJsonPath)
+        : workspacePath
+          ? pathLabel(workspacePath)
+          : undefined),
     lastOpenedAt: now,
     snapshot: entry.snapshot,
   };
-  const updated = [next, ...sessions].slice(0, WORK_SESSIONS_CAP);
+  const identity = sessionIdentity(appId, draft);
+  const sessions = readWorkSessions(appId).filter(
+    (session) => sessionIdentity(appId, session) !== identity,
+  );
+  const updated = [draft, ...sessions].slice(0, WORK_SESSIONS_CAP);
   writeWorkSessions(appId, updated);
-  return next;
+  return draft;
 }
 
 export function removeWorkSession(appId: LiscaAppId, sessionId: string): void {
@@ -137,7 +180,7 @@ function migrateLegacySession(appId: LiscaAppId): void {
       storage,
       "lisca-aligner-session",
     );
-    if (legacy?.workspacePath) {
+    if (legacy?.workspacePath && legacy.source) {
       storage.removeItem("lisca-aligner-session");
       touchWorkSession(appId, {
         server,
@@ -156,23 +199,6 @@ function migrateLegacySession(appId: LiscaAppId): void {
       storage.removeItem("lisca-annotator-session");
       touchWorkSession(appId, { server, workspacePath: legacy.workspacePath });
     }
-    return;
-  }
-  if (appId === "studio") {
-    const legacy = readStorageJson<{
-      state?: { workspacePath: string | null; source: AlignerSource | null };
-      workspacePath?: string | null;
-      source?: AlignerSource | null;
-    }>(storage, "lisca-studio-align-session");
-    const session = legacy?.state ?? legacy;
-    if (session?.workspacePath) {
-      storage.removeItem("lisca-studio-align-session");
-      touchWorkSession(appId, {
-        server,
-        workspacePath: session.workspacePath,
-        source: session.source ?? null,
-      });
-    }
   }
 }
 
@@ -180,7 +206,7 @@ export function touchAlignerWorkSessionFromState(state: {
   workspacePath: string | null;
   source: AlignerSource | null;
 }): void {
-  if (!state.workspacePath) return;
+  if (!state.workspacePath?.trim() || !state.source) return;
   touchWorkSession("aligner", {
     server: currentServerKey("aligner"),
     workspacePath: state.workspacePath,
@@ -189,21 +215,19 @@ export function touchAlignerWorkSessionFromState(state: {
 }
 
 export function touchAnnotatorWorkSessionFromState(state: { workspacePath: string | null }): void {
-  if (!state.workspacePath) return;
+  if (!state.workspacePath?.trim()) return;
   touchWorkSession("annotator", {
     server: currentServerKey("annotator"),
     workspacePath: state.workspacePath,
   });
 }
 
-export function touchStudioWorkSessionFromState(state: {
-  workspacePath: string | null;
-  source: AlignerSource | null;
-}): void {
-  if (!state.workspacePath) return;
+export function touchStudioWorkSessionFromAssayPath(assayJsonPath: string, label?: string): void {
+  const trimmed = assayJsonPath.trim();
+  if (!trimmed) return;
   touchWorkSession("studio", {
     server: currentServerKey("studio"),
-    workspacePath: state.workspacePath,
-    source: state.source,
+    assayJsonPath: trimmed,
+    label,
   });
 }

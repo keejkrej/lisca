@@ -1,13 +1,16 @@
 import {
   formatWorkSessionWhen,
   useWorkSessionPickerState,
+  workSessionPickerDescription,
   type WorkSessionPickerItem,
 } from "@lisca/ui-headless/work-session-picker";
+import type { LiscaAppId } from "@lisca/utils";
 import { Button } from "../../components/ui/button";
 import { DialogSurface } from "../modal/dialog-surface";
 import { ModalScrim } from "../modal/modal-scrim";
 
 export type WorkSessionPickerDialogProps = {
+  appId: LiscaAppId;
   open: boolean;
   sessions: WorkSessionPickerItem[];
   onRestore: (sessionId: string) => void;
@@ -15,6 +18,7 @@ export type WorkSessionPickerDialogProps = {
 };
 
 export function WorkSessionPickerDialog({
+  appId,
   open,
   sessions,
   onRestore,
@@ -29,9 +33,7 @@ export function WorkSessionPickerDialog({
         <div className="space-y-4">
           <div>
             <h2 className="font-medium text-foreground">Resume a session</h2>
-            <p className="text-muted-foreground text-sm">
-              Pick a recent workspace for this server, or start fresh.
-            </p>
+            <p className="text-muted-foreground text-sm">{workSessionPickerDescription(appId)}</p>
           </div>
           <ul className="max-h-72 space-y-2 overflow-auto">
             {state.items.map((item) => (
@@ -42,7 +44,7 @@ export function WorkSessionPickerDialog({
                   onClick={() => onRestore(item.id)}
                 >
                   <div className="font-medium text-foreground text-sm">{item.label}</div>
-                  <div className="truncate text-muted-foreground text-xs">{item.workspacePath}</div>
+                  <div className="truncate text-muted-foreground text-xs">{item.path}</div>
                   <div className="text-muted-foreground text-xs">
                     {formatWorkSessionWhen(item.lastOpenedAt)}
                   </div>

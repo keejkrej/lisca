@@ -1,5 +1,6 @@
 import { AppShell, HostFilePickerDialog, Text } from "@lisca/ui-native";
 import { runClientEffect } from "@lisca/client/runtime";
+import { touchStudioWorkSessionFromAssayPath } from "@lisca/client/session/work-session";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
@@ -8,14 +9,12 @@ import { ChooseAssay } from "../src/components/choose-assay";
 import { STUDIO_NAV_WIDTH } from "../src/components/studio-layout";
 import { StudioAssayDock } from "../src/components/studio-assay-dock";
 import { StudioLeft } from "../src/components/studio-left";
-import { useStudioProfile } from "../src/components/studio-profile-provider";
 import { useStudioMemoryRecent } from "../src/hooks/use-studio-memory-recent";
 import { parseStudioAssayJson, useStudioStore } from "../src/state/studio-store";
 import { recordStudioAssayMemory } from "../src/utils/studio-memory";
 
 export default function AssayRoute() {
   const router = useRouter();
-  const profile = useStudioProfile();
   const loadAssayJson = useStudioStore((state) => state.loadAssayJson);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [opening, setOpening] = useState(false);
@@ -30,8 +29,8 @@ export default function AssayRoute() {
       const contents = await runClientEffect(studioClient.readTextFile(path));
       const assayJson = parseStudioAssayJson(contents);
       loadAssayJson(assayJson);
+      touchStudioWorkSessionFromAssayPath(path, assayJson.assayLabel);
       recordStudioAssayMemory(
-        profile.session,
         path,
         assayJson.assayLabel,
         assayJson.info1.saveTo.trim() || undefined,

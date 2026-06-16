@@ -1,8 +1,11 @@
+import {
+  studioAssayJsonPathForSaveTo,
+  touchStudioWorkSessionFromAssayPath,
+} from "@lisca/client/session/work-session";
 import { useNavigation } from "expo-router";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { BackHandler } from "react-native";
 
-import { useStudioProfile } from "./studio-profile-provider";
 import {
   buildStudioAssayJson,
   isBasicInfoDirty,
@@ -22,7 +25,6 @@ const BasicInfoLeaveContext = createContext<BasicInfoLeaveContextValue | null>(n
 const allowBasicInfoNavigationRef = { current: false };
 
 export function StudioBasicInfoLeaveProvider({ children }: { children: ReactNode }) {
-  const profile = useStudioProfile();
   const wizard = useStudioStore((state) => state);
   const { assayId, dataSourceKind, info1, info2, info3, setBasicInfoSavedSnapshot } = wizard;
   const [saving, setSaving] = useState(false);
@@ -64,9 +66,10 @@ export function StudioBasicInfoLeaveProvider({ children }: { children: ReactNode
         info3,
       });
       await writeStudioAssayJson(saveTo, assayJson);
+      const assayJsonPath = studioAssayJsonPathForSaveTo(saveTo);
+      touchStudioWorkSessionFromAssayPath(assayJsonPath, assayJson.assayLabel);
       recordStudioAssayMemory(
-        profile.session,
-        `${saveTo.replace(/\/$/, "")}/assay.json`,
+        assayJsonPath,
         assayJson.assayLabel,
         saveTo,
       );

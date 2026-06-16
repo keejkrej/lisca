@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  studioAssayJsonPathForSaveTo,
+  touchStudioWorkSessionFromAssayPath,
+} from "@lisca/client/session/work-session";
 import { useBlocker } from "@tanstack/react-router";
 import { useState } from "react";
 import {
@@ -12,9 +16,8 @@ import { assayJsonExists, writeStudioAssayJson } from "../utils/save-studio-assa
 import { recordStudioAssayMemory } from "../utils/studio-memory";
 import { AssayOverwriteConfirmModal } from "./assay-overwrite-confirm-modal";
 import { AssaySaveConfirmModal } from "./assay-save-confirm-modal";
-import { useStudioProfile } from "./studio-profile-provider";
+
 export function StudioBasicInfoLeaveGuard() {
-  const profile = useStudioProfile();
   const wizard = useStudioStore((state) => state);
   const { assayId, dataSourceKind, info1, info2, info3, setBasicInfoSavedSnapshot } = wizard;
   const [saving, setSaving] = useState(false);
@@ -45,9 +48,10 @@ export function StudioBasicInfoLeaveGuard() {
         info3,
       });
       await writeStudioAssayJson(saveTo, assayJson);
+      const assayJsonPath = studioAssayJsonPathForSaveTo(saveTo);
+      touchStudioWorkSessionFromAssayPath(assayJsonPath, assayJson.assayLabel);
       recordStudioAssayMemory(
-        profile.session,
-        `${saveTo.replace(/\/$/, "")}/assay.json`,
+        assayJsonPath,
         assayJson.assayLabel,
         saveTo,
       );

@@ -11,7 +11,6 @@ import { Pressable, View } from "react-native";
 
 import { confirmStudioAnnotateLeave } from "../state/studio-annotate-guard";
 import { isBasicInfoDirty, useStudioStore } from "../state/studio-store";
-import { useStudioProfile } from "./studio-profile-provider";
 import { useStudioBasicInfoLeave } from "./studio-basic-info-leave-guard";
 
 const ROUTES = [
@@ -26,7 +25,6 @@ export function StudioNavRail() {
   const pathname = usePathname();
   const router = useRouter();
   const server = useShellServer();
-  const profile = useStudioProfile();
   const wizard = useStudioStore((state) => state);
   const basicInfoDirty = isBasicInfoDirty(wizard);
   const { requestLeave } = useStudioBasicInfoLeave();
@@ -67,11 +65,6 @@ export function StudioNavRail() {
           />
         </View>
         <View className="flex-row items-center justify-center gap-1">
-          <Pressable onPress={profile.switchProfile}>
-            <Text className="max-w-24 text-xs opacity-70">
-              {profile.session.mode === "guest" ? "Guest" : profile.session.displayName}
-            </Text>
-          </Pressable>
           <ShellThemeToggle />
         </View>
       </View>

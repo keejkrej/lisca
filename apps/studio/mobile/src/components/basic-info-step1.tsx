@@ -22,7 +22,6 @@ import {
   basicInfoFieldLabelClassName,
   basicInfoRowClassName,
 } from "./basic-info-layout";
-import { useStudioProfile } from "./studio-profile-provider";
 
 type StudioPathPickerState = null | { kind: "save" } | { kind: "source"; mode: HostFilePickerMode };
 
@@ -49,7 +48,6 @@ function kindFromMode(mode: HostFilePickerMode): StudioDataSourceKind {
 }
 
 export function BasicInfoStep1({ hostPort }: { hostPort: HostFilePickerOperations }) {
-  const profile = useStudioProfile();
   const info1 = useStudioStore((state) => state.info1);
   const setInfo1 = useStudioStore((state) => state.setInfo1);
   const setDataSourceKind = useStudioStore((state) => state.setDataSourceKind);
@@ -70,7 +68,7 @@ export function BasicInfoStep1({ hostPort }: { hostPort: HostFilePickerOperation
     const kind = kindFromMode(mode);
     setDataSourceKind(kind);
     if (kind === "nd2" || kind === "czi") {
-      recordStudioSourceMemory(profile.session, { kind, path } as AlignerSource);
+      recordStudioSourceMemory({ kind, path } as AlignerSource);
     }
   };
 
@@ -89,7 +87,7 @@ export function BasicInfoStep1({ hostPort }: { hostPort: HostFilePickerOperation
       setInfo1({ dataPath: source.path });
       setDataSourceKind("czi");
     }
-    recordStudioSourceMemory(profile.session, source);
+    recordStudioSourceMemory(source);
   };
 
   return (
@@ -162,7 +160,7 @@ export function BasicInfoStep1({ hostPort }: { hostPort: HostFilePickerOperation
           if (!pathPicker) return;
           if (pathPicker.kind === "save") {
             setInfo1({ saveTo: path });
-            recordStudioWorkspaceMemory(profile.session, path, info1.name.trim() || undefined);
+            recordStudioWorkspaceMemory(path, info1.name.trim() || undefined);
           } else if (pathPicker.mode === "folder") {
             setFolderSourcePath(path);
           }
@@ -175,7 +173,7 @@ export function BasicInfoStep1({ hostPort }: { hostPort: HostFilePickerOperation
         onPickRecent={(path) => {
           if (pathPicker?.kind === "save") {
             setInfo1({ saveTo: path });
-            recordStudioWorkspaceMemory(profile.session, path, info1.name.trim() || undefined);
+            recordStudioWorkspaceMemory(path, info1.name.trim() || undefined);
             setPathPicker(null);
           }
         }}
@@ -191,7 +189,7 @@ export function BasicInfoStep1({ hostPort }: { hostPort: HostFilePickerOperation
             folderFilenameTemplate: source.filenameTemplate,
           });
           setDataSourceKind("folder");
-          recordStudioSourceMemory(profile.session, source);
+          recordStudioSourceMemory(source);
           setFolderSourcePath(null);
         }}
       />
