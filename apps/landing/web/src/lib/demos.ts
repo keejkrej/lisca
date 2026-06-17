@@ -18,7 +18,7 @@ export const landingDemos = [
     id: "aligner",
     title: "Aligner",
     description:
-      "ibidi micropattern example (brightfield) with a starter grid fit — pan and zoom the grid, switch square or hex layout, and explore alignment on a sample frame.",
+      "ibidi micropattern brightfield field — align the grid on the full acquisition frame, mark occupied micropatterns, and switch square or hex layout. Annotator previews below crop the same files to a single ROI per cell.",
     href: ALIGNER_DEMO_PATH,
     linkLabel: "Try Aligner in your browser",
     Demo: AlignDemo,
@@ -27,7 +27,7 @@ export const landingDemos = [
     id: "annotator",
     title: "Annotator",
     description:
-      "ibidi fluorescence composite example — use the label chips below the canvas to switch colours. Segmentation draws outlines; Classification assigns one label to the whole site.",
+      "ibidi fluorescence composite cropped to a single ROI — the cell-level frame you annotate after alignment. Switch sample files from the dropdown; use label chips to change colours. Segmentation draws outlines; Classification assigns one label to the whole cell.",
     href: ANNOTATOR_DEMO_PATH,
     linkLabel: "Try Annotator in your browser",
     Demo: AnnotatorDemo,

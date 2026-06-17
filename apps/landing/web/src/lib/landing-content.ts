@@ -3,27 +3,25 @@
 export const IBIDI_MICROPATTERNED_LABWARE_URL = "https://ibidi.com/83-micropatterned-labware";
 export const IBIDI_MIS_URL =
   "https://ibidi.com/instruments/354-ibidi-micro-illumination-system.html";
-export const SARTORIUS_SX5_URL =
-  "https://www.sartorius.com/en/products/live-cell-imaging-analysis/live-cell-analysis-instruments/sx5-live-cell-analysis-instrument";
 
 export const landingProducts = [
   {
     id: "aligner",
     title: "Aligner",
     description:
-      "Match each microscopy field to the adhesive-site grid on your µ-Slide. Mark which micropatterns contain cells, leave empty sites out of the analysis, and keep the same site identity across wells and time points — even when the stage shifts slightly between acquisitions.",
+      "Register each microscopy field to the micropattern grid, mark occupied micropatterns, and export aligned ROI images. A single-purpose tool for patterned arrays — no built-in analysis. Use it on its own and feed exports into your in-house pipeline.",
   },
   {
     id: "annotator",
     title: "Annotator",
     description:
-      "Work on grid-aligned timelapse frames — the same sites you registered in Aligner. Outline cells within each patterned site, assign phenotype labels for segmentation or whole-site classification, and spot-check automated calls across your experiment.",
+      "Outline cells and assign phenotype labels on grid-aligned, single-cell ROI frames. A single-purpose annotation tool for micropattern experiments — no built-in quantification. Export masks and classifications to your own analysis stack.",
   },
   {
     id: "studio",
     title: "Studio",
     description:
-      "Pick an assay template, map samples and channels, then review quantitative readouts across every site in your array. Studio runs the analysis pipeline and surfaces summary tables and plots — no repeat alignment or annotation steps.",
+      "The complete end-to-end workflow when your experiment matches a LiSCA assay template: wizard setup, alignment, annotation, and built-in analysis with summary tables and plots in one app. Recommended for straightforward studies where a template fits your design.",
     assays: [
       {
         name: "Gene expression",
@@ -52,9 +50,9 @@ export const landingAssays: readonly LandingAssay[] = [
     id: "gene-expression",
     name: "Gene expression",
     summary:
-      "Quantify transfection or reporter expression across adhesive sites — fluorescence traces per site, area-under-curve summaries, and dose–response plots for comparing conditions.",
+      "Quantify transfection or reporter expression across arrayed single cells — fluorescence traces per cell, area-under-curve summaries, and dose–response plots for comparing conditions.",
     outputs: [
-      "Per-site fluorescence timelapse curves",
+      "Per-cell fluorescence timelapse curves",
       "AUC and peak-intensity tables",
       "Dose–response and condition comparison plots",
     ],
@@ -66,7 +64,7 @@ export const landingAssays: readonly LandingAssay[] = [
     summary:
       "Score effector-mediated killing on patterned co-cultures — survival over time, death-time extraction, and kill-curve kinetics across wells and doses.",
     outputs: [
-      "Site-level survival scores across timelapse",
+      "Single-cell-level survival scores across timelapse",
       "Kill-curve and kinetic summary plots",
       "Condition tables for effector:target ratios",
     ],
@@ -76,11 +74,11 @@ export const landingAssays: readonly LandingAssay[] = [
     id: "custom",
     name: "Custom assay",
     summary:
-      "Combine pipeline stages freely when a built-in template does not fit — much like the modular application suite on live-cell platforms such as the Sartorius Incucyte SX5, where you mix optical modules and analysis workflows for new readouts.",
+      "When a built-in template does not fit, define a custom assay and choose which quantification features to run — morphology, particle counts, per-particle fluorescence, or total fluorescence across single cells in your array.",
     outputs: [
-      "Pick segmentation, traces, survival scoring, or export steps à la carte",
-      "Reuse the same grid alignment and ROI definitions across experiments",
-      "Extend with new assay.json templates as your lab’s workflows grow",
+      "Toggle morphology, particle count, particle fluorescence, and total fluorescence independently",
+      "Built-in templates pre-select features; custom assays leave the choice to you",
+      "Your feature set is saved in assay.json and drives what Studio quantifies",
     ],
     visual: "custom",
   },
@@ -90,19 +88,19 @@ export const workflowSteps = [
   {
     step: "01",
     title: "Raw timelapse",
-    description: "Multi-site acquisition on micropatterned labware — brightfield and fluorescence channels per position.",
+    description: "Multi-position acquisition on micropatterned labware — brightfield and fluorescence channels per field.",
     visual: "raw" as const,
   },
   {
     step: "02",
     title: "Grid aligned",
-    description: "Register the field to the adhesive-site grid and mark empty sites so they stay out of quantification.",
+    description: "Register the field to the micropattern grid and mark unoccupied micropatterns so they stay out of quantification.",
     visual: "aligned" as const,
   },
   {
     step: "03",
-    title: "Sites annotated",
-    description: "Outline cells or assign phenotype labels on occupied sites — assisted tools or manual QC.",
+    title: "Cells annotated",
+    description: "Outline cells or assign phenotype labels on occupied micropatterns — assisted tools or manual QC.",
     visual: "annotated" as const,
   },
   {

@@ -4,6 +4,9 @@ import { ImageIcon } from "lucide-react";
 import { useRef, type ChangeEvent, type ReactNode } from "react";
 
 const imageAccept = ".png,.jpg,.jpeg,.tif,.tiff,image/png,image/jpeg,image/tiff";
+const sampleFileNameWidthClassName = "min-w-0 max-w-[9rem] sm:max-w-[11rem]";
+const sampleFileNameTextClassName =
+  "font-mono text-xs text-muted-foreground sm:text-sm";
 
 export type DemoSampleImageOption = {
   id: string;
@@ -67,7 +70,7 @@ export function DemoNavbar(props: DemoNavbarProps) {
               </Button>
             </>
           ) : props.onSampleChange && sampleImages.length > 0 ? (
-            <div className="w-fit max-w-full shrink-0">
+            <div className={sampleFileNameWidthClassName}>
               <Select
                 disabled={props.loading}
                 items={sampleImages.map((sample) => ({
@@ -81,8 +84,9 @@ export function DemoNavbar(props: DemoNavbarProps) {
               >
                 <SelectTrigger
                   aria-label="Sample image"
-                  className="w-auto max-w-[12rem] shrink-0 font-mono text-xs text-muted-foreground sm:max-w-[16rem] sm:text-sm"
+                  className={`w-full min-w-0 max-w-full ${sampleFileNameTextClassName}`}
                   size="sm"
+                  title={props.fileName ?? undefined}
                 >
                   <SelectValue placeholder="Sample image" />
                 </SelectTrigger>
@@ -101,7 +105,7 @@ export function DemoNavbar(props: DemoNavbarProps) {
             </div>
           ) : (
             <span
-              className="max-w-[12rem] truncate px-1 font-mono text-xs text-muted-foreground sm:max-w-[16rem] sm:text-sm"
+              className={`truncate px-1 ${sampleFileNameWidthClassName} ${sampleFileNameTextClassName}`}
               title={props.fileName ?? "Sample image"}
             >
               {props.fileName ?? "Sample image"}

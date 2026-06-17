@@ -1,4 +1,8 @@
 import type { FrameResult } from "@lisca/utils";
+import {
+  findSmartSegmentPromptIndexAt,
+  smartSegmentPromptFrameRadius,
+} from "@lisca/utils";
 import { useEffect, useRef, useState, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
 
 import { applyBinaryMask } from "../mask";
@@ -25,8 +29,6 @@ export type SmartSegmentDownloadState = {
   file?: string;
 };
 
-const PROMPT_HIT_RADIUS = 12;
-
 function isSmartTool(tool: string): boolean {
   return tool === "smart" || tool === "smart-erase";
 }
@@ -35,22 +37,14 @@ function findPromptIndexAt(
   prompts: SmartSegmentPoint[],
   x: number,
   y: number,
-  radius = PROMPT_HIT_RADIUS,
+  frame: FrameResult,
 ): number {
-  const radiusSq = radius * radius;
-  let bestIndex = -1;
-  let bestDistanceSq = radiusSq;
-  for (let index = 0; index < prompts.length; index += 1) {
-    const prompt = prompts[index]!;
-    const dx = prompt.x - x;
-    const dy = prompt.y - y;
-    const distanceSq = dx * dx + dy * dy;
-    if (distanceSq <= bestDistanceSq) {
-      bestDistanceSq = distanceSq;
-      bestIndex = index;
-    }
-  }
-  return bestIndex;
+  return findSmartSegmentPromptIndexAt(
+    prompts,
+    x,
+    y,
+    smartSegmentPromptFrameRadius(frame.width, frame.height),
+  );
 }
 
 function clearActiveLabel(mask: Uint8Array, labelValue: number): Uint8Array {
@@ -288,7 +282,7 @@ export function useSmartSegment(options: {
 
     const labelValue = activeLabelValue;
     const currentPrompts = labelValue > 0 ? (promptsByLabel[labelValue] ?? []) : [];
-    const promptIndex = findPromptIndexAt(currentPrompts, click.x, click.y);
+    const promptIndex = findPromptIndexAt(currentPrompts, click.x, click.y, frame);
     const nextPrompts: SmartSegmentPoint[] =
       promptIndex >= 0
         ? currentPrompts.filter((_, index) => index !== promptIndex)

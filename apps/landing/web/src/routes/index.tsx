@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Button } from "@lisca/ui/components";
 import { ShellThemeToggle } from "@lisca/ui/shell";
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowRight, Github } from "lucide-react";
+import { Github } from "lucide-react";
 
 import { DemoEmbed } from "../components/demo-embed";
 import { GITHUB_REPO, GITHUB_URL } from "../lib/constants";
@@ -12,7 +12,6 @@ import {
   IBIDI_MIS_URL,
   landingAssays,
   landingProducts,
-  SARTORIUS_SX5_URL,
   workflowSteps,
 } from "../lib/landing-content";
 import { scrollToSection } from "../lib/scroll-to-section";
@@ -52,7 +51,7 @@ function LandingPage() {
             title="From patterned surface to assay readout"
             lead={
               <>
-                Live-cell work on single-cell arrays begins with defined adhesion sites — on{" "}
+                Live-cell work on single-cell arrays begins with defined adhesion micropatterns — on{" "}
                 <ExternalLink href={IBIDI_MICROPATTERNED_LABWARE_URL}>prepatterned ibidi labware</ExternalLink>{" "}
                 or surfaces you pattern with a photomask and the{" "}
                 <ExternalLink href={IBIDI_MIS_URL}>Micro Illumination System</ExternalLink>. After seeding
@@ -69,9 +68,19 @@ function LandingPage() {
 
           <div className="texture-grain relative mt-12">
             <div className="grid gap-5 md:grid-cols-2">
-              {aligner ? <ProductCard step="01" title={aligner.title} body={aligner.description} /> : null}
+              {aligner ? (
+                <ProductCard
+                  eyebrow="Standalone · Grid alignment"
+                  title={aligner.title}
+                  body={aligner.description}
+                />
+              ) : null}
               {annotator ? (
-                <ProductCard step="02" title={annotator.title} body={annotator.description} />
+                <ProductCard
+                  eyebrow="Standalone · Annotation"
+                  title={annotator.title}
+                  body={annotator.description}
+                />
               ) : null}
             </div>
 
@@ -79,7 +88,7 @@ function LandingPage() {
               <article className="mt-5 overflow-hidden rounded-2xl border border-border bg-card/60">
                 <div className="flex flex-col gap-3 border-b border-border p-6 sm:p-8">
                   <p className="font-mono text-sm uppercase tracking-[0.14em] text-glow sm:text-base">
-                    Step 03
+                    End-to-end analysis
                   </p>
                   <h3 className="font-display text-2xl font-semibold">{studio.title}</h3>
                   <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
@@ -89,13 +98,26 @@ function LandingPage() {
               </article>
             ) : null}
 
-            <article className="mt-5 rounded-2xl border border-dashed border-border p-6 sm:p-8">
-              <h3 className="font-display text-xl font-semibold">Built for micropattern geometry</h3>
-              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-                Every step assumes the regular layout of adhesive sites on µ-Slides and photopatterned
-                surfaces — not unconstrained monolayers on plain plastic. That keeps site identity,
-                occupancy, and timelapse quantification consistent across an entire array experiment.
-              </p>
+            <article className="landing-surface mt-5 overflow-hidden rounded-2xl border border-border bg-card/60">
+              <div className="flex flex-col gap-3 p-6 sm:p-8">
+                <p className="font-mono text-sm uppercase tracking-[0.14em] text-glow sm:text-base">
+                  Platform philosophy
+                </p>
+                <h3 className="font-display text-2xl font-semibold">
+                  Built for the micropatterning workflow
+                </h3>
+                <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
+                  LiSCA is designed around prepatterned µ-Slides, photopatterned surfaces, and the rest of the
+                  micropatterning ecosystem. That shared geometry yields standardized, cell-level readouts that
+                  stay comparable across wells, time points, and experiments — more so than on unpatterned
+                  substrates where cell position and context vary freely.
+                </p>
+                <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
+                  Each micropattern maps to one ROI and usually one cell, so heavy segmentation is rarely
+                  needed — a quick visual check on occupancy or morphology is enough to include or exclude a
+                  pattern from the analysis.
+                </p>
+              </div>
             </article>
           </div>
         </section>
@@ -105,7 +127,7 @@ function LandingPage() {
             id="assays"
             eyebrow="Assays"
             title="Quantitative readouts for patterned-array experiments"
-            lead="LiSCA ships with assay templates for the workflows labs run most often on single-cell arrays. Each template defines which channels to read, how sites are scored, and which summary plots Studio produces."
+            lead="LiSCA ships with assay templates for the workflows labs run most often on single-cell arrays. Each template defines which channels to read, how cells are scored, and which summary plots Studio produces."
           />
           <div className="mt-12 grid gap-5 lg:grid-cols-3">
             {landingAssays.map((assay) => (
@@ -119,7 +141,7 @@ function LandingPage() {
             id="demos"
             eyebrow="Demos"
             title="Try the workflow in your browser"
-            lead="Each preview runs on a fixed sample frame so you can explore the tools immediately. Open the full demo to load your own images and export results."
+            lead="Play with our sample files here, or open the full demo to use your own images and download results."
           />
           <div className="mt-12 grid items-start gap-6 lg:grid-cols-2">
             {landingDemos.map((demo, index) => (
@@ -179,30 +201,21 @@ function Hero() {
           micropatterned slides · live-cell imaging · single-cell arrays
         </p>
         <p className="mx-auto mt-5 inline-flex rounded-full border border-[color-mix(in_oklab,var(--accent-glow)_35%,transparent)] bg-[color-mix(in_oklab,var(--accent-glow)_12%,transparent)] px-4 py-1.5 font-mono text-xs uppercase tracking-[0.16em] text-glow">
-          Free &amp; open source — no license fee
+          Free &amp; open source
         </p>
         <h1 className="mt-6 text-balance font-display text-5xl font-bold leading-[1.02] tracking-tight sm:text-7xl">
           Live-cell imaging on{" "}
           <span className="text-glow">single-cell arrays</span>
         </h1>
         <p className="mx-auto mt-7 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-          LiSCA helps cell biologists and pharmacologists analyse micropatterned ibidi µ-Slides and
-          custom photopatterns — whether you start from{" "}
-          <ExternalLink href={IBIDI_MICROPATTERNED_LABWARE_URL}>prepatterned labware</ExternalLink> or
-          define adhesion sites with the{" "}
+          LiSCA helps cell biologists and pharmacologists analyse micropatterned experiments — whether
+          you start from{" "}
+          <ExternalLink href={IBIDI_MICROPATTERNED_LABWARE_URL}>ibidi µ-Pattern ibiTreat</ExternalLink> or
+          define custom adhesion micropatterns with the{" "}
           <ExternalLink href={IBIDI_MIS_URL}>Micro Illumination System</ExternalLink>. Align timelapse
-          images to the grid, mark regions of interest on individual cells, and turn patterned-array
-          experiments into quantitative assay readouts.
+          images to the grid to define the ROI of each micropattern, annotate features of interest on
+          those cell-level ROIs, and turn them into quantitative assay readouts.
         </p>
-        <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-          <Button type="button" size="lg" onClick={() => scrollToSection("how-it-works")}>
-            How it works
-            <ArrowRight aria-hidden />
-          </Button>
-          <Button type="button" variant="outline" size="lg" onClick={() => scrollToSection("demos")}>
-            Demos
-          </Button>
-        </div>
       </div>
     </section>
   );
@@ -235,10 +248,10 @@ function SectionIntro({
   );
 }
 
-function ProductCard({ step, title, body }: { step: string; title: string; body: string }) {
+function ProductCard({ eyebrow, title, body }: { eyebrow: string; title: string; body: string }) {
   return (
     <article className="landing-surface relative rounded-2xl border border-border bg-card/60 p-6 sm:p-8">
-      <p className="font-mono text-sm uppercase tracking-[0.14em] text-glow sm:text-base">Step {step}</p>
+      <p className="font-mono text-sm uppercase tracking-[0.14em] text-glow sm:text-base">{eyebrow}</p>
       <h3 className="mt-3 font-display text-2xl font-semibold">{title}</h3>
       <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{body}</p>
     </article>
@@ -331,13 +344,6 @@ function AssayCard({ assay }: { assay: (typeof landingAssays)[number] }) {
             </li>
           ))}
         </ul>
-        {assay.id === "custom" ? (
-          <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-            Inspired by modular live-cell platforms like the{" "}
-            <ExternalLink href={SARTORIUS_SX5_URL}>Sartorius Incucyte SX5</ExternalLink>, where labs
-            combine optical modules and application workflows for new readouts.
-          </p>
-        ) : null}
       </div>
     </article>
   );
@@ -387,17 +393,77 @@ function AssayVisual({ kind }: { kind: (typeof landingAssays)[number]["visual"] 
   }
 
   return (
-    <div aria-hidden className="relative aspect-[16/10] border-b border-border bg-muted/20 p-5">
-      <div className="grid h-full grid-cols-3 gap-2">
-        {["Segment", "Trace", "Score"].map((label) => (
+    <div aria-hidden className="relative flex aspect-[16/10] items-center border-b border-border bg-muted/20 p-5 pb-10">
+      <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4">
+        {(
+          [
+            { label: "Morphology", selected: true },
+            { label: "Particle count", selected: false },
+            { label: "Particle fluorescence", selected: true },
+            { label: "Total fluorescence", selected: false },
+          ] as const
+        ).map(({ label, selected }) => (
           <div
             key={label}
-            className="flex items-center justify-center rounded-lg border border-dashed border-border bg-card/60 text-xs font-medium text-muted-foreground"
+            className={[
+              "flex flex-col items-center gap-1.5 rounded-lg border-2 px-1.5 py-2 text-center",
+              selected
+                ? "border-[color-mix(in_oklab,var(--accent-glow)_70%,transparent)] bg-[color-mix(in_oklab,var(--accent-glow)_10%,transparent)]"
+                : "border-dashed border-border bg-card/40 opacity-70",
+            ].join(" ")}
           >
-            {label}
+            <div
+              className={[
+                "flex size-8 items-center justify-center rounded-md border",
+                selected
+                  ? "border-[color-mix(in_oklab,var(--accent-glow)_50%,transparent)] bg-background"
+                  : "border-border bg-muted/30",
+              ].join(" ")}
+            >
+              <svg viewBox="0 0 24 24" className="size-5" role="presentation">
+                {label === "Morphology" ? (
+                  <ellipse
+                    cx="12"
+                    cy="12"
+                    fill="none"
+                    rx="7"
+                    ry="5"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    className="text-muted-foreground"
+                  />
+                ) : null}
+                {label === "Particle count" ? (
+                  <>
+                    <circle cx="9" cy="10" fill="currentColor" className="text-muted-foreground" r="2" />
+                    <circle cx="15" cy="14" fill="currentColor" className="text-muted-foreground" r="2" />
+                    <circle cx="12" cy="12" fill="currentColor" className="text-muted-foreground" r="1.5" />
+                  </>
+                ) : null}
+                {label === "Particle fluorescence" ? (
+                  <>
+                    <circle cx="12" cy="12" fill="none" r="5" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground" />
+                    <circle cx="12" cy="12" fill="currentColor" className="text-[color-mix(in_oklab,var(--accent-glow)_80%,transparent)]" r="2" />
+                  </>
+                ) : null}
+                {label === "Total fluorescence" ? (
+                  <path
+                    d="M6 14c2-4 4-6 6-6s4 2 6 6"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    className="text-muted-foreground"
+                  />
+                ) : null}
+              </svg>
+            </div>
+            <span className="text-[0.65rem] font-medium leading-tight text-muted-foreground">{label}</span>
           </div>
         ))}
       </div>
+      <p className="absolute bottom-3 left-5 font-mono text-[0.65rem] uppercase tracking-wider text-muted-foreground">
+        Pick features
+      </p>
     </div>
   );
 }

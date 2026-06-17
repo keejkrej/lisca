@@ -1,5 +1,5 @@
 import type { AnnotationLabel } from "@lisca/contracts";
-import { clamp, hexToRgb, type FrameResult } from "@lisca/utils";
+import { clamp, hexToRgb, smartSegmentPromptRadius, type FrameResult } from "@lisca/utils";
 import type { CanvasStatusMessage } from "@lisca/ui-headless";
 import {
   useAnnotationCanvasHandlers,
@@ -257,7 +257,11 @@ export function AnnotationCanvas({
                 if (!frameLayout) return null;
                 const centerX = frameLayout.drawX + prompt.x * frameLayout.scale;
                 const centerY = frameLayout.drawY + prompt.y * frameLayout.scale;
-                const radius = Math.max(4, 5 * frameLayout.scale);
+                const radius = smartSegmentPromptRadius(
+                  frame.width,
+                  frame.height,
+                  frameLayout.scale,
+                );
                 return (
                   <Circle
                     key={`${prompt.x}:${prompt.y}:${index}`}

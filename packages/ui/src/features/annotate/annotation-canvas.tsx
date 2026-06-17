@@ -5,7 +5,7 @@ import type { FrameResult } from "@lisca/utils";
 import type { CanvasStatusMessage } from "@lisca/ui-headless";
 import type { AnnotationTool } from "@lisca/ui-headless/annotation-tools";
 import { isSmartAnnotationTool } from "@lisca/ui-headless/annotation-tools";
-import { clamp, fillPolygon, hexToRgb, strokeMask } from "@lisca/utils";
+import { clamp, fillPolygon, hexToRgb, smartSegmentPromptRadius, strokeMask } from "@lisca/utils";
 import {
   useEffect,
   useLayoutEffect,
@@ -195,13 +195,17 @@ export function AnnotationCanvas({
         for (const prompt of smartSegmentPrompts) {
           const centerX = rect.x + prompt.x * rect.scale;
           const centerY = rect.y + prompt.y * rect.scale;
-          const radius = Math.max(4, 5 * rect.scale);
+          const radius = smartSegmentPromptRadius(
+            cached.frame.width,
+            cached.frame.height,
+            rect.scale,
+          );
           ctx.beginPath();
           ctx.globalAlpha = promptAlpha;
           ctx.fillStyle =
             prompt.label === 1 ? "rgba(34,197,94,0.95)" : "rgba(248,113,113,0.95)";
           ctx.strokeStyle = "rgba(255,255,255,0.95)";
-          ctx.lineWidth = 1.5;
+          ctx.lineWidth = Math.max(1, radius * 0.25);
           ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
           ctx.fill();
           ctx.stroke();

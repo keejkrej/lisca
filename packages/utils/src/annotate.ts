@@ -1,6 +1,7 @@
 import type { AlignGridCellCoord, AlignGridState } from "@lisca/contracts";
 import { enumerateVisibleAlignGridCells } from "./align-grid";
 import type { FrameResult } from "./frame";
+import { clamp } from "./frame";
 
 export type RgbColor = {
   r: number;
@@ -155,3 +156,43 @@ export function buildBboxCsv(
   return ["roi,x,y,w,h,i,j", ...rows].join("\n");
 }
 
+/** Frame-space radius for a SAM click prompt marker. */
+export function smartSegmentPromptFrameRadius(frameWidth: number, frameHeight: number): number {
+  const minDim = Math.min(frameWidth, frameHeight);
+  return clamp(minDim / 25, 1.5, 10);
+}
+
+/** Screen-space radius for a SAM click prompt — scales with frame size so tiny crops stay readable. */
+export function smartSegmentPromptRadius(
+  frameWidth: number,
+  frameHeight: number,
+  displayScale: number,
+): number {
+  const frameRadius = smartSegmentPromptFrameRadius(frameWidth, frameHeight);
+  const minDim = Math.min(frameWidth, frameHeight);
+  const displaySize = minDim * displayScale;
+  const maxRadius = displaySize * 0.04;
+  return clamp(frameRadius * displayScale, 2, maxRadius);
+}
+
+export function findSmartSegmentPromptIndexAt(
+  prompts: readonly MaskPoint[],
+  x: number,
+  y: number,
+  hitRadius: number,
+): number {
+  const radiusSq = hitRadius * hitRadius;
+  let bestIndex = -1;
+  let bestDistanceSq = radiusSq;
+  for (let index = 0; index < prompts.length; index += 1) {
+    const prompt = prompts[index]!;
+    const dx = prompt.x - x;
+    const dy = prompt.y - y;
+    const distanceSq = dx * dx + dy * dy;
+    if (distanceSq <= bestDistanceSq) {
+      bestDistanceSq = distanceSq;
+      bestIndex = index;
+    }
+  }
+  return bestIndex;
+}
