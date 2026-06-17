@@ -13,19 +13,23 @@ import {
 export const IBIDI_MICROPATTERNING_IMAGE_BASE =
   "https://ibidi.com/img/cms/applications/micropatterning";
 
-/** ibidi micropatterning example images — fetched at runtime, not bundled. */
+/** Same-origin demo images bundled in landing public assets (`assets/brand/demo-images/ibidi`). */
+export const IBIDI_DEMO_IMAGE_BASE = "/demo-images/ibidi";
+
+/** ibidi micropatterning example images — served same-origin so fetch + canvas decode work in production. */
 export const IBIDI_DEMO_SAMPLE_IMAGES = {
-  singleCell: `${IBIDI_MICROPATTERNING_IMAGE_BASE}/mp_example_singlecell.jpg`,
-  multiCell: `${IBIDI_MICROPATTERNING_IMAGE_BASE}/mp_example_multicell.jpg`,
-  rccComposite: `${IBIDI_MICROPATTERNING_IMAGE_BASE}/mp_RCC_4x_composite.jpg`,
-  ratComposite: `${IBIDI_MICROPATTERNING_IMAGE_BASE}/Rat1_10x_composite.jpg`,
+  singleCell: `${IBIDI_DEMO_IMAGE_BASE}/mp_example_singlecell.jpg`,
+  multiCell: `${IBIDI_DEMO_IMAGE_BASE}/mp_example_multicell.jpg`,
+  rccComposite: `${IBIDI_DEMO_IMAGE_BASE}/mp_RCC_4x_composite.jpg`,
+  ratComposite: `${IBIDI_DEMO_IMAGE_BASE}/Rat1_10x_composite.jpg`,
 } as const;
 
-/** Same-origin path used when ibidi blocks cross-origin fetch (see landing vite proxy). */
+/** Map canonical ibidi URLs (or local paths) to the bundled same-origin path. */
 export function resolveRemoteDemoImageUrl(url: string): string {
+  if (url.startsWith(`${IBIDI_DEMO_IMAGE_BASE}/`)) return url;
   if (!url.startsWith(`${IBIDI_MICROPATTERNING_IMAGE_BASE}/`)) return url;
   const fileName = url.slice(IBIDI_MICROPATTERNING_IMAGE_BASE.length + 1);
-  return `/demo-images/ibidi/${fileName}`;
+  return `${IBIDI_DEMO_IMAGE_BASE}/${fileName}`;
 }
 
 function luminance(r: number, g: number, b: number): number {
@@ -215,11 +219,11 @@ async function fetchImageBlob(url: string): Promise<Blob> {
   return response.blob();
 }
 
-/** Load a remote JPEG/PNG into a grayscale frame. Tries the canonical URL, then a same-origin proxy path. */
+/** Load a remote JPEG/PNG into a grayscale frame. Prefers bundled same-origin demo assets. */
 export async function loadImageFromUrl(url: string): Promise<LoadedImageFile> {
   const fileName = url.split("/").pop() ?? "sample.jpg";
   const format = formatFromFileName(fileName);
-  const candidates = [url, resolveRemoteDemoImageUrl(url)].filter(
+  const candidates = [resolveRemoteDemoImageUrl(url), url].filter(
     (candidate, index, all) => all.indexOf(candidate) === index,
   );
 

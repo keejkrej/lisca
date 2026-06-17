@@ -10,6 +10,7 @@ const brandPublicDir = resolve(
   "../../../assets/brand",
 );
 
+/** Dev fallback when bundled assets under assets/brand/demo-images/ibidi are missing. */
 const ibidiDemoImageProxy = {
   "/demo-images/ibidi": {
     target: "https://ibidi.com/img/cms/applications/micropatterning",
