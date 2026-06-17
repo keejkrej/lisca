@@ -18,14 +18,14 @@ export function AnnotatorWorkSessionGate({ children }: AnnotatorWorkSessionGateP
     <WorkSessionAppGate
       appId="annotator"
       PickerDialog={WorkSessionPickerDialog}
-      onRestore={(session) =>
-        restoreAnnotatorWorkSession({
+      onRestore={(session) => {
+        void restoreAnnotatorWorkSession({
           session,
           setShellWorkspacePath: workspace.setWorkspacePath,
           setWorkspacePath: annotatorUiActions.setWorkspacePath,
           setUi,
-        })
-      }
+        });
+      }}
     >
       {children}
     </WorkSessionAppGate>

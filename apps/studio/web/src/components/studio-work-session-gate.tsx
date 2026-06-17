@@ -1,4 +1,5 @@
 import type { StateUpdater } from "@lisca/client/atoms/align-ui";
+import type { StudioWizardData } from "@lisca/client/atoms/studio-ui";
 import type { AnalysisProgress } from "@lisca/contracts";
 import { useAtom } from "@effect-atom/atom-react";
 import { runClientEffect } from "@lisca/client/runtime";
@@ -16,7 +17,11 @@ import {
   studioAnnotateUiAtom,
   type StudioAnnotateStoreState,
 } from "../state/studio-annotate-store";
-import { parseStudioAssayJson, studioWizardActions, studioWizardAtom } from "../state/studio-store";
+import {
+  parseStudioAssayJson,
+  studioWizardActions,
+  studioWizardAtom,
+} from "../state/studio-store";
 
 type StudioWorkSessionGateProps = {
   children: ReactNode;
@@ -43,7 +48,7 @@ export function StudioWorkSessionGate({ children }: StudioWorkSessionGateProps) 
 
 async function restoreStudioSession(
   session: WorkSession,
-  setWizard: (update: StateUpdater<unknown>) => void,
+  setWizard: (update: StateUpdater<StudioWizardData>) => void,
   setAlignUi: (update: StateUpdater<import("@lisca/client/atoms/align-ui").AlignUiState>) => void,
   setAnnotateUi: (update: StateUpdater<StudioAnnotateStoreState>) => void,
   setShellWorkspacePath: (path: string | null) => void,

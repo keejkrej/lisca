@@ -20,8 +20,8 @@ export function AlignerWorkSessionGate({ children }: AlignerWorkSessionGateProps
     <WorkSessionAppGate
       appId="aligner"
       PickerDialog={WorkSessionPickerDialog}
-      onRestore={(session) =>
-        restoreAlignerWorkSession({
+      onRestore={async (session) => {
+        await restoreAlignerWorkSession({
           session,
           setShellWorkspacePath: workspace.setWorkspacePath,
           setWorkspacePath: alignerUiActions.setWorkspacePath,
@@ -34,8 +34,8 @@ export function AlignerWorkSessionGate({ children }: AlignerWorkSessionGateProps
               onProgress: (progress) => alignerUiActions.setCropProgress(setUi, progress),
             });
           },
-        })
-      }
+        });
+      }}
     >
       {children}
     </WorkSessionAppGate>

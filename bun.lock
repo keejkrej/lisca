@@ -606,6 +606,7 @@
         "@lisca/contracts": "workspace:*",
         "@lisca/ui": "workspace:*",
         "@lisca/ui-headless": "workspace:*",
+        "@lisca/utils": "workspace:*",
         "@tailwindcss/vite": "catalog:",
         "@tanstack/react-router": "catalog:",
         "@tanstack/router-plugin": "catalog:",

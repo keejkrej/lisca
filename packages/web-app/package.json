@@ -33,6 +33,7 @@
     "@lisca/client": "workspace:*",
     "@lisca/contracts": "workspace:*",
     "@lisca/ui": "workspace:*",
+    "@lisca/utils": "workspace:*",
     "@lisca/ui-headless": "workspace:*",
     "@tailwindcss/vite": "catalog:",
     "@tanstack/react-router": "catalog:",
