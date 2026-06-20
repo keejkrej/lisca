@@ -79,11 +79,7 @@ describe("lisca dev LAN host", () => {
     resolveDevLanHost,
   } = require("./lisca-dev-lan-host.cjs");
 
-  it("prefers explicit LISCA_DEV_HOST", () => {
-    expect(resolveDevLanHost({ LISCA_DEV_HOST: "10.0.0.5" })).toBe("10.0.0.5");
-  });
-
-  it("falls back to EXPO_PUBLIC_LISCA_HTTP_HOST", () => {
+  it("prefers explicit EXPO_PUBLIC_LISCA_HTTP_HOST", () => {
     expect(resolveDevLanHost({ EXPO_PUBLIC_LISCA_HTTP_HOST: "192.168.2.1" })).toBe("192.168.2.1");
   });
 

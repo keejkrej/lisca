@@ -17,7 +17,6 @@ Mobile apps under `apps/*/mobile` are native clients for the external Rust serve
 | `EXPO_PUBLIC_LISCA_HTTP_URL`  | Full HTTP base override            |
 | `EXPO_PUBLIC_LISCA_HTTP_HOST` | LAN host for dev (e.g. machine IP) |
 | `EXPO_PUBLIC_LISCA_HTTP_PORT` | Server port when using host/port   |
-| `LISCA_DEV_HOST`              | Override LAN IP detected by `bun lisca dev * ios` |
 
 On a physical device, point at your machine with `http://` URLs (not host-only).
 
@@ -52,10 +51,9 @@ Web-native dev runs **Expo in the browser** (not via turbo). Open the **808x** U
 ```bash
 bun lisca dev aligner ios-install   # once: USB device → Xcode build + install dev client
 bun lisca dev aligner ios             # Rust on 0.0.0.0:876x + Expo Metro with LAN API URLs
-bun lisca dev aligner ios -- --tunnel # Metro via Expo tunnel when LAN is blocked
 ```
 
-Test API reachability on the device: open `http://<mac-ip>:8765` in Safari. If that fails, use an iPhone hotspot (both Mac and iPad join) or `--tunnel` for Metro and tunnel the Rust port separately.
+Test API reachability on the device: open `http://<mac-ip>:8765` in Safari.
 
 First Skia/web load may take a few seconds while CanvasKit (WASM) initializes in web-native dev.
 

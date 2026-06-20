@@ -16,10 +16,10 @@ function isIphoneHotspotBridge(entry) {
 
 /**
  * Resolve a non-loopback IPv4 for physical-device dev (iPad, phone).
- * Override with `LISCA_DEV_HOST` or `EXPO_PUBLIC_LISCA_HTTP_HOST`.
+ * Override with `EXPO_PUBLIC_LISCA_HTTP_HOST`.
  */
 function resolveDevLanHost(env = process.env) {
-  const fromEnv = env.LISCA_DEV_HOST?.trim() || env.EXPO_PUBLIC_LISCA_HTTP_HOST?.trim();
+  const fromEnv = env.EXPO_PUBLIC_LISCA_HTTP_HOST?.trim();
   if (fromEnv) return fromEnv;
 
   const candidates = [];

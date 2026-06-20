@@ -92,8 +92,7 @@ Defaults:
 Web-native dev runs Expo in the browser (not via turbo). Open the 808x URL; API traffic is proxied to Rust on 876x.
 
 iOS dev binds the Rust server to 0.0.0.0 and sets EXPO_PUBLIC_LISCA_HTTP_URL from your LAN IP.
-Pass --tunnel after -- when eduroam blocks device-to-device traffic: bun lisca dev aligner ios -- --tunnel
-Override the detected IP with LISCA_DEV_HOST=192.168.x.x.
+Override the detected IP with EXPO_PUBLIC_LISCA_HTTP_HOST=192.168.x.x.
 
 Examples:
   bun lisca dev aligner
@@ -490,7 +489,6 @@ function runIosDev(scopeName) {
   API (iPad Safari test): http://${host}:${rustPort}
   EXPO_PUBLIC_LISCA_HTTP_URL=${liscaEnv.EXPO_PUBLIC_LISCA_HTTP_URL}
   First install: bun lisca dev ${scopeName} ios-install
-  No LAN? Metro tunnel: bun lisca dev ${scopeName} ios -- --tunnel
 `);
 
   const status = spawnSync("bun", ["x", "expo", "start", "--port", String(expoPort), ...turboExtra], {
