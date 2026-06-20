@@ -43,7 +43,7 @@
     "fmt:check": "vp fmt --check",
     "format": "vp run fmt",
     "format:check": "vp run fmt:check",
-    "lisca": "bun ./scripts/lisca.mjs",
+    "lisca": "vp exec bun ./scripts/lisca.mjs",
     "postinstall": "vp exec node ./scripts/install-electron.mjs && vp exec node ./scripts/install-skia.mjs",
     "lint": "vp lint",
     "test": "turbo run test",

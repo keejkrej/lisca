@@ -3,22 +3,22 @@
  * Unified CLI for product and workspace tasks.
  *
  * Usage:
- *   bun lisca <task> <scope> [target] [-- <extra turbo args>]
+ *   vp run lisca <task> <scope> [target] [-- <extra turbo args>]
  *
  * Examples:
- *   bun lisca dev aligner
- *   bun lisca dev aligner web
- *   bun lisca dev aligner web-native
- *   bun lisca dev aligner ios
- *   bun lisca dev landing
- *   bun lisca install landing
- *   bun lisca build landing
- *   bun lisca deploy landing
- *   bun lisca build workspace webs
- *   bun lisca build workspace all
- *   bun lisca dist aligner
- *   bun lisca typecheck annotator server
- *   bun lisca preview studio
+ *   vp run lisca dev aligner
+ *   vp run lisca dev aligner web
+ *   vp run lisca dev aligner web-native
+ *   vp run lisca dev aligner ios
+ *   vp run lisca dev landing
+ *   vp run lisca install landing
+ *   vp run lisca build landing
+ *   vp run lisca deploy landing
+ *   vp run lisca build workspace webs
+ *   vp run lisca build workspace all
+ *   vp run lisca dist aligner
+ *   vp run lisca typecheck annotator server
+ *   vp run lisca preview studio
  */
 import { spawn, spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
@@ -52,7 +52,7 @@ const [task, scope, targetArg] = argv;
 
 function usage() {
   console.error(`
-Usage: bun lisca <task> <scope> [target] [-- <turbo passthrough>]
+Usage: vp run lisca <task> <scope> [target] [-- <turbo passthrough>]
 
   task    dev | build | dist | deploy | typecheck | preview | install
   scope   aligner | annotator | studio | landing | workspace
@@ -95,24 +95,24 @@ iOS dev binds the Rust server to 0.0.0.0 and sets EXPO_PUBLIC_LISCA_HTTP_URL fro
 Override the detected IP with EXPO_PUBLIC_LISCA_HTTP_HOST=192.168.x.x.
 
 Examples:
-  bun lisca dev aligner
-  bun lisca dev annotator web
-  bun lisca dev aligner web-native
-  bun lisca dev aligner ios
-  bun lisca dev aligner ios-install
-  bun lisca dev landing
-  bun lisca install landing
-  bun lisca build landing
-  bun lisca build workspace all
-  bun lisca build workspace packages
-  bun lisca build workspace webs
-  bun lisca build aligner web-native
-  bun lisca build aligner ios
-  bun lisca dist aligner
-  bun lisca dist aligner ios
-  bun lisca typecheck aligner web-native
-  bun lisca typecheck aligner server
-  bun lisca preview studio demo
+  vp run lisca dev aligner
+  vp run lisca dev annotator web
+  vp run lisca dev aligner web-native
+  vp run lisca dev aligner ios
+  vp run lisca dev aligner ios-install
+  vp run lisca dev landing
+  vp run lisca install landing
+  vp run lisca build landing
+  vp run lisca build workspace all
+  vp run lisca build workspace packages
+  vp run lisca build workspace webs
+  vp run lisca build aligner web-native
+  vp run lisca build aligner ios
+  vp run lisca dist aligner
+  vp run lisca dist aligner ios
+  vp run lisca typecheck aligner web-native
+  vp run lisca typecheck aligner server
+  vp run lisca preview studio demo
 `);
 }
 
@@ -127,9 +127,9 @@ function isWorkspace(scopeName) {
 function renamedTargetHint(taskName, scopeName, oldName) {
   const next = "web-native";
   if (taskName === "dev" && oldName === "mobile") {
-    return `bun lisca dev ${scopeName} ${next}`;
+    return `vp run lisca dev ${scopeName} ${next}`;
   }
-  return `bun lisca ${taskName} ${scopeName} ${next}`;
+  return `vp run lisca ${taskName} ${scopeName} ${next}`;
 }
 
 function rejectRenamedTarget(taskName, scopeName, target) {
@@ -143,7 +143,7 @@ function rejectRenamedTarget(taskName, scopeName, target) {
 function rejectDevOnlyTarget(taskName, scopeName, target) {
   if (!target || !DEV_ONLY_TARGETS.has(target) || taskName === "dev") return false;
   console.error(
-    `target "${target}" only applies to dev. Example: bun lisca dev ${scopeName} ${target}`,
+    `target "${target}" only applies to dev. Example: vp run lisca dev ${scopeName} ${target}`,
   );
   process.exit(1);
 }
@@ -151,11 +151,11 @@ function rejectDevOnlyTarget(taskName, scopeName, target) {
 function rejectIosTurboTarget(taskName, target) {
   if (target !== "ios") return false;
   if (taskName === "build") {
-    console.error(`Use: bun lisca build <scope> ios`);
+    console.error(`Use: vp run lisca build <scope> ios`);
     process.exit(1);
   }
   if (taskName === "dist") {
-    console.error(`Use: bun lisca dist <scope> ios`);
+    console.error(`Use: vp run lisca dist <scope> ios`);
     process.exit(1);
   }
   console.error(
@@ -211,7 +211,7 @@ function productFilter(taskName, scopeName, target) {
 
   if (taskName === "preview" && t !== "web" && t !== "demo") {
     console.error(
-      'preview only applies to "web" or "demo" (Vite). Example: bun lisca preview aligner demo',
+      'preview only applies to "web" or "demo" (Vite). Example: vp run lisca preview aligner demo',
     );
     process.exit(1);
   }
@@ -490,7 +490,7 @@ function runIosDev(scopeName) {
 [lisca] iOS dev — Rust on 0.0.0.0:${rustPort}, Metro on port ${expoPort}
   API (iPad Safari test): http://${host}:${rustPort}
   EXPO_PUBLIC_LISCA_HTTP_URL=${liscaEnv.EXPO_PUBLIC_LISCA_HTTP_URL}
-  First install: bun lisca dev ${scopeName} ios-install
+  First install: vp run lisca dev ${scopeName} ios-install
 `);
 
   const status = spawnSync(
@@ -584,7 +584,7 @@ function main() {
   }
 
   if (isLanding(scope) && task === "dist") {
-    console.error("dist does not apply to landing. Use: bun lisca build landing");
+    console.error("dist does not apply to landing. Use: vp run lisca build landing");
     process.exit(1);
   }
 
