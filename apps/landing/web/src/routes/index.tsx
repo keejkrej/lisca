@@ -52,17 +52,26 @@ function LandingPage() {
             lead={
               <>
                 Live-cell work on single-cell arrays begins with defined adhesion micropatterns — on{" "}
-                <ExternalLink href={IBIDI_MICROPATTERNED_LABWARE_URL}>prepatterned ibidi labware</ExternalLink>{" "}
+                <ExternalLink href={IBIDI_MICROPATTERNED_LABWARE_URL}>
+                  prepatterned ibidi labware
+                </ExternalLink>{" "}
                 or surfaces you pattern with a photomask and the{" "}
-                <ExternalLink href={IBIDI_MIS_URL}>Micro Illumination System</ExternalLink>. After seeding
-                and timelapse imaging, LiSCA carries you from the first frame to summary tables and plots.
+                <ExternalLink href={IBIDI_MIS_URL}>Micro Illumination System</ExternalLink>. After
+                seeding and timelapse imaging, LiSCA carries you from the first frame to summary
+                tables and plots.
               </>
             }
           />
 
           <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {workflowSteps.map((step) => (
-              <WorkflowStepCard key={step.step} step={step.step} title={step.title} description={step.description} visual={step.visual} />
+              <WorkflowStepCard
+                key={step.step}
+                step={step.step}
+                title={step.title}
+                description={step.description}
+                visual={step.visual}
+              />
             ))}
           </div>
 
@@ -107,15 +116,16 @@ function LandingPage() {
                   Built for the micropatterning workflow
                 </h3>
                 <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
-                  LiSCA is designed around prepatterned µ-Slides, photopatterned surfaces, and the rest of the
-                  micropatterning ecosystem. That shared geometry yields standardized, cell-level readouts that
-                  stay comparable across wells, time points, and experiments — more so than on unpatterned
-                  substrates where cell position and context vary freely.
+                  LiSCA is designed around prepatterned µ-Slides, photopatterned surfaces, and the
+                  rest of the micropatterning ecosystem. That shared geometry yields standardized,
+                  cell-level readouts that stay comparable across wells, time points, and
+                  experiments — more so than on unpatterned substrates where cell position and
+                  context vary freely.
                 </p>
                 <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
-                  Each micropattern maps to one ROI and usually one cell, so heavy segmentation is rarely
-                  needed — a quick visual check on occupancy or morphology is enough to include or exclude a
-                  pattern from the analysis.
+                  Each micropattern maps to one ROI and usually one cell, so heavy segmentation is
+                  rarely needed — a quick visual check on occupancy or morphology is enough to
+                  include or exclude a pattern from the analysis.
                 </p>
               </div>
             </article>
@@ -179,7 +189,12 @@ function Header() {
         <div className="flex shrink-0 items-center gap-1">
           <Button
             render={
-              <a href={GITHUB_URL} rel="noopener noreferrer" target="_blank" aria-label="Project repository on GitHub" />
+              <a
+                href={GITHUB_URL}
+                rel="noopener noreferrer"
+                target="_blank"
+                aria-label="Project repository on GitHub"
+              />
             }
             variant="ghost"
             size="icon-sm"
@@ -204,17 +219,18 @@ function Hero() {
           Free &amp; open source
         </p>
         <h1 className="mt-6 text-balance font-display text-5xl font-bold leading-[1.02] tracking-tight sm:text-7xl">
-          Live-cell imaging on{" "}
-          <span className="text-glow">single-cell arrays</span>
+          Live-cell imaging on <span className="text-glow">single-cell arrays</span>
         </h1>
         <p className="mx-auto mt-7 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-          LiSCA helps cell biologists and pharmacologists analyse micropatterned experiments — whether
-          you start from{" "}
-          <ExternalLink href={IBIDI_MICROPATTERNED_LABWARE_URL}>ibidi µ-Pattern ibiTreat</ExternalLink> or
-          define custom adhesion micropatterns with the{" "}
-          <ExternalLink href={IBIDI_MIS_URL}>Micro Illumination System</ExternalLink>. Align timelapse
-          images to the grid to define the ROI of each micropattern, annotate features of interest on
-          those cell-level ROIs, and turn them into quantitative assay readouts.
+          LiSCA helps cell biologists and pharmacologists analyse micropatterned experiments —
+          whether you start from{" "}
+          <ExternalLink href={IBIDI_MICROPATTERNED_LABWARE_URL}>
+            ibidi µ-Pattern ibiTreat
+          </ExternalLink>{" "}
+          or define custom adhesion micropatterns with the{" "}
+          <ExternalLink href={IBIDI_MIS_URL}>Micro Illumination System</ExternalLink>. Align
+          timelapse images to the grid to define the ROI of each micropattern, annotate features of
+          interest on those cell-level ROIs, and turn them into quantitative assay readouts.
         </p>
       </div>
     </section>
@@ -251,7 +267,9 @@ function SectionIntro({
 function ProductCard({ eyebrow, title, body }: { eyebrow: string; title: string; body: string }) {
   return (
     <article className="landing-surface relative rounded-2xl border border-border bg-card/60 p-6 sm:p-8">
-      <p className="font-mono text-sm uppercase tracking-[0.14em] text-glow sm:text-base">{eyebrow}</p>
+      <p className="font-mono text-sm uppercase tracking-[0.14em] text-glow sm:text-base">
+        {eyebrow}
+      </p>
       <h3 className="mt-3 font-display text-2xl font-semibold">{title}</h3>
       <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{body}</p>
     </article>
@@ -294,9 +312,15 @@ function WorkflowVisual({ kind }: { kind: (typeof workflowSteps)[number]["visual
             className={[
               "rounded-sm border border-border/60",
               kind === "raw" ? "bg-muted/70" : "",
-              kind === "aligned" && index % 5 === 0 ? "border-destructive/70 bg-destructive/15" : "",
-              kind === "aligned" && index % 5 !== 0 ? "border-[color-mix(in_oklab,var(--accent-glow)_40%,transparent)] bg-[color-mix(in_oklab,var(--accent-glow)_10%,transparent)]" : "",
-              kind === "annotated" && index % 4 === 0 ? "bg-[color-mix(in_oklab,var(--accent-glow)_25%,transparent)]" : "",
+              kind === "aligned" && index % 5 === 0
+                ? "border-destructive/70 bg-destructive/15"
+                : "",
+              kind === "aligned" && index % 5 !== 0
+                ? "border-[color-mix(in_oklab,var(--accent-glow)_40%,transparent)] bg-[color-mix(in_oklab,var(--accent-glow)_10%,transparent)]"
+                : "",
+              kind === "annotated" && index % 4 === 0
+                ? "bg-[color-mix(in_oklab,var(--accent-glow)_25%,transparent)]"
+                : "",
               kind === "annotated" && index % 4 !== 0 ? "bg-muted/50" : "",
               kind === "readout" ? "bg-muted/40" : "",
             ]
@@ -393,7 +417,10 @@ function AssayVisual({ kind }: { kind: (typeof landingAssays)[number]["visual"] 
   }
 
   return (
-    <div aria-hidden className="relative flex aspect-[16/10] items-center border-b border-border bg-muted/20 p-5 pb-10">
+    <div
+      aria-hidden
+      className="relative flex aspect-[16/10] items-center border-b border-border bg-muted/20 p-5 pb-10"
+    >
       <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4">
         {(
           [
@@ -435,15 +462,47 @@ function AssayVisual({ kind }: { kind: (typeof landingAssays)[number]["visual"] 
                 ) : null}
                 {label === "Particle count" ? (
                   <>
-                    <circle cx="9" cy="10" fill="currentColor" className="text-muted-foreground" r="2" />
-                    <circle cx="15" cy="14" fill="currentColor" className="text-muted-foreground" r="2" />
-                    <circle cx="12" cy="12" fill="currentColor" className="text-muted-foreground" r="1.5" />
+                    <circle
+                      cx="9"
+                      cy="10"
+                      fill="currentColor"
+                      className="text-muted-foreground"
+                      r="2"
+                    />
+                    <circle
+                      cx="15"
+                      cy="14"
+                      fill="currentColor"
+                      className="text-muted-foreground"
+                      r="2"
+                    />
+                    <circle
+                      cx="12"
+                      cy="12"
+                      fill="currentColor"
+                      className="text-muted-foreground"
+                      r="1.5"
+                    />
                   </>
                 ) : null}
                 {label === "Particle fluorescence" ? (
                   <>
-                    <circle cx="12" cy="12" fill="none" r="5" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground" />
-                    <circle cx="12" cy="12" fill="currentColor" className="text-[color-mix(in_oklab,var(--accent-glow)_80%,transparent)]" r="2" />
+                    <circle
+                      cx="12"
+                      cy="12"
+                      fill="none"
+                      r="5"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      className="text-muted-foreground"
+                    />
+                    <circle
+                      cx="12"
+                      cy="12"
+                      fill="currentColor"
+                      className="text-[color-mix(in_oklab,var(--accent-glow)_80%,transparent)]"
+                      r="2"
+                    />
                   </>
                 ) : null}
                 {label === "Total fluorescence" ? (
@@ -457,7 +516,9 @@ function AssayVisual({ kind }: { kind: (typeof landingAssays)[number]["visual"] 
                 ) : null}
               </svg>
             </div>
-            <span className="text-[0.65rem] font-medium leading-tight text-muted-foreground">{label}</span>
+            <span className="text-[0.65rem] font-medium leading-tight text-muted-foreground">
+              {label}
+            </span>
           </div>
         ))}
       </div>

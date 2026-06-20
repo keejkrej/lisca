@@ -1,13 +1,6 @@
 import { Button } from "@lisca/ui/components";
-import {
-  AnnotationToolGrid,
-  buildAnnotationToolActions,
-} from "@lisca/ui/features";
-import {
-  DockSection,
-  DockStrip,
-  ReadonlyPathField,
-} from "@lisca/ui/shell";
+import { AnnotationToolGrid, buildAnnotationToolActions } from "@lisca/ui/features";
+import { DockSection, DockStrip, ReadonlyPathField } from "@lisca/ui/shell";
 
 import { useStudioAnnotateDock } from "../state/studio-annotate-page-selectors";
 import { annotationOutputPaths } from "../utils/annotation-output";

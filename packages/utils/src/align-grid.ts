@@ -1,4 +1,9 @@
-import type { AlignGridCellCoord, AlignGridShape, AlignGridState, SavedAlignState } from "@lisca/contracts";
+import type {
+  AlignGridCellCoord,
+  AlignGridShape,
+  AlignGridState,
+  SavedAlignState,
+} from "@lisca/contracts";
 import { clamp } from "./frame";
 
 export type AlignGridFrameBounds = {
@@ -592,4 +597,3 @@ export function setExcludedAlignGridCellsForPosition(
 export function clearExcludedAlignGridCells(): ExcludedAlignGridCellsByPosition {
   return {};
 }
-

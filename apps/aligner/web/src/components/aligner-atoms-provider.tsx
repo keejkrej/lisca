@@ -4,9 +4,7 @@ import { createInitialAlignerUiState, alignerUiAtom } from "../atoms/aligner-ui-
 import { useAtomInitialValues } from "@effect-atom/atom-react";
 
 function AlignerAtomInitialValues({ children }: { children: ReactNode }) {
-  useAtomInitialValues([
-    [alignerUiAtom, createInitialAlignerUiState()] as const,
-  ]);
+  useAtomInitialValues([[alignerUiAtom, createInitialAlignerUiState()] as const]);
   return children;
 }
 

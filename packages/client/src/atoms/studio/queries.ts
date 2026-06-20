@@ -14,10 +14,7 @@ import { StudioPortService } from "../ports";
 import { invalidateAfter, ReactivityKeys } from "../reactivity";
 import type { AppRuntime } from "../runtime";
 import { createSourceQueryAtoms } from "../source-queries";
-import type {
-  SaveAnnotationLabelsInput,
-  SaveRoiFrameAnnotationInput,
-} from "../annotator/queries";
+import type { SaveAnnotationLabelsInput, SaveRoiFrameAnnotationInput } from "../annotator/queries";
 
 export type StudioQueryAtoms = {
   scanSourceAtom: (sourceKey: string) => Atom.Atom<Result.Result<WorkspaceScan, ClientError>>;

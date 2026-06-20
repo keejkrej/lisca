@@ -1,10 +1,7 @@
 import { configureLiscaStorage, type LiscaStorageAdapter } from "@lisca/storage";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import {
-  readStudioWizardMemoryRecent,
-  touchStudioWizardMemory,
-} from "../src/studio/wizard-memory";
+import { readStudioWizardMemoryRecent, touchStudioWizardMemory } from "../src/studio/wizard-memory";
 
 function createMemoryStorage(): LiscaStorageAdapter {
   const items = new Map<string, string>();

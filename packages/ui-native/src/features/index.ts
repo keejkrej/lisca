@@ -21,10 +21,7 @@ export {
   useAnnotationCanvasHandlers,
   type AnnotationCanvasPointerEvent,
 } from "./annotate/annotation-canvas";
-export {
-  AnnotationToolGrid,
-  buildAnnotationToolActions,
-} from "./annotate/annotation-tool-grid";
+export { AnnotationToolGrid, buildAnnotationToolActions } from "./annotate/annotation-tool-grid";
 export {
   SmartSegmentModelDialog,
   type SmartSegmentModelDialogProps,
@@ -53,19 +50,13 @@ export type { HostFilePickerMode, HostFilePickerOperations } from "./host/host-o
 export { SourcePickerModal, type SourcePickerModalProps } from "./host/source-picker-modal";
 export { AlignGrid, type AlignGridProps } from "./align/align-grid";
 export { AlignGridRail } from "./align/align-grid-rail";
-export {
-  AlignSelectionRail,
-  type AlignSelectionRailProps,
-} from "./align/align-selection-rail";
+export { AlignSelectionRail, type AlignSelectionRailProps } from "./align/align-selection-rail";
 export {
   SmartExcludeModelDialog,
   type SmartExcludeModelDialogProps,
 } from "./align/smart-exclude-model-dialog";
 export { AlignSelectionCounts } from "./align/align-selection-counts";
-export {
-  AlignEditToggle,
-  type AlignEditToggleProps,
-} from "./align/align-edit-toggle";
+export { AlignEditToggle, type AlignEditToggleProps } from "./align/align-edit-toggle";
 export {
   VariationExcludeDialog,
   type VariationExcludePreviewState,

@@ -10,7 +10,10 @@ export function DemoAnnotatorSaveSection({ state }: { state: DemoAnnotatorState 
   return (
     <DockSection title="Save">
       <div className="flex w-full flex-col gap-2">
-        <ReadonlyPathField aria-label="Output annotation archive" value={`${stem}-annotation.zip`} />
+        <ReadonlyPathField
+          aria-label="Output annotation archive"
+          value={`${stem}-annotation.zip`}
+        />
         <DemoAnnotatorDownloadButton state={state} />
       </div>
     </DockSection>

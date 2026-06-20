@@ -21,7 +21,9 @@ function emptyMemory(): StudioWizardMemoryFile {
 }
 
 function readWizardMemory(): StudioWizardMemoryFile {
-  return readStorageJson<StudioWizardMemoryFile>(liscaLocalStorage(), WIZARD_MEMORY_KEY) ?? emptyMemory();
+  return (
+    readStorageJson<StudioWizardMemoryFile>(liscaLocalStorage(), WIZARD_MEMORY_KEY) ?? emptyMemory()
+  );
 }
 
 function writeWizardMemory(memory: StudioWizardMemoryFile): void {

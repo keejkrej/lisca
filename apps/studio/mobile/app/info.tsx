@@ -9,7 +9,10 @@ import { BasicInfoStep3 } from "../src/components/basic-info-step3";
 import { STUDIO_NAV_WIDTH } from "../src/components/studio-layout";
 import { StudioInfoDock } from "../src/components/studio-info-dock";
 import { StudioLeft } from "../src/components/studio-left";
-import { useStudioBasicInfoLeave, useStudioBasicInfoRouteGuard } from "../src/components/studio-basic-info-leave-guard";
+import {
+  useStudioBasicInfoLeave,
+  useStudioBasicInfoRouteGuard,
+} from "../src/components/studio-basic-info-leave-guard";
 import { useStudioStore } from "../src/state/studio-store";
 
 export default function InfoRoute() {

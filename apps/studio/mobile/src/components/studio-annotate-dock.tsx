@@ -26,7 +26,11 @@ export function StudioAnnotateDock() {
   return (
     <DockStrip>
       {dock.mode === "segmentation" ? (
-        <DockSection className={dockSectionWidths.tool} contentClassName={dockLayoutClasses.content} title="Tool">
+        <DockSection
+          className={dockSectionWidths.tool}
+          contentClassName={dockLayoutClasses.content}
+          title="Tool"
+        >
           <AnnotationToolGrid
             canEditTools={canEditTools}
             shortcutsEnabled={dock.shortcutsEnabled}
@@ -34,7 +38,11 @@ export function StudioAnnotateDock() {
           />
         </DockSection>
       ) : null}
-      <DockSection className={dockSectionWidths.save} contentClassName={dockLayoutClasses.content} title="Save">
+      <DockSection
+        className={dockSectionWidths.save}
+        contentClassName={dockLayoutClasses.content}
+        title="Save"
+      >
         <View className={dockLayoutClasses.stack}>
           {paths.length > 1 ? (
             <View className={dockLayoutClasses.cols2}>

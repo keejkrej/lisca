@@ -111,8 +111,7 @@ export function useDemoAlignState(): DemoAlignState {
     setManualExclusionEnabled: (enabled) =>
       demoAlignUiActions.setManualExclusionEnabled(setState, enabled),
     excludedCells,
-    setExcludedCells: (cells) =>
-      demoAlignUiActions.setExcludedCells(setState, Array.from(cells)),
+    setExcludedCells: (cells) => demoAlignUiActions.setExcludedCells(setState, Array.from(cells)),
     excludeAllCells: () => {
       if (!frame) return;
       demoAlignUiActions.setExcludedCells(
@@ -184,7 +183,10 @@ export function useDemoAlignState(): DemoAlignState {
     applySmartExclusion: (modelCells) => {
       if (!frame) return;
       const edgeCells = collectAlignGridEdgeCells(frame, grid);
-      const nextExcluded = mergeExcludedAlignGridCells(excludedCells, [...edgeCells, ...modelCells]);
+      const nextExcluded = mergeExcludedAlignGridCells(excludedCells, [
+        ...edgeCells,
+        ...modelCells,
+      ]);
       demoAlignUiActions.setExcludedCells(setState, nextExcluded);
       demoAlignUiActions.setStatus(
         setState,

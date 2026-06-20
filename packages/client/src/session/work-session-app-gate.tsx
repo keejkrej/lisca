@@ -1,7 +1,10 @@
 import type { LiscaAppId } from "@lisca/utils";
 import type { ComponentType, ReactNode } from "react";
 
-import { toWorkSessionPickerItems, type WorkSessionPickerItem } from "@lisca/ui-headless/work-session-picker";
+import {
+  toWorkSessionPickerItems,
+  type WorkSessionPickerItem,
+} from "@lisca/ui-headless/work-session-picker";
 
 import { WorkSessionBootstrap, type WorkSession } from "./work-session-gate";
 

@@ -44,12 +44,7 @@ export function SpecCartesianChart(props: SpecCartesianChartProps) {
   }>;
 
   return (
-    <ChartShell
-      colors={props.colors}
-      height={props.height}
-      title={props.title}
-      width={props.width}
-    >
+    <ChartShell colors={props.colors} height={props.height} title={props.title} width={props.width}>
       <VictoryChart
         data={props.data}
         domainPadding={VICTORY_DOMAIN_PADDING}

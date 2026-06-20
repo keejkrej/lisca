@@ -54,8 +54,7 @@ export function otsuOnHistogram(counts: readonly number[], centers: readonly num
 
     const meanBackground = sumBackground / weightBackground;
     const meanForeground = (totalIntensity - sumBackground) / weightForeground;
-    const variance =
-      weightBackground * weightForeground * (meanBackground - meanForeground) ** 2;
+    const variance = weightBackground * weightForeground * (meanBackground - meanForeground) ** 2;
     if (variance > bestVariance) {
       bestVariance = variance;
       bestThreshold = center;
@@ -127,7 +126,9 @@ function buildHistogram(scores: number[]): {
 }
 
 function compareCellScores(left: CellScore, right: CellScore): number {
-  return ascending(left.score, right.score) || ascending(left.i, right.i) || ascending(left.j, right.j);
+  return (
+    ascending(left.score, right.score) || ascending(left.i, right.i) || ascending(left.j, right.j)
+  );
 }
 
 export function computeAutoExcludePreview(

@@ -43,7 +43,9 @@ function AssayPage() {
       navigateTo("/info");
     } catch (cause) {
       setOpenAssayError(
-        cause instanceof Error ? cause.message : "Could not open assay.json. Check the file and try again.",
+        cause instanceof Error
+          ? cause.message
+          : "Could not open assay.json. Check the file and try again.",
       );
     } finally {
       setOpeningAssay(false);

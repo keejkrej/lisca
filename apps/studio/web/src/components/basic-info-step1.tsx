@@ -12,10 +12,7 @@ import { useState } from "react";
 
 import { useStudioMemoryRecent } from "../hooks/use-studio-memory-recent";
 import { useStudioStore } from "../state/studio-store";
-import {
-  recordStudioSourceMemory,
-  recordStudioWorkspaceMemory,
-} from "../utils/studio-memory";
+import { recordStudioSourceMemory, recordStudioWorkspaceMemory } from "../utils/studio-memory";
 
 const ROW = "flex min-h-[100px] w-full flex-col gap-2.5 p-2.5";
 
@@ -52,10 +49,7 @@ export function BasicInfoStep1({ hostPort }: { hostPort: HostFilePickerOperation
   const [folderSourcePath, setFolderSourcePath] = useState<string | null>(null);
 
   const sourceRecent = useStudioMemoryRecent("source", openDataModalOpen);
-  const workspaceRecent = useStudioMemoryRecent(
-    "workspace",
-    pathPicker?.kind === "save",
-  );
+  const workspaceRecent = useStudioMemoryRecent("workspace", pathPicker?.kind === "save");
 
   const openSourceBrowser = (mode: HostFilePickerMode) => {
     setOpenDataModalOpen(false);

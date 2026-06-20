@@ -1,7 +1,15 @@
-import type { AnnotationLabel, RoiFrameRequest, RoiIndexEntry, RoiPositionScan } from "@lisca/contracts";
+import type {
+  AnnotationLabel,
+  RoiFrameRequest,
+  RoiIndexEntry,
+  RoiPositionScan,
+} from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 import { resultData, resultLoading } from "../atoms/result-utils";
-import { useAnnotateSessionCore, type AnnotateWorkspaceSync } from "../session/use-annotate-session";
+import {
+  useAnnotateSessionCore,
+  type AnnotateWorkspaceSync,
+} from "../session/use-annotate-session";
 import { runClientEffect } from "../infra/runtime";
 import type { CanvasResourceTransactionOptions } from "../canvas-resource-transaction";
 import type {
@@ -63,10 +71,7 @@ export type UseAnnotateStateCoreDeps = {
     workspacePath: string,
     request: RoiFrameRequest,
     contrast: AnnotatorUiState["contrast"],
-  ) => import("effect").Effect.Effect<
-    FrameResult,
-    import("../infra/client-error.ts").ClientError
-  >;
+  ) => import("effect").Effect.Effect<FrameResult, import("../infra/client-error.ts").ClientError>;
   annotatorUiAtom: AnnotatorUiAtom;
   annotatorUiActions: AnnotatorUiActions;
   roiWorkspaceScanAtom: (
@@ -330,7 +335,12 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
     shellWorkspacePath,
   ]);
   useEffect(() => {
-    if (!shouldRunContrastFrameLoad(contrast) || !workspacePath || workspacePath !== shellWorkspacePath || !request) {
+    if (
+      !shouldRunContrastFrameLoad(contrast) ||
+      !workspacePath ||
+      workspacePath !== shellWorkspacePath ||
+      !request
+    ) {
       return;
     }
     return loadCanvasResources({

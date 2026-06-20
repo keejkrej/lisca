@@ -54,14 +54,19 @@ export function VariationExcludeDialog(props: {
 
         <DialogBody>
           <View className="flex-row gap-2">
-            <StatTile className="min-w-0 flex-1" label="Eligible cells" value={preview.eligibleCellCount} />
+            <StatTile
+              className="min-w-0 flex-1"
+              label="Eligible cells"
+              value={preview.eligibleCellCount}
+            />
             <StatTile className="min-w-0 flex-1" label="Selected cells" value={selectedCount} />
             <StatTile
               className="min-w-0 flex-1"
               label="Score range"
               value={
                 <Text className="text-xs">
-                  {formatVariationScore(preview.scoreMin)} - {formatVariationScore(preview.scoreMax)}
+                  {formatVariationScore(preview.scoreMin)} -{" "}
+                  {formatVariationScore(preview.scoreMax)}
                 </Text>
               }
             />

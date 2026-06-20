@@ -10,11 +10,7 @@ export {
   strokeMask,
 } from "@lisca/utils";
 export type { AnnotationValue } from "@lisca/web-demo";
-export {
-  annotationValuesEqual,
-  cloneAnnotationValue,
-  emptyAnnotationValue,
-} from "@lisca/web-demo";
+export { annotationValuesEqual, cloneAnnotationValue, emptyAnnotationValue } from "@lisca/web-demo";
 
 export function labelColorStyle(label: AnnotationLabel, selected: boolean) {
   const rgb = hexToRgb(label.color);

@@ -57,10 +57,7 @@ describe("dock", () => {
     expect(resolveDockToolShortcut([brush], { ...baseContext, key: "0" })).toBeNull();
     expect(resolveDockToolShortcut([brush], { ...baseContext, key: "2" })).toBeNull();
     expect(
-      resolveDockToolShortcut(
-        [action("brush", { disabled: true })],
-        { ...baseContext, key: "1" },
-      ),
+      resolveDockToolShortcut([action("brush", { disabled: true })], { ...baseContext, key: "1" }),
     ).toBeNull();
   });
 });

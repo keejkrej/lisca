@@ -1,5 +1,5 @@
-import { Platform } from 'react-native';
-import Animated from 'react-native-reanimated';
+import { Platform } from "react-native";
+import Animated from "react-native-reanimated";
 
 /**
  * This component is used to wrap animated views that should only be animated on native.

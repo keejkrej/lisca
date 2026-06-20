@@ -1,4 +1,12 @@
-import type { AlignGridCellCoord, AlignGridState, AlignerSource, ContrastWindow, FrameRequest, SavedAlignState, WorkspaceScan } from "@lisca/contracts";
+import type {
+  AlignGridCellCoord,
+  AlignGridState,
+  AlignerSource,
+  ContrastWindow,
+  FrameRequest,
+  SavedAlignState,
+  WorkspaceScan,
+} from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 import type { AlignGridToolMode } from "@lisca/utils";
 import { useAtom } from "@effect-atom/atom-react";

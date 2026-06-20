@@ -270,14 +270,14 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
       },
       load: (signal) =>
         runClientEffect(
-          deps.loadFrameEffect(
-            deps.alignerClient,
-            source,
-            selection,
-            frameLoadRequest({ kind: "contrast", contrast }),
-          ).pipe(
-            Effect.mapError(toClientError),
-          ),
+          deps
+            .loadFrameEffect(
+              deps.alignerClient,
+              source,
+              selection,
+              frameLoadRequest({ kind: "contrast", contrast }),
+            )
+            .pipe(Effect.mapError(toClientError)),
           { signal },
         ),
       commit: (nextFrame) => {

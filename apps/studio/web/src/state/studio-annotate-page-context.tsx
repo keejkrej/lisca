@@ -10,7 +10,9 @@ const StudioAnnotatePageContext = createContext<StudioAnnotateState | null>(null
 export function StudioAnnotatePageProvider({ children }: { children: ReactNode }) {
   const state = useStudioAnnotateState();
   return (
-    <StudioAnnotatePageContext.Provider value={state}>{children}</StudioAnnotatePageContext.Provider>
+    <StudioAnnotatePageContext.Provider value={state}>
+      {children}
+    </StudioAnnotatePageContext.Provider>
   );
 }
 

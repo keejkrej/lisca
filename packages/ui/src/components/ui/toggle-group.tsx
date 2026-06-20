@@ -17,7 +17,8 @@ import { Toggle as ToggleComponent, type toggleVariants } from "./toggle";
 type ToggleGroupSize = NonNullable<VariantProps<typeof toggleVariants>["size"]>;
 type ToggleGroupVariant = NonNullable<VariantProps<typeof toggleVariants>["variant"]>;
 
-export const ToggleGroupSizeContext: Context<ToggleGroupSize> = createContext<ToggleGroupSize>("default");
+export const ToggleGroupSizeContext: Context<ToggleGroupSize> =
+  createContext<ToggleGroupSize>("default");
 export const ToggleGroupVariantContext: Context<ToggleGroupVariant> =
   createContext<ToggleGroupVariant>("default");
 

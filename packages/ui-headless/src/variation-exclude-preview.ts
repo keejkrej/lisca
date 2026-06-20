@@ -33,9 +33,7 @@ export function isVariationBinActive(binEnd: number, threshold: number): boolean
   return binEnd <= threshold;
 }
 
-export function deriveVariationExcludePreview(
-  input: VariationExcludePreviewInput | null,
-): {
+export function deriveVariationExcludePreview(input: VariationExcludePreviewInput | null): {
   preview: AutoExcludePreviewResponse;
   threshold: number;
   selectedCount: number;

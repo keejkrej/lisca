@@ -24,10 +24,10 @@ Pure logic only — no React, no Observable Plot, no Victory.
 
 ## Platform renderers
 
-| Platform | Package | Renderer |
-| -------- | ------- | -------- |
-| Web | `@lisca/ui/features` | Observable Plot (`ResultPanelsGridView`) |
-| Mobile | `@lisca/ui-native/features` | Victory Native XL on Skia (`ResultPanelsGridView`) |
+| Platform | Package                     | Renderer                                           |
+| -------- | --------------------------- | -------------------------------------------------- |
+| Web      | `@lisca/ui/features`        | Observable Plot (`ResultPanelsGridView`)           |
+| Mobile   | `@lisca/ui-native/features` | Victory Native XL on Skia (`ResultPanelsGridView`) |
 
 Studio apps wire data loading; chart UI lives in the UI packages.
 

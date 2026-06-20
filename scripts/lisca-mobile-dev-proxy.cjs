@@ -20,9 +20,7 @@ function parseArgs() {
     else if (args[i] === "--rust") rust = Number(args[++i]);
   }
   if (!listen || !expo || !rust) {
-    console.error(
-      "Usage: lisca-mobile-dev-proxy.cjs --listen <port> --expo <port> --rust <port>",
-    );
+    console.error("Usage: lisca-mobile-dev-proxy.cjs --listen <port> --expo <port> --rust <port>");
     process.exit(1);
   }
   return { listen, expo, rust };

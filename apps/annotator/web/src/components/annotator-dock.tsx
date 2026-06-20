@@ -1,7 +1,4 @@
-import {
-  AnnotationToolGrid,
-  buildAnnotationToolActions,
-} from "@lisca/ui/features";
+import { AnnotationToolGrid, buildAnnotationToolActions } from "@lisca/ui/features";
 import { DockSection, DockStrip } from "@lisca/ui/shell";
 
 import { useAnnotateDock } from "../state/annotate-page-selectors";

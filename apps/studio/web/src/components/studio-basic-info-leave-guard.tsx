@@ -50,11 +50,7 @@ export function StudioBasicInfoLeaveGuard() {
       await writeStudioAssayJson(saveTo, assayJson);
       const assayJsonPath = studioAssayJsonPathForSaveTo(saveTo);
       touchStudioWorkSessionFromAssayPath(assayJsonPath, assayJson.assayLabel);
-      recordStudioAssayMemory(
-        assayJsonPath,
-        assayJson.assayLabel,
-        saveTo,
-      );
+      recordStudioAssayMemory(assayJsonPath, assayJson.assayLabel, saveTo);
       setBasicInfoSavedSnapshot(serializeBasicInfoSnapshot(wizard));
       return true;
     } catch (cause) {

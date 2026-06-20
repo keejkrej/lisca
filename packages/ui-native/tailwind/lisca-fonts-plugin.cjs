@@ -7,8 +7,16 @@ const { liscaFontFamily } = require("./lisca-fonts.cjs");
  * classes to the correct fontFamily (mirrors web `--font-sans` / `--font-display` / `--font-mono`).
  */
 module.exports = plugin(({ addUtilities }) => {
-  const { sansRegular, sansMedium, sansSemibold, sansBold, monoRegular, monoMedium, displaySemibold, displayBold } =
-    liscaFontFamily;
+  const {
+    sansRegular,
+    sansMedium,
+    sansSemibold,
+    sansBold,
+    monoRegular,
+    monoMedium,
+    displaySemibold,
+    displayBold,
+  } = liscaFontFamily;
 
   /** Avoid synthetic bolding when Tailwind also emits fontWeight. */
   const face = (fontFamily) => ({ fontFamily, fontWeight: "400" });

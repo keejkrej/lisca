@@ -6,7 +6,14 @@ export const SMART_EXCLUDE_IMAGE_SIZE = 224;
 
 type ProgressInfo =
   | { status: "initiate" | "download"; name: string; file: string }
-  | { status: "progress"; name: string; file: string; progress: number; loaded: number; total: number }
+  | {
+      status: "progress";
+      name: string;
+      file: string;
+      progress: number;
+      loaded: number;
+      total: number;
+    }
   | { status: "done"; name: string; file: string }
   | { status: "ready"; task: string; model: string };
 

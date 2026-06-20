@@ -42,7 +42,11 @@ export function StudioAnalysisStartModal() {
             </DialogDescriptionText>
           </View>
           <DialogActions>
-            <Button size="sm" variant="outline" onPress={() => state.setAnalysisStartConfirm(false)}>
+            <Button
+              size="sm"
+              variant="outline"
+              onPress={() => state.setAnalysisStartConfirm(false)}
+            >
               <Text>Cancel</Text>
             </Button>
             <Button size="sm" onPress={state.startAnalysis}>

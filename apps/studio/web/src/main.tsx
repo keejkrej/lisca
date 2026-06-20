@@ -13,4 +13,9 @@ declare module "@tanstack/react-router" {
   }
 }
 
-createLiscaWebApp({ router, defaultPort: 8767, appId: "studio", AtomsProvider: StudioAtomsProvider });
+createLiscaWebApp({
+  router,
+  defaultPort: 8767,
+  appId: "studio",
+  AtomsProvider: StudioAtomsProvider,
+});

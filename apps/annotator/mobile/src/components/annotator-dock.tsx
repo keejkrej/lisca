@@ -18,7 +18,11 @@ export function AnnotatorDock() {
   return (
     <DockStrip>
       {dock.mode === "segmentation" ? (
-        <DockSection className={dockSectionWidths.tool} contentClassName={dockLayoutClasses.content} title="Tool">
+        <DockSection
+          className={dockSectionWidths.tool}
+          contentClassName={dockLayoutClasses.content}
+          title="Tool"
+        >
           <AnnotationToolGrid
             canEditTools={canEditTools}
             shortcutsEnabled={dock.shortcutsEnabled}

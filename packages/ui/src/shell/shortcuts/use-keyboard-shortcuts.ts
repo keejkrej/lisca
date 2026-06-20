@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  resolveKeyboardShortcut,
-  type KeyboardShortcut,
-} from "@lisca/ui-headless/shortcuts";
+import { resolveKeyboardShortcut, type KeyboardShortcut } from "@lisca/ui-headless/shortcuts";
 import { useEffect, useRef } from "react";
 
 export type { KeyboardShortcut, ShortcutModifiers } from "@lisca/ui-headless/shortcuts";

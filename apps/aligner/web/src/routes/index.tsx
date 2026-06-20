@@ -17,27 +17,27 @@ function AlignPage() {
   return (
     <AlignerWorkSessionGate>
       <AlignPageProvider>
-      <AppShell>
-        <AppShell.Header>
-          <AlignerHeader />
-        </AppShell.Header>
-        <AppShell.Body>
-          <AppShell.Left widthClass="w-72">
-            <AlignerLeft />
-          </AppShell.Left>
-          <AppShell.MainColumn>
-            <AppShell.Main>
-              <AlignerMain />
-            </AppShell.Main>
-            <AppShell.Dock>
-              <AlignerDock />
-            </AppShell.Dock>
-          </AppShell.MainColumn>
-          <AppShell.Right widthClass="w-72">
-            <AlignerRight />
-          </AppShell.Right>
-        </AppShell.Body>
-      </AppShell>
+        <AppShell>
+          <AppShell.Header>
+            <AlignerHeader />
+          </AppShell.Header>
+          <AppShell.Body>
+            <AppShell.Left widthClass="w-72">
+              <AlignerLeft />
+            </AppShell.Left>
+            <AppShell.MainColumn>
+              <AppShell.Main>
+                <AlignerMain />
+              </AppShell.Main>
+              <AppShell.Dock>
+                <AlignerDock />
+              </AppShell.Dock>
+            </AppShell.MainColumn>
+            <AppShell.Right widthClass="w-72">
+              <AlignerRight />
+            </AppShell.Right>
+          </AppShell.Body>
+        </AppShell>
       </AlignPageProvider>
     </AlignerWorkSessionGate>
   );

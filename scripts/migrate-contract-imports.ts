@@ -64,11 +64,7 @@ function parseNamedImports(clause: string): Spec[] {
     });
 }
 
-function renderImport(
-  specs: Spec[],
-  source: string,
-  forceTypeOnly = false,
-): string {
+function renderImport(specs: Spec[], source: string, forceTypeOnly = false): string {
   if (specs.length === 0) return "";
   const allType = forceTypeOnly || specs.every((s) => s.isType);
   const parts = specs.map((s) => {
@@ -89,8 +85,7 @@ function bucket(spec: Spec): string {
 }
 
 function migrateSource(text: string): string {
-  const importRe =
-    /^import\s+(type\s+)?\{([^}]+)\}\s+from\s+["']@lisca\/contracts["'];?\s*$/gm;
+  const importRe = /^import\s+(type\s+)?\{([^}]+)\}\s+from\s+["']@lisca\/contracts["'];?\s*$/gm;
 
   return text.replace(importRe, (full, typeOnlyPrefix: string | undefined, inner: string) => {
     const forceType = Boolean(typeOnlyPrefix);
@@ -124,10 +119,12 @@ function migrateSource(text: string): string {
     if (utils?.length) lines.push(renderImport(utils, "@lisca/utils", true));
 
     const headlessTypes = buckets.get("headless-types");
-    if (headlessTypes?.length) lines.push(renderImport(headlessTypes, "@lisca/ui-headless/types", true));
+    if (headlessTypes?.length)
+      lines.push(renderImport(headlessTypes, "@lisca/ui-headless/types", true));
 
     const headlessHost = buckets.get("headless-host");
-    if (headlessHost?.length) lines.push(renderImport(headlessHost, "@lisca/ui-headless/host", true));
+    if (headlessHost?.length)
+      lines.push(renderImport(headlessHost, "@lisca/ui-headless/host", true));
 
     const client = buckets.get("client");
     if (client?.length) lines.push(renderImport(client, "@lisca/client/crop-status"));

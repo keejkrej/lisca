@@ -45,11 +45,7 @@ export function AlignSaveSection() {
               variant="outline"
               onPress={() => void nav.saveCurrent()}
             >
-              {nav.saving ? (
-                <ActivityIndicator size="small" />
-              ) : (
-                <Text>Save</Text>
-              )}
+              {nav.saving ? <ActivityIndicator size="small" /> : <Text>Save</Text>}
             </Button>
           </View>
           <View className="min-w-0 flex-1">

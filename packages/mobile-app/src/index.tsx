@@ -1,4 +1,9 @@
-import { NativeWindThemeSync, ShellServerProvider, ShellThemeProvider, ShellWorkspaceProvider } from "@lisca/ui-native";
+import {
+  NativeWindThemeSync,
+  ShellServerProvider,
+  ShellThemeProvider,
+  ShellWorkspaceProvider,
+} from "@lisca/ui-native";
 import "@lisca/ui-native/global.css";
 import { PortalHost } from "@rn-primitives/portal";
 import type { LiscaAppId } from "@lisca/utils";

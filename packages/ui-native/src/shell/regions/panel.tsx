@@ -17,9 +17,13 @@ export function Spinner(props: { size?: "small" | "large"; className?: string })
 
 export function Panel(props: { title?: string; children: ReactNode; className?: string }) {
   return (
-    <View className={cn("gap-2 rounded-xl border border-border bg-background p-3", props.className)}>
+    <View
+      className={cn("gap-2 rounded-xl border border-border bg-background p-3", props.className)}
+    >
       {props.title ? (
-        <Text className="font-display text-sm font-semibold leading-5 text-foreground">{props.title}</Text>
+        <Text className="font-display text-sm font-semibold leading-5 text-foreground">
+          {props.title}
+        </Text>
       ) : null}
       {props.children}
     </View>

@@ -13,7 +13,10 @@ import { SidebarSection } from "../../shell/regions/sidebar-section";
 
 import { AlignEditToggle } from "./align-edit-toggle";
 import { AlignSelectionCounts } from "./align-selection-counts";
-import { VariationExcludeDialog, type VariationExcludePreviewState } from "./variation-exclude-dialog";
+import {
+  VariationExcludeDialog,
+  type VariationExcludePreviewState,
+} from "./variation-exclude-dialog";
 
 export type AlignSelectionRailProps = {
   disabled?: boolean;
@@ -54,11 +57,7 @@ function LoadingButton(props: {
       variant="outline"
       onPress={props.onPress}
     >
-      {props.loading ? (
-        <ActivityIndicator size="small" />
-      ) : (
-        <Text>{props.children}</Text>
-      )}
+      {props.loading ? <ActivityIndicator size="small" /> : <Text>{props.children}</Text>}
     </Button>
   );
 }
@@ -141,7 +140,10 @@ export function AlignSelectionRail({
               onPress={() => {
                 if (!frame) return;
                 onExcludedCellsChange(
-                  mergeExcludedAlignGridCells(excludedCells, collectAlignGridEdgeCells(frame, grid)),
+                  mergeExcludedAlignGridCells(
+                    excludedCells,
+                    collectAlignGridEdgeCells(frame, grid),
+                  ),
                 );
               }}
             >

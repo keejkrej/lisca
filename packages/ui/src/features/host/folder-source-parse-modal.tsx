@@ -75,7 +75,9 @@ export function FolderSourceParseModal({
                 modal.setError(null);
               }}
             />
-            {modal.error ? <p className="text-destructive-foreground text-sm">{modal.error}</p> : null}
+            {modal.error ? (
+              <p className="text-destructive-foreground text-sm">{modal.error}</p>
+            ) : null}
           </Field>
         </div>
 

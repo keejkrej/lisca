@@ -46,13 +46,8 @@ export async function resumeAnalysisPendingRun(
 }
 
 export type ResumeStudioPendingRunsOptions = {
-  client: Pick<
-    AlignerDataPort,
-    "getLatestCropProgress" | "onCropRoiProgress"
-  > & {
-    getLatestAnalysisProgress(
-      workspacePath: string,
-    ): ClientEffect<AnalysisProgress | null>;
+  client: Pick<AlignerDataPort, "getLatestCropProgress" | "onCropRoiProgress"> & {
+    getLatestAnalysisProgress(workspacePath: string): ClientEffect<AnalysisProgress | null>;
     onAnalysisProgress(
       requestId: string,
       onProgress: (progress: AnalysisProgress) => void,

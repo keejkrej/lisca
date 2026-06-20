@@ -15,19 +15,19 @@ Do not scatter layout tint tokens (`railChrome`, `panel`, `stat`, etc.); shell s
 
 Compose apps from shell primitives, not exported class strings:
 
-| Component | Role |
-| --------- | ---- |
-| `AppShell` | Root layout; all regions use `bg-background` |
-| `Panel` | Bordered in-app frame (dock, nav rail, sidebar cards) |
-| `ViewportCard` | Padded main column; inner frame matches `Panel` |
-| `Section` | Collapsible in-app section inside a `Panel` (rare direct use) |
-| `SidebarStack` | Sidebar region container (`flex-col gap-2 overflow-auto p-3`) |
-| `SidebarSection` | Sidebar placement variant of `Section` (shrink + scrollable body) |
-| `DockStrip` | Outer dock band — `flex` row, sections grouped and centered (web + native) |
-| `DockSection` | Dock placement variant of `Section`; `fit="hug"` (default) or `fit="panel"` for instruction copy |
-| `DialogSurface` / `ModalScrim` | Modal chrome |
-| `StatTile` | Count/metric tile: `border border-border bg-background` |
-| `useKeyboardShortcuts` | Web keyboard bindings; pair with `dockToolShortcuts()` from `@lisca/ui-headless/dock` for digit tool keys |
+| Component                      | Role                                                                                                      |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `AppShell`                     | Root layout; all regions use `bg-background`                                                              |
+| `Panel`                        | Bordered in-app frame (dock, nav rail, sidebar cards)                                                     |
+| `ViewportCard`                 | Padded main column; inner frame matches `Panel`                                                           |
+| `Section`                      | Collapsible in-app section inside a `Panel` (rare direct use)                                             |
+| `SidebarStack`                 | Sidebar region container (`flex-col gap-2 overflow-auto p-3`)                                             |
+| `SidebarSection`               | Sidebar placement variant of `Section` (shrink + scrollable body)                                         |
+| `DockStrip`                    | Outer dock band — `flex` row, sections grouped and centered (web + native)                                |
+| `DockSection`                  | Dock placement variant of `Section`; `fit="hug"` (default) or `fit="panel"` for instruction copy          |
+| `DialogSurface` / `ModalScrim` | Modal chrome                                                                                              |
+| `StatTile`                     | Count/metric tile: `border border-border bg-background`                                                   |
+| `useKeyboardShortcuts`         | Web keyboard bindings; pair with `dockToolShortcuts()` from `@lisca/ui-headless/dock` for digit tool keys |
 
 Placement styling lives inside `DockSection`, `SidebarSection`, and `SidebarStack` — not exported as class strings.
 

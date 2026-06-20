@@ -1,4 +1,13 @@
-import type { AlignGridCellCoord, AlignGridState, AlignerSource, ContrastWindow, CropRoiProgress, FrameRequest, SavedAlignState, WorkspaceScan } from "@lisca/contracts";
+import type {
+  AlignGridCellCoord,
+  AlignGridState,
+  AlignerSource,
+  ContrastWindow,
+  CropRoiProgress,
+  FrameRequest,
+  SavedAlignState,
+  WorkspaceScan,
+} from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 import { runCropRoi } from "@lisca/client/align-session";
 import { useAlignSessionCore } from "@lisca/client/align-session/react";
@@ -22,8 +31,15 @@ import { scanIdleAtom, scanSourceAtom } from "../atoms/studio-query-atoms";
 import { effectErrorMessage, loadFrameEffect } from "../effects/frame-loader";
 import { isDoneCropStatus } from "@lisca/client/crop-status";
 import { runClientEffect } from "@lisca/client/runtime";
-import { lockedStudioSelection, studioMaskChannel, toStudioSource } from "@lisca/client/studio/source";
-import { collectAssayPositions, filterScanPositionsForAssay } from "@lisca/client/studio/sample-positions";
+import {
+  lockedStudioSelection,
+  studioMaskChannel,
+  toStudioSource,
+} from "@lisca/client/studio/source";
+import {
+  collectAssayPositions,
+  filterScanPositionsForAssay,
+} from "@lisca/client/studio/sample-positions";
 import {
   savedAlignStateKey,
   sourceKey,
@@ -284,15 +300,7 @@ export function useStudioAlignState(): StudioAlignState {
       },
       settle: () => studioAlignUiActions.setFrameLoading(setUi, false),
     });
-  }, [
-    alignPositions.length,
-    contrast,
-    loadCanvasResources,
-    lockedSelection,
-    scan,
-    setUi,
-    source,
-  ]);
+  }, [alignPositions.length, contrast, loadCanvasResources, lockedSelection, scan, setUi, source]);
   const applySmartExclusion = (modelCells: AlignGridCellCoord[]) => {
     if (!frame) return;
     const edgeCells = collectAlignGridEdgeCells(frame, grid);

@@ -24,15 +24,15 @@ On a physical device, point at your machine with `http://` URLs (not host-only).
 
 Turbo package folder is still `apps/<product>/mobile` (`@lisca/<product>-mobile`). CLI target name is **`web-native`**.
 
-| Task | Target | What it does |
-| ---- | ------ | ------------ |
-| `dev` | `web-native` | Expo web in browser + Rust + dev proxy (`localhost:808x`) |
-| `dev` | `ios` | Expo Metro for native + Rust on `0.0.0.0:876x` + LAN API URLs |
-| `dev` | `ios-install` | USB install dev client (`expo run:ios --device`) |
-| `build` | `web-native` | Export static web bundle → `apps/<product>/mobile/dist/web` |
-| `build` | `ios` | `expo prebuild` + Xcode Release compile (no IPA) |
-| `dist` | `ios` | Archive + development IPA → `apps/<product>/mobile/release/ios/` |
-| `typecheck` | `web-native` | Typecheck the Expo app package |
+| Task        | Target        | What it does                                                     |
+| ----------- | ------------- | ---------------------------------------------------------------- |
+| `dev`       | `web-native`  | Expo web in browser + Rust + dev proxy (`localhost:808x`)        |
+| `dev`       | `ios`         | Expo Metro for native + Rust on `0.0.0.0:876x` + LAN API URLs    |
+| `dev`       | `ios-install` | USB install dev client (`expo run:ios --device`)                 |
+| `build`     | `web-native`  | Export static web bundle → `apps/<product>/mobile/dist/web`      |
+| `build`     | `ios`         | `expo prebuild` + Xcode Release compile (no IPA)                 |
+| `dist`      | `ios`         | Archive + development IPA → `apps/<product>/mobile/release/ios/` |
+| `typecheck` | `web-native`  | Typecheck the Expo app package                                   |
 
 The old `mobile` target was renamed to **`web-native`** for dev, build, and typecheck.
 

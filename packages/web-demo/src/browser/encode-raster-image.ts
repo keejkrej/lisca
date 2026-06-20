@@ -1,4 +1,7 @@
-function canvasToBytes(canvas: HTMLCanvasElement, mimeType: "image/png" | "image/jpeg"): Promise<Uint8Array> {
+function canvasToBytes(
+  canvas: HTMLCanvasElement,
+  mimeType: "image/png" | "image/jpeg",
+): Promise<Uint8Array> {
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => {
       if (!blob) {

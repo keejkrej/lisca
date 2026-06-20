@@ -5,10 +5,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { cn } from "../../../lib/utils";
 import { ShellLayoutProvider, useShellLayout } from "./shell-layout-context";
-import {
-  ShellPortraitPanelControls,
-  ShellPortraitPanelOverlays,
-} from "./shell-portrait-panels";
+import { ShellPortraitPanelControls, ShellPortraitPanelOverlays } from "./shell-portrait-panels";
 
 const DEFAULT_RAIL_WIDTH = 288;
 const HEADER_HEIGHT = 64;
@@ -48,8 +45,7 @@ function useRegisterShellPanel(props: {
     if (!layout.isPortrait) {
       return undefined;
     }
-    const register =
-      props.side === "left" ? layout.registerLeftPanel : layout.registerRightPanel;
+    const register = props.side === "left" ? layout.registerLeftPanel : layout.registerRightPanel;
     return register({
       id,
       width,
@@ -84,9 +80,7 @@ function Header(props: { children?: ReactNode }) {
       className="h-16 min-h-16 max-h-16 border-b border-border bg-background px-6"
       style={{ maxHeight: HEADER_HEIGHT }}
     >
-      <View className="min-h-[62px] min-w-0 w-full flex-1 justify-center">
-        {props.children}
-      </View>
+      <View className="min-h-[62px] min-w-0 w-full flex-1 justify-center">{props.children}</View>
     </View>
   );
 }

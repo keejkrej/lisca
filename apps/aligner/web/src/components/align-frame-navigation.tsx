@@ -14,10 +14,7 @@ export function AlignFrameNavigation() {
     nav.scan?.positions ?? [],
     nav.scan?.positionLabels,
   );
-  const channelOptions = toAxisNavigationOptions(
-    nav.scan?.channels ?? [],
-    nav.scan?.channelLabels,
-  );
+  const channelOptions = toAxisNavigationOptions(nav.scan?.channels ?? [], nav.scan?.channelLabels);
   const timeIndex = selectedAxisIndex(nav.scan?.times, nav.selection.time);
   const zIndex = selectedAxisIndex(nav.scan?.zSlices, nav.selection.z);
   const posIndex = findNavigationOptionIndex(positionOptions, nav.selection.pos);

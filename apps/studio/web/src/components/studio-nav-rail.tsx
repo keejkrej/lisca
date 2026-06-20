@@ -67,19 +67,35 @@ export function StudioNavRail() {
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
         <Panel className="w-full shrink-0">
           <div className="flex flex-col items-center gap-6 p-3">
-            <NavButton active={routeId === "assay"} leaveAnnotateGuard={routeId === "annotate"} to="/assay">
+            <NavButton
+              active={routeId === "assay"}
+              leaveAnnotateGuard={routeId === "annotate"}
+              to="/assay"
+            >
               Assay type
             </NavButton>
-            <NavButton active={routeId === "info"} leaveAnnotateGuard={routeId === "annotate"} to="/info">
+            <NavButton
+              active={routeId === "info"}
+              leaveAnnotateGuard={routeId === "annotate"}
+              to="/info"
+            >
               Basic info
             </NavButton>
-            <NavButton active={routeId === "align"} leaveAnnotateGuard={routeId === "annotate"} to="/align">
+            <NavButton
+              active={routeId === "align"}
+              leaveAnnotateGuard={routeId === "annotate"}
+              to="/align"
+            >
               Align pattern
             </NavButton>
             <NavButton active={routeId === "annotate"} to="/annotate">
               Annotate ROI
             </NavButton>
-            <NavButton active={routeId === "result"} leaveAnnotateGuard={routeId === "annotate"} to="/result">
+            <NavButton
+              active={routeId === "result"}
+              leaveAnnotateGuard={routeId === "annotate"}
+              to="/result"
+            >
               View results
             </NavButton>
           </div>

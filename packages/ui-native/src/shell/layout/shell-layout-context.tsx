@@ -3,15 +3,7 @@ import {
   isPortraitViewport,
   shellLayoutReducer,
 } from "@lisca/ui-headless/shell-layout";
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useReducer,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useEffect, useReducer, useState, type ReactNode } from "react";
 import { useWindowDimensions } from "react-native";
 
 export type ShellRegisteredPanel = {
@@ -61,17 +53,17 @@ export function ShellLayoutProvider(props: { children: ReactNode }) {
     dispatch({ type: "portrait-changed", isPortrait });
   }, [isPortrait]);
 
-  const toggleLeft = useCallback(() => dispatch({ type: "toggle-left" }), []);
-  const toggleRight = useCallback(() => dispatch({ type: "toggle-right" }), []);
-  const closePanels = useCallback(() => dispatch({ type: "close" }), []);
-  const registerLeftPanel = useCallback((panel: ShellRegisteredPanel) => {
+  const toggleLeft = () => dispatch({ type: "toggle-left" });
+  const toggleRight = () => dispatch({ type: "toggle-right" });
+  const closePanels = () => dispatch({ type: "close" });
+  const registerLeftPanel = (panel: ShellRegisteredPanel) => {
     setLeftPanels((current) => upsertPanel(current, panel));
     return () => setLeftPanels((current) => removePanel(current, panel.id));
-  }, []);
-  const registerRightPanel = useCallback((panel: ShellRegisteredPanel) => {
+  };
+  const registerRightPanel = (panel: ShellRegisteredPanel) => {
     setRightPanels((current) => upsertPanel(current, panel));
     return () => setRightPanels((current) => removePanel(current, panel.id));
-  }, []);
+  };
 
   const value: ShellLayoutContextValue = {
     isPortrait,

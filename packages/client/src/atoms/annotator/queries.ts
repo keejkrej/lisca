@@ -1,4 +1,10 @@
-import type { AnnotationLabel, RoiFrameAnnotation, RoiFrameAnnotationPayload, RoiFrameRequest, RoiWorkspaceScan } from "@lisca/contracts";
+import type {
+  AnnotationLabel,
+  RoiFrameAnnotation,
+  RoiFrameAnnotationPayload,
+  RoiFrameRequest,
+  RoiWorkspaceScan,
+} from "@lisca/contracts";
 import { Atom, type Result } from "@effect-atom/atom-react";
 import { Effect } from "effect";
 

@@ -33,7 +33,13 @@ export function StudioWorkSessionGate({ children }: StudioWorkSessionGateProps) 
       appId="studio"
       PickerDialog={WorkSessionPickerDialog}
       onRestore={(session) =>
-        restoreStudioSession(session, setWizard, setAlignUi, setAnnotateUi, workspace.setWorkspacePath)
+        restoreStudioSession(
+          session,
+          setWizard,
+          setAlignUi,
+          setAnnotateUi,
+          workspace.setWorkspacePath,
+        )
       }
     >
       {children}
@@ -60,7 +66,8 @@ async function restoreStudioSession(
     loadAssayJson: (assayJson) => studioWizardActions.loadAssayJson(setWizard, assayJson),
     setShellWorkspacePath,
     setAlignWorkspacePath: (path) => studioAlignUiActions.setWorkspacePath(setAlignUi, path),
-    setAnnotateWorkspacePath: (path) => studioAnnotateUiActions.setWorkspacePath(setAnnotateUi, path),
+    setAnnotateWorkspacePath: (path) =>
+      studioAnnotateUiActions.setWorkspacePath(setAnnotateUi, path),
     setAlignSource: (source) => studioAlignUiActions.setSource(setAlignUi, source),
     resumePendingRuns: async (workspacePath) => {
       await resumeStudioPendingRuns({

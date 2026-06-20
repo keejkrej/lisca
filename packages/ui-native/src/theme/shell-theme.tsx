@@ -41,10 +41,7 @@ function themeReducer(state: ShellThemeMode, action: ThemeAction): ShellThemeMod
   return next;
 }
 
-function createThemeControls(
-  dispatch: Dispatch<ThemeAction>,
-  storageKeyRef: { current: string },
-) {
+function createThemeControls(dispatch: Dispatch<ThemeAction>, storageKeyRef: { current: string }) {
   return {
     setMode: (mode: ShellThemeMode) =>
       dispatch({ type: "setMode", mode, storageKey: storageKeyRef.current }),
@@ -61,10 +58,8 @@ export function ShellThemeProvider(props: {
   const storageKey = props.storageKey ?? DEFAULT_STORAGE_KEY;
   const storageKeyRef = useRef(storageKey);
   storageKeyRef.current = storageKey;
-  const [mode, dispatch] = useReducer(
-    themeReducer,
-    defaultMode,
-    (fallback) => readStoredMode(storageKey, fallback),
+  const [mode, dispatch] = useReducer(themeReducer, defaultMode, (fallback) =>
+    readStoredMode(storageKey, fallback),
   );
   const controlsRef = useRef<ReturnType<typeof createThemeControls>>(null!);
   if (!controlsRef.current) {

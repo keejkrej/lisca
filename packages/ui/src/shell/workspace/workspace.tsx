@@ -90,7 +90,9 @@ export function ShellWorkspaceProvider({ children }: { children: ReactNode }) {
 
   return (
     <ShellWorkspaceActionsContext.Provider value={actionsRef.current}>
-      <ShellWorkspaceStateContext.Provider value={state}>{children}</ShellWorkspaceStateContext.Provider>
+      <ShellWorkspaceStateContext.Provider value={state}>
+        {children}
+      </ShellWorkspaceStateContext.Provider>
     </ShellWorkspaceActionsContext.Provider>
   );
 }

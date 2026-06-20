@@ -1,4 +1,13 @@
-import type { AlignGridCellCoord, AlignGridState, AlignerSource, ContrastWindow, CropRoiProgress, FrameRequest, SavedAlignState, WorkspaceScan } from "@lisca/contracts";
+import type {
+  AlignGridCellCoord,
+  AlignGridState,
+  AlignerSource,
+  ContrastWindow,
+  CropRoiProgress,
+  FrameRequest,
+  SavedAlignState,
+  WorkspaceScan,
+} from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 import { runCropRoi, cellsBelowVariationThreshold } from "@lisca/client/align-session";
 import { useAlignSessionCore } from "@lisca/client/align-session/react";
@@ -23,8 +32,15 @@ import { scanIdleAtom, scanSourceAtom } from "../atoms/studio-query-atoms";
 import { effectErrorMessage, loadFrameEffect } from "../effects/frame-loader";
 import { isDoneCropStatus } from "@lisca/client/crop-status";
 import { runClientEffect } from "@lisca/client/runtime";
-import { lockedStudioSelection, studioMaskChannel, toStudioSource } from "@lisca/client/studio/source";
-import { collectAssayPositions, filterScanPositionsForAssay } from "@lisca/client/studio/sample-positions";
+import {
+  lockedStudioSelection,
+  studioMaskChannel,
+  toStudioSource,
+} from "@lisca/client/studio/source";
+import {
+  collectAssayPositions,
+  filterScanPositionsForAssay,
+} from "@lisca/client/studio/sample-positions";
 import {
   savedAlignStateKey,
   sourceKey,

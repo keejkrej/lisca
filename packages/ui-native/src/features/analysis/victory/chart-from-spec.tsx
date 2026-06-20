@@ -136,9 +136,7 @@ export function VictoryChartFromSpec(props: {
       yAxisTitle={spec.y.label}
       yKeys={["min", "q1", "median", "q3", "max"]}
     >
-      {({ points }) => (
-        <BoxPlotMarks color={BOXPLOT_STROKE} groups={spec.groups} points={points} />
-      )}
+      {({ points }) => <BoxPlotMarks color={BOXPLOT_STROKE} groups={spec.groups} points={points} />}
     </SpecCartesianChart>
   );
 }

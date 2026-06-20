@@ -3,10 +3,7 @@ import { useEffect, useId } from "react";
 
 import { cn } from "../../lib/utils";
 import { ShellLayoutProvider, useShellLayout } from "./shell-layout-context";
-import {
-  ShellPortraitPanelControls,
-  ShellPortraitPanelOverlays,
-} from "./shell-portrait-panels";
+import { ShellPortraitPanelControls, ShellPortraitPanelOverlays } from "./shell-portrait-panels";
 
 const shellDivider = "border-border";
 const shellSurface = "bg-background";
@@ -58,8 +55,7 @@ function useRegisterShellPanel(props: {
     if (!layout.isPortrait) {
       return undefined;
     }
-    const register =
-      props.side === "left" ? layout.registerLeftPanel : layout.registerRightPanel;
+    const register = props.side === "left" ? layout.registerLeftPanel : layout.registerRightPanel;
     return register({
       id,
       widthClass,

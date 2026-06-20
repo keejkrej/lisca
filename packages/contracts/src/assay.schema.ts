@@ -32,11 +32,9 @@ export const AssaySlideIdSchema = Schema.Literal("slide-i", "slide-vi").annotati
   identifier: "AssaySlideId",
 });
 
-export const AssayDataSourceKindSchema = Schema.Literal(
-  "folder",
-  "nd2",
-  "czi",
-).annotations({ identifier: "AssayDataSourceKind" });
+export const AssayDataSourceKindSchema = Schema.Literal("folder", "nd2", "czi").annotations({
+  identifier: "AssayDataSourceKind",
+});
 
 export const AssayBasicInfoStep1Schema = Schema.Struct({
   name: Schema.String,

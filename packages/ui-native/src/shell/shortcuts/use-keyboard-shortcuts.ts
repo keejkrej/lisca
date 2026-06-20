@@ -1,7 +1,4 @@
-import {
-  resolveKeyboardShortcut,
-  type KeyboardShortcut,
-} from "@lisca/ui-headless/shortcuts";
+import { resolveKeyboardShortcut, type KeyboardShortcut } from "@lisca/ui-headless/shortcuts";
 import { useEffect, useRef } from "react";
 import { Platform } from "react-native";
 

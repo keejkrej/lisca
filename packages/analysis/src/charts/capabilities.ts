@@ -33,15 +33,15 @@ export function isPanelRenderableOn(platform: ChartPlatform, panel: ResultPanel)
   return isPanelKindSupportedOn(platform, panel.kind);
 }
 
-export function isChartSpecKindSupportedOn(
-  platform: ChartPlatform,
-  kind: ChartSpecKind,
-): boolean {
+export function isChartSpecKindSupportedOn(platform: ChartPlatform, kind: ChartSpecKind): boolean {
   if (kind === "line") return PANEL_RENDER_CAPABILITIES[platform].generic;
   return PANEL_RENDER_CAPABILITIES[platform][kind];
 }
 
-export function filterRenderablePanels(platform: ChartPlatform, panels: ResultPanel[]): ResultPanel[] {
+export function filterRenderablePanels(
+  platform: ChartPlatform,
+  panels: ResultPanel[],
+): ResultPanel[] {
   return panels.filter((panel) => isPanelRenderableOn(platform, panel));
 }
 

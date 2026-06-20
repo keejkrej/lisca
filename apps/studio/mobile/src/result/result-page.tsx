@@ -208,8 +208,7 @@ export function ResultPage() {
         analysisResultFiles,
         loadPanelsForFile,
       );
-      const expectedPlots =
-        countChartSpecs(timeseriesPanels) + countChartSpecs(parameterPanels);
+      const expectedPlots = countChartSpecs(timeseriesPanels) + countChartSpecs(parameterPanels);
       if (expectedPlots === 0) {
         throw new Error("No plots to export");
       }

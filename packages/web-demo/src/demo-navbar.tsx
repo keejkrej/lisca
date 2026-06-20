@@ -1,12 +1,18 @@
-import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@lisca/ui/components";
+import {
+  Button,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@lisca/ui/components";
 import { ShellThemeToggle } from "@lisca/ui/shell";
 import { ImageIcon } from "lucide-react";
 import { useRef, type ChangeEvent, type ReactNode } from "react";
 
 const imageAccept = ".png,.jpg,.jpeg,.tif,.tiff,image/png,image/jpeg,image/tiff";
 const sampleFileNameWidthClassName = "min-w-0 max-w-[9rem] sm:max-w-[11rem]";
-const sampleFileNameTextClassName =
-  "font-mono text-xs text-muted-foreground sm:text-sm";
+const sampleFileNameTextClassName = "font-mono text-xs text-muted-foreground sm:text-sm";
 
 export type DemoSampleImageOption = {
   id: string;

@@ -3,7 +3,11 @@ import { ScrollView, type ViewProps } from "react-native";
 
 import { cn } from "../../../lib/utils";
 
-export function DockStrip(props: { children?: ReactNode; style?: ViewProps["style"]; className?: string }) {
+export function DockStrip(props: {
+  children?: ReactNode;
+  style?: ViewProps["style"];
+  className?: string;
+}) {
   return (
     <ScrollView
       horizontal

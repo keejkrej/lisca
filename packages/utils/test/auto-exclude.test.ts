@@ -28,13 +28,10 @@ describe("computeAutoExcludePreview", () => {
       }
     }
 
-    const preview = computeAutoExcludePreview(
-      { width, height, pixels },
-      [
-        { i: 0, j: 0, x: 0, y: 0, w: 10, h: 10 },
-        { i: 1, j: 0, x: 10, y: 0, w: 10, h: 10 },
-      ],
-    );
+    const preview = computeAutoExcludePreview({ width, height, pixels }, [
+      { i: 0, j: 0, x: 0, y: 0, w: 10, h: 10 },
+      { i: 1, j: 0, x: 10, y: 0, w: 10, h: 10 },
+    ]);
 
     expect(preview.eligibleCellCount).toBe(2);
     expect(preview.cellScores[0]?.score).toBeLessThan(preview.cellScores[1]?.score ?? 0);
@@ -42,10 +39,9 @@ describe("computeAutoExcludePreview", () => {
   });
 
   it("skips empty clipped cells", () => {
-    const preview = computeAutoExcludePreview(
-      { width: 8, height: 8, pixels: new Uint8Array(64) },
-      [{ i: 0, j: 0, x: 10, y: 10, w: 4, h: 4 }],
-    );
+    const preview = computeAutoExcludePreview({ width: 8, height: 8, pixels: new Uint8Array(64) }, [
+      { i: 0, j: 0, x: 10, y: 10, w: 4, h: 4 },
+    ]);
     expect(preview.eligibleCellCount).toBe(0);
     expect(preview.cellScores).toEqual([]);
   });

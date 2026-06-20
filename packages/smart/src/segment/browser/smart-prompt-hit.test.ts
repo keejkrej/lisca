@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  findSmartSegmentPromptIndexAt,
-  smartSegmentPromptFrameRadius,
-} from "@lisca/utils";
+import { findSmartSegmentPromptIndexAt, smartSegmentPromptFrameRadius } from "@lisca/utils";
 
 describe("smart prompt hit test", () => {
   it("finds the nearest prompt within a frame-scaled radius", () => {

@@ -17,7 +17,11 @@ export function AnnotatorSaveSection() {
   const paths = annotationOutputPaths(dock.request, dock.mode);
 
   return (
-    <DockSection className={dockSectionWidths.save} contentClassName={dockLayoutClasses.content} title="Save">
+    <DockSection
+      className={dockSectionWidths.save}
+      contentClassName={dockLayoutClasses.content}
+      title="Save"
+    >
       <View className={dockLayoutClasses.stack}>
         {paths.length > 1 ? (
           <View className={dockLayoutClasses.cols2}>
@@ -37,11 +41,7 @@ export function AnnotatorSaveSection() {
           variant="outline"
           onPress={() => void dock.handleSave()}
         >
-          {dock.saving ? (
-            <ActivityIndicator size="small" />
-          ) : (
-            <Text className="text-xs">Save</Text>
-          )}
+          {dock.saving ? <ActivityIndicator size="small" /> : <Text className="text-xs">Save</Text>}
         </Button>
       </View>
     </DockSection>

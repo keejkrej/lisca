@@ -3,7 +3,9 @@ import type { FrameResult } from "@lisca/utils";
 const IMAGENET_MEAN = [0.485, 0.456, 0.406] as const;
 const IMAGENET_STD = [0.229, 0.224, 0.225] as const;
 
-export function normalizeCellPixels(values: Float32Array | Uint16Array | Uint8Array): Uint8ClampedArray {
+export function normalizeCellPixels(
+  values: Float32Array | Uint16Array | Uint8Array,
+): Uint8ClampedArray {
   if (values.length === 0) return new Uint8ClampedArray(0);
 
   let minimum = Number.POSITIVE_INFINITY;
@@ -17,8 +19,7 @@ export function normalizeCellPixels(values: Float32Array | Uint16Array | Uint8Ar
   const range = maximum - minimum;
   const rgba = new Uint8ClampedArray(values.length * 4);
   for (let index = 0; index < values.length; index += 1) {
-    const normalized =
-      range > 0 ? Math.round(((values[index]! - minimum) / range) * 255) : 0;
+    const normalized = range > 0 ? Math.round(((values[index]! - minimum) / range) * 255) : 0;
     const offset = index * 4;
     rgba[offset] = normalized;
     rgba[offset + 1] = normalized;
@@ -67,8 +68,7 @@ export function cropCellToCanvas(
 
   const range = maximum - minimum;
   for (let index = 0; index < raw.length; index += 1) {
-    const normalized =
-      range > 0 ? Math.round(((raw[index]! - minimum) / range) * 255) : 0;
+    const normalized = range > 0 ? Math.round(((raw[index]! - minimum) / range) * 255) : 0;
     const offset = index * 4;
     rgba[offset] = normalized;
     rgba[offset + 1] = normalized;

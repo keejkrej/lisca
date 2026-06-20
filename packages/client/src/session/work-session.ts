@@ -7,7 +7,12 @@ import {
   writeLiscaActiveServerForApp,
   type LiscaAppId,
 } from "@lisca/utils";
-import { liscaLocalStorage, liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/storage";
+import {
+  liscaLocalStorage,
+  liscaSessionStorage,
+  readStorageJson,
+  writeStorageJson,
+} from "@lisca/storage";
 
 export type { LiscaAppId };
 export { LISCA_APP_DEFAULT_PORTS };
@@ -46,10 +51,7 @@ export function readPersistedActiveServerAddress(appId: LiscaAppId): string | nu
   return readLiscaActiveServerForApp(appId);
 }
 
-export function writePersistedActiveServerAddress(
-  appId: LiscaAppId,
-  address: string | null,
-): void {
+export function writePersistedActiveServerAddress(appId: LiscaAppId, address: string | null): void {
   writeLiscaActiveServerForApp(appId, address);
 }
 
@@ -138,7 +140,7 @@ export function touchWorkSession(
     server: entry.server,
     workspacePath,
     assayJsonPath,
-    source: appId === "aligner" ? entry.source ?? null : entry.source ?? null,
+    source: appId === "aligner" ? (entry.source ?? null) : (entry.source ?? null),
     label:
       entry.label ??
       (appId === "studio" && assayJsonPath

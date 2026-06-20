@@ -1,4 +1,9 @@
-import type { AlignerSource, AutoExcludePreviewRequest, AutoExcludePreviewResponse, WorkspaceScan } from "@lisca/contracts";
+import type {
+  AlignerSource,
+  AutoExcludePreviewRequest,
+  AutoExcludePreviewResponse,
+  WorkspaceScan,
+} from "@lisca/contracts";
 import { Atom, type Result } from "@effect-atom/atom-react";
 import { type Context, Effect } from "effect";
 

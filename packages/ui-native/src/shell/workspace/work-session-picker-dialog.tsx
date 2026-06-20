@@ -9,11 +9,7 @@ import { Pressable, ScrollView, View } from "react-native";
 
 import { Button } from "../../../components/ui/button";
 import { Text } from "../../../components/ui/text";
-import {
-  DialogDescriptionText,
-  DialogStack,
-  DialogTitleText,
-} from "../modal/dialog-copy";
+import { DialogDescriptionText, DialogStack, DialogTitleText } from "../modal/dialog-copy";
 import { DialogSurface, ModalScrim } from "../modal/modal";
 
 export type WorkSessionPickerDialogProps = {

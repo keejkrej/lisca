@@ -18,10 +18,7 @@ const {
   liscaMobileExpoPort,
 } = require("./lisca-dev-ports.cjs");
 const { DESKTOP_PRODUCTS } = require("./electron/products.cjs");
-const {
-  isBenignDevWsProxyError,
-  isLiscaApiProxyPath,
-} = require("./lisca-dev-proxy-shared.cjs");
+const { isBenignDevWsProxyError, isLiscaApiProxyPath } = require("./lisca-dev-proxy-shared.cjs");
 
 function listenHttp(
   handler: (req: IncomingMessage, res: ServerResponse) => void,
@@ -74,10 +71,7 @@ async function reservePort(): Promise<number> {
 }
 
 describe("lisca dev LAN host", () => {
-  const {
-    isUsableDevHost,
-    resolveDevLanHost,
-  } = require("./lisca-dev-lan-host.cjs");
+  const { isUsableDevHost, resolveDevLanHost } = require("./lisca-dev-lan-host.cjs");
 
   it("prefers explicit EXPO_PUBLIC_LISCA_HTTP_HOST", () => {
     expect(resolveDevLanHost({ EXPO_PUBLIC_LISCA_HTTP_HOST: "192.168.2.1" })).toBe("192.168.2.1");
@@ -136,8 +130,11 @@ describe("lisca dev ports", () => {
     for (const [scope, ports] of Object.entries(LISCA_APP_PORTS)) {
       expect(ports.backendPort).toBe(ports.publicPort + LISCA_DEV_BACKEND_PORT_OFFSET);
       expect(liscaDevBackendPort(ports.publicPort)).toBe(ports.backendPort);
-      expect(liscaMobileExpoPort(LISCA_MOBILE_PORTS[scope as keyof typeof LISCA_MOBILE_PORTS])).toBe(
-        LISCA_MOBILE_PORTS[scope as keyof typeof LISCA_MOBILE_PORTS] + LISCA_DEV_BACKEND_PORT_OFFSET,
+      expect(
+        liscaMobileExpoPort(LISCA_MOBILE_PORTS[scope as keyof typeof LISCA_MOBILE_PORTS]),
+      ).toBe(
+        LISCA_MOBILE_PORTS[scope as keyof typeof LISCA_MOBILE_PORTS] +
+          LISCA_DEV_BACKEND_PORT_OFFSET,
       );
     }
   });

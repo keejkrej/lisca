@@ -109,7 +109,9 @@ export const ResultPanelsGridView = forwardRef(function ResultPanelsGridView(
         <View className={exportMode ? "border-b border-[#e5e5e5] px-4 py-3" : "border-b px-4 py-3"}>
           <Text
             className={
-              exportMode ? "text-2xl font-semibold text-[#171717]" : "text-2xl font-semibold text-foreground"
+              exportMode
+                ? "text-2xl font-semibold text-[#171717]"
+                : "text-2xl font-semibold text-foreground"
             }
           >
             {props.pageTitle}

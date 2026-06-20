@@ -1,4 +1,10 @@
-import type { AutoExcludePreviewRequest, AutoExcludePreviewResponse, SavedAlignState, SaveBboxResponse, WorkspaceScan } from "@lisca/contracts";
+import type {
+  AutoExcludePreviewRequest,
+  AutoExcludePreviewResponse,
+  SavedAlignState,
+  SaveBboxResponse,
+  WorkspaceScan,
+} from "@lisca/contracts";
 import { Atom, type Result } from "@effect-atom/atom-react";
 import { Effect } from "effect";
 

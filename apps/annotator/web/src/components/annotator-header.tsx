@@ -5,7 +5,5 @@ import { useAnnotateShell } from "../state/annotate-page-selectors";
 export function AnnotatorHeader() {
   const shell = useAnnotateShell();
 
-  return (
-    <ShellNavbar.Annotator onPickWorkspace={() => shell.setFilePickerOpen(true)} />
-  );
+  return <ShellNavbar.Annotator onPickWorkspace={() => shell.setFilePickerOpen(true)} />;
 }

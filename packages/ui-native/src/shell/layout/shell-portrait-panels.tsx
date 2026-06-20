@@ -92,7 +92,15 @@ export function ShellPortraitPanelOverlays() {
             layout.leftOpen ? "opacity-100" : "opacity-0",
           )}
           pointerEvents={layout.leftOpen ? "auto" : "none"}
-          style={{ width: Math.min(layout.leftPanels.reduce((max, panel) => Math.max(max, panel.width ?? DEFAULT_PANEL_WIDTH), DEFAULT_PANEL_WIDTH), 320) }}
+          style={{
+            width: Math.min(
+              layout.leftPanels.reduce(
+                (max, panel) => Math.max(max, panel.width ?? DEFAULT_PANEL_WIDTH),
+                DEFAULT_PANEL_WIDTH,
+              ),
+              320,
+            ),
+          }}
         >
           <ScrollView contentContainerClassName="flex-grow" keyboardShouldPersistTaps="handled">
             {layout.leftPanels.map((panel) => (
@@ -112,7 +120,15 @@ export function ShellPortraitPanelOverlays() {
             layout.rightOpen ? "opacity-100" : "opacity-0",
           )}
           pointerEvents={layout.rightOpen ? "auto" : "none"}
-          style={{ width: Math.min(layout.rightPanels.reduce((max, panel) => Math.max(max, panel.width ?? DEFAULT_PANEL_WIDTH), DEFAULT_PANEL_WIDTH), 320) }}
+          style={{
+            width: Math.min(
+              layout.rightPanels.reduce(
+                (max, panel) => Math.max(max, panel.width ?? DEFAULT_PANEL_WIDTH),
+                DEFAULT_PANEL_WIDTH,
+              ),
+              320,
+            ),
+          }}
         >
           <ScrollView contentContainerClassName="flex-grow" keyboardShouldPersistTaps="handled">
             {layout.rightPanels.map((panel) => (

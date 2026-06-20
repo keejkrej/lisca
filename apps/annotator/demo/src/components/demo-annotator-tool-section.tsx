@@ -1,7 +1,4 @@
-import {
-  AnnotationToolGrid,
-  buildAnnotationToolActions,
-} from "@lisca/ui/features";
+import { AnnotationToolGrid, buildAnnotationToolActions } from "@lisca/ui/features";
 import { cn } from "@lisca/ui/components";
 import { DockSection } from "@lisca/ui/shell";
 import type { DockToolAction } from "@lisca/ui/shell";

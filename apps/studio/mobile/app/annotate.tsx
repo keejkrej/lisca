@@ -6,9 +6,7 @@ import { StudioAnnotateLeft } from "../src/components/studio-annotate-left";
 import { StudioAnnotateMain } from "../src/components/studio-annotate-main";
 import { StudioAnnotateRight } from "../src/components/studio-annotate-right";
 import { StudioLeft } from "../src/components/studio-left";
-import {
-  StudioAnnotatePageProvider,
-} from "../src/state/studio-annotate-page-context";
+import { StudioAnnotatePageProvider } from "../src/state/studio-annotate-page-context";
 import { useStudioAnnotateShell } from "../src/state/studio-annotate-page-selectors";
 
 const ANNOTATE_PANEL_WIDTH = 288;

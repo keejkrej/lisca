@@ -30,7 +30,9 @@ export function AssaySaveConfirmModal({
       <DialogSurface maxWidth={384}>
         <DialogTitleText>Basic info changed</DialogTitleText>
         <DialogDescriptionText>Save assay.json before leaving basic info?</DialogDescriptionText>
-        {error ? <DialogDescriptionText className="text-destructive">{error}</DialogDescriptionText> : null}
+        {error ? (
+          <DialogDescriptionText className="text-destructive">{error}</DialogDescriptionText>
+        ) : null}
         <View className="flex-row justify-end gap-2">
           <Button disabled={saving} size="sm" variant="outline" onPress={onCancel}>
             <Text className="text-xs">Cancel</Text>

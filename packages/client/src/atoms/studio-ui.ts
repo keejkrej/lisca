@@ -32,7 +32,10 @@ import {
   parseStudioAssayJson as parseStudioAssayJsonCore,
 } from "../studio/studio-assay-json";
 import { sampleRowFromDisk, sampleRowToDisk } from "../studio/sample-positions";
-import { isBasicInfoDirty as isBasicInfoDirtyCore, serializeBasicInfoSnapshot as serializeBasicInfoSnapshotCore } from "../studio/wizard-state";
+import {
+  isBasicInfoDirty as isBasicInfoDirtyCore,
+  serializeBasicInfoSnapshot as serializeBasicInfoSnapshotCore,
+} from "../studio/wizard-state";
 
 export type {
   AssayId,

@@ -14,9 +14,10 @@ describe("shell-layout", () => {
   });
 
   it("toggle-left opens left and closes right", () => {
-    expect(
-      shellLayoutReducer(initialShellLayoutPanelState, { type: "toggle-left" }),
-    ).toEqual({ leftOpen: true, rightOpen: false });
+    expect(shellLayoutReducer(initialShellLayoutPanelState, { type: "toggle-left" })).toEqual({
+      leftOpen: true,
+      rightOpen: false,
+    });
     expect(
       shellLayoutReducer({ leftOpen: true, rightOpen: false }, { type: "toggle-left" }),
     ).toEqual({ leftOpen: false, rightOpen: false });
@@ -26,9 +27,10 @@ describe("shell-layout", () => {
   });
 
   it("toggle-right opens right and closes left", () => {
-    expect(
-      shellLayoutReducer(initialShellLayoutPanelState, { type: "toggle-right" }),
-    ).toEqual({ leftOpen: false, rightOpen: true });
+    expect(shellLayoutReducer(initialShellLayoutPanelState, { type: "toggle-right" })).toEqual({
+      leftOpen: false,
+      rightOpen: true,
+    });
     expect(
       shellLayoutReducer({ leftOpen: true, rightOpen: false }, { type: "toggle-right" }),
     ).toEqual({ leftOpen: false, rightOpen: true });
@@ -40,8 +42,6 @@ describe("shell-layout", () => {
     expect(shellLayoutReducer(open, { type: "portrait-changed", isPortrait: true })).toEqual(
       initialShellLayoutPanelState,
     );
-    expect(
-      shellLayoutReducer(open, { type: "portrait-changed", isPortrait: false }),
-    ).toEqual(open);
+    expect(shellLayoutReducer(open, { type: "portrait-changed", isPortrait: false })).toEqual(open);
   });
 });

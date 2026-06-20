@@ -19,7 +19,14 @@ type TransformersModule = typeof import("@huggingface/transformers");
 
 type ProgressInfo =
   | { status: "initiate" | "download"; name: string; file: string }
-  | { status: "progress"; name: string; file: string; progress: number; loaded: number; total: number }
+  | {
+      status: "progress";
+      name: string;
+      file: string;
+      progress: number;
+      loaded: number;
+      total: number;
+    }
   | { status: "done"; name: string; file: string }
   | { status: "ready"; task: string; model: string };
 
@@ -36,10 +43,12 @@ export type BrowserSamEngineOptions = {
 
 type SamModelInstance = {
   get_image_embeddings(processed: ProcessedImage): Promise<ImageEmbeddings>;
-  (inputs: ImageEmbeddings & {
-    input_points: InstanceType<TransformersModule["Tensor"]>;
-    input_labels: InstanceType<TransformersModule["Tensor"]>;
-  }): Promise<{
+  (
+    inputs: ImageEmbeddings & {
+      input_points: InstanceType<TransformersModule["Tensor"]>;
+      input_labels: InstanceType<TransformersModule["Tensor"]>;
+    },
+  ): Promise<{
     pred_masks: unknown;
     iou_scores: { data: Float32Array };
   }>;
@@ -116,7 +125,9 @@ export class BrowserSamEngine implements SmartSegmentEngine {
     return Boolean(this.model && this.processor);
   }
 
-  private async ensureLoaded(onProgress?: (progress: SmartSegmentDownloadProgress) => void): Promise<void> {
+  private async ensureLoaded(
+    onProgress?: (progress: SmartSegmentDownloadProgress) => void,
+  ): Promise<void> {
     if (this.model && this.processor) return;
     if (this.loadPromise) return this.loadPromise;
 
@@ -129,7 +140,10 @@ export class BrowserSamEngine implements SmartSegmentEngine {
         progress_callback,
       };
       try {
-        this.model = (await SamModel.from_pretrained(this.modelId, loadOptions)) as unknown as SamModelInstance;
+        this.model = (await SamModel.from_pretrained(
+          this.modelId,
+          loadOptions,
+        )) as unknown as SamModelInstance;
         this.processor = (await AutoProcessor.from_pretrained(this.modelId, {
           progress_callback,
         })) as unknown as SamProcessorInstance;

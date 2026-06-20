@@ -205,9 +205,7 @@ function productFilter(taskName, scopeName, target) {
   rejectIosTurboTarget(taskName, t);
 
   if (!APP_TARGETS.has(t)) {
-    console.error(
-      `Invalid target "${t}". Use: desktop | web | demo | server | web-native | all`,
-    );
+    console.error(`Invalid target "${t}". Use: desktop | web | demo | server | web-native | all`);
     process.exit(1);
   }
 
@@ -355,11 +353,15 @@ function runWebDev(scopeName) {
   runDevWithServer(scopeName, {
     backend: true,
     run: () =>
-      spawnSync("bun", ["x", "turbo", "run", "dev", `--filter=@lisca/${scopeName}-web`, ...turboExtra], {
-        cwd: root,
-        stdio: "inherit",
-        shell: process.platform === "win32",
-      }).status,
+      spawnSync(
+        "bun",
+        ["x", "turbo", "run", "dev", `--filter=@lisca/${scopeName}-web`, ...turboExtra],
+        {
+          cwd: root,
+          stdio: "inherit",
+          shell: process.platform === "win32",
+        },
+      ).status,
   });
 }
 
@@ -491,12 +493,16 @@ function runIosDev(scopeName) {
   First install: bun lisca dev ${scopeName} ios-install
 `);
 
-  const status = spawnSync("bun", ["x", "expo", "start", "--port", String(expoPort), ...turboExtra], {
-    cwd: mobileDir,
-    env: { ...process.env, ...liscaEnv, EXPO_DEV_SERVER_PORT: String(expoPort) },
-    stdio: "inherit",
-    shell: process.platform === "win32",
-  }).status;
+  const status = spawnSync(
+    "bun",
+    ["x", "expo", "start", "--port", String(expoPort), ...turboExtra],
+    {
+      cwd: mobileDir,
+      env: { ...process.env, ...liscaEnv, EXPO_DEV_SERVER_PORT: String(expoPort) },
+      stdio: "inherit",
+      shell: process.platform === "win32",
+    },
+  ).status;
 
   stopChildren();
   process.removeListener("SIGINT", onSignal);
@@ -508,15 +514,11 @@ function runIosInstall(scopeName) {
   const mobileDir = path.join(root, "apps", scopeName, "mobile");
   buildMobileDeps(scopeName);
 
-  const status = spawnSync(
-    "bun",
-    ["x", "expo", "run:ios", "--device", ...turboExtra],
-    {
-      cwd: mobileDir,
-      stdio: "inherit",
-      shell: process.platform === "win32",
-    },
-  ).status;
+  const status = spawnSync("bun", ["x", "expo", "run:ios", "--device", ...turboExtra], {
+    cwd: mobileDir,
+    stdio: "inherit",
+    shell: process.platform === "win32",
+  }).status;
 
   process.exit(status ?? 1);
 }
@@ -548,11 +550,15 @@ function main() {
       console.error("deploy only supports scope landing.");
       process.exit(1);
     }
-    const status = spawnSync("bun", [path.join(root, "scripts/deploy-landing.mjs"), ...turboExtra], {
-      cwd: root,
-      stdio: "inherit",
-      shell: process.platform === "win32",
-    }).status;
+    const status = spawnSync(
+      "bun",
+      [path.join(root, "scripts/deploy-landing.mjs"), ...turboExtra],
+      {
+        cwd: root,
+        stdio: "inherit",
+        shell: process.platform === "win32",
+      },
+    ).status;
     process.exit(status ?? 1);
   }
 

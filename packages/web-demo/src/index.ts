@@ -1,14 +1,12 @@
 export { createLiscaDemoApp, type LiscaDemoAppConfig } from "./create-lisca-demo-app";
+export { clearDemoSession, readDemoSession, writeDemoSession } from "./demo-session-idb";
+export { ALIGNER_DEMO_SESSION_KEY, ANNOTATOR_DEMO_SESSION_KEY } from "./demo-session-keys";
 export {
-  clearDemoSession,
-  readDemoSession,
-  writeDemoSession,
-} from "./demo-session-idb";
-export {
-  ALIGNER_DEMO_SESSION_KEY,
-  ANNOTATOR_DEMO_SESSION_KEY,
-} from "./demo-session-keys";
-export { DemoNavbar, DemoNavbarActionButton, type DemoNavbarProps, type DemoSampleImageOption } from "./demo-navbar";
+  DemoNavbar,
+  DemoNavbarActionButton,
+  type DemoNavbarProps,
+  type DemoSampleImageOption,
+} from "./demo-navbar";
 export {
   annotatorCropFromSampleId,
   DEFAULT_DEMO_SAMPLE_ID,
@@ -39,11 +37,7 @@ export {
   type DemoAnnotatorSession,
   type DemoAnnotatorUiState,
 } from "./atoms/demo-annotator-ui";
-export {
-  DemoAlignRoot,
-  DemoAnnotatorRoot,
-  DemoRegistryProvider,
-} from "./atoms/demo-session-sync";
+export { DemoAlignRoot, DemoAnnotatorRoot, DemoRegistryProvider } from "./atoms/demo-session-sync";
 export { useDemoAlignState, type DemoAlignState } from "./hooks/use-demo-align-state";
 export { useEmbeddedDemoPreset } from "./hooks/use-embedded-demo-preset";
 export {

@@ -83,8 +83,7 @@ export function BasicInfoStep2() {
               onChangeText={(text) => {
                 const value = text.trim() === "" ? null : Number(text);
                 setInfo2({
-                  timelapseAmount:
-                    value == null || Number.isNaN(value) ? null : Math.max(1, value),
+                  timelapseAmount: value == null || Number.isNaN(value) ? null : Math.max(1, value),
                 });
               }}
             />

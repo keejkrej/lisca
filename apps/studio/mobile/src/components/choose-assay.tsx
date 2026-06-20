@@ -19,7 +19,10 @@ export function ChooseAssay() {
   return (
     <View className="w-full flex-1 items-center justify-center px-6">
       <Text className="text-center text-4xl font-semibold">LiSCA</Text>
-      <View accessibilityRole="radiogroup" className="mt-8 w-full max-w-md flex-row flex-wrap justify-center gap-3">
+      <View
+        accessibilityRole="radiogroup"
+        className="mt-8 w-full max-w-md flex-row flex-wrap justify-center gap-3"
+      >
         {ASSAY_ORDER.map((id) => {
           const selected = assayId === id;
           const disabled = !ENABLED_ASSAY_IDS.has(id);

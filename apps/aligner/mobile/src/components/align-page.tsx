@@ -12,28 +12,28 @@ export function AlignPage() {
   return (
     <AlignerWorkSessionGate>
       <AlignPageProvider>
-      <AppShell>
-        <AppShell.Header>
-          <AlignerHeader />
-        </AppShell.Header>
-        <AppShell.Body>
-          <AppShell.Left width={288}>
-            <AlignerLeft />
-          </AppShell.Left>
-          <AppShell.MainColumn>
-            <AppShell.Main>
-              <AlignerMain />
-            </AppShell.Main>
-            <AppShell.Dock>
-              <AlignerDock />
-            </AppShell.Dock>
-          </AppShell.MainColumn>
-          <AppShell.Right width={288}>
-            <AlignerRight />
-          </AppShell.Right>
-        </AppShell.Body>
-      </AppShell>
-    </AlignPageProvider>
+        <AppShell>
+          <AppShell.Header>
+            <AlignerHeader />
+          </AppShell.Header>
+          <AppShell.Body>
+            <AppShell.Left width={288}>
+              <AlignerLeft />
+            </AppShell.Left>
+            <AppShell.MainColumn>
+              <AppShell.Main>
+                <AlignerMain />
+              </AppShell.Main>
+              <AppShell.Dock>
+                <AlignerDock />
+              </AppShell.Dock>
+            </AppShell.MainColumn>
+            <AppShell.Right width={288}>
+              <AlignerRight />
+            </AppShell.Right>
+          </AppShell.Body>
+        </AppShell>
+      </AlignPageProvider>
     </AlignerWorkSessionGate>
   );
 }

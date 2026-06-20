@@ -8,7 +8,11 @@ import {
   type AnnotatorUiActions,
   type AnnotatorUiAtom,
 } from "@lisca/client/atoms/annotator-ui";
-import { useCanvasResourceTransaction, useCanvasTransientStatus, confirmDiscardAnnotationChanges } from "@lisca/ui-native";
+import {
+  useCanvasResourceTransaction,
+  useCanvasTransientStatus,
+  confirmDiscardAnnotationChanges,
+} from "@lisca/ui-native";
 import { useAtom } from "@effect-atom/atom-react";
 import { useEffect } from "react";
 import { useRouter } from "expo-router";
@@ -75,12 +79,7 @@ export function useStudioAnnotateState(): StudioAnnotateState {
   const activeWorkspacePath = saveTo.trim() || null;
   const router = useRouter();
   const [ui, setUi] = useAtom(studioAnnotateUiAtom);
-  const {
-    analysisStartConfirm,
-    analysisRequestId,
-    analysisProgress,
-    analysisResultFiles,
-  } = ui;
+  const { analysisStartConfirm, analysisRequestId, analysisProgress, analysisResultFiles } = ui;
   const workspace = useStudioWorkspaceSync(activeWorkspacePath);
   const annotate = useAnnotateStateCore({
     annotatorClient: studioClient,
@@ -126,7 +125,8 @@ export function useStudioAnnotateState(): StudioAnnotateState {
   const setStatus = (status: string | null) => studioAnnotateUiActions.setStatus(setUi, status);
   const shuffleSelection = () => {
     if (!annotate.scan?.positions.length) return;
-    const randomPosition = annotate.scan.positions[Math.floor(Math.random() * annotate.scan.positions.length)];
+    const randomPosition =
+      annotate.scan.positions[Math.floor(Math.random() * annotate.scan.positions.length)];
     const randomRoi =
       randomPosition?.rois[Math.floor(Math.random() * randomPosition.rois.length)] ?? null;
     const channel = randomPosition ? (randomPosition.channels[0] ?? null) : null;

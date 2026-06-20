@@ -10,7 +10,11 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <StorageBootstrap>
-          <LiscaMobileProviders appId="annotator" defaultPort={8766} AtomsProvider={AnnotatorAtomsProvider}>
+          <LiscaMobileProviders
+            appId="annotator"
+            defaultPort={8766}
+            AtomsProvider={AnnotatorAtomsProvider}
+          >
             <Stack screenOptions={{ headerShown: false }} />
           </LiscaMobileProviders>
         </StorageBootstrap>

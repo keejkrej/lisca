@@ -37,7 +37,9 @@ describe("folder-source-parse", () => {
         }
         if (path === "/data/Pos0") {
           return {
-            entries: [{ name: "img_0_0_0.jpg", path: "/data/Pos0/img_0_0_0.jpg", isDirectory: false }],
+            entries: [
+              { name: "img_0_0_0.jpg", path: "/data/Pos0/img_0_0_0.jpg", isDirectory: false },
+            ],
           };
         }
         return { entries: [] };

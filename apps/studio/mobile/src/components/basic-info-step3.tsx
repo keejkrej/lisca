@@ -4,10 +4,7 @@ import { Image, Pressable, ScrollView, View } from "react-native";
 
 import { type BasicInfoSlideId, useStudioStore } from "../state/studio-store";
 import { slideImageSources } from "./basic-info-assets";
-import {
-  basicInfoFieldLabelClassName,
-  basicInfoRowClassName,
-} from "./basic-info-layout";
+import { basicInfoFieldLabelClassName, basicInfoRowClassName } from "./basic-info-layout";
 
 const SLIDE_OPTIONS: { id: BasicInfoSlideId; label: string }[] = [
   { id: "slide-i", label: "Slide I" },
@@ -35,7 +32,9 @@ export function BasicInfoStep3() {
                   accessibilityState={{ selected }}
                   className={cn(
                     "min-h-[160px] min-w-0 flex-1 flex-col justify-between gap-2 rounded-lg border-2 bg-background p-2.5",
-                    selected ? "border-foreground/80 opacity-100 ring-1 ring-foreground/20" : "border-border opacity-70",
+                    selected
+                      ? "border-foreground/80 opacity-100 ring-1 ring-foreground/20"
+                      : "border-border opacity-70",
                   )}
                   onPress={() => setInfo3({ selectedSlideId: id })}
                 >

@@ -48,7 +48,7 @@ export function useStudioAnnotateDock() {
     workspaceMissing: state.workspaceMissing,
     analysisBusy: Boolean(
       state.analysisProgress &&
-        (state.analysisProgress.status === "queued" || state.analysisProgress.status === "running"),
+      (state.analysisProgress.status === "queued" || state.analysisProgress.status === "running"),
     ),
     setTool: state.setTool,
     handleSave: state.handleSave,

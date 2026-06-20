@@ -13,7 +13,10 @@ import { SidebarSection } from "../../shell/regions/sidebar-section";
 
 import { AlignEditToggle } from "./align-edit-toggle";
 import { AlignSelectionCounts } from "./align-selection-counts";
-import { VariationExcludeDialog, type VariationExcludePreviewState } from "./variation-exclude-dialog";
+import {
+  VariationExcludeDialog,
+  type VariationExcludePreviewState,
+} from "./variation-exclude-dialog";
 
 export type AlignSelectionRailProps = {
   disabled?: boolean;
@@ -130,7 +133,9 @@ export function AlignSelectionRail({
             Var exclude
           </Button>
           <Button
-            disabled={disabled || !hasVisibleCells || variationExcludeLoading || smartExcludeLoading}
+            disabled={
+              disabled || !hasVisibleCells || variationExcludeLoading || smartExcludeLoading
+            }
             loading={smartExcludeLoading}
             size="sm"
             type="button"

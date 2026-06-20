@@ -126,13 +126,7 @@ export const STUDIO_ANNOTATE_SESSION_KEY = "lisca-studio-annotate-session";
 
 export type StudioAnnotateSessionPersist = Pick<
   StudioAnnotateStoreState,
-  | "workspacePath"
-  | "selection"
-  | "activeLabelId"
-  | "mode"
-  | "tool"
-  | "brushSize"
-  | "overlayOpacity"
+  "workspacePath" | "selection" | "activeLabelId" | "mode" | "tool" | "brushSize" | "overlayOpacity"
 >;
 
 export function readStudioAnnotateSession(): StudioAnnotateSessionPersist | null {

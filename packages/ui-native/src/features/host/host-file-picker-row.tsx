@@ -35,7 +35,12 @@ export function HostFilePickerRow({
       )}
       onPress={() => onPress(entry)}
     >
-      <Icon as={EntryIcon} className="size-4 shrink-0 text-muted-foreground" size={16} strokeWidth={2} />
+      <Icon
+        as={EntryIcon}
+        className="size-4 shrink-0 text-muted-foreground"
+        size={16}
+        strokeWidth={2}
+      />
       <Text className="min-w-0 flex-1 text-sm text-foreground" numberOfLines={1}>
         {entry.name}
       </Text>

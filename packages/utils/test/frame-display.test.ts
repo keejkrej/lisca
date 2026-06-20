@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  clientToFramePoint,
-  computeFrameLayout,
-  pixelToDisplayValue,
-} from "../src/frame-display";
+import { clientToFramePoint, computeFrameLayout, pixelToDisplayValue } from "../src/frame-display";
 
 describe("frame-display", () => {
   it("letterboxes frame in viewport", () => {

@@ -43,13 +43,10 @@ function DemoAlignSessionSync({ persist }: { persist: boolean }) {
     };
   }, [persist, setState]);
 
-  useDebouncedEffect(
-    () => {
-      if (!persist || !persistReadyRef.current) return;
-      void writeDemoSession(ALIGNER_DEMO_SESSION_KEY, selectDemoAlignSession(state));
-    },
-    [persist, state],
-  );
+  useDebouncedEffect(() => {
+    if (!persist || !persistReadyRef.current) return;
+    void writeDemoSession(ALIGNER_DEMO_SESSION_KEY, selectDemoAlignSession(state));
+  }, [persist, state]);
 
   return null;
 }
@@ -74,13 +71,10 @@ function DemoAnnotatorSessionSync({ persist }: { persist: boolean }) {
     };
   }, [persist, setState]);
 
-  useDebouncedEffect(
-    () => {
-      if (!persist || !persistReadyRef.current) return;
-      void writeDemoSession(ANNOTATOR_DEMO_SESSION_KEY, selectDemoAnnotatorSession(state));
-    },
-    [persist, state],
-  );
+  useDebouncedEffect(() => {
+    if (!persist || !persistReadyRef.current) return;
+    void writeDemoSession(ANNOTATOR_DEMO_SESSION_KEY, selectDemoAnnotatorSession(state));
+  }, [persist, state]);
 
   return null;
 }

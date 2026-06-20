@@ -48,8 +48,15 @@ export function AlignGridSkiaOverlay(props: {
     return null;
   }
 
-  const { includedFill, excludedFill, includedStroke, excludedStroke } = buildCellPaths(scene.cells);
-  const clip = Skia.XYWHRect(scene.clipRect.x, scene.clipRect.y, scene.clipRect.w, scene.clipRect.h);
+  const { includedFill, excludedFill, includedStroke, excludedStroke } = buildCellPaths(
+    scene.cells,
+  );
+  const clip = Skia.XYWHRect(
+    scene.clipRect.x,
+    scene.clipRect.y,
+    scene.clipRect.w,
+    scene.clipRect.h,
+  );
 
   return (
     <Group>

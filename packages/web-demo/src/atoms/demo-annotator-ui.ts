@@ -138,10 +138,9 @@ function patchDemoAnnotatorUi(
   set((state) => (typeof patch === "function" ? patch(state) : { ...state, ...patch }));
 }
 
-function resetAnnotationState(value: AnnotationValue): Pick<
-  DemoAnnotatorUiState,
-  "annotationHistory" | "annotationIndex" | "annotationSaved"
-> {
+function resetAnnotationState(
+  value: AnnotationValue,
+): Pick<DemoAnnotatorUiState, "annotationHistory" | "annotationIndex" | "annotationSaved"> {
   const next = cloneAnnotationValue(value);
   return {
     annotationHistory: [cloneAnnotationValue(next)],
@@ -151,7 +150,10 @@ function resetAnnotationState(value: AnnotationValue): Pick<
 }
 
 export const demoAnnotatorUiActions = {
-  setActiveLabelId(set: (update: StateUpdater<DemoAnnotatorUiState>) => void, activeLabelId: string | null) {
+  setActiveLabelId(
+    set: (update: StateUpdater<DemoAnnotatorUiState>) => void,
+    activeLabelId: string | null,
+  ) {
     patchDemoAnnotatorUi(set, { activeLabelId });
   },
   setMode(set: (update: StateUpdater<DemoAnnotatorUiState>) => void, mode: AnnotationMode) {
@@ -163,19 +165,34 @@ export const demoAnnotatorUiActions = {
   setBrushSize(set: (update: StateUpdater<DemoAnnotatorUiState>) => void, brushSize: number) {
     patchDemoAnnotatorUi(set, { brushSize });
   },
-  setOverlayOpacity(set: (update: StateUpdater<DemoAnnotatorUiState>) => void, overlayOpacity: number) {
+  setOverlayOpacity(
+    set: (update: StateUpdater<DemoAnnotatorUiState>) => void,
+    overlayOpacity: number,
+  ) {
     patchDemoAnnotatorUi(set, { overlayOpacity });
   },
-  setContrast(set: (update: StateUpdater<DemoAnnotatorUiState>) => void, contrast: ContrastWindow | null) {
+  setContrast(
+    set: (update: StateUpdater<DemoAnnotatorUiState>) => void,
+    contrast: ContrastWindow | null,
+  ) {
     patchDemoAnnotatorUi(set, { contrast });
   },
-  setLabelDialogOpen(set: (update: StateUpdater<DemoAnnotatorUiState>) => void, labelDialogOpen: boolean) {
+  setLabelDialogOpen(
+    set: (update: StateUpdater<DemoAnnotatorUiState>) => void,
+    labelDialogOpen: boolean,
+  ) {
     patchDemoAnnotatorUi(set, { labelDialogOpen });
   },
-  setLabelError(set: (update: StateUpdater<DemoAnnotatorUiState>) => void, labelError: string | null) {
+  setLabelError(
+    set: (update: StateUpdater<DemoAnnotatorUiState>) => void,
+    labelError: string | null,
+  ) {
     patchDemoAnnotatorUi(set, { labelError });
   },
-  setFrameLoading(set: (update: StateUpdater<DemoAnnotatorUiState>) => void, frameLoading: boolean) {
+  setFrameLoading(
+    set: (update: StateUpdater<DemoAnnotatorUiState>) => void,
+    frameLoading: boolean,
+  ) {
     patchDemoAnnotatorUi(set, { frameLoading });
   },
   setSaving(set: (update: StateUpdater<DemoAnnotatorUiState>) => void, saving: boolean) {
@@ -198,7 +215,11 @@ export const demoAnnotatorUiActions = {
       labelError: null,
     }));
   },
-  applyLoadedImage(set: (update: StateUpdater<DemoAnnotatorUiState>) => void, fileName: string, frame: FrameResult) {
+  applyLoadedImage(
+    set: (update: StateUpdater<DemoAnnotatorUiState>) => void,
+    fileName: string,
+    frame: FrameResult,
+  ) {
     patchDemoAnnotatorUi(set, (state) => ({
       ...state,
       fileName,
@@ -236,11 +257,16 @@ export const demoAnnotatorUiActions = {
       status: null,
     }));
   },
-  commitAnnotation(set: (update: StateUpdater<DemoAnnotatorUiState>) => void, value: AnnotationValue) {
+  commitAnnotation(
+    set: (update: StateUpdater<DemoAnnotatorUiState>) => void,
+    value: AnnotationValue,
+  ) {
     patchDemoAnnotatorUi(set, (state) => {
       const active = currentDemoAnnotation(state);
       if (annotationValuesEqual(active, value)) return state;
-      const history = state.annotationHistory.slice(0, state.annotationIndex + 1).map(cloneAnnotationValue);
+      const history = state.annotationHistory
+        .slice(0, state.annotationIndex + 1)
+        .map(cloneAnnotationValue);
       history.push(cloneAnnotationValue(value));
       return {
         ...state,

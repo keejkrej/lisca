@@ -36,7 +36,7 @@ export function useStudioAnnotateDock() {
     state.mode === "segmentation" && state.canEditSegmentation && !state.labelDialogOpen;
   const analysisBusy = Boolean(
     state.analysisProgress &&
-      (state.analysisProgress.status === "queued" || state.analysisProgress.status === "running"),
+    (state.analysisProgress.status === "queued" || state.analysisProgress.status === "running"),
   );
 
   return {

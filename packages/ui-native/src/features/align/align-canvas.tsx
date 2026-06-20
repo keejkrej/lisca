@@ -33,10 +33,7 @@ export type AlignCanvasProps = {
   onVirtualPointerCancel?: (event: AlignCanvasPointerEvent) => void;
 };
 
-function AlignCanvasFrameImage(props: {
-  frameLayout: FrameLayout;
-  skImage: SkImage;
-}) {
+function AlignCanvasFrameImage(props: { frameLayout: FrameLayout; skImage: SkImage }) {
   return (
     <Image
       fit="fill"
@@ -109,7 +106,9 @@ export function AlignCanvas({
     onVirtualPointerUp,
     onVirtualPointerCancel,
   };
-  const frameLayout = frame ? computeFrameLayout(layout.width, layout.height, frame.width, frame.height) : null;
+  const frameLayout = frame
+    ? computeFrameLayout(layout.width, layout.height, frame.width, frame.height)
+    : null;
   const requestOverlayRedraw = () => {
     setOverlayTick((tick) => tick + 1);
   };

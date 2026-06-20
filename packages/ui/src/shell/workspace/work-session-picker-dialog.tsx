@@ -52,7 +52,13 @@ export function WorkSessionPickerDialog({
               </li>
             ))}
           </ul>
-          <Button className="w-full justify-center" size="sm" type="button" variant="outline" onClick={onStartNew}>
+          <Button
+            className="w-full justify-center"
+            size="sm"
+            type="button"
+            variant="outline"
+            onClick={onStartNew}
+          >
             Start new session
           </Button>
         </div>

@@ -213,11 +213,7 @@ export function AlignGrid(props: AlignGridProps) {
 
         <Field className="min-w-0 w-full">
           <FieldLabel>Grid shape</FieldLabel>
-          <AlignGridShapeToggle
-            disabled={disabled}
-            shape={shape}
-            onShapeChange={onShapeChange}
-          />
+          <AlignGridShapeToggle disabled={disabled} shape={shape} onShapeChange={onShapeChange} />
         </Field>
 
         <Field className="min-w-0 w-full">

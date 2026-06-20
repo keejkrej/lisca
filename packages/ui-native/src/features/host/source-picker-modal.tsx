@@ -83,7 +83,9 @@ export function SourcePickerModal(props: SourcePickerModalProps) {
                     {item.label ? (
                       <Text className="font-medium text-foreground">{item.label}</Text>
                     ) : (
-                      <Text className="font-medium capitalize text-foreground">{item.source.kind}</Text>
+                      <Text className="font-medium capitalize text-foreground">
+                        {item.source.kind}
+                      </Text>
                     )}
                     <Text className="text-sm text-muted-foreground" numberOfLines={1}>
                       {formatSourcePath(item.source)}

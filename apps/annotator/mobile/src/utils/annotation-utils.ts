@@ -30,7 +30,6 @@ export function annotationValuesEqual(left: AnnotationValue, right: AnnotationVa
   );
 }
 
-
 export async function decodeMaskBase64Png(
   maskBase64Png: string,
   expectedWidth: number,

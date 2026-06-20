@@ -144,10 +144,7 @@ export function parseLiscaServerAddress(
   };
 }
 
-function endpointsFromStoredOverride(
-  stored: string,
-  defaultPort: number,
-): LiscaServerEndpoints {
+function endpointsFromStoredOverride(stored: string, defaultPort: number): LiscaServerEndpoints {
   return parseLiscaServerAddress(stored, { defaultPort });
 }
 

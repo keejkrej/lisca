@@ -32,9 +32,7 @@ function ConnectionStatusContent(props: {
       <Text className="shrink-0 text-sm font-medium leading-none text-foreground">
         {props.title}
       </Text>
-      <Text className="shrink-0 text-sm leading-none text-foreground/70">
-        {props.statusLabel}
-      </Text>
+      <Text className="shrink-0 text-sm leading-none text-foreground/70">{props.statusLabel}</Text>
     </>
   );
 }
@@ -64,7 +62,11 @@ export function ConnectionStatus(props: {
   }
 
   return (
-    <View accessibilityRole="text" accessibilityLabel={accessibilityLabel} className={CHROME_CLASSNAME}>
+    <View
+      accessibilityRole="text"
+      accessibilityLabel={accessibilityLabel}
+      className={CHROME_CLASSNAME}
+    >
       <ConnectionStatusContent state={props.state} statusLabel={statusLabel} title={title} />
     </View>
   );

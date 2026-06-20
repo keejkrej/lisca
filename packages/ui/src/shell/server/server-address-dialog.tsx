@@ -87,7 +87,9 @@ export function ServerAddressDialog({
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
           <div className="space-y-2">
             <p className="font-medium text-foreground text-sm">Connected</p>
-            <p className="font-mono text-muted-foreground text-xs break-all">{currentHttpBaseUrl}</p>
+            <p className="font-mono text-muted-foreground text-xs break-all">
+              {currentHttpBaseUrl}
+            </p>
           </div>
 
           <div className="space-y-2">

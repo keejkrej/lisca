@@ -13,7 +13,9 @@ import {
 
 function runReducer(
   state: AnnotatorUiState,
-  fn: (set: (update: AnnotatorUiState | ((current: AnnotatorUiState) => AnnotatorUiState)) => void) => void,
+  fn: (
+    set: (update: AnnotatorUiState | ((current: AnnotatorUiState) => AnnotatorUiState)) => void,
+  ) => void,
 ): AnnotatorUiState {
   let next = state;
   fn((update) => {
@@ -89,9 +91,7 @@ describe("annotator-ui actions", () => {
 
   it("setContrast stores manual window and updates slider bounds", () => {
     const initial = createInitialAnnotatorUiState();
-    const next = runReducer(initial, (set) =>
-      actions.setContrast(set, { min: 50, max: 500 }),
-    );
+    const next = runReducer(initial, (set) => actions.setContrast(set, { min: 50, max: 500 }));
     expect(next.contrast).toEqual({ min: 50, max: 500 });
     expect(next.contrastMin).toBe(50);
     expect(next.contrastMax).toBe(500);

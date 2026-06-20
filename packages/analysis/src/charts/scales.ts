@@ -27,4 +27,3 @@ export function computeMedianTrace(
       y: median(values),
     }));
 }
-

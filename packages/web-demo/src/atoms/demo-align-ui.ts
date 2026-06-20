@@ -98,7 +98,10 @@ function patchDemoAlignUi(
 }
 
 export const demoAlignUiActions = {
-  setContrast(set: (update: StateUpdater<DemoAlignUiState>) => void, contrast: ContrastWindow | null) {
+  setContrast(
+    set: (update: StateUpdater<DemoAlignUiState>) => void,
+    contrast: ContrastWindow | null,
+  ) {
     patchDemoAlignUi(set, { contrast });
   },
   setGrid(
@@ -122,7 +125,10 @@ export const demoAlignUiActions = {
   ) {
     patchDemoAlignUi(set, { manualExclusionEnabled });
   },
-  setExcludedCells(set: (update: StateUpdater<DemoAlignUiState>) => void, cells: AlignGridCellCoord[]) {
+  setExcludedCells(
+    set: (update: StateUpdater<DemoAlignUiState>) => void,
+    cells: AlignGridCellCoord[],
+  ) {
     patchDemoAlignUi(set, { excludedCells: cells });
   },
   setVariationExcludePreview(
@@ -131,7 +137,10 @@ export const demoAlignUiActions = {
   ) {
     patchDemoAlignUi(set, { variationExcludePreview: preview });
   },
-  setVariationExcludeLoading(set: (update: StateUpdater<DemoAlignUiState>) => void, loading: boolean) {
+  setVariationExcludeLoading(
+    set: (update: StateUpdater<DemoAlignUiState>) => void,
+    loading: boolean,
+  ) {
     patchDemoAlignUi(set, { variationExcludeLoading: loading });
   },
   setFrameLoading(set: (update: StateUpdater<DemoAlignUiState>) => void, frameLoading: boolean) {

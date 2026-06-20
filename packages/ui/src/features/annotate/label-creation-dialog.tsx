@@ -126,7 +126,13 @@ export function LabelCreationDialog({
               </Button>
             </div>
           ))}
-          <Button className="w-fit" size="sm" type="button" variant="outline" onClick={form.addDraft}>
+          <Button
+            className="w-fit"
+            size="sm"
+            type="button"
+            variant="outline"
+            onClick={form.addDraft}
+          >
             <Plus className="size-4" aria-hidden />
             Add label
           </Button>

@@ -1,8 +1,4 @@
-import {
-  AlignGridShapeToggle,
-  AlignToolSection,
-  AlignToolToolbar,
-} from "@lisca/ui/features";
+import { AlignGridShapeToggle, AlignToolSection, AlignToolToolbar } from "@lisca/ui/features";
 import { DockStrip } from "@lisca/ui/shell";
 
 import { DemoAlignDownloadButton } from "./demo-align-download-button";

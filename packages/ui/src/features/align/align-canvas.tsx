@@ -23,10 +23,7 @@ import { useLatest } from "../../hooks/use-latest";
 import { CanvasStatusMessageStack, CanvasToastStack } from "../canvas/canvas-status";
 import { resolvedCanvasBackground, useCanvasThemeRerender } from "../canvas/canvas-theme";
 import { usePreparedFrameBitmap } from "../canvas/prepared-frame-bitmap";
-export type {
-  AlignCanvasFramePoint,
-  AlignCanvasPointerEvent,
-} from "./align-canvas-handlers";
+export type { AlignCanvasFramePoint, AlignCanvasPointerEvent } from "./align-canvas-handlers";
 import type { AlignCanvasFramePoint, AlignCanvasPointerEvent } from "./align-canvas-handlers";
 export type AlignCanvasWheelEvent = {
   deltaMode: number;
@@ -85,12 +82,7 @@ function drawGridOverlayFromScene(
     ctx.strokeStyle = `rgba(${rgb}, ${scene.strokeOpacity})`;
     ctx.lineWidth = 1;
     ctx.fillRect(cell.x, cell.y, cell.w, cell.h);
-    ctx.strokeRect(
-      cell.x + 0.5,
-      cell.y + 0.5,
-      Math.max(0, cell.w - 1),
-      Math.max(0, cell.h - 1),
-    );
+    ctx.strokeRect(cell.x + 0.5, cell.y + 0.5, Math.max(0, cell.w - 1), Math.max(0, cell.h - 1));
   }
   ctx.restore();
   ctx.strokeStyle = alignGridOverlayColors.origin;

@@ -50,13 +50,11 @@ export function StudioAnnotateLeft() {
             nav.changeSelection(() => nav.setSelection({ pos: value, roi: null })),
           onPrevious: () => {
             const next = stepNavigationValue(positionOptions, posValue, -1);
-            if (next != null)
-              nav.changeSelection(() => nav.setSelection({ pos: next, roi: null }));
+            if (next != null) nav.changeSelection(() => nav.setSelection({ pos: next, roi: null }));
           },
           onNext: () => {
             const next = stepNavigationValue(positionOptions, posValue, 1);
-            if (next != null)
-              nav.changeSelection(() => nav.setSelection({ pos: next, roi: null }));
+            if (next != null) nav.changeSelection(() => nav.setSelection({ pos: next, roi: null }));
           },
         }}
         roi={{
@@ -85,20 +83,17 @@ export function StudioAnnotateLeft() {
           onChange: (value) => nav.changeSelection(() => nav.setSelection({ channel: value })),
           onPrevious: () => {
             const next = stepNavigationValue(channelOptions, channelValue, -1);
-            if (next != null)
-              nav.changeSelection(() => nav.setSelection({ channel: next }));
+            if (next != null) nav.changeSelection(() => nav.setSelection({ channel: next }));
           },
           onNext: () => {
             const next = stepNavigationValue(channelOptions, channelValue, 1);
-            if (next != null)
-              nav.changeSelection(() => nav.setSelection({ channel: next }));
+            if (next != null) nav.changeSelection(() => nav.setSelection({ channel: next }));
           },
         }}
         timepoint={createAxisIndexSliderControl({
           axisValues: nav.position?.times,
           index: nav.selection.timeIndex,
-          onIndexChange: (timeIndex) =>
-            nav.changeSelection(() => nav.setSelection({ timeIndex })),
+          onIndexChange: (timeIndex) => nav.changeSelection(() => nav.setSelection({ timeIndex })),
         })}
         zPlane={createAxisIndexSliderControl({
           axisValues: nav.position?.zSlices,

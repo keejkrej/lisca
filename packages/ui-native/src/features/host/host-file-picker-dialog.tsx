@@ -134,7 +134,12 @@ export function HostFilePickerDialog({
             >
               <Text className="text-xs">Up</Text>
             </Button>
-            <Button disabled={picker.loading} size="sm" variant="outline" onPress={() => void picker.goHome()}>
+            <Button
+              disabled={picker.loading}
+              size="sm"
+              variant="outline"
+              onPress={() => void picker.goHome()}
+            >
               <Icon as={Home} className="size-4" size={16} strokeWidth={2} />
               <Text className="text-xs">Home</Text>
             </Button>
@@ -157,10 +162,7 @@ export function HostFilePickerDialog({
                 <DialogErrorText>{picker.error}</DialogErrorText>
               </View>
             ) : entries.length === 0 ? (
-              <View
-                className="items-center justify-center"
-                style={{ minHeight: LIST_MIN_HEIGHT }}
-              >
+              <View className="items-center justify-center" style={{ minHeight: LIST_MIN_HEIGHT }}>
                 <Text className="text-sm text-muted-foreground">No entries.</Text>
               </View>
             ) : (
@@ -193,7 +195,10 @@ export function HostFilePickerDialog({
             <Text>Cancel</Text>
           </Button>
           {picker.dirMode ? (
-            <Button disabled={!picker.list?.path || picker.loading} onPress={picker.confirmDirectory}>
+            <Button
+              disabled={!picker.list?.path || picker.loading}
+              onPress={picker.confirmDirectory}
+            >
               <Text>Select folder</Text>
             </Button>
           ) : (

@@ -7,5 +7,7 @@ export function StudioCropProgressModal() {
   const { state } = useStudioAlignPage();
   const crop = useStudioAlignCrop();
 
-  return <CropProgressModal progress={crop.cropProgress} onCancel={() => void state.cancelCrop()} />;
+  return (
+    <CropProgressModal progress={crop.cropProgress} onCancel={() => void state.cancelCrop()} />
+  );
 }

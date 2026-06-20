@@ -12,11 +12,7 @@ export function Field({ className, children, ...props }: ViewProps & { children?
   );
 }
 
-export function FieldLabel({
-  className,
-  children,
-  ...props
-}: React.ComponentProps<typeof Label>) {
+export function FieldLabel({ className, children, ...props }: React.ComponentProps<typeof Label>) {
   return (
     <Label
       className={cn(
@@ -38,8 +34,6 @@ export function FieldDescription({
   children?: ReactNode;
 }) {
   return (
-    <Label className={cn("font-normal text-muted-foreground text-xs", className)}>
-      {children}
-    </Label>
+    <Label className={cn("font-normal text-muted-foreground text-xs", className)}>{children}</Label>
   );
 }

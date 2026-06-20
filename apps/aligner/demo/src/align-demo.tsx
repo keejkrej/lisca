@@ -1,6 +1,14 @@
 import { AlignGridShapeToggle } from "@lisca/ui/features";
 import { AppShell } from "@lisca/ui/shell";
-import { DemoAlignRoot, DemoNavbar, DEMO_SAMPLE_IMAGES, resolveSelectedSampleId, useDemoAlignState, useEmbeddedDemoPreset, type DemoSampleImageId } from "@lisca/web-demo";
+import {
+  DemoAlignRoot,
+  DemoNavbar,
+  DEMO_SAMPLE_IMAGES,
+  resolveSelectedSampleId,
+  useDemoAlignState,
+  useEmbeddedDemoPreset,
+  type DemoSampleImageId,
+} from "@lisca/web-demo";
 
 import { DemoAlignContrastControls } from "./components/demo-align-contrast-controls";
 import { DemoAlignGridControls } from "./components/demo-align-grid-controls";

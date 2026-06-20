@@ -52,7 +52,8 @@ export function VariationExcludeDialog(props: {
               label="Score range"
               value={
                 <span className="text-xs">
-                  {formatVariationScore(preview.scoreMin)} - {formatVariationScore(preview.scoreMax)}
+                  {formatVariationScore(preview.scoreMin)} -{" "}
+                  {formatVariationScore(preview.scoreMax)}
                 </span>
               }
             />

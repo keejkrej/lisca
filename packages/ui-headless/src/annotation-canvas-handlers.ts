@@ -128,9 +128,7 @@ export function useAnnotationCanvasHandlers({
     const value = eraseMode ? 0 : activeLabelValue;
     if (value <= 0 && !eraseMode) return;
     if (brushMode) {
-      onMaskCommit(
-        strokeMask(mask, frame.width, frame.height, active.points, value, brushSize),
-      );
+      onMaskCommit(strokeMask(mask, frame.width, frame.height, active.points, value, brushSize));
     } else if (active.points.length >= 3) {
       onMaskCommit(fillPolygon(mask, frame.width, frame.height, active.points, value));
     }

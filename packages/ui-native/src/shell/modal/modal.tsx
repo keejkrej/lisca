@@ -94,12 +94,14 @@ export function DialogSurface(props: {
 }
 
 export function DialogHeader(props: { children: ReactNode }) {
-  return (
-    <View className="border-border border-b px-5 py-4">{props.children}</View>
-  );
+  return <View className="border-border border-b px-5 py-4">{props.children}</View>;
 }
 
-export function DialogBody(props: { children: ReactNode; style?: ViewProps["style"]; className?: string }) {
+export function DialogBody(props: {
+  children: ReactNode;
+  style?: ViewProps["style"];
+  className?: string;
+}) {
   return (
     <View className={cn("gap-4 px-5 py-4", props.className)} style={props.style}>
       {props.children}

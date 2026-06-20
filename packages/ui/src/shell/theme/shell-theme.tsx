@@ -53,10 +53,7 @@ function themeReducer(state: ShellThemeMode, action: ThemeAction): ShellThemeMod
   return next;
 }
 
-function createThemeControls(
-  dispatch: Dispatch<ThemeAction>,
-  storageKeyRef: { current: string },
-) {
+function createThemeControls(dispatch: Dispatch<ThemeAction>, storageKeyRef: { current: string }) {
   return {
     setMode: (mode: ShellThemeMode) =>
       dispatch({ type: "setMode", mode, storageKey: storageKeyRef.current }),

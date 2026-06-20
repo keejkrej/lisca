@@ -1,9 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import {
-  resolveKeyboardShortcut,
-  type KeyboardShortcut,
-} from "../src/shortcuts";
+import { resolveKeyboardShortcut, type KeyboardShortcut } from "../src/shortcuts";
 
 function shortcut(id: string, overrides?: Partial<KeyboardShortcut>): KeyboardShortcut {
   return {
@@ -32,9 +29,7 @@ describe("shortcuts", () => {
   it("resolveKeyboardShortcut requires exact modifier sets", () => {
     const save = shortcut("save", { key: "s", modifiers: { meta: true } });
     expect(resolveKeyboardShortcut([save], { ...baseContext, key: "s" })).toBeNull();
-    expect(
-      resolveKeyboardShortcut([save], { ...baseContext, key: "s", metaKey: true }),
-    ).toBe(save);
+    expect(resolveKeyboardShortcut([save], { ...baseContext, key: "s", metaKey: true })).toBe(save);
   });
 
   it("resolveKeyboardShortcut ignores editable targets unless allowed", () => {
@@ -43,10 +38,11 @@ describe("shortcuts", () => {
       resolveKeyboardShortcut([escape], { ...baseContext, key: "Escape", editableTarget: true }),
     ).toBeNull();
     expect(
-      resolveKeyboardShortcut(
-        [shortcut("escape", { key: "Escape", allowInEditable: true })],
-        { ...baseContext, key: "Escape", editableTarget: true },
-      ),
+      resolveKeyboardShortcut([shortcut("escape", { key: "Escape", allowInEditable: true })], {
+        ...baseContext,
+        key: "Escape",
+        editableTarget: true,
+      }),
     ).not.toBeNull();
   });
 

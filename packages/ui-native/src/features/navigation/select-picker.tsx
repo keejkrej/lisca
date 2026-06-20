@@ -1,4 +1,8 @@
-import { formatNavigationOptionDisplayLabel, type NavigationOption, type NavigationValue } from "@lisca/utils";
+import {
+  formatNavigationOptionDisplayLabel,
+  type NavigationOption,
+  type NavigationValue,
+} from "@lisca/utils";
 import { Check, ChevronsUpDown } from "lucide-react-native";
 import { useEffect, useId, useRef, useState } from "react";
 import {
@@ -93,7 +97,12 @@ export function SelectPicker<T extends NavigationValue>(props: {
         <Text className="min-w-0 flex-1 text-sm text-foreground" numberOfLines={1}>
           {selected ? formatNavigationOptionDisplayLabel(selected.label) : String(props.value)}
         </Text>
-        <Icon as={ChevronsUpDown} className="size-4 shrink-0 opacity-80" size={16} strokeWidth={2} />
+        <Icon
+          as={ChevronsUpDown}
+          className="size-4 shrink-0 opacity-80"
+          size={16}
+          strokeWidth={2}
+        />
       </Pressable>
 
       {open && anchor && dropdownStyle ? (
@@ -127,7 +136,12 @@ export function SelectPicker<T extends NavigationValue>(props: {
                   >
                     <View className="w-4 shrink-0 items-center justify-center">
                       {isSelected ? (
-                        <Icon as={Check} className="size-4 text-foreground" size={16} strokeWidth={2} />
+                        <Icon
+                          as={Check}
+                          className="size-4 text-foreground"
+                          size={16}
+                          strokeWidth={2}
+                        />
                       ) : null}
                     </View>
                     <Text className="min-w-0 flex-1 text-sm text-foreground">

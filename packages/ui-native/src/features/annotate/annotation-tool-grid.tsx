@@ -35,10 +35,7 @@ export function buildAnnotationToolActions(
   }));
 }
 
-function AnnotationToolButton(props: {
-  action: DockToolAction;
-  label: string;
-}) {
+function AnnotationToolButton(props: { action: DockToolAction; label: string }) {
   const family = annotationToolFamily(props.action.id as AnnotationTool);
   const ToolIcon = annotationToolIcons[family];
 

@@ -18,15 +18,17 @@ import { Button } from "../../../components/ui/button";
 import { Icon } from "../../../components/ui/icon";
 import { Text } from "../../../components/ui/text";
 import { cn } from "../../../lib/utils";
-import { dockToolLabel, dockToolShortcuts, keyboardShortcutsSupported, useKeyboardShortcuts } from "../../shell";
+import {
+  dockToolLabel,
+  dockToolShortcuts,
+  keyboardShortcutsSupported,
+  useKeyboardShortcuts,
+} from "../../shell";
 import { DockSection } from "../../shell/regions/dock-section";
 import { dockLayoutClasses, dockSectionWidths } from "../../shell/regions/dock-layout";
 import { useThemeColors } from "../../theme/use-theme-colors";
 
-function PatternZoomLockButton(props: {
-  locked: boolean;
-  onToggle?: () => void;
-}) {
+function PatternZoomLockButton(props: { locked: boolean; onToggle?: () => void }) {
   const colors = useThemeColors();
   const LockIcon = props.locked ? Lock : Unlock;
 
@@ -100,7 +102,12 @@ export function AlignToolButton(props: {
       variant={active ? "default" : "outline"}
       onPress={onPress}
     >
-      <Icon as={ToolIcon} color={active ? colors.primaryForeground : colors.foreground} size={20} strokeWidth={2} />
+      <Icon
+        as={ToolIcon}
+        color={active ? colors.primaryForeground : colors.foreground}
+        size={20}
+        strokeWidth={2}
+      />
       <Text
         className={cn("max-w-full shrink truncate text-xs", active && "text-primary-foreground")}
         numberOfLines={1}
@@ -166,11 +173,7 @@ function renderAlignToolCell(
 
 export type AlignToolToolbarProps = Pick<
   AlignToolSectionProps,
-  | "mode"
-  | "onModeChange"
-  | "patternZoomLocked"
-  | "onPatternZoomLockedChange"
-  | "shortcutsEnabled"
+  "mode" | "onModeChange" | "patternZoomLocked" | "onPatternZoomLockedChange" | "shortcutsEnabled"
 >;
 
 export function AlignToolToolbar({
@@ -197,7 +200,11 @@ export function AlignToolToolbar({
   );
 
   return (
-    <View accessibilityLabel="Align canvas tool" accessibilityRole="toolbar" className={dockLayoutClasses.toolbar}>
+    <View
+      accessibilityLabel="Align canvas tool"
+      accessibilityRole="toolbar"
+      className={dockLayoutClasses.toolbar}
+    >
       <View className={dockLayoutClasses.cols2}>
         {cells[0]}
         {cells[1]}

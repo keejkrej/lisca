@@ -1,8 +1,5 @@
 import type { CanvasStatusMessage } from "@lisca/ui-headless";
-import {
-  canvasToastPresentation,
-  shouldHideToastText,
-} from "@lisca/ui-headless/canvas-status";
+import { canvasToastPresentation, shouldHideToastText } from "@lisca/ui-headless/canvas-status";
 import { CircleAlert } from "lucide-react-native";
 import { ActivityIndicator, View } from "react-native";
 
@@ -38,7 +35,11 @@ export function CanvasToastStack({
         if (presentation === "loading" && hideText) {
           return (
             <View key={key} accessibilityLabel={message.text} className="p-1">
-              <ActivityIndicator accessibilityLabel={message.text} color={colors.foreground} size="small" />
+              <ActivityIndicator
+                accessibilityLabel={message.text}
+                color={colors.foreground}
+                size="small"
+              />
             </View>
           );
         }

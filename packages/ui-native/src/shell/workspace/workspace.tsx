@@ -79,7 +79,9 @@ export function ShellWorkspaceProvider({ children }: { children: ReactNode }) {
 
   return (
     <ShellWorkspaceActionsContext.Provider value={actionsRef.current}>
-      <ShellWorkspaceStateContext.Provider value={state}>{children}</ShellWorkspaceStateContext.Provider>
+      <ShellWorkspaceStateContext.Provider value={state}>
+        {children}
+      </ShellWorkspaceStateContext.Provider>
     </ShellWorkspaceActionsContext.Provider>
   );
 }
@@ -87,6 +89,7 @@ export function ShellWorkspaceProvider({ children }: { children: ReactNode }) {
 export function useShellWorkspace(): ShellWorkspace {
   const state = useContext(ShellWorkspaceStateContext);
   const actions = useContext(ShellWorkspaceActionsContext);
-  if (!state || !actions) throw new Error("useShellWorkspace must be used within ShellWorkspaceProvider");
+  if (!state || !actions)
+    throw new Error("useShellWorkspace must be used within ShellWorkspaceProvider");
   return { ...state, ...actions };
 }

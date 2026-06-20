@@ -2,10 +2,7 @@ import {
   BricolageGrotesque_600SemiBold,
   BricolageGrotesque_700Bold,
 } from "@expo-google-fonts/bricolage-grotesque";
-import {
-  IBMPlexMono_400Regular,
-  IBMPlexMono_500Medium,
-} from "@expo-google-fonts/ibm-plex-mono";
+import { IBMPlexMono_400Regular, IBMPlexMono_500Medium } from "@expo-google-fonts/ibm-plex-mono";
 import {
   IBMPlexSans_400Regular,
   IBMPlexSans_500Medium,

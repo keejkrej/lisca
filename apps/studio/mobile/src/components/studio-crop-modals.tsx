@@ -65,7 +65,9 @@ export function StudioCropConfirmModal() {
               {copy.title}
             </DialogTitleText>
             <DialogDescriptionText>{copy.description}</DialogDescriptionText>
-            <DialogDescriptionText className="max-h-20 text-xs">{existingList}</DialogDescriptionText>
+            <DialogDescriptionText className="max-h-20 text-xs">
+              {existingList}
+            </DialogDescriptionText>
           </View>
           <DialogActions>
             <Button size="sm" variant="outline" onPress={crop.cancelCropConfirm}>

@@ -5,11 +5,21 @@ import { createReadStream, existsSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { defineConfig, createLogger, type Logger, type PluginOption, type ProxyOptions, type UserConfig } from "vite";
+import {
+  defineConfig,
+  createLogger,
+  type Logger,
+  type PluginOption,
+  type ProxyOptions,
+  type UserConfig,
+} from "vite";
 
 const require = createRequire(fileURLToPath(new URL(".", import.meta.url)));
 const reactCompilerPlugin = require("babel-plugin-react-compiler");
-const { LISCA_API_PROXY_PREFIXES, liscaDevBackendPort } = require("../../scripts/lisca-dev-ports.cjs");
+const {
+  LISCA_API_PROXY_PREFIXES,
+  liscaDevBackendPort,
+} = require("../../scripts/lisca-dev-ports.cjs");
 const { isBenignDevWsProxyError } = require("../../scripts/lisca-dev-proxy-shared.cjs");
 
 /** @deprecated Import from `scripts/lisca-dev-ports.cjs`. */

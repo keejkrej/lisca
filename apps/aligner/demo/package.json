@@ -10,16 +10,16 @@
     }
   },
   "scripts": {
-    "dev": "vite",
+    "dev": "vp dev",
     "build": "node ../../../scripts/demo-standalone-build.mjs",
-    "build:site": "tsc -p tsconfig.json --noEmit && vite build",
-    "preview": "vite preview",
+    "build:site": "tsc -p tsconfig.json --noEmit && vp build",
+    "preview": "vp preview",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@lisca/client": "workspace:*",
-    "@lisca/smart": "workspace:*",
     "@lisca/contracts": "workspace:*",
+    "@lisca/smart": "workspace:*",
     "@lisca/ui": "workspace:*",
     "@lisca/utils": "workspace:*",
     "@lisca/web-demo": "workspace:*",

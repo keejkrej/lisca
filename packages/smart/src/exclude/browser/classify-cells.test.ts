@@ -81,10 +81,7 @@ describe("classifyExclusionCandidates", () => {
     getSmartExcludeClassifier.mockResolvedValue(classifier);
 
     const frame = createFrame(4, 4);
-    const cells = [
-      createCell({ i: 1, j: 2 }),
-      createCell({ i: 3, j: 4, x: 2, y: 2 }),
-    ];
+    const cells = [createCell({ i: 1, j: 2 }), createCell({ i: 3, j: 4, x: 2, y: 2 })];
 
     await expect(classifyExclusionCandidates(frame, cells, { threshold: 0.5 })).resolves.toEqual([
       { i: 1, j: 2 },

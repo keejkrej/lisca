@@ -128,4 +128,3 @@ export function normalizeFrameContrast(frame: FrameResult): FrameResult {
     appliedContrast: applied,
   };
 }
-

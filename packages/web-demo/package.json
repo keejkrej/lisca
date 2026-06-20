@@ -32,8 +32,8 @@
   "dependencies": {
     "@effect-atom/atom-react": "catalog:",
     "@lisca/client": "workspace:*",
-    "@lisca/smart": "workspace:*",
     "@lisca/contracts": "workspace:*",
+    "@lisca/smart": "workspace:*",
     "@lisca/ui": "workspace:*",
     "@lisca/utils": "workspace:*",
     "@lisca/web-app": "workspace:*",
@@ -41,8 +41,8 @@
     "@tanstack/react-router": "catalog:",
     "@tanstack/router-plugin": "catalog:",
     "@vitejs/plugin-react": "catalog:",
-    "lucide-react": "^0.511.0",
     "fflate": "^0.8.2",
+    "lucide-react": "^0.511.0",
     "tailwindcss": "catalog:",
     "utif": "^3.1.0",
     "vite": "catalog:"

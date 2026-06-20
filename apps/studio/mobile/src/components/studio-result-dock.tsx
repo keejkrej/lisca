@@ -47,9 +47,7 @@ export function StudioResultDock(props: {
               variant={action.active ? "default" : "outline"}
               onPress={action.onSelect}
             >
-              <Text>
-                {showShortcutLabels ? dockToolLabel(action.label, index) : action.label}
-              </Text>
+              <Text>{showShortcutLabels ? dockToolLabel(action.label, index) : action.label}</Text>
             </Button>
           ))}
         </View>
@@ -74,4 +72,3 @@ export function StudioResultDock(props: {
     </DockStrip>
   );
 }
-

@@ -8,13 +8,14 @@ export {
 } from "./layout/app-shell";
 export { Button } from "../../components/ui/button";
 export { DockSection, type DockSectionFit } from "./regions/dock-section";
-export { dockLayoutClasses, dockLayoutStyles, dockSectionWidths, dockToolbarMinHeight } from "./regions/dock-layout";
-export { DockStrip } from "./regions/dock-strip";
 export {
-  dockToolLabel,
-  dockToolShortcuts,
-  type DockToolAction,
-} from "@lisca/ui-headless/dock";
+  dockLayoutClasses,
+  dockLayoutStyles,
+  dockSectionWidths,
+  dockToolbarMinHeight,
+} from "./regions/dock-layout";
+export { DockStrip } from "./regions/dock-strip";
+export { dockToolLabel, dockToolShortcuts, type DockToolAction } from "@lisca/ui-headless/dock";
 export {
   keyboardShortcutsSupported,
   useKeyboardShortcuts,
@@ -23,7 +24,14 @@ export {
 } from "./shortcuts/use-keyboard-shortcuts";
 export { confirmDiscardAnnotationChanges } from "./confirm-discard-changes";
 export { ConnectionStatus } from "./chrome/connection-status";
-export { DIALOG_MAX_WIDTH, DialogBody, DialogFooter, DialogHeader, DialogSurface, ModalScrim } from "./modal/modal";
+export {
+  DIALOG_MAX_WIDTH,
+  DialogBody,
+  DialogFooter,
+  DialogHeader,
+  DialogSurface,
+  ModalScrim,
+} from "./modal/modal";
 export {
   DialogActions,
   DialogDescriptionText,

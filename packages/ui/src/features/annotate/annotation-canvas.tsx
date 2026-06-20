@@ -202,8 +202,7 @@ export function AnnotationCanvas({
           );
           ctx.beginPath();
           ctx.globalAlpha = promptAlpha;
-          ctx.fillStyle =
-            prompt.label === 1 ? "rgba(34,197,94,0.95)" : "rgba(248,113,113,0.95)";
+          ctx.fillStyle = prompt.label === 1 ? "rgba(34,197,94,0.95)" : "rgba(248,113,113,0.95)";
           ctx.strokeStyle = "rgba(255,255,255,0.95)";
           ctx.lineWidth = Math.max(1, radius * 0.25);
           ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
@@ -230,7 +229,15 @@ export function AnnotationCanvas({
   }, [frame, preparedFrame, renderNowLatest]);
   useEffect(() => {
     renderNowLatest.current();
-  }, [labels, lassoPoints, mask, overlayOpacity, renderNowLatest, smartSegmentPrompts, smartToolMode]);
+  }, [
+    labels,
+    lassoPoints,
+    mask,
+    overlayOpacity,
+    renderNowLatest,
+    smartSegmentPrompts,
+    smartToolMode,
+  ]);
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
     const viewport = viewportRef.current;

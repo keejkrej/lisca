@@ -4,9 +4,7 @@ import { STUDIO_NAV_WIDTH } from "../src/components/studio-layout";
 import { StudioAlignDock } from "../src/components/studio-align-dock";
 import { StudioAlignMain } from "../src/components/studio-align-main";
 import { StudioLeft } from "../src/components/studio-left";
-import {
-  StudioAlignPageProvider,
-} from "../src/state/studio-align-page-context";
+import { StudioAlignPageProvider } from "../src/state/studio-align-page-context";
 
 function AlignRouteContent() {
   return (

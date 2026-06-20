@@ -49,10 +49,7 @@ export function useHttpProbeForUrl(httpBaseUrl: string): Pick<ShellHttpProbe, "s
         })
         .catch((cause) => {
           if (cancelled || controller.signal.aborted) return;
-          setLog((lines) => [
-            ...lines,
-            cause instanceof Error ? cause.message : String(cause),
-          ]);
+          setLog((lines) => [...lines, cause instanceof Error ? cause.message : String(cause)]);
           scheduleRetry();
         });
     };

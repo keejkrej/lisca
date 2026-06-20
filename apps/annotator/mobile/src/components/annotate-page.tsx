@@ -24,44 +24,44 @@ export function AnnotatePage() {
   return (
     <AnnotatorWorkSessionGate>
       <AppShell>
-      <AppShell.Header>
-        <AnnotatorHeader />
-      </AppShell.Header>
-      <AppShell.Body>
-        <AppShell.Left width={288}>
-          <AnnotatorLeft />
-        </AppShell.Left>
-        <AppShell.MainColumn>
-          <AppShell.Main>
-            <AnnotatorMain />
-          </AppShell.Main>
-          <AppShell.Dock>
-            <AnnotatorDock />
-          </AppShell.Dock>
-        </AppShell.MainColumn>
-        <AppShell.Right width={288}>
-          <AnnotatorRight />
-        </AppShell.Right>
-      </AppShell.Body>
-      <HostFilePickerDialog
-        hostPort={annotatorHostOperations}
-        mode="workspace"
-        open={shell.filePickerOpen}
-        title="Workspace folder"
-        onOpenChange={shell.setFilePickerOpen}
-        onPickDirectory={shell.pickWorkspace}
-        onPickFile={() => undefined}
-      />
-      <LabelCreationDialog
-        error={shell.labelError}
-        labels={shell.labels}
-        open={shell.labelDialogOpen}
-        saving={shell.saveLabelsPending}
-        workspacePath={shell.workspacePath}
-        onOpenChange={shell.setLabelDialogOpen}
-        onSave={(nextLabels) => void shell.handleSaveLabels(nextLabels)}
-      />
-    </AppShell>
+        <AppShell.Header>
+          <AnnotatorHeader />
+        </AppShell.Header>
+        <AppShell.Body>
+          <AppShell.Left width={288}>
+            <AnnotatorLeft />
+          </AppShell.Left>
+          <AppShell.MainColumn>
+            <AppShell.Main>
+              <AnnotatorMain />
+            </AppShell.Main>
+            <AppShell.Dock>
+              <AnnotatorDock />
+            </AppShell.Dock>
+          </AppShell.MainColumn>
+          <AppShell.Right width={288}>
+            <AnnotatorRight />
+          </AppShell.Right>
+        </AppShell.Body>
+        <HostFilePickerDialog
+          hostPort={annotatorHostOperations}
+          mode="workspace"
+          open={shell.filePickerOpen}
+          title="Workspace folder"
+          onOpenChange={shell.setFilePickerOpen}
+          onPickDirectory={shell.pickWorkspace}
+          onPickFile={() => undefined}
+        />
+        <LabelCreationDialog
+          error={shell.labelError}
+          labels={shell.labels}
+          open={shell.labelDialogOpen}
+          saving={shell.saveLabelsPending}
+          workspacePath={shell.workspacePath}
+          onOpenChange={shell.setLabelDialogOpen}
+          onSave={(nextLabels) => void shell.handleSaveLabels(nextLabels)}
+        />
+      </AppShell>
     </AnnotatorWorkSessionGate>
   );
 }

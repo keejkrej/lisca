@@ -10,7 +10,13 @@ import {
 import { frameWithContrast } from "@lisca/web-demo/browser";
 import type { DemoAlignState } from "@lisca/web-demo";
 
-export function DemoAlignMain({ state, embedded = false }: { state: DemoAlignState; embedded?: boolean }) {
+export function DemoAlignMain({
+  state,
+  embedded = false,
+}: {
+  state: DemoAlignState;
+  embedded?: boolean;
+}) {
   const previewRedrawRef = useRef<(() => void) | null>(null);
   const gridHandlers = useAlignCanvasGridHandlers({
     disabled: false,

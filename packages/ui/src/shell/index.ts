@@ -28,11 +28,7 @@ export { DockSection, type DockSectionFit, type DockSectionProps } from "./regio
 export { DockStrip } from "./regions/dock-strip";
 export { SidebarSection, type SidebarSectionProps } from "./regions/sidebar-section";
 export { SidebarStack, type SidebarStackProps } from "./regions/sidebar-stack";
-export {
-  dockToolLabel,
-  dockToolShortcuts,
-  type DockToolAction,
-} from "@lisca/ui-headless/dock";
+export { dockToolLabel, dockToolShortcuts, type DockToolAction } from "@lisca/ui-headless/dock";
 export {
   useKeyboardShortcuts,
   type KeyboardShortcut,
@@ -45,7 +41,11 @@ export { ReadonlyPathField } from "./chrome/readonly-path-field";
 export { Section, type SectionProps } from "./regions/section";
 export { ViewportCard } from "./layout/viewport-card";
 export { ShellServerProvider, useShellServer, type ShellServer } from "./server/shell-server";
-export { ShellWorkspaceProvider, useShellWorkspace, type ShellWorkspace } from "./workspace/workspace";
+export {
+  ShellWorkspaceProvider,
+  useShellWorkspace,
+  type ShellWorkspace,
+} from "./workspace/workspace";
 export {
   WorkSessionPickerDialog,
   type WorkSessionPickerDialogProps,

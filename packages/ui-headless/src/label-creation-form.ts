@@ -28,7 +28,9 @@ function labelDraftFrom(label: AnnotationLabel): LabelDraft {
 }
 
 export function labelDraftsFrom(labels: AnnotationLabel[]): LabelDraft[] {
-  return labels.length > 0 ? labels.map(labelDraftFrom) : defaultLabelDrafts.map((draft) => ({ ...draft }));
+  return labels.length > 0
+    ? labels.map(labelDraftFrom)
+    : defaultLabelDrafts.map((draft) => ({ ...draft }));
 }
 
 export function validateLabelDrafts(drafts: LabelDraft[]): string | null {

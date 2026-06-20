@@ -1,7 +1,4 @@
-import {
-  createLiscaPortCore,
-  type LiscaPortDeps,
-} from "@lisca/client/port-core";
+import { createLiscaPortCore, type LiscaPortDeps } from "@lisca/client/port-core";
 
 export type LiscaMobilePortEnv = {
   httpUrl?: string | undefined;

@@ -4,19 +4,13 @@ import { loadTransformers } from "../../shared/transformers";
 
 import type { ClassifyExclusionCandidatesOptions } from "../types";
 import { EXCLUDE_LABEL } from "../types";
-import {
-  getSmartExcludeClassifier,
-  SMART_EXCLUDE_IMAGE_SIZE,
-} from "./exclude-engine";
+import { getSmartExcludeClassifier, SMART_EXCLUDE_IMAGE_SIZE } from "./exclude-engine";
 import { cropCellToCanvas, resizeCanvasToSquare } from "./preprocess";
 
 const DEFAULT_THRESHOLD = 0.5;
 const DEFAULT_BATCH_SIZE = 16;
 
-function scoreForLabel(
-  outputs: Array<{ label: string; score: number }>,
-  label: string,
-): number {
+function scoreForLabel(outputs: Array<{ label: string; score: number }>, label: string): number {
   const match = outputs.find((entry) => entry.label === label);
   return match?.score ?? 0;
 }

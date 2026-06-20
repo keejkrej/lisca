@@ -15,10 +15,10 @@ Binary image classifier for LiSCA **Smart exclude**: predicts whether a micropat
 
 Trained on user-preference exclusions (edge-clipped sites filtered out). Labels:
 
-| ID | Label |
-|----|-------|
-| 0 | `exclude` |
-| 1 | `include` |
+| ID  | Label     |
+| --- | --------- |
+| 0   | `exclude` |
+| 1   | `include` |
 
 ## Preprocessing
 
@@ -34,10 +34,7 @@ Matches `export_meta.json`:
 ```js
 import { pipeline } from "@huggingface/transformers";
 
-const classifier = await pipeline(
-  "image-classification",
-  "keejkrej/smart-exclusion-resnet18",
-);
+const classifier = await pipeline("image-classification", "keejkrej/smart-exclusion-resnet18");
 const outputs = await classifier(image);
 // exclude when P(label=exclude) >= 0.5
 ```

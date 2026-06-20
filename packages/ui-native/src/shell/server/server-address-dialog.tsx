@@ -4,11 +4,7 @@ import { ScrollView, View } from "react-native";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Text } from "../../../components/ui/text";
-import {
-  DialogActions,
-  DialogDescriptionText,
-  DialogTitleText,
-} from "../modal/dialog-copy";
+import { DialogActions, DialogDescriptionText, DialogTitleText } from "../modal/dialog-copy";
 import { DialogSurface, ModalScrim } from "../modal/modal";
 
 export type ServerAddressDialogProps = {

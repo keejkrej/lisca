@@ -22,7 +22,12 @@ export function ShellThemeToggle(props: { className?: string }) {
         toggleLightDark();
       }}
     >
-      <Icon as={mode === "light" ? Moon : Sun} className="text-foreground" size={16} strokeWidth={2} />
+      <Icon
+        as={mode === "light" ? Moon : Sun}
+        className="text-foreground"
+        size={16}
+        strokeWidth={2}
+      />
     </Button>
   );
 }

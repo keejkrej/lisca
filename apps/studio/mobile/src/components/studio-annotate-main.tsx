@@ -1,9 +1,4 @@
-import {
-  AnnotationCanvas,
-  SmartSegmentModelDialog,
-  Text,
-  ViewportCard,
-} from "@lisca/ui-native";
+import { AnnotationCanvas, SmartSegmentModelDialog, Text, ViewportCard } from "@lisca/ui-native";
 import { useSmartSegment } from "@lisca/smart/segment/browser";
 import { useState } from "react";
 import { View } from "react-native";

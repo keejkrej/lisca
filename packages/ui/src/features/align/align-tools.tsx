@@ -17,11 +17,7 @@ import {
 
 import { Button } from "../../components/ui/button";
 import { DockSection } from "../../shell/regions/dock-section";
-import {
-  dockToolLabel,
-  dockToolShortcuts,
-  useKeyboardShortcuts,
-} from "@lisca/ui/shell";
+import { dockToolLabel, dockToolShortcuts, useKeyboardShortcuts } from "@lisca/ui/shell";
 
 export type AlignToolSectionProps = {
   mode: AlignGridToolMode;
@@ -136,11 +132,7 @@ function renderAlignToolCell(
 
 export type AlignToolToolbarProps = Pick<
   AlignToolSectionProps,
-  | "mode"
-  | "onModeChange"
-  | "patternZoomLocked"
-  | "onPatternZoomLockedChange"
-  | "shortcutsEnabled"
+  "mode" | "onModeChange" | "patternZoomLocked" | "onPatternZoomLockedChange" | "shortcutsEnabled"
 >;
 
 export function AlignToolToolbar({

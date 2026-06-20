@@ -10,10 +10,7 @@ import {
   fileNameFromSampleId,
   type DemoSampleImageId,
 } from "./demo-sample-images";
-import {
-  IBIDI_DEMO_SAMPLE_IMAGES,
-  loadImageFromUrl,
-} from "./load-image-file";
+import { IBIDI_DEMO_SAMPLE_IMAGES, loadImageFromUrl } from "./load-image-file";
 
 export type AlignerDemoPreset = {
   fileName: string;

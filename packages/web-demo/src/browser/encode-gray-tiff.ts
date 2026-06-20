@@ -5,7 +5,12 @@ import type { TiffImageFormat } from "./source-image-format";
 
 type UtifInternals = typeof UTIF & {
   _binBE: TiffBinary;
-  _writeIFD: (bin: TiffBinary, data: Uint8Array, offset: number, ifd: Record<string, number[]>) => number[];
+  _writeIFD: (
+    bin: TiffBinary,
+    data: Uint8Array,
+    offset: number,
+    ifd: Record<string, number[]>,
+  ) => number[];
 };
 
 const utif = UTIF as UtifInternals;

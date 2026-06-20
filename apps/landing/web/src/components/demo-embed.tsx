@@ -28,7 +28,9 @@ export function DemoEmbed({ demo, index }: { demo: LandingDemo; index: number })
       </header>
 
       <div className="px-5 py-4">
-        <p className="min-h-[5lh] text-sm leading-relaxed text-muted-foreground">{demo.description}</p>
+        <p className="min-h-[5lh] text-sm leading-relaxed text-muted-foreground">
+          {demo.description}
+        </p>
       </div>
 
       <div className="relative mx-5 mb-5 h-[32rem] shrink-0 overflow-hidden rounded-xl border border-border">

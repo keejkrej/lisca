@@ -19,10 +19,7 @@ export type DerivedContrastControlState = {
 
 export function deriveAutoContrast(frame: FrameResult | null): ContrastWindow {
   const domain = frame?.contrastDomain ?? defaultContrastDomain;
-  return (
-    frame?.appliedContrast ??
-    frame?.suggestedContrast ?? { min: domain.min, max: domain.max }
-  );
+  return frame?.appliedContrast ?? frame?.suggestedContrast ?? { min: domain.min, max: domain.max };
 }
 
 export function deriveContrastUiState(

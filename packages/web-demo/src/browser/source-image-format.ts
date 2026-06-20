@@ -13,10 +13,7 @@ export type TiffImageFormat = {
   predictor?: number;
 };
 
-export type SourceImageFormat =
-  | { kind: "png" }
-  | { kind: "jpeg" }
-  | TiffImageFormat;
+export type SourceImageFormat = { kind: "png" } | { kind: "jpeg" } | TiffImageFormat;
 
 export type LoadedImageFile = {
   frame: FrameResult;

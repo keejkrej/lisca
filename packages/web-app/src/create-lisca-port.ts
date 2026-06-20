@@ -10,10 +10,7 @@ export type { LiscaPortDeps, LiscaPort } from "@lisca/client/port-core";
 
 import type { LiscaPortDeps } from "@lisca/client/port-core";
 import { readBrowserSearchParams } from "@lisca/client/urls";
-import {
-  createLiscaPortCore,
-  type LiscaPort,
-} from "@lisca/client/port-core";
+import { createLiscaPortCore, type LiscaPort } from "@lisca/client/port-core";
 
 /**
  * Fold the per-app port registry, URL resolver, and error formatter into one

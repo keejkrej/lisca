@@ -16,9 +16,7 @@ export function DialogTitleText(props: {
   tone?: keyof typeof dialogTitleToneClass;
 }) {
   const tone = props.tone ?? "h2";
-  return (
-    <Text className={cn(dialogTitleToneClass[tone], props.className)}>{props.children}</Text>
-  );
+  return <Text className={cn(dialogTitleToneClass[tone], props.className)}>{props.children}</Text>;
 }
 
 export function DialogDescriptionText(props: {
@@ -53,12 +51,14 @@ export function DialogSectionLabel(props: { children: ReactNode; className?: str
 }
 
 export function DialogErrorText(props: { children: ReactNode; className?: string }) {
-  return (
-    <Text className={cn("text-sm text-destructive", props.className)}>{props.children}</Text>
-  );
+  return <Text className={cn("text-sm text-destructive", props.className)}>{props.children}</Text>;
 }
 
-export function DialogStack(props: { children: ReactNode; className?: string; style?: ViewProps["style"] }) {
+export function DialogStack(props: {
+  children: ReactNode;
+  className?: string;
+  style?: ViewProps["style"];
+}) {
   return (
     <View className={cn("gap-3", props.className)} style={props.style}>
       {props.children}

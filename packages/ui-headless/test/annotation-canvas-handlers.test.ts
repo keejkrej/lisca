@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  activeLabelValueForId,
-  framePointFromViewport,
-} from "../src/annotation-canvas-handlers";
+import { activeLabelValueForId, framePointFromViewport } from "../src/annotation-canvas-handlers";
 
 describe("framePointFromViewport", () => {
   it("maps center of letterboxed viewport to frame center", () => {

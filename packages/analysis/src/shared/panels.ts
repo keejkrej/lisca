@@ -625,20 +625,12 @@ export async function resolvePanelByCursor(
 
   const panels = await loadPanels(files[fileIndex]);
   if (panels.length === 0) {
-    return resolvePanelByCursor(
-      files,
-      { fileIndex: fileIndex + 1, panelIndex: 0 },
-      loadPanels,
-    );
+    return resolvePanelByCursor(files, { fileIndex: fileIndex + 1, panelIndex: 0 }, loadPanels);
   }
 
   const panelIndex = fileIndex === cursor.fileIndex ? Math.max(cursor.panelIndex, 0) : 0;
   if (panelIndex >= panels.length) {
-    return resolvePanelByCursor(
-      files,
-      { fileIndex: fileIndex + 1, panelIndex: 0 },
-      loadPanels,
-    );
+    return resolvePanelByCursor(files, { fileIndex: fileIndex + 1, panelIndex: 0 }, loadPanels);
   }
 
   const panel = panels[panelIndex];

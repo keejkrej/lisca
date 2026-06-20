@@ -1,9 +1,13 @@
 import type { FrameResult } from "@lisca/utils";
+import { findSmartSegmentPromptIndexAt, smartSegmentPromptFrameRadius } from "@lisca/utils";
 import {
-  findSmartSegmentPromptIndexAt,
-  smartSegmentPromptFrameRadius,
-} from "@lisca/utils";
-import { useEffect, useRef, useState, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type MutableRefObject,
+  type SetStateAction,
+} from "react";
 
 import { applyBinaryMask } from "../mask";
 import type { SmartSegmentPoint } from "../types";
@@ -182,9 +186,7 @@ export function useSmartSegment(options: {
 
       const binary = await engine.segment(nextPrompts);
       if (segmentGenerationRef.current !== generation) return;
-      onCommitRef.current(
-        applyBinaryMask(clearActiveLabel(mask, labelValue), binary, labelValue),
-      );
+      onCommitRef.current(applyBinaryMask(clearActiveLabel(mask, labelValue), binary, labelValue));
       onStatusRef.current?.("Smart ready");
     } catch (cause) {
       if (segmentGenerationRef.current !== generation) return;

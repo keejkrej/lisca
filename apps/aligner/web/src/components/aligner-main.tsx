@@ -80,9 +80,10 @@ export function AlignerMain() {
       : canvas.scanLoading
         ? "Scanning source…"
         : "No frame loaded.";
-  const cursor = canvas.manualExclusionEnabled || selectionHandlers.selecting
-    ? "crosshair"
-    : cursorForAlignTool(canvas.toolMode, canvas.grid.enabled, gridHandlers.dragging);
+  const cursor =
+    canvas.manualExclusionEnabled || selectionHandlers.selecting
+      ? "crosshair"
+      : cursorForAlignTool(canvas.toolMode, canvas.grid.enabled, gridHandlers.dragging);
   return (
     <>
       <ViewportCard>

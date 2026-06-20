@@ -24,7 +24,9 @@ export function StudioAnnotateRight() {
     return (
       <SidebarStack>
         <SidebarSection title="Annotate">
-          <Text className="text-sm text-muted-foreground">Complete Basic info to annotate ROIs.</Text>
+          <Text className="text-sm text-muted-foreground">
+            Complete Basic info to annotate ROIs.
+          </Text>
         </SidebarSection>
       </SidebarStack>
     );
@@ -97,7 +99,9 @@ export function StudioAnnotateRight() {
           </Button>
         )}
         {loading ? <Text className="w-full text-xs text-muted-foreground">Loading…</Text> : null}
-        {activeError ? <Text className="w-full text-xs text-destructive">{activeError}</Text> : null}
+        {activeError ? (
+          <Text className="w-full text-xs text-destructive">{activeError}</Text>
+        ) : null}
       </SidebarSection>
       <SidebarSection contentClassName="flex-row flex-wrap gap-2" title="Edit">
         <View className="min-w-0 flex-grow basis-[47%]">

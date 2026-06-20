@@ -20,14 +20,15 @@ export function DockSection(props: {
   fit?: DockSectionFit;
 }) {
   const fitClassName =
-    props.fit === "panel"
-      ? "min-w-56 max-w-xs self-stretch shrink-0"
-      : "shrink-0 self-stretch";
+    props.fit === "panel" ? "min-w-56 max-w-xs self-stretch shrink-0" : "shrink-0 self-stretch";
 
   return (
     <Section
       className={cn(fitClassName, "flex min-h-0 h-full flex-col", props.className)}
-      contentClassName={cn("flex min-h-0 flex-1 flex-col justify-center gap-2", props.contentClassName)}
+      contentClassName={cn(
+        "flex min-h-0 flex-1 flex-col justify-center gap-2",
+        props.contentClassName,
+      )}
       contentStyle={props.contentStyle}
       defaultCollapsed={props.defaultCollapsed}
       description={props.description}

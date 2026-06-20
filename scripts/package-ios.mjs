@@ -68,11 +68,9 @@ function findIosWorkspace(iosDir) {
 }
 
 function findIosScheme(workspace) {
-  const result = spawnSync(
-    "xcodebuild",
-    ["-workspace", workspace, "-list", "-json"],
-    { encoding: "utf8" },
-  );
+  const result = spawnSync("xcodebuild", ["-workspace", workspace, "-list", "-json"], {
+    encoding: "utf8",
+  });
   if (result.status !== 0 || !result.stdout?.trim()) {
     console.error("xcodebuild -list failed. Is Xcode installed?");
     process.exit(result.status ?? 1);

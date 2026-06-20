@@ -1,20 +1,24 @@
-import { TextClassContext } from '@/components/ui/text';
-import { cn } from '@/lib/utils';
-import { resolveIconColorFromClasses } from '@/src/theme/resolve-icon-color';
-import { useShellTheme } from '@/src/theme/shell-theme';
-import type { LucideIcon, LucideProps } from 'lucide-react-native';
-import * as React from 'react';
-import { View } from 'react-native';
+import { TextClassContext } from "@/components/ui/text";
+import { cn } from "@/lib/utils";
+import { resolveIconColorFromClasses } from "@/src/theme/resolve-icon-color";
+import { useShellTheme } from "@/src/theme/shell-theme";
+import type { LucideIcon, LucideProps } from "lucide-react-native";
+import * as React from "react";
+import { View } from "react-native";
 
 const ICON_SKIP_CLASS =
   /^(?:text-(?:xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl|\[)|font-|leading-|tracking-|pointer-events-none|transition-colors|select-text|antialiased|size-|shrink-0|overflow-visible|leading-none)/;
 
 function iconColorClass(textClass?: string, className?: string): string {
-  const merged = [iconContextClass(textClass), layoutClassName(className)].filter(Boolean).join(" ");
+  const merged = [iconContextClass(textClass), layoutClassName(className)]
+    .filter(Boolean)
+    .join(" ");
   if (!merged) return "text-foreground";
   const tokens = merged.split(/\s+/).filter(Boolean);
   const hasSemantic = tokens.some((token) =>
-    /^(text-(?:primary|secondary|destructive|accent)-foreground|group-(?:hover|active):text-)/.test(token),
+    /^(text-(?:primary|secondary|destructive|accent)-foreground|group-(?:hover|active):text-)/.test(
+      token,
+    ),
   );
   if (hasSemantic) {
     const filtered = tokens.filter(

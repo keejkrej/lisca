@@ -88,25 +88,29 @@ export const workflowSteps = [
   {
     step: "01",
     title: "Raw timelapse",
-    description: "Multi-position acquisition on micropatterned labware — brightfield and fluorescence channels per field.",
+    description:
+      "Multi-position acquisition on micropatterned labware — brightfield and fluorescence channels per field.",
     visual: "raw" as const,
   },
   {
     step: "02",
     title: "Grid aligned",
-    description: "Register the field to the micropattern grid and mark unoccupied micropatterns so they stay out of quantification.",
+    description:
+      "Register the field to the micropattern grid and mark unoccupied micropatterns so they stay out of quantification.",
     visual: "aligned" as const,
   },
   {
     step: "03",
     title: "Cells annotated",
-    description: "Outline cells or assign phenotype labels on occupied micropatterns — assisted tools or manual QC.",
+    description:
+      "Outline cells or assign phenotype labels on occupied micropatterns — assisted tools or manual QC.",
     visual: "annotated" as const,
   },
   {
     step: "04",
     title: "Assay readouts",
-    description: "Run gene-expression or immune-killing analysis and review summary tables and plots in Studio.",
+    description:
+      "Run gene-expression or immune-killing analysis and review summary tables and plots in Studio.",
     visual: "readout" as const,
   },
 ] as const;

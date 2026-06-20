@@ -29,41 +29,45 @@
       "react-dom": "^19.1.0"
     }
   },
+  "type": "module",
   "scripts": {
     "build": "bun lisca build workspace all",
     "dev": "bun lisca dev workspace all",
-    "check": "bun run lint && bun run typecheck && bun run check:contracts && bun run check:rust && bun run test:packages",
-    "test:packages": "bun --filter @lisca/utils test && bun --filter @lisca/analysis test && bun --filter @lisca/ui-headless test && bun --filter @lisca/client test && bun --filter @lisca/smart test && bun run test:scripts",
-    "test:scripts": "vitest run scripts/lisca-dev.test.ts",
-    "check:contracts": "bun run contracts:generate && bun scripts/check-openapi-routes.ts && bun --filter @lisca/contracts test",
+    "check": "vp run lint && vp run typecheck && vp run check:contracts && vp run check:rust && vp run test:packages",
+    "test:packages": "bun --filter @lisca/utils test && bun --filter @lisca/analysis test && bun --filter @lisca/ui-headless test && bun --filter @lisca/client test && bun --filter @lisca/smart test && vp run test:scripts",
+    "test:scripts": "vp test run scripts/lisca-dev.test.ts --exclude '.deploy/**'",
+    "check:contracts": "vp run contracts:generate && vp exec bun scripts/check-openapi-routes.ts && bun --filter @lisca/contracts test",
     "check:rust": "cargo check --workspace && cargo clippy --workspace -- -D warnings",
     "contracts:generate": "bun --filter @lisca/contracts generate",
-    "fmt": "oxfmt .",
-    "fmt:check": "oxfmt . --check",
-    "format": "bun run fmt",
-    "format:check": "bun run fmt:check",
+    "fmt": "vp fmt",
+    "fmt:check": "vp fmt --check",
+    "format": "vp run fmt",
+    "format:check": "vp run fmt:check",
     "lisca": "bun ./scripts/lisca.mjs",
-    "postinstall": "node ./scripts/install-electron.mjs && node ./scripts/install-skia.mjs",
-    "lint": "oxlint . --report-unused-disable-directives",
+    "postinstall": "vp exec node ./scripts/install-electron.mjs && vp exec node ./scripts/install-skia.mjs",
+    "lint": "vp lint",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck"
   },
   "devDependencies": {
     "@babel/plugin-transform-react-jsx": "7.28.6",
     "@types/node": "catalog:",
+    "@voidzero-dev/vite-plus-core": "latest",
     "oxfmt": "^0.48.0",
     "oxlint": "^1.63.0",
     "oxlint-plugin-eslint": "1.68.0",
     "rcedit": "^4.0.1",
     "turbo": "^2.9.16",
     "typescript": "catalog:",
+    "vite-plus": "latest",
     "vitest": "catalog:",
     "wait-on": "^8.0.3"
   },
   "overrides": {
     "effect": "catalog:",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "vite": "npm:@voidzero-dev/vite-plus-core@latest"
   },
   "engines": {
     "bun": ">=1.2.14"

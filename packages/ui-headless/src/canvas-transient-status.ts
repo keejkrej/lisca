@@ -10,8 +10,7 @@ export function useCanvasTransientStatus(
   options?: UseCanvasTransientStatusOptions | number,
 ): string | null {
   const hideAfterMs = typeof options === "number" ? options : (options?.hideAfterMs ?? 2500);
-  const persistentStatuses =
-    typeof options === "number" ? undefined : options?.persistentStatuses;
+  const persistentStatuses = typeof options === "number" ? undefined : options?.persistentStatuses;
   const [visibleStatus, setVisibleStatus] = useState<string | null>(status);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 

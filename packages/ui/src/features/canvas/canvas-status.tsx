@@ -3,10 +3,7 @@
 import { CircleAlert, Loader2Icon } from "lucide-react";
 
 import type { CanvasStatusMessage, CanvasStatusTone } from "@lisca/ui-headless";
-import {
-  canvasToastPresentation,
-  shouldHideToastText,
-} from "@lisca/ui-headless/canvas-status";
+import { canvasToastPresentation, shouldHideToastText } from "@lisca/ui-headless/canvas-status";
 import { cn } from "../../lib/utils";
 
 function messageToneClassName(tone: CanvasStatusTone | undefined) {

@@ -10,16 +10,16 @@ swapped for any other backend (Node, FastAPI, …) without touching the schema.
 
 ## Layout
 
-| File / directory         | Role                                                               |
-| ------------------------ | ------------------------------------------------------------------ |
-| `src/schema/`            | Wire schemas by domain (`shared`, `host`, `align`, `annotate`, `studio`, …) |
-| `src/assay.schema.ts`    | Canonical schemas for the on-disk `assay.json` contract            |
-| `src/assay-ui.ts`        | Wizard / Studio UI assay types (not wire protocol)                 |
-| `src/assay.ts`           | Barrel for `@lisca/contracts/assay` subpath                        |
-| `src/http-api.ts`        | Effect `HttpApi` definition (groups, endpoints, error envelope)    |
-| `src/decode.ts`          | Schema decode helpers                                              |
-| `openapi.json`           | Generated OpenAPI 3.1 spec (`OpenApi.fromApi`)                     |
-| `contract.schema.json`   | Generated JSON Schema bundle fed to `typify`                       |
+| File / directory       | Role                                                                        |
+| ---------------------- | --------------------------------------------------------------------------- |
+| `src/schema/`          | Wire schemas by domain (`shared`, `host`, `align`, `annotate`, `studio`, …) |
+| `src/assay.schema.ts`  | Canonical schemas for the on-disk `assay.json` contract                     |
+| `src/assay-ui.ts`      | Wizard / Studio UI assay types (not wire protocol)                          |
+| `src/assay.ts`         | Barrel for `@lisca/contracts/assay` subpath                                 |
+| `src/http-api.ts`      | Effect `HttpApi` definition (groups, endpoints, error envelope)             |
+| `src/decode.ts`        | Schema decode helpers                                                       |
+| `openapi.json`         | Generated OpenAPI 3.1 spec (`OpenApi.fromApi`)                              |
+| `contract.schema.json` | Generated JSON Schema bundle fed to `typify`                                |
 
 ## Import paths
 

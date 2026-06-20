@@ -20,9 +20,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@effect-atom/atom-react": "catalog:",
     "@lisca/client": "workspace:*",
     "@lisca/contracts": "workspace:*",
-    "@effect-atom/atom-react": "catalog:",
     "d3-array": "^3.2.4",
     "effect": "catalog:"
   },

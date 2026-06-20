@@ -1,7 +1,10 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { useFolderSourceParseModal, folderParseConfirmError } from "../src/folder-source-parse-modal";
+import {
+  useFolderSourceParseModal,
+  folderParseConfirmError,
+} from "../src/folder-source-parse-modal";
 
 describe("useFolderSourceParseModal", () => {
   it("detects templates and confirms folder source", async () => {
@@ -15,7 +18,9 @@ describe("useFolderSourceParseModal", () => {
         }
         if (path === "/data/Pos0") {
           return {
-            entries: [{ name: "img_0_0_0.jpg", path: "/data/Pos0/img_0_0_0.jpg", isDirectory: false }],
+            entries: [
+              { name: "img_0_0_0.jpg", path: "/data/Pos0/img_0_0_0.jpg", isDirectory: false },
+            ],
           };
         }
         return { entries: [] };
