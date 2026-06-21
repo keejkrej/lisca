@@ -20,13 +20,15 @@
       "@types/react": "^19.2.6",
       "@types/react-dom": "^19.2.3",
       "@tailwindcss/vite": "^4.1.8",
-      "@vitejs/plugin-react": "^4.5.0",
+      "@vitejs/plugin-react": "^6.0.2",
       "babel-plugin-react-compiler": "^1.0.0",
       "tailwindcss": "^4.1.8",
       "vite": "^6.3.5",
       "electron": "^42.1.0",
       "react": "^19.1.0",
-      "react-dom": "^19.1.0"
+      "react-dom": "^19.1.0",
+      "@rolldown/plugin-babel": "^0.2.3",
+      "@babel/core": "^7.29.7"
     }
   },
   "type": "module",
@@ -77,5 +79,10 @@
     "core-js",
     "electron",
     "esbuild"
-  ]
+  ],
+  "dependencies": {
+    "aligner": "^1.0.13",
+    "dev": "^0.1.5",
+    "web": "^0.0.2"
+  }
 }

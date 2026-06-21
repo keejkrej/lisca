@@ -1,9 +1,10 @@
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
-import react from "@vitejs/plugin-react";
+import react, { reactCompilerPreset } from "@vitejs/plugin-react";
+import babel from "@rolldown/plugin-babel";
 import { createReadStream, existsSync, statSync } from "node:fs";
-import { createRequire } from "node:module";
 import { join, normalize, resolve } from "node:path";
+import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import {
   defineConfig,
@@ -29,11 +30,18 @@ export { liscaDevBackendPort };
 
 /** React plugin with React Compiler auto-memoization enabled for all Lisca web apps. */
 export function liscaReactPlugin(): PluginOption {
-  return react({
-    babel: {
-      plugins: [[reactCompilerPlugin, {}]],
-    },
-  });
+  const compilerPreset = reactCompilerPreset();
+  return [
+    react(),
+    babel({
+      presets: [
+        {
+          ...compilerPreset,
+          preset: () => ({ plugins: [[reactCompilerPlugin, {}]] }),
+        },
+      ],
+    }),
+  ];
 }
 
 const brandPublicDir = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../assets/brand");

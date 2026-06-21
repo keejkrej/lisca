@@ -41,7 +41,9 @@
     "@vitejs/plugin-react": "catalog:",
     "babel-plugin-react-compiler": "catalog:",
     "tailwindcss": "catalog:",
-    "vite": "catalog:"
+    "vite": "catalog:",
+    "@rolldown/plugin-babel": "catalog:",
+    "@babel/core": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
@@ -49,7 +51,8 @@
     "@types/react-dom": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "@types/babel__core": "^7.20.5"
   },
   "peerDependencies": {
     "react": "^19.0.0",
