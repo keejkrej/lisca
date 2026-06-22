@@ -19,7 +19,7 @@ Shared libraries under `packages/*`. Apps import these via workspace protocol (`
 | `@lisca/storage`     | Sync storage abstraction (localStorage / sessionStorage / AsyncStorage).                                                           |
 | `@lisca/smart`       | Browser ML via transformers.js: `./segment` (SAM masks), `./segment/browser` (hook), `./exclude/browser` (ResNet smart exclusion). |
 
-Desktop Electron wrappers live under `apps/*/desktop`, not in `packages/*`.
+Desktop Tauri wrappers live under `apps/*/desktop`, not in `packages/*`.
 
 ## `@lisca/contracts` boundaries
 

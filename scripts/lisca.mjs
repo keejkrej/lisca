@@ -75,14 +75,14 @@ Workspace targets:
   dev       all (default)
 
 Defaults:
-  dev, build (product)   → desktop (Electron stack; desktop scripts pull web + Rust)
+  dev, build (product)   → desktop (Tauri stack; desktop scripts pull web + Rust)
   dev web (product)    → web + server (Vite on 876x, Rust on 976x)
   dev web-native       → Expo web + server (http://localhost:808x, API proxied to Rust on 876x)
   dev ios              → Expo native + server on LAN (HOST=0.0.0.0; set EXPO_PUBLIC_LISCA_* for iPad)
   dev ios-install      → install dev client on a USB-connected iOS device (one-time / rebuild)
   build web-native     → export Expo web bundle (apps/<product>/mobile/dist/web)
   build ios            → prebuild ios/ and compile Release (no IPA)
-  dist desktop         → Electron installers (default)
+  dist desktop         → Tauri installers (default)
   dist ios             → development IPA under apps/<product>/mobile/release/ios/
   dev server (product) → Rust backend only
   dev, build (landing) → web

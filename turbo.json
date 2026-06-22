@@ -11,7 +11,20 @@
     "EXPO_PUBLIC_LISCA_HTTP_HOST",
     "EXPO_PUBLIC_LISCA_HTTP_PORT"
   ],
-  "globalPassThroughEnv": ["LISCA_BUILD_DEMO_SITE", "PATHEXT", "RUSTUP_HOME", "CARGO_HOME"],
+  "globalPassThroughEnv": [
+    "LISCA_BUILD_DEMO_SITE",
+    "PATHEXT",
+    "RUSTUP_HOME",
+    "CARGO_HOME",
+    "TAURI_SIGNING_PRIVATE_KEY",
+    "TAURI_SIGNING_PRIVATE_KEY_PASSWORD",
+    "TAURI_ARCH",
+    "TAURI_TARGET",
+    "APPLE_DEVELOPER_ID",
+    "APPLE_ID",
+    "APPLE_PASSWORD",
+    "APPLE_TEAM_ID"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

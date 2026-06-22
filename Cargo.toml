@@ -1,6 +1,15 @@
 [workspace]
 resolver = "2"
-members = ["crates/lisca", "apps/aligner/server", "apps/annotator/server", "apps/studio/server"]
+members = [
+  "crates/lisca",
+  "crates/lisca-tauri",
+  "apps/aligner/server",
+  "apps/annotator/server",
+  "apps/studio/server",
+  "apps/aligner/desktop/src-tauri",
+  "apps/annotator/desktop/src-tauri",
+  "apps/studio/desktop/src-tauri",
+]
 
 [workspace.package]
 version = "0.1.0"
@@ -43,3 +52,5 @@ rayon = "1.10"
 mplot = { git = "https://github.com/keejkrej/mplot-rs" }
 rust_xlsxwriter = "0.90"
 lisca = { path = "crates/lisca", default-features = false }
+tauri = "2"
+tauri-build = "2"

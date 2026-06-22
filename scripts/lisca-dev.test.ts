@@ -17,7 +17,7 @@ const {
   liscaDevBackendPort,
   liscaMobileExpoPort,
 } = require("./lisca-dev-ports.cjs");
-const { DESKTOP_PRODUCTS } = require("./electron/products.cjs");
+const { DESKTOP_PRODUCTS } = require("./lisca-desktop-products.cjs");
 const { isBenignDevWsProxyError, isLiscaApiProxyPath } = require("./lisca-dev-proxy-shared.cjs");
 
 function listenHttp(

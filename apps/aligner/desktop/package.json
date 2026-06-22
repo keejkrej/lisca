@@ -2,22 +2,16 @@
   "name": "@lisca/aligner-desktop",
   "version": "0.1.0",
   "private": true,
-  "main": "electron/main.cjs",
   "scripts": {
-    "build": "bun --filter @lisca/aligner-web build && bun --filter @lisca/aligner-server build",
-    "dev": "concurrently -k -n web,desk \"bun --filter @lisca/aligner-web dev\" \"cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:8765 wait-on -t 120000 tcp:127.0.0.1:8765 && electron .\"",
-    "dist": "bun ../../../scripts/package-desktop.mjs aligner",
-    "typecheck": "bunx oxlint electron/main.cjs electron/preload.cjs"
+    "build": "bun ../../../scripts/build-tauri-frontend.mjs aligner && bun --filter @lisca/aligner-server build",
+    "dev": "tauri dev",
+    "dist": "bun ../../../scripts/package-tauri.mjs aligner",
+    "typecheck": "cargo check -p aligner-tauri"
   },
-  "dependencies": {
-    "wait-on": "^8.0.3"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@lisca/aligner-server": "workspace:*",
     "@lisca/aligner-web": "workspace:*",
-    "concurrently": "^9.1.2",
-    "cross-env": "^7.0.3",
-    "electron": "catalog:",
-    "electron-builder": "^25.1.8"
+    "@tauri-apps/cli": "catalog:"
   }
 }

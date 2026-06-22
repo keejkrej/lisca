@@ -3,7 +3,7 @@ node_modules
 dist
 apps/*/web/dist
 packages/*/dist
-dist-electron
+dist-tauri
 *.tsbuildinfo
 .turbo
 .tanstack
@@ -26,9 +26,8 @@ python/checkpoints/
 .idea
 .vscode/*.log
 
-# Electron
-out
-release
-apps/*/desktop/staging
-apps/*/desktop/electron/desktop-main.cjs
-apps/*/desktop/electron/brand.cjs
+# Tauri
+apps/*/desktop/src-tauri/resources
+apps/*/desktop/src-tauri/target
+apps/*/desktop/release/
+

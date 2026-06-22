@@ -2,22 +2,16 @@
   "name": "@lisca/annotator-desktop",
   "version": "0.1.0",
   "private": true,
-  "main": "electron/main.cjs",
   "scripts": {
-    "build": "bun --filter @lisca/annotator-web build && bun --filter @lisca/annotator-server build",
-    "dev": "concurrently -k -n web,desk \"bun --filter @lisca/annotator-web dev\" \"cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:8766 wait-on -t 120000 tcp:127.0.0.1:8766 && electron .\"",
-    "dist": "bun ../../../scripts/package-desktop.mjs annotator",
-    "typecheck": "bunx oxlint electron/main.cjs electron/preload.cjs"
+    "build": "bun ../../../scripts/build-tauri-frontend.mjs annotator && bun --filter @lisca/annotator-server build",
+    "dev": "tauri dev",
+    "dist": "bun ../../../scripts/package-tauri.mjs annotator",
+    "typecheck": "cargo check -p annotator-tauri"
   },
-  "dependencies": {
-    "wait-on": "^8.0.3"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@lisca/annotator-server": "workspace:*",
     "@lisca/annotator-web": "workspace:*",
-    "concurrently": "^9.1.2",
-    "cross-env": "^7.0.3",
-    "electron": "catalog:",
-    "electron-builder": "^25.1.8"
+    "@tauri-apps/cli": "catalog:"
   }
 }
