@@ -51,7 +51,7 @@ pub fn run(config: ProductConfig, context: tauri::Context) {
 }
 
 fn resolve_server_path<R: tauri::Runtime, M: Manager<R>>(
-    _app: &M,
+    app: &M,
     config: &ProductConfig,
     is_dev: bool,
 ) -> io::Result<PathBuf> {
@@ -77,7 +77,7 @@ fn resolve_server_path<R: tauri::Runtime, M: Manager<R>>(
         return Ok(PathBuf::from("cargo"));
     }
 
-    let candidates = bundled_server_candidates(&binary_name)?;
+    let candidates = bundled_server_candidates(app, &binary_name)?;
     for candidate in &candidates {
         if candidate.exists() {
             return Ok(candidate.clone());
@@ -97,25 +97,21 @@ fn resolve_server_path<R: tauri::Runtime, M: Manager<R>>(
     ))
 }
 
-fn bundled_server_candidates(binary_name: &str) -> io::Result<Vec<PathBuf>> {
-    let exe = std::env::current_exe()?;
+fn bundled_server_candidates<R: tauri::Runtime, M: Manager<R>>(
+    app: &M,
+    binary_name: &str,
+) -> io::Result<Vec<PathBuf>> {
     let mut candidates = Vec::new();
 
-    if cfg!(target_os = "macos") {
-        // macOS bundle layout: MyApp.app/Contents/MacOS/<binary>
-        // Resources live in MyApp.app/Contents/Resources.
-        if let Some(contents_dir) = exe.parent().and_then(|p| p.parent()) {
-            candidates.push(
-                contents_dir
-                    .join("Resources")
-                    .join("server")
-                    .join(binary_name),
-            );
-        }
+    // Tauri maps `resources/` into the bundle resource dir (AppImage: $APPDIR/usr/lib/<product>/).
+    if let Ok(resource_dir) = app.path().resource_dir() {
+        candidates.push(resource_dir.join("server").join(binary_name));
     }
 
-    // Cross-platform fallback: resources/server/<binary> next to the executable.
+    let exe = std::env::current_exe()?;
     if let Some(exe_dir) = exe.parent() {
+        // Cargo output and some bundle layouts place resources next to the executable.
+        candidates.push(exe_dir.join("server").join(binary_name));
         candidates.push(exe_dir.join("resources").join("server").join(binary_name));
     }
 
