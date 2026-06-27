@@ -93,7 +93,7 @@ export function StudioAlignDock() {
             </View>
             <View className={dockLayoutClasses.cell}>
               <Button
-                disabled={!state.frame || state.saving || state.cropping || smartExclude.busy}
+                disabled={!state.frame || state.saving || state.cropping || smartExclude.active}
                 size="sm"
                 variant="outline"
                 onPress={() => void saveAndAdvance()}

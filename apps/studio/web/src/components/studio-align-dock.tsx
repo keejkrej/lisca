@@ -78,7 +78,7 @@ export function StudioAlignDock() {
             </Button>
             <Button
               className="w-full justify-center"
-              disabled={!state.frame || state.saving || state.cropping || smartExclude.busy}
+              disabled={!state.frame || state.saving || state.cropping || smartExclude.active}
               size="sm"
               type="button"
               variant="outline"

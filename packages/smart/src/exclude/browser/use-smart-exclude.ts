@@ -54,6 +54,7 @@ export function useSmartExclude(options: {
   });
   const runGenerationRef = useRef(0);
   const pendingRunRef = useRef<PendingRun | null>(null);
+  const consentPromiseRef = useRef<Promise<AlignGridCellCoord[]> | null>(null);
   const onCompleteRef = useRef(options.onComplete);
   const onStatusRef = useRef(options.onStatus);
   const onErrorRef = useRef(options.onError);
@@ -101,6 +102,7 @@ export function useSmartExclude(options: {
 
   const ensureAndClassify = async (): Promise<AlignGridCellCoord[]> => {
     if (!enabled || !frame) return [];
+    if (consentPromiseRef.current) return consentPromiseRef.current;
 
     const generation = runGenerationRef.current + 1;
     runGenerationRef.current = generation;
@@ -126,8 +128,19 @@ export function useSmartExclude(options: {
         return await runClassify(generation);
       }
 
-      return await new Promise<AlignGridCellCoord[]>((resolve, reject) => {
-        pendingRunRef.current = { resolve, reject };
+      consentPromiseRef.current = new Promise<AlignGridCellCoord[]>((resolve, reject) => {
+        pendingRunRef.current = {
+          resolve: (modelCells) => {
+            consentPromiseRef.current = null;
+            resolve(modelCells);
+          },
+          reject: (cause) => {
+            consentPromiseRef.current = null;
+            reject(cause);
+          },
+        };
+        // Release busy so the consent dialog can show the download action instead of a spinner.
+        setBusy(false);
         setDownloadState({
           open: true,
           requiresDownload: true,
@@ -136,6 +149,7 @@ export function useSmartExclude(options: {
         });
         onStatusRef.current?.("Smart exclude requires a one-time model download");
       });
+      return consentPromiseRef.current;
     } catch (cause) {
       if (runGenerationRef.current !== generation) return [];
       onErrorRef.current?.(cause instanceof Error ? cause.message : String(cause));
@@ -189,12 +203,13 @@ export function useSmartExclude(options: {
       pending.reject(new Error("Smart exclude cancelled"));
       resetPendingRun(pendingRunRef);
     }
+    consentPromiseRef.current = null;
     closeDownloadState();
     onStatusRef.current?.(null);
   };
 
   const request = async () => {
-    if (!enabled || !frame || busy) return;
+    if (!enabled || !frame || busy || pendingRunRef.current) return;
     try {
       const modelCells = await ensureAndClassify();
       onCompleteRef.current(modelCells);
@@ -211,6 +226,7 @@ export function useSmartExclude(options: {
 
   return {
     busy,
+    active: busy || downloadState.open,
     downloadState,
     request,
     ensureAndClassify,

@@ -27,7 +27,7 @@ export function DemoAlignSelectionControls({ state }: { state: DemoAlignState })
         frame={state.frame}
         grid={state.grid}
         manualExclusionEnabled={state.manualExclusionEnabled}
-        smartExcludeLoading={smartExclude.busy}
+        smartExcludeLoading={smartExclude.active}
         visibleCounts={state.visibleCounts}
         variationExcludeLoading={state.variationExcludeLoading}
         variationExcludePreview={state.variationExcludePreview}
