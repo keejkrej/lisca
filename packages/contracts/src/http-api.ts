@@ -6,8 +6,6 @@ import {
   AnalysisProgressSchema,
   AnalysisStartRequestSchema,
   AnnotationLabelArraySchema,
-  AutoExcludePreviewRequestSchema,
-  AutoExcludePreviewResponseSchema,
   ContrastWindowSchema,
   CropRoiProgressSchema,
   CropRoiRequestSchema,
@@ -92,11 +90,6 @@ const alignGroup = HttpApiGroup.make("align")
     HttpApiEndpoint.post("loadFrame", "/align/load-frame")
       .setPayload(LoadFrameRequestSchema)
       .addSuccess(FramePayloadSchema),
-  )
-  .add(
-    HttpApiEndpoint.post("autoExcludePreview", "/align/auto-exclude-preview")
-      .setPayload(AutoExcludePreviewRequestSchema)
-      .addSuccess(AutoExcludePreviewResponseSchema),
   )
   .add(
     HttpApiEndpoint.post("saveBbox", "/align/save-bbox")

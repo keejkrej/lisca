@@ -3,7 +3,6 @@ export * from "./ports";
 export * from "./runtime";
 export * from "./result-utils";
 export * from "./aligner/queries";
-export * from "./aligner/frame-queries";
 export * from "./annotator/queries";
 export * from "./studio/queries";
 export * from "./studio/analysis";

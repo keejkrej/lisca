@@ -19,7 +19,6 @@ export const {
   annotationLabelsAtom,
   saveAnnotationLabelsAtom,
   saveRoiFrameAnnotationAtom,
-  autoExcludePreviewAtom,
 } = studioQueryAtoms;
 
 export const scanIdleAtom = Atom.make(Result.initial<WorkspaceScan>());

@@ -33,7 +33,13 @@ export function readAlignerSession(): AlignerSessionPersist | null {
 }
 
 export function createInitialAlignerUiState(): AlignUiState {
-  return createInitialAlignUiState();
+  const session = alignerPersist.read();
+  if (!session) return createInitialAlignUiState();
+  return {
+    ...createInitialAlignUiState(),
+    workspacePath: session.workspacePath ?? null,
+    source: session.source ?? null,
+  };
 }
 
 export function hydrateAlignerSession(set: Parameters<typeof hydrateAlignUi>[0]): void {

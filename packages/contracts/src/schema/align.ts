@@ -43,12 +43,6 @@ export const AutoExcludePreviewCellSchema = Schema.Struct({
   h: U32,
 }).annotations({ identifier: "AutoExcludePreviewCell" });
 
-export const AutoExcludePreviewRequestSchema = Schema.Struct({
-  source: AlignerSourceSchema,
-  selection: FrameRequestSchema,
-  cells: Schema.mutable(Schema.Array(AutoExcludePreviewCellSchema)),
-}).annotations({ identifier: "AutoExcludePreviewRequest" });
-
 export const AutoExcludePreviewCellScoreSchema = Schema.Struct({
   i: I32,
   j: I32,
@@ -153,7 +147,6 @@ export type AlignGridState = typeof AlignGridStateSchema.Type;
 export type AlignGridCellCoord = typeof AlignGridCellCoordSchema.Type;
 export type SavedAlignState = typeof SavedAlignStateSchema.Type;
 export type AutoExcludePreviewCell = typeof AutoExcludePreviewCellSchema.Type;
-export type AutoExcludePreviewRequest = typeof AutoExcludePreviewRequestSchema.Type;
 export type AutoExcludePreviewCellScore = typeof AutoExcludePreviewCellScoreSchema.Type;
 export type AutoExcludeHistogramBin = typeof AutoExcludeHistogramBinSchema.Type;
 export type AutoExcludePreviewResponse = typeof AutoExcludePreviewResponseSchema.Type;

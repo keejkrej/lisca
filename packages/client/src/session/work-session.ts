@@ -178,12 +178,19 @@ function migrateLegacySession(appId: LiscaAppId): void {
   const storage = liscaSessionStorage();
   const server = "local";
   if (appId === "aligner") {
-    const legacy = readStorageJson<{ workspacePath: string | null; source: AlignerSource | null }>(
-      storage,
-      "lisca-aligner-session",
-    );
+    const legacy = readStorageJson<{
+      state?: { workspacePath: string | null; source: AlignerSource | null };
+      workspacePath?: string | null;
+      source?: AlignerSource | null;
+    }>(storage, "lisca-aligner-session");
+    if (legacy?.state) return;
     if (legacy?.workspacePath && legacy.source) {
-      storage.removeItem("lisca-aligner-session");
+      writeStorageJson(storage, "lisca-aligner-session", {
+        state: {
+          workspacePath: legacy.workspacePath,
+          source: legacy.source,
+        },
+      });
       touchWorkSession(appId, {
         server,
         workspacePath: legacy.workspacePath,

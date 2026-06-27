@@ -3,8 +3,6 @@ import type {
   AnalysisProgress,
   AnalysisStartRequest,
   AnnotationLabel,
-  AutoExcludePreviewRequest,
-  AutoExcludePreviewResponse,
   ContrastWindow,
   CropRoiProgress,
   CropRoiRequest,
@@ -88,7 +86,6 @@ export type AlignerDataPort = HostPort & {
     csv: string,
     alignState: SavedAlignState,
   ): ClientEffect<SaveBboxResponse>;
-  autoExcludePreview(request: AutoExcludePreviewRequest): ClientEffect<AutoExcludePreviewResponse>;
   listSavedBboxPositions(workspacePath: string): ClientEffect<number[]>;
   cropRoi(request: CropRoiRequest): ClientEffect<CropRoiResponse>;
   getLatestCropProgress(workspacePath: string): ClientEffect<CropRoiProgress | null>;

@@ -13,6 +13,25 @@ export const { scanSourceAtom } = createAlignerQueryAtoms(runtime);
 
 `createAppRuntime` merges `Reactivity.layer` with the port layer.
 
+## Cross-product data access
+
+**Query atoms** cache session-stable reads (`keepAlive` + `ReactivityKeys`). **Mutation atoms** write through the port and call `invalidateAfter` so related queries refresh.
+
+**Imperative port calls** (`runClientEffect(client.*)`) handle ephemeral loads, explicit checkpoints, and long-running jobs. Do not add query atoms for these paths.
+
+| Concern | Aligner | Annotator | Studio |
+| ------- | ------- | --------- | ------ |
+| Source scan | `scanSourceAtom` | — | `scanSourceAtom` |
+| ROI workspace scan | — | `roiWorkspaceScanAtom` | `roiWorkspaceScanAtom` |
+| Annotation labels | — | `annotationLabelsAtom` | `annotationLabelsAtom` |
+| Label/annotation saves | — | `save*Atom` + invalidation | `save*Atom` + invalidation |
+| Analysis index/CSV | — | — | `analysisResultsAtom`, `analysisCsvAtom` |
+| Frame pixels | `loadFrameEffect` | `loadRoiFrameEffect` | both (align + annotate) |
+| Align checkpoint | `saveBbox` / `loadAlignState` (port) | — | same in align step |
+| Var/auto exclude | `computeAutoExcludePreview` (`@lisca/utils`) | — | same |
+
+**Not query-backed (by design):** frame loads, per-navigation align state, bbox save/list, crop jobs, one-off `readTextFile` / assay saves.
+
 ## Family keys
 
 Use `Atom.family` for parameterized queries. Serialize composite keys with `JSON.stringify` when the param is an object (e.g. aligner source, analysis CSV input).
@@ -42,15 +61,17 @@ Mutations: `useAtomSet(mutationAtom, { mode: "promise" })`.
 
 ## App UI atoms
 
-Writable session/UI state stays in each app (`*-ui-atoms.ts` or `*-store.ts` atom-backed hooks). Persist workspace/source/selection via `sessionStorage` + `useAtomInitialValues` on boot.
+Writable session/UI state stays in each app (`*-ui-atoms.ts` or `*-store.ts` atom-backed hooks). Persist workspace/source via `sessionStorage` + `useAtomInitialValues` on boot (aligner); studio wizard uses the same pattern for assay state.
 
 ## Modules
 
-| Module                 | Atoms                                                   |
-| ---------------------- | ------------------------------------------------------- |
-| `aligner/queries.ts`   | scan source, saved bbox positions, auto-exclude preview |
-| `annotator/queries.ts` | ROI workspace scan, labels, save labels/annotation      |
-| `studio/queries.ts`    | scan source, ROI workspace scan, auto-exclude preview   |
-| `studio/analysis.ts`   | analysis results, analysis CSV text                     |
+| Module                 | Atoms                                              |
+| ---------------------- | -------------------------------------------------- |
+| `aligner/queries.ts`   | `scanSourceAtom` (via `createSourceQueryAtoms`)    |
+| `annotator/queries.ts` | ROI workspace scan, labels, save labels/annotation |
+| `studio/queries.ts`    | scan source, ROI workspace scan, labels, saves     |
+| `studio/analysis.ts`   | analysis results, analysis CSV text                |
+
+Frame loading uses `createAlignerFrameLoader` / app `roi-loader` effects — not query atoms.
 
 Panel parsing (CSV → plot panels) stays in `studio-web` because it depends on app-local plot parsers.

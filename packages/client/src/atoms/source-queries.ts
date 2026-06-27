@@ -1,9 +1,4 @@
-import type {
-  AlignerSource,
-  AutoExcludePreviewRequest,
-  AutoExcludePreviewResponse,
-  WorkspaceScan,
-} from "@lisca/contracts";
+import type { AlignerSource, WorkspaceScan } from "@lisca/contracts";
 import { Atom, type Result } from "@effect-atom/atom-react";
 import { type Context, Effect } from "effect";
 
@@ -15,21 +10,15 @@ import type { AppRuntime } from "./runtime";
 /** Port surface shared by the aligner and studio source-scan query atoms. */
 export type SourceQueryPort = {
   scanSource(source: AlignerSource): ClientEffect<WorkspaceScan>;
-  autoExcludePreview(request: AutoExcludePreviewRequest): ClientEffect<AutoExcludePreviewResponse>;
 };
 
 export type SourceQueryAtoms = {
   scanSourceAtom: (sourceKey: string) => Atom.Atom<Result.Result<WorkspaceScan, ClientError>>;
-  autoExcludePreviewAtom: Atom.AtomResultFn<
-    AutoExcludePreviewRequest,
-    AutoExcludePreviewResponse,
-    ClientError
-  >;
 };
 
 /**
- * Source-scan and auto-exclude query atoms, parameterized by the port
- * `Context.Tag`. The aligner and studio runtimes share one definition.
+ * Source-scan query atoms, parameterized by the port `Context.Tag`.
+ * The aligner and studio runtimes share one definition.
  */
 export function createSourceQueryAtoms<Id, Port extends SourceQueryPort>(
   runtime: AppRuntime<Id>,
@@ -47,12 +36,5 @@ export function createSourceQueryAtoms<Id, Port extends SourceQueryPort>(
       .pipe(Atom.keepAlive, Atom.withReactivity([ReactivityKeys.scanSource(sourceKey)])),
   );
 
-  const autoExcludePreviewAtom = runtime.fn(
-    Effect.fnUntraced(function* (request: AutoExcludePreviewRequest) {
-      const port = yield* PortTag;
-      return yield* port.autoExcludePreview(request);
-    }),
-  );
-
-  return { scanSourceAtom, autoExcludePreviewAtom };
+  return { scanSourceAtom };
 }

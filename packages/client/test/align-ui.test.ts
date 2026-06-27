@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { configureLiscaStorage, type LiscaStorageAdapter } from "@lisca/storage";
+import { describe, expect, it, beforeEach } from "vitest";
 import { normalizeAlignGridState } from "@lisca/utils";
 
 import {
@@ -7,6 +8,19 @@ import {
   createInitialAlignUiState,
   type AlignUiState,
 } from "../src/atoms/align-ui";
+
+function createMemoryStorage(): LiscaStorageAdapter {
+  const items = new Map<string, string>();
+  return {
+    getItem: (key) => items.get(key) ?? null,
+    setItem: (key, value) => {
+      items.set(key, value);
+    },
+    removeItem: (key) => {
+      items.delete(key);
+    },
+  };
+}
 
 function runReducer(
   state: AlignUiState,
@@ -132,5 +146,44 @@ describe("align-ui actions", () => {
     };
     const next = runReducer(initial, (set) => actions.setContrast(set, null));
     expect(next.contrast).toBeNull();
+  });
+});
+
+describe("createAlignerPersist", () => {
+  beforeEach(() => {
+    configureLiscaStorage({
+      local: createMemoryStorage(),
+      session: createMemoryStorage(),
+    });
+  });
+
+  it("round-trips workspace and source in session storage", () => {
+    const persist = createAlignerPersist("test-aligner-session");
+    const source = {
+      kind: "folder" as const,
+      path: "/data/src",
+      subfolderTemplate: "Pos{pos}",
+      filenameTemplate: "img.tif",
+    };
+    const state = {
+      ...createInitialAlignUiState(),
+      workspacePath: "/data/ws",
+      source,
+    };
+    persist.write(state);
+    expect(persist.read()).toEqual({
+      workspacePath: "/data/ws",
+      source,
+    });
+  });
+
+  it("returns null when workspace or source is missing", () => {
+    const persist = createAlignerPersist("test-aligner-session");
+    persist.write({
+      ...createInitialAlignUiState(),
+      workspacePath: "/data/ws",
+      source: null,
+    });
+    expect(persist.read()).toBeNull();
   });
 });

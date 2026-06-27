@@ -1,7 +1,5 @@
 import type {
   AnnotationLabel,
-  AutoExcludePreviewRequest,
-  AutoExcludePreviewResponse,
   RoiFrameAnnotation,
   RoiWorkspaceScan,
   WorkspaceScan,
@@ -34,18 +32,10 @@ export type StudioQueryAtoms = {
     RoiFrameAnnotation,
     ClientError
   >;
-  autoExcludePreviewAtom: Atom.AtomResultFn<
-    AutoExcludePreviewRequest,
-    AutoExcludePreviewResponse,
-    ClientError
-  >;
 };
 
 export function createStudioQueryAtoms(runtime: AppRuntime<StudioPortService>): StudioQueryAtoms {
-  const { scanSourceAtom, autoExcludePreviewAtom } = createSourceQueryAtoms(
-    runtime,
-    StudioPortService,
-  );
+  const { scanSourceAtom } = createSourceQueryAtoms(runtime, StudioPortService);
 
   const roiWorkspaceScanAtom = Atom.family((workspacePath: string) =>
     runtime
@@ -98,8 +88,7 @@ export function createStudioQueryAtoms(runtime: AppRuntime<StudioPortService>): 
     annotationLabelsAtom,
     saveAnnotationLabelsAtom,
     saveRoiFrameAnnotationAtom,
-    autoExcludePreviewAtom,
   };
 }
 
-export type { WorkspaceScan, RoiWorkspaceScan, AutoExcludePreviewResponse };
+export type { WorkspaceScan, RoiWorkspaceScan };

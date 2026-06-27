@@ -11,7 +11,7 @@ use axum::{
 use lisca::{
     aligner,
     protocol::{
-        AlignerSource, AutoExcludePreviewRequest, ContrastWindow, CropRoiProgress,
+        AlignerSource, ContrastWindow, CropRoiProgress,
         CropRoiRequest, CropRoiStatus, FrameRequest, SavedAlignState,
     },
 };
@@ -93,10 +93,6 @@ where
     Router::new()
         .route("/align/scan-source", post(scan_source_handler))
         .route("/align/load-frame", post(load_frame_handler))
-        .route(
-            "/align/auto-exclude-preview",
-            post(auto_exclude_preview_handler),
-        )
         .route("/align/save-bbox", post(save_bbox_handler))
         .route("/align/align-state", get(load_align_state_handler))
         .route("/align/output-paths", get(output_paths_handler))
@@ -123,14 +119,6 @@ async fn load_frame_handler(
     Json(payload): Json<LoadFramePayload>,
 ) -> Result<Json<lisca::protocol::FramePayload>, FsError> {
     aligner::load_frame_payload(payload.source, payload.request, payload.contrast)
-        .map(Json)
-        .map_err(FsError::new)
-}
-
-async fn auto_exclude_preview_handler(
-    Json(request): Json<AutoExcludePreviewRequest>,
-) -> Result<Json<lisca::protocol::AutoExcludePreviewResponse>, FsError> {
-    aligner::auto_exclude_preview(request)
         .map(Json)
         .map_err(FsError::new)
 }

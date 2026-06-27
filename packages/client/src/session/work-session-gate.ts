@@ -19,14 +19,21 @@ export type WorkSessionGateState = {
   startNewSession: () => void;
 };
 
+export type WorkSessionGateOptions = {
+  /** Skip the resume picker when the app already restored workspace/source (e.g. sessionStorage). */
+  skipResumePicker?: boolean;
+};
+
 export function useWorkSessionGate(
   appId: LiscaAppId,
   onRestore: (session: WorkSession) => void | Promise<void>,
+  options?: WorkSessionGateOptions,
 ): WorkSessionGateState {
+  const skipResumePicker = options?.skipResumePicker ?? false;
   const serverKey = currentServerKey(appId);
   const sessions = sessionsForServer(readWorkSessions(appId), serverKey);
-  const [ready, setReady] = useState(sessions.length === 0);
-  const [open, setOpen] = useState(sessions.length > 0);
+  const [ready, setReady] = useState(sessions.length === 0 || skipResumePicker);
+  const [open, setOpen] = useState(sessions.length > 0 && !skipResumePicker);
   const restoredRef = useRef(false);
 
   const finish = () => {
@@ -53,11 +60,17 @@ export function useWorkSessionGate(
 export type WorkSessionBootstrapProps = {
   appId: LiscaAppId;
   onRestore: (session: WorkSession) => void | Promise<void>;
+  gateOptions?: WorkSessionGateOptions;
   children: (gate: WorkSessionGateState) => ReactNode;
 };
 
-export function WorkSessionBootstrap({ appId, onRestore, children }: WorkSessionBootstrapProps) {
-  const gate = useWorkSessionGate(appId, onRestore);
+export function WorkSessionBootstrap({
+  appId,
+  onRestore,
+  gateOptions,
+  children,
+}: WorkSessionBootstrapProps) {
+  const gate = useWorkSessionGate(appId, onRestore, gateOptions);
   return children(gate);
 }
 

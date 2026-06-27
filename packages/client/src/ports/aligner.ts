@@ -52,11 +52,6 @@ export function createAlignerPort(
         c.align.saveBbox({ payload: { workspacePath, pos, csv, alignState } }),
       );
     },
-    autoExcludePreview(request) {
-      return withClientEffect(client, undefined, (c) =>
-        c.align.autoExcludePreview({ payload: request }),
-      );
-    },
     listSavedBboxPositions(workspacePath) {
       return withClientEffect(client, undefined, (c) =>
         c.align.listSavedBboxPositions({ urlParams: { workspacePath } }),

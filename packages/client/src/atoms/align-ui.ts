@@ -368,10 +368,33 @@ export type AlignUiActions = ReturnType<typeof createAlignUiActions>;
 export function createAlignerPersist(sessionKey: string): AlignUiPersist {
   return {
     write(state) {
+      writeStorageJson(liscaSessionStorage(), sessionKey, {
+        state: {
+          workspacePath: state.workspacePath,
+          source: state.source,
+        },
+      });
       touchAlignerWorkSessionFromState(state);
     },
     read() {
-      return null;
+      const parsed = readStorageJson<{
+        state?: {
+          workspacePath: string | null;
+          source: AlignerSource | null;
+        };
+      }>(liscaSessionStorage(), sessionKey);
+      if (!parsed) return null;
+      const session =
+        parsed.state ??
+        (parsed as {
+          workspacePath: string | null;
+          source: AlignerSource | null;
+        });
+      if (!session.workspacePath?.trim() || !session.source) return null;
+      return {
+        workspacePath: session.workspacePath,
+        source: session.source,
+      };
     },
   };
 }
