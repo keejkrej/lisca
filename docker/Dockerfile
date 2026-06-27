@@ -2,34 +2,27 @@
 
 ARG PRODUCT=aligner
 
-# --- Web: pruned install layer + cached turbo/vite build ---
-FROM oven/bun:1.3.14 AS web-prune
-ARG PRODUCT
-
-WORKDIR /app
-COPY . .
-RUN bunx turbo prune @lisca/${PRODUCT}-web --docker
-
+# --- Web: install layer + cached vp/vite build ---
 FROM oven/bun:1.3.14 AS web-build
 ARG PRODUCT
 
 WORKDIR /app
 
-COPY --from=web-prune /app/out/json/ .
-# turbo prune omits root tsconfig; workspace packages extend it.
-COPY --from=web-prune /app/tsconfig.base.json ./tsconfig.base.json
+# Install deps with a cached bun install layer. Lockfile is copied first so the
+# expensive install only re-runs when dependencies change.
+COPY package.json bun.lock bunfig.toml vite.config.ts tsconfig.base.json ./
+COPY packages ./packages
+COPY apps ./apps
+COPY scripts ./scripts
+COPY assets ./assets
+COPY docs ./docs
 RUN --mount=type=cache,target=/root/.bun/install/cache,id=lisca-bun-cache \
     bun install --frozen-lockfile --ignore-scripts
 
-COPY --from=web-prune /app/out/full/ .
-COPY --from=web-prune /app/tsconfig.base.json ./tsconfig.base.json
-# turbo prune omits root paths that @lisca/web-app/vite.ts resolves at config load time.
-COPY --from=web-prune /app/scripts/lisca-dev-ports.cjs /app/scripts/lisca-dev-proxy-shared.cjs ./scripts/
-COPY --from=web-prune /app/assets/brand ./assets/brand
-RUN --mount=type=cache,target=/root/.bun/install/cache,id=lisca-bun-cache \
-    --mount=type=cache,target=/app/.turbo,id=lisca-turbo-cache,sharing=locked \
-    --mount=type=cache,target=/app/node_modules/.cache,id=lisca-node-cache,sharing=locked \
-    bun x turbo run build --filter=@lisca/${PRODUCT}-web...
+# Build the product web app and its workspace dependencies.
+# vp run --filter <pkg>... resolves the transitive dependency graph from package.json.
+RUN --mount=type=cache,target=/app/node_modules/.cache,id=lisca-node-cache,sharing=locked \
+    vp run --no-cache --filter @lisca/${PRODUCT}-web... build
 
 # --- Rust: cargo-chef dep layer + cached target ---
 # Trixie (glibc ≥ 2.38) is required: ort prebuilt ONNX Runtime references __isoc23_* symbols.

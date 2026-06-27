@@ -46,7 +46,7 @@ function mobileDir(product) {
 }
 
 function buildMobileDeps(product) {
-  run("bun", ["x", "turbo", "run", "build", `--filter=@lisca/${product}-mobile^...`], {
+  run("vp", ["run", "--no-cache", "--filter", `@lisca/${product}-mobile^...`, "build"], {
     cwd: root,
   });
 }

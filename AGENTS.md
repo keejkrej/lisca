@@ -22,10 +22,10 @@ Humans review this file only. Agents maintain **Tech stack** via the memory skil
 
 <!-- memory:techstack-start -->
 
-- **Monorepo:** Bun workspaces + Turborepo — React 19, Vite, Tailwind v4, coss-ui, Effect Atom, TanStack Router; Tauri desktop and Expo mobile; Rust HTTP/WS servers per product (`apps/*/server`).
+- **Monorepo:** Bun workspaces + Vite+ (`vp run` for task orchestration) — React 19, Vite, Tailwind v4, coss-ui, Effect Atom, TanStack Router; Tauri desktop and Expo mobile; Rust HTTP/WS servers per product (`apps/*/server`).
 - **Client IO:** Effect programs and shared atoms in `@lisca/client` — not raw `fetch` in components.
 - **Toolchain:** `vp` (Vite+) is the unified entry point for package management and JS tasks. Use `vp install`, `vp add`, `vp remove`, `vp run`, `vp exec`, etc. Do not invoke `bun`/`npm`/`pnpm`/`yarn` directly for install/add/remove/update/run commands.
-- **CLI:** Prefer `vp run lisca <dev|build|dist|typecheck|preview|install> <aligner|annotator|studio|landing|workspace> [target]` over raw `turbo` for product orchestration — `scripts/lisca.mjs`. Underneath, JS tasks go through `vp`; `bun` is only used because the orchestration script requires it.
+- **CLI:** Prefer `vp run lisca <dev|build|dist|typecheck|preview|install> <aligner|annotator|studio|landing|workspace> [target]` for product orchestration — `scripts/lisca.mjs`. Underneath, JS tasks go through `vp run --filter <pkg> <task>`; `bun` is only used because the orchestration script requires it.
 - **Tooling:** oxfmt + oxlint are driven by `vp` from `vite.config.ts`; React Compiler enabled in web apps via `liscaReactPlugin()` — no `useMemo`, `useCallback`, or `memo`.
 - **Imports:** Extensionless TypeScript imports (no `.ts`/`.tsx` suffixes) — `.oxlintrc.json` `import/extensions`.
 - **Web UI:** coss (Base UI) primitives in `@lisca/ui/components/ui/` — do not edit vendor files; add via `packages/ui/components.json` (`@coss` registry). Shell/feature boundaries — `docs/agents/ui-package-layout.md`.

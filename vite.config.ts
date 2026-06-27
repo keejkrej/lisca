@@ -4,7 +4,7 @@ import { defineConfig } from "vite-plus";
 export default defineConfig({
   // Vitest configuration for workspace-level test runs.
   test: {
-    exclude: ["**/node_modules/**", "**/dist/**", "**/target/**", "**/.turbo/**", "**/.deploy/**"],
+    exclude: ["**/node_modules/**", "**/dist/**", "**/target/**", "**/.deploy/**"],
     resolve: {
       alias: [
         {
@@ -20,7 +20,6 @@ export default defineConfig({
     ignorePatterns: [
       "**/dist/**",
       "**/target/**",
-      "**/.turbo/**",
       "**/node_modules/**",
       "**/coverage/**",
       "*.tsbuildinfo",
@@ -84,7 +83,6 @@ export default defineConfig({
     ignorePatterns: [
       "**/dist/**",
       "**/target/**",
-      "**/.turbo/**",
       "**/coverage/**",
       "**/routeTree.gen.ts",
       "bun.lock",

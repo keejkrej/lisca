@@ -44,7 +44,7 @@ bun lisca dev annotator web-native   # http://localhost:8082
 bun lisca dev studio web-native      # http://localhost:8083
 ```
 
-Web-native dev runs **Expo in the browser** (not via turbo). Open the **808x** URL — the CLI starts a dev proxy there that forwards API routes (`/fs`, `/align`, …) to Rust on **876x** and everything else to Expo on **908x** (808x + 1000). Same-origin resolution works like the Vite web apps.
+Web-native dev runs **Expo in the browser** (not via `vp run`). Open the **808x** URL — the CLI starts a dev proxy there that forwards API routes (`/fs`, `/align`, …) to Rust on **876x** and everything else to Expo on **908x** (808x + 1000). Same-origin resolution works like the Vite web apps.
 
 ### Native iOS (iPad / iPhone)
 

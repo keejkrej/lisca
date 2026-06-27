@@ -3,7 +3,7 @@
  * Unified CLI for product and workspace tasks.
  *
  * Usage:
- *   vp run lisca <task> <scope> [target] [-- <extra turbo args>]
+ *   vp run lisca <task> <scope> [target] [-- <extra args>]
  *
  * Examples:
  *   vp run lisca dev aligner
@@ -46,73 +46,73 @@ const WORKSPACE_BUILD_TARGETS = new Set(["all", "packages", "webs"]);
 
 const dash = process.argv.indexOf("--");
 const argv = dash === -1 ? process.argv.slice(2) : process.argv.slice(2, dash);
-const turboExtra = dash === -1 ? [] : process.argv.slice(dash + 1);
+const extraArgs = dash === -1 ? [] : process.argv.slice(dash + 1);
 
 const [task, scope, targetArg] = argv;
 
 function usage() {
   console.error(`
-Usage: vp run lisca <task> <scope> [target] [-- <turbo passthrough>]
+Usage: vp run lisca <task> <scope> [target] [-- <passthrough args>]
 
   task    dev | build | dist | deploy | typecheck | preview | install
   scope   aligner | annotator | studio | landing | workspace
 
-Product targets (aligner, annotator, studio):
-  desktop | web | demo | server | web-native | all
+  Product targets (aligner, annotator, studio):
+    desktop | web | demo | server | web-native | all
 
-Dev-only targets:
-  ios-install
+  Dev-only targets:
+    ios-install
 
-iOS targets (macOS + Xcode):
-  build ios   → prebuild + Release compile
-  dist ios    → archive + development IPA (apps/<product>/mobile/release/ios/)
+  iOS targets (macOS + Xcode):
+    build ios   → prebuild + Release compile
+    dist ios    → archive + development IPA (apps/<product>/mobile/release/ios/)
 
-Landing targets:
-  web | site   (aliases — both build the marketing site bundle)
+  Landing targets:
+    web | site   (aliases — both build the marketing site bundle)
 
-Workspace targets:
-  build     all | packages | webs
-  dev       all (default)
+  Workspace targets:
+    build     all | packages | webs
+    dev       all (default)
 
-Defaults:
-  dev, build (product)   → desktop (Tauri stack; desktop scripts pull web + Rust)
-  dev web (product)    → web + server (Vite on 876x, Rust on 976x)
-  dev web-native       → Expo web + server (http://localhost:808x, API proxied to Rust on 876x)
-  dev ios              → Expo native + server on LAN (HOST=0.0.0.0; set EXPO_PUBLIC_LISCA_* for iPad)
-  dev ios-install      → install dev client on a USB-connected iOS device (one-time / rebuild)
-  build web-native     → export Expo web bundle (apps/<product>/mobile/dist/web)
-  build ios            → prebuild ios/ and compile Release (no IPA)
-  dist desktop         → Tauri installers (default)
-  dist ios             → development IPA under apps/<product>/mobile/release/ios/
-  dev server (product) → Rust backend only
-  dev, build (landing) → web
-  typecheck (product)  → all packages matching @lisca/<product>-*
-  preview              → web (Vite preview)
+  Defaults:
+    dev, build (product)   → desktop (Tauri stack; desktop scripts pull web + Rust)
+    dev web (product)    → web + server (Vite on 876x, Rust on 976x)
+    dev web-native       → Expo web + server (http://localhost:808x, API proxied to Rust on 876x)
+    dev ios              → Expo native + server on LAN (HOST=0.0.0.0; set EXPO_PUBLIC_LISCA_* for iPad)
+    dev ios-install      → install dev client on a USB-connected iOS device (one-time / rebuild)
+    build web-native     → export Expo web bundle (apps/<product>/mobile/dist/web)
+    build ios            → prebuild ios/ and compile Release (no IPA)
+    dist desktop         → Tauri installers (default)
+    dist ios             → development IPA under apps/<product>/mobile/release/ios/
+    dev server (product) → Rust backend only
+    dev, build (landing) → web
+    typecheck (product)  → all packages matching @lisca/<product>-*
+    preview              → web (Vite preview)
 
-Web-native dev runs Expo in the browser (not via turbo). Open the 808x URL; API traffic is proxied to Rust on 876x.
+  Web-native dev runs Expo in the browser (not via vp run). Open the 808x URL; API traffic is proxied to Rust on 876x.
 
-iOS dev binds the Rust server to 0.0.0.0 and sets EXPO_PUBLIC_LISCA_HTTP_URL from your LAN IP.
-Override the detected IP with EXPO_PUBLIC_LISCA_HTTP_HOST=192.168.x.x.
+  iOS dev binds the Rust server to 0.0.0.0 and sets EXPO_PUBLIC_LISCA_HTTP_URL from your LAN IP.
+  Override the detected IP with EXPO_PUBLIC_LISCA_HTTP_HOST=192.168.x.x.
 
-Examples:
-  vp run lisca dev aligner
-  vp run lisca dev annotator web
-  vp run lisca dev aligner web-native
-  vp run lisca dev aligner ios
-  vp run lisca dev aligner ios-install
-  vp run lisca dev landing
-  vp run lisca install landing
-  vp run lisca build landing
-  vp run lisca build workspace all
-  vp run lisca build workspace packages
-  vp run lisca build workspace webs
-  vp run lisca build aligner web-native
-  vp run lisca build aligner ios
-  vp run lisca dist aligner
-  vp run lisca dist aligner ios
-  vp run lisca typecheck aligner web-native
-  vp run lisca typecheck aligner server
-  vp run lisca preview studio demo
+  Examples:
+    vp run lisca dev aligner
+    vp run lisca dev annotator web
+    vp run lisca dev aligner web-native
+    vp run lisca dev aligner ios
+    vp run lisca dev aligner ios-install
+    vp run lisca dev landing
+    vp run lisca install landing
+    vp run lisca build landing
+    vp run lisca build workspace all
+    vp run lisca build workspace packages
+    vp run lisca build workspace webs
+    vp run lisca build aligner web-native
+    vp run lisca build aligner ios
+    vp run lisca dist aligner
+    vp run lisca dist aligner ios
+    vp run lisca typecheck aligner web-native
+    vp run lisca typecheck aligner server
+    vp run lisca preview studio demo
 `);
 }
 
@@ -148,7 +148,7 @@ function rejectDevOnlyTarget(taskName, scopeName, target) {
   process.exit(1);
 }
 
-function rejectIosTurboTarget(taskName, target) {
+function rejectIosTarget(taskName, target) {
   if (target !== "ios") return false;
   if (taskName === "build") {
     console.error(`Use: vp run lisca build <scope> ios`);
@@ -164,8 +164,8 @@ function rejectIosTurboTarget(taskName, target) {
   process.exit(1);
 }
 
-// Turbo package suffix; workspace folder remains apps/<product>/mobile.
-function turboPackageForTarget(scopeName, target) {
+// Workspace package suffix; workspace folder remains apps/<product>/mobile.
+function packageForTarget(scopeName, target) {
   if (target === "web-native") return `${scopeName}-mobile`;
   return `${scopeName}-${target}`;
 }
@@ -186,14 +186,14 @@ function productFilter(taskName, scopeName, target) {
   if (taskName === "typecheck") {
     const t = target ?? "all";
     if (t === "all") return [`@lisca/${scopeName}-*`];
-    rejectIosTurboTarget(taskName, t);
+    rejectIosTarget(taskName, t);
     if (!TYPECHECK_TARGETS.has(t)) {
       console.error(
         `Invalid typecheck target "${t}". Use: web | demo | server | desktop | web-native | all`,
       );
       process.exit(1);
     }
-    return [`@lisca/${turboPackageForTarget(scopeName, t)}`];
+    return [`@lisca/${packageForTarget(scopeName, t)}`];
   }
 
   let t = target;
@@ -202,7 +202,7 @@ function productFilter(taskName, scopeName, target) {
     else t = "desktop";
   }
 
-  rejectIosTurboTarget(taskName, t);
+  rejectIosTarget(taskName, t);
 
   if (!APP_TARGETS.has(t)) {
     console.error(`Invalid target "${t}". Use: desktop | web | demo | server | web-native | all`);
@@ -216,7 +216,7 @@ function productFilter(taskName, scopeName, target) {
     process.exit(1);
   }
 
-  return [`@lisca/${turboPackageForTarget(scopeName, t)}`];
+  return [`@lisca/${packageForTarget(scopeName, t)}`];
 }
 
 function workspaceFilters(taskName, target) {
@@ -250,7 +250,7 @@ function filtersFor(taskName, scopeName, target) {
   return productFilter(taskName, scopeName, target);
 }
 
-function runLandingInstall(extra = turboExtra) {
+function runLandingInstall(extra = extraArgs) {
   const result = spawnSync(
     "bun",
     ["install", "--filter", "@lisca/landing-web", "--ignore-scripts", ...extra],
@@ -259,12 +259,12 @@ function runLandingInstall(extra = turboExtra) {
   process.exit(result.status ?? 1);
 }
 
-function runTurbo(taskName, { filters = [], extra = turboExtra, env = {} } = {}) {
-  const cmd = ["x", "turbo", "run", taskName];
-  for (const filter of filters) cmd.push(`--filter=${filter}`);
-  cmd.push(...extra);
+function runTask(taskName, { filters = [], extra = extraArgs, env = {} } = {}) {
+  const cmd = ["run", "--no-cache"];
+  for (const filter of filters) cmd.push("--filter", filter);
+  cmd.push(taskName, ...extra);
 
-  const result = spawnSync("bun", cmd, {
+  const result = spawnSync("vp", cmd, {
     cwd: root,
     stdio: "inherit",
     shell: process.platform === "win32",
@@ -273,7 +273,7 @@ function runTurbo(taskName, { filters = [], extra = turboExtra, env = {} } = {})
   process.exit(result.status ?? 1);
 }
 
-function turboEnvFor(taskName, scopeName, target) {
+function envFor(taskName, scopeName, target) {
   if (taskName !== "build") return {};
 
   // Demo packages export TypeScript source; skip their standalone Vite builds on
@@ -298,7 +298,7 @@ function spawnDevServer(scopeName, { backend = false, host } = {}) {
   const port = backend ? ports.backendPort : ports.publicPort;
   const env = { ...process.env, PORT: String(port) };
   if (host) env.HOST = host;
-  return spawn("bun", ["x", "turbo", "run", "dev", `--filter=@lisca/${scopeName}-server`], {
+  return spawn("vp", ["run", "--no-cache", "--filter", `@lisca/${scopeName}-server`, "dev"], {
     cwd: root,
     env,
     stdio: "inherit",
@@ -354,8 +354,8 @@ function runWebDev(scopeName) {
     backend: true,
     run: () =>
       spawnSync(
-        "bun",
-        ["x", "turbo", "run", "dev", `--filter=@lisca/${scopeName}-web`, ...turboExtra],
+        "vp",
+        ["run", "--no-cache", "--filter", `@lisca/${scopeName}-web`, "dev", ...extraArgs],
         {
           cwd: root,
           stdio: "inherit",
@@ -390,8 +390,8 @@ function spawnMobileDevProxy(scopeName) {
 
 function buildMobileDeps(scopeName) {
   const build = spawnSync(
-    "bun",
-    ["x", "turbo", "run", "build", `--filter=@lisca/${scopeName}-mobile^...`],
+    "vp",
+    ["run", "--no-cache", "--filter", `@lisca/${scopeName}-mobile^...`, "build"],
     { cwd: root, stdio: "inherit", shell: process.platform === "win32" },
   );
   if (build.status !== 0) process.exit(build.status ?? 1);
@@ -442,7 +442,7 @@ function runWebNativeDev(scopeName) {
 
   console.log(`\n[lisca] web-native UI: http://localhost:${mobilePort}\n`);
 
-  const status = spawnSync("bun", ["run", "dev", ...turboExtra], {
+  const status = spawnSync("bun", ["run", "dev", ...extraArgs], {
     cwd: mobileDir,
     env: { ...process.env, EXPO_DEV_SERVER_PORT: String(expoPort) },
     stdio: "inherit",
@@ -495,7 +495,7 @@ function runIosDev(scopeName) {
 
   const status = spawnSync(
     "bun",
-    ["x", "expo", "start", "--port", String(expoPort), ...turboExtra],
+    ["x", "expo", "start", "--port", String(expoPort), ...extraArgs],
     {
       cwd: mobileDir,
       env: { ...process.env, ...liscaEnv, EXPO_DEV_SERVER_PORT: String(expoPort) },
@@ -514,7 +514,7 @@ function runIosInstall(scopeName) {
   const mobileDir = path.join(root, "apps", scopeName, "mobile");
   buildMobileDeps(scopeName);
 
-  const status = spawnSync("bun", ["x", "expo", "run:ios", "--device", ...turboExtra], {
+  const status = spawnSync("bun", ["x", "expo", "run:ios", "--device", ...extraArgs], {
     cwd: mobileDir,
     stdio: "inherit",
     shell: process.platform === "win32",
@@ -526,7 +526,7 @@ function runIosInstall(scopeName) {
 function runPackageIos(scopeName, mode) {
   const status = spawnSync(
     "bun",
-    [path.join(root, "scripts/package-ios.mjs"), scopeName, mode, ...turboExtra],
+    [path.join(root, "scripts/package-ios.mjs"), scopeName, mode, ...extraArgs],
     { cwd: root, stdio: "inherit", shell: process.platform === "win32" },
   ).status;
   process.exit(status ?? 1);
@@ -552,7 +552,7 @@ function main() {
     }
     const status = spawnSync(
       "bun",
-      [path.join(root, "scripts/deploy-landing.mjs"), ...turboExtra],
+      [path.join(root, "scripts/deploy-landing.mjs"), ...extraArgs],
       {
         cwd: root,
         stdio: "inherit",
@@ -624,7 +624,7 @@ function main() {
   }
 
   const filters = filtersFor(task, scope, targetArg);
-  runTurbo(task, { filters, env: turboEnvFor(task, scope, targetArg) });
+  runTask(task, { filters, env: envFor(task, scope, targetArg) });
 }
 
 main();
