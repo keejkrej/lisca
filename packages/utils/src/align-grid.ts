@@ -39,7 +39,7 @@ export type AlignGridPointerGestureInput = AlignGridMousePointerInput & {
 
 export type AlignGridPointerIntent = "offset" | "rotation" | "spacing" | "size" | "spacing-size";
 export type AlignGridWheelIntent = "ignore" | "size";
-export type AlignGridToolMode = "pan" | "rotate" | "zoom-vector" | "zoom-pattern" | "zoom";
+export type AlignGridToolMode = "pan" | "rotate" | "zoom-spacing" | "zoom-pattern" | "zoom";
 
 export type AlignGridPointerGestureSession = {
   pointerId: number;
@@ -411,7 +411,7 @@ export function beginAlignGridPointerGesture(
         ? "offset"
         : toolMode === "rotate"
           ? "rotation"
-          : toolMode === "zoom-vector"
+          : toolMode === "zoom-spacing"
             ? "spacing"
             : toolMode === "zoom-pattern"
               ? "size"

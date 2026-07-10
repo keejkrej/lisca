@@ -111,15 +111,15 @@ function drawGridOverlayFromScene(
   ctx.beginPath();
   ctx.arc(scene.origin.x, scene.origin.y, 4, 0, Math.PI * 2);
   ctx.stroke();
-  ctx.strokeStyle = alignGridOverlayColors.vectorA;
+  ctx.strokeStyle = alignGridOverlayColors.spacingA;
   ctx.beginPath();
-  ctx.moveTo(scene.vectorA.start.x, scene.vectorA.start.y);
-  ctx.lineTo(scene.vectorA.end.x, scene.vectorA.end.y);
+  ctx.moveTo(scene.spacingA.start.x, scene.spacingA.start.y);
+  ctx.lineTo(scene.spacingA.end.x, scene.spacingA.end.y);
   ctx.stroke();
-  ctx.strokeStyle = alignGridOverlayColors.vectorB;
+  ctx.strokeStyle = alignGridOverlayColors.spacingB;
   ctx.beginPath();
-  ctx.moveTo(scene.vectorB.start.x, scene.vectorB.start.y);
-  ctx.lineTo(scene.vectorB.end.x, scene.vectorB.end.y);
+  ctx.moveTo(scene.spacingB.start.x, scene.spacingB.start.y);
+  ctx.lineTo(scene.spacingB.end.x, scene.spacingB.end.y);
   ctx.stroke();
 }
 

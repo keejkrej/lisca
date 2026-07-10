@@ -1,4 +1,5 @@
-import { ChevronDown, ChevronRight } from "lucide-solid";
+import IconCaretDownRegular from "phosphor-icons-solid/IconCaretDownRegular";
+import IconCaretRightRegular from "phosphor-icons-solid/IconCaretRightRegular";
 import { createSignal, createUniqueId, Show, splitProps, type JSX } from "solid-js";
 
 import { Button } from "../../components/ui/button";
@@ -54,9 +55,9 @@ export function Section(props: SectionProps) {
             >
               <Show
                 when={collapsed()}
-                fallback={<ChevronDown aria-hidden="true" />}
+                fallback={<IconCaretDownRegular />}
               >
-                <ChevronRight aria-hidden="true" />
+                <IconCaretRightRegular />
               </Show>
             </Button>
           </div>

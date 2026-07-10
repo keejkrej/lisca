@@ -1,17 +1,14 @@
-import { Loader2 } from "lucide-solid";
-import { splitProps, type ComponentProps, type JSX } from "solid-js";
+import IconCircleNotchRegular from "phosphor-icons-solid/IconCircleNotchRegular";
+import { splitProps, type JSX } from "solid-js";
 
 import { cn } from "../../lib/utils";
 
-export function Spinner(props: ComponentProps<typeof Loader2>): JSX.Element {
+export function Spinner(props: { class?: string }): JSX.Element {
   const [local, rest] = splitProps(props, ["class"]);
 
   return (
-    <Loader2
-      aria-label="Loading"
-      class={cn("animate-spin", local.class)}
-      role="status"
-      {...rest}
-    />
+    <span aria-label="Loading" class={cn("inline-flex animate-spin", local.class)} role="status" {...rest}>
+      <IconCircleNotchRegular />
+    </span>
   );
 }

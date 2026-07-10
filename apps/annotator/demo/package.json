@@ -23,7 +23,7 @@
     "@lisca/utils": "workspace:*",
     "@lisca/web-demo": "workspace:*",
     "@tanstack/solid-router": "catalog:",
-    "lucide-solid": "catalog:",
+    "phosphor-icons-solid": "catalog:",
     "solid-js": "catalog:"
   },
   "devDependencies": {

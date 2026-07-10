@@ -7,7 +7,8 @@ import {
   type NavigationValue,
 } from "@lisca/utils";
 import { useSliderStepperField } from "@lisca/ui-headless/slider-stepper-field";
-import { ChevronLeft, ChevronRight } from "lucide-solid";
+import IconCaretLeftRegular from "phosphor-icons-solid/IconCaretLeftRegular";
+import IconCaretRightRegular from "phosphor-icons-solid/IconCaretRightRegular";
 import { For, Show, type JSX } from "solid-js";
 
 import { Button } from "../../components/ui/button";
@@ -78,7 +79,7 @@ export function SelectStepperField<T extends NavigationValue>(
           variant="outline"
           onClick={props.onPrevious}
         >
-          <ChevronLeft aria-hidden="true" />
+          <IconCaretLeftRegular />
         </Button>
         <Select<T>
           class="flex items-center"
@@ -110,7 +111,7 @@ export function SelectStepperField<T extends NavigationValue>(
           variant="outline"
           onClick={props.onNext}
         >
-          <ChevronRight aria-hidden="true" />
+          <IconCaretRightRegular />
         </Button>
       </div>
     </Field>
@@ -144,7 +145,7 @@ export function SliderStepperField(props: SliderNavigationFieldProps) {
           variant="outline"
           onClick={props.onPrevious}
         >
-          <ChevronLeft aria-hidden="true" />
+          <IconCaretLeftRegular />
         </Button>
         <Slider
           aria-valuetext={field.ariaValueText()}
@@ -169,7 +170,7 @@ export function SliderStepperField(props: SliderNavigationFieldProps) {
           variant="outline"
           onClick={props.onNext}
         >
-          <ChevronRight aria-hidden="true" />
+          <IconCaretRightRegular />
         </Button>
       </div>
     </Field>

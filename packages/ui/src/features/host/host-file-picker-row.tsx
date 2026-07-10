@@ -1,5 +1,6 @@
 import type { HostFsEntry } from "@lisca/contracts";
-import { FileIcon, FolderIcon } from "lucide-solid";
+import IconFileRegular from "phosphor-icons-solid/IconFileRegular";
+import IconFolderRegular from "phosphor-icons-solid/IconFolderRegular";
 import { cn } from "../../lib/utils";
 
 export type HostFilePickerRowProps = {
@@ -25,9 +26,9 @@ export function HostFilePickerRow(props: HostFilePickerRowProps) {
       >
         <span class="inline-flex size-4 shrink-0 text-muted-foreground">
           {props.entry.isDirectory ? (
-            <FolderIcon class="size-4" aria-hidden />
+            <IconFolderRegular class="size-4" />
           ) : (
-            <FileIcon class="size-4" aria-hidden />
+            <IconFileRegular class="size-4" />
           )}
         </span>
         <span class="min-w-0 flex-1 truncate">{props.entry.name}</span>

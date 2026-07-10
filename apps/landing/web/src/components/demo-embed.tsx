@@ -1,6 +1,6 @@
 import type { LandingDemo } from "../lib/demos";
 import { Link } from "@tanstack/solid-router";
-import { ArrowUpRight } from "lucide-solid";
+import IconArrowUpRightRegular from "phosphor-icons-solid/IconArrowUpRightRegular";
 
 /**
  * Inline demo frame — mounts immediately with a preloaded sample frame. File upload
@@ -23,7 +23,7 @@ export function DemoEmbed(props: { demo: LandingDemo; index: number }) {
           class="landing-control inline-flex shrink-0 items-center gap-1 px-2 py-1 font-mono text-xs"
         >
           Use your own file
-          <ArrowUpRight class="size-3.5" aria-hidden />
+          <IconArrowUpRightRegular class="size-3.5" />
         </Link>
       </header>
 

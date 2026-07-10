@@ -1,12 +1,5 @@
-import {
-  ArrowLeftRight,
-  Lock,
-  Move,
-  RotateCw,
-  SquareDashedMousePointer,
-  Unlock,
-} from "lucide-solid";
-import type { Component } from "solid-js";
+import IconLockRegular from "phosphor-icons-solid/IconLockRegular";
+import IconLockOpenRegular from "phosphor-icons-solid/IconLockOpenRegular";
 import { createEffect, onCleanup } from "solid-js";
 import type { AlignGridToolMode } from "@lisca/utils";
 import {
@@ -31,19 +24,9 @@ export type AlignToolSectionProps = {
   shortcutsEnabled?: boolean;
 };
 
-type LucideIcon = Component<{ class?: string; "aria-hidden"?: boolean | "true" | "false" }>;
-
-const alignToolIcons: Partial<Record<AlignGridToolMode, LucideIcon>> = {
-  pan: Move,
-  rotate: RotateCw,
-  "zoom-vector": ArrowLeftRight,
-  "zoom-pattern": SquareDashedMousePointer,
-};
-
 export const alignToolDefinitions = headlessAlignToolDefinitions.map(({ mode, label }) => ({
   mode,
   label,
-  Icon: alignToolIcons[mode] ?? SquareDashedMousePointer,
 }));
 
 export { buildAlignToolActions };
@@ -85,7 +68,6 @@ export function AlignToolButton(props: {
   mode: AlignGridToolMode;
   active: boolean;
   label: string;
-  Icon: LucideIcon;
   onClick: () => void;
   class?: string;
 }) {
@@ -100,7 +82,6 @@ export function AlignToolButton(props: {
       variant={props.active ? "default" : "outline"}
       onClick={props.onClick}
     >
-      <props.Icon aria-hidden="true" class="size-5" />
       <span class="max-w-full truncate text-xs">{props.label}</span>
     </Button>
   );
@@ -123,7 +104,6 @@ function renderAlignToolCell(
           <AlignToolButton
             active={mode === tool.mode}
             class="w-full min-w-0 justify-center gap-2 px-2"
-            Icon={tool.Icon}
             label={label}
             mode={tool.mode}
             onClick={() => onModeChange(tool.mode)}
@@ -140,9 +120,9 @@ function renderAlignToolCell(
             onClick={() => onPatternZoomLockedChange?.(!patternZoomLocked)}
           >
             {patternZoomLocked ? (
-              <Lock aria-hidden="true" class="size-4" />
+              <IconLockRegular class="size-4" />
             ) : (
-              <Unlock aria-hidden="true" class="size-4" />
+              <IconLockOpenRegular class="size-4" />
             )}
           </Button>
         </div>
@@ -154,7 +134,6 @@ function renderAlignToolCell(
     <div class="min-w-0">
       <AlignToolButton
         active={mode === tool.mode}
-        Icon={tool.Icon}
         label={label}
         mode={tool.mode}
         onClick={() => onModeChange(tool.mode)}

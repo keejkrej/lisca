@@ -103,7 +103,6 @@ export function StudioNavRail() {
         <ConnectionStatus
           state={server.state}
           httpBaseUrl={server.httpBaseUrl}
-          onOpenSettings={server.openSettings}
         />
         <ShellThemeToggle />
       </div>

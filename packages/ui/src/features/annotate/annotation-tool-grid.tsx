@@ -14,14 +14,16 @@ import {
   dockToolShortcuts,
   type DockToolAction,
 } from "@lisca/ui/shell";
-import { Lasso, Paintbrush, Sparkles } from "lucide-solid";
+import IconLassoRegular from "phosphor-icons-solid/IconLassoRegular";
+import IconPaintBrushRegular from "phosphor-icons-solid/IconPaintBrushRegular";
+import IconSparkleRegular from "phosphor-icons-solid/IconSparkleRegular";
 
-type LucideIcon = Component<{ class?: string; "aria-hidden"?: boolean | "true" | "false" }>;
+type PhosphorIcon = Component<{ class?: string }>;
 
-const annotationToolIcons: Record<AnnotationToolFamily, LucideIcon> = {
-  brush: Paintbrush,
-  lasso: Lasso,
-  smart: Sparkles,
+const annotationToolIcons: Record<AnnotationToolFamily, PhosphorIcon> = {
+  brush: IconPaintBrushRegular,
+  lasso: IconLassoRegular,
+  smart: IconSparkleRegular,
 };
 
 export function buildAnnotationToolActions(
@@ -86,7 +88,7 @@ function AnnotationToolButton(props: { action: DockToolAction; label: string }) 
       variant={props.action.active ? "default" : "outline"}
       onClick={props.action.onSelect}
     >
-      <Icon aria-hidden="true" class="size-4 shrink-0" />
+      <Icon class="size-4 shrink-0" />
       <span class="min-w-0 truncate text-xs">{props.label}</span>
     </Button>
   );

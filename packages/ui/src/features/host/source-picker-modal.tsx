@@ -1,5 +1,5 @@
 import type { AlignerSource } from "@lisca/contracts";
-import { X } from "lucide-solid";
+import IconXRegular from "phosphor-icons-solid/IconXRegular";
 import { For, Show } from "solid-js";
 
 import { Button } from "../../components/ui/button";
@@ -59,7 +59,7 @@ export function SourcePickerModal(props: SourcePickerModalProps) {
                 variant="ghost"
                 onClick={props.onClose}
               >
-                <X class="size-4" aria-hidden />
+                <IconXRegular class="size-4" />
               </Button>
             </div>
           </div>

@@ -1,5 +1,5 @@
 import { DropdownMenu as KobalteDropdownMenu } from "@kobalte/core/dropdown-menu";
-import { ChevronRight } from "lucide-solid";
+import IconCaretRightRegular from "phosphor-icons-solid/IconCaretRightRegular";
 import {
   createContext,
   createEffect,
@@ -351,7 +351,7 @@ export function MenuSubTrigger(
       {...rest}
     >
       {local.children}
-      <ChevronRight class="ms-auto -me-0.5 opacity-80" />
+      <IconCaretRightRegular class="ms-auto -me-0.5 opacity-80" />
     </KobalteDropdownMenu.SubTrigger>
   );
 }

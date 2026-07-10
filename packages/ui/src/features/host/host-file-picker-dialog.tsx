@@ -1,6 +1,7 @@
 import type { HostFilePickerMode } from "@lisca/ui-headless/host";
 import { useHostFilePickerState } from "@lisca/ui-headless/host-file-picker-state";
-import { Home, X } from "lucide-solid";
+import IconHouseRegular from "phosphor-icons-solid/IconHouseRegular";
+import IconXRegular from "phosphor-icons-solid/IconXRegular";
 import { For, onCleanup, onMount, Show } from "solid-js";
 
 import { Button } from "../../components/ui/button";
@@ -80,7 +81,7 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
               variant="ghost"
               onClick={() => props.onOpenChange(false)}
             >
-              <X class="size-4" aria-hidden />
+              <IconXRegular class="size-4" />
             </Button>
           </div>
 
@@ -129,7 +130,7 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
                 variant="outline"
                 onClick={() => void picker.goHome()}
               >
-                <Home class="size-4" aria-hidden />
+                <IconHouseRegular class="size-4" />
                 Home
               </Button>
             </div>

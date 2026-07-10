@@ -10,7 +10,7 @@ export type AlignToolDefinition = {
 export const alignToolDefinitions: AlignToolDefinition[] = [
   { mode: "pan", label: "Pan" },
   { mode: "rotate", label: "Rotate" },
-  { mode: "zoom-vector", label: "Zoom vector" },
+  { mode: "zoom-spacing", label: "Zoom spacing" },
   { mode: "zoom-pattern", label: "Zoom pattern" },
 ];
 

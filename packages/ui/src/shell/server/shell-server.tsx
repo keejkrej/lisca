@@ -1,9 +1,5 @@
 import {
-  addLiscaSavedServer,
-  persistLiscaActiveServer,
   readLiscaActiveServerForApp,
-  readLiscaSavedServers,
-  removeLiscaSavedServer,
   resolveLiscaHttpBaseUrl,
   setLiscaActiveServerAddress,
   type LiscaAppId,
@@ -18,7 +14,6 @@ import {
   type JSX,
 } from "solid-js";
 import { createStore } from "solid-js/store";
-import { ServerAddressDialog } from "./server-address-dialog";
 import type { ConnectionState } from "../chrome/connection-status";
 
 export type ShellServer = {
@@ -27,41 +22,21 @@ export type ShellServer = {
   defaultPort: number;
   localLabel: string;
   activeAddress: string | null;
-  savedServers: string[];
-  settingsOpen: boolean;
-  openSettings: () => void;
-  closeSettings: () => void;
 };
 
-type ShellServerData = Omit<ShellServer, "openSettings" | "closeSettings">;
+type ShellServerData = ShellServer;
 
-type ShellServerAction =
-  | { type: "openSettings" }
-  | { type: "closeSettings" }
-  | { type: "setSettingsOpen"; open: boolean }
-  | { type: "setSavedServers"; savedServers: string[] }
-  | { type: "setActiveAddress"; activeAddress: string | null }
-  | {
-      type: "syncRuntime";
-      httpBaseUrl: string;
-      localLabel: string;
-      connectionState: ConnectionState;
-    };
+type ShellServerAction = {
+  type: "syncRuntime";
+  httpBaseUrl: string;
+  localLabel: string;
+  connectionState: ConnectionState;
+};
 
 const ShellServerContext = createContext<ShellServer>();
 
 function shellServerReducer(state: ShellServerData, action: ShellServerAction): ShellServerData {
   switch (action.type) {
-    case "openSettings":
-      return { ...state, settingsOpen: true };
-    case "closeSettings":
-      return { ...state, settingsOpen: false };
-    case "setSettingsOpen":
-      return { ...state, settingsOpen: action.open };
-    case "setSavedServers":
-      return { ...state, savedServers: action.savedServers };
-    case "setActiveAddress":
-      return { ...state, activeAddress: action.activeAddress };
     case "syncRuntime":
       return {
         ...state,
@@ -118,13 +93,11 @@ function createInitialServerData(defaultPort: number, appId?: LiscaAppId): Shell
     httpResolveOptions(env, defaultPort, persistedAddress),
   );
   return {
-    settingsOpen: false,
-    savedServers: readLiscaSavedServers(),
-    activeAddress: persistedAddress,
     defaultPort,
     localLabel,
     httpBaseUrl,
     state: "idle",
+    activeAddress: persistedAddress,
   };
 }
 
@@ -195,11 +168,9 @@ export function ShellServerProvider(props: {
   appId?: LiscaAppId;
   children?: JSX.Element;
 }) {
-  const [server, setServer] = createStore<ShellServer>({
-    ...createInitialServerData(props.defaultPort, props.appId),
-    openSettings: () => {},
-    closeSettings: () => {},
-  });
+  const [server, setServer] = createStore<ShellServer>(
+    createInitialServerData(props.defaultPort, props.appId),
+  );
 
   const dispatch = (action: ShellServerAction) => {
     setServer(
@@ -210,18 +181,11 @@ export function ShellServerProvider(props: {
           defaultPort: server.defaultPort,
           localLabel: server.localLabel,
           activeAddress: server.activeAddress,
-          savedServers: server.savedServers,
-          settingsOpen: server.settingsOpen,
         },
         action,
       ),
     );
   };
-
-  setServer({
-    openSettings: () => dispatch({ type: "openSettings" }),
-    closeSettings: () => dispatch({ type: "closeSettings" }),
-  });
 
   const httpBaseUrl = createMemo(() => {
     const env = readWebEnv();
@@ -242,50 +206,9 @@ export function ShellServerProvider(props: {
     });
   });
 
-  const connectTo = (address: string | null) => {
-    const next = address?.trim() ? address.trim() : null;
-    if (props.appId) {
-      persistLiscaActiveServer(props.appId, next);
-    } else {
-      setLiscaActiveServerAddress(next);
-    }
-    dispatch({ type: "setActiveAddress", activeAddress: next });
-  };
-
-  const handleAddServer = (address: string) => {
-    dispatch({
-      type: "setSavedServers",
-      savedServers: addLiscaSavedServer(address, { defaultPort: props.defaultPort }),
-    });
-  };
-
-  const handleRemoveServer = (address: string) => {
-    dispatch({
-      type: "setSavedServers",
-      savedServers: removeLiscaSavedServer(address),
-    });
-    if (server.activeAddress === address.trim()) {
-      if (props.appId) persistLiscaActiveServer(props.appId, null);
-      else setLiscaActiveServerAddress(null);
-      dispatch({ type: "setActiveAddress", activeAddress: null });
-    }
-  };
-
   return (
     <ShellServerContext.Provider value={server}>
       {props.children}
-      <ServerAddressDialog
-        activeAddress={server.activeAddress}
-        currentHttpBaseUrl={server.httpBaseUrl}
-        defaultPort={props.defaultPort}
-        localLabel={server.localLabel}
-        open={server.settingsOpen}
-        savedServers={server.savedServers}
-        onAddServer={handleAddServer}
-        onConnect={connectTo}
-        onOpenChange={(open) => dispatch({ type: "setSettingsOpen", open })}
-        onRemoveServer={handleRemoveServer}
-      />
     </ShellServerContext.Provider>
   );
 }

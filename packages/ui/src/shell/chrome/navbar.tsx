@@ -1,4 +1,5 @@
-import { Folder, HardDrive } from "lucide-solid";
+import IconFolderRegular from "phosphor-icons-solid/IconFolderRegular";
+import IconHardDriveRegular from "phosphor-icons-solid/IconHardDriveRegular";
 import type { JSX } from "solid-js";
 import { For, Show } from "solid-js";
 
@@ -52,7 +53,7 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
           <PathButton
             label="Workspace"
             value={workspace.workspacePath}
-            icon={<Folder class="size-4 shrink-0 opacity-80" aria-hidden />}
+            icon={<IconFolderRegular class="size-4 shrink-0 opacity-80" />}
             onClick={handleWorkspace}
           />
           {props.workspaceTrailing}
@@ -60,7 +61,7 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
             <PathButton
               label="Source"
               value={workspace.sourcePath}
-              icon={<HardDrive class="size-4 shrink-0 opacity-80" aria-hidden />}
+              icon={<IconHardDriveRegular class="size-4 shrink-0 opacity-80" />}
               disabled={!workspace.workspacePath}
               onClick={workspace.workspacePath ? handleSource : undefined}
             />
@@ -97,7 +98,6 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
           <ConnectionStatus
             state={server.state}
             httpBaseUrl={server.httpBaseUrl}
-            onOpenSettings={server.openSettings}
           />
           <Show when={props.showToolsMenu !== false}>{props.endLeading}</Show>
           <ShellThemeToggle />

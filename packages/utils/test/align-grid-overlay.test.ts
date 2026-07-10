@@ -39,7 +39,7 @@ describe("align grid overlay scene", () => {
     expect(scene!.origin.y - centered!.origin.y).toBeCloseTo(-5 * scale);
   });
 
-  test("scales vector endpoints with spacing", () => {
+  test("scales spacing endpoints with spacing", () => {
     const frame = { width: 100, height: 100, pixels: new Uint8Array(100 * 100) };
     const tight = normalizeAlignGridState({
       ...createDefaultAlignGrid(),
@@ -57,12 +57,12 @@ describe("align grid overlay scene", () => {
     const tightScene = buildAlignGridOverlayScene(frame, tight, 200, 200)!;
     const wideScene = buildAlignGridOverlayScene(frame, wide, 200, 200)!;
     const tightLen = Math.hypot(
-      tightScene.vectorA.end.x - tightScene.origin.x,
-      tightScene.vectorA.end.y - tightScene.origin.y,
+      tightScene.spacingA.end.x - tightScene.origin.x,
+      tightScene.spacingA.end.y - tightScene.origin.y,
     );
     const wideLen = Math.hypot(
-      wideScene.vectorA.end.x - wideScene.origin.x,
-      wideScene.vectorA.end.y - wideScene.origin.y,
+      wideScene.spacingA.end.x - wideScene.origin.x,
+      wideScene.spacingA.end.y - wideScene.origin.y,
     );
     expect(wideLen).toBeGreaterThan(tightLen);
   });

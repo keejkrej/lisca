@@ -1,4 +1,5 @@
-import { CircleAlert, Loader2Icon } from "lucide-solid";
+import IconWarningCircleRegular from "phosphor-icons-solid/IconWarningCircleRegular";
+import IconCircleNotchRegular from "phosphor-icons-solid/IconCircleNotchRegular";
 import { For, Show } from "solid-js";
 
 import type { CanvasStatusMessage, CanvasStatusTone } from "@lisca/ui-headless";
@@ -27,10 +28,10 @@ function toastToneClassName(tone: CanvasStatusTone | undefined) {
 function toastIcon(message: CanvasStatusMessage) {
   const presentation = canvasToastPresentation(message);
   if (presentation === "error") {
-    return <CircleAlert aria-hidden="true" class="mt-0.5 size-4 shrink-0" />;
+    return <IconWarningCircleRegular class="mt-0.5 size-4 shrink-0" />;
   }
   if (presentation === "loading") {
-    return <Loader2Icon aria-hidden="true" class="mt-0.5 size-4 shrink-0 animate-spin" />;
+    return <IconCircleNotchRegular class="mt-0.5 size-4 shrink-0 animate-spin" />;
   }
   return null;
 }

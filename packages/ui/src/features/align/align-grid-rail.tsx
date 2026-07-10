@@ -67,12 +67,12 @@ export function AlignGridRail(props: {
           shape,
         })
       }
-      onVectorAChange={(spacingA) =>
+      onSpacingAChange={(spacingA) =>
         updateGrid({
           spacingA,
         })
       }
-      onVectorBChange={(spacingB) =>
+      onSpacingBChange={(spacingB) =>
         updateGrid({
           spacingB,
         })
@@ -85,9 +85,9 @@ export function AlignGridRail(props: {
       rotationDegrees={radiansToDegrees(props.grid.rotation)}
       sectionClassName="min-h-0 shrink-0"
       shape={props.grid.shape}
-      vectorA={props.grid.spacingA}
-      vectorB={props.grid.spacingB}
-      vectorMin={1}
+      spacingA={props.grid.spacingA}
+      spacingB={props.grid.spacingB}
+      spacingMin={1}
     />
   );
 }

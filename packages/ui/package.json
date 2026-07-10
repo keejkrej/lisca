@@ -46,7 +46,7 @@
     "@observablehq/plot": "^0.6.17",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "lucide-solid": "catalog:",
+    "phosphor-icons-solid": "catalog:",
     "tailwind-merge": "^3.0.2"
   },
   "devDependencies": {

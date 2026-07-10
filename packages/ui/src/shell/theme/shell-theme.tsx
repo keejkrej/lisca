@@ -1,4 +1,5 @@
-import { Moon, Sun } from "lucide-solid";
+import IconMoonRegular from "phosphor-icons-solid/IconMoonRegular";
+import IconSunRegular from "phosphor-icons-solid/IconSunRegular";
 import { createContext, createEffect, createSignal, Show, useContext, type JSX } from "solid-js";
 import { createStore } from "solid-js/store";
 import { Button } from "../../components/ui/button";
@@ -116,8 +117,8 @@ export function ShellThemeToggle(props: { class?: string }) {
       title={title()}
       aria-label={title()}
     >
-      <Show when={theme.mode === "light"} fallback={<Sun />}>
-        <Moon />
+      <Show when={theme.mode === "light"} fallback={<IconSunRegular />}>
+        <IconMoonRegular />
       </Show>
     </Button>
   );

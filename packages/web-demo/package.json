@@ -41,7 +41,7 @@
     "@tanstack/solid-router": "catalog:",
     "@tanstack/router-plugin": "catalog:",
     "fflate": "^0.8.2",
-    "lucide-solid": "catalog:",
+    "phosphor-icons-solid": "catalog:",
     "solid-js": "catalog:",
     "tailwindcss": "catalog:",
     "utif": "^3.1.0",

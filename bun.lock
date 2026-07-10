@@ -33,6 +33,7 @@
         "@lisca/utils": "workspace:*",
         "@lisca/web-demo": "workspace:*",
         "@tanstack/solid-router": "catalog:",
+        "phosphor-icons-solid": "catalog:",
         "solid-js": "catalog:",
       },
       "devDependencies": {
@@ -72,6 +73,7 @@
         "@lisca/web-app": "workspace:*",
         "@tanstack/solid-router": "catalog:",
         "effect": "catalog:",
+        "phosphor-icons-solid": "catalog:",
         "solid-js": "catalog:",
       },
       "devDependencies": {
@@ -93,7 +95,7 @@
         "@lisca/utils": "workspace:*",
         "@lisca/web-demo": "workspace:*",
         "@tanstack/solid-router": "catalog:",
-        "lucide-solid": "catalog:",
+        "phosphor-icons-solid": "catalog:",
         "solid-js": "catalog:",
       },
       "devDependencies": {
@@ -133,7 +135,7 @@
         "@lisca/web-app": "workspace:*",
         "@tanstack/solid-router": "catalog:",
         "effect": "catalog:",
-        "lucide-solid": "catalog:",
+        "phosphor-icons-solid": "catalog:",
         "solid-js": "catalog:",
       },
       "devDependencies": {
@@ -154,7 +156,7 @@
         "@lisca/ui": "workspace:*",
         "@lisca/web-app": "workspace:*",
         "@tanstack/solid-router": "catalog:",
-        "lucide-solid": "catalog:",
+        "phosphor-icons-solid": "catalog:",
         "solid-js": "catalog:",
       },
       "devDependencies": {
@@ -197,7 +199,7 @@
         "effect": "catalog:",
         "html2canvas-pro": "^2.0.2",
         "jspdf": "^4.2.1",
-        "lucide-solid": "catalog:",
+        "phosphor-icons-solid": "catalog:",
         "solid-js": "catalog:",
       },
       "devDependencies": {
@@ -295,7 +297,7 @@
         "@observablehq/plot": "^0.6.17",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
-        "lucide-solid": "catalog:",
+        "phosphor-icons-solid": "catalog:",
         "tailwind-merge": "^3.0.2",
       },
       "devDependencies": {
@@ -343,9 +345,7 @@
       "name": "@lisca/web-app",
       "version": "0.1.0",
       "dependencies": {
-        "@fontsource-variable/bricolage-grotesque": "^5.2.5",
         "@fontsource-variable/lora": "^5.2.8",
-        "@fontsource/ibm-plex-mono": "^5.2.5",
         "@lisca/client": "workspace:*",
         "@lisca/contracts": "workspace:*",
         "@lisca/ui": "workspace:*",
@@ -382,7 +382,7 @@
         "@tanstack/router-plugin": "catalog:",
         "@tanstack/solid-router": "catalog:",
         "fflate": "^0.8.2",
-        "lucide-solid": "catalog:",
+        "phosphor-icons-solid": "catalog:",
         "solid-js": "catalog:",
         "tailwindcss": "catalog:",
         "utif": "^3.1.0",
@@ -421,7 +421,7 @@
     "@tauri-apps/cli": "^2.0.0",
     "@types/node": "^22.15.21",
     "effect": "^3.21.2",
-    "lucide-solid": "^0.487.0",
+    "phosphor-icons-solid": "^1.0.0",
     "solid-js": "^1.9.0",
     "tailwindcss": "^4.1.8",
     "typescript": "^5.9.2",
@@ -504,11 +504,7 @@
 
     "@floating-ui/utils": ["@floating-ui/utils@0.2.11", "", {}, "sha512-RiB/yIh78pcIxl6lLMG0CgBXAZ2Y0eVHqMPYugu+9U0AeT6YBeiJpf7lbdJNIugFP5SIjwNRgo4DhR1Qxi26Gg=="],
 
-    "@fontsource-variable/bricolage-grotesque": ["@fontsource-variable/bricolage-grotesque@5.2.10", "", {}, "sha512-5EDsCqgGpKVcJWE4sg9ydli+t5WM97mISYw5lla/Ev4z71FwXh1oN0YUU8xjkRW9+wBCGD9R+ntAvI8G4bUFJg=="],
-
     "@fontsource-variable/lora": ["@fontsource-variable/lora@5.2.8", "", {}, "sha512-cxjTJ9BbOWIzusewR4UMBLVePvTSWV6dtNaNsCkF/oKoyA68fJGWfaYCILOOP1BObE4dmjfZ3xo6m9hdHhtYhg=="],
-
-    "@fontsource/ibm-plex-mono": ["@fontsource/ibm-plex-mono@5.2.7", "", {}, "sha512-MKAb8qV+CaiMQn2B0dIi1OV3565NYzp3WN5b4oT6LTkk+F0jR6j0ZN+5BKJiIhffDC3rtBULsYZE65+0018z9w=="],
 
     "@hapi/address": ["@hapi/address@5.1.1", "", { "dependencies": { "@hapi/hoek": "^11.0.2" } }, "sha512-A+po2d/dVoY7cYajycYI43ZbYMXukuopIsqCjh5QzsBCipDtdofHntljDlpccMjIfTy6UOkg+5KPriwYch2bXA=="],
 
@@ -1296,8 +1292,6 @@
 
     "lru-cache": ["lru-cache@5.1.1", "", { "dependencies": { "yallist": "^3.0.2" } }, "sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w=="],
 
-    "lucide-solid": ["lucide-solid@0.487.0", "", { "peerDependencies": { "solid-js": "^1.4.7" } }, "sha512-NkmNhrXiHbeihY1kXMFQBlFP2gxdJMI9Jh7/pvrJmX5q1eMgmz+5bLsckwbbnr2RUiCtl2iIk8gRhQ79LRel/Q=="],
-
     "lz-string": ["lz-string@1.5.0", "", { "bin": { "lz-string": "bin/bin.js" } }, "sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ=="],
 
     "magic-string": ["magic-string@0.30.21", "", { "dependencies": { "@jridgewell/sourcemap-codec": "^1.5.5" } }, "sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ=="],
@@ -1371,6 +1365,8 @@
     "pathval": ["pathval@2.0.1", "", {}, "sha512-//nshmD55c46FuFw26xV/xFAaB5HF9Xdap7HJBBnrKdAd6/GxDBaNA1870O79+9ueg61cZLSVc+OaFlfmObYVQ=="],
 
     "performance-now": ["performance-now@2.1.0", "", {}, "sha512-7EAHlyLHI56VEIdK57uwHdHKIaAGbnXPiw0yWbarQZOKaKpvUIgW0jWRVLiatnM+XXlSwsanIBH/hzGMJulMow=="],
+
+    "phosphor-icons-solid": ["phosphor-icons-solid@1.0.0", "", { "peerDependencies": { "solid-js": "1.9.5" } }, "sha512-nNApGDmT4cNU0CulD2BKX2fA9qmWp8UXGW3MmH46hnazgadykdJIjpnF63TjG8xVNNOMJtIO1/IQtQNSazo/ug=="],
 
     "picocolors": ["picocolors@1.1.1", "", {}, "sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA=="],
 

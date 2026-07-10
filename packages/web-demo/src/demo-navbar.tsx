@@ -7,7 +7,7 @@ import {
   SelectValue,
 } from "@lisca/ui/components";
 import { ShellThemeToggle } from "@lisca/ui/shell";
-import { ImageIcon } from "lucide-solid";
+import IconImageRegular from "phosphor-icons-solid/IconImageRegular";
 import { For, Show, type JSX } from "solid-js";
 
 const imageAccept = ".png,.jpg,.jpeg,.tif,.tiff,image/png,image/jpeg,image/tiff";
@@ -120,7 +120,7 @@ export function DemoNavbar(props: DemoNavbarProps) {
               variant="outline"
               onClick={() => inputRef?.click()}
             >
-              <ImageIcon class="size-4 shrink-0 opacity-80" aria-hidden />
+              <IconImageRegular class="size-4 shrink-0 opacity-80" />
               Image
             </Button>
           </Show>

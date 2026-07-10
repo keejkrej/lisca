@@ -24,7 +24,7 @@
     "effect": "catalog:",
     "html2canvas-pro": "^2.0.2",
     "jspdf": "^4.2.1",
-    "lucide-solid": "catalog:",
+    "phosphor-icons-solid": "catalog:",
     "solid-js": "catalog:"
   },
   "devDependencies": {

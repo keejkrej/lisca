@@ -205,7 +205,7 @@ describe("align grid utils", () => {
 
     expect(beginAlignGridPointerGesture(grid, input, "pan")?.intent).toBe("offset");
     expect(beginAlignGridPointerGesture(grid, input, "rotate")?.intent).toBe("rotation");
-    expect(beginAlignGridPointerGesture(grid, input, "zoom-vector")?.intent).toBe("spacing");
+    expect(beginAlignGridPointerGesture(grid, input, "zoom-spacing")?.intent).toBe("spacing");
     expect(beginAlignGridPointerGesture(grid, input, "zoom-pattern")?.intent).toBe("size");
     expect(beginAlignGridPointerGesture(grid, { ...input, button: 2 }, "pan")).toBeNull();
     expect(
@@ -223,18 +223,18 @@ describe("align grid utils", () => {
       clientX: 100,
       clientY: 100,
     };
-    const vectorSession = beginAlignGridPointerGesture(grid, input, "zoom-vector");
+    const spacingSession = beginAlignGridPointerGesture(grid, input, "zoom-spacing");
     const patternSession = beginAlignGridPointerGesture(grid, input, "zoom-pattern");
 
-    const vectorZoomed = applyAlignGridPointerGesture(
-      vectorSession!,
+    const spacingZoomed = applyAlignGridPointerGesture(
+      spacingSession!,
       { ...input, clientX: 140, clientY: 100 },
       viewport,
     );
-    expect(vectorZoomed.spacingA).toBeGreaterThan(grid.spacingA);
-    expect(vectorZoomed.spacingB).toBeGreaterThan(grid.spacingB);
-    expect(vectorZoomed.cellWidth).toBe(grid.cellWidth);
-    expect(vectorZoomed.cellHeight).toBe(grid.cellHeight);
+    expect(spacingZoomed.spacingA).toBeGreaterThan(grid.spacingA);
+    expect(spacingZoomed.spacingB).toBeGreaterThan(grid.spacingB);
+    expect(spacingZoomed.cellWidth).toBe(grid.cellWidth);
+    expect(spacingZoomed.cellHeight).toBe(grid.cellHeight);
 
     const patternZoomed = applyAlignGridPointerGesture(
       patternSession!,

@@ -1,7 +1,9 @@
 import type { PolymorphicProps } from "@kobalte/core/polymorphic";
 import { Select as KobalteSelect } from "@kobalte/core/select";
 import { cva, type VariantProps } from "class-variance-authority";
-import { ChevronDown, ChevronsUpDown, ChevronUp } from "lucide-solid";
+import IconArrowsDownUpRegular from "phosphor-icons-solid/IconArrowsDownUpRegular";
+import IconCaretDownRegular from "phosphor-icons-solid/IconCaretDownRegular";
+import IconCaretUpRegular from "phosphor-icons-solid/IconCaretUpRegular";
 import {
   createContext,
   createEffect,
@@ -257,7 +259,7 @@ function SelectButton<T extends ValidComponent = "button">(
       {...rest}
     >
       <span class="flex-1 truncate in-data-placeholder:text-muted-foreground/72">{props.children}</span>
-      <ChevronsUpDown class={selectTriggerIconClassName} />
+      <IconArrowsDownUpRegular class={selectTriggerIconClassName} />
     </Dynamic>
   );
 }
@@ -283,7 +285,7 @@ function SelectTrigger(
     >
       {local.children}
       <KobalteSelect.Icon data-slot="select-icon">
-        <ChevronsUpDown class={selectTriggerIconClassName} />
+        <IconArrowsDownUpRegular class={selectTriggerIconClassName} />
       </KobalteSelect.Icon>
     </KobalteSelect.Trigger>
   );
@@ -348,7 +350,7 @@ function SelectContent(
         data-slot="select-popup"
       >
         <div class="top-0 z-50 flex h-6 w-full cursor-default items-center justify-center before:pointer-events-none before:absolute before:inset-x-px before:top-px before:h-[200%] before:rounded-t-[calc(var(--radius-lg)-1px)] before:bg-linear-to-b before:from-50% before:from-popover">
-          <ChevronUp class="relative size-4.5 sm:size-4" data-slot="select-scroll-up-arrow" />
+          <IconCaretUpRegular class="relative size-4.5 sm:size-4" data-slot="select-scroll-up-arrow" />
         </div>
         <div class="relative h-full min-w-(--anchor-width) rounded-lg border bg-popover not-dark:bg-clip-padding shadow-lg/5 before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-lg)-1px)] before:shadow-[0_1px_--theme(--color-black/4%)] dark:before:shadow-[0_-1px_--theme(--color-white/6%)]">
           <KobalteSelect.Listbox
@@ -357,7 +359,7 @@ function SelectContent(
           />
         </div>
         <div class="bottom-0 z-50 flex h-6 w-full cursor-default items-center justify-center before:pointer-events-none before:absolute before:inset-x-px before:bottom-px before:h-[200%] before:rounded-b-[calc(var(--radius-lg)-1px)] before:bg-linear-to-t before:from-50% before:from-popover">
-          <ChevronDown class="relative size-4.5 sm:size-4" data-slot="select-scroll-down-arrow" />
+          <IconCaretDownRegular class="relative size-4.5 sm:size-4" data-slot="select-scroll-down-arrow" />
         </div>
       </KobalteSelect.Content>
     </KobalteSelect.Portal>

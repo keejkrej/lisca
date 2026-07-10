@@ -1,6 +1,8 @@
 import type { AnnotationLabel } from "@lisca/contracts";
 import { useLabelCreationForm, normalizeLabelId } from "@lisca/ui-headless/label-creation-form";
-import { Plus, Trash2, X } from "lucide-solid";
+import IconPlusRegular from "phosphor-icons-solid/IconPlusRegular";
+import IconTrashRegular from "phosphor-icons-solid/IconTrashRegular";
+import IconXRegular from "phosphor-icons-solid/IconXRegular";
 import { Index, onCleanup, onMount, Show } from "solid-js";
 
 import { Button } from "../../components/ui/button";
@@ -69,7 +71,7 @@ export function LabelCreationDialog(props: LabelCreationDialogProps) {
               variant="ghost"
               onClick={() => props.onOpenChange(false)}
             >
-              <X class="size-4" aria-hidden />
+              <IconXRegular class="size-4" />
             </Button>
           </div>
 
@@ -115,13 +117,13 @@ export function LabelCreationDialog(props: LabelCreationDialogProps) {
                     variant="ghost"
                     onClick={() => form.removeDraft(index)}
                   >
-                    <Trash2 class="size-4" aria-hidden />
+                    <IconTrashRegular class="size-4" />
                   </Button>
                 </div>
               )}
             </Index>
             <Button class="w-fit" size="sm" type="button" variant="outline" onClick={form.addDraft}>
-              <Plus class="size-4" aria-hidden />
+              <IconPlusRegular class="size-4" />
               Add label
             </Button>
             <Show when={form.activeError()}>

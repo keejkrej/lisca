@@ -16,7 +16,7 @@ describe("cursorForAlignTool", () => {
   it("maps tool modes", () => {
     expect(cursorForAlignTool("pan", true, false)).toBe("grab");
     expect(cursorForAlignTool("rotate", true, false)).toBe("crosshair");
-    expect(cursorForAlignTool("zoom-vector", true, false)).toBe("zoom-in");
+    expect(cursorForAlignTool("zoom-spacing", true, false)).toBe("zoom-in");
   });
 });
 

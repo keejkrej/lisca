@@ -16,7 +16,6 @@ export {
 } from "./chrome/navbar";
 export { PathButton } from "./chrome/path-button";
 export { ConnectionStatus, type ConnectionState } from "./chrome/connection-status";
-export { ServerAddressDialog, type ServerAddressDialogProps } from "./server/server-address-dialog";
 export {
   ShellThemeProvider,
   ShellThemeToggle,

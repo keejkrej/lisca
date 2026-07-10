@@ -10,8 +10,8 @@ export const alignGridOverlayColors = {
   includedRgb: "68, 151, 255",
   excludedRgb: "244, 63, 94",
   origin: "rgba(255,255,255,0.9)",
-  vectorA: "rgba(249,115,22,0.95)",
-  vectorB: "rgba(34,197,94,0.95)",
+  spacingA: "rgba(249,115,22,0.95)",
+  spacingB: "rgba(34,197,94,0.95)",
   frameHaloFill: "rgba(255,255,255,0.03)",
   frameHaloStroke: "rgba(255,255,255,0.08)",
 } as const;
@@ -44,8 +44,8 @@ export type AlignGridOverlayScene = {
   clipRect: AlignGridOverlayRect;
   cells: AlignGridOverlayCell[];
   origin: AlignGridOverlayPoint;
-  vectorA: { start: AlignGridOverlayPoint; end: AlignGridOverlayPoint };
-  vectorB: { start: AlignGridOverlayPoint; end: AlignGridOverlayPoint };
+  spacingA: { start: AlignGridOverlayPoint; end: AlignGridOverlayPoint };
+  spacingB: { start: AlignGridOverlayPoint; end: AlignGridOverlayPoint };
   fillOpacity: number;
   strokeOpacity: number;
 };
@@ -119,11 +119,11 @@ export function buildAlignGridOverlayScene(
     },
     cells,
     origin,
-    vectorA: {
+    spacingA: {
       start: origin,
       end: { x: originX + scaledA.x, y: originY + scaledA.y },
     },
-    vectorB: {
+    spacingB: {
       start: origin,
       end: { x: originX + scaledB.x, y: originY + scaledB.y },
     },

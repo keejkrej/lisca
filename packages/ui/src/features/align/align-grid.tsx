@@ -79,11 +79,11 @@ export type AlignGridProps = {
   rotationDegrees: number;
   onRotationDegreesChange: (degrees: number) => void;
 
-  vectorA: number;
-  vectorB: number;
-  onVectorAChange: (value: number) => void;
-  onVectorBChange: (value: number) => void;
-  vectorMin?: number;
+  spacingA: number;
+  spacingB: number;
+  onSpacingAChange: (value: number) => void;
+  onSpacingBChange: (value: number) => void;
+  spacingMin?: number;
 
   patternWidth: number;
   patternHeight: number;
@@ -112,10 +112,10 @@ export type AlignGridProps = {
 
 /**
  * Grid controls in a {@link Section} card: overlay row (**Show** / **Reset**), **Opacity**, then
- * shape toggle, rotation, vectors A/B, pattern width/height, offsets.
+ * shape toggle, rotation, spacing A/B, pattern width/height, offsets.
  */
 export function AlignGrid(props: AlignGridProps) {
-  const vectorMin = () => props.vectorMin ?? 1;
+  const spacingMin = () => props.spacingMin ?? 1;
   const patternMin = () => props.patternMin ?? 1;
   const [rotationDraft, setRotationDraft] = createSignal(props.rotationDegrees);
   const [overlayOpacityDraft, setOverlayOpacityDraft] = createSignal(props.overlayOpacity);
@@ -208,21 +208,21 @@ export function AlignGrid(props: AlignGridProps) {
 
         <div class="grid grid-cols-2 gap-2">
           <Field class="min-w-0 w-full">
-            <FieldLabel>Vector A</FieldLabel>
+            <FieldLabel>Spacing X</FieldLabel>
             <AlignNumberInput
               disabled={props.disabled}
-              min={vectorMin()}
-              value={props.vectorA}
-              onCommit={props.onVectorAChange}
+              min={spacingMin()}
+              value={props.spacingA}
+              onCommit={props.onSpacingAChange}
             />
           </Field>
           <Field class="min-w-0 w-full">
-            <FieldLabel>Vector B</FieldLabel>
+            <FieldLabel>Spacing Y</FieldLabel>
             <AlignNumberInput
               disabled={props.disabled}
-              min={vectorMin()}
-              value={props.vectorB}
-              onCommit={props.onVectorBChange}
+              min={spacingMin()}
+              value={props.spacingB}
+              onCommit={props.onSpacingBChange}
             />
           </Field>
         </div>

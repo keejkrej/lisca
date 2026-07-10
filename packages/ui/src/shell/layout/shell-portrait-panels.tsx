@@ -1,4 +1,5 @@
-import { Menu, PanelRightClose } from "lucide-solid";
+import IconListRegular from "phosphor-icons-solid/IconListRegular";
+import IconSidebarSimpleRegular from "phosphor-icons-solid/IconSidebarSimpleRegular";
 import { For, Show } from "solid-js";
 
 import { Button } from "../../components/ui/button";
@@ -31,8 +32,8 @@ export function ShellPanelToggle(props: { side: "left" | "right"; class?: string
         variant="outline"
         onClick={toggle}
       >
-        <Show when={props.side === "left"} fallback={<PanelRightClose aria-hidden class="size-4" />}>
-          <Menu aria-hidden class="size-4" />
+        <Show when={props.side === "left"} fallback={<IconSidebarSimpleRegular class="size-4" />}>
+          <IconListRegular class="size-4" />
         </Show>
       </Button>
     </Show>

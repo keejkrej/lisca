@@ -3,7 +3,7 @@ import { For, Index, Show } from "solid-js";
 import { buttonVariants, cn } from "@lisca/ui/components";
 import { ShellThemeToggle } from "@lisca/ui/shell";
 import { createFileRoute } from "@tanstack/solid-router";
-import { Github } from "lucide-solid";
+import IconGithubLogoRegular from "phosphor-icons-solid/IconGithubLogoRegular";
 
 import { DemoEmbed } from "../components/demo-embed";
 import { GITHUB_REPO, GITHUB_URL } from "../lib/constants";
@@ -207,7 +207,7 @@ function Header() {
             aria-label="Project repository on GitHub"
             class={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
           >
-            <Github aria-hidden />
+            <IconGithubLogoRegular />
           </a>
           <ShellThemeToggle />
         </div>
@@ -550,7 +550,7 @@ function Footer() {
           target="_blank"
           class="landing-control inline-flex items-center gap-2 px-2 py-1 font-mono text-sm"
         >
-          <Github class="size-4" aria-hidden />
+          <IconGithubLogoRegular class="size-4" />
           github.com/{GITHUB_REPO}
         </a>
       </div>
