@@ -34,7 +34,11 @@ export function Section(props: SectionProps) {
   const [collapsed, setCollapsed] = createSignal(local.defaultCollapsed ?? false);
 
   return (
-    <Panel class={local.class} {...panelProps}>
+    <Panel
+      class={local.class}
+      data-collapsed={collapsed() ? "" : undefined}
+      {...panelProps}
+    >
       <PanelHeader
         class={cn("space-y-1.5 px-3 py-3", !collapsed() && "pb-0", local.headerClassName)}
       >

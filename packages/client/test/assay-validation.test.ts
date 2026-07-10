@@ -14,31 +14,24 @@ describe("assay validation", () => {
       validInfo1({
         ...initial.info1,
         name: "Run A",
-        date: "2026-01-01",
         dataPath: "/data",
         saveTo: "/save",
       }),
     ).toBe(true);
   });
 
-  it("validates sample rows on active slide", () => {
+  it("validates sample rows", () => {
     const initial = createInitialStudioWizardState();
     const info3 = {
-      ...initial.info3,
-      samplesBySlide: {
-        ...initial.info3.samplesBySlide,
-        [initial.info3.selectedSlideId]: initial.info3.samplesBySlide[
-          initial.info3.selectedSlideId
-        ].map((row, index) =>
-          Object.assign({}, row, {
-            name: row.name || `sample-${index}`,
-            positionStart: "1",
-            positionFinish: "4",
-            maskChannel: row.maskChannel || "0",
-            signalChannel: row.signalChannel || "1",
-          }),
-        ),
-      },
+      samples: initial.info3.samples.map((row, index) =>
+        Object.assign({}, row, {
+          name: row.name || `sample-${index}`,
+          positionStart: "1",
+          positionFinish: "4",
+          maskChannel: row.maskChannel || "0",
+          signalChannel: row.signalChannel || "1",
+        }),
+      ),
     };
     expect(validInfo3(info3)).toBe(true);
   });
@@ -60,34 +53,26 @@ describe("assay validation", () => {
   it("accepts a complete wizard snapshot", () => {
     const initial = createInitialStudioWizardState();
     const info3 = {
-      ...initial.info3,
-      samplesBySlide: {
-        ...initial.info3.samplesBySlide,
-        [initial.info3.selectedSlideId]: initial.info3.samplesBySlide[
-          initial.info3.selectedSlideId
-        ].map((row, index) =>
-          Object.assign({}, row, {
-            name: row.name || `sample-${index}`,
-            positionStart: "1",
-            positionFinish: "4",
-            maskChannel: row.maskChannel || "0",
-            signalChannel: row.signalChannel || "1",
-          }),
-        ),
-      },
+      samples: initial.info3.samples.map((row, index) =>
+        Object.assign({}, row, {
+          name: row.name || `sample-${index}`,
+          positionStart: "1",
+          positionFinish: "4",
+          maskChannel: row.maskChannel || "0",
+          signalChannel: row.signalChannel || "1",
+        }),
+      ),
     };
     const result = validateAssayForAnalysis({
       assayId: ASSAY_TYPE.GENE_EXPRESSION,
       info1: {
         ...initial.info1,
         name: "Run A",
-        date: "2026-01-01",
         dataPath: "/data",
         saveTo: "/save",
       },
       info2: {
         ...initial.info2,
-        pattern: "square",
         timelapseAmount: 5,
       },
       info3,

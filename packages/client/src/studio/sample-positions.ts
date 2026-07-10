@@ -134,9 +134,9 @@ export function expandPositionRange(positionStart: string, positionFinish: strin
   return positions;
 }
 
-/** Union of all sample-row position ranges on the selected slide, sorted unique. */
+/** Union of all sample-row position ranges, sorted unique. */
 export function collectAssayPositions(info3: StudioBasicInfoStep3): number[] {
-  const rows = info3.samplesBySlide[info3.selectedSlideId] ?? [];
+  const rows = info3.samples ?? [];
   const seen = new Set<number>();
   for (const row of rows) {
     for (const pos of expandPositionRange(row.positionStart, row.positionFinish)) {

@@ -9,7 +9,6 @@ export type {
   AssayId,
   BasicInfo2FeatureId,
   BasicInfoSampleRow,
-  BasicInfoSlideId,
   BasicInfoStep1,
   BasicInfoStep2,
   BasicInfoStep3,
@@ -46,8 +45,10 @@ type StudioState = StudioWizardData & {
   setInfo3: (patch: Partial<StudioWizardData["info3"]>) => void;
   updateInfo3Sample: (
     index: number,
-    patch: Partial<StudioWizardData["info3"]["samplesBySlide"]["slide-i"][number]>,
+    patch: Partial<StudioWizardData["info3"]["samples"][number]>,
   ) => void;
+  addInfo3Sample: () => void;
+  removeInfo3Sample: (index: number) => void;
   setBasicInfoSavedSnapshot: (snapshot: string | null) => void;
 };
 function useStudioStoreApi(): Accessor<StudioState> {
@@ -68,8 +69,10 @@ function useStudioStoreApi(): Accessor<StudioState> {
     studioWizardActions.setInfo3(setState, patch);
   const updateInfo3Sample = (
     index: number,
-    patch: Partial<StudioWizardData["info3"]["samplesBySlide"]["slide-i"][number]>,
+    patch: Partial<StudioWizardData["info3"]["samples"][number]>,
   ) => studioWizardActions.updateInfo3Sample(setState, index, patch);
+  const addInfo3Sample = () => studioWizardActions.addInfo3Sample(setState);
+  const removeInfo3Sample = (index: number) => studioWizardActions.removeInfo3Sample(setState, index);
   const setBasicInfoSavedSnapshot = (basicInfoSavedSnapshot: string | null) =>
     studioWizardActions.setBasicInfoSavedSnapshot(setState, basicInfoSavedSnapshot);
   return createMemo(() => ({
@@ -82,6 +85,8 @@ function useStudioStoreApi(): Accessor<StudioState> {
     setInfo2,
     setInfo3,
     updateInfo3Sample,
+    addInfo3Sample,
+    removeInfo3Sample,
     setBasicInfoSavedSnapshot,
   }));
 }

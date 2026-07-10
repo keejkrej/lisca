@@ -15,6 +15,8 @@ import {
   slideChannelLabelsCacheKey,
 } from "../atoms/studio-analysis-atoms";
 import { StudioLeft } from "../components/studio-left";
+import { StudioRightPanel } from "../components/studio-right-panel";
+import { StudioResultExpertRight } from "../components/studio-result-expert-right";
 import { StudioResultDock } from "../components/studio-result-dock";
 import {
   collectDisplayedParameterPanels,
@@ -42,7 +44,7 @@ export default function ResultPage() {
   const slideChannelLabels = createMemo(() => {
     const labels: SlideChannelLabels = {};
     const currentInfo3 = info3();
-    for (const row of currentInfo3.samplesBySlide[currentInfo3.selectedSlideId]) {
+    for (const row of currentInfo3.samples) {
       const channel = Number(row.channel);
       if (Number.isInteger(channel) && row.name.trim()) {
         labels[channel] = row.name.trim();
@@ -288,7 +290,9 @@ export default function ResultPage() {
             />
           </AppShell.Dock>
         </AppShell.MainColumn>
-        <AppShell.Right widthClass="w-60" />
+        <AppShell.Right widthClass="w-72">
+          <StudioRightPanel expert={<StudioResultExpertRight />} />
+        </AppShell.Right>
       </AppShell.Body>
     </AppShell>
   );

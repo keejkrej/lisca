@@ -88,42 +88,28 @@ describe("sample positions", () => {
     expect(expandPositionRange("4", "1")).toEqual([]);
   });
 
-  test("collects union of assay sample rows on the selected slide", () => {
+  test("collects union of assay sample positions", () => {
     const info3: StudioBasicInfoStep3 = {
-      selectedSlideId: "slide-vi",
-      samplesBySlide: {
-        "slide-i": [
-          {
-            id: "slide-i:0",
-            channel: "0",
-            name: "a",
-            positionStart: "99",
-            positionFinish: "99",
-            maskChannel: "0",
-            signalChannel: "1",
-          },
-        ],
-        "slide-vi": [
-          {
-            id: "slide-vi:0",
-            channel: "0",
-            name: "a",
-            positionStart: "1",
-            positionFinish: "4",
-            maskChannel: "0",
-            signalChannel: "1",
-          },
-          {
-            id: "slide-vi:1",
-            channel: "1",
-            name: "b",
-            positionStart: "3",
-            positionFinish: "6",
-            maskChannel: "0",
-            signalChannel: "1",
-          },
-        ],
-      },
+      samples: [
+        {
+          id: "sample:0",
+          channel: "0",
+          name: "a",
+          positionStart: "1",
+          positionFinish: "4",
+          maskChannel: "0",
+          signalChannel: "1",
+        },
+        {
+          id: "sample:1",
+          channel: "1",
+          name: "b",
+          positionStart: "3",
+          positionFinish: "6",
+          maskChannel: "0",
+          signalChannel: "1",
+        },
+      ],
     };
     expect(collectAssayPositions(info3)).toEqual([1, 2, 3, 4, 5, 6]);
   });

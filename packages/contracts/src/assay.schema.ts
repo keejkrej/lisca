@@ -28,17 +28,12 @@ export const AssayTimelapseUnitSchema = Schema.Literal("second", "minute", "hour
   identifier: "AssayTimelapseUnit",
 });
 
-export const AssaySlideIdSchema = Schema.Literal("slide-i", "slide-vi").annotations({
-  identifier: "AssaySlideId",
-});
-
 export const AssayDataSourceKindSchema = Schema.Literal("folder", "nd2", "czi").annotations({
   identifier: "AssayDataSourceKind",
 });
 
 export const AssayBasicInfoStep1Schema = Schema.Struct({
   name: Schema.String,
-  date: Schema.String,
   dataPath: Schema.String,
   folderSubfolderTemplate: Schema.String,
   folderFilenameTemplate: Schema.String,
@@ -46,7 +41,6 @@ export const AssayBasicInfoStep1Schema = Schema.Struct({
 }).annotations({ identifier: "AssayBasicInfoStep1" });
 
 export const AssayBasicInfoStep2Schema = Schema.Struct({
-  pattern: Schema.String,
   timelapseAmount: Schema.NullOr(F64),
   timelapseUnit: AssayTimelapseUnitSchema,
   selectedFeatures: Schema.mutable(Schema.Array(AssayFeatureSchema)),
@@ -62,14 +56,12 @@ export const AssaySampleRowSchema = Schema.Struct({
   positions: Schema.String,
 }).annotations({ identifier: "AssaySampleRow" });
 
-export const AssaySamplesBySlideSchema = Schema.Struct({
-  "slide-i": Schema.mutable(Schema.Array(AssaySampleRowSchema)),
-  "slide-vi": Schema.mutable(Schema.Array(AssaySampleRowSchema)),
-}).annotations({ identifier: "AssaySamplesBySlide" });
+export const AssaySamplesSchema = Schema.mutable(Schema.Array(AssaySampleRowSchema)).annotations({
+  identifier: "AssaySamples",
+});
 
 export const AssayBasicInfoStep3Schema = Schema.Struct({
-  selectedSlideId: AssaySlideIdSchema,
-  samplesBySlide: AssaySamplesBySlideSchema,
+  samples: AssaySamplesSchema,
 }).annotations({ identifier: "AssayBasicInfoStep3" });
 
 export const AssayJsonFileSchema = Schema.Struct({
@@ -86,7 +78,6 @@ export const AssayJsonFileSchema = Schema.Struct({
 export type AssayType = typeof AssayTypeSchema.Type;
 export type AssayFeature = typeof AssayFeatureSchema.Type;
 export type AssayTimelapseUnit = typeof AssayTimelapseUnitSchema.Type;
-export type AssaySlideId = typeof AssaySlideIdSchema.Type;
 export type AssayDataSourceKind = typeof AssayDataSourceKindSchema.Type;
 export type AssayBasicInfoStep1 = typeof AssayBasicInfoStep1Schema.Type;
 export type AssayBasicInfoStep2 = typeof AssayBasicInfoStep2Schema.Type;

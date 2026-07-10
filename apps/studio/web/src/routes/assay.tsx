@@ -9,6 +9,7 @@ import { studioClient, studioHostOperations } from "../api/studio-port";
 import { ChooseAssay } from "../components/choose-assay";
 import { StudioAssayDock } from "../components/studio-assay-dock";
 import { StudioLeft } from "../components/studio-left";
+import { StudioRightPanel } from "../components/studio-right-panel";
 import { useStudioMemoryRecent } from "../hooks/use-studio-memory-recent";
 import { useStudioNavigate } from "../navigation/use-studio-navigate";
 import { parseStudioAssayJson, useStudioStore } from "../state/studio-store";
@@ -82,10 +83,12 @@ function AssayPage() {
             />
           </AppShell.Dock>
         </AppShell.MainColumn>
-        <AppShell.Right widthClass="w-60" />
+        <AppShell.Right widthClass="w-60">
+          <StudioRightPanel />
+        </AppShell.Right>
       </AppShell.Body>
       <HostFilePickerDialog
-        description="Choose a JSON file from a prior Studio export."
+        description={undefined}
         hostPort={studioHostOperations}
         mode="assay_json_file"
         open={assayPickerOpen()}

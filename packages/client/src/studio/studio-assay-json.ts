@@ -4,6 +4,7 @@ import type {
   StudioAssayJson,
   StudioAssayType,
   StudioBasicInfoFeatureId,
+  StudioBasicInfoSampleRow,
   StudioBasicInfoSampleRowFields,
   StudioBasicInfoStep1,
   StudioBasicInfoStep2,
@@ -11,6 +12,7 @@ import type {
   StudioDataSourceKind,
 } from "@lisca/contracts/assay";
 import { GENE_EXPRESSION_FEATURE_IDS } from "@lisca/contracts/assay";
+import type { AssaySampleRow } from "@lisca/contracts";
 import * as Either from "effect/Either";
 
 export const ASSAY_CHOICE_LABEL: Record<StudioAssayType, string> = {
@@ -50,22 +52,10 @@ export function normalizeSelectedFeaturesForAssay(
 
 export function normalizeInfo3ForAssay(
   info3: StudioBasicInfoStep3,
-  sampleRowToDisk: (row: StudioBasicInfoStep3["samplesBySlide"]["slide-i"][number]) => {
-    channel: string;
-    name: string;
-    positionStart: string;
-    positionFinish: string;
-    maskChannel: string;
-    signalChannel: string;
-    positions: string;
-  },
+  sampleRowToDisk: (row: StudioBasicInfoSampleRow) => AssaySampleRow,
 ): StudioAssayJson["info3"] {
   return {
-    selectedSlideId: info3.selectedSlideId,
-    samplesBySlide: {
-      "slide-i": info3.samplesBySlide["slide-i"].map(sampleRowToDisk),
-      "slide-vi": info3.samplesBySlide["slide-vi"].map(sampleRowToDisk),
-    },
+    samples: info3.samples.map(sampleRowToDisk),
   };
 }
 
@@ -82,15 +72,7 @@ export function buildStudioAssayJson({
   info1: StudioBasicInfoStep1;
   info2: StudioBasicInfoStep2;
   info3: StudioBasicInfoStep3;
-  sampleRowToDisk: (row: StudioBasicInfoStep3["samplesBySlide"]["slide-i"][number]) => {
-    channel: string;
-    name: string;
-    positionStart: string;
-    positionFinish: string;
-    maskChannel: string;
-    signalChannel: string;
-    positions: string;
-  };
+  sampleRowToDisk: (row: StudioBasicInfoSampleRow) => AssaySampleRow;
 }): StudioAssayJson {
   return {
     assayId,
@@ -116,15 +98,7 @@ export function parseStudioAssayJson(
     maskChannel: string;
     signalChannel: string;
   }) => StudioBasicInfoSampleRowFields,
-  sampleRowToDisk: (row: StudioBasicInfoStep3["samplesBySlide"]["slide-i"][number]) => {
-    channel: string;
-    name: string;
-    positionStart: string;
-    positionFinish: string;
-    maskChannel: string;
-    signalChannel: string;
-    positions: string;
-  },
+  sampleRowToDisk: (row: StudioBasicInfoSampleRow) => AssaySampleRow,
 ): StudioAssayJson {
   const decoded = decodeJsonResult(AssayJsonFileSchema)(contents);
   if (Either.isLeft(decoded)) {
@@ -134,17 +108,10 @@ export function parseStudioAssayJson(
   const root = decoded.right;
   const dataSourceKind = root.dataSourceKind ?? inferDataSourceKind(root.info1.dataPath);
   const info3: StudioBasicInfoStep3 = {
-    selectedSlideId: root.info3.selectedSlideId,
-    samplesBySlide: {
-      "slide-i": root.info3.samplesBySlide["slide-i"].map((row, index) => ({
-        id: `slide-i:${index}`,
-        ...sampleRowFromDisk(row),
-      })),
-      "slide-vi": root.info3.samplesBySlide["slide-vi"].map((row, index) => ({
-        id: `slide-vi:${index}`,
-        ...sampleRowFromDisk(row),
-      })),
-    },
+    samples: root.info3.samples.map((row, index) => ({
+      id: `sample:${index}`,
+      ...sampleRowFromDisk(row),
+    })),
   };
 
   return buildStudioAssayJson({

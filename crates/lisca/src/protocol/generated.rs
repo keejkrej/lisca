@@ -815,7 +815,6 @@ impl ::std::convert::TryFrom<::std::string::String> for AppId {
 #[doc = "  \"type\": \"object\","]
 #[doc = "  \"required\": ["]
 #[doc = "    \"dataPath\","]
-#[doc = "    \"date\","]
 #[doc = "    \"folderFilenameTemplate\","]
 #[doc = "    \"folderSubfolderTemplate\","]
 #[doc = "    \"name\","]
@@ -823,9 +822,6 @@ impl ::std::convert::TryFrom<::std::string::String> for AppId {
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
 #[doc = "    \"dataPath\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    },"]
-#[doc = "    \"date\": {"]
 #[doc = "      \"type\": \"string\""]
 #[doc = "    },"]
 #[doc = "    \"folderFilenameTemplate\": {"]
@@ -848,7 +844,6 @@ impl ::std::convert::TryFrom<::std::string::String> for AppId {
 pub struct AssayBasicInfoStep1 {
     #[serde(rename = "dataPath")]
     pub data_path: ::std::string::String,
-    pub date: ::std::string::String,
     #[serde(rename = "folderFilenameTemplate")]
     pub folder_filename_template: ::std::string::String,
     #[serde(rename = "folderSubfolderTemplate")]
@@ -870,15 +865,11 @@ impl AssayBasicInfoStep1 {
 #[doc = "{"]
 #[doc = "  \"type\": \"object\","]
 #[doc = "  \"required\": ["]
-#[doc = "    \"pattern\","]
 #[doc = "    \"selectedFeatures\","]
 #[doc = "    \"timelapseAmount\","]
 #[doc = "    \"timelapseUnit\""]
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
-#[doc = "    \"pattern\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    },"]
 #[doc = "    \"selectedFeatures\": {"]
 #[doc = "      \"type\": \"array\","]
 #[doc = "      \"items\": {"]
@@ -905,7 +896,6 @@ impl AssayBasicInfoStep1 {
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct AssayBasicInfoStep2 {
-    pub pattern: ::std::string::String,
     #[serde(rename = "selectedFeatures")]
     pub selected_features: ::std::vec::Vec<AssayFeature>,
     #[serde(rename = "timelapseAmount")]
@@ -926,15 +916,11 @@ impl AssayBasicInfoStep2 {
 #[doc = "{"]
 #[doc = "  \"type\": \"object\","]
 #[doc = "  \"required\": ["]
-#[doc = "    \"samplesBySlide\","]
-#[doc = "    \"selectedSlideId\""]
+#[doc = "    \"samples\""]
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
-#[doc = "    \"samplesBySlide\": {"]
-#[doc = "      \"$ref\": \"#/definitions/AssaySamplesBySlide\""]
-#[doc = "    },"]
-#[doc = "    \"selectedSlideId\": {"]
-#[doc = "      \"$ref\": \"#/definitions/AssaySlideId\""]
+#[doc = "    \"samples\": {"]
+#[doc = "      \"$ref\": \"#/definitions/AssaySamples\""]
 #[doc = "    }"]
 #[doc = "  }"]
 #[doc = "}"]
@@ -942,10 +928,7 @@ impl AssayBasicInfoStep2 {
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct AssayBasicInfoStep3 {
-    #[serde(rename = "samplesBySlide")]
-    pub samples_by_slide: AssaySamplesBySlide,
-    #[serde(rename = "selectedSlideId")]
-    pub selected_slide_id: AssaySlideId,
+    pub samples: AssaySamples,
 }
 impl AssayBasicInfoStep3 {
     pub fn builder() -> builder::AssayBasicInfoStep3 {
@@ -1234,116 +1217,36 @@ impl AssaySampleRow {
         Default::default()
     }
 }
-#[doc = "`AssaySamplesBySlide`"]
+#[doc = "`AssaySamples`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
 #[doc = r""]
 #[doc = r" ```json"]
 #[doc = "{"]
-#[doc = "  \"type\": \"object\","]
-#[doc = "  \"required\": ["]
-#[doc = "    \"slide-i\","]
-#[doc = "    \"slide-vi\""]
-#[doc = "  ],"]
-#[doc = "  \"properties\": {"]
-#[doc = "    \"slide-i\": {"]
-#[doc = "      \"type\": \"array\","]
-#[doc = "      \"items\": {"]
-#[doc = "        \"$ref\": \"#/definitions/AssaySampleRow\""]
-#[doc = "      }"]
-#[doc = "    },"]
-#[doc = "    \"slide-vi\": {"]
-#[doc = "      \"type\": \"array\","]
-#[doc = "      \"items\": {"]
-#[doc = "        \"$ref\": \"#/definitions/AssaySampleRow\""]
-#[doc = "      }"]
-#[doc = "    }"]
+#[doc = "  \"type\": \"array\","]
+#[doc = "  \"items\": {"]
+#[doc = "    \"$ref\": \"#/definitions/AssaySampleRow\""]
 #[doc = "  }"]
 #[doc = "}"]
 #[doc = r" ```"]
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
-pub struct AssaySamplesBySlide {
-    #[serde(rename = "slide-i")]
-    pub slide_i: ::std::vec::Vec<AssaySampleRow>,
-    #[serde(rename = "slide-vi")]
-    pub slide_vi: ::std::vec::Vec<AssaySampleRow>,
-}
-impl AssaySamplesBySlide {
-    pub fn builder() -> builder::AssaySamplesBySlide {
-        Default::default()
+#[serde(transparent)]
+pub struct AssaySamples(pub ::std::vec::Vec<AssaySampleRow>);
+impl ::std::ops::Deref for AssaySamples {
+    type Target = ::std::vec::Vec<AssaySampleRow>;
+    fn deref(&self) -> &::std::vec::Vec<AssaySampleRow> {
+        &self.0
     }
 }
-#[doc = "`AssaySlideId`"]
-#[doc = r""]
-#[doc = r" <details><summary>JSON schema</summary>"]
-#[doc = r""]
-#[doc = r" ```json"]
-#[doc = "{"]
-#[doc = "  \"type\": \"string\","]
-#[doc = "  \"enum\": ["]
-#[doc = "    \"slide-i\","]
-#[doc = "    \"slide-vi\""]
-#[doc = "  ]"]
-#[doc = "}"]
-#[doc = r" ```"]
-#[doc = r" </details>"]
-#[derive(
-    :: serde :: Deserialize,
-    :: serde :: Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum AssaySlideId {
-    #[serde(rename = "slide-i")]
-    SlideI,
-    #[serde(rename = "slide-vi")]
-    SlideVi,
-}
-impl ::std::fmt::Display for AssaySlideId {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::SlideI => f.write_str("slide-i"),
-            Self::SlideVi => f.write_str("slide-vi"),
-        }
+impl ::std::convert::From<AssaySamples> for ::std::vec::Vec<AssaySampleRow> {
+    fn from(value: AssaySamples) -> Self {
+        value.0
     }
 }
-impl ::std::str::FromStr for AssaySlideId {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "slide-i" => Ok(Self::SlideI),
-            "slide-vi" => Ok(Self::SlideVi),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for AssaySlideId {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for AssaySlideId {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for AssaySlideId {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
+impl ::std::convert::From<::std::vec::Vec<AssaySampleRow>> for AssaySamples {
+    fn from(value: ::std::vec::Vec<AssaySampleRow>) -> Self {
+        Self(value)
     }
 }
 #[doc = "`AssayTimelapseUnit`"]
@@ -4559,7 +4462,6 @@ pub mod builder {
     #[derive(Clone, Debug)]
     pub struct AssayBasicInfoStep1 {
         data_path: ::std::result::Result<::std::string::String, ::std::string::String>,
-        date: ::std::result::Result<::std::string::String, ::std::string::String>,
         folder_filename_template:
             ::std::result::Result<::std::string::String, ::std::string::String>,
         folder_subfolder_template:
@@ -4571,7 +4473,6 @@ pub mod builder {
         fn default() -> Self {
             Self {
                 data_path: Err("no value supplied for data_path".to_string()),
-                date: Err("no value supplied for date".to_string()),
                 folder_filename_template: Err(
                     "no value supplied for folder_filename_template".to_string()
                 ),
@@ -4592,16 +4493,6 @@ pub mod builder {
             self.data_path = value
                 .try_into()
                 .map_err(|e| format!("error converting supplied value for data_path: {e}"));
-            self
-        }
-        pub fn date<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::string::String>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.date = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for date: {e}"));
             self
         }
         pub fn folder_filename_template<T>(mut self, value: T) -> Self
@@ -4652,7 +4543,6 @@ pub mod builder {
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
                 data_path: value.data_path?,
-                date: value.date?,
                 folder_filename_template: value.folder_filename_template?,
                 folder_subfolder_template: value.folder_subfolder_template?,
                 name: value.name?,
@@ -4664,7 +4554,6 @@ pub mod builder {
         fn from(value: super::AssayBasicInfoStep1) -> Self {
             Self {
                 data_path: Ok(value.data_path),
-                date: Ok(value.date),
                 folder_filename_template: Ok(value.folder_filename_template),
                 folder_subfolder_template: Ok(value.folder_subfolder_template),
                 name: Ok(value.name),
@@ -4674,7 +4563,6 @@ pub mod builder {
     }
     #[derive(Clone, Debug)]
     pub struct AssayBasicInfoStep2 {
-        pattern: ::std::result::Result<::std::string::String, ::std::string::String>,
         selected_features:
             ::std::result::Result<::std::vec::Vec<super::AssayFeature>, ::std::string::String>,
         timelapse_amount: ::std::result::Result<::std::option::Option<f64>, ::std::string::String>,
@@ -4683,7 +4571,6 @@ pub mod builder {
     impl ::std::default::Default for AssayBasicInfoStep2 {
         fn default() -> Self {
             Self {
-                pattern: Err("no value supplied for pattern".to_string()),
                 selected_features: Err("no value supplied for selected_features".to_string()),
                 timelapse_amount: Err("no value supplied for timelapse_amount".to_string()),
                 timelapse_unit: Err("no value supplied for timelapse_unit".to_string()),
@@ -4691,16 +4578,6 @@ pub mod builder {
         }
     }
     impl AssayBasicInfoStep2 {
-        pub fn pattern<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::string::String>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.pattern = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for pattern: {e}"));
-            self
-        }
         pub fn selected_features<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<::std::vec::Vec<super::AssayFeature>>,
@@ -4738,7 +4615,6 @@ pub mod builder {
             value: AssayBasicInfoStep2,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
-                pattern: value.pattern?,
                 selected_features: value.selected_features?,
                 timelapse_amount: value.timelapse_amount?,
                 timelapse_unit: value.timelapse_unit?,
@@ -4748,7 +4624,6 @@ pub mod builder {
     impl ::std::convert::From<super::AssayBasicInfoStep2> for AssayBasicInfoStep2 {
         fn from(value: super::AssayBasicInfoStep2) -> Self {
             Self {
-                pattern: Ok(value.pattern),
                 selected_features: Ok(value.selected_features),
                 timelapse_amount: Ok(value.timelapse_amount),
                 timelapse_unit: Ok(value.timelapse_unit),
@@ -4757,36 +4632,24 @@ pub mod builder {
     }
     #[derive(Clone, Debug)]
     pub struct AssayBasicInfoStep3 {
-        samples_by_slide: ::std::result::Result<super::AssaySamplesBySlide, ::std::string::String>,
-        selected_slide_id: ::std::result::Result<super::AssaySlideId, ::std::string::String>,
+        samples: ::std::result::Result<super::AssaySamples, ::std::string::String>,
     }
     impl ::std::default::Default for AssayBasicInfoStep3 {
         fn default() -> Self {
             Self {
-                samples_by_slide: Err("no value supplied for samples_by_slide".to_string()),
-                selected_slide_id: Err("no value supplied for selected_slide_id".to_string()),
+                samples: Err("no value supplied for samples".to_string()),
             }
         }
     }
     impl AssayBasicInfoStep3 {
-        pub fn samples_by_slide<T>(mut self, value: T) -> Self
+        pub fn samples<T>(mut self, value: T) -> Self
         where
-            T: ::std::convert::TryInto<super::AssaySamplesBySlide>,
+            T: ::std::convert::TryInto<super::AssaySamples>,
             T::Error: ::std::fmt::Display,
         {
-            self.samples_by_slide = value
+            self.samples = value
                 .try_into()
-                .map_err(|e| format!("error converting supplied value for samples_by_slide: {e}"));
-            self
-        }
-        pub fn selected_slide_id<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<super::AssaySlideId>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.selected_slide_id = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for selected_slide_id: {e}"));
+                .map_err(|e| format!("error converting supplied value for samples: {e}"));
             self
         }
     }
@@ -4796,16 +4659,14 @@ pub mod builder {
             value: AssayBasicInfoStep3,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
-                samples_by_slide: value.samples_by_slide?,
-                selected_slide_id: value.selected_slide_id?,
+                samples: value.samples?,
             })
         }
     }
     impl ::std::convert::From<super::AssayBasicInfoStep3> for AssayBasicInfoStep3 {
         fn from(value: super::AssayBasicInfoStep3) -> Self {
             Self {
-                samples_by_slide: Ok(value.samples_by_slide),
-                selected_slide_id: Ok(value.selected_slide_id),
+                samples: Ok(value.samples),
             }
         }
     }
@@ -5043,62 +4904,6 @@ pub mod builder {
                 position_start: Ok(value.position_start),
                 positions: Ok(value.positions),
                 signal_channel: Ok(value.signal_channel),
-            }
-        }
-    }
-    #[derive(Clone, Debug)]
-    pub struct AssaySamplesBySlide {
-        slide_i:
-            ::std::result::Result<::std::vec::Vec<super::AssaySampleRow>, ::std::string::String>,
-        slide_vi:
-            ::std::result::Result<::std::vec::Vec<super::AssaySampleRow>, ::std::string::String>,
-    }
-    impl ::std::default::Default for AssaySamplesBySlide {
-        fn default() -> Self {
-            Self {
-                slide_i: Err("no value supplied for slide_i".to_string()),
-                slide_vi: Err("no value supplied for slide_vi".to_string()),
-            }
-        }
-    }
-    impl AssaySamplesBySlide {
-        pub fn slide_i<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::vec::Vec<super::AssaySampleRow>>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.slide_i = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for slide_i: {e}"));
-            self
-        }
-        pub fn slide_vi<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::vec::Vec<super::AssaySampleRow>>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.slide_vi = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for slide_vi: {e}"));
-            self
-        }
-    }
-    impl ::std::convert::TryFrom<AssaySamplesBySlide> for super::AssaySamplesBySlide {
-        type Error = super::error::ConversionError;
-        fn try_from(
-            value: AssaySamplesBySlide,
-        ) -> ::std::result::Result<Self, super::error::ConversionError> {
-            Ok(Self {
-                slide_i: value.slide_i?,
-                slide_vi: value.slide_vi?,
-            })
-        }
-    }
-    impl ::std::convert::From<super::AssaySamplesBySlide> for AssaySamplesBySlide {
-        fn from(value: super::AssaySamplesBySlide) -> Self {
-            Self {
-                slide_i: Ok(value.slide_i),
-                slide_vi: Ok(value.slide_vi),
             }
         }
     }

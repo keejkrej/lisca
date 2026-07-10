@@ -24,7 +24,7 @@ function parseChannel(value: string): number | null {
 }
 
 export function studioMaskChannel(info3: StudioBasicInfoStep3): number {
-  const rows = info3.samplesBySlide[info3.selectedSlideId];
+  const rows = info3.samples;
   for (const row of rows) {
     const channel = parseChannel(row.maskChannel);
     if (channel != null) return channel;

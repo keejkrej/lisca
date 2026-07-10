@@ -17,7 +17,7 @@ pub struct SlideChannelMapping {
 pub type SlideMapping = BTreeMap<u32, SlideChannelMapping>;
 
 pub fn build_slide_mapping(info3: &AssayBasicInfoStep3) -> Result<SlideMapping, String> {
-    let rows = info3.samples_by_slide.rows_for(info3.selected_slide_id);
+    let rows = &info3.samples.0;
 
     let mut mapping = BTreeMap::new();
     for row in rows {

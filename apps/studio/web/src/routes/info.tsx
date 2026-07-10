@@ -6,9 +6,9 @@ import { createMemo, Show } from "solid-js";
 import { studioHostOperations } from "../api/studio-port";
 import { BasicInfoStep1 } from "../components/basic-info-step1";
 import { BasicInfoStep2 } from "../components/basic-info-step2";
-import { BasicInfoStep3 } from "../components/basic-info-step3";
 import { StudioInfoDock } from "../components/studio-info-dock";
 import { StudioLeft } from "../components/studio-left";
+import { StudioRightPanel } from "../components/studio-right-panel";
 import { useStudioNavigate } from "../navigation/use-studio-navigate";
 import {
   studioWizardActions,
@@ -27,12 +27,10 @@ function InfoPage() {
   const setInfoStep = (step: InfoStep) => studioWizardActions.setInfoStep(setWizard, step);
 
   const infoStep = createMemo(() => wizard().infoStep);
-  const step = createMemo(() =>
-    infoStep() === 1 ? "info1" : infoStep() === 2 ? "info2" : "info3",
-  );
+  const step = createMemo(() => (infoStep() === 1 ? "info1" : "info2"));
 
   const next = () => {
-    if (infoStep() < 3) {
+    if (infoStep() < 2) {
       setInfoStep((infoStep() + 1) as InfoStep);
       return;
     }
@@ -60,16 +58,15 @@ function InfoPage() {
               <Show when={infoStep() === 2}>
                 <BasicInfoStep2 />
               </Show>
-              <Show when={infoStep() === 3}>
-                <BasicInfoStep3 />
-              </Show>
             </div>
           </AppShell.Main>
           <AppShell.Dock>
             <StudioInfoDock infoStep={infoStep()} step={step()} onBack={back} onNext={next} />
           </AppShell.Dock>
         </AppShell.MainColumn>
-        <AppShell.Right widthClass="w-60" />
+        <AppShell.Right widthClass="w-60">
+          <StudioRightPanel />
+        </AppShell.Right>
       </AppShell.Body>
     </AppShell>
   );

@@ -1,7 +1,17 @@
 import type { AlignerSource } from "@lisca/contracts";
 import type { StudioDataSourceKind } from "@lisca/contracts/assay";
 import type { HostFilePickerMode } from "@lisca/ui/features";
-import { Field, FieldLabel, Input } from "@lisca/ui/components";
+import {
+  cn,
+  Field,
+  FieldLabel,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@lisca/ui/components";
 import {
   FolderSourceParseModal,
   HostFilePickerDialog,
@@ -9,13 +19,31 @@ import {
 } from "@lisca/ui/features";
 import type { HostFilePickerOperations } from "@lisca/ui/features";
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-solid";
-import { createMemo, createSignal } from "solid-js";
+import { createMemo, createSignal, For, Show } from "solid-js";
 
 import { useStudioMemoryRecent } from "../hooks/use-studio-memory-recent";
-import { studioWizardActions, studioWizardAtom } from "../state/studio-store";
+import {
+  type BasicInfo2FeatureId,
+  type TimelapseUnit,
+  studioWizardActions,
+  studioWizardAtom,
+} from "../state/studio-store";
 import { recordStudioSourceMemory, recordStudioWorkspaceMemory } from "../utils/studio-memory";
 
-const ROW = "flex min-h-[100px] w-full flex-col gap-2.5 p-2.5";
+const ROW = "flex min-h-[80px] w-full flex-col gap-2.5 p-2.5";
+
+const TIMELAPSE_UNITS: { value: TimelapseUnit; label: string }[] = [
+  { value: "second", label: "Second" },
+  { value: "minute", label: "Minute" },
+  { value: "hour", label: "Hour" },
+];
+
+const FEATURES: { id: BasicInfo2FeatureId; title: string }[] = [
+  { id: "morphology", title: "Morphology" },
+  { id: "partcount", title: "Particle count" },
+  { id: "partfluor", title: "Particle fluorescence" },
+  { id: "totalfluor", title: "Total fluorescence" },
+];
 
 type StudioPathPickerState = null | { kind: "save" } | { kind: "source"; mode: HostFilePickerMode };
 
@@ -46,6 +74,8 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
   const setWizard = useAtomSet(studioWizardAtom);
   const setInfo1 = (patch: Parameters<typeof studioWizardActions.setInfo1>[1]) =>
     studioWizardActions.setInfo1(setWizard, patch);
+  const setInfo2 = (patch: Parameters<typeof studioWizardActions.setInfo2>[1]) =>
+    studioWizardActions.setInfo2(setWizard, patch);
   const setDataSourceKind = (kind: StudioDataSourceKind) =>
     studioWizardActions.setDataSourceKind(setWizard, kind);
   const [openDataModalOpen, setOpenDataModalOpen] = createSignal(false);
@@ -89,11 +119,23 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
     recordStudioSourceMemory(source);
   };
 
+  const selectedFeatures = () =>
+    Array.isArray(wizard().info2.selectedFeatures) ? wizard().info2.selectedFeatures : [];
+  const isFeatureSelected = (id: BasicInfo2FeatureId) => selectedFeatures().includes(id);
+  const toggleFeature = (id: BasicInfo2FeatureId) => {
+    const current = selectedFeatures();
+    setInfo2({
+      selectedFeatures: current.includes(id)
+        ? current.filter((item) => item !== id)
+        : [...current, id],
+    });
+  };
+
   return (
     <>
       <div class="flex w-full min-w-0 flex-col gap-2.5">
         <div class={ROW}>
-          <Field class="gap-2.5" name="name">
+          <Field class="w-full gap-2.5" name="name">
             <FieldLabel class="text-2xl font-normal" htmlFor="studio-name">
               Name
             </FieldLabel>
@@ -101,6 +143,7 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
               autocomplete="off"
               class="w-full"
               id="studio-name"
+              nativeInput
               placeholder="My assay"
               value={wizard().info1.name}
               onChange={(event) => setInfo1({ name: event.target.value })}
@@ -108,63 +151,131 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
           </Field>
         </div>
         <div class={ROW}>
-          <Field class="gap-2.5" name="date">
-            <FieldLabel class="text-2xl font-normal" htmlFor="studio-date">
-              Date
+          <Field class="w-full gap-2.5" name="dataPath">
+            <FieldLabel class="text-2xl font-normal" htmlFor="studio-source">
+              Source
             </FieldLabel>
-            <Input
-              class="w-full"
-              id="studio-date"
-              type="date"
-              value={wizard().info1.date}
-              onChange={(event) => setInfo1({ date: event.target.value })}
-            />
-          </Field>
-        </div>
-        <div class={ROW}>
-          <Field class="gap-2.5" name="dataPath">
-            <FieldLabel class="text-2xl font-normal" htmlFor="studio-data-path">
-              Data path
-            </FieldLabel>
-            <Input
-              readOnly
-              autocomplete="off"
+            <div
               class="w-full cursor-pointer"
-              id="studio-data-path"
-              placeholder="Click to choose source…"
-              value={wizard().info1.dataPath}
               onClick={() => setOpenDataModalOpen(true)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  setOpenDataModalOpen(true);
-                }
-              }}
-            />
+            >
+              <Input
+                readonly
+                autocomplete="off"
+                class="w-full cursor-pointer"
+                id="studio-source"
+                nativeInput
+                placeholder="Click to choose source…"
+                value={wizard().info1.dataPath}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setOpenDataModalOpen(true);
+                  }
+                }}
+              />
+            </div>
           </Field>
         </div>
         <div class={ROW}>
-          <Field class="gap-2.5" name="saveTo">
-            <FieldLabel class="text-2xl font-normal" htmlFor="studio-save-to">
-              Save to
+          <Field class="w-full gap-2.5" name="saveTo">
+            <FieldLabel class="text-2xl font-normal" htmlFor="studio-workspace">
+              Workspace
             </FieldLabel>
-            <Input
-              readOnly
-              autocomplete="off"
+            <div
               class="w-full cursor-pointer"
-              id="studio-save-to"
-              placeholder="Click to choose folder…"
-              value={wizard().info1.saveTo}
               onClick={() => setPathPicker({ kind: "save" })}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  setPathPicker({ kind: "save" });
-                }
-              }}
-            />
+            >
+              <Input
+                readonly
+                autocomplete="off"
+                class="w-full cursor-pointer"
+                id="studio-workspace"
+                nativeInput
+                placeholder="Click to choose folder…"
+                value={wizard().info1.saveTo}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setPathPicker({ kind: "save" });
+                  }
+                }}
+              />
+            </div>
           </Field>
         </div>
+        <div class={ROW}>
+          <Field class="w-full gap-2.5" name="timelapseInterval">
+            <FieldLabel class="text-2xl font-normal" id="studio-timelapse-label">
+              Timelapse interval
+            </FieldLabel>
+            <div class="mt-0 flex w-full min-w-0 flex-row flex-wrap items-stretch gap-2.5">
+              <Input
+                aria-labelledby="studio-timelapse-label"
+                class="min-w-0 flex-1"
+                min={1}
+                nativeInput
+                placeholder="10"
+                step={1}
+                type="number"
+                value={wizard().info2.timelapseAmount ?? ""}
+                onChange={(event) => {
+                  const raw = event.currentTarget.value;
+                  const value = raw.trim() === "" ? null : Number(raw);
+                  setInfo2({ timelapseAmount: value == null || Number.isNaN(value) ? null : value });
+                }}
+              />
+              <Select
+                value={wizard().info2.timelapseUnit}
+                onValueChange={(unit) => setInfo2({ timelapseUnit: unit as TimelapseUnit })}
+              >
+                <SelectTrigger
+                  aria-labelledby="studio-timelapse-label"
+                  class="w-[11rem] shrink-0 sm:w-[10.5rem]"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent align="end">
+                  <For each={TIMELAPSE_UNITS}>
+                    {({ value, label }) => (
+                      <SelectItem value={value}>{label}</SelectItem>
+                    )}
+                  </For>
+                </SelectContent>
+              </Select>
+            </div>
+          </Field>
+        </div>
+        <Show when={wizard().assayId === "gene-expression"}>
+          <div class={ROW}>
+            <Field class="gap-2.5" name="features">
+              <FieldLabel class="text-2xl font-normal">Features</FieldLabel>
+              <div class="mt-0 flex flex-col gap-1">
+                <For each={FEATURES}>
+                  {({ id, title }) => (
+                    <label
+                      class={cn(
+                        "flex cursor-pointer items-center gap-2.5 rounded-md border px-3 py-2 text-base transition-colors",
+                        isFeatureSelected(id)
+                          ? "border-foreground/80 bg-foreground/5"
+                          : "border-border hover:bg-muted/30",
+                      )}
+                    >
+                      <input
+                        class="size-4 shrink-0"
+                        checked={isFeatureSelected(id)}
+                        type="checkbox"
+                        value={id}
+                        onChange={() => toggleFeature(id)}
+                      />
+                      <span>{title}</span>
+                    </label>
+                  )}
+                </For>
+              </div>
+            </Field>
+          </div>
+        </Show>
       </div>
 
       <SourcePickerModal

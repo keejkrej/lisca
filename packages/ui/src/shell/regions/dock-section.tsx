@@ -22,7 +22,7 @@ export function DockSection(props: DockSectionProps) {
   return (
     <Section
       class={cn(
-        "flex h-full min-h-0 shrink-0 flex-col",
+        "flex h-full min-h-0 shrink-0 flex-col data-[collapsed]:min-w-0 data-[collapsed]:w-auto",
         (local.fit ?? "hug") === "panel" ? "min-w-56 max-w-xs" : "w-max max-w-full",
         local.class,
       )}

@@ -1,12 +1,12 @@
 import type { StudioStep } from "./studio-store";
 import {
-  isValidSamplePositionRange,
   validInfo1,
   validInfo2,
   validInfo3,
 } from "@lisca/client/studio/assay-validation";
 
 export { validInfo1, validInfo2, validInfo3 };
+export { isValidSamplePositionRange } from "@lisca/client/studio/assay-validation";
 
 export function instructionForStep(step: StudioStep): string {
   if (step === "chooseAssay") return "Choose an assay type.";
@@ -15,5 +15,3 @@ export function instructionForStep(step: StudioStep): string {
   }
   return "Complete basic info.";
 }
-
-export { isValidSamplePositionRange };

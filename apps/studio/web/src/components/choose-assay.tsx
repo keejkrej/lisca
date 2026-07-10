@@ -40,7 +40,7 @@ export function ChooseAssay() {
                 aria-pressed={selected()}
                 class={cn(
                   "h-20 w-full min-h-[5rem] items-center justify-center px-2 py-3 text-center sm:h-[5.5rem] sm:min-h-[5.5rem] sm:px-3",
-                  selected() && "border-primary bg-primary/6 ring-2 ring-ring/24 hover:bg-primary/10",
+                  selected() && "border-2 border-foreground/40 bg-foreground/5 hover:bg-foreground/10",
                 )}
                 disabled={disabled}
                 type="button"

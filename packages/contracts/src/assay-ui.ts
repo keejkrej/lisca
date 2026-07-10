@@ -5,7 +5,6 @@ import type {
   AssayBasicInfoStep3,
   AssayJsonFile,
   AssaySampleRow,
-  AssaySlideId,
   AssayTimelapseUnit,
 } from "./assay.schema";
 
@@ -96,8 +95,6 @@ export type StudioTimelapseUnit = AssayTimelapseUnit;
 
 export type StudioBasicInfoFeatureId = StudioAssayFeature;
 
-export type StudioBasicInfoSlideId = AssaySlideId;
-
 /** On-disk step 1 fields; identical to `AssayBasicInfoStep1`. */
 export type StudioBasicInfoStep1 = AssayBasicInfoStep1;
 
@@ -118,10 +115,9 @@ export type StudioBasicInfoSampleRow = {
 /** Sample row fields loaded from assay.json before a UI row id is assigned. */
 export type StudioBasicInfoSampleRowFields = Omit<StudioBasicInfoSampleRow, "id">;
 
-/** Wizard step 3: UI rows carry a client-only `id` not written to assay.json. */
+/** Wizard step 3: flat sample list (UI rows carry a client-only `id`). */
 export type StudioBasicInfoStep3 = {
-  selectedSlideId: StudioBasicInfoSlideId;
-  samplesBySlide: Record<StudioBasicInfoSlideId, StudioBasicInfoSampleRow[]>;
+  samples: StudioBasicInfoSampleRow[];
 };
 
 /** Sample row as written to assay.json (includes `positions` for the analysis pipeline). */

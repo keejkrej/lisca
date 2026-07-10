@@ -5,7 +5,6 @@ import type {
   StudioBasicInfoSampleRow as BasicInfoSampleRow,
   StudioBasicInfoSampleRowFields as BasicInfoSampleRowFields,
   StudioBasicInfoStep3OnDisk as BasicInfoStep3OnDisk,
-  StudioBasicInfoSlideId as BasicInfoSlideId,
   StudioTimelapseUnit as TimelapseUnit,
   StudioBasicInfoStep1 as BasicInfoStep1,
   StudioBasicInfoStep2 as BasicInfoStep2,
@@ -41,7 +40,6 @@ export type {
   AssayId,
   BasicInfo2FeatureId,
   BasicInfoSampleRow,
-  BasicInfoSlideId,
   BasicInfoStep1,
   BasicInfoStep2,
   BasicInfoStep3,
@@ -50,8 +48,8 @@ export type {
   TimelapseUnit,
 };
 
-export type StudioStep = "chooseAssay" | "info1" | "info2" | "info3" | "alignPattern";
-export type InfoStep = 1 | 2 | 3;
+export type StudioStep = "chooseAssay" | "info1" | "info2" | "alignPattern";
+export type InfoStep = 1 | 2;
 
 export {
   ASSAY_CHOICE_LABEL,
@@ -98,17 +96,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function requireRecord(value: unknown, label: string): Record<string, unknown> {
   if (!isRecord(value)) throw new Error(`Invalid assay.json: ${label} must be an object.`);
   return value;
-}
-
-function requireString(record: Record<string, unknown>, key: string, label = key): string {
-  const value = record[key];
-  if (typeof value !== "string") throw new Error(`Invalid assay.json: ${label} must be a string.`);
-  return value;
-}
-
-function optionalString(record: Record<string, unknown>, key: string): string {
-  const value = record[key];
-  return typeof value === "string" ? value : "";
 }
 
 function emptySampleRow(id: string): BasicInfoSampleRow {
@@ -197,7 +184,6 @@ export function createStudioUi(
       throw new Error("Invalid assay.json: info2.timelapseUnit is not supported.");
     }
     return {
-      pattern: requireString(info2, "pattern", "info2.pattern"),
       timelapseAmount,
       timelapseUnit,
       selectedFeatures: normalizeSelectedFeaturesForAssay(assayId, selectedFeatures),
@@ -213,7 +199,6 @@ export function createStudioUi(
       const rawSelectedFeatures = valueRecord.selectedFeatures;
       const rawSelectedFeature = valueRecord.selectedFeature;
       return {
-        pattern: optionalString(valueRecord, "pattern"),
         timelapseAmount: null,
         timelapseUnit: "minute",
         selectedFeatures: normalizeSelectedFeaturesForAssay(
@@ -254,7 +239,6 @@ export function createStudioUi(
 
   const initialInfo1: BasicInfoStep1 = {
     name: "",
-    date: "",
     dataPath: "",
     folderSubfolderTemplate: DEFAULT_FOLDER_SOURCE_TEMPLATE.subfolderTemplate,
     folderFilenameTemplate: DEFAULT_FOLDER_SOURCE_TEMPLATE.filenameTemplate,
@@ -272,25 +256,16 @@ export function createStudioUi(
   }
 
   const initialInfo2: BasicInfoStep2 = {
-    pattern: "",
     timelapseAmount: null,
     timelapseUnit: "minute",
     selectedFeatures: [ASSAY_FEATURE.TOTAL_FLUOR],
   };
 
   const initialInfo3: BasicInfoStep3 = {
-    selectedSlideId: "slide-vi",
-    samplesBySlide: {
-      "slide-i": [{ ...emptySampleRow("slide-i:0"), channel: "0" }],
-      "slide-vi": [
-        { ...emptySampleRow("slide-vi:0"), channel: "0" },
-        { ...emptySampleRow("slide-vi:1"), channel: "1" },
-        { ...emptySampleRow("slide-vi:2"), channel: "2" },
-        { ...emptySampleRow("slide-vi:3"), channel: "3" },
-        { ...emptySampleRow("slide-vi:4"), channel: "4" },
-        { ...emptySampleRow("slide-vi:5"), channel: "5" },
-      ],
-    },
+    samples: [
+      { ...emptySampleRow("sample:0"), channel: "0" },
+      { ...emptySampleRow("sample:1"), channel: "1" },
+    ],
   };
 
   function cloneSampleRow(
@@ -303,25 +278,17 @@ export function createStudioUi(
     };
   }
 
-  function cloneSamplesBySlide(
-    samplesBySlide:
-      | Record<BasicInfoSlideId, BasicInfoSampleRow[]>
-      | BasicInfoStep3OnDisk["samplesBySlide"],
-  ): Record<BasicInfoSlideId, BasicInfoSampleRow[]> {
-    return {
-      "slide-i": samplesBySlide["slide-i"].map((row, index) =>
-        cloneSampleRow("id" in row && row.id ? row.id : `slide-i:${index}`, row),
-      ),
-      "slide-vi": samplesBySlide["slide-vi"].map((row, index) =>
-        cloneSampleRow("id" in row && row.id ? row.id : `slide-vi:${index}`, row),
-      ),
-    };
+  function cloneSamples(
+    samples: BasicInfoSampleRow[] | BasicInfoStep3OnDisk["samples"],
+  ): BasicInfoSampleRow[] {
+    return samples.map((row, index) =>
+      cloneSampleRow("id" in row && row.id ? row.id : `sample:${index}`, row),
+    );
   }
 
   function normalizeInfo3(info3: BasicInfoStep3): BasicInfoStep3 {
     return {
-      selectedSlideId: info3.selectedSlideId,
-      samplesBySlide: cloneSamplesBySlide(info3.samplesBySlide),
+      samples: cloneSamples(info3.samples ?? []),
     };
   }
 
@@ -354,8 +321,7 @@ export function createStudioUi(
       info1: { ...initialInfo1 },
       info2: { ...initialInfo2 },
       info3: {
-        selectedSlideId: initialInfo3.selectedSlideId,
-        samplesBySlide: cloneSamplesBySlide(initialInfo3.samplesBySlide),
+        samples: cloneSamples(initialInfo3.samples),
       },
       basicInfoSavedSnapshot: null,
     };
@@ -418,8 +384,7 @@ export function createStudioUi(
         ),
       };
       const nextInfo3 = {
-        selectedSlideId: assayJson.info3.selectedSlideId,
-        samplesBySlide: cloneSamplesBySlide(assayJson.info3.samplesBySlide),
+        samples: cloneSamples(assayJson.info3.samples),
       };
       patchStudioWizard(set, {
         assayId: nextAssayId,
@@ -494,18 +459,43 @@ export function createStudioUi(
       patch: Partial<BasicInfoSampleRow>,
     ) {
       patchStudioWizard(set, (current) => {
-        const selectedSlideId = current.info3.selectedSlideId;
-        const samples = current.info3.samplesBySlide[selectedSlideId].map((row, i) =>
+        const samples = current.info3.samples.map((row, i) =>
           i === index ? { ...row, ...patch } : row,
         );
         return {
           ...current,
           info3: {
             ...current.info3,
-            samplesBySlide: {
-              ...current.info3.samplesBySlide,
-              [selectedSlideId]: samples,
-            },
+            samples,
+          },
+        };
+      });
+    },
+    addInfo3Sample(
+      set: (update: StateUpdater<StudioWizardState>) => void,
+    ) {
+      patchStudioWizard(set, (current) => {
+        const id = `sample:${current.info3.samples.length}`;
+        return {
+          ...current,
+          info3: {
+            ...current.info3,
+            samples: [...current.info3.samples, emptySampleRow(id)],
+          },
+        };
+      });
+    },
+    removeInfo3Sample(
+      set: (update: StateUpdater<StudioWizardState>) => void,
+      index: number,
+    ) {
+      patchStudioWizard(set, (current) => {
+        const samples = current.info3.samples.filter((_, i) => i !== index);
+        return {
+          ...current,
+          info3: {
+            ...current.info3,
+            samples,
           },
         };
       });

@@ -32,15 +32,6 @@ impl AssayTimelapseUnit {
     }
 }
 
-impl AssaySamplesBySlide {
-    pub fn rows_for(&self, slide: AssaySlideId) -> &[AssaySampleRow] {
-        match slide {
-            AssaySlideId::SlideI => &self.slide_i,
-            AssaySlideId::SlideVi => &self.slide_vi,
-        }
-    }
-}
-
 #[cfg(test)]
 mod contract_tests {
     //! Locks the cross-language wire shape of the generated types against the

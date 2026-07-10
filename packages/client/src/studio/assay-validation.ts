@@ -18,7 +18,6 @@ function parseNonNegativeInteger(value: string): number | null {
 export function validInfo1(info1: StudioBasicInfoStep1): boolean {
   return (
     info1.name.trim().length > 0 &&
-    info1.date.trim().length > 0 &&
     info1.dataPath.trim().length > 0 &&
     info1.saveTo.trim().length > 0
   );
@@ -26,7 +25,6 @@ export function validInfo1(info1: StudioBasicInfoStep1): boolean {
 
 export function validInfo2(info2: StudioBasicInfoStep2, assayId: StudioAssayId | null): boolean {
   return (
-    info2.pattern.trim().length > 0 &&
     info2.timelapseAmount != null &&
     info2.timelapseAmount > 0 &&
     (assayId !== ASSAY_TYPE.GENE_EXPRESSION ||
@@ -35,10 +33,10 @@ export function validInfo2(info2: StudioBasicInfoStep2, assayId: StudioAssayId |
 }
 
 export function validInfo3(info3: StudioBasicInfoStep3): boolean {
-  const activeSamples = info3.samplesBySlide[info3.selectedSlideId];
+  const samples = info3.samples;
   return (
-    activeSamples.length > 0 &&
-    activeSamples.every(
+    samples.length > 0 &&
+    samples.every(
       (row) =>
         parseNonNegativeInteger(row.channel) != null &&
         row.name.trim().length > 0 &&
@@ -63,18 +61,18 @@ export function validateAssayForAnalysis(input: {
     errors.push("Choose an assay type before starting analysis.");
   }
   if (!validInfo1(input.info1)) {
-    errors.push("Complete basic info step 1 (name, date, data path, save location).");
+    errors.push("Complete basic info step 1 (name, source, workspace).");
   }
   if (!validInfo2(input.info2, input.assayId)) {
-    errors.push("Complete basic info step 2 (pattern and timelapse interval).");
+    errors.push("Complete basic info step 1 (timelapse interval).");
   }
 
-  const activeSamples = input.info3.samplesBySlide[input.info3.selectedSlideId];
-  if (activeSamples.length === 0) {
-    errors.push("Add at least one sample row for the selected slide.");
+  const samples = input.info3.samples;
+  if (samples.length === 0) {
+    errors.push("Add at least one sample mapping.");
   }
 
-  activeSamples.forEach((row, index) => {
+  samples.forEach((row, index) => {
     const rowLabel = `Sample row ${index + 1}`;
     if (parseNonNegativeInteger(row.channel) == null) {
       errors.push(`${rowLabel}: channel must be a non-negative integer.`);
@@ -84,7 +82,7 @@ export function validateAssayForAnalysis(input: {
     }
     if (!isValidSamplePositionRange(row.positionStart, row.positionFinish)) {
       errors.push(
-        `${rowLabel}: position start and finish must be positive integers with finish ≥ start (1-based).`,
+        `${rowLabel}: position start and finish must be positive integers with finish >= start (1-based).`,
       );
     }
     if (parseNonNegativeInteger(row.maskChannel) == null) {

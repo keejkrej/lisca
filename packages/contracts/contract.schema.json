@@ -1424,7 +1424,6 @@
       "type": "object",
       "required": [
         "name",
-        "date",
         "dataPath",
         "folderSubfolderTemplate",
         "folderFilenameTemplate",
@@ -1432,9 +1431,6 @@
       ],
       "properties": {
         "name": {
-          "type": "string"
-        },
-        "date": {
           "type": "string"
         },
         "dataPath": {
@@ -1454,15 +1450,11 @@
     "AssayBasicInfoStep2": {
       "type": "object",
       "required": [
-        "pattern",
         "timelapseAmount",
         "timelapseUnit",
         "selectedFeatures"
       ],
       "properties": {
-        "pattern": {
-          "type": "string"
-        },
         "timelapseAmount": {
           "anyOf": [
             {
@@ -1505,44 +1497,18 @@
     "AssayBasicInfoStep3": {
       "type": "object",
       "required": [
-        "selectedSlideId",
-        "samplesBySlide"
+        "samples"
       ],
       "properties": {
-        "selectedSlideId": {
-          "$ref": "#/definitions/AssaySlideId"
-        },
-        "samplesBySlide": {
-          "$ref": "#/definitions/AssaySamplesBySlide"
+        "samples": {
+          "$ref": "#/definitions/AssaySamples"
         }
       }
     },
-    "AssaySlideId": {
-      "type": "string",
-      "enum": [
-        "slide-i",
-        "slide-vi"
-      ]
-    },
-    "AssaySamplesBySlide": {
-      "type": "object",
-      "required": [
-        "slide-i",
-        "slide-vi"
-      ],
-      "properties": {
-        "slide-i": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/AssaySampleRow"
-          }
-        },
-        "slide-vi": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/AssaySampleRow"
-          }
-        }
+    "AssaySamples": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/AssaySampleRow"
       }
     },
     "AssaySampleRow": {
