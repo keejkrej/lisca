@@ -1,15 +1,15 @@
 {
   "$schema": "https://ui.shadcn.com/schema.json",
-  "style": "new-york",
+  "style": "lyra",
   "rsc": false,
   "tsx": true,
   "tailwind": {
     "config": "",
     "css": "coss-theme.css",
-    "baseColor": "neutral",
+    "baseColor": "stone",
     "cssVariables": true
   },
-  "iconLibrary": "lucide",
+  "iconLibrary": "phosphor",
   "aliases": {
     "components": "@/components",
     "utils": "@/lib/utils",

@@ -1,5 +1,6 @@
 /**
- * coss-style semantic tokens for `@lisca/ui` primitives (neutral palette).
+ * coss-style semantic tokens for `@lisca/ui` primitives (stone palette).
+ * Preset: bKGikTwo (Lyra style, Stone base/theme/chart, Phosphor icons, Lora font).
  * Import after Tailwind in each app: `@import "@lisca/ui/coss-theme.css";`
  */
 /*---break---
@@ -31,49 +32,64 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: var(--color-white);
-  --foreground: var(--color-neutral-900);
-  --card: var(--color-white);
-  --card-foreground: var(--color-neutral-900);
-  --popover: var(--color-white);
-  --popover-foreground: var(--color-neutral-900);
-  --primary: var(--color-neutral-900);
-  --primary-foreground: var(--color-neutral-50);
-  --secondary: var(--color-neutral-100);
-  --secondary-foreground: var(--color-neutral-900);
-  --muted: var(--color-neutral-100);
-  --muted-foreground: var(--color-neutral-500);
-  --accent: var(--color-neutral-100);
-  --accent-foreground: var(--color-neutral-900);
-  --destructive: var(--color-red-500);
-  --destructive-foreground: var(--color-red-700);
-  --border: color-mix(in oklab, var(--color-neutral-900) 10%, transparent);
-  --input: color-mix(in oklab, var(--color-neutral-900) 12%, transparent);
-  --ring: var(--color-neutral-400);
+  --radius: 0rem;
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(20 14.3% 4.1%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(20 14.3% 4.1%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(20 14.3% 4.1%);
+  --primary: hsl(24 9.8% 10%);
+  --primary-foreground: hsl(60 9.1% 97.8%);
+  --secondary: hsl(60 4.8% 95.9%);
+  --secondary-foreground: hsl(24 9.8% 10%);
+  --muted: hsl(60 4.8% 95.9%);
+  --muted-foreground: hsl(25 5.3% 44.7%);
+  --accent: hsl(60 4.8% 95.9%);
+  --accent-foreground: hsl(24 9.8% 10%);
+  --destructive: hsl(0 84.2% 60.2%);
+  --destructive-foreground: hsl(60 9.1% 97.8%);
+  --border: hsl(20 5.9% 90%);
+  --input: hsl(20 5.9% 90%);
+  --ring: hsl(20 14.3% 4.1%);
+  --chart-1: hsl(12 76% 61%);
+  --chart-2: hsl(173 58% 39%);
+  --chart-3: hsl(197 37% 24%);
+  --chart-4: hsl(43 74% 66%);
+  --chart-5: hsl(27 87% 67%);
 }
 
 .dark {
-  --background: var(--color-neutral-950);
-  --foreground: var(--color-neutral-50);
-  --card: color-mix(in oklab, var(--color-neutral-950) 96%, var(--color-white));
-  --card-foreground: var(--color-neutral-50);
-  --popover: color-mix(in oklab, var(--color-neutral-950) 96%, var(--color-white));
-  --popover-foreground: var(--color-neutral-50);
-  --primary: var(--color-neutral-50);
-  --primary-foreground: var(--color-neutral-900);
-  --secondary: color-mix(in oklab, var(--color-white) 6%, transparent);
-  --secondary-foreground: var(--color-neutral-50);
-  --muted: color-mix(in oklab, var(--color-white) 6%, transparent);
-  --muted-foreground: var(--color-neutral-400);
-  --accent: color-mix(in oklab, var(--color-white) 6%, transparent);
-  --accent-foreground: var(--color-neutral-50);
-  --destructive: color-mix(in oklab, var(--color-red-500) 88%, var(--color-white));
-  --destructive-foreground: var(--color-red-400);
-  --border: color-mix(in oklab, var(--color-white) 10%, transparent);
-  --input: color-mix(in oklab, var(--color-white) 14%, transparent);
-  --ring: var(--color-neutral-500);
+  --background: hsl(20 14.3% 4.1%);
+  --foreground: hsl(60 9.1% 97.8%);
+  --card: hsl(20 14.3% 4.1%);
+  --card-foreground: hsl(60 9.1% 97.8%);
+  --popover: hsl(20 14.3% 4.1%);
+  --popover-foreground: hsl(60 9.1% 97.8%);
+  --primary: hsl(60 9.1% 97.8%);
+  --primary-foreground: hsl(24 9.8% 10%);
+  --secondary: hsl(12 6.5% 15.1%);
+  --secondary-foreground: hsl(60 9.1% 97.8%);
+  --muted: hsl(12 6.5% 15.1%);
+  --muted-foreground: hsl(24 5.4% 63.9%);
+  --accent: hsl(12 6.5% 15.1%);
+  --accent-foreground: hsl(60 9.1% 97.8%);
+  --destructive: hsl(0 62.8% 30.6%);
+  --destructive-foreground: hsl(60 9.1% 97.8%);
+  --border: hsl(12 6.5% 15.1%);
+  --input: hsl(12 6.5% 15.1%);
+  --ring: hsl(24 5.7% 82.9%);
+  --chart-1: hsl(220 70% 50%);
+  --chart-2: hsl(160 60% 45%);
+  --chart-3: hsl(30 80% 55%);
+  --chart-4: hsl(280 65% 60%);
+  --chart-5: hsl(340 75% 55%);
 }

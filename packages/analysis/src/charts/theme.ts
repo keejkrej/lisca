@@ -33,7 +33,7 @@ export const VICTORY_DOMAIN_PADDING = {
   bottom: 20,
 } as const;
 
-export const PLOT_FONT = '"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif';
+export const PLOT_FONT = '"Lora", ui-serif, Georgia, serif';
 
 export const PLOT_FONT_SIZE_PX = 20;
 
