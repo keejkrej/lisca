@@ -23,6 +23,18 @@ export const ToggleGroupVariantContext: Context<ToggleGroupVariant> =
 
 type ToggleGroupValue = string | string[] | null | undefined;
 
+function ToggleGroupProviders(
+  props: ParentProps<{ size: ToggleGroupSize; variant: ToggleGroupVariant }>,
+): JSX.Element {
+  return (
+    <ToggleGroupSizeContext.Provider value={props.size}>
+      <ToggleGroupVariantContext.Provider value={props.variant}>
+        {props.children}
+      </ToggleGroupVariantContext.Provider>
+    </ToggleGroupSizeContext.Provider>
+  );
+}
+
 export function ToggleGroup(
   props: ParentProps<{
     class?: string;
@@ -99,14 +111,6 @@ export function ToggleGroup(
       local.class,
     );
 
-  const groupChildren = (
-    <ToggleGroupSizeContext.Provider value={size()}>
-      <ToggleGroupVariantContext.Provider value={variant()}>
-        {local.children}
-      </ToggleGroupVariantContext.Provider>
-    </ToggleGroupSizeContext.Provider>
-  );
-
   return (
     <Show
       when={isMultiple()}
@@ -122,7 +126,9 @@ export function ToggleGroup(
           onChange={handleChange}
           {...rest}
         >
-          {groupChildren}
+          <ToggleGroupProviders size={size()} variant={variant()}>
+            {local.children}
+          </ToggleGroupProviders>
         </KobalteToggleGroup>
       }
     >
@@ -138,7 +144,9 @@ export function ToggleGroup(
         onChange={handleChange}
         {...rest}
       >
-        {groupChildren}
+        <ToggleGroupProviders size={size()} variant={variant()}>
+          {local.children}
+        </ToggleGroupProviders>
       </KobalteToggleGroup>
     </Show>
   );

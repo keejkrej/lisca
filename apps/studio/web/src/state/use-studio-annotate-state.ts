@@ -95,7 +95,7 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     saveRoiFrameAnnotationAtom,
     useShellWorkspace: () => workspace,
     useCanvasResourceTransaction,
-    useCanvasTransientStatus: (status) => useCanvasTransientStatus(() => status)(),
+    useCanvasTransientStatus: (status) => useCanvasTransientStatus(status),
     guardDirtySelection: (dirty, selectionChanging) => {
       if (!dirty || selectionChanging) return true;
       return window.confirm("Discard unsaved annotation changes?");

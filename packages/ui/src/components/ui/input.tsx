@@ -48,14 +48,16 @@ export function Input(props: InputProps): JSX.Element {
       <Show
         when={local.nativeInput}
         fallback={
-          <TextField.Input
-            class={inputClassName()}
-            data-slot="input"
-            size={typeof size() === "number" ? size() : undefined}
-            style={local.style}
-            type={local.type}
-            {...(rest as TextFieldInputProps)}
-          />
+          <TextField>
+            <TextField.Input
+              class={inputClassName()}
+              data-slot="input"
+              size={typeof size() === "number" ? size() : undefined}
+              style={local.style}
+              type={local.type}
+              {...(rest as TextFieldInputProps)}
+            />
+          </TextField>
         }
       >
         <input

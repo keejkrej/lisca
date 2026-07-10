@@ -116,7 +116,7 @@ export type UseAnnotateStateCoreDeps = {
   useCanvasResourceTransaction: () => <T>(
     options: CanvasResourceTransactionOptions<T>,
   ) => () => void;
-  useCanvasTransientStatus: (status: string | null) => string | null;
+  useCanvasTransientStatus: (status: Accessor<string | null>) => Accessor<string | null>;
   guardDirtySelection: DirtySelectionGuard;
   useAnnotationHistory: (frame: FrameResult | null) => AnnotationHistoryHandle;
   emptyValueFor: (frame: FrameResult | null) => {
@@ -180,6 +180,8 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
     annotation.reset(value);
   let selectionChanging = false;
   const loadCanvasResources = deps.useCanvasResourceTransaction();
+
+  const visibleStatus = deps.useCanvasTransientStatus(() => session.state().status);
 
   const requestContext = createMemo(() => {
     const currentUi = session.state();
@@ -416,7 +418,7 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
       currentUi.frameError ??
       currentUi.annotationError ??
       currentUi.saveError;
-    const visibleStatus = deps.useCanvasTransientStatus(currentUi.status);
+    const transientStatus = visibleStatus();
     const saveLabelsPending = resultLoading(saveLabelsResult());
     const activeToastStatus = currentUi.frameLoading
       ? "Loading ROI frame"
@@ -424,7 +426,7 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
         ? "Loading ROI annotation"
         : session.meta().scanLoading
           ? "Scanning ROI workspace"
-          : visibleStatus;
+          : transientStatus;
     const canvasToasts = (() => {
       if (activeError)
         return [

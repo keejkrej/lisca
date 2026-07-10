@@ -68,7 +68,7 @@ export function SelectStepperField<T extends NavigationValue>(
   return (
     <Field class="min-w-0 w-full">
       <FieldLabel>{props.label}</FieldLabel>
-      <div class="grid w-full grid-cols-[2rem_minmax(0,1fr)_2rem] gap-2">
+      <div class="grid w-full grid-cols-[2rem_minmax(0,1fr)_2rem] items-center gap-2">
         <Button
           aria-label={`Previous ${props.label}`}
           class="h-8 w-full px-0 text-xs"
@@ -81,6 +81,7 @@ export function SelectStepperField<T extends NavigationValue>(
           <ChevronLeft aria-hidden="true" />
         </Button>
         <Select<T>
+          class="flex items-center"
           disabled={props.disabled}
           items={props.options}
           modal={false}

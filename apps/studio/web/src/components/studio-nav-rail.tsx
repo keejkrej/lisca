@@ -99,17 +99,13 @@ export function StudioNavRail() {
           </div>
         </Panel>
       </div>
-      <div class="flex shrink-0 flex-col items-stretch gap-2">
-        <div class="flex justify-center">
-          <ConnectionStatus
-            state={server.state}
-            httpBaseUrl={server.httpBaseUrl}
-            onOpenSettings={server.openSettings}
-          />
-        </div>
-        <div class="flex items-center justify-center gap-1">
-          <ShellThemeToggle />
-        </div>
+      <div class="flex shrink-0 flex-row items-center justify-center gap-2">
+        <ConnectionStatus
+          state={server.state}
+          httpBaseUrl={server.httpBaseUrl}
+          onOpenSettings={server.openSettings}
+        />
+        <ShellThemeToggle />
       </div>
     </nav>
   );

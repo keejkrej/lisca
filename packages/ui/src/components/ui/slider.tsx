@@ -55,7 +55,7 @@ export function Slider(
       {local.children}
       <div
         class={cn(
-          "flex touch-none select-none data-[orientation=vertical]:h-full data-[orientation=vertical]:min-h-44 data-[orientation=horizontal]:w-full data-[orientation=horizontal]:min-w-44 data-[orientation=vertical]:flex-col data-disabled:pointer-events-none data-disabled:opacity-64",
+          "flex items-center touch-none select-none data-[orientation=vertical]:h-full data-[orientation=vertical]:min-h-44 data-[orientation=horizontal]:w-full data-[orientation=horizontal]:min-w-44 data-[orientation=vertical]:flex-col data-disabled:pointer-events-none data-disabled:opacity-64",
           local.controlClassName,
         )}
         data-slot="slider-control"
@@ -69,7 +69,7 @@ export function Slider(
             data-slot="slider-indicator"
           />
           <KobalteSlider.Thumb
-            class="block size-5 shrink-0 select-none rounded-full border border-input bg-white not-dark:bg-clip-padding shadow-xs/5 outline-none transition-[box-shadow,scale] before:absolute before:inset-0 before:rounded-full before:shadow-[0_1px_--theme(--color-black/4%)] has-focus-visible:ring-[3px] has-focus-visible:ring-ring/24 data-dragging:scale-120 sm:size-4 dark:border-background dark:has-focus-visible:ring-ring/48 [:has(*:focus-visible),[data-dragging]]:shadow-none"
+            class="block size-5 shrink-0 select-none rounded-full border border-input bg-white not-dark:bg-clip-padding shadow-xs/5 outline-none transition-[box-shadow,scale] before:absolute before:inset-0 before:rounded-full before:shadow-[0_1px_--theme(--color-black/4%)] has-focus-visible:ring-[3px] has-focus-visible:ring-ring/24 data-dragging:scale-120 sm:size-4 dark:border-background dark:has-focus-visible:ring-ring/48 [:has(*:focus-visible),[data-dragging]]:shadow-none data-[orientation=horizontal]:top-1/2 data-[orientation=horizontal]:-mt-2.5 sm:data-[orientation=horizontal]:-mt-2 data-[orientation=vertical]:left-1/2 data-[orientation=vertical]:-ml-2.5 sm:data-[orientation=vertical]:-ml-2"
             data-slot="slider-thumb"
           />
         </KobalteSlider.Track>

@@ -192,10 +192,14 @@ export function AlignToolToolbar(props: AlignToolToolbarProps) {
 
   return (
     <div aria-label="Align canvas tool" class="flex w-full flex-col gap-2" role="toolbar">
-      <div class="grid w-full grid-cols-2 gap-2">{cells()[0]}</div>
-      <div class="grid w-full grid-cols-2 gap-2">{cells()[1]}</div>
-      <div class="grid w-full grid-cols-2 gap-2">{cells()[2]}</div>
-      <div class="grid w-full grid-cols-2 gap-2">{cells()[3]}</div>
+      <div class="grid w-full grid-cols-2 gap-2">
+        {cells()[0]}
+        {cells()[1]}
+      </div>
+      <div class="grid w-full grid-cols-2 gap-2">
+        {cells()[2]}
+        {cells()[3]}
+      </div>
     </div>
   );
 }
