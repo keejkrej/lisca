@@ -1,5 +1,3 @@
-"use client";
-
 import type { AlignGridShape } from "@lisca/contracts";
 
 import { DockSection } from "../../shell/regions/dock-section";
@@ -12,15 +10,14 @@ export type AlignGridShapeDockSectionProps = {
   sectionTitle?: string;
 };
 
-export function AlignGridShapeDockSection({
-  shape,
-  onShapeChange,
-  disabled,
-  sectionTitle = "Grid",
-}: AlignGridShapeDockSectionProps) {
+export function AlignGridShapeDockSection(props: AlignGridShapeDockSectionProps) {
   return (
-    <DockSection className="min-w-[9.5rem]" title={sectionTitle}>
-      <AlignGridShapeToggle disabled={disabled} shape={shape} onShapeChange={onShapeChange} />
+    <DockSection class="min-w-[9.5rem]" title={props.sectionTitle ?? "Grid"}>
+      <AlignGridShapeToggle
+        disabled={props.disabled}
+        shape={props.shape}
+        onShapeChange={props.onShapeChange}
+      />
     </DockSection>
   );
 }

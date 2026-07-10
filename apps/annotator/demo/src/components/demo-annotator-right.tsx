@@ -3,6 +3,8 @@ import type { AnnotationMode } from "@lisca/ui/features";
 import { Button, cn } from "@lisca/ui/components";
 import { AnnotationModeToggle, AnnotationToolSlider } from "@lisca/ui/features";
 import { Section } from "@lisca/ui/shell";
+import { For, Show } from "solid-js";
+
 import { labelColorStyle, type AnnotationValue } from "../utils/annotation-utils";
 
 export function DemoAnnotatorRight(props: {
@@ -30,44 +32,45 @@ export function DemoAnnotatorRight(props: {
   onOpenLabelDialog: () => void;
 }) {
   return (
-    <div className="flex min-h-0 flex-col gap-2 overflow-auto p-3">
+    <div class="flex min-h-0 flex-col gap-2 overflow-auto p-3">
       <Section title="Mode">
         <AnnotationModeToggle
-          className="w-full"
+          class="w-full"
           mode={props.mode}
           onModeChange={props.onModeChange}
         />
       </Section>
       <Section title="Labels" contentClassName="grid grid-cols-2 gap-2">
-        {props.labels.map((label) => {
-          const selected =
-            props.mode === "classification"
-              ? props.annotation.classificationLabelId === label.id
-              : props.activeLabelId === label.id;
-          return (
-            <button
-              key={label.id}
-              className={cn(
-                "min-w-0 truncate rounded-md border px-2 py-2 text-center text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50",
-              )}
-              disabled={!props.canEdit}
-              style={labelColorStyle(label, selected)}
-              type="button"
-              title={label.name}
-              onClick={() => {
-                if (props.mode === "classification") {
-                  props.onClassificationChange(selected ? null : label.id);
-                } else {
-                  props.onPaintLabelChange(label.id);
-                }
-              }}
-            >
-              {label.name}
-            </button>
-          );
-        })}
+        <For each={props.labels}>
+          {(label) => {
+            const selected =
+              props.mode === "classification"
+                ? props.annotation.classificationLabelId === label.id
+                : props.activeLabelId === label.id;
+            return (
+              <button
+                class={cn(
+                  "min-w-0 truncate rounded-md border px-2 py-2 text-center text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50",
+                )}
+                disabled={!props.canEdit}
+                style={labelColorStyle(label, selected)}
+                type="button"
+                title={label.name}
+                onClick={() => {
+                  if (props.mode === "classification") {
+                    props.onClassificationChange(selected ? null : label.id);
+                  } else {
+                    props.onPaintLabelChange(label.id);
+                  }
+                }}
+              >
+                {label.name}
+              </button>
+            );
+          }}
+        </For>
         <Button
-          className="col-span-2 w-full"
+          class="col-span-2 w-full"
           size="sm"
           type="button"
           variant="outline"
@@ -75,10 +78,12 @@ export function DemoAnnotatorRight(props: {
         >
           Edit labels
         </Button>
-        {props.frameLoading ? (
-          <p className="col-span-2 text-muted-foreground text-xs">Loading…</p>
-        ) : null}
-        {props.error ? <p className="col-span-2 text-destructive text-xs">{props.error}</p> : null}
+        <Show when={props.frameLoading}>
+          <p class="col-span-2 text-muted-foreground text-xs">Loading…</p>
+        </Show>
+        <Show when={props.error}>
+          <p class="col-span-2 text-destructive text-xs">{props.error}</p>
+        </Show>
       </Section>
       <Section title="Edit" contentClassName="grid grid-cols-2 gap-2">
         <Button
@@ -118,7 +123,7 @@ export function DemoAnnotatorRight(props: {
           Discard
         </Button>
       </Section>
-      {props.mode === "segmentation" ? (
+      <Show when={props.mode === "segmentation"}>
         <Section title="Brush" contentClassName="flex flex-col gap-3">
           <AnnotationToolSlider
             label="Opacity"
@@ -139,7 +144,7 @@ export function DemoAnnotatorRight(props: {
             onChange={(value) => props.onBrushSizeChange(Math.round(value))}
           />
         </Section>
-      ) : null}
+      </Show>
     </div>
   );
 }

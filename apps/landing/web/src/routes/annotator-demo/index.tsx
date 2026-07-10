@@ -1,5 +1,5 @@
 import { AnnotatorDemo } from "@lisca/annotator-demo";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/solid-router";
 
 import { DemoRoutePage } from "../../lib/demo-route-page";
 

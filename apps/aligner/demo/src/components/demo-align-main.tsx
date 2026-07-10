@@ -1,4 +1,3 @@
-import { useRef } from "react";
 import { ViewportCard } from "@lisca/ui/shell";
 import {
   AlignCanvas,
@@ -9,32 +8,27 @@ import {
 } from "@lisca/ui/features";
 import { frameWithContrast } from "@lisca/web-demo/browser";
 import type { DemoAlignState } from "@lisca/web-demo";
+import type { Accessor } from "solid-js";
 
-export function DemoAlignMain({
-  state,
-  embedded = false,
-}: {
-  state: DemoAlignState;
-  embedded?: boolean;
-}) {
-  const previewRedrawRef = useRef<(() => void) | null>(null);
-  const gridHandlers = useAlignCanvasGridHandlers({
+export function DemoAlignMain(props: { state: Accessor<DemoAlignState>; embedded?: boolean }) {
+  const previewRedrawRef = { current: null as (() => void) | null };
+  const gridHandlers = useAlignCanvasGridHandlers(() => ({
     disabled: false,
-    grid: state.grid,
-    patternZoomLocked: state.patternZoomLocked,
-    setGrid: state.setGrid,
-    toolMode: state.toolMode,
+    grid: props.state().grid,
+    patternZoomLocked: props.state().patternZoomLocked,
+    setGrid: props.state().setGrid,
+    toolMode: props.state().toolMode,
     onPreviewGridChange: () => previewRedrawRef.current?.(),
-  });
-  const selectionHandlers = useAlignCanvasSelectionHandlers({
-    enabled: state.manualExclusionEnabled,
-    excludedCells: state.excludedCells,
-    frame: state.frame,
-    grid: state.grid,
-    onExcludedCellsChange: state.setExcludedCells,
-  });
+  }));
+  const selectionHandlers = useAlignCanvasSelectionHandlers(() => ({
+    enabled: props.state().manualExclusionEnabled,
+    excludedCells: props.state().excludedCells,
+    frame: props.state().frame,
+    grid: props.state().grid,
+    onExcludedCellsChange: props.state().setExcludedCells,
+  }));
   const handlePointerDown: typeof gridHandlers.handlePointerDown = (event) => {
-    if (state.manualExclusionEnabled) {
+    if (props.state().manualExclusionEnabled) {
       selectionHandlers.handlePointerDown(event);
       return;
     }
@@ -53,40 +47,51 @@ export function DemoAlignMain({
     if (selectionHandlers.handlePointerCancel(event)) return;
     gridHandlers.handlePointerEnd(event);
   };
-  const displayFrame = state.frame ? frameWithContrast(state.frame, state.contrast) : null;
-  const visibleStatus = useCanvasTransientStatus(state.status);
-  const activeToastStatus = state.frameLoading ? "Loading image" : visibleStatus;
-  const toasts = (() => {
-    if (state.error)
+  const displayFrame = () => {
+    const state = props.state();
+    return state.frame ? frameWithContrast(state.frame, state.contrast) : null;
+  };
+  const visibleStatus = useCanvasTransientStatus(() => props.state().status);
+  const activeToastStatus = () =>
+    props.state().frameLoading ? "Loading image" : visibleStatus();
+  const toasts = () => {
+    const error = props.state().error;
+    if (error) {
       return [
         {
-          text: state.error,
+          text: error,
           tone: "error" as const,
         },
       ];
-    if (activeToastStatus)
+    }
+    const status = activeToastStatus();
+    if (status)
       return [
         {
-          text: activeToastStatus,
+          text: status,
         },
       ];
     return [];
-  })();
-  const cursor =
-    state.manualExclusionEnabled || selectionHandlers.selecting
+  };
+  const cursor = () =>
+    props.state().manualExclusionEnabled || selectionHandlers.selecting()
       ? "crosshair"
-      : cursorForAlignTool(state.toolMode, state.grid.enabled, gridHandlers.dragging);
+      : cursorForAlignTool(
+          props.state().toolMode,
+          props.state().grid.enabled,
+          gridHandlers.dragging(),
+        );
   return (
     <ViewportCard>
       <AlignCanvas
-        className="min-h-0 flex-1"
-        cursor={cursor}
-        excludedCells={state.excludedCells}
-        frame={displayFrame}
-        grid={state.grid}
+        class="min-h-0 flex-1"
+        cursor={cursor()}
+        excludedCells={props.state().excludedCells}
+        frame={displayFrame()}
+        grid={props.state().grid}
         previewGridRef={gridHandlers.previewGridRef}
         previewRedrawRef={previewRedrawRef}
-        toasts={embedded ? [] : toasts}
+        toasts={props.embedded ? [] : toasts()}
         onVirtualPointerCancel={handlePointerCancel}
         onVirtualPointerDown={handlePointerDown}
         onVirtualPointerMove={handlePointerMove}

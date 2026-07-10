@@ -22,7 +22,7 @@ import {
   DEFAULT_FOLDER_SOURCE_TEMPLATE,
 } from "@lisca/contracts/assay";
 import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/storage";
-import { Atom } from "@effect-atom/atom-react";
+import { Atom } from "@effect-atom/atom-solid";
 
 import {
   ASSAY_CHOICE_LABEL,

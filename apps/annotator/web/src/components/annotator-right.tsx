@@ -2,6 +2,7 @@ import { Button, cn } from "@lisca/ui/components";
 import { AnnotationModeToggle, AnnotationToolSlider, labelColorStyle } from "@lisca/ui/features";
 import { SidebarSection, SidebarStack } from "@lisca/ui/shell";
 import { createEmptyMask } from "@lisca/utils";
+import { For, Show } from "solid-js";
 
 import { useAnnotateLabels } from "../state/annotate-page-selectors";
 
@@ -14,42 +15,57 @@ export function AnnotatorRight() {
   return (
     <SidebarStack>
       <SidebarSection title="Mode">
-        <AnnotationModeToggle className="w-full" mode={labels.mode} onModeChange={labels.setMode} />
+        <AnnotationModeToggle class="w-full" mode={labels.mode} onModeChange={labels.setMode} />
       </SidebarSection>
       <SidebarSection contentClassName="grid grid-cols-2 gap-2" title="Labels">
-        {labels.labels.map((label) => {
-          const selected =
-            labels.mode === "classification"
-              ? labels.annotation.current.classificationLabelId === label.id
-              : labels.activeLabelId === label.id;
-          return (
-            <button
-              key={label.id}
-              className={cn(
-                "min-w-0 truncate rounded-md border px-2 py-2 text-center text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50",
-              )}
-              disabled={!labels.canEdit}
-              style={labelColorStyle(label, selected)}
+        <For each={labels.labels}>
+          {(label) => {
+            const selected =
+              labels.mode === "classification"
+                ? labels.annotation.current.classificationLabelId === label.id
+                : labels.activeLabelId === label.id;
+            return (
+              <button
+                class={cn(
+                  "min-w-0 truncate rounded-md border px-2 py-2 text-center text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50",
+                )}
+                disabled={!labels.canEdit}
+                style={labelColorStyle(label, selected)}
+                type="button"
+                title={label.name}
+                onClick={() => {
+                  if (labels.mode === "classification") {
+                    labels.annotation.commit({
+                      classificationLabelId: selected ? null : label.id,
+                      mask: labels.annotation.current.mask,
+                    });
+                  } else {
+                    labels.setActiveLabelId(label.id);
+                  }
+                }}
+              >
+                {label.name}
+              </button>
+            );
+          }}
+        </For>
+        <Show
+          when={labels.labels.length === 0}
+          fallback={
+            <Button
+              class="col-span-2 w-full"
+              disabled={!labels.workspacePath}
+              size="sm"
               type="button"
-              title={label.name}
-              onClick={() => {
-                if (labels.mode === "classification") {
-                  labels.annotation.commit({
-                    classificationLabelId: selected ? null : label.id,
-                    mask: labels.annotation.current.mask,
-                  });
-                } else {
-                  labels.setActiveLabelId(label.id);
-                }
-              }}
+              variant="outline"
+              onClick={labels.openLabelDialog}
             >
-              {label.name}
-            </button>
-          );
-        })}
-        {labels.labels.length === 0 ? (
+              Edit labels
+            </Button>
+          }
+        >
           <Button
-            className="col-span-2 w-full"
+            class="col-span-2 w-full"
             disabled={!labels.workspacePath}
             size="sm"
             type="button"
@@ -58,20 +74,13 @@ export function AnnotatorRight() {
           >
             Add
           </Button>
-        ) : (
-          <Button
-            className="col-span-2 w-full"
-            disabled={!labels.workspacePath}
-            size="sm"
-            type="button"
-            variant="outline"
-            onClick={labels.openLabelDialog}
-          >
-            Edit labels
-          </Button>
-        )}
-        {loading ? <p className="col-span-2 text-muted-foreground text-xs">Loading…</p> : null}
-        {activeError ? <p className="col-span-2 text-destructive text-xs">{activeError}</p> : null}
+        </Show>
+        <Show when={loading}>
+          <p class="col-span-2 text-muted-foreground text-xs">Loading…</p>
+        </Show>
+        <Show when={activeError}>
+          <p class="col-span-2 text-destructive text-xs">{activeError}</p>
+        </Show>
       </SidebarSection>
       <SidebarSection contentClassName="grid grid-cols-2 gap-2" title="Edit">
         <Button
@@ -117,7 +126,7 @@ export function AnnotatorRight() {
           Discard
         </Button>
       </SidebarSection>
-      {labels.mode === "segmentation" ? (
+      <Show when={labels.mode === "segmentation"}>
         <SidebarSection contentClassName="flex flex-col gap-3" title="Brush">
           <AnnotationToolSlider
             label="Opacity"
@@ -138,7 +147,7 @@ export function AnnotatorRight() {
             onChange={(value) => labels.setBrushSize(Math.round(value))}
           />
         </SidebarSection>
-      ) : null}
+      </Show>
     </SidebarStack>
   );
 }

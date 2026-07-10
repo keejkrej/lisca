@@ -3,7 +3,8 @@
   "compilerOptions": {
     "module": "Preserve",
     "moduleResolution": "Bundler",
-    "jsx": "react-jsx",
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
     "types": ["vite/client"]
   },
   "include": ["src", "vite.config.ts", "src/routeTree.gen.ts"]

@@ -30,7 +30,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@effect-atom/atom-react": "catalog:",
+    "@effect-atom/atom-solid": "catalog:",
     "@lisca/client": "workspace:*",
     "@lisca/contracts": "workspace:*",
     "@lisca/smart": "workspace:*",
@@ -38,27 +38,23 @@
     "@lisca/utils": "workspace:*",
     "@lisca/web-app": "workspace:*",
     "@tailwindcss/vite": "catalog:",
-    "@tanstack/react-router": "catalog:",
+    "@tanstack/solid-router": "catalog:",
     "@tanstack/router-plugin": "catalog:",
-    "@vitejs/plugin-react": "catalog:",
     "fflate": "^0.8.2",
-    "lucide-react": "^0.511.0",
+    "lucide-solid": "catalog:",
+    "solid-js": "catalog:",
     "tailwindcss": "catalog:",
     "utif": "^3.1.0",
-    "vite": "catalog:"
+    "vite": "catalog:",
+    "vite-plugin-solid": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "@types/react": "catalog:",
-    "@types/react-dom": "catalog:",
     "@types/utif": "^3.0.6",
-    "react": "catalog:",
-    "react-dom": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
   "peerDependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "solid-js": "^1.9.0"
   }
 }

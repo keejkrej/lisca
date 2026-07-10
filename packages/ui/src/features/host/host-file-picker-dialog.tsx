@@ -1,9 +1,7 @@
-"use client";
-
 import type { HostFilePickerMode } from "@lisca/ui-headless/host";
 import { useHostFilePickerState } from "@lisca/ui-headless/host-file-picker-state";
-import { Home, X } from "lucide-react";
-import { useEffect } from "react";
+import { Home, X } from "lucide-solid";
+import { For, onCleanup, onMount, Show } from "solid-js";
 
 import { Button } from "../../components/ui/button";
 import { DialogSurface } from "../../shell/modal/dialog-surface";
@@ -29,181 +27,193 @@ export type HostFilePickerDialogProps = {
   onPickFile: (path: string) => void;
 };
 
-export function HostFilePickerDialog({
-  open,
-  onOpenChange,
-  hostPort,
-  mode,
-  title,
-  description,
-  recentItems,
-  onPickRecent,
-  onPickDirectory,
-  onPickFile,
-}: HostFilePickerDialogProps) {
-  const picker = useHostFilePickerState({
-    open,
-    mode,
-    hostPort,
-    onOpenChange,
-    onPickDirectory,
-    onPickFile,
-  });
+export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
+  const picker = useHostFilePickerState(() => ({
+    open: props.open,
+    mode: props.mode,
+    hostPort: props.hostPort,
+    onOpenChange: props.onOpenChange,
+    onPickDirectory: props.onPickDirectory,
+    onPickFile: props.onPickFile,
+  }));
 
-  useEffect(() => {
-    if (!open) return undefined;
+  onMount(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onOpenChange(false);
+      if (event.key === "Escape" && props.open) props.onOpenChange(false);
     };
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onOpenChange, open]);
-
-  if (!open) return null;
+    onCleanup(() => window.removeEventListener("keydown", onKeyDown));
+  });
 
   return (
-    <ModalScrim
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onOpenChange(false);
-      }}
-    >
-      <DialogSurface aria-labelledby="host-file-picker-title" maxWidth="2xl">
-        <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
-          <div className="min-w-0">
-            <h2
-              className="font-semibold text-foreground text-lg leading-none"
-              id="host-file-picker-title"
-            >
-              {title}
-            </h2>
-            {picker.locationLabel ? (
-              <p
-                className="mt-1 truncate text-muted-foreground text-sm"
-                title={picker.locationLabel}
+    <Show when={props.open}>
+      <ModalScrim
+        onMouseDown={(event) => {
+          if (event.target === event.currentTarget) props.onOpenChange(false);
+        }}
+      >
+        <DialogSurface aria-labelledby="host-file-picker-title" maxWidth="2xl">
+          <div class="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
+            <div class="min-w-0">
+              <h2
+                class="font-semibold text-foreground text-lg leading-none"
+                id="host-file-picker-title"
               >
-                {picker.locationLabel}
-              </p>
-            ) : null}
-            {description ? (
-              <p className="mt-1 text-muted-foreground text-sm">{description}</p>
-            ) : null}
-          </div>
-          <Button
-            aria-label="Close file picker"
-            className="shrink-0"
-            size="icon-sm"
-            type="button"
-            variant="ghost"
-            onClick={() => onOpenChange(false)}
-          >
-            <X className="size-4" aria-hidden />
-          </Button>
-        </div>
-
-        <div className="flex flex-col gap-3 px-5 py-4">
-          {recentItems && recentItems.length > 0 && onPickRecent ? (
-            <div className="space-y-2">
-              <p className="font-medium text-foreground text-sm">Recent</p>
-              <ul className="max-h-32 overflow-auto rounded-md border border-border divide-y divide-border/60">
-                {recentItems.map((item) => (
-                  <li key={item.path}>
-                    <button
-                      className="flex w-full flex-col gap-0.5 px-3 py-2 text-left text-sm transition-colors hover:bg-muted/30"
-                      type="button"
-                      onClick={() => onPickRecent(item.path)}
-                    >
-                      {item.label ? (
-                        <span className="font-medium text-foreground">{item.label}</span>
-                      ) : null}
-                      <span className="truncate text-muted-foreground" title={item.path}>
-                        {item.path}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+                {props.title}
+              </h2>
+              <Show when={picker.locationLabel()}>
+                {(locationLabel) => (
+                  <p class="mt-1 truncate text-muted-foreground text-sm" title={locationLabel()}>
+                    {locationLabel()}
+                  </p>
+                )}
+              </Show>
+              <Show when={props.description}>
+                <p class="mt-1 text-muted-foreground text-sm">{props.description}</p>
+              </Show>
             </div>
-          ) : null}
-
-          <div className="flex flex-wrap items-center gap-2">
             <Button
-              disabled={!picker.canGoUp || picker.loading}
-              size="sm"
+              aria-label="Close file picker"
+              class="shrink-0"
+              size="icon-sm"
               type="button"
-              variant="outline"
-              onClick={picker.goUp}
+              variant="ghost"
+              onClick={() => props.onOpenChange(false)}
             >
-              Up
-            </Button>
-            <Button
-              aria-label="Go to home directory"
-              disabled={picker.loading}
-              size="sm"
-              type="button"
-              variant="outline"
-              onClick={() => void picker.goHome()}
-            >
-              <Home className="size-4" aria-hidden />
-              Home
+              <X class="size-4" aria-hidden />
             </Button>
           </div>
 
-          <div className="max-h-[min(360px,42vh)] min-h-[220px] overflow-auto rounded-md border border-border bg-background/50">
-            {picker.loading ? (
-              <div className="flex h-[220px] items-center justify-center text-muted-foreground text-sm">
-                Loading…
+          <div class="flex flex-col gap-3 px-5 py-4">
+            <Show when={props.recentItems && props.recentItems.length > 0 && props.onPickRecent}>
+              <div class="space-y-2">
+                <p class="font-medium text-foreground text-sm">Recent</p>
+                <ul class="max-h-32 overflow-auto rounded-md border border-border divide-y divide-border/60">
+                  <For each={props.recentItems}>
+                    {(item) => (
+                      <li>
+                        <button
+                          class="flex w-full flex-col gap-0.5 px-3 py-2 text-left text-sm transition-colors hover:bg-muted/30"
+                          type="button"
+                          onClick={() => props.onPickRecent!(item.path)}
+                        >
+                          <Show when={item.label}>
+                            <span class="font-medium text-foreground">{item.label}</span>
+                          </Show>
+                          <span class="truncate text-muted-foreground" title={item.path}>
+                            {item.path}
+                          </span>
+                        </button>
+                      </li>
+                    )}
+                  </For>
+                </ul>
               </div>
-            ) : picker.error ? (
-              <div className="p-3 text-destructive-foreground text-sm">{picker.error}</div>
-            ) : (picker.list?.entries ?? []).length === 0 ? (
-              <div className="flex h-[220px] items-center justify-center text-muted-foreground text-sm">
-                No entries.
-              </div>
-            ) : (
-              <ul className="divide-y divide-border/60">
-                {(picker.list?.entries ?? []).map((entry) => (
-                  <HostFilePickerRow
-                    key={entry.path}
-                    entry={entry}
-                    muted={!entry.isDirectory && !picker.dirMode && !picker.fileMatchesMode(entry)}
-                    selected={picker.selectedFile?.path === entry.path && !entry.isDirectory}
-                    onClick={picker.handleRowClick}
-                    onDoubleClick={picker.handleRowDoubleClick}
-                  />
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
+            </Show>
 
-        <div className="flex justify-end gap-2 border-t border-border px-5 py-4">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          {picker.dirMode ? (
-            <Button
-              disabled={!picker.list?.path || picker.loading}
-              type="button"
-              onClick={picker.confirmDirectory}
-            >
-              Select folder
+            <div class="flex flex-wrap items-center gap-2">
+              <Button
+                disabled={!picker.canGoUp() || picker.loading()}
+                size="sm"
+                type="button"
+                variant="outline"
+                onClick={picker.goUp}
+              >
+                Up
+              </Button>
+              <Button
+                aria-label="Go to home directory"
+                disabled={picker.loading()}
+                size="sm"
+                type="button"
+                variant="outline"
+                onClick={() => void picker.goHome()}
+              >
+                <Home class="size-4" aria-hidden />
+                Home
+              </Button>
+            </div>
+
+            <div class="max-h-[min(360px,42vh)] min-h-[220px] overflow-auto rounded-md border border-border bg-background/50">
+              <Show
+                when={!picker.loading() && !picker.error() && (picker.list()?.entries ?? []).length > 0}
+                fallback={
+                  <Show
+                    when={picker.loading()}
+                    fallback={
+                      <Show
+                        when={picker.error()}
+                        fallback={
+                          <div class="flex h-[220px] items-center justify-center text-muted-foreground text-sm">
+                            No entries.
+                          </div>
+                        }
+                      >
+                        <div class="p-3 text-destructive-foreground text-sm">{picker.error()}</div>
+                      </Show>
+                    }
+                  >
+                    <div class="flex h-[220px] items-center justify-center text-muted-foreground text-sm">
+                      Loading…
+                    </div>
+                  </Show>
+                }
+              >
+                <ul class="divide-y divide-border/60">
+                  <For each={picker.list()?.entries ?? []}>
+                    {(entry) => (
+                      <HostFilePickerRow
+                        entry={entry}
+                        muted={
+                          !entry.isDirectory &&
+                          !picker.dirMode() &&
+                          !picker.fileMatchesMode(entry)
+                        }
+                        selected={
+                          picker.selectedFile()?.path === entry.path && !entry.isDirectory
+                        }
+                        onClick={picker.handleRowClick}
+                        onDoubleClick={picker.handleRowDoubleClick}
+                      />
+                    )}
+                  </For>
+                </ul>
+              </Show>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-2 border-t border-border px-5 py-4">
+            <Button type="button" variant="outline" onClick={() => props.onOpenChange(false)}>
+              Cancel
             </Button>
-          ) : (
-            <Button
-              disabled={
-                !picker.selectedFile ||
-                picker.selectedFile.isDirectory ||
-                !picker.fileMatchesMode(picker.selectedFile) ||
-                picker.loading
+            <Show
+              when={picker.dirMode()}
+              fallback={
+                <Button
+                  disabled={
+                    !picker.selectedFile() ||
+                    picker.selectedFile()!.isDirectory ||
+                    !picker.fileMatchesMode(picker.selectedFile()!) ||
+                    picker.loading()
+                  }
+                  type="button"
+                  onClick={picker.confirmFile}
+                >
+                  Select file
+                </Button>
               }
-              type="button"
-              onClick={picker.confirmFile}
             >
-              Select file
-            </Button>
-          )}
-        </div>
-      </DialogSurface>
-    </ModalScrim>
+              <Button
+                disabled={!picker.list()?.path || picker.loading()}
+                type="button"
+                onClick={picker.confirmDirectory}
+              >
+                Select folder
+              </Button>
+            </Show>
+          </div>
+        </DialogSurface>
+      </ModalScrim>
+    </Show>
   );
 }

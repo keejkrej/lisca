@@ -3,12 +3,21 @@ import {
   isPortraitViewport,
   shellLayoutReducer,
 } from "@lisca/ui-headless/shell-layout";
-import { createContext, useContext, useEffect, useReducer, useState, type ReactNode } from "react";
+import {
+  createContext,
+  createEffect,
+  createSignal,
+  onCleanup,
+  onMount,
+  useContext,
+  type JSX,
+} from "solid-js";
+import { createStore } from "solid-js/store";
 
 export type ShellRegisteredPanel = {
   id: string;
   widthClass?: string;
-  content: ReactNode;
+  content: JSX.Element;
 };
 
 export type ShellLayoutContextValue = {
@@ -26,21 +35,22 @@ export type ShellLayoutContextValue = {
   rightPanels: ShellRegisteredPanel[];
 };
 
-const ShellLayoutContext = createContext<ShellLayoutContextValue | null>(null);
+const ShellLayoutContext = createContext<ShellLayoutContextValue>();
 
-function usePortraitViewport(): boolean {
-  const [isPortrait, setIsPortrait] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return isPortraitViewport(window.innerWidth, window.innerHeight);
-  });
+function usePortraitViewport(): () => boolean {
+  const [isPortrait, setIsPortrait] = createSignal(
+    typeof window === "undefined"
+      ? false
+      : isPortraitViewport(window.innerWidth, window.innerHeight),
+  );
 
-  useEffect(() => {
+  onMount(() => {
     const media = window.matchMedia("(max-aspect-ratio: 1/1)");
     const update = () => setIsPortrait(media.matches);
     update();
     media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
+    onCleanup(() => media.removeEventListener("change", update));
+  });
 
   return isPortrait;
 }
@@ -58,44 +68,72 @@ function removePanel(panels: ShellRegisteredPanel[], id: string): ShellRegistere
   return panels.filter((entry) => entry.id !== id);
 }
 
-export function ShellLayoutProvider(props: { children?: ReactNode }) {
+export function ShellLayoutProvider(props: { children?: JSX.Element }) {
   const isPortrait = usePortraitViewport();
-  const [panelState, dispatch] = useReducer(shellLayoutReducer, initialShellLayoutPanelState);
-  const [leftPanels, setLeftPanels] = useState<ShellRegisteredPanel[]>([]);
-  const [rightPanels, setRightPanels] = useState<ShellRegisteredPanel[]>([]);
+  const [panelState, setPanelState] = createSignal(initialShellLayoutPanelState);
 
-  useEffect(() => {
-    dispatch({ type: "portrait-changed", isPortrait });
-  }, [isPortrait]);
-
-  const toggleLeft = () => dispatch({ type: "toggle-left" });
-  const toggleRight = () => dispatch({ type: "toggle-right" });
-  const closePanels = () => dispatch({ type: "close" });
-  const registerLeftPanel = (panel: ShellRegisteredPanel) => {
-    setLeftPanels((current) => upsertPanel(current, panel));
-    return () => setLeftPanels((current) => removePanel(current, panel.id));
-  };
-  const registerRightPanel = (panel: ShellRegisteredPanel) => {
-    setRightPanels((current) => upsertPanel(current, panel));
-    return () => setRightPanels((current) => removePanel(current, panel.id));
+  const dispatchPanel = (action: Parameters<typeof shellLayoutReducer>[1]) => {
+    setPanelState((current) => shellLayoutReducer(current, action));
   };
 
-  const value: ShellLayoutContextValue = {
-    isPortrait,
-    leftOpen: panelState.leftOpen,
-    rightOpen: panelState.rightOpen,
-    hasLeftPanels: leftPanels.length > 0,
-    hasRightPanels: rightPanels.length > 0,
-    toggleLeft,
-    toggleRight,
-    closePanels,
-    registerLeftPanel,
-    registerRightPanel,
-    leftPanels,
-    rightPanels,
-  };
+  createEffect(() => {
+    dispatchPanel({ type: "portrait-changed", isPortrait: isPortrait() });
+  });
 
-  return <ShellLayoutContext value={value}>{props.children}</ShellLayoutContext>;
+  const [layout, setLayout] = createStore<ShellLayoutContextValue>({
+    isPortrait: isPortrait(),
+    leftOpen: panelState().leftOpen,
+    rightOpen: panelState().rightOpen,
+    hasLeftPanels: false,
+    hasRightPanels: false,
+    leftPanels: [],
+    rightPanels: [],
+    toggleLeft: () => dispatchPanel({ type: "toggle-left" }),
+    toggleRight: () => dispatchPanel({ type: "toggle-right" }),
+    closePanels: () => dispatchPanel({ type: "close" }),
+    registerLeftPanel: (panel) => {
+      setLayout("leftPanels", (current) => {
+        const next = upsertPanel(current, panel);
+        setLayout("hasLeftPanels", next.length > 0);
+        return next;
+      });
+      return () => {
+        setLayout("leftPanels", (current) => {
+          const next = removePanel(current, panel.id);
+          setLayout("hasLeftPanels", next.length > 0);
+          return next;
+        });
+      };
+    },
+    registerRightPanel: (panel) => {
+      setLayout("rightPanels", (current) => {
+        const next = upsertPanel(current, panel);
+        setLayout("hasRightPanels", next.length > 0);
+        return next;
+      });
+      return () => {
+        setLayout("rightPanels", (current) => {
+          const next = removePanel(current, panel.id);
+          setLayout("hasRightPanels", next.length > 0);
+          return next;
+        });
+      };
+    },
+  });
+
+  createEffect(() => {
+    setLayout("isPortrait", isPortrait());
+  });
+
+  createEffect(() => {
+    const state = panelState();
+    setLayout({
+      leftOpen: state.leftOpen,
+      rightOpen: state.rightOpen,
+    });
+  });
+
+  return <ShellLayoutContext.Provider value={layout}>{props.children}</ShellLayoutContext.Provider>;
 }
 
 export function useShellLayout(): ShellLayoutContextValue {

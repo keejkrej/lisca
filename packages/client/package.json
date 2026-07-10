@@ -99,11 +99,11 @@
       "types": "./src/atoms/annotator-ui.ts",
       "import": "./src/atoms/annotator-ui.ts"
     },
-    "./align-session/react": {
+    "./align-session/solid": {
       "types": "./src/session/use-align-session.ts",
       "import": "./src/session/use-align-session.ts"
     },
-    "./annotate-session/react": {
+    "./annotate-session/solid": {
       "types": "./src/session/use-annotate-session.ts",
       "import": "./src/session/use-annotate-session.ts"
     },
@@ -183,7 +183,7 @@
     "typecheck": "tsc -p tsconfig.build.json --noEmit"
   },
   "dependencies": {
-    "@effect-atom/atom-react": "catalog:",
+    "@effect-atom/atom-solid": "catalog:",
     "@effect/experimental": "catalog:",
     "@effect/platform": "catalog:",
     "@effect/platform-browser": "catalog:",
@@ -194,11 +194,10 @@
     "effect": "catalog:"
   },
   "devDependencies": {
-    "@types/react": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
   "peerDependencies": {
-    "react": "^19.0.0"
+    "solid-js": "^1.9.0"
   }
 }

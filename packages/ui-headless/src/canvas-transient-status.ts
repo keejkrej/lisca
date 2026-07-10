@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { createEffect, createSignal, onCleanup, type Accessor } from "solid-js";
 
 export type UseCanvasTransientStatusOptions = {
   hideAfterMs?: number;
@@ -6,30 +6,42 @@ export type UseCanvasTransientStatusOptions = {
 };
 
 export function useCanvasTransientStatus(
-  status: string | null,
-  options?: UseCanvasTransientStatusOptions | number,
-): string | null {
-  const hideAfterMs = typeof options === "number" ? options : (options?.hideAfterMs ?? 2500);
-  const persistentStatuses = typeof options === "number" ? undefined : options?.persistentStatuses;
-  const [visibleStatus, setVisibleStatus] = useState<string | null>(status);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  status: Accessor<string | null>,
+  options?: UseCanvasTransientStatusOptions | number | Accessor<UseCanvasTransientStatusOptions>,
+): Accessor<string | null> {
+  const [visibleStatus, setVisibleStatus] = createSignal<string | null>(status());
+  const timerRef = { current: null as ReturnType<typeof setTimeout> | null };
 
-  useEffect(() => {
+  createEffect(() => {
+    const currentStatus = status();
+    const hideAfterMs =
+      typeof options === "number"
+        ? options
+        : typeof options === "function"
+          ? (options().hideAfterMs ?? 2500)
+          : (options?.hideAfterMs ?? 2500);
+    const persistentStatuses =
+      typeof options === "number"
+        ? undefined
+        : typeof options === "function"
+          ? options().persistentStatuses
+          : options?.persistentStatuses;
+
     if (timerRef.current) clearTimeout(timerRef.current);
-    if (!status) {
+    if (!currentStatus) {
       setVisibleStatus(null);
       return;
     }
-    setVisibleStatus(status);
-    if (persistentStatuses?.includes(status)) return;
+    setVisibleStatus(currentStatus);
+    if (persistentStatuses?.includes(currentStatus)) return;
 
     timerRef.current = setTimeout(() => {
-      setVisibleStatus((current) => (current === status ? null : current));
+      setVisibleStatus((current) => (current === currentStatus ? null : current));
     }, hideAfterMs);
-    return () => {
+    onCleanup(() => {
       if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [hideAfterMs, persistentStatuses, status]);
+    });
+  });
 
   return visibleStatus;
 }

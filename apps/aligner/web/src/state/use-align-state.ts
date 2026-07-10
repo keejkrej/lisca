@@ -1,3 +1,5 @@
+import type { Accessor } from "solid-js";
+
 import {
   useAlignStateCore,
   type AlignState,
@@ -20,7 +22,7 @@ import { effectErrorMessage, loadFrameEffect } from "../effects/frame-loader";
 export type { AlignState, CropConfirmState, VariationExcludePreview };
 export type { ExcludedByPosition } from "../atoms/aligner-ui-atoms";
 
-export function useAlignState(): AlignState {
+export function useAlignState(): Accessor<AlignState> {
   return useAlignStateCore({
     alignerClient,
     toErrorMessage,

@@ -1,6 +1,6 @@
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
-import { liscaReactPlugin } from "@lisca/web-app/vite";
+import { liscaSolidPlugin } from "@lisca/web-app/vite";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
@@ -23,8 +23,8 @@ export default defineConfig({
   base: "/",
   publicDir: brandPublicDir,
   plugins: [
-    tanstackRouter({ target: "react", autoCodeSplitting: true }),
-    liscaReactPlugin(),
+    tanstackRouter({ target: "solid", autoCodeSplitting: true }),
+    liscaSolidPlugin(),
     tailwindcss(),
   ],
   server: {

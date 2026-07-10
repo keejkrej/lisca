@@ -9,9 +9,9 @@ import {
   type AnnotatorUiAtom,
 } from "@lisca/client/atoms/annotator-ui";
 import { useCanvasResourceTransaction, useCanvasTransientStatus } from "@lisca/ui/features";
-import { useAtom, useAtomValue } from "@effect-atom/atom-react";
-import { useEffect } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useAtom } from "@effect-atom/atom-solid";
+import { createEffect } from "solid-js";
+import { useNavigate } from "@tanstack/solid-router";
 import { runClientEffect } from "@lisca/client/runtime";
 
 import { studioNavigate } from "../navigation/use-studio-navigate";
@@ -36,21 +36,24 @@ import { encodeMaskToBase64Png, maskHasPixels } from "../utils/annotation-utils"
 import { makeRequest } from "../utils/roi-request";
 import { setStudioAnnotateDirty } from "./studio-annotate-guard";
 
-function useStudioWorkspaceSync(activeWorkspacePath: string | null) {
+function useStudioWorkspaceSync(activeWorkspacePath: () => string | null) {
   const [ui, setUi] = useAtom(studioAnnotateUiAtom);
-  useEffect(() => {
-    if (ui.workspacePath !== activeWorkspacePath) {
-      studioAnnotateUiActions.setWorkspacePath(setUi, activeWorkspacePath);
+  createEffect(() => {
+    const path = activeWorkspacePath();
+    if (ui().workspacePath !== path) {
+      studioAnnotateUiActions.setWorkspacePath(setUi, path);
     }
-  }, [activeWorkspacePath, setUi, ui.workspacePath]);
+  });
   return {
-    workspacePath: activeWorkspacePath,
+    get workspacePath() {
+      return activeWorkspacePath();
+    },
     setWorkspacePath: (path: string | null) =>
       studioAnnotateUiActions.setWorkspacePath(setUi, path),
   };
 }
 
-export type StudioAnnotateState = ReturnType<typeof useAnnotateStateCore> & {
+export type StudioAnnotateState = ReturnType<ReturnType<typeof useAnnotateStateCore>> & {
   analysisStartConfirm: boolean;
   analysisRequestId: string | null;
   analysisProgress: AnalysisProgress | null;
@@ -72,10 +75,9 @@ export function useStudioAnnotateState(): StudioAnnotateState {
   const info2 = useStudioStore((state) => state.info2);
   const info3 = useStudioStore((state) => state.info3);
   const setBasicInfoSavedSnapshot = useStudioStore((state) => state.setBasicInfoSavedSnapshot);
-  const activeWorkspacePath = saveTo.trim() || null;
+  const activeWorkspacePath = () => saveTo().trim() || null;
   const navigate = useNavigate();
   const [ui, setUi] = useAtom(studioAnnotateUiAtom);
-  const { analysisStartConfirm, analysisRequestId, analysisProgress, analysisResultFiles } = ui;
   const workspace = useStudioWorkspaceSync(activeWorkspacePath);
   const annotate = useAnnotateStateCore({
     annotatorClient: studioClient,
@@ -93,7 +95,7 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     saveRoiFrameAnnotationAtom,
     useShellWorkspace: () => workspace,
     useCanvasResourceTransaction,
-    useCanvasTransientStatus,
+    useCanvasTransientStatus: (status) => useCanvasTransientStatus(() => status)(),
     guardDirtySelection: (dirty, selectionChanging) => {
       if (!dirty || selectionChanging) return true;
       return window.confirm("Discard unsaved annotation changes?");
@@ -117,9 +119,10 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     studioAnnotateUiActions.setAnalysisResultFiles(setUi, files);
   const setStatus = (status: string | null) => studioAnnotateUiActions.setStatus(setUi, status);
   const shuffleSelection = () => {
-    if (!annotate.scan?.positions.length) return;
+    const current = annotate();
+    if (!current.scan?.positions.length) return;
     const randomPosition =
-      annotate.scan.positions[Math.floor(Math.random() * annotate.scan.positions.length)];
+      current.scan.positions[Math.floor(Math.random() * current.scan.positions.length)];
     const randomRoi =
       randomPosition?.rois[Math.floor(Math.random() * randomPosition.rois.length)] ?? null;
     const channel = randomPosition ? (randomPosition.channels[0] ?? null) : null;
@@ -133,8 +136,8 @@ export function useStudioAnnotateState(): StudioAnnotateState {
         ? Math.floor(Math.random() * randomPosition.zSlices.length)
         : 0;
     if (!randomPosition) return;
-    annotate.changeSelection(() =>
-      annotate.setSelection({
+    current.changeSelection(() =>
+      current.setSelection({
         pos: randomPosition.pos,
         roi,
         channel,
@@ -144,7 +147,8 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     );
   };
   const startAnalysis = () => {
-    const workspacePath = annotate.workspacePath;
+    const current = annotate();
+    const workspacePath = current.workspacePath;
     if (!workspacePath) return;
     setAnalysisStartConfirm(false);
     setStatus("Saving assay.json");
@@ -181,22 +185,22 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     void (async () => {
       try {
         const assayJson = buildStudioAssayJson({
-          assayId: assayId ?? ASSAY_TYPE.CUSTOM_ASSAY,
-          dataSourceKind,
-          info1,
-          info2,
-          info3,
+          assayId: assayId() ?? ASSAY_TYPE.CUSTOM_ASSAY,
+          dataSourceKind: dataSourceKind(),
+          info1: info1(),
+          info2: info2(),
+          info3: info3(),
         });
         await runClientEffect(
           studioClient.saveAssayJson(workspacePath, JSON.stringify(assayJson, null, 2)),
         );
-        setBasicInfoSavedSnapshot(
+        setBasicInfoSavedSnapshot()(
           serializeBasicInfoSnapshot({
-            assayId,
-            dataSourceKind,
-            info1,
-            info2,
-            info3,
+            assayId: assayId(),
+            dataSourceKind: dataSourceKind(),
+            info1: info1(),
+            info2: info2(),
+            info3: info3(),
           }),
         );
         setStatus("Starting analysis");
@@ -234,7 +238,8 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     })();
   };
   const requestContinueToAnalysis = () => {
-    if (annotate.annotation.dirty) {
+    const current = annotate();
+    if (current.annotation.dirty) {
       const proceed = window.confirm(
         "You have unsaved annotation changes. Continue to analysis anyway?",
       );
@@ -242,21 +247,171 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     }
     setAnalysisStartConfirm(true);
   };
-  useEffect(() => {
-    setStudioAnnotateDirty(annotate.annotation.dirty);
-  }, [annotate.annotation.dirty]);
+  createEffect(() => {
+    setStudioAnnotateDirty(annotate().annotation.dirty);
+  });
   return {
-    ...annotate,
-    analysisStartConfirm,
-    analysisRequestId,
-    analysisProgress,
-    analysisResultFiles,
+    get workspacePath() {
+      return annotate().workspacePath;
+    },
+    get scan() {
+      return annotate().scan;
+    },
+    get labels() {
+      return annotate().labels;
+    },
+    get selection() {
+      return annotate().selection;
+    },
+    get activeLabelId() {
+      return annotate().activeLabelId;
+    },
+    get mode() {
+      return annotate().mode;
+    },
+    get tool() {
+      return annotate().tool;
+    },
+    get brushSize() {
+      return annotate().brushSize;
+    },
+    get overlayOpacity() {
+      return annotate().overlayOpacity;
+    },
+    get frame() {
+      return annotate().frame;
+    },
+    get contrast() {
+      return annotate().contrast;
+    },
+    get contrastDomain() {
+      return annotate().contrastDomain;
+    },
+    get contrastMin() {
+      return annotate().contrastMin;
+    },
+    get contrastMax() {
+      return annotate().contrastMax;
+    },
+    get scanLoading() {
+      return annotate().scanLoading;
+    },
+    get frameLoading() {
+      return annotate().frameLoading;
+    },
+    get annotationLoading() {
+      return annotate().annotationLoading;
+    },
+    get saving() {
+      return annotate().saving;
+    },
+    get scanError() {
+      return annotate().scanError;
+    },
+    get frameError() {
+      return annotate().frameError;
+    },
+    get annotationError() {
+      return annotate().annotationError;
+    },
+    get saveError() {
+      return annotate().saveError;
+    },
+    get labelError() {
+      return annotate().labelError;
+    },
+    get labelDialogOpen() {
+      return annotate().labelDialogOpen;
+    },
+    get filePickerOpen() {
+      return annotate().filePickerOpen;
+    },
+    get position() {
+      return annotate().position;
+    },
+    get request() {
+      return annotate().request;
+    },
+    get annotation() {
+      return annotate().annotation;
+    },
+    get canEdit() {
+      return annotate().canEdit;
+    },
+    get canEditSegmentation() {
+      return annotate().canEditSegmentation;
+    },
+    get canSave() {
+      return annotate().canSave;
+    },
+    get canvasToasts() {
+      return annotate().canvasToasts;
+    },
+    get setFilePickerOpen() {
+      return annotate().setFilePickerOpen;
+    },
+    get setLabelDialogOpen() {
+      return annotate().setLabelDialogOpen;
+    },
+    get setLabelError() {
+      return annotate().setLabelError;
+    },
+    get setSelection() {
+      return annotate().setSelection;
+    },
+    get setContrast() {
+      return annotate().setContrast;
+    },
+    get setMode() {
+      return annotate().setMode;
+    },
+    get setTool() {
+      return annotate().setTool;
+    },
+    get setBrushSize() {
+      return annotate().setBrushSize;
+    },
+    get setOverlayOpacity() {
+      return annotate().setOverlayOpacity;
+    },
+    get setActiveLabelId() {
+      return annotate().setActiveLabelId;
+    },
+    get changeSelection() {
+      return annotate().changeSelection;
+    },
+    get handleSave() {
+      return annotate().handleSave;
+    },
+    get handleSaveLabels() {
+      return annotate().handleSaveLabels;
+    },
+    get saveLabelsPending() {
+      return annotate().saveLabelsPending;
+    },
+    get pickWorkspace() {
+      return annotate().pickWorkspace;
+    },
+    get analysisStartConfirm() {
+      return ui().analysisStartConfirm;
+    },
+    get analysisRequestId() {
+      return ui().analysisRequestId;
+    },
+    get analysisProgress() {
+      return ui().analysisProgress;
+    },
+    get analysisResultFiles() {
+      return ui().analysisResultFiles;
+    },
     setAnalysisProgress,
     setAnalysisResultFiles,
     setAnalysisStartConfirm,
     startAnalysis,
     shuffleSelection,
     requestContinueToAnalysis,
-    workspaceMissing: !activeWorkspacePath,
+    get workspaceMissing() {
+      return !activeWorkspacePath();
+    },
   };
 }

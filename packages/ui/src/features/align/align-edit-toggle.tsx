@@ -1,5 +1,3 @@
-"use client";
-
 import { Toggle } from "../../components/ui/toggle";
 import { cn } from "../../lib/utils";
 
@@ -7,25 +5,20 @@ export type AlignEditToggleProps = {
   enabled: boolean;
   onEnabledChange: (enabled: boolean) => void;
   disabled?: boolean;
-  className?: string;
+  class?: string;
 };
 
-export function AlignEditToggle({
-  className,
-  disabled,
-  enabled,
-  onEnabledChange,
-}: AlignEditToggleProps) {
+export function AlignEditToggle(props: AlignEditToggleProps) {
   return (
     <Toggle
       aria-label="Edit site exclusions"
-      aria-pressed={enabled}
-      className={cn("w-full justify-center text-xs", className)}
-      disabled={disabled}
-      pressed={enabled}
+      aria-pressed={props.enabled}
+      class={cn("w-full justify-center text-xs", props.class)}
+      disabled={props.disabled}
+      pressed={props.enabled}
       size="sm"
       variant="outline"
-      onPressedChange={onEnabledChange}
+      onChange={props.onEnabledChange}
     >
       Edit
     </Toggle>

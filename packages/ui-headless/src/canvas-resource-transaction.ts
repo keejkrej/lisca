@@ -1,5 +1,3 @@
-import { useRef } from "react";
-
 export type CanvasResourceTransactionOptions<T> = {
   start?: () => void;
   load: (signal: AbortSignal) => Promise<T>;
@@ -14,8 +12,8 @@ export type UseCanvasResourceTransactionOptions = {
 
 export function useCanvasResourceTransaction(options?: UseCanvasResourceTransactionOptions) {
   const batch = options?.batch ?? ((apply: () => void) => apply());
-  const transactionIdRef = useRef(0);
-  const runRef = useRef(<T>(transactionOptions: CanvasResourceTransactionOptions<T>) => {
+  const transactionIdRef = { current: 0 };
+  const run = <T>(transactionOptions: CanvasResourceTransactionOptions<T>) => {
     transactionIdRef.current += 1;
     const transactionId = transactionIdRef.current;
     const abortController = new AbortController();
@@ -31,6 +29,6 @@ export function useCanvasResourceTransaction(options?: UseCanvasResourceTransact
       .catch((cause) => applyIfCurrent(() => transactionOptions.reject(cause)))
       .finally(() => applyIfCurrent(() => transactionOptions.settle?.()));
     return () => abortController.abort();
-  });
-  return runRef.current;
+  };
+  return run;
 }

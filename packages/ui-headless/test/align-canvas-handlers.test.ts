@@ -1,5 +1,5 @@
 import { createDefaultAlignGrid } from "@lisca/utils";
-import { act, renderHook } from "@testing-library/react";
+import { render } from "@solidjs/testing-library";
 import { describe, expect, it, vi } from "vitest";
 
 import { cursorForAlignTool, useAlignCanvasGridHandlers } from "../src/align-canvas-handlers";
@@ -45,38 +45,34 @@ describe("useAlignCanvasGridHandlers", () => {
       releasePointer: vi.fn(),
     };
 
-    const { result } = renderHook(() =>
-      useAlignCanvasGridHandlers({
+    let handlers!: ReturnType<typeof useAlignCanvasGridHandlers>;
+    render(() => {
+      handlers = useAlignCanvasGridHandlers(() => ({
         grid,
         setGrid,
         toolMode: "pan",
         onPreviewGridChange,
-      }),
-    );
-
-    act(() => {
-      result.current.handlePointerDown(pointer);
+      }));
+      return null;
     });
-    expect(result.current.dragging).toBe(true);
-    expect(result.current.previewGridRef.current).toBeNull();
 
-    act(() => {
-      result.current.handlePointerMove({
-        ...pointer,
-        clientX: 140,
-        clientY: 120,
-      });
+    handlers.handlePointerDown(pointer);
+    expect(handlers.dragging()).toBe(true);
+    expect(handlers.previewGridRef.current).toBeNull();
+
+    handlers.handlePointerMove({
+      ...pointer,
+      clientX: 140,
+      clientY: 120,
     });
-    const previewTx = result.current.previewGridRef.current?.tx;
+    const previewTx = handlers.previewGridRef.current?.tx;
     expect(previewTx).toBeGreaterThan(0);
     expect(setGrid).not.toHaveBeenCalled();
     expect(onPreviewGridChange).toHaveBeenCalled();
 
-    act(() => {
-      result.current.handlePointerEnd(pointer);
-    });
-    expect(result.current.dragging).toBe(false);
+    handlers.handlePointerEnd(pointer);
+    expect(handlers.dragging()).toBe(false);
     expect(setGrid).toHaveBeenCalledWith(expect.objectContaining({ tx: previewTx }));
-    expect(result.current.previewGridRef.current).toBeNull();
+    expect(handlers.previewGridRef.current).toBeNull();
   });
 });

@@ -13,7 +13,7 @@ import {
   TRACE_PALETTE,
 } from "@lisca/analysis/charts";
 import type { ResultPanel, ResultPlotSection } from "@lisca/analysis";
-import { useEffect, useRef, useState } from "react";
+import { createEffect, createSignal, For, onCleanup, onMount, Show, type JSX } from "solid-js";
 
 export { PLOT_FONT_SIZE_PX };
 
@@ -164,16 +164,17 @@ export function plotOptionsForPanel(panel: ResultPanel): Plot.PlotOptions | null
 function ObservablePlotView(props: {
   options: Plot.PlotOptions | null;
   title: string;
-  className?: string;
+  class?: string;
 }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const hostRef = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState({
+  let containerEl: HTMLDivElement | undefined;
+  let hostEl: HTMLDivElement | undefined;
+  const [size, setSize] = createSignal({
     width: 0,
     height: 0,
   });
-  useEffect(() => {
-    const node = containerRef.current;
+
+  onMount(() => {
+    const node = containerEl;
     if (!node) return;
     const update = () => {
       const rect = node.getBoundingClientRect();
@@ -185,41 +186,48 @@ function ObservablePlotView(props: {
     update();
     const observer = new ResizeObserver(update);
     observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-  useEffect(() => {
-    const host = hostRef.current;
-    if (!host || !props.options || size.width <= 0 || size.height <= 0) return;
+    onCleanup(() => observer.disconnect());
+  });
+
+  createEffect(() => {
+    const host = hostEl;
+    const options = props.options;
+    const { width, height } = size();
+    if (!host || !options || width <= 0 || height <= 0) return;
     const figure = Plot.plot({
-      ...props.options,
-      width: size.width,
-      height: size.height,
+      ...options,
+      width,
+      height,
     });
     applyPlotFontSize(figure, PLOT_FONT_SIZE_PX);
     host.replaceChildren(figure);
-    return () => host.replaceChildren();
-  }, [props.options, size.height, size.width]);
-  if (!props.options) return null;
+    onCleanup(() => host.replaceChildren());
+  });
+
   return (
-    <div
-      ref={containerRef}
-      aria-label={props.title}
-      className={
-        props.className ?? "flex min-h-0 flex-1 pointer-events-none select-none text-foreground"
-      }
-      role="img"
-    >
+    <Show when={props.options}>
       <div
-        ref={hostRef}
-        className="h-full w-full [&_figure]:m-0 [&_figure]:h-full [&_figure]:w-full [&_svg]:block"
-      />
-    </div>
+        ref={containerEl!}
+        aria-label={props.title}
+        class={
+          props.class ?? "flex min-h-0 flex-1 pointer-events-none select-none text-foreground"
+        }
+        role="img"
+      >
+        <div
+          ref={hostEl!}
+          class="h-full w-full [&_figure]:m-0 [&_figure]:h-full [&_figure]:w-full [&_svg]:block"
+        />
+      </div>
+    </Show>
   );
 }
 
-export function ResultPanelView({ panel, className }: { panel: ResultPanel; className?: string }) {
-  const options = plotOptionsForPanel(panel);
-  return <ObservablePlotView className={className} options={options} title={panel.title} />;
+export function ResultPanelView(props: { panel: ResultPanel; class?: string }) {
+  const options = () => plotOptionsForPanel(props.panel);
+  return (
+    <ObservablePlotView class={props.class} options={options()} title={props.panel.title} />
+  );
 }
 
 const EXPORT_PAGE_CLASS = "flex flex-col overflow-visible bg-white text-[#171717]";
@@ -229,77 +237,79 @@ const EXPORT_PANEL_TITLE_CLASS = "truncate px-1 text-xl font-semibold text-[#737
 const EXPORT_SUBPLOT_CLASS =
   "flex h-full min-h-[300px] pointer-events-none select-none text-[#171717]";
 
-export function ResultPanelsGridView({
-  panels,
-  exportMode = false,
-  pageTitle,
-  section = "timeseries",
-}: {
+export function ResultPanelsGridView(props: {
   panels: ResultPanel[];
   exportMode?: boolean;
   pageTitle?: string;
   section?: ResultPlotSection;
 }) {
-  if (panels.length === 0) return null;
-  const isParameters = section === "parameters";
-  const gridClass = isParameters
-    ? "grid grid-cols-1 gap-8 p-4"
-    : exportMode
-      ? "grid grid-cols-2 gap-6 p-4"
-      : "grid grid-cols-1 gap-6 p-4 xl:grid-cols-2";
-  const cellClass = isParameters
-    ? exportMode
-      ? "flex min-h-[520px] flex-col gap-2"
-      : "flex min-h-[560px] flex-col gap-2"
-    : exportMode
-      ? "flex min-h-[360px] flex-col gap-1"
-      : "flex min-h-[320px] flex-col gap-1";
-  const plotHeightClass = isParameters
-    ? exportMode
-      ? "h-[500px]"
-      : "h-[540px]"
-    : exportMode
-      ? "h-[340px]"
-      : "min-h-0 flex-1";
-  const subplotClass = isParameters
-    ? exportMode
-      ? "flex h-full min-h-[480px] pointer-events-none select-none text-[#171717]"
-      : "flex h-full min-h-[480px] pointer-events-none select-none text-foreground"
-    : exportMode
-      ? EXPORT_SUBPLOT_CLASS
-      : "flex h-full min-h-[300px] pointer-events-none select-none text-foreground";
+  if (props.panels.length === 0) return null;
+  const isParameters = () => props.section === "parameters";
+  const gridClass = () =>
+    isParameters()
+      ? "grid grid-cols-1 gap-8 p-4"
+      : props.exportMode
+        ? "grid grid-cols-2 gap-6 p-4"
+        : "grid grid-cols-1 gap-6 p-4 xl:grid-cols-2";
+  const cellClass = () =>
+    isParameters()
+      ? props.exportMode
+        ? "flex min-h-[520px] flex-col gap-2"
+        : "flex min-h-[560px] flex-col gap-2"
+      : props.exportMode
+        ? "flex min-h-[360px] flex-col gap-1"
+        : "flex min-h-[320px] flex-col gap-1";
+  const plotHeightClass = () =>
+    isParameters()
+      ? props.exportMode
+        ? "h-[500px]"
+        : "h-[540px]"
+      : props.exportMode
+        ? "h-[340px]"
+        : "min-h-0 flex-1";
+  const subplotClass = () =>
+    isParameters()
+      ? props.exportMode
+        ? "flex h-full min-h-[480px] pointer-events-none select-none text-[#171717]"
+        : "flex h-full min-h-[480px] pointer-events-none select-none text-foreground"
+      : props.exportMode
+        ? EXPORT_SUBPLOT_CLASS
+        : "flex h-full min-h-[300px] pointer-events-none select-none text-foreground";
+
   return (
     <div
-      className={exportMode ? EXPORT_PAGE_CLASS : "flex h-full min-h-0 flex-col overflow-y-auto"}
+      class={props.exportMode ? EXPORT_PAGE_CLASS : "flex h-full min-h-0 flex-col overflow-y-auto"}
     >
-      {pageTitle ? (
+      <Show when={props.pageTitle}>
         <h2
-          className={
-            exportMode
+          class={
+            props.exportMode
               ? EXPORT_TITLE_CLASS
               : "border-b px-4 py-3 text-2xl font-semibold text-foreground"
           }
         >
-          {pageTitle}
+          {props.pageTitle}
         </h2>
-      ) : null}
-      <div className={gridClass}>
-        {panels.map((panel) => (
-          <div key={`${panel.path}:${panel.kind}:${panel.title}`} className={cellClass}>
-            <p
-              className={
-                exportMode
-                  ? EXPORT_PANEL_TITLE_CLASS
-                  : "truncate px-1 text-xl font-semibold text-muted-foreground"
-              }
-            >
-              {panel.title}
-            </p>
-            <div className={plotHeightClass}>
-              <ResultPanelView className={subplotClass} panel={panel} />
+      </Show>
+      <div class={gridClass()}>
+        <For each={props.panels}>
+          {(panel) => (
+            <div class={cellClass()}>
+              <p
+                class={
+                  props.exportMode
+                    ? EXPORT_PANEL_TITLE_CLASS
+                    : "truncate px-1 text-xl font-semibold text-muted-foreground"
+                }
+              >
+                {panel.title}
+              </p>
+              <div class={plotHeightClass()}>
+                <ResultPanelView class={subplotClass()} panel={panel} />
+              </div>
             </div>
-          </div>
-        ))}
+          )}
+        </For>
       </div>
     </div>
   );

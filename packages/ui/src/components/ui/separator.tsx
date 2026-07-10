@@ -1,23 +1,27 @@
-import { Separator as SeparatorPrimitive } from "@base-ui/react/separator";
-import type React from "react";
+import { Separator as KobalteSeparator } from "@kobalte/core/separator";
+import { splitProps, type JSX } from "solid-js";
+
 import { cn } from "../../lib/utils";
 
-export function Separator({
-  className,
-  orientation = "horizontal",
-  ...props
-}: SeparatorPrimitive.Props): React.ReactElement {
+export type SeparatorProps = {
+  class?: string;
+  orientation?: "horizontal" | "vertical";
+};
+
+export function Separator(props: SeparatorProps): JSX.Element {
+  const [local, rest] = splitProps(props, ["class", "orientation"]);
+
   return (
-    <SeparatorPrimitive
-      className={cn(
+    <KobalteSeparator
+      class={cn(
         "shrink-0 bg-border data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-px data-[orientation=vertical]:not-[[class^='h-']]:not-[[class*='_h-']]:self-stretch",
-        className,
+        local.class,
       )}
       data-slot="separator"
-      orientation={orientation}
-      {...props}
+      orientation={local.orientation ?? "horizontal"}
+      {...rest}
     />
   );
 }
 
-export { SeparatorPrimitive };
+export { KobalteSeparator as SeparatorPrimitive };

@@ -1,13 +1,13 @@
 import { Spinner } from "@lisca/ui/components";
-import { createFileRoute } from "@tanstack/react-router";
-import { lazy, Suspense } from "react";
+import { createFileRoute } from "@tanstack/solid-router";
+import { lazy, Suspense } from "solid-js";
 
 const ResultPage = lazy(() => import("../result/result-page"));
 
 function ResultPageFallback() {
   return (
-    <div className="flex h-full items-center justify-center">
-      <Spinner className="size-4" />
+    <div class="flex h-full items-center justify-center">
+      <Spinner class="size-4" />
     </div>
   );
 }

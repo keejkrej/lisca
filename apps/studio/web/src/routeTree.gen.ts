@@ -89,7 +89,7 @@ export interface RootRouteChildren {
   ResultRoute: typeof ResultRoute
 }
 
-declare module '@tanstack/react-router' {
+declare module '@tanstack/solid-router' {
   interface FileRoutesByPath {
     '/result': {
       id: '/result'

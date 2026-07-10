@@ -1,118 +1,112 @@
-import { Menu, PanelRightClose } from "lucide-react";
+import { Menu, PanelRightClose } from "lucide-solid";
+import { For, Show } from "solid-js";
 
 import { Button } from "../../components/ui/button";
 import { cn } from "../../lib/utils";
 import { useShellLayout } from "./shell-layout-context";
 
-export function ShellPanelToggle(props: { side: "left" | "right"; className?: string }) {
+export function ShellPanelToggle(props: { side: "left" | "right"; class?: string }) {
   const layout = useShellLayout();
-  const open = props.side === "left" ? layout.leftOpen : layout.rightOpen;
-  const hasPanels = props.side === "left" ? layout.hasLeftPanels : layout.hasRightPanels;
+  const open = () => (props.side === "left" ? layout.leftOpen : layout.rightOpen);
+  const hasPanels = () => (props.side === "left" ? layout.hasLeftPanels : layout.hasRightPanels);
   const toggle = props.side === "left" ? layout.toggleLeft : layout.toggleRight;
 
-  if (!layout.isPortrait || !hasPanels) {
-    return null;
-  }
-
-  const Icon = props.side === "left" ? Menu : PanelRightClose;
-  const label =
+  const label = () =>
     props.side === "left"
-      ? open
+      ? open()
         ? "Close left panel"
         : "Open left panel"
-      : open
+      : open()
         ? "Close right panel"
         : "Open right panel";
 
   return (
-    <Button
-      aria-expanded={open}
-      aria-label={label}
-      className={cn("pointer-events-auto shadow-sm", props.className)}
-      size="icon-sm"
-      type="button"
-      variant="outline"
-      onClick={toggle}
-    >
-      <Icon aria-hidden className="size-4" />
-    </Button>
+    <Show when={() => layout.isPortrait && hasPanels()}>
+      <Button
+        aria-expanded={open()}
+        aria-label={label()}
+        class={cn("pointer-events-auto shadow-sm", props.class)}
+        size="icon-sm"
+        type="button"
+        variant="outline"
+        onClick={toggle}
+      >
+        <Show when={props.side === "left"} fallback={<PanelRightClose aria-hidden class="size-4" />}>
+          <Menu aria-hidden class="size-4" />
+        </Show>
+      </Button>
+    </Show>
   );
 }
 
 export function ShellPortraitPanelControls() {
   const layout = useShellLayout();
 
-  if (!layout.isPortrait) {
-    return null;
-  }
-
   return (
-    <>
-      {layout.hasLeftPanels ? (
-        <div className="pointer-events-none absolute left-3 top-1/2 z-30 -translate-y-1/2">
-          <ShellPanelToggle side="left" />
-        </div>
-      ) : null}
-      {layout.hasRightPanels ? (
-        <div className="pointer-events-none absolute right-3 top-1/2 z-30 -translate-y-1/2">
-          <ShellPanelToggle side="right" />
-        </div>
-      ) : null}
-    </>
+    <Show when={layout.isPortrait}>
+      <>
+        <Show when={layout.hasLeftPanels}>
+          <div class="pointer-events-none absolute left-3 top-1/2 z-30 -translate-y-1/2">
+            <ShellPanelToggle side="left" />
+          </div>
+        </Show>
+        <Show when={layout.hasRightPanels}>
+          <div class="pointer-events-none absolute right-3 top-1/2 z-30 -translate-y-1/2">
+            <ShellPanelToggle side="right" />
+          </div>
+        </Show>
+      </>
+    </Show>
   );
 }
 
 export function ShellPortraitPanelOverlays() {
   const layout = useShellLayout();
 
-  if (!layout.isPortrait) {
-    return null;
-  }
-
-  const scrimVisible = layout.leftOpen || layout.rightOpen;
-
   return (
-    <>
-      {scrimVisible ? (
-        <button
-          aria-label="Close side panels"
-          className="absolute inset-0 z-40 bg-black/55"
-          type="button"
-          onClick={layout.closePanels}
-        />
-      ) : null}
-      {layout.hasLeftPanels ? (
-        <aside
-          aria-hidden={!layout.leftOpen}
-          aria-label="Left panel"
-          className={cn(
-            "absolute inset-y-0 left-0 z-50 flex max-w-[min(100%,20rem)] flex-col overflow-y-auto border-r border-border bg-background shadow-xl transition-transform duration-200 ease-out",
-            layout.leftOpen ? "translate-x-0" : "-translate-x-full pointer-events-none",
-          )}
-        >
-          {layout.leftPanels.map((panel) => (
-            <div key={panel.id} className={cn("min-h-0 shrink-0", panel.widthClass ?? "w-56")}>
-              {panel.content}
-            </div>
-          ))}
-        </aside>
-      ) : null}
-      {layout.hasRightPanels ? (
-        <aside
-          aria-hidden={!layout.rightOpen}
-          aria-label="Right panel"
-          className={cn(
-            "absolute inset-y-0 right-0 z-50 flex max-w-[min(100%,20rem)] flex-col overflow-y-auto border-l border-border bg-background shadow-xl transition-transform duration-200 ease-out",
-            layout.rightOpen ? "translate-x-0" : "translate-x-full pointer-events-none",
-          )}
-        >
-          {layout.rightPanels.map((panel) => (
-            <div key={panel.id} className={cn("min-h-0 shrink-0", panel.widthClass ?? "w-56")}>
-              {panel.content}
-            </div>
-          ))}
-        </aside>
-      ) : null}
-    </>
+    <Show when={layout.isPortrait}>
+      <>
+        <Show when={() => layout.leftOpen || layout.rightOpen}>
+          <button
+            aria-label="Close side panels"
+            class="absolute inset-0 z-40 bg-black/55"
+            type="button"
+            onClick={layout.closePanels}
+          />
+        </Show>
+        <Show when={layout.hasLeftPanels}>
+          <aside
+            aria-hidden={!layout.leftOpen}
+            aria-label="Left panel"
+            class={cn(
+              "absolute inset-y-0 left-0 z-50 flex max-w-[min(100%,20rem)] flex-col overflow-y-auto border-r border-border bg-background shadow-xl transition-transform duration-200 ease-out",
+              layout.leftOpen ? "translate-x-0" : "-translate-x-full pointer-events-none",
+            )}
+          >
+            <For each={layout.leftPanels}>
+              {(panel) => (
+                <div class={cn("min-h-0 shrink-0", panel.widthClass ?? "w-56")}>{panel.content}</div>
+              )}
+            </For>
+          </aside>
+        </Show>
+        <Show when={layout.hasRightPanels}>
+          <aside
+            aria-hidden={!layout.rightOpen}
+            aria-label="Right panel"
+            class={cn(
+              "absolute inset-y-0 right-0 z-50 flex max-w-[min(100%,20rem)] flex-col overflow-y-auto border-l border-border bg-background shadow-xl transition-transform duration-200 ease-out",
+              layout.rightOpen ? "translate-x-0" : "translate-x-full pointer-events-none",
+            )}
+          >
+            <For each={layout.rightPanels}>
+              {(panel) => (
+                <div class={cn("min-h-0 shrink-0", panel.widthClass ?? "w-56")}>{panel.content}</div>
+              )}
+            </For>
+          </aside>
+        </Show>
+      </>
+    </Show>
   );
 }

@@ -1,8 +1,10 @@
-import { useRef } from "react";
+import { createEffect } from "solid-js";
 
-/** Keep a ref to the latest value — for effect deps when React Compiler replaces useCallback. */
+/** Keep a ref to the latest value — for effects that must not re-subscribe when it changes. */
 export function useLatest<T>(value: T) {
-  const ref = useRef(value);
-  ref.current = value;
+  const ref = { current: value };
+  createEffect(() => {
+    ref.current = value;
+  });
   return ref;
 }

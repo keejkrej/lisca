@@ -1,7 +1,7 @@
 import { buttonVariants, cn } from "@lisca/ui/components";
 import { ConnectionStatus, Panel, ShellThemeToggle, useShellServer } from "@lisca/ui/shell";
-import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { Link, useNavigate, useRouterState } from "@tanstack/solid-router";
+import type { JSX } from "solid-js";
 
 import { studioNavigate, type StudioRouteTo } from "../navigation/use-studio-navigate";
 import { confirmStudioAnnotateLeave } from "../state/studio-annotate-guard";
@@ -9,15 +9,9 @@ import { confirmStudioAnnotateLeave } from "../state/studio-annotate-guard";
 const navButtonClass =
   "h-auto w-auto min-w-0 max-w-full shrink-0 rounded-lg px-5 py-2.5 text-xl font-medium";
 
-function NavButton({
-  active,
-  children,
-  to,
-  onClick,
-  leaveAnnotateGuard,
-}: {
+function NavButton(props: {
   active: boolean;
-  children: ReactNode;
+  children: JSX.Element;
   to: StudioRouteTo;
   onClick?: () => void;
   leaveAnnotateGuard?: boolean;
@@ -26,15 +20,15 @@ function NavButton({
 
   return (
     <Link
-      aria-current={active ? "page" : undefined}
-      className={cn(
+      aria-current={props.active ? "page" : undefined}
+      class={cn(
         buttonVariants({ variant: "ghost" }),
         navButtonClass,
-        active ? "text-foreground" : "text-muted-foreground",
+        props.active ? "text-foreground" : "text-muted-foreground",
       )}
-      to={to}
+      to={props.to}
       onClick={(event) => {
-        onClick?.();
+        props.onClick?.();
         if (event.defaultPrevented) return;
         if (
           event.metaKey ||
@@ -46,13 +40,17 @@ function NavButton({
           return;
         }
         event.preventDefault();
-        if (leaveAnnotateGuard && to !== "/annotate" && !confirmStudioAnnotateLeave()) {
+        if (
+          props.leaveAnnotateGuard &&
+          props.to !== "/annotate" &&
+          !confirmStudioAnnotateLeave()
+        ) {
           return;
         }
-        studioNavigate(navigate, to);
+        studioNavigate(navigate, props.to);
       }}
     >
-      {children}
+      {props.children}
     </Link>
   );
 }
@@ -60,40 +58,40 @@ function NavButton({
 export function StudioNavRail() {
   const server = useShellServer();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const routeId = pathname.slice(1) || "assay";
+  const routeId = () => pathname().slice(1) || "assay";
 
   return (
-    <nav aria-label="Primary" className="flex h-full min-h-0 flex-col items-stretch gap-2.5 p-2.5">
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
-        <Panel className="w-full shrink-0">
-          <div className="flex flex-col items-center gap-6 p-3">
+    <nav aria-label="Primary" class="flex h-full min-h-0 flex-col items-stretch gap-2.5 p-2.5">
+      <div class="flex min-h-0 flex-1 flex-col items-center justify-center">
+        <Panel class="w-full shrink-0">
+          <div class="flex flex-col items-center gap-6 p-3">
             <NavButton
-              active={routeId === "assay"}
-              leaveAnnotateGuard={routeId === "annotate"}
+              active={routeId() === "assay"}
+              leaveAnnotateGuard={routeId() === "annotate"}
               to="/assay"
             >
               Assay type
             </NavButton>
             <NavButton
-              active={routeId === "info"}
-              leaveAnnotateGuard={routeId === "annotate"}
+              active={routeId() === "info"}
+              leaveAnnotateGuard={routeId() === "annotate"}
               to="/info"
             >
               Basic info
             </NavButton>
             <NavButton
-              active={routeId === "align"}
-              leaveAnnotateGuard={routeId === "annotate"}
+              active={routeId() === "align"}
+              leaveAnnotateGuard={routeId() === "annotate"}
               to="/align"
             >
               Align pattern
             </NavButton>
-            <NavButton active={routeId === "annotate"} to="/annotate">
+            <NavButton active={routeId() === "annotate"} to="/annotate">
               Annotate ROI
             </NavButton>
             <NavButton
-              active={routeId === "result"}
-              leaveAnnotateGuard={routeId === "annotate"}
+              active={routeId() === "result"}
+              leaveAnnotateGuard={routeId() === "annotate"}
               to="/result"
             >
               View results
@@ -101,15 +99,15 @@ export function StudioNavRail() {
           </div>
         </Panel>
       </div>
-      <div className="flex shrink-0 flex-col items-stretch gap-2">
-        <div className="flex justify-center">
+      <div class="flex shrink-0 flex-col items-stretch gap-2">
+        <div class="flex justify-center">
           <ConnectionStatus
             state={server.state}
             httpBaseUrl={server.httpBaseUrl}
             onOpenSettings={server.openSettings}
           />
         </div>
-        <div className="flex items-center justify-center gap-1">
+        <div class="flex items-center justify-center gap-1">
           <ShellThemeToggle />
         </div>
       </div>

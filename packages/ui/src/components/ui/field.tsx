@@ -1,68 +1,85 @@
-"use client";
+import { splitProps, type JSX, type ParentProps } from "solid-js";
 
-import { Field as FieldPrimitive } from "@base-ui/react/field";
-import type React from "react";
 import { cn } from "../../lib/utils";
 
-export function Field({ className, ...props }: FieldPrimitive.Root.Props): React.ReactElement {
+export function Field(props: ParentProps<{ class?: string; name?: string }>): JSX.Element {
+  const [local, rest] = splitProps(props, ["class", "children"]);
+
   return (
-    <FieldPrimitive.Root
-      className={cn("flex flex-col items-start gap-2", className)}
+    <div
+      class={cn("flex flex-col items-start gap-2", local.class)}
       data-slot="field"
-      {...props}
-    />
+      {...rest}
+    >
+      {local.children}
+    </div>
   );
 }
 
-export function FieldLabel({
-  className,
-  ...props
-}: FieldPrimitive.Label.Props): React.ReactElement {
+export function FieldLabel(
+  props: ParentProps<{ class?: string; id?: string; htmlFor?: string }>,
+): JSX.Element {
+  const [local, rest] = splitProps(props, ["class", "children", "htmlFor"]);
+
   return (
-    <FieldPrimitive.Label
-      className={cn(
+    <label
+      class={cn(
         "inline-flex items-center gap-2 font-medium text-base/4.5 text-foreground data-disabled:opacity-64 sm:text-sm/4",
-        className,
+        local.class,
       )}
       data-slot="field-label"
-      {...props}
-    />
+      for={local.htmlFor}
+      {...rest}
+    >
+      {local.children}
+    </label>
   );
 }
 
-export function FieldItem({ className, ...props }: FieldPrimitive.Item.Props): React.ReactElement {
+export function FieldItem(props: ParentProps<{ class?: string }>): JSX.Element {
+  const [local, rest] = splitProps(props, ["class", "children"]);
+
   return (
-    <FieldPrimitive.Item className={cn("flex", className)} data-slot="field-item" {...props} />
+    <div class={cn("flex", local.class)} data-slot="field-item" {...rest}>
+      {local.children}
+    </div>
   );
 }
 
-export function FieldDescription({
-  className,
-  ...props
-}: FieldPrimitive.Description.Props): React.ReactElement {
+export function FieldDescription(props: ParentProps<{ class?: string }>): JSX.Element {
+  const [local, rest] = splitProps(props, ["class", "children"]);
+
   return (
-    <FieldPrimitive.Description
-      className={cn("text-muted-foreground text-xs", className)}
-      data-slot="field-description"
-      {...props}
-    />
+    <p class={cn("text-muted-foreground text-xs", local.class)} data-slot="field-description" {...rest}>
+      {local.children}
+    </p>
   );
 }
 
-export function FieldError({
-  className,
-  ...props
-}: FieldPrimitive.Error.Props): React.ReactElement {
+export function FieldError(props: ParentProps<{ class?: string }>): JSX.Element {
+  const [local, rest] = splitProps(props, ["class", "children"]);
+
   return (
-    <FieldPrimitive.Error
-      className={cn("text-destructive-foreground text-xs", className)}
-      data-slot="field-error"
-      {...props}
-    />
+    <p class={cn("text-destructive-foreground text-xs", local.class)} data-slot="field-error" {...rest}>
+      {local.children}
+    </p>
   );
 }
 
-export const FieldControl: typeof FieldPrimitive.Control = FieldPrimitive.Control;
-export const FieldValidity: typeof FieldPrimitive.Validity = FieldPrimitive.Validity;
+export function FieldControl(props: ParentProps): JSX.Element {
+  return props.children as JSX.Element;
+}
 
-export { FieldPrimitive };
+export function FieldValidity(): null {
+  return null;
+}
+
+export const FieldPrimitive = {
+  Control: FieldControl,
+  Description: FieldDescription,
+  Error: FieldError,
+  Item: FieldItem,
+  Label: FieldLabel,
+  Root: Field,
+  Validity: FieldValidity,
+};

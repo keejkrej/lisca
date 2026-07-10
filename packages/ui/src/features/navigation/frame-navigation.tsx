@@ -1,5 +1,3 @@
-"use client";
-
 import {
   findNavigationOptionIndex,
   formatNavigationOptionDisplayLabel,
@@ -9,7 +7,8 @@ import {
   type NavigationValue,
 } from "@lisca/utils";
 import { useSliderStepperField } from "@lisca/ui-headless/slider-stepper-field";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-solid";
+import { For, Show, type JSX } from "solid-js";
 
 import { Button } from "../../components/ui/button";
 import {
@@ -67,12 +66,12 @@ export function SelectStepperField<T extends NavigationValue>(
   props: SelectNavigationFieldProps<T>,
 ) {
   return (
-    <Field className="min-w-0 w-full">
+    <Field class="min-w-0 w-full">
       <FieldLabel>{props.label}</FieldLabel>
-      <div className="grid w-full grid-cols-[2rem_minmax(0,1fr)_2rem] gap-2">
+      <div class="grid w-full grid-cols-[2rem_minmax(0,1fr)_2rem] gap-2">
         <Button
           aria-label={`Previous ${props.label}`}
-          className="h-8 w-full px-0 text-xs"
+          class="h-8 w-full px-0 text-xs"
           disabled={props.previousDisabled}
           size="sm"
           type="button"
@@ -88,20 +87,22 @@ export function SelectStepperField<T extends NavigationValue>(
           value={props.value}
           onValueChange={(next) => next != null && props.onChange(next)}
         >
-          <SelectTrigger size="sm" className="min-w-0 text-sm">
+          <SelectTrigger size="sm" class="min-w-0 text-sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {props.options.map((option) => (
-              <SelectItem key={String(option.value)} value={option.value}>
-                {formatNavigationOptionDisplayLabel(option.label)}
-              </SelectItem>
-            ))}
+            <For each={props.options}>
+              {(option) => (
+                <SelectItem value={option.value}>
+                  {formatNavigationOptionDisplayLabel(option.label)}
+                </SelectItem>
+              )}
+            </For>
           </SelectContent>
         </Select>
         <Button
           aria-label={`Next ${props.label}`}
-          className="h-8 w-full px-0 text-xs"
+          class="h-8 w-full px-0 text-xs"
           disabled={props.nextDisabled}
           size="sm"
           type="button"
@@ -116,26 +117,26 @@ export function SelectStepperField<T extends NavigationValue>(
 }
 
 export function SliderStepperField(props: SliderNavigationFieldProps) {
-  const { draftValue, setDraftValue, displayLabel, ariaValueText } = useSliderStepperField({
+  const field = useSliderStepperField(() => ({
     value: props.value,
     axisValues: props.axisValues,
     axisLabels: props.axisLabels,
     valueLabel: props.valueLabel,
-  });
-  const commitValue = props.onCommit ?? props.onChange;
+  }));
+  const commitValue = () => props.onCommit ?? props.onChange;
 
   return (
-    <Field className="min-w-0 w-full">
-      <FieldLabel className="w-full justify-between">
+    <Field class="min-w-0 w-full">
+      <FieldLabel class="w-full justify-between">
         <span>{props.label}</span>
-        {displayLabel ? (
-          <span className="font-normal text-muted-foreground">{displayLabel}</span>
-        ) : null}
+        <Show when={field.displayLabel()}>
+          <span class="font-normal text-muted-foreground">{field.displayLabel()}</span>
+        </Show>
       </FieldLabel>
-      <div className="grid w-full grid-cols-[2rem_minmax(0,1fr)_2rem] items-center gap-2">
+      <div class="grid w-full grid-cols-[2rem_minmax(0,1fr)_2rem] items-center gap-2">
         <Button
           aria-label={`Previous ${props.label}`}
-          className="h-8 w-full px-0 text-xs"
+          class="h-8 w-full px-0 text-xs"
           disabled={props.previousDisabled}
           size="sm"
           type="button"
@@ -145,22 +146,22 @@ export function SliderStepperField(props: SliderNavigationFieldProps) {
           <ChevronLeft aria-hidden="true" />
         </Button>
         <Slider
-          aria-valuetext={ariaValueText}
+          aria-valuetext={field.ariaValueText()}
           controlClassName="data-[orientation=horizontal]:!min-w-0"
           disabled={props.disabled}
           max={props.max}
           min={props.min}
           step={props.step}
-          value={draftValue}
-          onValueChange={setDraftValue}
+          value={field.draftValue()}
+          onValueChange={field.setDraftValue}
           onValueCommitted={(value) => {
-            setDraftValue(value);
-            commitValue?.(value);
+            field.setDraftValue(value);
+            commitValue()?.(value);
           }}
         />
         <Button
           aria-label={`Next ${props.label}`}
-          className="h-8 w-full px-0 text-xs"
+          class="h-8 w-full px-0 text-xs"
           disabled={props.nextDisabled}
           size="sm"
           type="button"
@@ -180,7 +181,7 @@ export type FrameNavigationProps<T extends NavigationValue> = {
   timepoint?: SliderNavigationControlProps;
   zPlane?: SliderNavigationControlProps;
   roi?: SelectNavigationControlProps<T>;
-  className?: string;
+  class?: string;
   sectionTitle?: string;
   sectionDescription?: string;
   sectionClassName?: string;
@@ -189,31 +190,29 @@ export type FrameNavigationProps<T extends NavigationValue> = {
 
 /** Shared stack in a {@link Section} card: optional position, channel, time (slider), Z (slider), ROI — render only props you pass. */
 export function FrameNavigation<T extends NavigationValue>(props: FrameNavigationProps<T>) {
-  const {
-    position,
-    channel,
-    timepoint,
-    zPlane,
-    roi,
-    className,
-    sectionTitle = "Navigation",
-    sectionDescription,
-    sectionClassName,
-    sectionContentClassName,
-  } = props;
   return (
     <Section
-      contentClassName={sectionContentClassName}
-      description={sectionDescription}
-      title={sectionTitle}
-      className={sectionClassName}
+      contentClassName={props.sectionContentClassName}
+      description={props.sectionDescription}
+      title={props.sectionTitle ?? "Navigation"}
+      class={props.sectionClassName}
     >
-      <div className={className ?? "min-w-0 space-y-3"}>
-        {position ? <SelectStepperField label="Position" {...position} /> : null}
-        {roi ? <SelectStepperField label="ROI" {...roi} /> : null}
-        {channel ? <SelectStepperField label="Channel" {...channel} /> : null}
-        {timepoint ? <SliderStepperField label="Timepoint" {...timepoint} /> : null}
-        {zPlane ? <SliderStepperField label="Z plane" {...zPlane} /> : null}
+      <div class={props.class ?? "min-w-0 space-y-3"}>
+        <Show when={props.position}>
+          {(position) => <SelectStepperField label="Position" {...position()} />}
+        </Show>
+        <Show when={props.roi}>
+          {(roi) => <SelectStepperField label="ROI" {...roi()} />}
+        </Show>
+        <Show when={props.channel}>
+          {(channel) => <SelectStepperField label="Channel" {...channel()} />}
+        </Show>
+        <Show when={props.timepoint}>
+          {(timepoint) => <SliderStepperField label="Timepoint" {...timepoint()} />}
+        </Show>
+        <Show when={props.zPlane}>
+          {(zPlane) => <SliderStepperField label="Z plane" {...zPlane()} />}
+        </Show>
       </div>
     </Section>
   );

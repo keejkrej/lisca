@@ -1,19 +1,16 @@
-import { useEffect, useRef } from "react";
+import { createEffect, onCleanup } from "solid-js";
 
 /** Runs `effect` after `delayMs` when `deps` change; clears pending runs on cleanup. */
 export function useDebouncedEffect(
   effect: () => void,
-  deps: readonly unknown[],
+  deps: () => readonly unknown[],
   delayMs = 400,
 ): void {
-  const effectRef = useRef(effect);
-  effectRef.current = effect;
-
-  useEffect(() => {
+  createEffect(() => {
+    deps();
     const handle = window.setTimeout(() => {
-      effectRef.current();
+      effect();
     }, delayMs);
-    return () => window.clearTimeout(handle);
-    // oxlint-disable-next-line react-hooks/exhaustive-deps -- caller-owned dependency list
-  }, deps);
+    onCleanup(() => window.clearTimeout(handle));
+  });
 }

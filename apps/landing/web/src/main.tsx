@@ -1,7 +1,6 @@
 import { ShellThemeProvider } from "@lisca/ui/shell";
-import { RouterProvider, createRouter } from "@tanstack/react-router";
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
+import { RouterProvider, createRouter } from "@tanstack/solid-router";
+import { render } from "solid-js/web";
 
 import "./index.css";
 import { routeTree } from "./routeTree.gen";
@@ -11,16 +10,17 @@ const router = createRouter({
   scrollRestoration: true,
 });
 
-declare module "@tanstack/react-router" {
+declare module "@tanstack/solid-router" {
   interface Register {
     router: typeof router;
   }
 }
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
+render(
+  () => (
     <ShellThemeProvider defaultMode="light" storageKey="lisca-landing-theme">
       <RouterProvider router={router} />
     </ShellThemeProvider>
-  </StrictMode>,
+  ),
+  document.getElementById("root")!,
 );

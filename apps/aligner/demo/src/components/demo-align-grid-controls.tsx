@@ -1,7 +1,14 @@
 import { AlignGridRail } from "@lisca/ui/features";
 
 import type { DemoAlignState } from "@lisca/web-demo";
+import type { Accessor } from "solid-js";
 
-export function DemoAlignGridControls({ state }: { state: DemoAlignState }) {
-  return <AlignGridRail disabled={!state.frame} grid={state.grid} onGridChange={state.setGrid} />;
+export function DemoAlignGridControls(props: { state: Accessor<DemoAlignState> }) {
+  return (
+    <AlignGridRail
+      disabled={!props.state().frame}
+      grid={props.state().grid}
+      onGridChange={props.state().setGrid}
+    />
+  );
 }

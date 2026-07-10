@@ -1,5 +1,5 @@
 import type { AnnotationLabel, RoiWorkspaceScan } from "@lisca/contracts";
-import { Atom, Result } from "@effect-atom/atom-react";
+import { Atom, Result } from "@effect-atom/atom-solid";
 
 import { annotatorPortLayer, createAnnotatorQueryAtoms } from "@lisca/client/atoms";
 import { createLiscaAppBootstrap } from "@lisca/client/bootstrap";

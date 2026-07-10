@@ -1,4 +1,4 @@
-import type { ComponentProps } from "react";
+import { splitProps, type JSX } from "solid-js";
 
 import { cn } from "../../lib/utils";
 
@@ -6,40 +6,45 @@ import { cn } from "../../lib/utils";
 export const panelFrameClass =
   "rounded-xl border border-border bg-background text-foreground shadow-none";
 
-export function Panel({ className, ...props }: ComponentProps<"div">) {
+export function Panel(props: JSX.HTMLAttributes<HTMLDivElement>) {
+  const [local, rest] = splitProps(props, ["class"]);
   return (
     <div
-      className={cn("relative flex flex-col", panelFrameClass, className)}
+      class={cn("relative flex flex-col", panelFrameClass, local.class)}
       data-slot="panel"
-      {...props}
+      {...rest}
     />
   );
 }
 
-export function PanelHeader({ className, ...props }: ComponentProps<"div">) {
-  return <div className={cn("shrink-0", className)} data-slot="panel-header" {...props} />;
+export function PanelHeader(props: JSX.HTMLAttributes<HTMLDivElement>) {
+  const [local, rest] = splitProps(props, ["class"]);
+  return <div class={cn("shrink-0", local.class)} data-slot="panel-header" {...rest} />;
 }
 
-export function PanelTitle({ className, ...props }: ComponentProps<"div">) {
+export function PanelTitle(props: JSX.HTMLAttributes<HTMLDivElement>) {
+  const [local, rest] = splitProps(props, ["class"]);
   return (
     <div
-      className={cn("font-display font-semibold leading-none", className)}
+      class={cn("font-display font-semibold leading-none", local.class)}
       data-slot="panel-title"
-      {...props}
+      {...rest}
     />
   );
 }
 
-export function PanelDescription({ className, ...props }: ComponentProps<"div">) {
+export function PanelDescription(props: JSX.HTMLAttributes<HTMLDivElement>) {
+  const [local, rest] = splitProps(props, ["class"]);
   return (
     <div
-      className={cn("text-muted-foreground text-sm", className)}
+      class={cn("text-muted-foreground text-sm", local.class)}
       data-slot="panel-description"
-      {...props}
+      {...rest}
     />
   );
 }
 
-export function PanelContent({ className, ...props }: ComponentProps<"div">) {
-  return <div className={cn("min-h-0 flex-1", className)} data-slot="panel-content" {...props} />;
+export function PanelContent(props: JSX.HTMLAttributes<HTMLDivElement>) {
+  const [local, rest] = splitProps(props, ["class"]);
+  return <div class={cn("min-h-0 flex-1", local.class)} data-slot="panel-content" {...rest} />;
 }

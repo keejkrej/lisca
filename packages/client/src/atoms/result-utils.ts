@@ -1,4 +1,4 @@
-import { Result } from "@effect-atom/atom-react";
+import { Result } from "@effect-atom/atom-solid";
 import { Cause } from "effect";
 
 export function resultData<A>(result: Result.Result<A, unknown> | undefined): A | undefined {

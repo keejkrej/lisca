@@ -1,5 +1,4 @@
-import type { ReactNode } from "react";
-import { useRef, useState } from "react";
+import { createMemo, createSignal, type JSX } from "solid-js";
 import {
   currentServerKey,
   readWorkSessions,
@@ -28,50 +27,45 @@ export function useWorkSessionGate(
   appId: LiscaAppId,
   onRestore: (session: WorkSession) => void | Promise<void>,
   options?: WorkSessionGateOptions,
-): WorkSessionGateState {
+) {
   const skipResumePicker = options?.skipResumePicker ?? false;
   const serverKey = currentServerKey(appId);
   const sessions = sessionsForServer(readWorkSessions(appId), serverKey);
-  const [ready, setReady] = useState(sessions.length === 0 || skipResumePicker);
-  const [open, setOpen] = useState(sessions.length > 0 && !skipResumePicker);
-  const restoredRef = useRef(false);
+  const [ready, setReady] = createSignal(sessions.length === 0 || skipResumePicker);
+  const [open, setOpen] = createSignal(sessions.length > 0 && !skipResumePicker);
+  let restored = false;
 
   const finish = () => {
     setOpen(false);
     setReady(true);
   };
 
-  return {
-    ready,
-    open,
+  return createMemo<WorkSessionGateState>(() => ({
+    ready: ready(),
+    open: open(),
     sessions,
     restoreSession: (session) => {
-      if (restoredRef.current) return;
-      restoredRef.current = true;
+      if (restored) return;
+      restored = true;
       void Promise.resolve(onRestore(session)).finally(finish);
     },
     startNewSession: () => {
-      restoredRef.current = true;
+      restored = true;
       finish();
     },
-  };
+  }));
 }
 
 export type WorkSessionBootstrapProps = {
   appId: LiscaAppId;
   onRestore: (session: WorkSession) => void | Promise<void>;
   gateOptions?: WorkSessionGateOptions;
-  children: (gate: WorkSessionGateState) => ReactNode;
+  children: (gate: WorkSessionGateState) => JSX.Element;
 };
 
-export function WorkSessionBootstrap({
-  appId,
-  onRestore,
-  gateOptions,
-  children,
-}: WorkSessionBootstrapProps) {
-  const gate = useWorkSessionGate(appId, onRestore, gateOptions);
-  return children(gate);
+export function WorkSessionBootstrap(props: WorkSessionBootstrapProps) {
+  const gate = useWorkSessionGate(props.appId, props.onRestore, props.gateOptions);
+  return props.children(gate());
 }
 
 export function persistActiveServer(appId: UtilsAppId, address: string | null): void {

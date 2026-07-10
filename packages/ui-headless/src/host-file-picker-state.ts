@@ -1,6 +1,6 @@
 import type { HostFsEntry, HostListDirectoryResult } from "@lisca/contracts";
 import type { HostFilePickerMode } from "@lisca/ui-headless/host";
-import { useEffect, useState } from "react";
+import { createEffect, createMemo, createSignal, onCleanup } from "solid-js";
 import type { HostFilePickerOperations } from "./host";
 function pathExtLower(name: string): string {
   const index = name.lastIndexOf(".");
@@ -38,13 +38,13 @@ export type UseHostFilePickerStateOptions = {
   onPickDirectory: (path: string) => void;
   onPickFile: (path: string) => void;
 };
-export function useHostFilePickerState(options: UseHostFilePickerStateOptions) {
-  const { open, hostPort, onOpenChange, onPickDirectory, onPickFile, mode } = options;
-  const [list, setList] = useState<HostListDirectoryResult | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<HostFsEntry | null>(null);
+export function useHostFilePickerState(options: () => UseHostFilePickerStateOptions) {
+  const [list, setList] = createSignal<HostListDirectoryResult | null>(null);
+  const [loading, setLoading] = createSignal(false);
+  const [error, setError] = createSignal<string | null>(null);
+  const [selectedFile, setSelectedFile] = createSignal<HostFsEntry | null>(null);
   const loadPath = async (path: string | null) => {
+    const { hostPort } = options();
     setLoading(true);
     setError(null);
     try {
@@ -64,7 +64,8 @@ export function useHostFilePickerState(options: UseHostFilePickerStateOptions) {
       setLoading(false);
     }
   };
-  useEffect(() => {
+  createEffect(() => {
+    const { open, hostPort } = options();
     if (!open) return;
     let cancelled = false;
     setList(null);
@@ -94,19 +95,21 @@ export function useHostFilePickerState(options: UseHostFilePickerStateOptions) {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => {
+    onCleanup(() => {
       cancelled = true;
-    };
-  }, [hostPort, open]);
-  const dirMode = isDirectoryMode(mode);
-  const canGoUp = canGoUpFromList(list);
-  const locationLabel = hostFilePickerLocationLabel(list);
+    });
+  });
+  const dirMode = createMemo(() => isDirectoryMode(options().mode));
+  const canGoUp = createMemo(() => canGoUpFromList(list()));
+  const locationLabel = createMemo(() => hostFilePickerLocationLabel(list()));
   const goUp = () => {
-    const parent = list?.parent;
+    const currentList = list();
+    const parent = currentList?.parent;
     if (parent == null) return;
     void loadPath(parent === "" ? null : parent);
   };
   const goHome = async () => {
+    const { hostPort } = options();
     try {
       const home = await hostPort.userHomeDirectory();
       await loadPath(home);
@@ -125,17 +128,22 @@ export function useHostFilePickerState(options: UseHostFilePickerStateOptions) {
     if (entry.isDirectory) void loadPath(entry.path);
   };
   const confirmDirectory = () => {
-    if (!list?.path) return;
-    onPickDirectory(list.path);
+    const { onPickDirectory, onOpenChange } = options();
+    const currentList = list();
+    if (!currentList?.path) return;
+    onPickDirectory(currentList.path);
     onOpenChange(false);
   };
   const confirmFile = () => {
-    if (!selectedFile || selectedFile.isDirectory || !fileMatchesMode(mode, selectedFile)) return;
-    onPickFile(selectedFile.path);
+    const { mode, onPickFile, onOpenChange } = options();
+    const file = selectedFile();
+    if (!file || file.isDirectory || !fileMatchesMode(mode, file)) return;
+    onPickFile(file.path);
     onOpenChange(false);
   };
   const handleRowClick = (entry: HostFsEntry) => {
-    if (dirMode && entry.isDirectory) {
+    const { mode } = options();
+    if (dirMode() && entry.isDirectory) {
       navigateToEntry(entry);
       return;
     }
@@ -148,11 +156,12 @@ export function useHostFilePickerState(options: UseHostFilePickerStateOptions) {
     }
   };
   const handleRowDoubleClick = (entry: HostFsEntry) => {
+    const { mode, onPickFile, onOpenChange } = options();
     if (entry.isDirectory) {
       navigateToEntry(entry);
       return;
     }
-    if (!dirMode && fileMatchesMode(mode, entry)) {
+    if (!dirMode() && fileMatchesMode(mode, entry)) {
       onPickFile(entry.path);
       onOpenChange(false);
     }
@@ -171,6 +180,6 @@ export function useHostFilePickerState(options: UseHostFilePickerStateOptions) {
     confirmFile,
     handleRowClick,
     handleRowDoubleClick,
-    fileMatchesMode: (entry: HostFsEntry) => fileMatchesMode(mode, entry),
+    fileMatchesMode: (entry: HostFsEntry) => fileMatchesMode(options().mode, entry),
   };
 }

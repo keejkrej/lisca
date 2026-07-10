@@ -8,7 +8,7 @@ function isInvalidApiJsonResponse(message: string): boolean {
 }
 
 function formatInvalidApiJsonResponse(fallback: string, serverAddress: string): string {
-  return `${fallback}: API returned a non-JSON response from ${serverAddress}. Ensure the Rust backend is running (e.g. \`bun lisca dev aligner web-native\` or \`bun lisca dev aligner server\`).`;
+  return `${fallback}: API returned a non-JSON response from ${serverAddress}. Ensure the Rust backend is running (e.g. \`vp run lisca dev aligner web\` or \`bun lisca dev aligner server\`).`;
 }
 
 export function toFetchErrorMessage(

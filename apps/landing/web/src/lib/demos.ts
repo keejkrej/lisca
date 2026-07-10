@@ -1,6 +1,6 @@
 import { AlignDemo } from "@lisca/aligner-demo";
 import { AnnotatorDemo } from "@lisca/annotator-demo";
-import type { ComponentType } from "react";
+import type { Component } from "solid-js";
 
 import { ALIGNER_DEMO_PATH, ANNOTATOR_DEMO_PATH } from "./constants";
 
@@ -10,7 +10,7 @@ export type LandingDemo = {
   description: string;
   href: string;
   linkLabel: string;
-  Demo: ComponentType<{ embedded?: boolean }>;
+  Demo: Component<{ embedded?: boolean }>;
 };
 
 export const landingDemos = [

@@ -1,7 +1,6 @@
-"use client";
-
 import type { AlignerSource } from "@lisca/contracts";
-import { X } from "lucide-react";
+import { X } from "lucide-solid";
+import { For, Show } from "solid-js";
 
 import { Button } from "../../components/ui/button";
 import { DialogSurface } from "../../shell/modal/dialog-surface";
@@ -26,120 +25,117 @@ export type SourcePickerModalProps = {
   onPickRecentSource?: (source: AlignerSource) => void;
 };
 
-export function SourcePickerModal({
-  open,
-  onClose,
-  onOpenFolder,
-  onOpenNd2,
-  onOpenCzi,
-  recentSources,
-  onPickRecentSource,
-}: SourcePickerModalProps) {
-  if (!open) return null;
+const optionClass =
+  "group flex min-h-24 w-full items-center justify-center rounded-lg border border-border bg-muted/20 px-4 py-5 text-center transition-colors hover:border-primary/35 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
+export function SourcePickerModal(props: SourcePickerModalProps) {
   const handleSelect = async (fn: () => void | Promise<void>) => {
-    onClose();
+    props.onClose();
     await fn();
   };
 
-  const optionClass =
-    "group flex min-h-24 w-full items-center justify-center rounded-lg border border-border bg-muted/20 px-4 py-5 text-center transition-colors hover:border-primary/35 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
-
   return (
-    <ModalScrim
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
-      <DialogSurface aria-labelledby="open-source-title" maxWidth="lg">
-        <div className="px-5 pb-3 pt-5">
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-1">
-              <h2 className="font-semibold text-foreground text-lg" id="open-source-title">
-                Open Data
-              </h2>
-              <p className="text-muted-foreground text-sm">Choose a source format.</p>
+    <Show when={props.open}>
+      <ModalScrim
+        onMouseDown={(event) => {
+          if (event.target === event.currentTarget) props.onClose();
+        }}
+      >
+        <DialogSurface aria-labelledby="open-source-title" maxWidth="lg">
+          <div class="px-5 pb-3 pt-5">
+            <div class="flex items-start justify-between gap-4">
+              <div class="space-y-1">
+                <h2 class="font-semibold text-foreground text-lg" id="open-source-title">
+                  Open Data
+                </h2>
+                <p class="text-muted-foreground text-sm">Choose a source format.</p>
+              </div>
+
+              <Button
+                aria-label="Close open data modal"
+                class="shrink-0"
+                size="icon-sm"
+                type="button"
+                variant="ghost"
+                onClick={props.onClose}
+              >
+                <X class="size-4" aria-hidden />
+              </Button>
             </div>
-
-            <Button
-              aria-label="Close open data modal"
-              className="shrink-0"
-              size="icon-sm"
-              type="button"
-              variant="ghost"
-              onClick={onClose}
-            >
-              <X className="size-4" aria-hidden />
-            </Button>
           </div>
-        </div>
 
-        <div className="space-y-4 px-5 pb-5">
-          {recentSources && recentSources.length > 0 && onPickRecentSource ? (
-            <div className="space-y-2">
-              <p className="font-medium text-foreground text-sm">Recent sources</p>
-              <ul className="max-h-32 overflow-auto rounded-md border border-border divide-y divide-border/60">
-                {recentSources.map((item) => (
-                  <li key={`${item.source.kind}:${item.source.path}`}>
-                    <button
-                      className="flex w-full flex-col gap-0.5 px-3 py-2 text-left text-sm transition-colors hover:bg-muted/30"
-                      type="button"
-                      onClick={() => {
-                        onPickRecentSource(item.source);
-                        onClose();
-                      }}
-                    >
-                      {item.label ? (
-                        <span className="font-medium text-foreground">{item.label}</span>
-                      ) : (
-                        <span className="font-medium text-foreground capitalize">
-                          {item.source.kind}
-                        </span>
-                      )}
-                      <span
-                        className="truncate text-muted-foreground"
-                        title={formatSourcePath(item.source)}
-                      >
-                        {formatSourcePath(item.source)}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+          <div class="space-y-4 px-5 pb-5">
+            <Show when={props.recentSources && props.recentSources.length > 0 && props.onPickRecentSource}>
+              <div class="space-y-2">
+                <p class="font-medium text-foreground text-sm">Recent sources</p>
+                <ul class="max-h-32 overflow-auto rounded-md border border-border divide-y divide-border/60">
+                  <For each={props.recentSources}>
+                    {(item) => (
+                      <li>
+                        <button
+                          class="flex w-full flex-col gap-0.5 px-3 py-2 text-left text-sm transition-colors hover:bg-muted/30"
+                          type="button"
+                          onClick={() => {
+                            props.onPickRecentSource!(item.source);
+                            props.onClose();
+                          }}
+                        >
+                          <Show
+                            when={item.label}
+                            fallback={
+                              <span class="font-medium text-foreground capitalize">
+                                {item.source.kind}
+                              </span>
+                            }
+                          >
+                            <span class="font-medium text-foreground">{item.label}</span>
+                          </Show>
+                          <span
+                            class="truncate text-muted-foreground"
+                            title={formatSourcePath(item.source)}
+                          >
+                            {formatSourcePath(item.source)}
+                          </span>
+                        </button>
+                      </li>
+                    )}
+                  </For>
+                </ul>
+              </div>
+            </Show>
+
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <button
+                class={optionClass}
+                type="button"
+                onClick={() => void handleSelect(props.onOpenFolder)}
+              >
+                <span class="font-medium text-foreground text-lg group-hover:text-primary">
+                  Folder
+                </span>
+              </button>
+              <button
+                class={optionClass}
+                type="button"
+                onClick={() => void handleSelect(props.onOpenNd2)}
+              >
+                <span class="font-medium text-foreground text-lg group-hover:text-primary">
+                  ND2
+                </span>
+              </button>
+              <button
+                class={optionClass}
+                type="button"
+                onClick={() => void handleSelect(props.onOpenCzi)}
+              >
+                <span class="font-medium text-foreground text-lg group-hover:text-primary">
+                  CZI
+                </span>
+              </button>
             </div>
-          ) : null}
-
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <button
-              className={optionClass}
-              type="button"
-              onClick={() => void handleSelect(onOpenFolder)}
-            >
-              <span className="font-medium text-foreground text-lg group-hover:text-primary">
-                Folder
-              </span>
-            </button>
-            <button
-              className={optionClass}
-              type="button"
-              onClick={() => void handleSelect(onOpenNd2)}
-            >
-              <span className="font-medium text-foreground text-lg group-hover:text-primary">
-                ND2
-              </span>
-            </button>
-            <button
-              className={optionClass}
-              type="button"
-              onClick={() => void handleSelect(onOpenCzi)}
-            >
-              <span className="font-medium text-foreground text-lg group-hover:text-primary">
-                CZI
-              </span>
-            </button>
           </div>
-        </div>
-      </DialogSurface>
-    </ModalScrim>
+        </DialogSurface>
+      </ModalScrim>
+    </Show>
   );
 }

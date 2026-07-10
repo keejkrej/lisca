@@ -1,8 +1,7 @@
-"use client";
-
-import { Toggle as TogglePrimitive } from "@base-ui/react/toggle";
+import { ToggleButton as KobalteToggleButton } from "@kobalte/core/toggle-button";
 import { cva, type VariantProps } from "class-variance-authority";
-import type React from "react";
+import { splitProps, type JSX } from "solid-js";
+
 import { cn } from "../../lib/utils";
 
 export const toggleVariants = cva(
@@ -27,19 +26,30 @@ export const toggleVariants = cva(
   },
 );
 
-export function Toggle({
-  className,
-  variant,
-  size,
-  ...props
-}: TogglePrimitive.Props & VariantProps<typeof toggleVariants>): React.ReactElement {
+export function Toggle(
+  props: {
+    class?: string;
+    variant?: VariantProps<typeof toggleVariants>["variant"];
+    size?: VariantProps<typeof toggleVariants>["size"];
+    pressed?: boolean;
+    defaultPressed?: boolean;
+    disabled?: boolean;
+    onChange?: (pressed: boolean) => void;
+  } & Omit<JSX.ButtonHTMLAttributes<HTMLButtonElement>, "onChange">,
+): JSX.Element {
+  const [local, rest] = splitProps(props, ["class", "variant", "size", "pressed", "defaultPressed", "disabled", "onChange"]);
+
   return (
-    <TogglePrimitive
-      className={cn(toggleVariants({ className, size, variant }))}
+    <KobalteToggleButton
+      class={cn(toggleVariants({ size: local.size, variant: local.variant }), local.class)}
       data-slot="toggle"
-      {...props}
+      defaultPressed={local.defaultPressed}
+      disabled={local.disabled}
+      pressed={local.pressed}
+      onChange={local.onChange}
+      {...rest}
     />
   );
 }
 
-export { TogglePrimitive };
+export { KobalteToggleButton as TogglePrimitive };

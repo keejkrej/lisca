@@ -1,23 +1,21 @@
 import { Button } from "@lisca/ui/components";
 
 import type { DemoAnnotatorState } from "@lisca/web-demo";
+import type { Accessor } from "solid-js";
 
-export function DemoAnnotatorDownloadButton({
-  state,
-  className,
-}: {
-  state: DemoAnnotatorState;
-  className?: string;
+export function DemoAnnotatorDownloadButton(props: {
+  state: Accessor<DemoAnnotatorState>;
+  class?: string;
 }) {
   return (
     <Button
-      className={className ?? "w-full justify-center"}
-      disabled={!state.canSave}
-      loading={state.saving}
+      class={props.class ?? "w-full justify-center"}
+      disabled={!props.state().canSave}
+      loading={props.state().saving}
       size="sm"
       type="button"
       variant="outline"
-      onClick={() => void state.saveCurrent()}
+      onClick={() => void props.state().saveCurrent()}
     >
       Download
     </Button>

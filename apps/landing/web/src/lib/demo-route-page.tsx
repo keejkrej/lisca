@@ -1,8 +1,8 @@
-import type { ComponentType } from "react";
+import type { Component } from "solid-js";
 
-export function DemoRoutePage(props: { Demo: ComponentType }) {
+export function DemoRoutePage(props: { Demo: Component }) {
   return (
-    <div className="h-dvh">
+    <div class="h-dvh">
       <props.Demo />
     </div>
   );

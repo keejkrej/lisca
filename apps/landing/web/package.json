@@ -14,19 +14,16 @@
     "@lisca/annotator-demo": "workspace:*",
     "@lisca/ui": "workspace:*",
     "@lisca/web-app": "workspace:*",
-    "@tanstack/react-router": "catalog:",
-    "lucide-react": "^0.511.0",
-    "react": "catalog:",
-    "react-dom": "catalog:"
+    "@tanstack/solid-router": "catalog:",
+    "lucide-solid": "catalog:",
+    "solid-js": "catalog:"
   },
   "devDependencies": {
     "@tailwindcss/vite": "catalog:",
     "@tanstack/router-plugin": "catalog:",
-    "@types/react": "catalog:",
-    "@types/react-dom": "catalog:",
-    "@vitejs/plugin-react": "catalog:",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
-    "vite": "catalog:"
+    "vite": "catalog:",
+    "vite-plugin-solid": "catalog:"
   }
 }

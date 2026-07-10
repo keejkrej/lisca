@@ -13,7 +13,7 @@ export {
 } from "@lisca/ui-headless/annotation-tools";
 import type { AnnotationTool } from "@lisca/ui-headless/annotation-tools";
 import { touchAnnotatorWorkSessionFromState } from "../session/work-session";
-import { Atom } from "@effect-atom/atom-react";
+import { Atom } from "@effect-atom/atom-solid";
 export type AnnotationMode = "classification" | "segmentation";
 
 export type RoiSelection = {

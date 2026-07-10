@@ -5,7 +5,7 @@ import {
   toggleExcludedAlignGridCells,
   type AlignGridFrameBounds,
 } from "@lisca/utils";
-import { useRef, useState } from "react";
+import { createSignal, type Accessor } from "solid-js";
 
 import type { AlignCanvasPointerEvent } from "./align-canvas-handlers";
 
@@ -24,21 +24,16 @@ export type UseAlignCanvasSelectionHandlersOptions = {
   onExcludedCellsChange: (cells: AlignGridCellCoord[]) => void;
 };
 
-export function useAlignCanvasSelectionHandlers({
-  disabled = false,
-  enabled = false,
-  excludedCells,
-  frame,
-  grid,
-  onExcludedCellsChange,
-}: UseAlignCanvasSelectionHandlersOptions) {
-  const strokeRef = useRef<StrokeSession | null>(null);
-  const excludedRef = useRef(excludedCells);
-  excludedRef.current = excludedCells;
-  const [selecting, setSelecting] = useState(false);
+export function useAlignCanvasSelectionHandlers(
+  options: () => UseAlignCanvasSelectionHandlersOptions,
+) {
+  const strokeRef = { current: null as StrokeSession | null };
+  const excludedRef = { current: options().excludedCells };
+  const [selecting, setSelecting] = createSignal(false);
 
   const applyStroke = (point: { x: number; y: number }) => {
     const session = strokeRef.current;
+    const { frame, grid, onExcludedCellsChange } = options();
     if (!session || !frame) return;
     const hitCells = collectAlignGridStrokeToggleCells(
       frame,
@@ -55,6 +50,8 @@ export function useAlignCanvasSelectionHandlers({
   };
 
   const handlePointerDown = (event: AlignCanvasPointerEvent): boolean => {
+    const { disabled = false, enabled = false, frame, grid } = options();
+    excludedRef.current = options().excludedCells;
     if (!enabled || disabled || !frame || !grid.enabled) return false;
     if (event.pointerType === "mouse" && event.button !== 0) return false;
     event.preventDefault();
@@ -73,6 +70,7 @@ export function useAlignCanvasSelectionHandlers({
   };
 
   const handlePointerMove = (event: AlignCanvasPointerEvent): boolean => {
+    const { enabled = false } = options();
     const session = strokeRef.current;
     if (!enabled || !session || session.pointerId !== event.pointerId || !event.framePoint) {
       return false;
@@ -96,6 +94,6 @@ export function useAlignCanvasSelectionHandlers({
     handlePointerMove,
     handlePointerEnd: endStroke,
     handlePointerCancel: endStroke,
-    selecting,
+    selecting: selecting as Accessor<boolean>,
   };
 }

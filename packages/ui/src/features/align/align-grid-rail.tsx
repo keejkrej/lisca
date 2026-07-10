@@ -1,19 +1,21 @@
 import type { AlignGridState } from "@lisca/contracts";
 import { createDefaultAlignGrid, degreesToRadians, radiansToDegrees } from "@lisca/utils";
 import { AlignGrid } from "./align-grid";
+
 export function AlignGridRail(props: {
   grid: AlignGridState;
   disabled?: boolean;
   onGridChange: (next: AlignGridState | ((current: AlignGridState) => AlignGridState)) => void;
 }) {
-  const disabled = props.disabled ?? false;
+  const disabled = () => props.disabled ?? false;
   const updateGrid = (patch: Partial<AlignGridState>) => {
-    if (disabled) return;
+    if (disabled()) return;
     props.onGridChange((grid) => ({
       ...grid,
       ...patch,
     }));
   };
+
   return (
     <AlignGrid
       offsetX={props.grid.tx}
@@ -49,7 +51,7 @@ export function AlignGridRail(props: {
         })
       }
       onReset={() =>
-        !disabled &&
+        !disabled() &&
         props.onGridChange({
           ...createDefaultAlignGrid(),
           enabled: true,

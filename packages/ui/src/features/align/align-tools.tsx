@@ -1,5 +1,3 @@
-"use client";
-
 import {
   ArrowLeftRight,
   Lock,
@@ -7,17 +5,19 @@ import {
   RotateCw,
   SquareDashedMousePointer,
   Unlock,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+} from "lucide-solid";
+import type { Component } from "solid-js";
+import { createEffect, onCleanup } from "solid-js";
 import type { AlignGridToolMode } from "@lisca/utils";
 import {
   alignToolDefinitions as headlessAlignToolDefinitions,
   buildAlignToolActions,
 } from "@lisca/ui-headless/align-tools";
+import { resolveKeyboardShortcut, type KeyboardShortcut } from "@lisca/ui-headless/shortcuts";
 
 import { Button } from "../../components/ui/button";
 import { DockSection } from "../../shell/regions/dock-section";
-import { dockToolLabel, dockToolShortcuts, useKeyboardShortcuts } from "@lisca/ui/shell";
+import { dockToolLabel, dockToolShortcuts } from "@lisca/ui/shell";
 
 export type AlignToolSectionProps = {
   mode: AlignGridToolMode;
@@ -30,6 +30,8 @@ export type AlignToolSectionProps = {
   sectionContentClassName?: string;
   shortcutsEnabled?: boolean;
 };
+
+type LucideIcon = Component<{ class?: string; "aria-hidden"?: boolean | "true" | "false" }>;
 
 const alignToolIcons: Partial<Record<AlignGridToolMode, LucideIcon>> = {
   pan: Move,
@@ -46,29 +48,60 @@ export const alignToolDefinitions = headlessAlignToolDefinitions.map(({ mode, la
 
 export { buildAlignToolActions };
 
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  return Boolean(target.closest("input, textarea, select, [contenteditable='true']"));
+}
+
+function useKeyboardShortcuts(
+  shortcuts: () => readonly KeyboardShortcut[],
+  options?: () => { enabled?: boolean },
+) {
+  createEffect(() => {
+    const enabled = options?.().enabled ?? true;
+    if (!enabled) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      const shortcut = resolveKeyboardShortcut(shortcuts(), {
+        key: event.key,
+        editableTarget: isEditableTarget(event.target),
+        metaKey: event.metaKey,
+        ctrlKey: event.ctrlKey,
+        shiftKey: event.shiftKey,
+        altKey: event.altKey,
+      });
+      if (!shortcut) return;
+
+      event.preventDefault();
+      shortcut.onTrigger();
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    onCleanup(() => window.removeEventListener("keydown", onKeyDown));
+  });
+}
+
 export function AlignToolButton(props: {
   mode: AlignGridToolMode;
   active: boolean;
   label: string;
   Icon: LucideIcon;
   onClick: () => void;
-  className?: string;
+  class?: string;
 }) {
-  const { mode, active, label, Icon, onClick, className } = props;
   return (
     <Button
-      aria-label={label}
-      aria-pressed={active}
-      className={className ?? "w-full min-w-0 justify-center gap-2 px-3"}
-      key={mode}
+      aria-label={props.label}
+      aria-pressed={props.active}
+      class={props.class ?? "w-full min-w-0 justify-center gap-2 px-3"}
       size="sm"
-      title={label}
+      title={props.label}
       type="button"
-      variant={active ? "default" : "outline"}
-      onClick={onClick}
+      variant={props.active ? "default" : "outline"}
+      onClick={props.onClick}
     >
-      <Icon aria-hidden="true" className="size-5" />
-      <span className="max-w-full truncate text-xs">{label}</span>
+      <props.Icon aria-hidden="true" class="size-5" />
+      <span class="max-w-full truncate text-xs">{props.label}</span>
     </Button>
   );
 }
@@ -85,11 +118,11 @@ function renderAlignToolCell(
   const label = shortcutsEnabled ? dockToolLabel(tool.label, index) : tool.label;
   if (tool.mode === "zoom-pattern") {
     return (
-      <div key={tool.mode} className="min-w-0">
-        <div className="grid min-w-0 grid-cols-[1fr_2rem] gap-1">
+      <div class="min-w-0">
+        <div class="grid min-w-0 grid-cols-[1fr_2rem] gap-1">
           <AlignToolButton
             active={mode === tool.mode}
-            className="w-full min-w-0 justify-center gap-2 px-2"
+            class="w-full min-w-0 justify-center gap-2 px-2"
             Icon={tool.Icon}
             label={label}
             mode={tool.mode}
@@ -98,7 +131,7 @@ function renderAlignToolCell(
           <Button
             aria-label={patternZoomLocked ? "Unlock pattern zoom" : "Lock pattern zoom"}
             aria-pressed={patternZoomLocked}
-            className="w-full px-0"
+            class="w-full px-0"
             disabled={!onPatternZoomLockedChange}
             size="sm"
             title={patternZoomLocked ? "Unlock pattern zoom" : "Lock pattern zoom"}
@@ -107,9 +140,9 @@ function renderAlignToolCell(
             onClick={() => onPatternZoomLockedChange?.(!patternZoomLocked)}
           >
             {patternZoomLocked ? (
-              <Lock aria-hidden="true" className="size-4" />
+              <Lock aria-hidden="true" class="size-4" />
             ) : (
-              <Unlock aria-hidden="true" className="size-4" />
+              <Unlock aria-hidden="true" class="size-4" />
             )}
           </Button>
         </div>
@@ -118,7 +151,7 @@ function renderAlignToolCell(
   }
 
   return (
-    <div key={tool.mode} className="min-w-0">
+    <div class="min-w-0">
       <AlignToolButton
         active={mode === tool.mode}
         Icon={tool.Icon}
@@ -135,66 +168,52 @@ export type AlignToolToolbarProps = Pick<
   "mode" | "onModeChange" | "patternZoomLocked" | "onPatternZoomLockedChange" | "shortcutsEnabled"
 >;
 
-export function AlignToolToolbar({
-  mode,
-  onModeChange,
-  patternZoomLocked = false,
-  onPatternZoomLockedChange,
-  shortcutsEnabled = true,
-}: AlignToolToolbarProps) {
-  const toolActions = buildAlignToolActions(mode, onModeChange);
-  useKeyboardShortcuts(dockToolShortcuts(toolActions), { enabled: shortcutsEnabled });
+export function AlignToolToolbar(props: AlignToolToolbarProps) {
+  const patternZoomLocked = () => props.patternZoomLocked ?? false;
+  const shortcutsEnabled = () => props.shortcutsEnabled ?? true;
+  const toolActions = () => buildAlignToolActions(props.mode, props.onModeChange);
 
-  const cells = alignToolDefinitions.map((tool, index) =>
-    renderAlignToolCell(
-      tool,
-      index,
-      mode,
-      onModeChange,
-      patternZoomLocked,
-      onPatternZoomLockedChange,
-      shortcutsEnabled,
-    ),
-  );
+  useKeyboardShortcuts(() => dockToolShortcuts(toolActions()), () => ({
+    enabled: shortcutsEnabled(),
+  }));
+
+  const cells = () =>
+    alignToolDefinitions.map((tool, index) =>
+      renderAlignToolCell(
+        tool,
+        index,
+        props.mode,
+        props.onModeChange,
+        patternZoomLocked(),
+        props.onPatternZoomLockedChange,
+        shortcutsEnabled(),
+      ),
+    );
 
   return (
-    <div aria-label="Align canvas tool" className="flex w-full flex-col gap-2" role="toolbar">
-      <div className="grid w-full grid-cols-2 gap-2">
-        {cells[0]}
-        {cells[1]}
-      </div>
-      <div className="grid w-full grid-cols-2 gap-2">
-        {cells[2]}
-        {cells[3]}
-      </div>
+    <div aria-label="Align canvas tool" class="flex w-full flex-col gap-2" role="toolbar">
+      <div class="grid w-full grid-cols-2 gap-2">{cells()[0]}</div>
+      <div class="grid w-full grid-cols-2 gap-2">{cells()[1]}</div>
+      <div class="grid w-full grid-cols-2 gap-2">{cells()[2]}</div>
+      <div class="grid w-full grid-cols-2 gap-2">{cells()[3]}</div>
     </div>
   );
 }
 
-export function AlignToolSection({
-  mode,
-  onModeChange,
-  patternZoomLocked = false,
-  onPatternZoomLockedChange,
-  sectionTitle = "Tool",
-  sectionDescription,
-  sectionClassName,
-  sectionContentClassName,
-  shortcutsEnabled = true,
-}: AlignToolSectionProps) {
+export function AlignToolSection(props: AlignToolSectionProps) {
   return (
     <DockSection
-      className={sectionClassName}
-      contentClassName={sectionContentClassName}
-      description={sectionDescription}
-      title={sectionTitle}
+      class={props.sectionClassName}
+      contentClassName={props.sectionContentClassName}
+      description={props.sectionDescription}
+      title={props.sectionTitle ?? "Tool"}
     >
       <AlignToolToolbar
-        mode={mode}
-        patternZoomLocked={patternZoomLocked}
-        shortcutsEnabled={shortcutsEnabled}
-        onModeChange={onModeChange}
-        onPatternZoomLockedChange={onPatternZoomLockedChange}
+        mode={props.mode}
+        patternZoomLocked={props.patternZoomLocked}
+        shortcutsEnabled={props.shortcutsEnabled}
+        onModeChange={props.onModeChange}
+        onPatternZoomLockedChange={props.onPatternZoomLockedChange}
       />
     </DockSection>
   );

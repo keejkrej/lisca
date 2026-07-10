@@ -1,17 +1,17 @@
-import { RegistryProvider } from "@effect-atom/atom-react";
-import { type ReactNode } from "react";
-import { createInitialAlignerUiState, alignerUiAtom } from "../atoms/aligner-ui-atoms";
-import { useAtomInitialValues } from "@effect-atom/atom-react";
+import { RegistryProvider, useAtomInitialValues } from "@effect-atom/atom-solid";
+import type { JSX } from "solid-js";
 
-function AlignerAtomInitialValues({ children }: { children: ReactNode }) {
+import { createInitialAlignerUiState, alignerUiAtom } from "../atoms/aligner-ui-atoms";
+
+function AlignerAtomInitialValues(props: { children?: JSX.Element }) {
   useAtomInitialValues([[alignerUiAtom, createInitialAlignerUiState()] as const]);
-  return children;
+  return props.children;
 }
 
-export function AlignerAtomsProvider({ children }: { children: ReactNode }) {
+export function AlignerAtomsProvider(props: { children?: JSX.Element }) {
   return (
     <RegistryProvider>
-      <AlignerAtomInitialValues>{children}</AlignerAtomInitialValues>
+      <AlignerAtomInitialValues>{props.children}</AlignerAtomInitialValues>
     </RegistryProvider>
   );
 }

@@ -1,5 +1,5 @@
 import type { AlignerSource, WorkspaceScan } from "@lisca/contracts";
-import { Atom, type Result } from "@effect-atom/atom-react";
+import { Atom, type Result } from "@effect-atom/atom-solid";
 import { type Context, Effect } from "effect";
 
 import type { ClientError } from "../infra/client-error";

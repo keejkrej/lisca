@@ -1,7 +1,5 @@
-"use client";
-
 import { resolveKeyboardShortcut, type KeyboardShortcut } from "@lisca/ui-headless/shortcuts";
-import { useEffect, useRef } from "react";
+import { createEffect, onCleanup } from "solid-js";
 
 export type { KeyboardShortcut, ShortcutModifiers } from "@lisca/ui-headless/shortcuts";
 
@@ -14,15 +12,13 @@ export function useKeyboardShortcuts(
   shortcuts: readonly KeyboardShortcut[],
   options?: { enabled?: boolean },
 ): void {
-  const enabled = options?.enabled ?? true;
-  const shortcutsRef = useRef(shortcuts);
-  shortcutsRef.current = shortcuts;
+  const enabled = () => options?.enabled ?? true;
 
-  useEffect(() => {
-    if (!enabled) return undefined;
+  createEffect(() => {
+    if (!enabled()) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
-      const shortcut = resolveKeyboardShortcut(shortcutsRef.current, {
+      const shortcut = resolveKeyboardShortcut(shortcuts, {
         key: event.key,
         editableTarget: isEditableTarget(event.target),
         metaKey: event.metaKey,
@@ -37,6 +33,6 @@ export function useKeyboardShortcuts(
     };
 
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [enabled]);
+    onCleanup(() => window.removeEventListener("keydown", onKeyDown));
+  });
 }

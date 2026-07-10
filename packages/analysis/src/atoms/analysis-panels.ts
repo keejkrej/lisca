@@ -1,5 +1,5 @@
 import type { AnalysisProgress, StudioAnalysisCsvFile } from "@lisca/contracts";
-import { Atom, Result } from "@effect-atom/atom-react";
+import { Atom, Result } from "@effect-atom/atom-solid";
 import { Effect } from "effect";
 
 import { createStudioAnalysisAtoms, ReactivityKeys, StudioPortService } from "@lisca/client/atoms";

@@ -1,7 +1,4 @@
-"use client";
-
-import { resolveLiscaHttpBaseUrl } from "@lisca/utils";
-import { useEffect, useState } from "react";
+import { createEffect, createSignal, onCleanup, type Accessor } from "solid-js";
 import type { ConnectionState } from "../chrome/connection-status";
 
 export type ShellHttpProbe = {
@@ -10,14 +7,20 @@ export type ShellHttpProbe = {
   log: string[];
 };
 
+export type ShellHttpProbeResult = {
+  state: Accessor<ConnectionState>;
+  log: Accessor<string[]>;
+};
+
 const MAX_ATTEMPTS = 40;
 const RETRY_MS = 250;
 
-export function useHttpProbeForUrl(httpBaseUrl: string): Pick<ShellHttpProbe, "state" | "log"> {
-  const [state, setState] = useState<ConnectionState>("idle");
-  const [log, setLog] = useState<string[]>([]);
+export function useHttpProbeForUrl(httpBaseUrl: string): ShellHttpProbeResult {
+  const [state, setState] = createSignal<ConnectionState>("idle");
+  const [log, setLog] = createSignal<string[]>([]);
 
-  useEffect(() => {
+  createEffect(() => {
+    const base = httpBaseUrl;
     let cancelled = false;
     let retryTimer: number | undefined;
     let attempt = 0;
@@ -36,7 +39,7 @@ export function useHttpProbeForUrl(httpBaseUrl: string): Pick<ShellHttpProbe, "s
       if (cancelled || connected) return;
       attempt += 1;
       setState("connecting");
-      const url = `${httpBaseUrl.replace(/\/$/, "")}/fs/home`;
+      const url = `${base.replace(/\/$/, "")}/fs/home`;
       void fetch(url, { signal: controller.signal })
         .then(async (response) => {
           if (cancelled) return;
@@ -49,19 +52,24 @@ export function useHttpProbeForUrl(httpBaseUrl: string): Pick<ShellHttpProbe, "s
         })
         .catch((cause) => {
           if (cancelled || controller.signal.aborted) return;
-          setLog((lines) => [...lines, cause instanceof Error ? cause.message : String(cause)]);
+          setLog((lines) => [
+            ...lines,
+            cause instanceof Error ? cause.message : String(cause),
+          ]);
           scheduleRetry();
         });
     };
 
+    setState("idle");
+    setLog([]);
     probe();
 
-    return () => {
+    onCleanup(() => {
       cancelled = true;
       controller.abort();
       if (retryTimer !== undefined) window.clearTimeout(retryTimer);
-    };
-  }, [httpBaseUrl]);
+    });
+  });
 
   return {
     state,

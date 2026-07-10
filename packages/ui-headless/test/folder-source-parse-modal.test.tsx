@@ -1,4 +1,4 @@
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { render } from "@solidjs/testing-library";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -27,30 +27,30 @@ describe("useFolderSourceParseModal", () => {
       }),
     };
 
-    const { result } = renderHook(() =>
-      useFolderSourceParseModal({
+    let result!: ReturnType<typeof useFolderSourceParseModal>;
+    render(() => {
+      result = useFolderSourceParseModal(() => ({
         path: "/data",
         hostPort,
         onConfirm,
-      }),
-    );
-
-    await waitFor(() => {
-      expect(result.current.detecting).toBe(false);
+      }));
+      return null;
     });
 
-    expect(result.current.subfolderTemplate).toBe("Pos{p}");
-    expect(result.current.filenameTemplate).toContain("{t}");
-
-    act(() => {
-      result.current.confirm();
+    await vi.waitFor(() => {
+      expect(result.detecting()).toBe(false);
     });
+
+    expect(result.subfolderTemplate()).toBe("Pos{p}");
+    expect(result.filenameTemplate()).toContain("{t}");
+
+    result.confirm();
 
     expect(onConfirm).toHaveBeenCalledWith({
       kind: "folder",
       path: "/data",
       subfolderTemplate: "Pos{p}",
-      filenameTemplate: result.current.filenameTemplate.trim(),
+      filenameTemplate: result.filenameTemplate().trim(),
     });
   });
 

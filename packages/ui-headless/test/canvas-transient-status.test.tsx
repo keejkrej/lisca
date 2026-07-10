@@ -1,7 +1,18 @@
-import { act, renderHook } from "@testing-library/react";
+import { createSignal } from "solid-js";
+import { render } from "@solidjs/testing-library";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useCanvasTransientStatus } from "../src/canvas-transient-status";
+
+function mountTransientStatus(initialStatus: string | null) {
+  const [status, setStatus] = createSignal(initialStatus);
+  let visible: (() => string | null) | undefined;
+  render(() => {
+    visible = useCanvasTransientStatus(status);
+    return null;
+  });
+  return { visible: () => visible!(), setStatus };
+}
 
 describe("useCanvasTransientStatus", () => {
   beforeEach(() => {
@@ -13,32 +24,30 @@ describe("useCanvasTransientStatus", () => {
   });
 
   it("clears when status becomes null", () => {
-    const { result, rerender } = renderHook(({ status }) => useCanvasTransientStatus(status), {
-      initialProps: { status: "Loading" as string | null },
-    });
-    rerender({ status: null });
-    expect(result.current).toBeNull();
+    const harness = mountTransientStatus("Loading");
+    expect(harness.visible()).toBe("Loading");
+    harness.setStatus(null);
+    expect(harness.visible()).toBeNull();
   });
 
   it("hides transient status after timeout", () => {
-    const { result } = renderHook(() => useCanvasTransientStatus("Saved", { hideAfterMs: 1000 }));
-    expect(result.current).toBe("Saved");
-    act(() => {
-      vi.advanceTimersByTime(1000);
-    });
-    expect(result.current).toBeNull();
+    const harness = mountTransientStatus("Saved");
+    expect(harness.visible()).toBe("Saved");
+    vi.advanceTimersByTime(2500);
+    expect(harness.visible()).toBeNull();
   });
 
   it("keeps persistent statuses visible", () => {
-    const { result } = renderHook(() =>
-      useCanvasTransientStatus("Pinned", {
+    const [status] = createSignal("Pinned");
+    let visible: (() => string | null) | undefined;
+    render(() => {
+      visible = useCanvasTransientStatus(status, {
         hideAfterMs: 1000,
         persistentStatuses: ["Pinned"],
-      }),
-    );
-    act(() => {
-      vi.advanceTimersByTime(2000);
+      });
+      return null;
     });
-    expect(result.current).toBe("Pinned");
+    vi.advanceTimersByTime(2000);
+    expect(visible!()).toBe("Pinned");
   });
 });

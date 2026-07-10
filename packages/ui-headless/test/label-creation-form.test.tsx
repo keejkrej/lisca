@@ -1,5 +1,6 @@
 import type { AnnotationLabel } from "@lisca/contracts";
-import { renderHook, act } from "@testing-library/react";
+import { createSignal } from "solid-js";
+import { render } from "@solidjs/testing-library";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -8,6 +9,21 @@ import {
   useLabelCreationForm,
   validateLabelDrafts,
 } from "../src/label-creation-form";
+
+function mountLabelCreationForm(
+  initial: { open: boolean; labels: AnnotationLabel[]; error: string | null },
+) {
+  const [props, setProps] = createSignal(initial);
+  let result!: ReturnType<typeof useLabelCreationForm>;
+  render(() => {
+    result = useLabelCreationForm(props);
+    return null;
+  });
+  return {
+    result: () => result,
+    rerender: (next: typeof initial) => setProps(() => next),
+  };
+}
 
 describe("label creation form", () => {
   it("normalizes label ids from names", () => {
@@ -28,27 +44,17 @@ describe("label creation form", () => {
   });
 
   it("submits normalized labels from hook state", () => {
-    const { result, rerender } = renderHook(
-      (props: { open: boolean; labels: AnnotationLabel[]; error: string | null }) =>
-        useLabelCreationForm(props),
-      {
-        initialProps: { open: true, labels: [], error: null },
-      },
-    );
+    const harness = mountLabelCreationForm({ open: true, labels: [], error: null });
 
-    act(() => {
-      result.current.updateDraft(0, { name: "Positive", id: "positive" });
-    });
+    harness.result().updateDraft(0, { name: "Positive", id: "positive" });
 
     let saved: AnnotationLabel[] | null = null;
-    act(() => {
-      saved = result.current.submit();
-    });
+    saved = harness.result().submit();
     expect(saved?.[0]).toEqual({ id: "positive", name: "Positive", color: "#22c55e" });
     expect(saved).toHaveLength(3);
 
-    rerender({ open: false, labels: saved ?? [], error: null });
-    rerender({ open: true, labels: saved ?? [], error: null });
-    expect(result.current.drafts[0]?.name).toBe("Positive");
+    harness.rerender({ open: false, labels: saved ?? [], error: null });
+    harness.rerender({ open: true, labels: saved ?? [], error: null });
+    expect(harness.result().drafts()[0]?.name).toBe("Positive");
   });
 });

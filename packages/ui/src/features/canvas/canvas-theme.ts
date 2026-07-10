@@ -1,5 +1,4 @@
-import { useEffect } from "react";
-import { useLatest } from "../../hooks/use-latest";
+import { onCleanup, onMount } from "solid-js";
 
 export function resolvedCanvasBackground(element: HTMLElement): string {
   const color = window.getComputedStyle(element).backgroundColor;
@@ -16,15 +15,14 @@ export function resolvedCanvasBackground(element: HTMLElement): string {
 }
 
 export function useCanvasThemeRerender(rerender: () => void) {
-  const rerenderLatest = useLatest(rerender);
-  useEffect(() => {
+  onMount(() => {
     const observer = new MutationObserver(() => {
-      window.requestAnimationFrame(() => rerenderLatest.current());
+      window.requestAnimationFrame(rerender);
     });
     observer.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ["class", "style"],
     });
-    return () => observer.disconnect();
-  }, [rerenderLatest]);
+    onCleanup(() => observer.disconnect());
+  });
 }

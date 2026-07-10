@@ -1,3 +1,4 @@
+import type { RoiIndexEntry, RoiPositionScan } from "@lisca/contracts";
 import {
   createAxisIndexSliderControl,
   findNavigationOptionIndex,
@@ -11,10 +12,10 @@ import { useAnnotateNav } from "../state/annotate-page-selectors";
 export function AnnotatorFrameNavigation() {
   const nav = useAnnotateNav();
   const positionOptions = toAxisNavigationOptions(
-    nav.scan?.positions.map((entry) => entry.pos) ?? [],
+    nav.scan?.positions.map((entry: RoiPositionScan) => entry.pos) ?? [],
   );
   const roiOptions =
-    nav.position?.rois.map((entry) => ({
+    nav.position?.rois.map((entry: RoiIndexEntry) => ({
       value: entry.roi,
       label: String(entry.roi),
     })) ?? [];

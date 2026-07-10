@@ -15,7 +15,7 @@ import type {
 import type { FrameResult } from "@lisca/utils";
 import { deriveContrastUiState } from "@lisca/utils";
 import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/storage";
-import { Atom, useAtom } from "@effect-atom/atom-react";
+import { Atom, useAtom } from "@effect-atom/atom-solid";
 
 export type StudioAnnotateSelection = RoiSelection;
 
@@ -375,43 +375,120 @@ export const studioAnnotateUiActions = {
 };
 
 export function useStudioAnnotateStore(): StudioAnnotateStore {
-  const [state, setState] = useAtom(studioAnnotateUiAtom);
+  const [ui, setUi] = useAtom(studioAnnotateUiAtom);
   return {
-    ...state,
+    get analysisStartConfirm() {
+      return ui().analysisStartConfirm;
+    },
+    get analysisRequestId() {
+      return ui().analysisRequestId;
+    },
+    get analysisProgress() {
+      return ui().analysisProgress;
+    },
+    get analysisResultFiles() {
+      return ui().analysisResultFiles;
+    },
+    get workspacePath() {
+      return ui().workspacePath;
+    },
+    get selection() {
+      return ui().selection;
+    },
+    get activeLabelId() {
+      return ui().activeLabelId;
+    },
+    get mode() {
+      return ui().mode;
+    },
+    get tool() {
+      return ui().tool;
+    },
+    get brushSize() {
+      return ui().brushSize;
+    },
+    get overlayOpacity() {
+      return ui().overlayOpacity;
+    },
+    get frame() {
+      return ui().frame;
+    },
+    get contrast() {
+      return ui().contrast;
+    },
+    get contrastDomain() {
+      return ui().contrastDomain;
+    },
+    get contrastMin() {
+      return ui().contrastMin;
+    },
+    get contrastMax() {
+      return ui().contrastMax;
+    },
+    get frameLoading() {
+      return ui().frameLoading;
+    },
+    get annotationLoading() {
+      return ui().annotationLoading;
+    },
+    get saving() {
+      return ui().saving;
+    },
+    get scanError() {
+      return ui().scanError;
+    },
+    get frameError() {
+      return ui().frameError;
+    },
+    get annotationError() {
+      return ui().annotationError;
+    },
+    get saveError() {
+      return ui().saveError;
+    },
+    get labelError() {
+      return ui().labelError;
+    },
+    get status() {
+      return ui().status;
+    },
+    get labelDialogOpen() {
+      return ui().labelDialogOpen;
+    },
     setWorkspacePath: (workspacePath) =>
-      studioAnnotateUiActions.setWorkspacePath(setState, workspacePath),
+      studioAnnotateUiActions.setWorkspacePath(setUi, workspacePath),
     setAnalysisStartConfirm: (value) =>
-      studioAnnotateUiActions.setAnalysisStartConfirm(setState, value),
+      studioAnnotateUiActions.setAnalysisStartConfirm(setUi, value),
     setAnalysisRequestId: (requestId) =>
-      studioAnnotateUiActions.setAnalysisRequestId(setState, requestId),
+      studioAnnotateUiActions.setAnalysisRequestId(setUi, requestId),
     setAnalysisProgress: (progress) =>
-      studioAnnotateUiActions.setAnalysisProgress(setState, progress),
+      studioAnnotateUiActions.setAnalysisProgress(setUi, progress),
     setAnalysisResultFiles: (files) =>
-      studioAnnotateUiActions.setAnalysisResultFiles(setState, files),
-    setSelection: (patch) => studioAnnotateUiActions.setSelection(setState, patch),
+      studioAnnotateUiActions.setAnalysisResultFiles(setUi, files),
+    setSelection: (patch) => studioAnnotateUiActions.setSelection(setUi, patch),
     setActiveLabelId: (activeLabelId) =>
-      studioAnnotateUiActions.setActiveLabelId(setState, activeLabelId),
-    setMode: (mode) => studioAnnotateUiActions.setMode(setState, mode),
-    setTool: (tool) => studioAnnotateUiActions.setTool(setState, tool),
-    setBrushSize: (brushSize) => studioAnnotateUiActions.setBrushSize(setState, brushSize),
+      studioAnnotateUiActions.setActiveLabelId(setUi, activeLabelId),
+    setMode: (mode) => studioAnnotateUiActions.setMode(setUi, mode),
+    setTool: (tool) => studioAnnotateUiActions.setTool(setUi, tool),
+    setBrushSize: (brushSize) => studioAnnotateUiActions.setBrushSize(setUi, brushSize),
     setOverlayOpacity: (overlayOpacity) =>
-      studioAnnotateUiActions.setOverlayOpacity(setState, overlayOpacity),
-    setFrame: (frame) => studioAnnotateUiActions.setFrame(setState, frame),
-    setContrast: (contrast) => studioAnnotateUiActions.setContrast(setState, contrast),
-    setContrastState: (frame) => studioAnnotateUiActions.setContrastState(setState, frame),
+      studioAnnotateUiActions.setOverlayOpacity(setUi, overlayOpacity),
+    setFrame: (frame) => studioAnnotateUiActions.setFrame(setUi, frame),
+    setContrast: (contrast) => studioAnnotateUiActions.setContrast(setUi, contrast),
+    setContrastState: (frame) => studioAnnotateUiActions.setContrastState(setUi, frame),
     setFrameLoading: (frameLoading) =>
-      studioAnnotateUiActions.setFrameLoading(setState, frameLoading),
+      studioAnnotateUiActions.setFrameLoading(setUi, frameLoading),
     setAnnotationLoading: (annotationLoading) =>
-      studioAnnotateUiActions.setAnnotationLoading(setState, annotationLoading),
-    setSaving: (saving) => studioAnnotateUiActions.setSaving(setState, saving),
-    setScanError: (scanError) => studioAnnotateUiActions.setScanError(setState, scanError),
-    setFrameError: (frameError) => studioAnnotateUiActions.setFrameError(setState, frameError),
+      studioAnnotateUiActions.setAnnotationLoading(setUi, annotationLoading),
+    setSaving: (saving) => studioAnnotateUiActions.setSaving(setUi, saving),
+    setScanError: (scanError) => studioAnnotateUiActions.setScanError(setUi, scanError),
+    setFrameError: (frameError) => studioAnnotateUiActions.setFrameError(setUi, frameError),
     setAnnotationError: (annotationError) =>
-      studioAnnotateUiActions.setAnnotationError(setState, annotationError),
-    setSaveError: (saveError) => studioAnnotateUiActions.setSaveError(setState, saveError),
-    setLabelError: (labelError) => studioAnnotateUiActions.setLabelError(setState, labelError),
-    setStatus: (status) => studioAnnotateUiActions.setStatus(setState, status),
+      studioAnnotateUiActions.setAnnotationError(setUi, annotationError),
+    setSaveError: (saveError) => studioAnnotateUiActions.setSaveError(setUi, saveError),
+    setLabelError: (labelError) => studioAnnotateUiActions.setLabelError(setUi, labelError),
+    setStatus: (status) => studioAnnotateUiActions.setStatus(setUi, status),
     setLabelDialogOpen: (labelDialogOpen) =>
-      studioAnnotateUiActions.setLabelDialogOpen(setState, labelDialogOpen),
+      studioAnnotateUiActions.setLabelDialogOpen(setUi, labelDialogOpen),
   };
 }

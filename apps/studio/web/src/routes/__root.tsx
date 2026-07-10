@@ -1,4 +1,4 @@
-import { Navigate, Outlet, createRootRoute } from "@tanstack/react-router";
+import { Navigate, Outlet, createRootRoute } from "@tanstack/solid-router";
 
 import { StudioBasicInfoLeaveGuard } from "../components/studio-basic-info-leave-guard";
 import { StudioWorkSessionGate } from "../components/studio-work-session-gate";

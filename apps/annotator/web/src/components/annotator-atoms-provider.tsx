@@ -1,16 +1,17 @@
-import { RegistryProvider, useAtomInitialValues } from "@effect-atom/atom-react";
-import { type ReactNode } from "react";
+import { RegistryProvider, useAtomInitialValues } from "@effect-atom/atom-solid";
+import type { JSX } from "solid-js";
+
 import { annotatorUiAtom, createInitialAnnotatorUiState } from "../atoms/annotator-ui-atoms";
 
-function AnnotatorAtomInitialValues({ children }: { children: ReactNode }) {
+function AnnotatorAtomInitialValues(props: { children?: JSX.Element }) {
   useAtomInitialValues([[annotatorUiAtom, createInitialAnnotatorUiState()] as const]);
-  return children;
+  return props.children;
 }
 
-export function AnnotatorAtomsProvider({ children }: { children: ReactNode }) {
+export function AnnotatorAtomsProvider(props: { children?: JSX.Element }) {
   return (
     <RegistryProvider>
-      <AnnotatorAtomInitialValues>{children}</AnnotatorAtomInitialValues>
+      <AnnotatorAtomInitialValues>{props.children}</AnnotatorAtomInitialValues>
     </RegistryProvider>
   );
 }
