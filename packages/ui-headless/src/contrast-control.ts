@@ -1,6 +1,6 @@
 import type { ContrastWindow } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
-import type { ReactNode } from "react";
+import type { JSX } from "solid-js";
 import { deriveContrastControlState } from "@lisca/utils";
 
 export type ContrastControlState = {
@@ -20,15 +20,16 @@ export type ContrastControlProps = {
   contrast: ContrastWindow | null;
   disabled?: boolean;
   onContrastChange: (contrast: ContrastWindow | null) => void;
-  children: (state: ContrastControlState) => ReactNode;
+  children: (state: ContrastControlState) => JSX.Element;
 };
 
 /** Per-frame auto contrast: sliders follow server auto values until manually adjusted. */
 export function ContrastControl(props: ContrastControlProps) {
-  const { frame, contrast, disabled: disabledOverride, onContrastChange, children } = props;
-
-  const { domain, suggestedContrast, value } = deriveContrastControlState(frame, contrast);
-  const disabled = disabledOverride ?? !frame;
+  const { domain, suggestedContrast, value } = deriveContrastControlState(
+    props.frame,
+    props.contrast,
+  );
+  const disabled = props.disabled ?? !props.frame;
 
   const state: ContrastControlState = {
     domainMin: domain.min,
@@ -37,10 +38,10 @@ export function ContrastControl(props: ContrastControlProps) {
     maxValue: value.max,
     disabled,
     autoRangeDisabled: disabled,
-    onAutoRange: () => onContrastChange(suggestedContrast),
-    onMinCommit: (min: number) => onContrastChange({ min, max: value.max }),
-    onMaxCommit: (max: number) => onContrastChange({ min: value.min, max }),
+    onAutoRange: () => props.onContrastChange(suggestedContrast),
+    onMinCommit: (min: number) => props.onContrastChange({ min, max: value.max }),
+    onMaxCommit: (max: number) => props.onContrastChange({ min: value.min, max }),
   };
 
-  return children(state);
+  return props.children(state);
 }

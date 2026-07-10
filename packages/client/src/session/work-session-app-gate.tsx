@@ -1,5 +1,5 @@
 import type { LiscaAppId } from "@lisca/utils";
-import type { ComponentType, ReactNode } from "react";
+import { Show, type Component, type JSX } from "solid-js";
 
 import {
   toWorkSessionPickerItems,
@@ -12,7 +12,7 @@ import {
   type WorkSessionGateOptions,
 } from "./work-session-gate";
 
-export type WorkSessionPickerDialogComponent = ComponentType<{
+export type WorkSessionPickerDialogComponent = Component<{
   appId: LiscaAppId;
   open: boolean;
   sessions: WorkSessionPickerItem[];
@@ -25,25 +25,23 @@ export type WorkSessionAppGateProps = {
   PickerDialog: WorkSessionPickerDialogComponent;
   onRestore: (session: WorkSession) => void | Promise<void>;
   gateOptions?: WorkSessionGateOptions;
-  children: ReactNode;
+  children?: JSX.Element;
 };
 
-export function WorkSessionAppGate({
-  appId,
-  PickerDialog,
-  onRestore,
-  gateOptions,
-  children,
-}: WorkSessionAppGateProps) {
+export function WorkSessionAppGate(props: WorkSessionAppGateProps) {
   return (
-    <WorkSessionBootstrap appId={appId} gateOptions={gateOptions} onRestore={onRestore}>
+    <WorkSessionBootstrap
+      appId={props.appId}
+      gateOptions={props.gateOptions}
+      onRestore={props.onRestore}
+    >
       {(gate) => (
         <>
-          {gate.ready ? children : null}
-          <PickerDialog
-            appId={appId}
+          <Show when={gate.ready}>{props.children}</Show>
+          <props.PickerDialog
+            appId={props.appId}
             open={gate.open}
-            sessions={toWorkSessionPickerItems(appId, gate.sessions)}
+            sessions={toWorkSessionPickerItems(props.appId, gate.sessions)}
             onRestore={(sessionId) => {
               const session = gate.sessions.find((entry) => entry.id === sessionId);
               if (session) gate.restoreSession(session);

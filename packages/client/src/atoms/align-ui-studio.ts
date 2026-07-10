@@ -9,7 +9,8 @@ import type {
 } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 import type { AlignGridToolMode } from "@lisca/utils";
-import { useAtom } from "@effect-atom/atom-react";
+import { useAtom } from "@effect-atom/atom-solid";
+import { createMemo } from "solid-js";
 import {
   createAlignUiActions,
   createAlignUiAtom,
@@ -20,20 +21,27 @@ import {
   type LoadedSavedAlignState,
   type StateUpdater,
 } from "./align-ui";
+
 export const STUDIO_ALIGN_SESSION_KEY = "lisca-studio-align-session";
+
 const studioPersist = createStudioPersist(STUDIO_ALIGN_SESSION_KEY);
+
 export const studioAlignUiAtom: AlignUiAtom = createAlignUiAtom();
+
 export const studioAlignUiActions = createAlignUiActions(studioPersist, {
   clearSourceOnWorkspaceChange: false,
   preserveSelectionOnScan: true,
   skipRedundantSourceSet: true,
   includeApplySavedAlignState: true,
 });
+
 export type StudioAlignStoreState = Omit<AlignUiState, "cropProgress">;
+
 export type StudioAlignSessionPersist = Pick<
   StudioAlignStoreState,
   "workspacePath" | "source" | "selection"
 >;
+
 export function readStudioAlignSession(): StudioAlignSessionPersist | null {
   const session = studioPersist.read();
   if (!session) return null;
@@ -48,10 +56,12 @@ export function readStudioAlignSession(): StudioAlignSessionPersist | null {
     },
   };
 }
+
 export function createInitialStudioAlignUiState(): StudioAlignStoreState {
   const { cropProgress: _cropProgress, ...state } = createInitialAlignUiState();
   return state;
 }
+
 type StudioAlignStoreActions = {
   setWorkspacePath: (workspacePath: string | null) => void;
   setSource: (source: AlignerSource | null) => void;
@@ -74,9 +84,12 @@ type StudioAlignStoreActions = {
   setError: (error: string | null) => void;
   setStatus: (status: string | null) => void;
 };
+
 export type StudioAlignStore = StudioAlignStoreState & StudioAlignStoreActions;
-export function useStudioAlignStore(): StudioAlignStore {
+
+export function useStudioAlignStore() {
   const [state, setState] = useAtom(studioAlignUiAtom);
+
   const setWorkspacePath = (workspacePath: string | null) =>
     studioAlignUiActions.setWorkspacePath(setState, workspacePath);
   const setSource = (source: AlignerSource | null) =>
@@ -107,24 +120,27 @@ export function useStudioAlignStore(): StudioAlignStore {
   const setSaving = (saving: boolean) => studioAlignUiActions.setSaving(setState, saving);
   const setError = (error: string | null) => studioAlignUiActions.setError(setState, error);
   const setStatus = (status: string | null) => studioAlignUiActions.setStatus(setState, status);
-  const { cropProgress: _cropProgress, ...storeState } = state;
-  return {
-    ...storeState,
-    setWorkspacePath,
-    setSource,
-    applySourceScan,
-    applySavedAlignState,
-    applyLoadedFrame,
-    setSelection,
-    setFrame,
-    setContrast,
-    setGrid,
-    setToolMode,
-    setPatternZoomLocked,
-    setExcludedCellsForCurrentPosition,
-    setFrameLoading,
-    setSaving,
-    setError,
-    setStatus,
-  };
+
+  return createMemo<StudioAlignStore>(() => {
+    const { cropProgress: _cropProgress, ...storeState } = state();
+    return {
+      ...storeState,
+      setWorkspacePath,
+      setSource,
+      applySourceScan,
+      applySavedAlignState,
+      applyLoadedFrame,
+      setSelection,
+      setFrame,
+      setContrast,
+      setGrid,
+      setToolMode,
+      setPatternZoomLocked,
+      setExcludedCellsForCurrentPosition,
+      setFrameLoading,
+      setSaving,
+      setError,
+      setStatus,
+    };
+  });
 }

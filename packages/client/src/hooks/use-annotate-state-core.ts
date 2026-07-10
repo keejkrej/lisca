@@ -27,11 +27,20 @@ import {
   shouldRunContrastFrameLoad,
 } from "../session/frame-load-policy";
 import type { AnnotatorDataPort } from "../ports/types";
-import type { Atom, Result } from "@effect-atom/atom-react";
-import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
+import type { Atom, Result } from "@effect-atom/atom-solid";
+import { RegistryContext, useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-solid";
 import { Effect } from "effect";
-import { useEffect, useRef, useState } from "react";
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  onCleanup,
+  untrack,
+  useContext,
+  type Accessor,
+} from "solid-js";
 import type { DirtySelectionGuard } from "./annotate-selection-guard";
+
 export type AnnotationHistoryHandle = {
   current: {
     classificationLabelId: string | null;
@@ -47,6 +56,7 @@ export type AnnotationHistoryHandle = {
   discard: () => void;
   markSaved: () => void;
 };
+
 export type UseAnnotateStateCoreDeps = {
   annotatorClient: AnnotatorDataPort;
   toErrorMessage: (cause: unknown, fallback: string) => string;
@@ -130,17 +140,20 @@ export type UseAnnotateStateCoreDeps = {
   encodeMaskToBase64Png: (mask: Uint8Array, width: number, height: number) => Promise<string>;
   maskHasPixels: (mask: Uint8Array) => boolean;
 };
+
 export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
   const workspace = deps.useShellWorkspace();
-  const shellWorkspacePath = workspace.workspacePath;
-  const [filePickerOpen, setFilePickerOpen] = useState(false);
+  const shellWorkspacePath = () => workspace.workspacePath;
+  const [filePickerOpen, setFilePickerOpen] = createSignal(false);
   const [ui, setUi] = useAtom(deps.annotatorUiAtom);
-  const scanResult = useAtomValue(
-    shellWorkspacePath ? deps.roiWorkspaceScanAtom(shellWorkspacePath) : deps.roiScanIdleAtom,
-  );
-  const labelsResult = useAtomValue(
-    shellWorkspacePath ? deps.annotationLabelsAtom(shellWorkspacePath) : deps.labelsIdleAtom,
-  );
+  const scanResult = useSelectedAtomValue(() => {
+    const path = shellWorkspacePath();
+    return path ? deps.roiWorkspaceScanAtom(path) : deps.roiScanIdleAtom;
+  });
+  const labelsResult = useSelectedAtomValue(() => {
+    const path = shellWorkspacePath();
+    return path ? deps.annotationLabelsAtom(path) : deps.labelsIdleAtom;
+  });
   const saveLabelsResult = useAtomValue(deps.saveAnnotationLabelsAtom);
   const runSaveLabels = useAtomSet(deps.saveAnnotationLabelsAtom, {
     mode: "promise",
@@ -148,6 +161,7 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
   const runSaveAnnotation = useAtomSet(deps.saveRoiFrameAnnotationAtom, {
     mode: "promise",
   });
+
   const session = useAnnotateSessionCore({
     ui,
     setUi,
@@ -160,115 +174,49 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
     },
     toErrorMessage: deps.toErrorMessage,
   });
-  const {
-    workspacePath,
-    selection,
-    activeLabelId,
-    mode,
-    tool,
-    brushSize,
-    overlayOpacity,
-    frame,
-    contrast,
-    contrastDomain,
-    contrastMin,
-    contrastMax,
-    frameLoading,
-    annotationLoading,
-    saving,
-    scanError,
-    frameError,
-    annotationError,
-    saveError,
-    labelError,
-    status,
-    labelDialogOpen,
-  } = session.state;
-  const {
-    setSelection,
-    setContrast,
-    setMode,
-    setTool,
-    setBrushSize,
-    setOverlayOpacity,
-    setActiveLabelId,
-    setLabelDialogOpen,
-    setLabelError,
-  } = session.actions;
-  const { scanLoading } = session.meta;
-  const { scan, position } = session.derived;
-  const annotation = deps.useAnnotationHistory(frame);
-  const resetAnnotation = annotation.reset;
-  const selectionChangingRef = useRef(false);
+
+  const annotation = deps.useAnnotationHistory(null);
+  const resetAnnotation = (value: { classificationLabelId: string | null; mask: Uint8Array }) =>
+    annotation.reset(value);
+  let selectionChanging = false;
   const loadCanvasResources = deps.useCanvasResourceTransaction();
-  const labels = [...(resultData(labelsResult) ?? [])];
-  const selectedRoi = deps.currentRoi(position, selection.roi);
-  const request = deps.makeRequest(
-    position,
-    selectedRoi,
-    selection.channel,
-    selection.timeIndex,
-    selection.zIndex,
-  );
-  const activeRequestKey = deps.requestKey(position, selectedRoi, selection);
-  const activeLabelValue = labels.findIndex((label) => label.id === activeLabelId) + 1;
-  const canEdit =
-    Boolean(frame && request && labels.length > 0) &&
-    !frameLoading &&
-    !annotationLoading &&
-    !scanLoading;
-  const toolCanRunWithoutLabelValue = toolCanRunWithoutLabel(tool);
-  const canEditSegmentation =
-    canEdit && mode === "segmentation" && (activeLabelValue > 0 || toolCanRunWithoutLabelValue);
-  const canSave = canEdit && annotation.dirty && !saving;
-  const activeError = scanError ?? frameError ?? annotationError ?? saveError;
-  const visibleStatus = deps.useCanvasTransientStatus(status);
-  const saveLabelsPending = resultLoading(saveLabelsResult);
-  const activeToastStatus = frameLoading
-    ? "Loading ROI frame"
-    : annotationLoading
-      ? "Loading ROI annotation"
-      : scanLoading
-        ? "Scanning ROI workspace"
-        : visibleStatus;
-  const canvasToasts = (() => {
-    if (activeError)
-      return [
-        {
-          text: activeError,
-          tone: "error" as const,
-        },
-      ];
-    if (activeToastStatus)
-      return [
-        {
-          text: activeToastStatus,
-        },
-      ];
-    return [];
-  })();
-  const changeSelection = (fn: () => void) => {
-    void (async () => {
-      const allowed = await Promise.resolve(
-        deps.guardDirtySelection(annotation.dirty, selectionChangingRef.current),
-      );
-      if (!allowed) return;
-      selectionChangingRef.current = true;
-      fn();
-      globalThis.setTimeout(() => {
-        selectionChangingRef.current = false;
-      }, 0);
-    })();
-  };
-  useEffect(() => {
-    if (!workspacePath || workspacePath !== shellWorkspacePath || !request) {
+
+  const requestContext = createMemo(() => {
+    const currentUi = session.state();
+    const labels = [...(resultData(labelsResult()) ?? [])];
+    const position = session.derived().position;
+    const selectedRoi = deps.currentRoi(position, currentUi.selection.roi);
+    const request = deps.makeRequest(
+      position,
+      selectedRoi,
+      currentUi.selection.channel,
+      currentUi.selection.timeIndex,
+      currentUi.selection.zIndex,
+    );
+    return {
+      labels,
+      position,
+      selectedRoi,
+      request,
+      activeRequestKey: deps.requestKey(position, selectedRoi, currentUi.selection),
+    };
+  });
+
+  createEffect(() => {
+    const activeRequestKey = requestContext().activeRequestKey;
+    const shellPath = shellWorkspacePath();
+    const workspacePath = untrack(() => session.state().workspacePath);
+    const request = untrack(() => requestContext().request);
+    if (!workspacePath || workspacePath !== shellPath || !request) {
       deps.annotatorUiActions.setFrame(setUi, null);
       resetAnnotation(deps.emptyValueFor(null));
       deps.annotatorUiActions.setFrameLoading(setUi, false);
       deps.annotatorUiActions.setAnnotationLoading(setUi, false);
       return;
     }
-    return loadCanvasResources<{
+    const contrast = untrack(() => session.state().contrast);
+    void activeRequestKey;
+    const cleanup = loadCanvasResources<{
       frame: FrameResult;
       annotation: {
         classificationLabelId: string | null;
@@ -318,32 +266,22 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
         deps.annotatorUiActions.setAnnotationLoading(setUi, false);
       },
     });
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    activeRequestKey,
-    deps.annotatorClient,
-    deps.annotatorUiActions,
-    deps.emptyValueFor,
-    deps.effectErrorMessage,
-    deps.loadRoiFrameWithAnnotationEffect,
-    loadCanvasResources,
-    request,
-    resetAnnotation,
-    setContrast,
-    setUi,
-    workspacePath,
-    shellWorkspacePath,
-  ]);
-  useEffect(() => {
-    if (
-      !shouldRunContrastFrameLoad(contrast) ||
-      !workspacePath ||
-      workspacePath !== shellWorkspacePath ||
-      !request
-    ) {
+    onCleanup(cleanup);
+  });
+
+  createEffect(() => {
+    const contrast = session.state().contrast;
+    if (!shouldRunContrastFrameLoad(contrast)) {
       return;
     }
-    return loadCanvasResources({
+    const currentUi = untrack(() => session.state());
+    const workspacePath = currentUi.workspacePath;
+    const shellPath = shellWorkspacePath();
+    const request = untrack(() => requestContext().request);
+    if (!workspacePath || workspacePath !== shellPath || !request) {
+      return;
+    }
+    const cleanup = loadCanvasResources({
       start: () => {
         deps.annotatorUiActions.setFrameLoading(setUi, true);
         deps.annotatorUiActions.setFrameError(setUi, null);
@@ -372,26 +310,41 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
       },
       settle: () => deps.annotatorUiActions.setFrameLoading(setUi, false),
     });
-    // Intentionally contrast-only: ROI navigation is handled by the effect above.
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [contrast]);
+    onCleanup(cleanup);
+  });
+
   const handleSave = async () => {
-    if (!shellWorkspacePath || !request || !frame || !canSave) return;
+    const currentUi = session.state();
+    const shellPath = shellWorkspacePath();
+    const request = requestContext().request;
+    const currentAnnotation = annotation;
+    const labels = requestContext().labels;
+    const canEdit =
+      Boolean(currentUi.frame && request && labels.length > 0) &&
+      !currentUi.frameLoading &&
+      !currentUi.annotationLoading &&
+      !session.meta().scanLoading;
+    const canSave = canEdit && currentAnnotation.dirty && !currentUi.saving;
+    if (!shellPath || !request || !currentUi.frame || !canSave) return;
     deps.annotatorUiActions.setSaving(setUi, true);
     deps.annotatorUiActions.setSaveError(setUi, null);
     try {
-      const segmentationMask = deps.maskHasPixels(annotation.current.mask);
+      const segmentationMask = deps.maskHasPixels(currentAnnotation.current.mask);
       await runSaveAnnotation({
-        workspacePath: shellWorkspacePath,
+        workspacePath: shellPath,
         request,
         annotation: {
-          classificationLabelId: annotation.current.classificationLabelId,
+          classificationLabelId: currentAnnotation.current.classificationLabelId,
           maskBase64Png: segmentationMask
-            ? await deps.encodeMaskToBase64Png(annotation.current.mask, frame.width, frame.height)
+            ? await deps.encodeMaskToBase64Png(
+                currentAnnotation.current.mask,
+                currentUi.frame.width,
+                currentUi.frame.height,
+              )
             : null,
         },
       });
-      annotation.markSaved();
+      currentAnnotation.markSaved();
       deps.annotatorUiActions.setStatus(setUi, "Saved ROI annotation");
     } catch (cause) {
       deps.annotatorUiActions.setSaveError(
@@ -402,74 +355,154 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
       deps.annotatorUiActions.setSaving(setUi, false);
     }
   };
+
   const handleSaveLabels = async (nextLabels: AnnotationLabel[]) => {
-    if (!shellWorkspacePath) {
-      setLabelError("Select a workspace first.");
+    const shellPath = shellWorkspacePath();
+    if (!shellPath) {
+      session.actions.setLabelError("Select a workspace first.");
       return;
     }
-    setLabelError(null);
+    session.actions.setLabelError(null);
     try {
       const savedLabels = await runSaveLabels({
-        workspacePath: shellWorkspacePath,
+        workspacePath: shellPath,
         labels: nextLabels,
       });
       deps.annotatorUiActions.applySavedLabels(setUi, savedLabels);
     } catch (cause) {
-      setLabelError(deps.toErrorMessage(cause, "Annotation labels save failed"));
+      session.actions.setLabelError(deps.toErrorMessage(cause, "Annotation labels save failed"));
     }
   };
+
   const pickWorkspace = (path: string) => {
     workspace.setWorkspacePath(path);
     setFilePickerOpen(false);
   };
-  return {
-    workspacePath,
-    scan,
-    labels,
-    selection,
-    activeLabelId,
-    mode,
-    tool,
-    brushSize,
-    overlayOpacity,
-    frame,
-    contrast,
-    contrastDomain,
-    contrastMin,
-    contrastMax,
-    scanLoading,
-    frameLoading,
-    annotationLoading,
-    saving,
-    scanError,
-    frameError,
-    annotationError,
-    saveError,
-    labelError,
-    labelDialogOpen,
-    filePickerOpen,
-    position,
-    request,
-    annotation,
-    canEdit,
-    canEditSegmentation,
-    canSave,
-    canvasToasts,
-    setFilePickerOpen,
-    setLabelDialogOpen,
-    setLabelError,
-    setSelection,
-    setContrast,
-    setMode,
-    setTool,
-    setBrushSize,
-    setOverlayOpacity,
-    setActiveLabelId,
-    changeSelection,
-    handleSave,
-    handleSaveLabels,
-    saveLabelsPending,
-    pickWorkspace,
+
+  const changeSelection = (fn: () => void) => {
+    void (async () => {
+      const allowed = await Promise.resolve(
+        deps.guardDirtySelection(annotation.dirty, selectionChanging),
+      );
+      if (!allowed) return;
+      selectionChanging = true;
+      fn();
+      globalThis.setTimeout(() => {
+        selectionChanging = false;
+      }, 0);
+    })();
   };
+
+  return createMemo(() => {
+    const currentUi = session.state();
+    const derived = session.derived();
+    const context = requestContext();
+    const currentAnnotation = annotation;
+    const labels = context.labels;
+    const activeLabelValue = labels.findIndex((label) => label.id === currentUi.activeLabelId) + 1;
+    const canEdit =
+      Boolean(currentUi.frame && context.request && labels.length > 0) &&
+      !currentUi.frameLoading &&
+      !currentUi.annotationLoading &&
+      !session.meta().scanLoading;
+    const toolCanRunWithoutLabelValue = toolCanRunWithoutLabel(currentUi.tool);
+    const canEditSegmentation =
+      canEdit &&
+      currentUi.mode === "segmentation" &&
+      (activeLabelValue > 0 || toolCanRunWithoutLabelValue);
+    const canSave = canEdit && currentAnnotation.dirty && !currentUi.saving;
+    const activeError =
+      currentUi.scanError ??
+      currentUi.frameError ??
+      currentUi.annotationError ??
+      currentUi.saveError;
+    const visibleStatus = deps.useCanvasTransientStatus(currentUi.status);
+    const saveLabelsPending = resultLoading(saveLabelsResult());
+    const activeToastStatus = currentUi.frameLoading
+      ? "Loading ROI frame"
+      : currentUi.annotationLoading
+        ? "Loading ROI annotation"
+        : session.meta().scanLoading
+          ? "Scanning ROI workspace"
+          : visibleStatus;
+    const canvasToasts = (() => {
+      if (activeError)
+        return [
+          {
+            text: activeError,
+            tone: "error" as const,
+          },
+        ];
+      if (activeToastStatus)
+        return [
+          {
+            text: activeToastStatus,
+          },
+        ];
+      return [];
+    })();
+
+    return {
+      workspacePath: currentUi.workspacePath,
+      scan: derived.scan,
+      labels,
+      selection: currentUi.selection,
+      activeLabelId: currentUi.activeLabelId,
+      mode: currentUi.mode,
+      tool: currentUi.tool,
+      brushSize: currentUi.brushSize,
+      overlayOpacity: currentUi.overlayOpacity,
+      frame: currentUi.frame,
+      contrast: currentUi.contrast,
+      contrastDomain: currentUi.contrastDomain,
+      contrastMin: currentUi.contrastMin,
+      contrastMax: currentUi.contrastMax,
+      scanLoading: session.meta().scanLoading,
+      frameLoading: currentUi.frameLoading,
+      annotationLoading: currentUi.annotationLoading,
+      saving: currentUi.saving,
+      scanError: currentUi.scanError,
+      frameError: currentUi.frameError,
+      annotationError: currentUi.annotationError,
+      saveError: currentUi.saveError,
+      labelError: currentUi.labelError,
+      labelDialogOpen: currentUi.labelDialogOpen,
+      filePickerOpen: filePickerOpen(),
+      position: derived.position,
+      request: context.request,
+      annotation: currentAnnotation,
+      canEdit,
+      canEditSegmentation,
+      canSave,
+      canvasToasts,
+      setFilePickerOpen,
+      setLabelDialogOpen: session.actions.setLabelDialogOpen,
+      setLabelError: session.actions.setLabelError,
+      setSelection: session.actions.setSelection,
+      setContrast: session.actions.setContrast,
+      setMode: session.actions.setMode,
+      setTool: session.actions.setTool,
+      setBrushSize: session.actions.setBrushSize,
+      setOverlayOpacity: session.actions.setOverlayOpacity,
+      setActiveLabelId: session.actions.setActiveLabelId,
+      changeSelection,
+      handleSave,
+      handleSaveLabels,
+      saveLabelsPending,
+      pickWorkspace,
+    };
+  });
 }
+
 export type { RoiSelection, StateUpdater };
+
+function useSelectedAtomValue<A>(selectAtom: () => Atom.Atom<A>): Accessor<A> {
+  const registry = useContext(RegistryContext);
+  const [value, setValue] = createSignal(registry.get(selectAtom()));
+  createEffect(() => {
+    const atom = selectAtom();
+    setValue(() => registry.get(atom));
+    onCleanup(registry.subscribe(atom, setValue as (next: A) => void));
+  });
+  return value;
+}

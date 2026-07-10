@@ -11,7 +11,8 @@ import {
   mergeExcludedAlignGridCells,
   type AlignGridToolMode,
 } from "@lisca/utils";
-import { useAtom } from "@effect-atom/atom-react";
+import { useAtom } from "@effect-atom/atom-solid";
+import { createMemo, type Accessor } from "solid-js";
 
 import {
   buildRoiExportZip,
@@ -64,213 +65,217 @@ export type DemoAlignState = {
   saveCurrent: () => Promise<boolean>;
 };
 
-export function useDemoAlignState(): DemoAlignState {
+export function useDemoAlignState(): Accessor<DemoAlignState> {
   const [state, setState] = useAtom(demoAlignUiAtom);
-  const {
-    fileName,
-    sourceFormat,
-    frameLoading,
-    saving,
-    error,
-    status,
-    contrast,
-    frame,
-    grid,
-    toolMode,
-    patternZoomLocked,
-    manualExclusionEnabled,
-    excludedCells,
-    variationExcludePreview,
-    variationExcludeLoading,
-  } = state;
 
   const previewVariationExclude = (): AutoExcludePreviewResponse | null => {
-    if (!frame) return null;
-    const cells = enumerateVisibleAlignGridCells(frame, grid);
+    const current = state();
+    if (!current.frame) return null;
+    const cells = enumerateVisibleAlignGridCells(current.frame, current.grid);
     if (cells.length === 0) return null;
-    return computeAutoExcludePreview(frame, cells);
+    return computeAutoExcludePreview(current.frame, cells);
   };
 
-  return {
-    fileName,
-    sourceFormat,
-    frameLoading,
-    saving,
-    error,
-    status,
-    contrast,
-    setContrast: (value) => demoAlignUiActions.setContrast(setState, value),
-    frame,
-    grid,
-    setGrid: (next) => demoAlignUiActions.setGrid(setState, next),
-    toolMode,
-    setToolMode: (mode) => demoAlignUiActions.setToolMode(setState, mode),
-    patternZoomLocked,
-    setPatternZoomLocked: (locked) => demoAlignUiActions.setPatternZoomLocked(setState, locked),
-    manualExclusionEnabled,
-    setManualExclusionEnabled: (enabled) =>
-      demoAlignUiActions.setManualExclusionEnabled(setState, enabled),
-    excludedCells,
-    setExcludedCells: (cells) => demoAlignUiActions.setExcludedCells(setState, Array.from(cells)),
-    excludeAllCells: () => {
-      if (!frame) return;
-      demoAlignUiActions.setExcludedCells(
-        setState,
-        enumerateVisibleAlignGridCells(frame, grid).map(({ i, j }) => ({ i, j })),
-      );
-    },
-    excludeEdgeCells: () => {
-      if (!frame) return;
-      demoAlignUiActions.setExcludedCells(
-        setState,
-        mergeExcludedAlignGridCells(excludedCells, collectAlignGridEdgeCells(frame, grid)),
-      );
-    },
-    resetExcludedCells: () => demoAlignUiActions.setExcludedCells(setState, []),
-    variationExcludePreview,
-    variationExcludeLoading,
-    variationExclude: async () => {
-      if (!frame) return;
-      demoAlignUiActions.setStatus(setState, "Var exclude preview");
-      demoAlignUiActions.setVariationExcludeLoading(setState, true);
-      try {
-        const preview = previewVariationExclude();
-        if (!preview) {
-          demoAlignUiActions.setStatus(setState, "No visible cells for var exclude");
-          return;
+  return createMemo<DemoAlignState>(() => {
+    const {
+      fileName,
+      sourceFormat,
+      frameLoading,
+      saving,
+      error,
+      status,
+      contrast,
+      frame,
+      grid,
+      toolMode,
+      patternZoomLocked,
+      manualExclusionEnabled,
+      excludedCells,
+      variationExcludePreview,
+      variationExcludeLoading,
+    } = state();
+
+    return {
+      fileName,
+      sourceFormat,
+      frameLoading,
+      saving,
+      error,
+      status,
+      contrast,
+      setContrast: (value) => demoAlignUiActions.setContrast(setState, value),
+      frame,
+      grid,
+      setGrid: (next) => demoAlignUiActions.setGrid(setState, next),
+      toolMode,
+      setToolMode: (mode) => demoAlignUiActions.setToolMode(setState, mode),
+      patternZoomLocked,
+      setPatternZoomLocked: (locked) => demoAlignUiActions.setPatternZoomLocked(setState, locked),
+      manualExclusionEnabled,
+      setManualExclusionEnabled: (enabled) =>
+        demoAlignUiActions.setManualExclusionEnabled(setState, enabled),
+      excludedCells,
+      setExcludedCells: (cells) => demoAlignUiActions.setExcludedCells(setState, Array.from(cells)),
+      excludeAllCells: () => {
+        if (!frame) return;
+        demoAlignUiActions.setExcludedCells(
+          setState,
+          enumerateVisibleAlignGridCells(frame, grid).map(({ i, j }) => ({ i, j })),
+        );
+      },
+      excludeEdgeCells: () => {
+        if (!frame) return;
+        demoAlignUiActions.setExcludedCells(
+          setState,
+          mergeExcludedAlignGridCells(excludedCells, collectAlignGridEdgeCells(frame, grid)),
+        );
+      },
+      resetExcludedCells: () => demoAlignUiActions.setExcludedCells(setState, []),
+      variationExcludePreview,
+      variationExcludeLoading,
+      variationExclude: async () => {
+        if (!frame) return;
+        demoAlignUiActions.setStatus(setState, "Var exclude preview");
+        demoAlignUiActions.setVariationExcludeLoading(setState, true);
+        try {
+          const preview = previewVariationExclude();
+          if (!preview) {
+            demoAlignUiActions.setStatus(setState, "No visible cells for var exclude");
+            return;
+          }
+          demoAlignUiActions.setVariationExcludePreview(setState, {
+            preview,
+            threshold: preview.threshold,
+          });
+          demoAlignUiActions.setStatus(setState, null);
+        } catch (cause) {
+          demoAlignUiActions.setError(
+            setState,
+            cause instanceof Error ? cause.message : String(cause),
+          );
+        } finally {
+          demoAlignUiActions.setVariationExcludeLoading(setState, false);
         }
+      },
+      setVariationExcludeThreshold: (threshold) => {
+        if (!variationExcludePreview) return;
         demoAlignUiActions.setVariationExcludePreview(setState, {
-          preview,
-          threshold: preview.threshold,
+          ...variationExcludePreview,
+          threshold,
         });
-        demoAlignUiActions.setStatus(setState, null);
-      } catch (cause) {
-        demoAlignUiActions.setError(
+      },
+      cancelVariationExclude: () => {
+        demoAlignUiActions.setVariationExcludePreview(setState, null);
+        demoAlignUiActions.setStatus(setState, "Var exclude cancelled");
+      },
+      applyVariationExclude: () => {
+        if (!variationExcludePreview) return;
+        const variationCells = cellsBelowVariationThreshold(
+          variationExcludePreview.preview,
+          variationExcludePreview.threshold,
+        );
+        demoAlignUiActions.setExcludedCells(
           setState,
-          cause instanceof Error ? cause.message : String(cause),
+          mergeExcludedAlignGridCells(excludedCells, variationCells),
         );
-      } finally {
-        demoAlignUiActions.setVariationExcludeLoading(setState, false);
-      }
-    },
-    setVariationExcludeThreshold: (threshold) => {
-      if (!variationExcludePreview) return;
-      demoAlignUiActions.setVariationExcludePreview(setState, {
-        ...variationExcludePreview,
-        threshold,
-      });
-    },
-    cancelVariationExclude: () => {
-      demoAlignUiActions.setVariationExcludePreview(setState, null);
-      demoAlignUiActions.setStatus(setState, "Var exclude cancelled");
-    },
-    applyVariationExclude: () => {
-      if (!variationExcludePreview) return;
-      const variationCells = cellsBelowVariationThreshold(
-        variationExcludePreview.preview,
-        variationExcludePreview.threshold,
-      );
-      demoAlignUiActions.setExcludedCells(
-        setState,
-        mergeExcludedAlignGridCells(excludedCells, variationCells),
-      );
-      demoAlignUiActions.setVariationExcludePreview(setState, null);
-      demoAlignUiActions.setStatus(
-        setState,
-        `Var excluded ${variationCells.length} of ${variationExcludePreview.preview.eligibleCellCount} cells`,
-      );
-    },
-    applySmartExclusion: (modelCells) => {
-      if (!frame) return;
-      const edgeCells = collectAlignGridEdgeCells(frame, grid);
-      const nextExcluded = mergeExcludedAlignGridCells(excludedCells, [
-        ...edgeCells,
-        ...modelCells,
-      ]);
-      demoAlignUiActions.setExcludedCells(setState, nextExcluded);
-      demoAlignUiActions.setStatus(
-        setState,
-        `Smart excluded ${nextExcluded.length - excludedCells.length} cells`,
-      );
-    },
-    reportError: (message) => demoAlignUiActions.setError(setState, message),
-    visibleCounts: frame
-      ? countVisibleAlignGridCells(frame, grid, excludedCells)
-      : { included: 0, excluded: 0 },
-    openImage: async (file) => {
-      demoAlignUiActions.setFrameLoading(setState, true);
-      demoAlignUiActions.setError(setState, null);
-      demoAlignUiActions.setStatus(setState, "Loading image");
-      try {
-        const { frame: nextFrame, format } = await loadImageFile(file);
-        demoAlignUiActions.applyLoadedImage(setState, file.name, format, nextFrame);
-      } catch (cause) {
-        demoAlignUiActions.clearLoadedImage(setState);
-        demoAlignUiActions.setError(
-          setState,
-          cause instanceof Error ? cause.message : String(cause),
-        );
-        demoAlignUiActions.setStatus(setState, null);
-      } finally {
-        demoAlignUiActions.setFrameLoading(setState, false);
-      }
-    },
-    openSampleImage: async (sampleId) => {
-      demoAlignUiActions.setFrameLoading(setState, true);
-      demoAlignUiActions.setError(setState, null);
-      demoAlignUiActions.setStatus(setState, "Loading sample image");
-      try {
-        const sample = await loadAlignerDemoPreset(sampleId);
-        demoAlignUiActions.applyDemoPreset(setState, sample);
-      } catch (cause) {
-        demoAlignUiActions.setError(
-          setState,
-          cause instanceof Error ? cause.message : String(cause),
-        );
-        demoAlignUiActions.setStatus(setState, null);
-      } finally {
-        demoAlignUiActions.setFrameLoading(setState, false);
-      }
-    },
-    saveCurrent: async () => {
-      if (!frame || !fileName || !sourceFormat) return false;
-      const { included } = countVisibleAlignGridCells(frame, grid, excludedCells);
-      if (included === 0) {
-        demoAlignUiActions.setError(
-          setState,
-          "All grid cells are excluded — adjust exclusions before saving.",
-        );
-        return false;
-      }
-      demoAlignUiActions.setSaving(setState, true);
-      demoAlignUiActions.setError(setState, null);
-      try {
-        const stem = stemName(fileName);
-        const zip = await buildRoiExportZip({
-          fileName,
-          frame,
-          sourceFormat,
-          grid,
-          excludedCells,
-        });
-        downloadBlob(
-          `${stem}-rois.zip`,
-          new Blob([new Uint8Array(zip)], { type: "application/zip" }),
-        );
+        demoAlignUiActions.setVariationExcludePreview(setState, null);
         demoAlignUiActions.setStatus(
           setState,
-          `Downloaded ${stem}-rois.zip (${included} ROI${included === 1 ? "" : "s"})`,
+          `Var excluded ${variationCells.length} of ${variationExcludePreview.preview.eligibleCellCount} cells`,
         );
-        return true;
-      } catch (cause) {
-        demoAlignUiActions.setError(
+      },
+      applySmartExclusion: (modelCells) => {
+        if (!frame) return;
+        const edgeCells = collectAlignGridEdgeCells(frame, grid);
+        const nextExcluded = mergeExcludedAlignGridCells(excludedCells, [
+          ...edgeCells,
+          ...modelCells,
+        ]);
+        demoAlignUiActions.setExcludedCells(setState, nextExcluded);
+        demoAlignUiActions.setStatus(
           setState,
-          cause instanceof Error ? cause.message : String(cause),
+          `Smart excluded ${nextExcluded.length - excludedCells.length} cells`,
         );
-        return false;
-      } finally {
-        demoAlignUiActions.setSaving(setState, false);
-      }
-    },
-  };
+      },
+      reportError: (message) => demoAlignUiActions.setError(setState, message),
+      visibleCounts: frame
+        ? countVisibleAlignGridCells(frame, grid, excludedCells)
+        : { included: 0, excluded: 0 },
+      openImage: async (file) => {
+        demoAlignUiActions.setFrameLoading(setState, true);
+        demoAlignUiActions.setError(setState, null);
+        demoAlignUiActions.setStatus(setState, "Loading image");
+        try {
+          const { frame: nextFrame, format } = await loadImageFile(file);
+          demoAlignUiActions.applyLoadedImage(setState, file.name, format, nextFrame);
+        } catch (cause) {
+          demoAlignUiActions.clearLoadedImage(setState);
+          demoAlignUiActions.setError(
+            setState,
+            cause instanceof Error ? cause.message : String(cause),
+          );
+          demoAlignUiActions.setStatus(setState, null);
+        } finally {
+          demoAlignUiActions.setFrameLoading(setState, false);
+        }
+      },
+      openSampleImage: async (sampleId) => {
+        demoAlignUiActions.setFrameLoading(setState, true);
+        demoAlignUiActions.setError(setState, null);
+        demoAlignUiActions.setStatus(setState, "Loading sample image");
+        try {
+          const sample = await loadAlignerDemoPreset(sampleId);
+          demoAlignUiActions.applyDemoPreset(setState, sample);
+        } catch (cause) {
+          demoAlignUiActions.setError(
+            setState,
+            cause instanceof Error ? cause.message : String(cause),
+          );
+          demoAlignUiActions.setStatus(setState, null);
+        } finally {
+          demoAlignUiActions.setFrameLoading(setState, false);
+        }
+      },
+      saveCurrent: async () => {
+        if (!frame || !fileName || !sourceFormat) return false;
+        const { included } = countVisibleAlignGridCells(frame, grid, excludedCells);
+        if (included === 0) {
+          demoAlignUiActions.setError(
+            setState,
+            "All grid cells are excluded — adjust exclusions before saving.",
+          );
+          return false;
+        }
+        demoAlignUiActions.setSaving(setState, true);
+        demoAlignUiActions.setError(setState, null);
+        try {
+          const stem = stemName(fileName);
+          const zip = await buildRoiExportZip({
+            fileName,
+            frame,
+            sourceFormat,
+            grid,
+            excludedCells,
+          });
+          downloadBlob(
+            `${stem}-rois.zip`,
+            new Blob([new Uint8Array(zip)], { type: "application/zip" }),
+          );
+          demoAlignUiActions.setStatus(
+            setState,
+            `Downloaded ${stem}-rois.zip (${included} ROI${included === 1 ? "" : "s"})`,
+          );
+          return true;
+        } catch (cause) {
+          demoAlignUiActions.setError(
+            setState,
+            cause instanceof Error ? cause.message : String(cause),
+          );
+          return false;
+        } finally {
+          demoAlignUiActions.setSaving(setState, false);
+        }
+      },
+    };
+  });
 }

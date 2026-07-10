@@ -1,6 +1,5 @@
 import type { FrameResult } from "@lisca/utils";
 import { prepareFrameRgba } from "@lisca/utils";
-import { useRef } from "react";
 
 function frameBitmapCacheKey(frame: FrameResult): string {
   const contrast = frame.appliedContrast ?? frame.suggestedContrast ?? frame.contrastDomain;
@@ -19,20 +18,22 @@ function createPreparedFrameBitmap(frame: FrameResult): HTMLCanvasElement {
   return canvas;
 }
 
+type FrameBitmapCache = { key: string; bitmap: HTMLCanvasElement };
+
 /** Reuses the decoded frame bitmap until frame pixels or contrast change. */
 export function usePreparedFrameBitmap(frame: FrameResult | null): HTMLCanvasElement | null {
-  const cacheRef = useRef<{ key: string; bitmap: HTMLCanvasElement } | null>(null);
+  let cache: FrameBitmapCache | undefined;
 
   if (!frame) {
     return null;
   }
 
   const key = frameBitmapCacheKey(frame);
-  if (cacheRef.current?.key === key) {
-    return cacheRef.current.bitmap;
+  if (cache?.key === key) {
+    return cache.bitmap;
   }
 
   const bitmap = createPreparedFrameBitmap(frame);
-  cacheRef.current = { key, bitmap };
+  cache = { key, bitmap };
   return bitmap;
 }

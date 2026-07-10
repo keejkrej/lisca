@@ -1,16 +1,15 @@
-import { createContext, useContext, type ReactNode } from "react";
-import { useAnnotateState } from "./use-annotate-state";
+import { createContext, useContext, type JSX } from "solid-js";
 
-type AnnotateState = ReturnType<typeof useAnnotateState>;
+import { useAnnotateState, type AnnotateState } from "./use-annotate-state";
 type AnnotatePageContextValue = {
   state: AnnotateState;
 };
 
 const AnnotatePageContext = createContext<AnnotateState | null>(null);
 
-export function AnnotatePageProvider({ children }: { children: ReactNode }) {
+export function AnnotatePageProvider(props: { children?: JSX.Element }) {
   const state = useAnnotateState();
-  return <AnnotatePageContext.Provider value={state}>{children}</AnnotatePageContext.Provider>;
+  return <AnnotatePageContext.Provider value={state}>{props.children}</AnnotatePageContext.Provider>;
 }
 
 export function useAnnotatePage(): AnnotatePageContextValue {

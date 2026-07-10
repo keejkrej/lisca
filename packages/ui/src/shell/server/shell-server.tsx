@@ -1,5 +1,3 @@
-"use client";
-
 import {
   addLiscaSavedServer,
   persistLiscaActiveServer,
@@ -12,16 +10,16 @@ import {
 } from "@lisca/utils";
 import {
   createContext,
+  createEffect,
+  createMemo,
+  createSignal,
+  onCleanup,
   useContext,
-  useEffect,
-  useReducer,
-  useRef,
-  type Dispatch,
-  type ReactNode,
-} from "react";
+  type JSX,
+} from "solid-js";
+import { createStore } from "solid-js/store";
 import { ServerAddressDialog } from "./server-address-dialog";
 import type { ConnectionState } from "../chrome/connection-status";
-import { useHttpProbeForUrl } from "./use-shell-http-probe";
 
 export type ShellServer = {
   httpBaseUrl: string;
@@ -50,11 +48,7 @@ type ShellServerAction =
       connectionState: ConnectionState;
     };
 
-const ShellServerContext = createContext<ShellServerData | null>(null);
-const ShellServerControlsContext = createContext<Pick<
-  ShellServer,
-  "openSettings" | "closeSettings"
-> | null>(null);
+const ShellServerContext = createContext<ShellServer>();
 
 function shellServerReducer(state: ShellServerData, action: ShellServerAction): ShellServerData {
   switch (action.type) {
@@ -76,13 +70,6 @@ function shellServerReducer(state: ShellServerData, action: ShellServerAction): 
         state: action.connectionState,
       };
   }
-}
-
-function createShellServerControls(dispatch: Dispatch<ShellServerAction>) {
-  return {
-    openSettings: () => dispatch({ type: "openSettings" }),
-    closeSettings: () => dispatch({ type: "closeSettings" }),
-  };
 }
 
 function readWebEnv() {
@@ -120,108 +107,193 @@ function resolveLocalLabel(defaultPort: number): string {
   }
 }
 
-export function ShellServerProvider({
-  defaultPort,
-  appId,
-  children,
-}: {
+function createInitialServerData(defaultPort: number, appId?: LiscaAppId): ShellServerData {
+  const env = readWebEnv();
+  const localLabel = resolveLocalLabel(defaultPort);
+  const persistedAddress = appId ? readLiscaActiveServerForApp(appId) : null;
+  if (persistedAddress) {
+    setLiscaActiveServerAddress(persistedAddress);
+  }
+  const httpBaseUrl = resolveLiscaHttpBaseUrl(
+    httpResolveOptions(env, defaultPort, persistedAddress),
+  );
+  return {
+    settingsOpen: false,
+    savedServers: readLiscaSavedServers(),
+    activeAddress: persistedAddress,
+    defaultPort,
+    localLabel,
+    httpBaseUrl,
+    state: "idle",
+  };
+}
+
+const MAX_PROBE_ATTEMPTS = 40;
+const PROBE_RETRY_MS = 250;
+
+function useHttpProbeForUrl(httpBaseUrl: () => string) {
+  const [state, setState] = createSignal<ConnectionState>("idle");
+  const [log, setLog] = createSignal<string[]>([]);
+
+  createEffect(() => {
+    const base = httpBaseUrl();
+    let cancelled = false;
+    let retryTimer: number | undefined;
+    let attempt = 0;
+    let connected = false;
+    const controller = new AbortController();
+
+    const scheduleRetry = () => {
+      if (cancelled || connected || attempt >= MAX_PROBE_ATTEMPTS) {
+        if (!connected && attempt >= MAX_PROBE_ATTEMPTS) setState("closed");
+        return;
+      }
+      retryTimer = window.setTimeout(probe, PROBE_RETRY_MS);
+    };
+
+    const probe = () => {
+      if (cancelled || connected) return;
+      attempt += 1;
+      setState("connecting");
+      const url = `${base.replace(/\/$/, "")}/fs/home`;
+      void fetch(url, { signal: controller.signal })
+        .then(async (response) => {
+          if (cancelled) return;
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          connected = true;
+          setState("open");
+          setLog((lines) => [...lines, `connected ${url}`]);
+        })
+        .catch((cause) => {
+          if (cancelled || controller.signal.aborted) return;
+          setLog((lines) => [
+            ...lines,
+            cause instanceof Error ? cause.message : String(cause),
+          ]);
+          scheduleRetry();
+        });
+    };
+
+    setState("idle");
+    setLog([]);
+    probe();
+
+    onCleanup(() => {
+      cancelled = true;
+      controller.abort();
+      if (retryTimer !== undefined) window.clearTimeout(retryTimer);
+    });
+  });
+
+  return { state, log };
+}
+
+export function ShellServerProvider(props: {
   defaultPort: number;
   appId?: LiscaAppId;
-  children: ReactNode;
+  children?: JSX.Element;
 }) {
-  const [data, dispatch] = useReducer(shellServerReducer, null, () => {
-    const env = readWebEnv();
-    const localLabel = resolveLocalLabel(defaultPort);
-    const persistedAddress = appId ? readLiscaActiveServerForApp(appId) : null;
-    if (persistedAddress) {
-      setLiscaActiveServerAddress(persistedAddress);
-    }
-    const httpBaseUrl = resolveLiscaHttpBaseUrl(
-      httpResolveOptions(env, defaultPort, persistedAddress),
-    );
-    return {
-      settingsOpen: false,
-      savedServers: readLiscaSavedServers(),
-      activeAddress: persistedAddress,
-      defaultPort,
-      localLabel,
-      httpBaseUrl,
-      state: "idle" as ConnectionState,
-    };
+  const [server, setServer] = createStore<ShellServer>({
+    ...createInitialServerData(props.defaultPort, props.appId),
+    openSettings: () => {},
+    closeSettings: () => {},
   });
-  const controlsRef = useRef<ReturnType<typeof createShellServerControls>>(null!);
-  if (!controlsRef.current) {
-    controlsRef.current = createShellServerControls(dispatch);
-  }
-  const env = readWebEnv();
-  const httpBaseUrl = resolveLiscaHttpBaseUrl(
-    httpResolveOptions(env, defaultPort, data.activeAddress),
-  );
-  const localLabel = resolveLocalLabel(defaultPort);
-  const probe = useHttpProbeForUrl(httpBaseUrl);
 
-  useEffect(() => {
+  const dispatch = (action: ShellServerAction) => {
+    setServer(
+      shellServerReducer(
+        {
+          httpBaseUrl: server.httpBaseUrl,
+          state: server.state,
+          defaultPort: server.defaultPort,
+          localLabel: server.localLabel,
+          activeAddress: server.activeAddress,
+          savedServers: server.savedServers,
+          settingsOpen: server.settingsOpen,
+        },
+        action,
+      ),
+    );
+  };
+
+  setServer({
+    openSettings: () => dispatch({ type: "openSettings" }),
+    closeSettings: () => dispatch({ type: "closeSettings" }),
+  });
+
+  const httpBaseUrl = createMemo(() => {
+    const env = readWebEnv();
+    return resolveLiscaHttpBaseUrl(
+      httpResolveOptions(env, props.defaultPort, server.activeAddress),
+    );
+  });
+
+  const localLabel = createMemo(() => resolveLocalLabel(props.defaultPort));
+  const probe = useHttpProbeForUrl(() => httpBaseUrl());
+
+  createEffect(() => {
     dispatch({
       type: "syncRuntime",
-      httpBaseUrl,
-      localLabel,
-      connectionState: probe.state,
+      httpBaseUrl: httpBaseUrl(),
+      localLabel: localLabel(),
+      connectionState: probe.state(),
     });
-  }, [httpBaseUrl, localLabel, probe.state]);
+  });
 
   const connectTo = (address: string | null) => {
     const next = address?.trim() ? address.trim() : null;
-    if (appId) {
-      persistLiscaActiveServer(appId, next);
+    if (props.appId) {
+      persistLiscaActiveServer(props.appId, next);
     } else {
       setLiscaActiveServerAddress(next);
     }
     dispatch({ type: "setActiveAddress", activeAddress: next });
   };
+
   const handleAddServer = (address: string) => {
     dispatch({
       type: "setSavedServers",
-      savedServers: addLiscaSavedServer(address, { defaultPort }),
+      savedServers: addLiscaSavedServer(address, { defaultPort: props.defaultPort }),
     });
   };
+
   const handleRemoveServer = (address: string) => {
     dispatch({
       type: "setSavedServers",
       savedServers: removeLiscaSavedServer(address),
     });
-    if (data.activeAddress === address.trim()) {
-      if (appId) persistLiscaActiveServer(appId, null);
+    if (server.activeAddress === address.trim()) {
+      if (props.appId) persistLiscaActiveServer(props.appId, null);
       else setLiscaActiveServerAddress(null);
       dispatch({ type: "setActiveAddress", activeAddress: null });
     }
   };
 
   return (
-    <ShellServerControlsContext.Provider value={controlsRef.current}>
-      <ShellServerContext.Provider value={data}>
-        {children}
-        <ServerAddressDialog
-          activeAddress={data.activeAddress}
-          currentHttpBaseUrl={data.httpBaseUrl}
-          defaultPort={defaultPort}
-          localLabel={data.localLabel}
-          open={data.settingsOpen}
-          savedServers={data.savedServers}
-          onAddServer={handleAddServer}
-          onConnect={connectTo}
-          onOpenChange={(open) => dispatch({ type: "setSettingsOpen", open })}
-          onRemoveServer={handleRemoveServer}
-        />
-      </ShellServerContext.Provider>
-    </ShellServerControlsContext.Provider>
+    <ShellServerContext.Provider value={server}>
+      {props.children}
+      <ServerAddressDialog
+        activeAddress={server.activeAddress}
+        currentHttpBaseUrl={server.httpBaseUrl}
+        defaultPort={props.defaultPort}
+        localLabel={server.localLabel}
+        open={server.settingsOpen}
+        savedServers={server.savedServers}
+        onAddServer={handleAddServer}
+        onConnect={connectTo}
+        onOpenChange={(open) => dispatch({ type: "setSettingsOpen", open })}
+        onRemoveServer={handleRemoveServer}
+      />
+    </ShellServerContext.Provider>
   );
 }
 
 export function useShellServer(): ShellServer {
-  const data = useContext(ShellServerContext);
-  const controls = useContext(ShellServerControlsContext);
-  if (!data || !controls) {
+  const value = useContext(ShellServerContext);
+  if (!value) {
     throw new Error("useShellServer must be used within ShellServerProvider");
   }
-  return { ...data, ...controls };
+  return value;
 }

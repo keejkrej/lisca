@@ -13,14 +13,14 @@ export function StudioInfoDock(props: {
   return (
     <DockStrip>
       <DockSection fit="panel" title="Instruction">
-        <p className="line-clamp-4 text-center text-sm leading-snug">
+        <p class="line-clamp-4 text-center text-sm leading-snug">
           {instructionForStep(props.step)}
         </p>
       </DockSection>
       <DockSection title="Action">
-        <div className="flex flex-col gap-2">
+        <div class="flex flex-col gap-2">
           <Button
-            className="w-full justify-center"
+            class="w-full justify-center"
             disabled={props.infoStep === 1}
             size="sm"
             type="button"
@@ -30,7 +30,7 @@ export function StudioInfoDock(props: {
             Back
           </Button>
           <Button
-            className="w-full justify-center"
+            class="w-full justify-center"
             size="sm"
             type="button"
             variant="outline"

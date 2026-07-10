@@ -1,8 +1,6 @@
-"use client";
-
 import type { AlignGridShape } from "@lisca/contracts";
 import { clamp } from "@lisca/utils";
-import { useEffect, useRef, useState } from "react";
+import { createEffect, createSignal } from "solid-js";
 
 import { Button } from "../../components/ui/button";
 import { Field, FieldLabel } from "../../components/ui/field";
@@ -20,21 +18,21 @@ function AlignNumberInput(props: {
   min?: number;
   step?: string;
 }) {
-  const [draft, setDraft] = useState(formatNumber(props.value));
-  const skipBlurCommitRef = useRef(false);
+  const [draft, setDraft] = createSignal(formatNumber(props.value));
+  let skipBlurCommit = false;
 
-  useEffect(() => {
+  createEffect(() => {
     setDraft(formatNumber(props.value));
-  }, [props.value]);
+  });
 
   const revert = () => setDraft(formatNumber(props.value));
   const commit = () => {
-    if (skipBlurCommitRef.current) {
-      skipBlurCommitRef.current = false;
+    if (skipBlurCommit) {
+      skipBlurCommit = false;
       revert();
       return;
     }
-    const trimmed = draft.trim();
+    const trimmed = draft().trim();
     const value = trimmed === "" ? NaN : Number(trimmed);
     if (!Number.isFinite(value) || (props.min != null && value < props.min)) {
       revert();
@@ -51,14 +49,14 @@ function AlignNumberInput(props: {
       size="sm"
       step={props.step ?? "any"}
       type="number"
-      value={draft}
+      value={draft()}
       onBlur={commit}
-      onChange={(e) => setDraft(e.target.value)}
+      onInput={(e) => setDraft(e.currentTarget.value)}
       onKeyDown={(e) => {
         if (e.key === "Enter") {
           e.currentTarget.blur();
         } else if (e.key === "Escape") {
-          skipBlurCommitRef.current = true;
+          skipBlurCommit = true;
           revert();
           e.currentTarget.blur();
         }
@@ -117,182 +115,156 @@ export type AlignGridProps = {
  * shape toggle, rotation, vectors A/B, pattern width/height, offsets.
  */
 export function AlignGrid(props: AlignGridProps) {
-  const {
-    overlayVisible,
-    onOverlayVisibleChange,
-    shape,
-    onShapeChange,
-    rotationDegrees,
-    onRotationDegreesChange,
-    vectorA,
-    vectorB,
-    onVectorAChange,
-    onVectorBChange,
-    vectorMin = 1,
-    patternWidth,
-    patternHeight,
-    onPatternWidthChange,
-    onPatternHeightChange,
-    patternMin = 1,
-    offsetX,
-    offsetY,
-    onOffsetXChange,
-    onOffsetYChange,
-    overlayOpacity,
-    onOverlayOpacityChange,
-    onReset,
-    resetDisabled,
-    disabled,
-    sectionTitle = "Grid",
-    sectionDescription,
-    sectionClassName,
-    sectionContentClassName,
-  } = props;
+  const vectorMin = () => props.vectorMin ?? 1;
+  const patternMin = () => props.patternMin ?? 1;
+  const [rotationDraft, setRotationDraft] = createSignal(props.rotationDegrees);
+  const [overlayOpacityDraft, setOverlayOpacityDraft] = createSignal(props.overlayOpacity);
 
-  const [rotationDraft, setRotationDraft] = useState(rotationDegrees);
-  const [overlayOpacityDraft, setOverlayOpacityDraft] = useState(overlayOpacity);
+  createEffect(() => {
+    setRotationDraft(props.rotationDegrees);
+  });
 
-  useEffect(() => {
-    setRotationDraft(rotationDegrees);
-  }, [rotationDegrees]);
-
-  useEffect(() => {
-    setOverlayOpacityDraft(overlayOpacity);
-  }, [overlayOpacity]);
+  createEffect(() => {
+    setOverlayOpacityDraft(props.overlayOpacity);
+  });
 
   return (
     <Section
-      contentClassName={sectionContentClassName}
-      description={sectionDescription}
-      title={sectionTitle}
-      className={sectionClassName}
+      contentClassName={props.sectionContentClassName}
+      description={props.sectionDescription}
+      title={props.sectionTitle ?? "Grid"}
+      class={props.sectionClassName}
     >
-      <div className="min-w-0 space-y-3">
-        <div className="grid w-full grid-cols-2 gap-2">
+      <div class="min-w-0 space-y-3">
+        <div class="grid w-full grid-cols-2 gap-2">
           <Toggle
             aria-label="Show grid overlay"
-            aria-pressed={overlayVisible}
-            className="w-full justify-center text-xs"
-            disabled={disabled}
-            pressed={overlayVisible}
+            aria-pressed={props.overlayVisible}
+            class="w-full justify-center text-xs"
+            disabled={props.disabled}
+            pressed={props.overlayVisible}
             size="sm"
             variant="outline"
-            onPressedChange={onOverlayVisibleChange}
+            onChange={props.onOverlayVisibleChange}
           >
             Show
           </Toggle>
           <Button
-            className="w-full justify-center text-xs"
-            disabled={disabled || resetDisabled || !onReset}
+            class="w-full justify-center text-xs"
+            disabled={props.disabled || props.resetDisabled || !props.onReset}
             size="sm"
             type="button"
             variant="outline"
-            onClick={() => onReset?.()}
+            onClick={() => props.onReset?.()}
           >
             Reset
           </Button>
         </div>
 
-        <Field className="min-w-0 w-full">
+        <Field class="min-w-0 w-full">
           <FieldLabel>Opacity</FieldLabel>
           <Slider
-            className="w-full pt-0.5"
-            disabled={disabled}
+            class="w-full pt-0.5"
+            disabled={props.disabled}
             max={1}
             min={0}
             step={0.01}
-            value={overlayOpacityDraft}
+            value={overlayOpacityDraft()}
             onValueChange={(value) => setOverlayOpacityDraft(clamp(value, 0, 1))}
             onValueCommitted={(value) => {
               const opacity = clamp(value, 0, 1);
               setOverlayOpacityDraft(opacity);
-              onOverlayOpacityChange(opacity);
+              props.onOverlayOpacityChange(opacity);
             }}
           />
         </Field>
 
-        <Field className="min-w-0 w-full">
+        <Field class="min-w-0 w-full">
           <FieldLabel>Grid shape</FieldLabel>
-          <AlignGridShapeToggle disabled={disabled} shape={shape} onShapeChange={onShapeChange} />
+          <AlignGridShapeToggle
+            disabled={props.disabled}
+            shape={props.shape}
+            onShapeChange={props.onShapeChange}
+          />
         </Field>
 
-        <Field className="min-w-0 w-full">
+        <Field class="min-w-0 w-full">
           <FieldLabel>Rotation</FieldLabel>
           <Slider
-            className="w-full pt-0.5"
-            disabled={disabled}
+            class="w-full pt-0.5"
+            disabled={props.disabled}
             max={180}
             min={-180}
             step={0.1}
-            value={rotationDraft}
+            value={rotationDraft()}
             onValueChange={(value) => setRotationDraft(clamp(value, -180, 180))}
             onValueCommitted={(value) => {
               const degrees = clamp(value, -180, 180);
               setRotationDraft(degrees);
-              onRotationDegreesChange(degrees);
+              props.onRotationDegreesChange(degrees);
             }}
           />
         </Field>
 
-        <div className="grid grid-cols-2 gap-2">
-          <Field className="min-w-0 w-full">
+        <div class="grid grid-cols-2 gap-2">
+          <Field class="min-w-0 w-full">
             <FieldLabel>Vector A</FieldLabel>
             <AlignNumberInput
-              disabled={disabled}
-              min={vectorMin}
-              value={vectorA}
-              onCommit={onVectorAChange}
+              disabled={props.disabled}
+              min={vectorMin()}
+              value={props.vectorA}
+              onCommit={props.onVectorAChange}
             />
           </Field>
-          <Field className="min-w-0 w-full">
+          <Field class="min-w-0 w-full">
             <FieldLabel>Vector B</FieldLabel>
             <AlignNumberInput
-              disabled={disabled}
-              min={vectorMin}
-              value={vectorB}
-              onCommit={onVectorBChange}
+              disabled={props.disabled}
+              min={vectorMin()}
+              value={props.vectorB}
+              onCommit={props.onVectorBChange}
             />
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <Field className="min-w-0 w-full">
+        <div class="grid grid-cols-2 gap-2">
+          <Field class="min-w-0 w-full">
             <FieldLabel>Pattern Width</FieldLabel>
             <AlignNumberInput
-              disabled={disabled}
-              min={patternMin}
-              value={patternWidth}
-              onCommit={onPatternWidthChange}
+              disabled={props.disabled}
+              min={patternMin()}
+              value={props.patternWidth}
+              onCommit={props.onPatternWidthChange}
             />
           </Field>
-          <Field className="min-w-0 w-full">
+          <Field class="min-w-0 w-full">
             <FieldLabel>Pattern Height</FieldLabel>
             <AlignNumberInput
-              disabled={disabled}
-              min={patternMin}
-              value={patternHeight}
-              onCommit={onPatternHeightChange}
+              disabled={props.disabled}
+              min={patternMin()}
+              value={props.patternHeight}
+              onCommit={props.onPatternHeightChange}
             />
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <Field className="min-w-0 w-full">
+        <div class="grid grid-cols-2 gap-2">
+          <Field class="min-w-0 w-full">
             <FieldLabel>Offset X</FieldLabel>
             <AlignNumberInput
-              disabled={disabled}
+              disabled={props.disabled}
               step="0.1"
-              value={offsetX}
-              onCommit={onOffsetXChange}
+              value={props.offsetX}
+              onCommit={props.onOffsetXChange}
             />
           </Field>
-          <Field className="min-w-0 w-full">
+          <Field class="min-w-0 w-full">
             <FieldLabel>Offset Y</FieldLabel>
             <AlignNumberInput
-              disabled={disabled}
+              disabled={props.disabled}
               step="0.1"
-              value={offsetY}
-              onCommit={onOffsetYChange}
+              value={props.offsetY}
+              onCommit={props.onOffsetYChange}
             />
           </Field>
         </div>

@@ -1,7 +1,6 @@
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
-import react, { reactCompilerPreset } from "@vitejs/plugin-react";
-import babel from "@rolldown/plugin-babel";
+import solid from "vite-plugin-solid";
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { join, normalize, resolve } from "node:path";
 import { createRequire } from "node:module";
@@ -16,7 +15,6 @@ import {
 } from "vite";
 
 const require = createRequire(fileURLToPath(new URL(".", import.meta.url)));
-const reactCompilerPlugin = require("babel-plugin-react-compiler");
 const {
   LISCA_API_PROXY_PREFIXES,
   liscaDevBackendPort,
@@ -28,20 +26,9 @@ export const LISCA_DEV_BACKEND_PORT_OFFSET = 1000;
 
 export { liscaDevBackendPort };
 
-/** React plugin with React Compiler auto-memoization enabled for all Lisca web apps. */
-export function liscaReactPlugin(): PluginOption {
-  const compilerPreset = reactCompilerPreset();
-  return [
-    react(),
-    babel({
-      presets: [
-        {
-          ...compilerPreset,
-          preset: () => ({ plugins: [[reactCompilerPlugin, {}]] }),
-        },
-      ],
-    }),
-  ];
+/** Solid plugin for all Lisca web apps. Replaces the former React + React Compiler plugin. */
+export function liscaSolidPlugin(): PluginOption {
+  return solid();
 }
 
 const brandPublicDir = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../assets/brand");
@@ -120,15 +107,11 @@ export function createLiscaViteConfig(options: {
     publicDir: brandPublicDir,
     customLogger: createLiscaDevLogger(),
     resolve: {
-      // React Compiler runtime must share the same React instance as react-dom.
-      dedupe: ["react", "react-dom"],
-    },
-    optimizeDeps: {
-      include: ["react/compiler-runtime"],
+      dedupe: ["solid-js"],
     },
     plugins: [
-      tanstackRouter({ target: "react", autoCodeSplitting: true }),
-      liscaReactPlugin(),
+      tanstackRouter({ target: "solid", autoCodeSplitting: true }),
+      liscaSolidPlugin(),
       tailwindcss(),
       liscaModelsPlugin(),
     ],

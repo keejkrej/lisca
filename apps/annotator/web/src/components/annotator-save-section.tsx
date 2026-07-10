@@ -1,5 +1,6 @@
 import { Button } from "@lisca/ui/components";
 import { DockSection, ReadonlyPathField } from "@lisca/ui/shell";
+import { For, Show } from "solid-js";
 
 import { annotationOutputPaths } from "../utils/annotation-output";
 import { useAnnotateDock } from "../state/annotate-page-selectors";
@@ -10,25 +11,46 @@ export function AnnotatorSaveSection() {
 
   return (
     <DockSection title="Save">
-      <div className="flex w-full flex-col gap-2">
-        {paths.length > 1 ? (
-          <div className="grid w-full grid-cols-2 gap-2">
-            {paths.map((path) => (
-              <div key={path} className="min-w-0">
+      <div class="flex w-full flex-col gap-2">
+        <Show
+          when={paths.length > 1}
+          fallback={
+            <For each={paths}>
+              {(path) => (
                 <ReadonlyPathField aria-label={`Output path ${path}`} value={path} />
-              </div>
-            ))}
+              )}
+            </For>
+          }
+        >
+          <div class="grid w-full grid-cols-2 gap-2">
+            <For each={paths}>
+              {(path) => (
+                <div class="min-w-0">
+                  <ReadonlyPathField aria-label={`Output path ${path}`} value={path} />
+                </div>
+              )}
+            </For>
           </div>
-        ) : (
-          paths.map((path) => (
-            <ReadonlyPathField key={path} aria-label={`Output path ${path}`} value={path} />
-          ))
-        )}
-        {paths.length > 1 ? (
-          <div className="grid w-full grid-cols-2 gap-2">
-            <div className="col-span-2 min-w-0">
+        </Show>
+        <Show
+          when={paths.length > 1}
+          fallback={
+            <Button
+              class="w-full justify-center"
+              disabled={!dock.canSave}
+              size="sm"
+              type="button"
+              variant="outline"
+              onClick={() => void dock.handleSave()}
+            >
+              {dock.saving ? "Saving…" : "Save"}
+            </Button>
+          }
+        >
+          <div class="grid w-full grid-cols-2 gap-2">
+            <div class="col-span-2 min-w-0">
               <Button
-                className="w-full justify-center"
+                class="w-full justify-center"
                 disabled={!dock.canSave}
                 size="sm"
                 type="button"
@@ -39,18 +61,7 @@ export function AnnotatorSaveSection() {
               </Button>
             </div>
           </div>
-        ) : (
-          <Button
-            className="w-full justify-center"
-            disabled={!dock.canSave}
-            size="sm"
-            type="button"
-            variant="outline"
-            onClick={() => void dock.handleSave()}
-          >
-            {dock.saving ? "Saving…" : "Save"}
-          </Button>
-        )}
+        </Show>
       </div>
     </DockSection>
   );

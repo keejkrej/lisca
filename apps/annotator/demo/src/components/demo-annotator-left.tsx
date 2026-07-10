@@ -1,17 +1,18 @@
 import { ContrastControl } from "@lisca/ui/features";
 
 import type { DemoAnnotatorState } from "@lisca/web-demo";
+import type { Accessor } from "solid-js";
 
-export function DemoAnnotatorLeft({ state }: { state: DemoAnnotatorState }) {
+export function DemoAnnotatorLeft(props: { state: Accessor<DemoAnnotatorState> }) {
   return (
-    <div className="flex min-h-0 flex-col gap-2 p-3">
+    <div class="flex min-h-0 flex-col gap-2 p-3">
       <ContrastControl
         aria-label="Contrast"
-        contrast={state.contrast}
-        disabled={!state.frame}
-        frame={state.frame}
+        contrast={props.state().contrast}
+        disabled={!props.state().frame}
+        frame={props.state().frame}
         role="region"
-        onContrastChange={state.setContrast}
+        onContrastChange={props.state().setContrast}
       />
     </div>
   );

@@ -1,7 +1,7 @@
 import type { AnnotationLabel, RoiWorkspaceScan } from "@lisca/contracts";
-import type { Result } from "@effect-atom/atom-react";
+import type { Result } from "@effect-atom/atom-solid";
 import { clamp } from "@lisca/utils";
-import { useEffect } from "react";
+import { createEffect, type Accessor } from "solid-js";
 import type {
   AnnotatorUiActions,
   AnnotatorUiState,
@@ -10,18 +10,22 @@ import type {
 } from "../atoms/annotator-ui";
 import { currentPosition } from "../atoms/annotator-ui";
 import { resultData, resultFailureMessage, resultLoading } from "../atoms/result-utils";
+
 export type AnnotateWorkspaceSync = {
   workspacePath: string | null;
   setWorkspacePath: (path: string | null) => void;
 };
+
 export type AnnotateScanAtoms = {
-  scanResult: Result.Result<RoiWorkspaceScan, unknown> | undefined;
-  labelsResult: Result.Result<readonly AnnotationLabel[], unknown> | undefined;
-  shellWorkspacePath: string | null;
+  scanResult: Accessor<Result.Result<RoiWorkspaceScan, unknown> | undefined>;
+  labelsResult: Accessor<Result.Result<readonly AnnotationLabel[], unknown> | undefined>;
+  shellWorkspacePath: Accessor<string | null>;
 };
+
 export type AnnotateSessionMeta = {
   scanLoading: boolean;
 };
+
 export type AnnotateSessionActions = {
   setSelection: (patch: Partial<RoiSelection>) => void;
   setContrast: (contrast: AnnotatorUiState["contrast"]) => void;
@@ -33,19 +37,19 @@ export type AnnotateSessionActions = {
   setLabelDialogOpen: (open: boolean) => void;
   setLabelError: (error: string | null) => void;
 };
+
 export type UseAnnotateSessionCoreOptions = {
-  ui: AnnotatorUiState;
+  ui: Accessor<AnnotatorUiState>;
   setUi: (update: StateUpdater<AnnotatorUiState>) => void;
   actions: AnnotatorUiActions;
   workspace: AnnotateWorkspaceSync;
   scan: AnnotateScanAtoms;
   toErrorMessage: (cause: unknown, fallback: string) => string;
 };
+
 export function useAnnotateSessionCore(options: UseAnnotateSessionCoreOptions) {
   const { ui, setUi, actions, workspace, scan, toErrorMessage } = options;
-  const scanLoading = Boolean(
-    scan.shellWorkspacePath && (resultLoading(scan.scanResult) || resultLoading(scan.labelsResult)),
-  );
+
   const sessionActions: AnnotateSessionActions = {
     setSelection: (patch) => actions.setSelection(setUi, patch),
     setContrast: (contrast) => actions.setContrast(setUi, contrast),
@@ -57,62 +61,90 @@ export function useAnnotateSessionCore(options: UseAnnotateSessionCoreOptions) {
     setLabelDialogOpen: (open) => actions.setLabelDialogOpen(setUi, open),
     setLabelError: (error) => actions.setLabelError(setUi, error),
   };
+
   const { setSelection } = sessionActions;
-  useEffect(() => {
-    if (workspace.workspacePath === ui.workspacePath) return;
-    if (workspace.workspacePath == null && ui.workspacePath != null) {
-      workspace.setWorkspacePath(ui.workspacePath);
+
+  createEffect(() => {
+    const currentUi = ui();
+    if (workspace.workspacePath === currentUi.workspacePath) return;
+    if (workspace.workspacePath == null && currentUi.workspacePath != null) {
+      workspace.setWorkspacePath(currentUi.workspacePath);
       return;
     }
     actions.setWorkspacePath(setUi, workspace.workspacePath);
-  }, [actions, setUi, ui.workspacePath, workspace]);
-  useEffect(() => {
+  });
+
+  createEffect(() => {
+    const shellWorkspacePath = scan.shellWorkspacePath();
+    const scanLoading = Boolean(
+      shellWorkspacePath &&
+        (resultLoading(scan.scanResult()) || resultLoading(scan.labelsResult())),
+    );
     if (scanLoading) {
       actions.setScanError(setUi, null);
       actions.setStatus(setUi, "Scanning ROI workspace");
     }
-  }, [actions, scanLoading, setUi]);
-  useEffect(() => {
-    if (ui.workspacePath !== scan.shellWorkspacePath) return;
-    const scanData = resultData(scan.scanResult);
+  });
+
+  createEffect(() => {
+    const currentUi = ui();
+    const shellWorkspacePath = scan.shellWorkspacePath();
+    if (currentUi.workspacePath !== shellWorkspacePath) return;
+    const scanData = resultData(scan.scanResult());
     if (scanData) actions.setStatus(setUi, "ROI workspace loaded");
-  }, [actions, scan.scanResult, scan.shellWorkspacePath, setUi, ui.workspacePath]);
-  useEffect(() => {
-    if (ui.workspacePath !== scan.shellWorkspacePath) return;
-    const labels = resultData(scan.labelsResult);
+  });
+
+  createEffect(() => {
+    const currentUi = ui();
+    const shellWorkspacePath = scan.shellWorkspacePath();
+    if (currentUi.workspacePath !== shellWorkspacePath) return;
+    const labels = resultData(scan.labelsResult());
     if (!labels || labels.length === 0) return;
     actions.syncActiveLabelFromLabels(
       setUi,
       labels.map((label) => label.id),
     );
-  }, [actions, scan.labelsResult, scan.shellWorkspacePath, setUi, ui.workspacePath]);
-  useEffect(() => {
-    if (ui.workspacePath !== scan.shellWorkspacePath) return;
-    const scanLoadError = resultFailureMessage(scan.scanResult);
-    const labelsLoadError = resultFailureMessage(scan.labelsResult);
+  });
+
+  createEffect(() => {
+    const currentUi = ui();
+    const shellWorkspacePath = scan.shellWorkspacePath();
+    if (currentUi.workspacePath !== shellWorkspacePath) return;
+    const scanLoadError = resultFailureMessage(scan.scanResult());
+    const labelsLoadError = resultFailureMessage(scan.labelsResult());
     const error = scanLoadError ?? labelsLoadError;
     if (!error) return;
     actions.setFrame(setUi, null);
     actions.setScanError(setUi, toErrorMessage(error, "ROI workspace load failed"));
-  }, [
-    actions,
-    scan.labelsResult,
-    scan.scanResult,
-    scan.shellWorkspacePath,
-    setUi,
-    toErrorMessage,
-    ui.workspacePath,
-  ]);
-  const scanData = resultData(scan.scanResult);
-  useEffect(() => {
+  });
+
+  const derived = () => {
+    const currentUi = ui();
+    const shellWorkspacePath = scan.shellWorkspacePath();
+    const scanLoading = Boolean(
+      shellWorkspacePath &&
+        (resultLoading(scan.scanResult()) || resultLoading(scan.labelsResult())),
+    );
+    const scanData = resultData(scan.scanResult());
+    const position = currentPosition(scanData ?? null, currentUi.selection.pos);
+    return {
+      scanLoading,
+      scan: scanData ?? null,
+      position,
+    };
+  };
+
+  createEffect(() => {
+    const currentUi = ui();
+    const scanData = resultData(scan.scanResult());
     const firstPosition = scanData?.positions[0] ?? null;
     if (!firstPosition) {
       if (
-        ui.selection.pos !== null ||
-        ui.selection.roi !== null ||
-        ui.selection.channel !== null ||
-        ui.selection.timeIndex !== 0 ||
-        ui.selection.zIndex !== 0
+        currentUi.selection.pos !== null ||
+        currentUi.selection.roi !== null ||
+        currentUi.selection.channel !== null ||
+        currentUi.selection.timeIndex !== 0 ||
+        currentUi.selection.zIndex !== 0
       ) {
         setSelection({
           pos: null,
@@ -124,43 +156,47 @@ export function useAnnotateSessionCore(options: UseAnnotateSessionCoreOptions) {
       }
       return;
     }
-    if (!scanData?.positions.some((entry) => entry.pos === ui.selection.pos)) {
+    if (!scanData?.positions.some((entry) => entry.pos === currentUi.selection.pos)) {
       setSelection({
         pos: firstPosition.pos,
       });
     }
-  }, [scanData, setSelection, ui.selection]);
-  const position = currentPosition(scanData ?? null, ui.selection.pos);
-  useEffect(() => {
+  });
+
+  createEffect(() => {
+    const currentUi = ui();
+    const position = derived().position;
     if (!position) return;
     const patch = {
-      channel: position.channels.includes(ui.selection.channel ?? Number.NaN)
-        ? ui.selection.channel
+      channel: position.channels.includes(currentUi.selection.channel ?? Number.NaN)
+        ? currentUi.selection.channel
         : (position.channels[0] ?? null),
-      roi: position.rois.some((entry) => entry.roi === ui.selection.roi)
-        ? ui.selection.roi
+      roi: position.rois.some((entry) => entry.roi === currentUi.selection.roi)
+        ? currentUi.selection.roi
         : (position.rois[0]?.roi ?? null),
-      timeIndex: clamp(ui.selection.timeIndex, 0, Math.max(0, position.times.length - 1)),
-      zIndex: clamp(ui.selection.zIndex, 0, Math.max(0, position.zSlices.length - 1)),
+      timeIndex: clamp(currentUi.selection.timeIndex, 0, Math.max(0, position.times.length - 1)),
+      zIndex: clamp(currentUi.selection.zIndex, 0, Math.max(0, position.zSlices.length - 1)),
     };
     if (
-      patch.channel !== ui.selection.channel ||
-      patch.roi !== ui.selection.roi ||
-      patch.timeIndex !== ui.selection.timeIndex ||
-      patch.zIndex !== ui.selection.zIndex
+      patch.channel !== currentUi.selection.channel ||
+      patch.roi !== currentUi.selection.roi ||
+      patch.timeIndex !== currentUi.selection.timeIndex ||
+      patch.zIndex !== currentUi.selection.zIndex
     ) {
       setSelection(patch);
     }
-  }, [position, setSelection, ui.selection]);
+  });
+
   return {
     state: ui,
     actions: sessionActions,
-    meta: {
-      scanLoading,
-    } satisfies AnnotateSessionMeta,
-    derived: {
-      scan: scanData ?? null,
-      position,
+    meta: () =>
+      ({
+        scanLoading: derived().scanLoading,
+      }) satisfies AnnotateSessionMeta,
+    derived: () => {
+      const { scanLoading: _scanLoading, ...rest } = derived();
+      return rest;
     },
   };
 }

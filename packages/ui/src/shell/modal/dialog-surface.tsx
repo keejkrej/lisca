@@ -1,4 +1,4 @@
-import type { ComponentProps, ReactNode } from "react";
+import { splitProps, type JSX } from "solid-js";
 
 const dialogSurfaceClass =
   "rounded-xl border border-border bg-background text-foreground shadow-2xl";
@@ -13,26 +13,33 @@ const maxWidthClass = {
 
 export type DialogSurfaceMaxWidth = keyof typeof maxWidthClass;
 
-export function DialogSurface({
-  children,
-  className,
-  maxWidth = "sm",
-  "aria-labelledby": ariaLabelledBy,
-  ...props
-}: ComponentProps<"div"> & {
-  children: ReactNode;
-  maxWidth?: DialogSurfaceMaxWidth;
-  "aria-labelledby"?: string;
-}) {
+export function DialogSurface(
+  props: JSX.HTMLAttributes<HTMLDivElement> & {
+    children?: JSX.Element;
+    maxWidth?: DialogSurfaceMaxWidth;
+    "aria-labelledby"?: string;
+  },
+) {
+  const [local, rest] = splitProps(props, [
+    "children",
+    "class",
+    "maxWidth",
+    "aria-labelledby",
+  ]);
   return (
     <div
-      aria-labelledby={ariaLabelledBy}
+      aria-labelledby={local["aria-labelledby"]}
       aria-modal="true"
-      className={cn("flex w-full flex-col", maxWidthClass[maxWidth], dialogSurfaceClass, className)}
+      class={cn(
+        "flex w-full flex-col",
+        maxWidthClass[local.maxWidth ?? "sm"],
+        dialogSurfaceClass,
+        local.class,
+      )}
       role="dialog"
-      {...props}
+      {...rest}
     >
-      {children}
+      {local.children}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { AnnotationCanvas, SmartSegmentModelDialog } from "@lisca/ui/features";
 import { ViewportCard } from "@lisca/ui/shell";
 import { useSmartSegment } from "@lisca/smart/segment/browser";
-import { useState } from "react";
+import { createSignal } from "solid-js";
 
 import { useStudioAnnotatePage } from "../state/studio-annotate-page-context";
 import { useStudioAnnotateCanvas } from "../state/studio-annotate-page-selectors";
@@ -12,8 +12,8 @@ export function StudioAnnotateMain() {
   const { state } = useStudioAnnotatePage();
   const canvas = useStudioAnnotateCanvas();
   const classificationLabelId = canvas.annotation.current.classificationLabelId;
-  const [smartSegmentStatus, setSmartSegmentStatus] = useState<string | null>(null);
-  const [smartSegmentError, setSmartSegmentError] = useState<string | null>(null);
+  const [smartSegmentStatus, setSmartSegmentStatus] = createSignal<string | null>(null);
+  const [smartSegmentError, setSmartSegmentError] = createSignal<string | null>(null);
   const activeLabelValue =
     canvas.labels.findIndex((label) => label.id === canvas.activeLabelId) + 1;
   const onMaskCommit = (mask: Uint8Array) => {
@@ -32,17 +32,17 @@ export function StudioAnnotateMain() {
     onStatus: setSmartSegmentStatus,
     onError: setSmartSegmentError,
   });
-  const toasts = smartSegmentError
-    ? [{ text: smartSegmentError, tone: "error" as const }]
-    : smartSegmentStatus
-      ? [...canvas.canvasToasts, { text: smartSegmentStatus }]
+  const toasts = smartSegmentError()
+    ? [{ text: smartSegmentError()!, tone: "error" as const }]
+    : smartSegmentStatus()
+      ? [...canvas.canvasToasts, { text: smartSegmentStatus()! }]
       : canvas.canvasToasts;
 
   if (state.workspaceMissing) {
     return (
       <>
-        <ViewportCard className="relative">
-          <div className="flex min-h-[12rem] items-center justify-center p-6 text-center text-muted-foreground text-sm">
+        <ViewportCard class="relative">
+          <div class="flex min-h-[12rem] items-center justify-center p-6 text-center text-muted-foreground text-sm">
             Set a save location in Basic info, then align and crop ROIs before annotating.
           </div>
         </ViewportCard>
@@ -55,8 +55,8 @@ export function StudioAnnotateMain() {
   if (!state.scanLoading && state.scan && state.scan.positions.length === 0) {
     return (
       <>
-        <ViewportCard className="relative">
-          <div className="flex min-h-[12rem] items-center justify-center p-6 text-center text-muted-foreground text-sm">
+        <ViewportCard class="relative">
+          <div class="flex min-h-[12rem] items-center justify-center p-6 text-center text-muted-foreground text-sm">
             No cropped ROI stacks found in the workspace. Complete Align pattern and crop ROIs
             first.
           </div>
@@ -69,23 +69,23 @@ export function StudioAnnotateMain() {
 
   return (
     <>
-      <ViewportCard className="relative min-h-0 flex-1">
+      <ViewportCard class="relative min-h-0 flex-1">
         <SmartSegmentModelDialog
-          busy={smartSegment.busy}
-          state={smartSegment.downloadState}
+          busy={smartSegment.busy()}
+          state={smartSegment.downloadState()}
           onCancel={smartSegment.cancelDownload}
           onConfirm={() => void smartSegment.confirmDownload()}
         />
         <AnnotationCanvas
           activeLabelId={canvas.activeLabelId}
           brushSize={canvas.brushSize}
-          className="min-h-0 flex-1"
-          disabled={!canvas.canEditSegmentation || smartSegment.busy}
+          class="min-h-0 flex-1"
+          disabled={!canvas.canEditSegmentation || smartSegment.busy()}
           frame={canvas.frame}
           labels={canvas.labels}
           mask={canvas.annotation.current.mask}
           overlayOpacity={canvas.overlayOpacity}
-          smartSegmentPrompts={smartSegment.prompts}
+          smartSegmentPrompts={smartSegment.prompts()}
           toasts={toasts}
           tool={canvas.tool}
           onMaskCommit={onMaskCommit}

@@ -1,5 +1,3 @@
-"use client";
-
 import type { AlignGridCellCoord, AlignGridState } from "@lisca/contracts";
 import {
   collectAlignGridEdgeCells,
@@ -42,115 +40,107 @@ export type AlignSelectionRailProps = {
   sectionContentClassName?: string;
 };
 
-export function AlignSelectionRail({
-  disabled = false,
-  excludedCells,
-  frame,
-  grid,
-  manualExclusionEnabled,
-  onApplyVariationExclude,
-  onSmartExclude,
-  smartExcludeLoading = false,
-  onCancelVariationExclude,
-  onExcludedCellsChange,
-  onManualExclusionEnabledChange,
-  onVariationExclude,
-  onVariationExcludeThresholdChange,
-  sectionClassName,
-  sectionContentClassName,
-  variationExcludeLoading = false,
-  variationExcludePreview,
-  visibleCounts,
-}: AlignSelectionRailProps) {
-  const visibleCells = frame
-    ? enumerateVisibleAlignGridCells(frame, grid).map(({ i, j }) => ({
-        i,
-        j,
-      }))
-    : [];
-  const hasVisibleCells = visibleCells.length > 0;
-  const hasExcludedCells = excludedCells.length > 0;
+export function AlignSelectionRail(props: AlignSelectionRailProps) {
+  const disabled = () => props.disabled ?? false;
+  const variationExcludeLoading = () => props.variationExcludeLoading ?? false;
+  const smartExcludeLoading = () => props.smartExcludeLoading ?? false;
+
+  const visibleCells = () =>
+    props.frame
+      ? enumerateVisibleAlignGridCells(props.frame, props.grid).map(({ i, j }) => ({
+          i,
+          j,
+        }))
+      : [];
+  const hasVisibleCells = () => visibleCells().length > 0;
+  const hasExcludedCells = () => props.excludedCells.length > 0;
 
   return (
     <>
       <SidebarSection
-        className={sectionClassName}
-        contentClassName={sectionContentClassName}
+        class={props.sectionClassName}
+        contentClassName={props.sectionContentClassName}
         title="Selection"
       >
-        <AlignSelectionCounts excluded={visibleCounts.excluded} included={visibleCounts.included} />
-        <div className="grid w-full grid-cols-2 gap-2">
+        <AlignSelectionCounts
+          excluded={props.visibleCounts.excluded}
+          included={props.visibleCounts.included}
+        />
+        <div class="grid w-full grid-cols-2 gap-2">
           <AlignEditToggle
-            disabled={disabled}
-            enabled={manualExclusionEnabled}
-            onEnabledChange={onManualExclusionEnabledChange}
+            disabled={disabled()}
+            enabled={props.manualExclusionEnabled}
+            onEnabledChange={props.onManualExclusionEnabledChange}
           />
           <Button
-            className="w-full justify-center text-xs"
-            disabled={disabled || !hasExcludedCells}
+            class="w-full justify-center text-xs"
+            disabled={disabled() || !hasExcludedCells()}
             size="sm"
             type="button"
             variant="outline"
-            onClick={() => onExcludedCellsChange([])}
+            onClick={() => props.onExcludedCellsChange([])}
           >
             Reset
           </Button>
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div class="grid grid-cols-2 gap-2">
           <Button
-            disabled={disabled || !hasVisibleCells}
+            disabled={disabled() || !hasVisibleCells()}
             size="sm"
             type="button"
             variant="outline"
-            onClick={() => onExcludedCellsChange(visibleCells)}
+            onClick={() => props.onExcludedCellsChange(visibleCells())}
           >
             Exclude all
           </Button>
           <Button
-            disabled={disabled || !hasVisibleCells}
+            disabled={disabled() || !hasVisibleCells()}
             size="sm"
             type="button"
             variant="outline"
             onClick={() => {
-              if (!frame) return;
-              onExcludedCellsChange(
-                mergeExcludedAlignGridCells(excludedCells, collectAlignGridEdgeCells(frame, grid)),
+              if (!props.frame) return;
+              props.onExcludedCellsChange(
+                mergeExcludedAlignGridCells(
+                  props.excludedCells,
+                  collectAlignGridEdgeCells(props.frame, props.grid),
+                ),
               );
             }}
           >
             Edge exclude
           </Button>
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div class="grid grid-cols-2 gap-2">
           <Button
-            disabled={disabled || !hasVisibleCells || variationExcludeLoading}
-            loading={variationExcludeLoading}
+            disabled={disabled() || !hasVisibleCells() || variationExcludeLoading()}
+            loading={variationExcludeLoading()}
             size="sm"
             type="button"
             variant="outline"
-            onClick={() => void onVariationExclude()}
+            onClick={() => void props.onVariationExclude()}
           >
             Var exclude
           </Button>
           <Button
             disabled={
-              disabled || !hasVisibleCells || variationExcludeLoading || smartExcludeLoading
+              disabled() || !hasVisibleCells() || variationExcludeLoading() || smartExcludeLoading()
             }
-            loading={smartExcludeLoading}
+            loading={smartExcludeLoading()}
             size="sm"
             type="button"
             variant="outline"
-            onClick={() => void onSmartExclude()}
+            onClick={() => void props.onSmartExclude()}
           >
             Smart exclude
           </Button>
         </div>
       </SidebarSection>
       <VariationExcludeDialog
-        state={variationExcludePreview}
-        onApply={onApplyVariationExclude}
-        onCancel={onCancelVariationExclude}
-        onThresholdChange={onVariationExcludeThresholdChange}
+        state={props.variationExcludePreview}
+        onApply={props.onApplyVariationExclude}
+        onCancel={props.onCancelVariationExclude}
+        onThresholdChange={props.onVariationExcludeThresholdChange}
       />
     </>
   );

@@ -31,12 +31,11 @@
     "@lisca/utils": "workspace:*"
   },
   "devDependencies": {
-    "@types/react": "catalog:",
-    "react": "catalog:",
+    "solid-js": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
   "peerDependencies": {
-    "react": "^19.0.0"
+    "solid-js": "^1.9.0"
   }
 }

@@ -5,7 +5,7 @@ import {
 } from "@lisca/ui/features";
 import { ShellNavbar, useShellWorkspace } from "@lisca/ui/shell";
 import type { HostFilePickerMode } from "@lisca/ui/features";
-import { useRef, useState } from "react";
+import { createSignal } from "solid-js";
 
 import { alignerHostOperations } from "../api/aligner-port";
 import { useAlignSource } from "../state/align-page-selectors";
@@ -21,22 +21,22 @@ function filePickerTitle(mode: HostFilePickerMode): string {
 export function AlignerHeader() {
   const alignSource = useAlignSource();
   const workspace = useShellWorkspace();
-  const pickerModeRef = useRef<HostFilePickerMode | null>(null);
-  const [sourcePickerOpen, setSourcePickerOpen] = useState(false);
-  const [folderSourcePath, setFolderSourcePath] = useState<string | null>(null);
-  const [filePicker, setFilePicker] = useState<{
+  let pickerMode: HostFilePickerMode | null = null;
+  const [sourcePickerOpen, setSourcePickerOpen] = createSignal(false);
+  const [folderSourcePath, setFolderSourcePath] = createSignal<string | null>(null);
+  const [filePicker, setFilePicker] = createSignal<{
     open: boolean;
     mode: HostFilePickerMode;
     title: string;
   }>({ open: false, mode: "workspace", title: "" });
 
   const openFilePicker = (mode: HostFilePickerMode) => {
-    pickerModeRef.current = mode;
+    pickerMode = mode;
     setFilePicker({ open: true, mode, title: filePickerTitle(mode) });
   };
 
   const applyPickDirectory = (path: string) => {
-    const mode = pickerModeRef.current;
+    const mode = pickerMode;
     if (mode === "workspace") {
       workspace.setWorkspacePath(path);
       alignSource.setSource(null);
@@ -48,7 +48,7 @@ export function AlignerHeader() {
   };
 
   const applyPickFile = (path: string) => {
-    const mode = pickerModeRef.current;
+    const mode = pickerMode;
     if (mode === "nd2_file") {
       workspace.setSourcePath(path);
       alignSource.setSource({ kind: "nd2", path });
@@ -67,7 +67,7 @@ export function AlignerHeader() {
       />
 
       <SourcePickerModal
-        open={sourcePickerOpen}
+        open={sourcePickerOpen()}
         onClose={() => setSourcePickerOpen(false)}
         onOpenCzi={() => openFilePicker("czi_file")}
         onOpenFolder={() => openFilePicker("folder")}
@@ -76,7 +76,7 @@ export function AlignerHeader() {
 
       <FolderSourceParseModal
         hostPort={alignerHostOperations}
-        path={folderSourcePath}
+        path={folderSourcePath()}
         onClose={() => setFolderSourcePath(null)}
         onConfirm={(source) => {
           workspace.setSourcePath(source.path);
@@ -87,12 +87,12 @@ export function AlignerHeader() {
 
       <HostFilePickerDialog
         hostPort={alignerHostOperations}
-        mode={filePicker.mode}
-        open={filePicker.open}
-        title={filePicker.title}
+        mode={filePicker().mode}
+        open={filePicker().open}
+        title={filePicker().title}
         onOpenChange={(open) => {
           setFilePicker((current) => ({ ...current, open }));
-          if (!open) pickerModeRef.current = null;
+          if (!open) pickerMode = null;
         }}
         onPickDirectory={applyPickDirectory}
         onPickFile={applyPickFile}

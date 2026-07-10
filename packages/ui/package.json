@@ -38,7 +38,7 @@
     "typecheck": "tsc -p tsconfig.build.json --noEmit"
   },
   "dependencies": {
-    "@base-ui/react": "^1.4.1",
+    "@kobalte/core": "catalog:",
     "@lisca/analysis": "workspace:*",
     "@lisca/contracts": "workspace:*",
     "@lisca/ui-headless": "workspace:*",
@@ -46,18 +46,14 @@
     "@observablehq/plot": "^0.6.17",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "lucide-react": "^0.511.0",
+    "lucide-solid": "catalog:",
     "tailwind-merge": "^3.0.2"
   },
   "devDependencies": {
-    "@types/react": "catalog:",
-    "@types/react-dom": "catalog:",
-    "react": "catalog:",
-    "react-dom": "catalog:",
+    "solid-js": "catalog:",
     "typescript": "catalog:"
   },
   "peerDependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "solid-js": "^1.9.0"
   }
 }

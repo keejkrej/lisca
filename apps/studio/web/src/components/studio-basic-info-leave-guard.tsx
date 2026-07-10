@@ -1,16 +1,17 @@
-"use client";
-
 import {
   studioAssayJsonPathForSaveTo,
   touchStudioWorkSessionFromAssayPath,
 } from "@lisca/client/session/work-session";
-import { useBlocker } from "@tanstack/react-router";
-import { useState } from "react";
+import { useBlocker } from "@tanstack/solid-router";
+import { useAtomSet, useAtomValue } from "@effect-atom/atom-solid";
+import { createMemo, createSignal } from "solid-js";
+
 import {
   buildStudioAssayJson,
   isBasicInfoDirty,
   serializeBasicInfoSnapshot,
-  useStudioStore,
+  studioWizardActions,
+  studioWizardAtom,
 } from "../state/studio-store";
 import { assayJsonExists, writeStudioAssayJson } from "../utils/save-studio-assay";
 import { recordStudioAssayMemory } from "../utils/studio-memory";
@@ -18,40 +19,48 @@ import { AssayOverwriteConfirmModal } from "./assay-overwrite-confirm-modal";
 import { AssaySaveConfirmModal } from "./assay-save-confirm-modal";
 
 export function StudioBasicInfoLeaveGuard() {
-  const wizard = useStudioStore((state) => state);
-  const { assayId, dataSourceKind, info1, info2, info3, setBasicInfoSavedSnapshot } = wizard;
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [overwriteOpen, setOverwriteOpen] = useState(false);
-  const dirty = isBasicInfoDirty(wizard);
-  const saveTo = info1.saveTo.trim();
-  const { proceed, reset, status } = useBlocker({
-    shouldBlockFn: () => dirty,
+  const wizard = useAtomValue(studioWizardAtom);
+  const setWizard = useAtomSet(studioWizardAtom);
+  const setBasicInfoSavedSnapshot = (snapshot: string | null) =>
+    studioWizardActions.setBasicInfoSavedSnapshot(setWizard, snapshot);
+
+  const [saving, setSaving] = createSignal(false);
+  const [saveError, setSaveError] = createSignal<string | null>(null);
+  const [overwriteOpen, setOverwriteOpen] = createSignal(false);
+
+  const dirty = createMemo(() => isBasicInfoDirty(wizard()));
+  const saveTo = createMemo(() => wizard().info1.saveTo.trim());
+
+  const blocker = useBlocker({
+    shouldBlockFn: () => dirty(),
     withResolver: true,
     enableBeforeUnload: false,
   });
-  const blocked = status === "blocked";
+
+  const blocked = () => blocker().status === "blocked";
+
   const saveAssay = async (overwrite: boolean) => {
-    if (!assayId || !saveTo || saving) return false;
+    const current = wizard();
+    if (!current.assayId || !saveTo() || saving()) return false;
     setSaving(true);
     setSaveError(null);
     try {
-      if (!overwrite && (await assayJsonExists(saveTo))) {
+      if (!overwrite && (await assayJsonExists(saveTo()))) {
         setOverwriteOpen(true);
         return false;
       }
       const assayJson = buildStudioAssayJson({
-        assayId,
-        dataSourceKind,
-        info1,
-        info2,
-        info3,
+        assayId: current.assayId,
+        dataSourceKind: current.dataSourceKind,
+        info1: current.info1,
+        info2: current.info2,
+        info3: current.info3,
       });
-      await writeStudioAssayJson(saveTo, assayJson);
-      const assayJsonPath = studioAssayJsonPathForSaveTo(saveTo);
+      await writeStudioAssayJson(saveTo(), assayJson);
+      const assayJsonPath = studioAssayJsonPathForSaveTo(saveTo());
       touchStudioWorkSessionFromAssayPath(assayJsonPath, assayJson.assayLabel);
-      recordStudioAssayMemory(assayJsonPath, assayJson.assayLabel, saveTo);
-      setBasicInfoSavedSnapshot(serializeBasicInfoSnapshot(wizard));
+      recordStudioAssayMemory(assayJsonPath, assayJson.assayLabel, saveTo());
+      setBasicInfoSavedSnapshot(serializeBasicInfoSnapshot(current));
       return true;
     } catch (cause) {
       setSaveError(
@@ -64,36 +73,41 @@ export function StudioBasicInfoLeaveGuard() {
       setSaving(false);
     }
   };
+
   const leaveWithoutSaving = () => {
-    proceed?.();
+    blocker().proceed?.();
   };
+
   const cancelLeave = () => {
     setOverwriteOpen(false);
     setSaveError(null);
-    reset?.();
+    blocker().reset?.();
   };
+
   const saveAndLeave = async () => {
     const saved = await saveAssay(false);
-    if (saved) proceed?.();
+    if (saved) blocker().proceed?.();
   };
+
   const overwriteAndLeave = async () => {
     setOverwriteOpen(false);
     const saved = await saveAssay(true);
-    if (saved) proceed?.();
+    if (saved) blocker().proceed?.();
   };
+
   return (
     <>
       <AssaySaveConfirmModal
-        error={saveError}
-        open={blocked && !overwriteOpen}
-        saving={saving}
+        error={saveError()}
+        open={blocked() && !overwriteOpen()}
+        saving={saving()}
         onCancel={cancelLeave}
         onSave={() => void saveAndLeave()}
         onSkip={leaveWithoutSaving}
       />
       <AssayOverwriteConfirmModal
-        open={overwriteOpen}
-        saveTo={saveTo}
+        open={overwriteOpen()}
+        saveTo={saveTo()}
         onCancel={cancelLeave}
         onOverwrite={() => void overwriteAndLeave()}
       />

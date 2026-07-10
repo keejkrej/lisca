@@ -2,7 +2,6 @@ import type {
   AlignGridCellCoord,
   AlignGridState,
   AlignerSource,
-  AutoExcludePreviewCell,
   AutoExcludePreviewResponse,
   ContrastWindow,
   CropRoiProgress,
@@ -31,10 +30,18 @@ import {
   mergeExcludedAlignGridCells,
   type AlignGridToolMode,
 } from "@lisca/utils";
-import type { Atom, Result } from "@effect-atom/atom-react";
-import { useAtom, useAtomValue } from "@effect-atom/atom-react";
+import type { Atom, Result } from "@effect-atom/atom-solid";
+import { RegistryContext, useAtom } from "@effect-atom/atom-solid";
 import { Effect } from "effect";
-import { useEffect, useRef, useState } from "react";
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  onCleanup,
+  untrack,
+  useContext,
+  type Accessor,
+} from "solid-js";
 import type {
   AlignUiActions,
   AlignUiAtom,
@@ -47,11 +54,14 @@ import {
   shouldResetContrastBeforeNavigationLoad,
   shouldRunContrastFrameLoad,
 } from "../session/frame-load-policy";
+
 export type { CropConfirmState };
+
 export type VariationExcludePreview = {
   preview: AutoExcludePreviewResponse;
   threshold: number;
 };
+
 export type AlignState = {
   workspacePath: string | null;
   source: AlignerSource | null;
@@ -103,6 +113,7 @@ export type AlignState = {
   applySmartExclusion: (modelCells: AlignGridCellCoord[]) => void;
   reportError: (message: string | null) => void;
 };
+
 export type UseAlignStateCoreDeps = {
   alignerClient: AlignerDataPort;
   toErrorMessage: (cause: unknown, fallback: string) => string;
@@ -124,51 +135,28 @@ export type UseAlignStateCoreDeps = {
     options: CanvasResourceTransactionOptions<T>,
   ) => () => void;
 };
-export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
+
+export function useAlignStateCore(deps: UseAlignStateCoreDeps): Accessor<AlignState> {
   const workspace = deps.useShellWorkspace();
   const [ui, setUi] = useAtom(deps.alignerUiAtom);
-  const {
-    workspacePath,
-    source,
-    scan,
-    selection,
-    contrast,
-    frame,
-    grid,
-    toolMode,
-    patternZoomLocked,
-    manualExclusionEnabled,
-    excludedCellsByPosition,
-    frameLoading,
-    saving,
-    cropProgress,
-    error,
-    status,
-  } = ui;
   const loadCanvasResources = deps.useCanvasResourceTransaction();
-  const cropRequestIdRef = useRef<string | null>(null);
-  const [cropConfirm, setCropConfirm] = useState<CropConfirmState | null>(null);
+  let cropRequestIdRef: string | null = null;
+  const [cropConfirm, setCropConfirm] = createSignal<CropConfirmState | null>(null);
   const [variationExcludePreview, setVariationExcludePreview] =
-    useState<VariationExcludePreview | null>(null);
-  const [variationExcludeLoading, setVariationExcludeLoading] = useState(false);
-  const activeSourceKey = deps.sourceKey(source);
-  const scanResult = useAtomValue(
-    activeSourceKey ? deps.scanSourceAtom(activeSourceKey) : deps.scanIdleAtom,
-  );
-  const {
-    actions: {
-      setSource,
-      setSelection,
-      setContrast,
-      setGrid,
-      setToolMode,
-      setPatternZoomLocked,
-      setManualExclusionEnabled,
-      setExcludedCellsForCurrentPosition,
-    },
-    meta: { scanLoading, cropping },
-    derived: { currentExcludedCells, displayedExcludedCells, visibleCounts },
-  } = useAlignSessionCore({
+    createSignal<VariationExcludePreview | null>(null);
+  const [variationExcludeLoading, setVariationExcludeLoading] = createSignal(false);
+
+  const activeSourceKey = createMemo(() => deps.sourceKey(ui().source));
+  const navSource = createMemo(() => ui().source);
+  const navScan = createMemo(() => ui().scan);
+  const navSelection = createMemo(() => ui().selection);
+  const navWorkspacePath = createMemo(() => ui().workspacePath);
+  const scanResult = useSelectedAtomValue(() => {
+    const key = activeSourceKey();
+    return key ? deps.scanSourceAtom(key) : deps.scanIdleAtom;
+  });
+
+  const session = useAlignSessionCore({
     ui,
     setUi,
     actions: deps.alignerUiActions,
@@ -184,7 +172,24 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
     },
     toErrorMessage: deps.toErrorMessage,
   });
-  useEffect(() => {
+
+  const {
+    setSource,
+    setSelection,
+    setContrast,
+    setGrid,
+    setToolMode,
+    setPatternZoomLocked,
+    setManualExclusionEnabled,
+    setExcludedCellsForCurrentPosition,
+  } = session.actions;
+
+  createEffect(() => {
+    const source = navSource();
+    const scan = navScan();
+    const selection = navSelection();
+    const workspacePath = navWorkspacePath();
+    const contrast = untrack(() => ui().contrast);
     if (!source || !scan) {
       deps.alignerUiActions.setFrameLoading(setUi, false);
       return;
@@ -192,7 +197,7 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
     const alignStateKey = workspacePath
       ? deps.savedAlignStateKey(workspacePath, selection.pos)
       : null;
-    return loadCanvasResources({
+    const cleanup = loadCanvasResources({
       start: () => {
         if (shouldResetContrastBeforeNavigationLoad()) {
           deps.alignerUiActions.setContrast(setUi, null);
@@ -243,27 +248,19 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
       },
       settle: () => deps.alignerUiActions.setFrameLoading(setUi, false),
     });
-    // deps members are listed individually; omitting the aggregate avoids unrelated reruns.
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    deps.alignerClient,
-    deps.alignerUiActions,
-    deps.loadFrameEffect,
-    deps.savedAlignStateKey,
-    deps.effectErrorMessage,
-    deps.toErrorMessage,
-    loadCanvasResources,
-    scan,
-    selection,
-    setUi,
-    source,
-    workspacePath,
-  ]);
-  useEffect(() => {
-    if (!shouldRunContrastFrameLoad(contrast) || !source || !scan) {
+    onCleanup(cleanup);
+  });
+
+  createEffect(() => {
+    const contrast = ui().contrast;
+    if (!shouldRunContrastFrameLoad(contrast)) {
       return;
     }
-    return loadCanvasResources({
+    const { source, scan, selection } = untrack(() => ui());
+    if (!source || !scan) {
+      return;
+    }
+    const cleanup = loadCanvasResources({
       start: () => {
         deps.alignerUiActions.setFrameLoading(setUi, true);
         deps.alignerUiActions.setError(setUi, null);
@@ -295,10 +292,13 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
       },
       settle: () => deps.alignerUiActions.setFrameLoading(setUi, false),
     });
-    // Intentionally contrast-only: frame navigation is handled by the effect above.
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [contrast]);
+    onCleanup(cleanup);
+  });
+
   const saveCurrent = async () => {
+    const currentUi = ui();
+    const { workspacePath, frame, grid, selection } = currentUi;
+    const currentExcludedCells = session.derived().currentExcludedCells;
     if (!workspacePath || !frame) return false;
     const { included } = countVisibleAlignGridCells(frame, grid, currentExcludedCells);
     if (included === 0) {
@@ -326,10 +326,13 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
       deps.alignerUiActions.setSaving(setUi, false);
     }
   };
+
   const runCrop = async (positions: number[], overwrite: boolean) => {
+    const currentUi = ui();
+    const { workspacePath, source } = currentUi;
     if (!workspacePath || !source || positions.length === 0) return;
     const requestId = `crop-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    cropRequestIdRef.current = requestId;
+    cropRequestIdRef = requestId;
     deps.alignerUiActions.setError(setUi, null);
     await runCropRoi({
       client: deps.alignerClient,
@@ -349,7 +352,10 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
       toErrorMessage: deps.toErrorMessage,
     });
   };
+
   const cropCurrent = async () => {
+    const currentUi = ui();
+    const { workspacePath, source, frame, selection } = currentUi;
     if (!workspacePath || !source || !frame) return;
     const saved = await saveCurrent();
     if (!saved) return;
@@ -366,7 +372,10 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
     }
     await runCrop([selection.pos], false);
   };
+
   const cropBatch = async () => {
+    const currentUi = ui();
+    const { workspacePath, source } = currentUi;
     if (!workspacePath || !source) return;
     let savedPositions: number[];
     try {
@@ -408,14 +417,16 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
     }
     await runCrop(savedPositions, false);
   };
+
   const confirmCropOverwrite = () => {
-    const next = cropConfirm;
+    const next = cropConfirm();
     if (!next) return;
     setCropConfirm(null);
     void runCrop(next.positions, true);
   };
+
   const skipExistingCrop = () => {
-    const next = cropConfirm;
+    const next = cropConfirm();
     if (!next || next.kind !== "batch") return;
     setCropConfirm(null);
     const remaining = cropPositionsAfterSkip(next.positions, next.existingPositions);
@@ -428,18 +439,23 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
     }
     void runCrop(remaining, false);
   };
+
   const cancelCropConfirm = () => {
     setCropConfirm(null);
   };
+
   const cancelCrop = async () => {
-    const requestId = cropRequestIdRef.current;
+    const requestId = cropRequestIdRef;
     if (!requestId) return;
     deps.alignerUiActions.setCropProgress(
       setUi,
       await runClientEffect(deps.alignerClient.cancelCropRoi(requestId)),
     );
   };
+
   const previewVariationExclude = async () => {
+    const currentUi = ui();
+    const { frame, grid } = currentUi;
     if (!frame) return null;
     const cells = enumerateVisibleAlignGridCells(frame, grid);
     if (cells.length === 0) return null;
@@ -450,7 +466,10 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
       setVariationExcludeLoading(false);
     }
   };
+
   const variationExclude = async () => {
+    const currentUi = ui();
+    const { source, frame } = currentUi;
     if (!source || !frame) return;
     deps.alignerUiActions.setStatus(setUi, "Var exclude preview");
     try {
@@ -470,6 +489,7 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
       );
     }
   };
+
   const setVariationExcludeThreshold = (threshold: number) => {
     setVariationExcludePreview((current) =>
       current
@@ -480,26 +500,31 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
         : current,
     );
   };
+
   const cancelVariationExclude = () => {
     setVariationExcludePreview(null);
     deps.alignerUiActions.setStatus(setUi, "Var exclude cancelled");
   };
+
   const applyVariationExclude = () => {
-    if (!variationExcludePreview) return;
-    const variationCells = cellsBelowVariationThreshold(
-      variationExcludePreview.preview,
-      variationExcludePreview.threshold,
-    );
+    const preview = variationExcludePreview();
+    if (!preview) return;
+    const currentExcludedCells = session.derived().currentExcludedCells;
+    const variationCells = cellsBelowVariationThreshold(preview.preview, preview.threshold);
     setExcludedCellsForCurrentPosition(
       mergeExcludedAlignGridCells(currentExcludedCells, variationCells),
     );
     setVariationExcludePreview(null);
     deps.alignerUiActions.setStatus(
       setUi,
-      `Var excluded ${variationCells.length} of ${variationExcludePreview.preview.eligibleCellCount} cells`,
+      `Var excluded ${variationCells.length} of ${preview.preview.eligibleCellCount} cells`,
     );
   };
+
   const autoExclude = async () => {
+    const currentUi = ui();
+    const { source, frame, grid } = currentUi;
+    const currentExcludedCells = session.derived().currentExcludedCells;
     if (!source || !frame) return;
     deps.alignerUiActions.setStatus(setUi, "Auto exclude");
     try {
@@ -521,7 +546,11 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
       deps.alignerUiActions.setError(setUi, deps.toErrorMessage(cause, "Auto exclude failed"));
     }
   };
+
   const applySmartExclusion = (modelCells: AlignGridCellCoord[]) => {
+    const currentUi = ui();
+    const { frame, grid } = currentUi;
+    const currentExcludedCells = session.derived().currentExcludedCells;
     if (!frame) return;
     const edgeCells = collectAlignGridEdgeCells(frame, grid);
     const finalExcludedCells = mergeExcludedAlignGridCells(currentExcludedCells, [
@@ -534,53 +563,71 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): AlignState {
       `Smart excluded ${finalExcludedCells.length - currentExcludedCells.length} cells`,
     );
   };
-  return {
-    workspacePath,
-    source,
-    setSource,
-    scan,
-    scanLoading,
-    frameLoading,
-    error,
-    selection,
-    setSelection,
-    contrast,
-    setContrast,
-    frame,
-    grid,
-    setGrid,
-    toolMode,
-    setToolMode,
-    patternZoomLocked,
-    setPatternZoomLocked,
-    manualExclusionEnabled,
-    setManualExclusionEnabled,
-    excludedCellsByPosition,
-    setExcludedCellsForCurrentPosition,
-    currentExcludedCells,
-    displayedExcludedCells,
-    visibleCounts,
-    saving,
-    cropping,
-    cropProgress,
-    cropConfirm,
-    status,
-    saveCurrent,
-    cropCurrent,
-    cropBatch,
-    confirmCropOverwrite,
-    skipExistingCrop,
-    cancelCropConfirm,
-    cancelCrop,
-    variationExcludePreview,
-    variationExcludeLoading,
-    variationExclude,
-    setVariationExcludeThreshold,
-    cancelVariationExclude,
-    applyVariationExclude,
-    autoExclude,
-    applySmartExclusion,
-    reportError: (message) => deps.alignerUiActions.setError(setUi, message),
-  };
+
+  return createMemo<AlignState>(() => {
+    const currentUi = ui();
+    const meta = session.meta();
+    const derived = session.derived();
+    return {
+      workspacePath: currentUi.workspacePath,
+      source: currentUi.source,
+      setSource,
+      scan: currentUi.scan,
+      scanLoading: meta.scanLoading,
+      frameLoading: currentUi.frameLoading,
+      error: currentUi.error,
+      selection: derived.selection,
+      setSelection,
+      contrast: currentUi.contrast,
+      setContrast,
+      frame: currentUi.frame,
+      grid: currentUi.grid,
+      setGrid,
+      toolMode: currentUi.toolMode,
+      setPatternZoomLocked,
+      patternZoomLocked: currentUi.patternZoomLocked,
+      setToolMode,
+      manualExclusionEnabled: currentUi.manualExclusionEnabled,
+      setManualExclusionEnabled,
+      excludedCellsByPosition: currentUi.excludedCellsByPosition,
+      setExcludedCellsForCurrentPosition,
+      currentExcludedCells: derived.currentExcludedCells,
+      displayedExcludedCells: derived.displayedExcludedCells,
+      visibleCounts: derived.visibleCounts,
+      saving: currentUi.saving,
+      cropping: meta.cropping,
+      cropProgress: currentUi.cropProgress,
+      cropConfirm: cropConfirm(),
+      status: currentUi.status,
+      saveCurrent,
+      cropCurrent,
+      cropBatch,
+      confirmCropOverwrite,
+      skipExistingCrop,
+      cancelCropConfirm,
+      cancelCrop,
+      variationExcludePreview: variationExcludePreview(),
+      variationExcludeLoading: variationExcludeLoading(),
+      variationExclude,
+      setVariationExcludeThreshold,
+      cancelVariationExclude,
+      applyVariationExclude,
+      autoExclude,
+      applySmartExclusion,
+      reportError: (message) => deps.alignerUiActions.setError(setUi, message),
+    };
+  });
 }
+
 export type { ExcludedByPosition, StateUpdater };
+
+function useSelectedAtomValue<A>(selectAtom: () => Atom.Atom<A>): Accessor<A> {
+  const registry = useContext(RegistryContext);
+  const [value, setValue] = createSignal(registry.get(selectAtom()));
+  createEffect(() => {
+    const atom = selectAtom();
+    setValue(() => registry.get(atom));
+    onCleanup(registry.subscribe(atom, setValue as (next: A) => void));
+  });
+  return value;
+}

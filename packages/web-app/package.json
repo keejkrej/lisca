@@ -36,26 +36,18 @@
     "@lisca/ui-headless": "workspace:*",
     "@lisca/utils": "workspace:*",
     "@tailwindcss/vite": "catalog:",
-    "@tanstack/react-router": "catalog:",
+    "@tanstack/solid-router": "catalog:",
     "@tanstack/router-plugin": "catalog:",
-    "@vitejs/plugin-react": "catalog:",
-    "babel-plugin-react-compiler": "catalog:",
     "tailwindcss": "catalog:",
     "vite": "catalog:",
-    "@rolldown/plugin-babel": "catalog:",
-    "@babel/core": "catalog:"
+    "vite-plugin-solid": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "@types/react": "catalog:",
-    "@types/react-dom": "catalog:",
-    "react": "catalog:",
-    "react-dom": "catalog:",
-    "typescript": "catalog:",
-    "@types/babel__core": "^7.20.5"
+    "solid-js": "catalog:",
+    "typescript": "catalog:"
   },
   "peerDependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "solid-js": "^1.9.0"
   }
 }

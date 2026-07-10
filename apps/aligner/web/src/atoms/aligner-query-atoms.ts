@@ -1,5 +1,5 @@
 import type { WorkspaceScan } from "@lisca/contracts";
-import { Atom, Result } from "@effect-atom/atom-react";
+import { Atom, Result } from "@effect-atom/atom-solid";
 
 import { alignerPortLayer, createAlignerQueryAtoms } from "@lisca/client/atoms";
 import { createLiscaAppBootstrap } from "@lisca/client/bootstrap";

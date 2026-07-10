@@ -17,7 +17,7 @@ import {
   type AlignGridToolMode,
 } from "@lisca/utils";
 import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/storage";
-import { Atom } from "@effect-atom/atom-react";
+import { Atom } from "@effect-atom/atom-solid";
 import { touchAlignerWorkSessionFromState } from "../session/work-session";
 
 export type ExcludedByPosition = Record<number, AlignGridCellCoord[]>;

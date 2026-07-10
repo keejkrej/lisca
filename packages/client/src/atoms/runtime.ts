@@ -1,4 +1,4 @@
-import { Atom } from "@effect-atom/atom-react";
+import { Atom } from "@effect-atom/atom-solid";
 import { Reactivity } from "@effect/experimental";
 import { Layer } from "effect";
 

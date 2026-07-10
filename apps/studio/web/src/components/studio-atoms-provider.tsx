@@ -1,5 +1,6 @@
-import { RegistryProvider, useAtomInitialValues } from "@effect-atom/atom-react";
-import { type ReactNode } from "react";
+import { RegistryProvider, useAtomInitialValues } from "@effect-atom/atom-solid";
+import type { JSX } from "solid-js";
+
 import {
   createInitialStudioWizardState,
   readStudioSession,
@@ -16,11 +17,11 @@ function StudioWizardInitialValues() {
   return null;
 }
 
-export function StudioAtomsProvider({ children }: { children: ReactNode }) {
+export function StudioAtomsProvider(props: { children?: JSX.Element }) {
   return (
     <RegistryProvider>
       <StudioWizardInitialValues />
-      {children}
+      {props.children}
     </RegistryProvider>
   );
 }

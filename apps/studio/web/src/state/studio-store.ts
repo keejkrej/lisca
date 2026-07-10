@@ -1,8 +1,9 @@
 import type { StudioAssayJson } from "@lisca/contracts/assay";
 import type { StudioDataSourceKind } from "@lisca/contracts/assay";
 import { createStudioUi } from "@lisca/client/atoms/studio-ui";
-import { useAtom } from "@effect-atom/atom-react";
-import { useRef } from "react";
+import { useAtom } from "@effect-atom/atom-solid";
+import { createMemo, type Accessor } from "solid-js";
+
 const studioUi = createStudioUi();
 export type {
   AssayId,
@@ -49,7 +50,7 @@ type StudioState = StudioWizardData & {
   ) => void;
   setBasicInfoSavedSnapshot: (snapshot: string | null) => void;
 };
-function useStudioStoreApi(): StudioState {
+function useStudioStoreApi(): Accessor<StudioState> {
   const [state, setState] = useAtom(studioWizardAtom);
   const setInfoStep = (infoStep: import("@lisca/client/atoms/studio-ui").InfoStep) =>
     studioWizardActions.setInfoStep(setState, infoStep);
@@ -71,8 +72,8 @@ function useStudioStoreApi(): StudioState {
   ) => studioWizardActions.updateInfo3Sample(setState, index, patch);
   const setBasicInfoSavedSnapshot = (basicInfoSavedSnapshot: string | null) =>
     studioWizardActions.setBasicInfoSavedSnapshot(setState, basicInfoSavedSnapshot);
-  return {
-    ...state,
+  return createMemo(() => ({
+    ...state(),
     setInfoStep,
     setDataSourceKind,
     loadAssayJson,
@@ -82,11 +83,9 @@ function useStudioStoreApi(): StudioState {
     setInfo3,
     updateInfo3Sample,
     setBasicInfoSavedSnapshot,
-  };
+  }));
 }
-export function useStudioStore<T>(selector: (state: StudioState) => T): T {
+export function useStudioStore<T>(selector: (state: StudioState) => T): Accessor<T> {
   const api = useStudioStoreApi();
-  const selectorRef = useRef(selector);
-  selectorRef.current = selector;
-  return selectorRef.current(api);
+  return createMemo(() => selector(api()));
 }

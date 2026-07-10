@@ -1,6 +1,5 @@
-"use client";
-
-import { CircleAlert, Loader2Icon } from "lucide-react";
+import { CircleAlert, Loader2Icon } from "lucide-solid";
+import { For, Show } from "solid-js";
 
 import type { CanvasStatusMessage, CanvasStatusTone } from "@lisca/ui-headless";
 import { canvasToastPresentation, shouldHideToastText } from "@lisca/ui-headless/canvas-status";
@@ -28,84 +27,79 @@ function toastToneClassName(tone: CanvasStatusTone | undefined) {
 function toastIcon(message: CanvasStatusMessage) {
   const presentation = canvasToastPresentation(message);
   if (presentation === "error") {
-    return <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />;
+    return <CircleAlert aria-hidden="true" class="mt-0.5 size-4 shrink-0" />;
   }
   if (presentation === "loading") {
-    return <Loader2Icon aria-hidden="true" className="mt-0.5 size-4 shrink-0 animate-spin" />;
+    return <Loader2Icon aria-hidden="true" class="mt-0.5 size-4 shrink-0 animate-spin" />;
   }
   return null;
 }
 
-export function CanvasStatusMessageStack({
-  className,
-  messages,
-}: {
-  className?: string;
+export function CanvasStatusMessageStack(props: {
+  class?: string;
   messages?: CanvasStatusMessage[];
 }) {
-  if (!messages?.length) return null;
-
   return (
-    <div
-      className={cn(
-        "pointer-events-none absolute left-3 top-3 flex max-w-[78%] flex-wrap gap-1.5",
-        className,
-      )}
-    >
-      {messages.map((message) => (
-        <div
-          key={`${message.tone ?? "default"}:${message.text}`}
-          className={cn(
-            "whitespace-pre-line rounded-md border bg-card/95 px-3 py-2 text-sm leading-snug shadow-lg backdrop-blur-sm",
-            messageToneClassName(message.tone),
+    <Show when={props.messages?.length}>
+      <div
+        class={cn(
+          "pointer-events-none absolute left-3 top-3 flex max-w-[78%] flex-wrap gap-1.5",
+          props.class,
+        )}
+      >
+        <For each={props.messages}>
+          {(message) => (
+            <div
+              class={cn(
+                "whitespace-pre-line rounded-md border bg-card/95 px-3 py-2 text-sm leading-snug shadow-lg backdrop-blur-sm",
+                messageToneClassName(message.tone),
+              )}
+            >
+              {message.text}
+            </div>
           )}
-        >
-          {message.text}
-        </div>
-      ))}
-    </div>
+        </For>
+      </div>
+    </Show>
   );
 }
 
-export function CanvasToastStack({
-  className,
-  messages,
-}: {
-  className?: string;
-  messages?: CanvasStatusMessage[];
-}) {
-  if (!messages?.length) return null;
-
+export function CanvasToastStack(props: { class?: string; messages?: CanvasStatusMessage[] }) {
   return (
-    <div
-      aria-live="polite"
-      className={cn(
-        "pointer-events-none absolute right-3 top-3 z-20 flex w-[min(24rem,calc(100%-1.5rem))] flex-col items-end gap-2",
-        className,
-      )}
-    >
-      {messages.map((message) => {
-        const icon = toastIcon(message);
-        const hideText = shouldHideToastText(message);
-        return (
-          <div
-            key={`${message.tone ?? "default"}:${message.text}`}
-            className={cn(
-              "flex max-w-full items-start rounded-lg text-sm leading-snug",
-              hideText
-                ? "p-1 text-popover-foreground drop-shadow-sm"
-                : "gap-2 border bg-popover/95 px-3 py-2 shadow-lg/5 backdrop-blur-md",
-              !hideText && toastToneClassName(message.tone),
-            )}
-            aria-label={hideText ? message.text : undefined}
-            role={message.tone === "error" ? "alert" : "status"}
-          >
-            {icon}
-            {hideText ? null : <span className="min-w-0">{message.text}</span>}
-          </div>
-        );
-      })}
-    </div>
+    <Show when={props.messages?.length}>
+      <div
+        aria-live="polite"
+        class={cn(
+          "pointer-events-none absolute right-3 top-3 z-20 flex w-[min(24rem,calc(100%-1.5rem))] flex-col items-end gap-2",
+          props.class,
+        )}
+      >
+        <For each={props.messages}>
+          {(message) => {
+            const icon = toastIcon(message);
+            const hideText = shouldHideToastText(message);
+            return (
+              <div
+                class={cn(
+                  "flex max-w-full items-start rounded-lg text-sm leading-snug",
+                  hideText
+                    ? "p-1 text-popover-foreground drop-shadow-sm"
+                    : "gap-2 border bg-popover/95 px-3 py-2 shadow-lg/5 backdrop-blur-md",
+                  !hideText && toastToneClassName(message.tone),
+                )}
+                aria-label={hideText ? message.text : undefined}
+                role={message.tone === "error" ? "alert" : "status"}
+              >
+                {icon}
+                <Show when={!hideText}>
+                  <span class="min-w-0">{message.text}</span>
+                </Show>
+              </div>
+            );
+          }}
+        </For>
+      </div>
+    </Show>
   );
 }
 

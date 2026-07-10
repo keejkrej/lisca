@@ -1,5 +1,6 @@
 import { AnnotationToolGrid, buildAnnotationToolActions } from "@lisca/ui/features";
 import { DockSection, DockStrip } from "@lisca/ui/shell";
+import { Show } from "solid-js";
 
 import { useAnnotateDock } from "../state/annotate-page-selectors";
 import { AnnotatorSaveSection } from "./annotator-save-section";
@@ -11,7 +12,7 @@ export function AnnotatorDock() {
 
   return (
     <DockStrip>
-      {dock.mode === "segmentation" ? (
+      <Show when={dock.mode === "segmentation"}>
         <DockSection title="Tool">
           <AnnotationToolGrid
             canEditTools={canEditTools}
@@ -19,7 +20,7 @@ export function AnnotatorDock() {
             toolActions={toolActions}
           />
         </DockSection>
-      ) : null}
+      </Show>
       <AnnotatorSaveSection />
     </DockStrip>
   );

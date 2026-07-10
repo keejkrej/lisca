@@ -1,43 +1,44 @@
 import { AlignSelectionRail, SmartExcludeModelDialog } from "@lisca/ui/features";
 import { useSmartExclude } from "@lisca/smart/exclude/browser";
 import type { DemoAlignState } from "@lisca/web-demo";
+import type { Accessor } from "solid-js";
 
-export function DemoAlignSelectionControls({ state }: { state: DemoAlignState }) {
-  const disabled = !state.frame;
+export function DemoAlignSelectionControls(props: { state: Accessor<DemoAlignState> }) {
+  const disabled = () => !props.state().frame;
   const smartExclude = useSmartExclude({
-    frame: state.frame,
-    grid: state.grid,
-    currentExcludedCells: state.excludedCells,
-    enabled: !disabled,
-    onComplete: state.applySmartExclusion,
-    onError: state.reportError,
+    frame: props.state().frame,
+    grid: props.state().grid,
+    currentExcludedCells: props.state().excludedCells,
+    enabled: !disabled(),
+    onComplete: props.state().applySmartExclusion,
+    onError: props.state().reportError,
   });
 
   return (
     <>
       <SmartExcludeModelDialog
-        busy={smartExclude.busy}
-        state={smartExclude.downloadState}
+        busy={smartExclude.busy()}
+        state={smartExclude.downloadState()}
         onCancel={smartExclude.cancelDownload}
         onConfirm={() => void smartExclude.confirmDownload()}
       />
       <AlignSelectionRail
-        disabled={disabled}
-        excludedCells={state.excludedCells}
-        frame={state.frame}
-        grid={state.grid}
-        manualExclusionEnabled={state.manualExclusionEnabled}
-        smartExcludeLoading={smartExclude.active}
-        visibleCounts={state.visibleCounts}
-        variationExcludeLoading={state.variationExcludeLoading}
-        variationExcludePreview={state.variationExcludePreview}
-        onApplyVariationExclude={state.applyVariationExclude}
+        disabled={disabled()}
+        excludedCells={props.state().excludedCells}
+        frame={props.state().frame}
+        grid={props.state().grid}
+        manualExclusionEnabled={props.state().manualExclusionEnabled}
+        smartExcludeLoading={smartExclude.active()}
+        visibleCounts={props.state().visibleCounts}
+        variationExcludeLoading={props.state().variationExcludeLoading}
+        variationExcludePreview={props.state().variationExcludePreview}
+        onApplyVariationExclude={props.state().applyVariationExclude}
         onSmartExclude={() => void smartExclude.request()}
-        onCancelVariationExclude={state.cancelVariationExclude}
-        onExcludedCellsChange={state.setExcludedCells}
-        onManualExclusionEnabledChange={state.setManualExclusionEnabled}
-        onVariationExclude={() => void state.variationExclude()}
-        onVariationExcludeThresholdChange={state.setVariationExcludeThreshold}
+        onCancelVariationExclude={props.state().cancelVariationExclude}
+        onExcludedCellsChange={props.state().setExcludedCells}
+        onManualExclusionEnabledChange={props.state().setManualExclusionEnabled}
+        onVariationExclude={() => void props.state().variationExclude()}
+        onVariationExcludeThresholdChange={props.state().setVariationExcludeThreshold}
       />
     </>
   );

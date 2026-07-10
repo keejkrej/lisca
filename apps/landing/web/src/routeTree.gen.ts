@@ -59,7 +59,7 @@ export interface RootRouteChildren {
   AnnotatorDemoIndexRoute: typeof AnnotatorDemoIndexRoute
 }
 
-declare module '@tanstack/react-router' {
+declare module '@tanstack/solid-router' {
   interface FileRoutesByPath {
     '/': {
       id: '/'

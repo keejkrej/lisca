@@ -5,7 +5,7 @@ import type {
   RoiFrameRequest,
   RoiWorkspaceScan,
 } from "@lisca/contracts";
-import { Atom, type Result } from "@effect-atom/atom-react";
+import { Atom, type Result } from "@effect-atom/atom-solid";
 import { Effect } from "effect";
 
 import type { ClientError } from "../../infra/client-error";

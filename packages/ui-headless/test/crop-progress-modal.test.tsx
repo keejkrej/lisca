@@ -1,11 +1,10 @@
-import { renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { useCropProgressModal } from "../src/crop-progress-modal";
 
 describe("useCropProgressModal", () => {
   it("returns null when progress is done", () => {
-    const { result } = renderHook(() =>
+    expect(
       useCropProgressModal({
         status: "completed",
         message: "Finished",
@@ -14,12 +13,11 @@ describe("useCropProgressModal", () => {
         completedRois: 0,
         totalRois: 0,
       }),
-    );
-    expect(result.current).toBeNull();
+    ).toBeNull();
   });
 
   it("derives progress state from roi counts", () => {
-    const { result } = renderHook(() =>
+    expect(
       useCropProgressModal({
         status: "running",
         message: "Cropping",
@@ -28,8 +26,7 @@ describe("useCropProgressModal", () => {
         completedRois: 2,
         totalRois: 4,
       }),
-    );
-    expect(result.current).toEqual({
+    ).toEqual({
       visible: true,
       done: 2,
       total: 4,

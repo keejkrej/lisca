@@ -1,5 +1,6 @@
-import { Folder, HardDrive } from "lucide-react";
-import type { ReactNode } from "react";
+import { Folder, HardDrive } from "lucide-solid";
+import type { JSX } from "solid-js";
+import { For, Show } from "solid-js";
 
 import { ShellThemeToggle } from "../theme/shell-theme";
 import { ToggleGroup, ToggleGroupItem } from "../../components/ui/toggle-group";
@@ -24,13 +25,13 @@ export type ShellNavbarProps = {
   /** Show the `endLeading` action slot (default: true). */
   showToolsMenu?: boolean;
   /** Insert next to the workspace action in the left path group. */
-  workspaceTrailing?: ReactNode;
+  workspaceTrailing?: JSX.Element;
   /** Override workspace action; defaults to `workspace.pickWorkspace()`. */
   onPickWorkspace?: () => void;
   /** Override source action; defaults to `workspace.pickSource()`. */
   onPickSource?: () => void;
   /** Insert before the theme toggle (e.g. aligner Tools menu). */
-  endLeading?: ReactNode;
+  endLeading?: JSX.Element;
 };
 
 /**
@@ -45,33 +46,34 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
   const handleWorkspace = props.onPickWorkspace ?? (() => workspace.pickWorkspace());
 
   return (
-    <header className="h-full px-6">
-      <div className="grid h-full grid-cols-[1fr_auto_1fr] items-center gap-4">
-        <div className="flex min-w-0 max-w-[56rem] flex-wrap items-center justify-start gap-3">
+    <header class="h-full px-6">
+      <div class="grid h-full grid-cols-[1fr_auto_1fr] items-center gap-4">
+        <div class="flex min-w-0 max-w-[56rem] flex-wrap items-center justify-start gap-3">
           <PathButton
             label="Workspace"
             value={workspace.workspacePath}
-            icon={<Folder className="size-4 shrink-0 opacity-80" aria-hidden />}
+            icon={<Folder class="size-4 shrink-0 opacity-80" aria-hidden />}
             onClick={handleWorkspace}
           />
           {props.workspaceTrailing}
-          {props.showSourceButton === false ? null : (
+          <Show when={props.showSourceButton !== false}>
             <PathButton
               label="Source"
               value={workspace.sourcePath}
-              icon={<HardDrive className="size-4 shrink-0 opacity-80" aria-hidden />}
+              icon={<HardDrive class="size-4 shrink-0 opacity-80" aria-hidden />}
               disabled={!workspace.workspacePath}
               onClick={workspace.workspacePath ? handleSource : undefined}
             />
-          )}
+          </Show>
         </div>
 
-        {props.showRouteToggle === false ? (
-          <div />
-        ) : props.routeItems.length > 1 ? (
-          <div className="min-w-0 justify-self-start">
+        <Show
+          when={props.showRouteToggle !== false && props.routeItems.length > 1}
+          fallback={<div />}
+        >
+          <div class="min-w-0 justify-self-start">
             <ToggleGroup
-              className="flex-nowrap gap-1 rounded-xl border border-border bg-background p-1"
+              class="flex-nowrap gap-1 rounded-xl border border-border bg-background p-1"
               multiple={false}
               size="sm"
               value={[props.routeValue]}
@@ -80,24 +82,24 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
                 if (v) props.onRouteChange(v);
               }}
             >
-              {props.routeItems.map((item) => (
-                <ToggleGroupItem key={item.value} value={item.value} className="min-w-[4.5rem]">
-                  {item.label}
-                </ToggleGroupItem>
-              ))}
+              <For each={props.routeItems}>
+                {(item) => (
+                  <ToggleGroupItem value={item.value} class="min-w-[4.5rem]">
+                    {item.label}
+                  </ToggleGroupItem>
+                )}
+              </For>
             </ToggleGroup>
           </div>
-        ) : (
-          <div />
-        )}
+        </Show>
 
-        <div className="flex min-w-0 items-center justify-end justify-self-end gap-1 sm:gap-2">
+        <div class="flex min-w-0 items-center justify-end justify-self-end gap-1 sm:gap-2">
           <ConnectionStatus
             state={server.state}
             httpBaseUrl={server.httpBaseUrl}
             onOpenSettings={server.openSettings}
           />
-          {props.showToolsMenu !== false && props.endLeading}
+          <Show when={props.showToolsMenu !== false}>{props.endLeading}</Show>
           <ShellThemeToggle />
         </div>
       </div>
@@ -106,7 +108,7 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
 }
 
 export type ShellNavbarAnnotatorProps = {
-  endLeading?: ReactNode;
+  endLeading?: JSX.Element;
   onPickWorkspace?: () => void;
 };
 
@@ -143,11 +145,11 @@ function ShellNavbarAligner(props: ShellNavbarAlignerProps) {
   );
 }
 
-function ShellNavbarLeading(props: { children?: ReactNode }) {
+function ShellNavbarLeading(props: { children?: JSX.Element }) {
   return props.children ?? null;
 }
 
-function ShellNavbarActions(props: { children?: ReactNode }) {
+function ShellNavbarActions(props: { children?: JSX.Element }) {
   return props.children ?? null;
 }
 

@@ -1,6 +1,6 @@
 import { LabelCreationDialog } from "@lisca/ui/features";
 import { AppShell } from "@lisca/ui/shell";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/solid-router";
 
 import { StudioAnnotateDock } from "../components/studio-annotate-dock";
 import { StudioAnnotateMain } from "../components/studio-annotate-main";

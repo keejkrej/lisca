@@ -7,7 +7,7 @@ import {
   strokeMask,
   type FrameResult,
 } from "@lisca/utils";
-import { useRef, useState } from "react";
+import { createMemo, createSignal, type Accessor } from "solid-js";
 
 import { isSmartAnnotationTool, type AnnotationTool } from "./annotation-tools";
 
@@ -77,33 +77,19 @@ export function framePointFromViewport(
   };
 }
 
-export function useAnnotationCanvasHandlers({
-  frame,
-  viewportWidth,
-  viewportHeight,
-  viewportX = 0,
-  viewportY = 0,
-  mask,
-  labels,
-  activeLabelId,
-  tool,
-  brushSize,
-  disabled = false,
-  onMaskCommit,
-  onSmartSegmentClick,
-  onSmartEraseClick,
-}: UseAnnotationCanvasHandlersOptions) {
-  const lassoRef = useRef<LassoSession | null>(null);
-  const [lassoPoints, setLassoPoints] = useState<AnnotationCanvasFramePoint[]>([]);
-  const [drawing, setDrawing] = useState(false);
-
-  const activeLabelValue = activeLabelValueForId(labels, activeLabelId);
-  const eraseMode = tool === "brush-erase" || tool === "lasso-erase";
-  const brushMode = tool === "brush" || tool === "brush-erase";
-  const smartToolMode = isSmartAnnotationTool(tool);
-  const smartEraseMode = tool === "smart-erase";
+export function useAnnotationCanvasHandlers(options: () => UseAnnotationCanvasHandlersOptions) {
+  const lassoRef = { current: null as LassoSession | null };
+  const [lassoPoints, setLassoPoints] = createSignal<AnnotationCanvasFramePoint[]>([]);
+  const [drawing, setDrawing] = createSignal(false);
 
   const framePointFromEvent = (event: AnnotationCanvasPointerEvent) => {
+    const {
+      frame,
+      viewportWidth,
+      viewportHeight,
+      viewportX = 0,
+      viewportY = 0,
+    } = options();
     if (!frame) return null;
     return framePointFromViewport(
       event.clientX,
@@ -119,12 +105,24 @@ export function useAnnotationCanvasHandlers({
 
   const finishLasso = (event: AnnotationCanvasPointerEvent) => {
     const active = lassoRef.current;
+    const {
+      frame,
+      mask,
+      labels,
+      activeLabelId,
+      tool,
+      brushSize,
+      onMaskCommit,
+    } = options();
     if (!active || active.pointerId !== event.pointerId || !frame) return;
     lassoRef.current = null;
     setLassoPoints([]);
     setDrawing(false);
     event.releasePointer();
 
+    const eraseMode = tool === "brush-erase" || tool === "lasso-erase";
+    const brushMode = tool === "brush" || tool === "brush-erase";
+    const activeLabelValue = activeLabelValueForId(labels, activeLabelId);
     const value = eraseMode ? 0 : activeLabelValue;
     if (value <= 0 && !eraseMode) return;
     if (brushMode) {
@@ -135,9 +133,23 @@ export function useAnnotationCanvasHandlers({
   };
 
   const handlePointerDown = (event: AnnotationCanvasPointerEvent) => {
+    const {
+      disabled = false,
+      frame,
+      labels,
+      activeLabelId,
+      tool,
+      onSmartSegmentClick,
+      onSmartEraseClick,
+    } = options();
     if (disabled || !frame) return false;
     const point = framePointFromEvent(event);
     if (!point) return false;
+
+    const smartToolMode = isSmartAnnotationTool(tool);
+    const smartEraseMode = tool === "smart-erase";
+    const eraseMode = tool === "brush-erase" || tool === "lasso-erase";
+    const activeLabelValue = activeLabelValueForId(labels, activeLabelId);
 
     if (smartToolMode) {
       if (event.button !== 0 && event.button !== 2) return false;
@@ -170,7 +182,8 @@ export function useAnnotationCanvasHandlers({
   };
 
   const handlePointerMove = (event: AnnotationCanvasPointerEvent) => {
-    if (smartToolMode) return false;
+    const { tool } = options();
+    if (isSmartAnnotationTool(tool)) return false;
     const active = lassoRef.current;
     if (!active || active.pointerId !== event.pointerId) return false;
     const point = framePointFromEvent(event);
@@ -183,7 +196,8 @@ export function useAnnotationCanvasHandlers({
   };
 
   const handlePointerEnd = (event: AnnotationCanvasPointerEvent) => {
-    if (smartToolMode) return false;
+    const { tool } = options();
+    if (isSmartAnnotationTool(tool)) return false;
     if (!lassoRef.current || lassoRef.current.pointerId !== event.pointerId) return false;
     finishLasso(event);
     return true;
@@ -198,8 +212,23 @@ export function useAnnotationCanvasHandlers({
     return true;
   };
 
-  const cursor =
-    disabled || !frame ? "default" : smartToolMode || drawing ? "crosshair" : "crosshair";
+  const activeLabelValue = createMemo(() =>
+    activeLabelValueForId(options().labels, options().activeLabelId),
+  );
+  const brushMode = createMemo(() => {
+    const tool = options().tool;
+    return tool === "brush" || tool === "brush-erase";
+  });
+  const eraseMode = createMemo(() => {
+    const tool = options().tool;
+    return tool === "brush-erase" || tool === "lasso-erase";
+  });
+  const smartToolMode = createMemo(() => isSmartAnnotationTool(options().tool));
+  const smartEraseMode = createMemo(() => options().tool === "smart-erase");
+  const cursor = createMemo(() => {
+    const { disabled = false, frame } = options();
+    return disabled || !frame ? "default" : "crosshair";
+  });
 
   return {
     activeLabelValue,

@@ -12,7 +12,7 @@ export function StudioAlignDock() {
   return (
     <DockStrip>
       <DockSection fit="panel" title="Instruction">
-        <p className="line-clamp-4 text-center text-sm leading-snug">
+        <p class="line-clamp-4 text-center text-sm leading-snug">
           {instructionForStep("alignPattern")}
         </p>
       </DockSection>
@@ -36,10 +36,10 @@ export function StudioAlignDock() {
         />
       </DockSection>
       <DockSection title="Action">
-        <div className="flex w-full flex-col gap-2">
-          <div className="grid w-full grid-cols-2 gap-2">
+        <div class="flex w-full flex-col gap-2">
+          <div class="grid w-full grid-cols-2 gap-2">
             <Button
-              className="w-full justify-center"
+              class="w-full justify-center"
               disabled={!state.frame || state.saving || state.cropping}
               size="sm"
               type="button"
@@ -49,7 +49,7 @@ export function StudioAlignDock() {
               Reset
             </Button>
             <Button
-              className="w-full justify-center"
+              class="w-full justify-center"
               disabled={
                 !state.workspacePath ||
                 state.alignPositions.length === 0 ||
@@ -65,9 +65,9 @@ export function StudioAlignDock() {
               Jump
             </Button>
           </div>
-          <div className="grid w-full grid-cols-2 gap-2">
+          <div class="grid w-full grid-cols-2 gap-2">
             <Button
-              className="w-full justify-center"
+              class="w-full justify-center"
               disabled={!state.canGoBack || state.saving || state.cropping}
               size="sm"
               type="button"
@@ -77,8 +77,8 @@ export function StudioAlignDock() {
               Back
             </Button>
             <Button
-              className="w-full justify-center"
-              disabled={!state.frame || state.saving || state.cropping || smartExclude.active}
+              class="w-full justify-center"
+              disabled={!state.frame || state.saving || state.cropping || smartExclude.active()}
               size="sm"
               type="button"
               variant="outline"

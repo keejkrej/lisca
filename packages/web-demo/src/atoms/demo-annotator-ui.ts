@@ -1,7 +1,7 @@
 import type { AnnotationLabel, ContrastWindow } from "@lisca/contracts";
 import type { AnnotationMode, AnnotationTool } from "@lisca/ui/features";
 import type { FrameResult } from "@lisca/utils";
-import { Atom } from "@effect-atom/atom-react";
+import { Atom } from "@effect-atom/atom-solid";
 
 import {
   annotationValuesEqual,

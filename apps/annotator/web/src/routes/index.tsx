@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/solid-router";
 
 import { AnnotatorWorkSessionGate } from "../components/annotator-work-session-gate";
 import { AnnotatePage } from "../components/annotate-page";

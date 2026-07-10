@@ -1,5 +1,10 @@
-import type { ReactNode } from "react";
-import { useEffect, useId } from "react";
+import {
+  createEffect,
+  createUniqueId,
+  onCleanup,
+  Show,
+  type JSX,
+} from "solid-js";
 
 import { cn } from "../../lib/utils";
 import { ShellLayoutProvider, useShellLayout } from "./shell-layout-context";
@@ -14,28 +19,28 @@ const shellHeaderFixed = "flex h-16 shrink-0 flex-col overflow-hidden";
 /** Fixed-height dock strip (`11rem`); scrolls inside if content overflows. */
 const shellDockFixed = "flex h-[11rem] shrink-0 flex-col overflow-hidden";
 
-function ShellDockInner(props: { children?: ReactNode; className?: string }) {
+function ShellDockInner(props: { children?: JSX.Element; class?: string }) {
   return (
     <div
       role="region"
       aria-label="Dock"
-      className={cn(shellDockFixed, "border-t", shellDivider, shellSurface, props.className)}
+      class={cn(shellDockFixed, "border-t", shellDivider, shellSurface, props.class)}
     >
-      <div className="min-h-0 flex-1 overflow-auto">{props.children}</div>
+      <div class="min-h-0 flex-1 overflow-auto">{props.children}</div>
     </div>
   );
 }
 
 function ShellSidebarInner(props: {
   side: "left" | "right";
-  children?: ReactNode;
+  children?: JSX.Element;
   widthClass?: string;
 }) {
   const edge = props.side === "left" ? `border-r ${shellDivider}` : `border-l ${shellDivider}`;
   return (
     <aside
       aria-label={props.side === "left" ? "Left panel" : "Right panel"}
-      className={`flex min-h-0 shrink-0 flex-col overflow-y-auto ${shellSurface} ${props.widthClass ?? "w-56"} ${edge}`}
+      class={`flex min-h-0 shrink-0 flex-col overflow-y-auto ${shellSurface} ${props.widthClass ?? "w-56"} ${edge}`}
     >
       {props.children}
     </aside>
@@ -44,38 +49,31 @@ function ShellSidebarInner(props: {
 
 function useRegisterShellPanel(props: {
   side: "left" | "right";
-  children?: ReactNode;
+  children?: JSX.Element;
   widthClass?: string;
 }) {
   const layout = useShellLayout();
-  const id = useId();
-  const widthClass = props.widthClass ?? "w-56";
+  const id = createUniqueId();
+  const widthClass = () => props.widthClass ?? "w-56";
 
-  useEffect(() => {
+  createEffect(() => {
     if (!layout.isPortrait) {
-      return undefined;
+      return;
     }
     const register = props.side === "left" ? layout.registerLeftPanel : layout.registerRightPanel;
-    return register({
+    const cleanup = register({
       id,
-      widthClass,
+      widthClass: widthClass(),
       content: props.children,
     });
-  }, [
-    id,
-    layout.isPortrait,
-    layout.registerLeftPanel,
-    layout.registerRightPanel,
-    props.children,
-    props.side,
-    widthClass,
-  ]);
+    onCleanup(cleanup);
+  });
 }
 
 function SkipToMainLink() {
   return (
     <a
-      className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-foreground focus:shadow-md focus:outline-none focus:ring-2 focus:ring-ring"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-foreground focus:shadow-md focus:outline-none focus:ring-2 focus:ring-ring"
       href="#main-content"
     >
       Skip to main content
@@ -83,10 +81,10 @@ function SkipToMainLink() {
   );
 }
 
-function AppShellRoot(props: { children?: ReactNode }) {
+function AppShellRoot(props: { children?: JSX.Element }) {
   return (
     <ShellLayoutProvider>
-      <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background text-foreground">
+      <div class="flex h-full min-h-0 flex-col overflow-hidden bg-background text-foreground">
         <SkipToMainLink />
         {props.children}
       </div>
@@ -96,13 +94,13 @@ function AppShellRoot(props: { children?: ReactNode }) {
 AppShellRoot.displayName = "AppShell";
 
 /** App header chrome (`h-16`). Renders a `<header>`. */
-function AppShellHeader(props: { children?: ReactNode }) {
+function AppShellHeader(props: { children?: JSX.Element }) {
   return (
     <header
-      className={`${shellHeaderFixed} border-b ${shellDivider} ${shellSurface}`}
+      class={`${shellHeaderFixed} border-b ${shellDivider} ${shellSurface}`}
       aria-label="Application header"
     >
-      <div className="min-h-0 flex-1 overflow-auto">{props.children}</div>
+      <div class="min-h-0 flex-1 overflow-auto">{props.children}</div>
     </header>
   );
 }
@@ -112,9 +110,9 @@ AppShellHeader.displayName = "AppShell.Header";
  * Horizontal band under the header: left rail, main column (main + optional dock), right rail.
  * Use `flex-1` so it fills remaining height when a `Header` is present.
  */
-function AppShellBody(props: { children?: ReactNode }) {
+function AppShellBody(props: { children?: JSX.Element }) {
   return (
-    <div className={`relative flex min-h-0 flex-1 overflow-hidden ${shellSurface}`}>
+    <div class={`relative flex min-h-0 flex-1 overflow-hidden ${shellSurface}`}>
       {props.children}
       <ShellPortraitPanelOverlays />
     </div>
@@ -123,9 +121,9 @@ function AppShellBody(props: { children?: ReactNode }) {
 AppShellBody.displayName = "AppShell.Body";
 
 /** Center stack: scrollable `Main` plus optional fixed-height `Dock`. */
-function AppShellMainColumn(props: { children?: ReactNode }) {
+function AppShellMainColumn(props: { children?: JSX.Element }) {
   return (
-    <div className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden ${shellSurface}`}>
+    <div class={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden ${shellSurface}`}>
       {props.children}
     </div>
   );
@@ -133,48 +131,44 @@ function AppShellMainColumn(props: { children?: ReactNode }) {
 AppShellMainColumn.displayName = "AppShell.MainColumn";
 
 function AppShellLeft(props: {
-  children?: ReactNode;
+  children?: JSX.Element;
   /** Tailwind width utility; default `w-56`. */
   widthClass?: string;
 }) {
   useRegisterShellPanel({ side: "left", children: props.children, widthClass: props.widthClass });
   const layout = useShellLayout();
 
-  if (layout.isPortrait) {
-    return null;
-  }
-
   return (
-    <ShellSidebarInner side="left" widthClass={props.widthClass}>
-      {props.children}
-    </ShellSidebarInner>
+    <Show when={!layout.isPortrait}>
+      <ShellSidebarInner side="left" widthClass={props.widthClass}>
+        {props.children}
+      </ShellSidebarInner>
+    </Show>
   );
 }
 AppShellLeft.displayName = "AppShell.Left";
 
 function AppShellRight(props: {
-  children?: ReactNode;
+  children?: JSX.Element;
   /** Tailwind width utility; default `w-56`. */
   widthClass?: string;
 }) {
   useRegisterShellPanel({ side: "right", children: props.children, widthClass: props.widthClass });
   const layout = useShellLayout();
 
-  if (layout.isPortrait) {
-    return null;
-  }
-
   return (
-    <ShellSidebarInner side="right" widthClass={props.widthClass}>
-      {props.children}
-    </ShellSidebarInner>
+    <Show when={!layout.isPortrait}>
+      <ShellSidebarInner side="right" widthClass={props.widthClass}>
+        {props.children}
+      </ShellSidebarInner>
+    </Show>
   );
 }
 AppShellRight.displayName = "AppShell.Right";
 
-function AppShellMain(props: { children?: ReactNode }) {
+function AppShellMain(props: { children?: JSX.Element }) {
   return (
-    <main className={`relative min-h-0 flex-1 overflow-auto ${shellSurface}`} id="main-content">
+    <main class={`relative min-h-0 flex-1 overflow-auto ${shellSurface}`} id="main-content">
       {props.children}
       <ShellPortraitPanelControls />
     </main>
@@ -182,8 +176,8 @@ function AppShellMain(props: { children?: ReactNode }) {
 }
 AppShellMain.displayName = "AppShell.Main";
 
-function AppShellDock(props: { children?: ReactNode; className?: string }) {
-  return <ShellDockInner className={props.className}>{props.children}</ShellDockInner>;
+function AppShellDock(props: { children?: JSX.Element; class?: string }) {
+  return <ShellDockInner class={props.class}>{props.children}</ShellDockInner>;
 }
 AppShellDock.displayName = "AppShell.Dock";
 
@@ -235,14 +229,14 @@ export const AppShell: AppShellCompound = Object.assign(AppShellRoot, {
 });
 
 /** Stand-alone dock strip (same fixed height as `AppShell.Dock`). */
-export function ShellDock(props: { children?: ReactNode; className?: string }) {
-  return <ShellDockInner className={props.className}>{props.children}</ShellDockInner>;
+export function ShellDock(props: { children?: JSX.Element; class?: string }) {
+  return <ShellDockInner class={props.class}>{props.children}</ShellDockInner>;
 }
 
 /** Stand-alone sidebar (same fixed width as `AppShell.Left` / `AppShell.Right`). */
 export function ShellSidebar(props: {
   side: "left" | "right";
-  children?: ReactNode;
+  children?: JSX.Element;
   /** Tailwind width utility; default `w-56`. */
   widthClass?: string;
 }) {

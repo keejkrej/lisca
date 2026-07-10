@@ -1,16 +1,12 @@
-import { useAtom } from "@effect-atom/atom-react";
+import { useAtom } from "@effect-atom/atom-solid";
 import { restoreAnnotatorWorkSession } from "@lisca/client/session/annotator-work-session-restore";
 import { WorkSessionAppGate } from "@lisca/client/session/work-session-app-gate";
 import { useShellWorkspace, WorkSessionPickerDialog } from "@lisca/ui/shell";
-import type { ReactNode } from "react";
+import type { JSX } from "solid-js";
 
 import { annotatorUiActions, annotatorUiAtom } from "../atoms/annotator-ui-atoms";
 
-type AnnotatorWorkSessionGateProps = {
-  children: ReactNode;
-};
-
-export function AnnotatorWorkSessionGate({ children }: AnnotatorWorkSessionGateProps) {
+export function AnnotatorWorkSessionGate(props: { children?: JSX.Element }) {
   const workspace = useShellWorkspace();
   const [, setUi] = useAtom(annotatorUiAtom);
 
@@ -27,7 +23,7 @@ export function AnnotatorWorkSessionGate({ children }: AnnotatorWorkSessionGateP
         });
       }}
     >
-      {children}
+      {props.children}
     </WorkSessionAppGate>
   );
 }

@@ -1,23 +1,19 @@
-import { useAtom } from "@effect-atom/atom-react";
+import { useAtom } from "@effect-atom/atom-solid";
 import { restoreAlignerWorkSession } from "@lisca/client/session/aligner-work-session-restore";
 import { resumeCropPendingRun } from "@lisca/client/session/resume-pending-runs";
 import { WorkSessionAppGate } from "@lisca/client/session/work-session-app-gate";
 import { useShellWorkspace, WorkSessionPickerDialog } from "@lisca/ui/shell";
-import { useEffect, type ReactNode } from "react";
+import { onMount, type JSX } from "solid-js";
 
 import { alignerClient } from "../api/aligner-port";
 import { alignerUiActions, alignerUiAtom, readAlignerSession } from "../atoms/aligner-ui-atoms";
 
-type AlignerWorkSessionGateProps = {
-  children: ReactNode;
-};
-
-export function AlignerWorkSessionGate({ children }: AlignerWorkSessionGateProps) {
+export function AlignerWorkSessionGate(props: { children?: JSX.Element }) {
   const workspace = useShellWorkspace();
   const [, setUi] = useAtom(alignerUiAtom);
   const persistedSession = readAlignerSession();
 
-  useEffect(() => {
+  onMount(() => {
     const session = readAlignerSession();
     if (!session?.workspacePath) return;
     workspace.setWorkspacePath(session.workspacePath);
@@ -26,7 +22,7 @@ export function AlignerWorkSessionGate({ children }: AlignerWorkSessionGateProps
       workspacePath: session.workspacePath,
       onProgress: (progress) => alignerUiActions.setCropProgress(setUi, progress),
     });
-  }, [setUi, workspace]);
+  });
 
   return (
     <WorkSessionAppGate
@@ -50,7 +46,7 @@ export function AlignerWorkSessionGate({ children }: AlignerWorkSessionGateProps
         });
       }}
     >
-      {children}
+      {props.children}
     </WorkSessionAppGate>
   );
 }

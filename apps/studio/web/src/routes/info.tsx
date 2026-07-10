@@ -1,5 +1,7 @@
+import { useAtomSet, useAtomValue } from "@effect-atom/atom-solid";
 import { AppShell } from "@lisca/ui/shell";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/solid-router";
+import { createMemo, Show } from "solid-js";
 
 import { studioHostOperations } from "../api/studio-port";
 import { BasicInfoStep1 } from "../components/basic-info-step1";
@@ -8,7 +10,11 @@ import { BasicInfoStep3 } from "../components/basic-info-step3";
 import { StudioInfoDock } from "../components/studio-info-dock";
 import { StudioLeft } from "../components/studio-left";
 import { useStudioNavigate } from "../navigation/use-studio-navigate";
-import { useStudioStore } from "../state/studio-store";
+import {
+  studioWizardActions,
+  studioWizardAtom,
+  type InfoStep,
+} from "../state/studio-store";
 
 export const Route = createFileRoute("/info")({
   component: InfoPage,
@@ -16,21 +22,26 @@ export const Route = createFileRoute("/info")({
 
 function InfoPage() {
   const { navigateTo } = useStudioNavigate();
-  const infoStep = useStudioStore((state) => state.infoStep);
-  const setInfoStep = useStudioStore((state) => state.setInfoStep);
-  const step = infoStep === 1 ? "info1" : infoStep === 2 ? "info2" : "info3";
+  const wizard = useAtomValue(studioWizardAtom);
+  const setWizard = useAtomSet(studioWizardAtom);
+  const setInfoStep = (step: InfoStep) => studioWizardActions.setInfoStep(setWizard, step);
+
+  const infoStep = createMemo(() => wizard().infoStep);
+  const step = createMemo(() =>
+    infoStep() === 1 ? "info1" : infoStep() === 2 ? "info2" : "info3",
+  );
 
   const next = () => {
-    if (infoStep < 3) {
-      setInfoStep((infoStep + 1) as 1 | 2 | 3);
+    if (infoStep() < 3) {
+      setInfoStep((infoStep() + 1) as InfoStep);
       return;
     }
     navigateTo("/align");
   };
 
   const back = () => {
-    if (infoStep > 1) {
-      setInfoStep((infoStep - 1) as 1 | 2 | 3);
+    if (infoStep() > 1) {
+      setInfoStep((infoStep() - 1) as InfoStep);
     }
   };
 
@@ -42,14 +53,20 @@ function InfoPage() {
         </AppShell.Left>
         <AppShell.MainColumn>
           <AppShell.Main>
-            <div className="mx-auto flex min-h-full w-full min-w-0 max-w-[52rem] flex-col items-center justify-center px-4 py-6 md:px-[100px] md:py-10">
-              {infoStep === 1 ? <BasicInfoStep1 hostPort={studioHostOperations} /> : null}
-              {infoStep === 2 ? <BasicInfoStep2 /> : null}
-              {infoStep === 3 ? <BasicInfoStep3 /> : null}
+            <div class="mx-auto flex min-h-full w-full min-w-0 max-w-[52rem] flex-col items-center justify-center px-4 py-6 md:px-[100px] md:py-10">
+              <Show when={infoStep() === 1}>
+                <BasicInfoStep1 hostPort={studioHostOperations} />
+              </Show>
+              <Show when={infoStep() === 2}>
+                <BasicInfoStep2 />
+              </Show>
+              <Show when={infoStep() === 3}>
+                <BasicInfoStep3 />
+              </Show>
             </div>
           </AppShell.Main>
           <AppShell.Dock>
-            <StudioInfoDock infoStep={infoStep} step={step} onBack={back} onNext={next} />
+            <StudioInfoDock infoStep={infoStep()} step={step()} onBack={back} onNext={next} />
           </AppShell.Dock>
         </AppShell.MainColumn>
         <AppShell.Right widthClass="w-60" />

@@ -1,8 +1,8 @@
 import type { AnnotationLabel } from "@lisca/contracts";
-import { useEffect, useState } from "react";
+import { createEffect, createMemo, createSignal, type Accessor } from "solid-js";
 
 export type LabelDraft = {
-  /** Stable React list key — does not change when id/name are edited. */
+  /** Stable list key — does not change when id/name are edited. */
   draftKey: string;
   id: string;
   name: string;
@@ -60,9 +60,9 @@ export function labelDraftsToLabels(drafts: LabelDraft[]): AnnotationLabel[] {
 }
 
 export type LabelCreationFormState = {
-  drafts: LabelDraft[];
-  localError: string | null;
-  activeError: string | null;
+  drafts: Accessor<LabelDraft[]>;
+  localError: Accessor<string | null>;
+  activeError: Accessor<string | null>;
   updateDraft: (index: number, patch: Partial<Omit<LabelDraft, "draftKey">>) => void;
   addDraft: () => void;
   removeDraft: (index: number) => void;
@@ -70,20 +70,22 @@ export type LabelCreationFormState = {
   resetFromLabels: (labels: AnnotationLabel[]) => void;
 };
 
-export function useLabelCreationForm(args: {
-  open: boolean;
-  labels: AnnotationLabel[];
-  error: string | null;
-}): LabelCreationFormState {
-  const [drafts, setDrafts] = useState<LabelDraft[]>(() => labelDraftsFrom(args.labels));
-  const [localError, setLocalError] = useState<string | null>(null);
+export function useLabelCreationForm(
+  args: () => {
+    open: boolean;
+    labels: AnnotationLabel[];
+    error: string | null;
+  },
+): LabelCreationFormState {
+  const [drafts, setDrafts] = createSignal<LabelDraft[]>(labelDraftsFrom(args().labels));
+  const [localError, setLocalError] = createSignal<string | null>(null);
 
-  useEffect(() => {
-    if (args.open) {
-      setDrafts(labelDraftsFrom(args.labels));
+  createEffect(() => {
+    if (args().open) {
+      setDrafts(labelDraftsFrom(args().labels));
       setLocalError(null);
     }
-  }, [args.labels, args.open]);
+  });
 
   const updateDraft = (index: number, patch: Partial<Omit<LabelDraft, "draftKey">>) => {
     setDrafts((current) =>
@@ -113,19 +115,21 @@ export function useLabelCreationForm(args: {
   };
 
   const submit = (): AnnotationLabel[] | null => {
-    const validationError = validateLabelDrafts(drafts);
+    const validationError = validateLabelDrafts(drafts());
     if (validationError) {
       setLocalError(validationError);
       return null;
     }
     setLocalError(null);
-    return labelDraftsToLabels(drafts);
+    return labelDraftsToLabels(drafts());
   };
+
+  const activeError = createMemo(() => localError() ?? args().error);
 
   return {
     drafts,
     localError,
-    activeError: localError ?? args.error,
+    activeError,
     updateDraft,
     addDraft,
     removeDraft,

@@ -8,10 +8,11 @@ import {
   SourcePickerModal,
 } from "@lisca/ui/features";
 import type { HostFilePickerOperations } from "@lisca/ui/features";
-import { useState } from "react";
+import { useAtomSet, useAtomValue } from "@effect-atom/atom-solid";
+import { createMemo, createSignal } from "solid-js";
 
 import { useStudioMemoryRecent } from "../hooks/use-studio-memory-recent";
-import { useStudioStore } from "../state/studio-store";
+import { studioWizardActions, studioWizardAtom } from "../state/studio-store";
 import { recordStudioSourceMemory, recordStudioWorkspaceMemory } from "../utils/studio-memory";
 
 const ROW = "flex min-h-[100px] w-full flex-col gap-2.5 p-2.5";
@@ -40,16 +41,21 @@ function kindFromMode(mode: HostFilePickerMode): StudioDataSourceKind {
   return null;
 }
 
-export function BasicInfoStep1({ hostPort }: { hostPort: HostFilePickerOperations }) {
-  const info1 = useStudioStore((state) => state.info1);
-  const setInfo1 = useStudioStore((state) => state.setInfo1);
-  const setDataSourceKind = useStudioStore((state) => state.setDataSourceKind);
-  const [openDataModalOpen, setOpenDataModalOpen] = useState(false);
-  const [pathPicker, setPathPicker] = useState<StudioPathPickerState>(null);
-  const [folderSourcePath, setFolderSourcePath] = useState<string | null>(null);
+export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
+  const wizard = useAtomValue(studioWizardAtom);
+  const setWizard = useAtomSet(studioWizardAtom);
+  const setInfo1 = (patch: Parameters<typeof studioWizardActions.setInfo1>[1]) =>
+    studioWizardActions.setInfo1(setWizard, patch);
+  const setDataSourceKind = (kind: StudioDataSourceKind) =>
+    studioWizardActions.setDataSourceKind(setWizard, kind);
+  const [openDataModalOpen, setOpenDataModalOpen] = createSignal(false);
+  const [pathPicker, setPathPicker] = createSignal<StudioPathPickerState>(null);
+  const [folderSourcePath, setFolderSourcePath] = createSignal<string | null>(null);
 
-  const sourceRecent = useStudioMemoryRecent("source", openDataModalOpen);
-  const workspaceRecent = useStudioMemoryRecent("workspace", pathPicker?.kind === "save");
+  const sourceRecent = createMemo(() => useStudioMemoryRecent("source", openDataModalOpen()));
+  const workspaceRecent = createMemo(() =>
+    useStudioMemoryRecent("workspace", pathPicker()?.kind === "save"),
+  );
 
   const openSourceBrowser = (mode: HostFilePickerMode) => {
     setOpenDataModalOpen(false);
@@ -85,48 +91,48 @@ export function BasicInfoStep1({ hostPort }: { hostPort: HostFilePickerOperation
 
   return (
     <>
-      <div className="flex w-full min-w-0 flex-col gap-2.5">
-        <div className={ROW}>
-          <Field className="gap-2.5" name="name">
-            <FieldLabel className="text-2xl font-normal" htmlFor="studio-name">
+      <div class="flex w-full min-w-0 flex-col gap-2.5">
+        <div class={ROW}>
+          <Field class="gap-2.5" name="name">
+            <FieldLabel class="text-2xl font-normal" htmlFor="studio-name">
               Name
             </FieldLabel>
             <Input
-              autoComplete="off"
-              className="w-full"
+              autocomplete="off"
+              class="w-full"
               id="studio-name"
               placeholder="My assay"
-              value={info1.name}
+              value={wizard().info1.name}
               onChange={(event) => setInfo1({ name: event.target.value })}
             />
           </Field>
         </div>
-        <div className={ROW}>
-          <Field className="gap-2.5" name="date">
-            <FieldLabel className="text-2xl font-normal" htmlFor="studio-date">
+        <div class={ROW}>
+          <Field class="gap-2.5" name="date">
+            <FieldLabel class="text-2xl font-normal" htmlFor="studio-date">
               Date
             </FieldLabel>
             <Input
-              className="w-full"
+              class="w-full"
               id="studio-date"
               type="date"
-              value={info1.date}
+              value={wizard().info1.date}
               onChange={(event) => setInfo1({ date: event.target.value })}
             />
           </Field>
         </div>
-        <div className={ROW}>
-          <Field className="gap-2.5" name="dataPath">
-            <FieldLabel className="text-2xl font-normal" htmlFor="studio-data-path">
+        <div class={ROW}>
+          <Field class="gap-2.5" name="dataPath">
+            <FieldLabel class="text-2xl font-normal" htmlFor="studio-data-path">
               Data path
             </FieldLabel>
             <Input
               readOnly
-              autoComplete="off"
-              className="w-full cursor-pointer"
+              autocomplete="off"
+              class="w-full cursor-pointer"
               id="studio-data-path"
               placeholder="Click to choose source…"
-              value={info1.dataPath}
+              value={wizard().info1.dataPath}
               onClick={() => setOpenDataModalOpen(true)}
               onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
@@ -137,18 +143,18 @@ export function BasicInfoStep1({ hostPort }: { hostPort: HostFilePickerOperation
             />
           </Field>
         </div>
-        <div className={ROW}>
-          <Field className="gap-2.5" name="saveTo">
-            <FieldLabel className="text-2xl font-normal" htmlFor="studio-save-to">
+        <div class={ROW}>
+          <Field class="gap-2.5" name="saveTo">
+            <FieldLabel class="text-2xl font-normal" htmlFor="studio-save-to">
               Save to
             </FieldLabel>
             <Input
               readOnly
-              autoComplete="off"
-              className="w-full cursor-pointer"
+              autocomplete="off"
+              class="w-full cursor-pointer"
               id="studio-save-to"
               placeholder="Click to choose folder…"
-              value={info1.saveTo}
+              value={wizard().info1.saveTo}
               onClick={() => setPathPicker({ kind: "save" })}
               onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
@@ -162,8 +168,8 @@ export function BasicInfoStep1({ hostPort }: { hostPort: HostFilePickerOperation
       </div>
 
       <SourcePickerModal
-        open={openDataModalOpen}
-        recentSources={sourceRecent.sources}
+        open={openDataModalOpen()}
+        recentSources={sourceRecent().sources}
         onClose={() => setOpenDataModalOpen(false)}
         onOpenCzi={() => openSourceBrowser("czi_file")}
         onOpenFolder={() => openSourceBrowser("folder")}
@@ -171,39 +177,41 @@ export function BasicInfoStep1({ hostPort }: { hostPort: HostFilePickerOperation
         onPickRecentSource={applyRecentSource}
       />
       <HostFilePickerDialog
-        hostPort={hostPort}
-        mode={pickerMode(pathPicker)}
-        open={pathPicker !== null}
-        recentItems={pathPicker?.kind === "save" ? workspaceRecent.workspaces : undefined}
-        title={pickerTitle(pathPicker)}
+        hostPort={props.hostPort}
+        mode={pickerMode(pathPicker())}
+        open={pathPicker() !== null}
+        recentItems={pathPicker()?.kind === "save" ? workspaceRecent().workspaces : undefined}
+        title={pickerTitle(pathPicker())}
         onOpenChange={(open) => {
           if (!open) setPathPicker(null);
         }}
         onPickDirectory={(path) => {
-          if (!pathPicker) return;
-          if (pathPicker.kind === "save") {
+          const picker = pathPicker();
+          if (!picker) return;
+          if (picker.kind === "save") {
             setInfo1({ saveTo: path });
-            recordStudioWorkspaceMemory(path, info1.name.trim() || undefined);
-          } else if (pathPicker.mode === "folder") {
+            recordStudioWorkspaceMemory(path, wizard().info1.name.trim() || undefined);
+          } else if (picker.mode === "folder") {
             setFolderSourcePath(path);
           }
           setPathPicker(null);
         }}
         onPickFile={(path) => {
-          if (pathPicker?.kind === "source") applySourcePath(path, pathPicker.mode);
+          const picker = pathPicker();
+          if (picker?.kind === "source") applySourcePath(path, picker.mode);
           setPathPicker(null);
         }}
         onPickRecent={(path) => {
-          if (pathPicker?.kind === "save") {
+          if (pathPicker()?.kind === "save") {
             setInfo1({ saveTo: path });
-            recordStudioWorkspaceMemory(path, info1.name.trim() || undefined);
+            recordStudioWorkspaceMemory(path, wizard().info1.name.trim() || undefined);
             setPathPicker(null);
           }
         }}
       />
       <FolderSourceParseModal
-        hostPort={hostPort}
-        path={folderSourcePath}
+        hostPort={props.hostPort}
+        path={folderSourcePath()}
         onClose={() => setFolderSourcePath(null)}
         onConfirm={(source) => {
           setInfo1({

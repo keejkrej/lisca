@@ -1,21 +1,19 @@
-import type { ComponentProps, ReactNode } from "react";
+import { splitProps, type JSX } from "solid-js";
 
 const modalScrimClass =
   "fixed inset-0 flex items-center justify-center overscroll-contain bg-black/55 px-6 backdrop-blur-sm";
 import { cn } from "../../lib/utils";
 
-export function ModalScrim({
-  children,
-  className,
-  zIndex = "z-50",
-  ...props
-}: ComponentProps<"div"> & {
-  children: ReactNode;
-  zIndex?: "z-40" | "z-50";
-}) {
+export function ModalScrim(
+  props: JSX.HTMLAttributes<HTMLDivElement> & {
+    children?: JSX.Element;
+    zIndex?: "z-40" | "z-50";
+  },
+) {
+  const [local, rest] = splitProps(props, ["children", "class", "zIndex"]);
   return (
-    <div className={cn(modalScrimClass, zIndex, className)} {...props}>
-      {children}
+    <div class={cn(modalScrimClass, local.zIndex ?? "z-50", local.class)} {...rest}>
+      {local.children}
     </div>
   );
 }

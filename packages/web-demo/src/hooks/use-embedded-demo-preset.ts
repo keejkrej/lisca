@@ -1,5 +1,5 @@
-import { useAtomSet } from "@effect-atom/atom-react";
-import { useEffect } from "react";
+import { useAtomSet } from "@effect-atom/atom-solid";
+import { createEffect, onCleanup } from "solid-js";
 
 import { demoAlignUiActions, demoAlignUiAtom } from "../atoms/demo-align-ui";
 import { demoAnnotatorUiActions, demoAnnotatorUiAtom } from "../atoms/demo-annotator-ui";
@@ -16,7 +16,7 @@ export function useEmbeddedDemoPreset(
   const setAlignState = useAtomSet(demoAlignUiAtom);
   const setAnnotatorState = useAtomSet(demoAnnotatorUiAtom);
 
-  useEffect(() => {
+  createEffect(() => {
     if (!embedded || !preset || hasFrame) return;
 
     let cancelled = false;
@@ -64,8 +64,8 @@ export function useEmbeddedDemoPreset(
 
     void load();
 
-    return () => {
+    onCleanup(() => {
       cancelled = true;
-    };
-  }, [embedded, preset, hasFrame, setAlignState, setAnnotatorState]);
+    });
+  });
 }

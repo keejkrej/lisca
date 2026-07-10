@@ -1,47 +1,55 @@
 import { Button } from "@lisca/ui/components";
 import { AnnotationToolGrid, buildAnnotationToolActions } from "@lisca/ui/features";
 import { DockSection, DockStrip, ReadonlyPathField } from "@lisca/ui/shell";
+import { For, Show } from "solid-js";
 
 import { useStudioAnnotateDock } from "../state/studio-annotate-page-selectors";
 import { annotationOutputPaths } from "../utils/annotation-output";
 
 export function StudioAnnotateDock() {
   const dock = useStudioAnnotateDock();
-  const paths = annotationOutputPaths(dock.request, dock.mode);
-  const canEditTools = dock.mode === "segmentation" && dock.shortcutsEnabled;
-  const toolActions = buildAnnotationToolActions(dock.tool, dock.setTool, !canEditTools);
-  const disableShuffle = dock.scanLoading || dock.scan === null || dock.workspaceMissing;
-  const disableContinue =
+  const paths = () => annotationOutputPaths(dock.request, dock.mode);
+  const canEditTools = () => dock.mode === "segmentation" && dock.shortcutsEnabled;
+  const toolActions = () => buildAnnotationToolActions(dock.tool, dock.setTool, !canEditTools());
+  const disableShuffle = () => dock.scanLoading || dock.scan === null || dock.workspaceMissing;
+  const disableContinue = () =>
     dock.frameLoading || !dock.request || dock.analysisBusy || dock.workspaceMissing;
 
   return (
     <DockStrip>
-      {dock.mode === "segmentation" ? (
+      <Show when={dock.mode === "segmentation"}>
         <DockSection title="Tool">
           <AnnotationToolGrid
-            canEditTools={canEditTools}
+            canEditTools={canEditTools()}
             shortcutsEnabled={dock.shortcutsEnabled}
-            toolActions={toolActions}
+            toolActions={toolActions()}
           />
         </DockSection>
-      ) : null}
+      </Show>
       <DockSection title="Save">
-        <div className="flex w-full flex-col gap-2">
-          {paths.length > 1 ? (
-            <div className="grid w-full grid-cols-2 gap-2">
-              {paths.map((path) => (
-                <div key={path} className="min-w-0">
+        <div class="flex w-full flex-col gap-2">
+          <Show
+            when={paths().length > 1}
+            fallback={
+              <For each={paths()}>
+                {(path) => (
                   <ReadonlyPathField aria-label={`Output path ${path}`} value={path} />
-                </div>
-              ))}
+                )}
+              </For>
+            }
+          >
+            <div class="grid w-full grid-cols-2 gap-2">
+              <For each={paths()}>
+                {(path) => (
+                  <div class="min-w-0">
+                    <ReadonlyPathField aria-label={`Output path ${path}`} value={path} />
+                  </div>
+                )}
+              </For>
             </div>
-          ) : (
-            paths.map((path) => (
-              <ReadonlyPathField key={path} aria-label={`Output path ${path}`} value={path} />
-            ))
-          )}
+          </Show>
           <Button
-            className="w-full justify-center"
+            class="w-full justify-center"
             disabled={!dock.canSave}
             size="sm"
             type="button"
@@ -53,10 +61,10 @@ export function StudioAnnotateDock() {
         </div>
       </DockSection>
       <DockSection title="Action">
-        <div className="flex flex-col gap-2">
+        <div class="flex flex-col gap-2">
           <Button
-            className="w-full justify-center"
-            disabled={disableShuffle}
+            class="w-full justify-center"
+            disabled={disableShuffle()}
             size="sm"
             type="button"
             variant="outline"
@@ -65,8 +73,8 @@ export function StudioAnnotateDock() {
             Shuffle
           </Button>
           <Button
-            className="w-full justify-center"
-            disabled={disableContinue}
+            class="w-full justify-center"
+            disabled={disableContinue()}
             size="sm"
             type="button"
             variant="outline"

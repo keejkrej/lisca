@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, type JSX } from "solid-js";
 import { useStudioAnnotateState, type StudioAnnotateState } from "./use-studio-annotate-state";
 
 type StudioAnnotatePageContextValue = {
@@ -7,12 +7,10 @@ type StudioAnnotatePageContextValue = {
 
 const StudioAnnotatePageContext = createContext<StudioAnnotateState | null>(null);
 
-export function StudioAnnotatePageProvider({ children }: { children: ReactNode }) {
+export function StudioAnnotatePageProvider(props: { children?: JSX.Element }) {
   const state = useStudioAnnotateState();
   return (
-    <StudioAnnotatePageContext.Provider value={state}>
-      {children}
-    </StudioAnnotatePageContext.Provider>
+    <StudioAnnotatePageContext.Provider value={state}>{props.children}</StudioAnnotatePageContext.Provider>
   );
 }
 

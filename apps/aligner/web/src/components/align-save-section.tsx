@@ -12,32 +12,32 @@ export function AlignSaveSection() {
 
   return (
     <DockSection title="Save">
-      <div className="flex w-full flex-col gap-2">
-        <div className="grid w-full grid-cols-3 gap-2">
-          <div className="min-w-0">
+      <div class="flex w-full flex-col gap-2">
+        <div class="grid w-full grid-cols-3 gap-2">
+          <div class="min-w-0">
             <ReadonlyPathField
               aria-label={`Output path bbox/Pos${pos}.csv`}
               value={`bbox/Pos${pos}.csv`}
             />
           </div>
-          <div className="min-w-0">
+          <div class="min-w-0">
             <ReadonlyPathField
               aria-label={`Output path align/Pos${pos}.json`}
               value={`align/Pos${pos}.json`}
             />
           </div>
-          <div className="min-w-0">
+          <div class="min-w-0">
             <ReadonlyPathField
-              className="text-center"
+              class="text-center"
               aria-label={`Output path roi/Pos${pos}`}
               value={`roi/Pos${pos}`}
             />
           </div>
         </div>
-        <div className="grid w-full grid-cols-3 gap-2">
-          <div className="min-w-0">
+        <div class="grid w-full grid-cols-3 gap-2">
+          <div class="min-w-0">
             <Button
-              className="w-full justify-center"
+              class="w-full justify-center"
               disabled={!canSave || nav.saving}
               loading={nav.saving}
               size="sm"
@@ -48,9 +48,9 @@ export function AlignSaveSection() {
               Save
             </Button>
           </div>
-          <div className="min-w-0">
+          <div class="min-w-0">
             <Button
-              className="w-full justify-center"
+              class="w-full justify-center"
               disabled={!canCrop}
               size="sm"
               type="button"
@@ -60,9 +60,9 @@ export function AlignSaveSection() {
               Crop
             </Button>
           </div>
-          <div className="min-w-0">
+          <div class="min-w-0">
             <Button
-              className="w-full justify-center"
+              class="w-full justify-center"
               disabled={!nav.workspacePath || !nav.source || crop.cropping}
               size="sm"
               type="button"

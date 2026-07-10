@@ -1,39 +1,39 @@
 import type { LandingDemo } from "../lib/demos";
-import { Link } from "@tanstack/react-router";
-import { ArrowUpRight } from "lucide-react";
+import { Link } from "@tanstack/solid-router";
+import { ArrowUpRight } from "lucide-solid";
 
 /**
  * Inline demo frame — mounts immediately with a preloaded sample frame. File upload
  * and export are disabled here; the link opens the full demo route for your own data.
  */
-export function DemoEmbed({ demo, index }: { demo: LandingDemo; index: number }) {
-  const Demo = demo.Demo;
+export function DemoEmbed(props: { demo: LandingDemo; index: number }) {
+  const Demo = props.demo.Demo;
 
   return (
-    <article className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card/60">
-      <header className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
-        <div className="min-w-0">
-          <p className="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground">
-            Demo {String(index + 1).padStart(2, "0")}
+    <article class="flex flex-col overflow-hidden rounded-2xl border border-border bg-card/60">
+      <header class="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
+        <div class="min-w-0">
+          <p class="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground">
+            Demo {String(props.index + 1).padStart(2, "0")}
           </p>
-          <h3 className="mt-1 font-display text-xl font-semibold">{demo.title}</h3>
+          <h3 class="mt-1 font-display text-xl font-semibold">{props.demo.title}</h3>
         </div>
         <Link
-          to={demo.href}
-          className="landing-control inline-flex shrink-0 items-center gap-1 px-2 py-1 font-mono text-xs"
+          to={props.demo.href}
+          class="landing-control inline-flex shrink-0 items-center gap-1 px-2 py-1 font-mono text-xs"
         >
           Use your own file
-          <ArrowUpRight className="size-3.5" aria-hidden />
+          <ArrowUpRight class="size-3.5" aria-hidden />
         </Link>
       </header>
 
-      <div className="px-5 py-4">
-        <p className="min-h-[5lh] text-sm leading-relaxed text-muted-foreground">
-          {demo.description}
+      <div class="px-5 py-4">
+        <p class="min-h-[5lh] text-sm leading-relaxed text-muted-foreground">
+          {props.demo.description}
         </p>
       </div>
 
-      <div className="relative mx-5 mb-5 h-[32rem] shrink-0 overflow-hidden rounded-xl border border-border">
+      <div class="relative mx-5 mb-5 h-[32rem] shrink-0 overflow-hidden rounded-xl border border-border">
         <Demo embedded />
       </div>
     </article>

@@ -1,16 +1,17 @@
 import { ContrastControl } from "@lisca/ui/features";
 
 import type { DemoAlignState } from "@lisca/web-demo";
+import type { Accessor } from "solid-js";
 
-export function DemoAlignContrastControls({ state }: { state: DemoAlignState }) {
+export function DemoAlignContrastControls(props: { state: Accessor<DemoAlignState> }) {
   return (
     <ContrastControl
       aria-label="Contrast"
-      contrast={state.contrast}
-      disabled={!state.frame}
-      frame={state.frame}
+      contrast={props.state().contrast}
+      disabled={!props.state().frame}
+      frame={props.state().frame}
       role="region"
-      onContrastChange={state.setContrast}
+      onContrastChange={props.state().setContrast}
     />
   );
 }

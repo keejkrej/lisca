@@ -39,7 +39,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
 }
 
-declare module '@tanstack/react-router' {
+declare module '@tanstack/solid-router' {
   interface FileRoutesByPath {
     '/': {
       id: '/'

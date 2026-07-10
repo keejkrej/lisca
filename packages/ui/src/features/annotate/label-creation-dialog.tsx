@@ -1,7 +1,7 @@
 import type { AnnotationLabel } from "@lisca/contracts";
 import { useLabelCreationForm, normalizeLabelId } from "@lisca/ui-headless/label-creation-form";
-import { Plus, Trash2, X } from "lucide-react";
-import { useEffect } from "react";
+import { Plus, Trash2, X } from "lucide-solid";
+import { Index, onCleanup, onMount, Show } from "solid-js";
 
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -21,138 +21,129 @@ export type LabelCreationDialogProps = {
   saveLabel?: string;
 };
 
-export function LabelCreationDialog({
-  open,
-  labels,
-  error,
-  onOpenChange,
-  onSave,
-  title = "Create labels",
-  subtitle,
-  workspacePath = null,
-  saving = false,
-  saveLabel = "Save labels",
-}: LabelCreationDialogProps) {
-  const form = useLabelCreationForm({ open, labels, error });
+export function LabelCreationDialog(props: LabelCreationDialogProps) {
+  const form = useLabelCreationForm(() => ({
+    open: props.open,
+    labels: props.labels,
+    error: props.error,
+  }));
 
-  useEffect(() => {
-    if (!open) return undefined;
+  onMount(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onOpenChange(false);
+      if (event.key === "Escape" && props.open) props.onOpenChange(false);
     };
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onOpenChange, open]);
+    onCleanup(() => window.removeEventListener("keydown", onKeyDown));
+  });
 
-  if (!open) return null;
-
-  const resolvedSubtitle =
-    subtitle ?? (workspacePath != null ? workspacePath : "Select a workspace first");
+  const resolvedSubtitle = () =>
+    props.subtitle ?? (props.workspacePath != null ? props.workspacePath : "Select a workspace first");
 
   const submit = () => {
     const nextLabels = form.submit();
-    if (nextLabels) onSave(nextLabels);
+    if (nextLabels) props.onSave(nextLabels);
   };
 
   return (
-    <ModalScrim
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onOpenChange(false);
-      }}
-    >
-      <DialogSurface aria-labelledby="label-dialog-title" className="max-h-[86vh]" maxWidth="2xl">
-        <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
-          <div className="min-w-0">
-            <h2 className="font-semibold text-foreground text-lg" id="label-dialog-title">
-              {title}
-            </h2>
-            <p className="truncate text-muted-foreground text-sm" title={resolvedSubtitle}>
-              {resolvedSubtitle}
-            </p>
-          </div>
-          <Button
-            aria-label="Close label dialog"
-            className="shrink-0"
-            size="icon-sm"
-            type="button"
-            variant="ghost"
-            onClick={() => onOpenChange(false)}
-          >
-            <X className="size-4" aria-hidden />
-          </Button>
-        </div>
-
-        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-auto px-5 py-4">
-          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_4rem_2rem] gap-2 px-1 text-muted-foreground text-xs">
-            <span>Name</span>
-            <span>ID</span>
-            <span>Color</span>
-            <span />
-          </div>
-          {form.drafts.map((draft, index) => (
-            <div
-              key={draft.draftKey}
-              className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_4rem_2rem] items-center gap-2"
-            >
-              <Input
-                aria-label={`Label ${index + 1} name`}
-                value={draft.name}
-                onChange={(event) => {
-                  const name = event.target.value;
-                  form.updateDraft(index, { name, id: normalizeLabelId(name) || draft.id });
-                }}
-              />
-              <Input
-                aria-label={`Label ${index + 1} id`}
-                value={draft.id}
-                onChange={(event) => form.updateDraft(index, { id: event.target.value })}
-              />
-              <Input
-                aria-label={`Label ${index + 1} color`}
-                nativeInput
-                type="color"
-                value={draft.color}
-                onChange={(event) => form.updateDraft(index, { color: event.target.value })}
-              />
-              <Button
-                aria-label={`Remove ${draft.name || `label ${index + 1}`}`}
-                disabled={form.drafts.length <= 1}
-                size="icon-sm"
-                type="button"
-                variant="ghost"
-                onClick={() => form.removeDraft(index)}
-              >
-                <Trash2 className="size-4" aria-hidden />
-              </Button>
+    <Show when={props.open}>
+      <ModalScrim
+        onMouseDown={(event) => {
+          if (event.target === event.currentTarget) props.onOpenChange(false);
+        }}
+      >
+        <DialogSurface aria-labelledby="label-dialog-title" class="max-h-[86vh]" maxWidth="2xl">
+          <div class="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
+            <div class="min-w-0">
+              <h2 class="font-semibold text-foreground text-lg" id="label-dialog-title">
+                {props.title ?? "Create labels"}
+              </h2>
+              <p class="truncate text-muted-foreground text-sm" title={resolvedSubtitle()}>
+                {resolvedSubtitle()}
+              </p>
             </div>
-          ))}
-          <Button
-            className="w-fit"
-            size="sm"
-            type="button"
-            variant="outline"
-            onClick={form.addDraft}
-          >
-            <Plus className="size-4" aria-hidden />
-            Add label
-          </Button>
-          {form.activeError ? <p className="text-destructive text-sm">{form.activeError}</p> : null}
-        </div>
+            <Button
+              aria-label="Close label dialog"
+              class="shrink-0"
+              size="icon-sm"
+              type="button"
+              variant="ghost"
+              onClick={() => props.onOpenChange(false)}
+            >
+              <X class="size-4" aria-hidden />
+            </Button>
+          </div>
 
-        <div className="flex justify-end gap-2 border-t border-border px-5 py-4">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            disabled={workspacePath != null ? !workspacePath : false}
-            loading={saving}
-            type="button"
-            onClick={submit}
-          >
-            {saveLabel}
-          </Button>
-        </div>
-      </DialogSurface>
-    </ModalScrim>
+          <div class="flex min-h-0 flex-1 flex-col gap-3 overflow-auto px-5 py-4">
+            <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_4rem_2rem] gap-2 px-1 text-muted-foreground text-xs">
+              <span>Name</span>
+              <span>ID</span>
+              <span>Color</span>
+              <span />
+            </div>
+            <Index each={form.drafts()}>
+              {(draft, index) => (
+                <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_4rem_2rem] items-center gap-2">
+                  <Input
+                    aria-label={`Label ${index + 1} name`}
+                    value={draft().name}
+                    onInput={(event) => {
+                      const name = event.currentTarget.value;
+                      form.updateDraft(index, { name, id: normalizeLabelId(name) || draft().id });
+                    }}
+                  />
+                  <Input
+                    aria-label={`Label ${index + 1} id`}
+                    value={draft().id}
+                    onInput={(event) =>
+                      form.updateDraft(index, { id: event.currentTarget.value })
+                    }
+                  />
+                  <Input
+                    aria-label={`Label ${index + 1} color`}
+                    nativeInput
+                    type="color"
+                    value={draft().color}
+                    onInput={(event) =>
+                      form.updateDraft(index, { color: event.currentTarget.value })
+                    }
+                  />
+                  <Button
+                    aria-label={`Remove ${draft().name || `label ${index + 1}`}`}
+                    disabled={form.drafts().length <= 1}
+                    size="icon-sm"
+                    type="button"
+                    variant="ghost"
+                    onClick={() => form.removeDraft(index)}
+                  >
+                    <Trash2 class="size-4" aria-hidden />
+                  </Button>
+                </div>
+              )}
+            </Index>
+            <Button class="w-fit" size="sm" type="button" variant="outline" onClick={form.addDraft}>
+              <Plus class="size-4" aria-hidden />
+              Add label
+            </Button>
+            <Show when={form.activeError()}>
+              <p class="text-destructive text-sm">{form.activeError()}</p>
+            </Show>
+          </div>
+
+          <div class="flex justify-end gap-2 border-t border-border px-5 py-4">
+            <Button type="button" variant="outline" onClick={() => props.onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={props.workspacePath != null ? !props.workspacePath : false}
+              loading={props.saving}
+              type="button"
+              onClick={submit}
+            >
+              {props.saveLabel ?? "Save labels"}
+            </Button>
+          </div>
+        </DialogSurface>
+      </ModalScrim>
+    </Show>
   );
 }

@@ -1,18 +1,17 @@
-import { Loader2Icon } from "lucide-react";
-import type React from "react";
+import { Loader2 } from "lucide-solid";
+import { splitProps, type ComponentProps, type JSX } from "solid-js";
 
 import { cn } from "../../lib/utils";
 
-export function Spinner({
-  className,
-  ...props
-}: React.ComponentProps<typeof Loader2Icon>): React.ReactElement {
+export function Spinner(props: ComponentProps<typeof Loader2>): JSX.Element {
+  const [local, rest] = splitProps(props, ["class"]);
+
   return (
-    <Loader2Icon
+    <Loader2
       aria-label="Loading"
-      className={cn("animate-spin", className)}
+      class={cn("animate-spin", local.class)}
       role="status"
-      {...props}
+      {...rest}
     />
   );
 }

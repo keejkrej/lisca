@@ -4,7 +4,7 @@ import {
   formatAxisValueLabel,
   formatNavigationOptionDisplayLabel,
 } from "@lisca/utils";
-import { useEffect, useState } from "react";
+import { createEffect, createSignal, type Accessor } from "solid-js";
 
 export type UseSliderStepperFieldOptions = {
   value: number;
@@ -13,25 +13,33 @@ export type UseSliderStepperFieldOptions = {
   valueLabel?: string;
 };
 
-export function useSliderStepperField(options: UseSliderStepperFieldOptions) {
-  const { value, axisValues, axisLabels, valueLabel } = options;
-  const [draftValue, setDraftValue] = useState(value);
+export function useSliderStepperField(options: () => UseSliderStepperFieldOptions) {
+  const [draftValue, setDraftValue] = createSignal(options().value);
 
-  useEffect(() => {
-    setDraftValue(value);
-  }, [value]);
+  createEffect(() => {
+    setDraftValue(options().value);
+  });
 
-  const displayLabel = axisValues
-    ? formatAxisValueLabel(axisValues, draftValue, displayAxisLabels(axisLabels))
-    : valueLabel
-      ? formatNavigationOptionDisplayLabel(valueLabel)
-      : undefined;
-  const ariaValueText = axisValues
-    ? formatAxisAriaValueText(axisValues, draftValue, displayAxisLabels(axisLabels))
-    : displayLabel;
+  const displayLabel = () => {
+    const { axisValues, axisLabels, valueLabel } = options();
+    const draft = draftValue();
+    return axisValues
+      ? formatAxisValueLabel(axisValues, draft, displayAxisLabels(axisLabels))
+      : valueLabel
+        ? formatNavigationOptionDisplayLabel(valueLabel)
+        : undefined;
+  };
+  const ariaValueText = () => {
+    const { axisValues, axisLabels } = options();
+    const draft = draftValue();
+    const label = displayLabel();
+    return axisValues
+      ? formatAxisAriaValueText(axisValues, draft, displayAxisLabels(axisLabels))
+      : label;
+  };
 
   return {
-    draftValue,
+    draftValue: draftValue as Accessor<number>,
     setDraftValue,
     displayLabel,
     ariaValueText,

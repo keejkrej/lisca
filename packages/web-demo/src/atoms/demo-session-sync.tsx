@@ -1,5 +1,5 @@
-import { RegistryProvider, useAtomSet, useAtomValue } from "@effect-atom/atom-react";
-import { type ReactNode, useEffect, useRef } from "react";
+import { RegistryProvider, useAtomSet, useAtomValue } from "@effect-atom/atom-solid";
+import { createEffect, onCleanup, type JSX } from "solid-js";
 
 import { readDemoSession, writeDemoSession } from "../demo-session-idb";
 import { ALIGNER_DEMO_SESSION_KEY, ANNOTATOR_DEMO_SESSION_KEY } from "../demo-session-keys";
@@ -19,17 +19,17 @@ import {
   type DemoAnnotatorSession,
 } from "./demo-annotator-ui";
 
-export function DemoRegistryProvider({ children }: { children: ReactNode }) {
-  return <RegistryProvider>{children}</RegistryProvider>;
+export function DemoRegistryProvider(props: { children?: JSX.Element }) {
+  return <RegistryProvider>{props.children}</RegistryProvider>;
 }
 
-function DemoAlignSessionSync({ persist }: { persist: boolean }) {
+function DemoAlignSessionSync(props: { persist: boolean }) {
   const state = useAtomValue(demoAlignUiAtom);
   const setState = useAtomSet(demoAlignUiAtom);
-  const persistReadyRef = useRef(!persist);
+  const persistReadyRef = { current: !props.persist };
 
-  useEffect(() => {
-    if (!persist) return;
+  createEffect(() => {
+    if (!props.persist) return;
     let cancelled = false;
     void readDemoSession<DemoAlignSession>(ALIGNER_DEMO_SESSION_KEY).then((session) => {
       if (cancelled) return;
@@ -38,26 +38,29 @@ function DemoAlignSessionSync({ persist }: { persist: boolean }) {
       }
       persistReadyRef.current = true;
     });
-    return () => {
+    onCleanup(() => {
       cancelled = true;
-    };
-  }, [persist, setState]);
+    });
+  });
 
-  useDebouncedEffect(() => {
-    if (!persist || !persistReadyRef.current) return;
-    void writeDemoSession(ALIGNER_DEMO_SESSION_KEY, selectDemoAlignSession(state));
-  }, [persist, state]);
+  useDebouncedEffect(
+    () => {
+      if (!props.persist || !persistReadyRef.current) return;
+      void writeDemoSession(ALIGNER_DEMO_SESSION_KEY, selectDemoAlignSession(state()));
+    },
+    () => [props.persist, state()],
+  );
 
   return null;
 }
 
-function DemoAnnotatorSessionSync({ persist }: { persist: boolean }) {
+function DemoAnnotatorSessionSync(props: { persist: boolean }) {
   const state = useAtomValue(demoAnnotatorUiAtom);
   const setState = useAtomSet(demoAnnotatorUiAtom);
-  const persistReadyRef = useRef(!persist);
+  const persistReadyRef = { current: !props.persist };
 
-  useEffect(() => {
-    if (!persist) return;
+  createEffect(() => {
+    if (!props.persist) return;
     let cancelled = false;
     void readDemoSession<DemoAnnotatorSession>(ANNOTATOR_DEMO_SESSION_KEY).then((session) => {
       if (cancelled) return;
@@ -66,73 +69,68 @@ function DemoAnnotatorSessionSync({ persist }: { persist: boolean }) {
       }
       persistReadyRef.current = true;
     });
-    return () => {
+    onCleanup(() => {
       cancelled = true;
-    };
-  }, [persist, setState]);
+    });
+  });
 
-  useDebouncedEffect(() => {
-    if (!persist || !persistReadyRef.current) return;
-    void writeDemoSession(ANNOTATOR_DEMO_SESSION_KEY, selectDemoAnnotatorSession(state));
-  }, [persist, state]);
+  useDebouncedEffect(
+    () => {
+      if (!props.persist || !persistReadyRef.current) return;
+      void writeDemoSession(ANNOTATOR_DEMO_SESSION_KEY, selectDemoAnnotatorSession(state()));
+    },
+    () => [props.persist, state()],
+  );
 
   return null;
 }
 
-function DemoAlignWorkspaceInit({ embedded }: { embedded: boolean }) {
+function DemoAlignWorkspaceInit(props: { embedded: boolean }) {
   const setState = useAtomSet(demoAlignUiAtom);
 
-  useEffect(() => {
-    if (embedded) return;
+  createEffect(() => {
+    if (props.embedded) return;
     setState(createInitialDemoAlignUiState());
-  }, [embedded, setState]);
+  });
 
   return null;
 }
 
-function DemoAnnotatorWorkspaceInit({ embedded }: { embedded: boolean }) {
+function DemoAnnotatorWorkspaceInit(props: { embedded: boolean }) {
   const setState = useAtomSet(demoAnnotatorUiAtom);
 
-  useEffect(() => {
-    if (embedded) return;
+  createEffect(() => {
+    if (props.embedded) return;
     setState(createInitialDemoAnnotatorUiState());
-  }, [embedded, setState]);
+  });
 
   return null;
 }
 
-export function DemoAlignRoot({
-  persist = false,
-  embedded = false,
-  children,
-}: {
+export function DemoAlignRoot(props: {
   persist?: boolean;
   embedded?: boolean;
-  children: ReactNode;
+  children?: JSX.Element;
 }) {
   return (
     <DemoRegistryProvider>
-      <DemoAlignWorkspaceInit embedded={embedded} />
-      <DemoAlignSessionSync persist={persist} />
-      {children}
+      <DemoAlignWorkspaceInit embedded={props.embedded ?? false} />
+      <DemoAlignSessionSync persist={props.persist ?? false} />
+      {props.children}
     </DemoRegistryProvider>
   );
 }
 
-export function DemoAnnotatorRoot({
-  persist = false,
-  embedded = false,
-  children,
-}: {
+export function DemoAnnotatorRoot(props: {
   persist?: boolean;
   embedded?: boolean;
-  children: ReactNode;
+  children?: JSX.Element;
 }) {
   return (
     <DemoRegistryProvider>
-      <DemoAnnotatorWorkspaceInit embedded={embedded} />
-      <DemoAnnotatorSessionSync persist={persist} />
-      {children}
+      <DemoAnnotatorWorkspaceInit embedded={props.embedded ?? false} />
+      <DemoAnnotatorSessionSync persist={props.persist ?? false} />
+      {props.children}
     </DemoRegistryProvider>
   );
 }

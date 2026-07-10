@@ -1,3 +1,5 @@
+import type { Component } from "solid-js";
+import { createEffect, For, onCleanup } from "solid-js";
 import { Button } from "@lisca/ui/components";
 import {
   ANNOTATION_TOOL_DEFINITIONS,
@@ -6,13 +8,15 @@ import {
   type AnnotationTool,
   type AnnotationToolFamily,
 } from "@lisca/ui-headless/annotation-tools";
+import { resolveKeyboardShortcut, type KeyboardShortcut } from "@lisca/ui-headless/shortcuts";
 import {
   dockToolLabel,
   dockToolShortcuts,
-  useKeyboardShortcuts,
   type DockToolAction,
 } from "@lisca/ui/shell";
-import { Lasso, Paintbrush, Sparkles, type LucideIcon } from "lucide-react";
+import { Lasso, Paintbrush, Sparkles } from "lucide-solid";
+
+type LucideIcon = Component<{ class?: string; "aria-hidden"?: boolean | "true" | "false" }>;
 
 const annotationToolIcons: Record<AnnotationToolFamily, LucideIcon> = {
   brush: Paintbrush,
@@ -35,13 +39,46 @@ export function buildAnnotationToolActions(
   }));
 }
 
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  return Boolean(target.closest("input, textarea, select, [contenteditable='true']"));
+}
+
+function useKeyboardShortcuts(
+  shortcuts: () => readonly KeyboardShortcut[],
+  options?: () => { enabled?: boolean },
+) {
+  createEffect(() => {
+    const enabled = options?.().enabled ?? true;
+    if (!enabled) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      const shortcut = resolveKeyboardShortcut(shortcuts(), {
+        key: event.key,
+        editableTarget: isEditableTarget(event.target),
+        metaKey: event.metaKey,
+        ctrlKey: event.ctrlKey,
+        shiftKey: event.shiftKey,
+        altKey: event.altKey,
+      });
+      if (!shortcut) return;
+
+      event.preventDefault();
+      shortcut.onTrigger();
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    onCleanup(() => window.removeEventListener("keydown", onKeyDown));
+  });
+}
+
 function AnnotationToolButton(props: { action: DockToolAction; label: string }) {
   const family = annotationToolFamily(props.action.id as AnnotationTool);
   const Icon = annotationToolIcons[family];
 
   return (
     <Button
-      className="w-full min-w-0 justify-center gap-1.5 px-1.5"
+      class="w-full min-w-0 justify-center gap-1.5 px-1.5"
       disabled={props.action.disabled}
       size="sm"
       title={props.label}
@@ -49,8 +86,8 @@ function AnnotationToolButton(props: { action: DockToolAction; label: string }) 
       variant={props.action.active ? "default" : "outline"}
       onClick={props.action.onSelect}
     >
-      <Icon aria-hidden="true" className="size-4 shrink-0" />
-      <span className="min-w-0 truncate text-xs">{props.label}</span>
+      <Icon aria-hidden="true" class="size-4 shrink-0" />
+      <span class="min-w-0 truncate text-xs">{props.label}</span>
     </Button>
   );
 }
@@ -58,35 +95,44 @@ function AnnotationToolButton(props: { action: DockToolAction; label: string }) 
 export function AnnotationToolGrid(props: {
   canEditTools: boolean;
   toolActions: DockToolAction[];
-  className?: string;
+  class?: string;
   shortcutsEnabled?: boolean;
 }) {
-  useKeyboardShortcuts(dockToolShortcuts(props.toolActions), {
+  const showShortcutLabels = () => props.shortcutsEnabled ?? true;
+
+  useKeyboardShortcuts(() => dockToolShortcuts(props.toolActions), () => ({
     enabled: props.canEditTools && (props.shortcutsEnabled ?? true),
-  });
-
-  const showShortcutLabels = props.shortcutsEnabled ?? true;
-
-  const buttons = props.toolActions.map((action, index) => {
-    const label = showShortcutLabels ? dockToolLabel(action.label, index) : action.label;
-    return <AnnotationToolButton key={action.id} action={action} label={label} />;
-  });
+  }));
 
   return (
     <div
       aria-label="Annotation tool"
-      className={props.className ?? "flex w-full flex-col gap-2"}
+      class={props.class ?? "flex w-full flex-col gap-2"}
       role="toolbar"
     >
-      {ANNOTATION_TOOL_GRID_ROWS.map((row, rowIndex) => (
-        <div key={rowIndex} className="grid w-full grid-cols-3 gap-2">
-          {row.map((buttonIndex) => (
-            <div key={props.toolActions[buttonIndex]?.id ?? buttonIndex} className="min-w-0">
-              {buttons[buttonIndex]}
-            </div>
-          ))}
-        </div>
-      ))}
+      <For each={ANNOTATION_TOOL_GRID_ROWS}>
+        {(row) => (
+          <div class="grid w-full grid-cols-3 gap-2">
+            <For each={row}>
+              {(buttonIndex) => {
+                const action = () => props.toolActions[buttonIndex];
+                const label = () => {
+                  const current = action();
+                  if (!current) return "";
+                  return showShortcutLabels()
+                    ? dockToolLabel(current.label, buttonIndex)
+                    : current.label;
+                };
+                return (
+                  <div class="min-w-0">
+                    {action() ? <AnnotationToolButton action={action()!} label={label()} /> : null}
+                  </div>
+                );
+              }}
+            </For>
+          </div>
+        )}
+      </For>
     </div>
   );
 }

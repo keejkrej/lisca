@@ -1,7 +1,7 @@
 import type { FolderSource } from "@lisca/contracts";
 import { DEFAULT_FOLDER_SOURCE_TEMPLATE } from "@lisca/contracts/assay";
 import { detectFolderSourceTemplate, type ListDirectoryHostPort } from "@lisca/utils";
-import { useEffect, useState } from "react";
+import { createEffect, createMemo, createSignal, onCleanup } from "solid-js";
 
 export type UseFolderSourceParseModalOptions = {
   path: string | null;
@@ -18,19 +18,19 @@ export function folderParseConfirmError(args: {
   return null;
 }
 
-export function useFolderSourceParseModal(options: UseFolderSourceParseModalOptions) {
-  const { path, hostPort, onConfirm } = options;
-  const [subfolderTemplate, setSubfolderTemplate] = useState<string>(
+export function useFolderSourceParseModal(options: () => UseFolderSourceParseModalOptions) {
+  const [subfolderTemplate, setSubfolderTemplate] = createSignal<string>(
     DEFAULT_FOLDER_SOURCE_TEMPLATE.subfolderTemplate,
   );
-  const [filenameTemplate, setFilenameTemplate] = useState<string>(
+  const [filenameTemplate, setFilenameTemplate] = createSignal<string>(
     DEFAULT_FOLDER_SOURCE_TEMPLATE.filenameTemplate,
   );
-  const [error, setError] = useState<string | null>(null);
-  const [detecting, setDetecting] = useState(false);
-  const [detected, setDetected] = useState(false);
+  const [error, setError] = createSignal<string | null>(null);
+  const [detecting, setDetecting] = createSignal(false);
+  const [detected, setDetected] = createSignal(false);
 
-  useEffect(() => {
+  createEffect(() => {
+    const { path, hostPort } = options();
     if (!path) return;
     let cancelled = false;
     setDetecting(true);
@@ -55,19 +55,22 @@ export function useFolderSourceParseModal(options: UseFolderSourceParseModalOpti
         if (!cancelled) setDetecting(false);
       });
 
-    return () => {
+    onCleanup(() => {
       cancelled = true;
-    };
-  }, [hostPort, path]);
+    });
+  });
 
-  const statusMessage = detecting
-    ? "Detecting image naming pattern..."
-    : detected
-      ? "Detected image naming pattern."
-      : "Using default image naming pattern.";
+  const statusMessage = createMemo(() =>
+    detecting()
+      ? "Detecting image naming pattern..."
+      : detected()
+        ? "Detected image naming pattern."
+        : "Using default image naming pattern.",
+  );
 
   const confirm = () => {
-    const validationError = folderParseConfirmError({ path, filenameTemplate });
+    const { path, onConfirm } = options();
+    const validationError = folderParseConfirmError({ path, filenameTemplate: filenameTemplate() });
     if (validationError) {
       setError(validationError);
       return;
@@ -77,13 +80,13 @@ export function useFolderSourceParseModal(options: UseFolderSourceParseModalOpti
     onConfirm({
       kind: "folder",
       path,
-      subfolderTemplate: subfolderTemplate.trim(),
-      filenameTemplate: filenameTemplate.trim(),
+      subfolderTemplate: subfolderTemplate().trim(),
+      filenameTemplate: filenameTemplate().trim(),
     });
   };
 
   return {
-    path,
+    path: () => options().path,
     subfolderTemplate,
     setSubfolderTemplate,
     filenameTemplate,

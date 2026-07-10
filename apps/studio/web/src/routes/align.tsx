@@ -1,5 +1,5 @@
 import { AppShell } from "@lisca/ui/shell";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/solid-router";
 
 import { StudioAlignDock } from "../components/studio-align-dock";
 import { StudioAlignMain } from "../components/studio-align-main";

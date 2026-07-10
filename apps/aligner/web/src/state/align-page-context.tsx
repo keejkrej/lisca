@@ -1,25 +1,28 @@
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, type Accessor, type JSX } from "solid-js";
+
 import { useAlignState, type AlignState } from "./use-align-state";
 
+type AlignPageMeta = {
+  scanLoading: boolean;
+  frameLoading: boolean;
+  saving: boolean;
+  cropping: boolean;
+};
+
 type AlignPageContextValue = {
-  state: AlignState;
+  state: Accessor<AlignState>;
   actions: Pick<
     AlignState,
     "setSource" | "setSelection" | "setContrast" | "setGrid" | "setToolMode"
   >;
-  meta: {
-    scanLoading: boolean;
-    frameLoading: boolean;
-    saving: boolean;
-    cropping: boolean;
-  };
+  meta: AlignPageMeta;
 };
 
-const AlignPageContext = createContext<AlignState | null>(null);
+const AlignPageContext = createContext<Accessor<AlignState> | null>(null);
 
-export function AlignPageProvider({ children }: { children: ReactNode }) {
+export function AlignPageProvider(props: { children?: JSX.Element }) {
   const state = useAlignState();
-  return <AlignPageContext.Provider value={state}>{children}</AlignPageContext.Provider>;
+  return <AlignPageContext.Provider value={state}>{props.children}</AlignPageContext.Provider>;
 }
 
 export function useAlignPage(): AlignPageContextValue {
@@ -30,17 +33,25 @@ export function useAlignPage(): AlignPageContextValue {
   return {
     state,
     actions: {
-      setSource: state.setSource,
-      setSelection: state.setSelection,
-      setContrast: state.setContrast,
-      setGrid: state.setGrid,
-      setToolMode: state.setToolMode,
+      setSource: (source) => state().setSource(source),
+      setSelection: (patch) => state().setSelection(patch),
+      setContrast: (contrast) => state().setContrast(contrast),
+      setGrid: (next) => state().setGrid(next),
+      setToolMode: (mode) => state().setToolMode(mode),
     },
     meta: {
-      scanLoading: state.scanLoading,
-      frameLoading: state.frameLoading,
-      saving: state.saving,
-      cropping: state.cropping,
+      get scanLoading() {
+        return state().scanLoading;
+      },
+      get frameLoading() {
+        return state().frameLoading;
+      },
+      get saving() {
+        return state().saving;
+      },
+      get cropping() {
+        return state().cropping;
+      },
     },
   };
 }

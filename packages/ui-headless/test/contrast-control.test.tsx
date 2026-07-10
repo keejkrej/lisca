@@ -1,5 +1,5 @@
 import type { FrameResult } from "@lisca/utils";
-import { render } from "@testing-library/react";
+import { render } from "@solidjs/testing-library";
 import { describe, expect, it, vi } from "vitest";
 
 import { ContrastControl, type ContrastControlState } from "../src/contrast-control";
@@ -17,14 +17,14 @@ describe("ContrastControl", () => {
   it("uses auto contrast when contrast is unset", () => {
     let state: ContrastControlState | null = null;
 
-    render(
+    render(() => (
       <ContrastControl frame={frame} contrast={null} onContrastChange={vi.fn()}>
         {(next) => {
           state = next;
           return null;
         }}
-      </ContrastControl>,
-    );
+      </ContrastControl>
+    ));
 
     expect(state?.minValue).toBe(100);
     expect(state?.maxValue).toBe(40000);
@@ -35,7 +35,7 @@ describe("ContrastControl", () => {
     const onContrastChange = vi.fn();
     let state: ContrastControlState | null = null;
 
-    render(
+    render(() => (
       <ContrastControl
         frame={frame}
         contrast={{ min: 200, max: 30000 }}
@@ -45,8 +45,8 @@ describe("ContrastControl", () => {
           state = next;
           return null;
         }}
-      </ContrastControl>,
-    );
+      </ContrastControl>
+    ));
 
     state?.onMinCommit(250);
     state?.onMaxCommit(35000);
@@ -60,14 +60,14 @@ describe("ContrastControl", () => {
   it("disables when frame is missing", () => {
     let state: ContrastControlState | null = null;
 
-    render(
+    render(() => (
       <ContrastControl frame={null} contrast={null} onContrastChange={vi.fn()}>
         {(next) => {
           state = next;
           return null;
         }}
-      </ContrastControl>,
-    );
+      </ContrastControl>
+    ));
 
     expect(state?.disabled).toBe(true);
     expect(state?.domainMax).toBe(255);

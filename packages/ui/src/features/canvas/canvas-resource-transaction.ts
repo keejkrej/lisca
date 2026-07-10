@@ -1,4 +1,4 @@
-import { unstable_batchedUpdates } from "react-dom";
+import { batch } from "solid-js";
 
 import {
   useCanvasResourceTransaction as useHeadlessCanvasResourceTransaction,
@@ -8,5 +8,5 @@ import {
 export type { CanvasResourceTransactionOptions };
 
 export function useCanvasResourceTransaction() {
-  return useHeadlessCanvasResourceTransaction({ batch: unstable_batchedUpdates });
+  return useHeadlessCanvasResourceTransaction({ batch });
 }
