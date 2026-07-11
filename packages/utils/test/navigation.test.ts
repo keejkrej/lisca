@@ -6,6 +6,7 @@ import {
   formatAxisAriaValueText,
   formatAxisValueLabel,
   formatNavigationOptionDisplayLabel,
+  formatSelectedAxisValueLabel,
   resolveAxisSelection,
   selectedAxisIndex,
   stepNavigationValue,
@@ -29,6 +30,39 @@ describe("formatAxisValueLabel", () => {
 
   it("prefers explicit axis labels for string channels", () => {
     expect(formatAxisValueLabel([0, 1], 0, ["DAPI", "GFP"])).toBe("DAPI (1/2)");
+  });
+});
+
+describe("formatSelectedAxisValueLabel", () => {
+  it("shows the selected sparse value and its position", () => {
+    expect(formatSelectedAxisValueLabel([138, 144, 161], 144)).toBe("144 (2/3)");
+  });
+
+  it("shows the first non-zero value as the first position", () => {
+    expect(formatSelectedAxisValueLabel([5, 6], 5)).toBe("5 (1/2)");
+  });
+
+  it("shows the first zero-based value as the first position", () => {
+    expect(formatSelectedAxisValueLabel([0, 1, 2], 0)).toBe("0 (1/3)");
+  });
+
+  it("shows a single selected position", () => {
+    expect(formatSelectedAxisValueLabel([138], 138)).toBe("138 (1/1)");
+  });
+
+  it("returns undefined when the selected value is missing", () => {
+    expect(formatSelectedAxisValueLabel([138, 144, 161], 1)).toBeUndefined();
+  });
+
+  it("returns undefined for an empty or undefined axis", () => {
+    expect(formatSelectedAxisValueLabel([], 0)).toBeUndefined();
+    expect(formatSelectedAxisValueLabel(undefined, 0)).toBeUndefined();
+  });
+
+  it("uses the explicit label corresponding to the selected value", () => {
+    expect(
+      formatSelectedAxisValueLabel([0, 12, 24], 12, ["000000000", "000000012", "000000024"]),
+    ).toBe("000000012 (2/3)");
   });
 });
 

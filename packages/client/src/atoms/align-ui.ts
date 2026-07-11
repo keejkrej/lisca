@@ -397,7 +397,7 @@ export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiB
               appliedAlignStateKey: stateKey,
               grid: saved ? normalizeAlignGridState(saved.grid) : state.grid,
               excludedCellsByPosition: nextExcluded,
-              status: saved ? `Loaded align/Pos${pos}.json` : state.status,
+              status: saved ? null : state.status,
             };
           });
         },

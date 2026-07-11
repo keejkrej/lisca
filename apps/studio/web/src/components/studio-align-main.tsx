@@ -1,4 +1,5 @@
 import type { AlignGridCellCoord } from "@lisca/contracts";
+import { formatSelectedAxisValueLabel } from "@lisca/utils";
 import {
   AlignCanvas,
   CanvasStatusMessageStack,
@@ -84,10 +85,8 @@ export function StudioAlignMain() {
   });
   const isOperationalStatus = (text: string) => /loading|scanning|cropping/i.test(text);
   const positionInfo = createMemo(() => {
-    const positionIndex = nav.alignPositions.indexOf(nav.selection.pos);
-    const positionCount = nav.alignPositions.length;
-    const positionMessage =
-      positionIndex >= 0 && positionCount > 0 ? `Pos ${positionIndex}/${positionCount}` : null;
+    const positionLabel = formatSelectedAxisValueLabel(nav.alignPositions, nav.selection.pos);
+    const positionMessage = positionLabel ? `Pos ${positionLabel}` : null;
     return positionMessage
       ? [
           {
@@ -145,11 +144,7 @@ export function StudioAlignMain() {
                 layout="inline"
                 messages={operationalMessages()}
               />
-              <CanvasStatusMessageStack
-                align="right"
-                layout="inline"
-                messages={canvasAlerts()}
-              />
+              <CanvasStatusMessageStack align="right" layout="inline" messages={canvasAlerts()} />
             </div>
           </div>
         </Show>

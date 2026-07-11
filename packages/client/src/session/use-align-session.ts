@@ -401,7 +401,7 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
         ),
       );
       if (!result.ok) throw new Error(result.error ?? "Save failed");
-      actions.setStatus(setUi, `Saved bbox/Pos${selection.pos}.csv`);
+      actions.setStatus(setUi, null);
       return true;
     } catch (cause) {
       actions.setError(setUi, backend.toErrorMessage(cause, "Save failed"));

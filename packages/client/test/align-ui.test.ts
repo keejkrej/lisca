@@ -41,6 +41,12 @@ describe("align-ui actions", () => {
     skipRedundantSourceSet: false,
     includeApplySavedAlignState: false,
   });
+  const studioActions = createAlignUiActions(persist, {
+    clearSourceOnWorkspaceChange: true,
+    preserveSelectionOnScan: false,
+    skipRedundantSourceSet: false,
+    includeApplySavedAlignState: true,
+  });
 
   it("applySourceScan resets frame and sets first scan selection", () => {
     const initial = createInitialAlignUiState();
@@ -126,6 +132,36 @@ describe("align-ui actions", () => {
       }),
     );
     expect(next.grid.opacity).toBe(0.2);
+  });
+
+  it("applySavedAlignState clears loading status and skips an already-applied key", () => {
+    const initial = {
+      ...createInitialAlignUiState(),
+      grid: normalizeAlignGridState({ opacity: 0.2 }),
+      status: "Loading frame",
+    };
+    const next = runReducer(initial, (set) =>
+      studioActions.applySavedAlignState!(set, "pos:1", 1, {
+        grid: normalizeAlignGridState({ opacity: 0.8 }),
+        excludedCells: [{ i: 0, j: 0 }],
+      }),
+    );
+
+    expect(next.appliedAlignStateKey).toBe("pos:1");
+    expect(next.grid.opacity).toBe(0.8);
+    expect(next.excludedCellsByPosition[1]).toEqual([{ i: 0, j: 0 }]);
+    expect(next.status).toBeNull();
+
+    const repeated = runReducer(next, (set) =>
+      studioActions.applySavedAlignState!(set, "pos:1", 1, {
+        grid: normalizeAlignGridState({ opacity: 0.9 }),
+        excludedCells: [{ i: 2, j: 2 }],
+      }),
+    );
+
+    expect(repeated).toBe(next);
+    expect(repeated.grid.opacity).toBe(0.8);
+    expect(repeated.excludedCellsByPosition[1]).toEqual([{ i: 0, j: 0 }]);
   });
 
   it("setSelection clears appliedAlignStateKey when position changes", () => {

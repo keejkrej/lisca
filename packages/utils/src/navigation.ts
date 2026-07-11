@@ -85,6 +85,17 @@ export function formatAxisValueLabel(
   return `${displayValue} (${frame}/${total})`;
 }
 
+export function formatSelectedAxisValueLabel(
+  axisValues: readonly number[] | undefined,
+  selectedValue: number,
+  axisLabels?: readonly string[],
+): string | undefined {
+  if (!axisValues || axisValues.length === 0) return undefined;
+  const index = axisValues.indexOf(selectedValue);
+  if (index < 0) return undefined;
+  return formatAxisValueLabel(axisValues, index, axisLabels);
+}
+
 export function formatAxisAriaValueText(
   axisValues: readonly number[] | undefined,
   index: number,
