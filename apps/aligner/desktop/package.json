@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "bun ../../../scripts/build-tauri-frontend.mjs aligner && bun --filter @lisca/aligner-server build",
+    "build": "bun ../../../scripts/build-tauri-frontend.ts aligner && bun --filter @lisca/aligner-server build",
     "dev": "tauri dev",
-    "dist": "bun ../../../scripts/package-tauri.mjs aligner",
+    "dist": "bun ../../../scripts/package-tauri.ts aligner",
     "typecheck": "cargo check -p aligner-tauri"
   },
   "dependencies": {},

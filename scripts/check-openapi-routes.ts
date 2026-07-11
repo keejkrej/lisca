@@ -1,8 +1,7 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join, resolve } from "node:path";
 
-const here = dirname(fileURLToPath(import.meta.url));
+const here = import.meta.dirname;
 const repoRoot = resolve(here, "..");
 
 const openapiPath = resolve(repoRoot, "packages/contracts/openapi.json");

@@ -1,20 +1,17 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import net from "node:net";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { createRequire } from "node:module";
 import { afterEach, describe, expect, it } from "vitest";
-
-const require = createRequire(import.meta.url);
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const {
+import {
   LISCA_API_PROXY_PREFIXES,
   LISCA_APP_PORTS,
   LISCA_DEV_BACKEND_PORT_OFFSET,
   liscaDevBackendPort,
-} = require("./lisca-dev-ports.cjs");
-const { DESKTOP_PRODUCTS } = require("./lisca-desktop-products.cjs");
-const { isBenignDevWsProxyError, isLiscaApiProxyPath } = require("./lisca-dev-proxy-shared.cjs");
+} from "./lisca-dev-ports";
+import { DESKTOP_PRODUCTS } from "./lisca-desktop-products";
+import { isBenignDevWsProxyError, isLiscaApiProxyPath } from "./lisca-dev-proxy-shared";
+
+const root = path.resolve(import.meta.dirname, "..");
 
 async function waitForTcpPort(port: number, timeoutMs = 10_000): Promise<void> {
   const started = Date.now();

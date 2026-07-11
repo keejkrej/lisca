@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "bun ../../../scripts/build-tauri-frontend.mjs studio && bun --filter @lisca/studio-server build",
+    "build": "bun ../../../scripts/build-tauri-frontend.ts studio && bun --filter @lisca/studio-server build",
     "dev": "tauri dev",
-    "dist": "bun ../../../scripts/package-tauri.mjs studio",
+    "dist": "bun ../../../scripts/package-tauri.ts studio",
     "typecheck": "cargo check -p studio-tauri"
   },
   "dependencies": {},

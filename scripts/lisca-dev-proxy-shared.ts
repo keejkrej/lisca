@@ -1,6 +1,6 @@
-const { LISCA_API_PROXY_PREFIXES } = require("./lisca-dev-ports.cjs");
+import { LISCA_API_PROXY_PREFIXES } from "./lisca-dev-ports";
 
-function pathnameFromUrl(url) {
+export function pathnameFromUrl(url: string): string {
   try {
     return new URL(url, "http://127.0.0.1").pathname;
   } catch {
@@ -9,7 +9,7 @@ function pathnameFromUrl(url) {
 }
 
 /** True when a dev-server request should be proxied to the Rust backend. */
-function isLiscaApiProxyPath(url) {
+export function isLiscaApiProxyPath(url: string): boolean {
   const path = pathnameFromUrl(url);
   return LISCA_API_PROXY_PREFIXES.some(
     (prefix) => path === prefix || path.startsWith(`${prefix}/`),
@@ -17,13 +17,7 @@ function isLiscaApiProxyPath(url) {
 }
 
 /** Benign when Rust restarts (cargo watch) or the shell WS probe retries. */
-function isBenignDevWsProxyError(message) {
+export function isBenignDevWsProxyError(message: string): boolean {
   if (!message.includes("ws proxy")) return false;
   return message.includes("EPIPE") || message.includes("ECONNRESET");
 }
-
-module.exports = {
-  pathnameFromUrl,
-  isLiscaApiProxyPath,
-  isBenignDevWsProxyError,
-};

@@ -3,8 +3,6 @@ import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import solid from "vite-plugin-solid";
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { join, normalize, resolve } from "node:path";
-import { createRequire } from "node:module";
-import { fileURLToPath } from "node:url";
 import {
   defineConfig,
   createLogger,
@@ -13,26 +11,22 @@ import {
   type ProxyOptions,
   type UserConfig,
 } from "vite";
-
-const require = createRequire(fileURLToPath(new URL(".", import.meta.url)));
-const {
+import {
   LISCA_API_PROXY_PREFIXES,
   liscaDevBackendPort,
-} = require("../../scripts/lisca-dev-ports.cjs");
-const { isBenignDevWsProxyError } = require("../../scripts/lisca-dev-proxy-shared.cjs");
+  LISCA_DEV_BACKEND_PORT_OFFSET,
+} from "../../scripts/lisca-dev-ports";
+import { isBenignDevWsProxyError } from "../../scripts/lisca-dev-proxy-shared";
 
-/** @deprecated Import from `scripts/lisca-dev-ports.cjs`. */
-export const LISCA_DEV_BACKEND_PORT_OFFSET = 1000;
-
-export { liscaDevBackendPort };
+export { liscaDevBackendPort, LISCA_DEV_BACKEND_PORT_OFFSET };
 
 /** Solid plugin for all Lisca web apps. Replaces the former React + React Compiler plugin. */
 export function liscaSolidPlugin(): PluginOption {
   return solid();
 }
 
-const brandPublicDir = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../assets/brand");
-const modelsDir = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../models");
+const brandPublicDir = resolve(import.meta.dirname, "../../assets/brand");
+const modelsDir = resolve(import.meta.dirname, "../../models");
 
 function contentTypeForPath(path: string): string {
   if (path.endsWith(".json")) return "application/json";

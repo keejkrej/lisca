@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "bun ../../../scripts/build-tauri-frontend.mjs annotator && bun --filter @lisca/annotator-server build",
+    "build": "bun ../../../scripts/build-tauri-frontend.ts annotator && bun --filter @lisca/annotator-server build",
     "dev": "tauri dev",
-    "dist": "bun ../../../scripts/package-tauri.mjs annotator",
+    "dist": "bun ../../../scripts/package-tauri.ts annotator",
     "typecheck": "cargo check -p annotator-tauri"
   },
   "dependencies": {},
