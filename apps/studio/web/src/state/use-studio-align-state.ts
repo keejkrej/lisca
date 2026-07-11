@@ -145,17 +145,32 @@ export function useStudioAlignState(): StudioAlignState {
   const activeWorkspacePath = createMemo(() => info1().saveTo.trim() || null);
   const maskChannel = createMemo(() => studioMaskChannel(info3()));
   const assayPositions = createMemo(() => collectAssayPositions(info3()));
+  const navSource = createMemo(() => ui().source);
+  const navScan = createMemo(() => ui().scan);
+  const navSelection = createMemo(() => ui().selection);
+  const navWorkspacePath = createMemo(() => ui().workspacePath);
+  const navContrast = createMemo(() => ui().contrast);
   const alignPositions = createMemo(() => {
-    const scan = ui().scan;
+    const scan = navScan();
     if (!scan) return [];
     return filterScanPositionsForAssay(scan.positions, assayPositions());
   });
-  const lockedSelection = createMemo(() => {
-    const scan = ui().scan;
-    if (!scan) return ui().selection;
-    return lockedStudioSelection(scan, ui().selection, maskChannel(), alignPositions());
+  const lockedSelection = createMemo<FrameRequest>((prev) => {
+    const scan = navScan();
+    if (!scan) return navSelection();
+    const next = lockedStudioSelection(scan, navSelection(), maskChannel(), alignPositions());
+    if (
+      prev &&
+      prev.pos === next.pos &&
+      prev.channel === next.channel &&
+      prev.time === next.time &&
+      prev.z === next.z
+    ) {
+      return prev;
+    }
+    return next;
   });
-  const activeSourceKey = createMemo(() => sourceKey(ui().source));
+  const activeSourceKey = createMemo(() => sourceKey(navSource()));
   const scanResult = useSelectedAtomValue(() => {
     const key = activeSourceKey();
     return key ? scanSourceAtom(key) : scanIdleAtom;
@@ -415,9 +430,9 @@ export function useStudioAlignState(): StudioAlignState {
     }
   });
   createEffect(() => {
-    const scan = ui().scan;
+    const scan = navScan();
     if (!scan) return;
-    const selection = ui().selection;
+    const selection = navSelection();
     const locked = lockedSelection();
     if (
       selection.pos === locked.pos &&
@@ -430,10 +445,10 @@ export function useStudioAlignState(): StudioAlignState {
     studioAlignUiActions.setSelection(setUi, locked);
   });
   createEffect(() => {
-    const source = ui().source;
-    const scan = ui().scan;
+    const source = navSource();
+    const scan = navScan();
     const positions = alignPositions();
-    const workspacePath = ui().workspacePath;
+    const workspacePath = navWorkspacePath();
     const locked = lockedSelection();
     if (!source || !scan || positions.length === 0) {
       studioAlignUiActions.setFrameLoading(setUi, false);
@@ -489,9 +504,9 @@ export function useStudioAlignState(): StudioAlignState {
     onCleanup(cleanup);
   });
   createEffect(() => {
-    const contrast = ui().contrast;
-    const source = ui().source;
-    const scan = ui().scan;
+    const contrast = navContrast();
+    const source = navSource();
+    const scan = navScan();
     const positions = alignPositions();
     const locked = lockedSelection();
     if (!contrast || !source || !scan || positions.length === 0) {

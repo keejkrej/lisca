@@ -22,7 +22,7 @@ export function ShellPanelToggle(props: { side: "left" | "right"; class?: string
         : "Open right panel";
 
   return (
-    <Show when={() => layout.isPortrait && hasPanels()}>
+    <Show when={layout.isPortrait && hasPanels()}>
       <Button
         aria-expanded={open()}
         aria-label={label()}
@@ -67,7 +67,7 @@ export function ShellPortraitPanelOverlays() {
   return (
     <Show when={layout.isPortrait}>
       <>
-        <Show when={() => layout.leftOpen || layout.rightOpen}>
+        <Show when={layout.leftOpen || layout.rightOpen}>
           <button
             aria-label="Close side panels"
             class="absolute inset-0 z-40 bg-black/55"
@@ -86,7 +86,7 @@ export function ShellPortraitPanelOverlays() {
           >
             <For each={layout.leftPanels}>
               {(panel) => (
-                <div class={cn("min-h-0 shrink-0", panel.widthClass ?? "w-56")}>{panel.content}</div>
+                <div class={cn("flex min-h-0 flex-1 flex-col", panel.widthClass ?? "w-56")}>{panel.content}</div>
               )}
             </For>
           </aside>
@@ -102,7 +102,7 @@ export function ShellPortraitPanelOverlays() {
           >
             <For each={layout.rightPanels}>
               {(panel) => (
-                <div class={cn("min-h-0 shrink-0", panel.widthClass ?? "w-56")}>{panel.content}</div>
+                <div class={cn("flex min-h-0 flex-1 flex-col", panel.widthClass ?? "w-56")}>{panel.content}</div>
               )}
             </For>
           </aside>
