@@ -19,7 +19,7 @@ export function StudioResultExpertRight() {
   const fileCount = () => analysisResultFiles().length;
 
   return (
-    <SidebarStack>
+    <SidebarStack class="p-0">
       <PanelSection title="Analysis">
         <div class="flex flex-col gap-1 text-sm">
           <div class="flex items-center justify-between">

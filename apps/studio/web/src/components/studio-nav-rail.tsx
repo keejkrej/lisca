@@ -1,5 +1,12 @@
 import { buttonVariants, cn } from "@lisca/ui/components";
-import { ConnectionStatus, Panel, ShellThemeToggle, useShellServer } from "@lisca/ui/shell";
+import {
+  ConnectionStatus,
+  Panel,
+  regionInsetClass,
+  regionStackGapClass,
+  ShellThemeToggle,
+  useShellServer,
+} from "@lisca/ui/shell";
 import { Link, useNavigate, useRouterState } from "@tanstack/solid-router";
 import type { JSX } from "solid-js";
 
@@ -61,7 +68,10 @@ export function StudioNavRail() {
   const routeId = () => pathname().slice(1) || "assay";
 
   return (
-    <nav aria-label="Primary" class="flex h-full min-h-0 flex-col items-stretch gap-2.5 p-2.5">
+    <nav
+      aria-label="Primary"
+      class={cn("flex h-full min-h-0 flex-col items-stretch", regionInsetClass, regionStackGapClass)}
+    >
       <div class="flex min-h-0 flex-1 flex-col items-center justify-center">
         <Panel class="w-full shrink-0">
           <div class="flex flex-col items-center gap-6 p-3">

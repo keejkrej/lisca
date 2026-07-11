@@ -1,19 +1,26 @@
 import { AlignToolToolbar } from "@lisca/ui/features";
 import { Button } from "@lisca/ui/components";
 import { DockSection, DockStrip } from "@lisca/ui/shell";
+import { createMemo } from "solid-js";
 
 import { useStudioAlignPage } from "../state/studio-align-page-context";
 
+/** Frame load does not touch the dock — only suppress disabled-state opacity flicker. */
+const DOCK_STRIP_CLASS =
+  "[&_button]:transition-none [&_button]:disabled:opacity-100 [&_button]:disabled:saturate-100";
+
 export function StudioAlignDock() {
-  const { state, varExclude, saveAndAdvance } = useStudioAlignPage();
+  const { state, excludeActive, runExclude, saveAndAdvance } = useStudioAlignPage();
+  const actionBusy = createMemo(() => state.saving || state.cropping);
+  const frameReady = createMemo(() => Boolean(state.frame));
 
   return (
-    <DockStrip>
+    <DockStrip class={DOCK_STRIP_CLASS}>
       <DockSection title="Tool">
         <AlignToolToolbar
           mode={state.toolMode}
           patternZoomLocked={state.patternZoomLocked}
-          shortcutsEnabled={!state.cropping && !state.saving}
+          shortcutsEnabled
           onModeChange={state.setToolMode}
           onPatternZoomLockedChange={state.setPatternZoomLocked}
         />
@@ -23,23 +30,17 @@ export function StudioAlignDock() {
           <div class="grid w-full grid-cols-2 gap-2">
             <Button
               class="w-full justify-center"
-              disabled={!state.frame || state.saving || state.cropping}
+              disabled={actionBusy() || !frameReady() || excludeActive()}
               size="sm"
               type="button"
               variant="outline"
-              onClick={state.resetCurrent}
+              onClick={() => void runExclude()}
             >
-              Reset
+              Exclude
             </Button>
             <Button
               class="w-full justify-center"
-              disabled={
-                !state.workspacePath ||
-                state.alignPositions.length === 0 ||
-                state.saving ||
-                state.cropping ||
-                state.findingFirstUnaligned
-              }
+              disabled={actionBusy() || state.findingFirstUnaligned}
               size="sm"
               type="button"
               variant="outline"
@@ -51,7 +52,7 @@ export function StudioAlignDock() {
           <div class="grid w-full grid-cols-2 gap-2">
             <Button
               class="w-full justify-center"
-              disabled={!state.canGoBack || state.saving || state.cropping}
+              disabled={actionBusy() || !state.canGoBack}
               size="sm"
               type="button"
               variant="outline"
@@ -61,7 +62,7 @@ export function StudioAlignDock() {
             </Button>
             <Button
               class="w-full justify-center"
-              disabled={!state.frame || state.saving || state.cropping || varExclude.active()}
+              disabled={actionBusy() || !frameReady()}
               size="sm"
               type="button"
               variant="outline"

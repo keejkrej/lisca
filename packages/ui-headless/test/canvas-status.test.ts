@@ -7,20 +7,21 @@ import {
 } from "../src/canvas-status";
 
 describe("canvas-status", () => {
-  it("detects loading toasts from message text", () => {
-    expect(shouldShowLoadingIcon({ text: "Loading frame" })).toBe(true);
-    expect(shouldShowLoadingIcon({ text: "Scanning workspace" })).toBe(true);
+  it("does not show loading spinner icons in canvas toasts", () => {
+    expect(shouldShowLoadingIcon({ text: "Loading frame" })).toBe(false);
+    expect(shouldShowLoadingIcon({ text: "Scanning workspace" })).toBe(false);
     expect(shouldShowLoadingIcon({ text: "Ready", tone: "success" })).toBe(false);
   });
 
-  it("hides toast text for loading-only messages", () => {
-    expect(shouldHideToastText({ text: "Preview update" })).toBe(true);
+  it("keeps toast text visible for loading messages", () => {
+    expect(shouldHideToastText({ text: "Loading frame" })).toBe(false);
+    expect(shouldHideToastText({ text: "Preview update" })).toBe(false);
     expect(shouldHideToastText({ text: "Saved", tone: "success" })).toBe(false);
   });
 
   it("classifies toast presentation", () => {
     expect(canvasToastPresentation({ text: "Failed", tone: "error" })).toBe("error");
-    expect(canvasToastPresentation({ text: "Loading" })).toBe("loading");
+    expect(canvasToastPresentation({ text: "Loading frame" })).toBe("text");
     expect(canvasToastPresentation({ text: "Done", tone: "success" })).toBe("text");
   });
 });

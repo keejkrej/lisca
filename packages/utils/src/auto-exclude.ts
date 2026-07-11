@@ -26,38 +26,44 @@ function flatnessScore(values: readonly number[]): number | null {
   return highMean / Math.max(lowMean, AUTO_EXCLUDE_EPSILON);
 }
 
-export function otsuOnHistogram(counts: readonly number[], centers: readonly number[]): number {
+function entropyFromProbabilities(probabilities: readonly number[]): number {
+  let entropy = 0;
+  for (const probability of probabilities) {
+    if (probability > 0) {
+      entropy -= probability * Math.log(probability);
+    }
+  }
+  return entropy;
+}
+
+/** Kapur maximum-entropy threshold on a histogram. */
+export function maxEntropyThresholdOnHistogram(
+  counts: readonly number[],
+  centers: readonly number[],
+): number {
   if (counts.length === 0 || centers.length === 0) return 0;
 
   const total = sum(counts) ?? 0;
-  if (total <= 0) return 0;
+  if (total <= 0) return centers[0] ?? 0;
 
-  let totalIntensity = 0;
-  for (let index = 0; index < counts.length; index += 1) {
-    totalIntensity += counts[index]! * centers[index]!;
-  }
-
-  let weightBackground = 0;
-  let sumBackground = 0;
-  let bestVariance = Number.NEGATIVE_INFINITY;
+  const probabilities = counts.map((count) => count / total);
+  let bestEntropy = Number.NEGATIVE_INFINITY;
   let bestThreshold = centers[0] ?? 0;
 
-  for (let index = 0; index < counts.length; index += 1) {
-    const count = counts[index]!;
-    const center = centers[index]!;
-    weightBackground += count;
-    if (weightBackground <= 0 || weightBackground >= total) continue;
+  for (let split = 0; split < counts.length - 1; split += 1) {
+    const background = probabilities.slice(0, split + 1);
+    const foreground = probabilities.slice(split + 1);
+    const weightBackground = sum(background) ?? 0;
+    const weightForeground = sum(foreground) ?? 0;
+    if (weightBackground <= 0 || weightForeground <= 0) continue;
 
-    sumBackground += center * count;
-    const weightForeground = total - weightBackground;
-    if (weightForeground <= 0) continue;
+    const totalEntropy =
+      entropyFromProbabilities(background.map((probability) => probability / weightBackground)) +
+      entropyFromProbabilities(foreground.map((probability) => probability / weightForeground));
 
-    const meanBackground = sumBackground / weightBackground;
-    const meanForeground = (totalIntensity - sumBackground) / weightForeground;
-    const variance = weightBackground * weightForeground * (meanBackground - meanForeground) ** 2;
-    if (variance > bestVariance) {
-      bestVariance = variance;
-      bestThreshold = center;
+    if (totalEntropy > bestEntropy) {
+      bestEntropy = totalEntropy;
+      bestThreshold = centers[split] ?? bestThreshold;
     }
   }
 
@@ -121,7 +127,7 @@ function buildHistogram(scores: number[]): {
     bins,
     scoreMin,
     scoreMax,
-    threshold: otsuOnHistogram(counts, centers),
+    threshold: maxEntropyThresholdOnHistogram(counts, centers),
   };
 }
 

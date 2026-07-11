@@ -34,6 +34,7 @@ import {
 } from "solid-js";
 import {
   applyVariationExcludePreview,
+  applyVariationExcludeWithEdge,
   cropPositionsAfterSkip,
   deriveCurrentExcludedCells,
   deriveDisplayedExcludedCells,
@@ -470,17 +471,23 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
     setVariationExcludePreview((current) => updateVariationExcludeThreshold(current, threshold));
   };
 
+  const dismissVariationExcludePreview = () => {
+    setVariationExcludePreview(null);
+  };
+
   const cancelVariationExclude = () => {
     if (!variationExcludePreview()) return;
-    setVariationExcludePreview(null);
+    dismissVariationExcludePreview();
     sessionActions.reportStatus("Var exclude cancelled");
   };
 
   const applyVariationExclude = () => {
     const preview = variationExcludePreview();
-    if (!preview) return;
+    const currentUi = ui();
+    const { frame, grid } = currentUi;
+    if (!preview || !frame) return;
     const currentExcludedCells = derived().currentExcludedCells;
-    const applied = applyVariationExcludePreview(currentExcludedCells, preview);
+    const applied = applyVariationExcludeWithEdge(currentExcludedCells, frame, grid, preview);
     sessionActions.setExcludedCellsForCurrentPosition(applied.cells);
     setVariationExcludePreview(null);
     sessionActions.reportStatus(
@@ -656,6 +663,7 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
         });
       },
       setThreshold: setVariationExcludeThreshold,
+      dismiss: dismissVariationExcludePreview,
       cancel: cancelVariationExclude,
       apply: applyVariationExclude,
       autoExclude,

@@ -3,10 +3,13 @@ import { describe, expect, it } from "vitest";
 
 import {
   allAlignPositionsSaved,
+  applyDockVariationExcludeWithEdge,
   applyVariationExcludePreview,
+  applyVariationExcludeWithEdge,
   cellsBelowVariationThreshold,
   cropPositionsAfterSkip,
   deriveVisibleCounts,
+  mergeAlignGridEdgeExclusion,
   mergeAutoExcludedAlignCells,
   nextAlignPosition,
   resolveFirstUnalignedTarget,
@@ -94,6 +97,81 @@ describe("align-session helpers", () => {
       ]),
     );
     expect(applied.cells).toHaveLength(2);
+  });
+
+  it("mergeAlignGridEdgeExclusion adds visible edge cells", () => {
+    const frame = {
+      width: 4,
+      height: 4,
+      pixels: new Uint8Array(16),
+      contrastDomain: { min: 0, max: 255 },
+    };
+    const grid = normalizeAlignGridState({
+      ...createDefaultAlignGrid(),
+      enabled: true,
+      cellWidth: 2,
+      cellHeight: 2,
+      spacingA: 2,
+      spacingB: 2,
+    });
+    const merged = mergeAlignGridEdgeExclusion([], frame, grid);
+    expect(merged.length).toBeGreaterThan(0);
+  });
+
+  it("applyDockVariationExcludeWithEdge replaces prior exclusions", () => {
+    const frame = {
+      width: 4,
+      height: 4,
+      pixels: new Uint8Array(16),
+      contrastDomain: { min: 0, max: 255 },
+    };
+    const grid = normalizeAlignGridState({
+      ...createDefaultAlignGrid(),
+      enabled: true,
+      cellWidth: 2,
+      cellHeight: 2,
+      spacingA: 2,
+      spacingB: 2,
+    });
+    const preview = {
+      preview: {
+        threshold: 5,
+        eligibleCellCount: 1,
+        cellScores: [{ i: 0, j: 0, score: 1 }],
+      },
+      threshold: 5,
+    };
+    const applied = applyDockVariationExcludeWithEdge(frame, grid, preview);
+    expect(applied.cells).not.toEqual(expect.arrayContaining([{ i: 2, j: 2 }]));
+    expect(applied.variationCells).toEqual([{ i: 0, j: 0 }]);
+  });
+
+  it("applyVariationExcludeWithEdge pairs var exclude with edge exclude", () => {
+    const frame = {
+      width: 4,
+      height: 4,
+      pixels: new Uint8Array(16),
+      contrastDomain: { min: 0, max: 255 },
+    };
+    const grid = normalizeAlignGridState({
+      ...createDefaultAlignGrid(),
+      enabled: true,
+      cellWidth: 2,
+      cellHeight: 2,
+      spacingA: 2,
+      spacingB: 2,
+    });
+    const preview = {
+      preview: {
+        threshold: 5,
+        eligibleCellCount: 1,
+        cellScores: [{ i: 0, j: 0, score: 1 }],
+      },
+      threshold: 5,
+    };
+    const applied = applyVariationExcludeWithEdge([], frame, grid, preview);
+    expect(applied.variationCells).toEqual([{ i: 0, j: 0 }]);
+    expect(applied.cells.length).toBeGreaterThan(applied.variationCells.length);
   });
 
   it("mergeAutoExcludedAlignCells combines edge and variation exclusions", () => {

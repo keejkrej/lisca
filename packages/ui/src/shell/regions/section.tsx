@@ -40,7 +40,7 @@ export function Section(props: SectionProps) {
       {...panelProps}
     >
       <PanelHeader
-        class={cn("space-y-1.5 px-3 py-3", !collapsed() && "pb-0", local.headerClassName)}
+        class={cn("space-y-1.5 px-2.5 py-2.5", !collapsed() && "pb-0", local.headerClassName)}
       >
         <div class="flex items-start justify-between gap-2">
           <PanelTitle class="min-w-0 flex-1 text-sm">{local.title}</PanelTitle>
@@ -71,7 +71,7 @@ export function Section(props: SectionProps) {
         </Show>
       </PanelHeader>
       <Show when={!collapsed()}>
-        <PanelContent class={cn("space-y-2 px-3 pb-3 pt-2", local.contentClassName)} id={contentId}>
+        <PanelContent class={cn("space-y-2 px-2.5 pb-2.5 pt-2", local.contentClassName)} id={contentId}>
           {local.children}
         </PanelContent>
       </Show>

@@ -12,14 +12,14 @@ export function StudioAnnotateExpertRight() {
     <Show
       when={!state.workspaceMissing}
       fallback={
-        <SidebarStack>
-          <p class="text-muted-foreground p-3 text-sm">
+        <SidebarStack class="p-0">
+          <p class="text-muted-foreground text-sm">
             Complete Basic info to annotate ROIs.
           </p>
         </SidebarStack>
       }
     >
-      <SidebarStack>
+      <SidebarStack class="p-0">
         <StudioAnnotateNav />
         <StudioAnnotateRightContent />
       </SidebarStack>

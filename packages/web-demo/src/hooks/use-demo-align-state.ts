@@ -169,14 +169,15 @@ export function useDemoAlignState(): Accessor<DemoAlignState> {
         demoAlignUiActions.setStatus(setState, "Var exclude cancelled");
       },
       applyVariationExclude: () => {
-        if (!variationExcludePreview) return;
+        if (!variationExcludePreview || !frame) return;
         const variationCells = cellsBelowVariationThreshold(
           variationExcludePreview.preview,
           variationExcludePreview.threshold,
         );
+        const edgeCells = collectAlignGridEdgeCells(frame, grid);
         demoAlignUiActions.setExcludedCells(
           setState,
-          mergeExcludedAlignGridCells(excludedCells, variationCells),
+          mergeExcludedAlignGridCells(excludedCells, [...edgeCells, ...variationCells]),
         );
         demoAlignUiActions.setVariationExcludePreview(setState, null);
         demoAlignUiActions.setStatus(

@@ -24,6 +24,14 @@ export {
   type AlignGridShapeDockSectionProps,
 } from "./align/align-grid-shape-dock-section";
 export {
+  AlignSelectionDockSection,
+  type AlignSelectionDockSectionProps,
+} from "./align/align-selection-dock-section";
+export {
+  AlignSelectionPanelSection,
+  type AlignSelectionPanelSectionProps,
+} from "./align/align-selection-panel-section";
+export {
   AlignGridShapeToggle,
   type AlignGridShapeToggleProps,
 } from "./align/align-grid-shape-toggle";

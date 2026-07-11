@@ -89,7 +89,7 @@ function AnnotationToolButton(props: { action: DockToolAction; label: string }) 
       onClick={props.action.onSelect}
     >
       <Icon class="size-4 shrink-0" />
-      <span class="min-w-0 truncate text-xs">{props.label}</span>
+      <span class="min-w-0 truncate">{props.label}</span>
     </Button>
   );
 }

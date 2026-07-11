@@ -81,7 +81,7 @@ export function AlignToolButton(props: {
       variant={props.active ? "default" : "outline"}
       onClick={props.onClick}
     >
-      <span class="max-w-full truncate text-xs">{props.label}</span>
+      <span class="max-w-full truncate">{props.label}</span>
     </Button>
   );
 }

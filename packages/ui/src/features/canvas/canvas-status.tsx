@@ -1,5 +1,4 @@
 import IconWarningCircleRegular from "phosphor-icons-solid/IconWarningCircleRegular";
-import IconCircleNotchRegular from "phosphor-icons-solid/IconCircleNotchRegular";
 import { For, Show } from "solid-js";
 
 import type { CanvasStatusMessage, CanvasStatusTone } from "@lisca/ui-headless";
@@ -26,9 +25,6 @@ function toastIcon(message: CanvasStatusMessage) {
   const presentation = canvasToastPresentation(message);
   if (presentation === "error") {
     return <IconWarningCircleRegular class="mt-0.5 size-4 shrink-0" />;
-  }
-  if (presentation === "loading") {
-    return <IconCircleNotchRegular class="mt-0.5 size-4 shrink-0 animate-spin" />;
   }
   return null;
 }

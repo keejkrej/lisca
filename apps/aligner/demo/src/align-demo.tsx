@@ -1,5 +1,5 @@
 import { AlignGridShapeToggle } from "@lisca/ui/features";
-import { AppShell } from "@lisca/ui/shell";
+import { AppShell, SidebarStack } from "@lisca/ui/shell";
 import {
   DemoAlignRoot,
   DemoNavbar,
@@ -84,9 +84,9 @@ function AlignDemoView(props: { embedded: boolean }) {
           }
         >
           <AppShell.Left widthClass="w-72">
-            <div class="flex min-h-0 flex-col gap-2 p-3">
+            <SidebarStack>
               <DemoAlignContrastControls state={state} />
-            </div>
+            </SidebarStack>
           </AppShell.Left>
           <AppShell.MainColumn>
             <AppShell.Main>
@@ -97,10 +97,10 @@ function AlignDemoView(props: { embedded: boolean }) {
             </AppShell.Dock>
           </AppShell.MainColumn>
           <AppShell.Right widthClass="w-72">
-            <div class="flex min-h-0 flex-col gap-2 overflow-auto p-3">
+            <SidebarStack>
               <DemoAlignGridControls state={state} />
               <DemoAlignSelectionControls state={state} />
-            </div>
+            </SidebarStack>
           </AppShell.Right>
         </Show>
       </AppShell.Body>

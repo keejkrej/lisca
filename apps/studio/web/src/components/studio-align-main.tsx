@@ -76,12 +76,13 @@ export function StudioAlignMain() {
     gridHandlers.handlePointerEnd(event);
   };
   const visibleStatus = useCanvasTransientStatus(() => canvas.status);
-  const loadingStatus = createMemo(() => {
+  const operationalStatus = createMemo(() => {
     if (crop.cropping) return "Cropping ROI output";
-    if (nav.saving || canvas.frameLoading) return "Loading frame";
+    if (canvas.frameLoading) return "Loading frame";
     if (canvas.scanLoading) return "Scanning source";
     return null;
   });
+  const isOperationalStatus = (text: string) => /loading|scanning|cropping/i.test(text);
   const positionInfo = createMemo(() => {
     const positionIndex = nav.alignPositions.indexOf(nav.selection.pos);
     const positionCount = nav.alignPositions.length;
@@ -108,11 +109,11 @@ export function StudioAlignMain() {
   const statusMessages = createMemo(() => {
     if (canvas.error) return [];
     const status = visibleStatus();
-    if (!status) return [];
+    if (!status || isOperationalStatus(status)) return [];
     return [{ text: status }];
   });
-  const canvasToasts = createMemo(() => {
-    const status = loadingStatus();
+  const operationalMessages = createMemo(() => {
+    const status = operationalStatus();
     if (!status) return [];
     return [{ text: status }];
   });
@@ -127,7 +128,10 @@ export function StudioAlignMain() {
       <div class="flex h-full min-h-0 flex-1 flex-col gap-2 bg-background p-3">
         <Show
           when={
-            positionInfo().length > 0 || statusMessages().length > 0 || canvasAlerts().length > 0
+            positionInfo().length > 0 ||
+            statusMessages().length > 0 ||
+            operationalMessages().length > 0 ||
+            canvasAlerts().length > 0
           }
         >
           <div class="flex shrink-0 items-start justify-between gap-2">
@@ -135,11 +139,18 @@ export function StudioAlignMain() {
               <CanvasStatusMessageStack layout="inline" messages={positionInfo()} />
               <CanvasStatusMessageStack layout="inline" messages={statusMessages()} />
             </div>
-            <CanvasStatusMessageStack
-              align="right"
-              layout="inline"
-              messages={canvasAlerts()}
-            />
+            <div class="flex min-w-0 flex-wrap items-start justify-end gap-1.5">
+              <CanvasStatusMessageStack
+                align="right"
+                layout="inline"
+                messages={operationalMessages()}
+              />
+              <CanvasStatusMessageStack
+                align="right"
+                layout="inline"
+                messages={canvasAlerts()}
+              />
+            </div>
           </div>
         </Show>
         <FrameAspectPanel frame={canvas.frame}>
@@ -151,7 +162,6 @@ export function StudioAlignMain() {
             grid={canvas.grid}
             previewGridRef={gridHandlers.previewGridRef}
             previewRedrawRef={previewRedrawRef}
-            toasts={canvasToasts()}
             onVirtualPointerCancel={handlePointerCancel}
             onVirtualPointerDown={handlePointerDown}
             onVirtualPointerMove={handlePointerMove}

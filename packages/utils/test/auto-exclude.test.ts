@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { computeAutoExcludePreview, otsuOnHistogram } from "../src/auto-exclude";
+import { computeAutoExcludePreview, maxEntropyThresholdOnHistogram } from "../src/auto-exclude";
 
-describe("otsuOnHistogram", () => {
+describe("maxEntropyThresholdOnHistogram", () => {
   it("splits a bimodal histogram", () => {
     const counts = [25, 25, 25, 25];
     const centers = [5, 15, 185, 205];
-    const threshold = otsuOnHistogram(counts, centers);
+    const threshold = maxEntropyThresholdOnHistogram(counts, centers);
     expect(threshold).toBeGreaterThanOrEqual(15);
     expect(threshold).toBeLessThanOrEqual(185);
   });

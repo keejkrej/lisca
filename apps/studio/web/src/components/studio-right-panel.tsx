@@ -1,6 +1,8 @@
+import { regionInsetClass, regionStackGapClass } from "@lisca/ui/shell";
 import type { JSX } from "solid-js";
 import { Show, createMemo } from "solid-js";
 import { useAtomValue } from "@effect-atom/atom-solid";
+import { cn } from "@lisca/ui/components";
 
 import { studioExpertModeAtom } from "../atoms/studio-expert-atoms";
 import { StudioExpertToggle } from "./studio-expert-toggle";
@@ -23,9 +25,9 @@ export function StudioRightPanel(props: {
   });
 
   return (
-    <div class="flex h-full min-h-0 flex-col items-stretch gap-2.5 p-2.5">
+    <div class={cn("flex h-full min-h-0 flex-col items-stretch", regionInsetClass, regionStackGapClass)}>
       <div class="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto">
-        <div class="flex w-full shrink-0 flex-col items-stretch gap-2">
+        <div class={cn("flex w-full shrink-0 flex-col items-stretch", regionStackGapClass)}>
           <Show when={instruction()}>
             {(text) => <StudioInstructionSection text={text()} />}
           </Show>

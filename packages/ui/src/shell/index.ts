@@ -27,6 +27,7 @@ export { DockSection, type DockSectionFit, type DockSectionProps } from "./regio
 export { DockStrip } from "./regions/dock-strip";
 export { PanelSection, type PanelSectionProps } from "./regions/panel-section";
 export { SidebarStack, type SidebarStackProps } from "./regions/sidebar-stack";
+export { regionInsetClass, regionStackGapClass } from "./regions/region-spacing";
 export { dockToolLabel, dockToolShortcuts, type DockToolAction } from "@lisca/ui-headless/dock";
 export {
   useKeyboardShortcuts,

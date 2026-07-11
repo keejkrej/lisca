@@ -2,7 +2,7 @@ import type { AnnotationLabel } from "@lisca/contracts";
 import type { AnnotationMode } from "@lisca/ui/features";
 import { Button, cn } from "@lisca/ui/components";
 import { AnnotationModeToggle, AnnotationToolSlider } from "@lisca/ui/features";
-import { Section } from "@lisca/ui/shell";
+import { Section, SidebarStack } from "@lisca/ui/shell";
 import { For, Show } from "solid-js";
 
 import { labelColorStyle, type AnnotationValue } from "../utils/annotation-utils";
@@ -32,7 +32,7 @@ export function DemoAnnotatorRight(props: {
   onOpenLabelDialog: () => void;
 }) {
   return (
-    <div class="flex min-h-0 flex-col gap-2 overflow-auto p-3">
+    <SidebarStack>
       <Section title="Mode">
         <AnnotationModeToggle
           class="w-full"
@@ -145,6 +145,6 @@ export function DemoAnnotatorRight(props: {
           />
         </Section>
       </Show>
-    </div>
+    </SidebarStack>
   );
 }

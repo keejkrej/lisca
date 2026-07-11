@@ -136,6 +136,51 @@ export function applyVariationExcludePreview(
   };
 }
 
+/** Var-exclude apply paired with edge exclude (same merge as auto-exclude). */
+export function applyVariationExcludeWithEdge(
+  currentExcludedCells: AlignGridCellCoord[],
+  frame: FrameResult,
+  grid: AlignGridState,
+  preview: VariationExcludePreview,
+): {
+  cells: AlignGridCellCoord[];
+  variationCells: AlignGridCellCoord[];
+  eligibleCellCount: number;
+} {
+  const variationCells = cellsBelowVariationThreshold(preview.preview, preview.threshold);
+  return {
+    cells: mergeAutoExcludedAlignCells(
+      currentExcludedCells,
+      frame,
+      grid,
+      preview.preview,
+      preview.threshold,
+    ),
+    variationCells,
+    eligibleCellCount: preview.preview.eligibleCellCount,
+  };
+}
+
+export function mergeAlignGridEdgeExclusion(
+  currentExcludedCells: AlignGridCellCoord[],
+  frame: FrameResult,
+  grid: AlignGridState,
+): AlignGridCellCoord[] {
+  return mergeExcludedAlignGridCells(
+    currentExcludedCells,
+    collectAlignGridEdgeCells(frame, grid),
+  );
+}
+
+/** Dock exclude: replace prior exclusions with edge + var (non-additive). */
+export function applyDockVariationExcludeWithEdge(
+  frame: FrameResult,
+  grid: AlignGridState,
+  preview: VariationExcludePreview,
+): ReturnType<typeof applyVariationExcludeWithEdge> {
+  return applyVariationExcludeWithEdge([], frame, grid, preview);
+}
+
 export function mergeAutoExcludedAlignCells(
   currentExcludedCells: AlignGridCellCoord[],
   frame: FrameResult,

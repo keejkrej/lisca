@@ -10,12 +10,12 @@ export function StudioAnnotateNav() {
     <Show
       when={!nav.workspaceMissing}
       fallback={
-        <div class="flex min-h-0 flex-col gap-2 p-3">
+        <div class="flex min-h-0 flex-col gap-2.5">
           <p class="text-destructive text-sm">Set a save location in Basic info first.</p>
         </div>
       }
     >
-      <div class="flex min-h-0 flex-col gap-2 p-3">
+      <div class="flex min-h-0 flex-col gap-2.5">
         <RoiFrameNavigation
           changeSelection={nav.changeSelection}
           position={nav.position}

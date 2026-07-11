@@ -6,6 +6,8 @@ import {
   type AlignGridFrameBounds,
 } from "@lisca/utils";
 
+import { Show } from "solid-js";
+
 import { Button } from "../../components/ui/button";
 import { PanelSection } from "../../shell/regions/panel-section";
 
@@ -38,12 +40,15 @@ export type AlignSelectionRailProps = {
   onVariationExcludeThresholdChange: (threshold: number) => void;
   sectionClassName?: string;
   sectionContentClassName?: string;
+  /** When false, the caller mounts `VariationExcludeDialog` elsewhere (e.g. dock-driven exclude). */
+  showVariationExcludeDialog?: boolean;
 };
 
 export function AlignSelectionRail(props: AlignSelectionRailProps) {
   const disabled = () => props.disabled ?? false;
   const variationExcludeLoading = () => props.variationExcludeLoading ?? false;
   const smartExcludeLoading = () => props.smartExcludeLoading ?? false;
+  const showVariationExcludeDialog = () => props.showVariationExcludeDialog ?? true;
 
   const visibleCells = () =>
     props.frame
@@ -134,12 +139,14 @@ export function AlignSelectionRail(props: AlignSelectionRailProps) {
           </Button>
         </div>
       </PanelSection>
-      <VariationExcludeDialog
-        state={props.variationExcludePreview}
-        onApply={props.onApplyVariationExclude}
-        onCancel={props.onCancelVariationExclude}
-        onThresholdChange={props.onVariationExcludeThresholdChange}
-      />
+      <Show when={showVariationExcludeDialog()}>
+        <VariationExcludeDialog
+          state={props.variationExcludePreview}
+          onApply={props.onApplyVariationExclude}
+          onCancel={props.onCancelVariationExclude}
+          onThresholdChange={props.onVariationExcludeThresholdChange}
+        />
+      </Show>
     </>
   );
 }

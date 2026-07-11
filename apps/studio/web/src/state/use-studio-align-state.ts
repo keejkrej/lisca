@@ -41,10 +41,7 @@ import {
 } from "./studio-align-store";
 import { useStudioStore } from "./studio-store";
 
-const nextExclusionPreviewMs = 1000;
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+
 export type StudioAlignState = {
   workspacePath: string | null;
   source: AlignerSource | null;
@@ -96,6 +93,7 @@ export type StudioAlignState = {
   variationExclude: () => Promise<void>;
   setVariationExcludeThreshold: (threshold: number) => void;
   cancelVariationExclude: () => void;
+  dismissVariationExcludePreview: () => void;
   applyVariationExclude: () => void;
   applySmartExclusion: (modelCells: AlignGridCellCoord[]) => void;
   saveAndAdvanceWithExcludedCells: (excludedCells: AlignGridCellCoord[]) => Promise<boolean>;
@@ -185,10 +183,8 @@ export function useStudioAlignState(): StudioAlignState {
   };
   const resetCurrent = () => {
     if (ui().saving) return;
-    setGrid({
-      ...createDefaultAlignGrid(),
-      enabled: true,
-    });
+    session.variation.cancel();
+    setManualExclusionEnabled(false);
     setExcludedCellsForCurrentPosition([]);
     setStatus(`Reset Pos${lockedSelection().pos}`);
   };
@@ -199,7 +195,6 @@ export function useStudioAlignState(): StudioAlignState {
     setFindingFirstUnaligned(true);
     setError(null);
     try {
-      setStatus("Finding jump target");
       const savedPositions = new Set(
         await runClientEffect(studioClient.listSavedBboxPositions(workspacePath)),
       );
@@ -208,7 +203,6 @@ export function useStudioAlignState(): StudioAlignState {
       setSelection({
         pos: firstUnaligned,
       });
-      setStatus(`Jumped to Pos${firstUnaligned}`);
     } catch (cause) {
       setError(toErrorMessage(cause, "Saved position scan failed"));
     } finally {
@@ -249,9 +243,7 @@ export function useStudioAlignState(): StudioAlignState {
     const advanced = advanceToNextPosition();
     if (!advanced) {
       await maybeCropWhenAllPositionsSaved();
-      return true;
     }
-    await delay(nextExclusionPreviewMs);
     return true;
   };
   createEffect(() => {
@@ -377,6 +369,7 @@ export function useStudioAlignState(): StudioAlignState {
     variationExclude: session.variation.exclude,
     setVariationExcludeThreshold: session.variation.setThreshold,
     cancelVariationExclude: session.variation.cancel,
+    dismissVariationExcludePreview: session.variation.dismiss,
     applyVariationExclude: session.variation.apply,
     applySmartExclusion,
     saveAndAdvanceWithExcludedCells,

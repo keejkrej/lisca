@@ -5,7 +5,7 @@ import { onCleanup } from "solid-js";
 import { useStudioAlignPage } from "../state/studio-align-page-context";
 
 export function StudioAlignExpertRight() {
-  const { state, smartExclude, varExclude } = useStudioAlignPage();
+  const { state, smartExclude, varExclude, requestExpertVarExclude } = useStudioAlignPage();
   const disabled = () => state.cropping || !state.frame;
 
   onCleanup(() => {
@@ -14,7 +14,7 @@ export function StudioAlignExpertRight() {
   });
 
   return (
-    <SidebarStack>
+    <SidebarStack class="p-0">
       <AlignGridRail disabled={disabled()} grid={state.grid} onGridChange={state.setGrid} />
       <AlignSelectionRail
         disabled={disabled()}
@@ -31,10 +31,11 @@ export function StudioAlignExpertRight() {
         onExcludedCellsChange={(cells) => state.setExcludedCellsForCurrentPosition(cells)}
         onManualExclusionEnabledChange={(enabled) => state.setManualExclusionEnabled(enabled)}
         onSmartExclude={() => void smartExclude.request()}
-        onVariationExclude={() => void varExclude.requestPreview()}
+        onVariationExclude={() => void requestExpertVarExclude()}
         onVariationExcludeThresholdChange={(threshold) =>
           state.setVariationExcludeThreshold(threshold)
         }
+        showVariationExcludeDialog={false}
       />
     </SidebarStack>
   );

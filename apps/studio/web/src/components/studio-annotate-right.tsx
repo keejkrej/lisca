@@ -12,14 +12,14 @@ export function StudioAnnotateRight() {
     <Show
       when={!state.workspaceMissing}
       fallback={
-        <SidebarStack>
+        <SidebarStack class="p-0">
           <PanelSection title="Annotate">
             <p class="text-muted-foreground text-sm">Complete Basic info to annotate ROIs.</p>
           </PanelSection>
         </SidebarStack>
       }
     >
-      <SidebarStack>
+      <SidebarStack class="p-0">
         <StudioAnnotateRightContent />
       </SidebarStack>
     </Show>
