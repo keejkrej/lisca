@@ -1,13 +1,6 @@
 import type { AnalysisProgress, StudioAnalysisCsvFile } from "@lisca/contracts";
 import { ASSAY_TYPE } from "@lisca/contracts/assay";
 import { useAnnotateStateCore } from "@lisca/client/use-annotate-state-core";
-import {
-  currentRoi,
-  requestKey,
-  roiRequestSelectionKey,
-  type AnnotatorUiActions,
-  type AnnotatorUiAtom,
-} from "@lisca/client/atoms/annotator-ui";
 import { useCanvasResourceTransaction, useCanvasTransientStatus } from "@lisca/ui/features";
 import { useAtom } from "@effect-atom/atom-solid";
 import { createEffect } from "solid-js";
@@ -24,16 +17,8 @@ import {
   saveAnnotationLabelsAtom,
   saveRoiFrameAnnotationAtom,
 } from "../atoms/studio-query-atoms";
-import {
-  effectErrorMessage,
-  loadRoiFrameEffect,
-  loadRoiFrameWithAnnotationEffect,
-} from "../effects/roi-loader";
 import { studioAnnotateUiActions, studioAnnotateUiAtom } from "./studio-annotate-store";
 import { buildStudioAssayJson, serializeBasicInfoSnapshot, useStudioStore } from "./studio-store";
-import { emptyValueFor, useAnnotationHistory } from "./use-annotation-history";
-import { encodeMaskToBase64Png, maskHasPixels } from "../utils/annotation-utils";
-import { makeRequest } from "../utils/roi-request";
 import { setStudioAnnotateDirty } from "./studio-annotate-guard";
 
 function useStudioWorkspaceSync(activeWorkspacePath: () => string | null) {
@@ -82,11 +67,8 @@ export function useStudioAnnotateState(): StudioAnnotateState {
   const annotate = useAnnotateStateCore({
     annotatorClient: studioClient,
     toErrorMessage,
-    effectErrorMessage,
-    loadRoiFrameWithAnnotationEffect,
-    loadRoiFrameEffect,
-    annotatorUiAtom: studioAnnotateUiAtom as unknown as AnnotatorUiAtom,
-    annotatorUiActions: studioAnnotateUiActions as unknown as AnnotatorUiActions,
+    annotatorUiAtom: studioAnnotateUiAtom,
+    annotatorUiActions: studioAnnotateUiActions,
     roiWorkspaceScanAtom,
     roiScanIdleAtom,
     annotationLabelsAtom,
@@ -100,14 +82,6 @@ export function useStudioAnnotateState(): StudioAnnotateState {
       if (!dirty || selectionChanging) return true;
       return window.confirm("Discard unsaved annotation changes?");
     },
-    useAnnotationHistory,
-    emptyValueFor,
-    makeRequest,
-    currentRoi,
-    requestKey,
-    roiRequestSelectionKey,
-    encodeMaskToBase64Png,
-    maskHasPixels,
   });
   const setAnalysisStartConfirm = (value: boolean) =>
     studioAnnotateUiActions.setAnalysisStartConfirm(setUi, value);

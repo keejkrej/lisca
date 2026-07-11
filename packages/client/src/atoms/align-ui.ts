@@ -284,11 +284,13 @@ export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiB
     },
     setFrame(set: (update: StateUpdater<AlignUiState>) => void, frame: FrameResult | null) {
       patchAlignUi(set, persist, (state) =>
-        state.frame === frame ? state : {
-          ...state,
-          frame,
-          loadedFrameSelection: frame ? state.loadedFrameSelection : null,
-        },
+        state.frame === frame
+          ? state
+          : {
+              ...state,
+              frame,
+              loadedFrameSelection: frame ? state.loadedFrameSelection : null,
+            },
       );
     },
     setContrast(
@@ -333,13 +335,29 @@ export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiB
         ),
       }));
     },
+    setExcludedCellsForPosition(
+      set: (update: StateUpdater<AlignUiState>) => void,
+      position: number,
+      cells: Iterable<AlignGridCellCoord>,
+    ) {
+      patchAlignUi(set, persist, (state) => ({
+        ...state,
+        excludedCellsByPosition: setExcludedAlignGridCellsForPosition(
+          state.excludedCellsByPosition,
+          position,
+          cells,
+        ),
+      }));
+    },
     setFrameLoading(set: (update: StateUpdater<AlignUiState>) => void, frameLoading: boolean) {
       patchAlignUi(set, persist, (state) =>
         state.frameLoading === frameLoading ? state : { ...state, frameLoading },
       );
     },
     setSaving(set: (update: StateUpdater<AlignUiState>) => void, saving: boolean) {
-      patchAlignUi(set, persist, (state) => (state.saving === saving ? state : { ...state, saving }));
+      patchAlignUi(set, persist, (state) =>
+        state.saving === saving ? state : { ...state, saving },
+      );
     },
     setCropProgress(
       set: (update: StateUpdater<AlignUiState>) => void,

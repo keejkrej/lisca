@@ -29,9 +29,19 @@ export const CreateDirectoryResponseSchema = Schema.Struct({
   path: Schema.String,
 }).annotations({ identifier: "CreateDirectoryResponse" });
 
+export const HostListDirectoryQuerySchema = Schema.Struct({
+  path: Schema.optional(Schema.String),
+}).annotations({ identifier: "HostListDirectoryQuery" });
+
+export const ReadTextFileQuerySchema = Schema.Struct({
+  path: Schema.String,
+}).annotations({ identifier: "ReadTextFileQuery" });
+
 export type HostFsEntry = typeof HostFsEntrySchema.Type;
 export type HostListDirectoryResult = typeof HostListDirectoryResultSchema.Type;
 export type HomeDirectoryResponse = typeof HomeDirectoryResponseSchema.Type;
 export type ReadTextFileResponse = typeof ReadTextFileResponseSchema.Type;
 export type CreateDirectoryRequest = typeof CreateDirectoryRequestSchema.Type;
 export type CreateDirectoryResponse = typeof CreateDirectoryResponseSchema.Type;
+export type HostListDirectoryQuery = typeof HostListDirectoryQuerySchema.Type;
+export type ReadTextFileQuery = typeof ReadTextFileQuerySchema.Type;

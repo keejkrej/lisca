@@ -5,40 +5,23 @@ import type {
   ContrastWindow,
   CropRoiProgress,
   FrameRequest,
-  SavedAlignState,
   WorkspaceScan,
 } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
-import { runCropRoi } from "@lisca/client/align-session";
+import {
+  allAlignPositionsSaved,
+  nextAlignPosition,
+  resolveFirstUnalignedTarget,
+} from "@lisca/client/align-session";
 import { useAlignSessionCore } from "@lisca/client/align-session/solid";
 import { useCanvasResourceTransaction } from "@lisca/ui/features";
-import {
-  alignStateFromCurrent,
-  buildBboxCsv,
-  collectAlignGridEdgeCells,
-  countVisibleAlignGridCells,
-  createDefaultAlignGrid,
-  mergeExcludedAlignGridCells,
-  type AlignGridToolMode,
-} from "@lisca/utils";
-import { Effect } from "effect";
+import { createDefaultAlignGrid, type AlignGridToolMode } from "@lisca/utils";
 import { useNavigate } from "@tanstack/solid-router";
-import type { Atom } from "@effect-atom/atom-solid";
-import { RegistryContext, useAtom } from "@effect-atom/atom-solid";
-import {
-  createEffect,
-  createMemo,
-  createSignal,
-  onCleanup,
-  untrack,
-  useContext,
-  type Accessor,
-} from "solid-js";
+import { createEffect, createMemo, createSignal } from "solid-js";
 import { studioClient, toErrorMessage } from "../api/studio-port";
 import { studioNavigate } from "../navigation/use-studio-navigate";
 import { scanIdleAtom, scanSourceAtom } from "../atoms/studio-query-atoms";
 import { effectErrorMessage, loadFrameEffect } from "../effects/frame-loader";
-import { isDoneCropStatus } from "@lisca/client/crop-status";
 import { runClientEffect } from "@lisca/client/runtime";
 import {
   lockedStudioSelection,
@@ -50,8 +33,6 @@ import {
   filterScanPositionsForAssay,
 } from "@lisca/client/studio/sample-positions";
 import {
-  savedAlignStateKey,
-  sourceKey,
   studioAlignUiActions,
   studioAlignUiAtom,
   type ExcludedByPosition,
@@ -121,86 +102,66 @@ export function useStudioAlignState(): StudioAlignState {
   const info1 = useStudioStore((state) => state.info1);
   const info3 = useStudioStore((state) => state.info3);
   const dataSourceKind = useStudioStore((state) => state.dataSourceKind);
-  const [ui, setUi] = useAtom(studioAlignUiAtom);
-  const setSelection = (patch: Partial<FrameRequest>) =>
-    studioAlignUiActions.setSelection(setUi, patch);
-  const setContrast = (next: ContrastWindow | null) =>
-    studioAlignUiActions.setContrast(setUi, next);
-  const setGrid = (next: AlignGridState | ((current: AlignGridState) => AlignGridState)) =>
-    studioAlignUiActions.setGrid(setUi, next);
-  const setToolMode = (mode: AlignGridToolMode) => studioAlignUiActions.setToolMode(setUi, mode);
-  const setPatternZoomLocked = (locked: boolean) =>
-    studioAlignUiActions.setPatternZoomLocked(setUi, locked);
-  const setExcludedCellsForCurrentPosition = (cells: Iterable<AlignGridCellCoord>) =>
-    studioAlignUiActions.setExcludedCellsForCurrentPosition(setUi, cells);
-  const setSaving = (next: boolean) => studioAlignUiActions.setSaving(setUi, next);
-  const setError = (next: string | null) => studioAlignUiActions.setError(setUi, next);
-  const setStatus = (next: string | null) => studioAlignUiActions.setStatus(setUi, next);
   const [findingFirstUnaligned, setFindingFirstUnaligned] = createSignal(false);
-  const [cropProgress, setCropProgress] = createSignal<CropRoiProgress | null>(null);
   const [cropStartConfirm, setCropStartConfirm] = createSignal<CropStartConfirmState | null>(null);
-  const [cropConfirm, setCropConfirm] = createSignal<CropConfirmState | null>(null);
-  let cropRequestIdRef: string | null = null;
-  const loadCanvasResources = useCanvasResourceTransaction();
   const activeSource = createMemo(() => toStudioSource(dataSourceKind(), info1()));
   const activeWorkspacePath = createMemo(() => info1().saveTo.trim() || null);
   const maskChannel = createMemo(() => studioMaskChannel(info3()));
   const assayPositions = createMemo(() => collectAssayPositions(info3()));
-  const navSource = createMemo(() => ui().source);
-  const navScan = createMemo(() => ui().scan);
-  const navSelection = createMemo(() => ui().selection);
-  const navWorkspacePath = createMemo(() => ui().workspacePath);
-  const navContrast = createMemo(() => ui().contrast);
-  const alignPositions = createMemo(() => {
-    const scan = navScan();
-    if (!scan) return [];
-    return filterScanPositionsForAssay(scan.positions, assayPositions());
-  });
-  const lockedSelection = createMemo<FrameRequest>((prev) => {
-    const scan = navScan();
-    if (!scan) return navSelection();
-    const next = lockedStudioSelection(scan, navSelection(), maskChannel(), alignPositions());
-    if (
-      prev &&
-      prev.pos === next.pos &&
-      prev.channel === next.channel &&
-      prev.time === next.time &&
-      prev.z === next.z
-    ) {
-      return prev;
-    }
-    return next;
-  });
-  const activeSourceKey = createMemo(() => sourceKey(navSource()));
-  const scanResult = useSelectedAtomValue(() => {
-    const key = activeSourceKey();
-    return key ? scanSourceAtom(key) : scanIdleAtom;
-  });
   const navigate = useNavigate();
+  const alignPositionsForScan = (scan: WorkspaceScan | null) =>
+    scan ? filterScanPositionsForAssay(scan.positions, assayPositions()) : [];
   const session = useAlignSessionCore({
-    ui,
-    setUi,
-    actions: studioAlignUiActions,
-    scan: {
-      scanResult,
-      activeSourceKey,
+    store: {
+      atom: studioAlignUiAtom,
+      actions: studioAlignUiActions,
     },
-    toErrorMessage,
-    effectiveSelection: lockedSelection,
+    backend: {
+      client: studioClient,
+      loadFrame: loadFrameEffect,
+      toErrorMessage,
+      frameErrorMessage: effectErrorMessage,
+    },
+    resources: {
+      transact: useCanvasResourceTransaction(),
+    },
+    scan: {
+      forSource: scanSourceAtom,
+      idle: scanIdleAtom,
+    },
+    policy: {
+      workspacePath: activeWorkspacePath,
+      source: activeSource,
+      selection: (state) =>
+        state.scan
+          ? lockedStudioSelection(
+              state.scan,
+              state.selection,
+              maskChannel(),
+              alignPositionsForScan(state.scan),
+            )
+          : state.selection,
+      canLoadFrame: (state) => alignPositionsForScan(state.scan).length > 0,
+      preserveFrameOnContrastFailure: true,
+      cropRequestPrefix: "studio-crop",
+      onCropCompleted: () => studioNavigate(navigate, "/annotate"),
+      onCropSkippedAll: () => studioNavigate(navigate, "/annotate"),
+    },
   });
-  const applySmartExclusion = (modelCells: AlignGridCellCoord[]) => {
-    const frame = ui().frame;
-    const grid = ui().grid;
-    if (!frame) return;
-    const currentExcludedCells = session.derived().currentExcludedCells;
-    const edgeCells = collectAlignGridEdgeCells(frame, grid);
-    const finalExcludedCells = mergeExcludedAlignGridCells(currentExcludedCells, [
-      ...edgeCells,
-      ...modelCells,
-    ]);
-    setExcludedCellsForCurrentPosition(finalExcludedCells);
-    setStatus(`Smart excluded ${finalExcludedCells.length - currentExcludedCells.length} cells`);
-  };
+  const ui = session.state;
+  const alignPositions = createMemo(() => alignPositionsForScan(ui().scan));
+  const lockedSelection = () => session.derived().selection;
+  const {
+    setContrast,
+    setExcludedCellsForCurrentPosition,
+    setGrid,
+    setPatternZoomLocked,
+    setSelection,
+    setToolMode,
+  } = session.actions;
+  const setError = session.actions.reportError;
+  const setStatus = session.actions.reportStatus;
+  const applySmartExclusion = session.applySmartExclusion;
   const positionIndex = () => alignPositions().indexOf(lockedSelection().pos);
   const canGoBack = () => positionIndex() > 0;
   const goBack = () => {
@@ -229,19 +190,8 @@ export function useStudioAlignState(): StudioAlignState {
       const savedPositions = new Set(
         await runClientEffect(studioClient.listSavedBboxPositions(workspacePath)),
       );
-      const firstUnaligned = positions.find((pos) => !savedPositions.has(pos));
-      if (firstUnaligned == null) {
-        const lastPos = positions.at(-1);
-        if (lastPos == null) {
-          setStatus("No positions in assay scope");
-          return;
-        }
-        setSelection({
-          pos: lastPos,
-        });
-        setStatus(`Jumped to Pos${lastPos}`);
-        return;
-      }
+      const firstUnaligned = resolveFirstUnalignedTarget(positions, savedPositions);
+      if (firstUnaligned == null) return;
       setSelection({
         pos: firstUnaligned,
       });
@@ -253,66 +203,12 @@ export function useStudioAlignState(): StudioAlignState {
     }
   };
   const advanceToNextPosition = () => {
-    const positions = alignPositions();
-    const currentIndex = positions.indexOf(lockedSelection().pos);
-    const nextPos = currentIndex >= 0 ? positions[currentIndex + 1] : null;
+    const nextPos = nextAlignPosition(alignPositions(), lockedSelection().pos);
     if (nextPos == null) return false;
     setSelection({
       pos: nextPos,
     });
     return true;
-  };
-  const runCrop = async (positions: number[], overwrite: boolean) => {
-    const workspacePath = ui().workspacePath;
-    const source = ui().source;
-    if (!workspacePath || !source || positions.length === 0) return;
-    const requestId = `studio-crop-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    cropRequestIdRef = requestId;
-    setError(null);
-    await runCropRoi({
-      client: studioClient,
-      request: {
-        requestId,
-        workspacePath,
-        source,
-        positions,
-        overwrite,
-        outputFormat: "tiff",
-      },
-      onProgress: setCropProgress,
-      onError: setError,
-      onCompleted: (progress) => {
-        setStatus(progress.message ?? "Crop completed");
-        studioNavigate(navigate, "/annotate");
-      },
-      toErrorMessage,
-    });
-  };
-  const cropBatchWithOverwriteCheck = async (positions: number[]) => {
-    const workspacePath = ui().workspacePath;
-    if (!workspacePath || positions.length === 0) return;
-    const existing = await runClientEffect(
-      Effect.all(
-        positions.map((pos) =>
-          studioClient.roiPosExists(workspacePath, pos).pipe(
-            Effect.map((exists) => ({
-              pos,
-              exists,
-            })),
-          ),
-        ),
-      ).pipe(
-        Effect.map((entries) => entries.filter((entry) => entry.exists).map((entry) => entry.pos)),
-      ),
-    );
-    if (existing.length > 0) {
-      setCropConfirm({
-        positions,
-        existingPositions: existing,
-      });
-      return;
-    }
-    await runCrop(positions, false);
   };
   const maybeCropWhenAllPositionsSaved = async () => {
     const workspacePath = ui().workspacePath;
@@ -321,8 +217,7 @@ export function useStudioAlignState(): StudioAlignState {
     const savedPositions = new Set(
       await runClientEffect(studioClient.listSavedBboxPositions(workspacePath)),
     );
-    const allPositionsSaved = positions.every((pos) => savedPositions.has(pos));
-    if (!allPositionsSaved) return;
+    if (!allAlignPositionsSaved(positions, savedPositions)) return;
     setCropStartConfirm({
       positions,
     });
@@ -331,73 +226,14 @@ export function useStudioAlignState(): StudioAlignState {
     const next = cropStartConfirm();
     if (!next) return;
     setCropStartConfirm(null);
-    void cropBatchWithOverwriteCheck(next.positions);
+    void session.crop.checkOverwrite(next.positions, "batch");
   };
   const cancelCropStartConfirm = () => {
     setCropStartConfirm(null);
   };
-  const confirmCropOverwrite = () => {
-    const next = cropConfirm();
-    if (!next) return;
-    setCropConfirm(null);
-    void runCrop(next.positions, true);
-  };
-  const skipExistingCrop = () => {
-    const next = cropConfirm();
-    if (!next) return;
-    setCropConfirm(null);
-    const existing = new Set(next.existingPositions);
-    const remaining = next.positions.filter((pos) => !existing.has(pos));
-    if (remaining.length === 0) {
-      setStatus(`Skipped ${next.existingPositions.length} existing ROI output(s)`);
-      studioNavigate(navigate, "/annotate");
-      return;
-    }
-    void runCrop(remaining, false);
-  };
-  const cancelCropConfirm = () => {
-    setCropConfirm(null);
-  };
-  const cancelCrop = async () => {
-    const requestId = cropRequestIdRef;
-    if (!requestId) return;
-    setCropProgress(await runClientEffect(studioClient.cancelCropRoi(requestId)));
-  };
   const saveAndAdvanceWithModelCells = async (modelCells: AlignGridCellCoord[]) => {
-    const workspacePath = ui().workspacePath;
-    const frame = ui().frame;
-    const grid = ui().grid;
-    if (!workspacePath || !frame) return false;
-    const currentExcludedCells = session.derived().currentExcludedCells;
-    const edgeCells = collectAlignGridEdgeCells(frame, grid);
-    const finalExcludedCells = mergeExcludedAlignGridCells(currentExcludedCells, [
-      ...edgeCells,
-      ...modelCells,
-    ]);
-    const { included } = countVisibleAlignGridCells(frame, grid, finalExcludedCells);
-    if (included === 0) {
-      setError("All grid cells are excluded — adjust exclusions before saving.");
-      return false;
-    }
-    setSaving(true);
-    setError(null);
-    let advanced = false;
-    try {
-      setExcludedCellsForCurrentPosition(finalExcludedCells);
-      const csv = buildBboxCsv(frame, grid, finalExcludedCells);
-      const alignState = alignStateFromCurrent(grid, finalExcludedCells);
-      const result = await runClientEffect(
-        studioClient.saveBbox(workspacePath, lockedSelection().pos, csv, alignState),
-      );
-      if (!result.ok) throw new Error(result.error ?? "Save failed");
-      setStatus(`Saved bbox/Pos${lockedSelection().pos}.csv`);
-    } catch (cause) {
-      setError(toErrorMessage(cause, "Save failed"));
-      return false;
-    } finally {
-      setSaving(false);
-    }
-    advanced = advanceToNextPosition();
+    if (!(await session.saveWithSmartExclusion(modelCells))) return false;
+    const advanced = advanceToNextPosition();
     if (!advanced) {
       await maybeCropWhenAllPositionsSaved();
       return true;
@@ -406,142 +242,17 @@ export function useStudioAlignState(): StudioAlignState {
     return true;
   };
   createEffect(() => {
-    studioAlignUiActions.setWorkspacePath(setUi, activeWorkspacePath());
-  });
-  createEffect(() => {
-    studioAlignUiActions.setSource(setUi, activeSource());
-  });
-  createEffect(() => {
     const scan = ui().scan;
     const positions = alignPositions();
     if (!scan) return;
     if (positions.length === 0) {
-      studioAlignUiActions.setError(
-        setUi,
-        "No assay positions found in source scan — check position ranges in basic info",
-      );
+      setError("No assay positions found in source scan — check position ranges in basic info");
       return;
     }
     const skipped = assayPositions().length - positions.length;
     if (skipped > 0) {
-      studioAlignUiActions.setStatus(
-        setUi,
-        `${skipped} assay position(s) not found in source scan`,
-      );
+      setStatus(`${skipped} assay position(s) not found in source scan`);
     }
-  });
-  createEffect(() => {
-    const scan = navScan();
-    if (!scan) return;
-    const selection = navSelection();
-    const locked = lockedSelection();
-    if (
-      selection.pos === locked.pos &&
-      selection.channel === locked.channel &&
-      selection.time === locked.time &&
-      selection.z === locked.z
-    ) {
-      return;
-    }
-    studioAlignUiActions.setSelection(setUi, locked);
-  });
-  createEffect(() => {
-    const source = navSource();
-    const scan = navScan();
-    const positions = alignPositions();
-    const workspacePath = navWorkspacePath();
-    const locked = lockedSelection();
-    if (!source || !scan || positions.length === 0) {
-      studioAlignUiActions.setFrameLoading(setUi, false);
-      return;
-    }
-    const alignStateKey = workspacePath
-      ? savedAlignStateKey(workspacePath, locked.pos)
-      : null;
-    const cleanup = loadCanvasResources({
-      start: () => {
-        studioAlignUiActions.setContrast(setUi, null);
-        studioAlignUiActions.setFrameLoading(setUi, true);
-        studioAlignUiActions.setError(setUi, null);
-        studioAlignUiActions.setStatus(setUi, "Loading frame");
-      },
-      load: (signal) =>
-        runClientEffect(
-          Effect.all([
-            loadFrameEffect(studioClient, source, locked, null),
-            workspacePath
-              ? studioClient.loadAlignState(workspacePath, locked.pos)
-              : Effect.succeed(null as SavedAlignState | null),
-          ]),
-          {
-            signal,
-          },
-        ),
-      commit: ([nextFrame, savedAlignState]) => {
-        studioAlignUiActions.applyLoadedFrame(
-          setUi,
-          locked,
-          nextFrame,
-          alignStateKey
-            ? {
-                stateKey: alignStateKey,
-                pos: locked.pos,
-                saved: savedAlignState,
-              }
-            : null,
-        );
-      },
-      reject: (cause) => {
-        studioAlignUiActions.setFrame(setUi, null);
-        studioAlignUiActions.setError(
-          setUi,
-          cause instanceof Error && cause.message.startsWith("Frame request failed")
-            ? effectErrorMessage(cause)
-            : toErrorMessage(cause, "Frame or saved align state load failed"),
-        );
-      },
-      settle: () => studioAlignUiActions.setFrameLoading(setUi, false),
-    });
-    onCleanup(cleanup);
-  });
-  createEffect(() => {
-    const contrast = navContrast();
-    if (!contrast) {
-      return;
-    }
-    const { source, scan } = untrack(() => ({
-      source: navSource(),
-      scan: navScan(),
-    }));
-    const positions = untrack(() => alignPositions());
-    const locked = untrack(() => lockedSelection());
-    if (!source || !scan || positions.length === 0) {
-      return;
-    }
-    const cleanup = loadCanvasResources({
-      start: () => {
-        studioAlignUiActions.setFrameLoading(setUi, true);
-        studioAlignUiActions.setError(setUi, null);
-      },
-      load: (signal) =>
-        runClientEffect(loadFrameEffect(studioClient, source, locked, contrast), {
-          signal,
-        }),
-      commit: (nextFrame) => {
-        studioAlignUiActions.setFrame(setUi, nextFrame);
-        studioAlignUiActions.setStatus(setUi, null);
-      },
-      reject: (cause) => {
-        studioAlignUiActions.setError(
-          setUi,
-          cause instanceof Error && cause.message.startsWith("Frame request failed")
-            ? effectErrorMessage(cause)
-            : toErrorMessage(cause, "Frame contrast update failed"),
-        );
-      },
-      settle: () => studioAlignUiActions.setFrameLoading(setUi, false),
-    });
-    onCleanup(cleanup);
   });
   return {
     get workspacePath() {
@@ -605,17 +316,22 @@ export function useStudioAlignState(): StudioAlignState {
       return ui().saving;
     },
     get cropping() {
-      const progress = cropProgress();
-      return progress != null && !isDoneCropStatus(progress.status);
+      return session.meta().cropping;
     },
     get cropProgress() {
-      return cropProgress();
+      return ui().cropProgress;
     },
     get cropStartConfirm() {
       return cropStartConfirm();
     },
     get cropConfirm() {
-      return cropConfirm();
+      const confirmation = session.crop.confirm();
+      return confirmation
+        ? {
+            positions: confirmation.positions,
+            existingPositions: confirmation.existingPositions,
+          }
+        : null;
     },
     get findingFirstUnaligned() {
       return findingFirstUnaligned();
@@ -631,23 +347,12 @@ export function useStudioAlignState(): StudioAlignState {
     goToFirstUnaligned,
     startConfirmedCrop,
     cancelCropStartConfirm,
-    confirmCropOverwrite,
-    skipExistingCrop,
-    cancelCropConfirm,
-    cancelCrop,
+    confirmCropOverwrite: session.crop.confirmOverwrite,
+    skipExistingCrop: session.crop.skipExisting,
+    cancelCropConfirm: session.crop.cancelConfirm,
+    cancelCrop: session.crop.cancel,
     applySmartExclusion,
     saveAndAdvanceWithModelCells,
     reportError: setError,
   };
-}
-
-function useSelectedAtomValue<A>(selectAtom: () => Atom.Atom<A>): Accessor<A> {
-  const registry = useContext(RegistryContext);
-  const [value, setValue] = createSignal(registry.get(selectAtom()));
-  createEffect(() => {
-    const atom = selectAtom();
-    setValue(() => registry.get(atom));
-    onCleanup(registry.subscribe(atom, setValue as (next: A) => void));
-  });
-  return value;
 }

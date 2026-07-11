@@ -9,14 +9,12 @@ Shared libraries under `packages/*`. Apps import these via workspace protocol (`
 | `@lisca/contracts`   | Wire + on-disk assay schemas (Effect Schema). Subpath `@lisca/contracts/assay` for wizard/UI assay types.                          |
 | `@lisca/utils`       | Client-side imaging helpers (frames, contrast, align grid, annotate masks, server address storage, crop status).                   |
 | `@lisca/client`      | Effect runtime, HTTP/WS ports, session hooks, studio assay JSON helpers, Effect Atom query layers.                                 |
-| `@lisca/analysis`    | Shared studio results UI: CSV/plot parsing, assay catalog constants, `createAnalysisPanelAtoms`.                                   |
-| `@lisca/ui-headless` | Framework-agnostic UI logic (host file picker, crop confirm copy, canvas status types, shortcuts).                                 |
-| `@lisca/ui`          | Web imaging UI (zaidan/Kobalte + Tailwind). Re-exports headless types through `@lisca/ui/features`.                                          |
-| `@lisca/ui-native`   | React Native / Skia imaging UI. Same re-export pattern as `@lisca/ui`.                                                             |
+| `@lisca/analysis`    | Shared Studio results model: CSV/plot parsing, assay catalog constants, `createAnalysisPanelAtoms`.                                |
+| `@lisca/ui-headless` | Shared non-DOM SolidJS state and UI logic (host picker, canvas handlers, status types, shortcuts).                                 |
+| `@lisca/ui`          | SolidJS web imaging UI (zaidan/Kobalte + Tailwind). Re-exports shared UI types through `@lisca/ui/features`.                       |
 | `@lisca/web-app`     | Vite web shell: port factory (`createLiscaPort`), shared CSS entry, host operations.                                               |
-| `@lisca/mobile-app`  | Expo shell: `createLiscaMobilePort`, storage bootstrap, host operations.                                                           |
 | `@lisca/web-demo`    | Browser-only demo helpers (`@lisca/web-demo/browser` — image load, contrast). Former `browser-frame` package.                      |
-| `@lisca/storage`     | Sync storage abstraction (localStorage / sessionStorage / AsyncStorage).                                                           |
+| `@lisca/storage`     | Sync storage abstraction with browser defaults and configurable adapters.                                                          |
 | `@lisca/smart`       | Browser ML via transformers.js: `./segment` (SAM masks), `./segment/browser` (hook), `./exclude/browser` (ResNet smart exclusion). |
 
 Desktop Tauri wrappers live under `apps/*/desktop`, not in `packages/*`.
@@ -71,7 +69,7 @@ Barrel: `@lisca/utils` re-exports all modules.
 
 ## UI type re-exports
 
-Apps should import shared UI types from `@lisca/ui/features` (web) or `@lisca/ui-native/features` (mobile), not directly from `@lisca/ui-headless/*`, unless the app already depends on headless.
+Apps should import shared UI types from `@lisca/ui/features`, not directly from `@lisca/ui-headless/*`, unless the app already depends on headless.
 
 Examples: `AnnotationMode`, `HostFilePickerMode`, `cropConfirmCopy`.
 
@@ -84,9 +82,9 @@ Examples: `AnnotationMode`, `HostFilePickerMode`, `cropConfirmCopy`.
 ## Verification
 
 ```sh
-bun install
-bun run typecheck
-bun run check:contracts
+vp install
+vp run typecheck
+vp run check:contracts
 ```
 
-After schema changes: `bun run --cwd packages/contracts generate` and `rust-types` as documented in [contracts.md](./contracts.md).
+After schema changes, run the filtered `generate` and `rust-types` tasks documented in [contracts.md](./contracts.md).

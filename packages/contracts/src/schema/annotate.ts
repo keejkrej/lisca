@@ -1,6 +1,6 @@
 import * as Schema from "effect/Schema";
 
-import { AlignerSourceSchema } from "./shared";
+import { AlignerSourceSchema, ContrastWindowSchema } from "./shared";
 import { NumArray, StrArray, U32 } from "./primitives";
 import { RoiBboxSchema } from "./roi-bbox";
 
@@ -76,6 +76,36 @@ export const LoadedRoiFrameAnnotationSchema = Schema.Struct({
   maskBase64Png: Schema.NullOr(Schema.String),
 }).annotations({ identifier: "LoadedRoiFrameAnnotation" });
 
+export const ScanRoiWorkspaceRequestSchema = Schema.Struct({
+  workspacePath: Schema.String,
+}).annotations({ identifier: "ScanRoiWorkspaceRequest" });
+
+export const LoadAnnotationLabelsRequestSchema = Schema.Struct({
+  workspacePath: Schema.String,
+}).annotations({ identifier: "LoadAnnotationLabelsRequest" });
+
+export const SaveAnnotationLabelsRequestSchema = Schema.Struct({
+  workspacePath: Schema.String,
+  labels: AnnotationLabelArraySchema,
+}).annotations({ identifier: "SaveAnnotationLabelsRequest" });
+
+export const LoadRoiFrameRequestSchema = Schema.Struct({
+  workspacePath: Schema.String,
+  request: RoiFrameRequestSchema,
+  contrast: Schema.NullOr(ContrastWindowSchema),
+}).annotations({ identifier: "LoadRoiFrameRequest" });
+
+export const LoadRoiFrameAnnotationRequestSchema = Schema.Struct({
+  workspacePath: Schema.String,
+  request: RoiFrameRequestSchema,
+}).annotations({ identifier: "LoadRoiFrameAnnotationRequest" });
+
+export const SaveRoiFrameAnnotationRequestSchema = Schema.Struct({
+  workspacePath: Schema.String,
+  request: RoiFrameRequestSchema,
+  annotation: RoiFrameAnnotationPayloadSchema,
+}).annotations({ identifier: "SaveRoiFrameAnnotationRequest" });
+
 export type RoiFrameRequest = typeof RoiFrameRequestSchema.Type;
 export type RoiIndexEntry = typeof RoiIndexEntrySchema.Type;
 export type RoiIndexFile = typeof RoiIndexFileSchema.Type;
@@ -85,3 +115,9 @@ export type AnnotationLabel = typeof AnnotationLabelSchema.Type;
 export type RoiFrameAnnotation = typeof RoiFrameAnnotationSchema.Type;
 export type RoiFrameAnnotationPayload = typeof RoiFrameAnnotationPayloadSchema.Type;
 export type LoadedRoiFrameAnnotation = typeof LoadedRoiFrameAnnotationSchema.Type;
+export type ScanRoiWorkspaceRequest = typeof ScanRoiWorkspaceRequestSchema.Type;
+export type LoadAnnotationLabelsRequest = typeof LoadAnnotationLabelsRequestSchema.Type;
+export type SaveAnnotationLabelsRequest = typeof SaveAnnotationLabelsRequestSchema.Type;
+export type LoadRoiFrameRequest = typeof LoadRoiFrameRequestSchema.Type;
+export type LoadRoiFrameAnnotationRequest = typeof LoadRoiFrameAnnotationRequestSchema.Type;
+export type SaveRoiFrameAnnotationRequest = typeof SaveRoiFrameAnnotationRequestSchema.Type;

@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "identifier": "com.lisca.studio",
   "build": {
-    "beforeDevCommand": "bun --filter @lisca/studio-web dev",
+    "beforeDevCommand": "vp run --filter @lisca/studio-web dev",
     "beforeBuildCommand": "",
     "devUrl": "http://127.0.0.1:8767",
     "frontendDist": "../../web/dist"

@@ -23,7 +23,7 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "lisca",
- "serde",
+ "lisca-server-common",
  "tokio",
 ]
 
@@ -67,7 +67,6 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "lisca",
- "serde",
  "tokio",
 ]
 
@@ -2373,6 +2372,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "lisca-server-common"
+version = "0.1.0"
+
+[[package]]
 name = "lisca-tauri"
 version = "0.1.0"
 dependencies = [
@@ -4283,7 +4286,7 @@ dependencies = [
  "axum",
  "base64 0.22.1",
  "lisca",
- "serde",
+ "lisca-server-common",
  "tokio",
 ]
 

@@ -20,5 +20,4 @@ path = "src/main.rs"
 [dependencies]
 axum.workspace = true
 lisca.workspace = true
-serde.workspace = true
 tokio.workspace = true

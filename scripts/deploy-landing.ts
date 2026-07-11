@@ -7,7 +7,7 @@
  *
  * Usage:
  *   vp run deploy:landing
- *   bun scripts/deploy-landing.ts [--skip-build]
+ *   vp exec bun scripts/deploy-landing.ts [--skip-build]
  */
 import { existsSync, mkdirSync, rmSync, cpSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";

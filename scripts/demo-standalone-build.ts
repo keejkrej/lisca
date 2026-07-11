@@ -9,7 +9,7 @@ if (process.env.LISCA_BUILD_DEMO_SITE !== "1") {
 }
 
 const result = Bun.spawnSync({
-  cmd: ["bun", "run", "build:site"],
+  cmd: ["vp", "run", "build:site"],
   cwd: process.cwd(),
   stdio: ["inherit", "inherit", "inherit"],
 });

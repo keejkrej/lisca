@@ -1,10 +1,5 @@
-import type {
-  AnnotationLabel,
-  RoiFrameRequest,
-  RoiIndexEntry,
-  RoiPositionScan,
-} from "@lisca/contracts";
-import type { FrameResult } from "@lisca/utils";
+import type { AnnotationLabel, RoiFrameRequest } from "@lisca/contracts";
+import { maskHasPixels, type FrameResult } from "@lisca/utils";
 import { resultData, resultLoading } from "../atoms/result-utils";
 import {
   useAnnotateSessionCore,
@@ -19,12 +14,10 @@ import type {
   RoiSelection,
   StateUpdater,
 } from "../atoms/annotator-ui";
+import { currentRoi, requestKey } from "../atoms/annotator-ui";
 import { toolCanRunWithoutLabel } from "@lisca/ui-headless/annotation-tools";
 import { toClientError } from "../infra/client-error";
-import {
-  frameLoadRequest,
-  shouldRunContrastFrameLoad,
-} from "../session/frame-load-policy";
+import { frameLoadRequest, shouldRunContrastFrameLoad } from "../session/frame-load-policy";
 import type { AnnotatorDataPort } from "../ports/types";
 import type { Atom, Result } from "@effect-atom/atom-solid";
 import { RegistryContext, useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-solid";
@@ -39,50 +32,38 @@ import {
   type Accessor,
 } from "solid-js";
 import type { DirtySelectionGuard } from "./annotate-selection-guard";
+import {
+  annotationSessionErrorMessage,
+  emptyAnnotationValue,
+  encodeMaskToBase64Png,
+  loadRoiFrameEffect,
+  loadRoiFrameWithAnnotationEffect,
+  makeRoiFrameRequest,
+  useAnnotationHistory,
+} from "../session/annotation-session";
 
-export type AnnotationHistoryHandle = {
-  current: {
-    classificationLabelId: string | null;
-    mask: Uint8Array;
-  };
-  dirty: boolean;
-  canUndo: boolean;
-  canRedo: boolean;
-  reset: (value: { classificationLabelId: string | null; mask: Uint8Array }) => void;
-  commit: (value: { classificationLabelId: string | null; mask: Uint8Array }) => void;
-  undo: () => void;
-  redo: () => void;
-  discard: () => void;
-  markSaved: () => void;
-};
+export {
+  AnnotationHistory,
+  annotationOutputPaths,
+  annotationSessionErrorMessage,
+  annotationValuesEqual,
+  cloneAnnotationValue,
+  createRoiFrameLoader,
+  decodeMaskBase64Png,
+  emptyAnnotationValue,
+  encodeMaskToBase64Png,
+  loadRoiFrameEffect,
+  loadRoiFrameWithAnnotationEffect,
+  makeRoiFrameRequest,
+  useAnnotationHistory,
+} from "../session/annotation-session";
+export type { AnnotationHistoryHandle, AnnotationValue } from "../session/annotation-session";
 
-export type UseAnnotateStateCoreDeps = {
+export type UseAnnotateStateCoreDeps<State extends AnnotatorUiState = AnnotatorUiState> = {
   annotatorClient: AnnotatorDataPort;
   toErrorMessage: (cause: unknown, fallback: string) => string;
-  effectErrorMessage: (cause: unknown, fallback: string) => string;
-  loadRoiFrameWithAnnotationEffect: (
-    backend: AnnotatorDataPort,
-    workspacePath: string,
-    request: RoiFrameRequest,
-    contrast: AnnotatorUiState["contrast"],
-  ) => import("effect").Effect.Effect<
-    {
-      frame: FrameResult;
-      annotation: {
-        classificationLabelId: string | null;
-        mask: Uint8Array;
-      };
-    },
-    import("../infra/client-error.ts").ClientError
-  >;
-  loadRoiFrameEffect: (
-    backend: AnnotatorDataPort,
-    workspacePath: string,
-    request: RoiFrameRequest,
-    contrast: AnnotatorUiState["contrast"],
-  ) => import("effect").Effect.Effect<FrameResult, import("../infra/client-error.ts").ClientError>;
-  annotatorUiAtom: AnnotatorUiAtom;
-  annotatorUiActions: AnnotatorUiActions;
+  annotatorUiAtom: AnnotatorUiAtom<State>;
+  annotatorUiActions: AnnotatorUiActions<State>;
   roiWorkspaceScanAtom: (
     workspacePath: string,
   ) => Atom.Atom<Result.Result<import("@lisca/contracts").RoiWorkspaceScan, unknown>>;
@@ -117,30 +98,11 @@ export type UseAnnotateStateCoreDeps = {
   ) => () => void;
   useCanvasTransientStatus: (status: Accessor<string | null>) => Accessor<string | null>;
   guardDirtySelection: DirtySelectionGuard;
-  useAnnotationHistory: (frame: FrameResult | null) => AnnotationHistoryHandle;
-  emptyValueFor: (frame: FrameResult | null) => {
-    classificationLabelId: string | null;
-    mask: Uint8Array;
-  };
-  makeRequest: (
-    position: RoiPositionScan | null,
-    selectedRoi: RoiIndexEntry | null,
-    channel: number | null,
-    timeIndex: number,
-    zIndex: number,
-  ) => RoiFrameRequest | null;
-  currentRoi: (position: RoiPositionScan | null, roi: number | null) => RoiIndexEntry | null;
-  requestKey: (
-    position: RoiPositionScan | null,
-    roi: RoiIndexEntry | null,
-    selection: RoiSelection,
-  ) => string;
-  roiRequestSelectionKey: (selection: RoiSelection) => string;
-  encodeMaskToBase64Png: (mask: Uint8Array, width: number, height: number) => Promise<string>;
-  maskHasPixels: (mask: Uint8Array) => boolean;
 };
 
-export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
+export function useAnnotateStateCore<State extends AnnotatorUiState>(
+  deps: UseAnnotateStateCoreDeps<State>,
+) {
   const workspace = deps.useShellWorkspace();
   const shellWorkspacePath = () => workspace.workspacePath;
   const [filePickerOpen, setFilePickerOpen] = createSignal(false);
@@ -174,7 +136,7 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
     toErrorMessage: deps.toErrorMessage,
   });
 
-  const annotation = deps.useAnnotationHistory(null);
+  const annotation = useAnnotationHistory();
   const resetAnnotation = (value: { classificationLabelId: string | null; mask: Uint8Array }) =>
     annotation.reset(value);
   let selectionChanging = false;
@@ -186,8 +148,8 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
     const currentUi = session.state();
     const labels = [...(resultData(labelsResult()) ?? [])];
     const position = session.derived().position;
-    const selectedRoi = deps.currentRoi(position, currentUi.selection.roi);
-    const request = deps.makeRequest(
+    const selectedRoi = currentRoi(position, currentUi.selection.roi);
+    const request = makeRoiFrameRequest(
       position,
       selectedRoi,
       currentUi.selection.channel,
@@ -199,7 +161,7 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
       position,
       selectedRoi,
       request,
-      activeRequestKey: deps.requestKey(position, selectedRoi, currentUi.selection),
+      activeRequestKey: requestKey(position, selectedRoi, currentUi.selection),
     };
   });
 
@@ -210,7 +172,7 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
     const request = untrack(() => requestContext().request);
     if (!workspacePath || workspacePath !== shellPath || !request) {
       deps.annotatorUiActions.setFrame(setUi, null);
-      resetAnnotation(deps.emptyValueFor(null));
+      resetAnnotation(emptyAnnotationValue(null));
       deps.annotatorUiActions.setFrameLoading(setUi, false);
       deps.annotatorUiActions.setAnnotationLoading(setUi, false);
       return;
@@ -233,14 +195,12 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
       },
       load: (signal) =>
         runClientEffect(
-          deps
-            .loadRoiFrameWithAnnotationEffect(
-              deps.annotatorClient,
-              workspacePath,
-              request,
-              frameLoadRequest({ kind: "navigation", contrast: null }),
-            )
-            .pipe(Effect.mapError(toClientError)),
+          loadRoiFrameWithAnnotationEffect(
+            deps.annotatorClient,
+            workspacePath,
+            request,
+            frameLoadRequest({ kind: "navigation", contrast: null }),
+          ).pipe(Effect.mapError(toClientError)),
           {
             signal,
           },
@@ -253,10 +213,10 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
       },
       reject: (cause) => {
         deps.annotatorUiActions.setFrame(setUi, null);
-        resetAnnotation(deps.emptyValueFor(null));
+        resetAnnotation(emptyAnnotationValue(null));
         deps.annotatorUiActions.setFrameError(
           setUi,
-          deps.effectErrorMessage(cause, "ROI frame and annotation request failed"),
+          annotationSessionErrorMessage(cause, "ROI frame and annotation request failed"),
         );
       },
       settle: () => {
@@ -286,14 +246,12 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
       },
       load: (signal) =>
         runClientEffect(
-          deps
-            .loadRoiFrameEffect(
-              deps.annotatorClient,
-              workspacePath,
-              request,
-              frameLoadRequest({ kind: "contrast", contrast }),
-            )
-            .pipe(Effect.mapError(toClientError)),
+          loadRoiFrameEffect(
+            deps.annotatorClient,
+            workspacePath,
+            request,
+            frameLoadRequest({ kind: "contrast", contrast }),
+          ).pipe(Effect.mapError(toClientError)),
           { signal },
         ),
       commit: (nextFrame) => {
@@ -303,7 +261,7 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
       reject: (cause) => {
         deps.annotatorUiActions.setFrameError(
           setUi,
-          deps.effectErrorMessage(cause, "ROI frame contrast update failed"),
+          annotationSessionErrorMessage(cause, "ROI frame contrast update failed"),
         );
       },
       settle: () => deps.annotatorUiActions.setFrameLoading(setUi, false),
@@ -327,14 +285,14 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
     deps.annotatorUiActions.setSaving(setUi, true);
     deps.annotatorUiActions.setSaveError(setUi, null);
     try {
-      const segmentationMask = deps.maskHasPixels(currentAnnotation.current.mask);
+      const segmentationMask = maskHasPixels(currentAnnotation.current.mask);
       await runSaveAnnotation({
         workspacePath: shellPath,
         request,
         annotation: {
           classificationLabelId: currentAnnotation.current.classificationLabelId,
           maskBase64Png: segmentationMask
-            ? await deps.encodeMaskToBase64Png(
+            ? await encodeMaskToBase64Png(
                 currentAnnotation.current.mask,
                 currentUi.frame.width,
                 currentUi.frame.height,

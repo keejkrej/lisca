@@ -54,6 +54,10 @@ export const MemoryTouchResponseSchema = Schema.Struct({
   ok: Schema.Boolean,
 }).annotations({ identifier: "MemoryTouchResponse" });
 
+export const MemoryRecentQuerySchema = Schema.Struct({
+  type: MemoryKindSchema,
+}).annotations({ identifier: "MemoryRecentQuery" });
+
 export type MemoryKind = typeof MemoryKindSchema.Type;
 export type MemoryWorkspaceEntry = typeof MemoryWorkspaceEntrySchema.Type;
 export type MemorySourceEntry = typeof MemorySourceEntrySchema.Type;
@@ -61,3 +65,4 @@ export type MemoryAssayEntry = typeof MemoryAssayEntrySchema.Type;
 export type MemoryTouchRequest = typeof MemoryTouchRequestSchema.Type;
 export type MemoryRecentResponse = typeof MemoryRecentResponseSchema.Type;
 export type MemoryTouchResponse = typeof MemoryTouchResponseSchema.Type;
+export type MemoryRecentQuery = typeof MemoryRecentQuerySchema.Type;

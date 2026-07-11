@@ -3,37 +3,51 @@ import * as Schema from "effect/Schema";
 
 import {
   AlignOutputPathsSchema,
+  AnalysisProgressQuerySchema,
   AnalysisProgressSchema,
   AnalysisStartRequestSchema,
   AnnotationLabelArraySchema,
-  ContrastWindowSchema,
+  CancelCropRoiRequestSchema,
+  CropRoiProgressQuerySchema,
   CropRoiProgressSchema,
   CropRoiRequestSchema,
   CropRoiResponseSchema,
-  NullableCropRoiProgressSchema,
-  FramePayloadSchema,
   CreateDirectoryRequestSchema,
   CreateDirectoryResponseSchema,
+  FramePayloadSchema,
   HomeDirectoryResponseSchema,
+  HostListDirectoryQuerySchema,
   HostListDirectoryResultSchema,
+  LatestAnalysisQuerySchema,
+  LatestCropQuerySchema,
+  LoadAlignStateQuerySchema,
+  LoadAnnotationLabelsRequestSchema,
   LoadedRoiFrameAnnotationSchema,
   LoadFrameRequestSchema,
+  LoadRoiFrameAnnotationRequestSchema,
+  LoadRoiFrameRequestSchema,
+  MemoryRecentQuerySchema,
   NullableAnalysisProgressSchema,
+  NullableCropRoiProgressSchema,
   NullableSavedAlignStateSchema,
+  OutputPathsQuerySchema,
+  ReadTextFileQuerySchema,
   ReadTextFileResponseSchema,
-  RoiFrameAnnotationPayloadSchema,
   RoiFrameAnnotationSchema,
-  RoiFrameRequestSchema,
+  RoiPosExistsQuerySchema,
   RoiPosExistsResponseSchema,
   RoiWorkspaceScanSchema,
+  SaveAnnotationLabelsRequestSchema,
   SaveAssayJsonRequestSchema,
   SaveAssayJsonResponseSchema,
   SaveBboxRequestSchema,
   SaveBboxResponseSchema,
+  SavedBboxPositionsQuerySchema,
+  SaveRoiFrameAnnotationRequestSchema,
   SaveResultPdfRequestSchema,
   SaveResultPdfResponseSchema,
+  ScanRoiWorkspaceRequestSchema,
   ScanSourceRequestSchema,
-  MemoryKindSchema,
   MemoryRecentResponseSchema,
   MemoryTouchRequestSchema,
   MemoryTouchResponseSchema,
@@ -63,21 +77,17 @@ export class Unauthorized extends Schema.TaggedError<Unauthorized>()(
   HttpApiSchema.annotations({ status: 401 }),
 ) {}
 
-const U32Param = Schema.NumberFromString.annotations({
-  jsonSchema: { type: "integer", format: "uint32", minimum: 0 },
-});
-
 // --- fs group (shared host filesystem) ---------------------------------------
 const fsGroup = HttpApiGroup.make("fs")
   .add(
     HttpApiEndpoint.get("listDirectory", "/fs/list")
-      .setUrlParams(Schema.Struct({ path: Schema.optional(Schema.String) }))
+      .setUrlParams(HostListDirectoryQuerySchema)
       .addSuccess(HostListDirectoryResultSchema),
   )
   .add(HttpApiEndpoint.get("userHomeDirectory", "/fs/home").addSuccess(HomeDirectoryResponseSchema))
   .add(
     HttpApiEndpoint.get("readTextFile", "/fs/read-text")
-      .setUrlParams(Schema.Struct({ path: Schema.String }))
+      .setUrlParams(ReadTextFileQuerySchema)
       .addSuccess(ReadTextFileResponseSchema),
   )
   .add(
@@ -105,22 +115,22 @@ const alignGroup = HttpApiGroup.make("align")
   )
   .add(
     HttpApiEndpoint.get("loadAlignState", "/align/align-state")
-      .setUrlParams(Schema.Struct({ workspacePath: Schema.String, pos: U32Param }))
+      .setUrlParams(LoadAlignStateQuerySchema)
       .addSuccess(NullableSavedAlignStateSchema),
   )
   .add(
     HttpApiEndpoint.get("outputPaths", "/align/output-paths")
-      .setUrlParams(Schema.Struct({ pos: U32Param }))
+      .setUrlParams(OutputPathsQuerySchema)
       .addSuccess(AlignOutputPathsSchema),
   )
   .add(
     HttpApiEndpoint.get("listSavedBboxPositions", "/align/saved-bbox-positions")
-      .setUrlParams(Schema.Struct({ workspacePath: Schema.String }))
+      .setUrlParams(SavedBboxPositionsQuerySchema)
       .addSuccess(UIntArraySchema),
   )
   .add(
     HttpApiEndpoint.get("roiPosExists", "/align/roi-pos-exists")
-      .setUrlParams(Schema.Struct({ workspacePath: Schema.String, pos: U32Param }))
+      .setUrlParams(RoiPosExistsQuerySchema)
       .addSuccess(RoiPosExistsResponseSchema),
   )
   .add(
@@ -130,17 +140,17 @@ const alignGroup = HttpApiGroup.make("align")
   )
   .add(
     HttpApiEndpoint.post("cancelCropRoi", "/align/cancel-crop-roi")
-      .setPayload(Schema.Struct({ requestId: Schema.String }))
+      .setPayload(CancelCropRoiRequestSchema)
       .addSuccess(CropRoiProgressSchema),
   )
   .add(
     HttpApiEndpoint.get("cropRoiProgress", "/align/crop-roi-progress")
-      .setUrlParams(Schema.Struct({ requestId: Schema.String }))
+      .setUrlParams(CropRoiProgressQuerySchema)
       .addSuccess(CropRoiProgressSchema),
   )
   .add(
     HttpApiEndpoint.get("getLatestCropProgress", "/align/crop-latest")
-      .setUrlParams(Schema.Struct({ workspacePath: Schema.String }))
+      .setUrlParams(LatestCropQuerySchema)
       .addSuccess(NullableCropRoiProgressSchema),
   );
 
@@ -148,46 +158,32 @@ const alignGroup = HttpApiGroup.make("align")
 const annotateGroup = HttpApiGroup.make("annotate")
   .add(
     HttpApiEndpoint.post("scanRoiWorkspace", "/annotate/scan-roi-workspace")
-      .setPayload(Schema.Struct({ workspacePath: Schema.String }))
+      .setPayload(ScanRoiWorkspaceRequestSchema)
       .addSuccess(RoiWorkspaceScanSchema),
   )
   .add(
     HttpApiEndpoint.post("loadLabels", "/annotate/load-labels")
-      .setPayload(Schema.Struct({ workspacePath: Schema.String }))
+      .setPayload(LoadAnnotationLabelsRequestSchema)
       .addSuccess(AnnotationLabelArraySchema),
   )
   .add(
     HttpApiEndpoint.post("saveLabels", "/annotate/save-labels")
-      .setPayload(
-        Schema.Struct({ workspacePath: Schema.String, labels: AnnotationLabelArraySchema }),
-      )
+      .setPayload(SaveAnnotationLabelsRequestSchema)
       .addSuccess(AnnotationLabelArraySchema),
   )
   .add(
     HttpApiEndpoint.post("loadRoiFrame", "/annotate/load-roi-frame")
-      .setPayload(
-        Schema.Struct({
-          workspacePath: Schema.String,
-          request: RoiFrameRequestSchema,
-          contrast: Schema.NullOr(ContrastWindowSchema),
-        }),
-      )
+      .setPayload(LoadRoiFrameRequestSchema)
       .addSuccess(FramePayloadSchema),
   )
   .add(
     HttpApiEndpoint.post("loadRoiFrameAnnotation", "/annotate/load-roi-frame-annotation")
-      .setPayload(Schema.Struct({ workspacePath: Schema.String, request: RoiFrameRequestSchema }))
+      .setPayload(LoadRoiFrameAnnotationRequestSchema)
       .addSuccess(LoadedRoiFrameAnnotationSchema),
   )
   .add(
     HttpApiEndpoint.post("saveRoiFrameAnnotation", "/annotate/save-roi-frame-annotation")
-      .setPayload(
-        Schema.Struct({
-          workspacePath: Schema.String,
-          request: RoiFrameRequestSchema,
-          annotation: RoiFrameAnnotationPayloadSchema,
-        }),
-      )
+      .setPayload(SaveRoiFrameAnnotationRequestSchema)
       .addSuccess(RoiFrameAnnotationSchema),
   );
 
@@ -214,11 +210,7 @@ const profileGroup = HttpApiGroup.make("profile")
 const memoryGroup = HttpApiGroup.make("memory")
   .add(
     HttpApiEndpoint.get("getRecentMemory", "/memory/recent")
-      .setUrlParams(
-        Schema.Struct({
-          type: MemoryKindSchema,
-        }),
-      )
+      .setUrlParams(MemoryRecentQuerySchema)
       .addSuccess(MemoryRecentResponseSchema)
       .addError(Unauthorized),
   )
@@ -248,17 +240,17 @@ const studioGroup = HttpApiGroup.make("studio")
   )
   .add(
     HttpApiEndpoint.get("getAnalysisProgress", "/studio/analysis-progress")
-      .setUrlParams(Schema.Struct({ requestId: Schema.String }))
+      .setUrlParams(AnalysisProgressQuerySchema)
       .addSuccess(AnalysisProgressSchema),
   )
   .add(
     HttpApiEndpoint.get("getLatestAnalysisProgress", "/studio/latest-analysis")
-      .setUrlParams(Schema.Struct({ workspacePath: Schema.String }))
+      .setUrlParams(LatestAnalysisQuerySchema)
       .addSuccess(NullableAnalysisProgressSchema),
   )
   .add(
     HttpApiEndpoint.get("getAnalysisResults", "/studio/analysis-results")
-      .setUrlParams(Schema.Struct({ workspacePath: Schema.String }))
+      .setUrlParams(LatestAnalysisQuerySchema)
       .addSuccess(NullableAnalysisProgressSchema),
   );
 

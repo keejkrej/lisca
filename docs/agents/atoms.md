@@ -19,16 +19,16 @@ export const { scanSourceAtom } = createAlignerQueryAtoms(runtime);
 
 **Imperative port calls** (`runClientEffect(client.*)`) handle ephemeral loads, explicit checkpoints, and long-running jobs. Do not add query atoms for these paths.
 
-| Concern | Aligner | Annotator | Studio |
-| ------- | ------- | --------- | ------ |
-| Source scan | `scanSourceAtom` | — | `scanSourceAtom` |
-| ROI workspace scan | — | `roiWorkspaceScanAtom` | `roiWorkspaceScanAtom` |
-| Annotation labels | — | `annotationLabelsAtom` | `annotationLabelsAtom` |
-| Label/annotation saves | — | `save*Atom` + invalidation | `save*Atom` + invalidation |
-| Analysis index/CSV | — | — | `analysisResultsAtom`, `analysisCsvAtom` |
-| Frame pixels | `loadFrameEffect` | `loadRoiFrameEffect` | both (align + annotate) |
-| Align checkpoint | `saveBbox` / `loadAlignState` (port) | — | same in align step |
-| Var/auto exclude | `computeAutoExcludePreview` (`@lisca/utils`) | — | same |
+| Concern                | Aligner                                      | Annotator                  | Studio                                   |
+| ---------------------- | -------------------------------------------- | -------------------------- | ---------------------------------------- |
+| Source scan            | `scanSourceAtom`                             | —                          | `scanSourceAtom`                         |
+| ROI workspace scan     | —                                            | `roiWorkspaceScanAtom`     | `roiWorkspaceScanAtom`                   |
+| Annotation labels      | —                                            | `annotationLabelsAtom`     | `annotationLabelsAtom`                   |
+| Label/annotation saves | —                                            | `save*Atom` + invalidation | `save*Atom` + invalidation               |
+| Analysis index/CSV     | —                                            | —                          | `analysisResultsAtom`, `analysisCsvAtom` |
+| Frame pixels           | `loadFrameEffect`                            | `loadRoiFrameEffect`       | both (align + annotate)                  |
+| Align checkpoint       | `saveBbox` / `loadAlignState` (port)         | —                          | same in align step                       |
+| Var/auto exclude       | `computeAutoExcludePreview` (`@lisca/utils`) | —                          | same                                     |
 
 **Not query-backed (by design):** frame loads, per-navigation align state, bbox save/list, crop jobs, one-off `readTextFile` / assay saves.
 
@@ -45,7 +45,7 @@ Query atoms use `Atom.withReactivity([ReactivityKeys.…])`. Shared key helpers 
 - **`Atom.keepAlive`**: scan sources, ROI workspace scans, annotation labels, analysis CSV/panels — data that should survive param churn within a session.
 - **Default (no keepAlive)**: ephemeral UI writable atoms unless persisted manually to `sessionStorage`.
 
-## Result handling in React
+## Result handling in SolidJS
 
 Use helpers from `result-utils.ts`:
 

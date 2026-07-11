@@ -25,6 +25,19 @@ function runReducer(
   return next;
 }
 
+function createMemoryStorage(): LiscaStorageAdapter {
+  const items = new Map<string, string>();
+  return {
+    getItem: (key) => items.get(key) ?? null,
+    setItem: (key, value) => {
+      items.set(key, value);
+    },
+    removeItem: (key) => {
+      items.delete(key);
+    },
+  };
+}
+
 const position: RoiPositionScan = {
   pos: 1,
   channels: [0, 1],
@@ -136,22 +149,33 @@ describe("annotator-ui actions", () => {
     expect(next.frame).toBeNull();
     expect(next.contrast).toBeNull();
   });
+
+  it("preserves host-specific state when reusing base actions", () => {
+    type ExtendedState = AnnotatorUiState & {
+      analysisRequestId: string | null;
+    };
+    const extendedActions = createAnnotatorUiActions<ExtendedState>({
+      write: () => undefined,
+    });
+    let state: ExtendedState = {
+      ...createInitialAnnotatorUiState(),
+      workspacePath: "/old",
+      analysisRequestId: "analysis-1",
+    };
+    const set = (update: ExtendedState | ((current: ExtendedState) => ExtendedState)) => {
+      state = typeof update === "function" ? update(state) : update;
+    };
+
+    extendedActions.setMode(set, "segmentation");
+    extendedActions.setWorkspacePath(set, "/new");
+
+    expect(state.mode).toBe("segmentation");
+    expect(state.workspacePath).toBe("/new");
+    expect(state.analysisRequestId).toBe("analysis-1");
+  });
 });
 
 describe("createAnnotatorPersist", () => {
-  function createMemoryStorage(): LiscaStorageAdapter {
-    const items = new Map<string, string>();
-    return {
-      getItem: (key) => items.get(key) ?? null,
-      setItem: (key, value) => {
-        items.set(key, value);
-      },
-      removeItem: (key) => {
-        items.delete(key);
-      },
-    };
-  }
-
   beforeEach(() => {
     configureLiscaStorage({
       local: createMemoryStorage(),

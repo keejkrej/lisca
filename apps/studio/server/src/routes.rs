@@ -5,29 +5,17 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
+use lisca::http::FsError;
 use lisca::{
     analysis,
     protocol::{
-        AnalysisProgress, AnalysisStartRequest, SaveAssayJsonRequest, SaveAssayJsonResponse,
-        SaveResultPdfRequest, SaveResultPdfResponse,
+        AnalysisProgress, AnalysisProgressQuery, AnalysisStartRequest, LatestAnalysisQuery,
+        SaveAssayJsonRequest, SaveAssayJsonResponse, SaveResultPdfRequest, SaveResultPdfResponse,
     },
 };
-use lisca::http::FsError;
-use serde::Deserialize;
+use lisca_server_common::normalize_workspace_path;
 
-use crate::analysis::{normalize_workspace_path, HasAnalysisJobs};
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct AnalysisProgressQuery {
-    request_id: String,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct LatestAnalysisQuery {
-    workspace_path: String,
-}
+use crate::analysis::HasAnalysisJobs;
 
 pub fn router<S>() -> Router<S>
 where
@@ -40,7 +28,10 @@ where
             post(save_result_pdf_handler).layer(DefaultBodyLimit::max(32 * 1024 * 1024)),
         )
         .route("/studio/start-analysis", post(start_analysis_handler::<S>))
-        .route("/studio/analysis-progress", get(analysis_progress_handler::<S>))
+        .route(
+            "/studio/analysis-progress",
+            get(analysis_progress_handler::<S>),
+        )
         .route(
             "/studio/latest-analysis",
             get(analysis_latest_progress_handler::<S>),
@@ -136,31 +127,26 @@ async fn start_analysis_handler<S: HasAnalysisJobs>(
         result_files: Vec::new(),
         error: None,
     };
-    {
-        let mut jobs = analysis
-            .jobs
-            .lock()
-            .map_err(|_| FsError::new("analysis job state is poisoned"))?;
-        if jobs.contains_key(&request_id) {
-            return Err(FsError::new("analysis request id already exists"));
-        }
-        jobs.insert(request_id.clone(), initial.clone());
-        let mut requests = analysis
-            .workspace_requests
-            .lock()
-            .map_err(|_| FsError::new("analysis workspace request map is poisoned"))?;
-        requests.insert(workspace_path.clone(), request_id.clone());
+    let inserted = analysis
+        .insert_unique(
+            request_id.clone(),
+            Some(workspace_path.clone()),
+            initial.clone(),
+        )
+        .map_err(|_| FsError::new("analysis job state is poisoned"))?;
+    if !inserted {
+        return Err(FsError::new("analysis request id already exists"));
     }
-    let jobs = analysis.jobs.clone();
+    let jobs = analysis.clone();
     let path = PathBuf::from(workspace_path.clone());
     let run_request_id = request_id.clone();
     tokio::spawn(async move {
         let update_progress = {
             let jobs = jobs.clone();
             move |progress: AnalysisProgress| {
-                if let Ok(mut jobs) = jobs.lock() {
-                    jobs.insert(progress.request_id.clone(), progress.clone());
-                }
+                let _ = jobs.update(&progress.request_id, |current| {
+                    *current = progress.clone();
+                });
             }
         };
 
@@ -178,9 +164,9 @@ async fn start_analysis_handler<S: HasAnalysisJobs>(
                     result_files,
                     error: None,
                 };
-                if let Ok(mut jobs) = jobs.lock() {
-                    jobs.insert(final_progress.request_id.clone(), final_progress.clone());
-                }
+                let _ = jobs.update(&final_progress.request_id, |current| {
+                    *current = final_progress.clone();
+                });
             }
             Err(error) => {
                 let final_progress = AnalysisProgress {
@@ -192,9 +178,9 @@ async fn start_analysis_handler<S: HasAnalysisJobs>(
                     result_files: Vec::new(),
                     error: Some(error),
                 };
-                if let Ok(mut jobs) = jobs.lock() {
-                    jobs.insert(final_progress.request_id.clone(), final_progress.clone());
-                }
+                let _ = jobs.update(&final_progress.request_id, |current| {
+                    *current = final_progress.clone();
+                });
             }
         }
     });
@@ -207,12 +193,9 @@ async fn analysis_progress_handler<S: HasAnalysisJobs>(
     Query(query): Query<AnalysisProgressQuery>,
 ) -> Result<Json<AnalysisProgress>, FsError> {
     let analysis = state.analysis_jobs();
-    let jobs = analysis
-        .jobs
-        .lock()
-        .map_err(|_| FsError::new("analysis job state is poisoned"))?;
-    jobs.get(&query.request_id)
-        .cloned()
+    analysis
+        .get(&query.request_id)
+        .map_err(|_| FsError::new("analysis job state is poisoned"))?
         .map(Json)
         .ok_or_else(|| FsError::new("analysis job not found"))
 }
@@ -227,15 +210,10 @@ async fn analysis_latest_progress_handler<S: HasAnalysisJobs>(
         return Err(FsError::new("analysis workspace path is required"));
     }
 
-    let request_id = {
-        let requests = analysis
-            .workspace_requests
-            .lock()
-            .map_err(|_| FsError::new("analysis workspace request map is poisoned"))?;
-        requests.get(&workspace_path).cloned()
-    };
-
-    let Some(request_id) = request_id else {
+    let latest = analysis
+        .latest(&workspace_path)
+        .map_err(|_| FsError::new("analysis job state is poisoned"))?;
+    let Some(progress) = latest else {
         let workspace = Path::new(&workspace_path);
         let result_files = match analysis::workspace_analysis_manifest(workspace) {
             Ok(result_files) if !result_files.is_empty() => result_files,
@@ -254,12 +232,7 @@ async fn analysis_latest_progress_handler<S: HasAnalysisJobs>(
         };
         return Ok(Json(Some(synthetic)));
     };
-
-    let jobs = analysis
-        .jobs
-        .lock()
-        .map_err(|_| FsError::new("analysis job state is poisoned"))?;
-    Ok(Json(jobs.get(&request_id).cloned()))
+    Ok(Json(Some(progress)))
 }
 
 async fn analysis_results_handler(

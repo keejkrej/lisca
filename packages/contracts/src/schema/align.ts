@@ -1,7 +1,7 @@
 import * as Schema from "effect/Schema";
 
 import { AlignerSourceSchema, ContrastWindowSchema, FrameRequestSchema } from "./shared";
-import { F64, I32, NumArray, U32 } from "./primitives";
+import { F64, I32, NumArray, U32, U32FromString } from "./primitives";
 
 export const AlignGridShapeSchema = Schema.Literal("rect", "square", "hex").annotations({
   identifier: "AlignGridShape",
@@ -137,10 +137,40 @@ export const LoadFrameRequestSchema = Schema.Struct({
 /** POST /align/save-bbox request body. */
 export const SaveBboxRequestSchema = Schema.Struct({
   workspacePath: Schema.String,
-  pos: Schema.Number,
+  pos: U32,
   csv: Schema.String,
   alignState: SavedAlignStateSchema,
 }).annotations({ identifier: "SaveBboxRequest" });
+
+export const LoadAlignStateQuerySchema = Schema.Struct({
+  workspacePath: Schema.String,
+  pos: U32FromString,
+}).annotations({ identifier: "LoadAlignStateQuery" });
+
+export const OutputPathsQuerySchema = Schema.Struct({
+  pos: U32FromString,
+}).annotations({ identifier: "OutputPathsQuery" });
+
+export const SavedBboxPositionsQuerySchema = Schema.Struct({
+  workspacePath: Schema.String,
+}).annotations({ identifier: "SavedBboxPositionsQuery" });
+
+export const RoiPosExistsQuerySchema = Schema.Struct({
+  workspacePath: Schema.String,
+  pos: U32FromString,
+}).annotations({ identifier: "RoiPosExistsQuery" });
+
+export const CancelCropRoiRequestSchema = Schema.Struct({
+  requestId: Schema.String,
+}).annotations({ identifier: "CancelCropRoiRequest" });
+
+export const CropRoiProgressQuerySchema = Schema.Struct({
+  requestId: Schema.String,
+}).annotations({ identifier: "CropRoiProgressQuery" });
+
+export const LatestCropQuerySchema = Schema.Struct({
+  workspacePath: Schema.String,
+}).annotations({ identifier: "LatestCropQuery" });
 
 export type AlignGridShape = typeof AlignGridShapeSchema.Type;
 export type AlignGridState = typeof AlignGridStateSchema.Type;
@@ -161,3 +191,10 @@ export type RoiPosExistsResponse = typeof RoiPosExistsResponseSchema.Type;
 export type ScanSourceRequest = typeof ScanSourceRequestSchema.Type;
 export type LoadFrameRequest = typeof LoadFrameRequestSchema.Type;
 export type SaveBboxRequest = typeof SaveBboxRequestSchema.Type;
+export type LoadAlignStateQuery = typeof LoadAlignStateQuerySchema.Type;
+export type OutputPathsQuery = typeof OutputPathsQuerySchema.Type;
+export type SavedBboxPositionsQuery = typeof SavedBboxPositionsQuerySchema.Type;
+export type RoiPosExistsQuery = typeof RoiPosExistsQuerySchema.Type;
+export type CancelCropRoiRequest = typeof CancelCropRoiRequestSchema.Type;
+export type CropRoiProgressQuery = typeof CropRoiProgressQuerySchema.Type;
+export type LatestCropQuery = typeof LatestCropQuerySchema.Type;

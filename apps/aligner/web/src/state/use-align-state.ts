@@ -11,12 +11,7 @@ import { useShellWorkspace } from "@lisca/ui/shell";
 
 import { alignerClient, toErrorMessage } from "../api/aligner-port";
 import { scanIdleAtom, scanSourceAtom } from "../atoms/aligner-query-atoms";
-import {
-  alignerUiActions,
-  alignerUiAtom,
-  savedAlignStateKey,
-  sourceKey,
-} from "../atoms/aligner-ui-atoms";
+import { alignerUiActions, alignerUiAtom } from "../atoms/aligner-ui-atoms";
 import { effectErrorMessage, loadFrameEffect } from "../effects/frame-loader";
 
 export type { AlignState, CropConfirmState, VariationExcludePreview };
@@ -24,17 +19,23 @@ export type { ExcludedByPosition } from "../atoms/aligner-ui-atoms";
 
 export function useAlignState(): Accessor<AlignState> {
   return useAlignStateCore({
-    alignerClient,
-    toErrorMessage,
-    effectErrorMessage,
-    loadFrameEffect,
-    alignerUiAtom,
-    alignerUiActions,
-    scanSourceAtom,
-    scanIdleAtom,
-    savedAlignStateKey,
-    sourceKey,
-    useShellWorkspace,
-    useCanvasResourceTransaction,
+    store: {
+      atom: alignerUiAtom,
+      actions: alignerUiActions,
+    },
+    backend: {
+      client: alignerClient,
+      loadFrame: loadFrameEffect,
+      toErrorMessage,
+      frameErrorMessage: effectErrorMessage,
+    },
+    scan: {
+      forSource: scanSourceAtom,
+      idle: scanIdleAtom,
+    },
+    host: {
+      useWorkspace: useShellWorkspace,
+      useCanvasTransaction: useCanvasResourceTransaction,
+    },
   });
 }

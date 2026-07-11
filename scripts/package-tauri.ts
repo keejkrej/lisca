@@ -3,8 +3,8 @@
  * Stage web + Rust server artifacts and run Tauri build for a Lisca desktop app.
  *
  * Usage:
- *   bun scripts/package-tauri.ts aligner
  *   vp run dist:aligner
+ *   vp exec bun scripts/package-tauri.ts aligner
  */
 import { chmodSync, copyFileSync, cpSync, existsSync, mkdirSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -17,16 +17,20 @@ const root = resolve(import.meta.dirname, "..");
 
 function usage(): void {
   console.error(`
-Usage: bun scripts/package-tauri.ts <product>
+Usage: vp exec bun scripts/package-tauri.ts <product>
 
   product  aligner | annotator | studio
 
 Example:
-  bun scripts/package-tauri.ts aligner
+  vp run dist:aligner
 `);
 }
 
-function run(command: string, args: string[], options: { cwd?: string; env?: Record<string, string> } = {}): void {
+function run(
+  command: string,
+  args: string[],
+  options: { cwd?: string; env?: Record<string, string> } = {},
+): void {
   const result = Bun.spawnSync({
     cmd: [command, ...args],
     stdio: ["inherit", "inherit", "inherit"],
@@ -82,15 +86,16 @@ if (!cfg) {
 
 console.log(`Building ${cfg.productName} for ${process.platform}...`);
 
-run("bun", [join(root, "scripts/build-tauri-frontend.ts"), product], {
+run("vp", ["run", "--filter", cfg.webPkg, "build"], {
   cwd: root,
+  env: { ...process.env, VITE_DESKTOP: "1" } as Record<string, string>,
 });
 
-run("bun", ["--filter", cfg.serverPkg, "build"], { cwd: root });
+run("vp", ["run", "--filter", cfg.serverPkg, "build"], { cwd: root });
 
 const desktopDir = stageArtifacts(product, cfg);
 
-run("bunx", ["tauri", "build"], {
+run("vp", ["exec", "tauri", "build"], {
   cwd: desktopDir,
   env: process.env as Record<string, string>,
 });

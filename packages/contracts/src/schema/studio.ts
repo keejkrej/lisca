@@ -65,6 +65,14 @@ export const AnalysisStartRequestSchema = Schema.Struct({
   requestId: Schema.String,
 }).annotations({ identifier: "AnalysisStartRequest" });
 
+export const AnalysisProgressQuerySchema = Schema.Struct({
+  requestId: Schema.String,
+}).annotations({ identifier: "AnalysisProgressQuery" });
+
+export const LatestAnalysisQuerySchema = Schema.Struct({
+  workspacePath: Schema.String,
+}).annotations({ identifier: "LatestAnalysisQuery" });
+
 export type SaveAssayJsonRequest = typeof SaveAssayJsonRequestSchema.Type;
 export type SaveAssayJsonResponse = typeof SaveAssayJsonResponseSchema.Type;
 export type SaveResultPdfRequest = typeof SaveResultPdfRequestSchema.Type;
@@ -74,3 +82,5 @@ export type AnalysisStage = typeof AnalysisStageSchema.Type;
 export type StudioAnalysisCsvFile = typeof StudioAnalysisCsvFileSchema.Type;
 export type AnalysisProgress = typeof AnalysisProgressSchema.Type;
 export type AnalysisStartRequest = typeof AnalysisStartRequestSchema.Type;
+export type AnalysisProgressQuery = typeof AnalysisProgressQuerySchema.Type;
+export type LatestAnalysisQuery = typeof LatestAnalysisQuerySchema.Type;

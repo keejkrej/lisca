@@ -1,13 +1,13 @@
 import { Button } from "@lisca/ui/components";
 import { DockSection, ReadonlyPathField } from "@lisca/ui/shell";
+import { annotationOutputPaths } from "@lisca/client/use-annotate-state-core";
 import { For, Show } from "solid-js";
 
-import { annotationOutputPaths } from "../utils/annotation-output";
 import { useAnnotateDock } from "../state/annotate-page-selectors";
 
 export function AnnotatorSaveSection() {
   const dock = useAnnotateDock();
-  const paths = annotationOutputPaths(dock.request, dock.mode);
+  const paths = annotationOutputPaths(dock.request);
 
   return (
     <DockSection title="Save">
@@ -16,9 +16,7 @@ export function AnnotatorSaveSection() {
           when={paths.length > 1}
           fallback={
             <For each={paths}>
-              {(path) => (
-                <ReadonlyPathField aria-label={`Output path ${path}`} value={path} />
-              )}
+              {(path) => <ReadonlyPathField aria-label={`Output path ${path}`} value={path} />}
             </For>
           }
         >

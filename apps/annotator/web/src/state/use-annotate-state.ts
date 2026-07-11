@@ -11,21 +11,7 @@ import {
   saveAnnotationLabelsAtom,
   saveRoiFrameAnnotationAtom,
 } from "../atoms/annotator-query-atoms";
-import {
-  annotatorUiActions,
-  annotatorUiAtom,
-  currentRoi,
-  requestKey,
-  roiRequestSelectionKey,
-} from "../atoms/annotator-ui-atoms";
-import {
-  effectErrorMessage,
-  loadRoiFrameEffect,
-  loadRoiFrameWithAnnotationEffect,
-} from "../effects/roi-loader";
-import { emptyValueFor, useAnnotationHistory } from "./use-annotation-history";
-import { makeRequest } from "../utils/roi-request";
-import { encodeMaskToBase64Png, maskHasPixels } from "../utils/annotation-utils";
+import { annotatorUiActions, annotatorUiAtom } from "../atoms/annotator-ui-atoms";
 
 export type AnnotateState = ReturnType<ReturnType<typeof useAnnotateStateCore>>;
 
@@ -33,9 +19,6 @@ export function useAnnotateState(): AnnotateState {
   const annotate = useAnnotateStateCore({
     annotatorClient,
     toErrorMessage,
-    effectErrorMessage,
-    loadRoiFrameWithAnnotationEffect,
-    loadRoiFrameEffect,
     annotatorUiAtom,
     annotatorUiActions,
     roiWorkspaceScanAtom,
@@ -51,14 +34,6 @@ export function useAnnotateState(): AnnotateState {
       if (!dirty || selectionChanging) return true;
       return window.confirm("Discard unsaved annotation changes?");
     },
-    useAnnotationHistory,
-    emptyValueFor,
-    makeRequest,
-    currentRoi,
-    requestKey,
-    roiRequestSelectionKey,
-    encodeMaskToBase64Png,
-    maskHasPixels,
   });
 
   return {

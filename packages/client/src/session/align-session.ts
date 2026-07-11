@@ -115,6 +115,26 @@ export function cropPositionsAfterSkip(positions: number[], existingPositions: n
   return positions.filter((pos) => !existing.has(pos));
 }
 
+/** Studio jump policy: first unsaved assay position, or the final position when all are saved. */
+export function resolveFirstUnalignedTarget(
+  positions: number[],
+  savedPositions: ReadonlySet<number>,
+): number | null {
+  return positions.find((position) => !savedPositions.has(position)) ?? positions.at(-1) ?? null;
+}
+
+export function nextAlignPosition(positions: number[], currentPosition: number): number | null {
+  const currentIndex = positions.indexOf(currentPosition);
+  return currentIndex >= 0 ? (positions[currentIndex + 1] ?? null) : null;
+}
+
+export function allAlignPositionsSaved(
+  positions: number[],
+  savedPositions: ReadonlySet<number>,
+): boolean {
+  return positions.length > 0 && positions.every((position) => savedPositions.has(position));
+}
+
 export function shouldApplySourceScan(
   scanSourceKey: string | null,
   activeSourceKey: string,

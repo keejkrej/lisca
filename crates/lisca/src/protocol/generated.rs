@@ -479,6 +479,34 @@ impl AnalysisProgress {
         Default::default()
     }
 }
+#[doc = "`AnalysisProgressQuery`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"requestId\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"requestId\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct AnalysisProgressQuery {
+    #[serde(rename = "requestId")]
+    pub request_id: ::std::string::String,
+}
+impl AnalysisProgressQuery {
+    pub fn builder() -> builder::AnalysisProgressQuery {
+        Default::default()
+    }
+}
 #[doc = "`AnalysisStage`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
@@ -1408,6 +1436,34 @@ impl ::std::convert::TryFrom<::std::string::String> for AssayType {
         value.parse()
     }
 }
+#[doc = "`CancelCropRoiRequest`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"requestId\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"requestId\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct CancelCropRoiRequest {
+    #[serde(rename = "requestId")]
+    pub request_id: ::std::string::String,
+}
+impl CancelCropRoiRequest {
+    pub fn builder() -> builder::CancelCropRoiRequest {
+        Default::default()
+    }
+}
 #[doc = "`ContrastWindow`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
@@ -1685,6 +1741,34 @@ pub struct CropRoiProgress {
 }
 impl CropRoiProgress {
     pub fn builder() -> builder::CropRoiProgress {
+        Default::default()
+    }
+}
+#[doc = "`CropRoiProgressQuery`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"requestId\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"requestId\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct CropRoiProgressQuery {
+    #[serde(rename = "requestId")]
+    pub request_id: ::std::string::String,
+}
+impl CropRoiProgressQuery {
+    pub fn builder() -> builder::CropRoiProgressQuery {
         Default::default()
     }
 }
@@ -2166,6 +2250,38 @@ impl HostFsEntry {
         Default::default()
     }
 }
+#[doc = "`HostListDirectoryQuery`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"path\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct HostListDirectoryQuery {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub path: ::std::option::Option<::std::string::String>,
+}
+impl ::std::default::Default for HostListDirectoryQuery {
+    fn default() -> Self {
+        Self {
+            path: Default::default(),
+        }
+    }
+}
+impl HostListDirectoryQuery {
+    pub fn builder() -> builder::HostListDirectoryQuery {
+        Default::default()
+    }
+}
 #[doc = "`HostListDirectoryResult`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
@@ -2220,6 +2336,125 @@ impl HostListDirectoryResult {
         Default::default()
     }
 }
+#[doc = "`LatestAnalysisQuery`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"workspacePath\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"workspacePath\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct LatestAnalysisQuery {
+    #[serde(rename = "workspacePath")]
+    pub workspace_path: ::std::string::String,
+}
+impl LatestAnalysisQuery {
+    pub fn builder() -> builder::LatestAnalysisQuery {
+        Default::default()
+    }
+}
+#[doc = "`LatestCropQuery`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"workspacePath\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"workspacePath\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct LatestCropQuery {
+    #[serde(rename = "workspacePath")]
+    pub workspace_path: ::std::string::String,
+}
+impl LatestCropQuery {
+    pub fn builder() -> builder::LatestCropQuery {
+        Default::default()
+    }
+}
+#[doc = "`LoadAlignStateQuery`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"pos\","]
+#[doc = "    \"workspacePath\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"pos\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    },"]
+#[doc = "    \"workspacePath\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct LoadAlignStateQuery {
+    pub pos: u32,
+    #[serde(rename = "workspacePath")]
+    pub workspace_path: ::std::string::String,
+}
+impl LoadAlignStateQuery {
+    pub fn builder() -> builder::LoadAlignStateQuery {
+        Default::default()
+    }
+}
+#[doc = "`LoadAnnotationLabelsRequest`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"workspacePath\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"workspacePath\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct LoadAnnotationLabelsRequest {
+    #[serde(rename = "workspacePath")]
+    pub workspace_path: ::std::string::String,
+}
+impl LoadAnnotationLabelsRequest {
+    pub fn builder() -> builder::LoadAnnotationLabelsRequest {
+        Default::default()
+    }
+}
 #[doc = "`LoadFrameRequest`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
@@ -2261,6 +2496,84 @@ pub struct LoadFrameRequest {
 }
 impl LoadFrameRequest {
     pub fn builder() -> builder::LoadFrameRequest {
+        Default::default()
+    }
+}
+#[doc = "`LoadRoiFrameAnnotationRequest`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"request\","]
+#[doc = "    \"workspacePath\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"request\": {"]
+#[doc = "      \"$ref\": \"#/definitions/RoiFrameRequest\""]
+#[doc = "    },"]
+#[doc = "    \"workspacePath\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct LoadRoiFrameAnnotationRequest {
+    pub request: RoiFrameRequest,
+    #[serde(rename = "workspacePath")]
+    pub workspace_path: ::std::string::String,
+}
+impl LoadRoiFrameAnnotationRequest {
+    pub fn builder() -> builder::LoadRoiFrameAnnotationRequest {
+        Default::default()
+    }
+}
+#[doc = "`LoadRoiFrameRequest`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"contrast\","]
+#[doc = "    \"request\","]
+#[doc = "    \"workspacePath\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"contrast\": {"]
+#[doc = "      \"anyOf\": ["]
+#[doc = "        {"]
+#[doc = "          \"$ref\": \"#/definitions/ContrastWindow\""]
+#[doc = "        },"]
+#[doc = "        {"]
+#[doc = "          \"type\": \"null\""]
+#[doc = "        }"]
+#[doc = "      ]"]
+#[doc = "    },"]
+#[doc = "    \"request\": {"]
+#[doc = "      \"$ref\": \"#/definitions/RoiFrameRequest\""]
+#[doc = "    },"]
+#[doc = "    \"workspacePath\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct LoadRoiFrameRequest {
+    pub contrast: ::std::option::Option<ContrastWindow>,
+    pub request: RoiFrameRequest,
+    #[serde(rename = "workspacePath")]
+    pub workspace_path: ::std::string::String,
+}
+impl LoadRoiFrameRequest {
+    pub fn builder() -> builder::LoadRoiFrameRequest {
         Default::default()
     }
 }
@@ -2432,6 +2745,34 @@ impl ::std::convert::TryFrom<::std::string::String> for MemoryKind {
         value.parse()
     }
 }
+#[doc = "`MemoryRecentQuery`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"type\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"type\": {"]
+#[doc = "      \"$ref\": \"#/definitions/MemoryKind\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct MemoryRecentQuery {
+    #[serde(rename = "type")]
+    pub type_: MemoryKind,
+}
+impl MemoryRecentQuery {
+    pub fn builder() -> builder::MemoryRecentQuery {
+        Default::default()
+    }
+}
 #[doc = "`MemoryRecentResponse`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
@@ -2585,6 +2926,35 @@ pub struct MemoryWorkspaceEntry {
 }
 impl MemoryWorkspaceEntry {
     pub fn builder() -> builder::MemoryWorkspaceEntry {
+        Default::default()
+    }
+}
+#[doc = "`OutputPathsQuery`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"pos\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"pos\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct OutputPathsQuery {
+    pub pos: u32,
+}
+impl OutputPathsQuery {
+    pub fn builder() -> builder::OutputPathsQuery {
         Default::default()
     }
 }
@@ -2877,6 +3247,33 @@ pub struct ProfileSummary {
 }
 impl ProfileSummary {
     pub fn builder() -> builder::ProfileSummary {
+        Default::default()
+    }
+}
+#[doc = "`ReadTextFileQuery`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"path\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"path\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct ReadTextFileQuery {
+    pub path: ::std::string::String,
+}
+impl ReadTextFileQuery {
+    pub fn builder() -> builder::ReadTextFileQuery {
         Default::default()
     }
 }
@@ -3263,6 +3660,41 @@ impl RoiIndexFile {
         Default::default()
     }
 }
+#[doc = "`RoiPosExistsQuery`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"pos\","]
+#[doc = "    \"workspacePath\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"pos\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    },"]
+#[doc = "    \"workspacePath\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct RoiPosExistsQuery {
+    pub pos: u32,
+    #[serde(rename = "workspacePath")]
+    pub workspace_path: ::std::string::String,
+}
+impl RoiPosExistsQuery {
+    pub fn builder() -> builder::RoiPosExistsQuery {
+        Default::default()
+    }
+}
 #[doc = "`RoiPosExistsResponse`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
@@ -3393,6 +3825,42 @@ impl RoiWorkspaceScan {
         Default::default()
     }
 }
+#[doc = "`SaveAnnotationLabelsRequest`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"labels\","]
+#[doc = "    \"workspacePath\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"labels\": {"]
+#[doc = "      \"type\": \"array\","]
+#[doc = "      \"items\": {"]
+#[doc = "        \"$ref\": \"#/definitions/AnnotationLabel\""]
+#[doc = "      }"]
+#[doc = "    },"]
+#[doc = "    \"workspacePath\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct SaveAnnotationLabelsRequest {
+    pub labels: ::std::vec::Vec<AnnotationLabel>,
+    #[serde(rename = "workspacePath")]
+    pub workspace_path: ::std::string::String,
+}
+impl SaveAnnotationLabelsRequest {
+    pub fn builder() -> builder::SaveAnnotationLabelsRequest {
+        Default::default()
+    }
+}
 #[doc = "`SaveAssayJsonRequest`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
@@ -3479,7 +3947,9 @@ impl SaveAssayJsonResponse {
 #[doc = "      \"type\": \"string\""]
 #[doc = "    },"]
 #[doc = "    \"pos\": {"]
-#[doc = "      \"type\": \"number\""]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
 #[doc = "    },"]
 #[doc = "    \"workspacePath\": {"]
 #[doc = "      \"type\": \"string\""]
@@ -3493,7 +3963,7 @@ pub struct SaveBboxRequest {
     #[serde(rename = "alignState")]
     pub align_state: SavedAlignState,
     pub csv: ::std::string::String,
-    pub pos: f64,
+    pub pos: u32,
     #[serde(rename = "workspacePath")]
     pub workspace_path: ::std::string::String,
 }
@@ -3618,6 +4088,44 @@ impl SaveResultPdfResponse {
         Default::default()
     }
 }
+#[doc = "`SaveRoiFrameAnnotationRequest`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"annotation\","]
+#[doc = "    \"request\","]
+#[doc = "    \"workspacePath\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"annotation\": {"]
+#[doc = "      \"$ref\": \"#/definitions/RoiFrameAnnotationPayload\""]
+#[doc = "    },"]
+#[doc = "    \"request\": {"]
+#[doc = "      \"$ref\": \"#/definitions/RoiFrameRequest\""]
+#[doc = "    },"]
+#[doc = "    \"workspacePath\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct SaveRoiFrameAnnotationRequest {
+    pub annotation: RoiFrameAnnotationPayload,
+    pub request: RoiFrameRequest,
+    #[serde(rename = "workspacePath")]
+    pub workspace_path: ::std::string::String,
+}
+impl SaveRoiFrameAnnotationRequest {
+    pub fn builder() -> builder::SaveRoiFrameAnnotationRequest {
+        Default::default()
+    }
+}
 #[doc = "`SavedAlignState`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
@@ -3651,6 +4159,62 @@ pub struct SavedAlignState {
 }
 impl SavedAlignState {
     pub fn builder() -> builder::SavedAlignState {
+        Default::default()
+    }
+}
+#[doc = "`SavedBboxPositionsQuery`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"workspacePath\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"workspacePath\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct SavedBboxPositionsQuery {
+    #[serde(rename = "workspacePath")]
+    pub workspace_path: ::std::string::String,
+}
+impl SavedBboxPositionsQuery {
+    pub fn builder() -> builder::SavedBboxPositionsQuery {
+        Default::default()
+    }
+}
+#[doc = "`ScanRoiWorkspaceRequest`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"workspacePath\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"workspacePath\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct ScanRoiWorkspaceRequest {
+    #[serde(rename = "workspacePath")]
+    pub workspace_path: ::std::string::String,
+}
+impl ScanRoiWorkspaceRequest {
+    pub fn builder() -> builder::ScanRoiWorkspaceRequest {
         Default::default()
     }
 }
@@ -4398,6 +4962,46 @@ pub mod builder {
         }
     }
     #[derive(Clone, Debug)]
+    pub struct AnalysisProgressQuery {
+        request_id: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for AnalysisProgressQuery {
+        fn default() -> Self {
+            Self {
+                request_id: Err("no value supplied for request_id".to_string()),
+            }
+        }
+    }
+    impl AnalysisProgressQuery {
+        pub fn request_id<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.request_id = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for request_id: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<AnalysisProgressQuery> for super::AnalysisProgressQuery {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: AnalysisProgressQuery,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                request_id: value.request_id?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::AnalysisProgressQuery> for AnalysisProgressQuery {
+        fn from(value: super::AnalysisProgressQuery) -> Self {
+            Self {
+                request_id: Ok(value.request_id),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
     pub struct AnalysisStartRequest {
         request_id: ::std::result::Result<::std::string::String, ::std::string::String>,
         workspace_path: ::std::result::Result<::std::string::String, ::std::string::String>,
@@ -4968,6 +5572,46 @@ pub mod builder {
         }
     }
     #[derive(Clone, Debug)]
+    pub struct CancelCropRoiRequest {
+        request_id: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for CancelCropRoiRequest {
+        fn default() -> Self {
+            Self {
+                request_id: Err("no value supplied for request_id".to_string()),
+            }
+        }
+    }
+    impl CancelCropRoiRequest {
+        pub fn request_id<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.request_id = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for request_id: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<CancelCropRoiRequest> for super::CancelCropRoiRequest {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: CancelCropRoiRequest,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                request_id: value.request_id?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::CancelCropRoiRequest> for CancelCropRoiRequest {
+        fn from(value: super::CancelCropRoiRequest) -> Self {
+            Self {
+                request_id: Ok(value.request_id),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
     pub struct ContrastWindow {
         max: ::std::result::Result<u32, ::std::string::String>,
         min: ::std::result::Result<u32, ::std::string::String>,
@@ -5282,6 +5926,46 @@ pub mod builder {
                 status: Ok(value.status),
                 total_positions: Ok(value.total_positions),
                 total_rois: Ok(value.total_rois),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct CropRoiProgressQuery {
+        request_id: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for CropRoiProgressQuery {
+        fn default() -> Self {
+            Self {
+                request_id: Err("no value supplied for request_id".to_string()),
+            }
+        }
+    }
+    impl CropRoiProgressQuery {
+        pub fn request_id<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.request_id = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for request_id: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<CropRoiProgressQuery> for super::CropRoiProgressQuery {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: CropRoiProgressQuery,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                request_id: value.request_id?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::CropRoiProgressQuery> for CropRoiProgressQuery {
+        fn from(value: super::CropRoiProgressQuery) -> Self {
+            Self {
+                request_id: Ok(value.request_id),
             }
         }
     }
@@ -5847,6 +6531,47 @@ pub mod builder {
         }
     }
     #[derive(Clone, Debug)]
+    pub struct HostListDirectoryQuery {
+        path: ::std::result::Result<
+            ::std::option::Option<::std::string::String>,
+            ::std::string::String,
+        >,
+    }
+    impl ::std::default::Default for HostListDirectoryQuery {
+        fn default() -> Self {
+            Self {
+                path: Ok(Default::default()),
+            }
+        }
+    }
+    impl HostListDirectoryQuery {
+        pub fn path<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<::std::string::String>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.path = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for path: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<HostListDirectoryQuery> for super::HostListDirectoryQuery {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: HostListDirectoryQuery,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self { path: value.path? })
+        }
+    }
+    impl ::std::convert::From<super::HostListDirectoryQuery> for HostListDirectoryQuery {
+        fn from(value: super::HostListDirectoryQuery) -> Self {
+            Self {
+                path: Ok(value.path),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
     pub struct HostListDirectoryResult {
         entries: ::std::result::Result<::std::vec::Vec<super::HostFsEntry>, ::std::string::String>,
         parent: ::std::result::Result<
@@ -5921,6 +6646,180 @@ pub mod builder {
         }
     }
     #[derive(Clone, Debug)]
+    pub struct LatestAnalysisQuery {
+        workspace_path: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for LatestAnalysisQuery {
+        fn default() -> Self {
+            Self {
+                workspace_path: Err("no value supplied for workspace_path".to_string()),
+            }
+        }
+    }
+    impl LatestAnalysisQuery {
+        pub fn workspace_path<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.workspace_path = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for workspace_path: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<LatestAnalysisQuery> for super::LatestAnalysisQuery {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: LatestAnalysisQuery,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                workspace_path: value.workspace_path?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::LatestAnalysisQuery> for LatestAnalysisQuery {
+        fn from(value: super::LatestAnalysisQuery) -> Self {
+            Self {
+                workspace_path: Ok(value.workspace_path),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct LatestCropQuery {
+        workspace_path: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for LatestCropQuery {
+        fn default() -> Self {
+            Self {
+                workspace_path: Err("no value supplied for workspace_path".to_string()),
+            }
+        }
+    }
+    impl LatestCropQuery {
+        pub fn workspace_path<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.workspace_path = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for workspace_path: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<LatestCropQuery> for super::LatestCropQuery {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: LatestCropQuery,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                workspace_path: value.workspace_path?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::LatestCropQuery> for LatestCropQuery {
+        fn from(value: super::LatestCropQuery) -> Self {
+            Self {
+                workspace_path: Ok(value.workspace_path),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct LoadAlignStateQuery {
+        pos: ::std::result::Result<u32, ::std::string::String>,
+        workspace_path: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for LoadAlignStateQuery {
+        fn default() -> Self {
+            Self {
+                pos: Err("no value supplied for pos".to_string()),
+                workspace_path: Err("no value supplied for workspace_path".to_string()),
+            }
+        }
+    }
+    impl LoadAlignStateQuery {
+        pub fn pos<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.pos = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for pos: {e}"));
+            self
+        }
+        pub fn workspace_path<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.workspace_path = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for workspace_path: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<LoadAlignStateQuery> for super::LoadAlignStateQuery {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: LoadAlignStateQuery,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                pos: value.pos?,
+                workspace_path: value.workspace_path?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::LoadAlignStateQuery> for LoadAlignStateQuery {
+        fn from(value: super::LoadAlignStateQuery) -> Self {
+            Self {
+                pos: Ok(value.pos),
+                workspace_path: Ok(value.workspace_path),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct LoadAnnotationLabelsRequest {
+        workspace_path: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for LoadAnnotationLabelsRequest {
+        fn default() -> Self {
+            Self {
+                workspace_path: Err("no value supplied for workspace_path".to_string()),
+            }
+        }
+    }
+    impl LoadAnnotationLabelsRequest {
+        pub fn workspace_path<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.workspace_path = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for workspace_path: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<LoadAnnotationLabelsRequest> for super::LoadAnnotationLabelsRequest {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: LoadAnnotationLabelsRequest,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                workspace_path: value.workspace_path?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::LoadAnnotationLabelsRequest> for LoadAnnotationLabelsRequest {
+        fn from(value: super::LoadAnnotationLabelsRequest) -> Self {
+            Self {
+                workspace_path: Ok(value.workspace_path),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
     pub struct LoadFrameRequest {
         contrast: ::std::result::Result<
             ::std::option::Option<super::ContrastWindow>,
@@ -5988,6 +6887,133 @@ pub mod builder {
                 contrast: Ok(value.contrast),
                 request: Ok(value.request),
                 source: Ok(value.source),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct LoadRoiFrameAnnotationRequest {
+        request: ::std::result::Result<super::RoiFrameRequest, ::std::string::String>,
+        workspace_path: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for LoadRoiFrameAnnotationRequest {
+        fn default() -> Self {
+            Self {
+                request: Err("no value supplied for request".to_string()),
+                workspace_path: Err("no value supplied for workspace_path".to_string()),
+            }
+        }
+    }
+    impl LoadRoiFrameAnnotationRequest {
+        pub fn request<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::RoiFrameRequest>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.request = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for request: {e}"));
+            self
+        }
+        pub fn workspace_path<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.workspace_path = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for workspace_path: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<LoadRoiFrameAnnotationRequest>
+        for super::LoadRoiFrameAnnotationRequest
+    {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: LoadRoiFrameAnnotationRequest,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                request: value.request?,
+                workspace_path: value.workspace_path?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::LoadRoiFrameAnnotationRequest> for LoadRoiFrameAnnotationRequest {
+        fn from(value: super::LoadRoiFrameAnnotationRequest) -> Self {
+            Self {
+                request: Ok(value.request),
+                workspace_path: Ok(value.workspace_path),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct LoadRoiFrameRequest {
+        contrast: ::std::result::Result<
+            ::std::option::Option<super::ContrastWindow>,
+            ::std::string::String,
+        >,
+        request: ::std::result::Result<super::RoiFrameRequest, ::std::string::String>,
+        workspace_path: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for LoadRoiFrameRequest {
+        fn default() -> Self {
+            Self {
+                contrast: Err("no value supplied for contrast".to_string()),
+                request: Err("no value supplied for request".to_string()),
+                workspace_path: Err("no value supplied for workspace_path".to_string()),
+            }
+        }
+    }
+    impl LoadRoiFrameRequest {
+        pub fn contrast<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<super::ContrastWindow>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.contrast = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for contrast: {e}"));
+            self
+        }
+        pub fn request<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::RoiFrameRequest>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.request = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for request: {e}"));
+            self
+        }
+        pub fn workspace_path<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.workspace_path = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for workspace_path: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<LoadRoiFrameRequest> for super::LoadRoiFrameRequest {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: LoadRoiFrameRequest,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                contrast: value.contrast?,
+                request: value.request?,
+                workspace_path: value.workspace_path?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::LoadRoiFrameRequest> for LoadRoiFrameRequest {
+        fn from(value: super::LoadRoiFrameRequest) -> Self {
+            Self {
+                contrast: Ok(value.contrast),
+                request: Ok(value.request),
+                workspace_path: Ok(value.workspace_path),
             }
         }
     }
@@ -6133,6 +7159,46 @@ pub mod builder {
                 last_used_at: Ok(value.last_used_at),
                 path: Ok(value.path),
                 workspace_path: Ok(value.workspace_path),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct MemoryRecentQuery {
+        type_: ::std::result::Result<super::MemoryKind, ::std::string::String>,
+    }
+    impl ::std::default::Default for MemoryRecentQuery {
+        fn default() -> Self {
+            Self {
+                type_: Err("no value supplied for type_".to_string()),
+            }
+        }
+    }
+    impl MemoryRecentQuery {
+        pub fn type_<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::MemoryKind>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.type_ = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for type_: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<MemoryRecentQuery> for super::MemoryRecentQuery {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: MemoryRecentQuery,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                type_: value.type_?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::MemoryRecentQuery> for MemoryRecentQuery {
+        fn from(value: super::MemoryRecentQuery) -> Self {
+            Self {
+                type_: Ok(value.type_),
             }
         }
     }
@@ -6385,6 +7451,42 @@ pub mod builder {
                 last_used_at: Ok(value.last_used_at),
                 path: Ok(value.path),
             }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct OutputPathsQuery {
+        pos: ::std::result::Result<u32, ::std::string::String>,
+    }
+    impl ::std::default::Default for OutputPathsQuery {
+        fn default() -> Self {
+            Self {
+                pos: Err("no value supplied for pos".to_string()),
+            }
+        }
+    }
+    impl OutputPathsQuery {
+        pub fn pos<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.pos = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for pos: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<OutputPathsQuery> for super::OutputPathsQuery {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: OutputPathsQuery,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self { pos: value.pos? })
+        }
+    }
+    impl ::std::convert::From<super::OutputPathsQuery> for OutputPathsQuery {
+        fn from(value: super::OutputPathsQuery) -> Self {
+            Self { pos: Ok(value.pos) }
         }
     }
     #[derive(Clone, Debug)]
@@ -6677,6 +7779,44 @@ pub mod builder {
                 created_at: Ok(value.created_at),
                 display_name: Ok(value.display_name),
                 id: Ok(value.id),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct ReadTextFileQuery {
+        path: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for ReadTextFileQuery {
+        fn default() -> Self {
+            Self {
+                path: Err("no value supplied for path".to_string()),
+            }
+        }
+    }
+    impl ReadTextFileQuery {
+        pub fn path<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.path = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for path: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<ReadTextFileQuery> for super::ReadTextFileQuery {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: ReadTextFileQuery,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self { path: value.path? })
+        }
+    }
+    impl ::std::convert::From<super::ReadTextFileQuery> for ReadTextFileQuery {
+        fn from(value: super::ReadTextFileQuery) -> Self {
+            Self {
+                path: Ok(value.path),
             }
         }
     }
@@ -7273,6 +8413,60 @@ pub mod builder {
         }
     }
     #[derive(Clone, Debug)]
+    pub struct RoiPosExistsQuery {
+        pos: ::std::result::Result<u32, ::std::string::String>,
+        workspace_path: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for RoiPosExistsQuery {
+        fn default() -> Self {
+            Self {
+                pos: Err("no value supplied for pos".to_string()),
+                workspace_path: Err("no value supplied for workspace_path".to_string()),
+            }
+        }
+    }
+    impl RoiPosExistsQuery {
+        pub fn pos<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.pos = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for pos: {e}"));
+            self
+        }
+        pub fn workspace_path<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.workspace_path = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for workspace_path: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<RoiPosExistsQuery> for super::RoiPosExistsQuery {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: RoiPosExistsQuery,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                pos: value.pos?,
+                workspace_path: value.workspace_path?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::RoiPosExistsQuery> for RoiPosExistsQuery {
+        fn from(value: super::RoiPosExistsQuery) -> Self {
+            Self {
+                pos: Ok(value.pos),
+                workspace_path: Ok(value.workspace_path),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
     pub struct RoiPosExistsResponse {
         exists: ::std::result::Result<bool, ::std::string::String>,
     }
@@ -7464,6 +8658,61 @@ pub mod builder {
         }
     }
     #[derive(Clone, Debug)]
+    pub struct SaveAnnotationLabelsRequest {
+        labels:
+            ::std::result::Result<::std::vec::Vec<super::AnnotationLabel>, ::std::string::String>,
+        workspace_path: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for SaveAnnotationLabelsRequest {
+        fn default() -> Self {
+            Self {
+                labels: Err("no value supplied for labels".to_string()),
+                workspace_path: Err("no value supplied for workspace_path".to_string()),
+            }
+        }
+    }
+    impl SaveAnnotationLabelsRequest {
+        pub fn labels<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::vec::Vec<super::AnnotationLabel>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.labels = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for labels: {e}"));
+            self
+        }
+        pub fn workspace_path<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.workspace_path = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for workspace_path: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<SaveAnnotationLabelsRequest> for super::SaveAnnotationLabelsRequest {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: SaveAnnotationLabelsRequest,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                labels: value.labels?,
+                workspace_path: value.workspace_path?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::SaveAnnotationLabelsRequest> for SaveAnnotationLabelsRequest {
+        fn from(value: super::SaveAnnotationLabelsRequest) -> Self {
+            Self {
+                labels: Ok(value.labels),
+                workspace_path: Ok(value.workspace_path),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
     pub struct SaveAssayJsonRequest {
         contents: ::std::result::Result<::std::string::String, ::std::string::String>,
         save_to: ::std::result::Result<::std::string::String, ::std::string::String>,
@@ -7575,7 +8824,7 @@ pub mod builder {
     pub struct SaveBboxRequest {
         align_state: ::std::result::Result<super::SavedAlignState, ::std::string::String>,
         csv: ::std::result::Result<::std::string::String, ::std::string::String>,
-        pos: ::std::result::Result<f64, ::std::string::String>,
+        pos: ::std::result::Result<u32, ::std::string::String>,
         workspace_path: ::std::result::Result<::std::string::String, ::std::string::String>,
     }
     impl ::std::default::Default for SaveBboxRequest {
@@ -7611,7 +8860,7 @@ pub mod builder {
         }
         pub fn pos<T>(mut self, value: T) -> Self
         where
-            T: ::std::convert::TryInto<f64>,
+            T: ::std::convert::TryInto<u32>,
             T::Error: ::std::fmt::Display,
         {
             self.pos = value
@@ -7847,6 +9096,76 @@ pub mod builder {
         }
     }
     #[derive(Clone, Debug)]
+    pub struct SaveRoiFrameAnnotationRequest {
+        annotation: ::std::result::Result<super::RoiFrameAnnotationPayload, ::std::string::String>,
+        request: ::std::result::Result<super::RoiFrameRequest, ::std::string::String>,
+        workspace_path: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for SaveRoiFrameAnnotationRequest {
+        fn default() -> Self {
+            Self {
+                annotation: Err("no value supplied for annotation".to_string()),
+                request: Err("no value supplied for request".to_string()),
+                workspace_path: Err("no value supplied for workspace_path".to_string()),
+            }
+        }
+    }
+    impl SaveRoiFrameAnnotationRequest {
+        pub fn annotation<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::RoiFrameAnnotationPayload>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.annotation = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for annotation: {e}"));
+            self
+        }
+        pub fn request<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::RoiFrameRequest>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.request = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for request: {e}"));
+            self
+        }
+        pub fn workspace_path<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.workspace_path = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for workspace_path: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<SaveRoiFrameAnnotationRequest>
+        for super::SaveRoiFrameAnnotationRequest
+    {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: SaveRoiFrameAnnotationRequest,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                annotation: value.annotation?,
+                request: value.request?,
+                workspace_path: value.workspace_path?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::SaveRoiFrameAnnotationRequest> for SaveRoiFrameAnnotationRequest {
+        fn from(value: super::SaveRoiFrameAnnotationRequest) -> Self {
+            Self {
+                annotation: Ok(value.annotation),
+                request: Ok(value.request),
+                workspace_path: Ok(value.workspace_path),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
     pub struct SavedAlignState {
         excluded_cells: ::std::result::Result<
             ::std::vec::Vec<super::AlignGridCellCoord>,
@@ -7900,6 +9219,86 @@ pub mod builder {
             Self {
                 excluded_cells: Ok(value.excluded_cells),
                 grid: Ok(value.grid),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct SavedBboxPositionsQuery {
+        workspace_path: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for SavedBboxPositionsQuery {
+        fn default() -> Self {
+            Self {
+                workspace_path: Err("no value supplied for workspace_path".to_string()),
+            }
+        }
+    }
+    impl SavedBboxPositionsQuery {
+        pub fn workspace_path<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.workspace_path = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for workspace_path: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<SavedBboxPositionsQuery> for super::SavedBboxPositionsQuery {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: SavedBboxPositionsQuery,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                workspace_path: value.workspace_path?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::SavedBboxPositionsQuery> for SavedBboxPositionsQuery {
+        fn from(value: super::SavedBboxPositionsQuery) -> Self {
+            Self {
+                workspace_path: Ok(value.workspace_path),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct ScanRoiWorkspaceRequest {
+        workspace_path: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for ScanRoiWorkspaceRequest {
+        fn default() -> Self {
+            Self {
+                workspace_path: Err("no value supplied for workspace_path".to_string()),
+            }
+        }
+    }
+    impl ScanRoiWorkspaceRequest {
+        pub fn workspace_path<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.workspace_path = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for workspace_path: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<ScanRoiWorkspaceRequest> for super::ScanRoiWorkspaceRequest {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: ScanRoiWorkspaceRequest,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                workspace_path: value.workspace_path?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::ScanRoiWorkspaceRequest> for ScanRoiWorkspaceRequest {
+        fn from(value: super::ScanRoiWorkspaceRequest) -> Self {
+            Self {
+                workspace_path: Ok(value.workspace_path),
             }
         }
     }

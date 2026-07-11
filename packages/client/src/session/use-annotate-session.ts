@@ -38,16 +38,18 @@ export type AnnotateSessionActions = {
   setLabelError: (error: string | null) => void;
 };
 
-export type UseAnnotateSessionCoreOptions = {
-  ui: Accessor<AnnotatorUiState>;
-  setUi: (update: StateUpdater<AnnotatorUiState>) => void;
-  actions: AnnotatorUiActions;
+export type UseAnnotateSessionCoreOptions<State extends AnnotatorUiState = AnnotatorUiState> = {
+  ui: Accessor<State>;
+  setUi: (update: StateUpdater<State>) => void;
+  actions: AnnotatorUiActions<State>;
   workspace: AnnotateWorkspaceSync;
   scan: AnnotateScanAtoms;
   toErrorMessage: (cause: unknown, fallback: string) => string;
 };
 
-export function useAnnotateSessionCore(options: UseAnnotateSessionCoreOptions) {
+export function useAnnotateSessionCore<State extends AnnotatorUiState>(
+  options: UseAnnotateSessionCoreOptions<State>,
+) {
   const { ui, setUi, actions, workspace, scan, toErrorMessage } = options;
 
   const sessionActions: AnnotateSessionActions = {
@@ -78,7 +80,7 @@ export function useAnnotateSessionCore(options: UseAnnotateSessionCoreOptions) {
     const shellWorkspacePath = scan.shellWorkspacePath();
     const scanLoading = Boolean(
       shellWorkspacePath &&
-        (resultLoading(scan.scanResult()) || resultLoading(scan.labelsResult())),
+      (resultLoading(scan.scanResult()) || resultLoading(scan.labelsResult())),
     );
     if (scanLoading) {
       actions.setScanError(setUi, null);
@@ -123,7 +125,7 @@ export function useAnnotateSessionCore(options: UseAnnotateSessionCoreOptions) {
     const shellWorkspacePath = scan.shellWorkspacePath();
     const scanLoading = Boolean(
       shellWorkspacePath &&
-        (resultLoading(scan.scanResult()) || resultLoading(scan.labelsResult())),
+      (resultLoading(scan.scanResult()) || resultLoading(scan.labelsResult())),
     );
     const scanData = resultData(scan.scanResult());
     const position = currentPosition(scanData ?? null, currentUi.selection.pos);

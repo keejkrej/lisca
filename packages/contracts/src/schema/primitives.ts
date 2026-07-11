@@ -5,6 +5,11 @@ export const U32 = Schema.Number.pipe(Schema.int(), Schema.nonNegative()).annota
   jsonSchema: { type: "integer", format: "uint32", minimum: 0 },
 });
 
+/** URL-encoded `u32`; decoded TypeScript values remain numbers. */
+export const U32FromString = Schema.NumberFromString.annotations({
+  jsonSchema: { type: "integer", format: "uint32", minimum: 0 },
+});
+
 /** JSON Schema `format` pins Rust `i32` in generated serde types. */
 export const I32 = Schema.Number.pipe(Schema.int()).annotations({
   jsonSchema: { type: "integer", format: "int32" },

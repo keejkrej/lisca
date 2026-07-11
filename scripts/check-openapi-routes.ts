@@ -20,9 +20,11 @@ function findRouteFiles(root: string): string[] {
       files.push(routesPath);
     }
   }
-  const fsRoutesPath = join(root, "crates/lisca/src/http/fs.rs");
-  if (statSync(fsRoutesPath, { throwIfNoEntry: false })?.isFile()) {
-    files.push(fsRoutesPath);
+  for (const fileName of ["fs.rs", "profile.rs"]) {
+    const sharedRoutesPath = join(root, "crates/lisca/src/http", fileName);
+    if (statSync(sharedRoutesPath, { throwIfNoEntry: false })?.isFile()) {
+      files.push(sharedRoutesPath);
+    }
   }
   return files.toSorted();
 }

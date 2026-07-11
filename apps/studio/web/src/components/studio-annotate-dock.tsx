@@ -1,14 +1,14 @@
 import { Button } from "@lisca/ui/components";
 import { AnnotationToolGrid, buildAnnotationToolActions } from "@lisca/ui/features";
 import { DockSection, DockStrip, ReadonlyPathField } from "@lisca/ui/shell";
+import { annotationOutputPaths } from "@lisca/client/use-annotate-state-core";
 import { For, Show } from "solid-js";
 
 import { useStudioAnnotateDock } from "../state/studio-annotate-page-selectors";
-import { annotationOutputPaths } from "../utils/annotation-output";
 
 export function StudioAnnotateDock() {
   const dock = useStudioAnnotateDock();
-  const paths = () => annotationOutputPaths(dock.request, dock.mode);
+  const paths = () => annotationOutputPaths(dock.request);
   const canEditTools = () => dock.mode === "segmentation" && dock.shortcutsEnabled;
   const toolActions = () => buildAnnotationToolActions(dock.tool, dock.setTool, !canEditTools());
   const disableShuffle = () => dock.scanLoading || dock.scan === null || dock.workspaceMissing;
@@ -32,9 +32,7 @@ export function StudioAnnotateDock() {
             when={paths().length > 1}
             fallback={
               <For each={paths()}>
-                {(path) => (
-                  <ReadonlyPathField aria-label={`Output path ${path}`} value={path} />
-                )}
+                {(path) => <ReadonlyPathField aria-label={`Output path ${path}`} value={path} />}
               </For>
             }
           >

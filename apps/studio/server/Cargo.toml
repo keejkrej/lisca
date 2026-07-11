@@ -23,5 +23,5 @@ annotator-server = { path = "../../annotator/server" }
 axum.workspace = true
 base64.workspace = true
 lisca = { workspace = true, features = ["studio"] }
-serde.workspace = true
+lisca-server-common = { path = "../../server-common" }
 tokio.workspace = true

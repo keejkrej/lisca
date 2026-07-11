@@ -2,7 +2,7 @@
 
 ## TypeScript (`@lisca/analysis`)
 
-Shared **results model** for web and mobile Studio apps. Layout mirrors Rust `analysis/assays/<name>/`:
+Shared **results model** for the Studio web app. Layout mirrors Rust `analysis/assays/<name>/`:
 
 - `shared/panels.ts` — parse analysis CSVs, build chart panels (`ResultPanel`)
 - `assays/gene-expression/catalog.ts` — gene-expression plot IDs and labels
@@ -16,20 +16,15 @@ Apps import `@lisca/analysis` and wire the factory with their `StudioPortService
 Platform-agnostic chart layer between panel models and renderers:
 
 - `chartSpecForPanel(panel)` — `ResultPanel` → `ChartSpec` (series, axes, histogram bins)
-- `chart-data.ts` — pivot panel specs into Victory row shapes
+- `chart-data.ts` — pivot panel specs into renderer-friendly row shapes
 - `theme.ts` — palette, margins, font defaults
-- `capabilities.ts` — which panel kinds each platform supports
+- `capabilities.ts` — renderer capability helpers (the current app uses `web`)
 
-Pure logic only — no React, no Observable Plot, no Victory.
+Pure logic only — no SolidJS or Observable Plot.
 
-## Platform renderers
+## Web renderer
 
-| Platform | Package                     | Renderer                                           |
-| -------- | --------------------------- | -------------------------------------------------- |
-| Web      | `@lisca/ui/features`        | Observable Plot (`ResultPanelsGridView`)           |
-| Mobile   | `@lisca/ui-native/features` | Victory Native XL on Skia (`ResultPanelsGridView`) |
-
-Studio apps wire data loading; chart UI lives in the UI packages.
+`@lisca/ui/features` renders chart specs with Observable Plot through `ResultPanelsGridView`. Studio wires data loading; chart UI stays in the shared web UI package.
 
 ## Rust pipeline
 

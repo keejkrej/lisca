@@ -3,21 +3,55 @@ import type {
   AlignGridState,
   AlignerSource,
   ContrastWindow,
+  CropRoiProgress,
   FrameRequest,
+  SavedAlignState,
   WorkspaceScan,
 } from "@lisca/contracts";
-import type { AlignGridToolMode } from "@lisca/utils";
-import { Result } from "@effect-atom/atom-solid";
-import { createEffect, type Accessor } from "solid-js";
+import type { FrameResult } from "@lisca/utils";
 import {
+  alignStateFromCurrent,
+  buildBboxCsv,
+  collectAlignGridEdgeCells,
+  countVisibleAlignGridCells,
+  mergeExcludedAlignGridCells,
+  type AlignGridToolMode,
+} from "@lisca/utils";
+import type { Atom, Result } from "@effect-atom/atom-solid";
+import { RegistryContext, useAtom } from "@effect-atom/atom-solid";
+import { Effect } from "effect";
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  onCleanup,
+  untrack,
+  useContext,
+  type Accessor,
+} from "solid-js";
+import {
+  cropPositionsAfterSkip,
   deriveCurrentExcludedCells,
   deriveDisplayedExcludedCells,
   deriveVisibleCounts,
   isCropping,
+  runCropRoi,
   shouldApplySourceScan,
+  type CropConfirmState,
 } from "./align-session";
-import type { AlignUiActions, AlignUiState, StateUpdater } from "../atoms/align-ui";
+import {
+  savedAlignStateKey,
+  sourceKey,
+  type AlignUiActions,
+  type AlignUiAtom,
+  type AlignUiState,
+} from "../atoms/align-ui";
 import { resultData, resultFailureMessage, resultLoading } from "../atoms/result-utils";
+import type { CanvasResourceTransactionOptions } from "../canvas-resource-transaction";
+import { toClientError, type ClientError } from "../infra/client-error";
+import { runClientEffect } from "../infra/runtime";
+import type { AlignerDataPort } from "../ports/types";
+import { frameLoadRequest, shouldRunContrastFrameLoad } from "./frame-load-policy";
 
 export type AlignSessionMeta = {
   scanLoading: boolean;
@@ -27,6 +61,7 @@ export type AlignSessionMeta = {
 };
 
 export type AlignSessionActions = {
+  setWorkspacePath: (path: string | null) => void;
   setSource: (source: AlignerSource | null) => void;
   setSelection: (patch: Partial<FrameRequest>) => void;
   setContrast: (contrast: ContrastWindow | null) => void;
@@ -35,6 +70,13 @@ export type AlignSessionActions = {
   setPatternZoomLocked: (locked: boolean) => void;
   setManualExclusionEnabled: (enabled: boolean) => void;
   setExcludedCellsForCurrentPosition: (cells: Iterable<AlignGridCellCoord>) => void;
+  reportError: (message: string | null) => void;
+  reportStatus: (message: string | null) => void;
+};
+
+export type AlignSessionStore = {
+  atom: AlignUiAtom;
+  actions: AlignUiActions;
 };
 
 export type AlignWorkspaceSync = {
@@ -44,26 +86,77 @@ export type AlignWorkspaceSync = {
   setSourcePath: (path: string | null) => void;
 };
 
-export type AlignScanAtoms = {
-  scanResult: Accessor<Result.Result<WorkspaceScan, unknown> | undefined>;
-  activeSourceKey: Accessor<string | null>;
+export type AlignScanSource = {
+  forSource: (sourceKey: string) => Atom.Atom<Result.Result<WorkspaceScan, unknown>>;
+  idle: Atom.Atom<Result.Result<WorkspaceScan, unknown>>;
+};
+
+export type AlignSessionBackend = {
+  client: AlignerDataPort;
+  loadFrame: (
+    backend: AlignerDataPort,
+    source: AlignerSource,
+    selection: FrameRequest,
+    contrast: ContrastWindow | null,
+  ) => Effect.Effect<FrameResult, ClientError>;
+  toErrorMessage: (cause: unknown, fallback: string) => string;
+  frameErrorMessage: (cause: unknown) => string;
+};
+
+export type AlignSessionResources = {
+  transact: <T>(options: CanvasResourceTransactionOptions<T>) => () => void;
+};
+
+export type AlignSessionPolicy = {
+  /** Host-owned workspace/source values (Studio derives these from its assay wizard). */
+  workspacePath?: Accessor<string | null>;
+  source?: Accessor<AlignerSource | null>;
+  /** Selection after host-specific locking (Studio locks channel/time/z and assay position). */
+  selection?: (state: AlignUiState) => FrameRequest;
+  /** Whether the current host policy permits loading a frame. */
+  canLoadFrame?: (state: AlignUiState) => boolean;
+  /** Studio preserves the prior frame when a contrast refresh fails. */
+  preserveFrameOnContrastFailure?: boolean;
+  cropRequestPrefix?: string;
+  onCropCompleted?: (progress: CropRoiProgress) => void;
+  onCropSkippedAll?: () => void;
 };
 
 export type UseAlignSessionCoreOptions = {
-  ui: Accessor<AlignUiState>;
-  setUi: (update: StateUpdater<AlignUiState>) => void;
-  actions: AlignUiActions;
+  store: AlignSessionStore;
+  backend: AlignSessionBackend;
+  resources: AlignSessionResources;
+  scan: AlignScanSource;
   workspace?: AlignWorkspaceSync;
-  scan: AlignScanAtoms;
-  toErrorMessage: (cause: unknown, fallback: string) => void;
-  /** Override selection used for excluded-cell derivation (studio locked selection). */
-  effectiveSelection?: Accessor<FrameRequest>;
+  policy?: AlignSessionPolicy;
 };
 
 export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
-  const { ui, setUi, actions, workspace, scan, effectiveSelection } = options;
+  const { backend, resources, scan, store, workspace } = options;
+  const policy = options.policy ?? {};
+  const actions = store.actions;
+  const [ui, setUi] = useAtom(store.atom);
+  const [cropConfirm, setCropConfirm] = createSignal<CropConfirmState | null>(null);
+  let cropRequestId: string | null = null;
+
+  const activeSourceKey = createMemo(() => sourceKey(ui().source));
+  const scanResult = useSelectedAtomValue(() => {
+    const key = activeSourceKey();
+    return key ? scan.forSource(key) : scan.idle;
+  });
+  const navSource = createMemo(() => ui().source);
+  const navScan = createMemo(() => ui().scan);
+  const navSelection = createMemo<FrameRequest>((previous) => {
+    const currentUi = ui();
+    const next = policy.selection?.(currentUi) ?? currentUi.selection;
+    return previous && sameFrameRequest(previous, next) ? previous : next;
+  });
+  const navWorkspacePath = createMemo(() => ui().workspacePath);
+  const navContrast = createMemo(() => ui().contrast);
+  const canLoadFrame = createMemo(() => policy.canLoadFrame?.(ui()) ?? true);
 
   const sessionActions: AlignSessionActions = {
+    setWorkspacePath: (path) => actions.setWorkspacePath(setUi, path),
     setSource: (source: AlignerSource | null) => actions.setSource(setUi, source),
     setSelection: (patch) => actions.setSelection(setUi, patch),
     setContrast: (contrast) => actions.setContrast(setUi, contrast),
@@ -72,8 +165,20 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
     setPatternZoomLocked: (locked) => actions.setPatternZoomLocked(setUi, locked),
     setManualExclusionEnabled: (enabled) => actions.setManualExclusionEnabled(setUi, enabled),
     setExcludedCellsForCurrentPosition: (cells) =>
-      actions.setExcludedCellsForCurrentPosition(setUi, cells),
+      actions.setExcludedCellsForPosition(setUi, navSelection().pos, cells),
+    reportError: (message) => actions.setError(setUi, message),
+    reportStatus: (message) => actions.setStatus(setUi, message),
   };
+
+  createEffect(() => {
+    if (!policy.workspacePath) return;
+    actions.setWorkspacePath(setUi, policy.workspacePath());
+  });
+
+  createEffect(() => {
+    if (!policy.source) return;
+    actions.setSource(setUi, policy.source());
+  });
 
   createEffect(() => {
     if (!workspace) return;
@@ -97,7 +202,7 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
 
   createEffect(() => {
     const currentUi = ui();
-    if (!currentUi.source || !resultLoading(scan.scanResult())) return;
+    if (!currentUi.source || !resultLoading(scanResult())) return;
     if (currentUi.error === null && currentUi.status === "Scanning source") return;
     actions.setError(setUi, null);
     actions.setStatus(setUi, "Scanning source");
@@ -105,24 +210,124 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
 
   createEffect(() => {
     const currentUi = ui();
-    const scanData = resultData(scan.scanResult());
-    const activeSourceKey = scan.activeSourceKey();
-    if (!scanData || !activeSourceKey) return;
-    if (!shouldApplySourceScan(currentUi.scanSourceKey, activeSourceKey)) return;
-    actions.applySourceScan(setUi, activeSourceKey, scanData);
+    const scanData = resultData(scanResult());
+    const key = activeSourceKey();
+    if (!scanData || !key) return;
+    if (!shouldApplySourceScan(currentUi.scanSourceKey, key)) return;
+    actions.applySourceScan(setUi, key, scanData);
   });
 
   createEffect(() => {
-    const message = resultFailureMessage(scan.scanResult());
+    const message = resultFailureMessage(scanResult());
     if (message == null || message === "") return;
     actions.setFrame(setUi, null);
     actions.setError(setUi, message);
   });
 
-  const derived = () => {
+  createEffect(() => {
+    if (!policy.selection) return;
+    const selection = ui().selection;
+    const effective = navSelection();
+    if (sameFrameRequest(selection, effective)) return;
+    actions.setSelection(setUi, effective);
+  });
+
+  createEffect(() => {
+    const source = navSource();
+    const sourceScan = navScan();
+    const selection = navSelection();
+    const workspacePath = navWorkspacePath();
+    if (!source || !sourceScan || !canLoadFrame()) {
+      actions.setFrameLoading(setUi, false);
+      return;
+    }
+    const stateKey = workspacePath ? savedAlignStateKey(workspacePath, selection.pos) : null;
+    const cleanup = resources.transact({
+      start: () => {
+        actions.setContrast(setUi, null);
+        actions.setFrameLoading(setUi, true);
+        actions.setError(setUi, null);
+        actions.setStatus(setUi, "Loading frame");
+      },
+      load: (signal) =>
+        runClientEffect(
+          Effect.all([
+            backend.loadFrame(
+              backend.client,
+              source,
+              selection,
+              frameLoadRequest({ kind: "navigation", contrast: null }),
+            ),
+            workspacePath
+              ? backend.client.loadAlignState(workspacePath, selection.pos)
+              : Effect.succeed(null as SavedAlignState | null),
+          ]).pipe(Effect.mapError(toClientError)),
+          { signal },
+        ),
+      commit: ([frame, saved]) => {
+        actions.applyLoadedFrame(
+          setUi,
+          selection,
+          frame,
+          stateKey ? { stateKey, pos: selection.pos, saved } : null,
+        );
+      },
+      reject: (cause) => {
+        actions.setFrame(setUi, null);
+        actions.setError(
+          setUi,
+          frameLoadError(backend, cause, "Frame or saved align state load failed"),
+        );
+      },
+      settle: () => actions.setFrameLoading(setUi, false),
+    });
+    onCleanup(cleanup);
+  });
+
+  createEffect(() => {
+    const contrast = navContrast();
+    if (!shouldRunContrastFrameLoad(contrast)) return;
+    const { source, sourceScan, selection, loadAllowed } = untrack(() => ({
+      source: navSource(),
+      sourceScan: navScan(),
+      selection: navSelection(),
+      loadAllowed: canLoadFrame(),
+    }));
+    if (!source || !sourceScan || !loadAllowed) return;
+    const cleanup = resources.transact({
+      start: () => {
+        actions.setFrameLoading(setUi, true);
+        actions.setError(setUi, null);
+      },
+      load: (signal) =>
+        runClientEffect(
+          backend
+            .loadFrame(
+              backend.client,
+              source,
+              selection,
+              frameLoadRequest({ kind: "contrast", contrast }),
+            )
+            .pipe(Effect.mapError(toClientError)),
+          { signal },
+        ),
+      commit: (frame) => {
+        actions.setFrame(setUi, frame);
+        actions.setStatus(setUi, null);
+      },
+      reject: (cause) => {
+        if (!policy.preserveFrameOnContrastFailure) actions.setFrame(setUi, null);
+        actions.setError(setUi, frameLoadError(backend, cause, "Frame contrast update failed"));
+      },
+      settle: () => actions.setFrameLoading(setUi, false),
+    });
+    onCleanup(cleanup);
+  });
+
+  const derived = createMemo(() => {
     const currentUi = ui();
-    const selection = effectiveSelection?.() ?? currentUi.selection;
-    const scanLoading = currentUi.source != null && resultLoading(scan.scanResult());
+    const selection = navSelection();
+    const scanLoading = currentUi.source != null && resultLoading(scanResult());
     const currentExcludedCells = deriveCurrentExcludedCells(
       currentUi.excludedCellsByPosition,
       selection.pos,
@@ -151,6 +356,180 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
       selection,
       meta,
     };
+  });
+
+  const saveCurrent = async (excludedCells?: Iterable<AlignGridCellCoord>) => {
+    const currentUi = ui();
+    const selection = navSelection();
+    const { workspacePath, frame, grid } = currentUi;
+    if (!workspacePath || !frame) return false;
+    const cells = excludedCells
+      ? Array.from(excludedCells)
+      : deriveCurrentExcludedCells(currentUi.excludedCellsByPosition, selection.pos);
+    const { included } = countVisibleAlignGridCells(frame, grid, cells);
+    if (included === 0) {
+      actions.setError(setUi, "All grid cells are excluded — adjust exclusions before saving.");
+      return false;
+    }
+    actions.setSaving(setUi, true);
+    actions.setError(setUi, null);
+    try {
+      if (excludedCells) actions.setExcludedCellsForPosition(setUi, selection.pos, cells);
+      const result = await runClientEffect(
+        backend.client.saveBbox(
+          workspacePath,
+          selection.pos,
+          buildBboxCsv(frame, grid, cells),
+          alignStateFromCurrent(grid, cells),
+        ),
+      );
+      if (!result.ok) throw new Error(result.error ?? "Save failed");
+      actions.setStatus(setUi, `Saved bbox/Pos${selection.pos}.csv`);
+      return true;
+    } catch (cause) {
+      actions.setError(setUi, backend.toErrorMessage(cause, "Save failed"));
+      return false;
+    } finally {
+      actions.setSaving(setUi, false);
+    }
+  };
+
+  const smartExcludedCells = (modelCells: AlignGridCellCoord[]) => {
+    const currentUi = ui();
+    if (!currentUi.frame) return null;
+    const current = deriveCurrentExcludedCells(
+      currentUi.excludedCellsByPosition,
+      navSelection().pos,
+    );
+    return mergeExcludedAlignGridCells(current, [
+      ...collectAlignGridEdgeCells(currentUi.frame, currentUi.grid),
+      ...modelCells,
+    ]);
+  };
+
+  const applySmartExclusion = (modelCells: AlignGridCellCoord[]) => {
+    const current = derived().currentExcludedCells;
+    const cells = smartExcludedCells(modelCells);
+    if (!cells) return;
+    sessionActions.setExcludedCellsForCurrentPosition(cells);
+    actions.setStatus(setUi, `Smart excluded ${cells.length - current.length} cells`);
+  };
+
+  const saveWithSmartExclusion = async (modelCells: AlignGridCellCoord[]) => {
+    const cells = smartExcludedCells(modelCells);
+    return cells ? saveCurrent(cells) : false;
+  };
+
+  const runCrop = async (positions: number[], overwrite: boolean) => {
+    const { workspacePath, source } = ui();
+    if (!workspacePath || !source || positions.length === 0) return;
+    const requestId = `${policy.cropRequestPrefix ?? "crop"}-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2)}`;
+    cropRequestId = requestId;
+    actions.setError(setUi, null);
+    await runCropRoi({
+      client: backend.client,
+      request: {
+        requestId,
+        workspacePath,
+        source,
+        positions,
+        overwrite,
+        outputFormat: "tiff",
+      },
+      onProgress: (progress) => actions.setCropProgress(setUi, progress),
+      onError: (message) => actions.setError(setUi, message),
+      onCompleted: (progress) => {
+        actions.setStatus(setUi, progress.message ?? "Crop completed");
+        policy.onCropCompleted?.(progress);
+      },
+      toErrorMessage: backend.toErrorMessage,
+    });
+  };
+
+  const checkCropOverwrite = async (
+    positions: number[],
+    kind: CropConfirmState["kind"] = "batch",
+  ) => {
+    const workspacePath = ui().workspacePath;
+    if (!workspacePath || positions.length === 0) return;
+    try {
+      const entries = await runClientEffect(
+        Effect.all(
+          positions.map((pos) =>
+            backend.client
+              .roiPosExists(workspacePath, pos)
+              .pipe(Effect.map((exists) => ({ pos, exists }))),
+          ),
+        ),
+      );
+      const existingPositions = entries.filter(({ exists }) => exists).map(({ pos }) => pos);
+      if (existingPositions.length > 0) {
+        setCropConfirm({ kind, positions, existingPositions });
+        return;
+      }
+      await runCrop(positions, false);
+    } catch (cause) {
+      actions.setError(setUi, backend.toErrorMessage(cause, "ROI output check failed"));
+    }
+  };
+
+  const cropCurrent = async () => {
+    const currentUi = ui();
+    if (!currentUi.workspacePath || !currentUi.source || !currentUi.frame) return;
+    const position = navSelection().pos;
+    if (!(await saveCurrent())) return;
+    await checkCropOverwrite([position], "single");
+  };
+
+  const cropSaved = async () => {
+    const { workspacePath, source } = ui();
+    if (!workspacePath || !source) return;
+    try {
+      const positions = await runClientEffect(backend.client.listSavedBboxPositions(workspacePath));
+      if (positions.length === 0) {
+        actions.setStatus(setUi, "No saved bbox CSVs found");
+        return;
+      }
+      await checkCropOverwrite(positions, "batch");
+    } catch (cause) {
+      actions.setError(setUi, backend.toErrorMessage(cause, "Saved bbox positions load failed"));
+    }
+  };
+
+  const confirmCropOverwrite = () => {
+    const confirmation = cropConfirm();
+    if (!confirmation) return;
+    setCropConfirm(null);
+    void runCrop(confirmation.positions, true);
+  };
+
+  const skipExistingCrop = () => {
+    const confirmation = cropConfirm();
+    if (!confirmation || confirmation.kind !== "batch") return;
+    setCropConfirm(null);
+    const remaining = cropPositionsAfterSkip(
+      confirmation.positions,
+      confirmation.existingPositions,
+    );
+    if (remaining.length === 0) {
+      actions.setStatus(
+        setUi,
+        `Skipped ${confirmation.existingPositions.length} existing ROI output(s)`,
+      );
+      policy.onCropSkippedAll?.();
+      return;
+    }
+    void runCrop(remaining, false);
+  };
+
+  const cancelCrop = async () => {
+    if (!cropRequestId) return;
+    actions.setCropProgress(
+      setUi,
+      await runClientEffect(backend.client.cancelCropRoi(cropRequestId)),
+    );
   };
 
   return {
@@ -161,5 +540,44 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
       const { meta: _meta, ...rest } = derived();
       return rest;
     },
+    saveCurrent,
+    saveWithSmartExclusion,
+    applySmartExclusion,
+    crop: {
+      confirm: cropConfirm,
+      checkOverwrite: checkCropOverwrite,
+      current: cropCurrent,
+      saved: cropSaved,
+      confirmOverwrite: confirmCropOverwrite,
+      skipExisting: skipExistingCrop,
+      cancelConfirm: () => setCropConfirm(null),
+      cancel: cancelCrop,
+    },
   };
+}
+
+function frameLoadError(backend: AlignSessionBackend, cause: unknown, fallback: string): string {
+  return cause instanceof Error && cause.message.startsWith("Frame request failed")
+    ? backend.frameErrorMessage(cause)
+    : backend.toErrorMessage(cause, fallback);
+}
+
+function sameFrameRequest(left: FrameRequest, right: FrameRequest): boolean {
+  return (
+    left.pos === right.pos &&
+    left.channel === right.channel &&
+    left.time === right.time &&
+    left.z === right.z
+  );
+}
+
+function useSelectedAtomValue<A>(selectAtom: () => Atom.Atom<A>): Accessor<A> {
+  const registry = useContext(RegistryContext);
+  const [value, setValue] = createSignal(registry.get(selectAtom()));
+  createEffect(() => {
+    const atom = selectAtom();
+    setValue(() => registry.get(atom));
+    onCleanup(registry.subscribe(atom, setValue as (next: A) => void));
+  });
+  return value;
 }

@@ -25,7 +25,7 @@ export default defineConfig({
       "*.tsbuildinfo",
       "**/routeTree.gen.ts",
     ],
-    plugins: ["eslint", "oxc", "react", "unicorn", "typescript"],
+    plugins: ["eslint", "oxc", "unicorn", "typescript"],
     jsPlugins: ["oxlint-plugin-eslint"],
     categories: {
       correctness: "warn",
@@ -43,38 +43,10 @@ export default defineConfig({
           ignorePackages: true,
         },
       ],
-      "react-in-jsx-scope": "off",
-      "react/jsx-no-constructed-context-values": "off",
-      "eslint-js/no-restricted-syntax": [
-        "error",
-        {
-          selector: "CallExpression[callee.name='useMemo']",
-          message: "React Compiler handles memoization — do not use useMemo.",
-        },
-        {
-          selector: "CallExpression[callee.name='useCallback']",
-          message: "React Compiler handles memoization — do not use useCallback.",
-        },
-        {
-          selector: "CallExpression[callee.name='memo']",
-          message: "React Compiler handles memoization — do not use memo().",
-        },
-        {
-          selector:
-            "CallExpression[callee.object.name='React'][callee.property.name=/^(useMemo|useCallback|memo)$/]",
-          message:
-            "React Compiler handles memoization — do not use React.useMemo/useCallback/memo.",
-        },
-      ],
     },
     env: {
       builtin: true,
       browser: true,
-    },
-    settings: {
-      react: {
-        version: "19.1.0",
-      },
     },
   },
 

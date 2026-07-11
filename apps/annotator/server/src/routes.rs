@@ -1,53 +1,13 @@
-use axum::{
-    routing::post,
-    Json, Router,
-};
+use axum::{routing::post, Json, Router};
+use lisca::http::FsError;
 use lisca::{
     image_source,
     protocol::{
-        AnnotationLabel, ContrastWindow, RoiFrameAnnotationPayload,
-        RoiFrameRequest,
+        LoadAnnotationLabelsRequest, LoadRoiFrameAnnotationRequest, LoadRoiFrameRequest,
+        SaveAnnotationLabelsRequest, SaveRoiFrameAnnotationRequest, ScanRoiWorkspaceRequest,
     },
     roi,
 };
-use lisca::http::FsError;
-use serde::Deserialize;
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct WorkspacePathPayload {
-    workspace_path: String,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct LoadRoiFramePayload {
-    workspace_path: String,
-    request: RoiFrameRequest,
-    contrast: Option<ContrastWindow>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct SaveAnnotationLabelsPayload {
-    workspace_path: String,
-    labels: Vec<AnnotationLabel>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct RoiFrameAnnotationPayloadBody {
-    workspace_path: String,
-    request: RoiFrameRequest,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct SaveRoiFrameAnnotationPayload {
-    workspace_path: String,
-    request: RoiFrameRequest,
-    annotation: RoiFrameAnnotationPayload,
-}
 
 pub fn router<S>() -> Router<S>
 where
@@ -78,7 +38,7 @@ where
 }
 
 async fn scan_roi_workspace_handler(
-    Json(payload): Json<WorkspacePathPayload>,
+    Json(payload): Json<ScanRoiWorkspaceRequest>,
 ) -> Result<Json<lisca::protocol::RoiWorkspaceScan>, FsError> {
     roi::scan_roi_workspace(&payload.workspace_path)
         .map(Json)
@@ -86,7 +46,7 @@ async fn scan_roi_workspace_handler(
 }
 
 async fn load_annotation_labels_handler(
-    Json(payload): Json<WorkspacePathPayload>,
+    Json(payload): Json<LoadAnnotationLabelsRequest>,
 ) -> Result<Json<Vec<lisca::protocol::AnnotationLabel>>, FsError> {
     roi::load_annotation_labels(&payload.workspace_path)
         .map(Json)
@@ -94,7 +54,7 @@ async fn load_annotation_labels_handler(
 }
 
 async fn save_annotation_labels_handler(
-    Json(payload): Json<SaveAnnotationLabelsPayload>,
+    Json(payload): Json<SaveAnnotationLabelsRequest>,
 ) -> Result<Json<Vec<lisca::protocol::AnnotationLabel>>, FsError> {
     roi::save_annotation_labels(&payload.workspace_path, payload.labels)
         .map(Json)
@@ -102,7 +62,7 @@ async fn save_annotation_labels_handler(
 }
 
 async fn load_roi_frame_handler(
-    Json(payload): Json<LoadRoiFramePayload>,
+    Json(payload): Json<LoadRoiFrameRequest>,
 ) -> Result<Json<lisca::protocol::FramePayload>, FsError> {
     roi::load_roi_frame(&payload.workspace_path, payload.request)
         .map(|raw| image_source::to_frame_payload(raw, payload.contrast))
@@ -111,7 +71,7 @@ async fn load_roi_frame_handler(
 }
 
 async fn load_roi_frame_annotation_handler(
-    Json(payload): Json<RoiFrameAnnotationPayloadBody>,
+    Json(payload): Json<LoadRoiFrameAnnotationRequest>,
 ) -> Result<Json<lisca::protocol::LoadedRoiFrameAnnotation>, FsError> {
     roi::load_roi_frame_annotation(&payload.workspace_path, payload.request)
         .map(Json)
@@ -119,7 +79,7 @@ async fn load_roi_frame_annotation_handler(
 }
 
 async fn save_roi_frame_annotation_handler(
-    Json(payload): Json<SaveRoiFrameAnnotationPayload>,
+    Json(payload): Json<SaveRoiFrameAnnotationRequest>,
 ) -> Result<Json<lisca::protocol::RoiFrameAnnotation>, FsError> {
     roi::save_roi_frame_annotation(&payload.workspace_path, payload.request, payload.annotation)
         .map(Json)

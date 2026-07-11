@@ -47,10 +47,10 @@ Commands:
 
 ```sh
 # Emit openapi.json + contract.schema.json (pure TS, no Rust toolchain needed)
-bun run --cwd packages/contracts generate
+vp run --filter @lisca/contracts generate
 
 # Regenerate the Rust serde types (requires `cargo install cargo-typify`)
-bun run --cwd packages/contracts rust-types
+vp run --filter @lisca/contracts rust-types
 ```
 
 ## Conventions

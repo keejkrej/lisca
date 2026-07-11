@@ -6,6 +6,8 @@
 //! (`anyOf` + `$ref` → inline `oneOf`) so typify emits internally-tagged
 //! enums like `AlignerSource`.
 
+// typify intentionally emits explicit Default impls for some schema objects.
+#[allow(clippy::derivable_impls)]
 mod generated;
 
 pub use generated::*;
@@ -37,7 +39,7 @@ mod contract_tests {
     //! Locks the cross-language wire shape of the generated types against the
     //! Effect contract. If the contract changes shape, these round-trips break
     //! and signal that protocol types must be regenerated
-    //! (`bun run --cwd packages/contracts rust-types`).
+    //! (`vp run --filter @lisca/contracts rust-types`).
     use super::*;
     use serde_json::json;
 

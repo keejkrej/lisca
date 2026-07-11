@@ -1,13 +1,10 @@
 # Shell UI
 
-Owned layout and theme for Lisca web (`@lisca/ui`) and native (`@lisca/ui-native`) shells.
+Owned layout and theme for the Lisca SolidJS web shell (`@lisca/ui`).
 
 ## Theme
 
-Edit colors in one place per platform:
-
-- **Web:** `packages/ui/theme.css` — CSS `z-*` component classes (button, card, input, field, select, dropdown-menu, toggle, etc.) and theme tokens — CSS variables (`--background`, `--border`, `--muted`, …).
-- **Native:** `packages/ui-native/src/theme/tokens.ts` — mirrors the core set (`background`, `foreground`, `border`, `muted`, `primary`, …).
+Edit colors in `packages/ui/theme.css`: CSS `z-*` component classes (button, card, input, field, select, dropdown-menu, toggle, etc.) and theme tokens (`--background`, `--border`, `--muted`, …).
 
 Do not scatter layout tint tokens (`railChrome`, `panel`, `stat`, etc.); shell surfaces use `background` + `border`.
 
@@ -23,7 +20,7 @@ Compose apps from shell primitives, not exported class strings:
 | `Section`                      | Collapsible in-app section inside a `Panel` (rare direct use)                                             |
 | `SidebarStack`                 | Sidebar region container (`flex-col gap-2 overflow-auto p-3`)                                             |
 | `SidebarSection`               | Sidebar placement variant of `Section` (shrink + scrollable body)                                         |
-| `DockStrip`                    | Outer dock band — `flex` row, sections grouped and centered (web + native)                                |
+| `DockStrip`                    | Outer dock band — `flex` row, sections grouped and centered                                               |
 | `DockSection`                  | Dock placement variant of `Section`; `fit="hug"` (default) or `fit="panel"` for instruction copy          |
 | `DialogSurface` / `ModalScrim` | Modal chrome                                                                                              |
 | `StatTile`                     | Count/metric tile: `border border-border bg-background`                                                   |
@@ -46,7 +43,7 @@ Sidebar and dock use the same layering:
 ### DockSection fit
 
 - `fit="hug"` (default) — tool, action, save sections shrink to content width.
-- `fit="panel"` — instruction sections use a stable band (`min-w-56 max-w-xs` web; 224–320px native).
+- `fit="panel"` — instruction sections use a stable band (`min-w-56 max-w-xs`).
 
 ```tsx
 <DockSection fit="panel" title="Instruction">
@@ -77,8 +74,6 @@ Do not add app-level instruction wrapper components; use `fit="panel"` inline in
 <div className="col-span-2 min-w-0">…</div>
 ```
 
-Native: `DockStrip` centers sections; dock sections hug width (`flexShrink: 0`). Button rows inside sections use `flexDirection: "row"`, `gap: 8`. Feature and app code compose RNR `Button` / `ToggleGroup` / `Field` from `@lisca/ui-native` (re-exported from `components/ui/*`) — not shell wrapper components with `label=` props.
-
 ## Rules
 
 1. **One layout background:** `bg-background` on AppShell and viewport padding bands.
@@ -91,7 +86,3 @@ Native: `DockStrip` centers sections; dock sections hug width (`flexShrink: 0`).
 **Do not edit** `packages/ui/src/components/ui/` — vendor zaidan/shadcn primitives (`Button`, `Input`, `Card`, …). Shell and features may import them; theme vars and component classes in `theme.css` still apply.
 
 Forms and dialogs that use `Card` may keep `--card`; shell layout frames do not use `bg-card`.
-
-## Native parity
-
-`packages/ui-native/src/shell/` mirrors the same mental model: `SidebarStack`, `SidebarSection`, `DockStrip`, `DockSection` (`fit` prop), `AppShell` regions and panel frames use `colors.background` and `colors.border`. Feature code should not introduce separate layout chrome tokens.

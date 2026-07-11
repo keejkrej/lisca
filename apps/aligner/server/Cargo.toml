@@ -20,5 +20,5 @@ path = "src/main.rs"
 [dependencies]
 axum.workspace = true
 lisca = { workspace = true, default-features = false }
-serde.workspace = true
+lisca-server-common = { path = "../../server-common" }
 tokio.workspace = true

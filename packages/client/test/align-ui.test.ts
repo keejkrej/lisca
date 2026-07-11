@@ -139,6 +139,18 @@ describe("align-ui actions", () => {
     expect(next.appliedAlignStateKey).toBeNull();
   });
 
+  it("sets exclusions for an effective position without relying on the stored selection", () => {
+    const initial = {
+      ...createInitialAlignUiState(),
+      selection: { pos: 1, channel: 0, time: 0, z: 0 },
+    };
+    const next = runReducer(initial, (set) =>
+      actions.setExcludedCellsForPosition(set, 4, [{ i: 2, j: 3 }]),
+    );
+    expect(next.selection.pos).toBe(1);
+    expect(next.excludedCellsByPosition[4]).toEqual([{ i: 2, j: 3 }]);
+  });
+
   it("setContrast clears manual contrast window", () => {
     const initial = {
       ...createInitialAlignUiState(),

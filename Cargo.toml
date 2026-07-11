@@ -3,6 +3,7 @@ resolver = "2"
 members = [
   "crates/lisca",
   "crates/lisca-tauri",
+  "apps/server-common",
   "apps/aligner/server",
   "apps/annotator/server",
   "apps/studio/server",

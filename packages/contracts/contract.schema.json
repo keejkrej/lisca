@@ -1,13 +1,18 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "definitions": {
+    "HostListDirectoryQuery": {
+      "type": "object",
+      "required": [],
+      "properties": {
+        "path": {
+          "type": "string"
+        }
+      }
+    },
     "HostListDirectoryResult": {
       "type": "object",
-      "required": [
-        "path",
-        "parent",
-        "entries"
-      ],
+      "required": ["path", "parent", "entries"],
       "properties": {
         "path": {
           "anyOf": [
@@ -39,11 +44,7 @@
     },
     "HostFsEntry": {
       "type": "object",
-      "required": [
-        "name",
-        "path",
-        "isDirectory"
-      ],
+      "required": ["name", "path", "isDirectory"],
       "properties": {
         "name": {
           "type": "string"
@@ -58,27 +59,29 @@
     },
     "Unauthorized": {
       "type": "object",
-      "required": [
-        "message",
-        "_tag"
-      ],
+      "required": ["message", "_tag"],
       "properties": {
         "message": {
           "type": "string"
         },
         "_tag": {
           "type": "string",
-          "enum": [
-            "Unauthorized"
-          ]
+          "enum": ["Unauthorized"]
         }
       }
     },
     "HomeDirectoryResponse": {
       "type": "object",
-      "required": [
-        "path"
-      ],
+      "required": ["path"],
+      "properties": {
+        "path": {
+          "type": "string"
+        }
+      }
+    },
+    "ReadTextFileQuery": {
+      "type": "object",
+      "required": ["path"],
       "properties": {
         "path": {
           "type": "string"
@@ -87,9 +90,7 @@
     },
     "ReadTextFileResponse": {
       "type": "object",
-      "required": [
-        "contents"
-      ],
+      "required": ["contents"],
       "properties": {
         "contents": {
           "type": "string"
@@ -98,10 +99,7 @@
     },
     "CreateDirectoryRequest": {
       "type": "object",
-      "required": [
-        "parentPath",
-        "name"
-      ],
+      "required": ["parentPath", "name"],
       "properties": {
         "parentPath": {
           "type": "string"
@@ -113,9 +111,7 @@
     },
     "CreateDirectoryResponse": {
       "type": "object",
-      "required": [
-        "path"
-      ],
+      "required": ["path"],
       "properties": {
         "path": {
           "type": "string"
@@ -124,9 +120,7 @@
     },
     "ScanSourceRequest": {
       "type": "object",
-      "required": [
-        "source"
-      ],
+      "required": ["source"],
       "properties": {
         "source": {
           "$ref": "#/definitions/AlignerSource"
@@ -137,18 +131,11 @@
       "oneOf": [
         {
           "type": "object",
-          "required": [
-            "kind",
-            "path",
-            "subfolderTemplate",
-            "filenameTemplate"
-          ],
+          "required": ["kind", "path", "subfolderTemplate", "filenameTemplate"],
           "properties": {
             "kind": {
               "type": "string",
-              "enum": [
-                "folder"
-              ]
+              "enum": ["folder"]
             },
             "path": {
               "type": "string"
@@ -163,16 +150,11 @@
         },
         {
           "type": "object",
-          "required": [
-            "kind",
-            "path"
-          ],
+          "required": ["kind", "path"],
           "properties": {
             "kind": {
               "type": "string",
-              "enum": [
-                "nd2"
-              ]
+              "enum": ["nd2"]
             },
             "path": {
               "type": "string"
@@ -181,16 +163,11 @@
         },
         {
           "type": "object",
-          "required": [
-            "kind",
-            "path"
-          ],
+          "required": ["kind", "path"],
           "properties": {
             "kind": {
               "type": "string",
-              "enum": [
-                "czi"
-              ]
+              "enum": ["czi"]
             },
             "path": {
               "type": "string"
@@ -201,18 +178,11 @@
     },
     "FolderSource": {
       "type": "object",
-      "required": [
-        "kind",
-        "path",
-        "subfolderTemplate",
-        "filenameTemplate"
-      ],
+      "required": ["kind", "path", "subfolderTemplate", "filenameTemplate"],
       "properties": {
         "kind": {
           "type": "string",
-          "enum": [
-            "folder"
-          ]
+          "enum": ["folder"]
         },
         "path": {
           "type": "string"
@@ -227,12 +197,7 @@
     },
     "WorkspaceScan": {
       "type": "object",
-      "required": [
-        "positions",
-        "channels",
-        "times",
-        "zSlices"
-      ],
+      "required": ["positions", "channels", "times", "zSlices"],
       "properties": {
         "positions": {
           "type": "array",
@@ -294,11 +259,7 @@
     },
     "LoadFrameRequest": {
       "type": "object",
-      "required": [
-        "source",
-        "request",
-        "contrast"
-      ],
+      "required": ["source", "request", "contrast"],
       "properties": {
         "source": {
           "$ref": "#/definitions/AlignerSource"
@@ -320,12 +281,7 @@
     },
     "FrameRequest": {
       "type": "object",
-      "required": [
-        "pos",
-        "channel",
-        "time",
-        "z"
-      ],
+      "required": ["pos", "channel", "time", "z"],
       "properties": {
         "pos": {
           "type": "integer",
@@ -351,10 +307,7 @@
     },
     "ContrastWindow": {
       "type": "object",
-      "required": [
-        "min",
-        "max"
-      ],
+      "required": ["min", "max"],
       "properties": {
         "min": {
           "type": "integer",
@@ -409,30 +362,19 @@
     },
     "PixelType": {
       "type": "string",
-      "enum": [
-        "uint8",
-        "uint8clamped",
-        "int8",
-        "uint16",
-        "int16",
-        "uint32",
-        "int32"
-      ]
+      "enum": ["uint8", "uint8clamped", "int8", "uint16", "int16", "uint32", "int32"]
     },
     "SaveBboxRequest": {
       "type": "object",
-      "required": [
-        "workspacePath",
-        "pos",
-        "csv",
-        "alignState"
-      ],
+      "required": ["workspacePath", "pos", "csv", "alignState"],
       "properties": {
         "workspacePath": {
           "type": "string"
         },
         "pos": {
-          "type": "number"
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
         },
         "csv": {
           "type": "string"
@@ -444,10 +386,7 @@
     },
     "SavedAlignState": {
       "type": "object",
-      "required": [
-        "grid",
-        "excludedCells"
-      ],
+      "required": ["grid", "excludedCells"],
       "properties": {
         "grid": {
           "$ref": "#/definitions/AlignGridState"
@@ -517,18 +456,11 @@
     },
     "AlignGridShape": {
       "type": "string",
-      "enum": [
-        "rect",
-        "square",
-        "hex"
-      ]
+      "enum": ["rect", "square", "hex"]
     },
     "AlignGridCellCoord": {
       "type": "object",
-      "required": [
-        "i",
-        "j"
-      ],
+      "required": ["i", "j"],
       "properties": {
         "i": {
           "type": "integer",
@@ -546,10 +478,7 @@
     },
     "SaveBboxResponse": {
       "type": "object",
-      "required": [
-        "ok",
-        "error"
-      ],
+      "required": ["ok", "error"],
       "properties": {
         "ok": {
           "type": "boolean"
@@ -566,13 +495,34 @@
         }
       }
     },
+    "LoadAlignStateQuery": {
+      "type": "object",
+      "required": ["workspacePath", "pos"],
+      "properties": {
+        "workspacePath": {
+          "type": "string"
+        },
+        "pos": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        }
+      }
+    },
+    "OutputPathsQuery": {
+      "type": "object",
+      "required": ["pos"],
+      "properties": {
+        "pos": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        }
+      }
+    },
     "AlignOutputPaths": {
       "type": "object",
-      "required": [
-        "bbox",
-        "align",
-        "roi"
-      ],
+      "required": ["bbox", "align", "roi"],
       "properties": {
         "bbox": {
           "type": "string"
@@ -585,11 +535,32 @@
         }
       }
     },
+    "SavedBboxPositionsQuery": {
+      "type": "object",
+      "required": ["workspacePath"],
+      "properties": {
+        "workspacePath": {
+          "type": "string"
+        }
+      }
+    },
+    "RoiPosExistsQuery": {
+      "type": "object",
+      "required": ["workspacePath", "pos"],
+      "properties": {
+        "workspacePath": {
+          "type": "string"
+        },
+        "pos": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        }
+      }
+    },
     "RoiPosExistsResponse": {
       "type": "object",
-      "required": [
-        "exists"
-      ],
+      "required": ["exists"],
       "properties": {
         "exists": {
           "type": "boolean"
@@ -598,13 +569,7 @@
     },
     "CropRoiRequest": {
       "type": "object",
-      "required": [
-        "requestId",
-        "workspacePath",
-        "source",
-        "positions",
-        "overwrite"
-      ],
+      "required": ["requestId", "workspacePath", "source", "positions", "overwrite"],
       "properties": {
         "requestId": {
           "type": "string"
@@ -633,16 +598,11 @@
     },
     "CropOutputFormat": {
       "type": "string",
-      "enum": [
-        "tiff"
-      ]
+      "enum": ["tiff"]
     },
     "CropRoiResponse": {
       "type": "object",
-      "required": [
-        "requestId",
-        "status"
-      ],
+      "required": ["requestId", "status"],
       "properties": {
         "requestId": {
           "type": "string"
@@ -654,13 +614,16 @@
     },
     "CropRoiStatus": {
       "type": "string",
-      "enum": [
-        "queued",
-        "running",
-        "completed",
-        "cancelled",
-        "error"
-      ]
+      "enum": ["queued", "running", "completed", "cancelled", "error"]
+    },
+    "CancelCropRoiRequest": {
+      "type": "object",
+      "required": ["requestId"],
+      "properties": {
+        "requestId": {
+          "type": "string"
+        }
+      }
     },
     "CropRoiProgress": {
       "type": "object",
@@ -743,11 +706,36 @@
         }
       }
     },
+    "CropRoiProgressQuery": {
+      "type": "object",
+      "required": ["requestId"],
+      "properties": {
+        "requestId": {
+          "type": "string"
+        }
+      }
+    },
+    "LatestCropQuery": {
+      "type": "object",
+      "required": ["workspacePath"],
+      "properties": {
+        "workspacePath": {
+          "type": "string"
+        }
+      }
+    },
+    "ScanRoiWorkspaceRequest": {
+      "type": "object",
+      "required": ["workspacePath"],
+      "properties": {
+        "workspacePath": {
+          "type": "string"
+        }
+      }
+    },
     "RoiWorkspaceScan": {
       "type": "object",
-      "required": [
-        "positions"
-      ],
+      "required": ["positions"],
       "properties": {
         "positions": {
           "type": "array",
@@ -759,14 +747,7 @@
     },
     "RoiPositionScan": {
       "type": "object",
-      "required": [
-        "pos",
-        "source",
-        "channels",
-        "times",
-        "zSlices",
-        "rois"
-      ],
+      "required": ["pos", "source", "channels", "times", "zSlices", "rois"],
       "properties": {
         "pos": {
           "type": "integer",
@@ -810,12 +791,7 @@
     },
     "RoiIndexEntry": {
       "type": "object",
-      "required": [
-        "roi",
-        "fileName",
-        "bbox",
-        "shape"
-      ],
+      "required": ["roi", "fileName", "bbox", "shape"],
       "properties": {
         "roi": {
           "type": "integer",
@@ -842,13 +818,7 @@
     },
     "RoiBbox": {
       "type": "object",
-      "required": [
-        "roi",
-        "x",
-        "y",
-        "w",
-        "h"
-      ],
+      "required": ["roi", "x", "y", "w", "h"],
       "properties": {
         "roi": {
           "type": "integer",
@@ -877,13 +847,18 @@
         }
       }
     },
+    "LoadAnnotationLabelsRequest": {
+      "type": "object",
+      "required": ["workspacePath"],
+      "properties": {
+        "workspacePath": {
+          "type": "string"
+        }
+      }
+    },
     "AnnotationLabel": {
       "type": "object",
-      "required": [
-        "id",
-        "name",
-        "color"
-      ],
+      "required": ["id", "name", "color"],
       "properties": {
         "id": {
           "type": "string"
@@ -896,15 +871,46 @@
         }
       }
     },
+    "SaveAnnotationLabelsRequest": {
+      "type": "object",
+      "required": ["workspacePath", "labels"],
+      "properties": {
+        "workspacePath": {
+          "type": "string"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AnnotationLabel"
+          }
+        }
+      }
+    },
+    "LoadRoiFrameRequest": {
+      "type": "object",
+      "required": ["workspacePath", "request", "contrast"],
+      "properties": {
+        "workspacePath": {
+          "type": "string"
+        },
+        "request": {
+          "$ref": "#/definitions/RoiFrameRequest"
+        },
+        "contrast": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ContrastWindow"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
     "RoiFrameRequest": {
       "type": "object",
-      "required": [
-        "pos",
-        "roi",
-        "channel",
-        "time",
-        "z"
-      ],
+      "required": ["pos", "roi", "channel", "time", "z"],
       "properties": {
         "pos": {
           "type": "integer",
@@ -933,12 +939,21 @@
         }
       }
     },
+    "LoadRoiFrameAnnotationRequest": {
+      "type": "object",
+      "required": ["workspacePath", "request"],
+      "properties": {
+        "workspacePath": {
+          "type": "string"
+        },
+        "request": {
+          "$ref": "#/definitions/RoiFrameRequest"
+        }
+      }
+    },
     "LoadedRoiFrameAnnotation": {
       "type": "object",
-      "required": [
-        "annotation",
-        "maskBase64Png"
-      ],
+      "required": ["annotation", "maskBase64Png"],
       "properties": {
         "annotation": {
           "$ref": "#/definitions/RoiFrameAnnotation"
@@ -957,11 +972,7 @@
     },
     "RoiFrameAnnotation": {
       "type": "object",
-      "required": [
-        "classificationLabelId",
-        "maskPath",
-        "updatedAt"
-      ],
+      "required": ["classificationLabelId", "maskPath", "updatedAt"],
       "properties": {
         "classificationLabelId": {
           "anyOf": [
@@ -995,12 +1006,24 @@
         }
       }
     },
+    "SaveRoiFrameAnnotationRequest": {
+      "type": "object",
+      "required": ["workspacePath", "request", "annotation"],
+      "properties": {
+        "workspacePath": {
+          "type": "string"
+        },
+        "request": {
+          "$ref": "#/definitions/RoiFrameRequest"
+        },
+        "annotation": {
+          "$ref": "#/definitions/RoiFrameAnnotationPayload"
+        }
+      }
+    },
     "RoiFrameAnnotationPayload": {
       "type": "object",
-      "required": [
-        "classificationLabelId",
-        "maskBase64Png"
-      ],
+      "required": ["classificationLabelId", "maskBase64Png"],
       "properties": {
         "classificationLabelId": {
           "anyOf": [
@@ -1026,9 +1049,7 @@
     },
     "ProfileListResponse": {
       "type": "object",
-      "required": [
-        "profiles"
-      ],
+      "required": ["profiles"],
       "properties": {
         "profiles": {
           "type": "array",
@@ -1040,11 +1061,7 @@
     },
     "ProfileSummary": {
       "type": "object",
-      "required": [
-        "id",
-        "displayName",
-        "createdAt"
-      ],
+      "required": ["id", "displayName", "createdAt"],
       "properties": {
         "id": {
           "type": "string"
@@ -1059,9 +1076,7 @@
     },
     "ProfileCreateRequest": {
       "type": "object",
-      "required": [
-        "displayName"
-      ],
+      "required": ["displayName"],
       "properties": {
         "displayName": {
           "type": "string"
@@ -1070,11 +1085,7 @@
     },
     "ProfileSessionResponse": {
       "type": "object",
-      "required": [
-        "profileId",
-        "displayName",
-        "accessToken"
-      ],
+      "required": ["profileId", "displayName", "accessToken"],
       "properties": {
         "profileId": {
           "type": "string"
@@ -1089,9 +1100,7 @@
     },
     "ProfileSignInRequest": {
       "type": "object",
-      "required": [
-        "displayName"
-      ],
+      "required": ["displayName"],
       "properties": {
         "displayName": {
           "type": "string"
@@ -1100,25 +1109,26 @@
     },
     "ProfileSignOutResponse": {
       "type": "object",
-      "required": [
-        "ok"
-      ],
+      "required": ["ok"],
       "properties": {
         "ok": {
           "type": "boolean",
-          "enum": [
-            true
-          ]
+          "enum": [true]
+        }
+      }
+    },
+    "MemoryRecentQuery": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/MemoryKind"
         }
       }
     },
     "MemoryKind": {
       "type": "string",
-      "enum": [
-        "workspace",
-        "source",
-        "assay"
-      ]
+      "enum": ["workspace", "source", "assay"]
     },
     "MemoryRecentResponse": {
       "type": "object",
@@ -1146,10 +1156,7 @@
     },
     "MemoryWorkspaceEntry": {
       "type": "object",
-      "required": [
-        "path",
-        "lastUsedAt"
-      ],
+      "required": ["path", "lastUsedAt"],
       "properties": {
         "path": {
           "type": "string"
@@ -1164,10 +1171,7 @@
     },
     "MemorySourceEntry": {
       "type": "object",
-      "required": [
-        "source",
-        "lastUsedAt"
-      ],
+      "required": ["source", "lastUsedAt"],
       "properties": {
         "source": {
           "$ref": "#/definitions/AlignerSource"
@@ -1182,10 +1186,7 @@
     },
     "MemoryAssayEntry": {
       "type": "object",
-      "required": [
-        "path",
-        "lastUsedAt"
-      ],
+      "required": ["path", "lastUsedAt"],
       "properties": {
         "path": {
           "type": "string"
@@ -1203,9 +1204,7 @@
     },
     "MemoryTouchResponse": {
       "type": "object",
-      "required": [
-        "ok"
-      ],
+      "required": ["ok"],
       "properties": {
         "ok": {
           "type": "boolean"
@@ -1214,10 +1213,7 @@
     },
     "SaveAssayJsonRequest": {
       "type": "object",
-      "required": [
-        "saveTo",
-        "contents"
-      ],
+      "required": ["saveTo", "contents"],
       "properties": {
         "saveTo": {
           "type": "string"
@@ -1229,10 +1225,7 @@
     },
     "SaveAssayJsonResponse": {
       "type": "object",
-      "required": [
-        "ok",
-        "path"
-      ],
+      "required": ["ok", "path"],
       "properties": {
         "ok": {
           "type": "boolean"
@@ -1244,11 +1237,7 @@
     },
     "SaveResultPdfRequest": {
       "type": "object",
-      "required": [
-        "workspacePath",
-        "fileName",
-        "contentsBase64"
-      ],
+      "required": ["workspacePath", "fileName", "contentsBase64"],
       "properties": {
         "workspacePath": {
           "type": "string"
@@ -1263,11 +1252,7 @@
     },
     "SaveResultPdfResponse": {
       "type": "object",
-      "required": [
-        "ok",
-        "directory",
-        "path"
-      ],
+      "required": ["ok", "directory", "path"],
       "properties": {
         "ok": {
           "type": "boolean"
@@ -1282,10 +1267,7 @@
     },
     "AnalysisStartRequest": {
       "type": "object",
-      "required": [
-        "workspacePath",
-        "requestId"
-      ],
+      "required": ["workspacePath", "requestId"],
       "properties": {
         "workspacePath": {
           "type": "string"
@@ -1297,14 +1279,7 @@
     },
     "AnalysisProgress": {
       "type": "object",
-      "required": [
-        "requestId",
-        "status",
-        "stage",
-        "progress",
-        "message",
-        "error"
-      ],
+      "required": ["requestId", "status", "stage", "progress", "message", "error"],
       "properties": {
         "requestId": {
           "type": "string"
@@ -1349,33 +1324,15 @@
     },
     "AnalysisStatus": {
       "type": "string",
-      "enum": [
-        "queued",
-        "running",
-        "completed",
-        "error"
-      ]
+      "enum": ["queued", "running", "completed", "error"]
     },
     "AnalysisStage": {
       "type": "string",
-      "enum": [
-        "queued",
-        "preparing",
-        "segment",
-        "timeseries",
-        "auc",
-        "fit",
-        "completed"
-      ]
+      "enum": ["queued", "preparing", "segment", "timeseries", "auc", "fit", "completed"]
     },
     "AnalysisCsvFile": {
       "type": "object",
-      "required": [
-        "kind",
-        "fileName",
-        "path",
-        "csv"
-      ],
+      "required": ["kind", "fileName", "path", "csv"],
       "properties": {
         "kind": {
           "type": "string"
@@ -1391,16 +1348,27 @@
         }
       }
     },
+    "AnalysisProgressQuery": {
+      "type": "object",
+      "required": ["requestId"],
+      "properties": {
+        "requestId": {
+          "type": "string"
+        }
+      }
+    },
+    "LatestAnalysisQuery": {
+      "type": "object",
+      "required": ["workspacePath"],
+      "properties": {
+        "workspacePath": {
+          "type": "string"
+        }
+      }
+    },
     "AssayJsonFile": {
       "type": "object",
-      "required": [
-        "assayId",
-        "assayLabel",
-        "dataSourceKind",
-        "info1",
-        "info2",
-        "info3"
-      ],
+      "required": ["assayId", "assayLabel", "dataSourceKind", "info1", "info2", "info3"],
       "properties": {
         "assayId": {
           "$ref": "#/definitions/AssayType"
@@ -1431,20 +1399,11 @@
     },
     "AssayType": {
       "type": "string",
-      "enum": [
-        "gene-expression",
-        "immune-killing",
-        "lnp-binding",
-        "custom-assay"
-      ]
+      "enum": ["gene-expression", "immune-killing", "lnp-binding", "custom-assay"]
     },
     "AssayDataSourceKind": {
       "type": "string",
-      "enum": [
-        "folder",
-        "nd2",
-        "czi"
-      ]
+      "enum": ["folder", "nd2", "czi"]
     },
     "AssayBasicInfoStep1": {
       "type": "object",
@@ -1475,11 +1434,7 @@
     },
     "AssayBasicInfoStep2": {
       "type": "object",
-      "required": [
-        "timelapseAmount",
-        "timelapseUnit",
-        "selectedFeatures"
-      ],
+      "required": ["timelapseAmount", "timelapseUnit", "selectedFeatures"],
       "properties": {
         "timelapseAmount": {
           "anyOf": [
@@ -1505,26 +1460,15 @@
     },
     "AssayTimelapseUnit": {
       "type": "string",
-      "enum": [
-        "second",
-        "minute",
-        "hour"
-      ]
+      "enum": ["second", "minute", "hour"]
     },
     "AssayFeature": {
       "type": "string",
-      "enum": [
-        "morphology",
-        "partcount",
-        "partfluor",
-        "totalfluor"
-      ]
+      "enum": ["morphology", "partcount", "partfluor", "totalfluor"]
     },
     "AssayBasicInfoStep3": {
       "type": "object",
-      "required": [
-        "samples"
-      ],
+      "required": ["samples"],
       "properties": {
         "samples": {
           "$ref": "#/definitions/AssaySamples"
@@ -1574,11 +1518,7 @@
     },
     "AppId": {
       "type": "string",
-      "enum": [
-        "aligner",
-        "annotator",
-        "studio"
-      ]
+      "enum": ["aligner", "annotator", "studio"]
     },
     "RoiIndexFile": {
       "type": "object",
