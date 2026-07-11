@@ -6,13 +6,19 @@ import { createMemo } from "solid-js";
 import { alignerClient } from "../api/aligner-port";
 import { useAlignPage } from "../state/align-page-context";
 
-const smartExcludeProvider = createRequestSmartExcludeProvider({
-  smartExclude: (request, signal) =>
-    runClientEffect(alignerClient.smartExclude(request, signal), signal ? { signal } : undefined),
-});
-
 export function AlignSelectionControls() {
   const { state } = useAlignPage();
+  const smartExcludeProvider = createRequestSmartExcludeProvider(
+    {
+      smartExclude: (request, signal) =>
+        runClientEffect(alignerClient.smartExclude(request, signal), signal ? { signal } : undefined),
+    },
+    {
+      source: () => state().source,
+      selection: () => state().selection,
+      contrast: () => state().contrast,
+    },
+  );
   const disabled = createMemo(() => state().cropping || !state().frame);
   const smartExclude = useSmartExclude({
     provider: smartExcludeProvider,

@@ -92,12 +92,13 @@ function createLiscaDevLogger(): Logger {
   const logger = createLogger();
   const logError = logger.error.bind(logger);
   logger.error = (message, options) => {
+    const value: unknown = message;
     const text =
-      typeof message === "string"
-        ? message
-        : message instanceof Error
-          ? `${message.message}\n${message.stack ?? ""}`
-          : String(message);
+      typeof value === "string"
+        ? value
+        : value instanceof Error
+          ? `${value.message}\n${value.stack ?? ""}`
+          : String(value);
     if (isBenignDevProxyError(text)) return;
     logError(message, options);
   };

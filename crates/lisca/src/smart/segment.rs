@@ -7,7 +7,9 @@ use ndarray::{Array, Ix4};
 use ort::session::Session;
 use ort::value::Tensor;
 
-use crate::protocol::{SmartSegmentPoint, SmartSegmentRequest, SmartSegmentResponse};
+use crate::image_source;
+use crate::protocol::{FramePayload, SmartSegmentPoint, SmartSegmentRequest, SmartSegmentResponse};
+use crate::roi;
 
 use super::frame::{decode_frame_pixels, pixels_to_rgb_u8};
 
@@ -23,20 +25,29 @@ struct SegmentSessions {
 static SEGMENT_SESSIONS: OnceLock<Result<Mutex<SegmentSessions>, String>> = OnceLock::new();
 
 pub fn segment_mask(request: SmartSegmentRequest) -> Result<SmartSegmentResponse, String> {
-    let width = request.frame.width;
-    let height = request.frame.height;
+    let raw = roi::load_roi_frame(&request.workspace_path, request.request)?;
+    let frame = image_source::to_frame_payload(raw, request.contrast);
+    segment_mask_on_frame(&frame, &request.points)
+}
+
+fn segment_mask_on_frame(
+    frame: &FramePayload,
+    points: &[SmartSegmentPoint],
+) -> Result<SmartSegmentResponse, String> {
+    let width = frame.width;
+    let height = frame.height;
     let pixel_count = (width as usize)
         .checked_mul(height as usize)
         .ok_or_else(|| "invalid frame dimensions".to_string())?;
 
-    if request.points.is_empty() {
+    if points.is_empty() {
         return Ok(SmartSegmentResponse {
             mask: vec![0; pixel_count],
         });
     }
 
-    let pixels = decode_frame_pixels(&request.frame)?;
-    let rgb = pixels_to_rgb_u8(&pixels, width, height, &request.frame.pixel_type)?;
+    let pixels = decode_frame_pixels(frame)?;
+    let rgb = pixels_to_rgb_u8(&pixels, width, height, &frame.pixel_type)?;
     let prepared = prepare_sam_image(&rgb, width, height)?;
 
     let mut sessions = segment_sessions()?;
@@ -47,7 +58,7 @@ pub fn segment_mask(request: SmartSegmentRequest) -> Result<SmartSegmentResponse
         &prepared,
         width,
         height,
-        &request.points,
+        points,
     )?;
 
     let mask = extract_best_mask(
@@ -361,11 +372,8 @@ mod tests {
 
     #[test]
     fn segment_mask_returns_zeros_without_points() {
-        let response = segment_mask(SmartSegmentRequest {
-            frame: solid_frame_payload(100),
-            points: Vec::new(),
-        })
-        .expect("segment");
+        let frame = solid_frame_payload(100);
+        let response = segment_mask_on_frame(&frame, &[]).expect("segment");
         assert_eq!(response.mask.len(), 64 * 48);
         assert!(response.mask.iter().all(|value| *value == 0));
     }
@@ -375,14 +383,15 @@ mod tests {
         if resolve_model_path().is_err() {
             return;
         }
-        let response = segment_mask(SmartSegmentRequest {
-            frame: solid_frame_payload(180),
-            points: vec![crate::protocol::SmartSegmentPoint {
+        let frame = solid_frame_payload(180);
+        let response = segment_mask_on_frame(
+            &frame,
+            &[crate::protocol::SmartSegmentPoint {
                 x: 32.0,
                 y: 24.0,
                 label: SmartSegmentPointLabel::try_from(1.0).expect("label"),
             }],
-        })
+        )
         .expect("segment");
         assert_eq!(response.mask.len(), 64 * 48);
     }

@@ -11,14 +11,20 @@ import { useStudioAnnotateCanvas } from "../state/studio-annotate-page-selectors
 import { StudioAnalysisProgressModal } from "./studio-analysis-progress-modal";
 import { StudioAnalysisStartModal } from "./studio-analysis-start-modal";
 
-const smartSegmentProvider = createRequestSmartSegmentProvider({
-  smartSegment: (request, signal) =>
-    runClientEffect(studioClient.smartSegment(request, signal), signal ? { signal } : undefined),
-});
-
 export function StudioAnnotateMain() {
   const { state } = useStudioAnnotatePage();
   const canvas = useStudioAnnotateCanvas();
+  const smartSegmentProvider = createRequestSmartSegmentProvider(
+    {
+      smartSegment: (request, signal) =>
+        runClientEffect(studioClient.smartSegment(request, signal), signal ? { signal } : undefined),
+    },
+    {
+      workspacePath: () => state.workspacePath,
+      roiRequest: () => state.request,
+      contrast: () => state.contrast,
+    },
+  );
   const classificationLabelId = canvas.annotation.current.classificationLabelId;
   const [smartSegmentStatus, setSmartSegmentStatus] = createSignal<string | null>(null);
   const [smartSegmentError, setSmartSegmentError] = createSignal<string | null>(null);

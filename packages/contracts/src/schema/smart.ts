@@ -1,14 +1,21 @@
 import * as Schema from "effect/Schema";
 
+import { RoiFrameRequestSchema } from "./annotate";
 import {
   AlignGridCellCoordSchema,
   AutoExcludePreviewCellSchema,
 } from "./align";
 import { F64, NumArray } from "./primitives";
-import { FramePayloadSchema } from "./shared";
+import {
+  AlignerSourceSchema,
+  ContrastWindowSchema,
+  FrameRequestSchema,
+} from "./shared";
 
 export const SmartExcludeRequestSchema = Schema.Struct({
-  frame: FramePayloadSchema,
+  source: AlignerSourceSchema,
+  request: FrameRequestSchema,
+  contrast: Schema.NullOr(ContrastWindowSchema),
   cells: Schema.mutable(Schema.Array(AutoExcludePreviewCellSchema)),
   threshold: Schema.optional(F64),
 }).annotations({ identifier: "SmartExcludeRequest" });
@@ -24,7 +31,9 @@ export const SmartSegmentPointSchema = Schema.Struct({
 }).annotations({ identifier: "SmartSegmentPoint" });
 
 export const SmartSegmentRequestSchema = Schema.Struct({
-  frame: FramePayloadSchema,
+  workspacePath: Schema.String,
+  request: RoiFrameRequestSchema,
+  contrast: Schema.NullOr(ContrastWindowSchema),
   points: Schema.mutable(Schema.Array(SmartSegmentPointSchema)),
 }).annotations({ identifier: "SmartSegmentRequest" });
 

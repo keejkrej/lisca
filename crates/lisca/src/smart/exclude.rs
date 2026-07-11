@@ -6,8 +6,10 @@ use ndarray::{Array, ArrayView, Ix4};
 use ort::session::Session;
 use ort::value::Tensor;
 
+use crate::aligner;
 use crate::protocol::{
-    AlignGridCellCoord, AutoExcludePreviewCell, SmartExcludeRequest, SmartExcludeResponse,
+    AlignGridCellCoord, AutoExcludePreviewCell, FramePayload, SmartExcludeRequest,
+    SmartExcludeResponse,
 };
 
 use super::frame::decode_frame_pixels;
@@ -20,23 +22,31 @@ const IMAGENET_STD: [f32; 3] = [0.229, 0.224, 0.225];
 static EXCLUDE_SESSION: OnceLock<Result<Mutex<Session>, String>> = OnceLock::new();
 
 pub fn classify_exclusion(request: SmartExcludeRequest) -> Result<SmartExcludeResponse, String> {
-    if request.cells.is_empty() {
+    let frame = aligner::load_frame_payload(request.source, request.request, request.contrast)?;
+    classify_exclusion_on_frame(&frame, &request.cells, request.threshold)
+}
+
+fn classify_exclusion_on_frame(
+    frame: &FramePayload,
+    cells: &[AutoExcludePreviewCell],
+    threshold: Option<f64>,
+) -> Result<SmartExcludeResponse, String> {
+    if cells.is_empty() {
         return Ok(SmartExcludeResponse {
             excluded_cells: Vec::new(),
         });
     }
 
-    let threshold = request.threshold.unwrap_or(DEFAULT_THRESHOLD);
-    let pixels = decode_frame_pixels(&request.frame)?;
-    let width = request.frame.width as usize;
-    let height = request.frame.height as usize;
+    let threshold = threshold.unwrap_or(DEFAULT_THRESHOLD);
+    let pixels = decode_frame_pixels(frame)?;
+    let width = frame.width as usize;
+    let height = frame.height as usize;
     let mut session = exclude_session()?;
     let input_name = "pixel_values";
     let mut excluded_cells = Vec::new();
 
-    for cell in &request.cells {
-        let exclude_score =
-            classify_cell(&mut session, input_name, &pixels, width, height, cell)?;
+    for cell in cells {
+        let exclude_score = classify_cell(&mut session, input_name, &pixels, width, height, cell)?;
         if exclude_score >= threshold {
             excluded_cells.push(AlignGridCellCoord { i: cell.i, j: cell.j });
         }
@@ -231,20 +241,16 @@ mod tests {
     fn classify_exclusion_returns_empty_for_no_cells() {
         use crate::protocol::{ContrastWindow, FramePayload, PixelType};
 
-        let response = classify_exclusion(SmartExcludeRequest {
-            frame: FramePayload {
-                width: 4,
-                height: 4,
-                data_base64: "AAAA".to_string(),
-                pixel_type: PixelType::Uint8,
-                contrast_domain: ContrastWindow { min: 0, max: 255 },
-                suggested_contrast: ContrastWindow { min: 0, max: 255 },
-                applied_contrast: ContrastWindow { min: 0, max: 255 },
-            },
-            cells: Vec::new(),
-            threshold: None,
-        })
-        .expect("classify");
+        let frame = FramePayload {
+            width: 4,
+            height: 4,
+            data_base64: "AAAA".to_string(),
+            pixel_type: PixelType::Uint8,
+            contrast_domain: ContrastWindow { min: 0, max: 255 },
+            suggested_contrast: ContrastWindow { min: 0, max: 255 },
+            applied_contrast: ContrastWindow { min: 0, max: 255 },
+        };
+        let response = classify_exclusion_on_frame(&frame, &[], None).expect("classify");
         assert!(response.excluded_cells.is_empty());
     }
 
@@ -257,20 +263,21 @@ mod tests {
         }
 
         let pixels = vec![128u8; 16];
-        let response = classify_exclusion(SmartExcludeRequest {
-            frame: FramePayload {
-                width: 4,
-                height: 4,
-                data_base64: {
-                    use base64::prelude::{Engine as _, BASE64_STANDARD};
-                    BASE64_STANDARD.encode(pixels)
-                },
-                pixel_type: PixelType::Uint8,
-                contrast_domain: ContrastWindow { min: 0, max: 255 },
-                suggested_contrast: ContrastWindow { min: 0, max: 255 },
-                applied_contrast: ContrastWindow { min: 0, max: 255 },
+        let frame = FramePayload {
+            width: 4,
+            height: 4,
+            data_base64: {
+                use base64::prelude::{Engine as _, BASE64_STANDARD};
+                BASE64_STANDARD.encode(pixels)
             },
-            cells: vec![AutoExcludePreviewCell {
+            pixel_type: PixelType::Uint8,
+            contrast_domain: ContrastWindow { min: 0, max: 255 },
+            suggested_contrast: ContrastWindow { min: 0, max: 255 },
+            applied_contrast: ContrastWindow { min: 0, max: 255 },
+        };
+        let response = classify_exclusion_on_frame(
+            &frame,
+            &[AutoExcludePreviewCell {
                 i: 0,
                 j: 0,
                 x: 0,
@@ -278,8 +285,8 @@ mod tests {
                 w: 4,
                 h: 4,
             }],
-            threshold: Some(2.0),
-        })
+            Some(2.0),
+        )
         .expect("classify");
         assert!(response.excluded_cells.is_empty());
     }

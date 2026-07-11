@@ -1,40 +1,48 @@
-import type { FrameResult } from "@lisca/utils";
-import { encodeFramePayload } from "@lisca/utils";
+import type {
+  ContrastWindow,
+  RoiFrameRequest,
+  SmartSegmentRequest,
+  SmartSegmentResponse,
+} from "@lisca/contracts";
 
 import type { SmartSegmentProvider } from "../provider";
 import type { SmartSegmentPoint } from "../types";
 
+export type RequestSmartSegmentContext = {
+  workspacePath: () => string | null;
+  roiRequest: () => RoiFrameRequest | null;
+  contrast: () => ContrastWindow | null;
+};
+
 export type RequestSmartSegmentClient = {
   smartSegment(
-    request: {
-      frame: ReturnType<typeof encodeFramePayload>;
-      points: SmartSegmentPoint[];
-    },
+    request: SmartSegmentRequest,
     signal?: AbortSignal,
-  ): Promise<{ mask: number[] }>;
+  ): Promise<SmartSegmentResponse>;
 };
 
 export function createRequestSmartSegmentProvider(
   client: RequestSmartSegmentClient,
+  context: RequestSmartSegmentContext,
 ): SmartSegmentProvider {
-  let preparedFrame: FrameResult | null = null;
-
   return {
-    async prepareFrame(frame, _options) {
-      preparedFrame = frame;
+    async prepareFrame() {
+      // Server-backed segmentation loads the ROI frame on demand.
     },
-    async segment(points) {
-      if (!preparedFrame) {
-        throw new Error("Smart segment frame is not prepared");
+    async segment(points: SmartSegmentPoint[]) {
+      const workspacePath = context.workspacePath();
+      const request = context.roiRequest();
+      if (!workspacePath || !request) {
+        throw new Error("ROI frame is not selected");
       }
       const response = await client.smartSegment({
-        frame: encodeFramePayload(preparedFrame),
+        workspacePath,
+        request,
+        contrast: context.contrast(),
         points,
       });
       return Uint8Array.from(response.mask);
     },
-    dispose() {
-      preparedFrame = null;
-    },
+    dispose() {},
   };
 }

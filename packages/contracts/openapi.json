@@ -3019,12 +3019,27 @@
       "SmartExcludeRequest": {
         "type": "object",
         "required": [
-          "frame",
+          "source",
+          "request",
+          "contrast",
           "cells"
         ],
         "properties": {
-          "frame": {
-            "$ref": "#/components/schemas/FramePayload"
+          "source": {
+            "$ref": "#/components/schemas/AlignerSource"
+          },
+          "request": {
+            "$ref": "#/components/schemas/FrameRequest"
+          },
+          "contrast": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ContrastWindow"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "cells": {
             "type": "array",
@@ -3499,12 +3514,27 @@
       "SmartSegmentRequest": {
         "type": "object",
         "required": [
-          "frame",
+          "workspacePath",
+          "request",
+          "contrast",
           "points"
         ],
         "properties": {
-          "frame": {
-            "$ref": "#/components/schemas/FramePayload"
+          "workspacePath": {
+            "type": "string"
+          },
+          "request": {
+            "$ref": "#/components/schemas/RoiFrameRequest"
+          },
+          "contrast": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ContrastWindow"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "points": {
             "type": "array",

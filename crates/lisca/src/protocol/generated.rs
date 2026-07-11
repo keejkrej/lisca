@@ -4322,7 +4322,9 @@ impl ScanSourceRequest {
 #[doc = "  \"type\": \"object\","]
 #[doc = "  \"required\": ["]
 #[doc = "    \"cells\","]
-#[doc = "    \"frame\""]
+#[doc = "    \"contrast\","]
+#[doc = "    \"request\","]
+#[doc = "    \"source\""]
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
 #[doc = "    \"cells\": {"]
@@ -4331,8 +4333,21 @@ impl ScanSourceRequest {
 #[doc = "        \"$ref\": \"#/definitions/AutoExcludePreviewCell\""]
 #[doc = "      }"]
 #[doc = "    },"]
-#[doc = "    \"frame\": {"]
-#[doc = "      \"$ref\": \"#/definitions/FramePayload\""]
+#[doc = "    \"contrast\": {"]
+#[doc = "      \"anyOf\": ["]
+#[doc = "        {"]
+#[doc = "          \"$ref\": \"#/definitions/ContrastWindow\""]
+#[doc = "        },"]
+#[doc = "        {"]
+#[doc = "          \"type\": \"null\""]
+#[doc = "        }"]
+#[doc = "      ]"]
+#[doc = "    },"]
+#[doc = "    \"request\": {"]
+#[doc = "      \"$ref\": \"#/definitions/FrameRequest\""]
+#[doc = "    },"]
+#[doc = "    \"source\": {"]
+#[doc = "      \"$ref\": \"#/definitions/AlignerSource\""]
 #[doc = "    },"]
 #[doc = "    \"threshold\": {"]
 #[doc = "      \"type\": \"number\","]
@@ -4345,7 +4360,9 @@ impl ScanSourceRequest {
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct SmartExcludeRequest {
     pub cells: ::std::vec::Vec<AutoExcludePreviewCell>,
-    pub frame: FramePayload,
+    pub contrast: ::std::option::Option<ContrastWindow>,
+    pub request: FrameRequest,
+    pub source: AlignerSource,
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
     pub threshold: ::std::option::Option<f64>,
 }
@@ -4481,18 +4498,33 @@ impl<'de> ::serde::Deserialize<'de> for SmartSegmentPointLabel {
 #[doc = "{"]
 #[doc = "  \"type\": \"object\","]
 #[doc = "  \"required\": ["]
-#[doc = "    \"frame\","]
-#[doc = "    \"points\""]
+#[doc = "    \"contrast\","]
+#[doc = "    \"points\","]
+#[doc = "    \"request\","]
+#[doc = "    \"workspacePath\""]
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
-#[doc = "    \"frame\": {"]
-#[doc = "      \"$ref\": \"#/definitions/FramePayload\""]
+#[doc = "    \"contrast\": {"]
+#[doc = "      \"anyOf\": ["]
+#[doc = "        {"]
+#[doc = "          \"$ref\": \"#/definitions/ContrastWindow\""]
+#[doc = "        },"]
+#[doc = "        {"]
+#[doc = "          \"type\": \"null\""]
+#[doc = "        }"]
+#[doc = "      ]"]
 #[doc = "    },"]
 #[doc = "    \"points\": {"]
 #[doc = "      \"type\": \"array\","]
 #[doc = "      \"items\": {"]
 #[doc = "        \"$ref\": \"#/definitions/SmartSegmentPoint\""]
 #[doc = "      }"]
+#[doc = "    },"]
+#[doc = "    \"request\": {"]
+#[doc = "      \"$ref\": \"#/definitions/RoiFrameRequest\""]
+#[doc = "    },"]
+#[doc = "    \"workspacePath\": {"]
+#[doc = "      \"type\": \"string\""]
 #[doc = "    }"]
 #[doc = "  }"]
 #[doc = "}"]
@@ -4500,8 +4532,11 @@ impl<'de> ::serde::Deserialize<'de> for SmartSegmentPointLabel {
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct SmartSegmentRequest {
-    pub frame: FramePayload,
+    pub contrast: ::std::option::Option<ContrastWindow>,
     pub points: ::std::vec::Vec<SmartSegmentPoint>,
+    pub request: RoiFrameRequest,
+    #[serde(rename = "workspacePath")]
+    pub workspace_path: ::std::string::String,
 }
 impl SmartSegmentRequest {
     pub fn builder() -> builder::SmartSegmentRequest {
@@ -9753,14 +9788,21 @@ pub mod builder {
             ::std::vec::Vec<super::AutoExcludePreviewCell>,
             ::std::string::String,
         >,
-        frame: ::std::result::Result<super::FramePayload, ::std::string::String>,
+        contrast: ::std::result::Result<
+            ::std::option::Option<super::ContrastWindow>,
+            ::std::string::String,
+        >,
+        request: ::std::result::Result<super::FrameRequest, ::std::string::String>,
+        source: ::std::result::Result<super::AlignerSource, ::std::string::String>,
         threshold: ::std::result::Result<::std::option::Option<f64>, ::std::string::String>,
     }
     impl ::std::default::Default for SmartExcludeRequest {
         fn default() -> Self {
             Self {
                 cells: Err("no value supplied for cells".to_string()),
-                frame: Err("no value supplied for frame".to_string()),
+                contrast: Err("no value supplied for contrast".to_string()),
+                request: Err("no value supplied for request".to_string()),
+                source: Err("no value supplied for source".to_string()),
                 threshold: Ok(Default::default()),
             }
         }
@@ -9776,14 +9818,34 @@ pub mod builder {
                 .map_err(|e| format!("error converting supplied value for cells: {e}"));
             self
         }
-        pub fn frame<T>(mut self, value: T) -> Self
+        pub fn contrast<T>(mut self, value: T) -> Self
         where
-            T: ::std::convert::TryInto<super::FramePayload>,
+            T: ::std::convert::TryInto<::std::option::Option<super::ContrastWindow>>,
             T::Error: ::std::fmt::Display,
         {
-            self.frame = value
+            self.contrast = value
                 .try_into()
-                .map_err(|e| format!("error converting supplied value for frame: {e}"));
+                .map_err(|e| format!("error converting supplied value for contrast: {e}"));
+            self
+        }
+        pub fn request<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::FrameRequest>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.request = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for request: {e}"));
+            self
+        }
+        pub fn source<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::AlignerSource>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.source = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for source: {e}"));
             self
         }
         pub fn threshold<T>(mut self, value: T) -> Self
@@ -9804,7 +9866,9 @@ pub mod builder {
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
                 cells: value.cells?,
-                frame: value.frame?,
+                contrast: value.contrast?,
+                request: value.request?,
+                source: value.source?,
                 threshold: value.threshold?,
             })
         }
@@ -9813,7 +9877,9 @@ pub mod builder {
         fn from(value: super::SmartExcludeRequest) -> Self {
             Self {
                 cells: Ok(value.cells),
-                frame: Ok(value.frame),
+                contrast: Ok(value.contrast),
+                request: Ok(value.request),
+                source: Ok(value.source),
                 threshold: Ok(value.threshold),
             }
         }
@@ -9931,27 +9997,34 @@ pub mod builder {
     }
     #[derive(Clone, Debug)]
     pub struct SmartSegmentRequest {
-        frame: ::std::result::Result<super::FramePayload, ::std::string::String>,
+        contrast: ::std::result::Result<
+            ::std::option::Option<super::ContrastWindow>,
+            ::std::string::String,
+        >,
         points:
             ::std::result::Result<::std::vec::Vec<super::SmartSegmentPoint>, ::std::string::String>,
+        request: ::std::result::Result<super::RoiFrameRequest, ::std::string::String>,
+        workspace_path: ::std::result::Result<::std::string::String, ::std::string::String>,
     }
     impl ::std::default::Default for SmartSegmentRequest {
         fn default() -> Self {
             Self {
-                frame: Err("no value supplied for frame".to_string()),
+                contrast: Err("no value supplied for contrast".to_string()),
                 points: Err("no value supplied for points".to_string()),
+                request: Err("no value supplied for request".to_string()),
+                workspace_path: Err("no value supplied for workspace_path".to_string()),
             }
         }
     }
     impl SmartSegmentRequest {
-        pub fn frame<T>(mut self, value: T) -> Self
+        pub fn contrast<T>(mut self, value: T) -> Self
         where
-            T: ::std::convert::TryInto<super::FramePayload>,
+            T: ::std::convert::TryInto<::std::option::Option<super::ContrastWindow>>,
             T::Error: ::std::fmt::Display,
         {
-            self.frame = value
+            self.contrast = value
                 .try_into()
-                .map_err(|e| format!("error converting supplied value for frame: {e}"));
+                .map_err(|e| format!("error converting supplied value for contrast: {e}"));
             self
         }
         pub fn points<T>(mut self, value: T) -> Self
@@ -9964,6 +10037,26 @@ pub mod builder {
                 .map_err(|e| format!("error converting supplied value for points: {e}"));
             self
         }
+        pub fn request<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::RoiFrameRequest>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.request = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for request: {e}"));
+            self
+        }
+        pub fn workspace_path<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.workspace_path = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for workspace_path: {e}"));
+            self
+        }
     }
     impl ::std::convert::TryFrom<SmartSegmentRequest> for super::SmartSegmentRequest {
         type Error = super::error::ConversionError;
@@ -9971,16 +10064,20 @@ pub mod builder {
             value: SmartSegmentRequest,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
-                frame: value.frame?,
+                contrast: value.contrast?,
                 points: value.points?,
+                request: value.request?,
+                workspace_path: value.workspace_path?,
             })
         }
     }
     impl ::std::convert::From<super::SmartSegmentRequest> for SmartSegmentRequest {
         fn from(value: super::SmartSegmentRequest) -> Self {
             Self {
-                frame: Ok(value.frame),
+                contrast: Ok(value.contrast),
                 points: Ok(value.points),
+                request: Ok(value.request),
+                workspace_path: Ok(value.workspace_path),
             }
         }
     }

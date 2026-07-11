@@ -7,18 +7,26 @@ import { ViewportCard } from "@lisca/ui/shell";
 import { createSignal } from "solid-js";
 
 import { annotatorClient } from "../api/annotator-port";
+import { useAnnotatePage } from "../state/annotate-page-context";
 import { useAnnotateCanvas } from "../state/annotate-page-selectors";
 
-const smartSegmentProvider = createRequestSmartSegmentProvider({
-  smartSegment: (request, signal) =>
-    runClientEffect(
-      annotatorClient.smartSegment(request, signal),
-      signal ? { signal } : undefined,
-    ),
-});
-
 export function AnnotatorMain() {
+  const { state } = useAnnotatePage();
   const canvas = useAnnotateCanvas();
+  const smartSegmentProvider = createRequestSmartSegmentProvider(
+    {
+      smartSegment: (request, signal) =>
+        runClientEffect(
+          annotatorClient.smartSegment(request, signal),
+          signal ? { signal } : undefined,
+        ),
+    },
+    {
+      workspacePath: () => state.workspacePath,
+      roiRequest: () => state.request,
+      contrast: () => state.contrast,
+    },
+  );
   const classificationLabelId = canvas.annotation.current.classificationLabelId;
   const [smartSegmentStatus, setSmartSegmentStatus] = createSignal<string | null>(null);
   const [smartSegmentError, setSmartSegmentError] = createSignal<string | null>(null);

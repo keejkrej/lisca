@@ -1,6 +1,7 @@
 export {
   createRequestSmartSegmentProvider,
   type RequestSmartSegmentClient,
+  type RequestSmartSegmentContext,
 } from "./provider";
 export {
   useSmartSegment,
