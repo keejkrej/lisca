@@ -17,10 +17,18 @@ const StudioAlignPageContext = createContext<StudioAlignPageContextValue | null>
 export function StudioAlignPageProvider(props: { children?: JSX.Element }) {
   const state = useStudioAlignState();
   const smartExclude = useSmartExclude({
-    frame: state.frame,
-    grid: state.grid,
-    currentExcludedCells: state.currentExcludedCells,
-    enabled: Boolean(state.frame) && !state.cropping && !state.saving,
+    get frame() {
+      return state.frame;
+    },
+    get grid() {
+      return state.grid;
+    },
+    get currentExcludedCells() {
+      return state.currentExcludedCells;
+    },
+    get enabled() {
+      return Boolean(state.frame) && !state.cropping && !state.saving;
+    },
     onComplete: state.applySmartExclusion,
     onError: state.reportError,
   });

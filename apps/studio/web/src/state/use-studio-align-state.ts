@@ -30,6 +30,7 @@ import {
   createMemo,
   createSignal,
   onCleanup,
+  untrack,
   useContext,
   type Accessor,
 } from "solid-js";
@@ -505,11 +506,16 @@ export function useStudioAlignState(): StudioAlignState {
   });
   createEffect(() => {
     const contrast = navContrast();
-    const source = navSource();
-    const scan = navScan();
-    const positions = alignPositions();
-    const locked = lockedSelection();
-    if (!contrast || !source || !scan || positions.length === 0) {
+    if (!contrast) {
+      return;
+    }
+    const { source, scan } = untrack(() => ({
+      source: navSource(),
+      scan: navScan(),
+    }));
+    const positions = untrack(() => alignPositions());
+    const locked = untrack(() => lockedSelection());
+    if (!source || !scan || positions.length === 0) {
       return;
     }
     const cleanup = loadCanvasResources({

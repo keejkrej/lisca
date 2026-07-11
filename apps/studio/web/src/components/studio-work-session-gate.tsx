@@ -8,10 +8,10 @@ import { restoreStudioWorkSession } from "@lisca/client/session/studio-work-sess
 import { WorkSessionAppGate } from "@lisca/client/session/work-session-app-gate";
 import type { WorkSession } from "@lisca/client/session/work-session-gate";
 import { useShellWorkspace, WorkSessionPickerDialog } from "@lisca/ui/shell";
-import type { JSX } from "solid-js";
+import { onMount, type JSX } from "solid-js";
 
 import { studioClient } from "../api/studio-port";
-import { studioAlignUiActions, studioAlignUiAtom } from "../state/studio-align-store";
+import { readStudioAlignSession, studioAlignUiActions, studioAlignUiAtom } from "../state/studio-align-store";
 import {
   studioAnnotateUiActions,
   studioAnnotateUiAtom,
@@ -24,10 +24,19 @@ export function StudioWorkSessionGate(props: { children?: JSX.Element }) {
   const [, setAlignUi] = useAtom(studioAlignUiAtom);
   const [, setAnnotateUi] = useAtom(studioAnnotateUiAtom);
   const [, setWizard] = useAtom(studioWizardAtom);
+  const persistedSession = readStudioAlignSession();
+
+  onMount(() => {
+    const alignSession = readStudioAlignSession();
+    if (alignSession?.workspacePath) {
+      workspace.setWorkspacePath(alignSession.workspacePath);
+    }
+  });
 
   return (
     <WorkSessionAppGate
       appId="studio"
+      gateOptions={{ skipResumePicker: persistedSession != null }}
       PickerDialog={WorkSessionPickerDialog}
       onRestore={(session) =>
         restoreStudioSession(

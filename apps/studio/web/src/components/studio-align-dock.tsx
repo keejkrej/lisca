@@ -7,7 +7,6 @@ import { useStudioAlignPage } from "../state/studio-align-page-context";
 
 export function StudioAlignDock() {
   const { state, smartExclude, saveAndAdvance } = useStudioAlignPage();
-  const gridDisabled = state.cropping || !state.frame;
 
   return (
     <DockStrip>
@@ -17,7 +16,7 @@ export function StudioAlignDock() {
         </p>
       </DockSection>
       <AlignGridShapeDockSection
-        disabled={gridDisabled}
+        disabled={state.cropping || !state.frame}
         shape={state.grid.shape}
         onShapeChange={(shape) =>
           state.setGrid((grid) => ({

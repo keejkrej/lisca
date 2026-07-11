@@ -5,6 +5,7 @@ import {
   useCanvasTransientStatus,
 } from "@lisca/ui/features";
 import { ViewportCard } from "@lisca/ui/shell";
+import { createMemo } from "solid-js";
 
 import {
   useStudioAlignCanvas,
@@ -29,26 +30,29 @@ export function StudioAlignMain() {
   }));
   const { handlePointerDown, handlePointerMove, handlePointerEnd } = gridHandlers;
   const visibleStatus = useCanvasTransientStatus(() => canvas.status);
-  const activeToastStatus = crop.cropping
-    ? "Cropping ROI output"
-    : nav.saving || canvas.frameLoading
-      ? "Loading frame"
-      : canvas.scanLoading
-        ? "Scanning source"
-        : visibleStatus();
-  const positionIndex = nav.alignPositions.indexOf(nav.selection.pos);
-  const positionCount = nav.alignPositions.length;
-  const positionMessage =
-    positionIndex >= 0 && positionCount > 0 ? `Pos ${positionIndex}/${positionCount}` : null;
-  const messages = (() => {
-    if (!positionMessage) return [];
-    return [
-      {
-        text: positionMessage,
-      },
-    ];
-  })();
-  const toasts = (() => {
+  const activeToastStatus = createMemo(() =>
+    crop.cropping
+      ? "Cropping ROI output"
+      : nav.saving || canvas.frameLoading
+        ? "Loading frame"
+        : canvas.scanLoading
+          ? "Scanning source"
+          : visibleStatus(),
+  );
+  const positionInfo = createMemo(() => {
+    const positionIndex = nav.alignPositions.indexOf(nav.selection.pos);
+    const positionCount = nav.alignPositions.length;
+    const positionMessage =
+      positionIndex >= 0 && positionCount > 0 ? `Pos ${positionIndex}/${positionCount}` : null;
+    return positionMessage
+      ? [
+          {
+            text: positionMessage,
+          },
+        ]
+      : [];
+  });
+  const toasts = createMemo(() => {
     if (canvas.error)
       return [
         {
@@ -56,14 +60,15 @@ export function StudioAlignMain() {
           tone: "error" as const,
         },
       ];
-    if (activeToastStatus)
+    const status = activeToastStatus();
+    if (status)
       return [
         {
-          text: activeToastStatus,
+          text: status,
         },
       ];
     return [];
-  })();
+  });
 
   return (
     <>
@@ -78,10 +83,10 @@ export function StudioAlignMain() {
           excludedCells={canvas.displayedExcludedCells}
           frame={canvas.frame}
           grid={canvas.grid}
-          messages={messages}
+          messages={positionInfo()}
           previewGridRef={gridHandlers.previewGridRef}
           previewRedrawRef={previewRedrawRef}
-          toasts={toasts}
+          toasts={toasts()}
           onVirtualPointerCancel={handlePointerEnd}
           onVirtualPointerDown={handlePointerDown}
           onVirtualPointerMove={handlePointerMove}

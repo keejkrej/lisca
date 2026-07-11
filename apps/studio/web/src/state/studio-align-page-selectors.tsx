@@ -2,16 +2,36 @@ import { useStudioAlignPage } from "./studio-align-page-context";
 export function useStudioAlignCanvas() {
   const { state } = useStudioAlignPage();
   return {
-    frame: state.frame,
-    grid: state.grid,
-    toolMode: state.toolMode,
-    patternZoomLocked: state.patternZoomLocked,
-    displayedExcludedCells: state.displayedExcludedCells,
-    workspacePath: state.workspacePath,
-    frameLoading: state.frameLoading,
-    scanLoading: state.scanLoading,
-    error: state.error,
-    status: state.status,
+    get frame() {
+      return state.frame;
+    },
+    get grid() {
+      return state.grid;
+    },
+    get toolMode() {
+      return state.toolMode;
+    },
+    get patternZoomLocked() {
+      return state.patternZoomLocked;
+    },
+    get displayedExcludedCells() {
+      return state.displayedExcludedCells;
+    },
+    get workspacePath() {
+      return state.workspacePath;
+    },
+    get frameLoading() {
+      return state.frameLoading;
+    },
+    get scanLoading() {
+      return state.scanLoading;
+    },
+    get error() {
+      return state.error;
+    },
+    get status() {
+      return state.status;
+    },
     setGrid: state.setGrid,
     setToolMode: state.setToolMode,
     setPatternZoomLocked: state.setPatternZoomLocked,
@@ -20,10 +40,18 @@ export function useStudioAlignCanvas() {
 export function useStudioAlignCrop() {
   const { state } = useStudioAlignPage();
   return {
-    cropStartConfirm: state.cropStartConfirm,
-    cropConfirm: state.cropConfirm,
-    cropProgress: state.cropProgress,
-    cropping: state.cropping,
+    get cropStartConfirm() {
+      return state.cropStartConfirm;
+    },
+    get cropConfirm() {
+      return state.cropConfirm;
+    },
+    get cropProgress() {
+      return state.cropProgress;
+    },
+    get cropping() {
+      return state.cropping;
+    },
     startConfirmedCrop: state.startConfirmedCrop,
     cancelCropStartConfirm: state.cancelCropStartConfirm,
     confirmCropOverwrite: state.confirmCropOverwrite,
@@ -35,13 +63,21 @@ export function useStudioAlignCrop() {
 export function useStudioAlignNav() {
   const { state } = useStudioAlignPage();
   return {
-    selection: state.selection,
-    alignPositions: state.alignPositions,
-    canGoBack: state.canGoBack,
+    get selection() {
+      return state.selection;
+    },
+    get alignPositions() {
+      return state.alignPositions;
+    },
+    get canGoBack() {
+      return state.canGoBack;
+    },
     goBack: state.goBack,
     resetCurrent: state.resetCurrent,
     goToFirstUnaligned: state.goToFirstUnaligned,
     saveAndAdvanceWithModelCells: state.saveAndAdvanceWithModelCells,
-    saving: state.saving,
+    get saving() {
+      return state.saving;
+    },
   };
 }
