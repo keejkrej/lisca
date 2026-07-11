@@ -13,7 +13,9 @@ import {
   alignStateFromCurrent,
   buildBboxCsv,
   collectAlignGridEdgeCells,
+  computeAutoExcludePreview,
   countVisibleAlignGridCells,
+  enumerateVisibleAlignGridCells,
   mergeExcludedAlignGridCells,
   type AlignGridToolMode,
 } from "@lisca/utils";
@@ -30,14 +32,18 @@ import {
   type Accessor,
 } from "solid-js";
 import {
+  applyVariationExcludePreview,
   cropPositionsAfterSkip,
   deriveCurrentExcludedCells,
   deriveDisplayedExcludedCells,
   deriveVisibleCounts,
   isCropping,
+  mergeAutoExcludedAlignCells,
   runCropRoi,
   shouldApplySourceScan,
+  updateVariationExcludeThreshold,
   type CropConfirmState,
+  type VariationExcludePreview,
 } from "./align-session";
 import {
   savedAlignStateKey,
@@ -131,12 +137,17 @@ export type UseAlignSessionCoreOptions = {
   policy?: AlignSessionPolicy;
 };
 
+export type { VariationExcludePreview } from "./align-session";
+
 export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
   const { backend, resources, scan, store, workspace } = options;
   const policy = options.policy ?? {};
   const actions = store.actions;
   const [ui, setUi] = useAtom(store.atom);
   const [cropConfirm, setCropConfirm] = createSignal<CropConfirmState | null>(null);
+  const [variationExcludePreview, setVariationExcludePreview] =
+    createSignal<VariationExcludePreview | null>(null);
+  const [variationExcludeLoading, setVariationExcludeLoading] = createSignal(false);
   let cropRequestId: string | null = null;
 
   const activeSourceKey = createMemo(() => sourceKey(ui().source));
@@ -420,6 +431,86 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
     return cells ? saveCurrent(cells) : false;
   };
 
+  const previewVariationExclude = async () => {
+    const currentUi = ui();
+    const { frame, grid } = currentUi;
+    if (!frame) return null;
+    const cells = enumerateVisibleAlignGridCells(frame, grid);
+    if (cells.length === 0) return null;
+    setVariationExcludeLoading(true);
+    try {
+      return computeAutoExcludePreview(frame, cells);
+    } finally {
+      setVariationExcludeLoading(false);
+    }
+  };
+
+  const variationExclude = async () => {
+    const currentUi = ui();
+    const { source, frame } = currentUi;
+    if (!source || !frame) return;
+    sessionActions.reportStatus("Var exclude preview");
+    try {
+      const preview = await previewVariationExclude();
+      if (!preview) {
+        sessionActions.reportStatus("No visible cells for var exclude");
+        return;
+      }
+      setVariationExcludePreview({
+        preview,
+        threshold: preview.threshold,
+      });
+    } catch (cause) {
+      sessionActions.reportError(backend.toErrorMessage(cause, "Var exclude preview failed"));
+    }
+  };
+
+  const setVariationExcludeThreshold = (threshold: number) => {
+    setVariationExcludePreview((current) => updateVariationExcludeThreshold(current, threshold));
+  };
+
+  const cancelVariationExclude = () => {
+    if (!variationExcludePreview()) return;
+    setVariationExcludePreview(null);
+    sessionActions.reportStatus("Var exclude cancelled");
+  };
+
+  const applyVariationExclude = () => {
+    const preview = variationExcludePreview();
+    if (!preview) return;
+    const currentExcludedCells = derived().currentExcludedCells;
+    const applied = applyVariationExcludePreview(currentExcludedCells, preview);
+    sessionActions.setExcludedCellsForCurrentPosition(applied.cells);
+    setVariationExcludePreview(null);
+    sessionActions.reportStatus(
+      `Var excluded ${applied.variationCells.length} of ${applied.eligibleCellCount} cells`,
+    );
+  };
+
+  const autoExclude = async () => {
+    const currentUi = ui();
+    const { source, frame, grid } = currentUi;
+    const currentExcludedCells = derived().currentExcludedCells;
+    if (!source || !frame) return;
+    sessionActions.reportStatus("Auto exclude");
+    try {
+      const preview = await previewVariationExclude();
+      const finalExcludedCells = mergeAutoExcludedAlignCells(
+        currentExcludedCells,
+        frame,
+        grid,
+        preview,
+        preview?.threshold,
+      );
+      sessionActions.setExcludedCellsForCurrentPosition(finalExcludedCells);
+      sessionActions.reportStatus(
+        `Auto excluded ${finalExcludedCells.length - currentExcludedCells.length} cells`,
+      );
+    } catch (cause) {
+      sessionActions.reportError(backend.toErrorMessage(cause, "Auto exclude failed"));
+    }
+  };
+
   const runCrop = async (positions: number[], overwrite: boolean) => {
     const { workspacePath, source } = ui();
     if (!workspacePath || !source || positions.length === 0) return;
@@ -552,6 +643,15 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
       skipExisting: skipExistingCrop,
       cancelConfirm: () => setCropConfirm(null),
       cancel: cancelCrop,
+    },
+    variation: {
+      preview: variationExcludePreview,
+      loading: variationExcludeLoading,
+      exclude: variationExclude,
+      setThreshold: setVariationExcludeThreshold,
+      cancel: cancelVariationExclude,
+      apply: applyVariationExclude,
+      autoExclude,
     },
   };
 }

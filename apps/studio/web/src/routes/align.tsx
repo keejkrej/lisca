@@ -36,7 +36,7 @@ function AlignPageContent() {
           </AppShell.Dock>
         </AppShell.MainColumn>
         <AppShell.Right widthClass="w-72">
-          <StudioRightPanel expert={<StudioAlignExpertRight />} />
+          <StudioRightPanel expert={() => <StudioAlignExpertRight />} />
         </AppShell.Right>
       </AppShell.Body>
     </AppShell>

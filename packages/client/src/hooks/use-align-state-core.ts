@@ -2,37 +2,25 @@ import type {
   AlignGridCellCoord,
   AlignGridState,
   AlignerSource,
-  AutoExcludePreviewResponse,
   ContrastWindow,
   CropRoiProgress,
   FrameRequest,
   WorkspaceScan,
 } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
-import { cellsBelowVariationThreshold, type CropConfirmState } from "../session/align-session";
+import { type CropConfirmState, type VariationExcludePreview } from "../session/align-session";
 import {
   useAlignSessionCore,
   type AlignScanSource,
   type AlignSessionBackend,
   type AlignSessionStore,
 } from "../session/use-align-session";
-import {
-  collectAlignGridEdgeCells,
-  computeAutoExcludePreview,
-  enumerateVisibleAlignGridCells,
-  mergeExcludedAlignGridCells,
-  type AlignGridToolMode,
-} from "@lisca/utils";
-import { createMemo, createSignal, type Accessor } from "solid-js";
+import { type AlignGridToolMode } from "@lisca/utils";
+import { createMemo, type Accessor } from "solid-js";
 import type { ExcludedByPosition, StateUpdater } from "../atoms/align-ui";
 import type { CanvasResourceTransactionOptions } from "../canvas-resource-transaction";
 
-export type { CropConfirmState };
-
-export type VariationExcludePreview = {
-  preview: AutoExcludePreviewResponse;
-  threshold: number;
-};
+export type { CropConfirmState, VariationExcludePreview };
 
 export type AlignState = {
   workspacePath: string | null;
@@ -104,9 +92,6 @@ export type UseAlignStateCoreDeps = {
 export function useAlignStateCore(deps: UseAlignStateCoreDeps): Accessor<AlignState> {
   const workspace = deps.host.useWorkspace();
   const transact = deps.host.useCanvasTransaction();
-  const [variationExcludePreview, setVariationExcludePreview] =
-    createSignal<VariationExcludePreview | null>(null);
-  const [variationExcludeLoading, setVariationExcludeLoading] = createSignal(false);
 
   const session = useAlignSessionCore({
     store: deps.store,
@@ -121,6 +106,7 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): Accessor<AlignSt
     },
   });
   const ui = session.state;
+  const variation = session.variation;
 
   const {
     setSource,
@@ -132,95 +118,6 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): Accessor<AlignSt
     setManualExclusionEnabled,
     setExcludedCellsForCurrentPosition,
   } = session.actions;
-
-  const previewVariationExclude = async () => {
-    const currentUi = ui();
-    const { frame, grid } = currentUi;
-    if (!frame) return null;
-    const cells = enumerateVisibleAlignGridCells(frame, grid);
-    if (cells.length === 0) return null;
-    setVariationExcludeLoading(true);
-    try {
-      return computeAutoExcludePreview(frame, cells);
-    } finally {
-      setVariationExcludeLoading(false);
-    }
-  };
-
-  const variationExclude = async () => {
-    const currentUi = ui();
-    const { source, frame } = currentUi;
-    if (!source || !frame) return;
-    session.actions.reportStatus("Var exclude preview");
-    try {
-      const preview = await previewVariationExclude();
-      if (!preview) {
-        session.actions.reportStatus("No visible cells for var exclude");
-        return;
-      }
-      setVariationExcludePreview({
-        preview,
-        threshold: preview.threshold,
-      });
-    } catch (cause) {
-      session.actions.reportError(deps.backend.toErrorMessage(cause, "Var exclude preview failed"));
-    }
-  };
-
-  const setVariationExcludeThreshold = (threshold: number) => {
-    setVariationExcludePreview((current) =>
-      current
-        ? {
-            ...current,
-            threshold,
-          }
-        : current,
-    );
-  };
-
-  const cancelVariationExclude = () => {
-    setVariationExcludePreview(null);
-    session.actions.reportStatus("Var exclude cancelled");
-  };
-
-  const applyVariationExclude = () => {
-    const preview = variationExcludePreview();
-    if (!preview) return;
-    const currentExcludedCells = session.derived().currentExcludedCells;
-    const variationCells = cellsBelowVariationThreshold(preview.preview, preview.threshold);
-    setExcludedCellsForCurrentPosition(
-      mergeExcludedAlignGridCells(currentExcludedCells, variationCells),
-    );
-    setVariationExcludePreview(null);
-    session.actions.reportStatus(
-      `Var excluded ${variationCells.length} of ${preview.preview.eligibleCellCount} cells`,
-    );
-  };
-
-  const autoExclude = async () => {
-    const currentUi = ui();
-    const { source, frame, grid } = currentUi;
-    const currentExcludedCells = session.derived().currentExcludedCells;
-    if (!source || !frame) return;
-    session.actions.reportStatus("Auto exclude");
-    try {
-      const edgeCells = collectAlignGridEdgeCells(frame, grid);
-      const preview = await previewVariationExclude();
-      const variationCells = preview
-        ? cellsBelowVariationThreshold(preview, preview.threshold)
-        : [];
-      const finalExcludedCells = mergeExcludedAlignGridCells(currentExcludedCells, [
-        ...edgeCells,
-        ...variationCells,
-      ]);
-      setExcludedCellsForCurrentPosition(finalExcludedCells);
-      session.actions.reportStatus(
-        `Auto excluded ${finalExcludedCells.length - currentExcludedCells.length} cells`,
-      );
-    } catch (cause) {
-      session.actions.reportError(deps.backend.toErrorMessage(cause, "Auto exclude failed"));
-    }
-  };
 
   return createMemo<AlignState>(() => {
     const currentUi = ui();
@@ -264,13 +161,13 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): Accessor<AlignSt
       skipExistingCrop: session.crop.skipExisting,
       cancelCropConfirm: session.crop.cancelConfirm,
       cancelCrop: session.crop.cancel,
-      variationExcludePreview: variationExcludePreview(),
-      variationExcludeLoading: variationExcludeLoading(),
-      variationExclude,
-      setVariationExcludeThreshold,
-      cancelVariationExclude,
-      applyVariationExclude,
-      autoExclude,
+      variationExcludePreview: variation.preview(),
+      variationExcludeLoading: variation.loading(),
+      variationExclude: variation.exclude,
+      setVariationExcludeThreshold: variation.setThreshold,
+      cancelVariationExclude: variation.cancel,
+      applyVariationExclude: variation.apply,
+      autoExclude: variation.autoExclude,
       applySmartExclusion: session.applySmartExclusion,
       reportError: session.actions.reportError,
     };

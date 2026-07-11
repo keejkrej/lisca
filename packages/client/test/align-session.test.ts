@@ -3,12 +3,15 @@ import { describe, expect, it } from "vitest";
 
 import {
   allAlignPositionsSaved,
+  applyVariationExcludePreview,
   cellsBelowVariationThreshold,
   cropPositionsAfterSkip,
   deriveVisibleCounts,
+  mergeAutoExcludedAlignCells,
   nextAlignPosition,
   resolveFirstUnalignedTarget,
   shouldApplySourceScan,
+  updateVariationExcludeThreshold,
 } from "../src/session/align-session";
 
 describe("align-session helpers", () => {
@@ -52,6 +55,80 @@ describe("align-session helpers", () => {
       5,
     );
     expect(cells).toEqual([{ i: 0, j: 0 }]);
+  });
+
+  it("updateVariationExcludeThreshold preserves preview while changing threshold", () => {
+    const preview = {
+      preview: {
+        threshold: 5,
+        eligibleCellCount: 1,
+        cellScores: [{ i: 0, j: 0, score: 1 }],
+      },
+      threshold: 5,
+    };
+    expect(updateVariationExcludeThreshold(preview, 3)).toEqual({
+      ...preview,
+      threshold: 3,
+    });
+    expect(updateVariationExcludeThreshold(null, 3)).toBeNull();
+  });
+
+  it("applyVariationExcludePreview merges variation cells into current exclusions", () => {
+    const applied = applyVariationExcludePreview([{ i: 2, j: 2 }], {
+      preview: {
+        threshold: 5,
+        eligibleCellCount: 2,
+        cellScores: [
+          { i: 0, j: 0, score: 1 },
+          { i: 1, j: 1, score: 9 },
+        ],
+      },
+      threshold: 5,
+    });
+    expect(applied.variationCells).toEqual([{ i: 0, j: 0 }]);
+    expect(applied.eligibleCellCount).toBe(2);
+    expect(applied.cells).toEqual(
+      expect.arrayContaining([
+        { i: 0, j: 0 },
+        { i: 2, j: 2 },
+      ]),
+    );
+    expect(applied.cells).toHaveLength(2);
+  });
+
+  it("mergeAutoExcludedAlignCells combines edge and variation exclusions", () => {
+    const frame = {
+      width: 4,
+      height: 4,
+      pixels: new Uint8Array(16),
+      contrastDomain: { min: 0, max: 255 },
+    };
+    const grid = normalizeAlignGridState({
+      ...createDefaultAlignGrid(),
+      enabled: true,
+      cellWidth: 2,
+      cellHeight: 2,
+      spacingA: 2,
+      spacingB: 2,
+    });
+    const merged = mergeAutoExcludedAlignCells(
+      [{ i: 9, j: 9 }],
+      frame,
+      grid,
+      {
+        threshold: 5,
+        eligibleCellCount: 1,
+        cellScores: [{ i: 0, j: 0, score: 1 }],
+      },
+      5,
+    );
+    expect(merged).toEqual(
+      expect.arrayContaining([
+        { i: 9, j: 9 },
+        { i: 0, j: 0 },
+      ]),
+    );
+    expect(merged.length).toBeGreaterThan(1);
   });
 
   it("deriveVisibleCounts returns zeros without frame", () => {

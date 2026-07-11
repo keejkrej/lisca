@@ -177,6 +177,18 @@ describe("align-ui actions", () => {
     const next = runReducer(initial, (set) => actions.setFrameLoading(set, false));
     expect(next).toBe(initial);
   });
+
+  it("defaults manual exclusion to disabled", () => {
+    expect(createInitialAlignUiState().manualExclusionEnabled).toBe(false);
+  });
+
+  it("setManualExclusionEnabled toggles manual exclusion mode", () => {
+    const initial = createInitialAlignUiState();
+    const enabled = runReducer(initial, (set) => actions.setManualExclusionEnabled(set, true));
+    expect(enabled.manualExclusionEnabled).toBe(true);
+    const disabled = runReducer(enabled, (set) => actions.setManualExclusionEnabled(set, false));
+    expect(disabled.manualExclusionEnabled).toBe(false);
+  });
 });
 
 describe("createAlignerPersist", () => {

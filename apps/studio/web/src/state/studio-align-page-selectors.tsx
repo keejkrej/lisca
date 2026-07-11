@@ -1,4 +1,7 @@
+import type { AlignGridCellCoord } from "@lisca/contracts";
+
 import { useStudioAlignPage } from "./studio-align-page-context";
+
 export function useStudioAlignCanvas() {
   const { state } = useStudioAlignPage();
   return {
@@ -13,6 +16,12 @@ export function useStudioAlignCanvas() {
     },
     get patternZoomLocked() {
       return state.patternZoomLocked;
+    },
+    get manualExclusionEnabled() {
+      return state.manualExclusionEnabled;
+    },
+    get currentExcludedCells() {
+      return state.currentExcludedCells;
     },
     get displayedExcludedCells() {
       return state.displayedExcludedCells;
@@ -35,6 +44,9 @@ export function useStudioAlignCanvas() {
     setGrid: state.setGrid,
     setToolMode: state.setToolMode,
     setPatternZoomLocked: state.setPatternZoomLocked,
+    setManualExclusionEnabled: state.setManualExclusionEnabled,
+    setExcludedCellsForCurrentPosition: (cells: Iterable<AlignGridCellCoord>) =>
+      state.setExcludedCellsForCurrentPosition(cells),
   };
 }
 export function useStudioAlignCrop() {

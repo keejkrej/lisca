@@ -291,7 +291,7 @@ export default function ResultPage() {
           </AppShell.Dock>
         </AppShell.MainColumn>
         <AppShell.Right widthClass="w-72">
-          <StudioRightPanel expert={<StudioResultExpertRight />} />
+          <StudioRightPanel expert={() => <StudioResultExpertRight />} />
         </AppShell.Right>
       </AppShell.Body>
     </AppShell>

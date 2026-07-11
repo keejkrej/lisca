@@ -8,7 +8,11 @@ import type {
 } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 import { isDoneCropStatus } from "@lisca/client/crop-status";
-import { countVisibleAlignGridCells } from "@lisca/utils";
+import {
+  collectAlignGridEdgeCells,
+  countVisibleAlignGridCells,
+  mergeExcludedAlignGridCells,
+} from "@lisca/utils";
 
 import type { AlignerDataPort } from "../ports/types";
 import { runClientEffect } from "../infra/runtime";
@@ -102,6 +106,49 @@ export function cellsBelowVariationThreshold(
   threshold: number,
 ): AlignGridCellCoord[] {
   return preview.cellScores.filter((cell) => cell.score <= threshold).map(({ i, j }) => ({ i, j }));
+}
+
+export type VariationExcludePreview = {
+  preview: AutoExcludePreviewResponse;
+  threshold: number;
+};
+
+export function updateVariationExcludeThreshold(
+  current: VariationExcludePreview | null,
+  threshold: number,
+): VariationExcludePreview | null {
+  return current ? { ...current, threshold } : null;
+}
+
+export function applyVariationExcludePreview(
+  currentExcludedCells: AlignGridCellCoord[],
+  preview: VariationExcludePreview,
+): {
+  cells: AlignGridCellCoord[];
+  variationCells: AlignGridCellCoord[];
+  eligibleCellCount: number;
+} {
+  const variationCells = cellsBelowVariationThreshold(preview.preview, preview.threshold);
+  return {
+    cells: mergeExcludedAlignGridCells(currentExcludedCells, variationCells),
+    variationCells,
+    eligibleCellCount: preview.preview.eligibleCellCount,
+  };
+}
+
+export function mergeAutoExcludedAlignCells(
+  currentExcludedCells: AlignGridCellCoord[],
+  frame: FrameResult,
+  grid: AlignGridState,
+  variationPreview: AutoExcludePreviewResponse | null,
+  variationThreshold?: number,
+): AlignGridCellCoord[] {
+  const edgeCells = collectAlignGridEdgeCells(frame, grid);
+  const variationCells =
+    variationPreview != null && variationThreshold != null
+      ? cellsBelowVariationThreshold(variationPreview, variationThreshold)
+      : [];
+  return mergeExcludedAlignGridCells(currentExcludedCells, [...edgeCells, ...variationCells]);
 }
 
 export type CropConfirmState = {

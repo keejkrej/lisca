@@ -12,6 +12,7 @@ import {
   allAlignPositionsSaved,
   nextAlignPosition,
   resolveFirstUnalignedTarget,
+  type VariationExcludePreview,
 } from "@lisca/client/align-session";
 import { useAlignSessionCore } from "@lisca/client/align-session/solid";
 import { useCanvasResourceTransaction } from "@lisca/ui/features";
@@ -62,6 +63,8 @@ export type StudioAlignState = {
   setToolMode: (mode: AlignGridToolMode) => void;
   patternZoomLocked: boolean;
   setPatternZoomLocked: (locked: boolean) => void;
+  manualExclusionEnabled: boolean;
+  setManualExclusionEnabled: (enabled: boolean) => void;
   excludedCellsByPosition: ExcludedByPosition;
   setExcludedCellsForCurrentPosition: (cells: Iterable<AlignGridCellCoord>) => void;
   currentExcludedCells: AlignGridCellCoord[];
@@ -87,6 +90,12 @@ export type StudioAlignState = {
   skipExistingCrop: () => void;
   cancelCropConfirm: () => void;
   cancelCrop: () => Promise<void>;
+  variationExcludePreview: VariationExcludePreview | null;
+  variationExcludeLoading: boolean;
+  variationExclude: () => Promise<void>;
+  setVariationExcludeThreshold: (threshold: number) => void;
+  cancelVariationExclude: () => void;
+  applyVariationExclude: () => void;
   applySmartExclusion: (modelCells: AlignGridCellCoord[]) => void;
   saveAndAdvanceWithModelCells: (modelCells: AlignGridCellCoord[]) => Promise<boolean>;
   reportError: (message: string | null) => void;
@@ -155,6 +164,7 @@ export function useStudioAlignState(): StudioAlignState {
     setContrast,
     setExcludedCellsForCurrentPosition,
     setGrid,
+    setManualExclusionEnabled,
     setPatternZoomLocked,
     setSelection,
     setToolMode,
@@ -299,6 +309,10 @@ export function useStudioAlignState(): StudioAlignState {
       return ui().patternZoomLocked;
     },
     setPatternZoomLocked,
+    get manualExclusionEnabled() {
+      return ui().manualExclusionEnabled;
+    },
+    setManualExclusionEnabled,
     get excludedCellsByPosition() {
       return ui().excludedCellsByPosition;
     },
@@ -351,6 +365,16 @@ export function useStudioAlignState(): StudioAlignState {
     skipExistingCrop: session.crop.skipExisting,
     cancelCropConfirm: session.crop.cancelConfirm,
     cancelCrop: session.crop.cancel,
+    get variationExcludePreview() {
+      return session.variation.preview();
+    },
+    get variationExcludeLoading() {
+      return session.variation.loading();
+    },
+    variationExclude: session.variation.exclude,
+    setVariationExcludeThreshold: session.variation.setThreshold,
+    cancelVariationExclude: session.variation.cancel,
+    applyVariationExclude: session.variation.apply,
     applySmartExclusion,
     saveAndAdvanceWithModelCells,
     reportError: setError,

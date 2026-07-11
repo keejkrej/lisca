@@ -48,6 +48,12 @@ export {
   type AnnotationTool,
   type SmartSegmentPrompt,
 } from "./annotate/annotation-canvas";
+export {
+  AnnotationControlRail,
+  type AnnotationControlHandle,
+  type AnnotationControlRailProps,
+  type AnnotationControlValue,
+} from "./annotate/annotation-control-rail";
 export { AnnotationToolGrid, buildAnnotationToolActions } from "./annotate/annotation-tool-grid";
 export {
   ANNOTATION_TOOL_DEFINITIONS,
@@ -94,6 +100,11 @@ export {
   type SelectNavigationControlProps,
   type SliderNavigationControlProps,
 } from "./navigation/frame-navigation";
+export {
+  RoiFrameNavigation,
+  type RoiFrameNavigationProps,
+  type RoiFrameSelection,
+} from "./navigation/roi-frame-navigation";
 export {
   HostFilePickerDialog,
   type HostFilePickerDialogProps,
