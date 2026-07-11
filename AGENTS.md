@@ -22,13 +22,13 @@ Humans review this file only. Agents maintain **Tech stack** via the memory skil
 
 <!-- memory:techstack-start -->
 
-- **Monorepo:** Bun workspaces + Vite+ (`vp run` for task orchestration) — React 19, Vite, Tailwind v4, coss-ui, Effect Atom, TanStack Router; Tauri desktop and Expo mobile; Rust HTTP/WS servers per product (`apps/*/server`).
+- **Monorepo:** Bun workspaces + Vite+ (`vp run` for task orchestration) — SolidJS, Vite, Tailwind v4, zaidan (shadcn registry for SolidJS/Kobalte), Effect Atom, TanStack Router; Tauri desktop and Expo mobile; Rust HTTP/WS servers per product (`apps/*/server`).
 - **Client IO:** Effect programs and shared atoms in `@lisca/client` — not raw `fetch` in components.
 - **Toolchain:** `vp` (Vite+) is the unified entry point for package management and JS tasks. Use `vp install`, `vp add`, `vp remove`, `vp run`, `vp exec`, etc. Do not invoke `bun`/`npm`/`pnpm`/`yarn` directly for install/add/remove/update/run commands.
 - **CLI:** Prefer `vp run lisca <dev|build|dist|typecheck|preview|install> <aligner|annotator|studio|landing|workspace> [target]` for product orchestration — `scripts/lisca.mjs`. Underneath, JS tasks go through `vp run --filter <pkg> <task>`; `bun` is only used because the orchestration script requires it.
-- **Tooling:** oxfmt + oxlint are driven by `vp` from `vite.config.ts`; React Compiler enabled in web apps via `liscaReactPlugin()` — no `useMemo`, `useCallback`, or `memo`.
+- **Tooling:** oxfmt + oxlint are driven by `vp` from `vite.config.ts`.
 - **Imports:** Extensionless TypeScript imports (no `.ts`/`.tsx` suffixes) — `.oxlintrc.json` `import/extensions`.
-- **Web UI:** coss (Base UI) primitives in `@lisca/ui/components/ui/` — do not edit vendor files; add via `packages/ui/components.json` (`@coss` registry). Shell/feature boundaries — `docs/agents/ui-package-layout.md`.
+- **Web UI:** zaidan (shadcn registry for SolidJS, built on Kobalte) primitives in `@lisca/ui/components/ui/` — do not edit vendor files; add via `packages/ui/components.json` (`@zaidan` registry: `https://zaidan.carere.dev/r/kobalte/{name}.json`). Component styles in `packages/ui/theme.css` (`z-*` CSS classes). Shell/feature boundaries — `docs/agents/ui-package-layout.md`.
 - **Contracts:** Never hand-write wire types — derive from Effect Schema + HttpApi in `@lisca/contracts`. Wizard/UI assay types from `@lisca/contracts/assay`, not the root entry. After schema changes: `vp run contracts:generate`; after Rust type changes: run the contracts package's rust-types script via the task runner (`vp run rust-types --filter @lisca/contracts` when supported, or the package manager's workspace filter as a fallback).
 - **Backends:** Rust (Axum; serde types from `typify` on generated JSON Schema) for product APIs; Python (uv, Ruff, ty, Typer) in `python/` for utilities and training.
 - **Tests:** Put logic in `@lisca/utils`, `@lisca/ui-headless`, `@lisca/client` — not DOM or React Native component mounts — `docs/agents/ui-package-layout.md`.

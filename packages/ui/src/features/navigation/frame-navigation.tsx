@@ -9,7 +9,7 @@ import {
 import { useSliderStepperField } from "@lisca/ui-headless/slider-stepper-field";
 import IconCaretLeftRegular from "phosphor-icons-solid/IconCaretLeftRegular";
 import IconCaretRightRegular from "phosphor-icons-solid/IconCaretRightRegular";
-import { For, Show, type JSX } from "solid-js";
+import { Show } from "solid-js";
 
 import { Button } from "../../components/ui/button";
 import {
@@ -84,23 +84,30 @@ export function SelectStepperField<T extends NavigationValue>(
         <Select<T>
           class="flex items-center"
           disabled={props.disabled}
-          items={props.options}
-          modal={false}
+          options={props.options.map((opt) => opt.value)}
+          optionValue={(opt) => opt}
+          optionTextValue={(opt) => formatNavigationOptionDisplayLabel(props.options.find((o) => o.value === opt)?.label ?? "")}
+          itemComponent={(itemProps) => (
+            <SelectItem item={itemProps.item}>
+              {formatNavigationOptionDisplayLabel(
+                props.options.find((o) => o.value === itemProps.item.rawValue)?.label ?? "",
+              )}
+            </SelectItem>
+          )}
+          placement="bottom-start"
           value={props.value}
-          onValueChange={(next) => next != null && props.onChange(next)}
+          onChange={(next) => next != null && props.onChange(next as T)}
         >
           <SelectTrigger size="sm" class="min-w-0 text-sm">
-            <SelectValue />
+            <SelectValue<T>>
+              {(state) =>
+                formatNavigationOptionDisplayLabel(
+                  props.options.find((o) => o.value === state.selectedOption())?.label ?? "",
+                )
+              }
+            </SelectValue>
           </SelectTrigger>
-          <SelectContent>
-            <For each={props.options}>
-              {(option) => (
-                <SelectItem value={option.value}>
-                  {formatNavigationOptionDisplayLabel(option.label)}
-                </SelectItem>
-              )}
-            </For>
-          </SelectContent>
+          <SelectContent />
         </Select>
         <Button
           aria-label={`Next ${props.label}`}

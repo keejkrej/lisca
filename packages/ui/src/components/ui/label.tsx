@@ -1,32 +1,22 @@
-import type { PolymorphicProps } from "@kobalte/core/polymorphic";
-import { splitProps, type JSX, type ValidComponent } from "solid-js";
-import { Dynamic } from "solid-js/web";
-
+import type { ComponentProps } from "solid-js";
+import { splitProps } from "solid-js";
 import { cn } from "../../lib/utils";
 
-export type LabelProps<T extends ValidComponent = "label"> = {
-  class?: string;
-  htmlFor?: string;
-  /** Base UI compat — maps to Kobalte `as`. Prefer `as` for polymorphic rendering. */
-  render?: T;
-  as?: T;
-};
+type LabelProps = ComponentProps<"label">;
 
-export function Label<T extends ValidComponent = "label">(
-  props: LabelProps<T> & Omit<PolymorphicProps<T>, "as">,
-): JSX.Element {
-  const [local, rest] = splitProps(props, ["class", "render", "as", "htmlFor"]);
+const Label = (props: LabelProps) => {
+  const [local, others] = splitProps(props, ["class"]);
 
   return (
-    <Dynamic
-      component={local.as ?? local.render ?? "label"}
+    <label
       class={cn(
-        "inline-flex items-center gap-2 font-medium text-base/4.5 text-foreground sm:text-sm/4",
+        "z-label flex select-none items-center peer-disabled:cursor-not-allowed group-data-[disabled=true]:pointer-events-none",
         local.class,
       )}
       data-slot="label"
-      for={local.htmlFor}
-      {...rest}
+      {...others}
     />
   );
-}
+};
+
+export { Label };

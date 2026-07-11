@@ -21,12 +21,11 @@ export function AlignGridShapeToggle(props: AlignGridShapeToggleProps) {
       aria-label="Grid shape"
       class={props.class ?? "w-full min-w-[9rem]"}
       disabled={props.disabled}
-      multiple={false}
       size="sm"
-      value={[value()]}
+      value={value()}
       variant="outline"
-      onValueChange={(next) => {
-        const selected = next[0];
+      onChange={(next) => {
+        const selected = typeof next === "string" ? next : next?.[0];
         if (selected === "rect" || selected === "hex") {
           props.onShapeChange(selected);
         }

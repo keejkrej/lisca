@@ -10,12 +10,11 @@ export function AnnotationModeToggle(props: {
   return (
     <ToggleGroup
       class={cn("w-full min-w-0", props.class)}
-      multiple={false}
       size="sm"
-      value={[props.mode]}
+      value={props.mode}
       variant="outline"
-      onValueChange={(next) => {
-        const value = next[0];
+      onChange={(next) => {
+        const value = typeof next === "string" ? next : next?.[0];
         if (value === "classification" || value === "segmentation") props.onModeChange(value);
       }}
     >

@@ -113,7 +113,6 @@ export function VariationExcludeDialog(props: {
                     />
                   </div>
                   <Input
-                    nativeInput
                     aria-label="Threshold value"
                     id="variation-threshold"
                     max={metrics().max}

@@ -1,6 +1,6 @@
 @import "./fonts.css";
 @import "tailwindcss";
-@import "@lisca/ui/coss-theme.css";
+@import "@lisca/ui/theme.css";
 @custom-variant dark (&:where(.dark, .dark *));
 @source "../ui/src";
 

@@ -1,0 +1,315 @@
+/**
+ * Zaidan/shadcn semantic tokens for `@lisca/ui` primitives (stone palette).
+ * Lyra style, Stone base/theme/chart, Phosphor icons.
+ * Import after Tailwind in each app: `@import "@lisca/ui/theme.css";`
+ */
+/*---break---
+ */
+@custom-variant dark (&:is(.dark *));
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+}
+
+:root {
+  --radius: 0rem;
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(20 14.3% 4.1%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(20 14.3% 4.1%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(20 14.3% 4.1%);
+  --primary: hsl(24 9.8% 10%);
+  --primary-foreground: hsl(60 9.1% 97.8%);
+  --secondary: hsl(60 4.8% 95.9%);
+  --secondary-foreground: hsl(24 9.8% 10%);
+  --muted: hsl(60 4.8% 95.9%);
+  --muted-foreground: hsl(25 5.3% 44.7%);
+  --accent: hsl(60 4.8% 95.9%);
+  --accent-foreground: hsl(24 9.8% 10%);
+  --destructive: hsl(0 84.2% 60.2%);
+  --destructive-foreground: hsl(60 9.1% 97.8%);
+  --border: hsl(20 5.9% 90%);
+  --input: hsl(20 5.9% 90%);
+  --ring: hsl(20 14.3% 4.1%);
+  --chart-1: hsl(12 76% 61%);
+  --chart-2: hsl(173 58% 39%);
+  --chart-3: hsl(197 37% 24%);
+  --chart-4: hsl(43 74% 66%);
+  --chart-5: hsl(27 87% 67%);
+}
+
+.dark {
+  --background: hsl(20 14.3% 4.1%);
+  --foreground: hsl(60 9.1% 97.8%);
+  --card: hsl(20 14.3% 4.1%);
+  --card-foreground: hsl(60 9.1% 97.8%);
+  --popover: hsl(20 14.3% 4.1%);
+  --popover-foreground: hsl(60 9.1% 97.8%);
+  --primary: hsl(60 9.1% 97.8%);
+  --primary-foreground: hsl(24 9.8% 10%);
+  --secondary: hsl(12 6.5% 15.1%);
+  --secondary-foreground: hsl(60 9.1% 97.8%);
+  --muted: hsl(12 6.5% 15.1%);
+  --muted-foreground: hsl(24 5.4% 63.9%);
+  --accent: hsl(12 6.5% 15.1%);
+  --accent-foreground: hsl(60 9.1% 97.8%);
+  --destructive: hsl(0 62.8% 30.6%);
+  --destructive-foreground: hsl(60 9.1% 97.8%);
+  --border: hsl(12 6.5% 15.1%);
+  --input: hsl(12 6.5% 15.1%);
+  --ring: hsl(24 5.7% 82.9%);
+  --chart-1: hsl(220 70% 50%);
+  --chart-2: hsl(160 60% 45%);
+  --chart-3: hsl(30 80% 55%);
+  --chart-4: hsl(280 65% 60%);
+  --chart-5: hsl(340 75% 55%);
+}
+
+/* MARK: Button */
+.z-button {
+  @apply focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:aria-invalid:border-destructive/50 rounded-lg border border-transparent bg-clip-padding text-sm font-medium focus-visible:ring-1 aria-invalid:ring-1 [&_svg:not([class*='size-'])]:size-4;
+}
+.z-button-variant-default {
+  @apply bg-primary text-primary-foreground hover:bg-primary/90;
+}
+.z-button-variant-outline {
+  @apply border-border bg-background hover:bg-accent/50 hover:text-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/64 aria-expanded:bg-accent/50 aria-expanded:text-foreground shadow-xs/5;
+}
+.z-button-variant-secondary {
+  @apply bg-secondary text-secondary-foreground hover:bg-secondary/90;
+}
+.z-button-variant-ghost {
+  @apply hover:bg-accent hover:text-foreground dark:hover:bg-muted/50;
+}
+.z-button-variant-destructive {
+  @apply border-destructive bg-destructive text-white hover:bg-destructive/90;
+}
+.z-button-variant-link {
+  @apply text-primary underline-offset-4 hover:underline;
+}
+.z-button-size-xs {
+  @apply h-7 gap-1 rounded-md px-[calc(--spacing(2)-1px)] text-xs [&_svg:not([class*='size-'])]:size-3.5 sm:h-6 sm:text-xs;
+}
+.z-button-size-sm {
+  @apply h-8 gap-1.5 px-[calc(--spacing(2.5)-1px)] [&_svg:not([class*='size-'])]:size-3.5 sm:h-7;
+}
+.z-button-size-default {
+  @apply h-9 gap-2 px-[calc(--spacing(3)-1px)] sm:h-8;
+}
+.z-button-size-lg {
+  @apply h-10 gap-2 px-[calc(--spacing(3.5)-1px)] sm:h-9;
+}
+.z-button-size-icon-xs {
+  @apply size-7 rounded-md sm:size-6 [&_svg:not([class*='size-'])]:size-3.5 sm:[&_svg:not([class*='size-'])]:size-3;
+}
+.z-button-size-icon-sm {
+  @apply size-8 sm:size-7;
+}
+.z-button-size-icon {
+  @apply size-9 sm:size-8;
+}
+.z-button-size-icon-lg {
+  @apply size-10 sm:size-9;
+}
+
+/* MARK: Card */
+.z-card {
+  @apply bg-card text-card-foreground gap-4 overflow-hidden rounded-2xl border shadow-xs/5;
+}
+.z-card-header {
+  @apply gap-1.5 p-6 has-data-[slot=card-action]:grid-cols-[1fr_auto];
+}
+.z-card-title {
+  @apply text-lg font-semibold leading-none;
+}
+.z-card-description {
+  @apply text-muted-foreground text-sm;
+}
+.z-card-content {
+  @apply p-6;
+}
+.z-card-footer {
+  @apply flex items-center p-6;
+}
+
+/* MARK: Field */
+.z-field-set {
+  @apply gap-4;
+}
+.z-field-legend {
+  @apply mb-2.5 font-medium text-sm;
+}
+.z-field-group {
+  @apply gap-5;
+}
+.z-field {
+  @apply gap-2;
+}
+.z-field-content {
+  @apply gap-0.5;
+}
+.z-field-label {
+  @apply gap-2 text-sm font-medium leading-none;
+}
+.z-field-title {
+  @apply gap-2 text-sm;
+}
+.z-field-description {
+  @apply text-muted-foreground text-left text-xs;
+}
+.z-field-separator {
+  @apply -my-2 h-5 text-xs;
+}
+.z-field-separator-content {
+  @apply text-muted-foreground px-2;
+}
+.z-field-error {
+  @apply text-destructive text-xs;
+}
+
+/* MARK: Input */
+.z-input {
+  @apply border-input focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:aria-invalid:border-destructive/50 disabled:bg-input/50 dark:disabled:bg-input/80 h-8.5 rounded-lg border bg-transparent px-[calc(--spacing(3)-1px)] py-1 text-sm transition-colors file:h-6 file:text-xs file:font-medium focus-visible:ring-1 aria-invalid:ring-1 sm:h-7.5;
+}
+
+/* MARK: Label */
+.z-label {
+  @apply gap-2 text-sm font-medium leading-none;
+}
+
+/* MARK: Separator */
+.z-separator {
+  @apply bg-border shrink-0;
+}
+
+/* MARK: Spinner */
+.z-spinner {
+  @apply size-4 animate-spin;
+}
+
+/* MARK: Toggle */
+.z-toggle {
+  @apply hover:text-foreground aria-pressed:bg-muted focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive data-[state=on]:bg-muted gap-1 rounded-lg text-sm font-medium transition-all [&_svg:not([class*='size-'])]:size-4;
+}
+.z-toggle-variant-default {
+  @apply bg-transparent;
+}
+.z-toggle-variant-outline {
+  @apply border-input hover:bg-accent border bg-transparent shadow-xs/5;
+}
+.z-toggle-size-default {
+  @apply h-9 min-w-9 px-[calc(--spacing(2)-1px)] sm:h-8 sm:min-w-8;
+}
+.z-toggle-size-sm {
+  @apply h-8 min-w-8 px-[calc(--spacing(1.5)-1px)] sm:h-7 sm:min-w-7;
+}
+.z-toggle-size-lg {
+  @apply h-10 min-w-10 px-[calc(--spacing(2.5)-1px)] sm:h-9 sm:min-w-9;
+}
+
+/* MARK: Toggle Group */
+.z-toggle-group {
+  @apply flex;
+}
+.z-toggle-group-item {
+  @apply shrink-0;
+}
+
+/* MARK: Select */
+.z-select-trigger {
+  @apply border-input data-placeholder:text-muted-foreground dark:bg-input/30 dark:hover:bg-input/50 focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:aria-invalid:border-destructive/50 gap-1.5 rounded-lg border bg-transparent py-2 pr-[calc(--spacing(3)-1px)] pl-[calc(--spacing(3)-1px)] text-base select-none focus-visible:ring-1 aria-invalid:ring-1 data-[size=default]:h-9 data-[size=sm]:h-8 sm:text-sm sm:data-[size=default]:h-8 sm:data-[size=sm]:h-7;
+}
+.z-select-value {
+  @apply flex flex-1 text-left;
+}
+.z-select-trigger-icon {
+  @apply text-muted-foreground size-4.5 sm:size-4;
+}
+.z-select-content {
+  @apply bg-popover text-popover-foreground ring-foreground/10 min-w-36 rounded-lg shadow-md ring-1 duration-100;
+}
+.z-select-label {
+  @apply text-muted-foreground px-2 py-2 text-xs;
+}
+.z-select-item {
+  @apply focus:bg-accent focus:text-accent-foreground gap-2 rounded-sm py-1.5 pr-8 pl-2 text-base sm:text-sm [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4;
+}
+.z-select-item-indicator {
+  @apply pointer-events-none absolute right-2 flex size-4 items-center justify-center;
+}
+.z-select-item-indicator-icon {
+  @apply size-4;
+}
+.z-select-group {
+  @apply scroll-my-1 px-0 py-1;
+}
+.z-select-item-text {
+  @apply flex flex-1 gap-2;
+}
+.z-select-separator {
+  @apply bg-border -mx-1 h-px;
+}
+
+/* MARK: Dropdown Menu */
+.z-dropdown-menu-content {
+  @apply ring-foreground/10 bg-popover text-popover-foreground min-w-32 rounded-lg shadow-md ring-1 duration-100;
+}
+.z-dropdown-menu-item {
+  @apply focus:bg-accent focus:text-accent-foreground data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:focus:text-destructive gap-2 rounded-sm px-2 py-1.5 text-base sm:text-sm [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4;
+}
+.z-dropdown-menu-checkbox-item {
+  @apply focus:bg-accent focus:text-accent-foreground gap-2 rounded-sm py-1.5 pr-8 pl-2 text-base sm:text-sm;
+}
+.z-dropdown-menu-radio-item {
+  @apply focus:bg-accent focus:text-accent-foreground gap-2 rounded-sm py-1.5 pr-8 pl-2 text-base sm:text-sm;
+}
+.z-dropdown-menu-item-indicator {
+  @apply pointer-events-none absolute right-2 flex items-center justify-center;
+}
+.z-dropdown-menu-label {
+  @apply text-muted-foreground px-2 py-1.5 text-xs;
+}
+.z-dropdown-menu-separator {
+  @apply bg-border -mx-1 h-px;
+}
+.z-dropdown-menu-shortcut {
+  @apply text-muted-foreground group-focus/dropdown-menu-item:text-accent-foreground ml-auto text-xs tracking-widest;
+}
+.z-dropdown-menu-sub-trigger {
+  @apply focus:bg-accent focus:text-accent-foreground data-expanded:bg-accent data-expanded:text-accent-foreground gap-2 rounded-sm px-2 py-1.5 text-base sm:text-sm;
+}
+.z-dropdown-menu-sub-content {
+  @apply ring-foreground/10 bg-popover text-popover-foreground min-w-[96px] rounded-lg shadow-lg ring-1 duration-100;
+}
+.z-menu-target {
+  @apply outline-none;
+}

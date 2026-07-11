@@ -11,7 +11,6 @@ export function DemoAnnotatorDownloadButton(props: {
     <Button
       class={props.class ?? "w-full justify-center"}
       disabled={!props.state().canSave}
-      loading={props.state().saving}
       size="sm"
       type="button"
       variant="outline"

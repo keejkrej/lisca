@@ -1,14 +1,26 @@
 import IconCircleNotchRegular from "phosphor-icons-solid/IconCircleNotchRegular";
-import { splitProps, type JSX } from "solid-js";
+import type { ComponentProps } from "solid-js";
+import { splitProps } from "solid-js";
 
 import { cn } from "../../lib/utils";
 
-export function Spinner(props: { class?: string }): JSX.Element {
-  const [local, rest] = splitProps(props, ["class"]);
+type SpinnerProps = ComponentProps<"span"> & {
+  class?: string | undefined;
+};
 
+const Spinner = (props: SpinnerProps) => {
+  const [local, others] = splitProps(props, ["class"]);
   return (
-    <span aria-label="Loading" class={cn("inline-flex animate-spin", local.class)} role="status" {...rest}>
+    <span
+      role="status"
+      aria-label="Loading"
+      class={cn("z-spinner inline-flex size-4 animate-spin", local.class)}
+      data-slot="spinner"
+      {...others}
+    >
       <IconCircleNotchRegular />
     </span>
   );
-}
+};
+
+export { Spinner };

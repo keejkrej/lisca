@@ -80,7 +80,6 @@ export function StudioAlignExpertRight() {
             <Button
               class="w-full justify-center text-xs"
               disabled={disabled() || !hasVisibleCells() || smartExclude.active()}
-              loading={smartExclude.active()}
               size="sm"
               type="button"
               variant="outline"

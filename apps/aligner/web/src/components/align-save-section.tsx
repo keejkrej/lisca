@@ -39,7 +39,6 @@ export function AlignSaveSection() {
             <Button
               class="w-full justify-center"
               disabled={!canSave || nav.saving}
-              loading={nav.saving}
               size="sm"
               type="button"
               variant="outline"

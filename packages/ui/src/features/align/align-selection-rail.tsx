@@ -114,7 +114,6 @@ export function AlignSelectionRail(props: AlignSelectionRailProps) {
         <div class="grid grid-cols-2 gap-2">
           <Button
             disabled={disabled() || !hasVisibleCells() || variationExcludeLoading()}
-            loading={variationExcludeLoading()}
             size="sm"
             type="button"
             variant="outline"
@@ -126,7 +125,6 @@ export function AlignSelectionRail(props: AlignSelectionRailProps) {
             disabled={
               disabled() || !hasVisibleCells() || variationExcludeLoading() || smartExcludeLoading()
             }
-            loading={smartExcludeLoading()}
             size="sm"
             type="button"
             variant="outline"

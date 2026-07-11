@@ -8,7 +8,6 @@ export function DemoAlignDownloadButton(props: { state: Accessor<DemoAlignState>
     <Button
       class={props.class ?? "w-full justify-center"}
       disabled={!props.state().frame || props.state().saving}
-      loading={props.state().saving}
       size="sm"
       type="button"
       variant="outline"

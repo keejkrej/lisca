@@ -43,8 +43,8 @@ export function FolderSourceParseModal(props: FolderSourceParseModalProps) {
           <div class="flex flex-col gap-4 px-5 py-4">
             <p class="text-muted-foreground text-sm">{modal.statusMessage()}</p>
 
-            <Field class="gap-2" name="subfolderTemplate">
-              <FieldLabel htmlFor="folder-subfolder-template">Subfolder template</FieldLabel>
+            <Field class="gap-2">
+              <FieldLabel for="folder-subfolder-template">Subfolder template</FieldLabel>
               <Input
                 autocomplete="off"
                 id="folder-subfolder-template"
@@ -58,8 +58,8 @@ export function FolderSourceParseModal(props: FolderSourceParseModalProps) {
               />
             </Field>
 
-            <Field class="gap-2" name="filenameTemplate">
-              <FieldLabel htmlFor="folder-filename-template">Filename template</FieldLabel>
+            <Field class="gap-2">
+              <FieldLabel for="folder-filename-template">Filename template</FieldLabel>
               <Input
                 autocomplete="off"
                 aria-invalid={Boolean(modal.error())}

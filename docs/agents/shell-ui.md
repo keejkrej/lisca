@@ -6,8 +6,8 @@ Owned layout and theme for Lisca web (`@lisca/ui`) and native (`@lisca/ui-native
 
 Edit colors in one place per platform:
 
-- **Web:** `packages/ui/coss-theme.css` — CSS variables (`--background`, `--border`, `--muted`, …).
-- **Native:** `packages/ui-native/src/theme/tokens.ts` — mirrors the core coss set (`background`, `foreground`, `border`, `muted`, `primary`, …).
+- **Web:** `packages/ui/theme.css` — CSS `z-*` component classes (button, card, input, field, select, dropdown-menu, toggle, etc.) and theme tokens — CSS variables (`--background`, `--border`, `--muted`, …).
+- **Native:** `packages/ui-native/src/theme/tokens.ts` — mirrors the core set (`background`, `foreground`, `border`, `muted`, `primary`, …).
 
 Do not scatter layout tint tokens (`railChrome`, `panel`, `stat`, etc.); shell surfaces use `background` + `border`.
 
@@ -88,9 +88,9 @@ Native: `DockStrip` centers sections; dock sections hug width (`flexShrink: 0`).
 
 ## Out of scope
 
-**Do not edit** `packages/ui/src/components/ui/` — vendor coss/shadcn primitives (`Button`, `Input`, `Card`, …). Shell and features may import them; theme vars in `coss-theme.css` still apply.
+**Do not edit** `packages/ui/src/components/ui/` — vendor zaidan/shadcn primitives (`Button`, `Input`, `Card`, …). Shell and features may import them; theme vars and component classes in `theme.css` still apply.
 
-Forms and dialogs that use coss `Card` may keep `--card`; shell layout frames do not use `bg-card`.
+Forms and dialogs that use `Card` may keep `--card`; shell layout frames do not use `bg-card`.
 
 ## Native parity
 

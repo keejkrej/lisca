@@ -135,15 +135,14 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
     <>
       <div class="flex w-full min-w-0 flex-col gap-2.5">
         <div class={ROW}>
-          <Field class="w-full gap-2.5" name="name">
-            <FieldLabel class="text-2xl font-normal" htmlFor="studio-name">
+          <Field class="w-full gap-2.5">
+            <FieldLabel class="text-2xl font-normal" for="studio-name">
               Name
             </FieldLabel>
             <Input
               autocomplete="off"
               class="w-full"
               id="studio-name"
-              nativeInput
               placeholder="My assay"
               value={wizard().info1.name}
               onChange={(event) => setInfo1({ name: event.target.value })}
@@ -151,8 +150,8 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
           </Field>
         </div>
         <div class={ROW}>
-          <Field class="w-full gap-2.5" name="dataPath">
-            <FieldLabel class="text-2xl font-normal" htmlFor="studio-source">
+          <Field class="w-full gap-2.5">
+            <FieldLabel class="text-2xl font-normal" for="studio-source">
               Source
             </FieldLabel>
             <div
@@ -164,7 +163,6 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
                 autocomplete="off"
                 class="w-full cursor-pointer"
                 id="studio-source"
-                nativeInput
                 placeholder="Click to choose source…"
                 value={wizard().info1.dataPath}
                 onKeyDown={(event) => {
@@ -178,8 +176,8 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
           </Field>
         </div>
         <div class={ROW}>
-          <Field class="w-full gap-2.5" name="saveTo">
-            <FieldLabel class="text-2xl font-normal" htmlFor="studio-workspace">
+          <Field class="w-full gap-2.5">
+            <FieldLabel class="text-2xl font-normal" for="studio-workspace">
               Workspace
             </FieldLabel>
             <div
@@ -191,7 +189,6 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
                 autocomplete="off"
                 class="w-full cursor-pointer"
                 id="studio-workspace"
-                nativeInput
                 placeholder="Click to choose folder…"
                 value={wizard().info1.saveTo}
                 onKeyDown={(event) => {
@@ -205,7 +202,7 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
           </Field>
         </div>
         <div class={ROW}>
-          <Field class="w-full gap-2.5" name="timelapseInterval">
+          <Field class="w-full gap-2.5">
             <FieldLabel class="text-2xl font-normal" id="studio-timelapse-label">
               Timelapse interval
             </FieldLabel>
@@ -214,7 +211,6 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
                 aria-labelledby="studio-timelapse-label"
                 class="min-w-0 flex-1"
                 min={1}
-                nativeInput
                 placeholder="10"
                 step={1}
                 type="number"
@@ -225,30 +221,36 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
                   setInfo2({ timelapseAmount: value == null || Number.isNaN(value) ? null : value });
                 }}
               />
-              <Select
+              <Select<TimelapseUnit>
+                options={TIMELAPSE_UNITS.map((unit) => unit.value)}
+                placement="bottom-end"
                 value={wizard().info2.timelapseUnit}
-                onValueChange={(unit) => setInfo2({ timelapseUnit: unit as TimelapseUnit })}
+                onChange={(unit) => unit != null && setInfo2({ timelapseUnit: unit })}
+                itemComponent={(props) => (
+                  <SelectItem item={props.item}>
+                    {TIMELAPSE_UNITS.find((unit) => unit.value === props.item.rawValue)?.label ??
+                      props.item.rawValue}
+                  </SelectItem>
+                )}
               >
                 <SelectTrigger
                   aria-labelledby="studio-timelapse-label"
                   class="w-[11rem] shrink-0 sm:w-[10.5rem]"
                 >
-                  <SelectValue />
+                  <SelectValue<TimelapseUnit>>
+                    {(state) =>
+                      TIMELAPSE_UNITS.find((unit) => unit.value === state.selectedOption())?.label
+                    }
+                  </SelectValue>
                 </SelectTrigger>
-                <SelectContent align="end">
-                  <For each={TIMELAPSE_UNITS}>
-                    {({ value, label }) => (
-                      <SelectItem value={value}>{label}</SelectItem>
-                    )}
-                  </For>
-                </SelectContent>
+                <SelectContent />
               </Select>
             </div>
           </Field>
         </div>
         <Show when={wizard().assayId === "gene-expression"}>
           <div class={ROW}>
-            <Field class="gap-2.5" name="features">
+            <Field class="gap-2.5">
               <FieldLabel class="text-2xl font-normal">Features</FieldLabel>
               <div class="mt-0 flex flex-col gap-1">
                 <For each={FEATURES}>

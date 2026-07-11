@@ -11,7 +11,7 @@ Shared libraries under `packages/*`. Apps import these via workspace protocol (`
 | `@lisca/client`      | Effect runtime, HTTP/WS ports, session hooks, studio assay JSON helpers, Effect Atom query layers.                                 |
 | `@lisca/analysis`    | Shared studio results UI: CSV/plot parsing, assay catalog constants, `createAnalysisPanelAtoms`.                                   |
 | `@lisca/ui-headless` | Framework-agnostic UI logic (host file picker, crop confirm copy, canvas status types, shortcuts).                                 |
-| `@lisca/ui`          | Web imaging UI (coss + Tailwind). Re-exports headless types through `@lisca/ui/features`.                                          |
+| `@lisca/ui`          | Web imaging UI (zaidan/Kobalte + Tailwind). Re-exports headless types through `@lisca/ui/features`.                                          |
 | `@lisca/ui-native`   | React Native / Skia imaging UI. Same re-export pattern as `@lisca/ui`.                                                             |
 | `@lisca/web-app`     | Vite web shell: port factory (`createLiscaPort`), shared CSS entry, host operations.                                               |
 | `@lisca/mobile-app`  | Expo shell: `createLiscaMobilePort`, storage bootstrap, host operations.                                                           |

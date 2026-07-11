@@ -1,55 +1,46 @@
-import { ToggleButton as KobalteToggleButton } from "@kobalte/core/toggle-button";
+import type { PolymorphicProps } from "@kobalte/core";
+import { ToggleButton, type ToggleButtonRootProps } from "@kobalte/core/toggle-button";
 import { cva, type VariantProps } from "class-variance-authority";
-import { splitProps, type JSX } from "solid-js";
-
+import { type ComponentProps, splitProps, type ValidComponent } from "solid-js";
 import { cn } from "../../lib/utils";
 
-export const toggleVariants = cva(
-  "relative inline-flex shrink-0 cursor-pointer select-none items-center justify-center gap-2 whitespace-nowrap rounded-lg border font-medium text-base text-foreground outline-none transition-shadow before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-lg)-1px)] pointer-coarse:after:absolute pointer-coarse:after:size-full pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-64 data-pressed:bg-input/64 data-pressed:text-accent-foreground sm:text-sm [&_svg:not([class*='opacity-'])]:opacity-80 [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:-mx-0.5 [&_svg]:shrink-0",
+const toggleVariants = cva(
+  "group/toggle z-toggle inline-flex items-center justify-center whitespace-nowrap outline-none hover:bg-muted focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
-    defaultVariants: {
-      size: "default",
-      variant: "default",
-    },
     variants: {
-      size: {
-        default: "h-9 min-w-9 px-[calc(--spacing(2)-1px)] sm:h-8 sm:min-w-8",
-        lg: "h-10 min-w-10 px-[calc(--spacing(2.5)-1px)] sm:h-9 sm:min-w-9",
-        sm: "h-8 min-w-8 px-[calc(--spacing(1.5)-1px)] sm:h-7 sm:min-w-7",
-      },
       variant: {
-        default: "border-transparent",
-        outline:
-          "border-input bg-background not-dark:bg-clip-padding shadow-xs/5 not-disabled:not-active:not-data-pressed:before:shadow-[0_1px_--theme(--color-black/4%)] dark:bg-input/32 dark:data-pressed:bg-input dark:hover:bg-input/64 dark:not-disabled:not-active:not-data-pressed:before:shadow-[0_-1px_--theme(--color-white/6%)] dark:not-disabled:not-data-pressed:before:shadow-[0_-1px_--theme(--color-white/2%)] [:disabled,:active,[data-pressed]]:shadow-none",
+        default: "z-toggle-variant-default",
+        outline: "z-toggle-variant-outline",
       },
+      size: {
+        default: "z-toggle-size-default",
+        sm: "z-toggle-size-sm",
+        lg: "z-toggle-size-lg",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
     },
   },
 );
 
-export function Toggle(
-  props: {
-    class?: string;
-    variant?: VariantProps<typeof toggleVariants>["variant"];
-    size?: VariantProps<typeof toggleVariants>["size"];
-    pressed?: boolean;
-    defaultPressed?: boolean;
-    disabled?: boolean;
-    onChange?: (pressed: boolean) => void;
-  } & Omit<JSX.ButtonHTMLAttributes<HTMLButtonElement>, "onChange">,
-): JSX.Element {
-  const [local, rest] = splitProps(props, ["class", "variant", "size", "pressed", "defaultPressed", "disabled", "onChange"]);
+type ToggleProps<T extends ValidComponent = "button"> = PolymorphicProps<
+  T,
+  ToggleButtonRootProps<T>
+> &
+  VariantProps<typeof toggleVariants> &
+  Pick<ComponentProps<T>, "class">;
 
+const Toggle = <T extends ValidComponent = "button">(props: ToggleProps<T>) => {
+  const [local, others] = splitProps(props as ToggleProps, ["variant", "size", "class"]);
   return (
-    <KobalteToggleButton
-      class={cn(toggleVariants({ size: local.size, variant: local.variant }), local.class)}
+    <ToggleButton
       data-slot="toggle"
-      defaultPressed={local.defaultPressed}
-      disabled={local.disabled}
-      pressed={local.pressed}
-      onChange={local.onChange}
-      {...rest}
+      class={cn(toggleVariants({ variant: local.variant, size: local.size }), local.class)}
+      {...others}
     />
   );
-}
+};
 
-export { KobalteToggleButton as TogglePrimitive };
+export { Toggle, type ToggleProps, toggleVariants };

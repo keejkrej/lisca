@@ -102,7 +102,6 @@ export function LabelCreationDialog(props: LabelCreationDialogProps) {
                   />
                   <Input
                     aria-label={`Label ${index + 1} color`}
-                    nativeInput
                     type="color"
                     value={draft().color}
                     onInput={(event) =>
@@ -137,7 +136,6 @@ export function LabelCreationDialog(props: LabelCreationDialogProps) {
             </Button>
             <Button
               disabled={props.workspacePath != null ? !props.workspacePath : false}
-              loading={props.saving}
               type="button"
               onClick={submit}
             >

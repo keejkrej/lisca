@@ -4,7 +4,7 @@
   "private": true,
   "files": [
     "src",
-    "coss-theme.css"
+    "theme.css"
   ],
   "type": "module",
   "main": "./src/index.tsx",
@@ -30,7 +30,7 @@
       "types": "./src/hooks/index.ts",
       "import": "./src/hooks/index.ts"
     },
-    "./coss-theme.css": "./coss-theme.css"
+    "./theme.css": "./theme.css"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

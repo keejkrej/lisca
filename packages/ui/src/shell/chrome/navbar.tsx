@@ -75,11 +75,10 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
           <div class="min-w-0 justify-self-start">
             <ToggleGroup
               class="flex-nowrap gap-1 rounded-xl border border-border bg-background p-1"
-              multiple={false}
               size="sm"
-              value={[props.routeValue]}
-              onValueChange={(next) => {
-                const v = next[0];
+              value={props.routeValue}
+              onChange={(next) => {
+                const v = typeof next === "string" ? next : next?.[0];
                 if (v) props.onRouteChange(v);
               }}
             >

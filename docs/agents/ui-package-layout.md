@@ -6,7 +6,7 @@ Source layout for `@lisca/ui` (web) and `@lisca/ui-native` (mobile). Both packag
 
 | Path             | Role                                                                                                         |
 | ---------------- | ------------------------------------------------------------------------------------------------------------ |
-| `components/ui/` | Vendor coss primitives — **do not edit** (web); React Native Reusables primitives — **do not edit** (native) |
+| `components/ui/` | Vendor zaidan (shadcn for SolidJS/Kobalte) primitives — **do not edit** (web); React Native Reusables primitives — **do not edit** (native) |
 | `hooks/`         | Generic React hooks (`useLatest`) — web only                                                                 |
 | `lib/`           | Shared utilities (`cn`) — web only                                                                           |
 | `shell/`         | Layout scaffold, regions, chrome, modals, server connectivity, workspace                                     |
@@ -44,7 +44,7 @@ Each domain is a subfolder under `features/` with a single responsibility:
 
 - `canvas/` is shared infrastructure — `align/` and `annotate/` may import from it; `canvas/` must not import from other feature domains.
 - No cross-domain imports (e.g. `host/` must not import from `align/`).
-- Features may import `shell/*`, `@lisca/ui-headless/*`, `@lisca/utils`, and `components/ui/*` (web); they must not import app code.
+- Features may import `shell/*`, `@lisca/ui-headless/*`, `@lisca/utils`, and `components/ui/*` (web, zaidan primitives); they must not import app code.
 
 ### Internal vs public
 
@@ -81,7 +81,7 @@ import { Button } from "@lisca/ui/components";
 import { useLatest } from "@lisca/ui/hooks";
 ```
 
-**Mobile** — import from `@lisca/ui-native` root or `/shell` / `/features` subpaths. Form controls (`Button`, `Field`, `FieldLabel`, `Input`, `Slider`) are RNR primitives from `components/ui/*` — compose with children (`<Button><Text>…</Text></Button>`, `<Field><FieldLabel>…</FieldLabel>…</Field>`), same as web coss. Shell `chrome/` is layout-only (navbar, path button, stat tile, progress); features must not use label-based wrapper APIs.
+**Mobile** — import from `@lisca/ui-native` root or `/shell` / `/features` subpaths. Form controls (`Button`, `Field`, `FieldLabel`, `Input`, `Slider`) are RNR primitives from `components/ui/*` — compose with children (`<Button><Text>…</Text></Button>`, `<Field><FieldLabel>…</FieldLabel>…</Field>`). Shell `chrome/` is layout-only (navbar, path button, stat tile, progress); features must not use label-based wrapper APIs.
 
 Do not import feature files by deep path (e.g. `@lisca/ui/src/features/align/...`).
 
@@ -91,7 +91,7 @@ When adding a web feature file, check whether `@lisca/ui-native` needs a paralle
 
 ## Testing
 
-Extract logic before testing. Never mount coss or React Native components for behavioral coverage.
+Extract logic before testing. Never mount zaidan or React Native components for behavioral coverage.
 
 | Logic kind                                     | Package                         | Test with                           |
 | ---------------------------------------------- | ------------------------------- | ----------------------------------- |

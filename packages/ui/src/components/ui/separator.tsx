@@ -1,27 +1,24 @@
-import { Separator as KobalteSeparator } from "@kobalte/core/separator";
-import { splitProps, type JSX } from "solid-js";
-
+import type { PolymorphicProps } from "@kobalte/core/polymorphic";
+import { Separator as SeparatorPrimitive, type SeparatorRootProps } from "@kobalte/core/separator";
+import { type ComponentProps, mergeProps, splitProps, type ValidComponent } from "solid-js";
 import { cn } from "../../lib/utils";
 
-export type SeparatorProps = {
-  class?: string;
-  orientation?: "horizontal" | "vertical";
-};
+type SeparatorProps<T extends ValidComponent = "hr"> = PolymorphicProps<T, SeparatorRootProps<T>> &
+  Pick<ComponentProps<T>, "class">;
 
-export function Separator(props: SeparatorProps): JSX.Element {
-  const [local, rest] = splitProps(props, ["class", "orientation"]);
-
+const Separator = <T extends ValidComponent = "hr">(props: SeparatorProps<T>) => {
+  const mergedProps = mergeProps({ orientation: "horizontal" } as const, props);
+  const [local, others] = splitProps(mergedProps as SeparatorProps, ["class"]);
   return (
-    <KobalteSeparator
+    <SeparatorPrimitive
+      data-slot="separator"
       class={cn(
-        "shrink-0 bg-border data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-px data-[orientation=vertical]:not-[[class^='h-']]:not-[[class*='_h-']]:self-stretch",
+        "shrink-0 bg-border data-[orientation=horizontal]:h-px data-[orientation=vertical]:h-full data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-px",
         local.class,
       )}
-      data-slot="separator"
-      orientation={local.orientation ?? "horizontal"}
-      {...rest}
+      {...others}
     />
   );
-}
+};
 
-export { KobalteSeparator as SeparatorPrimitive };
+export { Separator, type SeparatorProps };

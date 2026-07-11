@@ -8,7 +8,7 @@ import {
 } from "@lisca/ui/components";
 import { ShellThemeToggle } from "@lisca/ui/shell";
 import IconImageRegular from "phosphor-icons-solid/IconImageRegular";
-import { For, Show, type JSX } from "solid-js";
+import { Show, type JSX } from "solid-js";
 
 const imageAccept = ".png,.jpg,.jpeg,.tif,.tiff,image/png,image/jpeg,image/tiff";
 const sampleFileNameWidthClassName = "min-w-0 max-w-[9rem] sm:max-w-[11rem]";
@@ -67,36 +67,38 @@ export function DemoNavbar(props: DemoNavbarProps) {
                 }
               >
                 <div class={sampleFileNameWidthClassName}>
-                  <Select
+                  <Select<string>
                     disabled={props.loading}
-                    items={sampleImages().map((sample) => ({
-                      value: sample.id,
-                      label: sample.fileName,
-                    }))}
+                    options={sampleImages().map((sample) => sample.id)}
+                    placeholder="Sample image"
+                    placement="bottom-start"
                     value={selectedSampleId() ?? undefined}
-                    onValueChange={(value) => {
+                    onChange={(value) => {
                       if (value != null) props.onSampleChange?.(value);
                     }}
+                    itemComponent={(props) => (
+                      <SelectItem
+                        class="font-mono text-xs sm:text-sm"
+                        item={props.item}
+                      >
+                        {sampleImages().find((sample) => sample.id === props.item.rawValue)
+                          ?.fileName ?? props.item.rawValue}
+                      </SelectItem>
+                    )}
                   >
                     <SelectTrigger
                       aria-label="Sample image"
                       class={`w-full min-w-0 max-w-full ${sampleFileNameTextClassName}`}
                       size="sm"
                     >
-                      <SelectValue placeholder="Sample image" />
+                      <SelectValue<string>>
+                        {(state) =>
+                          sampleImages().find((sample) => sample.id === state.selectedOption())
+                            ?.fileName
+                        }
+                      </SelectValue>
                     </SelectTrigger>
-                    <SelectContent align="start">
-                      <For each={sampleImages()}>
-                        {(sample) => (
-                          <SelectItem
-                            class="font-mono text-xs sm:text-sm"
-                            value={sample.id}
-                          >
-                            {sample.fileName}
-                          </SelectItem>
-                        )}
-                      </For>
-                    </SelectContent>
+                    <SelectContent />
                   </Select>
                 </div>
               </Show>
@@ -113,7 +115,6 @@ export function DemoNavbar(props: DemoNavbarProps) {
             <Button
               class="gap-2 font-normal"
               disabled={props.loading}
-              loading={props.loading}
               size="sm"
               title={props.fileName ?? "Open image"}
               type="button"

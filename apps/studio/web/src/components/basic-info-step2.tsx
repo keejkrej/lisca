@@ -29,7 +29,7 @@ export function BasicInfoStep2() {
   return (
     <div class="flex w-full min-w-0 flex-col gap-2.5">
       <div class={ROW}>
-        <Field class="gap-2.5" name="samples">
+        <Field class="gap-2.5">
           <FieldLabel class="text-2xl font-normal">Samples</FieldLabel>
           <div class="mt-0 flex w-full min-w-0 flex-col gap-2">
             <For each={samples()}>
