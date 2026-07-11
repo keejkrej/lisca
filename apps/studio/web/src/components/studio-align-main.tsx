@@ -76,15 +76,12 @@ export function StudioAlignMain() {
     gridHandlers.handlePointerEnd(event);
   };
   const visibleStatus = useCanvasTransientStatus(() => canvas.status);
-  const activeToastStatus = createMemo(() =>
-    crop.cropping
-      ? "Cropping ROI output"
-      : nav.saving || canvas.frameLoading
-        ? "Loading frame"
-        : canvas.scanLoading
-          ? "Scanning source"
-          : visibleStatus(),
-  );
+  const loadingStatus = createMemo(() => {
+    if (crop.cropping) return "Cropping ROI output";
+    if (nav.saving || canvas.frameLoading) return "Loading frame";
+    if (canvas.scanLoading) return "Scanning source";
+    return null;
+  });
   const positionInfo = createMemo(() => {
     const positionIndex = nav.alignPositions.indexOf(nav.selection.pos);
     const positionCount = nav.alignPositions.length;
@@ -108,16 +105,16 @@ export function StudioAlignMain() {
       },
     ];
   });
-  const toasts = createMemo(() => {
+  const statusMessages = createMemo(() => {
     if (canvas.error) return [];
-    const status = activeToastStatus();
-    if (status)
-      return [
-        {
-          text: status,
-        },
-      ];
-    return [];
+    const status = visibleStatus();
+    if (!status) return [];
+    return [{ text: status }];
+  });
+  const canvasToasts = createMemo(() => {
+    const status = loadingStatus();
+    if (!status) return [];
+    return [{ text: status }];
   });
   const cursor = createMemo(() =>
     canvas.manualExclusionEnabled || selectionHandlers.selecting()
@@ -128,9 +125,16 @@ export function StudioAlignMain() {
   return (
     <>
       <div class="flex h-full min-h-0 flex-1 flex-col gap-2 bg-background p-3">
-        <Show when={positionInfo().length > 0 || canvasAlerts().length > 0}>
+        <Show
+          when={
+            positionInfo().length > 0 || statusMessages().length > 0 || canvasAlerts().length > 0
+          }
+        >
           <div class="flex shrink-0 items-start justify-between gap-2">
-            <CanvasStatusMessageStack layout="inline" messages={positionInfo()} />
+            <div class="flex min-w-0 flex-wrap items-start gap-1.5">
+              <CanvasStatusMessageStack layout="inline" messages={positionInfo()} />
+              <CanvasStatusMessageStack layout="inline" messages={statusMessages()} />
+            </div>
             <CanvasStatusMessageStack
               align="right"
               layout="inline"
@@ -147,7 +151,7 @@ export function StudioAlignMain() {
             grid={canvas.grid}
             previewGridRef={gridHandlers.previewGridRef}
             previewRedrawRef={previewRedrawRef}
-            toasts={toasts()}
+            toasts={canvasToasts()}
             onVirtualPointerCancel={handlePointerCancel}
             onVirtualPointerDown={handlePointerDown}
             onVirtualPointerMove={handlePointerMove}
