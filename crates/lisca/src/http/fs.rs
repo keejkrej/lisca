@@ -2,13 +2,14 @@ use std::path::{Component, Path, PathBuf};
 
 use axum::{
     extract::Query,
-    routing::get,
+    routing::{get, post},
     Json, Router,
 };
 use serde::Deserialize;
 
 use crate::protocol::{
-    HomeDirectoryResponse, HostFsEntry, HostListDirectoryResult, ReadTextFileResponse,
+    CreateDirectoryRequest, CreateDirectoryResponse, HomeDirectoryResponse, HostFsEntry,
+    HostListDirectoryResult, ReadTextFileResponse,
 };
 
 use super::error::FsError;
@@ -31,6 +32,7 @@ where
         .route("/fs/list", get(list_directory_handler))
         .route("/fs/home", get(home_directory_handler))
         .route("/fs/read-text", get(read_text_file_handler))
+        .route("/fs/create-directory", post(create_directory_handler))
 }
 
 async fn list_directory_handler(
@@ -48,6 +50,13 @@ async fn read_text_file_handler(
     Query(query): Query<ReadTextFileQuery>,
 ) -> Result<Json<ReadTextFileResponse>, FsError> {
     read_text_file(&query.path).map(Json)
+}
+
+async fn create_directory_handler(
+    Json(request): Json<CreateDirectoryRequest>,
+) -> Result<Json<CreateDirectoryResponse>, FsError> {
+    create_directory(&request.parent_path, &request.name)
+        .map(|path| Json(CreateDirectoryResponse { path }))
 }
 
 fn user_home_directory() -> Option<String> {
@@ -144,6 +153,26 @@ fn read_text_file(path: &str) -> Result<ReadTextFileResponse, FsError> {
     let contents = std::fs::read_to_string(path)
         .map_err(|error| FsError::new(format!("failed to read text file: {error}")))?;
     Ok(ReadTextFileResponse { contents })
+}
+
+fn create_directory(parent_path: &str, name: &str) -> Result<String, FsError> {
+    let trimmed_name = name.trim();
+    if trimmed_name.is_empty() {
+        return Err(FsError::new("folder name cannot be empty"));
+    }
+    if trimmed_name.contains('/') || trimmed_name.contains('\\') {
+        return Err(FsError::new("folder name must not contain path separators"));
+    }
+    let parent = PathBuf::from(parent_path);
+    ensure_local_path_allowed(&parent)?;
+    if !parent.is_dir() {
+        return Err(FsError::new("parent path is not a directory"));
+    }
+    let target = parent.join(trimmed_name);
+    ensure_local_path_allowed(&target)?;
+    std::fs::create_dir(&target)
+        .map_err(|error| FsError::new(format!("failed to create directory: {error}")))?;
+    Ok(target.to_string_lossy().to_string())
 }
 
 fn browse_roots() -> Option<Vec<PathBuf>> {

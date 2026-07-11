@@ -12,6 +12,8 @@ import {
   CropRoiResponseSchema,
   NullableCropRoiProgressSchema,
   FramePayloadSchema,
+  CreateDirectoryRequestSchema,
+  CreateDirectoryResponseSchema,
   HomeDirectoryResponseSchema,
   HostListDirectoryResultSchema,
   LoadedRoiFrameAnnotationSchema,
@@ -77,6 +79,11 @@ const fsGroup = HttpApiGroup.make("fs")
     HttpApiEndpoint.get("readTextFile", "/fs/read-text")
       .setUrlParams(Schema.Struct({ path: Schema.String }))
       .addSuccess(ReadTextFileResponseSchema),
+  )
+  .add(
+    HttpApiEndpoint.post("createDirectory", "/fs/create-directory")
+      .setPayload(CreateDirectoryRequestSchema)
+      .addSuccess(CreateDirectoryResponseSchema),
   );
 
 // --- align group -------------------------------------------------------------

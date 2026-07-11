@@ -1444,6 +1444,66 @@ impl ContrastWindow {
         Default::default()
     }
 }
+#[doc = "`CreateDirectoryRequest`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"name\","]
+#[doc = "    \"parentPath\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"name\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    },"]
+#[doc = "    \"parentPath\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct CreateDirectoryRequest {
+    pub name: ::std::string::String,
+    #[serde(rename = "parentPath")]
+    pub parent_path: ::std::string::String,
+}
+impl CreateDirectoryRequest {
+    pub fn builder() -> builder::CreateDirectoryRequest {
+        Default::default()
+    }
+}
+#[doc = "`CreateDirectoryResponse`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"path\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"path\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct CreateDirectoryResponse {
+    pub path: ::std::string::String,
+}
+impl CreateDirectoryResponse {
+    pub fn builder() -> builder::CreateDirectoryResponse {
+        Default::default()
+    }
+}
 #[doc = "`CropOutputFormat`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
@@ -4958,6 +5018,98 @@ pub mod builder {
             Self {
                 max: Ok(value.max),
                 min: Ok(value.min),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct CreateDirectoryRequest {
+        name: ::std::result::Result<::std::string::String, ::std::string::String>,
+        parent_path: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for CreateDirectoryRequest {
+        fn default() -> Self {
+            Self {
+                name: Err("no value supplied for name".to_string()),
+                parent_path: Err("no value supplied for parent_path".to_string()),
+            }
+        }
+    }
+    impl CreateDirectoryRequest {
+        pub fn name<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.name = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for name: {e}"));
+            self
+        }
+        pub fn parent_path<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.parent_path = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for parent_path: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<CreateDirectoryRequest> for super::CreateDirectoryRequest {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: CreateDirectoryRequest,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                name: value.name?,
+                parent_path: value.parent_path?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::CreateDirectoryRequest> for CreateDirectoryRequest {
+        fn from(value: super::CreateDirectoryRequest) -> Self {
+            Self {
+                name: Ok(value.name),
+                parent_path: Ok(value.parent_path),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct CreateDirectoryResponse {
+        path: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for CreateDirectoryResponse {
+        fn default() -> Self {
+            Self {
+                path: Err("no value supplied for path".to_string()),
+            }
+        }
+    }
+    impl CreateDirectoryResponse {
+        pub fn path<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.path = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for path: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<CreateDirectoryResponse> for super::CreateDirectoryResponse {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: CreateDirectoryResponse,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self { path: value.path? })
+        }
+    }
+    impl ::std::convert::From<super::CreateDirectoryResponse> for CreateDirectoryResponse {
+        fn from(value: super::CreateDirectoryResponse) -> Self {
+            Self {
+                path: Ok(value.path),
             }
         }
     }

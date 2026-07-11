@@ -37,5 +37,10 @@ export function createHostPort(
         c.fs.userHomeDirectory().pipe(Effect.map((result) => result.path)),
       );
     },
+    createDirectory(parentPath, name, signal) {
+      return withClientEffect(client, signal, (c) =>
+        c.fs.createDirectory({ payload: { parentPath, name } }),
+      );
+    },
   };
 }

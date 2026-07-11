@@ -124,6 +124,23 @@ export function useHostFilePickerState(options: () => UseHostFilePickerStateOpti
       );
     }
   };
+  const createDirectory = async (name: string) => {
+    const { hostPort } = options();
+    const currentList = list();
+    if (!currentList?.path) return;
+    try {
+      await hostPort.createDirectory(currentList.path, name);
+      await loadPath(currentList.path);
+    } catch (cause) {
+      setError(
+        cause instanceof Error && cause.message.includes("Could not parse JSON")
+          ? "Could not reach the API server. Ensure the Rust backend is running."
+          : cause instanceof Error
+            ? cause.message
+            : String(cause),
+      );
+    }
+  };
   const navigateToEntry = (entry: HostFsEntry) => {
     if (entry.isDirectory) void loadPath(entry.path);
   };
@@ -176,6 +193,7 @@ export function useHostFilePickerState(options: () => UseHostFilePickerStateOpti
     locationLabel,
     goUp,
     goHome,
+    createDirectory,
     confirmDirectory,
     confirmFile,
     handleRowClick,

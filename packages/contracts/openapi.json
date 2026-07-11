@@ -170,6 +170,65 @@
         }
       }
     },
+    "/fs/create-directory": {
+      "post": {
+        "tags": [
+          "fs"
+        ],
+        "operationId": "fs.createDirectory",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "CreateDirectoryResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateDirectoryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDirectoryRequest"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
     "/align/scan-source": {
       "post": {
         "tags": [
@@ -2294,6 +2353,34 @@
         ],
         "properties": {
           "contents": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateDirectoryRequest": {
+        "type": "object",
+        "required": [
+          "parentPath",
+          "name"
+        ],
+        "properties": {
+          "parentPath": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateDirectoryResponse": {
+        "type": "object",
+        "required": [
+          "path"
+        ],
+        "properties": {
+          "path": {
             "type": "string"
           }
         },

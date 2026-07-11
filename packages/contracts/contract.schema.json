@@ -96,6 +96,32 @@
         }
       }
     },
+    "CreateDirectoryRequest": {
+      "type": "object",
+      "required": [
+        "parentPath",
+        "name"
+      ],
+      "properties": {
+        "parentPath": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "CreateDirectoryResponse": {
+      "type": "object",
+      "required": [
+        "path"
+      ],
+      "properties": {
+        "path": {
+          "type": "string"
+        }
+      }
+    },
     "ScanSourceRequest": {
       "type": "object",
       "required": [

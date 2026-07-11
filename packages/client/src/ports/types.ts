@@ -4,6 +4,7 @@ import type {
   AnalysisStartRequest,
   AnnotationLabel,
   ContrastWindow,
+  CreateDirectoryResponse,
   CropRoiProgress,
   CropRoiRequest,
   CropRoiResponse,
@@ -27,6 +28,11 @@ import type { ClientEffect } from "../infra/runtime";
 export type HostPort = {
   listDirectory(path: string | null, signal?: AbortSignal): ClientEffect<HostListDirectoryResult>;
   userHomeDirectory(signal?: AbortSignal): ClientEffect<string>;
+  createDirectory(
+    parentPath: string,
+    name: string,
+    signal?: AbortSignal,
+  ): ClientEffect<CreateDirectoryResponse>;
 };
 
 export type StudioHostPort = HostPort & {

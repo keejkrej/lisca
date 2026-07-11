@@ -8,10 +8,12 @@ import type { HostFilePickerOperations } from "@lisca/ui-headless/host";
  * fake satisfying `HostFilePickerOperations` directly.
  */
 export function toHostFilePickerOperations(
-  port: Pick<HostPort, "listDirectory" | "userHomeDirectory">,
+  port: Pick<HostPort, "listDirectory" | "userHomeDirectory" | "createDirectory">,
 ): HostFilePickerOperations {
   return {
     listDirectory: (path) => runClientEffect(port.listDirectory(path)),
     userHomeDirectory: () => runClientEffect(port.userHomeDirectory()),
+    createDirectory: (parentPath, name) =>
+      runClientEffect(port.createDirectory(parentPath, name)).then((result) => result.path),
   };
 }

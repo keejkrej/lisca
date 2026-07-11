@@ -1,9 +1,14 @@
 import type { HostFilePickerMode } from "@lisca/ui-headless/host";
 import { useHostFilePickerState } from "@lisca/ui-headless/host-file-picker-state";
+import IconArrowUpRegular from "phosphor-icons-solid/IconArrowUpRegular";
+import IconHouseRegular from "phosphor-icons-solid/IconHouseRegular";
+import IconPlusRegular from "phosphor-icons-solid/IconPlusRegular";
 import IconXRegular from "phosphor-icons-solid/IconXRegular";
-import { For, onCleanup, onMount, Show } from "solid-js";
+import { For, onCleanup, onMount, Show, createSignal } from "solid-js";
 
 import { Button } from "../../components/ui/button";
+import { Field, FieldLabel } from "../../components/ui/field";
+import { Input } from "../../components/ui/input";
 import { DialogSurface } from "../../shell/modal/dialog-surface";
 import { ModalScrim } from "../../shell/modal/modal-scrim";
 import { HostFilePickerRow } from "./host-file-picker-row";
@@ -44,6 +49,42 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
     window.addEventListener("keydown", onKeyDown);
     onCleanup(() => window.removeEventListener("keydown", onKeyDown));
   });
+
+  const [showNewFolder, setShowNewFolder] = createSignal(false);
+  const [folderName, setFolderName] = createSignal("");
+  const [creating, setCreating] = createSignal(false);
+  const [folderError, setFolderError] = createSignal<string | null>(null);
+
+  const openNewFolder = () => {
+    setFolderName("");
+    setFolderError(null);
+    setShowNewFolder(true);
+  };
+
+  const cancelNewFolder = () => {
+    setShowNewFolder(false);
+    setFolderName("");
+    setFolderError(null);
+  };
+
+  const confirmNewFolder = async () => {
+    const name = folderName().trim();
+    if (!name) {
+      setFolderError("Folder name cannot be empty.");
+      return;
+    }
+    setCreating(true);
+    setFolderError(null);
+    try {
+      await picker.createDirectory(name);
+      setShowNewFolder(false);
+      setFolderName("");
+    } catch (cause) {
+      setFolderError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setCreating(false);
+    }
+  };
 
   return (
     <Show when={props.open}>
@@ -113,23 +154,34 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
 
             <div class="flex flex-wrap items-center gap-2">
               <Button
+                aria-label="Go up one directory"
                 disabled={!picker.canGoUp() || picker.loading()}
-                size="sm"
+                size="icon-sm"
                 type="button"
-                variant="outline"
+                variant="ghost"
                 onClick={picker.goUp}
               >
-                Up
+                <IconArrowUpRegular class="size-4" />
               </Button>
               <Button
                 aria-label="Go to home directory"
                 disabled={picker.loading()}
-                size="sm"
+                size="icon-sm"
                 type="button"
-                variant="outline"
+                variant="ghost"
                 onClick={() => void picker.goHome()}
               >
-                Home
+                <IconHouseRegular class="size-4" />
+              </Button>
+              <Button
+                aria-label="Create new folder"
+                disabled={picker.loading() || !picker.list()?.path}
+                size="icon-sm"
+                type="button"
+                variant="ghost"
+                onClick={openNewFolder}
+              >
+                <IconPlusRegular class="size-4" />
               </Button>
             </div>
 
@@ -213,6 +265,84 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
           </div>
         </DialogSurface>
       </ModalScrim>
+
+      <Show when={showNewFolder()}>
+        <ModalScrim
+          zIndex="z-50"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !creating()) cancelNewFolder();
+          }}
+        >
+          <DialogSurface aria-labelledby="new-folder-title" maxWidth="sm">
+            <div class="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
+              <div>
+                <h2 class="font-semibold text-foreground text-lg leading-none" id="new-folder-title">
+                  New folder
+                </h2>
+                <Show when={picker.locationLabel()}>
+                  {(locationLabel) => (
+                    <p class="mt-1 truncate text-muted-foreground text-sm" title={locationLabel()}>
+                      {locationLabel()}
+                    </p>
+                  )}
+                </Show>
+              </div>
+              <Button
+                aria-label="Close new folder dialog"
+                class="shrink-0"
+                disabled={creating()}
+                size="icon-sm"
+                type="button"
+                variant="ghost"
+                onClick={cancelNewFolder}
+              >
+                <IconXRegular class="size-4" />
+              </Button>
+            </div>
+
+            <form
+              class="flex flex-col gap-4 px-5 py-4"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (!creating()) void confirmNewFolder();
+              }}
+            >
+              <Field class="gap-2">
+                <FieldLabel for="new-folder-name">Folder name</FieldLabel>
+                <Input
+                  autocomplete="off"
+                  autofocus
+                  disabled={creating()}
+                  id="new-folder-name"
+                  placeholder="Folder name"
+                  type="text"
+                  value={folderName()}
+                  onInput={(event) => {
+                    setFolderName(event.currentTarget.value);
+                    setFolderError(null);
+                  }}
+                />
+                <Show when={folderError()}>
+                  <p class="text-destructive-foreground text-sm">{folderError()}</p>
+                </Show>
+              </Field>
+            </form>
+
+            <div class="flex justify-end gap-2 border-t border-border px-5 py-4">
+              <Button disabled={creating()} type="button" variant="outline" onClick={cancelNewFolder}>
+                Cancel
+              </Button>
+              <Button
+                disabled={creating() || !folderName().trim()}
+                type="button"
+                onClick={() => void confirmNewFolder()}
+              >
+                {creating() ? "Creating…" : "Create"}
+              </Button>
+            </div>
+          </DialogSurface>
+        </ModalScrim>
+      </Show>
     </Show>
   );
 }
