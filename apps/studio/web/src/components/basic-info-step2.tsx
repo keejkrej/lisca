@@ -5,10 +5,8 @@ import {
   Button,
 } from "@lisca/ui/components";
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-solid";
-import { For, Show, createSignal } from "solid-js";
+import { For } from "solid-js";
 import IconTrashRegular from "phosphor-icons-solid/IconTrashRegular";
-import IconCaretDownRegular from "phosphor-icons-solid/IconCaretDownRegular";
-import IconCaretRightRegular from "phosphor-icons-solid/IconCaretRightRegular";
 
 import { studioWizardActions, studioWizardAtom } from "../state/studio-store";
 
@@ -31,7 +29,7 @@ export function BasicInfoStep2() {
       <div class={ROW}>
         <Field class="gap-2.5">
           <FieldLabel class="text-2xl font-normal">Samples</FieldLabel>
-          <div class="mt-0 flex w-full min-w-0 flex-col gap-2">
+          <div class="mt-0 flex w-full min-w-0 flex-col gap-2 overflow-y-auto max-h-[60vh]">
             <For each={samples()}>
               {(row, index) => (
                 <SampleCard
@@ -76,8 +74,6 @@ function SampleCard(props: {
   }) => void;
   onRemove: () => void;
 }) {
-  const [advancedOpen, setAdvancedOpen] = createSignal(false);
-
   return (
     <div class="rounded-lg border border-border p-3">
       <div class="flex flex-col gap-2.5">
@@ -128,42 +124,26 @@ function SampleCard(props: {
             onChange={(e) => props.onChange({ positionFinish: e.currentTarget.value })}
           />
         </div>
-        <button
-          class="flex items-center gap-1 text-muted-foreground text-xs hover:text-foreground"
-          type="button"
-          onClick={() => setAdvancedOpen((v) => !v)}
-        >
-          <Show when={advancedOpen()} fallback={<IconCaretRightRegular />}>
-            <IconCaretDownRegular />
-          </Show>
-          Advanced
-        </button>
-        <Show when={advancedOpen()}>
-          <div class="flex flex-row items-center gap-2.5 pl-1">
-            <label class="flex flex-1 flex-col gap-1">
-              <span class="text-muted-foreground text-xs">Mask channel</span>
-              <Input
-                aria-label="Mask channel"
-                class="text-center"
-                inputMode="numeric"
-                placeholder="0"
-                value={props.row.maskChannel}
-                onChange={(e) => props.onChange({ maskChannel: e.currentTarget.value })}
-              />
-            </label>
-            <label class="flex flex-1 flex-col gap-1">
-              <span class="text-muted-foreground text-xs">Signal channel</span>
-              <Input
-                aria-label="Signal channel"
-                class="text-center"
-                inputMode="numeric"
-                placeholder="1"
-                value={props.row.signalChannel}
-                onChange={(e) => props.onChange({ signalChannel: e.currentTarget.value })}
-              />
-            </label>
-          </div>
-        </Show>
+        <div class="flex flex-row items-center gap-2.5">
+          <span class="text-muted-foreground text-sm shrink-0">Brightfield channel</span>
+          <Input
+            aria-label="Brightfield channel"
+            class="w-20 shrink-0 text-center"
+            inputMode="numeric"
+            placeholder="0"
+            value={props.row.maskChannel}
+            onChange={(e) => props.onChange({ maskChannel: e.currentTarget.value })}
+          />
+          <span class="text-muted-foreground text-sm shrink-0">Fluorescence channel</span>
+          <Input
+            aria-label="Fluorescence channel"
+            class="w-20 shrink-0 text-center"
+            inputMode="numeric"
+            placeholder="1"
+            value={props.row.signalChannel}
+            onChange={(e) => props.onChange({ signalChannel: e.currentTarget.value })}
+          />
+        </div>
       </div>
     </div>
   );

@@ -5,16 +5,16 @@ export type SamplePositionRange = {
   positionFinish: string;
 };
 
-function parsePositiveInteger(raw: string): number | null {
+function parseNonNegativeInteger(raw: string): number | null {
   const trimmed = raw.trim();
   if (!/^\d+$/.test(trimmed)) return null;
   const value = Number(trimmed);
-  return Number.isInteger(value) && value >= 1 ? value : null;
+  return Number.isInteger(value) && value >= 0 ? value : null;
 }
 
 export function formatSamplePositions(positionStart: string, positionFinish: string): string {
-  const start = parsePositiveInteger(positionStart);
-  const finish = parsePositiveInteger(positionFinish);
+  const start = parseNonNegativeInteger(positionStart);
+  const finish = parseNonNegativeInteger(positionFinish);
   if (start == null || finish == null) return "";
   const low = Math.min(start, finish);
   const high = Math.max(start, finish);
@@ -39,7 +39,7 @@ export function parseLegacySamplePositions(positions: string): SamplePositionRan
   for (const token of tokens) {
     const rangeParts = token.split(":").map((part) => part.trim());
     if (rangeParts.length === 1) {
-      const value = parsePositiveInteger(rangeParts[0] ?? "");
+      const value = parseNonNegativeInteger(rangeParts[0] ?? "");
       if (value == null) continue;
       min = min == null ? value : Math.min(min, value);
       max = max == null ? value : Math.max(max, value);
@@ -47,8 +47,8 @@ export function parseLegacySamplePositions(positions: string): SamplePositionRan
     }
 
     if (rangeParts.length >= 2) {
-      const start = parsePositiveInteger(rangeParts[0] ?? "");
-      const stop = parsePositiveInteger(rangeParts[1] ?? "");
+      const start = parseNonNegativeInteger(rangeParts[0] ?? "");
+      const stop = parseNonNegativeInteger(rangeParts[1] ?? "");
       if (start == null || stop == null) continue;
       min = min == null ? Math.min(start, stop) : Math.min(min, start, stop);
       max = max == null ? Math.max(start, stop) : Math.max(max, start, stop);
@@ -117,15 +117,15 @@ export function sampleRowFromDisk(record: {
 }
 
 export function isValidSamplePositionRange(positionStart: string, positionFinish: string): boolean {
-  const start = parsePositiveInteger(positionStart);
-  const finish = parsePositiveInteger(positionFinish);
+  const start = parseNonNegativeInteger(positionStart);
+  const finish = parseNonNegativeInteger(positionFinish);
   return start != null && finish != null && finish >= start;
 }
 
-/** Expand an inclusive 1-based position range into individual position indices. */
+/** Expand an inclusive 0-based position range into individual position indices. */
 export function expandPositionRange(positionStart: string, positionFinish: string): number[] {
-  const start = parsePositiveInteger(positionStart);
-  const finish = parsePositiveInteger(positionFinish);
+  const start = parseNonNegativeInteger(positionStart);
+  const finish = parseNonNegativeInteger(positionFinish);
   if (start == null || finish == null || finish < start) return [];
   const positions: number[] = [];
   for (let pos = start; pos <= finish; pos += 1) {

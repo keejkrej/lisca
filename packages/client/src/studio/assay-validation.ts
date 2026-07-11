@@ -82,7 +82,7 @@ export function validateAssayForAnalysis(input: {
     }
     if (!isValidSamplePositionRange(row.positionStart, row.positionFinish)) {
       errors.push(
-        `${rowLabel}: position start and finish must be positive integers with finish >= start (1-based).`,
+        `${rowLabel}: position start and finish must be non-negative integers with finish >= start.`,
       );
     }
     if (parseNonNegativeInteger(row.maskChannel) == null) {

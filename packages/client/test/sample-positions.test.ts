@@ -34,9 +34,9 @@ describe("sample positions", () => {
     });
   });
 
-  test("validates 1-based position ranges", () => {
+  test("validates 0-based position ranges", () => {
+    expect(isValidSamplePositionRange("0", "11")).toBe(true);
     expect(isValidSamplePositionRange("1", "12")).toBe(true);
-    expect(isValidSamplePositionRange("0", "12")).toBe(false);
     expect(isValidSamplePositionRange("12", "1")).toBe(false);
     expect(isValidSamplePositionRange("", "12")).toBe(false);
   });
@@ -82,6 +82,7 @@ describe("sample positions", () => {
   });
 
   test("expands inclusive position ranges", () => {
+    expect(expandPositionRange("0", "3")).toEqual([0, 1, 2, 3]);
     expect(expandPositionRange("3", "3")).toEqual([3]);
     expect(expandPositionRange("1", "4")).toEqual([1, 2, 3, 4]);
     expect(expandPositionRange("", "4")).toEqual([]);
@@ -95,8 +96,8 @@ describe("sample positions", () => {
           id: "sample:0",
           channel: "0",
           name: "a",
-          positionStart: "1",
-          positionFinish: "4",
+          positionStart: "0",
+          positionFinish: "3",
           maskChannel: "0",
           signalChannel: "1",
         },
@@ -104,19 +105,19 @@ describe("sample positions", () => {
           id: "sample:1",
           channel: "1",
           name: "b",
-          positionStart: "3",
-          positionFinish: "6",
+          positionStart: "2",
+          positionFinish: "5",
           maskChannel: "0",
           signalChannel: "1",
         },
       ],
     };
-    expect(collectAssayPositions(info3)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(collectAssayPositions(info3)).toEqual([0, 1, 2, 3, 4, 5]);
   });
 
   test("filters scan positions to assay positions in scan order", () => {
-    expect(filterScanPositionsForAssay([1, 2, 3, 4, 5], [2, 4])).toEqual([2, 4]);
-    expect(filterScanPositionsForAssay([10, 11, 12], [1, 2, 3])).toEqual([]);
-    expect(filterScanPositionsForAssay([1, 2, 3], [])).toEqual([]);
+    expect(filterScanPositionsForAssay([0, 1, 2, 3, 4], [1, 3])).toEqual([1, 3]);
+    expect(filterScanPositionsForAssay([10, 11, 12], [0, 1, 2])).toEqual([]);
+    expect(filterScanPositionsForAssay([0, 1, 2], [])).toEqual([]);
   });
 });
