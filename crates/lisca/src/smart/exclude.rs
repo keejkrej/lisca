@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 
 use image::{imageops::FilterType, GrayImage, ImageBuffer, Luma};
-use ndarray::{Array, Ix4};
+use ndarray::{Array, ArrayView, Ix4};
 use ort::session::Session;
 use ort::value::Tensor;
 
@@ -121,16 +121,34 @@ fn classify_cell(
     let input_tensor = Tensor::from_array(array).map_err(|error| error.to_string())?;
     let input = ort::inputs![input_name => input_tensor];
     let outputs = session.run(input).map_err(|error| error.to_string())?;
-    let logits = outputs[0]
-        .try_extract_array::<f32>()
-        .map_err(|error| error.to_string())?;
+    let logits = if let Some(output) = outputs.get("logits") {
+        output.try_extract_array::<f32>()
+    } else {
+        outputs[0].try_extract_array::<f32>()
+    }
+    .map_err(|error| error.to_string())?;
 
-    let exclude_logit = logits[[0, 0, 0, 0]];
-    let include_logit = logits[[0, 1, 0, 0]];
+    exclude_probability_from_logits(&logits)
+}
+
+fn exclude_probability_from_logits(logits: &ArrayView<f32, ndarray::IxDyn>) -> Result<f64, String> {
+    let (exclude_logit, include_logit) = binary_logits(logits)?;
     let max = exclude_logit.max(include_logit);
     let exclude_exp = (exclude_logit - max).exp();
     let include_exp = (include_logit - max).exp();
     Ok(f64::from(exclude_exp / (exclude_exp + include_exp)))
+}
+
+fn binary_logits(logits: &ArrayView<f32, ndarray::IxDyn>) -> Result<(f32, f32), String> {
+    match logits.ndim() {
+        1 if logits.len() >= 2 => Ok((logits[[0]], logits[[1]])),
+        2 if logits.shape()[1] >= 2 => Ok((logits[[0, 0]], logits[[0, 1]])),
+        4 => Ok((logits[[0, 0, 0, 0]], logits[[0, 1, 0, 0]])),
+        _ => Err(format!(
+            "unsupported smart exclusion logits shape: {:?}",
+            logits.shape()
+        )),
+    }
 }
 
 fn crop_and_normalize_cell(
@@ -183,6 +201,88 @@ fn resize_to_224(data: &[u8], width: u32, height: u32) -> GrayImage {
             ImageBuffer::from_raw(width, height, vec![0; (width * height) as usize]).unwrap()
         });
     image::imageops::resize(&img, IMAGE_SIZE, IMAGE_SIZE, FilterType::Triangle)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ndarray::array;
+
+    #[test]
+    fn binary_logits_supports_rank_one_and_two_outputs() {
+        let flat_array = array![1.0, 2.0];
+        let flat = flat_array.view().into_dyn();
+        assert_eq!(binary_logits(&flat).expect("flat"), (1.0, 2.0));
+
+        let batched_array = array![[0.5, 1.5]];
+        let batched = batched_array.view().into_dyn();
+        assert_eq!(binary_logits(&batched).expect("batched"), (0.5, 1.5));
+    }
+
+    #[test]
+    fn exclude_probability_prefers_exclude_label() {
+        let logits_array = array![[2.0, 0.0]];
+        let logits = logits_array.view().into_dyn();
+        let probability = exclude_probability_from_logits(&logits).expect("probability");
+        assert!(probability > 0.8);
+    }
+
+    #[test]
+    fn classify_exclusion_returns_empty_for_no_cells() {
+        use crate::protocol::{ContrastWindow, FramePayload, PixelType};
+
+        let response = classify_exclusion(SmartExcludeRequest {
+            frame: FramePayload {
+                width: 4,
+                height: 4,
+                data_base64: "AAAA".to_string(),
+                pixel_type: PixelType::Uint8,
+                contrast_domain: ContrastWindow { min: 0, max: 255 },
+                suggested_contrast: ContrastWindow { min: 0, max: 255 },
+                applied_contrast: ContrastWindow { min: 0, max: 255 },
+            },
+            cells: Vec::new(),
+            threshold: None,
+        })
+        .expect("classify");
+        assert!(response.excluded_cells.is_empty());
+    }
+
+    #[test]
+    fn classify_exclusion_runs_for_preview_cell() {
+        use crate::protocol::{ContrastWindow, FramePayload, PixelType};
+
+        if resolve_model_path().is_err() {
+            return;
+        }
+
+        let pixels = vec![128u8; 16];
+        let response = classify_exclusion(SmartExcludeRequest {
+            frame: FramePayload {
+                width: 4,
+                height: 4,
+                data_base64: {
+                    use base64::prelude::{Engine as _, BASE64_STANDARD};
+                    BASE64_STANDARD.encode(pixels)
+                },
+                pixel_type: PixelType::Uint8,
+                contrast_domain: ContrastWindow { min: 0, max: 255 },
+                suggested_contrast: ContrastWindow { min: 0, max: 255 },
+                applied_contrast: ContrastWindow { min: 0, max: 255 },
+            },
+            cells: vec![AutoExcludePreviewCell {
+                i: 0,
+                j: 0,
+                x: 0,
+                y: 0,
+                w: 4,
+                h: 4,
+            }],
+            threshold: Some(2.0),
+        })
+        .expect("classify");
+        assert!(response.excluded_cells.is_empty());
+    }
 }
 
 fn to_nchw_normalized(gray: &GrayImage) -> Vec<f32> {
