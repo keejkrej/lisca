@@ -1,6 +1,5 @@
 import { Toggle } from "@lisca/ui/components";
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-solid";
-import IconSlidersHorizontalRegular from "phosphor-icons-solid/IconSlidersHorizontalRegular";
 
 import { setStudioExpertMode, studioExpertModeAtom } from "../atoms/studio-expert-atoms";
 
@@ -16,7 +15,6 @@ export function StudioExpertToggle() {
   return (
     <div class="flex shrink-0 items-center justify-between border-b border-border px-3 py-2">
       <div class="flex items-center gap-1.5 text-sm">
-        <IconSlidersHorizontalRegular class="size-4 opacity-70" />
         <span class="font-medium">Expert</span>
       </div>
       <Toggle
