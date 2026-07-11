@@ -16,14 +16,33 @@ function isLiscaApiProxyPath(url) {
   );
 }
 
-/** Benign when Rust restarts (cargo watch) or the shell WS probe retries. */
-function isBenignDevWsProxyError(message) {
-  if (!message.includes("ws proxy")) return false;
-  return message.includes("EPIPE") || message.includes("ECONNRESET");
+const BENIGN_PROXY_SOCKET_CODES = ["EPIPE", "ECONNRESET"];
+
+function messageIncludesBenignProxySocketCode(message) {
+  return BENIGN_PROXY_SOCKET_CODES.some((code) => message.includes(code));
+}
+
+/** Benign when Rust restarts (cargo watch) or the browser aborts an in-flight request. */
+function isBenignDevProxyError(message) {
+  if (!messageIncludesBenignProxySocketCode(message)) return false;
+  if (message.includes("ws proxy") || message.includes("http proxy")) return true;
+  return message.includes("write EPIPE") || message.includes("read ECONNRESET");
+}
+
+function isBenignProxySocketError(error) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof error.code === "string" &&
+    BENIGN_PROXY_SOCKET_CODES.includes(error.code)
+  );
 }
 
 module.exports = {
   pathnameFromUrl,
   isLiscaApiProxyPath,
-  isBenignDevWsProxyError,
+  isBenignDevProxyError,
+  isBenignDevWsProxyError: isBenignDevProxyError,
+  isBenignProxySocketError,
 };

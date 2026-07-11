@@ -9,7 +9,12 @@ import {
   liscaDevBackendPort,
 } from "./lisca-dev-ports.cjs";
 import { DESKTOP_PRODUCTS } from "./lisca-desktop-products.cjs";
-import { isBenignDevWsProxyError, isLiscaApiProxyPath } from "./lisca-dev-proxy-shared.cjs";
+import {
+  isBenignDevProxyError,
+  isBenignDevWsProxyError,
+  isBenignProxySocketError,
+  isLiscaApiProxyPath,
+} from "./lisca-dev-proxy-shared.cjs";
 
 const root = path.resolve(import.meta.dirname, "..");
 
@@ -73,15 +78,25 @@ describe("lisca API proxy path matching", () => {
   });
 });
 
-describe("benign vite ws proxy errors", () => {
-  it("suppresses EPIPE and ECONNRESET", () => {
+describe("benign vite proxy errors", () => {
+  it("suppresses ws and http proxy EPIPE/ECONNRESET", () => {
+    expect(isBenignDevProxyError("ws proxy socket error:\nError: write EPIPE")).toBe(true);
+    expect(isBenignDevProxyError("ws proxy error:\nError: read ECONNRESET")).toBe(true);
+    expect(isBenignDevProxyError("http proxy socket error:\nError: write EPIPE")).toBe(true);
+    expect(isBenignDevProxyError("Error: write EPIPE\n    at afterWriteDispatched")).toBe(true);
     expect(isBenignDevWsProxyError("ws proxy socket error:\nError: write EPIPE")).toBe(true);
-    expect(isBenignDevWsProxyError("ws proxy error:\nError: read ECONNRESET")).toBe(true);
   });
 
   it("keeps actionable proxy failures", () => {
-    expect(isBenignDevWsProxyError("ws proxy error:\nError: connect ECONNREFUSED")).toBe(false);
-    expect(isBenignDevWsProxyError("http proxy error: connect ECONNREFUSED")).toBe(false);
+    expect(isBenignDevProxyError("ws proxy error:\nError: connect ECONNREFUSED")).toBe(false);
+    expect(isBenignDevProxyError("http proxy error: connect ECONNREFUSED")).toBe(false);
+    expect(isBenignDevProxyError("Error: connect ECONNREFUSED")).toBe(false);
+  });
+
+  it("detects benign proxy socket error codes", () => {
+    expect(isBenignProxySocketError({ code: "EPIPE" })).toBe(true);
+    expect(isBenignProxySocketError({ code: "ECONNRESET" })).toBe(true);
+    expect(isBenignProxySocketError({ code: "ECONNREFUSED" })).toBe(false);
   });
 });
 

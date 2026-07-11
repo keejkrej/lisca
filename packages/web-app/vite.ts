@@ -20,7 +20,10 @@ const {
   liscaDevBackendPort,
   LISCA_DEV_BACKEND_PORT_OFFSET,
 } = require("../../scripts/lisca-dev-ports.cjs");
-const { isBenignDevWsProxyError } = require("../../scripts/lisca-dev-proxy-shared.cjs");
+const {
+  isBenignDevProxyError,
+  isBenignProxySocketError,
+} = require("../../scripts/lisca-dev-proxy-shared.cjs");
 
 export { liscaDevBackendPort, LISCA_DEV_BACKEND_PORT_OFFSET };
 
@@ -64,7 +67,22 @@ function liscaModelsPlugin(): PluginOption {
         res.statusCode = 200;
         res.setHeader("Content-Type", contentTypeForPath(filePath));
         res.setHeader("Content-Length", String(stats.size));
-        createReadStream(filePath).pipe(res);
+        const stream = createReadStream(filePath);
+        stream.on("error", (error) => {
+          if (isBenignProxySocketError(error)) {
+            if (!res.writableEnded) res.end();
+            return;
+          }
+          next(error);
+        });
+        res.on("close", () => {
+          stream.destroy();
+        });
+        stream.pipe(res).on("error", (error) => {
+          if (isBenignProxySocketError(error)) {
+            stream.destroy();
+          }
+        });
       });
     },
   };
@@ -74,7 +92,13 @@ function createLiscaDevLogger(): Logger {
   const logger = createLogger();
   const logError = logger.error.bind(logger);
   logger.error = (message, options) => {
-    if (typeof message === "string" && isBenignDevWsProxyError(message)) return;
+    const text =
+      typeof message === "string"
+        ? message
+        : message instanceof Error
+          ? `${message.message}\n${message.stack ?? ""}`
+          : String(message);
+    if (isBenignDevProxyError(text)) return;
     logError(message, options);
   };
   return logger;
@@ -84,7 +108,23 @@ function liscaDevProxy(backendPort: number): Record<string, ProxyOptions> {
   const target = `http://127.0.0.1:${backendPort}`;
   const proxy: Record<string, ProxyOptions> = {};
   for (const prefix of LISCA_API_PROXY_PREFIXES) {
-    proxy[prefix] = { target, changeOrigin: true };
+    proxy[prefix] = {
+      target,
+      changeOrigin: true,
+      configure: (proxyServer) => {
+        proxyServer.on("error", (error, _req, res) => {
+          if (!isBenignProxySocketError(error)) return;
+          if (res && "writableEnded" in res && !res.writableEnded) {
+            res.end();
+          }
+        });
+        proxyServer.on("proxyReqWs", (_proxyReq, _req, socket) => {
+          socket.on("error", (error) => {
+            if (!isBenignProxySocketError(error)) return;
+          });
+        });
+      },
+    };
   }
   return proxy;
 }
