@@ -6,6 +6,7 @@ import { StudioAnnotateDock } from "../components/studio-annotate-dock";
 import { StudioAnnotateMain } from "../components/studio-annotate-main";
 import { StudioAnnotateRight } from "../components/studio-annotate-right";
 import { StudioAnnotateExpertRight } from "../components/studio-annotate-expert-right";
+import { instructionForAnnotate } from "../state/studio-routes";
 import { StudioLeft } from "../components/studio-left";
 import { StudioRightPanel } from "../components/studio-right-panel";
 import { useStudioAnnotateShell } from "../state/studio-annotate-page-selectors";
@@ -39,7 +40,10 @@ function AnnotatePageContent() {
           </AppShell.Dock>
         </AppShell.MainColumn>
         <AppShell.Right widthClass="w-72">
-          <StudioRightPanel expert={() => <StudioAnnotateExpertRight />}>
+          <StudioRightPanel
+            expert={() => <StudioAnnotateExpertRight />}
+            instruction={instructionForAnnotate}
+          >
             <StudioAnnotateRight />
           </StudioRightPanel>
         </AppShell.Right>

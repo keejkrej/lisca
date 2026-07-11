@@ -8,7 +8,7 @@ import { Input } from "../../components/ui/input";
 import { Toggle } from "../../components/ui/toggle";
 
 import { Slider } from "../../components/ui/slider";
-import { Section } from "../../shell/regions/section";
+import { PanelSection } from "../../shell/regions/panel-section";
 import { AlignGridShapeToggle } from "./align-grid-shape-toggle";
 
 function AlignNumberInput(props: {
@@ -129,7 +129,7 @@ export function AlignGrid(props: AlignGridProps) {
   });
 
   return (
-    <Section
+    <PanelSection
       contentClassName={props.sectionContentClassName}
       description={props.sectionDescription}
       title={props.sectionTitle ?? "Grid"}
@@ -269,6 +269,6 @@ export function AlignGrid(props: AlignGridProps) {
           </Field>
         </div>
       </div>
-    </Section>
+    </PanelSection>
   );
 }

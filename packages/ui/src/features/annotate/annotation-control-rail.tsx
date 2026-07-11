@@ -5,7 +5,7 @@ import { For, Show } from "solid-js";
 
 import { Button } from "../../components/ui/button";
 import { cn } from "../../lib/utils";
-import { SidebarSection } from "../../shell/regions/sidebar-section";
+import { PanelSection } from "../../shell/regions/panel-section";
 
 import { AnnotationModeToggle } from "./annotation-mode-toggle";
 import { AnnotationToolSlider } from "./annotation-tool-slider";
@@ -57,10 +57,10 @@ export function AnnotationControlRail(props: AnnotationControlRailProps) {
 
   return (
     <>
-      <SidebarSection title="Mode">
+      <PanelSection title="Mode">
         <AnnotationModeToggle class="w-full" mode={props.mode} onModeChange={props.setMode} />
-      </SidebarSection>
-      <SidebarSection contentClassName="grid grid-cols-2 gap-2" title="Labels">
+      </PanelSection>
+      <PanelSection contentClassName="grid grid-cols-2 gap-2" title="Labels">
         <For each={props.labels}>
           {(label) => {
             const selected =
@@ -124,8 +124,8 @@ export function AnnotationControlRail(props: AnnotationControlRailProps) {
         <Show when={activeError()}>
           <p class="col-span-2 text-destructive text-xs">{activeError()}</p>
         </Show>
-      </SidebarSection>
-      <SidebarSection contentClassName="grid grid-cols-2 gap-2" title="Edit">
+      </PanelSection>
+      <PanelSection contentClassName="grid grid-cols-2 gap-2" title="Edit">
         <Button
           disabled={!props.annotation.canUndo}
           size="sm"
@@ -168,9 +168,9 @@ export function AnnotationControlRail(props: AnnotationControlRailProps) {
         >
           Discard
         </Button>
-      </SidebarSection>
+      </PanelSection>
       <Show when={props.mode === "segmentation"}>
-        <SidebarSection contentClassName="flex flex-col gap-3" title="Brush">
+        <PanelSection contentClassName="flex flex-col gap-3" title="Brush">
           <AnnotationToolSlider
             label="Opacity"
             max={0.95}
@@ -189,7 +189,7 @@ export function AnnotationControlRail(props: AnnotationControlRailProps) {
             valueLabel={String(Math.round(props.brushSize))}
             onChange={(value) => props.setBrushSize(Math.round(value))}
           />
-        </SidebarSection>
+        </PanelSection>
       </Show>
     </>
   );

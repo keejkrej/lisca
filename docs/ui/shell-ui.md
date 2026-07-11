@@ -18,15 +18,15 @@ Compose apps from shell primitives, not exported class strings:
 | `Panel`                        | Bordered in-app frame (dock, nav rail, sidebar cards)                                                     |
 | `ViewportCard`                 | Padded main column; inner frame matches `Panel`                                                           |
 | `Section`                      | Collapsible in-app section inside a `Panel` (rare direct use)                                             |
+| `PanelSection`                 | Sidebar placement variant of `Section`; full width, height hugs content (inverse of `DockSection`)        |
 | `SidebarStack`                 | Sidebar region container (`flex-col gap-2 overflow-auto p-3`)                                             |
-| `SidebarSection`               | Sidebar placement variant of `Section` (shrink + scrollable body)                                         |
 | `DockStrip`                    | Outer dock band — `flex` row, sections grouped and centered                                               |
 | `DockSection`                  | Dock placement variant of `Section`; `fit="hug"` (default) or `fit="panel"` for instruction copy          |
 | `DialogSurface` / `ModalScrim` | Modal chrome                                                                                              |
 | `StatTile`                     | Count/metric tile: `border border-border bg-background`                                                   |
 | `useKeyboardShortcuts`         | Web keyboard bindings; pair with `dockToolShortcuts()` from `@lisca/ui-headless/dock` for digit tool keys |
 
-Placement styling lives inside `DockSection`, `SidebarSection`, and `SidebarStack` — not exported as class strings.
+Placement styling lives inside `DockSection`, `PanelSection`, and `SidebarStack` — not exported as class strings.
 
 Frame styling lives inside `panel.tsx` (`panelFrameClass`); not exported from the package.
 
@@ -35,7 +35,7 @@ Frame styling lives inside `panel.tsx` (`panelFrameClass`); not exported from th
 Sidebar and dock use the same layering:
 
 1. **Region container** — `SidebarStack` or `DockStrip`
-2. **Section variant** — `SidebarSection` or `DockSection` (both inherit `Section`)
+2. **Section variant** — `PanelSection` or `DockSection` (both inherit `Section`)
 3. **Body layout** — inline `flex` / `grid` divs in app-owned `*Section` / `*Dock` components
 
 **App-owned docks** (aligner pattern): `AlignerDock` composes `DockStrip` + feature sections. Studio mirrors this with `StudioAssayDock`, `StudioAlignDock`, etc. under `apps/studio/*/src/components/`.
@@ -53,6 +53,16 @@ Sidebar and dock use the same layering:
 ```
 
 Do not add app-level instruction wrapper components; use `fit="panel"` inline in `*-dock` files.
+
+### PanelSection
+
+Right sidebar sections use `PanelSection`: full width (`w-full`), height hugs content. Inverse of `DockSection`, which stretches height in the dock row and uses variable width (`w-max`).
+
+```tsx
+<PanelSection title="Instruction">
+  <p className="text-sm leading-snug text-muted-foreground">{instruction}</p>
+</PanelSection>
+```
 
 ## Layout recipes (section bodies)
 
@@ -78,7 +88,7 @@ Do not add app-level instruction wrapper components; use `fit="panel"` inline in
 
 1. **One layout background:** `bg-background` on AppShell and viewport padding bands.
 2. **Structure = border, not tint:** panels and sections use `rounded-xl border border-border bg-background`.
-3. **Apps use shell components** — do not import layout class strings; `DockSection` / `SidebarSection` own their placement styles.
+3. **Apps use shell components** — do not import layout class strings; `DockSection` / `PanelSection` own their placement styles.
 4. **Read-only path chips** may use `bg-muted/20` (`ReadonlyPathField`) as the one subtle inset.
 
 ## Out of scope

@@ -15,7 +15,6 @@ function isEditableTarget(target: EventTarget | null): boolean {
 }
 
 export function StudioResultDock(props: {
-  instruction: string;
   toolActions: DockToolAction[];
   shortcutsEnabled: boolean;
   saveDisabled: boolean;
@@ -44,9 +43,6 @@ export function StudioResultDock(props: {
 
   return (
     <DockStrip>
-      <DockSection fit="panel" title="Instruction">
-        <p class="line-clamp-4 text-center text-sm leading-snug">{props.instruction}</p>
-      </DockSection>
       <DockSection title="Tool">
         <div class="flex flex-col gap-2">
           <For each={props.toolActions}>

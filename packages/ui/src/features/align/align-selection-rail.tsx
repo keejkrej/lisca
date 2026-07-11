@@ -7,7 +7,7 @@ import {
 } from "@lisca/utils";
 
 import { Button } from "../../components/ui/button";
-import { SidebarSection } from "../../shell/regions/sidebar-section";
+import { PanelSection } from "../../shell/regions/panel-section";
 
 import { AlignEditToggle } from "./align-edit-toggle";
 import { AlignSelectionCounts } from "./align-selection-counts";
@@ -57,7 +57,7 @@ export function AlignSelectionRail(props: AlignSelectionRailProps) {
 
   return (
     <>
-      <SidebarSection
+      <PanelSection
         class={props.sectionClassName}
         contentClassName={props.sectionContentClassName}
         title="Selection"
@@ -133,7 +133,7 @@ export function AlignSelectionRail(props: AlignSelectionRailProps) {
             Smart exclude
           </Button>
         </div>
-      </SidebarSection>
+      </PanelSection>
       <VariationExcludeDialog
         state={props.variationExcludePreview}
         onApply={props.onApplyVariationExclude}

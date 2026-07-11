@@ -1,8 +1,7 @@
-import { AlignGridShapeDockSection, AlignToolToolbar } from "@lisca/ui/features";
+import { AlignToolToolbar } from "@lisca/ui/features";
 import { Button } from "@lisca/ui/components";
 import { DockSection, DockStrip } from "@lisca/ui/shell";
 
-import { instructionForStep } from "../state/studio-routes";
 import { useStudioAlignPage } from "../state/studio-align-page-context";
 
 export function StudioAlignDock() {
@@ -10,21 +9,6 @@ export function StudioAlignDock() {
 
   return (
     <DockStrip>
-      <DockSection fit="panel" title="Instruction">
-        <p class="line-clamp-4 text-center text-sm leading-snug">
-          {instructionForStep("alignPattern")}
-        </p>
-      </DockSection>
-      <AlignGridShapeDockSection
-        disabled={state.cropping || !state.frame}
-        shape={state.grid.shape}
-        onShapeChange={(shape) =>
-          state.setGrid((grid) => ({
-            ...grid,
-            shape,
-          }))
-        }
-      />
       <DockSection title="Tool">
         <AlignToolToolbar
           mode={state.toolMode}

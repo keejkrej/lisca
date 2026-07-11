@@ -196,6 +196,10 @@
   @apply text-destructive text-xs;
 }
 
+.z-destructive-surface {
+  @apply border-destructive/35 bg-destructive/10 text-destructive dark:border-destructive/40 dark:bg-destructive/20 dark:text-red-300;
+}
+
 /* MARK: Input */
 .z-input {
   @apply border-input focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:aria-invalid:border-destructive/50 disabled:bg-input/50 dark:disabled:bg-input/80 h-8.5 rounded-lg border bg-transparent px-[calc(--spacing(3)-1px)] py-1 text-sm transition-colors file:h-6 file:text-xs file:font-medium focus-visible:ring-1 aria-invalid:ring-1 sm:h-7.5;

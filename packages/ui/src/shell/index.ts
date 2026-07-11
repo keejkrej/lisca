@@ -25,7 +25,7 @@ export {
 export { DialogSurface, type DialogSurfaceMaxWidth } from "./modal/dialog-surface";
 export { DockSection, type DockSectionFit, type DockSectionProps } from "./regions/dock-section";
 export { DockStrip } from "./regions/dock-strip";
-export { SidebarSection, type SidebarSectionProps } from "./regions/sidebar-section";
+export { PanelSection, type PanelSectionProps } from "./regions/panel-section";
 export { SidebarStack, type SidebarStackProps } from "./regions/sidebar-stack";
 export { dockToolLabel, dockToolShortcuts, type DockToolAction } from "@lisca/ui-headless/dock";
 export {

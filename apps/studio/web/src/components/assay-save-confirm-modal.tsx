@@ -23,7 +23,7 @@ export function AssaySaveConfirmModal(props: {
                 Save assay.json before leaving basic info?
               </p>
               <Show when={props.error}>
-                <p class="text-destructive-foreground text-sm" role="alert">
+                <p class="z-destructive-surface text-sm" role="alert">
                   {props.error}
                 </p>
               </Show>

@@ -3,14 +3,15 @@ import { splitProps } from "solid-js";
 import { cn } from "../../lib/utils";
 import { Section, type SectionProps } from "./section";
 
-export type SidebarSectionProps = SectionProps;
+export type PanelSectionProps = SectionProps;
 
-export function SidebarSection(props: SidebarSectionProps) {
+/** Sidebar placement: full width, height hugs content (inverse of `DockSection`). */
+export function PanelSection(props: PanelSectionProps) {
   const [local, sectionProps] = splitProps(props, ["class", "contentClassName", "children"]);
   return (
     <Section
-      class={cn("min-h-0 shrink-0", local.class)}
-      contentClassName={cn("flex min-h-0 flex-col gap-2 overflow-auto", local.contentClassName)}
+      class={cn("w-full shrink-0", local.class)}
+      contentClassName={cn("flex flex-col gap-2", local.contentClassName)}
       {...sectionProps}
     >
       {local.children}

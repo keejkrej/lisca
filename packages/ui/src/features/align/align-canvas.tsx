@@ -37,6 +37,7 @@ export type AlignCanvasProps = {
   excludedCells?: Iterable<AlignGridCellCoord>;
   emptyText?: string;
   messages?: CanvasStatusMessage[];
+  alertMessages?: CanvasStatusMessage[];
   toasts?: CanvasStatusMessage[];
   class?: string;
   cursor?: string;
@@ -419,6 +420,7 @@ export function AlignCanvas(props: AlignCanvasProps) {
       </div>
 
       <CanvasStatusMessageStack messages={props.messages} />
+      <CanvasStatusMessageStack align="right" messages={props.alertMessages} />
       <CanvasToastStack messages={props.toasts} />
     </div>
   );

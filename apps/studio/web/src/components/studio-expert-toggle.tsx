@@ -1,4 +1,5 @@
-import { Toggle } from "@lisca/ui/components";
+import IconSlidersHorizontalRegular from "phosphor-icons-solid/IconSlidersHorizontalRegular";
+import { Button } from "@lisca/ui/components";
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-solid";
 
 import { setStudioExpertMode, studioExpertModeAtom } from "../atoms/studio-expert-atoms";
@@ -7,24 +8,30 @@ export function StudioExpertToggle() {
   const expertMode = useAtomValue(studioExpertModeAtom);
   const setExpertMode = useAtomSet(studioExpertModeAtom);
 
-  const onPress = (pressed: boolean) => {
+  const setPressed = (pressed: boolean) => {
     setExpertMode(pressed);
     setStudioExpertMode(pressed);
   };
 
   return (
-    <div class="flex shrink-0 items-center justify-between border-b border-border px-3 py-2">
-      <div class="flex items-center gap-1.5 text-sm">
-        <span class="font-medium">Expert</span>
-      </div>
-      <Toggle
-        aria-label="Expert mode"
-        pressed={expertMode()}
-        size="sm"
-        onChange={onPress}
+    <>
+      <div
+        aria-live="polite"
+        class="flex cursor-default items-center gap-1.5 py-1.5 text-sm whitespace-normal"
       >
-        <span class="text-xs">{expertMode() ? "ON" : "OFF"}</span>
-      </Toggle>
-    </div>
+        <span class="font-medium">Expert</span>
+        <span class="opacity-70">{expertMode() ? "On" : "Off"}</span>
+      </div>
+      <Button
+        aria-label="Toggle expert mode"
+        aria-pressed={expertMode()}
+        size="icon-sm"
+        type="button"
+        variant="ghost"
+        onClick={() => setPressed(!expertMode())}
+      >
+        <IconSlidersHorizontalRegular />
+      </Button>
+    </>
   );
 }

@@ -10,6 +10,7 @@ import { ChooseAssay } from "../components/choose-assay";
 import { StudioAssayDock } from "../components/studio-assay-dock";
 import { StudioLeft } from "../components/studio-left";
 import { StudioRightPanel } from "../components/studio-right-panel";
+import { instructionForStep } from "../state/studio-routes";
 import { useStudioMemoryRecent } from "../hooks/use-studio-memory-recent";
 import { useStudioNavigate } from "../navigation/use-studio-navigate";
 import { parseStudioAssayJson, useStudioStore } from "../state/studio-store";
@@ -65,7 +66,7 @@ function AssayPage() {
               <Show when={openAssayError()}>
                 {(error) => (
                   <p
-                    class="mb-4 w-full max-w-[28rem] rounded-lg border border-destructive/35 bg-destructive/10 px-3 py-2 text-destructive-foreground text-sm"
+                    class="z-destructive-surface mb-4 w-full max-w-[28rem] rounded-lg px-3 py-2 text-sm"
                     role="alert"
                   >
                     {error()}
@@ -84,7 +85,7 @@ function AssayPage() {
           </AppShell.Dock>
         </AppShell.MainColumn>
         <AppShell.Right widthClass="w-60">
-          <StudioRightPanel />
+          <StudioRightPanel instruction={() => instructionForStep("chooseAssay")} />
         </AppShell.Right>
       </AppShell.Body>
       <HostFilePickerDialog

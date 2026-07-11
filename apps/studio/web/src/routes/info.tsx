@@ -9,6 +9,7 @@ import { BasicInfoStep2 } from "../components/basic-info-step2";
 import { StudioInfoDock } from "../components/studio-info-dock";
 import { StudioLeft } from "../components/studio-left";
 import { StudioRightPanel } from "../components/studio-right-panel";
+import { instructionForStep } from "../state/studio-routes";
 import { useStudioNavigate } from "../navigation/use-studio-navigate";
 import {
   studioWizardActions,
@@ -61,11 +62,11 @@ function InfoPage() {
             </div>
           </AppShell.Main>
           <AppShell.Dock>
-            <StudioInfoDock infoStep={infoStep()} step={step()} onBack={back} onNext={next} />
+            <StudioInfoDock infoStep={infoStep()} onBack={back} onNext={next} />
           </AppShell.Dock>
         </AppShell.MainColumn>
         <AppShell.Right widthClass="w-60">
-          <StudioRightPanel />
+          <StudioRightPanel instruction={() => instructionForStep(step())} />
         </AppShell.Right>
       </AppShell.Body>
     </AppShell>

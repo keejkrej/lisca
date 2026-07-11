@@ -1,5 +1,5 @@
 import { Button } from "@lisca/ui/components";
-import { SidebarSection, SidebarStack } from "@lisca/ui/shell";
+import { PanelSection, SidebarStack } from "@lisca/ui/shell";
 import { Show } from "solid-js";
 import { filterResultFilesBySection } from "@lisca/analysis";
 
@@ -20,7 +20,7 @@ export function StudioResultExpertRight() {
 
   return (
     <SidebarStack>
-      <SidebarSection title="Analysis">
+      <PanelSection title="Analysis">
         <div class="flex flex-col gap-1 text-sm">
           <div class="flex items-center justify-between">
             <span class="text-muted-foreground">Assay</span>
@@ -31,9 +31,9 @@ export function StudioResultExpertRight() {
             <span class="font-medium tabular-nums">{fileCount()}</span>
           </div>
         </div>
-      </SidebarSection>
+      </PanelSection>
       <Show when={hasAnyResultFiles()}>
-        <SidebarSection title="Sections">
+        <PanelSection title="Sections">
           <div class="flex flex-col gap-2">
             <SectionButton
               label="Timeseries"
@@ -46,14 +46,14 @@ export function StudioResultExpertRight() {
               onClick={() => switchSection("parameters")}
             />
           </div>
-        </SidebarSection>
+        </PanelSection>
       </Show>
       <Show when={!hasAnyResultFiles()}>
-        <SidebarSection title="Results">
+        <PanelSection title="Results">
           <p class="text-muted-foreground text-sm">
             Run analysis to see results here.
           </p>
-        </SidebarSection>
+        </PanelSection>
       </Show>
     </SidebarStack>
   );

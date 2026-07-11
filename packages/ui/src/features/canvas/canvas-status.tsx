@@ -7,8 +7,7 @@ import { canvasToastPresentation, shouldHideToastText } from "@lisca/ui-headless
 import { cn } from "../../lib/utils";
 
 function messageToneClassName(tone: CanvasStatusTone | undefined) {
-  if (tone === "error")
-    return "border-destructive/35 bg-destructive/10 text-destructive-foreground";
+  if (tone === "error") return "z-destructive-surface";
   if (tone === "success") {
     return "border-emerald-600/30 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-300";
   }
@@ -16,9 +15,7 @@ function messageToneClassName(tone: CanvasStatusTone | undefined) {
 }
 
 function toastToneClassName(tone: CanvasStatusTone | undefined) {
-  if (tone === "error") {
-    return "border-destructive/35 bg-destructive/10 text-destructive-foreground";
-  }
+  if (tone === "error") return "z-destructive-surface";
   if (tone === "success") {
     return "border-emerald-600/30 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-300";
   }
@@ -39,12 +36,15 @@ function toastIcon(message: CanvasStatusMessage) {
 export function CanvasStatusMessageStack(props: {
   class?: string;
   messages?: CanvasStatusMessage[];
+  align?: "left" | "right";
 }) {
+  const align = () => props.align ?? "left";
   return (
     <Show when={props.messages?.length}>
       <div
         class={cn(
-          "pointer-events-none absolute left-3 top-3 flex max-w-[78%] flex-wrap gap-1.5",
+          "pointer-events-none absolute top-3 flex max-w-[78%] flex-wrap gap-1.5",
+          align() === "left" ? "left-3" : "right-3 justify-end",
           props.class,
         )}
       >
@@ -52,7 +52,7 @@ export function CanvasStatusMessageStack(props: {
           {(message) => (
             <div
               class={cn(
-                "whitespace-pre-line rounded-md border bg-card/95 px-3 py-2 text-sm leading-snug shadow-lg backdrop-blur-sm",
+                "whitespace-pre-line rounded-md border bg-card/75 px-3 py-2 text-sm leading-snug",
                 messageToneClassName(message.tone),
               )}
             >
@@ -85,7 +85,7 @@ export function CanvasToastStack(props: { class?: string; messages?: CanvasStatu
                   "flex max-w-full items-start rounded-lg text-sm leading-snug",
                   hideText
                     ? "p-1 text-popover-foreground drop-shadow-sm"
-                    : "gap-2 border bg-popover/95 px-3 py-2 shadow-lg/5 backdrop-blur-md",
+                    : "gap-2 border bg-popover/75 px-3 py-2",
                   !hideText && toastToneClassName(message.tone),
                 )}
                 aria-label={hideText ? message.text : undefined}

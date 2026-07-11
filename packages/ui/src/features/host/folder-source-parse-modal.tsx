@@ -73,7 +73,7 @@ export function FolderSourceParseModal(props: FolderSourceParseModalProps) {
                 }}
               />
               <Show when={modal.error()}>
-                <p class="text-destructive-foreground text-sm">{modal.error()}</p>
+                <p class="text-destructive text-sm">{modal.error()}</p>
               </Show>
             </Field>
           </div>

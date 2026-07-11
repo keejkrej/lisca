@@ -3,7 +3,6 @@ import { DockSection, DockStrip } from "@lisca/ui/shell";
 import { useAtomSet } from "@effect-atom/atom-solid";
 
 import { useStudioNavigate } from "../navigation/use-studio-navigate";
-import { instructionForStep } from "../state/studio-routes";
 import { studioWizardActions, studioWizardAtom } from "../state/studio-store";
 
 export function StudioAssayDock(props: {
@@ -18,11 +17,6 @@ export function StudioAssayDock(props: {
 
   return (
     <DockStrip>
-      <DockSection fit="panel" title="Instruction">
-        <p class="line-clamp-4 text-center text-sm leading-snug">
-          {instructionForStep("chooseAssay")}
-        </p>
-      </DockSection>
       <DockSection title="Action">
         <div class="flex flex-col gap-2">
           <Button

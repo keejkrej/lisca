@@ -18,6 +18,7 @@ import { StudioLeft } from "../components/studio-left";
 import { StudioRightPanel } from "../components/studio-right-panel";
 import { StudioResultExpertRight } from "../components/studio-result-expert-right";
 import { StudioResultDock } from "../components/studio-result-dock";
+import { defaultResultInstruction } from "../state/studio-routes";
 import {
   collectDisplayedParameterPanels,
   collectTimeseriesPanels,
@@ -209,10 +210,7 @@ export default function ResultPage() {
       cancelled = true;
     });
   });
-  const defaultInstruction = () =>
-    activeSection() === "timeseries"
-      ? "All timeseries plots are shown below."
-      : "Parameter plots: mRNA lifetime, AUC, transfection efficiency, and translation onset.";
+  const defaultInstruction = () => defaultResultInstruction(activeSection());
   const dockInstruction = () => saveMessage() ?? panelError() ?? defaultInstruction();
   const isBusy = () => isSectionLoading() || isSaving();
   const sectionToolActions = createMemo(() => [
@@ -279,7 +277,6 @@ export default function ResultPage() {
           </AppShell.Main>
           <AppShell.Dock>
             <StudioResultDock
-              instruction={dockInstruction()}
               saveDisabled={!activeWorkspacePath() || !hasAnyResultFiles() || isBusy()}
               saveLabel={isSaving() ? "Saving…" : "Save"}
               shortcutsEnabled={!isBusy()}
@@ -291,7 +288,10 @@ export default function ResultPage() {
           </AppShell.Dock>
         </AppShell.MainColumn>
         <AppShell.Right widthClass="w-72">
-          <StudioRightPanel expert={() => <StudioResultExpertRight />} />
+          <StudioRightPanel
+            expert={() => <StudioResultExpertRight />}
+            instruction={dockInstruction}
+          />
         </AppShell.Right>
       </AppShell.Body>
     </AppShell>

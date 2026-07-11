@@ -200,7 +200,7 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
                           </div>
                         }
                       >
-                        <div class="p-3 text-destructive-foreground text-sm">{picker.error()}</div>
+                        <div class="p-3 text-destructive text-sm">{picker.error()}</div>
                       </Show>
                     }
                   >
@@ -323,7 +323,7 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
                   }}
                 />
                 <Show when={folderError()}>
-                  <p class="text-destructive-foreground text-sm">{folderError()}</p>
+                  <p class="text-destructive text-sm">{folderError()}</p>
                 </Show>
               </Field>
             </form>

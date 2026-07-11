@@ -1,7 +1,7 @@
 import { splitProps, type JSX } from "solid-js";
 
 const modalScrimClass =
-  "fixed inset-0 flex items-center justify-center overscroll-contain bg-black/55 px-6 backdrop-blur-sm";
+  "fixed inset-0 flex items-center justify-center overscroll-contain bg-black/50 px-6";
 import { cn } from "../../lib/utils";
 
 export function ModalScrim(

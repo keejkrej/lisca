@@ -18,6 +18,20 @@ import { StudioCropConfirmModal } from "./studio-crop-confirm-modal";
 import { StudioCropProgressModal } from "./studio-crop-progress-modal";
 import { StudioCropStartModal } from "./studio-crop-start-modal";
 
+function isSourceNotFoundError(message: string): boolean {
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes("source not found") ||
+    normalized.includes("no such file") ||
+    normalized.includes("file error") ||
+    normalized.includes("not a directory")
+  );
+}
+
+function alignCanvasAlertText(error: string): string {
+  return isSourceNotFoundError(error) ? "Source not found" : error;
+}
+
 export function StudioAlignMain() {
   const canvas = useStudioAlignCanvas();
   const crop = useStudioAlignCrop();
@@ -83,14 +97,18 @@ export function StudioAlignMain() {
         ]
       : [];
   });
+  const canvasAlerts = createMemo(() => {
+    const error = canvas.error;
+    if (!error) return [];
+    return [
+      {
+        text: alignCanvasAlertText(error),
+        tone: "error" as const,
+      },
+    ];
+  });
   const toasts = createMemo(() => {
-    if (canvas.error)
-      return [
-        {
-          text: canvas.error,
-          tone: "error" as const,
-        },
-      ];
+    if (canvas.error) return [];
     const status = activeToastStatus();
     if (status)
       return [
@@ -116,6 +134,7 @@ export function StudioAlignMain() {
           frame={canvas.frame}
           grid={canvas.grid}
           messages={positionInfo()}
+          alertMessages={canvasAlerts()}
           previewGridRef={gridHandlers.previewGridRef}
           previewRedrawRef={previewRedrawRef}
           toasts={toasts()}
