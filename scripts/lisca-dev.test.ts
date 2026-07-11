@@ -147,6 +147,14 @@ describe("live rust server smoke", () => {
   }, 60_000);
 });
 
+describe("kill-tcp-listener", () => {
+  it("exits cleanly when no port argument is provided", async () => {
+    const { execFileSync } = await import("node:child_process");
+    const script = path.resolve(root, "scripts/kill-tcp-listener.cjs");
+    expect(() => execFileSync("node", [script], { stdio: "ignore" })).not.toThrow();
+  });
+});
+
 describe("vite dev config", () => {
   it("proxies every API prefix to the backend port", async () => {
     const { createLiscaViteConfig } = await import("../packages/web-app/vite.ts");
