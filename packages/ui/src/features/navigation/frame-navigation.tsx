@@ -98,7 +98,7 @@ export function SelectStepperField<T extends NavigationValue>(
           value={props.value}
           onChange={(next) => next != null && props.onChange(next as T)}
         >
-          <SelectTrigger size="sm" class="min-w-0 text-sm">
+          <SelectTrigger size="sm" class="w-full min-w-0 text-sm">
             <SelectValue<T>>
               {(state) =>
                 formatNavigationOptionDisplayLabel(
