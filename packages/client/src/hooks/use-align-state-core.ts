@@ -2,6 +2,7 @@ import type {
   AlignGridCellCoord,
   AlignGridState,
   AlignerSource,
+  AutoExcludePreviewResponse,
   ContrastWindow,
   CropRoiProgress,
   FrameRequest,
@@ -66,6 +67,7 @@ export type AlignState = {
   variationExcludePreview: VariationExcludePreview | null;
   variationExcludeLoading: boolean;
   variationExclude: () => Promise<void>;
+  showVariationExcludePreview: (preview: AutoExcludePreviewResponse) => void;
   setVariationExcludeThreshold: (threshold: number) => void;
   cancelVariationExclude: () => void;
   applyVariationExclude: () => void;
@@ -164,6 +166,7 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): Accessor<AlignSt
       variationExcludePreview: variation.preview(),
       variationExcludeLoading: variation.loading(),
       variationExclude: variation.exclude,
+      showVariationExcludePreview: variation.showPreview,
       setVariationExcludeThreshold: variation.setThreshold,
       cancelVariationExclude: variation.cancel,
       applyVariationExclude: variation.apply,

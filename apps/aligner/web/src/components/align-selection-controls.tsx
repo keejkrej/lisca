@@ -1,5 +1,7 @@
 import { runClientEffect } from "@lisca/client/runtime";
 import { createRequestSmartExcludeProvider, useSmartExclude } from "@lisca/smart/exclude/request";
+import { useVarExclude } from "@lisca/smart/var-exclude";
+import { createLocalVarExcludeProvider } from "@lisca/smart/var-exclude/local";
 import { AlignSelectionRail } from "@lisca/ui/features";
 import { createMemo } from "solid-js";
 
@@ -20,6 +22,23 @@ export function AlignSelectionControls() {
     },
   );
   const disabled = createMemo(() => state().cropping || !state().frame);
+  const varExclude = useVarExclude({
+    provider: createLocalVarExcludeProvider(),
+    get frame() {
+      return state().frame;
+    },
+    get grid() {
+      return state().grid;
+    },
+    get currentExcludedCells() {
+      return state().currentExcludedCells;
+    },
+    get enabled() {
+      return !disabled();
+    },
+    onPreview: (preview) => state().showVariationExcludePreview(preview),
+    onError: (error) => state().reportError(error),
+  });
   const smartExclude = useSmartExclude({
     provider: smartExcludeProvider,
     get frame() {
@@ -48,14 +67,14 @@ export function AlignSelectionControls() {
         manualExclusionEnabled={state().manualExclusionEnabled}
         smartExcludeLoading={smartExclude.active()}
         visibleCounts={state().visibleCounts}
-        variationExcludeLoading={state().variationExcludeLoading}
+        variationExcludeLoading={varExclude.active()}
         variationExcludePreview={state().variationExcludePreview}
         onApplyVariationExclude={() => state().applyVariationExclude()}
         onSmartExclude={() => void smartExclude.request()}
         onCancelVariationExclude={() => state().cancelVariationExclude()}
         onExcludedCellsChange={(cells) => state().setExcludedCellsForCurrentPosition(cells)}
         onManualExclusionEnabledChange={(enabled) => state().setManualExclusionEnabled(enabled)}
-        onVariationExclude={() => void state().variationExclude()}
+        onVariationExclude={() => void varExclude.requestPreview()}
         onVariationExcludeThresholdChange={(threshold) =>
           state().setVariationExcludeThreshold(threshold)
         }

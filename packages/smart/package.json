@@ -31,6 +31,18 @@
     "./segment/request": {
       "types": "./src/segment/request/index.ts",
       "import": "./src/segment/request/index.ts"
+    },
+    "./var-exclude": {
+      "types": "./src/var-exclude/index.ts",
+      "import": "./src/var-exclude/index.ts"
+    },
+    "./var-exclude/local": {
+      "types": "./src/var-exclude/local/index.ts",
+      "import": "./src/var-exclude/local/index.ts"
+    },
+    "./var-exclude/browser": {
+      "types": "./src/var-exclude/browser/index.ts",
+      "import": "./src/var-exclude/browser/index.ts"
     }
   },
   "scripts": {

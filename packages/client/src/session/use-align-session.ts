@@ -2,6 +2,7 @@ import type {
   AlignGridCellCoord,
   AlignGridState,
   AlignerSource,
+  AutoExcludePreviewResponse,
   ContrastWindow,
   CropRoiProgress,
   FrameRequest,
@@ -648,6 +649,12 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
       preview: variationExcludePreview,
       loading: variationExcludeLoading,
       exclude: variationExclude,
+      showPreview: (preview: AutoExcludePreviewResponse) => {
+        setVariationExcludePreview({
+          preview,
+          threshold: preview.threshold,
+        });
+      },
       setThreshold: setVariationExcludeThreshold,
       cancel: cancelVariationExclude,
       apply: applyVariationExclude,

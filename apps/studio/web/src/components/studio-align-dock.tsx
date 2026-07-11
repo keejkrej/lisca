@@ -5,7 +5,7 @@ import { DockSection, DockStrip } from "@lisca/ui/shell";
 import { useStudioAlignPage } from "../state/studio-align-page-context";
 
 export function StudioAlignDock() {
-  const { state, smartExclude, saveAndAdvance } = useStudioAlignPage();
+  const { state, varExclude, saveAndAdvance } = useStudioAlignPage();
 
   return (
     <DockStrip>
@@ -61,7 +61,7 @@ export function StudioAlignDock() {
             </Button>
             <Button
               class="w-full justify-center"
-              disabled={!state.frame || state.saving || state.cropping || smartExclude.active()}
+              disabled={!state.frame || state.saving || state.cropping || varExclude.active()}
               size="sm"
               type="button"
               variant="outline"

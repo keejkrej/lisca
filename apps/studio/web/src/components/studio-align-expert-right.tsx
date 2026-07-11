@@ -5,7 +5,7 @@ import { onCleanup } from "solid-js";
 import { useStudioAlignPage } from "../state/studio-align-page-context";
 
 export function StudioAlignExpertRight() {
-  const { state, smartExclude } = useStudioAlignPage();
+  const { state, smartExclude, varExclude } = useStudioAlignPage();
   const disabled = () => state.cropping || !state.frame;
 
   onCleanup(() => {
@@ -24,14 +24,14 @@ export function StudioAlignExpertRight() {
         manualExclusionEnabled={state.manualExclusionEnabled}
         smartExcludeLoading={smartExclude.active()}
         visibleCounts={state.visibleCounts}
-        variationExcludeLoading={state.variationExcludeLoading}
+        variationExcludeLoading={varExclude.active()}
         variationExcludePreview={state.variationExcludePreview}
         onApplyVariationExclude={() => state.applyVariationExclude()}
         onCancelVariationExclude={() => state.cancelVariationExclude()}
         onExcludedCellsChange={(cells) => state.setExcludedCellsForCurrentPosition(cells)}
         onManualExclusionEnabledChange={(enabled) => state.setManualExclusionEnabled(enabled)}
         onSmartExclude={() => void smartExclude.request()}
-        onVariationExclude={() => void state.variationExclude()}
+        onVariationExclude={() => void varExclude.requestPreview()}
         onVariationExcludeThresholdChange={(threshold) =>
           state.setVariationExcludeThreshold(threshold)
         }

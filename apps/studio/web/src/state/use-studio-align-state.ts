@@ -2,6 +2,7 @@ import type {
   AlignGridCellCoord,
   AlignGridState,
   AlignerSource,
+  AutoExcludePreviewResponse,
   ContrastWindow,
   CropRoiProgress,
   FrameRequest,
@@ -97,7 +98,9 @@ export type StudioAlignState = {
   cancelVariationExclude: () => void;
   applyVariationExclude: () => void;
   applySmartExclusion: (modelCells: AlignGridCellCoord[]) => void;
-  saveAndAdvanceWithModelCells: (modelCells: AlignGridCellCoord[]) => Promise<boolean>;
+  saveAndAdvanceWithExcludedCells: (excludedCells: AlignGridCellCoord[]) => Promise<boolean>;
+  showVariationExcludePreview: (preview: AutoExcludePreviewResponse) => void;
+  reportStatus: (message: string | null) => void;
   reportError: (message: string | null) => void;
 };
 export type CropStartConfirmState = {
@@ -241,8 +244,8 @@ export function useStudioAlignState(): StudioAlignState {
   const cancelCropStartConfirm = () => {
     setCropStartConfirm(null);
   };
-  const saveAndAdvanceWithModelCells = async (modelCells: AlignGridCellCoord[]) => {
-    if (!(await session.saveWithSmartExclusion(modelCells))) return false;
+  const saveAndAdvanceWithExcludedCells = async (excludedCells: AlignGridCellCoord[]) => {
+    if (!(await session.saveCurrent(excludedCells))) return false;
     const advanced = advanceToNextPosition();
     if (!advanced) {
       await maybeCropWhenAllPositionsSaved();
@@ -376,7 +379,9 @@ export function useStudioAlignState(): StudioAlignState {
     cancelVariationExclude: session.variation.cancel,
     applyVariationExclude: session.variation.apply,
     applySmartExclusion,
-    saveAndAdvanceWithModelCells,
+    saveAndAdvanceWithExcludedCells,
+    showVariationExcludePreview: session.variation.showPreview,
+    reportStatus: setStatus,
     reportError: setError,
   };
 }
