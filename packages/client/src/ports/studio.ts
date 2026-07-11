@@ -87,5 +87,10 @@ export function createStudioPort(deps: StudioPortDeps): StudioDataPort {
         }),
       );
     },
+    smartSegment(request, signal) {
+      return withClientEffect(client, signal, (c) =>
+        c.annotate.smartSegment({ payload: request }),
+      );
+    },
   };
 }

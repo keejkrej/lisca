@@ -11,7 +11,8 @@ workspace = true
 
 [features]
 default = ["studio"]
-studio = ["dep:mplot", "dep:ort", "dep:imageproc", "dep:rust_xlsxwriter"]
+smart = ["dep:ort"]
+studio = ["smart", "dep:mplot", "dep:imageproc", "dep:rust_xlsxwriter"]
 
 [dependencies]
 axum.workspace = true

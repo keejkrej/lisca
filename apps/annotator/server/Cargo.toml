@@ -19,5 +19,5 @@ path = "src/main.rs"
 
 [dependencies]
 axum.workspace = true
-lisca.workspace = true
+lisca = { workspace = true, default-features = false, features = ["smart"] }
 tokio.workspace = true

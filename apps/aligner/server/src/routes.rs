@@ -44,6 +44,15 @@ where
             get(crop_roi_progress_handler::<S>),
         )
         .route("/align/crop-latest", get(crop_latest_progress_handler::<S>))
+        .route("/align/smart-exclude", post(smart_exclude_handler))
+}
+
+async fn smart_exclude_handler(
+    Json(payload): Json<lisca::protocol::SmartExcludeRequest>,
+) -> Result<Json<lisca::protocol::SmartExcludeResponse>, FsError> {
+    lisca::smart::exclude::classify_exclusion(payload)
+        .map(Json)
+        .map_err(FsError::new)
 }
 
 async fn scan_source_handler(

@@ -1,11 +1,16 @@
+import { createBrowserSmartExcludeSetup } from "@lisca/smart/exclude/browser";
+import { useSmartExclude } from "@lisca/smart/exclude";
 import { AlignSelectionRail, SmartExcludeModelDialog } from "@lisca/ui/features";
-import { useSmartExclude } from "@lisca/smart/exclude/browser";
 import type { DemoAlignState } from "@lisca/web-demo";
 import type { Accessor } from "solid-js";
+
+const browserSmartExclude = createBrowserSmartExcludeSetup();
 
 export function DemoAlignSelectionControls(props: { state: Accessor<DemoAlignState> }) {
   const disabled = () => !props.state().frame;
   const smartExclude = useSmartExclude({
+    provider: browserSmartExclude.provider,
+    model: browserSmartExclude.model,
     frame: props.state().frame,
     grid: props.state().grid,
     currentExcludedCells: props.state().excludedCells,

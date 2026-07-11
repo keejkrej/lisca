@@ -20,6 +20,10 @@ import type {
   SavedAlignState,
   SaveResultPdfRequest,
   SaveResultPdfResponse,
+  SmartExcludeRequest,
+  SmartExcludeResponse,
+  SmartSegmentRequest,
+  SmartSegmentResponse,
   WorkspaceScan,
 } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
@@ -66,6 +70,10 @@ export type AnnotatorDataPort = HostPort & {
     annotation: RoiFrameAnnotationPayload,
     signal?: AbortSignal,
   ): ClientEffect<RoiFrameAnnotation>;
+  smartSegment(
+    request: SmartSegmentRequest,
+    signal?: AbortSignal,
+  ): ClientEffect<SmartSegmentResponse>;
 };
 
 export type AnalysisDataPort = {
@@ -98,6 +106,10 @@ export type AlignerDataPort = HostPort & {
   cancelCropRoi(requestId: string): ClientEffect<CropRoiProgress>;
   onCropRoiProgress(requestId: string, onProgress: (progress: CropRoiProgress) => void): () => void;
   roiPosExists(workspacePath: string, pos: number): ClientEffect<boolean>;
+  smartExclude(
+    request: SmartExcludeRequest,
+    signal?: AbortSignal,
+  ): ClientEffect<SmartExcludeResponse>;
 };
 
 export type StudioDataPort = AlignerDataPort &
@@ -129,4 +141,8 @@ export type StudioDataPort = AlignerDataPort &
       annotation: RoiFrameAnnotationPayload,
       signal?: AbortSignal,
     ): ClientEffect<RoiFrameAnnotation>;
+    smartSegment(
+      request: SmartSegmentRequest,
+      signal?: AbortSignal,
+    ): ClientEffect<SmartSegmentResponse>;
   };

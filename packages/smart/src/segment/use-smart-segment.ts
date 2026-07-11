@@ -2,10 +2,11 @@ import type { FrameResult } from "@lisca/utils";
 import { findSmartSegmentPromptIndexAt, smartSegmentPromptFrameRadius } from "@lisca/utils";
 import { createEffect, createMemo, createSignal, type Setter } from "solid-js";
 
-import { applyBinaryMask } from "../mask";
-import type { SmartSegmentPoint } from "../types";
-import { getBrowserSamEngine, type SmartSegmentDownloadProgress } from "./sam-engine";
-import { isSamModelCached } from "./sam-model-cache";
+import type { SmartModelDownloadState, SmartModelGate } from "../shared/model-gate";
+import { useLatestRef } from "../shared/use-latest-ref";
+import { applyBinaryMask } from "./mask";
+import type { SmartSegmentProvider } from "./provider";
+import type { SmartSegmentPoint } from "./types";
 
 export type SmartSegmentClick = {
   x: number;
@@ -18,13 +19,7 @@ export type SmartEraseClick = {
   y: number;
 };
 
-export type SmartSegmentDownloadState = {
-  open: boolean;
-  requiresDownload: boolean;
-  progress: number;
-  message: string;
-  file?: string;
-};
+export type SmartSegmentDownloadState = SmartModelDownloadState;
 
 function isSmartTool(tool: string): boolean {
   return tool === "smart" || tool === "smart-erase";
@@ -54,34 +49,27 @@ function clearActiveLabel(mask: Uint8Array, labelValue: number): Uint8Array {
 
 type SmartSegmentSessionRefs = {
   frameKey: string | null;
-  pendingClick: SmartSegmentClick | null;
   pendingPrompts: SmartSegmentPoint[] | null;
   pendingLabel: number;
 };
 
 function resetSmartSegmentSession(
   setPromptsByLabel: Setter<Record<number, SmartSegmentPoint[]>>,
-  setDownloadState: Setter<SmartSegmentDownloadState>,
+  setDownloadState: Setter<SmartSegmentDownloadState> | null,
   refs: SmartSegmentSessionRefs,
+  provider: SmartSegmentProvider,
 ) {
   setPromptsByLabel({});
-  getBrowserSamEngine().dispose();
+  provider.dispose();
   refs.frameKey = null;
-  refs.pendingClick = null;
   refs.pendingPrompts = null;
   refs.pendingLabel = 0;
-  setDownloadState({ open: false, requiresDownload: false, progress: 0, message: "" });
-}
-
-function useLatestRef<T>(value: () => T) {
-  const ref = { current: value() };
-  createEffect(() => {
-    ref.current = value();
-  });
-  return ref;
+  setDownloadState?.({ open: false, requiresDownload: false, progress: 0, message: "" });
 }
 
 export function useSmartSegment(options: {
+  provider: SmartSegmentProvider;
+  model?: SmartModelGate;
   frame: FrameResult | null;
   tool: string;
   activeLabelValue: number;
@@ -104,7 +92,6 @@ export function useSmartSegment(options: {
 
   const sessionRefs: SmartSegmentSessionRefs = {
     frameKey: null,
-    pendingClick: null,
     pendingPrompts: null,
     pendingLabel: 0,
   };
@@ -114,6 +101,7 @@ export function useSmartSegment(options: {
   const onCommitRef = useLatestRef(() => options.onCommit);
   const onStatusRef = useLatestRef(() => options.onStatus);
   const onErrorRef = useLatestRef(() => options.onError);
+  const setDownloadStateForModel = options.model ? setDownloadState : null;
 
   const prompts = createMemo(() => {
     const labelValue = options.activeLabelValue;
@@ -128,7 +116,12 @@ export function useSmartSegment(options: {
   };
 
   const resetForFrame = () => {
-    resetSmartSegmentSession(setPromptsByLabel, setDownloadState, sessionRefs);
+    resetSmartSegmentSession(
+      setPromptsByLabel,
+      setDownloadStateForModel,
+      sessionRefs,
+      options.provider,
+    );
   };
 
   createEffect(() => {
@@ -142,16 +135,30 @@ export function useSmartSegment(options: {
   createEffect(() => {
     const frame = options.frame;
     if (!frame) {
-      resetSmartSegmentSession(setPromptsByLabel, setDownloadState, sessionRefs);
+      resetSmartSegmentSession(
+        setPromptsByLabel,
+        setDownloadStateForModel,
+        sessionRefs,
+        options.provider,
+      );
       return;
     }
     const frameKey = `${frame.width}x${frame.height}:${frame.pixels.byteLength}`;
     if (sessionRefs.frameKey === frameKey) return;
     sessionRefs.frameKey = frameKey;
-    resetSmartSegmentSession(setPromptsByLabel, setDownloadState, sessionRefs);
+    resetSmartSegmentSession(
+      setPromptsByLabel,
+      setDownloadStateForModel,
+      sessionRefs,
+      options.provider,
+    );
   });
 
-  const updateDownloadProgress = (progress: SmartSegmentDownloadProgress) => {
+  const updateDownloadProgress = (progress: {
+    progress: number;
+    message: string;
+    file?: string;
+  }) => {
     setDownloadState((current) => ({
       ...current,
       open: true,
@@ -172,10 +179,17 @@ export function useSmartSegment(options: {
     setBusy(true);
 
     try {
-      const engine = getBrowserSamEngine();
-      await engine.prepareFrame(frame, updateDownloadProgress);
+      await options.provider.prepareFrame(
+        frame,
+        options.model ? { onProgress: updateDownloadProgress } : undefined,
+      );
       if (segmentGeneration !== generation) return;
-      setDownloadState({ open: false, requiresDownload: false, progress: 100, message: "" });
+      setDownloadStateForModel?.({
+        open: false,
+        requiresDownload: false,
+        progress: 100,
+        message: "",
+      });
 
       if (nextPrompts.length === 0) {
         onCommitRef.current(clearActiveLabel(options.mask, labelValue));
@@ -183,7 +197,7 @@ export function useSmartSegment(options: {
         return;
       }
 
-      const binary = await engine.segment(nextPrompts);
+      const binary = await options.provider.segment(nextPrompts);
       if (segmentGeneration !== generation) return;
       onCommitRef.current(
         applyBinaryMask(clearActiveLabel(options.mask, labelValue), binary, labelValue),
@@ -193,27 +207,35 @@ export function useSmartSegment(options: {
       if (segmentGeneration !== generation) return;
       onErrorRef.current?.(cause instanceof Error ? cause.message : String(cause));
       onStatusRef.current?.(null);
-      setDownloadState({ open: false, requiresDownload: false, progress: 0, message: "" });
+      setDownloadStateForModel?.({
+        open: false,
+        requiresDownload: false,
+        progress: 0,
+        message: "",
+      });
     } finally {
       if (segmentGeneration === generation) setBusy(false);
     }
   };
 
-  const ensureModelForClick = async (
-    click: SmartSegmentClick,
-    labelValue: number,
-    nextPrompts: SmartSegmentPoint[],
-  ) => {
+  const ensureModelForPrompts = async (labelValue: number, nextPrompts: SmartSegmentPoint[]) => {
     sessionRefs.pendingPrompts = nextPrompts;
     sessionRefs.pendingLabel = labelValue;
-    const engine = getBrowserSamEngine();
-    if (engine.isModelLoaded()) {
+
+    if (!options.model) {
       setPromptsForLabel(labelValue, nextPrompts);
       await runSegment(labelValue, nextPrompts);
       return;
     }
 
-    const cached = await isSamModelCached();
+    const model = options.model;
+    if (model.isLoaded()) {
+      setPromptsForLabel(labelValue, nextPrompts);
+      await runSegment(labelValue, nextPrompts);
+      return;
+    }
+
+    const cached = await model.isCached();
     if (cached) {
       setPromptsForLabel(labelValue, nextPrompts);
       setDownloadState({
@@ -227,7 +249,6 @@ export function useSmartSegment(options: {
       return;
     }
 
-    sessionRefs.pendingClick = click;
     setDownloadState({
       open: true,
       requiresDownload: true,
@@ -242,9 +263,7 @@ export function useSmartSegment(options: {
     const labelValue = sessionRefs.pendingLabel;
     if (!nextPrompts || !options.frame || labelValue <= 0) return;
 
-    sessionRefs.pendingClick = null;
     sessionRefs.pendingPrompts = null;
-
     setDownloadState({
       open: true,
       requiresDownload: true,
@@ -256,9 +275,8 @@ export function useSmartSegment(options: {
   };
 
   const cancelDownload = () => {
-    sessionRefs.pendingClick = null;
     sessionRefs.pendingPrompts = null;
-    setDownloadState({ open: false, requiresDownload: false, progress: 0, message: "" });
+    setDownloadStateForModel?.({ open: false, requiresDownload: false, progress: 0, message: "" });
     onStatusRef.current?.(null);
   };
 
@@ -281,7 +299,7 @@ export function useSmartSegment(options: {
       label: click.negative ? 0 : 1,
     };
     const nextPrompts = [...currentPrompts, nextPrompt];
-    await ensureModelForClick(click, labelValue, nextPrompts);
+    await ensureModelForPrompts(labelValue, nextPrompts);
   };
 
   const handleEraseClick = async (click: SmartEraseClick) => {
@@ -310,11 +328,7 @@ export function useSmartSegment(options: {
               label: 0,
             },
           ];
-    await ensureModelForClick(
-      { x: click.x, y: click.y, negative: promptIndex < 0 },
-      labelValue,
-      nextPrompts,
-    );
+    await ensureModelForPrompts(labelValue, nextPrompts);
   };
 
   return {

@@ -1,12 +1,20 @@
-import { AnnotationCanvas, SmartSegmentModelDialog } from "@lisca/ui/features";
+import { runClientEffect } from "@lisca/client/runtime";
+import { useSmartSegment } from "@lisca/smart/segment";
+import { createRequestSmartSegmentProvider } from "@lisca/smart/segment/request";
+import { AnnotationCanvas } from "@lisca/ui/features";
 import { ViewportCard } from "@lisca/ui/shell";
-import { useSmartSegment } from "@lisca/smart/segment/browser";
 import { createSignal } from "solid-js";
 
+import { studioClient } from "../api/studio-port";
 import { useStudioAnnotatePage } from "../state/studio-annotate-page-context";
 import { useStudioAnnotateCanvas } from "../state/studio-annotate-page-selectors";
 import { StudioAnalysisProgressModal } from "./studio-analysis-progress-modal";
 import { StudioAnalysisStartModal } from "./studio-analysis-start-modal";
+
+const smartSegmentProvider = createRequestSmartSegmentProvider({
+  smartSegment: (request, signal) =>
+    runClientEffect(studioClient.smartSegment(request, signal), signal ? { signal } : undefined),
+});
 
 export function StudioAnnotateMain() {
   const { state } = useStudioAnnotatePage();
@@ -23,6 +31,7 @@ export function StudioAnnotateMain() {
     });
   };
   const smartSegment = useSmartSegment({
+    provider: smartSegmentProvider,
     frame: canvas.frame,
     tool: canvas.tool,
     activeLabelValue,
@@ -70,12 +79,6 @@ export function StudioAnnotateMain() {
   return (
     <>
       <ViewportCard class="relative min-h-0 flex-1">
-        <SmartSegmentModelDialog
-          busy={smartSegment.busy()}
-          state={smartSegment.downloadState()}
-          onCancel={smartSegment.cancelDownload}
-          onConfirm={() => void smartSegment.confirmDownload()}
-        />
         <AnnotationCanvas
           activeLabelId={canvas.activeLabelId}
           brushSize={canvas.brushSize}

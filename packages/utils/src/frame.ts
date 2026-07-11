@@ -37,6 +37,42 @@ export function createPixelArray(pixelType: PixelType, buffer: ArrayBuffer): Pix
   return new Int32Array(buffer);
 }
 
+function bytesToBase64(bytes: Uint8Array): string {
+  if (typeof globalThis.btoa === "function") {
+    let binary = "";
+    for (let index = 0; index < bytes.length; index += 1) {
+      binary += String.fromCharCode(bytes[index]!);
+    }
+    return globalThis.btoa(binary);
+  }
+
+  const bufferCtor = (globalThis as { Buffer?: { from(input: Uint8Array): { toString(encoding: "base64"): string } } }).Buffer;
+  if (bufferCtor) {
+    return bufferCtor.from(bytes).toString("base64");
+  }
+
+  throw new Error("Base64 encode is unavailable in this runtime");
+}
+
+export function encodeFramePayload(frame: FrameResult): FramePayload {
+  const pixelType = frame.pixelType ?? "uint16";
+  const domain = frame.contrastDomain ?? defaultContrastDomain(frame);
+  const suggested = normalizeContrastWindow(frame.suggestedContrast ?? domain, domain);
+  const applied = normalizeContrastWindow(frame.appliedContrast ?? suggested, domain);
+  const pixels = frame.pixels;
+  const bytes = new Uint8Array(pixels.buffer, pixels.byteOffset, pixels.byteLength);
+
+  return {
+    width: frame.width,
+    height: frame.height,
+    dataBase64: bytesToBase64(bytes),
+    pixelType,
+    contrastDomain: domain,
+    suggestedContrast: suggested,
+    appliedContrast: applied,
+  };
+}
+
 export function decodeFramePayload(payload: FramePayload): FrameResult {
   try {
     const binary = window.atob(payload.dataBase64);

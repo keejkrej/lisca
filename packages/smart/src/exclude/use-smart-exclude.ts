@@ -1,46 +1,22 @@
 import type { AlignGridCellCoord, AlignGridState } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
-import { alignGridCellCoordKey, enumerateVisibleAlignGridCells } from "@lisca/utils";
-import { createEffect, createMemo, createSignal } from "solid-js";
+import { createMemo, createSignal } from "solid-js";
 
-import type { SmartExcludeDownloadProgress } from "../types";
-import { classifyExclusionCandidates } from "./classify-cells";
-import { isSmartExcludeClassifierLoaded } from "./exclude-engine";
-import { isSmartExcludeModelCached } from "./exclude-model-cache";
+import type { SmartModelDownloadState, SmartModelGate } from "../shared/model-gate";
+import { useLatestRef } from "../shared/use-latest-ref";
+import type { SmartExcludeProvider } from "./provider";
+import { getSmartExcludeCandidateCells } from "./shared";
 
-export type SmartExcludeDownloadState = {
-  open: boolean;
-  requiresDownload: boolean;
-  progress: number;
-  message: string;
-  file?: string;
-};
+export type SmartExcludeDownloadState = SmartModelDownloadState;
 
 type PendingRun = {
   resolve: (modelCells: AlignGridCellCoord[]) => void;
   reject: (cause: Error) => void;
 };
 
-function getCandidateCells(
-  frame: FrameResult,
-  grid: AlignGridState,
-  currentExcludedCells: readonly AlignGridCellCoord[],
-) {
-  const excludedKeys = new Set(currentExcludedCells.map(alignGridCellCoordKey));
-  return enumerateVisibleAlignGridCells(frame, grid).filter(
-    (cell) => !excludedKeys.has(alignGridCellCoordKey(cell)),
-  );
-}
-
-function useLatestRef<T>(value: () => T) {
-  const ref = { current: value() };
-  createEffect(() => {
-    ref.current = value();
-  });
-  return ref;
-}
-
 export function useSmartExclude(options: {
+  provider: SmartExcludeProvider;
+  model?: SmartModelGate;
   frame: FrameResult | null;
   grid: AlignGridState;
   currentExcludedCells: AlignGridCellCoord[];
@@ -56,7 +32,7 @@ export function useSmartExclude(options: {
     progress: 0,
     message: "",
   });
-  const active = createMemo(() => busy() || downloadState().open);
+  const active = createMemo(() => busy() || (options.model ? downloadState().open : false));
 
   let runGeneration = 0;
   let pendingRun: PendingRun | null = null;
@@ -70,7 +46,11 @@ export function useSmartExclude(options: {
     setDownloadState({ open: false, requiresDownload: false, progress: 0, message: "" });
   };
 
-  const updateDownloadProgress = (progress: SmartExcludeDownloadProgress) => {
+  const updateDownloadProgress = (progress: {
+    progress: number;
+    message: string;
+    file?: string;
+  }) => {
     setDownloadState((current) => ({
       ...current,
       open: true,
@@ -83,24 +63,71 @@ export function useSmartExclude(options: {
   const runClassify = async (generation: number): Promise<AlignGridCellCoord[]> => {
     const frame = options.frame;
     if (!frame) return [];
-    const cells = getCandidateCells(frame, options.grid, options.currentExcludedCells);
+    const cells = getSmartExcludeCandidateCells(frame, options.grid, options.currentExcludedCells);
     if (cells.length === 0) return [];
 
     onErrorRef.current?.(null);
     onStatusRef.current?.("Smart exclude");
-    setDownloadState((current) => ({
-      ...current,
-      open: true,
-      requiresDownload: false,
-      message: "Classifying cells…",
-    }));
+    if (options.model) {
+      setDownloadState((current) => ({
+        ...current,
+        open: true,
+        requiresDownload: false,
+        message: "Classifying cells…",
+      }));
+    }
 
-    const modelCells = await classifyExclusionCandidates(frame, cells, {
-      onProgress: updateDownloadProgress,
-    });
+    const modelCells = await options.provider.classify(
+      { frame, cells },
+      options.model ? { onProgress: updateDownloadProgress } : undefined,
+    );
     if (runGeneration !== generation) return [];
     closeDownloadState();
     return modelCells;
+  };
+
+  const classifyNow = async (generation: number): Promise<AlignGridCellCoord[]> => {
+    if (!options.model) {
+      return runClassify(generation);
+    }
+
+    const model = options.model;
+    if (model.isLoaded()) {
+      return runClassify(generation);
+    }
+
+    const cached = await model.isCached();
+    if (cached) {
+      setDownloadState({
+        open: true,
+        requiresDownload: false,
+        progress: 0,
+        message: "Loading cached smart exclusion model…",
+      });
+      onStatusRef.current?.("Loading cached smart exclusion model…");
+      return runClassify(generation);
+    }
+
+    return new Promise<AlignGridCellCoord[]>((resolve, reject) => {
+      pendingRun = {
+        resolve: (modelCells) => {
+          consentPromise = null;
+          resolve(modelCells);
+        },
+        reject: (cause) => {
+          consentPromise = null;
+          reject(cause);
+        },
+      };
+      setBusy(false);
+      setDownloadState({
+        open: true,
+        requiresDownload: true,
+        progress: 0,
+        message: "Confirm to download the smart exclusion model",
+      });
+      onStatusRef.current?.("Smart exclude requires a one-time model download");
+    });
   };
 
   const ensureAndClassify = async (): Promise<AlignGridCellCoord[]> => {
@@ -113,47 +140,15 @@ export function useSmartExclude(options: {
     setBusy(true);
 
     try {
-      const cells = getCandidateCells(frame, options.grid, options.currentExcludedCells);
+      const cells = getSmartExcludeCandidateCells(frame, options.grid, options.currentExcludedCells);
       if (cells.length === 0) return [];
 
-      if (isSmartExcludeClassifierLoaded()) {
-        return await runClassify(generation);
+      if (!options.model) {
+        return await options.provider.classify({ frame, cells });
       }
 
-      const cached = await isSmartExcludeModelCached();
-      if (cached) {
-        setDownloadState({
-          open: true,
-          requiresDownload: false,
-          progress: 0,
-          message: "Loading cached smart exclusion model…",
-        });
-        onStatusRef.current?.("Loading cached smart exclusion model…");
-        return await runClassify(generation);
-      }
-
-      consentPromise = new Promise<AlignGridCellCoord[]>((resolve, reject) => {
-        pendingRun = {
-          resolve: (modelCells) => {
-            consentPromise = null;
-            resolve(modelCells);
-          },
-          reject: (cause) => {
-            consentPromise = null;
-            reject(cause);
-          },
-        };
-        // Release busy so the consent dialog can show the download action instead of a spinner.
-        setBusy(false);
-        setDownloadState({
-          open: true,
-          requiresDownload: true,
-          progress: 0,
-          message: "Confirm to download the smart exclusion model",
-        });
-        onStatusRef.current?.("Smart exclude requires a one-time model download");
-      });
-      return consentPromise;
+      consentPromise = classifyNow(generation);
+      return await consentPromise;
     } catch (cause) {
       if (runGeneration !== generation) return [];
       onErrorRef.current?.(cause instanceof Error ? cause.message : String(cause));
@@ -168,6 +163,8 @@ export function useSmartExclude(options: {
   };
 
   const confirmDownload = async () => {
+    if (!options.model) return;
+
     const pending = pendingRun;
     const generation = runGeneration + 1;
     runGeneration = generation;

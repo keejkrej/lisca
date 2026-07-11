@@ -60,5 +60,10 @@ export function createAnnotatorPort(
         }),
       );
     },
+    smartSegment(request, signal) {
+      return withClientEffect(client, signal, (c) =>
+        c.annotate.smartSegment({ payload: request }),
+      );
+    },
   };
 }

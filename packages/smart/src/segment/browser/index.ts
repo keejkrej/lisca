@@ -8,8 +8,12 @@ export {
   type SmartSegmentDownloadProgress,
 } from "./sam-engine";
 export {
+  createBrowserSmartSegmentSetup,
+  type BrowserSmartSegmentSetup,
+} from "./provider";
+export {
   useSmartSegment,
-  type SmartSegmentClick,
   type SmartEraseClick,
+  type SmartSegmentClick,
   type SmartSegmentDownloadState,
-} from "./use-smart-segment";
+} from "../use-smart-segment";

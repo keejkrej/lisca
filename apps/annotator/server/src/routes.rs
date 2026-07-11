@@ -35,6 +35,15 @@ where
             "/annotate/save-roi-frame-annotation",
             post(save_roi_frame_annotation_handler),
         )
+        .route("/annotate/smart-segment", post(smart_segment_handler))
+}
+
+async fn smart_segment_handler(
+    Json(payload): Json<lisca::protocol::SmartSegmentRequest>,
+) -> Result<Json<lisca::protocol::SmartSegmentResponse>, FsError> {
+    lisca::smart::segment::segment_mask(payload)
+        .map(Json)
+        .map_err(FsError::new)
 }
 
 async fn scan_roi_workspace_handler(

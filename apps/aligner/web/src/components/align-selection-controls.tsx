@@ -1,13 +1,21 @@
-import { AlignSelectionRail, SmartExcludeModelDialog } from "@lisca/ui/features";
-import { useSmartExclude } from "@lisca/smart/exclude/browser";
+import { runClientEffect } from "@lisca/client/runtime";
+import { createRequestSmartExcludeProvider, useSmartExclude } from "@lisca/smart/exclude/request";
+import { AlignSelectionRail } from "@lisca/ui/features";
 import { createMemo } from "solid-js";
 
+import { alignerClient } from "../api/aligner-port";
 import { useAlignPage } from "../state/align-page-context";
+
+const smartExcludeProvider = createRequestSmartExcludeProvider({
+  smartExclude: (request, signal) =>
+    runClientEffect(alignerClient.smartExclude(request, signal), signal ? { signal } : undefined),
+});
 
 export function AlignSelectionControls() {
   const { state } = useAlignPage();
   const disabled = createMemo(() => state().cropping || !state().frame);
   const smartExclude = useSmartExclude({
+    provider: smartExcludeProvider,
     get frame() {
       return state().frame;
     },
@@ -26,12 +34,6 @@ export function AlignSelectionControls() {
 
   return (
     <>
-      <SmartExcludeModelDialog
-        busy={smartExclude.busy()}
-        state={smartExclude.downloadState()}
-        onCancel={smartExclude.cancelDownload}
-        onConfirm={() => void smartExclude.confirmDownload()}
-      />
       <AlignSelectionRail
         disabled={disabled()}
         excludedCells={state().currentExcludedCells}

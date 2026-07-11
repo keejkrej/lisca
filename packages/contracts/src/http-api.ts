@@ -48,6 +48,10 @@ import {
   SaveResultPdfResponseSchema,
   ScanRoiWorkspaceRequestSchema,
   ScanSourceRequestSchema,
+  SmartExcludeRequestSchema,
+  SmartExcludeResponseSchema,
+  SmartSegmentRequestSchema,
+  SmartSegmentResponseSchema,
   MemoryRecentResponseSchema,
   MemoryTouchRequestSchema,
   MemoryTouchResponseSchema,
@@ -152,6 +156,11 @@ const alignGroup = HttpApiGroup.make("align")
     HttpApiEndpoint.get("getLatestCropProgress", "/align/crop-latest")
       .setUrlParams(LatestCropQuerySchema)
       .addSuccess(NullableCropRoiProgressSchema),
+  )
+  .add(
+    HttpApiEndpoint.post("smartExclude", "/align/smart-exclude")
+      .setPayload(SmartExcludeRequestSchema)
+      .addSuccess(SmartExcludeResponseSchema),
   );
 
 // --- annotate group ----------------------------------------------------------
@@ -185,6 +194,11 @@ const annotateGroup = HttpApiGroup.make("annotate")
     HttpApiEndpoint.post("saveRoiFrameAnnotation", "/annotate/save-roi-frame-annotation")
       .setPayload(SaveRoiFrameAnnotationRequestSchema)
       .addSuccess(RoiFrameAnnotationSchema),
+  )
+  .add(
+    HttpApiEndpoint.post("smartSegment", "/annotate/smart-segment")
+      .setPayload(SmartSegmentRequestSchema)
+      .addSuccess(SmartSegmentResponseSchema),
   );
 
 // --- profile group (studio server only) --------------------------------------

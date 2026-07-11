@@ -8,3 +8,4 @@ export * from "./roi-bbox";
 export * from "./annotate";
 export * from "./profile";
 export * from "./memory";
+export * from "./smart";

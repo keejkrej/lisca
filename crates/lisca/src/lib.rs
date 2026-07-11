@@ -5,6 +5,8 @@
 extern crate self as lisca;
 
 pub mod aligner;
+#[cfg(feature = "smart")]
+pub mod smart;
 pub mod analysis;
 pub mod config;
 pub mod http;

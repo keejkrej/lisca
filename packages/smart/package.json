@@ -16,9 +16,21 @@
       "types": "./src/segment/browser/index.ts",
       "import": "./src/segment/browser/index.ts"
     },
+    "./exclude": {
+      "types": "./src/exclude/index.ts",
+      "import": "./src/exclude/index.ts"
+    },
     "./exclude/browser": {
       "types": "./src/exclude/browser/index.ts",
       "import": "./src/exclude/browser/index.ts"
+    },
+    "./exclude/request": {
+      "types": "./src/exclude/request/index.ts",
+      "import": "./src/exclude/request/index.ts"
+    },
+    "./segment/request": {
+      "types": "./src/segment/request/index.ts",
+      "import": "./src/segment/request/index.ts"
     }
   },
   "scripts": {

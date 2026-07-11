@@ -4,10 +4,13 @@ import {
   SmartSegmentModelDialog,
   useCanvasTransientStatus,
 } from "@lisca/ui/features";
-import { useSmartSegment } from "@lisca/smart/segment/browser";
+import { createBrowserSmartSegmentSetup } from "@lisca/smart/segment/browser";
+import { useSmartSegment } from "@lisca/smart/segment";
 import { toDisplayFrame } from "@lisca/web-demo/browser";
 import { createSignal, type Accessor } from "solid-js";
 import type { DemoAnnotatorState } from "@lisca/web-demo";
+
+const browserSmartSegment = createBrowserSmartSegmentSetup();
 
 export function DemoAnnotatorMain(props: { state: Accessor<DemoAnnotatorState>; embedded?: boolean }) {
   const displayFrame = () => {
@@ -22,6 +25,8 @@ export function DemoAnnotatorMain(props: { state: Accessor<DemoAnnotatorState>; 
     return state.labels.findIndex((label) => label.id === state.activeLabelId) + 1;
   };
   const smartSegment = useSmartSegment({
+    provider: browserSmartSegment.provider,
+    model: browserSmartSegment.model,
     frame: displayFrame(),
     tool: props.state().tool,
     activeLabelValue: activeLabelValue(),

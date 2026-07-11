@@ -1,8 +1,8 @@
-import { SmartExcludeModelDialog } from "@lisca/ui/features";
-import { useSmartExclude } from "@lisca/smart/exclude/browser";
+import { useSmartExclude } from "@lisca/smart/exclude/request";
 import { createContext, useContext, type JSX } from "solid-js";
 
 import { useStudioAlignState, type StudioAlignState } from "./use-studio-align-state";
+import { studioSmartExcludeProvider } from "./studio-smart-exclude";
 
 type StudioSmartExclude = ReturnType<typeof useSmartExclude>;
 
@@ -17,6 +17,7 @@ const StudioAlignPageContext = createContext<StudioAlignPageContextValue | null>
 export function StudioAlignPageProvider(props: { children?: JSX.Element }) {
   const state = useStudioAlignState();
   const smartExclude = useSmartExclude({
+    provider: studioSmartExcludeProvider,
     get frame() {
       return state.frame;
     },
@@ -49,12 +50,6 @@ export function StudioAlignPageProvider(props: { children?: JSX.Element }) {
 
   return (
     <StudioAlignPageContext.Provider value={{ state, smartExclude, saveAndAdvance }}>
-      <SmartExcludeModelDialog
-        busy={smartExclude.busy()}
-        state={smartExclude.downloadState()}
-        onCancel={smartExclude.cancelDownload}
-        onConfirm={() => void smartExclude.confirmDownload()}
-      />
       {props.children}
     </StudioAlignPageContext.Provider>
   );

@@ -1436,6 +1436,74 @@ impl ::std::convert::TryFrom<::std::string::String> for AssayType {
         value.parse()
     }
 }
+#[doc = "`AutoExcludePreviewCell`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"h\","]
+#[doc = "    \"i\","]
+#[doc = "    \"j\","]
+#[doc = "    \"w\","]
+#[doc = "    \"x\","]
+#[doc = "    \"y\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"h\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    },"]
+#[doc = "    \"i\": {"]
+#[doc = "      \"title\": \"int\","]
+#[doc = "      \"description\": \"an integer\","]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"int32\""]
+#[doc = "    },"]
+#[doc = "    \"j\": {"]
+#[doc = "      \"title\": \"int\","]
+#[doc = "      \"description\": \"an integer\","]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"int32\""]
+#[doc = "    },"]
+#[doc = "    \"w\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    },"]
+#[doc = "    \"x\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    },"]
+#[doc = "    \"y\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct AutoExcludePreviewCell {
+    pub h: u32,
+    #[doc = "an integer"]
+    pub i: i32,
+    #[doc = "an integer"]
+    pub j: i32,
+    pub w: u32,
+    pub x: u32,
+    pub y: u32,
+}
+impl AutoExcludePreviewCell {
+    pub fn builder() -> builder::AutoExcludePreviewCell {
+        Default::default()
+    }
+}
 #[doc = "`CancelCropRoiRequest`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
@@ -4245,6 +4313,233 @@ impl ScanSourceRequest {
         Default::default()
     }
 }
+#[doc = "`SmartExcludeRequest`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"cells\","]
+#[doc = "    \"frame\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"cells\": {"]
+#[doc = "      \"type\": \"array\","]
+#[doc = "      \"items\": {"]
+#[doc = "        \"$ref\": \"#/definitions/AutoExcludePreviewCell\""]
+#[doc = "      }"]
+#[doc = "    },"]
+#[doc = "    \"frame\": {"]
+#[doc = "      \"$ref\": \"#/definitions/FramePayload\""]
+#[doc = "    },"]
+#[doc = "    \"threshold\": {"]
+#[doc = "      \"type\": \"number\","]
+#[doc = "      \"format\": \"double\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct SmartExcludeRequest {
+    pub cells: ::std::vec::Vec<AutoExcludePreviewCell>,
+    pub frame: FramePayload,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub threshold: ::std::option::Option<f64>,
+}
+impl SmartExcludeRequest {
+    pub fn builder() -> builder::SmartExcludeRequest {
+        Default::default()
+    }
+}
+#[doc = "`SmartExcludeResponse`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"excludedCells\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"excludedCells\": {"]
+#[doc = "      \"type\": \"array\","]
+#[doc = "      \"items\": {"]
+#[doc = "        \"$ref\": \"#/definitions/AlignGridCellCoord\""]
+#[doc = "      }"]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct SmartExcludeResponse {
+    #[serde(rename = "excludedCells")]
+    pub excluded_cells: ::std::vec::Vec<AlignGridCellCoord>,
+}
+impl SmartExcludeResponse {
+    pub fn builder() -> builder::SmartExcludeResponse {
+        Default::default()
+    }
+}
+#[doc = "`SmartSegmentPoint`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"label\","]
+#[doc = "    \"x\","]
+#[doc = "    \"y\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"label\": {"]
+#[doc = "      \"type\": \"number\","]
+#[doc = "      \"enum\": ["]
+#[doc = "        0,"]
+#[doc = "        1"]
+#[doc = "      ]"]
+#[doc = "    },"]
+#[doc = "    \"x\": {"]
+#[doc = "      \"type\": \"number\""]
+#[doc = "    },"]
+#[doc = "    \"y\": {"]
+#[doc = "      \"type\": \"number\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct SmartSegmentPoint {
+    pub label: SmartSegmentPointLabel,
+    pub x: f64,
+    pub y: f64,
+}
+impl SmartSegmentPoint {
+    pub fn builder() -> builder::SmartSegmentPoint {
+        Default::default()
+    }
+}
+#[doc = "`SmartSegmentPointLabel`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"number\","]
+#[doc = "  \"enum\": ["]
+#[doc = "    0,"]
+#[doc = "    1"]
+#[doc = "  ]"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Serialize, Clone, Debug)]
+#[serde(transparent)]
+pub struct SmartSegmentPointLabel(f64);
+impl ::std::ops::Deref for SmartSegmentPointLabel {
+    type Target = f64;
+    fn deref(&self) -> &f64 {
+        &self.0
+    }
+}
+impl ::std::convert::From<SmartSegmentPointLabel> for f64 {
+    fn from(value: SmartSegmentPointLabel) -> Self {
+        value.0
+    }
+}
+impl ::std::convert::TryFrom<f64> for SmartSegmentPointLabel {
+    type Error = self::error::ConversionError;
+    fn try_from(value: f64) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if ![0_f64, 1_f64].contains(&value) {
+            Err("invalid value".into())
+        } else {
+            Ok(Self(value))
+        }
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for SmartSegmentPointLabel {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        Self::try_from(<f64>::deserialize(deserializer)?)
+            .map_err(|e| <D::Error as ::serde::de::Error>::custom(e.to_string()))
+    }
+}
+#[doc = "`SmartSegmentRequest`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"frame\","]
+#[doc = "    \"points\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"frame\": {"]
+#[doc = "      \"$ref\": \"#/definitions/FramePayload\""]
+#[doc = "    },"]
+#[doc = "    \"points\": {"]
+#[doc = "      \"type\": \"array\","]
+#[doc = "      \"items\": {"]
+#[doc = "        \"$ref\": \"#/definitions/SmartSegmentPoint\""]
+#[doc = "      }"]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct SmartSegmentRequest {
+    pub frame: FramePayload,
+    pub points: ::std::vec::Vec<SmartSegmentPoint>,
+}
+impl SmartSegmentRequest {
+    pub fn builder() -> builder::SmartSegmentRequest {
+        Default::default()
+    }
+}
+#[doc = "`SmartSegmentResponse`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"mask\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"mask\": {"]
+#[doc = "      \"type\": \"array\","]
+#[doc = "      \"items\": {"]
+#[doc = "        \"type\": \"integer\","]
+#[doc = "        \"format\": \"uint32\","]
+#[doc = "        \"minimum\": 0.0"]
+#[doc = "      }"]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct SmartSegmentResponse {
+    pub mask: ::std::vec::Vec<u32>,
+}
+impl SmartSegmentResponse {
+    pub fn builder() -> builder::SmartSegmentResponse {
+        Default::default()
+    }
+}
 #[doc = "`Unauthorized`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
@@ -5568,6 +5863,116 @@ pub mod builder {
                 position_start: Ok(value.position_start),
                 positions: Ok(value.positions),
                 signal_channel: Ok(value.signal_channel),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct AutoExcludePreviewCell {
+        h: ::std::result::Result<u32, ::std::string::String>,
+        i: ::std::result::Result<i32, ::std::string::String>,
+        j: ::std::result::Result<i32, ::std::string::String>,
+        w: ::std::result::Result<u32, ::std::string::String>,
+        x: ::std::result::Result<u32, ::std::string::String>,
+        y: ::std::result::Result<u32, ::std::string::String>,
+    }
+    impl ::std::default::Default for AutoExcludePreviewCell {
+        fn default() -> Self {
+            Self {
+                h: Err("no value supplied for h".to_string()),
+                i: Err("no value supplied for i".to_string()),
+                j: Err("no value supplied for j".to_string()),
+                w: Err("no value supplied for w".to_string()),
+                x: Err("no value supplied for x".to_string()),
+                y: Err("no value supplied for y".to_string()),
+            }
+        }
+    }
+    impl AutoExcludePreviewCell {
+        pub fn h<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.h = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for h: {e}"));
+            self
+        }
+        pub fn i<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<i32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.i = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for i: {e}"));
+            self
+        }
+        pub fn j<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<i32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.j = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for j: {e}"));
+            self
+        }
+        pub fn w<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.w = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for w: {e}"));
+            self
+        }
+        pub fn x<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.x = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for x: {e}"));
+            self
+        }
+        pub fn y<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.y = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for y: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<AutoExcludePreviewCell> for super::AutoExcludePreviewCell {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: AutoExcludePreviewCell,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                h: value.h?,
+                i: value.i?,
+                j: value.j?,
+                w: value.w?,
+                x: value.x?,
+                y: value.y?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::AutoExcludePreviewCell> for AutoExcludePreviewCell {
+        fn from(value: super::AutoExcludePreviewCell) -> Self {
+            Self {
+                h: Ok(value.h),
+                i: Ok(value.i),
+                j: Ok(value.j),
+                w: Ok(value.w),
+                x: Ok(value.x),
+                y: Ok(value.y),
             }
         }
     }
@@ -9339,6 +9744,281 @@ pub mod builder {
         fn from(value: super::ScanSourceRequest) -> Self {
             Self {
                 source: Ok(value.source),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct SmartExcludeRequest {
+        cells: ::std::result::Result<
+            ::std::vec::Vec<super::AutoExcludePreviewCell>,
+            ::std::string::String,
+        >,
+        frame: ::std::result::Result<super::FramePayload, ::std::string::String>,
+        threshold: ::std::result::Result<::std::option::Option<f64>, ::std::string::String>,
+    }
+    impl ::std::default::Default for SmartExcludeRequest {
+        fn default() -> Self {
+            Self {
+                cells: Err("no value supplied for cells".to_string()),
+                frame: Err("no value supplied for frame".to_string()),
+                threshold: Ok(Default::default()),
+            }
+        }
+    }
+    impl SmartExcludeRequest {
+        pub fn cells<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::vec::Vec<super::AutoExcludePreviewCell>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.cells = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for cells: {e}"));
+            self
+        }
+        pub fn frame<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::FramePayload>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.frame = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for frame: {e}"));
+            self
+        }
+        pub fn threshold<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<f64>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.threshold = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for threshold: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<SmartExcludeRequest> for super::SmartExcludeRequest {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: SmartExcludeRequest,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                cells: value.cells?,
+                frame: value.frame?,
+                threshold: value.threshold?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::SmartExcludeRequest> for SmartExcludeRequest {
+        fn from(value: super::SmartExcludeRequest) -> Self {
+            Self {
+                cells: Ok(value.cells),
+                frame: Ok(value.frame),
+                threshold: Ok(value.threshold),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct SmartExcludeResponse {
+        excluded_cells: ::std::result::Result<
+            ::std::vec::Vec<super::AlignGridCellCoord>,
+            ::std::string::String,
+        >,
+    }
+    impl ::std::default::Default for SmartExcludeResponse {
+        fn default() -> Self {
+            Self {
+                excluded_cells: Err("no value supplied for excluded_cells".to_string()),
+            }
+        }
+    }
+    impl SmartExcludeResponse {
+        pub fn excluded_cells<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::vec::Vec<super::AlignGridCellCoord>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.excluded_cells = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for excluded_cells: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<SmartExcludeResponse> for super::SmartExcludeResponse {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: SmartExcludeResponse,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                excluded_cells: value.excluded_cells?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::SmartExcludeResponse> for SmartExcludeResponse {
+        fn from(value: super::SmartExcludeResponse) -> Self {
+            Self {
+                excluded_cells: Ok(value.excluded_cells),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct SmartSegmentPoint {
+        label: ::std::result::Result<super::SmartSegmentPointLabel, ::std::string::String>,
+        x: ::std::result::Result<f64, ::std::string::String>,
+        y: ::std::result::Result<f64, ::std::string::String>,
+    }
+    impl ::std::default::Default for SmartSegmentPoint {
+        fn default() -> Self {
+            Self {
+                label: Err("no value supplied for label".to_string()),
+                x: Err("no value supplied for x".to_string()),
+                y: Err("no value supplied for y".to_string()),
+            }
+        }
+    }
+    impl SmartSegmentPoint {
+        pub fn label<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::SmartSegmentPointLabel>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.label = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for label: {e}"));
+            self
+        }
+        pub fn x<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<f64>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.x = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for x: {e}"));
+            self
+        }
+        pub fn y<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<f64>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.y = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for y: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<SmartSegmentPoint> for super::SmartSegmentPoint {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: SmartSegmentPoint,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                label: value.label?,
+                x: value.x?,
+                y: value.y?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::SmartSegmentPoint> for SmartSegmentPoint {
+        fn from(value: super::SmartSegmentPoint) -> Self {
+            Self {
+                label: Ok(value.label),
+                x: Ok(value.x),
+                y: Ok(value.y),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct SmartSegmentRequest {
+        frame: ::std::result::Result<super::FramePayload, ::std::string::String>,
+        points:
+            ::std::result::Result<::std::vec::Vec<super::SmartSegmentPoint>, ::std::string::String>,
+    }
+    impl ::std::default::Default for SmartSegmentRequest {
+        fn default() -> Self {
+            Self {
+                frame: Err("no value supplied for frame".to_string()),
+                points: Err("no value supplied for points".to_string()),
+            }
+        }
+    }
+    impl SmartSegmentRequest {
+        pub fn frame<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::FramePayload>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.frame = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for frame: {e}"));
+            self
+        }
+        pub fn points<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::vec::Vec<super::SmartSegmentPoint>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.points = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for points: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<SmartSegmentRequest> for super::SmartSegmentRequest {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: SmartSegmentRequest,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                frame: value.frame?,
+                points: value.points?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::SmartSegmentRequest> for SmartSegmentRequest {
+        fn from(value: super::SmartSegmentRequest) -> Self {
+            Self {
+                frame: Ok(value.frame),
+                points: Ok(value.points),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct SmartSegmentResponse {
+        mask: ::std::result::Result<::std::vec::Vec<u32>, ::std::string::String>,
+    }
+    impl ::std::default::Default for SmartSegmentResponse {
+        fn default() -> Self {
+            Self {
+                mask: Err("no value supplied for mask".to_string()),
+            }
+        }
+    }
+    impl SmartSegmentResponse {
+        pub fn mask<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::vec::Vec<u32>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.mask = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for mask: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<SmartSegmentResponse> for super::SmartSegmentResponse {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: SmartSegmentResponse,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self { mask: value.mask? })
+        }
+    }
+    impl ::std::convert::From<super::SmartSegmentResponse> for SmartSegmentResponse {
+        fn from(value: super::SmartSegmentResponse) -> Self {
+            Self {
+                mask: Ok(value.mask),
             }
         }
     }

@@ -80,6 +80,11 @@ export function createAlignerPort(
           .pipe(Effect.map((result) => result.exists)),
       );
     },
+    smartExclude(request, signal) {
+      return withClientEffect(client, signal, (c) =>
+        c.align.smartExclude({ payload: request }),
+      );
+    },
   };
 }
 
