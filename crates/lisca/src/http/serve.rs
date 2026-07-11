@@ -1,16 +1,20 @@
 use std::net::SocketAddr;
 
-use axum::Router;
+use axum::{extract::DefaultBodyLimit, Router};
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing::info;
 
 use crate::protocol::AppId;
+
+/// Axum defaults to 2MB; smart ML and PDF routes send full frame/base64 payloads.
+pub const HTTP_BODY_LIMIT_BYTES: usize = 32 * 1024 * 1024;
 
 pub fn with_standard_layers<S>(router: Router<S>) -> Router<S>
 where
     S: Clone + Send + Sync + 'static,
 {
     router
+        .layer(DefaultBodyLimit::max(HTTP_BODY_LIMIT_BYTES))
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
 }
