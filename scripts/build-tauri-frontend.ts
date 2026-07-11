@@ -6,7 +6,8 @@
  *   bun scripts/build-tauri-frontend.ts <product>
  */
 import { resolve } from "node:path";
-import { type LiscaProduct } from "./lisca-dev-ports";
+
+type LiscaProduct = "aligner" | "annotator" | "studio";
 
 const root = resolve(import.meta.dirname, "..");
 

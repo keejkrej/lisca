@@ -3,6 +3,8 @@ import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import solid from "vite-plugin-solid";
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { join, normalize, resolve } from "node:path";
+import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
 import {
   defineConfig,
   createLogger,
@@ -11,12 +13,14 @@ import {
   type ProxyOptions,
   type UserConfig,
 } from "vite";
-import {
+
+const require = createRequire(fileURLToPath(new URL(".", import.meta.url)));
+const {
   LISCA_API_PROXY_PREFIXES,
   liscaDevBackendPort,
   LISCA_DEV_BACKEND_PORT_OFFSET,
-} from "../../scripts/lisca-dev-ports";
-import { isBenignDevWsProxyError } from "../../scripts/lisca-dev-proxy-shared";
+} = require("../../scripts/lisca-dev-ports.cjs");
+const { isBenignDevWsProxyError } = require("../../scripts/lisca-dev-proxy-shared.cjs");
 
 export { liscaDevBackendPort, LISCA_DEV_BACKEND_PORT_OFFSET };
 
@@ -25,8 +29,8 @@ export function liscaSolidPlugin(): PluginOption {
   return solid();
 }
 
-const brandPublicDir = resolve(import.meta.dirname, "../../assets/brand");
-const modelsDir = resolve(import.meta.dirname, "../../models");
+const brandPublicDir = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../assets/brand");
+const modelsDir = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../models");
 
 function contentTypeForPath(path: string): string {
   if (path.endsWith(".json")) return "application/json";

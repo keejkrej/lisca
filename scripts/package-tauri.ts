@@ -8,8 +8,10 @@
  */
 import { chmodSync, copyFileSync, cpSync, existsSync, mkdirSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { DESKTOP_PRODUCTS, type DesktopProductConfig } from "./lisca-desktop-products";
-import { type LiscaProduct } from "./lisca-dev-ports";
+import { DESKTOP_PRODUCTS } from "./lisca-desktop-products.cjs";
+
+type LiscaProduct = "aligner" | "annotator" | "studio";
+type DesktopProductConfig = (typeof DESKTOP_PRODUCTS)[LiscaProduct];
 
 const root = resolve(import.meta.dirname, "..");
 

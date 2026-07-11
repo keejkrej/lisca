@@ -7,9 +7,9 @@ import {
   LISCA_APP_PORTS,
   LISCA_DEV_BACKEND_PORT_OFFSET,
   liscaDevBackendPort,
-} from "./lisca-dev-ports";
-import { DESKTOP_PRODUCTS } from "./lisca-desktop-products";
-import { isBenignDevWsProxyError, isLiscaApiProxyPath } from "./lisca-dev-proxy-shared";
+} from "./lisca-dev-ports.cjs";
+import { DESKTOP_PRODUCTS } from "./lisca-desktop-products.cjs";
+import { isBenignDevWsProxyError, isLiscaApiProxyPath } from "./lisca-dev-proxy-shared.cjs";
 
 const root = path.resolve(import.meta.dirname, "..");
 

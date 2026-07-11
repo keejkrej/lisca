@@ -1,18 +1,8 @@
-import { LISCA_APP_PORTS, type LiscaProduct } from "./lisca-dev-ports";
+/** @typedef {typeof DESKTOP_PRODUCTS[keyof typeof DESKTOP_PRODUCTS]} DesktopProductConfig */
 
-export type DesktopProductConfig = {
-  webPkg: string;
-  serverPkg: string;
-  port: number;
-  backendPort: number;
-  serverBinary: string;
-  cargoPackage: string;
-  appId: string;
-  productName: string;
-  executableName: string;
-};
+const { LISCA_APP_PORTS } = require("./lisca-dev-ports.cjs");
 
-export const DESKTOP_PRODUCTS: Record<LiscaProduct, DesktopProductConfig> = {
+const DESKTOP_PRODUCTS = {
   aligner: {
     webPkg: "@lisca/aligner-web",
     serverPkg: "@lisca/aligner-server",
@@ -47,3 +37,5 @@ export const DESKTOP_PRODUCTS: Record<LiscaProduct, DesktopProductConfig> = {
     executableName: "lisca-studio",
   },
 };
+
+module.exports = { DESKTOP_PRODUCTS };

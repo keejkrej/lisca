@@ -9,9 +9,11 @@
  * /fs, /align, /annotate, /studio, /profile, /memory to the Rust backend
  * (same layout as the Docker nginx config).
  */
-import { join, resolve } from "node:path";
 import { existsSync } from "node:fs";
-import { LISCA_API_PROXY_PREFIXES, type LiscaProduct } from "./lisca-dev-ports";
+import { join, resolve } from "node:path";
+import { LISCA_API_PROXY_PREFIXES } from "./lisca-dev-ports.cjs";
+
+type LiscaProduct = "aligner" | "annotator" | "studio";
 
 const root = resolve(import.meta.dirname, "..");
 
