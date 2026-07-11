@@ -1,16 +1,16 @@
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 
-use base64::prelude::{Engine as _, BASE64_STANDARD};
 use image::{imageops::FilterType, GrayImage, ImageBuffer, Luma};
 use ndarray::{Array, Ix4};
 use ort::session::Session;
 use ort::value::Tensor;
 
 use crate::protocol::{
-    AlignGridCellCoord, AutoExcludePreviewCell, FramePayload, PixelType, SmartExcludeRequest,
-    SmartExcludeResponse,
+    AlignGridCellCoord, AutoExcludePreviewCell, SmartExcludeRequest, SmartExcludeResponse,
 };
+
+use super::frame::decode_frame_pixels;
 
 const IMAGE_SIZE: u32 = 224;
 const DEFAULT_THRESHOLD: f64 = 0.5;
@@ -55,6 +55,10 @@ fn exclude_session() -> Result<std::sync::MutexGuard<'static, Session>, String> 
         .map_err(|error| format!("smart exclusion model lock poisoned: {error}"))
 }
 
+fn workspace_models_dir() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../models")
+}
+
 fn build_exclude_session(model_path: Result<PathBuf, String>) -> Result<Session, String> {
     let model_path = model_path?;
     let onnx_path = model_path.join("model.onnx");
@@ -83,6 +87,8 @@ pub fn resolve_model_path() -> Result<PathBuf, String> {
     }
 
     let candidates = [
+        workspace_models_dir().join("smart-exclusion-resnet18/onnx"),
+        workspace_models_dir().join("smart-exclusion-resnet18"),
         PathBuf::from("models/smart-exclusion-resnet18/onnx"),
         PathBuf::from("models/smart-exclusion-resnet18"),
     ];
@@ -97,44 +103,6 @@ pub fn resolve_model_path() -> Result<PathBuf, String> {
          models/smart-exclusion-resnet18/onnx/model.onnx"
             .to_string(),
     )
-}
-
-fn decode_frame_pixels(payload: &FramePayload) -> Result<Vec<f64>, String> {
-    let bytes = BASE64_STANDARD
-        .decode(payload.data_base64.as_bytes())
-        .map_err(|error| error.to_string())?;
-    let pixel_count = (payload.width as usize)
-        .checked_mul(payload.height as usize)
-        .ok_or_else(|| "invalid frame dimensions".to_string())?;
-
-    match payload.pixel_type {
-        PixelType::Uint8 | PixelType::Uint8clamped => {
-            if bytes.len() < pixel_count {
-                return Err("frame payload is shorter than width * height".to_string());
-            }
-            Ok(bytes
-                .iter()
-                .take(pixel_count)
-                .map(|value| f64::from(*value))
-                .collect())
-        }
-        PixelType::Uint16 => {
-            if bytes.len() < pixel_count * 2 {
-                return Err("uint16 frame payload is shorter than width * height".to_string());
-            }
-            Ok(bytes
-                .chunks_exact(2)
-                .take(pixel_count)
-                .map(|chunk| {
-                    let value = u16::from_le_bytes([chunk[0], chunk[1]]);
-                    f64::from(value)
-                })
-                .collect())
-        }
-        PixelType::Int8 | PixelType::Int16 | PixelType::Uint32 | PixelType::Int32 => Err(
-            "smart exclusion only supports uint8 and uint16 frame payloads".to_string(),
-        ),
-    }
 }
 
 fn classify_cell(
