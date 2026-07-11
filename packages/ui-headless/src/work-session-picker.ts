@@ -1,9 +1,11 @@
+import type { AlignerSource } from "@lisca/contracts";
 import type { LiscaAppId } from "@lisca/utils";
 
 export type WorkSessionPickerItem = {
   id: string;
   label: string;
   path: string;
+  sourcePath?: string;
   lastOpenedAt: string;
 };
 
@@ -38,6 +40,12 @@ export function workSessionPickerDescription(appId: LiscaAppId): string {
   return "Pick a recent workspace for this server, or start fresh.";
 }
 
+function sourcePathLabel(source: AlignerSource | null | undefined): string | undefined {
+  if (!source) return undefined;
+  if ("path" in source) return source.path;
+  return undefined;
+}
+
 export function toWorkSessionPickerItems(
   appId: LiscaAppId,
   sessions: Array<{
@@ -45,6 +53,7 @@ export function toWorkSessionPickerItems(
     label?: string;
     workspacePath?: string;
     assayJsonPath?: string;
+    source?: AlignerSource | null;
     lastOpenedAt: string;
   }>,
 ): WorkSessionPickerItem[] {
@@ -56,6 +65,7 @@ export function toWorkSessionPickerItems(
         ? (session.assayJsonPath ?? "Assay")
         : (session.workspacePath ?? "Workspace")),
     path: appId === "studio" ? (session.assayJsonPath ?? "") : (session.workspacePath ?? ""),
+    sourcePath: appId === "aligner" ? sourcePathLabel(session.source) : undefined,
     lastOpenedAt: session.lastOpenedAt,
   }));
 }

@@ -17,7 +17,7 @@ import {
   type CropConfirmState,
 } from "../session/align-session";
 import type { AlignerDataPort } from "../ports/types";
-import { useAlignSessionCore, type AlignWorkspaceSync } from "../session/use-align-session";
+import { useAlignSessionCore } from "../session/use-align-session";
 import { runClientEffect } from "../infra/runtime";
 import type { CanvasResourceTransactionOptions } from "../canvas-resource-transaction";
 import {
@@ -51,7 +51,6 @@ import type {
 import { toClientError } from "../infra/client-error";
 import {
   frameLoadRequest,
-  shouldResetContrastBeforeNavigationLoad,
   shouldRunContrastFrameLoad,
 } from "../session/frame-load-policy";
 
@@ -130,7 +129,12 @@ export type UseAlignStateCoreDeps = {
   scanIdleAtom: Atom.Atom<Result.Result<WorkspaceScan, unknown>>;
   savedAlignStateKey: (workspacePath: string, pos: number) => string;
   sourceKey: (source: AlignerSource | null) => string | null;
-  useShellWorkspace: () => AlignWorkspaceSync;
+  useShellWorkspace: () => {
+    workspacePath: string | null;
+    setWorkspacePath: (path: string | null) => void;
+    sourcePath: string | null;
+    setSourcePath: (path: string | null) => void;
+  };
   useCanvasResourceTransaction: () => <T>(
     options: CanvasResourceTransactionOptions<T>,
   ) => () => void;
@@ -151,6 +155,7 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): Accessor<AlignSt
   const navScan = createMemo(() => ui().scan);
   const navSelection = createMemo(() => ui().selection);
   const navWorkspacePath = createMemo(() => ui().workspacePath);
+  const navContrast = createMemo(() => ui().contrast);
   const scanResult = useSelectedAtomValue(() => {
     const key = activeSourceKey();
     return key ? deps.scanSourceAtom(key) : deps.scanIdleAtom;
@@ -161,9 +166,9 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): Accessor<AlignSt
     setUi,
     actions: deps.alignerUiActions,
     workspace: {
-      workspacePath: workspace.workspacePath,
+      workspacePath: () => workspace.workspacePath,
       setWorkspacePath: workspace.setWorkspacePath,
-      sourcePath: workspace.sourcePath,
+      sourcePath: () => workspace.sourcePath,
       setSourcePath: workspace.setSourcePath,
     },
     scan: {
@@ -189,7 +194,6 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): Accessor<AlignSt
     const scan = navScan();
     const selection = navSelection();
     const workspacePath = navWorkspacePath();
-    const contrast = untrack(() => ui().contrast);
     if (!source || !scan) {
       deps.alignerUiActions.setFrameLoading(setUi, false);
       return;
@@ -199,9 +203,7 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): Accessor<AlignSt
       : null;
     const cleanup = loadCanvasResources({
       start: () => {
-        if (shouldResetContrastBeforeNavigationLoad()) {
-          deps.alignerUiActions.setContrast(setUi, null);
-        }
+        deps.alignerUiActions.setContrast(setUi, null);
         deps.alignerUiActions.setFrameLoading(setUi, true);
         deps.alignerUiActions.setError(setUi, null);
         deps.alignerUiActions.setStatus(setUi, "Loading frame");
@@ -213,7 +215,7 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): Accessor<AlignSt
               deps.alignerClient,
               source,
               selection,
-              frameLoadRequest({ kind: "navigation", contrast }),
+              frameLoadRequest({ kind: "navigation", contrast: null }),
             ),
             workspacePath
               ? deps.alignerClient.loadAlignState(workspacePath, selection.pos)
@@ -252,7 +254,7 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): Accessor<AlignSt
   });
 
   createEffect(() => {
-    const contrast = ui().contrast;
+    const contrast = navContrast();
     if (!shouldRunContrastFrameLoad(contrast)) {
       return;
     }

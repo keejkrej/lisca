@@ -1,6 +1,5 @@
 import type { HostFilePickerMode } from "@lisca/ui-headless/host";
 import { useHostFilePickerState } from "@lisca/ui-headless/host-file-picker-state";
-import IconHouseRegular from "phosphor-icons-solid/IconHouseRegular";
 import IconXRegular from "phosphor-icons-solid/IconXRegular";
 import { For, onCleanup, onMount, Show } from "solid-js";
 
@@ -130,7 +129,6 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
                 variant="outline"
                 onClick={() => void picker.goHome()}
               >
-                <IconHouseRegular class="size-4" />
                 Home
               </Button>
             </div>

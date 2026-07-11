@@ -147,4 +147,21 @@ describe("work-session registry", () => {
     expect(sessions[0]?.workspacePath).toBe("/legacy/ws");
     expect(isValidWorkSession("aligner", sessions[0]!)).toBe(true);
   });
+
+  it("migrates legacy annotator session storage", () => {
+    configureLiscaStorage({
+      local: createMemoryStorage(),
+      session: (() => {
+        const storage = createMemoryStorage();
+        storage.setItem(
+          "lisca-annotator-session",
+          JSON.stringify({ workspacePath: "/legacy/ws" }),
+        );
+        return storage;
+      })(),
+    });
+    const sessions = readWorkSessions("annotator");
+    expect(sessions).toHaveLength(1);
+    expect(sessions[0]?.workspacePath).toBe("/legacy/ws");
+  });
 });

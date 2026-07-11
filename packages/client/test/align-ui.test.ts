@@ -147,6 +147,24 @@ describe("align-ui actions", () => {
     const next = runReducer(initial, (set) => actions.setContrast(set, null));
     expect(next.contrast).toBeNull();
   });
+
+  it("setError returns same state reference when error is unchanged", () => {
+    const initial = createInitialAlignUiState();
+    const next = runReducer(initial, (set) => actions.setError(set, null));
+    expect(next).toBe(initial);
+  });
+
+  it("setStatus returns same state reference when status is unchanged", () => {
+    const initial = { ...createInitialAlignUiState(), status: "Scanning source" };
+    const next = runReducer(initial, (set) => actions.setStatus(set, "Scanning source"));
+    expect(next).toBe(initial);
+  });
+
+  it("setFrameLoading returns same state reference when unchanged", () => {
+    const initial = createInitialAlignUiState();
+    const next = runReducer(initial, (set) => actions.setFrameLoading(set, false));
+    expect(next).toBe(initial);
+  });
 });
 
 describe("createAlignerPersist", () => {

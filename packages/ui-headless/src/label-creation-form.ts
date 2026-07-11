@@ -1,6 +1,13 @@
 import type { AnnotationLabel } from "@lisca/contracts";
 import { createEffect, createMemo, createSignal, type Accessor } from "solid-js";
 
+function generateId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 export type LabelDraft = {
   /** Stable list key — does not change when id/name are edited. */
   draftKey: string;
@@ -97,7 +104,7 @@ export function useLabelCreationForm(
     setDrafts((current) => [
       ...current,
       {
-        draftKey: crypto.randomUUID(),
+        draftKey: generateId(),
         id: `class-${current.length + 1}`,
         name: `Class ${current.length + 1}`,
         color: "#a855f7",

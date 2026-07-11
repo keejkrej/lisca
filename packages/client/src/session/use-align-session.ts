@@ -38,9 +38,9 @@ export type AlignSessionActions = {
 };
 
 export type AlignWorkspaceSync = {
-  workspacePath: string | null;
+  workspacePath: Accessor<string | null>;
   setWorkspacePath: (path: string | null) => void;
-  sourcePath: string | null;
+  sourcePath: Accessor<string | null>;
   setSourcePath: (path: string | null) => void;
 };
 
@@ -78,18 +78,19 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
   createEffect(() => {
     if (!workspace) return;
     const currentUi = ui();
-    if (workspace.workspacePath === currentUi.workspacePath) return;
-    if (workspace.workspacePath == null && currentUi.workspacePath != null) {
+    const shellWorkspacePath = workspace.workspacePath();
+    if (shellWorkspacePath === currentUi.workspacePath) return;
+    if (shellWorkspacePath == null && currentUi.workspacePath != null) {
       workspace.setWorkspacePath(currentUi.workspacePath);
       return;
     }
-    actions.setWorkspacePath(setUi, workspace.workspacePath);
+    actions.setWorkspacePath(setUi, shellWorkspacePath);
   });
 
   createEffect(() => {
     if (!workspace) return;
     const sourcePath = ui().source?.path ?? null;
-    if (workspace.sourcePath !== sourcePath) {
+    if (workspace.sourcePath() !== sourcePath) {
       workspace.setSourcePath(sourcePath);
     }
   });
@@ -97,6 +98,7 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
   createEffect(() => {
     const currentUi = ui();
     if (!currentUi.source || !resultLoading(scan.scanResult())) return;
+    if (currentUi.error === null && currentUi.status === "Scanning source") return;
     actions.setError(setUi, null);
     actions.setStatus(setUi, "Scanning source");
   });

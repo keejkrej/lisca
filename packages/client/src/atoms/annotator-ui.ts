@@ -13,6 +13,7 @@ export {
 } from "@lisca/ui-headless/annotation-tools";
 import type { AnnotationTool } from "@lisca/ui-headless/annotation-tools";
 import { touchAnnotatorWorkSessionFromState } from "../session/work-session";
+import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/storage";
 import { Atom } from "@effect-atom/atom-solid";
 export type AnnotationMode = "classification" | "segmentation";
 
@@ -122,7 +123,7 @@ export function requestKey(
 export type AnnotatorUiAtom = ReturnType<typeof Atom.make<AnnotatorUiState>>;
 
 export function createAnnotatorUiAtom(): AnnotatorUiAtom {
-  return Atom.make(createInitialState()).pipe(Atom.keepAlive);
+  return Atom.make(createInitialAnnotatorUiState()).pipe(Atom.keepAlive);
 }
 
 export const ANNOTATOR_SESSION_KEY = "lisca-annotator-session";
@@ -134,16 +135,31 @@ export type AnnotatorSessionPersist = {
 export function createAnnotatorPersist(sessionKey: string) {
   return {
     write(state: AnnotatorUiState) {
+      writeStorageJson(liscaSessionStorage(), sessionKey, {
+        state: { workspacePath: state.workspacePath },
+      });
       touchAnnotatorWorkSessionFromState(state);
     },
     read(): Partial<AnnotatorUiState> | null {
-      return null;
+      const parsed = readStorageJson<{
+        state?: { workspacePath: string | null };
+        workspacePath?: string | null;
+      }>(liscaSessionStorage(), sessionKey);
+      if (!parsed) return null;
+      const workspacePath = parsed.state?.workspacePath ?? parsed.workspacePath ?? null;
+      if (!workspacePath?.trim()) return null;
+      return { workspacePath };
     },
   };
 }
 
 export function createInitialAnnotatorUiState(): AnnotatorUiState {
-  return createInitialState();
+  const session = annotatorPersist.read();
+  if (!session) return createInitialState();
+  return {
+    ...createInitialState(),
+    workspacePath: session.workspacePath ?? null,
+  };
 }
 
 export function createAnnotatorUiActions(persist: ReturnType<typeof createAnnotatorPersist>) {

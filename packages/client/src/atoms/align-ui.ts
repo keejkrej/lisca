@@ -131,7 +131,12 @@ export function patchAlignUi(
 ): void {
   set((state) => {
     const next = typeof patch === "function" ? patch(state) : { ...state, ...patch };
-    persist.write(next);
+    if (next === state) return state;
+    try {
+      persist.write(next);
+    } catch {
+      // persistence errors must not prevent the state update
+    }
     return next;
   });
 }
@@ -255,27 +260,44 @@ export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiB
       });
     },
     setSelection(set: (update: StateUpdater<AlignUiState>) => void, patch: Partial<FrameRequest>) {
-      patchAlignUi(set, persist, (state) => ({
-        ...state,
-        selection: { ...state.selection, ...patch },
-        appliedAlignStateKey:
+      patchAlignUi(set, persist, (state) => {
+        const nextSelection = { ...state.selection, ...patch };
+        const nextAppliedAlignStateKey =
           patch.pos != null && patch.pos !== state.selection.pos
             ? null
-            : state.appliedAlignStateKey,
-      }));
+            : state.appliedAlignStateKey;
+        if (
+          nextSelection.pos === state.selection.pos &&
+          nextSelection.channel === state.selection.channel &&
+          nextSelection.time === state.selection.time &&
+          nextSelection.z === state.selection.z &&
+          nextAppliedAlignStateKey === state.appliedAlignStateKey
+        ) {
+          return state;
+        }
+        return {
+          ...state,
+          selection: nextSelection,
+          appliedAlignStateKey: nextAppliedAlignStateKey,
+        };
+      });
     },
     setFrame(set: (update: StateUpdater<AlignUiState>) => void, frame: FrameResult | null) {
-      patchAlignUi(set, persist, (state) => ({
-        ...state,
-        frame,
-        loadedFrameSelection: frame ? state.loadedFrameSelection : null,
-      }));
+      patchAlignUi(set, persist, (state) =>
+        state.frame === frame ? state : {
+          ...state,
+          frame,
+          loadedFrameSelection: frame ? state.loadedFrameSelection : null,
+        },
+      );
     },
     setContrast(
       set: (update: StateUpdater<AlignUiState>) => void,
       contrast: ContrastWindow | null,
     ) {
-      patchAlignUi(set, persist, (state) => ({ ...state, contrast }));
+      patchAlignUi(set, persist, (state) =>
+        state.contrast === contrast ? state : { ...state, contrast },
+      );
     },
     setGrid(set: (update: StateUpdater<AlignUiState>) => void, next: StateUpdater<AlignGridState>) {
       patchAlignUi(set, persist, (state) => ({
@@ -312,10 +334,12 @@ export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiB
       }));
     },
     setFrameLoading(set: (update: StateUpdater<AlignUiState>) => void, frameLoading: boolean) {
-      patchAlignUi(set, persist, (state) => ({ ...state, frameLoading }));
+      patchAlignUi(set, persist, (state) =>
+        state.frameLoading === frameLoading ? state : { ...state, frameLoading },
+      );
     },
     setSaving(set: (update: StateUpdater<AlignUiState>) => void, saving: boolean) {
-      patchAlignUi(set, persist, (state) => ({ ...state, saving }));
+      patchAlignUi(set, persist, (state) => (state.saving === saving ? state : { ...state, saving }));
     },
     setCropProgress(
       set: (update: StateUpdater<AlignUiState>) => void,
@@ -324,10 +348,12 @@ export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiB
       patchAlignUi(set, persist, (state) => ({ ...state, cropProgress }));
     },
     setError(set: (update: StateUpdater<AlignUiState>) => void, error: string | null) {
-      patchAlignUi(set, persist, (state) => ({ ...state, error }));
+      patchAlignUi(set, persist, (state) => (state.error === error ? state : { ...state, error }));
     },
     setStatus(set: (update: StateUpdater<AlignUiState>) => void, status: string | null) {
-      patchAlignUi(set, persist, (state) => ({ ...state, status }));
+      patchAlignUi(set, persist, (state) =>
+        state.status === status ? state : { ...state, status },
+      );
     },
   };
 

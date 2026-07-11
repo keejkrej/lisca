@@ -1,6 +1,7 @@
 import type { RoiPositionScan } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
-import { describe, expect, it } from "vitest";
+import { configureLiscaStorage, type LiscaStorageAdapter } from "@lisca/storage";
+import { describe, expect, it, beforeEach } from "vitest";
 
 import {
   createAnnotatorPersist,
@@ -134,5 +135,46 @@ describe("annotator-ui actions", () => {
     });
     expect(next.frame).toBeNull();
     expect(next.contrast).toBeNull();
+  });
+});
+
+describe("createAnnotatorPersist", () => {
+  function createMemoryStorage(): LiscaStorageAdapter {
+    const items = new Map<string, string>();
+    return {
+      getItem: (key) => items.get(key) ?? null,
+      setItem: (key, value) => {
+        items.set(key, value);
+      },
+      removeItem: (key) => {
+        items.delete(key);
+      },
+    };
+  }
+
+  beforeEach(() => {
+    configureLiscaStorage({
+      local: createMemoryStorage(),
+      session: createMemoryStorage(),
+    });
+  });
+
+  it("round-trips workspacePath in session storage", () => {
+    const persist = createAnnotatorPersist("test-annotator-session");
+    const state = {
+      ...createInitialAnnotatorUiState(),
+      workspacePath: "/data/ws",
+    };
+    persist.write(state);
+    expect(persist.read()).toEqual({ workspacePath: "/data/ws" });
+  });
+
+  it("returns null when workspace is missing", () => {
+    const persist = createAnnotatorPersist("test-annotator-session");
+    persist.write({
+      ...createInitialAnnotatorUiState(),
+      workspacePath: null,
+    });
+    expect(persist.read()).toBeNull();
   });
 });

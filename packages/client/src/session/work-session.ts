@@ -30,6 +30,13 @@ export type WorkSession = {
 
 const WORK_SESSIONS_CAP = 20;
 
+function generateId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 function workSessionsKey(appId: LiscaAppId): string {
   return `lisca.workSessions.${appId}`;
 }
@@ -136,7 +143,7 @@ export function touchWorkSession(
 
   const now = new Date().toISOString();
   const draft: WorkSession = {
-    id: crypto.randomUUID(),
+    id: generateId(),
     server: entry.server,
     workspacePath,
     assayJsonPath,
@@ -200,12 +207,15 @@ function migrateLegacySession(appId: LiscaAppId): void {
     return;
   }
   if (appId === "annotator") {
-    const legacy = readStorageJson<{ workspacePath: string | null }>(
-      storage,
-      "lisca-annotator-session",
-    );
+    const legacy = readStorageJson<{
+      state?: { workspacePath: string | null };
+      workspacePath?: string | null;
+    }>(storage, "lisca-annotator-session");
+    if (legacy?.state) return;
     if (legacy?.workspacePath) {
-      storage.removeItem("lisca-annotator-session");
+      writeStorageJson(storage, "lisca-annotator-session", {
+        state: { workspacePath: legacy.workspacePath },
+      });
       touchWorkSession(appId, { server, workspacePath: legacy.workspacePath });
     }
   }

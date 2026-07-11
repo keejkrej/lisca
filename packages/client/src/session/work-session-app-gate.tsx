@@ -37,16 +37,16 @@ export function WorkSessionAppGate(props: WorkSessionAppGateProps) {
     >
       {(gate) => (
         <>
-          <Show when={gate.ready}>{props.children}</Show>
+          <Show when={gate().ready}>{props.children}</Show>
           <props.PickerDialog
             appId={props.appId}
-            open={gate.open}
-            sessions={toWorkSessionPickerItems(props.appId, gate.sessions)}
+            open={gate().open}
+            sessions={toWorkSessionPickerItems(props.appId, gate().sessions)}
             onRestore={(sessionId) => {
-              const session = gate.sessions.find((entry) => entry.id === sessionId);
-              if (session) gate.restoreSession(session);
+              const session = gate().sessions.find((entry) => entry.id === sessionId);
+              if (session) gate().restoreSession(session);
             }}
-            onStartNew={gate.startNewSession}
+            onStartNew={gate().startNewSession}
           />
         </>
       )}

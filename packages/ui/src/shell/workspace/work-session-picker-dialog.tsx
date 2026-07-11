@@ -41,6 +41,13 @@ export function WorkSessionPickerDialog(props: WorkSessionPickerDialogProps) {
                     >
                       <div class="font-medium text-foreground text-sm">{item.label}</div>
                       <div class="truncate text-muted-foreground text-xs">{item.path}</div>
+                      <Show when={item.sourcePath}>
+                        {(sourcePath) => (
+                          <div class="truncate text-muted-foreground text-xs">
+                            {sourcePath()}
+                          </div>
+                        )}
+                      </Show>
                       <div class="text-muted-foreground text-xs">
                         {formatWorkSessionWhen(item.lastOpenedAt)}
                       </div>

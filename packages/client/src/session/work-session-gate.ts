@@ -1,4 +1,4 @@
-import { createMemo, createSignal, type JSX } from "solid-js";
+import { createMemo, createSignal, type Accessor, type JSX } from "solid-js";
 import {
   currentServerKey,
   readWorkSessions,
@@ -60,12 +60,12 @@ export type WorkSessionBootstrapProps = {
   appId: LiscaAppId;
   onRestore: (session: WorkSession) => void | Promise<void>;
   gateOptions?: WorkSessionGateOptions;
-  children: (gate: WorkSessionGateState) => JSX.Element;
+  children: (gate: Accessor<WorkSessionGateState>) => JSX.Element;
 };
 
 export function WorkSessionBootstrap(props: WorkSessionBootstrapProps) {
   const gate = useWorkSessionGate(props.appId, props.onRestore, props.gateOptions);
-  return props.children(gate());
+  return props.children(gate);
 }
 
 export function persistActiveServer(appId: UtilsAppId, address: string | null): void {

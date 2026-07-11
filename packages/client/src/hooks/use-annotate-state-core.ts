@@ -23,7 +23,6 @@ import { toolCanRunWithoutLabel } from "@lisca/ui-headless/annotation-tools";
 import { toClientError } from "../infra/client-error";
 import {
   frameLoadRequest,
-  shouldResetContrastBeforeNavigationLoad,
   shouldRunContrastFrameLoad,
 } from "../session/frame-load-policy";
 import type { AnnotatorDataPort } from "../ports/types";
@@ -216,7 +215,6 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
       deps.annotatorUiActions.setAnnotationLoading(setUi, false);
       return;
     }
-    const contrast = untrack(() => session.state().contrast);
     void activeRequestKey;
     const cleanup = loadCanvasResources<{
       frame: FrameResult;
@@ -226,9 +224,7 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
       };
     }>({
       start: () => {
-        if (shouldResetContrastBeforeNavigationLoad()) {
-          deps.annotatorUiActions.setContrast(setUi, null);
-        }
+        deps.annotatorUiActions.setContrast(setUi, null);
         deps.annotatorUiActions.setFrameLoading(setUi, true);
         deps.annotatorUiActions.setAnnotationLoading(setUi, true);
         deps.annotatorUiActions.setFrameError(setUi, null);
@@ -242,7 +238,7 @@ export function useAnnotateStateCore(deps: UseAnnotateStateCoreDeps) {
               deps.annotatorClient,
               workspacePath,
               request,
-              frameLoadRequest({ kind: "navigation", contrast }),
+              frameLoadRequest({ kind: "navigation", contrast: null }),
             )
             .pipe(Effect.mapError(toClientError)),
           {
