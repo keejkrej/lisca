@@ -8,7 +8,7 @@ import { StudioRightPanel } from "../components/studio-right-panel";
 import { StudioAlignExpertRight } from "../components/studio-align-expert-right";
 import { StudioAlignRight } from "../components/studio-align-right";
 import { instructionForStep } from "../state/studio-routes";
-import { StudioAlignPageProvider } from "../state/studio-align-page-context";
+import { StudioAlignPageProvider } from "../state/studio-align-page-provider";
 
 export const Route = createFileRoute("/align")({
   component: AlignPage,

@@ -1,18 +1,9 @@
 import { useSmartExclude } from "@lisca/smart/exclude/request";
-import { createContext, useContext, type JSX } from "solid-js";
+import type { JSX } from "solid-js";
 
-import { useStudioAlignState, type StudioAlignState } from "./use-studio-align-state";
+import { useStudioAlignState } from "./use-studio-align-state";
+import { StudioAlignPageContext } from "./studio-align-page-context";
 import { createStudioSmartExcludeProvider } from "./studio-smart-exclude";
-
-type StudioSmartExclude = ReturnType<typeof useSmartExclude>;
-
-type StudioAlignPageContextValue = {
-  state: StudioAlignState;
-  smartExclude: StudioSmartExclude;
-  saveAndAdvance: () => Promise<boolean>;
-};
-
-const StudioAlignPageContext = createContext<StudioAlignPageContextValue | null>(null);
 
 export function StudioAlignPageProvider(props: { children?: JSX.Element }) {
   const state = useStudioAlignState();
@@ -58,12 +49,4 @@ export function StudioAlignPageProvider(props: { children?: JSX.Element }) {
       {props.children}
     </StudioAlignPageContext.Provider>
   );
-}
-
-export function useStudioAlignPage(): StudioAlignPageContextValue {
-  const value = useContext(StudioAlignPageContext);
-  if (!value) {
-    throw new Error("useStudioAlignPage must be used within StudioAlignPageProvider");
-  }
-  return value;
 }
