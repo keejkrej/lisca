@@ -17,7 +17,7 @@ export function HostFilePickerRow(props: HostFilePickerRowProps) {
       <button
         class={cn(
           "flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-          props.selected && "bg-primary/15",
+          props.selected && "bg-accent/50",
           props.muted && "text-muted-foreground/60",
         )}
         type="button"

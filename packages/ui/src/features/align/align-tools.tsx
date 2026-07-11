@@ -74,7 +74,6 @@ export function AlignToolButton(props: {
   return (
     <Button
       aria-label={props.label}
-      aria-pressed={props.active}
       class={props.class ?? "w-full min-w-0 justify-center gap-2 px-3"}
       size="sm"
       title={props.label}
@@ -110,7 +109,6 @@ function renderAlignToolCell(
           />
           <Button
             aria-label={patternZoomLocked ? "Unlock pattern zoom" : "Lock pattern zoom"}
-            aria-pressed={patternZoomLocked}
             class="w-full px-0"
             disabled={!onPatternZoomLockedChange}
             size="sm"

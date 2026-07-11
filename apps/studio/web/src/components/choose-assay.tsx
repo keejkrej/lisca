@@ -1,5 +1,5 @@
 import { ASSAY_TYPE, ENABLED_STUDIO_ASSAY_IDS } from "@lisca/contracts/assay";
-import { Button, cn } from "@lisca/ui/components";
+import { Button } from "@lisca/ui/components";
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-solid";
 import { For } from "solid-js";
 
@@ -37,11 +37,8 @@ export function ChooseAssay() {
             const disabled = !ENABLED_ASSAY_IDS.has(id);
             return (
               <Button
-                aria-pressed={selected()}
-                class={cn(
-                  "h-20 w-full min-h-[5rem] items-center justify-center px-2 py-3 text-center sm:h-[5.5rem] sm:min-h-[5.5rem] sm:px-3",
-                  selected() && "border-2 border-foreground/40 bg-foreground/5 hover:bg-foreground/10",
-                )}
+                aria-expanded={selected()}
+                class="h-20 w-full min-h-[5rem] items-center justify-center px-2 py-3 text-center sm:h-[5.5rem] sm:min-h-[5.5rem] sm:px-3"
                 disabled={disabled}
                 type="button"
                 variant="outline"

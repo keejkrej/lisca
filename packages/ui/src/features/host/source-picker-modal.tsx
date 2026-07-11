@@ -26,7 +26,7 @@ export type SourcePickerModalProps = {
 };
 
 const optionClass =
-  "group flex min-h-24 w-full items-center justify-center rounded-lg border border-border bg-muted/20 px-4 py-5 text-center transition-colors hover:border-primary/35 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  "group flex min-h-24 w-full items-center justify-center rounded-lg border border-border bg-muted/20 px-4 py-5 text-center transition-colors hover:bg-accent/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 export function SourcePickerModal(props: SourcePickerModalProps) {
   const handleSelect = async (fn: () => void | Promise<void>) => {
