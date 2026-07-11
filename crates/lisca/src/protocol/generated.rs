@@ -1695,6 +1695,78 @@ impl ::std::convert::TryFrom<::std::string::String> for CropOutputFormat {
         value.parse()
     }
 }
+#[doc = "`CropRoiDisposition`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"string\","]
+#[doc = "  \"enum\": ["]
+#[doc = "    \"started\","]
+#[doc = "    \"attached\""]
+#[doc = "  ]"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(
+    :: serde :: Deserialize,
+    :: serde :: Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum CropRoiDisposition {
+    #[serde(rename = "started")]
+    Started,
+    #[serde(rename = "attached")]
+    Attached,
+}
+impl ::std::fmt::Display for CropRoiDisposition {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Started => f.write_str("started"),
+            Self::Attached => f.write_str("attached"),
+        }
+    }
+}
+impl ::std::str::FromStr for CropRoiDisposition {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "started" => Ok(Self::Started),
+            "attached" => Ok(Self::Attached),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for CropRoiDisposition {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for CropRoiDisposition {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for CropRoiDisposition {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
 #[doc = "`CropRoiProgress`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
@@ -1911,10 +1983,14 @@ impl CropRoiRequest {
 #[doc = "{"]
 #[doc = "  \"type\": \"object\","]
 #[doc = "  \"required\": ["]
+#[doc = "    \"disposition\","]
 #[doc = "    \"requestId\","]
 #[doc = "    \"status\""]
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
+#[doc = "    \"disposition\": {"]
+#[doc = "      \"$ref\": \"#/definitions/CropRoiDisposition\""]
+#[doc = "    },"]
 #[doc = "    \"requestId\": {"]
 #[doc = "      \"type\": \"string\""]
 #[doc = "    },"]
@@ -1927,6 +2003,7 @@ impl CropRoiRequest {
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct CropRoiResponse {
+    pub disposition: CropRoiDisposition,
     #[serde(rename = "requestId")]
     pub request_id: ::std::string::String,
     pub status: CropRoiStatus,
@@ -6524,18 +6601,30 @@ pub mod builder {
     }
     #[derive(Clone, Debug)]
     pub struct CropRoiResponse {
+        disposition: ::std::result::Result<super::CropRoiDisposition, ::std::string::String>,
         request_id: ::std::result::Result<::std::string::String, ::std::string::String>,
         status: ::std::result::Result<super::CropRoiStatus, ::std::string::String>,
     }
     impl ::std::default::Default for CropRoiResponse {
         fn default() -> Self {
             Self {
+                disposition: Err("no value supplied for disposition".to_string()),
                 request_id: Err("no value supplied for request_id".to_string()),
                 status: Err("no value supplied for status".to_string()),
             }
         }
     }
     impl CropRoiResponse {
+        pub fn disposition<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::CropRoiDisposition>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.disposition = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for disposition: {e}"));
+            self
+        }
         pub fn request_id<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<::std::string::String>,
@@ -6563,6 +6652,7 @@ pub mod builder {
             value: CropRoiResponse,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
+                disposition: value.disposition?,
                 request_id: value.request_id?,
                 status: value.status?,
             })
@@ -6571,6 +6661,7 @@ pub mod builder {
     impl ::std::convert::From<super::CropRoiResponse> for CropRoiResponse {
         fn from(value: super::CropRoiResponse) -> Self {
             Self {
+                disposition: Ok(value.disposition),
                 request_id: Ok(value.request_id),
                 status: Ok(value.status),
             }

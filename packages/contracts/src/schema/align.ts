@@ -87,6 +87,10 @@ export const CropRoiStatusSchema = Schema.Literal(
   "error",
 ).annotations({ identifier: "CropRoiStatus" });
 
+export const CropRoiDispositionSchema = Schema.Literal("started", "attached").annotations({
+  identifier: "CropRoiDisposition",
+});
+
 export const CropRoiRequestSchema = Schema.Struct({
   requestId: Schema.String,
   workspacePath: Schema.String,
@@ -99,6 +103,7 @@ export const CropRoiRequestSchema = Schema.Struct({
 export const CropRoiResponseSchema = Schema.Struct({
   requestId: Schema.String,
   status: CropRoiStatusSchema,
+  disposition: CropRoiDispositionSchema,
 }).annotations({ identifier: "CropRoiResponse" });
 
 export const CropRoiProgressSchema = Schema.Struct({
@@ -184,6 +189,7 @@ export type SaveBboxResponse = typeof SaveBboxResponseSchema.Type;
 export type AlignOutputPaths = typeof AlignOutputPathsSchema.Type;
 export type CropOutputFormat = typeof CropOutputFormatSchema.Type;
 export type CropRoiStatus = typeof CropRoiStatusSchema.Type;
+export type CropRoiDisposition = typeof CropRoiDispositionSchema.Type;
 export type CropRoiRequest = typeof CropRoiRequestSchema.Type;
 export type CropRoiResponse = typeof CropRoiResponseSchema.Type;
 export type CropRoiProgress = typeof CropRoiProgressSchema.Type;

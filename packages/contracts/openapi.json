@@ -2876,7 +2876,8 @@
         "type": "object",
         "required": [
           "requestId",
-          "status"
+          "status",
+          "disposition"
         ],
         "properties": {
           "requestId": {
@@ -2884,6 +2885,9 @@
           },
           "status": {
             "$ref": "#/components/schemas/CropRoiStatus"
+          },
+          "disposition": {
+            "$ref": "#/components/schemas/CropRoiDisposition"
           }
         },
         "additionalProperties": false
@@ -2896,6 +2900,13 @@
           "completed",
           "cancelled",
           "error"
+        ]
+      },
+      "CropRoiDisposition": {
+        "type": "string",
+        "enum": [
+          "started",
+          "attached"
         ]
       },
       "CancelCropRoiRequest": {

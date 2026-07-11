@@ -1,5 +1,5 @@
 use std::{
-    collections::VecDeque,
+    collections::{BTreeSet, VecDeque},
     fs,
     fs::File,
     path::Path,
@@ -110,12 +110,12 @@ where
 
     let request = Arc::new(request);
     let scan = Arc::new(scan);
-    let page_count_per_roi = scan_page_count(&scan);
     let worker_count = crop_position_worker_count(position_bboxes.len());
     let queue = Arc::new(Mutex::new(VecDeque::from(position_bboxes)));
     let (event_sender, event_receiver) = mpsc::channel::<CropPositionEvent>();
     let mut failed = None::<String>;
     let mut cancelled = false;
+    let mut active_positions = BTreeSet::<u32>::new();
 
     std::thread::scope(|scope| {
         for _ in 0..worker_count {
@@ -132,31 +132,40 @@ where
         for event in event_receiver {
             match event {
                 CropPositionEvent::Started { pos } if failed.is_none() && !cancelled => {
-                    progress.position = Some(pos);
-                    progress.message = Some(format!("Cropping Pos{pos}"));
+                    active_positions.insert(pos);
+                    set_active_position_progress(&mut progress, &active_positions);
                     on_progress(progress.clone());
                 }
-                CropPositionEvent::RoiWritten { pos, roi } if failed.is_none() && !cancelled => {
-                    progress.position = Some(pos);
-                    progress.completed_rois =
-                        progress.completed_rois.saturating_add(page_count_per_roi);
-                    progress.message = Some(format!("Wrote Pos{pos} Roi{roi}"));
+                CropPositionEvent::PagesWritten { pos, count }
+                    if failed.is_none() && !cancelled =>
+                {
+                    debug_assert!(active_positions.contains(&pos));
+                    record_pages_written(&mut progress, count);
+                    set_active_position_progress(&mut progress, &active_positions);
                     on_progress(progress.clone());
                 }
                 CropPositionEvent::Finished { pos } if failed.is_none() && !cancelled => {
+                    active_positions.remove(&pos);
                     progress.position = Some(pos);
-                    progress.completed_positions = progress.completed_positions.saturating_add(1);
+                    progress.completed_positions = progress
+                        .completed_positions
+                        .saturating_add(1)
+                        .min(progress.total_positions);
                     progress.message = Some(format!("Finished Pos{pos}"));
                     on_progress(progress.clone());
                 }
                 CropPositionEvent::Cancelled { pos } if failed.is_none() && !cancelled => {
+                    active_positions.remove(&pos);
                     cancelled = true;
                     progress.status = CropRoiStatus::Cancelled;
                     progress.position = Some(pos);
                     progress.message = Some("Crop cancelled".to_string());
                     on_progress(progress.clone());
                 }
-                CropPositionEvent::Error { message } if failed.is_none() => {
+                CropPositionEvent::Error { pos, message } if failed.is_none() => {
+                    if let Some(pos) = pos {
+                        active_positions.remove(&pos);
+                    }
                     cancel.store(true, AtomicOrdering::SeqCst);
                     failed = Some(message);
                 }
@@ -198,10 +207,35 @@ where
 
 enum CropPositionEvent {
     Started { pos: u32 },
-    RoiWritten { pos: u32, roi: u32 },
+    PagesWritten { pos: u32, count: u32 },
     Finished { pos: u32 },
     Cancelled { pos: u32 },
-    Error { message: String },
+    Error { pos: Option<u32>, message: String },
+}
+
+fn set_active_position_progress(progress: &mut CropRoiProgress, active: &BTreeSet<u32>) {
+    match active.len() {
+        0 => {
+            progress.position = None;
+            progress.message = Some("Cropping".to_string());
+        }
+        1 => {
+            let pos = active.iter().next().copied().expect("one active position");
+            progress.position = Some(pos);
+            progress.message = Some(format!("Cropping Pos{pos}"));
+        }
+        count => {
+            progress.position = None;
+            progress.message = Some(format!("Cropping {count} positions"));
+        }
+    }
+}
+
+fn record_pages_written(progress: &mut CropRoiProgress, count: u32) {
+    progress.completed_rois = progress
+        .completed_rois
+        .saturating_add(count)
+        .min(progress.total_rois);
 }
 
 struct RoiTiffWriter {
@@ -234,7 +268,7 @@ fn crop_position_worker(
         Ok(reader) => reader,
         Err(message) => {
             cancel.store(true, AtomicOrdering::SeqCst);
-            let _ = event_sender.send(CropPositionEvent::Error { message });
+            let _ = event_sender.send(CropPositionEvent::Error { pos: None, message });
             return;
         }
     };
@@ -247,6 +281,7 @@ fn crop_position_worker(
             Ok(mut queue) => queue.pop_front(),
             Err(_) => {
                 let _ = event_sender.send(CropPositionEvent::Error {
+                    pos: None,
                     message: "crop queue state is poisoned".to_string(),
                 });
                 return;
@@ -271,7 +306,10 @@ fn crop_position_worker(
             }
             Err(CropPositionStop::Error(message)) => {
                 cancel.store(true, AtomicOrdering::SeqCst);
-                let _ = event_sender.send(CropPositionEvent::Error { message });
+                let _ = event_sender.send(CropPositionEvent::Error {
+                    pos: Some(pos),
+                    message,
+                });
                 return;
             }
         }
@@ -319,10 +357,15 @@ fn crop_position_frame_major(
         if cancel.load(AtomicOrdering::SeqCst) {
             return Err(CropPositionStop::Cancelled);
         }
-        write_roi_tiff_chunk_frame_major(request, scan, pos, chunk, cancel, source_reader)?;
-        for bbox in chunk {
-            let _ = event_sender.send(CropPositionEvent::RoiWritten { pos, roi: bbox.roi });
-        }
+        write_roi_tiff_chunk_frame_major(
+            request,
+            scan,
+            pos,
+            chunk,
+            cancel,
+            event_sender,
+            source_reader,
+        )?;
     }
 
     write_roi_index(request, pos, roi_index_entries(&bboxes, scan), scan)?;
@@ -336,6 +379,7 @@ fn write_roi_tiff_chunk_frame_major(
     pos: u32,
     bboxes: &[RoiBbox],
     cancel: &AtomicBool,
+    event_sender: &mpsc::Sender<CropPositionEvent>,
     source_reader: &mut CachedSourceReader,
 ) -> Result<(), CropPositionStop> {
     let mut writers = bboxes
@@ -369,6 +413,10 @@ fn write_roi_tiff_chunk_frame_major(
                     let pixels = crop_frame(&raw, &writer.bbox)?;
                     write_roi_tiff_page(&mut writer.encoder, &writer.bbox, &pixels)?;
                 }
+                let _ = event_sender.send(CropPositionEvent::PagesWritten {
+                    pos,
+                    count: writers.len() as u32,
+                });
             }
         }
     }
@@ -425,12 +473,6 @@ fn crop_position_worker_count(position_count: usize) -> usize {
     position_count.min(max_workers).max(1)
 }
 
-fn scan_page_count(scan: &WorkspaceScan) -> u32 {
-    (scan.times.len().max(1) as u32)
-        .saturating_mul(scan.channels.len().max(1) as u32)
-        .saturating_mul(scan.z_slices.len().max(1) as u32)
-}
-
 fn roi_index_entries(bboxes: &[RoiBbox], scan: &WorkspaceScan) -> Vec<RoiIndexEntry> {
     bboxes
         .iter()
@@ -469,4 +511,49 @@ fn write_roi_index(
     let bytes = serde_json::to_vec_pretty(&index).map_err(|error| error.to_string())?;
     fs::write(roi_index_path(&request.workspace_path, pos), bytes)
         .map_err(|error| error.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn progress() -> CropRoiProgress {
+        CropRoiProgress {
+            request_id: "crop".to_string(),
+            status: CropRoiStatus::Running,
+            position: None,
+            completed_positions: 0,
+            total_positions: 2,
+            completed_rois: 0,
+            total_rois: 96,
+            message: None,
+            error: None,
+            skipped_positions: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn page_batches_advance_progress_and_saturate_at_total() {
+        let mut progress = progress();
+        record_pages_written(&mut progress, 32);
+        assert_eq!(progress.completed_rois, 32);
+        record_pages_written(&mut progress, 32);
+        assert_eq!(progress.completed_rois, 64);
+        record_pages_written(&mut progress, u32::MAX);
+        assert_eq!(progress.completed_rois, 96);
+    }
+
+    #[test]
+    fn active_position_message_does_not_misidentify_parallel_work() {
+        let mut progress = progress();
+        let mut active = BTreeSet::from([82]);
+        set_active_position_progress(&mut progress, &active);
+        assert_eq!(progress.position, Some(82));
+        assert_eq!(progress.message.as_deref(), Some("Cropping Pos82"));
+
+        active.insert(69);
+        set_active_position_progress(&mut progress, &active);
+        assert_eq!(progress.position, None);
+        assert_eq!(progress.message.as_deref(), Some("Cropping 2 positions"));
+    }
 }

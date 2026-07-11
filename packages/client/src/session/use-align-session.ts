@@ -36,6 +36,7 @@ import {
   applyVariationExcludePreview,
   applyVariationExcludeWithEdge,
   cropPositionsAfterSkip,
+  cropRequestIdForCancellation,
   deriveCurrentExcludedCells,
   deriveDisplayedExcludedCells,
   deriveVisibleCounts,
@@ -60,6 +61,7 @@ import { toClientError, type ClientError } from "../infra/client-error";
 import { runClientEffect } from "../infra/runtime";
 import type { AlignerDataPort } from "../ports/types";
 import { frameLoadRequest, shouldRunContrastFrameLoad } from "./frame-load-policy";
+import { currentServerKey } from "./work-session";
 
 export type AlignSessionMeta = {
   scanLoading: boolean;
@@ -126,6 +128,7 @@ export type AlignSessionPolicy = {
   /** Studio preserves the prior frame when a contrast refresh fails. */
   preserveFrameOnContrastFailure?: boolean;
   cropRequestPrefix?: string;
+  cropServerIdentity?: () => string;
   onCropCompleted?: (progress: CropRoiProgress) => void;
   onCropSkippedAll?: () => void;
 };
@@ -150,7 +153,8 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
   const [variationExcludePreview, setVariationExcludePreview] =
     createSignal<VariationExcludePreview | null>(null);
   const [variationExcludeLoading, setVariationExcludeLoading] = createSignal(false);
-  let cropRequestId: string | null = null;
+  let stopCropProgress: () => void = () => {};
+  onCleanup(() => stopCropProgress());
 
   const activeSourceKey = createMemo(() => sourceKey(ui().source));
   const scanResult = useSelectedAtomValue(() => {
@@ -525,9 +529,9 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
     const requestId = `${policy.cropRequestPrefix ?? "crop"}-${Date.now()}-${Math.random()
       .toString(36)
       .slice(2)}`;
-    cropRequestId = requestId;
     actions.setError(setUi, null);
-    await runCropRoi({
+    stopCropProgress();
+    stopCropProgress = await runCropRoi({
       client: backend.client,
       request: {
         requestId,
@@ -537,6 +541,7 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
         overwrite,
         outputFormat: "tiff",
       },
+      serverIdentity: policy.cropServerIdentity?.() ?? currentServerKey("aligner"),
       onProgress: (progress) => actions.setCropProgress(setUi, progress),
       onError: (message) => actions.setError(setUi, message),
       onCompleted: (progress) => {
@@ -624,11 +629,9 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
   };
 
   const cancelCrop = async () => {
-    if (!cropRequestId) return;
-    actions.setCropProgress(
-      setUi,
-      await runClientEffect(backend.client.cancelCropRoi(cropRequestId)),
-    );
+    const requestId = cropRequestIdForCancellation(ui().cropProgress);
+    if (!requestId) return;
+    actions.setCropProgress(setUi, await runClientEffect(backend.client.cancelCropRoi(requestId)));
   };
 
   return {

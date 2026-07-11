@@ -2,6 +2,7 @@ import type { AnalysisProgress, CropRoiProgress } from "@lisca/contracts";
 import { isDoneCropStatus } from "@lisca/client/crop-status";
 import type { AlignerDataPort } from "../ports/types";
 import { runClientEffect, type ClientEffect } from "../infra/runtime";
+import { acknowledgeCropRecovery, readCropRecovery, rememberCropRecovery } from "./crop-recovery";
 
 const ANALYSIS_TERMINAL_STATUSES = new Set(["completed", "error"]);
 
@@ -12,17 +13,44 @@ function isActiveAnalysisProgress(progress: AnalysisProgress): boolean {
 export type ResumeCropPendingRunsOptions = {
   client: Pick<AlignerDataPort, "getLatestCropProgress" | "onCropRoiProgress">;
   workspacePath: string;
+  serverIdentity: string;
   onProgress: (progress: CropRoiProgress) => void;
+  onTerminal?: (progress: CropRoiProgress) => void;
 };
+
+export type ResumedCropRun =
+  | { kind: "none" }
+  | { kind: "active"; progress: CropRoiProgress; stop: () => void }
+  | { kind: "terminal"; progress: CropRoiProgress; acknowledged: boolean };
 
 export async function resumeCropPendingRun(
   options: ResumeCropPendingRunsOptions,
-): Promise<(() => void) | null> {
-  const { client, workspacePath, onProgress } = options;
+): Promise<ResumedCropRun> {
+  const { client, serverIdentity, workspacePath, onProgress, onTerminal } = options;
   const latest = await runClientEffect(client.getLatestCropProgress(workspacePath));
-  if (!latest || isDoneCropStatus(latest.status)) return null;
+  if (!latest) return { kind: "none" };
+  if (isDoneCropStatus(latest.status)) {
+    const recovery = readCropRecovery(serverIdentity, workspacePath);
+    if (recovery?.requestId !== latest.requestId) return { kind: "none" };
+    return {
+      kind: "terminal",
+      progress: latest,
+      acknowledged: recovery.terminalAcknowledged,
+    };
+  }
+  rememberCropRecovery(serverIdentity, workspacePath, latest.requestId);
   onProgress(latest);
-  return client.onCropRoiProgress(latest.requestId, onProgress);
+  const handleProgress = (progress: CropRoiProgress) => {
+    onProgress(progress);
+    if (!isDoneCropStatus(progress.status)) return;
+    onTerminal?.(progress);
+    acknowledgeCropRecovery(serverIdentity, workspacePath, progress.requestId);
+  };
+  return {
+    kind: "active",
+    progress: latest,
+    stop: client.onCropRoiProgress(latest.requestId, handleProgress),
+  };
 }
 
 export type ResumeAnalysisPendingRunsOptions = {
@@ -54,7 +82,9 @@ export type ResumeStudioPendingRunsOptions = {
     ): () => void;
   };
   workspacePath: string;
+  serverIdentity: string;
   onCropProgress: (progress: CropRoiProgress) => void;
+  onRestoredCropTerminal?: (progress: CropRoiProgress) => void;
   onAnalysisProgress: (progress: AnalysisProgress) => void;
 };
 
@@ -62,13 +92,19 @@ export async function resumeStudioPendingRuns(
   options: ResumeStudioPendingRunsOptions,
 ): Promise<() => void> {
   const stops: Array<(() => void) | null> = [];
-  stops.push(
-    await resumeCropPendingRun({
-      client: options.client,
-      workspacePath: options.workspacePath,
-      onProgress: options.onCropProgress,
-    }),
-  );
+  const crop = await resumeCropPendingRun({
+    client: options.client,
+    serverIdentity: options.serverIdentity,
+    workspacePath: options.workspacePath,
+    onProgress: options.onCropProgress,
+    onTerminal: options.onRestoredCropTerminal,
+  });
+  if (crop.kind === "active") stops.push(crop.stop);
+  if (crop.kind === "terminal" && !crop.acknowledged) {
+    options.onCropProgress(crop.progress);
+    options.onRestoredCropTerminal?.(crop.progress);
+    acknowledgeCropRecovery(options.serverIdentity, options.workspacePath, crop.progress.requestId);
+  }
   stops.push(
     await resumeAnalysisPendingRun({
       workspacePath: options.workspacePath,

@@ -135,6 +135,14 @@
       "types": "./src/session/resume-pending-runs.ts",
       "import": "./src/session/resume-pending-runs.ts"
     },
+    "./session/crop-recovery": {
+      "types": "./src/session/crop-recovery.ts",
+      "import": "./src/session/crop-recovery.ts"
+    },
+    "./session/subscription-owner": {
+      "types": "./src/session/subscription-owner.ts",
+      "import": "./src/session/subscription-owner.ts"
+    },
     "./use-align-state-core": {
       "types": "./src/hooks/use-align-state-core.ts",
       "import": "./src/hooks/use-align-state-core.ts"

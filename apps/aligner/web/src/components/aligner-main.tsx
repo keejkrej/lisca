@@ -117,7 +117,9 @@ export function AlignerMain() {
       <CropConfirmModal />
       <SharedCropProgressModal
         progress={crop.cropProgress}
-        onCancel={() => void crop.cancelCrop()}
+        onCancel={() => {
+          if (globalThis.confirm("Cancel the active crop job?")) void crop.cancelCrop();
+        }}
       />
     </>
   );

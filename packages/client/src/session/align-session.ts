@@ -16,6 +16,7 @@ import {
 
 import type { AlignerDataPort } from "../ports/types";
 import { runClientEffect } from "../infra/runtime";
+import { acknowledgeCropRecovery, rememberCropRecovery } from "./crop-recovery";
 
 /** Initial `queued` progress for a freshly-submitted crop job. */
 export function makeQueuedCropProgress(requestId: string, totalPositions: number): CropRoiProgress {
@@ -53,6 +54,8 @@ export function makeErrorCropProgress(
 export type RunCropRoiOptions = {
   client: Pick<AlignerDataPort, "cropRoi" | "onCropRoiProgress">;
   request: CropRoiRequest;
+  /** Stable identity for the server owning the in-memory crop job. */
+  serverIdentity: string;
   /** Called with the queued progress, every progress update, and any error progress. */
   onProgress: (progress: CropRoiProgress) => void;
   /** Called with a human-readable message when the job fails. */
@@ -99,6 +102,10 @@ export function deriveVisibleCounts(
 
 export function isCropping(cropProgress: CropRoiProgress | null): boolean {
   return cropProgress != null && !isDoneCropStatus(cropProgress.status);
+}
+
+export function cropRequestIdForCancellation(progress: CropRoiProgress | null): string | null {
+  return progress && !isDoneCropStatus(progress.status) ? progress.requestId : null;
 }
 
 export function cellsBelowVariationThreshold(
@@ -166,10 +173,7 @@ export function mergeAlignGridEdgeExclusion(
   frame: FrameResult,
   grid: AlignGridState,
 ): AlignGridCellCoord[] {
-  return mergeExcludedAlignGridCells(
-    currentExcludedCells,
-    collectAlignGridEdgeCells(frame, grid),
-  );
+  return mergeExcludedAlignGridCells(currentExcludedCells, collectAlignGridEdgeCells(frame, grid));
 }
 
 /** Dock exclude: replace prior exclusions with edge + var (non-additive). */
@@ -240,16 +244,24 @@ export function frameLoadSelectionKey(selection: FrameRequest): string {
 
 const noop = () => {};
 
-export async function runCropRoi(options: RunCropRoiOptions): Promise<void> {
-  const { client, request, onProgress, onError, onCompleted, toErrorMessage } = options;
+export async function runCropRoi(options: RunCropRoiOptions): Promise<() => void> {
+  const { client, request, serverIdentity, onProgress, onError, onCompleted, toErrorMessage } =
+    options;
   const totalPositions = request.positions.length;
 
   onProgress(makeQueuedCropProgress(request.requestId, totalPositions));
 
   let stop: () => void = noop;
   try {
-    await runClientEffect(client.cropRoi(request));
-    stop = client.onCropRoiProgress(request.requestId, (progress) => {
+    const response = await runClientEffect(client.cropRoi(request));
+    const authoritativeId = response.requestId;
+    rememberCropRecovery(serverIdentity, request.workspacePath, authoritativeId);
+    onProgress({
+      ...makeQueuedCropProgress(authoritativeId, totalPositions),
+      status: response.status,
+      message: response.disposition === "attached" ? "Attached to active crop" : "Queued crop",
+    });
+    stop = client.onCropRoiProgress(authoritativeId, (progress) => {
       onProgress(progress);
       if (!isDoneCropStatus(progress.status)) return;
       if (progress.status === "error") {
@@ -257,12 +269,15 @@ export async function runCropRoi(options: RunCropRoiOptions): Promise<void> {
       } else if (progress.status === "completed") {
         onCompleted(progress);
       }
+      acknowledgeCropRecovery(serverIdentity, request.workspacePath, progress.requestId);
       stop();
     });
+    return () => stop();
   } catch (cause) {
     stop();
     const message = toErrorMessage(cause, "Crop failed");
     onError(message);
     onProgress(makeErrorCropProgress(request.requestId, totalPositions, message));
+    return noop;
   }
 }

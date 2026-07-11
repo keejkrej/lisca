@@ -19,6 +19,7 @@ import { useAlignSessionCore } from "@lisca/client/align-session/solid";
 import { useCanvasResourceTransaction } from "@lisca/ui/features";
 import { createDefaultAlignGrid, type AlignGridToolMode } from "@lisca/utils";
 import { useNavigate } from "@tanstack/solid-router";
+import { currentServerKey } from "@lisca/client/session/work-session";
 import { createEffect, createMemo, createSignal } from "solid-js";
 import { studioClient, toErrorMessage } from "../api/studio-port";
 import { studioNavigate } from "../navigation/use-studio-navigate";
@@ -40,7 +41,6 @@ import {
   type ExcludedByPosition,
 } from "./studio-align-store";
 import { useStudioStore } from "./studio-store";
-
 
 export type StudioAlignState = {
   workspacePath: string | null;
@@ -154,6 +154,7 @@ export function useStudioAlignState(): StudioAlignState {
       canLoadFrame: (state) => alignPositionsForScan(state.scan).length > 0,
       preserveFrameOnContrastFailure: true,
       cropRequestPrefix: "studio-crop",
+      cropServerIdentity: () => currentServerKey("studio"),
       onCropCompleted: () => studioNavigate(navigate, "/annotate"),
       onCropSkippedAll: () => studioNavigate(navigate, "/annotate"),
     },
