@@ -39,6 +39,7 @@ export { StatTile } from "./chrome/stat-tile";
 export { ReadonlyPathField } from "./chrome/readonly-path-field";
 export { Section, type SectionProps } from "./regions/section";
 export { ViewportCard } from "./layout/viewport-card";
+export { FrameAspectPanel } from "./layout/frame-aspect-panel";
 export { ShellServerProvider, useShellServer, type ShellServer } from "./server/shell-server";
 export {
   ShellWorkspaceProvider,

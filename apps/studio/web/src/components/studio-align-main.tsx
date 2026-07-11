@@ -1,13 +1,14 @@
 import type { AlignGridCellCoord } from "@lisca/contracts";
 import {
   AlignCanvas,
+  CanvasStatusMessageStack,
   cursorForAlignTool,
   useAlignCanvasGridHandlers,
   useAlignCanvasSelectionHandlers,
   useCanvasTransientStatus,
 } from "@lisca/ui/features";
-import { ViewportCard } from "@lisca/ui/shell";
-import { createMemo } from "solid-js";
+import { FrameAspectPanel } from "@lisca/ui/shell";
+import { createMemo, Show } from "solid-js";
 
 import {
   useStudioAlignCanvas,
@@ -126,24 +127,34 @@ export function StudioAlignMain() {
 
   return (
     <>
-      <ViewportCard>
-        <AlignCanvas
-          class="min-h-0 flex-1"
-          cursor={cursor()}
-          excludedCells={canvas.displayedExcludedCells}
-          frame={canvas.frame}
-          grid={canvas.grid}
-          messages={positionInfo()}
-          alertMessages={canvasAlerts()}
-          previewGridRef={gridHandlers.previewGridRef}
-          previewRedrawRef={previewRedrawRef}
-          toasts={toasts()}
-          onVirtualPointerCancel={handlePointerCancel}
-          onVirtualPointerDown={handlePointerDown}
-          onVirtualPointerMove={handlePointerMove}
-          onVirtualPointerUp={handlePointerEnd}
-        />
-      </ViewportCard>
+      <div class="flex h-full min-h-0 flex-1 flex-col gap-2 bg-background p-3">
+        <Show when={positionInfo().length > 0 || canvasAlerts().length > 0}>
+          <div class="flex shrink-0 items-start justify-between gap-2">
+            <CanvasStatusMessageStack layout="inline" messages={positionInfo()} />
+            <CanvasStatusMessageStack
+              align="right"
+              layout="inline"
+              messages={canvasAlerts()}
+            />
+          </div>
+        </Show>
+        <FrameAspectPanel frame={canvas.frame}>
+          <AlignCanvas
+            class="h-full w-full"
+            cursor={cursor()}
+            excludedCells={canvas.displayedExcludedCells}
+            frame={canvas.frame}
+            grid={canvas.grid}
+            previewGridRef={gridHandlers.previewGridRef}
+            previewRedrawRef={previewRedrawRef}
+            toasts={toasts()}
+            onVirtualPointerCancel={handlePointerCancel}
+            onVirtualPointerDown={handlePointerDown}
+            onVirtualPointerMove={handlePointerMove}
+            onVirtualPointerUp={handlePointerEnd}
+          />
+        </FrameAspectPanel>
+      </div>
       <StudioCropStartModal />
       <StudioCropConfirmModal />
       <StudioCropProgressModal />

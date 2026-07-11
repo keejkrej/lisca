@@ -37,14 +37,21 @@ export function CanvasStatusMessageStack(props: {
   class?: string;
   messages?: CanvasStatusMessage[];
   align?: "left" | "right";
+  layout?: "overlay" | "inline";
 }) {
   const align = () => props.align ?? "left";
+  const layout = () => props.layout ?? "overlay";
   return (
     <Show when={props.messages?.length}>
       <div
         class={cn(
-          "pointer-events-none absolute top-3 flex max-w-[78%] flex-wrap gap-1.5",
-          align() === "left" ? "left-3" : "right-3 justify-end",
+          "flex flex-wrap gap-1.5",
+          layout() === "overlay"
+            ? cn(
+                "pointer-events-none absolute top-3 max-w-[78%]",
+                align() === "left" ? "left-3" : "right-3 justify-end",
+              )
+            : cn("min-w-0", align() === "right" && "justify-end"),
           props.class,
         )}
       >
