@@ -30,21 +30,26 @@
   },
   "type": "module",
   "scripts": {
-    "build": "bun lisca build workspace all",
-    "dev": "bun lisca dev workspace all",
-    "check": "vp run lint && vp run typecheck && vp run check:contracts && vp run check:rust && vp run test:packages",
-    "test:packages": "bun --filter @lisca/utils test && bun --filter @lisca/analysis test && bun --filter @lisca/ui-headless test && bun --filter @lisca/client test && bun --filter @lisca/smart test && vp run test:scripts",
-    "test:scripts": "vp test run scripts/lisca-dev.test.ts --exclude '.deploy/**'",
-    "check:contracts": "vp run contracts:generate && vp exec bun scripts/check-openapi-routes.ts && bun --filter @lisca/contracts test",
+    "dev:aligner": "vp run --parallel --filter @lisca/aligner-server --filter @lisca/aligner-web dev",
+    "dev:annotator": "vp run --parallel --filter @lisca/annotator-server --filter @lisca/annotator-web dev",
+    "dev:studio": "vp run --parallel --filter @lisca/studio-server --filter @lisca/studio-web dev",
+    "dev:landing": "vp run --filter @lisca/landing-web dev",
+    "build": "vp run --filter ./packages/* build && vp run --filter @lisca/*-web build",
+    "dist:aligner": "bun scripts/package-tauri.mjs aligner",
+    "dist:annotator": "bun scripts/package-tauri.mjs annotator",
+    "dist:studio": "bun scripts/package-tauri.mjs studio",
+    "deploy:landing": "bun scripts/deploy-landing.mjs",
+    "serve:aligner": "bun scripts/serve.mjs aligner",
+    "serve:annotator": "bun scripts/serve.mjs annotator",
+    "serve:studio": "bun scripts/serve.mjs studio",
+    "check": "vp lint && vp run -r --no-cache typecheck && vp run check:contracts && vp run check:rust && vp run -r --no-cache test",
+    "check:contracts": "vp run --filter @lisca/contracts generate && vp exec bun scripts/check-openapi-routes.ts && vp run --filter @lisca/contracts test",
     "check:rust": "cargo check --workspace && cargo clippy --workspace -- -D warnings",
-    "contracts:generate": "bun --filter @lisca/contracts generate",
+    "lint": "vp lint",
     "fmt": "vp fmt",
     "fmt:check": "vp fmt --check",
-    "format": "vp run fmt",
-    "format:check": "vp run fmt:check",
-    "lisca": "vp exec bun ./scripts/lisca.mjs",
-    "lint": "vp lint",
     "test": "vp run -r --no-cache test",
+    "test:scripts": "vp test run scripts/lisca-dev.test.ts --exclude '.deploy/**'",
     "typecheck": "vp run -r --no-cache typecheck"
   },
   "devDependencies": {
@@ -71,10 +76,5 @@
   "trustedDependencies": [
     "core-js",
     "esbuild"
-  ],
-  "dependencies": {
-    "aligner": "^1.0.13",
-    "dev": "^0.1.5",
-    "web": "^0.0.2"
-  }
+  ]
 }

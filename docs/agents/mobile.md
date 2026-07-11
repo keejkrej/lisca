@@ -39,18 +39,17 @@ The old `mobile` target was renamed to **`web-native`** for dev, build, and type
 ## Dev
 
 ```bash
-bun lisca dev aligner web-native     # Expo web — http://localhost:8081
-bun lisca dev annotator web-native   # http://localhost:8082
-bun lisca dev studio web-native      # http://localhost:8083
+vp run dev:aligner     # Vite web — http://localhost:8765 (Rust backend on 9765)
+vp run dev:annotator   # http://localhost:8766 (Rust on 9766)
+vp run dev:studio       # http://localhost:8767 (Rust on 9767)
 ```
 
-Web-native dev runs **Expo in the browser** (not via `vp run`). Open the **808x** URL — the CLI starts a dev proxy there that forwards API routes (`/fs`, `/align`, …) to Rust on **876x** and everything else to Expo on **908x** (808x + 1000). Same-origin resolution works like the Vite web apps.
+Web-native and native iOS dev use Expo directly from each `apps/<product>/mobile` package (no shared orchestrator). Start the Rust backend separately with `vp run --filter @lisca/<product>-server dev`.
 
 ### Native iOS (iPad / iPhone)
 
 ```bash
-bun lisca dev aligner ios-install   # once: USB device → Xcode build + install dev client
-bun lisca dev aligner ios             # Rust on 0.0.0.0:876x + Expo Metro with LAN API URLs
+cd apps/aligner/mobile && bunx expo run:ios --device   # USB install dev client
 ```
 
 Test API reachability on the device: open `http://<mac-ip>:8765` in Safari.
@@ -60,16 +59,13 @@ First Skia/web load may take a few seconds while CanvasKit (WASM) initializes in
 ## Build & dist
 
 ```bash
-bun lisca build aligner web-native   # static Expo web export
-bun lisca build aligner ios          # prebuild + Release compile (macOS + Xcode)
-bun lisca dist aligner ios           # development IPA (requires signing)
+vp run --filter @lisca/aligner-web build          # production Vite web bundle
+vp run dist:aligner                                 # Tauri desktop installer
+cd apps/aligner/mobile && bunx expo export --platform web   # static Expo web export
+cd apps/aligner/mobile && bunx expo run:ios               # prebuild + Release compile (macOS + Xcode)
 ```
 
-`dist ios` uses Xcode archive + development export. Configure signing in the generated `ios/` project before distributing.
-
-For the production Vite web UI, use `bun lisca dev aligner web` → http://localhost:8765.
-
-Use `bun lisca dev aligner server` for Rust only. Override the API target in the app shell or via `EXPO_PUBLIC_LISCA_*` when pointing at a remote host.
+Use `vp run --filter @lisca/aligner-server dev` for Rust only. Override the API target in the app shell or via `EXPO_PUBLIC_LISCA_*` when pointing at a remote host.
 
 Each app uses a fixed Metro port so all three can run in parallel.
 

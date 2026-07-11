@@ -6,7 +6,7 @@
  * Pushes to deploy/landing trigger a Render deploy automatically.
  *
  * Usage:
- *   bun lisca deploy landing
+ *   vp run deploy:landing
  *   bun scripts/deploy-landing.mjs [--skip-build]
  */
 import { spawnSync } from "node:child_process";
@@ -64,12 +64,12 @@ function ensureWorktree() {
 
 function main() {
   if (!skipBuild) {
-    run("bun", ["lisca", "build", "landing"]);
+    run("vp", ["run", "--filter", "@lisca/landing-web", "build"]);
   }
 
   const distRoot = path.join(root, DIST_REL);
   if (!fs.existsSync(path.join(distRoot, "index.html"))) {
-    console.error(`Missing ${DIST_REL}/index.html — run: bun lisca build landing`);
+    console.error(`Missing ${DIST_REL}/index.html — run: vp run --filter @lisca/landing-web build`);
     process.exit(1);
   }
 

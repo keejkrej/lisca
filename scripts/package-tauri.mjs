@@ -4,7 +4,7 @@
  *
  * Usage:
  *   bun scripts/package-tauri.mjs aligner
- *   bun lisca dist aligner
+ *   vp run dist:aligner
  */
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
