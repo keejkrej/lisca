@@ -7,6 +7,7 @@ use std::path::{Path, PathBuf};
 use crate::protocol::{AnalysisCsvFile, AnalysisProgress, AnalysisStage, AssayJsonFile};
 
 use crate::analysis::output::collect_csv_outputs;
+use crate::analysis::plot::DEFAULT_PLOT_COLUMNS;
 use crate::analysis::progress::{analysis_progress, run_blocking};
 use crate::analysis::slide::{build_slide_mapping, parse_interval_minutes, write_slide_mapping};
 
@@ -28,15 +29,20 @@ pub fn resolve_model_path(workspace: &Path) -> Result<PathBuf, String> {
         ));
     }
 
-    let workspace_model_dir = workspace.join("models/mupattern-resnet18");
-    let workspace_model = workspace_model_dir.join("model.onnx");
-    if workspace_model.is_file() {
-        return Ok(workspace_model_dir);
+    let candidates = [
+        workspace.join("models/immune-killing-resnet18"),
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../models/immune-killing-resnet18"),
+        PathBuf::from("models/immune-killing-resnet18"),
+    ];
+    for candidate in candidates {
+        if candidate.join("model.onnx").is_file() {
+            return Ok(candidate);
+        }
     }
 
     Err(
         "immune killing model not found: set LISCA_KILL_MODEL or place model.onnx at \
-         workspace/models/mupattern-resnet18/model.onnx (export from keejkrej/mupattern-resnet18)"
+         workspace/models/immune-killing-resnet18/model.onnx (export from keejkrej/immune-killing-resnet18)"
             .to_string(),
     )
 }
@@ -53,8 +59,10 @@ pub fn run_sync(workspace: &Path, assay_json: &AssayJsonFile) -> Result<(), Stri
 
     let model_dir = resolve_model_path(workspace)?;
     predict::run_predict(workspace, &mapping, &model_dir, predict::PredictOptions::default())?;
+    plot::run_plot_timeseries(workspace, &mapping, interval, DEFAULT_PLOT_COLUMNS)?;
     clean::run_clean(workspace, &mapping)?;
     plot::run_plot_kill(workspace, &mapping, interval)?;
+    plot::run_plot_death_times(workspace, &mapping, interval)?;
     Ok(())
 }
 
@@ -84,7 +92,7 @@ where
         &request_id,
         AnalysisStage::Segment,
         35.0,
-        "Completed cell presence inference",
+        "Completed P(dead) inference",
     ));
     update_progress(analysis_progress(
         &request_id,

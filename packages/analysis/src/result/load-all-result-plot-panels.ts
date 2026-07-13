@@ -3,16 +3,16 @@ import type { StudioAnalysisCsvFile } from "@lisca/contracts";
 import {
   collectDisplayedParameterPanels,
   collectTimeseriesPanels,
+  filterResultFilesBySection,
   type ResultPanel,
-  type TimeseriesPanel,
 } from "../shared/panels";
 
 export async function loadAllResultPlotPanels(
   analysisResultFiles: StudioAnalysisCsvFile[],
   loadPanelsForFile: (file: StudioAnalysisCsvFile) => Promise<ResultPanel[]>,
-): Promise<{ timeseriesPanels: TimeseriesPanel[]; parameterPanels: ResultPanel[] }> {
-  const timeseriesFiles = analysisResultFiles.filter((file) => file.kind === "timeseries");
-  const parameterFiles = analysisResultFiles.filter((file) => file.kind !== "timeseries");
+): Promise<{ timeseriesPanels: ResultPanel[]; parameterPanels: ResultPanel[] }> {
+  const timeseriesFiles = filterResultFilesBySection(analysisResultFiles, "timeseries");
+  const parameterFiles = filterResultFilesBySection(analysisResultFiles, "parameters");
 
   const [timeseriesByFile, parametersByFile] = await Promise.all([
     Promise.all(timeseriesFiles.map((file) => loadPanelsForFile(file))),

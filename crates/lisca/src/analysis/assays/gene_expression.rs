@@ -7,6 +7,9 @@ mod segment;
 mod timeseries;
 mod traces;
 
+pub use auc::discover_timeseries_csvs;
+pub use traces::{load_trace_panel, TracePanel};
+
 use std::path::{Path, PathBuf};
 
 use crate::protocol::{AnalysisCsvFile, AnalysisProgress, AnalysisStage, AssayJsonFile};

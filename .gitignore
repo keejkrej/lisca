@@ -32,3 +32,6 @@ apps/*/desktop/src-tauri/gen/schemas
 apps/*/desktop/release/
 
 mcps/
+
+# ONNX model weights (download via models/*/README.md)
+models/**/model.onnx

@@ -114,9 +114,14 @@ export function collectDisplayedParameterPanels(panelsByFile: ResultPanel[][]): 
   });
 }
 
-export function collectTimeseriesPanels(panelsByFile: ResultPanel[][]): TimeseriesPanel[] {
+export function collectTimeseriesPanels(panelsByFile: ResultPanel[][]): ResultPanel[] {
   return panelsByFile.flatMap((panels) =>
-    panels.filter((panel): panel is TimeseriesPanel => panel.kind === "timeseries"),
+    panels.filter(
+      (panel) =>
+        panel.kind === "timeseries" ||
+        panel.kind === "histogram" ||
+        (panel.kind === "generic" && panel.yAxisLabel === "N(alive)"),
+    ),
   );
 }
 
@@ -132,12 +137,12 @@ const MAX_POINTS_PER_TRACE = 400;
 
 function resultFileRank(file: StudioAnalysisCsvFile): number {
   if (file.kind === "timeseries") return 0;
-  if (file.fileName === "kill_curve.csv") return 0;
-  if (file.fileName === "auc.csv") return 1;
-  if (file.fileName === "fit.csv") return 2;
-  if (file.fileName === "death_times.csv") return 3;
-  if (file.fileName === "predictions_cleaned.csv") return 4;
-  return 5;
+  if (file.fileName === "kill_curve.csv") return 1;
+  if (file.fileName === "death_times.csv") return 2;
+  if (file.fileName === "auc.csv") return 3;
+  if (file.fileName === "fit.csv") return 4;
+  if (file.fileName === "predictions_cleaned.csv") return 5;
+  return 6;
 }
 
 function parseTimeseriesGroupKey(pos: number | null, roi: number | null): string {
@@ -339,6 +344,7 @@ export function parsePanelGroups(
   const headerMap = Object.fromEntries(headers.map((header, index) => [header, index]));
   const tIndex = headerMap.t ?? -1;
   const correctedIndex = headerMap.corrected ?? -1;
+  const pDeadIndex = headerMap.p_dead ?? -1;
   const areaIndex = headerMap.area ?? -1;
   const posIndex = headerMap.pos ?? -1;
   const roiIndex = headerMap.roi ?? -1;
@@ -347,7 +353,10 @@ export function parsePanelGroups(
 
   const resultPanels: ResultPanel[] = [];
 
-  const makeTimeseriesPanel = (metricIndex: number, metric: "corrected" | "area") => {
+  const makeTimeseriesPanel = (
+    metricIndex: number,
+    metric: "corrected" | "area" | "p_dead",
+  ) => {
     if (tIndex < 0 || metricIndex < 0) return;
     const traces = new Map<string, TimeseriesTrace>();
 
@@ -397,7 +406,12 @@ export function parsePanelGroups(
       fileName: file.fileName,
       path: file.path,
       xAxisLabel: "minutes",
-      yAxisLabel: metric === "corrected" ? "corrected intensity" : "mask area",
+      yAxisLabel:
+        metric === "corrected"
+          ? "corrected intensity"
+          : metric === "area"
+            ? "mask area"
+            : "P(dead)",
       traces: grouped,
     });
   };
@@ -427,11 +441,11 @@ export function parsePanelGroups(
       const label = formatSlideChannelTickLabel(slideChannel, points.length, slideChannelLabels);
       resultPanels.push({
         kind: "generic",
-        title: `Kill curve (${label})`,
+        title: `N(alive) (${label})`,
         fileName: file.fileName,
         path: file.path,
         xAxisLabel: "minutes",
-        yAxisLabel: "n alive",
+        yAxisLabel: "N(alive)",
         series: [
           {
             dataKey: `kill_curve_${slideChannel}`,
@@ -448,33 +462,40 @@ export function parsePanelGroups(
   }
 
   if (deathTimeIndex >= 0) {
-    const values: number[] = [];
+    const grouped = new Map<number, number[]>();
     for (const row of rows) {
       const deathTime = parseNumeric(row[deathTimeIndex] ?? "");
       if (deathTime === null || deathTime <= 0) continue;
-      if (slideChannelForKillIndex >= 0) {
-        const slideChannel = parseNumeric(row[slideChannelForKillIndex] ?? "");
-        if (slideChannel === null || !Number.isInteger(slideChannel)) continue;
-      }
-      values.push(deathTime * timeseriesXScale);
+      const slideChannel =
+        slideChannelForKillIndex >= 0 ? parseNumeric(row[slideChannelForKillIndex] ?? "") : 0;
+      if (slideChannel === null || !Number.isInteger(slideChannel)) continue;
+      const bucket = grouped.get(slideChannel) ?? [];
+      bucket.push(deathTime * timeseriesXScale);
+      grouped.set(slideChannel, bucket);
     }
-    if (values.length > 0) {
+
+    for (const [slideChannel, values] of Array.from(grouped.entries()).toSorted(
+      ([left], [right]) => left - right,
+    )) {
+      if (values.length === 0) continue;
+      const label = formatSlideChannelTickLabel(slideChannel, values.length, slideChannelLabels);
       resultPanels.push({
         kind: "histogram",
-        title: `${file.fileName}: death time distribution`,
+        title: `T_death (${label})`,
         fileName: file.fileName,
         path: file.path,
         xAxisLabel: "minutes",
         yAxisLabel: "n crops",
         values,
       });
-      return resultPanels;
     }
+    if (resultPanels.length > 0) return resultPanels;
   }
 
-  if (tIndex >= 0 && (correctedIndex >= 0 || areaIndex >= 0)) {
+  if (tIndex >= 0 && (correctedIndex >= 0 || areaIndex >= 0 || pDeadIndex >= 0)) {
     if (correctedIndex >= 0) makeTimeseriesPanel(correctedIndex, "corrected");
     if (areaIndex >= 0) makeTimeseriesPanel(areaIndex, "area");
+    if (pDeadIndex >= 0) makeTimeseriesPanel(pDeadIndex, "p_dead");
     if (resultPanels.length > 0) return resultPanels;
   }
 
@@ -568,7 +589,11 @@ export function parsePanelGroups(
 export type ResultPlotSection = "timeseries" | "parameters";
 
 export function resultPlotSection(file: StudioAnalysisCsvFile): ResultPlotSection {
-  if (file.kind === "timeseries" || file.fileName === "kill_curve.csv") {
+  if (
+    file.kind === "timeseries" ||
+    file.fileName === "kill_curve.csv" ||
+    file.fileName === "death_times.csv"
+  ) {
     return "timeseries";
   }
   return "parameters";
