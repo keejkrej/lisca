@@ -20,13 +20,13 @@ pub fn parse_slide_channel(path: &Path) -> Option<u32> {
     channel.parse().ok()
 }
 
-pub fn percentile_ylim(values: &[f64]) -> (f64, f64) {
+pub fn percentile_ylim(values: &[f64], pct: f64) -> (f64, f64) {
     let finite: Vec<f64> = values.iter().copied().filter(|value| value.is_finite()).collect();
     if finite.is_empty() {
         return (0.0, 1.0);
     }
-    let low = percentile(&finite, 1.0);
-    let high = percentile(&finite, 99.0);
+    let low = percentile(&finite, pct);
+    let high = percentile(&finite, 100.0 - pct);
     expand_degenerate_ylim(low, high)
 }
 

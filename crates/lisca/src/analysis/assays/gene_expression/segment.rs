@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fs::File;
 use std::path::Path;
 
@@ -10,6 +11,14 @@ use crate::analysis::roi_stack::{
 use crate::analysis::slide::SlideMapping;
 
 use super::image_ops::segment_frame;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct PositionSegmentResult {
+    slide_channel: u32,
+    position: u32,
+    mask_count: usize,
+    skipped: bool,
+}
 
 #[derive(Debug, Clone)]
 pub struct SegmentOptions {
@@ -52,10 +61,10 @@ pub fn run_segment(workspace: &Path, mapping: &SlideMapping, options: &SegmentOp
         .build()
         .map_err(|error| error.to_string())?;
 
-    pool.install(|| {
+    let results = pool.install(|| {
         tasks
             .par_iter()
-            .try_for_each(|(slide_channel, mask_channel, position)| {
+            .map(|(slide_channel, mask_channel, position)| {
                 run_position_segmentation(
                     workspace,
                     *slide_channel,
@@ -64,22 +73,56 @@ pub fn run_segment(workspace: &Path, mapping: &SlideMapping, options: &SegmentOp
                     options,
                 )
             })
-    })
+            .collect::<Result<Vec<_>, String>>()
+    })?;
+
+    let mut skipped_positions: BTreeMap<u32, Vec<u32>> = BTreeMap::new();
+    let mut masks_written = 0usize;
+    for result in results {
+        if result.skipped {
+            skipped_positions
+                .entry(result.slide_channel)
+                .or_default()
+                .push(result.position);
+        } else {
+            masks_written += result.mask_count;
+        }
+    }
+
+    if masks_written == 0 {
+        if !skipped_positions.is_empty() {
+            let skipped_summary = format_skipped_positions(&skipped_positions);
+            return Err(format!(
+                "No ROI masks written. Skipped positions: {skipped_summary}"
+            ));
+        }
+        return Err("slide mapping defines no valid positions".to_string());
+    }
+
+    Ok(())
 }
 
 fn run_position_segmentation(
     workspace: &Path,
-    _slide_channel: u32,
+    slide_channel: u32,
     mask_channel: u32,
     position: u32,
     options: &SegmentOptions,
-) -> Result<(), String> {
+) -> Result<PositionSegmentResult, String> {
     let pos_dir = match position_dir(workspace, position) {
         Ok(path) => path,
-        Err(_) => return Ok(()),
+        Err(_) => {
+            return Ok(PositionSegmentResult {
+                slide_channel,
+                position,
+                mask_count: 0,
+                skipped: true,
+            });
+        }
     };
     let index = read_position_index(&pos_dir)?;
     validate_channel_index(&index, mask_channel)?;
+    let mut mask_count = 0usize;
 
     for roi in &index.rois {
         let output_path = crate::analysis::roi_stack::default_mask_path(
@@ -88,6 +131,7 @@ fn run_position_segmentation(
             &roi.file_name,
         );
         if output_path.exists() && !options.force {
+            mask_count += 1;
             continue;
         }
         let roi_path = pos_dir.join(&roi.file_name);
@@ -116,8 +160,29 @@ fn run_position_segmentation(
             ));
         }
         write_mask_tif(&output_path, &masks, width, height)?;
+        mask_count += 1;
     }
-    Ok(())
+    Ok(PositionSegmentResult {
+        slide_channel,
+        position,
+        mask_count,
+        skipped: false,
+    })
+}
+
+fn format_skipped_positions(skipped_positions: &BTreeMap<u32, Vec<u32>>) -> String {
+    skipped_positions
+        .iter()
+        .map(|(slide_channel, positions)| {
+            let listed = positions
+                .iter()
+                .map(|position| position.to_string())
+                .collect::<Vec<_>>()
+                .join(", ");
+            format!("slide channel {slide_channel} -> {listed}")
+        })
+        .collect::<Vec<_>>()
+        .join("; ")
 }
 
 fn write_mask_tif(path: &Path, masks: &[Vec<bool>], width: usize, height: usize) -> Result<(), String> {
@@ -141,4 +206,54 @@ pub fn default_jobs() -> usize {
         .map(usize::from)
         .unwrap_or(1)
         .max(1)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeMap;
+
+    use super::*;
+    use crate::analysis::slide::{SlideChannelMapping, SlideMapping};
+
+    fn test_mapping(positions: Vec<u32>) -> SlideMapping {
+        let mut mapping = BTreeMap::new();
+        mapping.insert(
+            0,
+            SlideChannelMapping {
+                positions,
+                signal_channel: 1,
+                mask_channel: 0,
+                sample_name: "test".to_string(),
+            },
+        );
+        mapping
+    }
+
+    fn test_workspace(label: &str) -> std::path::PathBuf {
+        std::env::temp_dir().join(format!("lisca-seg-{label}-{}", std::process::id()))
+    }
+
+    #[test]
+    fn segment_errors_on_empty_mapping() {
+        let workspace = test_workspace("empty");
+        let _ = std::fs::remove_dir_all(&workspace);
+        std::fs::create_dir_all(&workspace).unwrap();
+        let mapping = SlideMapping::new();
+        let err = run_segment(&workspace, &mapping, &SegmentOptions::default()).unwrap_err();
+        assert!(err.contains("no valid positions"));
+        let _ = std::fs::remove_dir_all(&workspace);
+    }
+
+    #[test]
+    fn segment_errors_when_all_positions_missing() {
+        let workspace = test_workspace("missing");
+        let _ = std::fs::remove_dir_all(&workspace);
+        std::fs::create_dir_all(&workspace).unwrap();
+        let mapping = test_mapping(vec![1, 2]);
+        let err = run_segment(&workspace, &mapping, &SegmentOptions::default()).unwrap_err();
+        assert!(err.contains("No ROI masks written"));
+        assert!(err.contains("Skipped positions"));
+        assert!(err.contains("slide channel 0 -> 1, 2"));
+        let _ = std::fs::remove_dir_all(&workspace);
+    }
 }

@@ -5,8 +5,8 @@ use mplot::prelude::{AxesStyle, BoxplotStyle, GridPos, Scale};
 
 use crate::analysis::csv_io::{column_index, parse_f64, read_csv};
 use crate::analysis::plot::{
-    boxplot_tick_label, boxplot_x_axis_label, default_figure_builder, save_figure,
-    slide_channel_labels,
+    boxplot_tick_label, boxplot_x_axis_label, default_figure_builder, percentile_ylim,
+    save_figure, slide_channel_labels,
 };
 use crate::analysis::slide::SlideMapping;
 
@@ -31,7 +31,7 @@ pub fn run_plot_auc(workspace: &Path, mapping: &SlideMapping) -> Result<(), Stri
         }
     }
     if grouped.is_empty() {
-        return Err("No positive AUC values available for log-scale plotting".to_string());
+        return Err("No positive AUC values available for plotting".to_string());
     }
 
     let channels: Vec<u32> = grouped.keys().copied().collect();
@@ -40,11 +40,20 @@ pub fn run_plot_auc(workspace: &Path, mapping: &SlideMapping) -> Result<(), Stri
         .map(|channel| grouped.get(channel).cloned().unwrap_or_default())
         .collect();
 
+    let results_dir = workspace.join("results");
     write_auc_boxplot(
-        &workspace.join("results").join("auc.png"),
+        &results_dir.join("auc.png"),
         &channels,
         &grouped_values,
         &labels,
+        false,
+    )?;
+    write_auc_boxplot(
+        &results_dir.join("auc_log.png"),
+        &channels,
+        &grouped_values,
+        &labels,
+        true,
     )
 }
 
@@ -53,6 +62,7 @@ fn write_auc_boxplot(
     channels: &[u32],
     grouped_values: &[Vec<f64>],
     labels: &BTreeMap<u32, String>,
+    log_scale: bool,
 ) -> Result<(), String> {
     let ticks: Vec<i32> = (1..=channels.len()).map(|index| index as i32).collect();
     let tick_labels: Vec<String> = channels
@@ -65,13 +75,18 @@ fn write_auc_boxplot(
 
     let figure = default_figure_builder()
         .panel(GridPos::new(1, 1, 1), |p| {
-            p.boxplot(grouped_values, BoxplotStyle::new()).axes(
-                AxesStyle::new()
-                    .x_label(boxplot_x_axis_label(labels))
-                    .y_label("AUC")
-                    .y_scale(Scale::Log)
-                    .x_tick_labels(&ticks, &tick_labels),
-            );
+            let mut axes = AxesStyle::new()
+                .x_label(boxplot_x_axis_label(labels))
+                .y_label("AUC")
+                .x_tick_labels(&ticks, &tick_labels);
+            if log_scale {
+                axes = axes.y_scale(Scale::Log);
+            } else {
+                let all_values: Vec<f64> = grouped_values.iter().flatten().copied().collect();
+                let (y_low, y_high) = percentile_ylim(&all_values, 5.0);
+                axes = axes.y_range(y_low, y_high);
+            }
+            p.boxplot(grouped_values, BoxplotStyle::new()).axes(axes);
         })
         .build()
         .map_err(|error| error.to_string())?;

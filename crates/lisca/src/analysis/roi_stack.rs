@@ -112,7 +112,7 @@ impl RoiStack {
             expected_shape[3] as usize,
             expected_shape[4] as usize,
         ];
-        let expected_pages = expected.iter().product::<usize>();
+        let expected_pages = expected[0] * expected[1] * expected[2];
         let file = File::open(path).map_err(|error| error.to_string())?;
         let mut decoder = Decoder::new(BufReader::new(file)).map_err(|error| error.to_string())?;
         let mut pages = Vec::with_capacity(expected_pages);

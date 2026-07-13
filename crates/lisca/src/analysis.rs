@@ -3,7 +3,7 @@
 pub mod array;
 
 #[cfg(feature = "studio")]
-mod assays;
+pub mod assays;
 #[cfg(feature = "studio")]
 mod csv_io;
 #[cfg(feature = "studio")]
@@ -19,7 +19,7 @@ mod progress;
 #[cfg(feature = "studio")]
 mod roi_stack;
 #[cfg(feature = "studio")]
-mod slide;
+pub mod slide;
 
 #[cfg(feature = "studio")]
 pub use output::{workspace_analysis_manifest, workspace_analysis_outputs};

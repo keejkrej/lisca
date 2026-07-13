@@ -64,6 +64,11 @@ export const AssayBasicInfoStep3Schema = Schema.Struct({
   samples: AssaySamplesSchema,
 }).annotations({ identifier: "AssayBasicInfoStep3" });
 
+/** Gene-expression analysis options (optional section on assay.json). */
+export const AssayAnalysisConfigSchema = Schema.Struct({
+  maxOnsetMinutes: Schema.optional(F64),
+}).annotations({ identifier: "AssayAnalysisConfig" });
+
 export const AssayJsonFileSchema = Schema.Struct({
   assayId: AssayTypeSchema,
   assayLabel: Schema.String,
@@ -71,6 +76,7 @@ export const AssayJsonFileSchema = Schema.Struct({
   info1: AssayBasicInfoStep1Schema,
   info2: AssayBasicInfoStep2Schema,
   info3: AssayBasicInfoStep3Schema,
+  analysis: Schema.optional(AssayAnalysisConfigSchema),
 }).annotations({ identifier: "AssayJsonFile" });
 
 // Derived on-disk types (`AssayType`/`AssayFeature` here are schema unions;
@@ -83,4 +89,5 @@ export type AssayBasicInfoStep1 = typeof AssayBasicInfoStep1Schema.Type;
 export type AssayBasicInfoStep2 = typeof AssayBasicInfoStep2Schema.Type;
 export type AssaySampleRow = typeof AssaySampleRowSchema.Type;
 export type AssayBasicInfoStep3 = typeof AssayBasicInfoStep3Schema.Type;
+export type AssayAnalysisConfig = typeof AssayAnalysisConfigSchema.Type;
 export type AssayJsonFile = typeof AssayJsonFileSchema.Type;

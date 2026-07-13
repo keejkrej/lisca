@@ -269,8 +269,8 @@ function fitParameterValue(
       return read("protein_lifetime") ?? (proteinDecayRate ? 1 / proteinDecayRate : null);
     case "mrna_lifetime":
       return read("mrna_lifetime") ?? (mrnaDecayRate ? 1 / mrnaDecayRate : null);
-    case "transfection_efficiency": {
-      const direct = read("transfection_efficiency");
+    case "expression_rate": {
+      const direct = read("expression_rate") ?? read("transfection_efficiency");
       if (direct !== null) return direct;
       if (expressionAmplitude === null || mrnaDecayRate === null || proteinDecayRate === null) {
         return null;
@@ -527,7 +527,7 @@ export function parsePanelGroups(
     slideChannelIndex >= 0
   ) {
     for (const [parameter, label] of PLOTTED_FIT_PARAMETERS) {
-      const useLogScale = parameter === "transfection_efficiency";
+      const useLogScale = parameter === "expression_rate";
       const groups = buildBoxPlotGroups(
         rows,
         slideChannelIndex,

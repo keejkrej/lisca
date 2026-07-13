@@ -123,4 +123,22 @@ mod tests {
         let auc = trapezoidal_integral(&times, &values);
         assert!((auc - 4.0).abs() < 1e-9);
     }
+
+    #[test]
+    fn auc_errors_when_csv_has_no_data_rows() {
+        let workspace =
+            std::env::temp_dir().join(format!("lisca-auc-empty-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&workspace);
+        let timeseries_dir = workspace.join("timeseries");
+        std::fs::create_dir_all(&timeseries_dir).unwrap();
+        std::fs::write(
+            timeseries_dir.join("sc0_ch1.csv"),
+            "pos,roi,t,area,background,intensity,corrected\n",
+        )
+        .unwrap();
+
+        let err = run_auc(&workspace, 1.0).unwrap_err();
+        assert!(err.contains("No AUC rows produced"));
+        let _ = std::fs::remove_dir_all(&workspace);
+    }
 }

@@ -305,7 +305,7 @@ struct FitCsvRow {
     mrna_lifetime: Option<f64>,
     translation_onset: Option<f64>,
     expression_amplitude: Option<f64>,
-    transfection_efficiency: Option<f64>,
+    expression_rate: Option<f64>,
     success: bool,
 }
 
@@ -326,7 +326,7 @@ fn successful_fit_row(
         mrna_lifetime: Some(1.0 / result.mrna_decay_rate),
         translation_onset: Some(result.translation_onset),
         expression_amplitude: Some(result.expression_amplitude),
-        transfection_efficiency: Some(
+        expression_rate: Some(
             result.expression_amplitude * (result.mrna_decay_rate - result.protein_decay_rate),
         ),
         success: true,
@@ -345,7 +345,7 @@ fn failed_fit_row(slide_channel: Option<u32>, pos: i64, roi: i64) -> FitCsvRow {
         mrna_lifetime: None,
         translation_onset: None,
         expression_amplitude: None,
-        transfection_efficiency: None,
+        expression_rate: None,
         success: false,
     }
 }
@@ -362,7 +362,7 @@ fn write_fit_csv(path: &Path, rows: &[FitCsvRow]) -> Result<(), String> {
         "mrna_lifetime",
         "translation_onset",
         "expression_amplitude",
-        "transfection_efficiency",
+        "expression_rate",
         "success",
     ];
     let csv_rows = rows
@@ -381,7 +381,7 @@ fn write_fit_csv(path: &Path, rows: &[FitCsvRow]) -> Result<(), String> {
                 format_optional(row.mrna_lifetime),
                 format_optional(row.translation_onset),
                 format_optional(row.expression_amplitude),
-                format_optional(row.transfection_efficiency),
+                format_optional(row.expression_rate),
                 if row.success { "true" } else { "false" }.to_string(),
             ]
         })

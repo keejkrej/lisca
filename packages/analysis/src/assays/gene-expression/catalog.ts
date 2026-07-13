@@ -2,7 +2,7 @@
 export const DISPLAYED_PARAMETER_PLOTS = [
   { id: "mrna_lifetime", label: "mRNA lifetime" },
   { id: "auc", label: "AUC" },
-  { id: "transfection_efficiency", label: "transfection efficiency" },
+  { id: "expression_rate", label: "expression rate" },
   { id: "translation_onset", label: "translation onset" },
 ] as const;
 
@@ -20,7 +20,7 @@ export const PLOTTED_FIT_PARAMETERS = [
   ["protein_lifetime", "protein lifetime"],
   ["mrna_lifetime", "mRNA lifetime"],
   ["translation_onset", "translation onset"],
-  ["transfection_efficiency", "transfection efficiency"],
+  ["expression_rate", "expression rate"],
 ] as const;
 
 export type DisplayedParameterPlotId = (typeof DISPLAYED_PARAMETER_PLOTS)[number]["id"];

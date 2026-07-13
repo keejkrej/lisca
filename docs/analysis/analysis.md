@@ -110,7 +110,7 @@ uv run optimum-cli export onnx --model keejkrej/immune-killing-resnet18 ./models
 | `results/auc.csv`                                                            | Trapezoidal AUC per `(pos, roi)` trace (+ `.xlsx`)     |
 | `results/fit.csv`                                                            | Two-exponential kinetic fit parameters (+ `.xlsx`)     |
 | `results/traces.png`, `traces_shared_y.png`, `area.png`, `area_shared_y.png` | Timeseries plots                                       |
-| `results/auc.png`                                                            | AUC boxplot                                            |
+| `results/auc.png`, `results/auc_log.png`                                      | AUC boxplots (linear and log y-scale)                  |
 | `results/{parameter}.png`, `results/traces_fit.png`                          | Fit parameter boxplots and fitted trace grid           |
 
 Studio results UI reads CSVs for interactive charts; PNG filenames match transfection output.
@@ -156,7 +156,7 @@ Plots render natively in Rust (no Python sidecar). Figure layout constants match
 - **Not required**: matching transfection/mupattern module names, NumPy vs loop structure, or bitwise float identity.
 - Position ranges in `assay.json` use **inclusive** Studio semantics (`1:12` → positions 1…12).
 - Segmentation defaults: `variation_radius=2`, `gaussian_sigma=1.0`.
-- Fit uses the two-pass pooled-protein strategy with `max_onset_minutes=0` unless extended later.
+- Fit uses the two-pass pooled-protein strategy. Optional `analysis.maxOnsetMinutes` in `assay.json` (default `0`) caps candidate translation-onset times, matching transfection's `--max-onset-minutes`.
 
 ## Tests
 
@@ -164,4 +164,12 @@ Plots render natively in Rust (no Python sidecar). Figure layout constants match
 cargo test -p lisca
 ```
 
-Unit tests live under each `analysis/` submodule. Golden workspace fixtures (when available) assert output shape and numeric tolerance — not Python source equivalence.
+Unit tests live under each `analysis/` submodule. Integration tests in `crates/lisca/tests/gene_expression_parity.rs` build a minimal synthetic workspace (4×4 ROI, four timepoints) and compare `timeseries/`, `results/auc.csv`, and `results/fit.csv` to transfection reference formulas:
+
+| Output | Tolerance |
+| ------ | --------- |
+| Masked intensity / trapezoidal AUC | relative `1e-6` |
+| Kinetic fit parameters (grid search, Rust reference) | relative `1e-5` |
+| Kinetic fit vs transfection Python CLI (optional ignored test) | relative `2e-2` on shared fit columns |
+
+An optional ignored test runs the sibling transfection CLI when `../transfection` is available (`cargo test -p lisca -- --ignored`).

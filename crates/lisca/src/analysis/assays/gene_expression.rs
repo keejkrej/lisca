@@ -7,7 +7,9 @@ mod segment;
 mod timeseries;
 mod traces;
 
-pub use auc::discover_timeseries_csvs;
+pub use auc::{discover_timeseries_csvs, run_auc};
+pub use fit::run_fit;
+pub use timeseries::run_timeseries;
 pub use traces::{load_trace_panel, TracePanel};
 
 use std::path::{Path, PathBuf};
@@ -20,7 +22,15 @@ use crate::analysis::slide::{build_slide_mapping, parse_interval_minutes, write_
 
 use plot::{run_plot_auc, run_plot_fit, run_plot_timeseries, DEFAULT_PLOT_COLUMNS};
 use segment::{run_segment, SegmentOptions};
-use timeseries::{default_timeseries_jobs, run_timeseries};
+use timeseries::default_timeseries_jobs;
+
+fn max_onset_minutes(assay_json: &AssayJsonFile) -> f64 {
+    assay_json
+        .analysis
+        .as_ref()
+        .and_then(|analysis| analysis.max_onset_minutes)
+        .unwrap_or(0.0)
+}
 
 pub async fn run<F>(
     workspace_path: PathBuf,
@@ -113,9 +123,10 @@ where
         .await
         .map_err(|error| format!("plot-auc step failed: {error}"))?;
 
+    let max_onset = max_onset_minutes(&assay_json);
     run_blocking({
         let workspace = workspace_path.clone();
-        move || fit::run_fit(&workspace, interval, 0.0, fit::default_fit_jobs())
+        move || fit::run_fit(&workspace, interval, max_onset, fit::default_fit_jobs())
     })
     .await
     .map_err(|error| format!("fit step failed: {error}"))?;
@@ -172,7 +183,12 @@ pub fn run_sync(workspace: &Path, assay_json: &AssayJsonFile) -> Result<(), Stri
     run_plot_timeseries(workspace, &mapping, interval, DEFAULT_PLOT_COLUMNS)?;
     auc::run_auc(workspace, interval)?;
     run_plot_auc(workspace, &mapping)?;
-    fit::run_fit(workspace, interval, 0.0, fit::default_fit_jobs())?;
+    fit::run_fit(
+        workspace,
+        interval,
+        max_onset_minutes(assay_json),
+        fit::default_fit_jobs(),
+    )?;
     run_plot_fit(workspace, &mapping, interval, DEFAULT_PLOT_COLUMNS)?;
     Ok(())
 }

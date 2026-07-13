@@ -1851,6 +1851,9 @@
         },
         "info3": {
           "$ref": "#/definitions/AssayBasicInfoStep3"
+        },
+        "analysis": {
+          "$ref": "#/definitions/AssayAnalysisConfig"
         }
       }
     },
@@ -1994,6 +1997,16 @@
         },
         "positions": {
           "type": "string"
+        }
+      }
+    },
+    "AssayAnalysisConfig": {
+      "type": "object",
+      "required": [],
+      "properties": {
+        "maxOnsetMinutes": {
+          "type": "number",
+          "format": "double"
         }
       }
     },

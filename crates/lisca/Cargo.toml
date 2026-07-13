@@ -40,6 +40,10 @@ imageproc = { workspace = true, optional = true }
 ort = { workspace = true, optional = true }
 
 [dev-dependencies]
+csv.workspace = true
+serde_json.workspace = true
+tempfile = "3"
+tiff.workspace = true
 tower = { version = "0.5", features = ["util"] }
 
 [[bin]]

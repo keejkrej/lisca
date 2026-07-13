@@ -834,6 +834,43 @@ impl ::std::convert::TryFrom<::std::string::String> for AppId {
         value.parse()
     }
 }
+#[doc = "`AssayAnalysisConfig`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"maxOnsetMinutes\": {"]
+#[doc = "      \"type\": \"number\","]
+#[doc = "      \"format\": \"double\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct AssayAnalysisConfig {
+    #[serde(
+        rename = "maxOnsetMinutes",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub max_onset_minutes: ::std::option::Option<f64>,
+}
+impl ::std::default::Default for AssayAnalysisConfig {
+    fn default() -> Self {
+        Self {
+            max_onset_minutes: Default::default(),
+        }
+    }
+}
+impl AssayAnalysisConfig {
+    pub fn builder() -> builder::AssayAnalysisConfig {
+        Default::default()
+    }
+}
 #[doc = "`AssayBasicInfoStep1`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
@@ -1138,6 +1175,9 @@ impl ::std::convert::TryFrom<::std::string::String> for AssayFeature {
 #[doc = "    \"info3\""]
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
+#[doc = "    \"analysis\": {"]
+#[doc = "      \"$ref\": \"#/definitions/AssayAnalysisConfig\""]
+#[doc = "    },"]
 #[doc = "    \"assayId\": {"]
 #[doc = "      \"$ref\": \"#/definitions/AssayType\""]
 #[doc = "    },"]
@@ -1169,6 +1209,8 @@ impl ::std::convert::TryFrom<::std::string::String> for AssayFeature {
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct AssayJsonFile {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub analysis: ::std::option::Option<AssayAnalysisConfig>,
     #[serde(rename = "assayId")]
     pub assay_id: AssayType,
     #[serde(rename = "assayLabel")]
@@ -5531,6 +5573,46 @@ pub mod builder {
         }
     }
     #[derive(Clone, Debug)]
+    pub struct AssayAnalysisConfig {
+        max_onset_minutes: ::std::result::Result<::std::option::Option<f64>, ::std::string::String>,
+    }
+    impl ::std::default::Default for AssayAnalysisConfig {
+        fn default() -> Self {
+            Self {
+                max_onset_minutes: Ok(Default::default()),
+            }
+        }
+    }
+    impl AssayAnalysisConfig {
+        pub fn max_onset_minutes<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<f64>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.max_onset_minutes = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for max_onset_minutes: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<AssayAnalysisConfig> for super::AssayAnalysisConfig {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: AssayAnalysisConfig,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                max_onset_minutes: value.max_onset_minutes?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::AssayAnalysisConfig> for AssayAnalysisConfig {
+        fn from(value: super::AssayAnalysisConfig) -> Self {
+            Self {
+                max_onset_minutes: Ok(value.max_onset_minutes),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
     pub struct AssayBasicInfoStep1 {
         data_path: ::std::result::Result<::std::string::String, ::std::string::String>,
         folder_filename_template:
@@ -5743,6 +5825,10 @@ pub mod builder {
     }
     #[derive(Clone, Debug)]
     pub struct AssayJsonFile {
+        analysis: ::std::result::Result<
+            ::std::option::Option<super::AssayAnalysisConfig>,
+            ::std::string::String,
+        >,
         assay_id: ::std::result::Result<super::AssayType, ::std::string::String>,
         assay_label: ::std::result::Result<::std::string::String, ::std::string::String>,
         data_source_kind: ::std::result::Result<
@@ -5756,6 +5842,7 @@ pub mod builder {
     impl ::std::default::Default for AssayJsonFile {
         fn default() -> Self {
             Self {
+                analysis: Ok(Default::default()),
                 assay_id: Err("no value supplied for assay_id".to_string()),
                 assay_label: Err("no value supplied for assay_label".to_string()),
                 data_source_kind: Err("no value supplied for data_source_kind".to_string()),
@@ -5766,6 +5853,16 @@ pub mod builder {
         }
     }
     impl AssayJsonFile {
+        pub fn analysis<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<super::AssayAnalysisConfig>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.analysis = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for analysis: {e}"));
+            self
+        }
         pub fn assay_id<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<super::AssayType>,
@@ -5833,6 +5930,7 @@ pub mod builder {
             value: AssayJsonFile,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
+                analysis: value.analysis?,
                 assay_id: value.assay_id?,
                 assay_label: value.assay_label?,
                 data_source_kind: value.data_source_kind?,
@@ -5845,6 +5943,7 @@ pub mod builder {
     impl ::std::convert::From<super::AssayJsonFile> for AssayJsonFile {
         fn from(value: super::AssayJsonFile) -> Self {
             Self {
+                analysis: Ok(value.analysis),
                 assay_id: Ok(value.assay_id),
                 assay_label: Ok(value.assay_label),
                 data_source_kind: Ok(value.data_source_kind),

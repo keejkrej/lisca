@@ -20,7 +20,7 @@ const PLOTTED_PARAMETERS: [(&str, &str); 5] = [
     ("protein_lifetime", "protein lifetime"),
     ("mrna_lifetime", "mRNA lifetime"),
     ("translation_onset", "translation onset"),
-    ("transfection_efficiency", "transfection efficiency"),
+    ("expression_rate", "expression rate"),
 ];
 
 #[derive(Debug, Clone)]
@@ -36,7 +36,7 @@ struct FitPlotRow {
     expression_amplitude: Option<f64>,
     protein_lifetime: Option<f64>,
     mrna_lifetime: Option<f64>,
-    transfection_efficiency: Option<f64>,
+    expression_rate: Option<f64>,
 }
 
 pub fn run_plot_fit(
@@ -51,13 +51,20 @@ pub fn run_plot_fit(
     let results_dir = workspace.join("results");
 
     for (parameter, label) in PLOTTED_PARAMETERS {
-        write_fit_boxplot(
-            &rows,
-            parameter,
-            label,
-            &results_dir.join(format!("{parameter}.png")),
-            &labels,
-        )?;
+        let output_plot = results_dir.join(format!("{parameter}.png"));
+        if parameter == "expression_rate" {
+            write_fit_boxplot(&rows, parameter, label, &output_plot, &labels, false)?;
+            write_fit_boxplot(
+                &rows,
+                parameter,
+                label,
+                &results_dir.join("expression_rate_log.png"),
+                &labels,
+                true,
+            )?;
+            continue;
+        }
+        write_fit_boxplot(&rows, parameter, label, &output_plot, &labels, false)?;
     }
 
     let timeseries_csvs = discover_timeseries_csvs(&workspace.join("timeseries"))?;
@@ -110,12 +117,14 @@ fn load_fit_rows(path: &Path) -> Result<Vec<FitPlotRow>, String> {
                 .or_else(|| protein_decay_rate.map(|rate| 1.0 / rate)),
             mrna_lifetime: read_opt(&row, "mrna_lifetime")
                 .or_else(|| mrna_decay_rate.map(|rate| 1.0 / rate)),
-            transfection_efficiency: read_opt(&row, "transfection_efficiency").or({
-                match (expression_amplitude, mrna_decay_rate, protein_decay_rate) {
-                    (Some(amp), Some(mrna), Some(protein)) => Some(amp * (mrna - protein)),
-                    _ => None,
-                }
-            }),
+            expression_rate: read_opt(&row, "expression_rate")
+                .or_else(|| read_opt(&row, "transfection_efficiency"))
+                .or_else(|| {
+                    match (expression_amplitude, mrna_decay_rate, protein_decay_rate) {
+                        (Some(amp), Some(mrna), Some(protein)) => Some(amp * (mrna - protein)),
+                        _ => None,
+                    }
+                }),
         });
     }
     if parsed.is_empty() {
@@ -133,7 +142,7 @@ fn parameter_value(row: &FitPlotRow, parameter: &str) -> Option<f64> {
         "protein_lifetime" => row.protein_lifetime,
         "mrna_lifetime" => row.mrna_lifetime,
         "translation_onset" => row.translation_onset,
-        "transfection_efficiency" => row.transfection_efficiency,
+        "expression_rate" => row.expression_rate,
         _ => None,
     }
 }
@@ -144,14 +153,14 @@ fn write_fit_boxplot(
     ylabel: &str,
     output_plot: &Path,
     labels: &BTreeMap<u32, String>,
+    log_scale: bool,
 ) -> Result<(), String> {
-    let use_log_scale = parameter == "transfection_efficiency";
     let mut grouped: BTreeMap<u32, Vec<f64>> = BTreeMap::new();
     for row in rows {
         let Some(value) = parameter_value(row, parameter) else {
             continue;
         };
-        if use_log_scale && value <= 0.0 {
+        if log_scale && value <= 0.0 {
             continue;
         }
         grouped.entry(row.slide_channel).or_default().push(value);
@@ -183,7 +192,7 @@ fn write_fit_boxplot(
                 .x_label(x_label)
                 .y_label(ylabel)
                 .x_tick_labels(&ticks, &tick_labels);
-            if use_log_scale {
+            if log_scale {
                 axes = axes.y_scale(Scale::Log);
             } else {
                 axes = axes.y_range(0.0, y_upper);
@@ -221,7 +230,7 @@ fn write_fitted_trace_grid(
         let groups = group_timeseries_rows(&headers, &data_rows, "corrected", false)?;
         let corrected_values: Vec<f64> = groups.values().flat_map(|trace| trace.iter().map(|(_, value)| *value)).collect();
 
-        let (y_low, y_high) = percentile_ylim(&corrected_values);
+        let (y_low, y_high) = percentile_ylim(&corrected_values, 1.0);
         let max_t = groups
             .values()
             .flat_map(|trace| trace.iter().map(|point| point.0))
