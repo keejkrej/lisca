@@ -59,14 +59,14 @@ The repository already contains user-owned and generated work in progress. Every
 
 **Blocked by:** Cancel and retry Task attempts.
 
-- [ ] Shared headless state derives Operation grouping, active-before-history ordering, bounded progress, statuses, permitted actions, and restrained active/attention indicators from canonical projections.
-- [ ] Snapshot reconciliation plus the existing live-update or polling infrastructure keeps list and detail state current through shared client IO without raw component fetches or a second mutable task model.
-- [ ] The centered modal uses LiSCA shell, modal, typography, icon, and component primitives; it references Chrome downloads for scanability rather than branding or pixel imitation.
-- [ ] The primary list summarizes Operations and does not render hundreds of child Tasks by default; detail reveals Task dependencies, Attempts, structured failures, context, and allowed actions.
-- [ ] Cancel and retry actions reconcile immediately from the canonical command response and communicate invalid transitions without losing the current list/detail context.
-- [ ] A persistent Aligner Task button sits with the top utility actions, remains available when no work exists, and indicates active or attention-needed work without becoming an intrusive progress overlay.
-- [ ] Deterministic headless tests cover all specified aggregate states, action derivation, ordering, attention, history updates, and snapshot/event reconciliation.
-- [ ] Browser coverage opens and dismisses the centered modal from Aligner and proves the current route, position, selections, and editable workflow remain intact with no blocking overlay, forced navigation, or brittle timeout.
+- [x] Shared headless state derives Operation grouping, active-before-history ordering, bounded progress, statuses, permitted actions, and restrained active/attention indicators from canonical projections.
+- [x] Snapshot reconciliation plus the existing live-update or polling infrastructure keeps list and detail state current through shared client IO without raw component fetches or a second mutable task model.
+- [x] The centered modal uses LiSCA shell, modal, typography, icon, and component primitives; it references Chrome downloads for scanability rather than branding or pixel imitation.
+- [x] The primary list summarizes Operations and does not render hundreds of child Tasks by default; detail reveals Task dependencies, Attempts, structured failures, context, and allowed actions.
+- [x] Cancel and retry actions reconcile immediately from the canonical command response and communicate invalid transitions without losing the current list/detail context.
+- [x] A persistent Aligner Task button sits with the top utility actions, remains available when no work exists, and indicates active or attention-needed work without becoming an intrusive progress overlay.
+- [x] Deterministic headless tests cover all specified aggregate states, action derivation, ordering, attention, history updates, and snapshot/event reconciliation.
+- [x] Browser coverage opens and dismisses the centered modal from Aligner and proves the current route, position, selections, and editable workflow remain intact with no blocking overlay, forced navigation, or brittle timeout.
 
 ## Expose the Task Center in Annotator and Studio shells
 
