@@ -7,13 +7,11 @@ import {
 } from "@lisca/ui/features";
 import { clamp } from "@lisca/utils";
 import { createMemo } from "solid-js";
-import { useAlignCrop, useAlignNav } from "../state/align-page-selectors";
+import { useAlignNav } from "../state/align-page-selectors";
 
 export function AlignFrameNavigation() {
   const nav = useAlignNav();
-  const crop = useAlignCrop();
-
-  const disabled = createMemo(() => !nav.scan || crop.cropping);
+  const disabled = createMemo(() => !nav.scan);
   const positionOptions = createMemo(() =>
     toAxisNavigationOptions(nav.scan?.positions ?? [], nav.scan?.positionLabels),
   );
@@ -133,11 +131,15 @@ export function AlignFrameNavigation() {
         },
         onPrevious: () => {
           const max = Math.max(0, (nav.scan?.times?.length ?? 1) - 1);
-          nav.setSelection({ time: nav.scan?.times?.[Math.max(0, clamp(timeIndex(), 0, max) - 1)] ?? 0 });
+          nav.setSelection({
+            time: nav.scan?.times?.[Math.max(0, clamp(timeIndex(), 0, max) - 1)] ?? 0,
+          });
         },
         onNext: () => {
           const max = Math.max(0, (nav.scan?.times?.length ?? 1) - 1);
-          nav.setSelection({ time: nav.scan?.times?.[Math.min(max, clamp(timeIndex(), 0, max) + 1)] ?? 0 });
+          nav.setSelection({
+            time: nav.scan?.times?.[Math.min(max, clamp(timeIndex(), 0, max) + 1)] ?? 0,
+          });
         },
       }}
       zPlane={{
@@ -190,11 +192,15 @@ export function AlignFrameNavigation() {
         },
         onPrevious: () => {
           const max = Math.max(0, (nav.scan?.zSlices?.length ?? 1) - 1);
-          nav.setSelection({ z: nav.scan?.zSlices?.[Math.max(0, clamp(zIndex(), 0, max) - 1)] ?? 0 });
+          nav.setSelection({
+            z: nav.scan?.zSlices?.[Math.max(0, clamp(zIndex(), 0, max) - 1)] ?? 0,
+          });
         },
         onNext: () => {
           const max = Math.max(0, (nav.scan?.zSlices?.length ?? 1) - 1);
-          nav.setSelection({ z: nav.scan?.zSlices?.[Math.min(max, clamp(zIndex(), 0, max) + 1)] ?? 0 });
+          nav.setSelection({
+            z: nav.scan?.zSlices?.[Math.min(max, clamp(zIndex(), 0, max) + 1)] ?? 0,
+          });
         },
       }}
     />

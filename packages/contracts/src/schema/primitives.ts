@@ -10,6 +10,20 @@ export const U32FromString = Schema.NumberFromString.annotations({
   jsonSchema: { type: "integer", format: "uint32", minimum: 0 },
 });
 
+/** Millisecond timestamps remain exactly representable by JavaScript numbers. */
+export const U64 = Schema.Number.pipe(
+  Schema.int(),
+  Schema.nonNegative(),
+  Schema.lessThanOrEqualTo(Number.MAX_SAFE_INTEGER),
+).annotations({
+  jsonSchema: {
+    type: "integer",
+    format: "uint64",
+    minimum: 0,
+    maximum: Number.MAX_SAFE_INTEGER,
+  },
+});
+
 /** JSON Schema `format` pins Rust `i32` in generated serde types. */
 export const I32 = Schema.Number.pipe(Schema.int()).annotations({
   jsonSchema: { type: "integer", format: "int32" },

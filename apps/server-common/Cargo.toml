@@ -8,3 +8,13 @@ description = "Shared internal state bookkeeping for LiSCA servers."
 
 [lints]
 workspace = true
+
+[dependencies]
+axum.workspace = true
+lisca.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+uuid = { workspace = true, features = ["v5"] }
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }

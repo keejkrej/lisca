@@ -2,7 +2,7 @@ use std::{
     collections::{BTreeSet, VecDeque},
     fs,
     fs::File,
-    path::Path,
+    path::{Path, PathBuf},
     sync::{
         atomic::{AtomicBool, Ordering as AtomicOrdering},
         mpsc, Arc, Mutex,
@@ -10,6 +10,7 @@ use std::{
 };
 
 use tiff::encoder::{colortype, TiffEncoder};
+use uuid::Uuid;
 
 use crate::{
     image_source::{scan_source, CachedSourceReader, RawFrame},
@@ -20,11 +21,82 @@ use crate::{
 };
 
 use super::workspace::{
-    bbox_csv_path, list_saved_bbox_positions, parse_bbox_csv, roi_index_path, roi_pos_dir_path,
-    roi_tiff_path,
+    bbox_csv_path, list_saved_bbox_positions, parse_bbox_csv, roi_pos_dir_path,
 };
 
 const CROP_ROI_CHUNK_SIZE: usize = 32;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct CropPositionOutput {
+    pub roi_pages: u32,
+    pub skipped: bool,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum CropPositionError {
+    Cancelled,
+    Failed(String),
+}
+
+pub fn inspect_crop_position(
+    workspace_path: &str,
+    scan: &WorkspaceScan,
+    pos: u32,
+) -> Result<CropPositionOutput, String> {
+    let bbox_path = bbox_csv_path(workspace_path, pos);
+    if !bbox_path.is_file() {
+        return Err(format!("missing bbox CSV: {}", bbox_path.display()));
+    }
+    let bboxes = parse_bbox_csv(&bbox_path)?;
+    Ok(CropPositionOutput {
+        roi_pages: (bboxes.len() as u32)
+            .saturating_mul(scan.times.len().max(1) as u32)
+            .saturating_mul(scan.channels.len().max(1) as u32)
+            .saturating_mul(scan.z_slices.len().max(1) as u32),
+        skipped: bboxes.is_empty(),
+    })
+}
+
+impl From<String> for CropPositionError {
+    fn from(value: String) -> Self {
+        Self::Failed(value)
+    }
+}
+
+/// Crops and atomically publishes exactly one position.
+///
+/// The caller owns scheduling. Cancellation is checked between bounded frame/chunk
+/// writes and immediately before publication. A failed or cancelled call removes
+/// its staging directory and leaves any previously published position untouched.
+pub fn crop_roi_position<F>(
+    request: &CropRoiRequest,
+    scan: &WorkspaceScan,
+    pos: u32,
+    is_cancelled: F,
+) -> Result<CropPositionOutput, CropPositionError>
+where
+    F: Fn() -> bool,
+{
+    if is_cancelled() {
+        return Err(CropPositionError::Cancelled);
+    }
+    let summary = inspect_crop_position(&request.workspace_path, scan, pos)?;
+    if summary.skipped {
+        return Ok(summary);
+    }
+    let bboxes = parse_bbox_csv(&bbox_csv_path(&request.workspace_path, pos))?;
+    let mut source_reader = CachedSourceReader::open(request.source.clone())?;
+    crop_position_atomic(
+        request,
+        scan,
+        pos,
+        &bboxes,
+        &is_cancelled,
+        |_| {},
+        &mut source_reader,
+    )?;
+    Ok(summary)
+}
 
 pub fn crop_roi<F>(
     request: CropRoiRequest,
@@ -244,8 +316,8 @@ struct RoiTiffWriter {
 }
 
 impl RoiTiffWriter {
-    fn create(request: &CropRoiRequest, pos: u32, bbox: &RoiBbox) -> Result<Self, String> {
-        let path = roi_tiff_path(&request.workspace_path, pos, bbox.roi);
+    fn create(output_dir: &Path, bbox: &RoiBbox) -> Result<Self, String> {
+        let path = output_dir.join(format!("Roi{}.tif", bbox.roi));
         let file = File::create(&path).map_err(|error| error.to_string())?;
         let encoder = TiffEncoder::new(file).map_err(|error| error.to_string())?;
         Ok(Self {
@@ -253,6 +325,65 @@ impl RoiTiffWriter {
             encoder,
         })
     }
+}
+
+struct StagingDirectory {
+    path: Option<PathBuf>,
+}
+
+impl StagingDirectory {
+    fn new(path: PathBuf) -> Self {
+        Self { path: Some(path) }
+    }
+
+    fn disarm(&mut self) {
+        self.path = None;
+    }
+}
+
+impl Drop for StagingDirectory {
+    fn drop(&mut self) {
+        if let Some(path) = self.path.take() {
+            let _ = fs::remove_dir_all(path);
+        }
+    }
+}
+
+fn publish_staged_directory(
+    staging_dir: &Path,
+    target_dir: &Path,
+    overwrite: bool,
+) -> Result<(), CropPositionError> {
+    if !target_dir.exists() {
+        return fs::rename(staging_dir, target_dir).map_err(|error| error.to_string().into());
+    }
+    if !overwrite {
+        return Err(CropPositionError::Failed(format!(
+            "{} already exists",
+            target_dir.display()
+        )));
+    }
+
+    let parent = target_dir
+        .parent()
+        .ok_or_else(|| CropPositionError::Failed("crop output has no parent".to_string()))?;
+    let file_name = target_dir
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("position");
+    let backup_dir = parent.join(format!(".{file_name}.previous-{}", Uuid::new_v4()));
+    fs::rename(target_dir, &backup_dir).map_err(|error| error.to_string())?;
+    if let Err(error) = fs::rename(staging_dir, target_dir) {
+        let rollback = fs::rename(&backup_dir, target_dir);
+        return Err(CropPositionError::Failed(match rollback {
+            Ok(()) => error.to_string(),
+            Err(rollback_error) => {
+                format!("{error}; failed to restore previous crop output: {rollback_error}")
+            }
+        }));
+    }
+    let _ = fs::remove_dir_all(backup_dir);
+    Ok(())
 }
 
 type CropJobQueue = Arc<Mutex<VecDeque<(u32, Vec<RoiBbox>)>>>;
@@ -300,11 +431,11 @@ fn crop_position_worker(
             &mut source_reader,
         ) {
             Ok(()) => {}
-            Err(CropPositionStop::Cancelled) => {
+            Err(CropPositionError::Cancelled) => {
                 let _ = event_sender.send(CropPositionEvent::Cancelled { pos });
                 return;
             }
-            Err(CropPositionStop::Error(message)) => {
+            Err(CropPositionError::Failed(message)) => {
                 cancel.store(true, AtomicOrdering::SeqCst);
                 let _ = event_sender.send(CropPositionEvent::Error {
                     pos: Some(pos),
@@ -316,17 +447,6 @@ fn crop_position_worker(
     }
 }
 
-enum CropPositionStop {
-    Cancelled,
-    Error(String),
-}
-
-impl From<String> for CropPositionStop {
-    fn from(value: String) -> Self {
-        Self::Error(value)
-    }
-}
-
 fn crop_position_frame_major(
     request: &CropRoiRequest,
     scan: &WorkspaceScan,
@@ -335,63 +455,110 @@ fn crop_position_frame_major(
     cancel: &AtomicBool,
     event_sender: &mpsc::Sender<CropPositionEvent>,
     source_reader: &mut CachedSourceReader,
-) -> Result<(), CropPositionStop> {
+) -> Result<(), CropPositionError> {
     if cancel.load(AtomicOrdering::SeqCst) {
-        return Err(CropPositionStop::Cancelled);
+        return Err(CropPositionError::Cancelled);
     }
-
-    let target_dir = roi_pos_dir_path(&request.workspace_path, pos);
-    if target_dir.exists() {
-        if request.overwrite {
-            fs::remove_dir_all(&target_dir).map_err(|error| error.to_string())?;
-        } else {
-            return Err(CropPositionStop::Error(format!(
-                "roi/Pos{pos} already exists"
-            )));
-        }
-    }
-    fs::create_dir_all(&target_dir).map_err(|error| error.to_string())?;
-
     let _ = event_sender.send(CropPositionEvent::Started { pos });
-    for chunk in bboxes.chunks(CROP_ROI_CHUNK_SIZE) {
-        if cancel.load(AtomicOrdering::SeqCst) {
-            return Err(CropPositionStop::Cancelled);
-        }
-        write_roi_tiff_chunk_frame_major(
-            request,
-            scan,
-            pos,
-            chunk,
-            cancel,
-            event_sender,
-            source_reader,
-        )?;
-    }
-
-    write_roi_index(request, pos, roi_index_entries(&bboxes, scan), scan)?;
+    crop_position_atomic(
+        request,
+        scan,
+        pos,
+        &bboxes,
+        &|| cancel.load(AtomicOrdering::SeqCst),
+        |count| {
+            let _ = event_sender.send(CropPositionEvent::PagesWritten { pos, count });
+        },
+        source_reader,
+    )?;
     let _ = event_sender.send(CropPositionEvent::Finished { pos });
     Ok(())
 }
 
-fn write_roi_tiff_chunk_frame_major(
+fn crop_position_atomic<F, P>(
     request: &CropRoiRequest,
     scan: &WorkspaceScan,
     pos: u32,
     bboxes: &[RoiBbox],
-    cancel: &AtomicBool,
-    event_sender: &mpsc::Sender<CropPositionEvent>,
+    is_cancelled: &F,
+    mut on_pages_written: P,
     source_reader: &mut CachedSourceReader,
-) -> Result<(), CropPositionStop> {
+) -> Result<(), CropPositionError>
+where
+    F: Fn() -> bool,
+    P: FnMut(u32),
+{
+    if is_cancelled() {
+        return Err(CropPositionError::Cancelled);
+    }
+
+    let target_dir = roi_pos_dir_path(&request.workspace_path, pos);
+    if target_dir.exists() && !request.overwrite {
+        return Err(CropPositionError::Failed(format!(
+            "roi/Pos{pos} already exists"
+        )));
+    }
+    let roi_dir = target_dir
+        .parent()
+        .ok_or_else(|| CropPositionError::Failed("crop output has no parent".to_string()))?;
+    fs::create_dir_all(roi_dir).map_err(|error| error.to_string())?;
+    let staging_dir = roi_dir.join(format!(".Pos{pos}.crop-{}", Uuid::new_v4()));
+    fs::create_dir(&staging_dir).map_err(|error| error.to_string())?;
+    let mut staging = StagingDirectory::new(staging_dir.clone());
+
+    for chunk in bboxes.chunks(CROP_ROI_CHUNK_SIZE) {
+        if is_cancelled() {
+            return Err(CropPositionError::Cancelled);
+        }
+        write_roi_tiff_chunk_frame_major(
+            scan,
+            pos,
+            chunk,
+            &staging_dir,
+            is_cancelled,
+            &mut on_pages_written,
+            source_reader,
+        )?;
+    }
+
+    write_roi_index(
+        request,
+        pos,
+        roi_index_entries(bboxes, scan),
+        scan,
+        &staging_dir,
+    )?;
+    if is_cancelled() {
+        return Err(CropPositionError::Cancelled);
+    }
+    publish_staged_directory(&staging_dir, &target_dir, request.overwrite)?;
+    staging.disarm();
+    Ok(())
+}
+
+fn write_roi_tiff_chunk_frame_major<F, P>(
+    scan: &WorkspaceScan,
+    pos: u32,
+    bboxes: &[RoiBbox],
+    output_dir: &Path,
+    is_cancelled: &F,
+    on_pages_written: &mut P,
+    source_reader: &mut CachedSourceReader,
+) -> Result<(), CropPositionError>
+where
+    F: Fn() -> bool,
+    P: FnMut(u32),
+{
     let mut writers = bboxes
         .iter()
-        .map(|bbox| RoiTiffWriter::create(request, pos, bbox))
+        .map(|bbox| RoiTiffWriter::create(output_dir, bbox))
         .collect::<Result<Vec<_>, _>>()?;
 
     for time in scan.times.iter().copied() {
         for channel in scan.channels.iter().copied() {
             for z in scan.z_slices.iter().copied() {
-                if cancel.load(AtomicOrdering::SeqCst) {
-                    return Err(CropPositionStop::Cancelled);
+                if is_cancelled() {
+                    return Err(CropPositionError::Cancelled);
                 }
                 let raw = source_reader
                     .load_frame(FrameRequest {
@@ -413,10 +580,7 @@ fn write_roi_tiff_chunk_frame_major(
                     let pixels = crop_frame(&raw, &writer.bbox)?;
                     write_roi_tiff_page(&mut writer.encoder, &writer.bbox, &pixels)?;
                 }
-                let _ = event_sender.send(CropPositionEvent::PagesWritten {
-                    pos,
-                    count: writers.len() as u32,
-                });
+                on_pages_written(writers.len() as u32);
             }
         }
     }
@@ -497,6 +661,7 @@ fn write_roi_index(
     pos: u32,
     entries: Vec<RoiIndexEntry>,
     scan: &WorkspaceScan,
+    output_dir: &Path,
 ) -> Result<(), String> {
     let index = RoiIndexFile {
         position: pos,
@@ -509,13 +674,66 @@ fn write_roi_index(
         rois: entries,
     };
     let bytes = serde_json::to_vec_pretty(&index).map_err(|error| error.to_string())?;
-    fs::write(roi_index_path(&request.workspace_path, pos), bytes)
-        .map_err(|error| error.to_string())
+    fs::write(output_dir.join("index.json"), bytes).map_err(|error| error.to_string())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::protocol::{AlignerSource, CropOutputFormat};
+    use image::{GrayImage, Luma};
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use tempfile::TempDir;
+
+    fn fixture(position_count: u32) -> (TempDir, CropRoiRequest, WorkspaceScan) {
+        let root = tempfile::tempdir().expect("temp workspace");
+        let workspace = root.path().join("workspace");
+        let source = root.path().join("source");
+        fs::create_dir_all(workspace.join("bbox")).expect("bbox dir");
+        for pos in 1..=position_count {
+            let source_pos = source.join(format!("Pos{pos}"));
+            fs::create_dir_all(&source_pos).expect("source position");
+            GrayImage::from_pixel(4, 4, Luma([pos as u8]))
+                .save(source_pos.join("img_0_0_0.png"))
+                .expect("source frame");
+            fs::write(
+                workspace.join("bbox").join(format!("Pos{pos}.csv")),
+                "roi,x,y,w,h\n1,0,0,2,2\n",
+            )
+            .expect("bbox");
+        }
+        let request = CropRoiRequest {
+            output_format: Some(CropOutputFormat::Tiff),
+            overwrite: true,
+            positions: (1..=position_count).collect(),
+            request_id: "crop-test".to_string(),
+            source: AlignerSource::Folder {
+                path: source.to_string_lossy().into_owned(),
+                subfolder_template: "Pos{p}".to_string(),
+                filename_template: "img_{t}_{c}_{z}".to_string(),
+            },
+            workspace_path: workspace.to_string_lossy().into_owned(),
+        };
+        let scan = scan_source(request.source.clone()).expect("scan fixture");
+        (root, request, scan)
+    }
+
+    fn staging_entries(request: &CropRoiRequest) -> Vec<PathBuf> {
+        let roi = Path::new(&request.workspace_path).join("roi");
+        fs::read_dir(roi)
+            .map(|entries| {
+                entries
+                    .filter_map(Result::ok)
+                    .map(|entry| entry.path())
+                    .filter(|path| {
+                        path.file_name()
+                            .and_then(|name| name.to_str())
+                            .is_some_and(|name| name.starts_with('.'))
+                    })
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
 
     fn progress() -> CropRoiProgress {
         CropRoiProgress {
@@ -555,5 +773,64 @@ mod tests {
         set_active_position_progress(&mut progress, &active);
         assert_eq!(progress.position, None);
         assert_eq!(progress.message.as_deref(), Some("Cropping 2 positions"));
+    }
+
+    #[test]
+    fn final_checkpoint_cancellation_preserves_previous_output_and_cleans_staging() {
+        let (_root, request, scan) = fixture(1);
+        let published = roi_pos_dir_path(&request.workspace_path, 1);
+        fs::create_dir_all(&published).expect("previous output");
+        fs::write(published.join("sentinel"), "previous").expect("sentinel");
+        let checkpoints = AtomicUsize::new(0);
+
+        let result = crop_roi_position(&request, &scan, 1, || {
+            checkpoints.fetch_add(1, Ordering::SeqCst) >= 4
+        });
+
+        assert_eq!(result, Err(CropPositionError::Cancelled));
+        assert_eq!(
+            fs::read_to_string(published.join("sentinel")).expect("previous output retained"),
+            "previous"
+        );
+        assert!(staging_entries(&request).is_empty());
+    }
+
+    #[test]
+    fn retry_publishes_only_failed_position_and_keeps_successful_sibling() {
+        let (_root, request, scan) = fixture(2);
+        crop_roi_position(&request, &scan, 1, || false).expect("first sibling");
+        let sibling_index =
+            fs::read(roi_pos_dir_path(&request.workspace_path, 1).join("index.json"))
+                .expect("sibling index");
+        fs::write(
+            bbox_csv_path(&request.workspace_path, 2),
+            "roi,x,y,w,h\n1,3,3,4,4\n",
+        )
+        .expect("invalid bbox");
+
+        let failed = crop_roi_position(&request, &scan, 2, || false);
+        assert!(matches!(failed, Err(CropPositionError::Failed(_))));
+        assert!(!roi_pos_dir_path(&request.workspace_path, 2).exists());
+        assert_eq!(
+            fs::read(roi_pos_dir_path(&request.workspace_path, 1).join("index.json"))
+                .expect("sibling remains"),
+            sibling_index
+        );
+        assert!(staging_entries(&request).is_empty());
+
+        fs::write(
+            bbox_csv_path(&request.workspace_path, 2),
+            "roi,x,y,w,h\n1,0,0,2,2\n",
+        )
+        .expect("fixed bbox");
+        crop_roi_position(&request, &scan, 2, || false).expect("position retry");
+        assert!(roi_pos_dir_path(&request.workspace_path, 2)
+            .join("index.json")
+            .is_file());
+        assert_eq!(
+            fs::read(roi_pos_dir_path(&request.workspace_path, 1).join("index.json"))
+                .expect("sibling still remains"),
+            sibling_index
+        );
     }
 }

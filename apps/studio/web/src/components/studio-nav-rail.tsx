@@ -12,6 +12,7 @@ import type { JSX } from "solid-js";
 
 import { studioNavigate, type StudioRouteTo } from "../navigation/use-studio-navigate";
 import { confirmStudioAnnotateLeave } from "../state/studio-annotate-guard";
+import { StudioTaskCenter } from "./studio-task-center";
 
 const navButtonClass =
   "h-auto w-auto min-w-0 max-w-full shrink-0 rounded-lg px-5 py-2.5 text-xl font-medium";
@@ -110,6 +111,7 @@ export function StudioNavRail() {
         </Panel>
       </div>
       <div class="flex shrink-0 flex-row items-center justify-center gap-2">
+        <StudioTaskCenter />
         <ConnectionStatus
           state={server.state}
           httpBaseUrl={server.httpBaseUrl}

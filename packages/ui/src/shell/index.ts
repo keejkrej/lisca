@@ -52,3 +52,4 @@ export {
   type WorkSessionPickerDialogProps,
 } from "./workspace/work-session-picker-dialog";
 export { useHttpProbeForUrl, type ShellHttpProbe } from "./server/use-shell-http-probe";
+export { TaskCenter, type TaskCenterProps } from "./task-center/task-center";

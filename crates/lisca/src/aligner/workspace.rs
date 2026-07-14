@@ -86,14 +86,6 @@ pub(super) fn roi_pos_dir_path(root: &str, pos: u32) -> PathBuf {
     Path::new(root).join("roi").join(format!("Pos{pos}"))
 }
 
-pub(super) fn roi_tiff_path(root: &str, pos: u32, roi: u32) -> PathBuf {
-    roi_pos_dir_path(root, pos).join(format!("Roi{roi}.tif"))
-}
-
-pub(super) fn roi_index_path(root: &str, pos: u32) -> PathBuf {
-    roi_pos_dir_path(root, pos).join("index.json")
-}
-
 pub(super) fn parse_bbox_csv(path: &Path) -> Result<Vec<RoiBbox>, String> {
     let text = fs::read_to_string(path).map_err(|error| format!("{}: {error}", path.display()))?;
     let mut bboxes = Vec::new();

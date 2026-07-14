@@ -4,10 +4,10 @@ import type { ClientEffect } from "./runtime";
 import { clientFail } from "./runtime";
 
 /** Link an optional `AbortSignal` to effect interruption. */
-export function withOptionalAbortSignal<A>(
-  effect: ClientEffect<A>,
+export function withOptionalAbortSignal<A, E = never>(
+  effect: ClientEffect<A, E>,
   signal?: AbortSignal,
-): ClientEffect<A> {
+): ClientEffect<A, E> {
   if (!signal) return effect;
   if (signal.aborted) {
     return clientFail("Request aborted");

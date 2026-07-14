@@ -1,7 +1,6 @@
 import type { AlignGridCellCoord } from "@lisca/contracts";
 import {
   AlignCanvas,
-  CropProgressModal as SharedCropProgressModal,
   cursorForAlignTool,
   useAlignCanvasGridHandlers,
   useAlignCanvasSelectionHandlers,
@@ -10,15 +9,14 @@ import {
 import { ViewportCard } from "@lisca/ui/shell";
 import { createMemo } from "solid-js";
 
-import { useAlignCanvas, useAlignCrop } from "../state/align-page-selectors";
+import { useAlignCanvas } from "../state/align-page-selectors";
 import { CropConfirmModal } from "./crop-confirm-modal";
 
 export function AlignerMain() {
   const canvas = useAlignCanvas();
-  const crop = useAlignCrop();
   const previewRedrawRef = { current: null as (() => void) | null };
   const gridHandlers = useAlignCanvasGridHandlers(() => ({
-    disabled: crop.cropping,
+    disabled: false,
     grid: canvas.grid,
     patternZoomLocked: canvas.patternZoomLocked,
     setGrid: canvas.setGrid,
@@ -26,7 +24,7 @@ export function AlignerMain() {
     onPreviewGridChange: () => previewRedrawRef.current?.(),
   }));
   const selectionHandlers = useAlignCanvasSelectionHandlers(() => ({
-    disabled: crop.cropping,
+    disabled: false,
     enabled: canvas.manualExclusionEnabled,
     excludedCells: canvas.currentExcludedCells,
     frame: canvas.frame,
@@ -115,12 +113,6 @@ export function AlignerMain() {
         />
       </ViewportCard>
       <CropConfirmModal />
-      <SharedCropProgressModal
-        progress={crop.cropProgress}
-        onCancel={() => {
-          if (globalThis.confirm("Cancel the active crop job?")) void crop.cancelCrop();
-        }}
-      />
     </>
   );
 }

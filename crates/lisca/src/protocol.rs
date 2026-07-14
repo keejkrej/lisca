@@ -86,4 +86,55 @@ mod contract_tests {
         let shape: [u32; 5] = entry.shape;
         assert_eq!(shape, [5, 1, 1, 4, 3]);
     }
+
+    #[test]
+    fn task_detail_preserves_operation_task_and_attempt_ids() {
+        let value = json!({
+            "operation": {
+                "operationId": "op-1",
+                "kind": "test-operation",
+                "workspaceId": "workspace-1",
+                "workspacePath": "/workspace",
+                "mutating": true,
+                "status": "running",
+                "attention": "none",
+                "progress": {
+                    "total": 1,
+                    "queued": 0,
+                    "blocked": 0,
+                    "running": 1,
+                    "completed": 0,
+                    "failed": 0,
+                    "cancelled": 0,
+                    "cancellationRequested": 0
+                },
+                "createdAtMs": 1,
+                "updatedAtMs": 2
+            },
+            "tasks": [{
+                "taskId": "task-1",
+                "operationId": "op-1",
+                "taskKind": "test-task",
+                "workspaceId": "workspace-1",
+                "status": "running",
+                "weight": 1,
+                "enqueueOrder": 0,
+                "dependencies": [],
+                "blockedBy": [],
+                "attempts": [{
+                    "attemptId": "attempt-1",
+                    "operationId": "op-1",
+                    "taskId": "task-1",
+                    "status": "running",
+                    "startedAtMs": 2,
+                    "finishedAtMs": null,
+                    "error": null
+                }]
+            }]
+        });
+        let detail: OperationDetail = serde_json::from_value(value).unwrap();
+        assert_eq!(detail.operation.operation_id, "op-1");
+        assert_eq!(detail.tasks[0].task_id, "task-1");
+        assert_eq!(detail.tasks[0].attempts[0].attempt_id, "attempt-1");
+    }
 }

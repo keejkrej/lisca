@@ -31,6 +31,10 @@ import {
   NullableCropRoiProgressSchema,
   NullableSavedAlignStateSchema,
   OutputPathsQuerySchema,
+  OperationDetailQuerySchema,
+  OperationDetailSchema,
+  OperationCancelRequestSchema,
+  OperationListSchema,
   ReadTextFileQuerySchema,
   ReadTextFileResponseSchema,
   RoiFrameAnnotationSchema,
@@ -52,6 +56,10 @@ import {
   SmartExcludeResponseSchema,
   SmartSegmentRequestSchema,
   SmartSegmentResponseSchema,
+  TaskDetailQuerySchema,
+  TaskDetailSchema,
+  TaskCancelRequestSchema,
+  TaskRetryRequestSchema,
   MemoryRecentResponseSchema,
   MemoryTouchRequestSchema,
   MemoryTouchResponseSchema,
@@ -79,6 +87,18 @@ export class Unauthorized extends Schema.TaggedError<Unauthorized>()(
   "Unauthorized",
   { message: Schema.String },
   HttpApiSchema.annotations({ status: 401 }),
+) {}
+
+export class TaskCommandError extends Schema.TaggedError<TaskCommandError>()(
+  "TaskCommandError",
+  {
+    code: Schema.Literal("not-found", "invalid-transition"),
+    entity: Schema.Literal("operation", "task"),
+    id: Schema.String,
+    currentStatus: Schema.NullOr(Schema.String),
+    message: Schema.String,
+  },
+  HttpApiSchema.annotations({ status: 409 }),
 ) {}
 
 // --- fs group (shared host filesystem) ---------------------------------------
@@ -235,6 +255,38 @@ const memoryGroup = HttpApiGroup.make("memory")
       .addError(Unauthorized),
   );
 
+// --- tasks group (shared by every product backend) --------------------------
+const tasksGroup = HttpApiGroup.make("tasks")
+  .add(HttpApiEndpoint.get("listOperations", "/tasks/operations").addSuccess(OperationListSchema))
+  .add(
+    HttpApiEndpoint.get("getOperation", "/tasks/operation")
+      .setUrlParams(OperationDetailQuerySchema)
+      .addSuccess(OperationDetailSchema),
+  )
+  .add(
+    HttpApiEndpoint.get("getTask", "/tasks/task")
+      .setUrlParams(TaskDetailQuerySchema)
+      .addSuccess(TaskDetailSchema),
+  )
+  .add(
+    HttpApiEndpoint.post("cancelOperation", "/tasks/operation/cancel")
+      .setPayload(OperationCancelRequestSchema)
+      .addSuccess(OperationDetailSchema)
+      .addError(TaskCommandError),
+  )
+  .add(
+    HttpApiEndpoint.post("cancelTask", "/tasks/task/cancel")
+      .setPayload(TaskCancelRequestSchema)
+      .addSuccess(OperationDetailSchema)
+      .addError(TaskCommandError),
+  )
+  .add(
+    HttpApiEndpoint.post("retryTask", "/tasks/task/retry")
+      .setPayload(TaskRetryRequestSchema)
+      .addSuccess(OperationDetailSchema)
+      .addError(TaskCommandError),
+  );
+
 // --- studio group ------------------------------------------------------------
 const studioGroup = HttpApiGroup.make("studio")
   .add(
@@ -279,6 +331,7 @@ export const liscaApi = HttpApi.make("lisca")
   .add(annotateGroup)
   .add(profileGroup)
   .add(memoryGroup)
+  .add(tasksGroup)
   .add(studioGroup)
   .addError(RequestError)
   .addError(Unauthorized);

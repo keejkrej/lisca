@@ -1,25 +1,20 @@
 import { AlignToolSection } from "@lisca/ui/features";
 import { DockStrip } from "@lisca/ui/shell";
 
-import { useAlignCanvas, useAlignCrop } from "../state/align-page-selectors";
+import { useAlignCanvas } from "../state/align-page-selectors";
 import { AlignSaveSection } from "./align-save-section";
 
 export function AlignerDock() {
   const canvas = useAlignCanvas();
-  const crop = useAlignCrop();
 
   return (
     <DockStrip>
       <AlignToolSection
         mode={canvas.toolMode}
         patternZoomLocked={canvas.patternZoomLocked}
-        shortcutsEnabled={!crop.cropping}
-        onModeChange={(mode) => {
-          if (!crop.cropping) canvas.setToolMode(mode);
-        }}
-        onPatternZoomLockedChange={(locked) => {
-          if (!crop.cropping) canvas.setPatternZoomLocked(locked);
-        }}
+        shortcutsEnabled
+        onModeChange={canvas.setToolMode}
+        onPatternZoomLockedChange={canvas.setPatternZoomLocked}
       />
       <AlignSaveSection />
     </DockStrip>

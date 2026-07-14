@@ -11,13 +11,8 @@ import {
 import { FrameAspectPanel } from "@lisca/ui/shell";
 import { createMemo, Show } from "solid-js";
 
-import {
-  useStudioAlignCanvas,
-  useStudioAlignCrop,
-  useStudioAlignNav,
-} from "../state/studio-align-page-selectors";
+import { useStudioAlignCanvas, useStudioAlignNav } from "../state/studio-align-page-selectors";
 import { StudioCropConfirmModal } from "./studio-crop-confirm-modal";
-import { StudioCropProgressModal } from "./studio-crop-progress-modal";
 import { StudioCropStartModal } from "./studio-crop-start-modal";
 
 function isSourceNotFoundError(message: string): boolean {
@@ -36,11 +31,10 @@ function alignCanvasAlertText(error: string): string {
 
 export function StudioAlignMain() {
   const canvas = useStudioAlignCanvas();
-  const crop = useStudioAlignCrop();
   const nav = useStudioAlignNav();
   const previewRedrawRef = { current: null as (() => void) | null };
   const gridHandlers = useAlignCanvasGridHandlers(() => ({
-    disabled: crop.cropping,
+    disabled: false,
     grid: canvas.grid,
     patternZoomLocked: canvas.patternZoomLocked,
     setGrid: canvas.setGrid,
@@ -48,7 +42,7 @@ export function StudioAlignMain() {
     onPreviewGridChange: () => previewRedrawRef.current?.(),
   }));
   const selectionHandlers = useAlignCanvasSelectionHandlers(() => ({
-    disabled: crop.cropping,
+    disabled: false,
     enabled: canvas.manualExclusionEnabled,
     excludedCells: canvas.currentExcludedCells,
     frame: canvas.frame,
@@ -78,7 +72,6 @@ export function StudioAlignMain() {
   };
   const visibleStatus = useCanvasTransientStatus(() => canvas.status);
   const operationalStatus = createMemo(() => {
-    if (crop.cropping) return "Cropping ROI output";
     if (canvas.frameLoading) return "Loading frame";
     if (canvas.scanLoading) return "Scanning source";
     return null;
@@ -166,7 +159,6 @@ export function StudioAlignMain() {
       </div>
       <StudioCropStartModal />
       <StudioCropConfirmModal />
-      <StudioCropProgressModal />
     </>
   );
 }

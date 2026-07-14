@@ -1,197 +1,189 @@
 use std::{
     collections::HashMap,
-    sync::{
-        atomic::{AtomicBool, Ordering as AtomicOrdering},
-        Arc, Mutex, MutexGuard,
-    },
+    sync::{Arc, Mutex, MutexGuard},
 };
 
-use lisca::protocol::{CropRoiProgress, CropRoiStatus};
-use lisca_server_common::normalize_workspace_path;
+use lisca::protocol::{
+    CropRoiDisposition, CropRoiProgress, CropRoiStatus, OperationDetail, OperationStatus,
+    TaskStatus,
+};
+use lisca_server_common::{normalize_workspace_path, SchedulerError, TaskScheduler};
 
-#[derive(Clone)]
-pub struct CropJob {
-    pub progress: CropRoiProgress,
-    pub cancel: Arc<AtomicBool>,
+#[derive(Clone, Debug)]
+pub struct CropTaskMetadata {
+    pub task_id: String,
+    pub position: u32,
+    pub roi_pages: u32,
+    pub skipped: bool,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
+pub struct CropOperationRecord {
+    pub request_id: String,
+    pub workspace_path: String,
+    pub operation_id: String,
+    pub tasks: Vec<CropTaskMetadata>,
+}
+
+#[derive(Debug)]
 pub enum CropJobStateError {
     Poisoned,
     RequestIdConflict,
+    Scheduler(SchedulerError),
 }
 
 #[derive(Clone)]
 pub struct CropJobState {
-    inner: Arc<Mutex<CropJobBook>>,
+    inner: Arc<Mutex<CropOperationBook>>,
 }
 
-struct CropJobBook {
-    jobs: HashMap<String, CropJobRecord>,
+struct CropOperationBook {
+    records: HashMap<String, CropOperationRecord>,
     latest_by_workspace: HashMap<String, String>,
 }
 
-struct CropJobRecord {
-    workspace_path: String,
-    worker_running: bool,
-    job: CropJob,
-}
-
-pub enum CropSubmission {
-    Started(CropJob),
-    Attached(CropJob),
-}
-
-impl CropSubmission {
-    pub fn job(&self) -> &CropJob {
-        match self {
-            Self::Started(job) | Self::Attached(job) => job,
-        }
-    }
+pub struct CropSubmission {
+    pub record: CropOperationRecord,
+    pub disposition: CropRoiDisposition,
 }
 
 impl CropJobState {
     pub fn new() -> Self {
         Self {
-            inner: Arc::new(Mutex::new(CropJobBook {
-                jobs: HashMap::new(),
+            inner: Arc::new(Mutex::new(CropOperationBook {
+                records: HashMap::new(),
                 latest_by_workspace: HashMap::new(),
             })),
         }
     }
 
-    fn lock(&self) -> Result<MutexGuard<'_, CropJobBook>, CropJobStateError> {
+    fn lock(&self) -> Result<MutexGuard<'_, CropOperationBook>, CropJobStateError> {
         self.inner.lock().map_err(|_| CropJobStateError::Poisoned)
     }
 
-    pub fn submit_or_attach(
+    pub fn submit_or_attach<F>(
         &self,
+        scheduler: &TaskScheduler,
         workspace_path: &str,
-        request_id: String,
-        job: CropJob,
-    ) -> Result<CropSubmission, CropJobStateError> {
+        request_id: &str,
+        create: F,
+    ) -> Result<CropSubmission, CropJobStateError>
+    where
+        F: FnOnce() -> Result<(OperationDetail, Vec<CropTaskMetadata>), SchedulerError>,
+    {
         let workspace_path = normalize_workspace_path(workspace_path);
         let mut book = self.lock()?;
+        prune_evicted_operations(&mut book, scheduler);
+
+        if let Some(existing) = book.records.get(request_id) {
+            if existing.workspace_path != workspace_path {
+                return Err(CropJobStateError::RequestIdConflict);
+            }
+            scheduler
+                .operation(&existing.operation_id)
+                .map_err(CropJobStateError::Scheduler)?;
+            return Ok(CropSubmission {
+                record: existing.clone(),
+                disposition: CropRoiDisposition::Attached,
+            });
+        }
 
         if let Some(active) = book
             .latest_by_workspace
             .get(&workspace_path)
-            .and_then(|request_id| book.jobs.get(request_id))
-            .filter(|record| {
-                record.worker_running || crop_progress_is_active(record.job.progress.status)
+            .and_then(|latest| book.records.get(latest))
+            .and_then(|record| {
+                scheduler
+                    .operation(&record.operation_id)
+                    .ok()
+                    .filter(|detail| !operation_is_terminal(detail.operation.status))
+                    .map(|_| record.clone())
             })
-            .map(|record| record.job.clone())
         {
-            return Ok(CropSubmission::Attached(active));
+            return Ok(CropSubmission {
+                record: active,
+                disposition: CropRoiDisposition::Attached,
+            });
         }
 
-        // A same-workspace retry is idempotent. The same identifier on another
-        // workspace is a conflict and must never attach to unrelated output.
-        if let Some(existing) = book.jobs.get(&request_id) {
-            return if existing.workspace_path == workspace_path {
-                Ok(CropSubmission::Attached(existing.job.clone()))
-            } else {
-                Err(CropJobStateError::RequestIdConflict)
-            };
-        }
-
+        let (detail, tasks) = create().map_err(CropJobStateError::Scheduler)?;
+        let record = CropOperationRecord {
+            request_id: request_id.to_string(),
+            workspace_path: workspace_path.clone(),
+            operation_id: detail.operation.operation_id.clone(),
+            tasks,
+        };
         book.latest_by_workspace
-            .insert(workspace_path.clone(), request_id.clone());
-        book.jobs.insert(
-            request_id,
-            CropJobRecord {
-                workspace_path,
-                worker_running: true,
-                job: job.clone(),
-            },
-        );
-        Ok(CropSubmission::Started(job))
+            .insert(workspace_path, request_id.to_string());
+        book.records.insert(request_id.to_string(), record.clone());
+        Ok(CropSubmission {
+            record,
+            disposition: CropRoiDisposition::Started,
+        })
     }
 
-    pub fn get(&self, request_id: &str) -> Result<Option<CropJob>, CropJobStateError> {
-        Ok(self
-            .lock()?
-            .jobs
-            .get(request_id)
-            .map(|record| record.job.clone()))
-    }
-
-    pub fn latest(&self, workspace_path: &str) -> Result<Option<CropJob>, CropJobStateError> {
-        let workspace_path = normalize_workspace_path(workspace_path);
-        let book = self.lock()?;
-        Ok(book
-            .latest_by_workspace
-            .get(&workspace_path)
-            .and_then(|request_id| book.jobs.get(request_id))
-            .map(|record| record.job.clone()))
-    }
-
-    pub fn update_progress(
+    pub fn progress(
         &self,
+        scheduler: &TaskScheduler,
         request_id: &str,
-        mut progress: CropRoiProgress,
-    ) -> Result<bool, CropJobStateError> {
-        let mut book = self.lock()?;
-        let Some(record) = book.jobs.get_mut(request_id) else {
-            return Ok(false);
+    ) -> Result<Option<CropRoiProgress>, CropJobStateError> {
+        let record = {
+            let mut book = self.lock()?;
+            prune_evicted_operations(&mut book, scheduler);
+            book.records.get(request_id).cloned()
         };
-        let job = &mut record.job;
-        if !crop_progress_is_terminal(job.progress.status)
-            && !matches!(
-                (job.progress.status, progress.status),
-                (CropRoiStatus::Running, CropRoiStatus::Queued)
-            )
-        {
-            progress.total_positions = progress.total_positions.max(job.progress.total_positions);
-            progress.total_rois = progress.total_rois.max(job.progress.total_rois);
-            progress.completed_positions = progress
-                .completed_positions
-                .max(job.progress.completed_positions)
-                .min(progress.total_positions);
-            progress.completed_rois = progress
-                .completed_rois
-                .max(job.progress.completed_rois)
-                .min(progress.total_rois);
-            job.progress = progress;
-        }
-        Ok(true)
+        record
+            .map(|record| {
+                scheduler
+                    .operation(&record.operation_id)
+                    .map(|detail| project_crop_progress(&record, &detail))
+                    .map_err(CropJobStateError::Scheduler)
+            })
+            .transpose()
     }
 
-    pub fn mark_error(&self, request_id: &str, error: String) -> Result<bool, CropJobStateError> {
-        let mut book = self.lock()?;
-        let Some(record) = book.jobs.get_mut(request_id) else {
-            return Ok(false);
+    pub fn latest_progress(
+        &self,
+        scheduler: &TaskScheduler,
+        workspace_path: &str,
+    ) -> Result<Option<CropRoiProgress>, CropJobStateError> {
+        let workspace_path = normalize_workspace_path(workspace_path);
+        let record = {
+            let mut book = self.lock()?;
+            prune_evicted_operations(&mut book, scheduler);
+            book.latest_by_workspace
+                .get(&workspace_path)
+                .and_then(|request_id| book.records.get(request_id))
+                .cloned()
         };
-        let job = &mut record.job;
-        if !crop_progress_is_terminal(job.progress.status) {
-            job.progress.status = CropRoiStatus::Error;
-            job.progress.error = Some(error);
-            job.progress.message = Some("Crop failed".to_string());
-        }
-        Ok(true)
+        record
+            .map(|record| {
+                scheduler
+                    .operation(&record.operation_id)
+                    .map(|detail| project_crop_progress(&record, &detail))
+                    .map_err(CropJobStateError::Scheduler)
+            })
+            .transpose()
     }
 
-    pub fn cancel(&self, request_id: &str) -> Result<Option<CropJob>, CropJobStateError> {
-        let mut book = self.lock()?;
-        let Some(record) = book.jobs.get_mut(request_id) else {
-            return Ok(None);
+    pub fn cancel(
+        &self,
+        scheduler: &TaskScheduler,
+        request_id: &str,
+    ) -> Result<Option<CropRoiProgress>, CropJobStateError> {
+        let record = {
+            let mut book = self.lock()?;
+            prune_evicted_operations(&mut book, scheduler);
+            book.records.get(request_id).cloned()
         };
-        let job = &mut record.job;
-        job.cancel.store(true, AtomicOrdering::SeqCst);
-        if crop_progress_is_active(job.progress.status) {
-            job.progress.status = CropRoiStatus::Cancelled;
-            job.progress.message = Some("Crop cancellation requested".to_string());
-        }
-        Ok(Some(job.clone()))
-    }
-
-    pub fn mark_worker_finished(&self, request_id: &str) -> Result<bool, CropJobStateError> {
-        let mut book = self.lock()?;
-        let Some(record) = book.jobs.get_mut(request_id) else {
-            return Ok(false);
-        };
-        record.worker_running = false;
-        Ok(true)
+        record
+            .map(|record| {
+                scheduler
+                    .cancel_operation(&record.operation_id)
+                    .map(|detail| project_crop_progress(&record, &detail))
+                    .map_err(CropJobStateError::Scheduler)
+            })
+            .transpose()
     }
 }
 
@@ -201,265 +193,233 @@ impl Default for CropJobState {
     }
 }
 
-pub fn crop_progress_is_active(status: CropRoiStatus) -> bool {
-    matches!(status, CropRoiStatus::Queued | CropRoiStatus::Running)
+pub trait HasCropJobs: Clone + Send + Sync + 'static {
+    fn crop_jobs(&self) -> &CropJobState;
 }
 
-fn crop_progress_is_terminal(status: CropRoiStatus) -> bool {
+fn operation_is_terminal(status: OperationStatus) -> bool {
     matches!(
         status,
-        CropRoiStatus::Completed | CropRoiStatus::Cancelled | CropRoiStatus::Error
+        OperationStatus::Completed
+            | OperationStatus::Failed
+            | OperationStatus::PartiallyComplete
+            | OperationStatus::Cancelled
     )
 }
 
-pub trait HasCropJobs: Clone + Send + Sync + 'static {
-    fn crop_jobs(&self) -> &CropJobState;
+fn prune_evicted_operations(book: &mut CropOperationBook, scheduler: &TaskScheduler) {
+    book.records.retain(|_, record| {
+        !matches!(
+            scheduler.operation(&record.operation_id),
+            Err(SchedulerError::NotFound { .. })
+        )
+    });
+    book.latest_by_workspace
+        .retain(|_, request_id| book.records.contains_key(request_id));
+}
+
+fn project_crop_progress(
+    record: &CropOperationRecord,
+    detail: &OperationDetail,
+) -> CropRoiProgress {
+    let metadata = record
+        .tasks
+        .iter()
+        .map(|task| (task.task_id.as_str(), task))
+        .collect::<HashMap<_, _>>();
+    let completed_rois = detail
+        .tasks
+        .iter()
+        .filter(|task| task.status == TaskStatus::Completed)
+        .filter_map(|task| metadata.get(task.task_id.as_str()))
+        .fold(0_u32, |total, task| total.saturating_add(task.roi_pages));
+    let total_rois = record
+        .tasks
+        .iter()
+        .fold(0_u32, |total, task| total.saturating_add(task.roi_pages));
+    let position = detail
+        .tasks
+        .iter()
+        .find(|task| {
+            matches!(
+                task.status,
+                TaskStatus::Running | TaskStatus::CancellationRequested
+            )
+        })
+        .and_then(|task| metadata.get(task.task_id.as_str()))
+        .map(|task| task.position);
+    let error = detail.tasks.iter().find_map(|task| {
+        (task.status == TaskStatus::Failed)
+            .then(|| {
+                task.attempts
+                    .last()
+                    .and_then(|attempt| attempt.error.as_ref())
+            })
+            .flatten()
+            .map(|error| format!("{}: {}", task.task_kind, error.message))
+    });
+    let status = match detail.operation.status {
+        OperationStatus::Queued => CropRoiStatus::Queued,
+        OperationStatus::Running | OperationStatus::CancellationRequested => CropRoiStatus::Running,
+        OperationStatus::Completed => CropRoiStatus::Completed,
+        OperationStatus::Cancelled => CropRoiStatus::Cancelled,
+        OperationStatus::Failed => CropRoiStatus::Error,
+        OperationStatus::PartiallyComplete if detail.operation.progress.failed > 0 => {
+            CropRoiStatus::Error
+        }
+        OperationStatus::PartiallyComplete => CropRoiStatus::Cancelled,
+    };
+    let message = match status {
+        CropRoiStatus::Queued => "Queued crop".to_string(),
+        CropRoiStatus::Running
+            if detail.operation.status == OperationStatus::CancellationRequested =>
+        {
+            "Crop cancellation requested".to_string()
+        }
+        CropRoiStatus::Running => position
+            .map(|pos| format!("Cropping Pos{pos}"))
+            .unwrap_or_else(|| "Cropping positions".to_string()),
+        CropRoiStatus::Completed => "Crop completed".to_string(),
+        CropRoiStatus::Cancelled => "Crop cancelled".to_string(),
+        CropRoiStatus::Error => "Crop finished with position errors".to_string(),
+    };
+
+    CropRoiProgress {
+        request_id: record.request_id.clone(),
+        status,
+        position,
+        completed_positions: detail.operation.progress.completed,
+        total_positions: detail.operation.progress.total,
+        completed_rois,
+        total_rois,
+        message: Some(message),
+        error,
+        skipped_positions: record
+            .tasks
+            .iter()
+            .filter(|task| task.skipped)
+            .map(|task| task.position)
+            .collect(),
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use lisca_server_common::{OperationSpec, SchedulerConfig, TaskFailure, TaskSpec};
+    use std::sync::atomic::{AtomicBool, Ordering};
 
-    fn progress(request_id: &str, status: CropRoiStatus) -> CropRoiProgress {
-        CropRoiProgress {
-            request_id: request_id.to_string(),
-            status,
-            position: None,
-            completed_positions: 0,
-            total_positions: 1,
-            completed_rois: 0,
-            total_rois: 1,
-            message: None,
-            error: None,
-            skipped_positions: Vec::new(),
+    fn scheduler() -> TaskScheduler {
+        TaskScheduler::new(SchedulerConfig {
+            capacity: 1,
+            history_cap: 10,
+        })
+        .expect("scheduler")
+    }
+
+    #[tokio::test]
+    async fn projection_uses_canonical_task_counts_and_position_errors() {
+        let scheduler = scheduler();
+        let success = TaskSpec::new("crop-roi/Pos1", 1, |_| async { Ok(()) });
+        let success_id = success.task_id().to_string();
+        let failure = TaskSpec::new("crop-roi/Pos2", 1, |_| async {
+            Err(TaskFailure::new("crop_failed", "bad box"))
+        });
+        let failure_id = failure.task_id().to_string();
+        let detail = scheduler
+            .submit(OperationSpec::new(
+                "crop-roi",
+                "/workspace",
+                true,
+                vec![success, failure],
+            ))
+            .expect("submit");
+        let record = CropOperationRecord {
+            request_id: "crop-1".to_string(),
+            workspace_path: "/workspace".to_string(),
+            operation_id: detail.operation.operation_id.clone(),
+            tasks: vec![
+                CropTaskMetadata {
+                    task_id: success_id,
+                    position: 1,
+                    roi_pages: 3,
+                    skipped: false,
+                },
+                CropTaskMetadata {
+                    task_id: failure_id,
+                    position: 2,
+                    roi_pages: 4,
+                    skipped: false,
+                },
+            ],
+        };
+        for _ in 0..100 {
+            if operation_is_terminal(
+                scheduler
+                    .operation(&record.operation_id)
+                    .unwrap()
+                    .operation
+                    .status,
+            ) {
+                break;
+            }
+            tokio::task::yield_now().await;
         }
+        let progress =
+            project_crop_progress(&record, &scheduler.operation(&record.operation_id).unwrap());
+        assert_eq!(progress.status, CropRoiStatus::Error);
+        assert_eq!(progress.completed_positions, 1);
+        assert_eq!(progress.total_positions, 2);
+        assert_eq!(progress.completed_rois, 3);
+        assert_eq!(progress.total_rois, 7);
+        assert!(progress.error.unwrap().contains("Pos2"));
     }
 
-    fn job(request_id: &str, status: CropRoiStatus) -> CropJob {
-        CropJob {
-            progress: progress(request_id, status),
-            cancel: Arc::new(AtomicBool::new(false)),
-        }
-    }
-
-    #[test]
-    fn active_workspace_submission_attaches_atomically() {
+    #[tokio::test]
+    async fn active_workspace_and_request_ids_attach_without_creating_another_operation() {
+        let scheduler = scheduler();
         let state = CropJobState::new();
-        assert!(matches!(
-            state
-                .submit_or_attach(
-                    "/workspace",
-                    "one".into(),
-                    job("one", CropRoiStatus::Queued)
-                )
-                .unwrap(),
-            CropSubmission::Started(_)
-        ));
+        let first = state
+            .submit_or_attach(&scheduler, "/workspace", "first", || {
+                let task = TaskSpec::new("crop-roi/Pos1", 1, |_| async {
+                    std::future::pending::<Result<(), TaskFailure>>().await
+                });
+                let task_id = task.task_id().to_string();
+                scheduler
+                    .submit(OperationSpec::new(
+                        "crop-roi",
+                        "/workspace",
+                        true,
+                        vec![task],
+                    ))
+                    .map(|detail| {
+                        (
+                            detail,
+                            vec![CropTaskMetadata {
+                                task_id,
+                                position: 1,
+                                roi_pages: 1,
+                                skipped: false,
+                            }],
+                        )
+                    })
+            })
+            .expect("first submission");
+        let created_second = AtomicBool::new(false);
         let attached = state
-            .submit_or_attach(
-                "/workspace",
-                "two".into(),
-                job("two", CropRoiStatus::Queued),
-            )
-            .unwrap();
-        assert!(matches!(attached, CropSubmission::Attached(_)));
-        assert_eq!(attached.job().progress.request_id, "one");
-        assert!(state.get("two").unwrap().is_none());
-    }
+            .submit_or_attach(&scheduler, "/workspace", "second", || {
+                created_second.store(true, Ordering::SeqCst);
+                unreachable!("active workspace must attach")
+            })
+            .expect("attach active workspace");
 
-    #[test]
-    fn terminal_job_allows_new_submission_and_remains_latest() {
-        let state = CropJobState::new();
-        state
-            .submit_or_attach(
-                "/workspace",
-                "one".into(),
-                job("one", CropRoiStatus::Queued),
-            )
-            .unwrap();
-        state
-            .update_progress("one", progress("one", CropRoiStatus::Completed))
-            .unwrap();
-        state.mark_worker_finished("one").unwrap();
+        assert_eq!(attached.disposition, CropRoiDisposition::Attached);
+        assert_eq!(attached.record.request_id, "first");
+        assert_eq!(attached.record.operation_id, first.record.operation_id);
+        assert!(!created_second.load(Ordering::SeqCst));
         assert!(matches!(
-            state
-                .submit_or_attach(
-                    "/workspace",
-                    "two".into(),
-                    job("two", CropRoiStatus::Queued)
-                )
-                .unwrap(),
-            CropSubmission::Started(_)
-        ));
-        assert_eq!(
-            state
-                .latest("/workspace")
-                .unwrap()
-                .unwrap()
-                .progress
-                .request_id,
-            "two"
-        );
-    }
-
-    #[test]
-    fn different_workspaces_are_independent() {
-        let state = CropJobState::new();
-        assert!(matches!(
-            state
-                .submit_or_attach("/one", "one".into(), job("one", CropRoiStatus::Queued))
-                .unwrap(),
-            CropSubmission::Started(_)
-        ));
-        assert!(matches!(
-            state
-                .submit_or_attach("/two", "two".into(), job("two", CropRoiStatus::Queued))
-                .unwrap(),
-            CropSubmission::Started(_)
-        ));
-    }
-
-    #[test]
-    fn equivalent_workspace_paths_attach_to_the_same_job() {
-        let workspace = std::env::temp_dir().join(format!(
-            "lisca-crop-registry-{}-{}",
-            std::process::id(),
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
-        ));
-        std::fs::create_dir_all(&workspace).unwrap();
-        let alias = workspace.join(".");
-        let state = CropJobState::new();
-        state
-            .submit_or_attach(
-                workspace.to_str().unwrap(),
-                "one".into(),
-                job("one", CropRoiStatus::Queued),
-            )
-            .unwrap();
-        let attached = state
-            .submit_or_attach(
-                alias.to_str().unwrap(),
-                "two".into(),
-                job("two", CropRoiStatus::Queued),
-            )
-            .unwrap();
-        assert_eq!(attached.job().progress.request_id, "one");
-        std::fs::remove_dir_all(workspace).unwrap();
-    }
-
-    #[test]
-    fn cancellation_is_terminal_against_worker_updates() {
-        let state = CropJobState::new();
-        state
-            .submit_or_attach(
-                "/workspace",
-                "one".into(),
-                job("one", CropRoiStatus::Running),
-            )
-            .unwrap();
-        state.cancel("one").unwrap();
-        state
-            .update_progress("one", progress("one", CropRoiStatus::Completed))
-            .unwrap();
-        state.mark_error("one", "late failure".into()).unwrap();
-        let current = state.get("one").unwrap().unwrap();
-        assert_eq!(current.progress.status, CropRoiStatus::Cancelled);
-        assert!(current.cancel.load(AtomicOrdering::SeqCst));
-    }
-
-    #[test]
-    fn cancelled_workspace_stays_occupied_until_worker_finishes() {
-        let state = CropJobState::new();
-        state
-            .submit_or_attach(
-                "/workspace",
-                "one".into(),
-                job("one", CropRoiStatus::Running),
-            )
-            .unwrap();
-        state.cancel("one").unwrap();
-
-        let while_running = state
-            .submit_or_attach(
-                "/workspace",
-                "two".into(),
-                job("two", CropRoiStatus::Queued),
-            )
-            .unwrap();
-        assert!(matches!(while_running, CropSubmission::Attached(_)));
-        assert_eq!(while_running.job().progress.request_id, "one");
-        assert!(state.get("two").unwrap().is_none());
-
-        state.mark_worker_finished("one").unwrap();
-        assert!(matches!(
-            state
-                .submit_or_attach(
-                    "/workspace",
-                    "three".into(),
-                    job("three", CropRoiStatus::Queued)
-                )
-                .unwrap(),
-            CropSubmission::Started(_)
-        ));
-    }
-
-    #[test]
-    fn duplicate_request_id_from_another_workspace_is_rejected() {
-        let state = CropJobState::new();
-        state
-            .submit_or_attach("/one", "same".into(), job("same", CropRoiStatus::Queued))
-            .unwrap();
-        let conflict =
-            state.submit_or_attach("/two", "same".into(), job("same", CropRoiStatus::Queued));
-        assert!(matches!(
-            conflict,
+            state.submit_or_attach(&scheduler, "/other", "first", || unreachable!()),
             Err(CropJobStateError::RequestIdConflict)
         ));
-        assert!(state.latest("/two").unwrap().is_none());
-    }
-
-    #[test]
-    fn progress_counters_and_status_do_not_regress() {
-        let state = CropJobState::new();
-        state
-            .submit_or_attach(
-                "/workspace",
-                "one".into(),
-                job("one", CropRoiStatus::Running),
-            )
-            .unwrap();
-        let mut advanced = progress("one", CropRoiStatus::Running);
-        advanced.completed_positions = 1;
-        advanced.completed_rois = 1;
-        state.update_progress("one", advanced).unwrap();
-        state
-            .update_progress("one", progress("one", CropRoiStatus::Queued))
-            .unwrap();
-        let current = state.get("one").unwrap().unwrap().progress;
-        assert_eq!(current.status, CropRoiStatus::Running);
-        assert_eq!(current.completed_positions, 1);
-        assert_eq!(current.completed_rois, 1);
-    }
-
-    #[test]
-    fn terminal_progress_is_returned_by_latest() {
-        let state = CropJobState::new();
-        state
-            .submit_or_attach(
-                "/workspace",
-                "one".into(),
-                job("one", CropRoiStatus::Queued),
-            )
-            .unwrap();
-        state
-            .update_progress("one", progress("one", CropRoiStatus::Completed))
-            .unwrap();
-        assert_eq!(
-            state.latest("/workspace").unwrap().unwrap().progress.status,
-            CropRoiStatus::Completed
-        );
     }
 }

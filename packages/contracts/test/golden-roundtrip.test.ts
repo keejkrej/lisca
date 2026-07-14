@@ -9,9 +9,11 @@ import {
   AlignerSourceSchema,
   FramePayloadSchema,
   LoadFrameRequestSchema,
+  OperationDetailSchema,
   RoiIndexEntrySchema,
   SaveBboxRequestSchema,
   ScanSourceRequestSchema,
+  U64,
   WorkspaceScanSchema,
 } from "../src/schema/index";
 
@@ -74,5 +76,112 @@ describe("golden wire roundtrip", () => {
     const decoded = decodeFixture(RoiIndexEntrySchema, "roi-index-entry.json");
     expect(decoded.shape).toEqual([5, 1, 1, 4, 3]);
     expect(decoded.bbox.w).toBe(3);
+  });
+
+  it("decodes operation, task, and attempt observability identities", () => {
+    const decoded = decodeJsonEither(OperationDetailSchema, {
+      operation: {
+        operationId: "op-1",
+        kind: "test-operation",
+        workspaceId: "ws-1",
+        workspacePath: "/workspace",
+        mutating: true,
+        status: "running",
+        attention: "none",
+        progress: {
+          total: 1,
+          queued: 0,
+          blocked: 0,
+          running: 1,
+          completed: 0,
+          failed: 0,
+          cancelled: 0,
+          cancellationRequested: 0,
+        },
+        createdAtMs: 1,
+        updatedAtMs: 2,
+      },
+      tasks: [
+        {
+          taskId: "task-1",
+          operationId: "op-1",
+          taskKind: "test-task",
+          workspaceId: "ws-1",
+          status: "running",
+          weight: 1,
+          enqueueOrder: 0,
+          dependencies: [],
+          blockedBy: [],
+          attempts: [
+            {
+              attemptId: "attempt-1",
+              operationId: "op-1",
+              taskId: "task-1",
+              status: "running",
+              startedAtMs: 2,
+              finishedAtMs: null,
+              error: null,
+            },
+          ],
+        },
+      ],
+    });
+    if (Either.isLeft(decoded)) throw new Error(formatSchemaError(decoded.left));
+    expect(decoded.right.tasks[0]?.attempts[0]?.attemptId).toBe("attempt-1");
+  });
+
+  it("decodes partial operation progress and dependency failure context", () => {
+    const decoded = decodeJsonEither(OperationDetailSchema, {
+      operation: {
+        operationId: "op-partial",
+        kind: "analysis",
+        workspaceId: "ws-1",
+        workspacePath: "/workspace",
+        mutating: true,
+        status: "partially-complete",
+        attention: "error",
+        progress: {
+          total: 3,
+          queued: 0,
+          blocked: 1,
+          running: 0,
+          completed: 1,
+          failed: 1,
+          cancelled: 0,
+          cancellationRequested: 0,
+        },
+        createdAtMs: 1,
+        updatedAtMs: 3,
+      },
+      tasks: [
+        {
+          taskId: "aggregate",
+          operationId: "op-partial",
+          taskKind: "aggregate",
+          workspaceId: "ws-1",
+          status: "blocked",
+          weight: 1,
+          enqueueOrder: 2,
+          dependencies: ["failed-position"],
+          blockedBy: [
+            {
+              taskId: "failed-position",
+              taskKind: "position",
+              status: "failed",
+              error: { code: "bad_input", message: "position input is invalid" },
+            },
+          ],
+          attempts: [],
+        },
+      ],
+    });
+    if (Either.isLeft(decoded)) throw new Error(formatSchemaError(decoded.left));
+    expect(decoded.right.operation.progress.blocked).toBe(1);
+    expect(decoded.right.tasks[0]?.blockedBy[0]?.error?.code).toBe("bad_input");
+  });
+
+  it("rejects u64 wire numbers that JavaScript cannot represent exactly", () => {
+    expect(Either.isRight(decodeJsonEither(U64, Number.MAX_SAFE_INTEGER))).toBe(true);
+    expect(Either.isLeft(decodeJsonEither(U64, Number.MAX_SAFE_INTEGER + 1))).toBe(true);
   });
 });

@@ -1,14 +1,13 @@
 import { Button } from "@lisca/ui/components";
 import { DockSection, ReadonlyPathField } from "@lisca/ui/shell";
 
-import { useAlignCrop, useAlignNav } from "../state/align-page-selectors";
+import { useAlignNav } from "../state/align-page-selectors";
 
 export function AlignSaveSection() {
   const nav = useAlignNav();
-  const crop = useAlignCrop();
   const pos = nav.selection.pos;
-  const canSave = Boolean(nav.workspacePath && nav.frame && !crop.cropping);
-  const canCrop = Boolean(nav.workspacePath && nav.source && nav.frame && !crop.cropping);
+  const canSave = Boolean(nav.workspacePath && nav.frame);
+  const canCrop = Boolean(nav.workspacePath && nav.source && nav.frame);
 
   return (
     <DockSection title="Save">
@@ -62,7 +61,7 @@ export function AlignSaveSection() {
           <div class="min-w-0">
             <Button
               class="w-full justify-center"
-              disabled={!nav.workspacePath || !nav.source || crop.cropping}
+              disabled={!nav.workspacePath || !nav.source}
               size="sm"
               type="button"
               variant="outline"

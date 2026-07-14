@@ -1,8 +1,17 @@
 use std::{
     collections::HashMap,
-    path::Path,
+    path::{Component, Path, PathBuf},
     sync::{Arc, Mutex, MutexGuard},
 };
+
+mod task_scheduler;
+mod tasks;
+
+pub use task_scheduler::{
+    OperationSpec, SchedulerConfig, SchedulerError, TaskContext, TaskFailure, TaskScheduler,
+    TaskSpec,
+};
+pub use tasks::{task_router, HasTaskScheduler};
 
 #[derive(Debug)]
 pub struct RunStatePoisoned;
@@ -101,10 +110,38 @@ pub fn normalize_workspace_path(raw: &str) -> String {
     if trimmed.is_empty() {
         return String::new();
     }
-    Path::new(trimmed)
-        .canonicalize()
-        .map(|path| path.to_string_lossy().into_owned())
-        .unwrap_or_else(|_| trimmed.to_string())
+    let path = Path::new(trimmed);
+    path.canonicalize()
+        .unwrap_or_else(|_| {
+            let absolute = if path.is_absolute() {
+                path.to_path_buf()
+            } else {
+                std::env::current_dir()
+                    .map(|current| current.canonicalize().unwrap_or(current).join(path))
+                    .unwrap_or_else(|_| path.to_path_buf())
+            };
+            normalize_lexically(&absolute)
+        })
+        .to_string_lossy()
+        .into_owned()
+}
+
+fn normalize_lexically(path: &Path) -> PathBuf {
+    let mut normalized = PathBuf::new();
+    for component in path.components() {
+        match component {
+            Component::Prefix(_) | Component::RootDir | Component::Normal(_) => {
+                normalized.push(component.as_os_str());
+            }
+            Component::CurDir => {}
+            Component::ParentDir => {
+                if !normalized.pop() && !path.has_root() {
+                    normalized.push(Component::ParentDir.as_os_str());
+                }
+            }
+        }
+    }
+    normalized
 }
 
 #[cfg(test)]
@@ -141,5 +178,17 @@ mod tests {
             "/does/not/exist"
         );
         assert_eq!(normalize_workspace_path("  "), "");
+    }
+
+    #[test]
+    fn nonexistent_workspace_aliases_are_normalized_lexically() {
+        let unique = format!("lisca-missing-workspace-{}", uuid::Uuid::new_v4());
+        let direct = normalize_workspace_path(&format!("{unique}/positions"));
+        let dotted = normalize_workspace_path(&format!("./{unique}/./positions"));
+        let parent = normalize_workspace_path(&format!("{unique}/discarded/../positions"));
+
+        assert_eq!(direct, dotted);
+        assert_eq!(direct, parent);
+        assert!(Path::new(&direct).is_absolute());
     }
 }

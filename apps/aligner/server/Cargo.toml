@@ -22,3 +22,7 @@ axum.workspace = true
 lisca = { workspace = true, default-features = false, features = ["smart"] }
 lisca-server-common = { path = "../../server-common" }
 tokio.workspace = true
+
+[dev-dependencies]
+image.workspace = true
+tempfile = "3"

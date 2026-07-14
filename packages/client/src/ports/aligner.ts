@@ -6,6 +6,7 @@ import { createApiClient, toClientEffect, type LiscaApiClient } from "../infra/a
 import { withOptionalAbortSignal } from "../infra/with-abort-signal";
 import { pollProgressLoop } from "../session/progress-poll";
 import { createHostPort, type HostPortDeps } from "./host";
+import { createTaskPort } from "./tasks";
 import type { AlignerDataPort } from "./types";
 
 export type { AlignerDataPort } from "./types";
@@ -27,9 +28,11 @@ export function createAlignerPort(
   client: LiscaApiClient = createApiClient(deps),
 ): AlignerDataPort {
   const host = createHostPort(deps, client);
+  const tasks = createTaskPort(deps, client);
 
   return {
     ...host,
+    ...tasks,
     scanSource(source) {
       return withClientEffect(client, undefined, (c) =>
         c.align.scanSource({ payload: { source } }),

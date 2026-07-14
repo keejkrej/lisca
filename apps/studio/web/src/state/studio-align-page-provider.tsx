@@ -33,7 +33,7 @@ export function StudioAlignPageProvider(props: { children?: JSX.Element }) {
       return state.currentExcludedCells;
     },
     get enabled() {
-      return Boolean(state.frame) && !state.cropping && !state.saving;
+      return Boolean(state.frame) && !state.saving;
     },
     onComplete: state.applySmartExclusion,
     onError: state.reportError,
@@ -50,7 +50,7 @@ export function StudioAlignPageProvider(props: { children?: JSX.Element }) {
       return state.currentExcludedCells;
     },
     get enabled() {
-      return Boolean(state.frame) && !state.cropping && !state.saving;
+      return Boolean(state.frame) && !state.saving;
     },
     onPreview: state.showVariationExcludePreview,
     onStatus: state.reportStatus,
@@ -62,11 +62,9 @@ export function StudioAlignPageProvider(props: { children?: JSX.Element }) {
   /** Dock action: overwrite exclusions, then edge + var-exclude provider. */
   const runExclude = async (): Promise<void> => {
     const frame = state.frame;
-    if (!frame || state.saving || state.cropping) return;
+    if (!frame || state.saving) return;
     setDockExcludePreview(true);
-    state.setExcludedCellsForCurrentPosition(
-      mergeAlignGridEdgeExclusion([], frame, state.grid),
-    );
+    state.setExcludedCellsForCurrentPosition(mergeAlignGridEdgeExclusion([], frame, state.grid));
     await varExclude.requestPreview();
   };
 
@@ -99,7 +97,7 @@ export function StudioAlignPageProvider(props: { children?: JSX.Element }) {
   };
 
   const saveAndAdvance = async (): Promise<boolean> => {
-    if (state.saving || state.cropping) return false;
+    if (state.saving) return false;
     return await state.saveAndAdvanceWithExcludedCells(state.currentExcludedCells);
   };
 

@@ -59,6 +59,10 @@
       "types": "./src/ports/host.ts",
       "import": "./src/ports/host.ts"
     },
+    "./ports/tasks": {
+      "types": "./src/ports/tasks.ts",
+      "import": "./src/ports/tasks.ts"
+    },
     "./ports/analysis": {
       "types": "./src/ports/analysis.ts",
       "import": "./src/ports/analysis.ts"
@@ -134,6 +138,10 @@
     "./session/resume-pending-runs": {
       "types": "./src/session/resume-pending-runs.ts",
       "import": "./src/session/resume-pending-runs.ts"
+    },
+    "./session/task-center": {
+      "types": "./src/session/task-center.ts",
+      "import": "./src/session/task-center.ts"
     },
     "./session/crop-recovery": {
       "types": "./src/session/crop-recovery.ts",

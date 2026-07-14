@@ -1695,6 +1695,360 @@
         }
       }
     },
+    "/tasks/operations": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "operationId": "tasks.listOperations",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "OperationList",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/operation": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "operationId": "tasks.getOperation",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "OperationDetail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/task": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "operationId": "tasks.getTask",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "TaskDetail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/operation/cancel": {
+      "post": {
+        "tags": [
+          "tasks"
+        ],
+        "operationId": "tasks.cancelOperation",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "OperationDetail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "TaskCommandError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskCommandError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OperationCancelRequest"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/tasks/task/cancel": {
+      "post": {
+        "tags": [
+          "tasks"
+        ],
+        "operationId": "tasks.cancelTask",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "OperationDetail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "TaskCommandError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskCommandError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskCancelRequest"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/tasks/task/retry": {
+      "post": {
+        "tags": [
+          "tasks"
+        ],
+        "operationId": "tasks.retryTask",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "OperationDetail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "TaskCommandError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskCommandError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskRetryRequest"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
     "/studio/save-assay-json": {
       "post": {
         "tags": [
@@ -3808,6 +4162,454 @@
         },
         "additionalProperties": false
       },
+      "OperationList": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/OperationSummary"
+        }
+      },
+      "OperationSummary": {
+        "type": "object",
+        "required": [
+          "operationId",
+          "kind",
+          "workspaceId",
+          "workspacePath",
+          "mutating",
+          "status",
+          "attention",
+          "progress",
+          "createdAtMs",
+          "updatedAtMs"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "workspaceId": {
+            "type": "string"
+          },
+          "workspacePath": {
+            "type": "string"
+          },
+          "mutating": {
+            "type": "boolean"
+          },
+          "status": {
+            "$ref": "#/components/schemas/OperationStatus"
+          },
+          "attention": {
+            "$ref": "#/components/schemas/OperationAttention"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/OperationProgress"
+          },
+          "createdAtMs": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "updatedAtMs": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "additionalProperties": false
+      },
+      "OperationStatus": {
+        "type": "string",
+        "enum": [
+          "queued",
+          "running",
+          "partially-complete",
+          "completed",
+          "failed",
+          "cancelled",
+          "cancellation-requested"
+        ]
+      },
+      "OperationAttention": {
+        "type": "string",
+        "enum": [
+          "none",
+          "error"
+        ]
+      },
+      "OperationProgress": {
+        "type": "object",
+        "required": [
+          "total",
+          "queued",
+          "blocked",
+          "running",
+          "completed",
+          "failed",
+          "cancelled",
+          "cancellationRequested"
+        ],
+        "properties": {
+          "total": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "queued": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "blocked": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "running": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "completed": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "failed": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "cancelled": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "cancellationRequested": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "OperationDetailQuery": {
+        "type": "object",
+        "required": [
+          "operationId"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "OperationDetail": {
+        "type": "object",
+        "required": [
+          "operation",
+          "tasks"
+        ],
+        "properties": {
+          "operation": {
+            "$ref": "#/components/schemas/OperationSummary"
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskDetail"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "TaskDetail": {
+        "type": "object",
+        "required": [
+          "taskId",
+          "operationId",
+          "taskKind",
+          "workspaceId",
+          "status",
+          "weight",
+          "enqueueOrder",
+          "dependencies",
+          "blockedBy",
+          "attempts"
+        ],
+        "properties": {
+          "taskId": {
+            "type": "string"
+          },
+          "operationId": {
+            "type": "string"
+          },
+          "taskKind": {
+            "type": "string"
+          },
+          "workspaceId": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TaskStatus"
+          },
+          "weight": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "enqueueOrder": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "dependencies": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "blockedBy": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskDependencyBlock"
+            }
+          },
+          "attempts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskAttempt"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "TaskStatus": {
+        "type": "string",
+        "enum": [
+          "queued",
+          "blocked",
+          "running",
+          "completed",
+          "failed",
+          "cancelled",
+          "cancellation-requested"
+        ]
+      },
+      "TaskDependencyBlock": {
+        "type": "object",
+        "required": [
+          "taskId",
+          "taskKind",
+          "status",
+          "error"
+        ],
+        "properties": {
+          "taskId": {
+            "type": "string"
+          },
+          "taskKind": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TaskStatus"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskError"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "TaskError": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TaskAttempt": {
+        "type": "object",
+        "required": [
+          "attemptId",
+          "operationId",
+          "taskId",
+          "status",
+          "startedAtMs",
+          "finishedAtMs",
+          "error"
+        ],
+        "properties": {
+          "attemptId": {
+            "type": "string"
+          },
+          "operationId": {
+            "type": "string"
+          },
+          "taskId": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TaskStatus"
+          },
+          "startedAtMs": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "format": "uint64",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "finishedAtMs": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "format": "uint64",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskError"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "TaskDetailQuery": {
+        "type": "object",
+        "required": [
+          "taskId"
+        ],
+        "properties": {
+          "taskId": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "OperationCancelRequest": {
+        "type": "object",
+        "required": [
+          "operationId"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TaskCommandError": {
+        "type": "object",
+        "required": [
+          "code",
+          "entity",
+          "id",
+          "currentStatus",
+          "message",
+          "_tag"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "not-found",
+              "invalid-transition"
+            ]
+          },
+          "entity": {
+            "type": "string",
+            "enum": [
+              "operation",
+              "task"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "currentStatus": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "_tag": {
+            "type": "string",
+            "enum": [
+              "TaskCommandError"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "TaskCancelRequest": {
+        "type": "object",
+        "required": [
+          "taskId"
+        ],
+        "properties": {
+          "taskId": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TaskRetryRequest": {
+        "type": "object",
+        "required": [
+          "taskId"
+        ],
+        "properties": {
+          "taskId": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "SaveAssayJsonRequest": {
         "type": "object",
         "required": [
@@ -4037,6 +4839,9 @@
     },
     {
       "name": "memory"
+    },
+    {
+      "name": "tasks"
     },
     {
       "name": "studio"

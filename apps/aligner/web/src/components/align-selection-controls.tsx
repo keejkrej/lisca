@@ -13,7 +13,10 @@ export function AlignSelectionControls() {
   const smartExcludeProvider = createRequestSmartExcludeProvider(
     {
       smartExclude: (request, signal) =>
-        runClientEffect(alignerClient.smartExclude(request, signal), signal ? { signal } : undefined),
+        runClientEffect(
+          alignerClient.smartExclude(request, signal),
+          signal ? { signal } : undefined,
+        ),
     },
     {
       source: () => state().source,
@@ -21,7 +24,7 @@ export function AlignSelectionControls() {
       contrast: () => state().contrast,
     },
   );
-  const disabled = createMemo(() => state().cropping || !state().frame);
+  const disabled = createMemo(() => !state().frame);
   const varExclude = useVarExclude({
     provider: createLocalVarExcludeProvider(),
     get frame() {

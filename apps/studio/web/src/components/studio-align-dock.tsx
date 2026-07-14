@@ -11,7 +11,7 @@ const DOCK_STRIP_CLASS =
 
 export function StudioAlignDock() {
   const { state, excludeActive, runExclude, saveAndAdvance } = useStudioAlignPage();
-  const actionBusy = createMemo(() => state.saving || state.cropping);
+  const actionBusy = createMemo(() => state.saving);
   const frameReady = createMemo(() => Boolean(state.frame));
 
   return (

@@ -5,7 +5,7 @@ import { useStudioAlignPage } from "../state/studio-align-page-context";
 
 export function StudioAlignRight() {
   const { state } = useStudioAlignPage();
-  const disabled = () => state.cropping || !state.frame;
+  const disabled = () => !state.frame;
 
   return (
     <>

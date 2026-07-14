@@ -7,6 +7,7 @@
     "dev": "vp dev",
     "build": "tsc -p tsconfig.json --noEmit && vp build",
     "preview": "vp preview",
+    "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
@@ -25,11 +26,14 @@
     "solid-js": "catalog:"
   },
   "devDependencies": {
+    "@solidjs/testing-library": "catalog:",
     "@tailwindcss/vite": "catalog:",
     "@tanstack/router-plugin": "catalog:",
+    "jsdom": "^26.1.0",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vite-plugin-solid": "catalog:"
+    "vite-plugin-solid": "catalog:",
+    "vitest": "catalog:"
   }
 }

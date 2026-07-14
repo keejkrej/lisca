@@ -26,6 +26,10 @@ function findRouteFiles(root: string): string[] {
       files.push(sharedRoutesPath);
     }
   }
+  const serverCommonRoutesPath = join(root, "apps/server-common/src/tasks.rs");
+  if (statSync(serverCommonRoutesPath, { throwIfNoEntry: false })?.isFile()) {
+    files.push(serverCommonRoutesPath);
+  }
   return files.toSorted();
 }
 

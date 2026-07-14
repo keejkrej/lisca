@@ -9,6 +9,7 @@ import { createSignal } from "solid-js";
 
 import { alignerHostOperations } from "../api/aligner-port";
 import { useAlignSource } from "../state/align-page-selectors";
+import { AlignerTaskCenter } from "./aligner-task-center";
 
 function filePickerTitle(mode: HostFilePickerMode): string {
   if (mode === "workspace") return "Workspace folder";
@@ -62,6 +63,7 @@ export function AlignerHeader() {
   return (
     <>
       <ShellNavbar.Aligner
+        endLeading={<AlignerTaskCenter />}
         onPickSource={() => setSourcePickerOpen(true)}
         onPickWorkspace={() => openFilePicker("workspace")}
       />

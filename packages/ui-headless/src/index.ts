@@ -18,3 +18,4 @@ export * from "./slider-stepper-field";
 export * from "./canvas-status";
 export * from "./label-creation-form";
 export * from "./variation-exclude-preview";
+export * from "./task-center";

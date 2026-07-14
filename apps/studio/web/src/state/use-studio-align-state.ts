@@ -18,11 +18,9 @@ import {
 import { useAlignSessionCore } from "@lisca/client/align-session/solid";
 import { useCanvasResourceTransaction } from "@lisca/ui/features";
 import { createDefaultAlignGrid, type AlignGridToolMode } from "@lisca/utils";
-import { useNavigate } from "@tanstack/solid-router";
 import { currentServerKey } from "@lisca/client/session/work-session";
 import { createEffect, createMemo, createSignal } from "solid-js";
 import { studioClient, toErrorMessage } from "../api/studio-port";
-import { studioNavigate } from "../navigation/use-studio-navigate";
 import { scanIdleAtom, scanSourceAtom } from "../atoms/studio-query-atoms";
 import { effectErrorMessage, loadFrameEffect } from "../effects/frame-loader";
 import { runClientEffect } from "@lisca/client/runtime";
@@ -118,7 +116,6 @@ export function useStudioAlignState(): StudioAlignState {
   const activeWorkspacePath = createMemo(() => info1().saveTo.trim() || null);
   const maskChannel = createMemo(() => studioMaskChannel(info3()));
   const assayPositions = createMemo(() => collectAssayPositions(info3()));
-  const navigate = useNavigate();
   const alignPositionsForScan = (scan: WorkspaceScan | null) =>
     scan ? filterScanPositionsForAssay(scan.positions, assayPositions()) : [];
   const session = useAlignSessionCore({
@@ -155,8 +152,6 @@ export function useStudioAlignState(): StudioAlignState {
       preserveFrameOnContrastFailure: true,
       cropRequestPrefix: "studio-crop",
       cropServerIdentity: () => currentServerKey("studio"),
-      onCropCompleted: () => studioNavigate(navigate, "/annotate"),
-      onCropSkippedAll: () => studioNavigate(navigate, "/annotate"),
     },
   });
   const ui = session.state;

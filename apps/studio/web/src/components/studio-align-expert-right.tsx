@@ -6,7 +6,7 @@ import { useStudioAlignPage } from "../state/studio-align-page-context";
 
 export function StudioAlignExpertRight() {
   const { state, smartExclude, varExclude, requestExpertVarExclude } = useStudioAlignPage();
-  const disabled = () => state.cropping || !state.frame;
+  const disabled = () => !state.frame;
 
   onCleanup(() => {
     state.setManualExclusionEnabled(false);

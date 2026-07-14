@@ -95,6 +95,10 @@
     "./work-session-picker": {
       "types": "./src/work-session-picker.ts",
       "import": "./src/work-session-picker.ts"
+    },
+    "./task-center": {
+      "types": "./src/task-center.ts",
+      "import": "./src/task-center.ts"
     }
   },
   "scripts": {

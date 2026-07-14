@@ -126,6 +126,7 @@ function ShellNavbarAnnotator(props: ShellNavbarAnnotatorProps) {
 }
 
 export type ShellNavbarAlignerProps = {
+  endLeading?: JSX.Element;
   onPickSource?: () => void;
   onPickWorkspace?: () => void;
 };
@@ -133,10 +134,11 @@ export type ShellNavbarAlignerProps = {
 function ShellNavbarAligner(props: ShellNavbarAlignerProps) {
   return (
     <ShellNavbarRoot
+      endLeading={props.endLeading}
       routeItems={[{ value: "align", label: "Align" }]}
       routeValue="align"
       showRouteToggle={false}
-      showToolsMenu={false}
+      showToolsMenu={props.endLeading !== undefined}
       onPickSource={props.onPickSource}
       onPickWorkspace={props.onPickWorkspace}
       onRouteChange={() => undefined}

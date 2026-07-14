@@ -4,6 +4,7 @@ import { Effect } from "effect";
 import { createApiClient, toClientEffect, type LiscaApiClient } from "../infra/api-client";
 import { withOptionalAbortSignal } from "../infra/with-abort-signal";
 import { createHostPort, type HostPortDeps } from "./host";
+import { createTaskPort } from "./tasks";
 import type { AnnotatorDataPort } from "./types";
 
 export type { AnnotatorDataPort } from "./types";
@@ -23,9 +24,11 @@ export function createAnnotatorPort(
   client: LiscaApiClient = createApiClient(deps),
 ): AnnotatorDataPort {
   const host = createHostPort(deps, client);
+  const tasks = createTaskPort(deps, client);
 
   return {
     ...host,
+    ...tasks,
     scanRoiWorkspace(workspacePath, signal) {
       return withClientEffect(client, signal, (c) =>
         c.annotate.scanRoiWorkspace({ payload: { workspacePath } }),
