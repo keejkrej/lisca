@@ -14,8 +14,18 @@
   its classification or segmentation mask, tracks history, and saves the annotation.
 - **Assay** — the typed experiment description in `assay.json`, including the assay
   kind, source, positions, channels, timing, and analysis configuration.
-- **Analysis run** — a background execution of the assay pipeline that reports
-  progress and writes result tables and plots.
+- **Analysis run** — an Operation that executes the assay pipeline and writes
+  result tables and plots.
+
+## Background work
+
+- **Operation** — one user-requested unit of background work, presented and tracked
+  as a single aggregate even when it fans out internally.
+- **Task** — the smallest independently scheduled part of an Operation; it is kept
+  bounded enough to run, retry, or fail without treating the whole Operation as one
+  indivisible computation.
+- **Queue** — the scheduler-owned ordered set of runnable Tasks. Users create
+  Operations, not Queues.
 
 ## Product composition
 
