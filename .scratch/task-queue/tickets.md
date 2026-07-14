@@ -74,11 +74,11 @@ The repository already contains user-owned and generated work in progress. Every
 
 **Blocked by:** Open the shared Task Center from Aligner.
 
-- [ ] Annotator uses the shared Task button and Task Center behavior from its top utility action area without duplicating modal or task state logic.
-- [ ] Studio uses the shared Task button at the bottom of its left navigation rail and keeps it available throughout the wizard, align, annotate, analyse, and result workflow states.
-- [ ] Empty, active, and attention-needed indicators are consistent across Aligner, Annotator, and Studio while respecting each shell's placement and styling.
-- [ ] Opening, inspecting, acting on, and dismissing the Task Center never replaces the current screen or forces navigation in Annotator or Studio.
-- [ ] Product-shell browser tests verify both placements and preserve the underlying route, workspace, selections, and current edit state across modal interaction.
+- [x] Annotator uses the shared Task button and Task Center behavior from its top utility action area without duplicating modal or task state logic.
+- [x] Studio uses the shared Task button at the bottom of its left navigation rail and keeps it available throughout the wizard, align, annotate, analyse, and result workflow states.
+- [x] Empty, active, and attention-needed indicators are consistent across Aligner, Annotator, and Studio while respecting each shell's placement and styling.
+- [x] Opening, inspecting, acting on, and dismissing the Task Center never replaces the current screen or forces navigation in Annotator or Studio.
+- [x] Product-shell browser tests verify both placements and preserve the underlying route, workspace, selections, and current edit state across modal interaction.
 
 ## Run cropping as one Task per position
 
