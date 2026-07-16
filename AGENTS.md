@@ -4,6 +4,8 @@ Humans review this file only. Agents maintain **Tech stack** via the memory skil
 
 ## Purpose
 
+Terse summary. **`PRODUCT.md`** is the full statement of product shape — the Workspace spine, how the shells compose, assay extensibility, and non-goals.
+
 - **Product:** LiSCA — analysis software for _live-cell imaging on single-cell arrays_ (micropatterned ibidi µ-Slides and similar prepatterned labware).
 - **Users:** Cell biologists and pharmacologists running patterned-array timelapse experiments — not general microscopy or single-field-of-view workflows.
 - **Problem:** Turn multi-site array acquisitions into registered adhesive sites, annotated ROIs, and quantitative assay readouts across wells and time points.
@@ -11,7 +13,7 @@ Humans review this file only. Agents maintain **Tech stack** via the memory skil
   - **Aligner** — register each field to the micropattern grid; mark occupied vs empty sites; preserve site identity across drift and timelapse.
   - **Annotator** — outline cells/regions per site; assign phenotype labels for classification, assisted segmentation, or QC.
   - **Studio** — end-to-end assay workflow (wizard → align → annotate → analyse → charts); built for multi-site arrays, not one FOV.
-- **Assays (today):** gene-expression (fluorescence traces, AUC, dose–response plots) and immune-killing (survival scoring, kill-curve kinetics). More assay types follow the same `assay.json` + Rust pipeline pattern.
+- **Assays (today):** gene-expression (fluorescence traces, AUC, dose–response plots) and immune-killing (survival scoring, kill-curve kinetics) — the two listed in `ENABLED_STUDIO_ASSAY_IDS`. Assay ids are a **closed enum**, not an extension point: adding one is a cross-cutting change across `@lisca/contracts`, Rust, and generated artifacts, and unregistered ids silently alias to gene-expression. See `PRODUCT.md`.
 
 ## Rules
 
@@ -52,6 +54,8 @@ Single-context — one `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/
 
 ## Context
 
+- Product shape — spine, composition, non-goals: `PRODUCT.md`
+- Domain glossary: `CONTEXT.md`
 - Package map and import boundaries: `docs/packages/packages.md`
 - Contracts pipeline: `docs/contracts/contracts.md`
 - UI package layout (headless/platform split, testing): `docs/ui/ui-package-layout.md`
