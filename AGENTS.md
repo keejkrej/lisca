@@ -18,6 +18,20 @@ Humans review this file only. Agents maintain **Tech stack** via the memory skil
 - **`README.md`** — leave blank (title only). Do not put docs here; humans should not rely on them.
 - **`docs/`** — organized by domain (`docs/{domain}/`). Agents may write notes and reference material here freely. Read domain docs when working in that area. Keep `AGENTS.md` short — do not duplicate long content here.
 
+## Agent skills
+
+### Issue tracker
+
+Local markdown — PRDs and issues live in `.scratch/<feature-slug>/`; this repo does not use GitHub Issues. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical roles, unchanged, recorded as a `Status:` line per issue file. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context — one `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
 ## Tech stack
 
 <!-- memory:techstack-start -->

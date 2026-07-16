@@ -1,3 +1,15 @@
+# Task queue and Task Center
+
+Bounded backend Operations and Tasks, migrating cropping and both current analysis
+pipelines onto a canonical scheduler, exposed through a shared Task Center.
+
+Implementation issues live in [`issues/`](./issues/), numbered in dependency order.
+Work the **frontier**: any issue whose blockers are all `resolved`.
+
+## Working-tree safety
+
+The repository already contains user-owned and generated work in progress. Every worker must begin from the current working tree, inspect overlapping edits before changing them, and preserve unrelated changes. Do not reset, discard, or blanket-rewrite existing work. In particular, contract generation must use the schemas present at implementation time and retain unrelated generated-contract changes; analysis migrations must treat current analysis edits as input and verify by diff that they remain intact.
+
 ## Problem Statement
 
 Long-running LiSCA computations such as cropping analysis currently behave too much like a single foreground action. Large workloads can become monolithic, provide poor visibility into progress and failure, and make cancellation or retry coarse and expensive. A crop over 100 positions must not be represented as one gigantic unit of work: it should be an operation composed of 100 independently schedulable one-position tasks.
