@@ -1,10 +1,10 @@
 [package]
-name = "lisca-server-common"
+name = "lisca-server"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "Shared internal state bookkeeping for LiSCA servers."
+description = "Shared Axum server glue for LiSCA product servers."
 
 [lints]
 workspace = true

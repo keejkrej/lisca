@@ -16,7 +16,7 @@ use lisca::{
         ScanSourceRequest,
     },
 };
-use lisca_server_common::{HasTaskScheduler, OperationSpec, TaskFailure, TaskSpec};
+use lisca_server::{HasTaskScheduler, OperationSpec, TaskFailure, TaskSpec};
 
 pub fn router<S>() -> Router<S>
 where
@@ -215,13 +215,13 @@ fn crop_state_error(error: CropJobStateError) -> FsError {
 }
 
 fn build_crop_operation(
-    scheduler: &lisca_server_common::TaskScheduler,
+    scheduler: &lisca_server::TaskScheduler,
     request: CropRoiRequest,
     scan: Arc<lisca::protocol::WorkspaceScan>,
     positions: Vec<u32>,
 ) -> Result<
     (lisca::protocol::OperationDetail, Vec<CropTaskMetadata>),
-    lisca_server_common::SchedulerError,
+    lisca_server::SchedulerError,
 > {
     let workspace_path = request.workspace_path.clone();
     let request = Arc::new(request);
@@ -275,7 +275,7 @@ mod crop_task_tests {
     use super::*;
     use image::{GrayImage, Luma};
     use lisca::protocol::{AlignerSource, OperationStatus, WorkspaceScan};
-    use lisca_server_common::{SchedulerConfig, TaskScheduler};
+    use lisca_server::{SchedulerConfig, TaskScheduler};
     use std::{fs, path::Path};
 
     async fn wait_until_terminal(scheduler: &TaskScheduler, operation_id: &str) {

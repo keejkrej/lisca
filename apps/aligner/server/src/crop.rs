@@ -7,7 +7,7 @@ use lisca::protocol::{
     CropRoiDisposition, CropRoiProgress, CropRoiStatus, OperationDetail, OperationStatus,
     TaskStatus,
 };
-use lisca_server_common::{normalize_workspace_path, SchedulerError, TaskScheduler};
+use lisca_server::{normalize_workspace_path, SchedulerError, TaskScheduler};
 
 #[derive(Clone, Debug)]
 pub struct CropTaskMetadata {
@@ -306,7 +306,7 @@ fn project_crop_progress(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use lisca_server_common::{OperationSpec, SchedulerConfig, TaskFailure, TaskSpec};
+    use lisca_server::{OperationSpec, SchedulerConfig, TaskFailure, TaskSpec};
     use std::sync::atomic::{AtomicBool, Ordering};
 
     fn scheduler() -> TaskScheduler {

@@ -2,8 +2,8 @@
 resolver = "2"
 members = [
   "crates/lisca",
+  "crates/lisca-server",
   "crates/lisca-tauri",
-  "apps/server-common",
   "apps/aligner/server",
   "apps/annotator/server",
   "apps/studio/server",
@@ -53,5 +53,6 @@ rayon = "1.10"
 mplot = { git = "https://github.com/keejkrej/mplot-rs" }
 rust_xlsxwriter = "0.90"
 lisca = { path = "crates/lisca", default-features = false }
+lisca-server = { path = "crates/lisca-server" }
 tauri = "2"
 tauri-build = "2"

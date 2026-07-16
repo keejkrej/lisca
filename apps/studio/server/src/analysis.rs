@@ -1,5 +1,5 @@
 use lisca::protocol::AnalysisProgress;
-use lisca_server_common::KeyedRuns;
+use lisca_server::KeyedRuns;
 
 pub type AnalysisJobState = KeyedRuns<AnalysisProgress>;
 

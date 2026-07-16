@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use lisca_server_common::{
+use lisca_server::{
     OperationSpec, SchedulerConfig, SchedulerError, TaskFailure, TaskScheduler, TaskSpec,
 };
 use tokio::sync::{mpsc, oneshot};

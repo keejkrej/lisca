@@ -1,7 +1,7 @@
 use aligner_server::{CropJobState, HasCropJobs};
 use axum::Router;
 use lisca::{http, protocol::AppId};
-use lisca_server_common::{task_router, HasTaskScheduler, SchedulerConfig, TaskScheduler};
+use lisca_server::{task_router, HasTaskScheduler, SchedulerConfig, TaskScheduler};
 
 const DEFAULT_PORT: u16 = 8765;
 

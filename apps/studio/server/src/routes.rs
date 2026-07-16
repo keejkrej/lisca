@@ -13,7 +13,7 @@ use lisca::{
         SaveAssayJsonRequest, SaveAssayJsonResponse, SaveResultPdfRequest, SaveResultPdfResponse,
     },
 };
-use lisca_server_common::normalize_workspace_path;
+use lisca_server::normalize_workspace_path;
 
 use crate::analysis::HasAnalysisJobs;
 

@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use axum::{body::Body, http::Request};
-use lisca_server_common::{
+use lisca_server::{
     task_router, HasTaskScheduler, OperationSpec, SchedulerConfig, TaskScheduler, TaskSpec,
 };
 use tower::ServiceExt;

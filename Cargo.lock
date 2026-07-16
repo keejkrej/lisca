@@ -24,7 +24,7 @@ dependencies = [
  "axum",
  "image 0.25.10",
  "lisca",
- "lisca-server-common",
+ "lisca-server",
  "tempfile",
  "tokio",
 ]
@@ -69,7 +69,7 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "lisca",
- "lisca-server-common",
+ "lisca-server",
  "tokio",
 ]
 
@@ -2382,7 +2382,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "lisca-server-common"
+name = "lisca-server"
 version = "0.1.0"
 dependencies = [
  "axum",
@@ -4323,7 +4323,7 @@ dependencies = [
  "axum",
  "base64 0.22.1",
  "lisca",
- "lisca-server-common",
+ "lisca-server",
  "tokio",
 ]
 
