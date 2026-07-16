@@ -1,13 +1,10 @@
-# Open the shared Task Center from Aligner
-
-Status: resolved
-Blocked by: 03
-
-Source: [PRD.md](../PRD.md)
+# 04 — Open the shared Task Center from Aligner
 
 **What to build:** Add a shared, centered Task Center inspired by Chrome's downloads information hierarchy and open it from a persistent Task button among Aligner's top utility actions. The default view stays compact and Operation-oriented, with optional Task/Attempt detail and immediate cancel or retry actions, while the underlying alignment workflow remains available.
 
-## Acceptance criteria
+**Blocked by:** 03 — Cancel and retry Task attempts.
+
+**Status:** resolved
 
 - [x] Shared headless state derives Operation grouping, active-before-history ordering, bounded progress, statuses, permitted actions, and restrained active/attention indicators from canonical projections.
 - [x] Snapshot reconciliation plus the existing live-update or polling infrastructure keeps list and detail state current through shared client IO without raw component fetches or a second mutable task model.

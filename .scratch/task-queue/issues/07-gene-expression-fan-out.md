@@ -1,13 +1,10 @@
-# Run gene-expression analysis as bounded fan-out/fan-in Tasks
-
-Status: ready-for-agent
-Blocked by: 03, 05
-
-Source: [PRD.md](../PRD.md)
+# 07 — Run gene-expression analysis as bounded fan-out/fan-in Tasks
 
 **What to build:** Migrate the gene-expression assay pipeline onto the canonical scheduler, splitting work at its natural independent units and expressing downstream aggregation through explicit dependencies. Successful branches and committed results remain authoritative when another branch fails, while established analysis consumers see a canonical compatibility projection and Studio stays non-blocking.
 
-## Acceptance criteria
+**Blocked by:** 03 — Cancel and retry Task attempts; 05 — Expose the Task Center in Annotator and Studio shells.
+
+**Status:** ready-for-agent
 
 - [ ] A gene-expression Analysis Operation fans out per independent position, site, time series, or other justified bounded unit and uses explicit fan-in Tasks for outputs that require multiple prerequisites; no large assay is hidden inside one Task.
 - [ ] Aggregation starts only when every declared prerequisite has succeeded, while ready independent branches continue after an unrelated failure and expose partial progress.

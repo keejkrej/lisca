@@ -1,13 +1,10 @@
-# Execute dependency graphs with partial outcomes
-
-Status: resolved
-Blocked by: 01
-
-Source: [PRD.md](../PRD.md)
+# 02 — Execute dependency graphs with partial outcomes
 
 **What to build:** Allow an Operation to declare a directed acyclic Task graph so independent branches run as soon as their own prerequisites succeed, aggregation waits for its inputs, and a failed branch does not erase or stop useful sibling work. Inspection clearly distinguishes execution failure from dependency blocking.
 
-## Acceptance criteria
+**Blocked by:** 01 — Run and inspect bounded Operations fairly.
+
+**Status:** resolved
 
 - [x] Operation creation or extension rejects cycles, missing dependencies, and dependencies outside the Operation before invalid work can run.
 - [x] A Task becomes eligible only after every declared dependency completes successfully, and blocked Tasks do not head-of-line block later independent ready Tasks.

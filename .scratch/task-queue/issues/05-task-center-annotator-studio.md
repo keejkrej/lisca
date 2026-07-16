@@ -1,13 +1,10 @@
-# Expose the Task Center in Annotator and Studio shells
-
-Status: resolved
-Blocked by: 04
-
-Source: [PRD.md](../PRD.md)
+# 05 — Expose the Task Center in Annotator and Studio shells
 
 **What to build:** Reuse the same Task Center throughout the remaining product shells, placing its button with Annotator's top utility actions and at the bottom of Studio's left rail so queued, active, and recent work stays globally reachable without competing with domain controls.
 
-## Acceptance criteria
+**Blocked by:** 04 — Open the shared Task Center from Aligner.
+
+**Status:** resolved
 
 - [x] Annotator uses the shared Task button and Task Center behavior from its top utility action area without duplicating modal or task state logic.
 - [x] Studio uses the shared Task button at the bottom of its left navigation rail and keeps it available throughout the wizard, align, annotate, analyse, and result workflow states.

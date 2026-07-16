@@ -1,13 +1,10 @@
-# Run and inspect bounded Operations fairly
-
-Status: resolved
-Blocked by: None
-
-Source: [PRD.md](../PRD.md)
+# 01 — Run and inspect bounded Operations fairly
 
 **What to build:** Introduce the canonical process-global queue so backend computations can be represented as user-facing Operations containing bounded Tasks and Attempts. Independent Tasks can be submitted and inspected through generated typed list/detail projections, while dispatch remains fair and predictable across Operations and workspaces. Keep all scheduling and history process-local.
 
-## Acceptance criteria
+**Blocked by:** None — can start immediately.
+
+**Status:** resolved
 
 - [x] Canonical generated contracts distinguish Operation, Task, and Attempt identities and expose queued, running, completed, failed, cancelled, cancellation-requested, and attention/progress information needed by later clients without hand-written wire types.
 - [x] Generic operation-centric list and operation/task detail reads are available from each product backend and decode through shared client IO; the list includes active work plus capped recent terminal history.

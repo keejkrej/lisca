@@ -1,13 +1,10 @@
-# Run cropping as one Task per position
-
-Status: ready-for-agent
-Blocked by: 03, 04
-
-Source: [PRD.md](../PRD.md)
+# 06 — Run cropping as one Task per position
 
 **What to build:** Migrate crop submission to the canonical scheduler so one user Crop Operation owns exactly one bounded crop Task per selected position. Each position can finish, fail, cancel, or retry independently, publishes only its complete declared output, and remains visible through the Task Center while established crop consumers receive a compatibility projection.
 
-## Acceptance criteria
+**Blocked by:** 03 — Cancel and retry Task attempts; 04 — Open the shared Task Center from Aligner.
+
+**Status:** ready-for-agent
 
 - [ ] A crop request for N selected positions creates one Operation with exactly N logical crop Tasks, including a representative 100-position request that creates 100 one-position Tasks and no monolithic crop execution path.
 - [ ] Each crop Task owns only one position's output boundary, checks cancellation at safe bounded checkpoints, stages output away from its published destination, and commits atomically only after successful computation and a final cancellation check.

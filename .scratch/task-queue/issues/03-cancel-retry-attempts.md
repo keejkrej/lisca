@@ -1,13 +1,10 @@
-# Cancel and retry Task attempts
-
-Status: resolved
-Blocked by: 02
-
-Source: [PRD.md](../PRD.md)
+# 03 — Cancel and retry Task attempts
 
 **What to build:** Let users control eligible work through generic typed cancel and retry commands. Cancellation is cooperative for running computation, immediate for work that has not started, and manual retry creates a new Attempt without losing prior outcomes or double-counting Operation progress.
 
-## Acceptance criteria
+**Blocked by:** 02 — Execute dependency graphs with partial outcomes.
+
+**Status:** resolved
 
 - [x] Generic Operation/Task cancel and Task retry commands are exposed by every product backend and consumed through shared client IO, returning the updated canonical projection or a typed invalid-transition error.
 - [x] Cancelling a queued or blocked Task prevents it from starting, while cancelling a running Task exposes cancellation-requested until its handler reaches a safe checkpoint and terminates.

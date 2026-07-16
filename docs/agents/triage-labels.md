@@ -12,13 +12,19 @@ The skills speak in terms of five canonical triage roles. This file maps those r
 
 When a skill mentions a role (e.g. "apply the AFK-ready triage label"), use the corresponding label string from this table.
 
-This repo tracks issues as local markdown, so a "label" is the `Status:` line near the top of an issue file:
+This repo tracks issues as local markdown, so a "label" is the `**Status:**` field of an
+issue file, in the per-ticket shape `/to-tickets` publishes:
 
 ```markdown
-# Run cropping as one Task per position
+# 06 — Run cropping as one Task per position
 
-Status: ready-for-agent
-Blocked by: 03, 04
+**What to build:** ...
+
+**Blocked by:** 03 — Cancel and retry Task attempts.
+
+**Status:** ready-for-agent
+
+- [ ] Acceptance criterion 1
 ```
 
 Issues derived from a PRD are triaged by construction — they start at `ready-for-agent`
