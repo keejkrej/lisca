@@ -6,7 +6,7 @@
     "build": "bun ../../../scripts/build-tauri-frontend.ts studio && bun --filter @lisca/studio-server build",
     "dev": "tauri dev",
     "dist": "bun ../../../scripts/package-tauri.ts studio",
-    "typecheck": "cargo check -p studio-tauri"
+    "typecheck": "vp exec bun ../../../scripts/prepare-tauri-resources.ts studio && cargo check -p studio-tauri"
   },
   "dependencies": {},
   "devDependencies": {

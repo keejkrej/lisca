@@ -2,6 +2,7 @@ import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
 
 import { createTaskPort } from "../src/ports/tasks";
+import { runClientEffect } from "../src/infra/runtime";
 import { TaskCommandError } from "@lisca/contracts/http-api";
 
 const operation = {
@@ -148,7 +149,7 @@ describe("createTaskPort", () => {
         ),
     });
 
-    const error = await Effect.runPromise(Effect.flip(port.retryTask("task-1")));
+    const error = await runClientEffect(port.retryTask("task-1")).catch((cause: unknown) => cause);
     expect(error).toBeInstanceOf(TaskCommandError);
     expect(error).toMatchObject({
       _tag: "TaskCommandError",

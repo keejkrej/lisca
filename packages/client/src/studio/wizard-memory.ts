@@ -5,7 +5,7 @@ import type {
   MemorySourceEntry,
   MemoryWorkspaceEntry,
 } from "@lisca/contracts";
-import { liscaLocalStorage, readStorageJson, writeStorageJson } from "@lisca/storage";
+import { liscaLocalStorage, readStorageJson, writeStorageJson } from "@lisca/utils";
 
 const WIZARD_MEMORY_KEY = "lisca.studio.wizardMemory";
 const MEMORY_CAP = 20;
@@ -49,7 +49,7 @@ export type StudioWizardMemoryTouch =
     };
 
 export function touchStudioWizardMemory(touch: StudioWizardMemoryTouch): void {
-  const now = new Date().toISOString();
+  const now = Date.now();
   const memory = readWizardMemory();
 
   if (touch.kind === "workspace") {

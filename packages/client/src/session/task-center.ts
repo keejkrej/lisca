@@ -1,4 +1,4 @@
-import type { TaskCenterGateway } from "@lisca/ui-headless/task-center";
+import type { TaskCenterGateway } from "@lisca/utils";
 
 import { runClientEffect } from "../infra/runtime";
 import type { TaskDataPort } from "../ports/types";
@@ -25,8 +25,6 @@ export type TaskCenterPollingOptions = {
   onSnapshot: (snapshot: Awaited<ReturnType<TaskCenterGateway["listOperations"]>>) => void;
   onError: (error: unknown) => void;
   pollIntervalMs?: number;
-  schedule?: (callback: () => void, delayMs: number) => ReturnType<typeof setTimeout>;
-  clearSchedule?: (handle: ReturnType<typeof setTimeout>) => void;
 };
 
 /**
@@ -35,15 +33,13 @@ export type TaskCenterPollingOptions = {
  */
 export function subscribeTaskCenterOperations(options: TaskCenterPollingOptions): () => void {
   const pollIntervalMs = options.pollIntervalMs ?? 1_500;
-  const schedule = options.schedule ?? globalThis.setTimeout;
-  const clearSchedule = options.clearSchedule ?? globalThis.clearTimeout;
   const abortController = new AbortController();
   let stopped = false;
   let handle: ReturnType<typeof setTimeout> | undefined;
 
   const scheduleNext = () => {
     if (stopped) return;
-    handle = schedule(() => void poll(), pollIntervalMs);
+    handle = globalThis.setTimeout(() => void poll(), pollIntervalMs);
   };
 
   const poll = async () => {
@@ -62,6 +58,6 @@ export function subscribeTaskCenterOperations(options: TaskCenterPollingOptions)
   return () => {
     stopped = true;
     abortController.abort();
-    if (handle !== undefined) clearSchedule(handle);
+    if (handle !== undefined) globalThis.clearTimeout(handle);
   };
 }

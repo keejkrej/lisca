@@ -8,10 +8,6 @@
       "types": "./src/index.ts",
       "import": "./src/index.ts"
     },
-    "./annotation-tools": {
-      "types": "./src/annotation-tools.ts",
-      "import": "./src/annotation-tools.ts"
-    },
     "./annotation-canvas-handlers": {
       "types": "./src/annotation-canvas-handlers.ts",
       "import": "./src/annotation-canvas-handlers.ts"
@@ -40,10 +36,6 @@
       "types": "./src/canvas-transient-status.ts",
       "import": "./src/canvas-transient-status.ts"
     },
-    "./contrast-control": {
-      "types": "./src/contrast-control.ts",
-      "import": "./src/contrast-control.ts"
-    },
     "./crop-progress-modal": {
       "types": "./src/crop-progress-modal.ts",
       "import": "./src/crop-progress-modal.ts"
@@ -56,10 +48,6 @@
       "types": "./src/folder-source-parse-modal.ts",
       "import": "./src/folder-source-parse-modal.ts"
     },
-    "./host": {
-      "types": "./src/host.ts",
-      "import": "./src/host.ts"
-    },
     "./host-file-picker-state": {
       "types": "./src/host-file-picker-state.ts",
       "import": "./src/host-file-picker-state.ts"
@@ -67,10 +55,6 @@
     "./shell-layout": {
       "types": "./src/shell-layout.ts",
       "import": "./src/shell-layout.ts"
-    },
-    "./shortcuts": {
-      "types": "./src/shortcuts.ts",
-      "import": "./src/shortcuts.ts"
     },
     "./slider-stepper-field": {
       "types": "./src/slider-stepper-field.ts",
@@ -91,14 +75,6 @@
     "./variation-exclude-preview": {
       "types": "./src/variation-exclude-preview.ts",
       "import": "./src/variation-exclude-preview.ts"
-    },
-    "./work-session-picker": {
-      "types": "./src/work-session-picker.ts",
-      "import": "./src/work-session-picker.ts"
-    },
-    "./task-center": {
-      "types": "./src/task-center.ts",
-      "import": "./src/task-center.ts"
     }
   },
   "scripts": {
@@ -111,10 +87,10 @@
   },
   "devDependencies": {
     "@solidjs/testing-library": "catalog:",
-    "vite-plugin-solid": "catalog:",
     "jsdom": "^26.1.0",
     "solid-js": "catalog:",
     "typescript": "catalog:",
+    "vite-plugin-solid": "catalog:",
     "vitest": "catalog:"
   },
   "peerDependencies": {

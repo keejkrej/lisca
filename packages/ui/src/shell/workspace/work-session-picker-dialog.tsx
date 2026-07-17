@@ -1,9 +1,9 @@
 import {
   formatWorkSessionWhen,
-  useWorkSessionPickerState,
+  createWorkSessionPickerState,
   workSessionPickerDescription,
   type WorkSessionPickerItem,
-} from "@lisca/ui-headless/work-session-picker";
+} from "@lisca/utils";
 import type { LiscaAppId } from "@lisca/utils";
 import { For, Show } from "solid-js";
 import { Button } from "../../components/ui/button";
@@ -19,7 +19,7 @@ export type WorkSessionPickerDialogProps = {
 };
 
 export function WorkSessionPickerDialog(props: WorkSessionPickerDialogProps) {
-  const state = () => useWorkSessionPickerState(props.open, props.sessions);
+  const state = () => createWorkSessionPickerState(props.open, props.sessions);
 
   return (
     <Show when={state().open}>
@@ -28,7 +28,9 @@ export function WorkSessionPickerDialog(props: WorkSessionPickerDialogProps) {
           <div class="space-y-4">
             <div>
               <h2 class="font-medium text-foreground">Resume a session</h2>
-              <p class="text-muted-foreground text-sm">{workSessionPickerDescription(props.appId)}</p>
+              <p class="text-muted-foreground text-sm">
+                {workSessionPickerDescription(props.appId)}
+              </p>
             </div>
             <ul class="max-h-72 space-y-2 overflow-auto">
               <For each={state().items}>
@@ -43,9 +45,7 @@ export function WorkSessionPickerDialog(props: WorkSessionPickerDialogProps) {
                       <div class="truncate text-muted-foreground text-xs">{item.path}</div>
                       <Show when={item.sourcePath}>
                         {(sourcePath) => (
-                          <div class="truncate text-muted-foreground text-xs">
-                            {sourcePath()}
-                          </div>
+                          <div class="truncate text-muted-foreground text-xs">{sourcePath()}</div>
                         )}
                       </Show>
                       <div class="text-muted-foreground text-xs">

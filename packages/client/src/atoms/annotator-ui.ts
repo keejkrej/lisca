@@ -5,15 +5,12 @@ import type {
   RoiWorkspaceScan,
 } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
-import { deriveContrastUiState } from "@lisca/utils";
-export type { AnnotationTool } from "@lisca/ui-headless/annotation-tools";
-export {
-  ANNOTATION_TOOL_DEFINITIONS,
-  toolCanRunWithoutLabel,
-} from "@lisca/ui-headless/annotation-tools";
-import type { AnnotationTool } from "@lisca/ui-headless/annotation-tools";
+import { defaultContrastDomain, deriveContrastUiState } from "@lisca/utils";
+export type { AnnotationTool } from "@lisca/utils";
+export { ANNOTATION_TOOL_DEFINITIONS, toolCanRunWithoutLabel } from "@lisca/utils";
+import type { AnnotationTool } from "@lisca/utils";
 import { touchAnnotatorWorkSessionFromState } from "../session/work-session";
-import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/storage";
+import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/utils";
 import { Atom } from "@effect-atom/atom-solid";
 export type AnnotationMode = "classification" | "segmentation";
 
@@ -60,7 +57,7 @@ const defaultSelection: RoiSelection = {
   zIndex: 0,
 };
 
-const defaultContrastDomain: ContrastWindow = { min: 0, max: 255 };
+const initialContrastDomain = defaultContrastDomain(undefined);
 
 export function createDefaultAnnotatorUiState(): AnnotatorUiState {
   return {
@@ -73,9 +70,9 @@ export function createDefaultAnnotatorUiState(): AnnotatorUiState {
     overlayOpacity: 0.35,
     frame: null,
     contrast: null,
-    contrastDomain: defaultContrastDomain,
+    contrastDomain: initialContrastDomain,
     contrastMin: 0,
-    contrastMax: 255,
+    contrastMax: initialContrastDomain.max,
     frameLoading: false,
     annotationLoading: false,
     saving: false,
@@ -194,9 +191,9 @@ export function resetAnnotatorWorkspace<State extends AnnotatorUiState>(
     activeLabelId: null,
     frame: null,
     contrast: null,
-    contrastDomain: defaultContrastDomain,
+    contrastDomain: initialContrastDomain,
     contrastMin: 0,
-    contrastMax: 255,
+    contrastMax: initialContrastDomain.max,
     scanError: null,
     frameError: null,
     annotationError: null,

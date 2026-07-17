@@ -176,7 +176,7 @@ async fn start_analysis_handler<S: HasAnalysisJobs>(
                     progress: 0.0,
                     message: Some("Analysis failed".to_string()),
                     result_files: Vec::new(),
-                    error: Some(error),
+                    error: Some(error.to_string()),
                 };
                 let _ = jobs.update(&final_progress.request_id, |current| {
                     *current = final_progress.clone();
@@ -263,4 +263,105 @@ async fn analysis_results_handler(
         error: None,
     };
     Ok(Json(Some(synthetic)))
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{
+        fs,
+        path::PathBuf,
+        time::{Duration, SystemTime, UNIX_EPOCH},
+    };
+
+    use axum::extract::State;
+    use lisca::protocol::{AnalysisProgress, AnalysisStartRequest, AnalysisStatus, AssayType};
+
+    use super::start_analysis_handler;
+    use crate::analysis::{AnalysisJobState, HasAnalysisJobs};
+
+    #[derive(Clone, Default)]
+    struct TestState {
+        analysis: AnalysisJobState,
+    }
+
+    impl HasAnalysisJobs for TestState {
+        fn analysis_jobs(&self) -> &AnalysisJobState {
+            &self.analysis
+        }
+    }
+
+    fn test_workspace(assay_id: AssayType) -> PathBuf {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system clock should be after the Unix epoch")
+            .as_nanos();
+        let workspace = std::env::temp_dir().join(format!(
+            "lisca-studio-unsupported-assay-{}-{nonce}",
+            std::process::id()
+        ));
+        fs::create_dir_all(&workspace).expect("test workspace should be created");
+
+        let assay = format!(
+            r#"{{
+                "assayId": "{assay_id}",
+                "assayLabel": "Unsupported assay",
+                "dataSourceKind": null,
+                "info1": {{
+                    "dataPath": "",
+                    "folderFilenameTemplate": "",
+                    "folderSubfolderTemplate": "",
+                    "name": "Unsupported assay",
+                    "saveTo": ""
+                }},
+                "info2": {{
+                    "selectedFeatures": [],
+                    "timelapseAmount": 1.0,
+                    "timelapseUnit": "minute"
+                }},
+                "info3": {{ "samples": [] }}
+            }}"#
+        );
+        fs::write(workspace.join("assay.json"), assay).expect("assay fixture should be written");
+        workspace
+    }
+
+    async fn wait_for_terminal_progress(state: &TestState, request_id: &str) -> AnalysisProgress {
+        for _ in 0..100 {
+            let progress = state
+                .analysis
+                .get(request_id)
+                .expect("analysis job state should not be poisoned")
+                .expect("analysis job should exist");
+            if progress.status == AnalysisStatus::Error {
+                return progress;
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+        panic!("analysis did not reach an error state");
+    }
+
+    #[tokio::test]
+    async fn unsupported_assays_surface_their_ids_in_analysis_progress() {
+        for assay_id in [AssayType::LnpBinding, AssayType::CustomAssay] {
+            let state = TestState::default();
+            let workspace = test_workspace(assay_id);
+            let request_id = format!("unsupported-{assay_id}");
+            let request = AnalysisStartRequest {
+                request_id: request_id.clone(),
+                workspace_path: workspace.to_string_lossy().into_owned(),
+            };
+
+            let _ = start_analysis_handler(State(state.clone()), axum::Json(request))
+                .await
+                .expect("analysis request should be accepted");
+
+            let progress = wait_for_terminal_progress(&state, &request_id).await;
+            assert_eq!(progress.message.as_deref(), Some("Analysis failed"));
+            let error = progress.error.expect("analysis error should be visible");
+            assert!(error.contains("unsupported assay id"));
+            assert!(error.contains(&assay_id.to_string()));
+
+            fs::remove_dir_all(workspace).expect("test workspace should be removed");
+        }
+    }
 }

@@ -2,29 +2,30 @@
 
 ## TypeScript (`@lisca/analysis`)
 
-Shared **results model** for the Studio web app. Layout mirrors Rust `analysis/assays/<name>/`:
+Pure **results model** for the Studio web app. Layout mirrors Rust `analysis/assays/<name>/`:
 
 - `shared/panels.ts` — parse analysis CSVs, build chart panels (`ResultPanel`)
 - `assays/gene-expression/catalog.ts` — gene-expression plot IDs and labels
-- `assays/immune-killing/catalog.ts` — immune-killing result file ordering
-- `atoms/analysis-panels.ts` — `createAnalysisPanelAtoms(runtime)` factory
 
-Apps import `@lisca/analysis` and wire the factory with their `StudioPortService` runtime.
+The package is pure model/chart logic. Studio-coupled atoms live in
+`apps/studio/web/src/atoms/studio-analysis-atoms.ts`, where the model is wired to the
+`StudioPortService` runtime.
 
 ## Chart spec (`@lisca/analysis/charts`)
 
-Platform-agnostic chart layer between panel models and renderers:
+Pure chart-spec layer between panel models and the Studio web renderer:
 
 - `chartSpecForPanel(panel)` — `ResultPanel` → `ChartSpec` (series, axes, histogram bins)
 - `chart-data.ts` — pivot panel specs into renderer-friendly row shapes
 - `theme.ts` — palette, margins, font defaults
-- `capabilities.ts` — renderer capability helpers (the current app uses `web`)
 
 Pure logic only — no SolidJS or Observable Plot.
 
 ## Web renderer
 
-`@lisca/ui/features` renders chart specs with Observable Plot through `ResultPanelsGridView`. Studio wires data loading; chart UI stays in the shared web UI package.
+`apps/studio/web/src/result/result-panels-grid.tsx` renders chart specs with Observable Plot
+through `ResultPanelsGridView`. The renderer and its data-loading atoms are owned by Studio;
+`@lisca/ui` does not depend on the analysis model or renderer.
 
 ## Rust pipeline
 

@@ -7,7 +7,7 @@ import { Field, FieldLabel } from "../../components/ui/field";
 import { Input } from "../../components/ui/input";
 import { DialogSurface } from "../../shell/modal/dialog-surface";
 import { ModalScrim } from "../../shell/modal/modal-scrim";
-import type { HostFilePickerOperations } from "./host-operations";
+import type { HostFilePickerOperations } from "@lisca/utils";
 
 export type FolderSourceParseModalProps = {
   path: string | null;

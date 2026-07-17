@@ -1,12 +1,15 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::{Mutex, OnceLock};
 
-use image::{imageops::FilterType, GrayImage, ImageBuffer, Luma};
 use ndarray::{Array, ArrayView, Ix4};
 use ort::session::Session;
 use ort::value::Tensor;
 
 use crate::aligner;
+use crate::onnx::{
+    binary_logits, first_class_probability, resize_to_224, to_nchw_normalized,
+    workspace_models_dir, IMAGE_SIZE,
+};
 use crate::protocol::{
     AlignGridCellCoord, AutoExcludePreviewCell, FramePayload, SmartExcludeRequest,
     SmartExcludeResponse,
@@ -14,10 +17,7 @@ use crate::protocol::{
 
 use super::frame::decode_frame_pixels;
 
-const IMAGE_SIZE: u32 = 224;
 const DEFAULT_THRESHOLD: f64 = 0.5;
-const IMAGENET_MEAN: [f32; 3] = [0.485, 0.456, 0.406];
-const IMAGENET_STD: [f32; 3] = [0.229, 0.224, 0.225];
 
 static EXCLUDE_SESSION: OnceLock<Result<Mutex<Session>, String>> = OnceLock::new();
 
@@ -48,7 +48,10 @@ fn classify_exclusion_on_frame(
     for cell in cells {
         let exclude_score = classify_cell(&mut session, input_name, &pixels, width, height, cell)?;
         if exclude_score >= threshold {
-            excluded_cells.push(AlignGridCellCoord { i: cell.i, j: cell.j });
+            excluded_cells.push(AlignGridCellCoord {
+                i: cell.i,
+                j: cell.j,
+            });
         }
     }
 
@@ -65,10 +68,6 @@ fn exclude_session() -> Result<std::sync::MutexGuard<'static, Session>, String> 
         .map_err(|error| format!("smart exclusion model lock poisoned: {error}"))
 }
 
-fn workspace_models_dir() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../models")
-}
-
 fn build_exclude_session(model_path: Result<PathBuf, String>) -> Result<Session, String> {
     let model_path = model_path?;
     let onnx_path = model_path.join("model.onnx");
@@ -79,39 +78,14 @@ fn build_exclude_session(model_path: Result<PathBuf, String>) -> Result<Session,
 }
 
 pub fn resolve_model_path() -> Result<PathBuf, String> {
-    if let Ok(env_path) = std::env::var("LISCA_SMART_EXCLUSION_MODEL") {
-        let path = PathBuf::from(env_path.trim());
-        if path.join("model.onnx").is_file() {
-            return Ok(path);
-        }
-        if path.file_name().is_some_and(|name| name == "model.onnx") && path.is_file() {
-            return Ok(path
-                .parent()
-                .map(Path::to_path_buf)
-                .unwrap_or_else(|| PathBuf::from(".")));
-        }
-        return Err(format!(
-            "LISCA_SMART_EXCLUSION_MODEL is set but no model.onnx found at {}",
-            path.display()
-        ));
-    }
-
-    let candidates = [
-        workspace_models_dir().join("smart-exclusion-resnet18/onnx"),
-        workspace_models_dir().join("smart-exclusion-resnet18"),
-        PathBuf::from("models/smart-exclusion-resnet18/onnx"),
-        PathBuf::from("models/smart-exclusion-resnet18"),
-    ];
-    for candidate in candidates {
-        if candidate.join("model.onnx").is_file() {
-            return Ok(candidate);
-        }
-    }
-
-    Err(
-        "smart exclusion model not found: set LISCA_SMART_EXCLUSION_MODEL or place model.onnx at \
-         models/smart-exclusion-resnet18/onnx/model.onnx"
-            .to_string(),
+    crate::onnx::resolve_model_path(
+        "LISCA_SMART_EXCLUSION_MODEL",
+        [
+            workspace_models_dir().join("smart-exclusion-resnet18/onnx"),
+            workspace_models_dir().join("smart-exclusion-resnet18"),
+            PathBuf::from("models/smart-exclusion-resnet18/onnx"),
+            PathBuf::from("models/smart-exclusion-resnet18"),
+        ],
     )
 }
 
@@ -143,22 +117,7 @@ fn classify_cell(
 
 fn exclude_probability_from_logits(logits: &ArrayView<f32, ndarray::IxDyn>) -> Result<f64, String> {
     let (exclude_logit, include_logit) = binary_logits(logits)?;
-    let max = exclude_logit.max(include_logit);
-    let exclude_exp = (exclude_logit - max).exp();
-    let include_exp = (include_logit - max).exp();
-    Ok(f64::from(exclude_exp / (exclude_exp + include_exp)))
-}
-
-fn binary_logits(logits: &ArrayView<f32, ndarray::IxDyn>) -> Result<(f32, f32), String> {
-    match logits.ndim() {
-        1 if logits.len() >= 2 => Ok((logits[[0]], logits[[1]])),
-        2 if logits.shape()[1] >= 2 => Ok((logits[[0, 0]], logits[[0, 1]])),
-        4 => Ok((logits[[0, 0, 0, 0]], logits[[0, 1, 0, 0]])),
-        _ => Err(format!(
-            "unsupported smart exclusion logits shape: {:?}",
-            logits.shape()
-        )),
-    }
+    Ok(first_class_probability(exclude_logit, include_logit))
 }
 
 fn crop_and_normalize_cell(
@@ -205,29 +164,10 @@ fn crop_and_normalize_cell(
         .collect())
 }
 
-fn resize_to_224(data: &[u8], width: u32, height: u32) -> GrayImage {
-    let img = ImageBuffer::<Luma<u8>, Vec<u8>>::from_raw(width, height, data.to_vec())
-        .unwrap_or_else(|| {
-            ImageBuffer::from_raw(width, height, vec![0; (width * height) as usize]).unwrap()
-        });
-    image::imageops::resize(&img, IMAGE_SIZE, IMAGE_SIZE, FilterType::Triangle)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use ndarray::array;
-
-    #[test]
-    fn binary_logits_supports_rank_one_and_two_outputs() {
-        let flat_array = array![1.0, 2.0];
-        let flat = flat_array.view().into_dyn();
-        assert_eq!(binary_logits(&flat).expect("flat"), (1.0, 2.0));
-
-        let batched_array = array![[0.5, 1.5]];
-        let batched = batched_array.view().into_dyn();
-        assert_eq!(binary_logits(&batched).expect("batched"), (0.5, 1.5));
-    }
 
     #[test]
     fn exclude_probability_prefers_exclude_label() {
@@ -290,17 +230,4 @@ mod tests {
         .expect("classify");
         assert!(response.excluded_cells.is_empty());
     }
-}
-
-fn to_nchw_normalized(gray: &GrayImage) -> Vec<f32> {
-    let n = (IMAGE_SIZE * IMAGE_SIZE) as usize;
-    let mut out = vec![0.0f32; 3 * n];
-    for channel in 0..3 {
-        let offset = channel * n;
-        for (index, value) in gray.as_raw().iter().enumerate() {
-            let normalized = *value as f32 / 255.0;
-            out[offset + index] = (normalized - IMAGENET_MEAN[channel]) / IMAGENET_STD[channel];
-        }
-    }
-    out
 }

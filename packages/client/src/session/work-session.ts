@@ -12,7 +12,7 @@ import {
   liscaSessionStorage,
   readStorageJson,
   writeStorageJson,
-} from "@lisca/storage";
+} from "@lisca/utils";
 
 export type { LiscaAppId };
 export { LISCA_APP_DEFAULT_PORTS };
@@ -147,7 +147,7 @@ export function touchWorkSession(
     server: entry.server,
     workspacePath,
     assayJsonPath,
-    source: appId === "aligner" ? (entry.source ?? null) : (entry.source ?? null),
+    source: entry.source ?? null,
     label:
       entry.label ??
       (appId === "studio" && assayJsonPath

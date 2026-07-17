@@ -7,13 +7,9 @@ import {
   annotationToolFamily,
   type AnnotationTool,
   type AnnotationToolFamily,
-} from "@lisca/ui-headless/annotation-tools";
-import { resolveKeyboardShortcut, type KeyboardShortcut } from "@lisca/ui-headless/shortcuts";
-import {
-  dockToolLabel,
-  dockToolShortcuts,
-  type DockToolAction,
-} from "@lisca/ui/shell";
+} from "@lisca/utils";
+import { resolveKeyboardShortcut, type KeyboardShortcut } from "@lisca/utils";
+import { dockToolLabel, dockToolShortcuts, type DockToolAction } from "@lisca/ui/shell";
 import IconLassoRegular from "phosphor-icons-solid/IconLassoRegular";
 import IconPaintBrushRegular from "phosphor-icons-solid/IconPaintBrushRegular";
 import IconSparkleRegular from "phosphor-icons-solid/IconSparkleRegular";
@@ -102,9 +98,12 @@ export function AnnotationToolGrid(props: {
 }) {
   const showShortcutLabels = () => props.shortcutsEnabled ?? true;
 
-  useKeyboardShortcuts(() => dockToolShortcuts(props.toolActions), () => ({
-    enabled: props.canEditTools && (props.shortcutsEnabled ?? true),
-  }));
+  useKeyboardShortcuts(
+    () => dockToolShortcuts(props.toolActions),
+    () => ({
+      enabled: props.canEditTools && (props.shortcutsEnabled ?? true),
+    }),
+  );
 
   return (
     <div

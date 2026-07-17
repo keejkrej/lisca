@@ -101,24 +101,12 @@ function ShellNavbarAligner(props: ShellNavbarAlignerProps) {
   );
 }
 
-function ShellNavbarLeading(props: { children?: JSX.Element }) {
-  return props.children ?? null;
-}
-
-function ShellNavbarActions(props: { children?: JSX.Element }) {
-  return props.children ?? null;
-}
-
 export type ShellNavbarCompound = typeof ShellNavbarRoot & {
-  Leading: typeof ShellNavbarLeading;
-  Actions: typeof ShellNavbarActions;
   Annotator: typeof ShellNavbarAnnotator;
   Aligner: typeof ShellNavbarAligner;
 };
 
 export const ShellNavbar: ShellNavbarCompound = Object.assign(ShellNavbarRoot, {
-  Leading: ShellNavbarLeading,
-  Actions: ShellNavbarActions,
   Annotator: ShellNavbarAnnotator,
   Aligner: ShellNavbarAligner,
 });

@@ -75,6 +75,36 @@ mod contract_tests {
     }
 
     #[test]
+    fn memory_touch_request_uses_tagged_camel_case_fields() {
+        let value = json!({
+            "kind": "assay",
+            "path": "/assays/run-1",
+            "assayLabel": "Reporter",
+            "workspacePath": "/workspaces/run-1",
+        });
+        let request: MemoryTouchRequest = serde_json::from_value(value.clone()).unwrap();
+        let MemoryTouchRequest::Assay {
+            path,
+            assay_label,
+            workspace_path,
+        } = request
+        else {
+            panic!("expected assay memory touch");
+        };
+        assert_eq!(path, "/assays/run-1");
+        assert_eq!(assay_label.as_deref(), Some("Reporter"));
+        assert_eq!(workspace_path.as_deref(), Some("/workspaces/run-1"));
+
+        let serialized = serde_json::to_value(MemoryTouchRequest::Assay {
+            path,
+            assay_label,
+            workspace_path,
+        })
+        .unwrap();
+        assert_eq!(serialized, value);
+    }
+
+    #[test]
     fn roi_index_entry_shape_is_fixed_array() {
         let entry: RoiIndexEntry = serde_json::from_value(json!({
             "roi": 0,

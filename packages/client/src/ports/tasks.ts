@@ -1,27 +1,15 @@
 import { Effect } from "effect";
 import { TaskCommandError } from "@lisca/contracts/http-api";
 
-import {
-  createApiClient,
-  toClientEffect,
-  type ApiClientDeps,
-  type LiscaApiClient,
-} from "../infra/api-client";
+import { createApiClient, type ApiClientDeps, type LiscaApiClient } from "../infra/api-client";
 import { withOptionalAbortSignal } from "../infra/with-abort-signal";
 import { toClientError } from "../infra/client-error";
+import { withClientEffect } from "../infra/with-client-effect";
 import type { TaskDataPort } from "./types";
 
 export type { TaskDataPort } from "./types";
 
 export type TaskPortDeps = ApiClientDeps;
-
-function withClientEffect<A, E>(
-  client: LiscaApiClient,
-  signal: AbortSignal | undefined,
-  run: (client: LiscaApiClient) => Effect.Effect<A, E>,
-) {
-  return withOptionalAbortSignal(toClientEffect(run(client)), signal);
-}
 
 function withTaskCommandEffect<A, E>(
   client: LiscaApiClient,

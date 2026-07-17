@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Cause, Effect, Exit } from "effect";
 
 import { ClientError, toClientError } from "./client-error";
 
@@ -12,7 +12,14 @@ export function runClientEffect<A, E>(
   effect: ClientEffect<A, E>,
   options?: { readonly signal?: AbortSignal },
 ): Promise<A> {
-  return Effect.runPromise(effect, options);
+  return Effect.runPromiseExit(effect, options).then(
+    Exit.match({
+      onFailure: (cause) => {
+        throw Cause.squash(cause);
+      },
+      onSuccess: (value) => value,
+    }),
+  );
 }
 
 export function clientQueryFn<A, E>(

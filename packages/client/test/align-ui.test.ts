@@ -1,4 +1,4 @@
-import { configureLiscaStorage, type LiscaStorageAdapter } from "@lisca/storage";
+import { configureLiscaStorage, type LiscaStorageAdapter } from "@lisca/utils";
 import { describe, expect, it, beforeEach } from "vitest";
 import { normalizeAlignGridState } from "@lisca/utils";
 
@@ -56,7 +56,6 @@ describe("align-ui actions", () => {
         channels: [1],
         times: [0],
         zSlices: [0],
-        rois: [],
       }),
     );
     expect(next.scanSourceKey).toBe("source-key");
@@ -69,7 +68,12 @@ describe("align-ui actions", () => {
     const withSource = {
       ...createInitialAlignUiState(),
       workspacePath: "/ws",
-      source: { kind: "folder", path: "/data" } as const,
+      source: {
+        kind: "folder",
+        path: "/data",
+        subfolderTemplate: "Pos{pos}",
+        filenameTemplate: "img.tif",
+      } as const,
     };
     const next = runReducer(withSource, (set) => actions.setWorkspacePath(set, "/other"));
     expect(next.workspacePath).toBe("/other");

@@ -4,11 +4,11 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] The typed error channel survives to the call sites: a failure carrying a tagged error is distinguishable from a generic failure by consumers, without string-matching the message.
-- [ ] All 35 existing call sites keep working with no call-site changes.
-- [ ] A regression test fails if the error channel is erased again.
-- [ ] `vp run check` shows no new failures beyond the 3 known `*-desktop#typecheck` (see issue 02).
+- [x] The typed error channel survives to the call sites: a failure carrying a tagged error is distinguishable from a generic failure by consumers, without string-matching the message.
+- [x] All 35 existing call sites keep working with no call-site changes.
+- [x] A regression test fails if the error channel is erased again.
+- [x] `vp run check` shows no new failures beyond the 3 known `*-desktop#typecheck` (see issue 02).
 
 See PRD §A and §3.A for the full analysis and the exact seam.

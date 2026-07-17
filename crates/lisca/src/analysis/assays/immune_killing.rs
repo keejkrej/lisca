@@ -12,38 +12,13 @@ use crate::analysis::progress::{analysis_progress, run_blocking};
 use crate::analysis::slide::{build_slide_mapping, parse_interval_minutes, write_slide_mapping};
 
 pub fn resolve_model_path(workspace: &Path) -> Result<PathBuf, String> {
-    if let Ok(env_path) = std::env::var("LISCA_KILL_MODEL") {
-        let path = PathBuf::from(env_path.trim());
-        if path.join("model.onnx").is_file() {
-            return Ok(path);
-        }
-        if path.file_name().is_some_and(|name| name == "model.onnx") && path.is_file() {
-            return Ok(path
-                .parent()
-                .map(Path::to_path_buf)
-                .unwrap_or_else(|| PathBuf::from(".")));
-        }
-        return Err(format!(
-            "LISCA_KILL_MODEL is set but no model.onnx found at {}",
-            path.display()
-        ));
-    }
-
-    let candidates = [
-        workspace.join("models/immune-killing-resnet18"),
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../models/immune-killing-resnet18"),
-        PathBuf::from("models/immune-killing-resnet18"),
-    ];
-    for candidate in candidates {
-        if candidate.join("model.onnx").is_file() {
-            return Ok(candidate);
-        }
-    }
-
-    Err(
-        "immune killing model not found: set LISCA_KILL_MODEL or place model.onnx at \
-         workspace/models/immune-killing-resnet18/model.onnx (export from keejkrej/immune-killing-resnet18)"
-            .to_string(),
+    crate::onnx::resolve_model_path(
+        "LISCA_KILL_MODEL",
+        [
+            workspace.join("models/immune-killing-resnet18"),
+            crate::onnx::workspace_models_dir().join("immune-killing-resnet18"),
+            PathBuf::from("models/immune-killing-resnet18"),
+        ],
     )
 }
 
@@ -58,7 +33,12 @@ pub fn run_sync(workspace: &Path, assay_json: &AssayJsonFile) -> Result<(), Stri
     write_slide_mapping(workspace, &mapping)?;
 
     let model_dir = resolve_model_path(workspace)?;
-    predict::run_predict(workspace, &mapping, &model_dir, predict::PredictOptions::default())?;
+    predict::run_predict(
+        workspace,
+        &mapping,
+        &model_dir,
+        predict::PredictOptions::default(),
+    )?;
     plot::run_plot_timeseries(workspace, &mapping, interval, DEFAULT_PLOT_COLUMNS)?;
     clean::run_clean(workspace, &mapping)?;
     plot::run_plot_kill(workspace, &mapping, interval)?;

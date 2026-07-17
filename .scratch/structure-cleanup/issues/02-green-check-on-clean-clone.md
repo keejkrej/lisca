@@ -4,12 +4,12 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] `vp run check` passes on a fresh clone with no prior `dist:` run: 23/23 tasks.
-- [ ] The fix does not weaken the gate — desktop crates are still type-checked, or their exclusion from `check` is deliberate and documented with the reason.
-- [ ] `vp run dist:<product>` still produces a working bundle with its resources staged.
-- [ ] The chosen approach is recorded (committing a `.gitkeep`, making the resource dir optional in the Tauri config, generating it in a pretask, or scoping it out of `check`) with the trade-off stated.
+- [x] `vp run check` passes on a fresh clone with no prior `dist:` run: 23/23 tasks.
+- [x] The fix does not weaken the gate — desktop crates are still type-checked, or their exclusion from `check` is deliberate and documented with the reason.
+- [x] `vp run dist:<product>` still produces a working bundle with its resources staged.
+- [x] The chosen approach is recorded (committing a `.gitkeep`, making the resource dir optional in the Tauri config, generating it in a pretask, or scoping it out of `check`) with the trade-off stated.
 
 **Note for whoever picks this up:** `vp run check 2>&1 | tail -N` returns tail's exit code, not the check's, and will report success on a hard failure. Do not pipe the gate.
 

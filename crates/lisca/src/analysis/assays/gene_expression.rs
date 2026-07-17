@@ -7,12 +7,11 @@ mod segment;
 mod timeseries;
 mod traces;
 
-pub use auc::{discover_timeseries_csvs, run_auc};
+pub use auc::run_auc;
 pub use fit::run_fit;
 pub use timeseries::run_timeseries;
-pub use traces::{load_trace_panel, TracePanel};
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use crate::protocol::{AnalysisCsvFile, AnalysisProgress, AnalysisStage, AssayJsonFile};
 
@@ -158,37 +157,4 @@ where
         "Analysis pipeline completed",
     ));
     Ok(outputs)
-}
-
-#[allow(dead_code)]
-pub fn run_sync(workspace: &Path, assay_json: &AssayJsonFile) -> Result<(), String> {
-    let interval = parse_interval_minutes(
-        assay_json.info2.timelapse_amount,
-        Some(assay_json.info2.timelapse_unit.as_str()),
-    )
-    .ok_or_else(|| "invalid timelapseAmount/timelapseUnit in assay.json".to_string())?;
-
-    let mapping = build_slide_mapping(&assay_json.info3)?;
-    let jobs = default_timeseries_jobs();
-    write_slide_mapping(workspace, &mapping)?;
-    run_segment(
-        workspace,
-        &mapping,
-        &SegmentOptions {
-            jobs,
-            ..SegmentOptions::default()
-        },
-    )?;
-    run_timeseries(workspace, &mapping, jobs)?;
-    run_plot_timeseries(workspace, &mapping, interval, DEFAULT_PLOT_COLUMNS)?;
-    auc::run_auc(workspace, interval)?;
-    run_plot_auc(workspace, &mapping)?;
-    fit::run_fit(
-        workspace,
-        interval,
-        max_onset_minutes(assay_json),
-        fit::default_fit_jobs(),
-    )?;
-    run_plot_fit(workspace, &mapping, interval, DEFAULT_PLOT_COLUMNS)?;
-    Ok(())
 }

@@ -82,10 +82,6 @@ export type HistogramPanel = {
 
 export type ResultPanel = TimeseriesPanel | BoxPlotPanel | GenericLinePanel | HistogramPanel;
 
-export function displayedParameterPlotFileName(id: DisplayedParameterPlotId): string {
-  return `${id}.png`;
-}
-
 export function displayedParameterPanelId(panel: ResultPanel): DisplayedParameterPlotId | null {
   if (panel.kind !== "boxplot") return null;
 
@@ -353,10 +349,7 @@ export function parsePanelGroups(
 
   const resultPanels: ResultPanel[] = [];
 
-  const makeTimeseriesPanel = (
-    metricIndex: number,
-    metric: "corrected" | "area" | "p_dead",
-  ) => {
+  const makeTimeseriesPanel = (metricIndex: number, metric: "corrected" | "area" | "p_dead") => {
     if (tIndex < 0 || metricIndex < 0) return;
     const traces = new Map<string, TimeseriesTrace>();
 

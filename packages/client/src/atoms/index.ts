@@ -2,6 +2,7 @@ export * from "./reactivity";
 export * from "./ports";
 export * from "./runtime";
 export * from "./result-utils";
+export * from "./annotate-queries";
 export * from "./aligner/queries";
 export * from "./annotator/queries";
 export * from "./studio/queries";

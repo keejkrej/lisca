@@ -141,26 +141,6 @@
   @apply size-10 sm:size-9;
 }
 
-/* MARK: Card */
-.z-card {
-  @apply bg-card text-card-foreground gap-4 overflow-hidden rounded-2xl border shadow-xs/5;
-}
-.z-card-header {
-  @apply gap-1.5 p-6 has-data-[slot=card-action]:grid-cols-[1fr_auto];
-}
-.z-card-title {
-  @apply text-lg font-semibold leading-none;
-}
-.z-card-description {
-  @apply text-muted-foreground text-sm;
-}
-.z-card-content {
-  @apply p-6;
-}
-.z-card-footer {
-  @apply flex items-center p-6;
-}
-
 /* MARK: Field */
 .z-field-set {
   @apply gap-4;
@@ -283,37 +263,6 @@
   @apply bg-border -mx-1 h-px;
 }
 
-/* MARK: Dropdown Menu */
-.z-dropdown-menu-content {
-  @apply ring-foreground/10 bg-popover text-popover-foreground min-w-32 rounded-lg shadow-md ring-1 duration-100;
-}
-.z-dropdown-menu-item {
-  @apply focus:bg-accent focus:text-accent-foreground data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:focus:text-destructive gap-2 rounded-sm px-2 py-1.5 text-base sm:text-sm [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4;
-}
-.z-dropdown-menu-checkbox-item {
-  @apply focus:bg-accent focus:text-accent-foreground gap-2 rounded-sm py-1.5 pr-8 pl-2 text-base sm:text-sm;
-}
-.z-dropdown-menu-radio-item {
-  @apply focus:bg-accent focus:text-accent-foreground gap-2 rounded-sm py-1.5 pr-8 pl-2 text-base sm:text-sm;
-}
-.z-dropdown-menu-item-indicator {
-  @apply pointer-events-none absolute right-2 flex items-center justify-center;
-}
-.z-dropdown-menu-label {
-  @apply text-muted-foreground px-2 py-1.5 text-xs;
-}
-.z-dropdown-menu-separator {
-  @apply bg-border -mx-1 h-px;
-}
-.z-dropdown-menu-shortcut {
-  @apply text-muted-foreground group-focus/dropdown-menu-item:text-accent-foreground ml-auto text-xs tracking-widest;
-}
-.z-dropdown-menu-sub-trigger {
-  @apply focus:bg-accent focus:text-accent-foreground data-expanded:bg-accent data-expanded:text-accent-foreground gap-2 rounded-sm px-2 py-1.5 text-base sm:text-sm;
-}
-.z-dropdown-menu-sub-content {
-  @apply ring-foreground/10 bg-popover text-popover-foreground min-w-[96px] rounded-lg shadow-lg ring-1 duration-100;
-}
 .z-menu-target {
   @apply outline-none;
 }

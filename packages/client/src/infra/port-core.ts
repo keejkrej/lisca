@@ -1,5 +1,4 @@
 import { toFetchErrorMessage } from "./errors";
-import { createPortRegistry, type PortRegistry } from "./port-registry";
 import { createLiscaUrlResolver } from "./urls";
 
 /** Dependencies handed to every `create*Port` factory. */
@@ -9,11 +8,7 @@ export type LiscaPortDeps = {
 };
 
 export type LiscaPort<T> = {
-  registry: PortRegistry<T>;
-  read: () => T | undefined;
-  ensure: () => T;
-  setForTests: (port: T) => void;
-  resetForTests: () => void;
+  client: T;
   httpBaseUrl: () => string;
   toErrorMessage: (cause: unknown, fallback: string) => string;
 };
@@ -36,17 +31,10 @@ export function createLiscaPortCore<T>(config: {
   });
 
   const httpBaseUrl = () => urls.httpBaseUrl();
-
-  const registry = createPortRegistry(() =>
-    config.createPort({ baseUrl: httpBaseUrl, isDev: config.dev ?? false }),
-  );
+  const client = config.createPort({ baseUrl: httpBaseUrl, isDev: config.dev ?? false });
 
   return {
-    registry,
-    read: () => registry.read(),
-    ensure: () => registry.ensure(),
-    setForTests: (port: T) => registry.setForTests(port),
-    resetForTests: () => registry.resetForTests(),
+    client,
     httpBaseUrl,
     toErrorMessage: (cause, fallback) => toFetchErrorMessage(cause, fallback, httpBaseUrl()),
   };

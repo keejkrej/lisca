@@ -2,7 +2,7 @@ import IconWarningCircleRegular from "phosphor-icons-solid/IconWarningCircleRegu
 import { For, Show } from "solid-js";
 
 import type { CanvasStatusMessage, CanvasStatusTone } from "@lisca/ui-headless";
-import { canvasToastPresentation, shouldHideToastText } from "@lisca/ui-headless/canvas-status";
+import { canvasToastPresentation } from "@lisca/ui-headless/canvas-status";
 import { cn } from "../../lib/utils";
 
 function messageToneClassName(tone: CanvasStatusTone | undefined) {
@@ -81,23 +81,16 @@ export function CanvasToastStack(props: { class?: string; messages?: CanvasStatu
         <For each={props.messages}>
           {(message) => {
             const icon = toastIcon(message);
-            const hideText = shouldHideToastText(message);
             return (
               <div
                 class={cn(
-                  "flex max-w-full items-start rounded-lg text-sm leading-snug",
-                  hideText
-                    ? "p-1 text-popover-foreground drop-shadow-sm"
-                    : "gap-2 border bg-popover/75 px-3 py-2",
-                  !hideText && toastToneClassName(message.tone),
+                  "flex max-w-full items-start gap-2 rounded-lg border bg-popover/75 px-3 py-2 text-sm leading-snug",
+                  toastToneClassName(message.tone),
                 )}
-                aria-label={hideText ? message.text : undefined}
                 role={message.tone === "error" ? "alert" : "status"}
               >
                 {icon}
-                <Show when={!hideText}>
-                  <span class="min-w-0">{message.text}</span>
-                </Show>
+                <span class="min-w-0">{message.text}</span>
               </div>
             );
           }}

@@ -15,7 +15,7 @@ import type {
   StateUpdater,
 } from "../atoms/annotator-ui";
 import { currentRoi, requestKey } from "../atoms/annotator-ui";
-import { toolCanRunWithoutLabel } from "@lisca/ui-headless/annotation-tools";
+import { toolCanRunWithoutLabel } from "@lisca/utils";
 import { toClientError } from "../infra/client-error";
 import { frameLoadRequest, shouldRunContrastFrameLoad } from "../session/frame-load-policy";
 import type { AnnotatorDataPort } from "../ports/types";
@@ -199,7 +199,7 @@ export function useAnnotateStateCore<State extends AnnotatorUiState>(
             deps.annotatorClient,
             workspacePath,
             request,
-            frameLoadRequest({ kind: "navigation", contrast: null }),
+            frameLoadRequest(null),
           ).pipe(Effect.mapError(toClientError)),
           {
             signal,
@@ -250,7 +250,7 @@ export function useAnnotateStateCore<State extends AnnotatorUiState>(
             deps.annotatorClient,
             workspacePath,
             request,
-            frameLoadRequest({ kind: "contrast", contrast }),
+            frameLoadRequest(contrast),
           ).pipe(Effect.mapError(toClientError)),
           { signal },
         ),

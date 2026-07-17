@@ -1,12 +1,9 @@
 import type { OperationSummary } from "@lisca/contracts";
-import type { TaskCenterGateway } from "@lisca/ui-headless/task-center";
+import type { TaskCenterGateway } from "@lisca/utils";
 import { Effect } from "effect";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import {
-  createTaskCenterGateway,
-  subscribeTaskCenterOperations,
-} from "../src/session/task-center";
+import { createTaskCenterGateway, subscribeTaskCenterOperations } from "../src/session/task-center";
 import type { TaskDataPort } from "../src/ports/types";
 
 const operation: OperationSummary = {
@@ -59,7 +56,7 @@ describe("Task Center client IO", () => {
       .mockResolvedValueOnce([operation])
       .mockRejectedValueOnce(new Error("server restarting"))
       .mockResolvedValueOnce([{ ...operation, status: "completed" }]);
-    const snapshots: readonly OperationSummary[][] = [];
+    const snapshots: (readonly OperationSummary[])[] = [];
     const errors: unknown[] = [];
 
     const stop = subscribeTaskCenterOperations({

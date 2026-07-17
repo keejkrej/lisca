@@ -1,4 +1,4 @@
-import { resolveKeyboardShortcut } from "@lisca/ui-headless/shortcuts";
+import { resolveKeyboardShortcut } from "@lisca/utils";
 import { Button } from "@lisca/ui/components";
 import {
   DockSection,

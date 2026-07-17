@@ -3,7 +3,7 @@ import { resultData } from "@lisca/client/atoms";
 import { RegistryContext, useAtomSet } from "@effect-atom/atom-solid";
 import { Spinner } from "@lisca/ui/components";
 import { AppShell, ViewportCard } from "@lisca/ui/shell";
-import { ResultPanelsGridView } from "@lisca/ui/features";
+import { ResultPanelsGridView } from "./result-panels-grid";
 import { countChartSpecs } from "@lisca/analysis/charts";
 import { createEffect, createMemo, createSignal, onCleanup, useContext } from "solid-js";
 import { runClientEffect } from "@lisca/client/runtime";
@@ -71,7 +71,9 @@ export default function ResultPage() {
     filterResultFilesBySection(analysisResultFiles(), activeSection()),
   );
   const sectionFilePathsKey = createMemo(() =>
-    sectionFiles().map((file) => file.path).join("\0"),
+    sectionFiles()
+      .map((file) => file.path)
+      .join("\0"),
   );
   const hasTimeseriesFiles = createMemo(
     () => filterResultFilesBySection(analysisResultFiles(), "timeseries").length > 0,

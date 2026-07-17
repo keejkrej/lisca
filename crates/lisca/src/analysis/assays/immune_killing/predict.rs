@@ -2,8 +2,7 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
 
-use image::{imageops::FilterType, GrayImage, ImageBuffer, Luma};
-use ndarray::{Array, Array1, ArrayView, Axis, Ix4};
+use ndarray::{Array, Array1, Axis, Ix4};
 use ndarray_stats::QuantileExt;
 use ort::session::Session;
 use ort::value::Tensor;
@@ -13,11 +12,11 @@ use crate::analysis::roi_stack::{
     position_dir, read_position_index, roi_frame_2d, validate_channel_index, RoiStack,
 };
 use crate::analysis::slide::SlideMapping;
+use crate::onnx::{
+    binary_logits, first_class_probability, resize_to_224, to_nchw_normalized, IMAGE_SIZE,
+};
 
-const IMAGE_SIZE: u32 = 224;
 const DEAD_LABEL_THRESHOLD: f64 = 0.5;
-const IMAGENET_MEAN: [f32; 3] = [0.485, 0.456, 0.406];
-const IMAGENET_STD: [f32; 3] = [0.229, 0.224, 0.225];
 
 #[derive(Debug, Clone)]
 pub struct PredictOptions {
@@ -85,43 +84,9 @@ fn normalize_frame(data: &[f64]) -> Vec<u8> {
         .collect()
 }
 
-fn resize_to_224(data: &[u8], width: u32, height: u32) -> GrayImage {
-    let img = ImageBuffer::<Luma<u8>, Vec<u8>>::from_raw(width, height, data.to_vec())
-        .unwrap_or_else(|| ImageBuffer::from_raw(width, height, vec![0; (width * height) as usize]).unwrap());
-    image::imageops::resize(&img, IMAGE_SIZE, IMAGE_SIZE, FilterType::Triangle)
-}
-
-fn to_nchw_normalized(gray: &GrayImage) -> Vec<f32> {
-    let n = (IMAGE_SIZE * IMAGE_SIZE) as usize;
-    let normalized = Array1::from_iter(gray.as_raw().iter().map(|&value| value as f32 / 255.0));
-    let mut out = vec![0.0f32; 3 * n];
-    for channel in 0..3 {
-        let offset = channel * n;
-        for (index, value) in normalized.iter().enumerate() {
-            out[offset + index] = (value - IMAGENET_MEAN[channel]) / IMAGENET_STD[channel];
-        }
-    }
-    out
-}
-
-fn binary_logits(logits: &ArrayView<f32, ndarray::IxDyn>) -> Result<(f32, f32), String> {
-    match logits.ndim() {
-        1 if logits.len() >= 2 => Ok((logits[[0]], logits[[1]])),
-        2 if logits.shape()[1] >= 2 => Ok((logits[[0, 0]], logits[[0, 1]])),
-        4 => Ok((logits[[0, 0, 0, 0]], logits[[0, 1, 0, 0]])),
-        _ => Err(format!(
-            "unsupported immune killing logits shape: {:?}",
-            logits.shape()
-        )),
-    }
-}
-
 /// P(dead) = P(absent) — label 0 means no surviving cell on the micropattern.
 fn dead_probability_from_logits(absent_logit: f32, present_logit: f32) -> f64 {
-    let max = absent_logit.max(present_logit);
-    let absent_exp = (absent_logit - max).exp();
-    let present_exp = (present_logit - max).exp();
-    f64::from(absent_exp / (absent_exp + present_exp))
+    first_class_probability(absent_logit, present_logit)
 }
 
 fn collect_position_frames(
@@ -176,12 +141,7 @@ fn run_batch_inference(
         batch_data[offset..offset + nchw.len()].copy_from_slice(&nchw);
     }
 
-    let shape: Ix4 = ndarray::Dim([
-        batch_len,
-        3,
-        IMAGE_SIZE as usize,
-        IMAGE_SIZE as usize,
-    ]);
+    let shape: Ix4 = ndarray::Dim([batch_len, 3, IMAGE_SIZE as usize, IMAGE_SIZE as usize]);
     let array = Array::from_shape_vec(shape, batch_data).map_err(|error| error.to_string())?;
     let input_tensor = Tensor::from_array(array).map_err(|error| error.to_string())?;
     let input = ort::inputs![input_name => input_tensor];
@@ -201,10 +161,7 @@ fn run_batch_inference(
                 let view = logits.index_axis(Axis(0), index).into_dyn();
                 binary_logits(&view)?
             } else {
-                (
-                    logits[[index, 0, 0, 0]],
-                    logits[[index, 1, 0, 0]],
-                )
+                (logits[[index, 0, 0, 0]], logits[[index, 1, 0, 0]])
             };
             Ok(dead_probability_from_logits(absent_logit, present_logit))
         })

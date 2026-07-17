@@ -6,7 +6,9 @@ describe("useCropProgressModal", () => {
   it("returns null when progress is done", () => {
     expect(
       useCropProgressModal({
+        requestId: "crop-1",
         status: "completed",
+        position: null,
         message: "Finished",
         completedPositions: 3,
         totalPositions: 3,
@@ -19,7 +21,9 @@ describe("useCropProgressModal", () => {
   it("derives progress state from roi counts", () => {
     expect(
       useCropProgressModal({
+        requestId: "crop-1",
         status: "running",
+        position: 1,
         message: "Cropping",
         completedPositions: 0,
         totalPositions: 0,

@@ -1,5 +1,5 @@
 import type { AlignerSource } from "@lisca/contracts";
-import type { LiscaAppId } from "@lisca/utils";
+import type { LiscaAppId } from "./server";
 
 export type WorkSessionPickerItem = {
   id: string;
@@ -14,7 +14,7 @@ export type WorkSessionPickerState = {
   items: WorkSessionPickerItem[];
 };
 
-export function useWorkSessionPickerState(
+export function createWorkSessionPickerState(
   open: boolean,
   items: WorkSessionPickerItem[],
 ): WorkSessionPickerState {

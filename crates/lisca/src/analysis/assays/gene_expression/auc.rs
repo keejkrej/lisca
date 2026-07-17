@@ -3,8 +3,7 @@ use std::path::{Path, PathBuf};
 use crate::analysis::array::trapezoidal_integral;
 use crate::analysis::csv_io::{format_float, write_csv};
 use crate::analysis::plot::parse_slide_channel;
-
-use super::traces::group_timeseries_rows;
+use crate::analysis::timeseries::{discover_timeseries_csvs, group_timeseries_rows};
 
 const OUTPUT_COLUMNS: [&str; 4] = ["slide_channel", "pos", "roi", "auc"];
 
@@ -18,37 +17,6 @@ pub fn run_auc(workspace: &Path, interval: f64) -> Result<PathBuf, String> {
     let output = workspace.join("results").join("auc.csv");
     write_auc_csv(&output, &rows)?;
     Ok(output)
-}
-
-pub fn discover_timeseries_csvs(timeseries_dir: &Path) -> Result<Vec<PathBuf>, String> {
-    if !timeseries_dir.is_dir() {
-        return Err(format!(
-            "Expected timeseries/ directory at {}",
-            timeseries_dir.display()
-        ));
-    }
-    let mut csvs = std::fs::read_dir(timeseries_dir)
-        .map_err(|error| error.to_string())?
-        .flatten()
-        .map(|entry| entry.path())
-        .filter(|path| {
-            path.extension().is_some_and(|ext| ext == "csv")
-                && path
-                    .file_stem()
-                    .and_then(|stem| stem.to_str())
-                    .is_some_and(|stem| {
-                        stem.starts_with("sc") && stem.contains("_ch")
-                    })
-        })
-        .collect::<Vec<_>>();
-    csvs.sort_by_key(|path| path.file_name().map(|name| name.to_owned()));
-    if csvs.is_empty() {
-        return Err(format!(
-            "No workspace metrics CSV files in {}",
-            timeseries_dir.display()
-        ));
-    }
-    Ok(csvs)
 }
 
 #[derive(Debug, Clone)]
@@ -85,12 +53,7 @@ fn compute_auc_table(csvs: &[PathBuf], interval: f64) -> Result<Vec<AucRow>, Str
         return Err("No AUC rows produced".to_string());
     }
     rows.sort_by(|left, right| {
-        (
-            left.slide_channel,
-            left.pos,
-            left.roi,
-        )
-            .cmp(&(right.slide_channel, right.pos, right.roi))
+        (left.slide_channel, left.pos, left.roi).cmp(&(right.slide_channel, right.pos, right.roi))
     });
     Ok(rows)
 }

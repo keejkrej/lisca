@@ -6,14 +6,19 @@ Make the dispatch exhaustive so an unsupported id fails loudly.
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-human
+**Status:** resolved
 
-- [ ] An analysis run for an assay id with no pipeline of its own fails with an explicit, typed error naming the unsupported id — it does not run another assay's pipeline.
-- [ ] The error surfaces to the user through the same path as other analysis failures, rather than only appearing in logs.
-- [ ] `gene-expression` and `immune-killing` behavior is unchanged.
-- [ ] The dispatch is exhaustive over `AssayType`, so adding an id to the enum forces a decision at compile time rather than silently aliasing.
-- [ ] A test covers an unsupported id producing the error.
+- [x] An analysis run for an assay id with no pipeline of its own fails with an explicit, typed error naming the unsupported id — it does not run another assay's pipeline.
+- [x] The error surfaces to the user through the same path as other analysis failures, rather than only appearing in logs.
+- [x] `gene-expression` and `immune-killing` behavior is unchanged.
+- [x] The dispatch is exhaustive over `AssayType`, so adding an id to the enum forces a decision at compile time rather than silently aliasing.
+- [x] A test covers an unsupported id producing the error.
 
 **Why `ready-for-human`, not `ready-for-agent`:** this changes product behavior. Today a hand-written `lnp-binding` assay silently produces gene-expression results; afterwards it fails. That is almost certainly right, but it is the owner's call whether any workspace in the wild relies on the current aliasing, and whether `custom-assay` was intended as a deliberate alias to gene-expression rather than a placeholder.
+
+## Owner ruling
+
+The behavior change is approved. Both `lnp-binding` and `custom-assay` are unsupported until they
+have dedicated pipelines; they must fail with a typed, user-visible error naming the assay id.
 
 Found during the product-shape interview, not by an audit lens. See `PRODUCT.md` "Assays are a closed enum, not an extension point".

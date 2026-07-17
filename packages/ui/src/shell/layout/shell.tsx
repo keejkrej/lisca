@@ -1,10 +1,4 @@
-import {
-  createEffect,
-  createUniqueId,
-  onCleanup,
-  Show,
-  type JSX,
-} from "solid-js";
+import { createEffect, createUniqueId, onCleanup, Show, type JSX } from "solid-js";
 
 import { cn } from "../../lib/utils";
 import { ShellLayoutProvider, useShellLayout } from "./shell-layout-context";
@@ -227,25 +221,6 @@ export const AppShell: AppShellCompound = Object.assign(AppShellRoot, {
   Dock: AppShellDock,
   Right: AppShellRight,
 });
-
-/** Stand-alone dock strip (same fixed height as `AppShell.Dock`). */
-export function ShellDock(props: { children?: JSX.Element; class?: string }) {
-  return <ShellDockInner class={props.class}>{props.children}</ShellDockInner>;
-}
-
-/** Stand-alone sidebar (same fixed width as `AppShell.Left` / `AppShell.Right`). */
-export function ShellSidebar(props: {
-  side: "left" | "right";
-  children?: JSX.Element;
-  /** Tailwind width utility; default `w-56`. */
-  widthClass?: string;
-}) {
-  return (
-    <ShellSidebarInner side={props.side} widthClass={props.widthClass}>
-      {props.children}
-    </ShellSidebarInner>
-  );
-}
 
 export { useShellLayout } from "./shell-layout-context";
 export { ShellPanelToggle } from "./shell-portrait-panels";

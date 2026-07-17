@@ -1,8 +1,8 @@
 import { decodeFramePayload } from "@lisca/utils";
 import { Effect } from "effect";
 
-import { createApiClient, toClientEffect, type LiscaApiClient } from "../infra/api-client";
-import { withOptionalAbortSignal } from "../infra/with-abort-signal";
+import { createApiClient, type LiscaApiClient } from "../infra/api-client";
+import { withClientEffect } from "../infra/with-client-effect";
 import { createHostPort, type HostPortDeps } from "./host";
 import { createTaskPort } from "./tasks";
 import type { AnnotatorDataPort } from "./types";
@@ -10,14 +10,6 @@ import type { AnnotatorDataPort } from "./types";
 export type { AnnotatorDataPort } from "./types";
 
 export type AnnotatorPortDeps = HostPortDeps;
-
-function withClientEffect<A, E>(
-  client: LiscaApiClient,
-  signal: AbortSignal | undefined,
-  run: (client: LiscaApiClient) => Effect.Effect<A, E>,
-) {
-  return withOptionalAbortSignal(toClientEffect(run(client)), signal);
-}
 
 export function createAnnotatorPort(
   deps: AnnotatorPortDeps,
@@ -64,9 +56,7 @@ export function createAnnotatorPort(
       );
     },
     smartSegment(request, signal) {
-      return withClientEffect(client, signal, (c) =>
-        c.annotate.smartSegment({ payload: request }),
-      );
+      return withClientEffect(client, signal, (c) => c.annotate.smartSegment({ payload: request }));
     },
   };
 }

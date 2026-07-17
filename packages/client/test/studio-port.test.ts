@@ -6,7 +6,6 @@ describe("createStudioPort", () => {
   it("exposes annotate label and annotation CRUD methods", () => {
     const port = createStudioPort({
       baseUrl: () => "http://127.0.0.1:8767",
-      isDev: false,
     });
 
     expect(typeof port.loadLabels).toBe("function");

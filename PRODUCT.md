@@ -36,11 +36,11 @@ annotator, and studio services. The workspace bus is provisioned infrastructure.
 
 **Where does this code go? → Whichever crate owns that slice of the workspace.**
 
-| Shell | Workspace slice | Assay template | Remembers you |
-|---|---|---|---|
-| **Aligner** | writes `align/`, `bbox/`, `roi/` | no | no |
-| **Annotator** | reads `roi/`, writes masks + `annotations/` | no | no |
-| **Studio** | all of the above, plus `assay.json` → `mask/`, `timeseries/`, `results/` | **yes** | **yes** |
+| Shell         | Workspace slice                                                          | Assay template | Remembers you |
+| ------------- | ------------------------------------------------------------------------ | -------------- | ------------- |
+| **Aligner**   | writes `align/`, `bbox/`, `roi/`                                         | no             | no            |
+| **Annotator** | reads `roi/`, writes masks + `annotations/`                              | no             | no            |
+| **Studio**    | all of the above, plus `assay.json` → `mask/`, `timeseries/`, `results/` | **yes**        | **yes**       |
 
 The chain is unbroken and runs through the filesystem: Aligner writes `bbox/Pos{n}.csv`; ROI crop
 reads it and writes `roi/Pos{n}/`; Annotator reads `roi/Pos{n}/Roi{m}/` and writes masks plus
@@ -68,7 +68,7 @@ contract is that the paths happen to agree.
 
 **The backend composes totally.** `apps/studio/server/src/main.rs` merges `aligner_server::router()`
 and `annotator_server::router()` into its own router, takes both as path dependencies, and implements
-`HasCropJobs` and `HasAnalysisJobs` on `StudioState`. Studio's binary *is* Aligner + Annotator +
+`HasCropJobs` and `HasAnalysisJobs` on `StudioState`. Studio's binary _is_ Aligner + Annotator +
 analysis on one port (Studio 8767, Aligner 8765, Annotator 8766). It serves the identical `/align/*`
 and `/annotate/*` routes from the identical crates. Nothing is reimplemented.
 
@@ -89,10 +89,11 @@ and `docker-compose.yml` gives `config:/root/.lisca` only to the studio service.
 **Studio remembers who you are and which workspaces you touched. Aligner and Annotator are stateless
 tools you point at a directory and walk away from.** They hold no opinion about you, your history, or
 your assay — which is what makes them usable as standalone tools feeding an external pipeline: the
-workspace directory *is* the export.
+workspace directory _is_ the export.
 
-This is also why `packages/storage` exists. It is the only per-user state in the product, and exactly
-one shell uses it.
+Client-side persistence is owned by **`@lisca/utils`**: `packages/utils/src/storage.ts` provides the
+configurable local/session storage adapters used by shell and session code. There is no separate
+`packages/storage` package.
 
 ## Assays are a closed enum, not an extension point
 
@@ -103,10 +104,10 @@ artifacts** — not a plug-in. The four shape facts an agent needs:
 1. **The id set is closed.** `ASSAY_TYPE` (`packages/contracts/src/assay-ui.ts`) defines
    `gene-expression`, `immune-killing`, `lnp-binding`, `custom-assay`. The literal union in
    `assay.schema.ts` and the generated Rust enum in `crates/lisca/src/protocol/generated.rs` must agree.
-2. **Unregistered ids silently alias to gene-expression.** `crates/lisca/src/analysis/assays.rs`
-   dispatches `GeneExpression | LnpBinding | CustomAssay` into `gene_expression::run`. Only
-   `immune-killing` has its own arm. `lnp-binding` and `custom-assay` do not lack a pipeline — they
-   inherit gene-expression's, without error.
+2. **Unsupported or unregistered ids fail explicitly.** `crates/lisca/src/analysis/assays.rs`
+   dispatches only `GeneExpression` and `ImmuneKilling`; `LnpBinding` and `CustomAssay` return a typed
+   `UnsupportedAssay` error, while values outside the closed contract fail schema decoding. No id
+   silently inherits gene-expression's pipeline.
 3. **The stage vocabulary is gene-expression's, and every assay must speak it.** `AnalysisStageSchema`
    (`packages/contracts/src/schema/studio.ts`) is a closed literal: `queued`, `preparing`, `segment`,
    `timeseries`, `auc`, `fit`, `completed`. It is in the wire contract. Immune-killing already
@@ -115,8 +116,8 @@ artifacts** — not a plug-in. The four shape facts an agent needs:
    own stages.
 4. **`ENABLED_STUDIO_ASSAY_IDS` is the gate between schema and product.** It lists
    `gene-expression` and `immune-killing`; `choose-assay.tsx` renders all four tiles and disables the
-   rest. Given (2), this gate is load-bearing — but it gates only the wizard. `assay.json` is a
-   hand-editable file in an unvalidated workspace.
+   rest. This gate controls the wizard, while the backend independently rejects unsupported ids from
+   hand-edited `assay.json` files with an explicit error.
 
 **`ENABLED_STUDIO_ASSAY_IDS` is the source of truth for "which assays exist today."** The landing
 page is not: `apps/landing/web/src/lib/landing-content.ts` markets "Custom assay" as an available
@@ -131,7 +132,7 @@ architecture, one is unpaid debt.
 
 ### Executed — decided, and the code is already gone
 
-**Not mobile.** `PORTING.md` records React Native / Expo / mobile being *deleted, not migrated*, in
+**Not mobile.** `PORTING.md` records React Native / Expo / mobile being _deleted, not migrated_, in
 the React 19 → SolidJS rewrite. The deletion happened: no `packages/ui-native`, no `packages/mobile-app`,
 no `apps/*/mobile`, no react-native or expo dependencies. LiSCA is web + desktop. Settled.
 

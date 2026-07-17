@@ -26,25 +26,19 @@
       "types": "./src/components/ui/index.ts",
       "import": "./src/components/ui/index.ts"
     },
-    "./hooks": {
-      "types": "./src/hooks/index.ts",
-      "import": "./src/hooks/index.ts"
-    },
     "./theme.css": "./theme.css"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
     "test": "vitest run",
-    "typecheck": "tsc -p tsconfig.build.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
     "@kobalte/core": "catalog:",
-    "@lisca/analysis": "workspace:*",
     "@lisca/contracts": "workspace:*",
     "@lisca/ui-headless": "workspace:*",
     "@lisca/utils": "workspace:*",
-    "@observablehq/plot": "^0.6.17",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "phosphor-icons-solid": "catalog:",

@@ -5,12 +5,8 @@
 
 use std::{
     env,
-    sync::{
-        atomic::{AtomicBool, Ordering},
-        Arc,
-    },
-    thread,
-    time::{Duration, Instant},
+    sync::{atomic::AtomicBool, Arc},
+    time::Instant,
 };
 
 use lisca::{
@@ -20,8 +16,13 @@ use lisca::{
 
 #[cfg(target_os = "linux")]
 mod monitor {
-    use super::*;
-    use std::{fs, thread::JoinHandle};
+    use super::{Arc, AtomicBool, Instant};
+    use std::{
+        fs,
+        sync::atomic::Ordering,
+        thread::{self, JoinHandle},
+        time::Duration,
+    };
 
     const SAMPLE_INTERVAL: Duration = Duration::from_millis(500);
 
@@ -220,7 +221,6 @@ mod monitor {
 
 #[cfg(not(target_os = "linux"))]
 mod monitor {
-    use super::*;
     use std::time::Duration;
 
     #[derive(Clone, Debug, Default)]
@@ -319,24 +319,25 @@ fn run(args: Vec<String>) -> Result<(), String> {
     let started = Instant::now();
     let mut last_progress = None::<CropRoiProgress>;
     crop_roi(request, &cancel, |progress| {
-        if matches!(progress.status, CropRoiStatus::Running) {
-            if progress.completed_rois == 0
+        if matches!(progress.status, CropRoiStatus::Running)
+            && (progress.completed_rois == 0
                 || progress.completed_positions
                     != last_progress
                         .as_ref()
                         .map(|p| p.completed_positions)
                         .unwrap_or(0)
-                || progress.completed_rois.is_multiple_of(progress.total_rois.max(1) / 20)
-            {
-                eprintln!(
-                    "  Pos{:?}  positions {}/{}  rois {}/{}",
-                    progress.position,
-                    progress.completed_positions,
-                    progress.total_positions,
-                    progress.completed_rois,
-                    progress.total_rois,
-                );
-            }
+                || progress
+                    .completed_rois
+                    .is_multiple_of(progress.total_rois.max(1) / 20))
+        {
+            eprintln!(
+                "  Pos{:?}  positions {}/{}  rois {}/{}",
+                progress.position,
+                progress.completed_positions,
+                progress.total_positions,
+                progress.completed_rois,
+                progress.total_rois,
+            );
         }
         last_progress = Some(progress);
     })?;

@@ -1,4 +1,4 @@
-import type { HostFilePickerMode } from "@lisca/ui-headless/host";
+import type { HostFilePickerMode, HostFilePickerOperations } from "@lisca/utils";
 import { useHostFilePickerState } from "@lisca/ui-headless/host-file-picker-state";
 import IconArrowUpRegular from "phosphor-icons-solid/IconArrowUpRegular";
 import IconHouseRegular from "phosphor-icons-solid/IconHouseRegular";
@@ -12,7 +12,6 @@ import { Input } from "../../components/ui/input";
 import { DialogSurface } from "../../shell/modal/dialog-surface";
 import { ModalScrim } from "../../shell/modal/modal-scrim";
 import { HostFilePickerRow } from "./host-file-picker-row";
-import type { HostFilePickerOperations } from "./host-operations";
 
 export type HostFilePickerRecentItem = {
   path: string;
@@ -187,7 +186,9 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
 
             <div class="max-h-[min(360px,42vh)] min-h-[220px] overflow-auto rounded-md border border-border bg-background/50">
               <Show
-                when={!picker.loading() && !picker.error() && (picker.list()?.entries ?? []).length > 0}
+                when={
+                  !picker.loading() && !picker.error() && (picker.list()?.entries ?? []).length > 0
+                }
                 fallback={
                   <Show
                     when={picker.loading()}
@@ -216,13 +217,9 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
                       <HostFilePickerRow
                         entry={entry}
                         muted={
-                          !entry.isDirectory &&
-                          !picker.dirMode() &&
-                          !picker.fileMatchesMode(entry)
+                          !entry.isDirectory && !picker.dirMode() && !picker.fileMatchesMode(entry)
                         }
-                        selected={
-                          picker.selectedFile()?.path === entry.path && !entry.isDirectory
-                        }
+                        selected={picker.selectedFile()?.path === entry.path && !entry.isDirectory}
                         onClick={picker.handleRowClick}
                         onDoubleClick={picker.handleRowDoubleClick}
                       />
@@ -276,7 +273,10 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
           <DialogSurface aria-labelledby="new-folder-title" maxWidth="sm">
             <div class="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
               <div>
-                <h2 class="font-semibold text-foreground text-lg leading-none" id="new-folder-title">
+                <h2
+                  class="font-semibold text-foreground text-lg leading-none"
+                  id="new-folder-title"
+                >
                   New folder
                 </h2>
                 <Show when={picker.locationLabel()}>
@@ -329,7 +329,12 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
             </form>
 
             <div class="flex justify-end gap-2 border-t border-border px-5 py-4">
-              <Button disabled={creating()} type="button" variant="outline" onClick={cancelNewFolder}>
+              <Button
+                disabled={creating()}
+                type="button"
+                variant="outline"
+                onClick={cancelNewFolder}
+              >
                 Cancel
               </Button>
               <Button

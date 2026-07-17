@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ResultPanel } from "../../src/shared/panels";
-import {
-  chartSpecForPanel,
-  countChartSpecs,
-  filterRenderablePanels,
-  isPanelRenderableOn,
-} from "../../src/charts/index";
+import { chartSpecForPanel, countChartSpecs } from "../../src/charts/index";
 
 const timeseriesPanel: ResultPanel = {
   kind: "timeseries",
@@ -65,13 +60,5 @@ describe("chartSpecForPanel", () => {
         },
       ]),
     ).toBe(1);
-  });
-});
-
-describe("capabilities", () => {
-  it("keeps web and native support in sync for known panel kinds", () => {
-    expect(isPanelRenderableOn("web", timeseriesPanel)).toBe(true);
-    expect(isPanelRenderableOn("native", timeseriesPanel)).toBe(true);
-    expect(filterRenderablePanels("native", [timeseriesPanel])).toHaveLength(1);
   });
 });

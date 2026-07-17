@@ -4,10 +4,9 @@ import { Atom, Result } from "@effect-atom/atom-solid";
 import { alignerPortLayer, createAlignerQueryAtoms } from "@lisca/client/atoms";
 import { createLiscaAppBootstrap } from "@lisca/client/bootstrap";
 
-import { ensureAlignerPort } from "../api/aligner-port";
+import { alignerClient } from "../api/aligner-port";
 
-const alignerPort = ensureAlignerPort();
-const bootstrap = createLiscaAppBootstrap(alignerPortLayer(alignerPort), alignerPort);
+const bootstrap = createLiscaAppBootstrap(alignerPortLayer(alignerClient));
 
 export const alignerRuntime = bootstrap.runtime;
 

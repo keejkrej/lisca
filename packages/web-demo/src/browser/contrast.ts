@@ -11,7 +11,7 @@ export function frameWithContrast(
 }
 
 export function toDisplayFrame(frame: FrameResult, contrast: ContrastWindow | null): FrameResult {
-  const domain = frame.contrastDomain ?? defaultContrastDomain(frame);
+  const domain = frame.contrastDomain ?? defaultContrastDomain(frame.pixelType);
   const applied = contrast ?? frame.appliedContrast ?? frame.suggestedContrast ?? domain;
   if (frame.pixelType === "uint8" || frame.pixelType === "uint8clamped") {
     return frameWithContrast(frame, applied);

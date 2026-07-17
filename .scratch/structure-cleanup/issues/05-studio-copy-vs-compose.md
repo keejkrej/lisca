@@ -4,12 +4,22 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] The Studio annotator port composes the Annotator port rather than duplicating it, matching how it already composes the Aligner port.
-- [ ] The Studio annotator atoms compose rather than duplicate, and the duplicated types move with them.
-- [ ] The drift between the copy and its original is resolved — record which behavior was correct and why, rather than silently picking one.
-- [ ] The three per-app port files, byte-identical after normalizing two values, are reduced to one shared construction path.
-- [ ] `vp run check` shows no new failures beyond the 3 known `*-desktop#typecheck`.
+- [x] The Studio annotator port composes the Annotator port rather than duplicating it, matching how it already composes the Aligner port.
+- [x] The Studio annotator atoms compose rather than duplicate, and the duplicated types move with them.
+- [x] The drift between the copy and its original is resolved — record which behavior was correct and why, rather than silently picking one.
+- [x] The three per-app port files, byte-identical after normalizing two values, are reduced to one shared construction path.
+- [x] `vp run check` shows no new failures beyond the 3 known `*-desktop#typecheck`.
 
 See PRD §D1, §D2 and §3.D.
+
+## Comments
+
+### Contrast drift owner decision
+
+Annotator's required-but-nullable `contrast` parameter is canonical. Studio composes and exposes
+the same Annotator port, so both surfaces should require callers to represent absence explicitly as
+`null` rather than giving Studio a looser copied signature. This is a type-level correction only:
+the shared implementation already normalizes the value to `null` on the wire, so no runtime behavior
+change is needed.

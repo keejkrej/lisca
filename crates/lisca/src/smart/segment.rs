@@ -8,14 +8,13 @@ use ort::session::Session;
 use ort::value::Tensor;
 
 use crate::image_source;
+use crate::onnx::{workspace_models_dir, IMAGENET_MEAN, IMAGENET_STD};
 use crate::protocol::{FramePayload, SmartSegmentPoint, SmartSegmentRequest, SmartSegmentResponse};
 use crate::roi;
 
 use super::frame::{decode_frame_pixels, pixels_to_rgb_u8};
 
 const SAM_SIZE: u32 = 1024;
-const IMAGENET_MEAN: [f32; 3] = [0.485, 0.456, 0.406];
-const IMAGENET_STD: [f32; 3] = [0.229, 0.224, 0.225];
 
 struct SegmentSessions {
     encoder: Session,
@@ -126,13 +125,11 @@ pub fn resolve_model_path() -> Result<PathBuf, String> {
     )
 }
 
-fn workspace_models_dir() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../models")
-}
-
 fn has_segment_models(dir: &Path) -> bool {
     dir.join("vision_encoder_quantized.onnx").is_file()
-        && dir.join("prompt_encoder_mask_decoder_quantized.onnx").is_file()
+        && dir
+            .join("prompt_encoder_mask_decoder_quantized.onnx")
+            .is_file()
 }
 
 struct PreparedSamImage {
@@ -149,7 +146,8 @@ fn prepare_sam_image(rgb: &[u8], width: u32, height: u32) -> Result<PreparedSamI
     let scale = SAM_SIZE as f32 / longest;
     let resized_width = ((width as f32) * scale).round().max(1.0) as u32;
     let resized_height = ((height as f32) * scale).round().max(1.0) as u32;
-    let resized = image::imageops::resize(&image, resized_width, resized_height, FilterType::Triangle);
+    let resized =
+        image::imageops::resize(&image, resized_width, resized_height, FilterType::Triangle);
 
     let mut pixel_values = vec![0.0f32; (3 * SAM_SIZE * SAM_SIZE) as usize];
     for y in 0..resized_height {
@@ -157,10 +155,8 @@ fn prepare_sam_image(rgb: &[u8], width: u32, height: u32) -> Result<PreparedSamI
             let pixel = resized.get_pixel(x, y);
             for channel in 0..3 {
                 let normalized = pixel[channel] as f32 / 255.0;
-                let index =
-                    (channel as u32 * SAM_SIZE * SAM_SIZE + y * SAM_SIZE + x) as usize;
-                pixel_values[index] =
-                    (normalized - IMAGENET_MEAN[channel]) / IMAGENET_STD[channel];
+                let index = (channel as u32 * SAM_SIZE * SAM_SIZE + y * SAM_SIZE + x) as usize;
+                pixel_values[index] = (normalized - IMAGENET_MEAN[channel]) / IMAGENET_STD[channel];
             }
         }
     }
@@ -178,6 +174,8 @@ struct SamEmbeddings {
     embedding_shape: Vec<usize>,
     positional_shape: Vec<usize>,
 }
+
+type DecoderOutputs = (Vec<f32>, Vec<usize>, Vec<f32>);
 
 fn run_encoder(session: &mut Session, pixel_values: &[f32]) -> Result<SamEmbeddings, String> {
     let shape: Ix4 = ndarray::Dim([1, 3, SAM_SIZE as usize, SAM_SIZE as usize]);
@@ -205,7 +203,7 @@ fn run_decoder(
     width: u32,
     height: u32,
     points: &[SmartSegmentPoint],
-) -> Result<(Vec<f32>, Vec<usize>, Vec<f32>), String> {
+) -> Result<DecoderOutputs, String> {
     let scale_x = prepared.resized_width as f64 / f64::from(width.max(1));
     let scale_y = prepared.resized_height as f64 / f64::from(height.max(1));
 
@@ -218,19 +216,18 @@ fn run_decoder(
     }
 
     let num_points = points.len();
-    let points_array = Array::from_shape_vec(
-        ndarray::Dim([1, 1, num_points, 2]),
-        point_coords,
-    )
-    .map_err(|e| e.to_string())?;
-    let labels_array = Array::from_shape_vec(
-        ndarray::Dim([1, 1, num_points]),
-        point_labels,
-    )
-    .map_err(|e| e.to_string())?;
-    let embeddings_array = array_from_shape(&embeddings.embedding_shape, embeddings.image_embeddings.clone())?;
-    let positional_array =
-        array_from_shape(&embeddings.positional_shape, embeddings.image_positional_embeddings.clone())?;
+    let points_array = Array::from_shape_vec(ndarray::Dim([1, 1, num_points, 2]), point_coords)
+        .map_err(|e| e.to_string())?;
+    let labels_array = Array::from_shape_vec(ndarray::Dim([1, 1, num_points]), point_labels)
+        .map_err(|e| e.to_string())?;
+    let embeddings_array = array_from_shape(
+        &embeddings.embedding_shape,
+        embeddings.image_embeddings.clone(),
+    )?;
+    let positional_array = array_from_shape(
+        &embeddings.positional_shape,
+        embeddings.image_positional_embeddings.clone(),
+    )?;
 
     let outputs = session
         .run(ort::inputs![
@@ -261,7 +258,7 @@ fn extract_f32_tensor(
     outputs[name]
         .try_extract_array::<f32>()
         .map(|array| {
-            let shape = array.shape().iter().copied().collect::<Vec<_>>();
+            let shape = array.shape().to_vec();
             (array.iter().copied().collect(), shape)
         })
         .map_err(|error| format!("failed to read {name}: {error}"))
@@ -279,9 +276,7 @@ fn extract_best_mask(
         .checked_mul(height as usize)
         .ok_or_else(|| "invalid frame dimensions".to_string())?;
     let (num_masks, mask_height, mask_width) = match pred_mask_shape {
-        [1, 1, num_masks, mask_height, mask_width] => {
-            (*num_masks, *mask_height, *mask_width)
-        }
+        [1, 1, num_masks, mask_height, mask_width] => (*num_masks, *mask_height, *mask_width),
         [1, num_masks, mask_height, mask_width] => (*num_masks, *mask_height, *mask_width),
         [_, num_masks, mask_height, mask_width] => (*num_masks, *mask_height, *mask_width),
         [num_masks, mask_height, mask_width] => (*num_masks, *mask_height, *mask_width),
@@ -301,8 +296,7 @@ fn extract_best_mask(
         .take(num_masks)
         .enumerate()
         .max_by(|(_, left), (_, right)| {
-            left.partial_cmp(right)
-                .unwrap_or(std::cmp::Ordering::Equal)
+            left.partial_cmp(right).unwrap_or(std::cmp::Ordering::Equal)
         })
         .map(|(index, _)| index)
         .unwrap_or(0);

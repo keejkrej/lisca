@@ -9,7 +9,7 @@ import {
 } from "@lisca/utils";
 import { createMemo, createSignal, type Accessor } from "solid-js";
 
-import { isSmartAnnotationTool, type AnnotationTool } from "./annotation-tools";
+import { isSmartAnnotationTool, type AnnotationTool } from "@lisca/utils";
 
 export type AnnotationCanvasFramePoint = {
   x: number;
@@ -83,13 +83,7 @@ export function useAnnotationCanvasHandlers(options: () => UseAnnotationCanvasHa
   const [drawing, setDrawing] = createSignal(false);
 
   const framePointFromEvent = (event: AnnotationCanvasPointerEvent) => {
-    const {
-      frame,
-      viewportWidth,
-      viewportHeight,
-      viewportX = 0,
-      viewportY = 0,
-    } = options();
+    const { frame, viewportWidth, viewportHeight, viewportX = 0, viewportY = 0 } = options();
     if (!frame) return null;
     return framePointFromViewport(
       event.clientX,
@@ -105,15 +99,7 @@ export function useAnnotationCanvasHandlers(options: () => UseAnnotationCanvasHa
 
   const finishLasso = (event: AnnotationCanvasPointerEvent) => {
     const active = lassoRef.current;
-    const {
-      frame,
-      mask,
-      labels,
-      activeLabelId,
-      tool,
-      brushSize,
-      onMaskCommit,
-    } = options();
+    const { frame, mask, labels, activeLabelId, tool, brushSize, onMaskCommit } = options();
     if (!active || active.pointerId !== event.pointerId || !frame) return;
     lassoRef.current = null;
     setLassoPoints([]);

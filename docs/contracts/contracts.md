@@ -5,8 +5,9 @@ the Rust backend(s). **Effect Schema** defines the types; **Effect HttpApi**
 defines the HTTP surface. Everything else — the TypeScript wire types, the
 OpenAPI document, and the Rust `serde` types — is _derived_ from these.
 
-Because the contract is backend-agnostic (OpenAPI 3.1), the Rust server can be
-swapped for any other backend (Node, FastAPI, …) without touching the schema.
+The generated OpenAPI 3.1 description is backend-neutral, but LiSCA supports its
+Rust servers. The schema pipeline is not a product commitment to interchangeable
+Node, FastAPI, or other backend implementations.
 
 ## Layout
 
@@ -27,7 +28,7 @@ swapped for any other backend (Node, FastAPI, …) without touching the schema.
 - **`@lisca/contracts/assay`** — wizard constants and UI types (`ASSAY_TYPE`, `StudioBasicInfoStep*`, `StudioAssayJson`, etc.).
 
 Client-side frame decoding types (`FrameResult`, `PixelArray`) live in **`@lisca/utils`**, not contracts.
-Canvas status and host picker modes live in **`@lisca/ui-headless`**.
+Canvas status lives in **`@lisca/ui-headless`**; `HostFilePickerMode` lives in **`@lisca/utils`**.
 
 ## Generation pipeline
 

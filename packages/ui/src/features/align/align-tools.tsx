@@ -6,7 +6,7 @@ import {
   alignToolDefinitions as headlessAlignToolDefinitions,
   buildAlignToolActions,
 } from "@lisca/ui-headless/align-tools";
-import { resolveKeyboardShortcut, type KeyboardShortcut } from "@lisca/ui-headless/shortcuts";
+import { resolveKeyboardShortcut, type KeyboardShortcut } from "@lisca/utils";
 
 import { Button } from "../../components/ui/button";
 import { DockSection } from "../../shell/regions/dock-section";
@@ -150,9 +150,12 @@ export function AlignToolToolbar(props: AlignToolToolbarProps) {
   const shortcutsEnabled = () => props.shortcutsEnabled ?? true;
   const toolActions = () => buildAlignToolActions(props.mode, props.onModeChange);
 
-  useKeyboardShortcuts(() => dockToolShortcuts(toolActions()), () => ({
-    enabled: shortcutsEnabled(),
-  }));
+  useKeyboardShortcuts(
+    () => dockToolShortcuts(toolActions()),
+    () => ({
+      enabled: shortcutsEnabled(),
+    }),
+  );
 
   const cells = () =>
     alignToolDefinitions.map((tool, index) =>

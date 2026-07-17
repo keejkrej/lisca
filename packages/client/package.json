@@ -15,10 +15,6 @@
       "types": "./src/session/progress-poll.ts",
       "import": "./src/session/progress-poll.ts"
     },
-    "./port-registry": {
-      "types": "./src/infra/port-registry.ts",
-      "import": "./src/infra/port-registry.ts"
-    },
     "./port-core": {
       "types": "./src/infra/port-core.ts",
       "import": "./src/infra/port-core.ts"
@@ -159,10 +155,6 @@
       "types": "./src/hooks/use-annotate-state-core.ts",
       "import": "./src/hooks/use-annotate-state-core.ts"
     },
-    "./studio-annotate-session-bridge": {
-      "types": "./src/session/studio-annotate-session-bridge.ts",
-      "import": "./src/session/studio-annotate-session-bridge.ts"
-    },
     "./atoms/studio-ui": {
       "types": "./src/atoms/studio-ui.ts",
       "import": "./src/atoms/studio-ui.ts"
@@ -196,7 +188,7 @@
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
     "test": "vitest run",
-    "typecheck": "tsc -p tsconfig.build.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
     "@effect-atom/atom-solid": "catalog:",
@@ -204,8 +196,6 @@
     "@effect/platform": "catalog:",
     "@effect/platform-browser": "catalog:",
     "@lisca/contracts": "workspace:*",
-    "@lisca/storage": "workspace:*",
-    "@lisca/ui-headless": "workspace:*",
     "@lisca/utils": "workspace:*",
     "effect": "catalog:"
   },

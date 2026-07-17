@@ -1,5 +1,29 @@
 //! Studio analysis: shared workspace I/O plus per-assay pipelines under `assays/`.
 
+use std::fmt;
+
+use crate::protocol::AssayType;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum AnalysisError {
+    UnsupportedAssay { assay_id: AssayType },
+    Failed(String),
+}
+
+impl fmt::Display for AnalysisError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::UnsupportedAssay { assay_id } => write!(
+                formatter,
+                "unsupported assay id '{assay_id}': no analysis pipeline is registered"
+            ),
+            Self::Failed(message) => formatter.write_str(message),
+        }
+    }
+}
+
+impl std::error::Error for AnalysisError {}
+
 pub mod array;
 
 #[cfg(feature = "studio")]
@@ -20,6 +44,8 @@ mod progress;
 mod roi_stack;
 #[cfg(feature = "studio")]
 pub mod slide;
+#[cfg(feature = "studio")]
+mod timeseries;
 
 #[cfg(feature = "studio")]
 pub use output::{workspace_analysis_manifest, workspace_analysis_outputs};

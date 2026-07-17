@@ -4,16 +4,14 @@ use std::path::{Path, PathBuf};
 use mplot::prelude::{AxesStyle, BoxplotStyle, GridPos, Scale};
 
 use crate::analysis::array::{fitted_trace_value, KineticFitCoeffs};
-use crate::analysis::assays::gene_expression::auc::discover_timeseries_csvs;
-use crate::analysis::assays::gene_expression::traces::group_timeseries_rows;
 use crate::analysis::csv_io::{column_index, parse_f64, read_csv};
 use crate::analysis::plot::{
     boxplot_tick_label, boxplot_x_axis_label, default_figure_builder, grid_dimensions,
-    parse_slide_channel, percentile_ylim, quartile_axis_upper, save_figure,
-    slide_channel_labels, subplot_title, trace_color_alpha, trace_line_style,
-    trace_naming_haystack,
+    parse_slide_channel, percentile_ylim, quartile_axis_upper, save_figure, slide_channel_labels,
+    subplot_title, trace_color_alpha, trace_line_style, trace_naming_haystack,
 };
 use crate::analysis::slide::SlideMapping;
+use crate::analysis::timeseries::{discover_timeseries_csvs, group_timeseries_rows};
 
 const PLOTTED_PARAMETERS: [(&str, &str); 5] = [
     ("intensity_offset", "intensity offset"),
@@ -119,12 +117,12 @@ fn load_fit_rows(path: &Path) -> Result<Vec<FitPlotRow>, String> {
                 .or_else(|| mrna_decay_rate.map(|rate| 1.0 / rate)),
             expression_rate: read_opt(&row, "expression_rate")
                 .or_else(|| read_opt(&row, "transfection_efficiency"))
-                .or_else(|| {
+                .or(
                     match (expression_amplitude, mrna_decay_rate, protein_decay_rate) {
                         (Some(amp), Some(mrna), Some(protein)) => Some(amp * (mrna - protein)),
                         _ => None,
-                    }
-                }),
+                    },
+                ),
         });
     }
     if parsed.is_empty() {
@@ -166,7 +164,9 @@ fn write_fit_boxplot(
         grouped.entry(row.slide_channel).or_default().push(value);
     }
     if grouped.is_empty() {
-        return Err(format!("No finite rows available to plot parameter {parameter:?}"));
+        return Err(format!(
+            "No finite rows available to plot parameter {parameter:?}"
+        ));
     }
 
     let channels: Vec<u32> = grouped.keys().copied().collect();
@@ -178,9 +178,7 @@ fn write_fit_boxplot(
     let tick_labels: Vec<String> = channels
         .iter()
         .enumerate()
-        .map(|(index, channel)| {
-            boxplot_tick_label(*channel, grouped_values[index].len(), labels)
-        })
+        .map(|(index, channel)| boxplot_tick_label(*channel, grouped_values[index].len(), labels))
         .collect();
     let y_upper = quartile_axis_upper(&grouped_values);
     let x_label = boxplot_x_axis_label(labels).to_string();
@@ -228,7 +226,10 @@ fn write_fitted_trace_grid(
         let slide_channel = parse_slide_channel(csv_path);
 
         let groups = group_timeseries_rows(&headers, &data_rows, "corrected", false)?;
-        let corrected_values: Vec<f64> = groups.values().flat_map(|trace| trace.iter().map(|(_, value)| *value)).collect();
+        let corrected_values: Vec<f64> = groups
+            .values()
+            .flat_map(|trace| trace.iter().map(|(_, value)| *value))
+            .collect();
 
         let (y_low, y_high) = percentile_ylim(&corrected_values, 1.0);
         let max_t = groups

@@ -1,4 +1,4 @@
-import { liscaLocalStorage } from "@lisca/storage";
+import { liscaLocalStorage } from "./storage";
 
 /** @deprecated Migrated into {@link LISCA_SAVED_SERVERS_STORAGE_KEY}. */
 export const LISCA_SERVER_ADDRESS_STORAGE_KEY = "lisca.serverAddress";

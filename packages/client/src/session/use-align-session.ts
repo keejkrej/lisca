@@ -269,12 +269,7 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
       load: (signal) =>
         runClientEffect(
           Effect.all([
-            backend.loadFrame(
-              backend.client,
-              source,
-              selection,
-              frameLoadRequest({ kind: "navigation", contrast: null }),
-            ),
+            backend.loadFrame(backend.client, source, selection, frameLoadRequest(null)),
             workspacePath
               ? backend.client.loadAlignState(workspacePath, selection.pos)
               : Effect.succeed(null as SavedAlignState | null),
@@ -319,12 +314,7 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
       load: (signal) =>
         runClientEffect(
           backend
-            .loadFrame(
-              backend.client,
-              source,
-              selection,
-              frameLoadRequest({ kind: "contrast", contrast }),
-            )
+            .loadFrame(backend.client, source, selection, frameLoadRequest(contrast))
             .pipe(Effect.mapError(toClientError)),
           { signal },
         ),

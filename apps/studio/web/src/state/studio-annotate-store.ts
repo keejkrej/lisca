@@ -13,7 +13,7 @@ import {
   resetAnnotatorWorkspace,
 } from "@lisca/client/atoms/annotator-ui";
 import type { AnalysisProgress, StudioAnalysisCsvFile } from "@lisca/contracts";
-import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/storage";
+import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/utils";
 import { Atom, useAtom } from "@effect-atom/atom-solid";
 
 export type StudioAnnotateSelection = RoiSelection;

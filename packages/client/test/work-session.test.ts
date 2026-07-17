@@ -1,4 +1,4 @@
-import { configureLiscaStorage, type LiscaStorageAdapter } from "@lisca/storage";
+import { configureLiscaStorage, type LiscaStorageAdapter } from "@lisca/utils";
 import { setLiscaActiveServerAddress } from "@lisca/utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -58,7 +58,12 @@ describe("work-session registry", () => {
     touchWorkSession("aligner", {
       server: "local",
       workspacePath: "/data/ws-a",
-      source: { kind: "folder", path: "/data/src" },
+      source: {
+        kind: "folder",
+        path: "/data/src",
+        subfolderTemplate: "Pos{pos}",
+        filenameTemplate: "img.tif",
+      },
     });
     expect(readWorkSessions("aligner")).toHaveLength(1);
   });
@@ -153,10 +158,7 @@ describe("work-session registry", () => {
       local: createMemoryStorage(),
       session: (() => {
         const storage = createMemoryStorage();
-        storage.setItem(
-          "lisca-annotator-session",
-          JSON.stringify({ workspacePath: "/legacy/ws" }),
-        );
+        storage.setItem("lisca-annotator-session", JSON.stringify({ workspacePath: "/legacy/ws" }));
         return storage;
       })(),
     });

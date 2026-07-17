@@ -6,20 +6,27 @@ use rayon::prelude::*;
 use crate::analysis::array::{evaluate_kinetic_candidate, KineticFitCoeffs};
 use crate::analysis::csv_io::write_csv;
 
-use super::auc::discover_timeseries_csvs;
 use super::segment::default_jobs;
 use super::traces::{build_fit_tasks, FitTraceTask};
+use crate::analysis::timeseries::discover_timeseries_csvs;
 
 const RATE_COARSE_CANDIDATE_COUNT: usize = 24;
 const RATE_REFINE_CANDIDATE_COUNT: usize = 12;
 const RATE_REFINE_PASSES: usize = 2;
 
-pub fn run_fit(workspace: &Path, interval: f64, max_onset_minutes: f64, jobs: usize) -> Result<PathBuf, String> {
+pub fn run_fit(
+    workspace: &Path,
+    interval: f64,
+    max_onset_minutes: f64,
+    jobs: usize,
+) -> Result<PathBuf, String> {
     if interval <= 0.0 {
         return Err(format!("interval must be > 0, got {interval}"));
     }
     if max_onset_minutes < 0.0 {
-        return Err(format!("max_onset_minutes must be >= 0, got {max_onset_minutes}"));
+        return Err(format!(
+            "max_onset_minutes must be >= 0, got {max_onset_minutes}"
+        ));
     }
     let csvs = discover_timeseries_csvs(&workspace.join("timeseries"))?;
     let tasks = build_fit_tasks(&csvs)?;
@@ -46,7 +53,8 @@ fn run_fit_tasks(
     max_onset_minutes: f64,
     jobs: usize,
 ) -> Vec<FitCsvRow> {
-    let fit = |task: &FitTraceTask| fit_task(task, interval, fixed_protein_decay_rate, max_onset_minutes);
+    let fit =
+        |task: &FitTraceTask| fit_task(task, interval, fixed_protein_decay_rate, max_onset_minutes);
     if jobs == 1 || tasks.len() <= 1 {
         return tasks.iter().map(fit).collect();
     }
@@ -76,10 +84,14 @@ fn fit_trace_points(
     if times.len() < 3 || values.len() < 3 {
         return None;
     }
-    if !times.iter().all(|value| value.is_finite()) || !values.iter().all(|value| value.is_finite()) {
+    if !times.iter().all(|value| value.is_finite()) || !values.iter().all(|value| value.is_finite())
+    {
         return None;
     }
-    if times.windows(2).all(|pair| (pair[0] - pair[1]).abs() <= 1e-12) {
+    if times
+        .windows(2)
+        .all(|pair| (pair[0] - pair[1]).abs() <= 1e-12)
+    {
         return None;
     }
     let min_value = values.iter().copied().fold(f64::INFINITY, f64::min);
@@ -124,9 +136,10 @@ fn fit_trace_points(
     let mut best_result: Option<KineticFitCoeffs> = None;
     let mut best_sse: Option<f64> = None;
 
-    for candidate_count in std::iter::once(RATE_COARSE_CANDIDATE_COUNT).chain(
-        std::iter::repeat_n(RATE_REFINE_CANDIDATE_COUNT, RATE_REFINE_PASSES),
-    ) {
+    for candidate_count in std::iter::once(RATE_COARSE_CANDIDATE_COUNT).chain(std::iter::repeat_n(
+        RATE_REFINE_CANDIDATE_COUNT,
+        RATE_REFINE_PASSES,
+    )) {
         let protein_logs = linspace_values(protein_lower, protein_upper, candidate_count);
         let mrna_logs = linspace_values(mrna_lower, mrna_upper, candidate_count);
         let mut stage_best: Option<(f64, KineticFitCoeffs)> = None;
@@ -146,7 +159,11 @@ fn fit_trace_points(
                     mrna_decay_rate,
                     0.0,
                 ) {
-                    if stage_best.as_ref().map(|(best, _)| sse < *best).unwrap_or(true) {
+                    if stage_best
+                        .as_ref()
+                        .map(|(best, _)| sse < *best)
+                        .unwrap_or(true)
+                    {
                         stage_best = Some((sse, candidate));
                         best_indices = Some((protein_index, mrna_index));
                     }
@@ -220,7 +237,11 @@ fn fit_trace_points_with_fixed_protein(
                     mrna_log.exp(),
                     t_onset,
                 ) {
-                    if stage_best.as_ref().map(|(best, _)| sse < *best).unwrap_or(true) {
+                    if stage_best
+                        .as_ref()
+                        .map(|(best, _)| sse < *best)
+                        .unwrap_or(true)
+                    {
                         stage_best = Some((sse, candidate));
                         best_index = Some(index);
                     }
@@ -229,7 +250,11 @@ fn fit_trace_points_with_fixed_protein(
             let Some((stage_sse, stage_result)) = stage_best else {
                 break;
             };
-            if onset_best.as_ref().map(|(best, _)| stage_sse < *best).unwrap_or(true) {
+            if onset_best
+                .as_ref()
+                .map(|(best, _)| stage_sse < *best)
+                .unwrap_or(true)
+            {
                 onset_best = Some((stage_sse, stage_result));
             }
             let Some(best_index) = best_index else {

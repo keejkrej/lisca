@@ -1,4 +1,4 @@
-import { configureLiscaStorage, type LiscaStorageAdapter } from "@lisca/storage";
+import { configureLiscaStorage, type LiscaStorageAdapter } from "@lisca/utils";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { readStudioWizardMemoryRecent, touchStudioWizardMemory } from "../src/studio/wizard-memory";
@@ -17,8 +17,11 @@ function createMemoryStorage(): LiscaStorageAdapter {
 }
 
 describe("studio wizard memory", () => {
+  let storage: LiscaStorageAdapter;
+
   beforeEach(() => {
-    configureLiscaStorage({ local: createMemoryStorage() });
+    storage = createMemoryStorage();
+    configureLiscaStorage({ local: storage });
   });
 
   it("records and returns recent workspaces", () => {
@@ -29,6 +32,11 @@ describe("studio wizard memory", () => {
       { path: "/data/run-b", label: undefined },
       { path: "/data/run-a", label: "Run A" },
     ]);
+
+    const stored = JSON.parse(storage.getItem("lisca.studio.wizardMemory") ?? "null") as {
+      workspaces: Array<{ lastUsedAt: unknown }>;
+    };
+    expect(stored.workspaces[0]?.lastUsedAt).toEqual(expect.any(Number));
   });
 
   it("dedupes sources and assays by identity", () => {

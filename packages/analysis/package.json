@@ -20,11 +20,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@effect-atom/atom-solid": "catalog:",
-    "@lisca/client": "workspace:*",
     "@lisca/contracts": "workspace:*",
-    "d3-array": "^3.2.4",
-    "effect": "catalog:"
+    "d3-array": "^3.2.4"
   },
   "devDependencies": {
     "@types/d3-array": "^3.2.2",

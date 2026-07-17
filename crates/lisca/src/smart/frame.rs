@@ -68,8 +68,8 @@ pub fn pixels_to_rgb_u8(
     let range = (maximum - minimum).max(1.0);
 
     let mut rgb = vec![0u8; count * 3];
-    for index in 0..count {
-        let normalized = (((pixels[index] - minimum) / range) * 255.0).round() as u8;
+    for (index, value) in pixels.iter().take(count).enumerate() {
+        let normalized = (((*value - minimum) / range) * 255.0).round() as u8;
         let offset = index * 3;
         rgb[offset] = normalized;
         rgb[offset + 1] = normalized;

@@ -16,7 +16,7 @@ import {
   setExcludedAlignGridCellsForPosition,
   type AlignGridToolMode,
 } from "@lisca/utils";
-import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/storage";
+import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/utils";
 import { Atom } from "@effect-atom/atom-solid";
 import { touchAlignerWorkSessionFromState } from "../session/work-session";
 

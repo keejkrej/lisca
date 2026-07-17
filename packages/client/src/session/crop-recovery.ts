@@ -1,4 +1,4 @@
-import { liscaLocalStorage, readStorageJson, writeStorageJson } from "@lisca/storage";
+import { liscaLocalStorage, readStorageJson, writeStorageJson } from "@lisca/utils";
 
 export type CropRecoveryRecord = {
   requestId: string;

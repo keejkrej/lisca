@@ -1,3 +1,5 @@
+use crate::profile::session;
+use crate::protocol::{Unauthorized, UnauthorizedTag};
 use axum::{
     extract::Request,
     http::{header, StatusCode},
@@ -5,9 +7,6 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use serde_json::json;
-
-use crate::profile::session;
 
 #[derive(Debug, Clone)]
 pub struct AuthenticatedProfile {
@@ -29,7 +28,10 @@ impl AuthError {
 
 impl IntoResponse for AuthError {
     fn into_response(self) -> Response {
-        let body = json!({ "_tag": "Unauthorized", "message": self.message });
+        let body = Unauthorized {
+            message: self.message,
+            tag: UnauthorizedTag::Unauthorized,
+        };
         (StatusCode::UNAUTHORIZED, Json(body)).into_response()
     }
 }
@@ -53,10 +55,7 @@ pub fn bearer_token(headers: &axum::http::HeaderMap) -> Result<String, AuthError
     Ok(token.to_string())
 }
 
-pub async fn require_bearer_profile(
-    mut req: Request,
-    next: Next,
-) -> Result<Response, AuthError> {
+pub async fn require_bearer_profile(mut req: Request, next: Next) -> Result<Response, AuthError> {
     let token = bearer_token(req.headers())?;
     let profile_id = session::resolve(&token).map_err(|err| AuthError::new(err.message()))?;
     req.extensions_mut()

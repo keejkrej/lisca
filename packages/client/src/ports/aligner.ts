@@ -3,7 +3,7 @@ import { decodeFramePayload } from "@lisca/utils";
 import { Effect } from "effect";
 
 import { createApiClient, toClientEffect, type LiscaApiClient } from "../infra/api-client";
-import { withOptionalAbortSignal } from "../infra/with-abort-signal";
+import { withClientEffect } from "../infra/with-client-effect";
 import { pollProgressLoop } from "../session/progress-poll";
 import { createHostPort, type HostPortDeps } from "./host";
 import { createTaskPort } from "./tasks";
@@ -14,14 +14,6 @@ export type { AlignerDataPort } from "./types";
 const CROP_ROI_TERMINAL_STATUSES = new Set(["completed", "cancelled", "error"]);
 
 export type AlignerPortDeps = HostPortDeps;
-
-function withClientEffect<A, E>(
-  client: LiscaApiClient,
-  signal: AbortSignal | undefined,
-  run: (client: LiscaApiClient) => Effect.Effect<A, E>,
-) {
-  return withOptionalAbortSignal(toClientEffect(run(client)), signal);
-}
 
 export function createAlignerPort(
   deps: AlignerPortDeps,
@@ -84,9 +76,7 @@ export function createAlignerPort(
       );
     },
     smartExclude(request, signal) {
-      return withClientEffect(client, signal, (c) =>
-        c.align.smartExclude({ payload: request }),
-      );
+      return withClientEffect(client, signal, (c) => c.align.smartExclude({ payload: request }));
     },
   };
 }

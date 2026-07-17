@@ -39,6 +39,7 @@ describe("golden wire roundtrip", () => {
   it("decodes AlignerSource folder variant with internal tag", () => {
     const decoded = decodeFixture(AlignerSourceSchema, "aligner-source-folder.json");
     expect(decoded.kind).toBe("folder");
+    if (decoded.kind !== "folder") throw new Error("expected folder source fixture");
     expect(decoded.subfolderTemplate).toBe("Pos{p}");
   });
 

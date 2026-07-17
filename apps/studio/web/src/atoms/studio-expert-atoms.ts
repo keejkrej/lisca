@@ -1,5 +1,5 @@
 import { Atom } from "@effect-atom/atom-solid";
-import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/storage";
+import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/utils";
 
 const EXPERT_MODE_KEY = "lisca-studio-expert-mode";
 

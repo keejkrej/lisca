@@ -1,10 +1,8 @@
 import { ASSAY_TYPE } from "@lisca/contracts/assay";
 import { describe, expect, it } from "vitest";
 
-import { createStudioUi } from "../src/atoms/studio-ui";
+import { createInitialStudioWizardState } from "../src/atoms/studio-ui";
 import { validateAssayForAnalysis, validInfo1, validInfo3 } from "../src/studio/assay-validation";
-
-const { createInitialStudioWizardState } = createStudioUi();
 
 describe("assay validation", () => {
   it("validates complete basic info step 1", () => {

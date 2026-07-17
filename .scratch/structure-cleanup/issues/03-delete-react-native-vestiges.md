@@ -4,13 +4,19 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] The `capabilities` indirection, the Victory domain-padding constant, the dead half of `packages/storage`, the `batch` injection and its ui wrapper, and the headless `contrast-control` are gone.
-- [ ] `docs/analysis/analysis.md` and `docs/ui/ui-package-layout.md` no longer describe the deleted abstractions, corrected in the same commit.
-- [ ] Behavior is unchanged; no test asserts on the removed indirection.
-- [ ] `vp run check` shows no new failures beyond the 3 known `*-desktop#typecheck`.
+- [x] The `capabilities` indirection, the Victory domain-padding constant, the dead half of `packages/storage`, the `batch` injection and its ui wrapper, and the headless `contrast-control` are gone.
+- [x] `docs/analysis/analysis.md` and `docs/ui/ui-package-layout.md` no longer describe the deleted abstractions, corrected in the same commit.
+- [x] Behavior is unchanged; no test asserts on the removed indirection.
+- [x] `vp run check` shows no new failures beyond the 3 known `*-desktop#typecheck`.
 
 **Owner decision this depends on:** `docs/contracts/contracts.md` asserts the Rust server "can be swapped for any other backend"; `docs/analysis/analysis.md` describes a "platform-agnostic" chart layer. Nothing exercises either claim. If those are live commitments rather than vestiges, `capabilities.ts` stays and this ticket shrinks. Confirm before deleting.
+
+## Owner ruling
+
+The portability claims are vestiges, not current product commitments. LiSCA supports its Rust
+backend and web/desktop UI; delete the zero-consumer native/platform abstractions and correct the
+backend-swappability wording in `docs/contracts/contracts.md`.
 
 See PRD §C and §3.C.

@@ -1,6 +1,6 @@
 import { FetchHttpClient, HttpApiClient, HttpClient, HttpClientRequest } from "@effect/platform";
 import { liscaApi } from "@lisca/contracts/http-api";
-import { Context, Effect, Layer } from "effect";
+import { Effect, Layer } from "effect";
 
 import { toClientError } from "./client-error";
 import type { ClientEffect } from "./runtime";
@@ -33,16 +33,6 @@ function makeApiClientEffect(deps: ApiClientDeps) {
 }
 
 export type LiscaApiClient = Effect.Effect.Success<ReturnType<typeof makeApiClientEffect>>;
-
-export class LiscaApiClientService extends Context.Tag("@lisca/LiscaApiClient")<
-  LiscaApiClientService,
-  LiscaApiClient
->() {}
-
-/** Layer that provides a shared typed HttpApi client. */
-export function apiClientLayer(deps: ApiClientDeps): Layer.Layer<LiscaApiClientService> {
-  return Layer.effect(LiscaApiClientService, makeApiClientEffect(deps));
-}
 
 /**
  * Typed client derived from the Effect `HttpApi` contract. The base URL is

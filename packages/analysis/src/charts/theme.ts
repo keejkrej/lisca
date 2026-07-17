@@ -26,13 +26,6 @@ export const CHART_MARGINS = {
   top: 28,
 } as const;
 
-export const VICTORY_DOMAIN_PADDING = {
-  left: 20,
-  right: 20,
-  top: 20,
-  bottom: 20,
-} as const;
-
 export const PLOT_FONT = '"Lora", ui-serif, Georgia, serif';
 
 export const PLOT_FONT_SIZE_PX = 20;

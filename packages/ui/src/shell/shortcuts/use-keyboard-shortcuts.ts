@@ -1,7 +1,7 @@
-import { resolveKeyboardShortcut, type KeyboardShortcut } from "@lisca/ui-headless/shortcuts";
+import { resolveKeyboardShortcut, type KeyboardShortcut } from "@lisca/utils";
 import { createEffect, onCleanup } from "solid-js";
 
-export type { KeyboardShortcut, ShortcutModifiers } from "@lisca/ui-headless/shortcuts";
+export type { KeyboardShortcut, ShortcutModifiers } from "@lisca/utils";
 
 function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;

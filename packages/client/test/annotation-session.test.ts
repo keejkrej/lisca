@@ -13,7 +13,7 @@ import {
 const roi = {
   roi: 4,
   fileName: "roi.tif",
-  bbox: { x: 0, y: 0, width: 2, height: 2 },
+  bbox: { x: 0, y: 0, w: 2, h: 2, roi: 4 },
   shape: [2, 2, 1, 1, 1] as [number, number, number, number, number],
 };
 

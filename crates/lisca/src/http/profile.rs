@@ -6,11 +6,12 @@ use axum::{
 };
 use serde::Deserialize;
 
-use crate::http::auth::{require_bearer_profile, AuthenticatedProfile, AuthError};
+use crate::http::auth::{require_bearer_profile, AuthError, AuthenticatedProfile};
 use crate::profile::store;
 use crate::protocol::{
-    MemoryKind, MemoryRecentResponse, MemoryTouchResponse, ProfileCreateRequest,
-    ProfileListResponse, ProfileSessionResponse, ProfileSignInRequest, ProfileSignOutResponse,
+    MemoryKind, MemoryRecentResponse, MemoryTouchRequest, MemoryTouchResponse,
+    ProfileCreateRequest, ProfileListResponse, ProfileSessionResponse, ProfileSignInRequest,
+    ProfileSignOutResponse,
 };
 
 use super::error::FsError;
@@ -72,7 +73,7 @@ async fn get_recent_memory_handler(
 
 async fn touch_memory_handler(
     Extension(AuthenticatedProfile { profile_id }): Extension<AuthenticatedProfile>,
-    Json(body): Json<store::MemoryTouchBody>,
+    Json(body): Json<MemoryTouchRequest>,
 ) -> Result<Json<MemoryTouchResponse>, FsError> {
     store::touch_memory(&profile_id, body).map(Json)
 }
@@ -87,7 +88,8 @@ mod tests {
     use crate::profile::store;
 
     fn set_temp_config_dir() -> std::path::PathBuf {
-        let dir = std::env::temp_dir().join(format!("lisca-auth-http-test-{}", uuid::Uuid::new_v4()));
+        let dir =
+            std::env::temp_dir().join(format!("lisca-auth-http-test-{}", uuid::Uuid::new_v4()));
         std::env::set_var("LISCA_CONFIG_DIR", dir.to_string_lossy().to_string());
         dir
     }

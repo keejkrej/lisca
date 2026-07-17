@@ -111,9 +111,7 @@ export function reconcileTaskCenterDetail(
   );
   if (detail.operation.updatedAtMs < currentUpdatedAtMs) return state;
 
-  const remaining = state.operations.filter(
-    (operation) => operation.operationId !== operationId,
-  );
+  const remaining = state.operations.filter((operation) => operation.operationId !== operationId);
   return {
     operations: sortTaskCenterOperations([...remaining, detail.operation]),
     details: { ...state.details, [operationId]: detail },
@@ -124,9 +122,7 @@ export function deriveTaskCenterIndicator(
   operations: readonly OperationSummary[],
 ): TaskCenterIndicator {
   const activeCount = operations.filter(isActiveOperation).length;
-  const attentionCount = operations.filter(
-    (operation) => operation.attention === "error",
-  ).length;
+  const attentionCount = operations.filter((operation) => operation.attention === "error").length;
   return {
     activeCount,
     attentionCount,
@@ -158,9 +154,7 @@ export function canCancelTask(task: TaskDetail): boolean {
 }
 
 export function canRetryTask(task: TaskDetail): boolean {
-  return (
-    (task.status === "failed" || task.status === "cancelled") && task.blockedBy.length === 0
-  );
+  return (task.status === "failed" || task.status === "cancelled") && task.blockedBy.length === 0;
 }
 
 export function operationStatusLabel(status: OperationStatus): string {
@@ -191,10 +185,6 @@ export function operationKindLabel(kind: string): string {
     .filter(Boolean)
     .map((word) => (word.toLowerCase() === "roi" ? "ROI" : sentenceCase(word)))
     .join(" ");
-}
-
-export function taskKindLabel(kind: string): string {
-  return operationKindLabel(kind);
 }
 
 function sentenceCase(value: string): string {

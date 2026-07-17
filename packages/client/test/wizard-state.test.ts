@@ -1,9 +1,7 @@
 import { describe, expect, test } from "vitest";
 
-import { createStudioUi } from "../src/atoms/studio-ui";
+import { createInitialStudioWizardState } from "../src/atoms/studio-ui";
 import { isBasicInfoDirty, serializeBasicInfoSnapshot } from "../src/studio/wizard-state";
-
-const { createInitialStudioWizardState } = createStudioUi();
 
 describe("basic info leave guard snapshot", () => {
   test("is not dirty on initial wizard state", () => {

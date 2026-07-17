@@ -27,7 +27,7 @@ export function cropDemoFrame(frame: FrameResult, region: DemoFrameCrop): FrameR
   }
 
   const suggested = autoContrastForGrayPixels(cropped, pixelType);
-  const domain = frame.contrastDomain ?? defaultContrastDomain({ pixelType } as FrameResult);
+  const domain = frame.contrastDomain ?? defaultContrastDomain(pixelType);
   return normalizeFrameContrast({
     width: region.w,
     height: region.h,

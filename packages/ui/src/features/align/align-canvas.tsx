@@ -13,8 +13,14 @@ import { createEffect, onCleanup, onMount } from "solid-js";
 import { cn } from "../../lib/utils";
 import { CanvasStatusMessageStack, CanvasToastStack } from "../canvas/canvas-status";
 import { resolvedCanvasBackground } from "../canvas/canvas-theme";
-export type { AlignCanvasFramePoint, AlignCanvasPointerEvent } from "./align-canvas-handlers";
-import type { AlignCanvasFramePoint, AlignCanvasPointerEvent } from "./align-canvas-handlers";
+export type {
+  AlignCanvasFramePoint,
+  AlignCanvasPointerEvent,
+} from "@lisca/ui-headless/align-canvas-handlers";
+import type {
+  AlignCanvasFramePoint,
+  AlignCanvasPointerEvent,
+} from "@lisca/ui-headless/align-canvas-handlers";
 
 export type AlignCanvasWheelEvent = {
   deltaMode: number;
@@ -391,10 +397,7 @@ export function AlignCanvas(props: AlignCanvasProps) {
   return (
     <div
       ref={viewportEl!}
-      class={cn(
-        "relative h-full min-h-0 w-full flex-1 overflow-hidden bg-background",
-        props.class,
-      )}
+      class={cn("relative h-full min-h-0 w-full flex-1 overflow-hidden bg-background", props.class)}
     >
       <div
         class="absolute inset-0"
@@ -409,10 +412,7 @@ export function AlignCanvas(props: AlignCanvasProps) {
         onPointerUp={(event) => props.onVirtualPointerUp?.(toVirtualPointerEvent(event))}
         onWheel={(event) => props.onVirtualWheel?.(toVirtualWheelEvent(event))}
       >
-        <canvas
-          ref={frameCanvasEl!}
-          class="absolute inset-0 block h-full w-full select-none"
-        />
+        <canvas ref={frameCanvasEl!} class="absolute inset-0 block h-full w-full select-none" />
         <canvas
           ref={overlayCanvasEl!}
           class="pointer-events-none absolute inset-0 block h-full w-full select-none"

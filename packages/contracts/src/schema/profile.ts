@@ -1,9 +1,11 @@
 import * as Schema from "effect/Schema";
 
+import { U64 } from "./primitives";
+
 export const ProfileSummarySchema = Schema.Struct({
   id: Schema.String,
   displayName: Schema.String,
-  createdAt: Schema.String,
+  createdAt: U64,
 }).annotations({ identifier: "ProfileSummary" });
 
 export const ProfileListResponseSchema = Schema.Struct({

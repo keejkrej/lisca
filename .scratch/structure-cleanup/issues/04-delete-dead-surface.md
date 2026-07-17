@@ -4,12 +4,18 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] The 7 phantom dependency lines across 6 manifests are gone, and the boundary rule they voided now has effect.
-- [ ] The dead API-client service and layer, the unused ui components and their `theme.css` blocks, the dead hooks subpath, the unreachable shell components, the dead probe, the dead studio bridge and progress modal, and the studio orphan assets are gone.
-- [ ] `progress-poll.ts` uses `globalThis.` rather than `window.`, and `task-center.ts`'s dead options are gone.
-- [ ] Every deletion is verified zero-consumer at the time of deletion, not assumed from the audit's snapshot — re-grep before removing.
-- [ ] `vp run check` shows no new failures beyond the 3 known `*-desktop#typecheck`.
+- [x] The 7 phantom dependency lines across 6 manifests are gone, and the boundary rule they voided now has effect.
+- [x] The dead API-client service and layer, the unused ui components and their `theme.css` blocks, the dead hooks subpath, the unreachable shell components, the dead probe, the dead studio bridge and progress modal, and the studio orphan assets are gone.
+- [x] `progress-poll.ts` uses `globalThis.` rather than `window.`, and `task-center.ts`'s dead options are gone.
+- [x] Every deletion is verified zero-consumer at the time of deletion, not assumed from the audit's snapshot — re-grep before removing.
+- [x] `vp run check` shows no new failures beyond the 3 known `*-desktop#typecheck`.
 
 See PRD §E and §3.E for the itemized list with citations. Re-anchor line numbers before editing.
+
+## Comments
+
+The final current-tree ledger was seven dependency entries across five manifests. The issue's
+six-manifest count was stale because issue 13 had already removed `@tanstack/router-plugin` from
+`packages/web-demo`; the remaining seven entries and their matching lockfile records were removed.

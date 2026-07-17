@@ -1,5 +1,5 @@
 import type { CropRoiProgress, CropRoiRequest } from "@lisca/contracts";
-import { configureLiscaStorage, type LiscaStorageAdapter } from "@lisca/storage";
+import { configureLiscaStorage, type LiscaStorageAdapter } from "@lisca/utils";
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -24,7 +24,12 @@ function memoryStorage(): LiscaStorageAdapter {
 const request: CropRoiRequest = {
   requestId: "provisional",
   workspacePath: "/data/workspace",
-  source: { kind: "folder", path: "/data/source" },
+  source: {
+    kind: "folder",
+    path: "/data/source",
+    subfolderTemplate: "Pos{pos}",
+    filenameTemplate: "img.tif",
+  },
   positions: [1],
   overwrite: false,
   outputFormat: "tiff",

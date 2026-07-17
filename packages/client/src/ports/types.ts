@@ -134,36 +134,9 @@ export type AlignerDataPort = HostPort &
   };
 
 export type StudioDataPort = AlignerDataPort &
+  AnnotatorDataPort &
   AnalysisDataPort &
   StudioHostPort & {
-    scanRoiWorkspace(workspacePath: string, signal?: AbortSignal): ClientEffect<RoiWorkspaceScan>;
     getAnalysisResults(workspacePath: string): ClientEffect<AnalysisProgress | null>;
     getLatestAnalysisProgress(workspacePath: string): ClientEffect<AnalysisProgress | null>;
-    loadLabels(workspacePath: string, signal?: AbortSignal): ClientEffect<AnnotationLabel[]>;
-    saveLabels(
-      workspacePath: string,
-      labels: AnnotationLabel[],
-      signal?: AbortSignal,
-    ): ClientEffect<AnnotationLabel[]>;
-    loadRoiFrame(
-      workspacePath: string,
-      request: RoiFrameRequest,
-      contrast?: ContrastWindow | null,
-      signal?: AbortSignal,
-    ): ClientEffect<FrameResult>;
-    loadRoiFrameAnnotation(
-      workspacePath: string,
-      request: RoiFrameRequest,
-      signal?: AbortSignal,
-    ): ClientEffect<LoadedRoiFrameAnnotation>;
-    saveRoiFrameAnnotation(
-      workspacePath: string,
-      request: RoiFrameRequest,
-      annotation: RoiFrameAnnotationPayload,
-      signal?: AbortSignal,
-    ): ClientEffect<RoiFrameAnnotation>;
-    smartSegment(
-      request: SmartSegmentRequest,
-      signal?: AbortSignal,
-    ): ClientEffect<SmartSegmentResponse>;
   };

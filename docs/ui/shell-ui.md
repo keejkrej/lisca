@@ -4,7 +4,7 @@ Owned layout and theme for the Lisca SolidJS web shell (`@lisca/ui`).
 
 ## Theme
 
-Edit colors in `packages/ui/theme.css`: CSS `z-*` component classes (button, card, input, field, select, dropdown-menu, toggle, etc.) and theme tokens (`--background`, `--border`, `--muted`, …).
+Edit colors in `packages/ui/theme.css`: CSS `z-*` component classes (button, input, field, select, toggle, etc.) and theme tokens (`--background`, `--border`, `--muted`, …).
 
 Do not scatter layout tint tokens (`railChrome`, `panel`, `stat`, etc.); shell surfaces use `background` + `border`.
 
@@ -23,7 +23,6 @@ Compose apps from shell primitives, not exported class strings:
 | `DockStrip`                    | Outer dock band — `flex` row, sections grouped and centered                                               |
 | `DockSection`                  | Dock placement variant of `Section`; `fit="hug"` (default) or `fit="panel"` for instruction copy          |
 | `DialogSurface` / `ModalScrim` | Modal chrome                                                                                              |
-| `StatTile`                     | Count/metric tile: `border border-border bg-background`                                                   |
 | `useKeyboardShortcuts`         | Web keyboard bindings; pair with `dockToolShortcuts()` from `@lisca/ui-headless/dock` for digit tool keys |
 
 Placement styling lives inside `DockSection`, `PanelSection`, and `SidebarStack` — not exported as class strings.
@@ -93,6 +92,4 @@ Right sidebar sections use `PanelSection`: full width (`w-full`), height hugs co
 
 ## Out of scope
 
-**Do not edit** `packages/ui/src/components/ui/` — vendor zaidan/shadcn primitives (`Button`, `Input`, `Card`, …). Shell and features may import them; theme vars and component classes in `theme.css` still apply.
-
-Forms and dialogs that use `Card` may keep `--card`; shell layout frames do not use `bg-card`.
+Do not modify implementation code in `packages/ui/src/components/ui/`; add or refresh zaidan/shadcn primitives through `packages/ui/components.json`. A verified zero-consumer primitive may be removed together with its barrel and `theme.css` references. Shell and features may import the remaining primitives normally.

@@ -5,15 +5,17 @@
 extern crate self as lisca;
 
 pub mod aligner;
-#[cfg(feature = "smart")]
-pub mod smart;
 pub mod analysis;
 pub mod config;
 pub mod http;
-pub mod profile;
 pub mod image_source;
+#[cfg(feature = "smart")]
+mod onnx;
+pub mod profile;
 pub mod protocol;
 pub mod roi;
+#[cfg(feature = "smart")]
+pub mod smart;
 mod tiff_io;
 
 pub use protocol::AppId;

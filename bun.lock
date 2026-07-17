@@ -59,9 +59,7 @@
         "@lisca/client": "workspace:*",
         "@lisca/contracts": "workspace:*",
         "@lisca/smart": "workspace:*",
-        "@lisca/storage": "workspace:*",
         "@lisca/ui": "workspace:*",
-        "@lisca/ui-headless": "workspace:*",
         "@lisca/utils": "workspace:*",
         "@lisca/web-app": "workspace:*",
         "effect": "catalog:",
@@ -117,9 +115,7 @@
         "@lisca/client": "workspace:*",
         "@lisca/contracts": "workspace:*",
         "@lisca/smart": "workspace:*",
-        "@lisca/storage": "workspace:*",
         "@lisca/ui": "workspace:*",
-        "@lisca/ui-headless": "workspace:*",
         "@lisca/utils": "workspace:*",
         "@lisca/web-app": "workspace:*",
         "effect": "catalog:",
@@ -180,11 +176,10 @@
         "@lisca/client": "workspace:*",
         "@lisca/contracts": "workspace:*",
         "@lisca/smart": "workspace:*",
-        "@lisca/storage": "workspace:*",
         "@lisca/ui": "workspace:*",
-        "@lisca/ui-headless": "workspace:*",
         "@lisca/utils": "workspace:*",
         "@lisca/web-app": "workspace:*",
+        "@observablehq/plot": "^0.6.17",
         "@tanstack/solid-router": "catalog:",
         "effect": "catalog:",
         "html2canvas-pro": "^2.0.2",
@@ -208,11 +203,8 @@
       "name": "@lisca/analysis",
       "version": "0.1.0",
       "dependencies": {
-        "@effect-atom/atom-solid": "catalog:",
-        "@lisca/client": "workspace:*",
         "@lisca/contracts": "workspace:*",
         "d3-array": "^3.2.4",
-        "effect": "catalog:",
       },
       "devDependencies": {
         "@types/d3-array": "^3.2.2",
@@ -229,8 +221,6 @@
         "@effect/platform": "catalog:",
         "@effect/platform-browser": "catalog:",
         "@lisca/contracts": "workspace:*",
-        "@lisca/storage": "workspace:*",
-        "@lisca/ui-headless": "workspace:*",
         "@lisca/utils": "workspace:*",
         "effect": "catalog:",
       },
@@ -271,23 +261,14 @@
         "solid-js": "^1.9.0",
       },
     },
-    "packages/storage": {
-      "name": "@lisca/storage",
-      "version": "0.1.0",
-      "devDependencies": {
-        "typescript": "catalog:",
-      },
-    },
     "packages/ui": {
       "name": "@lisca/ui",
       "version": "0.1.0",
       "dependencies": {
         "@kobalte/core": "catalog:",
-        "@lisca/analysis": "workspace:*",
         "@lisca/contracts": "workspace:*",
         "@lisca/ui-headless": "workspace:*",
         "@lisca/utils": "workspace:*",
-        "@observablehq/plot": "^0.6.17",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "phosphor-icons-solid": "catalog:",
@@ -329,7 +310,6 @@
       "version": "0.1.0",
       "dependencies": {
         "@lisca/contracts": "workspace:*",
-        "@lisca/storage": "workspace:*",
         "d3-array": "^3.2.4",
       },
       "devDependencies": {
@@ -344,9 +324,7 @@
       "dependencies": {
         "@fontsource-variable/lora": "^5.2.8",
         "@lisca/client": "workspace:*",
-        "@lisca/contracts": "workspace:*",
         "@lisca/ui": "workspace:*",
-        "@lisca/ui-headless": "workspace:*",
         "@lisca/utils": "workspace:*",
         "@tailwindcss/vite": "catalog:",
         "tailwindcss": "catalog:",
@@ -369,7 +347,6 @@
         "@effect-atom/atom-solid": "catalog:",
         "@lisca/client": "workspace:*",
         "@lisca/contracts": "workspace:*",
-        "@lisca/smart": "workspace:*",
         "@lisca/ui": "workspace:*",
         "@lisca/utils": "workspace:*",
         "@lisca/web-app": "workspace:*",
@@ -610,8 +587,6 @@
     "@lisca/landing-web": ["@lisca/landing-web@workspace:apps/landing/web"],
 
     "@lisca/smart": ["@lisca/smart@workspace:packages/smart"],
-
-    "@lisca/storage": ["@lisca/storage@workspace:packages/storage"],
 
     "@lisca/studio-desktop": ["@lisca/studio-desktop@workspace:apps/studio/desktop"],
 

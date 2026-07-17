@@ -1,6 +1,6 @@
 import type { RoiPositionScan } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
-import { configureLiscaStorage, type LiscaStorageAdapter } from "@lisca/storage";
+import { configureLiscaStorage, type LiscaStorageAdapter } from "@lisca/utils";
 import { describe, expect, it, beforeEach } from "vitest";
 
 import {
@@ -40,6 +40,7 @@ function createMemoryStorage(): LiscaStorageAdapter {
 
 const position: RoiPositionScan = {
   pos: 1,
+  source: { kind: "nd2", path: "/data/source.nd2" },
   channels: [0, 1],
   times: [10, 20],
   zSlices: [0, 1],
@@ -47,7 +48,7 @@ const position: RoiPositionScan = {
     {
       roi: 2,
       fileName: "roi.tif",
-      bbox: { x: 0, y: 0, width: 64, height: 64 },
+      bbox: { x: 0, y: 0, w: 64, h: 64, roi: 2 },
       shape: [64, 64, 1, 1, 1],
     },
   ],
@@ -62,6 +63,14 @@ const frame: FrameResult = {
 };
 
 describe("annotator-ui pure helpers", () => {
+  it("initializes no-frame contrast from the undefined pixel-type default", () => {
+    const state = createInitialAnnotatorUiState();
+    expect(state.frame).toBeNull();
+    expect(state.contrastDomain).toEqual({ min: 0, max: 65535 });
+    expect(state.contrastMin).toBe(0);
+    expect(state.contrastMax).toBe(65535);
+  });
+
   it("builds roiRequestSelectionKey from selection fields", () => {
     expect(
       roiRequestSelectionKey({
@@ -119,6 +128,21 @@ describe("annotator-ui actions", () => {
     expect(next.contrastMax).toBe(3000);
   });
 
+  it("setContrastState uses the uint16 default when the frame omits a domain", () => {
+    const initial = createInitialAnnotatorUiState();
+    const next = runReducer(initial, (set) =>
+      actions.setContrastState(set, {
+        width: 1,
+        height: 1,
+        pixels: new Uint16Array([0]),
+        pixelType: "uint16",
+      }),
+    );
+    expect(next.contrastDomain).toEqual({ min: 0, max: 65535 });
+    expect(next.contrastMin).toBe(0);
+    expect(next.contrastMax).toBe(65535);
+  });
+
   it("setContrastState preserves manual contrast after frame load", () => {
     const withContrast = {
       ...createInitialAnnotatorUiState(),
@@ -148,6 +172,9 @@ describe("annotator-ui actions", () => {
     });
     expect(next.frame).toBeNull();
     expect(next.contrast).toBeNull();
+    expect(next.contrastDomain).toEqual({ min: 0, max: 65535 });
+    expect(next.contrastMin).toBe(0);
+    expect(next.contrastMax).toBe(65535);
   });
 
   it("preserves host-specific state when reusing base actions", () => {

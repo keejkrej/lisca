@@ -1,5 +1,6 @@
 import * as Schema from "effect/Schema";
 
+import { U64 } from "./primitives";
 import { AlignerSourceSchema } from "./shared";
 
 export const MemoryKindSchema = Schema.Literal("workspace", "source", "assay").annotations({
@@ -9,20 +10,20 @@ export const MemoryKindSchema = Schema.Literal("workspace", "source", "assay").a
 export const MemoryWorkspaceEntrySchema = Schema.Struct({
   path: Schema.String,
   label: Schema.optional(Schema.String),
-  lastUsedAt: Schema.String,
+  lastUsedAt: U64,
 }).annotations({ identifier: "MemoryWorkspaceEntry" });
 
 export const MemorySourceEntrySchema = Schema.Struct({
   source: AlignerSourceSchema,
   label: Schema.optional(Schema.String),
-  lastUsedAt: Schema.String,
+  lastUsedAt: U64,
 }).annotations({ identifier: "MemorySourceEntry" });
 
 export const MemoryAssayEntrySchema = Schema.Struct({
   path: Schema.String,
   assayLabel: Schema.optional(Schema.String),
   workspacePath: Schema.optional(Schema.String),
-  lastUsedAt: Schema.String,
+  lastUsedAt: U64,
 }).annotations({ identifier: "MemoryAssayEntry" });
 
 export const MemoryTouchRequestSchema = Schema.Union(

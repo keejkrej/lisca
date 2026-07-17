@@ -6,7 +6,7 @@
     "build": "bun ../../../scripts/build-tauri-frontend.ts annotator && bun --filter @lisca/annotator-server build",
     "dev": "tauri dev",
     "dist": "bun ../../../scripts/package-tauri.ts annotator",
-    "typecheck": "cargo check -p annotator-tauri"
+    "typecheck": "vp exec bun ../../../scripts/prepare-tauri-resources.ts annotator && cargo check -p annotator-tauri"
   },
   "dependencies": {},
   "devDependencies": {

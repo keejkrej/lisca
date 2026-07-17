@@ -1,7 +1,6 @@
 import type { HostFsEntry, HostListDirectoryResult } from "@lisca/contracts";
-import type { HostFilePickerMode } from "@lisca/ui-headless/host";
+import type { HostFilePickerMode, HostFilePickerOperations } from "@lisca/utils";
 import { createEffect, createMemo, createSignal, onCleanup } from "solid-js";
-import type { HostFilePickerOperations } from "./host";
 function pathExtLower(name: string): string {
   const index = name.lastIndexOf(".");
   if (index <= 0 || index === name.length - 1) return "";

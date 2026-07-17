@@ -54,6 +54,9 @@ describe("align-session helpers", () => {
           { i: 0, j: 0, score: 1 },
           { i: 1, j: 1, score: 9 },
         ],
+        histogramBins: [],
+        scoreMin: 1,
+        scoreMax: 9,
       },
       5,
     );
@@ -66,6 +69,9 @@ describe("align-session helpers", () => {
         threshold: 5,
         eligibleCellCount: 1,
         cellScores: [{ i: 0, j: 0, score: 1 }],
+        histogramBins: [],
+        scoreMin: 1,
+        scoreMax: 1,
       },
       threshold: 5,
     };
@@ -85,6 +91,9 @@ describe("align-session helpers", () => {
           { i: 0, j: 0, score: 1 },
           { i: 1, j: 1, score: 9 },
         ],
+        histogramBins: [],
+        scoreMin: 1,
+        scoreMax: 9,
       },
       threshold: 5,
     });
@@ -138,6 +147,9 @@ describe("align-session helpers", () => {
         threshold: 5,
         eligibleCellCount: 1,
         cellScores: [{ i: 0, j: 0, score: 1 }],
+        histogramBins: [],
+        scoreMin: 1,
+        scoreMax: 1,
       },
       threshold: 5,
     };
@@ -166,6 +178,9 @@ describe("align-session helpers", () => {
         threshold: 5,
         eligibleCellCount: 1,
         cellScores: [{ i: 0, j: 0, score: 1 }],
+        histogramBins: [],
+        scoreMin: 1,
+        scoreMax: 1,
       },
       threshold: 5,
     };
@@ -197,6 +212,9 @@ describe("align-session helpers", () => {
         threshold: 5,
         eligibleCellCount: 1,
         cellScores: [{ i: 0, j: 0, score: 1 }],
+        histogramBins: [],
+        scoreMin: 1,
+        scoreMax: 1,
       },
       5,
     );

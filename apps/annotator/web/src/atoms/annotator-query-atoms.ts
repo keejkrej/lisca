@@ -4,10 +4,9 @@ import { Atom, Result } from "@effect-atom/atom-solid";
 import { annotatorPortLayer, createAnnotatorQueryAtoms } from "@lisca/client/atoms";
 import { createLiscaAppBootstrap } from "@lisca/client/bootstrap";
 
-import { ensureAnnotatorPort } from "../api/annotator-port";
+import { annotatorClient } from "../api/annotator-port";
 
-const annotatorPort = ensureAnnotatorPort();
-const bootstrap = createLiscaAppBootstrap(annotatorPortLayer(annotatorPort), annotatorPort);
+const bootstrap = createLiscaAppBootstrap(annotatorPortLayer(annotatorClient));
 
 export const annotatorRuntime = bootstrap.runtime;
 

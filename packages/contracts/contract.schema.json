@@ -65,6 +65,24 @@
         }
       }
     },
+    "RequestError": {
+      "type": "object",
+      "required": [
+        "message",
+        "_tag"
+      ],
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "_tag": {
+          "type": "string",
+          "enum": [
+            "RequestError"
+          ]
+        }
+      }
+    },
     "Unauthorized": {
       "type": "object",
       "required": [
@@ -1445,7 +1463,10 @@
           "type": "string"
         },
         "createdAt": {
-          "type": "string"
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0,
+          "maximum": 9007199254740991
         }
       }
     },
@@ -1561,7 +1582,10 @@
           "type": "string"
         },
         "lastUsedAt": {
-          "type": "string"
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0,
+          "maximum": 9007199254740991
         }
       }
     },
@@ -1579,7 +1603,10 @@
           "type": "string"
         },
         "lastUsedAt": {
-          "type": "string"
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0,
+          "maximum": 9007199254740991
         }
       }
     },
@@ -1600,7 +1627,10 @@
           "type": "string"
         },
         "lastUsedAt": {
-          "type": "string"
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0,
+          "maximum": 9007199254740991
         }
       }
     },
@@ -2505,6 +2535,76 @@
           }
         }
       }
+    },
+    "MemoryTouchRequest": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "path"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "workspace"
+              ]
+            },
+            "path": {
+              "type": "string"
+            },
+            "label": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "source"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "source"
+              ]
+            },
+            "source": {
+              "$ref": "#/definitions/AlignerSource"
+            },
+            "label": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "path"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "assay"
+              ]
+            },
+            "path": {
+              "type": "string"
+            },
+            "assayLabel": {
+              "type": "string"
+            },
+            "workspacePath": {
+              "type": "string"
+            }
+          }
+        }
+      ]
     }
   }
 }

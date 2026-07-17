@@ -4,12 +4,12 @@
 
 **Blocked by:** 05 — Studio composes the Aligner but copies the Annotator.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] The hand-rolled port registry is gone and the Layer is the only DI mechanism.
-- [ ] `createLiscaPortCore` returns the client directly; the dead re-exports and the `bootstrap.port`/`runPromise` path are gone.
-- [ ] Each per-app port file drops to roughly its irreducible content.
-- [ ] Test-override capability is either genuinely used by a test or not reintroduced.
-- [ ] `vp run check` shows no new failures beyond the 3 known `*-desktop#typecheck`.
+- [x] The hand-rolled port registry is gone and the Layer is the only DI mechanism.
+- [x] `createLiscaPortCore` returns the client directly; the dead re-exports and the `bootstrap.port`/`runPromise` path are gone.
+- [x] Each per-app port file drops to roughly its irreducible content.
+- [x] Test-override capability is either genuinely used by a test or not reintroduced.
+- [x] `vp run check` shows no new failures beyond the 3 known `*-desktop#typecheck`.
 
 See PRD §H4 and §3.H.

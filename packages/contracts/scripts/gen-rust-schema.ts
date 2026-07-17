@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 import { AssayJsonFileSchema } from "../src/assay.schema";
 import { liscaApi } from "../src/http-api";
-import { AppIdSchema, RoiIndexFileSchema } from "../src/schema/index";
+import { AppIdSchema, MemoryTouchRequestSchema, RoiIndexFileSchema } from "../src/schema/index";
 
 /**
  * Build the single JSON Schema document consumed by `typify` to generate the
@@ -37,18 +37,25 @@ for (const [name, schema] of Object.entries(openapi.components.schemas)) {
 
 // Non-HTTP contract types via JSON Schema. `JSONSchema.make` emits a `$defs`
 // map plus a `$ref` root; fold the `$defs` into our definitions.
-function foldDefs(schema: Parameters<typeof JSONSchema.make>[0]): void {
+function foldDefs(schema: Parameters<typeof JSONSchema.make>[0], identifier: string): void {
   const json = JSONSchema.make(schema) as { $defs?: Record<string, JsonObject> };
+  if (!json.$defs?.[identifier]) {
+    throw new Error(
+      `gen-rust-schema: identifier-annotated schema did not emit $defs.${identifier}`,
+    );
+  }
   for (const [name, def] of Object.entries(json.$defs ?? {})) {
     definitions[name] = def;
   }
 }
 
-foldDefs(AssayJsonFileSchema);
+foldDefs(AssayJsonFileSchema, "AssayJsonFile");
 // Server identity (not an HTTP payload; used by Rust `run_server`).
-foldDefs(AppIdSchema);
+foldDefs(AppIdSchema, "AppId");
 // On-disk ROI index container (not an HTTP payload).
-foldDefs(RoiIndexFileSchema);
+foldDefs(RoiIndexFileSchema, "RoiIndexFile");
+// HttpApi inlines top-level union payloads, so fold this union explicitly.
+foldDefs(MemoryTouchRequestSchema, "MemoryTouchRequest");
 
 // Normalize every `$ref` so they resolve within a single `definitions` map
 // (OpenAPI uses `#/components/schemas/...`, JSONSchema.make uses `#/$defs/...`).
@@ -104,11 +111,11 @@ function normalizeUnionForTypify(schema: JsonObject, schemaDefinitions: JsonObje
 
 const normalized = rewriteRefs({ definitions }) as { definitions: JsonObject };
 
-if (normalized.definitions.AlignerSource) {
-  normalized.definitions.AlignerSource = normalizeUnionForTypify(
-    normalized.definitions.AlignerSource,
-    normalized.definitions,
-  );
+for (const name of ["AlignerSource", "MemoryTouchRequest"]) {
+  const schema = normalized.definitions[name];
+  if (schema) {
+    normalized.definitions[name] = normalizeUnionForTypify(schema, normalized.definitions);
+  }
 }
 
 // Drop OpenAPI/HttpApi-internal error envelope types that are not part of the
@@ -116,7 +123,6 @@ if (normalized.definitions.AlignerSource) {
 delete normalized.definitions.HttpApiDecodeError;
 delete normalized.definitions.Issue;
 delete normalized.definitions.PropertyKey;
-delete normalized.definitions.RequestError;
 
 // No root `title` — typify would otherwise emit a useless
 // `LiscaContract(serde_json::Value)` wrapper for the document.

@@ -4,10 +4,9 @@ import { Atom, Result } from "@effect-atom/atom-solid";
 import { createStudioQueryAtoms, studioPortLayer } from "@lisca/client/atoms";
 import { createLiscaAppBootstrap } from "@lisca/client/bootstrap";
 
-import { ensureStudioPort } from "../api/studio-port";
+import { studioClient } from "../api/studio-port";
 
-const studioPort = ensureStudioPort();
-const bootstrap = createLiscaAppBootstrap(studioPortLayer(studioPort), studioPort);
+const bootstrap = createLiscaAppBootstrap(studioPortLayer(studioClient));
 
 export const studioRuntime = bootstrap.runtime;
 

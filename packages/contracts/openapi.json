@@ -3981,7 +3981,10 @@
             "type": "string"
           },
           "createdAt": {
-            "type": "string"
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0,
+            "maximum": 9007199254740991
           }
         },
         "additionalProperties": false
@@ -4104,7 +4107,10 @@
             "type": "string"
           },
           "lastUsedAt": {
-            "type": "string"
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0,
+            "maximum": 9007199254740991
           }
         },
         "additionalProperties": false
@@ -4123,7 +4129,10 @@
             "type": "string"
           },
           "lastUsedAt": {
-            "type": "string"
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0,
+            "maximum": 9007199254740991
           }
         },
         "additionalProperties": false
@@ -4145,7 +4154,10 @@
             "type": "string"
           },
           "lastUsedAt": {
-            "type": "string"
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0,
+            "maximum": 9007199254740991
           }
         },
         "additionalProperties": false

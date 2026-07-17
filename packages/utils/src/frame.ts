@@ -46,7 +46,9 @@ function bytesToBase64(bytes: Uint8Array): string {
     return globalThis.btoa(binary);
   }
 
-  const bufferCtor = (globalThis as { Buffer?: { from(input: Uint8Array): { toString(encoding: "base64"): string } } }).Buffer;
+  const bufferCtor = (
+    globalThis as { Buffer?: { from(input: Uint8Array): { toString(encoding: "base64"): string } } }
+  ).Buffer;
   if (bufferCtor) {
     return bufferCtor.from(bytes).toString("base64");
   }
@@ -56,7 +58,7 @@ function bytesToBase64(bytes: Uint8Array): string {
 
 export function encodeFramePayload(frame: FrameResult): FramePayload {
   const pixelType = frame.pixelType ?? "uint16";
-  const domain = frame.contrastDomain ?? defaultContrastDomain(frame);
+  const domain = frame.contrastDomain ?? defaultContrastDomain(pixelType);
   const suggested = normalizeContrastWindow(frame.suggestedContrast ?? domain, domain);
   const applied = normalizeContrastWindow(frame.appliedContrast ?? suggested, domain);
   const pixels = frame.pixels;
@@ -95,8 +97,8 @@ export function decodeFramePayload(payload: FramePayload): FrameResult {
   }
 }
 
-export function defaultContrastDomain(frame: FrameResult): ContrastWindow {
-  if (frame.pixelType === "uint8" || frame.pixelType === "uint8clamped") {
+export function defaultContrastDomain(pixelType: PixelType | undefined): ContrastWindow {
+  if (pixelType === "uint8" || pixelType === "uint8clamped") {
     return { min: 0, max: 255 };
   }
   return { min: 0, max: 65535 };
@@ -139,7 +141,7 @@ export function autoContrastForGrayPixels(
   const sorted = subsampleSortedGray(pixels, CONTRAST_SAMPLE_SIZE);
   const min = quantileFloorSorted(sorted, 0.001);
   const max = Math.max(min + 1, quantileFloorSorted(sorted, 0.999));
-  const domain = defaultContrastDomain({ pixelType } as FrameResult);
+  const domain = defaultContrastDomain(pixelType);
   return normalizeContrastWindow({ min, max }, domain);
 }
 
@@ -154,7 +156,7 @@ export function normalizeContrastWindow(
 }
 
 export function normalizeFrameContrast(frame: FrameResult): FrameResult {
-  const domain = frame.contrastDomain ?? defaultContrastDomain(frame);
+  const domain = frame.contrastDomain ?? defaultContrastDomain(frame.pixelType);
   const suggested = normalizeContrastWindow(frame.suggestedContrast ?? domain, domain);
   const applied = normalizeContrastWindow(frame.appliedContrast ?? suggested, domain);
   return {

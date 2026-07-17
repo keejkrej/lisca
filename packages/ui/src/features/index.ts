@@ -6,12 +6,14 @@ export {
 export {
   cursorForAlignTool,
   useAlignCanvasGridHandlers,
-  useAlignCanvasSelectionHandlers,
   type AlignCanvasFramePoint,
   type AlignCanvasPointerEvent,
   type UseAlignCanvasGridHandlersOptions,
+} from "@lisca/ui-headless/align-canvas-handlers";
+export {
+  useAlignCanvasSelectionHandlers,
   type UseAlignCanvasSelectionHandlersOptions,
-} from "./align/align-canvas-handlers";
+} from "@lisca/ui-headless/align-selection-handlers";
 export { AlignGrid, type AlignGridProps } from "./align/align-grid";
 export { AlignGridRail } from "./align/align-grid-rail";
 export { AlignSelectionRail, type AlignSelectionRailProps } from "./align/align-selection-rail";
@@ -63,10 +65,7 @@ export {
   type AnnotationControlValue,
 } from "./annotate/annotation-control-rail";
 export { AnnotationToolGrid, buildAnnotationToolActions } from "./annotate/annotation-tool-grid";
-export {
-  ANNOTATION_TOOL_DEFINITIONS,
-  toolCanRunWithoutLabel,
-} from "@lisca/ui-headless/annotation-tools";
+export { ANNOTATION_TOOL_DEFINITIONS, toolCanRunWithoutLabel } from "@lisca/utils";
 export { AnnotationModeToggle } from "./annotate/annotation-mode-toggle";
 export type { AnnotationMode } from "@lisca/ui-headless/types";
 export { AnnotationToolSlider } from "./annotate/annotation-tool-slider";
@@ -78,7 +77,7 @@ export {
 export {
   useCanvasResourceTransaction,
   type CanvasResourceTransactionOptions,
-} from "./canvas/canvas-resource-transaction";
+} from "@lisca/ui-headless/canvas-resource-transaction";
 export { ContrastControl, type ContrastControlProps } from "./contrast/contrast-control";
 export { CropProgressModal, type CropProgressModalProps } from "./align/crop-progress-modal";
 export { cropConfirmCopy } from "@lisca/ui-headless/crop";
@@ -117,7 +116,7 @@ export {
   HostFilePickerDialog,
   type HostFilePickerDialogProps,
 } from "./host/host-file-picker-dialog";
-export type { HostFilePickerMode, HostFilePickerOperations } from "./host/host-operations";
+export type { HostFilePickerMode, HostFilePickerOperations } from "@lisca/utils";
 export {
   LabelCreationDialog,
   type LabelCreationDialogProps,
@@ -128,13 +127,3 @@ export {
   type SmartSegmentModelDialogProps,
 } from "./annotate/smart-segment-model-dialog";
 export { SourcePickerModal, type SourcePickerModalProps } from "./host/source-picker-modal";
-export {
-  ResultPanelView,
-  ResultPanelsGridView,
-  applyPlotFontSize,
-  buildHistogramPlotOptions,
-  plotOptionsForPanel,
-  plotOptionsFromChartSpec,
-  PLOT_FONT_SIZE_PX,
-  PLOT_MARGINS,
-} from "./analysis/observable-plot-charts";

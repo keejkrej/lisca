@@ -2820,7 +2820,10 @@ impl LoadedRoiFrameAnnotation {
 #[doc = "      \"type\": \"string\""]
 #[doc = "    },"]
 #[doc = "    \"lastUsedAt\": {"]
-#[doc = "      \"type\": \"string\""]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint64\","]
+#[doc = "      \"maximum\": 9007199254740991.0,"]
+#[doc = "      \"minimum\": 0.0"]
 #[doc = "    },"]
 #[doc = "    \"path\": {"]
 #[doc = "      \"type\": \"string\""]
@@ -2841,7 +2844,7 @@ pub struct MemoryAssayEntry {
     )]
     pub assay_label: ::std::option::Option<::std::string::String>,
     #[serde(rename = "lastUsedAt")]
-    pub last_used_at: ::std::string::String,
+    pub last_used_at: u64,
     pub path: ::std::string::String,
     #[serde(
         rename = "workspacePath",
@@ -3029,7 +3032,10 @@ impl MemoryRecentResponse {
 #[doc = "      \"type\": \"string\""]
 #[doc = "    },"]
 #[doc = "    \"lastUsedAt\": {"]
-#[doc = "      \"type\": \"string\""]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint64\","]
+#[doc = "      \"maximum\": 9007199254740991.0,"]
+#[doc = "      \"minimum\": 0.0"]
 #[doc = "    },"]
 #[doc = "    \"source\": {"]
 #[doc = "      \"$ref\": \"#/definitions/AlignerSource\""]
@@ -3043,13 +3049,122 @@ pub struct MemorySourceEntry {
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
     pub label: ::std::option::Option<::std::string::String>,
     #[serde(rename = "lastUsedAt")]
-    pub last_used_at: ::std::string::String,
+    pub last_used_at: u64,
     pub source: AlignerSource,
 }
 impl MemorySourceEntry {
     pub fn builder() -> builder::MemorySourceEntry {
         Default::default()
     }
+}
+#[doc = "`MemoryTouchRequest`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"oneOf\": ["]
+#[doc = "    {"]
+#[doc = "      \"type\": \"object\","]
+#[doc = "      \"required\": ["]
+#[doc = "        \"kind\","]
+#[doc = "        \"path\""]
+#[doc = "      ],"]
+#[doc = "      \"properties\": {"]
+#[doc = "        \"kind\": {"]
+#[doc = "          \"type\": \"string\","]
+#[doc = "          \"enum\": ["]
+#[doc = "            \"workspace\""]
+#[doc = "          ]"]
+#[doc = "        },"]
+#[doc = "        \"label\": {"]
+#[doc = "          \"type\": \"string\""]
+#[doc = "        },"]
+#[doc = "        \"path\": {"]
+#[doc = "          \"type\": \"string\""]
+#[doc = "        }"]
+#[doc = "      }"]
+#[doc = "    },"]
+#[doc = "    {"]
+#[doc = "      \"type\": \"object\","]
+#[doc = "      \"required\": ["]
+#[doc = "        \"kind\","]
+#[doc = "        \"source\""]
+#[doc = "      ],"]
+#[doc = "      \"properties\": {"]
+#[doc = "        \"kind\": {"]
+#[doc = "          \"type\": \"string\","]
+#[doc = "          \"enum\": ["]
+#[doc = "            \"source\""]
+#[doc = "          ]"]
+#[doc = "        },"]
+#[doc = "        \"label\": {"]
+#[doc = "          \"type\": \"string\""]
+#[doc = "        },"]
+#[doc = "        \"source\": {"]
+#[doc = "          \"$ref\": \"#/definitions/AlignerSource\""]
+#[doc = "        }"]
+#[doc = "      }"]
+#[doc = "    },"]
+#[doc = "    {"]
+#[doc = "      \"type\": \"object\","]
+#[doc = "      \"required\": ["]
+#[doc = "        \"kind\","]
+#[doc = "        \"path\""]
+#[doc = "      ],"]
+#[doc = "      \"properties\": {"]
+#[doc = "        \"assayLabel\": {"]
+#[doc = "          \"type\": \"string\""]
+#[doc = "        },"]
+#[doc = "        \"kind\": {"]
+#[doc = "          \"type\": \"string\","]
+#[doc = "          \"enum\": ["]
+#[doc = "            \"assay\""]
+#[doc = "          ]"]
+#[doc = "        },"]
+#[doc = "        \"path\": {"]
+#[doc = "          \"type\": \"string\""]
+#[doc = "        },"]
+#[doc = "        \"workspacePath\": {"]
+#[doc = "          \"type\": \"string\""]
+#[doc = "        }"]
+#[doc = "      }"]
+#[doc = "    }"]
+#[doc = "  ]"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+#[serde(tag = "kind")]
+pub enum MemoryTouchRequest {
+    #[serde(rename = "workspace")]
+    Workspace {
+        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+        label: ::std::option::Option<::std::string::String>,
+        path: ::std::string::String,
+    },
+    #[serde(rename = "source")]
+    Source {
+        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+        label: ::std::option::Option<::std::string::String>,
+        source: AlignerSource,
+    },
+    #[serde(rename = "assay")]
+    Assay {
+        #[serde(
+            rename = "assayLabel",
+            default,
+            skip_serializing_if = "::std::option::Option::is_none"
+        )]
+        assay_label: ::std::option::Option<::std::string::String>,
+        path: ::std::string::String,
+        #[serde(
+            rename = "workspacePath",
+            default,
+            skip_serializing_if = "::std::option::Option::is_none"
+        )]
+        workspace_path: ::std::option::Option<::std::string::String>,
+    },
 }
 #[doc = "`MemoryTouchResponse`"]
 #[doc = r""]
@@ -3094,7 +3209,10 @@ impl MemoryTouchResponse {
 #[doc = "      \"type\": \"string\""]
 #[doc = "    },"]
 #[doc = "    \"lastUsedAt\": {"]
-#[doc = "      \"type\": \"string\""]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint64\","]
+#[doc = "      \"maximum\": 9007199254740991.0,"]
+#[doc = "      \"minimum\": 0.0"]
 #[doc = "    },"]
 #[doc = "    \"path\": {"]
 #[doc = "      \"type\": \"string\""]
@@ -3108,7 +3226,7 @@ pub struct MemoryWorkspaceEntry {
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
     pub label: ::std::option::Option<::std::string::String>,
     #[serde(rename = "lastUsedAt")]
-    pub last_used_at: ::std::string::String,
+    pub last_used_at: u64,
     pub path: ::std::string::String,
 }
 impl MemoryWorkspaceEntry {
@@ -3866,7 +3984,10 @@ impl ProfileSignOutResponse {
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
 #[doc = "    \"createdAt\": {"]
-#[doc = "      \"type\": \"string\""]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint64\","]
+#[doc = "      \"maximum\": 9007199254740991.0,"]
+#[doc = "      \"minimum\": 0.0"]
 #[doc = "    },"]
 #[doc = "    \"displayName\": {"]
 #[doc = "      \"type\": \"string\""]
@@ -3881,7 +4002,7 @@ impl ProfileSignOutResponse {
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct ProfileSummary {
     #[serde(rename = "createdAt")]
-    pub created_at: ::std::string::String,
+    pub created_at: u64,
     #[serde(rename = "displayName")]
     pub display_name: ::std::string::String,
     pub id: ::std::string::String,
@@ -3943,6 +4064,108 @@ pub struct ReadTextFileResponse {
 impl ReadTextFileResponse {
     pub fn builder() -> builder::ReadTextFileResponse {
         Default::default()
+    }
+}
+#[doc = "`RequestError`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"_tag\","]
+#[doc = "    \"message\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"_tag\": {"]
+#[doc = "      \"type\": \"string\","]
+#[doc = "      \"enum\": ["]
+#[doc = "        \"RequestError\""]
+#[doc = "      ]"]
+#[doc = "    },"]
+#[doc = "    \"message\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct RequestError {
+    pub message: ::std::string::String,
+    #[serde(rename = "_tag")]
+    pub tag: RequestErrorTag,
+}
+impl RequestError {
+    pub fn builder() -> builder::RequestError {
+        Default::default()
+    }
+}
+#[doc = "`RequestErrorTag`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"string\","]
+#[doc = "  \"enum\": ["]
+#[doc = "    \"RequestError\""]
+#[doc = "  ]"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(
+    :: serde :: Deserialize,
+    :: serde :: Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum RequestErrorTag {
+    RequestError,
+}
+impl ::std::fmt::Display for RequestErrorTag {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::RequestError => f.write_str("RequestError"),
+        }
+    }
+}
+impl ::std::str::FromStr for RequestErrorTag {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "RequestError" => Ok(Self::RequestError),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for RequestErrorTag {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for RequestErrorTag {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for RequestErrorTag {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
     }
 }
 #[doc = "`RoiBbox`"]
@@ -8891,7 +9114,7 @@ pub mod builder {
             ::std::option::Option<::std::string::String>,
             ::std::string::String,
         >,
-        last_used_at: ::std::result::Result<::std::string::String, ::std::string::String>,
+        last_used_at: ::std::result::Result<u64, ::std::string::String>,
         path: ::std::result::Result<::std::string::String, ::std::string::String>,
         workspace_path: ::std::result::Result<
             ::std::option::Option<::std::string::String>,
@@ -8921,7 +9144,7 @@ pub mod builder {
         }
         pub fn last_used_at<T>(mut self, value: T) -> Self
         where
-            T: ::std::convert::TryInto<::std::string::String>,
+            T: ::std::convert::TryInto<u64>,
             T::Error: ::std::fmt::Display,
         {
             self.last_used_at = value
@@ -9092,7 +9315,7 @@ pub mod builder {
             ::std::option::Option<::std::string::String>,
             ::std::string::String,
         >,
-        last_used_at: ::std::result::Result<::std::string::String, ::std::string::String>,
+        last_used_at: ::std::result::Result<u64, ::std::string::String>,
         source: ::std::result::Result<super::AlignerSource, ::std::string::String>,
     }
     impl ::std::default::Default for MemorySourceEntry {
@@ -9117,7 +9340,7 @@ pub mod builder {
         }
         pub fn last_used_at<T>(mut self, value: T) -> Self
         where
-            T: ::std::convert::TryInto<::std::string::String>,
+            T: ::std::convert::TryInto<u64>,
             T::Error: ::std::fmt::Display,
         {
             self.last_used_at = value
@@ -9199,7 +9422,7 @@ pub mod builder {
             ::std::option::Option<::std::string::String>,
             ::std::string::String,
         >,
-        last_used_at: ::std::result::Result<::std::string::String, ::std::string::String>,
+        last_used_at: ::std::result::Result<u64, ::std::string::String>,
         path: ::std::result::Result<::std::string::String, ::std::string::String>,
     }
     impl ::std::default::Default for MemoryWorkspaceEntry {
@@ -9224,7 +9447,7 @@ pub mod builder {
         }
         pub fn last_used_at<T>(mut self, value: T) -> Self
         where
-            T: ::std::convert::TryInto<::std::string::String>,
+            T: ::std::convert::TryInto<u64>,
             T::Error: ::std::fmt::Display,
         {
             self.last_used_at = value
@@ -9967,7 +10190,7 @@ pub mod builder {
     }
     #[derive(Clone, Debug)]
     pub struct ProfileSummary {
-        created_at: ::std::result::Result<::std::string::String, ::std::string::String>,
+        created_at: ::std::result::Result<u64, ::std::string::String>,
         display_name: ::std::result::Result<::std::string::String, ::std::string::String>,
         id: ::std::result::Result<::std::string::String, ::std::string::String>,
     }
@@ -9983,7 +10206,7 @@ pub mod builder {
     impl ProfileSummary {
         pub fn created_at<T>(mut self, value: T) -> Self
         where
-            T: ::std::convert::TryInto<::std::string::String>,
+            T: ::std::convert::TryInto<u64>,
             T::Error: ::std::fmt::Display,
         {
             self.created_at = value
@@ -10108,6 +10331,60 @@ pub mod builder {
         fn from(value: super::ReadTextFileResponse) -> Self {
             Self {
                 contents: Ok(value.contents),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct RequestError {
+        message: ::std::result::Result<::std::string::String, ::std::string::String>,
+        tag: ::std::result::Result<super::RequestErrorTag, ::std::string::String>,
+    }
+    impl ::std::default::Default for RequestError {
+        fn default() -> Self {
+            Self {
+                message: Err("no value supplied for message".to_string()),
+                tag: Err("no value supplied for tag".to_string()),
+            }
+        }
+    }
+    impl RequestError {
+        pub fn message<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.message = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for message: {e}"));
+            self
+        }
+        pub fn tag<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::RequestErrorTag>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.tag = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for tag: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<RequestError> for super::RequestError {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: RequestError,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                message: value.message?,
+                tag: value.tag?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::RequestError> for RequestError {
+        fn from(value: super::RequestError) -> Self {
+            Self {
+                message: Ok(value.message),
+                tag: Ok(value.tag),
             }
         }
     }

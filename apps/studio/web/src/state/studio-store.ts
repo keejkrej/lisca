@@ -1,10 +1,20 @@
 import type { StudioAssayJson } from "@lisca/contracts/assay";
 import type { StudioDataSourceKind } from "@lisca/contracts/assay";
-import { createStudioUi } from "@lisca/client/atoms/studio-ui";
+import {
+  STUDIO_SESSION_KEY,
+  basicInfoAssayTitle,
+  buildStudioAssayJson,
+  createInitialStudioWizardState,
+  isBasicInfoDirty,
+  parseStudioAssayJson,
+  readStudioSession,
+  serializeBasicInfoSnapshot,
+  studioWizardActions,
+  studioWizardAtom,
+} from "@lisca/client/atoms/studio-ui";
 import { useAtom } from "@effect-atom/atom-solid";
 import { createMemo, type Accessor } from "solid-js";
 
-const studioUi = createStudioUi();
 export type {
   AssayId,
   BasicInfo2FeatureId,
@@ -22,7 +32,7 @@ export {
   inferDataSourceKind,
   normalizeSelectedFeaturesForAssay,
 } from "@lisca/client/atoms/studio-ui";
-export const {
+export {
   STUDIO_SESSION_KEY,
   basicInfoAssayTitle,
   buildStudioAssayJson,
@@ -33,7 +43,7 @@ export const {
   createInitialStudioWizardState,
   studioWizardAtom,
   studioWizardActions,
-} = studioUi;
+};
 type StudioWizardData = ReturnType<typeof createInitialStudioWizardState>;
 type StudioState = StudioWizardData & {
   loadAssayJson: (assayJson: StudioAssayJson) => void;
@@ -72,7 +82,8 @@ function useStudioStoreApi(): Accessor<StudioState> {
     patch: Partial<StudioWizardData["info3"]["samples"][number]>,
   ) => studioWizardActions.updateInfo3Sample(setState, index, patch);
   const addInfo3Sample = () => studioWizardActions.addInfo3Sample(setState);
-  const removeInfo3Sample = (index: number) => studioWizardActions.removeInfo3Sample(setState, index);
+  const removeInfo3Sample = (index: number) =>
+    studioWizardActions.removeInfo3Sample(setState, index);
   const setBasicInfoSavedSnapshot = (basicInfoSavedSnapshot: string | null) =>
     studioWizardActions.setBasicInfoSavedSnapshot(setState, basicInfoSavedSnapshot);
   return createMemo(() => ({

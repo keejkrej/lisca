@@ -13,11 +13,9 @@ import {
   TRACE_PALETTE,
 } from "@lisca/analysis/charts";
 import type { ResultPanel, ResultPlotSection } from "@lisca/analysis";
-import { createEffect, createSignal, For, onCleanup, onMount, Show, type JSX } from "solid-js";
+import { createEffect, createSignal, For, onCleanup, onMount, Show } from "solid-js";
 
-export { PLOT_FONT_SIZE_PX };
-
-export const PLOT_MARGINS = {
+const PLOT_MARGINS = {
   marginLeft: CHART_MARGINS.left,
   marginBottom: CHART_MARGINS.bottom,
   marginRight: CHART_MARGINS.right,
@@ -31,7 +29,7 @@ const PLOT_STYLE: Plot.PlotOptions["style"] = {
   fontSize: `${PLOT_FONT_SIZE_PX}px`,
 };
 
-export function applyPlotFontSize(root: Element, fontSizePx: number) {
+function applyPlotFontSize(root: Element, fontSizePx: number) {
   const size = String(fontSizePx);
   const svg = root instanceof SVGSVGElement ? root : root.querySelector("svg");
   if (!svg) return;
@@ -57,7 +55,7 @@ function axisFromSpec(axis: ChartSpec["x"] | ChartSpec["y"]): Plot.PlotOptions["
   };
 }
 
-export function plotOptionsFromChartSpec(spec: ChartSpec): Plot.PlotOptions {
+function plotOptionsFromChartSpec(spec: ChartSpec): Plot.PlotOptions {
   if (spec.kind === "timeseries") {
     const traceData = spec.traces.flatMap((trace) =>
       trace.points.map((point) => ({
@@ -155,7 +153,7 @@ export function plotOptionsFromChartSpec(spec: ChartSpec): Plot.PlotOptions {
   };
 }
 
-export function plotOptionsForPanel(panel: ResultPanel): Plot.PlotOptions | null {
+function plotOptionsForPanel(panel: ResultPanel): Plot.PlotOptions | null {
   const spec = chartSpecForPanel(panel);
   if (!spec) return null;
   return plotOptionsFromChartSpec(spec);
@@ -209,9 +207,7 @@ function ObservablePlotView(props: {
       <div
         ref={containerEl!}
         aria-label={props.title}
-        class={
-          props.class ?? "flex min-h-0 flex-1 pointer-events-none select-none text-foreground"
-        }
+        class={props.class ?? "flex min-h-0 flex-1 pointer-events-none select-none text-foreground"}
         role="img"
       >
         <div
@@ -223,11 +219,9 @@ function ObservablePlotView(props: {
   );
 }
 
-export function ResultPanelView(props: { panel: ResultPanel; class?: string }) {
+function ResultPanelView(props: { panel: ResultPanel; class?: string }) {
   const options = () => plotOptionsForPanel(props.panel);
-  return (
-    <ObservablePlotView class={props.class} options={options()} title={props.panel.title} />
-  );
+  return <ObservablePlotView class={props.class} options={options()} title={props.panel.title} />;
 }
 
 const EXPORT_PAGE_CLASS = "flex flex-col overflow-visible bg-white text-[#171717]";
@@ -313,10 +307,4 @@ export function ResultPanelsGridView(props: {
       </div>
     </div>
   );
-}
-
-export function buildHistogramPlotOptions(panel: Extract<ResultPanel, { kind: "histogram" }>) {
-  const spec = chartSpecForPanel(panel);
-  if (!spec || spec.kind !== "histogram") return null;
-  return plotOptionsFromChartSpec(spec);
 }

@@ -1,10 +1,5 @@
-import type {
-  OperationDetail,
-  OperationSummary,
-  TaskAttempt,
-  TaskDetail,
-} from "@lisca/contracts";
-import type { TaskCenterGateway } from "@lisca/ui-headless/task-center";
+import type { OperationDetail, OperationSummary, TaskAttempt, TaskDetail } from "@lisca/contracts";
+import type { TaskCenterGateway } from "@lisca/utils";
 import { cleanup, fireEvent, render, screen, waitFor } from "@solidjs/testing-library";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -42,10 +37,7 @@ function attempt(status: TaskAttempt["status"]): TaskAttempt {
     status,
     startedAtMs: 10,
     finishedAtMs: status === "running" ? null : 20,
-    error:
-      status === "failed"
-        ? { code: "crop-failed", message: "Crop analysis failed" }
-        : null,
+    error: status === "failed" ? { code: "crop-failed", message: "Crop analysis failed" } : null,
   };
 }
 
@@ -69,7 +61,8 @@ function detail(
   updatedAtMs: number,
   attempts: TaskAttempt[] = [],
 ): OperationDetail {
-  const taskStatus = status === "completed" ? "completed" : status === "failed" ? "failed" : "running";
+  const taskStatus =
+    status === "completed" ? "completed" : status === "failed" ? "failed" : "running";
   return {
     operation: summary(status, updatedAtMs),
     tasks: [task(taskStatus, attempts)],
@@ -113,7 +106,11 @@ function renderTaskCenter(gatewayOverrides: Partial<TaskCenterGateway> = {}) {
       />
     </div>
   ));
-  return { ...view, gateway, snapshot: (value: readonly OperationSummary[]) => handlers!.onSnapshot(value) };
+  return {
+    ...view,
+    gateway,
+    snapshot: (value: readonly OperationSummary[]) => handlers!.onSnapshot(value),
+  };
 }
 
 afterEach(() => {

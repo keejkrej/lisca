@@ -29,9 +29,7 @@
   "dependencies": {
     "@fontsource-variable/lora": "^5.2.8",
     "@lisca/client": "workspace:*",
-    "@lisca/contracts": "workspace:*",
     "@lisca/ui": "workspace:*",
-    "@lisca/ui-headless": "workspace:*",
     "@lisca/utils": "workspace:*",
     "@tailwindcss/vite": "catalog:",
     "tailwindcss": "catalog:",

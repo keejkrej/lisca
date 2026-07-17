@@ -1,10 +1,7 @@
 import type { LiscaAppId } from "@lisca/utils";
 import { Show, type Component, type JSX } from "solid-js";
 
-import {
-  toWorkSessionPickerItems,
-  type WorkSessionPickerItem,
-} from "@lisca/ui-headless/work-session-picker";
+import { toWorkSessionPickerItems, type WorkSessionPickerItem } from "@lisca/utils";
 
 import {
   WorkSessionBootstrap,

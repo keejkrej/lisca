@@ -1,3 +1,5 @@
+import { batch } from "solid-js";
+
 export type CanvasResourceTransactionOptions<T> = {
   start?: () => void;
   load: (signal: AbortSignal) => Promise<T>;
@@ -6,12 +8,7 @@ export type CanvasResourceTransactionOptions<T> = {
   settle?: () => void;
 };
 
-export type UseCanvasResourceTransactionOptions = {
-  batch?: (apply: () => void) => void;
-};
-
-export function useCanvasResourceTransaction(options?: UseCanvasResourceTransactionOptions) {
-  const batch = options?.batch ?? ((apply: () => void) => apply());
+export function useCanvasResourceTransaction() {
   const transactionIdRef = { current: 0 };
   const run = <T>(transactionOptions: CanvasResourceTransactionOptions<T>) => {
     transactionIdRef.current += 1;

@@ -2,7 +2,7 @@ import {
   resolveKeyboardShortcut,
   type KeyboardShortcut,
   type KeyboardShortcutContext,
-} from "./shortcuts";
+} from "@lisca/utils";
 
 export type DockToolAction = {
   id: string;

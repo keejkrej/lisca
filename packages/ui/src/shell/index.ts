@@ -1,11 +1,4 @@
-export {
-  AppShell,
-  type AppShellCompound,
-  ShellDock,
-  ShellPanelToggle,
-  ShellSidebar,
-  useShellLayout,
-} from "./layout/shell";
+export { AppShell, type AppShellCompound, ShellPanelToggle, useShellLayout } from "./layout/shell";
 export {
   ShellNavbar,
   type ShellNavbarAlignerProps,
@@ -35,7 +28,6 @@ export {
 } from "./shortcuts/use-keyboard-shortcuts";
 export { ModalScrim } from "./modal/modal-scrim";
 export { Panel, PanelContent, PanelDescription, PanelHeader, PanelTitle } from "./regions/panel";
-export { StatTile } from "./chrome/stat-tile";
 export { ReadonlyPathField } from "./chrome/readonly-path-field";
 export { Section, type SectionProps } from "./regions/section";
 export { ViewportCard } from "./layout/viewport-card";
@@ -50,5 +42,4 @@ export {
   WorkSessionPickerDialog,
   type WorkSessionPickerDialogProps,
 } from "./workspace/work-session-picker-dialog";
-export { useHttpProbeForUrl, type ShellHttpProbe } from "./server/use-shell-http-probe";
 export { TaskCenter, type TaskCenterProps } from "./task-center/task-center";

@@ -1,30 +1,14 @@
-import type { StudioDataPort } from "@lisca/client/ports/types";
 import { createStudioPort } from "@lisca/client/ports/studio";
 import { createLiscaPort, toHostFilePickerOperations } from "@lisca/web-app";
 
-const port = createLiscaPort<StudioDataPort>({
+const port = createLiscaPort({
   defaultPort: 8767,
-  env: {
-    httpUrl: import.meta.env.VITE_HTTP_URL,
-    httpHost: import.meta.env.VITE_HTTP_HOST,
-    httpPort: import.meta.env.VITE_HTTP_PORT,
-    dev: import.meta.env.DEV,
-  },
   createPort: createStudioPort,
 });
 
-export const studioPortRegistry = port.registry;
-
-export const readStudioPort = port.read;
-export const ensureStudioPort = port.ensure;
-export const setStudioPortForTests = port.setForTests;
-export const resetStudioPortForTests = port.resetForTests;
-
 export const resolveStudioHttpBaseUrl = port.httpBaseUrl;
 export const toErrorMessage = port.toErrorMessage;
-
-/** Primary studio API for app code. */
-export const studioClient = port.ensure();
+export const studioClient = port.client;
 
 /** Promise-based host operations for `@lisca/ui` file pickers. */
 export const studioHostOperations = toHostFilePickerOperations(studioClient);

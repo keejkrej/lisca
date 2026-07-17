@@ -5,6 +5,7 @@ import {
   createAnnotatorUiActions,
   createInitialAnnotatorUiState,
   roiRequestSelectionKey,
+  type AnnotatorUiState,
 } from "../src/atoms/annotator-ui";
 
 describe("annotate-session helpers", () => {
@@ -24,13 +25,13 @@ describe("annotate-session helpers", () => {
   });
 
   it("setWorkspacePath clears frame and selection", () => {
-    let state = {
+    let state: AnnotatorUiState = {
       ...createInitialAnnotatorUiState(),
       workspacePath: "/old",
       selection: { pos: 1, roi: 1, channel: 0, timeIndex: 0, zIndex: 0 },
       frame: { width: 10, height: 10 } as never,
     };
-    const set = (update: typeof state | ((current: typeof state) => typeof state)) => {
+    const set = (update: AnnotatorUiState | ((current: AnnotatorUiState) => AnnotatorUiState)) => {
       state = typeof update === "function" ? update(state) : update;
     };
     actions.setWorkspacePath(set, "/new");

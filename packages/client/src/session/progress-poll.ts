@@ -17,8 +17,9 @@ export type ProgressPollOptions<TProgress> = {
 type ScheduleFn = (callback: () => void, delayMs: number) => number;
 type ClearScheduleFn = (handle: number) => void;
 
-const defaultSchedule: ScheduleFn = (callback, delayMs) => window.setTimeout(callback, delayMs);
-const defaultClearSchedule: ClearScheduleFn = (handle) => window.clearTimeout(handle);
+const defaultSchedule: ScheduleFn = (callback, delayMs) =>
+  globalThis.setTimeout(callback, delayMs) as unknown as number;
+const defaultClearSchedule: ClearScheduleFn = (handle) => globalThis.clearTimeout(handle);
 
 function createScheduledDelay(
   schedule: ScheduleFn,

@@ -1,8 +1,8 @@
 import type { AnnotationLabel } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 import type { CanvasStatusMessage } from "@lisca/ui-headless";
-import type { AnnotationTool } from "@lisca/ui-headless/annotation-tools";
-import { isSmartAnnotationTool } from "@lisca/ui-headless/annotation-tools";
+import type { AnnotationTool } from "@lisca/utils";
+import { isSmartAnnotationTool } from "@lisca/utils";
 import { clamp, fillPolygon, hexToRgb, smartSegmentPromptRadius, strokeMask } from "@lisca/utils";
 import { createEffect, createSignal, onCleanup, onMount, Show } from "solid-js";
 import { cn } from "../../lib/utils";
@@ -25,7 +25,7 @@ type PreparedFrame = {
   prepared: HTMLCanvasElement;
 };
 
-export type { AnnotationTool } from "@lisca/ui-headless/annotation-tools";
+export type { AnnotationTool } from "@lisca/utils";
 
 export type SmartSegmentPrompt = {
   x: number;
