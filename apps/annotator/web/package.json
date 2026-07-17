@@ -20,7 +20,6 @@
     "@lisca/ui-headless": "workspace:*",
     "@lisca/utils": "workspace:*",
     "@lisca/web-app": "workspace:*",
-    "@tanstack/solid-router": "catalog:",
     "effect": "catalog:",
     "phosphor-icons-solid": "catalog:",
     "solid-js": "catalog:"
@@ -28,7 +27,6 @@
   "devDependencies": {
     "@solidjs/testing-library": "catalog:",
     "@tailwindcss/vite": "catalog:",
-    "@tanstack/router-plugin": "catalog:",
     "jsdom": "^26.1.0",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",

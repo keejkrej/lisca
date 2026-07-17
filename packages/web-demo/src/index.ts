@@ -1,4 +1,3 @@
-export { createLiscaDemoApp, type LiscaDemoAppConfig } from "./create-lisca-demo-app";
 export { clearDemoSession, readDemoSession, writeDemoSession } from "./demo-session-idb";
 export { ALIGNER_DEMO_SESSION_KEY, ANNOTATOR_DEMO_SESSION_KEY } from "./demo-session-keys";
 export {

@@ -1,21 +1,49 @@
 import { createLiscaWebApp } from "@lisca/web-app";
-import { createHashHistory, createRouter } from "@tanstack/solid-router";
+import { AppShell } from "@lisca/ui/shell";
 
 import { AlignerAtomsProvider } from "./components/aligner-atoms-provider";
+import { AlignerDock } from "./components/aligner-dock";
+import { AlignerHeader } from "./components/aligner-header";
+import { AlignerLeft } from "./components/aligner-left";
+import { AlignerMain } from "./components/aligner-main";
+import { AlignerRight } from "./components/aligner-right";
+import { AlignerWorkSessionGate } from "./components/aligner-work-session-gate";
 import "./index.css";
-import { routeTree } from "./routeTree.gen";
-
-const router = createRouter({ routeTree, history: createHashHistory() });
-
-declare module "@tanstack/solid-router" {
-  interface Register {
-    router: typeof router;
-  }
-}
+import { AlignPageProvider } from "./state/align-page-context";
 
 createLiscaWebApp({
-  router,
+  App: AlignApp,
   defaultPort: 8765,
   appId: "aligner",
   AtomsProvider: AlignerAtomsProvider,
 });
+
+function AlignApp() {
+  return (
+    <AlignerWorkSessionGate>
+      <AlignPageProvider>
+        <AppShell>
+          <AppShell.Header>
+            <AlignerHeader />
+          </AppShell.Header>
+          <AppShell.Body>
+            <AppShell.Left widthClass="w-72">
+              <AlignerLeft />
+            </AppShell.Left>
+            <AppShell.MainColumn>
+              <AppShell.Main>
+                <AlignerMain />
+              </AppShell.Main>
+              <AppShell.Dock>
+                <AlignerDock />
+              </AppShell.Dock>
+            </AppShell.MainColumn>
+            <AppShell.Right widthClass="w-72">
+              <AlignerRight />
+            </AppShell.Right>
+          </AppShell.Body>
+        </AppShell>
+      </AlignPageProvider>
+    </AlignerWorkSessionGate>
+  );
+}

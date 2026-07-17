@@ -19,14 +19,12 @@
     "@lisca/ui-headless": "workspace:*",
     "@lisca/utils": "workspace:*",
     "@lisca/web-app": "workspace:*",
-    "@tanstack/solid-router": "catalog:",
     "effect": "catalog:",
     "phosphor-icons-solid": "catalog:",
     "solid-js": "catalog:"
   },
   "devDependencies": {
     "@tailwindcss/vite": "catalog:",
-    "@tanstack/router-plugin": "catalog:",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",

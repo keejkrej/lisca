@@ -6,16 +6,16 @@ Three seams enforce the router and must change first: `createLiscaWebApp` requir
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] `ShellNavbar`'s unreachable route-switcher API is gone: the required route props, the `ShellNavbarRouteItem` type, and the render branch whose guard both presets fail on both clauses.
-- [ ] `createLiscaWebApp` takes a root component instead of a router; Studio passes its `RouterProvider` through it.
-- [ ] `createLiscaDemoApp` is deleted and its render inlined into the two demo entries, without merging it into `createLiscaWebApp` — that factory exists to supply the provider stack the demos deliberately lack.
-- [ ] `createLiscaViteConfig` takes a plugins passthrough; Studio supplies `tanstackRouter` itself, as Landing already does.
-- [ ] `routes/`, `routeTree.gen.ts`, and the `createRouter`/`createHashHistory`/`Register` bootstrap are gone from all four builds, and `@tanstack/*` is gone from those manifests and from `packages/web-app`/`packages/web-demo`.
-- [ ] `@tanstack/solid-router` remains in the workspace for Studio and Landing.
-- [ ] Behavior is identical — these are single-route apps; `?liscaHttp=` handling is untouched.
-- [ ] `vp run check` shows no new failures beyond the 3 known `*-desktop#typecheck`.
+- [x] `ShellNavbar`'s unreachable route-switcher API is gone: the required route props, the `ShellNavbarRouteItem` type, and the render branch whose guard both presets fail on both clauses.
+- [x] `createLiscaWebApp` takes a root component instead of a router; Studio passes its `RouterProvider` through it.
+- [x] `createLiscaDemoApp` is deleted and its render inlined into the two demo entries, without merging it into `createLiscaWebApp` — that factory exists to supply the provider stack the demos deliberately lack.
+- [x] `createLiscaViteConfig` takes a plugins passthrough; Studio supplies `tanstackRouter` itself, as Landing already does.
+- [x] `routes/`, `routeTree.gen.ts`, and the `createRouter`/`createHashHistory`/`Register` bootstrap are gone from all four builds, and `@tanstack/*` is gone from those manifests and from `packages/web-app`/`packages/web-demo`.
+- [x] `@tanstack/solid-router` remains in the workspace for Studio and Landing.
+- [x] Behavior is identical — these are single-route apps; `?liscaHttp=` handling is untouched.
+- [x] `vp run check` shows no new failures beyond the 3 known `*-desktop#typecheck`.
 
 The reasoning is recorded in `docs/adr/0001-app-shapes.md` — the asymmetry with Studio is deliberate and invites a well-meaning "fix". This already went wrong once: aligner had a second route at `6956d8ed`, `2c17faf7` removed it, the router stayed, and `PORTING.md` §6 then translated the residue verbatim into SolidJS.
 

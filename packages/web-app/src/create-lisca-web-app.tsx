@@ -1,11 +1,10 @@
 import { ShellServerProvider, ShellThemeProvider, ShellWorkspaceProvider } from "@lisca/ui/shell";
-import { RouterProvider, type AnyRouter } from "@tanstack/solid-router";
 import { type JSX, type Component } from "solid-js";
 import { render } from "solid-js/web";
 
 export type LiscaWebAppConfig = {
-  /** Typed router built by the app (see its `Register` declaration). */
-  router: AnyRouter;
+  /** App-owned root component. */
+  App: Component;
   /** Default server port, surfaced through the server settings UI. */
   defaultPort: number;
   /** App id used for session history and active-server persistence. */
@@ -18,11 +17,11 @@ export type LiscaWebAppConfig = {
 
 /**
  * Mount a Lisca web app: render the shared provider stack around the app's
- * router. Each app supplies only its router, default port, and atoms provider;
+ * root. Each app supplies only its root component, default port, and atoms provider;
  * the provider nesting lives in one place.
  */
 export function createLiscaWebApp(config: LiscaWebAppConfig): void {
-  const { router, defaultPort, appId, AtomsProvider, rootElementId = "root" } = config;
+  const { App, defaultPort, appId, AtomsProvider, rootElementId = "root" } = config;
 
   const mount = document.getElementById(rootElementId);
   if (!mount) {
@@ -35,7 +34,7 @@ export function createLiscaWebApp(config: LiscaWebAppConfig): void {
         <ShellThemeProvider>
           <ShellServerProvider appId={appId} defaultPort={defaultPort}>
             <ShellWorkspaceProvider>
-              <RouterProvider router={router} />
+              <App />
             </ShellWorkspaceProvider>
           </ShellServerProvider>
         </ShellThemeProvider>

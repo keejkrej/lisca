@@ -38,8 +38,6 @@
     "@lisca/utils": "workspace:*",
     "@lisca/web-app": "workspace:*",
     "@tailwindcss/vite": "catalog:",
-    "@tanstack/solid-router": "catalog:",
-    "@tanstack/router-plugin": "catalog:",
     "fflate": "^0.8.2",
     "phosphor-icons-solid": "catalog:",
     "solid-js": "catalog:",

@@ -1,5 +1,5 @@
 import { createLiscaWebApp } from "@lisca/web-app";
-import { createHashHistory, createRouter } from "@tanstack/solid-router";
+import { createHashHistory, createRouter, RouterProvider } from "@tanstack/solid-router";
 
 import { StudioAtomsProvider } from "./components/studio-atoms-provider";
 import "./index.css";
@@ -14,7 +14,7 @@ declare module "@tanstack/solid-router" {
 }
 
 createLiscaWebApp({
-  router,
+  App: () => <RouterProvider router={router} />,
   defaultPort: 8767,
   appId: "studio",
   AtomsProvider: StudioAtomsProvider,

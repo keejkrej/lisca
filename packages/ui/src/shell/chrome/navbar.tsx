@@ -1,26 +1,15 @@
 import IconFolderRegular from "phosphor-icons-solid/IconFolderRegular";
 import IconHardDriveRegular from "phosphor-icons-solid/IconHardDriveRegular";
 import type { JSX } from "solid-js";
-import { For, Show } from "solid-js";
+import { Show } from "solid-js";
 
 import { ShellThemeToggle } from "../theme/shell-theme";
-import { ToggleGroup, ToggleGroupItem } from "../../components/ui/toggle-group";
 import { ConnectionStatus } from "./connection-status";
 import { PathButton } from "./path-button";
 import { useShellServer } from "../server/shell-server";
 import { useShellWorkspace } from "../workspace/workspace";
 
-export type ShellNavbarRouteItem = {
-  value: string;
-  label: string;
-};
-
 export type ShellNavbarProps = {
-  routeItems: readonly ShellNavbarRouteItem[];
-  routeValue: string;
-  onRouteChange: (value: string) => void;
-  /** Show the route switcher toggle group (default: true). */
-  showRouteToggle?: boolean;
   /** Show the source path/action button (default: true). */
   showSourceButton?: boolean;
   /** Show the `endLeading` action slot (default: true). */
@@ -36,7 +25,7 @@ export type ShellNavbarProps = {
 };
 
 /**
- * Shared shell chrome: route toggle, workspace/source paths, server status, theme.
+ * Shared shell chrome: workspace/source paths, server status, theme.
  * Requires `ShellServerProvider` and `ShellWorkspaceProvider` above in the tree.
  */
 function ShellNavbarRoot(props: ShellNavbarProps) {
@@ -68,36 +57,10 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
           </Show>
         </div>
 
-        <Show
-          when={props.showRouteToggle !== false && props.routeItems.length > 1}
-          fallback={<div />}
-        >
-          <div class="min-w-0 justify-self-start">
-            <ToggleGroup
-              class="flex-nowrap gap-1 rounded-xl border border-border bg-background p-1"
-              size="sm"
-              value={props.routeValue}
-              onChange={(next) => {
-                const v = typeof next === "string" ? next : next?.[0];
-                if (v) props.onRouteChange(v);
-              }}
-            >
-              <For each={props.routeItems}>
-                {(item) => (
-                  <ToggleGroupItem value={item.value} class="min-w-[4.5rem]">
-                    {item.label}
-                  </ToggleGroupItem>
-                )}
-              </For>
-            </ToggleGroup>
-          </div>
-        </Show>
+        <div />
 
         <div class="flex min-w-0 items-center justify-end justify-self-end gap-1 sm:gap-2">
-          <ConnectionStatus
-            state={server.state}
-            httpBaseUrl={server.httpBaseUrl}
-          />
+          <ConnectionStatus state={server.state} httpBaseUrl={server.httpBaseUrl} />
           <Show when={props.showToolsMenu !== false}>{props.endLeading}</Show>
           <ShellThemeToggle />
         </div>
@@ -115,12 +78,8 @@ function ShellNavbarAnnotator(props: ShellNavbarAnnotatorProps) {
   return (
     <ShellNavbarRoot
       endLeading={props.endLeading}
-      routeItems={[{ value: "roi", label: "ROI" }]}
-      routeValue="roi"
-      showRouteToggle={false}
       showSourceButton={false}
       onPickWorkspace={props.onPickWorkspace}
-      onRouteChange={() => undefined}
     />
   );
 }
@@ -135,13 +94,9 @@ function ShellNavbarAligner(props: ShellNavbarAlignerProps) {
   return (
     <ShellNavbarRoot
       endLeading={props.endLeading}
-      routeItems={[{ value: "align", label: "Align" }]}
-      routeValue="align"
-      showRouteToggle={false}
       showToolsMenu={props.endLeading !== undefined}
       onPickSource={props.onPickSource}
       onPickWorkspace={props.onPickWorkspace}
-      onRouteChange={() => undefined}
     />
   );
 }

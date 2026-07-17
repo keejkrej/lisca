@@ -12,7 +12,6 @@ export {
   type ShellNavbarAnnotatorProps,
   type ShellNavbarCompound,
   type ShellNavbarProps,
-  type ShellNavbarRouteItem,
 } from "./chrome/navbar";
 export { PathButton } from "./chrome/path-button";
 export { ConnectionStatus, type ConnectionState } from "./chrome/connection-status";

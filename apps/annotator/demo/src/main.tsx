@@ -1,15 +1,19 @@
-import { createLiscaDemoApp } from "@lisca/web-demo";
-import { createHashHistory, createRouter } from "@tanstack/solid-router";
+import { ShellThemeProvider } from "@lisca/ui/shell";
+import { render } from "solid-js/web";
 
+import { AnnotatorDemo } from "./annotator-demo";
 import "./index.css";
-import { routeTree } from "./routeTree.gen";
 
-const router = createRouter({ routeTree, history: createHashHistory() });
-
-declare module "@tanstack/solid-router" {
-  interface Register {
-    router: typeof router;
-  }
+const mount = document.getElementById("root");
+if (!mount) {
+  throw new Error('Lisca demo app mount node "#root" was not found');
 }
 
-createLiscaDemoApp({ router });
+render(
+  () => (
+    <ShellThemeProvider>
+      <AnnotatorDemo />
+    </ShellThemeProvider>
+  ),
+  mount,
+);

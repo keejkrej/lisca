@@ -1,5 +1,4 @@
 import tailwindcss from "@tailwindcss/vite";
-import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import solid from "vite-plugin-solid";
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { join, normalize, resolve } from "node:path";
@@ -138,6 +137,7 @@ export function createLiscaViteConfig(options: {
   port: number;
   base?: string;
   backendPort?: number;
+  plugins?: PluginOption[];
 }): UserConfig {
   const backendPort = options.backendPort ?? liscaDevBackendPort(options.port);
 
@@ -148,12 +148,7 @@ export function createLiscaViteConfig(options: {
     resolve: {
       dedupe: ["solid-js"],
     },
-    plugins: [
-      tanstackRouter({ target: "solid", autoCodeSplitting: true }),
-      liscaSolidPlugin(),
-      tailwindcss(),
-      liscaModelsPlugin(),
-    ],
+    plugins: [...(options.plugins ?? []), liscaSolidPlugin(), tailwindcss(), liscaModelsPlugin()],
     server: {
       host: true,
       port: options.port,

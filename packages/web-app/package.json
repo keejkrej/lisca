@@ -34,8 +34,6 @@
     "@lisca/ui-headless": "workspace:*",
     "@lisca/utils": "workspace:*",
     "@tailwindcss/vite": "catalog:",
-    "@tanstack/solid-router": "catalog:",
-    "@tanstack/router-plugin": "catalog:",
     "tailwindcss": "catalog:",
     "vite": "catalog:",
     "vite-plugin-solid": "catalog:"
