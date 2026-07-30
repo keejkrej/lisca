@@ -4,7 +4,7 @@
 
 **Blocked by:** 09 — Detailed within-task progress API; 04 — Open the shared Task Center from Aligner.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Problem
 
@@ -57,15 +57,15 @@ Rules:
 
 ## Acceptance criteria
 
-- [ ] Operation progress is primarily **two bars** (positions + current-pos roiframe), not prose or ID dumps.
-- [ ] At most **one** fold level in the default Task Center hierarchy (operation expand/collapse when useful for many concurrent ops)—no nested task/attempt fold required to see progress.
-- [ ] Multi-position crops do not default to a bar list of every position; only the running position’s roiframe bar is shown.
-- [ ] With many concurrent operations, collapsed rows remain scannable (title + progress cue); expanding shows the two bars without a further progress fold.
-- [ ] Cancel/retry remain reachable without reading long IDs.
-- [ ] Task button active/attention indicators and ordering unchanged in meaning.
-- [ ] Tests: 1-pos; multi-pos handoff on bar B; many ops with collapse/expand; completed/failed affordances.
-- [ ] Poll/reconcile updates bars without layout thrash.
-- [ ] Shared Task Center component (Aligner first; reusable elsewhere).
+- [x] Operation progress is primarily **two bars** (positions + current-pos roiframe), not prose or ID dumps.
+- [x] At most **one** fold level in the default Task Center hierarchy (operation expand/collapse when useful for many concurrent ops)—no nested task/attempt fold required to see progress.
+- [x] Multi-position crops do not default to a bar list of every position; only the running position’s roiframe bar is shown.
+- [x] With many concurrent operations, collapsed rows remain scannable (title + progress cue); expanding shows the two bars without a further progress fold.
+- [x] Cancel/retry remain reachable without reading long IDs.
+- [x] Task button active/attention indicators and ordering unchanged in meaning.
+- [x] Tests: 1-pos; multi-pos handoff on bar B; many ops with collapse/expand; completed/failed affordances.
+- [x] Poll/reconcile updates bars without layout thrash.
+- [x] Shared Task Center component (Aligner first; reusable elsewhere).
 
 ## Non-goals
 
@@ -84,3 +84,15 @@ Rules:
 
 - 2026-07-30: Nested fold with one bar per pos → then current-pos only → then “no folds, just two bars.”
 - 2026-07-30: **Clarify** — folds are still useful when **many concurrent operations** exist; **one fold is enough** (operation open/closed). Inside an op: **two bars**, no second fold for progress.
+
+## Answer
+
+The shared Task Center now renders operation-position progress and the active position's
+`roiframe` progress as the primary compact signals. The operation row remains the sole
+expand/collapse level; task status, failures, cancel, and retry are presented flat inside it,
+with UUID and attempt-tree chrome removed from the normal path.
+
+Focused verification:
+
+- `vp run --filter @lisca/ui test`
+- `vp run --filter @lisca/ui typecheck`

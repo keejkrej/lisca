@@ -232,7 +232,22 @@ fn project_crop_progress(
         .iter()
         .filter(|task| task.status == TaskStatus::Completed)
         .filter_map(|task| metadata.get(task.task_id.as_str()))
-        .fold(0_u32, |total, task| total.saturating_add(task.roi_pages));
+        .fold(0_u32, |total, task| total.saturating_add(task.roi_pages))
+        .saturating_add(
+            detail
+                .tasks
+                .iter()
+                .filter(|task| {
+                    matches!(
+                        task.status,
+                        TaskStatus::Running | TaskStatus::CancellationRequested
+                    )
+                })
+                .filter_map(|task| task.work_progress.as_ref())
+                .fold(0_u32, |total, progress| {
+                    total.saturating_add(progress.completed)
+                }),
+        );
     let total_rois = record
         .tasks
         .iter()

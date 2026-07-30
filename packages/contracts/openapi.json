@@ -4219,6 +4219,26 @@
           "progress": {
             "$ref": "#/components/schemas/OperationProgress"
           },
+          "activeTaskKind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "workProgress": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskWorkProgress"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "createdAtMs": {
             "type": "integer",
             "format": "uint64",
@@ -4305,6 +4325,59 @@
             "type": "integer",
             "format": "uint32",
             "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "TaskWorkProgress": {
+        "type": "object",
+        "required": [
+          "unit",
+          "completed",
+          "total",
+          "phase",
+          "message",
+          "updatedAtMs"
+        ],
+        "properties": {
+          "unit": {
+            "type": "string"
+          },
+          "completed": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "total": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "phase": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updatedAtMs": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0,
+            "maximum": 9007199254740991
           }
         },
         "additionalProperties": false
@@ -4398,6 +4471,16 @@
             "items": {
               "$ref": "#/components/schemas/TaskAttempt"
             }
+          },
+          "workProgress": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskWorkProgress"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false

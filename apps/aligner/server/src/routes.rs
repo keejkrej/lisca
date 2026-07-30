@@ -219,10 +219,8 @@ fn build_crop_operation(
     request: CropRoiRequest,
     scan: Arc<lisca::protocol::WorkspaceScan>,
     positions: Vec<u32>,
-) -> Result<
-    (lisca::protocol::OperationDetail, Vec<CropTaskMetadata>),
-    lisca_server::SchedulerError,
-> {
+) -> Result<(lisca::protocol::OperationDetail, Vec<CropTaskMetadata>), lisca_server::SchedulerError>
+{
     let workspace_path = request.workspace_path.clone();
     let request = Arc::new(request);
     let mut metadata = Vec::with_capacity(positions.len());
@@ -236,15 +234,28 @@ fn build_crop_operation(
         );
         let task_request = request.clone();
         let task_scan = scan.clone();
+        let total_pages = summary.roi_pages;
         let task = TaskSpec::new(format!("crop-roi/Pos{pos}"), 1, move |context| {
             let request = task_request.clone();
             let scan = task_scan.clone();
             async move {
                 context.checkpoint()?;
                 tokio::task::spawn_blocking(move || {
-                    aligner::crop_roi_position(&request, &scan, pos, || {
-                        context.is_cancellation_requested()
-                    })
+                    aligner::crop_roi_position_with_progress(
+                        &request,
+                        &scan,
+                        pos,
+                        || context.is_cancellation_requested(),
+                        |completed| {
+                            let _ = context.report_work_progress(
+                                "roiframe",
+                                completed,
+                                total_pages,
+                                Some("writing".to_string()),
+                                Some(format!("Writing Pos{pos}")),
+                            );
+                        },
+                    )
                     .map(|_| ())
                     .map_err(|error| match error {
                         aligner::CropPositionError::Cancelled => TaskFailure::cancelled(),

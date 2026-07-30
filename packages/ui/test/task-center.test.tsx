@@ -24,6 +24,18 @@ function summary(status: OperationSummary["status"], updatedAtMs: number): Opera
       cancelled: 0,
       cancellationRequested: 0,
     },
+    activeTaskKind: status === "running" ? "crop-roi/Pos4" : null,
+    workProgress:
+      status === "running"
+        ? {
+            unit: "roiframe",
+            completed: 1200,
+            total: 1800,
+            phase: "writing",
+            message: "Writing Pos4",
+            updatedAtMs,
+          }
+        : null,
     createdAtMs: 1,
     updatedAtMs,
   };
@@ -171,15 +183,15 @@ describe("Task Center dialog", () => {
     fireEvent.click(screen.getByRole("button", { name: /Crop ROI/ }));
     view.snapshot([summary("completed", 2)]);
     second.resolve(detail("completed", 2));
-    await screen.findByRole("button", { name: /Crop Position 1.*Completed/ });
+    await screen.findByText("Crop Position 1");
     first.resolve(detail("running", 1));
     await Promise.resolve();
-    expect(screen.getByRole("button", { name: /Crop Position 1.*Completed/ })).toBeTruthy();
+    expect(screen.getAllByText("Completed").length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole("button", { name: /Crop ROI/ }));
     fireEvent.click(screen.getByRole("button", { name: /Crop ROI/ }));
     third.resolve(detail("failed", 3));
-    await screen.findByRole("button", { name: /Crop Position 1.*Failed/ });
+    expect((await screen.findAllByText("Failed")).length).toBeGreaterThan(0);
   });
 
   it("refreshes already-loaded task, attempt, and action rows after a newer snapshot", async () => {
@@ -193,17 +205,20 @@ describe("Task Center dialog", () => {
     fireEvent.click(view.getByRole("button", { name: "Tasks, 1 active" }));
     fireEvent.click(screen.getByRole("button", { name: /Crop ROI/ }));
     first.resolve(detail("running", 1, [attempt("running")]));
-    const taskRow = await screen.findByRole("button", { name: /Crop Position 1.*Running/ });
-    fireEvent.click(taskRow);
-    expect(screen.getByText("Attempts (1)")).toBeTruthy();
+    await screen.findByText("Crop Position 1");
+    expect(
+      screen.getByRole("progressbar", { name: "Pos4 roiframe progress" }).getAttribute(
+        "aria-valuenow",
+      ),
+    ).toBe("1200");
     expect(screen.getAllByRole("button", { name: "Stop" })).toHaveLength(2);
 
     view.snapshot([summary("failed", 2)]);
     await waitFor(() => expect(getOperation).toHaveBeenCalledTimes(2));
     second.resolve(detail("failed", 2, [attempt("failed")]));
 
-    await screen.findByRole("button", { name: /Crop Position 1.*Failed/ });
-    expect(screen.getByText("Crop analysis failed")).toBeTruthy();
+    await screen.findByText(/Crop analysis failed/);
+    expect(screen.getByText(/Crop analysis failed/)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Stop" })).toBeNull();
   });

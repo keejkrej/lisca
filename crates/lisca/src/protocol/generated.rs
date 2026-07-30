@@ -3625,6 +3625,16 @@ impl ::std::convert::TryFrom<::std::string::String> for OperationStatus {
 #[doc = "    \"workspacePath\""]
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
+#[doc = "    \"activeTaskKind\": {"]
+#[doc = "      \"anyOf\": ["]
+#[doc = "        {"]
+#[doc = "          \"type\": \"string\""]
+#[doc = "        },"]
+#[doc = "        {"]
+#[doc = "          \"type\": \"null\""]
+#[doc = "        }"]
+#[doc = "      ]"]
+#[doc = "    },"]
 #[doc = "    \"attention\": {"]
 #[doc = "      \"$ref\": \"#/definitions/OperationAttention\""]
 #[doc = "    },"]
@@ -3655,6 +3665,16 @@ impl ::std::convert::TryFrom<::std::string::String> for OperationStatus {
 #[doc = "      \"maximum\": 9007199254740991.0,"]
 #[doc = "      \"minimum\": 0.0"]
 #[doc = "    },"]
+#[doc = "    \"workProgress\": {"]
+#[doc = "      \"anyOf\": ["]
+#[doc = "        {"]
+#[doc = "          \"$ref\": \"#/definitions/TaskWorkProgress\""]
+#[doc = "        },"]
+#[doc = "        {"]
+#[doc = "          \"type\": \"null\""]
+#[doc = "        }"]
+#[doc = "      ]"]
+#[doc = "    },"]
 #[doc = "    \"workspaceId\": {"]
 #[doc = "      \"type\": \"string\""]
 #[doc = "    },"]
@@ -3667,6 +3687,12 @@ impl ::std::convert::TryFrom<::std::string::String> for OperationStatus {
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct OperationSummary {
+    #[serde(
+        rename = "activeTaskKind",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub active_task_kind: ::std::option::Option<::std::string::String>,
     pub attention: OperationAttention,
     #[serde(rename = "createdAtMs")]
     pub created_at_ms: u64,
@@ -3678,6 +3704,12 @@ pub struct OperationSummary {
     pub status: OperationStatus,
     #[serde(rename = "updatedAtMs")]
     pub updated_at_ms: u64,
+    #[serde(
+        rename = "workProgress",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub work_progress: ::std::option::Option<TaskWorkProgress>,
     #[serde(rename = "workspaceId")]
     pub workspace_id: ::std::string::String,
     #[serde(rename = "workspacePath")]
@@ -5882,6 +5914,16 @@ impl TaskDependencyBlock {
 #[doc = "      \"format\": \"uint32\","]
 #[doc = "      \"minimum\": 0.0"]
 #[doc = "    },"]
+#[doc = "    \"workProgress\": {"]
+#[doc = "      \"anyOf\": ["]
+#[doc = "        {"]
+#[doc = "          \"$ref\": \"#/definitions/TaskWorkProgress\""]
+#[doc = "        },"]
+#[doc = "        {"]
+#[doc = "          \"type\": \"null\""]
+#[doc = "        }"]
+#[doc = "      ]"]
+#[doc = "    },"]
 #[doc = "    \"workspaceId\": {"]
 #[doc = "      \"type\": \"string\""]
 #[doc = "    }"]
@@ -5905,6 +5947,12 @@ pub struct TaskDetail {
     #[serde(rename = "taskKind")]
     pub task_kind: ::std::string::String,
     pub weight: u32,
+    #[serde(
+        rename = "workProgress",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub work_progress: ::std::option::Option<TaskWorkProgress>,
     #[serde(rename = "workspaceId")]
     pub workspace_id: ::std::string::String,
 }
@@ -6096,6 +6144,80 @@ impl ::std::convert::TryFrom<::std::string::String> for TaskStatus {
         value: ::std::string::String,
     ) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
+    }
+}
+#[doc = "`TaskWorkProgress`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"completed\","]
+#[doc = "    \"message\","]
+#[doc = "    \"phase\","]
+#[doc = "    \"total\","]
+#[doc = "    \"unit\","]
+#[doc = "    \"updatedAtMs\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"completed\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    },"]
+#[doc = "    \"message\": {"]
+#[doc = "      \"anyOf\": ["]
+#[doc = "        {"]
+#[doc = "          \"type\": \"string\""]
+#[doc = "        },"]
+#[doc = "        {"]
+#[doc = "          \"type\": \"null\""]
+#[doc = "        }"]
+#[doc = "      ]"]
+#[doc = "    },"]
+#[doc = "    \"phase\": {"]
+#[doc = "      \"anyOf\": ["]
+#[doc = "        {"]
+#[doc = "          \"type\": \"string\""]
+#[doc = "        },"]
+#[doc = "        {"]
+#[doc = "          \"type\": \"null\""]
+#[doc = "        }"]
+#[doc = "      ]"]
+#[doc = "    },"]
+#[doc = "    \"total\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    },"]
+#[doc = "    \"unit\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    },"]
+#[doc = "    \"updatedAtMs\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint64\","]
+#[doc = "      \"maximum\": 9007199254740991.0,"]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct TaskWorkProgress {
+    pub completed: u32,
+    pub message: ::std::option::Option<::std::string::String>,
+    pub phase: ::std::option::Option<::std::string::String>,
+    pub total: u32,
+    pub unit: ::std::string::String,
+    #[serde(rename = "updatedAtMs")]
+    pub updated_at_ms: u64,
+}
+impl TaskWorkProgress {
+    pub fn builder() -> builder::TaskWorkProgress {
+        Default::default()
     }
 }
 #[doc = "`Unauthorized`"]
@@ -9763,6 +9885,10 @@ pub mod builder {
     }
     #[derive(Clone, Debug)]
     pub struct OperationSummary {
+        active_task_kind: ::std::result::Result<
+            ::std::option::Option<::std::string::String>,
+            ::std::string::String,
+        >,
         attention: ::std::result::Result<super::OperationAttention, ::std::string::String>,
         created_at_ms: ::std::result::Result<u64, ::std::string::String>,
         kind: ::std::result::Result<::std::string::String, ::std::string::String>,
@@ -9771,12 +9897,17 @@ pub mod builder {
         progress: ::std::result::Result<super::OperationProgress, ::std::string::String>,
         status: ::std::result::Result<super::OperationStatus, ::std::string::String>,
         updated_at_ms: ::std::result::Result<u64, ::std::string::String>,
+        work_progress: ::std::result::Result<
+            ::std::option::Option<super::TaskWorkProgress>,
+            ::std::string::String,
+        >,
         workspace_id: ::std::result::Result<::std::string::String, ::std::string::String>,
         workspace_path: ::std::result::Result<::std::string::String, ::std::string::String>,
     }
     impl ::std::default::Default for OperationSummary {
         fn default() -> Self {
             Self {
+                active_task_kind: Ok(Default::default()),
                 attention: Err("no value supplied for attention".to_string()),
                 created_at_ms: Err("no value supplied for created_at_ms".to_string()),
                 kind: Err("no value supplied for kind".to_string()),
@@ -9785,12 +9916,23 @@ pub mod builder {
                 progress: Err("no value supplied for progress".to_string()),
                 status: Err("no value supplied for status".to_string()),
                 updated_at_ms: Err("no value supplied for updated_at_ms".to_string()),
+                work_progress: Ok(Default::default()),
                 workspace_id: Err("no value supplied for workspace_id".to_string()),
                 workspace_path: Err("no value supplied for workspace_path".to_string()),
             }
         }
     }
     impl OperationSummary {
+        pub fn active_task_kind<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<::std::string::String>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.active_task_kind = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for active_task_kind: {e}"));
+            self
+        }
         pub fn attention<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<super::OperationAttention>,
@@ -9871,6 +10013,16 @@ pub mod builder {
                 .map_err(|e| format!("error converting supplied value for updated_at_ms: {e}"));
             self
         }
+        pub fn work_progress<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<super::TaskWorkProgress>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.work_progress = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for work_progress: {e}"));
+            self
+        }
         pub fn workspace_id<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<::std::string::String>,
@@ -9898,6 +10050,7 @@ pub mod builder {
             value: OperationSummary,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
+                active_task_kind: value.active_task_kind?,
                 attention: value.attention?,
                 created_at_ms: value.created_at_ms?,
                 kind: value.kind?,
@@ -9906,6 +10059,7 @@ pub mod builder {
                 progress: value.progress?,
                 status: value.status?,
                 updated_at_ms: value.updated_at_ms?,
+                work_progress: value.work_progress?,
                 workspace_id: value.workspace_id?,
                 workspace_path: value.workspace_path?,
             })
@@ -9914,6 +10068,7 @@ pub mod builder {
     impl ::std::convert::From<super::OperationSummary> for OperationSummary {
         fn from(value: super::OperationSummary) -> Self {
             Self {
+                active_task_kind: Ok(value.active_task_kind),
                 attention: Ok(value.attention),
                 created_at_ms: Ok(value.created_at_ms),
                 kind: Ok(value.kind),
@@ -9922,6 +10077,7 @@ pub mod builder {
                 progress: Ok(value.progress),
                 status: Ok(value.status),
                 updated_at_ms: Ok(value.updated_at_ms),
+                work_progress: Ok(value.work_progress),
                 workspace_id: Ok(value.workspace_id),
                 workspace_path: Ok(value.workspace_path),
             }
@@ -12583,6 +12739,10 @@ pub mod builder {
         task_id: ::std::result::Result<::std::string::String, ::std::string::String>,
         task_kind: ::std::result::Result<::std::string::String, ::std::string::String>,
         weight: ::std::result::Result<u32, ::std::string::String>,
+        work_progress: ::std::result::Result<
+            ::std::option::Option<super::TaskWorkProgress>,
+            ::std::string::String,
+        >,
         workspace_id: ::std::result::Result<::std::string::String, ::std::string::String>,
     }
     impl ::std::default::Default for TaskDetail {
@@ -12597,6 +12757,7 @@ pub mod builder {
                 task_id: Err("no value supplied for task_id".to_string()),
                 task_kind: Err("no value supplied for task_kind".to_string()),
                 weight: Err("no value supplied for weight".to_string()),
+                work_progress: Ok(Default::default()),
                 workspace_id: Err("no value supplied for workspace_id".to_string()),
             }
         }
@@ -12692,6 +12853,16 @@ pub mod builder {
                 .map_err(|e| format!("error converting supplied value for weight: {e}"));
             self
         }
+        pub fn work_progress<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<super::TaskWorkProgress>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.work_progress = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for work_progress: {e}"));
+            self
+        }
         pub fn workspace_id<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<::std::string::String>,
@@ -12718,6 +12889,7 @@ pub mod builder {
                 task_id: value.task_id?,
                 task_kind: value.task_kind?,
                 weight: value.weight?,
+                work_progress: value.work_progress?,
                 workspace_id: value.workspace_id?,
             })
         }
@@ -12734,6 +12906,7 @@ pub mod builder {
                 task_id: Ok(value.task_id),
                 task_kind: Ok(value.task_kind),
                 weight: Ok(value.weight),
+                work_progress: Ok(value.work_progress),
                 workspace_id: Ok(value.workspace_id),
             }
         }
@@ -12869,6 +13042,122 @@ pub mod builder {
         fn from(value: super::TaskRetryRequest) -> Self {
             Self {
                 task_id: Ok(value.task_id),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct TaskWorkProgress {
+        completed: ::std::result::Result<u32, ::std::string::String>,
+        message: ::std::result::Result<
+            ::std::option::Option<::std::string::String>,
+            ::std::string::String,
+        >,
+        phase: ::std::result::Result<
+            ::std::option::Option<::std::string::String>,
+            ::std::string::String,
+        >,
+        total: ::std::result::Result<u32, ::std::string::String>,
+        unit: ::std::result::Result<::std::string::String, ::std::string::String>,
+        updated_at_ms: ::std::result::Result<u64, ::std::string::String>,
+    }
+    impl ::std::default::Default for TaskWorkProgress {
+        fn default() -> Self {
+            Self {
+                completed: Err("no value supplied for completed".to_string()),
+                message: Err("no value supplied for message".to_string()),
+                phase: Err("no value supplied for phase".to_string()),
+                total: Err("no value supplied for total".to_string()),
+                unit: Err("no value supplied for unit".to_string()),
+                updated_at_ms: Err("no value supplied for updated_at_ms".to_string()),
+            }
+        }
+    }
+    impl TaskWorkProgress {
+        pub fn completed<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.completed = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for completed: {e}"));
+            self
+        }
+        pub fn message<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<::std::string::String>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.message = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for message: {e}"));
+            self
+        }
+        pub fn phase<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<::std::string::String>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.phase = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for phase: {e}"));
+            self
+        }
+        pub fn total<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.total = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for total: {e}"));
+            self
+        }
+        pub fn unit<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.unit = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for unit: {e}"));
+            self
+        }
+        pub fn updated_at_ms<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u64>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.updated_at_ms = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for updated_at_ms: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<TaskWorkProgress> for super::TaskWorkProgress {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: TaskWorkProgress,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                completed: value.completed?,
+                message: value.message?,
+                phase: value.phase?,
+                total: value.total?,
+                unit: value.unit?,
+                updated_at_ms: value.updated_at_ms?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::TaskWorkProgress> for TaskWorkProgress {
+        fn from(value: super::TaskWorkProgress) -> Self {
+            Self {
+                completed: Ok(value.completed),
+                message: Ok(value.message),
+                phase: Ok(value.phase),
+                total: Ok(value.total),
+                unit: Ok(value.unit),
+                updated_at_ms: Ok(value.updated_at_ms),
             }
         }
     }

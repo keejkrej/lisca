@@ -10,7 +10,7 @@ use std::{
 
 use lisca::protocol::{
     OperationAttention, OperationDetail, OperationProgress, OperationStatus, OperationSummary,
-    TaskAttempt, TaskDependencyBlock, TaskDetail, TaskError, TaskStatus,
+    TaskAttempt, TaskDependencyBlock, TaskDetail, TaskError, TaskStatus, TaskWorkProgress,
 };
 use tokio::sync::{watch, Notify};
 use tracing::Instrument;
@@ -23,9 +23,12 @@ const DEFAULT_HISTORY_CAP: usize = 100;
 type TaskFuture = Pin<Box<dyn Future<Output = Result<(), TaskFailure>> + Send + 'static>>;
 type TaskHandlerFactory = Arc<dyn Fn(TaskContext) -> TaskFuture + Send + Sync + 'static>;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct TaskContext {
     cancellation: watch::Receiver<bool>,
+    scheduler: TaskScheduler,
+    operation_id: String,
+    task_id: String,
 }
 
 impl TaskContext {
@@ -47,6 +50,27 @@ impl TaskContext {
                 return;
             }
         }
+    }
+
+    pub fn report_work_progress(
+        &self,
+        unit: impl Into<String>,
+        completed: u32,
+        total: u32,
+        phase: Option<String>,
+        message: Option<String>,
+    ) -> Result<(), TaskFailure> {
+        self.scheduler
+            .report_work_progress(
+                &self.operation_id,
+                &self.task_id,
+                unit.into(),
+                completed,
+                total,
+                phase,
+                message,
+            )
+            .map_err(|error| TaskFailure::new("progress_report_failed", error.to_string()))
     }
 }
 
@@ -314,6 +338,7 @@ struct TaskRecord {
     handler_factory: TaskHandlerFactory,
     cancellation: watch::Sender<bool>,
     attempts: Vec<AttemptRecord>,
+    work_progress: Option<TaskWorkProgress>,
 }
 
 struct AttemptRecord {
@@ -432,6 +457,7 @@ impl TaskScheduler {
                     finished_at_ms: None,
                     error: None,
                 }],
+                work_progress: None,
             });
         }
         state.operations.insert(
@@ -703,6 +729,7 @@ impl TaskScheduler {
             let task = &mut operation.tasks[task_index];
             task.status = status;
             task.cancellation = cancellation;
+            task.work_progress = None;
             task.attempts.push(AttemptRecord {
                 id: Uuid::new_v4().to_string(),
                 status,
@@ -740,6 +767,59 @@ impl TaskScheduler {
                 .await
                 .map_err(|_| SchedulerError::Poisoned)?;
         }
+    }
+
+    fn report_work_progress(
+        &self,
+        operation_id: &str,
+        task_id: &str,
+        unit: String,
+        completed: u32,
+        total: u32,
+        phase: Option<String>,
+        message: Option<String>,
+    ) -> Result<(), SchedulerError> {
+        let mut state = self.lock()?;
+        let operation =
+            state
+                .operations
+                .get_mut(operation_id)
+                .ok_or_else(|| SchedulerError::NotFound {
+                    entity: "operation",
+                    id: operation_id.to_string(),
+                })?;
+        let now = next_operation_timestamp(operation);
+        let task = operation
+            .tasks
+            .iter_mut()
+            .find(|task| task.id == task_id)
+            .ok_or_else(|| SchedulerError::NotFound {
+                entity: "task",
+                id: task_id.to_string(),
+            })?;
+        if !matches!(
+            task.status,
+            TaskStatus::Running | TaskStatus::CancellationRequested
+        ) {
+            return Err(SchedulerError::InvalidTransition {
+                entity: "task",
+                id: task_id.to_string(),
+                status: task_status_name(task.status).to_string(),
+                command: "report progress",
+                reason: None,
+            });
+        }
+        task.work_progress = Some(TaskWorkProgress {
+            completed: completed.min(total),
+            message,
+            phase,
+            total,
+            unit,
+            updated_at_ms: now,
+        });
+        operation.updated_at_ms = now;
+        self.changed(&mut state);
+        Ok(())
     }
 
     async fn dispatch_loop(self) {
@@ -853,6 +933,9 @@ impl TaskScheduler {
                     task.handler_factory.clone(),
                     TaskContext {
                         cancellation: task.cancellation.subscribe(),
+                        scheduler: self.clone(),
+                        operation_id: operation_id.clone(),
+                        task_id: task.id.clone(),
                     },
                 )
             };
@@ -1048,7 +1131,14 @@ fn project_operation(operation: &OperationRecord) -> OperationDetail {
 
 fn project_summary(operation: &OperationRecord) -> OperationSummary {
     let progress = operation_progress(operation);
+    let active_task = operation.tasks.iter().find(|task| {
+        matches!(
+            task.status,
+            TaskStatus::Running | TaskStatus::CancellationRequested
+        )
+    });
     OperationSummary {
+        active_task_kind: active_task.map(|task| task.kind.clone()),
         attention: if progress.failed > 0 {
             OperationAttention::Error
         } else {
@@ -1063,6 +1153,7 @@ fn project_summary(operation: &OperationRecord) -> OperationSummary {
         updated_at_ms: operation.updated_at_ms,
         workspace_id: operation.workspace_id.clone(),
         workspace_path: operation.workspace_path.clone(),
+        work_progress: active_task.and_then(|task| task.work_progress.clone()),
     }
 }
 
@@ -1092,6 +1183,7 @@ fn project_task(operation: &OperationRecord, task: &TaskRecord) -> TaskDetail {
         task_id: task.id.clone(),
         task_kind: task.kind.clone(),
         weight: task.weight,
+        work_progress: task.work_progress.clone(),
         workspace_id: operation.workspace_id.clone(),
     }
 }

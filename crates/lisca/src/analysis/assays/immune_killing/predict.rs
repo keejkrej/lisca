@@ -191,6 +191,16 @@ pub fn run_predict(
     model_dir: &Path,
     options: PredictOptions,
 ) -> Result<(), String> {
+    run_predict_to(workspace, workspace, mapping, model_dir, options)
+}
+
+pub fn run_predict_to(
+    workspace: &Path,
+    output_workspace: &Path,
+    mapping: &SlideMapping,
+    model_dir: &Path,
+    options: PredictOptions,
+) -> Result<(), String> {
     let model_path = model_dir.join("model.onnx");
     if !model_path.is_file() {
         return Err(format!("missing kill model at {}", model_path.display()));
@@ -240,7 +250,7 @@ pub fn run_predict(
         }
     }
 
-    let timeseries_dir = workspace.join("timeseries");
+    let timeseries_dir = output_workspace.join("timeseries");
     fs::create_dir_all(&timeseries_dir).map_err(|error| error.to_string())?;
     for (slide_channel, entry) in mapping {
         let mut rows = timeseries_by_channel
@@ -259,7 +269,7 @@ pub fn run_predict(
             .then_with(|| left.t.cmp(&right.t))
     });
 
-    let results_dir = workspace.join("results");
+    let results_dir = output_workspace.join("results");
     fs::create_dir_all(&results_dir).map_err(|error| error.to_string())?;
     let prediction_csv_rows = prediction_rows
         .iter()

@@ -1,4 +1,8 @@
-use std::path::{Path, PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use axum::{
     extract::{DefaultBodyLimit, Query, State},
@@ -9,17 +13,20 @@ use lisca::http::FsError;
 use lisca::{
     analysis,
     protocol::{
-        AnalysisProgress, AnalysisProgressQuery, AnalysisStartRequest, LatestAnalysisQuery,
-        SaveAssayJsonRequest, SaveAssayJsonResponse, SaveResultPdfRequest, SaveResultPdfResponse,
+        AnalysisProgress, AnalysisProgressQuery, AnalysisStartRequest, AssayJsonFile, AssayType,
+        LatestAnalysisQuery, SaveAssayJsonRequest, SaveAssayJsonResponse, SaveResultPdfRequest,
+        SaveResultPdfResponse,
     },
 };
-use lisca_server::normalize_workspace_path;
+use lisca_server::{
+    normalize_workspace_path, HasTaskScheduler, OperationSpec, TaskFailure, TaskSpec,
+};
 
 use crate::analysis::HasAnalysisJobs;
 
 pub fn router<S>() -> Router<S>
 where
-    S: HasAnalysisJobs + Clone + Send + Sync + 'static,
+    S: HasAnalysisJobs + HasTaskScheduler + Clone + Send + Sync + 'static,
 {
     Router::new()
         .route("/studio/save-assay-json", post(save_assay_json_handler))
@@ -101,7 +108,406 @@ async fn save_result_pdf_handler(
     }))
 }
 
-async fn start_analysis_handler<S: HasAnalysisJobs>(
+fn load_assay_json(workspace: &Path) -> Result<AssayJsonFile, FsError> {
+    if !workspace.is_dir() {
+        return Err(FsError::new("workspace path does not exist"));
+    }
+    let path = workspace.join("assay.json");
+    let contents = fs::read_to_string(&path)
+        .map_err(|error| FsError::new(format!("failed to read {}: {error}", path.display())))?;
+    serde_json::from_str(&contents)
+        .map_err(|error| FsError::new(format!("invalid assay.json: {error}")))
+}
+
+type AnalysisTaskJob = Arc<dyn Fn() -> Result<(), String> + Send + Sync>;
+
+fn analysis_task(
+    kind: impl Into<String>,
+    dependencies: Vec<String>,
+    job: AnalysisTaskJob,
+) -> TaskSpec {
+    TaskSpec::new(kind, 1, move |context| {
+        let job = job.clone();
+        async move {
+            context.checkpoint()?;
+            let result = tokio::task::spawn_blocking(move || job())
+                .await
+                .map_err(|error| TaskFailure::new("analysis_worker_failed", error.to_string()))?;
+            context.checkpoint()?;
+            result.map_err(|error| TaskFailure::new("analysis_stage_failed", error))
+        }
+    })
+    .with_dependencies(dependencies)
+}
+
+fn build_analysis_operation(
+    scheduler: &lisca_server::TaskScheduler,
+    workspace: PathBuf,
+    assay: AssayJsonFile,
+    request_id: &str,
+) -> Result<lisca::protocol::OperationDetail, lisca_server::SchedulerError> {
+    match assay.assay_id {
+        AssayType::GeneExpression => build_gene_expression_operation(scheduler, workspace, assay),
+        AssayType::ImmuneKilling => {
+            build_immune_killing_operation(scheduler, workspace, assay, request_id)
+        }
+        assay_id => {
+            let task = analysis_task(
+                format!("analysis/unsupported/{assay_id}"),
+                Vec::new(),
+                Arc::new(move || Err(format!("unsupported assay id '{assay_id}'"))),
+            );
+            scheduler.submit(OperationSpec::new(
+                format!("analysis/{assay_id}"),
+                workspace.to_string_lossy(),
+                true,
+                vec![task],
+            ))
+        }
+    }
+}
+
+fn build_gene_expression_operation(
+    scheduler: &lisca_server::TaskScheduler,
+    workspace: PathBuf,
+    assay: AssayJsonFile,
+) -> Result<lisca::protocol::OperationDetail, lisca_server::SchedulerError> {
+    use lisca::analysis::{
+        assays::gene_expression as gene,
+        slide::{build_slide_mapping, parse_interval_minutes, write_slide_mapping, SlideMapping},
+    };
+
+    let mapping = match build_slide_mapping(&assay.info3) {
+        Ok(mapping) => Arc::new(mapping),
+        Err(message) => {
+            let task = analysis_task(
+                "analysis/gene-expression/prepare",
+                Vec::new(),
+                Arc::new(move || Err(message.clone())),
+            );
+            return scheduler.submit(OperationSpec::new(
+                "analysis/gene-expression",
+                workspace.to_string_lossy(),
+                true,
+                vec![task],
+            ));
+        }
+    };
+    let interval = parse_interval_minutes(
+        assay.info2.timelapse_amount,
+        Some(assay.info2.timelapse_unit.as_str()),
+    )
+    .unwrap_or(1.0);
+    let max_onset = assay
+        .analysis
+        .as_ref()
+        .and_then(|analysis| analysis.max_onset_minutes)
+        .unwrap_or(0.0);
+    let mut tasks = Vec::new();
+
+    let prepare_mapping = mapping.clone();
+    let prepare_workspace = workspace.clone();
+    let prepare = analysis_task(
+        "analysis/gene-expression/prepare",
+        Vec::new(),
+        Arc::new(move || write_slide_mapping(&prepare_workspace, &prepare_mapping)),
+    );
+    let prepare_id = prepare.task_id().to_string();
+    tasks.push(prepare);
+
+    let mut segment_ids_by_channel = std::collections::BTreeMap::<u32, Vec<String>>::new();
+    for (slide_channel, entry) in mapping.iter() {
+        for position in &entry.positions {
+            let mut shard = SlideMapping::new();
+            let mut shard_entry = entry.clone();
+            shard_entry.positions = vec![*position];
+            shard.insert(*slide_channel, shard_entry);
+            let shard = Arc::new(shard);
+            let task_workspace = workspace.clone();
+            let task = analysis_task(
+                format!("analysis/gene-expression/segment/Pos{position}"),
+                vec![prepare_id.clone()],
+                Arc::new(move || {
+                    gene::run_segment(
+                        &task_workspace,
+                        &shard,
+                        &gene::SegmentOptions {
+                            jobs: 1,
+                            ..gene::SegmentOptions::default()
+                        },
+                    )
+                }),
+            );
+            segment_ids_by_channel
+                .entry(*slide_channel)
+                .or_default()
+                .push(task.task_id().to_string());
+            tasks.push(task);
+        }
+    }
+
+    let mut timeseries_ids = Vec::new();
+    for (slide_channel, entry) in mapping.iter() {
+        let mut shard = SlideMapping::new();
+        shard.insert(*slide_channel, entry.clone());
+        let shard = Arc::new(shard);
+        let task_workspace = workspace.clone();
+        let task = analysis_task(
+            format!("analysis/gene-expression/timeseries/sc{slide_channel}"),
+            segment_ids_by_channel
+                .remove(slide_channel)
+                .unwrap_or_default(),
+            Arc::new(move || gene::run_timeseries(&task_workspace, &shard, 1)),
+        );
+        timeseries_ids.push(task.task_id().to_string());
+        tasks.push(task);
+    }
+
+    let plot_ts_workspace = workspace.clone();
+    let plot_ts_mapping = mapping.clone();
+    let plot_ts = analysis_task(
+        "analysis/gene-expression/plot-timeseries",
+        timeseries_ids.clone(),
+        Arc::new(move || {
+            gene::run_plot_timeseries(
+                &plot_ts_workspace,
+                &plot_ts_mapping,
+                interval,
+                gene::DEFAULT_PLOT_COLUMNS,
+            )
+        }),
+    );
+    let plot_ts_id = plot_ts.task_id().to_string();
+    tasks.push(plot_ts);
+
+    let auc_workspace = workspace.clone();
+    let auc = analysis_task(
+        "analysis/gene-expression/auc",
+        timeseries_ids,
+        Arc::new(move || gene::run_auc(&auc_workspace, interval).map(|_| ())),
+    );
+    let auc_id = auc.task_id().to_string();
+    tasks.push(auc);
+
+    let plot_auc_workspace = workspace.clone();
+    let plot_auc_mapping = mapping.clone();
+    let plot_auc = analysis_task(
+        "analysis/gene-expression/plot-auc",
+        vec![auc_id.clone()],
+        Arc::new(move || gene::run_plot_auc(&plot_auc_workspace, &plot_auc_mapping)),
+    );
+    let plot_auc_id = plot_auc.task_id().to_string();
+    tasks.push(plot_auc);
+
+    let fit_workspace = workspace.clone();
+    let fit = analysis_task(
+        "analysis/gene-expression/fit",
+        vec![auc_id],
+        Arc::new(move || {
+            gene::run_fit(
+                &fit_workspace,
+                interval,
+                max_onset,
+                gene::default_fit_jobs(),
+            )
+            .map(|_| ())
+        }),
+    );
+    let fit_id = fit.task_id().to_string();
+    tasks.push(fit);
+
+    let plot_fit_workspace = workspace.clone();
+    let plot_fit_mapping = mapping;
+    let plot_fit = analysis_task(
+        "analysis/gene-expression/plot-fit",
+        vec![fit_id],
+        Arc::new(move || {
+            gene::run_plot_fit(
+                &plot_fit_workspace,
+                &plot_fit_mapping,
+                interval,
+                gene::DEFAULT_PLOT_COLUMNS,
+            )
+        }),
+    );
+    let plot_fit_id = plot_fit.task_id().to_string();
+    tasks.push(plot_fit);
+
+    let finalize_workspace = workspace.clone();
+    tasks.push(analysis_task(
+        "analysis/gene-expression/finalize",
+        vec![plot_ts_id, plot_auc_id, plot_fit_id],
+        Arc::new(move || analysis::workspace_analysis_manifest(&finalize_workspace).map(|_| ())),
+    ));
+
+    scheduler.submit(OperationSpec::new(
+        "analysis/gene-expression",
+        workspace.to_string_lossy(),
+        true,
+        tasks,
+    ))
+}
+
+fn build_immune_killing_operation(
+    scheduler: &lisca_server::TaskScheduler,
+    workspace: PathBuf,
+    assay: AssayJsonFile,
+    request_id: &str,
+) -> Result<lisca::protocol::OperationDetail, lisca_server::SchedulerError> {
+    use lisca::analysis::{
+        assays::immune_killing as killing,
+        slide::{build_slide_mapping, parse_interval_minutes, write_slide_mapping, SlideMapping},
+    };
+
+    let mapping = match build_slide_mapping(&assay.info3) {
+        Ok(mapping) => Arc::new(mapping),
+        Err(message) => {
+            let task = analysis_task(
+                "analysis/immune-killing/prepare",
+                Vec::new(),
+                Arc::new(move || Err(message.clone())),
+            );
+            return scheduler.submit(OperationSpec::new(
+                "analysis/immune-killing",
+                workspace.to_string_lossy(),
+                true,
+                vec![task],
+            ));
+        }
+    };
+    let interval = parse_interval_minutes(
+        assay.info2.timelapse_amount,
+        Some(assay.info2.timelapse_unit.as_str()),
+    )
+    .unwrap_or(1.0);
+    let safe_request_id = request_id
+        .chars()
+        .map(|character| {
+            if character.is_ascii_alphanumeric() || matches!(character, '-' | '_') {
+                character
+            } else {
+                '_'
+            }
+        })
+        .collect::<String>();
+    let staging_root = workspace
+        .join(".analysis-staging")
+        .join(format!("immune-killing-{safe_request_id}"));
+    let mut tasks = Vec::new();
+
+    let prepare_workspace = workspace.clone();
+    let prepare_mapping = mapping.clone();
+    let prepare = analysis_task(
+        "analysis/immune-killing/prepare",
+        Vec::new(),
+        Arc::new(move || write_slide_mapping(&prepare_workspace, &prepare_mapping)),
+    );
+    let prepare_id = prepare.task_id().to_string();
+    tasks.push(prepare);
+
+    let mut predict_ids = Vec::new();
+    let mut shard_paths = Vec::new();
+    for (slide_channel, entry) in mapping.iter() {
+        for position in &entry.positions {
+            let mut shard_mapping = SlideMapping::new();
+            let mut shard_entry = entry.clone();
+            shard_entry.positions = vec![*position];
+            shard_mapping.insert(*slide_channel, shard_entry);
+            let shard_mapping = Arc::new(shard_mapping);
+            let shard_path = staging_root.join(format!("sc{slide_channel}-Pos{position}"));
+            shard_paths.push(shard_path.clone());
+            let task_workspace = workspace.clone();
+            let task_shard = shard_path;
+            let task = analysis_task(
+                format!("analysis/immune-killing/predict/Pos{position}"),
+                vec![prepare_id.clone()],
+                Arc::new(move || {
+                    let model = killing::resolve_model_path(&task_workspace)?;
+                    killing::run_predict_shard(&task_workspace, &task_shard, &shard_mapping, &model)
+                }),
+            );
+            predict_ids.push(task.task_id().to_string());
+            tasks.push(task);
+        }
+    }
+
+    let merge_workspace = workspace.clone();
+    let merge_shards = shard_paths.clone();
+    let merge = analysis_task(
+        "analysis/immune-killing/merge-predictions",
+        predict_ids,
+        Arc::new(move || killing::merge_prediction_shards(&merge_workspace, &merge_shards)),
+    );
+    let merge_id = merge.task_id().to_string();
+    tasks.push(merge);
+
+    let plot_ts_workspace = workspace.clone();
+    let plot_ts_mapping = mapping.clone();
+    let plot_ts = analysis_task(
+        "analysis/immune-killing/plot-timeseries",
+        vec![merge_id.clone()],
+        Arc::new(move || {
+            killing::run_plot_timeseries_stage(&plot_ts_workspace, &plot_ts_mapping, interval)
+        }),
+    );
+    let plot_ts_id = plot_ts.task_id().to_string();
+    tasks.push(plot_ts);
+
+    let clean_workspace = workspace.clone();
+    let clean_mapping = mapping.clone();
+    let clean = analysis_task(
+        "analysis/immune-killing/clean",
+        vec![merge_id],
+        Arc::new(move || killing::run_clean_stage(&clean_workspace, &clean_mapping)),
+    );
+    let clean_id = clean.task_id().to_string();
+    tasks.push(clean);
+
+    let kill_workspace = workspace.clone();
+    let kill_mapping = mapping.clone();
+    let plot_kill = analysis_task(
+        "analysis/immune-killing/plot-kill",
+        vec![clean_id.clone()],
+        Arc::new(move || killing::run_plot_kill_stage(&kill_workspace, &kill_mapping, interval)),
+    );
+    let plot_kill_id = plot_kill.task_id().to_string();
+    tasks.push(plot_kill);
+
+    let death_workspace = workspace.clone();
+    let death_mapping = mapping;
+    let plot_death = analysis_task(
+        "analysis/immune-killing/plot-death-times",
+        vec![clean_id],
+        Arc::new(move || {
+            killing::run_plot_death_times_stage(&death_workspace, &death_mapping, interval)
+        }),
+    );
+    let plot_death_id = plot_death.task_id().to_string();
+    tasks.push(plot_death);
+
+    let finalize_workspace = workspace.clone();
+    let finalize_staging = staging_root;
+    tasks.push(analysis_task(
+        "analysis/immune-killing/finalize",
+        vec![plot_ts_id, plot_kill_id, plot_death_id],
+        Arc::new(move || {
+            analysis::workspace_analysis_manifest(&finalize_workspace)?;
+            if finalize_staging.exists() {
+                fs::remove_dir_all(&finalize_staging).map_err(|error| error.to_string())?;
+            }
+            Ok(())
+        }),
+    ));
+
+    scheduler.submit(OperationSpec::new(
+        "analysis/immune-killing",
+        workspace.to_string_lossy(),
+        true,
+        tasks,
+    ))
+}
+
+async fn start_analysis_handler<S: HasAnalysisJobs + HasTaskScheduler>(
     State(state): State<S>,
     Json(payload): Json<AnalysisStartRequest>,
 ) -> Result<Json<AnalysisProgress>, FsError> {
@@ -118,89 +524,29 @@ async fn start_analysis_handler<S: HasAnalysisJobs>(
 
     let request_id = request_id.to_string();
     let workspace_path = workspace_path.to_string();
-    let initial = AnalysisProgress {
-        request_id: request_id.clone(),
-        status: lisca::protocol::AnalysisStatus::Queued,
-        stage: lisca::protocol::AnalysisStage::Queued,
-        progress: 0.0,
-        message: Some("Queued analysis".to_string()),
-        result_files: Vec::new(),
-        error: None,
-    };
-    let inserted = analysis
-        .insert_unique(
-            request_id.clone(),
-            Some(workspace_path.clone()),
-            initial.clone(),
-        )
-        .map_err(|_| FsError::new("analysis job state is poisoned"))?;
-    if !inserted {
-        return Err(FsError::new("analysis request id already exists"));
-    }
-    let jobs = analysis.clone();
-    let path = PathBuf::from(workspace_path.clone());
-    let run_request_id = request_id.clone();
-    tokio::spawn(async move {
-        let update_progress = {
-            let jobs = jobs.clone();
-            move |progress: AnalysisProgress| {
-                let _ = jobs.update(&progress.request_id, |current| {
-                    *current = progress.clone();
-                });
-            }
-        };
-
-        let result =
-            analysis::run_analysis_pipeline(path.clone(), run_request_id.clone(), update_progress)
-                .await;
-        match result {
-            Ok(result_files) => {
-                let final_progress = AnalysisProgress {
-                    request_id: run_request_id,
-                    status: lisca::protocol::AnalysisStatus::Completed,
-                    stage: lisca::protocol::AnalysisStage::Completed,
-                    progress: 100.0,
-                    message: Some("Completed".to_string()),
-                    result_files,
-                    error: None,
-                };
-                let _ = jobs.update(&final_progress.request_id, |current| {
-                    *current = final_progress.clone();
-                });
-            }
-            Err(error) => {
-                let final_progress = AnalysisProgress {
-                    request_id: run_request_id.clone(),
-                    status: lisca::protocol::AnalysisStatus::Error,
-                    stage: lisca::protocol::AnalysisStage::Queued,
-                    progress: 0.0,
-                    message: Some("Analysis failed".to_string()),
-                    result_files: Vec::new(),
-                    error: Some(error.to_string()),
-                };
-                let _ = jobs.update(&final_progress.request_id, |current| {
-                    *current = final_progress.clone();
-                });
-            }
-        }
-    });
-
+    let workspace = PathBuf::from(&workspace_path);
+    let assay_json = load_assay_json(&workspace)?;
+    let initial = analysis
+        .submit(&request_id, &workspace_path, || {
+            build_analysis_operation(state.task_scheduler(), workspace, assay_json, &request_id)
+        })
+        .map_err(FsError::new)?;
     Ok(Json(initial))
 }
 
-async fn analysis_progress_handler<S: HasAnalysisJobs>(
+async fn analysis_progress_handler<S: HasAnalysisJobs + HasTaskScheduler>(
     State(state): State<S>,
     Query(query): Query<AnalysisProgressQuery>,
 ) -> Result<Json<AnalysisProgress>, FsError> {
     let analysis = state.analysis_jobs();
     analysis
-        .get(&query.request_id)
-        .map_err(|_| FsError::new("analysis job state is poisoned"))?
+        .progress(state.task_scheduler(), &query.request_id)
+        .map_err(FsError::new)?
         .map(Json)
         .ok_or_else(|| FsError::new("analysis job not found"))
 }
 
-async fn analysis_latest_progress_handler<S: HasAnalysisJobs>(
+async fn analysis_latest_progress_handler<S: HasAnalysisJobs + HasTaskScheduler>(
     State(state): State<S>,
     Query(query): Query<LatestAnalysisQuery>,
 ) -> Result<Json<Option<AnalysisProgress>>, FsError> {
@@ -211,8 +557,8 @@ async fn analysis_latest_progress_handler<S: HasAnalysisJobs>(
     }
 
     let latest = analysis
-        .latest(&workspace_path)
-        .map_err(|_| FsError::new("analysis job state is poisoned"))?;
+        .latest(state.task_scheduler(), &workspace_path)
+        .map_err(FsError::new)?;
     let Some(progress) = latest else {
         let workspace = Path::new(&workspace_path);
         let result_files = match analysis::workspace_analysis_manifest(workspace) {
@@ -276,17 +622,38 @@ mod tests {
     use axum::extract::State;
     use lisca::protocol::{AnalysisProgress, AnalysisStartRequest, AnalysisStatus, AssayType};
 
-    use super::start_analysis_handler;
+    use super::{build_analysis_operation, load_assay_json, start_analysis_handler};
     use crate::analysis::{AnalysisJobState, HasAnalysisJobs};
+    use lisca_server::{HasTaskScheduler, SchedulerConfig, TaskScheduler};
 
-    #[derive(Clone, Default)]
+    #[derive(Clone)]
     struct TestState {
         analysis: AnalysisJobState,
+        tasks: TaskScheduler,
+    }
+
+    impl TestState {
+        fn new() -> Self {
+            Self {
+                analysis: AnalysisJobState::new(),
+                tasks: TaskScheduler::new(SchedulerConfig {
+                    capacity: 2,
+                    history_cap: 20,
+                })
+                .unwrap(),
+            }
+        }
     }
 
     impl HasAnalysisJobs for TestState {
         fn analysis_jobs(&self) -> &AnalysisJobState {
             &self.analysis
+        }
+    }
+
+    impl HasTaskScheduler for TestState {
+        fn task_scheduler(&self) -> &TaskScheduler {
+            &self.tasks
         }
     }
 
@@ -329,7 +696,7 @@ mod tests {
         for _ in 0..100 {
             let progress = state
                 .analysis
-                .get(request_id)
+                .progress(&state.tasks, request_id)
                 .expect("analysis job state should not be poisoned")
                 .expect("analysis job should exist");
             if progress.status == AnalysisStatus::Error {
@@ -343,7 +710,7 @@ mod tests {
     #[tokio::test]
     async fn unsupported_assays_surface_their_ids_in_analysis_progress() {
         for assay_id in [AssayType::LnpBinding, AssayType::CustomAssay] {
-            let state = TestState::default();
+            let state = TestState::new();
             let workspace = test_workspace(assay_id);
             let request_id = format!("unsupported-{assay_id}");
             let request = AnalysisStartRequest {
@@ -356,12 +723,88 @@ mod tests {
                 .expect("analysis request should be accepted");
 
             let progress = wait_for_terminal_progress(&state, &request_id).await;
-            assert_eq!(progress.message.as_deref(), Some("Analysis failed"));
             let error = progress.error.expect("analysis error should be visible");
             assert!(error.contains("unsupported assay id"));
             assert!(error.contains(&assay_id.to_string()));
 
             fs::remove_dir_all(workspace).expect("test workspace should be removed");
+        }
+    }
+
+    fn graph_workspace(assay_id: AssayType) -> PathBuf {
+        let workspace = test_workspace(assay_id);
+        let assay = format!(
+            r#"{{
+                "assayId": "{assay_id}",
+                "assayLabel": "Graph fixture",
+                "dataSourceKind": null,
+                "info1": {{
+                    "dataPath": "",
+                    "folderFilenameTemplate": "",
+                    "folderSubfolderTemplate": "",
+                    "name": "Graph fixture",
+                    "saveTo": ""
+                }},
+                "info2": {{
+                    "selectedFeatures": [],
+                    "timelapseAmount": 1.0,
+                    "timelapseUnit": "minute"
+                }},
+                "info3": {{
+                    "samples": [{{
+                        "channel": "0",
+                        "name": "sample",
+                        "positionStart": "0",
+                        "positionFinish": "1",
+                        "maskChannel": "0",
+                        "signalChannel": "1",
+                        "positions": "0,1"
+                    }}]
+                }}
+            }}"#
+        );
+        fs::write(workspace.join("assay.json"), assay).unwrap();
+        workspace
+    }
+
+    #[tokio::test]
+    async fn assay_operations_expose_real_fan_out_and_fan_in_graphs() {
+        for assay_id in [AssayType::GeneExpression, AssayType::ImmuneKilling] {
+            let state = TestState::new();
+            let workspace = graph_workspace(assay_id);
+            let assay = load_assay_json(&workspace).unwrap();
+            let detail =
+                build_analysis_operation(&state.tasks, workspace.clone(), assay, "graph-fixture")
+                    .unwrap();
+            let prefix = match assay_id {
+                AssayType::GeneExpression => "analysis/gene-expression",
+                AssayType::ImmuneKilling => "analysis/immune-killing",
+                _ => unreachable!(),
+            };
+            let position_tasks = detail
+                .tasks
+                .iter()
+                .filter(|task| {
+                    task.task_kind.starts_with(&format!("{prefix}/segment/Pos"))
+                        || task.task_kind.starts_with(&format!("{prefix}/predict/Pos"))
+                })
+                .collect::<Vec<_>>();
+            assert_eq!(position_tasks.len(), 2);
+            let fan_in = detail
+                .tasks
+                .iter()
+                .find(|task| {
+                    task.task_kind.ends_with("/timeseries/sc0")
+                        || task.task_kind.ends_with("/merge-predictions")
+                })
+                .unwrap();
+            assert_eq!(fan_in.dependencies.len(), 2);
+            assert!(detail
+                .tasks
+                .iter()
+                .any(|task| task.task_kind.ends_with("/finalize")));
+            let _ = state.tasks.cancel_operation(&detail.operation.operation_id);
+            fs::remove_dir_all(workspace).unwrap();
         }
     }
 }

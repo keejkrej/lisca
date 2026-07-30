@@ -1,4 +1,4 @@
-import type { OperationDetail, OperationSummary, TaskAttempt, TaskDetail } from "@lisca/contracts";
+import type { OperationDetail, OperationSummary, TaskDetail } from "@lisca/contracts";
 import * as Dialog from "@kobalte/core/dialog";
 import {
   canCancelOperation,
@@ -49,10 +49,6 @@ function workspaceName(path: string): string {
   return normalized.split(/[\\/]/).at(-1) || path;
 }
 
-function shortId(id: string): string {
-  return id.length > 12 ? `${id.slice(0, 8)}…` : id;
-}
-
 function formatTime(timestampMs: number | null): string {
   if (timestampMs === null) return "—";
   return new Intl.DateTimeFormat(undefined, {
@@ -96,66 +92,67 @@ function OperationProgressRail(props: { operation: OperationSummary }) {
   );
 }
 
-function AttemptDetails(props: { attempt: TaskAttempt; index: number }) {
+function WorkProgressRail(props: { operation: OperationSummary }) {
+  const work = () => props.operation.workProgress;
+  const percent = () => {
+    const current = work();
+    return current && current.total > 0 ? (current.completed / current.total) * 100 : 0;
+  };
+  const label = () => {
+    const kind = props.operation.activeTaskKind;
+    const position = kind?.match(/Pos\d+/)?.[0];
+    return position ?? "Current task";
+  };
   return (
-    <li class="grid gap-1 border-l-2 border-border pl-3 text-xs sm:grid-cols-[7rem_1fr]">
-      <span class="font-medium text-foreground">Attempt {props.index + 1}</span>
-      <span class={cn("font-medium", taskTone(props.attempt.status))}>
-        {taskStatusLabel(props.attempt.status)}
-      </span>
-      <span class="text-muted-foreground">Started</span>
-      <span class="tabular-nums text-foreground">{formatTime(props.attempt.startedAtMs)}</span>
-      <span class="text-muted-foreground">Finished</span>
-      <span class="tabular-nums text-foreground">{formatTime(props.attempt.finishedAtMs)}</span>
-      <Show when={props.attempt.error}>
-        {(error) => (
-          <>
-            <span class="text-destructive">{error().code}</span>
-            <span class="break-words text-destructive">{error().message}</span>
-          </>
-        )}
-      </Show>
-    </li>
+    <Show when={work()}>
+      {(current) => (
+        <div class="space-y-1">
+          <div class="flex justify-between gap-3 text-muted-foreground text-xs tabular-nums">
+            <span>{label()}</span>
+            <span>
+              {current().completed}/{current().total} {current().unit}
+            </span>
+          </div>
+          <div
+            aria-label={`${label()} ${current().unit} progress`}
+            aria-valuemax={current().total}
+            aria-valuemin={0}
+            aria-valuenow={current().completed}
+            class="h-1.5 overflow-hidden rounded-full bg-muted"
+            role="progressbar"
+          >
+            <div class="h-full bg-primary" style={{ width: `${percent()}%` }} />
+          </div>
+        </div>
+      )}
+    </Show>
   );
 }
 
 function TaskRow(props: {
   task: TaskDetail;
-  expanded: boolean;
   busy: boolean;
-  onToggle: () => void;
   onCancel: () => void;
   onRetry: () => void;
 }) {
-  const attempts = createMemo(() => [...props.task.attempts].reverse());
+  const latestError = () => props.task.attempts.at(-1)?.error;
   return (
     <li class="border-t border-border/70 first:border-t-0">
       <div class="flex items-start gap-2 px-3 py-2.5">
-        <button
-          aria-expanded={props.expanded}
-          class="flex min-w-0 flex-1 items-start gap-2 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          type="button"
-          onClick={props.onToggle}
-        >
-          <Show
-            when={props.expanded}
-            fallback={<IconCaretRightRegular class="mt-0.5 size-3.5 shrink-0" />}
-          >
-            <IconCaretDownRegular class="mt-0.5 size-3.5 shrink-0" />
-          </Show>
+        <div class="flex min-w-0 flex-1 items-start gap-2">
           <span class="min-w-0 flex-1">
             <span class="block truncate font-medium text-foreground text-sm">
               {operationKindLabel(props.task.taskKind)}
             </span>
             <span class="block truncate text-muted-foreground text-xs">
-              Task {shortId(props.task.taskId)} · queue {props.task.enqueueOrder + 1} · weight{" "}
-              {props.task.weight}
+              {taskStatusLabel(props.task.status)}
+              <Show when={latestError()}> · {latestError()?.message}</Show>
             </span>
           </span>
           <span class={cn("shrink-0 text-xs", taskTone(props.task.status))}>
             {taskStatusLabel(props.task.status)}
           </span>
-        </button>
+        </div>
 
         <Show when={canCancelTask(props.task)}>
           <Button
@@ -181,52 +178,6 @@ function TaskRow(props: {
           </Button>
         </Show>
       </div>
-
-      <Show when={props.expanded}>
-        <div class="space-y-3 bg-muted/20 px-8 py-3">
-          <Show when={props.task.dependencies.length > 0}>
-            <div class="space-y-1">
-              <p class="font-medium text-foreground text-xs">Depends on</p>
-              <p class="break-all font-mono text-muted-foreground text-xs">
-                {props.task.dependencies.join(", ")}
-              </p>
-            </div>
-          </Show>
-          <Show when={props.task.blockedBy.length > 0}>
-            <div class="space-y-1 rounded-md border border-destructive/30 bg-destructive/5 p-2">
-              <p class="font-medium text-destructive text-xs">Blocked dependencies</p>
-              <For each={props.task.blockedBy}>
-                {(dependency) => (
-                  <p class="text-destructive text-xs">
-                    {operationKindLabel(dependency.taskKind)} · {taskStatusLabel(dependency.status)}
-                    <Show when={dependency.error}> — {dependency.error?.message}</Show>
-                  </p>
-                )}
-              </For>
-            </div>
-          </Show>
-          <div class="space-y-2">
-            <p class="font-medium text-foreground text-xs">
-              Attempts ({props.task.attempts.length})
-            </p>
-            <Show
-              when={attempts().length > 0}
-              fallback={<p class="text-muted-foreground text-xs">No attempt has started.</p>}
-            >
-              <ol class="space-y-3">
-                <For each={attempts()}>
-                  {(attempt, index) => (
-                    <AttemptDetails
-                      attempt={attempt}
-                      index={props.task.attempts.length - index() - 1}
-                    />
-                  )}
-                </For>
-              </ol>
-            </Show>
-          </div>
-        </div>
-      </Show>
     </li>
   );
 }
@@ -235,7 +186,6 @@ export function TaskCenter(props: TaskCenterProps) {
   const [open, setOpen] = createSignal(false);
   const [state, setState] = createSignal(initialTaskCenterState);
   const [expandedOperationId, setExpandedOperationId] = createSignal<string | null>(null);
-  const [expandedTaskIds, setExpandedTaskIds] = createSignal<ReadonlySet<string>>(new Set());
   const [loadingDetail, setLoadingDetail] = createSignal<string | null>(null);
   const [busyAction, setBusyAction] = createSignal<string | null>(null);
   const [refreshError, setRefreshError] = createSignal<string | null>(null);
@@ -326,15 +276,6 @@ export function TaskCenter(props: TaskCenterProps) {
     setExpandedOperationId(operationId);
     setActionError(null);
     await refreshOperationDetail(operationId, !state().details[operationId]);
-  };
-
-  const toggleTask = (taskId: string) => {
-    setExpandedTaskIds((current) => {
-      const next = new Set(current);
-      if (next.has(taskId)) next.delete(taskId);
-      else next.add(taskId);
-      return next;
-    });
   };
 
   const runAction = async (
@@ -518,7 +459,7 @@ export function TaskCenter(props: TaskCenterProps) {
                               <OperationProgressRail operation={operation} />
                               <span class="flex justify-between gap-3 text-muted-foreground text-xs tabular-nums">
                                 <span>
-                                  {progress().completed} of {progress().total} complete
+                                  Positions {progress().completed}/{progress().total}
                                 </span>
                                 <Show when={operation.progress.failed > 0}>
                                   <span class="text-destructive">
@@ -526,6 +467,7 @@ export function TaskCenter(props: TaskCenterProps) {
                                   </span>
                                 </Show>
                               </span>
+                              <WorkProgressRail operation={operation} />
                             </span>
                           </button>
                           <Show when={canCancelOperation(operation)}>
@@ -576,7 +518,6 @@ export function TaskCenter(props: TaskCenterProps) {
                                       {(task) => (
                                         <TaskRow
                                           busy={busyAction() === `task:${task.taskId}`}
-                                          expanded={expandedTaskIds().has(task.taskId)}
                                           task={task}
                                           onCancel={() =>
                                             void runAction(
@@ -594,7 +535,6 @@ export function TaskCenter(props: TaskCenterProps) {
                                                 props.gateway.retryTask(task.taskId, signal),
                                             )
                                           }
-                                          onToggle={() => toggleTask(task.taskId)}
                                         />
                                       )}
                                     </For>

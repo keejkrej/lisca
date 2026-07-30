@@ -61,6 +61,67 @@ async fn next_cancellable_started(rx: &mut mpsc::UnboundedReceiver<&'static str>
 }
 
 #[tokio::test]
+async fn running_tasks_publish_fine_grained_progress_to_detail_and_summary() {
+    let scheduler = TaskScheduler::new(SchedulerConfig {
+        capacity: 1,
+        history_cap: 10,
+    })
+    .unwrap();
+    let (reported_tx, mut reported_rx) = mpsc::unbounded_channel();
+    let (finish_tx, finish_rx) = oneshot::channel();
+    let finish = std::sync::Arc::new(std::sync::Mutex::new(Some(finish_rx)));
+    let task = TaskSpec::new("crop-roi/Pos4", 1, move |context| {
+        let reported = reported_tx.clone();
+        let finish = finish.lock().unwrap().take().unwrap();
+        async move {
+            context.report_work_progress(
+                "roiframe",
+                1200,
+                1800,
+                Some("writing".to_string()),
+                Some("Writing Pos4".to_string()),
+            )?;
+            reported.send(()).unwrap();
+            finish
+                .await
+                .map_err(|_| TaskFailure::new("harness_closed", "finish dropped"))?
+        }
+    });
+    let operation = scheduler
+        .submit(OperationSpec::new(
+            "crop-roi",
+            "/workspace/progress",
+            true,
+            vec![task],
+        ))
+        .unwrap();
+
+    reported_rx.recv().await.unwrap();
+    let running = scheduler
+        .operation(&operation.operation.operation_id)
+        .unwrap();
+    assert_eq!(running.operation.progress.completed, 0);
+    assert_eq!(running.operation.progress.running, 1);
+    assert_eq!(
+        running.operation.active_task_kind.as_deref(),
+        Some("crop-roi/Pos4")
+    );
+    let progress = running.operation.work_progress.as_ref().unwrap();
+    assert_eq!(progress.completed, 1200);
+    assert_eq!(progress.total, 1800);
+    assert_eq!(
+        running.tasks[0].work_progress.as_ref().unwrap().completed,
+        progress.completed
+    );
+
+    finish_tx.send(Ok(())).unwrap();
+    scheduler
+        .wait_for_operation_terminal(&operation.operation.operation_id)
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
 async fn weighted_capacity_rejects_invalid_work_and_never_overcommits() {
     assert!(matches!(
         TaskScheduler::new(SchedulerConfig {

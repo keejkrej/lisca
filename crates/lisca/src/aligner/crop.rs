@@ -77,6 +77,20 @@ pub fn crop_roi_position<F>(
 where
     F: Fn() -> bool,
 {
+    crop_roi_position_with_progress(request, scan, pos, is_cancelled, |_| {})
+}
+
+pub fn crop_roi_position_with_progress<F, P>(
+    request: &CropRoiRequest,
+    scan: &WorkspaceScan,
+    pos: u32,
+    is_cancelled: F,
+    mut on_pages_written: P,
+) -> Result<CropPositionOutput, CropPositionError>
+where
+    F: Fn() -> bool,
+    P: FnMut(u32),
+{
     if is_cancelled() {
         return Err(CropPositionError::Cancelled);
     }
@@ -86,13 +100,17 @@ where
     }
     let bboxes = parse_bbox_csv(&bbox_csv_path(&request.workspace_path, pos))?;
     let mut source_reader = CachedSourceReader::open(request.source.clone())?;
+    let mut pages_written = 0_u32;
     crop_position_atomic(
         request,
         scan,
         pos,
         &bboxes,
         &is_cancelled,
-        |_| {},
+        |count| {
+            pages_written = pages_written.saturating_add(count);
+            on_pages_written(pages_written);
+        },
         &mut source_reader,
     )?;
     Ok(summary)

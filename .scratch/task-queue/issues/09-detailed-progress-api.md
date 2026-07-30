@@ -4,7 +4,7 @@
 
 **Blocked by:** 03 — Cancel and retry Task attempts; 06 — Run cropping as one Task per position (compatibility projection path must remain the source of truth).
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 **Context (why now):** During fig5 LNP binding crop of `~/data/lisca_review/fig5/20260730_1` (Pos0, **48 ROIs**, **1801** timepoints × 2 channels, full 4 s stacks), Task Center / `GET /tasks/operations` correctly reported:
 
@@ -52,14 +52,14 @@ type TaskWorkProgress = {
 
 ## Acceptance criteria
 
-- [ ] Contracts (`@lisca/contracts` / OpenAPI) define optional structured within-task work progress; Rust `typify` types regenerate cleanly; no hand-written wire types.
-- [ ] `GET /tasks/task` and `GET /tasks/operation` return current work progress for in-flight crop Tasks (at least `unit`, `completed`, `total`, `updatedAtMs`).
-- [ ] `GET /tasks/operations` list summary includes enough for Task Center to show a secondary progress line (e.g. `17/48 rois`) without a second round-trip for the active item, or document why detail-only is preferred and implement that consistently.
-- [ ] Crop Task updates progress as ROIs (or frames) complete in **staging**; progress never implies final `roi/Pos{N}/` publication before atomic commit.
-- [ ] Task Center Aligner UI shows within-task progress for running crop operations (list and/or detail); no blocking overlay; polling/reconcile path reused.
-- [ ] Stall detection is possible: `updatedAtMs` advances while work proceeds; documented behavior if a long single write holds the counter still (prefer updating message or phase).
-- [ ] Unit/integration tests: synthetic crop or handler fixture advances progress mid-flight; Operation stays `running` with `tasks.completed=0` until Task completes; final state clears or freezes progress sensibly.
-- [ ] Implementation preserves unrelated dirty-tree changes; starts from current task-scheduler / crop code.
+- [x] Contracts (`@lisca/contracts` / OpenAPI) define optional structured within-task work progress; Rust `typify` types regenerate cleanly; no hand-written wire types.
+- [x] `GET /tasks/task` and `GET /tasks/operation` return current work progress for in-flight crop Tasks (at least `unit`, `completed`, `total`, `updatedAtMs`).
+- [x] `GET /tasks/operations` list summary includes enough for Task Center to show a secondary progress line (e.g. `17/48 rois`) without a second round-trip for the active item, or document why detail-only is preferred and implement that consistently.
+- [x] Crop Task updates progress as ROIs (or frames) complete in **staging**; progress never implies final `roi/Pos{N}/` publication before atomic commit.
+- [x] Task Center Aligner UI shows within-task progress for running crop operations (list and/or detail); no blocking overlay; polling/reconcile path reused.
+- [x] Stall detection is possible: `updatedAtMs` advances while work proceeds; documented behavior if a long single write holds the counter still (prefer updating message or phase).
+- [x] Unit/integration tests: synthetic crop or handler fixture advances progress mid-flight; Operation stays `running` with `tasks.completed=0` until Task completes; final state clears or freezes progress sensibly.
+- [x] Implementation preserves unrelated dirty-tree changes; starts from current task-scheduler / crop code.
 
 ## Implementation notes
 
@@ -70,3 +70,17 @@ type TaskWorkProgress = {
 ## Comments
 
 - 2026-07-30: Filed after fig5 functionalized-LNP crop (`20260730_1`, 48 ROIs × 1801 t × 2 ch). Observed live: API always `0/1 running` while temp ROI dir grew 3→5+ GB with 32 open ROI stacks.
+
+## Answer
+
+The generated task contracts now expose optional `TaskWorkProgress`, task handlers report
+progress through their scheduler context, and both task detail and the active operation
+summary project the canonical value. Crop reports staged `roiframe` writes with a position
+label and monotonic `updatedAtMs`; the legacy crop projection consumes the same counter.
+Terminal summaries hide the active counter while retained task detail freezes the last value.
+
+Focused verification:
+
+- `cargo test -p lisca-server running_tasks_publish_fine_grained_progress_to_detail_and_summary`
+- `cargo test -p aligner-server crop::tests`
+- contract generation and Rust `typify` generation

@@ -4324,6 +4324,7 @@ dependencies = [
  "base64 0.22.1",
  "lisca",
  "lisca-server",
+ "serde_json",
  "tokio",
 ]
 

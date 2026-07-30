@@ -31,6 +31,15 @@ export const TaskErrorSchema = Schema.Struct({
   message: Schema.String,
 }).annotations({ identifier: "TaskError" });
 
+export const TaskWorkProgressSchema = Schema.Struct({
+  unit: Schema.String,
+  completed: U32,
+  total: U32,
+  phase: Schema.NullOr(Schema.String),
+  message: Schema.NullOr(Schema.String),
+  updatedAtMs: U64,
+}).annotations({ identifier: "TaskWorkProgress" });
+
 export const OperationProgressSchema = Schema.Struct({
   total: U32,
   queued: U32,
@@ -51,6 +60,8 @@ export const OperationSummarySchema = Schema.Struct({
   status: OperationStatusSchema,
   attention: OperationAttentionSchema,
   progress: OperationProgressSchema,
+  activeTaskKind: Schema.optional(Schema.NullOr(Schema.String)),
+  workProgress: Schema.optional(Schema.NullOr(TaskWorkProgressSchema)),
   createdAtMs: U64,
   updatedAtMs: U64,
 }).annotations({ identifier: "OperationSummary" });
@@ -109,6 +120,7 @@ export const TaskDetailSchema = Schema.Struct({
   dependencies: Schema.mutable(Schema.Array(Schema.String)),
   blockedBy: Schema.mutable(Schema.Array(TaskDependencyBlockSchema)),
   attempts: Schema.mutable(Schema.Array(TaskAttemptSchema)),
+  workProgress: Schema.optional(Schema.NullOr(TaskWorkProgressSchema)),
 }).annotations({ identifier: "TaskDetail" });
 
 export const OperationDetailSchema = Schema.Struct({
@@ -120,6 +132,7 @@ export type OperationStatus = typeof OperationStatusSchema.Type;
 export type TaskStatus = typeof TaskStatusSchema.Type;
 export type OperationAttention = typeof OperationAttentionSchema.Type;
 export type TaskError = typeof TaskErrorSchema.Type;
+export type TaskWorkProgress = typeof TaskWorkProgressSchema.Type;
 export type OperationProgress = typeof OperationProgressSchema.Type;
 export type OperationSummary = typeof OperationSummarySchema.Type;
 export type OperationList = typeof OperationListSchema.Type;
