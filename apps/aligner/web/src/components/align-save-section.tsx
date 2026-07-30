@@ -5,31 +5,31 @@ import { useAlignNav } from "../state/align-page-selectors";
 
 export function AlignSaveSection() {
   const nav = useAlignNav();
-  const pos = nav.selection.pos;
-  const canSave = Boolean(nav.workspacePath && nav.frame);
-  const canCrop = Boolean(nav.workspacePath && nav.source && nav.frame);
 
+  // Read workspace/source/frame inside JSX (or getters) so Solid tracks them.
+  // A one-shot `const canSave = Boolean(...)` freezes the mount-time nulls
+  // and leaves Save/Crop disabled after the frame loads.
   return (
     <DockSection title="Save">
       <div class="flex w-full flex-col gap-2">
         <div class="grid w-full grid-cols-3 gap-2">
           <div class="min-w-0">
             <ReadonlyPathField
-              aria-label={`Output path bbox/Pos${pos}.csv`}
-              value={`bbox/Pos${pos}.csv`}
+              aria-label={`Output path bbox/Pos${nav.selection.pos}.csv`}
+              value={`bbox/Pos${nav.selection.pos}.csv`}
             />
           </div>
           <div class="min-w-0">
             <ReadonlyPathField
-              aria-label={`Output path align/Pos${pos}.json`}
-              value={`align/Pos${pos}.json`}
+              aria-label={`Output path align/Pos${nav.selection.pos}.json`}
+              value={`align/Pos${nav.selection.pos}.json`}
             />
           </div>
           <div class="min-w-0">
             <ReadonlyPathField
               class="text-center"
-              aria-label={`Output path roi/Pos${pos}`}
-              value={`roi/Pos${pos}`}
+              aria-label={`Output path roi/Pos${nav.selection.pos}`}
+              value={`roi/Pos${nav.selection.pos}`}
             />
           </div>
         </div>
@@ -37,7 +37,7 @@ export function AlignSaveSection() {
           <div class="min-w-0">
             <Button
               class="w-full justify-center"
-              disabled={!canSave || nav.saving}
+              disabled={!nav.workspacePath || !nav.frame || nav.saving}
               size="sm"
               type="button"
               variant="outline"
@@ -49,7 +49,7 @@ export function AlignSaveSection() {
           <div class="min-w-0">
             <Button
               class="w-full justify-center"
-              disabled={!canCrop}
+              disabled={!nav.workspacePath || !nav.source || !nav.frame}
               size="sm"
               type="button"
               variant="outline"

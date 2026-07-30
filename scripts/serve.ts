@@ -6,7 +6,7 @@
  *   vp run serve:aligner [--host 0.0.0.0] [--port 8765] [--skip-build]
  *
  * A tiny HTTP proxy serves the static dist/ for non-API routes and forwards
- * /fs, /align, /annotate, /studio, /profile, /memory to the Rust backend
+ * /fs, /align, /annotate, /studio, /profile, /memory, /tasks to the Rust backend
  * (same layout as the Docker nginx config).
  */
 import { existsSync } from "node:fs";

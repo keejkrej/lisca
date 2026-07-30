@@ -3,7 +3,15 @@
 const LISCA_DEV_BACKEND_PORT_OFFSET = 1000;
 
 /** API path prefixes proxied from dev UI servers (Vite) to the Rust backend. */
-const LISCA_API_PROXY_PREFIXES = ["/fs", "/align", "/annotate", "/studio", "/profile", "/memory"];
+const LISCA_API_PROXY_PREFIXES = [
+  "/fs",
+  "/align",
+  "/annotate",
+  "/studio",
+  "/profile",
+  "/memory",
+  "/tasks",
+];
 
 /** @type {Record<"aligner" | "annotator" | "studio", LiscaDevPorts>} */
 const LISCA_APP_PORTS = {
