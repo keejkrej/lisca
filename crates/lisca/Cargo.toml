@@ -50,3 +50,8 @@ tower = { version = "0.5", features = ["util"] }
 name = "lisca-crop"
 path = "src/bin/lisca-crop.rs"
 required-features = []
+
+[[bin]]
+name = "lisca-analyze"
+path = "src/bin/lisca-analyze.rs"
+required-features = ["studio"]

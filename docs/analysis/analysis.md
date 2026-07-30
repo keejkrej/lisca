@@ -33,14 +33,16 @@ Native analysis pipeline in `crates/lisca/src/analysis/`. The running workflow d
 
 | Assay             | Goal source (not implementation reference)                                                   | Pipeline                                        |
 | ----------------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| `gene-expression` | sibling [`transfection`](../../transfection) — stages, CSV columns, plot names               | segment → timeseries → AUC → fit (+ plots)      |
-| `immune-killing`  | [mupattern](https://github.com/keejkrej/mupattern) — kill curve semantics, ResNet classifier | predict → plot-timeseries → clean → death times → kill curve plot |
+| `gene-expression` | sibling [`lisca-transfection-assay`](../../../lisca-transfection-assay) — stages, CSV columns, plot names | segment → timeseries → AUC → fit (+ plots)      |
+| `immune-killing`  | [mupattern](https://github.com/keejkrej/mupattern) / future `lisca-killing-assay` — kill curve semantics, ResNet classifier | predict → plot-timeseries → clean → death times → kill curve plot |
 
 Numeric stages and PNG plots run in Rust via [**mplot-rs**](https://github.com/keejkrej/mplot-rs). Immune killing inference uses ONNX Runtime (`ort`) with the `keejkrej/immune-killing-resnet18` model.
 
+**Python-first → Rust prod process, tolerances, and assay map:** [`parity.md`](./parity.md). Agent workflow: `/lisca-parity`.
+
 ## Design stance
 
-Sibling repos (**transfection**, **mupattern**) describe **what** to compute and **which files** to read/write. They are **not** Rust implementation references — do not mirror their NumPy loops, module layout, or Python packaging.
+Sibling **goal sources** (`lisca-*-assay` packages, mupattern) describe **what** to compute and **which files** to read/write. They are **not** Rust implementation references — do not mirror their NumPy loops, module layout, or Python packaging. Full rules: [`parity.md`](./parity.md).
 
 Rust should be idiomatic for this crate:
 
@@ -152,25 +154,42 @@ Plots render natively in Rust (no Python sidecar). Figure layout constants match
 
 ## Parity expectations (outputs, not code)
 
+Summary — full process, tolerances table, and lifecycle in [`parity.md`](./parity.md):
+
 - **Contract parity**: `assay.json` / `slide.json` semantics, output paths, CSV column names, PNG filenames Studio expects.
 - **Scientific parity**: same definitions (e.g. corrected = intensity − area × background; trapezoidal AUC; kill monotonicity clean).
-- **Not required**: matching transfection/mupattern module names, NumPy vs loop structure, or bitwise float identity.
+- **Not required**: matching Python module names, NumPy vs loop structure, or bitwise float identity.
 - Position ranges in `assay.json` use **inclusive** Studio semantics (`1:12` → positions 1…12).
 - Segmentation defaults: `variation_radius=2`, `gaussian_sigma=1.0`.
 - Fit uses the two-pass pooled-protein strategy. Optional `analysis.maxOnsetMinutes` in `assay.json` (default `0`) caps candidate translation-onset times, matching transfection's `--max-onset-minutes`.
+
+## Parity CLI (`lisca-analyze`)
+
+Rust stage CLI shaped like sibling [`lisca-transfection-assay`](../../../lisca-transfection-assay) so the same workspace can be driven from either side. Process and side-by-side recipe: [`parity.md`](./parity.md).
+
+```sh
+cargo build -p lisca --release --bin lisca-analyze
+
+# Stage commands (mirror transfection)
+./target/release/lisca-analyze segment ~/data/TF84 --sample ~/data/TF84/slide.json --jobs 20
+./target/release/lisca-analyze timeseries ~/data/TF84 --jobs 20
+./target/release/lisca-analyze auc ~/data/TF84 --interval 10
+./target/release/lisca-analyze fit ~/data/TF84 --interval 10 --jobs 20
+./target/release/lisca-analyze plot-timeseries ~/data/TF84 --interval 10
+./target/release/lisca-analyze plot-auc ~/data/TF84
+./target/release/lisca-analyze plot-fit ~/data/TF84 --interval 10
+
+# Full Studio pipeline from assay.json
+./target/release/lisca-analyze pipeline ~/data/TF84
+```
+
+`--interval` may be omitted when `assay.json` has `info2.timelapseAmount` / `timelapseUnit`. `--sample` defaults to `<workspace>/slide.json`. Plot commands also accept transfection-style paths (`…/timeseries`, `…/results/auc.csv`, `…/results/fit.csv`).
 
 ## Tests
 
 ```sh
 cargo test -p lisca
+cargo test -p lisca --test gene_expression_parity -- --ignored   # needs sibling assay + uv
 ```
 
-Unit tests live under each `analysis/` submodule. Integration tests in `crates/lisca/tests/gene_expression_parity.rs` build a minimal synthetic workspace (4×4 ROI, four timepoints) and compare `timeseries/`, `results/auc.csv`, and `results/fit.csv` to transfection reference formulas:
-
-| Output | Tolerance |
-| ------ | --------- |
-| Masked intensity / trapezoidal AUC | relative `1e-6` |
-| Kinetic fit parameters (grid search, Rust reference) | relative `1e-5` |
-| Kinetic fit vs transfection Python CLI (optional ignored test) | relative `2e-2` on shared fit columns |
-
-An optional ignored test runs the sibling transfection CLI when `../transfection` is available (`cargo test -p lisca -- --ignored`).
+Unit tests live under each `analysis/` submodule. Integration tests in `crates/lisca/tests/gene_expression_parity.rs` build a minimal synthetic workspace and compare stages to transfection reference formulas. Tolerances and ignored Python e2e: [`parity.md`](./parity.md).

@@ -193,7 +193,7 @@ fn fit_stage_matches_transfection_reference_fit() {
 
 /// Optional end-to-end check against the sibling transfection Python CLI.
 #[test]
-#[ignore = "requires ../transfection checkout and uv; run with `cargo test -p lisca -- --ignored`"]
+#[ignore = "requires ../lisca-transfection-assay (or ../transfection) and uv; run with `cargo test -p lisca -- --ignored`"]
 fn gene_expression_csvs_match_transfection_cli() {
     let temp = tempdir().expect("tempdir");
     let fixture = SyntheticWorkspace::build(temp.path());
@@ -250,7 +250,17 @@ fn gene_expression_csvs_match_transfection_cli() {
 }
 
 fn transfection_repo_root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../transfection")
+    let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    // crates/lisca → repo root → sibling assay package
+    let primary = manifest.join("../../../lisca-transfection-assay");
+    let fallback = manifest.join("../../../transfection");
+    if primary.join("pyproject.toml").is_file() {
+        primary
+    } else if fallback.join("pyproject.toml").is_file() {
+        fallback
+    } else {
+        primary
+    }
 }
 
 fn run_transfection(repo: &Path, command: &str, workspace: &str, extra_args: &[(&str, &str)]) {

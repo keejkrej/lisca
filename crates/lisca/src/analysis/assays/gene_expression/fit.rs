@@ -184,10 +184,11 @@ fn fit_trace_points(
         if candidate_count <= 1 {
             break;
         }
+        // Neighbors of the stage best (matches transfection: [i-1, i+1] clamped).
         protein_lower = protein_logs[protein_index.saturating_sub(1)];
-        protein_upper = protein_logs[protein_index.min(protein_logs.len() - 1).max(1)];
+        protein_upper = protein_logs[(protein_index + 1).min(protein_logs.len() - 1)];
         mrna_lower = mrna_logs[mrna_index.saturating_sub(1)];
-        mrna_upper = mrna_logs[mrna_index.min(mrna_logs.len() - 1).max(1)];
+        mrna_upper = mrna_logs[(mrna_index + 1).min(mrna_logs.len() - 1)];
         if !(protein_upper > protein_lower && mrna_upper > mrna_lower) {
             break;
         }
@@ -264,7 +265,7 @@ fn fit_trace_points_with_fixed_protein(
                 break;
             }
             mrna_lower = mrna_logs[best_index.saturating_sub(1)];
-            mrna_upper = mrna_logs[best_index.min(mrna_logs.len() - 1).max(1)];
+            mrna_upper = mrna_logs[(best_index + 1).min(mrna_logs.len() - 1)];
             if mrna_upper <= mrna_lower {
                 break;
             }

@@ -34,6 +34,10 @@ The five canonical roles, unchanged, recorded as a `Status:` line per issue file
 
 Single-context — one `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
 
+### Assay parity (Python → Rust)
+
+Analysis science matures in sibling `lisca-*-assay` Python packages, then is rewritten into `crates/lisca` for Studio. Contract + scientific parity process: `docs/analysis/parity.md`. Agent skill: `/lisca-parity` (`.grok/skills/lisca-parity/`).
+
 ## Tech stack
 
 <!-- memory:techstack-start -->
@@ -61,4 +65,5 @@ Single-context — one `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/
 - UI package layout (headless/platform split, testing): `docs/ui/ui-package-layout.md`
 - UI shell/theme: `docs/ui/shell-ui.md`
 - Studio analysis charts: `docs/analysis/analysis.md`
+- Assay Python→Rust parity: `docs/analysis/parity.md`
 - Effect Atom patterns: `docs/atoms/atoms.md`

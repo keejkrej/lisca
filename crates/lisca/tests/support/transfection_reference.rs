@@ -245,9 +245,9 @@ fn fit_trace_points(times: &[f64], values: &[f64], fixed_protein_decay_rate: Opt
             break;
         }
         protein_lower = protein_logs[protein_index.saturating_sub(1)];
-        protein_upper = protein_logs[protein_index.min(protein_logs.len().saturating_sub(1))];
+        protein_upper = protein_logs[(protein_index + 1).min(protein_logs.len() - 1)];
         mrna_lower = mrna_logs[mrna_index.saturating_sub(1)];
-        mrna_upper = mrna_logs[mrna_index.min(mrna_logs.len().saturating_sub(1))];
+        mrna_upper = mrna_logs[(mrna_index + 1).min(mrna_logs.len() - 1)];
         if !(protein_upper > protein_lower && mrna_upper > mrna_lower) {
             break;
         }
@@ -315,7 +315,7 @@ fn fit_with_fixed_protein(
                 break;
             }
             mrna_lower = mrna_logs[best_index.saturating_sub(1)];
-            mrna_upper = mrna_logs[best_index.min(mrna_logs.len().saturating_sub(1))];
+            mrna_upper = mrna_logs[(best_index + 1).min(mrna_logs.len() - 1)];
             if mrna_upper <= mrna_lower {
                 break;
             }

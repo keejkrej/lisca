@@ -8,8 +8,12 @@ mod timeseries;
 mod traces;
 
 pub use auc::run_auc;
-pub use fit::run_fit;
-pub use timeseries::run_timeseries;
+pub use fit::{default_fit_jobs, run_fit};
+pub use plot::{
+    run_plot_auc, run_plot_fit, run_plot_timeseries, DEFAULT_PLOT_COLUMNS,
+};
+pub use segment::{default_jobs, run_segment, SegmentOptions};
+pub use timeseries::{default_timeseries_jobs, run_timeseries};
 
 use std::path::PathBuf;
 
@@ -18,10 +22,6 @@ use crate::protocol::{AnalysisCsvFile, AnalysisProgress, AnalysisStage, AssayJso
 use crate::analysis::output::collect_csv_outputs;
 use crate::analysis::progress::{analysis_progress, run_blocking};
 use crate::analysis::slide::{build_slide_mapping, parse_interval_minutes, write_slide_mapping};
-
-use plot::{run_plot_auc, run_plot_fit, run_plot_timeseries, DEFAULT_PLOT_COLUMNS};
-use segment::{run_segment, SegmentOptions};
-use timeseries::default_timeseries_jobs;
 
 fn max_onset_minutes(assay_json: &AssayJsonFile) -> f64 {
     assay_json
@@ -157,4 +157,37 @@ where
         "Analysis pipeline completed",
     ));
     Ok(outputs)
+}
+
+/// Synchronous full gene-expression pipeline (parity CLI / tests).
+///
+/// Same stage order as Studio: segment → timeseries → plot-timeseries → auc →
+/// plot-auc → fit → plot-fit. Builds/writes `slide.json` from `assay.json`.
+pub fn run_sync(workspace: &std::path::Path, assay_json: &AssayJsonFile) -> Result<(), String> {
+    let interval = parse_interval_minutes(
+        assay_json.info2.timelapse_amount,
+        Some(assay_json.info2.timelapse_unit.as_str()),
+    )
+    .ok_or_else(|| "invalid timelapseAmount/timelapseUnit in assay.json".to_string())?;
+
+    let mapping = build_slide_mapping(&assay_json.info3)?;
+    let jobs = default_timeseries_jobs();
+    write_slide_mapping(workspace, &mapping)?;
+
+    run_segment(
+        workspace,
+        &mapping,
+        &SegmentOptions {
+            jobs,
+            ..SegmentOptions::default()
+        },
+    )?;
+    run_timeseries(workspace, &mapping, jobs)?;
+    run_plot_timeseries(workspace, &mapping, interval, DEFAULT_PLOT_COLUMNS)?;
+    run_auc(workspace, interval)?;
+    run_plot_auc(workspace, &mapping)?;
+    let max_onset = max_onset_minutes(assay_json);
+    run_fit(workspace, interval, max_onset, default_fit_jobs())?;
+    run_plot_fit(workspace, &mapping, interval, DEFAULT_PLOT_COLUMNS)?;
+    Ok(())
 }

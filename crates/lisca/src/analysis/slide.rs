@@ -1,12 +1,12 @@
 use std::collections::{BTreeMap, HashSet};
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::protocol::AssayBasicInfoStep3;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SlideChannelMapping {
     pub positions: Vec<u32>,
     pub signal_channel: u32,
@@ -44,6 +44,42 @@ pub fn build_slide_mapping(info3: &AssayBasicInfoStep3) -> Result<SlideMapping, 
         return Err("no samples for selected slide".to_string());
     }
     Ok(mapping)
+}
+
+/// Load transfection-format `slide.json` (string keys `"0"`, `"1"`, … → channel entries).
+pub fn load_slide_mapping(path: &Path) -> Result<SlideMapping, String> {
+    let contents = fs::read_to_string(path)
+        .map_err(|error| format!("failed to read slide mapping {}: {error}", path.display()))?;
+    let ordered: BTreeMap<String, SlideChannelMapping> = serde_json::from_str(&contents)
+        .map_err(|error| format!("invalid slide mapping {}: {error}", path.display()))?;
+    if ordered.is_empty() {
+        return Err(format!("slide mapping is empty: {}", path.display()));
+    }
+    let mut mapping = BTreeMap::new();
+    for (key, entry) in ordered {
+        let channel = key.parse::<u32>().map_err(|_| {
+            format!(
+                "invalid slide channel key {key:?} in {}",
+                path.display()
+            )
+        })?;
+        mapping.insert(channel, entry);
+    }
+    Ok(mapping)
+}
+
+/// Resolve `--sample` path or default `<workspace>/slide.json`.
+pub fn resolve_slide_mapping_path(workspace: &Path, sample: Option<&Path>) -> PathBuf {
+    sample
+        .map(Path::to_path_buf)
+        .unwrap_or_else(|| workspace.join("slide.json"))
+}
+
+pub fn load_slide_mapping_for_workspace(
+    workspace: &Path,
+    sample: Option<&Path>,
+) -> Result<SlideMapping, String> {
+    load_slide_mapping(&resolve_slide_mapping_path(workspace, sample))
 }
 
 pub fn write_slide_mapping(workspace: &Path, mapping: &SlideMapping) -> Result<(), String> {
@@ -164,5 +200,30 @@ mod tests {
     fn expands_inclusive_position_ranges() {
         assert_eq!(parse_positions("1:4").unwrap(), vec![1, 2, 3, 4]);
         assert_eq!(parse_positions("3").unwrap(), vec![3]);
+    }
+
+    #[test]
+    fn load_slide_mapping_round_trips_written_json() {
+        let dir = std::env::temp_dir().join(format!(
+            "lisca-slide-roundtrip-{}",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let mut mapping = SlideMapping::new();
+        mapping.insert(
+            0,
+            SlideChannelMapping {
+                positions: vec![10, 11],
+                signal_channel: 1,
+                mask_channel: 0,
+                sample_name: "A".to_string(),
+            },
+        );
+        write_slide_mapping(&dir, &mapping).unwrap();
+        let loaded = load_slide_mapping(&dir.join("slide.json")).unwrap();
+        assert_eq!(loaded.get(&0).unwrap().positions, vec![10, 11]);
+        assert_eq!(loaded.get(&0).unwrap().sample_name, "A");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }
