@@ -263,7 +263,7 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
                 Max onset (minutes)
               </FieldLabel>
               <p class="text-sm text-muted-foreground">
-                Transfection kinetic fit: cap candidate translation-onset times. Default{" "}
+                Transfection kinetic fit: cap candidate onset times (t₀). Default{" "}
                 {defaultMaxOnsetMinutesForAssay(ASSAY_TYPE.TRANSFECTION)}. Set 0 to fix onset at 0.
               </p>
               <Input
