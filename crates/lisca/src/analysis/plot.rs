@@ -3,6 +3,8 @@
 mod mplot_config;
 mod util;
 
+// Public API surface for assay plot modules (and external crates).
+#[allow(unused_imports)]
 pub use mplot_config::{
     figure_builder_for_panels, figure_builder_grid, figure_builder_single, save_figure,
     trace_line_style, FIGURE_DPI, FIGURE_GRID_HEIGHT_IN, FIGURE_GRID_WIDTH_IN,
