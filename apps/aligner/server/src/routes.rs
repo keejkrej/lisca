@@ -18,9 +18,11 @@ use lisca::{
 };
 use lisca_server::{HasTaskScheduler, OperationSpec, TaskFailure, TaskSpec};
 
+/// Lightweight Aligner routes: scan, frame load, bbox save, smart exclude.
+/// Does **not** include ROI crop (long-running); Studio mounts [`crop_router`].
 pub fn router<S>() -> Router<S>
 where
-    S: HasCropJobs + HasTaskScheduler + Clone + Send + Sync + 'static,
+    S: Clone + Send + Sync + 'static,
 {
     Router::new()
         .route("/align/scan-source", post(scan_source_handler))
@@ -33,6 +35,16 @@ where
             get(saved_bbox_positions_handler),
         )
         .route("/align/roi-pos-exists", get(roi_pos_exists_handler))
+        .route("/align/smart-exclude", post(smart_exclude_handler))
+}
+
+/// ROI crop job routes + task-manager integration. Owned by Studio (and CLI),
+/// not the lightweight Aligner shell.
+pub fn crop_router<S>() -> Router<S>
+where
+    S: HasCropJobs + HasTaskScheduler + Clone + Send + Sync + 'static,
+{
+    Router::new()
         .route("/align/crop-roi", post(crop_roi_handler::<S>))
         .route("/align/cancel-crop-roi", post(cancel_crop_roi_handler::<S>))
         .route(
@@ -40,7 +52,6 @@ where
             get(crop_roi_progress_handler::<S>),
         )
         .route("/align/crop-latest", get(crop_latest_progress_handler::<S>))
-        .route("/align/smart-exclude", post(smart_exclude_handler))
 }
 
 async fn smart_exclude_handler(

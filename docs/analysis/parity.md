@@ -63,7 +63,7 @@ pools, or bitwise float identity.
 
 | Studio `assayId` | Goal source | Rust module | Parity CLI | Notes |
 | --- | --- | --- | --- | --- |
-| `gene-expression` | `../lisca-transfection-assay` (`transfection` CLI) | `analysis/assays/gene_expression/` | `lisca-analyze` | Reference port; TF84 used as real-workspace check |
+| `gene-expression` (Studio wire id; science = transfection) | `../lisca-transfection-assay` (`transfection` CLI) | `analysis/assays/gene_expression/` | `lisca-analyze` | Reference port; TF84 used as real-workspace check |
 | `immune-killing` | mupattern / future `lisca-killing-assay` | `analysis/assays/immune_killing/` | extend when stages need stage-CLI | ONNX ResNet + kill-curve tables |
 | `lnp-binding` / binding | future `lisca-binding-assay` | none until mature | — | Closed enum: do not half-register |
 
@@ -74,13 +74,12 @@ Rust, generated types). Unsupported ids fail explicitly — see `PRODUCT.md`.
 
 ### Contract parity
 
-- Workspace layout: `assay.json`, `slide.json`, `roi/PosN/`, `mask/PosN/`,
-  `timeseries/`, `results/`.
+- Workspace layout: `assay.json`, `roi/PosN/`, `mask/PosN/`,
+  `timeseries/`, `results/` (no `slide.json`).
 - Output basenames Studio and Python both expect (`auc.csv`, `fit.csv`,
   `traces.png`, …).
 - CSV column names and row identity keys.
-- Stage order for full pipelines (gene-expression matches
-  `transfection-analyze.sh`).
+- Stage order for full pipelines (`transfection pipeline` / `lisca-analyze pipeline`).
 - Flag defaults that change science (`--interval`, `--max-onset-minutes`,
   segmentation radius/sigma, jobs only for performance).
 
@@ -128,7 +127,7 @@ Stage names mirror `transfection`:
 | `plot-timeseries` / `plot-auc` / `plot-fit` | `results/*.png` |
 | `pipeline` (`analyze`, `all`) | full Studio order from `assay.json` |
 
-Common flags: `--sample` (default `<workspace>/slide.json`), `--interval`,
+Common flags: `--assay` (default `<workspace>/assay.json`), `--interval`,
 `--jobs`, `--max-onset-minutes`, segment `--force` / radius / sigma.
 
 Details and examples: [`analysis.md`](./analysis.md) § Parity CLI.
@@ -141,7 +140,7 @@ INTERVAL=10
 
 # 1) golden
 uv run --directory ../lisca-transfection-assay \
-  transfection auc "$WS" --interval "$INTERVAL"
+  transfection auc "$WS"
 mkdir -p /tmp/TF84-python-golden
 cp "$WS/results/auc.csv" /tmp/TF84-python-golden/
 

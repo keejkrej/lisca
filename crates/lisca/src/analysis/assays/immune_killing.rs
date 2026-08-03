@@ -10,7 +10,7 @@ use crate::protocol::{AnalysisCsvFile, AnalysisProgress, AnalysisStage, AssayJso
 use crate::analysis::output::collect_csv_outputs;
 use crate::analysis::plot::DEFAULT_PLOT_COLUMNS;
 use crate::analysis::progress::{analysis_progress, run_blocking};
-use crate::analysis::slide::{build_slide_mapping, parse_interval_minutes, write_slide_mapping};
+use crate::analysis::slide::{build_slide_mapping, parse_interval_minutes};
 
 pub fn resolve_model_path(workspace: &Path) -> Result<PathBuf, String> {
     crate::onnx::resolve_model_path(
@@ -31,7 +31,6 @@ pub fn run_sync(workspace: &Path, assay_json: &AssayJsonFile) -> Result<(), Stri
     .ok_or_else(|| "invalid timelapseAmount/timelapseUnit in assay.json".to_string())?;
 
     let mapping = build_slide_mapping(&assay_json.info3)?;
-    write_slide_mapping(workspace, &mapping)?;
 
     let model_dir = resolve_model_path(workspace)?;
     predict::run_predict(

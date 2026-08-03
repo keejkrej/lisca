@@ -35,7 +35,9 @@ fn build_router(state: StudioState) -> Router<()> {
     Router::new()
         .merge(http::fs::router())
         .merge(http::profile::router())
+        // Light align routes (scan/frame/bbox) + Studio-owned crop job routes.
         .merge(aligner_server::router())
+        .merge(aligner_server::crop_router())
         .merge(studio_server::router())
         .merge(annotator_server::router())
         .merge(task_router())

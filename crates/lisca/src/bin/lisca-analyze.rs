@@ -1,15 +1,15 @@
-//! Gene-expression analysis CLI for parity with the transfection Python package.
+//! Transfection analysis CLI for parity with the Python `transfection` package.
 //!
-//! Stage commands mirror `transfection segment|timeseries|auc|fit|plot-*` so the
-//! same workspace can be driven from either tool and outputs compared.
+//! Stage commands mirror `transfection segment|timeseries|auc|fit|plot-*|pipeline`
+//! so the same workspace can be driven from either tool and outputs compared.
 //!
 //! ```text
 //! cargo run -p lisca --bin lisca-analyze -- --help
-//! cargo run -p lisca --release --bin lisca-analyze -- auc ~/data/TF84 --interval 10
+//! cargo run -p lisca --release --bin lisca-analyze -- auc ~/data/TF84
 //! cargo run -p lisca --release --bin lisca-analyze -- pipeline ~/data/TF84
 //! ```
 //!
-//! Requires the `studio` feature (default).
+//! Requires the `studio` feature (default). Config is `assay.json` only.
 
 use std::env;
 use std::fs;
@@ -23,8 +23,7 @@ use lisca::analysis::assays::gene_expression::{
     DEFAULT_PLOT_COLUMNS,
 };
 use lisca::analysis::slide::{
-    build_slide_mapping, load_slide_mapping_for_workspace, parse_interval_minutes,
-    write_slide_mapping,
+    load_mapping_for_workspace, parse_interval_minutes, resolve_assay_path,
 };
 use lisca::protocol::AssayJsonFile;
 
@@ -62,7 +61,7 @@ fn run() -> Result<(), String> {
 fn print_help() {
     eprintln!(
         "\
-lisca-analyze — gene-expression stages (Rust parity with transfection)
+lisca-analyze — transfection stages (Rust parity with `transfection` CLI)
 
 Usage:
   lisca-analyze <command> [options] <workspace>
@@ -79,22 +78,18 @@ Commands (same stage names as `transfection`):
                     (aliases: analyze, all)
 
 Common options:
-  --sample PATH           slide.json (default: <workspace>/slide.json)
-  --interval MINUTES      frame interval (required for auc/fit/plot-* unless
-                          assay.json is present with timelapseAmount/Unit)
+  --assay PATH            assay.json (default: <workspace>/assay.json)
+  --interval MINUTES      frame interval (default: assay.json info2.timelapse*)
   --jobs N                worker threads (segment/timeseries/fit; default: CPUs)
-  --max-onset-minutes N   fit onset search cap (default: 0 = onset fixed at 0)
+  --max-onset-minutes N   fit onset search cap (default: assay analysis.maxOnsetMinutes or 0)
   --variation-radius N    segment local-variation radius (default: 2)
   --gaussian-sigma F      segment Gaussian sigma (default: 1.0)
   --force, -f             segment: overwrite existing masks
   --columns N             plot grid columns (default: 3)
 
-Examples (side-by-side with transfection):
-  transfection auc ~/data/TF84 --interval 10
-  lisca-analyze auc ~/data/TF84 --interval 10
-
-  transfection fit ~/data/TF84 --interval 10 --jobs 20
-  lisca-analyze fit ~/data/TF84 --interval 10 --jobs 20
+Examples:
+  transfection auc ~/data/TF84
+  lisca-analyze auc ~/data/TF84
 
   lisca-analyze pipeline ~/data/TF84
 "
@@ -103,8 +98,8 @@ Examples (side-by-side with transfection):
 
 fn cmd_segment(args: &[String]) -> Result<(), String> {
     let workspace = require_workspace(args)?;
-    let sample = flag_path(args, "--sample");
-    let mapping = load_slide_mapping_for_workspace(&workspace, sample.as_deref())?;
+    let assay = flag_path(args, "--assay");
+    let mapping = load_mapping_for_workspace(&workspace, assay.as_deref())?;
     let options = SegmentOptions {
         variation_radius: flag_u32(args, "--variation-radius")?.unwrap_or(2),
         gaussian_sigma: flag_f64(args, "--gaussian-sigma")?.unwrap_or(1.0),
@@ -115,9 +110,9 @@ fn cmd_segment(args: &[String]) -> Result<(), String> {
         return Err("--gaussian-sigma must be >= 0".to_string());
     }
     eprintln!(
-        "segment workspace={} sample={} jobs={} force={}",
+        "segment workspace={} assay={} jobs={} force={}",
         workspace.display(),
-        resolve_sample_display(&workspace, sample.as_deref()),
+        resolve_assay_path(&workspace, assay.as_deref()).display(),
         options.jobs,
         options.force
     );
@@ -126,13 +121,13 @@ fn cmd_segment(args: &[String]) -> Result<(), String> {
 
 fn cmd_timeseries(args: &[String]) -> Result<(), String> {
     let workspace = require_workspace(args)?;
-    let sample = flag_path(args, "--sample");
-    let mapping = load_slide_mapping_for_workspace(&workspace, sample.as_deref())?;
+    let assay = flag_path(args, "--assay");
+    let mapping = load_mapping_for_workspace(&workspace, assay.as_deref())?;
     let jobs = flag_usize(args, "--jobs")?.unwrap_or_else(default_timeseries_jobs);
     eprintln!(
-        "timeseries workspace={} sample={} jobs={}",
+        "timeseries workspace={} assay={} jobs={}",
         workspace.display(),
-        resolve_sample_display(&workspace, sample.as_deref()),
+        resolve_assay_path(&workspace, assay.as_deref()).display(),
         jobs
     );
     timed("timeseries", || run_timeseries(&workspace, &mapping, jobs))
@@ -154,10 +149,7 @@ fn cmd_auc(args: &[String]) -> Result<(), String> {
 fn cmd_fit(args: &[String]) -> Result<(), String> {
     let workspace = require_workspace(args)?;
     let interval = resolve_interval(&workspace, args)?;
-    let max_onset = flag_f64(args, "--max-onset-minutes")?.unwrap_or(0.0);
-    if max_onset < 0.0 {
-        return Err("--max-onset-minutes must be >= 0".to_string());
-    }
+    let max_onset = resolve_max_onset(&workspace, args)?;
     let jobs = flag_usize(args, "--jobs")?.unwrap_or_else(default_fit_jobs);
     eprintln!(
         "fit workspace={} interval={interval} max_onset_minutes={max_onset} jobs={jobs}",
@@ -171,8 +163,8 @@ fn cmd_fit(args: &[String]) -> Result<(), String> {
 
 fn cmd_plot_timeseries(args: &[String]) -> Result<(), String> {
     let workspace = require_workspace_or_timeseries_dir(args)?;
-    let sample = flag_path(args, "--sample");
-    let mapping = load_slide_mapping_for_workspace(&workspace, sample.as_deref())?;
+    let assay = flag_path(args, "--assay");
+    let mapping = load_mapping_for_workspace(&workspace, assay.as_deref())?;
     let interval = resolve_interval(&workspace, args)?;
     let columns = flag_usize(args, "--columns")?.unwrap_or(DEFAULT_PLOT_COLUMNS);
     if columns == 0 {
@@ -189,16 +181,16 @@ fn cmd_plot_timeseries(args: &[String]) -> Result<(), String> {
 
 fn cmd_plot_auc(args: &[String]) -> Result<(), String> {
     let workspace = require_workspace_or_results_parent(args, "auc.csv")?;
-    let sample = flag_path(args, "--sample");
-    let mapping = load_slide_mapping_for_workspace(&workspace, sample.as_deref())?;
+    let assay = flag_path(args, "--assay");
+    let mapping = load_mapping_for_workspace(&workspace, assay.as_deref())?;
     eprintln!("plot-auc workspace={}", workspace.display());
     timed("plot-auc", || run_plot_auc(&workspace, &mapping))
 }
 
 fn cmd_plot_fit(args: &[String]) -> Result<(), String> {
     let workspace = require_workspace_or_results_parent(args, "fit.csv")?;
-    let sample = flag_path(args, "--sample");
-    let mapping = load_slide_mapping_for_workspace(&workspace, sample.as_deref())?;
+    let assay = flag_path(args, "--assay");
+    let mapping = load_mapping_for_workspace(&workspace, assay.as_deref())?;
     let interval = resolve_interval(&workspace, args)?;
     let columns = flag_usize(args, "--columns")?.unwrap_or(DEFAULT_PLOT_COLUMNS);
     if columns == 0 {
@@ -231,9 +223,6 @@ fn cmd_pipeline(args: &[String]) -> Result<(), String> {
         workspace.display(),
         assay.assay_id
     );
-    // Ensure slide.json exists for later stage-only re-runs even if pipeline fails mid-way.
-    let mapping = build_slide_mapping(&assay.info3)?;
-    write_slide_mapping(&workspace, &mapping)?;
     timed("pipeline", || run_sync(&workspace, &assay))
 }
 
@@ -319,18 +308,27 @@ fn resolve_interval(workspace: &Path, args: &[String]) -> Result<f64, String> {
     })
 }
 
+fn resolve_max_onset(workspace: &Path, args: &[String]) -> Result<f64, String> {
+    if let Some(value) = flag_f64(args, "--max-onset-minutes")? {
+        if value < 0.0 {
+            return Err("--max-onset-minutes must be >= 0".to_string());
+        }
+        return Ok(value);
+    }
+    let assay = load_assay_json(workspace)?;
+    Ok(assay
+        .analysis
+        .as_ref()
+        .and_then(|analysis| analysis.max_onset_minutes)
+        .unwrap_or(0.0))
+}
+
 fn load_assay_json(workspace: &Path) -> Result<AssayJsonFile, String> {
     let path = workspace.join("assay.json");
     let contents = fs::read_to_string(&path)
         .map_err(|error| format!("failed to read {}: {error}", path.display()))?;
     serde_json::from_str(&contents)
         .map_err(|error| format!("invalid assay.json {}: {error}", path.display()))
-}
-
-fn resolve_sample_display(workspace: &Path, sample: Option<&Path>) -> String {
-    sample
-        .map(|path| path.display().to_string())
-        .unwrap_or_else(|| workspace.join("slide.json").display().to_string())
 }
 
 fn first_positional(args: &[String]) -> Option<&str> {
@@ -350,7 +348,6 @@ fn first_positional(args: &[String]) -> Option<&str> {
                 i += 1;
                 continue;
             }
-            // flag with following value
             i += 2;
             continue;
         }
@@ -388,7 +385,7 @@ fn flag_f64(args: &[String], name: &str) -> Result<Option<f64>, String> {
         Some(raw) => raw
             .parse::<f64>()
             .map(Some)
-            .map_err(|error| format!("invalid {name} value {raw:?}: {error}")),
+            .map_err(|_| format!("invalid {name} value: {raw}")),
     }
 }
 
@@ -398,21 +395,16 @@ fn flag_u32(args: &[String], name: &str) -> Result<Option<u32>, String> {
         Some(raw) => raw
             .parse::<u32>()
             .map(Some)
-            .map_err(|error| format!("invalid {name} value {raw:?}: {error}")),
+            .map_err(|_| format!("invalid {name} value: {raw}")),
     }
 }
 
 fn flag_usize(args: &[String], name: &str) -> Result<Option<usize>, String> {
     match flag_value(args, name) {
         None => Ok(None),
-        Some(raw) => {
-            let value = raw
-                .parse::<usize>()
-                .map_err(|error| format!("invalid {name} value {raw:?}: {error}"))?;
-            if value == 0 {
-                return Err(format!("{name} must be >= 1"));
-            }
-            Ok(Some(value))
-        }
+        Some(raw) => raw
+            .parse::<usize>()
+            .map(Some)
+            .map_err(|_| format!("invalid {name} value: {raw}")),
     }
 }

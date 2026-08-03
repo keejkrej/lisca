@@ -29,7 +29,9 @@ through `ResultPanelsGridView`. The renderer and its data-loading atoms are owne
 
 ## Rust pipeline
 
-Native analysis pipeline in `crates/lisca/src/analysis/`. The running workflow depends on `assay.json` → `assayId`:
+Native analysis pipeline in `crates/lisca/src/analysis/`. ROI stacks under `roi/` come from **Studio crop**
+or CLI (`lisca-crop`; Python crop in `../pyama-v2`) — not from the light Aligner shell. The running workflow
+depends on `assay.json` → `assayId`:
 
 | Assay             | Goal source (not implementation reference)                                                   | Pipeline                                        |
 | ----------------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------- |
@@ -52,10 +54,10 @@ Rust should be idiomatic for this crate:
 
 ## Gene expression pipeline
 
-Order matches `transfection-analyze.sh`:
+Order matches `transfection pipeline` / `lisca-analyze pipeline`:
 
 ```
-assay.json → slide.json → segment → timeseries → plot-timeseries → auc → plot-auc → fit → plot-fit → CSV/XLSX outputs
+assay.json → segment → timeseries → plot-timeseries → auc → plot-auc → fit → plot-fit → CSV/XLSX outputs
 ```
 
 Progress stages (HTTP/WS contract): `preparing → segment → timeseries → auc → fit → completed`.
@@ -67,7 +69,7 @@ Plot steps run between their corresponding table stages but do not emit separate
 Ports the mupattern kill workflow (predict → clean → plot) to Studio ROI stacks (`roi/PosN/` TIFF stacks, not crops.zarr):
 
 ```
-assay.json → slide.json → predict (ResNet ONNX, P(dead) per frame) → plot-timeseries → clean (monotonicity) → death times → plot kill curve
+assay.json → predict (ResNet ONNX, P(dead) per frame) → plot-timeseries → clean (monotonicity) → death times → plot kill curve
 ```
 
 Progress reuses the same HTTP stage names with kill-specific messages:
@@ -105,8 +107,7 @@ uv run optimum-cli export onnx --model keejkrej/immune-killing-resnet18 ./models
 
 | Path                                                                         | Role                                                   |
 | ---------------------------------------------------------------------------- | ------------------------------------------------------ |
-| `assay.json`                                                                 | Input contract from Studio basic info                  |
-| `slide.json`                                                                 | Snake-case slide channel mapping (transfection format) |
+| `assay.json`                                                                 | Input contract from Studio basic info (sample mapping + interval) |
 | `roi/PosN/`                                                                  | Cropped ROI stacks + `index.json` (`axisOrder: TCZYX`) |
 | `mask/PosN/`                                                                 | Per-frame segmentation masks (`uint8` TIFF stacks)     |
 | `timeseries/sc{S}_ch{C}.csv`                                                 | Mask-corrected intensity metrics (+ parallel `.xlsx`)  |
@@ -156,7 +157,7 @@ Plots render natively in Rust (no Python sidecar). Figure layout constants match
 
 Summary — full process, tolerances table, and lifecycle in [`parity.md`](./parity.md):
 
-- **Contract parity**: `assay.json` / `slide.json` semantics, output paths, CSV column names, PNG filenames Studio expects.
+- **Contract parity**: `assay.json` semantics, output paths, CSV column names, PNG filenames Studio expects.
 - **Scientific parity**: same definitions (e.g. corrected = intensity − area × background; trapezoidal AUC; kill monotonicity clean).
 - **Not required**: matching Python module names, NumPy vs loop structure, or bitwise float identity.
 - Position ranges in `assay.json` use **inclusive** Studio semantics (`1:12` → positions 1…12).
@@ -170,20 +171,20 @@ Rust stage CLI shaped like sibling [`lisca-transfection-assay`](../../../lisca-t
 ```sh
 cargo build -p lisca --release --bin lisca-analyze
 
-# Stage commands (mirror transfection)
-./target/release/lisca-analyze segment ~/data/TF84 --sample ~/data/TF84/slide.json --jobs 20
+# Stage commands (mirror transfection CLI; mapping from assay.json)
+./target/release/lisca-analyze segment ~/data/TF84 --jobs 20
 ./target/release/lisca-analyze timeseries ~/data/TF84 --jobs 20
-./target/release/lisca-analyze auc ~/data/TF84 --interval 10
-./target/release/lisca-analyze fit ~/data/TF84 --interval 10 --jobs 20
-./target/release/lisca-analyze plot-timeseries ~/data/TF84 --interval 10
+./target/release/lisca-analyze auc ~/data/TF84
+./target/release/lisca-analyze fit ~/data/TF84 --jobs 20
+./target/release/lisca-analyze plot-timeseries ~/data/TF84
 ./target/release/lisca-analyze plot-auc ~/data/TF84
-./target/release/lisca-analyze plot-fit ~/data/TF84 --interval 10
+./target/release/lisca-analyze plot-fit ~/data/TF84
 
-# Full Studio pipeline from assay.json
+# Full pipeline from assay.json
 ./target/release/lisca-analyze pipeline ~/data/TF84
 ```
 
-`--interval` may be omitted when `assay.json` has `info2.timelapseAmount` / `timelapseUnit`. `--sample` defaults to `<workspace>/slide.json`. Plot commands also accept transfection-style paths (`…/timeseries`, `…/results/auc.csv`, `…/results/fit.csv`).
+`--interval` / `--max-onset-minutes` may be omitted when `assay.json` has `info2.timelapseAmount` / `timelapseUnit` and optional `analysis.maxOnsetMinutes`. `--assay` defaults to `<workspace>/assay.json`. Plot commands also accept transfection-style paths (`…/timeseries`, `…/results/auc.csv`, `…/results/fit.csv`).
 
 ## Tests
 

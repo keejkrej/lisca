@@ -10,7 +10,6 @@ import { ViewportCard } from "@lisca/ui/shell";
 import { createMemo } from "solid-js";
 
 import { useAlignCanvas } from "../state/align-page-selectors";
-import { CropConfirmModal } from "./crop-confirm-modal";
 
 export function AlignerMain() {
   const canvas = useAlignCanvas();
@@ -112,7 +111,6 @@ export function AlignerMain() {
           onVirtualPointerUp={handlePointerEnd}
         />
       </ViewportCard>
-      <CropConfirmModal />
     </>
   );
 }

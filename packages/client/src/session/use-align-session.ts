@@ -127,6 +127,11 @@ export type AlignSessionPolicy = {
   canLoadFrame?: (state: AlignUiState) => boolean;
   /** Studio preserves the prior frame when a contrast refresh fails. */
   preserveFrameOnContrastFailure?: boolean;
+  /**
+   * When false, crop actions no-op (light Aligner shell). Default true for Studio.
+   * Crop is Studio / `lisca-crop` / pyama-v2 — not standalone Aligner.
+   */
+  enableCrop?: boolean;
   cropRequestPrefix?: string;
   cropServerIdentity?: () => string;
   onCropCompleted?: (progress: CropRoiProgress) => void;
@@ -513,7 +518,14 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
     }
   };
 
+  const cropDisabledMessage =
+    "ROI crop is not available in Aligner. Use Studio, lisca-crop, or pyama-v2.";
+
   const runCrop = async (positions: number[], overwrite: boolean) => {
+    if (policy.enableCrop === false) {
+      actions.setStatus(setUi, cropDisabledMessage);
+      return;
+    }
     const { workspacePath, source } = ui();
     if (!workspacePath || !source || positions.length === 0) return;
     const requestId = `${policy.cropRequestPrefix ?? "crop"}-${Date.now()}-${Math.random()
@@ -546,6 +558,10 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
     positions: number[],
     kind: CropConfirmState["kind"] = "batch",
   ) => {
+    if (policy.enableCrop === false) {
+      actions.setStatus(setUi, cropDisabledMessage);
+      return;
+    }
     const workspacePath = ui().workspacePath;
     if (!workspacePath || positions.length === 0) return;
     try {
@@ -570,6 +586,10 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
   };
 
   const cropCurrent = async () => {
+    if (policy.enableCrop === false) {
+      actions.setStatus(setUi, cropDisabledMessage);
+      return;
+    }
     const currentUi = ui();
     if (!currentUi.workspacePath || !currentUi.source || !currentUi.frame) return;
     const position = navSelection().pos;
@@ -578,6 +598,10 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
   };
 
   const cropSaved = async () => {
+    if (policy.enableCrop === false) {
+      actions.setStatus(setUi, cropDisabledMessage);
+      return;
+    }
     const { workspacePath, source } = ui();
     if (!workspacePath || !source) return;
     try {

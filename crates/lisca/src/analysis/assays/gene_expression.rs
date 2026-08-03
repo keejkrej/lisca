@@ -21,7 +21,7 @@ use crate::protocol::{AnalysisCsvFile, AnalysisProgress, AnalysisStage, AssayJso
 
 use crate::analysis::output::collect_csv_outputs;
 use crate::analysis::progress::{analysis_progress, run_blocking};
-use crate::analysis::slide::{build_slide_mapping, parse_interval_minutes, write_slide_mapping};
+use crate::analysis::slide::{build_slide_mapping, parse_interval_minutes};
 
 fn max_onset_minutes(assay_json: &AssayJsonFile) -> f64 {
     assay_json
@@ -53,9 +53,8 @@ where
         &request_id,
         AnalysisStage::Preparing,
         5.0,
-        "Building slide mapping",
+        "Building sample mapping from assay.json",
     ));
-    write_slide_mapping(&workspace_path, &mapping)?;
 
     let segment_workspace = workspace_path.clone();
     let segment_mapping = mapping.clone();
@@ -159,10 +158,10 @@ where
     Ok(outputs)
 }
 
-/// Synchronous full gene-expression pipeline (parity CLI / tests).
+/// Synchronous full transfection pipeline (parity CLI / tests).
 ///
 /// Same stage order as Studio: segment → timeseries → plot-timeseries → auc →
-/// plot-auc → fit → plot-fit. Builds/writes `slide.json` from `assay.json`.
+/// plot-auc → fit → plot-fit. Sample mapping is read from `assay.json` only.
 pub fn run_sync(workspace: &std::path::Path, assay_json: &AssayJsonFile) -> Result<(), String> {
     let interval = parse_interval_minutes(
         assay_json.info2.timelapse_amount,
@@ -172,7 +171,6 @@ pub fn run_sync(workspace: &std::path::Path, assay_json: &AssayJsonFile) -> Resu
 
     let mapping = build_slide_mapping(&assay_json.info3)?;
     let jobs = default_timeseries_jobs();
-    write_slide_mapping(workspace, &mapping)?;
 
     run_segment(
         workspace,

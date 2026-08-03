@@ -10,9 +10,10 @@ Terse summary. **`PRODUCT.md`** is the full statement of product shape — the W
 - **Users:** Cell biologists and pharmacologists running patterned-array timelapse experiments — not general microscopy or single-field-of-view workflows.
 - **Problem:** Turn multi-site array acquisitions into registered adhesive sites, annotated ROIs, and quantitative assay readouts across wells and time points.
 - **Apps (pipeline):**
-  - **Aligner** — register each field to the micropattern grid; mark occupied vs empty sites; preserve site identity across drift and timelapse.
+  - **Aligner** — register each field to the micropattern grid; mark occupied vs empty sites; save `bbox/` / `align/` (light shell — no ROI crop jobs). Intended handoff: align → agent/CLI/notebook for crop + analysis.
   - **Annotator** — outline cells/regions per site; assign phenotype labels for classification, assisted segmentation, or QC.
-  - **Studio** — end-to-end assay workflow (wizard → align → annotate → analyse → charts); built for multi-site arrays, not one FOV.
+  - **Studio** — end-to-end for nontechnical users (wizard → align → crop → annotate → analyse → charts). While Studio matures, nontechnical path is Aligner + `../pyama-v2` Jupyter.
+- **Usage modes:** see **How people actually use it** in `PRODUCT.md` (agent/CLI vs Studio vs Aligner+pyama notebooks).
 - **Assays (today):** gene-expression (fluorescence traces, AUC, dose–response plots) and immune-killing (survival scoring, kill-curve kinetics) — the two listed in `ENABLED_STUDIO_ASSAY_IDS`. Assay ids are a **closed enum**, not an extension point: adding one is a cross-cutting change across `@lisca/contracts`, Rust, and generated artifacts. Unsupported or unregistered ids fail explicitly; none alias to gene-expression. See `PRODUCT.md`.
 
 ## Rules

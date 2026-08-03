@@ -43,7 +43,6 @@ impl SyntheticWorkspace {
         };
 
         write_assay_json(&root);
-        write_slide_json(&root);
         write_index_json(&root);
         write_roi_stack(&root, &kinetic_truth);
         write_mask_stack(&root);
@@ -98,18 +97,6 @@ fn write_assay_json(root: &Path) {
         }
     });
     fs::write(root.join("assay.json"), format!("{assay}\n")).expect("assay.json");
-}
-
-fn write_slide_json(root: &Path) {
-    let slide = serde_json::json!({
-        "0": {
-            "positions": [POSITION],
-            "signal_channel": SIGNAL_CHANNEL,
-            "mask_channel": MASK_CHANNEL,
-            "sample_name": "condA"
-        }
-    });
-    fs::write(root.join("slide.json"), format!("{slide}\n")).expect("slide.json");
 }
 
 fn write_index_json(root: &Path) {

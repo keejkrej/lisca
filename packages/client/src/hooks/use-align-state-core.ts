@@ -89,6 +89,8 @@ export type UseAlignStateCoreDeps = {
     };
     useCanvasTransaction: () => <T>(options: CanvasResourceTransactionOptions<T>) => () => void;
   };
+  /** Default true. Standalone Aligner sets false (light shell — no crop jobs). */
+  enableCrop?: boolean;
 };
 
 export function useAlignStateCore(deps: UseAlignStateCoreDeps): Accessor<AlignState> {
@@ -105,6 +107,9 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): Accessor<AlignSt
       setWorkspacePath: workspace.setWorkspacePath,
       sourcePath: () => workspace.sourcePath,
       setSourcePath: workspace.setSourcePath,
+    },
+    policy: {
+      enableCrop: deps.enableCrop,
     },
   });
   const ui = session.state;

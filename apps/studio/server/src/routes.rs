@@ -174,7 +174,7 @@ fn build_gene_expression_operation(
 ) -> Result<lisca::protocol::OperationDetail, lisca_server::SchedulerError> {
     use lisca::analysis::{
         assays::gene_expression as gene,
-        slide::{build_slide_mapping, parse_interval_minutes, write_slide_mapping, SlideMapping},
+        slide::{build_slide_mapping, parse_interval_minutes, SlideMapping},
     };
 
     let mapping = match build_slide_mapping(&assay.info3) {
@@ -205,12 +205,11 @@ fn build_gene_expression_operation(
         .unwrap_or(0.0);
     let mut tasks = Vec::new();
 
-    let prepare_mapping = mapping.clone();
-    let prepare_workspace = workspace.clone();
+    // Prepare validates assay mapping only (no slide.json side file).
     let prepare = analysis_task(
         "analysis/gene-expression/prepare",
         Vec::new(),
-        Arc::new(move || write_slide_mapping(&prepare_workspace, &prepare_mapping)),
+        Arc::new(move || Ok(())),
     );
     let prepare_id = prepare.task_id().to_string();
     tasks.push(prepare);
@@ -356,7 +355,7 @@ fn build_immune_killing_operation(
 ) -> Result<lisca::protocol::OperationDetail, lisca_server::SchedulerError> {
     use lisca::analysis::{
         assays::immune_killing as killing,
-        slide::{build_slide_mapping, parse_interval_minutes, write_slide_mapping, SlideMapping},
+        slide::{build_slide_mapping, parse_interval_minutes, SlideMapping},
     };
 
     let mapping = match build_slide_mapping(&assay.info3) {
@@ -395,12 +394,10 @@ fn build_immune_killing_operation(
         .join(format!("immune-killing-{safe_request_id}"));
     let mut tasks = Vec::new();
 
-    let prepare_workspace = workspace.clone();
-    let prepare_mapping = mapping.clone();
     let prepare = analysis_task(
         "analysis/immune-killing/prepare",
         Vec::new(),
-        Arc::new(move || write_slide_mapping(&prepare_workspace, &prepare_mapping)),
+        Arc::new(move || Ok(())),
     );
     let prepare_id = prepare.task_id().to_string();
     tasks.push(prepare);

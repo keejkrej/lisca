@@ -244,8 +244,23 @@ mod monitor {
 }
 
 fn usage() -> &'static str {
-    "Usage: lisca-crop --source PATH.nd2 --workspace PATH [--positions 0,1] [--overwrite] [--workers N]\n\
-     Env: LISCA_CROP_MAX_WORKERS overrides --workers"
+    "\
+Usage:
+  lisca-crop --workspace PATH [--source PATH] [--positions 1,2] [--overwrite] [--workers N]
+  lisca-crop PATH_TO_WORKSPACE ...
+
+Source:
+  --source PATH.nd2|.czi          single-file source
+  --source DIR                    folder of frames (TIF/PNG/JPEG)
+    --subfolder-template TMPL     default Pos{p}  (empty string = flat folder)
+    --filename-template TMPL      default img_{t}_{c}_{z}.tif
+  or assay.json: info1.dataPath + dataSourceKind folder|nd2|czi
+                 and info1.folderSubfolderTemplate / folderFilenameTemplate
+
+Positions: --positions list, or all bbox/Pos*.csv under the workspace.
+Env: LISCA_CROP_MAX_WORKERS overrides --workers
+
+ROI crop is Studio/CLI-owned; the Aligner app only saves bbox/align."
 }
 
 fn parse_flag(args: &[String], name: &str) -> Option<String> {
@@ -261,6 +276,107 @@ fn parse_positions(raw: &str) -> Result<Vec<u32>, String> {
         .collect()
 }
 
+fn first_positional(args: &[String]) -> Option<&str> {
+    let mut i = 0;
+    while i < args.len() {
+        let arg = args[i].as_str();
+        if arg == "--" {
+            return args.get(i + 1).map(String::as_str);
+        }
+        if arg.starts_with('-') {
+            if arg.contains('=') || matches!(arg, "--overwrite" | "-h" | "--help") {
+                i += 1;
+                continue;
+            }
+            i += 2;
+            continue;
+        }
+        return Some(arg);
+    }
+    None
+}
+
+fn folder_source(
+    path: String,
+    subfolder_template: String,
+    filename_template: String,
+) -> Result<AlignerSource, String> {
+    let root = std::path::Path::new(&path);
+    if !root.is_dir() {
+        return Err(format!("folder source is not a directory: {path}"));
+    }
+    Ok(AlignerSource::Folder {
+        path,
+        subfolder_template,
+        filename_template,
+    })
+}
+
+fn source_from_path(
+    path: String,
+    subfolder_template: Option<String>,
+    filename_template: Option<String>,
+) -> Result<AlignerSource, String> {
+    let meta = std::fs::metadata(&path)
+        .map_err(|error| format!("cannot access source {path}: {error}"))?;
+    if meta.is_dir() {
+        return folder_source(
+            path,
+            subfolder_template.unwrap_or_else(|| "Pos{p}".to_string()),
+            filename_template.unwrap_or_else(|| "img_{t}_{c}_{z}.tif".to_string()),
+        );
+    }
+    let lower = path.to_ascii_lowercase();
+    if lower.ends_with(".nd2") {
+        Ok(AlignerSource::Nd2 { path })
+    } else if lower.ends_with(".czi") {
+        Ok(AlignerSource::Czi { path })
+    } else {
+        Err(format!(
+            "unsupported --source (use .nd2, .czi, or a folder of frames): {path}"
+        ))
+    }
+}
+
+fn source_from_assay_json(workspace: &str) -> Result<AlignerSource, String> {
+    let path = std::path::Path::new(workspace).join("assay.json");
+    let contents = std::fs::read_to_string(&path)
+        .map_err(|error| format!("failed to read {}: {error}", path.display()))?;
+    let value: serde_json::Value = serde_json::from_str(&contents)
+        .map_err(|error| format!("invalid assay.json {}: {error}", path.display()))?;
+    let info1 = value.get("info1").cloned().unwrap_or(serde_json::Value::Null);
+    let data_path = info1
+        .get("dataPath")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| {
+            format!(
+                "missing --source and assay.json info1.dataPath is empty ({})",
+                path.display()
+            )
+        })?
+        .to_string();
+    let kind = value
+        .get("dataSourceKind")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let subfolder = info1
+        .get("folderSubfolderTemplate")
+        .and_then(|v| v.as_str())
+        .unwrap_or("Pos{p}")
+        .to_string();
+    let filename = info1
+        .get("folderFilenameTemplate")
+        .and_then(|v| v.as_str())
+        .unwrap_or("img_{t}_{c}_{z}.tif")
+        .to_string();
+    if kind == "folder" || std::path::Path::new(&data_path).is_dir() {
+        return folder_source(data_path, subfolder, filename);
+    }
+    source_from_path(data_path, None, None)
+}
+
 fn main() {
     if let Err(message) = run(env::args().skip(1).collect()) {
         eprintln!("{message}");
@@ -270,9 +386,22 @@ fn main() {
 }
 
 fn run(args: Vec<String>) -> Result<(), String> {
-    let source_path = parse_flag(&args, "--source").ok_or("missing --source")?;
-    let workspace_path = parse_flag(&args, "--workspace").ok_or("missing --workspace")?;
-    let overwrite = args.iter().any(|arg| arg == "--overwrite");
+    if args.is_empty() || args.iter().any(|a| matches!(a.as_str(), "-h" | "--help")) {
+        eprintln!("{}", usage());
+        return Ok(());
+    }
+
+    let workspace_path = parse_flag(&args, "--workspace")
+        .or_else(|| first_positional(&args).map(str::to_string))
+        .ok_or("missing --workspace (or positional workspace path)")?;
+    let subfolder_template = parse_flag(&args, "--subfolder-template");
+    let filename_template = parse_flag(&args, "--filename-template");
+    let source = match parse_flag(&args, "--source") {
+        Some(path) => source_from_path(path, subfolder_template, filename_template)?,
+        None => source_from_assay_json(&workspace_path)?,
+    };
+    let overwrite =
+        args.iter().any(|arg| arg == "--overwrite") || args.iter().any(|arg| arg == "--force");
     let positions = match parse_flag(&args, "--positions") {
         Some(raw) => parse_positions(&raw)?,
         None => list_saved_bbox_positions(&workspace_path)?,
@@ -290,15 +419,17 @@ fn run(args: Vec<String>) -> Result<(), String> {
         env::set_var("LISCA_CROP_MAX_WORKERS", workers.to_string());
     }
 
-    let scan = scan_source(AlignerSource::Nd2 {
-        path: source_path.clone(),
-    })?;
+    let scan = scan_source(source.clone())?;
     let frame_count = (scan.times.len().max(1) as u64)
         * (scan.channels.len().max(1) as u64)
         * (scan.z_slices.len().max(1) as u64);
 
+    let source_display = match &source {
+        AlignerSource::Nd2 { path } | AlignerSource::Czi { path } => path.clone(),
+        AlignerSource::Folder { path, .. } => path.clone(),
+    };
     eprintln!(
-        "source={source_path}\nworkspace={workspace_path}\npositions={}  T={} C={} Z={}  frames/position={frame_count}",
+        "source={source_display}\nworkspace={workspace_path}\npositions={}  T={} C={} Z={}  frames/position={frame_count}",
         positions.len(),
         scan.times.len().max(1),
         scan.channels.len().max(1),
@@ -309,7 +440,7 @@ fn run(args: Vec<String>) -> Result<(), String> {
     let request = CropRoiRequest {
         request_id: format!("cli-crop-{}", std::process::id()),
         workspace_path,
-        source: AlignerSource::Nd2 { path: source_path },
+        source,
         positions,
         overwrite,
         output_format: Some(CropOutputFormat::Tiff),

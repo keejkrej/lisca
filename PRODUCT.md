@@ -38,18 +38,30 @@ annotator, and studio services. The workspace bus is provisioned infrastructure.
 
 | Shell         | Workspace slice                                                          | Assay template | Remembers you |
 | ------------- | ------------------------------------------------------------------------ | -------------- | ------------- |
-| **Aligner**   | writes `align/`, `bbox/`, `roi/`                                         | no             | no            |
+| **Aligner**   | writes `align/`, `bbox/` (light: no long-running crop jobs)              | no             | no            |
 | **Annotator** | reads `roi/`, writes masks + `annotations/`                              | no             | no            |
-| **Studio**    | all of the above, plus `assay.json` → `mask/`, `timeseries/`, `results/` | **yes**        | **yes**       |
+| **Studio**    | all of the above, plus crop → `roi/`, `assay.json` → analysis outputs   | **yes**        | **yes**       |
 
-The chain is unbroken and runs through the filesystem: Aligner writes `bbox/Pos{n}.csv`; ROI crop
-reads it and writes `roi/Pos{n}/`; Annotator reads `roi/Pos{n}/Roi{m}/` and writes masks plus
-`annotations/labels.json`; analysis reads `assay.json` + `roi/` and writes results. Nothing in those
-paths is app-scoped. Align a workspace in Aligner, point Studio at the same directory, and the
-`bbox/` files are simply there.
+The chain is unbroken and runs through the filesystem: Aligner writes `bbox/Pos{n}.csv`; **ROI crop**
+(Studio HTTP job manager, CLI `lisca-crop`, or Python goal source in `../pyama-v2`) reads it and writes `roi/Pos{n}/`;
+Annotator reads `roi/Pos{n}/`; analysis reads `assay.json` + `roi/` and writes results. Nothing in those
+paths is app-scoped. Align a workspace in Aligner, crop via Studio or CLI, and the artifacts land in the
+same directory.
 
 That is what "pipeline" means in `AGENTS.md`. It describes the **user's workflow and the artifact
 chain** — not app-to-app calls.
+
+## How people actually use it
+
+Three intentional modes share the same workspace directory:
+
+| Who | Flow | Why |
+| --- | --- | --- |
+| **Power user / agent** | **Aligner** → save `bbox/` → hand the workspace to an **agent** (or CLI) for crop + analysis | Aligner stays short-lived and light; long jobs are not in the webapp. Crop via `lisca-crop` or pyama; transfection analysis via `../lisca-transfection-assay` (`transfection …`) or Rust `lisca-analyze`. |
+| **Nontechnical (Studio ready)** | **Studio** end-to-end (align → crop → annotate → analyse → charts) | One opinionated shell; task manager owns long crop/analysis jobs. |
+| **Nontechnical (Studio still in dev)** | **Aligner** for alignment only → **`../pyama-v2` Jupyter** (`crop.ipynb`, then analyze notebooks) | Same light-align + notebook handoff idea, less error-prone than a long-running web crop: the app exits after alignment; notebooks do crop/analysis. |
+
+Personal / agent default for transfection **analysis** after `roi/` exists: **`lisca-transfection-assay`**, not re-running crop inside that package. Python **crop** goal source remains **pyama-v2**.
 
 For the analysis half of the layout, see the I/O table in `docs/analysis/analysis.md`. It is not
 duplicated here; a second copy would drift and then lie.
@@ -66,17 +78,17 @@ contract is that the paths happen to agree.
 
 ## How the shells compose
 
-**The backend composes totally.** `apps/studio/server/src/main.rs` merges `aligner_server::router()`
-and `annotator_server::router()` into its own router, takes both as path dependencies, and implements
-`HasCropJobs` and `HasAnalysisJobs` on `StudioState`. Studio's binary _is_ Aligner + Annotator +
-analysis on one port (Studio 8767, Aligner 8765, Annotator 8766). It serves the identical `/align/*`
-and `/annotate/*` routes from the identical crates. Nothing is reimplemented.
+**The backend composes totally.** `apps/studio/server/src/main.rs` merges light
+`aligner_server::router()` (scan/frame/bbox), **Studio-owned** `aligner_server::crop_router()`
+(long-running ROI crop + task manager), and `annotator_server::router()`, and implements
+`HasCropJobs` and `HasAnalysisJobs` on `StudioState`. Studio's binary is Aligner-light + crop +
+Annotator + analysis on one port (Studio 8767). Standalone Aligner (8765) mounts only the light
+align routes — no crop job state, no task scheduler.
 
 **The frontend composes only at the primitive level.** `apps/studio/web/src/components/studio-align-main.tsx`
 and `apps/aligner/web/src/components/aligner-main.tsx` both build on the same `@lisca/ui/features`
 primitives, but each shell wires its own state and modals around them — `useStudioAlignCanvas` beside
-`useAlignCanvas`, `StudioCropConfirmModal` beside `CropConfirmModal`. Studio does not import the
-Aligner app.
+`useAlignCanvas`. Studio owns crop modals and the task center; Aligner does not run crop.
 
 The two layers compose at different granularities. That asymmetry is the shape; what to do about it,
 if anything, is not this file's business.
