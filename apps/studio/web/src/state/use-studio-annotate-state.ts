@@ -59,6 +59,7 @@ export function useStudioAnnotateState(): StudioAnnotateState {
   const info1 = useStudioStore((state) => state.info1);
   const info2 = useStudioStore((state) => state.info2);
   const info3 = useStudioStore((state) => state.info3);
+  const analysis = useStudioStore((state) => state.analysis);
   const setBasicInfoSavedSnapshot = useStudioStore((state) => state.setBasicInfoSavedSnapshot);
   const activeWorkspacePath = () => saveTo().trim() || null;
   const navigate = useNavigate();
@@ -164,6 +165,7 @@ export function useStudioAnnotateState(): StudioAnnotateState {
           info1: info1(),
           info2: info2(),
           info3: info3(),
+          analysis: analysis(),
         });
         await runClientEffect(
           studioClient.saveAssayJson(workspacePath, JSON.stringify(assayJson, null, 2)),
@@ -175,6 +177,7 @@ export function useStudioAnnotateState(): StudioAnnotateState {
             info1: info1(),
             info2: info2(),
             info3: info3(),
+            analysis: analysis(),
           }),
         );
         setStatus("Starting analysis");

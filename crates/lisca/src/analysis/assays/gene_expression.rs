@@ -32,7 +32,14 @@ pub const DEFAULT_MAX_ONSET_MINUTES: f64 = 120.0;
 /// `info2.timelapseAmount` / unit for this assay.
 pub const DEFAULT_INTERVAL_MINUTES: f64 = 10.0;
 
+/// Transfection-only analysis option. Other assays ignore `analysis.maxOnsetMinutes`.
 pub fn max_onset_minutes(assay_json: &AssayJsonFile) -> f64 {
+    if !matches!(
+        assay_json.assay_id,
+        crate::protocol::AssayType::Transfection
+    ) {
+        return 0.0;
+    }
     assay_json
         .analysis
         .as_ref()
@@ -40,9 +47,9 @@ pub fn max_onset_minutes(assay_json: &AssayJsonFile) -> f64 {
         .unwrap_or(DEFAULT_MAX_ONSET_MINUTES)
 }
 
-/// Resolve frame interval for transfection analysis. Prefers assay.json
-/// `info2.timelapseAmount`/`timelapseUnit`; falls back to
-/// [`DEFAULT_INTERVAL_MINUTES`].
+/// Resolve frame interval. Prefers assay.json `info2.timelapseAmount`/`timelapseUnit`.
+/// When missing, uses the assay-specific default (transfection: 10 min). Other assays
+/// require an explicit positive interval.
 pub fn interval_minutes(assay_json: &AssayJsonFile) -> Result<f64, String> {
     if let Some(interval) = parse_interval_minutes(
         assay_json.info2.timelapse_amount,
@@ -50,7 +57,12 @@ pub fn interval_minutes(assay_json: &AssayJsonFile) -> Result<f64, String> {
     ) {
         return Ok(interval);
     }
-    Ok(DEFAULT_INTERVAL_MINUTES)
+    match assay_json.assay_id {
+        crate::protocol::AssayType::Transfection => Ok(DEFAULT_INTERVAL_MINUTES),
+        other => Err(format!(
+            "missing info2.timelapseAmount/timelapseUnit for assay {other:?} (no default interval)"
+        )),
+    }
 }
 
 pub async fn run<F>(

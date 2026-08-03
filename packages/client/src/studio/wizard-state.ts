@@ -1,4 +1,5 @@
 import type {
+  AssayAnalysisConfig,
   StudioAssayId,
   StudioBasicInfoStep1,
   StudioBasicInfoStep2,
@@ -16,6 +17,8 @@ export type BasicInfoSnapshotState = {
   info1: StudioBasicInfoStep1;
   info2: StudioBasicInfoStep2;
   info3: StudioBasicInfoStep3;
+  /** Assay-dependent analysis options (e.g. transfection maxOnsetMinutes). */
+  analysis: AssayAnalysisConfig | null;
 };
 
 export type BasicInfoDirtyState = BasicInfoSnapshotState & {
@@ -31,6 +34,7 @@ export function serializeBasicInfoSnapshot(state: BasicInfoSnapshotState): strin
       info1: state.info1,
       info2: state.info2,
       info3: state.info3,
+      analysis: state.analysis,
       sampleRowToDisk,
     }),
   );

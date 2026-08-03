@@ -52,6 +52,7 @@ type StudioState = StudioWizardData & {
   setDataSourceKind: (kind: StudioDataSourceKind) => void;
   setInfo1: (patch: Partial<StudioWizardData["info1"]>) => void;
   setInfo2: (patch: Partial<StudioWizardData["info2"]>) => void;
+  setAnalysis: (patch: Partial<NonNullable<StudioWizardData["analysis"]>>) => void;
   setInfo3: (patch: Partial<StudioWizardData["info3"]>) => void;
   updateInfo3Sample: (
     index: number,
@@ -75,6 +76,8 @@ function useStudioStoreApi(): Accessor<StudioState> {
     studioWizardActions.setInfo1(setState, patch);
   const setInfo2 = (patch: Partial<StudioWizardData["info2"]>) =>
     studioWizardActions.setInfo2(setState, patch);
+  const setAnalysis = (patch: Partial<NonNullable<StudioWizardData["analysis"]>>) =>
+    studioWizardActions.setAnalysis(setState, patch);
   const setInfo3 = (patch: Partial<StudioWizardData["info3"]>) =>
     studioWizardActions.setInfo3(setState, patch);
   const updateInfo3Sample = (
@@ -94,6 +97,7 @@ function useStudioStoreApi(): Accessor<StudioState> {
     setAssayId,
     setInfo1,
     setInfo2,
+    setAnalysis,
     setInfo3,
     updateInfo3Sample,
     addInfo3Sample,

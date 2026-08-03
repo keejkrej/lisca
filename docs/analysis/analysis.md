@@ -162,7 +162,8 @@ Summary — full process, tolerances table, and lifecycle in [`parity.md`](./par
 - **Not required**: matching Python module names, NumPy vs loop structure, or bitwise float identity.
 - Position ranges in `assay.json` use **inclusive** Studio semantics (`1:12` → positions 1…12).
 - Segmentation defaults: `variation_radius=2`, `gaussian_sigma=1.0`.
-- Fit uses the two-pass pooled-protein strategy. Optional `analysis.maxOnsetMinutes` in `assay.json` (default **`120`**) caps candidate translation-onset times; set `0` to fix onset at 0.
+- Fit uses the two-pass pooled-protein strategy. Optional `analysis.maxOnsetMinutes` in `assay.json` is **transfection-only** (default **`120`** when omitted for that assay; set `0` to fix onset at 0). Other assays ignore it.
+- Frame interval (`info2.timelapseAmount` / `timelapseUnit`) is **general**. Transfection defaults to **10 minutes** when omitted; other assays require an explicit positive interval.
 
 ## Parity CLI (`lisca-analyze`)
 

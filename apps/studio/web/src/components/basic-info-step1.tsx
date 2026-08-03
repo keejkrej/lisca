@@ -1,5 +1,5 @@
 import type { AlignerSource } from "@lisca/contracts";
-import type { StudioDataSourceKind } from "@lisca/contracts/assay";
+import { ASSAY_TYPE, type StudioDataSourceKind } from "@lisca/contracts/assay";
 import type { HostFilePickerMode } from "@lisca/ui/features";
 import {
   cn,
@@ -18,6 +18,10 @@ import {
   SourcePickerModal,
 } from "@lisca/ui/features";
 import type { HostFilePickerOperations } from "@lisca/ui/features";
+import {
+  defaultIntervalMinutesForAssay,
+  defaultMaxOnsetMinutesForAssay,
+} from "@lisca/client/studio-assay-json";
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-solid";
 import { createMemo, createSignal, For, Show } from "solid-js";
 
@@ -76,8 +80,12 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
     studioWizardActions.setInfo1(setWizard, patch);
   const setInfo2 = (patch: Parameters<typeof studioWizardActions.setInfo2>[1]) =>
     studioWizardActions.setInfo2(setWizard, patch);
+  const setAnalysis = (patch: Parameters<typeof studioWizardActions.setAnalysis>[1]) =>
+    studioWizardActions.setAnalysis(setWizard, patch);
   const setDataSourceKind = (kind: StudioDataSourceKind) =>
     studioWizardActions.setDataSourceKind(setWizard, kind);
+  const intervalPlaceholder = () =>
+    String(defaultIntervalMinutesForAssay(wizard().assayId) ?? 10);
   const [openDataModalOpen, setOpenDataModalOpen] = createSignal(false);
   const [pathPicker, setPathPicker] = createSignal<StudioPathPickerState>(null);
   const [folderSourcePath, setFolderSourcePath] = createSignal<string | null>(null);
@@ -211,7 +219,7 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
                 aria-labelledby="studio-timelapse-label"
                 class="min-w-0 flex-1"
                 min={1}
-                placeholder="10"
+                placeholder={intervalPlaceholder()}
                 step={1}
                 type="number"
                 value={wizard().info2.timelapseAmount ?? ""}
@@ -248,7 +256,39 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
             </div>
           </Field>
         </div>
-        <Show when={wizard().assayId === "transfection"}>
+        <Show when={wizard().assayId === ASSAY_TYPE.TRANSFECTION}>
+          <div class={ROW}>
+            <Field class="w-full gap-2.5">
+              <FieldLabel class="text-2xl font-normal" id="studio-max-onset-label">
+                Max onset (minutes)
+              </FieldLabel>
+              <p class="text-sm text-muted-foreground">
+                Transfection kinetic fit: cap candidate translation-onset times. Default{" "}
+                {defaultMaxOnsetMinutesForAssay(ASSAY_TYPE.TRANSFECTION)}. Set 0 to fix onset at 0.
+              </p>
+              <Input
+                aria-labelledby="studio-max-onset-label"
+                class="min-w-0 w-full max-w-xs"
+                min={0}
+                placeholder={String(defaultMaxOnsetMinutesForAssay(ASSAY_TYPE.TRANSFECTION) ?? 120)}
+                step={1}
+                type="number"
+                value={wizard().analysis?.maxOnsetMinutes ?? ""}
+                onChange={(event) => {
+                  const raw = event.currentTarget.value;
+                  if (raw.trim() === "") {
+                    setAnalysis({
+                      maxOnsetMinutes: defaultMaxOnsetMinutesForAssay(ASSAY_TYPE.TRANSFECTION) ?? 120,
+                    });
+                    return;
+                  }
+                  const value = Number(raw);
+                  if (Number.isNaN(value) || value < 0) return;
+                  setAnalysis({ maxOnsetMinutes: value });
+                }}
+              />
+            </Field>
+          </div>
           <div class={ROW}>
             <Field class="gap-2.5">
               <FieldLabel class="text-2xl font-normal">Features</FieldLabel>

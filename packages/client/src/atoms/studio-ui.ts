@@ -1,4 +1,5 @@
 import type {
+  AssayAnalysisConfig,
   StudioAssayId as AssayId,
   StudioAssayJson,
   StudioBasicInfoFeatureId as BasicInfo2FeatureId,
@@ -24,7 +25,10 @@ import { Atom } from "@effect-atom/atom-solid";
 
 import {
   ASSAY_CHOICE_LABEL,
+  analysisConfigForAssay,
   buildStudioAssayJson as buildStudioAssayJsonCore,
+  defaultIntervalMinutesForAssay,
+  defaultMaxOnsetMinutesForAssay,
   inferDataSourceKind,
   normalizeSelectedFeaturesForAssay,
   parseStudioAssayJson as parseStudioAssayJsonCore,
@@ -119,12 +123,14 @@ export function buildStudioAssayJson({
   info1,
   info2,
   info3,
+  analysis,
 }: {
   assayId: AssayId;
   dataSourceKind: StudioDataSourceKind;
   info1: BasicInfoStep1;
   info2: BasicInfoStep2;
   info3: BasicInfoStep3;
+  analysis?: AssayAnalysisConfig | null;
 }): StudioAssayJson {
   return buildStudioAssayJsonCore({
     assayId,
@@ -132,6 +138,7 @@ export function buildStudioAssayJson({
     info1,
     info2,
     info3,
+    analysis,
     sampleRowToDisk,
   });
 }
@@ -197,11 +204,16 @@ export type StudioWizardState = {
   info1: BasicInfoStep1;
   info2: BasicInfoStep2;
   info3: BasicInfoStep3;
+  /** Assay-dependent analysis params (transfection: maxOnsetMinutes). */
+  analysis: AssayAnalysisConfig | null;
   basicInfoSavedSnapshot: string | null;
 };
 
 export function serializeBasicInfoSnapshot(
-  state: Pick<StudioWizardState, "assayId" | "dataSourceKind" | "info1" | "info2" | "info3">,
+  state: Pick<
+    StudioWizardState,
+    "assayId" | "dataSourceKind" | "info1" | "info2" | "info3" | "analysis"
+  >,
 ): string {
   return serializeBasicInfoSnapshotCore(state);
 }
@@ -229,10 +241,15 @@ function normalizeInfo1(info1: BasicInfoStep1): BasicInfoStep1 {
 }
 
 const initialInfo2: BasicInfoStep2 = {
-  timelapseAmount: null,
+  timelapseAmount: defaultIntervalMinutesForAssay(DEFAULT_ASSAY_ID),
   timelapseUnit: "minute",
   selectedFeatures: [ASSAY_FEATURE.TOTAL_FLUOR],
 };
+
+const initialAnalysis: AssayAnalysisConfig | null = analysisConfigForAssay(
+  DEFAULT_ASSAY_ID,
+  null,
+) ?? null;
 
 const initialInfo3: BasicInfoStep3 = {
   samples: [
@@ -277,6 +294,13 @@ function mergeStudioState(persisted: unknown, current: StudioWizardState): Studi
     info1: persistedState.info1 ? normalizeInfo1(persistedState.info1) : current.info1,
     info2: mergedInfo2,
     info3: persistedState.info3 ? normalizeInfo3(persistedState.info3) : current.info3,
+    analysis:
+      persistedState.analysis !== undefined
+        ? analysisConfigForAssay(
+            enabledAssayId(persistedState.assayId ?? current.assayId),
+            persistedState.analysis,
+          ) ?? null
+        : current.analysis,
     basicInfoSavedSnapshot:
       typeof persistedState.basicInfoSavedSnapshot === "string"
         ? persistedState.basicInfoSavedSnapshot
@@ -296,6 +320,7 @@ function createInitialWizardData(): StudioWizardState {
     info3: {
       samples: cloneSamples(initialInfo3.samples),
     },
+    analysis: initialAnalysis,
     basicInfoSavedSnapshot: null,
   };
 }
@@ -359,37 +384,66 @@ export const studioWizardActions = {
     const nextInfo3 = {
       samples: cloneSamples(assayJson.info3.samples),
     };
+    const nextAnalysis = analysisConfigForAssay(nextAssayId, assayJson.analysis) ?? null;
+    const dataSourceKind =
+      assayJson.dataSourceKind ?? inferDataSourceKind(assayJson.info1.dataPath);
     patchStudioWizard(set, {
       assayId: nextAssayId,
       infoStep: 1,
-      dataSourceKind: assayJson.dataSourceKind ?? inferDataSourceKind(assayJson.info1.dataPath),
+      dataSourceKind,
       info1: nextInfo1,
       info2: nextInfo2,
       info3: nextInfo3,
+      analysis: nextAnalysis,
       basicInfoSavedSnapshot: JSON.stringify(
         buildStudioAssayJson({
           assayId: nextAssayId,
-          dataSourceKind: assayJson.dataSourceKind ?? inferDataSourceKind(assayJson.info1.dataPath),
+          dataSourceKind,
           info1: nextInfo1,
           info2: nextInfo2,
           info3: nextInfo3,
+          analysis: nextAnalysis,
         }),
       ),
     });
   },
   setAssayId(set: (update: StateUpdater<StudioWizardState>) => void, assayId: AssayId | null) {
     const nextAssayId = enabledAssayId(assayId);
-    patchStudioWizard(set, (current) => ({
-      ...current,
-      assayId: nextAssayId,
-      info2: {
-        ...current.info2,
-        selectedFeatures: normalizeSelectedFeaturesForAssay(
-          nextAssayId,
-          nextAssayId === ASSAY_TYPE.TRANSFECTION ? current.info2.selectedFeatures : [],
-        ),
-      },
-    }));
+    patchStudioWizard(set, (current) => {
+      const defaultInterval = defaultIntervalMinutesForAssay(nextAssayId);
+      return {
+        ...current,
+        assayId: nextAssayId,
+        info2: {
+          ...current.info2,
+          // Seed assay-specific interval default when the field is empty.
+          timelapseAmount:
+            current.info2.timelapseAmount ?? defaultInterval ?? current.info2.timelapseAmount,
+          selectedFeatures: normalizeSelectedFeaturesForAssay(
+            nextAssayId,
+            nextAssayId === ASSAY_TYPE.TRANSFECTION ? current.info2.selectedFeatures : [],
+          ),
+        },
+        analysis: analysisConfigForAssay(nextAssayId, current.analysis) ?? null,
+      };
+    });
+  },
+  setAnalysis(
+    set: (update: StateUpdater<StudioWizardState>) => void,
+    patch: Partial<AssayAnalysisConfig>,
+  ) {
+    patchStudioWizard(set, (current) => {
+      if (!isTransfectionAssay(current.assayId)) {
+        return { ...current, analysis: null };
+      }
+      const base = current.analysis ?? {
+        maxOnsetMinutes: defaultMaxOnsetMinutesForAssay(current.assayId) ?? undefined,
+      };
+      return {
+        ...current,
+        analysis: analysisConfigForAssay(current.assayId, { ...base, ...patch }) ?? null,
+      };
+    });
   },
   setInfo1(set: (update: StateUpdater<StudioWizardState>) => void, patch: Partial<BasicInfoStep1>) {
     patchStudioWizard(set, (current) => ({ ...current, info1: { ...current.info1, ...patch } }));

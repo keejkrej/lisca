@@ -1,6 +1,7 @@
 import { AssayJsonFileSchema, decodeJsonResult, formatSchemaError } from "@lisca/contracts";
 import { ASSAY_FEATURE, ASSAY_TYPE } from "@lisca/contracts/assay";
 import type {
+  AssayAnalysisConfig,
   StudioAssayJson,
   StudioAssayType,
   StudioBasicInfoFeatureId,
@@ -11,7 +12,12 @@ import type {
   StudioBasicInfoStep3,
   StudioDataSourceKind,
 } from "@lisca/contracts/assay";
-import { TRANSFECTION_FEATURE_IDS } from "@lisca/contracts/assay";
+import {
+  ASSAY_DEFAULT_INTERVAL_MINUTES,
+  assayUsesMaxOnsetMinutes,
+  TRANSFECTION_DEFAULT_MAX_ONSET_MINUTES,
+  TRANSFECTION_FEATURE_IDS,
+} from "@lisca/contracts/assay";
 import type { AssaySampleRow } from "@lisca/contracts";
 import * as Either from "effect/Either";
 
@@ -21,6 +27,32 @@ export const ASSAY_CHOICE_LABEL: Record<StudioAssayType, string> = {
   [ASSAY_TYPE.LNP_BINDING]: "LNP binding",
   [ASSAY_TYPE.CUSTOM_ASSAY]: "Custom assay",
 };
+
+export {
+  ASSAY_DEFAULT_INTERVAL_MINUTES,
+  assayUsesMaxOnsetMinutes,
+  TRANSFECTION_DEFAULT_MAX_ONSET_MINUTES,
+};
+
+export function defaultIntervalMinutesForAssay(assayId: StudioAssayType | null): number | null {
+  if (!assayId) return null;
+  return ASSAY_DEFAULT_INTERVAL_MINUTES[assayId] ?? null;
+}
+
+export function defaultMaxOnsetMinutesForAssay(assayId: StudioAssayType | null): number | null {
+  if (!assayUsesMaxOnsetMinutes(assayId)) return null;
+  return TRANSFECTION_DEFAULT_MAX_ONSET_MINUTES;
+}
+
+export function analysisConfigForAssay(
+  assayId: StudioAssayType | null,
+  analysis: AssayAnalysisConfig | null | undefined,
+): AssayAnalysisConfig | undefined {
+  if (!assayUsesMaxOnsetMinutes(assayId)) return undefined;
+  const maxOnset =
+    analysis?.maxOnsetMinutes ?? TRANSFECTION_DEFAULT_MAX_ONSET_MINUTES;
+  return { maxOnsetMinutes: maxOnset };
+}
 
 const BASIC_INFO_FEATURE_IDS: ReadonlyArray<StudioBasicInfoFeatureId> = TRANSFECTION_FEATURE_IDS;
 
@@ -65,6 +97,7 @@ export function buildStudioAssayJson({
   info1,
   info2,
   info3,
+  analysis,
   sampleRowToDisk,
 }: {
   assayId: StudioAssayType;
@@ -72,8 +105,10 @@ export function buildStudioAssayJson({
   info1: StudioBasicInfoStep1;
   info2: StudioBasicInfoStep2;
   info3: StudioBasicInfoStep3;
+  analysis?: AssayAnalysisConfig | null;
   sampleRowToDisk: (row: StudioBasicInfoSampleRow) => AssaySampleRow;
 }): StudioAssayJson {
+  const analysisSection = analysisConfigForAssay(assayId, analysis);
   return {
     assayId,
     assayLabel: ASSAY_CHOICE_LABEL[assayId],
@@ -84,6 +119,7 @@ export function buildStudioAssayJson({
       selectedFeatures: [...info2.selectedFeatures],
     },
     info3: normalizeInfo3ForAssay(info3, sampleRowToDisk),
+    ...(analysisSection ? { analysis: analysisSection } : {}),
   };
 }
 
@@ -126,6 +162,7 @@ export function parseStudioAssayJson(
       ),
     },
     info3,
+    analysis: root.analysis,
     sampleRowToDisk,
   });
 }

@@ -64,7 +64,10 @@ export const AssayBasicInfoStep3Schema = Schema.Struct({
   samples: AssaySamplesSchema,
 }).annotations({ identifier: "AssayBasicInfoStep3" });
 
-/** Transfection analysis options (optional section on assay.json). */
+/**
+ * Assay-dependent analysis options on assay.json.
+ * `maxOnsetMinutes` is used only by the transfection assay; other assays ignore it.
+ */
 export const AssayAnalysisConfigSchema = Schema.Struct({
   maxOnsetMinutes: Schema.optional(F64),
 }).annotations({ identifier: "AssayAnalysisConfig" });

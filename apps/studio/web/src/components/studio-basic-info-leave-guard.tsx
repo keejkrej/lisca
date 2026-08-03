@@ -55,6 +55,7 @@ export function StudioBasicInfoLeaveGuard() {
         info1: current.info1,
         info2: current.info2,
         info3: current.info3,
+        analysis: current.analysis,
       });
       await writeStudioAssayJson(saveTo(), assayJson);
       const assayJsonPath = studioAssayJsonPathForSaveTo(saveTo());

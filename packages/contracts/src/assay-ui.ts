@@ -1,5 +1,6 @@
 import type { AlignerSource } from "./schema/shared";
 import type {
+  AssayAnalysisConfig,
   AssayBasicInfoStep1,
   AssayBasicInfoStep2,
   AssayBasicInfoStep3,
@@ -7,6 +8,8 @@ import type {
   AssaySampleRow,
   AssayTimelapseUnit,
 } from "./assay.schema";
+
+export type { AssayAnalysisConfig };
 
 export type FolderSourceTemplatePreset = {
   label: string;
@@ -48,6 +51,26 @@ export const ENABLED_STUDIO_ASSAY_IDS = [
 ] as const;
 
 export type EnabledStudioAssayId = (typeof ENABLED_STUDIO_ASSAY_IDS)[number];
+
+/**
+ * Default frame interval (minutes) when the user has not set info2.timelapse*.
+ * Interval is a general field; the default value is assay-dependent.
+ * Assays omitted here require an explicit interval before analysis.
+ */
+export const ASSAY_DEFAULT_INTERVAL_MINUTES: Partial<Record<StudioAssayType, number>> = {
+  [ASSAY_TYPE.TRANSFECTION]: 10,
+};
+
+/**
+ * Transfection-only: default second-pass onset search cap (minutes).
+ * Explicit 0 in assay.json still means onset fixed at 0.
+ */
+export const TRANSFECTION_DEFAULT_MAX_ONSET_MINUTES = 120;
+
+/** Whether the assay exposes maxOnsetMinutes in Studio basic info. */
+export function assayUsesMaxOnsetMinutes(assayId: StudioAssayType | null): boolean {
+  return assayId === ASSAY_TYPE.TRANSFECTION;
+}
 
 export const ASSAY_FEATURE = {
   MORPHOLOGY: "morphology",
