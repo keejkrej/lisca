@@ -681,6 +681,11 @@ fn write_roi_index(
     scan: &WorkspaceScan,
     output_dir: &Path,
 ) -> Result<(), String> {
+    let time_indices = if scan.times.is_empty() {
+        Some(vec![0])
+    } else {
+        Some(scan.times.clone())
+    };
     let index = RoiIndexFile {
         position: pos,
         axis_order: "TCZYX".to_string(),
@@ -688,6 +693,7 @@ fn write_roi_index(
         time_count: scan.times.len().max(1) as u32,
         channel_count: scan.channels.len().max(1) as u32,
         z_count: scan.z_slices.len().max(1) as u32,
+        time_indices,
         source: request.source.clone(),
         rois: entries,
     };
@@ -811,6 +817,32 @@ mod tests {
             "previous"
         );
         assert!(staging_entries(&request).is_empty());
+    }
+
+    #[test]
+    fn crop_writes_source_time_indices_into_index_json() {
+        let (_root, request, scan) = fixture(1);
+        crop_roi_position(&request, &scan, 1, || false).expect("crop");
+        let index: serde_json::Value = serde_json::from_slice(
+            &fs::read(roi_pos_dir_path(&request.workspace_path, 1).join("index.json"))
+                .expect("index"),
+        )
+        .expect("json");
+        let time_indices = index
+            .get("timeIndices")
+            .and_then(|value| value.as_array())
+            .expect("timeIndices present");
+        assert_eq!(
+            time_indices
+                .iter()
+                .map(|value| value.as_u64().expect("u64"))
+                .collect::<Vec<_>>(),
+            scan.times.iter().map(|&t| t as u64).collect::<Vec<_>>()
+        );
+        assert_eq!(
+            index.get("timeCount").and_then(|value| value.as_u64()),
+            Some(scan.times.len().max(1) as u64)
+        );
     }
 
     #[test]

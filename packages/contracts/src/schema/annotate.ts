@@ -35,6 +35,13 @@ export const RoiIndexFileSchema = Schema.Struct({
   timeCount: U32,
   channelCount: U32,
   zCount: U32,
+  /**
+   * Source acquisition time indices for each T plane in the ROI stack
+   * (length === timeCount). Folder series often skip frames (e.g. every 6th
+   * frame → `[0, 6, 12, …]`); analysis multiplies these by the assay interval
+   * to get real minutes. When omitted, consumers default to `0..timeCount-1`.
+   */
+  timeIndices: Schema.optional(NumArray),
   source: AlignerSourceSchema,
   rois: Schema.mutable(Schema.Array(RoiIndexEntrySchema)),
 }).annotations({ identifier: "RoiIndexFile" });

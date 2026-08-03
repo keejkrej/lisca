@@ -23,6 +23,9 @@ pub struct PositionIndex {
     pub channel_count: u32,
     #[allow(dead_code)]
     pub z_count: u32,
+    /// Source acquisition time indices per T plane (`t` in metrics CSVs).
+    /// Defaults to `0..time_count` when index.json omits `timeIndices`.
+    pub time_indices: Vec<u32>,
     pub rois: Vec<RoiCrop>,
 }
 
@@ -37,6 +40,8 @@ struct IndexJson {
     channel_count: u32,
     #[serde(rename = "zCount")]
     z_count: u32,
+    #[serde(rename = "timeIndices", default)]
+    time_indices: Option<Vec<u32>>,
     rois: Vec<IndexRoiJson>,
 }
 
@@ -78,14 +83,37 @@ pub fn read_position_index(pos_dir: &Path) -> Result<PositionIndex, String> {
     if rois.is_empty() {
         return Err(format!("No ROI entries found in {}", index_path.display()));
     }
+    let time_indices = resolve_time_indices(raw.time_indices, raw.time_count, &index_path)?;
     Ok(PositionIndex {
         position: raw.position,
         axis_order,
         time_count: raw.time_count,
         channel_count: raw.channel_count,
         z_count: raw.z_count,
+        time_indices,
         rois,
     })
+}
+
+/// Map stack plane `i` → source time index used as CSV `t` and `t * interval` minutes.
+pub fn resolve_time_indices(
+    explicit: Option<Vec<u32>>,
+    time_count: u32,
+    index_path: &Path,
+) -> Result<Vec<u32>, String> {
+    match explicit {
+        None => Ok((0..time_count).collect()),
+        Some(indices) => {
+            if indices.len() as u32 != time_count {
+                return Err(format!(
+                    "{}: timeIndices length {} does not match timeCount {time_count}",
+                    index_path.display(),
+                    indices.len()
+                ));
+            }
+            Ok(indices)
+        }
+    }
 }
 
 pub fn validate_channel_index(index: &PositionIndex, channel: u32) -> Result<(), String> {

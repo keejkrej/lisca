@@ -33,11 +33,16 @@ pub fn scan_roi_workspace(workspace_path: &str) -> Result<RoiWorkspaceScan, Stri
             continue;
         };
         let index = read_roi_index(workspace_path, pos)?;
+        let times = index
+            .time_indices
+            .clone()
+            .filter(|indices| indices.len() as u32 == index.time_count)
+            .unwrap_or_else(|| axis_values(index.time_count));
         positions.push(RoiPositionScan {
             pos,
             source: index.source.clone(),
             channels: axis_values(index.channel_count),
-            times: axis_values(index.time_count),
+            times,
             z_slices: axis_values(index.z_count),
             rois: index.rois,
         });

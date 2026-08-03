@@ -108,7 +108,7 @@ uv run optimum-cli export onnx --model keejkrej/immune-killing-resnet18 ./models
 | Path                                                                         | Role                                                   |
 | ---------------------------------------------------------------------------- | ------------------------------------------------------ |
 | `assay.json`                                                                 | Input contract from Studio basic info (sample mapping + interval) |
-| `roi/PosN/`                                                                  | Cropped ROI stacks + `index.json` (`axisOrder: TCZYX`) |
+| `roi/PosN/`                                                                  | Cropped ROI stacks + `index.json` (`axisOrder: TCZYX`; optional `timeIndices` = source frame indices per T plane for downsampled series) |
 | `mask/PosN/`                                                                 | Per-frame segmentation masks (`uint8` TIFF stacks)     |
 | `timeseries/sc{S}_ch{C}.csv`                                                 | Mask-corrected intensity metrics (+ parallel `.xlsx`)  |
 | `results/auc.csv`                                                            | Trapezoidal AUC per `(pos, roi)` trace (+ `.xlsx`)     |

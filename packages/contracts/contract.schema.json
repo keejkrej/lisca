@@ -2607,6 +2607,14 @@
           "format": "uint32",
           "minimum": 0
         },
+        "timeIndices": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          }
+        },
         "source": {
           "$ref": "#/definitions/AlignerSource"
         },

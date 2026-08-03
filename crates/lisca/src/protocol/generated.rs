@@ -4548,6 +4548,12 @@ pub struct RoiIndexFile {
     pub source: AlignerSource,
     #[serde(rename = "timeCount")]
     pub time_count: u32,
+    #[serde(
+        rename = "timeIndices",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub time_indices: ::std::option::Option<::std::vec::Vec<u32>>,
     #[serde(rename = "zCount")]
     pub z_count: u32,
 }
@@ -10967,6 +10973,10 @@ pub mod builder {
         rois: ::std::result::Result<::std::vec::Vec<super::RoiIndexEntry>, ::std::string::String>,
         source: ::std::result::Result<super::AlignerSource, ::std::string::String>,
         time_count: ::std::result::Result<u32, ::std::string::String>,
+        time_indices: ::std::result::Result<
+            ::std::option::Option<::std::vec::Vec<u32>>,
+            ::std::string::String,
+        >,
         z_count: ::std::result::Result<u32, ::std::string::String>,
     }
     impl ::std::default::Default for RoiIndexFile {
@@ -10979,6 +10989,7 @@ pub mod builder {
                 rois: Err("no value supplied for rois".to_string()),
                 source: Err("no value supplied for source".to_string()),
                 time_count: Err("no value supplied for time_count".to_string()),
+                time_indices: Ok(Default::default()),
                 z_count: Err("no value supplied for z_count".to_string()),
             }
         }
@@ -11054,6 +11065,16 @@ pub mod builder {
                 .map_err(|e| format!("error converting supplied value for time_count: {e}"));
             self
         }
+        pub fn time_indices<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<::std::vec::Vec<u32>>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.time_indices = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for time_indices: {e}"));
+            self
+        }
         pub fn z_count<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<u32>,
@@ -11078,6 +11099,7 @@ pub mod builder {
                 rois: value.rois?,
                 source: value.source?,
                 time_count: value.time_count?,
+                time_indices: value.time_indices?,
                 z_count: value.z_count?,
             })
         }
@@ -11092,6 +11114,7 @@ pub mod builder {
                 rois: Ok(value.rois),
                 source: Ok(value.source),
                 time_count: Ok(value.time_count),
+                time_indices: Ok(value.time_indices),
                 z_count: Ok(value.z_count),
             }
         }

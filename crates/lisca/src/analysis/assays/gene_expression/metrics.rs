@@ -40,20 +40,21 @@ pub fn compute_masked_roi_metrics(
         let mask_path = default_mask_path(workspace, index.position, &roi.file_name);
         let mask_stack = MaskStack::load(&mask_path, index.time_count, height, width)?;
 
-        for timepoint in 0..index.time_count {
+        for stack_t in 0..index.time_count {
             let frame = roi_frame_2d(
                 &stack,
                 &index.axis_order,
-                timepoint,
+                stack_t,
                 signal_channel,
                 0,
             )?;
-            let mask = &mask_stack.masks[timepoint as usize];
+            let mask = &mask_stack.masks[stack_t as usize];
             let stats = masked_roi_stats(frame.as_slice(), mask)?;
+            let source_t = index.time_indices[stack_t as usize];
             rows.push(MetricRow {
                 pos: index.position,
                 roi: roi.roi,
-                t: timepoint,
+                t: source_t,
                 area: stats.area,
                 background: stats.background,
                 intensity: stats.intensity,
