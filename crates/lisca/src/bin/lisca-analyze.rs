@@ -18,8 +18,8 @@ use std::process;
 use std::time::Instant;
 
 use lisca::analysis::assays::gene_expression::{
-    default_fit_jobs, default_timeseries_jobs, run_auc, run_fit, run_plot_auc, run_plot_fit,
-    run_plot_timeseries, run_segment, run_sync, run_timeseries, SegmentOptions,
+    default_fit_jobs, default_timeseries_jobs, max_onset_minutes, run_auc, run_fit, run_plot_auc,
+    run_plot_fit, run_plot_timeseries, run_segment, run_sync, run_timeseries, SegmentOptions,
     DEFAULT_PLOT_COLUMNS,
 };
 use lisca::analysis::slide::{
@@ -81,7 +81,8 @@ Common options:
   --assay PATH            assay.json (default: <workspace>/assay.json)
   --interval MINUTES      frame interval (default: assay.json info2.timelapse*)
   --jobs N                worker threads (segment/timeseries/fit; default: CPUs)
-  --max-onset-minutes N   fit onset search cap (default: assay analysis.maxOnsetMinutes or 0)
+  --max-onset-minutes N   fit onset search cap (default: assay analysis.maxOnsetMinutes
+                          or 120; 0 = onset fixed at 0)
   --variation-radius N    segment local-variation radius (default: 2)
   --gaussian-sigma F      segment Gaussian sigma (default: 1.0)
   --force, -f             segment: overwrite existing masks
@@ -213,11 +214,7 @@ fn cmd_pipeline(args: &[String]) -> Result<(), String> {
         Some(assay.info2.timelapse_unit.as_str()),
     )
     .ok_or_else(|| "invalid timelapseAmount/timelapseUnit in assay.json".to_string())?;
-    let max_onset = assay
-        .analysis
-        .as_ref()
-        .and_then(|analysis| analysis.max_onset_minutes)
-        .unwrap_or(0.0);
+    let max_onset = max_onset_minutes(&assay);
     eprintln!(
         "pipeline workspace={} assayId={:?} interval={interval} max_onset_minutes={max_onset}",
         workspace.display(),
@@ -316,11 +313,7 @@ fn resolve_max_onset(workspace: &Path, args: &[String]) -> Result<f64, String> {
         return Ok(value);
     }
     let assay = load_assay_json(workspace)?;
-    Ok(assay
-        .analysis
-        .as_ref()
-        .and_then(|analysis| analysis.max_onset_minutes)
-        .unwrap_or(0.0))
+    Ok(max_onset_minutes(&assay))
 }
 
 fn load_assay_json(workspace: &Path) -> Result<AssayJsonFile, String> {

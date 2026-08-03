@@ -9,31 +9,16 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ResultRouteImport } from './routes/result'
-import { Route as InfoRouteImport } from './routes/info'
-import { Route as AssayRouteImport } from './routes/assay'
-import { Route as AnnotateRouteImport } from './routes/annotate'
-import { Route as AlignRouteImport } from './routes/align'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AlignRouteImport } from './routes/align'
+import { Route as AnnotateRouteImport } from './routes/annotate'
+import { Route as AssayRouteImport } from './routes/assay'
+import { Route as InfoRouteImport } from './routes/info'
+import { Route as ResultRouteImport } from './routes/result'
 
-const ResultRoute = ResultRouteImport.update({
-  id: '/result',
-  path: '/result',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InfoRoute = InfoRouteImport.update({
-  id: '/info',
-  path: '/info',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AssayRoute = AssayRouteImport.update({
-  id: '/assay',
-  path: '/assay',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AnnotateRoute = AnnotateRouteImport.update({
-  id: '/annotate',
-  path: '/annotate',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AlignRoute = AlignRouteImport.update({
@@ -41,9 +26,24 @@ const AlignRoute = AlignRouteImport.update({
   path: '/align',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AnnotateRoute = AnnotateRouteImport.update({
+  id: '/annotate',
+  path: '/annotate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AssayRoute = AssayRouteImport.update({
+  id: '/assay',
+  path: '/assay',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InfoRoute = InfoRouteImport.update({
+  id: '/info',
+  path: '/info',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResultRoute = ResultRouteImport.update({
+  id: '/result',
+  path: '/result',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -91,32 +91,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/solid-router' {
   interface FileRoutesByPath {
-    '/result': {
-      id: '/result'
-      path: '/result'
-      fullPath: '/result'
-      preLoaderRoute: typeof ResultRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/info': {
-      id: '/info'
-      path: '/info'
-      fullPath: '/info'
-      preLoaderRoute: typeof InfoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/assay': {
-      id: '/assay'
-      path: '/assay'
-      fullPath: '/assay'
-      preLoaderRoute: typeof AssayRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/annotate': {
-      id: '/annotate'
-      path: '/annotate'
-      fullPath: '/annotate'
-      preLoaderRoute: typeof AnnotateRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/align': {
@@ -126,11 +105,32 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof AlignRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/annotate': {
+      id: '/annotate'
+      path: '/annotate'
+      fullPath: '/annotate'
+      preLoaderRoute: typeof AnnotateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/assay': {
+      id: '/assay'
+      path: '/assay'
+      fullPath: '/assay'
+      preLoaderRoute: typeof AssayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/info': {
+      id: '/info'
+      path: '/info'
+      fullPath: '/info'
+      preLoaderRoute: typeof InfoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/result': {
+      id: '/result'
+      path: '/result'
+      fullPath: '/result'
+      preLoaderRoute: typeof ResultRouteImport
       parentRoute: typeof rootRouteImport
     }
   }

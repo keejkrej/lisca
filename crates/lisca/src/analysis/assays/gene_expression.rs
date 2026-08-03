@@ -23,12 +23,17 @@ use crate::analysis::output::collect_csv_outputs;
 use crate::analysis::progress::{analysis_progress, run_blocking};
 use crate::analysis::slide::{build_slide_mapping, parse_interval_minutes};
 
-fn max_onset_minutes(assay_json: &AssayJsonFile) -> f64 {
+/// Default second-pass translation-onset search cap when assay.json omits
+/// `analysis.maxOnsetMinutes` (minutes). `0` still means “onset fixed at 0”
+/// when the field is set explicitly.
+pub const DEFAULT_MAX_ONSET_MINUTES: f64 = 120.0;
+
+pub fn max_onset_minutes(assay_json: &AssayJsonFile) -> f64 {
     assay_json
         .analysis
         .as_ref()
         .and_then(|analysis| analysis.max_onset_minutes)
-        .unwrap_or(0.0)
+        .unwrap_or(DEFAULT_MAX_ONSET_MINUTES)
 }
 
 pub async fn run<F>(

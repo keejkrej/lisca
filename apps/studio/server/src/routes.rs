@@ -198,11 +198,7 @@ fn build_gene_expression_operation(
         Some(assay.info2.timelapse_unit.as_str()),
     )
     .unwrap_or(1.0);
-    let max_onset = assay
-        .analysis
-        .as_ref()
-        .and_then(|analysis| analysis.max_onset_minutes)
-        .unwrap_or(0.0);
+    let max_onset = lisca::analysis::assays::gene_expression::max_onset_minutes(&assay);
     let mut tasks = Vec::new();
 
     // Prepare validates assay mapping only (no slide.json side file).
