@@ -162,7 +162,7 @@ export function parseSlideChannelFromFileName(fileName: string): number | null {
 }
 
 export function boxplotXAxisLabel(slideChannelLabels: SlideChannelLabels): string {
-  return Object.keys(slideChannelLabels).length > 0 ? "condition" : "slide channel";
+  return Object.keys(slideChannelLabels).length > 0 ? "sample" : "slide channel";
 }
 
 export function formatSlideChannelTickLabel(

@@ -107,14 +107,15 @@ pub fn boxplot_tick_label(channel: u32, count: usize, labels: &BTreeMap<u32, Str
         .get(&channel)
         .cloned()
         .unwrap_or_else(|| channel.to_string());
-    format!("{name}\n(n={count})")
+    // Single line so vertical tick labels stay readable when rotated.
+    format!("{name} (n={count})")
 }
 
 pub fn boxplot_x_axis_label(labels: &BTreeMap<u32, String>) -> &'static str {
     if labels.is_empty() {
         "slide channel"
     } else {
-        "condition"
+        "sample"
     }
 }
 

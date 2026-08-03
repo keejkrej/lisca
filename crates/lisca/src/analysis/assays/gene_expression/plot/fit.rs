@@ -1,16 +1,15 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-use mplot::prelude::{AxesStyle, BoxplotStyle, GridPos, Scale, TickFormat};
+use mplot::prelude::{AxesStyle, BoxplotStyle, GridPos, Scale, TickFormat, TickLabelRotation};
 
 use crate::analysis::array::{fitted_trace_value, KineticFitCoeffs};
 use crate::analysis::csv_io::{column_index, parse_f64, read_csv};
 use crate::analysis::plot::{
     boxplot_tick_label, boxplot_x_axis_label, expand_degenerate_ylim, figure_builder_for_panels,
-    figure_builder_single,
-    grid_dimensions, parse_slide_channel, percentile_ylim, quartile_axis_upper, save_figure,
-    slide_channel_labels, subplot_title, trace_color_alpha, trace_line_style,
-    trace_naming_haystack,
+    figure_builder_single, grid_dimensions, parse_slide_channel, percentile_ylim,
+    quartile_axis_upper, save_figure, slide_channel_labels, subplot_title, trace_color_alpha,
+    trace_line_style, trace_naming_haystack, SAVE_PAD_GRID_INCHES, SAVE_PAD_SINGLE_INCHES,
 };
 use crate::analysis::slide::SlideMapping;
 use crate::analysis::timeseries::{discover_timeseries_csvs, group_timeseries_rows};
@@ -191,7 +190,8 @@ fn write_fit_boxplot(
             let mut axes = AxesStyle::new()
                 .x_label(x_label)
                 .y_label(ylabel)
-                .x_tick_labels(&ticks, &tick_labels);
+                .x_tick_labels(&ticks, &tick_labels)
+                .x_tick_label_rotation(TickLabelRotation::Degrees(-30));
             if log_scale {
                 axes = axes.y_scale(Scale::Log);
             } else {
@@ -202,7 +202,7 @@ fn write_fit_boxplot(
         .build()
         .map_err(|error| error.to_string())?;
 
-    save_figure(&figure, output_plot)
+    save_figure(&figure, output_plot, SAVE_PAD_SINGLE_INCHES)
 }
 
 fn write_fitted_trace_plots(
@@ -365,7 +365,7 @@ fn write_fitted_trace_grid(
     }
 
     let figure = builder.build().map_err(|error| error.to_string())?;
-    save_figure(&figure, output_plot)
+    save_figure(&figure, output_plot, SAVE_PAD_GRID_INCHES)
 }
 
 impl FitPlotRow {

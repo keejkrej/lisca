@@ -56,3 +56,4 @@ lisca = { path = "crates/lisca", default-features = false }
 lisca-server = { path = "crates/lisca-server" }
 tauri = "2"
 tauri-build = "2"
+

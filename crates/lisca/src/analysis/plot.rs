@@ -8,7 +8,8 @@ mod util;
 pub use mplot_config::{
     figure_builder_for_panels, figure_builder_grid, figure_builder_single, save_figure,
     trace_line_style, FIGURE_DPI, FIGURE_GRID_HEIGHT_IN, FIGURE_GRID_WIDTH_IN,
-    FIGURE_SINGLE_HEIGHT_IN, FIGURE_SINGLE_WIDTH_IN,
+    FIGURE_SINGLE_HEIGHT_IN, FIGURE_SINGLE_WIDTH_IN, SAVE_PAD_GRID_INCHES,
+    SAVE_PAD_SINGLE_INCHES,
 };
 pub use util::{
     boxplot_tick_label, boxplot_x_axis_label, expand_degenerate_ylim, grid_dimensions,
@@ -127,5 +128,10 @@ fn write_subplot_grid(
     }
 
     let figure = builder.build().map_err(|error| error.to_string())?;
-    save_figure(&figure, output_plot)
+    let pad = if panels.len() <= 1 {
+        SAVE_PAD_SINGLE_INCHES
+    } else {
+        SAVE_PAD_GRID_INCHES
+    };
+    save_figure(&figure, output_plot, pad)
 }

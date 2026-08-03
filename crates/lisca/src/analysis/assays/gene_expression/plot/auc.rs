@@ -1,12 +1,12 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use mplot::prelude::{AxesStyle, BoxplotStyle, GridPos, Scale};
+use mplot::prelude::{AxesStyle, BoxplotStyle, GridPos, Scale, TickFormat, TickLabelRotation};
 
 use crate::analysis::csv_io::{column_index, parse_f64, read_csv};
 use crate::analysis::plot::{
     boxplot_tick_label, boxplot_x_axis_label, figure_builder_single, percentile_ylim, save_figure,
-    slide_channel_labels,
+    slide_channel_labels, SAVE_PAD_SINGLE_INCHES,
 };
 use crate::analysis::slide::SlideMapping;
 
@@ -78,7 +78,9 @@ fn write_auc_boxplot(
             let mut axes = AxesStyle::new()
                 .x_label(boxplot_x_axis_label(labels))
                 .y_label("AUC")
-                .x_tick_labels(&ticks, &tick_labels);
+                .x_tick_labels(&ticks, &tick_labels)
+                .x_tick_label_rotation(TickLabelRotation::Degrees(-30))
+                .y_tick_format(TickFormat::Scientific);
             if log_scale {
                 axes = axes.y_scale(Scale::Log);
             } else {
@@ -91,5 +93,5 @@ fn write_auc_boxplot(
         .build()
         .map_err(|error| error.to_string())?;
 
-    save_figure(&figure, output_plot)
+    save_figure(&figure, output_plot, SAVE_PAD_SINGLE_INCHES)
 }

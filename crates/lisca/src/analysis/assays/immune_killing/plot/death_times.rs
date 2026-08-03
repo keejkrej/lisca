@@ -7,6 +7,7 @@ use mplot::Color;
 use crate::analysis::csv_io::{column_index, parse_f64, read_csv};
 use crate::analysis::plot::{
     figure_builder_for_panels, grid_dimensions, save_figure, slide_channel_labels,
+    SAVE_PAD_GRID_INCHES,
 };
 use crate::analysis::slide::SlideMapping;
 
@@ -87,5 +88,9 @@ pub fn run_plot_death_times(
     }
 
     let figure = builder.build().map_err(|error| error.to_string())?;
-    save_figure(&figure, &workspace.join("results/death_times.png"))
+    save_figure(
+        &figure,
+        &workspace.join("results/death_times.png"),
+        SAVE_PAD_GRID_INCHES,
+    )
 }
