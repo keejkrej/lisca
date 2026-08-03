@@ -3,7 +3,10 @@
 mod mplot_config;
 mod util;
 
-pub use mplot_config::{default_figure_builder, save_figure, trace_line_style};
+pub use mplot_config::{
+    figure_builder_for_panels, figure_builder_grid, figure_builder_single, save_figure,
+    trace_line_style,
+};
 pub use util::{
     boxplot_tick_label, boxplot_x_axis_label, expand_degenerate_ylim, grid_dimensions,
     parse_slide_channel, percentile_ylim, quartile_axis_upper, slide_channel_labels, subplot_title,
@@ -78,7 +81,7 @@ fn write_subplot_grid(
     ylim_for_panel: impl Fn(usize) -> (f64, f64),
 ) -> Result<(), String> {
     let (rows, cols) = grid_dimensions(panels.len(), columns);
-    let mut builder = default_figure_builder();
+    let mut builder = figure_builder_for_panels(panels.len());
 
     for (index, panel) in panels.iter().enumerate() {
         let (y_low, y_high) = ylim_for_panel(index);

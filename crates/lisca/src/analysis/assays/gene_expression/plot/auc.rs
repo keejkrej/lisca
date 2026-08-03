@@ -5,8 +5,8 @@ use mplot::prelude::{AxesStyle, BoxplotStyle, GridPos, Scale};
 
 use crate::analysis::csv_io::{column_index, parse_f64, read_csv};
 use crate::analysis::plot::{
-    boxplot_tick_label, boxplot_x_axis_label, default_figure_builder, percentile_ylim,
-    save_figure, slide_channel_labels,
+    boxplot_tick_label, boxplot_x_axis_label, figure_builder_single, percentile_ylim, save_figure,
+    slide_channel_labels,
 };
 use crate::analysis::slide::SlideMapping;
 
@@ -73,7 +73,7 @@ fn write_auc_boxplot(
         })
         .collect();
 
-    let figure = default_figure_builder()
+    let figure = figure_builder_single()
         .panel(GridPos::new(1, 1, 1), |p| {
             let mut axes = AxesStyle::new()
                 .x_label(boxplot_x_axis_label(labels))

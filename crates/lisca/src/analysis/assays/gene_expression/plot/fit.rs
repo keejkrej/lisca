@@ -6,7 +6,8 @@ use mplot::prelude::{AxesStyle, BoxplotStyle, GridPos, Scale, TickFormat};
 use crate::analysis::array::{fitted_trace_value, KineticFitCoeffs};
 use crate::analysis::csv_io::{column_index, parse_f64, read_csv};
 use crate::analysis::plot::{
-    boxplot_tick_label, boxplot_x_axis_label, default_figure_builder, expand_degenerate_ylim,
+    boxplot_tick_label, boxplot_x_axis_label, expand_degenerate_ylim, figure_builder_for_panels,
+    figure_builder_single,
     grid_dimensions, parse_slide_channel, percentile_ylim, quartile_axis_upper, save_figure,
     slide_channel_labels, subplot_title, trace_color_alpha, trace_line_style,
     trace_naming_haystack,
@@ -185,7 +186,7 @@ fn write_fit_boxplot(
     let x_label = boxplot_x_axis_label(labels).to_string();
     let ylabel = ylabel.to_string();
 
-    let figure = default_figure_builder()
+    let figure = figure_builder_single()
         .panel(GridPos::new(1, 1, 1), move |p| {
             let mut axes = AxesStyle::new()
                 .x_label(x_label)
@@ -332,7 +333,7 @@ fn write_fitted_trace_grid(
     ylim_for_panel: impl Fn(usize) -> (f64, f64),
 ) -> Result<(), String> {
     let (rows, cols) = grid_dimensions(panels.len(), columns);
-    let mut builder = default_figure_builder();
+    let mut builder = figure_builder_for_panels(panels.len());
 
     for (index, panel) in panels.iter().enumerate() {
         let (y_low, y_high) = ylim_for_panel(index);
