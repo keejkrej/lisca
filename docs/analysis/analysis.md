@@ -115,7 +115,7 @@ uv run optimum-cli export onnx --model keejkrej/immune-killing-resnet18 ./models
 | `results/fit.csv`                                                            | Two-exponential kinetic fit parameters (+ `.xlsx`)     |
 | `results/traces.png`, `traces_shared_y.png`, `area.png`, `area_shared_y.png` | Timeseries plots                                       |
 | `results/auc.png`, `results/auc_log.png`                                      | AUC boxplots (linear and log y-scale)                  |
-| `results/{parameter}.png`, `results/traces_fit.png`                          | Fit parameter boxplots and fitted trace grid           |
+| `results/{parameter}.png`, `results/traces_fit.png`, `traces_fit_shared_y.png` | Fit parameter boxplots and fitted trace grids (per-panel + shared y) |
 
 Studio results UI reads CSVs for interactive charts; PNG filenames match transfection output.
 

@@ -6,9 +6,10 @@ use mplot::prelude::{AxesStyle, BoxplotStyle, GridPos, Scale};
 use crate::analysis::array::{fitted_trace_value, KineticFitCoeffs};
 use crate::analysis::csv_io::{column_index, parse_f64, read_csv};
 use crate::analysis::plot::{
-    boxplot_tick_label, boxplot_x_axis_label, default_figure_builder, grid_dimensions,
-    parse_slide_channel, percentile_ylim, quartile_axis_upper, save_figure, slide_channel_labels,
-    subplot_title, trace_color_alpha, trace_line_style, trace_naming_haystack,
+    boxplot_tick_label, boxplot_x_axis_label, default_figure_builder, expand_degenerate_ylim,
+    grid_dimensions, parse_slide_channel, percentile_ylim, quartile_axis_upper, save_figure,
+    slide_channel_labels, subplot_title, trace_color_alpha, trace_line_style,
+    trace_naming_haystack,
 };
 use crate::analysis::slide::SlideMapping;
 use crate::analysis::timeseries::{discover_timeseries_csvs, group_timeseries_rows};
@@ -66,7 +67,7 @@ pub fn run_plot_fit(
     }
 
     let timeseries_csvs = discover_timeseries_csvs(&workspace.join("timeseries"))?;
-    write_fitted_trace_grid(
+    write_fitted_trace_plots(
         &rows,
         &timeseries_csvs,
         &results_dir.join("traces_fit.png"),
@@ -203,7 +204,7 @@ fn write_fit_boxplot(
     save_figure(&figure, output_plot)
 }
 
-fn write_fitted_trace_grid(
+fn write_fitted_trace_plots(
     fit_rows: &[FitPlotRow],
     timeseries_csvs: &[PathBuf],
     output_plot: &Path,
@@ -211,17 +212,64 @@ fn write_fitted_trace_grid(
     columns: usize,
     labels: &BTreeMap<u32, String>,
 ) -> Result<(), String> {
+    let panels = load_fitted_trace_panels(fit_rows, timeseries_csvs, interval, labels)?;
+    if panels.is_empty() {
+        return Err("No successful fit rows matched the inferred timeseries CSVs".to_string());
+    }
+
+    let panel_ylims: Vec<(f64, f64)> = panels
+        .iter()
+        .map(|panel| percentile_ylim(&panel.corrected_values, 1.0))
+        .collect();
+    let unified_low = panel_ylims
+        .iter()
+        .map(|(low, _)| *low)
+        .fold(f64::INFINITY, f64::min);
+    let unified_high = panel_ylims
+        .iter()
+        .map(|(_, high)| *high)
+        .fold(f64::NEG_INFINITY, f64::max);
+    let shared_ylim = expand_degenerate_ylim(unified_low, unified_high);
+    let shared_y_plot = output_plot.with_file_name(format!(
+        "{}_shared_y.png",
+        output_plot
+            .file_stem()
+            .and_then(|stem| stem.to_str())
+            .unwrap_or("traces_fit")
+    ));
+
+    write_fitted_trace_grid(&panels, output_plot, columns, |index| {
+        panel_ylims.get(index).copied().unwrap_or((0.0, 1.0))
+    })?;
+    write_fitted_trace_grid(&panels, &shared_y_plot, columns, |_| shared_ylim)?;
+    Ok(())
+}
+
+struct FittedTracePanel {
+    title: String,
+    color: &'static str,
+    alpha: f64,
+    max_t: f64,
+    corrected_values: Vec<f64>,
+    series: Vec<(Vec<f64>, Vec<f64>)>,
+}
+
+fn load_fitted_trace_panels(
+    fit_rows: &[FitPlotRow],
+    timeseries_csvs: &[PathBuf],
+    interval: f64,
+    labels: &BTreeMap<u32, String>,
+) -> Result<Vec<FittedTracePanel>, String> {
     let fit_lookup: BTreeMap<(Option<u32>, i64, i64), &FitPlotRow> = fit_rows
         .iter()
         .filter(|row| row.success)
         .map(|row| ((Some(row.slide_channel), row.pos, row.roi), row))
         .collect();
 
-    let (rows, cols) = grid_dimensions(timeseries_csvs.len(), columns);
-    let mut builder = default_figure_builder();
+    let mut panels = Vec::with_capacity(timeseries_csvs.len());
     let mut plotted_trace_count = 0usize;
 
-    for (index, csv_path) in timeseries_csvs.iter().enumerate() {
+    for csv_path in timeseries_csvs {
         let (headers, data_rows) = read_csv(csv_path)?;
         let slide_channel = parse_slide_channel(csv_path);
 
@@ -231,7 +279,6 @@ fn write_fitted_trace_grid(
             .flat_map(|trace| trace.iter().map(|(_, value)| *value))
             .collect();
 
-        let (y_low, y_high) = percentile_ylim(&corrected_values, 1.0);
         let max_t = groups
             .values()
             .flat_map(|trace| trace.iter().map(|point| point.0))
@@ -261,7 +308,38 @@ fn write_fitted_trace_grid(
             plotted_trace_count += 1;
         }
 
-        let title = subplot_title(csv_path, matched_traces, labels);
+        panels.push(FittedTracePanel {
+            title: subplot_title(csv_path, matched_traces, labels),
+            color,
+            alpha,
+            max_t,
+            corrected_values,
+            series,
+        });
+    }
+
+    if plotted_trace_count == 0 {
+        return Err("No successful fit rows matched the inferred timeseries CSVs".to_string());
+    }
+    Ok(panels)
+}
+
+fn write_fitted_trace_grid(
+    panels: &[FittedTracePanel],
+    output_plot: &Path,
+    columns: usize,
+    ylim_for_panel: impl Fn(usize) -> (f64, f64),
+) -> Result<(), String> {
+    let (rows, cols) = grid_dimensions(panels.len(), columns);
+    let mut builder = default_figure_builder();
+
+    for (index, panel) in panels.iter().enumerate() {
+        let (y_low, y_high) = ylim_for_panel(index);
+        let title = panel.title.clone();
+        let series = panel.series.clone();
+        let (color, alpha) = (panel.color, panel.alpha);
+        let max_t = panel.max_t;
+
         builder = builder.panel(GridPos::new(rows, cols, index + 1), move |p| {
             for (x, y) in &series {
                 p.line(x, y, trace_line_style(color, alpha));
@@ -272,19 +350,15 @@ fn write_fitted_trace_grid(
                     .x_label("minutes")
                     .y_label("corrected intensity")
                     .y_range(y_low, y_high)
-                    .x_range(0.0, max_t.max(interval)),
+                    .x_range(0.0, max_t.max(1.0)),
             );
         });
     }
 
-    for index in timeseries_csvs.len()..(rows * cols) {
+    for index in panels.len()..(rows * cols) {
         builder = builder.panel(GridPos::new(rows, cols, index + 1), |p| {
             p.axes(AxesStyle::new().hide(true));
         });
-    }
-
-    if plotted_trace_count == 0 {
-        return Err("No successful fit rows matched the inferred timeseries CSVs".to_string());
     }
 
     let figure = builder.build().map_err(|error| error.to_string())?;
