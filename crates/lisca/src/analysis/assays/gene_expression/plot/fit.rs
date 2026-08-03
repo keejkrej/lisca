@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-use mplot::prelude::{AxesStyle, BoxplotStyle, GridPos, Scale};
+use mplot::prelude::{AxesStyle, BoxplotStyle, GridPos, Scale, TickFormat};
 
 use crate::analysis::array::{fitted_trace_value, KineticFitCoeffs};
 use crate::analysis::csv_io::{column_index, parse_f64, read_csv};
@@ -351,7 +351,8 @@ fn write_fitted_trace_grid(
                     .x_label("minutes")
                     .y_label("corrected intensity")
                     .y_range(y_low, y_high)
-                    .x_range(0.0, max_t.max(1.0)),
+                    .x_range(0.0, max_t.max(1.0))
+                    .y_tick_format(TickFormat::Scientific),
             );
         });
     }

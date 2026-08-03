@@ -13,7 +13,7 @@ pub use util::{
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use mplot::prelude::{AxesStyle, GridPos};
+use mplot::prelude::{AxesStyle, GridPos, TickFormat};
 
 use super::timeseries::TracePanel;
 
@@ -92,6 +92,8 @@ fn write_subplot_grid(
         let title = subplot_title(&panel.path, panel.traces.len(), labels);
         let traces = panel.traces.clone();
         let y_label = y_label.to_string();
+        // Intensity traces (not area) use scientific y-tick labels.
+        let y_scientific = y_label.contains("intensity");
 
         builder = builder.panel(GridPos::new(rows, cols, index + 1), move |panel| {
             for trace in &traces {
@@ -99,14 +101,16 @@ fn write_subplot_grid(
                 let y: Vec<f64> = trace.iter().map(|(_, value)| *value).collect();
                 panel.line(&x, &y, trace_line_style(color, alpha));
             }
-            panel.axes(
-                AxesStyle::new()
-                    .title(title)
-                    .x_label("minutes")
-                    .y_label(y_label)
-                    .y_range(y_low, y_high)
-                    .x_range(0.0, max_t.max(interval)),
-            );
+            let mut axes = AxesStyle::new()
+                .title(title)
+                .x_label("minutes")
+                .y_label(y_label)
+                .y_range(y_low, y_high)
+                .x_range(0.0, max_t.max(interval));
+            if y_scientific {
+                axes = axes.y_tick_format(TickFormat::Scientific);
+            }
+            panel.axes(axes);
         });
     }
 
