@@ -27,7 +27,8 @@ pub(crate) fn write_metric_plots(
 ) -> Result<(), String> {
     let panel_ylims: Vec<(f64, f64)> = panels
         .iter()
-        .map(|panel| percentile_ylim(&panel.y_values, 1.0))
+        // Match transfection plot_timeseries default (5th–95th percentile).
+        .map(|panel| percentile_ylim(&panel.y_values, 5.0))
         .collect();
     let unified_low = panel_ylims
         .iter()

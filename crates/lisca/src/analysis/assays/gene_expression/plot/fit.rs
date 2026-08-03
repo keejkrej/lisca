@@ -219,7 +219,8 @@ fn write_fitted_trace_plots(
 
     let panel_ylims: Vec<(f64, f64)> = panels
         .iter()
-        .map(|panel| percentile_ylim(&panel.corrected_values, 1.0))
+        // Match transfection plot_timeseries default (5th–95th percentile).
+        .map(|panel| percentile_ylim(&panel.corrected_values, 5.0))
         .collect();
     let unified_low = panel_ylims
         .iter()
