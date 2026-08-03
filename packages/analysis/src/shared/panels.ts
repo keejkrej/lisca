@@ -258,15 +258,15 @@ function fitParameterValue(
   const expressionAmplitude = read("expression_amplitude");
 
   switch (parameter) {
-    case "intensity_offset":
-    case "translation_onset":
+    case "baseline_intensity":
+    case "onset_time":
       return read(parameter);
     case "protein_lifetime":
       return read("protein_lifetime") ?? (proteinDecayRate ? 1 / proteinDecayRate : null);
     case "mrna_lifetime":
       return read("mrna_lifetime") ?? (mrnaDecayRate ? 1 / mrnaDecayRate : null);
     case "expression_rate": {
-      const direct = read("expression_rate") ?? read("transfection_efficiency");
+      const direct = read("expression_rate");
       if (direct !== null) return direct;
       if (expressionAmplitude === null || mrnaDecayRate === null || proteinDecayRate === null) {
         return null;
@@ -516,7 +516,7 @@ export function parsePanelGroups(
 
   if (
     headerIndex(headers, "protein_decay_rate") >= 0 &&
-    headerIndex(headers, "translation_onset") >= 0 &&
+    headerIndex(headers, "onset_time") >= 0 &&
     slideChannelIndex >= 0
   ) {
     for (const [parameter, label] of PLOTTED_FIT_PARAMETERS) {

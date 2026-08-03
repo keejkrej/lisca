@@ -15,12 +15,12 @@ use crate::analysis::slide::SlideMapping;
 use crate::analysis::timeseries::{discover_timeseries_csvs, group_timeseries_rows};
 
 // Display labels: Müller et al. 2024 basic model (no maturation).
-// CSV keys keep historical names (translation_onset, expression_rate, …).
+// CSV column ids match field names (no alternate aliases).
 const PLOTTED_PARAMETERS: [(&str, &str); 5] = [
-    ("intensity_offset", "intensity offset"),
+    ("baseline_intensity", "baseline intensity"),
     ("protein_lifetime", "protein lifetime"),
     ("mrna_lifetime", "mRNA lifetime"),
-    ("translation_onset", "onset time"),
+    ("onset_time", "onset time"),
     ("expression_rate", "expression rate"),
 ];
 
@@ -30,10 +30,10 @@ struct FitPlotRow {
     pos: i64,
     roi: i64,
     success: bool,
-    intensity_offset: Option<f64>,
+    baseline_intensity: Option<f64>,
     protein_decay_rate: Option<f64>,
     mrna_decay_rate: Option<f64>,
-    translation_onset: Option<f64>,
+    onset_time: Option<f64>,
     expression_amplitude: Option<f64>,
     protein_lifetime: Option<f64>,
     mrna_lifetime: Option<f64>,
@@ -109,23 +109,23 @@ fn load_fit_rows(path: &Path) -> Result<Vec<FitPlotRow>, String> {
             pos,
             roi,
             success,
-            intensity_offset: read_opt(&row, "intensity_offset"),
+            baseline_intensity: read_opt(&row, "baseline_intensity"),
             protein_decay_rate,
             mrna_decay_rate,
-            translation_onset: read_opt(&row, "translation_onset"),
+            onset_time: read_opt(&row, "onset_time"),
             expression_amplitude,
             protein_lifetime: read_opt(&row, "protein_lifetime")
                 .or_else(|| protein_decay_rate.map(|rate| 1.0 / rate)),
             mrna_lifetime: read_opt(&row, "mrna_lifetime")
                 .or_else(|| mrna_decay_rate.map(|rate| 1.0 / rate)),
-            expression_rate: read_opt(&row, "expression_rate")
-                .or_else(|| read_opt(&row, "transfection_efficiency"))
-                .or(
-                    match (expression_amplitude, mrna_decay_rate, protein_decay_rate) {
-                        (Some(amp), Some(mrna), Some(protein)) => Some(amp * (mrna - protein)),
-                        _ => None,
-                    },
-                ),
+            expression_rate: read_opt(&row, "expression_rate").or(match (
+                expression_amplitude,
+                mrna_decay_rate,
+                protein_decay_rate,
+            ) {
+                (Some(amp), Some(mrna), Some(protein)) => Some(amp * (mrna - protein)),
+                _ => None,
+            }),
         });
     }
     if parsed.is_empty() {
@@ -139,10 +139,10 @@ fn load_fit_rows(path: &Path) -> Result<Vec<FitPlotRow>, String> {
 
 fn parameter_value(row: &FitPlotRow, parameter: &str) -> Option<f64> {
     match parameter {
-        "intensity_offset" => row.intensity_offset,
+        "baseline_intensity" => row.baseline_intensity,
         "protein_lifetime" => row.protein_lifetime,
         "mrna_lifetime" => row.mrna_lifetime,
-        "translation_onset" => row.translation_onset,
+        "onset_time" => row.onset_time,
         "expression_rate" => row.expression_rate,
         _ => None,
     }
@@ -373,10 +373,10 @@ fn write_fitted_trace_grid(
 impl FitPlotRow {
     fn kinetic_coeffs(&self) -> KineticFitCoeffs {
         KineticFitCoeffs {
-            intensity_offset: self.intensity_offset.unwrap_or(0.0),
+            baseline_intensity: self.baseline_intensity.unwrap_or(0.0),
             protein_decay_rate: self.protein_decay_rate.unwrap_or(0.0),
             mrna_decay_rate: self.mrna_decay_rate.unwrap_or(0.0),
-            translation_onset: self.translation_onset.unwrap_or(0.0),
+            onset_time: self.onset_time.unwrap_or(0.0),
             expression_amplitude: self.expression_amplitude.unwrap_or(0.0),
         }
     }

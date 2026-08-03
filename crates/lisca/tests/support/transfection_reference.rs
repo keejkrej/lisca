@@ -67,10 +67,10 @@ pub fn integrate_trace(times: &[f64], corrected: &[f64], interval: f64) -> f64 {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct FitResult {
-    pub intensity_offset: f64,
+    pub baseline_intensity: f64,
     pub protein_decay_rate: f64,
     pub mrna_decay_rate: f64,
-    pub translation_onset: f64,
+    pub onset_time: f64,
     pub expression_amplitude: f64,
 }
 
@@ -78,11 +78,11 @@ const RATE_COARSE_CANDIDATE_COUNT: usize = 24;
 const RATE_REFINE_CANDIDATE_COUNT: usize = 12;
 const RATE_REFINE_PASSES: usize = 2;
 
-fn kinetic_basis(time: f64, protein_decay_rate: f64, mrna_decay_rate: f64, translation_onset: f64) -> f64 {
-    if time < translation_onset {
+fn kinetic_basis(time: f64, protein_decay_rate: f64, mrna_decay_rate: f64, onset_time: f64) -> f64 {
+    if time < onset_time {
         return 0.0;
     }
-    let dt = time - translation_onset;
+    let dt = time - onset_time;
     (-protein_decay_rate * dt).exp() - (-mrna_decay_rate * dt).exp()
 }
 
@@ -110,17 +110,17 @@ fn evaluate_rate_candidate(
     values: &[f64],
     protein_decay_rate: f64,
     mrna_decay_rate: f64,
-    translation_onset: f64,
+    onset_time: f64,
 ) -> Option<(f64, FitResult)> {
     let basis: Vec<f64> = times
         .iter()
-        .map(|&time| kinetic_basis(time, protein_decay_rate, mrna_decay_rate, translation_onset))
+        .map(|&time| kinetic_basis(time, protein_decay_rate, mrna_decay_rate, onset_time))
         .collect();
     if !basis.iter().all(|value| value.is_finite()) {
         return None;
     }
-    let (intensity_offset, expression_amplitude) = lstsq_affine(&basis, values)?;
-    if !intensity_offset.is_finite()
+    let (baseline_intensity, expression_amplitude) = lstsq_affine(&basis, values)?;
+    if !baseline_intensity.is_finite()
         || !expression_amplitude.is_finite()
         || expression_amplitude <= 0.0
     {
@@ -130,7 +130,7 @@ fn evaluate_rate_candidate(
         .iter()
         .zip(values.iter())
         .map(|(b, y)| {
-            let predicted = intensity_offset + expression_amplitude * b;
+            let predicted = baseline_intensity + expression_amplitude * b;
             let delta = predicted - y;
             delta * delta
         })
@@ -141,10 +141,10 @@ fn evaluate_rate_candidate(
     Some((
         sse,
         FitResult {
-            intensity_offset,
+            baseline_intensity,
             protein_decay_rate,
             mrna_decay_rate,
-            translation_onset,
+            onset_time,
             expression_amplitude,
         },
     ))
@@ -359,13 +359,13 @@ pub fn synthetic_kinetic_trace(
         .iter()
         .map(|&t| {
             let time = t * interval_minutes;
-            coeffs.intensity_offset
+            coeffs.baseline_intensity
                 + coeffs.expression_amplitude
                     * kinetic_basis(
                         time,
                         coeffs.protein_decay_rate,
                         coeffs.mrna_decay_rate,
-                        coeffs.translation_onset,
+                        coeffs.onset_time,
                     )
         })
         .collect()

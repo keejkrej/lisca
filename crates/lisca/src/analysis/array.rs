@@ -270,19 +270,19 @@ pub fn trapezoidal_integral(times: &[f64], values: &[f64]) -> f64 {
 
 /// Coefficients for the basic translation–degradation model (Müller et al. 2024
 /// Eq. 3; **no** protein maturation):
-/// `I(t) = intensity_offset + expression_amplitude * (e^{-β Δt} − e^{-δ Δt})`
-/// for `t ≥ translation_onset` (`t0`), else `intensity_offset`.
+/// `I(t) = baseline_intensity + expression_amplitude * (e^{-β Δt} − e^{-δ Δt})`
+/// for `t ≥ onset_time` (`t0`), else `baseline_intensity`.
 ///
-/// Paper terms: `translation_onset` = onset time \(t_0\);
+/// Paper terms: `onset_time` = onset time \(t_0\);
 /// `expression_rate = expression_amplitude * (δ − β)` = \(m_0 k_{TL}\);
 /// `1/δ` = mRNA lifetime; `1/β` = protein lifetime.
-/// `intensity_offset` is a baseline nuisance, not a kinetic rate.
+/// `baseline_intensity` is a baseline nuisance, not a kinetic rate.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct KineticFitCoeffs {
-    pub intensity_offset: f64,
+    pub baseline_intensity: f64,
     pub protein_decay_rate: f64,
     pub mrna_decay_rate: f64,
-    pub translation_onset: f64,
+    pub onset_time: f64,
     pub expression_amplitude: f64,
 }
 
@@ -290,23 +290,23 @@ pub fn kinetic_basis_value(
     time: f64,
     protein_decay_rate: f64,
     mrna_decay_rate: f64,
-    translation_onset: f64,
+    onset_time: f64,
 ) -> f64 {
-    if time < translation_onset {
+    if time < onset_time {
         return 0.0;
     }
-    let dt = time - translation_onset;
+    let dt = time - onset_time;
     (-protein_decay_rate * dt).exp() - (-mrna_decay_rate * dt).exp()
 }
 
 pub fn fitted_trace_value(time: f64, coeffs: &KineticFitCoeffs) -> f64 {
-    coeffs.intensity_offset
+    coeffs.baseline_intensity
         + coeffs.expression_amplitude
             * kinetic_basis_value(
                 time,
                 coeffs.protein_decay_rate,
                 coeffs.mrna_decay_rate,
-                coeffs.translation_onset,
+                coeffs.onset_time,
             )
 }
 
@@ -315,7 +315,7 @@ pub fn evaluate_kinetic_candidate(
     values: &[f64],
     protein_decay_rate: f64,
     mrna_decay_rate: f64,
-    translation_onset: f64,
+    onset_time: f64,
 ) -> Option<(f64, KineticFitCoeffs)> {
     if times.len() != values.len() || times.is_empty() {
         return None;
@@ -323,20 +323,20 @@ pub fn evaluate_kinetic_candidate(
     let times = Array1::from_iter(times.iter().copied());
     let values = Array1::from_iter(values.iter().copied());
     let basis = times.mapv(|time| {
-        kinetic_basis_value(time, protein_decay_rate, mrna_decay_rate, translation_onset)
+        kinetic_basis_value(time, protein_decay_rate, mrna_decay_rate, onset_time)
     });
     if !basis.iter().all(|value| value.is_finite()) {
         return None;
     }
-    let (intensity_offset, expression_amplitude) =
+    let (baseline_intensity, expression_amplitude) =
         lstsq_affine(basis.as_slice().unwrap_or(&[]), values.as_slice().unwrap_or(&[]))?;
-    if !intensity_offset.is_finite()
+    if !baseline_intensity.is_finite()
         || !expression_amplitude.is_finite()
         || expression_amplitude <= 0.0
     {
         return None;
     }
-    let predicted = &basis * expression_amplitude + intensity_offset;
+    let predicted = &basis * expression_amplitude + baseline_intensity;
     let residuals = &predicted - &values;
     let sse = residuals.mapv(|delta| delta * delta).sum();
     if !sse.is_finite() {
@@ -345,10 +345,10 @@ pub fn evaluate_kinetic_candidate(
     Some((
         sse,
         KineticFitCoeffs {
-            intensity_offset,
+            baseline_intensity,
             protein_decay_rate,
             mrna_decay_rate,
-            translation_onset,
+            onset_time,
             expression_amplitude,
         },
     ))

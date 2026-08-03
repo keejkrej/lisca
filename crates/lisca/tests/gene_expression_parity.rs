@@ -165,8 +165,8 @@ fn fit_stage_matches_transfection_reference_fit() {
         .expect("reference fit");
 
     assert!(approx_eq(
-        parse_f64(&row["intensity_offset"]),
-        reference.intensity_offset,
+        parse_f64(&row["baseline_intensity"]),
+        reference.baseline_intensity,
         FIT_REL_TOL
     ));
     assert!(approx_eq(
@@ -185,8 +185,8 @@ fn fit_stage_matches_transfection_reference_fit() {
         FIT_REL_TOL
     ));
     assert!(approx_eq(
-        parse_f64(&row["translation_onset"]),
-        reference.translation_onset,
+        parse_f64(&row["onset_time"]),
+        reference.onset_time,
         FIT_REL_TOL
     ));
 }
@@ -291,10 +291,10 @@ fn compare_fit_csvs(lisca_csv: &str, transfection_csv: &str) {
         &lisca_path,
         &tf_path,
         &[
-            "intensity_offset",
+            "baseline_intensity",
             "protein_decay_rate",
             "mrna_decay_rate",
-            "translation_onset",
+            "onset_time",
             "expression_amplitude",
         ],
         FIT_CLI_REL_TOL,
@@ -349,10 +349,10 @@ fn synthetic_frame(timepoint: u32) -> Vec<f64> {
     let foreground = {
         let frame_indices: Vec<f64> = (0..4).map(f64::from).collect();
         let kinetic_truth = FitResult {
-            intensity_offset: 10.0,
+            baseline_intensity: 10.0,
             protein_decay_rate: 0.1,
             mrna_decay_rate: 0.5,
-            translation_onset: 0.0,
+            onset_time: 0.0,
             expression_amplitude: 100.0,
         };
         let corrected = support::transfection_reference::synthetic_kinetic_trace(

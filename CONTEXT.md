@@ -35,20 +35,21 @@
 - **Studio** composes assay setup, Align and Annotation sessions, an Analysis run,
   and result review in one workflow.
 
-## Transfection kinetic parameters (display language)
+## Transfection kinetic parameters (code = CSV = UI)
 
 Gene-expression fits use the **basic translation–degradation model** (Müller et al.
-2024 Eq. 3; **no protein maturation**). Prefer paper display terms; CSV column ids
-may keep historical names:
+2024 Eq. 3; **no protein maturation**). Field names are the same in Rust, Python,
+`fit.csv`, and Studio labels:
 
-| Display label | CSV / field id | Paper symbol |
+| Code / CSV / id | Display label | Paper symbol |
 | --- | --- | --- |
-| onset time | `translation_onset` | \(t_0\) |
-| expression rate | `expression_rate` (legacy alias: `transfection_efficiency`) | \(m_0 k_{TL}\) |
-| mRNA lifetime | `mrna_lifetime` | \(\tau_\mathrm{mRNA}\) |
-| protein lifetime | `protein_lifetime` | \(\tau_\mathrm{EGFP}\) |
-| intensity offset | `intensity_offset` | baseline nuisance (not a kinetic rate) |
-| AUC | `auc` | integrated protein output |
+| `onset_time` | onset time | \(t_0\) |
+| `expression_rate` | expression rate | \(m_0 k_{TL}\) |
+| `mrna_lifetime` | mRNA lifetime | \(\tau_\mathrm{mRNA}\) |
+| `protein_lifetime` | protein lifetime | \(\tau_\mathrm{EGFP}\) |
+| `expression_amplitude` | (internal fit coeff.) | \(m_0 k_{TL}/(\delta-\beta)\) |
+| `baseline_intensity` | baseline intensity | additive baseline (not a kinetic rate) |
+| `auc` | AUC | integrated protein output |
 
-Do **not** label \(m_0 k_{TL}\) as “transfection efficiency” in UI or plots;
-reserve “efficiency” for delivery/escape fractions when that concept appears.
+Use **expression rate** for \(m_0 k_{TL}\); reserve “efficiency” for delivery/escape
+fractions. One name only — no alternate CSV/API aliases.

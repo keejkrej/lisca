@@ -35,10 +35,10 @@ impl SyntheticWorkspace {
         fs::create_dir_all(root.join("results")).expect("results dir");
 
         let kinetic_truth = FitResult {
-            intensity_offset: 10.0,
+            baseline_intensity: 10.0,
             protein_decay_rate: 0.1,
             mrna_decay_rate: 0.5,
-            translation_onset: 0.0,
+            onset_time: 0.0,
             expression_amplitude: 100.0,
         };
 
@@ -132,10 +132,10 @@ fn center_mask() -> Vec<bool> {
 fn quantized_frame_metrics(timepoint: u32) -> (u32, f64, f64, f64) {
     let frame_indices: Vec<f64> = (0..TIME_COUNT).map(f64::from).collect();
     let kinetic_truth = FitResult {
-        intensity_offset: 10.0,
+        baseline_intensity: 10.0,
         protein_decay_rate: 0.1,
         mrna_decay_rate: 0.5,
-        translation_onset: 0.0,
+        onset_time: 0.0,
         expression_amplitude: 100.0,
     };
     let corrected = synthetic_kinetic_trace(&frame_indices, INTERVAL_MINUTES, kinetic_truth);
