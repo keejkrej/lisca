@@ -29,5 +29,5 @@ export function instructionForAnnotate(): string {
 export function defaultResultInstruction(section: "timeseries" | "parameters"): string {
   return section === "timeseries"
     ? "All timeseries plots are shown below."
-    : "Parameter plots: mRNA lifetime, AUC, transfection efficiency, and translation onset.";
+    : "Parameter plots: mRNA lifetime, AUC, expression rate, and onset time.";
 }

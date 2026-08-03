@@ -23,9 +23,10 @@ use crate::analysis::output::collect_csv_outputs;
 use crate::analysis::progress::{analysis_progress, run_blocking};
 use crate::analysis::slide::{build_slide_mapping, parse_interval_minutes};
 
-/// Default second-pass translation-onset search cap when assay.json omits
-/// `analysis.maxOnsetMinutes` (minutes). `0` still means “onset fixed at 0”
-/// when the field is set explicitly.
+/// Default second-pass **onset time** (\(t_0\)) search cap when assay.json
+/// omits `analysis.maxOnsetMinutes` (minutes). `0` still means “onset fixed
+/// at 0” when the field is set explicitly. Fit uses the basic
+/// translation–degradation model (Müller et al. 2024 Eq. 3; no maturation).
 pub const DEFAULT_MAX_ONSET_MINUTES: f64 = 120.0;
 
 /// Default frame interval (minutes) when assay.json omits a positive

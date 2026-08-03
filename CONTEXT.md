@@ -34,3 +34,21 @@
 - **Annotator** hosts an Annotation session.
 - **Studio** composes assay setup, Align and Annotation sessions, an Analysis run,
   and result review in one workflow.
+
+## Transfection kinetic parameters (display language)
+
+Gene-expression fits use the **basic translation–degradation model** (Müller et al.
+2024 Eq. 3; **no protein maturation**). Prefer paper display terms; CSV column ids
+may keep historical names:
+
+| Display label | CSV / field id | Paper symbol |
+| --- | --- | --- |
+| onset time | `translation_onset` | \(t_0\) |
+| expression rate | `expression_rate` (legacy alias: `transfection_efficiency`) | \(m_0 k_{TL}\) |
+| mRNA lifetime | `mrna_lifetime` | \(\tau_\mathrm{mRNA}\) |
+| protein lifetime | `protein_lifetime` | \(\tau_\mathrm{EGFP}\) |
+| intensity offset | `intensity_offset` | baseline nuisance (not a kinetic rate) |
+| AUC | `auc` | integrated protein output |
+
+Do **not** label \(m_0 k_{TL}\) as “transfection efficiency” in UI or plots;
+reserve “efficiency” for delivery/escape fractions when that concept appears.

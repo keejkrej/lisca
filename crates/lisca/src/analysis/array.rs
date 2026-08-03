@@ -268,6 +268,15 @@ pub fn trapezoidal_integral(times: &[f64], values: &[f64]) -> f64 {
     (dt * heights).sum()
 }
 
+/// Coefficients for the basic translation–degradation model (Müller et al. 2024
+/// Eq. 3; **no** protein maturation):
+/// `I(t) = intensity_offset + expression_amplitude * (e^{-β Δt} − e^{-δ Δt})`
+/// for `t ≥ translation_onset` (`t0`), else `intensity_offset`.
+///
+/// Paper terms: `translation_onset` = onset time \(t_0\);
+/// `expression_rate = expression_amplitude * (δ − β)` = \(m_0 k_{TL}\);
+/// `1/δ` = mRNA lifetime; `1/β` = protein lifetime.
+/// `intensity_offset` is a baseline nuisance, not a kinetic rate.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct KineticFitCoeffs {
     pub intensity_offset: f64,

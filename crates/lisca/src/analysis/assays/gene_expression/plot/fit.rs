@@ -14,11 +14,13 @@ use crate::analysis::plot::{
 use crate::analysis::slide::SlideMapping;
 use crate::analysis::timeseries::{discover_timeseries_csvs, group_timeseries_rows};
 
+// Display labels: Müller et al. 2024 basic model (no maturation).
+// CSV keys keep historical names (translation_onset, expression_rate, …).
 const PLOTTED_PARAMETERS: [(&str, &str); 5] = [
     ("intensity_offset", "intensity offset"),
     ("protein_lifetime", "protein lifetime"),
     ("mrna_lifetime", "mRNA lifetime"),
-    ("translation_onset", "translation onset"),
+    ("translation_onset", "onset time"),
     ("expression_rate", "expression rate"),
 ];
 
