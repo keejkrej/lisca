@@ -1,0 +1,38 @@
+packages:
+  - "apps/*/*"
+  - "packages/*"
+
+catalog:
+  effect: "^3.21.2"
+  "@effect-atom/atom-solid": "^0.1.0"
+  "@effect/experimental": "^0.60.0"
+  "@effect/platform": "^0.96.1"
+  "@effect/platform-browser": "^0.60.0"
+  "@types/node": "^22.15.21"
+  typescript: "^5.9.2"
+  vitest: "^3.2.4"
+  "@tanstack/solid-router": "^1.169.2"
+  "@tanstack/router-plugin": "^1.167.35"
+  "@tailwindcss/vite": "^4.1.8"
+  "vite-plugin-solid": "^2.11.0"
+  "solid-js": "^1.9.0"
+  "@solidjs/testing-library": "^0.8.10"
+  "@kobalte/core": "^0.13.0"
+  "phosphor-icons-solid": "^1.0.0"
+  tailwindcss: "^4.1.8"
+  vite: "^6.3.5"
+  "@tauri-apps/cli": "^2.0.0"
+
+overrides:
+  effect: "catalog:"
+  solid-js: "^1.9.0"
+  vite: "npm:@voidzero-dev/vite-plus-core@latest"
+
+# pnpm 11: allow lifecycle scripts only for packages that need native builds.
+allowBuilds:
+  core-js: true
+  esbuild: true
+  msgpackr-extract: true
+  onnxruntime-node: true
+  protobufjs: true
+  sharp: true

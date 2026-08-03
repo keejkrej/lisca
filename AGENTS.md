@@ -43,9 +43,9 @@ Analysis science matures in sibling `lisca-*-assay` Python packages, then is rew
 
 <!-- memory:techstack-start -->
 
-- **Monorepo:** Bun workspaces + Vite+ (`vp run` for task orchestration) — SolidJS, Vite, Tailwind v4, zaidan (shadcn registry for SolidJS/Kobalte), Effect Atom, TanStack Router; Tauri desktop; Rust HTTP/WS servers per product (`apps/*/server`).
+- **Monorepo:** pnpm workspaces + Vite+ (`vp run` for task orchestration) — SolidJS, Vite, Tailwind v4, zaidan (shadcn registry for SolidJS/Kobalte), Effect Atom, TanStack Router; Tauri desktop; Rust HTTP/WS servers per product (`apps/*/server`).
 - **Client IO:** Effect programs and shared atoms in `@lisca/client` — not raw `fetch` in components.
-- **Toolchain:** `vp` (Vite+) is the unified entry point for package management and JS tasks. Use `vp install`, `vp add`, `vp remove`, `vp run`, `vp exec`, etc. Do not invoke `bun`/`npm`/`pnpm`/`yarn` directly for install/add/remove/update/run commands.
+- **Toolchain:** `vp` (Vite+) is the unified entry point for package management and JS tasks. Use `vp install`, `vp add`, `vp remove`, `vp run`, `vp exec`, etc. Do not invoke `pnpm`/`npm`/`yarn`/`bun` directly for install/add/remove/update/run commands (package manager is **pnpm** under `vp`).
 - **CLI:** Root scripts in `package.json` cover daily dev: `vp run dev:aligner`, `dev:annotator`, `dev:studio`, `dev:landing` (frontend + backend via `vp run --parallel`); `vp run dist:<product>` (Tauri packaging via `scripts/package-tauri.ts`); `vp run deploy:landing` (Render deploy via `scripts/deploy-landing.ts`); `vp run build` (all packages + web apps). Underneath, per-package tasks go through `vp run --filter <pkg> <task>`.
 - **Tooling:** oxfmt + oxlint are driven by `vp` from `vite.config.ts`.
 - **Imports:** Extensionless TypeScript imports (no `.ts`/`.tsx` suffixes) — `.oxlintrc.json` `import/extensions`.
@@ -54,7 +54,7 @@ Analysis science matures in sibling `lisca-*-assay` Python packages, then is rew
 - **Backends:** Rust (Axum; serde types from `typify` on generated JSON Schema) for product APIs; Python (uv, Ruff, ty, Typer) in `python/` for utilities and training.
 - **Tests:** Put logic in `@lisca/utils`, `@lisca/ui-headless`, `@lisca/client` — not DOM component mounts — `docs/ui/ui-package-layout.md`.
 - **Agent verification:** Playwright for web (Vite apps, Tauri desktop) — start dev servers, reproduce, and verify yourself.
-- **Install policy:** `vp install` auto-detects Bun and respects `bunfig.toml` `minimumReleaseAge`. Python uv (`exclude-newer = "7 days"`) rejects packages newer than 7 days.
+- **Install policy:** `vp install` uses **pnpm** (`packageManager` in root `package.json`). Release age is gated via `.npmrc` `minimum-release-age` (7 days). Python uv (`exclude-newer = "7 days"`) rejects packages newer than 7 days.
 <!-- memory:techstack-end -->
 
 ## Context

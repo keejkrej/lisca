@@ -1,14 +1,15 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 /**
  * Stage web + Rust server artifacts and run Tauri build for a Lisca desktop app.
  *
  * Usage:
  *   vp run dist:aligner
- *   vp exec bun scripts/package-tauri.ts aligner
+ *   vp exec node --experimental-strip-types scripts/package-tauri.ts aligner
  */
 import { chmodSync, copyFileSync, cpSync, existsSync, mkdirSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { DESKTOP_PRODUCTS } from "./lisca-desktop-products.cjs";
+import { runSync } from "./node-run.ts";
 
 type LiscaProduct = "aligner" | "annotator" | "studio";
 type DesktopProductConfig = (typeof DESKTOP_PRODUCTS)[LiscaProduct];
@@ -17,29 +18,13 @@ const root = resolve(import.meta.dirname, "..");
 
 function usage(): void {
   console.error(`
-Usage: vp exec bun scripts/package-tauri.ts <product>
+Usage: vp exec node --experimental-strip-types scripts/package-tauri.ts <product>
 
   product  aligner | annotator | studio
 
 Example:
   vp run dist:aligner
 `);
-}
-
-function run(
-  command: string,
-  args: string[],
-  options: { cwd?: string; env?: Record<string, string> } = {},
-): void {
-  const result = Bun.spawnSync({
-    cmd: [command, ...args],
-    stdio: ["inherit", "inherit", "inherit"],
-    cwd: options.cwd,
-    env: options.env,
-  });
-  if (result.exitCode !== 0) {
-    process.exit(result.exitCode ?? 1);
-  }
 }
 
 function stageArtifacts(product: LiscaProduct, cfg: DesktopProductConfig): string {
@@ -86,18 +71,18 @@ if (!cfg) {
 
 console.log(`Building ${cfg.productName} for ${process.platform}...`);
 
-run("vp", ["run", "--filter", cfg.webPkg, "build"], {
+runSync("vp", ["run", "--filter", cfg.webPkg, "build"], {
   cwd: root,
-  env: { ...process.env, VITE_DESKTOP: "1" } as Record<string, string>,
+  env: { ...process.env, VITE_DESKTOP: "1" },
 });
 
-run("vp", ["run", "--filter", cfg.serverPkg, "build"], { cwd: root });
+runSync("vp", ["run", "--filter", cfg.serverPkg, "build"], { cwd: root });
 
 const desktopDir = stageArtifacts(product, cfg);
 
-run("vp", ["exec", "tauri", "build"], {
+runSync("vp", ["exec", "tauri", "build"], {
   cwd: desktopDir,
-  env: process.env as Record<string, string>,
+  env: process.env,
 });
 
 const bundleSrc = join(root, "target", "release", "bundle");

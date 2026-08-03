@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "bun ../../../scripts/build-tauri-frontend.ts aligner && bun --filter @lisca/aligner-server build",
+    "build": "node --experimental-strip-types ../../../scripts/build-tauri-frontend.ts aligner && vp run --filter @lisca/aligner-server build",
     "dev": "tauri dev",
-    "dist": "bun ../../../scripts/package-tauri.ts aligner",
-    "typecheck": "vp exec bun ../../../scripts/prepare-tauri-resources.ts aligner && cargo check -p aligner-tauri"
+    "dist": "node --experimental-strip-types ../../../scripts/package-tauri.ts aligner",
+    "typecheck": "vp exec node --experimental-strip-types ../../../scripts/prepare-tauri-resources.ts aligner && cargo check -p aligner-tauri"
   },
   "dependencies": {},
   "devDependencies": {

@@ -11,7 +11,7 @@
   },
   "scripts": {
     "dev": "vp dev",
-    "build": "bun ../../../scripts/demo-standalone-build.ts",
+    "build": "node --experimental-strip-types ../../../scripts/demo-standalone-build.ts",
     "build:site": "tsc -p tsconfig.json --noEmit && vp build",
     "preview": "vp preview",
     "typecheck": "tsc -p tsconfig.json --noEmit"

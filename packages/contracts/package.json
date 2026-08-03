@@ -26,10 +26,10 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
-    "openapi": "bun scripts/gen-openapi.ts",
-    "contract-schema": "bun scripts/gen-rust-schema.ts",
-    "rust-types": "bun scripts/gen-rust-schema.ts && cargo typify contract.schema.json --crate 'lisca@0.1.0' --unknown-crates allow -o ../../crates/lisca/src/protocol/generated.rs",
-    "generate": "bun scripts/gen-openapi.ts && bun scripts/gen-rust-schema.ts",
+    "openapi": "node --experimental-strip-types scripts/gen-openapi.ts",
+    "contract-schema": "node --experimental-strip-types scripts/gen-rust-schema.ts",
+    "rust-types": "node --experimental-strip-types scripts/gen-rust-schema.ts && cargo typify contract.schema.json --crate 'lisca@0.1.0' --unknown-crates allow -o ../../crates/lisca/src/protocol/generated.rs",
+    "generate": "node --experimental-strip-types scripts/gen-openapi.ts && node --experimental-strip-types scripts/gen-rust-schema.ts",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json"
   },

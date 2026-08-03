@@ -1,11 +1,12 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 /**
  * Build a product's web frontend for a Tauri desktop bundle.
  *
  * Usage:
- *   vp exec bun scripts/build-tauri-frontend.ts <product>
+ *   vp exec node --experimental-strip-types scripts/build-tauri-frontend.ts <product>
  */
 import { resolve } from "node:path";
+import { runSync } from "./node-run.ts";
 
 type LiscaProduct = "aligner" | "annotator" | "studio";
 
@@ -15,7 +16,7 @@ const PRODUCTS = new Set<LiscaProduct>(["aligner", "annotator", "studio"]);
 
 function usage(): void {
   console.error(`
-Usage: vp exec bun scripts/build-tauri-frontend.ts <product>
+Usage: vp exec node --experimental-strip-types scripts/build-tauri-frontend.ts <product>
 
   product  aligner | annotator | studio
 `);
@@ -28,11 +29,7 @@ if (!product || !PRODUCTS.has(product)) {
 }
 
 const webPkg = `@lisca/${product}-web`;
-const result = Bun.spawnSync({
-  cmd: ["vp", "run", "--filter", webPkg, "build"],
+runSync("vp", ["run", "--filter", webPkg, "build"], {
   cwd: root,
-  stdio: ["inherit", "inherit", "inherit"],
   env: { ...process.env, VITE_DESKTOP: "1" },
 });
-
-process.exit(result.exitCode ?? 1);

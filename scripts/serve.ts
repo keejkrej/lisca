@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 /**
  * Build the web frontend + Rust backend for a product, then serve both on a
  * single public port so you can access it from another machine on the LAN.
@@ -9,21 +9,24 @@
  * /fs, /align, /annotate, /studio, /profile, /memory, /tasks to the Rust backend
  * (same layout as the Docker nginx config).
  */
-import { existsSync } from "node:fs";
+import { createReadStream, existsSync, statSync } from "node:fs";
+import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { join, resolve } from "node:path";
+import { pipeline } from "node:stream/promises";
 import { LISCA_API_PROXY_PREFIXES } from "./lisca-dev-ports.cjs";
+import { runSync, spawnInherit } from "./node-run.ts";
 
 type LiscaProduct = "aligner" | "annotator" | "studio";
 
 const root = resolve(import.meta.dirname, "..");
 
-const product = process.argv[2] as LiscaProduct ?? "aligner";
+const product = (process.argv[2] as LiscaProduct) ?? "aligner";
 const skipBuild = process.argv.includes("--skip-build");
 const hostArg = process.argv.find((a) => a.startsWith("--host="));
 const portArg = process.argv.find((a) => a.startsWith("--port="));
 
 const PORTS: Record<LiscaProduct, number> = { aligner: 8765, annotator: 8766, studio: 8767 };
-const publicPort = portArg ? Number(portArg.slice(7)) : PORTS[product] ?? 8765;
+const publicPort = portArg ? Number(portArg.slice(7)) : (PORTS[product] ?? 8765);
 const host = hostArg ? hostArg.slice(7) : "0.0.0.0";
 
 if (!(product in PORTS)) {
@@ -39,16 +42,11 @@ const serverBinary = resolve(
   process.platform === "win32" ? `${product}-server.exe` : `${product}-server`,
 );
 
-function run(cmd: string, args: string[]): void {
-  const r = Bun.spawnSync({ cmd: [cmd, ...args], cwd: root, stdio: ["inherit", "inherit", "inherit"] });
-  if (r.exitCode !== null && r.exitCode !== 0) process.exit(r.exitCode ?? 1);
-}
-
 if (!skipBuild) {
   console.log(`[serve] building @lisca/${product}-web…`);
-  run("vp", ["run", "--filter", `@lisca/${product}-web`, "build"]);
+  runSync("vp", ["run", "--filter", `@lisca/${product}-web`, "build"], { cwd: root });
   console.log(`[serve] building ${product}-server (release)…`);
-  run("cargo", ["build", "--release", "-p", `${product}-server`]);
+  runSync("cargo", ["build", "--release", "-p", `${product}-server`], { cwd: root });
 }
 
 if (!existsSync(distDir)) {
@@ -65,57 +63,117 @@ const backendPort = publicPort + 1000;
 console.log(`[serve] ${product}-server on 127.0.0.1:${backendPort}`);
 console.log(`[serve] public on ${host}:${publicPort} (static + API proxy)`);
 
-const server = Bun.spawn({
-  cmd: [serverBinary],
+const server = spawnInherit(serverBinary, [], {
   cwd: root,
   env: { ...process.env, PORT: String(backendPort), HOST: "127.0.0.1" },
-  stdio: ["inherit", "inherit", "inherit"],
 });
 
 const apiPrefixes = LISCA_API_PROXY_PREFIXES;
 
-const httpServer = Bun.serve({
-  port: publicPort,
-  hostname: host,
-  async fetch(req) {
-    const url = new URL(req.url);
-    const pathname = url.pathname;
+function contentType(filePath: string): string {
+  if (filePath.endsWith(".html")) return "text/html; charset=utf-8";
+  if (filePath.endsWith(".js") || filePath.endsWith(".mjs")) return "text/javascript; charset=utf-8";
+  if (filePath.endsWith(".css")) return "text/css; charset=utf-8";
+  if (filePath.endsWith(".json")) return "application/json; charset=utf-8";
+  if (filePath.endsWith(".svg")) return "image/svg+xml";
+  if (filePath.endsWith(".png")) return "image/png";
+  if (filePath.endsWith(".jpg") || filePath.endsWith(".jpeg")) return "image/jpeg";
+  if (filePath.endsWith(".woff2")) return "font/woff2";
+  return "application/octet-stream";
+}
 
-    // API routes -> proxy to Rust backend
-    if (apiPrefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
-      try {
-        const target = new URL(req.url);
-        target.port = String(backendPort);
-        target.hostname = "127.0.0.1";
-        return await fetch(target, req);
-      } catch {
-        return new Response("Backend unavailable", { status: 502 });
+async function proxyApi(req: IncomingMessage, res: ServerResponse, pathname: string): Promise<void> {
+  try {
+    const target = new URL(req.url ?? "/", `http://127.0.0.1:${backendPort}`);
+    target.port = String(backendPort);
+    target.hostname = "127.0.0.1";
+    const headers = new Headers();
+    for (const [key, value] of Object.entries(req.headers)) {
+      if (value === undefined) continue;
+      if (Array.isArray(value)) {
+        for (const item of value) headers.append(key, item);
+      } else {
+        headers.set(key, value);
       }
     }
+    headers.delete("host");
+    const body =
+      req.method === "GET" || req.method === "HEAD"
+        ? undefined
+        : await new Promise<Buffer>((resolvePromise, reject) => {
+            const chunks: Buffer[] = [];
+            req.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
+            req.on("end", () => resolvePromise(Buffer.concat(chunks)));
+            req.on("error", reject);
+          });
+    const upstream = await fetch(target, {
+      method: req.method,
+      headers,
+      body,
+      // @ts-expect-error duplex needed for some node fetch bodies
+      duplex: body ? "half" : undefined,
+    });
+    res.statusCode = upstream.status;
+    upstream.headers.forEach((value, key) => {
+      if (key.toLowerCase() === "transfer-encoding") return;
+      res.setHeader(key, value);
+    });
+    const ab = await upstream.arrayBuffer();
+    res.end(Buffer.from(ab));
+  } catch {
+    res.statusCode = 502;
+    res.end("Backend unavailable");
+  }
+  void pathname;
+}
 
-    // Static files from dist/
-    const filePath = join(distDir, decodeURIComponent(pathname));
+async function serveStatic(res: ServerResponse, pathname: string): Promise<void> {
+  const decoded = decodeURIComponent(pathname);
+  const candidates = [
+    join(distDir, decoded === "/" ? "index.html" : decoded),
+    join(distDir, "index.html"),
+  ];
+  for (const filePath of candidates) {
     if (!filePath.startsWith(distDir)) {
-      return new Response("Forbidden", { status: 403 });
+      res.statusCode = 403;
+      res.end("Forbidden");
+      return;
     }
-    let file = Bun.file(filePath);
-    if (await file.exists()) {
-      return new Response(file);
+    if (!existsSync(filePath) || !statSync(filePath).isFile()) continue;
+    res.statusCode = 200;
+    res.setHeader("Content-Type", contentType(filePath));
+    await pipeline(createReadStream(filePath), res);
+    return;
+  }
+  res.statusCode = 404;
+  res.end("Not found");
+}
+
+const httpServer = createServer((req, res) => {
+  void (async () => {
+    const url = new URL(req.url ?? "/", `http://${host}:${publicPort}`);
+    const pathname = url.pathname;
+    if (apiPrefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+      await proxyApi(req, res, pathname);
+      return;
     }
-    // SPA fallback
-    file = Bun.file(join(distDir, "index.html"));
-    if (await file.exists()) {
-      return new Response(file);
+    await serveStatic(res, pathname);
+  })().catch((error) => {
+    console.error(error);
+    if (!res.headersSent) {
+      res.statusCode = 500;
+      res.end("Internal error");
     }
-    return new Response("Not found", { status: 404 });
-  },
+  });
 });
 
-console.log(`[serve] listening on http://${host}:${publicPort}`);
+httpServer.listen(publicPort, host, () => {
+  console.log(`[serve] listening on http://${host}:${publicPort}`);
+});
 
 const cleanup = () => {
-  if (server.killed === false) server.kill("SIGTERM");
-  httpServer.stop(true);
+  if (!server.killed) server.kill("SIGTERM");
+  httpServer.close();
   process.exit(0);
 };
 process.on("SIGINT", cleanup);

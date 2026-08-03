@@ -3,21 +3,24 @@
 ARG PRODUCT=aligner
 
 # --- Web: install layer + cached vp/vite build ---
-FROM oven/bun:1.3.14 AS web-build
+FROM node:24-bookworm AS web-build
 ARG PRODUCT
 
 WORKDIR /app
 
-# Install deps with a cached bun install layer. Lockfile is copied first so the
+RUN corepack enable && corepack prepare pnpm@11.15.1 --activate \
+  && npm install -g vite-plus@latest
+
+# Install deps with a cached pnpm store. Lockfile is copied first so the
 # expensive install only re-runs when dependencies change.
-COPY package.json bun.lock bunfig.toml vite.config.ts tsconfig.base.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc vite.config.ts tsconfig.base.json ./
 COPY packages ./packages
 COPY apps ./apps
 COPY scripts ./scripts
 COPY assets ./assets
 COPY docs ./docs
-RUN --mount=type=cache,target=/root/.bun/install/cache,id=lisca-bun-cache \
-    bun install --frozen-lockfile --ignore-scripts
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store,id=lisca-pnpm-store \
+    pnpm install --frozen-lockfile --ignore-scripts
 
 # Build the product web app and its workspace dependencies.
 # vp run --filter <pkg>... resolves the transitive dependency graph from package.json.

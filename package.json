@@ -1,33 +1,6 @@
 {
   "name": "lisca",
   "private": true,
-  "workspaces": {
-    "packages": [
-      "apps/*/*",
-      "packages/*"
-    ],
-    "catalog": {
-      "effect": "^3.21.2",
-      "@effect-atom/atom-solid": "^0.1.0",
-      "@effect/experimental": "^0.60.0",
-      "@effect/platform": "^0.96.1",
-      "@effect/platform-browser": "^0.60.0",
-      "@types/node": "^22.15.21",
-      "typescript": "^5.9.2",
-      "vitest": "^3.2.4",
-      "@tanstack/solid-router": "^1.169.2",
-      "@tanstack/router-plugin": "^1.167.35",
-      "@tailwindcss/vite": "^4.1.8",
-      "vite-plugin-solid": "^2.11.0",
-      "solid-js": "^1.9.0",
-      "@solidjs/testing-library": "^0.8.10",
-      "@kobalte/core": "^0.13.0",
-      "phosphor-icons-solid": "^1.0.0",
-      "tailwindcss": "^4.1.8",
-      "vite": "^6.3.5",
-      "@tauri-apps/cli": "^2.0.0"
-    }
-  },
   "type": "module",
   "scripts": {
     "dev:aligner": "vp run --parallel --filter @lisca/aligner-server --filter @lisca/aligner-web dev",
@@ -35,15 +8,15 @@
     "dev:studio": "vp run --parallel --filter @lisca/studio-server --filter @lisca/studio-web dev",
     "dev:landing": "vp run --filter @lisca/landing-web dev",
     "build": "vp run --filter ./packages/* build && vp run --filter @lisca/*-web build",
-    "dist:aligner": "vp exec bun scripts/package-tauri.ts aligner",
-    "dist:annotator": "vp exec bun scripts/package-tauri.ts annotator",
-    "dist:studio": "vp exec bun scripts/package-tauri.ts studio",
-    "deploy:landing": "vp exec bun scripts/deploy-landing.ts",
-    "serve:aligner": "vp exec bun scripts/serve.ts aligner",
-    "serve:annotator": "vp exec bun scripts/serve.ts annotator",
-    "serve:studio": "vp exec bun scripts/serve.ts studio",
+    "dist:aligner": "vp exec node --experimental-strip-types scripts/package-tauri.ts aligner",
+    "dist:annotator": "vp exec node --experimental-strip-types scripts/package-tauri.ts annotator",
+    "dist:studio": "vp exec node --experimental-strip-types scripts/package-tauri.ts studio",
+    "deploy:landing": "vp exec node --experimental-strip-types scripts/deploy-landing.ts",
+    "serve:aligner": "vp exec node --experimental-strip-types scripts/serve.ts aligner",
+    "serve:annotator": "vp exec node --experimental-strip-types scripts/serve.ts annotator",
+    "serve:studio": "vp exec node --experimental-strip-types scripts/serve.ts studio",
     "check": "vp lint && vp run -r --no-cache typecheck && vp run check:contracts && vp run check:rust && vp run -r --no-cache test",
-    "check:contracts": "vp run --filter @lisca/contracts generate && vp exec bun scripts/check-openapi-routes.ts && vp run --filter @lisca/contracts test",
+    "check:contracts": "vp run --filter @lisca/contracts generate && vp exec node --experimental-strip-types scripts/check-openapi-routes.ts && vp run --filter @lisca/contracts test",
     "check:rust": "cargo check --workspace && cargo clippy --workspace -- -D warnings",
     "lint": "vp lint",
     "fmt": "vp fmt",
@@ -64,17 +37,9 @@
     "vitest": "catalog:",
     "wait-on": "^8.0.3"
   },
-  "overrides": {
-    "effect": "catalog:",
-    "solid-js": "^1.9.0",
-    "vite": "npm:@voidzero-dev/vite-plus-core@latest"
-  },
   "engines": {
-    "bun": ">=1.2.14"
+    "node": ">=22",
+    "pnpm": ">=10"
   },
-  "packageManager": "bun@1.3.14",
-  "trustedDependencies": [
-    "core-js",
-    "esbuild"
-  ]
+  "packageManager": "pnpm@11.15.1"
 }

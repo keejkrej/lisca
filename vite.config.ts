@@ -58,6 +58,7 @@ export default defineConfig({
       "**/target/**",
       "**/coverage/**",
       "**/routeTree.gen.ts",
+      "pnpm-lock.yaml",
       "bun.lock",
     ],
     sortPackageJson: {},

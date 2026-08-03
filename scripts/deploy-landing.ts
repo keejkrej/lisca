@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 /**
  * Build landing locally and push prebuilt assets to deploy/landing for Render.
  *
@@ -7,10 +7,11 @@
  *
  * Usage:
  *   vp run deploy:landing
- *   vp exec bun scripts/deploy-landing.ts [--skip-build]
+ *   vp exec node --experimental-strip-types scripts/deploy-landing.ts [--skip-build]
  */
 import { existsSync, mkdirSync, rmSync, cpSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
+import { runSync } from "./node-run.ts";
 
 const root = resolve(import.meta.dirname, "..");
 const DEPLOY_BRANCH = "deploy/landing";
@@ -20,23 +21,11 @@ const WORKTREE = join(root, ".deploy/landing");
 const skipBuild = process.argv.includes("--skip-build");
 
 function run(command: string, args: string[], options: { cwd?: string; ok?: boolean } = {}): void {
-  const result = Bun.spawnSync({
-    cmd: [command, ...args],
-    cwd: options.cwd ?? root,
-    stdio: ["inherit", "inherit", "inherit"],
-  });
-  if (result.exitCode !== 0 && !options.ok) {
-    process.exit(result.exitCode ?? 1);
-  }
+  runSync(command, args, { cwd: options.cwd ?? root, ok: options.ok });
 }
 
 function capture(command: string, args: string[], options: { cwd?: string } = {}): string {
-  const result = Bun.spawnSync({
-    cmd: [command, ...args],
-    cwd: options.cwd ?? root,
-    stdio: ["pipe", "pipe", "inherit"],
-  });
-  return (result.stdout as string | null)?.trim() ?? "";
+  return runSync(command, args, { cwd: options.cwd ?? root, capture: true, ok: true });
 }
 
 function ensureWorktree(): void {
