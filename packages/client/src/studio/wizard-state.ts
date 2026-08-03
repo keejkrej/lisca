@@ -23,7 +23,7 @@ export type BasicInfoDirtyState = BasicInfoSnapshotState & {
 };
 
 export function serializeBasicInfoSnapshot(state: BasicInfoSnapshotState): string {
-  const assayId = state.assayId ?? ASSAY_TYPE.GENE_EXPRESSION;
+  const assayId = state.assayId ?? ASSAY_TYPE.TRANSFECTION;
   return JSON.stringify(
     buildStudioAssayJson({
       assayId,

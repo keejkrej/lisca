@@ -376,7 +376,7 @@ function AssayCard(props: { assay: (typeof landingAssays)[number] }) {
 }
 
 function AssayVisual(props: { kind: (typeof landingAssays)[number]["visual"] }) {
-  if (props.kind === "gene-expression") {
+  if (props.kind === "transfection") {
     return (
       <div aria-hidden class="relative aspect-[16/10] border-b border-border bg-muted/20 p-5">
         <svg viewBox="0 0 320 180" class="h-full w-full" role="presentation">

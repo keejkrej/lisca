@@ -8,14 +8,14 @@ import type {
   StudioBasicInfoStep1 as BasicInfoStep1,
   StudioBasicInfoStep2 as BasicInfoStep2,
   StudioBasicInfoStep3 as BasicInfoStep3,
-  GeneExpressionAssayType,
+  TransfectionAssayType,
   StudioDataSourceKind,
   EnabledStudioAssayId,
 } from "@lisca/contracts/assay";
 import {
   ASSAY_TYPE,
   ENABLED_STUDIO_ASSAY_IDS,
-  GENE_EXPRESSION_FEATURE_IDS as CONTRACT_GENE_EXPRESSION_FEATURE_IDS,
+  TRANSFECTION_FEATURE_IDS as CONTRACT_TRANSFECTION_FEATURE_IDS,
   ASSAY_FEATURE,
   DEFAULT_FOLDER_SOURCE_TEMPLATE,
 } from "@lisca/contracts/assay";
@@ -57,14 +57,14 @@ export {
 } from "../studio/studio-assay-json";
 
 const BASIC_INFO_FEATURE_IDS: ReadonlyArray<BasicInfo2FeatureId> =
-  CONTRACT_GENE_EXPRESSION_FEATURE_IDS;
+  CONTRACT_TRANSFECTION_FEATURE_IDS;
 const BASIC_INFO_FEATURE_ID_SET = new Set<string>(BASIC_INFO_FEATURE_IDS);
 const TIMELAPSE_UNIT_SET = new Set<TimelapseUnit>(["second", "minute", "hour"]);
 const ENABLED_ASSAY_IDS = new Set<EnabledStudioAssayId>(ENABLED_STUDIO_ASSAY_IDS);
-const DEFAULT_ASSAY_ID: AssayId = ASSAY_TYPE.GENE_EXPRESSION;
+const DEFAULT_ASSAY_ID: AssayId = ASSAY_TYPE.TRANSFECTION;
 
-function isGeneExpressionAssay(assayId: AssayId | null): assayId is GeneExpressionAssayType {
-  return assayId === ASSAY_TYPE.GENE_EXPRESSION;
+function isTransfectionAssay(assayId: AssayId | null): assayId is TransfectionAssayType {
+  return assayId === ASSAY_TYPE.TRANSFECTION;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -386,7 +386,7 @@ export const studioWizardActions = {
         ...current.info2,
         selectedFeatures: normalizeSelectedFeaturesForAssay(
           nextAssayId,
-          nextAssayId === ASSAY_TYPE.GENE_EXPRESSION ? current.info2.selectedFeatures : [],
+          nextAssayId === ASSAY_TYPE.TRANSFECTION ? current.info2.selectedFeatures : [],
         ),
       },
     }));
@@ -397,7 +397,7 @@ export const studioWizardActions = {
   setInfo2(set: (update: StateUpdater<StudioWizardState>) => void, patch: Partial<BasicInfoStep2>) {
     patchStudioWizard(set, (current) => ({
       ...current,
-      info2: isGeneExpressionAssay(current.assayId)
+      info2: isTransfectionAssay(current.assayId)
         ? {
             ...current.info2,
             ...patch,

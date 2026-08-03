@@ -28,12 +28,29 @@ use crate::analysis::slide::{build_slide_mapping, parse_interval_minutes};
 /// when the field is set explicitly.
 pub const DEFAULT_MAX_ONSET_MINUTES: f64 = 120.0;
 
+/// Default frame interval (minutes) when assay.json omits a positive
+/// `info2.timelapseAmount` / unit for this assay.
+pub const DEFAULT_INTERVAL_MINUTES: f64 = 10.0;
+
 pub fn max_onset_minutes(assay_json: &AssayJsonFile) -> f64 {
     assay_json
         .analysis
         .as_ref()
         .and_then(|analysis| analysis.max_onset_minutes)
         .unwrap_or(DEFAULT_MAX_ONSET_MINUTES)
+}
+
+/// Resolve frame interval for transfection analysis. Prefers assay.json
+/// `info2.timelapseAmount`/`timelapseUnit`; falls back to
+/// [`DEFAULT_INTERVAL_MINUTES`].
+pub fn interval_minutes(assay_json: &AssayJsonFile) -> Result<f64, String> {
+    if let Some(interval) = parse_interval_minutes(
+        assay_json.info2.timelapse_amount,
+        Some(assay_json.info2.timelapse_unit.as_str()),
+    ) {
+        return Ok(interval);
+    }
+    Ok(DEFAULT_INTERVAL_MINUTES)
 }
 
 pub async fn run<F>(
@@ -45,12 +62,7 @@ pub async fn run<F>(
 where
     F: Fn(AnalysisProgress) + Send + Sync + 'static,
 {
-    let interval = parse_interval_minutes(
-        assay_json.info2.timelapse_amount,
-        Some(assay_json.info2.timelapse_unit.as_str()),
-    )
-    .ok_or_else(|| "invalid timelapseAmount/timelapseUnit in assay.json".to_string())?;
-
+    let interval = interval_minutes(&assay_json)?;
     let mapping = build_slide_mapping(&assay_json.info3)?;
     let jobs = default_timeseries_jobs();
 
@@ -168,11 +180,7 @@ where
 /// Same stage order as Studio: segment → timeseries → plot-timeseries → auc →
 /// plot-auc → fit → plot-fit. Sample mapping is read from `assay.json` only.
 pub fn run_sync(workspace: &std::path::Path, assay_json: &AssayJsonFile) -> Result<(), String> {
-    let interval = parse_interval_minutes(
-        assay_json.info2.timelapse_amount,
-        Some(assay_json.info2.timelapse_unit.as_str()),
-    )
-    .ok_or_else(|| "invalid timelapseAmount/timelapseUnit in assay.json".to_string())?;
+    let interval = interval_minutes(assay_json)?;
 
     let mapping = build_slide_mapping(&assay_json.info3)?;
     let jobs = default_timeseries_jobs();

@@ -2407,7 +2407,7 @@
     "AssayType": {
       "type": "string",
       "enum": [
-        "gene-expression",
+        "transfection",
         "immune-killing",
         "lnp-binding",
         "custom-assay"

@@ -4,9 +4,9 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { AssayJsonFileSchema } from "../src/assay.schema";
-import { liscaApi } from "../src/http-api";
-import { AppIdSchema, MemoryTouchRequestSchema, RoiIndexFileSchema } from "../src/schema/index";
+import { AssayJsonFileSchema } from "../src/assay.schema.ts";
+import { liscaApi } from "../src/http-api.ts";
+import { AppIdSchema, MemoryTouchRequestSchema, RoiIndexFileSchema } from "../src/schema/index.ts";
 
 /**
  * Build the single JSON Schema document consumed by `typify` to generate the

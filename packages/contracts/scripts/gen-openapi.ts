@@ -3,7 +3,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { liscaApi } from "../src/http-api";
+import { liscaApi } from "../src/http-api.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const outPath = resolve(here, "../openapi.json");

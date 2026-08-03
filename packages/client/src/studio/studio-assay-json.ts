@@ -11,21 +11,21 @@ import type {
   StudioBasicInfoStep3,
   StudioDataSourceKind,
 } from "@lisca/contracts/assay";
-import { GENE_EXPRESSION_FEATURE_IDS } from "@lisca/contracts/assay";
+import { TRANSFECTION_FEATURE_IDS } from "@lisca/contracts/assay";
 import type { AssaySampleRow } from "@lisca/contracts";
 import * as Either from "effect/Either";
 
 export const ASSAY_CHOICE_LABEL: Record<StudioAssayType, string> = {
-  [ASSAY_TYPE.GENE_EXPRESSION]: "Gene expression",
+  [ASSAY_TYPE.TRANSFECTION]: "Transfection",
   [ASSAY_TYPE.IMMUNE_KILLING]: "Immune killing",
   [ASSAY_TYPE.LNP_BINDING]: "LNP binding",
   [ASSAY_TYPE.CUSTOM_ASSAY]: "Custom assay",
 };
 
-const BASIC_INFO_FEATURE_IDS: ReadonlyArray<StudioBasicInfoFeatureId> = GENE_EXPRESSION_FEATURE_IDS;
+const BASIC_INFO_FEATURE_IDS: ReadonlyArray<StudioBasicInfoFeatureId> = TRANSFECTION_FEATURE_IDS;
 
 const ASSAY_DEFAULT_INFO_FEATURES: Record<StudioAssayType, readonly StudioBasicInfoFeatureId[]> = {
-  [ASSAY_TYPE.GENE_EXPRESSION]: [ASSAY_FEATURE.TOTAL_FLUOR],
+  [ASSAY_TYPE.TRANSFECTION]: [ASSAY_FEATURE.TOTAL_FLUOR],
   [ASSAY_TYPE.IMMUNE_KILLING]: [],
   [ASSAY_TYPE.LNP_BINDING]: [],
   [ASSAY_TYPE.CUSTOM_ASSAY]: [],

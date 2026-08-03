@@ -18,13 +18,11 @@ use std::process;
 use std::time::Instant;
 
 use lisca::analysis::assays::gene_expression::{
-    default_fit_jobs, default_timeseries_jobs, max_onset_minutes, run_auc, run_fit, run_plot_auc,
-    run_plot_fit, run_plot_timeseries, run_segment, run_sync, run_timeseries, SegmentOptions,
-    DEFAULT_PLOT_COLUMNS,
+    default_fit_jobs, default_timeseries_jobs, interval_minutes, max_onset_minutes, run_auc,
+    run_fit, run_plot_auc, run_plot_fit, run_plot_timeseries, run_segment, run_sync, run_timeseries,
+    SegmentOptions, DEFAULT_PLOT_COLUMNS,
 };
-use lisca::analysis::slide::{
-    load_mapping_for_workspace, parse_interval_minutes, resolve_assay_path,
-};
+use lisca::analysis::slide::{load_mapping_for_workspace, resolve_assay_path};
 use lisca::protocol::AssayJsonFile;
 
 fn main() {
@@ -209,11 +207,7 @@ fn cmd_plot_fit(args: &[String]) -> Result<(), String> {
 fn cmd_pipeline(args: &[String]) -> Result<(), String> {
     let workspace = require_workspace(args)?;
     let assay = load_assay_json(&workspace)?;
-    let interval = parse_interval_minutes(
-        assay.info2.timelapse_amount,
-        Some(assay.info2.timelapse_unit.as_str()),
-    )
-    .ok_or_else(|| "invalid timelapseAmount/timelapseUnit in assay.json".to_string())?;
+    let interval = interval_minutes(&assay)?;
     let max_onset = max_onset_minutes(&assay);
     eprintln!(
         "pipeline workspace={} assayId={:?} interval={interval} max_onset_minutes={max_onset}",
@@ -295,14 +289,8 @@ fn resolve_interval(workspace: &Path, args: &[String]) -> Result<f64, String> {
         return Ok(value);
     }
     let assay = load_assay_json(workspace)?;
-    parse_interval_minutes(
-        assay.info2.timelapse_amount,
-        Some(assay.info2.timelapse_unit.as_str()),
-    )
-    .ok_or_else(|| {
-        "missing --interval and could not read a positive timelapseAmount from assay.json"
-            .to_string()
-    })
+    // Transfection assay defaults to 10 min when info2 timelapse is missing.
+    interval_minutes(&assay)
 }
 
 fn resolve_max_onset(workspace: &Path, args: &[String]) -> Result<f64, String> {

@@ -1404,7 +1404,7 @@ impl ::std::convert::TryFrom<::std::string::String> for AssayTimelapseUnit {
 #[doc = "{"]
 #[doc = "  \"type\": \"string\","]
 #[doc = "  \"enum\": ["]
-#[doc = "    \"gene-expression\","]
+#[doc = "    \"transfection\","]
 #[doc = "    \"immune-killing\","]
 #[doc = "    \"lnp-binding\","]
 #[doc = "    \"custom-assay\""]
@@ -1425,8 +1425,8 @@ impl ::std::convert::TryFrom<::std::string::String> for AssayTimelapseUnit {
     PartialOrd,
 )]
 pub enum AssayType {
-    #[serde(rename = "gene-expression")]
-    GeneExpression,
+    #[serde(rename = "transfection")]
+    Transfection,
     #[serde(rename = "immune-killing")]
     ImmuneKilling,
     #[serde(rename = "lnp-binding")]
@@ -1437,7 +1437,7 @@ pub enum AssayType {
 impl ::std::fmt::Display for AssayType {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
-            Self::GeneExpression => f.write_str("gene-expression"),
+            Self::Transfection => f.write_str("transfection"),
             Self::ImmuneKilling => f.write_str("immune-killing"),
             Self::LnpBinding => f.write_str("lnp-binding"),
             Self::CustomAssay => f.write_str("custom-assay"),
@@ -1448,7 +1448,7 @@ impl ::std::str::FromStr for AssayType {
     type Err = self::error::ConversionError;
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
-            "gene-expression" => Ok(Self::GeneExpression),
+            "transfection" => Ok(Self::Transfection),
             "immune-killing" => Ok(Self::ImmuneKilling),
             "lnp-binding" => Ok(Self::LnpBinding),
             "custom-assay" => Ok(Self::CustomAssay),

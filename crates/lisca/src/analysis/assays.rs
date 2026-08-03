@@ -11,13 +11,13 @@ use crate::protocol::{AnalysisCsvFile, AnalysisProgress, AssayJsonFile, AssayTyp
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum SupportedAssay {
-    GeneExpression,
+    Transfection,
     ImmuneKilling,
 }
 
 fn dispatch(assay_id: AssayType) -> Result<SupportedAssay, AnalysisError> {
     match assay_id {
-        AssayType::GeneExpression => Ok(SupportedAssay::GeneExpression),
+        AssayType::Transfection => Ok(SupportedAssay::Transfection),
         AssayType::ImmuneKilling => Ok(SupportedAssay::ImmuneKilling),
         AssayType::LnpBinding => Err(AnalysisError::UnsupportedAssay { assay_id }),
         AssayType::CustomAssay => Err(AnalysisError::UnsupportedAssay { assay_id }),
@@ -34,7 +34,7 @@ where
     F: Fn(AnalysisProgress) + Send + Sync + 'static,
 {
     match dispatch(assay_json.assay_id)? {
-        SupportedAssay::GeneExpression => {
+        SupportedAssay::Transfection => {
             gene_expression::run(workspace_path, request_id, assay_json, update_progress)
                 .await
                 .map_err(AnalysisError::Failed)

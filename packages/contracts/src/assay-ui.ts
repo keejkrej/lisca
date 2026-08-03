@@ -30,7 +30,7 @@ export const FOLDER_SOURCE_TEMPLATE_PRESETS = [
 export const DEFAULT_FOLDER_SOURCE_TEMPLATE = FOLDER_SOURCE_TEMPLATE_PRESETS[0];
 
 export const ASSAY_TYPE = {
-  GENE_EXPRESSION: "gene-expression",
+  TRANSFECTION: "transfection",
   IMMUNE_KILLING: "immune-killing",
   LNP_BINDING: "lnp-binding",
   CUSTOM_ASSAY: "custom-assay",
@@ -38,12 +38,12 @@ export const ASSAY_TYPE = {
 
 /** Wizard-facing assay id union (const object keys, not the on-disk schema type). */
 export type StudioAssayType = (typeof ASSAY_TYPE)[keyof typeof ASSAY_TYPE];
-export type GeneExpressionAssayType = typeof ASSAY_TYPE.GENE_EXPRESSION;
+export type TransfectionAssayType = typeof ASSAY_TYPE.TRANSFECTION;
 export type ImmuneKillingAssayType = typeof ASSAY_TYPE.IMMUNE_KILLING;
 
 /** Assay types selectable in the wizard today. */
 export const ENABLED_STUDIO_ASSAY_IDS = [
-  ASSAY_TYPE.GENE_EXPRESSION,
+  ASSAY_TYPE.TRANSFECTION,
   ASSAY_TYPE.IMMUNE_KILLING,
 ] as const;
 
@@ -59,7 +59,7 @@ export const ASSAY_FEATURE = {
 /** Wizard-facing feature id union (const object keys). */
 export type StudioAssayFeature = (typeof ASSAY_FEATURE)[keyof typeof ASSAY_FEATURE];
 
-export const GENE_EXPRESSION_FEATURE_IDS = [
+export const TRANSFECTION_FEATURE_IDS = [
   ASSAY_FEATURE.MORPHOLOGY,
   ASSAY_FEATURE.PART_COUNT,
   ASSAY_FEATURE.PART_FLUOR,
@@ -75,16 +75,16 @@ export type Assay = {
   features: AssayFeatureList;
 };
 
-export type GeneExpressionAssayFeature = (typeof GENE_EXPRESSION_FEATURE_IDS)[number];
+export type TransfectionAssayFeature = (typeof TRANSFECTION_FEATURE_IDS)[number];
 
-export type GeneExpressionFeatureList = [
-  GeneExpressionAssayFeature,
-  ...GeneExpressionAssayFeature[],
+export type TransfectionFeatureList = [
+  TransfectionAssayFeature,
+  ...TransfectionAssayFeature[],
 ];
 
-export type GeneExpressionAssay = {
-  assayType: GeneExpressionAssayType;
-  features: GeneExpressionFeatureList;
+export type TransfectionAssay = {
+  assayType: TransfectionAssayType;
+  features: TransfectionFeatureList;
 };
 
 export type StudioAssayId = StudioAssayType;

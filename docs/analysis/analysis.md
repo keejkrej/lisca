@@ -5,7 +5,7 @@
 Pure **results model** for the Studio web app. Layout mirrors Rust `analysis/assays/<name>/`:
 
 - `shared/panels.ts` — parse analysis CSVs, build chart panels (`ResultPanel`)
-- `assays/gene-expression/catalog.ts` — gene-expression plot IDs and labels
+- `assays/transfection/catalog.ts` — transfection plot IDs and labels
 
 The package is pure model/chart logic. Studio-coupled atoms live in
 `apps/studio/web/src/atoms/studio-analysis-atoms.ts`, where the model is wired to the
@@ -35,7 +35,7 @@ depends on `assay.json` → `assayId`:
 
 | Assay             | Goal source (not implementation reference)                                                   | Pipeline                                        |
 | ----------------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| `gene-expression` | sibling [`lisca-transfection-assay`](../../../lisca-transfection-assay) — stages, CSV columns, plot names | segment → timeseries → AUC → fit (+ plots)      |
+| `transfection` | sibling [`lisca-transfection-assay`](../../../lisca-transfection-assay) — stages, CSV columns, plot names | segment → timeseries → AUC → fit (+ plots)      |
 | `immune-killing`  | [mupattern](https://github.com/keejkrej/mupattern) / future `lisca-killing-assay` — kill curve semantics, ResNet classifier | predict → plot-timeseries → clean → death times → kill curve plot |
 
 Numeric stages and PNG plots run in Rust via [**mplot-rs**](https://github.com/keejkrej/mplot-rs). Immune killing inference uses ONNX Runtime (`ort`) with the `keejkrej/immune-killing-resnet18` model.
@@ -52,7 +52,7 @@ Rust should be idiomatic for this crate:
 - Per-assay pipelines under `assays/<name>/`.
 - Parity is judged on **workspace outputs and scientific meaning** (tolerances in tests), not on matching Python evaluation order or data structures.
 
-## Gene expression pipeline
+## Transfection pipeline
 
 Order matches `transfection pipeline` / `lisca-analyze pipeline`:
 

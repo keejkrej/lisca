@@ -27,7 +27,7 @@ export function validInfo2(info2: StudioBasicInfoStep2, assayId: StudioAssayId |
   return (
     info2.timelapseAmount != null &&
     info2.timelapseAmount > 0 &&
-    (assayId !== ASSAY_TYPE.GENE_EXPRESSION ||
+    (assayId !== ASSAY_TYPE.TRANSFECTION ||
       (Array.isArray(info2.selectedFeatures) && info2.selectedFeatures.length > 0))
   );
 }

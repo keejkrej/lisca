@@ -14,7 +14,7 @@ Terse summary. **`PRODUCT.md`** is the full statement of product shape — the W
   - **Annotator** — outline cells/regions per site; assign phenotype labels for classification, assisted segmentation, or QC.
   - **Studio** — end-to-end for nontechnical users (wizard → align → crop → annotate → analyse → charts). While Studio matures, nontechnical path is Aligner + `../pyama-v2` Jupyter.
 - **Usage modes:** see **How people actually use it** in `PRODUCT.md` (agent/CLI vs Studio vs Aligner+pyama notebooks).
-- **Assays (today):** gene-expression (fluorescence traces, AUC, dose–response plots) and immune-killing (survival scoring, kill-curve kinetics) — the two listed in `ENABLED_STUDIO_ASSAY_IDS`. Assay ids are a **closed enum**, not an extension point: adding one is a cross-cutting change across `@lisca/contracts`, Rust, and generated artifacts. Unsupported or unregistered ids fail explicitly; none alias to gene-expression. See `PRODUCT.md`.
+- **Assays (today):** transfection (fluorescence traces, AUC, dose–response plots) and immune-killing (survival scoring, kill-curve kinetics) — the two listed in `ENABLED_STUDIO_ASSAY_IDS`. Assay ids are a **closed enum**, not an extension point: adding one is a cross-cutting change across `@lisca/contracts`, Rust, and generated artifacts. Unsupported or unregistered ids fail explicitly; none alias to transfection. See `PRODUCT.md`.
 
 ## Rules
 

@@ -49,7 +49,7 @@ packages/analysis/src/
   charts/           renderer-neutral chart specs and data transforms
   result/           result-panel loading
   assays/
-    gene-expression/catalog.ts
+    transfection/catalog.ts
 ```
 
 Studio owns its runtime-coupled analysis atoms and Observable Plot renderer under

@@ -7,7 +7,7 @@ packages:
 
 | Sibling package (R&D) | Role |
 | --- | --- |
-| [`lisca-transfection-assay`](../../../lisca-transfection-assay) | Gene-expression / transfection pipeline (segment → timeseries → AUC → fit + plots) |
+| [`lisca-transfection-assay`](../../../lisca-transfection-assay) | Transfection / transfection pipeline (segment → timeseries → AUC → fit + plots) |
 | `lisca-killing-assay` (planned / external goals via mupattern) | Immune-killing survival / kill-curve science |
 | `lisca-binding-assay` (planned) | Binding / LNP-style assays before Studio registration |
 
@@ -54,7 +54,7 @@ pools, or bitwise float identity.
 1. **Develop in Python** until stage semantics and I/O are trusted.
 2. **Port to Rust** stage-by-stage (or full pipeline when small).
 3. **Prove parity** with synthetic fixtures and at least one real workspace
-   (e.g. `~/data/TF84` for gene-expression).
+   (e.g. `~/data/TF84` for transfection).
 4. **Wire Studio** only after contract + scientific parity hold.
 5. **Keep Python** as the oracle: ignored tests and manual `lisca-analyze` vs
    `uv run …` diffs when kernels change.
@@ -63,7 +63,7 @@ pools, or bitwise float identity.
 
 | Studio `assayId` | Goal source | Rust module | Parity CLI | Notes |
 | --- | --- | --- | --- | --- |
-| `gene-expression` (Studio wire id; science = transfection) | `../lisca-transfection-assay` (`transfection` CLI) | `analysis/assays/gene_expression/` | `lisca-analyze` | Reference port; TF84 used as real-workspace check |
+| `transfection` (Studio wire id; science = transfection) | `../lisca-transfection-assay` (`transfection` CLI) | `analysis/assays/gene_expression/` | `lisca-analyze` | Reference port; TF84 used as real-workspace check |
 | `immune-killing` | mupattern / future `lisca-killing-assay` | `analysis/assays/immune_killing/` | extend when stages need stage-CLI | ONNX ResNet + kill-curve tables |
 | `lnp-binding` / binding | future `lisca-binding-assay` | none until mature | — | Closed enum: do not half-register |
 
@@ -109,7 +109,7 @@ success-flag mismatches before changing code.
 Rust stages must stay invocable **without** the Studio HTTP server so agents
 and humans can run differential loops.
 
-### Gene-expression: `lisca-analyze`
+### Transfection: `lisca-analyze`
 
 ```sh
 cargo build -p lisca --release --bin lisca-analyze

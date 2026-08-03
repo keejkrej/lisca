@@ -11,7 +11,7 @@ import { F64 } from "./schema/primitives";
  */
 
 export const AssayTypeSchema = Schema.Literal(
-  "gene-expression",
+  "transfection",
   "immune-killing",
   "lnp-binding",
   "custom-assay",
@@ -64,7 +64,7 @@ export const AssayBasicInfoStep3Schema = Schema.Struct({
   samples: AssaySamplesSchema,
 }).annotations({ identifier: "AssayBasicInfoStep3" });
 
-/** Gene-expression analysis options (optional section on assay.json). */
+/** Transfection analysis options (optional section on assay.json). */
 export const AssayAnalysisConfigSchema = Schema.Struct({
   maxOnsetMinutes: Schema.optional(F64),
 }).annotations({ identifier: "AssayAnalysisConfig" });

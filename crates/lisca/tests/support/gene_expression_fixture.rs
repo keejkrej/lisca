@@ -1,4 +1,4 @@
-//! Build a tiny gene-expression workspace (4×4 ROI, 4 timepoints, 2 channels).
+//! Build a tiny transfection workspace (4×4 ROI, 4 timepoints, 2 channels).
 
 use std::fs::{self, File};
 use std::path::{Path, PathBuf};
@@ -70,7 +70,7 @@ impl SyntheticWorkspace {
 
 fn write_assay_json(root: &Path) {
     let assay = serde_json::json!({
-        "assayId": "gene-expression",
+        "assayId": "transfection",
         "assayLabel": "fixture",
         "info1": {
             "dataPath": "",

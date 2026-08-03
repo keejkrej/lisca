@@ -62,7 +62,7 @@ describe("assay validation", () => {
       ),
     };
     const result = validateAssayForAnalysis({
-      assayId: ASSAY_TYPE.GENE_EXPRESSION,
+      assayId: ASSAY_TYPE.TRANSFECTION,
       info1: {
         ...initial.info1,
         name: "Run A",

@@ -248,7 +248,7 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
             </div>
           </Field>
         </div>
-        <Show when={wizard().assayId === "gene-expression"}>
+        <Show when={wizard().assayId === "transfection"}>
           <div class={ROW}>
             <Field class="gap-2.5">
               <FieldLabel class="text-2xl font-normal">Features</FieldLabel>

@@ -147,7 +147,7 @@ fn build_analysis_operation(
     request_id: &str,
 ) -> Result<lisca::protocol::OperationDetail, lisca_server::SchedulerError> {
     match assay.assay_id {
-        AssayType::GeneExpression => build_gene_expression_operation(scheduler, workspace, assay),
+        AssayType::Transfection => build_gene_expression_operation(scheduler, workspace, assay),
         AssayType::ImmuneKilling => {
             build_immune_killing_operation(scheduler, workspace, assay, request_id)
         }
@@ -174,36 +174,33 @@ fn build_gene_expression_operation(
 ) -> Result<lisca::protocol::OperationDetail, lisca_server::SchedulerError> {
     use lisca::analysis::{
         assays::gene_expression as gene,
-        slide::{build_slide_mapping, parse_interval_minutes, SlideMapping},
+        slide::{build_slide_mapping, SlideMapping},
     };
 
     let mapping = match build_slide_mapping(&assay.info3) {
         Ok(mapping) => Arc::new(mapping),
         Err(message) => {
             let task = analysis_task(
-                "analysis/gene-expression/prepare",
+                "analysis/transfection/prepare",
                 Vec::new(),
                 Arc::new(move || Err(message.clone())),
             );
             return scheduler.submit(OperationSpec::new(
-                "analysis/gene-expression",
+                "analysis/transfection",
                 workspace.to_string_lossy(),
                 true,
                 vec![task],
             ));
         }
     };
-    let interval = parse_interval_minutes(
-        assay.info2.timelapse_amount,
-        Some(assay.info2.timelapse_unit.as_str()),
-    )
-    .unwrap_or(1.0);
+    let interval = lisca::analysis::assays::gene_expression::interval_minutes(&assay)
+        .unwrap_or(lisca::analysis::assays::gene_expression::DEFAULT_INTERVAL_MINUTES);
     let max_onset = lisca::analysis::assays::gene_expression::max_onset_minutes(&assay);
     let mut tasks = Vec::new();
 
     // Prepare validates assay mapping only (no slide.json side file).
     let prepare = analysis_task(
-        "analysis/gene-expression/prepare",
+        "analysis/transfection/prepare",
         Vec::new(),
         Arc::new(move || Ok(())),
     );
@@ -220,7 +217,7 @@ fn build_gene_expression_operation(
             let shard = Arc::new(shard);
             let task_workspace = workspace.clone();
             let task = analysis_task(
-                format!("analysis/gene-expression/segment/Pos{position}"),
+                format!("analysis/transfection/segment/Pos{position}"),
                 vec![prepare_id.clone()],
                 Arc::new(move || {
                     gene::run_segment(
@@ -248,7 +245,7 @@ fn build_gene_expression_operation(
         let shard = Arc::new(shard);
         let task_workspace = workspace.clone();
         let task = analysis_task(
-            format!("analysis/gene-expression/timeseries/sc{slide_channel}"),
+            format!("analysis/transfection/timeseries/sc{slide_channel}"),
             segment_ids_by_channel
                 .remove(slide_channel)
                 .unwrap_or_default(),
@@ -261,7 +258,7 @@ fn build_gene_expression_operation(
     let plot_ts_workspace = workspace.clone();
     let plot_ts_mapping = mapping.clone();
     let plot_ts = analysis_task(
-        "analysis/gene-expression/plot-timeseries",
+        "analysis/transfection/plot-timeseries",
         timeseries_ids.clone(),
         Arc::new(move || {
             gene::run_plot_timeseries(
@@ -277,7 +274,7 @@ fn build_gene_expression_operation(
 
     let auc_workspace = workspace.clone();
     let auc = analysis_task(
-        "analysis/gene-expression/auc",
+        "analysis/transfection/auc",
         timeseries_ids,
         Arc::new(move || gene::run_auc(&auc_workspace, interval).map(|_| ())),
     );
@@ -287,7 +284,7 @@ fn build_gene_expression_operation(
     let plot_auc_workspace = workspace.clone();
     let plot_auc_mapping = mapping.clone();
     let plot_auc = analysis_task(
-        "analysis/gene-expression/plot-auc",
+        "analysis/transfection/plot-auc",
         vec![auc_id.clone()],
         Arc::new(move || gene::run_plot_auc(&plot_auc_workspace, &plot_auc_mapping)),
     );
@@ -296,7 +293,7 @@ fn build_gene_expression_operation(
 
     let fit_workspace = workspace.clone();
     let fit = analysis_task(
-        "analysis/gene-expression/fit",
+        "analysis/transfection/fit",
         vec![auc_id],
         Arc::new(move || {
             gene::run_fit(
@@ -314,7 +311,7 @@ fn build_gene_expression_operation(
     let plot_fit_workspace = workspace.clone();
     let plot_fit_mapping = mapping;
     let plot_fit = analysis_task(
-        "analysis/gene-expression/plot-fit",
+        "analysis/transfection/plot-fit",
         vec![fit_id],
         Arc::new(move || {
             gene::run_plot_fit(
@@ -330,13 +327,13 @@ fn build_gene_expression_operation(
 
     let finalize_workspace = workspace.clone();
     tasks.push(analysis_task(
-        "analysis/gene-expression/finalize",
+        "analysis/transfection/finalize",
         vec![plot_ts_id, plot_auc_id, plot_fit_id],
         Arc::new(move || analysis::workspace_analysis_manifest(&finalize_workspace).map(|_| ())),
     ));
 
     scheduler.submit(OperationSpec::new(
-        "analysis/gene-expression",
+        "analysis/transfection",
         workspace.to_string_lossy(),
         true,
         tasks,
@@ -762,7 +759,7 @@ mod tests {
 
     #[tokio::test]
     async fn assay_operations_expose_real_fan_out_and_fan_in_graphs() {
-        for assay_id in [AssayType::GeneExpression, AssayType::ImmuneKilling] {
+        for assay_id in [AssayType::Transfection, AssayType::ImmuneKilling] {
             let state = TestState::new();
             let workspace = graph_workspace(assay_id);
             let assay = load_assay_json(&workspace).unwrap();
@@ -770,7 +767,7 @@ mod tests {
                 build_analysis_operation(&state.tasks, workspace.clone(), assay, "graph-fixture")
                     .unwrap();
             let prefix = match assay_id {
-                AssayType::GeneExpression => "analysis/gene-expression",
+                AssayType::Transfection => "analysis/transfection",
                 AssayType::ImmuneKilling => "analysis/immune-killing",
                 _ => unreachable!(),
             };

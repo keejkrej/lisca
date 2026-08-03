@@ -24,7 +24,7 @@ export const landingProducts = [
       "The complete end-to-end workflow when your experiment matches a LiSCA assay template: wizard setup, alignment, annotation, and built-in analysis with summary tables and plots in one app. Recommended for straightforward studies where a template fits your design.",
     assays: [
       {
-        name: "Gene expression",
+        name: "Transfection",
         detail:
           "Track fluorescence over time on patterned cultures — segmentation, intensity traces, area-under-curve summaries, and dose–response style plots for transfection and expression readouts.",
       },
@@ -42,13 +42,13 @@ export type LandingAssay = {
   name: string;
   summary: string;
   outputs: string[];
-  visual: "gene-expression" | "immune-killing" | "custom";
+  visual: "transfection" | "immune-killing" | "custom";
 };
 
 export const landingAssays: readonly LandingAssay[] = [
   {
-    id: "gene-expression",
-    name: "Gene expression",
+    id: "transfection",
+    name: "Transfection",
     summary:
       "Quantify transfection or reporter expression across arrayed single cells — fluorescence traces per cell, area-under-curve summaries, and dose–response plots for comparing conditions.",
     outputs: [
@@ -56,7 +56,7 @@ export const landingAssays: readonly LandingAssay[] = [
       "AUC and peak-intensity tables",
       "Dose–response and condition comparison plots",
     ],
-    visual: "gene-expression",
+    visual: "transfection",
   },
   {
     id: "immune-killing",
@@ -110,7 +110,7 @@ export const workflowSteps = [
     step: "04",
     title: "Assay readouts",
     description:
-      "Run gene-expression or immune-killing analysis and review summary tables and plots in Studio.",
+      "Run transfection or immune-killing analysis and review summary tables and plots in Studio.",
     visual: "readout" as const,
   },
 ] as const;
