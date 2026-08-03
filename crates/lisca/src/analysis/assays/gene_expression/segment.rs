@@ -186,12 +186,29 @@ fn format_skipped_positions(skipped_positions: &BTreeMap<u32, Vec<u32>>) -> Stri
 }
 
 fn write_mask_tif(path: &Path, masks: &[Vec<bool>], width: usize, height: usize) -> Result<(), String> {
+    // Always write one Gray8 IFD per timepoint with explicit (width, height).
+    // Do not collapse singleton spatial dims (W=1 or H=1): loaders match mask
+    // page size to the ROI crop size from index.json.
+    if width == 0 || height == 0 {
+        return Err(format!(
+            "mask dimensions must be non-zero, got width={width} height={height}"
+        ));
+    }
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent).map_err(|error| error.to_string())?;
     }
     let file = File::create(path).map_err(|error| error.to_string())?;
     let mut encoder = TiffEncoder::new(file).map_err(|error| error.to_string())?;
+    let plane = width.checked_mul(height).ok_or_else(|| {
+        format!("mask plane size overflow for width={width} height={height}")
+    })?;
     for mask in masks {
+        if mask.len() != plane {
+            return Err(format!(
+                "mask plane length mismatch: expected {plane} (width={width} height={height}), got {}",
+                mask.len()
+            ));
+        }
         let bytes = mask.iter().map(|value| u8::from(*value)).collect::<Vec<_>>();
         let image = encoder
             .new_image::<colortype::Gray8>(width as u32, height as u32)
@@ -255,5 +272,35 @@ mod tests {
         assert!(err.contains("Skipped positions"));
         assert!(err.contains("slide channel 0 -> 1, 2"));
         let _ = std::fs::remove_dir_all(&workspace);
+    }
+
+    #[test]
+    fn write_mask_tif_preserves_singleton_width() {
+        use crate::analysis::roi_stack::MaskStack;
+
+        let dir = test_workspace("mask-w1");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("Roi0.tif");
+
+        let time_count = 5usize;
+        let width = 1usize;
+        let height = 8usize;
+        let masks: Vec<Vec<bool>> = (0..time_count)
+            .map(|t| {
+                (0..height * width)
+                    .map(|i| (i + t) % 2 == 0)
+                    .collect()
+            })
+            .collect();
+
+        write_mask_tif(&path, &masks, width, height).expect("write mask");
+        let loaded = MaskStack::load(&path, time_count as u32, height, width).expect("load mask");
+        assert_eq!(loaded.masks.len(), time_count);
+        assert_eq!(loaded.masks[0].len(), height * width);
+        assert_eq!(loaded.masks[0][0], masks[0][0]);
+        assert_eq!(loaded.masks[time_count - 1], masks[time_count - 1]);
+
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }
