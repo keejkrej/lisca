@@ -5,7 +5,8 @@ mod util;
 
 pub use mplot_config::{
     figure_builder_for_panels, figure_builder_grid, figure_builder_single, save_figure,
-    trace_line_style,
+    trace_line_style, FIGURE_DPI, FIGURE_GRID_HEIGHT_IN, FIGURE_GRID_WIDTH_IN,
+    FIGURE_SINGLE_HEIGHT_IN, FIGURE_SINGLE_WIDTH_IN,
 };
 pub use util::{
     boxplot_tick_label, boxplot_x_axis_label, expand_degenerate_ylim, grid_dimensions,
