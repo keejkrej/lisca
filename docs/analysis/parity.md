@@ -19,7 +19,7 @@ results.
 
 This doc is the process and contract for that rewrite. Day-to-day Studio chart
 wiring stays in [`analysis.md`](./analysis.md). Agent workflow:
-[`/lisca-parity`](../../.grok/skills/lisca-parity/SKILL.md).
+[`/lisca-parity`](../../.agents/skills/lisca-parity/SKILL.md).
 
 ## Roles
 
@@ -193,4 +193,4 @@ Python line-by-line.
 - Studio analysis layout and chart packages: [`analysis.md`](./analysis.md)
 - Product assay non-goals / closed enum: [`PRODUCT.md`](../../PRODUCT.md)
 - Domain language: [`CONTEXT.md`](../../CONTEXT.md)
-- Agent skill: [`.grok/skills/lisca-parity/SKILL.md`](../../.grok/skills/lisca-parity/SKILL.md)
+- Agent skill: [`.agents/skills/lisca-parity/SKILL.md`](../../.agents/skills/lisca-parity/SKILL.md)

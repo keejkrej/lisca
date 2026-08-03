@@ -37,7 +37,7 @@ Single-context — one `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/
 
 ### Assay parity (Python → Rust)
 
-Analysis science matures in sibling `lisca-*-assay` Python packages, then is rewritten into `crates/lisca` for Studio. Contract + scientific parity process: `docs/analysis/parity.md`. Agent skill: `/lisca-parity` (`.grok/skills/lisca-parity/`).
+Analysis science matures in sibling `lisca-*-assay` Python packages, then is rewritten into `crates/lisca` for Studio. Contract + scientific parity process: `docs/analysis/parity.md`. Agent skill: `/lisca-parity` (`.agents/skills/lisca-parity/`).
 
 ## Tech stack
 
