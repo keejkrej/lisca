@@ -17,6 +17,7 @@ export {
 export { Label } from "./label";
 export { Separator, type SeparatorProps } from "./separator";
 export { Spinner } from "./spinner";
+export { Switch } from "./switch";
 export { Toggle, toggleVariants, type ToggleProps } from "./toggle";
 export { ToggleGroup, ToggleGroupItem, type ToggleGroupProps } from "./toggle-group";
 export {

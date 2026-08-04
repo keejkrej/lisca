@@ -37,11 +37,11 @@ export function ChooseAssay() {
             const disabled = !ENABLED_ASSAY_IDS.has(id);
             return (
               <Button
-                aria-expanded={selected()}
+                aria-pressed={selected()}
                 class="h-20 w-full min-h-[5rem] items-center justify-center px-2 py-3 text-center sm:h-[5.5rem] sm:min-h-[5.5rem] sm:px-3"
                 disabled={disabled}
                 type="button"
-                variant="outline"
+                variant={selected() ? "default" : "outline"}
                 onClick={() => setAssayId(id)}
               >
                 <span class="text-center font-medium text-sm sm:text-base">
