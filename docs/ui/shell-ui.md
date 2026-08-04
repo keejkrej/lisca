@@ -17,11 +17,11 @@ Compose apps from shell primitives, not exported class strings:
 | `AppShell`                     | Root layout; all regions use `bg-background`                                                              |
 | `Panel`                        | Bordered in-app frame (dock, nav rail, sidebar cards)                                                     |
 | `ViewportCard`                 | Padded main column; inner frame matches `Panel`                                                           |
-| `Section`                      | Collapsible in-app section inside a `Panel` (rare direct use)                                             |
-| `PanelSection`                 | Sidebar placement variant of `Section`; full width, height hugs content (inverse of `DockSection`)        |
+| `Section`                      | Collapsible in-app section inside a `Panel` (rare direct use). Title is an accordion-style trigger (hover underline); `chevron="vertical"` (up/down) or `horizontal` (left/right) |
+| `PanelSection`                 | Sidebar placement variant of `Section`; full width, height hugs content; vertical carets (inverse of `DockSection`)        |
 | `SidebarStack`                 | Sidebar region container (`flex-col gap-2 overflow-auto p-3`)                                             |
 | `DockStrip`                    | Outer dock band — `flex` row, sections grouped and centered                                               |
-| `DockSection`                  | Dock placement variant of `Section`; `fit="hug"` (default) or `fit="panel"` for instruction copy          |
+| `DockSection`                  | Dock placement variant of `Section`; horizontal carets; `fit="hug"` (default) or `fit="panel"` for instruction copy          |
 | `DialogSurface` / `ModalScrim` | Modal chrome                                                                                              |
 | `useKeyboardShortcuts`         | Web keyboard bindings; pair with `dockToolShortcuts()` from `@lisca/ui-headless/dock` for digit tool keys |
 

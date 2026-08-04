@@ -29,7 +29,7 @@ export {
 export { ModalScrim } from "./modal/modal-scrim";
 export { Panel, PanelContent, PanelDescription, PanelHeader, PanelTitle } from "./regions/panel";
 export { ReadonlyPathField } from "./chrome/readonly-path-field";
-export { Section, type SectionProps } from "./regions/section";
+export { Section, type SectionChevron, type SectionProps } from "./regions/section";
 export { ViewportCard } from "./layout/viewport-card";
 export { FrameAspectPanel } from "./layout/frame-aspect-panel";
 export { ShellServerProvider, useShellServer, type ShellServer } from "./server/shell-server";

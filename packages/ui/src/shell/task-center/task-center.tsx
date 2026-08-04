@@ -416,16 +416,18 @@ export function TaskCenter(props: TaskCenterProps) {
                             type="button"
                             onClick={() => void toggleOperation(operation.operationId)}
                           >
-                            <span
-                              aria-hidden="true"
-                              class={cn(
-                                "mt-1.5 size-2 shrink-0 rounded-full",
-                                operationDotClass(operation),
-                              )}
-                            />
                             <span class="min-w-0 flex-1 space-y-2">
-                              <span class="block truncate font-medium text-foreground text-sm">
-                                {operationKindLabel(operation.kind)}
+                              <span class="flex items-center justify-between gap-3">
+                                <span class="min-w-0 truncate font-medium text-foreground text-sm">
+                                  {operationKindLabel(operation.kind)}
+                                </span>
+                                <span
+                                  aria-hidden="true"
+                                  class={cn(
+                                    "size-2 shrink-0 rounded-full",
+                                    operationDotClass(operation),
+                                  )}
+                                />
                               </span>
                               <span class="flex items-center justify-between gap-3 text-muted-foreground text-xs">
                                 <span class="min-w-0 truncate" title={operation.workspacePath}>

@@ -1,10 +1,13 @@
 import IconCaretDownRegular from "phosphor-icons-solid/IconCaretDownRegular";
+import IconCaretLeftRegular from "phosphor-icons-solid/IconCaretLeftRegular";
 import IconCaretRightRegular from "phosphor-icons-solid/IconCaretRightRegular";
+import IconCaretUpRegular from "phosphor-icons-solid/IconCaretUpRegular";
 import { createSignal, createUniqueId, Show, splitProps, type JSX } from "solid-js";
 
-import { Button } from "../../components/ui/button";
 import { cn } from "../../lib/utils";
-import { Panel, PanelContent, PanelDescription, PanelHeader, PanelTitle } from "./panel";
+import { Panel, PanelContent, PanelDescription, PanelHeader } from "./panel";
+
+export type SectionChevron = "vertical" | "horizontal";
 
 export type SectionProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, "title" | "children"> & {
   /** Primary heading shown in the section header. */
@@ -17,6 +20,11 @@ export type SectionProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, "title" | "c
   contentClassName?: string;
   /** Initial collapsed state for locally managed section disclosure. */
   defaultCollapsed?: boolean;
+  /**
+   * Caret axis for expand/collapse.
+   * `vertical` (side panels): up/down. `horizontal` (dock): left/right.
+   */
+  chevron?: SectionChevron;
 };
 
 export function Section(props: SectionProps) {
@@ -29,9 +37,12 @@ export function Section(props: SectionProps) {
     "headerClassName",
     "contentClassName",
     "defaultCollapsed",
+    "chevron",
   ]);
   const contentId = createUniqueId();
   const [collapsed, setCollapsed] = createSignal(local.defaultCollapsed ?? false);
+  const chevron = () => local.chevron ?? "vertical";
+  const toggle = () => setCollapsed((current) => !current);
 
   return (
     <Panel
@@ -40,38 +51,52 @@ export function Section(props: SectionProps) {
       {...panelProps}
     >
       <PanelHeader
-        class={cn("space-y-1.5 px-2.5 py-2.5", !collapsed() && "pb-0", local.headerClassName)}
+        class={cn(
+          "space-y-1 px-2.5",
+          collapsed() ? "py-2" : "pt-2 pb-0",
+          local.headerClassName,
+        )}
       >
-        <div class="flex items-start justify-between gap-2">
-          <PanelTitle class="min-w-0 flex-1 text-sm">{local.title}</PanelTitle>
-          <div class="flex shrink-0 items-center gap-1">
-            {local.headerAction}
-            <Button
-              aria-controls={contentId}
-              aria-expanded={!collapsed()}
-              aria-label={collapsed() ? `Expand ${local.title}` : `Collapse ${local.title}`}
-              class="-mr-1 -mt-1"
-              size="icon-xs"
-              variant="ghost"
-              onClick={() => {
-                setCollapsed((current) => !current);
-              }}
-            >
+        <div class="flex items-center gap-1">
+          {/* Accordion-style trigger: hover underline, no sticky expanded fill (unlike ghost Button). */}
+          <button
+            aria-controls={contentId}
+            aria-expanded={!collapsed()}
+            class="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-md py-1 text-left text-sm outline-none transition-colors hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+            type="button"
+            onClick={toggle}
+          >
+            <span class="min-w-0 truncate font-display font-semibold leading-none">
+              {local.title}
+            </span>
+            <span aria-hidden="true" class="shrink-0 text-muted-foreground">
               <Show
-                when={collapsed()}
-                fallback={<IconCaretDownRegular />}
+                when={chevron() === "horizontal"}
+                fallback={
+                  <Show when={collapsed()} fallback={<IconCaretUpRegular class="size-3.5" />}>
+                    <IconCaretDownRegular class="size-3.5" />
+                  </Show>
+                }
               >
-                <IconCaretRightRegular />
+                <Show when={collapsed()} fallback={<IconCaretLeftRegular class="size-3.5" />}>
+                  <IconCaretRightRegular class="size-3.5" />
+                </Show>
               </Show>
-            </Button>
-          </div>
+            </span>
+          </button>
+          <Show when={local.headerAction}>
+            <div class="flex shrink-0 items-center gap-1">{local.headerAction}</div>
+          </Show>
         </div>
         <Show when={local.description}>
           <PanelDescription class="text-xs">{local.description}</PanelDescription>
         </Show>
       </PanelHeader>
       <Show when={!collapsed()}>
-        <PanelContent class={cn("space-y-2 px-2.5 pb-2.5 pt-2", local.contentClassName)} id={contentId}>
+        <PanelContent
+          class={cn("space-y-2 px-2.5 pb-2.5 pt-2", local.contentClassName)}
+          id={contentId}
+        >
           {local.children}
         </PanelContent>
       </Show>
