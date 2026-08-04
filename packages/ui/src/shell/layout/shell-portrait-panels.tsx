@@ -1,5 +1,5 @@
-import IconListRegular from "phosphor-icons-solid/IconListRegular";
-import IconSidebarSimpleRegular from "phosphor-icons-solid/IconSidebarSimpleRegular";
+import IconCaretLeftRegular from "phosphor-icons-solid/IconCaretLeftRegular";
+import IconCaretRightRegular from "phosphor-icons-solid/IconCaretRightRegular";
 import { For, Show } from "solid-js";
 
 import { Button } from "../../components/ui/button";
@@ -32,8 +32,17 @@ export function ShellPanelToggle(props: { side: "left" | "right"; class?: string
         variant="outline"
         onClick={toggle}
       >
-        <Show when={props.side === "left"} fallback={<IconSidebarSimpleRegular class="size-4" />}>
-          <IconListRegular class="size-4" />
+        <Show
+          when={props.side === "left"}
+          fallback={
+            <Show when={open()} fallback={<IconCaretLeftRegular class="size-4" />}>
+              <IconCaretRightRegular class="size-4" />
+            </Show>
+          }
+        >
+          <Show when={open()} fallback={<IconCaretRightRegular class="size-4" />}>
+            <IconCaretLeftRegular class="size-4" />
+          </Show>
         </Show>
       </Button>
     </Show>

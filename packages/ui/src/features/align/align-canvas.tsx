@@ -12,7 +12,7 @@ import {
 import { createEffect, onCleanup, onMount } from "solid-js";
 import { cn } from "../../lib/utils";
 import { CanvasStatusMessageStack, CanvasToastStack } from "../canvas/canvas-status";
-import { resolvedCanvasBackground } from "../canvas/canvas-theme";
+import { resolvedCanvasBackground, useCanvasThemeRerender } from "../canvas/canvas-theme";
 export type {
   AlignCanvasFramePoint,
   AlignCanvasPointerEvent,
@@ -171,7 +171,7 @@ export function AlignCanvas(props: AlignCanvasProps) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.save();
     ctx.scale(dprRef.current, dprRef.current);
-    ctx.fillStyle = resolvedCanvasBackground(view);
+    ctx.fillStyle = resolvedCanvasBackground(view ?? undefined);
     ctx.fillRect(0, 0, cssWidth, cssHeight);
     if (currentFrame && bitmap) {
       const frameLayout = computeFrameLayout(
@@ -256,16 +256,7 @@ export function AlignCanvas(props: AlignCanvasProps) {
     });
   });
 
-  onMount(() => {
-    const observer = new MutationObserver(() => {
-      window.requestAnimationFrame(scheduleFrameRender);
-    });
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class", "style"],
-    });
-    onCleanup(() => observer.disconnect());
-  });
+  useCanvasThemeRerender(scheduleFrameRender);
 
   onMount(() => {
     const view = viewportEl;

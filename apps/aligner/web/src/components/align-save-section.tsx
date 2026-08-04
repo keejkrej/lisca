@@ -6,7 +6,6 @@ import { useAlignNav } from "../state/align-page-selectors";
 export function AlignSaveSection() {
   const nav = useAlignNav();
 
-  // Aligner is light: save bbox/align only. ROI crop runs in Studio, lisca-crop, or pyama-v2.
   return (
     <DockSection title="Save">
       <div class="flex w-full flex-col gap-2">
@@ -32,12 +31,8 @@ export function AlignSaveSection() {
           variant="outline"
           onClick={() => void nav.saveCurrent()}
         >
-          Save boxes
+          Save
         </Button>
-        <p class="text-xs text-muted-foreground">
-          ROI crop is not run here. Use Studio,{" "}
-          <code class="text-[0.7rem]">lisca-crop</code>, or pyama-v2.
-        </p>
       </div>
     </DockSection>
   );

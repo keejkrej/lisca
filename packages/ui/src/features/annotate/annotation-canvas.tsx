@@ -6,7 +6,7 @@ import { isSmartAnnotationTool } from "@lisca/utils";
 import { clamp, fillPolygon, hexToRgb, smartSegmentPromptRadius, strokeMask } from "@lisca/utils";
 import { createEffect, createSignal, onCleanup, onMount, Show } from "solid-js";
 import { cn } from "../../lib/utils";
-import { resolvedCanvasBackground } from "../canvas/canvas-theme";
+import { resolvedCanvasBackground, useCanvasThemeRerender } from "../canvas/canvas-theme";
 import { CanvasStatusMessageStack, CanvasToastStack } from "../canvas/canvas-status";
 
 type FramePoint = {
@@ -148,7 +148,7 @@ export function AnnotationCanvas(props: AnnotationCanvasProps) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.save();
     ctx.scale(dprRef.current, dprRef.current);
-    ctx.fillStyle = resolvedCanvasBackground(viewport);
+    ctx.fillStyle = resolvedCanvasBackground(viewport ?? undefined);
     ctx.fillRect(0, 0, width, height);
     if (cached) {
       const rect = drawRectFor(width, height, cached.frame);
@@ -226,16 +226,7 @@ export function AnnotationCanvas(props: AnnotationCanvasProps) {
     renderNow();
   });
 
-  onMount(() => {
-    const observer = new MutationObserver(() => {
-      window.requestAnimationFrame(renderNow);
-    });
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class", "style"],
-    });
-    onCleanup(() => observer.disconnect());
-  });
+  useCanvasThemeRerender(renderNow);
 
   onMount(() => {
     const canvas = canvasEl;
