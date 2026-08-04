@@ -1,7 +1,8 @@
-@import "@fontsource-variable/lora/wght.css";
-
+/**
+ * App font tokens. Face files load via `@lisca/ui/theme.css` (Geist).
+ */
 @theme {
-  --font-display: "Lora", ui-serif, Georgia, serif;
-  --font-sans: "Lora", ui-serif, Georgia, serif;
-  --font-mono: "Lora", ui-serif, Georgia, serif;
+  --font-display: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
 }
