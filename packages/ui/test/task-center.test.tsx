@@ -53,11 +53,15 @@ function attempt(status: TaskAttempt["status"]): TaskAttempt {
   };
 }
 
-function task(status: TaskDetail["status"], attempts: TaskAttempt[] = []): TaskDetail {
+function task(
+  status: TaskDetail["status"],
+  attempts: TaskAttempt[] = [],
+  workProgress: TaskDetail["workProgress"] = null,
+): TaskDetail {
   return {
     taskId: "task-1",
     operationId: "operation-1",
-    taskKind: "crop-position-1",
+    taskKind: "crop-roi/Pos4",
     workspaceId: "workspace-1",
     status,
     weight: 1,
@@ -65,6 +69,18 @@ function task(status: TaskDetail["status"], attempts: TaskAttempt[] = []): TaskD
     dependencies: [],
     blockedBy: [],
     attempts,
+    workProgress,
+  };
+}
+
+function runningWorkProgress(updatedAtMs: number): NonNullable<TaskDetail["workProgress"]> {
+  return {
+    unit: "roiframe",
+    completed: 1200,
+    total: 1800,
+    phase: "writing",
+    message: "Writing Pos4",
+    updatedAtMs,
   };
 }
 
@@ -77,7 +93,13 @@ function detail(
     status === "completed" ? "completed" : status === "failed" ? "failed" : "running";
   return {
     operation: summary(status, updatedAtMs),
-    tasks: [task(taskStatus, attempts)],
+    tasks: [
+      task(
+        taskStatus,
+        attempts,
+        taskStatus === "running" ? runningWorkProgress(updatedAtMs) : null,
+      ),
+    ],
   };
 }
 
@@ -180,21 +202,21 @@ describe("Task Center dialog", () => {
     view.snapshot([summary("running", 1)]);
 
     fireEvent.click(view.getByRole("button", { name: "Tasks, 1 active" }));
-    fireEvent.click(screen.getByRole("button", { name: /Crop ROI/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Expand Crop ROI/ }));
     view.snapshot([summary("completed", 2)]);
     second.resolve(detail("completed", 2));
-    await screen.findByText("Crop Position 1");
+    await screen.findByText("Pos4");
     first.resolve(detail("running", 1));
     await Promise.resolve();
-    expect(screen.getAllByText("Completed").length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: /Collapse Crop ROI, Completed/ })).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: /Crop ROI/ }));
-    fireEvent.click(screen.getByRole("button", { name: /Crop ROI/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Collapse Crop ROI/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Expand Crop ROI/ }));
     third.resolve(detail("failed", 3));
-    expect((await screen.findAllByText("Failed")).length).toBeGreaterThan(0);
+    expect(await screen.findByRole("button", { name: /Expand Crop ROI, Failed|Collapse Crop ROI, Failed/ })).toBeTruthy();
   });
 
-  it("refreshes already-loaded task, attempt, and action rows after a newer snapshot", async () => {
+  it("hides per-position progress when collapsed and shows it on each task when expanded", async () => {
     const first = deferred<OperationDetail>();
     const second = deferred<OperationDetail>();
     const responses = [first, second];
@@ -203,15 +225,19 @@ describe("Task Center dialog", () => {
     view.snapshot([summary("running", 1)]);
 
     fireEvent.click(view.getByRole("button", { name: "Tasks, 1 active" }));
-    fireEvent.click(screen.getByRole("button", { name: /Crop ROI/ }));
+    expect(screen.queryByRole("progressbar", { name: "Pos4 roiframe progress" })).toBeNull();
+    expect(screen.getByRole("progressbar", { name: /tasks completed/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Expand Crop ROI, Running/ })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: /Expand Crop ROI/ }));
     first.resolve(detail("running", 1, [attempt("running")]));
-    await screen.findByText("Crop Position 1");
+    await screen.findByRole("progressbar", { name: "Pos4 roiframe progress" });
     expect(
       screen.getByRole("progressbar", { name: "Pos4 roiframe progress" }).getAttribute(
         "aria-valuenow",
       ),
     ).toBe("1200");
-    expect(screen.getAllByRole("button", { name: "Stop" })).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: "Stop" })).toHaveLength(1);
 
     view.snapshot([summary("failed", 2)]);
     await waitFor(() => expect(getOperation).toHaveBeenCalledTimes(2));
@@ -221,5 +247,6 @@ describe("Task Center dialog", () => {
     expect(screen.getByText(/Crop analysis failed/)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Stop" })).toBeNull();
+    expect(screen.getByRole("button", { name: /Failed/ })).toBeTruthy();
   });
 });

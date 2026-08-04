@@ -164,9 +164,14 @@ export function useAnnotateStateCore<State extends AnnotatorUiState>(
       activeRequestKey: requestKey(position, selectedRoi, currentUi.selection),
     };
   });
+  // Primitive key so frame-load start()/settle() UI writes do not retrigger the effect.
+  // Depending on requestContext()'s object identity loops: start() patches UI → new context
+  // object → effect cleanup aborts → start() again → stack overflow / request storm.
+  const activeRequestKey = createMemo(() => requestContext().activeRequestKey);
+  const activeContrast = createMemo(() => session.state().contrast);
 
   createEffect(() => {
-    const activeRequestKey = requestContext().activeRequestKey;
+    const requestKeyValue = activeRequestKey();
     const shellPath = shellWorkspacePath();
     const workspacePath = untrack(() => session.state().workspacePath);
     const request = untrack(() => requestContext().request);
@@ -177,7 +182,7 @@ export function useAnnotateStateCore<State extends AnnotatorUiState>(
       deps.annotatorUiActions.setAnnotationLoading(setUi, false);
       return;
     }
-    void activeRequestKey;
+    void requestKeyValue;
     const cleanup = loadCanvasResources<{
       frame: FrameResult;
       annotation: {
@@ -228,7 +233,7 @@ export function useAnnotateStateCore<State extends AnnotatorUiState>(
   });
 
   createEffect(() => {
-    const contrast = session.state().contrast;
+    const contrast = activeContrast();
     if (!shouldRunContrastFrameLoad(contrast)) {
       return;
     }

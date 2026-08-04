@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
+import { cleanup, fireEvent, render, screen, waitFor } from "@solidjs/testing-library";
 import {
   ShellServerProvider,
   ShellThemeProvider,
@@ -172,29 +172,26 @@ describe("StudioNavRail Task Center", () => {
     fireEvent.click(trigger);
     await screen.findByRole("dialog", { name: "Task Center" });
 
-    fireEvent.click(screen.getByRole("button", { name: /Crop ROI.*Running/ }));
-    const runningTask = await screen.findByRole("button", {
-      name: /Crop Position 7.*Running/,
-    });
+    fireEvent.click(screen.getByRole("button", { name: /Expand Crop ROI/ }));
+    await screen.findByText("Current task");
     expect(mocks.getOperation).toHaveBeenCalledWith("crop-operation", expect.any(AbortSignal));
-    fireEvent.click(runningTask);
-    expect(screen.getByText("Attempts (1)")).toBeTruthy();
     expectStudioState(router.state.location.href, edit, routeState, workspaceState);
 
-    fireEvent.click(within(runningTask.parentElement!).getByRole("button", { name: "Stop" }));
+    fireEvent.click(screen.getByRole("button", { name: "Stop" }));
     await waitFor(() =>
-      expect(mocks.cancelTask).toHaveBeenCalledWith("crop-position-7", expect.any(AbortSignal)),
+      expect(mocks.gateway.cancelOperation).toHaveBeenCalledWith(
+        "crop-operation",
+        expect.any(AbortSignal),
+      ),
     );
-    const cancelledTask = await screen.findByRole("button", {
-      name: /Crop Position 7.*Cancelled/,
-    });
+    const retry = await screen.findByRole("button", { name: "Retry" });
     expectStudioState(router.state.location.href, edit, routeState, workspaceState);
 
-    fireEvent.click(within(cancelledTask.parentElement!).getByRole("button", { name: "Retry" }));
+    fireEvent.click(retry);
     await waitFor(() =>
       expect(mocks.retryTask).toHaveBeenCalledWith("crop-position-7", expect.any(AbortSignal)),
     );
-    await screen.findByRole("button", { name: /Crop Position 7.*Running/ });
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Retry" })).toBeNull());
     expectStudioState(router.state.location.href, edit, routeState, workspaceState);
 
     fireEvent.click(screen.getByRole("button", { name: "Close Task Center" }));

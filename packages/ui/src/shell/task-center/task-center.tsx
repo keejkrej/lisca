@@ -2,7 +2,6 @@ import type { OperationDetail, OperationSummary, TaskDetail } from "@lisca/contr
 import * as Dialog from "@kobalte/core/dialog";
 import {
   canCancelOperation,
-  canCancelTask,
   canRetryTask,
   deriveOperationProgress,
   deriveTaskCenterIndicator,
@@ -11,18 +10,15 @@ import {
   operationStatusLabel,
   reconcileTaskCenterDetail,
   reconcileTaskCenterSnapshot,
-  taskStatusLabel,
   type TaskCenterGateway,
 } from "@lisca/utils";
 import IconArrowsClockwiseRegular from "phosphor-icons-solid/IconArrowsClockwiseRegular";
-import IconCaretDownRegular from "phosphor-icons-solid/IconCaretDownRegular";
-import IconCaretRightRegular from "phosphor-icons-solid/IconCaretRightRegular";
 import IconQueueRegular from "phosphor-icons-solid/IconQueueRegular";
 import IconWarningCircleRegular from "phosphor-icons-solid/IconWarningCircleRegular";
 import IconXRegular from "phosphor-icons-solid/IconXRegular";
 import { For, Show, createMemo, createSignal, onCleanup, onMount } from "solid-js";
 
-import { Button } from "../../components/ui/button";
+import { Button, buttonVariants } from "../../components/ui/button";
 import { Spinner } from "../../components/ui/spinner";
 import { cn } from "../../lib/utils";
 
@@ -33,8 +29,6 @@ export type TaskCenterProps = {
     onError: (error: unknown) => void;
   }) => () => void;
 };
-
-const terminalTaskStatuses = new Set<TaskDetail["status"]>(["completed", "failed", "cancelled"]);
 
 function errorMessage(error: unknown): string {
   if (typeof error === "object" && error !== null && "message" in error) {
@@ -57,17 +51,17 @@ function formatTime(timestampMs: number | null): string {
   }).format(new Date(timestampMs));
 }
 
-function operationTone(operation: OperationSummary): string {
-  if (operation.attention === "error") return "text-destructive";
-  if (operation.status === "running" || operation.status === "cancellation-requested") {
-    return "text-foreground";
+function operationDotClass(operation: OperationSummary): string {
+  if (operation.attention === "error" || operation.status === "failed") {
+    return "bg-destructive";
   }
-  return "text-muted-foreground";
-}
-
-function taskTone(status: TaskDetail["status"]): string {
-  if (status === "failed" || status === "blocked") return "text-destructive";
-  return terminalTaskStatuses.has(status) ? "text-muted-foreground" : "text-foreground";
+  if (operation.status === "running" || operation.status === "cancellation-requested") {
+    return "bg-primary motion-safe:animate-pulse";
+  }
+  if (operation.status === "completed" || operation.status === "partially-complete") {
+    return "bg-primary";
+  }
+  return "bg-muted-foreground/50";
 }
 
 function OperationProgressRail(props: { operation: OperationSummary }) {
@@ -92,85 +86,74 @@ function OperationProgressRail(props: { operation: OperationSummary }) {
   );
 }
 
-function WorkProgressRail(props: { operation: OperationSummary }) {
-  const work = () => props.operation.workProgress;
-  const percent = () => {
-    const current = work();
-    return current && current.total > 0 ? (current.completed / current.total) * 100 : 0;
-  };
-  const label = () => {
-    const kind = props.operation.activeTaskKind;
-    const position = kind?.match(/Pos\d+/)?.[0];
-    return position ?? "Current task";
-  };
+function positionLabel(taskKind: string | null | undefined): string {
+  return taskKind?.match(/Pos\d+/)?.[0] ?? "Current task";
+}
+
+function WorkProgressRail(props: {
+  label: string;
+  work: NonNullable<TaskDetail["workProgress"]>;
+}) {
+  const percent = () =>
+    props.work.total > 0 ? (props.work.completed / props.work.total) * 100 : 0;
   return (
-    <Show when={work()}>
-      {(current) => (
-        <div class="space-y-1">
-          <div class="flex justify-between gap-3 text-muted-foreground text-xs tabular-nums">
-            <span>{label()}</span>
-            <span>
-              {current().completed}/{current().total} {current().unit}
-            </span>
-          </div>
-          <div
-            aria-label={`${label()} ${current().unit} progress`}
-            aria-valuemax={current().total}
-            aria-valuemin={0}
-            aria-valuenow={current().completed}
-            class="h-1.5 overflow-hidden rounded-full bg-muted"
-            role="progressbar"
-          >
-            <div class="h-full bg-primary" style={{ width: `${percent()}%` }} />
-          </div>
-        </div>
-      )}
-    </Show>
+    <div class="space-y-1">
+      <div class="flex justify-between gap-3 text-muted-foreground text-xs tabular-nums">
+        <span>{props.label}</span>
+        <span>
+          {props.work.completed}/{props.work.total} {props.work.unit}
+        </span>
+      </div>
+      <div
+        aria-label={`${props.label} ${props.work.unit} progress`}
+        aria-valuemax={props.work.total}
+        aria-valuemin={0}
+        aria-valuenow={props.work.completed}
+        class="h-1.5 overflow-hidden rounded-full bg-muted"
+        role="progressbar"
+      >
+        <div class="h-full bg-primary" style={{ width: `${percent()}%` }} />
+      </div>
+    </div>
   );
 }
 
 function TaskRow(props: {
   task: TaskDetail;
   busy: boolean;
-  onCancel: () => void;
   onRetry: () => void;
 }) {
   const latestError = () => props.task.attempts.at(-1)?.error;
+  const label = () => positionLabel(props.task.taskKind);
   return (
-    <li class="border-t border-border/70 first:border-t-0">
-      <div class="flex items-start gap-2 px-3 py-2.5">
-        <div class="flex min-w-0 flex-1 items-start gap-2">
-          <span class="min-w-0 flex-1">
-            <span class="block truncate font-medium text-foreground text-sm">
-              {operationKindLabel(props.task.taskKind)}
-            </span>
-            <span class="block truncate text-muted-foreground text-xs">
-              {taskStatusLabel(props.task.status)}
-              <Show when={latestError()}> · {latestError()?.message}</Show>
-            </span>
-          </span>
-          <span class={cn("shrink-0 text-xs", taskTone(props.task.status))}>
-            {taskStatusLabel(props.task.status)}
-          </span>
-        </div>
-
-        <Show when={canCancelTask(props.task)}>
-          <Button
-            disabled={props.busy}
-            size="xs"
-            type="button"
-            variant="outline"
-            onClick={props.onCancel}
+    <li>
+      <div
+        class={cn(
+          buttonVariants({ variant: "ghost" }),
+          "h-auto w-full justify-start gap-2 rounded-lg px-3 py-2.5 font-normal",
+        )}
+      >
+        <div class="min-w-0 flex-1 space-y-1 text-left">
+          <Show
+            when={props.task.workProgress}
+            fallback={
+              <span class="block truncate text-muted-foreground text-xs">{label()}</span>
+            }
           >
-            Stop
-          </Button>
-        </Show>
+            {(work) => <WorkProgressRail label={label()} work={work()} />}
+          </Show>
+          <Show when={latestError()}>
+            {(error) => (
+              <span class="block truncate text-destructive text-xs">{error().message}</span>
+            )}
+          </Show>
+        </div>
         <Show when={canRetryTask(props.task)}>
           <Button
             disabled={props.busy}
             size="xs"
             type="button"
-            variant="outline"
+            variant="ghost"
             onClick={props.onRetry}
           >
             <IconArrowsClockwiseRegular />
@@ -403,79 +386,74 @@ export function TaskCenter(props: TaskCenterProps) {
                 </div>
               }
             >
-              <ul class="divide-y divide-border">
+              <ul class="space-y-1 px-3 py-3">
                 <For each={state().operations}>
                   {(operation) => {
                     const expanded = () => expandedOperationId() === operation.operationId;
                     const detail = () => state().details[operation.operationId];
-                    const progress = () => deriveOperationProgress(operation);
                     const operationBusy = () =>
                       busyAction() === `operation:${operation.operationId}`;
                     return (
-                      <li class="px-5 py-4">
-                        <div class="flex items-start gap-3">
+                      <li>
+                        <div
+                          class={cn(
+                            "flex items-start gap-2 rounded-lg",
+                            expanded() && "bg-muted/50",
+                          )}
+                        >
                           <button
                             aria-expanded={expanded()}
-                            class="flex min-w-0 flex-1 items-start gap-3 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            aria-label={
+                              expanded()
+                                ? `Collapse ${operationKindLabel(operation.kind)}, ${operationStatusLabel(operation.status)}`
+                                : `Expand ${operationKindLabel(operation.kind)}, ${operationStatusLabel(operation.status)}`
+                            }
+                            class={cn(
+                              buttonVariants({ variant: "ghost" }),
+                              "h-auto min-w-0 flex-1 items-start justify-start gap-2 rounded-lg px-3 py-2.5 text-left font-normal",
+                              expanded() && "bg-transparent hover:bg-transparent",
+                            )}
                             type="button"
                             onClick={() => void toggleOperation(operation.operationId)}
                           >
                             <span
+                              aria-hidden="true"
                               class={cn(
-                                "mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full border border-border bg-background",
-                                operationTone(operation),
+                                "mt-1.5 size-2 shrink-0 rounded-full",
+                                operationDotClass(operation),
                               )}
-                            >
-                              <Show
-                                when={expanded()}
-                                fallback={<IconCaretRightRegular class="size-3.5" />}
-                              >
-                                <IconCaretDownRegular class="size-3.5" />
-                              </Show>
-                            </span>
+                            />
                             <span class="min-w-0 flex-1 space-y-2">
-                              <span class="flex items-start justify-between gap-3">
-                                <span class="min-w-0">
-                                  <span class="block truncate font-medium text-foreground text-sm">
-                                    {operationKindLabel(operation.kind)}
-                                  </span>
-                                  <span
-                                    class="block truncate text-muted-foreground text-xs"
-                                    title={operation.workspacePath}
-                                  >
-                                    {workspaceName(operation.workspacePath)} · updated{" "}
-                                    {formatTime(operation.updatedAtMs)}
-                                  </span>
+                              <span class="block truncate font-medium text-foreground text-sm">
+                                {operationKindLabel(operation.kind)}
+                              </span>
+                              <span class="flex items-center justify-between gap-3 text-muted-foreground text-xs">
+                                <span class="min-w-0 truncate" title={operation.workspacePath}>
+                                  {workspaceName(operation.workspacePath)} · updated{" "}
+                                  {formatTime(operation.updatedAtMs)}
                                 </span>
-                                <span
-                                  class={cn(
-                                    "shrink-0 font-medium text-xs",
-                                    operationTone(operation),
-                                  )}
-                                >
-                                  {operationStatusLabel(operation.status)}
+                                <span class="flex shrink-0 items-center gap-2 tabular-nums">
+                                  <Show when={operation.progress.failed > 0}>
+                                    <span class="text-destructive">
+                                      {operation.progress.failed} failed
+                                    </span>
+                                  </Show>
+                                  <span>
+                                    {operation.progress.completed}/{operation.progress.total}{" "}
+                                    Positions
+                                  </span>
                                 </span>
                               </span>
                               <OperationProgressRail operation={operation} />
-                              <span class="flex justify-between gap-3 text-muted-foreground text-xs tabular-nums">
-                                <span>
-                                  Positions {progress().completed}/{progress().total}
-                                </span>
-                                <Show when={operation.progress.failed > 0}>
-                                  <span class="text-destructive">
-                                    {operation.progress.failed} failed
-                                  </span>
-                                </Show>
-                              </span>
-                              <WorkProgressRail operation={operation} />
                             </span>
                           </button>
                           <Show when={canCancelOperation(operation)}>
                             <Button
+                              class="mt-2.5 mr-2"
                               disabled={operationBusy()}
                               size="xs"
                               type="button"
-                              variant="outline"
+                              variant="ghost"
                               onClick={() =>
                                 void runAction(
                                   `operation:${operation.operationId}`,
@@ -494,11 +472,11 @@ export function TaskCenter(props: TaskCenterProps) {
                         </div>
 
                         <Show when={expanded()}>
-                          <div class="ml-10 mt-3 overflow-hidden rounded-lg border border-border">
+                          <div class="mt-1 space-y-0.5 px-3">
                             <Show
                               when={loadingDetail() !== operation.operationId}
                               fallback={
-                                <div class="flex items-center gap-2 px-3 py-4 text-muted-foreground text-sm">
+                                <div class="flex items-center gap-2 px-3 py-2.5 text-muted-foreground text-sm">
                                   <Spinner /> Loading task details…
                                 </div>
                               }
@@ -506,27 +484,19 @@ export function TaskCenter(props: TaskCenterProps) {
                               <Show
                                 when={detail()}
                                 fallback={
-                                  <p class="px-3 py-4 text-muted-foreground text-sm">
+                                  <p class="px-3 py-2.5 text-muted-foreground text-sm">
                                     Details could not be loaded. Close and reopen this operation to
                                     try again.
                                   </p>
                                 }
                               >
                                 {(operationDetail) => (
-                                  <ul>
+                                  <ul class="space-y-0.5">
                                     <For each={operationDetail().tasks}>
                                       {(task) => (
                                         <TaskRow
                                           busy={busyAction() === `task:${task.taskId}`}
                                           task={task}
-                                          onCancel={() =>
-                                            void runAction(
-                                              `task:${task.taskId}`,
-                                              operation.operationId,
-                                              (signal) =>
-                                                props.gateway.cancelTask(task.taskId, signal),
-                                            )
-                                          }
                                           onRetry={() =>
                                             void runAction(
                                               `task:${task.taskId}`,
