@@ -2,13 +2,8 @@ import type {
   AssayAnalysisConfig,
   StudioAssayId as AssayId,
   StudioAssayJson,
-  StudioBasicInfoFeatureId as BasicInfo2FeatureId,
-  StudioBasicInfoSampleRow as BasicInfoSampleRow,
-  StudioBasicInfoStep3OnDisk as BasicInfoStep3OnDisk,
-  StudioTimelapseUnit as TimelapseUnit,
-  StudioBasicInfoStep1 as BasicInfoStep1,
-  StudioBasicInfoStep2 as BasicInfoStep2,
-  StudioBasicInfoStep3 as BasicInfoStep3,
+  StudioAssaySampleRow as BasicInfoSampleRow,
+  StudioIntervalUnit as IntervalUnit,
   TransfectionAssayType,
   StudioDataSourceKind,
   EnabledStudioAssayId,
@@ -16,8 +11,6 @@ import type {
 import {
   ASSAY_TYPE,
   ENABLED_STUDIO_ASSAY_IDS,
-  TRANSFECTION_FEATURE_IDS as CONTRACT_TRANSFECTION_FEATURE_IDS,
-  ASSAY_FEATURE,
   DEFAULT_FOLDER_SOURCE_TEMPLATE,
 } from "@lisca/contracts/assay";
 import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/utils";
@@ -27,10 +20,10 @@ import {
   ASSAY_CHOICE_LABEL,
   analysisConfigForAssay,
   buildStudioAssayJson as buildStudioAssayJsonCore,
+  dataSourceKindFromAssayData,
   defaultIntervalMinutesForAssay,
   defaultMaxOnsetMinutesForAssay,
   inferDataSourceKind,
-  normalizeSelectedFeaturesForAssay,
   parseStudioAssayJson as parseStudioAssayJsonCore,
 } from "../studio/studio-assay-json";
 import { sampleRowFromDisk, sampleRowToDisk } from "../studio/sample-positions";
@@ -39,31 +32,21 @@ import {
   serializeBasicInfoSnapshot as serializeBasicInfoSnapshotCore,
 } from "../studio/wizard-state";
 
-export type {
-  AssayId,
-  BasicInfo2FeatureId,
-  BasicInfoSampleRow,
-  BasicInfoStep1,
-  BasicInfoStep2,
-  BasicInfoStep3,
-  StudioAssayJson,
-  StudioDataSourceKind,
-  TimelapseUnit,
-};
+export type { AssayId, BasicInfoSampleRow, StudioAssayJson, StudioDataSourceKind, IntervalUnit };
+
+/** @deprecated Prefer IntervalUnit */
+export type TimelapseUnit = IntervalUnit;
 
 export type StudioStep = "chooseAssay" | "info1" | "info2" | "alignPattern";
 export type InfoStep = 1 | 2;
 
 export {
   ASSAY_CHOICE_LABEL,
+  assayDisplayLabel,
   inferDataSourceKind,
-  normalizeSelectedFeaturesForAssay,
 } from "../studio/studio-assay-json";
 
-const BASIC_INFO_FEATURE_IDS: ReadonlyArray<BasicInfo2FeatureId> =
-  CONTRACT_TRANSFECTION_FEATURE_IDS;
-const BASIC_INFO_FEATURE_ID_SET = new Set<string>(BASIC_INFO_FEATURE_IDS);
-const TIMELAPSE_UNIT_SET = new Set<TimelapseUnit>(["second", "minute", "hour"]);
+const INTERVAL_UNIT_SET = new Set<IntervalUnit>(["second", "minute", "hour"]);
 const ENABLED_ASSAY_IDS = new Set<EnabledStudioAssayId>(ENABLED_STUDIO_ASSAY_IDS);
 const DEFAULT_ASSAY_ID: AssayId = ASSAY_TYPE.TRANSFECTION;
 
@@ -75,33 +58,20 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function requireRecord(value: unknown, label: string): Record<string, unknown> {
-  if (!isRecord(value)) throw new Error(`Invalid assay.json: ${label} must be an object.`);
-  return value;
-}
-
 function emptySampleRow(id: string): BasicInfoSampleRow {
   return {
     id,
-    channel: "",
+    slide: "",
     name: "",
     positionStart: "",
     positionFinish: "",
-    maskChannel: "",
-    signalChannel: "",
+    brightfield: "",
+    fluorescence: "",
   };
 }
 
-function isBasicInfoFeatureId(value: unknown): value is BasicInfo2FeatureId {
-  return typeof value === "string" && BASIC_INFO_FEATURE_ID_SET.has(value);
-}
-
-function isBasicInfoFeatureList(value: unknown): value is BasicInfo2FeatureId[] {
-  return Array.isArray(value) && value.every((item) => isBasicInfoFeatureId(item));
-}
-
-function isTimelapseUnit(value: unknown): value is TimelapseUnit {
-  return typeof value === "string" && TIMELAPSE_UNIT_SET.has(value as TimelapseUnit);
+function isIntervalUnit(value: unknown): value is IntervalUnit {
+  return typeof value === "string" && INTERVAL_UNIT_SET.has(value as IntervalUnit);
 }
 
 function enabledAssayId(assayId: AssayId | null): AssayId | null {
@@ -113,84 +83,45 @@ function enabledAssayId(assayId: AssayId | null): AssayId | null {
 
 export function basicInfoAssayTitle(assayId: AssayId | null): string {
   if (!assayId) return "Assay";
-  if (assayId === ASSAY_TYPE.CUSTOM_ASSAY) return ASSAY_CHOICE_LABEL[ASSAY_TYPE.CUSTOM_ASSAY];
   return `${ASSAY_CHOICE_LABEL[assayId]} assay`;
 }
 
 export function buildStudioAssayJson({
   assayId,
+  name,
   dataSourceKind,
-  info1,
-  info2,
-  info3,
+  dataPath,
+  folderTemplate,
+  workspacePath,
+  intervalValue,
+  intervalUnit,
+  samples,
   analysis,
 }: {
   assayId: AssayId;
+  name: string;
   dataSourceKind: StudioDataSourceKind;
-  info1: BasicInfoStep1;
-  info2: BasicInfoStep2;
-  info3: BasicInfoStep3;
+  dataPath: string;
+  folderTemplate: { subfolder: string; filename: string };
+  workspacePath: string;
+  intervalValue: number | null;
+  intervalUnit: IntervalUnit;
+  samples: BasicInfoSampleRow[];
   analysis?: AssayAnalysisConfig | null;
 }): StudioAssayJson {
   return buildStudioAssayJsonCore({
     assayId,
+    name,
     dataSourceKind,
-    info1,
-    info2,
-    info3,
+    dataPath,
+    folderTemplate,
+    workspacePath,
+    intervalValue,
+    intervalUnit,
+    samples,
     analysis,
     sampleRowToDisk,
   });
-}
-
-function parseInfo2(value: unknown, assayId: AssayId | null): BasicInfoStep2 {
-  const info2 = requireRecord(value, "info2");
-  const timelapseAmount = info2.timelapseAmount;
-  const timelapseUnit = info2.timelapseUnit;
-  const rawSelectedFeatures = (info2 as Record<string, unknown>)?.selectedFeatures;
-  const rawSelectedFeature = (info2 as Record<string, unknown>)?.selectedFeature;
-  const selectedFeatures = isBasicInfoFeatureList(rawSelectedFeatures)
-    ? rawSelectedFeatures
-    : isBasicInfoFeatureId(rawSelectedFeature)
-      ? [rawSelectedFeature]
-      : [];
-  if (
-    timelapseAmount !== null &&
-    (typeof timelapseAmount !== "number" || !Number.isFinite(timelapseAmount))
-  ) {
-    throw new Error("Invalid assay.json: info2.timelapseAmount must be a number or null.");
-  }
-  if (!isTimelapseUnit(timelapseUnit)) {
-    throw new Error("Invalid assay.json: info2.timelapseUnit is not supported.");
-  }
-  return {
-    timelapseAmount,
-    timelapseUnit,
-    selectedFeatures: normalizeSelectedFeaturesForAssay(assayId, selectedFeatures),
-  };
-}
-
-function parsePersistedInfo2(value: unknown, assayId: AssayId | null): BasicInfoStep2 {
-  if (!isRecord(value)) return { ...initialInfo2 };
-  try {
-    return parseInfo2(value, assayId);
-  } catch {
-    const valueRecord = value as Record<string, unknown>;
-    const rawSelectedFeatures = valueRecord.selectedFeatures;
-    const rawSelectedFeature = valueRecord.selectedFeature;
-    return {
-      timelapseAmount: null,
-      timelapseUnit: "minute",
-      selectedFeatures: normalizeSelectedFeaturesForAssay(
-        assayId,
-        isBasicInfoFeatureList(rawSelectedFeatures)
-          ? [...rawSelectedFeatures]
-          : isBasicInfoFeatureId(rawSelectedFeature)
-            ? [rawSelectedFeature]
-            : [],
-      ),
-    };
-  }
 }
 
 export function parseStudioAssayJson(contents: string): StudioAssayJson {
@@ -200,19 +131,62 @@ export function parseStudioAssayJson(contents: string): StudioAssayJson {
 export type StudioWizardState = {
   assayId: AssayId | null;
   infoStep: InfoStep;
+  name: string;
   dataSourceKind: StudioDataSourceKind;
-  info1: BasicInfoStep1;
-  info2: BasicInfoStep2;
-  info3: BasicInfoStep3;
-  /** Assay-dependent analysis params (transfection: maxOnsetMinutes). */
+  dataPath: string;
+  folderTemplate: { subfolder: string; filename: string };
+  workspacePath: string;
+  intervalValue: number | null;
+  intervalUnit: IntervalUnit;
+  samples: BasicInfoSampleRow[];
+  /** Assay-dependent analysis params (transfection: maxOnsetMinutes, skipSegment). */
   analysis: AssayAnalysisConfig | null;
   basicInfoSavedSnapshot: string | null;
 };
 
+/** Build on-disk assay.json from the current wizard state. */
+export function buildStudioAssayJsonFromWizard(
+  state: Pick<
+    StudioWizardState,
+    | "assayId"
+    | "name"
+    | "dataSourceKind"
+    | "dataPath"
+    | "folderTemplate"
+    | "workspacePath"
+    | "intervalValue"
+    | "intervalUnit"
+    | "samples"
+    | "analysis"
+  >,
+): StudioAssayJson {
+  return buildStudioAssayJson({
+    assayId: state.assayId ?? ASSAY_TYPE.TRANSFECTION,
+    name: state.name,
+    dataSourceKind: state.dataSourceKind,
+    dataPath: state.dataPath,
+    folderTemplate: state.folderTemplate,
+    workspacePath: state.workspacePath,
+    intervalValue: state.intervalValue,
+    intervalUnit: state.intervalUnit,
+    samples: state.samples,
+    analysis: state.analysis,
+  });
+}
+
 export function serializeBasicInfoSnapshot(
   state: Pick<
     StudioWizardState,
-    "assayId" | "dataSourceKind" | "info1" | "info2" | "info3" | "analysis"
+    | "assayId"
+    | "name"
+    | "dataSourceKind"
+    | "dataPath"
+    | "folderTemplate"
+    | "workspacePath"
+    | "intervalValue"
+    | "intervalUnit"
+    | "samples"
+    | "analysis"
   >,
 ): string {
   return serializeBasicInfoSnapshotCore(state);
@@ -222,84 +196,91 @@ export function isBasicInfoDirty(state: StudioWizardState): boolean {
   return isBasicInfoDirtyCore(state, serializeBasicInfoSnapshot(createInitialWizardData()));
 }
 
-const initialInfo1: BasicInfoStep1 = {
-  name: "",
-  dataPath: "",
-  folderSubfolderTemplate: DEFAULT_FOLDER_SOURCE_TEMPLATE.subfolderTemplate,
-  folderFilenameTemplate: DEFAULT_FOLDER_SOURCE_TEMPLATE.filenameTemplate,
-  saveTo: "",
+const initialFolderTemplate = {
+  subfolder: DEFAULT_FOLDER_SOURCE_TEMPLATE.subfolderTemplate,
+  filename: DEFAULT_FOLDER_SOURCE_TEMPLATE.filenameTemplate,
 };
 
-function normalizeInfo1(info1: BasicInfoStep1): BasicInfoStep1 {
-  return {
-    ...info1,
-    folderSubfolderTemplate:
-      info1.folderSubfolderTemplate ?? DEFAULT_FOLDER_SOURCE_TEMPLATE.subfolderTemplate,
-    folderFilenameTemplate:
-      info1.folderFilenameTemplate ?? DEFAULT_FOLDER_SOURCE_TEMPLATE.filenameTemplate,
-  };
-}
+const initialAnalysis: AssayAnalysisConfig | null =
+  analysisConfigForAssay(DEFAULT_ASSAY_ID, null) ?? null;
 
-const initialInfo2: BasicInfoStep2 = {
-  timelapseAmount: defaultIntervalMinutesForAssay(DEFAULT_ASSAY_ID),
-  timelapseUnit: "minute",
-  selectedFeatures: [ASSAY_FEATURE.TOTAL_FLUOR],
-};
-
-const initialAnalysis: AssayAnalysisConfig | null = analysisConfigForAssay(
-  DEFAULT_ASSAY_ID,
-  null,
-) ?? null;
-
-const initialInfo3: BasicInfoStep3 = {
-  samples: [
-    { ...emptySampleRow("sample:0"), channel: "0" },
-    { ...emptySampleRow("sample:1"), channel: "1" },
-  ],
-};
-
-function cloneSampleRow(
-  id: string,
-  row: Parameters<typeof sampleRowFromDisk>[0],
-): BasicInfoSampleRow {
+function cloneSampleRow(id: string, row: BasicInfoSampleRow): BasicInfoSampleRow {
   return {
     id,
-    ...sampleRowFromDisk(row),
+    slide: row.slide,
+    name: row.name,
+    positionStart: row.positionStart,
+    positionFinish: row.positionFinish,
+    brightfield: row.brightfield,
+    fluorescence: row.fluorescence,
   };
 }
 
-function cloneSamples(
-  samples: BasicInfoSampleRow[] | BasicInfoStep3OnDisk["samples"],
-): BasicInfoSampleRow[] {
-  return samples.map((row, index) =>
-    cloneSampleRow("id" in row && row.id ? row.id : `sample:${index}`, row),
-  );
-}
-
-function normalizeInfo3(info3: BasicInfoStep3): BasicInfoStep3 {
-  return {
-    samples: cloneSamples(info3.samples ?? []),
-  };
+function cloneSamples(samples: BasicInfoSampleRow[]): BasicInfoSampleRow[] {
+  return samples.map((row, index) => cloneSampleRow(row.id ? row.id : `sample:${index}`, row));
 }
 
 function mergeStudioState(persisted: unknown, current: StudioWizardState): StudioWizardState {
-  const persistedState = persisted as Partial<StudioWizardState>;
-  const mergedInfo2 = persistedState.info2
-    ? parsePersistedInfo2(persistedState.info2, persistedState.assayId ?? current.assayId)
-    : current.info2;
+  const persistedState = persisted as Partial<StudioWizardState> & {
+    info1?: {
+      name?: string;
+      dataPath?: string;
+      saveTo?: string;
+      folderSubfolderTemplate?: string;
+      folderFilenameTemplate?: string;
+    };
+    info2?: { timelapseAmount?: number | null; timelapseUnit?: IntervalUnit };
+    info3?: { samples?: BasicInfoSampleRow[] };
+  };
+  const assayId = enabledAssayId(persistedState.assayId ?? current.assayId);
+
+  const name = persistedState.name ?? persistedState.info1?.name ?? current.name;
+  const dataPath = persistedState.dataPath ?? persistedState.info1?.dataPath ?? current.dataPath;
+  const workspacePath =
+    persistedState.workspacePath ?? persistedState.info1?.saveTo ?? current.workspacePath;
+  const folderTemplate = persistedState.folderTemplate ?? {
+    subfolder:
+      persistedState.info1?.folderSubfolderTemplate ?? current.folderTemplate.subfolder,
+    filename: persistedState.info1?.folderFilenameTemplate ?? current.folderTemplate.filename,
+  };
+  const samples = persistedState.samples
+    ? cloneSamples(persistedState.samples)
+    : persistedState.info3?.samples
+      ? cloneSamples(persistedState.info3.samples)
+      : current.samples;
+
+  let intervalValue = current.intervalValue;
+  if (persistedState.intervalValue !== undefined) {
+    intervalValue = persistedState.intervalValue;
+  } else if (persistedState.info2?.timelapseAmount !== undefined) {
+    intervalValue = persistedState.info2.timelapseAmount;
+  }
+
+  let intervalUnit = current.intervalUnit;
+  if (persistedState.intervalUnit !== undefined && isIntervalUnit(persistedState.intervalUnit)) {
+    intervalUnit = persistedState.intervalUnit;
+  } else if (
+    persistedState.info2?.timelapseUnit !== undefined &&
+    isIntervalUnit(persistedState.info2.timelapseUnit)
+  ) {
+    intervalUnit = persistedState.info2.timelapseUnit;
+  }
+
   return {
     ...current,
-    ...persistedState,
-    assayId: enabledAssayId(persistedState.assayId ?? current.assayId),
-    info1: persistedState.info1 ? normalizeInfo1(persistedState.info1) : current.info1,
-    info2: mergedInfo2,
-    info3: persistedState.info3 ? normalizeInfo3(persistedState.info3) : current.info3,
+    assayId,
+    infoStep: persistedState.infoStep ?? current.infoStep,
+    name,
+    dataSourceKind: persistedState.dataSourceKind ?? inferDataSourceKind(dataPath),
+    dataPath,
+    folderTemplate,
+    workspacePath,
+    intervalValue,
+    intervalUnit,
+    samples,
     analysis:
       persistedState.analysis !== undefined
-        ? analysisConfigForAssay(
-            enabledAssayId(persistedState.assayId ?? current.assayId),
-            persistedState.analysis,
-          ) ?? null
+        ? analysisConfigForAssay(assayId, persistedState.analysis) ?? null
         : current.analysis,
     basicInfoSavedSnapshot:
       typeof persistedState.basicInfoSavedSnapshot === "string"
@@ -314,12 +295,17 @@ function createInitialWizardData(): StudioWizardState {
   return {
     assayId: DEFAULT_ASSAY_ID,
     infoStep: 1,
+    name: "",
     dataSourceKind: null,
-    info1: { ...initialInfo1 },
-    info2: { ...initialInfo2 },
-    info3: {
-      samples: cloneSamples(initialInfo3.samples),
-    },
+    dataPath: "",
+    folderTemplate: { ...initialFolderTemplate },
+    workspacePath: "",
+    intervalValue: defaultIntervalMinutesForAssay(DEFAULT_ASSAY_ID),
+    intervalUnit: "minute",
+    samples: [
+      { ...emptySampleRow("sample:0"), slide: "0" },
+      { ...emptySampleRow("sample:1"), slide: "1" },
+    ],
     analysis: initialAnalysis,
     basicInfoSavedSnapshot: null,
   };
@@ -372,36 +358,42 @@ export const studioWizardActions = {
     set: (update: StateUpdater<StudioWizardState>) => void,
     assayJson: StudioAssayJson,
   ) {
-    const nextAssayId = enabledAssayId(assayJson.assayId) ?? DEFAULT_ASSAY_ID;
-    const nextInfo1 = { ...assayJson.info1 };
-    const nextInfo2 = {
-      ...assayJson.info2,
-      selectedFeatures: normalizeSelectedFeaturesForAssay(
-        assayJson.assayId,
-        assayJson.info2.selectedFeatures,
-      ),
-    };
-    const nextInfo3 = {
-      samples: cloneSamples(assayJson.info3.samples),
-    };
+    const nextAssayId = enabledAssayId(assayJson.type) ?? DEFAULT_ASSAY_ID;
+    const dataSourceKind = dataSourceKindFromAssayData(assayJson.data);
+    const folderTemplate =
+      assayJson.data.type === "folder"
+        ? assayJson.data.template
+        : { ...initialFolderTemplate };
+    const samples = cloneSamples(
+      assayJson.samples.map((row, index) => ({
+        id: `sample:${index}`,
+        ...sampleRowFromDisk(row),
+      })),
+    );
     const nextAnalysis = analysisConfigForAssay(nextAssayId, assayJson.analysis) ?? null;
-    const dataSourceKind =
-      assayJson.dataSourceKind ?? inferDataSourceKind(assayJson.info1.dataPath);
     patchStudioWizard(set, {
       assayId: nextAssayId,
       infoStep: 1,
+      name: assayJson.name,
       dataSourceKind,
-      info1: nextInfo1,
-      info2: nextInfo2,
-      info3: nextInfo3,
+      dataPath: assayJson.data.path,
+      folderTemplate,
+      workspacePath: assayJson.workspace.path,
+      intervalValue: assayJson.interval.value,
+      intervalUnit: assayJson.interval.unit,
+      samples,
       analysis: nextAnalysis,
       basicInfoSavedSnapshot: JSON.stringify(
         buildStudioAssayJson({
           assayId: nextAssayId,
+          name: assayJson.name,
           dataSourceKind,
-          info1: nextInfo1,
-          info2: nextInfo2,
-          info3: nextInfo3,
+          dataPath: assayJson.data.path,
+          folderTemplate,
+          workspacePath: assayJson.workspace.path,
+          intervalValue: assayJson.interval.value,
+          intervalUnit: assayJson.interval.unit,
+          samples,
           analysis: nextAnalysis,
         }),
       ),
@@ -414,16 +406,7 @@ export const studioWizardActions = {
       return {
         ...current,
         assayId: nextAssayId,
-        info2: {
-          ...current.info2,
-          // Seed assay-specific interval default when the field is empty.
-          timelapseAmount:
-            current.info2.timelapseAmount ?? defaultInterval ?? current.info2.timelapseAmount,
-          selectedFeatures: normalizeSelectedFeaturesForAssay(
-            nextAssayId,
-            nextAssayId === ASSAY_TYPE.TRANSFECTION ? current.info2.selectedFeatures : [],
-          ),
-        },
+        intervalValue: current.intervalValue ?? defaultInterval ?? current.intervalValue,
         analysis: analysisConfigForAssay(nextAssayId, current.analysis) ?? null,
       };
     });
@@ -438,6 +421,7 @@ export const studioWizardActions = {
       }
       const base = current.analysis ?? {
         maxOnsetMinutes: defaultMaxOnsetMinutesForAssay(current.assayId) ?? undefined,
+        skipSegment: false,
       };
       return {
         ...current,
@@ -445,72 +429,36 @@ export const studioWizardActions = {
       };
     });
   },
-  setInfo1(set: (update: StateUpdater<StudioWizardState>) => void, patch: Partial<BasicInfoStep1>) {
-    patchStudioWizard(set, (current) => ({ ...current, info1: { ...current.info1, ...patch } }));
+  patchWizard(
+    set: (update: StateUpdater<StudioWizardState>) => void,
+    patch: Partial<StudioWizardState>,
+  ) {
+    patchStudioWizard(set, patch);
   },
-  setInfo2(set: (update: StateUpdater<StudioWizardState>) => void, patch: Partial<BasicInfoStep2>) {
-    patchStudioWizard(set, (current) => ({
-      ...current,
-      info2: isTransfectionAssay(current.assayId)
-        ? {
-            ...current.info2,
-            ...patch,
-            selectedFeatures:
-              patch.selectedFeatures == null
-                ? current.info2.selectedFeatures
-                : normalizeSelectedFeaturesForAssay(current.assayId, patch.selectedFeatures),
-          }
-        : {
-            ...current.info2,
-            ...patch,
-            selectedFeatures: [],
-          },
-    }));
-  },
-  setInfo3(set: (update: StateUpdater<StudioWizardState>) => void, patch: Partial<BasicInfoStep3>) {
-    patchStudioWizard(set, (current) => ({ ...current, info3: { ...current.info3, ...patch } }));
-  },
-  updateInfo3Sample(
+  updateSample(
     set: (update: StateUpdater<StudioWizardState>) => void,
     index: number,
     patch: Partial<BasicInfoSampleRow>,
   ) {
+    patchStudioWizard(set, (current) => ({
+      ...current,
+      samples: current.samples.map((row, i) => (i === index ? { ...row, ...patch } : row)),
+    }));
+  },
+  addSample(set: (update: StateUpdater<StudioWizardState>) => void) {
     patchStudioWizard(set, (current) => {
-      const samples = current.info3.samples.map((row, i) =>
-        i === index ? { ...row, ...patch } : row,
-      );
+      const id = `sample:${current.samples.length}`;
       return {
         ...current,
-        info3: {
-          ...current.info3,
-          samples,
-        },
+        samples: [...current.samples, emptySampleRow(id)],
       };
     });
   },
-  addInfo3Sample(set: (update: StateUpdater<StudioWizardState>) => void) {
-    patchStudioWizard(set, (current) => {
-      const id = `sample:${current.info3.samples.length}`;
-      return {
-        ...current,
-        info3: {
-          ...current.info3,
-          samples: [...current.info3.samples, emptySampleRow(id)],
-        },
-      };
-    });
-  },
-  removeInfo3Sample(set: (update: StateUpdater<StudioWizardState>) => void, index: number) {
-    patchStudioWizard(set, (current) => {
-      const samples = current.info3.samples.filter((_, i) => i !== index);
-      return {
-        ...current,
-        info3: {
-          ...current.info3,
-          samples,
-        },
-      };
-    });
+  removeSample(set: (update: StateUpdater<StudioWizardState>) => void, index: number) {
+    patchStudioWizard(set, (current) => ({
+      ...current,
+      samples: current.samples.filter((_, i) => i !== index),
+    }));
   },
   setBasicInfoSavedSnapshot(
     set: (update: StateUpdater<StudioWizardState>) => void,

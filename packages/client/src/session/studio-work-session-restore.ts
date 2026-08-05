@@ -1,7 +1,7 @@
 import type { AlignerSource } from "@lisca/contracts";
 import type { StudioAssayJson, StudioDataSourceKind } from "@lisca/contracts/assay";
 
-import { inferDataSourceKind } from "../studio/studio-assay-json";
+import { assayDisplayLabel } from "../studio/studio-assay-json";
 import { toStudioSource } from "../studio/source";
 import { touchStudioWorkSessionFromAssayPath } from "./work-session";
 
@@ -29,17 +29,27 @@ export async function restoreStudioWorkSession({
   const assayJson = await readAssayJson(assayJsonPath);
   loadAssayJson(assayJson);
 
-  const workspacePath = assayJson.info1.saveTo.trim() || null;
-  const dataSourceKind: StudioDataSourceKind =
-    assayJson.dataSourceKind ?? inferDataSourceKind(assayJson.info1.dataPath);
-  const source = toStudioSource(dataSourceKind, assayJson.info1);
+  const workspacePath = assayJson.workspace.path.trim() || null;
+  const dataSourceKind: StudioDataSourceKind = assayJson.data.type;
+  const folderTemplate =
+    assayJson.data.type === "folder"
+      ? {
+          subfolder: assayJson.data.template.subfolder,
+          filename: assayJson.data.template.filename,
+        }
+      : undefined;
+  const source = toStudioSource({
+    kind: dataSourceKind,
+    dataPath: assayJson.data.path,
+    folderTemplate,
+  });
 
   setShellWorkspacePath(workspacePath);
   setAlignWorkspacePath(workspacePath);
   setAnnotateWorkspacePath(workspacePath);
   setAlignSource(source);
 
-  touchStudioWorkSessionFromAssayPath(assayJsonPath, assayJson.assayLabel);
+  touchStudioWorkSessionFromAssayPath(assayJsonPath, assayDisplayLabel(assayJson));
   if (workspacePath) {
     await resumePendingRuns(workspacePath);
   }

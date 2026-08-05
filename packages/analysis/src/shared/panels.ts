@@ -156,9 +156,30 @@ export function sortResultFiles(files: StudioAnalysisCsvFile[]): StudioAnalysisC
   });
 }
 
+/** Parse `Pos{n}/ch{n}.csv` (or legacy `sc{S}_ch{C}.csv`) display path. */
+export function parseTimeseriesPath(fileName: string): { pos: number; channel: number } | null {
+  const normalized = fileName.replace(/\\/g, "/");
+  const posCh = /(?:^|\/)Pos(\d+)\/ch(\d+)\.csv$/i.exec(normalized);
+  if (posCh) {
+    return { pos: Number(posCh[1]), channel: Number(posCh[2]) };
+  }
+  const legacy = /^sc(\d+)_ch(\d+)$/i.exec(normalized.replace(/\.csv$/i, ""));
+  if (legacy) {
+    return { pos: -1, channel: Number(legacy[2]) };
+  }
+  return null;
+}
+
+/**
+ * Resolve slide channel for a timeseries file.
+ * Prefer `slide_channel` in CSV rows; otherwise map `Pos{n}/ch{n}` via assay labels is not available here —
+ * titles fall back to the path stem. Legacy `sc{S}_ch{C}` stems still encode slide channel.
+ */
 export function parseSlideChannelFromFileName(fileName: string): number | null {
-  const match = /^sc(\d+)_ch\d+$/i.exec(fileName.replace(/\.csv$/i, ""));
-  return match ? Number(match[1]) : null;
+  const normalized = fileName.replace(/\.csv$/i, "").replace(/\\/g, "/");
+  const legacy = /^sc(\d+)_ch\d+$/i.exec(normalized);
+  if (legacy) return Number(legacy[1]);
+  return null;
 }
 
 export function boxplotXAxisLabel(slideChannelLabels: SlideChannelLabels): string {
@@ -314,11 +335,14 @@ function timeseriesPanelTitle(
   slideChannelLabels: SlideChannelLabels,
 ): string {
   const slideChannel = parseSlideChannelFromFileName(file.fileName);
+  const pathParts = parseTimeseriesPath(file.fileName);
   let label: string;
   if (slideChannel !== null && slideChannelLabels[slideChannel]?.trim()) {
     label = slideChannelLabels[slideChannel].trim();
   } else if (slideChannel !== null) {
     label = `slide channel ${slideChannel}`;
+  } else if (pathParts) {
+    label = `Pos${pathParts.pos} ch${pathParts.channel}`;
   } else {
     label = file.fileName.replace(/\.csv$/i, "");
   }

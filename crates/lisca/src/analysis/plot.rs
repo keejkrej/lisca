@@ -13,15 +13,15 @@ pub use mplot_config::{
 };
 pub use util::{
     boxplot_tick_label, boxplot_x_axis_label, expand_degenerate_ylim, grid_dimensions,
-    parse_slide_channel, percentile_ylim, quartile_axis_upper, slide_channel_labels, subplot_title,
-    trace_color_alpha, trace_naming_haystack, DEFAULT_PLOT_COLUMNS,
+    percentile_ylim, quartile_axis_upper, slide_channel_labels, subplot_title, trace_color_alpha,
+    trace_naming_haystack, DEFAULT_PLOT_COLUMNS,
 };
 
-use std::collections::BTreeMap;
 use std::path::Path;
 
 use mplot::prelude::{AxesStyle, GridPos, TickFormat};
 
+use super::slide::SlideMapping;
 use super::timeseries::TracePanel;
 
 pub(crate) fn write_metric_plots(
@@ -30,7 +30,7 @@ pub(crate) fn write_metric_plots(
     y_label: &str,
     interval: f64,
     columns: usize,
-    labels: &BTreeMap<u32, String>,
+    mapping: &SlideMapping,
 ) -> Result<(), String> {
     let panel_ylims: Vec<(f64, f64)> = panels
         .iter()
@@ -60,7 +60,7 @@ pub(crate) fn write_metric_plots(
         y_label,
         interval,
         columns,
-        labels,
+        mapping,
         |index| panel_ylims.get(index).copied().unwrap_or((0.0, 1.0)),
     )?;
     write_subplot_grid(
@@ -69,7 +69,7 @@ pub(crate) fn write_metric_plots(
         y_label,
         interval,
         columns,
-        labels,
+        mapping,
         |_| shared_ylim,
     )?;
     Ok(())
@@ -81,7 +81,7 @@ fn write_subplot_grid(
     y_label: &str,
     interval: f64,
     columns: usize,
-    labels: &BTreeMap<u32, String>,
+    mapping: &SlideMapping,
     ylim_for_panel: impl Fn(usize) -> (f64, f64),
 ) -> Result<(), String> {
     let (rows, cols) = grid_dimensions(panels.len(), columns);
@@ -95,8 +95,8 @@ fn write_subplot_grid(
             .flat_map(|trace| trace.iter().map(|point| point.0))
             .fold(0.0f64, f64::max)
             * interval;
-        let (color, alpha) = trace_color_alpha(&trace_naming_haystack(&panel.path, labels));
-        let title = subplot_title(&panel.path, panel.traces.len(), labels);
+        let (color, alpha) = trace_color_alpha(&trace_naming_haystack(&panel.path, mapping));
+        let title = subplot_title(&panel.path, panel.traces.len(), mapping);
         let traces = panel.traces.clone();
         let y_label = y_label.to_string();
         // Intensity traces (not area) use scientific y-tick labels.

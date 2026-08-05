@@ -36,9 +36,9 @@ depends on `assay.json` → `assayId`:
 | Assay             | Goal source (not implementation reference)                                                   | Pipeline                                        |
 | ----------------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------- |
 | `transfection` | sibling [`lisca-transfection-assay`](../../../lisca-transfection-assay) — stages, CSV columns, plot names | segment → timeseries → AUC → fit (+ plots)      |
-| `immune-killing`  | [mupattern](https://github.com/keejkrej/mupattern) / future `lisca-killing-assay` — kill curve semantics, ResNet classifier | predict → plot-timeseries → clean → death times → kill curve plot |
+| `killing`  | [mupattern](https://github.com/keejkrej/mupattern) / future `lisca-killing-assay` — kill curve semantics, ResNet classifier | predict → plot-timeseries → clean → death times → kill curve plot |
 
-Numeric stages and PNG plots run in Rust via [**mplot-rs**](https://github.com/keejkrej/mplot-rs). Immune killing inference uses ONNX Runtime (`ort`) with the `keejkrej/immune-killing-resnet18` model.
+Numeric stages and PNG plots run in Rust via [**mplot-rs**](https://github.com/keejkrej/mplot-rs). Killing inference uses ONNX Runtime (`ort`) with the `keejkrej/killing-assay-resnet18` model.
 
 **Python-first → Rust prod process, tolerances, and assay map:** [`parity.md`](./parity.md). Agent workflow: `/lisca-parity`.
 
@@ -64,7 +64,7 @@ Progress stages (HTTP/WS contract): `preparing → segment → timeseries → au
 
 Plot steps run between their corresponding table stages but do not emit separate progress events.
 
-## Immune killing pipeline
+## Killing pipeline
 
 Ports the mupattern kill workflow (predict → clean → plot) to Studio ROI stacks (`roi/PosN/` TIFF stacks, not crops.zarr):
 
@@ -84,17 +84,17 @@ Progress reuses the same HTTP stage names with kill-specific messages:
 
 ### Kill model path
 
-Set `LISCA_KILL_MODEL` to a directory containing `model.onnx`, or place the exported ONNX model at `workspace/models/immune-killing-resnet18/model.onnx`. Export from Hugging Face:
+Set `LISCA_KILL_MODEL` to a directory containing `model.onnx`, or place the exported ONNX model at `workspace/models/killing-assay-resnet18/model.onnx`. Export from Hugging Face:
 
 ```sh
-uv run optimum-cli export onnx --model keejkrej/immune-killing-resnet18 ./models/immune-killing-resnet18
+uv run optimum-cli export onnx --model keejkrej/killing-assay-resnet18 ./models/killing-assay-resnet18
 ```
 
-### Immune killing outputs
+### Killing outputs
 
 | Path                              | Role                                                          |
 | --------------------------------- | ------------------------------------------------------------- |
-| `timeseries/sc{S}_ch{C}.csv`      | Per-ROI `P(dead)` vs time (`pos, roi, t, p_dead`)             |
+| `timeseries/Pos{n}/ch{n}.csv`      | Per-ROI `P(dead)` vs time (`pos, roi, t, p_dead`)             |
 | `results/predictions.csv`         | Raw `(t, crop, p_dead, label, pos, slide_channel)` from ResNet |
 | `results/predictions_cleaned.csv` | Monotonicity-enforced labels                                  |
 | `results/kill_curve.csv`          | `N(alive)` vs time per slide channel                          |
@@ -110,7 +110,7 @@ uv run optimum-cli export onnx --model keejkrej/immune-killing-resnet18 ./models
 | `assay.json`                                                                 | Input contract from Studio basic info (sample mapping + interval) |
 | `roi/PosN/`                                                                  | Cropped ROI stacks + `index.json` (`axisOrder: TCZYX`; optional `timeIndices` = source frame indices per T plane for downsampled series) |
 | `mask/PosN/`                                                                 | Per-frame segmentation masks (`uint8` TIFF stacks)     |
-| `timeseries/sc{S}_ch{C}.csv`                                                 | Mask-corrected intensity metrics (+ parallel `.xlsx`)  |
+| `timeseries/Pos{n}/ch{n}.csv`                                                 | Per-position intensity metrics (`pos,roi,t,area,background,intensity,corrected`; no `slide_channel`; `t` from `timeIndices`). Segmented: mask fg + **median** bg; `--full-frame`: whole ROI + **10th-percentile** bg. |
 | `results/auc.csv`                                                            | Trapezoidal AUC per `(pos, roi)` trace (+ `.xlsx`)     |
 | `results/fit.csv`                                                            | Two-exponential kinetic fit parameters (+ `.xlsx`)     |
 | `results/traces.png`, `traces_shared_y.png`, `area.png`, `area_shared_y.png` | Timeseries plots                                       |
@@ -133,19 +133,19 @@ analysis/
   plot.rs + plot/      # shared mplot-rs helpers
   assays.rs            # match assayId → pipeline
   assays/
-    gene_expression.rs + gene_expression/
+    transfection.rs + transfection/
       traces.rs        # shared timeseries CSV grouping for AUC/fit/plots
-    immune_killing.rs + immune_killing/
+    killing.rs + killing/
 ```
 
 | Module                                 | Goal                                                         |
 | -------------------------------------- | ------------------------------------------------------------ |
-| `assays/gene_expression/segment.rs`    | Otsu mask per ROI frame                                      |
-| `assays/gene_expression/timeseries.rs` | Mask-corrected intensity traces → `timeseries/` CSVs         |
-| `assays/gene_expression/auc.rs`        | Trapezoidal AUC per trace                                    |
-| `assays/gene_expression/fit.rs`        | Two-exponential kinetic fit                                  |
-| `assays/gene_expression/plot/`         | PNGs for traces, AUC, fit parameters                         |
-| `assays/immune_killing/`               | ResNet presence, monotonicity clean, death times, kill curve |
+| `assays/transfection/segment.rs`    | Otsu mask per ROI frame                                      |
+| `assays/transfection/timeseries.rs` | Mask-corrected intensity traces → `timeseries/` CSVs         |
+| `assays/transfection/auc.rs`        | Trapezoidal AUC per trace                                    |
+| `assays/transfection/fit.rs`        | Two-exponential kinetic fit                                  |
+| `assays/transfection/plot/`         | PNGs for traces, AUC, fit parameters                         |
+| `assays/killing/`               | ResNet presence, monotonicity clean, death times, kill curve |
 
 Adding a new assay type: create `assays/<name>.rs` plus `assays/<name>/`, implement `run` (async) and optionally `run_sync`, then register in `assays.rs`.
 
@@ -191,7 +191,7 @@ cargo build -p lisca --release --bin lisca-analyze
 
 ```sh
 cargo test -p lisca
-cargo test -p lisca --test gene_expression_parity -- --ignored   # needs sibling assay + uv
+cargo test -p lisca --test transfection_parity -- --ignored   # needs sibling assay + uv
 ```
 
-Unit tests live under each `analysis/` submodule. Integration tests in `crates/lisca/tests/gene_expression_parity.rs` build a minimal synthetic workspace and compare stages to transfection reference formulas. Tolerances and ignored Python e2e: [`parity.md`](./parity.md).
+Unit tests live under each `analysis/` submodule. Integration tests in `crates/lisca/tests/transfection_parity.rs` build a minimal synthetic workspace and compare stages to transfection reference formulas. Tolerances and ignored Python e2e: [`parity.md`](./parity.md).

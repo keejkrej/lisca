@@ -682,9 +682,9 @@ fn write_roi_index(
     output_dir: &Path,
 ) -> Result<(), String> {
     let time_indices = if scan.times.is_empty() {
-        Some(vec![0])
+        vec![0]
     } else {
-        Some(scan.times.clone())
+        scan.times.clone()
     };
     let index = RoiIndexFile {
         position: pos,

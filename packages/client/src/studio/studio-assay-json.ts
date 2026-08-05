@@ -1,36 +1,35 @@
 import { AssayJsonFileSchema, decodeJsonResult, formatSchemaError } from "@lisca/contracts";
-import { ASSAY_FEATURE, ASSAY_TYPE } from "@lisca/contracts/assay";
+import { ASSAY_TYPE } from "@lisca/contracts/assay";
 import type {
   AssayAnalysisConfig,
+  AssayData,
   StudioAssayJson,
+  StudioAssaySampleRow,
+  StudioAssaySampleRowFields,
   StudioAssayType,
-  StudioBasicInfoFeatureId,
-  StudioBasicInfoSampleRow,
-  StudioBasicInfoSampleRowFields,
-  StudioBasicInfoStep1,
-  StudioBasicInfoStep2,
-  StudioBasicInfoStep3,
   StudioDataSourceKind,
+  StudioIntervalUnit,
 } from "@lisca/contracts/assay";
 import {
   ASSAY_DEFAULT_INTERVAL_MINUTES,
   assayUsesMaxOnsetMinutes,
+  assayUsesSkipSegment,
+  DEFAULT_FOLDER_SOURCE_TEMPLATE,
   TRANSFECTION_DEFAULT_MAX_ONSET_MINUTES,
-  TRANSFECTION_FEATURE_IDS,
 } from "@lisca/contracts/assay";
 import type { AssaySampleRow } from "@lisca/contracts";
 import * as Either from "effect/Either";
 
 export const ASSAY_CHOICE_LABEL: Record<StudioAssayType, string> = {
   [ASSAY_TYPE.TRANSFECTION]: "Transfection",
-  [ASSAY_TYPE.IMMUNE_KILLING]: "Immune killing",
+  [ASSAY_TYPE.KILLING]: "Killing",
   [ASSAY_TYPE.LNP_BINDING]: "LNP binding",
-  [ASSAY_TYPE.CUSTOM_ASSAY]: "Custom assay",
 };
 
 export {
   ASSAY_DEFAULT_INTERVAL_MINUTES,
   assayUsesMaxOnsetMinutes,
+  assayUsesSkipSegment,
   TRANSFECTION_DEFAULT_MAX_ONSET_MINUTES,
 };
 
@@ -48,20 +47,12 @@ export function analysisConfigForAssay(
   assayId: StudioAssayType | null,
   analysis: AssayAnalysisConfig | null | undefined,
 ): AssayAnalysisConfig | undefined {
-  if (!assayUsesMaxOnsetMinutes(assayId)) return undefined;
+  if (!assayUsesMaxOnsetMinutes(assayId) && !assayUsesSkipSegment(assayId)) return undefined;
   const maxOnset =
     analysis?.maxOnsetMinutes ?? TRANSFECTION_DEFAULT_MAX_ONSET_MINUTES;
-  return { maxOnsetMinutes: maxOnset };
+  const skipSegment = analysis?.skipSegment ?? false;
+  return { maxOnsetMinutes: maxOnset, skipSegment };
 }
-
-const BASIC_INFO_FEATURE_IDS: ReadonlyArray<StudioBasicInfoFeatureId> = TRANSFECTION_FEATURE_IDS;
-
-const ASSAY_DEFAULT_INFO_FEATURES: Record<StudioAssayType, readonly StudioBasicInfoFeatureId[]> = {
-  [ASSAY_TYPE.TRANSFECTION]: [ASSAY_FEATURE.TOTAL_FLUOR],
-  [ASSAY_TYPE.IMMUNE_KILLING]: [],
-  [ASSAY_TYPE.LNP_BINDING]: [],
-  [ASSAY_TYPE.CUSTOM_ASSAY]: [],
-};
 
 export function inferDataSourceKind(path: string): StudioDataSourceKind {
   const lower = path.trim().toLowerCase();
@@ -71,70 +62,86 @@ export function inferDataSourceKind(path: string): StudioDataSourceKind {
   return null;
 }
 
-export function normalizeSelectedFeaturesForAssay(
-  assayId: StudioAssayType | null,
-  selectedFeatures: readonly StudioBasicInfoFeatureId[],
-): StudioBasicInfoFeatureId[] {
-  const defaults = assayId ? ASSAY_DEFAULT_INFO_FEATURES[assayId] : [];
-  const allowed = defaults.length > 0 ? defaults : BASIC_INFO_FEATURE_IDS;
-  const filtered = selectedFeatures.filter((id) => allowed.includes(id));
-  if (filtered.length > 0) return [...filtered];
-  return defaults.length > 0 ? [...defaults] : [];
+export function buildAssayData(input: {
+  kind: StudioDataSourceKind;
+  path: string;
+  folderTemplate?: { subfolder: string; filename: string };
+}): AssayData {
+  const path = input.path;
+  if (input.kind === "folder") {
+    return {
+      type: "folder",
+      path,
+      template: {
+        subfolder:
+          input.folderTemplate?.subfolder ?? DEFAULT_FOLDER_SOURCE_TEMPLATE.subfolderTemplate,
+        filename:
+          input.folderTemplate?.filename ?? DEFAULT_FOLDER_SOURCE_TEMPLATE.filenameTemplate,
+      },
+    };
+  }
+  if (input.kind === "czi") {
+    return { type: "czi", path };
+  }
+  // Default nd2 when kind is null/nd2 — path may still be empty while editing.
+  return { type: "nd2", path };
 }
 
-export function normalizeInfo3ForAssay(
-  info3: StudioBasicInfoStep3,
-  sampleRowToDisk: (row: StudioBasicInfoSampleRow) => AssaySampleRow,
-): StudioAssayJson["info3"] {
-  return {
-    samples: info3.samples.map(sampleRowToDisk),
-  };
+export function dataSourceKindFromAssayData(data: AssayData): StudioDataSourceKind {
+  return data.type;
 }
 
 export function buildStudioAssayJson({
   assayId,
+  name,
   dataSourceKind,
-  info1,
-  info2,
-  info3,
+  dataPath,
+  folderTemplate,
+  workspacePath,
+  intervalValue,
+  intervalUnit,
+  samples,
   analysis,
   sampleRowToDisk,
 }: {
   assayId: StudioAssayType;
+  name: string;
   dataSourceKind: StudioDataSourceKind;
-  info1: StudioBasicInfoStep1;
-  info2: StudioBasicInfoStep2;
-  info3: StudioBasicInfoStep3;
+  dataPath: string;
+  folderTemplate: { subfolder: string; filename: string };
+  workspacePath: string;
+  intervalValue: number | null;
+  intervalUnit: StudioIntervalUnit;
+  samples: StudioAssaySampleRow[];
   analysis?: AssayAnalysisConfig | null;
-  sampleRowToDisk: (row: StudioBasicInfoSampleRow) => AssaySampleRow;
+  sampleRowToDisk: (row: StudioAssaySampleRow) => AssaySampleRow;
 }): StudioAssayJson {
   const analysisSection = analysisConfigForAssay(assayId, analysis);
   return {
-    assayId,
-    assayLabel: ASSAY_CHOICE_LABEL[assayId],
-    dataSourceKind: dataSourceKind ?? null,
-    info1,
-    info2: {
-      ...info2,
-      selectedFeatures: [...info2.selectedFeatures],
-    },
-    info3: normalizeInfo3ForAssay(info3, sampleRowToDisk),
+    type: assayId,
+    name,
+    data: buildAssayData({
+      kind: dataSourceKind ?? inferDataSourceKind(dataPath),
+      path: dataPath,
+      folderTemplate,
+    }),
+    workspace: { path: workspacePath },
+    interval: { value: intervalValue, unit: intervalUnit },
+    samples: samples.map(sampleRowToDisk),
     ...(analysisSection ? { analysis: analysisSection } : {}),
   };
 }
 
+/** Display label for memory / work-session UI (not persisted as assayLabel). */
+export function assayDisplayLabel(assay: Pick<StudioAssayJson, "type" | "name">): string {
+  const name = assay.name.trim();
+  return name || ASSAY_CHOICE_LABEL[assay.type];
+}
+
 export function parseStudioAssayJson(
   contents: string,
-  sampleRowFromDisk: (row: {
-    positions?: string;
-    positionStart?: string;
-    positionFinish?: string;
-    channel: string;
-    name: string;
-    maskChannel: string;
-    signalChannel: string;
-  }) => StudioBasicInfoSampleRowFields,
-  sampleRowToDisk: (row: StudioBasicInfoSampleRow) => AssaySampleRow,
+  sampleRowFromDisk: (row: AssaySampleRow) => StudioAssaySampleRowFields,
+  sampleRowToDisk: (row: StudioAssaySampleRow) => AssaySampleRow,
 ): StudioAssayJson {
   const decoded = decodeJsonResult(AssayJsonFileSchema)(contents);
   if (Either.isLeft(decoded)) {
@@ -142,26 +149,29 @@ export function parseStudioAssayJson(
   }
 
   const root = decoded.right;
-  const dataSourceKind = root.dataSourceKind ?? inferDataSourceKind(root.info1.dataPath);
-  const info3: StudioBasicInfoStep3 = {
-    samples: root.info3.samples.map((row, index) => ({
-      id: `sample:${index}`,
-      ...sampleRowFromDisk(row),
-    })),
-  };
+  const samples: StudioAssaySampleRow[] = root.samples.map((row, index) => ({
+    id: `sample:${index}`,
+    ...sampleRowFromDisk(row),
+  }));
+
+  const folderTemplate =
+    root.data.type === "folder"
+      ? root.data.template
+      : {
+          subfolder: DEFAULT_FOLDER_SOURCE_TEMPLATE.subfolderTemplate,
+          filename: DEFAULT_FOLDER_SOURCE_TEMPLATE.filenameTemplate,
+        };
 
   return buildStudioAssayJson({
-    assayId: root.assayId,
-    dataSourceKind,
-    info1: root.info1,
-    info2: {
-      ...root.info2,
-      selectedFeatures: normalizeSelectedFeaturesForAssay(
-        root.assayId,
-        root.info2.selectedFeatures,
-      ),
-    },
-    info3,
+    assayId: root.type,
+    name: root.name,
+    dataSourceKind: dataSourceKindFromAssayData(root.data),
+    dataPath: root.data.path,
+    folderTemplate,
+    workspacePath: root.workspace.path,
+    intervalValue: root.interval.value,
+    intervalUnit: root.interval.unit,
+    samples,
     analysis: root.analysis,
     sampleRowToDisk,
   });

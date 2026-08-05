@@ -35,20 +35,19 @@ import { useStudioStore } from "../state/studio-store";
 export default function ResultPage() {
   const registry = useContext(RegistryContext);
   const resultState = useStudioResultState();
-  const info3 = useStudioStore((state) => state.info3);
-  const timelapseAmount = useStudioStore((state) => state.info2.timelapseAmount);
-  const timelapseUnit = useStudioStore((state) => state.info2.timelapseUnit);
+  const samples = useStudioStore((state) => state.samples);
+  const intervalValue = useStudioStore((state) => state.intervalValue);
+  const intervalUnit = useStudioStore((state) => state.intervalUnit);
   const activeWorkspacePath = () => resultState.workspacePath?.trim() || null;
   const timeseriesXScale = createMemo(() =>
-    intervalFromAssaySettings(timelapseAmount(), timelapseUnit()),
+    intervalFromAssaySettings(intervalValue(), intervalUnit()),
   );
   const slideChannelLabels = createMemo(() => {
     const labels: SlideChannelLabels = {};
-    const currentInfo3 = info3();
-    for (const row of currentInfo3.samples) {
-      const channel = Number(row.channel);
-      if (Number.isInteger(channel) && row.name.trim()) {
-        labels[channel] = row.name.trim();
+    for (const row of samples()) {
+      const slide = Number(row.slide);
+      if (Number.isInteger(slide) && row.name.trim()) {
+        labels[slide] = row.name.trim();
       }
     }
     return labels;

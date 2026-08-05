@@ -13,7 +13,7 @@ import { StudioRightPanel } from "../components/studio-right-panel";
 import { instructionForStep } from "../state/studio-routes";
 import { useStudioMemoryRecent } from "../hooks/use-studio-memory-recent";
 import { useStudioNavigate } from "../navigation/use-studio-navigate";
-import { parseStudioAssayJson, useStudioStore } from "../state/studio-store";
+import { assayDisplayLabel, parseStudioAssayJson, useStudioStore } from "../state/studio-store";
 import { recordStudioAssayMemory } from "../utils/studio-memory";
 
 export const Route = createFileRoute("/assay")({
@@ -36,12 +36,9 @@ function AssayPage() {
       const contents = await runClientEffect(studioClient.readTextFile(path));
       const assayJson = parseStudioAssayJson(contents);
       loadAssayJson()(assayJson);
-      touchStudioWorkSessionFromAssayPath(path, assayJson.assayLabel);
-      recordStudioAssayMemory(
-        path,
-        assayJson.assayLabel,
-        assayJson.info1.saveTo.trim() || undefined,
-      );
+      const label = assayDisplayLabel(assayJson);
+      touchStudioWorkSessionFromAssayPath(path, label);
+      recordStudioAssayMemory(path, label, assayJson.workspace.path.trim() || undefined);
       navigateTo("/info");
     } catch (cause) {
       setOpenAssayError(

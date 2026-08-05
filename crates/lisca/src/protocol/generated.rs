@@ -845,6 +845,9 @@ impl ::std::convert::TryFrom<::std::string::String> for AppId {
 #[doc = "    \"maxOnsetMinutes\": {"]
 #[doc = "      \"type\": \"number\","]
 #[doc = "      \"format\": \"double\""]
+#[doc = "    },"]
+#[doc = "    \"skipSegment\": {"]
+#[doc = "      \"type\": \"boolean\""]
 #[doc = "    }"]
 #[doc = "  }"]
 #[doc = "}"]
@@ -858,11 +861,18 @@ pub struct AssayAnalysisConfig {
         skip_serializing_if = "::std::option::Option::is_none"
     )]
     pub max_onset_minutes: ::std::option::Option<f64>,
+    #[serde(
+        rename = "skipSegment",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub skip_segment: ::std::option::Option<bool>,
 }
 impl ::std::default::Default for AssayAnalysisConfig {
     fn default() -> Self {
         Self {
             max_onset_minutes: Default::default(),
+            skip_segment: Default::default(),
         }
     }
 }
@@ -871,109 +881,89 @@ impl AssayAnalysisConfig {
         Default::default()
     }
 }
-#[doc = "`AssayBasicInfoStep1`"]
+#[doc = "`AssayData`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
 #[doc = r""]
 #[doc = r" ```json"]
 #[doc = "{"]
-#[doc = "  \"type\": \"object\","]
-#[doc = "  \"required\": ["]
-#[doc = "    \"dataPath\","]
-#[doc = "    \"folderFilenameTemplate\","]
-#[doc = "    \"folderSubfolderTemplate\","]
-#[doc = "    \"name\","]
-#[doc = "    \"saveTo\""]
-#[doc = "  ],"]
-#[doc = "  \"properties\": {"]
-#[doc = "    \"dataPath\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    },"]
-#[doc = "    \"folderFilenameTemplate\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    },"]
-#[doc = "    \"folderSubfolderTemplate\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    },"]
-#[doc = "    \"name\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    },"]
-#[doc = "    \"saveTo\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    }"]
-#[doc = "  }"]
-#[doc = "}"]
-#[doc = r" ```"]
-#[doc = r" </details>"]
-#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
-pub struct AssayBasicInfoStep1 {
-    #[serde(rename = "dataPath")]
-    pub data_path: ::std::string::String,
-    #[serde(rename = "folderFilenameTemplate")]
-    pub folder_filename_template: ::std::string::String,
-    #[serde(rename = "folderSubfolderTemplate")]
-    pub folder_subfolder_template: ::std::string::String,
-    pub name: ::std::string::String,
-    #[serde(rename = "saveTo")]
-    pub save_to: ::std::string::String,
-}
-impl AssayBasicInfoStep1 {
-    pub fn builder() -> builder::AssayBasicInfoStep1 {
-        Default::default()
-    }
-}
-#[doc = "`AssayBasicInfoStep2`"]
-#[doc = r""]
-#[doc = r" <details><summary>JSON schema</summary>"]
-#[doc = r""]
-#[doc = r" ```json"]
-#[doc = "{"]
-#[doc = "  \"type\": \"object\","]
-#[doc = "  \"required\": ["]
-#[doc = "    \"selectedFeatures\","]
-#[doc = "    \"timelapseAmount\","]
-#[doc = "    \"timelapseUnit\""]
-#[doc = "  ],"]
-#[doc = "  \"properties\": {"]
-#[doc = "    \"selectedFeatures\": {"]
-#[doc = "      \"type\": \"array\","]
-#[doc = "      \"items\": {"]
-#[doc = "        \"$ref\": \"#/definitions/AssayFeature\""]
+#[doc = "  \"oneOf\": ["]
+#[doc = "    {"]
+#[doc = "      \"type\": \"object\","]
+#[doc = "      \"required\": ["]
+#[doc = "        \"path\","]
+#[doc = "        \"template\","]
+#[doc = "        \"type\""]
+#[doc = "      ],"]
+#[doc = "      \"properties\": {"]
+#[doc = "        \"path\": {"]
+#[doc = "          \"type\": \"string\""]
+#[doc = "        },"]
+#[doc = "        \"template\": {"]
+#[doc = "          \"$ref\": \"#/definitions/AssayFolderTemplate\""]
+#[doc = "        },"]
+#[doc = "        \"type\": {"]
+#[doc = "          \"type\": \"string\","]
+#[doc = "          \"enum\": ["]
+#[doc = "            \"folder\""]
+#[doc = "          ]"]
+#[doc = "        }"]
 #[doc = "      }"]
 #[doc = "    },"]
-#[doc = "    \"timelapseAmount\": {"]
-#[doc = "      \"anyOf\": ["]
-#[doc = "        {"]
-#[doc = "          \"type\": \"number\","]
-#[doc = "          \"format\": \"double\""]
+#[doc = "    {"]
+#[doc = "      \"type\": \"object\","]
+#[doc = "      \"required\": ["]
+#[doc = "        \"path\","]
+#[doc = "        \"type\""]
+#[doc = "      ],"]
+#[doc = "      \"properties\": {"]
+#[doc = "        \"path\": {"]
+#[doc = "          \"type\": \"string\""]
 #[doc = "        },"]
-#[doc = "        {"]
-#[doc = "          \"type\": \"null\""]
+#[doc = "        \"type\": {"]
+#[doc = "          \"type\": \"string\","]
+#[doc = "          \"enum\": ["]
+#[doc = "            \"nd2\""]
+#[doc = "          ]"]
 #[doc = "        }"]
-#[doc = "      ]"]
+#[doc = "      }"]
 #[doc = "    },"]
-#[doc = "    \"timelapseUnit\": {"]
-#[doc = "      \"$ref\": \"#/definitions/AssayTimelapseUnit\""]
+#[doc = "    {"]
+#[doc = "      \"type\": \"object\","]
+#[doc = "      \"required\": ["]
+#[doc = "        \"path\","]
+#[doc = "        \"type\""]
+#[doc = "      ],"]
+#[doc = "      \"properties\": {"]
+#[doc = "        \"path\": {"]
+#[doc = "          \"type\": \"string\""]
+#[doc = "        },"]
+#[doc = "        \"type\": {"]
+#[doc = "          \"type\": \"string\","]
+#[doc = "          \"enum\": ["]
+#[doc = "            \"czi\""]
+#[doc = "          ]"]
+#[doc = "        }"]
+#[doc = "      }"]
 #[doc = "    }"]
-#[doc = "  }"]
+#[doc = "  ]"]
 #[doc = "}"]
 #[doc = r" ```"]
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
-pub struct AssayBasicInfoStep2 {
-    #[serde(rename = "selectedFeatures")]
-    pub selected_features: ::std::vec::Vec<AssayFeature>,
-    #[serde(rename = "timelapseAmount")]
-    pub timelapse_amount: ::std::option::Option<f64>,
-    #[serde(rename = "timelapseUnit")]
-    pub timelapse_unit: AssayTimelapseUnit,
+#[serde(tag = "type")]
+pub enum AssayData {
+    #[serde(rename = "folder")]
+    Folder {
+        path: ::std::string::String,
+        template: AssayFolderTemplate,
+    },
+    #[serde(rename = "nd2")]
+    Nd2 { path: ::std::string::String },
+    #[serde(rename = "czi")]
+    Czi { path: ::std::string::String },
 }
-impl AssayBasicInfoStep2 {
-    pub fn builder() -> builder::AssayBasicInfoStep2 {
-        Default::default()
-    }
-}
-#[doc = "`AssayBasicInfoStep3`"]
+#[doc = "`AssayDataCzi`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
 #[doc = r""]
@@ -981,26 +971,35 @@ impl AssayBasicInfoStep2 {
 #[doc = "{"]
 #[doc = "  \"type\": \"object\","]
 #[doc = "  \"required\": ["]
-#[doc = "    \"samples\""]
+#[doc = "    \"path\","]
+#[doc = "    \"type\""]
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
-#[doc = "    \"samples\": {"]
-#[doc = "      \"$ref\": \"#/definitions/AssaySamples\""]
+#[doc = "    \"path\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    },"]
+#[doc = "    \"type\": {"]
+#[doc = "      \"type\": \"string\","]
+#[doc = "      \"enum\": ["]
+#[doc = "        \"czi\""]
+#[doc = "      ]"]
 #[doc = "    }"]
 #[doc = "  }"]
 #[doc = "}"]
 #[doc = r" ```"]
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
-pub struct AssayBasicInfoStep3 {
-    pub samples: AssaySamples,
+pub struct AssayDataCzi {
+    pub path: ::std::string::String,
+    #[serde(rename = "type")]
+    pub type_: AssayDataCziType,
 }
-impl AssayBasicInfoStep3 {
-    pub fn builder() -> builder::AssayBasicInfoStep3 {
+impl AssayDataCzi {
+    pub fn builder() -> builder::AssayDataCzi {
         Default::default()
     }
 }
-#[doc = "`AssayDataSourceKind`"]
+#[doc = "`AssayDataCziType`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
 #[doc = r""]
@@ -1008,8 +1007,6 @@ impl AssayBasicInfoStep3 {
 #[doc = "{"]
 #[doc = "  \"type\": \"string\","]
 #[doc = "  \"enum\": ["]
-#[doc = "    \"folder\","]
-#[doc = "    \"nd2\","]
 #[doc = "    \"czi\""]
 #[doc = "  ]"]
 #[doc = "}"]
@@ -1027,41 +1024,33 @@ impl AssayBasicInfoStep3 {
     PartialEq,
     PartialOrd,
 )]
-pub enum AssayDataSourceKind {
-    #[serde(rename = "folder")]
-    Folder,
-    #[serde(rename = "nd2")]
-    Nd2,
+pub enum AssayDataCziType {
     #[serde(rename = "czi")]
     Czi,
 }
-impl ::std::fmt::Display for AssayDataSourceKind {
+impl ::std::fmt::Display for AssayDataCziType {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
-            Self::Folder => f.write_str("folder"),
-            Self::Nd2 => f.write_str("nd2"),
             Self::Czi => f.write_str("czi"),
         }
     }
 }
-impl ::std::str::FromStr for AssayDataSourceKind {
+impl ::std::str::FromStr for AssayDataCziType {
     type Err = self::error::ConversionError;
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
-            "folder" => Ok(Self::Folder),
-            "nd2" => Ok(Self::Nd2),
             "czi" => Ok(Self::Czi),
             _ => Err("invalid value".into()),
         }
     }
 }
-impl ::std::convert::TryFrom<&str> for AssayDataSourceKind {
+impl ::std::convert::TryFrom<&str> for AssayDataCziType {
     type Error = self::error::ConversionError;
     fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<&::std::string::String> for AssayDataSourceKind {
+impl ::std::convert::TryFrom<&::std::string::String> for AssayDataCziType {
     type Error = self::error::ConversionError;
     fn try_from(
         value: &::std::string::String,
@@ -1069,7 +1058,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for AssayDataSourceKind {
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<::std::string::String> for AssayDataSourceKind {
+impl ::std::convert::TryFrom<::std::string::String> for AssayDataCziType {
     type Error = self::error::ConversionError;
     fn try_from(
         value: ::std::string::String,
@@ -1077,7 +1066,48 @@ impl ::std::convert::TryFrom<::std::string::String> for AssayDataSourceKind {
         value.parse()
     }
 }
-#[doc = "`AssayFeature`"]
+#[doc = "`AssayDataFolder`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"path\","]
+#[doc = "    \"template\","]
+#[doc = "    \"type\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"path\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    },"]
+#[doc = "    \"template\": {"]
+#[doc = "      \"$ref\": \"#/definitions/AssayFolderTemplate\""]
+#[doc = "    },"]
+#[doc = "    \"type\": {"]
+#[doc = "      \"type\": \"string\","]
+#[doc = "      \"enum\": ["]
+#[doc = "        \"folder\""]
+#[doc = "      ]"]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct AssayDataFolder {
+    pub path: ::std::string::String,
+    pub template: AssayFolderTemplate,
+    #[serde(rename = "type")]
+    pub type_: AssayDataFolderType,
+}
+impl AssayDataFolder {
+    pub fn builder() -> builder::AssayDataFolder {
+        Default::default()
+    }
+}
+#[doc = "`AssayDataFolderType`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
 #[doc = r""]
@@ -1085,10 +1115,7 @@ impl ::std::convert::TryFrom<::std::string::String> for AssayDataSourceKind {
 #[doc = "{"]
 #[doc = "  \"type\": \"string\","]
 #[doc = "  \"enum\": ["]
-#[doc = "    \"morphology\","]
-#[doc = "    \"partcount\","]
-#[doc = "    \"partfluor\","]
-#[doc = "    \"totalfluor\""]
+#[doc = "    \"folder\""]
 #[doc = "  ]"]
 #[doc = "}"]
 #[doc = r" ```"]
@@ -1105,45 +1132,33 @@ impl ::std::convert::TryFrom<::std::string::String> for AssayDataSourceKind {
     PartialEq,
     PartialOrd,
 )]
-pub enum AssayFeature {
-    #[serde(rename = "morphology")]
-    Morphology,
-    #[serde(rename = "partcount")]
-    Partcount,
-    #[serde(rename = "partfluor")]
-    Partfluor,
-    #[serde(rename = "totalfluor")]
-    Totalfluor,
+pub enum AssayDataFolderType {
+    #[serde(rename = "folder")]
+    Folder,
 }
-impl ::std::fmt::Display for AssayFeature {
+impl ::std::fmt::Display for AssayDataFolderType {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
-            Self::Morphology => f.write_str("morphology"),
-            Self::Partcount => f.write_str("partcount"),
-            Self::Partfluor => f.write_str("partfluor"),
-            Self::Totalfluor => f.write_str("totalfluor"),
+            Self::Folder => f.write_str("folder"),
         }
     }
 }
-impl ::std::str::FromStr for AssayFeature {
+impl ::std::str::FromStr for AssayDataFolderType {
     type Err = self::error::ConversionError;
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
-            "morphology" => Ok(Self::Morphology),
-            "partcount" => Ok(Self::Partcount),
-            "partfluor" => Ok(Self::Partfluor),
-            "totalfluor" => Ok(Self::Totalfluor),
+            "folder" => Ok(Self::Folder),
             _ => Err("invalid value".into()),
         }
     }
 }
-impl ::std::convert::TryFrom<&str> for AssayFeature {
+impl ::std::convert::TryFrom<&str> for AssayDataFolderType {
     type Error = self::error::ConversionError;
     fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<&::std::string::String> for AssayFeature {
+impl ::std::convert::TryFrom<&::std::string::String> for AssayDataFolderType {
     type Error = self::error::ConversionError;
     fn try_from(
         value: &::std::string::String,
@@ -1151,7 +1166,259 @@ impl ::std::convert::TryFrom<&::std::string::String> for AssayFeature {
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<::std::string::String> for AssayFeature {
+impl ::std::convert::TryFrom<::std::string::String> for AssayDataFolderType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[doc = "`AssayDataNd2`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"path\","]
+#[doc = "    \"type\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"path\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    },"]
+#[doc = "    \"type\": {"]
+#[doc = "      \"type\": \"string\","]
+#[doc = "      \"enum\": ["]
+#[doc = "        \"nd2\""]
+#[doc = "      ]"]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct AssayDataNd2 {
+    pub path: ::std::string::String,
+    #[serde(rename = "type")]
+    pub type_: AssayDataNd2Type,
+}
+impl AssayDataNd2 {
+    pub fn builder() -> builder::AssayDataNd2 {
+        Default::default()
+    }
+}
+#[doc = "`AssayDataNd2Type`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"string\","]
+#[doc = "  \"enum\": ["]
+#[doc = "    \"nd2\""]
+#[doc = "  ]"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(
+    :: serde :: Deserialize,
+    :: serde :: Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum AssayDataNd2Type {
+    #[serde(rename = "nd2")]
+    Nd2,
+}
+impl ::std::fmt::Display for AssayDataNd2Type {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Nd2 => f.write_str("nd2"),
+        }
+    }
+}
+impl ::std::str::FromStr for AssayDataNd2Type {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "nd2" => Ok(Self::Nd2),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for AssayDataNd2Type {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for AssayDataNd2Type {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for AssayDataNd2Type {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[doc = "`AssayFolderTemplate`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"filename\","]
+#[doc = "    \"subfolder\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"filename\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    },"]
+#[doc = "    \"subfolder\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct AssayFolderTemplate {
+    pub filename: ::std::string::String,
+    pub subfolder: ::std::string::String,
+}
+impl AssayFolderTemplate {
+    pub fn builder() -> builder::AssayFolderTemplate {
+        Default::default()
+    }
+}
+#[doc = "`AssayInterval`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"unit\","]
+#[doc = "    \"value\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"unit\": {"]
+#[doc = "      \"$ref\": \"#/definitions/AssayIntervalUnit\""]
+#[doc = "    },"]
+#[doc = "    \"value\": {"]
+#[doc = "      \"anyOf\": ["]
+#[doc = "        {"]
+#[doc = "          \"type\": \"number\","]
+#[doc = "          \"format\": \"double\""]
+#[doc = "        },"]
+#[doc = "        {"]
+#[doc = "          \"type\": \"null\""]
+#[doc = "        }"]
+#[doc = "      ]"]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct AssayInterval {
+    pub unit: AssayIntervalUnit,
+    pub value: ::std::option::Option<f64>,
+}
+impl AssayInterval {
+    pub fn builder() -> builder::AssayInterval {
+        Default::default()
+    }
+}
+#[doc = "`AssayIntervalUnit`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"string\","]
+#[doc = "  \"enum\": ["]
+#[doc = "    \"second\","]
+#[doc = "    \"minute\","]
+#[doc = "    \"hour\""]
+#[doc = "  ]"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(
+    :: serde :: Deserialize,
+    :: serde :: Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum AssayIntervalUnit {
+    #[serde(rename = "second")]
+    Second,
+    #[serde(rename = "minute")]
+    Minute,
+    #[serde(rename = "hour")]
+    Hour,
+}
+impl ::std::fmt::Display for AssayIntervalUnit {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Second => f.write_str("second"),
+            Self::Minute => f.write_str("minute"),
+            Self::Hour => f.write_str("hour"),
+        }
+    }
+}
+impl ::std::str::FromStr for AssayIntervalUnit {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "second" => Ok(Self::Second),
+            "minute" => Ok(Self::Minute),
+            "hour" => Ok(Self::Hour),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for AssayIntervalUnit {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for AssayIntervalUnit {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for AssayIntervalUnit {
     type Error = self::error::ConversionError;
     fn try_from(
         value: ::std::string::String,
@@ -1167,41 +1434,34 @@ impl ::std::convert::TryFrom<::std::string::String> for AssayFeature {
 #[doc = "{"]
 #[doc = "  \"type\": \"object\","]
 #[doc = "  \"required\": ["]
-#[doc = "    \"assayId\","]
-#[doc = "    \"assayLabel\","]
-#[doc = "    \"dataSourceKind\","]
-#[doc = "    \"info1\","]
-#[doc = "    \"info2\","]
-#[doc = "    \"info3\""]
+#[doc = "    \"data\","]
+#[doc = "    \"interval\","]
+#[doc = "    \"name\","]
+#[doc = "    \"samples\","]
+#[doc = "    \"type\","]
+#[doc = "    \"workspace\""]
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
 #[doc = "    \"analysis\": {"]
 #[doc = "      \"$ref\": \"#/definitions/AssayAnalysisConfig\""]
 #[doc = "    },"]
-#[doc = "    \"assayId\": {"]
-#[doc = "      \"$ref\": \"#/definitions/AssayType\""]
+#[doc = "    \"data\": {"]
+#[doc = "      \"$ref\": \"#/definitions/AssayData\""]
 #[doc = "    },"]
-#[doc = "    \"assayLabel\": {"]
+#[doc = "    \"interval\": {"]
+#[doc = "      \"$ref\": \"#/definitions/AssayInterval\""]
+#[doc = "    },"]
+#[doc = "    \"name\": {"]
 #[doc = "      \"type\": \"string\""]
 #[doc = "    },"]
-#[doc = "    \"dataSourceKind\": {"]
-#[doc = "      \"anyOf\": ["]
-#[doc = "        {"]
-#[doc = "          \"$ref\": \"#/definitions/AssayDataSourceKind\""]
-#[doc = "        },"]
-#[doc = "        {"]
-#[doc = "          \"type\": \"null\""]
-#[doc = "        }"]
-#[doc = "      ]"]
+#[doc = "    \"samples\": {"]
+#[doc = "      \"$ref\": \"#/definitions/AssaySamples\""]
 #[doc = "    },"]
-#[doc = "    \"info1\": {"]
-#[doc = "      \"$ref\": \"#/definitions/AssayBasicInfoStep1\""]
+#[doc = "    \"type\": {"]
+#[doc = "      \"$ref\": \"#/definitions/AssayType\""]
 #[doc = "    },"]
-#[doc = "    \"info2\": {"]
-#[doc = "      \"$ref\": \"#/definitions/AssayBasicInfoStep2\""]
-#[doc = "    },"]
-#[doc = "    \"info3\": {"]
-#[doc = "      \"$ref\": \"#/definitions/AssayBasicInfoStep3\""]
+#[doc = "    \"workspace\": {"]
+#[doc = "      \"$ref\": \"#/definitions/AssayWorkspace\""]
 #[doc = "    }"]
 #[doc = "  }"]
 #[doc = "}"]
@@ -1211,15 +1471,13 @@ impl ::std::convert::TryFrom<::std::string::String> for AssayFeature {
 pub struct AssayJsonFile {
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
     pub analysis: ::std::option::Option<AssayAnalysisConfig>,
-    #[serde(rename = "assayId")]
-    pub assay_id: AssayType,
-    #[serde(rename = "assayLabel")]
-    pub assay_label: ::std::string::String,
-    #[serde(rename = "dataSourceKind")]
-    pub data_source_kind: ::std::option::Option<AssayDataSourceKind>,
-    pub info1: AssayBasicInfoStep1,
-    pub info2: AssayBasicInfoStep2,
-    pub info3: AssayBasicInfoStep3,
+    pub data: AssayData,
+    pub interval: AssayInterval,
+    pub name: ::std::string::String,
+    pub samples: AssaySamples,
+    #[serde(rename = "type")]
+    pub type_: AssayType,
+    pub workspace: AssayWorkspace,
 }
 impl AssayJsonFile {
     pub fn builder() -> builder::AssayJsonFile {
@@ -1234,34 +1492,26 @@ impl AssayJsonFile {
 #[doc = "{"]
 #[doc = "  \"type\": \"object\","]
 #[doc = "  \"required\": ["]
-#[doc = "    \"channel\","]
-#[doc = "    \"maskChannel\","]
+#[doc = "    \"brightfield\","]
+#[doc = "    \"fluorescence\","]
 #[doc = "    \"name\","]
-#[doc = "    \"positionFinish\","]
-#[doc = "    \"positionStart\","]
 #[doc = "    \"positions\","]
-#[doc = "    \"signalChannel\""]
+#[doc = "    \"slide\""]
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
-#[doc = "    \"channel\": {"]
+#[doc = "    \"brightfield\": {"]
 #[doc = "      \"type\": \"string\""]
 #[doc = "    },"]
-#[doc = "    \"maskChannel\": {"]
+#[doc = "    \"fluorescence\": {"]
 #[doc = "      \"type\": \"string\""]
 #[doc = "    },"]
 #[doc = "    \"name\": {"]
 #[doc = "      \"type\": \"string\""]
 #[doc = "    },"]
-#[doc = "    \"positionFinish\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    },"]
-#[doc = "    \"positionStart\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    },"]
 #[doc = "    \"positions\": {"]
 #[doc = "      \"type\": \"string\""]
 #[doc = "    },"]
-#[doc = "    \"signalChannel\": {"]
+#[doc = "    \"slide\": {"]
 #[doc = "      \"type\": \"string\""]
 #[doc = "    }"]
 #[doc = "  }"]
@@ -1270,17 +1520,11 @@ impl AssayJsonFile {
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct AssaySampleRow {
-    pub channel: ::std::string::String,
-    #[serde(rename = "maskChannel")]
-    pub mask_channel: ::std::string::String,
+    pub brightfield: ::std::string::String,
+    pub fluorescence: ::std::string::String,
     pub name: ::std::string::String,
-    #[serde(rename = "positionFinish")]
-    pub position_finish: ::std::string::String,
-    #[serde(rename = "positionStart")]
-    pub position_start: ::std::string::String,
     pub positions: ::std::string::String,
-    #[serde(rename = "signalChannel")]
-    pub signal_channel: ::std::string::String,
+    pub slide: ::std::string::String,
 }
 impl AssaySampleRow {
     pub fn builder() -> builder::AssaySampleRow {
@@ -1319,83 +1563,6 @@ impl ::std::convert::From<::std::vec::Vec<AssaySampleRow>> for AssaySamples {
         Self(value)
     }
 }
-#[doc = "`AssayTimelapseUnit`"]
-#[doc = r""]
-#[doc = r" <details><summary>JSON schema</summary>"]
-#[doc = r""]
-#[doc = r" ```json"]
-#[doc = "{"]
-#[doc = "  \"type\": \"string\","]
-#[doc = "  \"enum\": ["]
-#[doc = "    \"second\","]
-#[doc = "    \"minute\","]
-#[doc = "    \"hour\""]
-#[doc = "  ]"]
-#[doc = "}"]
-#[doc = r" ```"]
-#[doc = r" </details>"]
-#[derive(
-    :: serde :: Deserialize,
-    :: serde :: Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum AssayTimelapseUnit {
-    #[serde(rename = "second")]
-    Second,
-    #[serde(rename = "minute")]
-    Minute,
-    #[serde(rename = "hour")]
-    Hour,
-}
-impl ::std::fmt::Display for AssayTimelapseUnit {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::Second => f.write_str("second"),
-            Self::Minute => f.write_str("minute"),
-            Self::Hour => f.write_str("hour"),
-        }
-    }
-}
-impl ::std::str::FromStr for AssayTimelapseUnit {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "second" => Ok(Self::Second),
-            "minute" => Ok(Self::Minute),
-            "hour" => Ok(Self::Hour),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for AssayTimelapseUnit {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for AssayTimelapseUnit {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for AssayTimelapseUnit {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
 #[doc = "`AssayType`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
@@ -1405,9 +1572,8 @@ impl ::std::convert::TryFrom<::std::string::String> for AssayTimelapseUnit {
 #[doc = "  \"type\": \"string\","]
 #[doc = "  \"enum\": ["]
 #[doc = "    \"transfection\","]
-#[doc = "    \"immune-killing\","]
-#[doc = "    \"lnp-binding\","]
-#[doc = "    \"custom-assay\""]
+#[doc = "    \"killing\","]
+#[doc = "    \"lnp-binding\""]
 #[doc = "  ]"]
 #[doc = "}"]
 #[doc = r" ```"]
@@ -1427,20 +1593,17 @@ impl ::std::convert::TryFrom<::std::string::String> for AssayTimelapseUnit {
 pub enum AssayType {
     #[serde(rename = "transfection")]
     Transfection,
-    #[serde(rename = "immune-killing")]
-    ImmuneKilling,
+    #[serde(rename = "killing")]
+    Killing,
     #[serde(rename = "lnp-binding")]
     LnpBinding,
-    #[serde(rename = "custom-assay")]
-    CustomAssay,
 }
 impl ::std::fmt::Display for AssayType {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
             Self::Transfection => f.write_str("transfection"),
-            Self::ImmuneKilling => f.write_str("immune-killing"),
+            Self::Killing => f.write_str("killing"),
             Self::LnpBinding => f.write_str("lnp-binding"),
-            Self::CustomAssay => f.write_str("custom-assay"),
         }
     }
 }
@@ -1449,9 +1612,8 @@ impl ::std::str::FromStr for AssayType {
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
             "transfection" => Ok(Self::Transfection),
-            "immune-killing" => Ok(Self::ImmuneKilling),
+            "killing" => Ok(Self::Killing),
             "lnp-binding" => Ok(Self::LnpBinding),
-            "custom-assay" => Ok(Self::CustomAssay),
             _ => Err("invalid value".into()),
         }
     }
@@ -1476,6 +1638,33 @@ impl ::std::convert::TryFrom<::std::string::String> for AssayType {
         value: ::std::string::String,
     ) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
+    }
+}
+#[doc = "`AssayWorkspace`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"path\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"path\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct AssayWorkspace {
+    pub path: ::std::string::String,
+}
+impl AssayWorkspace {
+    pub fn builder() -> builder::AssayWorkspace {
+        Default::default()
     }
 }
 #[doc = "`AutoExcludePreviewCell`"]
@@ -4526,6 +4715,14 @@ impl RoiIndexEntry {
 #[doc = "      \"format\": \"uint32\","]
 #[doc = "      \"minimum\": 0.0"]
 #[doc = "    },"]
+#[doc = "    \"timeIndices\": {"]
+#[doc = "      \"type\": \"array\","]
+#[doc = "      \"items\": {"]
+#[doc = "        \"type\": \"integer\","]
+#[doc = "        \"format\": \"uint32\","]
+#[doc = "        \"minimum\": 0.0"]
+#[doc = "      }"]
+#[doc = "    },"]
 #[doc = "    \"zCount\": {"]
 #[doc = "      \"type\": \"integer\","]
 #[doc = "      \"format\": \"uint32\","]
@@ -4551,9 +4748,9 @@ pub struct RoiIndexFile {
     #[serde(
         rename = "timeIndices",
         default,
-        skip_serializing_if = "::std::option::Option::is_none"
+        skip_serializing_if = "::std::vec::Vec::is_empty"
     )]
-    pub time_indices: ::std::option::Option<::std::vec::Vec<u32>>,
+    pub time_indices: ::std::vec::Vec<u32>,
     #[serde(rename = "zCount")]
     pub z_count: u32,
 }
@@ -7107,11 +7304,13 @@ pub mod builder {
     #[derive(Clone, Debug)]
     pub struct AssayAnalysisConfig {
         max_onset_minutes: ::std::result::Result<::std::option::Option<f64>, ::std::string::String>,
+        skip_segment: ::std::result::Result<::std::option::Option<bool>, ::std::string::String>,
     }
     impl ::std::default::Default for AssayAnalysisConfig {
         fn default() -> Self {
             Self {
                 max_onset_minutes: Ok(Default::default()),
+                skip_segment: Ok(Default::default()),
             }
         }
     }
@@ -7126,6 +7325,16 @@ pub mod builder {
                 .map_err(|e| format!("error converting supplied value for max_onset_minutes: {e}"));
             self
         }
+        pub fn skip_segment<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<bool>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.skip_segment = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for skip_segment: {e}"));
+            self
+        }
     }
     impl ::std::convert::TryFrom<AssayAnalysisConfig> for super::AssayAnalysisConfig {
         type Error = super::error::ConversionError;
@@ -7134,6 +7343,7 @@ pub mod builder {
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
                 max_onset_minutes: value.max_onset_minutes?,
+                skip_segment: value.skip_segment?,
             })
         }
     }
@@ -7141,217 +7351,291 @@ pub mod builder {
         fn from(value: super::AssayAnalysisConfig) -> Self {
             Self {
                 max_onset_minutes: Ok(value.max_onset_minutes),
+                skip_segment: Ok(value.skip_segment),
             }
         }
     }
     #[derive(Clone, Debug)]
-    pub struct AssayBasicInfoStep1 {
-        data_path: ::std::result::Result<::std::string::String, ::std::string::String>,
-        folder_filename_template:
-            ::std::result::Result<::std::string::String, ::std::string::String>,
-        folder_subfolder_template:
-            ::std::result::Result<::std::string::String, ::std::string::String>,
-        name: ::std::result::Result<::std::string::String, ::std::string::String>,
-        save_to: ::std::result::Result<::std::string::String, ::std::string::String>,
+    pub struct AssayDataCzi {
+        path: ::std::result::Result<::std::string::String, ::std::string::String>,
+        type_: ::std::result::Result<super::AssayDataCziType, ::std::string::String>,
     }
-    impl ::std::default::Default for AssayBasicInfoStep1 {
+    impl ::std::default::Default for AssayDataCzi {
         fn default() -> Self {
             Self {
-                data_path: Err("no value supplied for data_path".to_string()),
-                folder_filename_template: Err(
-                    "no value supplied for folder_filename_template".to_string()
-                ),
-                folder_subfolder_template: Err(
-                    "no value supplied for folder_subfolder_template".to_string()
-                ),
-                name: Err("no value supplied for name".to_string()),
-                save_to: Err("no value supplied for save_to".to_string()),
+                path: Err("no value supplied for path".to_string()),
+                type_: Err("no value supplied for type_".to_string()),
             }
         }
     }
-    impl AssayBasicInfoStep1 {
-        pub fn data_path<T>(mut self, value: T) -> Self
+    impl AssayDataCzi {
+        pub fn path<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<::std::string::String>,
             T::Error: ::std::fmt::Display,
         {
-            self.data_path = value
+            self.path = value
                 .try_into()
-                .map_err(|e| format!("error converting supplied value for data_path: {e}"));
+                .map_err(|e| format!("error converting supplied value for path: {e}"));
             self
         }
-        pub fn folder_filename_template<T>(mut self, value: T) -> Self
+        pub fn type_<T>(mut self, value: T) -> Self
         where
-            T: ::std::convert::TryInto<::std::string::String>,
+            T: ::std::convert::TryInto<super::AssayDataCziType>,
             T::Error: ::std::fmt::Display,
         {
-            self.folder_filename_template = value.try_into().map_err(|e| {
-                format!("error converting supplied value for folder_filename_template: {e}")
-            });
-            self
-        }
-        pub fn folder_subfolder_template<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::string::String>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.folder_subfolder_template = value.try_into().map_err(|e| {
-                format!("error converting supplied value for folder_subfolder_template: {e}")
-            });
-            self
-        }
-        pub fn name<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::string::String>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.name = value
+            self.type_ = value
                 .try_into()
-                .map_err(|e| format!("error converting supplied value for name: {e}"));
-            self
-        }
-        pub fn save_to<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::string::String>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.save_to = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for save_to: {e}"));
+                .map_err(|e| format!("error converting supplied value for type_: {e}"));
             self
         }
     }
-    impl ::std::convert::TryFrom<AssayBasicInfoStep1> for super::AssayBasicInfoStep1 {
+    impl ::std::convert::TryFrom<AssayDataCzi> for super::AssayDataCzi {
         type Error = super::error::ConversionError;
         fn try_from(
-            value: AssayBasicInfoStep1,
+            value: AssayDataCzi,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
-                data_path: value.data_path?,
-                folder_filename_template: value.folder_filename_template?,
-                folder_subfolder_template: value.folder_subfolder_template?,
-                name: value.name?,
-                save_to: value.save_to?,
+                path: value.path?,
+                type_: value.type_?,
             })
         }
     }
-    impl ::std::convert::From<super::AssayBasicInfoStep1> for AssayBasicInfoStep1 {
-        fn from(value: super::AssayBasicInfoStep1) -> Self {
+    impl ::std::convert::From<super::AssayDataCzi> for AssayDataCzi {
+        fn from(value: super::AssayDataCzi) -> Self {
             Self {
-                data_path: Ok(value.data_path),
-                folder_filename_template: Ok(value.folder_filename_template),
-                folder_subfolder_template: Ok(value.folder_subfolder_template),
-                name: Ok(value.name),
-                save_to: Ok(value.save_to),
+                path: Ok(value.path),
+                type_: Ok(value.type_),
             }
         }
     }
     #[derive(Clone, Debug)]
-    pub struct AssayBasicInfoStep2 {
-        selected_features:
-            ::std::result::Result<::std::vec::Vec<super::AssayFeature>, ::std::string::String>,
-        timelapse_amount: ::std::result::Result<::std::option::Option<f64>, ::std::string::String>,
-        timelapse_unit: ::std::result::Result<super::AssayTimelapseUnit, ::std::string::String>,
+    pub struct AssayDataFolder {
+        path: ::std::result::Result<::std::string::String, ::std::string::String>,
+        template: ::std::result::Result<super::AssayFolderTemplate, ::std::string::String>,
+        type_: ::std::result::Result<super::AssayDataFolderType, ::std::string::String>,
     }
-    impl ::std::default::Default for AssayBasicInfoStep2 {
+    impl ::std::default::Default for AssayDataFolder {
         fn default() -> Self {
             Self {
-                selected_features: Err("no value supplied for selected_features".to_string()),
-                timelapse_amount: Err("no value supplied for timelapse_amount".to_string()),
-                timelapse_unit: Err("no value supplied for timelapse_unit".to_string()),
+                path: Err("no value supplied for path".to_string()),
+                template: Err("no value supplied for template".to_string()),
+                type_: Err("no value supplied for type_".to_string()),
             }
         }
     }
-    impl AssayBasicInfoStep2 {
-        pub fn selected_features<T>(mut self, value: T) -> Self
+    impl AssayDataFolder {
+        pub fn path<T>(mut self, value: T) -> Self
         where
-            T: ::std::convert::TryInto<::std::vec::Vec<super::AssayFeature>>,
+            T: ::std::convert::TryInto<::std::string::String>,
             T::Error: ::std::fmt::Display,
         {
-            self.selected_features = value
+            self.path = value
                 .try_into()
-                .map_err(|e| format!("error converting supplied value for selected_features: {e}"));
+                .map_err(|e| format!("error converting supplied value for path: {e}"));
             self
         }
-        pub fn timelapse_amount<T>(mut self, value: T) -> Self
+        pub fn template<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::AssayFolderTemplate>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.template = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for template: {e}"));
+            self
+        }
+        pub fn type_<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::AssayDataFolderType>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.type_ = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for type_: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<AssayDataFolder> for super::AssayDataFolder {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: AssayDataFolder,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                path: value.path?,
+                template: value.template?,
+                type_: value.type_?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::AssayDataFolder> for AssayDataFolder {
+        fn from(value: super::AssayDataFolder) -> Self {
+            Self {
+                path: Ok(value.path),
+                template: Ok(value.template),
+                type_: Ok(value.type_),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct AssayDataNd2 {
+        path: ::std::result::Result<::std::string::String, ::std::string::String>,
+        type_: ::std::result::Result<super::AssayDataNd2Type, ::std::string::String>,
+    }
+    impl ::std::default::Default for AssayDataNd2 {
+        fn default() -> Self {
+            Self {
+                path: Err("no value supplied for path".to_string()),
+                type_: Err("no value supplied for type_".to_string()),
+            }
+        }
+    }
+    impl AssayDataNd2 {
+        pub fn path<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.path = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for path: {e}"));
+            self
+        }
+        pub fn type_<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::AssayDataNd2Type>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.type_ = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for type_: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<AssayDataNd2> for super::AssayDataNd2 {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: AssayDataNd2,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                path: value.path?,
+                type_: value.type_?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::AssayDataNd2> for AssayDataNd2 {
+        fn from(value: super::AssayDataNd2) -> Self {
+            Self {
+                path: Ok(value.path),
+                type_: Ok(value.type_),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct AssayFolderTemplate {
+        filename: ::std::result::Result<::std::string::String, ::std::string::String>,
+        subfolder: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for AssayFolderTemplate {
+        fn default() -> Self {
+            Self {
+                filename: Err("no value supplied for filename".to_string()),
+                subfolder: Err("no value supplied for subfolder".to_string()),
+            }
+        }
+    }
+    impl AssayFolderTemplate {
+        pub fn filename<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.filename = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for filename: {e}"));
+            self
+        }
+        pub fn subfolder<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.subfolder = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for subfolder: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<AssayFolderTemplate> for super::AssayFolderTemplate {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: AssayFolderTemplate,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                filename: value.filename?,
+                subfolder: value.subfolder?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::AssayFolderTemplate> for AssayFolderTemplate {
+        fn from(value: super::AssayFolderTemplate) -> Self {
+            Self {
+                filename: Ok(value.filename),
+                subfolder: Ok(value.subfolder),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct AssayInterval {
+        unit: ::std::result::Result<super::AssayIntervalUnit, ::std::string::String>,
+        value: ::std::result::Result<::std::option::Option<f64>, ::std::string::String>,
+    }
+    impl ::std::default::Default for AssayInterval {
+        fn default() -> Self {
+            Self {
+                unit: Err("no value supplied for unit".to_string()),
+                value: Err("no value supplied for value".to_string()),
+            }
+        }
+    }
+    impl AssayInterval {
+        pub fn unit<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::AssayIntervalUnit>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.unit = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for unit: {e}"));
+            self
+        }
+        pub fn value<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<::std::option::Option<f64>>,
             T::Error: ::std::fmt::Display,
         {
-            self.timelapse_amount = value
+            self.value = value
                 .try_into()
-                .map_err(|e| format!("error converting supplied value for timelapse_amount: {e}"));
-            self
-        }
-        pub fn timelapse_unit<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<super::AssayTimelapseUnit>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.timelapse_unit = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for timelapse_unit: {e}"));
+                .map_err(|e| format!("error converting supplied value for value: {e}"));
             self
         }
     }
-    impl ::std::convert::TryFrom<AssayBasicInfoStep2> for super::AssayBasicInfoStep2 {
+    impl ::std::convert::TryFrom<AssayInterval> for super::AssayInterval {
         type Error = super::error::ConversionError;
         fn try_from(
-            value: AssayBasicInfoStep2,
+            value: AssayInterval,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
-                selected_features: value.selected_features?,
-                timelapse_amount: value.timelapse_amount?,
-                timelapse_unit: value.timelapse_unit?,
+                unit: value.unit?,
+                value: value.value?,
             })
         }
     }
-    impl ::std::convert::From<super::AssayBasicInfoStep2> for AssayBasicInfoStep2 {
-        fn from(value: super::AssayBasicInfoStep2) -> Self {
+    impl ::std::convert::From<super::AssayInterval> for AssayInterval {
+        fn from(value: super::AssayInterval) -> Self {
             Self {
-                selected_features: Ok(value.selected_features),
-                timelapse_amount: Ok(value.timelapse_amount),
-                timelapse_unit: Ok(value.timelapse_unit),
-            }
-        }
-    }
-    #[derive(Clone, Debug)]
-    pub struct AssayBasicInfoStep3 {
-        samples: ::std::result::Result<super::AssaySamples, ::std::string::String>,
-    }
-    impl ::std::default::Default for AssayBasicInfoStep3 {
-        fn default() -> Self {
-            Self {
-                samples: Err("no value supplied for samples".to_string()),
-            }
-        }
-    }
-    impl AssayBasicInfoStep3 {
-        pub fn samples<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<super::AssaySamples>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.samples = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for samples: {e}"));
-            self
-        }
-    }
-    impl ::std::convert::TryFrom<AssayBasicInfoStep3> for super::AssayBasicInfoStep3 {
-        type Error = super::error::ConversionError;
-        fn try_from(
-            value: AssayBasicInfoStep3,
-        ) -> ::std::result::Result<Self, super::error::ConversionError> {
-            Ok(Self {
-                samples: value.samples?,
-            })
-        }
-    }
-    impl ::std::convert::From<super::AssayBasicInfoStep3> for AssayBasicInfoStep3 {
-        fn from(value: super::AssayBasicInfoStep3) -> Self {
-            Self {
-                samples: Ok(value.samples),
+                unit: Ok(value.unit),
+                value: Ok(value.value),
             }
         }
     }
@@ -7361,26 +7645,23 @@ pub mod builder {
             ::std::option::Option<super::AssayAnalysisConfig>,
             ::std::string::String,
         >,
-        assay_id: ::std::result::Result<super::AssayType, ::std::string::String>,
-        assay_label: ::std::result::Result<::std::string::String, ::std::string::String>,
-        data_source_kind: ::std::result::Result<
-            ::std::option::Option<super::AssayDataSourceKind>,
-            ::std::string::String,
-        >,
-        info1: ::std::result::Result<super::AssayBasicInfoStep1, ::std::string::String>,
-        info2: ::std::result::Result<super::AssayBasicInfoStep2, ::std::string::String>,
-        info3: ::std::result::Result<super::AssayBasicInfoStep3, ::std::string::String>,
+        data: ::std::result::Result<super::AssayData, ::std::string::String>,
+        interval: ::std::result::Result<super::AssayInterval, ::std::string::String>,
+        name: ::std::result::Result<::std::string::String, ::std::string::String>,
+        samples: ::std::result::Result<super::AssaySamples, ::std::string::String>,
+        type_: ::std::result::Result<super::AssayType, ::std::string::String>,
+        workspace: ::std::result::Result<super::AssayWorkspace, ::std::string::String>,
     }
     impl ::std::default::Default for AssayJsonFile {
         fn default() -> Self {
             Self {
                 analysis: Ok(Default::default()),
-                assay_id: Err("no value supplied for assay_id".to_string()),
-                assay_label: Err("no value supplied for assay_label".to_string()),
-                data_source_kind: Err("no value supplied for data_source_kind".to_string()),
-                info1: Err("no value supplied for info1".to_string()),
-                info2: Err("no value supplied for info2".to_string()),
-                info3: Err("no value supplied for info3".to_string()),
+                data: Err("no value supplied for data".to_string()),
+                interval: Err("no value supplied for interval".to_string()),
+                name: Err("no value supplied for name".to_string()),
+                samples: Err("no value supplied for samples".to_string()),
+                type_: Err("no value supplied for type_".to_string()),
+                workspace: Err("no value supplied for workspace".to_string()),
             }
         }
     }
@@ -7395,138 +7676,24 @@ pub mod builder {
                 .map_err(|e| format!("error converting supplied value for analysis: {e}"));
             self
         }
-        pub fn assay_id<T>(mut self, value: T) -> Self
+        pub fn data<T>(mut self, value: T) -> Self
         where
-            T: ::std::convert::TryInto<super::AssayType>,
+            T: ::std::convert::TryInto<super::AssayData>,
             T::Error: ::std::fmt::Display,
         {
-            self.assay_id = value
+            self.data = value
                 .try_into()
-                .map_err(|e| format!("error converting supplied value for assay_id: {e}"));
+                .map_err(|e| format!("error converting supplied value for data: {e}"));
             self
         }
-        pub fn assay_label<T>(mut self, value: T) -> Self
+        pub fn interval<T>(mut self, value: T) -> Self
         where
-            T: ::std::convert::TryInto<::std::string::String>,
+            T: ::std::convert::TryInto<super::AssayInterval>,
             T::Error: ::std::fmt::Display,
         {
-            self.assay_label = value
+            self.interval = value
                 .try_into()
-                .map_err(|e| format!("error converting supplied value for assay_label: {e}"));
-            self
-        }
-        pub fn data_source_kind<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::option::Option<super::AssayDataSourceKind>>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.data_source_kind = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for data_source_kind: {e}"));
-            self
-        }
-        pub fn info1<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<super::AssayBasicInfoStep1>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.info1 = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for info1: {e}"));
-            self
-        }
-        pub fn info2<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<super::AssayBasicInfoStep2>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.info2 = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for info2: {e}"));
-            self
-        }
-        pub fn info3<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<super::AssayBasicInfoStep3>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.info3 = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for info3: {e}"));
-            self
-        }
-    }
-    impl ::std::convert::TryFrom<AssayJsonFile> for super::AssayJsonFile {
-        type Error = super::error::ConversionError;
-        fn try_from(
-            value: AssayJsonFile,
-        ) -> ::std::result::Result<Self, super::error::ConversionError> {
-            Ok(Self {
-                analysis: value.analysis?,
-                assay_id: value.assay_id?,
-                assay_label: value.assay_label?,
-                data_source_kind: value.data_source_kind?,
-                info1: value.info1?,
-                info2: value.info2?,
-                info3: value.info3?,
-            })
-        }
-    }
-    impl ::std::convert::From<super::AssayJsonFile> for AssayJsonFile {
-        fn from(value: super::AssayJsonFile) -> Self {
-            Self {
-                analysis: Ok(value.analysis),
-                assay_id: Ok(value.assay_id),
-                assay_label: Ok(value.assay_label),
-                data_source_kind: Ok(value.data_source_kind),
-                info1: Ok(value.info1),
-                info2: Ok(value.info2),
-                info3: Ok(value.info3),
-            }
-        }
-    }
-    #[derive(Clone, Debug)]
-    pub struct AssaySampleRow {
-        channel: ::std::result::Result<::std::string::String, ::std::string::String>,
-        mask_channel: ::std::result::Result<::std::string::String, ::std::string::String>,
-        name: ::std::result::Result<::std::string::String, ::std::string::String>,
-        position_finish: ::std::result::Result<::std::string::String, ::std::string::String>,
-        position_start: ::std::result::Result<::std::string::String, ::std::string::String>,
-        positions: ::std::result::Result<::std::string::String, ::std::string::String>,
-        signal_channel: ::std::result::Result<::std::string::String, ::std::string::String>,
-    }
-    impl ::std::default::Default for AssaySampleRow {
-        fn default() -> Self {
-            Self {
-                channel: Err("no value supplied for channel".to_string()),
-                mask_channel: Err("no value supplied for mask_channel".to_string()),
-                name: Err("no value supplied for name".to_string()),
-                position_finish: Err("no value supplied for position_finish".to_string()),
-                position_start: Err("no value supplied for position_start".to_string()),
-                positions: Err("no value supplied for positions".to_string()),
-                signal_channel: Err("no value supplied for signal_channel".to_string()),
-            }
-        }
-    }
-    impl AssaySampleRow {
-        pub fn channel<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::string::String>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.channel = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for channel: {e}"));
-            self
-        }
-        pub fn mask_channel<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::string::String>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.mask_channel = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for mask_channel: {e}"));
+                .map_err(|e| format!("error converting supplied value for interval: {e}"));
             self
         }
         pub fn name<T>(mut self, value: T) -> Self
@@ -7539,24 +7706,114 @@ pub mod builder {
                 .map_err(|e| format!("error converting supplied value for name: {e}"));
             self
         }
-        pub fn position_finish<T>(mut self, value: T) -> Self
+        pub fn samples<T>(mut self, value: T) -> Self
         where
-            T: ::std::convert::TryInto<::std::string::String>,
+            T: ::std::convert::TryInto<super::AssaySamples>,
             T::Error: ::std::fmt::Display,
         {
-            self.position_finish = value
+            self.samples = value
                 .try_into()
-                .map_err(|e| format!("error converting supplied value for position_finish: {e}"));
+                .map_err(|e| format!("error converting supplied value for samples: {e}"));
             self
         }
-        pub fn position_start<T>(mut self, value: T) -> Self
+        pub fn type_<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::AssayType>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.type_ = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for type_: {e}"));
+            self
+        }
+        pub fn workspace<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::AssayWorkspace>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.workspace = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for workspace: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<AssayJsonFile> for super::AssayJsonFile {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: AssayJsonFile,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                analysis: value.analysis?,
+                data: value.data?,
+                interval: value.interval?,
+                name: value.name?,
+                samples: value.samples?,
+                type_: value.type_?,
+                workspace: value.workspace?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::AssayJsonFile> for AssayJsonFile {
+        fn from(value: super::AssayJsonFile) -> Self {
+            Self {
+                analysis: Ok(value.analysis),
+                data: Ok(value.data),
+                interval: Ok(value.interval),
+                name: Ok(value.name),
+                samples: Ok(value.samples),
+                type_: Ok(value.type_),
+                workspace: Ok(value.workspace),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct AssaySampleRow {
+        brightfield: ::std::result::Result<::std::string::String, ::std::string::String>,
+        fluorescence: ::std::result::Result<::std::string::String, ::std::string::String>,
+        name: ::std::result::Result<::std::string::String, ::std::string::String>,
+        positions: ::std::result::Result<::std::string::String, ::std::string::String>,
+        slide: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for AssaySampleRow {
+        fn default() -> Self {
+            Self {
+                brightfield: Err("no value supplied for brightfield".to_string()),
+                fluorescence: Err("no value supplied for fluorescence".to_string()),
+                name: Err("no value supplied for name".to_string()),
+                positions: Err("no value supplied for positions".to_string()),
+                slide: Err("no value supplied for slide".to_string()),
+            }
+        }
+    }
+    impl AssaySampleRow {
+        pub fn brightfield<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<::std::string::String>,
             T::Error: ::std::fmt::Display,
         {
-            self.position_start = value
+            self.brightfield = value
                 .try_into()
-                .map_err(|e| format!("error converting supplied value for position_start: {e}"));
+                .map_err(|e| format!("error converting supplied value for brightfield: {e}"));
+            self
+        }
+        pub fn fluorescence<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.fluorescence = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for fluorescence: {e}"));
+            self
+        }
+        pub fn name<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.name = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for name: {e}"));
             self
         }
         pub fn positions<T>(mut self, value: T) -> Self
@@ -7569,14 +7826,14 @@ pub mod builder {
                 .map_err(|e| format!("error converting supplied value for positions: {e}"));
             self
         }
-        pub fn signal_channel<T>(mut self, value: T) -> Self
+        pub fn slide<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<::std::string::String>,
             T::Error: ::std::fmt::Display,
         {
-            self.signal_channel = value
+            self.slide = value
                 .try_into()
-                .map_err(|e| format!("error converting supplied value for signal_channel: {e}"));
+                .map_err(|e| format!("error converting supplied value for slide: {e}"));
             self
         }
     }
@@ -7586,26 +7843,60 @@ pub mod builder {
             value: AssaySampleRow,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
-                channel: value.channel?,
-                mask_channel: value.mask_channel?,
+                brightfield: value.brightfield?,
+                fluorescence: value.fluorescence?,
                 name: value.name?,
-                position_finish: value.position_finish?,
-                position_start: value.position_start?,
                 positions: value.positions?,
-                signal_channel: value.signal_channel?,
+                slide: value.slide?,
             })
         }
     }
     impl ::std::convert::From<super::AssaySampleRow> for AssaySampleRow {
         fn from(value: super::AssaySampleRow) -> Self {
             Self {
-                channel: Ok(value.channel),
-                mask_channel: Ok(value.mask_channel),
+                brightfield: Ok(value.brightfield),
+                fluorescence: Ok(value.fluorescence),
                 name: Ok(value.name),
-                position_finish: Ok(value.position_finish),
-                position_start: Ok(value.position_start),
                 positions: Ok(value.positions),
-                signal_channel: Ok(value.signal_channel),
+                slide: Ok(value.slide),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct AssayWorkspace {
+        path: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for AssayWorkspace {
+        fn default() -> Self {
+            Self {
+                path: Err("no value supplied for path".to_string()),
+            }
+        }
+    }
+    impl AssayWorkspace {
+        pub fn path<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.path = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for path: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<AssayWorkspace> for super::AssayWorkspace {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: AssayWorkspace,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self { path: value.path? })
+        }
+    }
+    impl ::std::convert::From<super::AssayWorkspace> for AssayWorkspace {
+        fn from(value: super::AssayWorkspace) -> Self {
+            Self {
+                path: Ok(value.path),
             }
         }
     }
@@ -10973,10 +11264,7 @@ pub mod builder {
         rois: ::std::result::Result<::std::vec::Vec<super::RoiIndexEntry>, ::std::string::String>,
         source: ::std::result::Result<super::AlignerSource, ::std::string::String>,
         time_count: ::std::result::Result<u32, ::std::string::String>,
-        time_indices: ::std::result::Result<
-            ::std::option::Option<::std::vec::Vec<u32>>,
-            ::std::string::String,
-        >,
+        time_indices: ::std::result::Result<::std::vec::Vec<u32>, ::std::string::String>,
         z_count: ::std::result::Result<u32, ::std::string::String>,
     }
     impl ::std::default::Default for RoiIndexFile {
@@ -11067,7 +11355,7 @@ pub mod builder {
         }
         pub fn time_indices<T>(mut self, value: T) -> Self
         where
-            T: ::std::convert::TryInto<::std::option::Option<::std::vec::Vec<u32>>>,
+            T: ::std::convert::TryInto<::std::vec::Vec<u32>>,
             T::Error: ::std::fmt::Display,
         {
             self.time_indices = value

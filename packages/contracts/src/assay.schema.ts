@@ -10,87 +10,95 @@ import { F64 } from "./schema/primitives";
  * the HttpApi, and is emitted as JSON Schema for the Rust type generator.
  */
 
-export const AssayTypeSchema = Schema.Literal(
-  "transfection",
-  "immune-killing",
-  "lnp-binding",
-  "custom-assay",
-).annotations({ identifier: "AssayType" });
+/** Assay kind (root `type`). Distinct from `data.type` (source kind). */
+export const AssayTypeSchema = Schema.Literal("transfection", "killing", "lnp-binding").annotations(
+  {
+    identifier: "AssayType",
+  },
+);
 
-export const AssayFeatureSchema = Schema.Literal(
-  "morphology",
-  "partcount",
-  "partfluor",
-  "totalfluor",
-).annotations({ identifier: "AssayFeature" });
-
-export const AssayTimelapseUnitSchema = Schema.Literal("second", "minute", "hour").annotations({
-  identifier: "AssayTimelapseUnit",
+export const AssayIntervalUnitSchema = Schema.Literal("second", "minute", "hour").annotations({
+  identifier: "AssayIntervalUnit",
 });
 
-export const AssayDataSourceKindSchema = Schema.Literal("folder", "nd2", "czi").annotations({
-  identifier: "AssayDataSourceKind",
-});
+export const AssayFolderTemplateSchema = Schema.Struct({
+  subfolder: Schema.String,
+  filename: Schema.String,
+}).annotations({ identifier: "AssayFolderTemplate" });
 
-export const AssayBasicInfoStep1Schema = Schema.Struct({
-  name: Schema.String,
-  dataPath: Schema.String,
-  folderSubfolderTemplate: Schema.String,
-  folderFilenameTemplate: Schema.String,
-  saveTo: Schema.String,
-}).annotations({ identifier: "AssayBasicInfoStep1" });
+export const AssayDataFolderSchema = Schema.Struct({
+  type: Schema.Literal("folder"),
+  path: Schema.String,
+  template: AssayFolderTemplateSchema,
+}).annotations({ identifier: "AssayDataFolder" });
 
-export const AssayBasicInfoStep2Schema = Schema.Struct({
-  timelapseAmount: Schema.NullOr(F64),
-  timelapseUnit: AssayTimelapseUnitSchema,
-  selectedFeatures: Schema.mutable(Schema.Array(AssayFeatureSchema)),
-}).annotations({ identifier: "AssayBasicInfoStep2" });
+export const AssayDataNd2Schema = Schema.Struct({
+  type: Schema.Literal("nd2"),
+  path: Schema.String,
+}).annotations({ identifier: "AssayDataNd2" });
+
+export const AssayDataCziSchema = Schema.Struct({
+  type: Schema.Literal("czi"),
+  path: Schema.String,
+}).annotations({ identifier: "AssayDataCzi" });
+
+export const AssayDataSchema = Schema.Union(
+  AssayDataFolderSchema,
+  AssayDataNd2Schema,
+  AssayDataCziSchema,
+).annotations({ identifier: "AssayData" });
+
+export const AssayWorkspaceSchema = Schema.Struct({
+  path: Schema.String,
+}).annotations({ identifier: "AssayWorkspace" });
+
+export const AssayIntervalSchema = Schema.Struct({
+  value: Schema.NullOr(F64),
+  unit: AssayIntervalUnitSchema,
+}).annotations({ identifier: "AssayInterval" });
 
 export const AssaySampleRowSchema = Schema.Struct({
-  channel: Schema.String,
+  slide: Schema.String,
   name: Schema.String,
-  positionStart: Schema.String,
-  positionFinish: Schema.String,
-  maskChannel: Schema.String,
-  signalChannel: Schema.String,
   positions: Schema.String,
+  brightfield: Schema.String,
+  fluorescence: Schema.String,
 }).annotations({ identifier: "AssaySampleRow" });
 
 export const AssaySamplesSchema = Schema.mutable(Schema.Array(AssaySampleRowSchema)).annotations({
   identifier: "AssaySamples",
 });
 
-export const AssayBasicInfoStep3Schema = Schema.Struct({
-  samples: AssaySamplesSchema,
-}).annotations({ identifier: "AssayBasicInfoStep3" });
-
 /**
  * Assay-dependent analysis options on assay.json.
- * `maxOnsetMinutes` is used only by the transfection assay; other assays ignore it.
+ * `maxOnsetMinutes` / `skipSegment` are transfection-oriented; other assays ignore them.
  */
 export const AssayAnalysisConfigSchema = Schema.Struct({
   maxOnsetMinutes: Schema.optional(F64),
+  /** When true, skip Otsu segmentation and use full-ROI (10th-percentile bg) timeseries. */
+  skipSegment: Schema.optional(Schema.Boolean),
 }).annotations({ identifier: "AssayAnalysisConfig" });
 
 export const AssayJsonFileSchema = Schema.Struct({
-  assayId: AssayTypeSchema,
-  assayLabel: Schema.String,
-  dataSourceKind: Schema.NullOr(AssayDataSourceKindSchema),
-  info1: AssayBasicInfoStep1Schema,
-  info2: AssayBasicInfoStep2Schema,
-  info3: AssayBasicInfoStep3Schema,
+  type: AssayTypeSchema,
+  name: Schema.String,
+  data: AssayDataSchema,
+  workspace: AssayWorkspaceSchema,
+  interval: AssayIntervalSchema,
+  samples: AssaySamplesSchema,
   analysis: Schema.optional(AssayAnalysisConfigSchema),
 }).annotations({ identifier: "AssayJsonFile" });
 
-// Derived on-disk types (`AssayType`/`AssayFeature` here are schema unions;
-// wizard const-derived ids live under `@lisca/contracts/assay` as `StudioAssay*`).
 export type AssayType = typeof AssayTypeSchema.Type;
-export type AssayFeature = typeof AssayFeatureSchema.Type;
-export type AssayTimelapseUnit = typeof AssayTimelapseUnitSchema.Type;
-export type AssayDataSourceKind = typeof AssayDataSourceKindSchema.Type;
-export type AssayBasicInfoStep1 = typeof AssayBasicInfoStep1Schema.Type;
-export type AssayBasicInfoStep2 = typeof AssayBasicInfoStep2Schema.Type;
+export type AssayIntervalUnit = typeof AssayIntervalUnitSchema.Type;
+export type AssayFolderTemplate = typeof AssayFolderTemplateSchema.Type;
+export type AssayDataFolder = typeof AssayDataFolderSchema.Type;
+export type AssayDataNd2 = typeof AssayDataNd2Schema.Type;
+export type AssayDataCzi = typeof AssayDataCziSchema.Type;
+export type AssayData = typeof AssayDataSchema.Type;
+export type AssayWorkspace = typeof AssayWorkspaceSchema.Type;
+export type AssayInterval = typeof AssayIntervalSchema.Type;
 export type AssaySampleRow = typeof AssaySampleRowSchema.Type;
-export type AssayBasicInfoStep3 = typeof AssayBasicInfoStep3Schema.Type;
+export type AssaySamples = typeof AssaySamplesSchema.Type;
 export type AssayAnalysisConfig = typeof AssayAnalysisConfigSchema.Type;
 export type AssayJsonFile = typeof AssayJsonFileSchema.Type;

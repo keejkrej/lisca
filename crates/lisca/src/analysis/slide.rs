@@ -4,37 +4,35 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use crate::protocol::AssayBasicInfoStep3;
+use crate::protocol::AssaySamples;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SlideChannelMapping {
     pub positions: Vec<u32>,
-    pub signal_channel: u32,
-    pub mask_channel: u32,
+    pub fluorescence: u32,
+    pub brightfield: u32,
     pub sample_name: String,
 }
 
 pub type SlideMapping = BTreeMap<u32, SlideChannelMapping>;
 
-pub fn build_slide_mapping(info3: &AssayBasicInfoStep3) -> Result<SlideMapping, String> {
-    let rows = &info3.samples.0;
-
+pub fn build_slide_mapping(samples: &AssaySamples) -> Result<SlideMapping, String> {
     let mut mapping = BTreeMap::new();
-    for row in rows {
+    for row in samples.iter() {
         let sample_name = row.name.trim().to_string();
         if sample_name.is_empty() {
             continue;
         }
-        let signal_channel = parse_u32(&row.signal_channel, "signalChannel")?;
-        let mask_channel = parse_u32(&row.mask_channel, "maskChannel")?;
-        let channel = parse_u32(&row.channel, "channel")?;
+        let fluorescence = parse_u32(&row.fluorescence, "fluorescence")?;
+        let brightfield = parse_u32(&row.brightfield, "brightfield")?;
+        let slide = parse_u32(&row.slide, "slide")?;
         let positions = parse_positions(&row.positions)?;
         mapping.insert(
-            channel,
+            slide,
             SlideChannelMapping {
                 positions,
-                signal_channel,
-                mask_channel,
+                fluorescence,
+                brightfield,
                 sample_name,
             },
         );
@@ -53,7 +51,7 @@ pub fn resolve_assay_path(workspace: &Path, assay: Option<&Path>) -> PathBuf {
         .unwrap_or_else(|| workspace.join("assay.json"))
 }
 
-/// Load sample mapping from Studio-format `assay.json` (`info3.samples`).
+/// Load sample mapping from Studio-format `assay.json` (`samples`).
 pub fn load_mapping_for_workspace(
     workspace: &Path,
     assay: Option<&Path>,
@@ -63,7 +61,7 @@ pub fn load_mapping_for_workspace(
         .map_err(|error| format!("failed to read {}: {error}", path.display()))?;
     let assay_json: crate::protocol::AssayJsonFile = serde_json::from_str(&contents)
         .map_err(|error| format!("invalid assay.json {}: {error}", path.display()))?;
-    build_slide_mapping(&assay_json.info3)
+    build_slide_mapping(&assay_json.samples)
 }
 
 /// Deprecated alias: stages read assay.json, not slide.json.
@@ -167,14 +165,14 @@ mod tests {
             0,
             SlideChannelMapping {
                 positions: vec![1, 2, 3],
-                signal_channel: 2,
-                mask_channel: 0,
+                fluorescence: 2,
+                brightfield: 0,
                 sample_name: "condA".to_string(),
             },
         );
         let json = serde_json::to_string(&mapping).expect("serialize");
-        assert!(json.contains("\"signal_channel\""));
-        assert!(json.contains("\"mask_channel\""));
+        assert!(json.contains("\"fluorescence\""));
+        assert!(json.contains("\"brightfield\""));
         assert!(json.contains("\"sample_name\""));
         assert!(!json.contains("signalChannel"));
     }

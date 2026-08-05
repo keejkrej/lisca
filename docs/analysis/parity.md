@@ -8,7 +8,7 @@ packages:
 | Sibling package (R&D) | Role |
 | --- | --- |
 | [`lisca-transfection-assay`](../../../lisca-transfection-assay) | Transfection / transfection pipeline (segment → timeseries → AUC → fit + plots) |
-| `lisca-killing-assay` (planned / external goals via mupattern) | Immune-killing survival / kill-curve science |
+| `lisca-killing-assay` (planned / external goals via mupattern) | Killing survival / kill-curve science |
 | `lisca-binding-assay` (planned) | Binding / LNP-style assays before Studio registration |
 
 When a package is **mature** (stable CLI, stable workspace layout, trusted on
@@ -63,8 +63,8 @@ pools, or bitwise float identity.
 
 | Studio `assayId` | Goal source | Rust module | Parity CLI | Notes |
 | --- | --- | --- | --- | --- |
-| `transfection` (Studio wire id; science = transfection) | `../lisca-transfection-assay` (`transfection` CLI) | `analysis/assays/gene_expression/` | `lisca-analyze` | Reference port; TF84 used as real-workspace check |
-| `immune-killing` | mupattern / future `lisca-killing-assay` | `analysis/assays/immune_killing/` | extend when stages need stage-CLI | ONNX ResNet + kill-curve tables |
+| `transfection` (Studio wire id; science = transfection) | `../lisca-transfection-assay` (`transfection` CLI) | `analysis/assays/transfection/` | `lisca-analyze` | Reference port; TF84 used as real-workspace check |
+| `killing` | mupattern / future `lisca-killing-assay` | `analysis/assays/killing/` | extend when stages need stage-CLI | ONNX ResNet + kill-curve tables |
 | `lnp-binding` / binding | future `lisca-binding-assay` | none until mature | — | Closed enum: do not half-register |
 
 Adding a Studio assay id is a **cross-cutting** change (`@lisca/contracts`,
@@ -75,13 +75,16 @@ Rust, generated types). Unsupported ids fail explicitly — see `PRODUCT.md`.
 ### Contract parity
 
 - Workspace layout: `assay.json`, `roi/PosN/`, `mask/PosN/`,
-  `timeseries/`, `results/` (no `slide.json`).
+  `timeseries/Pos{n}/ch{n}.csv`, `results/` (no `slide.json`).
+- Timeseries columns omit `slide_channel` (joined later from assay mapping);
+  `t` uses `index.json` `timeIndices`. Segmented bg = median of `~mask`;
+  full-frame bg = 10th percentile.
 - Output basenames Studio and Python both expect (`auc.csv`, `fit.csv`,
   `traces.png`, …).
 - CSV column names and row identity keys.
 - Stage order for full pipelines (`transfection pipeline` / `lisca-analyze pipeline`).
 - Flag defaults that change science (`--interval`, `--max-onset-minutes`,
-  segmentation radius/sigma, jobs only for performance).
+  `--full-frame`, segmentation radius/sigma, jobs only for performance).
 
 ### Scientific parity
 
@@ -121,7 +124,7 @@ Stage names mirror `transfection`:
 | Command | Writes |
 | --- | --- |
 | `segment` | `mask/PosN/*.tif` |
-| `timeseries` | `timeseries/sc*_ch*.csv` (+ xlsx) |
+| `timeseries` | `timeseries/Pos*/ch*.csv` (+ xlsx) |
 | `auc` | `results/auc.csv` |
 | `fit` | `results/fit.csv` |
 | `plot-timeseries` / `plot-auc` / `plot-fit` | `results/*.png` |
@@ -157,8 +160,8 @@ Backup entire `results/` + `timeseries/` before a full re-run.
 
 | Lane | Command | Purpose |
 | --- | --- | --- |
-| Always-on synthetic | `cargo test -p lisca --test gene_expression_parity` | Tiny workspace; reference formulas |
-| Optional Python e2e | `cargo test -p lisca --test gene_expression_parity -- --ignored` | Needs `../lisca-transfection-assay` (or `../transfection`) + `uv` |
+| Always-on synthetic | `cargo test -p lisca --test transfection_parity` | Tiny workspace; reference formulas |
+| Optional Python e2e | `cargo test -p lisca --test transfection_parity -- --ignored` | Needs `../lisca-transfection-assay` (or `../transfection`) + `uv` |
 | Library units | `cargo test -p lisca --lib` | Kernels in `array.rs`, slide mapping, … |
 
 Support kernels for tests: `crates/lisca/tests/support/transfection_reference.rs`

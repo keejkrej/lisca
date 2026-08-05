@@ -6,7 +6,7 @@
 use ndarray::{s, Array1, ArrayView2};
 use ndarray_stats::{
     interpolate::{Linear, Lower},
-    Quantile1dExt, SummaryStatisticsExt,
+    Quantile1dExt,
 };
 use noisy_float::types::{n64, N64};
 
@@ -67,7 +67,11 @@ pub struct RoiStats {
     pub unmasked_q75: f64,
 }
 
-/// Masked ROI reduction matching transfection `compute_masked_roi_metrics`.
+/// Full-frame ROI reduction: whole crop as foreground; bg = 10th percentile.
+pub const FULL_FRAME_BACKGROUND_QUANTILE: f64 = 0.1;
+
+/// Masked ROI reduction matching transfection `compute_masked_roi_metrics`
+/// (background = median of non-mask pixels).
 pub fn masked_roi_stats(frame: &[f64], mask: &[bool]) -> Result<MaskedRoiStats, String> {
     if frame.len() != mask.len() {
         return Err(format!(
@@ -85,15 +89,22 @@ pub fn masked_roi_stats(frame: &[f64], mask: &[bool]) -> Result<MaskedRoiStats, 
         });
     }
 
-    let values = Array1::from_iter(frame.iter().copied());
-    let foreground_weight = Array1::from_iter(mask.iter().map(|&masked| f64::from(masked)));
-    let background_weight = 1.0 - &foreground_weight;
-
-    let area = foreground_weight.sum() as u32;
-    let intensity = values
-        .weighted_sum(&foreground_weight)
-        .map_err(|error| error.to_string())?;
-    let background = values.weighted_mean(&background_weight).unwrap_or(0.0);
+    let mut background_pixels = Vec::new();
+    let mut intensity = 0.0;
+    let mut area = 0u32;
+    for (value, &is_fg) in frame.iter().zip(mask.iter()) {
+        if is_fg {
+            intensity += *value;
+            area += 1;
+        } else {
+            background_pixels.push(*value);
+        }
+    }
+    let background = if background_pixels.is_empty() {
+        0.0
+    } else {
+        quantile(&background_pixels, 0.5)
+    };
     let corrected = intensity - f64::from(area) * background;
 
     Ok(MaskedRoiStats {
@@ -102,6 +113,27 @@ pub fn masked_roi_stats(frame: &[f64], mask: &[bool]) -> Result<MaskedRoiStats, 
         background,
         corrected,
     })
+}
+
+/// Full-frame ROI reduction matching pyama / transfection `--full-frame`.
+pub fn full_frame_roi_stats(frame: &[f64]) -> MaskedRoiStats {
+    if frame.is_empty() {
+        return MaskedRoiStats {
+            area: 0,
+            intensity: 0.0,
+            background: 0.0,
+            corrected: 0.0,
+        };
+    }
+    let area = frame.len() as u32;
+    let intensity: f64 = frame.iter().sum();
+    let background = quantile(frame, FULL_FRAME_BACKGROUND_QUANTILE);
+    MaskedRoiStats {
+        area,
+        intensity,
+        background,
+        corrected: intensity - f64::from(area) * background,
+    }
 }
 
 /// Masked metrics plus foreground/unmasked quartiles (`np.quantile` parity for morphology).
@@ -381,14 +413,24 @@ mod tests {
     use super::*;
 
     #[test]
-    fn masked_roi_stats_matches_transfection_formula() {
-        let frame = [10.0, 20.0, 30.0, 40.0];
-        let mask = [true, true, false, false];
+    fn masked_roi_stats_uses_background_median() {
+        // bg pixels [20, 100, 40] → median 40 (mean would be ~53.33)
+        let frame = [10.0, 20.0, 100.0, 40.0];
+        let mask = [true, false, false, false];
         let stats = masked_roi_stats(&frame, &mask).unwrap();
-        assert_eq!(stats.area, 2);
-        assert!((stats.intensity - 30.0).abs() < 1e-9);
-        assert!((stats.background - 35.0).abs() < 1e-9);
-        assert!((stats.corrected - (-40.0)).abs() < 1e-9);
+        assert_eq!(stats.area, 1);
+        assert!((stats.intensity - 10.0).abs() < 1e-9);
+        assert!((stats.background - 40.0).abs() < 1e-9);
+        assert!((stats.corrected - (10.0 - 40.0)).abs() < 1e-9);
+    }
+
+    #[test]
+    fn full_frame_roi_stats_uses_tenth_percentile_background() {
+        let frame = [0.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0];
+        let stats = full_frame_roi_stats(&frame);
+        assert_eq!(stats.area, 10);
+        assert!((stats.intensity - 450.0).abs() < 1e-9);
+        assert!((stats.background - quantile(&frame, 0.1)).abs() < 1e-9);
     }
 
     #[test]

@@ -25,7 +25,7 @@ pub struct SyntheticWorkspace {
 
 impl SyntheticWorkspace {
     pub fn build(parent: &Path) -> Self {
-        let root = parent.join("gene_expression_fixture");
+        let root = parent.join("transfection_fixture");
         if root.exists() {
             fs::remove_dir_all(&root).expect("clean fixture root");
         }
@@ -50,19 +50,11 @@ impl SyntheticWorkspace {
         Self { root }
     }
 
-    pub fn expected_timeseries_rows(&self) -> Vec<(u32, u32, u32, u32, f64, f64, f64)> {
+    pub fn expected_timeseries_rows(&self) -> Vec<(u32, u32, u32, f64, f64, f64)> {
         (0..TIME_COUNT)
             .map(|t| {
                 let (area, intensity, background, corrected_value) = quantized_frame_metrics(t);
-                (
-                    POSITION,
-                    ROI_ID,
-                    t,
-                    area,
-                    background,
-                    intensity,
-                    corrected_value,
-                )
+                (ROI_ID, t, area, background, intensity, corrected_value)
             })
             .collect()
     }
@@ -70,31 +62,22 @@ impl SyntheticWorkspace {
 
 fn write_assay_json(root: &Path) {
     let assay = serde_json::json!({
-        "assayId": "transfection",
-        "assayLabel": "fixture",
-        "info1": {
-            "dataPath": "",
-            "folderFilenameTemplate": "",
-            "folderSubfolderTemplate": "",
-            "name": "fixture",
-            "saveTo": ""
+        "type": "transfection",
+        "name": "fixture",
+        "workspace": { "path": root.to_string_lossy() },
+        "data": {
+            "type": "folder",
+            "path": "",
+            "template": { "subfolder": "", "filename": "" }
         },
-        "info2": {
-            "selectedFeatures": [],
-            "timelapseAmount": INTERVAL_MINUTES,
-            "timelapseUnit": "minute"
-        },
-        "info3": {
-            "samples": [{
-                "channel": SLIDE_CHANNEL.to_string(),
-                "maskChannel": MASK_CHANNEL.to_string(),
-                "name": "condA",
-                "positionFinish": POSITION.to_string(),
-                "positionStart": POSITION.to_string(),
-                "positions": POSITION.to_string(),
-                "signalChannel": SIGNAL_CHANNEL.to_string()
-            }]
-        }
+        "interval": { "value": INTERVAL_MINUTES, "unit": "minute" },
+        "samples": [{
+            "slide": SLIDE_CHANNEL.to_string(),
+            "brightfield": MASK_CHANNEL.to_string(),
+            "fluorescence": SIGNAL_CHANNEL.to_string(),
+            "name": "condA",
+            "positions": POSITION.to_string()
+        }]
     });
     fs::write(root.join("assay.json"), format!("{assay}\n")).expect("assay.json");
 }

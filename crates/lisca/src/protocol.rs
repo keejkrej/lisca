@@ -24,12 +24,12 @@ impl AppId {
     }
 }
 
-impl AssayTimelapseUnit {
+impl AssayIntervalUnit {
     pub const fn as_str(self) -> &'static str {
         match self {
-            AssayTimelapseUnit::Second => "second",
-            AssayTimelapseUnit::Minute => "minute",
-            AssayTimelapseUnit::Hour => "hour",
+            AssayIntervalUnit::Second => "second",
+            AssayIntervalUnit::Minute => "minute",
+            AssayIntervalUnit::Hour => "hour",
         }
     }
 }

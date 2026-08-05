@@ -1,17 +1,17 @@
 import type { StudioStep } from "./studio-store";
 import {
-  validInfo1,
-  validInfo2,
-  validInfo3,
+  validAssayIdentity,
+  validAssayInterval,
+  validAssaySamples,
 } from "@lisca/client/studio/assay-validation";
 
-export { validInfo1, validInfo2, validInfo3 };
+export { validAssayIdentity, validAssayInterval, validAssaySamples };
 export { isValidSamplePositionRange } from "@lisca/client/studio/assay-validation";
 
 export function instructionForStep(step: StudioStep): string {
   if (step === "chooseAssay") return "Choose an assay type.";
   if (step === "info1") {
-    return "Set the data source, workspace output folder, timelapse interval, and assay features.";
+    return "Set the data source, workspace output folder, and timelapse interval.";
   }
   if (step === "info2") {
     return "Define sample rows and position ranges used in align and annotate.";

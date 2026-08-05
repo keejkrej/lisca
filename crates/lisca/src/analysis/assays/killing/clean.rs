@@ -33,7 +33,7 @@ fn load_predictions(path: &Path) -> Result<Vec<PredictionRow>, String> {
     let label_index =
         column_index(&headers, "label").ok_or("missing label column in predictions.csv")?;
     let pos_index = column_index(&headers, "pos").unwrap_or(usize::MAX);
-    let slide_channel_index = column_index(&headers, "slide_channel").unwrap_or(usize::MAX);
+    let slide_channel_index = column_index(&headers, "slide").unwrap_or(usize::MAX);
 
     let mut parsed = Vec::with_capacity(rows.len());
     for row in rows {
@@ -204,7 +204,7 @@ pub fn run_clean(workspace: &Path, mapping: &SlideMapping) -> Result<(), String>
         .collect::<Vec<_>>();
     write_csv(
         &workspace.join("results/predictions_cleaned.csv"),
-        &["t", "crop", "label", "pos", "slide_channel"],
+        &["t", "crop", "label", "pos", "slide"],
         &cleaned_rows,
     )?;
 
@@ -221,7 +221,7 @@ pub fn run_clean(workspace: &Path, mapping: &SlideMapping) -> Result<(), String>
         .collect::<Vec<_>>();
     write_csv(
         &workspace.join("results/death_times.csv"),
-        &["crop", "death_time", "pos", "slide_channel"],
+        &["crop", "death_time", "pos", "slide"],
         &death_rows,
     )?;
 
@@ -237,7 +237,7 @@ pub fn run_clean(workspace: &Path, mapping: &SlideMapping) -> Result<(), String>
     }
     write_csv(
         &workspace.join("results/kill_curve.csv"),
-        &["t", "n_alive", "slide_channel"],
+        &["t", "n_alive", "slide"],
         &curve_rows,
     )?;
     Ok(())

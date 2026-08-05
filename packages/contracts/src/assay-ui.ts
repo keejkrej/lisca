@@ -1,16 +1,17 @@
 import type { AlignerSource } from "./schema/shared";
 import type {
   AssayAnalysisConfig,
-  AssayBasicInfoStep1,
-  AssayBasicInfoStep2,
-  AssayBasicInfoStep3,
+  AssayData,
+  AssayInterval,
+  AssayIntervalUnit,
   AssayJsonFile,
   AssaySampleRow,
-  AssayTimelapseUnit,
+  AssayWorkspace,
 } from "./assay.schema";
 
-export type { AssayAnalysisConfig };
+export type { AssayAnalysisConfig, AssayData, AssayInterval, AssayWorkspace };
 
+/** Presets for AlignerSource / folder-parse UI (maps into assay `data.template`). */
 export type FolderSourceTemplatePreset = {
   label: string;
   subfolderTemplate: string;
@@ -34,26 +35,22 @@ export const DEFAULT_FOLDER_SOURCE_TEMPLATE = FOLDER_SOURCE_TEMPLATE_PRESETS[0];
 
 export const ASSAY_TYPE = {
   TRANSFECTION: "transfection",
-  IMMUNE_KILLING: "immune-killing",
+  KILLING: "killing",
   LNP_BINDING: "lnp-binding",
-  CUSTOM_ASSAY: "custom-assay",
 } as const;
 
 /** Wizard-facing assay id union (const object keys, not the on-disk schema type). */
 export type StudioAssayType = (typeof ASSAY_TYPE)[keyof typeof ASSAY_TYPE];
 export type TransfectionAssayType = typeof ASSAY_TYPE.TRANSFECTION;
-export type ImmuneKillingAssayType = typeof ASSAY_TYPE.IMMUNE_KILLING;
+export type KillingAssayType = typeof ASSAY_TYPE.KILLING;
 
 /** Assay types selectable in the wizard today. */
-export const ENABLED_STUDIO_ASSAY_IDS = [
-  ASSAY_TYPE.TRANSFECTION,
-  ASSAY_TYPE.IMMUNE_KILLING,
-] as const;
+export const ENABLED_STUDIO_ASSAY_IDS = [ASSAY_TYPE.TRANSFECTION, ASSAY_TYPE.KILLING] as const;
 
 export type EnabledStudioAssayId = (typeof ENABLED_STUDIO_ASSAY_IDS)[number];
 
 /**
- * Default frame interval (minutes) when the user has not set info2.timelapse*.
+ * Default frame interval (minutes) when the user has not set interval.*.
  * Interval is a general field; the default value is assay-dependent.
  * Assays omitted here require an explicit interval before analysis.
  */
@@ -72,80 +69,39 @@ export function assayUsesMaxOnsetMinutes(assayId: StudioAssayType | null): boole
   return assayId === ASSAY_TYPE.TRANSFECTION;
 }
 
-export const ASSAY_FEATURE = {
-  MORPHOLOGY: "morphology",
-  PART_COUNT: "partcount",
-  PART_FLUOR: "partfluor",
-  TOTAL_FLUOR: "totalfluor",
-} as const;
-
-/** Wizard-facing feature id union (const object keys). */
-export type StudioAssayFeature = (typeof ASSAY_FEATURE)[keyof typeof ASSAY_FEATURE];
-
-export const TRANSFECTION_FEATURE_IDS = [
-  ASSAY_FEATURE.MORPHOLOGY,
-  ASSAY_FEATURE.PART_COUNT,
-  ASSAY_FEATURE.PART_FLUOR,
-  ASSAY_FEATURE.TOTAL_FLUOR,
-] as const;
-
-export type AssayFeatureList = readonly StudioAssayFeature[];
-
-export type NonEmptyAssayFeatureList = [StudioAssayFeature, ...StudioAssayFeature[]];
-
-export type Assay = {
-  assayType: StudioAssayType;
-  features: AssayFeatureList;
-};
-
-export type TransfectionAssayFeature = (typeof TRANSFECTION_FEATURE_IDS)[number];
-
-export type TransfectionFeatureList = [
-  TransfectionAssayFeature,
-  ...TransfectionAssayFeature[],
-];
-
-export type TransfectionAssay = {
-  assayType: TransfectionAssayType;
-  features: TransfectionFeatureList;
-};
+/** Whether the assay exposes skipSegment in Studio analysis options. */
+export function assayUsesSkipSegment(assayId: StudioAssayType | null): boolean {
+  return assayId === ASSAY_TYPE.TRANSFECTION;
+}
 
 export type StudioAssayId = StudioAssayType;
 
 export type StudioDataSourceKind = AlignerSource["kind"] | null;
 
-export type StudioTimelapseUnit = AssayTimelapseUnit;
+export type StudioIntervalUnit = AssayIntervalUnit;
 
-export type StudioBasicInfoFeatureId = StudioAssayFeature;
-
-/** On-disk step 1 fields; identical to `AssayBasicInfoStep1`. */
-export type StudioBasicInfoStep1 = AssayBasicInfoStep1;
-
-/** On-disk step 2 fields; identical to `AssayBasicInfoStep2`. */
-export type StudioBasicInfoStep2 = AssayBasicInfoStep2;
-
-export type StudioBasicInfoSampleRow = {
+export type StudioAssaySampleRow = {
   /** Stable UI row identity; not persisted to assay.json. */
   id: string;
-  channel: string;
+  slide: string;
   name: string;
   positionStart: string;
   positionFinish: string;
-  maskChannel: string;
-  signalChannel: string;
+  brightfield: string;
+  fluorescence: string;
 };
 
 /** Sample row fields loaded from assay.json before a UI row id is assigned. */
-export type StudioBasicInfoSampleRowFields = Omit<StudioBasicInfoSampleRow, "id">;
+export type StudioAssaySampleRowFields = Omit<StudioAssaySampleRow, "id">;
 
-/** Wizard step 3: flat sample list (UI rows carry a client-only `id`). */
-export type StudioBasicInfoStep3 = {
-  samples: StudioBasicInfoSampleRow[];
+/** Wizard sample list (UI rows carry a client-only `id`). */
+export type StudioAssaySamples = {
+  samples: StudioAssaySampleRow[];
 };
 
-/** Sample row as written to assay.json (includes `positions` for the analysis pipeline). */
+/** Sample row as written to assay.json. */
 export type StudioAssaySampleRowOnDisk = AssaySampleRow;
 
-export type StudioBasicInfoStep3OnDisk = AssayBasicInfoStep3;
-
 export type StudioAssayJson = AssayJsonFile;
+
+export type StudioAssayInterval = AssayInterval;

@@ -1,6 +1,6 @@
 # mupattern ResNet model (legacy)
 
-Immune killing analysis now uses [`immune-killing-resnet18`](../immune-killing-resnet18/README.md) (`keejkrej/immune-killing-resnet18`).
+Killing analysis now uses [`killing-assay-resnet18`](../killing-assay-resnet18/README.md) (`keejkrej/killing-assay-resnet18`).
 
 This directory remains for reference. The classifier is a binary ResNet-18 (absent/present) from [mupattern](https://github.com/keejkrej/mupattern).
 

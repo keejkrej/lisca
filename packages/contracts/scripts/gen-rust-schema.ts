@@ -111,7 +111,7 @@ function normalizeUnionForTypify(schema: JsonObject, schemaDefinitions: JsonObje
 
 const normalized = rewriteRefs({ definitions }) as { definitions: JsonObject };
 
-for (const name of ["AlignerSource", "MemoryTouchRequest"]) {
+for (const name of ["AlignerSource", "MemoryTouchRequest", "AssayData"]) {
   const schema = normalized.definitions[name];
   if (schema) {
     normalized.definitions[name] = normalizeUnionForTypify(schema, normalized.definitions);

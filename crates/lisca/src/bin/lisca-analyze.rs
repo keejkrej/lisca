@@ -17,10 +17,10 @@ use std::path::{Path, PathBuf};
 use std::process;
 use std::time::Instant;
 
-use lisca::analysis::assays::gene_expression::{
+use lisca::analysis::assays::transfection::{
     default_fit_jobs, default_timeseries_jobs, interval_minutes, max_onset_minutes, run_auc,
-    run_fit, run_plot_auc, run_plot_fit, run_plot_timeseries, run_segment, run_sync, run_timeseries,
-    SegmentOptions, DEFAULT_PLOT_COLUMNS,
+    run_fit, run_plot_auc, run_plot_fit, run_plot_timeseries, run_segment, run_sync_with_mode,
+    run_timeseries_with_mode, skip_segment, SegmentOptions, DEFAULT_PLOT_COLUMNS,
 };
 use lisca::analysis::slide::{load_mapping_for_workspace, resolve_assay_path};
 use lisca::protocol::AssayJsonFile;
@@ -66,7 +66,7 @@ Usage:
 
 Commands (same stage names as `transfection`):
   segment           Otsu masks → mask/PosN/
-  timeseries        Mask-corrected intensity → timeseries/sc*_ch*.csv
+  timeseries        Intensity metrics → timeseries/Pos{{n}}/ch{{n}}.csv
   auc               Trapezoidal AUC → results/auc.csv
   fit               Two-exponential kinetic fit → results/fit.csv
   plot-timeseries   Trace / area PNGs under results/
@@ -77,10 +77,12 @@ Commands (same stage names as `transfection`):
 
 Common options:
   --assay PATH            assay.json (default: <workspace>/assay.json)
-  --interval MINUTES      frame interval (default: assay.json info2.timelapse*)
+  --interval MINUTES      frame interval (default: assay.json interval.value/unit)
   --jobs N                worker threads (segment/timeseries/fit; default: CPUs)
   --max-onset-minutes N   fit onset search cap (default: assay analysis.maxOnsetMinutes
                           or 120; 0 = onset fixed at 0)
+  (timeseries/pipeline whole-ROI mode is controlled by assay.json
+   analysis.skipSegment, not a CLI flag)
   --variation-radius N    segment local-variation radius (default: 2)
   --gaussian-sigma F      segment Gaussian sigma (default: 1.0)
   --force, -f             segment: overwrite existing masks
@@ -123,13 +125,16 @@ fn cmd_timeseries(args: &[String]) -> Result<(), String> {
     let assay = flag_path(args, "--assay");
     let mapping = load_mapping_for_workspace(&workspace, assay.as_deref())?;
     let jobs = flag_usize(args, "--jobs")?.unwrap_or_else(default_timeseries_jobs);
+    let full_frame = load_assay_json(&workspace).map(|assay| skip_segment(&assay)).unwrap_or(false);
     eprintln!(
-        "timeseries workspace={} assay={} jobs={}",
+        "timeseries workspace={} assay={} jobs={} full_frame={full_frame}",
         workspace.display(),
         resolve_assay_path(&workspace, assay.as_deref()).display(),
         jobs
     );
-    timed("timeseries", || run_timeseries(&workspace, &mapping, jobs))
+    timed("timeseries", || {
+        run_timeseries_with_mode(&workspace, &mapping, jobs, full_frame)
+    })
 }
 
 fn cmd_auc(args: &[String]) -> Result<(), String> {
@@ -209,12 +214,13 @@ fn cmd_pipeline(args: &[String]) -> Result<(), String> {
     let assay = load_assay_json(&workspace)?;
     let interval = interval_minutes(&assay)?;
     let max_onset = max_onset_minutes(&assay);
+    let full_frame = skip_segment(&assay);
     eprintln!(
-        "pipeline workspace={} assayId={:?} interval={interval} max_onset_minutes={max_onset}",
+        "pipeline workspace={} assayType={:?} interval={interval} max_onset_minutes={max_onset} full_frame={full_frame}",
         workspace.display(),
-        assay.assay_id
+        assay.type_
     );
-    timed("pipeline", || run_sync(&workspace, &assay))
+    timed("pipeline", || run_sync_with_mode(&workspace, &assay, full_frame))
 }
 
 fn timed(label: &str, work: impl FnOnce() -> Result<(), String>) -> Result<(), String> {
@@ -289,7 +295,7 @@ fn resolve_interval(workspace: &Path, args: &[String]) -> Result<f64, String> {
         return Ok(value);
     }
     let assay = load_assay_json(workspace)?;
-    // Transfection assay defaults to 10 min when info2 timelapse is missing.
+    // Transfection assay defaults to 10 min when interval.value is missing.
     interval_minutes(&assay)
 }
 

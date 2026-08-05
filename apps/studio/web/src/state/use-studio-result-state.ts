@@ -16,8 +16,8 @@ export type StudioResultState = {
 };
 
 export function useStudioResultState(): StudioResultState {
-  const saveTo = useStudioStore((state) => state.info1.saveTo);
-  const activeWorkspacePath = () => saveTo().trim() || null;
+  const workspacePath = useStudioStore((state) => state.workspacePath);
+  const activeWorkspacePath = () => workspacePath().trim() || null;
   const annotateStore = useStudioAnnotateStore();
   const {
     setAnalysisProgress,

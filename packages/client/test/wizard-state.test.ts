@@ -15,7 +15,7 @@ describe("basic info leave guard snapshot", () => {
     const initial = createInitialStudioWizardState();
     const edited = {
       ...initial,
-      info1: { ...initial.info1, name: "Experiment A" },
+      name: "Experiment A",
     };
     expect(
       isBasicInfoDirty(edited, serializeBasicInfoSnapshot(createInitialStudioWizardState())),
@@ -26,10 +26,10 @@ describe("basic info leave guard snapshot", () => {
     const initial = createInitialStudioWizardState();
     const edited = {
       ...initial,
-      info1: { ...initial.info1, name: "Experiment A" },
+      name: "Experiment A",
       basicInfoSavedSnapshot: serializeBasicInfoSnapshot({
         ...initial,
-        info1: { ...initial.info1, name: "Experiment A" },
+        name: "Experiment A",
       }),
     };
     expect(

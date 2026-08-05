@@ -30,13 +30,6 @@ const NAV = [
 const WORKFLOW_CELL_INDICES = Array.from({ length: 12 }, (_, index) => index);
 const READOUT_BAR_HEIGHTS = [38, 52, 44, 68, 58, 72, 49];
 
-const CUSTOM_ASSAY_FEATURES = [
-  { label: "Morphology", selected: true },
-  { label: "Particle count", selected: false },
-  { label: "Particle fluorescence", selected: true },
-  { label: "Total fluorescence", selected: false },
-] as const;
-
 function LandingPage() {
   const aligner = landingProducts.find((product) => product.id === "aligner");
   const annotator = landingProducts.find((product) => product.id === "annotator");
@@ -400,122 +393,18 @@ function AssayVisual(props: { kind: (typeof landingAssays)[number]["visual"] }) 
     );
   }
 
-  if (props.kind === "immune-killing") {
-    return (
-      <div aria-hidden class="relative aspect-[16/10] border-b border-border bg-muted/20 p-5">
-        <svg viewBox="0 0 320 180" class="h-full w-full" role="presentation">
-          <path
-            d="M 10 40 C 80 40, 100 150, 170 150 S 260 150, 310 150"
-            fill="none"
-            stroke="var(--accent-glow)"
-            stroke-width="2.5"
-          />
-        </svg>
-        <p class="absolute bottom-3 left-5 font-mono text-[0.65rem] uppercase tracking-wider text-muted-foreground">
-          Kill curve
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <div
-      aria-hidden
-      class="relative flex aspect-[16/10] items-center border-b border-border bg-muted/20 p-5 pb-10"
-    >
-      <div class="grid w-full grid-cols-2 gap-2 sm:grid-cols-4">
-        <For each={CUSTOM_ASSAY_FEATURES}>
-          {(feature) => (
-            <div
-              class={[
-                "flex flex-col items-center gap-1.5 rounded-lg border-2 px-1.5 py-2 text-center",
-                feature.selected
-                  ? "border-[color-mix(in_oklab,var(--accent-glow)_70%,transparent)] bg-[color-mix(in_oklab,var(--accent-glow)_10%,transparent)]"
-                  : "border-dashed border-border bg-card/40 opacity-70",
-              ].join(" ")}
-            >
-              <div
-                class={[
-                  "flex size-8 items-center justify-center rounded-md border",
-                  feature.selected
-                    ? "border-[color-mix(in_oklab,var(--accent-glow)_50%,transparent)] bg-background"
-                    : "border-border bg-muted/30",
-                ].join(" ")}
-              >
-                <svg viewBox="0 0 24 24" class="size-5" role="presentation">
-                  <Show when={feature.label === "Morphology"}>
-                    <ellipse
-                      cx="12"
-                      cy="12"
-                      fill="none"
-                      rx="7"
-                      ry="5"
-                      stroke="currentColor"
-                      stroke-width="1.5"
-                      class="text-muted-foreground"
-                    />
-                  </Show>
-                  <Show when={feature.label === "Particle count"}>
-                    <circle
-                      cx="9"
-                      cy="10"
-                      fill="currentColor"
-                      class="text-muted-foreground"
-                      r="2"
-                    />
-                    <circle
-                      cx="15"
-                      cy="14"
-                      fill="currentColor"
-                      class="text-muted-foreground"
-                      r="2"
-                    />
-                    <circle
-                      cx="12"
-                      cy="12"
-                      fill="currentColor"
-                      class="text-muted-foreground"
-                      r="1.5"
-                    />
-                  </Show>
-                  <Show when={feature.label === "Particle fluorescence"}>
-                    <circle
-                      cx="12"
-                      cy="12"
-                      fill="none"
-                      r="5"
-                      stroke="currentColor"
-                      stroke-width="1.5"
-                      class="text-muted-foreground"
-                    />
-                    <circle
-                      cx="12"
-                      cy="12"
-                      fill="currentColor"
-                      class="text-[color-mix(in_oklab,var(--accent-glow)_80%,transparent)]"
-                      r="2"
-                    />
-                  </Show>
-                  <Show when={feature.label === "Total fluorescence"}>
-                    <path
-                      d="M6 14c2-4 4-6 6-6s4 2 6 6"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.5"
-                      class="text-muted-foreground"
-                    />
-                  </Show>
-                </svg>
-              </div>
-              <span class="text-[0.65rem] font-medium leading-tight text-muted-foreground">
-                {feature.label}
-              </span>
-            </div>
-          )}
-        </For>
-      </div>
+    <div aria-hidden class="relative aspect-[16/10] border-b border-border bg-muted/20 p-5">
+      <svg viewBox="0 0 320 180" class="h-full w-full" role="presentation">
+        <path
+          d="M 10 40 C 80 40, 100 150, 170 150 S 260 150, 310 150"
+          fill="none"
+          stroke="var(--accent-glow)"
+          stroke-width="2.5"
+        />
+      </svg>
       <p class="absolute bottom-3 left-5 font-mono text-[0.65rem] uppercase tracking-wider text-muted-foreground">
-        Pick features
+        Kill curve
       </p>
     </div>
   );

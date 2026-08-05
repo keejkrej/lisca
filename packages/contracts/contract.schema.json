@@ -2366,38 +2366,31 @@
     "AssayJsonFile": {
       "type": "object",
       "required": [
-        "assayId",
-        "assayLabel",
-        "dataSourceKind",
-        "info1",
-        "info2",
-        "info3"
+        "type",
+        "name",
+        "data",
+        "workspace",
+        "interval",
+        "samples"
       ],
       "properties": {
-        "assayId": {
+        "type": {
           "$ref": "#/definitions/AssayType"
         },
-        "assayLabel": {
+        "name": {
           "type": "string"
         },
-        "dataSourceKind": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/AssayDataSourceKind"
-            },
-            {
-              "type": "null"
-            }
-          ]
+        "data": {
+          "$ref": "#/definitions/AssayData"
         },
-        "info1": {
-          "$ref": "#/definitions/AssayBasicInfoStep1"
+        "workspace": {
+          "$ref": "#/definitions/AssayWorkspace"
         },
-        "info2": {
-          "$ref": "#/definitions/AssayBasicInfoStep2"
+        "interval": {
+          "$ref": "#/definitions/AssayInterval"
         },
-        "info3": {
-          "$ref": "#/definitions/AssayBasicInfoStep3"
+        "samples": {
+          "$ref": "#/definitions/AssaySamples"
         },
         "analysis": {
           "$ref": "#/definitions/AssayAnalysisConfig"
@@ -2408,55 +2401,164 @@
       "type": "string",
       "enum": [
         "transfection",
-        "immune-killing",
-        "lnp-binding",
-        "custom-assay"
+        "killing",
+        "lnp-binding"
       ]
     },
-    "AssayDataSourceKind": {
-      "type": "string",
-      "enum": [
-        "folder",
-        "nd2",
-        "czi"
+    "AssayData": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "path",
+            "template"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "folder"
+              ]
+            },
+            "path": {
+              "type": "string"
+            },
+            "template": {
+              "$ref": "#/definitions/AssayFolderTemplate"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "path"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "nd2"
+              ]
+            },
+            "path": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "path"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "czi"
+              ]
+            },
+            "path": {
+              "type": "string"
+            }
+          }
+        }
       ]
     },
-    "AssayBasicInfoStep1": {
+    "AssayDataFolder": {
       "type": "object",
       "required": [
-        "name",
-        "dataPath",
-        "folderSubfolderTemplate",
-        "folderFilenameTemplate",
-        "saveTo"
+        "type",
+        "path",
+        "template"
       ],
       "properties": {
-        "name": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "folder"
+          ]
+        },
+        "path": {
           "type": "string"
         },
-        "dataPath": {
+        "template": {
+          "$ref": "#/definitions/AssayFolderTemplate"
+        }
+      }
+    },
+    "AssayFolderTemplate": {
+      "type": "object",
+      "required": [
+        "subfolder",
+        "filename"
+      ],
+      "properties": {
+        "subfolder": {
           "type": "string"
         },
-        "folderSubfolderTemplate": {
-          "type": "string"
-        },
-        "folderFilenameTemplate": {
-          "type": "string"
-        },
-        "saveTo": {
+        "filename": {
           "type": "string"
         }
       }
     },
-    "AssayBasicInfoStep2": {
+    "AssayDataNd2": {
       "type": "object",
       "required": [
-        "timelapseAmount",
-        "timelapseUnit",
-        "selectedFeatures"
+        "type",
+        "path"
       ],
       "properties": {
-        "timelapseAmount": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "nd2"
+          ]
+        },
+        "path": {
+          "type": "string"
+        }
+      }
+    },
+    "AssayDataCzi": {
+      "type": "object",
+      "required": [
+        "type",
+        "path"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "czi"
+          ]
+        },
+        "path": {
+          "type": "string"
+        }
+      }
+    },
+    "AssayWorkspace": {
+      "type": "object",
+      "required": [
+        "path"
+      ],
+      "properties": {
+        "path": {
+          "type": "string"
+        }
+      }
+    },
+    "AssayInterval": {
+      "type": "object",
+      "required": [
+        "value",
+        "unit"
+      ],
+      "properties": {
+        "value": {
           "anyOf": [
             {
               "type": "number",
@@ -2467,44 +2569,18 @@
             }
           ]
         },
-        "timelapseUnit": {
-          "$ref": "#/definitions/AssayTimelapseUnit"
-        },
-        "selectedFeatures": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/AssayFeature"
-          }
+        "unit": {
+          "$ref": "#/definitions/AssayIntervalUnit"
         }
       }
     },
-    "AssayTimelapseUnit": {
+    "AssayIntervalUnit": {
       "type": "string",
       "enum": [
         "second",
         "minute",
         "hour"
       ]
-    },
-    "AssayFeature": {
-      "type": "string",
-      "enum": [
-        "morphology",
-        "partcount",
-        "partfluor",
-        "totalfluor"
-      ]
-    },
-    "AssayBasicInfoStep3": {
-      "type": "object",
-      "required": [
-        "samples"
-      ],
-      "properties": {
-        "samples": {
-          "$ref": "#/definitions/AssaySamples"
-        }
-      }
     },
     "AssaySamples": {
       "type": "array",
@@ -2515,34 +2591,26 @@
     "AssaySampleRow": {
       "type": "object",
       "required": [
-        "channel",
+        "slide",
         "name",
-        "positionStart",
-        "positionFinish",
-        "maskChannel",
-        "signalChannel",
-        "positions"
+        "positions",
+        "brightfield",
+        "fluorescence"
       ],
       "properties": {
-        "channel": {
+        "slide": {
           "type": "string"
         },
         "name": {
           "type": "string"
         },
-        "positionStart": {
-          "type": "string"
-        },
-        "positionFinish": {
-          "type": "string"
-        },
-        "maskChannel": {
-          "type": "string"
-        },
-        "signalChannel": {
-          "type": "string"
-        },
         "positions": {
+          "type": "string"
+        },
+        "brightfield": {
+          "type": "string"
+        },
+        "fluorescence": {
           "type": "string"
         }
       }
@@ -2554,6 +2622,9 @@
         "maxOnsetMinutes": {
           "type": "number",
           "format": "double"
+        },
+        "skipSegment": {
+          "type": "boolean"
         }
       }
     },

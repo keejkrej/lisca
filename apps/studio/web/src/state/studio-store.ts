@@ -4,6 +4,7 @@ import {
   STUDIO_SESSION_KEY,
   basicInfoAssayTitle,
   buildStudioAssayJson,
+  buildStudioAssayJsonFromWizard,
   createInitialStudioWizardState,
   isBasicInfoDirty,
   parseStudioAssayJson,
@@ -17,25 +18,23 @@ import { createMemo, type Accessor } from "solid-js";
 
 export type {
   AssayId,
-  BasicInfo2FeatureId,
   BasicInfoSampleRow,
-  BasicInfoStep1,
-  BasicInfoStep2,
-  BasicInfoStep3,
   StudioAssayJson,
   StudioDataSourceKind,
   TimelapseUnit,
+  IntervalUnit,
 } from "@lisca/client/atoms/studio-ui";
 export type { StudioStep, InfoStep } from "@lisca/client/atoms/studio-ui";
 export {
   ASSAY_CHOICE_LABEL,
+  assayDisplayLabel,
   inferDataSourceKind,
-  normalizeSelectedFeaturesForAssay,
 } from "@lisca/client/atoms/studio-ui";
 export {
   STUDIO_SESSION_KEY,
   basicInfoAssayTitle,
   buildStudioAssayJson,
+  buildStudioAssayJsonFromWizard,
   parseStudioAssayJson,
   serializeBasicInfoSnapshot,
   isBasicInfoDirty,
@@ -50,16 +49,14 @@ type StudioState = StudioWizardData & {
   setAssayId: (id: StudioWizardData["assayId"]) => void;
   setInfoStep: (step: import("@lisca/client/atoms/studio-ui").InfoStep) => void;
   setDataSourceKind: (kind: StudioDataSourceKind) => void;
-  setInfo1: (patch: Partial<StudioWizardData["info1"]>) => void;
-  setInfo2: (patch: Partial<StudioWizardData["info2"]>) => void;
+  patchWizard: (patch: Partial<StudioWizardData>) => void;
   setAnalysis: (patch: Partial<NonNullable<StudioWizardData["analysis"]>>) => void;
-  setInfo3: (patch: Partial<StudioWizardData["info3"]>) => void;
-  updateInfo3Sample: (
+  updateSample: (
     index: number,
-    patch: Partial<StudioWizardData["info3"]["samples"][number]>,
+    patch: Partial<StudioWizardData["samples"][number]>,
   ) => void;
-  addInfo3Sample: () => void;
-  removeInfo3Sample: (index: number) => void;
+  addSample: () => void;
+  removeSample: (index: number) => void;
   setBasicInfoSavedSnapshot: (snapshot: string | null) => void;
 };
 function useStudioStoreApi(): Accessor<StudioState> {
@@ -72,40 +69,38 @@ function useStudioStoreApi(): Accessor<StudioState> {
     studioWizardActions.loadAssayJson(setState, assayJson);
   const setAssayId = (assayId: StudioWizardData["assayId"]) =>
     studioWizardActions.setAssayId(setState, assayId);
-  const setInfo1 = (patch: Partial<StudioWizardData["info1"]>) =>
-    studioWizardActions.setInfo1(setState, patch);
-  const setInfo2 = (patch: Partial<StudioWizardData["info2"]>) =>
-    studioWizardActions.setInfo2(setState, patch);
+  const patchWizard = (patch: Partial<StudioWizardData>) =>
+    studioWizardActions.patchWizard(setState, patch);
   const setAnalysis = (patch: Partial<NonNullable<StudioWizardData["analysis"]>>) =>
     studioWizardActions.setAnalysis(setState, patch);
-  const setInfo3 = (patch: Partial<StudioWizardData["info3"]>) =>
-    studioWizardActions.setInfo3(setState, patch);
-  const updateInfo3Sample = (
+  const updateSample = (
     index: number,
-    patch: Partial<StudioWizardData["info3"]["samples"][number]>,
-  ) => studioWizardActions.updateInfo3Sample(setState, index, patch);
-  const addInfo3Sample = () => studioWizardActions.addInfo3Sample(setState);
-  const removeInfo3Sample = (index: number) =>
-    studioWizardActions.removeInfo3Sample(setState, index);
+    patch: Partial<StudioWizardData["samples"][number]>,
+  ) => studioWizardActions.updateSample(setState, index, patch);
+  const addSample = () => studioWizardActions.addSample(setState);
+  const removeSample = (index: number) => studioWizardActions.removeSample(setState, index);
   const setBasicInfoSavedSnapshot = (basicInfoSavedSnapshot: string | null) =>
     studioWizardActions.setBasicInfoSavedSnapshot(setState, basicInfoSavedSnapshot);
+
   return createMemo(() => ({
     ...state(),
-    setInfoStep,
-    setDataSourceKind,
     loadAssayJson,
     setAssayId,
-    setInfo1,
-    setInfo2,
+    setInfoStep,
+    setDataSourceKind,
+    patchWizard,
     setAnalysis,
-    setInfo3,
-    updateInfo3Sample,
-    addInfo3Sample,
-    removeInfo3Sample,
+    updateSample,
+    addSample,
+    removeSample,
     setBasicInfoSavedSnapshot,
   }));
 }
-export function useStudioStore<T>(selector: (state: StudioState) => T): Accessor<T> {
-  const api = useStudioStoreApi();
-  return createMemo(() => selector(api()));
+
+export function useStudioStore(): Accessor<StudioState>;
+export function useStudioStore<T>(selector: (state: StudioState) => T): Accessor<T>;
+export function useStudioStore<T>(selector?: (state: StudioState) => T) {
+  const store = useStudioStoreApi();
+  if (!selector) return store;
+  return createMemo(() => selector(store()));
 }

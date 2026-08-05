@@ -13,8 +13,7 @@ use crate::analysis::slide::SlideMapping;
 pub fn run_plot_auc(workspace: &Path, mapping: &SlideMapping) -> Result<(), String> {
     let auc_csv = workspace.join("results").join("auc.csv");
     let (headers, rows) = read_csv(&auc_csv)?;
-    let slide_channel_index =
-        column_index(&headers, "slide_channel").ok_or("missing slide_channel")?;
+    let slide_channel_index = column_index(&headers, "slide").ok_or("missing slide")?;
     let auc_index = column_index(&headers, "auc").ok_or("missing auc")?;
 
     let labels = slide_channel_labels(mapping);

@@ -10,12 +10,7 @@ import {
   studioWizardAtom,
 } from "../state/studio-store";
 
-const ASSAY_ORDER: AssayId[] = [
-  ASSAY_TYPE.TRANSFECTION,
-  ASSAY_TYPE.IMMUNE_KILLING,
-  ASSAY_TYPE.LNP_BINDING,
-  ASSAY_TYPE.CUSTOM_ASSAY,
-];
+const ASSAY_ORDER: AssayId[] = [ASSAY_TYPE.TRANSFECTION, ASSAY_TYPE.KILLING, ASSAY_TYPE.LNP_BINDING];
 const ENABLED_ASSAY_IDS = new Set<AssayId>(ENABLED_STUDIO_ASSAY_IDS);
 
 export function ChooseAssay() {

@@ -1,5 +1,4 @@
 import type { AnalysisProgress, StudioAnalysisCsvFile } from "@lisca/contracts";
-import { ASSAY_TYPE } from "@lisca/contracts/assay";
 import { useAnnotateStateCore } from "@lisca/client/use-annotate-state-core";
 import { useCanvasResourceTransaction, useCanvasTransientStatus } from "@lisca/ui/features";
 import { useAtom } from "@effect-atom/atom-solid";
@@ -18,7 +17,11 @@ import {
   saveRoiFrameAnnotationAtom,
 } from "../atoms/studio-query-atoms";
 import { studioAnnotateUiActions, studioAnnotateUiAtom } from "./studio-annotate-store";
-import { buildStudioAssayJson, serializeBasicInfoSnapshot, useStudioStore } from "./studio-store";
+import {
+  buildStudioAssayJsonFromWizard,
+  serializeBasicInfoSnapshot,
+  useStudioStore,
+} from "./studio-store";
 import { setStudioAnnotateDirty } from "./studio-annotate-guard";
 
 function useStudioWorkspaceSync(activeWorkspacePath: () => string | null) {
@@ -53,15 +56,9 @@ export type StudioAnnotateState = ReturnType<ReturnType<typeof useAnnotateStateC
 };
 
 export function useStudioAnnotateState(): StudioAnnotateState {
-  const saveTo = useStudioStore((state) => state.info1.saveTo);
-  const assayId = useStudioStore((state) => state.assayId);
-  const dataSourceKind = useStudioStore((state) => state.dataSourceKind);
-  const info1 = useStudioStore((state) => state.info1);
-  const info2 = useStudioStore((state) => state.info2);
-  const info3 = useStudioStore((state) => state.info3);
-  const analysis = useStudioStore((state) => state.analysis);
+  const wizard = useStudioStore();
   const setBasicInfoSavedSnapshot = useStudioStore((state) => state.setBasicInfoSavedSnapshot);
-  const activeWorkspacePath = () => saveTo().trim() || null;
+  const activeWorkspacePath = () => wizard().workspacePath.trim() || null;
   const navigate = useNavigate();
   const [ui, setUi] = useAtom(studioAnnotateUiAtom);
   const workspace = useStudioWorkspaceSync(activeWorkspacePath);
@@ -159,27 +156,11 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     };
     void (async () => {
       try {
-        const assayJson = buildStudioAssayJson({
-          assayId: assayId() ?? ASSAY_TYPE.CUSTOM_ASSAY,
-          dataSourceKind: dataSourceKind(),
-          info1: info1(),
-          info2: info2(),
-          info3: info3(),
-          analysis: analysis(),
-        });
+        const assayJson = buildStudioAssayJsonFromWizard(wizard());
         await runClientEffect(
           studioClient.saveAssayJson(workspacePath, JSON.stringify(assayJson, null, 2)),
         );
-        setBasicInfoSavedSnapshot()(
-          serializeBasicInfoSnapshot({
-            assayId: assayId(),
-            dataSourceKind: dataSourceKind(),
-            info1: info1(),
-            info2: info2(),
-            info3: info3(),
-            analysis: analysis(),
-          }),
-        );
+        setBasicInfoSavedSnapshot()(serializeBasicInfoSnapshot(wizard()));
         setStatus("Starting analysis");
         setAnalysisProgress({
           requestId,

@@ -1,4 +1,5 @@
-import type { StudioBasicInfoStep3 } from "@lisca/contracts/assay";
+import type { AssaySampleRow } from "@lisca/contracts";
+import type { StudioAssaySampleRow, StudioAssaySamples } from "@lisca/contracts/assay";
 
 export type SamplePositionRange = {
   positionStart: string;
@@ -21,8 +22,8 @@ export function formatSamplePositions(positionStart: string, positionFinish: str
   return low === high ? String(low) : `${low}:${high}`;
 }
 
-/** Parse legacy assay.json `positions` strings into start/finish (load only). */
-export function parseLegacySamplePositions(positions: string): SamplePositionRange {
+/** Parse assay.json `positions` strings into start/finish for the UI editor. */
+export function parseSamplePositions(positions: string): SamplePositionRange {
   const trimmed = positions.trim();
   if (!trimmed) {
     return { positionStart: "", positionFinish: "" };
@@ -65,54 +66,40 @@ export function parseLegacySamplePositions(positions: string): SamplePositionRan
   };
 }
 
+/** @deprecated Use parseSamplePositions */
+export const parseLegacySamplePositions = parseSamplePositions;
+
 export function sampleRowToDisk(row: {
   positionStart: string;
   positionFinish: string;
-  channel: string;
+  slide: string;
   name: string;
-  maskChannel: string;
-  signalChannel: string;
-}) {
+  brightfield: string;
+  fluorescence: string;
+}): AssaySampleRow {
   return {
-    ...row,
+    slide: row.slide,
+    name: row.name,
+    brightfield: row.brightfield,
+    fluorescence: row.fluorescence,
     positions: formatSamplePositions(row.positionStart, row.positionFinish),
   };
 }
 
-export function sampleRowFromDisk(record: {
-  positions?: string;
-  positionStart?: string;
-  positionFinish?: string;
-  channel: string;
+export function sampleRowFromDisk(record: AssaySampleRow): SamplePositionRange & {
+  slide: string;
   name: string;
-  maskChannel: string;
-  signalChannel: string;
-}): SamplePositionRange & {
-  channel: string;
-  name: string;
-  maskChannel: string;
-  signalChannel: string;
+  brightfield: string;
+  fluorescence: string;
 } {
-  const start = record.positionStart?.trim() ?? "";
-  const finish = record.positionFinish?.trim() ?? "";
-  if (start && finish) {
-    return {
-      channel: record.channel,
-      name: record.name,
-      maskChannel: record.maskChannel,
-      signalChannel: record.signalChannel,
-      positionStart: start,
-      positionFinish: finish,
-    };
-  }
-  const legacy = parseLegacySamplePositions(record.positions ?? "");
+  const range = parseSamplePositions(record.positions);
   return {
-    channel: record.channel,
+    slide: record.slide,
     name: record.name,
-    maskChannel: record.maskChannel,
-    signalChannel: record.signalChannel,
-    positionStart: legacy.positionStart,
-    positionFinish: legacy.positionFinish,
+    brightfield: record.brightfield,
+    fluorescence: record.fluorescence,
+    positionStart: range.positionStart,
+    positionFinish: range.positionFinish,
   };
 }
 
@@ -135,8 +122,8 @@ export function expandPositionRange(positionStart: string, positionFinish: strin
 }
 
 /** Union of all sample-row position ranges, sorted unique. */
-export function collectAssayPositions(info3: StudioBasicInfoStep3): number[] {
-  const rows = info3.samples ?? [];
+export function collectAssayPositions(samples: StudioAssaySamples): number[] {
+  const rows = samples.samples ?? [];
   const seen = new Set<number>();
   for (const row of rows) {
     for (const pos of expandPositionRange(row.positionStart, row.positionFinish)) {
@@ -155,3 +142,5 @@ export function filterScanPositionsForAssay(
   const allowed = new Set(assayPositions);
   return scanPositions.filter((pos) => allowed.has(pos));
 }
+
+export type { StudioAssaySampleRow };

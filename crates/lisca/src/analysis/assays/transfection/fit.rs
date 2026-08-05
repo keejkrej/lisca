@@ -8,6 +8,7 @@ use crate::analysis::csv_io::write_csv;
 
 use super::segment::default_jobs;
 use super::traces::{build_fit_tasks, FitTraceTask};
+use crate::analysis::slide::{load_mapping_for_workspace, SlideMapping};
 use crate::analysis::timeseries::discover_timeseries_csvs;
 
 const RATE_COARSE_CANDIDATE_COUNT: usize = 24;
@@ -20,6 +21,17 @@ pub fn run_fit(
     max_onset_minutes: f64,
     jobs: usize,
 ) -> Result<PathBuf, String> {
+    let mapping = load_mapping_for_workspace(workspace, None)?;
+    run_fit_with_mapping(workspace, interval, max_onset_minutes, jobs, &mapping)
+}
+
+pub fn run_fit_with_mapping(
+    workspace: &Path,
+    interval: f64,
+    max_onset_minutes: f64,
+    jobs: usize,
+    mapping: &SlideMapping,
+) -> Result<PathBuf, String> {
     if interval <= 0.0 {
         return Err(format!("interval must be > 0, got {interval}"));
     }
@@ -29,7 +41,7 @@ pub fn run_fit(
         ));
     }
     let csvs = discover_timeseries_csvs(&workspace.join("timeseries"))?;
-    let tasks = build_fit_tasks(&csvs)?;
+    let tasks = build_fit_tasks(&csvs, mapping)?;
     let jobs = jobs.max(1);
     let first_pass = run_fit_tasks(&tasks, interval, None, max_onset_minutes, jobs);
     let pooled = pooled_protein_decay_rate(&first_pass);
@@ -321,7 +333,7 @@ fn pooled_protein_decay_rate(rows: &[FitCsvRow]) -> Option<f64> {
 
 #[derive(Debug, Clone)]
 struct FitCsvRow {
-    slide_channel: Option<u32>,
+    slide_channel: u32,
     pos: i64,
     roi: i64,
     baseline_intensity: Option<f64>,
@@ -336,7 +348,7 @@ struct FitCsvRow {
 }
 
 fn successful_fit_row(
-    slide_channel: Option<u32>,
+    slide_channel: u32,
     pos: i64,
     roi: i64,
     result: KineticFitCoeffs,
@@ -359,7 +371,7 @@ fn successful_fit_row(
     }
 }
 
-fn failed_fit_row(slide_channel: Option<u32>, pos: i64, roi: i64) -> FitCsvRow {
+fn failed_fit_row(slide_channel: u32, pos: i64, roi: i64) -> FitCsvRow {
     FitCsvRow {
         slide_channel,
         pos,
@@ -378,7 +390,7 @@ fn failed_fit_row(slide_channel: Option<u32>, pos: i64, roi: i64) -> FitCsvRow {
 
 fn write_fit_csv(path: &Path, rows: &[FitCsvRow]) -> Result<(), String> {
     let headers = [
-        "slide_channel",
+        "slide",
         "pos",
         "roi",
         "baseline_intensity",
@@ -395,9 +407,7 @@ fn write_fit_csv(path: &Path, rows: &[FitCsvRow]) -> Result<(), String> {
         .iter()
         .map(|row| {
             vec![
-                row.slide_channel
-                    .map(|value| value.to_string())
-                    .unwrap_or_default(),
+                row.slide_channel.to_string(),
                 row.pos.to_string(),
                 row.roi.to_string(),
                 format_optional(row.baseline_intensity),

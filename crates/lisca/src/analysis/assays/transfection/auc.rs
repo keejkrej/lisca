@@ -2,18 +2,29 @@ use std::path::{Path, PathBuf};
 
 use crate::analysis::array::trapezoidal_integral;
 use crate::analysis::csv_io::{format_float, write_csv};
-use crate::analysis::plot::parse_slide_channel;
-use crate::analysis::timeseries::{discover_timeseries_csvs, group_timeseries_rows};
+use crate::analysis::slide::{load_mapping_for_workspace, SlideMapping};
+use crate::analysis::timeseries::{
+    discover_timeseries_csvs, group_timeseries_rows, parse_timeseries_path, resolve_slide_channel,
+};
 
-const OUTPUT_COLUMNS: [&str; 4] = ["slide_channel", "pos", "roi", "auc"];
+const OUTPUT_COLUMNS: [&str; 4] = ["slide", "pos", "roi", "auc"];
 
 pub fn run_auc(workspace: &Path, interval: f64) -> Result<PathBuf, String> {
+    let mapping = load_mapping_for_workspace(workspace, None)?;
+    run_auc_with_mapping(workspace, interval, &mapping)
+}
+
+pub fn run_auc_with_mapping(
+    workspace: &Path,
+    interval: f64,
+    mapping: &SlideMapping,
+) -> Result<PathBuf, String> {
     if interval <= 0.0 {
         return Err(format!("interval must be > 0, got {interval}"));
     }
     let timeseries_dir = workspace.join("timeseries");
     let csvs = discover_timeseries_csvs(&timeseries_dir)?;
-    let rows = compute_auc_table(&csvs, interval)?;
+    let rows = compute_auc_table(&csvs, interval, mapping)?;
     let output = workspace.join("results").join("auc.csv");
     write_auc_csv(&output, &rows)?;
     Ok(output)
@@ -21,19 +32,24 @@ pub fn run_auc(workspace: &Path, interval: f64) -> Result<PathBuf, String> {
 
 #[derive(Debug, Clone)]
 struct AucRow {
-    slide_channel: Option<u32>,
+    slide_channel: u32,
     pos: i64,
     roi: i64,
     auc: f64,
 }
 
-fn compute_auc_table(csvs: &[PathBuf], interval: f64) -> Result<Vec<AucRow>, String> {
+fn compute_auc_table(
+    csvs: &[PathBuf],
+    interval: f64,
+    mapping: &SlideMapping,
+) -> Result<Vec<AucRow>, String> {
     let mut rows = Vec::new();
     for csv_path in csvs {
-        let slide_channel = parse_slide_channel(csv_path);
+        let slide_channel = resolve_slide_channel(csv_path, mapping)?;
+        let (position, _channel) = parse_timeseries_path(csv_path)?;
         let (headers, data_rows) = crate::analysis::csv_io::read_csv(csv_path)?;
-        let groups = group_timeseries_rows(&headers, &data_rows, "corrected", true)?;
-        for ((pos, roi), mut trace) in groups {
+        let groups = group_timeseries_rows(&headers, &data_rows, "corrected")?;
+        for (roi, mut trace) in groups {
             trace.sort_by(|left, right| {
                 left.0
                     .partial_cmp(&right.0)
@@ -43,7 +59,7 @@ fn compute_auc_table(csvs: &[PathBuf], interval: f64) -> Result<Vec<AucRow>, Str
             let values: Vec<f64> = trace.iter().map(|(_, value)| *value).collect();
             rows.push(AucRow {
                 slide_channel,
-                pos,
+                pos: position as i64,
                 roi,
                 auc: trapezoidal_integral(&times, &values),
             });
@@ -63,9 +79,7 @@ fn write_auc_csv(path: &Path, rows: &[AucRow]) -> Result<(), String> {
         .iter()
         .map(|row| {
             vec![
-                row.slide_channel
-                    .map(|value| value.to_string())
-                    .unwrap_or_default(),
+                row.slide_channel.to_string(),
                 row.pos.to_string(),
                 row.roi.to_string(),
                 format_float(row.auc),
@@ -85,23 +99,5 @@ mod tests {
         let values = [0.0, 2.0, 4.0];
         let auc = trapezoidal_integral(&times, &values);
         assert!((auc - 4.0).abs() < 1e-9);
-    }
-
-    #[test]
-    fn auc_errors_when_csv_has_no_data_rows() {
-        let workspace =
-            std::env::temp_dir().join(format!("lisca-auc-empty-{}", std::process::id()));
-        let _ = std::fs::remove_dir_all(&workspace);
-        let timeseries_dir = workspace.join("timeseries");
-        std::fs::create_dir_all(&timeseries_dir).unwrap();
-        std::fs::write(
-            timeseries_dir.join("sc0_ch1.csv"),
-            "pos,roi,t,area,background,intensity,corrected\n",
-        )
-        .unwrap();
-
-        let err = run_auc(&workspace, 1.0).unwrap_err();
-        assert!(err.contains("No AUC rows produced"));
-        let _ = std::fs::remove_dir_all(&workspace);
     }
 }

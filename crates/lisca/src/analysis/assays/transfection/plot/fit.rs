@@ -7,12 +7,14 @@ use crate::analysis::array::{fitted_trace_value, KineticFitCoeffs};
 use crate::analysis::csv_io::{column_index, parse_f64, read_csv};
 use crate::analysis::plot::{
     boxplot_tick_label, boxplot_x_axis_label, expand_degenerate_ylim, figure_builder_for_panels,
-    figure_builder_single, grid_dimensions, parse_slide_channel, percentile_ylim,
-    quartile_axis_upper, save_figure, slide_channel_labels, subplot_title, trace_color_alpha,
-    trace_line_style, trace_naming_haystack, SAVE_PAD_GRID_INCHES, SAVE_PAD_SINGLE_INCHES,
+    figure_builder_single, grid_dimensions, percentile_ylim, quartile_axis_upper, save_figure,
+    slide_channel_labels, subplot_title, trace_color_alpha, trace_line_style,
+    trace_naming_haystack, SAVE_PAD_GRID_INCHES, SAVE_PAD_SINGLE_INCHES,
 };
 use crate::analysis::slide::SlideMapping;
-use crate::analysis::timeseries::{discover_timeseries_csvs, group_timeseries_rows};
+use crate::analysis::timeseries::{
+    discover_timeseries_csvs, group_timeseries_rows, parse_timeseries_path, resolve_slide_channel,
+};
 
 // Display labels: Müller et al. 2024 basic model (no maturation).
 // CSV column ids match field names (no alternate aliases).
@@ -75,15 +77,14 @@ pub fn run_plot_fit(
         &results_dir.join("traces_fit.png"),
         interval,
         columns,
-        &labels,
+        mapping,
     )?;
     Ok(())
 }
 
 fn load_fit_rows(path: &Path) -> Result<Vec<FitPlotRow>, String> {
     let (headers, rows) = read_csv(path)?;
-    let slide_channel_index =
-        column_index(&headers, "slide_channel").ok_or("missing slide_channel")?;
+    let slide_channel_index = column_index(&headers, "slide").ok_or("missing slide")?;
     let pos_index = column_index(&headers, "pos").ok_or("missing pos")?;
     let roi_index = column_index(&headers, "roi").ok_or("missing roi")?;
     let success_index = column_index(&headers, "success").ok_or("missing success")?;
@@ -130,7 +131,7 @@ fn load_fit_rows(path: &Path) -> Result<Vec<FitPlotRow>, String> {
     }
     if parsed.is_empty() {
         return Err(format!(
-            "{} has no fit rows with slide_channel values",
+            "{} has no fit rows with slide values",
             path.display()
         ));
     }
@@ -213,9 +214,9 @@ fn write_fitted_trace_plots(
     output_plot: &Path,
     interval: f64,
     columns: usize,
-    labels: &BTreeMap<u32, String>,
+    mapping: &SlideMapping,
 ) -> Result<(), String> {
-    let panels = load_fitted_trace_panels(fit_rows, timeseries_csvs, interval, labels)?;
+    let panels = load_fitted_trace_panels(fit_rows, timeseries_csvs, interval, mapping)?;
     if panels.is_empty() {
         return Err("No successful fit rows matched the inferred timeseries CSVs".to_string());
     }
@@ -262,12 +263,12 @@ fn load_fitted_trace_panels(
     fit_rows: &[FitPlotRow],
     timeseries_csvs: &[PathBuf],
     interval: f64,
-    labels: &BTreeMap<u32, String>,
+    mapping: &SlideMapping,
 ) -> Result<Vec<FittedTracePanel>, String> {
-    let fit_lookup: BTreeMap<(Option<u32>, i64, i64), &FitPlotRow> = fit_rows
+    let fit_lookup: BTreeMap<(u32, i64, i64), &FitPlotRow> = fit_rows
         .iter()
         .filter(|row| row.success)
-        .map(|row| ((Some(row.slide_channel), row.pos, row.roi), row))
+        .map(|row| ((row.slide_channel, row.pos, row.roi), row))
         .collect();
 
     let mut panels = Vec::with_capacity(timeseries_csvs.len());
@@ -275,9 +276,11 @@ fn load_fitted_trace_panels(
 
     for csv_path in timeseries_csvs {
         let (headers, data_rows) = read_csv(csv_path)?;
-        let slide_channel = parse_slide_channel(csv_path);
+        let slide_channel = resolve_slide_channel(csv_path, mapping)?;
+        let (position, _channel) = parse_timeseries_path(csv_path)?;
+        let position = position as i64;
 
-        let groups = group_timeseries_rows(&headers, &data_rows, "corrected", false)?;
+        let groups = group_timeseries_rows(&headers, &data_rows, "corrected")?;
         let corrected_values: Vec<f64> = groups
             .values()
             .flat_map(|trace| trace.iter().map(|(_, value)| *value))
@@ -288,12 +291,12 @@ fn load_fitted_trace_panels(
             .flat_map(|trace| trace.iter().map(|point| point.0))
             .fold(0.0f64, f64::max)
             * interval;
-        let (color, alpha) = trace_color_alpha(&trace_naming_haystack(csv_path, labels));
+        let (color, alpha) = trace_color_alpha(&trace_naming_haystack(csv_path, mapping));
         let mut matched_traces = 0usize;
         let mut series: Vec<(Vec<f64>, Vec<f64>)> = Vec::new();
 
-        for ((pos, roi), mut trace) in groups {
-            let Some(fit_row) = fit_lookup.get(&(slide_channel, pos, roi)) else {
+        for (roi, mut trace) in groups {
+            let Some(fit_row) = fit_lookup.get(&(slide_channel, position, roi)) else {
                 continue;
             };
             trace.sort_by(|left, right| {
@@ -313,7 +316,7 @@ fn load_fitted_trace_panels(
         }
 
         panels.push(FittedTracePanel {
-            title: subplot_title(csv_path, matched_traces, labels),
+            title: subplot_title(csv_path, matched_traces, mapping),
             color,
             alpha,
             max_t,

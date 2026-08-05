@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use crate::analysis::csv_io::{column_index, read_csv};
-use crate::analysis::plot::{slide_channel_labels, write_metric_plots};
+use crate::analysis::plot::write_metric_plots;
 use crate::analysis::slide::SlideMapping;
 use crate::analysis::timeseries::{discover_timeseries_csvs, load_trace_panel};
 
@@ -14,7 +14,6 @@ pub fn run_plot_timeseries(
     if interval <= 0.0 {
         return Err(format!("interval must be > 0, got {interval}"));
     }
-    let labels = slide_channel_labels(mapping);
     let csvs = discover_timeseries_csvs(&workspace.join("timeseries"))?;
     let corrected_panels = csvs
         .iter()
@@ -33,7 +32,7 @@ pub fn run_plot_timeseries(
         "corrected intensity",
         interval,
         columns,
-        &labels,
+        mapping,
     )?;
 
     if corrected_panels
@@ -50,7 +49,7 @@ pub fn run_plot_timeseries(
             "mask area",
             interval,
             columns,
-            &labels,
+            mapping,
         )?;
     }
     Ok(())

@@ -12,12 +12,12 @@ use std::process::Command;
 
 use csv::ReaderBuilder;
 use lisca::analysis::array::{masked_roi_stats, trapezoidal_integral};
-use lisca::analysis::assays::gene_expression::{run_auc, run_fit, run_timeseries};
+use lisca::analysis::assays::transfection::{run_auc, run_fit, run_timeseries};
 use lisca::analysis::slide::build_slide_mapping;
 use lisca::protocol::AssayJsonFile;
 use tempfile::tempdir;
 
-use support::gene_expression_fixture::{SyntheticWorkspace, INTERVAL_MINUTES};
+use support::transfection_fixture::{SyntheticWorkspace, INTERVAL_MINUTES};
 use support::transfection_reference::{
     approx_eq, fit_trace_table, integrate_trace, masked_roi_metrics, FitResult, AUC_REL_TOL,
     FIT_CLI_REL_TOL, FIT_REL_TOL,
@@ -83,27 +83,26 @@ fn timeseries_stage_matches_reference_metrics() {
     let temp = tempdir().expect("tempdir");
     let fixture = SyntheticWorkspace::build(temp.path());
     let assay = read_assay_json(&fixture.root);
-    let mapping = build_slide_mapping(&assay.info3).expect("mapping");
+    let mapping = build_slide_mapping(&assay.samples).expect("mapping");
 
     run_timeseries(&fixture.root, &mapping, 1).expect("timeseries");
 
     let csv_path = fixture
         .root
         .join("timeseries")
-        .join("sc0_ch1.csv");
+        .join("Pos1").join("ch1.csv");
     assert!(csv_path.is_file(), "expected {}", csv_path.display());
 
     let (_, rows) = read_results_csv(&csv_path);
     let expected = fixture.expected_timeseries_rows();
     assert_eq!(rows.len(), expected.len());
 
-    for (row, (pos, roi, t, area, background, intensity, corrected)) in rows.iter().zip(expected) {
-        assert_eq!(row["pos"], pos.to_string());
+    for (row, (roi, t, area, background, sum, corrected)) in rows.iter().zip(expected) {
         assert_eq!(row["roi"], roi.to_string());
         assert_eq!(row["t"], t.to_string());
         assert_eq!(row["area"], area.to_string());
         assert!(approx_eq(parse_f64(&row["background"]), background, AUC_REL_TOL));
-        assert!(approx_eq(parse_f64(&row["intensity"]), intensity, AUC_REL_TOL));
+        assert!(approx_eq(parse_f64(&row["sum"]), sum, AUC_REL_TOL));
         assert!(approx_eq(parse_f64(&row["corrected"]), corrected, AUC_REL_TOL));
     }
 }
@@ -113,7 +112,7 @@ fn auc_stage_matches_reference_trapz() {
     let temp = tempdir().expect("tempdir");
     let fixture = SyntheticWorkspace::build(temp.path());
     let assay = read_assay_json(&fixture.root);
-    let mapping = build_slide_mapping(&assay.info3).expect("mapping");
+    let mapping = build_slide_mapping(&assay.samples).expect("mapping");
     run_timeseries(&fixture.root, &mapping, 1).expect("timeseries");
 
     run_auc(&fixture.root, INTERVAL_MINUTES).expect("auc");
@@ -121,7 +120,7 @@ fn auc_stage_matches_reference_trapz() {
     let (_, rows) = read_results_csv(&csv_path);
     assert_eq!(rows.len(), 1);
 
-    let timeseries_path = fixture.root.join("timeseries").join("sc0_ch1.csv");
+    let timeseries_path = fixture.root.join("timeseries").join("Pos1").join("ch1.csv");
     let (_, ts_rows) = read_results_csv(&timeseries_path);
     let mut trace_times = Vec::new();
     let mut trace_values = Vec::new();
@@ -135,7 +134,7 @@ fn auc_stage_matches_reference_trapz() {
     assert!(approx_eq(actual_auc, expected_auc, AUC_REL_TOL));
     assert_eq!(rows[0]["pos"], "1");
     assert_eq!(rows[0]["roi"], "1");
-    assert_eq!(rows[0]["slide_channel"], "0");
+    assert_eq!(rows[0]["slide"], "0");
 }
 
 #[test]
@@ -143,7 +142,7 @@ fn fit_stage_matches_transfection_reference_fit() {
     let temp = tempdir().expect("tempdir");
     let fixture = SyntheticWorkspace::build(temp.path());
     let assay = read_assay_json(&fixture.root);
-    let mapping = build_slide_mapping(&assay.info3).expect("mapping");
+    let mapping = build_slide_mapping(&assay.samples).expect("mapping");
     run_timeseries(&fixture.root, &mapping, 1).expect("timeseries");
 
     run_fit(&fixture.root, INTERVAL_MINUTES, 0.0, 1).expect("fit");
@@ -153,7 +152,7 @@ fn fit_stage_matches_transfection_reference_fit() {
     let row = &rows[0];
     assert_eq!(row["success"], "true");
 
-    let timeseries_path = fixture.root.join("timeseries").join("sc0_ch1.csv");
+    let timeseries_path = fixture.root.join("timeseries").join("Pos1").join("ch1.csv");
     let (_, ts_rows) = read_results_csv(&timeseries_path);
     let mut trace_times = Vec::new();
     let mut trace_values = Vec::new();
@@ -194,11 +193,11 @@ fn fit_stage_matches_transfection_reference_fit() {
 /// Optional end-to-end check against the sibling transfection Python CLI.
 #[test]
 #[ignore = "requires ../lisca-transfection-assay (or ../transfection) and uv; run with `cargo test -p lisca -- --ignored`"]
-fn gene_expression_csvs_match_transfection_cli() {
+fn transfection_csvs_match_transfection_cli() {
     let temp = tempdir().expect("tempdir");
     let fixture = SyntheticWorkspace::build(temp.path());
     let assay = read_assay_json(&fixture.root);
-    let mapping = build_slide_mapping(&assay.info3).expect("mapping");
+    let mapping = build_slide_mapping(&assay.samples).expect("mapping");
     run_timeseries(&fixture.root, &mapping, 1).expect("lisca timeseries");
 
     let transfection_root = transfection_repo_root();

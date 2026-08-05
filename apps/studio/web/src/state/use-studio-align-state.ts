@@ -26,7 +26,7 @@ import { effectErrorMessage, loadFrameEffect } from "../effects/frame-loader";
 import { runClientEffect } from "@lisca/client/runtime";
 import {
   lockedStudioSelection,
-  studioMaskChannel,
+  studioBrightfieldChannel,
   toStudioSource,
 } from "@lisca/client/studio/source";
 import {
@@ -107,15 +107,23 @@ export type CropConfirmState = {
   existingPositions: number[];
 };
 export function useStudioAlignState(): StudioAlignState {
-  const info1 = useStudioStore((state) => state.info1);
-  const info3 = useStudioStore((state) => state.info3);
+  const dataPath = useStudioStore((state) => state.dataPath);
+  const folderTemplate = useStudioStore((state) => state.folderTemplate);
+  const workspacePath = useStudioStore((state) => state.workspacePath);
+  const samples = useStudioStore((state) => state.samples);
   const dataSourceKind = useStudioStore((state) => state.dataSourceKind);
   const [findingFirstUnaligned, setFindingFirstUnaligned] = createSignal(false);
   const [cropStartConfirm, setCropStartConfirm] = createSignal<CropStartConfirmState | null>(null);
-  const activeSource = createMemo(() => toStudioSource(dataSourceKind(), info1()));
-  const activeWorkspacePath = createMemo(() => info1().saveTo.trim() || null);
-  const maskChannel = createMemo(() => studioMaskChannel(info3()));
-  const assayPositions = createMemo(() => collectAssayPositions(info3()));
+  const activeSource = createMemo(() =>
+    toStudioSource({
+      kind: dataSourceKind(),
+      dataPath: dataPath(),
+      folderTemplate: folderTemplate(),
+    }),
+  );
+  const activeWorkspacePath = createMemo(() => workspacePath().trim() || null);
+  const brightfieldChannel = createMemo(() => studioBrightfieldChannel(samples()));
+  const assayPositions = createMemo(() => collectAssayPositions({ samples: samples() }));
   const alignPositionsForScan = (scan: WorkspaceScan | null) =>
     scan ? filterScanPositionsForAssay(scan.positions, assayPositions()) : [];
   const session = useAlignSessionCore({
@@ -144,7 +152,7 @@ export function useStudioAlignState(): StudioAlignState {
           ? lockedStudioSelection(
               state.scan,
               state.selection,
-              maskChannel(),
+              brightfieldChannel(),
               alignPositionsForScan(state.scan),
             )
           : state.selection,

@@ -1,22 +1,25 @@
 import type {
   AssayAnalysisConfig,
   StudioAssayId,
-  StudioBasicInfoStep1,
-  StudioBasicInfoStep2,
-  StudioBasicInfoStep3,
+  StudioAssaySampleRow,
   StudioDataSourceKind,
+  StudioIntervalUnit,
 } from "@lisca/contracts/assay";
-import { ASSAY_TYPE } from "@lisca/contracts/assay";
+import { ASSAY_TYPE, DEFAULT_FOLDER_SOURCE_TEMPLATE } from "@lisca/contracts/assay";
 
 import { sampleRowToDisk } from "./sample-positions";
 import { buildStudioAssayJson } from "./studio-assay-json";
 
 export type BasicInfoSnapshotState = {
   assayId: StudioAssayId | null;
+  name: string;
   dataSourceKind: StudioDataSourceKind;
-  info1: StudioBasicInfoStep1;
-  info2: StudioBasicInfoStep2;
-  info3: StudioBasicInfoStep3;
+  dataPath: string;
+  folderTemplate: { subfolder: string; filename: string };
+  workspacePath: string;
+  intervalValue: number | null;
+  intervalUnit: StudioIntervalUnit;
+  samples: StudioAssaySampleRow[];
   /** Assay-dependent analysis options (e.g. transfection maxOnsetMinutes). */
   analysis: AssayAnalysisConfig | null;
 };
@@ -30,10 +33,17 @@ export function serializeBasicInfoSnapshot(state: BasicInfoSnapshotState): strin
   return JSON.stringify(
     buildStudioAssayJson({
       assayId,
+      name: state.name,
       dataSourceKind: state.dataSourceKind,
-      info1: state.info1,
-      info2: state.info2,
-      info3: state.info3,
+      dataPath: state.dataPath,
+      folderTemplate: state.folderTemplate ?? {
+        subfolder: DEFAULT_FOLDER_SOURCE_TEMPLATE.subfolderTemplate,
+        filename: DEFAULT_FOLDER_SOURCE_TEMPLATE.filenameTemplate,
+      },
+      workspacePath: state.workspacePath,
+      intervalValue: state.intervalValue,
+      intervalUnit: state.intervalUnit,
+      samples: state.samples,
       analysis: state.analysis,
       sampleRowToDisk,
     }),

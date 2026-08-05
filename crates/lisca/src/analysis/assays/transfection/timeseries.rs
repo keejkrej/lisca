@@ -7,15 +7,31 @@ use crate::analysis::csv_io::{format_float, write_csv};
 use crate::analysis::roi_stack::{position_dir, read_position_index};
 use crate::analysis::slide::SlideMapping;
 
-use super::metrics::{compute_masked_roi_metrics, MetricRow};
+use super::metrics::{
+    compute_full_frame_roi_metrics, compute_masked_roi_metrics, MetricRow,
+};
 use super::segment::default_jobs;
 
-pub fn run_timeseries(workspace: &Path, mapping: &SlideMapping, jobs: usize) -> Result<(), String> {
+pub fn run_timeseries(
+    workspace: &Path,
+    mapping: &SlideMapping,
+    jobs: usize,
+) -> Result<(), String> {
+    run_timeseries_with_mode(workspace, mapping, jobs, false)
+}
+
+pub fn run_timeseries_with_mode(
+    workspace: &Path,
+    mapping: &SlideMapping,
+    jobs: usize,
+    full_frame: bool,
+) -> Result<(), String> {
     let _jobs = jobs.max(1);
     let mut skipped_positions: BTreeMap<u32, Vec<u32>> = BTreeMap::new();
     let mut csvs_written = 0usize;
 
     for (slide_channel, entry) in mapping {
+        let signal_channel = entry.fluorescence;
         let position_results = entry
             .positions
             .par_iter()
@@ -23,50 +39,35 @@ pub fn run_timeseries(workspace: &Path, mapping: &SlideMapping, jobs: usize) -> 
                 let pos_dir = match position_dir(workspace, *position) {
                     Ok(path) => path,
                     Err(_) => {
-                        return Ok::<_, String>((
-                            *slide_channel,
-                            *position,
-                            None::<Vec<MetricRow>>,
-                            true,
-                        ));
+                        return Ok::<_, String>((*slide_channel, *position, None::<Vec<MetricRow>>, true));
                     }
                 };
-                let rows = compute_masked_roi_metrics(
-                    workspace,
-                    &pos_dir,
-                    &read_position_index(&pos_dir)?,
-                    *slide_channel,
-                    entry.signal_channel,
-                    entry.mask_channel,
-                )?;
+                let index = read_position_index(&pos_dir)?;
+                let rows = if full_frame {
+                    compute_full_frame_roi_metrics(&pos_dir, &index, signal_channel)?
+                } else {
+                    compute_masked_roi_metrics(workspace, &pos_dir, &index, signal_channel)?
+                };
                 Ok((*slide_channel, *position, Some(rows), false))
             })
             .collect::<Result<Vec<_>, String>>()?;
 
-        let mut position_rows = Vec::new();
         for (channel, position, rows, skipped) in position_results {
             if skipped {
                 skipped_positions.entry(channel).or_default().push(position);
                 continue;
             }
-            if let Some(rows) = rows {
-                position_rows.push(rows);
-            }
+            let Some(mut rows) = rows else {
+                continue;
+            };
+            rows.sort_by_key(|row| (row.pos, row.roi, row.t));
+            let output = workspace
+                .join("timeseries")
+                .join(format!("Pos{position}"))
+                .join(format!("ch{signal_channel}.csv"));
+            write_metric_csv(&output, &rows)?;
+            csvs_written += 1;
         }
-
-        if position_rows.is_empty() {
-            continue;
-        }
-        let mut rows = position_rows
-            .into_iter()
-            .flat_map(|rows| rows.into_iter())
-            .collect::<Vec<MetricRow>>();
-        rows.sort_by_key(|row| (row.pos, row.roi, row.t));
-        let output = workspace
-            .join("timeseries")
-            .join(format!("sc{slide_channel}_ch{}.csv", entry.signal_channel));
-        write_metric_csv(&output, &rows)?;
-        csvs_written += 1;
     }
 
     if csvs_written == 0 {
@@ -83,12 +84,11 @@ pub fn run_timeseries(workspace: &Path, mapping: &SlideMapping, jobs: usize) -> 
 }
 
 fn write_metric_csv(path: &Path, rows: &[MetricRow]) -> Result<(), String> {
-    let headers = ["pos", "roi", "t", "area", "background", "intensity", "corrected"];
+    let headers = ["roi", "t", "area", "background", "sum", "corrected"];
     let csv_rows = rows
         .iter()
         .map(|row| {
             vec![
-                row.pos.to_string(),
                 row.roi.to_string(),
                 row.t.to_string(),
                 row.area.to_string(),
@@ -133,8 +133,8 @@ mod tests {
             0,
             SlideChannelMapping {
                 positions,
-                signal_channel: 1,
-                mask_channel: 0,
+                fluorescence: 1,
+                brightfield: 0,
                 sample_name: "test".to_string(),
             },
         );

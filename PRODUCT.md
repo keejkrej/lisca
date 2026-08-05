@@ -114,20 +114,20 @@ assay is a **cross-cutting change across `@lisca/contracts`, two languages, and 
 artifacts** — not a plug-in. The four shape facts an agent needs:
 
 1. **The id set is closed.** `ASSAY_TYPE` (`packages/contracts/src/assay-ui.ts`) defines
-   `transfection`, `immune-killing`, `lnp-binding`, `custom-assay`. The literal union in
+   `transfection`, `killing`, `lnp-binding`, `custom-assay`. The literal union in
    `assay.schema.ts` and the generated Rust enum in `crates/lisca/src/protocol/generated.rs` must agree.
 2. **Unsupported or unregistered ids fail explicitly.** `crates/lisca/src/analysis/assays.rs`
-   dispatches only `Transfection` and `ImmuneKilling`; `LnpBinding` and `CustomAssay` return a typed
+   dispatches only `Transfection` and `Killing`; `LnpBinding` and `CustomAssay` return a typed
    `UnsupportedAssay` error, while values outside the closed contract fail schema decoding. No id
    silently inherits transfection's pipeline.
 3. **The stage vocabulary is transfection's, and every assay must speak it.** `AnalysisStageSchema`
    (`packages/contracts/src/schema/studio.ts`) is a closed literal: `queued`, `preparing`, `segment`,
-   `timeseries`, `auc`, `fit`, `completed`. It is in the wire contract. Immune-killing already
+   `timeseries`, `auc`, `fit`, `completed`. It is in the wire contract. Killing already
    contorts to fit — per `docs/analysis/analysis.md`, its death-times and kill-curve table report
    under the stage named `auc`. A third assay is either transfection-shaped or it lies about its
    own stages.
 4. **`ENABLED_STUDIO_ASSAY_IDS` is the gate between schema and product.** It lists
-   `transfection` and `immune-killing`; `choose-assay.tsx` renders all four tiles and disables the
+   `transfection` and `killing`; `choose-assay.tsx` renders all four tiles and disables the
    rest. This gate controls the wizard, while the backend independently rejects unsupported ids from
    hand-edited `assay.json` files with an explicit error.
 

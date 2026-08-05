@@ -1,10 +1,8 @@
 import type {
   StudioAssayId,
-  StudioBasicInfoStep1,
-  StudioBasicInfoStep2,
-  StudioBasicInfoStep3,
+  StudioAssaySampleRow,
+  StudioIntervalUnit,
 } from "@lisca/contracts/assay";
-import { ASSAY_TYPE } from "@lisca/contracts/assay";
 
 import { isValidSamplePositionRange } from "./sample-positions";
 
@@ -15,34 +13,32 @@ function parseNonNegativeInteger(value: string): number | null {
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
 }
 
-export function validInfo1(info1: StudioBasicInfoStep1): boolean {
+export function validAssayIdentity(input: {
+  name: string;
+  dataPath: string;
+  workspacePath: string;
+}): boolean {
   return (
-    info1.name.trim().length > 0 &&
-    info1.dataPath.trim().length > 0 &&
-    info1.saveTo.trim().length > 0
+    input.name.trim().length > 0 &&
+    input.dataPath.trim().length > 0 &&
+    input.workspacePath.trim().length > 0
   );
 }
 
-export function validInfo2(info2: StudioBasicInfoStep2, assayId: StudioAssayId | null): boolean {
-  return (
-    info2.timelapseAmount != null &&
-    info2.timelapseAmount > 0 &&
-    (assayId !== ASSAY_TYPE.TRANSFECTION ||
-      (Array.isArray(info2.selectedFeatures) && info2.selectedFeatures.length > 0))
-  );
+export function validAssayInterval(intervalValue: number | null, _unit: StudioIntervalUnit): boolean {
+  return intervalValue != null && intervalValue > 0;
 }
 
-export function validInfo3(info3: StudioBasicInfoStep3): boolean {
-  const samples = info3.samples;
+export function validAssaySamples(samples: StudioAssaySampleRow[]): boolean {
   return (
     samples.length > 0 &&
     samples.every(
       (row) =>
-        parseNonNegativeInteger(row.channel) != null &&
+        parseNonNegativeInteger(row.slide) != null &&
         row.name.trim().length > 0 &&
         isValidSamplePositionRange(row.positionStart, row.positionFinish) &&
-        parseNonNegativeInteger(row.maskChannel) != null &&
-        parseNonNegativeInteger(row.signalChannel) != null,
+        parseNonNegativeInteger(row.brightfield) != null &&
+        parseNonNegativeInteger(row.fluorescence) != null,
     )
   );
 }
@@ -51,31 +47,33 @@ export type AssayValidationResult = { ok: true } | { ok: false; errors: string[]
 
 export function validateAssayForAnalysis(input: {
   assayId: StudioAssayId | null;
-  info1: StudioBasicInfoStep1;
-  info2: StudioBasicInfoStep2;
-  info3: StudioBasicInfoStep3;
+  name: string;
+  dataPath: string;
+  workspacePath: string;
+  intervalValue: number | null;
+  intervalUnit: StudioIntervalUnit;
+  samples: StudioAssaySampleRow[];
 }): AssayValidationResult {
   const errors: string[] = [];
 
   if (!input.assayId) {
     errors.push("Choose an assay type before starting analysis.");
   }
-  if (!validInfo1(input.info1)) {
-    errors.push("Complete basic info step 1 (name, source, workspace).");
+  if (!validAssayIdentity(input)) {
+    errors.push("Complete basic info (name, source, workspace).");
   }
-  if (!validInfo2(input.info2, input.assayId)) {
-    errors.push("Complete basic info step 1 (timelapse interval).");
+  if (!validAssayInterval(input.intervalValue, input.intervalUnit)) {
+    errors.push("Set a positive timelapse interval.");
   }
 
-  const samples = input.info3.samples;
-  if (samples.length === 0) {
+  if (input.samples.length === 0) {
     errors.push("Add at least one sample mapping.");
   }
 
-  samples.forEach((row, index) => {
+  input.samples.forEach((row, index) => {
     const rowLabel = `Sample row ${index + 1}`;
-    if (parseNonNegativeInteger(row.channel) == null) {
-      errors.push(`${rowLabel}: channel must be a non-negative integer.`);
+    if (parseNonNegativeInteger(row.slide) == null) {
+      errors.push(`${rowLabel}: slide must be a non-negative integer.`);
     }
     if (row.name.trim().length === 0) {
       errors.push(`${rowLabel}: sample name is required.`);
@@ -85,11 +83,11 @@ export function validateAssayForAnalysis(input: {
         `${rowLabel}: position start and finish must be non-negative integers with finish >= start.`,
       );
     }
-    if (parseNonNegativeInteger(row.maskChannel) == null) {
-      errors.push(`${rowLabel}: mask channel must be a non-negative integer.`);
+    if (parseNonNegativeInteger(row.brightfield) == null) {
+      errors.push(`${rowLabel}: brightfield channel must be a non-negative integer.`);
     }
-    if (parseNonNegativeInteger(row.signalChannel) == null) {
-      errors.push(`${rowLabel}: signal channel must be a non-negative integer.`);
+    if (parseNonNegativeInteger(row.fluorescence) == null) {
+      errors.push(`${rowLabel}: fluorescence channel must be a non-negative integer.`);
     }
   });
 
@@ -100,3 +98,15 @@ export function validateAssayForAnalysis(input: {
 }
 
 export { isValidSamplePositionRange } from "./sample-positions";
+
+/** @deprecated Use validAssayIdentity */
+export const validInfo1 = (info: {
+  name: string;
+  dataPath: string;
+  saveTo: string;
+}): boolean =>
+  validAssayIdentity({
+    name: info.name,
+    dataPath: info.dataPath,
+    workspacePath: info.saveTo,
+  });

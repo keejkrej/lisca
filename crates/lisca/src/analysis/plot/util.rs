@@ -3,6 +3,7 @@ use std::path::Path;
 
 use crate::analysis::array::percentile;
 use crate::analysis::slide::SlideMapping;
+use crate::analysis::timeseries::resolve_slide_channel;
 
 pub const DEFAULT_PLOT_COLUMNS: usize = 3;
 
@@ -11,13 +12,6 @@ pub fn slide_channel_labels(mapping: &SlideMapping) -> BTreeMap<u32, String> {
         .iter()
         .map(|(channel, entry)| (*channel, entry.sample_name.clone()))
         .collect()
-}
-
-pub fn parse_slide_channel(path: &Path) -> Option<u32> {
-    let stem = path.file_stem()?.to_str()?;
-    let rest = stem.strip_prefix("sc")?;
-    let channel = rest.split('_').next()?;
-    channel.parse().ok()
 }
 
 pub fn percentile_ylim(values: &[f64], pct: f64) -> (f64, f64) {
@@ -47,16 +41,14 @@ pub fn grid_dimensions(count: usize, columns: usize) -> (usize, usize) {
     (rows.max(1), columns)
 }
 
-pub fn subplot_title(
-    csv_path: &Path,
-    trace_count: usize,
-    labels: &BTreeMap<u32, String>,
-) -> String {
-    let sc = parse_slide_channel(csv_path);
-    let label = match sc.and_then(|channel| labels.get(&channel)) {
-        Some(name) => name.clone(),
-        None if sc.is_some() => format!("slide channel {}", sc.unwrap_or(0)),
-        None => csv_path
+pub fn subplot_title(csv_path: &Path, trace_count: usize, mapping: &SlideMapping) -> String {
+    let labels = slide_channel_labels(mapping);
+    let label = match resolve_slide_channel(csv_path, mapping) {
+        Ok(channel) => labels
+            .get(&channel)
+            .cloned()
+            .unwrap_or_else(|| format!("slide channel {channel}")),
+        Err(_) => csv_path
             .file_stem()
             .and_then(|stem| stem.to_str())
             .unwrap_or("timeseries")
@@ -65,7 +57,8 @@ pub fn subplot_title(
     format!("{label} ({trace_count} traces)")
 }
 
-pub fn trace_naming_haystack(csv_path: &Path, labels: &BTreeMap<u32, String>) -> String {
+pub fn trace_naming_haystack(csv_path: &Path, mapping: &SlideMapping) -> String {
+    let labels = slide_channel_labels(mapping);
     let mut parts = vec![
         csv_path
             .file_name()
@@ -78,7 +71,7 @@ pub fn trace_naming_haystack(csv_path: &Path, labels: &BTreeMap<u32, String>) ->
             .unwrap_or("")
             .to_string(),
     ];
-    if let Some(channel) = parse_slide_channel(csv_path) {
+    if let Ok(channel) = resolve_slide_channel(csv_path, mapping) {
         if let Some(label) = labels.get(&channel) {
             parts.push(label.clone());
         }

@@ -146,10 +146,10 @@ fn build_analysis_operation(
     assay: AssayJsonFile,
     request_id: &str,
 ) -> Result<lisca::protocol::OperationDetail, lisca_server::SchedulerError> {
-    match assay.assay_id {
-        AssayType::Transfection => build_gene_expression_operation(scheduler, workspace, assay),
-        AssayType::ImmuneKilling => {
-            build_immune_killing_operation(scheduler, workspace, assay, request_id)
+    match assay.type_ {
+        AssayType::Transfection => build_transfection_operation(scheduler, workspace, assay),
+        AssayType::Killing => {
+            build_killing_operation(scheduler, workspace, assay, request_id)
         }
         assay_id => {
             let task = analysis_task(
@@ -167,17 +167,17 @@ fn build_analysis_operation(
     }
 }
 
-fn build_gene_expression_operation(
+fn build_transfection_operation(
     scheduler: &lisca_server::TaskScheduler,
     workspace: PathBuf,
     assay: AssayJsonFile,
 ) -> Result<lisca::protocol::OperationDetail, lisca_server::SchedulerError> {
     use lisca::analysis::{
-        assays::gene_expression as gene,
+        assays::transfection as transfection,
         slide::{build_slide_mapping, SlideMapping},
     };
 
-    let mapping = match build_slide_mapping(&assay.info3) {
+    let mapping = match build_slide_mapping(&assay.samples) {
         Ok(mapping) => Arc::new(mapping),
         Err(message) => {
             let task = analysis_task(
@@ -193,9 +193,9 @@ fn build_gene_expression_operation(
             ));
         }
     };
-    let interval = lisca::analysis::assays::gene_expression::interval_minutes(&assay)
-        .unwrap_or(lisca::analysis::assays::gene_expression::DEFAULT_INTERVAL_MINUTES);
-    let max_onset = lisca::analysis::assays::gene_expression::max_onset_minutes(&assay);
+    let interval = lisca::analysis::assays::transfection::interval_minutes(&assay)
+        .unwrap_or(lisca::analysis::assays::transfection::DEFAULT_INTERVAL_MINUTES);
+    let max_onset = lisca::analysis::assays::transfection::max_onset_minutes(&assay);
     let mut tasks = Vec::new();
 
     // Prepare validates assay mapping only (no slide.json side file).
@@ -220,12 +220,12 @@ fn build_gene_expression_operation(
                 format!("analysis/transfection/segment/Pos{position}"),
                 vec![prepare_id.clone()],
                 Arc::new(move || {
-                    gene::run_segment(
+                    transfection::run_segment(
                         &task_workspace,
                         &shard,
-                        &gene::SegmentOptions {
+                        &transfection::SegmentOptions {
                             jobs: 1,
-                            ..gene::SegmentOptions::default()
+                            ..transfection::SegmentOptions::default()
                         },
                     )
                 }),
@@ -249,7 +249,7 @@ fn build_gene_expression_operation(
             segment_ids_by_channel
                 .remove(slide_channel)
                 .unwrap_or_default(),
-            Arc::new(move || gene::run_timeseries(&task_workspace, &shard, 1)),
+            Arc::new(move || transfection::run_timeseries(&task_workspace, &shard, 1)),
         );
         timeseries_ids.push(task.task_id().to_string());
         tasks.push(task);
@@ -261,11 +261,11 @@ fn build_gene_expression_operation(
         "analysis/transfection/plot-timeseries",
         timeseries_ids.clone(),
         Arc::new(move || {
-            gene::run_plot_timeseries(
+            transfection::run_plot_timeseries(
                 &plot_ts_workspace,
                 &plot_ts_mapping,
                 interval,
-                gene::DEFAULT_PLOT_COLUMNS,
+                transfection::DEFAULT_PLOT_COLUMNS,
             )
         }),
     );
@@ -276,7 +276,7 @@ fn build_gene_expression_operation(
     let auc = analysis_task(
         "analysis/transfection/auc",
         timeseries_ids,
-        Arc::new(move || gene::run_auc(&auc_workspace, interval).map(|_| ())),
+        Arc::new(move || transfection::run_auc(&auc_workspace, interval).map(|_| ())),
     );
     let auc_id = auc.task_id().to_string();
     tasks.push(auc);
@@ -286,7 +286,7 @@ fn build_gene_expression_operation(
     let plot_auc = analysis_task(
         "analysis/transfection/plot-auc",
         vec![auc_id.clone()],
-        Arc::new(move || gene::run_plot_auc(&plot_auc_workspace, &plot_auc_mapping)),
+        Arc::new(move || transfection::run_plot_auc(&plot_auc_workspace, &plot_auc_mapping)),
     );
     let plot_auc_id = plot_auc.task_id().to_string();
     tasks.push(plot_auc);
@@ -296,11 +296,11 @@ fn build_gene_expression_operation(
         "analysis/transfection/fit",
         vec![auc_id],
         Arc::new(move || {
-            gene::run_fit(
+            transfection::run_fit(
                 &fit_workspace,
                 interval,
                 max_onset,
-                gene::default_fit_jobs(),
+                transfection::default_fit_jobs(),
             )
             .map(|_| ())
         }),
@@ -314,11 +314,11 @@ fn build_gene_expression_operation(
         "analysis/transfection/plot-fit",
         vec![fit_id],
         Arc::new(move || {
-            gene::run_plot_fit(
+            transfection::run_plot_fit(
                 &plot_fit_workspace,
                 &plot_fit_mapping,
                 interval,
-                gene::DEFAULT_PLOT_COLUMNS,
+                transfection::DEFAULT_PLOT_COLUMNS,
             )
         }),
     );
@@ -340,38 +340,35 @@ fn build_gene_expression_operation(
     ))
 }
 
-fn build_immune_killing_operation(
+fn build_killing_operation(
     scheduler: &lisca_server::TaskScheduler,
     workspace: PathBuf,
     assay: AssayJsonFile,
     request_id: &str,
 ) -> Result<lisca::protocol::OperationDetail, lisca_server::SchedulerError> {
     use lisca::analysis::{
-        assays::immune_killing as killing,
+        assays::killing as killing,
         slide::{build_slide_mapping, parse_interval_minutes, SlideMapping},
     };
 
-    let mapping = match build_slide_mapping(&assay.info3) {
+    let mapping = match build_slide_mapping(&assay.samples) {
         Ok(mapping) => Arc::new(mapping),
         Err(message) => {
             let task = analysis_task(
-                "analysis/immune-killing/prepare",
+                "analysis/killing/prepare",
                 Vec::new(),
                 Arc::new(move || Err(message.clone())),
             );
             return scheduler.submit(OperationSpec::new(
-                "analysis/immune-killing",
+                "analysis/killing",
                 workspace.to_string_lossy(),
                 true,
                 vec![task],
             ));
         }
     };
-    let interval = parse_interval_minutes(
-        assay.info2.timelapse_amount,
-        Some(assay.info2.timelapse_unit.as_str()),
-    )
-    .unwrap_or(1.0);
+    let interval = parse_interval_minutes(assay.interval.value, Some(assay.interval.unit.as_str()))
+        .unwrap_or(1.0);
     let safe_request_id = request_id
         .chars()
         .map(|character| {
@@ -384,11 +381,11 @@ fn build_immune_killing_operation(
         .collect::<String>();
     let staging_root = workspace
         .join(".analysis-staging")
-        .join(format!("immune-killing-{safe_request_id}"));
+        .join(format!("killing-{safe_request_id}"));
     let mut tasks = Vec::new();
 
     let prepare = analysis_task(
-        "analysis/immune-killing/prepare",
+        "analysis/killing/prepare",
         Vec::new(),
         Arc::new(move || Ok(())),
     );
@@ -409,7 +406,7 @@ fn build_immune_killing_operation(
             let task_workspace = workspace.clone();
             let task_shard = shard_path;
             let task = analysis_task(
-                format!("analysis/immune-killing/predict/Pos{position}"),
+                format!("analysis/killing/predict/Pos{position}"),
                 vec![prepare_id.clone()],
                 Arc::new(move || {
                     let model = killing::resolve_model_path(&task_workspace)?;
@@ -424,7 +421,7 @@ fn build_immune_killing_operation(
     let merge_workspace = workspace.clone();
     let merge_shards = shard_paths.clone();
     let merge = analysis_task(
-        "analysis/immune-killing/merge-predictions",
+        "analysis/killing/merge-predictions",
         predict_ids,
         Arc::new(move || killing::merge_prediction_shards(&merge_workspace, &merge_shards)),
     );
@@ -434,7 +431,7 @@ fn build_immune_killing_operation(
     let plot_ts_workspace = workspace.clone();
     let plot_ts_mapping = mapping.clone();
     let plot_ts = analysis_task(
-        "analysis/immune-killing/plot-timeseries",
+        "analysis/killing/plot-timeseries",
         vec![merge_id.clone()],
         Arc::new(move || {
             killing::run_plot_timeseries_stage(&plot_ts_workspace, &plot_ts_mapping, interval)
@@ -446,7 +443,7 @@ fn build_immune_killing_operation(
     let clean_workspace = workspace.clone();
     let clean_mapping = mapping.clone();
     let clean = analysis_task(
-        "analysis/immune-killing/clean",
+        "analysis/killing/clean",
         vec![merge_id],
         Arc::new(move || killing::run_clean_stage(&clean_workspace, &clean_mapping)),
     );
@@ -456,7 +453,7 @@ fn build_immune_killing_operation(
     let kill_workspace = workspace.clone();
     let kill_mapping = mapping.clone();
     let plot_kill = analysis_task(
-        "analysis/immune-killing/plot-kill",
+        "analysis/killing/plot-kill",
         vec![clean_id.clone()],
         Arc::new(move || killing::run_plot_kill_stage(&kill_workspace, &kill_mapping, interval)),
     );
@@ -466,7 +463,7 @@ fn build_immune_killing_operation(
     let death_workspace = workspace.clone();
     let death_mapping = mapping;
     let plot_death = analysis_task(
-        "analysis/immune-killing/plot-death-times",
+        "analysis/killing/plot-death-times",
         vec![clean_id],
         Arc::new(move || {
             killing::run_plot_death_times_stage(&death_workspace, &death_mapping, interval)
@@ -478,7 +475,7 @@ fn build_immune_killing_operation(
     let finalize_workspace = workspace.clone();
     let finalize_staging = staging_root;
     tasks.push(analysis_task(
-        "analysis/immune-killing/finalize",
+        "analysis/killing/finalize",
         vec![plot_ts_id, plot_kill_id, plot_death_id],
         Arc::new(move || {
             analysis::workspace_analysis_manifest(&finalize_workspace)?;
@@ -490,7 +487,7 @@ fn build_immune_killing_operation(
     ));
 
     scheduler.submit(OperationSpec::new(
-        "analysis/immune-killing",
+        "analysis/killing",
         workspace.to_string_lossy(),
         true,
         tasks,
@@ -660,22 +657,12 @@ mod tests {
 
         let assay = format!(
             r#"{{
-                "assayId": "{assay_id}",
-                "assayLabel": "Unsupported assay",
-                "dataSourceKind": null,
-                "info1": {{
-                    "dataPath": "",
-                    "folderFilenameTemplate": "",
-                    "folderSubfolderTemplate": "",
-                    "name": "Unsupported assay",
-                    "saveTo": ""
-                }},
-                "info2": {{
-                    "selectedFeatures": [],
-                    "timelapseAmount": 1.0,
-                    "timelapseUnit": "minute"
-                }},
-                "info3": {{ "samples": [] }}
+                "type": "{assay_id}",
+                "name": "Unsupported assay",
+                "workspace": {{ "path": "" }},
+                "data": {{ "type": "folder", "path": "", "template": {{ "subfolder": "", "filename": "" }} }},
+                "interval": {{ "value": 1.0, "unit": "minute" }},
+                "samples": []
             }}"#
         );
         fs::write(workspace.join("assay.json"), assay).expect("assay fixture should be written");
@@ -699,7 +686,7 @@ mod tests {
 
     #[tokio::test]
     async fn unsupported_assays_surface_their_ids_in_analysis_progress() {
-        for assay_id in [AssayType::LnpBinding, AssayType::CustomAssay] {
+        for assay_id in [AssayType::LnpBinding] {
             let state = TestState::new();
             let workspace = test_workspace(assay_id);
             let request_id = format!("unsupported-{assay_id}");
@@ -725,32 +712,18 @@ mod tests {
         let workspace = test_workspace(assay_id);
         let assay = format!(
             r#"{{
-                "assayId": "{assay_id}",
-                "assayLabel": "Graph fixture",
-                "dataSourceKind": null,
-                "info1": {{
-                    "dataPath": "",
-                    "folderFilenameTemplate": "",
-                    "folderSubfolderTemplate": "",
-                    "name": "Graph fixture",
-                    "saveTo": ""
-                }},
-                "info2": {{
-                    "selectedFeatures": [],
-                    "timelapseAmount": 1.0,
-                    "timelapseUnit": "minute"
-                }},
-                "info3": {{
-                    "samples": [{{
-                        "channel": "0",
-                        "name": "sample",
-                        "positionStart": "0",
-                        "positionFinish": "1",
-                        "maskChannel": "0",
-                        "signalChannel": "1",
-                        "positions": "0,1"
-                    }}]
-                }}
+                "type": "{assay_id}",
+                "name": "Graph fixture",
+                "workspace": {{ "path": "" }},
+                "data": {{ "type": "folder", "path": "", "template": {{ "subfolder": "", "filename": "" }} }},
+                "interval": {{ "value": 1.0, "unit": "minute" }},
+                "samples": [{{
+                    "slide": "0",
+                    "name": "sample",
+                    "brightfield": "0",
+                    "fluorescence": "1",
+                    "positions": "0,1"
+                }}]
             }}"#
         );
         fs::write(workspace.join("assay.json"), assay).unwrap();
@@ -759,7 +732,7 @@ mod tests {
 
     #[tokio::test]
     async fn assay_operations_expose_real_fan_out_and_fan_in_graphs() {
-        for assay_id in [AssayType::Transfection, AssayType::ImmuneKilling] {
+        for assay_id in [AssayType::Transfection, AssayType::Killing] {
             let state = TestState::new();
             let workspace = graph_workspace(assay_id);
             let assay = load_assay_json(&workspace).unwrap();
@@ -768,7 +741,7 @@ mod tests {
                     .unwrap();
             let prefix = match assay_id {
                 AssayType::Transfection => "analysis/transfection",
-                AssayType::ImmuneKilling => "analysis/immune-killing",
+                AssayType::Killing => "analysis/killing",
                 _ => unreachable!(),
             };
             let position_tasks = detail

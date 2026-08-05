@@ -1,13 +1,13 @@
 import { describe, expect, test } from "vitest";
 
-import type { StudioBasicInfoStep3 } from "@lisca/contracts/assay";
+import type { StudioAssaySamples } from "@lisca/contracts/assay";
 import {
   collectAssayPositions,
   expandPositionRange,
   filterScanPositionsForAssay,
   formatSamplePositions,
   isValidSamplePositionRange,
-  parseLegacySamplePositions,
+  parseSamplePositions,
   sampleRowFromDisk,
   sampleRowToDisk,
 } from "../src/studio/sample-positions";
@@ -19,16 +19,16 @@ describe("sample positions", () => {
     expect(formatSamplePositions("12", "1")).toBe("1:12");
   });
 
-  test("parses legacy positions strings into start and finish", () => {
-    expect(parseLegacySamplePositions("1:12")).toEqual({
+  test("parses positions strings into start and finish", () => {
+    expect(parseSamplePositions("1:12")).toEqual({
       positionStart: "1",
       positionFinish: "12",
     });
-    expect(parseLegacySamplePositions("5")).toEqual({
+    expect(parseSamplePositions("5")).toEqual({
       positionStart: "5",
       positionFinish: "5",
     });
-    expect(parseLegacySamplePositions("1,3,5")).toEqual({
+    expect(parseSamplePositions("1,3,5")).toEqual({
       positionStart: "1",
       positionFinish: "5",
     });
@@ -44,40 +44,38 @@ describe("sample positions", () => {
   test("adds positions only when serializing to disk", () => {
     expect(
       sampleRowToDisk({
-        channel: "0",
+        slide: "0",
         name: "sample",
         positionStart: "2",
         positionFinish: "4",
-        maskChannel: "0",
-        signalChannel: "1",
+        brightfield: "0",
+        fluorescence: "1",
       }),
     ).toEqual({
-      channel: "0",
+      slide: "0",
       name: "sample",
-      positionStart: "2",
-      positionFinish: "4",
-      maskChannel: "0",
-      signalChannel: "1",
+      brightfield: "0",
+      fluorescence: "1",
       positions: "2:4",
     });
   });
 
-  test("loads UI rows without keeping legacy positions in state", () => {
+  test("loads UI rows from disk positions", () => {
     expect(
       sampleRowFromDisk({
-        channel: "0",
+        slide: "0",
         name: "sample",
         positions: "9:20",
-        maskChannel: "0",
-        signalChannel: "1",
+        brightfield: "0",
+        fluorescence: "1",
       }),
     ).toEqual({
-      channel: "0",
+      slide: "0",
       name: "sample",
       positionStart: "9",
       positionFinish: "20",
-      maskChannel: "0",
-      signalChannel: "1",
+      brightfield: "0",
+      fluorescence: "1",
     });
   });
 
@@ -90,29 +88,29 @@ describe("sample positions", () => {
   });
 
   test("collects union of assay sample positions", () => {
-    const info3: StudioBasicInfoStep3 = {
+    const samples: StudioAssaySamples = {
       samples: [
         {
           id: "sample:0",
-          channel: "0",
+          slide: "0",
           name: "a",
           positionStart: "0",
           positionFinish: "3",
-          maskChannel: "0",
-          signalChannel: "1",
+          brightfield: "0",
+          fluorescence: "1",
         },
         {
           id: "sample:1",
-          channel: "1",
+          slide: "1",
           name: "b",
           positionStart: "2",
           positionFinish: "5",
-          maskChannel: "0",
-          signalChannel: "1",
+          brightfield: "0",
+          fluorescence: "1",
         },
       ],
     };
-    expect(collectAssayPositions(info3)).toEqual([0, 1, 2, 3, 4, 5]);
+    expect(collectAssayPositions(samples)).toEqual([0, 1, 2, 3, 4, 5]);
   });
 
   test("filters scan positions to assay positions in scan order", () => {

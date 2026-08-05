@@ -2,45 +2,55 @@ import { ASSAY_TYPE } from "@lisca/contracts/assay";
 import { describe, expect, it } from "vitest";
 
 import { createInitialStudioWizardState } from "../src/atoms/studio-ui";
-import { validateAssayForAnalysis, validInfo1, validInfo3 } from "../src/studio/assay-validation";
+import {
+  validateAssayForAnalysis,
+  validAssayIdentity,
+  validAssaySamples,
+} from "../src/studio/assay-validation";
 
 describe("assay validation", () => {
-  it("validates complete basic info step 1", () => {
+  it("validates identity fields", () => {
     const initial = createInitialStudioWizardState();
-    expect(validInfo1(initial.info1)).toBe(false);
     expect(
-      validInfo1({
-        ...initial.info1,
+      validAssayIdentity({
+        name: initial.name,
+        dataPath: initial.dataPath,
+        workspacePath: initial.workspacePath,
+      }),
+    ).toBe(false);
+    expect(
+      validAssayIdentity({
         name: "Run A",
         dataPath: "/data",
-        saveTo: "/save",
+        workspacePath: "/save",
       }),
     ).toBe(true);
   });
 
   it("validates sample rows", () => {
     const initial = createInitialStudioWizardState();
-    const info3 = {
-      samples: initial.info3.samples.map((row, index) =>
-        Object.assign({}, row, {
-          name: row.name || `sample-${index}`,
-          positionStart: "1",
-          positionFinish: "4",
-          maskChannel: row.maskChannel || "0",
-          signalChannel: row.signalChannel || "1",
-        }),
-      ),
-    };
-    expect(validInfo3(info3)).toBe(true);
+    const samples = initial.samples.map((row, index) =>
+      Object.assign({}, row, {
+        name: row.name || `sample-${index}`,
+        positionStart: "1",
+        positionFinish: "4",
+        brightfield: row.brightfield || "0",
+        fluorescence: row.fluorescence || "1",
+      }),
+    );
+    expect(validAssaySamples(samples)).toBe(true);
   });
 
   it("reports missing assay and incomplete steps", () => {
     const initial = createInitialStudioWizardState();
     const result = validateAssayForAnalysis({
       assayId: null,
-      info1: initial.info1,
-      info2: initial.info2,
-      info3: initial.info3,
+      name: initial.name,
+      dataPath: initial.dataPath,
+      workspacePath: initial.workspacePath,
+      intervalValue: initial.intervalValue,
+      intervalUnit: initial.intervalUnit,
+      samples: initial.samples,
     });
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -50,30 +60,23 @@ describe("assay validation", () => {
 
   it("accepts a complete wizard snapshot", () => {
     const initial = createInitialStudioWizardState();
-    const info3 = {
-      samples: initial.info3.samples.map((row, index) =>
-        Object.assign({}, row, {
-          name: row.name || `sample-${index}`,
-          positionStart: "1",
-          positionFinish: "4",
-          maskChannel: row.maskChannel || "0",
-          signalChannel: row.signalChannel || "1",
-        }),
-      ),
-    };
+    const samples = initial.samples.map((row, index) =>
+      Object.assign({}, row, {
+        name: row.name || `sample-${index}`,
+        positionStart: "1",
+        positionFinish: "4",
+        brightfield: row.brightfield || "0",
+        fluorescence: row.fluorescence || "1",
+      }),
+    );
     const result = validateAssayForAnalysis({
       assayId: ASSAY_TYPE.TRANSFECTION,
-      info1: {
-        ...initial.info1,
-        name: "Run A",
-        dataPath: "/data",
-        saveTo: "/save",
-      },
-      info2: {
-        ...initial.info2,
-        timelapseAmount: 5,
-      },
-      info3,
+      name: "Run A",
+      dataPath: "/data",
+      workspacePath: "/save",
+      intervalValue: 5,
+      intervalUnit: "minute",
+      samples,
     });
     expect(result.ok).toBe(true);
   });

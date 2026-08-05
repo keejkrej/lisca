@@ -7,7 +7,8 @@ import { useAtomSet, useAtomValue } from "@effect-atom/atom-solid";
 import { createMemo, createSignal } from "solid-js";
 
 import {
-  buildStudioAssayJson,
+  assayDisplayLabel,
+  buildStudioAssayJsonFromWizard,
   isBasicInfoDirty,
   serializeBasicInfoSnapshot,
   studioWizardActions,
@@ -29,7 +30,7 @@ export function StudioBasicInfoLeaveGuard() {
   const [overwriteOpen, setOverwriteOpen] = createSignal(false);
 
   const dirty = createMemo(() => isBasicInfoDirty(wizard()));
-  const saveTo = createMemo(() => wizard().info1.saveTo.trim());
+  const workspacePath = createMemo(() => wizard().workspacePath.trim());
 
   const blocker = useBlocker({
     shouldBlockFn: () => dirty(),
@@ -41,26 +42,20 @@ export function StudioBasicInfoLeaveGuard() {
 
   const saveAssay = async (overwrite: boolean) => {
     const current = wizard();
-    if (!current.assayId || !saveTo() || saving()) return false;
+    if (!current.assayId || !workspacePath() || saving()) return false;
     setSaving(true);
     setSaveError(null);
     try {
-      if (!overwrite && (await assayJsonExists(saveTo()))) {
+      if (!overwrite && (await assayJsonExists(workspacePath()))) {
         setOverwriteOpen(true);
         return false;
       }
-      const assayJson = buildStudioAssayJson({
-        assayId: current.assayId,
-        dataSourceKind: current.dataSourceKind,
-        info1: current.info1,
-        info2: current.info2,
-        info3: current.info3,
-        analysis: current.analysis,
-      });
-      await writeStudioAssayJson(saveTo(), assayJson);
-      const assayJsonPath = studioAssayJsonPathForSaveTo(saveTo());
-      touchStudioWorkSessionFromAssayPath(assayJsonPath, assayJson.assayLabel);
-      recordStudioAssayMemory(assayJsonPath, assayJson.assayLabel, saveTo());
+      const assayJson = buildStudioAssayJsonFromWizard(current);
+      const label = assayDisplayLabel(assayJson);
+      await writeStudioAssayJson(workspacePath(), assayJson);
+      const assayJsonPath = studioAssayJsonPathForSaveTo(workspacePath());
+      touchStudioWorkSessionFromAssayPath(assayJsonPath, label);
+      recordStudioAssayMemory(assayJsonPath, label, workspacePath());
       setBasicInfoSavedSnapshot(serializeBasicInfoSnapshot(current));
       return true;
     } catch (cause) {
@@ -108,7 +103,7 @@ export function StudioBasicInfoLeaveGuard() {
       />
       <AssayOverwriteConfirmModal
         open={overwriteOpen()}
-        saveTo={saveTo()}
+        saveTo={workspacePath()}
         onCancel={cancelLeave}
         onOverwrite={() => void overwriteAndLeave()}
       />

@@ -19,8 +19,8 @@ pub fn run_plot_kill(workspace: &Path, mapping: &SlideMapping, interval: f64) ->
     let (headers, rows) = read_csv(&curve_csv)?;
     let t_index = column_index(&headers, "t").ok_or("missing t in kill_curve.csv")?;
     let alive_index = column_index(&headers, "n_alive").ok_or("missing n_alive in kill_curve.csv")?;
-    let slide_channel_index = column_index(&headers, "slide_channel")
-        .ok_or("missing slide_channel in kill_curve.csv")?;
+    let slide_channel_index =
+        column_index(&headers, "slide").ok_or("missing slide in kill_curve.csv")?;
 
     let labels = slide_channel_labels(mapping);
     let mut grouped: BTreeMap<u32, Vec<(f64, f64)>> = BTreeMap::new();

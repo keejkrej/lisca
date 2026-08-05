@@ -26,8 +26,8 @@ pub fn run_plot_death_times(
     let (headers, rows) = read_csv(&death_csv)?;
     let death_time_index =
         column_index(&headers, "death_time").ok_or("missing death_time in death_times.csv")?;
-    let slide_channel_index = column_index(&headers, "slide_channel")
-        .ok_or("missing slide_channel in death_times.csv")?;
+    let slide_channel_index =
+        column_index(&headers, "slide").ok_or("missing slide in death_times.csv")?;
 
     let labels = slide_channel_labels(mapping);
     let mut grouped: BTreeMap<u32, Vec<f64>> = BTreeMap::new();

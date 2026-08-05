@@ -39,7 +39,15 @@ pub fn masked_roi_metrics(frame: &[f64], mask: &[bool]) -> (u32, f64, f64, f64) 
     let background = if background_pixels.is_empty() {
         0.0
     } else {
-        background_pixels.iter().sum::<f64>() / background_pixels.len() as f64
+        // Match transfection / lisca: median of non-mask pixels.
+        let mut sorted = background_pixels;
+        sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+        let mid = sorted.len() / 2;
+        if sorted.len() % 2 == 0 {
+            (sorted[mid - 1] + sorted[mid]) * 0.5
+        } else {
+            sorted[mid]
+        }
     };
     let corrected = intensity - f64::from(area) * background;
     (area, intensity, background, corrected)

@@ -2,7 +2,6 @@ import type { AlignerSource } from "@lisca/contracts";
 import { ASSAY_TYPE, type StudioDataSourceKind } from "@lisca/contracts/assay";
 import type { HostFilePickerMode } from "@lisca/ui/features";
 import {
-  cn,
   Field,
   FieldLabel,
   Input,
@@ -23,11 +22,10 @@ import {
   defaultMaxOnsetMinutesForAssay,
 } from "@lisca/client/studio-assay-json";
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-solid";
-import { createMemo, createSignal, For, Show } from "solid-js";
+import { createMemo, createSignal, Show } from "solid-js";
 
 import { useStudioMemoryRecent } from "../hooks/use-studio-memory-recent";
 import {
-  type BasicInfo2FeatureId,
   type TimelapseUnit,
   studioWizardActions,
   studioWizardAtom,
@@ -40,13 +38,6 @@ const TIMELAPSE_UNITS: { value: TimelapseUnit; label: string }[] = [
   { value: "second", label: "Second" },
   { value: "minute", label: "Minute" },
   { value: "hour", label: "Hour" },
-];
-
-const FEATURES: { id: BasicInfo2FeatureId; title: string }[] = [
-  { id: "morphology", title: "Morphology" },
-  { id: "partcount", title: "Particle count" },
-  { id: "partfluor", title: "Particle fluorescence" },
-  { id: "totalfluor", title: "Total fluorescence" },
 ];
 
 type StudioPathPickerState = null | { kind: "save" } | { kind: "source"; mode: HostFilePickerMode };
@@ -76,12 +67,10 @@ function kindFromMode(mode: HostFilePickerMode): StudioDataSourceKind {
 export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
   const wizard = useAtomValue(studioWizardAtom);
   const setWizard = useAtomSet(studioWizardAtom);
-  const setInfo1 = (patch: Parameters<typeof studioWizardActions.setInfo1>[1]) =>
-    studioWizardActions.setInfo1(setWizard, patch);
-  const setInfo2 = (patch: Parameters<typeof studioWizardActions.setInfo2>[1]) =>
-    studioWizardActions.setInfo2(setWizard, patch);
-  const setAnalysis = (patch: Parameters<typeof studioWizardActions.setAnalysis>[1]) =>
-    studioWizardActions.setAnalysis(setWizard, patch);
+  const patch = (p: Parameters<typeof studioWizardActions.patchWizard>[1]) =>
+    studioWizardActions.patchWizard(setWizard, p);
+  const setAnalysis = (p: Parameters<typeof studioWizardActions.setAnalysis>[1]) =>
+    studioWizardActions.setAnalysis(setWizard, p);
   const setDataSourceKind = (kind: StudioDataSourceKind) =>
     studioWizardActions.setDataSourceKind(setWizard, kind);
   const intervalPlaceholder = () =>
@@ -101,7 +90,7 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
   };
 
   const applySourcePath = (path: string, mode: HostFilePickerMode) => {
-    setInfo1({ dataPath: path });
+    patch({ dataPath: path });
     const kind = kindFromMode(mode);
     setDataSourceKind(kind);
     if (kind === "nd2" || kind === "czi") {
@@ -111,32 +100,22 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
 
   const applyRecentSource = (source: AlignerSource) => {
     if (source.kind === "folder") {
-      setInfo1({
+      patch({
         dataPath: source.path,
-        folderSubfolderTemplate: source.subfolderTemplate,
-        folderFilenameTemplate: source.filenameTemplate,
+        folderTemplate: {
+          subfolder: source.subfolderTemplate,
+          filename: source.filenameTemplate,
+        },
       });
       setDataSourceKind("folder");
     } else if (source.kind === "nd2") {
-      setInfo1({ dataPath: source.path });
+      patch({ dataPath: source.path });
       setDataSourceKind("nd2");
     } else {
-      setInfo1({ dataPath: source.path });
+      patch({ dataPath: source.path });
       setDataSourceKind("czi");
     }
     recordStudioSourceMemory(source);
-  };
-
-  const selectedFeatures = () =>
-    Array.isArray(wizard().info2.selectedFeatures) ? wizard().info2.selectedFeatures : [];
-  const isFeatureSelected = (id: BasicInfo2FeatureId) => selectedFeatures().includes(id);
-  const toggleFeature = (id: BasicInfo2FeatureId) => {
-    const current = selectedFeatures();
-    setInfo2({
-      selectedFeatures: current.includes(id)
-        ? current.filter((item) => item !== id)
-        : [...current, id],
-    });
   };
 
   return (
@@ -152,8 +131,8 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
               class="w-full"
               id="studio-name"
               placeholder="My assay"
-              value={wizard().info1.name}
-              onChange={(event) => setInfo1({ name: event.target.value })}
+              value={wizard().name}
+              onChange={(event) => patch({ name: event.target.value })}
             />
           </Field>
         </div>
@@ -162,17 +141,14 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
             <FieldLabel class="text-2xl font-normal" for="studio-source">
               Source
             </FieldLabel>
-            <div
-              class="w-full cursor-pointer"
-              onClick={() => setOpenDataModalOpen(true)}
-            >
+            <div class="w-full cursor-pointer" onClick={() => setOpenDataModalOpen(true)}>
               <Input
                 readonly
                 autocomplete="off"
                 class="w-full cursor-pointer"
                 id="studio-source"
                 placeholder="Click to choose source…"
-                value={wizard().info1.dataPath}
+                value={wizard().dataPath}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
@@ -188,17 +164,14 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
             <FieldLabel class="text-2xl font-normal" for="studio-workspace">
               Workspace
             </FieldLabel>
-            <div
-              class="w-full cursor-pointer"
-              onClick={() => setPathPicker({ kind: "save" })}
-            >
+            <div class="w-full cursor-pointer" onClick={() => setPathPicker({ kind: "save" })}>
               <Input
                 readonly
                 autocomplete="off"
                 class="w-full cursor-pointer"
                 id="studio-workspace"
                 placeholder="Click to choose folder…"
-                value={wizard().info1.saveTo}
+                value={wizard().workspacePath}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
@@ -222,18 +195,18 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
                 placeholder={intervalPlaceholder()}
                 step={1}
                 type="number"
-                value={wizard().info2.timelapseAmount ?? ""}
+                value={wizard().intervalValue ?? ""}
                 onChange={(event) => {
                   const raw = event.currentTarget.value;
                   const value = raw.trim() === "" ? null : Number(raw);
-                  setInfo2({ timelapseAmount: value == null || Number.isNaN(value) ? null : value });
+                  patch({ intervalValue: value == null || Number.isNaN(value) ? null : value });
                 }}
               />
               <Select<TimelapseUnit>
                 options={TIMELAPSE_UNITS.map((unit) => unit.value)}
                 placement="bottom-end"
-                value={wizard().info2.timelapseUnit}
-                onChange={(unit) => unit != null && setInfo2({ timelapseUnit: unit })}
+                value={wizard().intervalUnit}
+                onChange={(unit) => unit != null && patch({ intervalUnit: unit })}
                 itemComponent={(props) => (
                   <SelectItem item={props.item}>
                     {TIMELAPSE_UNITS.find((unit) => unit.value === props.item.rawValue)?.label ??
@@ -278,7 +251,8 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
                   const raw = event.currentTarget.value;
                   if (raw.trim() === "") {
                     setAnalysis({
-                      maxOnsetMinutes: defaultMaxOnsetMinutesForAssay(ASSAY_TYPE.TRANSFECTION) ?? 120,
+                      maxOnsetMinutes:
+                        defaultMaxOnsetMinutesForAssay(ASSAY_TYPE.TRANSFECTION) ?? 120,
                     });
                     return;
                   }
@@ -290,31 +264,24 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
             </Field>
           </div>
           <div class={ROW}>
-            <Field class="gap-2.5">
-              <FieldLabel class="text-2xl font-normal">Features</FieldLabel>
-              <div class="mt-0 flex flex-col gap-1">
-                <For each={FEATURES}>
-                  {({ id, title }) => (
-                    <label
-                      class={cn(
-                        "flex cursor-pointer items-center gap-2.5 rounded-md border px-3 py-2 text-base transition-colors",
-                        isFeatureSelected(id)
-                          ? "border-primary/40 bg-accent/50"
-                          : "border-border hover:bg-muted/30",
-                      )}
-                    >
-                      <input
-                        class="size-4 shrink-0"
-                        checked={isFeatureSelected(id)}
-                        type="checkbox"
-                        value={id}
-                        onChange={() => toggleFeature(id)}
-                      />
-                      <span>{title}</span>
-                    </label>
-                  )}
-                </For>
-              </div>
+            <Field class="w-full gap-2.5">
+              <FieldLabel class="text-2xl font-normal" for="studio-skip-segment">
+                Skip segmentation
+              </FieldLabel>
+              <p class="text-sm text-muted-foreground">
+                Use the full ROI for fluorescence timeseries (10th-percentile background) instead of
+                Otsu segmentation.
+              </p>
+              <label class="flex cursor-pointer items-center gap-2.5 text-base">
+                <input
+                  checked={wizard().analysis?.skipSegment ?? false}
+                  class="size-4 shrink-0"
+                  id="studio-skip-segment"
+                  type="checkbox"
+                  onChange={(event) => setAnalysis({ skipSegment: event.currentTarget.checked })}
+                />
+                <span>Skip Otsu segment (full-frame timeseries)</span>
+              </label>
             </Field>
           </div>
         </Show>
@@ -342,8 +309,8 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
           const picker = pathPicker();
           if (!picker) return;
           if (picker.kind === "save") {
-            setInfo1({ saveTo: path });
-            recordStudioWorkspaceMemory(path, wizard().info1.name.trim() || undefined);
+            patch({ workspacePath: path });
+            recordStudioWorkspaceMemory(path, wizard().name.trim() || undefined);
           } else if (picker.mode === "folder") {
             setFolderSourcePath(path);
           }
@@ -356,8 +323,8 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
         }}
         onPickRecent={(path) => {
           if (pathPicker()?.kind === "save") {
-            setInfo1({ saveTo: path });
-            recordStudioWorkspaceMemory(path, wizard().info1.name.trim() || undefined);
+            patch({ workspacePath: path });
+            recordStudioWorkspaceMemory(path, wizard().name.trim() || undefined);
             setPathPicker(null);
           }
         }}
@@ -367,10 +334,12 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
         path={folderSourcePath()}
         onClose={() => setFolderSourcePath(null)}
         onConfirm={(source) => {
-          setInfo1({
+          patch({
             dataPath: source.path,
-            folderSubfolderTemplate: source.subfolderTemplate,
-            folderFilenameTemplate: source.filenameTemplate,
+            folderTemplate: {
+              subfolder: source.subfolderTemplate,
+              filename: source.filenameTemplate,
+            },
           });
           setDataSourceKind("folder");
           recordStudioSourceMemory(source);

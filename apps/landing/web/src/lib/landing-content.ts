@@ -29,7 +29,7 @@ export const landingProducts = [
           "Track fluorescence over time on patterned cultures — segmentation, intensity traces, area-under-curve summaries, and dose–response style plots for transfection and expression readouts.",
       },
       {
-        name: "Immune killing",
+        name: "Killing",
         detail:
           "Score cell survival across timelapse positions and summarise killing kinetics from patterned effector–target co-cultures.",
       },
@@ -42,7 +42,7 @@ export type LandingAssay = {
   name: string;
   summary: string;
   outputs: string[];
-  visual: "transfection" | "immune-killing" | "custom";
+  visual: "transfection" | "killing" | "custom";
 };
 
 export const landingAssays: readonly LandingAssay[] = [
@@ -59,8 +59,8 @@ export const landingAssays: readonly LandingAssay[] = [
     visual: "transfection",
   },
   {
-    id: "immune-killing",
-    name: "Immune killing",
+    id: "killing",
+    name: "Killing",
     summary:
       "Score effector-mediated killing on patterned co-cultures — survival over time, death-time extraction, and kill-curve kinetics across wells and doses.",
     outputs: [
@@ -68,19 +68,7 @@ export const landingAssays: readonly LandingAssay[] = [
       "Kill-curve and kinetic summary plots",
       "Condition tables for effector:target ratios",
     ],
-    visual: "immune-killing",
-  },
-  {
-    id: "custom",
-    name: "Custom assay",
-    summary:
-      "When a built-in template does not fit, define a custom assay and choose which quantification features to run — morphology, particle counts, per-particle fluorescence, or total fluorescence across single cells in your array.",
-    outputs: [
-      "Toggle morphology, particle count, particle fluorescence, and total fluorescence independently",
-      "Built-in templates pre-select features; custom assays leave the choice to you",
-      "Your feature set is saved in assay.json and drives what Studio quantifies",
-    ],
-    visual: "custom",
+    visual: "killing",
   },
 ];
 
@@ -110,7 +98,7 @@ export const workflowSteps = [
     step: "04",
     title: "Assay readouts",
     description:
-      "Run transfection or immune-killing analysis and review summary tables and plots in Studio.",
+      "Run transfection or killing analysis and review summary tables and plots in Studio.",
     visual: "readout" as const,
   },
 ] as const;

@@ -16,21 +16,21 @@ pub fn resolve_model_path(workspace: &Path) -> Result<PathBuf, String> {
     crate::onnx::resolve_model_path(
         "LISCA_KILL_MODEL",
         [
-            workspace.join("models/immune-killing-resnet18"),
-            crate::onnx::workspace_models_dir().join("immune-killing-resnet18"),
-            PathBuf::from("models/immune-killing-resnet18"),
+            workspace.join("models/killing-assay-resnet18"),
+            crate::onnx::workspace_models_dir().join("killing-assay-resnet18"),
+            PathBuf::from("models/killing-assay-resnet18"),
         ],
     )
 }
 
 pub fn run_sync(workspace: &Path, assay_json: &AssayJsonFile) -> Result<(), String> {
     let interval = parse_interval_minutes(
-        assay_json.info2.timelapse_amount,
-        Some(assay_json.info2.timelapse_unit.as_str()),
+        assay_json.interval.value,
+        Some(assay_json.interval.unit.as_str()),
     )
-    .ok_or_else(|| "invalid timelapseAmount/timelapseUnit in assay.json".to_string())?;
+    .ok_or_else(|| "invalid interval.value/unit in assay.json".to_string())?;
 
-    let mapping = build_slide_mapping(&assay_json.info3)?;
+    let mapping = build_slide_mapping(&assay_json.samples)?;
 
     let model_dir = resolve_model_path(workspace)?;
     predict::run_predict(
@@ -151,14 +151,14 @@ where
         &request_id,
         AnalysisStage::Preparing,
         5.0,
-        "Preparing immune killing analysis",
+        "Preparing killing analysis",
     ));
 
     let kill_workspace = workspace_path.clone();
     let kill_assay = assay_json.clone();
     run_blocking(move || run_sync(&kill_workspace, &kill_assay))
         .await
-        .map_err(|error| format!("immune killing analysis failed: {error}"))?;
+        .map_err(|error| format!("killing analysis failed: {error}"))?;
 
     update_progress(analysis_progress(
         &request_id,
@@ -190,7 +190,7 @@ where
         &request_id,
         AnalysisStage::Completed,
         100.0,
-        "Immune killing analysis completed",
+        "Killing analysis completed",
     ));
     Ok(outputs)
 }
@@ -211,12 +211,12 @@ mod scheduler_stage_tests {
         }
         fs::write(
             first.join("results/predictions.csv"),
-            "t,crop,p_dead,label,pos,slide_channel\n0,1,0.1,false,0,0\n",
+            "t,crop,p_dead,label,pos,slide\n0,1,0.1,false,0,0\n",
         )
         .unwrap();
         fs::write(
             second.join("results/predictions.csv"),
-            "t,crop,p_dead,label,pos,slide_channel\n0,1,0.9,true,1,0\n",
+            "t,crop,p_dead,label,pos,slide\n0,1,0.9,true,1,0\n",
         )
         .unwrap();
 

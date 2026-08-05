@@ -11,7 +11,10 @@ use std::{
 
 use lisca::{
     aligner::{crop_roi, list_saved_bbox_positions, scan_source},
-    protocol::{AlignerSource, CropOutputFormat, CropRoiProgress, CropRoiRequest, CropRoiStatus},
+    protocol::{
+        AlignerSource, AssayData, AssayJsonFile, CropOutputFormat, CropRoiProgress,
+        CropRoiRequest, CropRoiStatus,
+    },
 };
 
 #[cfg(target_os = "linux")]
@@ -254,8 +257,7 @@ Source:
   --source DIR                    folder of frames (TIF/PNG/JPEG)
     --subfolder-template TMPL     default Pos{p}  (empty string = flat folder)
     --filename-template TMPL      default img_{t}_{c}_{z}.tif
-  or assay.json: info1.dataPath + dataSourceKind folder|nd2|czi
-                 and info1.folderSubfolderTemplate / folderFilenameTemplate
+  or assay.json: data (folder{path,template}|nd2{path}|czi{path})
 
 Positions: --positions list, or all bbox/Pos*.csv under the workspace.
 Env: LISCA_CROP_MAX_WORKERS overrides --workers
@@ -342,39 +344,15 @@ fn source_from_assay_json(workspace: &str) -> Result<AlignerSource, String> {
     let path = std::path::Path::new(workspace).join("assay.json");
     let contents = std::fs::read_to_string(&path)
         .map_err(|error| format!("failed to read {}: {error}", path.display()))?;
-    let value: serde_json::Value = serde_json::from_str(&contents)
+    let assay: AssayJsonFile = serde_json::from_str(&contents)
         .map_err(|error| format!("invalid assay.json {}: {error}", path.display()))?;
-    let info1 = value.get("info1").cloned().unwrap_or(serde_json::Value::Null);
-    let data_path = info1
-        .get("dataPath")
-        .and_then(|v| v.as_str())
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .ok_or_else(|| {
-            format!(
-                "missing --source and assay.json info1.dataPath is empty ({})",
-                path.display()
-            )
-        })?
-        .to_string();
-    let kind = value
-        .get("dataSourceKind")
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
-    let subfolder = info1
-        .get("folderSubfolderTemplate")
-        .and_then(|v| v.as_str())
-        .unwrap_or("Pos{p}")
-        .to_string();
-    let filename = info1
-        .get("folderFilenameTemplate")
-        .and_then(|v| v.as_str())
-        .unwrap_or("img_{t}_{c}_{z}.tif")
-        .to_string();
-    if kind == "folder" || std::path::Path::new(&data_path).is_dir() {
-        return folder_source(data_path, subfolder, filename);
+    match assay.data {
+        AssayData::Folder { path, template } => {
+            folder_source(path, template.subfolder, template.filename)
+        }
+        AssayData::Nd2 { path } => Ok(AlignerSource::Nd2 { path }),
+        AssayData::Czi { path } => Ok(AlignerSource::Czi { path }),
     }
-    source_from_path(data_path, None, None)
 }
 
 fn main() {

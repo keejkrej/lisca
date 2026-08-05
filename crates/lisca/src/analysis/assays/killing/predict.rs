@@ -108,13 +108,14 @@ fn collect_position_frames(
         let stack_path = pos_dir.join(&roi_crop.file_name);
         let stack = RoiStack::load(&stack_path, roi_crop.shape)?;
 
-        for t in 0..index.time_count {
-            let frame = roi_frame_2d(&stack, &index.axis_order, t, signal_channel, 0)?;
+        for stack_t in 0..index.time_count {
+            let frame = roi_frame_2d(&stack, &index.axis_order, stack_t, signal_channel, 0)?;
+            let source_t = index.time_indices[stack_t as usize];
             frames.push(FrameBatchItem {
                 pos: position,
                 slide_channel,
                 roi: roi_crop.roi,
-                t,
+                t: source_t,
                 width: frame.width,
                 height: frame.height,
                 pixels: frame.into_vec(),
@@ -170,12 +171,11 @@ fn run_batch_inference(
 }
 
 fn write_timeseries_csv(path: &Path, rows: &[TimeseriesRow]) -> Result<(), String> {
-    let headers = ["pos", "roi", "t", "p_dead"];
+    let headers = ["roi", "t", "p_dead"];
     let csv_rows = rows
         .iter()
         .map(|row| {
             vec![
-                row.pos.to_string(),
                 row.roi.to_string(),
                 row.t.to_string(),
                 format_float(row.p_dead),
@@ -214,7 +214,7 @@ pub fn run_predict_to(
         .name()
         .to_string();
 
-    let mut timeseries_by_channel: BTreeMap<u32, Vec<TimeseriesRow>> = BTreeMap::new();
+    let mut timeseries_by_pos_channel: BTreeMap<(u32, u32), Vec<TimeseriesRow>> = BTreeMap::new();
     let mut prediction_rows: Vec<PredictionRow> = Vec::new();
 
     for (slide_channel, entry) in mapping {
@@ -222,14 +222,14 @@ pub fn run_predict_to(
             let frames = collect_position_frames(
                 workspace,
                 *slide_channel,
-                entry.signal_channel,
+                entry.fluorescence,
                 *position,
             )?;
             for chunk in frames.chunks(options.batch_size.max(1)) {
                 let probabilities = run_batch_inference(&mut session, &input_name, chunk)?;
                 for (frame, p_dead) in chunk.iter().zip(probabilities) {
-                    timeseries_by_channel
-                        .entry(*slide_channel)
+                    timeseries_by_pos_channel
+                        .entry((frame.pos, entry.fluorescence))
                         .or_default()
                         .push(TimeseriesRow {
                             pos: frame.pos,
@@ -252,12 +252,11 @@ pub fn run_predict_to(
 
     let timeseries_dir = output_workspace.join("timeseries");
     fs::create_dir_all(&timeseries_dir).map_err(|error| error.to_string())?;
-    for (slide_channel, entry) in mapping {
-        let mut rows = timeseries_by_channel
-            .remove(slide_channel)
-            .unwrap_or_default();
+    for ((position, signal_channel), mut rows) in timeseries_by_pos_channel {
         rows.sort_by_key(|row| (row.pos, row.roi, row.t));
-        let output = timeseries_dir.join(format!("sc{slide_channel}_ch{}", entry.signal_channel));
+        let output = timeseries_dir
+            .join(format!("Pos{position}"))
+            .join(format!("ch{signal_channel}.csv"));
         write_timeseries_csv(&output, &rows)?;
     }
 
@@ -286,7 +285,7 @@ pub fn run_predict_to(
         .collect::<Vec<_>>();
     write_csv(
         &results_dir.join("predictions.csv"),
-        &["t", "crop", "p_dead", "label", "pos", "slide_channel"],
+        &["t", "crop", "p_dead", "label", "pos", "slide"],
         &prediction_csv_rows,
     )
 }

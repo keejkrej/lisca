@@ -13,7 +13,7 @@ pub use plot::{
     run_plot_auc, run_plot_fit, run_plot_timeseries, DEFAULT_PLOT_COLUMNS,
 };
 pub use segment::{default_jobs, run_segment, SegmentOptions};
-pub use timeseries::{default_timeseries_jobs, run_timeseries};
+pub use timeseries::{default_timeseries_jobs, run_timeseries, run_timeseries_with_mode};
 
 use std::path::PathBuf;
 
@@ -30,15 +30,12 @@ use crate::analysis::slide::{build_slide_mapping, parse_interval_minutes};
 pub const DEFAULT_MAX_ONSET_MINUTES: f64 = 120.0;
 
 /// Default frame interval (minutes) when assay.json omits a positive
-/// `info2.timelapseAmount` / unit for this assay.
+/// `interval.value` / unit for this assay.
 pub const DEFAULT_INTERVAL_MINUTES: f64 = 10.0;
 
 /// Transfection-only analysis option. Other assays ignore `analysis.maxOnsetMinutes`.
 pub fn max_onset_minutes(assay_json: &AssayJsonFile) -> f64 {
-    if !matches!(
-        assay_json.assay_id,
-        crate::protocol::AssayType::Transfection
-    ) {
+    if !matches!(assay_json.type_, crate::protocol::AssayType::Transfection) {
         return 0.0;
     }
     assay_json
@@ -48,20 +45,30 @@ pub fn max_onset_minutes(assay_json: &AssayJsonFile) -> f64 {
         .unwrap_or(DEFAULT_MAX_ONSET_MINUTES)
 }
 
-/// Resolve frame interval. Prefers assay.json `info2.timelapseAmount`/`timelapseUnit`.
+/// Whether to skip mask-based segmentation and use whole-ROI metrics instead
+/// (assay.json `analysis.skipSegment`). Defaults to `false`.
+pub fn skip_segment(assay_json: &AssayJsonFile) -> bool {
+    assay_json
+        .analysis
+        .as_ref()
+        .and_then(|analysis| analysis.skip_segment)
+        .unwrap_or(false)
+}
+
+/// Resolve frame interval. Prefers assay.json `interval.value`/`interval.unit`.
 /// When missing, uses the assay-specific default (transfection: 10 min). Other assays
 /// require an explicit positive interval.
 pub fn interval_minutes(assay_json: &AssayJsonFile) -> Result<f64, String> {
     if let Some(interval) = parse_interval_minutes(
-        assay_json.info2.timelapse_amount,
-        Some(assay_json.info2.timelapse_unit.as_str()),
+        assay_json.interval.value,
+        Some(assay_json.interval.unit.as_str()),
     ) {
         return Ok(interval);
     }
-    match assay_json.assay_id {
+    match assay_json.type_ {
         crate::protocol::AssayType::Transfection => Ok(DEFAULT_INTERVAL_MINUTES),
         other => Err(format!(
-            "missing info2.timelapseAmount/timelapseUnit for assay {other:?} (no default interval)"
+            "missing interval.value/unit for assay {other:?} (no default interval)"
         )),
     }
 }
@@ -76,8 +83,9 @@ where
     F: Fn(AnalysisProgress) + Send + Sync + 'static,
 {
     let interval = interval_minutes(&assay_json)?;
-    let mapping = build_slide_mapping(&assay_json.info3)?;
+    let mapping = build_slide_mapping(&assay_json.samples)?;
     let jobs = default_timeseries_jobs();
+    let skip_segment_stage = skip_segment(&assay_json);
 
     update_progress(analysis_progress(
         &request_id,
@@ -86,20 +94,22 @@ where
         "Building sample mapping from assay.json",
     ));
 
-    let segment_workspace = workspace_path.clone();
-    let segment_mapping = mapping.clone();
-    run_blocking(move || {
-        run_segment(
-            &segment_workspace,
-            &segment_mapping,
-            &SegmentOptions {
-                jobs,
-                ..SegmentOptions::default()
-            },
-        )
-    })
-    .await
-    .map_err(|error| format!("segment step failed: {error}"))?;
+    if !skip_segment_stage {
+        let segment_workspace = workspace_path.clone();
+        let segment_mapping = mapping.clone();
+        run_blocking(move || {
+            run_segment(
+                &segment_workspace,
+                &segment_mapping,
+                &SegmentOptions {
+                    jobs,
+                    ..SegmentOptions::default()
+                },
+            )
+        })
+        .await
+        .map_err(|error| format!("segment step failed: {error}"))?;
+    }
     update_progress(analysis_progress(
         &request_id,
         AnalysisStage::Segment,
@@ -109,9 +119,16 @@ where
 
     let timeseries_workspace = workspace_path.clone();
     let timeseries_mapping = mapping.clone();
-    run_blocking(move || run_timeseries(&timeseries_workspace, &timeseries_mapping, jobs))
-        .await
-        .map_err(|error| format!("timeseries step failed: {error}"))?;
+    run_blocking(move || {
+        run_timeseries_with_mode(
+            &timeseries_workspace,
+            &timeseries_mapping,
+            jobs,
+            skip_segment_stage,
+        )
+    })
+    .await
+    .map_err(|error| format!("timeseries step failed: {error}"))?;
     update_progress(analysis_progress(
         &request_id,
         AnalysisStage::Timeseries,
@@ -193,20 +210,30 @@ where
 /// Same stage order as Studio: segment → timeseries → plot-timeseries → auc →
 /// plot-auc → fit → plot-fit. Sample mapping is read from `assay.json` only.
 pub fn run_sync(workspace: &std::path::Path, assay_json: &AssayJsonFile) -> Result<(), String> {
+    run_sync_with_mode(workspace, assay_json, skip_segment(assay_json))
+}
+
+pub fn run_sync_with_mode(
+    workspace: &std::path::Path,
+    assay_json: &AssayJsonFile,
+    full_frame: bool,
+) -> Result<(), String> {
     let interval = interval_minutes(assay_json)?;
 
-    let mapping = build_slide_mapping(&assay_json.info3)?;
+    let mapping = build_slide_mapping(&assay_json.samples)?;
     let jobs = default_timeseries_jobs();
 
-    run_segment(
-        workspace,
-        &mapping,
-        &SegmentOptions {
-            jobs,
-            ..SegmentOptions::default()
-        },
-    )?;
-    run_timeseries(workspace, &mapping, jobs)?;
+    if !full_frame {
+        run_segment(
+            workspace,
+            &mapping,
+            &SegmentOptions {
+                jobs,
+                ..SegmentOptions::default()
+            },
+        )?;
+    }
+    run_timeseries_with_mode(workspace, &mapping, jobs, full_frame)?;
     run_plot_timeseries(workspace, &mapping, interval, DEFAULT_PLOT_COLUMNS)?;
     run_auc(workspace, interval)?;
     run_plot_auc(workspace, &mapping)?;
