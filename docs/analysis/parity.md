@@ -76,15 +76,18 @@ Rust, generated types). Unsupported ids fail explicitly — see `PRODUCT.md`.
 
 - Workspace layout: `assay.json`, `roi/PosN/`, `mask/PosN/`,
   `timeseries/Pos{n}/ch{n}.csv`, `results/` (no `slide.json`).
-- Timeseries columns omit `slide_channel` (joined later from assay mapping);
-  `t` uses `index.json` `timeIndices`. Segmented bg = median of `~mask`;
-  full-frame bg = 10th percentile.
+- Timeseries columns: `roi,t,area,background,sum,corrected` (no `pos` /
+  `slide_channel`; joined later from path + assay mapping). `t` uses
+  `index.json` `timeIndices`. Segmented bg = median of `~mask`;
+  `analysis.skipSegment` bg = 10th percentile.
+- Slim `index.json`: always `TCZYX`; keep `zCount`; drop `source` /
+  `pageOrder` / per-ROI `shape` (derive from counts + bbox).
 - Output basenames Studio and Python both expect (`auc.csv`, `fit.csv`,
   `traces.png`, …).
 - CSV column names and row identity keys.
 - Stage order for full pipelines (`transfection pipeline` / `lisca-analyze pipeline`).
 - Flag defaults that change science (`--interval`, `--max-onset-minutes`,
-  `--full-frame`, segmentation radius/sigma, jobs only for performance).
+  `analysis.skipSegment`, segmentation radius/sigma, jobs only for performance).
 
 ### Scientific parity
 

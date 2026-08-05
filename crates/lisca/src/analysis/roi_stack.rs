@@ -46,11 +46,17 @@ struct IndexJson {
 }
 
 #[derive(Debug, Deserialize)]
+struct IndexBboxJson {
+    w: u32,
+    h: u32,
+}
+
+#[derive(Debug, Deserialize)]
 struct IndexRoiJson {
     roi: u32,
     #[serde(rename = "fileName")]
     file_name: String,
-    shape: [u32; 5],
+    bbox: IndexBboxJson,
 }
 
 pub fn position_dir(workspace: &Path, pos: u32) -> Result<PathBuf, String> {
@@ -68,8 +74,11 @@ pub fn read_position_index(pos_dir: &Path) -> Result<PositionIndex, String> {
     let raw: IndexJson = serde_json::from_slice(&bytes)
         .map_err(|error| format!("{}: {error}", index_path.display()))?;
     let axis_order = raw.axis_order.to_uppercase();
-    if axis_order.is_empty() {
-        return Err(format!("{index_path:?} is missing axisOrder"));
+    if axis_order != "TCZYX" {
+        return Err(format!(
+            "{}: unsupported axisOrder '{axis_order}' (expected TCZYX)",
+            index_path.display()
+        ));
     }
     let rois = raw
         .rois
@@ -77,7 +86,13 @@ pub fn read_position_index(pos_dir: &Path) -> Result<PositionIndex, String> {
         .map(|entry| RoiCrop {
             roi: entry.roi,
             file_name: entry.file_name,
-            shape: entry.shape,
+            shape: [
+                raw.time_count,
+                raw.channel_count,
+                raw.z_count,
+                entry.bbox.h,
+                entry.bbox.w,
+            ],
         })
         .collect::<Vec<_>>();
     if rois.is_empty() {

@@ -27,28 +27,18 @@ function alignGridCellKey(cell: AlignGridCellCoord): string {
 }
 
 function demoRoiIndexJson(
-  fileName: string,
-  frame: FrameResult,
   entries: Array<{
     roi: number;
     fileName: string;
     bbox: { roi: number; x: number; y: number; w: number; h: number };
-    shape: [number, number, number, number, number];
   }>,
 ) {
   return {
     position: DEMO_POSITION,
-    axisOrder: "TCZYX",
-    pageOrder: ["t", "c", "z"],
+    axisOrder: "TCZYX" as const,
     timeCount: 1,
     channelCount: 1,
     zCount: 1,
-    source: {
-      kind: "folder" as const,
-      path: fileName,
-      subfolderTemplate: "Pos{p}",
-      filenameTemplate: "img_channel{c}_position{p}_time{t}_z{z}",
-    },
     rois: entries,
   };
 }
@@ -80,7 +70,6 @@ export async function buildRoiExportZip(input: BuildRoiExportZipInput): Promise<
     roi: number;
     fileName: string;
     bbox: { roi: number; x: number; y: number; w: number; h: number };
-    shape: [number, number, number, number, number];
   }> = [];
 
   const roiExtension = roiImageExtension(input.sourceFormat);
@@ -110,7 +99,6 @@ export async function buildRoiExportZip(input: BuildRoiExportZipInput): Promise<
             w: cell.w,
             h: cell.h,
           },
-          shape: [1, 1, 1, cell.h, cell.w] as [number, number, number, number, number],
         },
       };
     }),
@@ -122,7 +110,7 @@ export async function buildRoiExportZip(input: BuildRoiExportZipInput): Promise<
   }
 
   files[`roi/Pos${DEMO_POSITION}/index.json`] = strToU8(
-    `${JSON.stringify(demoRoiIndexJson(input.fileName, input.frame, indexEntries), null, 2)}\n`,
+    `${JSON.stringify(demoRoiIndexJson(indexEntries), null, 2)}\n`,
   );
 
   return zipSync(files);

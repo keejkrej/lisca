@@ -1010,7 +1010,6 @@
       "type": "object",
       "required": [
         "pos",
-        "source",
         "channels",
         "times",
         "zSlices",
@@ -1021,9 +1020,6 @@
           "type": "integer",
           "format": "uint32",
           "minimum": 0
-        },
-        "source": {
-          "$ref": "#/definitions/AlignerSource"
         },
         "channels": {
           "type": "array",
@@ -1062,8 +1058,7 @@
       "required": [
         "roi",
         "fileName",
-        "bbox",
-        "shape"
+        "bbox"
       ],
       "properties": {
         "roi": {
@@ -1076,16 +1071,6 @@
         },
         "bbox": {
           "$ref": "#/definitions/RoiBbox"
-        },
-        "shape": {
-          "type": "array",
-          "items": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          },
-          "minItems": 5,
-          "maxItems": 5
         }
       }
     },
@@ -2641,11 +2626,9 @@
       "required": [
         "position",
         "axisOrder",
-        "pageOrder",
         "timeCount",
         "channelCount",
         "zCount",
-        "source",
         "rois"
       ],
       "properties": {
@@ -2655,13 +2638,10 @@
           "minimum": 0
         },
         "axisOrder": {
-          "type": "string"
-        },
-        "pageOrder": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
+          "type": "string",
+          "enum": [
+            "TCZYX"
+          ]
         },
         "timeCount": {
           "type": "integer",
@@ -2685,9 +2665,6 @@
             "format": "uint32",
             "minimum": 0
           }
-        },
-        "source": {
-          "$ref": "#/definitions/AlignerSource"
         },
         "rois": {
           "type": "array",

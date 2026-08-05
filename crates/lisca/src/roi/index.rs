@@ -40,7 +40,6 @@ pub fn scan_roi_workspace(workspace_path: &str) -> Result<RoiWorkspaceScan, Stri
         };
         positions.push(RoiPositionScan {
             pos,
-            source: index.source.clone(),
             channels: axis_values(index.channel_count),
             times,
             z_slices: axis_values(index.z_count),
@@ -106,33 +105,9 @@ pub(super) fn read_roi_index(workspace_path: &str, pos: u32) -> Result<RoiIndexF
             index.position, pos
         ));
     }
-    if index.axis_order != "TCZYX" {
-        return Err(format!(
-            "Unsupported ROI axis order '{}' for Pos{}",
-            index.axis_order, pos
-        ));
-    }
-    if index.page_order != ["t", "c", "z"] {
-        return Err(format!(
-            "Unsupported ROI page order {:?} for Pos{}",
-            index.page_order, pos
-        ));
-    }
-    for roi in &index.rois {
-        if roi.shape
-            != [
-                index.time_count,
-                index.channel_count,
-                index.z_count,
-                roi.bbox.h,
-                roi.bbox.w,
-            ]
-        {
-            return Err(format!(
-                "ROI {} shape metadata does not match index",
-                roi.roi
-            ));
-        }
+    // axis_order is a closed enum (`TCZYX`) in the generated schema.
+    if index.rois.is_empty() {
+        return Err(format!("No ROI entries found in {}", path.display()));
     }
     Ok(index)
 }

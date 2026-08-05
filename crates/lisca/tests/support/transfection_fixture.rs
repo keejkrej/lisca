@@ -92,7 +92,13 @@ fn write_index_json(root: &Path) {
         "rois": [{
             "roi": ROI_ID,
             "fileName": "roi_001.tif",
-            "shape": [TIME_COUNT, CHANNEL_COUNT, Z_COUNT, HEIGHT as u32, WIDTH as u32]
+            "bbox": {
+                "roi": ROI_ID,
+                "x": 0,
+                "y": 0,
+                "w": WIDTH as u32,
+                "h": HEIGHT as u32
+            }
         }]
     });
     let path = root

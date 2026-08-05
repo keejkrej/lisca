@@ -4622,8 +4622,7 @@ impl RoiFrameRequest {
 #[doc = "  \"required\": ["]
 #[doc = "    \"bbox\","]
 #[doc = "    \"fileName\","]
-#[doc = "    \"roi\","]
-#[doc = "    \"shape\""]
+#[doc = "    \"roi\""]
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
 #[doc = "    \"bbox\": {"]
@@ -4636,16 +4635,6 @@ impl RoiFrameRequest {
 #[doc = "      \"type\": \"integer\","]
 #[doc = "      \"format\": \"uint32\","]
 #[doc = "      \"minimum\": 0.0"]
-#[doc = "    },"]
-#[doc = "    \"shape\": {"]
-#[doc = "      \"type\": \"array\","]
-#[doc = "      \"items\": {"]
-#[doc = "        \"type\": \"integer\","]
-#[doc = "        \"format\": \"uint32\","]
-#[doc = "        \"minimum\": 0.0"]
-#[doc = "      },"]
-#[doc = "      \"maxItems\": 5,"]
-#[doc = "      \"minItems\": 5"]
 #[doc = "    }"]
 #[doc = "  }"]
 #[doc = "}"]
@@ -4657,7 +4646,6 @@ pub struct RoiIndexEntry {
     #[serde(rename = "fileName")]
     pub file_name: ::std::string::String,
     pub roi: u32,
-    pub shape: [u32; 5usize],
 }
 impl RoiIndexEntry {
     pub fn builder() -> builder::RoiIndexEntry {
@@ -4674,27 +4662,22 @@ impl RoiIndexEntry {
 #[doc = "  \"required\": ["]
 #[doc = "    \"axisOrder\","]
 #[doc = "    \"channelCount\","]
-#[doc = "    \"pageOrder\","]
 #[doc = "    \"position\","]
 #[doc = "    \"rois\","]
-#[doc = "    \"source\","]
 #[doc = "    \"timeCount\","]
 #[doc = "    \"zCount\""]
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
 #[doc = "    \"axisOrder\": {"]
-#[doc = "      \"type\": \"string\""]
+#[doc = "      \"type\": \"string\","]
+#[doc = "      \"enum\": ["]
+#[doc = "        \"TCZYX\""]
+#[doc = "      ]"]
 #[doc = "    },"]
 #[doc = "    \"channelCount\": {"]
 #[doc = "      \"type\": \"integer\","]
 #[doc = "      \"format\": \"uint32\","]
 #[doc = "      \"minimum\": 0.0"]
-#[doc = "    },"]
-#[doc = "    \"pageOrder\": {"]
-#[doc = "      \"type\": \"array\","]
-#[doc = "      \"items\": {"]
-#[doc = "        \"type\": \"string\""]
-#[doc = "      }"]
 #[doc = "    },"]
 #[doc = "    \"position\": {"]
 #[doc = "      \"type\": \"integer\","]
@@ -4706,9 +4689,6 @@ impl RoiIndexEntry {
 #[doc = "      \"items\": {"]
 #[doc = "        \"$ref\": \"#/definitions/RoiIndexEntry\""]
 #[doc = "      }"]
-#[doc = "    },"]
-#[doc = "    \"source\": {"]
-#[doc = "      \"$ref\": \"#/definitions/AlignerSource\""]
 #[doc = "    },"]
 #[doc = "    \"timeCount\": {"]
 #[doc = "      \"type\": \"integer\","]
@@ -4735,14 +4715,11 @@ impl RoiIndexEntry {
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct RoiIndexFile {
     #[serde(rename = "axisOrder")]
-    pub axis_order: ::std::string::String,
+    pub axis_order: RoiIndexFileAxisOrder,
     #[serde(rename = "channelCount")]
     pub channel_count: u32,
-    #[serde(rename = "pageOrder")]
-    pub page_order: ::std::vec::Vec<::std::string::String>,
     pub position: u32,
     pub rois: ::std::vec::Vec<RoiIndexEntry>,
-    pub source: AlignerSource,
     #[serde(rename = "timeCount")]
     pub time_count: u32,
     #[serde(
@@ -4757,6 +4734,73 @@ pub struct RoiIndexFile {
 impl RoiIndexFile {
     pub fn builder() -> builder::RoiIndexFile {
         Default::default()
+    }
+}
+#[doc = "`RoiIndexFileAxisOrder`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"string\","]
+#[doc = "  \"enum\": ["]
+#[doc = "    \"TCZYX\""]
+#[doc = "  ]"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(
+    :: serde :: Deserialize,
+    :: serde :: Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum RoiIndexFileAxisOrder {
+    #[serde(rename = "TCZYX")]
+    Tczyx,
+}
+impl ::std::fmt::Display for RoiIndexFileAxisOrder {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Tczyx => f.write_str("TCZYX"),
+        }
+    }
+}
+impl ::std::str::FromStr for RoiIndexFileAxisOrder {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "TCZYX" => Ok(Self::Tczyx),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for RoiIndexFileAxisOrder {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for RoiIndexFileAxisOrder {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for RoiIndexFileAxisOrder {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
     }
 }
 #[doc = "`RoiPosExistsQuery`"]
@@ -4832,7 +4876,6 @@ impl RoiPosExistsResponse {
 #[doc = "    \"channels\","]
 #[doc = "    \"pos\","]
 #[doc = "    \"rois\","]
-#[doc = "    \"source\","]
 #[doc = "    \"times\","]
 #[doc = "    \"zSlices\""]
 #[doc = "  ],"]
@@ -4855,9 +4898,6 @@ impl RoiPosExistsResponse {
 #[doc = "      \"items\": {"]
 #[doc = "        \"$ref\": \"#/definitions/RoiIndexEntry\""]
 #[doc = "      }"]
-#[doc = "    },"]
-#[doc = "    \"source\": {"]
-#[doc = "      \"$ref\": \"#/definitions/AlignerSource\""]
 #[doc = "    },"]
 #[doc = "    \"times\": {"]
 #[doc = "      \"type\": \"array\","]
@@ -4884,7 +4924,6 @@ pub struct RoiPositionScan {
     pub channels: ::std::vec::Vec<u32>,
     pub pos: u32,
     pub rois: ::std::vec::Vec<RoiIndexEntry>,
-    pub source: AlignerSource,
     pub times: ::std::vec::Vec<u32>,
     #[serde(rename = "zSlices")]
     pub z_slices: ::std::vec::Vec<u32>,
@@ -11177,7 +11216,6 @@ pub mod builder {
         bbox: ::std::result::Result<super::RoiBbox, ::std::string::String>,
         file_name: ::std::result::Result<::std::string::String, ::std::string::String>,
         roi: ::std::result::Result<u32, ::std::string::String>,
-        shape: ::std::result::Result<[u32; 5usize], ::std::string::String>,
     }
     impl ::std::default::Default for RoiIndexEntry {
         fn default() -> Self {
@@ -11185,7 +11223,6 @@ pub mod builder {
                 bbox: Err("no value supplied for bbox".to_string()),
                 file_name: Err("no value supplied for file_name".to_string()),
                 roi: Err("no value supplied for roi".to_string()),
-                shape: Err("no value supplied for shape".to_string()),
             }
         }
     }
@@ -11220,16 +11257,6 @@ pub mod builder {
                 .map_err(|e| format!("error converting supplied value for roi: {e}"));
             self
         }
-        pub fn shape<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<[u32; 5usize]>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.shape = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for shape: {e}"));
-            self
-        }
     }
     impl ::std::convert::TryFrom<RoiIndexEntry> for super::RoiIndexEntry {
         type Error = super::error::ConversionError;
@@ -11240,7 +11267,6 @@ pub mod builder {
                 bbox: value.bbox?,
                 file_name: value.file_name?,
                 roi: value.roi?,
-                shape: value.shape?,
             })
         }
     }
@@ -11250,19 +11276,15 @@ pub mod builder {
                 bbox: Ok(value.bbox),
                 file_name: Ok(value.file_name),
                 roi: Ok(value.roi),
-                shape: Ok(value.shape),
             }
         }
     }
     #[derive(Clone, Debug)]
     pub struct RoiIndexFile {
-        axis_order: ::std::result::Result<::std::string::String, ::std::string::String>,
+        axis_order: ::std::result::Result<super::RoiIndexFileAxisOrder, ::std::string::String>,
         channel_count: ::std::result::Result<u32, ::std::string::String>,
-        page_order:
-            ::std::result::Result<::std::vec::Vec<::std::string::String>, ::std::string::String>,
         position: ::std::result::Result<u32, ::std::string::String>,
         rois: ::std::result::Result<::std::vec::Vec<super::RoiIndexEntry>, ::std::string::String>,
-        source: ::std::result::Result<super::AlignerSource, ::std::string::String>,
         time_count: ::std::result::Result<u32, ::std::string::String>,
         time_indices: ::std::result::Result<::std::vec::Vec<u32>, ::std::string::String>,
         z_count: ::std::result::Result<u32, ::std::string::String>,
@@ -11272,10 +11294,8 @@ pub mod builder {
             Self {
                 axis_order: Err("no value supplied for axis_order".to_string()),
                 channel_count: Err("no value supplied for channel_count".to_string()),
-                page_order: Err("no value supplied for page_order".to_string()),
                 position: Err("no value supplied for position".to_string()),
                 rois: Err("no value supplied for rois".to_string()),
-                source: Err("no value supplied for source".to_string()),
                 time_count: Err("no value supplied for time_count".to_string()),
                 time_indices: Ok(Default::default()),
                 z_count: Err("no value supplied for z_count".to_string()),
@@ -11285,7 +11305,7 @@ pub mod builder {
     impl RoiIndexFile {
         pub fn axis_order<T>(mut self, value: T) -> Self
         where
-            T: ::std::convert::TryInto<::std::string::String>,
+            T: ::std::convert::TryInto<super::RoiIndexFileAxisOrder>,
             T::Error: ::std::fmt::Display,
         {
             self.axis_order = value
@@ -11301,16 +11321,6 @@ pub mod builder {
             self.channel_count = value
                 .try_into()
                 .map_err(|e| format!("error converting supplied value for channel_count: {e}"));
-            self
-        }
-        pub fn page_order<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::vec::Vec<::std::string::String>>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.page_order = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for page_order: {e}"));
             self
         }
         pub fn position<T>(mut self, value: T) -> Self
@@ -11331,16 +11341,6 @@ pub mod builder {
             self.rois = value
                 .try_into()
                 .map_err(|e| format!("error converting supplied value for rois: {e}"));
-            self
-        }
-        pub fn source<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<super::AlignerSource>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.source = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for source: {e}"));
             self
         }
         pub fn time_count<T>(mut self, value: T) -> Self
@@ -11382,10 +11382,8 @@ pub mod builder {
             Ok(Self {
                 axis_order: value.axis_order?,
                 channel_count: value.channel_count?,
-                page_order: value.page_order?,
                 position: value.position?,
                 rois: value.rois?,
-                source: value.source?,
                 time_count: value.time_count?,
                 time_indices: value.time_indices?,
                 z_count: value.z_count?,
@@ -11397,10 +11395,8 @@ pub mod builder {
             Self {
                 axis_order: Ok(value.axis_order),
                 channel_count: Ok(value.channel_count),
-                page_order: Ok(value.page_order),
                 position: Ok(value.position),
                 rois: Ok(value.rois),
-                source: Ok(value.source),
                 time_count: Ok(value.time_count),
                 time_indices: Ok(value.time_indices),
                 z_count: Ok(value.z_count),
@@ -11506,7 +11502,6 @@ pub mod builder {
         channels: ::std::result::Result<::std::vec::Vec<u32>, ::std::string::String>,
         pos: ::std::result::Result<u32, ::std::string::String>,
         rois: ::std::result::Result<::std::vec::Vec<super::RoiIndexEntry>, ::std::string::String>,
-        source: ::std::result::Result<super::AlignerSource, ::std::string::String>,
         times: ::std::result::Result<::std::vec::Vec<u32>, ::std::string::String>,
         z_slices: ::std::result::Result<::std::vec::Vec<u32>, ::std::string::String>,
     }
@@ -11516,7 +11511,6 @@ pub mod builder {
                 channels: Err("no value supplied for channels".to_string()),
                 pos: Err("no value supplied for pos".to_string()),
                 rois: Err("no value supplied for rois".to_string()),
-                source: Err("no value supplied for source".to_string()),
                 times: Err("no value supplied for times".to_string()),
                 z_slices: Err("no value supplied for z_slices".to_string()),
             }
@@ -11553,16 +11547,6 @@ pub mod builder {
                 .map_err(|e| format!("error converting supplied value for rois: {e}"));
             self
         }
-        pub fn source<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<super::AlignerSource>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.source = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for source: {e}"));
-            self
-        }
         pub fn times<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<::std::vec::Vec<u32>>,
@@ -11593,7 +11577,6 @@ pub mod builder {
                 channels: value.channels?,
                 pos: value.pos?,
                 rois: value.rois?,
-                source: value.source?,
                 times: value.times?,
                 z_slices: value.z_slices?,
             })
@@ -11605,7 +11588,6 @@ pub mod builder {
                 channels: Ok(value.channels),
                 pos: Ok(value.pos),
                 rois: Ok(value.rois),
-                source: Ok(value.source),
                 times: Ok(value.times),
                 z_slices: Ok(value.z_slices),
             }

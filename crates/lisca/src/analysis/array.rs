@@ -115,7 +115,7 @@ pub fn masked_roi_stats(frame: &[f64], mask: &[bool]) -> Result<MaskedRoiStats, 
     })
 }
 
-/// Full-frame ROI reduction matching pyama / transfection `--full-frame`.
+/// Full-frame ROI reduction matching transfection `analysis.skipSegment`.
 pub fn full_frame_roi_stats(frame: &[f64]) -> MaskedRoiStats {
     if frame.is_empty() {
         return MaskedRoiStats {

@@ -3511,7 +3511,6 @@
         "type": "object",
         "required": [
           "pos",
-          "source",
           "channels",
           "times",
           "zSlices",
@@ -3522,9 +3521,6 @@
             "type": "integer",
             "format": "uint32",
             "minimum": 0
-          },
-          "source": {
-            "$ref": "#/components/schemas/AlignerSource"
           },
           "channels": {
             "type": "array",
@@ -3564,8 +3560,7 @@
         "required": [
           "roi",
           "fileName",
-          "bbox",
-          "shape"
+          "bbox"
         ],
         "properties": {
           "roi": {
@@ -3578,16 +3573,6 @@
           },
           "bbox": {
             "$ref": "#/components/schemas/RoiBbox"
-          },
-          "shape": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "format": "uint32",
-              "minimum": 0
-            },
-            "minItems": 5,
-            "maxItems": 5
           }
         },
         "additionalProperties": false

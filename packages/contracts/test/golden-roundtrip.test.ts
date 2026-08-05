@@ -73,10 +73,11 @@ describe("golden wire roundtrip", () => {
     expect(decoded.zSlices).toEqual([0]);
   });
 
-  it("decodes RoiIndexEntry fixed shape array", () => {
+  it("decodes RoiIndexEntry without shape", () => {
     const decoded = decodeFixture(RoiIndexEntrySchema, "roi-index-entry.json");
-    expect(decoded.shape).toEqual([5, 1, 1, 4, 3]);
+    expect(decoded.roi).toBe(0);
     expect(decoded.bbox.w).toBe(3);
+    expect(decoded.bbox.h).toBe(4);
   });
 
   it("decodes operation, task, and attempt observability identities", () => {

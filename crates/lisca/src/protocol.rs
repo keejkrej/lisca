@@ -105,16 +105,16 @@ mod contract_tests {
     }
 
     #[test]
-    fn roi_index_entry_shape_is_fixed_array() {
+    fn roi_index_entry_omits_shape() {
         let entry: RoiIndexEntry = serde_json::from_value(json!({
             "roi": 0,
             "fileName": "roi0.tif",
             "bbox": { "roi": 0, "x": 1, "y": 2, "w": 3, "h": 4 },
-            "shape": [5, 1, 1, 4, 3],
         }))
         .unwrap();
-        let shape: [u32; 5] = entry.shape;
-        assert_eq!(shape, [5, 1, 1, 4, 3]);
+        assert_eq!(entry.roi, 0);
+        assert_eq!(entry.bbox.w, 3);
+        assert_eq!(entry.bbox.h, 4);
     }
 
     #[test]

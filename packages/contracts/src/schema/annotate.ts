@@ -16,22 +16,17 @@ export const RoiIndexEntrySchema = Schema.Struct({
   roi: U32,
   fileName: Schema.String,
   bbox: RoiBboxSchema,
-  // Fixed 5-element array; the explicit `jsonSchema` makes the Rust generator
-  // (typify) emit `[u32; 5]` instead of a malformed tuple type.
-  shape: Schema.Tuple(U32, U32, U32, U32, U32).annotations({
-    jsonSchema: {
-      type: "array",
-      items: { type: "integer", format: "uint32", minimum: 0 },
-      minItems: 5,
-      maxItems: 5,
-    },
-  }),
 }).annotations({ identifier: "RoiIndexEntry" });
 
+/**
+ * On-disk `roi/Pos{n}/index.json`. Always `TCZYX` (use `zCount: 1` when there
+ * is no z-stack). Stack shape is derived as `[timeCount, channelCount, zCount,
+ * bbox.h, bbox.w]` — not stored per ROI. Provenance (`source`) and `pageOrder`
+ * are omitted; page order follows `axisOrder`.
+ */
 export const RoiIndexFileSchema = Schema.Struct({
   position: U32,
-  axisOrder: Schema.String,
-  pageOrder: StrArray,
+  axisOrder: Schema.Literal("TCZYX"),
   timeCount: U32,
   channelCount: U32,
   zCount: U32,
@@ -42,13 +37,11 @@ export const RoiIndexFileSchema = Schema.Struct({
    * to get real minutes. When omitted, consumers default to `0..timeCount-1`.
    */
   timeIndices: Schema.optional(NumArray),
-  source: AlignerSourceSchema,
   rois: Schema.mutable(Schema.Array(RoiIndexEntrySchema)),
 }).annotations({ identifier: "RoiIndexFile" });
 
 export const RoiPositionScanSchema = Schema.Struct({
   pos: U32,
-  source: AlignerSourceSchema,
   channels: NumArray,
   times: NumArray,
   zSlices: NumArray,

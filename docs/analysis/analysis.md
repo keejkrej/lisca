@@ -31,7 +31,7 @@ through `ResultPanelsGridView`. The renderer and its data-loading atoms are owne
 
 Native analysis pipeline in `crates/lisca/src/analysis/`. ROI stacks under `roi/` come from **Studio crop**
 or CLI (`lisca-crop`; Python crop in `../pyama-v2`) — not from the light Aligner shell. The running workflow
-depends on `assay.json` → `assayId`:
+depends on `assay.json` → root `type`:
 
 | Assay             | Goal source (not implementation reference)                                                   | Pipeline                                        |
 | ----------------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------- |
@@ -107,10 +107,10 @@ uv run optimum-cli export onnx --model keejkrej/killing-assay-resnet18 ./models/
 
 | Path                                                                         | Role                                                   |
 | ---------------------------------------------------------------------------- | ------------------------------------------------------ |
-| `assay.json`                                                                 | Input contract from Studio basic info (sample mapping + interval) |
-| `roi/PosN/`                                                                  | Cropped ROI stacks + `index.json` (`axisOrder: TCZYX`; optional `timeIndices` = source frame indices per T plane for downsampled series) |
+| `assay.json`                                                                 | Nested domain contract (`type`, `data`, `workspace`, `interval`, `samples`, optional `analysis`) |
+| `roi/PosN/`                                                                  | Cropped ROI stacks + slim `index.json` (always `axisOrder: TCZYX`; keep `zCount`; derive stack shape from counts + `bbox`; optional `timeIndices`) |
 | `mask/PosN/`                                                                 | Per-frame segmentation masks (`uint8` TIFF stacks)     |
-| `timeseries/Pos{n}/ch{n}.csv`                                                 | Per-position intensity metrics (`pos,roi,t,area,background,intensity,corrected`; no `slide_channel`; `t` from `timeIndices`). Segmented: mask fg + **median** bg; `--full-frame`: whole ROI + **10th-percentile** bg. |
+| `timeseries/Pos{n}/ch{n}.csv`                                                 | Per-position intensity metrics (`roi,t,area,background,sum,corrected`; no `pos` / `slide_channel`; `t` from `timeIndices`). Segmented: mask fg + **median** bg; `analysis.skipSegment`: whole ROI + **10th-percentile** bg. |
 | `results/auc.csv`                                                            | Trapezoidal AUC per `(pos, roi)` trace (+ `.xlsx`)     |
 | `results/fit.csv`                                                            | Two-exponential kinetic fit parameters (+ `.xlsx`)     |
 | `results/traces.png`, `traces_shared_y.png`, `area.png`, `area_shared_y.png` | Timeseries plots                                       |
@@ -131,7 +131,7 @@ analysis/
   roi_stack.rs         # ROI TIFF stacks (shared)
   csv_io.rs, output.rs, export.rs
   plot.rs + plot/      # shared mplot-rs helpers
-  assays.rs            # match assayId → pipeline
+  assays.rs            # match assay type → pipeline
   assays/
     transfection.rs + transfection/
       traces.rs        # shared timeseries CSV grouping for AUC/fit/plots
@@ -163,7 +163,7 @@ Summary — full process, tolerances table, and lifecycle in [`parity.md`](./par
 - Position ranges in `assay.json` use **inclusive** Studio semantics (`1:12` → positions 1…12).
 - Segmentation defaults: `variation_radius=2`, `gaussian_sigma=1.0`.
 - Fit uses the two-pass pooled-protein strategy on the **basic translation–degradation model** (onset time \(t_0\), expression rate \(m_0 k_{TL}\), mRNA/protein lifetimes; **no maturation**). Optional `analysis.maxOnsetMinutes` in `assay.json` is **transfection-only** (default **`120`** when omitted for that assay; set `0` to fix onset at 0). Other assays ignore it. Code, CSV, and UI use one set of names: `onset_time`, `expression_rate`, `baseline_intensity` (no alternate aliases).
-- Frame interval (`info2.timelapseAmount` / `timelapseUnit`) is **general**. Transfection defaults to **10 minutes** when omitted; other assays require an explicit positive interval.
+- Frame interval (`interval.value` / `interval.unit`) is **general**. Transfection defaults to **10 minutes** when omitted; other assays require an explicit positive interval. Optional `analysis.skipSegment` skips Otsu and uses full-ROI p10 background.
 
 ## Parity CLI (`lisca-analyze`)
 
@@ -185,7 +185,7 @@ cargo build -p lisca --release --bin lisca-analyze
 ./target/release/lisca-analyze pipeline ~/data/TF84
 ```
 
-`--interval` / `--max-onset-minutes` may be omitted when `assay.json` has `info2.timelapseAmount` / `timelapseUnit` and optional `analysis.maxOnsetMinutes`. `--assay` defaults to `<workspace>/assay.json`. Plot commands also accept transfection-style paths (`…/timeseries`, `…/results/auc.csv`, `…/results/fit.csv`).
+`--interval` / `--max-onset-minutes` may be omitted when `assay.json` has `interval` and optional `analysis.maxOnsetMinutes`. `--assay` defaults to `<workspace>/assay.json`. Plot commands also accept transfection-style paths (`…/timeseries`, `…/results/auc.csv`, `…/results/fit.csv`).
 
 ## Tests
 

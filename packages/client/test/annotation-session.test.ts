@@ -14,12 +14,10 @@ const roi = {
   roi: 4,
   fileName: "roi.tif",
   bbox: { x: 0, y: 0, w: 2, h: 2, roi: 4 },
-  shape: [2, 2, 1, 1, 1] as [number, number, number, number, number],
 };
 
 const position: RoiPositionScan = {
   pos: 2,
-  source: { kind: "nd2", path: "/data/source.nd2" },
   channels: [1],
   times: [10, 20],
   zSlices: [3, 5],

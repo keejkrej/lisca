@@ -539,13 +539,7 @@ where
         )?;
     }
 
-    write_roi_index(
-        request,
-        pos,
-        roi_index_entries(bboxes, scan),
-        scan,
-        &staging_dir,
-    )?;
+    write_roi_index(pos, roi_index_entries(bboxes), scan, &staging_dir)?;
     if is_cancelled() {
         return Err(CropPositionError::Cancelled);
     }
@@ -655,32 +649,26 @@ fn crop_position_worker_count(position_count: usize) -> usize {
     position_count.min(max_workers).max(1)
 }
 
-fn roi_index_entries(bboxes: &[RoiBbox], scan: &WorkspaceScan) -> Vec<RoiIndexEntry> {
+fn roi_index_entries(bboxes: &[RoiBbox]) -> Vec<RoiIndexEntry> {
     bboxes
         .iter()
         .cloned()
         .map(|bbox| RoiIndexEntry {
             roi: bbox.roi,
             file_name: format!("Roi{}.tif", bbox.roi),
-            shape: [
-                scan.times.len().max(1) as u32,
-                scan.channels.len().max(1) as u32,
-                scan.z_slices.len().max(1) as u32,
-                bbox.h,
-                bbox.w,
-            ],
             bbox,
         })
         .collect()
 }
 
 fn write_roi_index(
-    request: &CropRoiRequest,
     pos: u32,
     entries: Vec<RoiIndexEntry>,
     scan: &WorkspaceScan,
     output_dir: &Path,
 ) -> Result<(), String> {
+    use crate::protocol::RoiIndexFileAxisOrder;
+
     let time_indices = if scan.times.is_empty() {
         vec![0]
     } else {
@@ -688,13 +676,11 @@ fn write_roi_index(
     };
     let index = RoiIndexFile {
         position: pos,
-        axis_order: "TCZYX".to_string(),
-        page_order: vec!["t".to_string(), "c".to_string(), "z".to_string()],
+        axis_order: RoiIndexFileAxisOrder::Tczyx,
         time_count: scan.times.len().max(1) as u32,
         channel_count: scan.channels.len().max(1) as u32,
         z_count: scan.z_slices.len().max(1) as u32,
         time_indices,
-        source: request.source.clone(),
         rois: entries,
     };
     let bytes = serde_json::to_vec_pretty(&index).map_err(|error| error.to_string())?;

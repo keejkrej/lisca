@@ -40,7 +40,6 @@ function createMemoryStorage(): LiscaStorageAdapter {
 
 const position: RoiPositionScan = {
   pos: 1,
-  source: { kind: "nd2", path: "/data/source.nd2" },
   channels: [0, 1],
   times: [10, 20],
   zSlices: [0, 1],
@@ -49,7 +48,6 @@ const position: RoiPositionScan = {
       roi: 2,
       fileName: "roi.tif",
       bbox: { x: 0, y: 0, w: 64, h: 64, roi: 2 },
-      shape: [64, 64, 1, 1, 1],
     },
   ],
 };
