@@ -8,7 +8,6 @@ use std::{collections::BTreeMap, fs};
 use crate::protocol::{AnalysisCsvFile, AnalysisProgress, AnalysisStage, AssayJsonFile};
 
 use crate::analysis::output::collect_csv_outputs;
-use crate::analysis::plot::DEFAULT_PLOT_COLUMNS;
 use crate::analysis::progress::{analysis_progress, run_blocking};
 use crate::analysis::slide::{build_slide_mapping, parse_interval_minutes};
 
@@ -39,7 +38,7 @@ pub fn run_sync(workspace: &Path, assay_json: &AssayJsonFile) -> Result<(), Stri
         &model_dir,
         predict::PredictOptions::default(),
     )?;
-    plot::run_plot_timeseries(workspace, &mapping, interval, DEFAULT_PLOT_COLUMNS)?;
+    plot::run_plot_timeseries(workspace, &mapping, interval, None)?;
     clean::run_clean(workspace, &mapping)?;
     plot::run_plot_kill(workspace, &mapping, interval)?;
     plot::run_plot_death_times(workspace, &mapping, interval)?;
@@ -112,7 +111,7 @@ pub fn run_plot_timeseries_stage(
     mapping: &crate::analysis::slide::SlideMapping,
     interval: f64,
 ) -> Result<(), String> {
-    plot::run_plot_timeseries(workspace, mapping, interval, DEFAULT_PLOT_COLUMNS)
+    plot::run_plot_timeseries(workspace, mapping, interval, None)
 }
 
 pub fn run_clean_stage(

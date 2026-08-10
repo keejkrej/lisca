@@ -130,7 +130,7 @@ Stage names mirror `transfection`:
 | `timeseries` | `timeseries/Pos*/ch*.csv` (+ xlsx) |
 | `auc` | `results/auc.csv` |
 | `fit` | `results/fit.csv` |
-| `plot-timeseries` / `plot-auc` / `plot-fit` | `results/*.png` |
+| `plot-timeseries` / `plot-auc` / `plot-fit` | `results/*.png` (timeseries includes summary mean/median/IQR + shared-y companions) |
 | `pipeline` (`analyze`, `all`) | full Studio order from `assay.json` |
 
 Common flags: `--assay` (default `<workspace>/assay.json`), `--interval`,

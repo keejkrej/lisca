@@ -425,7 +425,7 @@ export function parsePanelGroups(
       xAxisLabel: "minutes",
       yAxisLabel:
         metric === "corrected"
-          ? "corrected intensity"
+          ? "intensity"
           : metric === "area"
             ? "mask area"
             : "P(dead)",

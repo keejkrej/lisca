@@ -9,9 +9,7 @@ mod traces;
 
 pub use auc::run_auc;
 pub use fit::{default_fit_jobs, run_fit};
-pub use plot::{
-    run_plot_auc, run_plot_fit, run_plot_timeseries, DEFAULT_PLOT_COLUMNS,
-};
+pub use plot::{run_plot_auc, run_plot_fit, run_plot_timeseries, DEFAULT_PLOT_COLUMNS};
 pub use segment::{default_jobs, run_segment, SegmentOptions};
 pub use timeseries::{default_timeseries_jobs, run_timeseries, run_timeseries_with_mode};
 
@@ -139,12 +137,7 @@ where
     let plot_ts_workspace = workspace_path.clone();
     let plot_ts_mapping = mapping.clone();
     run_blocking(move || {
-        run_plot_timeseries(
-            &plot_ts_workspace,
-            &plot_ts_mapping,
-            interval,
-            DEFAULT_PLOT_COLUMNS,
-        )
+        run_plot_timeseries(&plot_ts_workspace, &plot_ts_mapping, interval, None)
     })
     .await
     .map_err(|error| format!("plot-timeseries step failed: {error}"))?;
@@ -185,12 +178,7 @@ where
     let plot_fit_workspace = workspace_path.clone();
     let plot_fit_mapping = mapping.clone();
     run_blocking(move || {
-        run_plot_fit(
-            &plot_fit_workspace,
-            &plot_fit_mapping,
-            interval,
-            DEFAULT_PLOT_COLUMNS,
-        )
+        run_plot_fit(&plot_fit_workspace, &plot_fit_mapping, interval, None)
     })
     .await
     .map_err(|error| format!("plot-fit step failed: {error}"))?;
@@ -234,11 +222,11 @@ pub fn run_sync_with_mode(
         )?;
     }
     run_timeseries_with_mode(workspace, &mapping, jobs, full_frame)?;
-    run_plot_timeseries(workspace, &mapping, interval, DEFAULT_PLOT_COLUMNS)?;
+    run_plot_timeseries(workspace, &mapping, interval, None)?;
     run_auc(workspace, interval)?;
     run_plot_auc(workspace, &mapping)?;
     let max_onset = max_onset_minutes(assay_json);
     run_fit(workspace, interval, max_onset, default_fit_jobs())?;
-    run_plot_fit(workspace, &mapping, interval, DEFAULT_PLOT_COLUMNS)?;
+    run_plot_fit(workspace, &mapping, interval, None)?;
     Ok(())
 }

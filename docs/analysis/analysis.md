@@ -113,7 +113,7 @@ uv run optimum-cli export onnx --model keejkrej/killing-assay-resnet18 ./models/
 | `timeseries/Pos{n}/ch{n}.csv`                                                 | Per-position intensity metrics (`roi,t,area,background,sum,corrected`; no `pos` / `slide_channel`; `t` from `timeIndices`). Segmented: mask fg + **median** bg; `analysis.skipSegment`: whole ROI + **10th-percentile** bg. |
 | `results/auc.csv`                                                            | Trapezoidal AUC per `(pos, roi)` trace (+ `.xlsx`)     |
 | `results/fit.csv`                                                            | Two-exponential kinetic fit parameters (+ `.xlsx`)     |
-| `results/traces.png`, `traces_shared_y.png`, `area.png`, `area_shared_y.png` | Timeseries plots                                       |
+| `results/traces.png`, `traces_shared_y.png`, `traces_summary.png`, `traces_summary_shared_y.png`, `area.png`, `area_shared_y.png`, `area_summary.png`, `area_summary_shared_y.png` | Timeseries plots (individual + mean/median/IQR summary; per-panel and shared y) |
 | `results/auc.png`, `results/auc_log.png`                                      | AUC boxplots (linear and log y-scale)                  |
 | `results/{parameter}.png`, `results/traces_fit.png`, `traces_fit_shared_y.png` | Fit parameter boxplots and fitted trace grids (per-panel + shared y) |
 

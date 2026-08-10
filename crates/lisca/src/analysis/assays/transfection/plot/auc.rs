@@ -84,7 +84,7 @@ fn write_auc_boxplot(
                 axes = axes.y_scale(Scale::Log);
             } else {
                 let all_values: Vec<f64> = grouped_values.iter().flatten().copied().collect();
-                let (y_low, y_high) = percentile_ylim(&all_values, 5.0);
+                let (y_low, y_high) = percentile_ylim(&all_values);
                 axes = axes.y_range(y_low, y_high);
             }
             p.boxplot(grouped_values, BoxplotStyle::new()).axes(axes);

@@ -6,7 +6,7 @@ use mplot::Color;
 
 use crate::analysis::csv_io::{column_index, parse_f64, read_csv};
 use crate::analysis::plot::{
-    figure_builder_for_panels, grid_dimensions, save_figure, slide_channel_labels,
+    figure_builder_for_grid, grid_dimensions, save_figure, slide_channel_labels,
     SAVE_PAD_GRID_INCHES,
 };
 use crate::analysis::slide::SlideMapping;
@@ -53,7 +53,7 @@ pub fn run_plot_death_times(
 
     let channels: Vec<u32> = grouped.keys().copied().collect();
     let (rows, cols) = grid_dimensions(channels.len(), 2);
-    let mut builder = figure_builder_for_panels(channels.len());
+    let mut builder = figure_builder_for_grid(rows, cols);
 
     for (index, slide_channel) in channels.iter().enumerate() {
         let values = grouped.get(slide_channel).cloned().unwrap_or_default();

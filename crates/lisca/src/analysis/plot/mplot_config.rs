@@ -8,9 +8,14 @@ use mplot::Color;
 /// category x-labels keep a usable axes box after the bottom gutter.
 pub const FIGURE_SINGLE_WIDTH_IN: f64 = 6.5;
 pub const FIGURE_SINGLE_HEIGHT_IN: f64 = 5.5;
-/// Multi-panel grids (2×3 traces, kill-curve packs, …) (inches).
+/// Multi-panel grids fallback size when layout is unknown (inches).
+#[allow(dead_code)] // public API / historical fixed grid
 pub const FIGURE_GRID_WIDTH_IN: f64 = 12.0;
+#[allow(dead_code)]
 pub const FIGURE_GRID_HEIGHT_IN: f64 = 8.0;
+/// Approximate inches per subplot cell (transfection Python parity).
+const PANEL_WIDTH_IN: f64 = 5.5;
+const PANEL_HEIGHT_IN: f64 = 4.0;
 
 /// Matches transfection `FIGURE_DPI`.
 pub const FIGURE_DPI: u32 = 100;
@@ -25,22 +30,46 @@ pub fn figure_builder_single() -> FigureBuilder {
     figure_builder(FIGURE_SINGLE_WIDTH_IN, FIGURE_SINGLE_HEIGHT_IN, 0.2, 0.2)
 }
 
-/// Multi-panel packs (traces, area, traces_fit, multi-channel grids).
+/// Multi-panel packs at the historical fixed 12×8 size.
 ///
-/// Gaps are mplot `wspace`/`hspace` fractions of cell size (matplotlib
-/// `subplots_adjust`). Keep them tighter than the library default (0.2) so
-/// 2×3 assay grids use space for axes, not whitespace.
+/// Prefer [`figure_builder_for_grid`] so size tracks sample-aware layouts.
+#[allow(dead_code)] // public API
 pub fn figure_builder_grid() -> FigureBuilder {
     figure_builder(FIGURE_GRID_WIDTH_IN, FIGURE_GRID_HEIGHT_IN, 0.12, 0.16)
 }
 
-/// Choose single vs grid size from how many data panels will be drawn.
-pub fn figure_builder_for_panels(panel_count: usize) -> FigureBuilder {
-    if panel_count <= 1 {
-        figure_builder_single()
-    } else {
-        figure_builder_grid()
+/// Figure size in inches for an ``nrows`` × ``ncols`` subplot pack.
+pub fn figure_size_for_grid(nrows: usize, ncols: usize) -> (f64, f64) {
+    let rows = nrows.max(1);
+    let cols = ncols.max(1);
+    if rows == 1 && cols == 1 {
+        return (FIGURE_SINGLE_WIDTH_IN, FIGURE_SINGLE_HEIGHT_IN);
     }
+    let panel_slots = rows * cols;
+    let scale = if panel_slots >= 12 {
+        0.75
+    } else if panel_slots >= 8 {
+        0.85
+    } else {
+        1.0
+    };
+    (
+        PANEL_WIDTH_IN * cols as f64 * scale,
+        PANEL_HEIGHT_IN * rows as f64 * scale,
+    )
+}
+
+/// Multi-panel figure sized for a concrete grid shape.
+pub fn figure_builder_for_grid(nrows: usize, ncols: usize) -> FigureBuilder {
+    let (width_in, height_in) = figure_size_for_grid(nrows, ncols);
+    figure_builder(width_in, height_in, 0.12, 0.16)
+}
+
+/// Choose size from panel count via auto layout (1–12 sample table).
+#[allow(dead_code)] // public API; call sites prefer [`figure_builder_for_grid`]
+pub fn figure_builder_for_panels(panel_count: usize) -> FigureBuilder {
+    let (rows, cols) = super::util::subplot_grid_shape(panel_count.max(1));
+    figure_builder_for_grid(rows, cols)
 }
 
 fn figure_builder(width_in: f64, height_in: f64, h_gap: f64, v_gap: f64) -> FigureBuilder {

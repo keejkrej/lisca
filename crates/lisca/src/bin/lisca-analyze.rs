@@ -20,7 +20,7 @@ use std::time::Instant;
 use lisca::analysis::assays::transfection::{
     default_fit_jobs, default_jobs, default_timeseries_jobs, interval_minutes, max_onset_minutes,
     run_auc, run_fit, run_plot_auc, run_plot_fit, run_plot_timeseries, run_segment,
-    run_sync_with_mode, run_timeseries_with_mode, skip_segment, SegmentOptions, DEFAULT_PLOT_COLUMNS,
+    run_sync_with_mode, run_timeseries_with_mode, skip_segment, SegmentOptions,
 };
 use lisca::analysis::slide::{load_mapping_for_workspace, resolve_assay_path};
 use lisca::protocol::AssayJsonFile;
@@ -69,7 +69,7 @@ Commands (same stage names as `transfection`):
   timeseries        Intensity metrics → timeseries/Pos{{n}}/ch{{n}}.csv
   auc               Trapezoidal AUC → results/auc.csv
   fit               Two-exponential kinetic fit → results/fit.csv
-  plot-timeseries   Trace / area PNGs under results/
+  plot-timeseries   Trace / area / summary PNGs under results/
   plot-auc          AUC boxplots (linear + log)
   plot-fit          Fit parameter boxplots + traces_fit.png
   pipeline          Full Studio order from assay.json
@@ -174,13 +174,16 @@ fn cmd_plot_timeseries(args: &[String]) -> Result<(), String> {
     let assay = flag_path(args, "--assay");
     let mapping = load_mapping_for_workspace(&workspace, assay.as_deref())?;
     let interval = resolve_interval(&workspace, args)?;
-    let columns = flag_usize(args, "--columns")?.unwrap_or(DEFAULT_PLOT_COLUMNS);
-    if columns == 0 {
+    let columns = flag_usize(args, "--columns")?;
+    if columns == Some(0) {
         return Err("--columns must be >= 1".to_string());
     }
     eprintln!(
-        "plot-timeseries workspace={} interval={interval} columns={columns}",
-        workspace.display()
+        "plot-timeseries workspace={} interval={interval} columns={}",
+        workspace.display(),
+        columns
+            .map(|value| value.to_string())
+            .unwrap_or_else(|| "auto".to_string())
     );
     timed("plot-timeseries", || {
         run_plot_timeseries(&workspace, &mapping, interval, columns)
@@ -200,13 +203,16 @@ fn cmd_plot_fit(args: &[String]) -> Result<(), String> {
     let assay = flag_path(args, "--assay");
     let mapping = load_mapping_for_workspace(&workspace, assay.as_deref())?;
     let interval = resolve_interval(&workspace, args)?;
-    let columns = flag_usize(args, "--columns")?.unwrap_or(DEFAULT_PLOT_COLUMNS);
-    if columns == 0 {
+    let columns = flag_usize(args, "--columns")?;
+    if columns == Some(0) {
         return Err("--columns must be >= 1".to_string());
     }
     eprintln!(
-        "plot-fit workspace={} interval={interval} columns={columns}",
-        workspace.display()
+        "plot-fit workspace={} interval={interval} columns={}",
+        workspace.display(),
+        columns
+            .map(|value| value.to_string())
+            .unwrap_or_else(|| "auto".to_string())
     );
     timed("plot-fit", || {
         run_plot_fit(&workspace, &mapping, interval, columns)

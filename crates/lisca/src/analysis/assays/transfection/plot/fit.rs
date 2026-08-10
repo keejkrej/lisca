@@ -6,8 +6,8 @@ use mplot::prelude::{AxesStyle, BoxplotStyle, GridPos, Scale, TickFormat, TickLa
 use crate::analysis::array::{fitted_trace_value, KineticFitCoeffs};
 use crate::analysis::csv_io::{column_index, parse_f64, read_csv};
 use crate::analysis::plot::{
-    boxplot_tick_label, boxplot_x_axis_label, expand_degenerate_ylim, figure_builder_for_panels,
-    figure_builder_single, grid_dimensions, percentile_ylim, quartile_axis_upper, save_figure,
+    boxplot_tick_label, boxplot_x_axis_label, expand_degenerate_ylim, figure_builder_for_grid,
+    figure_builder_single, percentile_ylim, quartile_axis_upper, resolve_subplot_grid, save_figure,
     slide_channel_labels, subplot_title, trace_color_alpha, trace_line_style,
     trace_naming_haystack, SAVE_PAD_GRID_INCHES, SAVE_PAD_SINGLE_INCHES,
 };
@@ -46,7 +46,7 @@ pub fn run_plot_fit(
     workspace: &Path,
     mapping: &SlideMapping,
     interval: f64,
-    columns: usize,
+    columns: Option<usize>,
 ) -> Result<(), String> {
     let fit_csv = workspace.join("results").join("fit.csv");
     let rows = load_fit_rows(&fit_csv)?;
@@ -213,7 +213,7 @@ fn write_fitted_trace_plots(
     timeseries_csvs: &[PathBuf],
     output_plot: &Path,
     interval: f64,
-    columns: usize,
+    columns: Option<usize>,
     mapping: &SlideMapping,
 ) -> Result<(), String> {
     let panels = load_fitted_trace_panels(fit_rows, timeseries_csvs, interval, mapping)?;
@@ -223,8 +223,8 @@ fn write_fitted_trace_plots(
 
     let panel_ylims: Vec<(f64, f64)> = panels
         .iter()
-        // Match transfection plot_timeseries default (5th–95th percentile).
-        .map(|panel| percentile_ylim(&panel.corrected_values, 5.0))
+        // Match transfection plot_timeseries default (0.1·p1 … p99/0.9).
+        .map(|panel| percentile_ylim(&panel.corrected_values))
         .collect();
     let unified_low = panel_ylims
         .iter()
@@ -334,11 +334,11 @@ fn load_fitted_trace_panels(
 fn write_fitted_trace_grid(
     panels: &[FittedTracePanel],
     output_plot: &Path,
-    columns: usize,
+    columns: Option<usize>,
     ylim_for_panel: impl Fn(usize) -> (f64, f64),
 ) -> Result<(), String> {
-    let (rows, cols) = grid_dimensions(panels.len(), columns);
-    let mut builder = figure_builder_for_panels(panels.len());
+    let (rows, cols) = resolve_subplot_grid(panels.len(), columns);
+    let mut builder = figure_builder_for_grid(rows, cols);
 
     for (index, panel) in panels.iter().enumerate() {
         let (y_low, y_high) = ylim_for_panel(index);
@@ -355,7 +355,7 @@ fn write_fitted_trace_grid(
                 AxesStyle::new()
                     .title(title)
                     .x_label("minutes")
-                    .y_label("corrected intensity")
+                    .y_label("intensity")
                     .y_range(y_low, y_high)
                     .x_range(0.0, max_t.max(1.0))
                     .y_tick_format(TickFormat::Scientific),

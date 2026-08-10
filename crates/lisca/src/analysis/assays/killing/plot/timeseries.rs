@@ -8,7 +8,7 @@ pub fn run_plot_timeseries(
     workspace: &Path,
     mapping: &SlideMapping,
     interval: f64,
-    columns: usize,
+    columns: Option<usize>,
 ) -> Result<(), String> {
     if interval <= 0.0 {
         return Err(format!("interval must be > 0, got {interval}"));
