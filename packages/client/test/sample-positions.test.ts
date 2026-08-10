@@ -2,12 +2,14 @@ import { describe, expect, test } from "vitest";
 
 import type { StudioAssaySamples } from "@lisca/contracts/assay";
 import {
+  analysisChannelsFromSamples,
   collectAssayPositions,
   expandPositionRange,
   filterScanPositionsForAssay,
   formatSamplePositions,
   isValidSamplePositionRange,
   parseSamplePositions,
+  parseSignalChannels,
   sampleRowFromDisk,
   sampleRowToDisk,
 } from "../src/studio/sample-positions";
@@ -41,41 +43,60 @@ describe("sample positions", () => {
     expect(isValidSamplePositionRange("", "12")).toBe(false);
   });
 
-  test("adds positions only when serializing to disk", () => {
+  test("parses signal channel lists", () => {
+    expect(parseSignalChannels("1")).toEqual([1]);
+    expect(parseSignalChannels("1,2")).toEqual([1, 2]);
+    expect(parseSignalChannels("")).toBeNull();
+    expect(parseSignalChannels("1,x")).toBeNull();
+  });
+
+  test("serializes sample identity only; channels go to analysis", () => {
     expect(
       sampleRowToDisk({
-        slide: "0",
+        slideChannel: "0",
         name: "sample",
         positionStart: "2",
         positionFinish: "4",
-        brightfield: "0",
-        fluorescence: "1",
       }),
     ).toEqual({
-      slide: "0",
+      slideChannel: 0,
       name: "sample",
-      brightfield: "0",
-      fluorescence: "1",
       positions: "2:4",
     });
   });
 
-  test("loads UI rows from disk positions", () => {
+  test("loads UI rows from disk positions and analysis channels", () => {
     expect(
-      sampleRowFromDisk({
-        slide: "0",
-        name: "sample",
-        positions: "9:20",
-        brightfield: "0",
-        fluorescence: "1",
-      }),
+      sampleRowFromDisk(
+        {
+          slideChannel: 0,
+          name: "sample",
+          positions: "9:20",
+        },
+        {
+          channels: { mask: 0, signal: [1] },
+          sampleChannels: [{ slideChannel: 0, mask: 2, signal: [3, 4] }],
+        },
+      ),
     ).toEqual({
-      slide: "0",
+      slideChannel: "0",
       name: "sample",
       positionStart: "9",
       positionFinish: "20",
-      brightfield: "0",
-      fluorescence: "1",
+      mask: "2",
+      signal: "3,4",
+    });
+  });
+
+  test("derives analysis channel defaults and per-slide overrides", () => {
+    expect(
+      analysisChannelsFromSamples([
+        { slideChannel: "1", name: "a", mask: "0", signal: "1" },
+        { slideChannel: "2", name: "b", mask: "0", signal: "1,2" },
+      ]),
+    ).toEqual({
+      channels: { mask: 0, signal: [1] },
+      sampleChannels: [{ slideChannel: 2, mask: 0, signal: [1, 2] }],
     });
   });
 
@@ -92,21 +113,21 @@ describe("sample positions", () => {
       samples: [
         {
           id: "sample:0",
-          slide: "0",
+          slideChannel: "0",
           name: "a",
           positionStart: "0",
           positionFinish: "3",
-          brightfield: "0",
-          fluorescence: "1",
+          mask: "0",
+          signal: "1",
         },
         {
           id: "sample:1",
-          slide: "1",
+          slideChannel: "1",
           name: "b",
           positionStart: "2",
           positionFinish: "5",
-          brightfield: "0",
-          fluorescence: "1",
+          mask: "0",
+          signal: "1",
         },
       ],
     };

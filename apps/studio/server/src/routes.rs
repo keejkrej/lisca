@@ -177,7 +177,7 @@ fn build_transfection_operation(
         slide::{build_slide_mapping, SlideMapping},
     };
 
-    let mapping = match build_slide_mapping(&assay.samples) {
+    let mapping = match build_slide_mapping(&assay) {
         Ok(mapping) => Arc::new(mapping),
         Err(message) => {
             let task = analysis_task(
@@ -351,7 +351,7 @@ fn build_killing_operation(
         slide::{build_slide_mapping, parse_interval_minutes, SlideMapping},
     };
 
-    let mapping = match build_slide_mapping(&assay.samples) {
+    let mapping = match build_slide_mapping(&assay) {
         Ok(mapping) => Arc::new(mapping),
         Err(message) => {
             let task = analysis_task(
@@ -718,12 +718,13 @@ mod tests {
                 "data": {{ "type": "folder", "path": "", "template": {{ "subfolder": "", "filename": "" }} }},
                 "interval": {{ "value": 1.0, "unit": "minute" }},
                 "samples": [{{
-                    "slide": "0",
+                    "slideChannel": 0,
                     "name": "sample",
-                    "brightfield": "0",
-                    "fluorescence": "1",
                     "positions": "0,1"
-                }}]
+                }}],
+                "analysis": {{
+                    "channels": {{ "mask": 0, "signal": [1] }}
+                }}
             }}"#
         );
         fs::write(workspace.join("assay.json"), assay).unwrap();

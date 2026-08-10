@@ -46,7 +46,7 @@ pub fn run_segment(workspace: &Path, mapping: &SlideMapping, options: &SegmentOp
             entry.positions.iter().copied().map(|position| {
                 (
                     *slide_channel,
-                    entry.brightfield,
+                    entry.mask,
                     position,
                 )
             })
@@ -238,8 +238,8 @@ mod tests {
             0,
             SlideChannelMapping {
                 positions,
-                fluorescence: 1,
-                brightfield: 0,
+                signal: vec![1],
+                mask: 0,
                 sample_name: "test".to_string(),
             },
         );

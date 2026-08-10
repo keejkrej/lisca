@@ -842,9 +842,18 @@ impl ::std::convert::TryFrom<::std::string::String> for AppId {
 #[doc = "{"]
 #[doc = "  \"type\": \"object\","]
 #[doc = "  \"properties\": {"]
+#[doc = "    \"channels\": {"]
+#[doc = "      \"$ref\": \"#/definitions/AssayChannels\""]
+#[doc = "    },"]
 #[doc = "    \"maxOnsetMinutes\": {"]
 #[doc = "      \"type\": \"number\","]
 #[doc = "      \"format\": \"double\""]
+#[doc = "    },"]
+#[doc = "    \"sampleChannels\": {"]
+#[doc = "      \"type\": \"array\","]
+#[doc = "      \"items\": {"]
+#[doc = "        \"$ref\": \"#/definitions/AssaySampleChannels\""]
+#[doc = "      }"]
 #[doc = "    },"]
 #[doc = "    \"skipSegment\": {"]
 #[doc = "      \"type\": \"boolean\""]
@@ -855,12 +864,20 @@ impl ::std::convert::TryFrom<::std::string::String> for AppId {
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct AssayAnalysisConfig {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub channels: ::std::option::Option<AssayChannels>,
     #[serde(
         rename = "maxOnsetMinutes",
         default,
         skip_serializing_if = "::std::option::Option::is_none"
     )]
     pub max_onset_minutes: ::std::option::Option<f64>,
+    #[serde(
+        rename = "sampleChannels",
+        default,
+        skip_serializing_if = "::std::vec::Vec::is_empty"
+    )]
+    pub sample_channels: ::std::vec::Vec<AssaySampleChannels>,
     #[serde(
         rename = "skipSegment",
         default,
@@ -871,13 +888,49 @@ pub struct AssayAnalysisConfig {
 impl ::std::default::Default for AssayAnalysisConfig {
     fn default() -> Self {
         Self {
+            channels: Default::default(),
             max_onset_minutes: Default::default(),
+            sample_channels: Default::default(),
             skip_segment: Default::default(),
         }
     }
 }
 impl AssayAnalysisConfig {
     pub fn builder() -> builder::AssayAnalysisConfig {
+        Default::default()
+    }
+}
+#[doc = "`AssayChannels`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"mask\","]
+#[doc = "    \"signal\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"mask\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    },"]
+#[doc = "    \"signal\": {"]
+#[doc = "      \"$ref\": \"#/definitions/AssaySignalChannels\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct AssayChannels {
+    pub mask: u32,
+    pub signal: AssaySignalChannels,
+}
+impl AssayChannels {
+    pub fn builder() -> builder::AssayChannels {
         Default::default()
     }
 }
@@ -1484,6 +1537,48 @@ impl AssayJsonFile {
         Default::default()
     }
 }
+#[doc = "`AssaySampleChannels`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"mask\","]
+#[doc = "    \"signal\","]
+#[doc = "    \"slideChannel\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"mask\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    },"]
+#[doc = "    \"signal\": {"]
+#[doc = "      \"$ref\": \"#/definitions/AssaySignalChannels\""]
+#[doc = "    },"]
+#[doc = "    \"slideChannel\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct AssaySampleChannels {
+    pub mask: u32,
+    pub signal: AssaySignalChannels,
+    #[serde(rename = "slideChannel")]
+    pub slide_channel: u32,
+}
+impl AssaySampleChannels {
+    pub fn builder() -> builder::AssaySampleChannels {
+        Default::default()
+    }
+}
 #[doc = "`AssaySampleRow`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
@@ -1492,27 +1587,21 @@ impl AssayJsonFile {
 #[doc = "{"]
 #[doc = "  \"type\": \"object\","]
 #[doc = "  \"required\": ["]
-#[doc = "    \"brightfield\","]
-#[doc = "    \"fluorescence\","]
 #[doc = "    \"name\","]
 #[doc = "    \"positions\","]
-#[doc = "    \"slide\""]
+#[doc = "    \"slideChannel\""]
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
-#[doc = "    \"brightfield\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    },"]
-#[doc = "    \"fluorescence\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    },"]
 #[doc = "    \"name\": {"]
 #[doc = "      \"type\": \"string\""]
 #[doc = "    },"]
 #[doc = "    \"positions\": {"]
 #[doc = "      \"type\": \"string\""]
 #[doc = "    },"]
-#[doc = "    \"slide\": {"]
-#[doc = "      \"type\": \"string\""]
+#[doc = "    \"slideChannel\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
 #[doc = "    }"]
 #[doc = "  }"]
 #[doc = "}"]
@@ -1520,11 +1609,10 @@ impl AssayJsonFile {
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct AssaySampleRow {
-    pub brightfield: ::std::string::String,
-    pub fluorescence: ::std::string::String,
     pub name: ::std::string::String,
     pub positions: ::std::string::String,
-    pub slide: ::std::string::String,
+    #[serde(rename = "slideChannel")]
+    pub slide_channel: u32,
 }
 impl AssaySampleRow {
     pub fn builder() -> builder::AssaySampleRow {
@@ -1560,6 +1648,41 @@ impl ::std::convert::From<AssaySamples> for ::std::vec::Vec<AssaySampleRow> {
 }
 impl ::std::convert::From<::std::vec::Vec<AssaySampleRow>> for AssaySamples {
     fn from(value: ::std::vec::Vec<AssaySampleRow>) -> Self {
+        Self(value)
+    }
+}
+#[doc = "`AssaySignalChannels`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"array\","]
+#[doc = "  \"items\": {"]
+#[doc = "    \"type\": \"integer\","]
+#[doc = "    \"format\": \"uint32\","]
+#[doc = "    \"minimum\": 0.0"]
+#[doc = "  },"]
+#[doc = "  \"minItems\": 1"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+#[serde(transparent)]
+pub struct AssaySignalChannels(pub ::std::vec::Vec<u32>);
+impl ::std::ops::Deref for AssaySignalChannels {
+    type Target = ::std::vec::Vec<u32>;
+    fn deref(&self) -> &::std::vec::Vec<u32> {
+        &self.0
+    }
+}
+impl ::std::convert::From<AssaySignalChannels> for ::std::vec::Vec<u32> {
+    fn from(value: AssaySignalChannels) -> Self {
+        value.0
+    }
+}
+impl ::std::convert::From<::std::vec::Vec<u32>> for AssaySignalChannels {
+    fn from(value: ::std::vec::Vec<u32>) -> Self {
         Self(value)
     }
 }
@@ -7342,18 +7465,38 @@ pub mod builder {
     }
     #[derive(Clone, Debug)]
     pub struct AssayAnalysisConfig {
+        channels: ::std::result::Result<
+            ::std::option::Option<super::AssayChannels>,
+            ::std::string::String,
+        >,
         max_onset_minutes: ::std::result::Result<::std::option::Option<f64>, ::std::string::String>,
+        sample_channels: ::std::result::Result<
+            ::std::vec::Vec<super::AssaySampleChannels>,
+            ::std::string::String,
+        >,
         skip_segment: ::std::result::Result<::std::option::Option<bool>, ::std::string::String>,
     }
     impl ::std::default::Default for AssayAnalysisConfig {
         fn default() -> Self {
             Self {
+                channels: Ok(Default::default()),
                 max_onset_minutes: Ok(Default::default()),
+                sample_channels: Ok(Default::default()),
                 skip_segment: Ok(Default::default()),
             }
         }
     }
     impl AssayAnalysisConfig {
+        pub fn channels<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<super::AssayChannels>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.channels = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for channels: {e}"));
+            self
+        }
         pub fn max_onset_minutes<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<::std::option::Option<f64>>,
@@ -7362,6 +7505,16 @@ pub mod builder {
             self.max_onset_minutes = value
                 .try_into()
                 .map_err(|e| format!("error converting supplied value for max_onset_minutes: {e}"));
+            self
+        }
+        pub fn sample_channels<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::vec::Vec<super::AssaySampleChannels>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.sample_channels = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for sample_channels: {e}"));
             self
         }
         pub fn skip_segment<T>(mut self, value: T) -> Self
@@ -7381,7 +7534,9 @@ pub mod builder {
             value: AssayAnalysisConfig,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
+                channels: value.channels?,
                 max_onset_minutes: value.max_onset_minutes?,
+                sample_channels: value.sample_channels?,
                 skip_segment: value.skip_segment?,
             })
         }
@@ -7389,8 +7544,64 @@ pub mod builder {
     impl ::std::convert::From<super::AssayAnalysisConfig> for AssayAnalysisConfig {
         fn from(value: super::AssayAnalysisConfig) -> Self {
             Self {
+                channels: Ok(value.channels),
                 max_onset_minutes: Ok(value.max_onset_minutes),
+                sample_channels: Ok(value.sample_channels),
                 skip_segment: Ok(value.skip_segment),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct AssayChannels {
+        mask: ::std::result::Result<u32, ::std::string::String>,
+        signal: ::std::result::Result<super::AssaySignalChannels, ::std::string::String>,
+    }
+    impl ::std::default::Default for AssayChannels {
+        fn default() -> Self {
+            Self {
+                mask: Err("no value supplied for mask".to_string()),
+                signal: Err("no value supplied for signal".to_string()),
+            }
+        }
+    }
+    impl AssayChannels {
+        pub fn mask<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.mask = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for mask: {e}"));
+            self
+        }
+        pub fn signal<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::AssaySignalChannels>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.signal = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for signal: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<AssayChannels> for super::AssayChannels {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: AssayChannels,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                mask: value.mask?,
+                signal: value.signal?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::AssayChannels> for AssayChannels {
+        fn from(value: super::AssayChannels) -> Self {
+            Self {
+                mask: Ok(value.mask),
+                signal: Ok(value.signal),
             }
         }
     }
@@ -7806,45 +8017,89 @@ pub mod builder {
         }
     }
     #[derive(Clone, Debug)]
+    pub struct AssaySampleChannels {
+        mask: ::std::result::Result<u32, ::std::string::String>,
+        signal: ::std::result::Result<super::AssaySignalChannels, ::std::string::String>,
+        slide_channel: ::std::result::Result<u32, ::std::string::String>,
+    }
+    impl ::std::default::Default for AssaySampleChannels {
+        fn default() -> Self {
+            Self {
+                mask: Err("no value supplied for mask".to_string()),
+                signal: Err("no value supplied for signal".to_string()),
+                slide_channel: Err("no value supplied for slide_channel".to_string()),
+            }
+        }
+    }
+    impl AssaySampleChannels {
+        pub fn mask<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.mask = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for mask: {e}"));
+            self
+        }
+        pub fn signal<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::AssaySignalChannels>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.signal = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for signal: {e}"));
+            self
+        }
+        pub fn slide_channel<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.slide_channel = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for slide_channel: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<AssaySampleChannels> for super::AssaySampleChannels {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: AssaySampleChannels,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                mask: value.mask?,
+                signal: value.signal?,
+                slide_channel: value.slide_channel?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::AssaySampleChannels> for AssaySampleChannels {
+        fn from(value: super::AssaySampleChannels) -> Self {
+            Self {
+                mask: Ok(value.mask),
+                signal: Ok(value.signal),
+                slide_channel: Ok(value.slide_channel),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
     pub struct AssaySampleRow {
-        brightfield: ::std::result::Result<::std::string::String, ::std::string::String>,
-        fluorescence: ::std::result::Result<::std::string::String, ::std::string::String>,
         name: ::std::result::Result<::std::string::String, ::std::string::String>,
         positions: ::std::result::Result<::std::string::String, ::std::string::String>,
-        slide: ::std::result::Result<::std::string::String, ::std::string::String>,
+        slide_channel: ::std::result::Result<u32, ::std::string::String>,
     }
     impl ::std::default::Default for AssaySampleRow {
         fn default() -> Self {
             Self {
-                brightfield: Err("no value supplied for brightfield".to_string()),
-                fluorescence: Err("no value supplied for fluorescence".to_string()),
                 name: Err("no value supplied for name".to_string()),
                 positions: Err("no value supplied for positions".to_string()),
-                slide: Err("no value supplied for slide".to_string()),
+                slide_channel: Err("no value supplied for slide_channel".to_string()),
             }
         }
     }
     impl AssaySampleRow {
-        pub fn brightfield<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::string::String>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.brightfield = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for brightfield: {e}"));
-            self
-        }
-        pub fn fluorescence<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::string::String>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.fluorescence = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for fluorescence: {e}"));
-            self
-        }
         pub fn name<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<::std::string::String>,
@@ -7865,14 +8120,14 @@ pub mod builder {
                 .map_err(|e| format!("error converting supplied value for positions: {e}"));
             self
         }
-        pub fn slide<T>(mut self, value: T) -> Self
+        pub fn slide_channel<T>(mut self, value: T) -> Self
         where
-            T: ::std::convert::TryInto<::std::string::String>,
+            T: ::std::convert::TryInto<u32>,
             T::Error: ::std::fmt::Display,
         {
-            self.slide = value
+            self.slide_channel = value
                 .try_into()
-                .map_err(|e| format!("error converting supplied value for slide: {e}"));
+                .map_err(|e| format!("error converting supplied value for slide_channel: {e}"));
             self
         }
     }
@@ -7882,22 +8137,18 @@ pub mod builder {
             value: AssaySampleRow,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
-                brightfield: value.brightfield?,
-                fluorescence: value.fluorescence?,
                 name: value.name?,
                 positions: value.positions?,
-                slide: value.slide?,
+                slide_channel: value.slide_channel?,
             })
         }
     }
     impl ::std::convert::From<super::AssaySampleRow> for AssaySampleRow {
         fn from(value: super::AssaySampleRow) -> Self {
             Self {
-                brightfield: Ok(value.brightfield),
-                fluorescence: Ok(value.fluorescence),
                 name: Ok(value.name),
                 positions: Ok(value.positions),
-                slide: Ok(value.slide),
+                slide_channel: Ok(value.slide_channel),
             }
         }
     }

@@ -1,15 +1,24 @@
 import type { AlignerSource } from "./schema/shared";
 import type {
   AssayAnalysisConfig,
+  AssayChannels,
   AssayData,
   AssayInterval,
   AssayIntervalUnit,
   AssayJsonFile,
+  AssaySampleChannels,
   AssaySampleRow,
   AssayWorkspace,
 } from "./assay.schema";
 
-export type { AssayAnalysisConfig, AssayData, AssayInterval, AssayWorkspace };
+export type {
+  AssayAnalysisConfig,
+  AssayChannels,
+  AssayData,
+  AssayInterval,
+  AssaySampleChannels,
+  AssayWorkspace,
+};
 
 /** Presets for AlignerSource / folder-parse UI (maps into assay `data.template`). */
 export type FolderSourceTemplatePreset = {
@@ -83,12 +92,18 @@ export type StudioIntervalUnit = AssayIntervalUnit;
 export type StudioAssaySampleRow = {
   /** Stable UI row identity; not persisted to assay.json. */
   id: string;
-  slide: string;
+  /** Slide-channel key; edited as text, written as int on disk. */
+  slideChannel: string;
   name: string;
   positionStart: string;
   positionFinish: string;
-  brightfield: string;
-  fluorescence: string;
+  /**
+   * Mask channel and comma-separated signal channels for this sample (UI).
+   * Persisted under `analysis.channels` / `analysis.sampleChannels`, not on the sample row.
+   */
+  mask: string;
+  /** e.g. `"1"` or `"1,2"`. */
+  signal: string;
 };
 
 /** Sample row fields loaded from assay.json before a UI row id is assigned. */

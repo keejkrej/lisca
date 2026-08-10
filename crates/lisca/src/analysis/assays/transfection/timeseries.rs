@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 use std::path::Path;
+use std::sync::Mutex;
 
 use rayon::prelude::*;
 
@@ -26,39 +27,50 @@ pub fn run_timeseries_with_mode(
     jobs: usize,
     full_frame: bool,
 ) -> Result<(), String> {
-    let _jobs = jobs.max(1);
-    let mut skipped_positions: BTreeMap<u32, Vec<u32>> = BTreeMap::new();
-    let mut csvs_written = 0usize;
-
-    for (slide_channel, entry) in mapping {
-        let signal_channel = entry.fluorescence;
-        let position_results = entry
-            .positions
-            .par_iter()
-            .map(|position| {
-                let pos_dir = match position_dir(workspace, *position) {
-                    Ok(path) => path,
-                    Err(_) => {
-                        return Ok::<_, String>((*slide_channel, *position, None::<Vec<MetricRow>>, true));
-                    }
-                };
-                let index = read_position_index(&pos_dir)?;
-                let rows = if full_frame {
-                    compute_full_frame_roi_metrics(&pos_dir, &index, signal_channel)?
-                } else {
-                    compute_masked_roi_metrics(workspace, &pos_dir, &index, signal_channel)?
-                };
-                Ok((*slide_channel, *position, Some(rows), false))
+    let tasks = mapping
+        .iter()
+        .flat_map(|(slide_channel, entry)| {
+            entry.signal.iter().flat_map(move |&signal_channel| {
+                entry
+                    .positions
+                    .iter()
+                    .copied()
+                    .map(move |position| (*slide_channel, signal_channel, position))
             })
-            .collect::<Result<Vec<_>, String>>()?;
+        })
+        .collect::<Vec<_>>();
 
-        for (channel, position, rows, skipped) in position_results {
-            if skipped {
-                skipped_positions.entry(channel).or_default().push(position);
-                continue;
-            }
-            let Some(mut rows) = rows else {
-                continue;
+    if tasks.is_empty() {
+        return Err("slide mapping defines no valid positions".to_string());
+    }
+
+    let skipped_positions = Mutex::new(BTreeMap::<u32, Vec<u32>>::new());
+    let csvs_written = Mutex::new(0usize);
+
+    let pool = rayon::ThreadPoolBuilder::new()
+        .num_threads(jobs.max(1))
+        .build()
+        .map_err(|error| error.to_string())?;
+
+    pool.install(|| {
+        tasks.par_iter().try_for_each(|&(slide_channel, signal_channel, position)| {
+            let pos_dir = match position_dir(workspace, position) {
+                Ok(path) => path,
+                Err(_) => {
+                    skipped_positions
+                        .lock()
+                        .map_err(|_| "timeseries skipped_positions lock poisoned".to_string())?
+                        .entry(slide_channel)
+                        .or_default()
+                        .push(position);
+                    return Ok::<(), String>(());
+                }
+            };
+            let index = read_position_index(&pos_dir)?;
+            let mut rows = if full_frame {
+                compute_full_frame_roi_metrics(&pos_dir, &index, signal_channel)?
+            } else {
+                compute_masked_roi_metrics(workspace, &pos_dir, &index, signal_channel)?
             };
             rows.sort_by_key(|row| (row.pos, row.roi, row.t));
             let output = workspace
@@ -66,9 +78,19 @@ pub fn run_timeseries_with_mode(
                 .join(format!("Pos{position}"))
                 .join(format!("ch{signal_channel}.csv"));
             write_metric_csv(&output, &rows)?;
-            csvs_written += 1;
-        }
-    }
+            *csvs_written
+                .lock()
+                .map_err(|_| "timeseries csvs_written lock poisoned".to_string())? += 1;
+            Ok::<(), String>(())
+        })
+    })?;
+
+    let csvs_written = *csvs_written
+        .lock()
+        .map_err(|_| "timeseries csvs_written lock poisoned".to_string())?;
+    let skipped_positions = skipped_positions
+        .into_inner()
+        .map_err(|_| "timeseries skipped_positions lock poisoned".to_string())?;
 
     if csvs_written == 0 {
         if !skipped_positions.is_empty() {
@@ -133,8 +155,8 @@ mod tests {
             0,
             SlideChannelMapping {
                 positions,
-                fluorescence: 1,
-                brightfield: 0,
+                signal: vec![1],
+                mask: 0,
                 sample_name: "test".to_string(),
             },
         );

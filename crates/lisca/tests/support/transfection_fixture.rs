@@ -72,12 +72,16 @@ fn write_assay_json(root: &Path) {
         },
         "interval": { "value": INTERVAL_MINUTES, "unit": "minute" },
         "samples": [{
-            "slide": SLIDE_CHANNEL.to_string(),
-            "brightfield": MASK_CHANNEL.to_string(),
-            "fluorescence": SIGNAL_CHANNEL.to_string(),
+            "slideChannel": SLIDE_CHANNEL,
             "name": "condA",
             "positions": POSITION.to_string()
-        }]
+        }],
+        "analysis": {
+            "channels": {
+                "mask": MASK_CHANNEL,
+                "signal": [SIGNAL_CHANNEL]
+            }
+        }
     });
     fs::write(root.join("assay.json"), format!("{assay}\n")).expect("assay.json");
 }

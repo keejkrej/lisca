@@ -4,7 +4,7 @@ import type {
   StudioIntervalUnit,
 } from "@lisca/contracts/assay";
 
-import { isValidSamplePositionRange } from "./sample-positions";
+import { isValidSamplePositionRange, parseSignalChannels } from "./sample-positions";
 
 function parseNonNegativeInteger(value: string): number | null {
   const trimmed = value.trim();
@@ -34,11 +34,11 @@ export function validAssaySamples(samples: StudioAssaySampleRow[]): boolean {
     samples.length > 0 &&
     samples.every(
       (row) =>
-        parseNonNegativeInteger(row.slide) != null &&
+        parseNonNegativeInteger(row.slideChannel) != null &&
         row.name.trim().length > 0 &&
         isValidSamplePositionRange(row.positionStart, row.positionFinish) &&
-        parseNonNegativeInteger(row.brightfield) != null &&
-        parseNonNegativeInteger(row.fluorescence) != null,
+        parseNonNegativeInteger(row.mask) != null &&
+        parseSignalChannels(row.signal) != null,
     )
   );
 }
@@ -72,8 +72,8 @@ export function validateAssayForAnalysis(input: {
 
   input.samples.forEach((row, index) => {
     const rowLabel = `Sample row ${index + 1}`;
-    if (parseNonNegativeInteger(row.slide) == null) {
-      errors.push(`${rowLabel}: slide must be a non-negative integer.`);
+    if (parseNonNegativeInteger(row.slideChannel) == null) {
+      errors.push(`${rowLabel}: slide channel must be a non-negative integer.`);
     }
     if (row.name.trim().length === 0) {
       errors.push(`${rowLabel}: sample name is required.`);
@@ -83,11 +83,13 @@ export function validateAssayForAnalysis(input: {
         `${rowLabel}: position start and finish must be non-negative integers with finish >= start.`,
       );
     }
-    if (parseNonNegativeInteger(row.brightfield) == null) {
-      errors.push(`${rowLabel}: brightfield channel must be a non-negative integer.`);
+    if (parseNonNegativeInteger(row.mask) == null) {
+      errors.push(`${rowLabel}: mask channel must be a non-negative integer.`);
     }
-    if (parseNonNegativeInteger(row.fluorescence) == null) {
-      errors.push(`${rowLabel}: fluorescence channel must be a non-negative integer.`);
+    if (parseSignalChannels(row.signal) == null) {
+      errors.push(
+        `${rowLabel}: signal must be a non-empty comma-separated list of non-negative integers.`,
+      );
     }
   });
 

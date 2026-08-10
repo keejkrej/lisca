@@ -57,20 +57,20 @@ export function BasicInfoStep2() {
 
 function SampleCard(props: {
   row: {
-    slide: string;
+    slideChannel: string;
     name: string;
     positionStart: string;
     positionFinish: string;
-    brightfield: string;
-    fluorescence: string;
+    mask: string;
+    signal: string;
   };
   onChange: (patch: {
-    slide?: string;
+    slideChannel?: string;
     name?: string;
     positionStart?: string;
     positionFinish?: string;
-    brightfield?: string;
-    fluorescence?: string;
+    mask?: string;
+    signal?: string;
   }) => void;
   onRemove: () => void;
 }) {
@@ -79,12 +79,12 @@ function SampleCard(props: {
       <div class="flex flex-col gap-2.5">
         <div class="flex flex-row items-center gap-2.5">
           <Input
-            aria-label="Slide"
+            aria-label="Slide channel"
             class="w-16 shrink-0 text-center"
             inputMode="numeric"
-            placeholder="slide"
-            value={props.row.slide}
-            onChange={(e) => props.onChange({ slide: e.currentTarget.value })}
+            placeholder="ch"
+            value={props.row.slideChannel}
+            onChange={(e) => props.onChange({ slideChannel: e.currentTarget.value })}
           />
           <Input
             aria-label="Name"
@@ -125,23 +125,22 @@ function SampleCard(props: {
           />
         </div>
         <div class="flex flex-row items-center gap-2.5">
-          <span class="text-muted-foreground text-sm shrink-0">Brightfield</span>
+          <span class="text-muted-foreground text-sm shrink-0">Mask</span>
           <Input
-            aria-label="Brightfield channel"
+            aria-label="Mask channel"
             class="w-20 shrink-0 text-center"
             inputMode="numeric"
             placeholder="0"
-            value={props.row.brightfield}
-            onChange={(e) => props.onChange({ brightfield: e.currentTarget.value })}
+            value={props.row.mask}
+            onChange={(e) => props.onChange({ mask: e.currentTarget.value })}
           />
-          <span class="text-muted-foreground text-sm shrink-0">Fluorescence</span>
+          <span class="text-muted-foreground text-sm shrink-0">Signal</span>
           <Input
-            aria-label="Fluorescence channel"
-            class="w-20 shrink-0 text-center"
-            inputMode="numeric"
-            placeholder="1"
-            value={props.row.fluorescence}
-            onChange={(e) => props.onChange({ fluorescence: e.currentTarget.value })}
+            aria-label="Signal channels"
+            class="min-w-0 flex-1 text-center"
+            placeholder="1 or 1,2"
+            value={props.row.signal}
+            onChange={(e) => props.onChange({ signal: e.currentTarget.value })}
           />
         </div>
       </div>

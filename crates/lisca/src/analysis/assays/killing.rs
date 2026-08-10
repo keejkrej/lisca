@@ -30,7 +30,7 @@ pub fn run_sync(workspace: &Path, assay_json: &AssayJsonFile) -> Result<(), Stri
     )
     .ok_or_else(|| "invalid interval.value/unit in assay.json".to_string())?;
 
-    let mapping = build_slide_mapping(&assay_json.samples)?;
+    let mapping = build_slide_mapping(&assay_json)?;
 
     let model_dir = resolve_model_path(workspace)?;
     predict::run_predict(

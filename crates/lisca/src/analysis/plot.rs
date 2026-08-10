@@ -13,8 +13,9 @@ pub use mplot_config::{
 };
 pub use util::{
     boxplot_tick_label, boxplot_x_axis_label, expand_degenerate_ylim, grid_dimensions,
-    percentile_ylim, quartile_axis_upper, slide_channel_labels, subplot_title, trace_color_alpha,
-    trace_naming_haystack, DEFAULT_PLOT_COLUMNS,
+    percentile_ylim, quartile_axis_upper, sample_subplot_title, sample_trace_naming_haystack,
+    slide_channel_labels, subplot_title, trace_color_alpha, trace_naming_haystack,
+    DEFAULT_PLOT_COLUMNS,
 };
 
 use std::path::Path;
@@ -95,8 +96,12 @@ fn write_subplot_grid(
             .flat_map(|trace| trace.iter().map(|point| point.0))
             .fold(0.0f64, f64::max)
             * interval;
-        let (color, alpha) = trace_color_alpha(&trace_naming_haystack(&panel.path, mapping));
-        let title = subplot_title(&panel.path, panel.traces.len(), mapping);
+        let (color, alpha) = trace_color_alpha(&sample_trace_naming_haystack(
+            panel.slide_channel,
+            &panel.paths,
+            mapping,
+        ));
+        let title = sample_subplot_title(panel.slide_channel, panel.traces.len(), mapping);
         let traces = panel.traces.clone();
         let y_label = y_label.to_string();
         // Intensity traces (not area) use scientific y-tick labels.

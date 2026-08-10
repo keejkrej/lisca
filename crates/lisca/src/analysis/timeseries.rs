@@ -8,7 +8,9 @@ use super::slide::SlideMapping;
 
 #[derive(Debug, Clone)]
 pub(crate) struct TracePanel {
-    pub path: PathBuf,
+    /// One subplot per sample (`slide` / slide_channel), not per position CSV.
+    pub slide_channel: u32,
+    pub paths: Vec<PathBuf>,
     pub traces: Vec<Vec<(f64, f64)>>,
     pub y_values: Vec<f64>,
 }
@@ -104,7 +106,7 @@ pub fn parse_timeseries_path(path: &Path) -> Result<(u32, u32), String> {
 pub fn resolve_slide_channel(path: &Path, mapping: &SlideMapping) -> Result<u32, String> {
     let (position, signal_channel) = parse_timeseries_path(path)?;
     let mut matches = mapping.iter().filter_map(|(slide_channel, entry)| {
-        (entry.fluorescence == signal_channel && entry.positions.contains(&position))
+        (entry.signal.contains(&signal_channel) && entry.positions.contains(&position))
             .then_some(*slide_channel)
     });
     let Some(slide_channel) = matches.next() else {
@@ -138,10 +140,34 @@ pub(crate) fn load_trace_panel(path: &Path, y_column: &str) -> Result<TracePanel
         })
         .collect();
     Ok(TracePanel {
-        path: path.to_path_buf(),
+        slide_channel: 0,
+        paths: vec![path.to_path_buf()],
         traces,
         y_values,
     })
+}
+
+/// Load position CSVs and merge into one panel per sample (`slide_channel`).
+pub(crate) fn load_trace_panels_by_sample(
+    csvs: &[PathBuf],
+    y_column: &str,
+    mapping: &SlideMapping,
+) -> Result<Vec<TracePanel>, String> {
+    let mut grouped: BTreeMap<u32, TracePanel> = BTreeMap::new();
+    for path in csvs {
+        let slide_channel = resolve_slide_channel(path, mapping)?;
+        let panel = load_trace_panel(path, y_column)?;
+        let entry = grouped.entry(slide_channel).or_insert_with(|| TracePanel {
+            slide_channel,
+            paths: Vec::new(),
+            traces: Vec::new(),
+            y_values: Vec::new(),
+        });
+        entry.paths.extend(panel.paths);
+        entry.traces.extend(panel.traces);
+        entry.y_values.extend(panel.y_values);
+    }
+    Ok(grouped.into_values().collect())
 }
 
 /// Group `(t, y)` points by ROI. Timeseries CSVs are already split per
@@ -187,8 +213,8 @@ mod tests {
             3,
             SlideChannelMapping {
                 positions: vec![7],
-                fluorescence: 2,
-                brightfield: 0,
+                signal: vec![2],
+                mask: 0,
                 sample_name: "A".into(),
             },
         );

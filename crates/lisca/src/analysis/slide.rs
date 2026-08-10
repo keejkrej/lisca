@@ -2,44 +2,74 @@ use std::collections::{BTreeMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use serde::{Deserialize, Serialize};
+use crate::protocol::{AssayAnalysisConfig, AssayJsonFile, AssaySamples};
 
-use crate::protocol::AssaySamples;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct SlideChannelMapping {
     pub positions: Vec<u32>,
-    pub fluorescence: u32,
-    pub brightfield: u32,
+    /// Intensity channel indices (one timeseries CSV per channel).
+    pub signal: Vec<u32>,
+    /// Channel used for Otsu / mask generation.
+    pub mask: u32,
     pub sample_name: String,
 }
 
 pub type SlideMapping = BTreeMap<u32, SlideChannelMapping>;
 
-pub fn build_slide_mapping(samples: &AssaySamples) -> Result<SlideMapping, String> {
+pub fn build_slide_mapping(assay: &AssayJsonFile) -> Result<SlideMapping, String> {
+    build_slide_mapping_from_parts(&assay.samples, assay.analysis.as_ref())
+}
+
+pub fn build_slide_mapping_from_parts(
+    samples: &AssaySamples,
+    analysis: Option<&AssayAnalysisConfig>,
+) -> Result<SlideMapping, String> {
+    let defaults = analysis.and_then(|config| config.channels.as_ref());
+    let overrides = analysis
+        .map(|config| {
+            config
+                .sample_channels
+                .iter()
+                .map(|row| (row.slide_channel, (row.mask, row.signal.0.clone())))
+                .collect::<BTreeMap<_, _>>()
+        })
+        .unwrap_or_default();
+
     let mut mapping = BTreeMap::new();
     for row in samples.iter() {
         let sample_name = row.name.trim().to_string();
         if sample_name.is_empty() {
             continue;
         }
-        let fluorescence = parse_u32(&row.fluorescence, "fluorescence")?;
-        let brightfield = parse_u32(&row.brightfield, "brightfield")?;
-        let slide = parse_u32(&row.slide, "slide")?;
+        let slide_channel = row.slide_channel;
+        let (mask, signal) = if let Some((mask, signal)) = overrides.get(&slide_channel) {
+            (*mask, signal.clone())
+        } else if let Some(channels) = defaults {
+            (channels.mask, channels.signal.0.clone())
+        } else {
+            return Err(format!(
+                "missing analysis.channels (and no sampleChannels override) for slideChannel {slide_channel}"
+            ));
+        };
+        if signal.is_empty() {
+            return Err(format!(
+                "slideChannel {slide_channel}: signal channel list must be non-empty"
+            ));
+        }
         let positions = parse_positions(&row.positions)?;
         mapping.insert(
-            slide,
+            slide_channel,
             SlideChannelMapping {
                 positions,
-                fluorescence,
-                brightfield,
+                signal,
+                mask,
                 sample_name,
             },
         );
     }
 
     if mapping.is_empty() {
-        return Err("no samples for selected slide".to_string());
+        return Err("no samples for selected slide channel".to_string());
     }
     Ok(mapping)
 }
@@ -51,7 +81,7 @@ pub fn resolve_assay_path(workspace: &Path, assay: Option<&Path>) -> PathBuf {
         .unwrap_or_else(|| workspace.join("assay.json"))
 }
 
-/// Load sample mapping from Studio-format `assay.json` (`samples`).
+/// Load sample mapping from Studio-format `assay.json`.
 pub fn load_mapping_for_workspace(
     workspace: &Path,
     assay: Option<&Path>,
@@ -59,9 +89,9 @@ pub fn load_mapping_for_workspace(
     let path = resolve_assay_path(workspace, assay);
     let contents = fs::read_to_string(&path)
         .map_err(|error| format!("failed to read {}: {error}", path.display()))?;
-    let assay_json: crate::protocol::AssayJsonFile = serde_json::from_str(&contents)
+    let assay_json: AssayJsonFile = serde_json::from_str(&contents)
         .map_err(|error| format!("invalid assay.json {}: {error}", path.display()))?;
-    build_slide_mapping(&assay_json.samples)
+    build_slide_mapping(&assay_json)
 }
 
 /// Deprecated alias: stages read assay.json, not slide.json.
@@ -150,10 +180,6 @@ fn parse_position(raw: &str) -> Result<u32, String> {
         .map_err(|_| format!("invalid position token: {raw}"))
 }
 
-fn parse_u32(raw: &str, field_name: &str) -> Result<u32, String> {
-    parse_position(raw).map_err(|error| format!("invalid {field_name}: {error}"))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -165,14 +191,14 @@ mod tests {
             0,
             SlideChannelMapping {
                 positions: vec![1, 2, 3],
-                fluorescence: 2,
-                brightfield: 0,
+                signal: vec![2],
+                mask: 0,
                 sample_name: "condA".to_string(),
             },
         );
         let json = serde_json::to_string(&mapping).expect("serialize");
-        assert!(json.contains("\"fluorescence\""));
-        assert!(json.contains("\"brightfield\""));
+        assert!(json.contains("\"signal\""));
+        assert!(json.contains("\"mask\""));
         assert!(json.contains("\"sample_name\""));
         assert!(!json.contains("signalChannel"));
     }
@@ -182,5 +208,4 @@ mod tests {
         assert_eq!(parse_positions("1:4").unwrap(), vec![1, 2, 3, 4]);
         assert_eq!(parse_positions("3").unwrap(), vec![3]);
     }
-
 }

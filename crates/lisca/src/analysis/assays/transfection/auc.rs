@@ -1,5 +1,7 @@
 use std::path::{Path, PathBuf};
 
+use rayon::prelude::*;
+
 use crate::analysis::array::trapezoidal_integral;
 use crate::analysis::csv_io::{format_float, write_csv};
 use crate::analysis::slide::{load_mapping_for_workspace, SlideMapping};
@@ -38,12 +40,21 @@ struct AucRow {
     auc: f64,
 }
 
+#[derive(Debug, Clone)]
+struct AucTraceTask {
+    slide_channel: u32,
+    pos: i64,
+    roi: i64,
+    times: Vec<f64>,
+    values: Vec<f64>,
+}
+
 fn compute_auc_table(
     csvs: &[PathBuf],
     interval: f64,
     mapping: &SlideMapping,
 ) -> Result<Vec<AucRow>, String> {
-    let mut rows = Vec::new();
+    let mut tasks = Vec::new();
     for csv_path in csvs {
         let slide_channel = resolve_slide_channel(csv_path, mapping)?;
         let (position, _channel) = parse_timeseries_path(csv_path)?;
@@ -55,19 +66,31 @@ fn compute_auc_table(
                     .partial_cmp(&right.0)
                     .unwrap_or(std::cmp::Ordering::Equal)
             });
-            let times: Vec<f64> = trace.iter().map(|(t, _)| *t * interval).collect();
-            let values: Vec<f64> = trace.iter().map(|(_, value)| *value).collect();
-            rows.push(AucRow {
+            tasks.push(AucTraceTask {
                 slide_channel,
                 pos: position as i64,
                 roi,
-                auc: trapezoidal_integral(&times, &values),
+                times: trace.iter().map(|(t, _)| *t).collect(),
+                values: trace.iter().map(|(_, value)| *value).collect(),
             });
         }
     }
-    if rows.is_empty() {
+    if tasks.is_empty() {
         return Err("No AUC rows produced".to_string());
     }
+
+    let mut rows = tasks
+        .into_par_iter()
+        .map(|task| {
+            let times: Vec<f64> = task.times.iter().map(|t| t * interval).collect();
+            AucRow {
+                slide_channel: task.slide_channel,
+                pos: task.pos,
+                roi: task.roi,
+                auc: trapezoidal_integral(&times, &task.values),
+            }
+        })
+        .collect::<Vec<_>>();
     rows.sort_by(|left, right| {
         (left.slide_channel, left.pos, left.roi).cmp(&(right.slide_channel, right.pos, right.roi))
     });

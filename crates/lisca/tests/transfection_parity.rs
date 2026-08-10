@@ -83,7 +83,7 @@ fn timeseries_stage_matches_reference_metrics() {
     let temp = tempdir().expect("tempdir");
     let fixture = SyntheticWorkspace::build(temp.path());
     let assay = read_assay_json(&fixture.root);
-    let mapping = build_slide_mapping(&assay.samples).expect("mapping");
+    let mapping = build_slide_mapping(&assay).expect("mapping");
 
     run_timeseries(&fixture.root, &mapping, 1).expect("timeseries");
 
@@ -112,7 +112,7 @@ fn auc_stage_matches_reference_trapz() {
     let temp = tempdir().expect("tempdir");
     let fixture = SyntheticWorkspace::build(temp.path());
     let assay = read_assay_json(&fixture.root);
-    let mapping = build_slide_mapping(&assay.samples).expect("mapping");
+    let mapping = build_slide_mapping(&assay).expect("mapping");
     run_timeseries(&fixture.root, &mapping, 1).expect("timeseries");
 
     run_auc(&fixture.root, INTERVAL_MINUTES).expect("auc");
@@ -142,7 +142,7 @@ fn fit_stage_matches_transfection_reference_fit() {
     let temp = tempdir().expect("tempdir");
     let fixture = SyntheticWorkspace::build(temp.path());
     let assay = read_assay_json(&fixture.root);
-    let mapping = build_slide_mapping(&assay.samples).expect("mapping");
+    let mapping = build_slide_mapping(&assay).expect("mapping");
     run_timeseries(&fixture.root, &mapping, 1).expect("timeseries");
 
     run_fit(&fixture.root, INTERVAL_MINUTES, 0.0, 1).expect("fit");
@@ -197,7 +197,7 @@ fn transfection_csvs_match_transfection_cli() {
     let temp = tempdir().expect("tempdir");
     let fixture = SyntheticWorkspace::build(temp.path());
     let assay = read_assay_json(&fixture.root);
-    let mapping = build_slide_mapping(&assay.samples).expect("mapping");
+    let mapping = build_slide_mapping(&assay).expect("mapping");
     run_timeseries(&fixture.root, &mapping, 1).expect("lisca timeseries");
 
     let transfection_root = transfection_repo_root();
@@ -237,7 +237,7 @@ fn transfection_csvs_match_transfection_cli() {
         &transfection_root,
         "fit",
         &workspace,
-        &[("--interval", &interval), ("--jobs", "1")],
+        &[("--interval", &interval)],
     );
     let transfection_fit = fixture.root.join("results").join("fit.csv");
     let transfection_fit_golden = fs::read_to_string(&transfection_fit).expect("transfection fit");

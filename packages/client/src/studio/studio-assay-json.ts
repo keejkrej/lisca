@@ -20,6 +20,8 @@ import {
 import type { AssaySampleRow } from "@lisca/contracts";
 import * as Either from "effect/Either";
 
+import { analysisChannelsFromSamples } from "./sample-positions";
+
 export const ASSAY_CHOICE_LABEL: Record<StudioAssayType, string> = {
   [ASSAY_TYPE.TRANSFECTION]: "Transfection",
   [ASSAY_TYPE.KILLING]: "Killing",
@@ -47,11 +49,30 @@ export function analysisConfigForAssay(
   assayId: StudioAssayType | null,
   analysis: AssayAnalysisConfig | null | undefined,
 ): AssayAnalysisConfig | undefined {
-  if (!assayUsesMaxOnsetMinutes(assayId) && !assayUsesSkipSegment(assayId)) return undefined;
-  const maxOnset =
-    analysis?.maxOnsetMinutes ?? TRANSFECTION_DEFAULT_MAX_ONSET_MINUTES;
-  const skipSegment = analysis?.skipSegment ?? false;
-  return { maxOnsetMinutes: maxOnset, skipSegment };
+  const transfectionBits =
+    assayUsesMaxOnsetMinutes(assayId) || assayUsesSkipSegment(assayId)
+      ? {
+          maxOnsetMinutes: analysis?.maxOnsetMinutes ?? TRANSFECTION_DEFAULT_MAX_ONSET_MINUTES,
+          skipSegment: analysis?.skipSegment ?? false,
+        }
+      : {};
+
+  const channels = analysis?.channels;
+  const sampleChannels = analysis?.sampleChannels;
+
+  if (
+    Object.keys(transfectionBits).length === 0 &&
+    channels == null &&
+    (sampleChannels == null || sampleChannels.length === 0)
+  ) {
+    return undefined;
+  }
+
+  return {
+    ...transfectionBits,
+    ...(channels != null ? { channels } : {}),
+    ...(sampleChannels != null && sampleChannels.length > 0 ? { sampleChannels } : {}),
+  };
 }
 
 export function inferDataSourceKind(path: string): StudioDataSourceKind {
@@ -116,7 +137,11 @@ export function buildStudioAssayJson({
   analysis?: AssayAnalysisConfig | null;
   sampleRowToDisk: (row: StudioAssaySampleRow) => AssaySampleRow;
 }): StudioAssayJson {
-  const analysisSection = analysisConfigForAssay(assayId, analysis);
+  const derivedChannels = analysisChannelsFromSamples(samples);
+  const analysisSection = analysisConfigForAssay(assayId, {
+    ...analysis,
+    ...derivedChannels,
+  });
   return {
     type: assayId,
     name,
@@ -140,7 +165,10 @@ export function assayDisplayLabel(assay: Pick<StudioAssayJson, "type" | "name">)
 
 export function parseStudioAssayJson(
   contents: string,
-  sampleRowFromDisk: (row: AssaySampleRow) => StudioAssaySampleRowFields,
+  sampleRowFromDisk: (
+    row: AssaySampleRow,
+    analysis?: AssayAnalysisConfig | null,
+  ) => StudioAssaySampleRowFields,
   sampleRowToDisk: (row: StudioAssaySampleRow) => AssaySampleRow,
 ): StudioAssayJson {
   const decoded = decodeJsonResult(AssayJsonFileSchema)(contents);
@@ -151,7 +179,7 @@ export function parseStudioAssayJson(
   const root = decoded.right;
   const samples: StudioAssaySampleRow[] = root.samples.map((row, index) => ({
     id: `sample:${index}`,
-    ...sampleRowFromDisk(row),
+    ...sampleRowFromDisk(row, root.analysis),
   }));
 
   const folderTemplate =

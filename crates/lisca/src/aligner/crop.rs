@@ -641,12 +641,7 @@ fn crop_position_worker_count(position_count: usize) -> usize {
     let available = std::thread::available_parallelism()
         .map(usize::from)
         .unwrap_or(1);
-    let max_workers = std::env::var("LISCA_CROP_MAX_WORKERS")
-        .ok()
-        .and_then(|value| value.parse::<usize>().ok())
-        .filter(|value| *value > 0)
-        .unwrap_or(available);
-    position_count.min(max_workers).max(1)
+    position_count.min(available).max(1)
 }
 
 fn roi_index_entries(bboxes: &[RoiBbox]) -> Vec<RoiIndexEntry> {

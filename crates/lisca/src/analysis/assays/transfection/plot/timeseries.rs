@@ -3,7 +3,7 @@ use std::path::Path;
 use crate::analysis::csv_io::{column_index, read_csv};
 use crate::analysis::plot::write_metric_plots;
 use crate::analysis::slide::SlideMapping;
-use crate::analysis::timeseries::{discover_timeseries_csvs, load_trace_panel};
+use crate::analysis::timeseries::{discover_timeseries_csvs, load_trace_panels_by_sample};
 
 pub fn run_plot_timeseries(
     workspace: &Path,
@@ -15,10 +15,7 @@ pub fn run_plot_timeseries(
         return Err(format!("interval must be > 0, got {interval}"));
     }
     let csvs = discover_timeseries_csvs(&workspace.join("timeseries"))?;
-    let corrected_panels = csvs
-        .iter()
-        .map(|path| load_trace_panel(path, "corrected"))
-        .collect::<Result<Vec<_>, String>>()?;
+    let corrected_panels = load_trace_panels_by_sample(&csvs, "corrected", mapping)?;
     if corrected_panels.is_empty() {
         return Err("no timeseries panels to plot".to_string());
     }
@@ -35,14 +32,13 @@ pub fn run_plot_timeseries(
         mapping,
     )?;
 
-    if corrected_panels
-        .iter()
-        .all(|panel| panel_has_column(&panel.path, "area"))
-    {
-        let area_panels = csvs
+    if corrected_panels.iter().all(|panel| {
+        panel
+            .paths
             .iter()
-            .map(|path| load_trace_panel(path, "area"))
-            .collect::<Result<Vec<_>, String>>()?;
+            .all(|path| panel_has_column(path, "area"))
+    }) {
+        let area_panels = load_trace_panels_by_sample(&csvs, "area", mapping)?;
         write_metric_plots(
             &area_panels,
             &results_dir.join("area.png"),

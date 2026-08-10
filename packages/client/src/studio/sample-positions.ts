@@ -1,4 +1,4 @@
-import type { AssaySampleRow } from "@lisca/contracts";
+import type { AssayAnalysisConfig, AssaySampleRow } from "@lisca/contracts";
 import type { StudioAssaySampleRow, StudioAssaySamples } from "@lisca/contracts/assay";
 
 export type SamplePositionRange = {
@@ -69,35 +69,105 @@ export function parseSamplePositions(positions: string): SamplePositionRange {
 /** @deprecated Use parseSamplePositions */
 export const parseLegacySamplePositions = parseSamplePositions;
 
+/** Parse comma-separated non-negative ints (`"1"` / `"1,2"`). Empty → null. */
+export function parseSignalChannels(raw: string): number[] | null {
+  const tokens = raw
+    .split(",")
+    .map((token) => token.trim())
+    .filter(Boolean);
+  if (tokens.length === 0) return null;
+  const values: number[] = [];
+  for (const token of tokens) {
+    const value = parseNonNegativeInteger(token);
+    if (value == null) return null;
+    values.push(value);
+  }
+  return values;
+}
+
+export function formatSignalChannels(signal: readonly number[]): string {
+  return signal.join(",");
+}
+
+function signalChannelsEqual(a: readonly number[], b: readonly number[]): boolean {
+  return a.length === b.length && a.every((value, index) => value === b[index]);
+}
+
+/** Resolve mask/signal for a slide channel from analysis defaults + per-sample overrides. */
+export function resolveSampleChannels(
+  analysis: AssayAnalysisConfig | null | undefined,
+  slideChannel: number,
+): { mask: number; signal: number[] } | null {
+  const override = analysis?.sampleChannels?.find((entry) => entry.slideChannel === slideChannel);
+  if (override) {
+    return { mask: override.mask, signal: [...override.signal] };
+  }
+  if (analysis?.channels) {
+    return { mask: analysis.channels.mask, signal: [...analysis.channels.signal] };
+  }
+  return null;
+}
+
+/** Derive on-disk analysis channel fields from UI sample rows. */
+export function analysisChannelsFromSamples(
+  samples: readonly {
+    slideChannel: string;
+    name: string;
+    mask: string;
+    signal: string;
+  }[],
+): Pick<AssayAnalysisConfig, "channels" | "sampleChannels"> {
+  const rows: { slideChannel: number; mask: number; signal: number[] }[] = [];
+  for (const sample of samples) {
+    if (!sample.name.trim()) continue;
+    const slideChannel = parseNonNegativeInteger(sample.slideChannel);
+    const mask = parseNonNegativeInteger(sample.mask);
+    const signal = parseSignalChannels(sample.signal);
+    if (slideChannel == null || mask == null || signal == null) continue;
+    rows.push({ slideChannel, mask, signal });
+  }
+  if (rows.length === 0) return {};
+
+  const channels = { mask: rows[0]!.mask, signal: [...rows[0]!.signal] };
+  const sampleChannels = rows.filter(
+    (row) => row.mask !== channels.mask || !signalChannelsEqual(row.signal, channels.signal),
+  );
+  return {
+    channels,
+    ...(sampleChannels.length > 0 ? { sampleChannels } : {}),
+  };
+}
+
 export function sampleRowToDisk(row: {
   positionStart: string;
   positionFinish: string;
-  slide: string;
+  slideChannel: string;
   name: string;
-  brightfield: string;
-  fluorescence: string;
 }): AssaySampleRow {
+  const slideChannel = parseNonNegativeInteger(row.slideChannel);
   return {
-    slide: row.slide,
+    slideChannel: slideChannel ?? 0,
     name: row.name,
-    brightfield: row.brightfield,
-    fluorescence: row.fluorescence,
     positions: formatSamplePositions(row.positionStart, row.positionFinish),
   };
 }
 
-export function sampleRowFromDisk(record: AssaySampleRow): SamplePositionRange & {
-  slide: string;
+export function sampleRowFromDisk(
+  record: AssaySampleRow,
+  analysis?: AssayAnalysisConfig | null,
+): SamplePositionRange & {
+  slideChannel: string;
   name: string;
-  brightfield: string;
-  fluorescence: string;
+  mask: string;
+  signal: string;
 } {
   const range = parseSamplePositions(record.positions);
+  const channels = resolveSampleChannels(analysis, record.slideChannel);
   return {
-    slide: record.slide,
+    slideChannel: String(record.slideChannel),
     name: record.name,
-    brightfield: record.brightfield,
-    fluorescence: record.fluorescence,
+    mask: channels != null ? String(channels.mask) : "",
+    signal: channels != null ? formatSignalChannels(channels.signal) : "",
     positionStart: range.positionStart,
     positionFinish: range.positionFinish,
   };

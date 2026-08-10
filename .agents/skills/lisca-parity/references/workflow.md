@@ -10,7 +10,7 @@ Pointer target for agents; the canonical long form is
 | segment | `transfection segment WS --sample slide.json` | `lisca-analyze segment WS` |
 | timeseries | `transfection timeseries WS --sample slide.json` | `lisca-analyze timeseries WS` |
 | auc | `transfection auc WS --interval N` | `lisca-analyze auc WS --interval N` |
-| fit | `transfection fit WS --interval N --jobs J` | `lisca-analyze fit WS --interval N --jobs J` |
+| fit | `transfection fit WS --interval N` | `lisca-analyze fit WS --interval N` |
 | plots | `plot-timeseries` / `plot-auc` / `plot-fit` | same names on `lisca-analyze` |
 | full | `transfection-analyze.sh` | `lisca-analyze pipeline WS` |
 

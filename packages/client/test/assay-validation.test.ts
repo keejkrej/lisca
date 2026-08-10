@@ -34,8 +34,8 @@ describe("assay validation", () => {
         name: row.name || `sample-${index}`,
         positionStart: "1",
         positionFinish: "4",
-        brightfield: row.brightfield || "0",
-        fluorescence: row.fluorescence || "1",
+        mask: row.mask || "0",
+        signal: row.signal || "1",
       }),
     );
     expect(validAssaySamples(samples)).toBe(true);
@@ -65,8 +65,8 @@ describe("assay validation", () => {
         name: row.name || `sample-${index}`,
         positionStart: "1",
         positionFinish: "4",
-        brightfield: row.brightfield || "0",
-        fluorescence: row.fluorescence || "1",
+        mask: row.mask || "0",
+        signal: row.signal || "1",
       }),
     );
     const result = validateAssayForAnalysis({

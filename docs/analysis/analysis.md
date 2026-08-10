@@ -107,7 +107,7 @@ uv run optimum-cli export onnx --model keejkrej/killing-assay-resnet18 ./models/
 
 | Path                                                                         | Role                                                   |
 | ---------------------------------------------------------------------------- | ------------------------------------------------------ |
-| `assay.json`                                                                 | Nested domain contract (`type`, `data`, `workspace`, `interval`, `samples`, optional `analysis`) |
+| `assay.json`                                                                 | Nested domain contract (`type`, `data`, `workspace`, `interval`, `samples`, optional `analysis` with `channels` / `sampleChannels`) |
 | `roi/PosN/`                                                                  | Cropped ROI stacks + slim `index.json` (always `axisOrder: TCZYX`; keep `zCount`; derive stack shape from counts + `bbox`; optional `timeIndices`) |
 | `mask/PosN/`                                                                 | Per-frame segmentation masks (`uint8` TIFF stacks)     |
 | `timeseries/Pos{n}/ch{n}.csv`                                                 | Per-position intensity metrics (`roi,t,area,background,sum,corrected`; no `pos` / `slide_channel`; `t` from `timeIndices`). Segmented: mask fg + **median** bg; `analysis.skipSegment`: whole ROI + **10th-percentile** bg. |
@@ -164,6 +164,7 @@ Summary — full process, tolerances table, and lifecycle in [`parity.md`](./par
 - Segmentation defaults: `variation_radius=2`, `gaussian_sigma=1.0`.
 - Fit uses the two-pass pooled-protein strategy on the **basic translation–degradation model** (onset time \(t_0\), expression rate \(m_0 k_{TL}\), mRNA/protein lifetimes; **no maturation**). Optional `analysis.maxOnsetMinutes` in `assay.json` is **transfection-only** (default **`120`** when omitted for that assay; set `0` to fix onset at 0). Other assays ignore it. Code, CSV, and UI use one set of names: `onset_time`, `expression_rate`, `baseline_intensity` (no alternate aliases).
 - Frame interval (`interval.value` / `interval.unit`) is **general**. Transfection defaults to **10 minutes** when omitted; other assays require an explicit positive interval. Optional `analysis.skipSegment` skips Otsu and uses full-ROI p10 background.
+- Channel indices live under `analysis`, not on sample rows: `analysis.channels.{mask,signal}` (default) and optional `analysis.sampleChannels[]` overrides keyed by `slideChannel` (int). `signal` is a non-empty int list (one timeseries CSV per channel). Samples keep `slideChannel` (int), `name`, `positions` only.
 
 ## Parity CLI (`lisca-analyze`)
 
@@ -173,10 +174,10 @@ Rust stage CLI shaped like sibling [`lisca-transfection-assay`](../../../lisca-t
 cargo build -p lisca --release --bin lisca-analyze
 
 # Stage commands (mirror transfection CLI; mapping from assay.json)
-./target/release/lisca-analyze segment ~/data/TF84 --jobs 20
-./target/release/lisca-analyze timeseries ~/data/TF84 --jobs 20
+./target/release/lisca-analyze segment ~/data/TF84
+./target/release/lisca-analyze timeseries ~/data/TF84
 ./target/release/lisca-analyze auc ~/data/TF84
-./target/release/lisca-analyze fit ~/data/TF84 --jobs 20
+./target/release/lisca-analyze fit ~/data/TF84
 ./target/release/lisca-analyze plot-timeseries ~/data/TF84
 ./target/release/lisca-analyze plot-auc ~/data/TF84
 ./target/release/lisca-analyze plot-fit ~/data/TF84

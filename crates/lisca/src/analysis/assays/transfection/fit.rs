@@ -70,7 +70,14 @@ fn run_fit_tasks(
     if jobs == 1 || tasks.len() <= 1 {
         return tasks.iter().map(fit).collect();
     }
-    tasks.par_iter().map(fit).collect()
+    let pool = match rayon::ThreadPoolBuilder::new()
+        .num_threads(jobs.max(1))
+        .build()
+    {
+        Ok(pool) => pool,
+        Err(_) => return tasks.iter().map(fit).collect(),
+    };
+    pool.install(|| tasks.par_iter().map(fit).collect())
 }
 
 fn fit_task(

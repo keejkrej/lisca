@@ -218,33 +218,35 @@ pub fn run_predict_to(
     let mut prediction_rows: Vec<PredictionRow> = Vec::new();
 
     for (slide_channel, entry) in mapping {
-        for position in &entry.positions {
-            let frames = collect_position_frames(
-                workspace,
-                *slide_channel,
-                entry.fluorescence,
-                *position,
-            )?;
-            for chunk in frames.chunks(options.batch_size.max(1)) {
-                let probabilities = run_batch_inference(&mut session, &input_name, chunk)?;
-                for (frame, p_dead) in chunk.iter().zip(probabilities) {
-                    timeseries_by_pos_channel
-                        .entry((frame.pos, entry.fluorescence))
-                        .or_default()
-                        .push(TimeseriesRow {
-                            pos: frame.pos,
-                            roi: frame.roi,
+        for &signal_channel in &entry.signal {
+            for position in &entry.positions {
+                let frames = collect_position_frames(
+                    workspace,
+                    *slide_channel,
+                    signal_channel,
+                    *position,
+                )?;
+                for chunk in frames.chunks(options.batch_size.max(1)) {
+                    let probabilities = run_batch_inference(&mut session, &input_name, chunk)?;
+                    for (frame, p_dead) in chunk.iter().zip(probabilities) {
+                        timeseries_by_pos_channel
+                            .entry((frame.pos, signal_channel))
+                            .or_default()
+                            .push(TimeseriesRow {
+                                pos: frame.pos,
+                                roi: frame.roi,
+                                t: frame.t,
+                                p_dead,
+                            });
+                        prediction_rows.push(PredictionRow {
                             t: frame.t,
+                            roi: frame.roi,
                             p_dead,
+                            label: p_dead >= DEAD_LABEL_THRESHOLD,
+                            pos: frame.pos,
+                            slide_channel: frame.slide_channel,
                         });
-                    prediction_rows.push(PredictionRow {
-                        t: frame.t,
-                        roi: frame.roi,
-                        p_dead,
-                        label: p_dead >= DEAD_LABEL_THRESHOLD,
-                        pos: frame.pos,
-                        slide_channel: frame.slide_channel,
-                    });
+                    }
                 }
             }
         }

@@ -27,21 +27,16 @@ function parseChannel(value: string): number | null {
   return Number.isInteger(channel) && channel >= 0 ? channel : null;
 }
 
-export function studioBrightfieldChannel(samples: StudioAssaySampleRow[]): number {
+export function studioMaskChannel(samples: StudioAssaySampleRow[]): number {
   for (const row of samples) {
-    const channel = parseChannel(row.brightfield);
+    const channel = parseChannel(row.mask);
     if (channel != null) return channel;
   }
   return 0;
 }
 
-/** @deprecated Use studioBrightfieldChannel */
-export const studioMaskChannel = (
-  samplesOrInfo3: StudioAssaySampleRow[] | { samples: StudioAssaySampleRow[] },
-): number => {
-  const samples = Array.isArray(samplesOrInfo3) ? samplesOrInfo3 : samplesOrInfo3.samples;
-  return studioBrightfieldChannel(samples);
-};
+/** @deprecated Use studioMaskChannel */
+export const studioBrightfieldChannel = studioMaskChannel;
 
 function lastOrZero(values: number[] | undefined): number {
   return values?.[Math.max(0, values.length - 1)] ?? 0;

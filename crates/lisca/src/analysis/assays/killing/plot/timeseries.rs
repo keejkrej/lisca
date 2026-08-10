@@ -2,7 +2,7 @@ use std::path::Path;
 
 use crate::analysis::plot::write_metric_plots;
 use crate::analysis::slide::SlideMapping;
-use crate::analysis::timeseries::{discover_timeseries_csvs, load_trace_panel};
+use crate::analysis::timeseries::{discover_timeseries_csvs, load_trace_panels_by_sample};
 
 pub fn run_plot_timeseries(
     workspace: &Path,
@@ -14,10 +14,7 @@ pub fn run_plot_timeseries(
         return Err(format!("interval must be > 0, got {interval}"));
     }
     let csvs = discover_timeseries_csvs(&workspace.join("timeseries"))?;
-    let panels = csvs
-        .iter()
-        .map(|path| load_trace_panel(path, "p_dead"))
-        .collect::<Result<Vec<_>, String>>()?;
+    let panels = load_trace_panels_by_sample(&csvs, "p_dead", mapping)?;
     if panels.is_empty() {
         return Err("no p_dead timeseries panels to plot".to_string());
     }

@@ -87,7 +87,7 @@ Rust, generated types). Unsupported ids fail explicitly — see `PRODUCT.md`.
 - CSV column names and row identity keys.
 - Stage order for full pipelines (`transfection pipeline` / `lisca-analyze pipeline`).
 - Flag defaults that change science (`--interval`, `--max-onset-minutes`,
-  `analysis.skipSegment`, segmentation radius/sigma, jobs only for performance).
+  `analysis.skipSegment`, segmentation radius/sigma).
 
 ### Scientific parity
 
@@ -134,7 +134,8 @@ Stage names mirror `transfection`:
 | `pipeline` (`analyze`, `all`) | full Studio order from `assay.json` |
 
 Common flags: `--assay` (default `<workspace>/assay.json`), `--interval`,
-`--jobs`, `--max-onset-minutes`, segment `--force` / radius / sigma.
+`--max-onset-minutes`, segment `--force` / radius / sigma. Parallel stages
+always use available CPU cores (no `--jobs` on Python or `lisca-analyze`).
 
 Details and examples: [`analysis.md`](./analysis.md) § Parity CLI.
 

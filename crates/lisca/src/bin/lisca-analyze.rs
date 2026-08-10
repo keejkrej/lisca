@@ -18,9 +18,9 @@ use std::process;
 use std::time::Instant;
 
 use lisca::analysis::assays::transfection::{
-    default_fit_jobs, default_timeseries_jobs, interval_minutes, max_onset_minutes, run_auc,
-    run_fit, run_plot_auc, run_plot_fit, run_plot_timeseries, run_segment, run_sync_with_mode,
-    run_timeseries_with_mode, skip_segment, SegmentOptions, DEFAULT_PLOT_COLUMNS,
+    default_fit_jobs, default_jobs, default_timeseries_jobs, interval_minutes, max_onset_minutes,
+    run_auc, run_fit, run_plot_auc, run_plot_fit, run_plot_timeseries, run_segment,
+    run_sync_with_mode, run_timeseries_with_mode, skip_segment, SegmentOptions, DEFAULT_PLOT_COLUMNS,
 };
 use lisca::analysis::slide::{load_mapping_for_workspace, resolve_assay_path};
 use lisca::protocol::AssayJsonFile;
@@ -78,7 +78,6 @@ Commands (same stage names as `transfection`):
 Common options:
   --assay PATH            assay.json (default: <workspace>/assay.json)
   --interval MINUTES      frame interval (default: assay.json interval.value/unit)
-  --jobs N                worker threads (segment/timeseries/fit; default: CPUs)
   --max-onset-minutes N   fit onset search cap (default: assay analysis.maxOnsetMinutes
                           or 120; 0 = onset fixed at 0)
   (timeseries/pipeline whole-ROI mode is controlled by assay.json
@@ -87,6 +86,8 @@ Common options:
   --gaussian-sigma F      segment Gaussian sigma (default: 1.0)
   --force, -f             segment: overwrite existing masks
   --columns N             plot grid columns (default: 3)
+
+Parallel stages always use available CPU cores (no --jobs).
 
 Examples:
   transfection auc ~/data/TF84
@@ -98,6 +99,7 @@ Examples:
 }
 
 fn cmd_segment(args: &[String]) -> Result<(), String> {
+    reject_removed_jobs_flag(args)?;
     let workspace = require_workspace(args)?;
     let assay = flag_path(args, "--assay");
     let mapping = load_mapping_for_workspace(&workspace, assay.as_deref())?;
@@ -105,7 +107,7 @@ fn cmd_segment(args: &[String]) -> Result<(), String> {
         variation_radius: flag_u32(args, "--variation-radius")?.unwrap_or(2),
         gaussian_sigma: flag_f64(args, "--gaussian-sigma")?.unwrap_or(1.0),
         force: has_flag(args, "--force") || has_flag(args, "-f"),
-        jobs: flag_usize(args, "--jobs")?.unwrap_or_else(default_timeseries_jobs),
+        jobs: default_jobs(),
     };
     if options.gaussian_sigma < 0.0 {
         return Err("--gaussian-sigma must be >= 0".to_string());
@@ -121,10 +123,11 @@ fn cmd_segment(args: &[String]) -> Result<(), String> {
 }
 
 fn cmd_timeseries(args: &[String]) -> Result<(), String> {
+    reject_removed_jobs_flag(args)?;
     let workspace = require_workspace(args)?;
     let assay = flag_path(args, "--assay");
     let mapping = load_mapping_for_workspace(&workspace, assay.as_deref())?;
-    let jobs = flag_usize(args, "--jobs")?.unwrap_or_else(default_timeseries_jobs);
+    let jobs = default_timeseries_jobs();
     let full_frame = load_assay_json(&workspace).map(|assay| skip_segment(&assay)).unwrap_or(false);
     eprintln!(
         "timeseries workspace={} assay={} jobs={} full_frame={full_frame}",
@@ -151,10 +154,11 @@ fn cmd_auc(args: &[String]) -> Result<(), String> {
 }
 
 fn cmd_fit(args: &[String]) -> Result<(), String> {
+    reject_removed_jobs_flag(args)?;
     let workspace = require_workspace(args)?;
     let interval = resolve_interval(&workspace, args)?;
     let max_onset = resolve_max_onset(&workspace, args)?;
-    let jobs = flag_usize(args, "--jobs")?.unwrap_or_else(default_fit_jobs);
+    let jobs = default_fit_jobs();
     eprintln!(
         "fit workspace={} interval={interval} max_onset_minutes={max_onset} jobs={jobs}",
         workspace.display()
@@ -210,6 +214,7 @@ fn cmd_plot_fit(args: &[String]) -> Result<(), String> {
 }
 
 fn cmd_pipeline(args: &[String]) -> Result<(), String> {
+    reject_removed_jobs_flag(args)?;
     let workspace = require_workspace(args)?;
     let assay = load_assay_json(&workspace)?;
     let interval = interval_minutes(&assay)?;
@@ -227,6 +232,15 @@ fn timed(label: &str, work: impl FnOnce() -> Result<(), String>) -> Result<(), S
     let started = Instant::now();
     work()?;
     eprintln!("{label} done in {:.2}s", started.elapsed().as_secs_f64());
+    Ok(())
+}
+
+fn reject_removed_jobs_flag(args: &[String]) -> Result<(), String> {
+    if has_flag(args, "--jobs") || args.iter().any(|arg| arg.starts_with("--jobs=")) {
+        return Err(
+            "--jobs was removed; parallel stages always use available CPU cores".to_string(),
+        );
+    }
     Ok(())
 }
 

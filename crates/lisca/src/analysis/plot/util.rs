@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::analysis::array::percentile;
 use crate::analysis::slide::SlideMapping;
@@ -57,6 +57,19 @@ pub fn subplot_title(csv_path: &Path, trace_count: usize, mapping: &SlideMapping
     format!("{label} ({trace_count} traces)")
 }
 
+pub fn sample_subplot_title(
+    slide_channel: u32,
+    trace_count: usize,
+    mapping: &SlideMapping,
+) -> String {
+    let labels = slide_channel_labels(mapping);
+    let label = labels
+        .get(&slide_channel)
+        .cloned()
+        .unwrap_or_else(|| format!("slide channel {slide_channel}"));
+    format!("{label} ({trace_count} traces)")
+}
+
 pub fn trace_naming_haystack(csv_path: &Path, mapping: &SlideMapping) -> String {
     let labels = slide_channel_labels(mapping);
     let mut parts = vec![
@@ -74,6 +87,24 @@ pub fn trace_naming_haystack(csv_path: &Path, mapping: &SlideMapping) -> String 
     if let Ok(channel) = resolve_slide_channel(csv_path, mapping) {
         if let Some(label) = labels.get(&channel) {
             parts.push(label.clone());
+        }
+    }
+    parts.join(" ")
+}
+
+pub fn sample_trace_naming_haystack(
+    slide_channel: u32,
+    paths: &[PathBuf],
+    mapping: &SlideMapping,
+) -> String {
+    let labels = slide_channel_labels(mapping);
+    let mut parts = vec![labels
+        .get(&slide_channel)
+        .cloned()
+        .unwrap_or_else(|| format!("slide channel {slide_channel}"))];
+    for path in paths {
+        if let Some(name) = path.file_name().and_then(|value| value.to_str()) {
+            parts.push(name.to_string());
         }
     }
     parts.join(" ")

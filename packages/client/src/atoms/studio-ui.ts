@@ -61,12 +61,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function emptySampleRow(id: string): BasicInfoSampleRow {
   return {
     id,
-    slide: "",
+    slideChannel: "",
     name: "",
     positionStart: "",
     positionFinish: "",
-    brightfield: "",
-    fluorescence: "",
+    mask: "",
+    signal: "",
   };
 }
 
@@ -207,12 +207,12 @@ const initialAnalysis: AssayAnalysisConfig | null =
 function cloneSampleRow(id: string, row: BasicInfoSampleRow): BasicInfoSampleRow {
   return {
     id,
-    slide: row.slide,
+    slideChannel: row.slideChannel,
     name: row.name,
     positionStart: row.positionStart,
     positionFinish: row.positionFinish,
-    brightfield: row.brightfield,
-    fluorescence: row.fluorescence,
+    mask: row.mask,
+    signal: row.signal,
   };
 }
 
@@ -303,8 +303,8 @@ function createInitialWizardData(): StudioWizardState {
     intervalValue: defaultIntervalMinutesForAssay(DEFAULT_ASSAY_ID),
     intervalUnit: "minute",
     samples: [
-      { ...emptySampleRow("sample:0"), slide: "0" },
-      { ...emptySampleRow("sample:1"), slide: "1" },
+      { ...emptySampleRow("sample:0"), slideChannel: "0" },
+      { ...emptySampleRow("sample:1"), slideChannel: "1" },
     ],
     analysis: initialAnalysis,
     basicInfoSavedSnapshot: null,
@@ -367,7 +367,7 @@ export const studioWizardActions = {
     const samples = cloneSamples(
       assayJson.samples.map((row, index) => ({
         id: `sample:${index}`,
-        ...sampleRowFromDisk(row),
+        ...sampleRowFromDisk(row, assayJson.analysis),
       })),
     );
     const nextAnalysis = analysisConfigForAssay(nextAssayId, assayJson.analysis) ?? null;

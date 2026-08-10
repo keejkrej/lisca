@@ -2576,26 +2576,20 @@
     "AssaySampleRow": {
       "type": "object",
       "required": [
-        "slide",
+        "slideChannel",
         "name",
-        "positions",
-        "brightfield",
-        "fluorescence"
+        "positions"
       ],
       "properties": {
-        "slide": {
-          "type": "string"
+        "slideChannel": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
         },
         "name": {
           "type": "string"
         },
         "positions": {
-          "type": "string"
-        },
-        "brightfield": {
-          "type": "string"
-        },
-        "fluorescence": {
           "type": "string"
         }
       }
@@ -2610,6 +2604,64 @@
         },
         "skipSegment": {
           "type": "boolean"
+        },
+        "channels": {
+          "$ref": "#/definitions/AssayChannels"
+        },
+        "sampleChannels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AssaySampleChannels"
+          }
+        }
+      }
+    },
+    "AssayChannels": {
+      "type": "object",
+      "required": [
+        "mask",
+        "signal"
+      ],
+      "properties": {
+        "mask": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "signal": {
+          "$ref": "#/definitions/AssaySignalChannels"
+        }
+      }
+    },
+    "AssaySignalChannels": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "integer",
+        "format": "uint32",
+        "minimum": 0
+      }
+    },
+    "AssaySampleChannels": {
+      "type": "object",
+      "required": [
+        "slideChannel",
+        "mask",
+        "signal"
+      ],
+      "properties": {
+        "slideChannel": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "mask": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "signal": {
+          "$ref": "#/definitions/AssaySignalChannels"
         }
       }
     },
