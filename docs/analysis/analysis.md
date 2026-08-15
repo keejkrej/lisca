@@ -92,7 +92,7 @@ Progress reuses the same HTTP stage names with kill-specific messages:
 
 ### Kill model path
 
-Set `LISCA_KILL_MODEL` to a directory containing `model.onnx`, or place the exported ONNX model at `workspace/models/killing-assay-resnet18/model.onnx`. Export from Hugging Face:
+Set `LISCA_KILL_MODEL` to a directory containing `model.onnx`, or place the exported ONNX model at `workspace/models/killing-assay-resnet18/model.onnx`. Packaged Studio sets `LISCA_KILL_MODEL` to the bundled resource `models/killing-assay-resnet18` (next to the bundled server). Export from Hugging Face:
 
 ```sh
 uv run optimum-cli export onnx --model keejkrej/killing-assay-resnet18 ./models/killing-assay-resnet18
