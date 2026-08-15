@@ -18,27 +18,32 @@ export function StudioRightPanel(props: {
 }) {
   const expertMode = useAtomValue(studioExpertModeAtom);
   const instruction = createMemo(() => {
-    const value =
-      typeof props.instruction === "function" ? props.instruction() : props.instruction;
+    const value = typeof props.instruction === "function" ? props.instruction() : props.instruction;
     const trimmed = value?.trim();
     return trimmed ? trimmed : undefined;
   });
 
   return (
-    <div class={cn("flex h-full min-h-0 flex-col items-stretch", regionInsetClass, regionStackGapClass)}>
+    <div
+      class={cn(
+        "flex h-full min-h-0 flex-col items-stretch",
+        regionInsetClass,
+        regionStackGapClass,
+      )}
+    >
       <div class="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto">
         <div class={cn("flex w-full shrink-0 flex-col items-stretch", regionStackGapClass)}>
-          <Show when={instruction()}>
-            {(text) => <StudioInstructionSection text={text()} />}
-          </Show>
+          <Show when={instruction()}>{(text) => <StudioInstructionSection text={text()} />}</Show>
           <Show when={expertMode()} fallback={props.children}>
             {props.expert?.()}
           </Show>
         </div>
       </div>
-      <div class="flex shrink-0 flex-row items-center justify-center gap-2">
-        <StudioExpertToggle />
-      </div>
+      <Show when={props.expert}>
+        <div class="flex shrink-0 flex-row items-center justify-center gap-2">
+          <StudioExpertToggle />
+        </div>
+      </Show>
     </div>
   );
 }

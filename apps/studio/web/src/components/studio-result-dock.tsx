@@ -7,7 +7,7 @@ import {
   dockToolShortcuts,
   type DockToolAction,
 } from "@lisca/ui/shell";
-import { createEffect, For, onCleanup } from "solid-js";
+import { createEffect, For, onCleanup, Show } from "solid-js";
 
 function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -43,24 +43,26 @@ export function StudioResultDock(props: {
 
   return (
     <DockStrip>
-      <DockSection title="Tool">
-        <div class="flex flex-col gap-2">
-          <For each={props.toolActions}>
-            {(action, index) => (
-              <Button
-                class="w-full justify-center"
-                disabled={action.disabled}
-                size="sm"
-                type="button"
-                variant={action.active ? "default" : "outline"}
-                onClick={action.onSelect}
-              >
-                {dockToolLabel(action.label, index())}
-              </Button>
-            )}
-          </For>
-        </div>
-      </DockSection>
+      <Show when={props.toolActions.length > 0}>
+        <DockSection title="View">
+          <div class="flex flex-col gap-2">
+            <For each={props.toolActions}>
+              {(action, index) => (
+                <Button
+                  class="w-full justify-center"
+                  disabled={action.disabled}
+                  size="sm"
+                  type="button"
+                  variant={action.active ? "default" : "outline"}
+                  onClick={action.onSelect}
+                >
+                  {dockToolLabel(action.label, index())}
+                </Button>
+              )}
+            </For>
+          </div>
+        </DockSection>
+      </Show>
       <DockSection title="Action">
         <div class="flex flex-col gap-2">
           <Button

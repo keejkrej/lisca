@@ -11,7 +11,7 @@ export function StudioAnnotateNav() {
       when={!nav.workspaceMissing}
       fallback={
         <div class="flex min-h-0 flex-col gap-2.5">
-          <p class="text-destructive text-sm">Set a save location in Basic info first.</p>
+          <p class="text-destructive text-sm">Choose a workspace in Basic info first.</p>
         </div>
       }
     >

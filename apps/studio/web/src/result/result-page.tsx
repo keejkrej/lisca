@@ -1,4 +1,4 @@
-import { Spinner } from "@lisca/ui/components";
+import { Button, Spinner } from "@lisca/ui/components";
 import { AppShell, ViewportCard } from "@lisca/ui/shell";
 import { ResultPlotGallery } from "./result-panels-grid";
 import { createEffect, createMemo, createSignal } from "solid-js";
@@ -19,9 +19,11 @@ import {
   type ResultPlot,
   type ResultPlotSection,
 } from "@lisca/analysis";
+import { useStudioNavigate } from "../navigation/use-studio-navigate";
 import { useStudioResultState } from "../state/use-studio-result-state";
 
 export default function ResultPage() {
+  const { navigateTo } = useStudioNavigate();
   const resultState = useStudioResultState();
   const [activeSection, setActiveSection] = createSignal<ResultPlotSection>("timeseries");
   const [isSaving, setIsSaving] = createSignal(false);
@@ -131,10 +133,33 @@ export default function ResultPage() {
             <ViewportCard class="relative">
               <div class="relative flex h-full min-h-0 flex-1 flex-col">
                 <ResultPlotGallery
+                  emptyTitle={
+                    !resultState.workspacePath?.trim()
+                      ? "No workspace yet"
+                      : hasAnyPlots()
+                        ? "Nothing in this view"
+                        : "No plots yet"
+                  }
                   emptyMessage={
-                    hasAnyPlots()
-                      ? "No plot images in this section."
-                      : "Run analysis to see pipeline plot images."
+                    !resultState.workspacePath?.trim()
+                      ? "Choose a workspace in Basic info, then run analysis from Annotate. Plots show up here as images."
+                      : hasAnyPlots()
+                        ? "Switch views in the dock, or run analysis again."
+                        : "On Annotate, press Continue to analysis. Finished plots appear here as images."
+                  }
+                  emptyAction={
+                    hasAnyPlots() ? undefined : (
+                      <Button
+                        size="sm"
+                        type="button"
+                        variant="outline"
+                        onClick={() =>
+                          navigateTo(resultState.workspacePath?.trim() ? "/annotate" : "/info")
+                        }
+                      >
+                        {resultState.workspacePath?.trim() ? "Go to Annotate" : "Go to Basic info"}
+                      </Button>
+                    )
                   }
                   plots={sectionPlots()}
                   section={activeSection()}
@@ -177,9 +202,9 @@ export default function ResultPage() {
           <AppShell.Dock>
             <StudioResultDock
               saveDisabled={!resultState.workspacePath?.trim() || !hasAnyPlots() || isSaving()}
-              saveLabel={isSaving() ? "Saving…" : "Save"}
+              saveLabel={isSaving() ? "Saving PDF…" : "Save PDF"}
               shortcutsEnabled={!isSaving()}
-              toolActions={sectionToolActions()}
+              toolActions={hasAnyPlots() ? sectionToolActions() : []}
               onSave={() => {
                 void savePdf();
               }}

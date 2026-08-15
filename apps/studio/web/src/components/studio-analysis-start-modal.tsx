@@ -17,11 +17,11 @@ export function StudioAnalysisStartModal() {
                 Start analysis
               </h2>
               <p class="text-muted-foreground text-sm">
-                Run the analysis pipeline now and open results when finished?
+                Run analysis now and open results when it finishes?
               </p>
               <p class="text-muted-foreground text-sm">
-                assay.json will be saved to the workspace before analysis starts. Annotations already
-                saved under annotations/ will remain in the workspace.
+                Assay settings will be saved to the workspace first. Saved annotations stay as they
+                are.
               </p>
             </div>
             <div class="flex justify-end gap-2">

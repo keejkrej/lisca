@@ -18,7 +18,7 @@ export function StudioCropStartModal() {
                   All positions aligned
                 </h2>
                 <p class="text-muted-foreground text-sm">
-                  {`${confirm().positions.length} positions have saved alignment output. Start cropping ROI output now?`}
+                  {`${confirm().positions.length} positions have saved alignment output. Crop site images from the aligned grid now?`}
                 </p>
               </div>
               <div class="flex justify-end gap-2">

@@ -14,7 +14,7 @@ export function StudioAnnotateRight() {
       fallback={
         <SidebarStack class="p-0">
           <PanelSection title="Annotate">
-            <p class="text-muted-foreground text-sm">Complete Basic info to annotate ROIs.</p>
+            <p class="text-muted-foreground text-sm">Choose a workspace in Basic info first.</p>
           </PanelSection>
         </SidebarStack>
       }

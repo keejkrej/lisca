@@ -5,19 +5,25 @@ import { AnnotationCanvas } from "@lisca/ui/features";
 import { ViewportCard } from "@lisca/ui/shell";
 import { createSignal } from "solid-js";
 
+import { useStudioNavigate } from "../navigation/use-studio-navigate";
 import { studioClient } from "../api/studio-port";
 import { useStudioAnnotatePage } from "../state/studio-annotate-page-context";
 import { useStudioAnnotateCanvas } from "../state/studio-annotate-page-selectors";
 import { StudioAnalysisProgressModal } from "./studio-analysis-progress-modal";
+import { StudioEmptyState } from "./studio-empty-state";
 import { StudioAnalysisStartModal } from "./studio-analysis-start-modal";
 
 export function StudioAnnotateMain() {
+  const { navigateTo } = useStudioNavigate();
   const { state } = useStudioAnnotatePage();
   const canvas = useStudioAnnotateCanvas();
   const smartSegmentProvider = createRequestSmartSegmentProvider(
     {
       smartSegment: (request, signal) =>
-        runClientEffect(studioClient.smartSegment(request, signal), signal ? { signal } : undefined),
+        runClientEffect(
+          studioClient.smartSegment(request, signal),
+          signal ? { signal } : undefined,
+        ),
     },
     {
       workspacePath: () => state.workspacePath,
@@ -57,9 +63,12 @@ export function StudioAnnotateMain() {
     return (
       <>
         <ViewportCard class="relative">
-          <div class="flex min-h-[12rem] items-center justify-center p-6 text-center text-muted-foreground text-sm">
-            Set a save location in Basic info, then align and crop ROIs before annotating.
-          </div>
+          <StudioEmptyState
+            actionLabel="Go to Basic info"
+            description="Choose a workspace in Basic info, then align and crop sites before annotating."
+            title="Workspace not set"
+            onAction={() => navigateTo("/info")}
+          />
         </ViewportCard>
         <StudioAnalysisStartModal />
         <StudioAnalysisProgressModal />
@@ -71,10 +80,12 @@ export function StudioAnnotateMain() {
     return (
       <>
         <ViewportCard class="relative">
-          <div class="flex min-h-[12rem] items-center justify-center p-6 text-center text-muted-foreground text-sm">
-            No cropped ROI stacks found in the workspace. Complete Align pattern and crop ROIs
-            first.
-          </div>
+          <StudioEmptyState
+            actionLabel="Go to Align"
+            description="Align the pattern and crop site images first. Annotation needs those ROI stacks."
+            title="No cropped sites"
+            onAction={() => navigateTo("/align")}
+          />
         </ViewportCard>
         <StudioAnalysisStartModal />
         <StudioAnalysisProgressModal />

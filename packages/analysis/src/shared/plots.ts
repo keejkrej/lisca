@@ -1,8 +1,5 @@
 import { KILLING_PLOTS, type KillingPlotSpec } from "../assays/killing/catalog";
-import {
-  TRANSFECTION_PLOTS,
-  type TransfectionPlotSpec,
-} from "../assays/transfection/catalog";
+import { TRANSFECTION_PLOTS, type TransfectionPlotSpec } from "../assays/transfection/catalog";
 
 export type ResultPlotSection = "timeseries" | "parameters";
 
@@ -70,12 +67,12 @@ export function resultSectionInstruction(
 ): string {
   if (section === "timeseries") {
     return assay === "killing"
-      ? "P(dead) traces written by the Rust pipeline."
-      : "Intensity, area, and fit-trace plots written by the Rust pipeline.";
+      ? "Death-probability traces (P(dead)) for each sample."
+      : "Intensity, area, and fitted traces for each sample.";
   }
   return assay === "killing"
-    ? "Kill-curve and death-time plots written by the Rust pipeline."
-    : "Parameter boxplots written by the Rust pipeline: mRNA lifetime, AUC, expression rate, and onset time.";
+    ? "Survival curve and death-time distributions."
+    : "Fitted parameters: mRNA lifetime, AUC, expression rate, and onset time.";
 }
 
 function guessPlotSection(fileName: string): ResultPlotSection {

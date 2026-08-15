@@ -60,7 +60,7 @@ export function buildTransfectionFixture(): AnalysisFixture {
     id: "transfection",
     title: "Transfection (fixture)",
     description:
-      "Fixture transfection workspace showing the PNG plots the Rust pipeline writes (traces, area, fit, and parameter boxplots). Images are sample placeholders.",
+      "Fixture transfection workspace showing the PNG plots analysis writes (traces, area, fit, and parameter boxplots). Images are sample placeholders.",
     intervalMinutes: 10,
     slideChannelLabels: {
       0: "Mock (fixture)",
@@ -81,7 +81,7 @@ export function buildKillingFixture(): AnalysisFixture {
     id: "killing",
     title: "Killing (fixture)",
     description:
-      "Fixture killing workspace showing the PNG plots the Rust pipeline writes (P(dead) traces, kill curve, death times). Images are sample placeholders.",
+      "Fixture killing workspace showing the PNG plots analysis writes (P(dead) traces, kill curve, death times). Images are sample placeholders.",
     intervalMinutes: 15,
     slideChannelLabels: {
       0: "Control (fixture)",

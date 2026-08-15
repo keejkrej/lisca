@@ -17,7 +17,7 @@ export function DemoAnalysisRight(props: {
             <span class="font-medium">{props.title}</span>
           </div>
           <div class="flex items-center justify-between">
-            <span class="text-muted-foreground">Result files</span>
+            <span class="text-muted-foreground">Plots</span>
             <span class="font-medium tabular-nums">{props.fileCount}</span>
           </div>
         </div>

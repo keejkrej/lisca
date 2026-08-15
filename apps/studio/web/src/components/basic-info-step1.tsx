@@ -25,11 +25,7 @@ import { useAtomSet, useAtomValue } from "@effect-atom/atom-solid";
 import { createMemo, createSignal, Show } from "solid-js";
 
 import { useStudioMemoryRecent } from "../hooks/use-studio-memory-recent";
-import {
-  type TimelapseUnit,
-  studioWizardActions,
-  studioWizardAtom,
-} from "../state/studio-store";
+import { type TimelapseUnit, studioWizardActions, studioWizardAtom } from "../state/studio-store";
 import { recordStudioSourceMemory, recordStudioWorkspaceMemory } from "../utils/studio-memory";
 
 const ROW = "flex min-h-[80px] w-full flex-col gap-2.5 p-2.5";
@@ -73,8 +69,7 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
     studioWizardActions.setAnalysis(setWizard, p);
   const setDataSourceKind = (kind: StudioDataSourceKind) =>
     studioWizardActions.setDataSourceKind(setWizard, kind);
-  const intervalPlaceholder = () =>
-    String(defaultIntervalMinutesForAssay(wizard().assayId) ?? 10);
+  const intervalPlaceholder = () => String(defaultIntervalMinutesForAssay(wizard().assayId) ?? 10);
   const [openDataModalOpen, setOpenDataModalOpen] = createSignal(false);
   const [pathPicker, setPathPicker] = createSignal<StudioPathPickerState>(null);
   const [folderSourcePath, setFolderSourcePath] = createSignal<string | null>(null);
@@ -123,7 +118,7 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
       <div class="flex w-full min-w-0 flex-col gap-2.5">
         <div class={ROW}>
           <Field class="w-full gap-2.5">
-            <FieldLabel class="text-2xl font-normal" for="studio-name">
+            <FieldLabel class="text-xl font-medium" for="studio-name">
               Name
             </FieldLabel>
             <Input
@@ -138,7 +133,7 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
         </div>
         <div class={ROW}>
           <Field class="w-full gap-2.5">
-            <FieldLabel class="text-2xl font-normal" for="studio-source">
+            <FieldLabel class="text-xl font-medium" for="studio-source">
               Source
             </FieldLabel>
             <div class="w-full cursor-pointer" onClick={() => setOpenDataModalOpen(true)}>
@@ -161,7 +156,7 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
         </div>
         <div class={ROW}>
           <Field class="w-full gap-2.5">
-            <FieldLabel class="text-2xl font-normal" for="studio-workspace">
+            <FieldLabel class="text-xl font-medium" for="studio-workspace">
               Workspace
             </FieldLabel>
             <div class="w-full cursor-pointer" onClick={() => setPathPicker({ kind: "save" })}>
@@ -184,7 +179,7 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
         </div>
         <div class={ROW}>
           <Field class="w-full gap-2.5">
-            <FieldLabel class="text-2xl font-normal" id="studio-timelapse-label">
+            <FieldLabel class="text-xl font-medium" id="studio-timelapse-label">
               Timelapse interval
             </FieldLabel>
             <div class="mt-0 flex w-full min-w-0 flex-row flex-wrap items-stretch gap-2.5">
@@ -232,12 +227,13 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
         <Show when={wizard().assayId === ASSAY_TYPE.TRANSFECTION}>
           <div class={ROW}>
             <Field class="w-full gap-2.5">
-              <FieldLabel class="text-2xl font-normal" id="studio-max-onset-label">
-                Max onset (minutes)
+              <FieldLabel class="text-xl font-medium" id="studio-max-onset-label">
+                Max onset time
               </FieldLabel>
               <p class="text-sm text-muted-foreground">
-                Transfection kinetic fit: cap candidate onset times (t₀). Default{" "}
-                {defaultMaxOnsetMinutesForAssay(ASSAY_TYPE.TRANSFECTION)}. Set 0 to fix onset at 0.
+                Latest time expression is allowed to start, in minutes. Default{" "}
+                {defaultMaxOnsetMinutesForAssay(ASSAY_TYPE.TRANSFECTION)}. 0 means start at the
+                first frame.
               </p>
               <Input
                 aria-labelledby="studio-max-onset-label"
@@ -265,12 +261,11 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
           </div>
           <div class={ROW}>
             <Field class="w-full gap-2.5">
-              <FieldLabel class="text-2xl font-normal" for="studio-skip-segment">
+              <FieldLabel class="text-xl font-medium" for="studio-skip-segment">
                 Skip segmentation
               </FieldLabel>
               <p class="text-sm text-muted-foreground">
-                Use the full ROI for fluorescence timeseries (10th-percentile background) instead of
-                Otsu segmentation.
+                Measure the whole site instead of finding a fluorescent region first.
               </p>
               <label class="flex cursor-pointer items-center gap-2.5 text-base">
                 <input
@@ -280,7 +275,7 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
                   type="checkbox"
                   onChange={(event) => setAnalysis({ skipSegment: event.currentTarget.checked })}
                 />
-                <span>Skip Otsu segment (full-frame timeseries)</span>
+                <span>Use the full site (skip mask)</span>
               </label>
             </Field>
           </div>

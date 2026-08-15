@@ -15,10 +15,10 @@ export function AssayOverwriteConfirmModal(props: {
           <div class="space-y-4">
             <div class="space-y-1">
               <h2 id="assay-overwrite-confirm-title" class="font-medium text-foreground">
-                assay.json already exists
+                Assay already saved here
               </h2>
               <p class="text-muted-foreground text-sm">
-                Overwrite the existing assay.json in this save folder?
+                An assay is already saved in this workspace. Replace it?
               </p>
               <p class="truncate text-muted-foreground text-xs" title={props.saveTo}>
                 {props.saveTo}

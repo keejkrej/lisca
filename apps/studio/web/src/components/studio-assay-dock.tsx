@@ -27,19 +27,18 @@ export function StudioAssayDock(props: {
             variant="outline"
             onClick={props.onOpenAssay}
           >
-            Open assay
+            Open existing
           </Button>
           <Button
             class="w-full justify-center"
             size="sm"
             type="button"
-            variant="outline"
             onClick={() => {
               navigateTo("/info");
               setInfoStep(1);
             }}
           >
-            Next
+            Continue
           </Button>
         </div>
       </DockSection>

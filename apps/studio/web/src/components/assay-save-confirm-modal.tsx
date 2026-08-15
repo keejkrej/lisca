@@ -20,7 +20,7 @@ export function AssaySaveConfirmModal(props: {
                 Basic info changed
               </h2>
               <p class="text-muted-foreground text-sm">
-                Save assay.json before leaving basic info?
+                Save these settings before leaving Basic info?
               </p>
               <Show when={props.error}>
                 <p class="z-destructive-surface text-sm" role="alert">

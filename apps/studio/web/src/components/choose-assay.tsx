@@ -1,4 +1,4 @@
-import { ASSAY_TYPE, ENABLED_STUDIO_ASSAY_IDS } from "@lisca/contracts/assay";
+import { ENABLED_STUDIO_ASSAY_IDS } from "@lisca/contracts/assay";
 import { Button } from "@lisca/ui/components";
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-solid";
 import { For } from "solid-js";
@@ -10,8 +10,7 @@ import {
   studioWizardAtom,
 } from "../state/studio-store";
 
-const ASSAY_ORDER: AssayId[] = [ASSAY_TYPE.TRANSFECTION, ASSAY_TYPE.KILLING, ASSAY_TYPE.LNP_BINDING];
-const ENABLED_ASSAY_IDS = new Set<AssayId>(ENABLED_STUDIO_ASSAY_IDS);
+const ASSAY_ORDER = ENABLED_STUDIO_ASSAY_IDS as readonly AssayId[];
 
 export function ChooseAssay() {
   const wizard = useAtomValue(studioWizardAtom);
@@ -21,6 +20,9 @@ export function ChooseAssay() {
   return (
     <div class="flex w-full min-w-0 flex-col items-center">
       <h1 class="text-center font-semibold text-4xl tracking-tight sm:text-5xl">LiSCA</h1>
+      <p class="mt-2 max-w-md text-center text-sm text-muted-foreground">
+        Set up a new assay, or open one you already saved.
+      </p>
       <div
         aria-label="Assay type"
         class="mt-8 grid w-full max-w-[28rem] grid-cols-2 gap-3 sm:mt-10 sm:gap-4"
@@ -29,12 +31,10 @@ export function ChooseAssay() {
         <For each={ASSAY_ORDER}>
           {(id) => {
             const selected = () => wizard().assayId === id;
-            const disabled = !ENABLED_ASSAY_IDS.has(id);
             return (
               <Button
                 aria-pressed={selected()}
                 class="h-20 w-full min-h-[5rem] items-center justify-center px-2 py-3 text-center sm:h-[5.5rem] sm:min-h-[5.5rem] sm:px-3"
-                disabled={disabled}
                 type="button"
                 variant={selected() ? "default" : "outline"}
                 onClick={() => setAssayId(id)}
