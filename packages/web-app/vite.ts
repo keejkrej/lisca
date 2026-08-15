@@ -1,6 +1,6 @@
 import tailwindcss from "@tailwindcss/vite";
 import solid from "vite-plugin-solid";
-import { createReadStream, existsSync, statSync } from "node:fs";
+import { copyFileSync, createReadStream, existsSync, statSync } from "node:fs";
 import { join, normalize, resolve } from "node:path";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
@@ -33,6 +33,51 @@ export function liscaSolidPlugin(): PluginOption {
 
 const brandPublicDir = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../assets/brand");
 const modelsDir = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../models");
+
+export type LiscaViteProduct = "aligner" | "annotator" | "studio";
+
+const PRODUCT_FAVICON_FILES = ["favicon.ico", "favicon.png", "icon.png", "icon.ico"] as const;
+
+function contentTypeForPublicFile(name: string): string {
+  if (name.endsWith(".ico")) return "image/x-icon";
+  if (name.endsWith(".png")) return "image/png";
+  return "application/octet-stream";
+}
+
+/** Overlay product-specific favicons on top of the shared `assets/brand` public dir. */
+function liscaProductFaviconPlugin(product: LiscaViteProduct): PluginOption {
+  const dir = resolve(brandPublicDir, "apps", product);
+  return {
+    name: "lisca-product-favicon",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const name = (req.url?.split("?")[0] ?? "").replace(/^\//, "");
+        if (!PRODUCT_FAVICON_FILES.includes(name as (typeof PRODUCT_FAVICON_FILES)[number])) {
+          next();
+          return;
+        }
+        const filePath = join(dir, name);
+        if (!existsSync(filePath) || !statSync(filePath).isFile()) {
+          next();
+          return;
+        }
+        res.statusCode = 200;
+        res.setHeader("Content-Type", contentTypeForPublicFile(name));
+        res.setHeader("Content-Length", String(statSync(filePath).size));
+        createReadStream(filePath).pipe(res);
+      });
+    },
+    writeBundle(options) {
+      const outDir = options.dir;
+      if (!outDir) return;
+      for (const name of PRODUCT_FAVICON_FILES) {
+        const src = join(dir, name);
+        if (!existsSync(src)) continue;
+        copyFileSync(src, join(outDir, name));
+      }
+    },
+  };
+}
 
 function contentTypeForPath(path: string): string {
   if (path.endsWith(".json")) return "application/json";
@@ -138,8 +183,11 @@ export function createLiscaViteConfig(options: {
   base?: string;
   backendPort?: number;
   plugins?: PluginOption[];
+  /** When set, favicon/icon files come from `assets/brand/apps/<product>/`. */
+  product?: LiscaViteProduct;
 }): UserConfig {
   const backendPort = options.backendPort ?? liscaDevBackendPort(options.port);
+  const productFavicon = options.product ? liscaProductFaviconPlugin(options.product) : null;
 
   return defineConfig({
     base: options.base ?? (process.env.VITE_DESKTOP === "1" ? "./" : "/"),
@@ -148,7 +196,13 @@ export function createLiscaViteConfig(options: {
     resolve: {
       dedupe: ["solid-js"],
     },
-    plugins: [...(options.plugins ?? []), liscaSolidPlugin(), tailwindcss(), liscaModelsPlugin()],
+    plugins: [
+      ...(options.plugins ?? []),
+      liscaSolidPlugin(),
+      tailwindcss(),
+      liscaModelsPlugin(),
+      ...(productFavicon ? [productFavicon] : []),
+    ],
     server: {
       host: true,
       port: options.port,

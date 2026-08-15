@@ -1,4 +1,6 @@
 import { spawn, type ChildProcess } from "node:child_process";
+import { createHash } from "node:crypto";
+import { existsSync, readFileSync } from "node:fs";
 import net from "node:net";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -168,5 +170,26 @@ describe("vite dev config", () => {
         expect(entry?.target).toBe(`http://127.0.0.1:${ports.backendPort}`);
       }
     }
+  });
+});
+
+describe("desktop app icons", () => {
+  const required = ["32x32.png", "128x128.png", "128x128@2x.png", "icon.png", "icon.ico"] as const;
+
+  it("gives each product a distinct icon that packaging already lists", () => {
+    const hashes = new Set<string>();
+    for (const product of Object.keys(DESKTOP_PRODUCTS)) {
+      const icons = path.join(root, "apps", product, "desktop", "src-tauri", "icons");
+      for (const name of required) {
+        const filePath = path.join(icons, name);
+        expect(existsSync(filePath), `${product} missing ${name}`).toBe(true);
+      }
+      hashes.add(
+        createHash("sha256")
+          .update(readFileSync(path.join(icons, "icon.png")))
+          .digest("hex"),
+      );
+    }
+    expect(hashes.size).toBe(Object.keys(DESKTOP_PRODUCTS).length);
   });
 });

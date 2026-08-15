@@ -17,7 +17,7 @@
     "serve:aligner": "vp exec node --experimental-strip-types scripts/serve.ts aligner",
     "serve:annotator": "vp exec node --experimental-strip-types scripts/serve.ts annotator",
     "serve:studio": "vp exec node --experimental-strip-types scripts/serve.ts studio",
-    "check": "vp lint && vp run -r --no-cache typecheck && vp run check:contracts && vp run check:rust && vp run -r --no-cache test",
+    "check": "vp lint && vp run -r --no-cache typecheck && vp run check:contracts && vp run check:rust && vp run -r --no-cache test && vp run test:scripts",
     "check:contracts": "vp run --filter @lisca/contracts generate && vp exec node --experimental-strip-types scripts/check-openapi-routes.ts && vp run --filter @lisca/contracts test",
     "check:rust": "cargo check --workspace && cargo clippy --workspace -- -D warnings",
     "lint": "vp lint",

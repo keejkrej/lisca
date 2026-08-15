@@ -1,5 +1,9 @@
-import { createLiscaViteConfig } from "@lisca/web-app/vite";
+import { createLiscaViteConfig, type LiscaViteProduct } from "@lisca/web-app/vite";
 
-export function createLiscaDemoViteConfig(options: { port: number }) {
-  return createLiscaViteConfig({ port: options.port, base: "./" });
+export function createLiscaDemoViteConfig(options: { port: number; product: LiscaViteProduct }) {
+  return createLiscaViteConfig({
+    port: options.port,
+    base: "./",
+    product: options.product,
+  });
 }
