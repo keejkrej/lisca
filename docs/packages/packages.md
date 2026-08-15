@@ -9,7 +9,8 @@ Shared libraries under `packages/*`. Apps import these via workspace protocol (`
 | `@lisca/contracts`   | Wire + on-disk assay schemas (Effect Schema). Subpath `@lisca/contracts/assay` for wizard/UI assay types.                          |
 | `@lisca/utils`       | Framework-free client logic: imaging helpers, storage adapters, annotation tools, shortcuts, task-center and picker models.        |
 | `@lisca/client`      | Effect runtime, HTTP/WS ports, session hooks, studio assay JSON helpers, Effect Atom query layers.                                 |
-| `@lisca/analysis`    | Pure Studio results model: Rust PNG plot catalog, sectioning, and assay constants.                                             |
+| `@lisca/analysis`    | Pure Studio results model: Rust PNG plot catalog, sectioning, and assay constants.                                                 |
+| `@lisca/fixtures`    | On-disk sample sources and half-finished workspaces for e2e / agent tests (`vp run fixture:workspace`).                            |
 | `@lisca/ui-headless` | Solid-coupled non-DOM state and interaction logic, plus the structural types and policies that directly support those modules.     |
 | `@lisca/ui`          | SolidJS web imaging UI (zaidan/Kobalte + Tailwind). Re-exports shared UI types through `@lisca/ui/features`.                       |
 | `@lisca/web-app`     | Vite web shell: port factory (`createLiscaPort`), shared CSS entry, host operations.                                               |
@@ -54,6 +55,17 @@ packages/analysis/src/
 
 Studio owns its runtime-coupled analysis atoms and PNG gallery under
 `apps/studio/web/src/{atoms,result}/`.
+
+## `@lisca/fixtures`
+
+On-disk sample sources and half-finished workspaces for e2e / agent tests.
+Not the analysis-demo PNG placeholders.
+
+```
+vp run fixture:workspace -- --assay transfection --stage cropped --out /tmp/tf
+```
+
+See `packages/fixtures/README.md`.
 
 ## `@lisca/utils` modules
 

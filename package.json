@@ -7,6 +7,7 @@
     "dev:annotator": "vp run --parallel --filter @lisca/annotator-server --filter @lisca/annotator-web dev",
     "dev:studio": "vp run --parallel --filter @lisca/studio-server --filter @lisca/studio-web dev",
     "dev:studio-demo": "vp run --filter @lisca/studio-demo dev",
+    "fixture:workspace": "vp run --filter @lisca/fixtures fixture",
     "dev:landing": "vp run --filter @lisca/landing-web dev",
     "build": "vp run --filter ./packages/* build && vp run --filter @lisca/*-web build",
     "dist:aligner": "vp exec node --experimental-strip-types scripts/package-tauri.ts aligner",
