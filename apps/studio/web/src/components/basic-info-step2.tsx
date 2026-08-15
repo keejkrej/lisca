@@ -1,9 +1,4 @@
-import {
-  Field,
-  FieldLabel,
-  Input,
-  Button,
-} from "@lisca/ui/components";
+import { Field, FieldLabel, Input, Button } from "@lisca/ui/components";
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-solid";
 import { For } from "solid-js";
 import IconTrashRegular from "phosphor-icons-solid/IconTrashRegular";
@@ -28,7 +23,10 @@ export function BasicInfoStep2() {
     <div class="flex w-full min-w-0 flex-col gap-2.5">
       <div class={ROW}>
         <Field class="gap-2.5">
-          <FieldLabel class="text-2xl font-normal">Samples</FieldLabel>
+          <FieldLabel class="text-xl font-medium">Samples</FieldLabel>
+          <p class="text-sm text-muted-foreground">
+            Each row is one condition: name, position range, and mask vs signal channels.
+          </p>
           <div class="mt-0 flex w-full min-w-0 flex-col gap-2 overflow-y-auto max-h-[60vh]">
             <For each={samples()}>
               {(row, index) => (
@@ -82,7 +80,7 @@ function SampleCard(props: {
             aria-label="Slide channel"
             class="w-16 shrink-0 text-center"
             inputMode="numeric"
-            placeholder="ch"
+            placeholder="slide"
             value={props.row.slideChannel}
             onChange={(e) => props.onChange({ slideChannel: e.currentTarget.value })}
           />
@@ -130,7 +128,7 @@ function SampleCard(props: {
             aria-label="Mask channel"
             class="w-20 shrink-0 text-center"
             inputMode="numeric"
-            placeholder="0"
+            placeholder="mask"
             value={props.row.mask}
             onChange={(e) => props.onChange({ mask: e.currentTarget.value })}
           />

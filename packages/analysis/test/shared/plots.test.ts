@@ -4,6 +4,7 @@ import {
   defaultResultPlotSection,
   filterResultPlotsBySection,
   inferResultAssayKind,
+  resultSectionInstruction,
   resultSectionLabel,
 } from "../../src/shared/plots";
 
@@ -31,11 +32,7 @@ describe("collectResultPlots", () => {
       ],
       "transfection",
     );
-    expect(plots.map((plot) => plot.fileName)).toEqual([
-      "traces.png",
-      "auc.png",
-      "onset_time.png",
-    ]);
+    expect(plots.map((plot) => plot.fileName)).toEqual(["traces.png", "auc.png", "onset_time.png"]);
     expect(plots[0]?.title).toBe("Intensity traces");
     expect(plots[0]?.section).toBe("timeseries");
     expect(plots[1]?.section).toBe("parameters");
@@ -83,5 +80,16 @@ describe("result sections", () => {
     );
     expect(defaultResultPlotSection(plots)).toBe("timeseries");
     expect(filterResultPlotsBySection(plots, "parameters")).toHaveLength(1);
+  });
+});
+
+describe("resultSectionInstruction", () => {
+  it("uses scientist-facing copy without pipeline jargon", () => {
+    expect(resultSectionInstruction("timeseries", "transfection")).toBe(
+      "Intensity, area, and fitted traces for each sample.",
+    );
+    expect(resultSectionInstruction("parameters", "killing")).toBe(
+      "Survival curve and death-time distributions.",
+    );
   });
 });

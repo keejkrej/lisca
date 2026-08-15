@@ -9,33 +9,21 @@ export { validAssayIdentity, validAssayInterval, validAssaySamples };
 export { isValidSamplePositionRange } from "@lisca/client/studio/assay-validation";
 
 export function instructionForStep(step: StudioStep): string {
-  if (step === "chooseAssay") return "Choose an assay type.";
+  if (step === "chooseAssay") {
+    return "Pick an assay to set up, or open an existing one.";
+  }
   if (step === "info1") {
-    return "Set the data source, workspace output folder, and timelapse interval.";
+    return "Choose the image source, workspace folder, and time between frames.";
   }
   if (step === "info2") {
-    return "Define sample rows and position ranges used in align and annotate.";
+    return "Name each sample and the microscope positions it covers. Align and Annotate use these ranges.";
   }
   if (step === "alignPattern") {
-    return "Align the grid with the mouse for positions defined in basic info, then press Next to save bbox and advance.";
+    return "Drag the grid onto the micropattern for each position, then press Next to save and continue.";
   }
-  return "Complete basic info.";
+  return "Finish Basic info before aligning.";
 }
 
 export function instructionForAnnotate(): string {
-  return "Annotate each adhesive site, save labels, then continue to analysis.";
-}
-
-export function defaultResultInstruction(
-  section: "timeseries" | "parameters",
-  assay: "transfection" | "killing" | "unknown" = "unknown",
-): string {
-  if (section === "timeseries") {
-    return assay === "killing"
-      ? "P(dead) traces written by the Rust pipeline."
-      : "Intensity, area, and fit-trace plots written by the Rust pipeline.";
-  }
-  return assay === "killing"
-    ? "Kill-curve and death-time plots written by the Rust pipeline."
-    : "Parameter boxplots written by the Rust pipeline: mRNA lifetime, AUC, expression rate, and onset time.";
+  return "Label each site, save, then continue to analysis.";
 }

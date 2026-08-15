@@ -20,14 +20,8 @@ export function StudioInfoDock(props: {
           >
             Back
           </Button>
-          <Button
-            class="w-full justify-center"
-            size="sm"
-            type="button"
-            variant="outline"
-            onClick={props.onNext}
-          >
-            Next
+          <Button class="w-full justify-center" size="sm" type="button" onClick={props.onNext}>
+            Continue
           </Button>
         </div>
       </DockSection>

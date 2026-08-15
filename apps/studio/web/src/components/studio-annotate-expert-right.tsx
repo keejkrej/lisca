@@ -13,9 +13,7 @@ export function StudioAnnotateExpertRight() {
       when={!state.workspaceMissing}
       fallback={
         <SidebarStack class="p-0">
-          <p class="text-muted-foreground text-sm">
-            Complete Basic info to annotate ROIs.
-          </p>
+          <p class="text-muted-foreground text-sm">Choose a workspace in Basic info first.</p>
         </SidebarStack>
       }
     >

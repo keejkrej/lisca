@@ -48,11 +48,7 @@ function NavButton(props: {
           return;
         }
         event.preventDefault();
-        if (
-          props.leaveAnnotateGuard &&
-          props.to !== "/annotate" &&
-          !confirmStudioAnnotateLeave()
-        ) {
+        if (props.leaveAnnotateGuard && props.to !== "/annotate" && !confirmStudioAnnotateLeave()) {
           return;
         }
         studioNavigate(navigate, props.to);
@@ -71,17 +67,21 @@ export function StudioNavRail() {
   return (
     <nav
       aria-label="Primary"
-      class={cn("flex h-full min-h-0 flex-col items-stretch", regionInsetClass, regionStackGapClass)}
+      class={cn(
+        "flex h-full min-h-0 flex-col items-stretch",
+        regionInsetClass,
+        regionStackGapClass,
+      )}
     >
       <div class="flex min-h-0 flex-1 flex-col items-center justify-center">
         <Panel class="w-full shrink-0">
-          <div class="flex flex-col items-center gap-6 p-3">
+          <div class="flex flex-col items-center gap-3 p-3">
             <NavButton
               active={routeId() === "assay"}
               leaveAnnotateGuard={routeId() === "annotate"}
               to="/assay"
             >
-              Assay type
+              Assay
             </NavButton>
             <NavButton
               active={routeId() === "info"}
@@ -95,27 +95,24 @@ export function StudioNavRail() {
               leaveAnnotateGuard={routeId() === "annotate"}
               to="/align"
             >
-              Align pattern
+              Align
             </NavButton>
             <NavButton active={routeId() === "annotate"} to="/annotate">
-              Annotate ROI
+              Annotate
             </NavButton>
             <NavButton
               active={routeId() === "result"}
               leaveAnnotateGuard={routeId() === "annotate"}
               to="/result"
             >
-              View results
+              Results
             </NavButton>
           </div>
         </Panel>
       </div>
       <div class="flex shrink-0 flex-row items-center justify-center gap-2">
         <StudioTaskCenter />
-        <ConnectionStatus
-          state={server.state}
-          httpBaseUrl={server.httpBaseUrl}
-        />
+        <ConnectionStatus state={server.state} httpBaseUrl={server.httpBaseUrl} />
         <ShellThemeToggle />
       </div>
     </nav>

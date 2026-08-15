@@ -86,7 +86,7 @@ function AssayPage() {
         </AppShell.Right>
       </AppShell.Body>
       <HostFilePickerDialog
-        description={undefined}
+        description="Choose a saved assay.json to resume."
         hostPort={studioHostOperations}
         mode="assay_json_file"
         open={assayPickerOpen()}
@@ -94,7 +94,7 @@ function AssayPage() {
           path: entry.path,
           label: entry.assayLabel,
         }))}
-        title="Open assay.json"
+        title="Open existing assay"
         onOpenChange={setAssayPickerOpen}
         onPickDirectory={() => {}}
         onPickFile={(path) => void openAssayJson(path)}

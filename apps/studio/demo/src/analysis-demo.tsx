@@ -34,9 +34,7 @@ export function AnalysisDemo(props: AnalysisDemoProps) {
   const [section, setSection] = createSignal<ResultPlotSection>("timeseries");
   const fixture = createMemo(() => FIXTURES[assayId()]());
   const assayKind = createMemo(() => inferResultAssayKind(fixture().files));
-  const plots = createMemo(() =>
-    fixture().plots.filter((plot) => plot.section === section()),
-  );
+  const plots = createMemo(() => fixture().plots.filter((plot) => plot.section === section()));
 
   const switchAssay = (next: FixtureAssayId) => {
     setAssayId(next);
@@ -73,7 +71,8 @@ export function AnalysisDemo(props: AnalysisDemoProps) {
                       {fixtureBanner()}
                     </p>
                     <ResultPlotGallery
-                      emptyMessage="No fixture plots in this section."
+                      emptyTitle="No plots in this view"
+                      emptyMessage="Switch Timeseries and Parameters in the dock."
                       plots={plots()}
                       section={section()}
                     />
@@ -103,7 +102,8 @@ export function AnalysisDemo(props: AnalysisDemoProps) {
                 <div class="flex h-full min-h-0 flex-col">
                   <p class="border-b px-4 py-2 text-xs text-muted-foreground">{fixtureBanner()}</p>
                   <ResultPlotGallery
-                    emptyMessage="No fixture plots in this section."
+                    emptyTitle="No plots in this view"
+                    emptyMessage="Switch Timeseries and Parameters in the dock."
                     plots={plots()}
                     section={section()}
                   />
