@@ -35,6 +35,23 @@ vp run dev:studio-demo
 Opens [http://localhost:5177](http://localhost:5177). Switch `transfection.fixture` /
 `killing.fixture` in the navbar. See `apps/studio/demo/README.md`.
 
+## Workspace fixtures (e2e / agents)
+
+`@lisca/fixtures` writes a real on-disk source folder or workspace so tests and
+agents can skip earlier pipeline steps. This is separate from the analysis demo
+PNGs above.
+
+```sh
+# Only test analysis
+vp run fixture:workspace -- --assay transfection --stage cropped --out /tmp/tf-analyze
+
+# Only test align
+vp run fixture:workspace -- --assay killing --stage assay --out /tmp/kill-align
+```
+
+Stages: `source`, `assay`, `aligned`, `cropped`, `annotated`, `analyzed`.
+See `packages/fixtures/README.md`.
+
 ## Rust pipeline
 
 Native analysis pipeline in `crates/lisca/src/analysis/`. ROI stacks under `roi/` come from **Studio crop**
