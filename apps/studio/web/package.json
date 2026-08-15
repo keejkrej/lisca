@@ -3,6 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./result": {
+      "types": "./src/result/result-panels-grid.tsx",
+      "import": "./src/result/result-panels-grid.tsx"
+    }
+  },
   "scripts": {
     "dev": "vp dev",
     "build": "tsc -p tsconfig.json --noEmit && vp build",
@@ -19,7 +25,6 @@
     "@lisca/ui": "workspace:*",
     "@lisca/utils": "workspace:*",
     "@lisca/web-app": "workspace:*",
-    "@observablehq/plot": "^0.6.17",
     "@tanstack/solid-router": "catalog:",
     "effect": "catalog:",
     "html2canvas-pro": "^2.0.2",

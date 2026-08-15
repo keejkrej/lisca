@@ -12,6 +12,7 @@
   "dependencies": {
     "@lisca/aligner-demo": "workspace:*",
     "@lisca/annotator-demo": "workspace:*",
+    "@lisca/studio-demo": "workspace:*",
     "@lisca/ui": "workspace:*",
     "@lisca/web-app": "workspace:*",
     "@tanstack/solid-router": "catalog:",

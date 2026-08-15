@@ -559,7 +559,7 @@ async fn analysis_latest_progress_handler<S: HasAnalysisJobs + HasTaskScheduler>
             status: lisca::protocol::AnalysisStatus::Completed,
             stage: lisca::protocol::AnalysisStage::Completed,
             progress: 100.0,
-            message: Some("Using existing workspace CSV results".to_string()),
+            message: Some("Using existing workspace results".to_string()),
             result_files,
             error: None,
         };

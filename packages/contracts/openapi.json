@@ -152,6 +152,55 @@
         }
       }
     },
+    "/fs/file": {
+      "get": {
+        "tags": [
+          "fs"
+        ],
+        "operationId": "fs.readFile",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "ReadTextFileResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadTextFileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request did not match the expected schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HttpApiDecodeError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unauthorized"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/fs/create-directory": {
       "post": {
         "tags": [

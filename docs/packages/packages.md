@@ -9,7 +9,7 @@ Shared libraries under `packages/*`. Apps import these via workspace protocol (`
 | `@lisca/contracts`   | Wire + on-disk assay schemas (Effect Schema). Subpath `@lisca/contracts/assay` for wizard/UI assay types.                          |
 | `@lisca/utils`       | Framework-free client logic: imaging helpers, storage adapters, annotation tools, shortcuts, task-center and picker models.        |
 | `@lisca/client`      | Effect runtime, HTTP/WS ports, session hooks, studio assay JSON helpers, Effect Atom query layers.                                 |
-| `@lisca/analysis`    | Pure Studio results model: CSV/plot parsing, chart specs, and assay catalog constants.                                             |
+| `@lisca/analysis`    | Pure Studio results model: Rust PNG plot catalog, sectioning, and assay constants.                                             |
 | `@lisca/ui-headless` | Solid-coupled non-DOM state and interaction logic, plus the structural types and policies that directly support those modules.     |
 | `@lisca/ui`          | SolidJS web imaging UI (zaidan/Kobalte + Tailwind). Re-exports shared UI types through `@lisca/ui/features`.                       |
 | `@lisca/web-app`     | Vite web shell: port factory (`createLiscaPort`), shared CSS entry, host operations.                                               |
@@ -45,14 +45,14 @@ Mirrors Rust `analysis/assays/<name>/`:
 
 ```
 packages/analysis/src/
-  shared/           panels.ts (plot/CSV parsing), queries.ts
-  charts/           renderer-neutral chart specs and data transforms
-  result/           result-panel loading
+  shared/           plots.ts (PNG catalog, sections, assay inference)
   assays/
     transfection/catalog.ts
+    killing/catalog.ts
+  fixtures/         placeholder PNGs for the Studio analysis demo
 ```
 
-Studio owns its runtime-coupled analysis atoms and Observable Plot renderer under
+Studio owns its runtime-coupled analysis atoms and PNG gallery under
 `apps/studio/web/src/{atoms,result}/`.
 
 ## `@lisca/utils` modules

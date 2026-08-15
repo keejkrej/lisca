@@ -26,8 +26,16 @@ export function instructionForAnnotate(): string {
   return "Annotate each adhesive site, save labels, then continue to analysis.";
 }
 
-export function defaultResultInstruction(section: "timeseries" | "parameters"): string {
-  return section === "timeseries"
-    ? "All timeseries plots are shown below."
-    : "Parameter plots: mRNA lifetime, AUC, expression rate, and onset time.";
+export function defaultResultInstruction(
+  section: "timeseries" | "parameters",
+  assay: "transfection" | "killing" | "unknown" = "unknown",
+): string {
+  if (section === "timeseries") {
+    return assay === "killing"
+      ? "P(dead) traces written by the Rust pipeline."
+      : "Intensity, area, and fit-trace plots written by the Rust pipeline.";
+  }
+  return assay === "killing"
+    ? "Kill-curve and death-time plots written by the Rust pipeline."
+    : "Parameter boxplots written by the Rust pipeline: mRNA lifetime, AUC, expression rate, and onset time.";
 }

@@ -115,6 +115,11 @@ const fsGroup = HttpApiGroup.make("fs")
       .addSuccess(ReadTextFileResponseSchema),
   )
   .add(
+    HttpApiEndpoint.get("readFile", "/fs/file")
+      .setUrlParams(ReadTextFileQuerySchema)
+      .addSuccess(ReadTextFileResponseSchema),
+  )
+  .add(
     HttpApiEndpoint.post("createDirectory", "/fs/create-directory")
       .setPayload(CreateDirectoryRequestSchema)
       .addSuccess(CreateDirectoryResponseSchema),

@@ -1,7 +1,10 @@
 use std::path::{Component, Path, PathBuf};
 
 use axum::{
+    body::Body,
     extract::Query,
+    http::{header, HeaderValue, StatusCode},
+    response::Response,
     routing::{get, post},
     Json, Router,
 };
@@ -32,6 +35,7 @@ where
         .route("/fs/list", get(list_directory_handler))
         .route("/fs/home", get(home_directory_handler))
         .route("/fs/read-text", get(read_text_file_handler))
+        .route("/fs/file", get(read_file_handler))
         .route("/fs/create-directory", post(create_directory_handler))
 }
 
@@ -315,6 +319,39 @@ fn list_roots() -> HostListDirectoryResult {
         parent: None,
         entries,
     }
+}
+
+async fn read_file_handler(
+    Query(query): Query<ReadTextFileQuery>,
+) -> Result<Response, FsError> {
+    let path = Path::new(&query.path);
+    ensure_local_path_allowed(path)?;
+    let bytes = std::fs::read(path)
+        .map_err(|error| FsError::new(format!("failed to read file: {error}")))?;
+    let content_type = match path
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase()
+        .as_str()
+    {
+        "png" => "image/png",
+        "jpg" | "jpeg" => "image/jpeg",
+        "gif" => "image/gif",
+        "webp" => "image/webp",
+        "svg" => "image/svg+xml",
+        "pdf" => "application/pdf",
+        _ => "application/octet-stream",
+    };
+    Response::builder()
+        .status(StatusCode::OK)
+        .header(
+            header::CONTENT_TYPE,
+            HeaderValue::from_static(content_type),
+        )
+        .header(header::CACHE_CONTROL, HeaderValue::from_static("no-store"))
+        .body(Body::from(bytes))
+        .map_err(|error| FsError::new(format!("failed to build file response: {error}")))
 }
 
 #[cfg(test)]
