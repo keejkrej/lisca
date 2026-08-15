@@ -1,0 +1,118 @@
+name: Release
+
+# Landing already deploys from deploy/landing via Render (vp run deploy:landing).
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+
+jobs:
+  release:
+    name: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          body: |
+            Unsigned first-pass desktop installers.
+
+            | App | macOS | Windows | Linux |
+            | --- | --- | --- | --- |
+            | Studio | DMG | NSIS | deb |
+            | Aligner | DMG | NSIS | deb |
+            | Annotator | DMG | NSIS | deb |
+
+            These builds are not signed or notarized. macOS Gatekeeper and Windows SmartScreen will warn.
+
+            Linux is Debian/Ubuntu `.deb` only. There is no AppImage, rpm, or pacman package.
+
+
+  publish:
+    name: ${{ matrix.product }} / ${{ matrix.os }}
+    needs: release
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        product: [studio, aligner, annotator]
+        os: [macos-latest, windows-latest, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+
+      - name: Toolchain
+        run: corepack enable && corepack prepare pnpm@11.15.1 --activate
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install Linux libraries
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            pkg-config \
+            libssl-dev \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libfontconfig1-dev \
+            fakeroot \
+            dpkg
+
+      - name: Install JavaScript dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download Studio killing model
+        if: matrix.product == 'studio'
+        shell: bash
+        run: |
+          curl -fL --retry 3 --retry-delay 2 "https://huggingface.co/keejkrej/killing-assay-resnet18/resolve/main/model.onnx" \
+            -o ./models/killing-assay-resnet18/model.onnx
+          test -s models/killing-assay-resnet18/model.onnx
+
+      - name: Package desktop app
+        run: pnpm exec vp run dist:${{ matrix.product }}
+
+      - name: Upload installers
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          product="${{ matrix.product }}"
+          dest="apps/${product}/desktop/release"
+          shopt -s nullglob
+          case "${RUNNER_OS}" in
+            macOS) files=("${dest}"/dmg/*.dmg) ;;
+            Windows) files=("${dest}"/nsis/*.exe) ;;
+            Linux) files=("${dest}"/deb/*.deb) ;;
+            *) echo "unsupported OS ${RUNNER_OS}" >&2; exit 1 ;;
+          esac
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No installers under ${dest}" >&2
+            ls -R "${dest}" || true
+            exit 1
+          fi
+          gh release upload "${GITHUB_REF_NAME}" "${files[@]}" --clobber
