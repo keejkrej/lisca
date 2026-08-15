@@ -265,7 +265,7 @@ fn build_transfection_operation(
                 &plot_ts_workspace,
                 &plot_ts_mapping,
                 interval,
-                transfection::DEFAULT_PLOT_COLUMNS,
+                Some(transfection::DEFAULT_PLOT_COLUMNS),
             )
         }),
     );
@@ -318,7 +318,7 @@ fn build_transfection_operation(
                 &plot_fit_workspace,
                 &plot_fit_mapping,
                 interval,
-                transfection::DEFAULT_PLOT_COLUMNS,
+                Some(transfection::DEFAULT_PLOT_COLUMNS),
             )
         }),
     );

@@ -182,12 +182,14 @@ export function createLiscaViteConfig(options: {
   port: number;
   base?: string;
   backendPort?: number;
-  plugins?: PluginOption[];
+  /** Extra Vite plugins from the app. Untyped so Studio tsc does not compare two Vite copies. */
+  plugins?: readonly unknown[];
   /** When set, favicon/icon files come from `assets/brand/apps/<product>/`. */
   product?: LiscaViteProduct;
 }): UserConfig {
   const backendPort = options.backendPort ?? liscaDevBackendPort(options.port);
   const productFavicon = options.product ? liscaProductFaviconPlugin(options.product) : null;
+  const extraPlugins = (options.plugins ?? []) as PluginOption[];
 
   return defineConfig({
     base: options.base ?? (process.env.VITE_DESKTOP === "1" ? "./" : "/"),
@@ -197,7 +199,7 @@ export function createLiscaViteConfig(options: {
       dedupe: ["solid-js"],
     },
     plugins: [
-      ...(options.plugins ?? []),
+      ...extraPlugins,
       liscaSolidPlugin(),
       tailwindcss(),
       liscaModelsPlugin(),

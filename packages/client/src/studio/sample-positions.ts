@@ -70,7 +70,7 @@ export function parseSamplePositions(positions: string): SamplePositionRange {
 export const parseLegacySamplePositions = parseSamplePositions;
 
 /** Parse comma-separated non-negative ints (`"1"` / `"1,2"`). Empty → null. */
-export function parseSignalChannels(raw: string): number[] | null {
+export function parseSignalChannels(raw: string): [number, ...number[]] | null {
   const tokens = raw
     .split(",")
     .map((token) => token.trim())
@@ -82,7 +82,7 @@ export function parseSignalChannels(raw: string): number[] | null {
     if (value == null) return null;
     values.push(value);
   }
-  return values;
+  return [values[0]!, ...values.slice(1)];
 }
 
 export function formatSignalChannels(signal: readonly number[]): string {
@@ -117,7 +117,7 @@ export function analysisChannelsFromSamples(
     signal: string;
   }[],
 ): Pick<AssayAnalysisConfig, "channels" | "sampleChannels"> {
-  const rows: { slideChannel: number; mask: number; signal: number[] }[] = [];
+  const rows: { slideChannel: number; mask: number; signal: [number, ...number[]] }[] = [];
   for (const sample of samples) {
     if (!sample.name.trim()) continue;
     const slideChannel = parseNonNegativeInteger(sample.slideChannel);
@@ -128,7 +128,7 @@ export function analysisChannelsFromSamples(
   }
   if (rows.length === 0) return {};
 
-  const channels = { mask: rows[0]!.mask, signal: [...rows[0]!.signal] };
+  const channels = { mask: rows[0]!.mask, signal: rows[0]!.signal };
   const sampleChannels = rows.filter(
     (row) => row.mask !== channels.mask || !signalChannelsEqual(row.signal, channels.signal),
   );
