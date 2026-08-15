@@ -1,7 +1,7 @@
 import type { StudioAnalysisCsvFile } from "@lisca/contracts";
 
 import {
-  collectDisplayedParameterPanels,
+  collectSummaryPanels,
   collectTimeseriesPanels,
   filterResultFilesBySection,
   type ResultPanel,
@@ -21,6 +21,6 @@ export async function loadAllResultPlotPanels(
 
   return {
     timeseriesPanels: collectTimeseriesPanels(timeseriesByFile),
-    parameterPanels: collectDisplayedParameterPanels(parametersByFile),
+    parameterPanels: collectSummaryPanels(parametersByFile),
   };
 }

@@ -3,6 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./result": {
+      "types": "./src/result/result-panels-grid.tsx",
+      "import": "./src/result/result-panels-grid.tsx"
+    }
+  },
   "scripts": {
     "dev": "vp dev",
     "build": "tsc -p tsconfig.json --noEmit && vp build",

@@ -26,8 +26,16 @@ export function instructionForAnnotate(): string {
   return "Annotate each adhesive site, save labels, then continue to analysis.";
 }
 
-export function defaultResultInstruction(section: "timeseries" | "parameters"): string {
-  return section === "timeseries"
-    ? "All timeseries plots are shown below."
+export function defaultResultInstruction(
+  section: "timeseries" | "parameters",
+  assay: "transfection" | "killing" | "unknown" = "unknown",
+): string {
+  if (section === "timeseries") {
+    return assay === "killing"
+      ? "P(dead) traces for each position. The red line is the median."
+      : "Intensity traces for each position. The red line is the median.";
+  }
+  return assay === "killing"
+    ? "Kill curves overlay samples; death-time histograms share a time axis."
     : "Parameter plots: mRNA lifetime, AUC, expression rate, and onset time.";
 }

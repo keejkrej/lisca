@@ -18,13 +18,15 @@ import { StudioLeft } from "../components/studio-left";
 import { StudioRightPanel } from "../components/studio-right-panel";
 import { StudioResultExpertRight } from "../components/studio-result-expert-right";
 import { StudioResultDock } from "../components/studio-result-dock";
-import { defaultResultInstruction } from "../state/studio-routes";
 import {
-  collectDisplayedParameterPanels,
+  collectSummaryPanels,
   collectTimeseriesPanels,
   defaultResultPlotSection,
   filterResultFilesBySection,
+  inferResultAssayKind,
   intervalFromAssaySettings,
+  resultSectionInstruction,
+  resultSectionLabel,
   type ResultPanel,
   type ResultPlotSection,
   type SlideChannelLabels,
@@ -185,7 +187,7 @@ export default function ResultPage() {
     const collectPanels = (panelsByFile: ResultPanel[][]) =>
       section === "timeseries"
         ? collectTimeseriesPanels(panelsByFile)
-        : collectDisplayedParameterPanels(panelsByFile);
+        : collectSummaryPanels(panelsByFile);
     const syncPanels = files.map((file) => getCachedAnalysisPanels(file));
     if (syncPanels.every((panels) => panels !== undefined)) {
       setSectionPanels(collectPanels(syncPanels as ResultPanel[][]));
@@ -211,20 +213,21 @@ export default function ResultPage() {
       cancelled = true;
     });
   });
-  const defaultInstruction = () => defaultResultInstruction(activeSection());
+  const assayKind = createMemo(() => inferResultAssayKind(analysisResultFiles()));
+  const defaultInstruction = () => resultSectionInstruction(activeSection(), assayKind());
   const dockInstruction = () => saveMessage() ?? panelError() ?? defaultInstruction();
   const isBusy = () => isSectionLoading() || isSaving();
   const sectionToolActions = createMemo(() => [
     {
       id: "timeseries",
-      label: "Timeseries",
+      label: resultSectionLabel("timeseries", assayKind()),
       disabled: !hasTimeseriesFiles() || isBusy(),
       active: activeSection() === "timeseries",
       onSelect: () => switchSection("timeseries"),
     },
     {
       id: "parameters",
-      label: "Parameters",
+      label: resultSectionLabel("parameters", assayKind()),
       disabled: !hasParameterFiles() || isBusy(),
       active: activeSection() === "parameters",
       onSelect: () => switchSection("parameters"),
@@ -245,7 +248,15 @@ export default function ResultPage() {
                     <Spinner class="size-4" />
                   </div>
                 ) : null}
-                <ResultPanelsGridView panels={sectionPanels()} section={activeSection()} />
+                <ResultPanelsGridView
+                  emptyMessage={
+                    hasAnyResultFiles()
+                      ? "No plots in this section."
+                      : "Run analysis to see timeseries and summary plots."
+                  }
+                  panels={sectionPanels()}
+                  section={activeSection()}
+                />
                 {exportCapture() ? (
                   <div
                     aria-hidden

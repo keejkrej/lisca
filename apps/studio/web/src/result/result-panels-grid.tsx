@@ -6,6 +6,8 @@ import {
   chartSpecForPanel,
   CHART_MARGINS,
   type ChartSpec,
+  HISTOGRAM_FILL,
+  HISTOGRAM_FILL_OPACITY,
   PLOT_FONT,
   PLOT_FONT_SIZE_PX,
   TIMESERIES_MEDIAN_STROKE,
@@ -50,8 +52,9 @@ function axisFromSpec(axis: ChartSpec["x"] | ChartSpec["y"]): Plot.PlotOptions["
     label: axis.label,
     grid: axis.grid,
     tickFormat: axis.tickFormat,
-    domain: "domain" in axis ? axis.domain : undefined,
-    tickRotate: "tickRotate" in axis ? axis.tickRotate : undefined,
+    domain: axis.categoryDomain ?? axis.numericDomain,
+    tickRotate: axis.tickRotate,
+    type: axis.type,
   };
 }
 
@@ -99,6 +102,7 @@ function plotOptionsFromChartSpec(spec: ChartSpec): Plot.PlotOptions {
       ...basePlotOptions(),
       ...PLOT_MARGINS,
       color: {
+        legend: spec.legend ? true : undefined,
         range: [...TRACE_PALETTE],
       },
       x: axisFromSpec(spec.x),
@@ -108,7 +112,8 @@ function plotOptionsFromChartSpec(spec: ChartSpec): Plot.PlotOptions {
           x: "x",
           y: "y",
           stroke: "series",
-          strokeOpacity: spec.series[0]?.strokeOpacity ?? 0.55,
+          strokeOpacity: spec.series[0]?.strokeOpacity ?? 0.9,
+          strokeWidth: spec.series[0]?.strokeWidth ?? 2,
         }),
       ],
     };
@@ -148,6 +153,8 @@ function plotOptionsFromChartSpec(spec: ChartSpec): Plot.PlotOptions {
         x: "x0",
         x1: "x1",
         y: "count",
+        fill: HISTOGRAM_FILL,
+        fillOpacity: HISTOGRAM_FILL_OPACITY,
       }),
     ],
   };
@@ -236,8 +243,16 @@ export function ResultPanelsGridView(props: {
   exportMode?: boolean;
   pageTitle?: string;
   section?: ResultPlotSection;
+  emptyMessage?: string;
 }) {
-  if (props.panels.length === 0) return null;
+  if (props.panels.length === 0) {
+    if (props.exportMode || !props.emptyMessage) return null;
+    return (
+      <div class="flex h-full min-h-0 items-center justify-center px-6 text-center text-sm text-muted-foreground">
+        {props.emptyMessage}
+      </div>
+    );
+  }
   const isParameters = () => props.section === "parameters";
   const gridClass = () =>
     isParameters()

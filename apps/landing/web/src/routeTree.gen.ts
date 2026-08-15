@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AnnotatorDemoIndexRouteImport } from './routes/annotator-demo/index'
 import { Route as AlignerDemoIndexRouteImport } from './routes/aligner-demo/index'
+import { Route as StudioDemoIndexRouteImport } from './routes/studio-demo/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +29,44 @@ const AlignerDemoIndexRoute = AlignerDemoIndexRouteImport.update({
   path: '/aligner-demo/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StudioDemoIndexRoute = StudioDemoIndexRouteImport.update({
+  id: '/studio-demo/',
+  path: '/studio-demo/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/aligner-demo/': typeof AlignerDemoIndexRoute
   '/annotator-demo/': typeof AnnotatorDemoIndexRoute
+  '/studio-demo/': typeof StudioDemoIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/aligner-demo': typeof AlignerDemoIndexRoute
   '/annotator-demo': typeof AnnotatorDemoIndexRoute
+  '/studio-demo': typeof StudioDemoIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/aligner-demo/': typeof AlignerDemoIndexRoute
   '/annotator-demo/': typeof AnnotatorDemoIndexRoute
+  '/studio-demo/': typeof StudioDemoIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/aligner-demo/' | '/annotator-demo/'
+  fullPaths: '/' | '/aligner-demo/' | '/annotator-demo/' | '/studio-demo/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/aligner-demo' | '/annotator-demo'
-  id: '__root__' | '/' | '/aligner-demo/' | '/annotator-demo/'
+  to: '/' | '/aligner-demo' | '/annotator-demo' | '/studio-demo'
+  id: '__root__' | '/' | '/aligner-demo/' | '/annotator-demo/' | '/studio-demo/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AlignerDemoIndexRoute: typeof AlignerDemoIndexRoute
   AnnotatorDemoIndexRoute: typeof AnnotatorDemoIndexRoute
+  StudioDemoIndexRoute: typeof StudioDemoIndexRoute
 }
 
 declare module '@tanstack/solid-router' {
@@ -82,6 +92,13 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof AlignerDemoIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/studio-demo/': {
+      id: '/studio-demo/'
+      path: '/studio-demo'
+      fullPath: '/studio-demo/'
+      preLoaderRoute: typeof StudioDemoIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +106,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AlignerDemoIndexRoute: AlignerDemoIndexRoute,
   AnnotatorDemoIndexRoute: AnnotatorDemoIndexRoute,
+  StudioDemoIndexRoute: StudioDemoIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

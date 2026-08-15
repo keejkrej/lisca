@@ -1,8 +1,9 @@
 import { AlignDemo } from "@lisca/aligner-demo";
 import { AnnotatorDemo } from "@lisca/annotator-demo";
+import { AnalysisDemo } from "@lisca/studio-demo";
 import type { Component } from "solid-js";
 
-import { ALIGNER_DEMO_PATH, ANNOTATOR_DEMO_PATH } from "./constants";
+import { ALIGNER_DEMO_PATH, ANNOTATOR_DEMO_PATH, STUDIO_DEMO_PATH } from "./constants";
 
 export type LandingDemo = {
   id: string;
@@ -32,7 +33,17 @@ export const landingDemos = [
     linkLabel: "Try Annotator in your browser",
     Demo: AnnotatorDemo,
   },
+  {
+    id: "studio",
+    title: "Analysis",
+    description:
+      "Fixture transfection and killing results — intensity or P(dead) traces, fit/AUC boxplots, overlaid kill curves, and death-time histograms. Sample data only; switch assays from the dropdown.",
+    href: STUDIO_DEMO_PATH,
+    linkLabel: "Try analysis plots in your browser",
+    Demo: AnalysisDemo,
+  },
 ] as const satisfies readonly LandingDemo[];
 
 export const alignerDemo = landingDemos[0];
 export const annotatorDemo = landingDemos[1];
+export const analysisDemo = landingDemos[2];

@@ -50,6 +50,8 @@ packages/analysis/src/
   result/           result-panel loading
   assays/
     transfection/catalog.ts
+    killing/catalog.ts
+  fixtures/         synthetic result CSVs for the Studio analysis demo
 ```
 
 Studio owns its runtime-coupled analysis atoms and Observable Plot renderer under

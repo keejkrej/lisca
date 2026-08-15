@@ -11,6 +11,7 @@ import {
   boxPlotBottomMargin,
   boxPlotTickRotate,
   GENERIC_LINE_OPACITY,
+  GENERIC_LINE_WIDTH,
   TIMESERIES_TRACE_OPACITY,
   TIMESERIES_TRACE_STROKE,
   traceColor,
@@ -26,24 +27,50 @@ import type {
 } from "./spec";
 import { computeMedianTrace } from "./scales";
 
-const HISTOGRAM_BIN_COUNT = 40;
+const HISTOGRAM_BIN_COUNT = 20;
 
-function yAxis(label: string): AxisSpec {
+function yAxisForLabel(label: string, scale?: "linear" | "log"): AxisSpec {
+  switch (label) {
+    case "P(dead)":
+      return { label, grid: true, tickFormat: ".2f", numericDomain: [0, 1] };
+    case "N(alive)":
+    case "n crops":
+      return { label, grid: true, tickFormat: "d" };
+    case "onset time":
+      return { label, grid: true, tickFormat: ".0f" };
+    case "mRNA lifetime":
+    case "protein lifetime":
+      return { label, grid: true, tickFormat: ".1f" };
+    case "expression rate":
+      return { label, grid: true, tickFormat: ".1e", type: scale ?? "log" };
+    case "AUC":
+    case "intensity":
+    case "mask area":
+    case "baseline intensity":
+      return { label, grid: true, tickFormat: ".2s" };
+    default:
+      return { label, grid: true, tickFormat: Y_AXIS_TICK_FORMAT, type: scale };
+  }
+}
+
+function xAxisMinutes(label: string, domain?: [number, number]): AxisSpec {
   return {
     label,
     grid: true,
-    tickFormat: Y_AXIS_TICK_FORMAT,
+    tickFormat: ".0f",
+    numericDomain: domain,
   };
+}
+
+function maxY(points: Array<{ y: number }>): number {
+  return points.reduce((high, point) => (point.y > high ? point.y : high), 0);
 }
 
 function buildTimeseriesChartSpec(panel: TimeseriesPanel): TimeseriesChartSpec {
   return {
     kind: "timeseries",
-    x: {
-      label: panel.xAxisLabel,
-      grid: true,
-    },
-    y: yAxis(panel.yAxisLabel),
+    x: xAxisMinutes(panel.xAxisLabel),
+    y: yAxisForLabel(panel.yAxisLabel),
     traces: panel.traces.map((trace) => ({
       key: trace.key,
       points: trace.points,
@@ -55,18 +82,23 @@ function buildTimeseriesChartSpec(panel: TimeseriesPanel): TimeseriesChartSpec {
 }
 
 function buildGenericLineChartSpec(panel: GenericLinePanel): GenericLineChartSpec {
+  const overlay = panel.series.length > 1;
+  const y = yAxisForLabel(panel.yAxisLabel);
+  if (panel.yAxisLabel === "N(alive)") {
+    const peak = panel.series.reduce((high, entry) => Math.max(high, maxY(entry.points)), 0);
+    y.numericDomain = [0, Math.max(peak, 1)];
+  }
   return {
     kind: "line",
-    x: {
-      label: panel.xAxisLabel,
-      grid: true,
-    },
-    y: yAxis(panel.yAxisLabel),
+    x: xAxisMinutes(panel.xAxisLabel),
+    y,
+    legend: overlay,
     series: panel.series.map((entry, index) => ({
-      key: entry.dataKey,
+      key: entry.label || entry.dataKey,
       points: entry.points,
       stroke: traceColor(index),
       strokeOpacity: GENERIC_LINE_OPACITY,
+      strokeWidth: GENERIC_LINE_WIDTH,
     })),
   };
 }
@@ -76,10 +108,10 @@ function buildBoxPlotChartSpec(panel: BoxPlotPanel): BoxPlotChartSpec {
     kind: "boxplot",
     x: {
       label: panel.xAxisLabel,
-      domain: panel.groups.map((group) => group.label),
+      categoryDomain: panel.groups.map((group) => group.label),
       tickRotate: boxPlotTickRotate(panel.groups.length),
     },
-    y: yAxis(panel.yAxisLabel),
+    y: yAxisForLabel(panel.yAxisLabel, panel.yScale),
     groups: panel.groups.map((group) => ({
       label: group.label,
       values: group.values,
@@ -99,11 +131,8 @@ function buildHistogramChartSpec(panel: HistogramPanel): HistogramChartSpec {
 
   return {
     kind: "histogram",
-    x: {
-      label: panel.xAxisLabel,
-      grid: true,
-    },
-    y: yAxis(panel.yAxisLabel),
+    x: xAxisMinutes(panel.xAxisLabel, panel.xDomain),
+    y: yAxisForLabel(panel.yAxisLabel),
     bins: histogram,
   };
 }

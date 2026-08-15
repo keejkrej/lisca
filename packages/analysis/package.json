@@ -13,6 +13,10 @@
     "./charts": {
       "types": "./src/charts/index.ts",
       "import": "./src/charts/index.ts"
+    },
+    "./fixtures": {
+      "types": "./src/fixtures/index.ts",
+      "import": "./src/fixtures/index.ts"
     }
   },
   "scripts": {

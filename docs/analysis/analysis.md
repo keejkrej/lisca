@@ -6,6 +6,8 @@ Pure **results model** for the Studio web app. Layout mirrors Rust `analysis/ass
 
 - `shared/panels.ts` — parse analysis CSVs, build chart panels (`ResultPanel`)
 - `assays/transfection/catalog.ts` — transfection plot IDs and labels
+- `assays/killing/catalog.ts` — killing summary plot IDs
+- `fixtures/` — synthetic transfection and killing result CSVs for the analysis demo
 
 The package is pure model/chart logic. Studio-coupled atoms live in
 `apps/studio/web/src/atoms/studio-analysis-atoms.ts`, where the model is wired to the
@@ -27,16 +29,32 @@ Pure logic only — no SolidJS or Observable Plot.
 through `ResultPanelsGridView`. The renderer and its data-loading atoms are owned by Studio;
 `@lisca/ui` does not depend on the analysis model or renderer.
 
+CSV parsing accepts Rust column names (`slide`, and timeseries files without `pos` — position
+comes from `Pos{n}/ch{n}.csv`). Kill curves overlay samples on one plot; death-time histograms
+share an x-axis. Expression rate uses a log y-scale.
+
+## Analysis demo
+
+`apps/studio/demo` is a browser-only mock of the result page. It loads fixture CSVs for both
+shipping assays so the team can iterate on plots without a workspace.
+
+```sh
+vp run dev:studio-demo
+```
+
+Opens [http://localhost:5177](http://localhost:5177). Switch `transfection.fixture` /
+`killing.fixture` in the navbar. See `apps/studio/demo/README.md`.
+
 ## Rust pipeline
 
 Native analysis pipeline in `crates/lisca/src/analysis/`. ROI stacks under `roi/` come from **Studio crop**
 or CLI (`lisca-crop`; Python crop in `../pyama-v2`) — not from the light Aligner shell. The running workflow
 depends on `assay.json` → root `type`:
 
-| Assay             | Goal source (not implementation reference)                                                   | Pipeline                                        |
-| ----------------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| `transfection` | sibling [`lisca-transfection-assay`](../../../lisca-transfection-assay) — stages, CSV columns, plot names | segment → timeseries → AUC → fit (+ plots)      |
-| `killing`  | [mupattern](https://github.com/keejkrej/mupattern) / future `lisca-killing-assay` — kill curve semantics, ResNet classifier | predict → plot-timeseries → clean → death times → kill curve plot |
+| Assay          | Goal source (not implementation reference)                                                                                  | Pipeline                                                          |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `transfection` | sibling [`lisca-transfection-assay`](../../../lisca-transfection-assay) — stages, CSV columns, plot names                   | segment → timeseries → AUC → fit (+ plots)                        |
+| `killing`      | [mupattern](https://github.com/keejkrej/mupattern) / future `lisca-killing-assay` — kill curve semantics, ResNet classifier | predict → plot-timeseries → clean → death times → kill curve plot |
 
 Numeric stages and PNG plots run in Rust via [**mplot-rs**](https://github.com/keejkrej/mplot-rs). Killing inference uses ONNX Runtime (`ort`) with the `keejkrej/killing-assay-resnet18` model.
 
@@ -74,13 +92,13 @@ assay.json → predict (ResNet ONNX, P(dead) per frame) → plot-timeseries → 
 
 Progress reuses the same HTTP stage names with kill-specific messages:
 
-| Stage        | Kill step                                |
-| ------------ | ---------------------------------------- |
-| `preparing`  | Resolve ONNX model + slide mapping       |
-| `segment`    | P(dead) inference per ROI frame          |
-| `timeseries` | Monotonicity clean                       |
-| `auc`        | Death times + kill curve table           |
-| `fit`        | P(dead) trace + kill curve PNGs          |
+| Stage        | Kill step                          |
+| ------------ | ---------------------------------- |
+| `preparing`  | Resolve ONNX model + slide mapping |
+| `segment`    | P(dead) inference per ROI frame    |
+| `timeseries` | Monotonicity clean                 |
+| `auc`        | Death times + kill curve table     |
+| `fit`        | P(dead) trace + kill curve PNGs    |
 
 ### Kill model path
 
@@ -92,30 +110,30 @@ uv run optimum-cli export onnx --model keejkrej/killing-assay-resnet18 ./models/
 
 ### Killing outputs
 
-| Path                              | Role                                                          |
-| --------------------------------- | ------------------------------------------------------------- |
-| `timeseries/Pos{n}/ch{n}.csv`      | Per-ROI `P(dead)` vs time (`pos, roi, t, p_dead`)             |
-| `results/predictions.csv`         | Raw `(t, crop, p_dead, label, pos, slide_channel)` from ResNet |
-| `results/predictions_cleaned.csv` | Monotonicity-enforced labels                                  |
-| `results/kill_curve.csv`          | `N(alive)` vs time per slide channel                          |
-| `results/death_times.csv`         | Per-ROI death frame (`≥80%` true span, mupattern clean logic) |
-| `results/traces.png`, `results/traces_shared_y.png` | P(dead) trace grids                           |
-| `results/kill_curve.png`          | N(alive) curve plot                                           |
-| `results/death_times.png`         | T_death histogram per slide channel                           |
+| Path                                                | Role                                                           |
+| --------------------------------------------------- | -------------------------------------------------------------- |
+| `timeseries/Pos{n}/ch{n}.csv`                       | Per-ROI `P(dead)` vs time (`pos, roi, t, p_dead`)              |
+| `results/predictions.csv`                           | Raw `(t, crop, p_dead, label, pos, slide_channel)` from ResNet |
+| `results/predictions_cleaned.csv`                   | Monotonicity-enforced labels                                   |
+| `results/kill_curve.csv`                            | `N(alive)` vs time per slide channel                           |
+| `results/death_times.csv`                           | Per-ROI death frame (`≥80%` true span, mupattern clean logic)  |
+| `results/traces.png`, `results/traces_shared_y.png` | P(dead) trace grids                                            |
+| `results/kill_curve.png`                            | N(alive) curve plot                                            |
+| `results/death_times.png`                           | T_death histogram per slide channel                            |
 
 ## Workspace I/O
 
-| Path                                                                         | Role                                                   |
-| ---------------------------------------------------------------------------- | ------------------------------------------------------ |
-| `assay.json`                                                                 | Nested domain contract (`type`, `data`, `workspace`, `interval`, `samples`, optional `analysis` with `channels` / `sampleChannels`) |
-| `roi/PosN/`                                                                  | Cropped ROI stacks + slim `index.json` (always `axisOrder: TCZYX`; keep `zCount`; derive stack shape from counts + `bbox`; optional `timeIndices`) |
-| `mask/PosN/`                                                                 | Per-frame segmentation masks (`uint8` TIFF stacks)     |
-| `timeseries/Pos{n}/ch{n}.csv`                                                 | Per-position intensity metrics (`roi,t,area,background,sum,corrected`; no `pos` / `slide_channel`; `t` from `timeIndices`). Segmented: mask fg + **median** bg; `analysis.skipSegment`: whole ROI + **10th-percentile** bg. |
-| `results/auc.csv`                                                            | Trapezoidal AUC per `(pos, roi)` trace (+ `.xlsx`)     |
-| `results/fit.csv`                                                            | Two-exponential kinetic fit parameters (+ `.xlsx`)     |
-| `results/traces.png`, `traces_shared_y.png`, `traces_summary.png`, `traces_summary_shared_y.png`, `area.png`, `area_shared_y.png`, `area_summary.png`, `area_summary_shared_y.png` | Timeseries plots (individual + mean/median/IQR summary; per-panel and shared y) |
-| `results/auc.png`, `results/auc_log.png`                                      | AUC boxplots (linear and log y-scale)                  |
-| `results/{parameter}.png`, `results/traces_fit.png`, `traces_fit_shared_y.png` | Fit parameter boxplots and fitted trace grids (per-panel + shared y) |
+| Path                                                                                                                                                                               | Role                                                                                                                                                                                                                        |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `assay.json`                                                                                                                                                                       | Nested domain contract (`type`, `data`, `workspace`, `interval`, `samples`, optional `analysis` with `channels` / `sampleChannels`)                                                                                         |
+| `roi/PosN/`                                                                                                                                                                        | Cropped ROI stacks + slim `index.json` (always `axisOrder: TCZYX`; keep `zCount`; derive stack shape from counts + `bbox`; optional `timeIndices`)                                                                          |
+| `mask/PosN/`                                                                                                                                                                       | Per-frame segmentation masks (`uint8` TIFF stacks)                                                                                                                                                                          |
+| `timeseries/Pos{n}/ch{n}.csv`                                                                                                                                                      | Per-position intensity metrics (`roi,t,area,background,sum,corrected`; no `pos` / `slide_channel`; `t` from `timeIndices`). Segmented: mask fg + **median** bg; `analysis.skipSegment`: whole ROI + **10th-percentile** bg. |
+| `results/auc.csv`                                                                                                                                                                  | Trapezoidal AUC per `(pos, roi)` trace (+ `.xlsx`)                                                                                                                                                                          |
+| `results/fit.csv`                                                                                                                                                                  | Two-exponential kinetic fit parameters (+ `.xlsx`)                                                                                                                                                                          |
+| `results/traces.png`, `traces_shared_y.png`, `traces_summary.png`, `traces_summary_shared_y.png`, `area.png`, `area_shared_y.png`, `area_summary.png`, `area_summary_shared_y.png` | Timeseries plots (individual + mean/median/IQR summary; per-panel and shared y)                                                                                                                                             |
+| `results/auc.png`, `results/auc_log.png`                                                                                                                                           | AUC boxplots (linear and log y-scale)                                                                                                                                                                                       |
+| `results/{parameter}.png`, `results/traces_fit.png`, `traces_fit_shared_y.png`                                                                                                     | Fit parameter boxplots and fitted trace grids (per-panel + shared y)                                                                                                                                                        |
 
 Studio results UI reads CSVs for interactive charts; PNG filenames match transfection output.
 
@@ -138,14 +156,14 @@ analysis/
     killing.rs + killing/
 ```
 
-| Module                                 | Goal                                                         |
-| -------------------------------------- | ------------------------------------------------------------ |
+| Module                              | Goal                                                         |
+| ----------------------------------- | ------------------------------------------------------------ |
 | `assays/transfection/segment.rs`    | Otsu mask per ROI frame                                      |
 | `assays/transfection/timeseries.rs` | Mask-corrected intensity traces → `timeseries/` CSVs         |
 | `assays/transfection/auc.rs`        | Trapezoidal AUC per trace                                    |
 | `assays/transfection/fit.rs`        | Two-exponential kinetic fit                                  |
 | `assays/transfection/plot/`         | PNGs for traces, AUC, fit parameters                         |
-| `assays/killing/`               | ResNet presence, monotonicity clean, death times, kill curve |
+| `assays/killing/`                   | ResNet presence, monotonicity clean, death times, kill curve |
 
 Adding a new assay type: create `assays/<name>.rs` plus `assays/<name>/`, implement `run` (async) and optionally `run_sync`, then register in `assays.rs`.
 
@@ -162,7 +180,7 @@ Summary — full process, tolerances table, and lifecycle in [`parity.md`](./par
 - **Not required**: matching Python module names, NumPy vs loop structure, or bitwise float identity.
 - Position ranges in `assay.json` use **inclusive** Studio semantics (`1:12` → positions 1…12).
 - Segmentation defaults: `variation_radius=2`, `gaussian_sigma=1.0`.
-- Fit uses the two-pass pooled-protein strategy on the **basic translation–degradation model** (onset time \(t_0\), expression rate \(m_0 k_{TL}\), mRNA/protein lifetimes; **no maturation**). Optional `analysis.maxOnsetMinutes` in `assay.json` is **transfection-only** (default **`120`** when omitted for that assay; set `0` to fix onset at 0). Other assays ignore it. Code, CSV, and UI use one set of names: `onset_time`, `expression_rate`, `baseline_intensity` (no alternate aliases).
+- Fit uses the two-pass pooled-protein strategy on the **basic translation–degradation model** (onset time \(t*0\), expression rate \(m_0 k*{TL}\), mRNA/protein lifetimes; **no maturation**). Optional `analysis.maxOnsetMinutes` in `assay.json` is **transfection-only** (default **`120`** when omitted for that assay; set `0` to fix onset at 0). Other assays ignore it. Code, CSV, and UI use one set of names: `onset_time`, `expression_rate`, `baseline_intensity` (no alternate aliases).
 - Frame interval (`interval.value` / `interval.unit`) is **general**. Transfection defaults to **10 minutes** when omitted; other assays require an explicit positive interval. Optional `analysis.skipSegment` skips Otsu and uses full-ROI p10 background.
 - Channel indices live under `analysis`, not on sample rows: `analysis.channels.{mask,signal}` (default) and optional `analysis.sampleChannels[]` overrides keyed by `slideChannel` (int). `signal` is a non-empty int list (one timeseries CSV per channel). Samples keep `slideChannel` (int), `name`, `positions` only.
 

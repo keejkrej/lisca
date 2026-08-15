@@ -3,12 +3,16 @@ export type ChartPoint = {
   y: number;
 };
 
+export type AxisScale = "linear" | "log";
+
 export type AxisSpec = {
   label: string;
   grid?: boolean;
   tickFormat?: string;
-  domain?: string[];
+  categoryDomain?: string[];
+  numericDomain?: [number, number];
   tickRotate?: number;
+  type?: AxisScale;
 };
 
 export type LineSeriesSpec = {
@@ -50,6 +54,7 @@ export type GenericLineChartSpec = {
   x: AxisSpec;
   y: AxisSpec;
   series: LineSeriesSpec[];
+  legend?: boolean;
 };
 
 export type BoxPlotChartSpec = {
