@@ -35,7 +35,12 @@ pub fn run(config: ProductConfig, context: tauri::Context) {
             };
 
             let server_path = resolve_server_path(app, &config, is_dev)?;
-            let child = spawn_server(&server_path, rust_port, &config)?;
+            let kill_model = if !is_dev && config.product == "studio" {
+                resolve_kill_model_path(app)
+            } else {
+                None
+            };
+            let child = spawn_server(&server_path, rust_port, &config, kill_model.as_deref())?;
             app.manage(Mutex::new(Some(child)));
 
             create_window(app, &config, dev_url.as_deref())?;
@@ -97,28 +102,51 @@ fn resolve_server_path<R: tauri::Runtime, M: Manager<R>>(
     ))
 }
 
-fn bundled_server_candidates<R: tauri::Runtime, M: Manager<R>>(
+fn bundled_resource_candidates<R: tauri::Runtime, M: Manager<R>>(
     app: &M,
-    binary_name: &str,
+    relative: impl AsRef<Path>,
 ) -> io::Result<Vec<PathBuf>> {
+    let relative = relative.as_ref();
     let mut candidates = Vec::new();
 
-    // Tauri maps `resources/` into the bundle resource dir (AppImage: $APPDIR/usr/lib/<product>/).
+    // Tauri maps `resources/` into the bundle resource dir (deb: /usr/lib/<product>/).
     if let Ok(resource_dir) = app.path().resource_dir() {
-        candidates.push(resource_dir.join("server").join(binary_name));
+        candidates.push(resource_dir.join(relative));
     }
 
     let exe = std::env::current_exe()?;
     if let Some(exe_dir) = exe.parent() {
         // Cargo output and some bundle layouts place resources next to the executable.
-        candidates.push(exe_dir.join("server").join(binary_name));
-        candidates.push(exe_dir.join("resources").join("server").join(binary_name));
+        candidates.push(exe_dir.join(relative));
+        candidates.push(exe_dir.join("resources").join(relative));
     }
 
     Ok(candidates)
 }
 
-fn spawn_server(path: &Path, port: u16, config: &ProductConfig) -> io::Result<Child> {
+fn bundled_server_candidates<R: tauri::Runtime, M: Manager<R>>(
+    app: &M,
+    binary_name: &str,
+) -> io::Result<Vec<PathBuf>> {
+    bundled_resource_candidates(app, Path::new("server").join(binary_name))
+}
+
+fn resolve_kill_model_path<R: tauri::Runtime, M: Manager<R>>(app: &M) -> Option<PathBuf> {
+    let relative = Path::new("models").join("killing-assay-resnet18");
+    let Ok(candidates) = bundled_resource_candidates(app, &relative) else {
+        return None;
+    };
+    candidates
+        .into_iter()
+        .find(|path| path.join("model.onnx").is_file())
+}
+
+fn spawn_server(
+    path: &Path,
+    port: u16,
+    config: &ProductConfig,
+    kill_model: Option<&Path>,
+) -> io::Result<Child> {
     let mut command = if path.as_os_str() == "cargo" {
         let mut cmd = Command::new("cargo");
         cmd.args(["run", "-p", config.cargo_package, "--quiet"]);
@@ -131,6 +159,9 @@ fn spawn_server(path: &Path, port: u16, config: &ProductConfig) -> io::Result<Ch
     };
 
     command.env("PORT", port.to_string());
+    if let Some(model) = kill_model {
+        command.env("LISCA_KILL_MODEL", model);
+    }
     command.stdout(std::process::Stdio::inherit());
     command.stderr(std::process::Stdio::inherit());
 

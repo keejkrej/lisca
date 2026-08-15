@@ -54,6 +54,20 @@ function stageArtifacts(product: LiscaProduct, cfg: DesktopProductConfig): strin
   }
   cpSync(brandSrc, join(resourcesDir, "brand"), { recursive: true });
 
+  if (product === "studio") {
+    const modelSrc = join(root, "models", "killing-assay-resnet18");
+    const modelFile = join(modelSrc, "model.onnx");
+    if (!existsSync(modelFile)) {
+      console.error(
+        `Missing Studio killing model at ${modelFile}. Download it before packaging (see models/killing-assay-resnet18/README.md).`,
+      );
+      process.exit(1);
+    }
+    cpSync(modelSrc, join(resourcesDir, "models", "killing-assay-resnet18"), {
+      recursive: true,
+    });
+  }
+
   return desktopDir;
 }
 

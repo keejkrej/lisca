@@ -13,6 +13,28 @@ pub(crate) fn workspace_models_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../models")
 }
 
+/// Model roots next to a packaged server binary.
+///
+/// Desktop installers place the server at `<resource_dir>/server/<bin>` and
+/// Studio's killing ONNX at `<resource_dir>/models/killing-assay-resnet18`.
+pub(crate) fn models_dirs_near_executable(exe: &Path) -> Vec<PathBuf> {
+    let mut dirs = Vec::new();
+    if let Some(exe_dir) = exe.parent() {
+        if let Some(resource_dir) = exe_dir.parent() {
+            dirs.push(resource_dir.join("models"));
+        }
+        dirs.push(exe_dir.join("models"));
+        dirs.push(exe_dir.join("resources").join("models"));
+    }
+    dirs
+}
+
+pub(crate) fn bundled_models_dirs() -> Vec<PathBuf> {
+    std::env::current_exe()
+        .map(|exe| models_dirs_near_executable(&exe))
+        .unwrap_or_default()
+}
+
 pub(crate) fn resolve_model_path(
     env_var: &str,
     extra_candidates: impl IntoIterator<Item = PathBuf>,
@@ -96,6 +118,29 @@ mod tests {
     use ndarray::array;
 
     use super::*;
+
+    #[test]
+    fn models_dirs_near_packaged_server_include_resource_models() {
+        let exe = Path::new("/usr/lib/lisca-studio/server/studio-server");
+        let dirs = models_dirs_near_executable(exe);
+        assert!(dirs.contains(&PathBuf::from("/usr/lib/lisca-studio/models")));
+        assert!(dirs.contains(&PathBuf::from("/usr/lib/lisca-studio/server/models")));
+        assert!(dirs.contains(&PathBuf::from(
+            "/usr/lib/lisca-studio/server/resources/models"
+        )));
+    }
+
+    #[test]
+    fn resolve_model_path_uses_candidate_dir_with_onnx() {
+        let root = std::env::temp_dir().join(format!("lisca-kill-model-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(root.join("model.onnx"), b"onnx").unwrap();
+        let resolved =
+            resolve_model_path("LISCA_UNSET_KILL_MODEL_FOR_TEST", [root.clone()]).unwrap();
+        assert_eq!(resolved, root);
+        let _ = std::fs::remove_dir_all(&root);
+    }
 
     #[test]
     fn binary_logits_supports_common_export_shapes() {

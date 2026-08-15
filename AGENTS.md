@@ -14,7 +14,7 @@ Use Node 22+, pnpm 10+, and the `vp` wrapper for JavaScript workspace tasks.
 - `vp run check` runs linting, TypeScript checks, contract validation, Rust checks/Clippy, and workspace tests.
 - `vp run fmt` formats supported files; `vp run fmt:check` verifies formatting without edits.
 - `vp run dist:studio` packages the Studio desktop installer; replace `studio` with `aligner` or `annotator`.
-- GitHub Actions runs `vp run fmt:check` and `vp run check` on pull requests and `main`. A `v*` tag publishes unsigned Studio, Aligner, and Annotator installers (macOS DMG, Windows NSIS, Linux deb) to a GitHub Release.
+- GitHub Actions runs `vp run fmt:check` and `vp run check` on pull requests and `main`. A `v*` tag publishes unsigned Studio, Aligner, and Annotator installers (macOS DMG, Windows NSIS, Linux deb) to a GitHub Release. Studio installers include the public killing ONNX.
 - `cargo test --workspace` runs Rust tests.
 - `cd python && uv run pytest` runs the Python suite.
 

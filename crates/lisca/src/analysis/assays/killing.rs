@@ -12,14 +12,17 @@ use crate::analysis::progress::{analysis_progress, run_blocking};
 use crate::analysis::slide::{build_slide_mapping, parse_interval_minutes};
 
 pub fn resolve_model_path(workspace: &Path) -> Result<PathBuf, String> {
-    crate::onnx::resolve_model_path(
-        "LISCA_KILL_MODEL",
-        [
-            workspace.join("models/killing-assay-resnet18"),
-            crate::onnx::workspace_models_dir().join("killing-assay-resnet18"),
-            PathBuf::from("models/killing-assay-resnet18"),
-        ],
-    )
+    let mut candidates = vec![
+        workspace.join("models/killing-assay-resnet18"),
+        crate::onnx::workspace_models_dir().join("killing-assay-resnet18"),
+        PathBuf::from("models/killing-assay-resnet18"),
+    ];
+    candidates.extend(
+        crate::onnx::bundled_models_dirs()
+            .into_iter()
+            .map(|dir| dir.join("killing-assay-resnet18")),
+    );
+    crate::onnx::resolve_model_path("LISCA_KILL_MODEL", candidates)
 }
 
 pub fn run_sync(workspace: &Path, assay_json: &AssayJsonFile) -> Result<(), String> {
