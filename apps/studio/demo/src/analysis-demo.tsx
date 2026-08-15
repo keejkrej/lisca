@@ -1,12 +1,7 @@
 import {
-  collectSummaryPanels,
-  collectTimeseriesPanels,
   inferResultAssayKind,
-  parseCsvFile,
-  parsePanelGroups,
   resultSectionInstruction,
   resultSectionLabel,
-  type ResultPanel,
   type ResultPlotSection,
 } from "@lisca/analysis";
 import {
@@ -16,7 +11,7 @@ import {
   type AnalysisFixture,
   type FixtureAssayId,
 } from "@lisca/analysis/fixtures";
-import { ResultPanelsGridView } from "@lisca/studio-web/result";
+import { ResultPlotGallery } from "@lisca/studio-web/result";
 import { AppShell, SidebarStack, ViewportCard } from "@lisca/ui/shell";
 import { DemoNavbar } from "@lisca/web-demo";
 import { createMemo, createSignal, Show } from "solid-js";
@@ -34,21 +29,14 @@ const FIXTURES: Record<FixtureAssayId, () => AnalysisFixture> = {
   killing: buildKillingFixture,
 };
 
-function panelsForSection(fixture: AnalysisFixture, section: ResultPlotSection): ResultPanel[] {
-  const byFile = fixture.files.map((file) => {
-    const parsed = parseCsvFile(file);
-    if (!parsed) return [];
-    return parsePanelGroups(parsed, fixture.intervalMinutes, fixture.slideChannelLabels);
-  });
-  return section === "timeseries" ? collectTimeseriesPanels(byFile) : collectSummaryPanels(byFile);
-}
-
 export function AnalysisDemo(props: AnalysisDemoProps) {
   const [assayId, setAssayId] = createSignal<FixtureAssayId>("transfection");
   const [section, setSection] = createSignal<ResultPlotSection>("timeseries");
   const fixture = createMemo(() => FIXTURES[assayId()]());
   const assayKind = createMemo(() => inferResultAssayKind(fixture().files));
-  const panels = createMemo(() => panelsForSection(fixture(), section()));
+  const plots = createMemo(() =>
+    fixture().plots.filter((plot) => plot.section === section()),
+  );
 
   const switchAssay = (next: FixtureAssayId) => {
     setAssayId(next);
@@ -84,9 +72,9 @@ export function AnalysisDemo(props: AnalysisDemoProps) {
                     <p class="border-b px-4 py-2 text-xs text-muted-foreground">
                       {fixtureBanner()}
                     </p>
-                    <ResultPanelsGridView
+                    <ResultPlotGallery
                       emptyMessage="No fixture plots in this section."
-                      panels={panels()}
+                      plots={plots()}
                       section={section()}
                     />
                   </div>
@@ -114,9 +102,9 @@ export function AnalysisDemo(props: AnalysisDemoProps) {
               <ViewportCard class="relative">
                 <div class="flex h-full min-h-0 flex-col">
                   <p class="border-b px-4 py-2 text-xs text-muted-foreground">{fixtureBanner()}</p>
-                  <ResultPanelsGridView
+                  <ResultPlotGallery
                     emptyMessage="No fixture plots in this section."
-                    panels={panels()}
+                    plots={plots()}
                     section={section()}
                   />
                 </div>
@@ -135,7 +123,7 @@ export function AnalysisDemo(props: AnalysisDemoProps) {
           </AppShell.MainColumn>
           <AppShell.Right widthClass="w-72">
             <DemoAnalysisRight
-              fileCount={fixture().files.length}
+              fileCount={fixture().plots.length}
               instruction={resultSectionInstruction(section(), assayKind())}
               title={fixture().title}
             />

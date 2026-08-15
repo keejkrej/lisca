@@ -1,129 +1,60 @@
-import type { StudioAnalysisCsvFile } from "@lisca/contracts";
-import { resultData } from "@lisca/client/atoms";
-import { RegistryContext, useAtomSet } from "@effect-atom/atom-solid";
 import { Spinner } from "@lisca/ui/components";
 import { AppShell, ViewportCard } from "@lisca/ui/shell";
-import { ResultPanelsGridView } from "./result-panels-grid";
-import { countChartSpecs } from "@lisca/analysis/charts";
-import { createEffect, createMemo, createSignal, onCleanup, useContext } from "solid-js";
+import { ResultPlotGallery } from "./result-panels-grid";
+import { createEffect, createMemo, createSignal } from "solid-js";
 import { runClientEffect } from "@lisca/client/runtime";
-import { studioClient, toErrorMessage } from "../api/studio-port";
-import {
-  analysisPanelsAtom,
-  analysisPanelsParamsKey,
-  loadAnalysisPanelsAtom,
-  slideChannelLabelsCacheKey,
-} from "../atoms/studio-analysis-atoms";
+import { resolveStudioHttpBaseUrl, studioClient, toErrorMessage } from "../api/studio-port";
 import { StudioLeft } from "../components/studio-left";
 import { StudioRightPanel } from "../components/studio-right-panel";
 import { StudioResultExpertRight } from "../components/studio-result-expert-right";
 import { StudioResultDock } from "../components/studio-result-dock";
 import {
-  collectSummaryPanels,
-  collectTimeseriesPanels,
+  collectResultPlots,
   defaultResultPlotSection,
-  filterResultFilesBySection,
+  filterResultPlotsBySection,
   inferResultAssayKind,
-  intervalFromAssaySettings,
   resultSectionInstruction,
   resultSectionLabel,
-  type ResultPanel,
+  withPlotSrc,
+  type ResultPlot,
   type ResultPlotSection,
-  type SlideChannelLabels,
 } from "@lisca/analysis";
 import { useStudioResultState } from "../state/use-studio-result-state";
-import { useStudioStore } from "../state/studio-store";
 
 export default function ResultPage() {
-  const registry = useContext(RegistryContext);
   const resultState = useStudioResultState();
-  const samples = useStudioStore((state) => state.samples);
-  const intervalValue = useStudioStore((state) => state.intervalValue);
-  const intervalUnit = useStudioStore((state) => state.intervalUnit);
-  const activeWorkspacePath = () => resultState.workspacePath?.trim() || null;
-  const timeseriesXScale = createMemo(() =>
-    intervalFromAssaySettings(intervalValue(), intervalUnit()),
-  );
-  const slideChannelLabels = createMemo(() => {
-    const labels: SlideChannelLabels = {};
-    for (const row of samples()) {
-      const slide = Number(row.slide);
-      if (Number.isInteger(slide) && row.name.trim()) {
-        labels[slide] = row.name.trim();
-      }
-    }
-    return labels;
-  });
-  const slideChannelLabelsKey = createMemo(() => slideChannelLabelsCacheKey(slideChannelLabels()));
   const [activeSection, setActiveSection] = createSignal<ResultPlotSection>("timeseries");
-  const [isSectionLoading, setIsSectionLoading] = createSignal(false);
   const [isSaving, setIsSaving] = createSignal(false);
   const [saveMessage, setSaveMessage] = createSignal<string | null>(null);
-  const [panelError, setPanelError] = createSignal<string | null>(null);
-  const [sectionPanels, setSectionPanels] = createSignal<ResultPanel[]>([]);
   const [exportCapture, setExportCapture] = createSignal<{
-    timeseriesPanels: ResultPanel[];
-    parameterPanels: ResultPanel[];
+    timeseriesPlots: ResultPlot[];
+    parameterPlots: ResultPlot[];
   } | null>(null);
   let exportTimeseriesEl: HTMLDivElement | undefined;
   let exportParametersEl: HTMLDivElement | undefined;
   const analysisResultFiles = () => resultState.analysisResultFiles;
-  const sectionFiles = createMemo(() =>
-    filterResultFilesBySection(analysisResultFiles(), activeSection()),
+  const assayKind = createMemo(() => inferResultAssayKind(analysisResultFiles()));
+  const allPlots = createMemo(() =>
+    collectResultPlots(analysisResultFiles(), assayKind()).map((plot) =>
+      withPlotSrc(plot, resolveStudioHttpBaseUrl()),
+    ),
   );
-  const sectionFilePathsKey = createMemo(() =>
-    sectionFiles()
-      .map((file) => file.path)
-      .join("\0"),
-  );
-  const hasTimeseriesFiles = createMemo(
-    () => filterResultFilesBySection(analysisResultFiles(), "timeseries").length > 0,
-  );
-  const hasParameterFiles = createMemo(
-    () => filterResultFilesBySection(analysisResultFiles(), "parameters").length > 0,
-  );
-  const panelsParams = (file: StudioAnalysisCsvFile) => ({
-    workspacePath: activeWorkspacePath() ?? "",
-    file,
-    timeseriesXScale: timeseriesXScale(),
-    slideChannelLabels: slideChannelLabels(),
-    slideChannelLabelsKey: slideChannelLabelsKey(),
-  });
-  const runLoadPanels = useAtomSet(loadAnalysisPanelsAtom, {
-    mode: "promise",
-  });
-  const loadPanelsForFile = async (file: StudioAnalysisCsvFile): Promise<ResultPanel[]> => {
-    if (!activeWorkspacePath()) throw new Error("No workspace selected");
-    return (await runLoadPanels(panelsParams(file))) as ResultPanel[];
-  };
-  const getCachedAnalysisPanels = (file: StudioAnalysisCsvFile): ResultPanel[] | undefined => {
-    const workspacePath = activeWorkspacePath();
-    if (!workspacePath) return undefined;
-    const atom = analysisPanelsAtom(analysisPanelsParamsKey(panelsParams(file)));
-    return resultData(registry.get(atom));
-  };
-  const hasAnyResultFiles = createMemo(() => analysisResultFiles().length > 0);
-  const countRenderablePanels = (panels: ResultPanel[]) => countChartSpecs(panels);
+  const sectionPlots = createMemo(() => filterResultPlotsBySection(allPlots(), activeSection()));
+  const timeseriesPlots = createMemo(() => filterResultPlotsBySection(allPlots(), "timeseries"));
+  const parameterPlots = createMemo(() => filterResultPlotsBySection(allPlots(), "parameters"));
+  const hasAnyPlots = createMemo(() => allPlots().length > 0);
   const savePdf = async () => {
-    if (!activeWorkspacePath() || isSaving() || isSectionLoading() || !hasAnyResultFiles()) return;
+    if (!resultState.workspacePath?.trim() || isSaving() || !hasAnyPlots()) return;
     setIsSaving(true);
     setSaveMessage(null);
-    setPanelError(null);
     try {
-      const {
-        buildResultPdf,
-        loadAllResultPlotPanels,
-        pdfBytesToBase64,
-        RESULT_PDF_FILE_NAME,
-        waitForExportPlots,
-      } = await import("./save-result-pdf");
-      const { timeseriesPanels, parameterPanels } = await loadAllResultPlotPanels(
-        analysisResultFiles(),
-        loadPanelsForFile,
-      );
+      const { buildResultPdf, pdfBytesToBase64, RESULT_PDF_FILE_NAME, waitForExportPlots } =
+        await import("./save-result-pdf");
+      const timeseries = timeseriesPlots();
+      const parameters = parameterPlots();
       setExportCapture({
-        timeseriesPanels,
-        parameterPanels,
+        timeseriesPlots: timeseries,
+        parameterPlots: parameters,
       });
       await Promise.resolve();
       const timeseriesPage = exportTimeseriesEl;
@@ -132,14 +63,13 @@ export default function ResultPage() {
         throw new Error("Nothing to export");
       }
       const pages: HTMLElement[] = [];
-      const expectedPlots =
-        countRenderablePanels(timeseriesPanels) + countRenderablePanels(parameterPanels);
-      if (timeseriesPage && timeseriesPanels.length > 0) {
-        await waitForExportPlots(timeseriesPage, countRenderablePanels(timeseriesPanels));
+      const expectedPlots = timeseries.length + parameters.length;
+      if (timeseriesPage && timeseries.length > 0) {
+        await waitForExportPlots(timeseriesPage, timeseries.length);
         pages.push(timeseriesPage);
       }
-      if (parametersPage && parameterPanels.length > 0) {
-        await waitForExportPlots(parametersPage, countRenderablePanels(parameterPanels));
+      if (parametersPage && parameters.length > 0) {
+        await waitForExportPlots(parametersPage, parameters.length);
         pages.push(parametersPage);
       }
       if (pages.length === 0) {
@@ -148,7 +78,7 @@ export default function ResultPage() {
       const pdfBytes = await buildResultPdf(pages);
       const response = await runClientEffect(
         studioClient.saveResultPdf({
-          workspacePath: activeWorkspacePath()!,
+          workspacePath: resultState.workspacePath!,
           fileName: RESULT_PDF_FILE_NAME,
           contentsBase64: pdfBytesToBase64(pdfBytes),
         }),
@@ -162,73 +92,30 @@ export default function ResultPage() {
     }
   };
   const switchSection = (section: ResultPlotSection) => {
-    if (section === activeSection() || isSectionLoading() || isSaving()) return;
+    if (section === activeSection() || isSaving()) return;
     setActiveSection(section);
   };
   createEffect(() => {
-    const files = analysisResultFiles();
-    if (files.length === 0) return;
-    const current = activeSection();
-    const currentFiles = filterResultFilesBySection(files, current);
-    if (currentFiles.length > 0) return;
-    setActiveSection(defaultResultPlotSection(files));
+    const plots = allPlots();
+    if (plots.length === 0) return;
+    const current = filterResultPlotsBySection(plots, activeSection());
+    if (current.length > 0) return;
+    setActiveSection(defaultResultPlotSection(plots));
   });
-  createEffect(() => {
-    const files = sectionFiles();
-    const section = activeSection();
-    if (files.length === 0) {
-      setSectionPanels([]);
-      setIsSectionLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setIsSectionLoading(true);
-    setPanelError(null);
-    const collectPanels = (panelsByFile: ResultPanel[][]) =>
-      section === "timeseries"
-        ? collectTimeseriesPanels(panelsByFile)
-        : collectSummaryPanels(panelsByFile);
-    const syncPanels = files.map((file) => getCachedAnalysisPanels(file));
-    if (syncPanels.every((panels) => panels !== undefined)) {
-      setSectionPanels(collectPanels(syncPanels as ResultPanel[][]));
-      setIsSectionLoading(false);
-      return;
-    }
-    void (async () => {
-      try {
-        const panelsByFile = await Promise.all(files.map((file) => loadPanelsForFile(file)));
-        if (cancelled) return;
-        setSectionPanels(collectPanels(panelsByFile));
-      } catch (cause) {
-        if (cancelled) return;
-        setSectionPanels([]);
-        setPanelError(cause instanceof Error ? cause.message : "Failed to load plot data");
-      } finally {
-        if (!cancelled) {
-          setIsSectionLoading(false);
-        }
-      }
-    })();
-    onCleanup(() => {
-      cancelled = true;
-    });
-  });
-  const assayKind = createMemo(() => inferResultAssayKind(analysisResultFiles()));
   const defaultInstruction = () => resultSectionInstruction(activeSection(), assayKind());
-  const dockInstruction = () => saveMessage() ?? panelError() ?? defaultInstruction();
-  const isBusy = () => isSectionLoading() || isSaving();
+  const dockInstruction = () => saveMessage() ?? defaultInstruction();
   const sectionToolActions = createMemo(() => [
     {
       id: "timeseries",
       label: resultSectionLabel("timeseries", assayKind()),
-      disabled: !hasTimeseriesFiles() || isBusy(),
+      disabled: timeseriesPlots().length === 0 || isSaving(),
       active: activeSection() === "timeseries",
       onSelect: () => switchSection("timeseries"),
     },
     {
       id: "parameters",
       label: resultSectionLabel("parameters", assayKind()),
-      disabled: !hasParameterFiles() || isBusy(),
+      disabled: parameterPlots().length === 0 || isSaving(),
       active: activeSection() === "parameters",
       onSelect: () => switchSection("parameters"),
     },
@@ -243,18 +130,13 @@ export default function ResultPage() {
           <AppShell.Main>
             <ViewportCard class="relative">
               <div class="relative flex h-full min-h-0 flex-1 flex-col">
-                {isSectionLoading() ? (
-                  <div class="absolute inset-0 z-10 flex items-center justify-center bg-background/70">
-                    <Spinner class="size-4" />
-                  </div>
-                ) : null}
-                <ResultPanelsGridView
+                <ResultPlotGallery
                   emptyMessage={
-                    hasAnyResultFiles()
-                      ? "No plots in this section."
-                      : "Run analysis to see timeseries and summary plots."
+                    hasAnyPlots()
+                      ? "No plot images in this section."
+                      : "Run analysis to see pipeline plot images."
                   }
-                  panels={sectionPanels()}
+                  plots={sectionPlots()}
                   section={activeSection()}
                 />
                 {exportCapture() ? (
@@ -262,26 +144,31 @@ export default function ResultPage() {
                     aria-hidden
                     class="pointer-events-none fixed top-0 -left-[10000px] w-[1200px] bg-white"
                   >
-                    {exportCapture()!.timeseriesPanels.length > 0 ? (
+                    {exportCapture()!.timeseriesPlots.length > 0 ? (
                       <div ref={exportTimeseriesEl!}>
-                        <ResultPanelsGridView
+                        <ResultPlotGallery
                           exportMode
                           pageTitle="Timeseries"
-                          panels={exportCapture()!.timeseriesPanels}
+                          plots={exportCapture()!.timeseriesPlots}
                           section="timeseries"
                         />
                       </div>
                     ) : null}
-                    {exportCapture()!.parameterPanels.length > 0 ? (
+                    {exportCapture()!.parameterPlots.length > 0 ? (
                       <div ref={exportParametersEl!}>
-                        <ResultPanelsGridView
+                        <ResultPlotGallery
                           exportMode
                           pageTitle="Parameters"
-                          panels={exportCapture()!.parameterPanels}
+                          plots={exportCapture()!.parameterPlots}
                           section="parameters"
                         />
                       </div>
                     ) : null}
+                  </div>
+                ) : null}
+                {isSaving() ? (
+                  <div class="absolute inset-0 z-10 flex items-center justify-center bg-background/70">
+                    <Spinner class="size-4" />
                   </div>
                 ) : null}
               </div>
@@ -289,9 +176,9 @@ export default function ResultPage() {
           </AppShell.Main>
           <AppShell.Dock>
             <StudioResultDock
-              saveDisabled={!activeWorkspacePath() || !hasAnyResultFiles() || isBusy()}
+              saveDisabled={!resultState.workspacePath?.trim() || !hasAnyPlots() || isSaving()}
               saveLabel={isSaving() ? "Saving…" : "Save"}
-              shortcutsEnabled={!isBusy()}
+              shortcutsEnabled={!isSaving()}
               toolActions={sectionToolActions()}
               onSave={() => {
                 void savePdf();

@@ -1,8 +1,12 @@
 # Studio analysis demo
 
-Browser-only mock of Studio result visualization. It loads **fixture** analysis CSVs for transfection and killing so the team can iterate on plots without a workspace or real experiment.
+Browser-only mock of Studio result visualization. It loads **fixture** PNG plot
+files for transfection and killing — the same filenames the Rust pipeline writes
+via mplot-rs — so the team can iterate on the result gallery without a workspace
+or real experiment.
 
-The fixtures are synthetic and labeled as sample data. Column names match the Rust pipeline (`slide`, `roi,t,...`, `kill_curve.csv`, `death_times.csv`).
+The images are tiny placeholder PNGs labeled as sample data. They are not drawn
+in the browser.
 
 ## Start
 
@@ -20,9 +24,11 @@ vp run --filter @lisca/studio-demo dev
 
 The app listens on [http://localhost:5177](http://localhost:5177).
 
-Use the navbar to switch `transfection.fixture` and `killing.fixture`. Dock buttons switch Timeseries vs Parameters (transfection) or Survival (killing).
+Use the navbar to switch `transfection.fixture` and `killing.fixture`. Dock
+buttons switch Timeseries vs Parameters (transfection) or Survival (killing).
 
 ## What you should see
 
-- **Transfection:** intensity traces (median overlay), then mRNA lifetime / AUC / expression rate / onset time boxplots. Expression rate uses a log y-scale.
-- **Killing:** P(dead) traces, one overlaid N(alive) kill curve with a sample legend, and per-sample death-time histograms on a shared time axis.
+- **Transfection:** `traces.png`, `traces_summary.png`, `area.png`, `traces_fit.png`,
+  then `mrna_lifetime.png`, `auc.png`, `expression_rate.png`, `onset_time.png`.
+- **Killing:** `traces.png`, then `kill_curve.png` and `death_times.png`.

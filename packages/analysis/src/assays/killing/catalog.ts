@@ -1,7 +1,19 @@
-/** Summary plots shown on the Survival tab for the killing assay. */
-export const KILLING_SUMMARY_PLOTS = [
-  { id: "kill_curve", label: "N(alive)" },
-  { id: "death_times", label: "T_death" },
-] as const;
+export type KillingPlotSpec = {
+  fileName: string;
+  title: string;
+  section: "timeseries" | "parameters";
+};
 
-export type KillingSummaryPlotId = (typeof KILLING_SUMMARY_PLOTS)[number]["id"];
+/** PNG artifacts written by the Rust killing plot stages, in display order. */
+export const KILLING_PLOTS: readonly KillingPlotSpec[] = [
+  { fileName: "traces.png", title: "P(dead) traces", section: "timeseries" },
+  { fileName: "traces_shared_y.png", title: "P(dead) traces (shared y)", section: "timeseries" },
+  { fileName: "traces_summary.png", title: "P(dead) summary", section: "timeseries" },
+  {
+    fileName: "traces_summary_shared_y.png",
+    title: "P(dead) summary (shared y)",
+    section: "timeseries",
+  },
+  { fileName: "kill_curve.png", title: "N(alive)", section: "parameters" },
+  { fileName: "death_times.png", title: "T_death", section: "parameters" },
+] as const;

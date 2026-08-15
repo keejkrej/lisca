@@ -1,27 +1,23 @@
-import type { StudioAnalysisCsvFile } from "@lisca/contracts";
 import html2canvas from "html2canvas-pro";
 import { jsPDF } from "jspdf";
 
-import { loadAllResultPlotPanels } from "@lisca/analysis";
-
 export const RESULT_PDF_FILE_NAME = "results.pdf";
-
-export { loadAllResultPlotPanels };
 
 export function waitForExportPlots(container: HTMLElement, expectedPlots: number): Promise<void> {
   return new Promise((resolve, reject) => {
     let attempts = 0;
 
     const tick = () => {
-      const count = container.querySelectorAll("svg").length;
-      if (count >= expectedPlots) {
+      const images = [...container.querySelectorAll("img")];
+      const ready = images.filter((image) => image.complete && image.naturalWidth > 0).length;
+      if (ready >= expectedPlots) {
         resolve();
         return;
       }
 
       attempts += 1;
       if (attempts >= 100) {
-        reject(new Error("Timed out waiting for plots to render"));
+        reject(new Error("Timed out waiting for plot images to load"));
         return;
       }
 

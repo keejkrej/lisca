@@ -37,9 +37,9 @@ export const landingDemos = [
     id: "studio",
     title: "Analysis",
     description:
-      "Fixture transfection and killing results — intensity or P(dead) traces, fit/AUC boxplots, overlaid kill curves, and death-time histograms. Sample data only; switch assays from the dropdown.",
+      "Fixture transfection and killing result PNGs from the Rust pipeline — traces, area/fit, parameter boxplots, kill curve, and death times. Sample placeholders only; switch assays from the dropdown.",
     href: STUDIO_DEMO_PATH,
-    linkLabel: "Try analysis plots in your browser",
+    linkLabel: "Try analysis results in your browser",
     Demo: AnalysisDemo,
   },
 ] as const satisfies readonly LandingDemo[];

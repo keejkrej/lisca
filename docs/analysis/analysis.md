@@ -4,39 +4,29 @@
 
 Pure **results model** for the Studio web app. Layout mirrors Rust `analysis/assays/<name>/`:
 
-- `shared/panels.ts` — parse analysis CSVs, build chart panels (`ResultPanel`)
-- `assays/transfection/catalog.ts` — transfection plot IDs and labels
-- `assays/killing/catalog.ts` — killing summary plot IDs
-- `fixtures/` — synthetic transfection and killing result CSVs for the analysis demo
+- `shared/plots.ts` — catalog of Rust PNG artifacts, sectioning, assay inference
+- `assays/transfection/catalog.ts` — transfection plot filenames and labels
+- `assays/killing/catalog.ts` — killing plot filenames and labels
+- `fixtures/` — placeholder PNGs with the same filenames the Rust pipeline writes
 
-The package is pure model/chart logic. Studio-coupled atoms live in
+The package is pure model logic. Studio-coupled atoms live in
 `apps/studio/web/src/atoms/studio-analysis-atoms.ts`, where the model is wired to the
 `StudioPortService` runtime.
 
-## Chart spec (`@lisca/analysis/charts`)
+## Result gallery
 
-Pure chart-spec layer between panel models and the Studio web renderer:
+`apps/studio/web/src/result/result-panels-grid.tsx` shows the PNG files the Rust
+pipeline already wrote via mplot-rs (`ResultPlotGallery`). There is no in-app chart
+renderer. Studio lists `results/*.png` from the analysis manifest and serves them
+at `GET /fs/file?path=`.
 
-- `chartSpecForPanel(panel)` — `ResultPanel` → `ChartSpec` (series, axes, histogram bins)
-- `chart-data.ts` — pivot panel specs into renderer-friendly row shapes
-- `theme.ts` — palette, margins, font defaults
-
-Pure logic only — no SolidJS or Observable Plot.
-
-## Web renderer
-
-`apps/studio/web/src/result/result-panels-grid.tsx` renders chart specs with Observable Plot
-through `ResultPanelsGridView`. The renderer and its data-loading atoms are owned by Studio;
-`@lisca/ui` does not depend on the analysis model or renderer.
-
-CSV parsing accepts Rust column names (`slide`, and timeseries files without `pos` — position
-comes from `Pos{n}/ch{n}.csv`). Kill curves overlay samples on one plot; death-time histograms
-share an x-axis. Expression rate uses a log y-scale.
+Sections stay assay-aware: Timeseries / Parameters (transfection) vs Timeseries /
+Survival (killing).
 
 ## Analysis demo
 
-`apps/studio/demo` is a browser-only mock of the result page. It loads fixture CSVs for both
-shipping assays so the team can iterate on plots without a workspace.
+`apps/studio/demo` is a browser-only mock of the result page. It loads fixture PNGs
+for both shipping assays so the team can iterate on the gallery without a workspace.
 
 ```sh
 vp run dev:studio-demo
@@ -135,7 +125,7 @@ uv run optimum-cli export onnx --model keejkrej/killing-assay-resnet18 ./models/
 | `results/auc.png`, `results/auc_log.png`                                                                                                                                           | AUC boxplots (linear and log y-scale)                                                                                                                                                                                       |
 | `results/{parameter}.png`, `results/traces_fit.png`, `traces_fit_shared_y.png`                                                                                                     | Fit parameter boxplots and fitted trace grids (per-panel + shared y)                                                                                                                                                        |
 
-Studio results UI reads CSVs for interactive charts; PNG filenames match transfection output.
+Studio results UI displays these PNG files; it does not re-render plots from CSVs.
 
 ## Module map
 

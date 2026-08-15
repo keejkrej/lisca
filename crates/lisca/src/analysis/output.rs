@@ -7,6 +7,7 @@ pub fn collect_csv_outputs(workspace: &Path) -> Result<Vec<AnalysisCsvFile>, Str
     let mut files = Vec::new();
     collect_timeseries_csvs(&workspace.join("timeseries"), &mut files)?;
     collect_csv_dir(&workspace.join("results"), "results", &mut files)?;
+    collect_plot_dir(&workspace.join("results"), &mut files)?;
     files.sort_by_key(|entry| entry.file_name.clone());
     Ok(files)
 }
@@ -99,6 +100,36 @@ fn collect_csv_dir(
             file_name,
             path: path.to_string_lossy().to_string(),
             csv,
+        });
+    }
+    Ok(())
+}
+
+fn collect_plot_dir(directory: &Path, out: &mut Vec<AnalysisCsvFile>) -> Result<(), String> {
+    let Ok(entries) = fs::read_dir(directory) else {
+        return Ok(());
+    };
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if !path.extension().is_some_and(|ext| ext == "png") {
+            continue;
+        }
+
+        let file_name = path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("")
+            .to_string();
+        if file_name.is_empty() {
+            continue;
+        }
+
+        out.push(AnalysisCsvFile {
+            kind: "plot".to_string(),
+            file_name,
+            path: path.to_string_lossy().to_string(),
+            csv: String::new(),
         });
     }
     Ok(())

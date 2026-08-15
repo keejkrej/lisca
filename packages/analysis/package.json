@@ -10,10 +10,6 @@
       "types": "./src/index.ts",
       "import": "./src/index.ts"
     },
-    "./charts": {
-      "types": "./src/charts/index.ts",
-      "import": "./src/charts/index.ts"
-    },
     "./fixtures": {
       "types": "./src/fixtures/index.ts",
       "import": "./src/fixtures/index.ts"
@@ -24,11 +20,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@lisca/contracts": "workspace:*",
-    "d3-array": "^3.2.4"
+    "@lisca/contracts": "workspace:*"
   },
   "devDependencies": {
-    "@types/d3-array": "^3.2.2",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

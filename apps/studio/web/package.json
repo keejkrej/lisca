@@ -25,7 +25,6 @@
     "@lisca/ui": "workspace:*",
     "@lisca/utils": "workspace:*",
     "@lisca/web-app": "workspace:*",
-    "@observablehq/plot": "^0.6.17",
     "@tanstack/solid-router": "catalog:",
     "effect": "catalog:",
     "html2canvas-pro": "^2.0.2",

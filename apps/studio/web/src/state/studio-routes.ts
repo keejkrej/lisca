@@ -32,10 +32,10 @@ export function defaultResultInstruction(
 ): string {
   if (section === "timeseries") {
     return assay === "killing"
-      ? "P(dead) traces for each position. The red line is the median."
-      : "Intensity traces for each position. The red line is the median.";
+      ? "P(dead) traces written by the Rust pipeline."
+      : "Intensity, area, and fit-trace plots written by the Rust pipeline.";
   }
   return assay === "killing"
-    ? "Kill curves overlay samples; death-time histograms share a time axis."
-    : "Parameter plots: mRNA lifetime, AUC, expression rate, and onset time.";
+    ? "Kill-curve and death-time plots written by the Rust pipeline."
+    : "Parameter boxplots written by the Rust pipeline: mRNA lifetime, AUC, expression rate, and onset time.";
 }
