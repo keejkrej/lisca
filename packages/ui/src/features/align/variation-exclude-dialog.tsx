@@ -87,6 +87,7 @@ export function VariationExcludeDialog(props: {
                     </span>
                   </div>
                   <Slider
+                    aria-label="Variation threshold"
                     id="variation-threshold"
                     max={metrics().max}
                     min={metrics().min}

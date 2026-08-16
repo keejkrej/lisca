@@ -12,7 +12,10 @@ import type { DemoAnnotatorState } from "@lisca/web-demo";
 
 const browserSmartSegment = createBrowserSmartSegmentSetup();
 
-export function DemoAnnotatorMain(props: { state: Accessor<DemoAnnotatorState>; embedded?: boolean }) {
+export function DemoAnnotatorMain(props: {
+  state: Accessor<DemoAnnotatorState>;
+  embedded?: boolean;
+}) {
   const displayFrame = () => {
     const state = props.state();
     return state.frame ? toDisplayFrame(state.frame, state.contrast) : null;

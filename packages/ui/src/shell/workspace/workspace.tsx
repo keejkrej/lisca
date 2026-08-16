@@ -85,7 +85,9 @@ export function ShellWorkspaceProvider(props: { children?: JSX.Element }) {
   });
 
   return (
-    <ShellWorkspaceContext.Provider value={workspace}>{props.children}</ShellWorkspaceContext.Provider>
+    <ShellWorkspaceContext.Provider value={workspace}>
+      {props.children}
+    </ShellWorkspaceContext.Provider>
   );
 }
 

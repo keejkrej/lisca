@@ -14,9 +14,17 @@ export const initialShellLayoutPanelState: ShellLayoutPanelState = {
   rightOpen: false,
 };
 
-/** True when the viewport is taller than it is wide. */
+/** Two 256px rails plus a 512px minimum viable scientific workspace. */
+export const STAGE_SHELL_INLINE_MIN_WIDTH = 1024;
+
+/** True when the viewport is square or taller than it is wide. */
 export function isPortraitViewport(width: number, height: number): boolean {
-  return height > width;
+  return height >= width;
+}
+
+/** Stage rails overlay when orientation or available width would starve the center workspace. */
+export function isStageOverlayViewport(width: number, height: number): boolean {
+  return isPortraitViewport(width, height) || width < STAGE_SHELL_INLINE_MIN_WIDTH;
 }
 
 export function shellLayoutReducer(

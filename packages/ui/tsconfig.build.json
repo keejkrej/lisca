@@ -11,7 +11,10 @@
     "moduleResolution": "bundler",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "#components/*": ["./src/components/*"],
+      "#hooks/*": ["./src/hooks/*"],
+      "#lib/*": ["./src/lib/*"],
+      "#ui/*": ["./src/components/ui/*"]
     }
   },
   "include": ["src/**/*.tsx", "src/**/*.ts", "src/**/*.d.ts"]

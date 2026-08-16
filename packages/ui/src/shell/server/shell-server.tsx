@@ -141,10 +141,7 @@ function useHttpProbeForUrl(httpBaseUrl: () => string) {
         })
         .catch((cause) => {
           if (cancelled || controller.signal.aborted) return;
-          setLog((lines) => [
-            ...lines,
-            cause instanceof Error ? cause.message : String(cause),
-          ]);
+          setLog((lines) => [...lines, cause instanceof Error ? cause.message : String(cause)]);
           scheduleRetry();
         });
     };
@@ -206,11 +203,7 @@ export function ShellServerProvider(props: {
     });
   });
 
-  return (
-    <ShellServerContext.Provider value={server}>
-      {props.children}
-    </ShellServerContext.Provider>
-  );
+  return <ShellServerContext.Provider value={server}>{props.children}</ShellServerContext.Provider>;
 }
 
 export function useShellServer(): ShellServer {

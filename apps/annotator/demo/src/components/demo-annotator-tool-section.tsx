@@ -28,7 +28,9 @@ function DemoAnnotatorToolToolbar(props: {
 export function DemoAnnotatorToolSection(props: { state: Accessor<DemoAnnotatorState> }) {
   const canEditTools = () => props.state().mode === "segmentation";
   const toolActions = () =>
-    buildAnnotationToolActions(props.state().tool, props.state().setTool, !canEditTools());
+    buildAnnotationToolActions(props.state().tool, props.state().setTool, !canEditTools(), {
+      viewable: Boolean(props.state().frame),
+    });
 
   return (
     <Show when={props.state().mode === "segmentation"}>
@@ -45,7 +47,9 @@ export function DemoInlineAnnotatorToolbar(props: {
 }) {
   const canEditTools = () => props.state().mode === "segmentation";
   const toolActions = () =>
-    buildAnnotationToolActions(props.state().tool, props.state().setTool, !canEditTools());
+    buildAnnotationToolActions(props.state().tool, props.state().setTool, !canEditTools(), {
+      viewable: Boolean(props.state().frame),
+    });
 
   return (
     <div class="shrink-0 border-t border-border px-3 py-2">

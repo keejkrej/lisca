@@ -1,15 +1,15 @@
 import type { AlignGridCellCoord, AlignGridState } from "@lisca/contracts";
-import type { FrameResult } from "@lisca/utils";
-import type { CanvasStatusMessage } from "@lisca/ui-headless";
+import type { AlignGridToolMode, FrameLayout, FrameResult } from "@lisca/utils";
+import { createFrameViewController, type CanvasStatusMessage } from "@lisca/ui-headless";
 import {
   alignGridOverlayColors,
   buildAlignFrameHaloRect,
   buildAlignGridOverlayScene,
-  computeFrameLayout,
+  frameViewWheelFactor,
   prepareFrameRgba,
   type AlignGridWheelViewport,
 } from "@lisca/utils";
-import { createEffect, onCleanup, onMount } from "solid-js";
+import { createEffect, onCleanup, onMount, Show } from "solid-js";
 import { cn } from "../../lib/utils";
 import { CanvasStatusMessageStack, CanvasToastStack } from "../canvas/canvas-status";
 import { resolvedCanvasBackground, useCanvasThemeRerender } from "../canvas/canvas-theme";
@@ -47,6 +47,7 @@ export type AlignCanvasProps = {
   toasts?: CanvasStatusMessage[];
   class?: string;
   cursor?: string;
+  toolMode?: AlignGridToolMode;
   onVirtualPointerDown?: (event: AlignCanvasPointerEvent) => void;
   onVirtualPointerMove?: (event: AlignCanvasPointerEvent) => void;
   onVirtualPointerUp?: (event: AlignCanvasPointerEvent) => void;
@@ -83,10 +84,7 @@ function getPreparedFrameBitmap(frame: FrameResult | null): HTMLCanvasElement | 
   return bitmap;
 }
 
-function drawFrameHalo(
-  ctx: CanvasRenderingContext2D,
-  frameLayout: ReturnType<typeof computeFrameLayout>,
-) {
+function drawFrameHalo(ctx: CanvasRenderingContext2D, frameLayout: FrameLayout) {
   const haloRect = buildAlignFrameHaloRect(frameLayout);
   ctx.fillStyle = alignGridOverlayColors.frameHaloFill;
   ctx.fillRect(haloRect.x, haloRect.y, haloRect.w, haloRect.h);
@@ -142,6 +140,7 @@ export function AlignCanvas(props: AlignCanvasProps) {
   const frameRef = { current: props.frame };
   const dprRef = { current: 1 };
   const excludedCellKeysRef = { current: new Set<string>() };
+  const frameView = createFrameViewController();
 
   createEffect(() => {
     gridRef.current = props.grid;
@@ -149,6 +148,7 @@ export function AlignCanvas(props: AlignCanvasProps) {
 
   createEffect(() => {
     frameRef.current = props.frame;
+    frameView.syncFrame(props.frame);
   });
 
   createEffect(() => {
@@ -174,12 +174,7 @@ export function AlignCanvas(props: AlignCanvasProps) {
     ctx.fillStyle = resolvedCanvasBackground(view ?? undefined);
     ctx.fillRect(0, 0, cssWidth, cssHeight);
     if (currentFrame && bitmap) {
-      const frameLayout = computeFrameLayout(
-        cssWidth,
-        cssHeight,
-        currentFrame.width,
-        currentFrame.height,
-      );
+      const frameLayout = frameView.layout(cssWidth, cssHeight, currentFrame);
       drawFrameHalo(ctx, frameLayout);
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(
@@ -214,6 +209,7 @@ export function AlignCanvas(props: AlignCanvasProps) {
       cssWidth,
       cssHeight,
       excludedCellKeysRef.current,
+      frameView.layout(cssWidth, cssHeight, currentFrame),
     );
     if (scene) {
       drawGridOverlayFromScene(ctx, scene);
@@ -246,6 +242,11 @@ export function AlignCanvas(props: AlignCanvasProps) {
     props.grid;
     props.excludedCells;
     scheduleOverlayRender();
+  });
+
+  createEffect(() => {
+    frameView.view();
+    scheduleAllRender();
   });
 
   createEffect(() => {
@@ -319,12 +320,7 @@ export function AlignCanvas(props: AlignCanvasProps) {
     const view = viewportEl;
     if (!currentFrame || !view) return null;
     const bounds = view.getBoundingClientRect();
-    const frameLayout = computeFrameLayout(
-      bounds.width,
-      bounds.height,
-      currentFrame.width,
-      currentFrame.height,
-    );
+    const frameLayout = frameView.layout(bounds.width, bounds.height, currentFrame);
     const pointerX = clientX - bounds.left;
     const pointerY = clientY - bounds.top;
     if (
@@ -350,6 +346,7 @@ export function AlignCanvas(props: AlignCanvasProps) {
       displayHeight: view.clientHeight,
       modelWidth: currentFrame.width,
       modelHeight: currentFrame.height,
+      scale: frameView.layout(view.clientWidth, view.clientHeight, currentFrame).scale,
     };
   };
 
@@ -358,6 +355,7 @@ export function AlignCanvas(props: AlignCanvasProps) {
     pointerType: event.pointerType,
     button: event.button,
     buttons: event.buttons,
+    altKey: event.altKey,
     clientX: event.clientX,
     clientY: event.clientY,
     framePoint: getFramePointFromClient(event.clientX, event.clientY),
@@ -385,11 +383,54 @@ export function AlignCanvas(props: AlignCanvasProps) {
     preventDefault: () => event.preventDefault(),
   });
 
+  const zoomAtFramePoint = (factor: number, point: AlignCanvasFramePoint) => {
+    const view = viewportEl;
+    const currentFrame = frameRef.current;
+    if (!view || !currentFrame) return;
+    frameView.zoomAtFramePoint(factor, point, view.clientWidth, view.clientHeight, currentFrame);
+  };
+
+  createEffect(() => {
+    if (props.toolMode !== "magnifier") return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        (event.target instanceof HTMLElement &&
+          Boolean(event.target.closest("input, textarea, select, [contenteditable='true']")))
+      ) {
+        return;
+      }
+      const view = viewportEl;
+      const currentFrame = frameRef.current;
+      if (!view || !currentFrame) return;
+      if (event.key === "0") {
+        event.preventDefault();
+        frameView.reset(currentFrame);
+      } else if (event.key === "+" || event.key === "=") {
+        event.preventDefault();
+        frameView.zoomAtCenter(2, view.clientWidth, view.clientHeight, currentFrame);
+      } else if (event.key === "-" || event.key === "_") {
+        event.preventDefault();
+        frameView.zoomAtCenter(0.5, view.clientWidth, view.clientHeight, currentFrame);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    onCleanup(() => window.removeEventListener("keydown", onKeyDown));
+  });
+
   return (
     <div
       ref={viewportEl!}
+      data-frame-view-zoom={frameView.view().zoom}
       class={cn("relative h-full min-h-0 w-full flex-1 overflow-hidden bg-background", props.class)}
     >
+      <Show when={!props.frame && props.emptyText}>
+        <div class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center px-6 text-center text-sm text-muted-foreground">
+          {props.emptyText}
+        </div>
+      </Show>
       <div
         class="absolute inset-0"
         style={{
@@ -397,11 +438,46 @@ export function AlignCanvas(props: AlignCanvasProps) {
           "touch-action": "none",
         }}
         onContextMenu={(event) => event.preventDefault()}
-        onPointerCancel={(event) => props.onVirtualPointerCancel?.(toVirtualPointerEvent(event))}
-        onPointerDown={(event) => props.onVirtualPointerDown?.(toVirtualPointerEvent(event))}
-        onPointerMove={(event) => props.onVirtualPointerMove?.(toVirtualPointerEvent(event))}
-        onPointerUp={(event) => props.onVirtualPointerUp?.(toVirtualPointerEvent(event))}
-        onWheel={(event) => props.onVirtualWheel?.(toVirtualWheelEvent(event))}
+        onPointerCancel={(event) => {
+          props.onVirtualPointerCancel?.(toVirtualPointerEvent(event));
+        }}
+        onPointerDown={(event) => {
+          const virtualEvent = toVirtualPointerEvent(event);
+          if (props.toolMode === "magnifier") {
+            if (!virtualEvent.framePoint) return;
+            if (event.button !== 0 && event.button !== 2) return;
+            event.preventDefault();
+            zoomAtFramePoint(event.altKey || event.button === 2 ? 0.5 : 2, virtualEvent.framePoint);
+            return;
+          }
+          props.onVirtualPointerDown?.(virtualEvent);
+        }}
+        onPointerMove={(event) => {
+          if (props.toolMode === "magnifier") return;
+          props.onVirtualPointerMove?.(toVirtualPointerEvent(event));
+        }}
+        onPointerUp={(event) => {
+          const virtualEvent = toVirtualPointerEvent(event);
+          if (props.toolMode === "magnifier") {
+            props.onVirtualPointerCancel?.(virtualEvent);
+            return;
+          }
+          props.onVirtualPointerUp?.(virtualEvent);
+        }}
+        onWheel={(event) => {
+          if (props.toolMode === "magnifier") {
+            const point = getFramePointFromClient(event.clientX, event.clientY);
+            const view = viewportEl;
+            if (!point || !view) return;
+            event.preventDefault();
+            zoomAtFramePoint(
+              frameViewWheelFactor(event.deltaY, event.deltaMode, view.clientHeight),
+              point,
+            );
+            return;
+          }
+          props.onVirtualWheel?.(toVirtualWheelEvent(event));
+        }}
       >
         <canvas ref={frameCanvasEl!} class="absolute inset-0 block h-full w-full select-none" />
         <canvas

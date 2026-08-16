@@ -3,14 +3,25 @@ import { describe, expect, it } from "vitest";
 import {
   initialShellLayoutPanelState,
   isPortraitViewport,
+  isStageOverlayViewport,
   shellLayoutReducer,
+  STAGE_SHELL_INLINE_MIN_WIDTH,
 } from "../src/shell-layout";
 
 describe("shell-layout", () => {
   it("isPortraitViewport compares height and width", () => {
     expect(isPortraitViewport(800, 1200)).toBe(true);
     expect(isPortraitViewport(1200, 800)).toBe(false);
-    expect(isPortraitViewport(900, 900)).toBe(false);
+    expect(isPortraitViewport(900, 900)).toBe(true);
+  });
+
+  it("uses overlay rails when the stage cannot preserve a usable center workspace", () => {
+    expect(STAGE_SHELL_INLINE_MIN_WIDTH).toBe(1024);
+    expect(isStageOverlayViewport(1440, 900)).toBe(false);
+    expect(isStageOverlayViewport(1024, 700)).toBe(false);
+    expect(isStageOverlayViewport(900, 700)).toBe(true);
+    expect(isStageOverlayViewport(800, 600)).toBe(true);
+    expect(isStageOverlayViewport(1200, 1300)).toBe(true);
   });
 
   it("toggle-left opens left and closes right", () => {

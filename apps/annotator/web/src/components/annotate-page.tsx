@@ -3,7 +3,6 @@ import { AppShell } from "@lisca/ui/shell";
 
 import { annotatorHostOperations } from "../api/annotator-port";
 import { useAnnotateShell } from "../state/annotate-page-selectors";
-import { AnnotatorDock } from "./annotator-dock";
 import { AnnotatorHeader } from "./annotator-header";
 import { AnnotatorLeft } from "./annotator-left";
 import { AnnotatorMain } from "./annotator-main";
@@ -13,23 +12,20 @@ export function AnnotatePage() {
   const shell = useAnnotateShell();
 
   return (
-    <AppShell>
-      <AppShell.Header>
-        <AnnotatorHeader />
-      </AppShell.Header>
+    <AppShell variant="stage">
       <AppShell.Body>
-        <AppShell.Left widthClass="w-72">
+        <AppShell.Left>
           <AnnotatorLeft />
         </AppShell.Left>
         <AppShell.MainColumn>
+          <AppShell.TopBar>
+            <AnnotatorHeader />
+          </AppShell.TopBar>
           <AppShell.Main>
             <AnnotatorMain />
           </AppShell.Main>
-          <AppShell.Dock>
-            <AnnotatorDock />
-          </AppShell.Dock>
         </AppShell.MainColumn>
-        <AppShell.Right widthClass="w-72">
+        <AppShell.Right>
           <AnnotatorRight />
         </AppShell.Right>
       </AppShell.Body>

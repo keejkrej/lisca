@@ -21,9 +21,9 @@ export function instructionForStep(step: StudioStep): string {
   if (step === "alignPattern") {
     return "Drag the grid onto the micropattern for each position, then press Next to save and continue.";
   }
-  return "Finish Basic info before aligning.";
+  return "Finish the Info step before aligning.";
 }
 
 export function instructionForAnnotate(): string {
-  return "Label each site, save, then continue to analysis.";
+  return "Pick a label, paint the site, then continue.";
 }

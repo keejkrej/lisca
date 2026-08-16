@@ -1,4 +1,13 @@
-import { createEffect, createUniqueId, onCleanup, Show, type JSX } from "solid-js";
+import {
+  children as resolveChildren,
+  createContext,
+  createEffect,
+  createUniqueId,
+  onCleanup,
+  Show,
+  useContext,
+  type JSX,
+} from "solid-js";
 
 import { cn } from "../../lib/utils";
 import { ShellLayoutProvider, useShellLayout } from "./shell-layout-context";
@@ -6,6 +15,16 @@ import { ShellPortraitPanelControls, ShellPortraitPanelOverlays } from "./shell-
 
 const shellDivider = "border-border";
 const shellSurface = "bg-background";
+const shellStageSurface =
+  "rounded-2xl bg-background shadow-[0_1px_2px_#0000000a,0_8px_24px_#0000000f]";
+
+export type AppShellVariant = "default" | "stage";
+
+const AppShellVariantContext = createContext<AppShellVariant>("default");
+
+function useAppShellVariant(): AppShellVariant {
+  return useContext(AppShellVariantContext);
+}
 
 /** Fixed-height header strip (`h-16`); scrolls inside if content overflows. */
 const shellHeaderFixed = "flex h-16 shrink-0 flex-col overflow-hidden";
@@ -30,11 +49,19 @@ function ShellSidebarInner(props: {
   children?: JSX.Element;
   widthClass?: string;
 }) {
+  const variant = useAppShellVariant();
   const edge = props.side === "left" ? `border-r ${shellDivider}` : `border-l ${shellDivider}`;
+  const widthClass = props.widthClass ?? (variant === "stage" ? "w-64" : "w-56");
   return (
     <aside
       aria-label={props.side === "left" ? "Left panel" : "Right panel"}
-      class={`flex min-h-0 shrink-0 flex-col overflow-y-auto ${shellSurface} ${props.widthClass ?? "w-56"} ${edge}`}
+      class={cn(
+        "flex min-h-0 shrink-0 flex-col",
+        widthClass,
+        variant === "stage"
+          ? "h-full overflow-hidden bg-muted"
+          : `overflow-y-auto ${shellSurface} ${edge}`,
+      )}
     >
       {props.children}
     </aside>
@@ -43,12 +70,13 @@ function ShellSidebarInner(props: {
 
 function useRegisterShellPanel(props: {
   side: "left" | "right";
-  children?: JSX.Element;
+  children: () => JSX.Element;
   widthClass?: string;
 }) {
   const layout = useShellLayout();
+  const variant = useAppShellVariant();
   const id = createUniqueId();
-  const widthClass = () => props.widthClass ?? "w-56";
+  const widthClass = () => props.widthClass ?? (variant === "stage" ? "w-64" : "w-56");
 
   createEffect(() => {
     if (!layout.isPortrait) {
@@ -58,7 +86,7 @@ function useRegisterShellPanel(props: {
     const cleanup = register({
       id,
       widthClass: widthClass(),
-      content: props.children,
+      content: props.children(),
     });
     onCleanup(cleanup);
   });
@@ -75,14 +103,25 @@ function SkipToMainLink() {
   );
 }
 
-function AppShellRoot(props: { children?: JSX.Element }) {
+function AppShellRoot(props: { children?: JSX.Element; variant?: AppShellVariant }) {
+  const variant = () => props.variant ?? "default";
+
   return (
-    <ShellLayoutProvider>
-      <div class="flex h-full min-h-0 flex-col overflow-hidden bg-background text-foreground">
-        <SkipToMainLink />
-        {props.children}
-      </div>
-    </ShellLayoutProvider>
+    <AppShellVariantContext.Provider value={variant()}>
+      <ShellLayoutProvider layout={variant()}>
+        <div
+          class={
+            variant() === "stage"
+              ? "lisca-instrument-shell flex h-full min-h-0 flex-col overflow-clip bg-muted py-4 text-xs leading-4 text-foreground"
+              : "flex h-full min-h-0 flex-col overflow-hidden bg-background text-foreground"
+          }
+          data-variant={variant()}
+        >
+          <SkipToMainLink />
+          {props.children}
+        </div>
+      </ShellLayoutProvider>
+    </AppShellVariantContext.Provider>
   );
 }
 AppShellRoot.displayName = "AppShell";
@@ -100,15 +139,39 @@ function AppShellHeader(props: { children?: JSX.Element }) {
 }
 AppShellHeader.displayName = "AppShell.Header";
 
+/** Floating header surface for the `stage` composition. Place it inside `MainColumn`. */
+function AppShellTopBar(props: { children?: JSX.Element; class?: string }) {
+  return (
+    <div
+      class={cn(
+        "flex h-14 w-full shrink-0 flex-col overflow-hidden px-5",
+        shellStageSurface,
+        props.class,
+      )}
+      data-slot="app-shell-top-bar"
+    >
+      <div class="min-h-0 flex-1 overflow-auto">{props.children}</div>
+    </div>
+  );
+}
+AppShellTopBar.displayName = "AppShell.TopBar";
+
 /**
  * Horizontal band under the header: left rail, main column (main + optional dock), right rail.
  * Use `flex-1` so it fills remaining height when a `Header` is present.
  */
 function AppShellBody(props: { children?: JSX.Element }) {
+  const variant = useAppShellVariant();
+
   return (
-    <div class={`relative flex min-h-0 flex-1 overflow-hidden ${shellSurface}`}>
+    <div
+      class={cn(
+        "relative flex min-h-0 flex-1 overflow-hidden",
+        variant === "stage" ? "bg-muted" : shellSurface,
+      )}
+    >
       {props.children}
-      <ShellPortraitPanelOverlays />
+      <ShellPortraitPanelOverlays appearance={variant} />
     </div>
   );
 }
@@ -116,8 +179,15 @@ AppShellBody.displayName = "AppShell.Body";
 
 /** Center stack: scrollable `Main` plus optional fixed-height `Dock`. */
 function AppShellMainColumn(props: { children?: JSX.Element }) {
+  const variant = useAppShellVariant();
+
   return (
-    <div class={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden ${shellSurface}`}>
+    <div
+      class={cn(
+        "flex min-h-0 min-w-0 flex-1 flex-col",
+        variant === "stage" ? "gap-3 overflow-visible bg-muted" : `overflow-hidden ${shellSurface}`,
+      )}
+    >
       {props.children}
     </div>
   );
@@ -126,16 +196,17 @@ AppShellMainColumn.displayName = "AppShell.MainColumn";
 
 function AppShellLeft(props: {
   children?: JSX.Element;
-  /** Tailwind width utility; default `w-56`. */
+  /** Tailwind width utility; defaults to `w-56`, or `w-64` in the stage variant. */
   widthClass?: string;
 }) {
-  useRegisterShellPanel({ side: "left", children: props.children, widthClass: props.widthClass });
+  const content = resolveChildren(() => props.children);
+  useRegisterShellPanel({ side: "left", children: content, widthClass: props.widthClass });
   const layout = useShellLayout();
 
   return (
     <Show when={!layout.isPortrait}>
       <ShellSidebarInner side="left" widthClass={props.widthClass}>
-        {props.children}
+        {content()}
       </ShellSidebarInner>
     </Show>
   );
@@ -144,16 +215,17 @@ AppShellLeft.displayName = "AppShell.Left";
 
 function AppShellRight(props: {
   children?: JSX.Element;
-  /** Tailwind width utility; default `w-56`. */
+  /** Tailwind width utility; defaults to `w-56`, or `w-64` in the stage variant. */
   widthClass?: string;
 }) {
-  useRegisterShellPanel({ side: "right", children: props.children, widthClass: props.widthClass });
+  const content = resolveChildren(() => props.children);
+  useRegisterShellPanel({ side: "right", children: content, widthClass: props.widthClass });
   const layout = useShellLayout();
 
   return (
     <Show when={!layout.isPortrait}>
       <ShellSidebarInner side="right" widthClass={props.widthClass}>
-        {props.children}
+        {content()}
       </ShellSidebarInner>
     </Show>
   );
@@ -161,14 +233,60 @@ function AppShellRight(props: {
 AppShellRight.displayName = "AppShell.Right";
 
 function AppShellMain(props: { children?: JSX.Element }) {
+  const variant = useAppShellVariant();
+
   return (
-    <main class={`relative min-h-0 flex-1 overflow-auto ${shellSurface}`} id="main-content">
+    <main
+      class={cn(
+        "relative min-h-0 flex-1",
+        variant === "stage"
+          ? cn("flex min-w-0 flex-col overflow-clip", shellStageSurface)
+          : `overflow-auto ${shellSurface}`,
+      )}
+      id="main-content"
+    >
       {props.children}
-      <ShellPortraitPanelControls />
+      <ShellPortraitPanelControls placement={variant === "stage" ? "top" : "center"} />
     </main>
   );
 }
 AppShellMain.displayName = "AppShell.Main";
+
+/**
+ * Full-sheet document scrolling with a separately constrained content measure.
+ *
+ * Stage `Main` stays clipped so portrait controls remain fixed; this direct child owns the
+ * scrollbar at the sheet edge. Classic `Main` already owns scrolling, so the same interface
+ * contributes document flow without creating a nested scroll viewport.
+ */
+function AppShellMainScroll(props: {
+  children?: JSX.Element;
+  class?: string;
+  contentClass?: string;
+}) {
+  const variant = useAppShellVariant();
+
+  return (
+    <div
+      class={cn(
+        "flex min-w-0 w-full flex-1 flex-col",
+        variant === "stage"
+          ? "h-full min-h-0 overflow-x-hidden overflow-y-auto"
+          : "min-h-full overflow-visible",
+        props.class,
+      )}
+      data-slot="app-shell-main-scroll"
+    >
+      <div
+        class={cn("mx-auto flex min-h-full w-full min-w-0 shrink-0 flex-col", props.contentClass)}
+        data-slot="app-shell-main-scroll-content"
+      >
+        {props.children}
+      </div>
+    </div>
+  );
+}
+AppShellMainScroll.displayName = "AppShell.MainScroll";
 
 function AppShellDock(props: { children?: JSX.Element; class?: string }) {
   return <ShellDockInner class={props.class}>{props.children}</ShellDockInner>;
@@ -177,10 +295,12 @@ AppShellDock.displayName = "AppShell.Dock";
 
 export type AppShellCompound = typeof AppShellRoot & {
   Header: typeof AppShellHeader;
+  TopBar: typeof AppShellTopBar;
   Body: typeof AppShellBody;
   MainColumn: typeof AppShellMainColumn;
   Left: typeof AppShellLeft;
   Main: typeof AppShellMain;
+  MainScroll: typeof AppShellMainScroll;
   Dock: typeof AppShellDock;
   Right: typeof AppShellRight;
 };
@@ -189,11 +309,13 @@ export type AppShellCompound = typeof AppShellRoot & {
  * Full-viewport app layout: **explicit composition** (no slot parsing).
  *
  * Structure:
- * - `Header` — fixed-height header strip
+ * - `Header` — classic fixed-height header strip
+ * - `TopBar` — floating stage header; place it inside `MainColumn`
  * - `Body` — `flex-1` row containing optional `Left`, `MainColumn`, optional `Right`
  * - `MainColumn` — `Main` (grows, scrolls) and optional `Dock` (fixed-height strip)
  *
- * In portrait (taller than wide), left/right panels collapse and open as overlays above main.
+ * In portrait, or when the stage cannot preserve a usable center workspace, left/right panels
+ * collapse and open as overlays above main.
  *
  * Wrap the app in `ShellThemeProvider` so `dark:` Tailwind utilities work.
  *
@@ -214,10 +336,12 @@ export type AppShellCompound = typeof AppShellRoot & {
  */
 export const AppShell: AppShellCompound = Object.assign(AppShellRoot, {
   Header: AppShellHeader,
+  TopBar: AppShellTopBar,
   Body: AppShellBody,
   MainColumn: AppShellMainColumn,
   Left: AppShellLeft,
   Main: AppShellMain,
+  MainScroll: AppShellMainScroll,
   Dock: AppShellDock,
   Right: AppShellRight,
 });

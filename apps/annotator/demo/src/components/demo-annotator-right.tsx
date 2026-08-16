@@ -34,11 +34,7 @@ export function DemoAnnotatorRight(props: {
   return (
     <SidebarStack>
       <Section title="Mode">
-        <AnnotationModeToggle
-          class="w-full"
-          mode={props.mode}
-          onModeChange={props.onModeChange}
-        />
+        <AnnotationModeToggle class="w-full" mode={props.mode} onModeChange={props.onModeChange} />
       </Section>
       <Section title="Labels" contentClassName="grid grid-cols-2 gap-2">
         <For each={props.labels}>

@@ -63,6 +63,33 @@ export type SelectNavigationControlProps<T extends NavigationValue> = Omit<
 
 export type SliderNavigationControlProps = Omit<SliderNavigationFieldProps, "label">;
 
+type NavigationStepButtonProps = {
+  direction: "previous" | "next";
+  disabled?: boolean;
+  label: string;
+  onClick: () => void;
+};
+
+function NavigationStepButton(props: NavigationStepButtonProps) {
+  const isPrevious = () => props.direction === "previous";
+
+  return (
+    <Button
+      aria-label={`${isPrevious() ? "Previous" : "Next"} ${props.label}`}
+      class="size-8 rounded-full p-0 text-foreground"
+      disabled={props.disabled}
+      size="icon-sm"
+      type="button"
+      variant="outline"
+      onClick={props.onClick}
+    >
+      <Show when={isPrevious()} fallback={<IconCaretRightRegular class="size-4" />}>
+        <IconCaretLeftRegular class="size-4" />
+      </Show>
+    </Button>
+  );
+}
+
 export function SelectStepperField<T extends NavigationValue>(
   props: SelectNavigationFieldProps<T>,
 ) {
@@ -70,23 +97,22 @@ export function SelectStepperField<T extends NavigationValue>(
     <Field class="min-w-0 w-full">
       <FieldLabel>{props.label}</FieldLabel>
       <div class="grid w-full grid-cols-[2rem_minmax(0,1fr)_2rem] items-center gap-2">
-        <Button
-          aria-label={`Previous ${props.label}`}
-          class="h-8 w-full px-0 text-xs"
+        <NavigationStepButton
+          direction="previous"
           disabled={props.previousDisabled}
-          size="sm"
-          type="button"
-          variant="outline"
+          label={props.label}
           onClick={props.onPrevious}
-        >
-          <IconCaretLeftRegular />
-        </Button>
+        />
         <Select<T>
           class="flex items-center"
           disabled={props.disabled}
           options={props.options.map((opt) => opt.value)}
           optionValue={(opt) => opt}
-          optionTextValue={(opt) => formatNavigationOptionDisplayLabel(props.options.find((o) => o.value === opt)?.label ?? "")}
+          optionTextValue={(opt) =>
+            formatNavigationOptionDisplayLabel(
+              props.options.find((o) => o.value === opt)?.label ?? "",
+            )
+          }
           itemComponent={(itemProps) => (
             <SelectItem item={itemProps.item}>
               {formatNavigationOptionDisplayLabel(
@@ -98,7 +124,7 @@ export function SelectStepperField<T extends NavigationValue>(
           value={props.value}
           onChange={(next) => next != null && props.onChange(next as T)}
         >
-          <SelectTrigger size="sm" class="w-full min-w-0 text-sm">
+          <SelectTrigger aria-label={props.label} size="sm" class="w-full min-w-0 text-sm">
             <SelectValue<T>>
               {(state) =>
                 formatNavigationOptionDisplayLabel(
@@ -109,17 +135,12 @@ export function SelectStepperField<T extends NavigationValue>(
           </SelectTrigger>
           <SelectContent />
         </Select>
-        <Button
-          aria-label={`Next ${props.label}`}
-          class="h-8 w-full px-0 text-xs"
+        <NavigationStepButton
+          direction="next"
           disabled={props.nextDisabled}
-          size="sm"
-          type="button"
-          variant="outline"
+          label={props.label}
           onClick={props.onNext}
-        >
-          <IconCaretRightRegular />
-        </Button>
+        />
       </div>
     </Field>
   );
@@ -143,18 +164,14 @@ export function SliderStepperField(props: SliderNavigationFieldProps) {
         </Show>
       </FieldLabel>
       <div class="grid w-full grid-cols-[2rem_minmax(0,1fr)_2rem] items-center gap-2">
-        <Button
-          aria-label={`Previous ${props.label}`}
-          class="h-8 w-full px-0 text-xs"
+        <NavigationStepButton
+          direction="previous"
           disabled={props.previousDisabled}
-          size="sm"
-          type="button"
-          variant="outline"
+          label={props.label}
           onClick={props.onPrevious}
-        >
-          <IconCaretLeftRegular />
-        </Button>
+        />
         <Slider
+          aria-label={props.label}
           aria-valuetext={field.ariaValueText()}
           controlClassName="data-[orientation=horizontal]:!min-w-0"
           disabled={props.disabled}
@@ -168,17 +185,12 @@ export function SliderStepperField(props: SliderNavigationFieldProps) {
             commitValue()?.(value);
           }}
         />
-        <Button
-          aria-label={`Next ${props.label}`}
-          class="h-8 w-full px-0 text-xs"
+        <NavigationStepButton
+          direction="next"
           disabled={props.nextDisabled}
-          size="sm"
-          type="button"
-          variant="outline"
+          label={props.label}
           onClick={props.onNext}
-        >
-          <IconCaretRightRegular />
-        </Button>
+        />
       </div>
     </Field>
   );
@@ -195,24 +207,29 @@ export type FrameNavigationProps<T extends NavigationValue> = {
   sectionDescription?: string;
   sectionClassName?: string;
   sectionContentClassName?: string;
+  sectionAppearance?: "framed" | "rail";
 };
 
 /** Shared stack in a {@link Section} card: optional position, channel, time (slider), Z (slider), ROI — render only props you pass. */
 export function FrameNavigation<T extends NavigationValue>(props: FrameNavigationProps<T>) {
   return (
     <Section
+      appearance={props.sectionAppearance}
       contentClassName={props.sectionContentClassName}
       description={props.sectionDescription}
       title={props.sectionTitle ?? "Navigation"}
       class={props.sectionClassName}
     >
-      <div class={props.class ?? "min-w-0 space-y-3"}>
+      <div
+        class={
+          props.class ??
+          (props.sectionAppearance === "rail" ? "min-w-0 space-y-2" : "min-w-0 space-y-3")
+        }
+      >
         <Show when={props.position}>
           {(position) => <SelectStepperField label="Position" {...position()} />}
         </Show>
-        <Show when={props.roi}>
-          {(roi) => <SelectStepperField label="ROI" {...roi()} />}
-        </Show>
+        <Show when={props.roi}>{(roi) => <SelectStepperField label="ROI" {...roi()} />}</Show>
         <Show when={props.channel}>
           {(channel) => <SelectStepperField label="Channel" {...channel()} />}
         </Show>

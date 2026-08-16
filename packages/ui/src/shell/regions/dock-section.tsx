@@ -13,12 +13,7 @@ export type DockSectionProps = Omit<SectionProps, "class" | "contentClassName" |
 };
 
 export function DockSection(props: DockSectionProps) {
-  const [local, sectionProps] = splitProps(props, [
-    "class",
-    "contentClassName",
-    "children",
-    "fit",
-  ]);
+  const [local, sectionProps] = splitProps(props, ["class", "contentClassName", "children", "fit"]);
   return (
     <Section
       chevron="horizontal"

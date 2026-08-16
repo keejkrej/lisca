@@ -18,6 +18,7 @@ export type DemoAlignUiState = {
   frame: FrameResult | null;
   grid: AlignGridState;
   toolMode: AlignGridToolMode;
+  spacingZoomLocked: boolean;
   patternZoomLocked: boolean;
   manualExclusionEnabled: boolean;
   excludedCells: AlignGridCellCoord[];
@@ -33,6 +34,7 @@ export type DemoAlignSession = Pick<
   | "contrast"
   | "grid"
   | "toolMode"
+  | "spacingZoomLocked"
   | "patternZoomLocked"
   | "excludedCells"
 >;
@@ -52,6 +54,7 @@ export function createInitialDemoAlignUiState(): DemoAlignUiState {
       enabled: true,
     },
     toolMode: "pan",
+    spacingZoomLocked: true,
     patternZoomLocked: false,
     manualExclusionEnabled: false,
     excludedCells: [],
@@ -68,9 +71,24 @@ export function selectDemoAlignSession(state: DemoAlignUiState): DemoAlignSessio
     contrast: state.contrast,
     grid: state.grid,
     toolMode: state.toolMode,
+    spacingZoomLocked: state.spacingZoomLocked,
     patternZoomLocked: state.patternZoomLocked,
     excludedCells: state.excludedCells,
   };
+}
+
+export function normalizePersistedAlignToolMode(value: unknown): AlignGridToolMode {
+  if (value === "zoom") return "magnifier";
+  if (
+    value === "pan" ||
+    value === "rotate" ||
+    value === "zoom-spacing" ||
+    value === "zoom-pattern" ||
+    value === "magnifier"
+  ) {
+    return value;
+  }
+  return "pan";
 }
 
 export function mergeDemoAlignSession(
@@ -80,6 +98,9 @@ export function mergeDemoAlignSession(
   return {
     ...current,
     ...session,
+    toolMode: normalizePersistedAlignToolMode(
+      (session as DemoAlignSession & { toolMode?: unknown }).toolMode,
+    ),
     status: session.fileName ? `Restored ${session.fileName}` : current.status,
   };
 }
@@ -115,6 +136,9 @@ export const demoAlignUiActions = {
   },
   setToolMode(set: (update: StateUpdater<DemoAlignUiState>) => void, toolMode: AlignGridToolMode) {
     patchDemoAlignUi(set, { toolMode });
+  },
+  setSpacingZoomLocked(set: (update: StateUpdater<DemoAlignUiState>) => void, locked: boolean) {
+    patchDemoAlignUi(set, { spacingZoomLocked: locked });
   },
   setPatternZoomLocked(set: (update: StateUpdater<DemoAlignUiState>) => void, locked: boolean) {
     patchDemoAlignUi(set, { patternZoomLocked: locked });

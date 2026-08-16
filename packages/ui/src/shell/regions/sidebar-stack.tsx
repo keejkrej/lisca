@@ -12,7 +12,7 @@ export function SidebarStack(props: SidebarStackProps) {
   return (
     <div
       class={cn(
-        "flex w-full min-h-0 flex-col items-stretch overflow-auto",
+        "flex h-full w-full min-h-0 flex-col items-stretch overflow-auto",
         regionInsetClass,
         regionStackGapClass,
         local.class,

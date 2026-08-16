@@ -6,6 +6,7 @@ import {
   createAlignUiActions,
   createAlignerPersist,
   createInitialAlignUiState,
+  createStudioPersist,
   type AlignUiState,
 } from "../src/atoms/align-ui";
 
@@ -222,6 +223,22 @@ describe("align-ui actions", () => {
     expect(createInitialAlignUiState().manualExclusionEnabled).toBe(false);
   });
 
+  it("defaults both zoom gestures to locked and updates them independently", () => {
+    const initial = createInitialAlignUiState();
+    expect(initial.spacingZoomLocked).toBe(true);
+    expect(initial.patternZoomLocked).toBe(true);
+
+    const spacingUnlocked = runReducer(initial, (set) => actions.setSpacingZoomLocked(set, false));
+    expect(spacingUnlocked.spacingZoomLocked).toBe(false);
+    expect(spacingUnlocked.patternZoomLocked).toBe(true);
+
+    const patternUnlocked = runReducer(spacingUnlocked, (set) =>
+      actions.setPatternZoomLocked(set, false),
+    );
+    expect(patternUnlocked.spacingZoomLocked).toBe(false);
+    expect(patternUnlocked.patternZoomLocked).toBe(false);
+  });
+
   it("setManualExclusionEnabled toggles manual exclusion mode", () => {
     const initial = createInitialAlignUiState();
     const enabled = runReducer(initial, (set) => actions.setManualExclusionEnabled(set, true));
@@ -231,7 +248,7 @@ describe("align-ui actions", () => {
   });
 });
 
-describe("createAlignerPersist", () => {
+describe("align session persistence", () => {
   beforeEach(() => {
     configureLiscaStorage({
       local: createMemoryStorage(),
@@ -251,11 +268,15 @@ describe("createAlignerPersist", () => {
       ...createInitialAlignUiState(),
       workspacePath: "/data/ws",
       source,
+      spacingZoomLocked: false,
+      patternZoomLocked: false,
     };
     persist.write(state);
     expect(persist.read()).toEqual({
       workspacePath: "/data/ws",
       source,
+      spacingZoomLocked: false,
+      patternZoomLocked: false,
     });
   });
 
@@ -267,5 +288,19 @@ describe("createAlignerPersist", () => {
       source: null,
     });
     expect(persist.read()).toBeNull();
+  });
+
+  it("round-trips both zoom locks in Studio session storage", () => {
+    const persist = createStudioPersist("test-studio-align-session");
+    persist.write({
+      ...createInitialAlignUiState(),
+      spacingZoomLocked: false,
+      patternZoomLocked: false,
+    });
+
+    expect(persist.read()).toMatchObject({
+      spacingZoomLocked: false,
+      patternZoomLocked: false,
+    });
   });
 });

@@ -77,10 +77,7 @@ export function DemoNavbar(props: DemoNavbarProps) {
                       if (value != null) props.onSampleChange?.(value);
                     }}
                     itemComponent={(props) => (
-                      <SelectItem
-                        class="font-mono text-xs sm:text-sm"
-                        item={props.item}
-                      >
+                      <SelectItem class="font-mono text-xs sm:text-sm" item={props.item}>
                         {sampleImages().find((sample) => sample.id === props.item.rawValue)
                           ?.fileName ?? props.item.rawValue}
                       </SelectItem>

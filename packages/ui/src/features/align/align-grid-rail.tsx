@@ -5,6 +5,7 @@ import { AlignGrid } from "./align-grid";
 export function AlignGridRail(props: {
   grid: AlignGridState;
   disabled?: boolean;
+  sectionAppearance?: "framed" | "rail";
   onGridChange: (next: AlignGridState | ((current: AlignGridState) => AlignGridState)) => void;
 }) {
   const disabled = () => props.disabled ?? false;
@@ -18,6 +19,8 @@ export function AlignGridRail(props: {
 
   return (
     <AlignGrid
+      disabled={disabled()}
+      sectionAppearance={props.sectionAppearance}
       offsetX={props.grid.tx}
       offsetY={props.grid.ty}
       onOffsetXChange={(tx) =>

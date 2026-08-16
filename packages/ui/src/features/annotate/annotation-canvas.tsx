@@ -1,9 +1,16 @@
 import type { AnnotationLabel } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
-import type { CanvasStatusMessage } from "@lisca/ui-headless";
+import { createFrameViewController, type CanvasStatusMessage } from "@lisca/ui-headless";
 import type { AnnotationTool } from "@lisca/utils";
-import { isSmartAnnotationTool } from "@lisca/utils";
-import { clamp, fillPolygon, hexToRgb, smartSegmentPromptRadius, strokeMask } from "@lisca/utils";
+import { isMagnifierAnnotationTool, isSmartAnnotationTool } from "@lisca/utils";
+import {
+  clamp,
+  fillPolygon,
+  frameViewWheelFactor,
+  hexToRgb,
+  smartSegmentPromptRadius,
+  strokeMask,
+} from "@lisca/utils";
 import { createEffect, createSignal, onCleanup, onMount, Show } from "solid-js";
 import { cn } from "../../lib/utils";
 import { resolvedCanvasBackground, useCanvasThemeRerender } from "../canvas/canvas-theme";
@@ -12,13 +19,6 @@ import { CanvasStatusMessageStack, CanvasToastStack } from "../canvas/canvas-sta
 type FramePoint = {
   x: number;
   y: number;
-};
-type DrawRect = {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  scale: number;
 };
 type PreparedFrame = {
   frame: FrameResult;
@@ -51,19 +51,6 @@ export type AnnotationCanvasProps = {
   onSmartSegmentClick?: (click: { x: number; y: number; negative: boolean }) => void;
   onSmartEraseClick?: (click: { x: number; y: number }) => void;
 };
-
-function drawRectFor(width: number, height: number, frame: FrameResult): DrawRect {
-  const scale = Math.min(width / frame.width, height / frame.height);
-  const drawWidth = frame.width * scale;
-  const drawHeight = frame.height * scale;
-  return {
-    x: (width - drawWidth) / 2,
-    y: (height - drawHeight) / 2,
-    width: drawWidth,
-    height: drawHeight,
-    scale,
-  };
-}
 
 function prepareFrameCanvas(frame: FrameResult) {
   const canvas = document.createElement("canvas");
@@ -124,6 +111,18 @@ export function AnnotationCanvas(props: AnnotationCanvasProps) {
   const resizeRafRef = { current: null as number | null };
   const [lassoPoints, setLassoPoints] = createSignal<FramePoint[]>([]);
   const lassoRef = { current: null as { pointerId: number; points: FramePoint[] } | null };
+  const frameView = createFrameViewController();
+
+  const drawRectFor = (width: number, height: number, frame: FrameResult) => {
+    const layout = frameView.layout(width, height, frame);
+    return {
+      x: layout.drawX,
+      y: layout.drawY,
+      width: layout.drawWidth,
+      height: layout.drawHeight,
+      scale: layout.scale,
+    };
+  };
 
   const activeLabelValue = () => {
     if (!props.activeLabelId) return 0;
@@ -134,6 +133,7 @@ export function AnnotationCanvas(props: AnnotationCanvasProps) {
   const brushMode = () => props.tool === "brush" || props.tool === "brush-erase";
   const smartToolMode = () => isSmartAnnotationTool(props.tool);
   const smartEraseMode = () => props.tool === "smart-erase";
+  const magnifierMode = () => isMagnifierAnnotationTool(props.tool);
 
   const renderNow = () => {
     renderRafRef.current = null;
@@ -203,8 +203,14 @@ export function AnnotationCanvas(props: AnnotationCanvasProps) {
     ctx.restore();
   };
 
+  const scheduleRender = () => {
+    if (renderRafRef.current != null) return;
+    renderRafRef.current = window.requestAnimationFrame(renderNow);
+  };
+
   createEffect(() => {
     const frame = props.frame;
+    frameView.syncFrame(frame);
     if (frame) {
       latestFrameRef.current = {
         frame,
@@ -213,7 +219,7 @@ export function AnnotationCanvas(props: AnnotationCanvasProps) {
     } else {
       latestFrameRef.current = null;
     }
-    renderNow();
+    scheduleRender();
   });
 
   createEffect(() => {
@@ -223,10 +229,15 @@ export function AnnotationCanvas(props: AnnotationCanvasProps) {
     props.smartSegmentPrompts;
     props.tool;
     lassoPoints();
-    renderNow();
+    scheduleRender();
   });
 
-  useCanvasThemeRerender(renderNow);
+  createEffect(() => {
+    frameView.view();
+    scheduleRender();
+  });
+
+  useCanvasThemeRerender(scheduleRender);
 
   onMount(() => {
     const canvas = canvasEl;
@@ -249,7 +260,7 @@ export function AnnotationCanvas(props: AnnotationCanvasProps) {
         const cssHeight = `${viewport.clientHeight}px`;
         if (canvas.style.width !== cssWidth) canvas.style.width = cssWidth;
         if (canvas.style.height !== cssHeight) canvas.style.height = cssHeight;
-        renderNow();
+        scheduleRender();
       });
     };
 
@@ -270,7 +281,10 @@ export function AnnotationCanvas(props: AnnotationCanvasProps) {
     });
   });
 
-  const framePointFromEvent = (event: PointerEvent): FramePoint | null => {
+  const fractionalFramePointFromEvent = (event: {
+    clientX: number;
+    clientY: number;
+  }): FramePoint | null => {
     const viewport = viewportEl;
     const cached = latestFrameRef.current;
     if (!viewport || !cached) return null;
@@ -282,8 +296,18 @@ export function AnnotationCanvas(props: AnnotationCanvasProps) {
       return null;
     }
     return {
-      x: clamp(Math.floor((x - rect.x) / rect.scale), 0, cached.frame.width - 1),
-      y: clamp(Math.floor((y - rect.y) / rect.scale), 0, cached.frame.height - 1),
+      x: clamp((x - rect.x) / rect.scale, 0, cached.frame.width),
+      y: clamp((y - rect.y) / rect.scale, 0, cached.frame.height),
+    };
+  };
+
+  const framePointFromEvent = (event: { clientX: number; clientY: number }): FramePoint | null => {
+    const cached = latestFrameRef.current;
+    const point = fractionalFramePointFromEvent(event);
+    if (!cached || !point) return null;
+    return {
+      x: clamp(Math.floor(point.x), 0, cached.frame.width - 1),
+      y: clamp(Math.floor(point.y), 0, cached.frame.height - 1),
     };
   };
 
@@ -297,6 +321,7 @@ export function AnnotationCanvas(props: AnnotationCanvasProps) {
     if (target.hasPointerCapture(event.pointerId)) {
       target.releasePointerCapture(event.pointerId);
     }
+    if (magnifierMode()) return;
     const value = eraseMode() ? 0 : activeLabelValue();
     if (value <= 0 && !eraseMode()) return;
     if (brushMode()) {
@@ -317,9 +342,53 @@ export function AnnotationCanvas(props: AnnotationCanvasProps) {
     }
   };
 
+  const zoomAtFramePoint = (factor: number, point: FramePoint) => {
+    const viewport = viewportEl;
+    const cached = latestFrameRef.current;
+    if (!viewport || !cached) return;
+    frameView.zoomAtFramePoint(
+      factor,
+      point,
+      viewport.clientWidth,
+      viewport.clientHeight,
+      cached.frame,
+    );
+  };
+
+  createEffect(() => {
+    if (!magnifierMode()) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        (event.target instanceof HTMLElement &&
+          Boolean(event.target.closest("input, textarea, select, [contenteditable='true']")))
+      ) {
+        return;
+      }
+      const viewport = viewportEl;
+      const cached = latestFrameRef.current;
+      if (!viewport || !cached) return;
+      if (event.key === "0") {
+        event.preventDefault();
+        frameView.reset(cached.frame);
+      } else if (event.key === "+" || event.key === "=") {
+        event.preventDefault();
+        frameView.zoomAtCenter(2, viewport.clientWidth, viewport.clientHeight, cached.frame);
+      } else if (event.key === "-" || event.key === "_") {
+        event.preventDefault();
+        frameView.zoomAtCenter(0.5, viewport.clientWidth, viewport.clientHeight, cached.frame);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    onCleanup(() => window.removeEventListener("keydown", onKeyDown));
+  });
+
   return (
     <div
       ref={viewportEl!}
+      data-frame-view-zoom={frameView.view().zoom}
       class={cn("relative h-full min-h-0 w-full overflow-hidden bg-background", props.class)}
     >
       <Show when={!props.frame && props.emptyText}>
@@ -331,12 +400,27 @@ export function AnnotationCanvas(props: AnnotationCanvasProps) {
         ref={canvasEl!}
         class="block touch-none"
         style={{
-          cursor: props.disabled || !props.frame ? "default" : "crosshair",
+          cursor: !props.frame
+            ? "default"
+            : magnifierMode()
+              ? "zoom-in"
+              : props.disabled
+                ? "default"
+                : "crosshair",
         }}
         onPointerDown={(event) => {
-          if (props.disabled || !props.frame || event.pointerType !== "mouse") return;
+          if (!props.frame) return;
+          if (magnifierMode()) {
+            const point = fractionalFramePointFromEvent(event);
+            if (!point) return;
+            if (event.button !== 0 && event.button !== 2) return;
+            event.preventDefault();
+            zoomAtFramePoint(event.altKey || event.button === 2 ? 0.5 : 2, point);
+            return;
+          }
           const point = framePointFromEvent(event);
           if (!point) return;
+          if (props.disabled || event.pointerType !== "mouse") return;
           if (smartToolMode()) {
             if (event.button !== 0 && event.button !== 2) return;
             if (activeLabelValue() <= 0) return;
@@ -364,6 +448,7 @@ export function AnnotationCanvas(props: AnnotationCanvasProps) {
           setLassoPoints([point]);
         }}
         onPointerMove={(event) => {
+          if (magnifierMode()) return;
           if (smartToolMode()) return;
           const active = lassoRef.current;
           if (!active || active.pointerId !== event.pointerId) return;
@@ -378,6 +463,17 @@ export function AnnotationCanvas(props: AnnotationCanvasProps) {
         onPointerCancel={finishLasso}
         onLostPointerCapture={finishLasso}
         onContextMenu={(event) => event.preventDefault()}
+        onWheel={(event) => {
+          if (!magnifierMode()) return;
+          const point = fractionalFramePointFromEvent(event);
+          const viewport = viewportEl;
+          if (!point || !viewport) return;
+          event.preventDefault();
+          zoomAtFramePoint(
+            frameViewWheelFactor(event.deltaY, event.deltaMode, viewport.clientHeight),
+            point,
+          );
+        }}
       />
       <CanvasStatusMessageStack messages={props.messages} />
       <CanvasToastStack messages={props.toasts} />

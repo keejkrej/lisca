@@ -5,5 +5,8 @@ export default defineConfig({
   plugins: [solid()],
   test: {
     environment: "jsdom",
+    server: {
+      deps: { inline: true },
+    },
   },
 });

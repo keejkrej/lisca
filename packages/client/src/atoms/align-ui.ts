@@ -42,6 +42,7 @@ export type AlignUiState = {
   contrast: ContrastWindow | null;
   grid: AlignGridState;
   toolMode: AlignGridToolMode;
+  spacingZoomLocked: boolean;
   patternZoomLocked: boolean;
   manualExclusionEnabled: boolean;
   excludedCellsByPosition: ExcludedByPosition;
@@ -87,6 +88,7 @@ export function createInitialAlignUiState(): AlignUiState {
     contrast: null,
     grid: normalizeAlignGridState(createDefaultAlignGrid()),
     toolMode: "pan",
+    spacingZoomLocked: true,
     patternZoomLocked: true,
     manualExclusionEnabled: false,
     excludedCellsByPosition: {},
@@ -310,6 +312,12 @@ export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiB
     setToolMode(set: (update: StateUpdater<AlignUiState>) => void, toolMode: AlignGridToolMode) {
       patchAlignUi(set, persist, (state) => ({ ...state, toolMode }));
     },
+    setSpacingZoomLocked(
+      set: (update: StateUpdater<AlignUiState>) => void,
+      spacingZoomLocked: boolean,
+    ) {
+      patchAlignUi(set, persist, (state) => ({ ...state, spacingZoomLocked }));
+    },
     setPatternZoomLocked(
       set: (update: StateUpdater<AlignUiState>) => void,
       patternZoomLocked: boolean,
@@ -416,6 +424,8 @@ export function createAlignerPersist(sessionKey: string): AlignUiPersist {
         state: {
           workspacePath: state.workspacePath,
           source: state.source,
+          spacingZoomLocked: state.spacingZoomLocked,
+          patternZoomLocked: state.patternZoomLocked,
         },
       });
       touchAlignerWorkSessionFromState(state);
@@ -425,6 +435,8 @@ export function createAlignerPersist(sessionKey: string): AlignUiPersist {
         state?: {
           workspacePath: string | null;
           source: AlignerSource | null;
+          spacingZoomLocked?: boolean;
+          patternZoomLocked?: boolean;
         };
       }>(liscaSessionStorage(), sessionKey);
       if (!parsed) return null;
@@ -433,11 +445,15 @@ export function createAlignerPersist(sessionKey: string): AlignUiPersist {
         (parsed as {
           workspacePath: string | null;
           source: AlignerSource | null;
+          spacingZoomLocked?: boolean;
+          patternZoomLocked?: boolean;
         });
       if (!session.workspacePath?.trim() || !session.source) return null;
       return {
         workspacePath: session.workspacePath,
         source: session.source,
+        spacingZoomLocked: session.spacingZoomLocked ?? true,
+        patternZoomLocked: session.patternZoomLocked ?? true,
       };
     },
   };
@@ -451,6 +467,8 @@ export function createStudioPersist(sessionKey: string): AlignUiPersist {
           workspacePath: state.workspacePath,
           source: state.source,
           selection: state.selection,
+          spacingZoomLocked: state.spacingZoomLocked,
+          patternZoomLocked: state.patternZoomLocked,
         },
       });
     },
@@ -460,6 +478,8 @@ export function createStudioPersist(sessionKey: string): AlignUiPersist {
           workspacePath: string | null;
           source: AlignerSource | null;
           selection: FrameRequest;
+          spacingZoomLocked?: boolean;
+          patternZoomLocked?: boolean;
         };
       }>(liscaSessionStorage(), sessionKey);
       if (!parsed) return null;
@@ -469,11 +489,15 @@ export function createStudioPersist(sessionKey: string): AlignUiPersist {
           workspacePath: string | null;
           source: AlignerSource | null;
           selection: FrameRequest;
+          spacingZoomLocked?: boolean;
+          patternZoomLocked?: boolean;
         });
       return {
         workspacePath: session.workspacePath,
         source: session.source,
         selection: session.selection,
+        spacingZoomLocked: session.spacingZoomLocked ?? true,
+        patternZoomLocked: session.patternZoomLocked ?? true,
       };
     },
   };

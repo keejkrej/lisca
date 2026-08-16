@@ -7,6 +7,7 @@ export * from "./crop-progress-modal";
 export * from "./types";
 export * from "./dock";
 export * from "./folder-source-parse-modal";
+export * from "./frame-view-controller";
 export * from "./shell-layout";
 export * from "./crop";
 export * from "./host-file-picker-state";

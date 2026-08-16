@@ -24,6 +24,8 @@ export type AlignGridWheelViewport = {
   displayHeight: number;
   modelWidth: number;
   modelHeight: number;
+  /** Exact rendered frame scale when the canvas uses an ephemeral view transform. */
+  scale?: number;
 };
 
 export type AlignGridMousePointerInput = {
@@ -39,7 +41,7 @@ export type AlignGridPointerGestureInput = AlignGridMousePointerInput & {
 
 export type AlignGridPointerIntent = "offset" | "rotation" | "spacing" | "size" | "spacing-size";
 export type AlignGridWheelIntent = "ignore" | "size";
-export type AlignGridToolMode = "pan" | "rotate" | "zoom-spacing" | "zoom-pattern" | "zoom";
+export type AlignGridToolMode = "pan" | "rotate" | "zoom-spacing" | "zoom-pattern" | "magnifier";
 
 export type AlignGridPointerGestureSession = {
   pointerId: number;
@@ -405,6 +407,7 @@ export function beginAlignGridPointerGesture(
   toolMode?: AlignGridToolMode,
 ): AlignGridPointerGestureSession | null {
   if (toolMode !== undefined) {
+    if (toolMode === "magnifier") return null;
     if (!isPrimaryAlignGridPointerButton(input)) return null;
     const intent: AlignGridPointerIntent =
       toolMode === "pan"
@@ -446,13 +449,15 @@ export function applyAlignGridPointerGesture(
 
   if (session.intent === "offset") {
     const sx =
-      viewport.displayWidth > 0 && viewport.modelWidth > 0
+      viewport.scale ??
+      (viewport.displayWidth > 0 && viewport.modelWidth > 0
         ? viewport.displayWidth / viewport.modelWidth
-        : 1;
+        : 1);
     const sy =
-      viewport.displayHeight > 0 && viewport.modelHeight > 0
+      viewport.scale ??
+      (viewport.displayHeight > 0 && viewport.modelHeight > 0
         ? viewport.displayHeight / viewport.modelHeight
-        : 1;
+        : 1);
     const invSx = sx > 0 ? 1 / sx : 1;
     const invSy = sy > 0 ? 1 / sy : 1;
 

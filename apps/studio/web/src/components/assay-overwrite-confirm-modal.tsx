@@ -28,7 +28,12 @@ export function AssayOverwriteConfirmModal(props: {
               <Button size="sm" type="button" variant="outline" onClick={props.onCancel}>
                 Cancel
               </Button>
-              <Button size="sm" type="button" onClick={props.onOverwrite}>
+              <Button
+                class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                size="sm"
+                type="button"
+                onClick={props.onOverwrite}
+              >
                 Overwrite
               </Button>
             </div>

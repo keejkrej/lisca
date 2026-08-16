@@ -3,6 +3,7 @@ import IconSunRegular from "phosphor-icons-solid/IconSunRegular";
 import { createContext, createEffect, createSignal, Show, useContext, type JSX } from "solid-js";
 import { createStore } from "solid-js/store";
 import { Button } from "../../components/ui/button";
+import { cn } from "../../lib/utils";
 
 export type ShellThemeMode = "light" | "dark";
 
@@ -58,9 +59,7 @@ export function ShellThemeProvider(props: {
   const storageKey = () => props.storageKey ?? DEFAULT_STORAGE_KEY;
 
   const initialMode =
-    typeof window === "undefined"
-      ? defaultMode()
-      : readStoredMode(storageKey(), defaultMode());
+    typeof window === "undefined" ? defaultMode() : readStoredMode(storageKey(), defaultMode());
 
   const [mode, setMode] = createSignal<ShellThemeMode>(initialMode);
 
@@ -104,21 +103,20 @@ export function useShellTheme(): ShellThemeContextValue {
  */
 export function ShellThemeToggle(props: { class?: string }) {
   const theme = useShellTheme();
-  const title = () =>
-    theme.mode === "light" ? "Switch to dark theme" : "Switch to light theme";
+  const title = () => (theme.mode === "light" ? "Switch to dark theme" : "Switch to light theme");
 
   return (
     <Button
       type="button"
       variant="ghost"
       size="icon-sm"
-      class={props.class}
+      class={cn("size-7 rounded-full text-muted-foreground", props.class)}
       onClick={theme.toggleLightDark}
       title={title()}
       aria-label={title()}
     >
-      <Show when={theme.mode === "light"} fallback={<IconSunRegular />}>
-        <IconMoonRegular />
+      <Show when={theme.mode === "light"} fallback={<IconSunRegular class="size-3.5" />}>
+        <IconMoonRegular class="size-3.5" />
       </Show>
     </Button>
   );

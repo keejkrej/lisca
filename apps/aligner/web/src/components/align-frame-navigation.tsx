@@ -29,6 +29,7 @@ export function AlignFrameNavigation() {
 
   return (
     <FrameNavigation
+      sectionAppearance="rail"
       position={{
         get value() {
           return nav.selection.pos;

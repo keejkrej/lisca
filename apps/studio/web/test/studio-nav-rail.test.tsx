@@ -94,6 +94,7 @@ vi.mock("@lisca/client/session/task-center", () => ({
 }));
 
 import { StudioNavRail } from "../src/components/studio-nav-rail";
+import { StudioTopBar } from "../src/components/studio-top-bar";
 
 function StudioShellFixture() {
   const workspace = useShellWorkspace();
@@ -105,6 +106,7 @@ function StudioShellFixture() {
   return (
     <div class="h-screen">
       <StudioNavRail />
+      <StudioTopBar showExpert />
       <output aria-label="Route state">{route()}</output>
       <output aria-label="Workspace state">{workspace.workspacePath}</output>
       <input
@@ -158,12 +160,18 @@ describe("StudioNavRail Task Center", () => {
     const { router } = renderStudioShell();
 
     const trigger = await screen.findByRole("button", { name: "Tasks, 1 active" });
+    const expert = screen.getByRole("switch", { name: /Expert mode$/ });
     const nav = screen.getByRole("navigation", { name: "Primary" });
-    const utilities = trigger.parentElement;
+    const statusBar = screen.getByRole("region", { name: "Studio status bar" });
+    const connection = screen.getByLabelText(/^Server /);
 
-    expect(utilities).toBe(nav.lastElementChild);
-    expect(utilities?.firstElementChild).toBe(trigger);
-    expect(trigger.nextElementSibling?.textContent).toContain("Server");
+    expect(nav.classList.contains("px-7")).toBe(true);
+    expect(nav.classList.contains("pl-12")).toBe(false);
+    expect(nav.contains(trigger)).toBe(false);
+    expect(statusBar.contains(trigger)).toBe(true);
+    expect(trigger.parentElement?.contains(expert)).toBe(true);
+    expect(trigger.parentElement?.contains(connection)).toBe(false);
+    expect(trigger.compareDocumentPosition(expert) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
     const edit = screen.getByRole("textbox", { name: "Current edit" }) as HTMLInputElement;
     const routeState = screen.getByLabelText("Route state");

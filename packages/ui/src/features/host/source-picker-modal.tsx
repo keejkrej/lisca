@@ -65,7 +65,11 @@ export function SourcePickerModal(props: SourcePickerModalProps) {
           </div>
 
           <div class="space-y-4 px-5 pb-5">
-            <Show when={props.recentSources && props.recentSources.length > 0 && props.onPickRecentSource}>
+            <Show
+              when={
+                props.recentSources && props.recentSources.length > 0 && props.onPickRecentSource
+              }
+            >
               <div class="space-y-2">
                 <p class="font-medium text-foreground text-sm">Recent sources</p>
                 <ul class="max-h-32 overflow-auto rounded-md border border-border divide-y divide-border/60">

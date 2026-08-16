@@ -12,6 +12,7 @@ export const alignToolDefinitions: AlignToolDefinition[] = [
   { mode: "rotate", label: "Rotate" },
   { mode: "zoom-spacing", label: "Zoom spacing" },
   { mode: "zoom-pattern", label: "Zoom pattern" },
+  { mode: "magnifier", label: "Magnifier" },
 ];
 
 export function buildAlignToolActions(

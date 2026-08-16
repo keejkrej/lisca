@@ -36,6 +36,7 @@ export function StudioAlignMain() {
   const gridHandlers = useAlignCanvasGridHandlers(() => ({
     disabled: false,
     grid: canvas.grid,
+    spacingZoomLocked: canvas.spacingZoomLocked,
     patternZoomLocked: canvas.patternZoomLocked,
     setGrid: canvas.setGrid,
     toolMode: canvas.toolMode,
@@ -66,9 +67,9 @@ export function StudioAlignMain() {
     if (selectionHandlers.handlePointerEnd(event)) return;
     gridHandlers.handlePointerEnd(event);
   };
-  const handlePointerCancel: typeof gridHandlers.handlePointerEnd = (event) => {
+  const handlePointerCancel: typeof gridHandlers.handlePointerCancel = (event) => {
     if (selectionHandlers.handlePointerCancel(event)) return;
-    gridHandlers.handlePointerEnd(event);
+    gridHandlers.handlePointerCancel(event);
   };
   const visibleStatus = useCanvasTransientStatus(() => canvas.status);
   const operationalStatus = createMemo(() => {
@@ -110,14 +111,16 @@ export function StudioAlignMain() {
     return [{ text: status }];
   });
   const cursor = createMemo(() =>
-    canvas.manualExclusionEnabled || selectionHandlers.selecting()
-      ? "crosshair"
-      : cursorForAlignTool(canvas.toolMode, canvas.grid.enabled, gridHandlers.dragging()),
+    canvas.toolMode === "magnifier"
+      ? "zoom-in"
+      : canvas.manualExclusionEnabled || selectionHandlers.selecting()
+        ? "crosshair"
+        : cursorForAlignTool(canvas.toolMode, canvas.grid.enabled, gridHandlers.dragging()),
   );
 
   return (
     <>
-      <div class="flex h-full min-h-0 flex-1 flex-col gap-2 bg-background p-3">
+      <div class="relative flex h-full min-h-0 flex-1 items-center justify-center bg-background p-6">
         <Show
           when={
             positionInfo().length > 0 ||
@@ -126,7 +129,7 @@ export function StudioAlignMain() {
             canvasAlerts().length > 0
           }
         >
-          <div class="flex shrink-0 items-start justify-between gap-2">
+          <div class="absolute inset-x-3 top-3 z-10 flex shrink-0 items-start justify-between gap-2">
             <div class="flex min-w-0 flex-wrap items-start gap-1.5">
               <CanvasStatusMessageStack layout="inline" messages={positionInfo()} />
               <CanvasStatusMessageStack layout="inline" messages={statusMessages()} />
@@ -141,21 +144,27 @@ export function StudioAlignMain() {
             </div>
           </div>
         </Show>
-        <FrameAspectPanel frame={canvas.frame}>
-          <AlignCanvas
-            class="h-full w-full"
-            cursor={cursor()}
-            excludedCells={canvas.displayedExcludedCells}
+        <div class="flex h-full max-h-[420px] w-full max-w-[720px] min-h-0 min-w-0">
+          <FrameAspectPanel
+            class="rounded-none border-0 bg-transparent shadow-none"
             frame={canvas.frame}
-            grid={canvas.grid}
-            previewGridRef={gridHandlers.previewGridRef}
-            previewRedrawRef={previewRedrawRef}
-            onVirtualPointerCancel={handlePointerCancel}
-            onVirtualPointerDown={handlePointerDown}
-            onVirtualPointerMove={handlePointerMove}
-            onVirtualPointerUp={handlePointerEnd}
-          />
-        </FrameAspectPanel>
+          >
+            <AlignCanvas
+              class="h-full w-full"
+              cursor={cursor()}
+              excludedCells={canvas.displayedExcludedCells}
+              frame={canvas.frame}
+              grid={canvas.grid}
+              toolMode={canvas.toolMode}
+              previewGridRef={gridHandlers.previewGridRef}
+              previewRedrawRef={previewRedrawRef}
+              onVirtualPointerCancel={handlePointerCancel}
+              onVirtualPointerDown={handlePointerDown}
+              onVirtualPointerMove={handlePointerMove}
+              onVirtualPointerUp={handlePointerEnd}
+            />
+          </FrameAspectPanel>
+        </div>
       </div>
       <StudioCropStartModal />
       <StudioCropConfirmModal />

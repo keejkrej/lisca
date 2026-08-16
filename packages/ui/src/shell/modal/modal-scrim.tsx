@@ -12,7 +12,11 @@ export function ModalScrim(
 ) {
   const [local, rest] = splitProps(props, ["children", "class", "zIndex"]);
   return (
-    <div class={cn(modalScrimClass, local.zIndex ?? "z-50", local.class)} {...rest}>
+    <div
+      class={cn(modalScrimClass, local.zIndex ?? "z-50", local.class)}
+      data-slot="modal-scrim"
+      {...rest}
+    >
       {local.children}
     </div>
   );

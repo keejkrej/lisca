@@ -12,7 +12,7 @@ import {
   type FixtureAssayId,
 } from "@lisca/analysis/fixtures";
 import { ResultPlotGallery } from "@lisca/studio-web/result";
-import { AppShell, SidebarStack, ViewportCard } from "@lisca/ui/shell";
+import { AppShell, Panel, SidebarStack } from "@lisca/ui/shell";
 import { DemoNavbar } from "@lisca/web-demo";
 import { createMemo, createSignal, Show } from "solid-js";
 
@@ -65,8 +65,8 @@ export function AnalysisDemo(props: AnalysisDemoProps) {
           fallback={
             <AppShell.MainColumn>
               <AppShell.Main>
-                <ViewportCard class="relative">
-                  <div class="flex h-full min-h-0 flex-col">
+                <AppShell.MainScroll contentClass="p-2.5">
+                  <Panel class="min-h-full w-full">
                     <p class="border-b px-4 py-2 text-xs text-muted-foreground">
                       {fixtureBanner()}
                     </p>
@@ -76,8 +76,8 @@ export function AnalysisDemo(props: AnalysisDemoProps) {
                       plots={plots()}
                       section={section()}
                     />
-                  </div>
-                </ViewportCard>
+                  </Panel>
+                </AppShell.MainScroll>
               </AppShell.Main>
               <DemoAnalysisDock
                 compact
@@ -98,8 +98,8 @@ export function AnalysisDemo(props: AnalysisDemoProps) {
           </AppShell.Left>
           <AppShell.MainColumn>
             <AppShell.Main>
-              <ViewportCard class="relative">
-                <div class="flex h-full min-h-0 flex-col">
+              <AppShell.MainScroll contentClass="p-2.5">
+                <Panel class="min-h-full w-full">
                   <p class="border-b px-4 py-2 text-xs text-muted-foreground">{fixtureBanner()}</p>
                   <ResultPlotGallery
                     emptyTitle="No plots in this view"
@@ -107,8 +107,8 @@ export function AnalysisDemo(props: AnalysisDemoProps) {
                     plots={plots()}
                     section={section()}
                   />
-                </div>
-              </ViewportCard>
+                </Panel>
+              </AppShell.MainScroll>
             </AppShell.Main>
             <AppShell.Dock>
               <DemoAnalysisDock

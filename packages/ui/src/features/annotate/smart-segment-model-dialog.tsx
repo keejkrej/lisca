@@ -39,7 +39,9 @@ export function SmartSegmentModelDialog(props: SmartSegmentModelDialogProps) {
           <Show when={loading()}>
             <div class="mt-4 flex items-center gap-3">
               <Spinner class="size-4" />
-              <div class="min-w-0 truncate text-sm text-muted-foreground">{props.state.message}</div>
+              <div class="min-w-0 truncate text-sm text-muted-foreground">
+                {props.state.message}
+              </div>
             </div>
             <div class="mt-4 h-2 overflow-hidden rounded-full bg-muted">
               <div

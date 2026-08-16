@@ -11,9 +11,11 @@ export function AlignerDock() {
     <DockStrip>
       <AlignToolSection
         mode={canvas.toolMode}
+        spacingZoomLocked={canvas.spacingZoomLocked}
         patternZoomLocked={canvas.patternZoomLocked}
         shortcutsEnabled
         onModeChange={canvas.setToolMode}
+        onSpacingZoomLockedChange={canvas.setSpacingZoomLocked}
         onPatternZoomLockedChange={canvas.setPatternZoomLocked}
       />
       <AlignSaveSection />

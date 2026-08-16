@@ -21,7 +21,10 @@ export const alignerAlignUiActions = createAlignUiActions(alignerPersist, {
   includeApplySavedAlignState: false,
 });
 
-export type AlignerSessionPersist = Pick<AlignUiState, "workspacePath" | "source">;
+export type AlignerSessionPersist = Pick<
+  AlignUiState,
+  "workspacePath" | "source" | "spacingZoomLocked" | "patternZoomLocked"
+>;
 
 export function readAlignerSession(): AlignerSessionPersist | null {
   const session = alignerPersist.read();
@@ -29,6 +32,8 @@ export function readAlignerSession(): AlignerSessionPersist | null {
   return {
     workspacePath: session.workspacePath ?? null,
     source: session.source ?? null,
+    spacingZoomLocked: session.spacingZoomLocked ?? true,
+    patternZoomLocked: session.patternZoomLocked ?? true,
   };
 }
 
@@ -39,6 +44,8 @@ export function createInitialAlignerUiState(): AlignUiState {
     ...createInitialAlignUiState(),
     workspacePath: session.workspacePath ?? null,
     source: session.source ?? null,
+    spacingZoomLocked: session.spacingZoomLocked ?? true,
+    patternZoomLocked: session.patternZoomLocked ?? true,
   };
 }
 

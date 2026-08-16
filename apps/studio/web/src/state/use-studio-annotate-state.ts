@@ -23,6 +23,7 @@ import {
   useStudioStore,
 } from "./studio-store";
 import { setStudioAnnotateDirty } from "./studio-annotate-guard";
+import { nextStudioAnnotateSite } from "./studio-annotate-navigation";
 
 function useStudioWorkspaceSync(activeWorkspacePath: () => string | null) {
   const [ui, setUi] = useAtom(studioAnnotateUiAtom);
@@ -50,6 +51,8 @@ export type StudioAnnotateState = ReturnType<ReturnType<typeof useAnnotateStateC
   setAnalysisResultFiles: (files: StudioAnalysisCsvFile[]) => void;
   setAnalysisStartConfirm: (value: boolean) => void;
   startAnalysis: () => void;
+  canGoToNextSite: boolean;
+  goToNextSite: () => void;
   shuffleSelection: () => void;
   requestContinueToAnalysis: () => void;
   workspaceMissing: boolean;
@@ -117,6 +120,16 @@ export function useStudioAnnotateState(): StudioAnnotateState {
         zIndex,
       }),
     );
+  };
+  const nextSite = () => {
+    const current = annotate();
+    return nextStudioAnnotateSite(current.scan, current.selection);
+  };
+  const goToNextSite = () => {
+    const current = annotate();
+    const target = nextStudioAnnotateSite(current.scan, current.selection);
+    if (!target) return;
+    current.changeSelection(() => current.setSelection(target));
   };
   const startAnalysis = () => {
     const current = annotate();
@@ -366,6 +379,10 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     setAnalysisResultFiles,
     setAnalysisStartConfirm,
     startAnalysis,
+    get canGoToNextSite() {
+      return nextSite() !== null;
+    },
+    goToNextSite,
     shuffleSelection,
     requestContinueToAnalysis,
     get workspaceMissing() {

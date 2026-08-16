@@ -20,16 +20,13 @@ export function DialogSurface(
     "aria-labelledby"?: string;
   },
 ) {
-  const [local, rest] = splitProps(props, [
-    "children",
-    "class",
-    "maxWidth",
-    "aria-labelledby",
-  ]);
+  const [local, rest] = splitProps(props, ["children", "class", "maxWidth", "aria-labelledby"]);
   return (
     <div
       aria-labelledby={local["aria-labelledby"]}
       aria-modal="true"
+      data-max-width={local.maxWidth ?? "sm"}
+      data-slot="dialog-surface"
       class={cn(
         "flex w-full flex-col",
         maxWidthClass[local.maxWidth ?? "sm"],

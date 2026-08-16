@@ -2,13 +2,13 @@ import { LabelCreationDialog } from "@lisca/ui/features";
 import { AppShell } from "@lisca/ui/shell";
 import { createFileRoute } from "@tanstack/solid-router";
 
-import { StudioAnnotateDock } from "../components/studio-annotate-dock";
 import { StudioAnnotateMain } from "../components/studio-annotate-main";
 import { StudioAnnotateRight } from "../components/studio-annotate-right";
 import { StudioAnnotateExpertRight } from "../components/studio-annotate-expert-right";
 import { instructionForAnnotate } from "../state/studio-routes";
 import { StudioLeft } from "../components/studio-left";
 import { StudioRightPanel } from "../components/studio-right-panel";
+import { StudioTopBar } from "../components/studio-top-bar";
 import { useStudioAnnotateShell } from "../state/studio-annotate-page-selectors";
 import { StudioAnnotatePageProvider } from "../state/studio-annotate-page-context";
 
@@ -26,20 +26,20 @@ function AnnotatePage() {
 
 function AnnotatePageContent() {
   return (
-    <AppShell>
+    <AppShell variant="stage">
       <AppShell.Body>
-        <AppShell.Left widthClass="w-60">
+        <AppShell.Left widthClass="w-64">
           <StudioLeft />
         </AppShell.Left>
         <AppShell.MainColumn>
+          <AppShell.TopBar>
+            <StudioTopBar showExpert />
+          </AppShell.TopBar>
           <AppShell.Main>
             <StudioAnnotateMain />
           </AppShell.Main>
-          <AppShell.Dock>
-            <StudioAnnotateDock />
-          </AppShell.Dock>
         </AppShell.MainColumn>
-        <AppShell.Right widthClass="w-72">
+        <AppShell.Right widthClass="w-64">
           <StudioRightPanel
             expert={() => <StudioAnnotateExpertRight />}
             instruction={instructionForAnnotate}

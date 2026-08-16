@@ -32,16 +32,18 @@ export function LabelCreationDialog(props: LabelCreationDialogProps) {
 
   onMount(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && props.open) props.onOpenChange(false);
+      if (event.key === "Escape" && props.open && !props.saving) props.onOpenChange(false);
     };
     window.addEventListener("keydown", onKeyDown);
     onCleanup(() => window.removeEventListener("keydown", onKeyDown));
   });
 
   const resolvedSubtitle = () =>
-    props.subtitle ?? (props.workspacePath != null ? props.workspacePath : "Select a workspace first");
+    props.subtitle ??
+    (props.workspacePath != null ? props.workspacePath : "Select a workspace first");
 
   const submit = () => {
+    if (props.saving) return;
     const nextLabels = form.submit();
     if (nextLabels) props.onSave(nextLabels);
   };
@@ -50,10 +52,15 @@ export function LabelCreationDialog(props: LabelCreationDialogProps) {
     <Show when={props.open}>
       <ModalScrim
         onMouseDown={(event) => {
-          if (event.target === event.currentTarget) props.onOpenChange(false);
+          if (!props.saving && event.target === event.currentTarget) props.onOpenChange(false);
         }}
       >
-        <DialogSurface aria-labelledby="label-dialog-title" class="max-h-[86vh]" maxWidth="2xl">
+        <DialogSurface
+          aria-busy={props.saving}
+          aria-labelledby="label-dialog-title"
+          class="max-h-[86vh]"
+          maxWidth="2xl"
+        >
           <div class="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
             <div class="min-w-0">
               <h2 class="font-semibold text-foreground text-lg" id="label-dialog-title">
@@ -66,6 +73,7 @@ export function LabelCreationDialog(props: LabelCreationDialogProps) {
             <Button
               aria-label="Close label dialog"
               class="shrink-0"
+              disabled={props.saving}
               size="icon-sm"
               type="button"
               variant="ghost"
@@ -87,6 +95,7 @@ export function LabelCreationDialog(props: LabelCreationDialogProps) {
                 <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_4rem_2rem] items-center gap-2">
                   <Input
                     aria-label={`Label ${index + 1} name`}
+                    disabled={props.saving}
                     value={draft().name}
                     onInput={(event) => {
                       const name = event.currentTarget.value;
@@ -95,13 +104,13 @@ export function LabelCreationDialog(props: LabelCreationDialogProps) {
                   />
                   <Input
                     aria-label={`Label ${index + 1} id`}
+                    disabled={props.saving}
                     value={draft().id}
-                    onInput={(event) =>
-                      form.updateDraft(index, { id: event.currentTarget.value })
-                    }
+                    onInput={(event) => form.updateDraft(index, { id: event.currentTarget.value })}
                   />
                   <Input
                     aria-label={`Label ${index + 1} color`}
+                    disabled={props.saving}
                     type="color"
                     value={draft().color}
                     onInput={(event) =>
@@ -110,7 +119,7 @@ export function LabelCreationDialog(props: LabelCreationDialogProps) {
                   />
                   <Button
                     aria-label={`Remove ${draft().name || `label ${index + 1}`}`}
-                    disabled={form.drafts().length <= 1}
+                    disabled={props.saving || form.drafts().length <= 1}
                     size="icon-sm"
                     type="button"
                     variant="ghost"
@@ -121,7 +130,14 @@ export function LabelCreationDialog(props: LabelCreationDialogProps) {
                 </div>
               )}
             </Index>
-            <Button class="w-fit" size="sm" type="button" variant="outline" onClick={form.addDraft}>
+            <Button
+              class="w-fit"
+              disabled={props.saving}
+              size="sm"
+              type="button"
+              variant="outline"
+              onClick={form.addDraft}
+            >
               <IconPlusRegular class="size-4" />
               Add label
             </Button>
@@ -131,15 +147,22 @@ export function LabelCreationDialog(props: LabelCreationDialogProps) {
           </div>
 
           <div class="flex justify-end gap-2 border-t border-border px-5 py-4">
-            <Button type="button" variant="outline" onClick={() => props.onOpenChange(false)}>
+            <Button
+              disabled={props.saving}
+              type="button"
+              variant="outline"
+              onClick={() => props.onOpenChange(false)}
+            >
               Cancel
             </Button>
             <Button
-              disabled={props.workspacePath != null ? !props.workspacePath : false}
+              disabled={
+                props.saving || (props.workspacePath != null ? !props.workspacePath : false)
+              }
               type="button"
               onClick={submit}
             >
-              {props.saveLabel ?? "Save labels"}
+              {props.saving ? "Saving…" : (props.saveLabel ?? "Save labels")}
             </Button>
           </div>
         </DialogSurface>

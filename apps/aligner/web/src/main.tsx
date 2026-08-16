@@ -2,7 +2,6 @@ import { createLiscaWebApp } from "@lisca/web-app";
 import { AppShell } from "@lisca/ui/shell";
 
 import { AlignerAtomsProvider } from "./components/aligner-atoms-provider";
-import { AlignerDock } from "./components/aligner-dock";
 import { AlignerHeader } from "./components/aligner-header";
 import { AlignerLeft } from "./components/aligner-left";
 import { AlignerMain } from "./components/aligner-main";
@@ -22,23 +21,20 @@ function AlignApp() {
   return (
     <AlignerWorkSessionGate>
       <AlignPageProvider>
-        <AppShell>
-          <AppShell.Header>
-            <AlignerHeader />
-          </AppShell.Header>
+        <AppShell variant="stage">
           <AppShell.Body>
-            <AppShell.Left widthClass="w-72">
+            <AppShell.Left>
               <AlignerLeft />
             </AppShell.Left>
             <AppShell.MainColumn>
+              <AppShell.TopBar>
+                <AlignerHeader />
+              </AppShell.TopBar>
               <AppShell.Main>
                 <AlignerMain />
               </AppShell.Main>
-              <AppShell.Dock>
-                <AlignerDock />
-              </AppShell.Dock>
             </AppShell.MainColumn>
-            <AppShell.Right widthClass="w-72">
+            <AppShell.Right>
               <AlignerRight />
             </AppShell.Right>
           </AppShell.Body>

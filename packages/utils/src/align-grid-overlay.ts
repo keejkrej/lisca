@@ -79,12 +79,15 @@ export function buildAlignGridOverlayScene(
   viewportWidth: number,
   viewportHeight: number,
   excludedKeys: ReadonlySet<string> = new Set(),
+  resolvedFrameLayout?: FrameLayout,
 ): AlignGridOverlayScene | null {
   if (!grid.enabled) {
     return null;
   }
 
-  const frameLayout = computeFrameLayout(viewportWidth, viewportHeight, frame.width, frame.height);
+  const frameLayout =
+    resolvedFrameLayout ??
+    computeFrameLayout(viewportWidth, viewportHeight, frame.width, frame.height);
   const { drawX, drawY, scale } = frameLayout;
   const originX = drawX + (frame.width / 2 + grid.tx) * scale;
   const originY = drawY + (frame.height / 2 + grid.ty) * scale;

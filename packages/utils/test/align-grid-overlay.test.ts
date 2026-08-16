@@ -90,6 +90,23 @@ describe("align grid overlay scene", () => {
     expect(scene.haloRect.h).toBeCloseTo(scene.frameLayout.drawHeight + 16);
   });
 
+  test("uses the supplied transformed layout for overlay coordinates", () => {
+    const frame = { width: 100, height: 100, pixels: new Uint8Array(100 * 100) };
+    const grid = normalizeAlignGridState({ ...createDefaultAlignGrid(), enabled: true });
+    const transformed = {
+      scale: 4,
+      drawX: -100,
+      drawY: -120,
+      drawWidth: 400,
+      drawHeight: 400,
+    };
+    const scene = buildAlignGridOverlayScene(frame, grid, 200, 160, new Set(), transformed)!;
+
+    expect(scene.frameLayout).toEqual(transformed);
+    expect(scene.origin).toEqual({ x: 100, y: 80 });
+    expect(scene.clipRect).toEqual({ x: -100, y: -120, w: 400, h: 400 });
+  });
+
   test("derives fill opacity from grid opacity", () => {
     const grid = normalizeAlignGridState({ ...createDefaultAlignGrid(), opacity: 0.8 });
     expect(alignGridOverlayFillOpacity(grid)).toBeCloseTo(0.44);

@@ -57,6 +57,8 @@ export type StudioAlignState = {
   setGrid: (next: AlignGridState | ((current: AlignGridState) => AlignGridState)) => void;
   toolMode: AlignGridToolMode;
   setToolMode: (mode: AlignGridToolMode) => void;
+  spacingZoomLocked: boolean;
+  setSpacingZoomLocked: (locked: boolean) => void;
   patternZoomLocked: boolean;
   setPatternZoomLocked: (locked: boolean) => void;
   manualExclusionEnabled: boolean;
@@ -170,6 +172,7 @@ export function useStudioAlignState(): StudioAlignState {
     setExcludedCellsForCurrentPosition,
     setGrid,
     setManualExclusionEnabled,
+    setSpacingZoomLocked,
     setPatternZoomLocked,
     setSelection,
     setToolMode,
@@ -255,7 +258,7 @@ export function useStudioAlignState(): StudioAlignState {
     const positions = alignPositions();
     if (!scan) return;
     if (positions.length === 0) {
-      setError("No assay positions found in source scan — check position ranges in basic info");
+      setError("No assay positions found in source scan — check position ranges on the Info step");
       return;
     }
     const skipped = assayPositions().length - positions.length;
@@ -304,6 +307,10 @@ export function useStudioAlignState(): StudioAlignState {
       return ui().toolMode;
     },
     setToolMode,
+    get spacingZoomLocked() {
+      return ui().spacingZoomLocked;
+    },
+    setSpacingZoomLocked,
     get patternZoomLocked() {
       return ui().patternZoomLocked;
     },

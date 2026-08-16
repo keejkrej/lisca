@@ -8,8 +8,12 @@ import { ConnectionStatus } from "./connection-status";
 import { PathButton } from "./path-button";
 import { useShellServer } from "../server/shell-server";
 import { useShellWorkspace } from "../workspace/workspace";
+import { cn } from "../../lib/utils";
 
 export type ShellNavbarProps = {
+  /** Screen-reader application title rendered as the page's primary heading. */
+  title?: string;
+  appearance?: "default" | "stage";
   /** Show the source path/action button (default: true). */
   showSourceButton?: boolean;
   /** Show the `endLeading` action slot (default: true). */
@@ -36,10 +40,17 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
   const handleWorkspace = props.onPickWorkspace ?? (() => workspace.pickWorkspace());
 
   return (
-    <header class="h-full px-6">
-      <div class="grid h-full grid-cols-[1fr_auto_1fr] items-center gap-4">
+    <header class={cn("h-full", props.appearance !== "stage" && "px-6")}>
+      <Show when={props.title}>{(title) => <h1 class="sr-only">{title()}</h1>}</Show>
+      <div
+        class={cn(
+          "h-full items-center gap-4",
+          props.appearance === "stage" ? "flex justify-between" : "grid grid-cols-[1fr_auto_1fr]",
+        )}
+      >
         <div class="flex min-w-0 max-w-[56rem] flex-wrap items-center justify-start gap-3">
           <PathButton
+            appearance={props.appearance}
             label="Workspace"
             value={workspace.workspacePath}
             icon={<IconFolderRegular class="size-4 shrink-0 opacity-80" />}
@@ -48,16 +59,20 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
           {props.workspaceTrailing}
           <Show when={props.showSourceButton !== false}>
             <PathButton
+              appearance={props.appearance}
               label="Source"
               value={workspace.sourcePath}
               icon={<IconHardDriveRegular class="size-4 shrink-0 opacity-80" />}
+              preserveExtension={props.appearance === "stage"}
               disabled={!workspace.workspacePath}
               onClick={workspace.workspacePath ? handleSource : undefined}
             />
           </Show>
         </div>
 
-        <div />
+        <Show when={props.appearance !== "stage"}>
+          <div />
+        </Show>
 
         <div class="flex min-w-0 items-center justify-end justify-self-end gap-1 sm:gap-2">
           <ConnectionStatus state={server.state} httpBaseUrl={server.httpBaseUrl} />
@@ -70,6 +85,7 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
 }
 
 export type ShellNavbarAnnotatorProps = {
+  appearance?: "default" | "stage";
   endLeading?: JSX.Element;
   onPickWorkspace?: () => void;
 };
@@ -77,14 +93,17 @@ export type ShellNavbarAnnotatorProps = {
 function ShellNavbarAnnotator(props: ShellNavbarAnnotatorProps) {
   return (
     <ShellNavbarRoot
+      appearance={props.appearance}
       endLeading={props.endLeading}
       showSourceButton={false}
+      title="LiSCA Annotator"
       onPickWorkspace={props.onPickWorkspace}
     />
   );
 }
 
 export type ShellNavbarAlignerProps = {
+  appearance?: "default" | "stage";
   endLeading?: JSX.Element;
   onPickSource?: () => void;
   onPickWorkspace?: () => void;
@@ -93,8 +112,10 @@ export type ShellNavbarAlignerProps = {
 function ShellNavbarAligner(props: ShellNavbarAlignerProps) {
   return (
     <ShellNavbarRoot
+      appearance={props.appearance}
       endLeading={props.endLeading}
       showToolsMenu={props.endLeading !== undefined}
+      title="LiSCA Aligner"
       onPickSource={props.onPickSource}
       onPickWorkspace={props.onPickWorkspace}
     />

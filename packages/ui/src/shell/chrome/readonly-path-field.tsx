@@ -2,11 +2,7 @@ import { cn } from "../../lib/utils";
 
 const pathChipClass = "rounded-md border border-border bg-muted/20 text-foreground";
 
-export function ReadonlyPathField(props: {
-  value: string;
-  class?: string;
-  "aria-label"?: string;
-}) {
+export function ReadonlyPathField(props: { value: string; class?: string; "aria-label"?: string }) {
   return (
     <div
       aria-label={props["aria-label"] ?? `Path ${props.value}`}

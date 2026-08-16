@@ -23,6 +23,8 @@ import { Spinner } from "../../components/ui/spinner";
 import { cn } from "../../lib/utils";
 
 export type TaskCenterProps = {
+  /** Compact instrument-session trigger; the default keeps the existing shell button. */
+  appearance?: "button" | "status-link";
   gateway: TaskCenterGateway;
   subscribe: (handlers: {
     onSnapshot: (snapshot: Awaited<ReturnType<TaskCenterGateway["listOperations"]>>) => void;
@@ -90,10 +92,7 @@ function positionLabel(taskKind: string | null | undefined): string {
   return taskKind?.match(/Pos\d+/)?.[0] ?? "Current task";
 }
 
-function WorkProgressRail(props: {
-  label: string;
-  work: NonNullable<TaskDetail["workProgress"]>;
-}) {
+function WorkProgressRail(props: { label: string; work: NonNullable<TaskDetail["workProgress"]> }) {
   const percent = () =>
     props.work.total > 0 ? (props.work.completed / props.work.total) * 100 : 0;
   return (
@@ -118,11 +117,7 @@ function WorkProgressRail(props: {
   );
 }
 
-function TaskRow(props: {
-  task: TaskDetail;
-  busy: boolean;
-  onRetry: () => void;
-}) {
+function TaskRow(props: { task: TaskDetail; busy: boolean; onRetry: () => void }) {
   const latestError = () => props.task.attempts.at(-1)?.error;
   const label = () => positionLabel(props.task.taskKind);
   return (
@@ -136,9 +131,7 @@ function TaskRow(props: {
         <div class="min-w-0 flex-1 space-y-1 text-left">
           <Show
             when={props.task.workProgress}
-            fallback={
-              <span class="block truncate text-muted-foreground text-xs">{label()}</span>
-            }
+            fallback={<span class="block truncate text-muted-foreground text-xs">{label()}</span>}
           >
             {(work) => <WorkProgressRail label={label()} work={work()} />}
           </Show>
@@ -174,6 +167,7 @@ export function TaskCenter(props: TaskCenterProps) {
   const [refreshError, setRefreshError] = createSignal<string | null>(null);
   const [actionError, setActionError] = createSignal<string | null>(null);
   const indicator = createMemo(() => deriveTaskCenterIndicator(state().operations));
+  const statusLink = () => props.appearance === "status-link";
   const operationRequests = new Map<string, { generation: number; controller: AbortController }>();
   let nextRequestGeneration = 0;
   let closeButton: HTMLButtonElement | undefined;
@@ -298,38 +292,56 @@ export function TaskCenter(props: TaskCenterProps) {
             ? `Tasks, ${indicator().attentionCount} need attention`
             : `Tasks, ${indicator().activeCount} active`
         }
-        class="relative"
+        class={cn(
+          "relative",
+          statusLink() && "h-7 gap-2 px-2 text-xs font-normal text-muted-foreground",
+        )}
+        data-task-center-appearance={props.appearance ?? "button"}
         size="sm"
         type="button"
         variant="ghost"
       >
-        <IconQueueRegular class="size-4" />
-        <span class="hidden sm:inline">Tasks</span>
-        <Show when={indicator().tone !== "idle"}>
+        <Show when={!statusLink()}>
+          <IconQueueRegular class="size-4" />
+        </Show>
+        <span class={statusLink() ? undefined : "hidden sm:inline"}>Tasks</span>
+        <Show when={statusLink() ? indicator().activeCount > 0 : indicator().tone !== "idle"}>
           <span
             aria-hidden="true"
+            data-slot="task-badge"
             class={cn(
               "flex min-w-4 items-center justify-center rounded-full px-1 text-[10px] leading-4",
-              indicator().tone === "attention"
-                ? "bg-destructive text-destructive-foreground"
-                : "bg-primary text-primary-foreground",
+              statusLink()
+                ? "bg-foreground text-background"
+                : indicator().tone === "attention"
+                  ? "bg-destructive text-destructive-foreground"
+                  : "bg-primary text-primary-foreground",
             )}
           >
-            {indicator().tone === "attention" ? "!" : indicator().activeCount}
+            {statusLink()
+              ? indicator().activeCount
+              : indicator().tone === "attention"
+                ? "!"
+                : indicator().activeCount}
           </span>
         </Show>
       </Dialog.Trigger>
 
       <Dialog.Portal>
         <Dialog.Overlay
-          class="fixed inset-0 z-50 bg-black/50"
+          class={cn("fixed inset-0 z-50", statusLink() ? "bg-foreground/40" : "bg-black/50")}
           data-testid="task-center-overlay"
           onPointerDown={(event) => {
             if (event.target === event.currentTarget) setDialogOpen(false);
           }}
         />
         <Dialog.Content
-          class="fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100%-2.5rem)] w-[calc(100%-3rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-background text-foreground shadow-2xl sm:max-h-[calc(100%-4rem)]"
+          class={cn(
+            "fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100%-2.5rem)] w-[calc(100%-3rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden border border-border bg-background text-foreground sm:max-h-[calc(100%-4rem)]",
+            statusLink()
+              ? "max-w-[32.5rem] rounded-[18px] shadow-none"
+              : "max-w-2xl rounded-xl shadow-2xl",
+          )}
           onOpenAutoFocus={(event) => {
             event.preventDefault();
             closeButton?.focus();

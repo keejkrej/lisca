@@ -62,10 +62,10 @@ export function StudioAnnotateMain() {
   if (state.workspaceMissing) {
     return (
       <>
-        <ViewportCard class="relative">
+        <ViewportCard contentClass="relative max-w-[480px]" variant="stage">
           <StudioEmptyState
-            actionLabel="Go to Basic info"
-            description="Choose a workspace in Basic info, then align and crop sites before annotating."
+            actionLabel="Go to Info"
+            description="Choose a workspace on the Info step, then align and crop sites before annotating."
             title="Workspace not set"
             onAction={() => navigateTo("/info")}
           />
@@ -79,7 +79,7 @@ export function StudioAnnotateMain() {
   if (!state.scanLoading && state.scan && state.scan.positions.length === 0) {
     return (
       <>
-        <ViewportCard class="relative">
+        <ViewportCard contentClass="relative max-w-[480px]" variant="stage">
           <StudioEmptyState
             actionLabel="Go to Align"
             description="Align the pattern and crop site images first. Annotation needs those ROI stacks."
@@ -95,23 +95,28 @@ export function StudioAnnotateMain() {
 
   return (
     <>
-      <ViewportCard class="relative min-h-0 flex-1">
-        <AnnotationCanvas
-          activeLabelId={canvas.activeLabelId}
-          brushSize={canvas.brushSize}
-          class="min-h-0 flex-1"
-          disabled={!canvas.canEditSegmentation || smartSegment.busy()}
-          frame={canvas.frame}
-          labels={canvas.labels}
-          mask={canvas.annotation.current.mask}
-          overlayOpacity={canvas.overlayOpacity}
-          smartSegmentPrompts={smartSegment.prompts()}
-          toasts={toasts}
-          tool={canvas.tool}
-          onMaskCommit={onMaskCommit}
-          onSmartSegmentClick={(click) => void smartSegment.handleClick(click)}
-          onSmartEraseClick={(click) => void smartSegment.handleEraseClick(click)}
-        />
+      <ViewportCard
+        contentClass="relative items-center justify-center overflow-visible"
+        variant="stage"
+      >
+        <div class="flex size-full max-h-[480px] max-w-[480px] min-h-0 flex-col overflow-hidden">
+          <AnnotationCanvas
+            activeLabelId={canvas.activeLabelId}
+            brushSize={canvas.brushSize}
+            class="min-h-0 flex-1"
+            disabled={!canvas.canEditSegmentation || smartSegment.busy()}
+            frame={canvas.frame}
+            labels={canvas.labels}
+            mask={canvas.annotation.current.mask}
+            overlayOpacity={canvas.overlayOpacity}
+            smartSegmentPrompts={smartSegment.prompts()}
+            toasts={toasts}
+            tool={canvas.tool}
+            onMaskCommit={onMaskCommit}
+            onSmartSegmentClick={(click) => void smartSegment.handleClick(click)}
+            onSmartEraseClick={(click) => void smartSegment.handleEraseClick(click)}
+          />
+        </div>
       </ViewportCard>
       <StudioAnalysisStartModal />
       <StudioAnalysisProgressModal />

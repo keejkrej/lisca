@@ -1,8 +1,8 @@
 /**
- * App font tokens. Face files load via `@lisca/ui/theme.css` (Geist).
+ * App font tokens. Face files load via `@lisca/ui/theme.css` (Outfit).
  */
 @theme {
-  --font-display: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Outfit Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Outfit Variable", ui-sans-serif, system-ui, sans-serif;
 }

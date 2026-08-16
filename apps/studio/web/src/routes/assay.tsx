@@ -7,9 +7,10 @@ import { createMemo, createSignal, Show } from "solid-js";
 
 import { studioClient, studioHostOperations } from "../api/studio-port";
 import { ChooseAssay } from "../components/choose-assay";
-import { StudioAssayDock } from "../components/studio-assay-dock";
+import { StudioAssayActions } from "../components/studio-assay-dock";
 import { StudioLeft } from "../components/studio-left";
 import { StudioRightPanel } from "../components/studio-right-panel";
+import { StudioTopBar } from "../components/studio-top-bar";
 import { instructionForStep } from "../state/studio-routes";
 import { useStudioMemoryRecent } from "../hooks/use-studio-memory-recent";
 import { useStudioNavigate } from "../navigation/use-studio-navigate";
@@ -52,14 +53,17 @@ function AssayPage() {
   };
 
   return (
-    <AppShell>
+    <AppShell variant="stage">
       <AppShell.Body>
-        <AppShell.Left widthClass="w-60">
+        <AppShell.Left widthClass="w-64">
           <StudioLeft />
         </AppShell.Left>
         <AppShell.MainColumn>
+          <AppShell.TopBar>
+            <StudioTopBar />
+          </AppShell.TopBar>
           <AppShell.Main>
-            <div class="mx-auto flex min-h-full w-full min-w-0 max-w-[52rem] flex-col items-center justify-center px-4 py-6 md:px-[100px] md:py-10">
+            <AppShell.MainScroll contentClass="max-w-[52rem] items-center justify-center px-4 py-6 md:px-12 md:py-10">
               <Show when={openAssayError()}>
                 {(error) => (
                   <p
@@ -71,18 +75,17 @@ function AssayPage() {
                 )}
               </Show>
               <ChooseAssay />
-            </div>
+            </AppShell.MainScroll>
           </AppShell.Main>
-          <AppShell.Dock>
-            <StudioAssayDock
+        </AppShell.MainColumn>
+        <AppShell.Right widthClass="w-64">
+          <StudioRightPanel instruction={() => instructionForStep("chooseAssay")}>
+            <StudioAssayActions
               assayPickerOpen={assayPickerOpen()}
               openingAssay={openingAssay()}
               onOpenAssay={() => setAssayPickerOpen(true)}
             />
-          </AppShell.Dock>
-        </AppShell.MainColumn>
-        <AppShell.Right widthClass="w-60">
-          <StudioRightPanel instruction={() => instructionForStep("chooseAssay")} />
+          </StudioRightPanel>
         </AppShell.Right>
       </AppShell.Body>
       <HostFilePickerDialog

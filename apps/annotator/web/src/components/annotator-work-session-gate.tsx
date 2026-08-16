@@ -4,7 +4,11 @@ import { WorkSessionAppGate } from "@lisca/client/session/work-session-app-gate"
 import { useShellWorkspace, WorkSessionPickerDialog } from "@lisca/ui/shell";
 import { onMount, type JSX } from "solid-js";
 
-import { annotatorUiActions, annotatorUiAtom, readAnnotatorSession } from "../atoms/annotator-ui-atoms";
+import {
+  annotatorUiActions,
+  annotatorUiAtom,
+  readAnnotatorSession,
+} from "../atoms/annotator-ui-atoms";
 
 export function AnnotatorWorkSessionGate(props: { children?: JSX.Element }) {
   const workspace = useShellWorkspace();

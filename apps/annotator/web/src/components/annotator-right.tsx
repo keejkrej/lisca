@@ -1,13 +1,14 @@
 import { AnnotationControlRail } from "@lisca/ui/features";
-import { SidebarStack } from "@lisca/ui/shell";
+import { RailSidebar } from "@lisca/ui/shell";
 
 import { useAnnotateLabels } from "../state/annotate-page-selectors";
+import { AnnotatorSaveSection } from "./annotator-save-section";
 
 export function AnnotatorRight() {
   const labels = useAnnotateLabels();
 
   return (
-    <SidebarStack>
+    <RailSidebar>
       <AnnotationControlRail
         activeLabelId={labels.activeLabelId}
         annotation={labels.annotation}
@@ -25,12 +26,14 @@ export function AnnotatorRight() {
         saveError={labels.saveError}
         scanError={labels.scanError}
         scanLoading={labels.scanLoading}
+        sectionAppearance="rail"
         setActiveLabelId={labels.setActiveLabelId}
         setBrushSize={labels.setBrushSize}
         setMode={labels.setMode}
         setOverlayOpacity={labels.setOverlayOpacity}
         workspacePath={labels.workspacePath}
       />
-    </SidebarStack>
+      <AnnotatorSaveSection />
+    </RailSidebar>
   );
 }

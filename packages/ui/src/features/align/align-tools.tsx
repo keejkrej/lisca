@@ -1,6 +1,6 @@
 import IconLockRegular from "phosphor-icons-solid/IconLockRegular";
 import IconLockOpenRegular from "phosphor-icons-solid/IconLockOpenRegular";
-import { createEffect, onCleanup } from "solid-js";
+import { createEffect, For, onCleanup } from "solid-js";
 import type { AlignGridToolMode } from "@lisca/utils";
 import {
   alignToolDefinitions as headlessAlignToolDefinitions,
@@ -10,11 +10,15 @@ import { resolveKeyboardShortcut, type KeyboardShortcut } from "@lisca/utils";
 
 import { Button } from "../../components/ui/button";
 import { DockSection } from "../../shell/regions/dock-section";
+import { PanelSection } from "../../shell/regions/panel-section";
+import { RailControlStack } from "../../shell/regions/rail-control-layout";
 import { dockToolLabel, dockToolShortcuts } from "@lisca/ui/shell";
 
 export type AlignToolSectionProps = {
   mode: AlignGridToolMode;
   onModeChange: (mode: AlignGridToolMode) => void;
+  spacingZoomLocked?: boolean;
+  onSpacingZoomLockedChange?: (locked: boolean) => void;
   patternZoomLocked?: boolean;
   onPatternZoomLockedChange?: (locked: boolean) => void;
   sectionTitle?: string;
@@ -22,6 +26,7 @@ export type AlignToolSectionProps = {
   sectionClassName?: string;
   sectionContentClassName?: string;
   shortcutsEnabled?: boolean;
+  placement?: "dock" | "rail";
 };
 
 export const alignToolDefinitions = headlessAlignToolDefinitions.map(({ mode, label }) => ({
@@ -91,12 +96,28 @@ function renderAlignToolCell(
   index: number,
   mode: AlignGridToolMode,
   onModeChange: (mode: AlignGridToolMode) => void,
+  spacingZoomLocked: boolean,
+  onSpacingZoomLockedChange: ((locked: boolean) => void) | undefined,
   patternZoomLocked: boolean,
   onPatternZoomLockedChange: ((locked: boolean) => void) | undefined,
   shortcutsEnabled: boolean,
 ) {
   const label = shortcutsEnabled ? dockToolLabel(tool.label, index) : tool.label;
-  if (tool.mode === "zoom-pattern") {
+  const zoomLock =
+    tool.mode === "zoom-spacing"
+      ? {
+          locked: spacingZoomLocked,
+          name: "spacing",
+          onChange: onSpacingZoomLockedChange,
+        }
+      : tool.mode === "zoom-pattern"
+        ? {
+            locked: patternZoomLocked,
+            name: "pattern",
+            onChange: onPatternZoomLockedChange,
+          }
+        : null;
+  if (zoomLock) {
     return (
       <div class="min-w-0">
         <div class="grid min-w-0 grid-cols-[1fr_2rem] gap-1">
@@ -108,16 +129,16 @@ function renderAlignToolCell(
             onClick={() => onModeChange(tool.mode)}
           />
           <Button
-            aria-label={patternZoomLocked ? "Unlock pattern zoom" : "Lock pattern zoom"}
-            class="w-full px-0"
-            disabled={!onPatternZoomLockedChange}
+            aria-label={`${zoomLock.locked ? "Unlock" : "Lock"} ${zoomLock.name} zoom`}
+            class="size-8 px-0"
+            disabled={!zoomLock.onChange}
             size="sm"
-            title={patternZoomLocked ? "Unlock pattern zoom" : "Lock pattern zoom"}
+            title={`${zoomLock.locked ? "Unlock" : "Lock"} ${zoomLock.name} zoom`}
             type="button"
-            variant={patternZoomLocked ? "default" : "outline"}
-            onClick={() => onPatternZoomLockedChange?.(!patternZoomLocked)}
+            variant={zoomLock.locked ? "default" : "outline"}
+            onClick={() => zoomLock.onChange?.(!zoomLock.locked)}
           >
-            {patternZoomLocked ? (
+            {zoomLock.locked ? (
               <IconLockRegular class="size-4" />
             ) : (
               <IconLockOpenRegular class="size-4" />
@@ -142,10 +163,19 @@ function renderAlignToolCell(
 
 export type AlignToolToolbarProps = Pick<
   AlignToolSectionProps,
-  "mode" | "onModeChange" | "patternZoomLocked" | "onPatternZoomLockedChange" | "shortcutsEnabled"
->;
+  | "mode"
+  | "onModeChange"
+  | "spacingZoomLocked"
+  | "onSpacingZoomLockedChange"
+  | "patternZoomLocked"
+  | "onPatternZoomLockedChange"
+  | "shortcutsEnabled"
+> & {
+  layout?: "grid" | "rail";
+};
 
 export function AlignToolToolbar(props: AlignToolToolbarProps) {
+  const spacingZoomLocked = () => props.spacingZoomLocked ?? false;
   const patternZoomLocked = () => props.patternZoomLocked ?? false;
   const shortcutsEnabled = () => props.shortcutsEnabled ?? true;
   const toolActions = () => buildAlignToolActions(props.mode, props.onModeChange);
@@ -164,11 +194,81 @@ export function AlignToolToolbar(props: AlignToolToolbarProps) {
         index,
         props.mode,
         props.onModeChange,
+        spacingZoomLocked(),
+        props.onSpacingZoomLockedChange,
         patternZoomLocked(),
         props.onPatternZoomLockedChange,
         shortcutsEnabled(),
       ),
     );
+
+  if (props.layout === "rail") {
+    return (
+      <RailControlStack aria-label="Align canvas tool" role="toolbar">
+        <For each={alignToolDefinitions}>
+          {(tool, index) => {
+            const label = () =>
+              shortcutsEnabled() ? dockToolLabel(tool.label, index()) : tool.label;
+            const toolButton = () => (
+              <Button
+                aria-label={label()}
+                class="h-8 w-full min-w-0 justify-between rounded-full px-3 text-xs"
+                size="sm"
+                title={label()}
+                type="button"
+                variant={props.mode === tool.mode ? "default" : "outline"}
+                onClick={() => props.onModeChange(tool.mode)}
+              >
+                <span class="min-w-0 truncate">{tool.label}</span>
+                {shortcutsEnabled() ? (
+                  <kbd class="ml-auto flex size-4 shrink-0 items-center justify-center rounded-full bg-muted font-[inherit] font-medium text-[10px] text-muted-foreground">
+                    {index() + 1}
+                  </kbd>
+                ) : null}
+              </Button>
+            );
+
+            const zoomName =
+              tool.mode === "zoom-spacing"
+                ? "spacing"
+                : tool.mode === "zoom-pattern"
+                  ? "pattern"
+                  : null;
+            const zoomLocked = () =>
+              tool.mode === "zoom-spacing" ? spacingZoomLocked() : patternZoomLocked();
+            const onZoomLockedChange =
+              tool.mode === "zoom-spacing"
+                ? props.onSpacingZoomLockedChange
+                : props.onPatternZoomLockedChange;
+
+            return zoomName ? (
+              <div class="grid min-w-0 grid-cols-[minmax(0,1fr)_2rem] gap-1">
+                {toolButton()}
+                <Button
+                  aria-label={`${zoomLocked() ? "Unlock" : "Lock"} ${zoomName} zoom`}
+                  class="size-8 rounded-full px-0"
+                  disabled={!onZoomLockedChange}
+                  size="sm"
+                  title={`${zoomLocked() ? "Unlock" : "Lock"} ${zoomName} zoom`}
+                  type="button"
+                  variant={zoomLocked() ? "default" : "outline"}
+                  onClick={() => onZoomLockedChange?.(!zoomLocked())}
+                >
+                  {zoomLocked() ? (
+                    <IconLockRegular class="size-3.5" />
+                  ) : (
+                    <IconLockOpenRegular class="size-3.5" />
+                  )}
+                </Button>
+              </div>
+            ) : (
+              toolButton()
+            );
+          }}
+        </For>
+      </RailControlStack>
+    );
+  }
 
   return (
     <div aria-label="Align canvas tool" class="flex w-full flex-col gap-2" role="toolbar">
@@ -180,11 +280,35 @@ export function AlignToolToolbar(props: AlignToolToolbarProps) {
         {cells()[2]}
         {cells()[3]}
       </div>
+      <div class="w-full">{cells()[4]}</div>
     </div>
   );
 }
 
 export function AlignToolSection(props: AlignToolSectionProps) {
+  if (props.placement === "rail") {
+    return (
+      <PanelSection
+        appearance="rail"
+        class={props.sectionClassName}
+        contentClassName={props.sectionContentClassName}
+        description={props.sectionDescription}
+        title={props.sectionTitle ?? "Tool"}
+      >
+        <AlignToolToolbar
+          layout="rail"
+          mode={props.mode}
+          spacingZoomLocked={props.spacingZoomLocked}
+          patternZoomLocked={props.patternZoomLocked}
+          shortcutsEnabled={props.shortcutsEnabled}
+          onModeChange={props.onModeChange}
+          onSpacingZoomLockedChange={props.onSpacingZoomLockedChange}
+          onPatternZoomLockedChange={props.onPatternZoomLockedChange}
+        />
+      </PanelSection>
+    );
+  }
+
   return (
     <DockSection
       class={props.sectionClassName}
@@ -194,9 +318,11 @@ export function AlignToolSection(props: AlignToolSectionProps) {
     >
       <AlignToolToolbar
         mode={props.mode}
+        spacingZoomLocked={props.spacingZoomLocked}
         patternZoomLocked={props.patternZoomLocked}
         shortcutsEnabled={props.shortcutsEnabled}
         onModeChange={props.onModeChange}
+        onSpacingZoomLockedChange={props.onSpacingZoomLockedChange}
         onPatternZoomLockedChange={props.onPatternZoomLockedChange}
       />
     </DockSection>

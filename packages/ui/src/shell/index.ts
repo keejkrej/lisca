@@ -18,6 +18,16 @@ export { DialogSurface, type DialogSurfaceMaxWidth } from "./modal/dialog-surfac
 export { DockSection, type DockSectionFit, type DockSectionProps } from "./regions/dock-section";
 export { DockStrip } from "./regions/dock-strip";
 export { PanelSection, type PanelSectionProps } from "./regions/panel-section";
+export {
+  RailActionPair,
+  RailControlStack,
+  RailFieldPair,
+  RailSectionStack,
+  RailSidebar,
+  type RailActionPairProps,
+  type RailControlLayoutProps,
+  type RailSidebarProps,
+} from "./regions/rail-control-layout";
 export { SidebarStack, type SidebarStackProps } from "./regions/sidebar-stack";
 export { regionInsetClass, regionStackGapClass } from "./regions/region-spacing";
 export { dockToolLabel, dockToolShortcuts, type DockToolAction } from "@lisca/ui-headless/dock";

@@ -19,13 +19,9 @@ export function useStudioResultState(): StudioResultState {
   const workspacePath = useStudioStore((state) => state.workspacePath);
   const activeWorkspacePath = () => workspacePath().trim() || null;
   const annotateStore = useStudioAnnotateStore();
-  const {
-    setAnalysisProgress,
-    setAnalysisResultFiles,
-  } = annotateStore;
+  const { setAnalysisProgress, setAnalysisResultFiles } = annotateStore;
 
-  const resolvedWorkspacePath = () =>
-    annotateStore.workspacePath?.trim() || activeWorkspacePath();
+  const resolvedWorkspacePath = () => annotateStore.workspacePath?.trim() || activeWorkspacePath();
   const hasStoredResultFiles = () => annotateStore.analysisResultFiles.length > 0;
   const resultsQueryResult = useSelectedAtomValue(() => {
     if (hasStoredResultFiles()) return analysisResultsIdleAtom;

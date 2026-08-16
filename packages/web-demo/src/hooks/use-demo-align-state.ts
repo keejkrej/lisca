@@ -39,6 +39,8 @@ export type DemoAlignState = {
   setGrid: (next: AlignGridState | ((current: AlignGridState) => AlignGridState)) => void;
   toolMode: AlignGridToolMode;
   setToolMode: (mode: AlignGridToolMode) => void;
+  spacingZoomLocked: boolean;
+  setSpacingZoomLocked: (locked: boolean) => void;
   patternZoomLocked: boolean;
   setPatternZoomLocked: (locked: boolean) => void;
   manualExclusionEnabled: boolean;
@@ -88,6 +90,7 @@ export function useDemoAlignState(): Accessor<DemoAlignState> {
       frame,
       grid,
       toolMode,
+      spacingZoomLocked,
       patternZoomLocked,
       manualExclusionEnabled,
       excludedCells,
@@ -109,6 +112,8 @@ export function useDemoAlignState(): Accessor<DemoAlignState> {
       setGrid: (next) => demoAlignUiActions.setGrid(setState, next),
       toolMode,
       setToolMode: (mode) => demoAlignUiActions.setToolMode(setState, mode),
+      spacingZoomLocked,
+      setSpacingZoomLocked: (locked) => demoAlignUiActions.setSpacingZoomLocked(setState, locked),
       patternZoomLocked,
       setPatternZoomLocked: (locked) => demoAlignUiActions.setPatternZoomLocked(setState, locked),
       manualExclusionEnabled,

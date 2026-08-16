@@ -49,19 +49,20 @@ export function ShellPanelToggle(props: { side: "left" | "right"; class?: string
   );
 }
 
-export function ShellPortraitPanelControls() {
+export function ShellPortraitPanelControls(props: { placement?: "center" | "top" }) {
   const layout = useShellLayout();
+  const placementClass = () => (props.placement === "top" ? "top-4" : "top-1/2 -translate-y-1/2");
 
   return (
     <Show when={layout.isPortrait}>
       <>
         <Show when={layout.hasLeftPanels}>
-          <div class="pointer-events-none absolute left-3 top-1/2 z-30 -translate-y-1/2">
+          <div class={cn("pointer-events-none absolute left-3 z-30", placementClass())}>
             <ShellPanelToggle side="left" />
           </div>
         </Show>
         <Show when={layout.hasRightPanels}>
-          <div class="pointer-events-none absolute right-3 top-1/2 z-30 -translate-y-1/2">
+          <div class={cn("pointer-events-none absolute right-3 z-30", placementClass())}>
             <ShellPanelToggle side="right" />
           </div>
         </Show>
@@ -70,8 +71,9 @@ export function ShellPortraitPanelControls() {
   );
 }
 
-export function ShellPortraitPanelOverlays() {
+export function ShellPortraitPanelOverlays(props: { appearance?: "default" | "stage" }) {
   const layout = useShellLayout();
+  const stage = () => props.appearance === "stage";
 
   return (
     <Show when={layout.isPortrait}>
@@ -88,14 +90,18 @@ export function ShellPortraitPanelOverlays() {
           <aside
             aria-hidden={!layout.leftOpen}
             aria-label="Left panel"
+            inert={!layout.leftOpen}
             class={cn(
-              "absolute inset-y-0 left-0 z-50 flex max-w-[min(100%,20rem)] flex-col overflow-y-auto border-r border-border bg-background shadow-xl transition-transform duration-200 ease-out",
+              "absolute inset-y-0 left-0 z-50 flex max-w-[min(100%,20rem)] flex-col overflow-y-auto shadow-xl transition-transform duration-200 ease-out",
+              stage() ? "bg-muted" : "border-r border-border bg-background",
               layout.leftOpen ? "translate-x-0" : "-translate-x-full pointer-events-none",
             )}
           >
             <For each={layout.leftPanels}>
               {(panel) => (
-                <div class={cn("flex min-h-0 flex-1 flex-col", panel.widthClass ?? "w-56")}>{panel.content}</div>
+                <div class={cn("flex min-h-0 flex-1 flex-col", panel.widthClass ?? "w-56")}>
+                  {panel.content}
+                </div>
               )}
             </For>
           </aside>
@@ -104,14 +110,18 @@ export function ShellPortraitPanelOverlays() {
           <aside
             aria-hidden={!layout.rightOpen}
             aria-label="Right panel"
+            inert={!layout.rightOpen}
             class={cn(
-              "absolute inset-y-0 right-0 z-50 flex max-w-[min(100%,20rem)] flex-col overflow-y-auto border-l border-border bg-background shadow-xl transition-transform duration-200 ease-out",
+              "absolute inset-y-0 right-0 z-50 flex max-w-[min(100%,20rem)] flex-col overflow-y-auto shadow-xl transition-transform duration-200 ease-out",
+              stage() ? "bg-muted" : "border-l border-border bg-background",
               layout.rightOpen ? "translate-x-0" : "translate-x-full pointer-events-none",
             )}
           >
             <For each={layout.rightPanels}>
               {(panel) => (
-                <div class={cn("flex min-h-0 flex-1 flex-col", panel.widthClass ?? "w-56")}>{panel.content}</div>
+                <div class={cn("flex min-h-0 flex-1 flex-col", panel.widthClass ?? "w-56")}>
+                  {panel.content}
+                </div>
               )}
             </For>
           </aside>

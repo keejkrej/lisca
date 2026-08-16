@@ -3,7 +3,10 @@ import { Button } from "@lisca/ui/components";
 import type { DemoAlignState } from "@lisca/web-demo";
 import type { Accessor } from "solid-js";
 
-export function DemoAlignDownloadButton(props: { state: Accessor<DemoAlignState>; class?: string }) {
+export function DemoAlignDownloadButton(props: {
+  state: Accessor<DemoAlignState>;
+  class?: string;
+}) {
   return (
     <Button
       class={props.class ?? "w-full justify-center"}

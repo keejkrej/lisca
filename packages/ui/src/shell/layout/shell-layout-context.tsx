@@ -1,7 +1,9 @@
 import {
   initialShellLayoutPanelState,
   isPortraitViewport,
+  isStageOverlayViewport,
   shellLayoutReducer,
+  STAGE_SHELL_INLINE_MIN_WIDTH,
 } from "@lisca/ui-headless/shell-layout";
 import {
   createContext,
@@ -37,19 +39,26 @@ export type ShellLayoutContextValue = {
 
 const ShellLayoutContext = createContext<ShellLayoutContextValue>();
 
-function usePortraitViewport(): () => boolean {
+function useOverlayViewport(layout: "default" | "stage"): () => boolean {
+  const resolve = () =>
+    layout === "stage"
+      ? isStageOverlayViewport(window.innerWidth, window.innerHeight)
+      : isPortraitViewport(window.innerWidth, window.innerHeight);
   const [isPortrait, setIsPortrait] = createSignal(
-    typeof window === "undefined"
-      ? false
-      : isPortraitViewport(window.innerWidth, window.innerHeight),
+    typeof window === "undefined" ? false : resolve(),
   );
 
   onMount(() => {
-    const media = window.matchMedia("(max-aspect-ratio: 1/1)");
-    const update = () => setIsPortrait(media.matches);
+    const media = [window.matchMedia("(max-aspect-ratio: 1/1)")];
+    if (layout === "stage") {
+      media.push(window.matchMedia(`(max-width: ${STAGE_SHELL_INLINE_MIN_WIDTH - 1}px)`));
+    }
+    const update = () => setIsPortrait(resolve());
     update();
-    media.addEventListener("change", update);
-    onCleanup(() => media.removeEventListener("change", update));
+    for (const query of media) query.addEventListener("change", update);
+    onCleanup(() => {
+      for (const query of media) query.removeEventListener("change", update);
+    });
   });
 
   return isPortrait;
@@ -68,8 +77,11 @@ function removePanel(panels: ShellRegisteredPanel[], id: string): ShellRegistere
   return panels.filter((entry) => entry.id !== id);
 }
 
-export function ShellLayoutProvider(props: { children?: JSX.Element }) {
-  const isPortrait = usePortraitViewport();
+export function ShellLayoutProvider(props: {
+  children?: JSX.Element;
+  layout?: "default" | "stage";
+}) {
+  const isPortrait = useOverlayViewport(props.layout ?? "default");
   const [panelState, setPanelState] = createSignal(initialShellLayoutPanelState);
 
   const dispatchPanel = (action: Parameters<typeof shellLayoutReducer>[1]) => {

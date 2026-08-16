@@ -34,10 +34,7 @@ const buttonVariants = cva(
   },
 );
 
-type ButtonProps<T extends ValidComponent = "button"> = PolymorphicProps<
-  T,
-  ButtonRootProps<T>
-> &
+type ButtonProps<T extends ValidComponent = "button"> = PolymorphicProps<T, ButtonRootProps<T>> &
   VariantProps<typeof buttonVariants> &
   Pick<ComponentProps<T>, "class">;
 

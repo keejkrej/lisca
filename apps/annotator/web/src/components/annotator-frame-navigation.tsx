@@ -11,6 +11,7 @@ export function AnnotatorFrameNavigation() {
       position={nav.position}
       scan={nav.scan}
       selection={nav.selection}
+      sectionAppearance="rail"
       setSelection={nav.setSelection}
     />
   );

@@ -1,85 +1,177 @@
 import { useStudioAnnotatePage } from "./studio-annotate-page-context";
 
+function bindLive<Args extends unknown[], Result>(
+  callback: () => (...args: Args) => Result,
+): (...args: Args) => Result {
+  return (...args) => callback()(...args);
+}
+
 export function useStudioAnnotateNav() {
   const { state } = useStudioAnnotatePage();
   return {
-    scan: state.scan,
-    position: state.position,
-    selection: state.selection,
-    frame: state.frame,
-    contrast: state.contrast,
-    workspaceMissing: state.workspaceMissing,
-    changeSelection: state.changeSelection,
-    setSelection: state.setSelection,
-    setContrast: state.setContrast,
+    get scan() {
+      return state.scan;
+    },
+    get position() {
+      return state.position;
+    },
+    get selection() {
+      return state.selection;
+    },
+    get frame() {
+      return state.frame;
+    },
+    get contrast() {
+      return state.contrast;
+    },
+    get workspaceMissing() {
+      return state.workspaceMissing;
+    },
+    changeSelection: bindLive(() => state.changeSelection),
+    setSelection: bindLive(() => state.setSelection),
+    setContrast: bindLive(() => state.setContrast),
   };
 }
 
 export function useStudioAnnotateCanvas() {
   const { state } = useStudioAnnotatePage();
   return {
-    frame: state.frame,
-    labels: state.labels,
-    tool: state.tool,
-    activeLabelId: state.activeLabelId,
-    brushSize: state.brushSize,
-    overlayOpacity: state.overlayOpacity,
-    annotation: state.annotation,
-    canEditSegmentation: state.canEditSegmentation,
-    canvasToasts: state.canvasToasts,
+    get frame() {
+      return state.frame;
+    },
+    get labels() {
+      return state.labels;
+    },
+    get tool() {
+      return state.tool;
+    },
+    get activeLabelId() {
+      return state.activeLabelId;
+    },
+    get brushSize() {
+      return state.brushSize;
+    },
+    get overlayOpacity() {
+      return state.overlayOpacity;
+    },
+    get annotation() {
+      return state.annotation;
+    },
+    get canEditSegmentation() {
+      return state.canEditSegmentation;
+    },
+    get canvasToasts() {
+      return state.canvasToasts;
+    },
   };
 }
 
 export function useStudioAnnotateDock() {
   const { state } = useStudioAnnotatePage();
-  const shortcutsEnabled =
-    state.mode === "segmentation" && state.canEditSegmentation && !state.labelDialogOpen;
 
   return {
-    mode: state.mode,
-    tool: state.tool,
-    request: state.request,
-    canSave: state.canSave,
-    saving: state.saving,
-    shortcutsEnabled,
-    scanLoading: state.scanLoading,
-    scan: state.scan,
-    frameLoading: state.frameLoading,
-    workspaceMissing: state.workspaceMissing,
-    analysisBusy: Boolean(
-      state.analysisProgress &&
-      (state.analysisProgress.status === "queued" || state.analysisProgress.status === "running"),
-    ),
-    setTool: state.setTool,
-    handleSave: state.handleSave,
-    shuffleSelection: state.shuffleSelection,
-    requestContinueToAnalysis: state.requestContinueToAnalysis,
+    get mode() {
+      return state.mode;
+    },
+    get tool() {
+      return state.tool;
+    },
+    get request() {
+      return state.request;
+    },
+    get canSave() {
+      return state.canSave;
+    },
+    get saving() {
+      return state.saving;
+    },
+    get shortcutsEnabled() {
+      return state.mode === "segmentation" && state.canEditSegmentation && !state.labelDialogOpen;
+    },
+    get scanLoading() {
+      return state.scanLoading;
+    },
+    get scan() {
+      return state.scan;
+    },
+    get frameLoading() {
+      return state.frameLoading;
+    },
+    get workspaceMissing() {
+      return state.workspaceMissing;
+    },
+    get analysisBusy() {
+      return Boolean(
+        state.analysisProgress &&
+        (state.analysisProgress.status === "queued" || state.analysisProgress.status === "running"),
+      );
+    },
+    setTool: bindLive(() => state.setTool),
+    handleSave: bindLive(() => state.handleSave),
+    get canGoToNextSite() {
+      return state.canGoToNextSite;
+    },
+    goToNextSite: bindLive(() => state.goToNextSite),
+    shuffleSelection: bindLive(() => state.shuffleSelection),
+    requestContinueToAnalysis: bindLive(() => state.requestContinueToAnalysis),
   };
 }
 
 export function useStudioAnnotateLabels() {
   const { state } = useStudioAnnotatePage();
   return {
-    labels: state.labels,
-    mode: state.mode,
-    overlayOpacity: state.overlayOpacity,
-    brushSize: state.brushSize,
-    activeLabelId: state.activeLabelId,
-    annotation: state.annotation,
-    canEdit: state.canEdit,
-    scanLoading: state.scanLoading,
-    frameLoading: state.frameLoading,
-    annotationLoading: state.annotationLoading,
-    scanError: state.scanError,
-    frameError: state.frameError,
-    annotationError: state.annotationError,
-    saveError: state.saveError,
-    workspacePath: state.workspacePath,
-    frame: state.frame,
-    setMode: state.setMode,
-    setOverlayOpacity: state.setOverlayOpacity,
-    setBrushSize: state.setBrushSize,
-    setActiveLabelId: state.setActiveLabelId,
+    get labels() {
+      return state.labels;
+    },
+    get mode() {
+      return state.mode;
+    },
+    get overlayOpacity() {
+      return state.overlayOpacity;
+    },
+    get brushSize() {
+      return state.brushSize;
+    },
+    get activeLabelId() {
+      return state.activeLabelId;
+    },
+    get annotation() {
+      return state.annotation;
+    },
+    get canEdit() {
+      return state.canEdit;
+    },
+    get scanLoading() {
+      return state.scanLoading;
+    },
+    get frameLoading() {
+      return state.frameLoading;
+    },
+    get annotationLoading() {
+      return state.annotationLoading;
+    },
+    get scanError() {
+      return state.scanError;
+    },
+    get frameError() {
+      return state.frameError;
+    },
+    get annotationError() {
+      return state.annotationError;
+    },
+    get saveError() {
+      return state.saveError;
+    },
+    get workspacePath() {
+      return state.workspacePath;
+    },
+    get frame() {
+      return state.frame;
+    },
+    setMode: bindLive(() => state.setMode),
+    setOverlayOpacity: bindLive(() => state.setOverlayOpacity),
+    setBrushSize: bindLive(() => state.setBrushSize),
+    setActiveLabelId: bindLive(() => state.setActiveLabelId),
     openLabelDialog: () => {
       state.setLabelError(null);
       state.setLabelDialogOpen(true);
@@ -90,12 +182,22 @@ export function useStudioAnnotateLabels() {
 export function useStudioAnnotateShell() {
   const { state } = useStudioAnnotatePage();
   return {
-    workspacePath: state.workspacePath,
-    labelDialogOpen: state.labelDialogOpen,
-    labels: state.labels,
-    labelError: state.labelError,
-    saveLabelsPending: state.saveLabelsPending,
-    setLabelDialogOpen: state.setLabelDialogOpen,
-    handleSaveLabels: state.handleSaveLabels,
+    get workspacePath() {
+      return state.workspacePath;
+    },
+    get labelDialogOpen() {
+      return state.labelDialogOpen;
+    },
+    get labels() {
+      return state.labels;
+    },
+    get labelError() {
+      return state.labelError;
+    },
+    get saveLabelsPending() {
+      return state.saveLabelsPending;
+    },
+    setLabelDialogOpen: bindLive(() => state.setLabelDialogOpen),
+    handleSaveLabels: bindLive(() => state.handleSaveLabels),
   };
 }

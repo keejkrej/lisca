@@ -14,6 +14,9 @@ export function useStudioAlignCanvas() {
     get toolMode() {
       return state.toolMode;
     },
+    get spacingZoomLocked() {
+      return state.spacingZoomLocked;
+    },
     get patternZoomLocked() {
       return state.patternZoomLocked;
     },
@@ -43,6 +46,7 @@ export function useStudioAlignCanvas() {
     },
     setGrid: state.setGrid,
     setToolMode: state.setToolMode,
+    setSpacingZoomLocked: state.setSpacingZoomLocked,
     setPatternZoomLocked: state.setPatternZoomLocked,
     setManualExclusionEnabled: state.setManualExclusionEnabled,
     setExcludedCellsForCurrentPosition: (cells: Iterable<AlignGridCellCoord>) =>

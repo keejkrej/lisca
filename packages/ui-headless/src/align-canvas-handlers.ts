@@ -18,6 +18,7 @@ export type AlignCanvasPointerEvent = {
   pointerType: string;
   button: number;
   buttons: number;
+  altKey?: boolean;
   clientX: number;
   clientY: number;
   framePoint: AlignCanvasFramePoint | null;
@@ -31,6 +32,7 @@ export type UseAlignCanvasGridHandlersOptions = {
   grid: AlignGridState;
   setGrid: (grid: AlignGridState) => void;
   toolMode: AlignGridToolMode;
+  spacingZoomLocked?: boolean;
   patternZoomLocked?: boolean;
   disabled?: boolean;
   /** Called when the in-flight preview grid changes; canvas should redraw locally. */
@@ -43,6 +45,7 @@ export type AlignCanvasGridHandlers = {
   handlePointerDown: (event: AlignCanvasPointerEvent) => void;
   handlePointerMove: (event: AlignCanvasPointerEvent) => void;
   handlePointerEnd: (event: AlignCanvasPointerEvent) => void;
+  handlePointerCancel: (event: AlignCanvasPointerEvent) => void;
 };
 
 export function useAlignCanvasGridHandlers(
@@ -58,10 +61,13 @@ export function useAlignCanvasGridHandlers(
     const {
       disabled = false,
       grid,
+      spacingZoomLocked = false,
       patternZoomLocked = false,
       toolMode,
     } = options();
     if (disabled || !event.viewport || !grid.enabled) return;
+    if (toolMode === "magnifier") return;
+    if (spacingZoomLocked && toolMode === "zoom-spacing") return;
     if (patternZoomLocked && toolMode === "zoom-pattern") return;
     if (event.pointerType === "mouse" && event.button !== 0) {
       event.preventDefault();
@@ -93,12 +99,21 @@ export function useAlignCanvasGridHandlers(
     notifyPreviewChange();
     event.releasePointer();
   };
+  const handlePointerCancel = (event: AlignCanvasPointerEvent) => {
+    if (gestureRef.current?.pointerId !== event.pointerId) return;
+    gestureRef.current = null;
+    previewGridRef.current = null;
+    setDragging(false);
+    notifyPreviewChange();
+    event.releasePointer();
+  };
   return {
     previewGridRef,
     dragging,
     handlePointerDown,
     handlePointerMove,
     handlePointerEnd,
+    handlePointerCancel,
   };
 }
 
@@ -107,6 +122,7 @@ export function cursorForAlignTool(
   gridEnabled: boolean,
   dragging: boolean,
 ) {
+  if (toolMode === "magnifier") return "zoom-in";
   if (!gridEnabled) return "default";
   if (dragging) return "grabbing";
   if (toolMode === "pan") return "grab";

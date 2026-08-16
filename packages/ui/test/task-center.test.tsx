@@ -111,7 +111,10 @@ function deferred<T>() {
   return { promise, resolve };
 }
 
-function renderTaskCenter(gatewayOverrides: Partial<TaskCenterGateway> = {}) {
+function renderTaskCenter(
+  gatewayOverrides: Partial<TaskCenterGateway> = {},
+  appearance?: "button" | "status-link",
+) {
   let handlers:
     | {
         onSnapshot: (snapshot: readonly OperationSummary[]) => void;
@@ -132,6 +135,7 @@ function renderTaskCenter(gatewayOverrides: Partial<TaskCenterGateway> = {}) {
       <button type="button">Underlying workflow</button>
       <input aria-label="Current edit" />
       <TaskCenter
+        appearance={appearance}
         gateway={gateway}
         subscribe={(next) => {
           handlers = next;
@@ -155,6 +159,25 @@ afterEach(() => {
 Object.defineProperty(window, "scrollTo", { value: vi.fn(), writable: true });
 
 describe("Task Center dialog", () => {
+  it("offers an opt-in quiet status link with a running-operation badge", () => {
+    const view = renderTaskCenter({}, "status-link");
+    const trigger = view.getByRole("button", { name: "Tasks, 0 active" });
+
+    expect(trigger.dataset.taskCenterAppearance).toBe("status-link");
+    expect(trigger.textContent).toBe("Tasks");
+    expect(trigger.querySelector('[data-slot="task-badge"]')).toBeNull();
+
+    view.snapshot([summary("running", 1)]);
+
+    expect(trigger.textContent).toBe("Tasks1");
+    expect(trigger.querySelector('[data-slot="task-badge"]')?.textContent).toBe("1");
+
+    view.snapshot([summary("completed", 2)]);
+
+    expect(trigger.textContent).toBe("Tasks");
+    expect(trigger.querySelector('[data-slot="task-badge"]')).toBeNull();
+  });
+
   it("opens modally and restores trigger focus after close, Escape, and backdrop dismiss", async () => {
     history.replaceState(null, "", "/align?position=7");
     const originalUrl = location.href;
@@ -213,7 +236,11 @@ describe("Task Center dialog", () => {
     fireEvent.click(screen.getByRole("button", { name: /Collapse Crop ROI/ }));
     fireEvent.click(screen.getByRole("button", { name: /Expand Crop ROI/ }));
     third.resolve(detail("failed", 3));
-    expect(await screen.findByRole("button", { name: /Expand Crop ROI, Failed|Collapse Crop ROI, Failed/ })).toBeTruthy();
+    expect(
+      await screen.findByRole("button", {
+        name: /Expand Crop ROI, Failed|Collapse Crop ROI, Failed/,
+      }),
+    ).toBeTruthy();
   });
 
   it("hides per-position progress when collapsed and shows it on each task when expanded", async () => {
@@ -233,9 +260,9 @@ describe("Task Center dialog", () => {
     first.resolve(detail("running", 1, [attempt("running")]));
     await screen.findByRole("progressbar", { name: "Pos4 roiframe progress" });
     expect(
-      screen.getByRole("progressbar", { name: "Pos4 roiframe progress" }).getAttribute(
-        "aria-valuenow",
-      ),
+      screen
+        .getByRole("progressbar", { name: "Pos4 roiframe progress" })
+        .getAttribute("aria-valuenow"),
     ).toBe("1200");
     expect(screen.getAllByRole("button", { name: "Stop" })).toHaveLength(1);
 

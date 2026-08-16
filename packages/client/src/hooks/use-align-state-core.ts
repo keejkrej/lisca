@@ -40,6 +40,8 @@ export type AlignState = {
   setGrid: (next: AlignGridState | ((current: AlignGridState) => AlignGridState)) => void;
   toolMode: AlignGridToolMode;
   setToolMode: (mode: AlignGridToolMode) => void;
+  spacingZoomLocked: boolean;
+  setSpacingZoomLocked: (locked: boolean) => void;
   patternZoomLocked: boolean;
   setPatternZoomLocked: (locked: boolean) => void;
   manualExclusionEnabled: boolean;
@@ -121,6 +123,7 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): Accessor<AlignSt
     setContrast,
     setGrid,
     setToolMode,
+    setSpacingZoomLocked,
     setPatternZoomLocked,
     setManualExclusionEnabled,
     setExcludedCellsForCurrentPosition,
@@ -146,6 +149,8 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): Accessor<AlignSt
       grid: currentUi.grid,
       setGrid,
       toolMode: currentUi.toolMode,
+      setSpacingZoomLocked,
+      spacingZoomLocked: currentUi.spacingZoomLocked,
       setPatternZoomLocked,
       patternZoomLocked: currentUi.patternZoomLocked,
       setToolMode,

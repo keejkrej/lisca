@@ -1,11 +1,9 @@
-import { Field, FieldLabel, Input, Button } from "@lisca/ui/components";
+import { Button, Input } from "@lisca/ui/components";
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-solid";
 import { For } from "solid-js";
 import IconTrashRegular from "phosphor-icons-solid/IconTrashRegular";
 
 import { studioWizardActions, studioWizardAtom } from "../state/studio-store";
-
-const ROW = "flex min-h-[80px] w-full flex-col gap-2.5 p-2.5";
 
 export function BasicInfoStep2() {
   const wizard = useAtomValue(studioWizardAtom);
@@ -20,40 +18,45 @@ export function BasicInfoStep2() {
   const samples = () => wizard().samples;
 
   return (
-    <div class="flex w-full min-w-0 flex-col gap-2.5">
-      <div class={ROW}>
-        <Field class="gap-2.5">
-          <FieldLabel class="text-xl font-medium">Samples</FieldLabel>
-          <p class="text-sm text-muted-foreground">
-            Each row is one condition: name, position range, and mask vs signal channels.
-          </p>
-          <div class="mt-0 flex w-full min-w-0 flex-col gap-2 overflow-y-auto max-h-[60vh]">
-            <For each={samples()}>
-              {(row, index) => (
-                <SampleCard
-                  row={row}
-                  onChange={(patch) => updateSample(index(), patch)}
-                  onRemove={() => removeSample(index())}
-                />
-              )}
-            </For>
-          </div>
-          <Button
-            class="w-full justify-center"
-            size="sm"
-            type="button"
-            variant="outline"
-            onClick={addSample}
-          >
-            Add sample
-          </Button>
-        </Field>
+    <section
+      aria-labelledby="studio-samples-title"
+      class="flex w-full max-w-[640px] min-w-0 flex-col gap-6"
+    >
+      <div class="flex flex-col gap-2">
+        <h1 class="text-2xl font-semibold leading-8 tracking-[-0.02em]" id="studio-samples-title">
+          Samples
+        </h1>
+        <p class="text-[13px] leading-[18px] text-muted-foreground">
+          Each row is one condition: name, position range, and mask vs signal channels.
+        </p>
       </div>
-    </div>
+      <div class="w-full min-w-0 border-y border-border">
+        <For each={samples()}>
+          {(row, index) => (
+            <SampleCard
+              index={index()}
+              row={row}
+              onChange={(patch) => updateSample(index(), patch)}
+              onRemove={() => removeSample(index())}
+            />
+          )}
+        </For>
+      </div>
+      <Button
+        class="h-8 w-full justify-center rounded-full"
+        size="sm"
+        type="button"
+        variant="outline"
+        onClick={addSample}
+      >
+        Add sample
+      </Button>
+    </section>
   );
 }
 
 function SampleCard(props: {
+  index: number;
   row: {
     slideChannel: string;
     name: string;
@@ -73,75 +76,99 @@ function SampleCard(props: {
   onRemove: () => void;
 }) {
   return (
-    <div class="rounded-lg border border-border p-3">
-      <div class="flex flex-col gap-2.5">
-        <div class="flex flex-row items-center gap-2.5">
+    <article
+      aria-label={`Sample ${props.index + 1}`}
+      class="flex min-w-0 flex-col gap-4 border-b border-border py-5 last:border-b-0"
+    >
+      <div class="grid min-w-0 grid-cols-[4.5rem_minmax(0,1fr)_2rem] items-end gap-2.5">
+        <label class="flex min-w-0 flex-col gap-1.5">
+          <span class="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+            Slide
+          </span>
           <Input
             aria-label="Slide channel"
-            class="w-16 shrink-0 text-center"
+            class="h-8 w-full rounded-full px-2 text-center font-mono text-[13px]"
             inputMode="numeric"
-            placeholder="slide"
+            placeholder="0"
             value={props.row.slideChannel}
-            onChange={(e) => props.onChange({ slideChannel: e.currentTarget.value })}
+            onChange={(event) => props.onChange({ slideChannel: event.currentTarget.value })}
           />
+        </label>
+        <label class="flex min-w-0 flex-col gap-1.5">
+          <span class="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+            Name
+          </span>
           <Input
             aria-label="Name"
-            class="min-w-0 flex-1"
+            class="h-8 min-w-0 rounded-full px-3 text-[13px]"
             placeholder="Sample name (e.g. eGFP, 100nM STS)"
             value={props.row.name}
-            onChange={(e) => props.onChange({ name: e.currentTarget.value })}
+            onChange={(event) => props.onChange({ name: event.currentTarget.value })}
           />
-          <Button
-            class="shrink-0"
-            size="icon-sm"
-            type="button"
-            variant="ghost"
-            onClick={props.onRemove}
-            aria-label="Remove sample"
-          >
-            <IconTrashRegular />
-          </Button>
-        </div>
-        <div class="flex flex-row items-center gap-2.5">
-          <span class="text-muted-foreground text-sm shrink-0">Positions</span>
+        </label>
+        <Button
+          aria-label="Remove sample"
+          class="size-8 shrink-0 rounded-full"
+          size="icon-sm"
+          type="button"
+          variant="ghost"
+          onClick={props.onRemove}
+        >
+          <IconTrashRegular />
+        </Button>
+      </div>
+      <div class="grid min-w-0 grid-cols-2 gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_5rem_minmax(0,1fr)]">
+        <SampleField label="Position start">
           <Input
             aria-label="Position start"
-            class="w-20 shrink-0 text-center"
+            class="h-8 w-full rounded-full px-3 text-center font-mono text-[13px]"
             inputMode="numeric"
             placeholder="start"
             value={props.row.positionStart}
-            onChange={(e) => props.onChange({ positionStart: e.currentTarget.value })}
+            onChange={(event) => props.onChange({ positionStart: event.currentTarget.value })}
           />
-          <span class="text-muted-foreground text-sm">:</span>
+        </SampleField>
+        <SampleField label="Position end">
           <Input
             aria-label="Position finish"
-            class="w-20 shrink-0 text-center"
+            class="h-8 w-full rounded-full px-3 text-center font-mono text-[13px]"
             inputMode="numeric"
             placeholder="end"
             value={props.row.positionFinish}
-            onChange={(e) => props.onChange({ positionFinish: e.currentTarget.value })}
+            onChange={(event) => props.onChange({ positionFinish: event.currentTarget.value })}
           />
-        </div>
-        <div class="flex flex-row items-center gap-2.5">
-          <span class="text-muted-foreground text-sm shrink-0">Mask</span>
+        </SampleField>
+        <SampleField label="Mask">
           <Input
             aria-label="Mask channel"
-            class="w-20 shrink-0 text-center"
+            class="h-8 w-full rounded-full px-2 text-center font-mono text-[13px]"
             inputMode="numeric"
-            placeholder="mask"
+            placeholder="0"
             value={props.row.mask}
-            onChange={(e) => props.onChange({ mask: e.currentTarget.value })}
+            onChange={(event) => props.onChange({ mask: event.currentTarget.value })}
           />
-          <span class="text-muted-foreground text-sm shrink-0">Signal</span>
+        </SampleField>
+        <SampleField label="Signal">
           <Input
             aria-label="Signal channels"
-            class="min-w-0 flex-1 text-center"
+            class="h-8 w-full rounded-full px-3 text-center font-mono text-[13px]"
             placeholder="1 or 1,2"
             value={props.row.signal}
-            onChange={(e) => props.onChange({ signal: e.currentTarget.value })}
+            onChange={(event) => props.onChange({ signal: event.currentTarget.value })}
           />
-        </div>
+        </SampleField>
       </div>
-    </div>
+    </article>
+  );
+}
+
+function SampleField(props: { label: string; children: import("solid-js").JSX.Element }) {
+  return (
+    <label class="flex min-w-0 flex-col gap-1.5">
+      <span class="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+        {props.label}
+      </span>
+      {props.children}
+    </label>
   );
 }

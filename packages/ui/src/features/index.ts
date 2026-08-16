@@ -116,6 +116,7 @@ export {
   HostFilePickerDialog,
   type HostFilePickerDialogProps,
 } from "./host/host-file-picker-dialog";
+export { PathPickerField, type PathPickerFieldProps } from "./host/path-picker-field";
 export type { HostFilePickerMode, HostFilePickerOperations } from "@lisca/utils";
 export {
   LabelCreationDialog,

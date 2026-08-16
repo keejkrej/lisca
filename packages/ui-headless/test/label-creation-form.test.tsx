@@ -10,9 +10,11 @@ import {
   validateLabelDrafts,
 } from "../src/label-creation-form";
 
-function mountLabelCreationForm(
-  initial: { open: boolean; labels: AnnotationLabel[]; error: string | null },
-) {
+function mountLabelCreationForm(initial: {
+  open: boolean;
+  labels: AnnotationLabel[];
+  error: string | null;
+}) {
   const [props, setProps] = createSignal(initial);
   let result!: ReturnType<typeof useLabelCreationForm>;
   render(() => {

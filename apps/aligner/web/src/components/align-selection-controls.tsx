@@ -68,6 +68,7 @@ export function AlignSelectionControls() {
         frame={state().frame}
         grid={state().grid}
         manualExclusionEnabled={state().manualExclusionEnabled}
+        sectionAppearance="rail"
         smartExcludeLoading={smartExclude.active()}
         visibleCounts={state().visibleCounts}
         variationExcludeLoading={varExclude.active()}

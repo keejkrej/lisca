@@ -22,6 +22,7 @@ export type ContrastControlProps = {
   sectionDescription?: string;
   sectionClassName?: string;
   sectionContentClassName?: string;
+  sectionAppearance?: "framed" | "rail";
   "aria-label"?: string;
   role?: JSX.AriaAttributes["role"];
 };
@@ -63,6 +64,7 @@ export function ContrastControl(props: ContrastControlProps) {
       role={props.role}
       sectionClassName={props.sectionClassName}
       sectionContentClassName={props.sectionContentClassName}
+      sectionAppearance={props.sectionAppearance}
       sectionDescription={props.sectionDescription}
       sectionTitle={props.sectionTitle}
       title={props.title}
@@ -89,6 +91,7 @@ function ContrastControlBody(props: {
   sectionDescription?: string;
   sectionClassName?: string;
   sectionContentClassName?: string;
+  sectionAppearance?: "framed" | "rail";
   "aria-label"?: string;
   role?: JSX.AriaAttributes["role"];
 }) {
@@ -106,6 +109,7 @@ function ContrastControlBody(props: {
       when={domainOk()}
       fallback={
         <Section
+          appearance={props.sectionAppearance}
           aria-label={props["aria-label"]}
           contentClassName={props.sectionContentClassName}
           description={props.sectionDescription}
@@ -120,6 +124,7 @@ function ContrastControlBody(props: {
       }
     >
       <Section
+        appearance={props.sectionAppearance}
         aria-label={props["aria-label"]}
         contentClassName={props.sectionContentClassName}
         description={props.sectionDescription}
@@ -127,12 +132,23 @@ function ContrastControlBody(props: {
         class={props.sectionClassName}
         role={props.role}
       >
-        <div class={cn("flex w-full min-w-0 flex-col gap-3", props.class)}>
+        <div
+          class={cn(
+            "flex w-full min-w-0 flex-col",
+            props.sectionAppearance === "rail" ? "gap-2" : "gap-3",
+            props.class,
+          )}
+        >
           <Show when={props.title?.trim()}>
             <span class="shrink-0 font-medium text-foreground text-sm">{props.title!.trim()}</span>
           </Show>
 
-          <div class="flex w-full min-w-0 flex-col gap-3">
+          <div
+            class={cn(
+              "flex w-full min-w-0 flex-col",
+              props.sectionAppearance === "rail" ? "gap-2" : "gap-3",
+            )}
+          >
             <Button
               type="button"
               size="sm"
@@ -144,15 +160,24 @@ function ContrastControlBody(props: {
               Auto Range
             </Button>
 
-            <div class="flex min-h-0 min-w-0 flex-col gap-3">
+            <div
+              class={cn(
+                "flex min-h-0 min-w-0 flex-col",
+                props.sectionAppearance === "rail" ? "gap-2" : "gap-3",
+              )}
+            >
               <Field class="min-w-0 w-full">
                 <div class="flex w-full items-center justify-between gap-2">
                   <FieldLabel class="w-auto">Min</FieldLabel>
-                  <span class="shrink-0 font-normal text-muted-foreground/80 tabular-nums text-sm">
+                  <span
+                    class="shrink-0 font-normal text-foreground tabular-nums text-sm"
+                    data-slot="field-value"
+                  >
                     {String(Math.round(displayed().min))}
                   </span>
                 </div>
                 <Slider
+                  aria-label="Minimum contrast"
                   class="w-full pt-0.5"
                   disabled={props.disabled}
                   max={props.domainMax}
@@ -177,11 +202,15 @@ function ContrastControlBody(props: {
               <Field class="min-w-0 w-full">
                 <div class="flex w-full items-center justify-between gap-2">
                   <FieldLabel class="w-auto">Max</FieldLabel>
-                  <span class="shrink-0 font-normal text-muted-foreground/80 tabular-nums text-sm">
+                  <span
+                    class="shrink-0 font-normal text-foreground tabular-nums text-sm"
+                    data-slot="field-value"
+                  >
                     {String(Math.round(displayed().max))}
                   </span>
                 </div>
                 <Slider
+                  aria-label="Maximum contrast"
                   class="w-full pt-0.5"
                   disabled={props.disabled}
                   max={props.domainMax}

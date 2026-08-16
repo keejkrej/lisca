@@ -51,10 +51,7 @@ type StudioState = StudioWizardData & {
   setDataSourceKind: (kind: StudioDataSourceKind) => void;
   patchWizard: (patch: Partial<StudioWizardData>) => void;
   setAnalysis: (patch: Partial<NonNullable<StudioWizardData["analysis"]>>) => void;
-  updateSample: (
-    index: number,
-    patch: Partial<StudioWizardData["samples"][number]>,
-  ) => void;
+  updateSample: (index: number, patch: Partial<StudioWizardData["samples"][number]>) => void;
   addSample: () => void;
   removeSample: (index: number) => void;
   setBasicInfoSavedSnapshot: (snapshot: string | null) => void;
@@ -73,10 +70,8 @@ function useStudioStoreApi(): Accessor<StudioState> {
     studioWizardActions.patchWizard(setState, patch);
   const setAnalysis = (patch: Partial<NonNullable<StudioWizardData["analysis"]>>) =>
     studioWizardActions.setAnalysis(setState, patch);
-  const updateSample = (
-    index: number,
-    patch: Partial<StudioWizardData["samples"][number]>,
-  ) => studioWizardActions.updateSample(setState, index, patch);
+  const updateSample = (index: number, patch: Partial<StudioWizardData["samples"][number]>) =>
+    studioWizardActions.updateSample(setState, index, patch);
   const addSample = () => studioWizardActions.addSample(setState);
   const removeSample = (index: number) => studioWizardActions.removeSample(setState, index);
   const setBasicInfoSavedSnapshot = (basicInfoSavedSnapshot: string | null) =>

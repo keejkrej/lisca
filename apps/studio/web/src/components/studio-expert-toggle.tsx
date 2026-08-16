@@ -13,15 +13,11 @@ export function StudioExpertToggle() {
   };
 
   return (
-    <label class="flex cursor-pointer items-center gap-2 py-1.5 text-sm">
-      <span>Expert</span>
-      <Switch
-        aria-label="Expert mode"
-        checked={expertMode()}
-        id="studio-expert-mode"
-        size="sm"
-        onChange={setPressed}
-      />
+    <label class="flex h-7 cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+      <span>
+        Expert<span class="sr-only"> mode</span>
+      </span>
+      <Switch checked={expertMode()} id="studio-expert-mode" size="sm" onChange={setPressed} />
     </label>
   );
 }

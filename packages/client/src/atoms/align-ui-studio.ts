@@ -39,7 +39,7 @@ export type StudioAlignStoreState = Omit<AlignUiState, "cropProgress">;
 
 export type StudioAlignSessionPersist = Pick<
   StudioAlignStoreState,
-  "workspacePath" | "source" | "selection"
+  "workspacePath" | "source" | "selection" | "spacingZoomLocked" | "patternZoomLocked"
 >;
 
 export function readStudioAlignSession(): StudioAlignSessionPersist | null {
@@ -54,6 +54,8 @@ export function readStudioAlignSession(): StudioAlignSessionPersist | null {
       time: 0,
       z: 0,
     },
+    spacingZoomLocked: session.spacingZoomLocked ?? true,
+    patternZoomLocked: session.patternZoomLocked ?? true,
   };
 }
 
@@ -77,6 +79,7 @@ type StudioAlignStoreActions = {
   setContrast: (contrast: ContrastWindow | null) => void;
   setGrid: (next: StateUpdater<AlignGridState>) => void;
   setToolMode: (mode: AlignGridToolMode) => void;
+  setSpacingZoomLocked: (locked: boolean) => void;
   setPatternZoomLocked: (locked: boolean) => void;
   setExcludedCellsForCurrentPosition: (cells: Iterable<AlignGridCellCoord>) => void;
   setFrameLoading: (frameLoading: boolean) => void;
@@ -111,6 +114,8 @@ export function useStudioAlignStore() {
   const setGrid = (next: StateUpdater<AlignGridState>) =>
     studioAlignUiActions.setGrid(setState, next);
   const setToolMode = (mode: AlignGridToolMode) => studioAlignUiActions.setToolMode(setState, mode);
+  const setSpacingZoomLocked = (locked: boolean) =>
+    studioAlignUiActions.setSpacingZoomLocked(setState, locked);
   const setPatternZoomLocked = (locked: boolean) =>
     studioAlignUiActions.setPatternZoomLocked(setState, locked);
   const setExcludedCellsForCurrentPosition = (cells: Iterable<AlignGridCellCoord>) =>
@@ -135,6 +140,7 @@ export function useStudioAlignStore() {
       setContrast,
       setGrid,
       setToolMode,
+      setSpacingZoomLocked,
       setPatternZoomLocked,
       setExcludedCellsForCurrentPosition,
       setFrameLoading,

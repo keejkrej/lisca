@@ -1,5 +1,5 @@
 import type { Component } from "solid-js";
-import { createEffect, For, onCleanup } from "solid-js";
+import { createEffect, createSignal, For, onCleanup } from "solid-js";
 import { Button } from "@lisca/ui/components";
 import {
   ANNOTATION_TOOL_DEFINITIONS,
@@ -10,7 +10,9 @@ import {
 } from "@lisca/utils";
 import { resolveKeyboardShortcut, type KeyboardShortcut } from "@lisca/utils";
 import { dockToolLabel, dockToolShortcuts, type DockToolAction } from "@lisca/ui/shell";
+import { RailControlStack } from "../../shell/regions/rail-control-layout";
 import IconLassoRegular from "phosphor-icons-solid/IconLassoRegular";
+import IconMagnifyingGlassRegular from "phosphor-icons-solid/IconMagnifyingGlassRegular";
 import IconPaintBrushRegular from "phosphor-icons-solid/IconPaintBrushRegular";
 import IconSparkleRegular from "phosphor-icons-solid/IconSparkleRegular";
 
@@ -20,18 +22,21 @@ const annotationToolIcons: Record<AnnotationToolFamily, PhosphorIcon> = {
   brush: IconPaintBrushRegular,
   lasso: IconLassoRegular,
   smart: IconSparkleRegular,
+  magnifier: IconMagnifyingGlassRegular,
 };
 
 export function buildAnnotationToolActions(
   tool: AnnotationTool,
   onToolChange: (tool: AnnotationTool) => void,
   disabled: boolean,
-  options?: { disableTool?: (tool: AnnotationTool) => boolean },
+  options?: { disableTool?: (tool: AnnotationTool) => boolean; viewable?: boolean },
 ): DockToolAction[] {
   return ANNOTATION_TOOL_DEFINITIONS.map(({ id, label }) => ({
     id,
     label,
-    disabled: disabled || (options?.disableTool?.(id) ?? false),
+    disabled:
+      (id === "magnifier" ? options?.viewable === false : disabled) ||
+      (options?.disableTool?.(id) ?? false),
     active: tool === id,
     onSelect: () => onToolChange(id),
   }));
@@ -95,15 +100,71 @@ export function AnnotationToolGrid(props: {
   toolActions: DockToolAction[];
   class?: string;
   shortcutsEnabled?: boolean;
+  layout?: "grid" | "rail";
 }) {
   const showShortcutLabels = () => props.shortcutsEnabled ?? true;
+  const [lastEditFamily, setLastEditFamily] =
+    createSignal<Exclude<AnnotationToolFamily, "magnifier">>("brush");
+  createEffect(() => {
+    const activeTool = (props.toolActions.find((action) => action.active)?.id ??
+      "brush") as AnnotationTool;
+    const family = annotationToolFamily(activeTool);
+    if (family !== "magnifier") setLastEditFamily(family);
+  });
+  const railActions = () => {
+    const activeTool = (props.toolActions.find((action) => action.active)?.id ??
+      "brush") as AnnotationTool;
+    const activeFamily = annotationToolFamily(activeTool);
+    const editFamily = activeFamily === "magnifier" ? lastEditFamily() : activeFamily;
+    const primaryIds: AnnotationTool[] = ["brush", "lasso", "smart"];
+    const eraseId = `${editFamily}-erase` as AnnotationTool;
+    const primary = primaryIds
+      .map((id) => props.toolActions.find((action) => action.id === id))
+      .filter((action): action is DockToolAction => Boolean(action));
+    const erase = props.toolActions.find((action) => action.id === eraseId);
+    const magnifier = props.toolActions.find((action) => action.id === "magnifier");
+    const editActions = erase ? [...primary, { ...erase, label: "Erase" }] : primary;
+    return magnifier ? [...editActions, magnifier] : editActions;
+  };
 
   useKeyboardShortcuts(
-    () => dockToolShortcuts(props.toolActions),
+    () => dockToolShortcuts(props.layout === "rail" ? railActions() : props.toolActions),
     () => ({
-      enabled: props.canEditTools && (props.shortcutsEnabled ?? true),
+      enabled: props.shortcutsEnabled ?? true,
     }),
   );
+
+  if (props.layout === "rail") {
+    return (
+      <RailControlStack aria-label="Annotation tool" class={props.class} role="toolbar">
+        <For each={railActions()}>
+          {(action, index) => {
+            const label = () =>
+              showShortcutLabels() ? dockToolLabel(action.label, index()) : action.label;
+            return (
+              <Button
+                aria-label={label()}
+                class="h-8 w-full min-w-0 justify-between rounded-full px-3 text-xs"
+                disabled={action.disabled}
+                size="sm"
+                title={label()}
+                type="button"
+                variant={action.active ? "default" : "outline"}
+                onClick={action.onSelect}
+              >
+                <span class="min-w-0 truncate">{action.label}</span>
+                {showShortcutLabels() ? (
+                  <kbd class="ml-auto flex size-4 shrink-0 items-center justify-center rounded-full bg-muted font-[inherit] font-medium text-[10px] text-muted-foreground">
+                    {index() + 1}
+                  </kbd>
+                ) : null}
+              </Button>
+            );
+          }}
+        </For>
+      </RailControlStack>
+    );
+  }
 
   return (
     <div
@@ -134,6 +195,18 @@ export function AnnotationToolGrid(props: {
           </div>
         )}
       </For>
+      {props.toolActions[6] ? (
+        <div class="w-full">
+          <AnnotationToolButton
+            action={props.toolActions[6]!}
+            label={
+              showShortcutLabels()
+                ? dockToolLabel(props.toolActions[6]!.label, 6)
+                : props.toolActions[6]!.label
+            }
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

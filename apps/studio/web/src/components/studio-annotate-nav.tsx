@@ -11,7 +11,7 @@ export function StudioAnnotateNav() {
       when={!nav.workspaceMissing}
       fallback={
         <div class="flex min-h-0 flex-col gap-2.5">
-          <p class="text-destructive text-sm">Choose a workspace in Basic info first.</p>
+          <p class="text-destructive text-sm">Choose a workspace on the Info step first.</p>
         </div>
       }
     >
@@ -20,6 +20,7 @@ export function StudioAnnotateNav() {
           changeSelection={nav.changeSelection}
           position={nav.position}
           scan={nav.scan}
+          sectionAppearance="rail"
           selection={nav.selection}
           setSelection={nav.setSelection}
         />
@@ -29,6 +30,7 @@ export function StudioAnnotateNav() {
           disabled={!nav.frame}
           frame={nav.frame}
           role="region"
+          sectionAppearance="rail"
           onContrastChange={nav.setContrast}
         />
       </div>

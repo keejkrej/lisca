@@ -6,16 +6,13 @@ import { createMemo, Show } from "solid-js";
 import { studioHostOperations } from "../api/studio-port";
 import { BasicInfoStep1 } from "../components/basic-info-step1";
 import { BasicInfoStep2 } from "../components/basic-info-step2";
-import { StudioInfoDock } from "../components/studio-info-dock";
+import { StudioInfoActions } from "../components/studio-info-dock";
 import { StudioLeft } from "../components/studio-left";
 import { StudioRightPanel } from "../components/studio-right-panel";
+import { StudioTopBar } from "../components/studio-top-bar";
 import { instructionForStep } from "../state/studio-routes";
 import { useStudioNavigate } from "../navigation/use-studio-navigate";
-import {
-  studioWizardActions,
-  studioWizardAtom,
-  type InfoStep,
-} from "../state/studio-store";
+import { studioWizardActions, studioWizardAtom, type InfoStep } from "../state/studio-store";
 
 export const Route = createFileRoute("/info")({
   component: InfoPage,
@@ -41,32 +38,36 @@ function InfoPage() {
   const back = () => {
     if (infoStep() > 1) {
       setInfoStep((infoStep() - 1) as InfoStep);
+      return;
     }
+    navigateTo("/assay");
   };
 
   return (
-    <AppShell>
+    <AppShell variant="stage">
       <AppShell.Body>
-        <AppShell.Left widthClass="w-60">
+        <AppShell.Left widthClass="w-64">
           <StudioLeft />
         </AppShell.Left>
         <AppShell.MainColumn>
+          <AppShell.TopBar>
+            <StudioTopBar />
+          </AppShell.TopBar>
           <AppShell.Main>
-            <div class="mx-auto flex min-h-full w-full min-w-0 max-w-[52rem] flex-col items-center justify-center px-4 py-6 md:px-[100px] md:py-10">
+            <AppShell.MainScroll contentClass="max-w-[52rem] items-center justify-center px-4 py-6 md:px-12 md:py-10">
               <Show when={infoStep() === 1}>
                 <BasicInfoStep1 hostPort={studioHostOperations} />
               </Show>
               <Show when={infoStep() === 2}>
                 <BasicInfoStep2 />
               </Show>
-            </div>
+            </AppShell.MainScroll>
           </AppShell.Main>
-          <AppShell.Dock>
-            <StudioInfoDock infoStep={infoStep()} onBack={back} onNext={next} />
-          </AppShell.Dock>
         </AppShell.MainColumn>
-        <AppShell.Right widthClass="w-60">
-          <StudioRightPanel instruction={() => instructionForStep(step())} />
+        <AppShell.Right widthClass="w-64">
+          <StudioRightPanel instruction={() => instructionForStep(step())}>
+            <StudioInfoActions onBack={back} onNext={next} />
+          </StudioRightPanel>
         </AppShell.Right>
       </AppShell.Body>
     </AppShell>

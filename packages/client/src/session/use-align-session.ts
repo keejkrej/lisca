@@ -77,6 +77,7 @@ export type AlignSessionActions = {
   setContrast: (contrast: ContrastWindow | null) => void;
   setGrid: (next: AlignGridState | ((current: AlignGridState) => AlignGridState)) => void;
   setToolMode: (mode: AlignGridToolMode) => void;
+  setSpacingZoomLocked: (locked: boolean) => void;
   setPatternZoomLocked: (locked: boolean) => void;
   setManualExclusionEnabled: (enabled: boolean) => void;
   setExcludedCellsForCurrentPosition: (cells: Iterable<AlignGridCellCoord>) => void;
@@ -184,6 +185,7 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
     setContrast: (contrast) => actions.setContrast(setUi, contrast),
     setGrid: (next) => actions.setGrid(setUi, next),
     setToolMode: (mode) => actions.setToolMode(setUi, mode),
+    setSpacingZoomLocked: (locked) => actions.setSpacingZoomLocked(setUi, locked),
     setPatternZoomLocked: (locked) => actions.setPatternZoomLocked(setUi, locked),
     setManualExclusionEnabled: (enabled) => actions.setManualExclusionEnabled(setUi, enabled),
     setExcludedCellsForCurrentPosition: (cells) =>

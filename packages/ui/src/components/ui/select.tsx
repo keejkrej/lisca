@@ -11,7 +11,7 @@ import {
   useSelectContext,
   Value,
 } from "@kobalte/core/select";
-import IconArrowsDownUpRegular from "phosphor-icons-solid/IconArrowsDownUpRegular";
+import IconCaretDownRegular from "phosphor-icons-solid/IconCaretDownRegular";
 import IconCheckRegular from "phosphor-icons-solid/IconCheckRegular";
 import type { ComponentProps, JSX, ValidComponent } from "solid-js";
 import { mergeProps, splitProps } from "solid-js";
@@ -93,7 +93,10 @@ const SelectTrigger = <T extends ValidComponent = "button">(rawProps: SelectTrig
       {...others}
     >
       {local.children}
-      <SelectPrimitive.Icon as={IconArrowsDownUpRegular} class="pointer-events-none z-select-trigger-icon" />
+      <SelectPrimitive.Icon
+        as={IconCaretDownRegular}
+        class="pointer-events-none z-select-trigger-icon text-foreground"
+      />
     </SelectPrimitive.Trigger>
   );
 };

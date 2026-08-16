@@ -55,6 +55,10 @@ export function StudioWorkSessionGate(props: { children?: JSX.Element }) {
 
   onMount(() => {
     const alignSession = readStudioAlignSession();
+    if (alignSession) {
+      studioAlignUiActions.setSpacingZoomLocked(setAlignUi, alignSession.spacingZoomLocked);
+      studioAlignUiActions.setPatternZoomLocked(setAlignUi, alignSession.patternZoomLocked);
+    }
     if (alignSession?.workspacePath) {
       workspace.setWorkspacePath(alignSession.workspacePath);
       void attachPendingRuns(alignSession.workspacePath);

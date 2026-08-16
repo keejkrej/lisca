@@ -9,6 +9,7 @@ export * from "./crop-frame";
 export * from "./navigation";
 export * from "./folder-source-parse";
 export * from "./frame-display";
+export * from "./frame-view";
 export * from "./contrast";
 export * from "./storage";
 export * from "./annotation-tools";

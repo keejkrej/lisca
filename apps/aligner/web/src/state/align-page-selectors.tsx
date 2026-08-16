@@ -1,4 +1,9 @@
-import type { AlignGridCellCoord, AlignGridState, AlignerSource, ContrastWindow } from "@lisca/contracts";
+import type {
+  AlignGridCellCoord,
+  AlignGridState,
+  AlignerSource,
+  ContrastWindow,
+} from "@lisca/contracts";
 import type { AlignGridToolMode } from "@lisca/utils";
 
 import type { AlignState } from "./use-align-state";
@@ -15,6 +20,9 @@ export function useAlignCanvas() {
     },
     get toolMode() {
       return state().toolMode;
+    },
+    get spacingZoomLocked() {
+      return state().spacingZoomLocked;
     },
     get patternZoomLocked() {
       return state().patternZoomLocked;
@@ -55,6 +63,7 @@ export function useAlignCanvas() {
     setGrid: (next: AlignGridState | ((current: AlignGridState) => AlignGridState)) =>
       state().setGrid(next),
     setToolMode: (mode: AlignGridToolMode) => state().setToolMode(mode),
+    setSpacingZoomLocked: (locked: boolean) => state().setSpacingZoomLocked(locked),
     setPatternZoomLocked: (locked: boolean) => state().setPatternZoomLocked(locked),
     setManualExclusionEnabled: (enabled: boolean) => state().setManualExclusionEnabled(enabled),
     setContrast: (contrast: ContrastWindow | null) => state().setContrast(contrast),

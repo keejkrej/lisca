@@ -9,14 +9,16 @@ import {
 import { ViewportCard } from "@lisca/ui/shell";
 import { createMemo } from "solid-js";
 
-import { useAlignCanvas } from "../state/align-page-selectors";
+import { useAlignCanvas, useAlignNav } from "../state/align-page-selectors";
 
 export function AlignerMain() {
   const canvas = useAlignCanvas();
+  const nav = useAlignNav();
   const previewRedrawRef = { current: null as (() => void) | null };
   const gridHandlers = useAlignCanvasGridHandlers(() => ({
     disabled: false,
     grid: canvas.grid,
+    spacingZoomLocked: canvas.spacingZoomLocked,
     patternZoomLocked: canvas.patternZoomLocked,
     setGrid: canvas.setGrid,
     toolMode: canvas.toolMode,
@@ -47,9 +49,9 @@ export function AlignerMain() {
     if (selectionHandlers.handlePointerEnd(event)) return;
     gridHandlers.handlePointerEnd(event);
   };
-  const handlePointerCancel: typeof gridHandlers.handlePointerEnd = (event) => {
+  const handlePointerCancel: typeof gridHandlers.handlePointerCancel = (event) => {
     if (selectionHandlers.handlePointerCancel(event)) return;
-    gridHandlers.handlePointerEnd(event);
+    gridHandlers.handlePointerCancel(event);
   };
   const visibleStatus = useCanvasTransientStatus(() => canvas.status);
   const activeToastStatus = createMemo(() =>
@@ -88,28 +90,46 @@ export function AlignerMain() {
           : "No frame loaded.",
   );
   const cursor = createMemo(() =>
-    canvas.manualExclusionEnabled || selectionHandlers.selecting()
-      ? "crosshair"
-      : cursorForAlignTool(canvas.toolMode, canvas.grid.enabled, gridHandlers.dragging()),
+    canvas.toolMode === "magnifier"
+      ? "zoom-in"
+      : canvas.manualExclusionEnabled || selectionHandlers.selecting()
+        ? "crosshair"
+        : cursorForAlignTool(canvas.toolMode, canvas.grid.enabled, gridHandlers.dragging()),
   );
+  const positionLabel = createMemo(() => {
+    const index = nav.scan?.positions.indexOf(nav.selection.pos) ?? -1;
+    const explicit = index >= 0 ? nav.scan?.positionLabels?.[index] : undefined;
+    return explicit?.trim() || String(nav.selection.pos).padStart(2, "0");
+  });
   return (
     <>
-      <ViewportCard>
-        <AlignCanvas
-          class="min-h-0 flex-1"
-          cursor={cursor()}
-          emptyText={emptyText()}
-          excludedCells={canvas.displayedExcludedCells}
-          frame={canvas.frame}
-          grid={canvas.grid}
-          previewGridRef={gridHandlers.previewGridRef}
-          previewRedrawRef={previewRedrawRef}
-          toasts={toasts()}
-          onVirtualPointerCancel={handlePointerCancel}
-          onVirtualPointerDown={handlePointerDown}
-          onVirtualPointerMove={handlePointerMove}
-          onVirtualPointerUp={handlePointerEnd}
-        />
+      <ViewportCard variant="stage">
+        <div class="flex h-full w-full max-w-[45rem] flex-col justify-center gap-3 self-center">
+          <div class="aspect-[12/7] w-full overflow-hidden rounded-2xl bg-muted">
+            <AlignCanvas
+              class="h-full w-full"
+              cursor={cursor()}
+              emptyText={emptyText()}
+              excludedCells={canvas.displayedExcludedCells}
+              frame={canvas.frame}
+              grid={canvas.grid}
+              toolMode={canvas.toolMode}
+              previewGridRef={gridHandlers.previewGridRef}
+              previewRedrawRef={previewRedrawRef}
+              toasts={toasts()}
+              onVirtualPointerCancel={handlePointerCancel}
+              onVirtualPointerDown={handlePointerDown}
+              onVirtualPointerMove={handlePointerMove}
+              onVirtualPointerUp={handlePointerEnd}
+            />
+          </div>
+          <div class="flex items-center justify-between gap-4 px-1 text-[11px] text-muted-foreground uppercase tracking-[0.12em]">
+            <span>Position {positionLabel()}</span>
+            <span>
+              {canvas.frame ? `${canvas.frame.width} × ${canvas.frame.height} px` : "No frame"}
+            </span>
+          </div>
+        </div>
       </ViewportCard>
     </>
   );

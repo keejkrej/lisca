@@ -42,21 +42,19 @@ export function ResultPlotGallery(props: {
   }
 
   return (
-    <div
-      class={props.exportMode ? EXPORT_PAGE_CLASS : "flex h-full min-h-0 flex-col overflow-y-auto"}
-    >
+    <div class={props.exportMode ? EXPORT_PAGE_CLASS : "flex min-h-0 w-full flex-1 flex-col"}>
       <Show when={props.pageTitle}>
         <h2
           class={
             props.exportMode
               ? EXPORT_TITLE_CLASS
-              : "border-b px-4 py-3 text-lg font-semibold text-foreground"
+              : "mb-6 text-2xl font-semibold leading-8 tracking-[-0.02em] text-foreground"
           }
         >
           {props.pageTitle}
         </h2>
       </Show>
-      <div class="flex flex-col gap-6 p-4">
+      <div class={props.exportMode ? "flex flex-col gap-6 p-4" : "flex flex-col gap-8 pb-8"}>
         <For each={props.plots}>
           {(plot) => (
             <figure class="flex flex-col gap-2">
@@ -64,7 +62,7 @@ export function ResultPlotGallery(props: {
                 class={
                   props.exportMode
                     ? EXPORT_PANEL_TITLE_CLASS
-                    : "truncate px-1 text-sm font-medium text-foreground"
+                    : "truncate text-[13px] font-medium leading-[18px] text-foreground"
                 }
               >
                 {plot.title}
@@ -72,14 +70,18 @@ export function ResultPlotGallery(props: {
               <Show
                 when={plot.src}
                 fallback={
-                  <div class="flex min-h-[240px] items-center justify-center rounded-md border border-dashed text-sm text-muted-foreground">
+                  <div class="flex min-h-[240px] items-center justify-center rounded-[18px] border border-dashed text-sm text-muted-foreground">
                     Plot image not found
                   </div>
                 }
               >
                 <img
                   alt={plot.title}
-                  class="w-full rounded-md border bg-white object-contain"
+                  class={
+                    props.exportMode
+                      ? "w-full rounded-md border bg-white object-contain"
+                      : "w-full bg-white object-contain"
+                  }
                   src={plot.src}
                 />
               </Show>

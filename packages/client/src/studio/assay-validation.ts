@@ -25,7 +25,10 @@ export function validAssayIdentity(input: {
   );
 }
 
-export function validAssayInterval(intervalValue: number | null, _unit: StudioIntervalUnit): boolean {
+export function validAssayInterval(
+  intervalValue: number | null,
+  _unit: StudioIntervalUnit,
+): boolean {
   return intervalValue != null && intervalValue > 0;
 }
 
@@ -60,7 +63,7 @@ export function validateAssayForAnalysis(input: {
     errors.push("Choose an assay type before starting analysis.");
   }
   if (!validAssayIdentity(input)) {
-    errors.push("Complete basic info (name, source, workspace).");
+    errors.push("Complete the Info step (name, source, workspace).");
   }
   if (!validAssayInterval(input.intervalValue, input.intervalUnit)) {
     errors.push("Set a positive timelapse interval.");
@@ -102,11 +105,7 @@ export function validateAssayForAnalysis(input: {
 export { isValidSamplePositionRange } from "./sample-positions";
 
 /** @deprecated Use validAssayIdentity */
-export const validInfo1 = (info: {
-  name: string;
-  dataPath: string;
-  saveTo: string;
-}): boolean =>
+export const validInfo1 = (info: { name: string; dataPath: string; saveTo: string }): boolean =>
   validAssayIdentity({
     name: info.name,
     dataPath: info.dataPath,

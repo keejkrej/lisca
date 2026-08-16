@@ -11,6 +11,7 @@ const gateway = createTaskCenterGateway(studioClient);
 export function StudioTaskCenter() {
   return (
     <TaskCenter
+      appearance="status-link"
       gateway={gateway}
       subscribe={({ onSnapshot, onError }) =>
         subscribeTaskCenterOperations({ gateway, onSnapshot, onError })

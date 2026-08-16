@@ -1,12 +1,12 @@
 import { AppShell } from "@lisca/ui/shell";
 import { createFileRoute } from "@tanstack/solid-router";
 
-import { StudioAlignDock } from "../components/studio-align-dock";
+import { StudioAlignControls } from "../components/studio-align-dock";
 import { StudioAlignMain } from "../components/studio-align-main";
 import { StudioLeft } from "../components/studio-left";
 import { StudioRightPanel } from "../components/studio-right-panel";
 import { StudioAlignExpertRight } from "../components/studio-align-expert-right";
-import { StudioAlignRight } from "../components/studio-align-right";
+import { StudioTopBar } from "../components/studio-top-bar";
 import { instructionForStep } from "../state/studio-routes";
 import { StudioAlignPageProvider } from "../state/studio-align-page-provider";
 
@@ -24,25 +24,30 @@ function AlignPage() {
 
 function AlignPageContent() {
   return (
-    <AppShell>
+    <AppShell variant="stage">
       <AppShell.Body>
-        <AppShell.Left widthClass="w-60">
+        <AppShell.Left widthClass="w-64">
           <StudioLeft />
         </AppShell.Left>
         <AppShell.MainColumn>
+          <AppShell.TopBar>
+            <StudioTopBar showExpert />
+          </AppShell.TopBar>
           <AppShell.Main>
             <StudioAlignMain />
           </AppShell.Main>
-          <AppShell.Dock>
-            <StudioAlignDock />
-          </AppShell.Dock>
         </AppShell.MainColumn>
-        <AppShell.Right widthClass="w-72">
+        <AppShell.Right widthClass="w-64">
           <StudioRightPanel
-            expert={() => <StudioAlignExpertRight />}
+            expert={() => (
+              <>
+                <StudioAlignExpertRight />
+                <StudioAlignControls />
+              </>
+            )}
             instruction={() => instructionForStep("alignPattern")}
           >
-            <StudioAlignRight />
+            <StudioAlignControls />
           </StudioRightPanel>
         </AppShell.Right>
       </AppShell.Body>

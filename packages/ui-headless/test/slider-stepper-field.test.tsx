@@ -4,7 +4,9 @@ import { describe, expect, it } from "vitest";
 
 import { useSliderStepperField } from "../src/slider-stepper-field";
 
-function mountSliderStepperField(options: () => Parameters<typeof useSliderStepperField>[0] extends () => infer T ? T : never) {
+function mountSliderStepperField(
+  options: () => Parameters<typeof useSliderStepperField>[0] extends () => infer T ? T : never,
+) {
   let result!: ReturnType<typeof useSliderStepperField>;
   render(() => {
     result = useSliderStepperField(options);

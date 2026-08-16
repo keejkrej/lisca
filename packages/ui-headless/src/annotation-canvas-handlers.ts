@@ -9,7 +9,11 @@ import {
 } from "@lisca/utils";
 import { createMemo, createSignal, type Accessor } from "solid-js";
 
-import { isSmartAnnotationTool, type AnnotationTool } from "@lisca/utils";
+import {
+  isMagnifierAnnotationTool,
+  isSmartAnnotationTool,
+  type AnnotationTool,
+} from "@lisca/utils";
 
 export type AnnotationCanvasFramePoint = {
   x: number;
@@ -129,6 +133,7 @@ export function useAnnotationCanvasHandlers(options: () => UseAnnotationCanvasHa
       onSmartEraseClick,
     } = options();
     if (disabled || !frame) return false;
+    if (isMagnifierAnnotationTool(tool)) return false;
     const point = framePointFromEvent(event);
     if (!point) return false;
 
@@ -169,6 +174,7 @@ export function useAnnotationCanvasHandlers(options: () => UseAnnotationCanvasHa
 
   const handlePointerMove = (event: AnnotationCanvasPointerEvent) => {
     const { tool } = options();
+    if (isMagnifierAnnotationTool(tool)) return false;
     if (isSmartAnnotationTool(tool)) return false;
     const active = lassoRef.current;
     if (!active || active.pointerId !== event.pointerId) return false;
@@ -183,6 +189,7 @@ export function useAnnotationCanvasHandlers(options: () => UseAnnotationCanvasHa
 
   const handlePointerEnd = (event: AnnotationCanvasPointerEvent) => {
     const { tool } = options();
+    if (isMagnifierAnnotationTool(tool)) return false;
     if (isSmartAnnotationTool(tool)) return false;
     if (!lassoRef.current || lassoRef.current.pointerId !== event.pointerId) return false;
     finishLasso(event);
@@ -212,8 +219,10 @@ export function useAnnotationCanvasHandlers(options: () => UseAnnotationCanvasHa
   const smartToolMode = createMemo(() => isSmartAnnotationTool(options().tool));
   const smartEraseMode = createMemo(() => options().tool === "smart-erase");
   const cursor = createMemo(() => {
-    const { disabled = false, frame } = options();
-    return disabled || !frame ? "default" : "crosshair";
+    const { disabled = false, frame, tool } = options();
+    if (!frame) return "default";
+    if (isMagnifierAnnotationTool(tool)) return "zoom-in";
+    return disabled ? "default" : "crosshair";
   });
 
   return {

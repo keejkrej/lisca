@@ -11,8 +11,10 @@ export function DemoAlignToolSection(props: { state: Accessor<DemoAlignState> })
   return (
     <AlignToolSection
       mode={props.state().toolMode}
+      spacingZoomLocked={props.state().spacingZoomLocked}
       patternZoomLocked={props.state().patternZoomLocked}
       onModeChange={props.state().setToolMode}
+      onSpacingZoomLockedChange={props.state().setSpacingZoomLocked}
       onPatternZoomLockedChange={props.state().setPatternZoomLocked}
     />
   );
@@ -50,9 +52,11 @@ export function DemoInlineAlignToolbar(props: {
         </Show>
         <AlignToolToolbar
           mode={props.state().toolMode}
+          spacingZoomLocked={props.state().spacingZoomLocked}
           patternZoomLocked={props.state().patternZoomLocked}
           shortcutsEnabled={false}
           onModeChange={props.state().setToolMode}
+          onSpacingZoomLockedChange={props.state().setSpacingZoomLocked}
           onPatternZoomLockedChange={props.state().setPatternZoomLocked}
         />
         <Show when={props.showDownload ?? true}>

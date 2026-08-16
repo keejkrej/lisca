@@ -1,5 +1,4 @@
 import { AlignGridRail, AlignSelectionRail } from "@lisca/ui/features";
-import { SidebarStack } from "@lisca/ui/shell";
 import { onCleanup } from "solid-js";
 
 import { useStudioAlignPage } from "../state/studio-align-page-context";
@@ -14,14 +13,20 @@ export function StudioAlignExpertRight() {
   });
 
   return (
-    <SidebarStack class="p-0">
-      <AlignGridRail disabled={disabled()} grid={state.grid} onGridChange={state.setGrid} />
+    <>
+      <AlignGridRail
+        disabled={disabled()}
+        grid={state.grid}
+        sectionAppearance="rail"
+        onGridChange={state.setGrid}
+      />
       <AlignSelectionRail
         disabled={disabled()}
         excludedCells={state.currentExcludedCells}
         frame={state.frame}
         grid={state.grid}
         manualExclusionEnabled={state.manualExclusionEnabled}
+        sectionAppearance="rail"
         smartExcludeLoading={smartExclude.active()}
         visibleCounts={state.visibleCounts}
         variationExcludeLoading={varExclude.active()}
@@ -37,6 +42,6 @@ export function StudioAlignExpertRight() {
         }
         showVariationExcludeDialog={false}
       />
-    </SidebarStack>
+    </>
   );
 }

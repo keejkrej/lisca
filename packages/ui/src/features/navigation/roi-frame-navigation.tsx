@@ -26,7 +26,12 @@ export type RoiFrameNavigationProps = {
   setSelection: (patch: Partial<RoiFrameSelection>) => void;
 } & Pick<
   FrameNavigationProps<number>,
-  "class" | "sectionTitle" | "sectionDescription" | "sectionClassName" | "sectionContentClassName"
+  | "class"
+  | "sectionTitle"
+  | "sectionDescription"
+  | "sectionClassName"
+  | "sectionContentClassName"
+  | "sectionAppearance"
 >;
 
 function buildSelectStepperControl<T extends NavigationValue>(args: {
@@ -71,6 +76,7 @@ export function RoiFrameNavigation(props: RoiFrameNavigationProps) {
   return (
     <FrameNavigation
       class={props.class}
+      sectionAppearance={props.sectionAppearance}
       sectionClassName={props.sectionClassName}
       sectionContentClassName={props.sectionContentClassName}
       sectionDescription={props.sectionDescription}

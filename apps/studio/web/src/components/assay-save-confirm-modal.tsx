@@ -17,10 +17,10 @@ export function AssaySaveConfirmModal(props: {
           <div class="space-y-4">
             <div class="space-y-1">
               <h2 id="assay-save-confirm-title" class="font-medium text-foreground">
-                Basic info changed
+                Info changed
               </h2>
               <p class="text-muted-foreground text-sm">
-                Save these settings before leaving Basic info?
+                Save these settings before leaving the Info step?
               </p>
               <Show when={props.error}>
                 <p class="z-destructive-surface text-sm" role="alert">

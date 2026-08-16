@@ -1,8 +1,8 @@
 import { resolveKeyboardShortcut } from "@lisca/utils";
 import { Button } from "@lisca/ui/components";
 import {
-  DockSection,
-  DockStrip,
+  PanelSection,
+  RailControlStack,
   dockToolLabel,
   dockToolShortcuts,
   type DockToolAction,
@@ -14,7 +14,7 @@ function isEditableTarget(target: EventTarget | null): boolean {
   return Boolean(target.closest("input, textarea, select, [contenteditable='true']"));
 }
 
-export function StudioResultDock(props: {
+export function StudioResultControls(props: {
   toolActions: DockToolAction[];
   shortcutsEnabled: boolean;
   saveDisabled: boolean;
@@ -42,14 +42,14 @@ export function StudioResultDock(props: {
   });
 
   return (
-    <DockStrip>
+    <>
       <Show when={props.toolActions.length > 0}>
-        <DockSection title="View">
-          <div class="flex flex-col gap-2">
+        <PanelSection appearance="rail" title="View">
+          <RailControlStack>
             <For each={props.toolActions}>
               {(action, index) => (
                 <Button
-                  class="w-full justify-center"
+                  class="w-full justify-center rounded-full"
                   disabled={action.disabled}
                   size="sm"
                   type="button"
@@ -60,23 +60,22 @@ export function StudioResultDock(props: {
                 </Button>
               )}
             </For>
-          </div>
-        </DockSection>
+          </RailControlStack>
+        </PanelSection>
       </Show>
-      <DockSection title="Action">
-        <div class="flex flex-col gap-2">
+      <PanelSection appearance="rail" title="Action">
+        <RailControlStack>
           <Button
-            class="w-full justify-center"
+            class="w-full justify-center rounded-full"
             disabled={props.saveDisabled}
             size="sm"
             type="button"
-            variant="outline"
             onClick={props.onSave}
           >
             {props.saveLabel}
           </Button>
-        </div>
-      </DockSection>
-    </DockStrip>
+        </RailControlStack>
+      </PanelSection>
+    </>
   );
 }

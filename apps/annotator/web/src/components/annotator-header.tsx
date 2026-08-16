@@ -8,6 +8,7 @@ export function AnnotatorHeader() {
 
   return (
     <ShellNavbar.Annotator
+      appearance="stage"
       endLeading={<AnnotatorTaskCenter />}
       onPickWorkspace={() => shell.setFilePickerOpen(true)}
     />

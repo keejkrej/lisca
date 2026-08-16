@@ -1,5 +1,5 @@
 import { Button, Spinner } from "@lisca/ui/components";
-import { AppShell, ViewportCard } from "@lisca/ui/shell";
+import { AppShell } from "@lisca/ui/shell";
 import { ResultPlotGallery } from "./result-panels-grid";
 import { createEffect, createMemo, createSignal } from "solid-js";
 import { runClientEffect } from "@lisca/client/runtime";
@@ -7,7 +7,8 @@ import { resolveStudioHttpBaseUrl, studioClient, toErrorMessage } from "../api/s
 import { StudioLeft } from "../components/studio-left";
 import { StudioRightPanel } from "../components/studio-right-panel";
 import { StudioResultExpertRight } from "../components/studio-result-expert-right";
-import { StudioResultDock } from "../components/studio-result-dock";
+import { StudioResultControls } from "../components/studio-result-dock";
+import { StudioTopBar } from "../components/studio-top-bar";
 import {
   collectResultPlots,
   defaultResultPlotSection,
@@ -123,15 +124,18 @@ export default function ResultPage() {
     },
   ]);
   return (
-    <AppShell>
+    <AppShell variant="stage">
       <AppShell.Body>
-        <AppShell.Left widthClass="w-60">
+        <AppShell.Left widthClass="w-64">
           <StudioLeft />
         </AppShell.Left>
         <AppShell.MainColumn>
+          <AppShell.TopBar>
+            <StudioTopBar showExpert />
+          </AppShell.TopBar>
           <AppShell.Main>
-            <ViewportCard class="relative">
-              <div class="relative flex h-full min-h-0 flex-1 flex-col">
+            <AppShell.MainScroll contentClass="relative max-w-[840px] px-6 py-8">
+              <div class="relative flex min-h-full w-full flex-1 flex-col">
                 <ResultPlotGallery
                   emptyTitle={
                     !resultState.workspacePath?.trim()
@@ -142,7 +146,7 @@ export default function ResultPage() {
                   }
                   emptyMessage={
                     !resultState.workspacePath?.trim()
-                      ? "Choose a workspace in Basic info, then run analysis from Annotate. Plots show up here as images."
+                      ? "Choose a workspace on the Info step, then run analysis from Annotate. Plots show up here as images."
                       : hasAnyPlots()
                         ? "Switch views in the dock, or run analysis again."
                         : "On Annotate, press Continue to analysis. Finished plots appear here as images."
@@ -157,10 +161,11 @@ export default function ResultPage() {
                           navigateTo(resultState.workspacePath?.trim() ? "/annotate" : "/info")
                         }
                       >
-                        {resultState.workspacePath?.trim() ? "Go to Annotate" : "Go to Basic info"}
+                        {resultState.workspacePath?.trim() ? "Go to Annotate" : "Go to Info"}
                       </Button>
                     )
                   }
+                  pageTitle={resultSectionLabel(activeSection(), assayKind())}
                   plots={sectionPlots()}
                   section={activeSection()}
                 />
@@ -197,25 +202,33 @@ export default function ResultPage() {
                   </div>
                 ) : null}
               </div>
-            </ViewportCard>
+            </AppShell.MainScroll>
           </AppShell.Main>
-          <AppShell.Dock>
-            <StudioResultDock
+        </AppShell.MainColumn>
+        <AppShell.Right widthClass="w-64">
+          <StudioRightPanel
+            expert={() => (
+              <>
+                <StudioResultExpertRight />
+                <StudioResultControls
+                  saveDisabled={!resultState.workspacePath?.trim() || !hasAnyPlots() || isSaving()}
+                  saveLabel={isSaving() ? "Saving PDF…" : "Save PDF"}
+                  shortcutsEnabled={!isSaving()}
+                  toolActions={hasAnyPlots() ? sectionToolActions() : []}
+                  onSave={() => void savePdf()}
+                />
+              </>
+            )}
+            instruction={dockInstruction}
+          >
+            <StudioResultControls
               saveDisabled={!resultState.workspacePath?.trim() || !hasAnyPlots() || isSaving()}
               saveLabel={isSaving() ? "Saving PDF…" : "Save PDF"}
               shortcutsEnabled={!isSaving()}
               toolActions={hasAnyPlots() ? sectionToolActions() : []}
-              onSave={() => {
-                void savePdf();
-              }}
+              onSave={() => void savePdf()}
             />
-          </AppShell.Dock>
-        </AppShell.MainColumn>
-        <AppShell.Right widthClass="w-72">
-          <StudioRightPanel
-            expert={() => <StudioResultExpertRight />}
-            instruction={dockInstruction}
-          />
+          </StudioRightPanel>
         </AppShell.Right>
       </AppShell.Body>
     </AppShell>

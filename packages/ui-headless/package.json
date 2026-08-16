@@ -48,6 +48,10 @@
       "types": "./src/folder-source-parse-modal.ts",
       "import": "./src/folder-source-parse-modal.ts"
     },
+    "./frame-view-controller": {
+      "types": "./src/frame-view-controller.ts",
+      "import": "./src/frame-view-controller.ts"
+    },
     "./host-file-picker-state": {
       "types": "./src/host-file-picker-state.ts",
       "import": "./src/host-file-picker-state.ts"

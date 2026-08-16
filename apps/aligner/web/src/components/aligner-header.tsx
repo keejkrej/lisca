@@ -63,6 +63,7 @@ export function AlignerHeader() {
   return (
     <>
       <ShellNavbar.Aligner
+        appearance="stage"
         onPickSource={() => setSourcePickerOpen(true)}
         onPickWorkspace={() => openFilePicker("workspace")}
       />

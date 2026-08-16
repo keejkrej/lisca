@@ -142,7 +142,7 @@ describe("AnnotatorHeader Task Center", () => {
     expect(header).not.toBeNull();
     expect(themeToggle.parentElement).toBe(trigger.parentElement);
     expect(trigger.nextElementSibling).toBe(themeToggle);
-    expect(trigger.previousElementSibling?.textContent).toContain("Server");
+    expect(trigger.previousElementSibling?.textContent).toContain("Connecting…");
 
     const edit = screen.getByRole("textbox", { name: "Current edit" }) as HTMLInputElement;
     const workspaceState = screen.getByLabelText("Workspace state");

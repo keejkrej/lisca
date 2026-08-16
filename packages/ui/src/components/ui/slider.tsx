@@ -3,24 +3,26 @@ import { splitProps, type JSX } from "solid-js";
 
 import { cn } from "../../lib/utils";
 
-export function Slider(
-  props: {
-    class?: string;
-    controlClassName?: string;
-    children?: JSX.Element;
-    defaultValue?: number;
-    onValueChange?: (value: number) => void;
-    onValueCommitted?: (value: number) => void;
-    value: number;
-    min?: number;
-    max?: number;
-    disabled?: boolean;
-    orientation?: "horizontal" | "vertical";
-    step?: number;
-    name?: string;
-    id?: string;
-  },
-): JSX.Element {
+export function Slider(props: {
+  class?: string;
+  controlClassName?: string;
+  children?: JSX.Element;
+  defaultValue?: number;
+  onValueChange?: (value: number) => void;
+  onValueCommitted?: (value: number) => void;
+  value: number;
+  min?: number;
+  max?: number;
+  disabled?: boolean;
+  orientation?: "horizontal" | "vertical";
+  step?: number;
+  name?: string;
+  id?: string;
+  "aria-label"?: string;
+  "aria-labelledby"?: string;
+  "aria-describedby"?: string;
+  "aria-valuetext"?: string;
+}): JSX.Element {
   const [local, rest] = splitProps(props, [
     "class",
     "controlClassName",
@@ -31,6 +33,10 @@ export function Slider(
     "value",
     "min",
     "max",
+    "aria-label",
+    "aria-labelledby",
+    "aria-describedby",
+    "aria-valuetext",
   ]);
 
   const safeMin = () => local.min ?? 0;
@@ -47,6 +53,9 @@ export function Slider(
       defaultValue={local.defaultValue == null ? undefined : [local.defaultValue]}
       maxValue={safeMax()}
       minValue={safeMin()}
+      getValueLabel={
+        local["aria-valuetext"] == null ? undefined : () => local["aria-valuetext"] ?? ""
+      }
       onChange={(next) => local.onValueChange?.(next[0] ?? 0)}
       onChangeEnd={(next) => local.onValueCommitted?.(next[0] ?? 0)}
       value={[clampedValue()]}
@@ -69,7 +78,10 @@ export function Slider(
             data-slot="slider-indicator"
           />
           <KobalteSlider.Thumb
-            class="block size-5 shrink-0 select-none rounded-full border border-input bg-white not-dark:bg-clip-padding shadow-xs/5 outline-none transition-[box-shadow,scale] before:absolute before:inset-0 before:rounded-full before:shadow-[0_1px_--theme(--color-black/4%)] has-focus-visible:ring-[3px] has-focus-visible:ring-ring/24 data-dragging:scale-120 sm:size-4 dark:border-background dark:has-focus-visible:ring-ring/48 [:has(*:focus-visible),[data-dragging]]:shadow-none data-[orientation=horizontal]:top-1/2 data-[orientation=horizontal]:-mt-2.5 sm:data-[orientation=horizontal]:-mt-2 data-[orientation=vertical]:left-1/2 data-[orientation=vertical]:-ml-2.5 sm:data-[orientation=vertical]:-ml-2"
+            aria-describedby={local["aria-describedby"]}
+            aria-label={local["aria-label"]}
+            aria-labelledby={local["aria-labelledby"]}
+            class="block size-4 shrink-0 select-none rounded-full border border-input bg-white not-dark:bg-clip-padding shadow-xs/5 outline-none transition-[box-shadow,scale] before:absolute before:inset-0 before:rounded-full before:shadow-[0_1px_--theme(--color-black/4%)] has-focus-visible:ring-[3px] has-focus-visible:ring-ring/24 data-dragging:scale-120 dark:border-background dark:has-focus-visible:ring-ring/48 [:has(*:focus-visible),[data-dragging]]:shadow-none data-[orientation=horizontal]:top-1/2 data-[orientation=horizontal]:-mt-2 data-[orientation=vertical]:left-1/2 data-[orientation=vertical]:-ml-2"
             data-slot="slider-thumb"
           />
         </KobalteSlider.Track>

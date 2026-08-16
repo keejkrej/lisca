@@ -10,7 +10,10 @@ export function createStudioSmartExcludeProvider(context: RequestSmartExcludeCon
   return createRequestSmartExcludeProvider(
     {
       smartExclude: (request, signal) =>
-        runClientEffect(studioClient.smartExclude(request, signal), signal ? { signal } : undefined),
+        runClientEffect(
+          studioClient.smartExclude(request, signal),
+          signal ? { signal } : undefined,
+        ),
     },
     context,
   );

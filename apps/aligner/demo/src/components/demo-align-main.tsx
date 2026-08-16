@@ -15,6 +15,7 @@ export function DemoAlignMain(props: { state: Accessor<DemoAlignState>; embedded
   const gridHandlers = useAlignCanvasGridHandlers(() => ({
     disabled: false,
     grid: props.state().grid,
+    spacingZoomLocked: props.state().spacingZoomLocked,
     patternZoomLocked: props.state().patternZoomLocked,
     setGrid: props.state().setGrid,
     toolMode: props.state().toolMode,
@@ -43,17 +44,16 @@ export function DemoAlignMain(props: { state: Accessor<DemoAlignState>; embedded
     if (selectionHandlers.handlePointerEnd(event)) return;
     gridHandlers.handlePointerEnd(event);
   };
-  const handlePointerCancel: typeof gridHandlers.handlePointerEnd = (event) => {
+  const handlePointerCancel: typeof gridHandlers.handlePointerCancel = (event) => {
     if (selectionHandlers.handlePointerCancel(event)) return;
-    gridHandlers.handlePointerEnd(event);
+    gridHandlers.handlePointerCancel(event);
   };
   const displayFrame = () => {
     const state = props.state();
     return state.frame ? frameWithContrast(state.frame, state.contrast) : null;
   };
   const visibleStatus = useCanvasTransientStatus(() => props.state().status);
-  const activeToastStatus = () =>
-    props.state().frameLoading ? "Loading image" : visibleStatus();
+  const activeToastStatus = () => (props.state().frameLoading ? "Loading image" : visibleStatus());
   const toasts = () => {
     const error = props.state().error;
     if (error) {
@@ -74,13 +74,15 @@ export function DemoAlignMain(props: { state: Accessor<DemoAlignState>; embedded
     return [];
   };
   const cursor = () =>
-    props.state().manualExclusionEnabled || selectionHandlers.selecting()
-      ? "crosshair"
-      : cursorForAlignTool(
-          props.state().toolMode,
-          props.state().grid.enabled,
-          gridHandlers.dragging(),
-        );
+    props.state().toolMode === "magnifier"
+      ? "zoom-in"
+      : props.state().manualExclusionEnabled || selectionHandlers.selecting()
+        ? "crosshair"
+        : cursorForAlignTool(
+            props.state().toolMode,
+            props.state().grid.enabled,
+            gridHandlers.dragging(),
+          );
   return (
     <ViewportCard>
       <AlignCanvas
@@ -89,6 +91,7 @@ export function DemoAlignMain(props: { state: Accessor<DemoAlignState>; embedded
         excludedCells={props.state().excludedCells}
         frame={displayFrame()}
         grid={props.state().grid}
+        toolMode={props.state().toolMode}
         previewGridRef={gridHandlers.previewGridRef}
         previewRedrawRef={previewRedrawRef}
         toasts={props.embedded ? [] : toasts()}
