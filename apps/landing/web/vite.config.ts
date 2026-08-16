@@ -3,7 +3,7 @@ import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import { liscaSolidPlugin } from "@lisca/web-app/vite";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { defineConfig } from "vite";
+import { defineConfig, type PluginOption } from "vite";
 
 const brandPublicDir = resolve(
   fileURLToPath(new URL(".", import.meta.url)),
@@ -19,13 +19,17 @@ const ibidiDemoImageProxy = {
   },
 } as const;
 
+function localPlugin(plugin: unknown): PluginOption {
+  return plugin as PluginOption;
+}
+
 export default defineConfig({
   base: "/",
   publicDir: brandPublicDir,
   plugins: [
-    tanstackRouter({ target: "solid", autoCodeSplitting: true }),
-    liscaSolidPlugin(),
-    tailwindcss(),
+    localPlugin(tanstackRouter({ target: "solid", autoCodeSplitting: true })),
+    localPlugin(liscaSolidPlugin()),
+    localPlugin(tailwindcss()),
   ],
   server: {
     host: true,

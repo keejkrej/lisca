@@ -23,6 +23,14 @@ const DEFAULT_HISTORY_CAP: usize = 100;
 type TaskFuture = Pin<Box<dyn Future<Output = Result<(), TaskFailure>> + Send + 'static>>;
 type TaskHandlerFactory = Arc<dyn Fn(TaskContext) -> TaskFuture + Send + Sync + 'static>;
 
+struct TaskProgressUpdate {
+    unit: String,
+    completed: u32,
+    total: u32,
+    phase: Option<String>,
+    message: Option<String>,
+}
+
 #[derive(Clone)]
 pub struct TaskContext {
     cancellation: watch::Receiver<bool>,
@@ -64,11 +72,13 @@ impl TaskContext {
             .report_work_progress(
                 &self.operation_id,
                 &self.task_id,
-                unit.into(),
-                completed,
-                total,
-                phase,
-                message,
+                TaskProgressUpdate {
+                    unit: unit.into(),
+                    completed,
+                    total,
+                    phase,
+                    message,
+                },
             )
             .map_err(|error| TaskFailure::new("progress_report_failed", error.to_string()))
     }
@@ -773,11 +783,7 @@ impl TaskScheduler {
         &self,
         operation_id: &str,
         task_id: &str,
-        unit: String,
-        completed: u32,
-        total: u32,
-        phase: Option<String>,
-        message: Option<String>,
+        update: TaskProgressUpdate,
     ) -> Result<(), SchedulerError> {
         let mut state = self.lock()?;
         let operation =
@@ -810,11 +816,11 @@ impl TaskScheduler {
             });
         }
         task.work_progress = Some(TaskWorkProgress {
-            completed: completed.min(total),
-            message,
-            phase,
-            total,
-            unit,
+            completed: update.completed.min(update.total),
+            message: update.message,
+            phase: update.phase,
+            total: update.total,
+            unit: update.unit,
             updated_at_ms: now,
         });
         operation.updated_at_ms = now;

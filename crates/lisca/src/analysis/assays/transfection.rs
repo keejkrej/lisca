@@ -208,7 +208,7 @@ pub fn run_sync_with_mode(
 ) -> Result<(), String> {
     let interval = interval_minutes(assay_json)?;
 
-    let mapping = build_slide_mapping(&assay_json)?;
+    let mapping = build_slide_mapping(assay_json)?;
     let jobs = default_timeseries_jobs();
 
     if !full_frame {

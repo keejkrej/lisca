@@ -28,7 +28,7 @@ export { liscaDevBackendPort, LISCA_DEV_BACKEND_PORT_OFFSET };
 
 /** Solid plugin for all Lisca web apps. Replaces the former React + React Compiler plugin. */
 export function liscaSolidPlugin(): PluginOption {
-  return solid();
+  return solid() as unknown as PluginOption;
 }
 
 const brandPublicDir = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../assets/brand");
@@ -190,6 +190,7 @@ export function createLiscaViteConfig(options: {
   const backendPort = options.backendPort ?? liscaDevBackendPort(options.port);
   const productFavicon = options.product ? liscaProductFaviconPlugin(options.product) : null;
   const extraPlugins = (options.plugins ?? []) as PluginOption[];
+  const tailwindPlugin = tailwindcss() as unknown as PluginOption;
 
   return defineConfig({
     base: options.base ?? (process.env.VITE_DESKTOP === "1" ? "./" : "/"),
@@ -201,7 +202,7 @@ export function createLiscaViteConfig(options: {
     plugins: [
       ...extraPlugins,
       liscaSolidPlugin(),
-      tailwindcss(),
+      tailwindPlugin,
       liscaModelsPlugin(),
       ...(productFavicon ? [productFavicon] : []),
     ],

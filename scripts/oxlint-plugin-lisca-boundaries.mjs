@@ -78,9 +78,36 @@ function expandWorkspacePattern(root, pattern) {
   return candidates;
 }
 
+function loadWorkspacePatterns(root, rootManifest) {
+  const manifestWorkspaces = Array.isArray(rootManifest.workspaces)
+    ? rootManifest.workspaces
+    : rootManifest.workspaces?.packages;
+  if (Array.isArray(manifestWorkspaces)) return manifestWorkspaces;
+
+  const workspaceFile = path.join(root, "pnpm-workspace.yaml");
+  if (!existsSync(workspaceFile)) return [];
+
+  const patterns = [];
+  let readingPackages = false;
+  for (const line of readFileSync(workspaceFile, "utf8").split(/\r?\n/u)) {
+    if (/^packages:\s*$/u.test(line)) {
+      readingPackages = true;
+      continue;
+    }
+    if (!readingPackages) continue;
+    const item = /^\s+-\s+(.+?)\s*$/u.exec(line);
+    if (item) {
+      patterns.push(item[1].replace(/^(?:"([^"]*)"|'([^']*)')$/u, "$1$2"));
+      continue;
+    }
+    if (line.trim()) break;
+  }
+  return patterns;
+}
+
 function loadWorkspaceIndex(root) {
   const rootManifest = JSON.parse(readFileSync(path.join(root, "package.json"), "utf8"));
-  const patterns = rootManifest.workspaces?.packages ?? [];
+  const patterns = loadWorkspacePatterns(root, rootManifest);
   const workspaces = patterns
     .flatMap((pattern) => expandWorkspacePattern(root, pattern))
     .flatMap((workspaceRoot) => {
