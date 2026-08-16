@@ -10,8 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AnnotatorDemoIndexRouteImport } from './routes/annotator-demo/index'
 import { Route as AlignerDemoIndexRouteImport } from './routes/aligner-demo/index'
+import { Route as AnnotatorDemoIndexRouteImport } from './routes/annotator-demo/index'
 import { Route as StudioDemoIndexRouteImport } from './routes/studio-demo/index'
 
 const IndexRoute = IndexRouteImport.update({
@@ -19,14 +19,14 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AnnotatorDemoIndexRoute = AnnotatorDemoIndexRouteImport.update({
-  id: '/annotator-demo/',
-  path: '/annotator-demo/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AlignerDemoIndexRoute = AlignerDemoIndexRouteImport.update({
   id: '/aligner-demo/',
   path: '/aligner-demo/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnnotatorDemoIndexRoute = AnnotatorDemoIndexRouteImport.update({
+  id: '/annotator-demo/',
+  path: '/annotator-demo/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StudioDemoIndexRoute = StudioDemoIndexRouteImport.update({
@@ -78,18 +78,18 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/annotator-demo/': {
-      id: '/annotator-demo/'
-      path: '/annotator-demo'
-      fullPath: '/annotator-demo/'
-      preLoaderRoute: typeof AnnotatorDemoIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/aligner-demo/': {
       id: '/aligner-demo/'
       path: '/aligner-demo'
       fullPath: '/aligner-demo/'
       preLoaderRoute: typeof AlignerDemoIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/annotator-demo/': {
+      id: '/annotator-demo/'
+      path: '/annotator-demo'
+      fullPath: '/annotator-demo/'
+      preLoaderRoute: typeof AnnotatorDemoIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/studio-demo/': {
