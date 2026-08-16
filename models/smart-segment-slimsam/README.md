@@ -6,9 +6,9 @@ Source: [Xenova/slimsam-77-uniform](https://huggingface.co/Xenova/slimsam-77-uni
 
 ## Files
 
-| File | Role |
-| --- | --- |
-| `onnx/vision_encoder_quantized.onnx` | Image encoder (`pixel_values` → embeddings) |
+| File                                              | Role                                                                                     |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `onnx/vision_encoder_quantized.onnx`              | Image encoder (`pixel_values` → embeddings)                                              |
 | `onnx/prompt_encoder_mask_decoder_quantized.onnx` | Prompt decoder (`input_points`, `input_labels`, embeddings → `pred_masks`, `iou_scores`) |
 
 ## Server path

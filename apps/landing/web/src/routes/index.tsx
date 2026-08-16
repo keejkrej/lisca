@@ -145,9 +145,7 @@ function LandingPage() {
             lead="LiSCA ships with assay templates for the workflows labs run most often on single-cell arrays. Each template defines which channels to read, how cells are scored, and which summary plots Studio produces."
           />
           <div class="mt-12 grid gap-5 lg:grid-cols-3">
-            <For each={landingAssays}>
-              {(assay) => <AssayCard assay={assay} />}
-            </For>
+            <For each={landingAssays}>{(assay) => <AssayCard assay={assay} />}</For>
           </div>
         </section>
 
@@ -175,10 +173,7 @@ function Header() {
   return (
     <header class="fixed inset-x-0 top-0 z-50 border-b border-border/60 bg-background/95 shadow-sm backdrop-blur-md supports-[backdrop-filter]:bg-background/80">
       <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-6">
-        <nav
-          class="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto"
-          aria-label="Primary"
-        >
+        <nav class="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto" aria-label="Primary">
           <For each={NAV}>
             {(item) => (
               <button
@@ -223,27 +218,22 @@ function Hero() {
           Live-cell imaging on <span class="text-glow">single-cell arrays</span>
         </h1>
         <p class="mx-auto mt-7 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-          LiSCA helps cell biologists and pharmacologists analyse micropatterned experiments — whether
-          you start from{" "}
+          LiSCA helps cell biologists and pharmacologists analyse micropatterned experiments —
+          whether you start from{" "}
           <ExternalLink href={IBIDI_MICROPATTERNED_LABWARE_URL}>
             ibidi µ-Pattern ibiTreat
           </ExternalLink>{" "}
           or define custom adhesion micropatterns with the{" "}
-          <ExternalLink href={IBIDI_MIS_URL}>Micro Illumination System</ExternalLink>. Align timelapse
-          images to the grid to define the ROI of each micropattern, annotate features of interest on
-          those cell-level ROIs, and turn them into quantitative assay readouts.
+          <ExternalLink href={IBIDI_MIS_URL}>Micro Illumination System</ExternalLink>. Align
+          timelapse images to the grid to define the ROI of each micropattern, annotate features of
+          interest on those cell-level ROIs, and turn them into quantitative assay readouts.
         </p>
       </div>
     </section>
   );
 }
 
-function SectionIntro(props: {
-  id?: string;
-  eyebrow: string;
-  title: string;
-  lead: JSX.Element;
-}) {
+function SectionIntro(props: { id?: string; eyebrow: string; title: string; lead: JSX.Element }) {
   return (
     <div class="max-w-3xl">
       <p

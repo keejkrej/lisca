@@ -12,9 +12,9 @@ Current Task Center is text-heavy and information-light: long IDs, queue metadat
 
 ## Fold model: exactly one level
 
-| Level | Fold? | Content |
-|-------|--------|---------|
-| **Operation list** | **Yes (one fold)** | Many concurrent operations: each row is collapsible so the list can stay compact |
+| Level                   | Fold?                           | Content                                                                                                                   |
+| ----------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| **Operation list**      | **Yes (one fold)**              | Many concurrent operations: each row is collapsible so the list can stay compact                                          |
 | **Inside an operation** | **No second fold** for progress | Always (when expanded, or always-visible summary—see below) show the two bars; no task/attempt tree required for progress |
 
 **Why one fold:** With many concurrent Operations (several crops/analyses), collapsing older or secondary ops keeps the modal usable. Nested fold-under-fold (today’s tasks + attempts) is the part to remove from the default path.
@@ -33,9 +33,9 @@ Optional “⋯ Details” for UUIDs / attempts / errors is fine; it must not be
     Pos4        [████████████░░]  1200/1800 roiframes
 ```
 
-| Bar | Meaning |
-|-----|---------|
-| **Positions** | `pos_completed / pos_total` — position Tasks done vs total for this Operation |
+| Bar             | Meaning                                                                                     |
+| --------------- | ------------------------------------------------------------------------------------------- |
+| **Positions**   | `pos_completed / pos_total` — position Tasks done vs total for this Operation               |
 | **Current pos** | `roiframe_completed / roiframe_total` for the **single running** position, labeled `Pos{k}` |
 
 Rules:

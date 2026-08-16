@@ -15,10 +15,7 @@ export type RequestSmartExcludeContext = {
 };
 
 export type RequestSmartExcludeClient = {
-  smartExclude(
-    request: SmartExcludeRequest,
-    signal?: AbortSignal,
-  ): Promise<SmartExcludeResponse>;
+  smartExclude(request: SmartExcludeRequest, signal?: AbortSignal): Promise<SmartExcludeResponse>;
 };
 
 export function createRequestSmartExcludeProvider(

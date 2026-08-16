@@ -15,10 +15,7 @@ export type RequestSmartSegmentContext = {
 };
 
 export type RequestSmartSegmentClient = {
-  smartSegment(
-    request: SmartSegmentRequest,
-    signal?: AbortSignal,
-  ): Promise<SmartSegmentResponse>;
+  smartSegment(request: SmartSegmentRequest, signal?: AbortSignal): Promise<SmartSegmentResponse>;
 };
 
 export function createRequestSmartSegmentProvider(

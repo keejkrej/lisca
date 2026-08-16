@@ -96,8 +96,7 @@ export function buildAssayData(input: {
       template: {
         subfolder:
           input.folderTemplate?.subfolder ?? DEFAULT_FOLDER_SOURCE_TEMPLATE.subfolderTemplate,
-        filename:
-          input.folderTemplate?.filename ?? DEFAULT_FOLDER_SOURCE_TEMPLATE.filenameTemplate,
+        filename: input.folderTemplate?.filename ?? DEFAULT_FOLDER_SOURCE_TEMPLATE.filenameTemplate,
       },
     };
   }

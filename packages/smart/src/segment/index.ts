@@ -1,8 +1,5 @@
 export type { SmartSegmentEngine, SmartSegmentPoint } from "./types";
-export type {
-  SmartSegmentPrepareOptions,
-  SmartSegmentProvider,
-} from "./provider";
+export type { SmartSegmentPrepareOptions, SmartSegmentProvider } from "./provider";
 export {
   useSmartSegment,
   type SmartEraseClick,

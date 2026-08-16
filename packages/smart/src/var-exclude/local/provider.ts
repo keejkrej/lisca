@@ -1,7 +1,4 @@
-import {
-  computeAutoExcludePreview,
-  enumerateVisibleAlignGridCells,
-} from "@lisca/utils";
+import { computeAutoExcludePreview, enumerateVisibleAlignGridCells } from "@lisca/utils";
 
 import { mergeAutoExcludedAlignCells } from "../merge";
 import type { VarExcludeProvider } from "../provider";

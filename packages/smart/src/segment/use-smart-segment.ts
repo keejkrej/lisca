@@ -79,9 +79,7 @@ export function useSmartSegment(options: {
   onStatus?: (status: string | null) => void;
   onError?: (error: string | null) => void;
 }) {
-  const [promptsByLabel, setPromptsByLabel] = createSignal<Record<number, SmartSegmentPoint[]>>(
-    {},
-  );
+  const [promptsByLabel, setPromptsByLabel] = createSignal<Record<number, SmartSegmentPoint[]>>({});
   const [busy, setBusy] = createSignal(false);
   const [downloadState, setDownloadState] = createSignal<SmartSegmentDownloadState>({
     open: false,

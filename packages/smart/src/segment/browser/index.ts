@@ -7,10 +7,7 @@ export {
   type BrowserSamEngineOptions,
   type SmartSegmentDownloadProgress,
 } from "./sam-engine";
-export {
-  createBrowserSmartSegmentSetup,
-  type BrowserSmartSegmentSetup,
-} from "./provider";
+export { createBrowserSmartSegmentSetup, type BrowserSmartSegmentSetup } from "./provider";
 export {
   useSmartSegment,
   type SmartEraseClick,

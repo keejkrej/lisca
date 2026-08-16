@@ -72,7 +72,8 @@ const apiPrefixes = LISCA_API_PROXY_PREFIXES;
 
 function contentType(filePath: string): string {
   if (filePath.endsWith(".html")) return "text/html; charset=utf-8";
-  if (filePath.endsWith(".js") || filePath.endsWith(".mjs")) return "text/javascript; charset=utf-8";
+  if (filePath.endsWith(".js") || filePath.endsWith(".mjs"))
+    return "text/javascript; charset=utf-8";
   if (filePath.endsWith(".css")) return "text/css; charset=utf-8";
   if (filePath.endsWith(".json")) return "application/json; charset=utf-8";
   if (filePath.endsWith(".svg")) return "image/svg+xml";
@@ -82,7 +83,11 @@ function contentType(filePath: string): string {
   return "application/octet-stream";
 }
 
-async function proxyApi(req: IncomingMessage, res: ServerResponse, pathname: string): Promise<void> {
+async function proxyApi(
+  req: IncomingMessage,
+  res: ServerResponse,
+  pathname: string,
+): Promise<void> {
   try {
     const target = new URL(req.url ?? "/", `http://127.0.0.1:${backendPort}`);
     target.port = String(backendPort);

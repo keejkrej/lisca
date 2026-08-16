@@ -41,15 +41,15 @@ Gene-expression fits use the **basic translation–degradation model** (Müller 
 2024 Eq. 3; **no protein maturation**). Field names are the same in Rust, Python,
 `fit.csv`, and Studio labels:
 
-| Code / CSV / id | Display label | Paper symbol |
-| --- | --- | --- |
-| `onset_time` | onset time | \(t_0\) |
-| `expression_rate` | expression rate | \(m_0 k_{TL}\) |
-| `mrna_lifetime` | mRNA lifetime | \(\tau_\mathrm{mRNA}\) |
-| `protein_lifetime` | protein lifetime | \(\tau_\mathrm{EGFP}\) |
-| `expression_amplitude` | (internal fit coeff.) | \(m_0 k_{TL}/(\delta-\beta)\) |
-| `baseline_intensity` | baseline intensity | additive baseline (not a kinetic rate) |
-| `auc` | AUC | integrated protein output |
+| Code / CSV / id        | Display label         | Paper symbol                           |
+| ---------------------- | --------------------- | -------------------------------------- |
+| `onset_time`           | onset time            | \(t_0\)                                |
+| `expression_rate`      | expression rate       | \(m*0 k*{TL}\)                         |
+| `mrna_lifetime`        | mRNA lifetime         | \(\tau\_\mathrm{mRNA}\)                |
+| `protein_lifetime`     | protein lifetime      | \(\tau\_\mathrm{EGFP}\)                |
+| `expression_amplitude` | (internal fit coeff.) | \(m*0 k*{TL}/(\delta-\beta)\)          |
+| `baseline_intensity`   | baseline intensity    | additive baseline (not a kinetic rate) |
+| `auc`                  | AUC                   | integrated protein output              |
 
-Use **expression rate** for \(m_0 k_{TL}\); reserve “efficiency” for delivery/escape
+Use **expression rate** for \(m*0 k*{TL}\); reserve “efficiency” for delivery/escape
 fractions. One name only — no alternate CSV/API aliases.

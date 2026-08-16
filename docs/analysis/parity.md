@@ -5,14 +5,14 @@
 Most **analysis science** is developed outside this monorepo, in focused Python
 packages:
 
-| Sibling package (R&D) | Role |
-| --- | --- |
+| Sibling package (R&D)                                           | Role                                                                            |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------- |
 | [`lisca-transfection-assay`](../../../lisca-transfection-assay) | Transfection / transfection pipeline (segment → timeseries → AUC → fit + plots) |
-| `lisca-killing-assay` (planned / external goals via mupattern) | Killing survival / kill-curve science |
-| `lisca-binding-assay` (planned) | Binding / LNP-style assays before Studio registration |
+| `lisca-killing-assay` (planned / external goals via mupattern)  | Killing survival / kill-curve science                                           |
+| `lisca-binding-assay` (planned)                                 | Binding / LNP-style assays before Studio registration                           |
 
 When a package is **mature** (stable CLI, stable workspace layout, trusted on
-real experiments), its *goals* are rewritten into **Rust** under
+real experiments), its _goals_ are rewritten into **Rust** under
 `crates/lisca/src/analysis/` so Studio and desktop builds ship one native
 pipeline. Python remains the place to prototype and to **oracle** numerical
 results.
@@ -23,12 +23,12 @@ wiring stays in [`analysis.md`](./analysis.md). Agent workflow:
 
 ## Roles
 
-| Layer | Responsibility |
-| --- | --- |
-| **Goal source** (Python `lisca-*-assay`) | Define stages, flags, output paths, CSV columns, plot names, scientific definitions |
-| **Prod port** (Rust `crates/lisca`) | Idiomatic, fast implementation Studio runs; same contracts and answers |
-| **Parity cage** (tests + CLI) | Prove the two stay aligned as either side evolves |
-| **Studio UI** (`@lisca/analysis`, Studio web) | Consume Rust outputs; chart catalogs must match file/column contracts |
+| Layer                                         | Responsibility                                                                      |
+| --------------------------------------------- | ----------------------------------------------------------------------------------- |
+| **Goal source** (Python `lisca-*-assay`)      | Define stages, flags, output paths, CSV columns, plot names, scientific definitions |
+| **Prod port** (Rust `crates/lisca`)           | Idiomatic, fast implementation Studio runs; same contracts and answers              |
+| **Parity cage** (tests + CLI)                 | Prove the two stay aligned as either side evolves                                   |
+| **Studio UI** (`@lisca/analysis`, Studio web) | Consume Rust outputs; chart catalogs must match file/column contracts               |
 
 **Not required:** matching Python module trees, NumPy evaluation order, process
 pools, or bitwise float identity.
@@ -61,11 +61,11 @@ pools, or bitwise float identity.
 
 ## Assay map
 
-| Studio `assayId` | Goal source | Rust module | Parity CLI | Notes |
-| --- | --- | --- | --- | --- |
-| `transfection` (Studio wire id; science = transfection) | `../lisca-transfection-assay` (`transfection` CLI) | `analysis/assays/transfection/` | `lisca-analyze` | Reference port; TF84 used as real-workspace check |
-| `killing` | mupattern / future `lisca-killing-assay` | `analysis/assays/killing/` | extend when stages need stage-CLI | ONNX ResNet + kill-curve tables |
-| `lnp-binding` / binding | future `lisca-binding-assay` | none until mature | — | Closed enum: do not half-register |
+| Studio `assayId`                                        | Goal source                                        | Rust module                     | Parity CLI                        | Notes                                             |
+| ------------------------------------------------------- | -------------------------------------------------- | ------------------------------- | --------------------------------- | ------------------------------------------------- |
+| `transfection` (Studio wire id; science = transfection) | `../lisca-transfection-assay` (`transfection` CLI) | `analysis/assays/transfection/` | `lisca-analyze`                   | Reference port; TF84 used as real-workspace check |
+| `killing`                                               | mupattern / future `lisca-killing-assay`           | `analysis/assays/killing/`      | extend when stages need stage-CLI | ONNX ResNet + kill-curve tables                   |
+| `lnp-binding` / binding                                 | future `lisca-binding-assay`                       | none until mature               | —                                 | Closed enum: do not half-register                 |
 
 Adding a Studio assay id is a **cross-cutting** change (`@lisca/contracts`,
 Rust, generated types). Unsupported ids fail explicitly — see `PRODUCT.md`.
@@ -93,11 +93,11 @@ Rust, generated types). Unsupported ids fail explicitly — see `PRODUCT.md`.
 
 Same definitions, within tolerances:
 
-| Quantity | Typical relative tolerance | Where locked |
-| --- | --- | --- |
-| Masked intensity / background / corrected | `1e-6` | unit + timeseries tests |
-| Trapezoidal AUC | `1e-6` | unit + AUC stage |
-| Kinetic fit params (Rust reference kernel) | `1e-5` | synthetic fit test |
+| Quantity                                       | Typical relative tolerance                        | Where locked                      |
+| ---------------------------------------------- | ------------------------------------------------- | --------------------------------- |
+| Masked intensity / background / corrected      | `1e-6`                                            | unit + timeseries tests           |
+| Trapezoidal AUC                                | `1e-6`                                            | unit + AUC stage                  |
+| Kinetic fit params (Rust reference kernel)     | `1e-5`                                            | synthetic fit test                |
 | Kinetic fit vs Python CLI (real/synthetic e2e) | `2e-2` (aim much tighter after kernel bugs fixed) | ignored CLI test + real workspace |
 
 Use relative error `|a−b| / max(|a|,|b|,ε)`. Report p50/p90/p99/max and
@@ -124,14 +124,14 @@ cargo build -p lisca --release --bin lisca-analyze
 
 Stage names mirror `transfection`:
 
-| Command | Writes |
-| --- | --- |
-| `segment` | `mask/PosN/*.tif` |
-| `timeseries` | `timeseries/Pos*/ch*.csv` (+ xlsx) |
-| `auc` | `results/auc.csv` |
-| `fit` | `results/fit.csv` |
+| Command                                     | Writes                                                                              |
+| ------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `segment`                                   | `mask/PosN/*.tif`                                                                   |
+| `timeseries`                                | `timeseries/Pos*/ch*.csv` (+ xlsx)                                                  |
+| `auc`                                       | `results/auc.csv`                                                                   |
+| `fit`                                       | `results/fit.csv`                                                                   |
 | `plot-timeseries` / `plot-auc` / `plot-fit` | `results/*.png` (timeseries includes summary mean/median/IQR + shared-y companions) |
-| `pipeline` (`analyze`, `all`) | full Studio order from `assay.json` |
+| `pipeline` (`analyze`, `all`)               | full Studio order from `assay.json`                                                 |
 
 Common flags: `--assay` (default `<workspace>/assay.json`), `--interval`,
 `--max-onset-minutes`, segment `--force` / radius / sigma. Parallel stages
@@ -162,11 +162,11 @@ Backup entire `results/` + `timeseries/` before a full re-run.
 
 ## Tests in this repo
 
-| Lane | Command | Purpose |
-| --- | --- | --- |
-| Always-on synthetic | `cargo test -p lisca --test transfection_parity` | Tiny workspace; reference formulas |
+| Lane                | Command                                                       | Purpose                                                           |
+| ------------------- | ------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Always-on synthetic | `cargo test -p lisca --test transfection_parity`              | Tiny workspace; reference formulas                                |
 | Optional Python e2e | `cargo test -p lisca --test transfection_parity -- --ignored` | Needs `../lisca-transfection-assay` (or `../transfection`) + `uv` |
-| Library units | `cargo test -p lisca --lib` | Kernels in `array.rs`, slide mapping, … |
+| Library units       | `cargo test -p lisca --lib`                                   | Kernels in `array.rs`, slide mapping, …                           |
 
 Support kernels for tests: `crates/lisca/tests/support/transfection_reference.rs`
 (goal formulas, not a second production path).

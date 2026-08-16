@@ -26,7 +26,7 @@ export default defineConfig({
       "**/routeTree.gen.ts",
     ],
     plugins: ["eslint", "oxc", "unicorn", "typescript"],
-    jsPlugins: ["oxlint-plugin-eslint", "./scripts/oxlint-plugin-lisca-boundaries.mjs"],
+    jsPlugins: ["./scripts/oxlint-plugin-lisca-boundaries.mjs"],
     categories: {
       correctness: "warn",
       suspicious: "warn",

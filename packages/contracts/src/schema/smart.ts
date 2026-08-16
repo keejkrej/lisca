@@ -1,16 +1,9 @@
 import * as Schema from "effect/Schema";
 
 import { RoiFrameRequestSchema } from "./annotate";
-import {
-  AlignGridCellCoordSchema,
-  AutoExcludePreviewCellSchema,
-} from "./align";
+import { AlignGridCellCoordSchema, AutoExcludePreviewCellSchema } from "./align";
 import { F64, NumArray } from "./primitives";
-import {
-  AlignerSourceSchema,
-  ContrastWindowSchema,
-  FrameRequestSchema,
-} from "./shared";
+import { AlignerSourceSchema, ContrastWindowSchema, FrameRequestSchema } from "./shared";
 
 export const SmartExcludeRequestSchema = Schema.Struct({
   source: AlignerSourceSchema,

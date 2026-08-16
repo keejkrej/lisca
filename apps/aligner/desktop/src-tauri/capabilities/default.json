@@ -3,9 +3,5 @@
   "identifier": "default",
   "description": "Default permissions for the Lisca Aligner desktop shell.",
   "windows": ["main"],
-  "permissions": [
-    "core:default",
-    "core:window:default",
-    "core:webview:default"
-  ]
+  "permissions": ["core:default", "core:window:default", "core:webview:default"]
 }

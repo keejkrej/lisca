@@ -239,8 +239,7 @@ function mergeStudioState(persisted: unknown, current: StudioWizardState): Studi
   const workspacePath =
     persistedState.workspacePath ?? persistedState.info1?.saveTo ?? current.workspacePath;
   const folderTemplate = persistedState.folderTemplate ?? {
-    subfolder:
-      persistedState.info1?.folderSubfolderTemplate ?? current.folderTemplate.subfolder,
+    subfolder: persistedState.info1?.folderSubfolderTemplate ?? current.folderTemplate.subfolder,
     filename: persistedState.info1?.folderFilenameTemplate ?? current.folderTemplate.filename,
   };
   const samples = persistedState.samples
@@ -280,7 +279,7 @@ function mergeStudioState(persisted: unknown, current: StudioWizardState): Studi
     samples,
     analysis:
       persistedState.analysis !== undefined
-        ? analysisConfigForAssay(assayId, persistedState.analysis) ?? null
+        ? (analysisConfigForAssay(assayId, persistedState.analysis) ?? null)
         : current.analysis,
     basicInfoSavedSnapshot:
       typeof persistedState.basicInfoSavedSnapshot === "string"
@@ -361,9 +360,7 @@ export const studioWizardActions = {
     const nextAssayId = enabledAssayId(assayJson.type) ?? DEFAULT_ASSAY_ID;
     const dataSourceKind = dataSourceKindFromAssayData(assayJson.data);
     const folderTemplate =
-      assayJson.data.type === "folder"
-        ? assayJson.data.template
-        : { ...initialFolderTemplate };
+      assayJson.data.type === "folder" ? assayJson.data.template : { ...initialFolderTemplate };
     const samples = cloneSamples(
       assayJson.samples.map((row, index) => ({
         id: `sample:${index}`,

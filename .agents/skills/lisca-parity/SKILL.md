@@ -12,7 +12,7 @@ description: >
 
 **Python is the lab notebook; Rust is production.** Assay science is developed
 to maturity in sibling `lisca-*-assay` packages (CLI + workspace I/O). Once
-stable, the same *goals* are rewritten into idiomatic Rust under
+stable, the same _goals_ are rewritten into idiomatic Rust under
 `crates/lisca/src/analysis/` for Studio / Tauri. Parity means **same workspace
 contracts and same scientific answers**, not the same NumPy loops.
 
@@ -23,8 +23,8 @@ kernels. Stage CLI details live in
 
 ## Leading words
 
-- **Goal source** — the Python package defines *what* to compute and *which
-  files* to read/write (columns, stage order, plot names).
+- **Goal source** — the Python package defines _what_ to compute and _which
+  files_ to read/write (columns, stage order, plot names).
 - **Prod port** — Rust implementation Studio actually runs.
 - **Contract parity** — paths, CSV headers, plot filenames, `assay.json` /
   `slide.json` semantics.
@@ -35,12 +35,12 @@ kernels. Stage CLI details live in
 
 ## When this skill applies
 
-| Situation | Do |
-| --- | --- |
-| Porting a mature stage from a `lisca-*-assay` package | Follow phases below end-to-end |
-| "TF84 / real workspace doesn't match Python" | Differential loop → fix kernel → re-diff |
-| Adding a new Studio assay id | Map goal source → register pipeline → parity cage before shipping |
-| Only chart UI / Studio wiring | Prefer `docs/analysis/analysis.md`; no Python CLI needed |
+| Situation                                             | Do                                                                |
+| ----------------------------------------------------- | ----------------------------------------------------------------- |
+| Porting a mature stage from a `lisca-*-assay` package | Follow phases below end-to-end                                    |
+| "TF84 / real workspace doesn't match Python"          | Differential loop → fix kernel → re-diff                          |
+| Adding a new Studio assay id                          | Map goal source → register pipeline → parity cage before shipping |
+| Only chart UI / Studio wiring                         | Prefer `docs/analysis/analysis.md`; no Python CLI needed          |
 
 ## Phase 1 — Map the goal source
 
@@ -131,11 +131,11 @@ documented or re-run; docs list the stage.
 
 ## Quick map (see docs for full table)
 
-| Assay id | Goal source (sibling) | Rust | Parity CLI |
-| --- | --- | --- | --- |
-| `gene-expression` | `../lisca-transfection-assay` (`transfection`) | `assays/gene_expression/` | `lisca-analyze` |
-| `immune-killing` | killing assay / mupattern goals | `assays/immune_killing/` | (extend when porting) |
-| binding (future) | `../lisca-binding-assay` | (not registered until mature) | — |
+| Assay id          | Goal source (sibling)                          | Rust                          | Parity CLI            |
+| ----------------- | ---------------------------------------------- | ----------------------------- | --------------------- |
+| `gene-expression` | `../lisca-transfection-assay` (`transfection`) | `assays/gene_expression/`     | `lisca-analyze`       |
+| `immune-killing`  | killing assay / mupattern goals                | `assays/immune_killing/`      | (extend when porting) |
+| binding (future)  | `../lisca-binding-assay`                       | (not registered until mature) | —                     |
 
 ## Completion checklist
 

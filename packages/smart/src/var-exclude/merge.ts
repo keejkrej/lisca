@@ -4,10 +4,7 @@ import type {
   AutoExcludePreviewResponse,
 } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
-import {
-  collectAlignGridEdgeCells,
-  mergeExcludedAlignGridCells,
-} from "@lisca/utils";
+import { collectAlignGridEdgeCells, mergeExcludedAlignGridCells } from "@lisca/utils";
 
 export function cellsBelowVariationThreshold(
   preview: AutoExcludePreviewResponse,

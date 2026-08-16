@@ -7,9 +7,7 @@
   "paths": {
     "/fs/list": {
       "get": {
-        "tags": [
-          "fs"
-        ],
+        "tags": ["fs"],
         "operationId": "fs.listDirectory",
         "parameters": [],
         "security": [],
@@ -56,9 +54,7 @@
     },
     "/fs/home": {
       "get": {
-        "tags": [
-          "fs"
-        ],
+        "tags": ["fs"],
         "operationId": "fs.userHomeDirectory",
         "parameters": [],
         "security": [],
@@ -105,9 +101,7 @@
     },
     "/fs/read-text": {
       "get": {
-        "tags": [
-          "fs"
-        ],
+        "tags": ["fs"],
         "operationId": "fs.readTextFile",
         "parameters": [],
         "security": [],
@@ -154,9 +148,7 @@
     },
     "/fs/file": {
       "get": {
-        "tags": [
-          "fs"
-        ],
+        "tags": ["fs"],
         "operationId": "fs.readFile",
         "parameters": [],
         "security": [],
@@ -203,9 +195,7 @@
     },
     "/fs/create-directory": {
       "post": {
-        "tags": [
-          "fs"
-        ],
+        "tags": ["fs"],
         "operationId": "fs.createDirectory",
         "parameters": [],
         "security": [],
@@ -262,9 +252,7 @@
     },
     "/align/scan-source": {
       "post": {
-        "tags": [
-          "align"
-        ],
+        "tags": ["align"],
         "operationId": "align.scanSource",
         "parameters": [],
         "security": [],
@@ -321,9 +309,7 @@
     },
     "/align/load-frame": {
       "post": {
-        "tags": [
-          "align"
-        ],
+        "tags": ["align"],
         "operationId": "align.loadFrame",
         "parameters": [],
         "security": [],
@@ -380,9 +366,7 @@
     },
     "/align/save-bbox": {
       "post": {
-        "tags": [
-          "align"
-        ],
+        "tags": ["align"],
         "operationId": "align.saveBbox",
         "parameters": [],
         "security": [],
@@ -439,9 +423,7 @@
     },
     "/align/align-state": {
       "get": {
-        "tags": [
-          "align"
-        ],
+        "tags": ["align"],
         "operationId": "align.loadAlignState",
         "parameters": [],
         "security": [],
@@ -495,9 +477,7 @@
     },
     "/align/output-paths": {
       "get": {
-        "tags": [
-          "align"
-        ],
+        "tags": ["align"],
         "operationId": "align.outputPaths",
         "parameters": [],
         "security": [],
@@ -544,9 +524,7 @@
     },
     "/align/saved-bbox-positions": {
       "get": {
-        "tags": [
-          "align"
-        ],
+        "tags": ["align"],
         "operationId": "align.listSavedBboxPositions",
         "parameters": [],
         "security": [],
@@ -598,9 +576,7 @@
     },
     "/align/roi-pos-exists": {
       "get": {
-        "tags": [
-          "align"
-        ],
+        "tags": ["align"],
         "operationId": "align.roiPosExists",
         "parameters": [],
         "security": [],
@@ -647,9 +623,7 @@
     },
     "/align/crop-roi": {
       "post": {
-        "tags": [
-          "align"
-        ],
+        "tags": ["align"],
         "operationId": "align.cropRoi",
         "parameters": [],
         "security": [],
@@ -706,9 +680,7 @@
     },
     "/align/cancel-crop-roi": {
       "post": {
-        "tags": [
-          "align"
-        ],
+        "tags": ["align"],
         "operationId": "align.cancelCropRoi",
         "parameters": [],
         "security": [],
@@ -765,9 +737,7 @@
     },
     "/align/crop-roi-progress": {
       "get": {
-        "tags": [
-          "align"
-        ],
+        "tags": ["align"],
         "operationId": "align.cropRoiProgress",
         "parameters": [],
         "security": [],
@@ -814,9 +784,7 @@
     },
     "/align/crop-latest": {
       "get": {
-        "tags": [
-          "align"
-        ],
+        "tags": ["align"],
         "operationId": "align.getLatestCropProgress",
         "parameters": [],
         "security": [],
@@ -870,9 +838,7 @@
     },
     "/align/smart-exclude": {
       "post": {
-        "tags": [
-          "align"
-        ],
+        "tags": ["align"],
         "operationId": "align.smartExclude",
         "parameters": [],
         "security": [],
@@ -929,9 +895,7 @@
     },
     "/annotate/scan-roi-workspace": {
       "post": {
-        "tags": [
-          "annotate"
-        ],
+        "tags": ["annotate"],
         "operationId": "annotate.scanRoiWorkspace",
         "parameters": [],
         "security": [],
@@ -988,9 +952,7 @@
     },
     "/annotate/load-labels": {
       "post": {
-        "tags": [
-          "annotate"
-        ],
+        "tags": ["annotate"],
         "operationId": "annotate.loadLabels",
         "parameters": [],
         "security": [],
@@ -1050,9 +1012,7 @@
     },
     "/annotate/save-labels": {
       "post": {
-        "tags": [
-          "annotate"
-        ],
+        "tags": ["annotate"],
         "operationId": "annotate.saveLabels",
         "parameters": [],
         "security": [],
@@ -1112,9 +1072,7 @@
     },
     "/annotate/load-roi-frame": {
       "post": {
-        "tags": [
-          "annotate"
-        ],
+        "tags": ["annotate"],
         "operationId": "annotate.loadRoiFrame",
         "parameters": [],
         "security": [],
@@ -1171,9 +1129,7 @@
     },
     "/annotate/load-roi-frame-annotation": {
       "post": {
-        "tags": [
-          "annotate"
-        ],
+        "tags": ["annotate"],
         "operationId": "annotate.loadRoiFrameAnnotation",
         "parameters": [],
         "security": [],
@@ -1230,9 +1186,7 @@
     },
     "/annotate/save-roi-frame-annotation": {
       "post": {
-        "tags": [
-          "annotate"
-        ],
+        "tags": ["annotate"],
         "operationId": "annotate.saveRoiFrameAnnotation",
         "parameters": [],
         "security": [],
@@ -1289,9 +1243,7 @@
     },
     "/annotate/smart-segment": {
       "post": {
-        "tags": [
-          "annotate"
-        ],
+        "tags": ["annotate"],
         "operationId": "annotate.smartSegment",
         "parameters": [],
         "security": [],
@@ -1348,9 +1300,7 @@
     },
     "/profile/list": {
       "get": {
-        "tags": [
-          "profile"
-        ],
+        "tags": ["profile"],
         "operationId": "profile.listProfiles",
         "parameters": [],
         "security": [],
@@ -1397,9 +1347,7 @@
     },
     "/profile/create": {
       "post": {
-        "tags": [
-          "profile"
-        ],
+        "tags": ["profile"],
         "operationId": "profile.createProfile",
         "parameters": [],
         "security": [],
@@ -1456,9 +1404,7 @@
     },
     "/profile/sign-in": {
       "post": {
-        "tags": [
-          "profile"
-        ],
+        "tags": ["profile"],
         "operationId": "profile.signInProfile",
         "parameters": [],
         "security": [],
@@ -1515,9 +1461,7 @@
     },
     "/profile/sign-out": {
       "post": {
-        "tags": [
-          "profile"
-        ],
+        "tags": ["profile"],
         "operationId": "profile.signOutProfile",
         "parameters": [],
         "security": [],
@@ -1564,9 +1508,7 @@
     },
     "/memory/recent": {
       "get": {
-        "tags": [
-          "memory"
-        ],
+        "tags": ["memory"],
         "operationId": "memory.getRecentMemory",
         "parameters": [],
         "security": [],
@@ -1613,9 +1555,7 @@
     },
     "/memory/touch": {
       "post": {
-        "tags": [
-          "memory"
-        ],
+        "tags": ["memory"],
         "operationId": "memory.touchMemory",
         "parameters": [],
         "security": [],
@@ -1667,16 +1607,11 @@
                     "anyOf": [
                       {
                         "type": "object",
-                        "required": [
-                          "kind",
-                          "path"
-                        ],
+                        "required": ["kind", "path"],
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "workspace"
-                            ]
+                            "enum": ["workspace"]
                           },
                           "path": {
                             "type": "string"
@@ -1689,16 +1624,11 @@
                       },
                       {
                         "type": "object",
-                        "required": [
-                          "kind",
-                          "source"
-                        ],
+                        "required": ["kind", "source"],
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "source"
-                            ]
+                            "enum": ["source"]
                           },
                           "source": {
                             "$ref": "#/components/schemas/AlignerSource"
@@ -1713,16 +1643,11 @@
                   },
                   {
                     "type": "object",
-                    "required": [
-                      "kind",
-                      "path"
-                    ],
+                    "required": ["kind", "path"],
                     "properties": {
                       "kind": {
                         "type": "string",
-                        "enum": [
-                          "assay"
-                        ]
+                        "enum": ["assay"]
                       },
                       "path": {
                         "type": "string"
@@ -1746,9 +1671,7 @@
     },
     "/tasks/operations": {
       "get": {
-        "tags": [
-          "tasks"
-        ],
+        "tags": ["tasks"],
         "operationId": "tasks.listOperations",
         "parameters": [],
         "security": [],
@@ -1795,9 +1718,7 @@
     },
     "/tasks/operation": {
       "get": {
-        "tags": [
-          "tasks"
-        ],
+        "tags": ["tasks"],
         "operationId": "tasks.getOperation",
         "parameters": [],
         "security": [],
@@ -1844,9 +1765,7 @@
     },
     "/tasks/task": {
       "get": {
-        "tags": [
-          "tasks"
-        ],
+        "tags": ["tasks"],
         "operationId": "tasks.getTask",
         "parameters": [],
         "security": [],
@@ -1893,9 +1812,7 @@
     },
     "/tasks/operation/cancel": {
       "post": {
-        "tags": [
-          "tasks"
-        ],
+        "tags": ["tasks"],
         "operationId": "tasks.cancelOperation",
         "parameters": [],
         "security": [],
@@ -1962,9 +1879,7 @@
     },
     "/tasks/task/cancel": {
       "post": {
-        "tags": [
-          "tasks"
-        ],
+        "tags": ["tasks"],
         "operationId": "tasks.cancelTask",
         "parameters": [],
         "security": [],
@@ -2031,9 +1946,7 @@
     },
     "/tasks/task/retry": {
       "post": {
-        "tags": [
-          "tasks"
-        ],
+        "tags": ["tasks"],
         "operationId": "tasks.retryTask",
         "parameters": [],
         "security": [],
@@ -2100,9 +2013,7 @@
     },
     "/studio/save-assay-json": {
       "post": {
-        "tags": [
-          "studio"
-        ],
+        "tags": ["studio"],
         "operationId": "studio.saveAssayJson",
         "parameters": [],
         "security": [],
@@ -2159,9 +2070,7 @@
     },
     "/studio/save-result-pdf": {
       "post": {
-        "tags": [
-          "studio"
-        ],
+        "tags": ["studio"],
         "operationId": "studio.saveResultPdf",
         "parameters": [],
         "security": [],
@@ -2218,9 +2127,7 @@
     },
     "/studio/start-analysis": {
       "post": {
-        "tags": [
-          "studio"
-        ],
+        "tags": ["studio"],
         "operationId": "studio.startAnalysis",
         "parameters": [],
         "security": [],
@@ -2277,9 +2184,7 @@
     },
     "/studio/analysis-progress": {
       "get": {
-        "tags": [
-          "studio"
-        ],
+        "tags": ["studio"],
         "operationId": "studio.getAnalysisProgress",
         "parameters": [],
         "security": [],
@@ -2326,9 +2231,7 @@
     },
     "/studio/latest-analysis": {
       "get": {
-        "tags": [
-          "studio"
-        ],
+        "tags": ["studio"],
         "operationId": "studio.getLatestAnalysisProgress",
         "parameters": [],
         "security": [],
@@ -2382,9 +2285,7 @@
     },
     "/studio/analysis-results": {
       "get": {
-        "tags": [
-          "studio"
-        ],
+        "tags": ["studio"],
         "operationId": "studio.getAnalysisResults",
         "parameters": [],
         "security": [],
@@ -2451,11 +2352,7 @@
       },
       "HostListDirectoryResult": {
         "type": "object",
-        "required": [
-          "path",
-          "parent",
-          "entries"
-        ],
+        "required": ["path", "parent", "entries"],
         "properties": {
           "path": {
             "anyOf": [
@@ -2488,11 +2385,7 @@
       },
       "HostFsEntry": {
         "type": "object",
-        "required": [
-          "name",
-          "path",
-          "isDirectory"
-        ],
+        "required": ["name", "path", "isDirectory"],
         "properties": {
           "name": {
             "type": "string"
@@ -2508,11 +2401,7 @@
       },
       "HttpApiDecodeError": {
         "type": "object",
-        "required": [
-          "issues",
-          "message",
-          "_tag"
-        ],
+        "required": ["issues", "message", "_tag"],
         "properties": {
           "issues": {
             "type": "array",
@@ -2525,9 +2414,7 @@
           },
           "_tag": {
             "type": "string",
-            "enum": [
-              "HttpApiDecodeError"
-            ]
+            "enum": ["HttpApiDecodeError"]
           }
         },
         "additionalProperties": false,
@@ -2535,11 +2422,7 @@
       },
       "Issue": {
         "type": "object",
-        "required": [
-          "_tag",
-          "path",
-          "message"
-        ],
+        "required": ["_tag", "path", "message"],
         "properties": {
           "_tag": {
             "type": "string",
@@ -2580,16 +2463,11 @@
           },
           {
             "type": "object",
-            "required": [
-              "_tag",
-              "key"
-            ],
+            "required": ["_tag", "key"],
             "properties": {
               "_tag": {
                 "type": "string",
-                "enum": [
-                  "symbol"
-                ]
+                "enum": ["symbol"]
               },
               "key": {
                 "type": "string"
@@ -2602,47 +2480,35 @@
       },
       "RequestError": {
         "type": "object",
-        "required": [
-          "message",
-          "_tag"
-        ],
+        "required": ["message", "_tag"],
         "properties": {
           "message": {
             "type": "string"
           },
           "_tag": {
             "type": "string",
-            "enum": [
-              "RequestError"
-            ]
+            "enum": ["RequestError"]
           }
         },
         "additionalProperties": false
       },
       "Unauthorized": {
         "type": "object",
-        "required": [
-          "message",
-          "_tag"
-        ],
+        "required": ["message", "_tag"],
         "properties": {
           "message": {
             "type": "string"
           },
           "_tag": {
             "type": "string",
-            "enum": [
-              "Unauthorized"
-            ]
+            "enum": ["Unauthorized"]
           }
         },
         "additionalProperties": false
       },
       "HomeDirectoryResponse": {
         "type": "object",
-        "required": [
-          "path"
-        ],
+        "required": ["path"],
         "properties": {
           "path": {
             "type": "string"
@@ -2652,9 +2518,7 @@
       },
       "ReadTextFileQuery": {
         "type": "object",
-        "required": [
-          "path"
-        ],
+        "required": ["path"],
         "properties": {
           "path": {
             "type": "string"
@@ -2664,9 +2528,7 @@
       },
       "ReadTextFileResponse": {
         "type": "object",
-        "required": [
-          "contents"
-        ],
+        "required": ["contents"],
         "properties": {
           "contents": {
             "type": "string"
@@ -2676,10 +2538,7 @@
       },
       "CreateDirectoryRequest": {
         "type": "object",
-        "required": [
-          "parentPath",
-          "name"
-        ],
+        "required": ["parentPath", "name"],
         "properties": {
           "parentPath": {
             "type": "string"
@@ -2692,9 +2551,7 @@
       },
       "CreateDirectoryResponse": {
         "type": "object",
-        "required": [
-          "path"
-        ],
+        "required": ["path"],
         "properties": {
           "path": {
             "type": "string"
@@ -2704,9 +2561,7 @@
       },
       "ScanSourceRequest": {
         "type": "object",
-        "required": [
-          "source"
-        ],
+        "required": ["source"],
         "properties": {
           "source": {
             "$ref": "#/components/schemas/AlignerSource"
@@ -2721,16 +2576,11 @@
           },
           {
             "type": "object",
-            "required": [
-              "kind",
-              "path"
-            ],
+            "required": ["kind", "path"],
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "nd2"
-                ]
+                "enum": ["nd2"]
               },
               "path": {
                 "type": "string"
@@ -2740,16 +2590,11 @@
           },
           {
             "type": "object",
-            "required": [
-              "kind",
-              "path"
-            ],
+            "required": ["kind", "path"],
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "czi"
-                ]
+                "enum": ["czi"]
               },
               "path": {
                 "type": "string"
@@ -2761,18 +2606,11 @@
       },
       "FolderSource": {
         "type": "object",
-        "required": [
-          "kind",
-          "path",
-          "subfolderTemplate",
-          "filenameTemplate"
-        ],
+        "required": ["kind", "path", "subfolderTemplate", "filenameTemplate"],
         "properties": {
           "kind": {
             "type": "string",
-            "enum": [
-              "folder"
-            ]
+            "enum": ["folder"]
           },
           "path": {
             "type": "string"
@@ -2788,12 +2626,7 @@
       },
       "WorkspaceScan": {
         "type": "object",
-        "required": [
-          "positions",
-          "channels",
-          "times",
-          "zSlices"
-        ],
+        "required": ["positions", "channels", "times", "zSlices"],
         "properties": {
           "positions": {
             "type": "array",
@@ -2856,11 +2689,7 @@
       },
       "LoadFrameRequest": {
         "type": "object",
-        "required": [
-          "source",
-          "request",
-          "contrast"
-        ],
+        "required": ["source", "request", "contrast"],
         "properties": {
           "source": {
             "$ref": "#/components/schemas/AlignerSource"
@@ -2883,12 +2712,7 @@
       },
       "FrameRequest": {
         "type": "object",
-        "required": [
-          "pos",
-          "channel",
-          "time",
-          "z"
-        ],
+        "required": ["pos", "channel", "time", "z"],
         "properties": {
           "pos": {
             "type": "integer",
@@ -2915,10 +2739,7 @@
       },
       "ContrastWindow": {
         "type": "object",
-        "required": [
-          "min",
-          "max"
-        ],
+        "required": ["min", "max"],
         "properties": {
           "min": {
             "type": "integer",
@@ -2975,24 +2796,11 @@
       },
       "PixelType": {
         "type": "string",
-        "enum": [
-          "uint8",
-          "uint8clamped",
-          "int8",
-          "uint16",
-          "int16",
-          "uint32",
-          "int32"
-        ]
+        "enum": ["uint8", "uint8clamped", "int8", "uint16", "int16", "uint32", "int32"]
       },
       "SaveBboxRequest": {
         "type": "object",
-        "required": [
-          "workspacePath",
-          "pos",
-          "csv",
-          "alignState"
-        ],
+        "required": ["workspacePath", "pos", "csv", "alignState"],
         "properties": {
           "workspacePath": {
             "type": "string"
@@ -3013,10 +2821,7 @@
       },
       "SavedAlignState": {
         "type": "object",
-        "required": [
-          "grid",
-          "excludedCells"
-        ],
+        "required": ["grid", "excludedCells"],
         "properties": {
           "grid": {
             "$ref": "#/components/schemas/AlignGridState"
@@ -3088,18 +2893,11 @@
       },
       "AlignGridShape": {
         "type": "string",
-        "enum": [
-          "rect",
-          "square",
-          "hex"
-        ]
+        "enum": ["rect", "square", "hex"]
       },
       "AlignGridCellCoord": {
         "type": "object",
-        "required": [
-          "i",
-          "j"
-        ],
+        "required": ["i", "j"],
         "properties": {
           "i": {
             "type": "integer",
@@ -3118,10 +2916,7 @@
       },
       "SaveBboxResponse": {
         "type": "object",
-        "required": [
-          "ok",
-          "error"
-        ],
+        "required": ["ok", "error"],
         "properties": {
           "ok": {
             "type": "boolean"
@@ -3141,10 +2936,7 @@
       },
       "LoadAlignStateQuery": {
         "type": "object",
-        "required": [
-          "workspacePath",
-          "pos"
-        ],
+        "required": ["workspacePath", "pos"],
         "properties": {
           "workspacePath": {
             "type": "string"
@@ -3159,9 +2951,7 @@
       },
       "OutputPathsQuery": {
         "type": "object",
-        "required": [
-          "pos"
-        ],
+        "required": ["pos"],
         "properties": {
           "pos": {
             "type": "integer",
@@ -3173,11 +2963,7 @@
       },
       "AlignOutputPaths": {
         "type": "object",
-        "required": [
-          "bbox",
-          "align",
-          "roi"
-        ],
+        "required": ["bbox", "align", "roi"],
         "properties": {
           "bbox": {
             "type": "string"
@@ -3193,9 +2979,7 @@
       },
       "SavedBboxPositionsQuery": {
         "type": "object",
-        "required": [
-          "workspacePath"
-        ],
+        "required": ["workspacePath"],
         "properties": {
           "workspacePath": {
             "type": "string"
@@ -3205,10 +2989,7 @@
       },
       "RoiPosExistsQuery": {
         "type": "object",
-        "required": [
-          "workspacePath",
-          "pos"
-        ],
+        "required": ["workspacePath", "pos"],
         "properties": {
           "workspacePath": {
             "type": "string"
@@ -3223,9 +3004,7 @@
       },
       "RoiPosExistsResponse": {
         "type": "object",
-        "required": [
-          "exists"
-        ],
+        "required": ["exists"],
         "properties": {
           "exists": {
             "type": "boolean"
@@ -3235,13 +3014,7 @@
       },
       "CropRoiRequest": {
         "type": "object",
-        "required": [
-          "requestId",
-          "workspacePath",
-          "source",
-          "positions",
-          "overwrite"
-        ],
+        "required": ["requestId", "workspacePath", "source", "positions", "overwrite"],
         "properties": {
           "requestId": {
             "type": "string"
@@ -3271,17 +3044,11 @@
       },
       "CropOutputFormat": {
         "type": "string",
-        "enum": [
-          "tiff"
-        ]
+        "enum": ["tiff"]
       },
       "CropRoiResponse": {
         "type": "object",
-        "required": [
-          "requestId",
-          "status",
-          "disposition"
-        ],
+        "required": ["requestId", "status", "disposition"],
         "properties": {
           "requestId": {
             "type": "string"
@@ -3297,26 +3064,15 @@
       },
       "CropRoiStatus": {
         "type": "string",
-        "enum": [
-          "queued",
-          "running",
-          "completed",
-          "cancelled",
-          "error"
-        ]
+        "enum": ["queued", "running", "completed", "cancelled", "error"]
       },
       "CropRoiDisposition": {
         "type": "string",
-        "enum": [
-          "started",
-          "attached"
-        ]
+        "enum": ["started", "attached"]
       },
       "CancelCropRoiRequest": {
         "type": "object",
-        "required": [
-          "requestId"
-        ],
+        "required": ["requestId"],
         "properties": {
           "requestId": {
             "type": "string"
@@ -3408,9 +3164,7 @@
       },
       "CropRoiProgressQuery": {
         "type": "object",
-        "required": [
-          "requestId"
-        ],
+        "required": ["requestId"],
         "properties": {
           "requestId": {
             "type": "string"
@@ -3420,9 +3174,7 @@
       },
       "LatestCropQuery": {
         "type": "object",
-        "required": [
-          "workspacePath"
-        ],
+        "required": ["workspacePath"],
         "properties": {
           "workspacePath": {
             "type": "string"
@@ -3432,12 +3184,7 @@
       },
       "SmartExcludeRequest": {
         "type": "object",
-        "required": [
-          "source",
-          "request",
-          "contrast",
-          "cells"
-        ],
+        "required": ["source", "request", "contrast", "cells"],
         "properties": {
           "source": {
             "$ref": "#/components/schemas/AlignerSource"
@@ -3470,14 +3217,7 @@
       },
       "AutoExcludePreviewCell": {
         "type": "object",
-        "required": [
-          "i",
-          "j",
-          "x",
-          "y",
-          "w",
-          "h"
-        ],
+        "required": ["i", "j", "x", "y", "w", "h"],
         "properties": {
           "i": {
             "type": "integer",
@@ -3516,9 +3256,7 @@
       },
       "SmartExcludeResponse": {
         "type": "object",
-        "required": [
-          "excludedCells"
-        ],
+        "required": ["excludedCells"],
         "properties": {
           "excludedCells": {
             "type": "array",
@@ -3531,9 +3269,7 @@
       },
       "ScanRoiWorkspaceRequest": {
         "type": "object",
-        "required": [
-          "workspacePath"
-        ],
+        "required": ["workspacePath"],
         "properties": {
           "workspacePath": {
             "type": "string"
@@ -3543,9 +3279,7 @@
       },
       "RoiWorkspaceScan": {
         "type": "object",
-        "required": [
-          "positions"
-        ],
+        "required": ["positions"],
         "properties": {
           "positions": {
             "type": "array",
@@ -3558,13 +3292,7 @@
       },
       "RoiPositionScan": {
         "type": "object",
-        "required": [
-          "pos",
-          "channels",
-          "times",
-          "zSlices",
-          "rois"
-        ],
+        "required": ["pos", "channels", "times", "zSlices", "rois"],
         "properties": {
           "pos": {
             "type": "integer",
@@ -3606,11 +3334,7 @@
       },
       "RoiIndexEntry": {
         "type": "object",
-        "required": [
-          "roi",
-          "fileName",
-          "bbox"
-        ],
+        "required": ["roi", "fileName", "bbox"],
         "properties": {
           "roi": {
             "type": "integer",
@@ -3628,13 +3352,7 @@
       },
       "RoiBbox": {
         "type": "object",
-        "required": [
-          "roi",
-          "x",
-          "y",
-          "w",
-          "h"
-        ],
+        "required": ["roi", "x", "y", "w", "h"],
         "properties": {
           "roi": {
             "type": "integer",
@@ -3666,9 +3384,7 @@
       },
       "LoadAnnotationLabelsRequest": {
         "type": "object",
-        "required": [
-          "workspacePath"
-        ],
+        "required": ["workspacePath"],
         "properties": {
           "workspacePath": {
             "type": "string"
@@ -3678,11 +3394,7 @@
       },
       "AnnotationLabel": {
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "color"
-        ],
+        "required": ["id", "name", "color"],
         "properties": {
           "id": {
             "type": "string"
@@ -3698,10 +3410,7 @@
       },
       "SaveAnnotationLabelsRequest": {
         "type": "object",
-        "required": [
-          "workspacePath",
-          "labels"
-        ],
+        "required": ["workspacePath", "labels"],
         "properties": {
           "workspacePath": {
             "type": "string"
@@ -3717,11 +3426,7 @@
       },
       "LoadRoiFrameRequest": {
         "type": "object",
-        "required": [
-          "workspacePath",
-          "request",
-          "contrast"
-        ],
+        "required": ["workspacePath", "request", "contrast"],
         "properties": {
           "workspacePath": {
             "type": "string"
@@ -3744,13 +3449,7 @@
       },
       "RoiFrameRequest": {
         "type": "object",
-        "required": [
-          "pos",
-          "roi",
-          "channel",
-          "time",
-          "z"
-        ],
+        "required": ["pos", "roi", "channel", "time", "z"],
         "properties": {
           "pos": {
             "type": "integer",
@@ -3782,10 +3481,7 @@
       },
       "LoadRoiFrameAnnotationRequest": {
         "type": "object",
-        "required": [
-          "workspacePath",
-          "request"
-        ],
+        "required": ["workspacePath", "request"],
         "properties": {
           "workspacePath": {
             "type": "string"
@@ -3798,10 +3494,7 @@
       },
       "LoadedRoiFrameAnnotation": {
         "type": "object",
-        "required": [
-          "annotation",
-          "maskBase64Png"
-        ],
+        "required": ["annotation", "maskBase64Png"],
         "properties": {
           "annotation": {
             "$ref": "#/components/schemas/RoiFrameAnnotation"
@@ -3821,11 +3514,7 @@
       },
       "RoiFrameAnnotation": {
         "type": "object",
-        "required": [
-          "classificationLabelId",
-          "maskPath",
-          "updatedAt"
-        ],
+        "required": ["classificationLabelId", "maskPath", "updatedAt"],
         "properties": {
           "classificationLabelId": {
             "anyOf": [
@@ -3862,11 +3551,7 @@
       },
       "SaveRoiFrameAnnotationRequest": {
         "type": "object",
-        "required": [
-          "workspacePath",
-          "request",
-          "annotation"
-        ],
+        "required": ["workspacePath", "request", "annotation"],
         "properties": {
           "workspacePath": {
             "type": "string"
@@ -3882,10 +3567,7 @@
       },
       "RoiFrameAnnotationPayload": {
         "type": "object",
-        "required": [
-          "classificationLabelId",
-          "maskBase64Png"
-        ],
+        "required": ["classificationLabelId", "maskBase64Png"],
         "properties": {
           "classificationLabelId": {
             "anyOf": [
@@ -3912,12 +3594,7 @@
       },
       "SmartSegmentRequest": {
         "type": "object",
-        "required": [
-          "workspacePath",
-          "request",
-          "contrast",
-          "points"
-        ],
+        "required": ["workspacePath", "request", "contrast", "points"],
         "properties": {
           "workspacePath": {
             "type": "string"
@@ -3946,11 +3623,7 @@
       },
       "SmartSegmentPoint": {
         "type": "object",
-        "required": [
-          "x",
-          "y",
-          "label"
-        ],
+        "required": ["x", "y", "label"],
         "properties": {
           "x": {
             "type": "number"
@@ -3960,19 +3633,14 @@
           },
           "label": {
             "type": "number",
-            "enum": [
-              0,
-              1
-            ]
+            "enum": [0, 1]
           }
         },
         "additionalProperties": false
       },
       "SmartSegmentResponse": {
         "type": "object",
-        "required": [
-          "mask"
-        ],
+        "required": ["mask"],
         "properties": {
           "mask": {
             "type": "array",
@@ -3987,9 +3655,7 @@
       },
       "ProfileListResponse": {
         "type": "object",
-        "required": [
-          "profiles"
-        ],
+        "required": ["profiles"],
         "properties": {
           "profiles": {
             "type": "array",
@@ -4002,11 +3668,7 @@
       },
       "ProfileSummary": {
         "type": "object",
-        "required": [
-          "id",
-          "displayName",
-          "createdAt"
-        ],
+        "required": ["id", "displayName", "createdAt"],
         "properties": {
           "id": {
             "type": "string"
@@ -4025,9 +3687,7 @@
       },
       "ProfileCreateRequest": {
         "type": "object",
-        "required": [
-          "displayName"
-        ],
+        "required": ["displayName"],
         "properties": {
           "displayName": {
             "type": "string"
@@ -4037,11 +3697,7 @@
       },
       "ProfileSessionResponse": {
         "type": "object",
-        "required": [
-          "profileId",
-          "displayName",
-          "accessToken"
-        ],
+        "required": ["profileId", "displayName", "accessToken"],
         "properties": {
           "profileId": {
             "type": "string"
@@ -4057,9 +3713,7 @@
       },
       "ProfileSignInRequest": {
         "type": "object",
-        "required": [
-          "displayName"
-        ],
+        "required": ["displayName"],
         "properties": {
           "displayName": {
             "type": "string"
@@ -4069,24 +3723,18 @@
       },
       "ProfileSignOutResponse": {
         "type": "object",
-        "required": [
-          "ok"
-        ],
+        "required": ["ok"],
         "properties": {
           "ok": {
             "type": "boolean",
-            "enum": [
-              true
-            ]
+            "enum": [true]
           }
         },
         "additionalProperties": false
       },
       "MemoryRecentQuery": {
         "type": "object",
-        "required": [
-          "type"
-        ],
+        "required": ["type"],
         "properties": {
           "type": {
             "$ref": "#/components/schemas/MemoryKind"
@@ -4096,11 +3744,7 @@
       },
       "MemoryKind": {
         "type": "string",
-        "enum": [
-          "workspace",
-          "source",
-          "assay"
-        ]
+        "enum": ["workspace", "source", "assay"]
       },
       "MemoryRecentResponse": {
         "type": "object",
@@ -4129,10 +3773,7 @@
       },
       "MemoryWorkspaceEntry": {
         "type": "object",
-        "required": [
-          "path",
-          "lastUsedAt"
-        ],
+        "required": ["path", "lastUsedAt"],
         "properties": {
           "path": {
             "type": "string"
@@ -4151,10 +3792,7 @@
       },
       "MemorySourceEntry": {
         "type": "object",
-        "required": [
-          "source",
-          "lastUsedAt"
-        ],
+        "required": ["source", "lastUsedAt"],
         "properties": {
           "source": {
             "$ref": "#/components/schemas/AlignerSource"
@@ -4173,10 +3811,7 @@
       },
       "MemoryAssayEntry": {
         "type": "object",
-        "required": [
-          "path",
-          "lastUsedAt"
-        ],
+        "required": ["path", "lastUsedAt"],
         "properties": {
           "path": {
             "type": "string"
@@ -4198,9 +3833,7 @@
       },
       "MemoryTouchResponse": {
         "type": "object",
-        "required": [
-          "ok"
-        ],
+        "required": ["ok"],
         "properties": {
           "ok": {
             "type": "boolean"
@@ -4302,10 +3935,7 @@
       },
       "OperationAttention": {
         "type": "string",
-        "enum": [
-          "none",
-          "error"
-        ]
+        "enum": ["none", "error"]
       },
       "OperationProgress": {
         "type": "object",
@@ -4365,14 +3995,7 @@
       },
       "TaskWorkProgress": {
         "type": "object",
-        "required": [
-          "unit",
-          "completed",
-          "total",
-          "phase",
-          "message",
-          "updatedAtMs"
-        ],
+        "required": ["unit", "completed", "total", "phase", "message", "updatedAtMs"],
         "properties": {
           "unit": {
             "type": "string"
@@ -4418,9 +4041,7 @@
       },
       "OperationDetailQuery": {
         "type": "object",
-        "required": [
-          "operationId"
-        ],
+        "required": ["operationId"],
         "properties": {
           "operationId": {
             "type": "string"
@@ -4430,10 +4051,7 @@
       },
       "OperationDetail": {
         "type": "object",
-        "required": [
-          "operation",
-          "tasks"
-        ],
+        "required": ["operation", "tasks"],
         "properties": {
           "operation": {
             "$ref": "#/components/schemas/OperationSummary"
@@ -4533,12 +4151,7 @@
       },
       "TaskDependencyBlock": {
         "type": "object",
-        "required": [
-          "taskId",
-          "taskKind",
-          "status",
-          "error"
-        ],
+        "required": ["taskId", "taskKind", "status", "error"],
         "properties": {
           "taskId": {
             "type": "string"
@@ -4564,10 +4177,7 @@
       },
       "TaskError": {
         "type": "object",
-        "required": [
-          "code",
-          "message"
-        ],
+        "required": ["code", "message"],
         "properties": {
           "code": {
             "type": "string"
@@ -4643,9 +4253,7 @@
       },
       "TaskDetailQuery": {
         "type": "object",
-        "required": [
-          "taskId"
-        ],
+        "required": ["taskId"],
         "properties": {
           "taskId": {
             "type": "string"
@@ -4655,9 +4263,7 @@
       },
       "OperationCancelRequest": {
         "type": "object",
-        "required": [
-          "operationId"
-        ],
+        "required": ["operationId"],
         "properties": {
           "operationId": {
             "type": "string"
@@ -4667,28 +4273,15 @@
       },
       "TaskCommandError": {
         "type": "object",
-        "required": [
-          "code",
-          "entity",
-          "id",
-          "currentStatus",
-          "message",
-          "_tag"
-        ],
+        "required": ["code", "entity", "id", "currentStatus", "message", "_tag"],
         "properties": {
           "code": {
             "type": "string",
-            "enum": [
-              "not-found",
-              "invalid-transition"
-            ]
+            "enum": ["not-found", "invalid-transition"]
           },
           "entity": {
             "type": "string",
-            "enum": [
-              "operation",
-              "task"
-            ]
+            "enum": ["operation", "task"]
           },
           "id": {
             "type": "string"
@@ -4708,18 +4301,14 @@
           },
           "_tag": {
             "type": "string",
-            "enum": [
-              "TaskCommandError"
-            ]
+            "enum": ["TaskCommandError"]
           }
         },
         "additionalProperties": false
       },
       "TaskCancelRequest": {
         "type": "object",
-        "required": [
-          "taskId"
-        ],
+        "required": ["taskId"],
         "properties": {
           "taskId": {
             "type": "string"
@@ -4729,9 +4318,7 @@
       },
       "TaskRetryRequest": {
         "type": "object",
-        "required": [
-          "taskId"
-        ],
+        "required": ["taskId"],
         "properties": {
           "taskId": {
             "type": "string"
@@ -4741,10 +4328,7 @@
       },
       "SaveAssayJsonRequest": {
         "type": "object",
-        "required": [
-          "saveTo",
-          "contents"
-        ],
+        "required": ["saveTo", "contents"],
         "properties": {
           "saveTo": {
             "type": "string"
@@ -4757,10 +4341,7 @@
       },
       "SaveAssayJsonResponse": {
         "type": "object",
-        "required": [
-          "ok",
-          "path"
-        ],
+        "required": ["ok", "path"],
         "properties": {
           "ok": {
             "type": "boolean"
@@ -4773,11 +4354,7 @@
       },
       "SaveResultPdfRequest": {
         "type": "object",
-        "required": [
-          "workspacePath",
-          "fileName",
-          "contentsBase64"
-        ],
+        "required": ["workspacePath", "fileName", "contentsBase64"],
         "properties": {
           "workspacePath": {
             "type": "string"
@@ -4793,11 +4370,7 @@
       },
       "SaveResultPdfResponse": {
         "type": "object",
-        "required": [
-          "ok",
-          "directory",
-          "path"
-        ],
+        "required": ["ok", "directory", "path"],
         "properties": {
           "ok": {
             "type": "boolean"
@@ -4813,10 +4386,7 @@
       },
       "AnalysisStartRequest": {
         "type": "object",
-        "required": [
-          "workspacePath",
-          "requestId"
-        ],
+        "required": ["workspacePath", "requestId"],
         "properties": {
           "workspacePath": {
             "type": "string"
@@ -4829,14 +4399,7 @@
       },
       "AnalysisProgress": {
         "type": "object",
-        "required": [
-          "requestId",
-          "status",
-          "stage",
-          "progress",
-          "message",
-          "error"
-        ],
+        "required": ["requestId", "status", "stage", "progress", "message", "error"],
         "properties": {
           "requestId": {
             "type": "string"
@@ -4882,33 +4445,15 @@
       },
       "AnalysisStatus": {
         "type": "string",
-        "enum": [
-          "queued",
-          "running",
-          "completed",
-          "error"
-        ]
+        "enum": ["queued", "running", "completed", "error"]
       },
       "AnalysisStage": {
         "type": "string",
-        "enum": [
-          "queued",
-          "preparing",
-          "segment",
-          "timeseries",
-          "auc",
-          "fit",
-          "completed"
-        ]
+        "enum": ["queued", "preparing", "segment", "timeseries", "auc", "fit", "completed"]
       },
       "AnalysisCsvFile": {
         "type": "object",
-        "required": [
-          "kind",
-          "fileName",
-          "path",
-          "csv"
-        ],
+        "required": ["kind", "fileName", "path", "csv"],
         "properties": {
           "kind": {
             "type": "string"
@@ -4927,9 +4472,7 @@
       },
       "AnalysisProgressQuery": {
         "type": "object",
-        "required": [
-          "requestId"
-        ],
+        "required": ["requestId"],
         "properties": {
           "requestId": {
             "type": "string"
@@ -4939,9 +4482,7 @@
       },
       "LatestAnalysisQuery": {
         "type": "object",
-        "required": [
-          "workspacePath"
-        ],
+        "required": ["workspacePath"],
         "properties": {
           "workspacePath": {
             "type": "string"

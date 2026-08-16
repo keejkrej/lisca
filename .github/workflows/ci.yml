@@ -15,7 +15,6 @@ permissions:
 env:
   CARGO_TERM_COLOR: always
 
-
 jobs:
   check:
     name: check
@@ -27,7 +26,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-
 
       - name: Toolchain
         run: corepack enable && corepack prepare pnpm@11.15.1 --activate

@@ -140,7 +140,11 @@ export function useSmartExclude(options: {
     setBusy(true);
 
     try {
-      const cells = getSmartExcludeCandidateCells(frame, options.grid, options.currentExcludedCells);
+      const cells = getSmartExcludeCandidateCells(
+        frame,
+        options.grid,
+        options.currentExcludedCells,
+      );
       if (cells.length === 0) return [];
 
       if (!options.model) {
