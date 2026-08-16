@@ -24,7 +24,7 @@
     "fmt": "vp fmt",
     "fmt:check": "vp fmt --check",
     "test": "vp run -r --no-cache test",
-    "test:scripts": "vp test run scripts/lisca-dev.test.ts scripts/lint-boundaries.test.ts --exclude '.deploy/**'",
+    "test:scripts": "vp test run scripts/check-release-version.test.ts scripts/lisca-dev.test.ts scripts/lint-boundaries.test.ts scripts/node-run.test.ts --exclude '.deploy/**'",
     "typecheck": "vp run -r --no-cache typecheck"
   },
   "devDependencies": {

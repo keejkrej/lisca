@@ -1,6 +1,6 @@
 {
   "name": "@lisca/aligner-desktop",
-  "version": "0.1.0",
+  "version": "0.3.2",
   "private": true,
   "scripts": {
     "build": "node --experimental-strip-types ../../../scripts/build-tauri-frontend.ts aligner && vp run --filter @lisca/aligner-server build",

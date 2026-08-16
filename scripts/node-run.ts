@@ -2,18 +2,17 @@
  * Small Node helpers replacing Bun.spawn / Bun.spawnSync for root scripts.
  */
 import { spawn, spawnSync, type SpawnSyncOptions } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import type { ChildProcess } from "node:child_process";
 
-export function runSync(
-  command: string,
-  args: string[],
-  options: {
-    cwd?: string;
-    env?: NodeJS.ProcessEnv;
-    ok?: boolean;
-    capture?: boolean;
-  } = {},
-): string {
+type RunSyncOptions = {
+  cwd?: string;
+  env?: NodeJS.ProcessEnv;
+  ok?: boolean;
+  capture?: boolean;
+};
+
+export function runSync(command: string, args: string[], options: RunSyncOptions = {}): string {
   const spawnOpts: SpawnSyncOptions = {
     cwd: options.cwd,
     env: options.env ?? process.env,
@@ -28,6 +27,15 @@ export function runSync(
     process.exit(result.status ?? 1);
   }
   return (result.stdout ?? "").toString().trim();
+}
+
+/**
+ * Run the local Vite+ CLI without relying on platform-specific package-manager
+ * shims such as `vp.cmd`.
+ */
+export function runVpSync(args: string[], options: RunSyncOptions = {}): string {
+  const vitePlusCli = fileURLToPath(import.meta.resolve("vite-plus/bin"));
+  return runSync(process.execPath, [vitePlusCli, ...args], options);
 }
 
 export function spawnInherit(

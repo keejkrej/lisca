@@ -14,7 +14,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import { join, resolve } from "node:path";
 import { pipeline } from "node:stream/promises";
 import { LISCA_API_PROXY_PREFIXES } from "./lisca-dev-ports.cjs";
-import { runSync, spawnInherit } from "./node-run.ts";
+import { runSync, runVpSync, spawnInherit } from "./node-run.ts";
 
 type LiscaProduct = "aligner" | "annotator" | "studio";
 
@@ -44,7 +44,7 @@ const serverBinary = resolve(
 
 if (!skipBuild) {
   console.log(`[serve] building @lisca/${product}-web…`);
-  runSync("vp", ["run", "--filter", `@lisca/${product}-web`, "build"], { cwd: root });
+  runVpSync(["run", "--filter", `@lisca/${product}-web`, "build"], { cwd: root });
   console.log(`[serve] building ${product}-server (release)…`);
   runSync("cargo", ["build", "--release", "-p", `${product}-server`], { cwd: root });
 }

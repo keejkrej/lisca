@@ -61,3 +61,28 @@ jobs:
 
       - name: Check
         run: pnpm exec vp run check
+
+  windows-script-smoke:
+    name: windows script smoke
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Toolchain
+        run: corepack enable && corepack prepare pnpm@11.15.1 --activate
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install JavaScript dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Exercise the portable Vite+ launcher
+        run: pnpm exec vp test run scripts/node-run.test.ts

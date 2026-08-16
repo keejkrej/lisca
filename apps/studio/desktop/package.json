@@ -1,6 +1,6 @@
 {
   "name": "@lisca/studio-desktop",
-  "version": "0.1.0",
+  "version": "0.3.2",
   "private": true,
   "scripts": {
     "build": "node --experimental-strip-types ../../../scripts/build-tauri-frontend.ts studio && vp run --filter @lisca/studio-server build",

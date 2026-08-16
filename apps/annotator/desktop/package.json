@@ -1,6 +1,6 @@
 {
   "name": "@lisca/annotator-desktop",
-  "version": "0.1.0",
+  "version": "0.3.2",
   "private": true,
   "scripts": {
     "build": "node --experimental-strip-types ../../../scripts/build-tauri-frontend.ts annotator && vp run --filter @lisca/annotator-server build",

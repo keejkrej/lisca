@@ -17,6 +17,15 @@ jobs:
     name: create-release
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Verify desktop release versions
+        run: node --experimental-strip-types scripts/check-release-version.ts "${GITHUB_REF_NAME}"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:

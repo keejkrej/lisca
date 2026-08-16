@@ -11,7 +11,7 @@
  */
 import { existsSync, mkdirSync, rmSync, cpSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { runSync } from "./node-run.ts";
+import { runSync, runVpSync } from "./node-run.ts";
 
 const root = resolve(import.meta.dirname, "..");
 const DEPLOY_BRANCH = "deploy/landing";
@@ -50,7 +50,7 @@ function ensureWorktree(): void {
 }
 
 if (!skipBuild) {
-  run("vp", ["run", "--filter", "@lisca/landing-web", "build"]);
+  runVpSync(["run", "--filter", "@lisca/landing-web", "build"], { cwd: root });
 }
 
 const distRoot = join(root, DIST_REL);

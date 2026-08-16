@@ -9,7 +9,7 @@
 import { chmodSync, copyFileSync, cpSync, existsSync, mkdirSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { DESKTOP_PRODUCTS } from "./lisca-desktop-products.cjs";
-import { runSync } from "./node-run.ts";
+import { runVpSync } from "./node-run.ts";
 
 type LiscaProduct = "aligner" | "annotator" | "studio";
 type DesktopProductConfig = (typeof DESKTOP_PRODUCTS)[LiscaProduct];
@@ -85,16 +85,16 @@ if (!cfg) {
 
 console.log(`Building ${cfg.productName} for ${process.platform}...`);
 
-runSync("vp", ["run", "--filter", cfg.webPkg, "build"], {
+runVpSync(["run", "--filter", cfg.webPkg, "build"], {
   cwd: root,
   env: { ...process.env, VITE_DESKTOP: "1" },
 });
 
-runSync("vp", ["run", "--filter", cfg.serverPkg, "build"], { cwd: root });
+runVpSync(["run", "--filter", cfg.serverPkg, "build"], { cwd: root });
 
 const desktopDir = stageArtifacts(product, cfg);
 
-runSync("vp", ["exec", "tauri", "build"], {
+runVpSync(["exec", "tauri", "build"], {
   cwd: desktopDir,
   env: process.env,
 });

@@ -6,7 +6,7 @@
  *   vp exec node --experimental-strip-types scripts/build-tauri-frontend.ts <product>
  */
 import { resolve } from "node:path";
-import { runSync } from "./node-run.ts";
+import { runVpSync } from "./node-run.ts";
 
 type LiscaProduct = "aligner" | "annotator" | "studio";
 
@@ -29,7 +29,7 @@ if (!product || !PRODUCTS.has(product)) {
 }
 
 const webPkg = `@lisca/${product}-web`;
-runSync("vp", ["run", "--filter", webPkg, "build"], {
+runVpSync(["run", "--filter", webPkg, "build"], {
   cwd: root,
   env: { ...process.env, VITE_DESKTOP: "1" },
 });

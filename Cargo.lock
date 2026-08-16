@@ -31,7 +31,7 @@ dependencies = [
 
 [[package]]
 name = "aligner-tauri"
-version = "0.1.0"
+version = "0.3.2"
 dependencies = [
  "lisca-tauri",
  "serde_json",
@@ -75,7 +75,7 @@ dependencies = [
 
 [[package]]
 name = "annotator-tauri"
-version = "0.1.0"
+version = "0.3.2"
 dependencies = [
  "lisca-tauri",
  "serde_json",
@@ -4320,7 +4320,7 @@ dependencies = [
 
 [[package]]
 name = "studio-tauri"
-version = "0.1.0"
+version = "0.3.2"
 dependencies = [
  "lisca-tauri",
  "serde_json",
