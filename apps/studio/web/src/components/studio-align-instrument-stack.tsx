@@ -1,7 +1,7 @@
 import { AlignGridRail, AlignSelectionRail, AlignToolSection } from "@lisca/ui/features";
 import { Button } from "@lisca/ui/components";
 import { PanelSection, RailControlStack, RailSectionStack } from "@lisca/ui/shell";
-import { createMemo, onCleanup } from "solid-js";
+import { createMemo } from "solid-js";
 
 import { useStudioAlignPage } from "../state/studio-align-page-context";
 import { StudioAlignNav } from "./studio-align-nav";
@@ -27,11 +27,6 @@ export function StudioAlignInstrumentStack() {
   const disabled = () => !state.frame;
   const actionBusy = createMemo(() => state.saving);
   const frameReady = createMemo(() => Boolean(state.frame));
-
-  onCleanup(() => {
-    state.setManualExclusionEnabled(false);
-    state.cancelVariationExclude();
-  });
 
   return (
     <RailSectionStack class={RAIL_CLASS}>
