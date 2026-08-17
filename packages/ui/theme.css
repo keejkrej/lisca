@@ -11,10 +11,11 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
+  /* DESIGN.md: sm=6 md=8 lg=14 xl=18. Keep --radius at 10px so sm/md calc stay correct. */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-lg: 0.875rem;
+  --radius-xl: 1.125rem;
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
@@ -78,22 +79,23 @@
   --popover-foreground: #171717;
   --primary: #252525;
   --primary-foreground: #fafafa;
-  --secondary: oklch(0.97 0 0);
+  --secondary: #f5f5f5;
   --secondary-foreground: #252525;
-  --muted: oklch(0.97 0 0);
+  --muted: #f5f5f5;
   --muted-foreground: #6b6b6b;
-  --accent: oklch(0.97 0 0);
+  --accent: #f5f5f5;
   --accent-foreground: #252525;
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
+  --destructive: #dc2626;
+  --destructive-foreground: #fafafa;
   --info: oklch(0.97 0.014 254.604);
   --info-foreground: oklch(0.379 0.146 265.522);
-  --success: oklch(0.979 0.021 166.113);
-  --success-foreground: oklch(0.378 0.077 168.94);
+  /* Success is neutral — GFP (#10B981 / --color-gfp) is biological signal only. */
+  --success: #f5f5f5;
+  --success-foreground: #171717;
   --warning: oklch(0.987 0.026 102.212);
   --warning-foreground: oklch(0.421 0.095 57.708);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
+  --border: #e5e5e5;
+  --input: #e5e5e5;
   --ring: oklch(0.708 0 0);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
@@ -106,7 +108,7 @@
   --sidebar-primary-foreground: #fafafa;
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-border: #e5e5e5;
   --sidebar-ring: oklch(0.708 0 0);
 }
 
@@ -129,8 +131,9 @@
   --destructive-foreground: oklch(0.985 0 0);
   --info: oklch(0.25 0.0714 268.38);
   --info-foreground: oklch(0.707 0.165 254.624);
-  --success: oklch(0.23 0.0359 185.7);
-  --success-foreground: oklch(0.765 0.177 163.223);
+  /* Success stays neutral in dark mode too — never GFP green. */
+  --success: oklch(0.269 0 0);
+  --success-foreground: oklch(0.985 0 0);
   --warning: oklch(0.25 0.0437 50.86);
   --warning-foreground: oklch(0.795 0.184 86.047);
   --border: oklch(1 0 0 / 10%);

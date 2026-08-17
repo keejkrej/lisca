@@ -22,15 +22,10 @@ export function StudioCropStartModal() {
                 </p>
               </div>
               <div class="flex justify-end gap-2">
-                <Button
-                  size="sm"
-                  type="button"
-                  variant="outline"
-                  onClick={state.cancelCropStartConfirm}
-                >
+                <Button type="button" variant="outline" onClick={state.cancelCropStartConfirm}>
                   Cancel
                 </Button>
-                <Button size="sm" type="button" onClick={state.startConfirmedCrop}>
+                <Button type="button" onClick={state.startConfirmedCrop}>
                   Start
                 </Button>
               </div>

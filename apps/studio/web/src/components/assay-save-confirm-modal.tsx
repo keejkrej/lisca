@@ -31,7 +31,6 @@ export function AssaySaveConfirmModal(props: {
             <div class="flex justify-end gap-2">
               <Button
                 disabled={props.saving}
-                size="sm"
                 type="button"
                 variant="outline"
                 onClick={props.onCancel}
@@ -40,14 +39,13 @@ export function AssaySaveConfirmModal(props: {
               </Button>
               <Button
                 disabled={props.saving}
-                size="sm"
                 type="button"
                 variant="outline"
                 onClick={props.onSkip}
               >
                 Skip Save
               </Button>
-              <Button disabled={props.saving} size="sm" type="button" onClick={props.onSave}>
+              <Button disabled={props.saving} type="button" onClick={props.onSave}>
                 {props.saving ? "Saving…" : "Save"}
               </Button>
             </div>

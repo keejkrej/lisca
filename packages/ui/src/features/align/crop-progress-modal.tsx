@@ -36,7 +36,6 @@ export function CropProgressModal(props: CropProgressModalProps) {
             </div>
             <Button
               class="mt-4 w-full justify-center"
-              size="sm"
               type="button"
               variant="outline"
               onClick={props.onCancel}

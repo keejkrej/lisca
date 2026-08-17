@@ -20,7 +20,7 @@ describe("Slider", () => {
     expect(view.getByRole("slider", { name: "Opacity" })).toBeTruthy();
   });
 
-  it("uses the 12px/16px control-label type rhythm", () => {
+  it("uses FieldLabel ink for the control name and muted for the value", () => {
     const view = render(() => (
       <AnnotationToolSlider
         label="Opacity"
@@ -33,9 +33,11 @@ describe("Slider", () => {
       />
     ));
     const label = view.getByText("Opacity");
+    const value = view.getByText("65%");
+    const fieldLabel = label.closest('[data-slot="field-label"]');
 
-    expect(label.classList.contains("text-xs")).toBe(true);
-    expect(label.classList.contains("leading-4")).toBe(true);
-    expect(label.classList.contains("leading-tight")).toBe(false);
+    expect(fieldLabel).not.toBeNull();
+    expect(label.classList.contains("text-muted-foreground")).toBe(false);
+    expect(value.classList.contains("text-muted-foreground")).toBe(true);
   });
 });

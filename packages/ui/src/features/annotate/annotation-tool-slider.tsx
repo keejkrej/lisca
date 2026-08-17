@@ -1,3 +1,4 @@
+import { Field, FieldLabel } from "../../components/ui/field";
 import { Slider } from "../../components/ui/slider";
 
 export function AnnotationToolSlider(props: {
@@ -10,13 +11,11 @@ export function AnnotationToolSlider(props: {
   onChange: (value: number) => void;
 }) {
   return (
-    <div class="flex min-h-0 w-full min-w-0 flex-col gap-1">
-      <div class="flex items-center justify-between gap-2">
-        <span class="min-w-0 text-xs font-medium leading-4 text-muted-foreground">
-          {props.label}
-        </span>
-        <span class="text-xs text-muted-foreground/80 tabular-nums">{props.valueLabel}</span>
-      </div>
+    <Field class="min-w-0 w-full">
+      <FieldLabel class="w-full justify-between gap-2">
+        <span>{props.label}</span>
+        <span class="font-normal tabular-nums text-muted-foreground">{props.valueLabel}</span>
+      </FieldLabel>
       <Slider
         aria-label={props.label}
         class="w-full pt-0.5"
@@ -26,6 +25,6 @@ export function AnnotationToolSlider(props: {
         value={props.value}
         onValueChange={props.onChange}
       />
-    </div>
+    </Field>
   );
 }

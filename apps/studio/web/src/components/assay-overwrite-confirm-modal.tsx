@@ -25,12 +25,11 @@ export function AssayOverwriteConfirmModal(props: {
               </p>
             </div>
             <div class="flex justify-end gap-2">
-              <Button size="sm" type="button" variant="outline" onClick={props.onCancel}>
+              <Button type="button" variant="outline" onClick={props.onCancel}>
                 Cancel
               </Button>
               <Button
                 class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                size="sm"
                 type="button"
                 onClick={props.onOverwrite}
               >
