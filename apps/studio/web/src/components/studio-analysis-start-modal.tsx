@@ -26,14 +26,13 @@ export function StudioAnalysisStartModal() {
             </div>
             <div class="flex justify-end gap-2">
               <Button
-                size="sm"
                 type="button"
                 variant="outline"
                 onClick={() => state.setAnalysisStartConfirm(false)}
               >
                 Cancel
               </Button>
-              <Button size="sm" type="button" onClick={state.startAnalysis}>
+              <Button type="button" onClick={state.startAnalysis}>
                 Start
               </Button>
             </div>

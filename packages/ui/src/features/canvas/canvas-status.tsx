@@ -8,7 +8,8 @@ import { cn } from "../../lib/utils";
 function messageToneClassName(tone: CanvasStatusTone | undefined) {
   if (tone === "error") return "z-destructive-surface";
   if (tone === "success") {
-    return "border-emerald-600/30 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-300";
+    // Neutral ink/muted — GFP green is biological signal only (DESIGN.md).
+    return "border-border bg-muted text-foreground";
   }
   return "border-border text-muted-foreground";
 }
@@ -16,7 +17,8 @@ function messageToneClassName(tone: CanvasStatusTone | undefined) {
 function toastToneClassName(tone: CanvasStatusTone | undefined) {
   if (tone === "error") return "z-destructive-surface";
   if (tone === "success") {
-    return "border-emerald-600/30 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-300";
+    // Neutral ink/muted — GFP green is biological signal only (DESIGN.md).
+    return "border-border/80 bg-muted text-foreground";
   }
   return "border-border/80 text-popover-foreground";
 }

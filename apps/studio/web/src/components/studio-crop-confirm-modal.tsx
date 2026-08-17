@@ -31,20 +31,14 @@ export function StudioCropConfirmModal() {
                   <p class="max-h-20 overflow-auto text-muted-foreground text-xs">{existingList}</p>
                 </div>
                 <div class="flex justify-end gap-2">
-                  <Button
-                    size="sm"
-                    type="button"
-                    variant="outline"
-                    onClick={crop.cancelCropConfirm}
-                  >
+                  <Button type="button" variant="outline" onClick={crop.cancelCropConfirm}>
                     Cancel
                   </Button>
-                  <Button size="sm" type="button" variant="outline" onClick={crop.skipExistingCrop}>
+                  <Button type="button" variant="outline" onClick={crop.skipExistingCrop}>
                     Skip Existing
                   </Button>
                   <Button
                     class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    size="sm"
                     type="button"
                     onClick={crop.confirmCropOverwrite}
                   >

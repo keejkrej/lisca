@@ -43,8 +43,7 @@ export function BasicInfoStep2() {
         </For>
       </div>
       <Button
-        class="h-8 w-full justify-center rounded-full"
-        size="sm"
+        class="w-full justify-center rounded-full"
         type="button"
         variant="outline"
         onClick={addSample}
