@@ -1,4 +1,4 @@
-import { ViewportCard } from "@lisca/ui/shell";
+import { StageCanvas, ViewportCard } from "@lisca/ui/shell";
 import {
   AlignCanvas,
   cursorForAlignTool,
@@ -6,7 +6,7 @@ import {
   useAlignCanvasSelectionHandlers,
   useCanvasTransientStatus,
 } from "@lisca/ui/features";
-import { frameWithContrast } from "@lisca/web-demo/browser";
+import { frameWithContrast, stemName } from "@lisca/web-demo/browser";
 import type { DemoAlignState } from "@lisca/web-demo";
 import type { Accessor } from "solid-js";
 
@@ -83,23 +83,47 @@ export function DemoAlignMain(props: { state: Accessor<DemoAlignState>; embedded
             props.state().grid.enabled,
             gridHandlers.dragging(),
           );
+  const canvas = (
+    <AlignCanvas
+      class={props.embedded ? "min-h-0 flex-1" : "h-full w-full"}
+      cursor={cursor()}
+      excludedCells={props.state().excludedCells}
+      frame={displayFrame()}
+      grid={props.state().grid}
+      toolMode={props.state().toolMode}
+      previewGridRef={gridHandlers.previewGridRef}
+      previewRedrawRef={previewRedrawRef}
+      toasts={props.embedded ? [] : toasts()}
+      onVirtualPointerCancel={handlePointerCancel}
+      onVirtualPointerDown={handlePointerDown}
+      onVirtualPointerMove={handlePointerMove}
+      onVirtualPointerUp={handlePointerEnd}
+    />
+  );
+
+  if (props.embedded) {
+    return <ViewportCard>{canvas}</ViewportCard>;
+  }
+
+  const captionLeft = () => {
+    const fileName = props.state().fileName;
+    return fileName ? stemName(fileName) : "Demo";
+  };
+  const captionRight = () => {
+    const frame = displayFrame();
+    return frame ? `${frame.width} × ${frame.height} px` : "No frame";
+  };
+
   return (
-    <ViewportCard>
-      <AlignCanvas
-        class="min-h-0 flex-1"
-        cursor={cursor()}
-        excludedCells={props.state().excludedCells}
-        frame={displayFrame()}
-        grid={props.state().grid}
-        toolMode={props.state().toolMode}
-        previewGridRef={gridHandlers.previewGridRef}
-        previewRedrawRef={previewRedrawRef}
-        toasts={props.embedded ? [] : toasts()}
-        onVirtualPointerCancel={handlePointerCancel}
-        onVirtualPointerDown={handlePointerDown}
-        onVirtualPointerMove={handlePointerMove}
-        onVirtualPointerUp={handlePointerEnd}
-      />
+    <ViewportCard variant="stage">
+      <StageCanvas
+        aspect="wide"
+        captionLeft={captionLeft()}
+        captionRight={captionRight()}
+        class="max-w-[45rem]"
+      >
+        {canvas}
+      </StageCanvas>
     </ViewportCard>
   );
 }

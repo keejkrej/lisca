@@ -33,6 +33,7 @@ export function DemoAlignSelectionControls(props: { state: Accessor<DemoAlignSta
         frame={props.state().frame}
         grid={props.state().grid}
         manualExclusionEnabled={props.state().manualExclusionEnabled}
+        sectionAppearance="rail"
         smartExcludeLoading={smartExclude.active()}
         visibleCounts={props.state().visibleCounts}
         variationExcludeLoading={props.state().variationExcludeLoading}

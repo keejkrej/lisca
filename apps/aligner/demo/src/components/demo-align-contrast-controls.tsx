@@ -11,6 +11,9 @@ export function DemoAlignContrastControls(props: { state: Accessor<DemoAlignStat
       disabled={!props.state().frame}
       frame={props.state().frame}
       role="region"
+      sectionAppearance="rail"
+      sectionClassName="min-h-0 shrink-0"
+      sectionContentClassName="flex min-h-0 flex-col"
       onContrastChange={props.state().setContrast}
     />
   );

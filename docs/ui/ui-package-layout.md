@@ -62,7 +62,7 @@ Treat these as implementation details; do not import them from apps.
 | Subfolder    | Contents                                               |
 | ------------ | ------------------------------------------------------ |
 | `layout/`    | `AppShell`, viewport card, route loading fallback      |
-| `regions/`   | Panel, section, sidebar/dock containers                |
+| `regions/`   | Panel, section, rail/sidebar/dock containers           |
 | `chrome/`    | Navbar, path button, connection status, progress bar   |
 | `modal/`     | Dialog surface and scrim                               |
 | `server/`    | Server address dialog, shell server provider, WS probe |
@@ -77,7 +77,7 @@ State providers (`ShellServerProvider`, `ShellWorkspaceProvider`) are re-exporte
 Use public subpaths only:
 
 ```tsx
-import { AppShell, DockStrip } from "@lisca/ui/shell";
+import { AppShell, RailSidebar, StageCanvas } from "@lisca/ui/shell";
 import { AlignCanvas } from "@lisca/ui/features";
 import { Button } from "@lisca/ui/components";
 ```

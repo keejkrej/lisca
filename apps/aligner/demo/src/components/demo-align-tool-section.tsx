@@ -1,10 +1,8 @@
 import { AlignGridShapeToggle, AlignToolSection, AlignToolToolbar } from "@lisca/ui/features";
-import { DockStrip } from "@lisca/ui/shell";
 import { Show } from "solid-js";
 import type { Accessor } from "solid-js";
 
 import { DemoAlignDownloadButton } from "./demo-align-download-button";
-import { DemoAlignSaveSection } from "./demo-align-save-section";
 import type { DemoAlignState } from "@lisca/web-demo";
 
 export function DemoAlignToolSection(props: { state: Accessor<DemoAlignState> }) {
@@ -13,19 +11,11 @@ export function DemoAlignToolSection(props: { state: Accessor<DemoAlignState> })
       mode={props.state().toolMode}
       spacingZoomLocked={props.state().spacingZoomLocked}
       patternZoomLocked={props.state().patternZoomLocked}
+      placement="rail"
       onModeChange={props.state().setToolMode}
       onSpacingZoomLockedChange={props.state().setSpacingZoomLocked}
       onPatternZoomLockedChange={props.state().setPatternZoomLocked}
     />
-  );
-}
-
-export function DemoAlignDock(props: { state: Accessor<DemoAlignState> }) {
-  return (
-    <DockStrip>
-      <DemoAlignToolSection state={props.state} />
-      <DemoAlignSaveSection state={props.state} />
-    </DockStrip>
   );
 }
 

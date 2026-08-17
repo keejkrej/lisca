@@ -1,5 +1,5 @@
 import { AlignGridShapeToggle } from "@lisca/ui/features";
-import { AppShell, SidebarStack } from "@lisca/ui/shell";
+import { AppShell, RailSidebar } from "@lisca/ui/shell";
 import {
   DemoAlignRoot,
   DemoNavbar,
@@ -14,8 +14,9 @@ import { Show } from "solid-js";
 import { DemoAlignContrastControls } from "./components/demo-align-contrast-controls";
 import { DemoAlignGridControls } from "./components/demo-align-grid-controls";
 import { DemoAlignMain } from "./components/demo-align-main";
+import { DemoAlignSaveSection } from "./components/demo-align-save-section";
 import { DemoAlignSelectionControls } from "./components/demo-align-selection-controls";
-import { DemoAlignDock, DemoInlineAlignToolbar } from "./components/demo-align-tool-section";
+import { DemoAlignToolSection, DemoInlineAlignToolbar } from "./components/demo-align-tool-section";
 
 export type AlignDemoProps = {
   embedded?: boolean;
@@ -33,74 +34,80 @@ function AlignDemoView(props: { embedded: boolean }) {
   const state = useDemoAlignState();
   useEmbeddedDemoPreset(props.embedded, props.embedded ? "aligner" : null, Boolean(state().frame));
 
+  const navbar = (
+    <DemoNavbar
+      fileName={state().fileName}
+      loading={state().frameLoading}
+      allowOpenFile={!props.embedded}
+      showThemeToggle={!props.embedded}
+      sampleImages={props.embedded ? DEMO_SAMPLE_IMAGES : undefined}
+      selectedSampleId={props.embedded ? resolveSelectedSampleId(state().fileName) : null}
+      onSampleChange={
+        props.embedded
+          ? (sampleId) => void state().openSampleImage(sampleId as DemoSampleImageId)
+          : undefined
+      }
+      startTrailing={undefined}
+      endLeading={
+        props.embedded ? (
+          <AlignGridShapeToggle
+            class="w-[9rem]"
+            disabled={!state().frame}
+            shape={state().grid.shape}
+            onShapeChange={(shape) =>
+              state().setGrid((grid) => ({
+                ...grid,
+                shape,
+              }))
+            }
+          />
+        ) : undefined
+      }
+      onOpenFile={(file) => void state().openImage(file)}
+    />
+  );
+
   const shell = (
-    <AppShell>
-      <AppShell.Header>
-        <DemoNavbar
-          fileName={state().fileName}
-          loading={state().frameLoading}
-          allowOpenFile={!props.embedded}
-          showThemeToggle={!props.embedded}
-          sampleImages={props.embedded ? DEMO_SAMPLE_IMAGES : undefined}
-          selectedSampleId={props.embedded ? resolveSelectedSampleId(state().fileName) : null}
-          onSampleChange={
-            props.embedded
-              ? (sampleId) => void state().openSampleImage(sampleId as DemoSampleImageId)
-              : undefined
-          }
-          startTrailing={undefined}
-          endLeading={
-            props.embedded ? (
-              <AlignGridShapeToggle
-                class="w-[9rem]"
-                disabled={!state().frame}
-                shape={state().grid.shape}
-                onShapeChange={(shape) =>
-                  state().setGrid((grid) => ({
-                    ...grid,
-                    shape,
-                  }))
-                }
-              />
-            ) : undefined
-          }
-          onOpenFile={(file) => void state().openImage(file)}
-        />
-      </AppShell.Header>
-      <AppShell.Body>
-        <Show
-          when={!props.embedded}
-          fallback={
+    <Show
+      when={!props.embedded}
+      fallback={
+        <AppShell>
+          <AppShell.Header>{navbar}</AppShell.Header>
+          <AppShell.Body>
             <AppShell.MainColumn>
               <AppShell.Main>
                 <DemoAlignMain embedded state={state} />
               </AppShell.Main>
               <DemoInlineAlignToolbar showDownload={false} showShapeToggle={false} state={state} />
             </AppShell.MainColumn>
-          }
-        >
-          <AppShell.Left widthClass="w-72">
-            <SidebarStack>
+          </AppShell.Body>
+        </AppShell>
+      }
+    >
+      <AppShell variant="stage">
+        <AppShell.Body>
+          <AppShell.Left>
+            <RailSidebar>
               <DemoAlignContrastControls state={state} />
-            </SidebarStack>
+              <DemoAlignToolSection state={state} />
+            </RailSidebar>
           </AppShell.Left>
           <AppShell.MainColumn>
+            <AppShell.TopBar>{navbar}</AppShell.TopBar>
             <AppShell.Main>
               <DemoAlignMain state={state} />
             </AppShell.Main>
-            <AppShell.Dock>
-              <DemoAlignDock state={state} />
-            </AppShell.Dock>
           </AppShell.MainColumn>
-          <AppShell.Right widthClass="w-72">
-            <SidebarStack>
+          <AppShell.Right>
+            <RailSidebar>
               <DemoAlignGridControls state={state} />
               <DemoAlignSelectionControls state={state} />
-            </SidebarStack>
+              <DemoAlignSaveSection state={state} />
+            </RailSidebar>
           </AppShell.Right>
-        </Show>
-      </AppShell.Body>
-    </AppShell>
+        </AppShell.Body>
+      </AppShell>
+    </Show>
   );
 
   return (
