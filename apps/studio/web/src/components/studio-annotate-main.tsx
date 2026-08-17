@@ -2,13 +2,16 @@ import { runClientEffect } from "@lisca/client/runtime";
 import { useSmartSegment } from "@lisca/smart/segment";
 import { createRequestSmartSegmentProvider } from "@lisca/smart/segment/request";
 import { AnnotationCanvas } from "@lisca/ui/features";
-import { ViewportCard } from "@lisca/ui/shell";
-import { createSignal } from "solid-js";
+import { StageCanvas, ViewportCard } from "@lisca/ui/shell";
+import { createMemo, createSignal } from "solid-js";
 
 import { useStudioNavigate } from "../navigation/use-studio-navigate";
 import { studioClient } from "../api/studio-port";
 import { useStudioAnnotatePage } from "../state/studio-annotate-page-context";
-import { useStudioAnnotateCanvas } from "../state/studio-annotate-page-selectors";
+import {
+  useStudioAnnotateCanvas,
+  useStudioAnnotateNav,
+} from "../state/studio-annotate-page-selectors";
 import { StudioAnalysisProgressModal } from "./studio-analysis-progress-modal";
 import { StudioEmptyState } from "./studio-empty-state";
 import { StudioAnalysisStartModal } from "./studio-analysis-start-modal";
@@ -17,6 +20,7 @@ export function StudioAnnotateMain() {
   const { navigateTo } = useStudioNavigate();
   const { state } = useStudioAnnotatePage();
   const canvas = useStudioAnnotateCanvas();
+  const nav = useStudioAnnotateNav();
   const smartSegmentProvider = createRequestSmartSegmentProvider(
     {
       smartSegment: (request, signal) =>
@@ -53,11 +57,13 @@ export function StudioAnnotateMain() {
     onStatus: setSmartSegmentStatus,
     onError: setSmartSegmentError,
   });
-  const toasts = smartSegmentError()
-    ? [{ text: smartSegmentError()!, tone: "error" as const }]
-    : smartSegmentStatus()
-      ? [...canvas.canvasToasts, { text: smartSegmentStatus()! }]
-      : canvas.canvasToasts;
+  const toasts = createMemo(() =>
+    smartSegmentError()
+      ? [{ text: smartSegmentError()!, tone: "error" as const }]
+      : smartSegmentStatus()
+        ? [...canvas.canvasToasts, { text: smartSegmentStatus()! }]
+        : canvas.canvasToasts,
+  );
 
   if (state.workspaceMissing) {
     return (
@@ -95,28 +101,32 @@ export function StudioAnnotateMain() {
 
   return (
     <>
-      <ViewportCard
-        contentClass="relative items-center justify-center overflow-visible"
-        variant="stage"
-      >
-        <div class="flex size-full max-h-[480px] max-w-[480px] min-h-0 flex-col overflow-hidden">
+      <ViewportCard variant="stage">
+        <StageCanvas
+          aspect="square"
+          captionLeft={`Site ${nav.selection.roi ?? "—"} · Channel ${nav.selection.channel ?? "—"}`}
+          captionRight={
+            canvas.frame ? `${canvas.frame.width} × ${canvas.frame.height} px` : "No frame"
+          }
+          class="max-w-[30rem]"
+        >
           <AnnotationCanvas
             activeLabelId={canvas.activeLabelId}
             brushSize={canvas.brushSize}
-            class="min-h-0 flex-1"
+            class="h-full w-full"
             disabled={!canvas.canEditSegmentation || smartSegment.busy()}
             frame={canvas.frame}
             labels={canvas.labels}
             mask={canvas.annotation.current.mask}
             overlayOpacity={canvas.overlayOpacity}
             smartSegmentPrompts={smartSegment.prompts()}
-            toasts={toasts}
+            toasts={toasts()}
             tool={canvas.tool}
             onMaskCommit={onMaskCommit}
             onSmartSegmentClick={(click) => void smartSegment.handleClick(click)}
             onSmartEraseClick={(click) => void smartSegment.handleEraseClick(click)}
           />
-        </div>
+        </StageCanvas>
       </ViewportCard>
       <StudioAnalysisStartModal />
       <StudioAnalysisProgressModal />

@@ -3,7 +3,7 @@ import { runClientEffect } from "@lisca/client/runtime";
 import { useSmartSegment } from "@lisca/smart/segment";
 import { createRequestSmartSegmentProvider } from "@lisca/smart/segment/request";
 import { AnnotationCanvas } from "@lisca/ui/features";
-import { ViewportCard } from "@lisca/ui/shell";
+import { StageCanvas, ViewportCard } from "@lisca/ui/shell";
 import { createMemo, createSignal } from "solid-js";
 
 import { annotatorClient } from "../api/annotator-port";
@@ -71,35 +71,32 @@ export function AnnotatorMain() {
 
   return (
     <ViewportCard variant="stage">
-      <div class="flex h-full w-full max-w-[30rem] flex-col justify-center gap-3 self-center">
-        <div class="aspect-square w-full overflow-hidden rounded-2xl bg-muted">
-          <AnnotationCanvas
-            activeLabelId={canvas.activeLabelId}
-            brushSize={canvas.brushSize}
-            class="h-full w-full"
-            disabled={!canvas.canEditSegmentation || smartSegment.busy()}
-            emptyText="Pick a workspace to load a frame."
-            frame={canvas.frame}
-            labels={canvas.labels}
-            mask={canvas.annotation.current.mask}
-            overlayOpacity={canvas.overlayOpacity}
-            smartSegmentPrompts={smartSegment.prompts()}
-            toasts={toasts()}
-            tool={canvas.tool}
-            onMaskCommit={onMaskCommit}
-            onSmartSegmentClick={(click) => void smartSegment.handleClick(click)}
-            onSmartEraseClick={(click) => void smartSegment.handleEraseClick(click)}
-          />
-        </div>
-        <div class="flex items-center justify-between gap-4 px-1 text-[11px] text-muted-foreground uppercase tracking-[0.12em]">
-          <span>
-            Site {nav.selection.roi ?? "—"} · Channel {nav.selection.channel ?? "—"}
-          </span>
-          <span>
-            {canvas.frame ? `${canvas.frame.width} × ${canvas.frame.height} px` : "No frame"}
-          </span>
-        </div>
-      </div>
+      <StageCanvas
+        aspect="square"
+        captionLeft={`Site ${nav.selection.roi ?? "—"} · Channel ${nav.selection.channel ?? "—"}`}
+        captionRight={
+          canvas.frame ? `${canvas.frame.width} × ${canvas.frame.height} px` : "No frame"
+        }
+        class="max-w-[30rem]"
+      >
+        <AnnotationCanvas
+          activeLabelId={canvas.activeLabelId}
+          brushSize={canvas.brushSize}
+          class="h-full w-full"
+          disabled={!canvas.canEditSegmentation || smartSegment.busy()}
+          emptyText="Pick a workspace to load a frame."
+          frame={canvas.frame}
+          labels={canvas.labels}
+          mask={canvas.annotation.current.mask}
+          overlayOpacity={canvas.overlayOpacity}
+          smartSegmentPrompts={smartSegment.prompts()}
+          toasts={toasts()}
+          tool={canvas.tool}
+          onMaskCommit={onMaskCommit}
+          onSmartSegmentClick={(click) => void smartSegment.handleClick(click)}
+          onSmartEraseClick={(click) => void smartSegment.handleEraseClick(click)}
+        />
+      </StageCanvas>
     </ViewportCard>
   );
 }

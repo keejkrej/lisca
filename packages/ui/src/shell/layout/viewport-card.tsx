@@ -4,7 +4,7 @@ import { cn } from "../../lib/utils";
 import { panelFrameClass } from "../regions/panel";
 import { regionInsetClass } from "../regions/region-spacing";
 
-/** Padded main-column frame; `stage` uses the plain, centered Paper canvas treatment. */
+/** Padded main-column frame; `stage` centers content for `StageCanvas` well + caption framing. */
 export function ViewportCard(props: {
   children?: JSX.Element;
   class?: string;

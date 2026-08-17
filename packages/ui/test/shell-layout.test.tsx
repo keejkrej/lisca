@@ -3,6 +3,7 @@ import { createEffect, onCleanup } from "solid-js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AppShell } from "../src/shell/layout/shell";
+import { StageCanvas } from "../src/shell/layout/stage-canvas";
 import { ViewportCard } from "../src/shell/layout/viewport-card";
 
 function stubViewport(width: number, height: number) {
@@ -352,5 +353,54 @@ describe("ViewportCard stage layout", () => {
     expect(content.classList.contains("rounded-xl")).toBe(false);
     hasClass(content, "flex-none");
     hasClass(content, "max-w-[720px]");
+  });
+});
+
+describe("StageCanvas framing", () => {
+  it("renders a muted rounded well and tracked caption for wide and square aspects", () => {
+    const wide = render(() => (
+      <StageCanvas
+        aspect="wide"
+        captionLeft="Position 01"
+        captionRight="1024 × 768 px"
+        class="max-w-[45rem]"
+      >
+        <div data-testid="wide-child">canvas</div>
+      </StageCanvas>
+    ));
+    const wideRoot = wide.container.firstElementChild!;
+    hasClass(wideRoot, "max-w-[45rem]");
+    hasClass(wideRoot, "gap-3");
+    const wideWell = wideRoot.firstElementChild!;
+    hasClass(wideWell, "rounded-2xl");
+    hasClass(wideWell, "bg-muted");
+    hasClass(wideWell, "aspect-[12/7]");
+    expect(screen.getByTestId("wide-child")).toBeTruthy();
+    expect(screen.getByText("Position 01")).toBeTruthy();
+    expect(screen.getByText("1024 × 768 px")).toBeTruthy();
+    const caption = wideRoot.lastElementChild!;
+    hasClass(caption, "tracking-[0.12em]");
+    hasClass(caption, "text-muted-foreground");
+    wide.unmount();
+
+    const square = render(() => (
+      <StageCanvas
+        aspect="square"
+        captionLeft="Site 1 · Channel GFP"
+        captionRight="No frame"
+        class="max-w-[30rem]"
+      >
+        <div data-testid="square-child">canvas</div>
+      </StageCanvas>
+    ));
+    const squareRoot = square.container.firstElementChild!;
+    hasClass(squareRoot, "max-w-[30rem]");
+    const squareWell = squareRoot.firstElementChild!;
+    hasClass(squareWell, "aspect-square");
+    hasClass(squareWell, "rounded-2xl");
+    hasClass(squareWell, "bg-muted");
+    expect(screen.getByTestId("square-child")).toBeTruthy();
+    expect(screen.getByText("Site 1 · Channel GFP")).toBeTruthy();
+    expect(screen.getByText("No frame")).toBeTruthy();
   });
 });

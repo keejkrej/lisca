@@ -6,7 +6,7 @@ import {
   useAlignCanvasSelectionHandlers,
   useCanvasTransientStatus,
 } from "@lisca/ui/features";
-import { ViewportCard } from "@lisca/ui/shell";
+import { StageCanvas, ViewportCard } from "@lisca/ui/shell";
 import { createMemo } from "solid-js";
 
 import { useAlignCanvas, useAlignNav } from "../state/align-page-selectors";
@@ -104,32 +104,31 @@ export function AlignerMain() {
   return (
     <>
       <ViewportCard variant="stage">
-        <div class="flex h-full w-full max-w-[45rem] flex-col justify-center gap-3 self-center">
-          <div class="aspect-[12/7] w-full overflow-hidden rounded-2xl bg-muted">
-            <AlignCanvas
-              class="h-full w-full"
-              cursor={cursor()}
-              emptyText={emptyText()}
-              excludedCells={canvas.displayedExcludedCells}
-              frame={canvas.frame}
-              grid={canvas.grid}
-              toolMode={canvas.toolMode}
-              previewGridRef={gridHandlers.previewGridRef}
-              previewRedrawRef={previewRedrawRef}
-              toasts={toasts()}
-              onVirtualPointerCancel={handlePointerCancel}
-              onVirtualPointerDown={handlePointerDown}
-              onVirtualPointerMove={handlePointerMove}
-              onVirtualPointerUp={handlePointerEnd}
-            />
-          </div>
-          <div class="flex items-center justify-between gap-4 px-1 text-[11px] text-muted-foreground uppercase tracking-[0.12em]">
-            <span>Position {positionLabel()}</span>
-            <span>
-              {canvas.frame ? `${canvas.frame.width} × ${canvas.frame.height} px` : "No frame"}
-            </span>
-          </div>
-        </div>
+        <StageCanvas
+          aspect="wide"
+          captionLeft={`Position ${positionLabel()}`}
+          captionRight={
+            canvas.frame ? `${canvas.frame.width} × ${canvas.frame.height} px` : "No frame"
+          }
+          class="max-w-[45rem]"
+        >
+          <AlignCanvas
+            class="h-full w-full"
+            cursor={cursor()}
+            emptyText={emptyText()}
+            excludedCells={canvas.displayedExcludedCells}
+            frame={canvas.frame}
+            grid={canvas.grid}
+            toolMode={canvas.toolMode}
+            previewGridRef={gridHandlers.previewGridRef}
+            previewRedrawRef={previewRedrawRef}
+            toasts={toasts()}
+            onVirtualPointerCancel={handlePointerCancel}
+            onVirtualPointerDown={handlePointerDown}
+            onVirtualPointerMove={handlePointerMove}
+            onVirtualPointerUp={handlePointerEnd}
+          />
+        </StageCanvas>
       </ViewportCard>
     </>
   );

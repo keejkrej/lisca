@@ -41,6 +41,7 @@ export { Panel, PanelContent, PanelDescription, PanelHeader, PanelTitle } from "
 export { ReadonlyPathField } from "./chrome/readonly-path-field";
 export { Section, type SectionChevron, type SectionProps } from "./regions/section";
 export { ViewportCard } from "./layout/viewport-card";
+export { StageCanvas, type StageCanvasAspect } from "./layout/stage-canvas";
 export { FrameAspectPanel } from "./layout/frame-aspect-panel";
 export { ShellServerProvider, useShellServer, type ShellServer } from "./server/shell-server";
 export {
