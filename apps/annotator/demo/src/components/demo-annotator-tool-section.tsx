@@ -1,6 +1,5 @@
 import { AnnotationToolGrid, buildAnnotationToolActions } from "@lisca/ui/features";
 import { cn } from "@lisca/ui/components";
-import { DockSection } from "@lisca/ui/shell";
 import type { DockToolAction } from "@lisca/ui/shell";
 import { For, Show } from "solid-js";
 import type { Accessor } from "solid-js";
@@ -25,22 +24,7 @@ function DemoAnnotatorToolToolbar(props: {
   );
 }
 
-export function DemoAnnotatorToolSection(props: { state: Accessor<DemoAnnotatorState> }) {
-  const canEditTools = () => props.state().mode === "segmentation";
-  const toolActions = () =>
-    buildAnnotationToolActions(props.state().tool, props.state().setTool, !canEditTools(), {
-      viewable: Boolean(props.state().frame),
-    });
-
-  return (
-    <Show when={props.state().mode === "segmentation"}>
-      <DockSection title="Tool">
-        <DemoAnnotatorToolToolbar canEditTools={canEditTools()} toolActions={toolActions()} />
-      </DockSection>
-    </Show>
-  );
-}
-
+/** Compact toolbar for embedded landing previews. */
 export function DemoInlineAnnotatorToolbar(props: {
   state: Accessor<DemoAnnotatorState>;
   embedded?: boolean;

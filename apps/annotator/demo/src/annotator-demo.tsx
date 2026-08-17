@@ -1,5 +1,5 @@
 import { AnnotationModeToggle, LabelCreationDialog } from "@lisca/ui/features";
-import { AppShell } from "@lisca/ui/shell";
+import { AppShell, RailSidebar } from "@lisca/ui/shell";
 import {
   DemoAnnotatorRoot,
   DemoNavbar,
@@ -11,12 +11,11 @@ import {
 } from "@lisca/web-demo";
 import { Show } from "solid-js";
 
-import { DemoAnnotatorDock } from "./components/demo-annotator-dock";
 import { DemoAnnotatorLeft } from "./components/demo-annotator-left";
 import { DemoAnnotatorMain } from "./components/demo-annotator-main";
 import { DemoAnnotatorRight } from "./components/demo-annotator-right";
+import { DemoAnnotatorSaveSection } from "./components/demo-annotator-save-section";
 import { DemoInlineAnnotatorToolbar } from "./components/demo-annotator-tool-section";
-import { createEmptyMask } from "./utils/annotation-utils";
 
 export type AnnotatorDemoProps = {
   embedded?: boolean;
@@ -38,100 +37,67 @@ function AnnotatorDemoView(props: { embedded: boolean }) {
     Boolean(state().frame),
   );
 
+  const navbar = (
+    <DemoNavbar
+      allowOpenFile={!props.embedded}
+      sampleImages={props.embedded ? DEMO_SAMPLE_IMAGES : undefined}
+      selectedSampleId={props.embedded ? resolveSelectedSampleId(state().fileName) : null}
+      onSampleChange={
+        props.embedded
+          ? (sampleId) => void state().openSampleImage(sampleId as DemoSampleImageId)
+          : undefined
+      }
+      endLeading={
+        props.embedded ? (
+          <AnnotationModeToggle
+            class="w-[14rem]"
+            mode={state().mode}
+            onModeChange={state().setMode}
+          />
+        ) : undefined
+      }
+      fileName={state().fileName}
+      loading={state().frameLoading}
+      showThemeToggle={!props.embedded}
+      onOpenFile={(file) => void state().openImage(file)}
+    />
+  );
+
   const shell = (
-    <AppShell>
-      <AppShell.Header>
-        <DemoNavbar
-          allowOpenFile={!props.embedded}
-          sampleImages={props.embedded ? DEMO_SAMPLE_IMAGES : undefined}
-          selectedSampleId={props.embedded ? resolveSelectedSampleId(state().fileName) : null}
-          onSampleChange={
-            props.embedded
-              ? (sampleId) => void state().openSampleImage(sampleId as DemoSampleImageId)
-              : undefined
-          }
-          endLeading={
-            props.embedded ? (
-              <AnnotationModeToggle
-                class="w-[14rem]"
-                mode={state().mode}
-                onModeChange={state().setMode}
-              />
-            ) : undefined
-          }
-          fileName={state().fileName}
-          loading={state().frameLoading}
-          showThemeToggle={!props.embedded}
-          onOpenFile={(file) => void state().openImage(file)}
-        />
-      </AppShell.Header>
-      <AppShell.Body>
-        <Show
-          when={!props.embedded}
-          fallback={
+    <Show
+      when={!props.embedded}
+      fallback={
+        <AppShell>
+          <AppShell.Header>{navbar}</AppShell.Header>
+          <AppShell.Body>
             <AppShell.MainColumn>
               <AppShell.Main>
                 <DemoAnnotatorMain embedded state={state} />
               </AppShell.Main>
               <DemoInlineAnnotatorToolbar embedded state={state} />
             </AppShell.MainColumn>
-          }
-        >
-          <AppShell.Left widthClass="w-72">
+          </AppShell.Body>
+        </AppShell>
+      }
+    >
+      <AppShell variant="stage">
+        <AppShell.Body>
+          <AppShell.Left>
             <DemoAnnotatorLeft state={state} />
           </AppShell.Left>
           <AppShell.MainColumn>
+            <AppShell.TopBar>{navbar}</AppShell.TopBar>
             <AppShell.Main>
               <DemoAnnotatorMain state={state} />
             </AppShell.Main>
-            <AppShell.Dock>
-              <DemoAnnotatorDock state={state} />
-            </AppShell.Dock>
           </AppShell.MainColumn>
-          <AppShell.Right widthClass="w-72">
-            <DemoAnnotatorRight
-              activeLabelId={state().activeLabelId}
-              annotation={state().annotation.current}
-              brushSize={state().brushSize}
-              canEdit={state().canEdit}
-              canRedo={state().annotation.canRedo}
-              canUndo={state().annotation.canUndo}
-              dirty={state().annotation.dirty}
-              error={state().error}
-              frameLoading={state().frameLoading}
-              labels={state().labels}
-              mode={state().mode}
-              overlayOpacity={state().overlayOpacity}
-              onBrushSizeChange={state().setBrushSize}
-              onClassificationChange={(labelId) =>
-                state().annotation.commit({
-                  classificationLabelId: labelId,
-                  mask: state().annotation.current.mask,
-                })
-              }
-              onClear={() => {
-                const current = state();
-                if (!current.frame) return;
-                current.annotation.commit({
-                  classificationLabelId: current.annotation.current.classificationLabelId,
-                  mask: createEmptyMask(current.frame.width, current.frame.height),
-                });
-              }}
-              onDiscard={state().annotation.discard}
-              onModeChange={state().setMode}
-              onOverlayOpacityChange={state().setOverlayOpacity}
-              onPaintLabelChange={state().setActiveLabelId}
-              onRedo={state().annotation.redo}
-              onUndo={state().annotation.undo}
-              onOpenLabelDialog={() => {
-                state().setLabelError(null);
-                state().setLabelDialogOpen(true);
-              }}
-            />
+          <AppShell.Right>
+            <RailSidebar>
+              <DemoAnnotatorRight state={state} />
+              <DemoAnnotatorSaveSection state={state} />
+            </RailSidebar>
           </AppShell.Right>
-        </Show>
-      </AppShell.Body>
-      <Show when={!props.embedded}>
+        </AppShell.Body>
         <LabelCreationDialog
           error={state().labelError}
           labels={state().labels}
@@ -142,8 +108,8 @@ function AnnotatorDemoView(props: { embedded: boolean }) {
           onOpenChange={state().setLabelDialogOpen}
           onSave={state().saveLabels}
         />
-      </Show>
-    </AppShell>
+      </AppShell>
+    </Show>
   );
 
   return (

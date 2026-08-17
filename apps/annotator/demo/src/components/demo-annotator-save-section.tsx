@@ -1,4 +1,4 @@
-import { DockSection, ReadonlyPathField } from "@lisca/ui/shell";
+import { PanelSection, RailControlStack, ReadonlyPathField } from "@lisca/ui/shell";
 import { stemName } from "@lisca/web-demo/browser";
 import type { Accessor } from "solid-js";
 
@@ -12,14 +12,14 @@ export function DemoAnnotatorSaveSection(props: { state: Accessor<DemoAnnotatorS
   };
 
   return (
-    <DockSection title="Save">
-      <div class="flex w-full flex-col gap-2">
+    <PanelSection appearance="rail" title="Action">
+      <RailControlStack>
         <ReadonlyPathField
           aria-label="Output annotation archive"
           value={`${stem()}-annotation.zip`}
         />
         <DemoAnnotatorDownloadButton state={props.state} />
-      </div>
-    </DockSection>
+      </RailControlStack>
+    </PanelSection>
   );
 }

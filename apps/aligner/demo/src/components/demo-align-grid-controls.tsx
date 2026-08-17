@@ -8,6 +8,7 @@ export function DemoAlignGridControls(props: { state: Accessor<DemoAlignState> }
     <AlignGridRail
       disabled={!props.state().frame}
       grid={props.state().grid}
+      sectionAppearance="rail"
       onGridChange={props.state().setGrid}
     />
   );

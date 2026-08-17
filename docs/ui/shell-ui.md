@@ -11,25 +11,78 @@ Edit colors in `packages/ui/theme.css`: CSS `z-*` component classes (button, inp
 
 Do not scatter layout tint tokens (`railChrome`, `panel`, `stat`, etc.); shell surfaces use `background` + `border`.
 
+## Instrument stage shell
+
+Studio, Aligner, and Annotator use `AppShell variant="stage"` as the live product chrome. The reference desktop is 1440×900 with fixed columns **256px / 928px / 256px** (`w-64` rails, no `w-72` overrides). The center column begins with a 56px `AppShell.TopBar`, then the main sheet.
+
+```tsx
+<AppShell variant="stage">
+  <AppShell.Body>
+    <AppShell.Left>
+      <RailSidebar>{/* nav + instrument */}</RailSidebar>
+    </AppShell.Left>
+    <AppShell.MainColumn>
+      <AppShell.TopBar>{/* ShellNavbar or demo chrome */}</AppShell.TopBar>
+      <AppShell.Main>
+        <ViewportCard variant="stage">
+          <StageCanvas aspect="wide" captionLeft="…" captionRight="…">
+            {/* canvas */}
+          </StageCanvas>
+        </ViewportCard>
+      </AppShell.Main>
+    </AppShell.MainColumn>
+    <AppShell.Right>
+      <RailSidebar>{/* instruction + instrument / action */}</RailSidebar>
+    </AppShell.Right>
+  </AppShell.Body>
+</AppShell>
+```
+
+Do **not** put instrument tools or save actions in `AppShell.Dock` / `DockStrip`. Bottom docks are not the live instrument chrome.
+
+### Rails and StageCanvas
+
+| Piece                                                   | Role                                                                                            |
+| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `RailSidebar`                                           | Full 256px overflow viewport; centers a fixed 200px `RailSectionStack` with 16px section rhythm |
+| `PanelSection appearance="rail"`                        | Collapsible rail section (vertical carets)                                                      |
+| `RailControlStack` / `RailActionPair` / `RailFieldPair` | Body layout inside rail sections                                                                |
+| `ViewportCard variant="stage"`                          | Padded main sheet around the canvas                                                             |
+| `StageCanvas`                                           | Shared muted well + tracked captions (`aspect="wide"` for Align, `square` for Annotate)         |
+
+Stage shells keep both 256px rails inline at 1024px and wider. Below 1024px—or in portrait orientation—the same mounted rail content moves into body-owned overlays so the scientific workspace retains at least 512px.
+
+### App rail mapping
+
+- **Aligner:** left — Navigation, Contrast, Tool; right — Grid, Geometry, Selection, Action.
+- **Annotator:** left — Navigation, Contrast, segmentation Tool; right — Mode, Labels, Edit, optional Brush, Action.
+- **Studio:** left — workflow navigation; center — active task; right — Instruction plus basic/expert instrument stacks. Embedded Align/Annotate stages reuse the standalone component rules, names, and order.
+
+### Studio Instruction + Expert
+
+Studio’s right rail always shows an Instruction section when the route provides copy, then either the default instrument stack or the expert stack. Expert mode is a workspace-level setting: render its compact checkmark toggle (Show/Edit family: persistent indicator, `aria-pressed`, dark primary fill when on) in the Studio top bar only on routes with an expert body. Place it immediately after Tasks in the left cluster; the right cluster is Connected + theme only. Never put Expert at the bottom of a scrolling rail.
+
 ## Shell components (web)
 
 Compose apps from shell primitives, not exported class strings:
 
 | Component                      | Role                                                                                                                                                                              |
 | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `AppShell`                     | Root layout; all regions use `bg-background`                                                                                                                                      |
+| `AppShell`                     | Root layout; `variant="stage"` for instrument chrome, default for classic document shells                                                                                         |
+| `AppShell.TopBar`              | Floating 56px stage header inside `MainColumn`                                                                                                                                    |
 | `AppShell.MainScroll`          | Full-sheet document scroll viewport with a separately centered, non-scrolling content measure                                                                                     |
-| `Panel`                        | Bordered in-app frame (dock, nav rail, sidebar cards)                                                                                                                             |
-| `ViewportCard`                 | Padded main column; inner frame matches `Panel`                                                                                                                                   |
+| `StageCanvas`                  | Shared stage well + caption row for Align/Annotate viewports                                                                                                                      |
+| `Panel`                        | Bordered in-app frame (nav rail, sidebar cards, classic panels)                                                                                                                   |
+| `ViewportCard`                 | Padded main column; `variant="stage"` for the instrument sheet                                                                                                                    |
 | `Section`                      | Collapsible in-app section inside a `Panel` (rare direct use). Title is an accordion-style trigger (hover underline); `chevron="vertical"` (up/down) or `horizontal` (left/right) |
-| `PanelSection`                 | Sidebar placement variant of `Section`; full width, height hugs content; vertical carets (inverse of `DockSection`)                                                               |
+| `PanelSection`                 | Sidebar/rail placement variant of `Section`; full width, height hugs content; vertical carets                                                                                     |
 | `RailControlStack`             | Default full-width vertical composition for independent controls in a stage rail                                                                                                  |
 | `RailActionPair`               | Named, adaptive two-column composition for exactly two short product-authored actions with one task scope                                                                         |
 | `RailFieldPair`                | Auto-stacking two-column composition reserved for semantic X/Y or Width/Height peers                                                                                              |
 | `RailSectionStack`             | Canonical 16px vertical rhythm between independently collapsible stage-rail sections                                                                                              |
 | `RailSidebar`                  | Full-width stage-rail scroller with a centered fixed 200px section measure and symmetric scrollbar gutters                                                                        |
-| `SidebarStack`                 | Full-height scrolling sidebar region container                                                                                                                                    |
-| `DockStrip`                    | Outer dock band — `flex` row, sections grouped and centered                                                                                                                       |
+| `SidebarStack`                 | Full-height scrolling sidebar region container (classic non-stage sidebars)                                                                                                       |
+| `DockStrip`                    | Classic horizontal dock band — not used by the live Align/Annotate/Studio instrument stages                                                                                       |
 | `DockSection`                  | Dock placement variant of `Section`; horizontal carets; `fit="hug"` (default) or `fit="panel"` for instruction copy                                                               |
 | `DialogSurface` / `ModalScrim` | Modal chrome                                                                                                                                                                      |
 | `useKeyboardShortcuts`         | Web keyboard bindings; pair with `dockToolShortcuts()` from `@lisca/ui-headless/dock` for digit tool keys                                                                         |
@@ -41,13 +94,19 @@ Frame styling lives inside `panel.tsx` (`panelFrameClass`); not exported from th
 
 ## Composition model
 
-Sidebar and dock use the same layering:
+**Stage rails** (live instrument chrome):
 
-1. **Region container** — `RailSidebar`, `SidebarStack`, or `DockStrip`
-2. **Section variant** — `PanelSection` or `DockSection` (both inherit `Section`)
-3. **Body layout** — rail primitives for stage rails; inline `flex` / `grid` in classic sidebars and docks
+1. **Region container** — `RailSidebar`
+2. **Section variant** — `PanelSection appearance="rail"`
+3. **Body layout** — `RailControlStack` / `RailActionPair` / `RailFieldPair`
 
-**App-owned docks** (aligner pattern): `AlignerDock` composes `DockStrip` + feature sections. Studio mirrors this with `StudioAssayDock`, `StudioAlignDock`, etc. under `apps/studio/*/src/components/`.
+**Classic sidebars and docks** (document/wizard leftovers, demos that have not migrated, or non-instrument panels):
+
+1. **Region container** — `SidebarStack` or `DockStrip`
+2. **Section variant** — `PanelSection` or `DockSection`
+3. **Body layout** — inline `flex` / `grid`
+
+App-owned instrument composition lives in the stage rails (`AlignerLeft` / `AlignerRight`, `AnnotatorLeft` / `AnnotatorRight`, Studio nav + `StudioRightPanel` with Instruction and instrument stacks). Do not revive bottom `*-dock` wrappers as product chrome.
 
 ### DockSection fit
 
@@ -61,14 +120,14 @@ Sidebar and dock use the same layering:
 <DockSection title="Action">…</DockSection>
 ```
 
-Do not add app-level instruction wrapper components; use `fit="panel"` inline in `*-dock` files.
+Prefer Studio’s rail Instruction section for stage shells; use `fit="panel"` only when composing a classic horizontal dock.
 
 ### PanelSection
 
-Right sidebar sections use `PanelSection`: full width (`w-full`), height hugs content. Inverse of `DockSection`, which stretches height in the dock row and uses variable width (`w-max`).
+Rail and right-sidebar sections use `PanelSection`: full width (`w-full`), height hugs content. Inverse of `DockSection`, which stretches height in the dock row and uses variable width (`w-max`).
 
 ```tsx
-<PanelSection title="Instruction">
+<PanelSection appearance="rail" title="Instruction">
   <p className="text-sm leading-snug text-muted-foreground">{instruction}</p>
 </PanelSection>
 ```
@@ -114,9 +173,7 @@ fixed 200px `RailSectionStack`; its 16px section rhythm is distinct from spacing
 The stack uses auto block margins, which center it while it fits and collapse when it overflows so
 scrolling begins at the first section rather than at an unreachable negative offset. Symmetric stable
 scrollbar gutters keep the 200px measure physically centered on platforms with non-overlay scrollbars,
-so action pairs do not unexpectedly stack. Stage shells keep both 256px rails inline at 1024px and
-wider. Below 1024px—or in portrait orientation—the same mounted rail content moves into the
-body-owned overlays so the scientific workspace retains at least 512px.
+so action pairs do not unexpectedly stack.
 
 ## Main document scrolling
 
@@ -141,7 +198,8 @@ immediately by the optional Expert checkmark toggle (Show/Edit family); its righ
 only Connected status and the theme toggle. Expert is rendered only on routes with an expert body
 and never belongs in a scrolling rail.
 
-Classic sidebars and horizontal docks keep their established layouts:
+Classic sidebars and horizontal docks keep their established layouts when still needed outside the
+instrument stage:
 
 ```tsx
 // Vertical action list (studio wizard) — DockSection fit="hug" (default); no centering hacks
@@ -163,10 +221,15 @@ Classic sidebars and horizontal docks keep their established layouts:
 
 ## Rules
 
-1. **One layout background:** `bg-background` on AppShell and viewport padding bands.
+1. **One layout background:** stage uses muted surround + paper sheet; classic shells use `bg-background` on AppShell and viewport padding bands.
 2. **Structure = border, not tint:** panels and sections use `rounded-xl border border-border bg-background`.
-3. **Apps use shell components** — do not import layout class strings; `DockSection` / `PanelSection` own their placement styles.
-4. **Read-only path chips** may use `bg-muted/20` (`ReadonlyPathField`) as the one subtle inset.
+3. **Apps use shell components** — do not import layout class strings; `DockSection` / `PanelSection` / `RailSidebar` own their placement styles.
+4. **Instrument chrome is stage rails** — 256px `RailSidebar`, `StageCanvas`, top-bar Expert; not bottom docks.
+5. **Read-only path chips** may use `bg-muted/20` (`ReadonlyPathField`) as the one subtle inset.
+
+## Demo shells
+
+Standalone **Aligner** and **Annotator** demos (`apps/aligner/demo`, `apps/annotator/demo`) use the same stage shell, 256px rails, shared rail primitives, and `StageCanvas` as the real apps. Embedded landing previews keep a compact classic `AppShell` + inline toolbar so the marketing page is not restyled. The Studio analysis demo may still use a classic horizontal dock for assay actions; treat that as a leftover, not the Align/Annotate instrument pattern. `@lisca/web-demo` supplies demo state and `DemoNavbar` only — it does not own shell layout.
 
 ## Out of scope
 

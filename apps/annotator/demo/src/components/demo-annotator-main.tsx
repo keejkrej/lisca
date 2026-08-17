@@ -1,4 +1,4 @@
-import { ViewportCard } from "@lisca/ui/shell";
+import { StageCanvas, ViewportCard } from "@lisca/ui/shell";
 import {
   AnnotationCanvas,
   SmartSegmentModelDialog,
@@ -6,7 +6,7 @@ import {
 } from "@lisca/ui/features";
 import { createBrowserSmartSegmentSetup } from "@lisca/smart/segment/browser";
 import { useSmartSegment } from "@lisca/smart/segment";
-import { toDisplayFrame } from "@lisca/web-demo/browser";
+import { stemName, toDisplayFrame } from "@lisca/web-demo/browser";
 import { createSignal, type Accessor } from "solid-js";
 import type { DemoAnnotatorState } from "@lisca/web-demo";
 
@@ -67,36 +67,70 @@ export function DemoAnnotatorMain(props: {
     }
     return [];
   };
+  const canvas = (
+    <AnnotationCanvas
+      activeLabelId={props.state().activeLabelId}
+      brushSize={props.state().brushSize}
+      class={props.embedded ? "min-h-0 flex-1" : "h-full w-full"}
+      disabled={!props.state().canEditSegmentation || smartSegment.busy()}
+      frame={displayFrame()}
+      labels={props.state().labels}
+      mask={props.state().annotation.current.mask}
+      overlayOpacity={props.state().overlayOpacity}
+      smartSegmentPrompts={smartSegment.prompts()}
+      toasts={toasts()}
+      tool={props.state().tool}
+      onMaskCommit={(mask) => {
+        const state = props.state();
+        state.annotation.commit({
+          classificationLabelId: state.annotation.current.classificationLabelId,
+          mask,
+        });
+      }}
+      onSmartSegmentClick={(click) => void smartSegment.handleClick(click)}
+      onSmartEraseClick={(click) => void smartSegment.handleEraseClick(click)}
+    />
+  );
+
+  if (props.embedded) {
+    return (
+      <ViewportCard>
+        <SmartSegmentModelDialog
+          busy={smartSegment.busy()}
+          state={smartSegment.downloadState()}
+          onCancel={smartSegment.cancelDownload}
+          onConfirm={() => void smartSegment.confirmDownload()}
+        />
+        {canvas}
+      </ViewportCard>
+    );
+  }
+
+  const captionLeft = () => {
+    const fileName = props.state().fileName;
+    return fileName ? stemName(fileName) : "Demo";
+  };
+  const captionRight = () => {
+    const frame = displayFrame();
+    return frame ? `${frame.width} × ${frame.height} px` : "No frame";
+  };
+
   return (
-    <ViewportCard>
+    <ViewportCard variant="stage">
       <SmartSegmentModelDialog
         busy={smartSegment.busy()}
         state={smartSegment.downloadState()}
         onCancel={smartSegment.cancelDownload}
         onConfirm={() => void smartSegment.confirmDownload()}
       />
-      <AnnotationCanvas
-        activeLabelId={props.state().activeLabelId}
-        brushSize={props.state().brushSize}
-        class="min-h-0 flex-1"
-        disabled={!props.state().canEditSegmentation || smartSegment.busy()}
-        frame={displayFrame()}
-        labels={props.state().labels}
-        mask={props.state().annotation.current.mask}
-        overlayOpacity={props.state().overlayOpacity}
-        smartSegmentPrompts={smartSegment.prompts()}
-        toasts={toasts()}
-        tool={props.state().tool}
-        onMaskCommit={(mask) => {
-          const state = props.state();
-          state.annotation.commit({
-            classificationLabelId: state.annotation.current.classificationLabelId,
-            mask,
-          });
-        }}
-        onSmartSegmentClick={(click) => void smartSegment.handleClick(click)}
-        onSmartEraseClick={(click) => void smartSegment.handleEraseClick(click)}
-      />
+      <StageCanvas
+        aspect="square"
+        captionLeft={captionLeft()}
+        captionRight={captionRight()}
+        class="max-w-[30rem]"
+      >
+        {canvas}
+      </StageCanvas>
     </ViewportCard>
   );
 }
