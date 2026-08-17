@@ -3,8 +3,7 @@ import { AppShell } from "@lisca/ui/shell";
 import { createFileRoute } from "@tanstack/solid-router";
 
 import { StudioAnnotateMain } from "../components/studio-annotate-main";
-import { StudioAnnotateRight } from "../components/studio-annotate-right";
-import { StudioAnnotateExpertRight } from "../components/studio-annotate-expert-right";
+import { StudioAnnotateInstrumentStack } from "../components/studio-annotate-instrument-stack";
 import { instructionForAnnotate } from "../state/studio-routes";
 import { StudioLeft } from "../components/studio-left";
 import { StudioRightPanel } from "../components/studio-right-panel";
@@ -41,10 +40,10 @@ function AnnotatePageContent() {
         </AppShell.MainColumn>
         <AppShell.Right widthClass="w-64">
           <StudioRightPanel
-            expert={() => <StudioAnnotateExpertRight />}
+            expert={() => <StudioAnnotateInstrumentStack showShuffle />}
             instruction={instructionForAnnotate}
           >
-            <StudioAnnotateRight />
+            <StudioAnnotateInstrumentStack showShuffle={false} />
           </StudioRightPanel>
         </AppShell.Right>
       </AppShell.Body>

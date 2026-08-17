@@ -79,8 +79,17 @@ export function useStudioAlignCrop() {
 export function useStudioAlignNav() {
   const { state } = useStudioAlignPage();
   return {
+    get scan() {
+      return state.scan;
+    },
+    get frame() {
+      return state.frame;
+    },
     get selection() {
       return state.selection;
+    },
+    get contrast() {
+      return state.contrast;
     },
     get alignPositions() {
       return state.alignPositions;
@@ -88,6 +97,8 @@ export function useStudioAlignNav() {
     get canGoBack() {
       return state.canGoBack;
     },
+    setSelection: state.setSelection,
+    setContrast: state.setContrast,
     goBack: state.goBack,
     resetCurrent: state.resetCurrent,
     goToFirstUnaligned: state.goToFirstUnaligned,
