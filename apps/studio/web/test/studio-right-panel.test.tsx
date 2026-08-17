@@ -55,4 +55,3 @@ describe("StudioRightPanel", () => {
     expect(screen.queryByRole("button", { name: "Expert mode" })).toBeNull();
   });
 });
-
