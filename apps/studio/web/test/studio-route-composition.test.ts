@@ -65,13 +65,12 @@ describe("Studio workflow route composition", () => {
   });
 
   it("reuses the standalone annotation rail and shared five-action tool grid", () => {
-    const rightSource = readSource("../src/components/studio-annotate-right.tsx");
-    const controlsSource = readSource("../src/components/studio-annotate-dock.tsx");
+    const stackSource = readSource("../src/components/studio-annotate-instrument-stack.tsx");
 
-    expect(rightSource).toMatch(/<StudioAnnotateRightContent\s*\/>/);
-    expect(rightSource).not.toMatch(/title="Label"/);
-    expect(controlsSource).toMatch(/<AnnotationToolGrid/);
-    expect(controlsSource).toMatch(/layout="rail"/);
-    expect(controlsSource).toMatch(/shortcutsEnabled=\{dock\.shortcutsEnabled\}/);
+    expect(stackSource).toMatch(/<AnnotationControlRail\b/);
+    expect(stackSource).not.toMatch(/title="Label"/);
+    expect(stackSource).toMatch(/<AnnotationToolGrid/);
+    expect(stackSource).toMatch(/layout="rail"/);
+    expect(stackSource).toMatch(/shortcutsEnabled=\{dock\.shortcutsEnabled\}/);
   });
 });

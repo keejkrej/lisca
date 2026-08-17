@@ -9,13 +9,9 @@ export function StudioAnnotateNav() {
   return (
     <Show
       when={!nav.workspaceMissing}
-      fallback={
-        <div class="flex min-h-0 flex-col gap-2.5">
-          <p class="text-destructive text-sm">Choose a workspace on the Info step first.</p>
-        </div>
-      }
+      fallback={<p class="text-destructive text-sm">Choose a workspace on the Info step first.</p>}
     >
-      <div class="flex min-h-0 flex-col gap-2.5">
+      <>
         <RoiFrameNavigation
           changeSelection={nav.changeSelection}
           position={nav.position}
@@ -31,9 +27,11 @@ export function StudioAnnotateNav() {
           frame={nav.frame}
           role="region"
           sectionAppearance="rail"
+          sectionClassName="min-h-0 shrink-0"
+          sectionContentClassName="flex min-h-0 flex-col"
           onContrastChange={nav.setContrast}
         />
-      </div>
+      </>
     </Show>
   );
 }

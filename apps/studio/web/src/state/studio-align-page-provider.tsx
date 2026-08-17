@@ -4,7 +4,7 @@ import {
 } from "@lisca/client/align-session";
 import { useSmartExclude } from "@lisca/smart/exclude/request";
 import { useVarExclude } from "@lisca/smart/var-exclude";
-import { createMemo, createSignal } from "solid-js";
+import { createMemo, createSignal, onCleanup } from "solid-js";
 import type { JSX } from "solid-js";
 
 import { StudioAlignVariationExcludeDialog } from "../components/studio-align-variation-exclude-dialog";
@@ -100,6 +100,11 @@ export function StudioAlignPageProvider(props: { children?: JSX.Element }) {
     if (state.saving) return false;
     return await state.saveAndAdvanceWithExcludedCells(state.currentExcludedCells);
   };
+
+  onCleanup(() => {
+    state.setManualExclusionEnabled(false);
+    state.cancelVariationExclude();
+  });
 
   return (
     <StudioAlignPageContext.Provider
