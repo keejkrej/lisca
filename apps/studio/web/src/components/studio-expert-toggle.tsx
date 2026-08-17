@@ -1,4 +1,5 @@
-import { Switch } from "@lisca/ui/components";
+import { Toggle } from "@lisca/ui/components";
+import { AlignStateToggleIndicator } from "@lisca/ui/features";
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-solid";
 
 import { setStudioExpertMode, studioExpertModeAtom } from "../atoms/studio-expert-atoms";
@@ -13,11 +14,18 @@ export function StudioExpertToggle() {
   };
 
   return (
-    <label class="flex h-7 cursor-pointer items-center gap-2 text-xs text-muted-foreground">
-      <span>
-        Expert<span class="sr-only"> mode</span>
-      </span>
-      <Switch checked={expertMode()} id="studio-expert-mode" size="sm" onChange={setPressed} />
-    </label>
+    <Toggle
+      aria-label="Expert mode"
+      aria-pressed={expertMode()}
+      class="h-7 justify-center px-2.5 text-xs"
+      data-instrument-state-toggle=""
+      pressed={expertMode()}
+      size="sm"
+      variant="outline"
+      onChange={setPressed}
+    >
+      <AlignStateToggleIndicator pressed={expertMode()} />
+      <span>Expert</span>
+    </Toggle>
   );
 }

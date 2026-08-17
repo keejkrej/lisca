@@ -137,9 +137,9 @@ for an independently navigable bounded widget such as a file list, task queue, o
 form section, sample collection, or result gallery.
 
 The Studio top bar groups workspace controls by function. Its left cluster contains Tasks followed
-immediately by the optional Expert switch; its right cluster contains only Connected status and the
-theme toggle. Expert is rendered only on routes with an expert body and never belongs in a scrolling
-rail.
+immediately by the optional Expert checkmark toggle (Show/Edit family); its right cluster contains
+only Connected status and the theme toggle. Expert is rendered only on routes with an expert body
+and never belongs in a scrolling rail.
 
 Classic sidebars and horizontal docks keep their established layouts:
 

@@ -209,7 +209,7 @@ State controls and actions must be distinguishable before interaction. **Show** 
 
 Grid **Show / Reset** is a named two-column action pair: both labels are short, they share one grid-visibility task scope, and Show retains its persistent state indicator. This is the canonical toggle/reset exception to the full-width rule.
 
-Expert mode is a workspace-level setting. Show its compact switch in the Studio top bar only on routes that provide an expert view. It sits immediately after Tasks in the left cluster; the right cluster contains only Connected and theme. Never place Expert at the bottom of a scrolling rail.
+Expert mode is a workspace-level setting. Show its compact checkmark toggle (same Show/Edit family: persistent indicator, `aria-pressed`, dark primary fill when on) in the Studio top bar only on routes that provide an expert view. It sits immediately after Tasks in the left cluster; the right cluster contains only Connected and theme. Never place Expert at the bottom of a scrolling rail.
 
 Read-only source and workspace paths are full-width picker triggers, not editable inputs. The complete surface opens the picker and always exposes the same trailing **Browse** action so identical behavior has an identical affordance.
 

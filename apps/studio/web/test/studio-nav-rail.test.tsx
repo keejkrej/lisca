@@ -160,7 +160,10 @@ describe("StudioNavRail Task Center", () => {
     const { router } = renderStudioShell();
 
     const trigger = await screen.findByRole("button", { name: "Tasks, 1 active" });
-    const expert = screen.getByRole("switch", { name: /Expert mode$/ });
+    const expert = screen.getByRole("button", { name: /Expert mode$/ });
+    expect(["true", "false"]).toContain(expert.getAttribute("aria-pressed"));
+    expect(expert.querySelector('[data-slot="instrument-toggle-indicator"]')).toBeTruthy();
+
     const nav = screen.getByRole("navigation", { name: "Primary" });
     const statusBar = screen.getByRole("region", { name: "Studio status bar" });
     const connection = screen.getByLabelText(/^Server /);

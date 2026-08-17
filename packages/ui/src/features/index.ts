@@ -39,6 +39,8 @@ export {
 } from "./align/align-grid-shape-toggle";
 export { AlignSelectionCounts } from "./align/align-selection-counts";
 export { AlignEditToggle, type AlignEditToggleProps } from "./align/align-edit-toggle";
+export { AlignStateToggleIndicator } from "./align/align-state-toggle-indicator";
+
 export {
   AlignToolButton,
   AlignToolSection,

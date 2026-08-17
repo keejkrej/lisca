@@ -46,12 +46,13 @@ describe("StudioRightPanel", () => {
     ));
 
     expect(screen.getByText("Default controls")).toBeTruthy();
-    expect(screen.queryByRole("switch", { name: "Expert mode" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Expert mode" })).toBeNull();
   });
 
   it("keeps expert mode controls out of the scrolling rail", () => {
     render(() => <StudioRightPanel expert={() => <div>Expert controls</div>} />);
 
-    expect(screen.queryByRole("switch", { name: "Expert mode" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Expert mode" })).toBeNull();
   });
 });
+
