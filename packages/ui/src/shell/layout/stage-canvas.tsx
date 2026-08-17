@@ -22,9 +22,7 @@ export function StageCanvas(props: {
   captionRight?: JSX.Element;
 }) {
   return (
-    <div
-      class={cn("flex h-full w-full flex-col justify-center gap-3 self-center", props.class)}
-    >
+    <div class={cn("flex h-full w-full flex-col justify-center gap-3 self-center", props.class)}>
       <div
         class={cn(
           "w-full overflow-hidden rounded-2xl bg-muted",
