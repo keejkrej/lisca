@@ -106,7 +106,11 @@ function AnnotatorShellFixture() {
 function renderAnnotatorShell() {
   return render(() => (
     <ShellThemeProvider>
-      <ShellServerProvider appId="annotator" defaultPort={8766}>
+      <ShellServerProvider
+        appId="annotator"
+        defaultPort={8766}
+        probe={() => new Promise(() => undefined)}
+      >
         <ShellWorkspaceProvider>
           <AnnotatorAtomsProvider>
             <AnnotatePageProvider>

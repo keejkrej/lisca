@@ -20,7 +20,7 @@ import {
   mergeExcludedAlignGridCells,
   type AlignGridToolMode,
 } from "@lisca/utils";
-import type { Result } from "@effect-atom/atom-solid";
+import type { Atom, Result } from "@effect-atom/atom-solid";
 import { useAtom } from "@effect-atom/atom-solid";
 import { Effect } from "effect";
 import {

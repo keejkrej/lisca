@@ -18,7 +18,7 @@ import { currentRoi, requestKey } from "../atoms/annotator-ui";
 import { toolCanRunWithoutLabel } from "@lisca/utils";
 import { toClientError } from "../infra/client-error";
 import type { AnnotatorDataPort } from "../ports/types";
-import type { Result } from "@effect-atom/atom-solid";
+import type { Atom, Result } from "@effect-atom/atom-solid";
 import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-solid";
 import { Effect } from "effect";
 import { useSelectedAtomValue } from "../atoms/selected-atom-value";

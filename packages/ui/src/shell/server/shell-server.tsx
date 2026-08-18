@@ -118,7 +118,7 @@ function useHostProbe(
       return;
     }
     let cancelled = false;
-    let retryTimer: number | undefined;
+    let retryTimer: ReturnType<typeof globalThis.setTimeout> | undefined;
     let attempt = 0;
     let connected = false;
 
