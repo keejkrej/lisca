@@ -24,6 +24,7 @@ impl fmt::Display for AnalysisError {
 
 impl std::error::Error for AnalysisError {}
 
+#[cfg(feature = "studio")]
 pub mod array;
 
 #[cfg(feature = "studio")]

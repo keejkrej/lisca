@@ -65,12 +65,13 @@ Writable session/UI state stays in each app (`*-ui-atoms.ts` or `*-store.ts` ato
 
 ## Modules
 
-| Module                 | Atoms                                              |
-| ---------------------- | -------------------------------------------------- |
-| `aligner/queries.ts`   | `scanSourceAtom` (via `createSourceQueryAtoms`)    |
-| `annotator/queries.ts` | ROI workspace scan, labels, save labels/annotation |
-| `studio/queries.ts`    | scan source, ROI workspace scan, labels, saves     |
-| `studio/analysis.ts`   | analysis results, analysis CSV text                |
+| Module                   | Atoms                                                            |
+| ------------------------ | ---------------------------------------------------------------- |
+| `aligner/queries.ts`     | `scanSourceAtom` (via `createSourceQueryAtoms`)                  |
+| `annotator/queries.ts`   | ROI workspace scan, labels, save labels/annotation               |
+| `studio/queries.ts`      | scan source, ROI workspace scan, labels, saves                   |
+| `studio/analysis.ts`     | analysis results, analysis CSV text                              |
+| `selected-atom-value.ts` | `useSelectedAtomValue` — subscribe to a key-selected Effect Atom |
 
 Frame loading uses `createAlignerFrameLoader` / app `roi-loader` effects — not query atoms.
 

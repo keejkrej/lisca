@@ -11,6 +11,8 @@ export type LiscaWebAppConfig = {
   appId: import("@lisca/utils").LiscaAppId;
   /** App-owned atoms provider (port runtime + session hydration). */
   AtomsProvider: Component<{ children?: JSX.Element }>;
+  /** Host-port probe used for the connection-status light. */
+  probe?: () => Promise<unknown>;
   /** DOM id of the mount node (defaults to `root`). */
   rootElementId?: string;
 };
@@ -21,7 +23,7 @@ export type LiscaWebAppConfig = {
  * the provider nesting lives in one place.
  */
 export function createLiscaWebApp(config: LiscaWebAppConfig): void {
-  const { App, defaultPort, appId, AtomsProvider, rootElementId = "root" } = config;
+  const { App, defaultPort, appId, AtomsProvider, probe, rootElementId = "root" } = config;
 
   const mount = document.getElementById(rootElementId);
   if (!mount) {
@@ -32,7 +34,7 @@ export function createLiscaWebApp(config: LiscaWebAppConfig): void {
     () => (
       <AtomsProvider>
         <ShellThemeProvider>
-          <ShellServerProvider appId={appId} defaultPort={defaultPort}>
+          <ShellServerProvider appId={appId} defaultPort={defaultPort} probe={probe}>
             <ShellWorkspaceProvider>
               <App />
             </ShellWorkspaceProvider>

@@ -16,6 +16,10 @@
       "types": "./src/align-canvas-handlers.ts",
       "import": "./src/align-canvas-handlers.ts"
     },
+    "./align-pointer-handlers": {
+      "types": "./src/align-pointer-handlers.ts",
+      "import": "./src/align-pointer-handlers.ts"
+    },
     "./align-selection-handlers": {
       "types": "./src/align-selection-handlers.ts",
       "import": "./src/align-selection-handlers.ts"

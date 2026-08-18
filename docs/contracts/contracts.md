@@ -73,5 +73,5 @@ lisca` (the `protocol::contract_tests` lock the key wire shapes).
 
 - **Single transport:** Effect `HttpApi` over HTTP for all client↔server calls.
 - **Long-running jobs** (crop ROI, analysis): clients poll the existing progress GET endpoints (`/align/crop-roi-progress`, `/studio/analysis-progress`).
-- **Connection health:** shell UI probes `GET /fs/home` on the resolved HTTP base URL.
+- **Connection health:** each app injects its host-port `userHomeDirectory()` probe into `ShellServerProvider`; the shell does not call `fetch` itself.
 - **API style:** typed action-oriented HTTP RPC (named endpoints like `/align/load-frame`), not REST resources and not a separate RPC framework.
