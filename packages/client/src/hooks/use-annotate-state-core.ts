@@ -17,18 +17,17 @@ import type {
 import { currentRoi, requestKey } from "../atoms/annotator-ui";
 import { toolCanRunWithoutLabel } from "@lisca/utils";
 import { toClientError } from "../infra/client-error";
-import { frameLoadRequest, shouldRunContrastFrameLoad } from "../session/frame-load-policy";
 import type { AnnotatorDataPort } from "../ports/types";
 import type { Atom, Result } from "@effect-atom/atom-solid";
-import { RegistryContext, useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-solid";
+import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-solid";
 import { Effect } from "effect";
+import { useSelectedAtomValue } from "../atoms/selected-atom-value";
 import {
   createEffect,
   createMemo,
   createSignal,
   onCleanup,
   untrack,
-  useContext,
   type Accessor,
 } from "solid-js";
 import type { DirtySelectionGuard } from "./annotate-selection-guard";
@@ -200,12 +199,9 @@ export function useAnnotateStateCore<State extends AnnotatorUiState>(
       },
       load: (signal) =>
         runClientEffect(
-          loadRoiFrameWithAnnotationEffect(
-            deps.annotatorClient,
-            workspacePath,
-            request,
-            frameLoadRequest(null),
-          ).pipe(Effect.mapError(toClientError)),
+          loadRoiFrameWithAnnotationEffect(deps.annotatorClient, workspacePath, request, null).pipe(
+            Effect.mapError(toClientError),
+          ),
           {
             signal,
           },
@@ -234,7 +230,7 @@ export function useAnnotateStateCore<State extends AnnotatorUiState>(
 
   createEffect(() => {
     const contrast = activeContrast();
-    if (!shouldRunContrastFrameLoad(contrast)) {
+    if (contrast == null) {
       return;
     }
     const currentUi = untrack(() => session.state());
@@ -251,12 +247,9 @@ export function useAnnotateStateCore<State extends AnnotatorUiState>(
       },
       load: (signal) =>
         runClientEffect(
-          loadRoiFrameEffect(
-            deps.annotatorClient,
-            workspacePath,
-            request,
-            frameLoadRequest(contrast),
-          ).pipe(Effect.mapError(toClientError)),
+          loadRoiFrameEffect(deps.annotatorClient, workspacePath, request, contrast).pipe(
+            Effect.mapError(toClientError),
+          ),
           { signal },
         ),
       commit: (nextFrame) => {
@@ -456,14 +449,3 @@ export function useAnnotateStateCore<State extends AnnotatorUiState>(
 }
 
 export type { RoiSelection, StateUpdater };
-
-function useSelectedAtomValue<A>(selectAtom: () => Atom.Atom<A>): Accessor<A> {
-  const registry = useContext(RegistryContext);
-  const [value, setValue] = createSignal(registry.get(selectAtom()));
-  createEffect(() => {
-    const atom = selectAtom();
-    setValue(() => registry.get(atom));
-    onCleanup(registry.subscribe(atom, setValue as (next: A) => void));
-  });
-  return value;
-}

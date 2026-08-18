@@ -21,7 +21,7 @@ import {
   type AlignGridToolMode,
 } from "@lisca/utils";
 import type { Atom, Result } from "@effect-atom/atom-solid";
-import { RegistryContext, useAtom } from "@effect-atom/atom-solid";
+import { useAtom } from "@effect-atom/atom-solid";
 import { Effect } from "effect";
 import {
   createEffect,
@@ -29,9 +29,9 @@ import {
   createSignal,
   onCleanup,
   untrack,
-  useContext,
   type Accessor,
 } from "solid-js";
+import { useSelectedAtomValue } from "../atoms/selected-atom-value";
 import {
   applyVariationExcludePreview,
   applyVariationExcludeWithEdge,
@@ -60,7 +60,6 @@ import type { CanvasResourceTransactionOptions } from "../canvas-resource-transa
 import { toClientError, type ClientError } from "../infra/client-error";
 import { runClientEffect } from "../infra/runtime";
 import type { AlignerDataPort } from "../ports/types";
-import { frameLoadRequest, shouldRunContrastFrameLoad } from "./frame-load-policy";
 import { currentServerKey } from "./work-session";
 
 export type AlignSessionMeta = {
@@ -276,7 +275,7 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
       load: (signal) =>
         runClientEffect(
           Effect.all([
-            backend.loadFrame(backend.client, source, selection, frameLoadRequest(null)),
+            backend.loadFrame(backend.client, source, selection, null),
             workspacePath
               ? backend.client.loadAlignState(workspacePath, selection.pos)
               : Effect.succeed(null as SavedAlignState | null),
@@ -305,7 +304,7 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
 
   createEffect(() => {
     const contrast = navContrast();
-    if (!shouldRunContrastFrameLoad(contrast)) return;
+    if (contrast == null) return;
     const { source, sourceScan, selection, loadAllowed } = untrack(() => ({
       source: navSource(),
       sourceScan: navScan(),
@@ -321,7 +320,7 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
       load: (signal) =>
         runClientEffect(
           backend
-            .loadFrame(backend.client, source, selection, frameLoadRequest(contrast))
+            .loadFrame(backend.client, source, selection, contrast)
             .pipe(Effect.mapError(toClientError)),
           { signal },
         ),
@@ -703,15 +702,4 @@ function sameFrameRequest(left: FrameRequest, right: FrameRequest): boolean {
     left.time === right.time &&
     left.z === right.z
   );
-}
-
-function useSelectedAtomValue<A>(selectAtom: () => Atom.Atom<A>): Accessor<A> {
-  const registry = useContext(RegistryContext);
-  const [value, setValue] = createSignal(registry.get(selectAtom()));
-  createEffect(() => {
-    const atom = selectAtom();
-    setValue(() => registry.get(atom));
-    onCleanup(registry.subscribe(atom, setValue as (next: A) => void));
-  });
-  return value;
 }

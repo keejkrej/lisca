@@ -1,9 +1,7 @@
 import type { AlignGridCellCoord } from "@lisca/contracts";
 import {
   AlignCanvas,
-  cursorForAlignTool,
-  useAlignCanvasGridHandlers,
-  useAlignCanvasSelectionHandlers,
+  useAlignCanvasPointerHandlers,
   useCanvasTransientStatus,
 } from "@lisca/ui/features";
 import { StageCanvas, ViewportCard } from "@lisca/ui/shell";
@@ -14,45 +12,18 @@ import { useAlignCanvas, useAlignNav } from "../state/align-page-selectors";
 export function AlignerMain() {
   const canvas = useAlignCanvas();
   const nav = useAlignNav();
-  const previewRedrawRef = { current: null as (() => void) | null };
-  const gridHandlers = useAlignCanvasGridHandlers(() => ({
-    disabled: false,
+  const pointer = useAlignCanvasPointerHandlers(() => ({
     grid: canvas.grid,
-    spacingZoomLocked: canvas.spacingZoomLocked,
-    patternZoomLocked: canvas.patternZoomLocked,
     setGrid: canvas.setGrid,
     toolMode: canvas.toolMode,
-    onPreviewGridChange: () => previewRedrawRef.current?.(),
-  }));
-  const selectionHandlers = useAlignCanvasSelectionHandlers(() => ({
-    disabled: false,
-    enabled: canvas.manualExclusionEnabled,
+    spacingZoomLocked: canvas.spacingZoomLocked,
+    patternZoomLocked: canvas.patternZoomLocked,
+    manualExclusionEnabled: canvas.manualExclusionEnabled,
     excludedCells: canvas.currentExcludedCells,
     frame: canvas.frame,
-    grid: canvas.grid,
     onExcludedCellsChange: (cells: AlignGridCellCoord[]) =>
       canvas.setExcludedCellsForCurrentPosition(cells),
   }));
-  const handlePointerDown: typeof gridHandlers.handlePointerDown = (event) => {
-    if (canvas.manualExclusionEnabled) {
-      selectionHandlers.handlePointerDown(event);
-      return;
-    }
-    if (selectionHandlers.handlePointerDown(event)) return;
-    gridHandlers.handlePointerDown(event);
-  };
-  const handlePointerMove: typeof gridHandlers.handlePointerMove = (event) => {
-    if (selectionHandlers.handlePointerMove(event)) return;
-    gridHandlers.handlePointerMove(event);
-  };
-  const handlePointerEnd: typeof gridHandlers.handlePointerEnd = (event) => {
-    if (selectionHandlers.handlePointerEnd(event)) return;
-    gridHandlers.handlePointerEnd(event);
-  };
-  const handlePointerCancel: typeof gridHandlers.handlePointerCancel = (event) => {
-    if (selectionHandlers.handlePointerCancel(event)) return;
-    gridHandlers.handlePointerCancel(event);
-  };
   const visibleStatus = useCanvasTransientStatus(() => canvas.status);
   const activeToastStatus = createMemo(() =>
     canvas.frameLoading
@@ -89,13 +60,6 @@ export function AlignerMain() {
           ? "Scanning source…"
           : "No frame loaded.",
   );
-  const cursor = createMemo(() =>
-    canvas.toolMode === "magnifier"
-      ? "zoom-in"
-      : canvas.manualExclusionEnabled || selectionHandlers.selecting()
-        ? "crosshair"
-        : cursorForAlignTool(canvas.toolMode, canvas.grid.enabled, gridHandlers.dragging()),
-  );
   const positionLabel = createMemo(() => {
     const index = nav.scan?.positions.indexOf(nav.selection.pos) ?? -1;
     const explicit = index >= 0 ? nav.scan?.positionLabels?.[index] : undefined;
@@ -114,19 +78,19 @@ export function AlignerMain() {
         >
           <AlignCanvas
             class="h-full w-full"
-            cursor={cursor()}
+            cursor={pointer.cursor()}
             emptyText={emptyText()}
             excludedCells={canvas.displayedExcludedCells}
             frame={canvas.frame}
             grid={canvas.grid}
             toolMode={canvas.toolMode}
-            previewGridRef={gridHandlers.previewGridRef}
-            previewRedrawRef={previewRedrawRef}
+            previewGridRef={pointer.previewGridRef}
+            previewRedrawRef={pointer.previewRedrawRef}
             toasts={toasts()}
-            onVirtualPointerCancel={handlePointerCancel}
-            onVirtualPointerDown={handlePointerDown}
-            onVirtualPointerMove={handlePointerMove}
-            onVirtualPointerUp={handlePointerEnd}
+            onVirtualPointerCancel={pointer.handlePointerCancel}
+            onVirtualPointerDown={pointer.handlePointerDown}
+            onVirtualPointerMove={pointer.handlePointerMove}
+            onVirtualPointerUp={pointer.handlePointerEnd}
           />
         </StageCanvas>
       </ViewportCard>

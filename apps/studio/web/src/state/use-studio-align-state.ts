@@ -13,6 +13,7 @@ import {
   allAlignPositionsSaved,
   nextAlignPosition,
   resolveFirstUnalignedTarget,
+  type CropConfirmState,
   type VariationExcludePreview,
 } from "@lisca/client/align-session";
 import { useAlignSessionCore } from "@lisca/client/align-session/solid";
@@ -104,10 +105,7 @@ export type StudioAlignState = {
 export type CropStartConfirmState = {
   positions: number[];
 };
-export type CropConfirmState = {
-  positions: number[];
-  existingPositions: number[];
-};
+export type { CropConfirmState };
 export function useStudioAlignState(): StudioAlignState {
   const dataPath = useStudioStore((state) => state.dataPath);
   const folderTemplate = useStudioStore((state) => state.folderTemplate);
@@ -345,13 +343,7 @@ export function useStudioAlignState(): StudioAlignState {
       return cropStartConfirm();
     },
     get cropConfirm() {
-      const confirmation = session.crop.confirm();
-      return confirmation
-        ? {
-            positions: confirmation.positions,
-            existingPositions: confirmation.existingPositions,
-          }
-        : null;
+      return session.crop.confirm();
     },
     get findingFirstUnaligned() {
       return findingFirstUnaligned();

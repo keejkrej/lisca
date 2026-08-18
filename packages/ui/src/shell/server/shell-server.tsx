@@ -104,65 +104,65 @@ function createInitialServerData(defaultPort: number, appId?: LiscaAppId): Shell
 const MAX_PROBE_ATTEMPTS = 40;
 const PROBE_RETRY_MS = 250;
 
-function useHttpProbeForUrl(httpBaseUrl: () => string) {
+function useHostProbe(
+  probe: () => (() => Promise<unknown>) | undefined,
+  httpBaseUrl: () => string,
+) {
   const [state, setState] = createSignal<ConnectionState>("idle");
-  const [log, setLog] = createSignal<string[]>([]);
 
   createEffect(() => {
-    const base = httpBaseUrl();
+    httpBaseUrl();
+    const run = probe();
+    if (!run) {
+      setState("idle");
+      return;
+    }
     let cancelled = false;
-    let retryTimer: number | undefined;
+    let retryTimer: ReturnType<typeof globalThis.setTimeout> | undefined;
     let attempt = 0;
     let connected = false;
-    const controller = new AbortController();
 
     const scheduleRetry = () => {
       if (cancelled || connected || attempt >= MAX_PROBE_ATTEMPTS) {
         if (!connected && attempt >= MAX_PROBE_ATTEMPTS) setState("closed");
         return;
       }
-      retryTimer = window.setTimeout(probe, PROBE_RETRY_MS);
+      retryTimer = globalThis.setTimeout(runProbe, PROBE_RETRY_MS);
     };
 
-    const probe = () => {
+    const runProbe = () => {
       if (cancelled || connected) return;
       attempt += 1;
       setState("connecting");
-      const url = `${base.replace(/\/$/, "")}/fs/home`;
-      void fetch(url, { signal: controller.signal })
-        .then(async (response) => {
+      void run()
+        .then(() => {
           if (cancelled) return;
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-          }
           connected = true;
           setState("open");
-          setLog((lines) => [...lines, `connected ${url}`]);
         })
-        .catch((cause) => {
-          if (cancelled || controller.signal.aborted) return;
-          setLog((lines) => [...lines, cause instanceof Error ? cause.message : String(cause)]);
+        .catch(() => {
+          if (cancelled) return;
           scheduleRetry();
         });
     };
 
     setState("idle");
-    setLog([]);
-    probe();
+    runProbe();
 
     onCleanup(() => {
       cancelled = true;
-      controller.abort();
-      if (retryTimer !== undefined) window.clearTimeout(retryTimer);
+      if (retryTimer !== undefined) globalThis.clearTimeout(retryTimer);
     });
   });
 
-  return { state, log };
+  return { state };
 }
 
 export function ShellServerProvider(props: {
   defaultPort: number;
   appId?: LiscaAppId;
+  /** Host-port check. Omit in tests to skip network. */
+  probe?: () => Promise<unknown>;
   children?: JSX.Element;
 }) {
   const [server, setServer] = createStore<ShellServer>(
@@ -192,7 +192,10 @@ export function ShellServerProvider(props: {
   });
 
   const localLabel = createMemo(() => resolveLocalLabel(props.defaultPort));
-  const probe = useHttpProbeForUrl(() => httpBaseUrl());
+  const probe = useHostProbe(
+    () => props.probe,
+    () => httpBaseUrl(),
+  );
 
   createEffect(() => {
     dispatch({

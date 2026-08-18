@@ -1,5 +1,6 @@
 export * from "./annotation-canvas-handlers";
 export * from "./align-canvas-handlers";
+export * from "./align-pointer-handlers";
 export * from "./align-tools";
 export * from "./canvas-resource-transaction";
 export * from "./canvas-transient-status";

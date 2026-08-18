@@ -1,8 +1,6 @@
 import type { AnalysisProgress, StudioAnalysisCsvFile } from "@lisca/contracts";
-import { resultData } from "@lisca/client/atoms";
-import type { Atom } from "@effect-atom/atom-solid";
-import { RegistryContext } from "@effect-atom/atom-solid";
-import { createEffect, createSignal, onCleanup, useContext, type Accessor } from "solid-js";
+import { resultData, useSelectedAtomValue } from "@lisca/client/atoms";
+import { createEffect } from "solid-js";
 
 import { analysisResultsAtom, analysisResultsIdleAtom } from "../atoms/studio-analysis-atoms";
 import { useStudioAnnotateStore } from "./studio-annotate-store";
@@ -50,15 +48,4 @@ export function useStudioResultState(): StudioResultState {
     setAnalysisProgress,
     setAnalysisResultFiles,
   };
-}
-
-function useSelectedAtomValue<A>(selectAtom: () => Atom.Atom<A>): Accessor<A> {
-  const registry = useContext(RegistryContext);
-  const [value, setValue] = createSignal(registry.get(selectAtom()));
-  createEffect(() => {
-    const atom = selectAtom();
-    setValue(() => registry.get(atom));
-    onCleanup(registry.subscribe(atom, setValue as (next: A) => void));
-  });
-  return value;
 }

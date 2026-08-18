@@ -3,6 +3,7 @@ import { render } from "@solidjs/testing-library";
 import { describe, expect, it, vi } from "vitest";
 
 import { cursorForAlignTool, useAlignCanvasGridHandlers } from "../src/align-canvas-handlers";
+import { useAlignCanvasPointerHandlers } from "../src/align-pointer-handlers";
 
 describe("cursorForAlignTool", () => {
   it("returns default when grid is disabled", () => {
@@ -212,5 +213,70 @@ describe("useAlignCanvasGridHandlers", () => {
     expect(handlers.dragging()).toBe(false);
     expect(handlers.previewGridRef.current).toBeNull();
     expect(pointer.releasePointer).toHaveBeenCalledOnce();
+  });
+});
+
+describe("useAlignCanvasPointerHandlers", () => {
+  const viewport = {
+    displayWidth: 400,
+    displayHeight: 400,
+    modelWidth: 200,
+    modelHeight: 200,
+  };
+  const pointerEvent = {
+    pointerId: 1,
+    pointerType: "mouse",
+    button: 0,
+    buttons: 1,
+    clientX: 100,
+    clientY: 100,
+    framePoint: { x: 50, y: 50 },
+    viewport,
+    preventDefault: vi.fn(),
+    capturePointer: vi.fn(),
+    releasePointer: vi.fn(),
+  };
+
+  it("starts a grid gesture when manual exclusion is off", () => {
+    const setGrid = vi.fn();
+    let handlers!: ReturnType<typeof useAlignCanvasPointerHandlers>;
+    render(() => {
+      handlers = useAlignCanvasPointerHandlers(() => ({
+        grid: { ...createDefaultAlignGrid(), enabled: true },
+        setGrid,
+        toolMode: "pan",
+        manualExclusionEnabled: false,
+        excludedCells: [],
+        frame: { width: 200, height: 200 },
+        onExcludedCellsChange: vi.fn(),
+      }));
+      return null;
+    });
+
+    handlers.handlePointerDown(pointerEvent);
+    expect(handlers.dragging()).toBe(true);
+    expect(handlers.selecting()).toBe(false);
+    expect(handlers.cursor()).toBe("grabbing");
+  });
+
+  it("does not start a grid gesture when manual exclusion is on", () => {
+    const setGrid = vi.fn();
+    let handlers!: ReturnType<typeof useAlignCanvasPointerHandlers>;
+    render(() => {
+      handlers = useAlignCanvasPointerHandlers(() => ({
+        grid: { ...createDefaultAlignGrid(), enabled: true },
+        setGrid,
+        toolMode: "pan",
+        manualExclusionEnabled: true,
+        excludedCells: [],
+        frame: { width: 200, height: 200 },
+        onExcludedCellsChange: vi.fn(),
+      }));
+      return null;
+    });
+
+    handlers.handlePointerDown(pointerEvent);
+    expect(handlers.dragging()).toBe(false);
+    expect(handlers.cursor()).toBe("crosshair");
   });
 });

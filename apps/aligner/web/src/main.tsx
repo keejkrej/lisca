@@ -8,6 +8,7 @@ import { AlignerMain } from "./components/aligner-main";
 import { AlignerRight } from "./components/aligner-right";
 import { AlignerWorkSessionGate } from "./components/aligner-work-session-gate";
 import "./index.css";
+import { alignerHostOperations } from "./api/aligner-port";
 import { AlignPageProvider } from "./state/align-page-context";
 
 createLiscaWebApp({
@@ -15,6 +16,7 @@ createLiscaWebApp({
   defaultPort: 8765,
   appId: "aligner",
   AtomsProvider: AlignerAtomsProvider,
+  probe: () => alignerHostOperations.userHomeDirectory(),
 });
 
 function AlignApp() {

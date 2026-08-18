@@ -4,10 +4,7 @@
 //! use the `ndarray` ecosystem (`ndarray-stats`, `ndarray-ndimage`) rather than hand-rolled loops.
 
 use ndarray::{s, Array1, ArrayView2};
-use ndarray_stats::{
-    interpolate::{Linear, Lower},
-    Quantile1dExt,
-};
+use ndarray_stats::{interpolate::Linear, Quantile1dExt};
 use noisy_float::types::{n64, N64};
 
 #[derive(Debug, Clone)]
@@ -55,16 +52,6 @@ pub struct MaskedRoiStats {
     pub intensity: f64,
     pub background: f64,
     pub corrected: f64,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct RoiStats {
-    pub masked: MaskedRoiStats,
-    pub foreground_q25: f64,
-    pub foreground_q75: f64,
-    pub unmasked_mean: f64,
-    pub unmasked_q25: f64,
-    pub unmasked_q75: f64,
 }
 
 /// Full-frame ROI reduction: whole crop as foreground; bg = 10th percentile.
@@ -136,31 +123,6 @@ pub fn full_frame_roi_stats(frame: &[f64]) -> MaskedRoiStats {
     }
 }
 
-/// Masked metrics plus foreground/unmasked quartiles (`np.quantile` parity for morphology).
-pub fn roi_stats(frame: &[f64], mask: &[bool]) -> Result<RoiStats, String> {
-    let masked = masked_roi_stats(frame, mask)?;
-    let foreground: Vec<f64> = frame
-        .iter()
-        .zip(mask.iter())
-        .filter_map(|(value, &masked)| masked.then_some(*value))
-        .collect();
-    let unmasked_mean = if frame.is_empty() {
-        0.0
-    } else {
-        Array1::from_iter(frame.iter().copied())
-            .mean()
-            .unwrap_or(0.0)
-    };
-    Ok(RoiStats {
-        masked,
-        foreground_q25: quantile(&foreground, 0.25),
-        foreground_q75: quantile(&foreground, 0.75),
-        unmasked_mean,
-        unmasked_q25: quantile(frame, 0.25),
-        unmasked_q75: quantile(frame, 0.75),
-    })
-}
-
 /// Linear interpolation quantile on unsorted `f64` values (`numpy.quantile` default).
 pub fn quantile(values: &[f64], q: f64) -> f64 {
     quantile_linear(values, q)
@@ -174,7 +136,13 @@ pub fn quantile_linear(values: &[f64], q: f64) -> f64 {
     if values.len() == 1 {
         return values[0];
     }
-    let mut arr = Array1::from_iter(values.iter().copied().filter(|value| value.is_finite()).map(N64::new));
+    let mut arr = Array1::from_iter(
+        values
+            .iter()
+            .copied()
+            .filter(|value| value.is_finite())
+            .map(N64::new),
+    );
     if arr.is_empty() {
         return 0.0;
     }
@@ -204,88 +172,6 @@ pub fn quantile_floor_sorted(sorted: &[f64], q: f64) -> f64 {
     let clamped = q.clamp(0.0, 1.0);
     let index = (clamped * (sorted.len().saturating_sub(1)) as f64).floor() as usize;
     sorted[index.min(sorted.len() - 1)]
-}
-
-/// Floor-index quantile on pre-sorted `u16` samples (viewer contrast semantics).
-pub fn quantile_floor_sorted_u16(sorted: &[u16], q: f64) -> u16 {
-    if sorted.is_empty() {
-        return 0;
-    }
-    if sorted.len() == 1 {
-        return sorted[0];
-    }
-    let mut arr = Array1::from_iter(sorted.iter().copied());
-    arr.quantile_mut(n64(q.clamp(0.0, 1.0)), &Lower)
-        .unwrap_or(0)
-}
-
-/// Evenly subsample then sort (used for large-frame contrast estimation).
-pub fn subsample_sorted_u16(values: &[u16], sample_size: usize) -> Vec<u16> {
-    if values.is_empty() {
-        return vec![0];
-    }
-    if values.len() <= sample_size {
-        let mut copy = values.to_vec();
-        copy.sort_unstable();
-        return copy;
-    }
-
-    let step = values.len() as f64 / sample_size as f64;
-    let mut sample = Vec::with_capacity(sample_size);
-    for index in 0..sample_size {
-        let position = (index as f64 * step).floor() as usize;
-        sample.push(values[position.min(values.len() - 1)]);
-    }
-    sample.sort_unstable();
-    sample
-}
-
-/// Subsampled floor quantile for `u16` frame pixels (aligner/viewer auto-contrast).
-pub fn quantile_floor_subsampled_u16(values: &[u16], q: f64, sample_size: usize) -> u16 {
-    quantile_floor_sorted_u16(&subsample_sorted_u16(values, sample_size), q)
-}
-
-/// Otsu threshold from histogram bin counts and bin centers.
-pub fn otsu_on_histogram(counts: &[f64], centers: &[f64]) -> f64 {
-    if counts.is_empty() || centers.is_empty() {
-        return 0.0;
-    }
-    let total: f64 = counts.iter().sum();
-    if total <= 0.0 {
-        return 0.0;
-    }
-    let total_intensity: f64 = counts
-        .iter()
-        .zip(centers.iter())
-        .map(|(count, center)| count * center)
-        .sum();
-
-    let mut weight_background = 0.0;
-    let mut sum_background = 0.0;
-    let mut best_variance = f64::NEG_INFINITY;
-    let mut best_threshold = centers[0];
-
-    for (count, center) in counts.iter().zip(centers.iter()) {
-        weight_background += count;
-        if weight_background <= 0.0 || weight_background >= total {
-            continue;
-        }
-        sum_background += center * count;
-        let weight_foreground = total - weight_background;
-        if weight_foreground <= 0.0 {
-            continue;
-        }
-        let mean_background = sum_background / weight_background;
-        let mean_foreground = (total_intensity - sum_background) / weight_foreground;
-        let variance = weight_background
-            * weight_foreground
-            * (mean_background - mean_foreground).powi(2);
-        if variance > best_variance {
-            best_variance = variance;
-            best_threshold = *center;
-        }
-    }
-    best_threshold
 }
 
 /// Trapezoidal integration of `(times, values)` pairs (`numpy.trapz` parity).
@@ -354,14 +240,15 @@ pub fn evaluate_kinetic_candidate(
     }
     let times = Array1::from_iter(times.iter().copied());
     let values = Array1::from_iter(values.iter().copied());
-    let basis = times.mapv(|time| {
-        kinetic_basis_value(time, protein_decay_rate, mrna_decay_rate, onset_time)
-    });
+    let basis = times
+        .mapv(|time| kinetic_basis_value(time, protein_decay_rate, mrna_decay_rate, onset_time));
     if !basis.iter().all(|value| value.is_finite()) {
         return None;
     }
-    let (baseline_intensity, expression_amplitude) =
-        lstsq_affine(basis.as_slice().unwrap_or(&[]), values.as_slice().unwrap_or(&[]))?;
+    let (baseline_intensity, expression_amplitude) = lstsq_affine(
+        basis.as_slice().unwrap_or(&[]),
+        values.as_slice().unwrap_or(&[]),
+    )?;
     if !baseline_intensity.is_finite()
         || !expression_amplitude.is_finite()
         || expression_amplitude <= 0.0
@@ -446,16 +333,6 @@ mod tests {
     }
 
     #[test]
-    fn roi_stats_includes_quartiles() {
-        let frame = [1.0, 2.0, 3.0, 100.0];
-        let mask = [true, true, true, false];
-        let stats = roi_stats(&frame, &mask).unwrap();
-        assert!((stats.foreground_q25 - 1.5).abs() < 1e-9);
-        assert!((stats.foreground_q75 - 2.5).abs() < 1e-9);
-        assert!((stats.unmasked_q25 - 1.75).abs() < 1e-9);
-    }
-
-    #[test]
     fn kinetic_candidate_matches_scalar_formula() {
         let times = [0.0, 1.0, 2.0, 3.0];
         let values = [1.0, 2.0, 2.5, 2.0];
@@ -467,14 +344,6 @@ mod tests {
         for (actual, expected) in values.iter().zip(predicted.iter()) {
             assert!((actual - expected).abs() < 0.5);
         }
-    }
-
-    #[test]
-    fn otsu_on_histogram_splits_bimodal() {
-        let counts = vec![25.0, 25.0, 25.0, 25.0];
-        let centers = vec![5.0, 15.0, 185.0, 205.0];
-        let threshold = otsu_on_histogram(&counts, &centers);
-        assert!(threshold >= 15.0 && threshold <= 185.0);
     }
 
     #[test]
