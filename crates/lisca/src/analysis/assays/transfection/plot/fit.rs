@@ -354,7 +354,7 @@ fn write_fitted_trace_grid(
             p.axes(
                 AxesStyle::new()
                     .title(title)
-                    .x_label("minutes")
+                    .x_label("time (min)")
                     .y_label("intensity")
                     .y_range(y_low, y_high)
                     .x_range(0.0, max_t.max(1.0))

@@ -256,7 +256,7 @@ fn write_subplot_grid(
             }
             let mut axes = AxesStyle::new()
                 .title(title)
-                .x_label("minutes")
+                .x_label("time (min)")
                 .y_label(y_label)
                 .y_range(y_low, y_high)
                 .x_range(0.0, max_t.max(interval));
@@ -351,7 +351,7 @@ fn write_summary_subplot_grid(
 
             let mut axes = AxesStyle::new()
                 .title(title)
-                .x_label("minutes")
+                .x_label("time (min)")
                 .y_label(y_label)
                 .y_range(y_low, y_high)
                 .x_range(0.0, max_t);

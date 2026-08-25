@@ -68,7 +68,7 @@ pub fn run_plot_kill(workspace: &Path, mapping: &SlideMapping, interval: f64) ->
             panel.axes(
                 AxesStyle::new()
                     .title(label)
-                    .x_label("minutes")
+                    .x_label("time (min)")
                     .y_label("N(alive)")
                     .x_range(0.0, max_x.max(interval))
                     .y_range(0.0, max_y.max(1.0)),

@@ -74,7 +74,7 @@ pub fn run_plot_death_times(
             panel.axes(
                 AxesStyle::new()
                     .title(label)
-                    .x_label("minutes")
+                    .x_label("time (min)")
                     .y_label("n crops")
                     .y_range(0.0, max_count.max(1.0)),
             );
