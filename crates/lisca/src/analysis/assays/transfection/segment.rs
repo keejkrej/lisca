@@ -11,6 +11,8 @@ use crate::analysis::roi_stack::{
 use crate::analysis::slide::SlideMapping;
 
 use super::image_ops::segment_frame;
+#[cfg(feature = "smart")]
+use super::segment_onnx::{resolve_ge_seg_model_dir, OnnxSegmentConfig, OnnxSegmenter};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct PositionSegmentResult {
@@ -20,12 +22,38 @@ struct PositionSegmentResult {
     skipped: bool,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum SegmentBackend {
+    #[default]
+    Otsu,
+    Onnx,
+}
+
+impl SegmentBackend {
+    pub fn parse(value: &str) -> Result<Self, String> {
+        match value.trim().to_ascii_lowercase().as_str() {
+            "otsu" | "classical" | "default" => Ok(Self::Otsu),
+            "onnx" | "unet" | "model" => Ok(Self::Onnx),
+            other => Err(format!(
+                "unknown segment backend {other:?} (expected otsu|onnx)"
+            )),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct SegmentOptions {
     pub variation_radius: u32,
     pub gaussian_sigma: f64,
     pub force: bool,
     pub jobs: usize,
+    pub backend: SegmentBackend,
+    /// Explicit model directory (or path to model.onnx).
+    /// Falls back to `LISCA_PATTERN_SEG_MODEL` (or legacy `LISCA_GE_SEG_MODEL`).
+    pub model_dir: Option<std::path::PathBuf>,
+    pub image_size: u32,
+    pub threshold: f32,
+    pub batch_size: usize,
 }
 
 impl Default for SegmentOptions {
@@ -35,27 +63,28 @@ impl Default for SegmentOptions {
             gaussian_sigma: 1.0,
             force: false,
             jobs: default_jobs(),
+            backend: SegmentBackend::Otsu,
+            model_dir: None,
+            image_size: 128,
+            threshold: 0.5,
+            batch_size: 32,
         }
     }
 }
 
 pub fn run_segment(workspace: &Path, mapping: &SlideMapping, options: &SegmentOptions) -> Result<(), String> {
-    let tasks = mapping
-        .iter()
-        .flat_map(|(slide_channel, entry)| {
-            entry.positions.iter().copied().map(|position| {
-                (
-                    *slide_channel,
-                    entry.mask,
-                    position,
-                )
-            })
-        })
-        .collect::<Vec<_>>();
-    if tasks.is_empty() {
-        return Err("slide mapping defines no valid positions".to_string());
+    match options.backend {
+        SegmentBackend::Otsu => run_segment_otsu(workspace, mapping, options),
+        SegmentBackend::Onnx => run_segment_onnx(workspace, mapping, options),
     }
+}
 
+fn run_segment_otsu(
+    workspace: &Path,
+    mapping: &SlideMapping,
+    options: &SegmentOptions,
+) -> Result<(), String> {
+    let tasks = collect_tasks(mapping)?;
     let pool = rayon::ThreadPoolBuilder::new()
         .num_threads(options.jobs.max(1))
         .build()
@@ -65,7 +94,7 @@ pub fn run_segment(workspace: &Path, mapping: &SlideMapping, options: &SegmentOp
         tasks
             .par_iter()
             .map(|(slide_channel, mask_channel, position)| {
-                run_position_segmentation(
+                run_position_segmentation_otsu(
                     workspace,
                     *slide_channel,
                     *mask_channel,
@@ -76,6 +105,67 @@ pub fn run_segment(workspace: &Path, mapping: &SlideMapping, options: &SegmentOp
             .collect::<Result<Vec<_>, String>>()
     })?;
 
+    summarize_results(results)
+}
+
+#[cfg(feature = "smart")]
+fn run_segment_onnx(
+    workspace: &Path,
+    mapping: &SlideMapping,
+    options: &SegmentOptions,
+) -> Result<(), String> {
+    let tasks = collect_tasks(mapping)?;
+    let model_dir = resolve_ge_seg_model_dir(options.model_dir.as_deref())?;
+    let config = OnnxSegmentConfig {
+        model_dir,
+        image_size: options.image_size,
+        threshold: options.threshold,
+        fill_holes: true,
+        batch_size: options.batch_size,
+    };
+    let mut segmenter = OnnxSegmenter::open(&config)?;
+
+    let mut results = Vec::with_capacity(tasks.len());
+    for (slide_channel, mask_channel, position) in tasks {
+        results.push(run_position_segmentation_onnx(
+            workspace,
+            slide_channel,
+            mask_channel,
+            position,
+            options,
+            &mut segmenter,
+        )?);
+    }
+    summarize_results(results)
+}
+
+#[cfg(not(feature = "smart"))]
+fn run_segment_onnx(
+    _workspace: &Path,
+    _mapping: &SlideMapping,
+    _options: &SegmentOptions,
+) -> Result<(), String> {
+    Err("ONNX segment backend requires the `smart` feature (ort)".to_string())
+}
+
+fn collect_tasks(mapping: &SlideMapping) -> Result<Vec<(u32, u32, u32)>, String> {
+    let tasks = mapping
+        .iter()
+        .flat_map(|(slide_channel, entry)| {
+            entry
+                .positions
+                .iter()
+                .copied()
+                .map(|position| (*slide_channel, entry.mask, position))
+        })
+        .collect::<Vec<_>>();
+    if tasks.is_empty() {
+        return Err("slide mapping defines no valid positions".to_string());
+    }
+    Ok(tasks)
+}
+
+fn summarize_results(results: Vec<PositionSegmentResult>) -> Result<(), String> {
     let mut skipped_positions: BTreeMap<u32, Vec<u32>> = BTreeMap::new();
     let mut masks_written = 0usize;
     for result in results {
@@ -102,7 +192,7 @@ pub fn run_segment(workspace: &Path, mapping: &SlideMapping, options: &SegmentOp
     Ok(())
 }
 
-fn run_position_segmentation(
+fn run_position_segmentation_otsu(
     workspace: &Path,
     slide_channel: u32,
     mask_channel: u32,
@@ -159,6 +249,72 @@ fn run_position_segmentation(
                 options.gaussian_sigma,
             ));
         }
+        write_mask_tif(&output_path, &masks, width, height)?;
+        mask_count += 1;
+    }
+    Ok(PositionSegmentResult {
+        slide_channel,
+        position,
+        mask_count,
+        skipped: false,
+    })
+}
+
+#[cfg(feature = "smart")]
+fn run_position_segmentation_onnx(
+    workspace: &Path,
+    slide_channel: u32,
+    mask_channel: u32,
+    position: u32,
+    options: &SegmentOptions,
+    segmenter: &mut OnnxSegmenter,
+) -> Result<PositionSegmentResult, String> {
+    let pos_dir = match position_dir(workspace, position) {
+        Ok(path) => path,
+        Err(_) => {
+            return Ok(PositionSegmentResult {
+                slide_channel,
+                position,
+                mask_count: 0,
+                skipped: true,
+            });
+        }
+    };
+    let index = read_position_index(&pos_dir)?;
+    validate_channel_index(&index, mask_channel)?;
+    let mut mask_count = 0usize;
+
+    for roi in &index.rois {
+        let output_path = crate::analysis::roi_stack::default_mask_path(
+            workspace,
+            index.position,
+            &roi.file_name,
+        );
+        if output_path.exists() && !options.force {
+            mask_count += 1;
+            continue;
+        }
+        let roi_path = pos_dir.join(&roi.file_name);
+        if !roi_path.is_file() {
+            return Err(format!(
+                "Missing ROI TIFF referenced by index.json: {}",
+                roi_path.display()
+            ));
+        }
+        let stack = RoiStack::load(&roi_path, roi.shape)?;
+        let width = roi.shape[4] as usize;
+        let height = roi.shape[3] as usize;
+        let mut frames = Vec::with_capacity(index.time_count as usize);
+        for timepoint in 0..index.time_count {
+            frames.push(roi_frame_2d(
+                &stack,
+                &index.axis_order,
+                timepoint,
+                mask_channel,
+                0,
+            )?);
+        }
+        let masks = segmenter.segment_frames(&frames)?;
         write_mask_tif(&output_path, &masks, width, height)?;
         mask_count += 1;
     }

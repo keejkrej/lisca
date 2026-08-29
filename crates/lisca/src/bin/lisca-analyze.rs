@@ -20,7 +20,7 @@ use std::time::Instant;
 use lisca::analysis::assays::transfection::{
     default_fit_jobs, default_jobs, default_timeseries_jobs, interval_minutes, max_onset_minutes,
     run_auc, run_fit, run_plot_auc, run_plot_fit, run_plot_timeseries, run_segment,
-    run_sync_with_mode, run_timeseries_with_mode, skip_segment, SegmentOptions,
+    run_sync_with_mode, run_timeseries_with_mode, skip_segment, SegmentBackend, SegmentOptions,
 };
 use lisca::analysis::slide::{load_mapping_for_workspace, resolve_assay_path};
 use lisca::protocol::AssayJsonFile;
@@ -65,7 +65,7 @@ Usage:
   lisca-analyze <command> [options] <workspace>
 
 Commands (same stage names as `transfection`):
-  segment           Otsu masks → mask/PosN/
+  segment           Masks → mask/PosN/ (default Otsu; optional ONNX U-Net)
   timeseries        Intensity metrics → timeseries/Pos{{n}}/ch{{n}}.csv
   auc               Trapezoidal AUC → results/auc.csv
   fit               Two-exponential kinetic fit → results/fit.csv
@@ -84,6 +84,11 @@ Common options:
    analysis.skipSegment, not a CLI flag)
   --variation-radius N    segment local-variation radius (default: 2)
   --gaussian-sigma F      segment Gaussian sigma (default: 1.0)
+  --backend otsu|onnx     segment backend (default: otsu)
+  --model-dir PATH        ONNX model dir (or LISCA_PATTERN_SEG_MODEL)
+  --image-size N          ONNX input size (default: 128)
+  --threshold F           ONNX sigmoid threshold (default: 0.5)
+  --batch-size N          ONNX frame batch size (default: 32)
   --force, -f             segment: overwrite existing masks
   --columns N             plot grid columns (default: 3)
 
@@ -103,19 +108,32 @@ fn cmd_segment(args: &[String]) -> Result<(), String> {
     let workspace = require_workspace(args)?;
     let assay = flag_path(args, "--assay");
     let mapping = load_mapping_for_workspace(&workspace, assay.as_deref())?;
+    let backend = match flag_value(args, "--backend") {
+        Some(value) => SegmentBackend::parse(value)?,
+        None => SegmentBackend::Otsu,
+    };
     let options = SegmentOptions {
         variation_radius: flag_u32(args, "--variation-radius")?.unwrap_or(2),
         gaussian_sigma: flag_f64(args, "--gaussian-sigma")?.unwrap_or(1.0),
         force: has_flag(args, "--force") || has_flag(args, "-f"),
         jobs: default_jobs(),
+        backend,
+        model_dir: flag_path(args, "--model-dir"),
+        image_size: flag_u32(args, "--image-size")?.unwrap_or(128),
+        threshold: flag_f64(args, "--threshold")?.unwrap_or(0.5) as f32,
+        batch_size: flag_usize(args, "--batch-size")?.unwrap_or(32),
     };
     if options.gaussian_sigma < 0.0 {
         return Err("--gaussian-sigma must be >= 0".to_string());
     }
+    if options.image_size == 0 {
+        return Err("--image-size must be > 0".to_string());
+    }
     eprintln!(
-        "segment workspace={} assay={} jobs={} force={}",
+        "segment workspace={} assay={} backend={:?} jobs={} force={}",
         workspace.display(),
         resolve_assay_path(&workspace, assay.as_deref()).display(),
+        options.backend,
         options.jobs,
         options.force
     );
