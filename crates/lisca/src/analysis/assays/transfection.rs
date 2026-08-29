@@ -4,13 +4,15 @@ mod image_ops;
 mod metrics;
 mod plot;
 mod segment;
+#[cfg(feature = "smart")]
+mod segment_onnx;
 mod timeseries;
 mod traces;
 
 pub use auc::run_auc;
 pub use fit::{default_fit_jobs, run_fit};
 pub use plot::{run_plot_auc, run_plot_fit, run_plot_timeseries, DEFAULT_PLOT_COLUMNS};
-pub use segment::{default_jobs, run_segment, SegmentOptions};
+pub use segment::{default_jobs, run_segment, SegmentBackend, SegmentOptions};
 pub use timeseries::{default_timeseries_jobs, run_timeseries, run_timeseries_with_mode};
 
 use std::path::PathBuf;
