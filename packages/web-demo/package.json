@@ -1,6 +1,5 @@
 {
   "name": "@lisca/web-demo",
-  "version": "0.1.0",
   "private": true,
   "files": [
     "src",

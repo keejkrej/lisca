@@ -13,6 +13,12 @@ ships Studio, Aligner, and Annotator at version `0.3.2`.
 - Do not give private web apps, servers, helper packages, or shared crates an empty version bump. Their
   versions move only if they are published independently or their own package-version policy requires
   it.
+- Private npm workspaces omit `version`; [npm only requires it for published packages](https://docs.npmjs.com/cli/v11/configuring-npm/package-json#name). Desktop `package.json` files are
+  the exception because their versions are release metadata.
+- Internal Cargo packages declare [`publish = false`](https://doc.rust-lang.org/cargo/reference/manifest.html#the-publish-field). Cargo still requires a SemVer package version, so their versions are
+  independent metadata rather than the desktop release version.
+- The Python distribution is independently versioned and keeps the static version required by the
+  [project metadata standard](https://packaging.python.org/en/latest/specifications/pyproject-toml/#version).
 - Never move or reuse a published release tag. If a release fails after its tag is pushed, fix the
   problem on `main` and publish the next patch version.
 
